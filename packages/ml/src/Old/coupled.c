@@ -1023,7 +1023,7 @@ for (i=0; i<exp_Nrows; i++)
    ML_CommInfoOP_Generate( &((*Pmatrix)->getrow->pre_comm),
                            ML_Aggregate_ExchangeBdry, aggr_comm,
                            comm, Ncoarse*nullspace_dim, m*nullspace_dim);
-   ML_Operator_Set_Getrow((*Pmatrix), ML_EXTERNAL, Nrows, CSR_getrows);
+   ML_Operator_Set_Getrow((*Pmatrix), ML_INTERNAL, Nrows, CSR_getrow);
    ML_Operator_Set_ApplyFunc((*Pmatrix), ML_INTERNAL, CSR_matvec);
    (*Pmatrix)->max_nz_per_row = nullspace_dim;
 

@@ -1851,7 +1851,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    Pstart->getrow->pre_comm = ML_CommInfoOP_Create();
    
-   ML_Operator_Set_Getrow((Pstart), ML_EXTERNAL, new_Nrows, CSR_getrows);
+   ML_Operator_Set_Getrow((Pstart), ML_INTERNAL, new_Nrows, CSR_getrow);
    ML_Operator_Set_ApplyFunc(Pstart, ML_INTERNAL, CSR_matvec);
    Pstart->max_nz_per_row = 1;
 

@@ -23,7 +23,7 @@ int oldML_Mdfy_Prolongator_DirBdry(ML *ml_handle, int level2,
 
    int size;
 
-   if (ml_handle->Pmat[level2].getrow->external != CSR_getrows)
+   if (ml_handle->Pmat[level2].getrow->internal != CSR_getrow)
      perror("ML_Mdfy_Prolongator_DirBdry can only be used with CSR matrices\n");
 
    temp    = (struct ML_CSR_MSRdata *) ml_handle->Pmat[level2].data;
@@ -85,7 +85,7 @@ int ML_Mdfy_Prolongator_DirBdry(ML *ml_handle, int level2, int size,
 
 
 
-   if (ml_handle->Pmat[level2].getrow->external != CSR_getrows)
+   if (ml_handle->Pmat[level2].getrow->internal != CSR_getrow)
      perror("ML_Mdfy_Prolongator_DirBdry can only be used with CSR matrices\n");
 
    temp    = (struct ML_CSR_MSRdata *) ml_handle->Pmat[level2].data;
@@ -249,8 +249,8 @@ printf("we've changed the data pointer ? ....\n");
    }
    else ml_handle->Pmat[level2].getrow->pre_comm = NULL;
 
-   ML_Operator_Set_Getrow(&(ml_handle->Pmat[level2]), ML_EXTERNAL, 
-			  ml_handle->Pmat[level2].outvec_leng, CSR_getrows);
+   ML_Operator_Set_Getrow(&(ml_handle->Pmat[level2]), ML_INTERNAL, 
+			  ml_handle->Pmat[level2].outvec_leng, CSR_getrow);
 
 /*
    ML_CommInfoOP_Generate(&(ml_handle->Pmat[level2].getrow->pre_comm),
@@ -410,8 +410,8 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
    ml_handle->Rmat[level].data_destroy = ML_CSR_MSRdata_Destroy;
    ML_Init_Restrictor(ml_handle, level, level2, isize, osize, (void *) temp);
    ML_Operator_Set_ApplyFunc(Rmat,ML_INTERNAL, CSR_matvec);
-   ML_Operator_Set_Getrow(&(ml_handle->Rmat[level]), ML_EXTERNAL,
-                                 Nghost+osize, CSR_getrows);
+   ML_Operator_Set_Getrow(&(ml_handle->Rmat[level]), ML_INTERNAL,
+                                 Nghost+osize, CSR_getrow);
   return(1);
 }
 /*  SYMB_GRID::partitionBlocksNodes ****************************************
@@ -766,8 +766,8 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
    ML_Operator_Set_ApplyFuncData(Amat_trans, isize, osize, 
                                   ML_EMPTY, temp, osize, NULL, 0);
    ML_Operator_Set_ApplyFunc(Amat_trans,ML_INTERNAL, CSR_matvec);
-   ML_Operator_Set_Getrow(Amat_trans, ML_EXTERNAL,
-                                 Nghost+osize, CSR_getrows);
+   ML_Operator_Set_Getrow(Amat_trans, ML_INTERNAL,
+                                 Nghost+osize, CSR_getrow);
 
   return(1);
 }

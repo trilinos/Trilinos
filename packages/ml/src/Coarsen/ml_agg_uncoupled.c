@@ -927,7 +927,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    ML_CommInfoOP_Generate( &((*Pmatrix)->getrow->pre_comm), 
                            ML_Aggregate_ExchangeBdry, aggr_comm, 
                            comm, Ncoarse, m);
-   ML_Operator_Set_Getrow((*Pmatrix), ML_EXTERNAL, Nrows, CSR_getrows);
+   ML_Operator_Set_Getrow((*Pmatrix), ML_INTERNAL, Nrows, CSR_getrow);
    ML_Operator_Set_ApplyFunc((*Pmatrix), ML_INTERNAL, CSR_matvec);
 
    /* ============================================================= */

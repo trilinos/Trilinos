@@ -544,8 +544,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    ML_Operator_Set_ApplyFuncData(&(ml->Pmat[clevel]), nxcoarse*nxcoarse,
 				 Nfine, ML_EMPTY, csr_data,
 				 Nfine, NULL, 0);
-   ML_Operator_Set_Getrow(&(ml->Pmat[clevel]), ML_EXTERNAL, 
-			  Nfine, CSR_getrows);
+   ML_Operator_Set_Getrow(&(ml->Pmat[clevel]), ML_INTERNAL, 
+			  Nfine, CSR_getrow);
    ml->Pmat[clevel].max_nz_per_row = 4;
    ml->Pmat[clevel].N_nonzeros = bindx[Nfine];
    ML_Operator_Set_ApplyFunc (&(ml->Pmat[clevel]), ML_INTERNAL, CSR_matvec);
@@ -1383,7 +1383,7 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
    aggr_comm->local_nrows = 1;
    ML_CommInfoOP_Generate( &(tentP->getrow->pre_comm),
                            ML_Aggregate_ExchangeBdry, aggr_comm, ml->comm, 1, 0);
-   ML_Operator_Set_Getrow(tentP, ML_EXTERNAL, Nfine, CSR_getrows);
+   ML_Operator_Set_Getrow(tentP, ML_INTERNAL, Nfine, CSR_getrow);
    ML_Operator_Set_ApplyFunc(tentP, ML_INTERNAL, CSR_matvec);
 
    /* ----------------------------------------------------------------- */
@@ -1488,7 +1488,7 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
    ML_Operator_Set_ApplyFuncData(APMat,1,Nfine,ML_EMPTY,csr_data,
                                  Nfine,NULL,ap_ncols-1);
    APMat->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
-   ML_Operator_Set_Getrow(APMat, ML_EXTERNAL, Nfine, CSR_getrows);
+   ML_Operator_Set_Getrow(APMat, ML_INTERNAL, Nfine, CSR_getrow);
    ML_Operator_Set_ApplyFunc(APMat, ML_INTERNAL, CSR_matvec);
    APMat->max_nz_per_row = max_nz_per_row;
 /*
@@ -1919,7 +1919,7 @@ tentP = ML_Operator_Create(ml->comm);
    aggr_comm->local_nrows = 1;
    ML_CommInfoOP_Generate( &(tentP->getrow->pre_comm),
                            ML_Aggregate_ExchangeBdry, aggr_comm, ml->comm, 1, 0);
-   ML_Operator_Set_Getrow(tentP, ML_EXTERNAL, Nfine, CSR_getrows);
+   ML_Operator_Set_Getrow(tentP, ML_INTERNAL, Nfine, CSR_getrow);
    ML_Operator_Set_ApplyFunc(tentP, ML_INTERNAL, CSR_matvec);
    ML_Operator_Set_1Levels(&(ml->Pmat[clevel]),
               &(ml->SingleLevel[clevel]), &(ml->SingleLevel[level]));

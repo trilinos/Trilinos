@@ -384,8 +384,8 @@ example (with nonutilized ghost variables still works
                              /* Nrows+Nrows_new, */ Nrows+Nrows_new,
                              ML_EMPTY,(void*)temp,Nrows+Nrows_new,NULL,0);
 
-  ML_Operator_Set_Getrow(*Pappended, ML_EXTERNAL, Nrows + Nrows_new,
-                  CSR_getrows);
+  ML_Operator_Set_Getrow(*Pappended, ML_INTERNAL, Nrows + Nrows_new,
+                  CSR_getrow);
   (*Pappended)->max_nz_per_row = max_per_row;
   if (Pmatrix->N_nonzeros >= 0) 
      (*Pappended)->N_nonzeros     = Pmatrix->N_nonzeros + rowptr_new[Nrows_new];
@@ -690,8 +690,8 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
                ML_Operator_Set_1Levels(current, parent->from, parent->to);
                ML_Operator_Set_ApplyFuncData(current,row_count,row_count,
                                    ML_EMPTY,(void*)temp,row_count,NULL,0);
-               ML_Operator_Set_Getrow(current, ML_EXTERNAL, row_count, 
-				      CSR_getrows);
+               ML_Operator_Set_Getrow(current, ML_INTERNAL, row_count, 
+				      CSR_getrow);
                current->max_nz_per_row = max_nz_row_new;
                if (matrix->sub_matrix->N_nonzeros >= 0)
                   current->N_nonzeros =total_nz+matrix->sub_matrix->N_nonzeros;
@@ -758,7 +758,8 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
 
    total_nz += next_nz;
    matrix->getrow->Nrows  = row_count;
-   matrix->getrow->external = CSR_getrows;
+   matrix->getrow->internal = CSR_getrow;
+   matrix->getrow->ML_id = ML_INTERNAL;
    matrix->getrow->loc_glob_map   = NULL;
    matrix->getrow->use_loc_glob_map = ML_NO;
    if (matrix->getrow->row_map != NULL) ML_free(matrix->getrow->row_map);
@@ -949,8 +950,8 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
    ML_Operator_Set_ApplyFuncData(omatrix, imatrix->invec_leng,
                              imatrix->getrow->Nrows, ML_EMPTY, (void*)temp,
                              imatrix->getrow->Nrows, NULL, 0);
-   ML_Operator_Set_Getrow(omatrix, ML_EXTERNAL, imatrix->getrow->Nrows,
-                          CSR_getrows);
+   ML_Operator_Set_Getrow(omatrix, ML_INTERNAL, imatrix->getrow->Nrows,
+                          CSR_getrow);
    omatrix->max_nz_per_row = imatrix->max_nz_per_row;
    omatrix->N_nonzeros     = next_nz;
    ML_Operator_Set_ApplyFunc (omatrix, ML_INTERNAL, CSR_matvec);

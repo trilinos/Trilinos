@@ -284,6 +284,39 @@ int CSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    return(1);
 }
 
+int CSR_getrow(void *data, int N_requested_rows, int requested_rows[],
+   int allocated_space, int columns[], double values[], int row_lengths[])
+{
+   register int    *bindx, j;
+   int     *rowptr,  row, itemp;
+   register double *val;
+   struct ML_CSR_MSRdata *input_matrix;
+   ML_Operator *mat_in;
+
+   row            = *requested_rows;
+   mat_in = (ML_Operator *) data;
+   input_matrix = (struct ML_CSR_MSRdata *) ML_Get_MyGetrowData(mat_in);
+   rowptr = input_matrix->rowptr;
+   itemp = rowptr[row];
+   *row_lengths = rowptr[row+1] - itemp;
+
+
+   if (*row_lengths > allocated_space) {
+    ML_avoid_unused_param( (void *) &N_requested_rows);
+    return(0);
+  }
+
+   bindx  = &(input_matrix->columns[itemp]);
+   for (j = 0 ; j < *row_lengths; j++) {
+      *columns++ = *bindx++;
+   }
+   val    = &(input_matrix->values[itemp]);
+   for (j = 0 ; j < *row_lengths; j++) {
+      *values++  = *val++;
+   }
+   return(1);
+}
+
 /* single precision version to save storage */
 int sCSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])

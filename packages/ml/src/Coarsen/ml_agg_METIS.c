@@ -2144,7 +2144,7 @@ int agg_offset, vertex_offset;
    (*Pmatrix)->getrow->pre_comm = ML_CommInfoOP_Create();
    (*Pmatrix)->max_nz_per_row = 1;
    
-   ML_Operator_Set_Getrow((*Pmatrix), ML_EXTERNAL, Nrows, CSR_getrows);
+   ML_Operator_Set_Getrow((*Pmatrix), ML_INTERNAL, Nrows, CSR_getrow);
    ML_Operator_Set_ApplyFunc((*Pmatrix), ML_INTERNAL, CSR_matvec);
    (*Pmatrix)->max_nz_per_row = 1;
 

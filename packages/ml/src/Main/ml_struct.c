@@ -4917,8 +4917,8 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       ML_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
       ML_CommInfoOP_Set_neighbors(&(subml->Amat[0].getrow->pre_comm), 0,
                                NULL, ML_OVERWRITE, NULL, 0);
-      ML_Operator_Set_Getrow(&(subml->Amat[0]), ML_EXTERNAL,
-                             subml->Amat[0].outvec_leng, CSR_getrows);
+      ML_Operator_Set_Getrow(&(subml->Amat[0]), ML_INTERNAL,
+                             subml->Amat[0].outvec_leng, CSR_getrow);
       ML_Gen_Blocks_Metis(subml, 0, &nblocks, &block_list);
       ML_Destroy(&subml);
       ML_free(temp_ptr);
@@ -5171,8 +5171,8 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       ML_Init_Amatrix(subml, 0, nrows, nrows, (void *) temp_ptr);
       ML_CommInfoOP_Set_neighbors(&(subml->Amat[0].getrow->pre_comm), 0,
                                NULL, ML_OVERWRITE, NULL, 0);
-      ML_Operator_Set_Getrow(&(subml->Amat[0]), ML_EXTERNAL,
-                             subml->Amat[0].outvec_leng, CSR_getrows);
+      ML_Operator_Set_Getrow(&(subml->Amat[0]), ML_INTERNAL,
+                             subml->Amat[0].outvec_leng, CSR_getrow);
 
       ML_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
       ML_Gen_Blocks_Metis(subml, 0, &nblocks, &block_list);
@@ -6001,7 +6001,7 @@ int ML_build_ggb(ML *ml, void *data)
 				  Nrows, NULL, 0);
   
   
-  ML_Operator_Set_Getrow(Pmat, ML_EXTERNAL, Nrows, CSR_getrows);
+  ML_Operator_Set_Getrow(Pmat, ML_INTERNAL, Nrows, CSR_getrow);
   ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_densematvec); 
   /*  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_matvec);  */
 
@@ -6123,7 +6123,7 @@ int ML_build_ggb(ML *ml, void *data)
   
   
   
-  ML_Operator_Set_Getrow(Qtilde, ML_EXTERNAL, Nrows, CSR_getrows);
+  ML_Operator_Set_Getrow(Qtilde, ML_INTERNAL, Nrows, CSR_getrow);
   ML_Operator_Set_ApplyFunc (Qtilde, ML_INTERNAL, CSR_densematvec); 
   Qtilde->data_destroy = ML_CSR_MSRdata_Destroy;
 
@@ -6185,7 +6185,7 @@ int ML_build_ggb(ML *ml, void *data)
 				   0, NULL, 0);
   
   
-  ML_Operator_Set_Getrow(&(ml_ggb->Amat[0]), ML_EXTERNAL, Ncols, CSR_getrows);
+  ML_Operator_Set_Getrow(&(ml_ggb->Amat[0]), ML_INTERNAL, Ncols, CSR_getrow);
   ML_Operator_Set_ApplyFunc (&(ml_ggb->Amat[0]), ML_INTERNAL, CSR_densematvec); 
   ml_ggb->Amat[0].getrow->pre_comm = ML_CommInfoOP_Create();
   ml_ggb->Amat[0].data_destroy = ML_CSR_MSRdata_Destroy;
@@ -6302,7 +6302,7 @@ void ML_build_ggb_cheap(ML *ml, void *data)
 				  Nrows, NULL, 0);
   
   
-  ML_Operator_Set_Getrow(Pmat, ML_EXTERNAL, Nrows, CSR_getrows);
+  ML_Operator_Set_Getrow(Pmat, ML_INTERNAL, Nrows, CSR_getrow);
   ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_densematvec); 
   /*  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_matvec);  */
 

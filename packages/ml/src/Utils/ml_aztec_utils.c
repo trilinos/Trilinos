@@ -1546,6 +1546,7 @@ int  wrapper_DCSR_getrow(int columns[], double values[], int row_lengths[],
    temp_ptr->rowptr = csr2_mat->mat_ia;
    temp_ptr->columns= csr2_mat->mat_ja;
    temp_ptr->values = csr2_mat->mat_a;
+   
 
    status = CSR_getrows(temp_ptr, N_requested_rows, requested_rows,
                         allocated_space, columns, values, row_lengths);
@@ -2440,7 +2441,7 @@ void AZ_Tmat_transform2ml(int Nexterns, int global_node_externs[], int *reordere
   *Tmat = ML_Operator_Create(comm);
   ML_Operator_Set_ApplyFuncData( *Tmat, Nlocal_nodes, Nlocal_edges, 
                                   ML_EMPTY, csr_data, Nlocal_edges, NULL, 0);
-  ML_Operator_Set_Getrow(*Tmat, ML_EXTERNAL, Nlocal_edges, CSR_getrows);
+  ML_Operator_Set_Getrow(*Tmat, ML_INTERNAL, Nlocal_edges, CSR_getrow);
   ML_Operator_Set_ApplyFunc(*Tmat, ML_INTERNAL, CSR_matvec);
 
   if ((*Tmat)->data_destroy == NULL)

@@ -82,6 +82,9 @@ extern void ML_Scale_CSR(ML_Operator *input_matrix,
 extern int CSR_getrows(void *data,int N_requested_rows,int requested_rows[],
                        int allocated_space, int columns[], double values[],
                        int row_lengths[]);
+extern int CSR_getrow(void *data,int N_requested_rows,int requested_rows[],
+                       int allocated_space, int columns[], double values[],
+                       int row_lengths[]);
 extern int sCSR_getrows(void *data,int N_requested_rows,int requested_rows[],
                        int allocated_space, int columns[], double values[],
                        int row_lengths[]);

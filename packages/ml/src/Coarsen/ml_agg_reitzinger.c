@@ -424,7 +424,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      Tcoarse->data_destroy = ML_CSR_MSRdata_Destroy;
      ML_Operator_Set_ApplyFuncData( Tcoarse, Kn_coarse->outvec_leng, counter, 
                                      ML_EMPTY, csr_data, counter, NULL, 0);
-     ML_Operator_Set_Getrow(Tcoarse, ML_EXTERNAL, counter, CSR_getrows);
+     ML_Operator_Set_Getrow(Tcoarse, ML_INTERNAL, counter, CSR_getrow);
      ML_Operator_Set_ApplyFunc(Tcoarse, ML_INTERNAL, CSR_matvec);
    
      ML_CommInfoOP_Clone(&(Tcoarse->getrow->pre_comm),
@@ -802,7 +802,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      /* We want all +1 entries to avoid changing sign of entries in Pe. */
      Pn_coarse = &(ml_nodes->Pmat[grid_level]);
      csr_data = (struct ML_CSR_MSRdata *) Pn_coarse->data;
-     if (Pn_coarse->getrow->external == CSR_getrows) {
+     if (Pn_coarse->getrow->internal == CSR_getrow) {
        for (i = 0; i < csr_data->rowptr[Pn_coarse->outvec_leng]; i++)
 	 if (csr_data->values[i] != 0) csr_data->values[i] = 1.;
      }
@@ -1080,9 +1080,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        }
      }
     
-     Pe->getrow->external = CSR_getrows;
-     Pe->getrow->internal = NULL;
-     Pe->getrow->ML_id    = ML_EXTERNAL;
+     Pe->getrow->internal = CSR_getrow;
+     Pe->getrow->external = NULL;
+     Pe->getrow->ML_id    = ML_INTERNAL;
      Pe->matvec->internal = CSR_matvec;
      Pe->matvec->external = NULL;
      Pe->matvec->ML_id = ML_INTERNAL;
@@ -1872,7 +1872,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
    ML_Operator_Set_ApplyFuncData(Pe_mat,Trowcount, Tfine_mat->outvec_leng,
 				 ML_EMPTY,Pe,Tfine_mat->outvec_leng,NULL,0);
    ML_Operator_Set_ApplyFunc (Pe_mat, ML_INTERNAL, CSR_matvec);
-   ML_Operator_Set_Getrow(Pe_mat, ML_EXTERNAL, Tfine_mat->outvec_leng, CSR_getrows);
+   ML_Operator_Set_Getrow(Pe_mat, ML_INTERNAL, Tfine_mat->outvec_leng, CSR_getrow);
    Pe_mat->getrow->Nrows = Tfine_mat->outvec_leng;
    Pe_mat->max_nz_per_row = max_nz_per_row;
    Pe_mat->N_nonzeros     = Pnzcount;
@@ -1880,7 +1880,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
    ML_Operator_Set_ApplyFuncData(Tcoarse_mat,Pn_mat->invec_leng, Trowcount,
 				 ML_EMPTY,Tcoarse,Trowcount,NULL,0);
    ML_Operator_Set_ApplyFunc (Tcoarse_mat, ML_INTERNAL, CSR_matvec);
-   ML_Operator_Set_Getrow(Tcoarse_mat, ML_EXTERNAL, Trowcount, CSR_getrows);
+   ML_Operator_Set_Getrow(Tcoarse_mat, ML_INTERNAL, Trowcount, CSR_getrow);
    Tcoarse_mat->getrow->Nrows = Trowcount;
    Tcoarse_mat->max_nz_per_row = 2;
    Tcoarse_mat->N_nonzeros     = Tcoarse->rowptr[Trowcount];

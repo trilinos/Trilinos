@@ -166,8 +166,8 @@ for(kkk = 0; kkk < row_length; kkk++)
    ML_Operator_Set_ApplyFuncData(omatrix, Amat->invec_leng,
                              Amat->getrow->Nrows, ML_EMPTY, (void*)temp,
                              Amat->getrow->Nrows, NULL, 0);
-   ML_Operator_Set_Getrow(omatrix, ML_EXTERNAL, omatrix->getrow->Nrows,
-                          CSR_getrows);
+   ML_Operator_Set_Getrow(omatrix, ML_INTERNAL, omatrix->getrow->Nrows,
+                          CSR_getrow);
 
    omatrix->max_nz_per_row = max_nz_per_row;
    omatrix->N_nonzeros     = N_nz;
