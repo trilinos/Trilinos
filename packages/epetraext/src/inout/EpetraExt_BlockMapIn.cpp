@@ -55,7 +55,7 @@ int MatrixMarketFileToBlockMap( const char *filename, const Epetra_Comm & comm, 
 
   bool inHeader = true;
 
-  handle = fopen(filename,"w");
+  handle = fopen(filename,"r");
   while (inHeader) {
     if(fgets(line, lineLength, handle)==0) return(-1);
     if(sscanf(line, "%s", token)==0) return(-1);

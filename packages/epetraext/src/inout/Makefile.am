@@ -39,7 +39,8 @@ INOUT_H = \
      $(srcdir)/EpetraExt_MultiVectorOut.h \
      $(srcdir)/EpetraExt_VectorOut.h \
      $(srcdir)/EpetraExt_BlockMapOut.h \
-     $(srcdir)/EpetraExt_BlockMapIn.h
+     $(srcdir)/EpetraExt_BlockMapIn.h \
+     $(srcdir)/EpetraExt_CrsMatrixIn.h
 
 INOUT = \
 	$(srcdir)/EpetraExt_mmio.cpp \
@@ -47,7 +48,8 @@ INOUT = \
      $(srcdir)/EpetraExt_MultiVectorOut.cpp \
      $(srcdir)/EpetraExt_VectorOut.cpp \
      $(srcdir)/EpetraExt_BlockMapOut.cpp \
-     $(srcdir)/EpetraExt_BlockMapIn.cpp
+     $(srcdir)/EpetraExt_BlockMapIn.cpp \
+     $(srcdir)/EpetraExt_CrsMatrixIn.cpp
 
 # ------------------------------------------------------------------------
 # EpetraExt inout library specifications
