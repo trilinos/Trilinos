@@ -17,8 +17,8 @@
 #
 # Usage: test_zoltan [-arch arch-type] [-cmd command] 
 #
-# where arch-type is one of {generic, sun, solaris, gcc, linux, tflop, cplant, dec, 
-# linux, sgi32, sgi64}.
+# where arch-type is one of {generic, solaris, gcc, linux, tflop, cplant,
+# dec, sgi32, sgi64}.
 # Alternatively, give a run command with the -cmd option.
 #
 
@@ -240,6 +240,22 @@ endif
 set ch_methods = ( )
 set nem_methods = ( )
 
+# Determine ParMETIS version, if any
+if ( $no_parmetis ) then
+  @ pmversion = 0
+else
+  # Scan ParMETIS header file for version info
+  set pmfile = `sed -n 's/^.* \([^ ]*parmetis\.h\).*/\1/p' ../Obj_${arch}/parmetis_jostle.d`
+  set majorversion = `grep MAJOR_VERSION $pmfile[1]`
+  if ( $status ) then
+    @ pmversion = 2
+  else
+    @ pmversion = $majorversion[3]
+  endif
+endif 
+
+echo "ParMETIS version is $pmversion"
+
 # Check for Jostle
 if ( $yes_jostle ) then
   set ch_methods = ( $ch_methods jostle jostle-diffusion )
@@ -264,7 +280,11 @@ if ( $yes_fortran ) then
     set ch_methods = ( $ch_methods oct0 oct1 oct2 )
   endif
   if (! $no_parmetis) then
-    set ch_methods = ( $ch_methods partkway partgeom diffusion )
+    if ( $pmversion == 2) then
+      set ch_methods = ( $ch_methods partkway partgeom diffusion )
+    else
+      set ch_methods = ( $ch_methods partkway-v$pmversion partgeom-v$pmversion diffusion-v$pmversion )
+    endif
   endif
 else
 # Using C
@@ -295,14 +315,20 @@ else
     set nem_methods = ( $nem_methods oct0 oct1 oct2 )
   endif
   if (! $no_parmetis) then
-    set ch_methods = ( $ch_methods partkway partkway-oneproc partkway-cyclic partgeom diffusion )
-    set nem_methods = ( $nem_methods partkway partgeom diffusion )
+    if ( $pmversion == 2) then
+      set ch_methods = ( $ch_methods partkway partkway-oneproc partkway-cyclic partgeom diffusion )
+      set nem_methods = ( $nem_methods partkway partgeom diffusion )
+    else
+      set ch_methods = ( $ch_methods partkway-v$pmversion partkway-oneproc-v$pmversion partkway-cyclic-v$pmversion partgeom-v$pmversion diffusion-v$pmversion )
+      set nem_methods = ( $nem_methods-v$pmversion partkway-v$pmversion partgeom-v$pmversion diffusion-v$pmversion )
+    endif
   endif
 endif
 
 # Set up log file
 if ( -e $logfile ) /bin/mv $logfile ${logfile}.old
 echo "Test date  = `date`" > $logfile
+echo "System     = `uname -a`" > $logfile
 echo "Arch       = ${arch}" >> $logfile
 echo "Fortran    = $yes_fortran" >> $logfile
 echo "Run cmd    = $run" >> $logfile
@@ -337,15 +363,16 @@ if (! $no_chaco ) then
       @ fail = 0
       @ skip = 0
 
-      # Temporary hack: We know ParMetis bombs on nograph, so skip these cases!
-      if ( ${ch_name[1]} == nograph ) then
-         if (($mtd == partkway)  \
-             || ($mtd == partkway-cyclic) \
-             || ($mtd == partkway-oneproc) \
-             || ($mtd == diffusion)) then
-            @ skip = 1
-         endif
-      endif
+      # EBEB 11/2002: Removed those answer files. Hack below not necessary.
+      # Temporary hack: We know ParMetis2 bombs on nograph, so skip these cases!
+      # if ( (${ch_name[1]} == nograph) && ($pmversion == 2) ) then
+      #    if (($mtd == partkway)  \
+      #        || ($mtd == partkway-cyclic) \
+      #        || ($mtd == partkway-oneproc) \
+      #        || ($mtd == diffusion)) then
+      #       @ skip = 1
+      #    endif
+      # endif
 
       if (! $skip ) then
 
