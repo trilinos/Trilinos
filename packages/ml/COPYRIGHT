@@ -64,13 +64,6 @@ Livermore National Laboratory (LLNL).
 
 DEVELOPERS 
 
-Charles Tong 
-Lawrence Livermore National Laboratory
-L-560, Center for Applied Scientific Computing
-7000 East Avenue, Livermore CA 94550
-Tel : (925) 422-3411
-Email : chtong@llnl.gov
-
 Ray Tuminaro 
 Sandia National Laboratory
 MS 9217, P.O. Box 969 
@@ -85,11 +78,14 @@ MS 9217, P.O. Box 969
 Tel : (925) 294-2931
 Email : jhu@sandia.gov
 
+Marzio Sala
+Sandia National Laboratory
+MS 1110, P.O. Box 5800
+Albuquerque, NM 87185
+Tel: (505) 845-9010
+Email: msala@sandia.gov
 
-THIRD PARTY SOFTWARE USED BY THIS PACKAGE
-
-- LAPACK
-- SUPERLU
-- XXT (by Henry Tufo)
-- AZTEC
- 
+Michael Gee
+MS 1110, P.O. Box 5800
+Albuquerque, NM 87185
+Email: mwgee@sandia.gov
