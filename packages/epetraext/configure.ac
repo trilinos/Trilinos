@@ -201,6 +201,7 @@ AC_CXX_MUTABLE
 AC_CXX_NEW_FOR_SCOPING
 #AC_CXX_STD_IOS_BASE_FMTFLAGS
 AC_CXX_STD_SPRINTF
+AC_CXX_STL_MAP_KEY_CONST
 
 # ------------------------------------------------------------------------
 # Checks for special package flags

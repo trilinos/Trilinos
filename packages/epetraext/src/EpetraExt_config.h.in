@@ -104,6 +104,9 @@
 /* Define if want to build with zoltan enabled */
 #undef HAVE_ZOLTAN
 
+/* define if STL map key is required to be const */
+#undef MUST_CONST_STL_MAP_KEY
+
 /* Name of package */
 #undef PACKAGE
 

@@ -3,7 +3,11 @@
 #define EPETRA_TRANSFORM_H
 
 #ifdef HAVE_CONFIG_H
+
+#undef PACKAGE
+
 #include <EpetraExt_config.h>
+
 #endif
 
 namespace EpetraExt {
@@ -17,7 +21,7 @@ struct Transform
 
   typedef U  NewType;
   typedef U* NewTypePtr;
-  typedef T& NewTypeRef;
+  typedef U& NewTypeRef;
 
   virtual ~Transform() {}
 
@@ -54,9 +58,9 @@ struct StructuralSameTypeTransform : public SameTypeTransform<T>
 template<class T>
 struct InPlaceTransform : public SameTypeTransform<T>
 {
-  typename InPlaceTransform<T>::NewTypePtr
+  typename Transform<T,T>::NewTypePtr
   operator()
-  ( typename InPlaceTransform<T>::OriginalTypeRef old )
+  ( typename Transform<T,T>::OriginalTypeRef old )
   { return NewTypePtr(0); }
 
   virtual ~InPlaceTransform() {}
