@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Load-Balancing Query Functions</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -10,2172 +18,2114 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1377">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_query_mig.html">Next</a>&nbsp; |&nbsp; <a href="ug_query.html">Previous</a></i></b></div>
 
-   <TITLE>Zoltan User's Guide:  Load-Balancing Query Functions</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
+<h2>
+<a NAME="Load-Balancing Query Functions"></a>Load-Balancing Query Functions</h2>
+The following registered functions are used by various load-balancing algorithms
+in the Zoltan library. No single algorithm uses all the query functions;
+the <a href="ug_alg.html">algorithm descriptions</a> indicate which query
+functions are required by individual algorithms.
+<blockquote><a href="#General Functions">General Functions</a>
+<blockquote><b><a href="#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</a></b>
+<br><b><a href="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
+<br><b><a href="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>
+<br><b><a href="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b>
+<br><b><a href="#LB_NUM_BORDER_OBJ_FN">LB_NUM_BORDER_OBJ_FN</a></b>
+<br><b><a href="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</a></b>
+<br><b><a href="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</a></b>
+<br><b><a href="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</a></b></blockquote>
+<a href="#Geometry-based Functions">Geometry-Based Functions</a>
+<blockquote><b><a href="#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</a></b>
+<br><b><a href="#LB_GEOM_FN">LB_GEOM_FN</a></b></blockquote>
+<a href="#Graph-based Functions">Graph-Based Functions</a>
+<blockquote><b><a href="#LB_NUM_EDGES">LB_NUM_EDGES_FN</a></b>
+<br><b><a href="#LB_EDGE_LIST_FN">LB_EDGE_LIST_FN</a></b></blockquote>
+<a href="#Tree-based Functions">Tree-Based Functions</a>
+<blockquote><b><a href="#LB_NUM_COARSE_OBJ_FN">LB_NUM_COARSE_OBJ_FN</a></b>
+<br><b><a href="#LB_COARSE_OBJ_LIST_FN">LB_COARSE_OBJ_LIST_FN</a></b>
+<br><b><a href="#LB_FIRST_COARSE_OBJ_FN">LB_FIRST_COARSE_OBJ_FN</a></b>
+<br><b><a href="#LB_NEXT_COARSE_OBJ_FN">LB_NEXT_COARSE_OBJ_FN</a></b>
+<br><b><a href="#LB_NUM_CHILD_FN">LB_NUM_CHILD_FN</a></b>
+<br><b><a href="#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</a></b>
+<br><b><a href="#LB_CHILD_WEIGHT_FN">LB_CHILD_WEIGHT_FN</a></b></blockquote>
+</blockquote>
 
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_query_mig.html">Next</a>&nbsp; |&nbsp; <a href="ug_query.html">Previous</a></i></b></div>
+<h2>
+<a NAME="General Functions"></a>General Functions</h2>
 
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<H2>
-<A NAME="Load-Balancing Query Functions"></A>Load-Balancing Query Functions</H2>
-The following registered functions are used by various load-balancing
-algorithms in the Zoltan library.  No single algorithm uses
-all the query functions; the <a href="ug_alg.html">algorithm
-descriptions</a> indicate which query functions are required by individual
-algorithms.
-<BLOCKQUOTE><A HREF="#General Functions">General Functions</A>
-<BLOCKQUOTE><B><A HREF="#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B>
-<BR><B><A HREF="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
-<BR><B><A HREF="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>
-<BR><B><A HREF="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B>
-<BR><B><A HREF="#LB_NUM_BORDER_OBJ_FN">LB_NUM_BORDER_OBJ_FN</A></B>
-<BR><B><A HREF="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</A></B>
-<BR><B><A HREF="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</A></B>
-<BR><B><A HREF="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</A></B></BLOCKQUOTE>
-<A HREF="#Geometry-based Functions">Geometry-Based Functions</A>
-<BLOCKQUOTE><B><A HREF="#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</A></B>
-<BR><B><A HREF="#LB_GEOM_FN">LB_GEOM_FN</A></B></BLOCKQUOTE>
-<A HREF="#Graph-based Functions">Graph-Based Functions</A>
-<BLOCKQUOTE><B><A HREF="#LB_NUM_EDGES">LB_NUM_EDGES_FN</A></B>
-<BR><B><A HREF="#LB_EDGE_LIST_FN">LB_EDGE_LIST_FN</A></B></BLOCKQUOTE>
-<A HREF="#Tree-based Functions">Tree-Based Functions</A>
-<BLOCKQUOTE><B><A HREF="#LB_NUM_COARSE_OBJ_FN">LB_NUM_COARSE_OBJ_FN</A></B>
-<BR><B><A HREF="#LB_COARSE_OBJ_LIST_FN">LB_COARSE_OBJ_LIST_FN</A></B>
-<BR><B><A HREF="#LB_FIRST_COARSE_OBJ_FN">LB_FIRST_COARSE_OBJ_FN</A></B>
-<BR><B><A HREF="#LB_NEXT_COARSE_OBJ_FN">LB_NEXT_COARSE_OBJ_FN</A></B>
-<BR><B><A HREF="#LB_NUM_CHILD_FN">LB_NUM_CHILD_FN</A></B>
-<BR><B><A HREF="#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</A></B>
-<BR><B><A HREF="#LB_CHILD_WEIGHT_FN">LB_CHILD_WEIGHT_FN</A></B></BLOCKQUOTE>
-</BLOCKQUOTE>
-&nbsp;
-<H2>
-<A NAME="General Functions"></A>General Functions</H2>
+<td><a NAME="LB_NUM_OBJ_FN"></a>typedef int <b>LB_NUM_OBJ_FN</b>(void *<i>
+data</i>,<i> </i>int<i> *ierr</i>);</td>
+</tr>
 
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD><A NAME="LB_NUM_OBJ_FN"></A>typedef int <B>LB_NUM_OBJ_FN</B>(void
-*<I> data</I>,<I> </I>int<I> *ierr</I>);
-<BR>&nbsp;</TD>
+<td>FUNCTION <b><i>Get_Num_Obj</i></b>(<i>data, ierr</i>)&nbsp;
+<br>INTEGER(LB_INT) :: Get_Num_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
-
-<TD> FUNCTION <B><I>Get_Num_Obj</I></B>(<I>data, ierr</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: Get_Num_Obj&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-
-<P>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_NUM_OBJ_FN</B> query function returns the number
+<hr WIDTH="100%">An <b>LB_NUM_OBJ_FN</b> query function returns the number
 of objects to be balanced that are currently assigned to the processor.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_NUM_OBJ_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_NUM_OBJ_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD><B>Parameters:</B></TD>
+<tr>
+<td><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
+<td>Error code to be set by function.</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<TD>The number of objects to be balanced that are assigned to the processor.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>The number of objects to be balanced that are assigned to the processor.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_OBJ_LIST_FN"></A>typedef void<B> LB_OBJ_LIST_FN</B>(void
-*<I> data</I>, <B>LB_GID</B> *<I> global_ids</I>, <B>LB_LID</B> *<I> local_ids</I>,
-int <I>wgt_dim</I>, float * <I>obj_wgts,</I> int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_OBJ_LIST_FN"></a>typedef void<b> LB_OBJ_LIST_FN</b>(void
+*<i> data</i>, <b>LB_GID</b> *<i> global_ids</i>, <b>LB_LID</b> *<i> local_ids</i>,
+int <i>wgt_dim</i>, float * <i>obj_wgts,</i> int<i> *ierr</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD> SUBROUTINE <B><I>Get_Obj_List</I></B>(<I>data, global_ids, local_ids,
-wgt_dim, obj_wgts, ierr</I>)&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<td>SUBROUTINE <b><i>Get_Obj_List</i></b>(<i>data, global_ids, local_ids,
+wgt_dim, obj_wgts, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_OBJ_LIST_FN</B> query function fills two (three
+<hr WIDTH="100%">An <b>LB_OBJ_LIST_FN</b> query function fills two (three
 if weights are used) arrays with information about the objects currently
 assigned to the processor. Both arrays are allocated (and subsequently
-freed) by the load-balancing library using a query to an <B><A HREF="#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B>
-query function to get the array size. For many algorithms, either an <B>LB_OBJ_LIST_FN</B>
-query function or an <B><A HREF="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>/<B><A HREF="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B>
+freed) by the load-balancing library using a query to an <b><a href="#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</a></b>
+query function to get the array size. For many algorithms, either an <b>LB_OBJ_LIST_FN</b>
+query function or an <b><a href="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>/<b><a href="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b>
 query-function pair must be registered to allow the load-balancing library
 to obtain needed object information; however, both query options need not
 be provided.
-<BR>&nbsp;
-<TABLE WIDTH="100%" NOSAVE >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_OBJ_LIST_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_OBJ_LIST_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD><B>Parameters:</B></TD>
+<tr>
+<td><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
 
-<TD>An array of unique global IDs for all objects assigned to the processor.</TD>
-</TR>
+<td>An array of unique global IDs for all objects assigned to the processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
-<TD>An array of local IDs, the meaning of which can be determined by the
-application, for all objects assigned to the processor.</TD>
-</TR>
+<td>An array of local IDs, the meaning of which can be determined by the
+application, for all objects assigned to the processor.</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
-<TD>The number of weights associated with an object (typically 1), or 0 if weights are not
-requested.</TD>
-</TR>
+<td>The number of weights associated with an object (typically 1), or 0
+if weights are not requested.</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>obj_wgts</I></TD>
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>obj_wgts</i></td>
 
-<TD>An array of object weights. Weight <I>i </I>is stored in o<I>bj_wgts[(i-1)*wgt_dim:i*wgt_dim-1]</I>.&nbsp;
-If <I>wgt_dim</I>=0, the return value of <I>obj_wgts</I> is undefined and
-may be NULL.</TD>
-</TR>
+<td>An array of object weights. Weight <i>i </i>is stored in o<i>bj_wgts[(i-1)*wgt_dim:i*wgt_dim-1]</i>.&nbsp;
+If <i>wgt_dim</i>=0, the return value of <i>obj_wgts</i> is undefined and
+may be NULL.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>Error code to be set by function.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_FIRST_OBJ_FN"></A>typedef int <B>LB_FIRST_OBJ_FN</B>(void
-*<I> data, </I><B>LB_GID </B>*<I> first_global_id</I>, <B>LB_LID</B> *<I>
-first_local_id</I>, int <I>wgt_dim,</I> float * <I>first_obj_wgt</I>,&nbsp;<I>
-</I>int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_FIRST_OBJ_FN"></a>typedef int <b>LB_FIRST_OBJ_FN</b>(void
+*<i> data, </i><b>LB_GID </b>*<i> first_global_id</i>, <b>LB_LID</b> *<i>
+first_local_id</i>, int <i>wgt_dim,</i> float * <i>first_obj_wgt</i>, int<i>
+*ierr</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD> FUNCTION <B><I>Get_First_Obj</I></B>(<I>data, first_global_id,
-first_local_id, wgt_dim, first_obj_wgt, ierr</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: Get_First_Obj&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(OUT) :: first_global_id&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(OUT) :: first_local_id&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<td>FUNCTION <b><i>Get_First_Obj</i></b>(<i>data, first_global_id, first_local_id,
+wgt_dim, first_obj_wgt, ierr</i>)&nbsp;
+<br>INTEGER(LB_INT) :: Get_First_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(OUT) :: first_global_id&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(OUT) :: first_local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_FIRST_OBJ_FN</B> query function initializes an
+<hr WIDTH="100%">An <b>LB_FIRST_OBJ_FN</b> query function initializes an
 iteration over objects assigned to the processor. It returns the global
 and local IDs of the first object on the processor. Subsequent calls to
-an <B><A HREF="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B> query function iterate
+an <b><a href="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b> query function iterate
 over and return other objects assigned to the processor. This query-function
 pair frees the application from having to build an array of objects (as
-in <B><A HREF="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>) and allows the
+in <b><a href="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>) and allows the
 load-balancing routines to obtain only as much information about objects
-as they need. For many algorithms, either an <B><A HREF="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
-query function or an <B>LB_FIRST_OBJ_FN</B><I>/</I><B><A HREF="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B>
+as they need. For many algorithms, either an <b><a href="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
+query function or an <b>LB_FIRST_OBJ_FN</b><i>/</i><b><a href="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b>
 query-function pair must be registered to allow the load-balancing library
 to obtain needed object information; however, both query options need not
 be provided.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_FIRST_OBJ_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_FIRST_OBJ_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD><B>Parameters:</B></TD>
+<tr>
+<td><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; first_global_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; first_global_id</i></td>
 
-<TD>The returned value of the global ID for the first object; the value
-is ignored if there are no objects.</TD>
-</TR>
+<td>The returned value of the global ID for the first object; the value
+is ignored if there are no objects.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; first_local_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; first_local_id</i></td>
 
-<TD>The returned value of the local ID for the first object; the value
-is ignored if there are no objects.</TD>
-</TR>
+<td>The returned value of the local ID for the first object; the value
+is ignored if there are no objects.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
-<TD>The number of weights associated with an object (typically 1), or 0 if weights are not
-requested.</TD>
-</TR>
+<td>The number of weights associated with an object (typically 1), or 0
+if weights are not requested.</td>
+</tr>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>first_obj_wgt</I></TD>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>first_obj_wgt</i></td>
 
-<TD>Object weight, an array of length <I>wgt_dim. </I>Undefined if <I>wgt_dim=0.</I></TD>
-</TR>
+<td>Object weight, an array of length <i>wgt_dim. </i>Undefined if <i>wgt_dim=0.</i></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
+<td>Error code to be set by function.</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</td>
 
-<TD>If <I>first_global_id</I> and <I>first_local_id</I> contain valid IDs
-of the first object.</TD>
-</TR>
+<td>If <i>first_global_id</i> and <i>first_local_id</i> contain valid IDs
+of the first object.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</td>
 
-<TD>If no objects are available.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>If no objects are available.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_NEXT_OBJ_FN"></A>typedef int <B>LB_NEXT_OBJ_FN</B>(void
-*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID </B><I>local_id</I>,
-<B>LB_GID </B>*<I> next_global_id</I>, <B>LB_LID</B> *<I> next_local_id</I>,
-int <I>wgt_dim,</I> float * <I>next_obj_wgt</I>, int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_NEXT_OBJ_FN"></a>typedef int <b>LB_NEXT_OBJ_FN</b>(void
+*<i> data</i>, <b>LB_GID</b> <i>global_id</i>, <b>LB_LID </b><i>local_id</i>,
+<b>LB_GID
+</b>*<i> next_global_id</i>, <b>LB_LID</b> *<i> next_local_id</i>, int
+<i>wgt_dim,</i> float * <i>next_obj_wgt</i>, int<i> *ierr</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD> FUNCTION <B><I>Get_Next_Obj</I></B>(<I>data, global_id, local_id,
-next_global_id, next_local_id, wgt_dim, next_obj_wgt, ierr</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: Get_Next_Obj&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: local_id&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(OUT) :: next_global_id&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(OUT) :: next_local_id&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<td>FUNCTION <b><i>Get_Next_Obj</i></b>(<i>data, global_id, local_id, next_global_id,
+next_local_id, wgt_dim, next_obj_wgt, ierr</i>)&nbsp;
+<br>INTEGER(LB_INT) :: Get_Next_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(OUT) :: next_global_id&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(OUT) :: next_local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_NEXT_OBJ_FN</B> query function is an iterator
+<hr WIDTH="100%">An <b>LB_NEXT_OBJ_FN</b> query function is an iterator
 function which, when given an object assigned to the processor, returns
 the next object assigned to the processor. The first object of the iteration
-is provided by an <B><A HREF="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>
+is provided by an <b><a href="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>
 query function. This query-function pair frees the application from having
-to build an array of objects (as in <B><A HREF="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>)
+to build an array of objects (as in <b><a href="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>)
 and allows the load-balancing routines to obtain only as much information
-about objects as they need. For many algorithms, either an <B><A HREF="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
-query function or an <B><A HREF="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>/<B>LB_NEXT_OBJ_FN</B>
+about objects as they need. For many algorithms, either an <b><a href="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
+query function or an <b><a href="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>/<b>LB_NEXT_OBJ_FN</b>
 query-function pair must be registered to allow the load-balancing library
 to obtain needed object information; however, both query options need not
 be provided.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_NEXT_OBJ_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_NEXT_OBJ_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD><B>Parameters:</B></TD>
+<tr>
+<td><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
 
-<TD>The global ID of the previous object.</TD>
-</TR>
+<td>The global ID of the previous object.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
 
-<TD>The local ID of the previous object.</TD>
-</TR>
+<td>The local ID of the previous object.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; next_global_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; next_global_id</i></td>
 
-<TD>The returned value of the global ID for the next object; the value
-is ignored if there are no more objects.</TD>
-</TR>
+<td>The returned value of the global ID for the next object; the value
+is ignored if there are no more objects.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; next_local_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; next_local_id</i></td>
 
-<TD>The returned value of the local ID for the next object; the value is
-ignored if there are no more objects.</TD>
-</TR>
+<td>The returned value of the local ID for the next object; the value is
+ignored if there are no more objects.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
-<TD>The number of weights associated with an object (typically 1), or 0 if weights are not
-requested.</TD>
-</TR>
+<td>The number of weights associated with an object (typically 1), or 0
+if weights are not requested.</td>
+</tr>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>next_obj_wgt</I></TD>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>next_obj_wgt</i></td>
 
-<TD>Object weight, an array of length <I>wgt_dim. </I>Undefined if <I>wgt_dim=0.</I></TD>
-</TR>
+<td>Object weight, an array of length <i>wgt_dim. </i>Undefined if <i>wgt_dim=0.</i></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
+<td>Error code to be set by function.</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</td>
 
-<TD>If <I>next_global_id</I> and <I>next_local_id</I> contain valid IDs
-of the next object.</TD>
-</TR>
+<td>If <i>next_global_id</i> and <i>next_local_id</i> contain valid IDs
+of the next object.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</td>
 
-<TD>If no more objects are available.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>If no more objects are available.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_NUM_BORDER_OBJ_FN"></A>typedef int <B>LB_NUM_BORDER_OBJ_FN</B>(void
-*<I> data</I>, int <I>nbor_proc</I>, int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_NUM_BORDER_OBJ_FN"></a>typedef int <b>LB_NUM_BORDER_OBJ_FN</b>(void
+*<i> data</i>, int <i>nbor_proc</i>, int<i> *ierr</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD> FUNCTION <B><I>Get_Num_Border_Obj</I></B>(<I>data, nbor_proc, ierr</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: Get_Num_Border_Obj
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<td>FUNCTION <b><i>Get_Num_Border_Obj</i></b>(<i>data, nbor_proc, ierr</i>)&nbsp;
+<br>INTEGER(LB_INT) :: Get_Num_Border_Obj
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<P>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_NUM_BORDER_OBJ_FN</B> query function returns
+<hr WIDTH="100%">An <b>LB_NUM_BORDER_OBJ_FN</b> query function returns
 the number of objects sharing a processor subdomain border (in the communication
 graph of the application) with a given processor.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_NUM_BORDER_OBJ_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_NUM_BORDER_OBJ_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Parameters:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; nbor_proc</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; nbor_proc</i></td>
 
-<TD>The processor ID of the processor for which the number of border objects
-should be returned.</TD>
-</TR>
+<td>The processor ID of the processor for which the number of border objects
+should be returned.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
+<td>Error code to be set by function.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Returned Value:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<TD>The number of objects sharing a processor subdomain border with processor
-<I>nbor_proc</I>.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>The number of objects sharing a processor subdomain border with processor
+<i>nbor_proc</i>.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_BORDER_OBJ_LIST_FN"></A>typedef void <B>LB_BORDER_OBJ_LIST_FN</B>(void
-*<I> data</I>, int <I>nbor_proc</I>, <B>LB_GID </B>*<I> global_ids</I>,
-<B>LB_LID</B> *<I> local_ids</I>,<I> </I>int <I>wgt_dim</I>, float * <I>obj_wgts,
-</I>int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_BORDER_OBJ_LIST_FN"></a>typedef void <b>LB_BORDER_OBJ_LIST_FN</b>(void
+*<i> data</i>, int <i>nbor_proc</i>, <b>LB_GID </b>*<i> global_ids</i>,
+<b>LB_LID</b>
+*<i> local_ids</i>,<i> </i>int <i>wgt_dim</i>, float * <i>obj_wgts,
+</i>int<i>
+*ierr</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD> SUBROUTINE <B><I>Get_Border_Obj_List</I></B>(<I>data, nbor_proc,
-global_ids, local_ids, wgt_dim, obj_wgts, ierr</I>)&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<td>SUBROUTINE <b><i>Get_Border_Obj_List</i></b>(<i>data, nbor_proc, global_ids,
+local_ids, wgt_dim, obj_wgts, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_BORDER_OBJ_LIST_FN</B> query function fills two
+<hr WIDTH="100%">An <b>LB_BORDER_OBJ_LIST_FN</b> query function fills two
 arrays with information about the objects currently assigned to the processor
 that share a processor subdomain border (in the communication graph of
 the application) with a given processor. Both arrays are allocated (and
-subsequently freed) by the load-balancing library using a query to an <B><A HREF="#LB_NUM_BORDER_OBJ_FN">LB_NUM_BORDER_OBJ_FN</A></B>
+subsequently freed) by the load-balancing library using a query to an <b><a href="#LB_NUM_BORDER_OBJ_FN">LB_NUM_BORDER_OBJ_FN</a></b>
 query function to get the array size. For certain load-balancing algorithms,
-either an <B>LB_BORDER_OBJ_LIST_FN</B> query function or an <B><A HREF="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</A></B>/<B><A HREF="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</A></B>
+either an <b>LB_BORDER_OBJ_LIST_FN</b> query function or an <b><a href="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</a></b>/<b><a href="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</a></b>
 query-function pair must be registered to allow the load-balancing library
 to obtain needed object information; however, both query options need not
 be provided.
-<BR>&nbsp;
-<TABLE WIDTH="100%" NOSAVE >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_BORDER_OBJ_LIST_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_BORDER_OBJ_LIST_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD><B>Parameters:</B></TD>
+<tr>
+<td><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>nbor_proc</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_proc</i></td>
 
-<TD>The processor ID of the processor for which border objects should be
-returned.</TD>
-</TR>
+<td>The processor ID of the processor for which border objects should be
+returned.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
 
-<TD>An array of unique global IDs for all objects assigned to the processor
-that share a subdomain border with <I>nbor_proc</I>.</TD>
-</TR>
+<td>An array of unique global IDs for all objects assigned to the processor
+that share a subdomain border with <i>nbor_proc</i>.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
-<TD>An array of local IDs, the meaning of which can be determined by the
+<td>An array of local IDs, the meaning of which can be determined by the
 application, for all objects assigned to the processor that share a subdomain
-border with <I>nbor_proc</I>.</TD>
-</TR>
+border with <i>nbor_proc</i>.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
-<TD>The number of weights associated with an object (typically 1), or 0 if weights are not
-requested.</TD>
-</TR>
+<td>The number of weights associated with an object (typically 1), or 0
+if weights are not requested.</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>obj_wgts</I></TD>
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>obj_wgts</i></td>
 
-<TD>An array of object weights. Weight <I>i </I>is stored in <I>obj_wgts[(i-1)*wgt_dim:i*wgt_dim-1]</I>.&nbsp;
-If <I>wgt_dim=0,</I> <I>obj_wgts</I> is undefined and may be NULL.</TD>
-</TR>
+<td>An array of object weights. Weight <i>i </i>is stored in <i>obj_wgts[(i-1)*wgt_dim:i*wgt_dim-1]</i>.&nbsp;
+If <i>wgt_dim=0,</i> <i>obj_wgts</i> is undefined and may be NULL.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>Error code to be set by function.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_FIRST_BORDER_OBJ_FN"></A>typedef int <B>LB_FIRST_BORDER_OBJ_FN</B>(void
-*<I> data</I>, int <I>nbor_proc</I>, <B>LB_GID</B> *<I> first_global_id</I>,
-<B>LB_LID </B>*<I> first_local_id</I>,<I> </I>int<I> wgt_dim, </I>float<I>
-* first_obj_wgt, </I>int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_FIRST_BORDER_OBJ_FN"></a>typedef int <b>LB_FIRST_BORDER_OBJ_FN</b>(void
+*<i> data</i>, int <i>nbor_proc</i>, <b>LB_GID</b> *<i> first_global_id</i>,
+<b>LB_LID
+</b>*<i> first_local_id</i>,<i> </i>int<i> wgt_dim, </i>float<i> * first_obj_wgt,
+</i>int<i> *ierr</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD> FUNCTION <B><I>Get_First_Border_Obj</I></B>(<I>data, nbor_proc,
-first_global_id, first_local_id, wgt_dim, first_obj_wgt, ierr</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: Get_First_Border_Obj
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(OUT) :: first_global_id&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(OUT) :: first_local_id&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<td>FUNCTION <b><i>Get_First_Border_Obj</i></b>(<i>data, nbor_proc, first_global_id,
+first_local_id, wgt_dim, first_obj_wgt, ierr</i>)&nbsp;
+<br>INTEGER(LB_INT) :: Get_First_Border_Obj
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(OUT) :: first_global_id&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(OUT) :: first_local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_FIRST_BORDER_OBJ_FN</B> query function initializes
+<hr WIDTH="100%">An <b>LB_FIRST_BORDER_OBJ_FN</b> query function initializes
 an iteration over objects assigned to the processor that share a processor
 subdomain border with a given processor. It returns the global and local
 IDs of the first object on the processor along the specified subdomain
-border. Subsequent calls to an <B><A HREF="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</A></B>
+border. Subsequent calls to an <b><a href="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</a></b>
 query function iterate over and return other objects along the requested
 subdomain border. This query-function pair frees the application from having
-to build an array of objects (as in <B><A HREF="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</A></B>)
+to build an array of objects (as in <b><a href="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</a></b>)
 and allows the load-balancing routines to obtain only as much information
 about objects as they need. For some load-balancing algorithms, either
-an <B><A HREF="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</A></B> query
-function or an <B>LB_FIRST_BORDER_OBJ_FN</B>/<B><A HREF="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</A></B>
+an <b><a href="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</a></b> query
+function or an <b>LB_FIRST_BORDER_OBJ_FN</b>/<b><a href="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</a></b>
 query-function pair must be registered to allow the load-balancing library
 to obtain needed object information; however, both query options need not
 be provided.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_FIRST_BORDER_OBJ_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_FIRST_BORDER_OBJ_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD><B>Parameters:</B></TD>
+<tr>
+<td><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>nbor_proc</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_proc</i></td>
 
-<TD>The processor ID of the processor for which border objects should be
-returned.</TD>
-</TR>
+<td>The processor ID of the processor for which border objects should be
+returned.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; first_global_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; first_global_id</i></td>
 
-<TD>The returned value of the global ID for the first object; the value
-is ignored if there are no objects along the border.</TD>
-</TR>
+<td>The returned value of the global ID for the first object; the value
+is ignored if there are no objects along the border.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; first_local_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; first_local_id</i></td>
 
-<TD>The returned value of the local ID for the first object; the value
-is ignored if there are no objects along the border.</TD>
-</TR>
+<td>The returned value of the local ID for the first object; the value
+is ignored if there are no objects along the border.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
-<TD>The number of weights associated with an object (typically 1), or 0 if weights are not
-requested.</TD>
-</TR>
+<td>The number of weights associated with an object (typically 1), or 0
+if weights are not requested.</td>
+</tr>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>first_obj_wgt</I></TD>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>first_obj_wgt</i></td>
 
-<TD>First object weight. Undefined if&nbsp; <I>wgt_dim=</I>0.</TD>
-</TR>
+<td>First object weight. Undefined if&nbsp; <i>wgt_dim=</i>0.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
+<td>Error code to be set by function.</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</td>
 
-<TD>If <I>first_global_id</I> and <I>first_local_id</I> contain valid IDs
-of the first object along the processor border.</TD>
-</TR>
+<td>If <i>first_global_id</i> and <i>first_local_id</i> contain valid IDs
+of the first object along the processor border.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</td>
 
-<TD>If no objects are available along this processor border.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>If no objects are available along this processor border.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_NEXT_BORDER_OBJ_FN"></A>typedef int <B>LB_NEXT_BORDER_OBJ_FN</B>(void
-*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID</B> <I>local_id</I>,
-int <I>nbor_proc</I>, <B>LB_GID</B> *<I> next_global_id</I>, <B>LB_LID</B>
-*<I> next_local_id</I>,<I> </I>int <I>wgt_dim, </I>float <I>*next_obj_wgt,,
-</I>int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_NEXT_BORDER_OBJ_FN"></a>typedef int <b>LB_NEXT_BORDER_OBJ_FN</b>(void
+*<i> data</i>, <b>LB_GID</b> <i>global_id</i>, <b>LB_LID</b> <i>local_id</i>,
+int <i>nbor_proc</i>, <b>LB_GID</b> *<i> next_global_id</i>, <b>LB_LID</b>
+*<i> next_local_id</i>,<i> </i>int <i>wgt_dim, </i>float <i>*next_obj_wgt,,
+</i>int<i>
+*ierr</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD> FUNCTION <B><I>Get_Next_Border_Obj</I></B>(<I>data, global_id, local_id,
-nbor_proc, next_global_id, next_local_id, wgt_dim, next_obj_wgt, ierr</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: Get_Next_Border_Obj&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: local_id&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(OUT) :: next_global_id&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(OUT) :: next_local_id&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<td>FUNCTION <b><i>Get_Next_Border_Obj</i></b>(<i>data, global_id, local_id,
+nbor_proc, next_global_id, next_local_id, wgt_dim, next_obj_wgt, ierr</i>)&nbsp;
+<br>INTEGER(LB_INT) :: Get_Next_Border_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(OUT) :: next_global_id&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(OUT) :: next_local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_NEXT_BORDER_OBJ_FN</B> query function is an iterator
+<hr WIDTH="100%">An <b>LB_NEXT_BORDER_OBJ_FN</b> query function is an iterator
 function which, when given an object assigned to the processor and a neighboring
 processor ID, returns the next object assigned to the processor that shares
 a subdomain border with the neighboring processor. The first object of
-the iteration is provided by an <B><A HREF="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</A></B>
+the iteration is provided by an <b><a href="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</a></b>
 query function. This query-function pair frees the application from having
-to build an array of objects (as in <B><A HREF="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</A></B>)
+to build an array of objects (as in <b><a href="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</a></b>)
 and allows the load-balancing routines to obtain only as much information
 about objects as they need. For some load-balancing algorithms, either
-an <B><A HREF="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</A></B> query
-function or an <B><A HREF="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</A></B>/<B>LB_NEXT_BORDER_OBJ_FN</B>
+an <b><a href="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</a></b> query
+function or an <b><a href="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</a></b>/<b>LB_NEXT_BORDER_OBJ_FN</b>
 query-function pair must be registered to allow the load-balancing library
 to obtain needed object information; however, both query options need not
 be provided.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_NEXT_BORDER_OBJ_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_NEXT_BORDER_OBJ_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD><B>Parameters:</B></TD>
+<tr>
+<td><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
 
-<TD>The global ID of the previous object.</TD>
-</TR>
+<td>The global ID of the previous object.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
 
-<TD>The local ID of the previous object.</TD>
-</TR>
+<td>The local ID of the previous object.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>nbor_proc</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_proc</i></td>
 
-<TD>The processor ID of the processor for which border objects should be
-returned.</TD>
-</TR>
+<td>The processor ID of the processor for which border objects should be
+returned.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; next_global_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; next_global_id</i></td>
 
-<TD>The returned value of the global ID for the next object; the value
-is ignored if there are no more objects along the border.</TD>
-</TR>
+<td>The returned value of the global ID for the next object; the value
+is ignored if there are no more objects along the border.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; next_local_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; next_local_id</i></td>
 
-<TD>The returned value of the local ID for the next object; the value is
-ignored if there are no more objects along the border.</TD>
-</TR>
+<td>The returned value of the local ID for the next object; the value is
+ignored if there are no more objects along the border.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
-<TD>The number of weights associated with an object (typically 1), or 0 if weights are not
-requested.</TD>
-</TR>
+<td>The number of weights associated with an object (typically 1), or 0
+if weights are not requested.</td>
+</tr>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>next_obj_wgt</I></TD>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>next_obj_wgt</i></td>
 
-<TD>Weight of the next object. Undefined if <I>wgt_dim</I>=0.</TD>
-</TR>
+<td>Weight of the next object. Undefined if <i>wgt_dim</i>=0.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
+<td>Error code to be set by function.</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</td>
 
-<TD>If <I>next_global_id</I> and <I>next_local_id</I> contain valid IDs
-of the next object along the processor border.</TD>
-</TR>
+<td>If <i>next_global_id</i> and <i>next_local_id</i> contain valid IDs
+of the next object along the processor border.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</td>
 
-<TD>If no more objects are available along this processor border.</TD>
-</TR>
-</TABLE>
-&nbsp;
-<H2>
-<A NAME="Geometry-based Functions"></A>Geometry-based Functions</H2>
+<td>If no more objects are available along this processor border.</td>
+</tr>
+</table>
 
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<h2>
+<a NAME="Geometry-based Functions"></a>Geometry-based Functions</h2>
 
-<TD><A NAME="LB_NUM_GEOM_FN"></A>typedef int <B>LB_NUM_GEOM_FN</B>(void
-*<I> data</I>, int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<td><a NAME="LB_NUM_GEOM_FN"></a>typedef int <b>LB_NUM_GEOM_FN</b>(void
+*<i> data</i>, int<i> *ierr</i>);&nbsp;</td>
+</tr>
 
-<TD> FUNCTION <B><I>Get_Num_Geom</I></B>(<I>data, ierr</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: Get_Num_Geom&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<P>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
+<td>FUNCTION <b><i>Get_Num_Geom</i></b>(<i>data, ierr</i>)&nbsp;
+<br>INTEGER(LB_INT) :: Get_Num_Geom&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<HR WIDTH="100%">An <B>LB_NUM_GEOM_FN</B> query function returns the number
+<hr WIDTH="100%">An <b>LB_NUM_GEOM_FN</b> query function returns the number
 of values needed to express the geometry of an object. For example, for
-a two-dimensional mesh-based application, (<I>x</I>,<I>y</I>) coordinates
-are needed to describe an object's geometry; thus the <B>LB_NUM_GEOM_FN</B>
+a two-dimensional mesh-based application, (<i>x</i>,<i>y</i>) coordinates
+are needed to describe an object's geometry; thus the <b>LB_NUM_GEOM_FN</b>
 query function should return the value of two. For a similar three-dimensional
 application, the return value should be three.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_NUM_GEOM_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_NUM_GEOM_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Parameters:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
+<td>Error code to be set by function.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Returned Value:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<TD>The number of values needed to express the geometry of an object.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>The number of values needed to express the geometry of an object.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_GEOM_FN"></A>typedef void <B>LB_GEOM_FN</B>(void
-*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID</B> <I>local_id</I>,
-double *<I> geom_vec</I>, int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_GEOM_FN"></a>typedef void <b>LB_GEOM_FN</b>(void *<i> data</i>,
+<b>LB_GID</b> <i>global_id</i>, <b>LB_LID</b> <i>local_id</i>, double *<i>
+geom_vec</i>, int<i> *ierr</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD> SUBROUTINE <B><I>Get_Geom</I></B>(<I>data, global_id, local_id,
-geom_vec, ierr</I>)&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: local_id&nbsp;
-<BR>REAL(LB_DOUBLE), INTENT(OUT), DIMENSION(*) :: geom_vec&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<td>SUBROUTINE <b><i>Get_Geom</i></b>(<i>data, global_id, local_id, geom_vec,
+ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
+<br>REAL(LB_DOUBLE), INTENT(OUT), DIMENSION(*) :: geom_vec&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_GEOM_FN</B> query function returns a vector of
+<hr WIDTH="100%">An <b>LB_GEOM_FN</b> query function returns a vector of
 geometry values for a given object. The geometry vector is allocated by
-the load-balancing library to be of the size returned by an <B><A HREF="#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</A></B>
+the load-balancing library to be of the size returned by an <b><a href="#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</a></b>
 query function.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_GEOM_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_GEOM_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD><B>Parameters:</B></TD>
+<tr>
+<td><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
 
-<TD>The global ID of the object whose geometry values should be returned.</TD>
-</TR>
+<td>The global ID of the object whose geometry values should be returned.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
 
-<TD>The local ID of the object whose geometry values should be returned.</TD>
-</TR>
+<td>The local ID of the object whose geometry values should be returned.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>geom_vec</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>geom_vec</i></td>
 
-<TD>An array in which the geometry values should be stored.</TD>
-</TR>
+<td>An array in which the geometry values should be stored.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
-</TABLE>
-&nbsp;
-<BR>&nbsp;
-<H2>
-<A NAME="Graph-based Functions"></A>Graph-based Functions</H2>
+<td>Error code to be set by function.</td>
+</tr>
+</table>
 
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<br>&nbsp;
+<h2>
+<a NAME="Graph-based Functions"></a>Graph-based Functions</h2>
 
-<TD><A NAME="LB_NUM_EDGES"></A>typedef int <B>LB_NUM_EDGES_FN</B>(void
-*<I> data</I>, <B>LB_GID </B><I>global_id</I>, <B>LB_LID</B> <I>local_id</I>,
-int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<td><a NAME="LB_NUM_EDGES"></a>typedef int <b>LB_NUM_EDGES_FN</b>(void
+*<i> data</i>, <b>LB_GID </b><i>global_id</i>, <b>LB_LID</b> <i>local_id</i>,
+int<i> *ierr</i>);&nbsp;</td>
+</tr>
 
-<TD> FUNCTION <B><I>Get_Num_Edges</I></B>(<I>data, global_id, local_id, ierr</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: Get_Num_Edges&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: local_id&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
+<td>FUNCTION <b><i>Get_Num_Edges</i></b>(<i>data, global_id, local_id,
+ierr</i>)&nbsp;
+<br>INTEGER(LB_INT) :: Get_Num_Edges&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<HR WIDTH="100%">An <B>LB_NUM_EDGES_FN</B> query function returns the number
+<hr WIDTH="100%">An <b>LB_NUM_EDGES_FN</b> query function returns the number
 of edges for a given object in the communication graph of the application
 (i.e., the number of objects with which the given object must share information).
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_NUM_EDGES_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_NUM_EDGES_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Parameters:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>global_id</I></TD>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>global_id</i></td>
 
-<TD>The global ID of the object for which the number of edges should be
-returned.</TD>
-</TR>
+<td>The global ID of the object for which the number of edges should be
+returned.</td>
+</tr>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>local_id</I></TD>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>local_id</i></td>
 
-<TD>The local ID of the object for which the number of edges should be
-returned.</TD>
-</TR>
+<td>The local ID of the object for which the number of edges should be
+returned.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
+<td>Error code to be set by function.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Returned Value:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<TD>The number of edges for the object identified by <I>global_id</I> and
-<I>local_id</I>.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>The number of edges for the object identified by <i>global_id</i> and
+<i>local_id</i>.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
-<TD><A NAME="LB_EDGE_LIST_FN"></A>typedef void <B>LB_EDGE_LIST_FN</B>(void
-*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID </B><I>local_id</I>,
-<B>LB_GID</B> *<I> nbor_global_id</I>, int * <I>nbor_procs</I>, int <I>wgt_dim</I>,
-int * <I>ewgts,</I> int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<td><a NAME="LB_EDGE_LIST_FN"></a>typedef void <b>LB_EDGE_LIST_FN</b>(void
+*<i> data</i>, <b>LB_GID</b> <i>global_id</i>, <b>LB_LID </b><i>local_id</i>,
+<b>LB_GID</b>
+*<i> nbor_global_id</i>, int * <i>nbor_procs</i>, int <i>wgt_dim</i>, float
+* <i>ewgts,</i> int<i> *ierr</i>);&nbsp;</td>
+</tr>
 
-<TD> SUBROUTINE <B><I>Get_Edge_List</I></B>(<I>data, global_id, local_id,
-nbor_global_id, nbor_procs, wgt_dim, ewgts, ierr</I>)&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: local_id&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(OUT), DIMENSION(*) :: nbor_global_id&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: nbor_procs&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: ewgts&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
+<td>SUBROUTINE <b><i>Get_Edge_List</i></b>(<i>data, global_id, local_id,
+nbor_global_id, nbor_procs, wgt_dim, ewgts, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(OUT), DIMENSION(*) :: nbor_global_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: nbor_procs&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(LB_INT), INTENT(OUT), DIMENSION(*) :: ewgts&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<HR WIDTH="100%">An <B>LB_EDGE_LIST_FN</B> query function returns lists
+<hr WIDTH="100%">An <b>LB_EDGE_LIST_FN</b> query function returns lists
 of global IDs, processor IDs, and optionally edge weights for objects sharing
 an edge with a given object (i.e., objects that must share information
 with the given object). The arrays for the returned neighbor lists are
 allocated by the load-balancing library; their size is determined by a
-call to an <B><A HREF="#LB_NUM_EDGES">LB_NUM_EDGES_FN</A></B> query function.
-<BR>&nbsp;
-<TABLE WIDTH="100%" NOSAVE >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+call to an <b><a href="#LB_NUM_EDGES">LB_NUM_EDGES_FN</a></b> query function.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_EDGE_LIST_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_EDGE_LIST_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD><B>Parameters:</B></TD>
+<tr>
+<td><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
 
-<TD>The global ID of the object for which edge lists should be returned.</TD>
-</TR>
+<td>The global ID of the object for which edge lists should be returned.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_id</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
 
-<TD>The local ID of the object for which edge lists should be returned.</TD>
-</TR>
+<td>The local ID of the object for which edge lists should be returned.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>nbor_global_id</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_global_id</i></td>
 
-<TD>Upon return, an array of global IDs of objects sharing edges with the
-given object.</TD>
-</TR>
+<td>Upon return, an array of global IDs of objects sharing edges with the
+given object.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>nbor_procs</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_procs</i></td>
 
-<TD>Upon return, an array of processor IDs that identifies where the neighboring
-objects reside.</TD>
-</TR>
+<td>Upon return, an array of processor IDs that identifies where the neighboring
+objects reside.</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
-<TD>The number of weights associated with an edge (typically 1), or 0 if edge weights are
-not requested.</TD>
-</TR>
+<td>The number of weights associated with an edge (typically 1), or 0 if
+edge weights are not requested.</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>ewgts</I></TD>
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>ewgts</i></td>
 
-<TD>Upon return, an array of edge weights, where <I>ewgts[i*wgt_dim: (i+1)*wgt_dim-1]</I>
-<BR>corresponds to the <I>i</I>th edge weight. If <I>wgt_dim=0 </I>the
-return value of <I>ewgts </I>is undefined and may be NULL.</TD>
-</TR>
+<td>Upon return, an array of edge weights, where <i>ewgts[i*wgt_dim: (i+1)*wgt_dim-1]</i>
+<br>corresponds to the <i>i</i>th edge weight. If <i>wgt_dim=0 </i>the
+return value of <i>ewgts </i>is undefined and may be NULL.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
-</TABLE>
-&nbsp;
-<BR>&nbsp;
-<H2>
-<A NAME="Tree-based Functions"></A>Tree-based Functions</H2>
+<td>Error code to be set by function.</td>
+</tr>
+</table>
 
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<br>&nbsp;
+<h2>
+<a NAME="Tree-based Functions"></a>Tree-based Functions</h2>
 
-<TD><A NAME="LB_NUM_COARSE_OBJ_FN"></A>typedef int <B>LB_NUM_COARSE_OBJ_FN</B>(void
-*<I> data</I>, int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<td><a NAME="LB_NUM_COARSE_OBJ_FN"></a>typedef int <b>LB_NUM_COARSE_OBJ_FN</b>(void
+*<i> data</i>, int<i> *ierr</i>);&nbsp;</td>
+</tr>
 
-<TD> FUNCTION <B><I>Get_Num_Coarse_Obj</I></B>(<I>data, ierr</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: Get_Num_Coarse_Obj&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<P>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
+<td>FUNCTION <b><i>Get_Num_Coarse_Obj</i></b>(<i>data, ierr</i>)&nbsp;
+<br>INTEGER(LB_INT) :: Get_Num_Coarse_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<HR WIDTH="100%">An <B>LB_NUM_COARSE_OBJ_FN</B> query function returns the
-number of objects (elements) in the initial coarse grid.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<hr WIDTH="100%">An <b>LB_NUM_COARSE_OBJ_FN</b> query function returns
+the number of objects (elements) in the initial coarse grid.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_NUM_COARSE_OBJ_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_NUM_COARSE_OBJ_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Parameters:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
-<TD>Error code to be set by function.</TD>
-</TR>
+<td>Error code to be set by function.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Returned Value:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<TD>The number of objects in the coarse grid.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>The number of objects in the coarse grid.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
-<TD><A NAME="LB_COARSE_OBJ_LIST_FN"></A>typedef void <B>LB_COARSE_OBJ_LIST_FN</B>(void
-*<I> data</I>, <B>LB_GID</B> <I>global_ids</I>, <B>LB_LID </B><I>local_ids</I>,
-int *<I>assigned</I>, int *<I>num_vert</I>, int *<I>vertices</I>,
-int *<I>in_order</I>, int *<I>in_vertex</I>, int *<I>out_vertex</I>,
-int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<td><a NAME="LB_COARSE_OBJ_LIST_FN"></a>typedef void <b>LB_COARSE_OBJ_LIST_FN</b>(void
+*<i> data</i>, <b>LB_GID</b> <i>global_ids</i>, <b>LB_LID </b><i>local_ids</i>,
+int *<i>assigned</i>, int *<i>num_vert</i>, int *<i>vertices</i>, int *<i>in_order</i>,
+int *<i>in_vertex</i>, int *<i>out_vertex</i>, int<i> *ierr</i>);&nbsp;</td>
+</tr>
 
-<TD> SUBROUTINE <B><I>Get_Coarse_Obj_List</I></B>(<I>data, global_ids, local_ids,
-assigned, num_vert, vertices, in_order, in_vertex, out_vertex, ierr</I>)&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: assigned, num_vert,
-vertices, in_vertex, out_vertex&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: in_order, ierr&nbsp;
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
+<td>SUBROUTINE <b><i>Get_Coarse_Obj_List</i></b>(<i>data, global_ids, local_ids,
+assigned, num_vert, vertices, in_order, in_vertex, out_vertex, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: assigned, num_vert, vertices,
+in_vertex, out_vertex&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: in_order, ierr&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
 
-<HR WIDTH="100%">An <B>LB_COARSE_OBJ_LIST_FN</B> query function returns
+<hr WIDTH="100%">An <b>LB_COARSE_OBJ_LIST_FN</b> query function returns
 lists of global IDs, local IDs, vertices, and order information for all
-objects (elements) of the initial coarse grid.  The vertices are a designation
-on the local processor of the vertices such that if two elements share a
-vertex then the same integer designates that vertex in both elements.  The
-user may choose to provide the order in which the elements should be
-traversed or have Zoltan determine the order.  If the user provides the
-order, then entry and exit vertices for a path through the elements may also
-be provided.  The arrays for the returned values are
-allocated by the load-balancing library; their size is determined by a
-call to an <B><A HREF="#LB_NUM_COARSE_OBJ_FN">LB_NUM_COARSE_OBJ_FN</A></B> query function.
-<BR>&nbsp;
-<TABLE WIDTH="100%" NOSAVE >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
-
-<TD><B>LB_COARSE_OBJ_LIST_FN_TYPE</B></TD>
-</TR>
-
-<TR>
-<TD><B>Parameters:</B></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
-
-<TD>Pointer to user-defined data.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_ids</I></TD>
-
-<TD>Upon return, an array of global IDs of all objects in the coarse grid.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_ids</I></TD>
-
-<TD>Upon return, an array of local IDs of all objects in the coarse grid.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>assigned</I></TD>
-
-<TD>Upon return, an array of integers indicating whether or not each object
-is currently assigned to this processor.  A value of 1 indicates it is
-assigned to this processor; a value of 0 indicates it is assigned to some
-other processor.  For elements that have been refined, it is ignored
-unless weights are assigned to interior nodes of the tree.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_vert</I></TD>
-
-<TD>Upon return, an array containing the number of vertices for each object.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; vertices</I></TD>
-
-<TD>Upon return, an array containing the vertices of each object.  If the
-number of vertices for objects 0 through <I>i</I>-1 is <I>N</I>, then the
-vertices for object <I>i</I> are in <I>vertices</I>[<I>N:N+num_vert</I>[<I>i</I>]]</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; in_order</I></TD>
-
-<TD>Upon return, 1 if the user is providing the objects in the order in
-which they should be traversed, or 0 if Zoltan should determine the order.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; in_vertex</I></TD>
-
-<TD>Upon return, an array containing the vertex through which to enter each
-element in the user provided traversal.  It is required only if the user
-is providing the order for the coarse grid objects (i.e., <I>in_order</I>==1)
-and allowing Zoltan to select the order of the children in at least one
-invocation of
-<B><A HREF="#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</A></B>.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; out_vertex</I></TD>
-
-<TD>Upon return, an array containing the vertex through which to exit each
-element in the user provided traversal.  The same provisions hold as for
-<I>in_vertex</I>.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
-
-<TD>Error code to be set by function.</TD>
-</TR>
-</TABLE>
-&nbsp;
-
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
-<TD><A NAME="LB_FIRST_COARSE_OBJ_FN"></A>typedef void <B>LB_FIRST_COARSE_OBJ_FN</B>(void
-*<I> data</I>, <B>LB_GID</B> *<I>global_id</I>, <B>LB_LID </B>*<I>local_id</I>,
-int *<I>assigned</I>, int *<I>num_vert</I>, int *<I>vertices</I>,
-int *<I>in_order</I>, int *<I>in_vertex</I>, int *<I>out_vertex</I>,
-int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
-
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
-
-<TD> FUNCTION <B><I>Get_First_Coarse_Obj</I></B>(<I>data, global_id, local_id,
-assigned, num_vert, vertices, in_order, in_vertex, out_vertex, ierr</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: Get_First_Coarse_Obj&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(OUT) :: global_id&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(OUT) :: local_id&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: assigned, num_vert, in_order,
-in_vertex, out_vertex, ierr&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
-
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_FIRST_COARSE_OBJ_FN</B> query function 
-initializes an iteration over the objects of the initial coarse grid.  It
-returns the global ID, local ID, vertices, and order information for the
-first object (element) of the initial coarse grid.  Subsequent
-calls to an <B><A HREF="#LB_NEXT_COARSE_OBJ_FN">LB_NEXT_COARSE_OBJ_FN</A></B>
-iterate over and return other objects from the coarse grid.
-The vertices are a designation
-on the local processor of the vertices such that if two elements share a
-vertex then the same integer designates that vertex in both elements.  The
-user may choose to provide the order in which the elements should be
-traversed, or have Zoltan determine the order.  If the user provides the
-order, then entry and exit vertices for a path through the elements may also
-be provided.
-<BR>&nbsp;
-<TABLE WIDTH="100%" NOSAVE >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
-
-<TD><B>LB_FIRST_COARSE_OBJ_FN_TYPE</B></TD>
-</TR>
-
-<TR>
-<TD><B>Parameters:</B></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
-
-<TD>Pointer to user-defined data.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_ids</I></TD>
-
-<TD>Upon return, the global ID of the first object in the coarse grid.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_ids</I></TD>
-
-<TD>Upon return, the local ID of the first object in the coarse grid.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>assigned</I></TD>
-
-<TD>Upon return, an integer indicating whether or not this object
-is currently assigned to this processor.  A value of 1 indicates it is
-assigned to this processor; a value of 0 indicates it is assigned to some
-other processor.  For elements that have been refined, it is ignored
-unless weights are assigned to interior nodes of the tree.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_vert</I></TD>
-
-<TD>Upon return, the number of vertices for this object.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; vertices</I></TD>
-
-<TD>Upon return, an array containing the vertices of this object.
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; in_order</I></TD>
-
-<TD>Upon return, 1 if the user is providing the objects in the order in
-which they should be traversed, or 0 if Zoltan should determine the order.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; in_vertex</I></TD>
-
-<TD>Upon return, the vertex through which to enter this
-element in the user provided traversal.  It is required only if the user
-is providing the order for the coarse grid objects (i.e., <I>in_order</I>==1)
-and allowing Zoltan to select the order of the children in at least one
-invocation of
-<B><A HREF="#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</A></B>.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; out_vertex</I></TD>
-
-<TD>Upon return, the vertex through which to exit this
-element in the user provided traversal.  The same provisions hold as for
-<I>in_vertex</I>.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
-
-<TD>Error code to be set by function.</TD>
-
-<TR>
-<TD><B>Returned Value:</B></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</TD>
-
-<TD>If <I>global_id</I> and <I>local_id</I> contain valid IDs
-of the first object in the coarse grid.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</TD>
-
-<TD>If no coarse grid is available.</TD>
-</TR>
-</TR>
-</TABLE>
-&nbsp;
-
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
-<TD><A NAME="LB_NEXT_COARSE_OBJ_FN"></A>typedef void <B>LB_NEXT_COARSE_OBJ_FN</B>(void
-*<I> data</I>, <B>LB_GID</B> *<I>global_id</I>, <B>LB_LID *</B><I>local_id</I>,
-int *<I>assigned</I>, int *<I>num_vert</I>, int *<I>vertices</I>,
-int *<I>in_vertex</I>, int *<I>out_vertex</I>,
-int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
-
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
-
-<TD> FUNCTION <B><I>Get_Next_Coarse_Obj</I></B>(<I>data, global_id, local_id,
-assigned, num_vert, vertices, in_vertex, out_vertex, ierr</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: Get_Next_Coarse_Obj&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(OUT) :: global_id&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(OUT) :: local_id&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: assigned, num_vertex, in_vertex, out_vertex, ierr&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
-
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_NEXT_COARSE_OBJ_FN</B> query function is
-an iterator function that returns the next object in the initial coarse grid.
-initializes an iteration over the objects of the initial coarse grid.
-The first object of the iteration is provided by
-an <B><A HREF="#LB_FIRST_COARSE_OBJ_FN">LB_FIRST_COARSE_OBJ_FN</A></B>
+objects (elements) of the initial coarse grid. The vertices are a designation
+on the local processor of the vertices such that if two elements share
+a vertex then the same integer designates that vertex in both elements.
+The user may choose to provide the order in which the elements should be
+traversed or have Zoltan determine the order. If the user provides the
+order, then entry and exit vertices for a path through the elements may
+also be provided. The arrays for the returned values are allocated by the
+load-balancing library; their size is determined by a call to an <b><a href="#LB_NUM_COARSE_OBJ_FN">LB_NUM_COARSE_OBJ_FN</a></b>
 query function.
-<BR>&nbsp;
-<TABLE WIDTH="100%" NOSAVE >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<TD><B>LB_NEXT_COARSE_OBJ_FN_TYPE</B></TD>
-</TR>
+<td><b>LB_COARSE_OBJ_LIST_FN_TYPE</b></td>
+</tr>
 
-<TR>
-<TD><B>Parameters:</B></TD>
+<tr>
+<td><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
-<TD>Pointer to user-defined data.</TD>
-</TR>
+<td>Pointer to user-defined data.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
 
-<TD>Upon return, the global ID of the next object in the coarse grid.</TD>
-</TR>
+<td>Upon return, an array of global IDs of all objects in the coarse grid.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
-<TD>Upon return, the local ID of the next object in the coarse grid.</TD>
-</TR>
+<td>Upon return, an array of local IDs of all objects in the coarse grid.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>assigned</I></TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>assigned</i></td>
 
-<TD>Upon return, an integer indicating whether or not this object
-is currently assigned to this processor.  A value of 1 indicates it is
-assigned to this processor; a value of 0 indicates it is assigned to some
-other processor.  For elements that have been refined, it is ignored
-unless weights are assigned to interior nodes of the tree.</TD>
-</TR>
+<td>Upon return, an array of integers indicating whether or not each object
+is currently assigned to this processor. A value of 1 indicates it is assigned
+to this processor; a value of 0 indicates it is assigned to some other
+processor. For elements that have been refined, it is ignored unless weights
+are assigned to interior nodes of the tree.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_vert</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_vert</i></td>
 
-<TD>Upon return, the number of vertices for this object.</TD>
-</TR>
+<td>Upon return, an array containing the number of vertices for each object.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; vertices</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; vertices</i></td>
 
-<TD>Upon return, an array containing the vertices of this object.
-</TR>
+<td>Upon return, an array containing the vertices of each object. If the
+number of vertices for objects 0 through <i>i</i>-1 is <i>N</i>, then the
+vertices for object <i>i</i> are in <i>vertices</i>[<i>N:N+num_vert</i>[<i>i</i>]]</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; in_vertex</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; in_order</i></td>
 
-<TD>Upon return, the vertex through which to enter this
-element in the user provided traversal.  It is required only if the user
-is providing the order for the coarse grid objects (i.e., <I>in_order</I>==1)
+<td>Upon return, 1 if the user is providing the objects in the order in
+which they should be traversed, or 0 if Zoltan should determine the order.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; in_vertex</i></td>
+
+<td>Upon return, an array containing the vertex through which to enter
+each element in the user provided traversal. It is required only if the
+user is providing the order for the coarse grid objects (i.e., <i>in_order</i>==1)
 and allowing Zoltan to select the order of the children in at least one
 invocation of
-<B><A HREF="#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</A></B>.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; out_vertex</I></TD>
-
-<TD>Upon return, the vertex through which to exit this
-element in the user provided traversal.  The same provisions hold as for
-<I>in_vertex</I>.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
-
-<TD>Error code to be set by function.</TD>
-
-<TR>
-<TD><B>Returned Value:</B></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</TD>
-
-<TD>If <I>global_id</I> and <I>local_id</I> contain valid IDs
-of the next object in the coarse grid.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</TD>
-
-<TD>If no more objects are available.</TD>
-</TR>
-</TR>
-</TABLE>
-&nbsp;
-
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
-<TD><A NAME="LB_NUM_CHILD_FN"></A>typedef int <B>LB_NUM_CHILD_FN</B>(void
-*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID </B><I>local_id</I>,
-int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
-
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
-
-<TD> FUNCTION <B><I>Get_Num_Child</I></B>(<I>data, global_id,
-local_id, ierr</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: Get_Num_Child&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: local_id&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_NUM_CHILD_FN</B> query function returns the
-number of children of the element with the given global and local IDs.
-If the element has not been refined, the number of children is 0.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
-
-<TD><B>LB_NUM_CHILD_FN_TYPE</B></TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><B>Parameters:</B></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
-
-<TD>Pointer to user-defined data.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
-
-<TD>The global ID of the object for which the number of children is
-requested.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_id</I></TD>
-
-<TD>The local ID of the object for which the number of children is
-requested.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
-
-<TD>Error code to be set by function.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><B>Returned Value:</B></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
-
-<TD>The number of children.</TD>
-</TR>
-</TABLE>
-&nbsp;
-
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
-<TD><A NAME="LB_CHILD_LIST_FN"></A>typedef void <B>LB_CHILD_LIST_FN</B>(void
-*<I> data</I>, <B>LB_GID</B> <I>parent_gid</I>, <B>LB_LID </B><I>parent_lid</I>,
-<B>LB_GID</B> *<I>child_gids</I>, <B>LB_LID *</B><I>child_lids</I>,
-int *<I>assigned</I>, int *<I>num_vert</I>, int *<I>vertices</I>,
-<B>LB_REF_TYPE</B> *<I>ref_type</I>,
-int *<I>in_vertex</I>, int *<I>out_vertex</I>,
-int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
-
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
-
-<TD> SUBROUTINE <B><I>Get_Child_List</I></B>(<I>data, parent_gid, parent_lid,
-child_gids, child_lids,
-assigned, num_vert, vertices, ref_type, in_vertex, out_vertex, ierr</I>)&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: parent_gid&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: parent_lid&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(OUT), DIMENSION(*) :: child_gids&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(OUT), DIMENSION(*) :: child_lids&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: assigned, num_vert,
-vertices, in_vertex, out_vertex&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ref_type, ierr&nbsp;
-
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_CHILD_LIST_FN</B> query function returns
-lists of global IDs, local IDs, vertices, and order information for all
-children of a refined element.  The vertices are a designation
-on the local processor of the vertices such that if two elements share a
-vertex then the same integer designates that vertex in both elements.  The
-user may choose to provide the order in which the children should be
-traversed, or have Zoltan determine the order based on the type of element
-refinement used to create the children.  If the user provides the
-order, then entry and exit vertices for a path through the elements may also
-be provided.  The arrays for the returned values are
-allocated by the load-balancing library; their size is determined by a
-call to an <B><A HREF="#LB_NUM_CHILD_FN">LB_NUM_CHILD_FN</A></B> query function.
-<BR>&nbsp;
-<TABLE WIDTH="100%" NOSAVE >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
-
-<TD><B>LB_CHILD_LIST_FN_TYPE</B></TD>
-</TR>
-
-<TR>
-<TD><B>Parameters:</B></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
-
-<TD>Pointer to user-defined data.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; parent_gid</I></TD>
-
-<TD>The global ID of the object whose children are requested.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; parent_lid</I></TD>
-
-<TD>The local ID of the object whose children are requested.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; child_gids</I></TD>
-
-<TD>Upon return, an array of global IDs of all children of this object.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; child_lids</I></TD>
-
-<TD>Upon return, an array of local IDs of all children of this object.</TD>
-</TR>
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>assigned</I></TD>
-
-<TD>Upon return, an array of integers indicating whether or not each child
-is currently assigned to this processor.  A value of 1 indicates it is
-assigned to this processor; a value of 0 indicates it is assigned to some
-other processor.  For children that have been further refined, it is ignored
-unless weights are assigned to interior nodes of the tree.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_vert</I></TD>
-
-<TD>Upon return, an array containing the number of vertices for each object.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; vertices</I></TD>
-
-<TD>Upon return, an array containing the vertices of each object.  If the
-number of vertices for objects 0 through <I>i</I>-1 is <I>N</I>, then the
-vertices for object <I>i</I> are in <I>vertices</I>[<I>N:N+num_vert</I>[<I>i</I>]]</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ref_type</I></TD>
-
-<TD>Upon return, a value indicating what type of refinement was used to
-create the children.  This determines how the children will be ordered.
-The values currently supported are:</TD>
-
-<TR>
-<TD></TD>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>LB_TRI_BISECT</I>
-Bisection of triangles.</TD>
-</TR>
-
-<TR>
-<TD></TD>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>LB_OTHER_REF</I>
-All other forms of refinement.</TD>
-</TR>
-
-<TR>
-<TD></TD>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>LB_IN_ORDER</I>
-Traverse the children in the order in which they are provided.</TD>
-</TR>
-
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; in_vertex</I></TD>
-
-<TD>Upon return, an array containing the vertex through which to enter each
-element in the user provided traversal.  It is required only if the user
-is providing the order for the children of this element (i.e.,
-<I>ref_type</I>==<I>LB_IN_ORDER</I>) but does not provide the order for
-the children of at least one of those children.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; out_vertex</I></TD>
-
-<TD>Upon return, an array containing the vertex through which to exit each
-element in the user provided traversal.  The same provisions hold as for
-<I>in_vertex</I>.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
-
-<TD>Error code to be set by function.</TD>
-</TR>
-</TABLE>
-&nbsp;
-
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
-
-<TD><A NAME="LB_CHILD_WEIGHT_FN"></A>typedef void<B> LB_CHILD_WEIGHT_FN</B>(void
-*<I> data</I>, <B>LB_GID</B> <I> global_id</I>, <B>LB_LID</B> <I> local_id</I>,
-int <I>wgt_dim</I>, float * <I>obj_wgt,</I> int<I> *ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
-
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
-
-<TD> SUBROUTINE <B><I>Get_Child_Weight</I></B>(<I>data, global_id, local_id,
-wgt_dim, obj_wgt, ierr</I>)&nbsp;
-<BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: local_id&nbsp;
-<BR>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgt&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
-where <I>x</I> is 1, 2, 3 or 4. See the section on
-<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
-for an explanation.&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%">An <B>LB_CHILD_WEIGHT_FN</B> query function returns the
-weight of an object.  Interior nodes of the refinement tree as well as
-the leaves are allowed to
-have weights.
-<BR>&nbsp;
-<TABLE WIDTH="100%" NOSAVE >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
-
-<TD><B>LB_CHILD_WEIGHT_FN_TYPE</B></TD>
-</TR>
-
-<TR>
-<TD><B>Parameters:</B></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
-
-<TD>Pointer to user-defined data.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
-
-<TD>The global ID of the object whose weight is requested.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_id</I></TD>
-
-<TD>The local ID of the object whose weight is requested.</TD>
-</TR>
-
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
-
-<TD>The number of weights associated with an object (typically 1), or 0 if weights are not
-requested.</TD>
-</TR>
-
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>obj_wgt</I></TD>
-
-<TD>An array containing the object weight.
-If <I>wgt_dim</I>=0, the return value of <I>obj_wgts</I> is undefined and
-may be NULL.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
-
-<TD>Error code to be set by function.</TD>
-</TR>
-</TABLE>
-&nbsp;
-
-<P>
-<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
-<A HREF="ug_query_mig.html">Next:&nbsp; Migration Query Functions</A>&nbsp;
-|&nbsp; <A HREF="ug_query.html">Previous:&nbsp; Application-Registered
-Query Functions</A>]
-</BODY>
-</HTML>
+<b><a href="#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; out_vertex</i></td>
+
+<td>Upon return, an array containing the vertex through which to exit each
+element in the user provided traversal. The same provisions hold as for
+<i>in_vertex</i>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td><a NAME="LB_FIRST_COARSE_OBJ_FN"></a>typedef void <b>LB_FIRST_COARSE_OBJ_FN</b>(void
+*<i> data</i>, <b>LB_GID</b> *<i>global_id</i>, <b>LB_LID </b>*<i>local_id</i>,
+int *<i>assigned</i>, int *<i>num_vert</i>, int *<i>vertices</i>, int *<i>in_order</i>,
+int *<i>in_vertex</i>, int *<i>out_vertex</i>, int<i> *ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_First_Coarse_Obj</i></b>(<i>data, global_id, local_id,
+assigned, num_vert, vertices, in_order, in_vertex, out_vertex, ierr</i>)&nbsp;
+<br>INTEGER(LB_INT) :: Get_First_Coarse_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(OUT) :: global_id&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(OUT) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: assigned, num_vert, in_order, in_vertex,
+out_vertex, ierr&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">An <b>LB_FIRST_COARSE_OBJ_FN</b> query function initializes
+an iteration over the objects of the initial coarse grid. It returns the
+global ID, local ID, vertices, and order information for the first object
+(element) of the initial coarse grid. Subsequent calls to an <b><a href="#LB_NEXT_COARSE_OBJ_FN">LB_NEXT_COARSE_OBJ_FN</a></b>
+iterate over and return other objects from the coarse grid. The vertices
+are a designation on the local processor of the vertices such that if two
+elements share a vertex then the same integer designates that vertex in
+both elements. The user may choose to provide the order in which the elements
+should be traversed, or have Zoltan determine the order. If the user provides
+the order, then entry and exit vertices for a path through the elements
+may also be provided.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td><b>LB_FIRST_COARSE_OBJ_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
+
+<td>Upon return, the global ID of the first object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
+
+<td>Upon return, the local ID of the first object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>assigned</i></td>
+
+<td>Upon return, an integer indicating whether or not this object is currently
+assigned to this processor. A value of 1 indicates it is assigned to this
+processor; a value of 0 indicates it is assigned to some other processor.
+For elements that have been refined, it is ignored unless weights are assigned
+to interior nodes of the tree.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_vert</i></td>
+
+<td>Upon return, the number of vertices for this object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; vertices</i></td>
+
+<td>Upon return, an array containing the vertices of this object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; in_order</i></td>
+
+<td>Upon return, 1 if the user is providing the objects in the order in
+which they should be traversed, or 0 if Zoltan should determine the order.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; in_vertex</i></td>
+
+<td>Upon return, the vertex through which to enter this element in the
+user provided traversal. It is required only if the user is providing the
+order for the coarse grid objects (i.e., <i>in_order</i>==1) and allowing
+Zoltan to select the order of the children in at least one invocation of
+<b><a href="#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; out_vertex</i></td>
+
+<td>Upon return, the vertex through which to exit this element in the user
+provided traversal. The same provisions hold as for
+<i>in_vertex</i>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</td>
+
+<td>If <i>global_id</i> and <i>local_id</i> contain valid IDs of the first
+object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</td>
+
+<td>If no coarse grid is available.</td>
+</tr>
+</table>
+
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td><a NAME="LB_NEXT_COARSE_OBJ_FN"></a>typedef void <b>LB_NEXT_COARSE_OBJ_FN</b>(void
+*<i> data</i>, <b>LB_GID</b> *<i>global_id</i>, <b>LB_LID *</b><i>local_id</i>,
+int *<i>assigned</i>, int *<i>num_vert</i>, int *<i>vertices</i>, int *<i>in_vertex</i>,
+int *<i>out_vertex</i>, int<i> *ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_Next_Coarse_Obj</i></b>(<i>data, global_id, local_id,
+assigned, num_vert, vertices, in_vertex, out_vertex, ierr</i>)&nbsp;
+<br>INTEGER(LB_INT) :: Get_Next_Coarse_Obj&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(OUT) :: global_id&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(OUT) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: assigned, num_vertex, in_vertex, out_vertex,
+ierr&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">An <b>LB_NEXT_COARSE_OBJ_FN</b> query function is an iterator
+function that returns the next object in the initial coarse grid. initializes
+an iteration over the objects of the initial coarse grid. The first object
+of the iteration is provided by an <b><a href="#LB_FIRST_COARSE_OBJ_FN">LB_FIRST_COARSE_OBJ_FN</a></b>
+query function.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td><b>LB_NEXT_COARSE_OBJ_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
+
+<td>Upon return, the global ID of the next object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
+
+<td>Upon return, the local ID of the next object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>assigned</i></td>
+
+<td>Upon return, an integer indicating whether or not this object is currently
+assigned to this processor. A value of 1 indicates it is assigned to this
+processor; a value of 0 indicates it is assigned to some other processor.
+For elements that have been refined, it is ignored unless weights are assigned
+to interior nodes of the tree.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_vert</i></td>
+
+<td>Upon return, the number of vertices for this object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; vertices</i></td>
+
+<td>Upon return, an array containing the vertices of this object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; in_vertex</i></td>
+
+<td>Upon return, the vertex through which to enter this element in the
+user provided traversal. It is required only if the user is providing the
+order for the coarse grid objects (i.e., <i>in_order</i>==1) and allowing
+Zoltan to select the order of the children in at least one invocation of
+<b><a href="#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; out_vertex</i></td>
+
+<td>Upon return, the vertex through which to exit this element in the user
+provided traversal. The same provisions hold as for
+<i>in_vertex</i>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 1</td>
+
+<td>If <i>global_id</i> and <i>local_id</i> contain valid IDs of the next
+object in the coarse grid.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; 0</td>
+
+<td>If no more objects are available.</td>
+</tr>
+</table>
+
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td><a NAME="LB_NUM_CHILD_FN"></a>typedef int <b>LB_NUM_CHILD_FN</b>(void
+*<i> data</i>, <b>LB_GID</b> <i>global_id</i>, <b>LB_LID </b><i>local_id</i>,
+int<i> *ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b><i>Get_Num_Child</i></b>(<i>data, global_id, local_id,
+ierr</i>)&nbsp;
+<br>INTEGER(LB_INT) :: Get_Num_Child&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">An <b>LB_NUM_CHILD_FN</b> query function returns the number
+of children of the element with the given global and local IDs. If the
+element has not been refined, the number of children is 0.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td><b>LB_NUM_CHILD_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
+
+<td>The global ID of the object for which the number of children is requested.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
+
+<td>The local ID of the object for which the number of children is requested.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The number of children.</td>
+</tr>
+</table>
+
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td><a NAME="LB_CHILD_LIST_FN"></a>typedef void <b>LB_CHILD_LIST_FN</b>(void
+*<i> data</i>, <b>LB_GID</b> <i>parent_gid</i>, <b>LB_LID </b><i>parent_lid</i>,
+<b>LB_GID</b>
+*<i>child_gids</i>, <b>LB_LID *</b><i>child_lids</i>, int *<i>assigned</i>,
+int *<i>num_vert</i>, int *<i>vertices</i>,
+<b>LB_REF_TYPE</b> *<i>ref_type</i>,
+int *<i>in_vertex</i>, int *<i>out_vertex</i>, int<i> *ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Child_List</i></b>(<i>data, parent_gid, parent_lid,
+child_gids, child_lids, assigned, num_vert, vertices, ref_type, in_vertex,
+out_vertex, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(IN) :: parent_gid&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(IN) :: parent_lid&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(OUT), DIMENSION(*) :: child_gids&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(OUT), DIMENSION(*) :: child_lids&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: assigned, num_vert, vertices,
+in_vertex, out_vertex&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ref_type, ierr&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">An <b>LB_CHILD_LIST_FN</b> query function returns lists
+of global IDs, local IDs, vertices, and order information for all children
+of a refined element. The vertices are a designation on the local processor
+of the vertices such that if two elements share a vertex then the same
+integer designates that vertex in both elements. The user may choose to
+provide the order in which the children should be traversed, or have Zoltan
+determine the order based on the type of element refinement used to create
+the children. If the user provides the order, then entry and exit vertices
+for a path through the elements may also be provided. The arrays for the
+returned values are allocated by the load-balancing library; their size
+is determined by a call to an <b><a href="#LB_NUM_CHILD_FN">LB_NUM_CHILD_FN</a></b>
+query function.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td><b>LB_CHILD_LIST_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; parent_gid</i></td>
+
+<td>The global ID of the object whose children are requested.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; parent_lid</i></td>
+
+<td>The local ID of the object whose children are requested.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; child_gids</i></td>
+
+<td>Upon return, an array of global IDs of all children of this object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; child_lids</i></td>
+
+<td>Upon return, an array of local IDs of all children of this object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>assigned</i></td>
+
+<td>Upon return, an array of integers indicating whether or not each child
+is currently assigned to this processor. A value of 1 indicates it is assigned
+to this processor; a value of 0 indicates it is assigned to some other
+processor. For children that have been further refined, it is ignored unless
+weights are assigned to interior nodes of the tree.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_vert</i></td>
+
+<td>Upon return, an array containing the number of vertices for each object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; vertices</i></td>
+
+<td>Upon return, an array containing the vertices of each object. If the
+number of vertices for objects 0 through <i>i</i>-1 is <i>N</i>, then the
+vertices for object <i>i</i> are in <i>vertices</i>[<i>N:N+num_vert</i>[<i>i</i>]]</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ref_type</i></td>
+
+<td>Upon return, a value indicating what type of refinement was used to
+create the children. This determines how the children will be ordered.
+The values currently supported are:</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>LB_TRI_BISECT</i> Bisection of triangles.</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>LB_OTHER_REF</i> All other forms of
+refinement.</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>LB_IN_ORDER</i> Traverse the children
+in the order in which they are provided.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; in_vertex</i></td>
+
+<td>Upon return, an array containing the vertex through which to enter
+each element in the user provided traversal. It is required only if the
+user is providing the order for the children of this element (i.e.,
+<i>ref_type</i>==<i>LB_IN_ORDER</i>)
+but does not provide the order for the children of at least one of those
+children.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; out_vertex</i></td>
+
+<td>Upon return, an array containing the vertex through which to exit each
+element in the user provided traversal. The same provisions hold as for
+<i>in_vertex</i>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td><a NAME="LB_CHILD_WEIGHT_FN"></a>typedef void<b> LB_CHILD_WEIGHT_FN</b>(void
+*<i> data</i>, <b>LB_GID</b> <i>global_id</i>, <b>LB_LID</b> <i>local_id</i>,
+int <i>wgt_dim</i>, float * <i>obj_wgt,</i> int<i> *ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Child_Weight</i></b>(<i>data, global_id, local_id,
+wgt_dim, obj_wgt, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
+<br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgt&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<br>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">An <b>LB_CHILD_WEIGHT_FN</b> query function returns the
+weight of an object. Interior nodes of the refinement tree as well as the
+leaves are allowed to have weights.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td><b>LB_CHILD_WEIGHT_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
+
+<td>The global ID of the object whose weight is requested.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
+
+<td>The local ID of the object whose weight is requested.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
+
+<td>The number of weights associated with an object (typically 1), or 0
+if weights are not requested.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>obj_wgt</i></td>
+
+<td>An array containing the object weight. If <i>wgt_dim</i>=0, the return
+value of <i>obj_wgts</i> is undefined and may be NULL.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
+<a href="ug_query_mig.html">Next:&nbsp;
+Migration Query Functions</a>&nbsp; |&nbsp; <a href="ug_query.html">Previous:&nbsp;
+Application-Registered Query Functions</a>]
+</body>
+</html>

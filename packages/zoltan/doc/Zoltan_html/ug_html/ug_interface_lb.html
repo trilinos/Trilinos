@@ -325,20 +325,21 @@ IDs of processors that will own the exported objects in the new decomposition
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td><a NAME="LB_Eval"></a>void <b>LB_Eval</b>(struct <b>LB_struct *</b><i>lb</i>,
-int <i>print_stats</i>, int *<i>nobj</i>, float *o<i>bj_wgt</i>, int *<i>cut_wgt</i>,
-int *<i>nboundary</i>, int *<i>nadj</i>, int *<i>ierr</i>);&nbsp;</td>
+int <i>print_stats</i>, int *<i>nobj</i>, float *o<i>bj_wgt</i>, int *<i>ncuts,</i>
+float *<i>cut_wgt</i>, int *<i>nboundary</i>, int *<i>nadj</i>, int *<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
 <td>SUBROUTINE <b>LB_Eval</b>(<i>lb, print_stats,&nbsp; nobj, obj_wgt,
-cut_wgt, nboundary, nadj, ierr</i>)&nbsp;
+ncuts, cut_wgt, nboundary, nadj, ierr</i>)&nbsp;
 <br>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
 <br>LOGICAL, INTENT(IN) :: print_stats&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), OPTIONAL :: nobj, cut_wgt, nboundary,
-nadj, ierr&nbsp;
-<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(vwgt_dim), OPTIONAL :: obj_wgt&nbsp;</td>
+<br>INTEGER(LB_INT), INTENT(OUT), OPTIONAL :: nobj, ncuts, nboundary, nadj,
+ierr&nbsp;
+<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(vwgt_dim), OPTIONAL :: obj_wgt&nbsp;
+<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(ewgt_dim), OPTIONAL :: cut_wgt&nbsp;</td>
 </tr>
 </table>
 
@@ -383,9 +384,16 @@ processor.</td>
 </tr>
 
 <tr>
+<td>&nbsp;&nbsp;&nbsp; <i>ncuts</i></td>
+
+<td>Upon return,&nbsp; the number of (communication) edge cuts&nbsp; for
+this processor.</td>
+</tr>
+
+<tr>
 <td>&nbsp;&nbsp;&nbsp; <i>cut_wgt</i></td>
 
-<td>Upon return, the cut size (weight) for this processor.</td>
+<td>Upon return, an array of cut weights for this processor.&nbsp;</td>
 </tr>
 
 <tr>
@@ -455,9 +463,11 @@ one or more of the optional output parameters.
 
 <td><a NAME="LB_Free_Data"></a>int <b>LB_Free_Data</b>(<b>LB_GID</b> **
 <i>import_global_ids</i>,
-<b>LB_LID</b> ** <i>import_local_ids</i>, int ** <i>import_procs</i>, <b>LB_GID
-</b>** <i>export_global_ids</i>, <b>LB_LID</b> ** <i>export_local_ids</i>,
-int ** <i>export_procs</i>);&nbsp;</td>
+<b>LB_LID</b>
+** <i>import_local_ids</i>, int ** <i>import_procs</i>, <b>LB_GID
+</b>**
+<i>export_global_ids</i>, <b>LB_LID</b> ** <i>export_local_ids</i>, int
+** <i>export_procs</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
@@ -573,14 +583,13 @@ This requires a separate call to <b><a href="#LB_Free_Data">LB_Free_Data</a></b>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
 
 <td>A pointer to the address of the load-balancing structure, created by
-<b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>, to be
-destroyed.&nbsp;</td>
+<b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>,
+to be destroyed.&nbsp;</td>
 </tr>
 </table>
 
 <p>
-<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
-<a href="ug_interface_augment.html">Next:&nbsp;
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_interface_augment.html">Next:&nbsp;
 Functions for Augmenting a Decomposition</a>&nbsp; |&nbsp; <a href="ug_interface_init.html">Previous:&nbsp;
 Initialization Functions</a>]
 </body>
