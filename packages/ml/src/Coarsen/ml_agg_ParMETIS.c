@@ -795,11 +795,11 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 	}
 
 	if( nodes_per_aggre != NULL ) {
-	  (void)ML_free( (void *)nodes_per_aggre  );
+	  (void)ML_free( nodes_per_aggre  );
 	  nodes_per_aggre = NULL;
 	}
 	if( nodes_per_aggre2 != NULL ) {
-	  (void)ML_free( (void *)nodes_per_aggre2 );
+	  (void)ML_free( nodes_per_aggre2 );
 	  nodes_per_aggre2 = NULL;
 	}
 	
