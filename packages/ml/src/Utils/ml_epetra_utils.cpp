@@ -224,7 +224,6 @@ Epetra_CrsMatrix *Epetra_MatrixMult(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *B
   ML_Comm *comm, *temp;
   Epetra_RowMatrix *result;
 
-  temp = global_comm;
   ML_Comm_Create(&comm);
   ML_Operator *B_ml, *Bt_ml, *BBt_ml;
   B_ml  = ML_Operator_Create(comm);
