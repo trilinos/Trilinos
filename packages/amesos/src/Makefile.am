@@ -34,6 +34,16 @@
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
+if HAVE_AMESOS_LAPACK
+LAPACK_H = 
+	$(srcdir)/Amesos_Lapack.h
+LAPACK = \
+	$(srcdir)/Amesos_Lapack.cpp
+else
+LAPACK_H =
+LAPACK =
+endif
+
 if HAVE_AMESOS_SUPERLU
 SUPERLU_H = \
 	$(srcdir)/Amesos_Superlu.h
@@ -276,6 +286,7 @@ AMESOS_H = \
 	$(SUPERLU_H) \
 	$(SUPERLUDIST_H) \
 	$(KUNDERT_H) \
+	$(LAPACK_H) \
 	$(COMP_H) \
 	$(srcdir)/Amesos_BaseSolver.h \
 	$(srcdir)/Amesos_ComponentBaseSolver.h \
@@ -293,6 +304,7 @@ libamesos_a_SOURCES = \
 	$(FACTORY) \
 	$(SUPERLU) \
 	$(SUPERLUDIST) \
+	$(LAPACK) \
 	$(KUNDERT) \
 	$(COMP)
 
