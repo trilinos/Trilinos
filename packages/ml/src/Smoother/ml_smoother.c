@@ -1,4 +1,8 @@
 #define MatrixProductHiptmair
+#define xSE_MLS
+#define xSE_EDGEMLS
+#define SYM_HIP
+#define USE_MSR_SGSDAMPING
 /*
 #define NoDampingFactor
 #define MatrixFreeHiptmair
@@ -800,13 +804,12 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
 /* ************************************************************************* */
 /* Hiptmair smoother with matrix products                                    */
 /* ------------------------------------------------------------------------- */
-#define USE_MSR_SGSDAMPING
 
 #ifdef MatrixProductHiptmair
 int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen, 
                             double rhs[])
 {
-   int iter, kk, Nrows,ntimes;
+  int iter, kk, Nrows,ntimes, init_guess;
    ML_Operator *Tmat, *Tmat_trans, *TtATmat, *Ke_mat;
    double *res_edge, *edge_update,
           *rhs_nodal, *x_nodal;
@@ -863,6 +866,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    ML_Comm_Envelope_Set_Tag(envelope, smooth_ptr->my_level->levelnum,
                             smooth_ptr->pre_or_post); 
 
+   init_guess = smooth_ptr->init_guess;
    for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
    {
    
@@ -886,17 +890,23 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 #elif defined(USESGSSequential)
       ML_Smoother_SGSSequential(sm, inlen, x, outlen, rhs);
 #elif defined(USE_MSR_SGSDAMPING)
+#ifdef USE_EDGEMLS
+      ML_Smoother_Apply(&(dataptr->ml_edge->pre_smoother[0]),
+			inlen, x, outlen, rhs, init_guess);
+      init_guess = ML_NONZERO;
+#else
       ML_Smoother_MSR_SGSdamping(sm, inlen, x, outlen, rhs);
+#endif
 #else
       ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
 #endif
- 
       /* Reset ntimes and omega for Hiptmair smoother. */
 
       smooth_ptr->ntimes = ntimes;
 #ifndef NoDampingFactor
       smooth_ptr->omega = omega;
 #endif /* ifdef DampingFactor */
+ 
 
       for (kk = 0; kk < TtATmat->invec_leng; kk++) x_nodal[kk] = 0.;
 
@@ -941,14 +951,18 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       ML_Smoother_SGSSequential(dataptr->sm_nodal, TtATmat->invec_leng, x_nodal,
                                 TtATmat->outvec_leng, rhs_nodal);
 #elif defined(USE_MSR_SGSDAMPING)
-      ML_Smoother_MSR_SGSdamping(dataptr->sm_nodal, TtATmat->invec_leng,
-                      x_nodal, TtATmat->outvec_leng, rhs_nodal);
-#else
-      /*
+#ifdef USE_MLS
       ML_Smoother_Apply(&(dataptr->ml_nodal->pre_smoother[0]),
 			TtATmat->invec_leng, x_nodal,
 			TtATmat->outvec_leng, rhs_nodal,ML_ZERO);
-      */
+      /* we probably should do 2 nodal when we symmetrize. */
+      /* for some reason I can't get mls to switch to 2 either by */
+      /* changing ntimes here or within the ML_Create() call */
+#else
+      ML_Smoother_MSR_SGSdamping(dataptr->sm_nodal, TtATmat->invec_leng,
+                      x_nodal, TtATmat->outvec_leng, rhs_nodal);
+#endif
+#else
       ML_Smoother_SGS(dataptr->sm_nodal, TtATmat->invec_leng, x_nodal,
                       TtATmat->outvec_leng, rhs_nodal);
 #endif
@@ -972,6 +986,41 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    
       for (kk=0; kk < Nrows; kk++) x[kk] += edge_update[kk];
 
+#ifdef SYM_HIP
+   
+      /********************************************
+      * One SGS smoothing sweep on edge solution. *
+      ********************************************/
+
+      ntimes = smooth_ptr->ntimes;
+      smooth_ptr->ntimes = 1;
+#ifndef NoDampingFactor
+      omega = smooth_ptr->omega;
+      smooth_ptr->omega = dataptr->omega;
+#endif /* ifdef DampingFactor */
+
+#ifdef USEJACOBI
+      ML_Smoother_Jacobi(sm, inlen, x, outlen, rhs);
+#elif defined(USESGSSequential)
+      ML_Smoother_SGSSequential(sm, inlen, x, outlen, rhs);
+#elif defined(USE_MSR_SGSDAMPING)
+#ifdef USE_EDGEMLS
+      ML_Smoother_Apply(&(dataptr->ml_edge->pre_smoother[0]),
+			inlen, x, outlen, rhs, ML_NONZERO);
+#else
+      ML_Smoother_MSR_SGSdamping(sm, inlen, x, outlen, rhs);
+#endif
+#else
+      ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
+#endif
+ 
+      /* Reset ntimes and omega for Hiptmair smoother. */
+
+      smooth_ptr->ntimes = ntimes;
+#ifndef NoDampingFactor
+      smooth_ptr->omega = omega;
+#endif /* ifdef DampingFactor */
+#endif
 #ifdef ML_DEBUG_SMOOTHER
       printf("After updating edge solution\n");
       printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
@@ -2760,14 +2809,12 @@ void ML_Smoother_Destroy_Hiptmair_Data(void *data)
       ML_Smoother_Destroy(&(ml_data->sm_nodal));
 
    if ( ml_data->ml_nodal != NULL ){
-     if (&(ml_data->ml_nodal->Amat[0]) != NULL)
-       ml_data->ml_nodal->Amat[0].getrow->pre_comm = NULL;
+     ML_Operator_halfClone_Clean(&(ml_data->ml_nodal->Amat[0]));
      ML_Destroy(&(ml_data->ml_nodal));
    }
 
    if ( ml_data->ml_edge != NULL ) {
-     if (&(ml_data->ml_edge->Amat[0]) != NULL)
-       ml_data->ml_edge->Amat[0].getrow->pre_comm = NULL;
+     ML_Operator_halfClone_Clean(&(ml_data->ml_edge->Amat[0]));
      ML_Destroy(&(ml_data->ml_edge));
    }
 
@@ -3053,6 +3100,14 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    dataptr->Tmat = Tmat;
    dataptr->output_level = 2.0;
 
+#ifdef USE_EDGEMLS
+   ML_Create(&(dataptr->ml_edge),1);
+   ML_Operator_halfClone_Init(&(dataptr->ml_edge->Amat[0]),
+				   Amat);
+   ML_Gen_Smoother_MLS(dataptr->ml_edge, 0, ML_PRESMOOTHER,1);
+
+#endif
+
    /* Get maximum eigenvalue for damping parameter. */
 
    if ( ((int) omega) == ML_DEFAULT)
@@ -3143,18 +3198,6 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    {
       ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_MSR_MATRIX);
    }
-#ifdef notready
-      tmpmat_data  = (struct ML_CSR_MSRdata *) tmpmat->data;
-      tmpmat_vals  = tmpmat_data->values;
-      tmpmat_cols  = tmpmat_data->columns;
-      tmpmat_rowptr= tmpmat_data->rowptr;
-      for (i = 0; i < tmpmat->outvec_leng; i++) {
-	for (j = tmpmat_rowptr[i]; j < tmpmat_rowptr[i+1]; j++) {
-	  if ((tmpmat_cols[j] == i) && (tmpmat_vals[j] == 0.0)) 
-	    tmpmat_vals[j] = 1.;
-	}
-      }
-#endif
 /*
    kdata = ML_Krylov_Create( tmpmat->comm );
    ML_Krylov_Set_ComputeEigenvalues( kdata );
@@ -3183,20 +3226,11 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    dataptr->sm_nodal->my_level->Amat = tmpmat;
    dataptr->sm_nodal->my_level->comm = tmpmat->comm;
    dataptr->TtATmat = tmpmat;
-#ifdef willbeadded_soon
+#ifdef USE_MLS
    ML_Create(&(dataptr->ml_nodal),1);
-   ML_Init_Amatrix(dataptr->ml_nodal, 0, tmpmat->invec_leng, 
-		   tmpmat->outvec_leng, tmpmat->data);
-it looks like we switched from MSR to CSR ... but fix this ....
-   ML_Operator_Set_ApplyFunc (&(dataptr->ml_nodal->Amat[0]), ML_INTERNAL, CSR_matvec);
-
-   ML_Operator_Set_Getrow(&(dataptr->ml_nodal->Amat[0]), ML_EXTERNAL, 
-			  tmpmat->outvec_leng, CSR_getrows);
-   dataptr->ml_nodal->Amat[0].getrow->pre_comm = tmpmat->getrow->pre_comm;
-   ML_Gen_Smoother_MLS(dataptr->ml_nodal, 0, ML_PRESMOOTHER,1);
-matdata = (struct ML_CSR_MSRdata *) (tmpmat->data);
- printf("data widget %u and rowptr %u\n", matdata, matdata->rowptr);
-
+   ML_Operator_halfClone_Init(&(dataptr->ml_nodal->Amat[0]),
+				   tmpmat);
+   ML_Gen_Smoother_MLS(dataptr->ml_nodal, 0, ML_PRESMOOTHER,2);
 #endif
 
 
