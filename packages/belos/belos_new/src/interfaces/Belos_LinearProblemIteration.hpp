@@ -94,7 +94,7 @@ public:
 		) = 0;
 
 	///
-	/** Get smart pointer to mutable current LHS \f$\bar{X}\f$.
+	/** Get smart pointer to mutable current unscaled unpreconditioned LHS \f$\bar{X}\f$.
 	 *
 	 * Preconditions:<ul>
 	 * <li><tt>this->getCurrNumRhs() > 0</tt>
@@ -106,11 +106,18 @@ public:
 	 * solver that directly updates the unscaled unpreconditioned
 	 * solution \f$\bar{X}\f$ such as a CG, BiCG, BiCGStab or other
 	 * solver where there is no right scaling or right preconditioning.
+	 *
+	 * Note that if right scaling is present then direct access to this
+	 * solution multi-vector probably should not be sought.  When in
+	 * doubt, a concrete <tt>Belos::BasicIteration</tt> subclass should
+	 * not call this function but should instead update the current
+	 * unscaled unpreconditioned solution using
+	 * <tt>this->setCurrLhs()</tt>.
 	 */
 	virtual RefCountPtr<TSFCore::MultiVector<Scalar> > getCurrLhs() = 0;
 
 	///
-	/** Inform that current LHS is up to date or not.
+	/** Inform that current unscaled unpreconditioned LHS \f$\bar{X}\f$ is up to date or not.
 	 *
 	 * @param  isCurrLhsUpdated  [in] If <tt>true</tt> then <tt>this->getCurrLhs()</tt> is current.
 	 *                         If <tt>false</tt> then <tt>this->getCurrLhs()</tt> is not current.
@@ -123,14 +130,19 @@ public:
 	 * <li><tt>this->isCurrLhsUpdated() == isCurrLhsUpdated</tt>
 	 * <li><tt>this->isCurrResidualComputed() == false</tt>
 	 * </ul>
+	 *
+	 * This function should only be called if <tt>this->getCurrLhs()</tt> was
+	 * called to get direct access to the unscaled unpreconditioned
+	 * solution multi-vector for direct update by the iterative solver
+	 * implementation.
 	 */
 	virtual void setCurrLhsUpdated( const bool isCurrLhsUpdated ) = 0;
 
 	///
-	/** Update the current solution given an update MultiVector.
+	/** Update the current unscaled unpreconditoned LHS \f$\bar{X}\f$ given an scaled preconditioned LHS update \f$\breve{Z}\f$.
 	 *
-	 * @param  nativeLhsStep  [in] Multivector \f$\bar{Z}\f$ that defines the
-	 *                        update \f$\bar{X} = \bar{X}_{0,r} + S_R P_R \bar{Z}\f$.
+	 * @param  nativeLhsStep  [in] Multivector \f$\breve{Z}\f$ that defines the
+	 *                        update \f$\bar{X} = \bar{X}_{0,r} + S_R P_R \breve{Z}\f$.
 	 *
 	 * Preconditions:<ul>
 	 * <li><tt>this->getCurrNumRhs() > 0</tt>
@@ -144,7 +156,7 @@ public:
 	virtual void updateCurrLhs( const TSFCore::MultiVector<Scalar> &nativeLhsStep ) = 0;
 
 	///
-	/** Set the current solution given a native LHS MultiVector.
+	/** Set the current unscaled unpreconditioned LHS \f$\bar{X}\f$ given the scaled preconditioned LHS \f$\breve{X}\f$.
 	 *
 	 * @param  nativeLhs  [in] Multivector \f$\breve{X}\f$ that defines the
 	 *                    update \f$\bar{X} = S_R P_R \breve{X}\f$.
@@ -161,7 +173,7 @@ public:
 	virtual void setCurrLhs( const TSFCore::MultiVector<Scalar> &nativeLhs ) = 0;
 
 	///
-	/** Get smart pointer to mutable current residual \f$\bar{R}\f$.
+	/** Get smart pointer to mutable current unscaled unpreconditioned residual \f$\bar{R}\f$.
 	 *
 	 * Preconditions:<ul>
 	 * <li><tt>this->getCurrNumRhs() > 0</tt>
@@ -170,14 +182,20 @@ public:
 	 * This function allows an interative solver to directly update the
 	 * current residual if it is convenient to do so.  For example, a
 	 * standard CG algorithm that uses just one preconditioner and no
-	 * scaling will directly update the unscaled, unpreconditioned
+	 * scaling will directly update the unscaled unpreconditioned
 	 * residual \f$\bar{R}\f$ and therefore save on storage and
 	 * computational cost.
+	 *
+	 * Note that if left scaling is present then direct access to this
+	 * residual probably should not be sought.  When in doubt, a
+	 * concrete <tt>Belos::BasicIteration</tt> subclass should not call
+	 * this function and instead just let <tt>*this</tt> compute it when
+	 * requested by the status test.
 	 */
 	virtual RefCountPtr<TSFCore::MultiVector<Scalar> > getCurrResidual() = 0;
 
 	///
-	/** Inform that current Residual is up to date or not.
+	/** Inform that current unscaled unpreconditioned residual \f$\bar{R}\f$ is up to date or not.
 	 *
 	 * @param  isCurrResidualComputed  [in] If <tt>true</tt> then <tt>this->getCurrResidual()</tt> is current.
 	 *                                If <tt>false</tt> then <tt>this->getCurrResidual()</tt> is not current.
@@ -189,13 +207,17 @@ public:
 	 * Postconditions:<ul>
 	 * <li><tt>this->isCurrResidualComputed() == isCurrResidualComputed</tt>
 	 * </ul>
+	 *
+	 * This function should only be called if <tt>this->getCurrResidual()</tt>
+	 * was called to get direct access to the unscaled unpreconditioned
+	 * residual multi-vector for direct update by the iterative solver
+	 * implementation.
 	 */
 	virtual void setCurrResidualComputed( const bool isCurrResidualComputed ) = 0;
 
 	///
-	/** Compute the preconditioned residual \f$P_L S_L \bar{R}\f$
-	 * consistent with the conbined operator returned from
-	 * <tt>this->getCombinedOperator()>/tt>.
+	/** \brief Compute the scaled preconditioned residual \f$\breve{R}\f$ consistent
+	 * with the combined operator returned from this->getCombinedOperator().
 	 *
 	 * @param  currLhs  [in] Pointer to current LHS to use.  If <tt>currLhs==NULL</tt> then
 	 *                  <tt>this->getCurrLhs()</tt> will be used in its place.
