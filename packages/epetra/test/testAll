@@ -6,11 +6,11 @@ echo "Date: " `eval date` >>& $file
 echo `uname -a` >>& $file
 foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix ImportExport Map MultiVector Object VbrMatrix Vector)
 	cd $f
-	make clobber; make
+	make $1 $2 $3 $4 clobber; make $1 $2 $3 $4
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
 		./$g -v >>& ../$file
 	end
-	make clobber
+	make $1 $2 $3 $4 clobber
 	cd ..
 end
