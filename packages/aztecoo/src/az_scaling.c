@@ -294,11 +294,28 @@ double one = 1.0;
 
     if (((action == AZ_SCALE_RHS) || (action == AZ_INVSCALE_RHS) || 
          (options[AZ_pre_calc] >= AZ_reuse)) && (itemp == AZ_NEW_ADDRESS)) {
-      (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
+
+     if (itemp == AZ_NEW_ADDRESS) {
+        AZ_manage_memory(0, AZ_CLEAR, data_org[AZ_name], label, (int*)0);
+
+        /* If we're about to exit due to getting itemp==AZ_NEW_ADDRESS, let's try
+           one other thing. See if the required memory can be found using
+           type==scaling->mat_name. If not, then go ahead and crash. ABW
+        */
+        if (scaling != 0) {
+          sc_vec = (double *) AZ_manage_memory((N + data_org[AZ_N_external]) *
+                                               sizeof(double), AZ_ALLOC,
+                                               scaling->mat_name, label, &itemp);
+        }
+      }
+
+      if (itemp == AZ_NEW_ADDRESS) {
+        (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
                      "with\ndata_org[AZ_name] = %d. Check\n"
                      "options[AZ_pre_calc]\n", yo,
                      data_org[AZ_name]);
-      exit(-1);
+        exit(-1);
+      }
     }
 
     if ( (options[AZ_pre_calc] <= AZ_recalc) && (action == AZ_SCALE_MAT_RHS_SOL)) {
@@ -940,11 +957,28 @@ void AZ_row_sum_scaling(int action, AZ_MATRIX *Amat, double b[],
 
     if (((action == AZ_SCALE_RHS) || (action == AZ_INVSCALE_RHS) || 
          (options[AZ_pre_calc] >= AZ_reuse)) && (k == AZ_NEW_ADDRESS)) {
-    (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
-                   "with\ndata_org[AZ_name] = %d. Check\n"
-                   "options[AZ_pre_calc]\n", yo,
-                   data_org[AZ_name]);
-    exit(-1);
+
+      if (k == AZ_NEW_ADDRESS) {
+        AZ_manage_memory(0, AZ_CLEAR, data_org[AZ_name], label, (int*)0);
+
+        /* If we're about to exit due to getting k==AZ_NEW_ADDRESS, let's try
+           one other thing. See if the required memory can be found using
+           type==scaling->mat_name. If not, then go ahead and crash. ABW
+        */
+        if (scaling != 0) {
+          sc_vec = (double *) AZ_manage_memory((N + data_org[AZ_N_external]) *
+                                               sizeof(double), AZ_ALLOC,
+                                               scaling->mat_name, label, &k);
+        }
+      }
+
+    if (k == AZ_NEW_ADDRESS) {
+      (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
+                     "with\ndata_org[AZ_name] = %d. Check\n"
+                     "options[AZ_pre_calc]\n", yo,
+                     data_org[AZ_name]);
+      exit(-1);
+    }
   }
 
   if ( (options[AZ_pre_calc] <= AZ_recalc) && (action == AZ_SCALE_MAT_RHS_SOL)) {
@@ -1178,11 +1212,28 @@ void AZ_sym_diagonal_scaling(int action, AZ_MATRIX *Amat,
   scaling->action = AZ_left_and_right_scaling;
   if (((action == AZ_SCALE_RHS) || (action == AZ_INVSCALE_RHS) || 
        (options[AZ_pre_calc] >= AZ_reuse)) && (i == AZ_NEW_ADDRESS)) {
-    (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
+
+    if (i == AZ_NEW_ADDRESS) {
+      AZ_manage_memory(0, AZ_CLEAR, data_org[AZ_name], label, (int*)0);
+
+      /* If we're about to exit due to getting i==AZ_NEW_ADDRESS, let's try
+         one other thing. See if the required memory can be found using
+         type==scaling->mat_name. If not, then go ahead and crash. ABW
+      */
+      if (scaling != 0) {
+        sc_vec = (double *) AZ_manage_memory((N + data_org[AZ_N_external]) *
+                                             sizeof(double), AZ_ALLOC,
+                                             scaling->mat_name, label, &i);
+      }
+    }
+
+    if (i == AZ_NEW_ADDRESS) {
+      (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
                    "with\ndata_org[AZ_name] = %d. Check\n"
                    "options[AZ_pre_calc]\n\n", yo,
                    data_org[AZ_name]);
-    exit(-1);
+      exit(-1);
+    }
   }
 
 
@@ -1309,7 +1360,6 @@ void AZ_sym_diagonal_scaling(int action, AZ_MATRIX *Amat,
        for (irow = 0; irow < N; irow++) x[irow] /= sc_vec[irow];
   }
 
-
 } /* sym_diagonal_scaling */
 
 /******************************************************************************/
@@ -1400,11 +1450,28 @@ void AZ_sym_row_sum_scaling(int action, AZ_MATRIX *Amat,
   scaling->action = AZ_left_and_right_scaling;
 
   if ((options[AZ_pre_calc] >= AZ_reuse) && (i == AZ_NEW_ADDRESS)) {
-    (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
-                   "with\ndata_org[AZ_name] = %d. Check\n"
-                   "options[AZ_pre_calc]\n", yo,
-                   data_org[AZ_name]);
-    exit(-1);
+
+    if (i == AZ_NEW_ADDRESS) {
+        AZ_manage_memory(0, AZ_CLEAR, data_org[AZ_name], label, (int*)0);
+
+      /* If we're about to exit due to getting i==AZ_NEW_ADDRESS, let's try
+         one other thing. See if the required memory can be found using
+         type==scaling->mat_name. If not, then go ahead and crash. ABW
+      */
+      if (scaling != 0) {
+        sc_vec = (double *) AZ_manage_memory((N + data_org[AZ_N_external]) *
+                                             sizeof(double), AZ_ALLOC,
+                                             scaling->mat_name, label, &i);
+      }
+    }
+
+    if (i == AZ_NEW_ADDRESS) {
+      (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
+                     "with\ndata_org[AZ_name] = %d. Check\n"
+                     "options[AZ_pre_calc]\n", yo,
+                     data_org[AZ_name]);
+      exit(-1);
+    }
   }
   if ( (options[AZ_pre_calc] <= AZ_recalc) && (action == AZ_SCALE_MAT_RHS_SOL)) {
     if (data_org[AZ_matrix_type] == AZ_MSR_MATRIX) {
@@ -1633,10 +1700,27 @@ void AZ_equil_scaling(int action, AZ_MATRIX *Amat,
   scaling->action = AZ_left_and_right_scaling;
 
   if ((options[AZ_pre_calc] >= AZ_reuse) && (i == AZ_NEW_ADDRESS)) {
-    (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
-                   "with\ndata_org[AZ_name] = %d. Check\n"
-                   "options[AZ_pre_calc]\n", yo, data_org[AZ_name]);
-    exit(-1);
+
+    if (i == AZ_NEW_ADDRESS) {
+      AZ_manage_memory(0, AZ_CLEAR, data_org[AZ_name], label, (int*)0);
+
+      /* If we're about to exit due to getting i==AZ_NEW_ADDRESS, let's try
+         one other thing. See if the required memory can be found using
+         type==scaling->mat_name. If not, then go ahead and crash. ABW
+      */
+      if (scaling != 0) {
+        sc_vec = (double *) AZ_manage_memory((N + data_org[AZ_N_external]) *
+                                             sizeof(double), AZ_ALLOC,
+                                             scaling->mat_name, label, &i);
+      }
+    }
+
+    if (i == AZ_NEW_ADDRESS) {
+      (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
+                     "with\ndata_org[AZ_name] = %d. Check\n"
+                     "options[AZ_pre_calc]\n", yo, data_org[AZ_name]);
+      exit(-1);
+    }
   }
   if ( (options[AZ_pre_calc] <= AZ_recalc) && (action == AZ_SCALE_MAT_RHS_SOL)) {
 

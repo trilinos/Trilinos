@@ -54,6 +54,8 @@ static char rcsid[] = "$Id$";
 #include <nx.h>
 #include "az_aztec.h"
 
+extern int az_iterate_id;
+
 /*
  * Intel specific version of local communication routines.
  */
@@ -337,7 +339,7 @@ void gather_and_send_mesgs(double x[], int data_org[], char *message_recv_add[],
   /* Define arrays for message passing */
 
   ptrd = (double *) AZ_manage_memory(data_org[AZ_total_send]*sizeof(double),
-                                     AZ_ALLOC, data_org[AZ_name], "ptrd", &n);
+                                     AZ_ALLOC, AZ_SYS+az_iterate_id, "ptrd", &n);
   ptr_send_list = ptrd;
   ptr_recv_list = &x[External_Index];
 

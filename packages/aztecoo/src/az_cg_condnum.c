@@ -51,6 +51,8 @@
 #include "az_blas_wrappers.h"
 #include "az_lapack_wrappers.h"
 
+extern int az_iterate_id;
+
 static void compute_condnum_tridiag_sym( int N, double *diag, double *offdiag,
 					 char prefix[], int options[],
 					 int proc_config[],
@@ -184,7 +186,7 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
 
   sprintf(label,"z%s",suffix);
   p  = (double *) AZ_manage_memory(4*NN*sizeof(double),AZ_ALLOC,
-                                   data_org[AZ_name], label, &j);
+                                   AZ_SYS+az_iterate_id, label, &j);
   r  = &(p[1*NN]);
   z  = &(p[2*NN]);
   ap = &(p[3*NN]);

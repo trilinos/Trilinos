@@ -50,6 +50,8 @@
 #include "az_aztec.h"
 #include "az_blas_wrappers.h"
 
+extern int az_iterate_id;
+
 void AZ_pqmrs(double b[], double x[], double weight[], int options[], 
 	double params[], int proc_config[], double status[], AZ_MATRIX *Amat, 
 	AZ_PRECOND *precond, struct AZ_CONVERGE_STRUCT *convergence_info)
@@ -170,7 +172,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
 
   sprintf(label,"ubar%s",suffix);
   ubar   = (double *) AZ_manage_memory(8*NN*sizeof(double),
-				      AZ_ALLOC,data_org[AZ_name],label,&j);
+				      AZ_ALLOC,AZ_SYS+az_iterate_id,label,&j);
   v      = &(ubar[1*NN]);
   Aubar  = &(ubar[2*NN]);
   d      = &(ubar[3*NN]);
@@ -234,7 +236,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
   if (r_avail || (options[AZ_conv]==AZTECOO_conv_test)) {
     sprintf(label,"Ad%s",suffix);
     Ad = (double *) AZ_manage_memory(NN*sizeof(double),AZ_ALLOC,
-				     data_org[AZ_name], label, &j);
+				     AZ_SYS+az_iterate_id, label, &j);
     for (i = 0; i < N; i++) Ad[i] = 0.0;
   }
 

@@ -55,6 +55,8 @@
 #define FALSE 0
 #endif
 
+extern int az_iterate_id;
+
 int AZ_sys_msg_type = AZ_MSG_TYPE;
 
 /******************************************************************************/
@@ -153,7 +155,7 @@ void AZ_exchange_bdry(double x[], int data_org[], int proc_config[])
   /* Set up send messages: Gather send unknowns from "x" vector */
 
   ptrd = (double *) AZ_manage_memory(data_org[AZ_total_send]*sizeof(double),
-                                     AZ_ALLOC, data_org[AZ_name], "comm buff", &n);
+                                     AZ_ALLOC, AZ_SYS+az_iterate_id, "comm buff", &n);
   ptr_send_list = ptrd;
 
   ptr_int = list_send_unknowns;
@@ -404,7 +406,7 @@ void AZ_gather_mesg_info(double x[] ,int data_org[], char *message_recv_add[],
   /* Set up send messages:  Gather send unknowns from "x" vector */
 
   ptrd = (double *) AZ_manage_memory(data_org[AZ_total_send]*sizeof(double),
-                                     AZ_ALLOC, data_org[AZ_name], "ptrd", &n);
+                                     AZ_ALLOC, AZ_SYS+az_iterate_id, "ptrd", &n);
   ptr_send_list = ptrd;
 
   ptr_int = &data_org[AZ_send_list];

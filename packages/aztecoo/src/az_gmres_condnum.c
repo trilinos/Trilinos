@@ -51,6 +51,8 @@
 #include "az_blas_wrappers.h"
 #include "az_lapack_wrappers.h"
 
+extern int az_iterate_id;
+
 /* define AZ_CONDNUM_ESTIMATE to get an estimation of the condition
    number of the preconditioned operator based on the analysis of 
    the Hessember matrix. Note that, in the case of restart, the
@@ -202,7 +204,7 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
   sprintf(label,"general%s",suffix);
   temp   = AZ_manage_memory((3*kspace_p2 + 5*kspace_p1 + N_total +
                              (kspace+1)*kspace_p1)
-                            *sizeof(double),AZ_ALLOC,data_org[AZ_name],label, &i);
+                            *sizeof(double),AZ_ALLOC,AZ_SYS+az_iterate_id,label, &i);
 
   dots   = &(temp[  N_total]);
   tmp    = &(dots[  kspace_p2]);
@@ -216,7 +218,7 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
 
   sprintf(label,"ptrs%s",suffix);
   v     = (double **) AZ_manage_memory(2*kspace_p2*sizeof(double *),AZ_ALLOC,
-                                       data_org[AZ_name], label, &i);
+                                       AZ_SYS+az_iterate_id, label, &i);
   hh   = &(v[kspace_p2]);
   hh2 = (double **) malloc(kspace_p1*sizeof(double *));
 
@@ -226,7 +228,7 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
 
   sprintf(label,"vblock%s",suffix);
   vblock = AZ_manage_memory((kspace+1)*aligned_N_total*sizeof(double),AZ_ALLOC,
-                            data_org[AZ_name],label, &i);
+                            AZ_SYS+az_iterate_id,label, &i);
 
   for (k = 0; k < kspace+1; k++) {
     hh[k] = &(hhblock[k*kspace_p1]);
@@ -267,7 +269,7 @@ void AZ_pgmres_condnum (double b[], double x[],double weight[], int options[],
 
   if (r_avail) {
     sprintf(label,"res%s",suffix);
-    res = AZ_manage_memory(N_total*sizeof(double),AZ_ALLOC,data_org[AZ_name],label,&i);
+    res = AZ_manage_memory(N_total*sizeof(double),AZ_ALLOC,AZ_SYS+az_iterate_id,label,&i);
   }
   else res = (double *) NULL;
 

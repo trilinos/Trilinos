@@ -59,7 +59,7 @@
 #define AZ_oldpre_calc        3
 #define AZ_SAVE_SIZE          5
 
-static int az_iterate_id = 1;
+int az_iterate_id = 1;
 
 void AZ_iterate(double x[], double b[], int options[], double params[],
                 double status[], int proc_config[], AZ_MATRIX *Amat,
@@ -173,6 +173,8 @@ NOTE: User's can still invoke AZ_solve() in the old Aztec way. AZ_solve
   ++az_iterate_id;
   Amat->data_org[AZ_name] += az_iterate_id;
   precond->Pmat->data_org[AZ_name] += az_iterate_id;
+
+  scale2->mat_name = Amat->data_org[AZ_name];
 
   AZ_iterate_setup(options, params, proc_config, Amat, precond);
   AZ_sync(proc_config);

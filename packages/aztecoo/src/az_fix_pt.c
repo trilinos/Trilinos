@@ -50,6 +50,8 @@
 #include "az_aztec.h"
 #include "az_blas_wrappers.h"
 
+extern int az_iterate_id;
+
 void AZ_fix_pt(double b[], double x[], double weight[], int options[], 
 	double params[], int proc_config[],double status[], AZ_MATRIX *Amat, 
 	AZ_PRECOND *precond, struct AZ_CONVERGE_STRUCT *convergence_info)
@@ -148,7 +150,7 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
 
   sprintf(label,"z%s",suffix);
   res  = (double *) AZ_manage_memory(NN*sizeof(double),AZ_ALLOC, 
-			           data_org[AZ_name], label, &j);
+			           AZ_SYS+az_iterate_id, label, &j);
   if (options[AZ_init_guess] != AZ_ZERO)
      AZ_compute_residual(b, x, res, proc_config, Amat);
   else DCOPY_F77(&N, b, &one, res, &one);

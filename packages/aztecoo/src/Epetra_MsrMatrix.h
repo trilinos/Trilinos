@@ -247,6 +247,9 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
     //! Returns the Epetra_Map object associated with the range of this operator (same as domain).
     const Epetra_Map & OperatorRangeMap() const  {return(*DomainMap_);};
 
+    //! Implement the Epetra_SrcDistObjec::Map() function.
+    const Epetra_BlockMap& Map() const {return(RowMatrixRowMap());}
+
     //! Returns the Row Map object needed for implementing Epetra_RowMatrix.
     const Epetra_Map & RowMatrixRowMap() const {return(OperatorRangeMap());};
 

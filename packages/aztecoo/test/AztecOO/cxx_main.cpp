@@ -38,6 +38,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
+#include "Epetra_MsrMatrix.h"
 #include "AztecOO_StatusTestMaxIters.h"
 #include "AztecOO_StatusTestResNorm.h"
 #include "AztecOO_StatusTestCombo.h"
@@ -67,7 +68,9 @@ int create_and_transform_simple_diag_MSR(int N, int* proc_config,
                                          int*& external, int*& update_index,
                                          int*& external_index);
 
-int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm, bool verbose);
+int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
+                                         int* options,
+                                         bool verbose);
 
 int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose);
 
@@ -153,17 +156,59 @@ int main(int argc, char *argv[])
     return(err);
   }
 
-  err = test_AZ_iterate_AZ_pre_calc_AZ_reuse(comm, verbose);
+  int* options = new int[AZ_OPTIONS_SIZE];
+  options[AZ_solver] = AZ_cg;
+  options[AZ_subdomain_solve] = AZ_icc;
+  options[AZ_precond] = AZ_dom_decomp;
+
+  err = test_AZ_iterate_AZ_pre_calc_AZ_reuse(comm, options, verbose);
   if (err != 0) {
     cout << "test_AZ_iterate_AZ_pre_calc_AZ_reuse err, test FAILED."<<endl;
     return(err);
   }
 
-//  err = test_AZ_iterate_then_AZ_scale_f(comm, verbose);
-//  if (err != 0) {
-//    cout << "test_AZ_iterate_then_AZ_scale_f err, test FAILED."<<endl;
-//    return(err);
-//  }
+  options[AZ_solver] = AZ_cgs;
+
+  err = test_AZ_iterate_AZ_pre_calc_AZ_reuse(comm, options, verbose);
+  if (err != 0) {
+    cout << "test_AZ_iterate_AZ_pre_calc_AZ_reuse err, test FAILED."<<endl;
+    return(err);
+  }
+
+  options[AZ_solver] = AZ_gmres;
+  options[AZ_subdomain_solve] = AZ_ilut;
+
+  err = test_AZ_iterate_AZ_pre_calc_AZ_reuse(comm, options, verbose);
+  if (err != 0) {
+    cout << "test_AZ_iterate_AZ_pre_calc_AZ_reuse err, test FAILED."<<endl;
+    return(err);
+  }
+
+  options[AZ_solver] = AZ_tfqmr;
+  options[AZ_subdomain_solve] = AZ_ilu;
+
+  err = test_AZ_iterate_AZ_pre_calc_AZ_reuse(comm, options, verbose);
+  if (err != 0) {
+    cout << "test_AZ_iterate_AZ_pre_calc_AZ_reuse err, test FAILED."<<endl;
+    return(err);
+  }
+
+  options[AZ_solver] = AZ_bicgstab;
+  options[AZ_subdomain_solve] = AZ_rilu;
+
+  err = test_AZ_iterate_AZ_pre_calc_AZ_reuse(comm, options, verbose);
+  if (err != 0) {
+    cout << "test_AZ_iterate_AZ_pre_calc_AZ_reuse err, test FAILED."<<endl;
+    return(err);
+  }
+
+  err = test_AZ_iterate_then_AZ_scale_f(comm, verbose);
+  if (err != 0) {
+    cout << "test_AZ_iterate_then_AZ_scale_f err, test FAILED."<<endl;
+    return(err);
+  }
+
+  delete [] options;
 
   cout << "********* Test passed **********" << endl;
 
@@ -353,7 +398,7 @@ int create_and_transform_simple_diag_MSR(int N, int* proc_config,
   int* bindx = new int[nnz+1];
 
   for(i=0; i<nnz+1; ++i) {
-    val[i] = 1.0;
+    val[i] = 2.0;
     bindx[i] = N+1;
   }
 
@@ -370,10 +415,13 @@ int create_and_transform_simple_diag_MSR(int N, int* proc_config,
   return(0);
 }
 
-int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm, bool verbose)
+int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
+                                         int* options,
+                                         bool verbose)
 {
   if (verbose) {
-    cout << "testing successive solves with 'old' Aztec (AZ_keep_info and AZ_reuse)"<<endl;
+    cout << "testing AZ_keep_info/AZ_reuse with 'old' Aztec (solver "
+         <<options[AZ_solver] <<", precond "<<options[AZ_subdomain_solve]<<")"<<endl;
   }
   int numProcs = Comm.NumProc();
   int localProc = Comm.MyPID();
@@ -393,19 +441,21 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm, bool verbose)
                                                  external, update_index,
                                                  external_index);
 
-  int* options = new int[AZ_OPTIONS_SIZE];
+  Epetra_MsrMatrix emsr(proc_config, Amat);
+
+  int* az_options = new int[AZ_OPTIONS_SIZE];
   double* params = new double[AZ_PARAMS_SIZE];
   double* status = new double[AZ_STATUS_SIZE];
-  AZ_defaults(options, params);
-  options[AZ_solver] = AZ_gmres;
-  options[AZ_precond] = AZ_dom_decomp;
-  options[AZ_subdomain_solve] = AZ_ilut;
-  options[AZ_scaling] = AZ_none;
+  AZ_defaults(az_options, params);
+  az_options[AZ_solver] = options[AZ_solver];
+  az_options[AZ_precond] = options[AZ_precond];
+  az_options[AZ_subdomain_solve] = options[AZ_subdomain_solve];
+  az_options[AZ_scaling] = AZ_none;
   if (verbose) {
-    options[AZ_output] = 1;
+    az_options[AZ_output] = AZ_warnings;
   }
   else {
-    options[AZ_output] = 0;
+    az_options[AZ_output] = 0;
   }
 
   double* x = new double[N];
@@ -419,19 +469,19 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm, bool verbose)
   AZ_PRECOND* Pmat = AZ_precond_create(Amat, AZ_precondition, NULL);
   AZ_SCALING* Scal = AZ_scaling_create();
 
-  options[AZ_pre_calc] = AZ_calc;
-  options[AZ_keep_info] = 1;
+  az_options[AZ_pre_calc] = AZ_calc;
+  az_options[AZ_keep_info] = 1;
 
-  AZ_iterate(x, b, options, params, status, proc_config,
+  AZ_iterate(x, b, az_options, params, status, proc_config,
              Amat, Pmat, Scal);
 
   for(i=0; i<N; ++i) {
     x[i] = 0.0;
   }
 
-  options[AZ_pre_calc] = AZ_reuse;
+  az_options[AZ_pre_calc] = AZ_reuse;
 
-  AZ_iterate(x, b, options, params, status, proc_config,
+  AZ_iterate(x, b, az_options, params, status, proc_config,
              Amat, Pmat, Scal);
 
   AZ_scaling_destroy(&Scal);
@@ -441,7 +491,7 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm, bool verbose)
   delete [] x;
   delete [] b;
 
-  delete [] options;
+  delete [] az_options;
   delete [] params;
   delete [] status;
   delete [] proc_config;
@@ -509,13 +559,16 @@ int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose)
   AZ_precond_destroy(&Pmat);
   destroy_MSR(Amat);
 
+  delete [] x;
+  delete [] b;
+
   delete [] options;
   delete [] params;
   delete [] status;
   delete [] proc_config;
-  free(&update_index);
-  free(&external);
-  free(&external_index);
+  free(update_index);
+  free(external);
+  free(external_index);
 
   return(0);
 }

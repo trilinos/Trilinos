@@ -50,6 +50,8 @@
 #include "az_aztec.h"
 #include "az_blas_wrappers.h"
 
+extern int az_iterate_id;
+
 void AZ_pgmresr(double b[], double x[],double weight[], int options[],
 	double params[], int proc_config[], double status[], AZ_MATRIX *Amat, 
 	AZ_PRECOND *precond, struct AZ_CONVERGE_STRUCT *convergence_info)
@@ -168,11 +170,11 @@ char *T2 = "N";
   /* +1: make sure everybody allocates something */
 
   sprintf(label,"dots%s",suffix);
-  dots  = AZ_manage_memory(2*NN*sizeof(double), AZ_ALLOC, data_org[AZ_name],label,&i);
+  dots  = AZ_manage_memory(2*NN*sizeof(double), AZ_ALLOC,AZ_SYS+az_iterate_id,label,&i);
   tmp   = &(dots[NN]);
   sprintf(label,"CC%s",suffix);
   CC    = (double **) AZ_manage_memory(2*NN*sizeof(double *),
-                                       AZ_ALLOC,data_org[AZ_name],label,&i);
+                                       AZ_ALLOC,AZ_SYS+az_iterate_id,label,&i);
   UU    = &(CC[NN]);
 
   NN    = N + data_org[AZ_N_external];
@@ -182,13 +184,13 @@ char *T2 = "N";
 
   sprintf(label,"UUblock%s",suffix);
   UUblock = AZ_manage_memory(2*NN*kspace*sizeof(double),
-                             AZ_ALLOC, data_org[AZ_name],label, &i);
+                             AZ_ALLOC, AZ_SYS+az_iterate_id,label, &i);
   for (k = 0; k < kspace; k++) UU[k] = &(UUblock[k*NN]);
   CCblock = &(UUblock[kspace*NN]);
   for (k = 0; k < kspace; k++) CC[k] = &(CCblock[k*NN]);
 
   sprintf(label,"res%s",suffix);
-  res = AZ_manage_memory(NN*sizeof(double),AZ_ALLOC,data_org[AZ_name],label,&i);
+  res = AZ_manage_memory(NN*sizeof(double),AZ_ALLOC,AZ_SYS+az_iterate_id,label,&i);
 
   AZ_compute_residual(b, x, res, proc_config, Amat);
 

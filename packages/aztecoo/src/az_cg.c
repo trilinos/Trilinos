@@ -50,6 +50,8 @@
 #include "az_aztec.h"
 #include "az_blas_wrappers.h"
 
+extern int az_iterate_id;
+
 void AZ_pcg_f(double b[], double x[], double weight[], int options[],
               double params[], int proc_config[],double status[],
               AZ_MATRIX *Amat, AZ_PRECOND *precond,
@@ -167,7 +169,7 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
 
   sprintf(label,"z%s",suffix);
   p  = (double *) AZ_manage_memory(4*NN*sizeof(double),AZ_ALLOC,
-                                   data_org[AZ_name], label, &j);
+                                   AZ_SYS+az_iterate_id, label, &j);
   r  = &(p[1*NN]);
   z  = &(p[2*NN]);
   ap = &(p[3*NN]);
