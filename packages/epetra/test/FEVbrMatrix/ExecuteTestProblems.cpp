@@ -598,43 +598,44 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
 
   EPETRA_CHK_ERR( A->GlobalAssemble() );
 
-  Epetra_FEVbrMatrix Acopy(*A);
+  Epetra_FEVbrMatrix* Acopy = new Epetra_FEVbrMatrix(*A);
 
   if (verbose) {
     cout << "A:"<<*A << endl;
-    cout << "Acopy:"<<Acopy<<endl;
+    cout << "Acopy:"<<*Acopy<<endl;
   }
 
   Epetra_Vector x(A->RowMap()), y(A->RowMap());
 
   x.PutScalar(1.0); y.PutScalar(0.0);
 
-  Epetra_Vector x2(Acopy.RowMap()), y2(Acopy.RowMap());
+  Epetra_Vector x2(Acopy->RowMap()), y2(Acopy->RowMap());
 
   x2.PutScalar(1.0); y2.PutScalar(0.0);
 
   A->Multiply(false, x, y);
 
-  Acopy.Multiply(false, x2, y2);
+  Acopy->Multiply(false, x2, y2);
 
   double ynorm2, y2norm2;
 
   y.Norm2(&ynorm2);
   y2.Norm2(&y2norm2);
   if (ynorm2 != y2norm2) {
-    cerr << "norm2(A*ones) != norm2(Acopy*ones)"<<endl;
+    cerr << "norm2(A*ones) != norm2(*Acopy*ones)"<<endl;
     return(-99);
   }
 
-  Epetra_FEVbrMatrix Acopy2(Copy, A->RowMap(), A->ColMap(), 1);
+  Epetra_FEVbrMatrix* Acopy2 =
+    new Epetra_FEVbrMatrix(Copy, A->RowMap(), A->ColMap(), 1);
 
-  Acopy2 = Acopy;
+  *Acopy2 = *Acopy;
 
-  Epetra_Vector x3(Acopy.RowMap()), y3(Acopy.RowMap());
+  Epetra_Vector x3(Acopy->RowMap()), y3(Acopy->RowMap());
 
   x3.PutScalar(1.0); y3.PutScalar(0.0);
 
-  Acopy2.Multiply(false, x3, y3);
+  Acopy2->Multiply(false, x3, y3);
 
   double y3norm2;
   y3.Norm2(&y3norm2);
@@ -694,6 +695,8 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
   delete [] values;
 
   delete A;
+  delete Acopy2;
+  delete Acopy;
   delete graph;
 
   return(0);
