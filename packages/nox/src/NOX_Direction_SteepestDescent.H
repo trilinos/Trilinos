@@ -38,6 +38,9 @@
 // Forward declaration
 namespace NOX {
 class Utils;
+  namespace Parameter {
+    class MeritFunction;
+  }
 }
 
 namespace NOX {
@@ -124,6 +127,9 @@ private:
   //! Type of scaling of the Cauchy direction
   ScalingType scaleType;
 
+  //! Pointer to a user defined merit function
+  NOX::Parameter::MeritFunction* meritFuncPtr;
+  
 };
 } // namespace Direction
 } // namespace NOX

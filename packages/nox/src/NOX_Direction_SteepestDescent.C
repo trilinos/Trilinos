@@ -35,6 +35,7 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Parameter_List.H"
+#include "NOX_Parameter_MeritFunction.H"
 #include "NOX_Utils.H"
 
 NOX::Direction::SteepestDescent::SteepestDescent(const NOX::Utils& u, 
@@ -69,6 +70,14 @@ bool NOX::Direction::SteepestDescent::reset(NOX::Parameter::List& params)
     throw "NOX Error";
   }
 
+  // Check for a user defined merit function
+  meritFuncPtr = 0;
+  if (p.isParameterArbitrary("User Defined Merit Function")) {
+    meritFuncPtr = const_cast<NOX::Parameter::MeritFunction*>
+      (dynamic_cast<const NOX::Parameter::MeritFunction*>
+       (&(p.getArbitraryParameter("User Defined Merit Function"))));
+  }
+
  return true;
 }
 
@@ -78,68 +87,73 @@ bool NOX::Direction::SteepestDescent::compute(Abstract::Vector& dir,
 {
   NOX::Abstract::Group::ReturnType status;
 
-
   // Compute F at current solution
   status = soln.computeF();
   if (status != NOX::Abstract::Group::Ok) 
     throwError("compute", "Unable to compute F");
 
-  // Compute Jacobian at current solution.
+  // Compute Jacobian at current solution
   status = soln.computeJacobian();
   if (status != NOX::Abstract::Group::Ok) 
     throwError("compute", "Unable to compute Jacobian");
 
   // Compute the gradient at the current solution
-  status = soln.computeGradient();
-  if (status != NOX::Abstract::Group::Ok) 
-    throwError("compute", "Unable to compute gradient");
+  if (meritFuncPtr != 0) {
+    meritFuncPtr->computeSteepestDescentDir(soln, dir);
+  }
+  else {
 
-  // Get the gradient direction.
-  dir = soln.getGradient();
-
-  // Scale
-  switch (scaleType) {
-
-  case NOX::Direction::SteepestDescent::TwoNorm:
-
-    dir.scale(-1.0/dir.norm());
-    break;
-
-  case NOX::Direction::SteepestDescent::FunctionTwoNorm:
-
-    dir.scale(-1.0/soln.getNormF());
-    break;
-
-  case NOX::Direction::SteepestDescent::QuadMin:
-  {
-    // If necessary, allocate space for tmpVecPtr
-    if (tmpVecPtr == NULL) 
-      tmpVecPtr = soln.getX().clone(NOX::ShapeCopy);
-
-    // Create a local reference
-    Abstract::Vector& tmpVec(*tmpVecPtr);
-    
-    // Compute denominator
-    status = soln.applyJacobian(dir, tmpVec);
+    status = soln.computeGradient();
     if (status != NOX::Abstract::Group::Ok) 
-      throwError("compute", "Unable to compute apply Jacobian");
+      throwError("compute", "Unable to compute gradient");
+    
+    // Get the gradient direction.
+    dir = soln.getGradient();
 
     // Scale
-    dir.scale( -1.0 * dir.dot(dir) / tmpVec.dot(tmpVec) );
+    switch (scaleType) {
 
-    break;
-  }
+    case NOX::Direction::SteepestDescent::TwoNorm:
 
-  case NOX::Direction::SteepestDescent::None:
+      dir.scale(-1.0/dir.norm());
+      break;
 
-    dir.scale( -1.0 );
-    break;
+    case NOX::Direction::SteepestDescent::FunctionTwoNorm:
+      
+      dir.scale(-1.0/soln.getNormF());
+      break;
 
-  default:
+    case NOX::Direction::SteepestDescent::QuadMin:
+      {
+	// If necessary, allocate space for tmpVecPtr
+	if (tmpVecPtr == NULL) 
+	  tmpVecPtr = soln.getX().clone(NOX::ShapeCopy);
+	
+	// Create a local reference
+	Abstract::Vector& tmpVec(*tmpVecPtr);
     
-    throwError("compute", "Invalid scaleType");
+	// Compute denominator
+	status = soln.applyJacobian(dir, tmpVec);
+	if (status != NOX::Abstract::Group::Ok) 
+	  throwError("compute", "Unable to compute apply Jacobian");
+	
+	// Scale
+	dir.scale( -1.0 * dir.dot(dir) / tmpVec.dot(tmpVec) );
+	
+	break;
+      }
 
-  }
+    case NOX::Direction::SteepestDescent::None:
+
+      dir.scale( -1.0 );
+      break;
+
+    default:
+    
+      throwError("compute", "Invalid scaleType");
+
+    }
+  } // end of else case for the "if (meritFuncPtr != 0)"
 
   return true;
 }
