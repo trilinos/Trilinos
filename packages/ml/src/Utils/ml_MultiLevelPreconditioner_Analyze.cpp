@@ -116,7 +116,6 @@ AnalyzeHierarchy(const bool AnalyzeMatrices,
     }
   }
 
-  exit(0);
   if (Comm().MyPID() == 0) {
     cout << endl;
     cout << "Solving Ae = 0, with a random initial guess" << endl;
