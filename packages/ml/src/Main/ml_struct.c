@@ -1964,13 +1964,9 @@ int ML_Gen_Smoother_BlockDiagScaledCheby(ML *ml, int nl, int pre_or_post,
 					 int nBlocks, int *blockIndices)
 {
   double temp;
-  ML_DVector *temp_ptr;
-  ML_Sm_BGS_Data *data;
   struct MLSthing *widget;
   ML_Operator *Amat;
   ML_Operator *blockMat;
-  double *diagonal;
-  int i;
 
 
   if (deg < 0) {
@@ -1993,9 +1989,6 @@ int ML_Gen_Smoother_BlockDiagScaledCheby(ML *ml, int nl, int pre_or_post,
   ML_Gen_Smoother_MLS(ml, nl, pre_or_post, eig_ratio, deg);
   Amat->lambda_max = temp;
 
-  ML_Smoother_Create_BGS_Data(&data);
-  ML_Smoother_Gen_VBGSFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices);
-
   if (pre_or_post != ML_POSTSMOOTHER) {
     widget = (struct MLSthing *) ml->pre_smoother[nl].smoother->data;
   }
@@ -2003,25 +1996,47 @@ int ML_Gen_Smoother_BlockDiagScaledCheby(ML *ml, int nl, int pre_or_post,
     widget = (struct MLSthing *) ml->post_smoother[nl].smoother->data;
   }
 
-  widget->block_scaling   = data;
+  ML_Gen_BlockScaledMatrix_with_Eigenvalues(Amat, nBlocks, blockIndices,
+					    &blockMat, widget);
+  return 0;
+
+}
+
+int ML_Gen_BlockScaledMatrix_with_Eigenvalues(ML_Operator *Amat,
+					      int nBlocks, 
+					      int *blockIndices,
+					      ML_Operator **blockMat,
+					      struct MLSthing *widget) {
+  ML_Sm_BGS_Data *data;
+
   widget->unscaled_matrix = Amat;
+
+  ML_Smoother_Create_BGS_Data(&data);
+  if (blockIndices != NULL) 
+    ML_Smoother_Gen_VBGSFacts(&data, Amat, nBlocks, blockIndices);
+  else
+    ML_Smoother_Gen_BGSFacts(&data, Amat, Amat->num_PDEs);
+
+  widget->block_scaling   = data;
 
   /* create a block matrix wrapper that will correspond to Dinv A */
 
-  blockMat = ML_Operator_Create(Amat->comm);
-  ML_Operator_Set_ApplyFuncData(blockMat, Amat->invec_leng, Amat->outvec_leng, 
+  *blockMat = ML_Operator_Create(Amat->comm);
+  ML_Operator_Set_ApplyFuncData(*blockMat,Amat->invec_leng, Amat->outvec_leng, 
 				ML_EMPTY,
 				widget,Amat->outvec_leng, NULL,0);
-  ML_Operator_Set_ApplyFunc (blockMat, ML_INTERNAL, 
+  ML_Operator_Set_ApplyFunc (*blockMat, ML_INTERNAL, 
 			     (int (*)(void*,int,double*,int,double*))
 			     ML_BlockScaledApply);
 
-  widget->scaled_matrix = blockMat;
-  ML_Gimmie_Eigenvalues(blockMat, ML_NO_SCALE, ML_NONSYMM, ML_NO_SYMMETRIZE);
+  widget->scaled_matrix = *blockMat;
+
+  ML_Gimmie_Eigenvalues(*blockMat, ML_NO_SCALE, ML_NONSYMM, ML_NO_SYMMETRIZE);
 
   return 0;
 
 }
+
 /* Set Amat->lambda_max and Amat->lambda_min by estimating the */
 /* eigenvalues of A or D^-1 A                                  */
 int ML_Gimmie_Eigenvalues(ML_Operator *Amat, int scale_by_diag,
@@ -3160,7 +3175,6 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
    FILE    *fp;
 #endif
 
-
    Amat     = curr->Amat;
    Rmat     = curr->Rmat;
    pre      = curr->pre_smoother;
@@ -3400,7 +3414,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       /* process the next level and transfer back to this level    */
       /* --------------------------------------------------------- */
       ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
-      if (ml->ML_scheme == ML_MGW)
+      if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
 	ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
 
       /* ------------------------------------------------------------ */

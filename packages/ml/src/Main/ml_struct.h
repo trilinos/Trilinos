@@ -45,6 +45,7 @@ typedef struct ML_Struct ML;
 #include "ml_mat_formats.h"
 #include "ml_amg.h"
 #include "ml_aggregate.h"
+#include "ml_mls.h"
 #include <string.h>
 
 #ifdef WKC
@@ -242,6 +243,11 @@ extern int ML_Gen_Smoother_BlockDiagScaledCheby(ML *ml, int nl,
 					int pre_or_post,
 					double eig_ratio, int deg,
 					int nBlocks, int *blockIndices);
+extern int ML_Gen_BlockScaledMatrix_with_Eigenvalues(ML_Operator *Amat,
+					      int nBlocks, 
+					      int *blockIndices,
+					      ML_Operator **blockMat,
+					      struct MLSthing *widget);
 
 extern int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
                      int ntimes, double omega);
