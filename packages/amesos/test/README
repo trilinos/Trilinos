@@ -1,5 +1,12 @@
 Organization of Amesos tests:
-(M. Sala, SNL 9214, Sep-04)
+(M. Sala, SNL 9214, Nov-04)
+
+- Test_Basic
+  ==========
+
+  Basic tests, based on MatrixMarket matrices.
+  I have tested LAPACK, KLU, UMFPACK, DSCPACK.
+
 
 - Test_Epetra_RowMatrix
   =====================
@@ -11,6 +18,7 @@ Organization of Amesos tests:
   Tests for default options only, with matrix and its transpose.
 
   Amesos_Descpack is NOT tested.
+
 
 - Test_Epetra_CrsMatrix
   =====================
@@ -28,6 +36,7 @@ Organization of Amesos tests:
 
   Amesos_Descpack is NOT tested.
 
+
 - Test_Detailed
   =============
 
@@ -41,6 +50,7 @@ Organization of Amesos tests:
   changed in several ways (values and underlying maps).
 
   Amesos_Descpack is NOT tested.
+
 
 - Test_MultipleSolves
   ===================
