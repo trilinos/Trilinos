@@ -41,7 +41,7 @@
 using namespace NOX;
 using namespace NOX::Linesearch;
 
-MoreThuente::MoreThuente(const Parameter::List& params) :
+MoreThuente::MoreThuente(Parameter::List& params) :
   tmpvecptr(NULL)
 {
   reset(params);
@@ -52,7 +52,7 @@ MoreThuente::~MoreThuente()
   delete tmpvecptr;
 }
 
-bool MoreThuente::reset(const Parameter::List& params)
+bool MoreThuente::reset(Parameter::List& params)
 { 
   ftol = params.getParameter("Sufficient Decrease", 1.0e-4);
   gtol = params.getParameter("Curvature Condition", 0.9999);

@@ -41,7 +41,7 @@
 using namespace NOX;
 using namespace NOX::Linesearch;
 
-Polynomial::Polynomial(const Parameter::List& params) 
+Polynomial::Polynomial(Parameter::List& params) 
 {
   reset(params);
 }
@@ -51,7 +51,7 @@ Polynomial::~Polynomial()
 
 }
 
-bool Polynomial::reset(const Parameter::List& params)
+bool Polynomial::reset(Parameter::List& params)
 { 
   minstep = params.getParameter("Minimum Step", 1.0e-12);
   defaultstep = params.getParameter("Default Step", 1.0);

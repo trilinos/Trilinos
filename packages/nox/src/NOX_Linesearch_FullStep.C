@@ -42,7 +42,7 @@
 using namespace NOX;
 using namespace NOX::Linesearch;
 
-FullStep::FullStep(const Parameter::List& params) 
+FullStep::FullStep(Parameter::List& params) 
 {
   reset(params);
 }
@@ -52,7 +52,7 @@ FullStep::~FullStep()
 
 }
 
-bool FullStep::reset(const Parameter::List& params)
+bool FullStep::reset(Parameter::List& params)
 {
   fullstep = params.getParameter("Full Step", 1.0);
   return true;

@@ -63,7 +63,7 @@ public:
   virtual ~Generic() {};
 
   //! Reset parameters
-  virtual bool reset(const Parameter::List& params) = 0;
+  virtual bool reset(Parameter::List& params) = 0;
   
   //! Perform a line search from oldgrp along dirction dir. 
   //! Update newgrp = oldgrp + step * dir.

@@ -52,13 +52,13 @@ class FullStep : public Generic {
 public:
 
   //! Constructor
-  FullStep(const Parameter::List& params);
+  FullStep(Parameter::List& params);
 
   //! Destructor
   ~FullStep();
   
   // derived
-  bool reset(const Parameter::List& params);
+  bool reset(Parameter::List& params);
 
   // derived
   bool operator()(Abstract::Group& newgrp, double& step, 

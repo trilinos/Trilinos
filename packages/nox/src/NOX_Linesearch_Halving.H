@@ -67,13 +67,13 @@ class Halving : public Generic {
 public:
 
   //! Constructor
-  Halving(const Parameter::List& params);
+  Halving(Parameter::List& params);
 
   //! Destructor
   ~Halving();
   
   // derived
-  bool reset(const Parameter::List& params);
+  bool reset(Parameter::List& params);
 
   // derived
   bool operator()(Abstract::Group& newgrp, double& step, 

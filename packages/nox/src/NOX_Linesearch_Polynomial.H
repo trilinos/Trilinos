@@ -67,13 +67,13 @@ class Polynomial : public Generic {
 public:
 
   //! Constructor
-  Polynomial(const Parameter::List& params);
+  Polynomial(Parameter::List& params);
 
   //! Destructor
   ~Polynomial();
   
   // derived
-  bool reset(const Parameter::List& params);
+  bool reset(Parameter::List& params);
 
   // derived
   bool operator()(Abstract::Group& newgrp, double& step, 

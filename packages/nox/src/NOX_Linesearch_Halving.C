@@ -41,7 +41,7 @@
 using namespace NOX;
 using namespace NOX::Linesearch;
 
-Halving::Halving(const Parameter::List& params) 
+Halving::Halving(Parameter::List& params) 
 {
   reset(params);
 }
@@ -51,7 +51,7 @@ Halving::~Halving()
 
 }
 
-bool Halving::reset(const Parameter::List& params)
+bool Halving::reset(Parameter::List& params)
 { 
   minstep = params.getParameter("Minimum Step", 1.0e-12);
   defaultstep = params.getParameter("Default Step", 1.0);

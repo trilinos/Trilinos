@@ -113,13 +113,13 @@ class MoreThuente : public Generic {
 public:
 
   //! Constructor
-  MoreThuente(const Parameter::List& params);
+  MoreThuente(Parameter::List& params);
 
   //! Destructor
   ~MoreThuente();
   
   // derived
-  bool reset(const Parameter::List& params);
+  bool reset(Parameter::List& params);
 
   // derived
   bool operator()(Abstract::Group& newgrp, double& step, 
