@@ -31,6 +31,6 @@
 
 if BUILD_LOCA_EPETRA_EXAMPLES
 
-SUBDIRS = 1Dfem Tcubed Tcubed_epetra_new
+SUBDIRS = 1Dfem Tcubed Tcubed_epetra_new Brusselator_xyzt 
 
 endif
