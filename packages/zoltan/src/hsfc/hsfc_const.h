@@ -25,6 +25,7 @@ extern "C" {
 
 int  Zoltan_HSFC_Set_Param (char *name, char *val) ;
 void Zoltan_HSFC_Free_Structure (ZZ*);
+int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

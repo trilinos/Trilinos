@@ -587,6 +587,58 @@ void Zoltan_HSFC_Free_Structure (ZZ *zz)
    ZOLTAN_FREE (&zz->LB.Data_Structure);
    }
 
+/* Copy an hsfc data structure */
+
+int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
+{
+  char *yo = "Zoltan_HSFC_Copy_Structure";
+  int i, len;
+  HSFC_Data *from, *to;
+
+  Zoltan_HSFC_Free_Structure(toZZ);
+  from = (HSFC_Data *)fromZZ->LB.Data_Structure;
+
+  if (!from){
+    return ZOLTAN_OK;
+  }
+
+  to = (HSFC_Data *)ZOLTAN_MALLOC(sizeof(HSFC_Data));
+  memset(to, 0, sizeof(HSFC_Data));
+
+  if (!to){
+    ZOLTAN_PRINT_ERROR(fromZZ->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
+
+  toZZ->LB.Data_Structure = (void *)to;
+
+  for (i=0; i<3; i++){
+    to->bbox_hi[i] = from->bbox_hi[i];
+    to->bbox_lo[i] = from->bbox_lo[i];
+    to->bbox_extent[i] = from->bbox_extent[i];
+  }
+
+  to->ndimension = from->ndimension;
+  to->fhsfc = from->fhsfc;
+
+  if (from->final_partition){
+    len = sizeof(Partition) * fromZZ->LB.Num_Global_Parts;
+
+    to->final_partition = (Partition*) ZOLTAN_MALLOC(len);
+
+    if (!to->final_partition){
+      Zoltan_HSFC_Free_Structure(toZZ);
+      ZOLTAN_PRINT_ERROR(fromZZ->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+    }
+
+    memcpy(to->final_partition, from->final_partition, len);
+  }
+
+  return ZOLTAN_OK;
+}
+
+
 
 
 /* function to read  "KEEP_CUTS" parameter: */
