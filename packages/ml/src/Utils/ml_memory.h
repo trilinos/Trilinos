@@ -21,8 +21,17 @@
 
 #define MAX_MALLOC_LOG 1000
 
+#ifndef ML_MEM_CHECK
 #define ML_allocate(i)    malloc((i + sizeof(double) ))
 #define ML_free(i)        { free(i); i = NULL; }
+#else
+extern void  ML_print_it();
+extern char *ML_allocate(unsigned int isize);
+#define ML_free(i)        { ML_myfree(i); i = NULL; }
+extern void  ML_myfree(void *vptr);
+extern char *ML_realloc(void *vptr, unsigned int new_size);
+extern void ML_spit_it_out();
+#endif
 #define ML_allocate_check(ptr_to_check) \
                          {if ((ptr_to_check) == NULL) {\
                             printf("In file %s (line %d): memory allocation failed for pointer #%lu\n", __FILE__, __LINE__, (long unsigned int) ptr_to_check);\
