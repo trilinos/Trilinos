@@ -551,6 +551,11 @@ fi
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+# #np# - Yet another opportunity to remove code if you aren't
+# using Fortran
+# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX 
+AC_F77_WRAPPERS
+
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
 if test "X$ac_cv_use_teuchos_tests" != "Xno" || test "X$ac_cv_use_teuchos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
@@ -563,11 +568,6 @@ dnl Replace `main' with a function in -lm:
 #  #np# These lines can be removed if the math lib is not needed.
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_CHECK_FUNCS([pow sqrt])
-
-# #np# - Yet another opportunity to remove code if you aren't
-# using Fortran
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX 
-AC_F77_WRAPPERS
 
 ### Include Blas/Lapack example here. ###  For now, developers should see
 ### The configure.ac file for epetra (Trilinos/packages/epetra) if blas and
