@@ -45,7 +45,6 @@ endif
 
 include Makefiles/Makefile.$(ZOLTAN_ARCH)
 ZOLTAN_OBJ_DIR = Obj_$(ZOLTAN_ARCH)
-ZOLTAN_CSRC =
 
 ##############################################################################
 # Process input flags
@@ -61,37 +60,39 @@ endif
 # Process third-party library information.
 ##############################################################################
 
+THIRD_PARTY_CSRC =
+THIRD_PARTY_VPATH =
+THIRD_PARTY_LIBS =
+THIRD_PARTY_LIBPATH = 
+THIRD_PARTY_INCPATH =
+
 # If PARMETIS_LIBPATH is defined, compile the ParMETIS interface and 
 # link ParMETIS into zdrive.
 ifdef PARMETIS_LIBPATH
   GDEFINES     += -DLB_PARMETIS
-  PARMETIS_LIBS = -lparmetis -lmetis
+  THIRD_PARTY_LIBS += -lparmetis -lmetis
+  THIRD_PARTY_LIBPATH += $(PARMETIS_LIBPATH)
 endif
 
 # If JOSTLE_LIBPATH is defined, compile the JOSTLE interface and 
 # link JOSTLE into zdrive.
 ifdef JOSTLE_LIBPATH
   GDEFINES     += -DLB_JOSTLE
-  JOSTLE_LIBS   = -ljostle
-  ifndef JOSTLE_INCPATH
-    JOSTLE_INCPATH = .
-  endif
-  ifndef JOSTLE_SRCPATH
-    JOSTLE_SRCPATH = .
-  endif
-  ZOLTAN_CSRC += $(JOSTLE_SRCPATH)/jmpilib.c
+  THIRD_PARTY_LIBS += -ljostle
+  THIRD_PARTY_INCPATH += $(JOSTLE_INCPATH)
+  THIRD_PARTY_LIBPATH += $(JOSTLE_LIBPATH)
+  THIRD_PARTY_CSRC += jmpilib.c
+  THIRD_PARTY_VPATH += $(JOSTLE_SRCPATH)
 endif
 
 # If NEMESIS_LIBPATH is defined, link Nemesis, Exodus and Netcdf into zdrive.
 ifdef NEMESIS_LIBPATH
-  NEM_LIBS	= -lnemIc -lexoIIc -lnetcdf
+  THIRD_PARTY_LIBS += -lnemIc -lexoIIc -lnetcdf
+  THIRD_PARTY_LIBPATH += $(NEMESIS_LIBPATH)
+  THIRD_PARTY_INCPATH += $(NEMESIS_INCPATH)
 else
-  GDEFINES     += -DLB_NO_NEMESIS
+  GDEFINES += -DLB_NO_NEMESIS
 endif
-
-THIRD_PARTY_LIBS    = $(PARMETIS_LIBS) $(JOSTLE_LIBS) $(NEM_LIBS)
-THIRD_PARTY_LIBPATH = $(PARMETIS_LIBPATH) $(JOSTLE_LIBPATH) $(NEMESIS_LIBPATH)
-THIRD_PARTY_INCPATH = $(NEMESIS_INCPATH)  $(JOSTLE_INCPATH)
 
 
 ############################################################################
@@ -111,7 +112,7 @@ SUB_VPATH	= ../all ../lb ../par ../rcb ../comm ../oct \
                   ../ha ../reftree
 SUBINCPATH	= -I../all -I../lb -I../par -I../rcb -I../comm -I../oct \
 		  -I../params -I../driver -I../ch -I../parmetis -I../timer \
-                  -I../ha -I../reftree
+                  -I../ha -I../reftree 
 
 
 ALL_CSRC	= all_allo.c free_structure.c
@@ -207,10 +208,11 @@ VPATH		= $(SUBDIRS)
 #  Architecture-independent definitions
 ##############################################################################
 
-ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INC_PATH)
+ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INC_PATH) $(THIRD_PARTY_INCPATH)
 ZOLTAN_CSRC    += $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
 		  $(COMM_CSRC) $(OCT_CSRC) $(PARAMS_CSRC) $(PARMETIS_CSRC) \
-		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC)
+		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) $(THIRD_PARTY_CSRC)
+ZOLTAN_VPATH	= $(SUB_VPATH) $(THIRD_PARTY_VPATH)
 ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o) 
 
 ZDRIVE_CSRC 	= $(DR_CSRC) $(CH_CSRC)
@@ -219,8 +221,7 @@ ZDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
 	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) \
 		  $(MPI_LIBPATH) $(MPI_LIB) -lm
 
-CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS) \
-		  $(THIRD_PARTY_INCPATH)
+CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS) 
 F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 
 ###########################################################################
@@ -265,7 +266,7 @@ zoltan:
 	$(MAKE) $(LIB_NAME) 			\
 	"LIB_NAME=$(LIB_NAME)"			\
 	"CC=$(CCOMP)"				\
-	"VPATH=$(SUB_VPATH)"			\
+	"VPATH=$(ZOLTAN_VPATH)"			\
 	"OBJ_FILES=$(ZOLTAN_OBJ)" 		\
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
 	"INC_FORTRAN=$(INC_FORTRAN)" 		\
@@ -289,7 +290,7 @@ zdrive:
 	"TARGET=$(TARGET)"			\
 	"LIB_NAME=$(LIB_NAME)"			\
 	"CC=$(CCOMP)" 				\
-	"VPATH=$(SUB_VPATH)"			\
+	"VPATH=$(ZOLTAN_VPATH)"			\
 	"OBJ_FILES=$(ZOLTAN_OBJ)"		\
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
 	"INC_FORTRAN=$(INC_FORTRAN)" 		\
