@@ -310,10 +310,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    ML_Operator **prev_P_tentatives;
    struct      ML_AGG_Matrix_Context widget;
    ML_Krylov   *kdata;
-
-#ifdef SYMMETRIZE
    ML_Operator *t2, *t3;
-#endif
+
 #ifdef GEOMETRIC_2D
    int nx, nxcoarse, ii, coarse_me, fine_me, *rowptr, *bindx, k,free_ptr,start;
    int i,j, end;
@@ -550,6 +548,13 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
      ML_Operator_Transpose_byrow(Amat,t2);
      t3 = ML_Operator_Create(Amat->comm);
      ML_Operator_Add(Amat,t2,t3);
+#else
+     if (ml->symmetrize_matrix == ML_TRUE) {
+       t2 = ML_Operator_Create(Amat->comm);
+       ML_Operator_Transpose_byrow(Amat,t2);
+       t3 = ML_Operator_Create(Amat->comm);
+       ML_Operator_Add(Amat,t2,t3);
+     }
 #endif
       if ( ag->spectral_radius_scheme == 1 ) /* compute it using CG */
       {
@@ -559,7 +564,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 #ifdef SYMMETRIZE
          ML_Krylov_Set_Amatrix(kdata, t3);
 #else
-         ML_Krylov_Set_Amatrix(kdata, Amat);
+	 if (ml->symmetrize_matrix ==ML_TRUE) ML_Krylov_Set_Amatrix(kdata, t3);
+         else ML_Krylov_Set_Amatrix(kdata, Amat);
 #endif
          ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
          max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
@@ -596,7 +602,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 #ifdef SYMMETRIZE
      widget.Amat   = t3;
 #else
-     widget.Amat   = &(ml->Amat[level]);
+     if (ml->symmetrize_matrix == ML_TRUE) widget.Amat   = t3;
+     else widget.Amat   = &(ml->Amat[level]);
 #endif
      widget.aggr_info = ag->aggr_info[level];
      AGGsmoother = ML_Operator_Create(ml->comm);
@@ -639,6 +646,11 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 #ifdef SYMMETRIZE
      if (t3 != NULL) ML_Operator_Destroy(t3);
      if (t2 != NULL) ML_Operator_Destroy(t2);
+#else
+     if (ml->symmetrize_matrix == ML_TRUE) {
+       if (t3 != NULL) ML_Operator_Destroy(t3);
+       if (t2 != NULL) ML_Operator_Destroy(t2);
+     }
 #endif
      if (ag->keep_P_tentative == ML_NO)  ML_Operator_Destroy(Pmatrix);
      else {
