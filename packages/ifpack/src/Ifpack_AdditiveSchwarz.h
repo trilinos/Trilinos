@@ -335,6 +335,7 @@ int Ifpack_AdditiveSchwarz<T>::
 Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   IFPACK_CHK_ERR(Matrix_->Apply(X,Y));
+  return(0);
 }
 
 //==============================================================================

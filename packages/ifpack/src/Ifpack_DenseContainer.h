@@ -67,6 +67,7 @@ public:
     // factorize the matrix using LAPACK
     IFPACK_CHK_ERR(Solver_.Factor());
     IsComputed_ = true;
+    return(0);
   }
 
 
@@ -91,6 +92,7 @@ public:
   {
     IsShaped_ = false;
     IsComputed_ = false;
+    return(0);
   }    
 
 private:
@@ -160,7 +162,8 @@ int Ifpack_DenseContainer::Reshape(const int NumRows, const int NumVectors)
     Destroy();
 
   Shape(NumRows,NumVectors);
-  
+
+  return(0);
 }
 
 //==============================================================================
