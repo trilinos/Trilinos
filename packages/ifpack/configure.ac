@@ -426,6 +426,8 @@ AC_CONFIG_FILES([
 		test/AdditiveSchwarz/Makefile.include
 		test/CrsAdditiveSchwarz/Makefile
 		test/CrsAdditiveSchwarz/Makefile.include
+		test/Container/Makefile
+		test/Container/Makefile.include
 		test/scripts/Makefile
           test/scripts/daily/Makefile
           test/scripts/daily/mpi/Makefile
