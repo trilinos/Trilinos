@@ -17,6 +17,7 @@ rm ../src/implementations/*.hpp
 rmdir ../src/implementations
 rm ../doc/DoxyfileWeb
 rm ../doc/index.doc
+rm ../doc/images/Belos-Interfaces-Harder.gif
 
 rm ../test/Makefile*
 rm ../test/BlockCG/Makefile*

@@ -85,7 +85,7 @@ public:
 	NonblockGmres(
 		const int                                                           maxKrylovDim  = 1000
 		,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType        breakdown_tol = 0.0
-		,const out_ptr_t                                                    &out          = Teuchos::null
+		,const Teuchos::RefCountPtr<std::ostream>                           &out          = Teuchos::null
 		,const bool                                                         dump_all      = false
 		);
 
@@ -177,7 +177,7 @@ template<class Scalar>
 NonblockGmres<Scalar>::NonblockGmres(
 	const int                                                           maxKrylovDim
 	,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType        breakdown_tol
-	,const out_ptr_t                                                    &out
+	,const Teuchos::RefCountPtr<std::ostream>                           &out
 	,const bool                                                         dump_all
 	)
 	:maxKrylovDim_(maxKrylovDim)

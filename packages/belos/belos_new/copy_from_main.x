@@ -15,6 +15,7 @@ cp ../src/interfaces/*.hpp ./src/interfaces/.
 cp ../src/implementations/*.hpp ./src/implementations/.
 cp ../doc/DoxyfileWeb ./doc/.
 cp ../doc/index.doc ./doc/.
+cp ../doc/images/Belos-Interfaces-Harder.gif ./doc/images/.
 
 cp ../test/Makefile* ./test/.
 cp ../test/BlockCG/Makefile* ./test/BlockCG/.

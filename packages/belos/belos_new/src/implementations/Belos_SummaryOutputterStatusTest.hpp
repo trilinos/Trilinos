@@ -113,11 +113,11 @@ public:
 	 * </ul>
 	 */
 	SummaryOutputterStatusTest(
-		const out_ptr_t       &out
-		,const std::string    &leadingOutputStr       = std::string("")
-		,const bool           printMaxNativeRhsNorm   = true
-		,const bool           printEachNativeRhsNorm  = false
-		,const bool           printEachOrigRhsNorm    = false
+		const Teuchos::RefCountPtr<std::ostream> &out
+		,const std::string                       &leadingOutputStr       = std::string("")
+		,const bool                              printMaxNativeRhsNorm   = true
+		,const bool                              printEachNativeRhsNorm  = false
+		,const bool                              printEachOrigRhsNorm    = false
 		);
 
 	//@}
@@ -185,11 +185,11 @@ SummaryOutputterStatusTest<Scalar>::SummaryOutputterStatusTest()
 
 template<class Scalar>
 SummaryOutputterStatusTest<Scalar>::SummaryOutputterStatusTest(
-	const out_ptr_t       &out
-	,const std::string    &leadingOutputStr
-	,const bool           printMaxNativeRhsNorm
-	,const bool           printEachNativeRhsNorm
-	,const bool           printEachOrigRhsNorm
+	const Teuchos::RefCountPtr<std::ostream>  &out
+	,const std::string                        &leadingOutputStr
+	,const bool                               printMaxNativeRhsNorm
+	,const bool                               printEachNativeRhsNorm
+	,const bool                               printEachOrigRhsNorm
 	)
 	:AttachStatusTestBase<Scalar>(ATTACHED_TEST_INSTEAD)
 	,out_(out)
