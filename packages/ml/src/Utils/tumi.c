@@ -367,10 +367,10 @@ char str [80];
   sprintf(str,"greg_b%d",*proc);
   fp1 = fopen(str,"w");
   for (i = 0 ; i < Nlocal_edges; i++) {
-    //    if (Dir_bdry[i] == 1.) {
+    /*    if (Dir_bdry[i] == 1.) { */
       fprintf(fp,"%d %20.13e   %20.13e\n",i,complex_x[2*i],complex_x[2*i +1 ]);
       fprintf(fp1,"%d %20.13e   %20.13e\n",i,complex_rhs[2*i],complex_rhs[2*i +1 ]);
-      //    }
+      /*    } */
   }
   fflush(fp);  fclose(fp);
   fflush(fp1);  fclose(fp1);
@@ -753,10 +753,10 @@ char str [80];
 #endif
 
   /* solve */
-  //time_it_(&(ml_edges->comm->ML_mypid));
+  /*time_it_(&(ml_edges->comm->ML_mypid));*/
   AZ_iterate(ERF_x, ERF_y, options, params, status,proc_config, 
   	         ERF_AZmat, Prec, NULL);
-  //time_it_(&(ml_edges->comm->ML_mypid));
+  /*time_it_(&(ml_edges->comm->ML_mypid));*/
 
   /* calculate a final residual */
   ML_Operator_Apply(global_dude, global_dude->invec_leng, ERF_x,
