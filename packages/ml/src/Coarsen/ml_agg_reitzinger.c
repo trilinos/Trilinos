@@ -8,7 +8,7 @@
 double checkit(ML_Operator *A, double *v);
 #endif
 
-#define ML_NUMITS 50
+#define ML_NUMITS 0
 
 int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes, 
                     int fine_level, int incr_or_decrease,
@@ -292,14 +292,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                       Kn_coarse->outvec_leng, Kn_coarse->comm,
                       ML_OVERWRITE,NULL);
    
-#ifdef DEBUG_T_BUILD
-     printf("\n\n%d: Kn_coarse->N_nonzeros = %d ",
-            Kn_coarse->comm->ML_mypid, Kn_coarse->N_nonzeros);
-     printf("Kn_coarse->invec_leng+Nghost = %d\n",
-            Kn_coarse->invec_leng+Nghost);
-     printf("Kn_coarse->invec_leng = %d\n\n",Kn_coarse->invec_leng);
-#endif /* ifdef DEBUG_T_BUILD */
-
 #ifdef ML_NEW_T_PE
      /* let's figure out who corresponds to a Dirichlet point */
 
@@ -1508,18 +1500,20 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      ML_Operator_Profile(Pe, "edge_before_repartition", ML_NUMITS);
      perm = ML_repartition_Acoarse(ml_edges, grid_level+1, grid_level, ag_edge,
                                    ML_TRUE, ML_TRUE);
-     /* permute T */
-     Tnew = ML_Operator_Create(Tcoarse->comm);
-     ML_2matmult(perm[0], Tcoarse, Tnew, ML_CSR_MATRIX); 
-     ML_Operator_Move2HierarchyAndDestroy(&Tnew, Tcoarse);
-     /* permute T trans */
-     Tnew = ML_Operator_Create(Tcoarse_trans->comm);
-     ML_2matmult(Tcoarse_trans, perm[1], Tnew, ML_CSR_MATRIX); 
-     ML_Operator_Move2HierarchyAndDestroy(&Tnew, Tcoarse_trans);
+     if (perm != NULL) {
+       /* permute T */
+       Tnew = ML_Operator_Create(Tcoarse->comm);
+       ML_2matmult(perm[0], Tcoarse, Tnew, ML_CSR_MATRIX); 
+       ML_Operator_Move2HierarchyAndDestroy(&Tnew, Tcoarse);
+       /* permute T trans */
+       Tnew = ML_Operator_Create(Tcoarse_trans->comm);
+       ML_2matmult(Tcoarse_trans, perm[1], Tnew, ML_CSR_MATRIX); 
+       ML_Operator_Move2HierarchyAndDestroy(&Tnew, Tcoarse_trans);
 
-     ML_Operator_Clean(perm[0]);
-     ML_Operator_Clean(perm[1]);
-     ML_free(perm);
+       ML_Operator_Clean(perm[0]);
+       ML_Operator_Clean(perm[1]);
+       ML_free(perm);
+     }
      ML_Aggregate_Destroy(&ag_edge);
 
      ML_memory_check("L%d EdgeRepartition end",grid_level);
