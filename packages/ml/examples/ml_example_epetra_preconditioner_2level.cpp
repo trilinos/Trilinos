@@ -141,9 +141,12 @@ int main(int argc, char *argv[])
 
 #else
 
+#include <stdlib.h>
+#include <stdio.h>
+
 int main(int argc, char *argv[])
 {
-  puts("Please compile with --with-ml_epetra --with-ml_teuchos --with-ml_triutils");
+  puts("Please configure ML with --with-ml_epetra --with-ml_teuchos --with-ml_triutils");
   
   return 0;
 }

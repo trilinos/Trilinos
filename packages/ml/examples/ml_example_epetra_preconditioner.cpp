@@ -2,9 +2,10 @@
 #define HAVE_CONFIG_H
 #endif
 #include "ml_config.h"
-#include "ml_include.h"
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS)
+
+#include "ml_include.h"
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -133,9 +134,12 @@ int main(int argc, char *argv[])
 
 #else
 
+#include <stdlib.h>
+#include <stdio.h>
+
 int main(int argc, char *argv[])
 {
-  puts("Please compile with --with-ml_epetra --with-ml_teuchos --with-ml_triutils");
+  puts("Please configure ML with --with-ml_epetra --with-ml_teuchos --with-ml_triutils");
   
   return 0;
 }
