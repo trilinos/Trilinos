@@ -35,17 +35,11 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
-/* Define if want to build default-packages */
-#undef HAVE_DEFAULT_PACKAGES
-
 /* Define if want to build with amesos enabled */
 #undef HAVE_IFPACK_AMESOS
 
-/* Define if want to build aztecoo */
+/* Define if want to build with aztecoo enabled */
 #undef HAVE_IFPACK_AZTECOO
-
-/* Define if want to build epetra */
-#undef HAVE_IFPACK_EPETRA
 
 /* Define if you want to build Ifpack's ParameterList interface */
 #undef HAVE_IFPACK_METIS

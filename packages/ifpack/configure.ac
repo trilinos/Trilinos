@@ -219,28 +219,16 @@ AC_CXX_STD_SPRINTF
 # - Teuchos is used for the parameters list in several classes.
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_FEATURE_SUB( default, packages, [Build all default packages unless explicitly disabled.  When this option is disabled, only packages explicitly enabled and packages needed to satisfy the dependencies of enabled packages will be built], DEFAULT_PACKAGES, yes)
-
-TAC_ARG_ENABLE_DEFAULT_FEATURE(epetra, [Enable EPETRA support. IFPACK depens on Epetra. Hence, if --disable-default-packages is used, the user need to specify --enable-epetra to compile IFPACK.], IFPACK_EPETRA, yes)
-AM_CONDITIONAL(HAVE_IFPACK_AZTECOO, test "X$ac_cv_use_epetra" = "Xyes")
-if test "X$ac_cv_use_epetra" = "Xno"; then
-  echo "IFPACK depends on EPETRA. If you disable the default packages"
-  echo "(--disable-default-packages), then you must enable epetra,"
-  echo "using --enable-epetra."
-  exit 1
-fi
-#
-
-TAC_ARG_ENABLE_DEFAULT_FEATURE(aztecoo, [Enable AztecOO support. AztecOO, a Trilinos package, is used in some of the examples for solve the linear system.], IFPACK_AZTECOO, yes)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(aztecoo, [Enable AztecOO support. AztecOO, a Trilinos package, is used in some of the examples for solve the linear system.], IFPACK_AZTECOO)
 AM_CONDITIONAL(HAVE_IFPACK_AZTECOO, test "X$ac_cv_use_aztecoo" = "Xyes")
 #
-TAC_ARG_ENABLE_OPTION(triutils, [Enable TRIUTILS support. Triutils, a Trilinos package, is used in some IFPACK examples to construct the linear system.], IFPACK_TRIUTILS, no)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(triutils, [Enable TRIUTILS support. Triutils, a Trilinos package, is used in some IFPACK examples to construct the linear system.], IFPACK_TRIUTILS)
 AM_CONDITIONAL(HAVE_IFPACK_TRIUTILS, test "X$ac_cv_use_triutils" = "Xyes")
 #
-TAC_ARG_ENABLE_OPTION(teuchos, [Enable TEUCHOS support. The parameters list of Teuchos, a Trilinos package, can be used in several IFPACK classes.], IFPACK_TEUCHOS, no)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(teuchos, [Enable TEUCHOS support. The parameters list of Teuchos, a Trilinos package, can be used in several IFPACK classes.], IFPACK_TEUCHOS)
 AM_CONDITIONAL(HAVE_IFPACK_TEUCHOS, test "X$ac_cv_use_teuchos" = "Xyes")
 #
-TAC_ARG_ENABLE_OPTION(amesos, [Enable AMESOS support. Amesos, a Trilinos package, can be adopted as local solver for additive Schwarz preconditioners.  ], IFPACK_AMESOS, no)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, [Enable AMESOS support. Amesos, a Trilinos package, can be adopted as local solver for additive Schwarz preconditioners.  ], IFPACK_AMESOS)
 AM_CONDITIONAL(HAVE_IFPACK_AMESOS, test "X$ac_cv_use_amesos" = "Xyes")
 
 # ------------------------------------------------------------------------

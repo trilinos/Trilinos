@@ -875,30 +875,18 @@ Optional Features:
   --enable-mpi            MPI support
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
-  --enable-default-packages
-                          Build all default packages unless explicitly
-                          disabled. When this option is disabled, only
-                          packages explicitly enabled and packages needed to
-                          satisfy the dependencies of enabled packages will be
-                          built (default is yes)
-  --enable-epetra         Enable EPETRA support. IFPACK depens on Epetra.
-                          Hence, if --disable-default-packages is used, the
-                          user need to specify --enable-epetra to compile
-                          IFPACK. (default is yes unless the
-                          --disable-default-packages option is used
   --enable-aztecoo        Enable AztecOO support. AztecOO, a Trilinos package,
                           is used in some of the examples for solve the linear
-                          system. (default is yes unless the
-                          --disable-default-packages option is used
+                          system.
   --enable-triutils       Enable TRIUTILS support. Triutils, a Trilinos
                           package, is used in some IFPACK examples to
-                          construct the linear system. (default is no)
+                          construct the linear system.
   --enable-teuchos        Enable TEUCHOS support. The parameters list of
                           Teuchos, a Trilinos package, can be used in several
-                          IFPACK classes. (default is no)
+                          IFPACK classes.
   --enable-amesos         Enable AMESOS support. Amesos, a Trilinos package,
                           can be adopted as local solver for additive Schwarz
-                          preconditioners. (default is no)
+                          preconditioners.
   --enable-ifpack-metis   Enable Ifpack support for METIS. METIS can be used
                           to decompose the local graph into subgraphs. Note 1:
                           METIS is a third party library. As such, configure
@@ -3827,7 +3815,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3830:" \
+echo "$as_me:3818:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6585,92 +6573,23 @@ fi
 # ------------------------------------------------------------------------
 
 
-# Check whether --enable-default-packages or --disable-default-packages was given.
-if test "${enable_default_packages+set}" = set; then
-  enableval="$enable_default_packages"
-  ac_cv_use_default_packages=$enableval
-else
-  ac_cv_use_default_packages=yes
-fi;
-
-echo "$as_me:$LINENO: checking whether to use default-packages" >&5
-echo $ECHO_N "checking whether to use default-packages... $ECHO_C" >&6
-
-if test "X$ac_cv_use_default_packages" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_DEFAULT_PACKAGES
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-# Check whether --enable-epetra or --disable-epetra was given.
-if test "${enable_epetra+set}" = set; then
-  enableval="$enable_epetra"
-  ac_cv_use_epetra=$enableval
-else
-  ac_cv_use_epetra=$ac_cv_use_default_packages
-fi;
-
-echo "$as_me:$LINENO: checking whether to use epetra" >&5
-echo $ECHO_N "checking whether to use epetra... $ECHO_C" >&6
-
-if test "X$ac_cv_use_epetra" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_IFPACK_EPETRA
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_epetra" = "Xyes"; then
-  HAVE_IFPACK_AZTECOO_TRUE=
-  HAVE_IFPACK_AZTECOO_FALSE='#'
-else
-  HAVE_IFPACK_AZTECOO_TRUE='#'
-  HAVE_IFPACK_AZTECOO_FALSE=
-fi
-
-if test "X$ac_cv_use_epetra" = "Xno"; then
-  echo "IFPACK depends on EPETRA. If you disable the default packages"
-  echo "(--disable-default-packages), then you must enable epetra,"
-  echo "using --enable-epetra."
-  exit 1
-fi
-#
-
-
 # Check whether --enable-aztecoo or --disable-aztecoo was given.
 if test "${enable_aztecoo+set}" = set; then
   enableval="$enable_aztecoo"
   ac_cv_use_aztecoo=$enableval
 else
-  ac_cv_use_aztecoo=$ac_cv_use_default_packages
+  ac_cv_use_aztecoo=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use aztecoo" >&5
-echo $ECHO_N "checking whether to use aztecoo... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to build optional aztecoo dependent code" >&5
+echo $ECHO_N "checking whether to build optional aztecoo dependent code... $ECHO_C" >&6
 
 if test "X$ac_cv_use_aztecoo" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_IFPACK_AZTECOO
+#define HAVE_IFPACK_AZTECOO 1
 _ACEOF
 
 else
@@ -6698,8 +6617,8 @@ else
   ac_cv_use_triutils=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use triutils" >&5
-echo $ECHO_N "checking whether to use triutils... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to build optional triutils dependent code" >&5
+echo $ECHO_N "checking whether to build optional triutils dependent code... $ECHO_C" >&6
 
 if test "X$ac_cv_use_triutils" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
@@ -6734,8 +6653,8 @@ else
   ac_cv_use_teuchos=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use teuchos" >&5
-echo $ECHO_N "checking whether to use teuchos... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to build optional teuchos dependent code" >&5
+echo $ECHO_N "checking whether to build optional teuchos dependent code... $ECHO_C" >&6
 
 if test "X$ac_cv_use_teuchos" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
@@ -6770,8 +6689,8 @@ else
   ac_cv_use_amesos=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use amesos" >&5
-echo $ECHO_N "checking whether to use amesos... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to build optional amesos dependent code" >&5
+echo $ECHO_N "checking whether to build optional amesos dependent code... $ECHO_C" >&6
 
 if test "X$ac_cv_use_amesos" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
@@ -7053,7 +6972,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7056: \"$ac_link\") >&5
+(eval echo $as_me:6975: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7131,7 +7050,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7134: \"$ac_link\") >&5
+(eval echo $as_me:7053: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9867,7 +9786,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9870: \"$ac_link\") >&5
+(eval echo $as_me:9789: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9945,7 +9864,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9948: \"$ac_link\") >&5
+(eval echo $as_me:9867: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10171,7 +10090,7 @@ fi
 #		example/Makefile
 #		example/ifpack_hb/Makefile
 
-                                                                                                                                                                                                                                                ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile src/Makefile.include test/Makefile test/CrsRiluk/Makefile test/CrsRiluk/Makefile.include test/IlukGraph/Makefile test/IlukGraph/Makefile.include test/SetParameters/Makefile test/SetParameters/Makefile.include test/PointPreconditioner/Makefile test/PointPreconditioner/Makefile.include test/AdditiveSchwarz/Makefile test/AdditiveSchwarz/Makefile.include test/CrsAdditiveSchwarz/Makefile test/CrsAdditiveSchwarz/Makefile.include test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
+                                                                                                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile src/Makefile.include test/Makefile test/CrsRiluk/Makefile test/CrsRiluk/Makefile.include test/IlukGraph/Makefile test/IlukGraph/Makefile.include test/SetParameters/Makefile test/SetParameters/Makefile.include test/PointPreconditioner/Makefile test/PointPreconditioner/Makefile.include test/AdditiveSchwarz/Makefile test/AdditiveSchwarz/Makefile.include test/CrsAdditiveSchwarz/Makefile test/CrsAdditiveSchwarz/Makefile.include test/Container/Makefile test/Container/Makefile.include test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10311,13 +10230,6 @@ if test -z "${USE_ALTERNATE_AR_TRUE}" && test -z "${USE_ALTERNATE_AR_FALSE}"; th
   { { echo "$as_me:$LINENO: error: conditional \"USE_ALTERNATE_AR\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"USE_ALTERNATE_AR\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_IFPACK_AZTECOO_TRUE}" && test -z "${HAVE_IFPACK_AZTECOO_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_IFPACK_AZTECOO\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_IFPACK_AZTECOO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -10824,6 +10736,8 @@ do
   "test/AdditiveSchwarz/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/AdditiveSchwarz/Makefile.include" ;;
   "test/CrsAdditiveSchwarz/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/CrsAdditiveSchwarz/Makefile" ;;
   "test/CrsAdditiveSchwarz/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/CrsAdditiveSchwarz/Makefile.include" ;;
+  "test/Container/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Container/Makefile" ;;
+  "test/Container/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/Container/Makefile.include" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
   "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
   "test/scripts/daily/mpi/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/Makefile" ;;
