@@ -38,9 +38,9 @@
 /*                                                                   */
 /*********************************************************************/
 
-int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj, 
+int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj, 
        idxtype *adjncy, idxtype *vwgt, idxtype *adjwgt, 
-       int vwgt_dim, int ewgt_dim, int check_graph)
+       int vwgt_dim, int ewgt_dim, int check_graph, int debug_level)
 {
   int i, j, ii, jj, k, kk, num_obj, nedges, ierr;
   int flag, cross_edges, mesg_size, sum;
@@ -49,7 +49,7 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   idxtype *ptr1, *ptr2;
   char *sendbuf, *recvbuf;
   struct Comm_Obj *comm_plan;
-  static char *yo = "LB_verify_graph";
+  static char *yo = "LB_Verify_Graph";
 
   ierr = LB_OK;
   if (check_graph == 0) /* perform no error checking at all */
@@ -304,6 +304,12 @@ barrier1:
     return LB_WARN;
   }
   else {
+    if (debug_level && (proc==0)){
+      if (check_graph == 1)
+        printf("ZOLTAN %s: graph is OK locally on each processor\n", yo);
+      else /* check_graph >= 2 */
+        printf("ZOLTAN %s: graph is OK\n", yo);
+    }
     return LB_OK;
   }
 

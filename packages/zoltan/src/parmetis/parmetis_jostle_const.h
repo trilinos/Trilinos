@@ -26,7 +26,7 @@
 #define MAX_OPTIONS             4  /* Total number of options +1 */
 
 /* Do we have the multiconstraint beta version of ParMetis? */
-/* #define BETA_PARMETIS */
+#define BETA_PARMETIS
 
 /* Misc. defs to be used with MPI */
 #define TAG1  32001
@@ -76,10 +76,10 @@ typedef int idxtype;
 /* Zoltan function prototypes */
 extern int LB_Set_ParMetis_Param(char *, char *);
 extern int LB_Set_Jostle_Param(char *, char *);
-extern int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj, 
+extern int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj, 
               idxtype *adjncy, idxtype *vwgt, idxtype *adjwgt, 
-              int vwgt_dim, int ewgt_dim, int check_graph);
-extern int LB_scatter_graph(int have_graph, idxtype **vtxdist, idxtype **xadj, idxtype **adjncy,
+              int vwgt_dim, int ewgt_dim, int check_graph, int debug_level);
+extern int LB_Scatter_Graph(int have_graph, idxtype **vtxdist, idxtype **xadj, idxtype **adjncy,
               idxtype **vwgt, idxtype **adjwgt, float   **xyz, int     ndims,
               LB      *lb, struct Comm_Obj **plan);
 

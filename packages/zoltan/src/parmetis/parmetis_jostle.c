@@ -922,7 +922,7 @@ static int LB_ParMetis_Jostle(
   }
 
   if (scatter){
-    ierr = LB_scatter_graph(get_graph_data, &vtxdist, &xadj, &adjncy, &vwgt, &adjwgt, &xyz, ndims, 
+    ierr = LB_Scatter_Graph(get_graph_data, &vtxdist, &xadj, &adjncy, &vwgt, &adjwgt, &xyz, ndims, 
               lb, &comm_plan);
     if ((ierr == LB_FATAL) || (ierr == LB_MEMERR)){
       FREE_MY_MEMORY;
@@ -952,8 +952,8 @@ static int LB_ParMetis_Jostle(
 
   /* Verify that graph is correct */
   if (get_graph_data){
-     ierr = LB_verify_graph(lb->Communicator, vtxdist, xadj, adjncy, vwgt, 
-               adjwgt, obj_wgt_dim, comm_wgt_dim, check_graph);
+     ierr = LB_Verify_Graph(lb->Communicator, vtxdist, xadj, adjncy, vwgt, 
+               adjwgt, obj_wgt_dim, comm_wgt_dim, check_graph, lb->Debug_Level);
   }
   
   /* Get a time here */

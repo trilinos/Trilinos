@@ -32,7 +32,7 @@
  * the export lists after partitioning. 
  */
 
-int LB_scatter_graph(
+int LB_Scatter_Graph(
   int     have_graph,		/* do I have graph data, or only the geometry? */
   idxtype **vtxdist,
   idxtype **xadj,
@@ -45,7 +45,7 @@ int LB_scatter_graph(
   struct Comm_Obj **plan
 )
 {
-  static char *yo = "LB_scatter_graph";
+  static char *yo = "LB_Scatter_Graph";
   idxtype *old_vtxdist, *old_xadj, *old_adjncy, *old_vwgt, *old_adjwgt;
   float   *old_xyz;
   int *ptr, *proclist, *proclist2;
