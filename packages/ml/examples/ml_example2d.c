@@ -54,11 +54,14 @@ int **global_mapping;
 int global_nrows, global_ncoarse;
 #endif
 
+
 /*****************************************************************************/
 /* Set up and solve a test problem defined in the subroutine                 */
 /* init_matrix_vector_structures().                                          */
 /*****************************************************************************/
 int coarse_iterations = 0, use_cg = 0, num_levels = 2; 
+  int    *update = NULL, *external = NULL;
+  int    *update_index = NULL, *extern_index = NULL;
 
 int main(int argc, char *argv[])
 {
@@ -73,8 +76,6 @@ int main(int argc, char *argv[])
 
   /* data structure for matrix corresponding to the fine grid */
 
-  int    *update = NULL, *external = NULL;
-  int    *update_index = NULL, *extern_index = NULL;
   int    *rpntr = NULL,*cpntr = NULL, *indx = NULL, *bpntr = NULL;
   int    proc_factor;
   double alpha=1.0, beta=0.0;
@@ -204,10 +205,12 @@ int main(int argc, char *argv[])
 	fclose(xfile);
 	
 #endif
+#ifdef SCALE_ME
 	ML_MSR_scalerhs(b, scaling_vect, Amat->data_org[AZ_N_internal] +
                     Amat->data_org[AZ_N_border]);
 	ML_MSR_scalesol(x, scaling_vect, Amat->data_org[AZ_N_internal] +
 			Amat->data_org[AZ_N_border]);
+#endif
 
       if (use_cg == 0) {
          ML_Iterate(ml, x, b); 
@@ -494,7 +497,9 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
    (*Amat_f)->matrix_type  = data_org[AZ_matrix_type];
    data_org[AZ_N_rows]  = data_org[AZ_N_internal] + data_org[AZ_N_border];
    ML_GridAGX_Destroy(&f_mesh); 
+#ifdef SCALE_ME
    ML_MSR_sym_diagonal_scaling(*Amat_f, proc_config, &scaling_vect);
+#endif
 
 
 
@@ -503,6 +508,7 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
       /* initialization and set up scheme */
 
       ML_Create(&ml, N_levels);
+      ML_Set_PrintLevel(3);
       (*ml_ptr) = ml;
 
       /* set up processor information */
@@ -547,7 +553,9 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
 
       ML_Aggregate_Set_NullSpace(*ml_ag, num_PDE_eqns, ndim, null_vect, leng); 
       if (null_vect != NULL) free(null_vect);
+#ifdef SCALE_ME
       ML_Aggregate_Scale_NullSpace(*ml_ag, scaling_vect,leng);
+#endif
 
       coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, 
                                                           ML_DECREASING, *ml_ag);
@@ -603,13 +611,14 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
 	 if (temp1[1] != 0)
 	   eig_ratio = ((double) temp1[0])/ ((double) temp1[1]);
 	 if (eig_ratio < 4.) eig_ratio = 4.;
-	 ML_Gen_Smoother_MLS(ml, level, ML_BOTH, nsmooth, eig_ratio);
+	 ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 1, eig_ratio,nsmooth);
 #endif
       }
 
       if (coarse_iterations == 0) ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
       else ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
-                                          coarse_iterations,1.);
+					  coarse_iterations,1.);
+
 
       ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level); 
 
@@ -799,7 +808,7 @@ void create_msr_matrix(int update[], double **val, int **bindx, int N_update)
 
 {
   int i, total_nz, n = -1;
-  int avg_nonzeros_per_row = 5;
+  int avg_nonzeros_per_row = 9;
   extern void add_row_5pt(int, int , double val[], int bindx[], int *n);
 
   total_nz = /*num_PDE_eqns**/N_update*avg_nonzeros_per_row + 1;
@@ -993,6 +1002,19 @@ void add_row_5pt(int row, int location, double val[],
   bindx[k] = row - m*NP; if ((row/(NP*m))%m !=   0) val[k++] = -1.00;
   val[location]     = 4.0;
 #else
+
+  /* hardwired stencil stuff ...
+
+  bindx[k] = row + NP;   if ((row/NP)%m !=     m-1) val[k++] = sten_f;
+  bindx[k] = row - NP;   if ((row/NP)%m !=       0) val[k++] = sten_d;
+  bindx[k] = row + m*NP-NP; if (((row/(NP*m))%m != m-1) &&((row/NP)%m != 0))  val[k++] = sten_a;
+  bindx[k] = row + m*NP; if ((row/(NP*m))%m != m-1) val[k++] = sten_b;
+  bindx[k] = row + m*NP+NP; if (((row/(NP*m))%m != m-1) &&((row/NP)%m != m-1)) val[k++] = sten_c;
+  bindx[k] = row - m*NP-NP; if (((row/(NP*m))%m !=   0) &&((row/NP)%m != 0)) val[k++] = sten_g;
+  bindx[k] = row - m*NP; if ((row/(NP*m))%m !=   0) val[k++] = sten_h;
+  bindx[k] = row - m*NP+NP; if (((row/(NP*m))%m !=   0) && ((row/NP)%m != m-1)) val[k++] = sten_i;
+  val[location]     = sten_e;
+  */
   bindx[k] = row + NP;   if ((row/NP)%m !=     m-1) val[k++] = -f(x+h/2.,y,m);
   bindx[k] = row - NP;   if ((row/NP)%m !=       0) val[k++] = -f(x-h/2.,y,m);
   bindx[k] = row + m*NP; if ((row/(NP*m))%m != m-1) val[k++] = -f(x,y+h/2.,m);
