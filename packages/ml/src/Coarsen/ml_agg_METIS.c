@@ -233,7 +233,7 @@ int ML_Aggregate_Set_LocalNumber( ML *ml, ML_Aggregate *ag,
 
   int i;
   ML_Aggregate_Options *pointer = NULL;
-  int Nlevels;
+  int Nlevels = ml->ML_num_levels;
 
   /* ********************************************************************** */
   /* control on the input parameters                                        */
@@ -300,7 +300,7 @@ int ML_Aggregate_Set_GlobalNumber( ML *ml, ML_Aggregate *ag,
 
   int i;
   ML_Aggregate_Options *pointer = NULL;
-  int Nlevels;
+  int Nlevels = ml->ML_num_levels;
 
   /* ********************************************************************** */
   /* control on the input parameters                                        */
