@@ -898,28 +898,33 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
 #endif
       if (val != NULL) {
          fun = ML_Smoother_MSR_SGS;
-         sgs_nums = (double **) ML_allocate( sizeof(double)*2);
-         Nrows    = Amat->getrow->Nrows;
-         nums     = (double *) ML_allocate( Nrows * sizeof(double));
-         num2     = (double *) ML_allocate( Nrows * sizeof(double));
-         sgs_nums[0] = nums;
-         sgs_nums[1] = num2;
-         for (j = 0; j < Nrows; j++) { 
-            count = 0;
-         /*
-         for (j = bindx[j]; j < bindx[j+1]; j++) if (bindx[j] >= Nrows) count++;
-         */
-
-            if (bindx[j] != bindx[j+1]) 
+	 if (omega != 1.0) {
+	   sgs_nums = (double **) ML_allocate( sizeof(double)*2);
+	   Nrows    = Amat->getrow->Nrows;
+	   nums     = (double *) ML_allocate( Nrows * sizeof(double));
+	   num2     = (double *) ML_allocate( Nrows * sizeof(double));
+	   sgs_nums[0] = nums;
+	   sgs_nums[1] = num2;
+	   for (j = 0; j < Nrows; j++) { 
+	     count = 0;
+	     /*
+	       for (j = bindx[j]; j < bindx[j+1]; j++) if (bindx[j] >= Nrows) count++;
+	       */
+	     
+	     if (bindx[j] != bindx[j+1]) 
                temp_omega = omega*(1.0 - .5*((double) count) / 
-                               ((double) (bindx[j+1]-bindx[j])));
-            else temp_omega = 1.;
-
-            num2[j] = 1. - temp_omega;
-            if (val[j] != 0.0) nums[j] = temp_omega/val[j];
-            else { nums[j] = 0.0; num2[j] = 1.; }
-         }
-         fun2 = ML_Smoother_Clean_MSR_GS;
+				   ((double) (bindx[j+1]-bindx[j])));
+	     else temp_omega = 1.;
+	     
+	     num2[j] = 1. - temp_omega;
+	     if (val[j] != 0.0) nums[j] = temp_omega/val[j];
+	     else { nums[j] = 0.0; num2[j] = 1.; }
+	   }
+	   fun2 = ML_Smoother_Clean_MSR_GS;
+	 }
+	 else {
+	   fun = ML_Smoother_MSR_SGSnodamping;
+	 }
       }
 
       if (pre_or_post == ML_PRESMOOTHER) {
@@ -2227,8 +2232,8 @@ int ML_Iterate(ML *ml, double *sol, double *rhs)
 
    while ( reduction >= ml->tolerance && i < ml->max_iterations ) 
    {
-      res_norm = ML_Cycle_MGV( &(ml->SingleLevel[ml->ML_finest_level]), sol, 
-				rhs, ML_NONZERO,ml->comm, ML_COMPUTE_RES_NORM);
+      res_norm = ML_Cycle_MG( &(ml->SingleLevel[ml->ML_finest_level]), sol, 
+				rhs, ML_NONZERO,ml->comm, ML_COMPUTE_RES_NORM,ml);
       count++;
       i++;
       if (count == ml->res_output_freq) {
@@ -2316,8 +2321,8 @@ scales = NULL;
    /* call MG v-cycle                                              */
    /* ------------------------------------------------------------ */
 
-   ML_Cycle_MGV(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
-                ML_ZERO, ml->comm, ML_NO_RES_NORM);
+   ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
+                ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
 
    free(din_temp);
    return 0;
@@ -2383,7 +2388,7 @@ scales = NULL;
    /* ------------------------------------------------------------ */
 
    ML_Cycle_MGFull(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
-                ML_ZERO, ml->comm, ML_NO_RES_NORM);
+                ML_ZERO, ml->comm, ML_NO_RES_NORM,ml);
 
    free(din_temp);
    return 0;
@@ -2476,8 +2481,8 @@ scales = NULL;
    /* call MG v-cycle                                              */
    /* ------------------------------------------------------------ */
 
-   ML_Cycle_MGV(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
-                ML_ZERO, ml->comm, ML_NO_RES_NORM);
+   ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
+                ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
 
    free(din_temp);
    return 0;
@@ -2487,8 +2492,8 @@ scales = NULL;
 /* solve using V-cycle multigrid                                             */
 /*-------------------------------------------------------------------------- */
 
-double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
-	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not)
+double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml)
 {
    int         i, lengc, lengf;
    double      *res,  *sol2, *rhs2, res_norm = 0., *normalscales;
@@ -2747,7 +2752,9 @@ double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
       /* --------------------------------------------------------- */
       /* process the next level and transfer back to this level    */
       /* --------------------------------------------------------- */
-      ML_Cycle_MGV( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM);
+      ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
+      if (ml->ML_scheme == ML_MGW) 
+	ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
 
       /* ------------------------------------------------------------ */
       /* transform the data from equation to grid space, do grid      */
@@ -2895,7 +2902,7 @@ double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
 /*-------------------------------------------------------------------------- */
 
 double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
-	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not)
+	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml)
 {
    int         i, lengc, lengf;
    double      *res,  *sol2, *rhs2, res_norm = 0., *normalscales;
@@ -2967,7 +2974,7 @@ double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
       if ( normalscales != NULL )
          for ( i = 0; i < lengc; i++ ) rhs2[i] = rhs2[i] * normalscales[i];
 
-      ML_Cycle_MGFull( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM);
+      ML_Cycle_MGFull( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
 
       /* bring it back up */
 
@@ -2998,7 +3005,7 @@ double ML_Cycle_MGFull(ML_1Level *curr, double *sol, double *rhs,
       approx_all_zeros = ML_NONZERO;
    }
    free(rhss);
-   res_norm = ML_Cycle_MGV(curr,sol,rhs,approx_all_zeros,comm,res_norm_or_not);
+   res_norm = ML_Cycle_MG(curr,sol,rhs,approx_all_zeros,comm,res_norm_or_not, ml);
 
    return(res_norm);
 }
