@@ -1469,27 +1469,31 @@ ApplyInverse(const Epetra_MultiVector& X,
     
   Epetra_Time Time(Comm());
   
-#if 0
-  // these checks can be expensive, I skip them
-  if (!X.Map().SameAs(OperatorDomainMap())) 
-    ML_CHK_ERR(-1);
-  if (!Y.Map().SameAs(OperatorRangeMap())) 
-    ML_CHK_ERR(-2);
-#endif
+  // ========================================================= //
+  // I do not perfom checks on maps, like the following,       //
+  // if (!X.Map().SameAs(OperatorDomainMap())) ML_CHK_ERR(-1)  //
+  // if (!Y.Map().SameAs(OperatorRangeMap())) ML_CHK_ERR(-1)   //
+  // because they can be expensive                             //
+  //                                                           //
+  // We allocate xtmp, needed in case X is scaled in solver or //
+  // X = Y. We cannot pre-allocate xtmp, since the user might  //
+  // give in input different number of vectors.                //
+  //                                                           //
+  // Finally, since does not handle multivectors, we need to   //
+  // extract and iterate one at a time.                        //
+  //                                                           //
+  // FIXME: the Y.PutScalar(0.0) can probably be skipped.      //
+  // ========================================================= //
+  
   if (Y.NumVectors()!=X.NumVectors()) 
     ML_CHK_ERR(-3);
   if( !IsPreconditionerComputed() ) 
     ML_CHK_ERR(-10);
 
-  // Cannot allocate this before because the user may give in 
-  // input multi-vectors with different number of vectors
-  Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled
-                              // in solver or if X = Y
+  Epetra_MultiVector xtmp(X); 
 
   if (ZeroStartingSolution_) Y.PutScalar(0.0); 
 
-  // ML_iterate doesn't handle multivectors, so extract and iterate one at
-  // a time on them.
   double** xvectors;
   double** yvectors;
   ML_CHK_ERR(xtmp.ExtractView(&xvectors));
@@ -1501,53 +1505,65 @@ ApplyInverse(const Epetra_MultiVector& X,
   else                          ml_ptr = ml_edges_;
 
   for (int i = 0; i < X.NumVectors(); ++i) {
-    switch(ml_ptr->ML_scheme) {
-    case(ML_MGFULLV):
-      ML_Solve_MGFull(ml_ptr, xvectors[i], yvectors[i]); 
-      break;
-    case(ML_SAAMG): //Marian Brezina's solver
-      ML_Solve_AMGV(ml_ptr, xvectors[i], yvectors[i]); 
-      break;
-    case(ML_ONE_LEVEL_DD): 
-      // MS // note that all the DD stuff is "delicate"
-      // MS // in the sense that the coarse solver must
-      // MS // Amesos
-      ML_DD_OneLevel(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
-		     yvectors[i], xvectors[i],
-		     ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);
-      break;
-    case(ML_TWO_LEVEL_DD_ADD):
-      ML_DD_Additive(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
-		     yvectors[i], xvectors[i],
-		     ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);
-      break;
-    case(ML_TWO_LEVEL_DD_HYBRID): 
-      ML_DD_Hybrid(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
-		   yvectors[i], xvectors[i],
-		   ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);    
-      break;
+
+    // ================================================== //
+    // Added support for multiple cycles on 08-Mar-05     //
+    // Tested for ML_Cycle_MG only                        //
+    //                                                    //
+    // note that all the DD stuff is "delicate"           //
+    // in the sense that the coarse solver must be Amesos //
+    //                                                    //
+    // I am not sure if ML_NONZERO applies to something   //
+    // else than ML_Cycle_MG().                           //
+    //                                                    //
+    // The flt_ml_ is the filtering, which requires a     //
+    // suitable setup phase. Note that in the current     //
+    // implementation the                                 //
+    // resulting preconditioner is always non-symmetric   //
+    // ================================================== //
+
+    for (int ia = 0 ; ia < CycleApplications_ ; ++ia) {
+
+      int StartingSolution;
+      if (ia || !ZeroStartingSolution_)
+        StartingSolution = ML_NONZERO;
+      else
+        StartingSolution = ML_ZERO;
+
+      switch(ml_ptr->ML_scheme) {
+      case(ML_MGFULLV):
+        ML_Solve_MGFull(ml_ptr, xvectors[i], yvectors[i]); 
+        break;
+      case(ML_SAAMG): //Marian Brezina's solver
+        ML_Solve_AMGV(ml_ptr, xvectors[i], yvectors[i]); 
+        break;
+      case(ML_ONE_LEVEL_DD): 
+        ML_DD_OneLevel(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
+                       yvectors[i], xvectors[i],
+                       ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);
+        break;
+      case(ML_TWO_LEVEL_DD_ADD):
+        ML_DD_Additive(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
+                       yvectors[i], xvectors[i],
+                       ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);
+        break;
+      case(ML_TWO_LEVEL_DD_HYBRID): 
+        ML_DD_Hybrid(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
+                     yvectors[i], xvectors[i],
+                     ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);    
+        break;
     case(ML_TWO_LEVEL_DD_HYBRID_2):
       ML_DD_Hybrid_2(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
 		     yvectors[i], xvectors[i],
 		     ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);    
       break;
     default: 
-      // MS // Standard way of doing things in ML
-      // MS // Added support for multiple cycles on 08-Mar-05
-
-      for (int ia = 0 ; ia < CycleApplications_ ; ++ia) {
-        int StartingSolution = ML_ZERO;
-        if (ia || !ZeroStartingSolution_)
-          StartingSolution = ML_NONZERO;
-
-        ML_Cycle_MG(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]), 
-                    yvectors[i], xvectors[i], StartingSolution,
-                    ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);
+      ML_Cycle_MG(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]), 
+                  yvectors[i], xvectors[i], StartingSolution,
+                  ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);
       }
     }
-    
-    // filtering (requires suitable setup first). Note that the
-    // resulting preconditioner is always non-symmetric
+
     if (flt_ml_) {
       ML_Cycle_MG(&(flt_ml_->SingleLevel[flt_ml_->ML_finest_level]),
 		  yvectors[i], xvectors[i],
@@ -1555,60 +1571,9 @@ ApplyInverse(const Epetra_MultiVector& X,
     }
   }
 
-#ifdef DELETE_ME
-  /* ********************************************************************** */
-  /* filtering stuff if required                                            */
-  /* ********************************************************************** */
-
-  if (flt_R_) {
-    
-    // apply matvec
-    if( Y.NumVectors() != 1 ) {
-      if( verbose_ ) 
-	cerr << ErrorMsg_ << "My dear user, filtering currently works only with one vector," << endl
-	     << ErrorMsg_ << "I am very sorry for this, now I give up..." << endl;
-      exit( EXIT_FAILURE );
-    }
-
-    xtmp.PutScalar(0.0);
-    RowMatrix_->Multiply(false,Y,xtmp);
-    
-    xtmp.Update(1.0,X,-1.0);
-
-    //    Epetra_MultiVector xtmp2(xtmp);
-    /*
-    xtmp2.PutScalar(0.0);
-    RowMatrix_->Multiply(false,xtmp,xtmp2);
-    */
-    int size = flt_A_.N();
-
-    for( int i=0 ; i<size ; ++i ) {
-      double val = 0.0;
-      (*flt_R_)(i)->Dot(*(xtmp(0)),&val);
-      flt_rhs_(i) = val;
-    }
-    
-    flt_lhs_.Multiply('N','N',1.0, flt_A_, flt_rhs_, 0.0);
-    /*
-      flt_solver_.SetVectors(flt_lhs_, flt_rhs_);
-      flt_solver_.SolveToRefinedSolution(true);
-      flt_solver_.Solve();
-    */
-    
-    xtmp.PutScalar(0.0);
-    for( int i=0 ; i<size ; ++i ) {
-      double val = flt_lhs_(i);
-      xtmp(0)->Update(val,*(*flt_R_)(i),1.0); 
-    }
-    
-    Y.Update(1.0,xtmp,1.0);
-    
-  }
-#endif
-  
-  /* ********************************************************************** */
-  /* track timing                                                           */
-  /* ********************************************************************** */
+  // ====== //
+  // timing //
+  // ====== //
 
   MultiLevelPreconditioner * This = const_cast<MultiLevelPreconditioner *>(this);
 

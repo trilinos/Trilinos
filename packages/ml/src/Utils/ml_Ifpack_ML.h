@@ -26,7 +26,7 @@
  *
  * \class Ifpack_ML
  *
- * \brief Wrapper for Ifpack_AdditiveSchwarz
+ * \brief Wrapper for Ifpack_Preconditioner
  *
  * \author Marzio Sala, SNL 9214.
  *
@@ -42,7 +42,6 @@
 
 #include "ml_epetra.h"
 #include "Ifpack_Preconditioner.h"
-#include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_Amesos.h"
 #include "ml_MultiLevelPreconditioner.h"
 
@@ -86,7 +85,6 @@ public:
     if (MLPrec_)
       delete MLPrec_;
 
-    MLList_.set("zero starting solution", false);
     MLPrec_ = new ML_Epetra::MultiLevelPreconditioner(*A_, MLList_);
     if (MLPrec_->IsPreconditionerComputed() == false) {
       ML_CHK_ERR(-1);
