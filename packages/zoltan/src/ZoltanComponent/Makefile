@@ -26,7 +26,7 @@ clean :
 
 distclean :
 	for dir in $(DIRS) ; \
-	do echo " Making clean in $$dir ..." ;\
+	do echo " Making distclean in $$dir ..." ;\
 	cd $$dir ; make distclean ; cd .. ;\
 	done
 	/bin/rm -fr config.log config.status autom4te* MakeIncl.ZoltanComponent
