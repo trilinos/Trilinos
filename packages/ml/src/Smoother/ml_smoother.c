@@ -3150,6 +3150,18 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    {
       ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_CSR_MATRIX);
    }
+#ifdef notready
+      tmpmat_data  = (struct ML_CSR_MSRdata *) tmpmat->data;
+      tmpmat_vals  = tmpmat_data->values;
+      tmpmat_cols  = tmpmat_data->columns;
+      tmpmat_rowptr= tmpmat_data->rowptr;
+      for (i = 0; i < tmpmat->outvec_leng; i++) {
+	for (j = tmpmat_rowptr[i]; j < tmpmat_rowptr[i+1]; j++) {
+	  if ((tmpmat_cols[j] == i) && (tmpmat_vals[j] == 0.0)) 
+	    tmpmat_vals[j] = 1.;
+	}
+      }
+#endif
 /*
    kdata = ML_Krylov_Create( tmpmat->comm );
    ML_Krylov_Set_ComputeEigenvalues( kdata );
