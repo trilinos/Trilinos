@@ -16,10 +16,10 @@
 #
 #echo "Usage: run_benchmarks [bench_directory executable_directory scratch_directory parallel={TRUE,FALSE}]
 
-BENCH_DIRECTORY=/home/tuminaro/ml_bench
+BENCH_DIRECTORY=/home/tuminaro/mlbench
 EXECUTABLE_DIRECTORY=/home/tuminaro/codes/Aztec/ml/Obj
 SCRATCH_DIRECTORY=/tmp/poop
-PARALLEL=TRUE
+PARALLEL=FALSE
 
 #echo "Usage: run_benchmarks [bench_directory executable_directory scratch_directory paralel={TRUE,FALSE}]
 
@@ -39,6 +39,7 @@ then
   echo "      BENCH DIRECTORY      = " $BENCH_DIRECTORY
   echo "      EXECUTABLE DIRECTORY = " $EXECUTABLE_DIRECTORY
   echo "      SCRATCH DIRECTORY    = " $SCRATCH_DIRECTORY
+  echo "      PARALLEL             = " $PARALLEL
   echo 
   echo "If defaults not wanted, overwrite using ..."
   echo "    Usage: run_benchmarks [bench_directory executable_directory scratch_directory parallel={TRUE,FALSE} ]"
@@ -50,7 +51,7 @@ then
 fi
 if test $# -ge 2
 then
-  EXECUTABLE=$2
+  EXECUTABLE_DIRECTORY=$2
 fi
 if test $# -ge 3
 then
@@ -134,6 +135,8 @@ do
 #         check if the executable exists
 #       
           temp=`cat exe.name`
+          /bin/rm -f $temp
+
           EXE=`echo ${EXECUTABLE_DIRECTORY}/$temp`
           if test -f $EXE
           then
@@ -143,6 +146,8 @@ do
              make APPLICATION_C=${temp}.c TESTING=-DBENCHMARK
              cd ${BENCH_DIRECTORY}/$i
           fi
+          ln -s $EXE $temp
+          EXE=$temp
 #
 #
 #     execute any file that starts with ml_inputfile ...
@@ -158,11 +163,19 @@ do
 #       run only if parallel=TRUE or nprocs = 1 or []
 #
         temp=`echo xx${Nprocs}xx | sed "s/ *//g"`
-        if test `expr ${PARALLEL}` = 'TRUE' -o \
-           `expr ${temp}` = 'xxxx' -o \
-           `expr ${temp}` = 'xx1xx' 
+        if test `expr ${temp}` = 'xxxx'
         then
-        ${EXE} ${Nprocs} | grep -v ime > ${SCRATCH_DIRECTORY}/${i}/output${ttt}
+            Nprocs=1
+        fi
+        if test `expr ${PARALLEL}` = 'TRUE' -o \
+           `expr ${Nprocs}` = '1' 
+        then
+        EXE_MOD=$EXE
+        if test `expr ${PARALLEL}` = 'TRUE' 
+        then
+           EXE_MOD=`echo mpirun -machinefile /home/tuminaro/bin/machinefile -np $Nprocs $EXE`
+        fi
+        ${EXE_MOD} | grep -v ime > ${SCRATCH_DIRECTORY}/${i}/output${ttt}
         diff -w output${ttt} ${SCRATCH_DIRECTORY}/${i}/output${ttt} > \
                                     ${SCRATCH_DIRECTORY}/${i}/difs${ttt}
         wc ${SCRATCH_DIRECTORY}/${i}/difs${ttt} >> ${SCRATCH_DIRECTORY}/summary
@@ -174,6 +187,7 @@ do
       fi
       done
       /bin/rm -f ml_inputfile
+      /bin/rm -f $EXE
       else 
          echo "The file does not exist ${BENCH_DIRECTORY}/$i/exe.name?"
       fi
