@@ -4,11 +4,11 @@
 #
 #   Usage:    flatten [directory]
 #
-#        If directory is ommited, this creates a directory called 'flat'.
+#        If directory is ommited, this creates a directory called 'Obj'.
 #
 # Note: The makefile associated with the resulting flattened directory
 #       uses `depends.ml'. This file assumes that the source code is
-#       in a directory 'flat'. If there is no such directory, things don't
+#       in a directory 'Obj'. If there is no such directory, things don't
 #       work. Thus, the first time this utility should be run without
 #       specifying a directory. Subsequent invokations can then be used
 #       to create additional Obj directories.
@@ -16,7 +16,7 @@
 DEST=Obj_$1
 if test `expr $DEST` = `expr Obj_`
    then
-   DEST=flat
+   DEST=Obj
 fi
 echo flatten into $DEST
 DIRECTORIES="Coarsen Comm FEGrid Krylov Main Operator Smoother Utils"
