@@ -29,7 +29,13 @@
 /* okay values for this partitioning scheme, the user can set them in the as parameters also */
 #define BINS_PER_PROC 10 
 #define HASHTABLE_DIVIDER 20
-#define MAX_CUTS_PER_BIN 10 /* maximum amount of cuts in a coarse level bin */
+/* the parameters below have not been set to be passed in yet */
+#define MAX_CUTS_IN_BIN 10 /* maximum amount of cuts in a coarse level bin */
+#define SUBBINS_PER_BIN 10 /* amount of subbins a bin is divided into */
+#define MAX_REFINEMENT_LEVEL 30 /* amount of refinement of the bins */
+#define BIN_REFINEMENT_METHOD 1 /* flag to specify whether all bins with a cut in them are
+				 refined or just the bins with a cut that are imbalanced 
+				 (the value 1 is currently meaningless!) */
 
 int create_refinement_info(LB* lb, int* number_of_cuts, float* global_actual_work_allocated,
 			   int wgt_dim, float* total_weight_array, float* work_percent_array,
@@ -127,6 +133,7 @@ int LB_sfc(
   COMM_OBJ *plan;
   int comm_tag = 8765; /* randomly chosen communication tag */
   int num_vert_sent;
+  int refinement_level_counter = 0, max_refinement_level, subbins_per_bin;
 
   
   printf("in sfc partitioning\n");
@@ -136,6 +143,8 @@ int LB_sfc(
   LB_Bind_Param(SFC_params, "SFC_HASHTABLE_DIVIDER", (void*) &hashtable_divider); 
   bins_per_proc = BINS_PER_PROC;
   hashtable_divider = HASHTABLE_DIVIDER; 
+  max_refinement_level = MAX_REFINEMENT_LEVEL;
+  subbins_per_bin = SUBBINS_PER_BIN;
 
   LB_Assign_Param_Vals(lb->Params, SFC_params, lb->Debug_Level, lb->Proc,
 		       lb->Debug_Proc);
@@ -344,7 +353,7 @@ int LB_sfc(
     for(i=0;i<number_of_cuts;i++)
       ll_bins_head[i] = -1;
     /* refine bins until a satisfactory partition tolerance is attained */
-    while(balanced_flag != SFC_BALANCED) { 
+    while(balanced_flag != SFC_BALANCED && refinement_level_counter < max_refinement_level) { 
       /* if this partition is balanced, we do not need to refine the partition */
       if(local_balanced_flag == SFC_NOT_BALANCED) {
 	ierr = sfc_refine_partition_level(lb, &local_balanced_flag, &amount_of_bits_used,
@@ -353,7 +362,7 @@ int LB_sfc(
 					  wgts_in_cut_ptr, work_percent_array,
 					  total_weight_array, global_actual_work_allocated, 
 					  number_of_cuts, &max_cuts_in_bin, ll_bins_head,
-					  work_prev_allocated);
+					  work_prev_allocated, subbins_per_bin);
 	if(ierr != LB_OK && ierr != LB_WARN) {
 	  LB_PRINT_ERROR(lb->Proc, yo, "Error in sfc_refine_partition_level function.");
 	  return(ierr);
@@ -362,7 +371,7 @@ int LB_sfc(
       /* check if any partition does not meet the imbalance tolerance */
       j = local_balanced_flag;
       i = MPI_Allreduce(&j, &balanced_flag, 1, MPI_INT, MPI_MAX, lb->Communicator);
-      balanced_flag = SFC_BALANCED; /* take this out!!! */
+
 
       /* for debugging */
       if(lb->Proc ==0) {
@@ -372,6 +381,8 @@ int LB_sfc(
       } 
       i = MPI_Bcast(&balanced_flag, 1, MPI_INT, 0, lb->Communicator);
       /* done debugging */
+
+      refinement_level_counter++;
 
     }
     LB_FREE(&work_prev_allocated);

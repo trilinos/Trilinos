@@ -30,7 +30,7 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
 			       float* wgts_in_cut_ptr, float* work_percent_array,
 			       float* total_weight_array, float* global_actual_work_allocated,
 			       int number_of_cuts, int* max_cuts_in_bin, int* ll_bins_head,
-			       float* work_prev_allocated) 
+			       float* work_prev_allocated, int subbins_per_bin) 
 {
   int i=0, j=0, k;
   int amount_of_bits;
@@ -40,9 +40,13 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
   int ll_counter, ll_location, *ll_bins_head_copy;
 
   /* amount of sub-bins in a bin, probably want this as a passed in parameter */
-  int number_of_bins = 10; /* should equal user specified parameter sub_bins_per_bin */
+  int number_of_bins = subbins_per_bin;
 
   printf("refining some bins on proc %d!!!\n",lb->Proc);
+
+  /*  assume initially that all the partitions on this processor are balanced.
+      we will check later on whether any are not balanced */
+  *local_balanced_flag = SFC_BALANCED;
 
   /* if there are a lot of cuts in a bin, we want the amount of bins
      to be greater than the amount of cuts */

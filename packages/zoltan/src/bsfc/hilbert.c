@@ -45,6 +45,18 @@ bit is the trailing bit of the last word.
 
 ----------------------------------------------------------------------*/
 
+/*----------------------------------------------------------------------
+
+Notes from acbauer:
+The maximum significant keylength for 2D is 2 and for 3D is 3.  Any 
+keylength longer than this will have all zeroes beyond the significant
+keylength.
+
+The 2D SFC starts at [0.0,0.0] and ends at [0.0,1.0], in the limit of 
+the SFC 
+
+----------------------------------------------------------------------*/
+
 #include "lb_const.h"
 #include <limits.h>
 #include "hilbert_const.h"
