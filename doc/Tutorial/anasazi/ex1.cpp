@@ -52,6 +52,8 @@
 #include "Trilinos_Util_CommandLineParser.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
+using namespace Trilinos_Util;
+
 int main(int argc, char *argv[])
 {
     
@@ -63,10 +65,10 @@ int main(int argc, char *argv[])
 #endif
 
   // initialize the command line parser
-  Trilinos_Util_CommandLineParser CLP(argc,argv);
+  CommandLineParser CLP(argc,argv);
   
   // initialize an Gallery object
-  Trilinos_Util_CrsMatrixGallery Gallery("", Comm);
+  CrsMatrixGallery Gallery("", Comm);
 
   // add default values
   if( CLP.Has("-problem_type") == false ) CLP.Add("-problem_type", "laplace_2d" ); 
