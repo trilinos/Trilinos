@@ -57,7 +57,7 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
 			     bool parallelColoring,
                              double beta_, double alpha_) :
   FiniteDifference(printingParams, i, x, beta_, alpha_),
-  coloringType(SERIAL),
+  coloringType(NOX_SERIAL),
   colorMap(&colorMap_),
   columns(&columns_),
   numColors(colorMap->NumColors()),
@@ -75,7 +75,7 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
   label = "NOX::FiniteDifferenceColoring Jacobian";
 
   if( parallelColoring )
-    coloringType = PARALLEL;
+    coloringType = NOX_PARALLEL;
 
   createColorContainers();
 }
@@ -88,7 +88,7 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
 			     bool parallelColoring,
                              double beta_, double alpha_) :
   FiniteDifference(i, x, beta_, alpha_),
-  coloringType(SERIAL),
+  coloringType(NOX_SERIAL),
   colorMap(&colorMap_),
   columns(&columns_),
   numColors(colorMap->NumColors()),
@@ -106,7 +106,7 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
   label = "NOX::FiniteDifferenceColoring Jacobian";
 
   if( parallelColoring )
-    coloringType = PARALLEL;
+    coloringType = NOX_PARALLEL;
 
   createColorContainers();
 }
@@ -121,7 +121,7 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
 			     bool parallelColoring,
                              double beta_, double alpha_) :
   FiniteDifference(printingParams, i, x, rawGraph_, beta_, alpha_),
-  coloringType(SERIAL),
+  coloringType(NOX_SERIAL),
   colorMap(&colorMap_),
   columns(&columns_),
   numColors(colorMap->NumColors()),
@@ -139,7 +139,7 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
   label = "NOX::FiniteDifferenceColoring Jacobian";
 
   if( parallelColoring ) 
-    coloringType = PARALLEL;
+    coloringType = NOX_PARALLEL;
 
   createColorContainers();
 }
@@ -153,7 +153,7 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
 			     bool parallelColoring,
                              double beta_, double alpha_) :
   FiniteDifference(i, x, rawGraph_, beta_, alpha_),
-  coloringType(SERIAL),
+  coloringType(NOX_SERIAL),
   colorMap(&colorMap_),
   columns(&columns_),
   numColors(colorMap->NumColors()),
@@ -171,7 +171,7 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
   label = "NOX::FiniteDifferenceColoring Jacobian";
 
   if( parallelColoring ) 
-    coloringType = PARALLEL;
+    coloringType = NOX_PARALLEL;
 
   createColorContainers();
 }
@@ -238,7 +238,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   xCol_perturb->Import(x, *rowColImporter, Insert);
   
   // Compute the RHS at the initial solution
-  if( coloringType == SERIAL )
+  if( coloringType == NOX_SERIAL )
     computeF(*xCol_perturb, fo, NOX::EpetraNew::Interface::Required::FD_Res);
   else {
 //    x_perturb.Export(*xCol_perturb, *rowColImporter, Insert);
@@ -293,7 +293,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     xCol_perturb->Update(scaleFactor, *mappedColorVect, 1.0);
 
     // Compute the perturbed RHS
-    if( coloringType == SERIAL )
+    if( coloringType == NOX_SERIAL )
       computeF(*xCol_perturb, fp, NOX::EpetraNew::Interface::Required::FD_Res);
     else {
       //x_perturb.Export(*xCol_perturb, *rowColImporter, Insert);
@@ -304,7 +304,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     
     if ( diffType == Centered ) {
       xCol_perturb->Update(-2.0, *mappedColorVect, 1.0);
-      if( coloringType == SERIAL )
+      if( coloringType == NOX_SERIAL )
         computeF(*xCol_perturb, fm, 
                  NOX::EpetraNew::Interface::Required::FD_Res);
       else {

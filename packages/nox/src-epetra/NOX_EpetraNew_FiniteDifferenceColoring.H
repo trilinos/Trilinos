@@ -119,11 +119,13 @@ potentially different ghosted index ordering.  See the %Brusselator and
 */
 
 class FiniteDifferenceColoring : public FiniteDifference {
-      
+     
+ protected:
+ 
+  enum ColoringType { NOX_SERIAL, NOX_PARALLEL };
+        
  public:
-
-  enum ColoringType { SERIAL, PARALLEL };
-
+ 
   //! Constructor with output control
   FiniteDifferenceColoring(NOX::Parameter::List& printingParams,
                            Interface::Required& i, 
