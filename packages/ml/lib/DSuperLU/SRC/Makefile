@@ -58,7 +58,7 @@ DLUSRC = \
 	dsnode_dfs.o dsnode_bmod.o \
 	dpanel_dfs.o dpanel_bmod.o dreadhb.o \
 	dcolumn_dfs.o dcolumn_bmod.o dpivotL.o dpruneL.o \
-	dmemory.o dutil.o
+	dmemory.o dutil.o superlu_timer.o
 
 CLUSRC = \
 	scomplex.o scsum1.o icmax1.o \
@@ -107,7 +107,7 @@ complex16: $(ZLUSRC) $(ALLAUX) $(DZLAUX)
 slamch.o: slamch.c ; $(CC) -c $<
 #dlamch.o: dlamch.c ; $(CC) -c $<
 
-superlu_timer.o:  superlu_timer.c ; $(CC) -c $<
+#superlu_timer.o:  superlu_timer.c ; $(CC) -c $<
 
 .c.o:
 	$(CC) $(CFLAGS) -DUSE_VENDOR_BLAS $(CDEFS) $(BLASDEF) -c $< $(VERBOSE)
