@@ -197,7 +197,7 @@ CrsGraph_SymmRCM::BFT::BFT( const vector< vector<int> > & adjlist,
       vector<int> degrees( currWidth );
       for( int i = 0; i < currWidth; ++i )
         degrees[i] = adjList_[ levelSets_[depth_+1][i] ].size();
-      int ** indices = new (int*)[1];
+      int ** indices = new int*[1];
       indices[0] = &(levelSets_[depth_+1][0]);
       Epetra_Util().Sort( true, currWidth, &degrees[0],
                         0, 0, 1, indices );
