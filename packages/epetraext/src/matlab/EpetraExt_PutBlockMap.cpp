@@ -39,6 +39,7 @@ namespace Matlab {
 
 int CopyBlockMap(mxArray* matlabA, const Epetra_BlockMap& map) {
 
+  int valueCount = 0;
   const Epetra_Comm & comm = map.Comm();
   int numProc = comm.NumProc();
   bool doSizes = !map.ConstantElementSize();
@@ -47,7 +48,7 @@ int CopyBlockMap(mxArray* matlabA, const Epetra_BlockMap& map) {
     int * myElements = map.MyGlobalElements();
     int * elementSizeList = 0;
     if (doSizes) elementSizeList = map.ElementSizeList();
-    return(DoCopyBlockMap(matlabA, map.NumGlobalElements(), myElements, elementSizeList, doSizes));
+    return(DoCopyBlockMap(matlabA, valueCount, map.NumGlobalElements(), myElements, elementSizeList, doSizes));
   }
 
   int numRows = map.NumMyElements();
@@ -96,7 +97,9 @@ int CopyBlockMap(mxArray* matlabA, const Epetra_BlockMap& map) {
     int * elementSizeList = 0;
     if (doSizes) elementSizeList = importSizes.Values();
     // Finally we are ready to write this strip of the map to file
-    DoCopyBlockMap(matlabA, importGids.MyLength(), myElements, elementSizeList, doSizes);
+    if (comm.MyPID()==0) {
+      DoCopyBlockMap(matlabA, valueCount, importGids.MyLength(), myElements, elementSizeList, doSizes);
+    }
   }
   return(0);
 }
@@ -110,14 +113,20 @@ int DoCopyBlockMap(mxArray* matlabA, int& valueCount, int length, const int * v1
   // set all matlabA pointers to the proper offset
   matlabAvaluesPtr += valueCount;
   matlabArowIndicesPtr += valueCount;
-  matlabAcolumnIndicesPtr += valueCount;
+  int numGidsDone = valueCount;
+  if (doSizes) {
+    numGidsDone /= 2;
+  }
+  
+  matlabAcolumnIndicesPtr += numGidsDone;
   
   for (int i=0; i<length; i++) {
     *matlabAcolumnIndicesPtr++ = valueCount;
     *matlabArowIndicesPtr++ = 0;
-    *matlabAvaluesPtr++ = v1[i]; # row GID of block map
+    *matlabAvaluesPtr++ = v1[i]; // row GID of block map
+
     if (doSizes) {
-      *matlabAvaluesPtr++ = v2[i]; # size of block
+      *matlabAvaluesPtr++ = v2[i]; // size of block
       valueCount += 2;
       *matlabArowIndicesPtr++ = 1;
     }
@@ -125,6 +134,7 @@ int DoCopyBlockMap(mxArray* matlabA, int& valueCount, int length, const int * v1
       valueCount++;
     }
   }
+  
   return(0);
 }
 } // namespace Matlab

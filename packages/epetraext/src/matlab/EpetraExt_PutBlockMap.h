@@ -46,8 +46,7 @@ class Epetra_BlockMap;
 
 namespace Matlab {
  
-int CopyBlockMap(mxArray* matlabA, const Epetra_BlockMap& map)
-
+  int CopyBlockMap(mxArray* matlabA, const Epetra_BlockMap& map);
 
   // Internal function
   int DoCopyBlockMap(mxArray* matlabA, int& valueCount, int length, const int * v1, const int * v2, bool doSizes);

@@ -29,6 +29,7 @@
 #include "EpetraExt_MatlabEngine.h"
 #include "EpetraExt_PutMultiVector.h"
 #include "EpetraExt_PutRowMatrix.h"
+#include "EpetraExt_PutBlockMap.h"
 
 #include "Epetra_Comm.h"
 #include "Epetra_MultiVector.h"
@@ -109,17 +110,17 @@ int EpetraExt_MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* 
     mxArray* matlabA = 0;
     if (Comm_.MyPID() == 0)
 	  // since matlab uses column major for matrices, switch row and column numbers
-	  matlabA = mxCreateSparse(A.RowMatrixColMap().MaxAllGID() - A.RowMatrixColMap().MinAllGID()+1, A.RowMatrixRowMap().MaxAllGID() - A.RowMatrixRowMap().MinAllGID() + 1, A.NumGlobalNonzeros(), mxREAL);
+	  matlabA = mxCreateSparse(A.OperatorDomainMap().MaxAllGID() - A.OperatorDomainMap().MinAllGID()+1, A.OperatorRangeMap().MaxAllGID() - A.OperatorRangeMap().MinAllGID() + 1, A.NumGlobalNonzeros(), mxREAL);
 	
 	//cout << "numrows: " << A.RowMatrixColMap().NumGlobalElements() << " numCols: " << A.NumGlobalRows() << "numNonZeros: " << A.NumGlobalNonzeros() << "\n";
 
-	cout << "calling CopyRowMatrix\n";
+	//cout << "calling CopyRowMatrix\n";
 	if (Matlab::CopyRowMatrix(matlabA, A)) {
 	  mxDestroyArray(matlabA);
 	  return(-2);
 	}
 
-	cout << "done doing CopyRowMatrix\n";
+	//cout << "done doing CopyRowMatrix\n";
 	if (Comm_.MyPID() == 0) {
 
 	  /*cout << "printing matlabA pointers\n";
@@ -146,9 +147,9 @@ int EpetraExt_MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* 
 	  }
 	}
 
-	cout << "done with everything in PutRowMatrix, going to destroy matlabA\n" << "matlabA=" << matlabA << "\n";
+	//cout << "done with everything in PutRowMatrix, going to destroy matlabA\n" << "matlabA=" << matlabA << "\n";
 	mxDestroyArray(matlabA);
-	cout << "done destroying matlabA\n";
+	//cout << "done destroying matlabA\n";
 	return(0);
 }
 
@@ -319,7 +320,7 @@ int EpetraExt_MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseM
 }
 
 //=============================================================================
-int EpetraExt_MatlabEngine::PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName) {
+int EpetraExt_MatlabEngine::PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName, bool transA) {
   mxArray* matlabA = 0;
   if (Comm_.MyPID() == 0) {		 
     int M = blockMap.NumGlobalElements();
@@ -328,26 +329,17 @@ int EpetraExt_MatlabEngine::PutBlockMap(const Epetra_BlockMap& blockMap, const c
     if (blockMap.MaxElementSize()>1) N = 2; // Non-trivial block map, store element sizes in second column
   
     matlabA = mxCreateSparse(N, M, M*N, mxREAL);
+    int* matlabAcolumnIndicesPtr = mxGetJc(matlabA);
+    matlabAcolumnIndicesPtr += M;
+    *matlabAcolumnIndicesPtr = M*N; // set max cap.
   }
   
-  cout << "calling CopyBlockMap\n";
   if (Matlab::CopyBlockMap(matlabA, blockMap)) {
     mxDestroyArray(matlabA);
     return(-2);
   }
 
-  cout << "done doing CopyBlockMap\n";
   if (Comm_.MyPID() == 0) {
-
-	  /*cout << "printing matlabA pointers\n";
-		double* matlabAvaluesPtr = mxGetPr(matlabA);
-		int* matlabAcolumnIndicesPtr = mxGetJc(matlabA);
-		int* matlabArowIndicesPtr = mxGetIr(matlabA);
-		for(int i=0; i < A.NumGlobalNonzeros(); i++) {
-		  cout << "*matlabAvaluesPtr: " << *matlabAvaluesPtr++ << " *matlabAcolumnIndicesPtr: " << *matlabAcolumnIndicesPtr++ << " *matlabArowIndicesPtr" << *matlabArowIndicesPtr++ << "\n";
-		}
-		cout << "done printing matlabA pointers\n";
-	  */
     if (PutIntoMatlab(variableName, matlabA)) {
       mxDestroyArray(matlabA);
       return(-1);
@@ -363,9 +355,7 @@ int EpetraExt_MatlabEngine::PutBlockMap(const Epetra_BlockMap& blockMap, const c
     }
   }
 
-  cout << "done with everything in PutBlockMap, going to destroy matlabA\n" << "matlabA=" << matlabA << "\n";
   mxDestroyArray(matlabA);
-  cout << "done destroying matlabA\n";
   return(0);
 }
 

@@ -189,7 +189,7 @@ class EpetraExt_MatlabEngine {
   int PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName, int proc);
 
   //! not implemented yet
-  int PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName);
+  int PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName, bool transA);
   
   //! Put a mxArray into Matlab.
   /*! The Matlab provided C library provides mxArray which is used to construct and fill a Matlab

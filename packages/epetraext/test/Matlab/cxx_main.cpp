@@ -81,17 +81,28 @@ cout << "going to setup MPI...\n";
   int N=10;
   int* myGlobalElements = new int[M];
   
-  int startIndex = -4 + M*comm.MyPID();
+  int minGID = 0;
+  int startIndex = minGID + M*comm.MyPID();
   for(int i=0; i < M; i++) {
       myGlobalElements[i] = startIndex++;
   }
   
 
-  Epetra_Map map (numGlobalElements, numMyElements, myGlobalElements, -4, comm);
-  Epetra_CrsMatrix crsMatrix (Copy, map, 8);
+  int* colMapGIDs = new int[N];
+  for (int i=0; i < N; i++) {
+    colMapGIDs[i] = i;
+  }
+  //Epetra_Map map (numGlobalElements, numMyElements, myGlobalElements, minGID, comm);
+  Epetra_Map map (numGlobalElements, minGID, comm);
+  Epetra_Map colMap (N, N, colMapGIDs, 0, comm);		   
+
+  Epetra_CrsMatrix crsMatrix (Copy, map, colMap, N);
   
-  int indices[8] = {-4,-3,-2,-1,0,1,2,3};
-  double* values = new double[8];
+  cout << "crs matrix created\n";
+  
+  //int indices[8] = {-4,-3,-2,-1,0,1,2,3};
+  int indices[10] = {0,1,2,3,4,5,6,7,8,9};
+  double* values = new double[N];
   double value = M * N * comm.MyPID();
   for (int i=0; i < M; i++) {
     if (i % 2 == 0) {
@@ -99,19 +110,24 @@ cout << "going to setup MPI...\n";
       	values[j] = value++;
       }
       
-      crsMatrix.InsertGlobalValues(myGlobalElements[i], 8, values, indices);
+      crsMatrix.InsertGlobalValues(myGlobalElements[i], N, values, indices);
     }
   }
   
-  crsMatrix.FillComplete();
+  cout << "done putting values\n";
+  crsMatrix.FillComplete(colMap, map);
   cout << "done filling crsMatrix and calling crsMatrix.FillComplete()\n";
   
   cout << crsMatrix;
   
   cout << "done printing crsMatrix\n";
   
+  //cout << map;
+  //cout << "done printing map\n";
+  
   int ierr = engine.PutRowMatrix(crsMatrix, "TEST", true);
-  cout << "done calling engine.PutRowMatrix(crsMatrix, \"TEST\", false)\n";
+  //int ierr = engine.PutBlockMap(map, "TEST", true);
+  //cout << "done calling engine.PutRowMatrix(crsMatrix, \"TEST\", false)\n";
   if (ierr != 0) {
     cout << "engine.PutRowMatrix(crsMatrix, \"TEST\") returned nonzero result: " << ierr << "\n";
     return(-1);
@@ -249,7 +265,7 @@ cout << "going to setup MPI...\n";
   MPI_Finalize();
 #endif
 
-  
+  delete &engine;
   return(0);
  
 }
