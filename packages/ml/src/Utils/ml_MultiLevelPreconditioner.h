@@ -460,31 +460,20 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
 		     int NodeID = -1,
 		     const int EquationID = 0);
 
-  //! Analyze the effect of each level's smoother on a random vector.
-  int AnalyzeSmoothersSparse(const int NumPreCycles = 1,
-			     const int NumPostCycles = 1);
-
-  //! Analyze the effect of each level's smoother on a random vector.
-  int AnalyzeSmoothersDense(const int NumPreCycles = 1,
-			    const int NumPostCycles = 1,
-			    const int MaxSize = 1024);
-
   //! Cheap analysis of each level matrix.
   int AnalyzeHierarchy(const bool AnalyzeMatrices, 
                        const int PreCycles, const int PostCycles,
                        const int MLCycles);
 
-  //! Compute the lowest and largest magniture eigenvalues of fine-level matrix.
-  int AnalyzeMatrixEigenvaluesSparse(const char* MatVec, const bool IsSymmetric = false);
+  //! Analyze the effect of each level's smoother on a random vector.
+  int AnalyzeSmoothers(const int NumPreCycles = 1,
+                       const int NumPostCycles = 1);
 
-  //! Compute the lowest and largest magniture eigenvalues of fine-level matrix.
-  int AnalyzeMatrixEigenvaluesDense(const char* MatVec, const bool IsSymmetric = false);
+  //! Analyze the effect of the coarse solver on a random vector.
+  int AnalyzeCoarse();
 
   //! Analyze the effect of the ML cycle on a random vector.
   int AnalyzeCycle(const int NumCycles = 1);
-
-  //! Analyze the effect of the coarse solver on a random vector.
-  int AnalyzeCoarseSparse();
 
   //! Test several smoothers on fine-level matrix.
   int TestSmoothers(Teuchos::ParameterList& InputList,
@@ -588,8 +577,6 @@ private:
   bool CheckPreconditionerKrylov();
 
   void VectorNorms(double*, int, double*,double*);
-
-  void SmoothnessFactor(ML_Operator* Op, double*, double*);
 
   //@}
 
