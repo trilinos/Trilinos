@@ -57,7 +57,7 @@ bool NOX::Direction::Newton::reset(NOX::Parameter::List& params)
 
   NOX::Parameter::List& p = params.sublist("Newton");
 
-  doRescue = p.getParameter("Resuce Bad Newton Solve", true);
+  doRescue = p.getParameter("Rescue Bad Newton Solve", true);
   if (!p.sublist("Linear Solver").isParameter("Tolerance"))
     p.sublist("Linear Solver").getParameter("Tolerance", 1.0e-10);
   return true;

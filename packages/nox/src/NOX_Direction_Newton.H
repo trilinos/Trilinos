@@ -85,7 +85,7 @@ namespace Direction {
   The following options may be specified in the "Newton" sublist of
   the "Direction" sublist of the solver parameters.
 
-  - "Resuce Bad Newton Solve" (Boolean) - Says whether or not we should
+  - "Rescue Bad Newton Solve" (Boolean) - Says whether or not we should
     try to use the solution from a bad linear solve. If set to true, 
     we will accept the solution if it produces any reduction whatsoever
     in the linear residual. Defaults to true.
@@ -177,7 +177,7 @@ private:
    */
   NOX::Parameter::List* paramsPtr;
 
-  //! Determined based on "Resuce Bad Newton Solve". Used in rescueBadNewtonSolve
+  //! Determined based on "Rescue Bad Newton Solve". Used in rescueBadNewtonSolve
   bool doRescue;
 
   //! Vector containing the predicted RHS
