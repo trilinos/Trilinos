@@ -24,7 +24,7 @@ extern "C" {
 /* Definitions shared by parallel RCB and RIB */
 #define DEFAULT_CHECK_GEOM 1
 #define TINY 1.0e-6
-#define RB_MAX_WGTS 4
+#define RB_MAX_WGTS 1
 
 /* Data structures shared by parallel RCB and RIB */
 /* dot to balance on for RCB and RIB */ 
