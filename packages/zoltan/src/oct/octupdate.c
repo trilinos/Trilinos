@@ -75,9 +75,13 @@ int LB_octpart(
   LB_LID **import_local_ids,  /* Returned value:  array of local IDs for
                                  non-local objects in this processor's new
                                  decomposition.                              */
-  int **import_procs          /* Returned value:  array of processor IDs for
+  int **import_procs,         /* Returned value:  array of processor IDs for
                                  processors owning the non-local objects in
                                  this processor's new decomposition.         */
+  int *num_export,            /* Not computed; return -1. */
+  LB_GID **export_global_ids, /* Not computed. */
+  LB_LID **export_local_ids,  /* Not computed. */
+  int **export_procs          /* Not computed. */
 ) 
 {
 int oct_dim = 3;              /* Dimension of method to be used (2D or 3D)   */
@@ -102,6 +106,8 @@ PARAM_VARS oct_params[] = {
   oct_params[4].ptr = (void *) &oct_wgtflag;
 
   LB_Assign_Param_Vals(lb->Params, oct_params);
+
+  *num_export = -1;  /* We don't compute any export data */
 
   /* Error checking for parameters */
   if (oct_dim < 2 || oct_dim > 3) {
