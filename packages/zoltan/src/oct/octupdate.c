@@ -535,6 +535,9 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
     abort();
   }
 
+  if (wgtflag == 0)
+    for (i = 0; i < *num_objs; i++) obj_wgts[i] = 0.;
+
   if (lb->Get_Obj_List != NULL) {
     lb->Get_Obj_List(lb->Get_Obj_List_Data, obj_global_ids, obj_local_ids,
                      wgtflag, obj_wgts, &ierr);
