@@ -35,10 +35,8 @@
 # ------------------------------------------------------------------------
 
 if HAVE_AMESOS_LAPACK
-LAPACK_H = 
-	$(srcdir)/Amesos_Lapack.h
-LAPACK = \
-	$(srcdir)/Amesos_Lapack.cpp
+LAPACK_H = $(srcdir)/Amesos_Lapack.h
+LAPACK = $(srcdir)/Amesos_Lapack.cpp
 else
 LAPACK_H =
 LAPACK =

@@ -262,9 +262,10 @@ am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
 	$(srcdir)/Amesos_Klu.h $(srcdir)/Amesos_Mumps.h \
 	$(srcdir)/Amesos.h $(srcdir)/Amesos_Superlu.h \
 	$(srcdir)/Amesos_Superludist.h \
-	$(srcdir)/Epetra_CrsKundertSparse.h Amesos_BaseSolver.h \
-	Amesos_ComponentBaseSolver.h Amesos_ConfigDefs.h \
-	$(srcdir)/CrsMatrixTranspose.h $(srcdir)/Amesos_BaseSolver.h \
+	$(srcdir)/Epetra_CrsKundertSparse.h $(srcdir)/Amesos_Lapack.h \
+	Amesos_BaseSolver.h Amesos_ComponentBaseSolver.h \
+	Amesos_ConfigDefs.h $(srcdir)/CrsMatrixTranspose.h \
+	$(srcdir)/Amesos_BaseSolver.h \
 	$(srcdir)/Amesos_ComponentBaseSolver.h \
 	$(srcdir)/Amesos_TestRowMatrix.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
@@ -418,11 +419,9 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 @HAVE_AMESOS_LAPACK_FALSE@LAPACK_H = 
-@HAVE_AMESOS_LAPACK_TRUE@LAPACK_H = 
+@HAVE_AMESOS_LAPACK_TRUE@LAPACK_H = $(srcdir)/Amesos_Lapack.h
 @HAVE_AMESOS_LAPACK_FALSE@LAPACK = 
-@HAVE_AMESOS_LAPACK_TRUE@LAPACK = \
-@HAVE_AMESOS_LAPACK_TRUE@	$(srcdir)/Amesos_Lapack.cpp
-
+@HAVE_AMESOS_LAPACK_TRUE@LAPACK = $(srcdir)/Amesos_Lapack.cpp
 @HAVE_AMESOS_SUPERLU_FALSE@SUPERLU_H = 
 @HAVE_AMESOS_SUPERLU_TRUE@SUPERLU_H = \
 @HAVE_AMESOS_SUPERLU_TRUE@	$(srcdir)/Amesos_Superlu.h
@@ -1897,7 +1896,6 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-am uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
-@HAVE_AMESOS_LAPACK_TRUE@	$(srcdir)/Amesos_Lapack.h
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
