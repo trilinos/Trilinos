@@ -416,6 +416,8 @@ TAC_ARG_WITH_PACKAGE(ml_parpack, [Enable PARPACK support. See notes for --with-m
 #
 TAC_ARG_WITH_PACKAGE(ml_parasails, [Enable Parasails support. See notes for --with-ml_metis.], ML_PARASAILS, no) 
 #
+TAC_ARG_WITH_PACKAGE(ml_nox, [Enable ML_NOX support. See notes for --with-ml_metis.], ML_NOX, no) 
+#
   TAC_ARG_WITH_PACKAGE(ml_zoltan, [Enable Zoltan support. This option requires
 that MPI be enabled.  See notes for --with-ml_metis.], ML_ZOLTAN, no) 
 #this works
