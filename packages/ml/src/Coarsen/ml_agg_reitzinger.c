@@ -1,3 +1,7 @@
+#ifdef HierarchyCheck
+extern double *xxx;
+#endif
+
 #include "ml_agg_reitzinger.h"
 
 int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes, 
@@ -12,11 +16,12 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
     double *Tcoarse_val = NULL, *node2proc, *val = NULL;
     int allocated = 0, lower;
     ML_Operator *Kn_coarse, *Rn_coarse, *Tcoarse, *Pn_coarse;
-    ML_Operator *Pe, *Tcoarse_trans, *Tfine;  
+    ML_Operator *Pe, *Tcoarse_trans, *Tfine, *Ke, *Re;
     struct ML_CSR_MSRdata *csr_data;
     int Nlevels_nodal, grid_level;
-    double *fido,*yyy, dtemp,*xxx;
+    double *fido,*yyy, *vvv, dtemp;
     int created_ag_obj = 0;
+    struct aztec_context *temp;
 
     if (incr_or_decrease != ML_DECREASING)
       pr_error("Hiptmair: Only ML_DECREASING is supported\n");
@@ -42,14 +47,13 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 					     ml_nodes->ML_num_levels);
   *Tmat_trans_array = (ML_Operator **) ML_allocate(sizeof(ML_Operator *)*
 					     ml_nodes->ML_num_levels);
-  for (i = 0; i < ml_nodes->ML_num_levels; i++) {
+  for (i = 0; i < ml_nodes->ML_num_levels; i++)
+  {
      (*Tmat_array)[i] = NULL;
      (*Tmat_trans_array)[i] = NULL;
   }
   (*Tmat_array)[fine_level] = Tfine;
   (*Tmat_trans_array)[fine_level] = Tmat_trans;
-
-  printf("ready to build T on the coarse grids\n");
 
   /********************************************************************/
   /*                 Build T on the coarse grid.                      */
@@ -62,41 +66,60 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   /* main loop through grid hierarchy */
   for (grid_level = fine_level-1; grid_level >= coarsest_level ; grid_level--)
   {
-  counter = 0;
-
-  /* node2proc = node to processor lookup table */
-  
   Kn_coarse = &(ml_nodes->Amat[grid_level]);
   Rn_coarse = &(ml_nodes->Rmat[grid_level+1]);
 
   if (Kn_coarse->getrow->pre_comm != NULL)
-   Nghost = Kn_coarse->getrow->pre_comm->total_rcv_length;
+     Nghost = Kn_coarse->getrow->pre_comm->total_rcv_length;
   else Nghost = 0;
 
-   node2proc = (double *) ML_allocate(sizeof(double)*(Nghost+
-						  Kn_coarse->invec_leng+1));
-   for (i = 0; i < Kn_coarse->invec_leng+Nghost; i++)
-      node2proc[i] = (double) Kn_coarse->comm->ML_mypid;
+  /* node2proc = node to processor lookup table
+     Main idea:
+     
+     1) Assign the proc. id to all nodes (local + ghost) on the processor.
+     2) Exchange boundary information.  Ghost nodes should now have the proc.
+        id of the "owning" processor.
 
-   if (Kn_coarse->getrow->pre_comm != NULL)
-   ML_exchange_bdry(node2proc, Kn_coarse->getrow->pre_comm,
-                    Kn_coarse->outvec_leng, Kn_coarse->comm, ML_OVERWRITE);
+     Tcoarse must be constructed in a way that processors do not duplicate
+     work.  A processor owns a row if both nodes are local.  If one node
+     is a ghost node, than the processor owns row i (edge i with endpoints
+     k & j) if proc_id(k) < proc_id(j).  Otherwise, processor proc_id(j) will
+     own row i.
+  */
 
+  node2proc = (double *) ML_allocate(sizeof(double)*(Nghost+
+                         Kn_coarse->invec_leng+1));
+  for (i = 0; i < Kn_coarse->invec_leng+Nghost; i++)
+     node2proc[i] = (double) Kn_coarse->comm->ML_mypid;
 
-  printf("\acheck allocation sizes for Tcoarse in ml_agg_reitzinger.c\n");
+  if (Kn_coarse->getrow->pre_comm != NULL)
+  ML_exchange_bdry(node2proc, Kn_coarse->getrow->pre_comm,
+                   Kn_coarse->outvec_leng, Kn_coarse->comm, ML_OVERWRITE);
 
-  Tcoarse_bindx =(int    *) ML_allocate(Kn_coarse->N_nonzeros *sizeof(int) );
-  Tcoarse_val = (double *) ML_allocate(Kn_coarse->N_nonzeros *sizeof(double));
-  Tcoarse_rowptr= (int    *) ML_allocate(Kn_coarse->N_nonzeros *sizeof(int));
+#ifdef DEBUG_T_BUILD
+  printf("\n\n%d: Kn_coarse->N_nonzeros = %d  Kn_coarse->invec_leng+Nghost = %d\nKn_coarse->invec_leng = %d\n\n",
+         Kn_coarse->comm->ML_mypid, Kn_coarse->N_nonzeros,
+         Kn_coarse->invec_leng+Nghost, Kn_coarse->invec_leng);
+#endif /* ifdef DEBUG_T_BUILD */
+
+  printf("\n\n\aCheck allocation for construction of Tcoarse\n\n");
+
+  Tcoarse_bindx =(int *)
+                 ML_allocate((Kn_coarse->N_nonzeros+1000) *sizeof(int) );
+  Tcoarse_val = (double *)
+                 ML_allocate((Kn_coarse->N_nonzeros+1000) *sizeof(double));
+  Tcoarse_rowptr= (int *) ML_allocate(Kn_coarse->N_nonzeros *sizeof(int));
   Tcoarse_rowptr[0] = 0;
-  nz_ptr = 0;
+  counter = 0; nz_ptr = 0;
   for (i = 0; i < Kn_coarse->outvec_leng; i++)
   {
      ML_get_matrix_row(Kn_coarse,1, &i,&allocated,&bindx,&val,&row_length, 0);
      ML_az_sort(bindx, row_length, NULL, NULL);
 
+     /* Step through unknowns bindx[j] connected to unknown i. */
      for (j = 0; j < row_length; j++)
 	 {
+       /* If nodes i and bindx[j] are owned by the same processor ... */
        if (node2proc[i] == node2proc[bindx[j]])
 	   {
           if (bindx[j] > i)
@@ -109,6 +132,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
              counter++;
           }
 	   }
+       /* If node i is owned by a smaller processor than node bindx[j] ... */
        else if (node2proc[i] < node2proc[bindx[j]])
 	      {
              Tcoarse_bindx[nz_ptr]  =  bindx[j];
@@ -120,6 +144,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 	      }
      }
   }
+#ifdef DEBUG_T_BUILD
+  printf("\n\n%d:nnz_ptr = %d\n\n",Kn_coarse->comm->ML_mypid,nz_ptr);
+#endif /* ifdef DEBUG_T_BUILD */
   ML_free(node2proc);
 
   csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct 
@@ -141,6 +168,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
   Pn_coarse = &(ml_nodes->Pmat[grid_level]);
   Rn_coarse = &(ml_nodes->Rmat[grid_level+1]);
+
+/*
+  if ( grid_level == fine_level-1)
+  {
+     printf("Pn ( %d by %d)\n",Pn_coarse->outvec_leng,Pn_coarse->invec_leng);
+     ML_Operator_Print(Pn_coarse,"Pn");
+  }
+*/
 
   /********************************************************************/
   /* Fix P and R so that they are not normalized. This is so that we  */
@@ -375,7 +410,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 	     fido[i] = 1;
 	  else
 	  {
-	     /* This is for debuggin a 2 process run.  The indices will
+	     /* This is for debugging a 2 process run.  The indices will
 		    be split between 2 processes;  here, the split occurs at 120. */
 	     if ((Pe->comm->ML_mypid == 0) && (i < 120))
 		    fido[i] = 1;
@@ -415,13 +450,40 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 			  &(ml_edges->SingleLevel[grid_level]), 
 			  &(ml_edges->SingleLevel[grid_level+1]));
   ML_Gen_Restrictor_TransP(ml_edges, grid_level+1, grid_level);
+#ifdef RAPstuff
   ML_Gen_AmatrixRAP(ml_edges, grid_level+1, grid_level);
-
+#endif
   Tfine = Tcoarse;
-  } /* for gridlevel = finelevel-1 ... */
+
+/*
+  if (grid_level == fine_level-1)
+  {
+      printf("Don't forget these temporary frees!!\n");
+      temp = (struct aztec_context *) ml_nodes->Amat[grid_level+1].data;
+      free(temp->Amat->bindx);
+      free(temp->Amat->val);
+      free(temp->Amat);
+  }
+*/
+
+  /* Free Pn and Rn. */
+/*
+  printf("Don't forget these temporary frees!!\n");
+  ML_Operator_Clean(&(ml_nodes->Pmat[grid_level]));
+  ML_Operator_Clean(&(ml_nodes->Rmat[grid_level+1]));
+  ML_Operator_Clean(&(ml_nodes->Amat[grid_level+1]));
+*/
+
+  } /* for grid_level = fine_level-1 ... */
 
   ML_free(bindx);
   ML_free(val);
+
+  for (grid_level = fine_level-1; grid_level >= coarsest_level ; grid_level--)
+  {
+     ML_Gen_AmatrixRAP(ml_edges, grid_level+1, grid_level);
+
+  } /* for gridlevel = finelevel-1 ... */
 
   if (created_ag_obj == 1) ML_Aggregate_Destroy(&ag);
   return(Nlevels_nodal);
@@ -432,9 +494,12 @@ int ML_MGHierarchy_ReitzingerDestroy(int finest_level, int coarsest_level,
 {
     int level;
 
-    for (level = finest_level; level >= coarsest_level; level--) {
-      if ((*Tmat_array)[level] != NULL)   ML_Operator_Destroy((*Tmat_array)[level]);
-      if ((*Tmat_trans_array)[level] != NULL)   ML_Operator_Destroy((*Tmat_trans_array)[level]);
+    for (level = finest_level; level >= coarsest_level; level--)
+    {
+      if ((*Tmat_array)[level] != NULL)
+         ML_Operator_Destroy((*Tmat_array)[level]);
+      if ((*Tmat_trans_array)[level] != NULL)
+         ML_Operator_Destroy((*Tmat_trans_array)[level]);
       (*Tmat_array)[level] = NULL;
       (*Tmat_trans_array)[level] = NULL;
     }
