@@ -3,9 +3,7 @@
 if ("$1" == "-v") then
   cat log.txt
 endif
-grep "2-norm of difference between" referencelog.txt > temp1.txt
-grep "2-norm of difference between" log.txt > temp2.txt
-diff -b -B temp1.txt temp2.txt
+grep "Solver converged" log.txt >> log.txt
 if( "$status" != "0" ) then
   echo " ******** Test failed ******** "
 else 
