@@ -63,10 +63,7 @@ LOCA::Stepper::Stepper(LOCA::Continuation::AbstractGroup& initialGuess,
   conGroupManagerPtr(NULL),
   curGroupPtr(NULL),
   prevGroupPtr(NULL),
-  solStatusTestPtr(NULL),
-  paramStatusTestPtr(NULL),
-  comboStatusTestPtr(NULL),
-  haveSeparateStatusTests(false),
+  statusTestPtr(NULL),
   paramListPtr(NULL),
   solverPtr(NULL),
   predictorManagerPtr(NULL),
@@ -78,38 +75,12 @@ LOCA::Stepper::Stepper(LOCA::Continuation::AbstractGroup& initialGuess,
   reset(initialGuess, t, p);
 }
 
-LOCA::Stepper::Stepper(LOCA::Continuation::AbstractGroup& initialGuess, 
-		       NOX::StatusTest::Generic& tSol,
-		       NOX::StatusTest::Generic& tParam,
-		       NOX::Parameter::List& p) :
-  LOCA::Abstract::Iterator(),
-  conGroupManagerPtr(NULL),
-  curGroupPtr(NULL),
-  prevGroupPtr(NULL),
-  solStatusTestPtr(NULL),
-  paramStatusTestPtr(NULL),
-  comboStatusTestPtr(NULL),
-  haveSeparateStatusTests(true),
-  paramListPtr(NULL),
-  solverPtr(NULL),
-  predictorManagerPtr(NULL),
-  curPredictorPtr(NULL),
-  prevPredictorPtr(NULL),
-  stepSizeManagerPtr(NULL)
-  
-{
-  reset(initialGuess, tSol, tParam, p);
-}
-
 LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
   LOCA::Abstract::Iterator(s),
   conGroupManagerPtr(NULL),
   curGroupPtr(NULL),
   prevGroupPtr(NULL),
-  solStatusTestPtr(NULL),
-  paramStatusTestPtr(s.paramStatusTestPtr),
-  comboStatusTestPtr(NULL),
-  haveSeparateStatusTests(s.haveSeparateStatusTests),
+  statusTestPtr(s.statusTestPtr),
   paramListPtr(s.paramListPtr),
   solverPtr(NULL),
   predictorManagerPtr(NULL),
@@ -143,15 +114,6 @@ LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
   stepSizeManagerPtr = 
     new LOCA::StepSize::Manager(*s.stepSizeManagerPtr);
 
-  if (haveSeparateStatusTests) {
-    solStatusTestPtr = 
-      &(dynamic_cast<LOCA::StatusTest::Wrapper*>(s.solStatusTestPtr)->
-	getUnderlyingStatusTest());
-    comboStatusTestPtr = 
-      new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND,
-				 *solStatusTestPtr, *paramStatusTestPtr);
-  }
-
   // Right now this doesn't work because we can't copy the solver
 }
 
@@ -165,11 +127,6 @@ LOCA::Stepper::~Stepper()
   delete prevPredictorPtr;
   delete stepSizeManagerPtr;
   delete solverPtr;
-
-  if (haveSeparateStatusTests) {
-    delete solStatusTestPtr;
-    delete comboStatusTestPtr;
-  }
 }
 
 bool 
@@ -177,44 +134,6 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
 		     NOX::StatusTest::Generic& t,
 		     NOX::Parameter::List& p) 
 {
-  if (comboStatusTestPtr != NULL && haveSeparateStatusTests) 
-    delete comboStatusTestPtr;
-  if (solStatusTestPtr != NULL && haveSeparateStatusTests) 
-    delete solStatusTestPtr;
-
-  haveSeparateStatusTests = false;
-  solStatusTestPtr = NULL;
-  paramStatusTestPtr = NULL;
-  comboStatusTestPtr = &t;
-
-  return resetCommon(initialGuess, *comboStatusTestPtr, p);
-}
-
-bool 
-LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
-		     NOX::StatusTest::Generic& tSol,
-		     NOX::StatusTest::Generic& tParam,
-		     NOX::Parameter::List& p) 
-{
-  if (comboStatusTestPtr != NULL && haveSeparateStatusTests)
-    delete comboStatusTestPtr;
-  if (solStatusTestPtr != NULL && haveSeparateStatusTests) 
-    delete solStatusTestPtr;
-
-  haveSeparateStatusTests = true;
-  solStatusTestPtr = new LOCA::StatusTest::Wrapper(tSol);
-  paramStatusTestPtr = &tParam;
-  comboStatusTestPtr = new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND,
-						  *solStatusTestPtr,
-						  *paramStatusTestPtr);
-
-  return resetCommon(initialGuess, tSol, p);
-}
-
-bool
-LOCA::Stepper::resetCommon(LOCA::Continuation::AbstractGroup& initialGuess,
-			   NOX::StatusTest::Generic& initialStatusTest,
-			   NOX::Parameter::List& p) {
   delete curGroupPtr;
   delete prevGroupPtr;
   delete curPredictorPtr;
@@ -225,6 +144,7 @@ LOCA::Stepper::resetCommon(LOCA::Continuation::AbstractGroup& initialGuess,
   delete solverPtr;
 
   paramListPtr = &p;
+  statusTestPtr = &t;
 
   // Initialize the utilities
   Utils::setUtils(paramListPtr->sublist("LOCA").sublist("Utilities"));
@@ -252,6 +172,17 @@ LOCA::Stepper::resetCommon(LOCA::Continuation::AbstractGroup& initialGuess,
   else {
     cout << "ERROR: LOCA::Stepper::Stepper::resetStepperMembers() - "
 	 << "\"Initial Value\" of continuation param is not set!" << endl;
+    throw "LOCA Error";
+  }
+
+  // Get the continuation parameter name
+  if (stepperList.isParameter("Continuation Parameter"))
+    initialGuess.setParam(stepperList.getParameter("Continuation Parameter", 
+						   "None"), 
+			  startValue);
+  else {
+    cout << "ERROR: LOCA::Stepper::Stepper::resetStepperMembers() - "
+	 << "\"Continuation Parameter\" name is not set!" << endl;
     throw "LOCA Error";
   }
   
@@ -284,8 +215,27 @@ LOCA::Stepper::resetCommon(LOCA::Continuation::AbstractGroup& initialGuess,
     stepperList.getParameter("Tangent Factor Exponent",1.0);
   calcEigenvalues = stepperList.getParameter("Compute Eigenvalues",false);
 
+  // Make a copy of the parameter list, change continuation method to 
+  // natural
+  NOX::Parameter::List firstStepParams(*paramListPtr);
+  NOX::Parameter::List& firstStepperParams 
+      = firstStepParams.sublist("LOCA").sublist("Stepper");
+  firstStepperParams.setParameter("Continuation Method", "Natural");
+
+  // Reset continuation manager
+  conGroupManagerPtr->reset(firstStepperParams);
+
+  // Create continuation group
+  curGroupPtr = conGroupManagerPtr->createContinuationGroup(initialGuess, firstStepParams.sublist("NOX").sublist("Direction").sublist("Newton").sublist("Linear Solver"));
+      
+  // Set step size
+  curGroupPtr->setStepSize(0.0);
+  
+  // Set previous solution vector in current solution group
+  curGroupPtr->setPrevX(curGroupPtr->getX());
+
   // Create solver using initial conditions
-  solverPtr = new NOX::Solver::Manager(initialGuess, initialStatusTest, 
+  solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
 				       paramListPtr->sublist("NOX"));
 
   printInitializationInfo();
@@ -305,14 +255,18 @@ LOCA::Stepper::start() {
   // Perform solve of initial conditions
   solverStatus = solverPtr->solve();
 
+  // Reset continuation manager
+  conGroupManagerPtr->reset(paramListPtr->sublist("LOCA").sublist("Stepper"));
+
   // Set up continuation groups
-  const LOCA::Continuation::AbstractGroup& constSolnGrp = 
-    dynamic_cast<const LOCA::Continuation::AbstractGroup&>(solverPtr->getSolutionGroup());
-   LOCA::Continuation::AbstractGroup& solnGrp = 
-     const_cast<LOCA::Continuation::AbstractGroup&>(constSolnGrp);
+  const LOCA::Continuation::ExtendedGroup& constSolnGrp = 
+    dynamic_cast<const LOCA::Continuation::ExtendedGroup&>(solverPtr->getSolutionGroup());
+  LOCA::Continuation::AbstractGroup& solnGrp = 
+    const_cast<LOCA::Continuation::AbstractGroup&>(constSolnGrp.getUnderlyingGroup());
+  delete curGroupPtr;
   curGroupPtr = 
     conGroupManagerPtr->createContinuationGroup(solnGrp, paramListPtr->sublist("NOX").sublist("Direction").sublist("Newton").sublist("Linear Solver"));
-
+  
   // Do printing (stepNumber==0 case) after continuation group set up
   if (solverStatus == NOX::StatusTest::Failed) 
     printEndStep(LOCA::Abstract::Iterator::Unsuccessful);
@@ -344,7 +298,7 @@ LOCA::Stepper::start() {
 
   // Create new solver using new continuation groups and combo status test
   delete solverPtr;
-  solverPtr = new NOX::Solver::Manager(*curGroupPtr, *comboStatusTestPtr, 
+  solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
 				       paramListPtr->sublist("NOX"));
 
   return LOCA::Abstract::Iterator::NotFinished;
@@ -421,7 +375,7 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus)
       
     // Create new solver
     delete solverPtr;
-    solverPtr = new NOX::Solver::Manager(*curGroupPtr, *comboStatusTestPtr, 
+    solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
 					 lastStepParams.sublist("NOX"));
 
     // Solve step
@@ -472,7 +426,7 @@ LOCA::Stepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
   curGroupPtr->computeX(*prevGroupPtr, *curPredictorPtr, stepSize);
 
   // Reset solver to compute new solution
-  solverPtr->reset(*curGroupPtr, *comboStatusTestPtr, 
+  solverPtr->reset(*curGroupPtr, *statusTestPtr, 
 		   paramListPtr->sublist("NOX"));
 
   return stepStatus;
