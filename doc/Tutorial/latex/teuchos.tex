@@ -557,119 +557,114 @@ This section presents examples of all the methods in the
 \subsection{Teuchos::RefCountPtr}
 \label{sec:teuchos:RefCountPtr}
 
-Teuchos::RefCountPtr is a templated class, whose functionalities are very
-similar to the garbage collector of Java. Memory allocated through
-RefCountPtr will automatically freed when no longer referenced, avoding
-memory leaks.
+The \verb!Teuchos::RefCountPtr! class is a templated class for implementing
+automatic garbage collection in C++ using smart, reference-counted pointers.
+Using this class allows one client to dynamically create an object and pass
+the object around to other clients without fear of memory leaks.  
+No client is required to explicitly
+call delete because object will be deleted when all the clients remove their
+references to it.  The type of garbage collection performed by \verb!Teuchos::RefCountPtr! is similar to those found in Perl and Java.
 
-This Section presents the basic usage of RefCountPtr. For an extensive
-presentation and details about the implementation, the reader is
-referred to~\cite{RefCountPtr-guide}. 
-
-As a starting example, consider the following simple piece of
-code. 
+To use the \verb!Teuchos::RefCountPtr! class, include the header:
+{\small 
 \begin{verbatim}
-#define HAVE_CONFIG_H
 #include "Teuchos_RefCountPtr.hpp"
-using namespace Teuchos;
-
-class Data 
-{
-public:
-  // allocate some data here
-  Data::Data() { A_ = new int[100];  }
-  Data::!Data() { delete [] A_; }
-  void PrintHello() { cout << "Hello from Data!" << endl; }
-private:
-  int * A_;
-};
-
-int main(int argc, char *argv[]) 
-{
-
-  RefCountPtr<Data> DataPtr = null;
-  DataPtr = rcp( new Data() );
-  DataPtr->PrintHello();
-
-  cout << DataPtr.get() << endl;
-  cout << DataPtr.count() << endl;
-
-  return 0;
-}
-\end{verbatim}
-This simple code illustrates the basic usage of \verb!RefCountPtr<>!. In
-the main function, we first declare a \verb!null! pointer (lowercase,
-defined in the Teuchos namespace) for Data class. This is more for the
-programmer's convenience, as \verb!RefCountPtr<>! are automatically
-initialized to null.
-
-The object is allocated using the standard C++ \verb!new! function, and
-the RefCountPtr function \verb!rcp()!.  Methods of Data can be accessed
-as if \verb!DataPtr! were a raw C++ pointer, using \verb!->!.  The raw
-C++ pointer to the Data object can be obtained through the method
-\verb!get()!.
-
-\verb!RefCountPtr<>! objects keeps trace of the number of objects (or
-functions) that need the object itself. As the object is no longer
-required, it can be safely deleted. Users can query the number of
-references to {\sl this} object using method \verb!DataPtr.count()!.
-
-Counting the references allows to avoid several memory leaks. For
-instance, one can erroneusly reassign a pointer, without calling
-\verb!delete! to the no-longer used object, \verb!RefCountPtr<>! will
-avoid this problem. Consider the following lines of code:
+\end{verbatim}}
+The data type used with {\tt Teuchos::RefCountPtr} should not 
+be a built-in data type (like {\tt int} or {\tt double}), this creates unneccessary 
+overhead.  Instead, it should be used to manage dynamic objects 
+and data members that need to be shared with many clients.  This means that the data type 
+will most likely be a C++ class.  Consider the class hierarchy:
+{\small
 \begin{verbatim}
-RefCountPtr<Data> DataPtr = rcp( new Data() );    
-DataPtr = new( new Data );
-\end{verbatim}
-As the first object is no longer referenced after the second \verb!new!
-statement, \verb!RefCountPtr<>! will take care of deleting it.
+class A { 
+ public: 
+   A& operator=(const A&){}; 
+   virtual ~A(){}; 
+   virtual void f(){}; 
+};   
+class B : virtual public A {};
+\end{verbatim}}
 
-Some Trilinos applications require in input variables allocated through
-\verb!RefCountPtr<>!. It may the case that those variable cannot be
-allocated using \verb!rcp()!. This happens, for instance, if the
-allocation is handled by other libraries, or by other parts of the code
-that cannot be modifed. In this situation, on can create a
-\verb!RefCountPtr<>! object as follows:
+Creating a reference-counted pointer to a dynamically allocated object (of type {\tt A}) can be done several ways:
+
+{\small 
 \begin{verbatim}
-Data * DataObj = new Data;
-RefCountPtr<Data> DataPtr;
-DataPtr = rcp(DataObj,false);
-DataPtr->PrintHello();
-delete DataObj;
-\end{verbatim}
-In the above fragment of code, we have created a \verb!RefCountPtr<>!
-that points to the raw C pointer \verb!DataObj!. As the second parameter
-is \verb!false!, the code assumes that the pointer will be freed by the
-user. 
+// Create a reference-counted NULL pointer of type A.
+RefCountPtr<A>	           a_null_ptr;
+// Create a reference-counted pointer of non-const type A.
+RefCountPtr<A>             a_ptr = rcp(new A);
+// Create a reference-counted pointer of const type A.
+RefCountPtr<const A>       ca_ptr = rcp(new A);
+// Create a const reference-counted pointer of non-const type A.
+const RefCountPtr<A>       a_cptr = rcp(new A); 
+// Create a const reference-counted pointer of const type A.
+const RefCountPtr<const A> ca_cptr = rcp(new A); 
+\end{verbatim}}
 
-More advanced features of \verb!RefCountPtr<>! are breifly listed below:
-\begin{itemize}
-\item \verb!rcp_implicit_cast()!, \verb!rcp_static_cast()!,
-  \verb!rcp_dynamic_cast()!, \verb!rcp_static_cast()! must be used to
-  cast RefCountPtr pointers, whose syntax is pretty similar to that of
-  raw C++ pointers;
-\item Specific deallocators can be specified in the construction phase;
-\item Several RefCountPtr pointers can share the same data, so that
-  deallocation occurs only once;
-\item Additional data to be free can be specified using
-  \verb!set_extra_data()!.
-\end{itemize}
+The {\tt Teuchos::RefCountPtr} class can also perform implicit conversions between a derived
+class ({\tt B}) and its base class ({\tt A}):
 
-As a final remark, we note that \verb!RefCountPtr<>! is {\sl not} meant
-to replace raw C pointers. First of all, some operations (like
-\verb!++!) on raw pointers are not allowed on RefCountPtr pointers.
-Secondly, it is probably not a good idea to use RefCountPtr pointers
-with build-in data time such as \verb!int! or \verb!double!. As
-suggested in~\cite{RefCountPtr-manual}, the most compelling situation
-where \verb!RefCountPtr<>! objects should be used is for data shared
-among various clients, of when a client needs to maintain a private data
-member to another object which is of abstract type. As a general rule,
-we may suggest to use \verb!RefCountPtr<>! for allocations that should
-be freed by other, independent part of the same code. Also,
-\verb!RefCountPtr<>! objects can be profitably used to dynamically
-allocate a given object's private data, as those data will not explicit
-deallocations in the object's destructor.
+{\small
+\begin{verbatim}
+RefCountPtr<B> b_ptr  = rcp(new B);
+RefCountPtr<A> a_ptr  = b_ptr;
+\end{verbatim}}
+
+\noindent Other non-implicit type conversions like static, dynamic, or const casts
+can be taken care of by non-member template functions:
+
+{\small
+\begin{verbatim}
+RefCountPtr<const B> b_ptr = rcp(new B);
+// Implicit cast from B to A.
+RefCountPtr<const A> ca_ptr = b_ptr;                              
+// Safe cast, type-checked.
+RefCountPtr<const B> ba_ptr1 = rcp_dynamic_cast<const B>(ca_ptr); 
+// Unsafe cast, non-type-checked.
+RefCountPtr<const B> ba_ptr2 = rcp_static_cast<const B>(ca_ptr);  
+// Cast away const from A.
+RefCountPtr<A>       a_ptr = rcp_const_cast<A>(ca_ptr);           
+\end{verbatim}}
+
+Using a reference-counted pointer is very similar to using a raw C++ pointer.  Some
+of the operations that are common to both are:
+{\small
+\begin{verbatim}
+RefCountPtr<A>
+   a_ptr1 = rcp(new A), // Initialize reference-counted pointers.
+   a_ptr2 = rcp(new A); // ""
+A  *ra_ptr1 = new A,    // Initialize non-reference counted pointers.
+   *ra_ptr2 = new A;    // ""
+a_ptr1 = rcp(ra_ptr2);  // Assign from a raw pointer (only do this once!)
+a_ptr2 = a_ptr1;        // Assign one smart pointer to another.
+a_ptr1 = rcp(ra_ptr1);  // Assign from a raw pointer (only do this once!)
+a_ptr1->f();            // Access a member of A using ->
+ra_ptr1->f();           // ""
+*a_ptr1 = *a_ptr2;      // Dereference the objects and assign.
+*ra_ptr1 = *ra_ptr2;    // ""
+\end{verbatim}}
+
+\noindent However, a reference-counted pointer cannot be used everywhere a raw C++ pointer
+can.  For instance, these statements will not compile:
+{\small
+\begin{verbatim}
+// Pointer arithmetic ++, --, +, - etc. not defined!
+a_ptr1++;            // error  
+// Comparision operators ==, !=, <=, >= etc. not defined!
+a_ptr1 == ra_ptr1;   // error 
+\end{verbatim}}
+
+\noindent Because the two are not equivalent, there is a way for getting the 
+raw C++ pointer held by any {\tt RefCountPtr<A>} object:
+{\small
+\begin{verbatim}
+A* true_ptr = a_ptr1.get();
+\end{verbatim}}
+These are just some of the basic features found in the {\tt Teuchos::RefCountPtr} class.  
+A more extensive tutorial of this powerful tool is ``in the works'' and will be made available
+to Teuchos users as soon as it is finished.  The examples presented in this section can be found in
+\TriExe{teuchos/ex7.cpp}.  
 
 %%%
 %%%
@@ -714,7 +709,8 @@ To obtain a summary from all the timers in the global TimeMonitor, use:
 TimeMonitor::summarize();
 \end{verbatim}}
 \noindent Information from each timer can also be obtained using 
-the methods from {\tt Teuchos::Time}.  This section presents examples of all the 
+the methods from {\tt Teuchos::Time}.  
+This section presents examples of all the 
 methods in the {\tt Teuchos::TimeMonitor} class and can be found in
 \TriExe{teuchos/ex6.cpp}.  
 
