@@ -98,28 +98,31 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
 {
    int i;
 
-   if ( (*ag)->ML_id != ML_ID_AGGRE ) 
+   if (*ag != NULL)
    {
-      printf("ML_Aggregate_Destroy : wrong object. \n");
-      exit(-1);
+      if ( (*ag)->ML_id != ML_ID_AGGRE ) 
+      {
+         printf("ML_Aggregate_Destroy : wrong object. \n");
+         exit(-1);
+      }
+      if ((*ag)->nullspace_vect != NULL) 
+      {
+         ML_memory_free((void **)&((*ag)->nullspace_vect));
+      }
+      if ((*ag)->aggr_info != NULL) 
+      {
+         for ( i = 0; i < (*ag)->max_levels; i++ )
+            if ((*ag)->aggr_info[i] != NULL) 
+               ML_memory_free((void **)&((*ag)->aggr_info[i]));
+         ML_memory_free((void **)&((*ag)->aggr_info));
+      } 
+      if ((*ag)->aggr_count != NULL) 
+      {
+         ML_memory_free((void **)&((*ag)->aggr_count));
+      } 
+      ML_memory_free( (void **) ag );
+      (*ag) = NULL;
    }
-   if ((*ag)->nullspace_vect != NULL) 
-   {
-      ML_memory_free((void **)&((*ag)->nullspace_vect));
-   }
-   if ((*ag)->aggr_info != NULL) 
-   {
-      for ( i = 0; i < (*ag)->max_levels; i++ )
-         if ((*ag)->aggr_info[i] != NULL) 
-            ML_memory_free((void **)&((*ag)->aggr_info[i]));
-      ML_memory_free((void **)&((*ag)->aggr_info));
-   } 
-   if ((*ag)->aggr_count != NULL) 
-   {
-      ML_memory_free((void **)&((*ag)->aggr_count));
-   } 
-   ML_memory_free( (void **) ag );
-   (*ag) = NULL;
    return 0;
 }
 
