@@ -133,7 +133,6 @@ int Epetra_Vector::ChangeValues(int NumEntries, int BlockOffset, double * Values
 
   int cur_index;
   int ierr = 0;
-  int ierr1 = 0;
   if (BlockOffset<0) EPETRA_CHK_ERR(-1); // Offset is out-of-range
 
   for (int i=0; i<NumEntries; i++) {

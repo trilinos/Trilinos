@@ -159,7 +159,6 @@ int Epetra_BasicDirectory::Generate()
   
   // Get list of processors owning the directory entries for the Map GIDs
 
-  int NumProc = Map_->Comm().NumProc();
   int MyPID = Map_->Comm().MyPID();
 
   int Map_NumMyElements = Map_->NumMyElements();
@@ -245,7 +244,6 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const int NumEntries,
   int MyPID = Map_->Comm().MyPID();
   int NumProc = Map_->Comm().NumProc();
   int n_over_p = Map_->NumGlobalElements() / NumProc;
-  int remainder = Map_->NumGlobalElements() % NumProc;
 
 
   // Test for simple cases

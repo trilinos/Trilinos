@@ -131,7 +131,6 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
   // Get processor information
 
   int NumProc = Comm.NumProc();
-  int MyPID = Comm.MyPID();
 
   DistributedGlobal_ = IsDistributedGlobal(NumGlobalElements, NumMyElements);
 
@@ -231,7 +230,6 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
   // Get processor information
 
   int NumProc = Comm.NumProc();
-  int MyPID = Comm.MyPID();
   if (NumMyElements>0) {
     // Compute min/max GID on this processor
     MinMyGID_ = MyGlobalElements[0];
@@ -345,7 +343,6 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
   // Get processor information
 
   int NumProc = Comm.NumProc();
-  int MyPID = Comm.MyPID();
   
   if (NumMyElements>0) {
     // Compute min/max GID and element size, number of points on this processor

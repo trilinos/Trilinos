@@ -286,7 +286,6 @@ void Epetra_MapColoring::Print(ostream& os) const {
 	  os <<  "Color  ";
 	  os << endl;
 	}
-	int * MyGlobalElements1 = Map().MyGlobalElements();
 	int * ColorValues = ListOfColors();
 	for (int ii=0; ii<NumColors(); ii++) {
 	  int CV = ColorValues[ii];
@@ -389,7 +388,7 @@ int Epetra_MapColoring::UnpackAndCombine(const Epetra_DistObject & Source,
 					char * Imports, int & SizeOfPacket, 
 					 Epetra_Distributor & Distor, 
 					 Epetra_CombineMode CombineMode ) {
-  int i, j, jj, k;
+  int j;
   
   if(    CombineMode != Add
       && CombineMode != Zero

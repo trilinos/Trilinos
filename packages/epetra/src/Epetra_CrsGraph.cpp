@@ -35,7 +35,7 @@ Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& Ro
     ColMap_(0),
     CV_(CV) {
   InitializeDefaults();
-  int ierr = Allocate(NumIndicesPerRow, 1);
+  assert(Allocate(NumIndicesPerRow, 1)==0);
 }
 
 //==============================================================================
@@ -44,7 +44,7 @@ Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& Ro
     ColMap_(0),
     CV_(CV) {
   InitializeDefaults();
-  int ierr = Allocate(&NumIndicesPerRow, 0);
+  assert(Allocate(&NumIndicesPerRow, 0)==0);
 }
 //==============================================================================
 Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, 
@@ -53,7 +53,7 @@ Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& Ro
     ColMap_(0),
     CV_(CV) {
   InitializeDefaults();
-  int ierr = Allocate(NumIndicesPerRow, 1);
+  assert(Allocate(NumIndicesPerRow, 1)==0);
   ColMap_ = new Epetra_BlockMap(ColMap);
 }
 
@@ -64,7 +64,7 @@ Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& Ro
     ColMap_(0),
     CV_(CV) {
   InitializeDefaults();
-  int ierr = Allocate(&NumIndicesPerRow, 0);
+  assert(Allocate(&NumIndicesPerRow, 0)==0);
   ColMap_ = new Epetra_BlockMap(ColMap);
 }
 //==============================================================================
@@ -118,7 +118,7 @@ Epetra_CrsGraph::Epetra_CrsGraph(const Epetra_CrsGraph & Graph)
     All_Indices_(0),
     CV_(Copy)
 {
-  int ierr = Allocate(Graph.NumIndicesPerRow(), 1);
+  assert(Allocate(Graph.NumIndicesPerRow(), 1)==0);
   for (int i=0; i<NumMyBlockRows_; i++) {
     NumIndicesPerRow_[i] = NumAllocatedIndicesPerRow_[i];
     for (int j=0; j< NumIndicesPerRow_[i]; j++) Indices_[i][j] = Graph.Indices_[i][j];
@@ -498,7 +498,7 @@ int Epetra_CrsGraph::TransformToLocal(Epetra_BlockMap *DomainMap, Epetra_BlockMa
 //==========================================================================
 int Epetra_CrsGraph::ComputeGlobalConstants() {
 
-  int i, j, k;
+  int i, j;
 
   if (GlobalConstantsComputed()) return(0);
 
@@ -694,7 +694,6 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap & DomainMap, const Epetra_
   // If not owned, add to ColMap for later use
 
   int NumMyBlockCols = RowMap().NumMyElements(); // Redefine NumMyBlockCols_ to number of local domain map elements
-  int NumMyCols = RowMap().NumMyPoints(); // Redefine NumMyCols_ to number of local domain map points
     
   int IncBlockCols = EPETRA_MAX(EPETRA_MIN(NumMyBlockCols_/4,100),10);
   int MaxBlockCols = 0;

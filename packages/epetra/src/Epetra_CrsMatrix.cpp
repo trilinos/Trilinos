@@ -44,7 +44,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
 {
   Graph_ = new Epetra_CrsGraph(CV, RowMap, NumEntriesPerRow);
   InitializeDefaults();
-  int ierr = Allocate();
+  assert(Allocate()==0);
 }
 
 //==============================================================================
@@ -60,7 +60,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
 {
   Graph_ = new Epetra_CrsGraph(CV, RowMap, NumEntriesPerRow);
   InitializeDefaults();
-  int ierr = Allocate();
+  assert(Allocate()==0);
 }
 //==============================================================================
 Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, 
@@ -76,7 +76,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
 {
   Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap, NumEntriesPerRow);
   InitializeDefaults();
-  int ierr = Allocate();
+  assert(Allocate()==0);
 }
 
 //==============================================================================
@@ -93,7 +93,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
 {
   Graph_ = new Epetra_CrsGraph(CV, RowMap, ColMap,  NumEntriesPerRow);
   InitializeDefaults();
-  int ierr = Allocate();
+  assert(Allocate()==0);
 }
 //==============================================================================
 Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph & Graph) 
@@ -107,7 +107,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph &
     CV_(CV)
 {
   InitializeDefaults();
-  int ierr = Allocate();
+  assert(Allocate()==0);
 }
 
 //==============================================================================
@@ -128,7 +128,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & Matrix)
     CV_(Copy)
 {
   Graph_ = new Epetra_CrsGraph(Matrix.Graph());
-  int ierr = Allocate();
+  assert(Allocate()==0);
   for (int i=0; i<NumMyRows_; i++) {
     int NumEntries = NumEntriesPerRow_[i];
     for (int j=0; j< NumEntries; j++) Values_[i][j] = Matrix.Values_[i][j];
@@ -468,7 +468,7 @@ int Epetra_CrsMatrix::SortEntries() {
 //==========================================================================
 int Epetra_CrsMatrix::MergeRedundantEntries() {
 
-  int i, j, k;
+  int i;
 
   if (NoRedundancies()) return(0);
   if (!Sorted()) EPETRA_CHK_ERR(-1);  // Must have sorted entries
@@ -502,7 +502,7 @@ int Epetra_CrsMatrix::MergeRedundantEntries() {
 	}
 
 	//Now slide remaining Values down in the list.
-	for(int k=offset+1; k<NumEntries-numMerged-1; ++k) {
+	for(int k=offset+1; k<NumEntries-numMerged; ++k) {
 	  Values[k] = Values[k+numMerged];
 	}
 
@@ -1021,7 +1021,6 @@ int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epe
   int ** Indices = Indices_;
   double ** Values = Values_;
   double diag;
-  int NumMyCols_ = NumMyCols();
 
   // If upper, point to last row
   if ((Upper && !Trans) || (!Upper && Trans)) {
@@ -1129,7 +1128,6 @@ int Epetra_CrsMatrix::InvRowSums(Epetra_Vector& x) const {
   int ierr = 0;
   int i, j;
   int * NumEntriesPerRow = NumEntriesPerRow_;
-  int ** Indices = Indices_;
   double ** Values = Values_;
   double * xp = (double*)x.Values();
 
@@ -1219,7 +1217,6 @@ int Epetra_CrsMatrix::LeftScale(const Epetra_Vector& x) {
 
   int i, j;
   int * NumEntriesPerRow = NumEntriesPerRow_;
-  int ** Indices = Indices_;
   double ** Values = Values_;
   double * xp = (double*)x.Values();
 
@@ -1264,7 +1261,6 @@ int Epetra_CrsMatrix::RightScale(const Epetra_Vector& x) {
     int      NumEntries = *NumEntriesPerRow++;
     int *    ColIndices = *Indices++;
     double * RowValues  = *Values++;
-    double scale = xp[i];
     for (j=0; j < NumEntries; j++)  RowValues[j] *=  xp[ColIndices[j]];
   }
   if (x_tmp!=0) delete x_tmp;
@@ -1313,7 +1309,6 @@ double Epetra_CrsMatrix::NormOne() const {
     x_tmp = new Epetra_Vector(ImportMap()); // Create temporary import vector if needed
     xp = (double*)x_tmp->Values();
   }
-  int ierr = 0;
   int i, j;
   int * NumEntriesPerRow = NumEntriesPerRow_;
   int ** Indices = Indices_;

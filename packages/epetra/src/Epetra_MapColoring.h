@@ -244,8 +244,8 @@ class Epetra_MapColoring: public Epetra_DistObject {
 
 
   struct ListItem {
-    ListItem * NextItem;
     int ItemValue;
+    ListItem * NextItem;
     
     ListItem( const int itemValue = 0, ListItem * nextItem = 0)
       : ItemValue(itemValue), NextItem(nextItem){}

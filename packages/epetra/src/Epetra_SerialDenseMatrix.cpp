@@ -67,7 +67,6 @@ Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(const Epetra_SerialDenseMatri
 
 {
 
-  int i;
   LDA_ = M_;
   A_ = new double[LDA_*N_];
   CopyMat(Source.A_, Source.LDA_, M_, N_, A_, LDA_);

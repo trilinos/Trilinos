@@ -6,17 +6,17 @@ class Epetra_HashTable
 {
   struct Node
   {
-     Node * Ptr;
      int Key;
      int Value;
+     Node * Ptr;
 
      Node( const int key = 0, const int value = 0, Node * ptr = 0 )
      : Key(key), Value(value), Ptr(ptr) {}
   };
 
-  unsigned int Seed_;
   Node ** Container_;
   int Size_;
+  unsigned int Seed_;
 
   int Func( const int key ) { return (Seed_ ^ key)%Size_; }
      

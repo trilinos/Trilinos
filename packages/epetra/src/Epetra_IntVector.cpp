@@ -287,7 +287,7 @@ int Epetra_IntVector::PackAndPrepare(const Epetra_DistObject & Source, int NumEx
 
   const Epetra_IntVector & A = dynamic_cast<const Epetra_IntVector &>(Source);
 
-  int i, j, jj, k;
+  int j, jj, k;
 
   int  * From;
   A.ExtractView(&From);
@@ -363,7 +363,7 @@ int Epetra_IntVector::UnpackAndCombine(const Epetra_DistObject & Source,
 					char * Imports, int & SizeOfPacket, 
 					 Epetra_Distributor & Distor, 
 					 Epetra_CombineMode CombineMode ) {
-  int i, j, jj, k;
+  int j, jj, k;
   
   if(    CombineMode != Add
       && CombineMode != Zero

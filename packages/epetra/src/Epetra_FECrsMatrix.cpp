@@ -179,8 +179,6 @@ int Epetra_FECrsMatrix::GlobalAssemble()
 
   Epetra_CrsMatrix tempMat(Copy, sourceMap, nonlocalRowLengths_);
 
-  double* values;
-  int* indices;
   int i;
 
   for(i=0; i<numNonlocalRows_; ++i) {

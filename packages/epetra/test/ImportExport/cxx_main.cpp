@@ -18,25 +18,13 @@
 int main(int argc, char *argv[])
 {
   int ierr = 0, i, j, forierr = 0;
-  bool debug = false;
 
 #ifdef EPETRA_MPI
-
   // Initialize MPI
-
   MPI_Init(&argc,&argv);
-  int size, rank; // Number of MPI processes, My process ID
-
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
-
 #else
-
-  int size = 1; // Serial case (not using MPI)
-  int rank = 0;
   Epetra_SerialComm Comm;
-
 #endif
 
   bool verbose = false;
@@ -48,8 +36,8 @@ int main(int argc, char *argv[])
 
 
   //char tmp;
-  //if (rank==0) cout << "Press any key to continue..."<< endl;
-  //if (rank==0) cin >> tmp;
+  //if (Comm.MyPID()==0) cout << "Press any key to continue..."<< endl;
+  //if (Comm.MyPID()==0) cin >> tmp;
   //Comm.Barrier();
 
   Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
@@ -58,17 +46,12 @@ int main(int argc, char *argv[])
   if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
               << " is alive."<<endl;
 
-  bool verbose1 = verbose;
-
   // Redefine verbose to only print on PE 0
-  if (verbose && rank!=0) verbose = false;
+  if (verbose && Comm.MyPID()!=0) verbose = false;
 
   int NumMyEquations = 10000;
   int NumGlobalEquations = NumMyEquations*NumProc+EPETRA_MIN(NumProc,3);
   if (MyPID < 3) NumMyEquations++;
-  int IndexBase = 0;
-  bool DistributedGlobal = (NumGlobalEquations>NumMyEquations);
-
   // Construct a Source Map that puts approximately the same Number of equations on each processor in 
   // uniform global ordering
 
@@ -84,7 +67,7 @@ int main(int argc, char *argv[])
   //  some unchanged elements (relative to the soure map),
   //  some permuted elements
   //  some off-processor elements
-  Epetra_Vector & RandVec = *new Epetra_Vector(SourceMap);
+  Epetra_Vector RandVec(SourceMap);
   RandVec.Random(); // This creates a vector of random numbers between negative one and one.
 
   int *TargetMyGlobalElements = new int[NumMyElements];
@@ -113,21 +96,21 @@ int main(int argc, char *argv[])
   }
   EPETRA_TEST_ERR(!(NumMyEquations==NumSameIDs+NumPermutedIDs+NumRemoteIDs),ierr);
 
-  Epetra_Map & TargetMap = *new Epetra_Map(-1, NumMyElements, TargetMyGlobalElements, 0, Comm);
+  Epetra_Map TargetMap(-1, NumMyElements, TargetMyGlobalElements, 0, Comm);
 
   // Create a multivector whose elements are GlobalID * (column number +1)
 
   int NumVectors = 3;
-  Epetra_MultiVector & SourceMultiVector = *new Epetra_MultiVector(SourceMap, NumVectors);
+  Epetra_MultiVector SourceMultiVector(SourceMap, NumVectors);
   for (j=0; j < NumVectors; j++)
     for (i=0; i < NumMyElements; i++)
       SourceMultiVector[j][i] = (double) SourceMyGlobalElements[i]*(j+1);
 
   // Create a target multivector that we will fill using an Import
 
-  Epetra_MultiVector & TargetMultiVector = *new Epetra_MultiVector(TargetMap, NumVectors);
+  Epetra_MultiVector TargetMultiVector(TargetMap, NumVectors);
 
-  Epetra_Import & Importer = *new Epetra_Import(TargetMap, SourceMap);
+  Epetra_Import Importer(TargetMap, SourceMap);
 
   EPETRA_TEST_ERR(!(TargetMultiVector.Import(SourceMultiVector, Importer, Insert)==0),ierr);
 
@@ -149,14 +132,13 @@ int main(int argc, char *argv[])
 
   // Now use Importer to do an export
 
-  Epetra_Vector & TargetVector = *new  Epetra_Vector(SourceMap);
-  Epetra_Vector & ExpectedTarget = *new  Epetra_Vector(SourceMap);
-  Epetra_Vector & SourceVector = *new  Epetra_Vector(TargetMap);
+  Epetra_Vector TargetVector(SourceMap);
+  Epetra_Vector ExpectedTarget(SourceMap);
+  Epetra_Vector SourceVector(TargetMap);
 
   NumSameIDs = Importer.NumSameIDs();
   int NumPermuteIDs = Importer.NumPermuteIDs();
   int NumExportIDs = Importer.NumExportIDs();
-  int *PermuteToLIDs = Importer.PermuteToLIDs();
   int *PermuteFromLIDs = Importer.PermuteFromLIDs();
   int *ExportLIDs = Importer.ExportLIDs();
   int *ExportPIDs = Importer.ExportPIDs();
@@ -289,7 +271,8 @@ int main(int argc, char *argv[])
 	NumEntries = 2;
       }
     forierr += !(StandardMatrix.ReplaceGlobalValues(StandardMyGlobalElements[i], NumEntries, Values, Indices)==0);
-    forierr += !(StandardMatrix.ReplaceGlobalValues(StandardMyGlobalElements[i], 1, &two, StandardMyGlobalElements+i)==0); // Put in the diagonal entry
+    // Put in the diagonal entry
+    forierr += !(StandardMatrix.ReplaceGlobalValues(StandardMyGlobalElements[i], 1, &two, StandardMyGlobalElements+i)==0); 
     }
   EPETRA_TEST_ERR(forierr,ierr);
 
@@ -365,7 +348,7 @@ int main(int argc, char *argv[])
   // Make a gathered matrix from OverlapMatrix.  It should be identical to StandardMatrix
 
   Epetra_CrsMatrix& GatheredMatrix = *new Epetra_CrsMatrix(Copy, StandardGraph);
-  Epetra_Export & Exporter = *new Epetra_Export(OverlapMap, StandardMap);
+  Epetra_Export Exporter(OverlapMap, StandardMap);
   EPETRA_TEST_ERR(!(GatheredMatrix.Export(OverlapMatrix, Exporter, Add)==0),ierr);
   EPETRA_TEST_ERR(!(GatheredMatrix.TransformToLocal()==0),ierr);
 
@@ -383,6 +366,9 @@ int main(int argc, char *argv[])
   int GatheredNumMyRows = GatheredMatrix.NumMyRows();
   EPETRA_TEST_ERR(!(StandardNumMyRows==GatheredNumMyRows),ierr);
 
+  //cout << " Overlap Matrix "  << endl<< OverlapMatrix   << endl
+  //     << " Standard Matrix " << endl << StandardMatrix << endl 
+  //     << "GatheredMatrix "   << endl << GatheredMatrix << endl;
   forierr = 0;
   for (i=0; i< StandardNumMyRows; i++)
     {
@@ -405,31 +391,9 @@ int main(int argc, char *argv[])
   if (verbose) cout << "Matrix Export Check OK" << endl;
   // Release all objects
 
-  delete &SourceVector;
-  delete &TargetVector;
-  delete &ExpectedTarget;
-
-
-  delete &Importer;
-  delete &SourceMap;
-  delete &TargetMap;
-
   delete [] SourceMyGlobalElements;
   delete [] TargetMyGlobalElements;
-
-  delete &SourceMultiVector;
-  delete &TargetMultiVector;
-  delete &RandVec;
-
-  delete &Exporter;
-  delete &GatheredMatrix;
-  delete &OverlapMatrix;
-  delete &OverlapMap;
   delete [] OverlapMyGlobalElements;
-
-  delete &StandardMatrix;
-  delete &StandardGraph;
-  delete &StandardMap;
   delete [] StandardMyGlobalElements;
 
   delete [] Values;

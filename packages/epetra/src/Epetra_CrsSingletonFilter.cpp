@@ -374,7 +374,6 @@ int Epetra_CrsSingletonFilter::ConstructReducedProblem() {
   //cout << "tempExportX = " << endl << tempExportX << endl;
 
   int NumMyRows = FullMatrix()->NumMyRows();
-  int NumMyCols = FullMatrix()->NumMyCols();
 
   int * ReducedIndices;
   double * ReducedValues;

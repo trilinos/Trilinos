@@ -135,7 +135,6 @@ void Epetra_SerialDenseSolver::ResetVectors()
 //=============================================================================
 int Epetra_SerialDenseSolver::SetVectors(Epetra_SerialDenseMatrix & X, Epetra_SerialDenseMatrix & B)
 {
-  int ierr = 0;
   if (B.M()!=X.M() || B.N() != X.N()) EPETRA_CHK_ERR(-1);
   if (B.A()==0) EPETRA_CHK_ERR(-2);
   if (B.LDA()<1) EPETRA_CHK_ERR(-3);

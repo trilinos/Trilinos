@@ -255,12 +255,16 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
   // Iterate
-
+  Epetra_Flops flopcounter;
+  A.SetFlopCounter(flopcounter);
+  q.SetFlopCounter(A);
+  z.SetFlopCounter(A);
+  resid.SetFlopCounter(A);
   z = z_initial;  // Start with common initial guess
   Epetra_Time timer(Comm);
   int ierr1 = power_method(false, A, q, z, resid, &lambda, niters, tolerance, verbose);
   double elapsed_time = timer.ElapsedTime();
-  double total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
+  double total_flops = flopcounter.Flops();
   double MFLOPs = total_flops/elapsed_time/1000000.0;
 
   if (verbose) cout << "\n\nTotal MFLOPs for first solve = " << MFLOPs << endl<< endl;
@@ -275,11 +279,11 @@ int main(int argc, char *argv[])
   // Iterate
   lambda = 0.0;
   z = z_initial;  // Start with common initial guess
-  A.ResetFlops(); q.ResetFlops(); z.ResetFlops(); resid.ResetFlops();
+  flopcounter.ResetFlops();
   timer.ResetStartTime();
   ierr1 = power_method(true, A, q, z, resid, &lambda, niters, tolerance, verbose);
   elapsed_time = timer.ElapsedTime();
-  total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
+  total_flops = flopcounter.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
 
   if (verbose) cout << "\n\nTotal MFLOPs for transpose solve = " << MFLOPs << endl<< endl;
@@ -311,11 +315,11 @@ int main(int argc, char *argv[])
   // Iterate (again)
   lambda = 0.0;
   z = z_initial;  // Start with common initial guess
-  A.ResetFlops(); q.ResetFlops(); z.ResetFlops(); resid.ResetFlops();
+  flopcounter.ResetFlops();
   timer.ResetStartTime();
   ierr1 = power_method(false, A, q, z, resid, &lambda, niters, tolerance, verbose);
   elapsed_time = timer.ElapsedTime();
-  total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
+  total_flops = flopcounter.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
 
   if (verbose) cout << "\n\nTotal MFLOPs for second solve = " << MFLOPs << endl<< endl;
@@ -331,11 +335,11 @@ int main(int argc, char *argv[])
   // Iterate (again)
   lambda = 0.0;
   z = z_initial;  // Start with common initial guess
-  A.ResetFlops(); q.ResetFlops(); z.ResetFlops(); resid.ResetFlops();
+  flopcounter.ResetFlops();
   timer.ResetStartTime();
   ierr1 = power_method(true, A, q, z, resid, &lambda, niters, tolerance, verbose);
   elapsed_time = timer.ElapsedTime();
-  total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
+  total_flops = flopcounter.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
 
   if (verbose) cout << "\n\nTotal MFLOPs for tranpose of second solve = " << MFLOPs << endl<< endl;
