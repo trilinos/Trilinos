@@ -5,6 +5,7 @@
 
 #include "ml_include.h"
 
+#ifdef ML_HAVE_IFPACK
 #include "ml_utils.h"
 #include "ml_epetra_utils.h"
 
