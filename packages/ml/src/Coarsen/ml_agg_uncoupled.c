@@ -1,20 +1,20 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* See the file COPYRIGHT for a complete copyright notice, contact person    */
+/* and disclaimer.                                                           */
+/* ************************************************************************* */
 
-/* ******************************************************************** */
-/* ******************************************************************** */
-/* Functions to create tentative prolongators                           */
-/*  (uncoupled aggregation)                                             */
-/* ******************************************************************** */
-/* Author        : Charles Tong (LLNL)                                  */
-/* Date          : August, 2000                                         */
-/* ******************************************************************** */
-/* Local Functions :                                                    */
-/*    ML_Aggregate_CoarsenUncoupledVBlock                               */
-/*    ML_Aggregate_CoarsenUncoupledCore                                 */
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* Functions to create tentative prolongators                                */
+/*  (uncoupled aggregation)                                                  */
+/* ************************************************************************* */
+/* Author        : Charles Tong (LLNL)                                       */
+/* Date          : August, 2000                                              */
+/* ************************************************************************* */
+/* Local Functions :                                                         */
+/*    ML_Aggregate_CoarsenUncoupled                                          */
+/*    ML_Aggregate_CoarsenUncoupledCore                                      */
+/* ************************************************************************* */
 
 #include <assert.h>
 #include <stdio.h>
@@ -24,24 +24,24 @@
 
 #define dabs(x) (((x) > 0) ? x : (-(x)))
 
-/* ******************************************************************** */
-/* internal function defined later on in this file                      */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* internal function defined later on in this file                           */
+/* ------------------------------------------------------------------------- */
 
 extern int  ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *, ML_Comm *,
-                ML_Operator *, int *mat_indx, int *aggr_count_in, 
-                int **aggr_index_in);
+                ML_Operator *, int *mat_indx, int *bdry_array, 
+                int *aggr_count_in, int **aggr_index_in);
 
-/* ******************************************************************** */
-/* external functions called from this file                             */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* external functions called from this file                                  */
+/* ------------------------------------------------------------------------- */
 
 extern void ML_CSR_MSR_ML_memorydata_Destroy(void *data);
 extern int  ML_randomize(int nlist, int *list);
 
-/* ******************************************************************** */
-/* local defines                                                        */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* local defines                                                             */
+/* ------------------------------------------------------------------------- */
 
 #define ML_AGGR_READY      -11
 #define ML_AGGR_NOTSEL     -12
@@ -51,37 +51,38 @@ extern int  ML_randomize(int nlist, int *list);
 #define ML_AGGR_MINRANK      1
 #define ML_AGGR_MAXLINK      2
 
-/* ******************************************************************** */
-/* ******************************************************************** */
-/*          Uncoupled subroutines                                       */
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* ************************************************************************* */
+/*          Uncoupled subroutines                                            */
+/* ************************************************************************* */
 
-/* ******************************************************************** */
-/* ******************************************************************** */
-/* construct the tentative prolongator (local)                          */
-/* This function assumes that the block information are stored in the   */
-/* ML_Aggregate structure.                                              */ 
-/*  phase 1 : relax on the new seed point as Vanek                      */
-/*  phase 2 : assign the rest of the nodes to one of the existing       */
-/*            aggregate (attach_scheme), if possible.                   */
-/*  phase 3 : see if the un-aggregated nodes have enough neighbors      */
-/*            (min_nodes_per_aggregate) to form its own aggregate       */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* construct the tentative prolongator (local)                               */
+/* This function assumes that the block information are stored in the        */
+/* ML_Aggregate structure.                                                   */ 
+/*  phase 1 : relax on the new seed point as Vanek                           */
+/*  phase 2 : assign the rest of the nodes to one of the existing            */
+/*            aggregate (attach_scheme), if possible.                        */
+/*  phase 3 : see if the un-aggregated nodes have enough neighbors           */
+/*            (min_nodes_per_aggregate) to form its own aggregate            */
+/* ------------------------------------------------------------------------- */
 
-int ML_Aggregate_CoarsenUncoupledVBlock(ML_Aggregate *ml_ag, 
+int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag, 
            ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm)
 {
    int     mypid, Nrows, nvblocks, *vblock_info, *vblock_info2;
    int     i, j, k, m, nullspace_dim, *col_ind, aggr_count, nvblockflag;
    int     nbytes, Ncoarse, *mat_indx=NULL,*aggr_index,nz_cnt, diff_level;
    int     *new_ia = NULL, *new_ja = NULL, maxnnz_per_row=500, printflag;
-   int     *amal_mat_indx=NULL, amal_count, **rows_in_aggs = NULL;
+   int     *amal_mat_indx=NULL, amal_count, **rows_in_aggs = NULL,ibeg;
    int     lwork, *agg_sizes = NULL, row, level, new_cnt, max_agg_size;
    int     zerodiag_cnt, offset, jnode, *agg_sizes_cum=NULL, index, info;
+   int     iend, bdry_blk, *bdry_array;
    double  epsilon, *col_val, *tmp_vect = NULL;
    double  dcompare1, dcompare2, *new_val=NULL, *diagonal=NULL;
    double  *nullspace_vect=NULL, *new_null=NULL, *work=NULL, *qr_tmp=NULL;
-   double  largest, thesign;
+   double  largest, thesign, dtemp;
    char    *col_entered;
    struct  ML_CSR_MSRdata *csr_data;
    ML_Aggregate_Comm *aggr_comm;
@@ -115,7 +116,7 @@ int ML_Aggregate_CoarsenUncoupledVBlock(ML_Aggregate *ml_ag,
    if ( diff_level < 0 ) diff_level = - diff_level;
    if ( diff_level > 0 )
    { 
-      printf("ML_Aggregate_CoarsenUncoupledVBlock should be called only at");
+      printf("ML_Aggregate_CoarsenUncoupled should be called only at");
       printf("          the fineset level.\n");
       exit(1);
    }
@@ -123,9 +124,9 @@ int ML_Aggregate_CoarsenUncoupledVBlock(ML_Aggregate *ml_ag,
 
    if ( mypid == 0 && printflag )
    {
-      printf("ML_Aggregate_CoarsenUncoupledVBlock : current level = %d\n", 
+      printf("ML_Aggregate_CoarsenUncoupled : current level = %d\n", 
                            ml_ag->cur_level);
-      printf("ML_Aggregate_CoarsenUncoupledVBlock : current eps = %e\n",
+      printf("ML_Aggregate_CoarsenUncoupled : current eps = %e\n",
                            epsilon);
    }
    epsilon = epsilon * epsilon;
@@ -143,7 +144,7 @@ int ML_Aggregate_CoarsenUncoupledVBlock(ML_Aggregate *ml_ag,
    else                                  getrowfunc=getrow_obj->internal;
    if ( getrowfunc == NULL ) 
    {
-      printf("ML_Aggregate_CoarsenUncoupledVBlock ERROR : no getrow.\n");
+      printf("ML_Aggregate_CoarsenUncoupled ERROR : no getrow.\n");
       exit(-1);
    }
 
@@ -243,6 +244,7 @@ int ML_Aggregate_CoarsenUncoupledVBlock(ML_Aggregate *ml_ag,
             mat_indx[nz_cnt++] = col_ind[j];
       }
       mat_indx[i+1] = nz_cnt;
+      if ( m <= 1 ) mat_indx[i] = -mat_indx[i];
    }
    free(col_ind);
    free(col_val);
@@ -280,27 +282,46 @@ int ML_Aggregate_CoarsenUncoupledVBlock(ML_Aggregate *ml_ag,
       exit(1);
    }
    for ( i = 0; i < nvblocks; i++) col_entered[i] = 'F';
+   bdry_array = (int *) malloc(sizeof(int)*nvblocks);
+   for ( i = 0; i < nvblocks; i++) bdry_array[i] = 0;
 
-   for ( i = 0; i < nvblocks; i++) {
+   for ( i = 0; i < nvblocks; i++) 
+   {
       col_entered[i] = 'T';
-      for ( j = 0; j < vblock_info[i]; j++) {
-         for ( k = mat_indx[row]; k < mat_indx[row+1]; k++) {
-            if ( mat_indx[k] < vblock_info2[0] ) index = 0;
-            else
+      bdry_blk = 1;
+      for ( j = 0; j < vblock_info[i]; j++) 
+      {
+         if ( mat_indx[row+j] >= 0 ) bdry_blk = 0;
+         else                        mat_indx[row+j] = - mat_indx[row+j];
+      }
+      if ( bdry_blk == 1 ) {row += vblock_info[i]; bdry_array[i] = 1;}
+      else
+      { 
+         for ( j = 0; j < vblock_info[i]; j++) 
+         {
+            ibeg = mat_indx[row]; 
+            iend = mat_indx[row+1];
+            if ( iend < 0 ) iend = - iend;
+            for ( k = ibeg; k < iend; k++) 
             {
-               index=ML_sorted_search(mat_indx[k],nvblocks,vblock_info2);
-               if ( index < 0 ) index = - index;
-               else             index++;
+               if ( mat_indx[k] < vblock_info2[0] ) index = 0;
+               else
+               {
+                  index=ML_sorted_search(mat_indx[k],nvblocks,vblock_info2);
+                  if ( index < 0 ) index = - index;
+                  else             index++;
+               }
+               if ( index < 0 || index >= nvblocks )
+                  printf("ERROR : in almalgamation %d => %d(%d).\n",mat_indx[k],
+                          index,nvblocks);
+               if (col_entered[index] == 'F') 
+               {
+                  amal_mat_indx[ amal_count++] = index;
+                  col_entered[index] = 'T';
+               }
             }
-            if ( index < 0 || index >= nvblocks )
-               printf("ERROR : in almalgamation %d => %d(%d).\n",mat_indx[k],
-                       index,nvblocks);
-            if (col_entered[index] == 'F') {
-               amal_mat_indx[ amal_count++] = index;
-               col_entered[index] = 'T';
-            }
+            row++;
          }
-         row++;
       }
       amal_mat_indx[i+1] = amal_count;
       col_entered[i] = 'F';
@@ -317,7 +338,8 @@ int ML_Aggregate_CoarsenUncoupledVBlock(ML_Aggregate *ml_ag,
    /* ============================================================= */
 
    ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Amatrix,amal_mat_indx,
-                                     &aggr_count, &aggr_index); 
+                                     bdry_array, &aggr_count, &aggr_index); 
+   free( bdry_array );
 
    /* ============================================================= */
    /* Form tentative prolongator                                    */
@@ -499,6 +521,7 @@ int ML_Aggregate_CoarsenUncoupledVBlock(ML_Aggregate *ml_ag,
    nbytes = nullspace_dim * sizeof(double);
    ML_memory_alloc((void**)&work, nbytes, "AVK");
 
+   work[0] = lwork;
    for (i = 0; i < aggr_count; i++) 
    {
       /* set up the matrix we want to decompose into Q and R: */
@@ -532,10 +555,22 @@ int ML_Aggregate_CoarsenUncoupledVBlock(ML_Aggregate *ml_ag,
 
       /* now calculate QR using an LAPACK routine */
 
-      MLFORTRAN(dgeqrf)(&(agg_sizes[i]), &nullspace_dim, qr_tmp, 
-                        &(agg_sizes[i]), tmp_vect, work, &lwork, &info);
-      if (info != 0)
-         pr_error("Error in CoarsenUncoupled : dgeqrf returned a non-zero\n");
+      if ( nullspace_dim == 1 )
+      {
+         dtemp = 0.0;
+         for (j = 0; j < agg_sizes[i]; j++)
+            dtemp += ( qr_tmp[j] * qr_tmp[j] ); 
+         dtemp = sqrt( dtemp );
+         tmp_vect[0] = qr_tmp[0];
+         qr_tmp[0] = dtemp;
+      }
+      else
+      {
+         MLFORTRAN(dgeqrf)(&(agg_sizes[i]), &nullspace_dim, qr_tmp, 
+                           &(agg_sizes[i]), tmp_vect, work, &lwork, &info);
+         if (info != 0)
+            pr_error("ERROR (CoarsenUncoupled) : dgeqrf returned a non-zero\n");
+      }
 
       if (work[0] > lwork) 
       {
@@ -555,10 +590,21 @@ int ML_Aggregate_CoarsenUncoupledVBlock(ML_Aggregate *ml_ag,
       /* to get this block of P, need to run qr_tmp through another LAPACK 
          function: */
 
-      MLFORTRAN(dorgqr)(&(agg_sizes[i]), &nullspace_dim, &nullspace_dim, 
-              qr_tmp, &(agg_sizes[i]), tmp_vect, work, &lwork, &info);
-      if (info != 0)
-         pr_error("Error in CoarsenUncoupled: dorgqr returned a non-zero\n");
+      if ( nullspace_dim == 1 )
+      {
+         dtemp = qr_tmp[0];
+         qr_tmp[0] = tmp_vect[0];
+         dtemp = 1.0 / dtemp;
+         for (j = 0; j < agg_sizes[i]; j++)
+            qr_tmp[j] *= dtemp;
+      }
+      else
+      {
+         MLFORTRAN(dorgqr)(&(agg_sizes[i]), &nullspace_dim, &nullspace_dim, 
+                 qr_tmp, &(agg_sizes[i]), tmp_vect, work, &lwork, &info);
+         if (info != 0)
+            pr_error("ERROR (CoarsenUncoupled): dorgqr returned a non-zero\n");
+      }
 
       if (work[0] > lwork) 
       {
@@ -683,17 +729,17 @@ if (comm->ML_mypid == 0 )
    return Ncoarse;
 }
 
-/* ******************************************************************** */
-/* construct the tentative prolongator (local)                          */
-/*  phase 1 : relax on the new seed point as Vanek                      */
-/*  phase 2 : assign the rest of the nodes to one of the existing       */
-/*            aggregate (attach_scheme), if possible.                   */
-/*  phase 3 : see if the un-aggregated nodes have enough neighbors      */
-/*            (min_nodes_per_aggregate) to form its own aggregate       */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* construct the tentative prolongator (local)                               */
+/*  phase 1 : relax on the new seed point as Vanek                           */
+/*  phase 2 : assign the rest of the nodes to one of the existing            */
+/*            aggregate (attach_scheme), if possible.                        */
+/*  phase 3 : see if the un-aggregated nodes have enough neighbors           */
+/*            (min_nodes_per_aggregate) to form its own aggregate            */
+/* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
-                      ML_Operator *Amat, int *mat_indx,
+                      ML_Operator *Amat, int *mat_indx, int *bdry_array,
                       int *aggr_count_in, int **aggr_index_in)
 {
    int     i, j, k, m, kk, inode, jnode, nbytes, length, Nrows;
@@ -732,6 +778,25 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
 
    for ( i = 0; i < Nrows; i++ ) aggr_stat[i] = ML_AGGR_READY;
    for ( i = 0; i < Nrows; i++ ) aggr_index[i] = -1;
+
+   /* ============================================================= */
+   /* count number of boundary points                               */
+   /* ============================================================= */
+
+   m = 0;
+   for ( i = 0; i < Nrows; i++ ) 
+   {
+      if ( bdry_array[i] == 1 ) 
+      {
+         aggr_stat[i] = ML_AGGR_BDRY;
+         m++;
+      }
+   }
+   k = ML_Comm_GsumInt( comm, m);
+   if ( mypid == 0 && printflag ) 
+   {
+      printf("Aggregation(UC) : Phase 0 - no. of bdry pts  = %d \n",k);
+   }
 
    /* ============================================================= */
    /* Set up the data structures for aggregation                    */

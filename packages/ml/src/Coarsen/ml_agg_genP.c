@@ -1,16 +1,16 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* See the file COPYRIGHT for a complete copyright notice, contact person    */
+/* and disclaimer.                                                           */
+/* ************************************************************************* */
 
-/* ******************************************************************** */
-/* ******************************************************************** */
-/* Functions to create tentative prolongators                           */
-/* ******************************************************************** */
-/* Author        : Charles Tong (LLNL) and Ray Tuminaro (SNL)           */
-/* Date          : August, 1999                                         */
-/* ******************************************************************** */
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* Functions to create tentative prolongators                                */
+/* ************************************************************************* */
+/* Author        : Charles Tong (LLNL) and Ray Tuminaro (SNL)                */
+/* Date          : August, 1999                                              */
+/* ************************************************************************* */
+/* ************************************************************************* */
 
 #include <math.h>
 #include "ml_struct.h"
@@ -21,9 +21,9 @@ extern int ML_AGG_Amat_Getrows(void *data, int N_requested_rows,
                int requested_rows[], int allocated_space, int columns[], 
                double values[], int row_lengths[]);
 
-/* ******************************************************************** */
-/* wrapper function as smoother                                         */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* wrapper function as smoother                                              */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_Smoother_Wrapper(void *obj, int leng1, double *outvec, int leng2,
                             double *invec)
@@ -34,9 +34,9 @@ int ML_AGG_Smoother_Wrapper(void *obj, int leng1, double *outvec, int leng2,
    return 1;
 }
 
-/* ******************************************************************** */
-/* generate multilevel hierarchy based on Vanek's method                */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* generate multilevel hierarchy based on Vanek's method                     */
+/* ------------------------------------------------------------------------- */
 
 int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start, 
                        int increment_or_decrement, ML_Aggregate *ag)
@@ -44,6 +44,9 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    int    level, idata;
    double dnnz;
    ML_Aggregate *ml_ag;
+#ifdef ML_TIMING
+   double t0;
+#endif
 
    /* ----------------------------------------------------------------- */
    /* if user does not provide a ML_Aggregate object, create a default  */
@@ -62,6 +65,9 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    idata = ML_gmax_int(idata, ml->comm);
    if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag ) 
       ML_Aggregate_Print( ml_ag );
+#ifdef ML_TIMING
+   t0 = GetClock();
+#endif
    idata = ML_gmax_int(idata, ml->comm);
 
    if (increment_or_decrement == ML_INCREASING)
@@ -102,6 +108,11 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
       }
       exit(1);
    }
+#ifdef ML_TIMING
+   t0 = GetClock() - t0;
+   if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag ) 
+      printf("Aggregation total setup time = %e seconds\n", t0);
+#endif
 
    /* ----------------------------------------------------------------- */
    /* compute operator complexity                                       */
@@ -123,10 +134,10 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    return(level);
 }
 
-/* ******************************************************************** */
-/* generate multilevel hierarchy given a subroutine for generating      */
-/* prolongation operators (version 2 : with ML_Aggregate given)         */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* generate multilevel hierarchy given a subroutine for generating           */
+/* prolongation operators (version 2 : with ML_Aggregate given)              */
+/* ------------------------------------------------------------------------- */
 
 int ML_Gen_MGHierarchy(ML *ml, int fine_level,
         int (*next_level)(ML *, int, ML_Operator *, ML_Aggregate *ag2),
@@ -134,6 +145,9 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
         void *data, int internal_or_external, ML_Aggregate *ag)
 {
    int level, next, flag, count=1;
+#ifdef ML_TIMING
+   double t0;
+#endif
 
    level = fine_level;
    next  = next_level(ml, level, &(ml->Amat[fine_level]), ag);
@@ -160,7 +174,15 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
          printf("ML_Gen_MGHierarchy : Gen_RAP\n");
 
+#ifdef ML_TIMING
+      t0 = GetClock();
+#endif
       ML_Gen_AmatrixRAP(ml, level, next);
+#ifdef ML_TIMING
+      t0 = GetClock() - t0;
+      if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+         printf("RAP time for level %2d = %e\n", level, t0);
+#endif
 
       if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
          printf("ML_Gen_MGHierarchy : Gen_RAP done\n");
@@ -172,9 +194,9 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
    return(count);
 }
 
-/* ******************************************************************** */
-/* generate smooth prolongator                                          */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* generate smooth prolongator                                               */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
                              ML_Aggregate *ag)
@@ -196,9 +218,9 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    ML_Aggregate_Set_CurrentLevel( ag, level );
    Ncoarse  = ML_Aggregate_Coarsen(ag,Amat,&Pmatrix,ml->comm);
    gNcoarse = ML_Comm_GsumInt( ml->comm, Ncoarse);
-   if ( gNcoarse == 0 || (1.0*gNfine)/(1.0*gNcoarse+0.1) < 1.05 )
+   if ( gNcoarse == 0 || ((1.0*gNfine)/(1.0*gNcoarse+0.1) < 1.05) )
    {
-      ML_Operator_Destroy(Pmatrix);
+      if ( Pmatrix != NULL ) ML_Operator_Destroy(Pmatrix);
       return -1;
    }
 
@@ -271,10 +293,10 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    return 0;
 }
 
-/* ******************************************************************** */
-/* function for advancing to the next coarser level with coarse level   */
-/* number larger than the fine levels                                   */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* function for advancing to the next coarser level with coarse level        */
+/* number larger than the fine levels                                        */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_Increment_Level(ML *ml, int current_level, ML_Operator *Amat,
                            ML_Aggregate *ag)
@@ -290,10 +312,10 @@ int ML_AGG_Increment_Level(ML *ml, int current_level, ML_Operator *Amat,
    return(current_level+1);
 }
 
-/* ******************************************************************** */
-/* function for advancing to the next coarser level with coarse level   */
-/* number smaller than the fine levels                                  */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* function for advancing to the next coarser level with coarse level number */
+/* smaller than the fine levels                                              */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_Decrement_Level(ML *ml, int current_level, ML_Operator *Amat,
                            ML_Aggregate *ag)
@@ -309,9 +331,9 @@ int ML_AGG_Decrement_Level(ML *ml, int current_level, ML_Operator *Amat,
    return(current_level-1);
 }
 
-/* ******************************************************************** */
-/* function for enforcing a 2-level scheme                              */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* function for enforcing a 2-level scheme                                   */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_Increment_Two_Level(ML *ml,int current_level,ML_Operator *Amat,
                                ML_Aggregate *ag)
@@ -322,9 +344,9 @@ int ML_AGG_Increment_Two_Level(ML *ml,int current_level,ML_Operator *Amat,
    return(-1);
 }
 
-/* ******************************************************************** */
-/* function for enforcing a 2-level scheme                              */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* function for enforcing a 2-level scheme                                   */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_Decrement_Two_Level(ML *ml,int current_level,ML_Operator *Amat,
                                ML_Aggregate *ag)
@@ -335,10 +357,10 @@ int ML_AGG_Decrement_Two_Level(ML *ml,int current_level,ML_Operator *Amat,
    return(-1);
 }
 
-/* ******************************************************************** */
-/* ******************************************************************** */
-/* getrow function for the aggregation tentative prolongator            */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* getrow function for the aggregation tentative prolongator                 */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows, 
    int requested_rows[], int allocated_space, int columns[], 
@@ -349,6 +371,10 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
    int            info, diag = -1, i, j /*, *aggr_info */;
    double         diag_val = 1.0, dropped, threshold = 0.0;
 
+   /* ----------------------------------------------------------------- */
+   /* error checking                                                    */
+   /* ----------------------------------------------------------------- */
+
    widget = (struct ML_AGG_Matrix_Context *) data;
    getrow_obj = widget->Amat->getrow;
    if (N_requested_rows > 1) 
@@ -356,6 +382,22 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
       printf("Too bad. This routine only works with 1 row at a time\n");
       exit(1);
    }
+
+   /* ----------------------------------------------------------------- */
+   /* if omega = 0, just return identity                                */
+   /* ----------------------------------------------------------------- */
+
+   if ( widget->omega == 0.0 )
+   {
+      row_lengths[0] = 1;
+      values[0] = 1.0;
+      columns[0] = requested_rows[0];
+      return 1;
+   }
+
+   /* ----------------------------------------------------------------- */
+   /* fetch row                                                         */
+   /* ----------------------------------------------------------------- */
 
    if ( getrow_obj->ML_id == ML_EXTERNAL) 
       info = getrow_obj->external(widget->Amat->data, N_requested_rows,
@@ -372,29 +414,45 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
    }
    if (info == 0) return(0);
 
-   for (i = 0; i < row_lengths[0]; i++) 
+   /* ----------------------------------------------------------------- */
+   /* compute threshold for dropping                                    */
+   /* ----------------------------------------------------------------- */
+
+   if ( widget->drop_tol > 0.0 )
    {
-      if (columns[i] == requested_rows[0]) 
+      for (i = 0; i < row_lengths[0]; i++) 
       {
-         threshold = fabs(values[i])*widget->drop_tol;
-         break;
+         if (columns[i] == requested_rows[0]) 
+         {
+            threshold = fabs(values[i])*widget->drop_tol;
+            break;
+         }
       }
+      j = 0;
+      dropped = 0.0;
+      for (i = 0; i < row_lengths[0]; i++) 
+      {
+         if ( fabs(values[i]) >= threshold) 
+         {
+            columns[j] = columns[i];
+            values[j]  = values[i];
+            if (columns[j] == requested_rows[0]) { diag = j; }
+            j++;
+         }
+         else dropped += values[i];
+      }
+      row_lengths[0] = j;
+   }
+   else
+   {
+      dropped = 0.0;
+      for (i = 0; i < row_lengths[0]; i++) 
+         if (columns[i] == requested_rows[0]) { diag = i; break;}
    }
 
-   j = 0;
-   dropped = 0.0;
-   for (i = 0; i < row_lengths[0]; i++) 
-   {
-      if ( fabs(values[i]) >= threshold) 
-      {
-         columns[j] = columns[i];
-         values[j]  = values[i];
-         if (columns[j] == requested_rows[0]) { diag = j; }
-         j++;
-      }
-      else dropped += values[i];
-   }
-   row_lengths[0] = j;
+   /* ----------------------------------------------------------------- */
+   /* if diagonal is not found, append one                              */
+   /* ----------------------------------------------------------------- */
 
    if (diag == -1) 
    {
@@ -408,9 +466,11 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
 
    values[diag] += dropped;
 
-   /*-------------------------------------------------------------*/
-   /* The following segment is for filtering
+   /* ----------------------------------------------------------------- */
+   /* The following segment is for filtering (aggregate - not used)     */
+   /* ----------------------------------------------------------------- */
 
+/*
    aggr_info = widget->aggr_info;
    N = widget->Amat->outvec_leng;
    for (i = 0; i < row_lengths[0]; i++) 
@@ -433,23 +493,22 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
    }
    row_lengths[0] = N;
    diag_val = values[diag];
-   */
-   /*-------------------------------------------------------------*/
+*/
+
+   /* ----------------------------------------------------------------- */
+   /* compute I - omega D^{-1} A                                        */
+   /* ----------------------------------------------------------------- */
 
    for (i = 0; i < row_lengths[0]; i++) 
-   {
       values[i] *= (-widget->omega)/diag_val;
-      /*values[i] *= (-widget->omega);*/
-   }
    values[diag] += 1.;
 
    return(1);
 }
 
-/* ******************************************************************** */
-/* ******************************************************************** */
-/* getrow function for the aggregation tentative prolongator            */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* getrow function for the aggregation tentative prolongator                 */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_Amat_Getrows(void *data, int N_requested_rows, 
    int requested_rows[], int allocated_space, int columns[], 
@@ -485,9 +544,9 @@ int ML_AGG_Amat_Getrows(void *data, int N_requested_rows,
    return(1);
 }
 
-/* ******************************************************************** */
-/* generate smooth prolongator for 2-level DD method                    */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* generate smooth prolongator for 2-level DD method                         */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
                              ML_Aggregate *ag)
@@ -844,9 +903,9 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
    return 0;
 }
 
-/* ******************************************************************** */
-/* local matvec                                                         */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* local matvec                                                              */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_DD_Matvec(void *obj,int leng1,double p[],int leng2,double ap[])
 {
@@ -901,9 +960,9 @@ int ML_AGG_DD_Matvec(void *obj,int leng1,double p[],int leng2,double ap[])
    return 1;
 }
 
-/* ******************************************************************** */
-/* local getrow                                                         */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* local getrow                                                              */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_DD_Getrow(void *obj,int inNrows, int *rowlist,int alloc_space, 
                      int *col_ind, double *col_val, int *rowcnt)
@@ -960,9 +1019,9 @@ int ML_AGG_DD_Getrow(void *obj,int inNrows, int *rowlist,int alloc_space,
    return 1;
 }  
 
-/* ******************************************************************** */
-/* extract diagonal                                                     */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* extract diagonal                                                          */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_Extract_Diag(ML_Operator *Amat, double *diagonal)
 {
@@ -1001,9 +1060,9 @@ int ML_AGG_Extract_Diag(ML_Operator *Amat, double *diagonal)
    return 1;
 }
 
-/* ******************************************************************** */
-/* destroy aggregate matrix context                                     */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* destroy aggregate matrix context                                          */
+/* ------------------------------------------------------------------------- */
 
 void ML_AGG_Matrix_Context_Clean(void *data)
 {
@@ -1013,9 +1072,9 @@ void ML_AGG_Matrix_Context_Clean(void *data)
    free (context);
 }
 
-/* ******************************************************************** */
-/* solve local subproblem using smoothed aggregation                    */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* solve local subproblem using smoothed aggregation                         */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_DD_Solve(void *data, int leng1, double *outvec, int leng2, 
                     double *invec)
@@ -1025,9 +1084,9 @@ int ML_AGG_DD_Solve(void *data, int leng1, double *outvec, int leng2,
    return 1;
 }
 
-/* ******************************************************************** */
-/* solve local subproblem using smoothed aggregation                    */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* solve local subproblem using smoothed aggregation                         */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_Extract_Matrix(ML_Operator *mat, int *ncols, int **cols,
                           double ***vals)
@@ -1128,9 +1187,9 @@ int ML_AGG_Extract_Matrix(ML_Operator *mat, int *ncols, int **cols,
    return 1;
 }
 
-/* ******************************************************************** */
-/* generate smooth prolongator for 2-level DD method                    */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* generate smooth prolongator for 2-level DD method                         */
+/* ------------------------------------------------------------------------- */
 
 int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data,
                              ML_Aggregate *ag)
