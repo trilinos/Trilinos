@@ -1,6 +1,7 @@
 /*****************************************************************************
  * Zoltan Library for Parallel Applications                                  *
  * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
+ * This software is distributed under the GNU Lesser General Public License. *
  * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
 /*****************************************************************************
@@ -17,7 +18,6 @@ extern "C" {
 #endif
 
 #include "zz_heap.h"
-
 
 
 #define INT_SWAP(A,B)         {int    _C_=(A);(A)=(B);(B)=_C_;}
@@ -50,9 +50,9 @@ static void heapify (HEAP*, int);
 /* the range of the input elements. These two parameters may be */
 /* decoupled in the future. */
 
-int Zoltan_heap_init (ZZ *zz, HEAP *h, int space)
+int Zoltan_Heap_Init (ZZ *zz, HEAP *h, int space)
 {
-char *yo = "Zoltan_heap_init";
+char *yo = "Zoltan_Heap_Init";
 int i;
 
   h->space = space;
@@ -71,7 +71,7 @@ int i;
 
 
 
-void Zoltan_heap_clear (HEAP *h)
+void Zoltan_Heap_Clear (HEAP *h)
 {
 int i;
 
@@ -86,7 +86,7 @@ int i;
 
 
 /* Frees all memory and sets the heap value back to default */
-void Zoltan_heap_free (HEAP *h)
+void Zoltan_Heap_Free (HEAP *h)
 {
   if (h->space != 0){
      Zoltan_Multifree(__FILE__, __LINE__, 3, &h->ele, &h->pos, &h->value);
@@ -98,10 +98,10 @@ void Zoltan_heap_free (HEAP *h)
 
 
 /* Checks wheather the heap has the Max-Heap property */
-int Zoltan_heap_check (HEAP *h)
+int Zoltan_Heap_Check (HEAP *h)
 {
 int i, left, right;
-static char *yo = "Zoltan_heap_check";
+static char *yo = "Zoltan_Heap_Check";
 
   for (i = 0; i < h->n; i++) {
      left  = 2*i + 1;
@@ -117,13 +117,13 @@ static char *yo = "Zoltan_heap_check";
 
 
 
-/* Zoltan_heap_input adds one item to the heap but does NOT rearrange the
-   heap! Constant time. We might want to write a function Zoltan_heap_insert
+/* Zoltan_Heap_Input adds one item to the heap but does NOT rearrange the
+   heap! Constant time. We might want to write a function Zoltan_Heap_Insert
    that adds an item and preserves the heap property. */
 
-int Zoltan_heap_input (HEAP *h, int element, float value)
+int Zoltan_Heap_Input (HEAP *h, int element, float value)
 {
-static char *yo = "Zoltan_heap_input";
+static char *yo = "Zoltan_Heap_Input";
 
   if (element >= h->space) {
      ZOLTAN_PRINT_ERROR(0, yo, "Inserted heap element out of range!\n");
@@ -142,7 +142,7 @@ static char *yo = "Zoltan_heap_input";
 
 
 /* Moves the values in the heap to gain the Max-Heap property. Linear time */
-int Zoltan_heap_make (HEAP *h)
+int Zoltan_Heap_Make (HEAP *h)
 { int i;
 
   for (i = h->n / 2; i >= 0;  i--)
@@ -174,7 +174,7 @@ int left = root*2 + 1, right = root*2 + 2, largest = root;
 
 /* Changes the value of an element in the heap and restores the
    heap property. This can take O(log(n)) time */
-int Zoltan_heap_change_value (HEAP *h, int element, float value)
+int Zoltan_Heap_Change_Value (HEAP *h, int element, float value)
 {
 int position, father;
 
@@ -205,7 +205,7 @@ int position, father;
 
 
 /* Extracts the maximum element & restores the heap property. Time O(log(n))*/
-int Zoltan_heap_extract_max (HEAP *h)
+int Zoltan_Heap_Extract_Max (HEAP *h)
 {
 int max;
 
@@ -224,7 +224,7 @@ int max;
 
 
 /* Extracts an element from the heap */
-int Zoltan_heap_extract (HEAP *h, int element)
+int Zoltan_Heap_Extract (HEAP *h, int element)
 {
   int position;
 

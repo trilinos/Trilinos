@@ -327,6 +327,9 @@ int read_cmd_file (
     else if (sscanf(line, " test drops" SKIPEQ "%d%n", &Test.Drops, &n) == 1)
       continue;                         /* Box- and Point-drop testing flag */
 
+    else if (sscanf (line, " test rcb box" SKIPEQ "%d", &Test.RCB_Box) == 1)
+      continue;                         /* Zoltan_RCB_Box testing flag */
+
     else if (sscanf(line, " test generate files" SKIPEQ "%d%n",
                     &Test.Gen_Files, &n) == 1)
       continue;                             /* file generation testing flag */
@@ -500,7 +503,7 @@ void brdcst_cmd_info (
 {
   int ctrl_id;
   int size;
-  int int_params[13];  /* Make sure this array is large enough */
+  int int_params[14];  /* Make sure this array is large enough */
 
   int j = 0;
   int_params[j++] = Debug_Driver;
@@ -515,6 +518,7 @@ void brdcst_cmd_info (
   int_params[j++] = Number_Iterations;
   int_params[j++] = Driver_Action;
   int_params[j++] = Test.Drops;
+  int_params[j++] = Test.RCB_Box;
   int_params[j++] = Test.Gen_Files;
 
   MPI_Bcast (int_params, j, MPI_INT, 0, MPI_COMM_WORLD);
@@ -532,6 +536,7 @@ void brdcst_cmd_info (
   Number_Iterations      = int_params[j++];
   Driver_Action          = int_params[j++];
   Test.Drops             = int_params[j++];
+  Test.RCB_Box           = int_params[j++];
   Test.Gen_Files         = int_params[j++];
 
   MPI_Bcast (pio_info, sizeof(PARIO_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);

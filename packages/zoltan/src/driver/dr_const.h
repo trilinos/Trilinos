@@ -191,6 +191,7 @@ struct Test_Flags {
   int Local_Partitions;     /* Sets NUM_LOCAL_PARTITIONS parameter in various
                                ways. */
   int Drops;                /* Exercises point- and box-assign. */
+  int RCB_Box;              /* Exercises Zoltan_RCB_Box. */
   int Multi_Callbacks;      /* Exercises list-based callback functions. */
   int Gen_Files;            /* Exercise output file generation. */
   int Null_Lists;           /* Exercises null import or export lists to

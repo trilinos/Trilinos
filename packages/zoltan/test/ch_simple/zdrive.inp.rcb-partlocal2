@@ -6,3 +6,4 @@ File Name		= simple
 Parallel Disk Info	= number=0
 test local partitions	= 2
 Test Drops		= 1
+Test RCB Box		= 1

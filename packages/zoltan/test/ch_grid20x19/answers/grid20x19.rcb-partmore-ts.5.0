@@ -7,6 +7,7 @@ File Type		= Chaco
 File Name		= grid20x19
 Parallel Disk Info	= number=0
 Test Drops		= 1
+Test RCB Box		= 1
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
 9	0	-1	-1

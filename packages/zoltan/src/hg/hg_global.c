@@ -667,16 +667,16 @@ static int greedy_order (
 
   /* Initialize heap. */
   gain[start_vtx] = 1.0;           /* Make it highest value in heap. */
-  Zoltan_heap_init(zz, &(h[0]), hg->nVtx);
-  Zoltan_heap_init(zz, &(h[1]), 0);       /* Dummy heap, not used. */
+  Zoltan_Heap_Init(zz, &(h[0]), hg->nVtx);
+  Zoltan_Heap_Init(zz, &(h[1]), 0);       /* Dummy heap, not used. */
   for(i=0; i<hg->nVtx; i++)
-    Zoltan_heap_input(h, i, gain[i]);
-  Zoltan_heap_make(h);
+    Zoltan_Heap_Input(h, i, gain[i]);
+  Zoltan_Heap_Make(h);
 
   while (bfsnumber < hg->nVtx ) {
 
     /* Get next vertex from heap */
-    vtx = Zoltan_heap_extract_max(h);
+    vtx = Zoltan_Heap_Extract_Max(h);
 
     if (vtx<0){
       /* This should never happen. */
@@ -724,7 +724,7 @@ static int greedy_order (
       }
       else { /* part[vtx] == pnumber-1 */
         part_sum = 0.0;
-        j = Zoltan_heap_peek_max(h); /* j will be the first vertex in the next part. */
+        j = Zoltan_Heap_Peek_Max(h); /* j will be the first vertex in the next part. */
       }
       if (hgp->output_level >= HG_DEBUG_ALL)
         printf("GLOBAL_PART initializing for partition %2d, cutoff = %f\n",
@@ -734,7 +734,7 @@ static int greedy_order (
         /* Reset all gain values (but one). */
         for (i=0; i<hg->nVtx; i++){
           if (i != j) gain[i] = 0.0;
-          if (rank[i] <0) Zoltan_heap_change_value(h, i, gain[i]);
+          if (rank[i] <0) Zoltan_Heap_Change_Value(h, i, gain[i]);
         }
         /* Reset counters. */
         if (vtx_count)
@@ -783,7 +783,7 @@ static int greedy_order (
                else
                  gain[nbor] += delta/edge_sum[nbor];
 
-               Zoltan_heap_change_value(h, nbor, gain[nbor]);
+               Zoltan_Heap_Change_Value(h, nbor, gain[nbor]);
             }
           }
         }
@@ -805,8 +805,8 @@ error:
   if (vtx_count) ZOLTAN_FREE ((void **) &vtx_count);
   if (cut[0])    ZOLTAN_FREE ((void **) &cut[0]);
   if (visited)   ZOLTAN_FREE ((void **) &visited);
-  Zoltan_heap_free(&(h[0]));
-  Zoltan_heap_free(&(h[1]));
+  Zoltan_Heap_Free(&(h[0]));
+  Zoltan_Heap_Free(&(h[1]));
   return ierr;
 }
 

@@ -557,7 +557,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     if (Test.Drops)
       test_drops(Proc, mesh, pio_info, zz);
 
-    if (!(strcasecmp(prob->method, "RCB"))) {
+    if (Test.RCB_Box && !(strcasecmp(prob->method, "RCB"))) {
       double xmin, ymin, zmin;
       double xmax, ymax, zmax;
       int ndim;

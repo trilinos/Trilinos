@@ -30,23 +30,23 @@ typedef struct {
    float *value;
    } HEAP;
 
-#define Zoltan_heap_empty(H)         (((H)->n)==0)
-#define Zoltan_heap_not_empty(H)     (((H)->n)!=0)
-#define Zoltan_heap_has_elem(H,e)    (((H)->pos[e])!=-1)
-#define Zoltan_heap_value(H,e)       ((H)->value[e])    
-#define Zoltan_heap_max_value(H)     ((H)->value[(H)->ele[0]])
-#define Zoltan_heap_peek_max(H)      ((H)->ele[0])
-#define Zoltan_heap_count(H)         ((H)->n)
+#define Zoltan_Heap_Empty(H)         (((H)->n)==0)
+#define Zoltan_Heap_Not_Empty(H)     (((H)->n)!=0)
+#define Zoltan_Heap_Has_Elem(H,e)    (((H)->pos[e])!=-1)
+#define Zoltan_Heap_Value(H,e)       ((H)->value[e])    
+#define Zoltan_Heap_Max_Value(H)     ((H)->value[(H)->ele[0]])
+#define Zoltan_Heap_Peek_Max(H)      ((H)->ele[0])
+#define Zoltan_Heap_Count(H)         ((H)->n)
 
-int  Zoltan_heap_init         (ZZ*, HEAP*, int);
-void Zoltan_heap_clear        (HEAP*);
-void Zoltan_heap_free         (HEAP*);
-int  Zoltan_heap_check        (HEAP*);
-int  Zoltan_heap_input        (HEAP*, int, float);
-int  Zoltan_heap_make         (HEAP*);
-int  Zoltan_heap_change_value (HEAP*, int, float);
-int  Zoltan_heap_extract_max  (HEAP*);
-int  Zoltan_heap_extract      (HEAP*, int);
+int  Zoltan_Heap_Init         (ZZ*, HEAP*, int);
+void Zoltan_Heap_Clear        (HEAP*);
+void Zoltan_Heap_Free         (HEAP*);
+int  Zoltan_Heap_Check        (HEAP*);
+int  Zoltan_Heap_Input        (HEAP*, int, float);
+int  Zoltan_Heap_Make         (HEAP*);
+int  Zoltan_Heap_Change_Value (HEAP*, int, float);
+int  Zoltan_Heap_Extract_Max  (HEAP*);
+int  Zoltan_Heap_Extract      (HEAP*, int);
 
 
 

@@ -141,8 +141,8 @@ static void fm2_move_vertex_oneway(int v, HGraph *hg, Partition part, float *gai
             errexit("hey while moving v=%d u=%d is in part %d", v, u, part[u]);
 #endif
         mark[u] = 0;
-        if (Zoltan_heap_has_elem(&heap[p], u))
-            Zoltan_heap_change_value(&heap[p], u, gain[u]);
+        if (Zoltan_Heap_Has_Elem(&heap[p], u))
+            Zoltan_Heap_Change_Value(&heap[p], u, gain[u]);
     }
 }
 
@@ -175,19 +175,19 @@ static int fm2_select(HEAP heap[2], double *weights, double *max_weight, double 
 {
     int from;
     /* select a vertex with max gain; if possible */
-    if (Zoltan_heap_not_empty(&heap[0]) && Zoltan_heap_not_empty(&heap[1])) {
-        if (Zoltan_heap_max_value(&heap[0])==Zoltan_heap_max_value(&heap[1]))
+    if (Zoltan_Heap_Not_Empty(&heap[0]) && Zoltan_Heap_Not_Empty(&heap[1])) {
+        if (Zoltan_Heap_Max_Value(&heap[0])==Zoltan_Heap_Max_Value(&heap[1]))
             from = (weights[0] < targetw0) ? 1 : 0;
         else
-            from = (Zoltan_heap_max_value(&heap[0])>Zoltan_heap_max_value(&heap[1])) ? 0 : 1;
-    } else if (Zoltan_heap_empty(&heap[0])) {
-        if (Zoltan_heap_empty(&heap[1])) /* too bad both are empty */
+            from = (Zoltan_Heap_Max_Value(&heap[0])>Zoltan_Heap_Max_Value(&heap[1])) ? 0 : 1;
+    } else if (Zoltan_Heap_Empty(&heap[0])) {
+        if (Zoltan_Heap_Empty(&heap[1])) /* too bad both are empty */
             return -1; /* nothing to select */
         else
             from = 1;
     } else
         from = 0;
-    return Zoltan_heap_extract_max(&heap[from]);    
+    return Zoltan_Heap_Extract_Max(&heap[from]);    
 }
 
 
@@ -267,8 +267,8 @@ static void fm2_move_vertex(int v, HGraph *hg, Partition part, float *gain, HEAP
         int u=adj[i], p=part[u];
         
         mark[u] = 0;
-        if (Zoltan_heap_has_elem(&heap[p], u))
-            Zoltan_heap_change_value(&heap[p], u, gain[u]);
+        if (Zoltan_Heap_Has_Elem(&heap[p], u))
+            Zoltan_Heap_Change_Value(&heap[p], u, gain[u]);
     }
 }
 #endif
@@ -368,8 +368,8 @@ static int refine_fm2 (ZZ *zz,
              || !(adj   = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))   
              || !(gain  = (float*) ZOLTAN_CALLOC(hg->nVtx, sizeof(float)))))
             MEMORY_ERROR;
-        Zoltan_heap_init(zz, &heap[0], hg->nVtx);
-        Zoltan_heap_init(zz, &heap[1], hg->nVtx);  
+        Zoltan_Heap_Init(zz, &heap[0], hg->nVtx);
+        Zoltan_Heap_Init(zz, &heap[1], hg->nVtx);  
     }
 
     /* Initial calculation of the local pin distribution (sigma in UVC's papers)  */
@@ -456,16 +456,16 @@ static int refine_fm2 (ZZ *zz,
                version we'll do it in the root procs and broadcast */
 
             /* Initialize the heaps and fill them with the gain values */
-            Zoltan_heap_clear(&heap[from]);  
+            Zoltan_Heap_Clear(&heap[from]);  
             for (i = 0; i < hg->nVtx; ++i)
                 if (part[i]==from)
-                    Zoltan_heap_input(&heap[from], i, gain[i]);
-            Zoltan_heap_make(&heap[from]);
+                    Zoltan_Heap_Input(&heap[from], i, gain[i]);
+            Zoltan_Heap_Make(&heap[from]);
             
             while ((v>=0) && (neggaincnt < maxneggain) && ((lweights[to]+minvw) <= lmax_weight[to]) ) {
-                if (Zoltan_heap_empty(&heap[from])) /* too bad it is empty */
+                if (Zoltan_Heap_Empty(&heap[from])) /* too bad it is empty */
                     break;
-                v = Zoltan_heap_extract_max(&heap[from]);    
+                v = Zoltan_Heap_Extract_Max(&heap[from]);    
                 
 #ifdef _DEBUG
                 if (from != part[v])
@@ -598,8 +598,8 @@ static int refine_fm2 (ZZ *zz,
 
     if (hgc->myProc_y==root.rank) { /* only root needs mark, adj, gain and heaps*/
         Zoltan_Multifree(__FILE__,__LINE__, 3, &mark, &adj, &gain);
-        Zoltan_heap_free(&heap[0]);
-        Zoltan_heap_free(&heap[1]);        
+        Zoltan_Heap_Free(&heap[0]);
+        Zoltan_Heap_Free(&heap[1]);        
     }
     
  End:    

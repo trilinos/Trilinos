@@ -7,3 +7,4 @@ File Name		= grid20x19
 Parallel Disk Info	= number=0
 Test local partitions   = 3
 Test Drops		= 1
+Test RCB Box		= 1
