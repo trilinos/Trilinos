@@ -1,0 +1,11 @@
+# !/bin/sh
+~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/cube27p_32n_natural.hb
+~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/cube7p_64n_natural.hb
+~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/defroll.hb
+~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/DIE3D.hb
+~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/goma_braze_npspg.hb
+~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/hutch3.hb
+~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/NIMROD2.hb
+~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/RHPentium_new_rcm.hb
+~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/small.hb
+~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/viscoelastic.hb
