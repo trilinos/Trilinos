@@ -699,7 +699,7 @@ int sCSR_trans_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[]
 
    Amat    = (ML_Operator *) Amat_in;
    comm    = Amat->comm;
-   Nstored = Amat->outvec_leng;
+   Nstored = Amat->getrow->Nrows;
    temp    = (struct ML_CSR_MSRdata *) Amat->data;
    val     = (float *) temp->values;
    bindx   = temp->columns;
@@ -721,10 +721,13 @@ int sCSR_trans_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[]
       i = Nstored+getrow_comm->minimum_vec_size + 1;
       if (getrow_comm->remap_max+1 > i) i = getrow_comm->remap_max+1;
       ap2 = (double *) ML_allocate(i* sizeof(double));
+      for (k = 0; k < i; k++) ap2[k] = 0.;
    }
-   else ap2 = ap;
+   else {
+     ap2 = ap;
+     for (i = 0; i < olen; i++) ap2[i] = 0.;
+   }
 
-   for (i = 0; i < olen; i++) ap2[i] = 0.;
    for (i = 0; i < ilen; i++) {
      for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
      {
