@@ -83,7 +83,7 @@ SMOS_CC		= sicc
 SMOS_DBG_FLAGS	= -g
 SMOS_OPT_FLAGS	= -O4
 SMOS_RANLIB	= touch
-SMOS_AR		= ar860 rv
+SMOS_AR		= ar860 r
 
 SMOS_CSRC	= $(LIB_SRC_C)
 SMOS_INC	= $(INC)
@@ -103,7 +103,7 @@ TFLOP_CC	= pgcc -cougar
 TFLOP_DBG_FLAGS	= -g
 TFLOP_OPT_FLAGS	= -O3 -Minfo=all
 TFLOP_RANLIB	= xranlib
-TFLOP_AR	= xar rv
+TFLOP_AR	= xar r
 
 TFLOP_CSRC	= $(LIB_SRC_C)
 TFLOP_INC	= $(INC)
@@ -122,7 +122,7 @@ SUN_CC		= acc-2.0.1 -vc -Xc
 SUN_DBG_FLAGS	= -g
 SUN_OPT_FLAGS	= -O4
 SUN_RANLIB	= ranlib
-SUN_AR		= ar rv
+SUN_AR		= ar r
 
 SUN_CSRC	= $(LIB_SRC_C)
 SUN_INC		= $(INC)

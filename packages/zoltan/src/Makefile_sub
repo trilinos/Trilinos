@@ -28,12 +28,12 @@ include $(OBJ_FILES:.o=.d)
 
 %.o:	%.c
 	@echo "Compiling $<..."
-	$(CC) $(DEFS) -c $<
+	@$(CC) $(DEFS) -c $<
 %.d:	%.c
 	@echo "(Re)Building dependency for $<..."
 	@$(SHELL) -ec '$(DCC) $(DEPS) $(DEFS) $< | sed '\''s/$*.o/& $@/g'\'' > $@'
 
 $(LIB_NAME):	$(OBJ_FILES) $(OBJ_FILES:.o=.d)
 		@echo "creating library..."
-		$(AR) $(LIB_NAME) $(OBJ_FILES)
+		@$(AR) $(LIB_NAME) $(OBJ_FILES)
 		@$(RANLIB) $(LIB_NAME)
