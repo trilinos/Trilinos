@@ -14,6 +14,7 @@
 --enable-nox-epetra
 --enable-nox-tests
 --enable-loca
+--with-loca-anasazi
 --enable-komplex
 --enable-meros
 --enable-nox-epetra-examples
