@@ -38,7 +38,7 @@
 // configured with --enable-epetra --enable-teuchos. This example
 // required --enable-triutils (for the definition of the linear systems)
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) && defined(FIXME)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
