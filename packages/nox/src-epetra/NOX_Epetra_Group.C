@@ -75,6 +75,7 @@ Group::Group(Parameter::List& printParams,
   NewtonVectorPtr(new Vector(x, ShapeCopy)), // new vector of same size
   NewtonVector(*NewtonVectorPtr), 
   tmpVectorPtr(0),
+  normNewtonSolveResidual(0.0),
   sharedJacobianPtr(new SharedOperator(J)), // pass J to SharedJacobian
   sharedJacobian(*sharedJacobianPtr), // pass J to SharedJacobian
   sharedPreconditionerPtr(0),  // separate preconditioner is not used in this ctor
@@ -114,6 +115,7 @@ Group::Group(Parameter::List& printParams,
   NewtonVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
   NewtonVector(*NewtonVectorPtr),
   tmpVectorPtr(0),
+  normNewtonSolveResidual(0.0),
   sharedJacobianPtr(new SharedOperator(J)), // pass J to SharedJacobian
   sharedJacobian(*sharedJacobianPtr), // pass J to SharedJacobian
   sharedPreconditionerPtr(0),  // separate preconditioner is not used in this ctor
@@ -153,6 +155,7 @@ Group::Group(Parameter::List& printParams,
   NewtonVectorPtr(new Vector(x, ShapeCopy)), // new vector of same size
   NewtonVector(*NewtonVectorPtr), 
   tmpVectorPtr(0),
+  normNewtonSolveResidual(0.0),
   sharedJacobianPtr(new SharedOperator(J)), // pass J to SharedOperator
   sharedJacobian(*sharedJacobianPtr), // create reference from pointer
   sharedPreconditionerPtr(new SharedOperator(M)), // pass M to SharedOperator
@@ -192,6 +195,7 @@ Group::Group(Parameter::List& printParams,
   NewtonVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
   NewtonVector(*NewtonVectorPtr), 
   tmpVectorPtr(0),
+  normNewtonSolveResidual(0.0),
   sharedJacobianPtr(new SharedOperator(J)), // pass J to SharedOperator
   sharedJacobian(*sharedJacobianPtr), // create reference from pointer
   sharedPreconditionerPtr(new SharedOperator(M)), // pass M to SharedOperator

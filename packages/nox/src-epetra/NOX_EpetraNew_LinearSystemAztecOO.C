@@ -82,7 +82,9 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
   ifpackGraphPtr(0),
   ifpackPreconditionerPtr(0),
   scaling(s),
-  tmpVectorPtr(new Epetra_Vector(cloneVector))
+  tmpVectorPtr(new Epetra_Vector(cloneVector)),
+  conditionNumberEstimate(0.0),
+  isPrecConstructed(false)
 {
   // Neither Jacobian or Preconditioner are supplied
   createJacobianOperator(linearSolverParams, iReq, cloneVector);
@@ -115,7 +117,9 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
   ifpackGraphPtr(0),
   ifpackPreconditionerPtr(0),
   scaling(s),
-  tmpVectorPtr(new Epetra_Vector(cloneVector))
+  tmpVectorPtr(new Epetra_Vector(cloneVector)),
+  conditionNumberEstimate(0.0),
+  isPrecConstructed(false)
 {
   // Jacobian operator is supplied 
   jacType = getOperatorType(*jacPtr);
@@ -149,7 +153,9 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
   ifpackGraphPtr(0),
   ifpackPreconditionerPtr(0),
   scaling(s),
-  tmpVectorPtr(new Epetra_Vector(cloneVector))
+  tmpVectorPtr(new Epetra_Vector(cloneVector)),
+  conditionNumberEstimate(0.0),
+  isPrecConstructed(false)
 {
   // Jacobian operator is not supplied
   createJacobianOperator(linearSolverParams, iReq, cloneVector);
@@ -184,7 +190,9 @@ LinearSystemAztecOO(NOX::Parameter::List& printParams,
   ifpackGraphPtr(0),
   ifpackPreconditionerPtr(0),
   scaling(s),
-  tmpVectorPtr(new Epetra_Vector(cloneVector))
+  tmpVectorPtr(new Epetra_Vector(cloneVector)),
+  conditionNumberEstimate(0.0),
+  isPrecConstructed(false)
 {
   // Both operators are supplied
   jacType = getOperatorType(*jacPtr);
