@@ -91,22 +91,22 @@ echo `uname -a` >>& $file
 
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
-set run_lapack_tests = @ADDON_lapack_TESTS@
-set run_loca_lapack_tests = @ADDON_loca_lapack_TESTS@
-set run_epetra_tests = @ADDON_epetra_TESTS@
-set run_loca_epetra_tests = @ADDON_loca_epetra_TESTS@
-set run_petsc_tests = @ADDON_petsc_TESTS@
-set run_loca_petsc_tests = @ADDON_loca_petsc_TESTS@
-set run_python_tests = @ADDON_python_TESTS@
-set run_loca_python_tests = @ADDON_loca_python_TESTS@
+set run_lapack = @ADDON_lapack_TESTS@
+set run_loca_lapack = @ADDON_loca_lapack_TESTS@
+set run_epetra = @ADDON_epetra_TESTS@
+set run_loca_epetra = @ADDON_loca_epetra_TESTS@
+set run_petsc = @ADDON_petsc_TESTS@
+set run_loca_petsc = @ADDON_loca_petsc_TESTS@
+set run_python = @ADDON_python_TESTS@
+set run_loca_python = @ADDON_loca_python_TESTS@
 set tests_lapack =
 set tests_epetra =
 set tests_petsc = 
 
-if ($run_epetra_tests == yes) then
+if ($run_epetra == yes) then
     set tests_epetra = ($tests_epetra NOX_NewTest NOX_Vector NOX_Group 1Dfem)
 endif
-if ($run_loca_epetra_tests == yes) then
+if ($run_loca_epetra == yes) then
     set tests_epetra = ($tests_epetra LOCA_NewTest LOCA_Group)
 endif
  
