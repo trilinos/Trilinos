@@ -60,7 +60,8 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-SUBDIRS = doc src example src-epetra src-petsc example-epetra example-petsc
+SUBDIRS = doc src example src-epetra src-petsc example-epetra example-petsc \
+          src-loca 
 
 
 ## #######################################################################

@@ -961,6 +961,8 @@ AC_CONFIG_FILES([
                 src-petsc/Makefile
                 example-petsc/Makefile
                 example-petsc/DS6.5.1/Makefile
+		src-loca/Makefile
+                src-loca/src-epetra/Makefile
 		])
 
 AC_OUTPUT()

@@ -5190,7 +5190,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile doc/Makefile src/Makefile src-epetra/Makefile example/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile"
+ac_config_files="$ac_config_files Makefile doc/Makefile src/Makefile src-epetra/Makefile example/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile src-loca/Makefile src-loca/src-epetra/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -5687,6 +5687,8 @@ do
   "src-petsc/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-petsc/Makefile" ;;
   "example-petsc/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-petsc/Makefile" ;;
   "example-petsc/DS6.5.1/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-petsc/DS6.5.1/Makefile" ;;
+  "src-loca/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/Makefile" ;;
+  "src-loca/src-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/src-epetra/Makefile" ;;
   "default-1" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
   "src/NOX_Config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/NOX_Config.h:src/NOX_Config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
