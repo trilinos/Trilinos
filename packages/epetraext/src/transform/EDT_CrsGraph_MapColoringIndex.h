@@ -39,19 +39,34 @@ class Epetra_IntVector;
 
 namespace EpetraExt {
 
+///
+/** Generates a std::vector of Epetra_IntVector's to be used to map perturbation
+ * contributions to a CrsGraph/CrsMatrix from a perturbed vector.
+ */
+
 class CrsGraph_MapColoringIndex
 : public StructuralTransform< Epetra_CrsGraph,std::vector<Epetra_IntVector> > {
 
- const Epetra_MapColoring & ColorMap_;
+  const Epetra_MapColoring & ColorMap_;
 
  public:
 
+  ///
+  /** Destructor
+   */
   ~CrsGraph_MapColoringIndex() {}
 
+  ///
+  /** Constructor
+   * input param ColorMap defines the perturbation coloring
+   */
   CrsGraph_MapColoringIndex( const Epetra_MapColoring & ColorMap )
   : ColorMap_( ColorMap )
   {}
 
+  ///
+  /** Generates a std::vector<Epetra_IntVector> from the input Epetra_CrsGraph
+   */
   NewTypeRef operator()( OriginalTypeRef orig );
 };
 

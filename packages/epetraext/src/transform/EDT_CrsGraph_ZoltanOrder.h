@@ -40,18 +40,32 @@ class Epetra_CrsGraph;
 
 namespace EpetraExt {
 
+///
+/** Generates a local reordered Epetra_CrsGraph based on the Metis local ordering
+ * from Zoltan
+ */
+
 class CrsGraph_ZoltanOrder : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
   Epetra_Map * NewRowMap_;
 
  public:
 
+  ///
+  /** Destructor
+   */
   ~CrsGraph_ZoltanOrder();
 
+  ///
+  /** Constructor
+   */
   CrsGraph_ZoltanOrder()
   : NewRowMap_(0)
   {}
 
+  ///
+  /** Generates the reordered Epetra_CrsGraph from the input object.
+   */
   NewTypeRef operator()( OriginalTypeRef orig );
 
 };

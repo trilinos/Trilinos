@@ -36,6 +36,11 @@ class Epetra_CrsGraph;
 
 namespace EpetraExt {
 
+///
+/** Given an input Epetra_CrsGraph, a "overlapped" Epetra_CrsGraph is generated
+ * including rows associated with off processor contributions.
+ */
+
 class CrsGraph_Overlap : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
   const int levelOverlap_;
@@ -46,14 +51,26 @@ class CrsGraph_Overlap : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
  public:
 
+  ///
+  /** Destructor
+   */
   ~CrsGraph_Overlap();
 
+  ///
+  /** Constructor
+   * input parameter overlap - number of levels of overlap
+   * input parameter squareLocalBlock - whether to force the overlapped local domains
+   * to be square by excluding the new columns associated with the overlapped rows
+   */
   CrsGraph_Overlap( int overlap, bool squareLocalBlock = false )
   : levelOverlap_(overlap),
     squareLocalBlock_(squareLocalBlock),
     OverlapMap_(0)
   {}
 
+  ///
+  /** Generates the overlapped Epetra_CrsGraph from the input Epetra_CrsGraph
+   */
   NewTypeRef operator()( OriginalTypeRef orig );
 
 };

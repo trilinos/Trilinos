@@ -36,19 +36,38 @@ class Epetra_MapColoring;
 
 namespace EpetraExt {
 
-class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_MapColoring> {
+///
+/** Map Coloring of independent columns in a Graph
+ *
+ * Generates a Epetra_MapColoring object for which all column indices form
+ * independent sets.
+ */
 
-  bool verbose_;
+class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_MapColoring>
+{
 
  public:
 
+  ///
+  /** Destructor
+   */
   ~CrsGraph_MapColoring() {}
 
+  ///
+  /** Constructor
+   */
   CrsGraph_MapColoring( bool verbose = false )
   : verbose_(verbose)
   {}
 
+  ///
+  /** Generates the Epetra_MapColoring object from an input Epetra_CrsGraph
+   */
   NewTypeRef operator()( OriginalTypeRef orig );
+
+ private:
+
+  bool verbose_;
 
 };
 

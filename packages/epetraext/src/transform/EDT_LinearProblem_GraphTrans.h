@@ -41,6 +41,11 @@ class Epetra_Import;
 
 namespace EpetraExt {
 
+///
+/** Adaptation of a Epetra_LinearProblem transform from a Epetra_CrsGraph
+ * transform
+ */
+
 class LinearProblem_GraphTrans : public SameTypeTransform<Epetra_LinearProblem>
 {
   StructuralSameTypeTransform<Epetra_CrsGraph> & graphTrans_;
@@ -62,9 +67,14 @@ class LinearProblem_GraphTrans : public SameTypeTransform<Epetra_LinearProblem>
 
  public:
 
+  ///
+  /** Destructor
+   */
   ~LinearProblem_GraphTrans();
 
-  //Note: User is responsible for destroying input Graph Transform.
+  ///
+  /** Contructor
+   */
   LinearProblem_GraphTrans( StructuralSameTypeTransform<Epetra_CrsGraph> & graph_trans )
   : graphTrans_(graph_trans),
     OldProblem_(0),
@@ -81,9 +91,19 @@ class LinearProblem_GraphTrans : public SameTypeTransform<Epetra_LinearProblem>
     Exporter_(0)
   {}
 
+  ///
+  /** Generates transformed Epetra_LinearProblem from input object
+   */
   NewTypeRef operator()( OriginalTypeRef orig );
 
+  ///
+  /** Migrates data from original Epetra_LinearProblem to new Epetra_LinearProblem
+   */
   bool fwd();
+
+  ///
+  /** Migrates data from new Epetra_LinearProblem to original Epetra_LinearProblem
+   */
   bool rvs();
 
 };

@@ -41,6 +41,11 @@ class Epetra_Import;
 
 namespace EpetraExt {
 
+///
+/** Generates an Epetra_LinearProblem based on the repartitioning of an
+ * original Epetra_LinearProblem using Zoltan partitioning algorithms
+ */
+
 class LinearProblem_Zoltan : public SameTypeTransform<Epetra_LinearProblem>
 {
   const bool verbose_;
@@ -62,8 +67,14 @@ class LinearProblem_Zoltan : public SameTypeTransform<Epetra_LinearProblem>
 
  public:
 
+  ///
+  /** Destructor
+   */
   ~LinearProblem_Zoltan();
 
+  ///
+  /** Constructor
+   */
   LinearProblem_Zoltan( bool verbose = false )
   : verbose_(verbose),
     OldProblem_(0),
@@ -80,9 +91,19 @@ class LinearProblem_Zoltan : public SameTypeTransform<Epetra_LinearProblem>
     Exporter_(0)
   {}
 
+  ///
+  /** Generates repartitioned Epetra_LinearProblem from original object
+   */
   NewTypeRef operator()( OriginalTypeRef orig );
 
+  ///
+  /** Migrates data from original to new object.
+   */
   bool fwd();
+
+  ///
+  /** Migrates data from new to original object.
+   */
   bool rvs();
 
 };

@@ -36,18 +36,45 @@ class Epetra_Map;
 
 namespace EpetraExt {
 
-class CrsGraph_BTF : public StructuralSameTypeTransform<Epetra_CrsGraph> {
+///
+/** Block Triangular Factorization (Reordering) of Epetra_CrsGraph
+ *
+ * Uses Alex Pothien's BTF algorithm to find a block upper triangular
+ * ordering for a Epetra_CrsGraph.
+ */
+
+class CrsGraph_BTF : public StructuralSameTypeTransform<Epetra_CrsGraph>
+{
 
  public:
 
+  ///
+  /** Destructor
+   */
   ~CrsGraph_BTF();
 
+  ///
+  /** Default Constructor
+   */
   CrsGraph_BTF()
   : NewRowMap_(0),
     NewDomainMap_(0),
     NewGraph_(0)
   {}
 
+  ///
+  /** Construction of BTF ordered Epetra_CrsGraph from <tt>orig</tt> object.
+   *
+   * Preconditions:<ul>
+   * </ul>
+   *
+   * Invariants:<ul>
+   * </ul>
+   *
+   * Postconditions:<ul>
+   * </ul>
+   *
+   */
   NewTypeRef operator()( OriginalTypeRef orig );
 
  private:

@@ -40,6 +40,10 @@ class Zoltan_LoadBalance;
 
 namespace EpetraExt {
 
+///
+/** Generates a Epetra_CrsGraph based on the repartitioning algorithms in Zoltan
+ */
+
 class CrsGraph_Zoltan : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
   const std::string partitionMethod_;
@@ -48,15 +52,24 @@ class CrsGraph_Zoltan : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
  public:
 
+  ///
+  /* Destructor
+   */
   ~CrsGraph_Zoltan();
 
+  ///
+  /* Constructor
+   * input param part_method - type of Zoltan partitioning to use
+   */
   CrsGraph_Zoltan( const std::string & part_method = std::string("PartKway") )
   : partitionMethod_(part_method),
     NewRowMap_(0)
   {}
 
+  ///
+  /* Generates the Zoltan partitioned Epetra_CrsGraph from the input object.
+   */
   NewTypeRef operator()( OriginalTypeRef orig );
-
 };
 
 } //namespace EpetraExt

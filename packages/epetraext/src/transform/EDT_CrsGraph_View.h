@@ -36,6 +36,10 @@ class Epetra_BlockMap;
 
 namespace EpetraExt {
 
+///
+/** Generates a "view" object of a contiguous subset of a original Epetra_CrsGraph
+ */
+
 class CrsGraph_View : public ViewTransform<Epetra_CrsGraph> {
 
   const Epetra_BlockMap * NewRowMap_;
@@ -43,14 +47,25 @@ class CrsGraph_View : public ViewTransform<Epetra_CrsGraph> {
 
  public:
 
+  ///
+  /** Destructor
+   */
   ~CrsGraph_View();
 
+  ///
+  /** Constructor
+   * input param new_row_map - Row Map for the new "view" object
+   * input param new_col_map - Col Map for the new "view" object
+   */
   CrsGraph_View( const Epetra_BlockMap * new_row_map,
                  const Epetra_BlockMap * new_col_map = 0 )
   : NewRowMap_(new_row_map),
     NewColMap_(new_col_map)
   {}
 
+  ///
+  /** Generates the contiguous subset "view" of the input Epetra_CrsGraph
+   */
   NewTypeRef operator()( OriginalTypeRef orig );
 
 };

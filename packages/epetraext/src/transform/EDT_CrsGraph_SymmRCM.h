@@ -38,17 +38,33 @@ class Epetra_CrsGraph;
 
 namespace EpetraExt {
 
+///
+/** Generates a Local Symmetric Reverse Cuthill McGee permutation of an input
+ * Epetra_CrsGraph
+ */
+
 struct CrsGraph_SymmRCM : public StructuralSameTypeTransform<Epetra_CrsGraph> {
 
  public:
 
+  ///
+  /** Destructor
+   */
   ~CrsGraph_SymmRCM();
 
+  ///
+  /** Constructor
+   * input parameter testLeafWidth - restrict number of leaves used for next
+   * traversal to this count.
+   */
   CrsGraph_SymmRCM( int testLeafWidth = 5 )
   : testLeafWidth_(testLeafWidth),
     RCMMap_(0)
   {}
 
+  ///
+  /** Generate the RCM permuted Epetra_CrsGraph from the input Epetra_CrsGraph
+   */
   NewTypeRef operator()( OriginalTypeRef orig );
 
  private:

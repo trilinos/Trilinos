@@ -41,6 +41,12 @@ class Epetra_CrsGraph;
 
 namespace EpetraExt {
 
+///
+/** Query helper object to be used form Zoltan partitioning/ordering.
+ * This object allows Zoltan to query an Epetra_CrsGraph object for it's
+ * partitioning/ordering algorithms
+ */
+
 class Epetra_ZoltanQuery : public Zoltan_QueryObject
 {
 
@@ -54,6 +60,9 @@ class Epetra_ZoltanQuery : public Zoltan_QueryObject
 
  public:
 
+  ///
+  /** Constructor
+   */
   Epetra_ZoltanQuery( const Epetra_CrsGraph & graph,
                       const Epetra_CrsGraph * tgraph = 0,
                       bool localEdgesOnly = false );
