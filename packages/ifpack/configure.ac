@@ -340,7 +340,9 @@ AC_CONFIG_FILES([
 		src/Makefile.include
 		test/Makefile
 		test/CrsRiluk/Makefile
+		test/CrsRiluk/Makefile.include
 		test/IlukGraph/Makefile
+		test/IlukGraph/Makefile.include
 		test/SetParameters/Makefile
 		test/SetParameters/Makefile.include
 		test/scripts/Makefile

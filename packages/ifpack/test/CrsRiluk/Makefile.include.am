@@ -28,18 +28,14 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = IlukGraph_test
+noinst_PROGRAMS = CrsRiluk_test
 
-IlukGraph_test_SOURCES = $(srcdir)/cxx_main.cpp
+CrsRiluk_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-IlukGraph_test_DEPENDENCIES = \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/src/libifpack.a
+CrsRiluk_test_DEPENDENCIES = $(IFPACK_LIBS)
 
-IlukGraph_test_CXXFLAGS = -I$(top_srcdir)/src \
-	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+CrsRiluk_test_CXXFLAGS = $(IFPACK_INCLUDES)
 
-IlukGraph_test_LDADD = $(top_builddir)/src/libifpack.a \
-	$(top_builddir)/../epetra/src/libepetra.a $(BLAS_LIBS) $(FLIBS)
-
+CrsRiluk_test_LDADD = $(IFPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)
 

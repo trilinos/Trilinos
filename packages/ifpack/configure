@@ -9871,7 +9871,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #		example/Makefile
 #		example/ifpack_hb/Makefile
 
-                                                                                                                                                                ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile src/Makefile.include test/Makefile test/CrsRiluk/Makefile test/IlukGraph/Makefile test/SetParameters/Makefile test/SetParameters/Makefile.include test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
+                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile src/Makefile.include test/Makefile test/CrsRiluk/Makefile test/CrsRiluk/Makefile.include test/IlukGraph/Makefile test/IlukGraph/Makefile.include test/SetParameters/Makefile test/SetParameters/Makefile.include test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10478,7 +10478,9 @@ do
   "src/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES src/Makefile.include" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/CrsRiluk/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/CrsRiluk/Makefile" ;;
+  "test/CrsRiluk/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/CrsRiluk/Makefile.include" ;;
   "test/IlukGraph/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/IlukGraph/Makefile" ;;
+  "test/IlukGraph/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/IlukGraph/Makefile.include" ;;
   "test/SetParameters/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/SetParameters/Makefile" ;;
   "test/SetParameters/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/SetParameters/Makefile.include" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;

@@ -32,7 +32,7 @@ noinst_PROGRAMS = SetParameters
 
 SetParameters_SOURCES = $(srcdir)/cxx_main.cpp
 
-SetParameters_DEPENDENCIES = $(top_builddir)/src/libifpack.a
+SetParameters_DEPENDENCIES = $(IFPACK_LIBS)
 
 SetParameters_CXXFLAGS = -I$(top_srcdir)/src \
 	$(IFPACK_INCLUDES)

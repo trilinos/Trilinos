@@ -405,7 +405,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/src $(distdir)/test/SetParameters
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/src $(distdir)/test/CrsRiluk $(distdir)/test/IlukGraph $(distdir)/test/SetParameters
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
