@@ -281,10 +281,10 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 #TAC_ARG_ENABLE_FEATURE(triutils, [Build examples which use triutils], TRIUTILS, no)
 #AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(belos, [Build examples which use belos], BELOS, no)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, [Build examples which use belos], BELOS)
 AM_CONDITIONAL(BUILD_BELOS, test "X$ac_cv_use_belos" != "Xno")
 
-TAC_ARG_CHECK_DEFAULT_FEATURE(ifpack, IFPACK)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, IFPACK)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
 
 #TAC_ARG_CHECK_DEFAULT_FEATURE(triutils, TRIUTILS)
