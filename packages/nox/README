@@ -1,156 +1,58 @@
 #@HEADER
+# ************************************************************************
+# 
+#            NOX: An Object-Oriented Nonlinear Solver Package
+#                 Copyright (2002) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#   
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#   
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# 
+# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+# (rppawlo@sandia.gov).
+# 
+# ************************************************************************
 #@HEADER
 
-#----------------------------------------------------------------------
-UNPACKING
-#----------------------------------------------------------------------
 
-To unpack NOX, type
+1. To unpack NOX, type
 
-> tar xzvf nox-<version>.tar.gz
+gunzip -c nox-<version>.tgz | tar xvf -
 
-or 
+This will create the directory nox-<version>. 
 
-> gunzip -c nox-<version>.tar.gz | tar xvf -
+2. Go to the newly created directory; type
 
-In either case, rename the directory to simply "nox":
+cd nox-<version>
 
-> mv nox-<version> nox
+3. Run configure once so that we can automatically create the
+documentation; type
 
-#----------------------------------------------------------------------
-COMPILING THE EXAMPLES WITH TRILINOS & MPI
-#----------------------------------------------------------------------
+configure
 
-As far as I can tell, the examples we have will only work with
-"regular" MPI (as opposed to LAM MPI).  The problems seems mainly to
-be that TRILINOS_COMM is then set to LAMMPI instead of just MPI, which
-would cause problems in the cc_main.cc code. 
+4. Create the documentation by typing
 
-> cd nox
-> mkdir builds
-> cd builds
-> mkdir LINUX.MPI
-> cd LINUX.MPI
-> ../../configure TRILINOS_COMM=MPI TRILINOS_TARGET=LINUX.MPI CC=mpicc CXX=mpiCC
-> make
+make dox
 
-The 'configure' line assumes that TRILINOS_HOME is defined. If not,
-add that to the configure line as well. Furthermore, TRILINOS_COMM
-does not need to be defined if it is already defined as an
-environmental variable. Likewise, TRILINOS_TARGET does not need to be
-defined if TRILINOS_ARCH, TRILINOS_COMM, and (optionally) TRILINOS_ID
-are already defined on the configure line or as enviromental
-variables.
+5. Finally, bring up the following web page in your browser for the
+remaining instructions.
 
-The executables for the examples are now named 'example'.
+nox-<version>/doc/html/index.html
 
-#----------------------------------------------------------------------
-COMPILING THE EXAMPLES WITH TRILINOS & SERIAL MODE
-#----------------------------------------------------------------------
 
-This is essentially the same as above.
-The DS6.5.1 example does not work in serial mode. Not sure why.
 
-> cd nox
-> mkdir builds
-> cd builds
-> mkdir LINUX.SERIAL
-> cd LINUX.SERIAL
-> ../../configure TRILINOS_COMM=SERIAL TRILINOS_TARGET=LINUX.SERIAL
-> make
 
-#----------------------------------------------------------------------
-COMPILING - MULTI 
-#----------------------------------------------------------------------
 
-> cd nox
-> mkdir builds
-> cd builds
-> mkdir <BUILD_NAME>
-> cd <BUILD_NAME>
-> ../../configure
-> make
-
-Add the following to your CPPFLAGS:
-
-  -I$(NOX_HOME)/builds/<BUILD_NAME>/src -I$(NOX_HOME)/src
-
-Add the following to your LDFLAGS:
-
-  -L$(NOX_HOME)/builds/<BUILD_NAME>/src
-
-Add the following to you LIBS:
-
-  -lnox -lnoxepetra
-
-#----------------------------------------------------------------------
-INSTALLING NOX - MULTI
-#----------------------------------------------------------------------
-
-> cd $(NOX_HOME)
-> ./configure --prefix=<directory> --exec_prefix=<exec_directory>
-> make install
-
-Headers: $(prefix)/include/nox $(exec_prefix)/include/nox
-Libraries: $(exec_prefix)/lib
-
-Add the following to your CPPFLAGS:
-
-  -I$(prefix)/include/nox -I$(exec_prefix)/include/nox
-
-Add the following to your LDFLAGS:
-
-  -L$(exec_prefix)/lib
-
-Add the following to you LIBS:
-
-  -lnox -lnoxepetra
-
-#----------------------------------------------------------------------
-COMPILING - SINGLE
-#----------------------------------------------------------------------
-
-> cd nox
-> ./configure
-> make
-
-Add the following to your CPPFLAGS:
-
-  -I$(NOX_HOME)/src
-
-Add the following to your LDFLAGS:
-
-  -L$(NOX_HOME)/src
-
-Add the following to you LIBS:
-
-  -lnox -lnoxepetra
-
-#----------------------------------------------------------------------
-INSTALLING NOX - SINGLE
-#----------------------------------------------------------------------
-
-> cd $(NOX_HOME)
-> ./configure --prefix=<directory>
-> make install
-
-Headers: $(prefix)/include/nox
-Libraries: $(prefix)/lib
-
-Add the following to your CPPFLAGS:
-
-  -I$(prefix)/include/nox
-
-Add the following to your LDFLAGS:
-
-  -L$(prefix)/lib
-
-Add the following to you LIBS:
-
-  -lnox -lnoxepetra
-
-#----------------------------------------------------------------------
-Developer's Notes...
-#----------------------------------------------------------------------
-
-If you change any .m4 file in config, "rm aclocal.m4" and re-run "bootstrap".
