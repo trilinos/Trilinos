@@ -3,6 +3,7 @@ ARCH=$1
 USE_MPI=$2
 BLAS_LIB=$3
 LAPACK_LIB=$4
+EXES=
 if test $# -le 1
 then
 USE_MPI=no
@@ -27,10 +28,14 @@ then
 fi
 cd ..
 ML_HOME=`pwd`
+cd Obj
+/bin/rm -f superlapack aztecsuperblas aztecsupermpi aztecnosuper noaztecsuper aztecsuper noaztecnosuper
+cd ..
 tLAPACK=`echo ${LAPACK_LIB} | sed "s/ /x/g"`
 ###############################################################3
 if test `expr ${tLAPACK}` != 'no'
 then
+EXES=`echo $EXES superlapack`
 #
 #  no Aztec with superlu and blas and lapack
 #
@@ -79,6 +84,8 @@ else
 fi
 echo no >> .compile_input
 echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
 echo yes >> .compile_input
 echo  >> .compile_input
 echo yes >> .compile_input
@@ -90,6 +97,7 @@ fi
 ###############################################################3
 if test `expr ${BLAS_LIB}` != 'no'
 then
+EXES=`echo $EXES aztecsuperblas`
 #
 #  Aztec with superlu and blas
 #
@@ -120,6 +128,8 @@ else
    fi
 fi
 echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
 echo yes >> .compile_input
 echo  >> .compile_input
 echo no >> .compile_input
@@ -135,6 +145,7 @@ fi
 ###############################################################3
 if test `expr ${USE_MPI}` = 'yes'
 then
+EXES=`echo $EXES aztecsupermpi`
 #
 #  Aztec with superlu and MPI
 #
@@ -145,6 +156,7 @@ make clean
 cd ..
 \rm -f .compile_input
 echo $ARCH  >> .compile_input
+echo no >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
 echo yes >> .compile_input
@@ -167,6 +179,7 @@ echo no >> .compile_input
 fi
 echo >> .compile_input
 echo no >> .compile_input
+echo no >> .compile_input
 echo yes >> .compile_input
 echo  >> .compile_input
 echo no >> .compile_input
@@ -183,6 +196,7 @@ fi
 #
 #  Aztec but no superlu
 #
+EXES=`echo $EXES aztecnosuper`
 echo "testing with Aztec but no superlu"
 etc/clean_all
 pwd
@@ -194,6 +208,8 @@ then
 fi
 \rm -f .compile_input
 echo $ARCH >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
@@ -211,12 +227,15 @@ mv ${ML_HOME}/Obj/mlguide ${ML_HOME}/aztecnosuper
 # SuperLU no aztec
 #
 echo "testing with Superlu but no aztec"
+EXES=`echo $EXES noaztecsuper`
 etc/clean_all
 cd Obj
 make clean
 cd ..
 \rm -f .compile_input
 echo $ARCH >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
@@ -232,12 +251,15 @@ mv ${ML_HOME}/Obj/mlguide ${ML_HOME}/noaztecsuper
 #  Aztec with superlu
 #
 echo "testing with Superlu and aztec"
+EXES=`echo $EXES aztecsuper`
 etc/clean_all
 cd Obj
 make clean
 cd ..
 \rm -f .compile_input
 echo $ARCH  >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
@@ -256,6 +278,7 @@ mv ${ML_HOME}/Obj/mlguide ${ML_HOME}/aztecsuper
 #  no Aztec no superlu
 #
 echo "testing with no Superlu and no aztec"
+EXES=`echo $EXES noaztecnosuper`
 etc/clean_all
 cd Obj
 make clean
@@ -270,6 +293,14 @@ echo no >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
+echo no >> .compile_input
+echo no >> .compile_input
 ./installer < .compile_input
 mv ${ML_HOME}/Obj/mlguide ${ML_HOME}/noaztecnosuper
-
+cd ${ML_HOME}
+echo
+echo
+echo "Listing all the executables created during the test"
+echo "Any files listed as 'not found' indicates an error"
+echo "during the compile of this executable"
+ls `echo $EXES`
