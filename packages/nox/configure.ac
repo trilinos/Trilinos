@@ -68,6 +68,10 @@ AC_PREREQ(2.52)
 
 AC_REVISION($Revision$)
 
+# define $target, etc
+
+AC_CANONICAL_SYSTEM
+
 # ------------------------------------------------------------------------
 # Configure command line options
 # ------------------------------------------------------------------------
@@ -139,6 +143,23 @@ AC_CXX_MUTABLE
 AC_CXX_HAVE_STL
 AC_CXX_HAVE_STD
 
+AC_MSG_CHECKING([what target])
+AC_MSG_RESULT($target)
+
+AC_MSG_CHECKING([for special compiler options])
+case $target in
+  rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
+    COPTIONS="-qnolm"
+    CXXOPTIONS="-qnolm -qrtti"
+    AC_MSG_RESULT([rs6000 or powerpc])
+  ;;
+  *)
+    AC_MSG_RESULT([none])
+  ;;
+esac
+
+CFLAGS="${CFLAGS} ${COPTIONS}"
+CXXFLAGS="${CXXFLAGS} ${CXXOPTIONS}"
 CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS} ${XTRAINC}"
 
 # ------------------------------------------------------------------------

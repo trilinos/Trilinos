@@ -82,6 +82,12 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+build_alias = @build_alias@
+build_triplet = @build@
+host_alias = @host_alias@
+host_triplet = @host@
+target_alias = @target_alias@
+target_triplet = @target@
 AMTAR = @AMTAR@
 AWK = @AWK@
 CC = @CC@
@@ -132,7 +138,8 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-info-recursive all-recursive install-data-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
-DIST_COMMON = README Makefile.am Makefile.in aclocal.m4 config/depcomp \
+DIST_COMMON = README Makefile.am Makefile.in aclocal.m4 \
+	config/config.guess config/config.sub config/depcomp \
 	config/install-sh config/missing config/mkinstalldirs configure \
 	configure.ac
 DIST_SUBDIRS = $(SUBDIRS)
