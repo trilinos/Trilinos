@@ -1,8 +1,17 @@
 To compile ml ...
 
-I.  Use the configure/make method.
+I.  Use the configure/make method:
 
-or ...
+    > cd /home/jhu/Trilinos/packages/ml
+    > ./configure [command-line-options-for-configure]
+    > make
+
+    From the top level ml directory, type ./configure --help for a list
+    of options, including some specific to ml.
+
+
+or
+
 
 II.  There are two scripts 'installer' and 'etc/ml_install'.
 
