@@ -466,8 +466,8 @@ void sample2(struct data *Afine_data, struct data *Acoarse_data,
    ML_Init_Prolongator(my_ml, grid0, grid1, Ncoarse, Nfine,(void *)Pmat_data);
    ML_Set_Prolongator_Matvec(my_ml,  grid0, myinterp);
 
-   ML_Set_Smoother   (my_ml, grid1,    ML_PRESMOOTH, (void *)&fsmooth,mysmooth);
-   ML_Set_Smoother   (my_ml, grid0,    ML_PRESMOOTH, (void *)&csmooth,mysmooth);
+   ML_Set_Smoother   (my_ml, grid1,    ML_PRESMOOTH, (void *)&fsmooth,mysmooth, NULL);
+   ML_Set_Smoother   (my_ml, grid0,    ML_PRESMOOTH, (void *)&csmooth,mysmooth, NULL);
 
    ML_Gen_Solver    (my_ml, 0, fine_grid, grid0 );
    ML_Iterate(my_ml, sol, rhs);

@@ -520,11 +520,11 @@ void sample2(struct data *Afine_data, struct data *Acoarse_data,
 
    ML_Init_Amatrix      (my_ml, grid1,   Nfine,   Nfine, (void *) Afine_data);
    ML_Set_Amatrix_Matvec(my_ml, grid1,  mymatvec);
-   ML_Set_Smoother   (my_ml, grid1,    ML_PRESMOOTH, (void *)&fsmooth,mysmooth);
+   ML_Set_Smoother   (my_ml, grid1,    ML_PRESMOOTH, (void *)&fsmooth,mysmooth,NULL);
 
    ML_Init_Amatrix      (my_ml, grid0, Ncoarse, Ncoarse, (void *) Acoarse_data);
    ML_Set_Amatrix_Matvec(my_ml, grid0,  mymatvec);
-   ML_Set_Smoother   (my_ml, grid0,    ML_PRESMOOTH, (void *)&csmooth,mysmooth);
+   ML_Set_Smoother   (my_ml, grid0,    ML_PRESMOOTH, (void *)&csmooth,mysmooth,NULL);
 
    ML_Init_Restrictor(my_ml, grid1, grid0, Nfine, Ncoarse,(void *)Rmat_data);
    ML_Set_Restrictor_Matvec(my_ml,  grid1, myrestrict);
@@ -547,7 +547,7 @@ void sample2(struct data *Afine_data, struct data *Acoarse_data,
 
    ML_Init_Amatrix      (my_ml, grid0, Ncoarse, Ncoarse, (void *) Acoarse_data);
    ML_Set_Amatrix_Matvec(my_ml, grid0,  mymatvec);
-   ML_Set_Smoother   (my_ml, grid0,    ML_PRESMOOTH, (void *)&csmooth,mysmooth);
+   ML_Set_Smoother   (my_ml, grid0,    ML_PRESMOOTH, (void *)&csmooth,mysmooth,NULL);
 
    ML_Init_Restrictor(my_ml, grid1, grid0, Nfine, Ncoarse,(void *)Rmat_data);
    ML_Set_Restrictor_Matvec(my_ml,  grid1, myrestrict);
@@ -568,7 +568,7 @@ void sample2(struct data *Afine_data, struct data *Acoarse_data,
 
    ML_Init_Amatrix      (my_ml, grid0, Ncoarse, Ncoarse, (void *) Acoarse_data);
    ML_Set_Amatrix_Matvec(my_ml, grid0,  mymatvec);
-   ML_Set_Smoother   (my_ml, grid0,    ML_PRESMOOTH, (void *)&csmooth,mysmooth);
+   ML_Set_Smoother   (my_ml, grid0,    ML_PRESMOOTH, (void *)&csmooth,mysmooth, NULL);
 
    ML_Init_Restrictor(my_ml, grid1, grid0, Nfine, Ncoarse,(void *)Rmat_data);
    ML_Set_Restrictor_Matvec(my_ml,  grid1, myrestrict);

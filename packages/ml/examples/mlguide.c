@@ -42,11 +42,11 @@ int main(int argc, char *argv[]){
 
    /******** Begin code to set a user-defined smoother ******/
    ML_Get_Amatrix(ml_object, 0, &data);
-   ML_Set_Smoother(ml_object, 0, ML_PRESMOOTHER, data, user_smoothing);
+   ML_Set_Smoother(ml_object, 0, ML_PRESMOOTHER, data, user_smoothing,"mine");
    ML_Get_Amatrix(ml_object, 1, &data);
-   ML_Set_Smoother(ml_object, 1, ML_PRESMOOTHER, data, user_smoothing);
+   ML_Set_Smoother(ml_object, 1, ML_PRESMOOTHER, data, user_smoothing,"mine");
    ML_Get_Amatrix(ml_object, 2, &data);
-   ML_Set_Smoother(ml_object, 2, ML_PRESMOOTHER, data, user_smoothing);
+   ML_Set_Smoother(ml_object, 2, ML_PRESMOOTHER, data, user_smoothing,"mine");
    ML_Gen_Solver    (ml_object, ML_MGV, 0, N_levels-1);
    ML_Iterate(ml_object, sol, rhs);
    ML_Aggregate_Destroy(&agg_object);
