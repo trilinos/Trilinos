@@ -444,7 +444,7 @@ ML_Aggregate_Set_Threshold(ag, 0.0);
 */
 
        ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 
-          parasails_sym, parasails_thresh, parasails_nlevels, parasails_filter);
+          parasails_sym, parasails_thresh, parasails_nlevels, parasails_filter,0,0);
 
 
 /*
@@ -482,7 +482,7 @@ ML_Gen_Smoother_OrderedSymGaussSeidel(ml , level, ML_POSTSMOOTHER,nsmooth,1.);
                                     coarse_iterations,1.); */
 
        ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 
-                                 0, 0.0, 0, 0.0);  /* 0 means nonsymmetric */
+                                 0, 0.0, 0, 0.0,0,0);  /* 0 means nonsymmetric */
 
 
 }

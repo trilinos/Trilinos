@@ -168,7 +168,7 @@ options[AZ_reorder] = 1;
                         proc_config, status, AZ_ONLY_PRECONDITIONER, 
                         ML_PRESMOOTHER,NULL);
 */
- ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 0, parasails_thresh, 0, 0.0);
+ ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 0, parasails_thresh, 0, 0.0,0,0);
 parasails_thresh /= 4.;
 
 
@@ -201,7 +201,7 @@ parasails_thresh /= 4.;
 	
 	ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
 /*
-ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 0, parasails_thresh, 0, 0.0);
+ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 0, parasails_thresh, 0, 0.0,0,0);
 */
 /*
 ML_Gen_SmootherAztec(ml, coarsest_level, options, params, 

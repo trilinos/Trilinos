@@ -220,7 +220,7 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
    for (level = N_levels-1; level > coarsest_level; level--) {
 		
       ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, parasails_sym, 
-                                parasails_thresh, parasails_nlevels, parasails_filter);
+                                parasails_thresh, parasails_nlevels, parasails_filter,0,0);
 /*
       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth,1.);
       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth,1.);

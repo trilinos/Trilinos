@@ -553,7 +553,7 @@ ML_Gen_Blocks_Aggregates(*ml_ag, level, &nblocks, &block_list);
          ML_Gen_Smoother_GaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth, 1.);
 */
 /*
-         ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 0, 0.0, 1, 0.0);
+         ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 0, 0.0, 1, 0.0,0,0);
 */
 /*
          ML_Gen_Smoother_BlockGaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth,1., 2);
@@ -576,7 +576,7 @@ ML_Gen_Blocks_Aggregates(*ml_ag, level, &nblocks, &block_list);
          ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
       }
       else if ( coarse_iterations == 1 )
-         ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 0, 0.0, 1, 0.0);
+         ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 0, 0.0, 1, 0.0,0,0);
 /*
          ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
                                         coarse_iterations,1.);
