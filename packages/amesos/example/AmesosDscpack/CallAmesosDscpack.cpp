@@ -117,8 +117,10 @@ int main(int argc, char *argv[])
       cout << " TEST FAILED " << endl ;
   }
 #else
-  cout << "This example requires DSCPACK" << endl ; 
+  if ( iam == 0 ) cout << "This example requires DSCPACK" << endl ; 
 #endif
+
+  MPI_Finalize() ; 
   return 0;
 }
 
