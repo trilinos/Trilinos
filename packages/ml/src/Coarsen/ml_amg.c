@@ -7,8 +7,24 @@
 /* ******************************************************************** */
 /* Functions to set up AMG multigrid structure                          */
 /* ******************************************************************** */
+/* ML_AMG_Create                                                        */
+/* ML_AMG_Destroy                                                       */
+/* ML_AMG_Set_OutputLevel                                               */
+/* ML_AMG_Set_MaxCoarseSize                                             */
+/* ML_AMG_Set_CoarsenScheme_MIS                                         */
+/* ML_AMG_Set_Threshold                                                 */
+/* ML_AMG_Set_MaxLevels                                                 */
+/* ML_AMG_Set_CurrentLevel                                              */
+/* ML_AMG_Set_StartLevel                                                */
+/* ML_AMG_Set_Coarsen                                                   */
+/* ML_AMG_Set_Smoother                                                  */
+/* ML_AMG_Set_SmootherAztec                                             */
+/* ML_AMG_Set_CoarseSolve                                               */
+/* ML_AMG_Print                                                         */
+/* ML_AMG_Print_Complexity                                              */
+/* ******************************************************************** */
 /* Author        : Charles Tong (LLNL)                                  */
-/* Date          : September, 2000                                      */
+/* Date          : October, 2000                                        */
 /* ******************************************************************** */
 /* ******************************************************************** */
 
@@ -16,29 +32,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "ml_operator.h"
 #include "ml_amg.h"
-#include "ml_lapack.h"
-
-#define dabs(x) (((x) > 0) ? x : (-(x)))
-
-#define ML_AMG_MIS         21
-#define ML_AMG_SM_JACOBI   11
-#define ML_AMG_SM_GS       12
-#define ML_AMG_SM_SGS      13
-#define ML_AMG_SM_VBJACOBI 14
-#define ML_AMG_SM_VBGS     15
-#define ML_AMG_SM_VBSGS    16
-#define ML_AMG_SM_ASCHWARZ 17
-#define ML_AMG_SM_MSCHWARZ 18
-#define ML_AMG_SM_SUPERLU  19
-
-/* ******************************************************************** */
-/* external functions called from this file                             */
-/* -------------------------------------------------------------------- */
-
-extern int ML_randomize(int nlist, int *list);
-extern int ML_AMG_CoarsenMIS(ML_AMG*,ML_Operator*,ML_Operator**,ML_Comm*);
+#include "ml_operator.h"
 
 /* ******************************************************************** */
 /* Constructor                                                          */
@@ -49,7 +44,7 @@ int ML_AMG_Create( ML_AMG **amg )
    ML_memory_alloc( (void **) amg, sizeof(ML_AMG), "MG1" );
    (*amg)->ML_id                      = ML_ID_AMG;
    (*amg)->print_flag                 = 1;
-   (*amg)->max_coarse_size            = 100;
+   (*amg)->max_coarse_size            = 4;
    (*amg)->threshold                  = 0.2;
    (*amg)->curr_threshold             = 0.2;
    (*amg)->coarsen_scheme             = ML_AMG_MIS;
@@ -75,11 +70,11 @@ int ML_AMG_Create( ML_AMG **amg )
    (*amg)->pre_aztec_proc_config      = NULL;
    (*amg)->pre_aztec_status           = NULL;
    (*amg)->pre_function               = NULL;
-   (*amg)->post_aztec_options          = NULL;
-   (*amg)->post_aztec_params           = NULL;
-   (*amg)->post_aztec_proc_config      = NULL;
-   (*amg)->post_aztec_status           = NULL;
-   (*amg)->post_function               = NULL;
+   (*amg)->post_aztec_options         = NULL;
+   (*amg)->post_aztec_params          = NULL;
+   (*amg)->post_aztec_proc_config     = NULL;
+   (*amg)->post_aztec_status          = NULL;
+   (*amg)->post_function              = NULL;
 #endif
    return 0;
 }
@@ -90,8 +85,6 @@ int ML_AMG_Create( ML_AMG **amg )
 
 int ML_AMG_Destroy( ML_AMG **amg )
 {
-   int i;
-
    if ( (*amg)->ML_id != ML_ID_AMG ) 
    {
       printf("ML_AMG_Destroy : wrong object. \n");
@@ -151,20 +144,20 @@ int ML_AMG_Set_CoarsenScheme_MIS( ML_AMG *amg  )
 /* set/reset strength of connection threshold                           */
 /* -------------------------------------------------------------------- */
 
-int ML_AMG_Set_Threshold( ML_AMG *amg, double epsilon )
+int ML_AMG_Set_Threshold( ML_AMG *amg, double thresh )
 {
    if ( amg->ML_id != ML_ID_AMG ) 
    {
       printf("ML_AMG_Set_Threshold : wrong object. \n");
       exit(-1);
    }
-   if ( epsilon > 0.0 ) amg->threshold = epsilon;
-   else                 amg->threshold = 0.0;
+   if ( thresh >= 0.0 && thresh <= 1.0 ) amg->threshold = thresh;
+   else                                  amg->threshold = 0.0;
    return 0;
 }
 
 /* ******************************************************************** */
-/* set max number of levels                                             */
+/* set max number of levels and other level information                 */
 /* -------------------------------------------------------------------- */
 
 int ML_AMG_Set_MaxLevels( ML_AMG *amg, int level )
@@ -205,22 +198,18 @@ int ML_AMG_Set_StartLevel( ML_AMG *amg, int level )
 }
 
 /* ******************************************************************** */
-/* ******************************************************************** */
 /* Coarsening routine                                                   */
 /* -------------------------------------------------------------------- */
 
 int ML_AMG_Coarsen(ML_AMG *amg,ML_Operator *Amatrix,ML_Operator **Pmatrix, 
                    ML_Comm *comm)
 {
-   int i, ndofs, Ncoarse, coarsen_scheme;
-   int mypid;
+   int    Ncoarse, mypid;
 #ifdef ML_TIMING
    double t0;
 
    t0 = GetClock();
 #endif
-
-   mypid = comm->ML_mypid;
 
    if ( amg->ML_id != ML_ID_AMG ) 
    {
@@ -228,39 +217,30 @@ int ML_AMG_Coarsen(ML_AMG *amg,ML_Operator *Amatrix,ML_Operator **Pmatrix,
       exit(-1);
    }
 
-   if ( mypid == 0 && amg->print_flag ) 
-      printf("ML_AMG_Coarsen begins ...\n");
+   mypid = comm->ML_mypid;
+   if (mypid == 0 && amg->print_flag) printf("ML_AMG_Coarsen begins ...\n");
 
    Amatrix->num_PDEs = amg->num_PDE_eqns;
-
-   ndofs = Amatrix->outvec_leng;
-   if ( ndofs < 2 ) ndofs = 0; else ndofs = 1;
-   i = 1;
-   ML_gsum_vec_int(&ndofs, &i, 1, comm);
-   coarsen_scheme = amg->coarsen_scheme;
-
-   if ( coarsen_scheme == ML_AMG_MIS )
+   switch ( amg->coarsen_scheme )
    {
-      Ncoarse = ML_AMG_CoarsenMIS(amg,Amatrix,Pmatrix,comm);
-   } 
-   else 
-   {
-      if ( mypid == 0 ) printf("ML_AMG_Coarsen : invalid scheme.\n");
-      exit(1);
+      case ML_AMG_MIS :
+         Ncoarse = ML_AMG_CoarsenMIS(amg,Amatrix,Pmatrix,comm);
+         break;
+      default :
+         if ( mypid == 0 ) printf("ML_AMG_Coarsen : invalid scheme.\n");
+         exit(1);
    } 
 
 #ifdef ML_AMG_DEBUG
    i = 0;
    i = ML_gmax_int(i, comm);
-   if ( mypid == 0 && amg->print_flag ) 
-      printf("ML_AMG_Coarsen ends.\n");
+   if ( mypid == 0 && amg->print_flag ) printf("ML_AMG_Coarsen ends.\n");
 #endif
 #ifdef ML_TIMING
    t0 = GetClock() - t0;
    t0 = ML_gsum_double(t0, comm);
    t0 = t0/((double) comm->ML_nprocs);
-   if (comm->ML_mypid == 0)
-      printf(" AMG setup time \t= %e\n",t0);
+   if ( mypid == 0 ) printf(" AMG setup time \t= %e\n",t0);
 #endif
 
    return Ncoarse;
@@ -268,7 +248,7 @@ int ML_AMG_Coarsen(ML_AMG *amg,ML_Operator *Amatrix,ML_Operator **Pmatrix,
 
 /* ******************************************************************** */
 /* set smoother and smoother parameters                                 */
-/* ******************************************************************** */
+/* -------------------------------------------------------------------- */
 
 int ML_AMG_Set_Smoother(ML_AMG *amg,int smoother_type, int pre_or_post,
                         ML_Operator *Amatrix,int ntimes, double weight)
@@ -296,13 +276,12 @@ int ML_AMG_Set_Smoother(ML_AMG *amg,int smoother_type, int pre_or_post,
 #ifdef AZTEC
 /* ******************************************************************** */
 /* set Aztec-related smoother parameters                                */
-/* ******************************************************************** */
+/* -------------------------------------------------------------------- */
 
-int ML_AMG_Set_SmootherAztecInfo(ML_AMG *amg, int pre_or_post,
-                       int *options, double *params, int *proc_config,
-                       double *status, 
+int ML_AMG_Set_SmootherAztec(ML_AMG *amg, int pre_or_post, int *options, 
+                       double *params, int *proc_config, double *status, 
                        void (*aztec_function)(double *,int *,int *,double *,
-                        struct AZ_MATRIX_STRUCT*,struct AZ_PREC_STRUCT*))
+                       struct AZ_MATRIX_STRUCT*,struct AZ_PREC_STRUCT*))
 {
    if ( pre_or_post == ML_PRESMOOTHER )
    {
@@ -326,7 +305,7 @@ int ML_AMG_Set_SmootherAztecInfo(ML_AMG *amg, int pre_or_post,
 
 /* ******************************************************************** */
 /* set coarse grid solver                                               */
-/* ******************************************************************** */
+/* -------------------------------------------------------------------- */
 
 int ML_AMG_Set_CoarseSolve(ML_AMG *amg, int solve_type, int ntimes, 
                            double weight)
@@ -341,10 +320,12 @@ int ML_AMG_Set_CoarseSolve(ML_AMG *amg, int solve_type, int ntimes,
 
 /* ******************************************************************** */
 /* Print information about current state of ML_AMG                      */
-/* ******************************************************************** */
+/* -------------------------------------------------------------------- */
 
 int ML_AMG_Print( ML_AMG *amg )
 {
+   char string[100];
+
    printf("**************************************************************\n");
    printf("* ML AMG information                                         *\n");
    printf("==============================================================\n");
@@ -355,19 +336,65 @@ int ML_AMG_Print( ML_AMG *amg )
    }
    printf("ML_AMG : strong threshold   = %e\n", amg->threshold);
    printf("ML_AMG : number of PDEs     = %d\n", amg->num_PDE_eqns);
+   printf("ML_AMG : max coarse size    = %d\n", amg->max_coarse_size);
+   printf("ML_AMG : coarsen scheme     = MIS\n");
    printf("ML_AMG : max no. of levels  = %d\n", amg->max_levels);
+   switch (amg->presmoother_type)
+   {
+      case ML_AMG_SM_JACOBI   : strcpy( string, "Jacobi" ); break;
+      case ML_AMG_SM_GS       : strcpy( string, "Gauss Seidel" ); break;
+      case ML_AMG_SM_SGS      : strcpy( string, "symmetric Gauss Seidel" ); break;
+      case ML_AMG_SM_VBJACOBI : strcpy( string, "VBlock Jacobi" ); break;
+      case ML_AMG_SM_VBGS     : strcpy( string, "VBlock Gauss Seidel" ); break;
+      case ML_AMG_SM_VBSGS    : strcpy( string, "VBlock symmetric GS" ); break;
+      case ML_AMG_SM_ASCHWARZ : strcpy( string, "additive Schwarz" ); break;
+      case ML_AMG_SM_MSCHWARZ : strcpy( string, "multiplicative Schwarz" ); break;
+   }
+   printf("ML_AMG : presmoother type   = %s\n", string);
+   printf("ML_AMG : presmoother ntimes = %d\n", amg->presmoother_ntimes);
+   if ( amg->presmoother_type == ML_AMG_SM_JACOBI )
+      printf("ML_AMG : damping factor     = %e\n", amg->presmoother_jacobiwt);
+   switch (amg->postsmoother_type)
+   {
+      case ML_AMG_SM_JACOBI   : strcpy( string, "Jacobi" ); break;
+      case ML_AMG_SM_GS       : strcpy( string, "Gauss Seidel" ); break;
+      case ML_AMG_SM_SGS      : strcpy( string, "symmetric Gauss Seidel" ); break;
+      case ML_AMG_SM_VBJACOBI : strcpy( string, "VBlock Jacobi" ); break;
+      case ML_AMG_SM_VBGS     : strcpy( string, "VBlock Gauss Seidel" ); break;
+      case ML_AMG_SM_VBSGS    : strcpy( string, "VBlock symmetric GS" ); break;
+      case ML_AMG_SM_ASCHWARZ : strcpy( string, "additive Schwarz" ); break;
+      case ML_AMG_SM_MSCHWARZ : strcpy( string, "multiplicative Schwarz" ); break;
+   }
+   printf("ML_AMG : postsmoother type  = %s\n", string);
+   printf("ML_AMG : postsmoother ntimes= %d\n", amg->postsmoother_ntimes);
+   if ( amg->postsmoother_type == ML_AMG_SM_JACOBI )
+      printf("ML_AMG : damping factor     = %e\n", amg->postsmoother_jacobiwt);
+   switch (amg->coarse_solver_type)
+   {
+      case ML_AMG_SM_JACOBI   : strcpy( string, "Jacobi" ); break;
+      case ML_AMG_SM_GS       : strcpy( string, "Gauss Seidel" ); break;
+      case ML_AMG_SM_SGS      : strcpy( string, "symmetric Gauss Seidel" ); break;
+      case ML_AMG_SM_VBJACOBI : strcpy( string, "VBlock Jacobi" ); break;
+      case ML_AMG_SM_VBGS     : strcpy( string, "VBlock Gauss Seidel" ); break;
+      case ML_AMG_SM_VBSGS    : strcpy( string, "VBlock symmetric GS" ); break;
+      case ML_AMG_SM_ASCHWARZ : strcpy( string, "additive Schwarz" ); break;
+      case ML_AMG_SM_MSCHWARZ : strcpy( string, "multiplicative Schwarz" ); break;
+      case ML_AMG_SM_SUPERLU  : strcpy( string, "SuperLU"); break;
+   }
+   printf("ML_AMG : coarse solver      = %s\n", string);
+
    printf("**************************************************************\n");
    return 1;
 }
 
 /* ******************************************************************** */
 /* Print information about operator complexity                          */
-/* ******************************************************************** */
+/* -------------------------------------------------------------------- */
 
 int ML_AMG_Print_Complexity( ML_AMG *amg )
 {
    if ( amg->fine_complexity != 0.0 )
-      printf("AMG Aggregation : operator complexity = %e.\n",
+      printf("AMG : operator complexity = %e.\n",
               amg->operator_complexity / amg->fine_complexity);
    else
       printf("AMG error :  fine complexity = 0.0.\n");

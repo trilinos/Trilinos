@@ -7,7 +7,7 @@
 /* data structure to hold AMG information                               */
 /* ******************************************************************** */
 /* Author        : Charles Tong (LLNL)                                  */
-/* Date          : August, 1999                                         */
+/* Date          : October, 2000                                        */
 /* ******************************************************************** */
 
 #ifndef __MLAMGH__
@@ -21,7 +21,32 @@
 #endif
 
 /* ******************************************************************** */
-/* definition of the aggregate structure                                */
+/* local defines                                                        */
+/* -------------------------------------------------------------------- */
+
+#define ML_ID_AMG         127
+#define ML_AMG_MIS         21
+#define ML_AMG_SM_JACOBI   11
+#define ML_AMG_SM_GS       12
+#define ML_AMG_SM_SGS      13
+#define ML_AMG_SM_VBJACOBI 14
+#define ML_AMG_SM_VBGS     15
+#define ML_AMG_SM_VBSGS    16
+#define ML_AMG_SM_ASCHWARZ 17
+#define ML_AMG_SM_MSCHWARZ 18
+#define ML_AMG_SM_SUPERLU  19
+
+/* ******************************************************************** */
+/* other ML include files                                               */
+/* -------------------------------------------------------------------- */
+
+#include "ml_defs.h"
+#include "ml_comm.h"
+#include "ml_memory.h"
+#include "ml_operator.h"
+
+/* ******************************************************************** */
+/* definition of the AMG structure                                      */
 /* -------------------------------------------------------------------- */
 
 typedef struct ML_AMG_Struct
@@ -68,15 +93,6 @@ typedef struct ML_AMG_Struct
 } ML_AMG;
 
 /* ******************************************************************** */
-/* other ML include files                                               */
-/* -------------------------------------------------------------------- */
-
-#include "ml_defs.h"
-#include "ml_comm.h"
-#include "ml_memory.h"
-#include "ml_operator.h"
-
-/* ******************************************************************** */
 /* ******************************************************************** */
 /* functions to manipulate the AMG data structure                       */
 /* -------------------------------------------------------------------- */
@@ -118,9 +134,11 @@ extern int  ML_AMG_Set_CoarsenScheme_MIS( ML_AMG *amg  );
 extern int  ML_AMG_Set_Threshold( ML_AMG *amg, double epsilon );
 
 /* -------------------------------------------------------------------- */
-/* functions for performing aggregation                                 */
+/* functions for performing coarsening                                  */
 /* -------------------------------------------------------------------- */
 
+extern int  ML_AMG_Coarsen(ML_AMG *amg, ML_Operator *Amatrix,
+                           ML_Operator **Pmatrix, ML_Comm *comm);
 extern int  ML_AMG_CoarsenMIS(ML_AMG *ml_amg,ML_Operator *Amatrix,
                               ML_Operator **Pmatrix, ML_Comm *comm);
 
@@ -132,7 +150,7 @@ extern int  ML_AMG_Set_Smoother(ML_AMG *ml_amg,int smoother_type, int pre_or_pos
                         ML_Operator *Amatrix,int ntimes, double weight);
 
 #ifdef AZTEC
-extern int  ML_AMG_Set_SmootherAztecInfo(ML_AMG *ml_amg, int pre_or_post,
+extern int  ML_AMG_Set_SmootherAztec(ML_AMG *ml_amg, int pre_or_post,
                        int *options, double *params, int *proc_config,
                        double *status, 
                        void (*post_function)(double *,int *,int *,double *,
