@@ -70,6 +70,11 @@ typedef int idxtype;
 #define TAG6  32006
 #define TAG7  32007
 
+/* Graph types */
+#define NO_GRAPH     0
+#define LOCAL_GRAPH  1
+#define GLOBAL_GRAPH 2
+
 /* Misc. local constants */
 #define CHUNKSIZE 20  /* Number of nodes to allocate in initial chunk. */
 #define REALLOC_FACTOR 1.5  /* Increase size by this factor if too small. */
@@ -125,7 +130,7 @@ extern int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
 extern int Zoltan_Scatter_Graph(idxtype **vtxdist, idxtype **xadj, 
        idxtype **adjncy, idxtype **vwgt, idxtype **vsize, idxtype **adjwgt, 
        float **xyz, int ndims, ZZ *zz, ZOLTAN_COMM_OBJ **plan);
-extern int Zoltan_Build_Graph( ZZ *zz, int get_graph, int global_graph,
+extern int Zoltan_Build_Graph( ZZ *zz, int graph_type,
        int check_graph, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
        int obj_wgt_dim, int edge_wgt_dim,
        idxtype **vtxdist, idxtype **xadj, idxtype **adjncy, float **ewgts);

@@ -408,7 +408,7 @@ static int Zoltan_ParMetis_Jostle(
   int i, j, k, ierr, tmp, flag, ndims; 
   int obj_wgt_dim, edge_wgt_dim, check_graph, scatter;
   int num_obj, num_edges, edgecut;
-  int nsend, wgtflag, numflag, global_graph; 
+  int nsend, wgtflag, numflag, graph_type; 
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *part2, *vsize;
   idxtype *sep_sizes;
@@ -511,8 +511,9 @@ static int Zoltan_ParMetis_Jostle(
     /* Allocate space for separator sizes */
     sep_sizes = (idxtype *) ZOLTAN_MALLOC(2*num_proc*sizeof(idxtype));
     /* EB: Temp hack; allocate temp rank array here if local ordering */
-    if (!global_graph) tmp_rank = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
-    if ((!sep_sizes) || (!global_graph && !tmp_rank)){
+    if (graph_type==LOCAL_GRAPH) 
+      tmp_rank = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+    if ((!sep_sizes) || (graph_type==LOCAL_GRAPH && !tmp_rank)){
       /* Not enough memory */
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
@@ -526,7 +527,7 @@ static int Zoltan_ParMetis_Jostle(
   }
   
   /* Usually we need the entire global graph. */
-  global_graph = 1;
+  graph_type = GLOBAL_GRAPH;
 
   /* Most ParMetis methods use only graph data */
   get_graph_data = 1;
@@ -580,7 +581,7 @@ static int Zoltan_ParMetis_Jostle(
   }
   
   /* Build ParMetis data structures, or just get vtxdist. */
-  ierr = Zoltan_Build_Graph(zz, get_graph_data, global_graph, check_graph,
+  ierr = Zoltan_Build_Graph(zz, graph_type, check_graph,
          global_ids, local_ids, obj_wgt_dim, edge_wgt_dim,
          &vtxdist, &xadj, &adjncy, &ewgts);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
@@ -862,7 +863,7 @@ static int Zoltan_ParMetis_Jostle(
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "NODEND") == 0){
-    if (global_graph){
+    if (graph_type==GLOBAL_GRAPH){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
       ParMETIS_V3_NodeND (vtxdist, xadj, adjncy, 
         &numflag, options, part, sep_sizes, &comm);
@@ -926,7 +927,7 @@ static int Zoltan_ParMetis_Jostle(
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "NODEND") == 0){
-    if (global_graph){
+    if (graph_type==GLOBAL_GRAPH){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
       ParMETIS_NodeND (vtxdist, xadj, adjncy, 
         &numflag, options, part, sep_sizes, &comm);

@@ -27,18 +27,23 @@ static int hash_lookup (ZZ *zz, struct Hash_Node **hashtab, ZOLTAN_ID_PTR key,
  * The dynamic arrays are allocated in this function
  * and should be freed by the calling function after use.
  * Geometric methods may use this function to only
- * compute vtxdist by setting get_graph=0.
+ * compute vtxdist (and nothing else) by setting graph_type = NO_GRAPH.
  * The global and local ids are assumed to be available.
  * Also, the vertex weights are not computed here since
  * they are typically obtained together with the gids.
  *
- * If global_graph is TRUE, construct the global graph,
- * otherwise construct a local subgraph on each proc
+ * If graph_type = GLOBAL_GRAPH, construct the global graph,
+ * otherwise (LOCAL_GRAPH) construct a local subgraph on each proc
  * (and discard all inter-proc edges).
+ *
+ * The graph should be symmetric. BUG: Currently, a graceful
+ * exit is not guaranteed if the graph is non-symmetric.
+ * Future versions should consider automatically
+ * symmetrizing the graph (at least as an option).
  */
 
 int Zoltan_Build_Graph(
-    ZZ *zz, int get_graph, int global_graph, int check_graph,
+    ZZ *zz, int graph_type, int check_graph,
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
     int obj_wgt_dim, int edge_wgt_dim,
     idxtype **vtxdist, idxtype **xadj, idxtype **adjncy, 
@@ -117,6 +122,8 @@ int Zoltan_Build_Graph(
         ZOLTAN_PRINT_WARN(zz->Proc, yo, "No objects to balance.");
   }
 
+  if (graph_type != NO_GRAPH){
+    /* Get edge data */
     num_edges = 0;
     max_edges = 0;
     for (i=0; i< num_obj; i++){
@@ -163,7 +170,7 @@ int Zoltan_Build_Graph(
     for (i=0; i< num_obj; i++){
       hashtab[i] = NULL;
       hash_nodes[i].gid = &(global_ids[i*num_gid_entries]);
-      if (global_graph)
+      if (graph_type == GLOBAL_GRAPH)
         /* Make this a global number */
         hash_nodes[i].gno = (*vtxdist)[zz->Proc]+i;
       else
@@ -186,7 +193,7 @@ int Zoltan_Build_Graph(
      */
     max_proc_list_len = 0;
 
-    if (global_graph){
+    if (graph_type == GLOBAL_GRAPH){
       num_border = 4*sqrt((double) num_obj);
       if (num_border > num_obj) num_border = num_obj;
        
@@ -312,7 +319,7 @@ int Zoltan_Build_Graph(
         } else {
           /* Inter-processor edge. */
           /* Skip this edge if local graphs have been requested. */
-          if (global_graph){
+          if (graph_type == GLOBAL_GRAPH){
             /* Check if we already have gid[i] in proc_list with */
             /* the same destination.                             */
             flag = 0;
@@ -522,24 +529,25 @@ int Zoltan_Build_Graph(
       }
       
     }
+  }
 
-    /* Successful finish */
-    ierr = ZOLTAN_OK; 
+  /* Successful finish */
+  ierr = ZOLTAN_OK; 
 
 free:
-    /* Free all local arrays */
-    ZOLTAN_FREE(&sendbuf);
-    ZOLTAN_FREE(&recvbuf);
-    ZOLTAN_FREE(&proc_list);
-    ZOLTAN_FREE(&proc_list_nbor);
-    ZOLTAN_FREE(&plist);
-    ZOLTAN_FREE(&hash_nodes);
-    ZOLTAN_FREE(&hashtab);
+  /* Free all local arrays */
+  ZOLTAN_FREE(&sendbuf);
+  ZOLTAN_FREE(&recvbuf);
+  ZOLTAN_FREE(&proc_list);
+  ZOLTAN_FREE(&proc_list_nbor);
+  ZOLTAN_FREE(&plist);
+  ZOLTAN_FREE(&hash_nodes);
+  ZOLTAN_FREE(&hashtab);
 
-    /* Free tmp_ewgts if they haven't been freed already (error occurred) */
-    if (tmp_ewgts) ZOLTAN_FREE(ewgts); 
+  /* Free tmp_ewgts if they haven't been freed already (error occurred) */
+  if (tmp_ewgts) ZOLTAN_FREE(ewgts); 
 
-    return (ierr);
+  return (ierr);
 }
 
 
