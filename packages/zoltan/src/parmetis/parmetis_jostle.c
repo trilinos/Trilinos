@@ -361,8 +361,9 @@ static int LB_ParMetis_Jostle(
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
    */
-  nbors_proc = NULL;
   vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
+  nbors_proc = NULL;
+  nbors_global = NULL;
   local_ids = NULL;
   global_ids = NULL;
   float_vwgt = ewgt = xyz = imb_tols = NULL;
@@ -523,11 +524,18 @@ static int LB_ParMetis_Jostle(
     if (lb->Debug_Level >= LB_DEBUG_ALL)
       printf("[%1d] Debug: num_edges = %d\n", lb->Proc, num_edges);
 
-    if (lb->Debug_Level){
-       ierr = MPI_Reduce(&num_edges, &tmp, 1, MPI_INT, MPI_SUM, 0, lb->Communicator);
-       if ((lb->Proc ==0) && (tmp==0))
-          LB_PRINT_WARN(lb->Proc, yo, "No edges in graph. "
-                        "Please use a different load balancing method.");
+    if (num_edges==0){
+      /* No edges on a proc is a fatal error in ParMETIS 2.0
+         but fine with Jostle.                                */
+      if (strcmp(alg, "JOSTLE")){
+        LB_PRINT_ERROR(lb->Proc, yo, "No edges on this proc; "
+                      "ParMETIS 2.0 will crash. "
+                      "Please use a different load balancing method.");
+        ierr = LB_FATAL;
+        FREE_MY_MEMORY; 
+        LB_TRACE_EXIT(lb, yo);
+        return (ierr);
+      }
     }
 
   
@@ -538,7 +546,8 @@ static int LB_ParMetis_Jostle(
       adjwgt = (idxtype *)LB_MALLOC(comm_wgt_dim 
                 * num_edges * sizeof(idxtype));
   
-    if (!xadj || (num_edges && !adjncy) || (num_edges && comm_wgt_dim && !adjwgt)){
+    if (!xadj || (num_edges && !adjncy) || 
+        (num_edges && comm_wgt_dim && !adjwgt)){
       /* Not enough memory */
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
@@ -790,9 +799,9 @@ static int LB_ParMetis_Jostle(
     for (i=0, ptr=proc_list; i<cross_edges; i++, ptr++){
       if (ptr->nbor_proc >= 0){
         if (lb->Debug_Level >= LB_DEBUG_ALL) {
-          printf("[%1d] Debug: Sending (", lb->Proc);
+          printf("[%1d] Debug: Sending gid = ", lb->Proc);
           LB_PRINT_GID(lb, ptr->my_gid);
-          printf(",%d) to proc %d\n", ptr->my_gno, ptr->nbor_proc);
+          printf(", gno = %d to proc %d\n", ptr->my_gno, ptr->nbor_proc);
         }
         memcpy(&sendbuf[offset], (char *) (ptr->my_gid), gid_size); 
         offset += gid_size;
@@ -1033,7 +1042,7 @@ static int LB_ParMetis_Jostle(
   /* Verify that graph is correct */
   if (get_graph_data){
      ierr = LB_Verify_Graph(lb->Communicator, vtxdist, xadj, adjncy, vwgt, 
-               adjwgt, obj_wgt_dim, comm_wgt_dim, check_graph, lb->Debug_Level);
+               adjwgt, obj_wgt_dim, comm_wgt_dim, check_graph, 1);
   }
   
   /* Get a time here */
