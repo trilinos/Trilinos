@@ -38,27 +38,30 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 
+namespace Epetra_ML 
+{
+  
 //==============================================================================
 // constructor -- it's presumed that the user has constructed the ML
 // object somewhere else
-Epetra_ML_Operator::Epetra_ML_Operator(ML *ml_handle, const Epetra_Comm &myComm,const Epetra_Map &dm, const Epetra_Map &rm)
+MultiLevelOperator::MultiLevelOperator(ML *ml_handle, const Epetra_Comm &myComm,const Epetra_Map &dm, const Epetra_Map &rm)
   : solver_(ml_handle),
     Label_(0),
     Comm_(myComm),
     DomainMap_(dm),
     RangeMap_(rm) {
   ownership_ = false;
-  Label_ = "Epetra ML_Operator";
+  Label_ = "Epetra ML::MultilLevelOperator";
 }
 //==============================================================================
-Epetra_ML_Operator::~Epetra_ML_Operator() {
+MultiLevelOperator::~MultiLevelOperator() {
   if (ownership_ == true) {
     ML_Destroy(&solver_);
   }
 }
 //==============================================================================
 #ifndef WKC
-int Epetra_ML_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+int MultiLevelOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
 
 
   if (!X.Map().SameAs(OperatorDomainMap())) EPETRA_CHK_ERR(-1);
@@ -100,7 +103,7 @@ int Epetra_ML_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVe
 }
 
 #else
-int Epetra_ML_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVe
+int MultiLevelOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVe
 ctor& Y , int iBlockSize) const {
 
 
@@ -147,7 +150,7 @@ ze );
 
 
 //==============================================================================
-int Epetra_ML_Operator::ApplyInverse_WKC(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+int MultiLevelOperator::ApplyInverse_WKC(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
 
   if (!X.Map().SameAs(OperatorDomainMap())) EPETRA_CHK_ERR(-1);
   if (!Y.Map().SameAs(OperatorRangeMap())) EPETRA_CHK_ERR(-2);
@@ -187,5 +190,7 @@ int Epetra_ML_Operator::ApplyInverse_WKC(const Epetra_MultiVector& X, Epetra_Mul
   return 0;
 }
 #endif
+ 
+}
 
 #endif //ifdef ML_WITH_EPETRA

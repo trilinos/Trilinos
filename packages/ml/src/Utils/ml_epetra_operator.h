@@ -34,14 +34,17 @@ class Epetra_Comm;
 #include "Epetra_Object.h"
 #include "ml_include.h"
 
-//! Epetra_ML_Operator: An implementation of the Epetra_Operator class.
-/*! The Epetra_ML_Operator class implements Epetra_Operator using a
+//! Operator: An implementation of the Epetra_Operator class.
+/*! Operator class implements Epetra_Operator using a
     pre-constructed ML solver object.
-    Once constructed, an Epetra_ML_Operator can be used as a preconditioner
+    Once constructed, an Operator can be used as a preconditioner
     within an AztecOO solver object.
 */    
 
-class Epetra_ML_Operator: public virtual Epetra_Operator {
+namespace Epetra_ML 
+{
+  
+class MultiLevelOperator: public virtual Epetra_Operator {
       
  public:
 
@@ -54,18 +57,18 @@ class Epetra_ML_Operator: public virtual Epetra_Operator {
     \param In - An Epetra domain map
     \param In - An Epetra range map
   */
-  Epetra_ML_Operator(ML * ml_handle, const Epetra_Comm & myComm,
+  MultiLevelOperator(ML * ml_handle, const Epetra_Comm & myComm,
                      const Epetra_Map & DomainMap,
                      const Epetra_Map & RangeMap);
   //@{ \name Destructor.
     //! Destructor
-  ~Epetra_ML_Operator();
+  ~MultiLevelOperator();
   //@}
 
   
   //@{ \name Atribute set methods.
 
-    //! If set true, the multigrid hierarchy is destroyed when the Epetra_ML_Operator is destroyed.
+    //! If set true, the multigrid hierarchy is destroyed when the Operator is destroyed.
     /*! This flag determines the ownership of the multigrid hierarchy. When set to true, this
         object owns the multigrid hierarchy and so it destroys it when freed. Otherwise, it is
         assumed that the multigrid hierarchy is owned by another object and so it is not freed.
@@ -97,7 +100,7 @@ class Epetra_ML_Operator: public virtual Epetra_Operator {
   
   //@{ \name Mathematical functions.
 
-    //! Returns the result of a Epetra_ML_Operator applied to a Epetra_MultiVector X in Y.
+    //! Returns the result of a Operator applied to a Epetra_MultiVector X in Y.
     /*! 
     \param In
 	   X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
@@ -109,7 +112,7 @@ class Epetra_ML_Operator: public virtual Epetra_Operator {
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
     return(-1);}
 
-  //! Returns the result of a Epetra_ML_Operator inverse applied to an Epetra_MultiVector X in Y.
+  //! Returns the result of a Operator inverse applied to an Epetra_MultiVector X in Y.
   /*! 
     \param In
     X - A Epetra_MultiVector of dimension NumVectors to solve for.
@@ -174,5 +177,7 @@ kSize = WKC) const;
   const Epetra_Comm & Comm_;
   bool  ownership_;
 };
+ 
+}
 
 #endif /* _EPETRA_ML_OPERATOR_H_ */

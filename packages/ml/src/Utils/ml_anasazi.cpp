@@ -25,95 +25,254 @@
 #include "AnasaziMatrix.hpp"
 #include "AnasaziOperator.hpp"
 
-using namespace Teuchos;
-
 #include "ml_anasazi.h"
 
 using namespace Anasazi;
 
+// ================================================ ====== ==== ==== == =
+
+enum MLMatOp { A_MATRIX, I_MINUS_A_MATRIX, A_PLUS_AT_MATRIX, A_MINUS_AT_MATRIX };
+
+// ================================================ ====== ==== ==== == =
+
 template <class TYPE> 
 class MLMat : public virtual Matrix<TYPE> {
 public:
-  MLMat(const Epetra_Operator&, const Epetra_Vector &, const bool);
+  MLMat(const Epetra_RowMatrix &, const MLMatOp MatOp, const bool UseScaling );
   ~MLMat();
   ReturnType ApplyMatrix ( const MultiVec<TYPE>& x, 
 			   MultiVec<TYPE>& y ) const;
-  void SetApplyMatrix(const bool ApplyMatrix) 
+  void SetMatOp(const MLMatOp MatOp) 
   {
-    ApplyMatrix_ = ApplyMatrix;
+    MatOp_ = MatOp;
+  }
+
+  void SetScaling(const double Scale) 
+  {
+    Scale_ = Scale;
   }
   
 private:
-  const Epetra_Operator & Mat_;
-  const Epetra_Vector & Diagonal_;
-  bool ApplyMatrix_;
+  const Epetra_RowMatrix & Mat_;
+  Epetra_Vector * Diagonal_;
+  MLMatOp MatOp_;
+  const bool UseScaling_;
+  double Scale_;
+  
 };
 
+// ================================================ ====== ==== ==== == =
+
 template <class TYPE>
-MLMat<TYPE>::MLMat(const Epetra_Operator & Matrix,
-		   const Epetra_Vector & Diagonal,
-		   const bool ApplyMatrix) 
+MLMat<TYPE>::MLMat(const Epetra_RowMatrix & Matrix,
+		   const MLMatOp MatOp, const bool UseScaling ) 
   : Mat_(Matrix),
-    Diagonal_(Diagonal),
-    ApplyMatrix_(ApplyMatrix)
+    MatOp_(MatOp),
+    UseScaling_(UseScaling),
+    Scale_(1.0)
 {
+  if( UseScaling_ ) {
+    
+    Epetra_Vector * Diagonal_ = new Epetra_Vector(Matrix.RowMatrixRowMap());
+    Matrix.ExtractDiagonalCopy(*Diagonal_);
+    
+    int NumMyElements = Matrix.RowMatrixRowMap().NumMyElements();
+    for( int i=0 ; i<NumMyElements ; ++i ) {
+      if( (*Diagonal_)[i] != 0.0 ) (*Diagonal_)[i] = 1.0/(*Diagonal_)[i];
+      else  (*Diagonal_)[i] = 0.0;
+    }
+    
+  }
+  
 }
+
+// ================================================ ====== ==== ==== == =
 
 template <class TYPE>
 MLMat<TYPE>::~MLMat() 
 {
+  if( UseScaling_ ) delete Diagonal_;
 }
+
+// ================================================ ====== ==== ==== == =
 
 template <class TYPE>
 ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x, 
 				      MultiVec<TYPE>& y ) const 
 {
-  int info=0;
+  int info = 0;
   MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
   Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
   Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
-  
-  assert( vec_x!=NULL && vec_y!=NULL );
-  //
-  // Need to cast away constness because the member function Apply
-  // is not declared const.
-  //
-  info=const_cast<Epetra_Operator&>(Mat_).Apply( *vec_x, *vec_y );
-  if (info==0) {
 
-    for( int j=0 ; j<vec_y->NumVectors() ; ++j ) 
-      for( int i=0 ; i<vec_y->Map().NumMyElements() ; ++i ) (*vec_y)[j][i] *= Diagonal_[i];
+  if( vec_x==0 || vec_y==0 ) return Failed;
 
-    if( ApplyMatrix_ == false ) {
-      vec_y->Update (1.0,*vec_x,-1.0);
-    }
-    
+  info = const_cast<Epetra_RowMatrix &>(Mat_).Apply( *vec_x, *vec_y );
+  vec_y->Scale(Scale_);
+
     return Ok; 
-  } else { 
-    return Failed; 
-  }	
+  if( info ) return Failed;
+  
+  Epetra_MultiVector * tmp ;
+  if( MatOp_ == A_PLUS_AT_MATRIX || MatOp_ == A_MINUS_AT_MATRIX ) {
+    tmp = new Epetra_MultiVector(*vec_x);
+    const Epetra_RowMatrix & RowMatrix = dynamic_cast<const Epetra_RowMatrix &>(Mat_);
+    info = RowMatrix.Multiply(true,*vec_x,*tmp);
+    tmp->Scale(Scale_);
+    if( info ) return Failed;
+  }
+  if( MatOp_ == A_PLUS_AT_MATRIX ) vec_y->Update(1.0,*tmp,1.0);
+  else if( MatOp_ == A_MINUS_AT_MATRIX ) vec_y->Update(-1.0,*tmp,1.0);
+
+  if(  MatOp_ == A_PLUS_AT_MATRIX || MatOp_ == A_MINUS_AT_MATRIX ) delete tmp;
+  
+  // diagonal scaling
+  if( UseScaling_ == true ) {
+    for( int j=0 ; j<vec_y->NumVectors() ; ++j ) 
+      for( int i=0 ; i<vec_y->Map().NumMyElements() ; ++i ) (*vec_y)[j][i] *= (*Diagonal_)[i];
+  }
+  
+  if( MatOp_ == I_MINUS_A_MATRIX ) {
+    vec_y->Update (1.0,*vec_x,-1.0);
+  }
+
+  return Ok; 
 }
 
-using namespace Teuchos;
+// ================================================ ====== ==== ==== == =
 
-int ML_Anasazi_Interface(const Epetra_RowMatrix * RowMatrix, int & NullSpaceDim,
-			 double * & NullSpacePtr, ParameterList & List) 
+int ML_Anasazi_Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVectors,
+			 double RealEigenvalues[], double ImagEigenvalues[],
+			 Teuchos::ParameterList & List) 
 {
 
+  int MyPID = RowMatrix->Comm().MyPID();
   
-  // copy diagonal in an epetra_vector, being interested in I-D^{-1} A
-  Epetra_Vector * RowMatrixDiagonal = new Epetra_Vector(RowMatrix->RowMatrixRowMap());
-  EPETRA_CHK_ERR( RowMatrix->ExtractDiagonalCopy(*RowMatrixDiagonal) );
+  /* ********************************************************************** */
+  /* Retrive parameters' choices                                            */
+  /* ********************************************************************** */
 
-  int NumMyElements = RowMatrixDiagonal->Map().NumMyElements();
+  MLMatOp MatOp;
+  string MatOpStr = "A";
+  MatOpStr = List.get("matrix operation", MatOpStr);
+  if( MatOpStr == "A" ) MatOp = A_MATRIX;
+  else if( MatOpStr == "I-A" ) MatOp = I_MINUS_A_MATRIX;
+  else if( MatOpStr == "A+A^T" ) MatOp = A_PLUS_AT_MATRIX;
+  else if( MatOpStr == "A-A^T" ) MatOp = A_MINUS_AT_MATRIX;
+
+  bool UseScaling = true;
+  UseScaling = List.get("use scaling", UseScaling);
+
+  int length = List.get("length", 20);
+  double tol = List.get("tolerance", 1.0e-5);
+  string which = List.get("action", "LM");
+  int restarts = List.get("restart", 100);
+  bool isSymmetric = List.get("symmetric problem", false);
+
+  int output = List.get("output", 5);
   
-  for( int i=0 ; i<NumMyElements ; ++i )
-    if( (*RowMatrixDiagonal)[i] != 0.0 ) (*RowMatrixDiagonal)[i] = 1.0/(*RowMatrixDiagonal)[i];
-    else  (*RowMatrixDiagonal)[i] = 0.0;
+  double Scaling = List.get("scaling", 1.0);
   
+  if( output > 5 && MyPID == 0 ) {
+    if( MatOp == A_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of A" << endl;
+    if( MatOp == I_MINUS_A_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of I - A" << endl;
+    if( MatOp == A_PLUS_AT_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of A + A^T" << endl;
+    if( MatOp == A_MINUS_AT_MATRIX ) cout << "ML_Anasazi : Computing eigenvalues of A - A^T" << endl;
+    if( UseScaling ) cout << "ML_Anasazi : where A is scaled by D^{-1}" << endl;
+    if( isSymmetric ) cout << "ML_Anasazi : Problem is symmetric" << endl;
+    cout << "ML_Anasazi : Tolerance = " << tol << endl;
+    cout << "ML_Anasazi : Scaling = " << Scaling << endl;
+    cout << "ML_Anasazi : Required Action = " << which << endl;
+	
+  }
+
+  /* ********************************************************************** */
+  /* view mode for PetraVectors                                             */
+  /* ********************************************************************** */
+  
+  int NumBlocks = EigenVectors.NumVectors();
+
+  int indices[NumBlocks];
+  for( int i=0 ; i<NumBlocks ; ++i ) indices[i] = i;
+  
+  Anasazi::PetraVec<double> Vectors(View,EigenVectors,indices,NumBlocks);
+  
+  /* ********************************************************************** */
+  /* Perform required action                                                */
+  /* ********************************************************************** */
+
+  int step = restarts*length*NumBlocks;
+  
+  // Call the ctor that calls the petra ctor for a matrix
+  MLMat<double> Amat(*RowMatrix,MatOp,UseScaling);
+  Amat.SetScaling(Scaling);
+  
+  Anasazi::Eigenproblem<double> MyProblem(&Amat, &Vectors);
+
+  // Initialize the Block Arnoldi solver
+  Anasazi::BlockArnoldi<double> MyBlockArnoldi1(MyProblem, tol, NumBlocks, length, NumBlocks, 
+						which, step, restarts);
+	
+  // Inform the solver that the problem is symmetric
+  if( isSymmetric ) MyBlockArnoldi1.setSymmetric(true);
+  MyBlockArnoldi1.setDebugLevel(0);
+
+  //  MyBlockArnoldi.iterate(5);
+  
+  // Solve the problem to the specified tolerances or length
+  MyBlockArnoldi1.solve();
+  
+  // Obtain results directly
+
+  double * evalr = MyBlockArnoldi1.getEvals(); 
+  double * evali = MyBlockArnoldi1.getiEvals();
+
+  for( int i=0 ; i<NumBlocks ; ++i ) {
+    RealEigenvalues[i] = evalr[i];
+    ImagEigenvalues[i] = evali[i];
+  }
+  
+  // Output results to screen
+  if( output > 5 && MyPID == 0 ) MyBlockArnoldi1.currentStatus();
+
+  MyBlockArnoldi1.getEvecs(Vectors);
+  
+  /* ********************************************************************** */
+  /* Scale vectors (real and imag part) so that max is 1 for each of them   */
+  /* ********************************************************************** */
+
+  if( List.get("normalize eigenvectors",false) ) {
+    
+    double MaxVals[NumBlocks];
+    double MinVals[NumBlocks];
+    double Vals[NumBlocks];
+    EigenVectors.MaxValue(MaxVals);
+    EigenVectors.MinValue(MinVals);
+
+    for( int i=0 ; i<NumBlocks ; ++i ) {
+      Vals[i] = EPETRA_MAX(abs(MaxVals[i]),abs(MinVals[i]));
+      if( Vals[i] == abs(MaxVals[i]) && MaxVals[i]<0 ) Vals[i] *= -1.0;
+      if( Vals[i] == abs(MinVals[i]) && MinVals[i]<0 ) Vals[i] *= -1.0;
+      Vals[i] = 1.0/Vals[i];
+      EigenVectors(i)->Scale(Vals[i]);
+
+    }
+  }
+
+  return 0;
+  
+}
+
+// ================================================ ====== ==== ==== == =
+
+int ML_Anasazi_Get_FiledOfValuesBox(const Epetra_RowMatrix * RowMatrix, 
+				    double & MaxReal, double & MaxImag ) 
+{
+  
+#ifdef NEIN
   int block = 1;
   int length = 20;
-  int nev = NullSpaceDim;
+  int nev = 1;
   double tol = 1.0e-10;
   string which="LR";
   int restarts = 100;
@@ -123,97 +282,73 @@ int ML_Anasazi_Interface(const Epetra_RowMatrix * RowMatrix, int & NullSpaceDim,
   Anasazi::PetraVec<double> ivec(RowMatrix->RowMatrixRowMap(), block);
   ivec.MvRandom();
 
-  /* ********************************************************************** */
-  /* Phase 1: estimate lambda max                                           */
-  /* ********************************************************************** */
-  
   // Call the ctor that calls the petra ctor for a matrix
   MLMat<double> Amat1(*RowMatrix,*RowMatrixDiagonal,true);	
-  Anasazi::Eigenproblem<double> MyProblem1(&Amat1, &ivec);
-
-  // Initialize the Block Arnoldi solver
-  Anasazi::BlockArnoldi<double> MyBlockArnoldi1(MyProblem1, tol, nev, length, block, 
-					       which, step, restarts);
-	
-  // Inform the solver that the problem is symmetric
-  //MyBlockArnoldi1.setSymmetric(true);
-  MyBlockArnoldi1.setDebugLevel(0);
-
-  //  MyBlockArnoldi.iterate(5);
-  
-  // Solve the problem to the specified tolerances or length
-  MyBlockArnoldi1.solve();
-  
-  // Obtain results directly
-  double * resids = MyBlockArnoldi1.getResiduals();
-  double * evalr = MyBlockArnoldi1.getEvals(); 
-  double * evali = MyBlockArnoldi1.getiEvals();
-
-  // Output results to screen
-  MyBlockArnoldi1.currentStatus();
 
   /* ********************************************************************** */
-  /* phase 2: estimate the null space                                       */
-  /* - scale diagonal                                                       */
-  /* - compute lambda max of I - D^{-1} A /lamdba_max                       */
+  /* Phase 1: estimate max real lambda                                      */
   /* ********************************************************************** */
-
-  double InvLambdaMax = 1.0/(1.5*sqrt(pow(evalr[0],2) + pow(evali[0],2)));
   
-  for( int i=0 ; i<NumMyElements ; ++i )
-    (*RowMatrixDiagonal)[i] *= InvLambdaMax;
-  
-  // Call the ctor that calls the petra ctor for a matrix
-  MLMat<double> Amat2(*RowMatrix,*RowMatrixDiagonal,false);	
-  Anasazi::Eigenproblem<double> MyProblem2(&Amat2, &ivec);
-
-  // Initialize the Block Arnoldi solver
-  Anasazi::BlockArnoldi<double> MyBlockArnoldi2(MyProblem2, tol, nev, length, block, 
-					       which, step, restarts);
-	
-  // Inform the solver that the problem is symmetric
-  //MyBlockArnoldi2.setSymmetric(true);
-  MyBlockArnoldi2.setDebugLevel(0);
-
-  MyBlockArnoldi2.solve();
-
-  evalr = MyBlockArnoldi2.getEvals(); 
-  evali = MyBlockArnoldi2.getiEvals();
-
-  for( int i=0 ; i<nev ; ++i ) {
-    cout << "eval[" << i << "] = " << evalr[i] << " + i " << evali[i] << endl;
-  }  
-  
-  // Retrieve eigenvectors
-  Anasazi::PetraVec<double> evecr(RowMatrix->RowMatrixRowMap(), nev);
-  MyBlockArnoldi2.getEvecs( evecr );
-  Anasazi::PetraVec<double> eveci(RowMatrix->RowMatrixRowMap(), nev);
-  MyBlockArnoldi2.getiEvecs( eveci );
-
-  /* ********************************************************************** */
-  /* Scale vectors (real and imag part) so that max is 1 for each of them   */
-  /* ********************************************************************** */
-
-  double MaxRealValue[nev], MaxImagValue[nev];
-  evecr.MaxValue(MaxRealValue);
-  eveci.MaxValue(MaxImagValue);
-
-  for( int i=0 ; i<nev ; ++i ) {
-    if( MaxRealValue[i] != 0.0 ) evecr(i)->Scale(1.0/MaxRealValue[i]);
-    if( MaxImagValue[i] != 0.0 ) eveci(i)->Scale(1.0/MaxImagValue[i]);
+  {
+    
+    Anasazi::Eigenproblem<double> MyProblem1(&Amat1, &ivec);
+    
+    // Initialize the Block Arnoldi solver
+    Anasazi::BlockArnoldi<double> MyBlockArnoldi1(MyProblem1, tol, nev, length, block, 
+						  which, step, restarts);
+    
+    // Inform the solver that the problem is symmetric
+    //MyBlockArnoldi1.setSymmetric(true);
+    MyBlockArnoldi1.setDebugLevel(0);
+    
+    //  MyBlockArnoldi.iterate(5);
+    
+    // Solve the problem to the specified tolerances or length
+    MyBlockArnoldi1.solve();
+    
+    // Obtain results directly
+    double * resids = MyBlockArnoldi1.getResiduals();
+    double * evalr = MyBlockArnoldi1.getEvals(); 
+    double * evali = MyBlockArnoldi1.getiEvals();
+    
+    // Output results to screen
+    MyBlockArnoldi1.currentStatus();
+    
   }
-
-  // Output results to screen
-  MyBlockArnoldi2.currentStatus();
-
-  delete RowMatrixDiagonal;
-
-  NullSpacePtr = new double[NumMyElements * nev];
-
-  for( int j=0 ; j<nev ; ++j ) 
-    for( int i=0 ; i<NumMyElements ; ++i ) 
-      NullSpacePtr[j*NumMyElements+i] = evecr[j][i];
   
+  /* ********************************************************************** */
+  /* Phase 2: estimate max imag lambda                                      */
+  /* ********************************************************************** */
+
+  which="LI";
+  
+  {
+    
+    Anasazi::Eigenproblem<double> MyProblem1(&Amat1, &ivec);
+
+    // Initialize the Block Arnoldi solver
+    Anasazi::BlockArnoldi<double> MyBlockArnoldi1(MyProblem1, tol, nev, length, block, 
+						  which, step, restarts);
+    
+    // Inform the solver that the problem is symmetric
+    //MyBlockArnoldi1.setSymmetric(true);
+    MyBlockArnoldi1.setDebugLevel(0);
+    
+    //  MyBlockArnoldi.iterate(5);
+    
+    // Solve the problem to the specified tolerances or length
+    MyBlockArnoldi1.solve();
+    
+    // Obtain results directly
+    double * resids = MyBlockArnoldi1.getResiduals();
+    double * evalr = MyBlockArnoldi1.getEvals(); 
+    double * evali = MyBlockArnoldi1.getiEvals();
+
+    // Output results to screen
+    MyBlockArnoldi1.currentStatus();
+    
+  }
+#endif  
   return 0;
   
 }

@@ -14,94 +14,62 @@ class Epetra_Comm;
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
+#include "AztecOO.h"
 
-using namespace Teuchos;
-
-class Epetra_ML_Time 
+namespace Epetra_ML
 {
-public:
-  Epetra_ML_Time()
-  {
-    Reset();
-  }
+
+  //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
+  int SetDefaults(string ProblemType, Teuchos::ParameterList & List, char * Prefix = "",
+		  int SmootherOptions[] = NULL, double SmootherParams[] = NULL);
   
-  inline void Update(double time, bool flag)
-  {
-    ApplicationTime_ += time;
-    if( flag ) FirstApplicationTime_ = time;
-    ++NumApplications_;
-  }
-
-  inline void Reset() 
-  {
-    ApplicationTime_ = 0.0;
-    FirstApplicationTime_ = 0.0;
-    NumApplications_ = 0;
-  }
-
-  inline double Application() const
-  {
-    return ApplicationTime_;
-  }
-
-  inline double FirstApplication() const
-  {
-    return FirstApplicationTime_;
-  }
-
-  inline int NumApplications() const
-  {
-    return NumApplications_;
-  }
+  //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
+  int SetDefaultsDD(Teuchos::ParameterList & List, char * Prefix = "",
+		    int SmootherOptions[] = NULL, double SmootherParams[] = NULL);
   
-private:
-  double ApplicationTime_;
-  double FirstApplicationTime_;
-  int NumApplications_;
-};
+  //! Sets default parameters for aggregation-based 3-level domain decomposition preconditioners.  
+  int SetDefaultsDD_3Levels(Teuchos::ParameterList & List, char * Prefix = "",
+			    int SmootherOptions[] = NULL, double SmootherParams[] = NULL);
+  
+  //! Sets default parameters for Maxwell's equations.
+  int SetDefaultsMaxwell(Teuchos::ParameterList & List, char * Prefix = "" ,
+			 int SmootherOptions[] = NULL, double SmootherParams[] = NULL);
+  
+  //! Sets classical smoothed aggregation.
+  int SetDefaultsSA(Teuchos::ParameterList & List, char * Prefix = ""  ,
+		    int SmootherOptions[] = NULL, double SmootherParams[] = NULL);
 
   
-class Epetra_ML_Preconditioner: public virtual Epetra_RowMatrix {
+class MultiLevelPreconditioner : public virtual Epetra_RowMatrix {
       
 public:  
 
-  //! Constructs an Epetra_ML_Preconditioner with default values for \c ProblemType.
-  /*! Constructs an Epetra_ML_Preconditioner with default values for \c ProblemType. This can be:
-    - "DD" (default)
-    - "DD 3-levels"
-    - "AMG"
-    - "maxwell"
-    If ComputePrec is \c true, the object will construct the multilevel hierarchy in the
-    constructor. Otherwise, the use must create it via \c ComputePreconditioner().
-    This can be useful when matrix entries are not yet available as the object is constructed.
-  */
+  //! Constructs an MultiLevelPreconditioner with default values.
 
-  Epetra_ML_Preconditioner::Epetra_ML_Preconditioner(const Epetra_RowMatrix & RowMatrix,
-						     char ProblemType[],
+  MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
 						     bool ComputePrec );
 
-//! Constructs an Epetra_ML_Preconditioner with default values for \c ProblemType using \c Prefix.
-
-  Epetra_ML_Preconditioner::Epetra_ML_Preconditioner(const Epetra_RowMatrix & RowMatrix,
-						     char ProblemType[],
-						     bool ComputePrec, char Prefix[] );
-
-  //! Constructs an Epetra_ML_Preconditioner with default values.
-
-  Epetra_ML_Preconditioner::Epetra_ML_Preconditioner(const Epetra_RowMatrix & RowMatrix,
-						     bool ComputePrec );
-
-    //! Constructs an Epetra_ML_Preconditioner. Retrives parameters (with prefix \c Prefix) from \c List.
+    //! Constructs an MultiLevelPreconditioner. Retrives parameters (with prefix \c Prefix) from \c List.
   
-  Epetra_ML_Preconditioner( const Epetra_RowMatrix & RowMatrix,
-			    ParameterList & List, bool, char Prefix[]);
+  MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
+			    Teuchos::ParameterList & List, bool, char Prefix[]);
 
-  //! Constructs an Epetra_ML_Preconditioner. Retrives parameters from \c List.
+  //! Constructs an MultiLevelPreconditioner. Retrives parameters from \c List.
 
-  Epetra_ML_Preconditioner( const Epetra_RowMatrix & RowMatrix,
-			    ParameterList & List, bool);
+  MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
+			    Teuchos::ParameterList & List, bool);
 
-  ~Epetra_ML_Preconditioner() {
+  //! Constructs an MultiLevelPreconditioner for Maxwell equations. Retrives parameters from \c List.
+  /*! Constructs an MultiLevelPreconditioner for Maxwell equations. The constructor
+      requires the edge matrix, the connectivity matrix T, the nodal matrix.
+  */
+  MultiLevelPreconditioner( const Epetra_RowMatrix & EdgeMatrix,
+			    const Epetra_RowMatrix & TMatrix,
+			    const Epetra_RowMatrix & NodeMatrix,
+			    const Teuchos::ParameterList & List,
+			    const bool, const char Prefix[]);
+
+  ~MultiLevelPreconditioner() {
     if( IsComputePreconditionerOK_ ) Destroy_ML_Preconditioner(); 
   }
 
@@ -119,12 +87,12 @@ public:
 
   void PrintUnused(int MyPID);
 
-  ParameterList & GetList() 
+  Teuchos::ParameterList & GetList() 
   {
     return List_;
   }
 
-  ParameterList & GetOutputList() 
+  Teuchos::ParameterList & GetOutputList() 
   {
     return OutputList_;
   }
@@ -132,36 +100,8 @@ public:
   //! Prints on \c cout the values of the internally stored parameter list for processor \c MyPID
   void PrintList(int MyPID);
 
-  //! Sets defaults parameter for a given \c ProblemType
-  /*! Sets defaults parameter. The input string \c ProblemType can be:
-      - "SA" : classical smoothed aggregation;
-      - "DD" : aggregation-based 2-level domain decomposition;
-      - "DD 3-levels" : aggregation based 3-level domain decomposition;
-      - "maxwell" : smoothed aggregation for Maxwell's equations;
-      - "empty" : creates an empty list. The user can retrive a reference to this list,
-                  and set parameters before calling \c ComputePreconditioner()
-  */
-  int SetDefaults(const string ProblemType ){
-    ParameterList NewList;
-    List_ = NewList;
-    SetDefaults(List_,ProblemType);
-  }
-
-  //! Sets default parameters, sticks them in \c List.
-  int SetDefaults(ParameterList & List, const string ProblemType );
-
-  //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
-  int SetDefaultsDD(ParameterList & List);
-
-  //! Sets default parameters for aggregation-based 3-level domain decomposition preconditioners.  
-  int SetDefaultsDD_3Levels(ParameterList & List);
-
-  //! Sets default parameters for Maxwell's equations.
-  int SetDefaultsMaxwell(ParameterList & List );
-  int SetDefaultsSA(ParameterList & List );
-
   //! Copies \c List into the internally stored parameter list object.
-  int SetParameterList(const ParameterList & List);
+  int SetParameterList(const Teuchos::ParameterList & List);
 
   //! Computes the multilevel hierarchy.
   /*! Computes the multilevel hierarchy. This function retrives the user's defines parameters (as
@@ -353,8 +293,25 @@ public:
 private:
 
   //! Initializes object with defauls values.
-  void Initialize(bool ComputePrec);
+  void Initialize();
 
+  //! Sets level smoothers for non-Maxwell equations.
+  void SetSmoothers();
+
+  //! Sets level smoothers for Maxwell equations.
+  void SetSmoothersMaxwell();
+
+  //! Sets coarse level solvers.
+  void SetCoarse();
+
+  //! Sets aggregation schemes.
+  void SetAggregation();
+
+  //! Set preconditioner type (usually, V-cycle).
+  void SetPreconditioner();
+
+  void SetNullSpace();
+  
   void PrintLine();
   
   ML * ml_;                                 // ML_Struct
@@ -376,8 +333,8 @@ private:
   int   SmootherOptions_[AZ_OPTIONS_SIZE];
   double SmootherParams_[AZ_PARAMS_SIZE];
   double SmootherStatus_[AZ_STATUS_SIZE];
-  ParameterList List_;                      // all input parameters are here
-  ParameterList OutputList_;                // various informations
+  Teuchos::ParameterList List_;             // all input parameters are here
+  Teuchos::ParameterList OutputList_;       // various informations
   
   int MaxLevels_;
   int * LevelID_;                           // used to easily handle ML_INCREASING and ML_DECREASING.
@@ -386,13 +343,32 @@ private:
 
   double * NullSpaceToFree_;                // not NULL if null space vectors have been allocated
   
-  Epetra_ML_Time * ML_Time_;                // some timing
-
   char Prefix_[80];                         // all user's defined input data have this prefix
   string PrintMsg_;                         // all cout's have this prefix (default'd in Initialize() )
   char ErrorMsg_[80];                       // all cerr's have this prefix (default'd in Initialize() )
+  bool verbose_;
+  int NumPDEEqns_;
+  
+  // Maxwell stuff
+  bool SolvingMaxwell_;                     // true if Maxwell equations are used
+  const Epetra_RowMatrix * EdgeMatrix_;     // Main matrix for Maxwell
+  const Epetra_RowMatrix * NodeMatrix_;     // aux matrix for Maxwell
+  const Epetra_RowMatrix * TMatrix_;
+  const Epetra_RowMatrix * TMatrixTranspose_;
+  ML_Operator ** Tmat_array, ** Tmat_trans_array;
+  ML * ml_edges_, * ml_nodes_;
+
+  // variables for Timing
+  int NumApplications_;
+  double ApplicationTime_; // all applications
+  bool FirstApplication_;
+  double FirstApplicationTime_; // only for first application
+  int NumConstructions_;
+  double ConstructionTime_;
   
 };
+ 
+}
 
 #endif /* defined ML_EPETRA and ML_TEUCHOS */
 
