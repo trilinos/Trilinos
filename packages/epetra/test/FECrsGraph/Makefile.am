@@ -26,8 +26,17 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = BlockMap CrsGraph CrsMatrix CrsRectMatrix \
-FECrsGraph FECrsMatrix FEVbrMatrix FEVector ImportExport \
-IntSerialDense Map MapColoring \
-MultiVector Object SerialDense SerialSpdDense \
-VbrMatrix Vector Comm scripts BasicPerfTest
+EXEEXT = .exe
+
+noinst_PROGRAMS = FECrsGraph_test
+
+FECrsGraph_test_SOURCES = $(srcdir)/cxx_main.cpp \
+                  $(srcdir)/ExecuteTestProblems.cpp \
+		  $(srcdir)/ExecuteTestProblems.h 
+
+FECrsGraph_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
+
+FECrsGraph_test_CXXFLAGS = -I$(top_srcdir)/src
+
+FECrsGraph_test_LDADD = $(top_builddir)/src/libepetra.a \
+	$(LIBS) $(BLAS_LIBS) $(FLIBS)

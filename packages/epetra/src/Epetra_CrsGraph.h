@@ -579,6 +579,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	// (just pretend CrsMatrix and VbrMatrix derive from CrsGraph to understand the distinction.)
 	friend class Epetra_CrsMatrix;
 	friend class Epetra_VbrMatrix;
+	friend class Epetra_FECrsGraph;
 	friend class Epetra_FECrsMatrix;
 	friend class Epetra_FEVbrMatrix;
 	friend class Epetra_OffsetIndex;
