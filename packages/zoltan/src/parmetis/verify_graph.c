@@ -41,6 +41,7 @@
 /*   - zero sum of vertex or edge weights                            */
 /*   - self-edge                                                     */
 /*   - multiple edges between a pair of vertices                     */
+/*   - singletons (vertices with no edges)                              */
 /*                                                                   */
 /*********************************************************************/
 
@@ -51,7 +52,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   int i, j, ii, jj, k, kk, num_obj, nedges, ierr;
   int flag, cross_edges, mesg_size, sum, global_sum;
   int nprocs, proc, *proclist, errors, global_errors;
-  int num_zeros, num_selfs, num_duplicates;
+  int num_zeros, num_selfs, num_duplicates, num_singletons;
   idxtype global_i, global_j;
   idxtype *ptr1, *ptr2;
   char *sendbuf, *recvbuf;
@@ -161,8 +162,17 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   cross_edges = 0;
   num_selfs = 0;
   num_duplicates = 0;
+  num_singletons = 0;
   for (i=0; i<num_obj; i++){
     global_i = vtxdist[proc]+i;
+    /* Singleton? */
+    if (xadj[i] == xadj[i+1]){
+      num_singletons++;
+      if (output_level>1){
+        sprintf(msg, "Vertex %d has no edges.", global_i);
+        LB_PRINT_WARN(proc, yo, msg);
+      }
+    }
     for (ii=xadj[i]; ii<xadj[i+1]; ii++){
       global_j = adjncy[ii];
       /* Reasonable vertex value? */
@@ -241,6 +251,15 @@ barrier1:
       LB_PRINT_WARN(proc, yo, msg);
     }
   }
+  MPI_Reduce(&num_singletons, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
+  if ((proc==0) && (global_sum>0)){
+    ierr = LB_WARN;
+    if (output_level>0){
+      sprintf(msg, "%d vertices in the graph are singletons (have no edges).", global_sum);
+      LB_PRINT_WARN(proc, yo, msg);
+    }
+  }
+  
   
   /* Check if any processor has encountered a fatal error so far */
   errors = 0;
