@@ -40,13 +40,6 @@ namespace LineSearch {
 
 //! Use quad/cubic polynomial fit from Dennis & Schnabel
 /*!
-
-  \todo Russ needs to add a citation for the source of this line
-  search. Is it Alg 6.3.1mod from D&S? We also need to add a basic
-  description of the search.
-  
-  \todo Does this work with non-Newton directions?
-
   This line search can be called via NOX::LineSearch::Manager.
  
   The following parameters can be specified for this line search:
@@ -60,6 +53,7 @@ namespace LineSearch {
 
   - "Max Iters" - maximum number of iterations (i.e., RHS computations)
 
+  \author Russ Hopper, Org. 9233, Sandia National Labs
 */
 
 class Polynomial : public Generic {
