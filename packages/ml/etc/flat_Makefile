@@ -58,7 +58,7 @@ ML_INC = ml_1level.h         ml_ggraph.h         ml_operatoragx.h       \
 
 #DEFAULT : libml.a
 
-APPLICATION_C = ml_read_maxwell.c
+APPLICATION_C = mlguide.c
 
 ML_OBJ          = $(ML_C:.c=.o)
 APPLICATION_OBJ = $(APPLICATION_C:.c=.o)
