@@ -111,7 +111,7 @@ static void free_lists(int all_triangles)
       ZOLTAN_FREE(&(neigh_dim[i]));
       ZOLTAN_FREE(&(num_neigh[i]));
    }
-   for (j=1; j<MAXVERT; j++) {
+   for (j=0; j<=MAXVERT; j++) {
       ZOLTAN_FREE(&(to_add[j]));
    }
    ZOLTAN_FREE(&shared_vert);

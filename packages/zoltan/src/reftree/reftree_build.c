@@ -569,6 +569,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
     ZOLTAN_FREE(&num_ass_all);
     ZOLTAN_FREE(&displs);
     ZOLTAN_FREE(&sum_ass_vert_all);
+    ZOLTAN_FREE(&recv_size_all);
     ZOLTAN_FREE(&send_id);
     ZOLTAN_FREE(&send_int);
     Zoltan_Reftree_Free_Structure(zz);
@@ -619,6 +620,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
     ZOLTAN_FREE(&num_ass_all);
     ZOLTAN_FREE(&displs);
     ZOLTAN_FREE(&sum_ass_vert_all);
+    ZOLTAN_FREE(&recv_size_all);
     ZOLTAN_FREE(&send_id);
     ZOLTAN_FREE(&send_int);
     ZOLTAN_FREE(&recv_id);
@@ -672,6 +674,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
 
   ZOLTAN_FREE(&displs);
   ZOLTAN_FREE(&send_int);
+  ZOLTAN_FREE(&recv_size_all);
 
 /* copy the messages into the coarse grid data structure */
 
@@ -2386,7 +2389,6 @@ int ierr;             /* error flag */
 ZOLTAN_REFTREE *tree_node;/* pointer to an initial grid element in the tree */
 int final_ierr;       /* error code returned */
 int found;            /* flag for another coarse grid element */
-ZOLTAN_ID_PTR zero_gid; /* a global ID containing 0, for comparison */
 int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
 int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
 
@@ -2396,9 +2398,6 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
   hashtab  = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table;
   hashsize = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table_size;
   final_ierr = ZOLTAN_OK;
-
-  zero_gid = ZOLTAN_MALLOC_GID(zz);
-  ZOLTAN_INIT_GID(zz,zero_gid);
 
   /*
    * Mark all coarse elements as unknown
@@ -2584,6 +2583,8 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
     ZOLTAN_FREE(&plocal_lids);
     ZOLTAN_FREE(&vertices);
   }
+  ZOLTAN_FREE(&sin_vertex);
+  ZOLTAN_FREE(&sout_vertex);
   ZOLTAN_TRACE_EXIT(zz, yo);
   return(final_ierr);
 }
