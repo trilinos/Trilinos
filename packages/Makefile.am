@@ -89,7 +89,11 @@ if BUILD_EPETRA
 EPETRA_SUBDIR = epetra
 endif
 
+if BUILD_TSF
+TSF_SUBDIR = TSF
+endif
+
 #Epetra must be listed first due to aztecoo's dependence on Epetra
 SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
-	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) $(NOX_SUBDIR)
+	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) $(NOX_SUBDIR) $(TSF_SUBDIR)
 

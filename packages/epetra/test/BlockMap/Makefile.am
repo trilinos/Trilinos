@@ -1,6 +1,9 @@
 #@HEADER
 #@HEADER
 
+%.e : %.o
+	$(CXXLINK) -o $@ $(LDFLAGS) $< -L$(top_builddir)/src -lepetra $(FLIBS)
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = BlockMap_test
