@@ -44,7 +44,23 @@ ACLOCAL	= aclocal -I config
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = \
-	testharness/subdir-list testharness/checkin-test-harness
+	testharness/subdir-list testharness/checkin-test-harness \
+	config/aix_mpi_xlC config/aix_mpi_xlC2 \
+	config/compaqCluster_mpi_stratus \
+	config/compaqCluster_serial_stratus config/cplant_mpi_ross \
+	config/cplant_serial_ross \
+	config/cygwin_mpi config/cygwin_serial_gcc \
+	config/cygwin_serial_icl config/cygwingcc_amesos \
+	config/irix_mpi_sierra config/janus_mpi config/janus_mpi_stlport \
+	config/linux_mpi_codecov \
+	config/linux_mpi_herouxsmp config/linux_mpi_instCluster \
+	config/linux_serial_codecov \
+	config/macosx_mpi_paul config/macosx_serial_paul \
+	config/macosx_serial_samt5980 \
+	config/scyld_mpi_beowulf config/sgi64_mpi_atlantis \
+	config/sgi64_serial_atlantis \
+	config/solaris_mpi_conejo config/solaris_serial_paul
+
 ## #######################################################################
 ## Tools in the auxillary directory 
 ## #######################################################################
