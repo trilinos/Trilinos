@@ -525,15 +525,23 @@ report($SUMMARY);
                             
                             my $command = "";
                             if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
-                                $command .= "make $options{'MAKE_FLAGS'}[0] clean >> ";
+                                $command .= "make $options{'MAKE_FLAGS'}[0] clean 2>&1";
+                            } else {
+                                $command .= "make clean 2>&1";
+                            }
+                            system $command;        
+                                                
+                            $command = "";
+                            if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
+                                $command .= "make $options{'MAKE_FLAGS'}[0] >> ";
                                 $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
                                 $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log 2>&1";
                             } else {
-                                $command .= "make clean >> ";
+                                $command .= "make >> ";
                                 $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
                                 $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log 2>&1";
                             }
-                            system $command;                            
+                            system $command;        
                 
                             # return to build dir
                             chdir"$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";                           
