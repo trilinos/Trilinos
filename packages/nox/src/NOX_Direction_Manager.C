@@ -100,14 +100,14 @@ bool NOX::Direction::Manager::reset(NOX::Parameter::List& params)
   else if (method == "User Defined")
   {
     // Check that the corresponding Direction parameter exists
-    if (!params.isParameterArbitrary("User Defined Direction Constructor"))
+    if (!params.isParameterArbitrary("User Defined Constructor"))
     {
-      printWarning("reset", "No \"User Defined Direction Constructor\" specified");
+      printWarning("reset", "No \"User Defined Constructor\" specified");
       return false;
     }
     
     // Extract the Arbitrary Parameter
-    const NOX::Parameter::Arbitrary& ap = params.getArbitraryParameter("User Defined Direction Constructor");
+    const NOX::Parameter::Arbitrary& ap = params.getArbitraryParameter("User Defined Constructor");
     
     // Dynamically cast the Arbitrary Parameter to a DirectionConstructor Parameter
     const NOX::Parameter::DirectionConstructor* dcPtr = 
@@ -126,7 +126,7 @@ bool NOX::Direction::Manager::reset(NOX::Parameter::List& params)
     // Check that the creation was successful
     if (ptr == NULL) 
     {
-      printWarning("reset", "ArbiraryDirectionConstructor object failed to create new direction");
+      printWarning("reset", "DirectionConstructor object failed to create new direction");
       return false;
     }
   }
@@ -145,7 +145,7 @@ bool NOX::Direction::Manager::compute(Abstract::Vector& dir, Abstract::Group& gr
 {
   if (ptr == NULL) 
   {
-    if (Utils::doPrint(NOX::Utils::Warning)) 
+    if (utils.doPrint(NOX::Utils::Warning)) 
       cout << "Calling NOX::Direction::Manager::compute on uninitialized direction" << endl;
     return false;
   }
@@ -158,7 +158,7 @@ bool NOX::Direction::Manager::compute(Abstract::Vector& dir, Abstract::Group& gr
 {
   if (ptr == NULL) 
   {
-    if (Utils::doPrint(NOX::Utils::Warning)) 
+    if (utils.doPrint(NOX::Utils::Warning)) 
       cout << "Calling NOX::Direction::Manager::compute on uninitialized direction" << endl;
     return false;
   }
@@ -168,6 +168,6 @@ bool NOX::Direction::Manager::compute(Abstract::Vector& dir, Abstract::Group& gr
 
 void NOX::Direction::Manager::printWarning(const string& name, const string& warning)
 {
-  if (Utils::doPrint(NOX::Utils::Warning)) 
+  if (utils.doPrint(NOX::Utils::Warning)) 
     cout << "Calling NOX::Direction::Manager::" << name << " - " << warning << endl;
 }

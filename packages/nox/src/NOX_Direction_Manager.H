@@ -46,9 +46,9 @@ namespace Direction {
 
 //! %Manager for all direction computations
 /*! 
-   The parameters passed to the constructor or reset should specify
-   the "Method", as described below, as well as any additional
-   parameters for that particular method.
+  <b>Parameters</b>
+
+  "Direction":
  
    <ul>
    <li> "Method" - Name of the direction method. Valid choices are
@@ -59,7 +59,7 @@ namespace Direction {
    <li> "User Defined" - see below
    </ul>
 
-   <li> "User Defined Direction" - see below.
+   <li> "User Defined Constructor" - see below.
 
    </ul>
 
@@ -93,7 +93,7 @@ NOX::Parameter::DirectionConstructorT<Foo> foo;
 
 \code
 params.sublist("Direction").setParameter("Method", "User Defined");
-params.sublist("Direction").setParameter("User Defined Direction Constructor", foo);
+params.sublist("Direction").setParameter("User Defined Constructor", foo);
 \endcode
 
 </ol>
