@@ -49,7 +49,7 @@ int Zoltan_PHG_Coarsening
   char *yo = "Zoltan_PHG_Coarsening";
 
   ZOLTAN_TRACE_ENTER (zz, yo);  
-  Zoltan_PHG_PHGraph_Init (c_hg);   /* inits working copy of hypergraph info */
+  Zoltan_HG_HGraph_Init (c_hg);   /* inits working copy of hypergraph info */
     
   if (!(cmatch    = (int*)    ZOLTAN_MALLOC (hg->nVtx     * sizeof(int)))
    || !(c_hg->vwgt = (float*) ZOLTAN_CALLOC (hg->nVtx, sizeof(float))) 
@@ -180,7 +180,7 @@ if (VTX_GNO_TO_LNO(hg,ip[i]) < 0 || VTX_GNO_TO_LNO(hg,ip[i]) >= hg->nVtx)
 
   /* Construct the LevelMap; match[vertex] is changed back to original value */
   /* Coarsen vertices (create vindex, vedge), sum up coarsened vertex weights */
-  c_hg->nNonZero = 0;                   /* count of coarsened pins */
+  c_hg->nPins = 0;                   /* count of coarsened pins */
   c_hg->nVtx     = 0;                   /* count of coarsened vertices */
   for (i = 0; i < hg->nVtx; i++)  {
     if (match[i] < 0 && cmatch[i] < 0)  /* match to external vertex, don't own */                  
@@ -218,7 +218,7 @@ if (VTX_GNO_TO_LNO(hg,ip[i]) < 0 || VTX_GNO_TO_LNO(hg,ip[i]) >= hg->nVtx)
         for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++)  {
           if (used_edges [hg->vedge[j]] <= i)  {
             used_edges [hg->vedge[j]] = i+1;          
-            c_vedge[c_hg->nNonZero++] = hg->vedge[j];
+            c_vedge[c_hg->nPins++] = hg->vedge[j];
           }              
         }                       
         cmatch[vertex] = -cmatch[vertex] - 1;
