@@ -147,7 +147,7 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp, double&
     oldf_interp = oldf_2;
 
   // Get the slope f'(0)
-  slope_2 = slopeObj.computeSlope(dir, oldGrp);
+  slope_2 = slopeObj.computeSlope(dir, oldGrp) * factor * factor;
   slope_1 = slope_2 / oldf_1;
   slope_interp = 0.0;
   if (meritFunctionType == NormF)

@@ -103,7 +103,7 @@ namespace LineSearch {
   -\phi'(0) \lambda_{k-1} \right]} 
   \f]
 
-  where \f$ \phi'(0) = s^T \left(J_{\rm old}^T F_{\rm old} \right) \f$ for Armijo-Goldstein conditions and \f$ \phi'(0) = \frac{s^T \left(J_{\rm old}^T F_{\rm old} \right)} {\|F_{\rm old} \|_2 } \f$ for Ared/Pred conditions.
+  where \f$ \phi'(0) = s^T \left(J_{\rm old}^T F_{\rm old} \right) \f$ if using "Norm-F Squared" as the merit function  and \f$ \phi'(0) = \frac{s^T \left(J_{\rm old}^T F_{\rm old} \right)} {\|F_{\rm old} \| } \f$ if using "Norm-F" merit function.
 
   If we are using a \b cubic \b model, the \f$k\f$-th step (\f$ k>1
   \f$) approximation is calculated as
