@@ -395,3 +395,27 @@ extern void LB_Set_LB_Object_Type(struct LB_Struct *, int);
  *    struct LB_Struct * --  Appropriate fields set to designated type.
  */
 extern void LB_Set_Help_Migrate(struct LB_Struct *, int);
+
+/*****************************************************************************/
+/*
+ *  Function to invoke the load-balancer.
+ *
+ *  Input:
+ *    struct LB_Struct * -- The load balancing object containing info about
+ *                           this load-balancing invocation.
+ *  Output:
+ *    int *              --  The number of non-local objects in the 
+ *                           processor's new decomposition (i.e., number of
+ *                           objects to be imported).
+ *    LB_TAG **          --  Array of load-balancing tags for the objects
+ *                           to be imported.
+ *    int *              --  The number of local objects that need to be 
+ *                           exported from the processor to establish the
+ *                           new decomposition.
+ *    LB_TAG **          --  Array of load-balancing tags for objects that
+ *                           need to be exported to establish the new
+ *                           decomposition.
+ */
+
+extern void LB_Balance(struct LB_Struct *, int *, LB_TAG **, int *, LB_TAG **);
+

@@ -350,7 +350,19 @@ char *yo = "LB_Set_Help_Migrate";
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Balance(LB *lb)
+void LB_Balance(
+  LB *lb, 
+  int *num_import_objs,       /* The number of non-local objects in the
+                                 processor's new decomposition.            */
+  LB_TAG **import_objs,       /* Array of tags for non-local objects in
+                                 the processor's new decomposition.        */
+  int *num_export_objs,       /* The number of local objects that need to
+                                 be exported from the processor to establish
+                                 the new decomposition.                    */
+  LB_TAG **export_objs        /* Array of tags for objects that need to be
+                                 exported to establish the new 
+                                 decomposition.                            */
+)
 {
 /*
  * Main user-call for load-balancing.
@@ -362,39 +374,30 @@ int num_objs;                  /* Set to the new number of objects on
                                   the processor.                            */
 int num_keep;                  /* Set to the number of objects the processor
                                   keeps from the old decomposition.         */
-int num_import_objs;           /* The number of non-local objects in the
-                                  processor's new decomposition.            */
-LB_TAG *import_objs;           /* Array of tags for non-local objects in
-                                  the processor's new decomposition.        */
-int num_export_objs;           /* The number of local objects that need to
-                                  be exported from the processor to establish
-                                  the new decomposition.                    */
-LB_TAG *export_objs;           /* Array of tags for objects that need to be
-                                  exported to establish the new 
-                                  decomposition.  */
 
   perform_error_checking(lb);
 
-  lb->LB_Fn(lb, &num_objs, &num_keep, &num_import_objs, &import_objs);
+  lb->LB_Fn(lb, &num_objs, &num_keep, num_import_objs, import_objs);
 
-  compute_destinations(lb, num_objs, num_import_objs, import_objs, 
-                       &num_export_objs, &export_objs);
+  compute_destinations(lb, *num_import_objs, *import_objs, 
+                       num_export_objs, export_objs);
 
-  LB_print_sync_start(TRUE);
-  {
+  if (LB_Debug > 6) {
     int i;
+    LB_print_sync_start(TRUE);
     printf("LBLB: Objects to be exported from Proc %d\n", LB_Proc);
-    for (i = 0; i < num_export_objs; i++) {
+    for (i = 0; i < *num_export_objs; i++) {
       printf("    Obj: %10d  Destination: %4d\n", 
-             export_objs[i].Global_ID, export_objs[i].Proc);
+             (*export_objs)[i].Global_ID, (*export_objs)[i].Proc);
     }
+    LB_print_sync_end(TRUE);
   }
-  LB_print_sync_end(TRUE);
 
   if (lb->Migrate.Help_Migrate) {
-    help_migrate(lb, num_import_objs, import_objs, 
-                 num_export_objs, export_objs);
+    help_migrate(lb, *num_import_objs, *import_objs, 
+                 *num_export_objs, *export_objs);
   }
+  
   clean_up(lb);
 }
 

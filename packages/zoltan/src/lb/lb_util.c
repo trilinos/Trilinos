@@ -40,8 +40,6 @@ void perform_error_checking(LB *lb)
 
 void compute_destinations(
   LB *lb,                 /* Load balancing object for the current balance. */
-  int num_objs,           /* Number of objects originally assigned to the
-                             processor.                                     */
   int num_non_local,      /* Number of non-local objects assigned to the 
                              processor in the new decomposition.            */
   LB_TAG *non_local_objs, /* Array of tags for non-local objects assigned
@@ -125,10 +123,16 @@ COMM_OBJ *comm_plan;     /* Communication object returned
                             by Bruce and Steve's communication routines     */
 
   
-printf("%d KDD Entering HELP_MIGRATE %d %d\n", LB_Proc, num_import, num_export);
-  lb->Migrate.Pre_Process(num_import, import_objs, num_export, export_objs);
+  if (LB_Debug > 4)
+    printf("DLBLIB %d %s Entering HELP_MIGRATE %d %d\n",
+            LB_Proc, yo, num_import, num_export);
 
-printf("%d KDD     Done Pre-Process\n", LB_Proc);
+  if (lb->Migrate.Pre_Process != NULL)
+    lb->Migrate.Pre_Process(num_import, import_objs, num_export, export_objs);
+
+  if (LB_Debug > 5)
+    printf("DLBLIB %d %s Done Pre-Process\n", LB_Proc, yo);
+
   size = lb->Migrate.Get_Obj_Data_Size(lb->Object_Type);
   export_buf = (char *) LB_array_alloc(1, num_export, size);
 
@@ -181,7 +185,11 @@ printf("%d KDD     Done Pre-Process\n", LB_Proc);
     lb->Migrate.Unpack_Obj_Data(size, tmp);
     tmp += size;
   }
-printf("%d KDD Leaving HELP_MIGRATE %d %d\n", LB_Proc, num_import, num_export);
+
+  LB_safe_free((void **) &import_buf);
+  if (LB_Debug > 4)
+    printf("DLBLIB %d %s Leaving HELP_MIGRATE %d %d\n",
+            LB_Proc, yo, num_import, num_export);
 }
 
 /****************************************************************************/

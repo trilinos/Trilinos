@@ -23,7 +23,7 @@ static char *cvs_lbutilconsth_id = "$Id$";
 extern void perform_error_checking(LB *);
 extern void help_migrate(LB *, int, LB_TAG *, int, LB_TAG *);
 extern void clean_up(LB *);
-extern void compute_destinations(LB *, int, int, LB_TAG *, int *, LB_TAG **);
+extern void compute_destinations(LB *, int, LB_TAG *, int *, LB_TAG **);
 
 /*****************************************************************************/
 /*****************************************************************************/
