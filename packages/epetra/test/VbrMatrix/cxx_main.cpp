@@ -30,7 +30,7 @@ int power_method(bool TransA, Epetra_VbrMatrix& A,
 		 bool verbose);
 
 int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose);
- 
+
 int main(int argc, char *argv[])
 {
   int ierr = 0, i, j, forierr = 0;
@@ -475,7 +475,7 @@ int main(int argc, char *argv[])
   */
 
   EPETRA_TEST_ERR( checkMergeRedundantEntries(Comm, verbose1), ierr);
-			
+
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
@@ -829,6 +829,12 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
 
   Epetra_VbrMatrix A(Copy, map, numCols);
 
+  Epetra_MultiVector x(map, 1), y(map, 1);
+  x.PutScalar(1.0);
+
+  Epetra_MultiVector x3(map, 3), y3(map, 3);
+  x.PutScalar(1.0);
+
   double coef = 0.5;
 
   //we're going to insert each row twice, with coef values of 0.5. So after
@@ -847,15 +853,33 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
 
   EPETRA_TEST_ERR( A.TransformToLocal(), ierr);
 
+  cout << "Multiply x"<<endl;
+  EPETRA_TEST_ERR( A.Multiply(false, x, y), ierr );
+  cout << y <<endl;
+
+  //Next we're going to extract pointers-to-block-rows and check values to make
+  //sure that the internal method Epetra_VbrMatrix::mergeRedundantEntries()
+  //worked correctly. 
+  //At the same time, we're also going to create another VbrMatrix which will
+  //be a View of the matrix we've already created. This will serve to provide
+  //more test coverage of the VbrMatrix code.
+
   int numBlockEntries = 0;
   int RowDim;
-  int* BlockIndices = new int[numMyRows];
+  int** BlockIndices = new int*[numMyRows];
   Epetra_SerialDenseMatrix** Values;
 
+  Epetra_VbrMatrix Aview(View, map, numMyRows);
+
   for(i=myFirstRow; i<=myLastRow; ++i) {
+    BlockIndices[i-myFirstRow] = new int[numCols];
     EPETRA_TEST_ERR( A.ExtractGlobalBlockRowPointers(i, numCols,
-					       RowDim, numBlockEntries,
-					       BlockIndices, Values), ierr);
+						     RowDim, numBlockEntries,
+						     BlockIndices[i-myFirstRow],
+						     Values), ierr);
+
+    EPETRA_TEST_ERR( Aview.BeginInsertGlobalValues(i, numBlockEntries,
+					      BlockIndices[i-myFirstRow]), ierr);
 
     if (numMyRows != numBlockEntries) return(-1);
     if (RowDim != 1) return(-2);
@@ -865,7 +889,38 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
 	     << " should be 1.0" << endl;
 	return(-3); //comment-out this return to de-activate this test
       }
+
+      EPETRA_TEST_ERR( Aview.SubmitBlockEntry(Values[j]->A(),
+					      Values[j]->LDA(),
+					      Values[j]->M(),
+					      Values[j]->N()), ierr);
     }
+
+    EPETRA_TEST_ERR( Aview.EndSubmitEntries(), ierr);
+  }
+
+  EPETRA_TEST_ERR( Aview.TransformToLocal(), ierr);
+
+  //So the test appears to have passed for the original matrix A. Now check the
+  //values of our second "view" of the matrix, 'Aview'.
+
+  for(i=myFirstRow; i<=myLastRow; ++i) {
+    EPETRA_TEST_ERR( Aview.ExtractGlobalBlockRowPointers(i, numMyRows,
+							 RowDim, numBlockEntries,
+							 BlockIndices[i-myFirstRow],
+							 Values), ierr);
+
+    if (numMyRows != numBlockEntries) return(-1);
+    if (RowDim != 1) return(-2);
+    for(j=0; j<numBlockEntries; ++j) {
+      if (Values[j]->A()[0] != 1.0) {
+	cout << "Aview: Row " << i << " Values["<<j<<"][0]: "<< Values[j][0]
+	     << " should be 1.0" << endl;
+	return(-3); //comment-out this return to de-activate this test
+      }
+    }
+    
+    delete [] BlockIndices[i-myFirstRow];
   }
 
   if (verbose&&localProc==0) {

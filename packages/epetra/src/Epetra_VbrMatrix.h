@@ -185,7 +185,9 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
     \return Integer error code, set to 0 if successful.
   */
-    int BeginInsertGlobalValues(int BlockRow, int NumBlockEntries, int * BlockIndices);
+    int BeginInsertGlobalValues(int BlockRow,
+				int NumBlockEntries,
+				int * BlockIndices);
 
   //! Initiate insertion of a list of elements in a given local row of the matrix, values are inserted via SubmitEntry().
   /*!

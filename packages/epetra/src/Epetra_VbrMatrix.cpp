@@ -235,7 +235,7 @@ Epetra_VbrMatrix::~Epetra_VbrMatrix(){
     
     if (NumAllocatedBlockEntries >0) {
       if (All_Values_!=0) delete [] All_Values_[i];
-      else if (CV_==Copy) {
+      else {
 	for (int j=0; j < NumAllocatedBlockEntries; j++) {
 	  if (Entries_[i][j]!=0) {
 	    delete Entries_[i][j];
@@ -258,24 +258,23 @@ Epetra_VbrMatrix::~Epetra_VbrMatrix(){
 
   if (LenTemps_>0) {
     delete [] TempRowDims_;
-    for(int ii=0; ii<LenTemps_; ++ii) delete TempEntries_[ii];
     delete [] TempEntries_;
   }
 
-	// Delete any objects related to supporting the RowMatrix and Operator interfaces
-	if (HavePointObjects_) {
-		if (!RowMatrixColMap().SameAs(RowMatrixRowMap())) delete RowMatrixColMap_;
-		if (!OperatorDomainMap().SameAs(RowMatrixRowMap())) delete OperatorDomainMap_;
-		if (!OperatorRangeMap().SameAs(RowMatrixRowMap())) delete OperatorRangeMap_;
-		delete RowMatrixRowMap_;
-		delete RowMatrixImporter_;
-		HavePointObjects_ = false;
-	}
-		
-	if (OperatorX_!=0) {
-		delete OperatorX_;
-		delete OperatorY_;
-	}
+  // Delete any objects related to supporting the RowMatrix and Operator interfaces
+  if (HavePointObjects_) {
+    if (!RowMatrixColMap().SameAs(RowMatrixRowMap())) delete RowMatrixColMap_;
+    if (!OperatorDomainMap().SameAs(RowMatrixRowMap())) delete OperatorDomainMap_;
+    if (!OperatorRangeMap().SameAs(RowMatrixRowMap())) delete OperatorRangeMap_;
+    delete RowMatrixRowMap_;
+    delete RowMatrixImporter_;
+    HavePointObjects_ = false;
+  }
+	
+  if (OperatorX_!=0) {
+    delete OperatorX_;
+    delete OperatorY_;
+  }
   
   InitializeDefaults(); // Reset all basic pointers to zero
   Allocated_ = false;
@@ -432,7 +431,6 @@ int Epetra_VbrMatrix::SetupForSubmits(int BlockRow, int NumBlockEntries,
   if (NumBlockEntries>LenTemps_) {
     if (LenTemps_>0) {
       delete [] TempRowDims_;
-      for(int ii=0; ii<LenTemps_; ++ii) delete TempEntries_[ii];
       delete [] TempEntries_;
     }
     TempRowDims_ = new int[NumBlockEntries];
@@ -516,6 +514,8 @@ int Epetra_VbrMatrix::EndReplaceSumIntoValues() {
       }
     }
     else ierr=2; // Block Discarded, Not Found
+
+    delete TempEntries_[j];
   }
 
   EPETRA_CHK_ERR(ierr);
@@ -569,21 +569,23 @@ int Epetra_VbrMatrix::EndInsertValues() {
       Entries_[CurBlockRow_] = tmp_Entries; // Set pointer to new storage
     }
   }
-  if (CV_==View) {
-    for (j=start; j<stop; j++) {
-      Entries_[CurBlockRow_][j] = TempEntries_[ ValidBlockIndices[j-start] ];
-    }
-  }
-  else { // Copy not view
-    for (j=start; j<stop; j++) {
-      Entries_[CurBlockRow_][j] = new Epetra_SerialDenseMatrix(*(TempEntries_[ValidBlockIndices[j-start]]));
-    }
+
+  for (j=start; j<stop; j++) {
+    Epetra_SerialDenseMatrix& mat = *(TempEntries_[ValidBlockIndices[j-start]]);
+    Entries_[CurBlockRow_][j] = new Epetra_SerialDenseMatrix(CV_, mat.A(),
+							     mat.LDA(),
+							     mat.M(),
+							     mat.N());
   }
 
   delete [] ValidBlockIndices;
 
   EPETRA_CHK_ERR(Graph_->InsertIndices(CurBlockRow_, CurNumBlockEntries_, CurBlockIndices_)); // Update graph
-  
+
+  for(j=0; j<CurNumBlockEntries_; ++j) {
+    delete TempEntries_[j];
+  }
+
   EPETRA_CHK_ERR(ierr);
   return(0);
 }
@@ -1363,7 +1365,6 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     }
     else
       Y.PutScalar(0.0); // Zero y values
-    
     // Do actual computation
     for (i=0; i < NumMyBlockRows_; i++) {
       int      NumEntries = *NumBlockEntriesPerRow++;
@@ -1441,7 +1442,6 @@ void Epetra_VbrMatrix::BlockRowMultiply(bool TransA, int RowDim, int NumEntries,
 		      double Alpha, Epetra_SerialDenseMatrix** As,
 		      double ** X, double Beta, double ** Y, int NumVectors) const {
   int j, k;
-
   if (!TransA) {
     for (j=0; j < NumEntries; j++) {
       double * A = As[j]->A();
