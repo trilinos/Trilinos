@@ -1,12 +1,22 @@
 #!/bin/sh
 #
+# Benchmarking script.  Called by run_benchmarks.
+#
       /bin/rm -f ml_inputfile
 #     check that the executable file name is there
       if test -f exe.name
       then
 #         check if the executable exists
 #       
-          temp=`cat exe.name`
+         # poop=`pwd`
+         # echo "pwd is ${poop}"
+          temp1=`cat exe.name`
+          temp2=${temp1}ttt
+          temp=`echo ${temp2} | sed "s/t//"`
+         # echo "temp = ${temp}"
+      if test `expr ${temp}` != 'tt'
+      then
+          temp=${temp1}
           /bin/rm -f $temp
           if test -f exe.makeflags
           then
@@ -14,6 +24,8 @@
 
           fi
 
+          echo "trying to make ${temp}"
+          #sleep 30
           EXE=`echo ${EXECUTABLE_DIRECTORY}/$temp`
           #if test -f $EXE
           #then
@@ -22,18 +34,18 @@
              cd ${EXECUTABLE_DIRECTORY}
              rm -f ${temp} ${temp}.o
              make APPLICATION_C=${temp}.c TESTING=-DBENCHMARK TESTING2=${makeflags}
-             cd ${BENCH_DIRECTORY}/$1/$2
+             cd ${BENCH_SUBDIR}
           #fi
           ln -s $EXE $temp
           EXE=$temp
-#
 #
 #     execute any file that starts with ml_inputfile ...
 #
       for j in ml_inputfile*
       do
+        #echo ${j}
         ttt=`echo $j | sed "s/ml_inputfile//"`
-        /bin/rm -f ${SCRATCH_DIRECTORY}/$1/$2/output${ttt} ${SCRATCH_DIRECTORY}/${1}/${2}/difs${ttt}
+        /bin/rm -f ${SCRATCH_SUBDIR}/output${ttt} ${SCRATCH_SUBDIR}/difs${ttt}
         /bin/rm -f ml_inputfile
         cp $j ml_inputfile
         Nprocs=`grep -i "^Number of processors" ml_inputfile | sed s"/.*=//"`
@@ -48,27 +60,42 @@
         if test `expr ${PARALLEL}` = 'TRUE' -o \
            `expr ${Nprocs}` = '1' 
         then
-        EXE_MOD=$EXE
-        if test `expr ${PARALLEL}` = 'TRUE' 
-        then
-           EXE_MOD=`echo ${PARALLEL_CMD} $Nprocs $EXE`
+          EXE_MOD=$EXE
+          if test `expr ${PARALLEL}` = 'TRUE' 
+          then
+            EXE_MOD=`echo ${PARALLEL_CMD} $Nprocs $EXE`
+          fi
+          rm -f ${SCRATCH_SUBDIR}/xxxxxx${ttt}
+          if test `expr ${BATCH}` = 'TRUE'
+          then
+            rm -f parallel_cmd
+            echo ${PARALLEL_CMD} > parallel_cmd
+            echo ${SCRATCH_SUBDIR} > scratch_subdirectory
+            export ttt
+            ${SCRIPT_DIRECTORY}/qbench ${Nprocs} ${1} ${2}
+            rm -f parallel_cmd
+            rm -f scratch_subdirectory
+          else
+            rm -f machines
+            echo "localhost" > machines
+            ${EXE_MOD} | grep -vi Reading > ${SCRATCH_SUBDIR}/xxxxxx${ttt}
+            rm -f machines
+          fi
+          cat ${SCRATCH_SUBDIR}/xxxxxx${ttt} | grep -v ime > ${SCRATCH_SUBDIR}/output${ttt}
+          rm -f ${SCRATCH_SUBDIR}/xxxxxx${ttt}
+          diff -w output${ttt} ${SCRATCH_SUBDIR}/output${ttt} > \
+                                    ${SCRATCH_SUBDIR}/difs${ttt}
+          wc ${SCRATCH_SUBDIR}/difs${ttt} >> ${SCRATCH_ROOT_DIRECTORY}/summary
+          tail -1 ${SCRATCH_ROOT_DIRECTORY}/summary
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "total iterations"
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "total iterations" >> ${SCRATCH_ROOT_DIRECTORY}/summary
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "gid = "
+          cat ${SCRATCH_SUBDIR}/difs${ttt} | grep "gid = " >> ${SCRATCH_ROOT_DIRECTORY}/summary
         fi
-        rm -f ${SCRATCH_DIRECTORY}/${1}/${2}/xxxxxx${ttt}
-        ${EXE_MOD} | grep -vi Reading > ${SCRATCH_DIRECTORY}/${1}/${2}/xxxxxx${ttt}
-        cat ${SCRATCH_DIRECTORY}/${1}/${2}/xxxxxx${ttt} | grep -v ime > ${SCRATCH_DIRECTORY}/${1}/${2}/output${ttt}
-        rm -f ${SCRATCH_DIRECTORY}/${1}/${2}/xxxxxx${ttt}
-        diff -w output${ttt} ${SCRATCH_DIRECTORY}/${1}/${2}/output${ttt} > \
-                                    ${SCRATCH_DIRECTORY}/${1}/${2}/difs${ttt}
-        wc ${SCRATCH_DIRECTORY}/${1}/${2}/difs${ttt} >> ${SCRATCH_DIRECTORY}/summary
-        tail -1 ${SCRATCH_DIRECTORY}/summary
-        cat ${SCRATCH_DIRECTORY}/${1}/${2}/difs${ttt} | grep "total iterations"
-        cat ${SCRATCH_DIRECTORY}/${1}/${2}/difs${ttt} | grep "total iterations" >> ${SCRATCH_DIRECTORY}/summary
-        cat ${SCRATCH_DIRECTORY}/${1}/${2}/difs${ttt} | grep "gid = "
-        cat ${SCRATCH_DIRECTORY}/${1}/${2}/difs${ttt} | grep "gid = " >> ${SCRATCH_DIRECTORY}/summary
-      fi
       done
       /bin/rm -f ml_inputfile
       /bin/rm -f $EXE
+      fi
       else 
-         echo "The file does not exist ${BENCH_DIRECTORY}/$1/$2/exe.name?"
+         echo "The file does not exist ${BENCH_SUBDIR}/exe.name?"
       fi
