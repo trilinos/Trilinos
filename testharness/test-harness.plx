@@ -1749,6 +1749,17 @@ report($SUMMARY);
             }         
         }
         
+        # create results directory if REPORT_METHOD is LOCAL_FILESYSTEM
+        if ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+            system "rm -rf $options{'TRILINOS_DIR'}[0]/testharness/results";
+            system "mkdir $options{'TRILINOS_DIR'}[0]/testharness/results";
+        }
+
+        # delete temp directory and create new one
+        chdir "$options{'TRILINOS_DIR'}[0]/testharness";
+        system "rm -rf temp";
+        system "mkdir temp";
+        
         # convert <HOST_FILE> psuedo-variable
         for my $name (keys %options) {
             for my $i (0 .. $#{$options{$name}}) {
@@ -1772,18 +1783,7 @@ report($SUMMARY);
                 $options{'MAKE_FLAGS'}[0] =~ s/^/-/;
             }
         }
-        
-        # create results directory if REPORT_METHOD is LOCAL_FILESYSTEM
-        if ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
-            system "rm -rf $options{'TRILINOS_DIR'}[0]/testharness/results";
-            system "mkdir $options{'TRILINOS_DIR'}[0]/testharness/results";
-        }
-        
-        # delete temp directory and create new one
-        chdir "$options{'TRILINOS_DIR'}[0]/testharness";
-        system "rm -rf temp";
-        system "mkdir temp";
-        
+                
         # validations, enforcements, etc. ======================================
         
         # MACHINE_CONFIG_FILE --------------------------------------------------
