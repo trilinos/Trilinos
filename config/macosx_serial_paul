@@ -3,7 +3,7 @@
 # the g77 package) for this script to work properly.
 
 ../configure \
-    --disable-nox --disable-epetraext --disable-aztecoo --disable-ml \
+    --disable-nox --disable-loca --disable-epetraext --disable-aztecoo --disable-ml \
     --disable-new_package --disable-ifpack --disable-epetra --enable-tpetra \
     CC=gcc CXX=g++ F77=g77 \
     FLIBS="-L/sw/lib/ -lg2c" \
