@@ -68,7 +68,11 @@
 #define F77_FUNC_(lcase,UCASE) lcase
 #else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
 #define F77_FUNC(lcase,UCASE) lcase ## _
+#if defined(SGI32) || defined(SGI64)
+#define F77_FUNC_(lcase,UCASE) lcase ## _
+#else
 #define F77_FUNC_(lcase,UCASE) lcase ## __
+#endif
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 #endif /* HAVE_CONFIG_H */
 
