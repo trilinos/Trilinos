@@ -96,7 +96,9 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->aggr_viz_and_stats         = NULL;
    (*ag)->field_of_values            = NULL;
 /*MS*/
-   (*ag)->block_scaled_SA            = 0;
+   (*ag)->block_scaled_SA            =  0;
+   (*ag)->phase3_agg_creation        = .5;
+
 
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
    ML_Aggregate_AztecRead(*ag);
@@ -157,6 +159,33 @@ int ML_Aggregate_Destroy( ML_Aggregate **ag )
 
    }
    return 0;
+}
+
+
+
+/* Steers how the MIS  and Uncoupled handle phase 3 of aggregation.  
+ * Values near 0 create few additional aggregates.Large values create 
+ * many additional aggregates. Convergence can be improve convergence 
+ * by new aggregates but nonzero fill-in increases on coarse meshes.
+ * Default: .5. The basic idea is that the ratio of vertex neighbors
+ * that are already aggregated to the total number of vertex neighbors 
+ * is compared with alpha^factor where alpha is the ratio of vertices
+ * aggregated in phase 1 to the total number of vertices. This is used
+ * to see if a new aggregate should be created.
+ */
+int ML_Aggregate_Set_Phase3AggregateCreationAggressiveness(
+			   ML_Aggregate *ag, double factor) {
+
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_Phase3AggregateCreationAggressiveness: wrong object. \n");
+      exit(-1);
+   }
+   if (factor < 0) {
+      printf("ML_Aggregate_Set_Phase3AggregateCreationAggressiveness: negative settings (%e) not allowed.\n",factor);
+      exit(-1);
+   }
+   ag->phase3_agg_creation        = factor;
 }
 
 /* ************************************************************************* */

@@ -2261,13 +2261,13 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* unaggregated nodes.                                            */
 
    factor = ((double) phase_one_aggregated)/((double)(total_vertices + 1));
-   factor = sqrt(factor);
+   factor = pow(factor, ml_ag->phase3_agg_creation);
 
    for (i = 0; i < nvertices; i++) {
      if ((aggr_index[i] == -1) && (bdry[i] != 'T')) {
        ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val, &rowi_N, 0);
        aggd_neighbors = 0;
-       nonaggd_neighbors = 1;
+       nonaggd_neighbors = 0;
        for (j = 0; j < rowi_N; j++) {
 	 current_agg = aggr_index[rowi_col[j]];
 	 if (current_agg != -1) aggd_neighbors++;

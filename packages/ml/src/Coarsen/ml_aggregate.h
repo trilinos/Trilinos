@@ -65,6 +65,16 @@ typedef struct ML_Aggregate_Struct
   int    block_scaled_SA;              /* = 1 indicates that the prolongator */
                                        /* smoother should use block diagonal */
                                        /* scaling (blocksize = num_PDE_eqns) */
+
+  double phase3_agg_creation;          /* Steers how the MIS  and Uncoupled  */
+                                       /* handle phase 3 of aggregation.     */
+                                       /* Values near 0 create few additional*/
+                                       /* aggregates.Large values create many*/
+                                       /* additional aggregates. Convergence */
+                                       /* can be improve convergence by new  */
+                                       /* aggregates but nonzero fill-in     */
+                                       /* increases on coarse meshes.        */
+                                       /* Default: .5                        */
 /*ms*/
 } ML_Aggregate;
 
@@ -157,6 +167,8 @@ int ML_Aggregate_Set_StartLevel( ML_Aggregate *, int level );
 int ML_Aggregate_Set_MinNodesPerAggregate(ML_Aggregate *,int n);
 int ML_Aggregate_Set_AttachScheme_MaxLink( ML_Aggregate * );
 int ML_Aggregate_Set_AttachScheme_MinRank( ML_Aggregate * );
+int ML_Aggregate_Set_Phase3AggregateCreationAggressiveness(
+				   ML_Aggregate *ag, double factor);
 
 /* ------------------------------------------------------------------------- */
 /* aggregation node traversal control                                        */
