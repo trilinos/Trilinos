@@ -251,7 +251,7 @@ extern int  heap_input        (HEAP*, int, float);
 extern void heap_make         (HEAP*);
 extern void heap_change_value (HEAP*, int, float);
 extern int  heap_extract_max  (HEAP*);
-
+int move_vertex     (HGraph *, int, int, int, int *, int **, float *, HEAP *);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
