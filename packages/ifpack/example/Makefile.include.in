@@ -67,8 +67,8 @@ POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1)
 subdir = example
-DIST_COMMON = README $(srcdir)/Makefile.include.am \
-	$(srcdir)/Makefile.include.in
+DIST_COMMON = README $(srcdir)/Makefile.in \
+	$(srcdir)/Makefile.include.am $(srcdir)/Makefile.include.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -96,7 +96,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Ifpack_config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = Makefile
 am__EXEEXT_1 = Ifpack_ex_Factory$(EXEEXT) Ifpack_ex_Amesos$(EXEEXT) \
 	Ifpack_ex_Ict$(EXEEXT) Ifpack_ex_BlockPrec$(EXEEXT) \
 	Ifpack_ex_Reordering$(EXEEXT)
@@ -404,6 +404,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
