@@ -196,7 +196,9 @@ AC_CXX_STD_SPRINTF
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( triutils, tests, [Build Triutils tests], TRIUTILS_TESTS)
-AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_triutils_tests" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -214,6 +216,10 @@ AC_F77_WRAPPERS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+# If tests, examples and libcheck are disabled, we don't have to check
+# for these libraries.
+#if test "X$ac_cv_use_triutils_tests" != "Xno" || test "X$ac_cv_use_triutils_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+if test "X$ac_cv_use_triutils_tests" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 # checks for libraries now
 dnl Replace `main' with a function in -lm:
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
@@ -230,12 +236,10 @@ dnl Check for user-specified names for BLAS
 TAC_ARG_WITH_BLASLIB
 
 # find or choose to supply a valid blas library
-#TAC_ARG_ENABLE_FEATURE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
-#AM_CONDITIONAL(BUILD_BLAS, test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-#if test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
-#  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, please specify additional locations using --with-ldflags, additional lib names using --with-blas or type --with-referenceblasandlapack on the configure line in the Trilinos level directory to use the blas and lapack libraries included in the distribution]])])
   ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-#fi
+fi
+# end of the list of libraries that don't need to be checked for if
+# tests and examples are disabled.
 
 # ------------------------------------------------------------------------
 # Checks for linker characteristics

@@ -887,6 +887,9 @@ Optional Features:
   --enable-kokkos-examples
                           Build Kokkos examples (default is yes if
                           --disable-examples is not specified)
+  --enable-libcheck       Check for some third-party libraries including BLAS
+                          and LAPACK. (Cannot be disabled unless tests and
+                          examples are also disabled.) (default is yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -3793,7 +3796,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3796:" \
+echo "$as_me:3799:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5921,7 +5924,7 @@ fi
 
 
 
-if test "X$ac_cv_use_tests" != "Xno"; then
+if test "X$ac_cv_use_kokkos_tests" != "Xno"; then
   BUILD_TESTS_TRUE=
   BUILD_TESTS_FALSE='#'
 else
@@ -5990,12 +5993,38 @@ fi
 
 
 
-if test "X$ac_cv_use_examples" != "Xno"; then
+if test "X$ac_cv_use_kokkos_examples" != "Xno"; then
   BUILD_EXAMPLES_TRUE=
   BUILD_EXAMPLES_FALSE='#'
 else
   BUILD_EXAMPLES_TRUE='#'
   BUILD_EXAMPLES_FALSE=
+fi
+
+
+
+# Check whether --enable-libcheck or --disable-libcheck was given.
+if test "${enable_libcheck+set}" = set; then
+  enableval="$enable_libcheck"
+  ac_cv_use_libcheck=$enableval
+else
+  ac_cv_use_libcheck=yes
+fi;
+
+echo "$as_me:$LINENO: checking whether to use libcheck" >&5
+echo $ECHO_N "checking whether to use libcheck... $ECHO_C" >&6
+
+if test "X$ac_cv_use_libcheck" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBCHECK
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
 fi
 
 
@@ -6095,7 +6124,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6098: \"$ac_link\") >&5
+(eval echo $as_me:6127: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6173,7 +6202,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6176: \"$ac_link\") >&5
+(eval echo $as_me:6205: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6865,7 +6894,9 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # Checks for libraries
 # ------------------------------------------------------------------------
 
-if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno"; then
+# If tests, examples and libcheck are disabled, we don't have to check
+# for these libraries.
+if test "X$ac_cv_use_kokkos_tests" != "Xno" || test "X$ac_cv_use_kokkos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 echo "$as_me:$LINENO: checking for library containing sqrt" >&5
 echo $ECHO_N "checking for library containing sqrt... $ECHO_C" >&6
@@ -8485,6 +8516,8 @@ fi
 
 
 fi
+# end of the list of libraries that don't need to be checked for if
+# tests and examples are disabled.
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
@@ -8546,7 +8579,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8549: \"$ac_link\") >&5
+(eval echo $as_me:8582: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8624,7 +8657,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8627: \"$ac_link\") >&5
+(eval echo $as_me:8660: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

@@ -101,6 +101,10 @@ dnl Commented out this line for now because it causes headaches in
 dnl committing.
 dnl AC_REVISION($Revision$)
 
+# ------------------------------------------------------------------------# Check to see if MPI enabled and if any special configuration done
+# ------------------------------------------------------------------------                                                                          
+TAC_ARG_CONFIG_MPI
+                                                                          
 # ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
 # ------------------------------------------------------------------------                                                                          
@@ -306,16 +310,17 @@ AM_CONDITIONAL(BUILD_MATLAB, [test "X$ac_cv_use_epetraext_matlab" != "Xno"])
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
-AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
-TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, no)
-AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( epetraext, tests, [Build EpetraExt tests], EPETRAEXT_TESTS)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_epetraext_tests" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( epetraext, examples, [Build EpetraExt examples], EPETRAEXT_EXAMPLES)
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_epetraext_examples" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+
 TAC_ARG_ENABLE_FEATURE(experimental, [Build experimental code for all Trilinos packages (not all packages are sensitive to this option)], EXPERIMENTAL, no)
 AM_CONDITIONAL(BUILD_EXPERIMENTAL, test "X$ac_cv_use_experimental" != "Xno")
-
-TAC_ARG_ENABLE_FEATURE_SUB( epetraext, tests, [Build tests for EpetraExt package], TESTS, yes)
-AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_epetraext_tests" != "Xno")
-TAC_ARG_ENABLE_FEATURE_SUB( epetraext, examples, [Build examples for EpetraExt package], EXAMPLES, no)
-AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_epetraext_examples" != "Xno")
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, experimental, [Build experimental code for EpetraExt package], EXPERIMENTAL, no)
 AM_CONDITIONAL(BUILD_EXPERIMENTAL, test "X$ac_cv_use_epetraext_experimental" != "Xno")
 
@@ -337,6 +342,10 @@ AC_F77_WRAPPERS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+# If tests, examples and libcheck are disabled, we don't have to check
+# for these libraries.
+if test "X$ac_cv_use_epetraext_tests" != "Xno" || test "X$ac_cv_use_epetraext_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
 # checks for libraries now
 dnl Replace `main' with a function in -lm:
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
@@ -347,18 +356,11 @@ TAC_ARG_WITH_BLASLIB
 TAC_ARG_WITH_LAPACKLIB
 
 # find or choose to supply valid blas and lapack libraries
-#TAC_ARG_ENABLE_FEATURE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
-#AM_CONDITIONAL(BUILD_BLAS, test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-#if test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
-#  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, please specify additional locations using --with-ldflags, additional lib names using --with-blas or type --with-referenceblasandlapack on the configure line in the Trilinos level directory to use the blas and lapack libraries included in the distribution]])])
   ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-#fi
-#TAC_ARG_ENABLE_FEATURE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
-#AM_CONDITIONAL(BUILD_LAPACK, test "X$ac_cv_use_referencelapack" != "Xno" || test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-#if test "X$ac_cv_use_referencelapack" = "Xno" && test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
-#  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, please specify additional locations using --with-ldflags, additional lib names using --with-lapacklib or type --with-referencelapack on the configure line in the Trilinos level directory to use the lapack library included in the distribution]])])
   ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
-#fi
+fi
+# end of the list of libraries that don't need to be checked for if
+# tests and examples are disabled.
 
 if test "X$ac_cv_use_epetraext_zoltan" != "Xno"; then
   AC_CHECK_LIB(metis,METIS_PartGraphKway,[],[AC_MSG_ERROR([Cannot find libmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>])])

@@ -189,13 +189,17 @@ AC_CXX_STD_SPRINTF
 # Checks if tests should be built and which ones should be built
 # ------------------------------------------------------------------------
 
-#TAC_ARG_CHECK_DEFAULT_FEATURE(epetra, EPETRA)
-#AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno")
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( belos, tests, [Build Belos tests], BELOS_TESTS)
+AM_CONDITIONAL(BUILD_TESTS, [test "X$ac_cv_use_belos_tests" != "Xno" ])
+
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 TAC_ARG_CHECK_DEFAULT_FEATURE(ifpack, IFPACK)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
 
 #TAC_ARG_CHECK_DEFAULT_FEATURE(triutils, TRIUTILS)
+#TAC_ARG_ENABLE_FEATURE(triutils, [Build examples which use triutils], TRIUTILS, no)
 #AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
 TAC_ARG_CHECK_FEATURE(tsfcore, TSFCORE)
@@ -220,6 +224,10 @@ TAC_ARG_WITH_INCDIRS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+# If tests, examples and libcheck are disabled, we don't have to check
+# for these libraries.
+if test "X$ac_cv_use_belos_tests" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
@@ -228,6 +236,10 @@ AC_F77_WRAPPERS
 ### Belos requires both BLAS and LAPACK
 ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
 ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
+
+fi
+# end of the list of libraries that don't need to be checked for if
+# tests and examples are disabled.
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics

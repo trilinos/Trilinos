@@ -266,6 +266,8 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
 TAC_ARG_ENABLE_FEATURE(valgrind, [Use valgrind to perform memory checks and detect leaks (not all packages are sensitive to this option)], VALGRIND, no)
 AM_CONDITIONAL(HAVE_VALGRIND, test "X$ac_cv_use_valgrind" != "Xno")
 
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+
 # ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
@@ -282,6 +284,10 @@ AC_F77_WRAPPERS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+# If tests, examples and libcheck are disabled, we don't have to check
+# for these libraries.
+if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
 dnl Check for user-specified names for LAPACK and BLAS
 TAC_ARG_WITH_BLASLIB
 # ------------------------------  ABC
@@ -291,6 +297,10 @@ TAC_ARG_WITH_LAPACKLIB
   ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]])])
 # ------------------------------  ABCDE
   ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]])])
+
+fi
+# end of the list of libraries that don't need to be checked for if
+# tests and examples are disabled.
 
 # ------------------------------------------------------------------------
 # Checks for addons
@@ -381,7 +391,34 @@ fi
 #  U M F P A C K  #
 #  =============  #
 
-if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
+  if test "X$superludist_lib_ok" != "Xyes"; then
+#
+#       2)  Next try to compile with -lsuperludist.  This allows the user to specify 
+#           the directory while using the default name for the library
+     LIBS=" -lsuperludist ${LIBS}"
+
+     AC_TRY_LINK_FUNC(pdgssvx,superludist_with_lib="yes",superludist_with_lib="no")
+
+     if test "X$superludist_with_lib" == "Xyes"; then
+       amesos_libs="${amesos_libs} -lsuperludist"
+     else
+#       3)  Then try the existing Triliinos3PL scheme. 
+#
+       TAC_ARG_WITH_SUB( amesos, superludistlib, [Set SuperLU dist library],  
+                         ${tac_with_amesos_superludistdir}/libsuperludist.a )
+       TAC_CHECK_FILE(${tac_with_amesos_superludistlib})
+       LIBS="${tac_with_amesos_superludistlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
+       amesos_libs="${amesos_libs} ${tac_with_amesos_superludistlib}"
+     fi
+  fi
+#
+#   At this point, LIBS and amesos_libs both have our best shot, if they don't work now
+#   we give up
+
+#   This causes problems when you use build with both superlu and superludist
+#
+#    AC_TRY_LINK_FUNC( set_default_options,
+#                        AC_DEFINE(OLD_SUPERLUDIST,,[Define if we are using the old Superludist]) ) 
 
   AC_TRY_LINK_FUNC(umfdi_local_search,,
   AC_MSG_ERROR([[Cannot find the UMFPACK library, specify a location using --with-libs, (ex. --with-libs=/home/username/lib/libumfpack.a, or use --with-libs=-lumfpack --with-ldflags=-L/home/username/lib).]]))

@@ -882,6 +882,9 @@ Optional Features:
   --enable-anasazi-examples
                           Build Anasazi examples (default is yes if
                           --disable-examples is not specified)
+  --enable-libcheck       Check for some third-party libraries including BLAS
+                          and LAPACK. (Cannot be disabled unless tests and
+                          examples are also disabled.) (default is yes)
   --enable-belos          Build examples which use belos (default is no)
 
 Optional Packages:
@@ -3796,7 +3799,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3799:" \
+echo "$as_me:3802:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6155,6 +6158,32 @@ else
 fi
 
 
+
+# Check whether --enable-libcheck or --disable-libcheck was given.
+if test "${enable_libcheck+set}" = set; then
+  enableval="$enable_libcheck"
+  ac_cv_use_libcheck=$enableval
+else
+  ac_cv_use_libcheck=yes
+fi;
+
+echo "$as_me:$LINENO: checking whether to use libcheck" >&5
+echo $ECHO_N "checking whether to use libcheck... $ECHO_C" >&6
+
+if test "X$ac_cv_use_libcheck" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBCHECK
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
 #TAC_ARG_ENABLE_FEATURE(triutils, [Build examples which use triutils], TRIUTILS, no)
 #AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
@@ -6193,9 +6222,6 @@ else
   BUILD_BELOS_FALSE=
 fi
 
-
-#TAC_ARG_CHECK_DEFAULT_FEATURE(epetra,EPETRA)
-#AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno")
 
 
 # Check whether --enable-default-packages or --disable-default-packages was given.
@@ -6335,7 +6361,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6338: \"$ac_link\") >&5
+(eval echo $as_me:6364: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6413,7 +6439,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6416: \"$ac_link\") >&5
+(eval echo $as_me:6442: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7104,6 +7130,11 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
+
+# If tests, examples and libcheck are disabled, we don't have to check
+# for these libraries.
+#if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+if test "X$ac_cv_use_anasazi_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 # #np# -
 # To add any libraries that you want to check for, replace pow below
@@ -9184,6 +9215,10 @@ echo "$as_me: error: Cannot find lapack library, specify a path using --with-lap
 fi
 
 
+fi
+# end of the list of libraries that don't need to be checked for if
+# tests and examples are disabled.
+
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
 # ------------------------------------------------------------------------
@@ -9244,7 +9279,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9247: \"$ac_link\") >&5
+(eval echo $as_me:9282: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9322,7 +9357,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9325: \"$ac_link\") >&5
+(eval echo $as_me:9360: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

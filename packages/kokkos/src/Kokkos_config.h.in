@@ -47,6 +47,9 @@
 /* Define if want to build kokkos-tests */
 #undef HAVE_KOKKOS_TESTS
 
+/* Define if want to build libcheck */
+#undef HAVE_LIBCHECK
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 

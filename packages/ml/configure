@@ -915,6 +915,9 @@ Optional Features:
                           --enable-ml_metis. (default is no)
   --enable-ml_examples    Build examples for ML package (default is yes)
   --enable-tests          Build tests for ML package (default is no)
+  --enable-libcheck       Check for some third-party libraries including BLAS
+                          and LAPACK. (Cannot be disabled unless tests and
+                          examples are also disabled.) (default is yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -3899,7 +3902,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3902:" \
+echo "$as_me:3905:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7006,6 +7009,32 @@ else
 fi
 
 
+
+# Check whether --enable-libcheck or --disable-libcheck was given.
+if test "${enable_libcheck+set}" = set; then
+  enableval="$enable_libcheck"
+  ac_cv_use_libcheck=$enableval
+else
+  ac_cv_use_libcheck=yes
+fi;
+
+echo "$as_me:$LINENO: checking whether to use libcheck" >&5
+echo $ECHO_N "checking whether to use libcheck... $ECHO_C" >&6
+
+if test "X$ac_cv_use_libcheck" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBCHECK
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
 # ------------------------------------------------------------------------
 # Specify other directories
 # ------------------------------------------------------------------------
@@ -7104,7 +7133,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7107: \"$ac_link\") >&5
+(eval echo $as_me:7136: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7182,7 +7211,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7185: \"$ac_link\") >&5
+(eval echo $as_me:7214: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7873,6 +7902,10 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
+
+# If tests, examples and libcheck are disabled, we don't have to check
+# for these libraries.
+if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 # #np# -
 # To add any libraries that you want to check for, replace pow below
@@ -9990,6 +10023,10 @@ echo "$as_me: error: Cannot find lapack library, specify a path using --with-ldf
 fi
 
 
+fi
+# end of the list of libraries that don't need to be checked for if
+# tests and examples are disabled.
+
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
 # ------------------------------------------------------------------------
@@ -10127,7 +10164,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10130: \"$ac_link\") >&5
+(eval echo $as_me:10167: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10205,7 +10242,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10208: \"$ac_link\") >&5
+(eval echo $as_me:10245: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

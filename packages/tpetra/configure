@@ -887,6 +887,9 @@ Optional Features:
   --enable-tpetra-examples
                           Build Tpetra examples (default is yes if
                           --disable-examples is not specified)
+  --enable-libcheck       Check for some third-party libraries including BLAS
+                          and LAPACK. (Cannot be disabled unless tests and
+                          examples are also disabled.) (default is yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -3789,7 +3792,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3792:" \
+echo "$as_me:3795:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6261,7 +6264,7 @@ fi
 
 
 
-if test "X$ac_cv_use_tests" != "Xno"; then
+if test "X$ac_cv_use_tpetra_tests" != "Xno"; then
   BUILD_TESTS_TRUE=
   BUILD_TESTS_FALSE='#'
 else
@@ -6334,7 +6337,7 @@ fi
 
 
 
-if test "X$ac_cv_use_examples" != "Xno"; then
+if test "X$ac_cv_use_tpetra_examples" != "Xno"; then
   BUILD_EXAMPLES_TRUE=
   BUILD_EXAMPLES_FALSE='#'
 else
@@ -6407,6 +6410,31 @@ fi
 
 
 
+# Check whether --enable-libcheck or --disable-libcheck was given.
+if test "${enable_libcheck+set}" = set; then
+  enableval="$enable_libcheck"
+  ac_cv_use_libcheck=$enableval
+else
+  ac_cv_use_libcheck=yes
+fi;
+
+echo "$as_me:$LINENO: checking whether to use libcheck" >&5
+echo $ECHO_N "checking whether to use libcheck... $ECHO_C" >&6
+
+if test "X$ac_cv_use_libcheck" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBCHECK
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
 # ------------------------------------------------------------------------
 # Specify other directories
 # ------------------------------------------------------------------------
@@ -6453,6 +6481,10 @@ fi;
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
+
+# If tests, examples and libcheck are disabled, we don't have to check
+# for these libraries.
+if test "X$ac_cv_use_tpetra_tests" != "Xno" || test "X$ac_cv_use_tpetra_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 # To add any libraries that you want to check for, replace pow below
 # with the name of an entry point in that library.
@@ -6772,7 +6804,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6775: \"$ac_link\") >&5
+(eval echo $as_me:6807: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6850,7 +6882,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6853: \"$ac_link\") >&5
+(eval echo $as_me:6885: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9319,6 +9351,9 @@ echo "$as_me: error: Cannot find lapack library, specify a path using --with-lap
 fi
 
 
+fi
+# end of the list of libraries that don't need to be checked for if
+# tests and examples are disabled.
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
@@ -9380,7 +9415,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9383: \"$ac_link\") >&5
+(eval echo $as_me:9418: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9458,7 +9493,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9461: \"$ac_link\") >&5
+(eval echo $as_me:9496: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

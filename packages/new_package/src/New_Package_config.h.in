@@ -53,6 +53,9 @@
 /* Define to 1 if you have the <iostream.h> header file. */
 #undef HAVE_IOSTREAM_H
 
+/* Define if want to build libcheck */
+#undef HAVE_LIBCHECK
+
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
 

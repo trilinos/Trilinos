@@ -278,11 +278,13 @@ AM_CONDITIONAL(HAVE_NEWP_SWAHILI, [test "X$ac_cv_use_newp_swahili" != "Xno"])
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( new_package, tests, [Build New_Package tests], NEW_PACKAGE_TESTS)
-AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_new_package_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( new_package, examples, [Build New_Package examples], NEW_PACKAGE_EXAMPLES)
-AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_new_package_examples" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -302,6 +304,15 @@ AC_F77_WRAPPERS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+# If tests, examples and libcheck are disabled, we don't have to check
+# for these libraries.
+
+# #np# -
+# If a package does not have tests or examples, the corresponding check(s)
+# should be pulled out of the "if" statement below.
+#if test "X$ac_cv_use_new_package_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+if test "X$ac_cv_use_new_package_tests" != "Xno" || test "X$ac_cv_use_new_package_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
 # #np# - 
 # To add any libraries that you want to check for, replace pow below 
 # with the name of an entry point in that library.
@@ -319,6 +330,9 @@ TAC_ARG_WITH_BLASLIB
 
   ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
 
+fi
+# end of the list of libraries that don't need to be checked for if
+# tests and examples are disabled.
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics

@@ -68,6 +68,9 @@
 /* Define if you have LAPACK library. */
 #undef HAVE_LAPACK
 
+/* Define if want to build libcheck */
+#undef HAVE_LIBCHECK
+
 /* Define to 1 if you have the <map> header file. */
 #undef HAVE_MAP
 

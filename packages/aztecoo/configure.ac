@@ -234,11 +234,13 @@ fi
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( aztecoo, tests, [Build AztecOO tests], AZTECOO_TESTS)
-AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_aztecoo_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( aztecoo, examples, [Build AztecOO examples], AZTECOO_EXAMPLES)
-AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_aztecoo_examples" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -249,10 +251,17 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
+# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
+AC_F77_WRAPPERS
+
 # For now we will consider AztecOO to be dependent on Triutils,
 # even though it is really only the examples.
 #TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, no)
 #AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+
+# If tests, examples and libcheck are disabled, we don't have to check
+# for these libraries.
+if test "X$ac_cv_use_aztecoo_tests" != "Xno" || test "X$ac_cv_use_aztecoo_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 # y12m is needed only when AZ_lu is enabled
 if test "X$ac_cv_use_aztecoo_azlu" != "Xno"; then
@@ -277,23 +286,13 @@ AC_CHECK_FUNCS([floor pow sqrt strchr uname])
 TAC_ARG_WITH_LAPACKLIB
 TAC_ARG_WITH_BLASLIB
 
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK
-AC_F77_WRAPPERS
-
 # find or choose to supply valid blas and lapack libraries
-#TAC_ARG_ENABLE_FEATURE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
-#AM_CONDITIONAL(BUILD_BLAS, test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-#if test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
-#  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, please specify additional locations using --with-ldflags, additional lib names using --with-blas or type --with-referenceblasandlapack on the configure line in the Trilinos level directory to use the blas and lapack libraries included in the distribution]])])
   ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
 
-#fi
-#TAC_ARG_ENABLE_FEATURE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
-#AM_CONDITIONAL(BUILD_LAPACK, test "X$ac_cv_use_referencelapack" != "Xno" || test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-#if test "X$ac_cv_use_referencelapack" = "Xno" && test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
-#  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, please specify additional locations using --with-ldflags, additional lib names using --with-lapacklib or type --with-referencelapack on the configure line in the Trilinos level directory to use the lapack library included in the distribution]])])
   ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
-#fi
+fi
+# end of the list of libraries that don't need to be checked for if
+# tests and examples are disabled.
 
 # Determine libraries needed for linking with Fortran
 AC_F77_LIBRARY_LDFLAGS

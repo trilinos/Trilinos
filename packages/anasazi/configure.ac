@@ -272,14 +272,13 @@ TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not 
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( anasazi, examples, [Build Anasazi examples], ANASAZI_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, [test "X$ac_cv_use_anasazi_examples" != "Xno"])
 
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+
 #TAC_ARG_ENABLE_FEATURE(triutils, [Build examples which use triutils], TRIUTILS, no)
 #AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(belos, [Build examples which use belos], BELOS, no)
 AM_CONDITIONAL(BUILD_BELOS, test "X$ac_cv_use_belos" != "Xno")
-
-#TAC_ARG_CHECK_DEFAULT_FEATURE(epetra,EPETRA)
-#AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno")
 
 TAC_ARG_CHECK_DEFAULT_FEATURE(ifpack, IFPACK)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
@@ -306,6 +305,11 @@ AC_F77_WRAPPERS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+# If tests, examples and libcheck are disabled, we don't have to check
+# for these libraries.
+#if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+if test "X$ac_cv_use_anasazi_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
 # #np# - 
 # To add any libraries that you want to check for, replace pow below 
 # with the name of an entry point in that library.
@@ -321,6 +325,10 @@ AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
 ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
 ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
+
+fi
+# end of the list of libraries that don't need to be checked for if
+# tests and examples are disabled.
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
