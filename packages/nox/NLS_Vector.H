@@ -40,7 +40,6 @@ public:
   //@{ \name Vector initialization methods
 
   //! Puts element-wise absolute values of input vector in target.
-  /*! Note: It is possible to use the same argument for "this" for y. */
   virtual NLS_Vector& abs(const NLS_Vector& y) = 0;
 
   //! Copies scaled version of y into "this"
@@ -51,10 +50,18 @@ public:
   //@{ \name Update methods
 
   //! Compute this = alpha * this + beta * y
-  virtual void update(double alpha, const NLS_Vector& y, double beta) = 0;
+  virtual NLS_Vector& update(double alpha, const NLS_Vector& y, double beta) = 0;
 
   //! this = alpha * this
-  virtual void scale(double alpha) = 0;
+  virtual NLS_Vector& scale(double alpha) = 0;
+
+  //@}
+
+  //@{ \name Creating new NLS_Vectors 
+
+  //! Create a \b new NLS_Vector by copying this one. 
+  //! Return a pointer to the new vector. 
+  virtual NLS_Vector* newcopy() = 0;
 
   //@}
 
@@ -84,13 +91,13 @@ public:
   //@{ \name Statistics
 
   //! Compute minimum value of each vector in vector.
-  virtual double minValue() const = 0;
+  virtual double min() const = 0;
 
   //! Compute maximum value of vector.
-  virtual double maxValue() const = 0;
+  virtual double max() const = 0;
 
   //! Compute mean (average) value of each vector in vector.
-  virtual double meanValue() const = 0;
+  virtual double mean() const = 0;
 
   //@}
 
