@@ -78,8 +78,8 @@ int main(int argc, char *argv[])
   if (MyPID < 3) NumMyElements++;
 
   // Define pseudo-random block sizes using a Petra Vector of random numbers
-  Epetra_Map & randmap = * new Epetra_Map(-1, NumMyElements, 0, Comm);
-  Epetra_Vector & randvec = * new Epetra_Vector(randmap);
+  Epetra_Map randmap(-1, NumMyElements, 0, Comm);
+  Epetra_Vector randvec(randmap);
   randvec.Random(); // Fill with random numbers
   int * ElementSizeList = new int[NumMyElements];
   int MinSize = 3;
@@ -92,10 +92,7 @@ int main(int argc, char *argv[])
 
   int *randMyGlobalElements = randmap.MyGlobalElements();
 
-  Epetra_BlockMap& Map = *new Epetra_BlockMap(-1, NumMyElements, 
-					    randMyGlobalElements, ElementSizeList, 0, Comm);
-  delete &randvec;
-  delete &randmap; // Done with these
+  Epetra_BlockMap Map (-1, NumMyElements, randMyGlobalElements, ElementSizeList, 0, Comm);
   
   // Get update list and number of local elements from newly created Map
   int NumGlobalElements = Map.NumGlobalElements();
@@ -116,7 +113,7 @@ int main(int argc, char *argv[])
       NumNz[i] = 3;
   // Create a Epetra_Matrix
 
-  Epetra_VbrMatrix& A = *new Epetra_VbrMatrix(Copy, Map, NumNz);
+  Epetra_VbrMatrix A(Copy, Map, NumNz);
   assert(!A.IndicesAreGlobal());
   assert(!A.IndicesAreLocal());
   
@@ -168,7 +165,7 @@ int main(int argc, char *argv[])
 	Indices[1] = CurRow;
 	NumEntries = 2;
 	ColDims[0] = ElementSizeList[i-1] - MinSize;
-	  ColDims[1] = ElementSizeList[i] - MinSize; // Assumes linear global ordering and > 1 row/proc.
+	ColDims[1] = ElementSizeList[i] - MinSize; // Assumes linear global ordering and > 1 row/proc.
       }
       else {
 	Indices[0] = CurRow-1;
@@ -180,13 +177,13 @@ int main(int argc, char *argv[])
 	ColDims[1] = ElementSizeList[i];
 	// ElementSize on MyPID+1
 	if (i==NumMyElements-1) ColDims[2] = EPETRA_MAX(MinSize, EPETRA_MIN(MaxSize, MyPID)) - MinSize;
-	else ColDims[0] = ElementSizeList[i+1] - MinSize;
+	else ColDims[2] = ElementSizeList[i+1] - MinSize;
       }
     assert(A.BeginInsertGlobalValues(CurRow, NumEntries, Indices)==0);
     for (j=0; j < NumEntries; j++) {
-      Epetra_SerialDenseMatrix AD = BlockEntries[RowDim][ColDims[j]];
-      NumMyNonzeros += AD.M() * AD.N();	  
-      assert(A.SubmitBlockEntry(AD.A(), AD.LDA(), AD.M(), AD.N())==0);
+      Epetra_SerialDenseMatrix * AD = &(BlockEntries[RowDim][ColDims[j]]);
+      NumMyNonzeros += AD->M() * AD->N();	  
+      assert(A.SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N())==0);
     }
 
       A.EndSubmitEntries();
@@ -202,6 +199,12 @@ int main(int argc, char *argv[])
   assert(!A.UpperTriangular());
   assert(!A.LowerTriangular());
 
+
+  for (int kr=0; kr<SizeRange; kr++) delete [] BlockEntries[kr];
+  delete [] BlockEntries;
+  delete [] ColDims;
+  delete [] Indices;
+  delete [] ElementSizeList;
   
 
   int NumMyBlockEntries = 3*NumMyElements;
@@ -223,13 +226,15 @@ int main(int argc, char *argv[])
 
   if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
 
+  delete [] NumNz;
+
 
   // Create vectors for Power method
 
-  Epetra_Vector& q = *new Epetra_Vector(Map);
-  Epetra_Vector& z = *new Epetra_Vector(Map);
-  Epetra_Vector& z_initial = *new Epetra_Vector(Map);
-  Epetra_Vector& resid = *new Epetra_Vector(Map);
+  Epetra_Vector q(Map);
+  Epetra_Vector z(Map);
+  Epetra_Vector z_initial(Map);
+  Epetra_Vector resid(Map);
 
   
   // Fill z with random Numbers 
@@ -246,7 +251,7 @@ int main(int argc, char *argv[])
   // Iterate
 
   z = z_initial;  // Start with common initial guess
-  Epetra_Time & timer = *new Epetra_Time(Comm);
+  Epetra_Time timer(Comm);
   int ierr1 = power_method(false, A, q, z, resid, &lambda, niters, tolerance, verbose);
   double elapsed_time = timer.ElapsedTime();
   double total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
@@ -327,8 +332,6 @@ int main(int argc, char *argv[])
   total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
 
-  delete &timer;
-
   if (verbose) cout << "\n\nTotal MFLOPs for tranpose of second solve = " << MFLOPs << endl<< endl;
   if (verbose && ierr1==1) cout << "***** Power Method did not converge. *****" << endl << endl;
 
@@ -337,7 +340,7 @@ int main(int argc, char *argv[])
 
   if (verbose) cout << "\n\n*****Testing copy constructor" << endl<< endl;
 
-  Epetra_VbrMatrix & B = *new Epetra_VbrMatrix(A);
+  Epetra_VbrMatrix B(A);
 
   assert(check(B, NumMyEquations, NumGlobalEquations, NumMyNonzeros, NumGlobalNonzeros, 
 	       NumMyElements, NumGlobalElements, NumMyBlockEntries, NumGlobalBlockEntries, 
@@ -350,19 +353,8 @@ int main(int argc, char *argv[])
 
   int One = 1;
   if (B.MyGRID(0)) assert(B.BeginInsertGlobalValues(0, 1, &One)==-2);
-  delete &B;
 
-  // Release all objects
-  delete [] Indices;
-  delete [] NumNz;
 
-  delete &resid;
-  delete &z;
-  delete &z_initial;
-  delete &q;
-  delete &A;
-  delete &Map;
-			
   /*
   if (verbose1) {
     // Test ostream << operator (if verbose1)
@@ -372,7 +364,7 @@ int main(int argc, char *argv[])
     int NumMyElements1 = NumMyElements1;
     int NumGlobalElements1 = NumMyElements1*NumProc;
 
-    Epetra_Map& Map1 = *new Epetra_Map(-1, NumMyElements1, 0, Comm);
+    Epetra_Map Map1(-1, NumMyElements1, 0, Comm);
     
     // Get update list and number of local equations from newly created Map
     int * MyGlobalElements1 = new int[Map1.NumMyElements()];
@@ -394,7 +386,7 @@ int main(int argc, char *argv[])
     
     // Create a Epetra_Matrix
     
-    Epetra_VbrMatrix& A1 = *new Epetra_VbrMatrix(Copy, Map1, NumNz1);
+    Epetra_VbrMatrix A1(Copy, Map1, NumNz1);
     
     // Add  rows one-at-a-time
     // Need some vectors to help
@@ -439,8 +431,6 @@ int main(int argc, char *argv[])
     delete [] Indices1;
     delete [] MyGlobalElements1;
 
-    delete &A1;
-    delete &Map1;
   }
   */
 

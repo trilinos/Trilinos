@@ -292,6 +292,7 @@ int main(int argc, char *argv[]) {
 
   delete [] MyGlobalElements;
   delete Map;
+  delete LocalMap;
 
   if (verbose1)
     {
