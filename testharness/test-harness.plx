@@ -501,7 +501,12 @@ report($SUMMARY);
                             # run each test
                             foreach my $potentialScript (@potentialScripts) {
                                 $potentialScript =~ s/\s*$//;  # trim trailing whitespace
-                                
+                               # The following line is needed if there are
+			       # multiple test scripts for a package and 
+			       # not all of the scripts finish executing
+			       # in the same directory that execution begins in 
+				chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/$testDir";
+ 
                                 # if potential script file is executable...
                                 if (-x $potentialScript) {
                     
