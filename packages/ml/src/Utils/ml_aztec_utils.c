@@ -2062,23 +2062,28 @@ void AZ_zeroDirichletcolumns(AZ_MATRIX *Amat, double rhs[], int proc_config[] )
 
   N = data_org[AZ_N_internal] + data_org[AZ_N_border];
 
-  for (i = 0 ; i < N; i++) {
+  for (i = 0 ; i < N; i++)
+  {
     N_nz = 0;
-    for (j = bindx[i]; j < bindx[i+1]; j++) {
-      if (val[j] != 0.0) { N_nz++; break; }
-    }
-    if (N_nz == 0) {
+    for (j = bindx[i]; j < bindx[i+1]; j++)
+       if (val[j] != 0.0) { N_nz++; break; }
+
+    /* Found a Dirichlet node. */
+    if (N_nz == 0)
+    {
+      /* Solve for the Dirichlet value. */
       sol_value = rhs[i]/val[i];
-      for (j = bindx[i]; j < bindx[i+1]; j++) {
-	col = bindx[j];
-      
-	/* Zero out the (col,i) entry */
-	for (k = bindx[col]; k < bindx[col+1] ; k++) {
-	  if (bindx[k] == i) {
-	    rhs[col] -= val[k]*sol_value;
-	    val[k] = 0.0;
-	  }
-	}
+      /* Eliminate the Dirichlet value from all equations that depend on it. */
+      for (j = bindx[i]; j < bindx[i+1]; j++)
+      {
+   	     col = bindx[j];
+   	     /* Eliminate the (col,i) entry */
+   	     for (k = bindx[col]; k < bindx[col+1] ; k++)
+   	        if (bindx[k] == i)
+            {
+   	           rhs[col] -= val[k]*sol_value;
+   	           val[k] = 0.0;
+   	        }
       }
     }
   }

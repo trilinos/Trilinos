@@ -472,9 +472,16 @@ int MSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
   return(1);
 }
 
-/*********************************************************************/
-/* matvec in CSR format                                              */
-/*********************************************************************/
+/*********************************************************************
+* Matvec Av=y in CSR format.                                         *
+*                                                                    *
+* Amat_in   ML Operator (cast to void)                               *
+* ilen      on input, length of x vector (int)                       *
+* p         on input, x vector (int)                                 *
+* olen      on input, length of y vector (int)                       *
+* ap        on ouput, product Ax (double)                            *
+*                                                                    * 
+*********************************************************************/
 
 int CSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 {
@@ -501,7 +508,9 @@ int CSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
      p2 = (double *) ML_allocate((getrow_comm->minimum_vec_size+ilen+1)*
                                   sizeof(double));
      for (i = 0; i < ilen; i++) p2[i] = p[i];
+
      ML_exchange_bdry(p2,getrow_comm, ilen, comm, ML_OVERWRITE);
+
    }
    else p2 = p;
 
@@ -516,7 +525,9 @@ int CSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
    for (i = 0; i < Nstored; i++) {
      sum = 0;
      for (k = row_ptr[i]; k < row_ptr[i+1]; k++)
+     {
         sum  += val[k] * p2[bindx[k]];
+     }
 
      ap2[i] = sum;
    }
