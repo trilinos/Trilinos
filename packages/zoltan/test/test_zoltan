@@ -47,8 +47,8 @@ while ( $#argv )
 
   if ( ($1 == "-h") || ($1 == "-help") ) then
      goto usage
-  else if ( $1 == "-no_parmetis" ) then
-     @ no_parmetis = 1
+  else if ( $1 == "-no_nemesis" ) then
+     @ no_nemesis = 1
   else if ( $1 == "-no_parmetis" ) then
      @ no_parmetis = 1
   else if ( $1 == "-no_chaco" ) then
