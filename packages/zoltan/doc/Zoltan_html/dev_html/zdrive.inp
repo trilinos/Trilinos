@@ -299,6 +299,23 @@ Chaco input assignment inverse = 0
 #-----------------------------------------------------------------------------
 Number of Iterations = 1
 
+#-----------------------------------------------------------------------------
+# zdrive action = <integer>
+#
+# This line is optional.  It indicates the action the driver should take,
+# typically load-balancing or ordering. Valid values are:
+# 
+# 	0   --  No action.
+#	1   --  Load balance.
+#	2   --  Order.
+#	3   --  First load balance, then order.
+#
+# Default value is 1 (load balance).
+#
+# NOTE:  The Fortran90 driver zfdrive ignores this input line.
+#-----------------------------------------------------------------------------
+zdrive action = 1
+
 
 #-----------------------------------------------------------------------------
 # Test DDirectory = <integer>
