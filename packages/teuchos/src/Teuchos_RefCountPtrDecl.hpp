@@ -686,7 +686,7 @@ RefCountPtr<T2> rcp_dynamic_cast(
 	);
 #ifdef __sun // RAB: 20041019: Sun needs to fix their compiler
 template<class T2, class T1> inline RefCountPtr<T2> rcp_dynamic_cast( const RefCountPtr<T1>& p1 )
-{ return rcp_dynamic_cast<T2>(p1,true); }
+{ return rcp_dynamic_cast<T2>(p1,false); }
 #endif
 
 ///

@@ -354,7 +354,7 @@ int main( int argc, char* argv[] ) {
 				assert( rcp_dynamic_cast<B1>( rcp(new B2) )->B1_g() == B1_g_return );
 				return -1; // Should not be executed!
 			}
-			catch( const std::logic_error )
+			catch( const std::logic_error &excpt )
 			{}
 			try {
 				// Try to cast form one interface to another that is not supported (B2 -> B1).
@@ -364,7 +364,7 @@ int main( int argc, char* argv[] ) {
 				rcp_dynamic_cast<B1>( rcp(new B2), true );
 				return -1; // Should not be executed!
 			}
-			catch( const std::bad_cast )
+			catch( const std::bad_cast &excpt )
 			{}
 #endif
 
