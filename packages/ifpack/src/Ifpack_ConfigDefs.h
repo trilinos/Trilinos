@@ -104,4 +104,18 @@
 #endif
 #endif
 
+// prints out an error message if variable is not zero,
+// and return this value.
+#define IFPACK_CHK_ERR(ifpack_err) \
+{ if (ifpack_err != 0) { \
+  std::cerr << "IFPACK ERROR " << ifpack_err << ", " \
+    << __FILE__ << ", line " << __LINE__ << std::endl; \
+    return(ifpack_err);  } }
+
+// prints out an error message and returns
+#define IFPACK_RETURN(ifpack_err) \
+{ if (ifpack_err != 0) { \
+  std::cerr << "IFPACK ERROR " << ifpack_err << ", " \
+    << __FILE__ << ", line " << __LINE__ << std::endl; \
+		       } return(ifpack_err); }
 #endif /*_IFPACK_CONFIGDEFS_H_*/
