@@ -15,6 +15,6 @@ IlukGraph_test_CXXFLAGS = -I$(top_srcdir)/src \
 	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 
 IlukGraph_test_LDADD = -L$(top_builddir)/src -lifpack \
-	-L$(top_builddir)/../epetra/src -lepetra $(FLIBS)
+	-L$(top_builddir)/../epetra/src -lepetra $(BLAS_LIBS) $(FLIBS)
 
 
