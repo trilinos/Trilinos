@@ -54,6 +54,12 @@ ifndef ZOLTAN_LIB_DIR
 ZOLTAN_LIB_DIR = $(ZOLTAN_OBJ_DIR)
 endif
 
+ifeq ($(ZOLTAN_LIB_DIR), $(ZOLTAN_OBJ_DIR))
+ZOLTAN_SUBLIB_DIR = ../$(ZOLTAN_OBJ_DIR)
+else
+ZOLTAN_SUBLIB_DIR = $(ZOLTAN_LIB_DIR)
+endif
+
 ##############################################################################
 # Process input flags
 ##############################################################################
@@ -265,10 +271,10 @@ help:
 zoltan:
 	@if [ ! -d $(ZOLTAN_LIB_DIR) ];		\
 	then mkdir $(ZOLTAN_LIB_DIR);		\
-	fi;					\
+	fi;					 
 	@cd Utilities; \
-	$(MAKE) libzoltan_mem.a; \
-	$(MAKE) libzoltan_comm.a  
+	$(MAKE) "ZOLTAN_LIB_DIR=$(ZOLTAN_SUBLIB_DIR)" libzoltan_mem.a; \
+	$(MAKE) "ZOLTAN_LIB_DIR=$(ZOLTAN_SUBLIB_DIR)" libzoltan_comm.a  
 	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 	\
 	then mkdir $(ZOLTAN_OBJ_DIR); 		\
 	fi
@@ -291,18 +297,11 @@ zoltan:
 	"RANLIB=$(RANLIB)" 			\
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
 	@if [ $(ZOLTAN_OBJ_DIR) != $(ZOLTAN_LIB_DIR) ]; 		\
-	then mv -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR); 	\
+	then cp -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR); 	\
 	fi
 
 zdrive:
-	@cd Utilities; \
-	$(MAKE) libzoltan_mem.a; \
-	$(MAKE) libzoltan_comm.a  
-	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 	\
-	then mkdir $(ZOLTAN_OBJ_DIR); 		\
-	fi
-	@rm -f $(ZOLTAN_OBJ_DIR)/Makefile
-	@cp Makefile_sub $(ZOLTAN_OBJ_DIR)/Makefile
+	$(MAKE) zoltan
 	@cd $(ZOLTAN_OBJ_DIR); 			\
 	$(MAKE) $(TARGET)			\
 	"TARGET=$(TARGET)"			\
@@ -311,14 +310,6 @@ zdrive:
 	"VPATH=$(ZOLTAN_VPATH)"			\
 	"OBJ_FILES=$(ZOLTAN_OBJ)"		\
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
-	"INC_FORTRAN=$(INC_FORTRAN)" 		\
-	"F90=$(F90COMP)"			\
-	"LOCAL_F90=$(LOCAL_F90)" 		\
-	"FOBJ_FILES=$(FOBJ_FILES)" 		\
-	"F90_MODULE_PREFIX=$(F90_MODULE_PREFIX)"\
-	"SPPR_HEAD=$(SPPR_HEAD)" 		\
-	"AR=$(AR)" 				\
-	"RANLIB=$(RANLIB)" 			\
 	"MAIN_OBJ=$(ZDRIVE_OBJ)" 		\
 	"LNK_LIBS=$(ZDRIVE_LIBS)" 		\
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
@@ -412,7 +403,7 @@ zscript:
 	@echo '$$AR' $(LIB_NAME) $(OBJ_FILES) $(FOBJ_FILES) >> zoltan_script
 	@echo '$$RANLIB' $(LIB_NAME) >> zoltan_script
 	@echo 'if [ $$ZOLTAN_LIB_DIR ] ; ' >> zoltan_script
-	@echo 'then mv -f $(LIB_NAME) $$ZOLTAN_LIB_DIR ; ' >> zoltan_script
+	@echo 'then cp -f $(LIB_NAME) $$ZOLTAN_LIB_DIR ; ' >> zoltan_script
 	@echo 'fi' >> zoltan_script
 	@echo "cd .." >> zoltan_script
 	@chmod +x zoltan_script
