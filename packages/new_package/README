@@ -24,7 +24,7 @@ CONTENTS of new_package
 
 new_package contains both static and dynamic examples of what should
 be included in a new package.  The src and example directories are
-dynamic examples - they can be bootstrapped, configured, compilted and
+dynamic examples - they can be bootstrapped, configured, compiled and
 run.  And, they demonstrate the use of two switches: 1) --enable-mpi,
 a switch which most packages should support and 2)
 --enable-newp_swahili, a switch used only with new_pacakge.  The test
@@ -33,8 +33,8 @@ package should include, but has not yet been autotool'd.
 
 The Trilinos/packages/new_package package was created as a tool for developers
 wishing to utilize the Autotools configure/build process for a new or existing
-package.  Before beginning this process, approval must be obtained from the
-Trilinos Project Leader.
+Trilinos package.  Before beginning this process, approval must be obtained 
+from the Trilinos Project Leader.
 
 GETTING STARTED
 ===============
@@ -96,9 +96,9 @@ These warnings will be fixed in the future.
 3.  Test/debug your autoconf/automake files
 
 After you have run bootstrap, run configure in a clean BUILD directory.
-Whenever I tried to take shortcuts, it ended up costing me time.  
+Running configure can take a long time.  Here is a tip to save time.   
 Disable all packages that you will not need, and while you are debugging
-the configure.ac script itself, disable all p[ackages other than the 
+the configure.ac script itself, disable all packages other than the 
 one you are working with.
 
 echo is one way to print out variables.  AC_CHECK_FILE can be used 
@@ -107,7 +107,7 @@ to check for the existence of a particular file or directory.
 
 Do not run configure in the source directory.  If you have done so,
 you will have to claen up the source directory before you can run
-configure in a separate build directoy.  If make distclean doed not
+configure in a separate build directoy.  If make distclean does not
 work (at present it does not work consistently) you may have to start
 from scratch, with a cvs checkout and adding your new source files. 
 
@@ -121,7 +121,7 @@ For new_package, we added the following non-generated files to the
 CVS repository:
    cvs add example/Makefile.am
    cvs add bootstrap configure.ac Makefile.am
-   cvs add src/Makefile.am src/New_Package_config.h
+   cvs add src/Makefile.am
 
 For new_package, we added the following files in the config directory:
    cvs add ac_cxx_bool.m4 ac_cxx_have_std.m4 ac_cxx_have_stl.m4
@@ -138,27 +138,13 @@ For new_package, we added the following files in the config directory:
    cvs add config.guess config.sub install-sh missing mkinstalldirs 
    cvs add depcomp
 
-Note:  It is probably worth checking CVS/Entries for the various directories
-to double the above list.  
-
 For new_package, we added the following automake and autoconf generated
-files to the CVS repository
-   cvs add example/Makefile.in 
-   cvs add src/Makefile.in
+files to the CVS repository:
+   cvs add example/Makefile.in src/Makefile.in src/New_Package_config.h.in
    cvs add Makefile.in configure aclocal.m4
 
 5. Perform tests and request new Mailman lists.
 
-
-
-6. Change build default to 'yes'
-
-This step requires the separate approval of the Trilinos Project Leader!
-
-Not all Trilinos packages should be configured and built by default.  Consult
-with the Trilinos Project Leader for more information.
-
-If approval to build by default is granted, ...
 
 
 IMPROVING PORTABILITY
