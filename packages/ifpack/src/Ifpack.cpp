@@ -50,6 +50,7 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
     return(new Ifpack_AdditiveSchwarz<
 	    Ifpack_BlockSymGaussSeidel<Ifpack_DenseContainer> >(Matrix,Overlap));
   }
+#ifdef HAVE_IFPACK_AMESOS
   else if (PrecType == "block Jacobi (Amesos)") {
     return(new Ifpack_AdditiveSchwarz<
 	    Ifpack_BlockJacobi<Ifpack_SparseContainer<Ifpack_Amesos> > >(Matrix,Overlap));
@@ -65,6 +66,7 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
   else if (PrecType == "Amesos") {
     return(new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(Matrix,Overlap));
   }
+#endif
   else if (PrecType == "ICT") {
     return(new Ifpack_AdditiveSchwarz<Ifpack_Ict>(Matrix,Overlap));
 
