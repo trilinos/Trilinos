@@ -397,7 +397,7 @@ class Epetra_BlockMap: public Epetra_Object {
   //! Number of global points for this map; equals the sum of all element sizes across all processors.
   int  NumGlobalPoints() const {return(BlockMapData_->NumGlobalPoints_);};
   
-  //! Number of global points for this map; equals the sum of all element sizes on the calling processor.
+  //! Number of local points for this map; equals the sum of all element sizes on the calling processor.
   int  NumMyPoints() const {return(BlockMapData_->NumMyPoints_);};
   
   //! Minimum element size on the calling processor.

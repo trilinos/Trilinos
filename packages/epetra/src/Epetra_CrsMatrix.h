@@ -108,7 +108,8 @@ entries being associated with only a single processor.
 
 Epetra_CrsMatrix has query functions IndicesAreLocal() and IndicesAreGlobal(), which are used to determine whether the
 underlying Epetra_CrsGraph attribute's column-indices have been transformed into a local index space or not. (This
-transformation occurs when the method Epetra_CrsGraph::FillComplete() is called.) The state of the indices in the
+transformation occurs when the method Epetra_CrsGraph::FillComplete() is called, which happens when the
+method Epetra_CrsMatrix::FillComplete() is called.) The state of the indices in the
 graph determines the behavior of many Epetra_CrsMatrix methods. If an Epetra_CrsMatrix instance is constructed using
 one of the constructors that does not accept a pre-existing Epetra_CrsGraph object, then an Epetra_CrsGraph attribute
 is created internally and its indices remain untransformed (IndicesAreGlobal()==true) until Epetra_CrsMatrix::FillComplete()

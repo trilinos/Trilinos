@@ -1334,6 +1334,19 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
   int * ColElementSizeList = ElementSizeList_;
   int * ColFirstPointInElementList = FirstPointInElementList_;
 
+  bool x_and_y_same = false;
+  Epetra_Vector* ytemp = 0;
+  if (xp == yp) {
+    x_and_y_same = true;
+    ytemp = new Epetra_Vector(y.Map());
+    yp = (double*)ytemp->Values();
+  }
+
+  Epetra_MultiVector& yref = x_and_y_same ? *ytemp : y;
+  //
+  //Now yref is a reference to ytemp if x_and_y_same == true, otherwise it is a reference
+  //to y.
+  //
 
   if (!TransA) {
 
@@ -1380,11 +1393,11 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
       }
     }
     if (Exporter()!=0) {
-      y.PutScalar(0.0);
-      EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
+      yref.PutScalar(0.0);
+      EPETRA_CHK_ERR(yref.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
     }
     // Handle case of rangemap being a local replicated map
-    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(yref.Reduce());
   }
   
   else { // Transpose operation
@@ -1434,11 +1447,11 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
       }
     }
     if (Importer()!=0) {
-      y.PutScalar(0.0); // Make sure target is zero
-      EPETRA_CHK_ERR(y.Export(*ImportVector_, *Importer(), Add)); // Fill y with Values from export vector
+      yref.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(yref.Export(*ImportVector_, *Importer(), Add)); // Fill y with Values from export vector
     }
     // Handle case of rangemap being a local replicated map
-    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
+    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(yref.Reduce());
   }
   
   UpdateFlops(2*NumGlobalNonzeros());
@@ -1468,7 +1481,20 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
   double **Xp = (double**)X.Pointers();
   double **Yp = (double**)Y.Pointers();
 
-  
+  bool x_and_y_same = false;
+  Epetra_MultiVector* Ytemp = 0;
+  if (Xp == Yp) {
+    x_and_y_same = true;
+    Ytemp = new Epetra_MultiVector(Y.Map(), NumVectors);
+    Yp = (double**)Ytemp->Pointers();
+  }
+
+  Epetra_MultiVector& Yref = x_and_y_same ? *Ytemp : Y;
+  //
+  //Now Yref is a reference to Ytemp if x_and_y_same == true, otherwise it is a reference
+  //to Y.
+  //
+
   if (!TransA) {
     
     // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
@@ -1498,8 +1524,10 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       RowElementSizeList = ColMap().ElementSizeList();
       RowFirstPointInElementList = ColMap().FirstPointInElementList();
     }
-    else
-      Y.PutScalar(0.0); // Zero y values
+    else {
+      Yref.PutScalar(0.0); // Zero y values
+    }
+
     // Do actual computation
     for (i=0; i < NumMyBlockRows_; i++) {
       int      NumEntries = *NumBlockEntriesPerRow++;
@@ -1511,12 +1539,13 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 		       ColFirstPointInElementList, ColElementSizeList, 
 		       BlockRowValues, Xp, Yp, NumVectors);
     }
+
     if (Exporter()!=0) {
-      Y.PutScalar(0.0);
-      EPETRA_CHK_ERR(Y.Export(*ExportVector_, *Exporter(), Add)); // Fill Y with Values from export vector
+      Yref.PutScalar(0.0);
+      EPETRA_CHK_ERR(Yref.Export(*ExportVector_, *Exporter(), Add)); // Fill Y with Values from export vector
     }
     // Handle case of rangemap being a local replicated map
-    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Y.Reduce());
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Yref.Reduce());
   }
   else { // Transpose operation
     
@@ -1550,7 +1579,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       RowFirstPointInElementList = ColMap().FirstPointInElementList();
     }
     else
-      Y.PutScalar(0.0); // Zero y values
+      Yref.PutScalar(0.0); // Zero y values
 
     // Do actual computation
     
@@ -1566,14 +1595,20 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     }
 
     if (Importer()!=0) {
-      Y.PutScalar(0.0); // Make sure target is zero
-      EPETRA_CHK_ERR(Y.Export(*ImportVector_, *Importer(), Add)); // Fill Y with Values from export vector
+      Yref.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(Yref.Export(*ImportVector_, *Importer(), Add)); // Fill Y with Values from export vector
     }
     // Handle case of rangemap being a local replicated map
-    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1)  EPETRA_CHK_ERR(Y.Reduce());
+    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1)  EPETRA_CHK_ERR(Yref.Reduce());
   }
 
   UpdateFlops(2*NumVectors*NumGlobalNonzeros());
+
+  if (x_and_y_same == true) {
+    Y = *Ytemp;
+    delete Ytemp;
+  }
+
   return(0);
 }
 //=============================================================================

@@ -46,25 +46,95 @@ class Epetra_Export;
 class Epetra_Vector;
 class Epetra_MultiVector;
 
-/*! Epetra_VbrMatrix: A class for the construction and use of real-valued double-precision
-  variable block-row sparse matrices.
+//! Epetra_VbrMatrix: A class for the construction and use of real-valued double-precision variable block-row sparse matrices.
+/*! The Epetra_VbrMatrix class is a sparse variable block row matrix object. This matrix can be
+  used in a parallel setting, with data distribution described by Epetra_Map attributes.
+  The structure or graph of the matrix is defined by an Epetra_CrsGraph attribute.
 
-  At this time, the primary function provided by Epetra_VbrMatrix is matrix times vector
-  and matrix times multi-vector multiplication.  It is also possible to extract matrix
-  rows from a constructed matrix.
+ In addition to coefficient access, the primary operations provided by Epetra_VbrMatrix are matrix
+ times vector and matrix times multi-vector multiplication.
 <p>
-<b>Constructing Epetra_VbrMatrix objects</b>
+<b>Creating and filling Epetra_VbrMatrix objects</b>
 
 Constructing Epetra_VbrMatrix objects is a multi-step process.  The basic steps are as follows:
 <ol>
-  <li> Create Epetra_VbrMatrix instance, including storage,  via constructor.
-  <li> Enter values via one or more Put or SumInto functions.
-  <li> Complete construction via FillComplete call.
+  <li> Create Epetra_VbrMatrix instance via one of the constructors:
+    <ul>
+     <li>Constructor that accepts one Epetra_Map object, a row-map defining the distribution of matrix rows.
+     <li>Constructor that accepts two Epetra_Map objects. (The second map is a column-map, and describes the set
+       of column-indices that appear in each processor's portion of the matrix. Generally these are 
+       overlapping sets -- column-indices may appear on more than one processor.)
+     <li>Constructor that accepts an Epetra_CrsGraph object, defining the non-zero structure of the matrix.
+    </ul>
+  <li> Input coefficient values (more detail on this below).
+  <li> Complete construction by calling FillComplete.
 </ol>
 
-Note that, even after FillComplete() has been called, it is possible to update existing matrix
+Note that even after FillComplete() has been called, it is possible to update existing matrix
 entries but it is \e not possible to create new entries.
 <p>
+
+<b>Epetra_Map attributes</b>
+
+Epetra_VbrMatrix objects have four Epetra_Map attributes, which are held by the Epetra_CrsGraph attribute.
+
+The Epetra_Map attributes can be obtained via these accessor methods:
+<ul>
+ <li>RowMap() Describes the numbering and distribution of the rows of the matrix. The row-map exists and is valid
+ for the entire life of the matrix. The set of matrix rows is defined by the row-map and may not be changed. Rows
+ may not be inserted or deleted by the user. The only change that may be made is that the user can replace the
+ row-map with a compatible row-map (which is the same except for re-numbering) by calling the ReplaceRowMap() method.
+ <li>ColMap() Describes the set of column-indices that appear in the rows in each processor's portion of the matrix.
+ Unless provided by the user at construction time, a valid column-map doesn't exist until FillComplete() is called.
+ <li>RangeMap() Describes the range of the matrix operator. e.g., for a matrix-vector product operation, the result
+   vector's map must be compatible with the range-map of this matrix. The range-map is usually the same as the row-map.
+   The range-map is set equal to the row-map at matrix creation time, but may be specified by the user when
+   FillComplete() is called.
+ <li>DomainMap() Describes the domain of the matrix operator. The domain-map can be specified by the user when
+ FillComplete() is called. Until then, it is set equal to the row-map.
+</ul>
+
+It is important to note that while the row-map and the range-map are often the same, the column-map and the domain-map
+are almost never the same. The set of entries in a distributed column-map almost always form overlapping sets, with
+entries being associated with more than one processor. A domain-map, on the other hand, must be a 1-to-1 map, with
+entries being associated with only a single processor.
+
+<b>Local versus Global Indices</b>
+
+Epetra_VbrMatrix has query functions IndicesAreLocal() and IndicesAreGlobal(), which are used to determine whether the
+underlying Epetra_CrsGraph attribute's column-indices have been transformed into a local index space or not. (This
+transformation occurs when the method Epetra_CrsGraph::FillComplete() is called, which happens when
+the method Epetra_VbrMatrix::FillComplete() is called.) The state of the indices in the
+graph determines the behavior of many Epetra_VbrMatrix methods. If an Epetra_VbrMatrix instance is constructed using
+one of the constructors that does not accept a pre-existing Epetra_CrsGraph object, then an Epetra_CrsGraph attribute
+is created internally and its indices remain untransformed (IndicesAreGlobal()==true) until Epetra_VbrMatrix::FillComplete()
+is called. The query function Epetra_VbrMatrix::Filled() returns true if Epetra_VbrMatrix::FillComplete() has been
+called.
+
+<b>Inputting coefficient values</b>
+
+The process for inputting block-entry coefficients is as follows:
+<ol>
+<li>Indicate that values for a specified row are about to be provided by calling one of these methods
+  which specify a block-row and a list of block-column-indices:
+ <ul>
+  <li>BeginInsertGlobalValues()
+  <li>BeginInsertMyValues()
+  <li>BeginReplaceGlobalValues()
+  <li>BeginReplaceMyValues()
+  <li>BeginSumIntoGlobalValues()
+  <li>BeginSumIntoMyValues()
+ </ul>
+<li>Loop over the list of block-column-indices and pass each block-entry to the matrix using the
+  method SubmitBlockEntry().
+<li>Complete the process for the specified block-row by calling the method EndSubmitEntries().
+</ol>
+
+Note that the 'GlobalValues' methods have the precondition that IndicesAreGlobal() must be true, and
+the 'MyValues' methods have the precondition that IndicesAreLocal() must be true. Furthermore, the
+'SumInto' and 'Replace' methods may only be used to update matrix entries which already exist, and
+the 'Insert' methods may only be used if IndicesAreContiguous() is false.
+
 <b> Counting Floating Point Operations </b>
 
 Each Epetra_VbrMatrix object keeps track of the number of \e serial floating point operations
@@ -72,8 +142,6 @@ performed using the specified object as the \e this argument to the function.  T
 function returns this number as a double precision number.  Using this information, in
 conjunction with the Epetra_Time class, one can get accurate parallel performance
 numbers.  The ResetFlops() function resets the floating point counter.
-
-\warning A Epetra_BlockMap is required for the Epetra_VbrMatrix constructor.
 
 */    
 
