@@ -1,7 +1,7 @@
 /*****************************************************************************
  * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
  * Copyright (c) 2000, Sandia National Laboratories.                         *
- * For more info, see the README file in the top-level Zoltan directory.     *  
+ * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
 /*****************************************************************************
  * CVS File Information :
@@ -10,7 +10,6 @@
  *    $Date$
  *    $Revision$
  ****************************************************************************/
-
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
@@ -26,35 +25,49 @@
 #include "sfc.h"
 #include "all_allo_const.h"
 
-
-/* debug parameters */
-/*#define USER_STOP */
-
-
-/* okay values for this partitioning scheme, the user can set them in the as parameters also */
-#define BINS_PER_PROC 10 
-#define HASHTABLE_DIVIDER 20
+/* decent values for this partitioning scheme, the user can
+   set them in the as parameters to tune for better performance */
+#define BINS_PER_PROC 50 /* minimum amount of coarse bins on each processor */
+#define HASHTABLE_DIVIDER 100 /* for this algorithm, need to send out the
+				 weights of objects on this processor to 
+				 the corresponding bins which may be on
+				 other processors.  a hashtable is used so
+				 that we do not have to allocate an array
+				 of size BINS_PER_PROC * Num_Proc.  only 
+				 an array of size 
+				 BINS_PER_PROC * Num_Proc / HASHTABLE_DIVIDER
+				 needs to be allocated which allows the 
+				 algorithm to scale */
 #define MAX_CUTS_IN_BIN 10 /* maximum amount of cuts in a coarse level bin */
-#define SUBBINS_PER_BIN 10 /* amount of subbins a bin is divided into */
-#define MAX_REFINEMENT_LEVEL 10 /* amount of refinement of the bins */
+#define SUBBINS_PER_BIN 20 /* amount of subbins a bin is divided into */
+#define MAX_REFINEMENT_LEVEL 20 /* amount of refinement of the bins */
 #define BIN_REFINEMENT_METHOD 1 /* flag to specify whether all bins with a cut in them are
 				 refined or just the bins with a cut that are imbalanced 
 				 1 is to refine all partitions with a cut,
 				 0 is to refine only the imbalanced partitions with a cut */
 
-int create_refinement_info(LB* lb, int* number_of_cuts, float* global_actual_work_allocated,
-			   int wgt_dim, float* total_weight_array, float* work_percent_array,
-			   int num_vert_in_cut, SFC_VERTEX_PTR vert_in_cut_ptr,
-			   float* wgts_in_cut_ptr, float** work_prev_allocated_ptr);
+#define SFC_BOUNDING_BOX_EPSILON 0.0000001 /* used to increase the bounding
+					      box slightly so that no objects
+					      are on the boundary of the box */
 
-int sfc_create_bins(LB* lb, int num_local_objects, 
-		    int wgt_dim, SFC_VERTEX_PTR sfc_vert_ptr, float objs_wgt[], int* amount_of_bits_used,
-		    int sfc_keylength, int size_of_unsigned, unsigned imax, 
-		    float* global_actual_work_allocated, float *work_percent_array, 
-		    float* total_weight_array, int* balanced_flag,
-		    SFC_VERTEX_PTR *vert_in_cut_ptr, float** wgts_in_cut_ptr, 
-		    int* num_vert_in_cut, int* number_of_cuts, int bins_per_proc, 
-		    int hashtable_divider, COMM_OBJ **plan, int* num_vert_sent, int max_cuts_in_bin);
+int sfc_create_refinement_info(LB* lb, int* number_of_cuts, 
+			       float* global_actual_work_allocated,
+			       int wgt_dim, float* total_weight_array, 
+			       float* work_percent_array, int num_vert_in_cut, 
+			       SFC_VERTEX_PTR vert_in_cut_ptr, 
+			       float* wgts_in_cut_ptr,
+			       float** work_prev_allocated_ptr);
+
+int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
+		    SFC_VERTEX_PTR sfc_vert_ptr, float objs_wgt[],
+		    int* amount_of_bits_used, int size_of_unsigned, 
+		    unsigned imax, float* global_actual_work_allocated, 
+		    float *work_percent_array, float* total_weight_array,
+		    int* balanced_flag, SFC_VERTEX_PTR *vert_in_cut_ptr,
+		    float** wgts_in_cut_ptr, int* num_vert_in_cut,
+		    int* number_of_cuts, int bins_per_proc, 
+		    int hashtable_divider, COMM_OBJ **plan, 
+		    int* num_vert_sent, int max_cuts_in_bin);
 
 static PARAM_VARS SFC_params[] = {
   { "SFC_BINS_PER_PROC", NULL, "INT" },
@@ -95,65 +108,76 @@ char *val)			/* value of variable */
 int LB_sfc(
   LB *lb,                       /* The load-balancing structure with info for
                                    the RCB balancer.                         */
-  int *num_import,              /* Number of non-local objects assigned to this
-                                   processor in the new decomposition.       */
-  LB_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
-                                   non-local objects in this processor's new
-                                   decomposition.                            */
-  LB_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
-                                   non-local objects in this processor's new
-                                   decomposition.                            */
-  int **import_procs,           /* Returned value:  array of processor IDs for
-                                   processors owning the non-local objects in
+  int *num_import,              /* Not computed.  Set to -1. */
+  LB_ID_PTR *import_global_ids, /* Not computed. */
+  LB_ID_PTR *import_local_ids,  /* Not computed. */
+  int **import_procs,           /* Not computed. */
+  int *num_export,              /* Number of local objects assigned to another
+                                   processor in the new decomposition. */
+  LB_ID_PTR *export_global_ids, /* Returned value:  array of global IDs of
+                                   local objects assigned to other processors
+				   for the new decomposition.                */
+  LB_ID_PTR *export_local_ids,  /* Returned value:  array of local IDs of
+                                   local objects assigned to other processors
+				   for the new decomposition.                */ 
+  int **export_procs            /* Returned value:  array of processor IDs for
+                                   the local objects to be sent to in
                                    this processor's new decomposition.       */
-  int *num_export,              /* Not computed, set to -1 */
-  LB_ID_PTR *export_global_ids, /* Not computed. */
-  LB_ID_PTR *export_local_ids,  /* Not computed. */
-  int **export_procs            /* Not computed. */
 )
 {
   char    yo[] = "LB_sfc";
-  int wgt_dim = lb->Obj_Weight_Dim;              /* dimension of weights of each object */
-  int num_dims;
-  int ierr, i, j;
-  double bounding_box[6];
-  double global_bounding_box[6];
-  int num_local_objects;
-  double delta;
-  SFC_VERTEX_PTR sfc_vert_ptr;
-  int num_gid_entries = lb->Num_GID;
+  int wgt_dim = lb->Obj_Weight_Dim;   /* dimension of weights of each object */
+  int num_dims;                       /* geometric dimension */
+  int ierr, i, j;                     /* local variables */
+  double bounding_box[6], global_bounding_box[6]; /* local and global geometric
+						     bounding boxes for the objects */
+  int num_local_objects;              /* the number of objects this processor owns */
+  SFC_VERTEX_PTR sfc_vert_ptr;        /* array that stores the sfc objects */
+  int num_gid_entries = lb->Num_GID;  
   int num_lid_entries = lb->Num_LID;
-  int max_obj;
   LB_ID_PTR global_ids = NULL;
   LB_ID_PTR local_ids = NULL;
-  float* objs_wgt = NULL;
-  int size_of_unsigned;
-  unsigned imax;
-  float *global_actual_work_allocated = NULL, *total_weight_array = NULL;
-  float *work_percent_array = NULL;
-  int balanced_flag;
-  SFC_VERTEX_PTR vert_in_cut_ptr = NULL;
-  float* wgts_in_cut_ptr = NULL;
-  int num_vert_in_cut;
-  int number_of_cuts = 0; /* amount of cuts in the coarse bin that gets a cut */
-  int bins_per_proc = 10;  /* bring this in as a parameter later on... */
-  int amount_of_bits_used = 0;
-  int hashtable_divider;
-  COMM_OBJ *plan;
-  int comm_tag = 8765; /* randomly chosen communication tag */
-  int num_vert_sent, local_balanced_flag = SFC_BALANCED;
-  int refinement_level_counter = 0, max_refinement_level, subbins_per_bin;
-  int max_cuts_in_bin, bin_refinement_method;
-  
-  printf("in sfc partitioning\n");
+  float* objs_wgt = NULL;             /* array of objects weights */
+  int size_of_unsigned;               /* minimum size of an unsigned integer,
+					 used only for heterogeneous systems */
+  unsigned imax;                      /* largest unsigned integer for an integer
+					 of size size_of_unsigned */
+  float *global_actual_work_allocated = NULL; /* cumulative actual work allocated */
+  float *total_weight_array = NULL;   /* sum of weights (length of wgt_dim) */
+  float *work_percent_array = NULL;   /* the cumulative percent of work each
+					 processor should ideally get */
+  int balanced_flag;                  /* flag to indicate if all partitions
+					 are balanced */
+  SFC_VERTEX_PTR vert_in_cut_ptr = NULL; /* array of sfc objects that are in a 
+					    cut bin and get partitioned with 
+					    the multi-level scheme */
+  float* wgts_in_cut_ptr = NULL;      /* array of weights for sfc objects in 
+					 a cut bin */
+  int num_vert_in_cut;                /* number of sfc objects in the cut bin */
+  int number_of_cuts = 0; /* maximum amount of cuts in a coarse bin on this processor */
+  int amount_of_bits_used = 0;        /* amount of bits used in calculating the
+					 bin an sfc object belongs to */
+  COMM_OBJ *plan;                     /* used to put all sfc objects that were 
+					 moved to a new proc back on the original proc */
+  int comm_tag = 8765;                /* randomly chosen communication tag */
+  int num_vert_sent;                  /* the number of sfc objects that this processor 
+					 sent to other processors */
+  int local_balanced_flag = SFC_BALANCED; /* balanced_flag for this processor */
+  int refinement_level_counter = 0;   /* counter to keep track of how many 
+					 levels of bin refinement have been performed */
+  int max_cuts_in_bin, bin_refinement_method, max_refinement_level,
+    subbins_per_bin, hashtable_divider, bins_per_proc; /* tuning parameters */
+  double* coords; /* array for objects coordinates */
 
-  /* set up a couple of parameters */
-  LB_Bind_Param(SFC_params, "SFC_BINS_PER_PROC", (void*) &bins_per_proc);
-  LB_Bind_Param(SFC_params, "SFC_HASHTABLE_DIVIDER", (void*) &hashtable_divider); 
-  LB_Bind_Param(SFC_params, "SFC_MAX_CUTS_IN_BIN", (void*) &max_cuts_in_bin);
-  LB_Bind_Param(SFC_params, "SFC_SUBBINS_PER_BIN", (void*) &subbins_per_bin); 
-  LB_Bind_Param(SFC_params, "SFC_MAX_REFINEMENT_LEVEL", (void*) &max_refinement_level);
-  LB_Bind_Param(SFC_params, "SFC_BIN_REFINEMENT_METHOD", (void*) &bin_refinement_method); 
+  LB_TRACE_ENTER(lb, yo);
+
+  /* set the of parameters */
+  LB_Bind_Param(SFC_params,"SFC_BINS_PER_PROC",(void*) &bins_per_proc);
+  LB_Bind_Param(SFC_params,"SFC_HASHTABLE_DIVIDER",(void*) &hashtable_divider); 
+  LB_Bind_Param(SFC_params,"SFC_MAX_CUTS_IN_BIN",(void*) &max_cuts_in_bin);
+  LB_Bind_Param(SFC_params,"SFC_SUBBINS_PER_BIN",(void*) &subbins_per_bin); 
+  LB_Bind_Param(SFC_params,"SFC_MAX_REFINEMENT_LEVEL",(void*) &max_refinement_level);
+  LB_Bind_Param(SFC_params,"SFC_BIN_REFINEMENT_METHOD",(void*) &bin_refinement_method); 
   bins_per_proc = BINS_PER_PROC;
   hashtable_divider = HASHTABLE_DIVIDER; 
   max_cuts_in_bin = MAX_CUTS_IN_BIN;
@@ -163,6 +187,33 @@ int LB_sfc(
 
   LB_Assign_Param_Vals(lb->Params, SFC_params, lb->Debug_Level, lb->Proc,
 		       lb->Debug_Proc);
+
+  /* make sure that all parameters have feasible values */
+  if(bins_per_proc <= 0) {
+    LB_PRINT_WARN(lb->Proc, yo, 
+		  "SFC_BINS_PER_PROC parameter must be greater than 0.");
+    bins_per_proc = BINS_PER_PROC;
+  }
+  if(hashtable_divider <= 0) {
+    LB_PRINT_WARN(lb->Proc, yo, 
+		  "SFC_HASH_TABLE_DIVIDER parameter must be greater than 0.");
+    hashtable_divider = HASHTABLE_DIVIDER;
+  }
+  if(max_cuts_in_bin <= 0) {
+    LB_PRINT_WARN(lb->Proc, yo, 
+		  "SFC_MAX_CUTS_IN_BIN parameter must be greater than 0.");
+    max_cuts_in_bin = MAX_CUTS_IN_BIN;
+  }
+  if(subbins_per_bin <= 1) {
+    LB_PRINT_WARN(lb->Proc, yo, 
+		  "SFC_SUBBINS_PER_BIN parameter must be greater than 1.");
+    subbins_per_bin = BINS_PER_PROC;
+  }
+  if(bin_refinement_method != 0 && bin_refinement_method != 1) {
+    LB_PRINT_WARN(lb->Proc, yo, 
+		  "SFC_BIN_REFINEMENT_METHOD parameter must be either 0 or 1.");
+    bin_refinement_method = BIN_REFINEMENT_METHOD;
+  }
 
   /* Initializations in case of early exit. */
   *num_import = -1;  /* We don't compute the import map. */
@@ -179,8 +230,7 @@ int LB_sfc(
   if(num_dims != 2 && num_dims != 3) {
     LB_PRINT_ERROR(lb->Proc, yo, 
                    "Incompatible space dimension for SFC. Space dimension must be 2 or 3.");
-    ierr = LB_FATAL;
-    return(ierr);
+    return(LB_FATAL);
   }
 
   /*for heterogeneous systems where the size of an unsigned integer may be different,
@@ -194,7 +244,6 @@ int LB_sfc(
     imax = pow(2, size_of_unsigned*8) - 1;
   
   /* get application data (number of objects, ids, weights, and coords */
-  
   num_local_objects = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
   
   if (ierr) {
@@ -202,11 +251,10 @@ int LB_sfc(
                    "Error returned from user function Get_Num_Obj.");
     return(ierr);
   }
-  /*max_objects might need to be more than num_local_objects (max_objects taken from rcg/shared.c)*/
-  max_obj = num_local_objects;
-  if (max_obj > 0) {
-    global_ids = LB_MALLOC_GID_ARRAY(lb, (max_obj));
-    local_ids  = LB_MALLOC_LID_ARRAY(lb, (max_obj));
+
+  if (num_local_objects > 0) {
+    global_ids = LB_MALLOC_GID_ARRAY(lb, num_local_objects);
+    local_ids  = LB_MALLOC_LID_ARRAY(lb, num_local_objects);
 
     if (!(global_ids) || (lb->Num_LID && !(local_ids))) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
@@ -218,14 +266,14 @@ int LB_sfc(
    *  Get list of objects' IDs and weights.
    */
   if (num_local_objects > 0) {
-    
     if (wgt_dim) {
       
       /* 
        *  Allocate space for object weights.
        */
       
-      objs_wgt    = (float *) LB_MALLOC(wgt_dim*(num_local_objects)*sizeof(float));
+      objs_wgt    = 
+	(float *) LB_MALLOC(wgt_dim*(num_local_objects)*sizeof(float));
       if (!objs_wgt) {
         LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         return(LB_MEMERR);
@@ -258,114 +306,118 @@ int LB_sfc(
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(LB_MEMERR);
   }
+  coords = (double*) LB_MALLOC(sizeof(double) * num_local_objects * num_dims);
+  if(num_local_objects != 0 && coords == NULL) {
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    return(LB_MEMERR);
+  }
+  /* get the geometric coordinates of the objects */
   for(i=0;i<num_local_objects;i++) {
     lb->Get_Geom(lb->Get_Geom_Data, num_gid_entries, num_lid_entries,
 		 &(global_ids[i*num_gid_entries]), &(local_ids[i*num_lid_entries]),
-		 sfc_vert_ptr[i].coord, &ierr);
+		 (coords+i*num_dims), &ierr);
     
     if (ierr == LB_FATAL || ierr == LB_MEMERR) {
       LB_PRINT_ERROR(lb->Proc, yo, 
                      "Error returned from user defined Get_Geom function.");
       return(ierr);
-    }    
-
-    
+    }  
   }
+
   /* go through and find bounding box for entire domain */  
   for(i=0;i<num_dims+num_dims;i++)
     bounding_box[i] = MAXDOUBLE;
   
   for(i=0;i<num_local_objects;i++) 
     for(j=0;j<num_dims;j++)  {
-      if(sfc_vert_ptr[i].coord[j] < bounding_box[j])
-	bounding_box[j] = sfc_vert_ptr[i].coord[j];
-      if(sfc_vert_ptr[i].coord[j] > -bounding_box[j+num_dims])
-	bounding_box[j+num_dims] = -sfc_vert_ptr[i].coord[j];
+      if(coords[i*num_dims+j] < bounding_box[j])
+	bounding_box[j] = coords[i*num_dims+j];
+      if(coords[i*num_dims+j] > -bounding_box[j+num_dims])
+	bounding_box[j+num_dims] = -coords[i*num_dims+j];
     }
   
-  ierr = MPI_Allreduce(bounding_box, global_bounding_box, 2*num_dims, MPI_DOUBLE, 
-		       MPI_MIN, lb->Communicator);
+  ierr = MPI_Allreduce(bounding_box, global_bounding_box, 2*num_dims,
+		       MPI_DOUBLE, MPI_MIN, lb->Communicator);
   for(i=num_dims;i<num_dims+num_dims;i++)
     global_bounding_box[i] = - global_bounding_box[i];
 
   /* enlarge global_bounding_box slightly */
   for(i=0;i<num_dims;i++) {
-    delta = global_bounding_box[i+num_dims] - global_bounding_box[i];
+    double delta = global_bounding_box[i+num_dims] - global_bounding_box[i];
     if(delta > 0 ) {
-      global_bounding_box[i] = global_bounding_box[i]*(1. - SFC_BOUNDING_BOX_EPSILON);
-      global_bounding_box[i+num_dims] = global_bounding_box[i+num_dims]*(1. + SFC_BOUNDING_BOX_EPSILON);
+      global_bounding_box[i] = 
+	global_bounding_box[i]*(1. - SFC_BOUNDING_BOX_EPSILON);
+      global_bounding_box[i+num_dims] =
+	global_bounding_box[i+num_dims]*(1. + SFC_BOUNDING_BOX_EPSILON);
     }
     else {
       global_bounding_box[i] = global_bounding_box[i] - SFC_BOUNDING_BOX_EPSILON;
-      global_bounding_box[i+num_dims] = global_bounding_box[i+num_dims] + SFC_BOUNDING_BOX_EPSILON;
+      global_bounding_box[i+num_dims] =
+	global_bounding_box[i+num_dims] + SFC_BOUNDING_BOX_EPSILON;
     }
   }
   /* done creating global bounding box */
+
   /* Normalize space coordinates and fill in sfc_vertex info */
   sfc_create_info(lb, global_bounding_box, (global_bounding_box+num_dims), 
-		  num_dims, num_local_objects, wgt_dim, sfc_vert_ptr, SFC_KEYLENGTH);
+		  num_dims, num_local_objects, wgt_dim, sfc_vert_ptr, coords);
 
-  global_actual_work_allocated = (float*) LB_MALLOC(sizeof(float) * wgt_dim * lb->Num_Proc);
+  LB_FREE(&coords);
+
+  global_actual_work_allocated=(float*) LB_MALLOC(sizeof(float)*wgt_dim* lb->Num_Proc);
   if(!global_actual_work_allocated) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      return(LB_MEMERR);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    return(LB_MEMERR);
   }
   work_percent_array = (float*) LB_MALLOC(sizeof(float) * lb->Num_Proc);
   if(!work_percent_array) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      return(LB_MEMERR);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    return(LB_MEMERR);
   }
   total_weight_array = (float*) LB_MALLOC(sizeof(float) * wgt_dim);
   if(!total_weight_array) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      return(LB_MEMERR);
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    return(LB_MEMERR);
   }
   /*create bins, fill global weight vector and perform initial partition of the bins*/
-  ierr = sfc_create_bins(lb, num_local_objects, wgt_dim, sfc_vert_ptr, objs_wgt, &amount_of_bits_used, 
-			 SFC_KEYLENGTH, size_of_unsigned, imax, global_actual_work_allocated, 
-			 work_percent_array, total_weight_array, &balanced_flag, &vert_in_cut_ptr,
-			 &wgts_in_cut_ptr, &num_vert_in_cut, &number_of_cuts, bins_per_proc,
-			 hashtable_divider, &plan, &num_vert_sent, max_cuts_in_bin); 
+  ierr = sfc_create_bins(lb, num_local_objects, wgt_dim, sfc_vert_ptr, objs_wgt,
+			 &amount_of_bits_used, size_of_unsigned, 
+			 imax, global_actual_work_allocated, work_percent_array, 
+			 total_weight_array, &balanced_flag, &vert_in_cut_ptr,
+			 &wgts_in_cut_ptr, &num_vert_in_cut, &number_of_cuts,
+			 bins_per_proc, hashtable_divider, &plan,
+			 &num_vert_sent, max_cuts_in_bin); 
   if(ierr != LB_OK && ierr != LB_WARN) {
       LB_PRINT_ERROR(lb->Proc, yo, "Error in sfc_create_bins function.");
       return(ierr);
   }
 
-  /* for debugging */
-/*  for(i=0;i<lb->Num_Proc;i++)
-    printf("#### on proc %d work_percent_array[%d]=%e @@@@@@@@@@@@@@@@@@@@@@@\n",
-	   lb->Proc, i, work_percent_array[i]);*/
-#ifdef USER_STOP
-  if(lb->Proc ==0) {
-    printf("coarse bins: input balanced %d or unbalanced %d\n",SFC_BALANCED, SFC_NOT_BALANCED);
-    scanf("%d",&balanced_flag);
-    printf("\n");    
-  } 
-  i = MPI_Bcast(&balanced_flag, 1, MPI_INT, 0, lb->Communicator);
-#endif
-  /* done debugging */
-
   if(balanced_flag != SFC_BALANCED) { 
-    int* local_balanced_flag_array;  /* used to indicate which partitions on this 
-					processor are already balanced - useful
-					for when more than one cut in a bin */
+    int* local_balanced_flag_array; /* used to indicate which partitions on this 
+				       processor are already balanced - useful
+				       for when more than one cut in a bin */
     int max_cuts_in_bin;
-    int* ll_bins_head;  /* used to indicate the beginning of the linklist */
-    float* work_prev_allocated = NULL; /* stores the weights of all objects before a cut */
-    local_balanced_flag = SFC_NOT_BALANCED; /* assume that if coarse bin partition is not balanced
-						   that all partitions need to be rebalanced */
+    int* ll_bins_head; /* used to indicate the beginning of the linklist */
+    float* work_prev_allocated = NULL; /* stores the weights of all 
+					  objects before a cut */
+    local_balanced_flag = SFC_NOT_BALANCED; /* assume that if coarse bin 
+					       partition is not balanced
+					       that all partitions need 
+					       to be rebalanced */
     if(num_vert_in_cut == 0 || lb->Proc == 0) 
       local_balanced_flag = SFC_BALANCED;
-    ierr = create_refinement_info(lb, &number_of_cuts, global_actual_work_allocated, wgt_dim,
-				  total_weight_array, work_percent_array, num_vert_in_cut,
-				  vert_in_cut_ptr, wgts_in_cut_ptr, &work_prev_allocated);
+    ierr = sfc_create_refinement_info(lb, &number_of_cuts, 
+				      global_actual_work_allocated, wgt_dim,
+				      total_weight_array, work_percent_array,
+				      num_vert_in_cut, vert_in_cut_ptr, 
+				      wgts_in_cut_ptr, &work_prev_allocated);
     if(ierr != LB_OK && ierr != LB_WARN) {
       LB_PRINT_ERROR(lb->Proc, yo, "Error in create_refinement_info function.");
       return(ierr);
     }    
 
     ll_bins_head = (int*) LB_MALLOC(sizeof(int) * (1+number_of_cuts));
-    if(ll_bins_head == NULL && number_of_cuts > 0) {
+    if(ll_bins_head == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory."); 
       return(LB_MEMERR);
     }
@@ -374,51 +426,48 @@ int LB_sfc(
       local_balanced_flag = SFC_BALANCED;
 
     if(ll_bins_head != NULL)
-      ll_bins_head[number_of_cuts] = 0;  /* the first link list starts off at array location number_of_cuts-1 ! */
+      ll_bins_head[number_of_cuts] = 0;  /* the first link list starts off
+					    at array location number_of_cuts-1 ! */
     for(i=0;i<number_of_cuts;i++)
       ll_bins_head[i] = -1;
    
-
-
     local_balanced_flag_array = (int*) LB_MALLOC(sizeof(int) * (1+number_of_cuts));
+    if(local_balanced_flag_array == NULL) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory."); 
+      return(LB_MEMERR);
+    }
     for(i=0;i<number_of_cuts;i++)
       local_balanced_flag_array[i] = SFC_BALANCED;
     local_balanced_flag_array[number_of_cuts] = local_balanced_flag;
+
     /* refine bins until a satisfactory partition tolerance is attained */
-    while(balanced_flag != SFC_BALANCED && refinement_level_counter < max_refinement_level) { 
-      /* if this partition is balanced, we do not need to refine the partition */
-      if(local_balanced_flag == SFC_NOT_BALANCED || bin_refinement_method == 0) {
-	ierr = sfc_refine_partition_level(lb, &local_balanced_flag, &amount_of_bits_used,
-					  num_vert_in_cut, vert_in_cut_ptr,
-					  SFC_KEYLENGTH, size_of_unsigned, imax, wgt_dim,
-					  wgts_in_cut_ptr, work_percent_array,
-					  total_weight_array, global_actual_work_allocated, 
-					  number_of_cuts, &max_cuts_in_bin, ll_bins_head,
-					  work_prev_allocated, subbins_per_bin, 
-					  local_balanced_flag_array, bin_refinement_method);
+    while(balanced_flag != SFC_BALANCED &&
+	  refinement_level_counter < max_refinement_level) { 
+      /* if this partition is balanced, we do not need to refine the
+	 partition unless we decide to refine all partitions */
+      if((local_balanced_flag == SFC_NOT_BALANCED ||
+	  bin_refinement_method == 1) &&
+	 vert_in_cut_ptr != NULL) {
+	ierr = sfc_refine_partition(lb, &local_balanced_flag, 
+				    &amount_of_bits_used, num_vert_in_cut,
+				    vert_in_cut_ptr, size_of_unsigned, 
+				    imax, wgt_dim, wgts_in_cut_ptr, 
+				    work_percent_array, total_weight_array,
+				    global_actual_work_allocated, 
+				    number_of_cuts, &max_cuts_in_bin,
+				    ll_bins_head, work_prev_allocated, 
+				    subbins_per_bin, local_balanced_flag_array,
+				    bin_refinement_method);
 	if(ierr != LB_OK && ierr != LB_WARN) {
 	  LB_PRINT_ERROR(lb->Proc, yo, "Error in sfc_refine_partition_level function.");
 	  return(ierr);
 	}
       }
       /* check if any partition does not meet the imbalance tolerance */
-      printf("################ local_balanced_flag for proc %d is %d, we want to get %d   ####\n",
-	     lb->Proc, local_balanced_flag, SFC_BALANCED);
       j = local_balanced_flag;
-      i = MPI_Allreduce(&j, &balanced_flag, 1, MPI_INT, MPI_MAX, lb->Communicator);
-
-
-      /* for debugging */
-#ifdef USER_STOP
-      if(lb->Proc ==0) {
-	printf("input balanced %d or unbalanced %d\n",SFC_BALANCED, SFC_NOT_BALANCED);
-	scanf("%d",&balanced_flag);
-	printf("\n");    
-      } 
-      i = MPI_Bcast(&balanced_flag, 1, MPI_INT, 0, lb->Communicator);
-#endif
-      /* done debugging */
-
+      i = MPI_Allreduce(&j, &balanced_flag, 1, MPI_INT,
+			MPI_MAX, lb->Communicator);
+      
       refinement_level_counter++;
 
     }
@@ -427,12 +476,13 @@ int LB_sfc(
     LB_FREE(&ll_bins_head);
   }
   
-  /* if the objects were moved to different processors, we need to move them back now */
+  /* if the objects were moved to different processors,
+     we need to move them back now */
   if(plan != NULL) {
     SFC_VERTEX_PTR recv_buf = NULL;
     int counter = 0;
     if (num_vert_sent > 0) {
-      recv_buf = (SFC_VERTEX_PTR) LB_MALLOC(sizeof(SFC_VERTEX) * num_vert_sent);
+      recv_buf = (SFC_VERTEX_PTR) LB_MALLOC(sizeof(SFC_VERTEX)*num_vert_sent);
       if(recv_buf==NULL) {
         LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         return(LB_MEMERR);
@@ -440,7 +490,19 @@ int LB_sfc(
     }
     ierr = LB_Comm_Do_Reverse(plan, comm_tag, (char*) vert_in_cut_ptr,
 			      sizeof(SFC_VERTEX), NULL, (char*) recv_buf);
-    /* put objects back in sfc_vert_ptr array the way they were copied from this array */
+    if(ierr == COMM_WARN) {
+      LB_PRINT_WARN(lb->Proc, yo, "Warning from LB_Comm_Do_Reverse.");
+    }
+    else if(ierr == COMM_FATAL) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Fatal error in LB_Comm_Do_Reverse.");
+      return(LB_FATAL);
+    }      
+    else if(ierr == COMM_MEMERR) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Do_Reverse.");
+      return(LB_MEMERR);
+    }
+    /* put objects back in sfc_vert_ptr array the way they 
+       were copied from this array */
     for(i=0;i<num_local_objects;i++)
       if(sfc_vert_ptr[i].cut_bin_flag == SFC_CUT)  {
 	sfc_vert_ptr[i] = recv_buf[counter];
@@ -449,6 +511,17 @@ int LB_sfc(
 
     LB_FREE(&recv_buf);
     ierr = LB_Comm_Destroy(&plan);
+    if(ierr == COMM_WARN) {
+      LB_PRINT_WARN(lb->Proc, yo, "Warning from LB_Comm_Destroy.");
+    }
+    else if(ierr == COMM_FATAL) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Fatal error in LB_Comm_Destroy.");
+      return(LB_FATAL);
+    }      
+    else if(ierr == COMM_MEMERR) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Destroy.");
+      return(LB_MEMERR);
+    }
   }
 
   LB_FREE(&vert_in_cut_ptr);
@@ -457,30 +530,36 @@ int LB_sfc(
   LB_FREE(&work_percent_array);  
   LB_FREE(&total_weight_array);
 
-
   /* add up stuff to export */
   *num_export = 0;
   for(i=0;i<num_local_objects;i++) 
     if(sfc_vert_ptr[i].destination_proc != lb->Proc)
       (*num_export)++;
-  ierr = LB_Special_Malloc(lb, (void**) export_global_ids, *num_export, LB_SPECIAL_MALLOC_GID);
-  ierr = LB_Special_Malloc(lb, (void**) export_local_ids, *num_export, LB_SPECIAL_MALLOC_LID);
-  ierr = LB_Special_Malloc(lb, (void**) export_procs, *num_export, LB_SPECIAL_MALLOC_INT);
 
+  ierr = LB_Special_Malloc(lb, (void**) export_global_ids,
+			   *num_export, LB_SPECIAL_MALLOC_GID);
+  if(ierr != LB_OK && ierr != LB_WARN) {
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    return(LB_MEMERR);
+  }
+  ierr = LB_Special_Malloc(lb, (void**) export_local_ids,
+			   *num_export, LB_SPECIAL_MALLOC_LID);
+  if(ierr != LB_OK && ierr != LB_WARN) {
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    return(LB_MEMERR);
+  }
+  ierr = LB_Special_Malloc(lb, (void**) export_procs,
+			   *num_export, LB_SPECIAL_MALLOC_INT);
+  if(ierr != LB_OK && ierr != LB_WARN) {
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    return(LB_MEMERR);
+  }
+  
+  /* fill in the export data */
   j = 0;
   for(i=0;i<num_local_objects;i++) 
     if(sfc_vert_ptr[i].destination_proc != lb->Proc) {
-      /* check to see that a destination proc is between 0 and Num_Proc */
-      if(sfc_vert_ptr[i].destination_proc > -1 && sfc_vert_ptr[i].destination_proc < lb->Num_Proc)
-	*((*export_procs)+j) = sfc_vert_ptr[i].destination_proc;
-      else {
-	printf("i'm sending to proc %d for i=%d on proc %d --------- oops\n",  
-	       sfc_vert_ptr[i].destination_proc,i, lb->Proc);
-	if(lb->Proc != 0)
-	  *((*export_procs)+j) = 0;
-	else 
-	  *((*export_procs)+j) = 1;
-      }
+      *((*export_procs)+j) = sfc_vert_ptr[i].destination_proc;
       LB_SET_GID(lb, (*export_global_ids+j), (global_ids+i));
       LB_SET_LID(lb, (*export_local_ids+j), (local_ids+i));
       j++;
@@ -492,30 +571,28 @@ int LB_sfc(
   LB_FREE(&local_ids);
   LB_FREE(&sfc_vert_ptr);
 
-  MPI_Barrier(lb->Communicator);
-  printf("proc %d is leaving sfc balancing routines after exporting %d objects, the amount of iterations is %d and local_balanced_flag=%d and we want %d\n",
-	 lb->Proc, *num_export, refinement_level_counter, local_balanced_flag, SFC_BALANCED);
-
+  LB_TRACE_EXIT(lb, yo);
   return LB_OK;
 }
 
+/* create info before starting the multi-level refinement of the bins 
+   NOTE:  this routine only works for objects with one weight!
+*/
 
-
-
-/* create info before starting the multi-level refinement of the bins */
-
-int create_refinement_info(LB* lb, int* number_of_cuts, float* global_actual_work_allocated,
-			   int wgt_dim, float* total_weight_array, float* work_percent_array,
-			   int num_vert_in_cut, SFC_VERTEX_PTR vert_in_cut_ptr,
-			   float* wgts_in_cut_ptr, float** work_prev_allocated_ptr)
+int sfc_create_refinement_info(LB* lb, int* number_of_cuts, 
+			       float* global_actual_work_allocated,
+			       int wgt_dim, float* total_weight_array, 
+			       float* work_percent_array,
+			       int num_vert_in_cut, 
+			       SFC_VERTEX_PTR vert_in_cut_ptr,
+			       float* wgts_in_cut_ptr, 
+			       float** work_prev_allocated_ptr)
 {
   char    yo[] = "create_refinement_info";
   float my_work, *work_array;
   int i = 0, j;
 
-  /* find out how many cuts are in this bin.  NOTE:  this only works for objects
-     with one weight!
-  */
+  /* find out how many cuts are in this bin. */
   my_work = global_actual_work_allocated[(lb->Proc)*wgt_dim];
   while(my_work > total_weight_array[0] * work_percent_array[lb->Proc-i])
     i++;
@@ -524,37 +601,40 @@ int create_refinement_info(LB* lb, int* number_of_cuts, float* global_actual_wor
     *number_of_cuts = 0;
     return LB_OK;
   }
-  printf("originally I count %d cuts on proc %d\n",*number_of_cuts,lb->Proc);
 
-  /* create link list for objects in the array.  link list is set up so that
-     the objects in the array are traversed consecutively */
+  /* create link list for objects in the array.  link list
+     is set up so that the objects in the array are
+     traversed consecutively */
   for(i=0;i<(num_vert_in_cut-1);i++)
     vert_in_cut_ptr[i].next_sfc_vert_index = i+1;
   vert_in_cut_ptr[num_vert_in_cut-1].next_sfc_vert_index = -1;
 
-  /* update work previously allocated to include work in all bins with higher keys than this bin */
+  /* update work previously allocated to include work in all
+     bins with higher keys than this bin */
   work_array = (float*) LB_MALLOC(sizeof(float) * wgt_dim);
   if(work_array == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(LB_MEMERR);
   }
-
+  
   for(i=0;i<wgt_dim;i++)
     work_array[i] = 0;
   for(i=0;i<num_vert_in_cut;i++) 
     for(j=0;j<wgt_dim;j++)
       work_array[j] += wgts_in_cut_ptr[i*wgt_dim+j];
-
-  *work_prev_allocated_ptr = (float*) LB_MALLOC(sizeof(float) * wgt_dim * (*number_of_cuts+1));
+  
+  *work_prev_allocated_ptr = 
+    (float*) LB_MALLOC(sizeof(float) * wgt_dim * (*number_of_cuts+1));
   if(*work_prev_allocated_ptr == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(LB_MEMERR);
   }
       
-  /* update work previously allocated to include work in all bins with higher keys than this bin */
+  /* update work previously allocated to include work in all bins
+     with higher keys than this bin */
   for(i=0;i<wgt_dim;i++)
-    *((*work_prev_allocated_ptr)+wgt_dim*(*number_of_cuts)+i) = global_actual_work_allocated[(lb->Proc)*wgt_dim+i] -
-      work_array[i];
+    *((*work_prev_allocated_ptr)+wgt_dim*(*number_of_cuts)+i) =
+      global_actual_work_allocated[(lb->Proc)*wgt_dim+i] - work_array[i];
 
   LB_FREE(&work_array);
   return LB_OK;

@@ -24,15 +24,18 @@
 #include "sfc.h"
 
 
-int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_used_bits,
-			       int num_vert_in_cut, SFC_VERTEX_PTR vert_in_cut_ptr,
-			       int sfc_keylength, int size_of_unsigned, unsigned imax, int wgt_dim,
-			       float* wgts_in_cut_ptr, float* work_percent_array,
-			       float* total_weight_array, float* global_actual_work_allocated,
-			       int number_of_cuts, int* max_cuts_in_bin, int* ll_bins_head,
-			       float* work_prev_allocated, int subbins_per_bin,
-			       int* local_balanced_flag_array, int bin_refinement_method) 
+int sfc_refine_partition(LB* lb, int* local_balanced_flag, 
+			 int *amount_of_used_bits, int num_vert_in_cut,
+			 SFC_VERTEX_PTR vert_in_cut_ptr, int size_of_unsigned,
+			 unsigned imax, int wgt_dim, float* wgts_in_cut_ptr,
+			 float* work_percent_array, float* total_weight_array,
+			 float* global_actual_work_allocated, 
+			 int number_of_cuts, int* max_cuts_in_bin,
+			 int* ll_bins_head, float* work_prev_allocated,
+			 int subbins_per_bin, int* local_balanced_flag_array,
+			 int bin_refinement_method) 
 {
+  char yo[] = "sfc_refine_partition";
   int i=0, j=0, k;
   int amount_of_bits;
   float* binned_weight_array, *work_prev_allocated_copy;
@@ -43,7 +46,7 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
   /* amount of sub-bins in a bin, probably want this as a passed in parameter */
   int number_of_bins = subbins_per_bin;
 
- /* printf("refining some bins on proc %d!!!\n",lb->Proc);*/
+  LB_TRACE_ENTER(lb, yo);
   
   /*  assume initially that all the partitions on this processor are balanced.
       we will check later on whether any are not balanced */
@@ -64,29 +67,51 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
   number_of_bins = pow(2,i);
     
   ll_prev_bins = (int*) LB_MALLOC(sizeof(int) * (number_of_cuts+1));
+  if(ll_prev_bins == NULL) {
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    return(LB_MEMERR);
+  }    
   
   ll_bins_head_copy = (int*) LB_MALLOC(sizeof(int) * (number_of_cuts+1));
+  if(ll_bins_head_copy == NULL) {
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    return(LB_MEMERR);
+  } 
+
   for(i=0;i<=number_of_cuts;i++)
     ll_bins_head_copy[i] = -1;
   
-  work_prev_allocated_copy = (float*) LB_MALLOC(sizeof(float) *wgt_dim * (number_of_cuts+1));
+  work_prev_allocated_copy = 
+    (float*) LB_MALLOC(sizeof(float) *wgt_dim * (number_of_cuts+1));
+  if(work_prev_allocated_copy == NULL) {
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    return(LB_MEMERR);
+  } 
   
-  /* loop over all bins that have a cut in them using linklist to find objects in the cut bins */
+  /* loop over all bins that have a cut in them using linklist 
+     to find objects in the cut bins */
   for(ll_counter=0;ll_counter<=number_of_cuts;ll_counter++) 
-    if(ll_bins_head[ll_counter] != -1) {
+    if((bin_refinement_method==1 ||
+	local_balanced_flag_array[ll_counter]==SFC_NOT_BALANCED)
+       && ll_bins_head[ll_counter] != -1) {
+
       int temp_max_cuts_in_bin = 0;
       
       /* calculate new bin numbers for objects that are in a cut bin */
       ll_location = ll_bins_head[ll_counter];
       while(ll_location != -1) {
 	vert_in_cut_ptr[ll_location].my_bin = 
-	  get_array_location(number_of_bins, amount_of_bits,
-			     *amount_of_used_bits, (vert_in_cut_ptr+ll_location), 
-			     sfc_keylength, size_of_unsigned, imax);
+	  sfc_get_array_location(number_of_bins, amount_of_bits,
+				 *amount_of_used_bits, (vert_in_cut_ptr+ll_location), 
+				 size_of_unsigned, imax);
 	ll_location = vert_in_cut_ptr[ll_location].next_sfc_vert_index;
       }  
       
       binned_weight_array = (float*) LB_MALLOC(number_of_bins*wgt_dim*sizeof(float));
+      if(binned_weight_array == NULL) {
+	LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+	return(LB_MEMERR);
+      } 
       for(i=0;i<number_of_bins*wgt_dim;i++)
 	binned_weight_array[i] = 0;
       
@@ -94,30 +119,29 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
       ll_location = ll_bins_head[ll_counter];
       while(ll_location != -1) {  
 	for(j=0;j<wgt_dim;j++)
-	  binned_weight_array[vert_in_cut_ptr[ll_location].my_bin+j] += 
+	  binned_weight_array[wgt_dim*vert_in_cut_ptr[ll_location].my_bin+j] += 
 	    wgts_in_cut_ptr[ll_location*wgt_dim+j];
 	ll_location = vert_in_cut_ptr[ll_location].next_sfc_vert_index;
       }
-
-  /*    for(i=0;i<number_of_bins;i++)
-	printf("weight[%d] = %e ************* proc = %d\n",i, 
-	       binned_weight_array[i], lb->Proc); */
-   /*   printf("@@@@@@@@@@ work prev allocated is %e on proc %d for ll_counter %d\n",
-	     work_prev_allocated[ll_counter], lb->Proc, ll_counter);  */
       
       bin_proc_array = (int*) LB_MALLOC(sizeof(int) * (1+number_of_cuts));
+      if(bin_proc_array == NULL) {
+	LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+	return(LB_MEMERR);
+      } 
       bin_proc_array[0] = -1;
       for(i=1;i<=number_of_cuts;i++)
 	bin_proc_array[i] = number_of_bins;
       
       /* find new cut(s) in the sub-bins */
       if(wgt_dim==1) {
-	single_wgt_calc_partition(wgt_dim, work_prev_allocated[ll_counter], total_weight_array, 
-				  bin_proc_array, lb, binned_weight_array, 
-				  (work_percent_array+lb->Proc+ll_counter-2*number_of_cuts),
-				  (global_actual_work_allocated+(lb->Proc-number_of_cuts*wgt_dim)),
-				  number_of_bins, 
-				  &temp_max_cuts_in_bin, number_of_cuts, 0, NULL);
+	sfc_single_wgt_calc_partition(wgt_dim, work_prev_allocated[ll_counter],
+				      total_weight_array, bin_proc_array, lb,
+				      binned_weight_array, 
+				      (work_percent_array+lb->Proc+ll_counter-2*number_of_cuts),
+				      (global_actual_work_allocated+(lb->Proc-number_of_cuts*wgt_dim)),
+				      number_of_bins, &temp_max_cuts_in_bin,
+				      number_of_cuts, 0, NULL);
 
 	if(temp_max_cuts_in_bin > *max_cuts_in_bin)
 	  *max_cuts_in_bin = temp_max_cuts_in_bin;
@@ -125,7 +149,16 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
       else {
 	/* multi_wgt_dim_calc_partition(); */  
 	/*fill in with erik's multi-weight stuff when it is ready, use first weight for now */      
-	
+	sfc_single_wgt_calc_partition(wgt_dim, work_prev_allocated[ll_counter*wgt_dim],
+				      total_weight_array, bin_proc_array, lb, 
+				      binned_weight_array, 
+				      (work_percent_array+lb->Proc+ll_counter-2*number_of_cuts),
+				      (global_actual_work_allocated+(lb->Proc-number_of_cuts*wgt_dim)),
+				      number_of_bins, &temp_max_cuts_in_bin, 
+				      number_of_cuts, 0, NULL);
+
+	if(temp_max_cuts_in_bin > *max_cuts_in_bin)
+	  *max_cuts_in_bin = temp_max_cuts_in_bin;	
       }
       
       
@@ -139,8 +172,9 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
 
       ll_location = ll_bins_head[ll_counter];
       while(ll_location != -1) {
-	int non_cut_bin_counter = 0;  /* keeps track of how many bins between number_of_cuts and j
-					 do not have a cut in them */
+	int non_cut_bin_counter = 0;  /* keeps track of how many bins between
+					 number_of_cuts and j do not have 
+					 a cut in them */
 	/* bad search method but easy, should probably replace */
 	j=number_of_cuts;
 	while((int) vert_in_cut_ptr[ll_location].my_bin < bin_proc_array[j]) {
@@ -149,12 +183,7 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
 	    non_cut_bin_counter++;
 	}
 	vert_in_cut_ptr[ll_location].destination_proc += 
-	  j-number_of_cuts; /*+non_cut_bin_counter-temp_max_cuts_in_bin+1;*/
-	/*if(vert_in_cut_ptr[ll_location].destination_proc != 2 && lb->Proc == 2)
-	  printf("right here\n");*/
-
-	if(vert_in_cut_ptr[ll_location].destination_proc < 0)
-	  printf("bad proc right here!!!!!!! i'm proc %d >>>>>>>\n",lb->Proc);
+	  j-number_of_cuts; 
 
 	/* if this object is in a bin with a cut... */
 	if((int) vert_in_cut_ptr[ll_location].my_bin == bin_proc_array[j]) {
@@ -164,11 +193,14 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
 	    ll_bins_head_copy[number_of_cuts-(lb->Proc)+vert_in_cut_ptr[ll_location].destination_proc] = ll_location;
 	    /* calculate work_prev_allocated for this new partition */
 	    for(i=0;i<wgt_dim;i++)
-	      work_prev_allocated_copy[number_of_cuts-(lb->Proc)+vert_in_cut_ptr[ll_location].destination_proc*wgt_dim+i] = 
+	      work_prev_allocated_copy /* array continued on next line */
+		[(number_of_cuts-(lb->Proc)+vert_in_cut_ptr[ll_location].destination_proc)*wgt_dim+i] = 
 		work_prev_allocated[i+wgt_dim*ll_counter];
 	    for(i=bin_proc_array[j]+1;i<number_of_bins;i++)
-	      for(k=0;k<wgt_dim;k++)
-		work_prev_allocated_copy[number_of_cuts-(lb->Proc)+vert_in_cut_ptr[ll_location].destination_proc*wgt_dim+k] += binned_weight_array[i*wgt_dim+k];
+	      for(k=0;k<wgt_dim;k++) 
+		work_prev_allocated_copy /* array continued on next line */
+		  [(number_of_cuts-(lb->Proc)+vert_in_cut_ptr[ll_location].destination_proc)*wgt_dim+k] 
+		  += binned_weight_array[i*wgt_dim+k];
 	  }
 	  
 	  ll_prev_bins[j] = ll_location;
@@ -183,8 +215,6 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
       LB_FREE(&binned_weight_array);
       LB_FREE(&bin_proc_array);
     }
-  
-
   
   for(i=0;i<=number_of_cuts;i++) {
     ll_bins_head[i] = ll_bins_head_copy[i];
@@ -203,14 +233,19 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
   for(i=0;i<=number_of_cuts;i++) {
     if(ll_bins_head[i] != -1 || local_balanced_flag_array[i] != SFC_BALANCED)
       {
-	local_balanced_flag_array[i] =
-	  single_wgt_find_imbalance(work_percent_array, 
-				    global_actual_work_allocated[(lb->Proc+i-number_of_cuts)*wgt_dim],
-				    total_weight_array[0], lb->Proc+i-number_of_cuts, lb);
-	printf("balanced flag=%d , gl work allocated=%e total weight %e number of cuts is %d i=%d###$$$!!!!!!!\n",
-	       *local_balanced_flag, 
-	       global_actual_work_allocated[(lb->Proc+i-number_of_cuts)*wgt_dim],
-	       total_weight_array[0], number_of_cuts, i);
+	if(wgt_dim == 1) {
+	  local_balanced_flag_array[i] =
+	    sfc_single_wgt_find_imbalance(work_percent_array, 
+					  global_actual_work_allocated[(lb->Proc+i-number_of_cuts)*wgt_dim],
+					  total_weight_array[0], lb->Proc+i-number_of_cuts, lb);
+	}
+	else {
+	  /* put in multi-dimensional algorithm to calculate imbalance of the partitions */
+	  local_balanced_flag_array[i] =
+	    sfc_single_wgt_find_imbalance(work_percent_array, 
+					  global_actual_work_allocated[(lb->Proc+i-number_of_cuts)*wgt_dim],
+					  total_weight_array[0], lb->Proc+i-number_of_cuts, lb);
+	}
       }
   }
   
@@ -221,20 +256,18 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
     *local_balanced_flag = local_balanced_flag_array[i];
     i++;
   }
-
   
   /* check the partitions to see if any more improvement can be made on them */
   if(*local_balanced_flag == SFC_NOT_BALANCED) {
     for(i=0;i<=number_of_cuts;i++)
       if(ll_bins_head[i] != -1) {
-	/* check if there is only 1 object in this bin (no further bin refinement will improve load-balance */
+	/* check if there is only 1 object in this bin. if there is, 
+	   no further bin refinement will improve load-balance */
 	if(vert_in_cut_ptr[ll_bins_head[i]].next_sfc_vert_index == -1) {
 	  ll_bins_head[i] = -1;
 	  local_balanced_flag_array[i] = SFC_BALANCED;
-	  /* might want to put in a warning about the situation:  load-balance tolerance not
-	     able to be met with this algorithm !!! */
-	  printf("********WARNING******** bin refinement cannot improve load balance.  i=%d proc=%d!!!!\n",
-		 i, lb->Proc);
+	  LB_PRINT_WARN(lb->Proc, yo, 
+			"Bin refinement cannot improve load balance on this processor.");
 	}
 	/* check if the objects in the bin have all the same sfc_key */
 	else {
@@ -263,16 +296,14 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
 	    ll_counter = ll_bins_head[i];
 	    j=1;
 	    while(ll_counter != -1) {
-	      unsigned new_key = imax*((float) j/(float) amount_of_objects_in_bin);
+	      unsigned new_key = imax*((float) j/(float) 10*amount_of_objects_in_bin);
 	      for(k=0;k<SFC_KEYLENGTH;k++)
 		vert_in_cut_ptr[ll_counter].sfc_key[k] = new_key;
 	      j++;
 	      ll_counter = vert_in_cut_ptr[ll_counter].next_sfc_vert_index; 
 	    }
-	    /* might want to put in a warning about the situation:  not able to 
-	       distinguish between objects around a desired cut location!!! */
-	    printf("********WARNING******** all objects in a cut bin have the same sfc_key for i=%d proc=%d!!!!\n",
-		   i, lb->Proc);
+	    LB_PRINT_WARN(lb->Proc, yo, 
+			  "All objects in a bin that needs to be refined have the same sfc key.");
 	  }
 	}
       }
@@ -285,6 +316,7 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
     }
   }
   
+  LB_TRACE_EXIT(lb, yo);
   return LB_OK;
 }
 
