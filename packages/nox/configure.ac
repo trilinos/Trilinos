@@ -90,6 +90,14 @@ if test -n "${CPPFLAGS}"; then
   USERDEF_CPPFLAGS=yes
 fi
 
+if test -n "${F77}"; then
+  USERDEF_F77=yes
+fi
+
+if test -n "${FFLAGS}"; then
+  USERDEF_FFLAGS=yes
+fi
+
 # ------------------------------------------------------------------------
 # Checks for extra flags, etc
 # ------------------------------------------------------------------------
@@ -250,8 +258,8 @@ case $target in
 
     if test "${CXX}" = "CC"; then
      CXXFLAGS_MISC="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
-     F77=f77
-     FFLAGS="-64"
+     F77_MISC=f77
+     FFLAGS_MISC="-64"
      SPECIAL_AR="CC -ar -W,l -W,s -o"    
     fi
 
@@ -282,6 +290,28 @@ else
   fi			  
 
   AC_MSG_RESULT([${CXXFLAGS}])
+
+fi
+
+if test "X${USERDEF_F77}" != "Xyes"; then
+  if test -n "${F77_MISC}"; then
+    F77="${F77_MISC}"
+  fi			  
+fi
+
+AC_MSG_CHECKING([for F77 flags])
+
+if test "X${USERDEF_FFLAGS}" = "Xyes"; then
+
+  AC_MSG_RESULT([${FFLAGS} (user-specified via FFLAGS)])
+
+else
+
+  if test -n "${FFLAGS_MISC}"; then
+    FFLAGS="${FFLAGS} ${FFLAGS_MISC}"
+  fi			  
+
+  AC_MSG_RESULT([${FFLAGS}])
 
 fi
 
@@ -914,7 +944,7 @@ dnl fi
 # -- DEC CXX --
 case $target in
   alpha*)
-    if test CXX = cxx; then
+    if test $CXX = cxx; then
       CXXREPOS="cxx_repository/*.o"
     fi
   ;;
