@@ -11,6 +11,7 @@
 /* ******************************************************************** */
 
 #include "ml_comm.h"
+#include "ml_utils.h"
 
 ML_Comm *global_comm = NULL; /* should not be used to avoid side effect */
 
