@@ -30,15 +30,16 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_LINESEARCH_HALVING_H
-#define NOX_LINESEARCH_HALVING_H
+#ifndef NOX_LINESEARCH_BACKTRACK_H
+#define NOX_LINESEARCH_BACKTRACK_H
 
 #include "NOX_Linesearch_Generic.H" // base class
+#include "NOX_Abstract_Vector.H" // for NOX::Abstract::Vector::NormType
 
 namespace NOX {
 namespace Linesearch {
 
-//! Halve the step until we find reduction in the norm of the right hand side.
+//! Generic backtracking line search.
 /*!  This line search starts with the step length defined by "Default
   Step". It checks to see if the norm of the right hand side (RHS) has
   been reduced. It so, it exits successfully. Otherwise, it reduces
@@ -52,25 +53,29 @@ namespace Linesearch {
  
   The following parameters can be specified for this line search:
  
-  - "Default Step" - starting step length (defaults to 1.0)
-
-  - "Minimum Step" - minimum acceptable step length (defaults to 1.0e-12)
-
-  - "Recovery Step" - step to take when the line search fails
-    (defaults to value for "Default Step")
-
-  - "Max Iters" - maximum number of iterations (i.e., RHS computations)
+<ul>
+<li> "Default Step" - starting step length (defaults to 1.0)
+<li> "Minimum Step" - minimum acceptable step length (defaults to 1.0e-12)
+<li> "Recovery Step" - step to take when the line search fails
+     (defaults to value for "Default Step")
+<li> "Max Iters" - maximum number of iterations (i.e., RHS computations)
+<li> "Decrease Condition" - choices are the following:
+     <ul>
+     <li> "Max Norm" - simple decrease using the infinity norm of the RHS (default)
+     <li> "Two Norm" - simple decrease using the Euclidean norm of the RHS
+     </ul>
+</ul>
  */  
 
-class Halving : public Generic {
+class Backtrack : public Generic {
 
 public:
 
   //! Constructor
-  Halving(Parameter::List& params);
+  Backtrack(Parameter::List& params);
 
   //! Destructor
-  ~Halving();
+  ~Backtrack();
   
   // derived
   bool reset(Parameter::List& params);
@@ -80,6 +85,13 @@ public:
 		  const Abstract::Group& oldgrp, 
 		  const Abstract::Vector& dir) ;
   
+private:
+
+  /*! \brief Compute the correct norm (according to the input
+      parameters) of the given grp. 
+  */
+  double getNormRHS(const Abstract::Group& grp) const;
+
 private:
 
    //! Minimum step length (i.e., when we give up)
@@ -93,6 +105,9 @@ private:
 
   //! Maximum number of iterations
   int maxiters;
+  
+  //! Norm used in simple decrease condition
+  NOX::Abstract::Vector::NormType normtype;
 
 };
 } // namespace Linesearch

@@ -43,14 +43,14 @@ ABSTRACT_H = \
 LINESEARCH_H = \
 	$(srcdir)/NOX_Linesearch_Generic.H \
 	$(srcdir)/NOX_Linesearch_FullStep.H \
-	$(srcdir)/NOX_Linesearch_Halving.H \
+	$(srcdir)/NOX_Linesearch_Backtrack.H \
 	$(srcdir)/NOX_Linesearch_Manager.H \
 	$(srcdir)/NOX_Linesearch_MoreThuente.H \
 	$(srcdir)/NOX_Linesearch_Polynomial.H 
 
 LINESEARCH = \
 	$(srcdir)/NOX_Linesearch_FullStep.C \
-	$(srcdir)/NOX_Linesearch_Halving.C \
+	$(srcdir)/NOX_Linesearch_Backtrack.C \
 	$(srcdir)/NOX_Linesearch_Manager.C \
 	$(srcdir)/NOX_Linesearch_MoreThuente.C \
 	$(srcdir)/NOX_Linesearch_Polynomial.C 

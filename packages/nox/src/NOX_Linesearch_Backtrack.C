@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Linesearch_Halving.H" // class definition
+#include "NOX_Linesearch_Backtrack.H" // class definition
 
 #include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
@@ -41,40 +41,59 @@
 using namespace NOX;
 using namespace NOX::Linesearch;
 
-Halving::Halving(Parameter::List& params) 
+Backtrack::Backtrack(Parameter::List& params) 
 {
   reset(params);
 }
 
-Halving::~Halving()
+Backtrack::~Backtrack()
 {
 
 }
 
-bool Halving::reset(Parameter::List& params)
+bool Backtrack::reset(Parameter::List& params)
 { 
   minstep = params.getParameter("Minimum Step", 1.0e-12);
   defaultstep = params.getParameter("Default Step", 1.0);
   recoverystep = params.getParameter("Recovery Step", defaultstep);
   maxiters = params.getParameter("Max Iters", 100);
+
+  const string tmp = params.getParameter("Decrease Condition", "Max Norm");
+  
+  if (tmp == "Max Norm")
+    normtype = NOX::Abstract::Vector::INF;
+  else if (tmp == "Two Norm")
+    normtype = NOX::Abstract::Vector::TWO;
+  else {
+    cout << "NOX::Backtrack::reset - Invalid choice \"" << tmp 
+	 << "\" for \"Decrease Condition\"" << endl;
+    throw "NOX Error";
+  }
+
   return true;
 }
 
-bool Halving::operator()(Abstract::Group& newgrp, double& step, 
+double Backtrack::getNormRHS(const Abstract::Group& grp) const
+{
+  return (normtype == NOX::Abstract::Vector::INF) ? 
+    grp.getRHS().norm(normtype) : grp.getNormRHS();
+}
+
+bool Backtrack::operator()(Abstract::Group& newgrp, double& step, 
 			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
 {
-  double oldf = oldgrp.getNormRHS();
+  double oldf = getNormRHS(oldgrp);
   double newf;
   bool isfailed = false;
 
   step = defaultstep;
   newgrp.computeX(oldgrp, dir, step);
   newgrp.computeRHS();    
-  newf = newgrp.getNormRHS();
+  newf = getNormRHS(newgrp);
   int niters = 1;
 
   if (Utils::doPrint(Utils::InnerIteration)) {
-   cout << "\n" << Utils::fill(72) << "\n" << "-- Interval Halving Line Search -- \n";
+   cout << "\n" << Utils::fill(72) << "\n" << "-- Backtrack Line Search -- \n";
   }
   while ((newf >= oldf) && (!isfailed)) {
 
@@ -96,7 +115,7 @@ bool Halving::operator()(Abstract::Group& newgrp, double& step,
 
     newgrp.computeX(oldgrp, dir, step);
     newgrp.computeRHS();    
-    newf = newgrp.getNormRHS();
+    newf = getNormRHS(newgrp);
   } 
 
   if (Utils::doPrint(Utils::InnerIteration)) {

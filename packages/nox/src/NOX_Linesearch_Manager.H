@@ -49,7 +49,7 @@ namespace Linesearch {
    <li> "Method" - Name of the line search. Valid choices are
    <ul> 
    <li> "Full Step" (NOX::Linesearch::FullStep)
-   <li> "Interval %Halving" (NOX::Linesearch::Halving)
+   <li> "Backtrack" (NOX::Linesearch::Backtrack)
    <li> "%Polynomial" (NOX::Linesearch::Polynomial)
    <li> "More'-Thuente" (NOX::Linesearch::MoreThuente)
    </ul>

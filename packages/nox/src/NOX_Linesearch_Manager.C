@@ -39,7 +39,7 @@
 
 // All the different line searches
 #include "NOX_Linesearch_FullStep.H"
-#include "NOX_Linesearch_Halving.H"
+#include "NOX_Linesearch_Backtrack.H"
 #include "NOX_Linesearch_Polynomial.H"
 #include "NOX_Linesearch_MoreThuente.H"
 
@@ -70,8 +70,9 @@ bool Manager::reset(Parameter::List& params)
     
     if (method == "Full Step")
       ptr = new FullStep(params);
-    else if (method == "Interval Halving")
-      ptr = new Halving(params);
+    else if ((method == "Interval Halving") // deprecated
+	     || (method == "Backtrack"))
+      ptr = new Backtrack(params);
     else if (method == "Polynomial")
       ptr = new Polynomial(params);
     else if (method == "More'-Thuente")
