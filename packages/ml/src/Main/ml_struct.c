@@ -1901,7 +1901,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
 
 
 int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes,
-			double eig_ratio, int deg)
+			double eig_ratio, int deg, double eig_tol)
 {
    int              start_level, end_level, i, j, errCode=0;   
    struct MLSthing *widget;
@@ -1909,7 +1909,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes,
    double          *tdiag;
    char             str[80];
    int                (*fun)(void *, int, double *, int, double *);
-   int iii, degree;
+   int iii, jjj, degree;
    ML_Krylov   *kdata;
 #ifdef SYMMETRIZE
    ML_Operator *t3;
@@ -1993,13 +1993,8 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes,
 	 widget->pAux     = NULL;   /* currently reserved */
 	 widget->res      = NULL;   /* currently reserved */
 	 widget->y        = NULL;   /* currently reserved */
-     /*
-            Ray -- I think that the next line should be changed from 4 to
-            27 = 3^3 in the 3D case.  Is this right?  I'm leaving it as is
-            for right now.  JJH
-     */
-	 if (eig_ratio >= 4.) widget->eig_ratio = eig_ratio;
-	 else widget->eig_ratio = 20.;
+	 if (eig_ratio >= eig_tol) widget->eig_ratio = eig_ratio; /*JJH*/
+	 else widget->eig_ratio = eig_tol;                        /*JJH*/
 
 	 if (pre_or_post == ML_PRESMOOTHER) {
 	   ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
@@ -4903,9 +4898,11 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
          sprintf(str,"Hiptmair_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
 				      (void *) data, fun, NULL, ntimes, 1.0, str);
+         ml->pre_smoother[i].pre_or_post = ML_TAG_PRESM;
          sprintf(str,"Hiptmair_post%d",i);
          status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
 				      (void *) data, fun, NULL, ntimes, 1.0, str);
+         ml->post_smoother[i].pre_or_post = ML_TAG_POSTSM;
          BClist = NULL; BClength = 0;
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
