@@ -6196,14 +6196,15 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    ML_Operator_halfClone_Init( &((*ml_subproblem)->Amat[0]),
 				   Amat);
    if (smoother == (void *) ML_Gen_Smoother_MLS) {
-     if (ML_Smoother_Arglist_Nargs(args) != 1) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need one nodal argument for ML_Gen_Smoother_MLS() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+     if (ML_Smoother_Arglist_Nargs(args) != 2) {
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need two nodal arguments for ML_Gen_Smoother_MLS() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
      int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);
+     dbl_arg1 = (double *) ML_Smoother_Arglist_Get(args, 1);
      if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
         printf("Generating subsmoother MLS\n");
-     ML_Gen_Smoother_MLS(*ml_subproblem, 0, ML_PRESMOOTHER,*int_arg1);
+     ML_Gen_Smoother_MLS(*ml_subproblem, 0, ML_PRESMOOTHER,*int_arg1,*dbl_arg1);
    }
    else if (smoother == (void *) ML_Gen_Smoother_Jacobi) {
      if (ML_Smoother_Arglist_Nargs(args) != 2) {
@@ -6322,7 +6323,7 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    if (dk    == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
 
    beta = 1.1*Amat->lambda_max;   /* try and bracket high */
-   alpha = Amat->lambda_max*1.1/8.8;           /* frequency errors.    */
+   alpha = Amat->lambda_max/(widget->eig_ratio);
    delta = (beta - alpha)/2.;
    theta = (beta + alpha)/2.;
    s1 = theta/delta;
@@ -6397,4 +6398,204 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    ML_free(dk);
    ML_free(pAux);
    return 0;	
+}
+
+
+/*****************************************************************************/
+/* MSR Gauss-Seidel smoother with no damping.                      */
+/* ------------------------------------------------------------------------- */
+
+int ML_Smoother_MSR_GSforwardnodamping(void *sm,int inlen,double x[],
+				       int outlen, double rhs[])
+{
+   int iter, i, j;
+   ML_Operator *Amat;
+   ML_Comm *comm;
+   ML_CommInfoOP *getrow_comm;
+   int Nrows;
+   double *x2;
+   ML_Smoother  *smooth_ptr;
+   register int    *bindx_ptr;
+   register double sum;
+   int             *bindx;
+   double          *val = NULL;
+   struct ML_CSR_MSRdata *ptr = NULL;
+
+   smooth_ptr = (ML_Smoother *) sm;
+
+   Amat = smooth_ptr->my_level->Amat;
+   comm = smooth_ptr->my_level->comm;
+   Nrows = Amat->getrow->Nrows;
+
+   if (Amat->getrow->external == MSR_getrows){
+      ptr   = (struct ML_CSR_MSRdata *) Amat->data;
+      val   = ptr->values;
+      bindx = ptr->columns;
+   }
+#ifdef AZTEC
+   else AZ_get_MSR_arrays(Amat, &bindx, &val);
+#endif
+   if (val == NULL) {
+     ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
+     return 0;
+   }
+
+   if (Amat->getrow->post_comm != NULL)
+      pr_error("Post communication not implemented for SGS smoother\n");
+
+   getrow_comm= Amat->getrow->pre_comm;
+   if (getrow_comm != NULL) {
+      x2 = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)
+                                   *sizeof(double));
+      if (x2 == NULL) {
+         printf("Not enough space in Gauss-Seidel\n"); exit(1);
+      }
+      for (i = 0; i < inlen; i++) x2[i] = x[i];
+      if (smooth_ptr->init_guess != ML_NONZERO)
+      {
+         for (i = inlen; i < inlen+getrow_comm->total_rcv_length+1; i++)
+            x2[i] = 0.;
+      }
+   }
+   else x2 = x;
+
+   for (iter = 0; iter < smooth_ptr->ntimes; iter++)
+   {
+
+      if (((getrow_comm != NULL) && (smooth_ptr->init_guess == ML_NONZERO))
+          || (iter != 0) )
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
+
+
+      j = bindx[0];
+      bindx_ptr = &bindx[j];
+      for (i = 0; i < Nrows; i++) {
+	sum =  rhs[i];
+	while (j+10 < bindx[i+1]) {
+	  sum -= (val[j+9]*x2[bindx_ptr[9]] +
+		  val[j+8]*x2[bindx_ptr[8]] +
+		  val[j+7]*x2[bindx_ptr[7]] +
+		  val[j+6]*x2[bindx_ptr[6]] +
+		  val[j+5]*x2[bindx_ptr[5]] +
+		  val[j+4]*x2[bindx_ptr[4]] +
+		  val[j+3]*x2[bindx_ptr[3]] +
+		  val[j+2]*x2[bindx_ptr[2]] +
+		  val[j+1]*x2[bindx_ptr[1]] +
+		  val[j]*x2[*bindx_ptr]);
+	  bindx_ptr += 10;
+	  j += 10;
+	}
+	while (j < bindx[i+1]) {
+	  sum -= val[j++] * x2[*bindx_ptr++];
+	}
+	if (val[i] != 0.0) x2[i] = sum/val[i];
+      }
+   }
+
+   if (getrow_comm != NULL) {
+      for (i = 0; i < inlen; i++) x[i] = x2[i];
+      ML_free(x2);
+   }
+
+   return 0;
+}
+
+int ML_Smoother_MSR_GSbackwardnodamping(void *sm,int inlen,double x[],
+				       int outlen, double rhs[])
+{
+   int iter, i, j;
+   ML_Operator *Amat;
+   ML_Comm *comm;
+   ML_CommInfoOP *getrow_comm;
+   int Nrows;
+   double *x2;
+   ML_Smoother  *smooth_ptr;
+   register int    *bindx_ptr;
+   register double sum;
+   int             *bindx;
+   double          *val = NULL;
+   struct ML_CSR_MSRdata *ptr = NULL;
+
+   smooth_ptr = (ML_Smoother *) sm;
+
+   Amat = smooth_ptr->my_level->Amat;
+   comm = smooth_ptr->my_level->comm;
+   Nrows = Amat->getrow->Nrows;
+
+   if (Amat->getrow->external == MSR_getrows){
+      ptr   = (struct ML_CSR_MSRdata *) Amat->data;
+      val   = ptr->values;
+      bindx = ptr->columns;
+   }
+#ifdef AZTEC
+   else AZ_get_MSR_arrays(Amat, &bindx, &val);
+#endif
+   if (val == NULL) {
+     ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
+     return 0;
+   }
+
+   if (Amat->getrow->post_comm != NULL)
+      pr_error("Post communication not implemented for SGS smoother\n");
+
+   getrow_comm= Amat->getrow->pre_comm;
+   if (getrow_comm != NULL) {
+      x2 = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)
+                                   *sizeof(double));
+      if (x2 == NULL) {
+         printf("Not enough space in Gauss-Seidel\n"); exit(1);
+      }
+      for (i = 0; i < inlen; i++) x2[i] = x[i];
+      if (smooth_ptr->init_guess != ML_NONZERO)
+      {
+         for (i = inlen; i < inlen+getrow_comm->total_rcv_length+1; i++)
+            x2[i] = 0.;
+      }
+   }
+   else x2 = x;
+
+   for (iter = 0; iter < smooth_ptr->ntimes; iter++)
+   {
+
+      if (((getrow_comm != NULL) && (smooth_ptr->init_guess == ML_NONZERO))
+          || (iter != 0) )
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
+
+
+      j = bindx[Nrows];
+      bindx_ptr = &(bindx[j]);
+      j--;
+      bindx_ptr--;
+      for (i = Nrows - 1; i >= 0; i--) {
+	sum    = rhs[i];
+
+	while (j-9 >= bindx[i]) {
+	  bindx_ptr -= 10;
+	  j -= 10;
+	  sum -= (val[j+10]*x2[bindx_ptr[10]] +
+		  val[j+9]*x2[bindx_ptr[9]] +
+		  val[j+8]*x2[bindx_ptr[8]] +
+		  val[j+7]*x2[bindx_ptr[7]] +
+		  val[j+6]*x2[bindx_ptr[6]] +
+		  val[j+5]*x2[bindx_ptr[5]] +
+		  val[j+4]*x2[bindx_ptr[4]] +
+		  val[j+3]*x2[bindx_ptr[3]] +
+		  val[j+2]*x2[bindx_ptr[2]] +
+		  val[j+1]*x2[bindx_ptr[1]]);
+	}
+	while (j >= bindx[i]) {
+	  sum -= val[j--] * x2[*bindx_ptr--];
+	}
+	if (val[i] != 0.0) x2[i] = sum/val[i];
+/*	if (fabs(val[i]) > 1.0e-9)  x2[i] = sum/val[i]; These is needed on 
+        nodal problems with very small mass matrix..... */
+      }
+   }
+
+   if (getrow_comm != NULL) {
+      for (i = 0; i < inlen; i++) x[i] = x2[i];
+      ML_free(x2);
+   }
+
+   return 0;
 }
