@@ -50,13 +50,13 @@ enum EVerbosityLevel {
  * information about their current state.  This interface has just two
  * virtual member functions, <tt>describe(void)</tt> and
  * <tt>describe()</tt>, which both have default implementations.  The
- * shorter version of <tt>describe(void)</tt> that takes no arguments
- * and returns an <tt>std::string</tt> object is meant for very short
+ * shorter version of <tt>describe(void)</tt> (which takes no arguments
+ * and returns an <tt>std::string</tt> object) is meant for very short
  * descriptions while the longer version of <tt>describe()</tt> takes
  * and returns an <tt>std::ostream</tt> argument and is designed for
  * more detailed formated output.
  *
- * Since both of these <tt>describe()</tt> functions have a reasonable
+ * Since both of these <tt>describe()</tt> functions have reasonable
  * default implementations, when a subclass inherits from this base
  * class, no virtual functions need to be overridden to start with.
  * However, when debugging time comes, one or both of these functions
