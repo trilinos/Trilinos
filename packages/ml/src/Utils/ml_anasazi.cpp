@@ -382,7 +382,7 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
     
     double * evali = MyBlockArnoldi2.getiEvals();
     
-    MaxImag = evali[0] / 2;
+    MaxImag = abs(evali[0] / 2);
 
     delete [] evali;
     
@@ -529,8 +529,7 @@ int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
 }
 #else
 
-#include <iostream>
-using namespace std;
+#include <stdio.h>
 
 extern "C" {  
   // ================================================ ====== ==== ==== == =
@@ -542,8 +541,8 @@ extern "C" {
 					double * LambdaMax )
   {
     
-    cerr << "You must configure with options --with-ml_epetra and " << endl
-	 << "--with-ml_anasazi to estimate lambda max with Anasazi." << endl;
+    puts("You must configure with options --with-ml_epetra and ");
+    puts("--with-ml_anasazi to estimate lambda max with Anasazi.");
 
     exit( EXIT_FAILURE );
     
