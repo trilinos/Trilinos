@@ -1397,11 +1397,11 @@ Default values are listed in Table~\ref{tab:default}.
     \\
     \hline
     \hline
-{\tt max levels} & \tt int & 16 & 2 & 3 & 5 \\
+{\tt max levels} & \tt int & 16 & 2 & 3 & 10 \\
 \tt output & \tt int & 8 &  8 & 8 & 10 \\
 \tt increasing or decreasing & \tt string & \tt increasing & \tt
 increasing & \tt increasing & \tt decreasing \\
-\tt PDE equations & \tt int & 1 & 1 & 1 & -- \\
+\tt PDE equations & \tt int & 1 & 1 & 1 & 1 \\
 \tt print unused & \tt int & 0 & 0 & 0 & 0 \\
 \hline
 \hline
@@ -1409,7 +1409,7 @@ increasing & \tt increasing & \tt decreasing \\
 \tt Uncoupled-MIS \\
 \tt aggregation: local aggregates & \tt int & -- & 1 & -- & -- \\
 \tt aggregation: nodes per aggregate & \tt int & -- & -- & 512 & -- \\
-\tt aggregation: damping factor & \tt double &  4/3 & 4/3 & 4/3 & 0.0\\
+\tt aggregation: damping factor & \tt double &  4/3 & 4/3 & 4/3 & 4/3\\
 \tt eigen-analysis: type & \tt string & \tt Anorm & \tt Anorm & \tt Anorm & \tt
 Anorm \\
 \tt aggregation: threshold & \tt double & 0.0 & 0.0 & 0.0 & 0.0\\
@@ -1417,12 +1417,12 @@ Anorm \\
 &128 & --\\
 \hline
 \hline
-\tt smoother: sweeps & \tt int & 2 & 2 & 2 & 2 \\
+\tt smoother: sweeps & \tt int & 2 & 2 & 2 & 1 \\
 \tt smoother: damping factor & \tt double & 0.67  & -- & --  & 0.67 \\
 \tt smoother: pre or post & \tt string & \tt both & \tt both & \tt both
 & \tt both \\
 \tt smoother: type & \tt string & \tt Gauss-Seidel & \tt Aztec & \tt
-Aztec & -- \\
+Aztec & Hiptmair \\
 \tt smoother: Aztec as solver & \tt bool & -- & \tt false & \tt
 false & -- \\
 \tt smoother: MLS polynomial order & \tt int & -- & -- & -- & 3 \\
@@ -1430,8 +1430,8 @@ false & -- \\
 \hline
 \hline
 \tt coarse: type & \tt string & \tt Amesos\_KLU & \tt Amesos\_KLU  & \tt
-Amesos\_KLU & \tt SuperLU \\
-\tt coarse: max size & \tt int & 128 & 128 & 128 & 128 \\
+Amesos\_KLU & \tt Amesos\_KLU \\
+\tt coarse: max size & \tt int & 128 & 128 & 128 & 75 \\
 \tt coarse: sweeps & \tt int & 1 & 1 & 1 & 1 \\
 \tt coarse: damping factor & \tt double & 1.0 & 1.0 & 1.0 & 1.0 \\
 \tt coarse: max processes & \tt int & 16 & 16 & 16 & -- \\
@@ -2036,7 +2036,6 @@ Although we assume that (\ref{maxwell pde}) is discretized with
 first-order edge elements, it is possible to use this preconditioner for
 higher-order discretizations, as long as the user provides the sub-matrix
 that corresponds to just the first-order discretization.
-%% FIXME add paper references
 For more theoretical background and algorithm descriptions, please see
 \cite{HTBGR_2004,BGHRT_2003}.
 
@@ -2080,6 +2079,9 @@ T^{\mathrm{T}}M T,$$
 where we have used the fact that $ST=0$.
 %FIXME
 %boundary conditions
+%FIXME
+%note consistency in parallel of how nodes, edges are distributed
+%
 %%%%%%%%%%%%%%
 \subsubsection{Description of the discrete gradient matrix $T$}\label{T matrix}
 %%%%%%%%%%%%%%
@@ -2098,15 +2100,10 @@ each row of $T$ corresponds to an edge, and the $+1$/$-1$ entries in the
 row are the head/tail of the edge, respectively.
 Hence, $T$ can be built one row at a time by visiting each edge and inserting
 $+1$/$-1$ in the appropriate columns.
-%FIXME
-\comm{JJH}{What about directionality?  As I recall, it doesn't matter.}
 The second method assumes that \Kn\ is already constructed.
-Each off-diagonal nonzero $(i,j)$ in the upper triangular
+Each off-diagonal nonzero entry, $(i,j)$, in the upper triangular
 portion of \Kn\ corresponds to a row in $T$ containing
-a $1$ and a $-1$ in columns $i$ and $j$. 
-%FIXME
-%note consistency in parallel of how nodes, edges are distributed
-%
+a $1$ and a $-1$ in columns $i$ and $j$.
 %FIXME
 %boundary conditions
 %%%%%%%%%%%%%%
@@ -2129,11 +2126,6 @@ The coefficients of this polynomial are calculated automatically based on the
 coarsening rate of the multigrid hierarchy.
 The Chebyshev degree can be changed with the option\\
 \verb!smoother: Hiptmair MLS polynomial order!
-%
-%%%%%%%%%%%%%%
-\subsection{Prolongation options}\label{maxwell coarsening}
-%%%%%%%%%%%%%%
-%
 
 \clearpage
 \newpage
