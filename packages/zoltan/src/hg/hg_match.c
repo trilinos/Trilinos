@@ -49,9 +49,9 @@ int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
      * edge weight scaling functions accordingly.
      */
 
-    if      (!strcasecmp(hgp->redmo_str, "aug1")) hgp->matching_opt = matching_aug1;
-    else if (!strcasecmp(hgp->redmo_str, "aug2")) hgp->matching_opt = matching_aug2;
-    else                                          hgp->matching_opt = NULL;
+   if     (!strcasecmp(hgp->redmo_str, "aug1"))hgp->matching_opt=matching_aug1;
+   else if(!strcasecmp(hgp->redmo_str, "aug2"))hgp->matching_opt=matching_aug2;
+   else                                         hgp->matching_opt=NULL;
   }
   return  hgp->matching ? 1 : 0 ;
 }
@@ -285,26 +285,20 @@ static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 }
 #endif
 
-static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
+static int matching_rrm(ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
    {
-   int i, j, edge, random, *vertices=NULL, vertex, *Hindex, n, temp, *stack, pstack ;
+   int i, j, k, edge, random, *vertices, vertex, *stack, pstack, pick ;
    char *yo = "matching_rrm" ;
 
-   if (!(vertices  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int))))
+   if (!(vertices  = (int *) ZOLTAN_MALLOC (hg->nVtx * sizeof(int))))
       {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
       }
    for (i = 0 ; i < hg->nVtx ;  i++)
       vertices[i] = i ;
-   if (!(Hindex    = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nEdge+1)) ))
-      {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      return ZOLTAN_MEMERR ;
-      }
-   for (i=0; i<=hg->nEdge; i++)
-      Hindex[i] = hg->hindex[i];
-   if (!(stack    = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nEdge+1)) ))
+
+   if (!(stack    = (int *) ZOLTAN_MALLOC (hg->nInput * sizeof(int))))
       {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR ;
@@ -315,44 +309,28 @@ static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
       random = Zoltan_HG_Rand() % i ;
       vertex = vertices[random] ;
       vertices[random] = vertices[i-1] ;
-      if (match[vertex] != vertex)
-         continue ;          /* vertex already packed, move on */
-
-      pstack = 0 ;
-      for (j = hg->vindex[vertex] ; j < hg->vindex[vertex+1] ; j++)
+      if (match[vertex] == vertex)
          {
-         edge = hg->vedge[j] ;
-         if (hg->hindex[edge+1]- Hindex[edge] > 1)
-            stack[pstack++] = edge ;
-         }
-      if (pstack == 0)
-         continue ;
-      edge = stack[Zoltan_HG_Rand() % pstack]  ;
-
-      for (j = Hindex[edge]++ ; j < hg->hindex[edge+1] ; j = Hindex[edge]++)
-         if (match[hg->hvertex[j]] == hg->hvertex[j])
+         pstack = 0 ;
+         for (j = hg->vindex[vertex] ; j < hg->vindex[vertex+1] ; j++)
             {
-            vertex = hg->hvertex[j] ;
-            while (hg->hindex[edge+1] > (j=Hindex[edge]++))
-               {
-               n = Zoltan_HG_Rand() % (hg->hindex[edge+1]-j) ;
-               temp = hg->hvertex[j] ;
-               hg->hvertex[j]   = hg->hvertex[j+n] ;
-               hg->hvertex[j+n] = temp ;
-               if (match[hg->hvertex[j]] == hg->hvertex[j])
-                  {
-                  match[vertex]         = hg->hvertex[j] ;
-                  match[hg->hvertex[j]] = vertex ;
-                  (*limit)-- ;
-                  break ;
-                  }
-               }
-            break ;
+            edge = hg->vedge[j] ;
+            for (k = hg->hindex[edge] ; k < hg->hindex[edge+1] ; k++)
+               if (hg->hvertex[k] == match[hg->hvertex[k]]
+                && hg->hvertex[k] != vertex)
+                   stack[pstack++] = hg->hvertex[k] ;
             }
+         if (pstack > 0)
+            {
+            pick = stack[Zoltan_HG_Rand() % pstack]  ;
+            match[vertex] = pick ;
+            match[pick]   = vertex ;
+            (*limit)-- ;
+            }
+         }
       }
    ZOLTAN_FREE ((void **) &stack) ;
    ZOLTAN_FREE ((void **) &vertices) ;
-   ZOLTAN_FREE ((void **) &Hindex);
    return ZOLTAN_OK ;
    }
 /*****************************************************************************/
@@ -401,95 +379,68 @@ static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
   return ZOLTAN_OK;
 }
 #endif
-static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching pack, int *limit)
-{
-   int   i, j, *vertices=NULL, *del_edges=NULL, vertex, edge,
-         number, best_edge, best_size, best_neighbors, random, size;
-   float best_ewgt;
-   char  *yo = "matching_rhm" ;
+static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
+   {
+   int i, j, k, edge, random, *vertices, vertex, *stack, pstack, pick ;
+   float weight, max_weight ;
+   char *yo = "matching_rhm" ;
 
-   if (!(vertices  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int))) ||
-       !(del_edges = (int *) ZOLTAN_CALLOC (hg->nEdge,sizeof(int))) )
+   if (!(vertices  = (int *) ZOLTAN_MALLOC (hg->nVtx * sizeof(int))))
       {
-      ZOLTAN_FREE ((void **) &vertices) ;
-      ZOLTAN_FREE ((void **) &del_edges) ;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
       }
-   for (i = 0 ; i < hg->nVtx ; i++)
+   for (i = 0 ; i < hg->nVtx ;  i++)
       vertices[i] = i ;
 
-   for (i = hg->nVtx ; i > 0 && (*limit)>0 ; i--)
+   if (!(stack    = (int *) ZOLTAN_MALLOC (hg->nInput * sizeof(int))))
       {
-      number = Zoltan_HG_Rand() % i ;
-      vertex = vertices[number] ;
-      vertices[number] = vertices[i-1] ;
-      if (pack[vertex] != vertex)
-         continue ;            /* vertex is already matched, move on */
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR ;
+      }
 
-      best_neighbors = 0 ;
-      best_edge = best_size = -1 ;
-      best_ewgt = -1.0 ;
-      for (j = hg->vindex[vertex] ; j < hg->vindex[vertex+1] ; j++)
+   for (i = hg->nVtx ; i > 0 && (*limit)>0; i--)
+      {
+      random = Zoltan_HG_Rand() % i ;
+      vertex = vertices[random] ;
+      vertices[random] = vertices[i-1] ;
+      if (match[vertex] == vertex)
          {
-         int size ;
-         edge = hg->vedge[j];
-         size = hg->hindex[edge+1] - hg->hindex[edge] ;
-         if (del_edges[edge]==0 && ((!(hg->ewgt) && size == best_size)
-          || (hg->ewgt && hg->ewgt[edge] == best_ewgt && size == best_size)))
-            {
-            best_neighbors++;
-            }
-         else if (del_edges[edge]==0 && ((!(hg->ewgt) && size < best_size)
-          || (hg->ewgt && (hg->ewgt[edge] >  best_ewgt
-                       || (hg->ewgt[edge] == best_ewgt && size < best_size)))))
-              {
-              best_neighbors = 1 ;
-              best_edge = edge ;
-              best_ewgt = hg->ewgt[edge] ;
-              best_size = hg->hindex[edge+1]-hg->hindex[edge];
-              }
-         }
-      if (best_neighbors == 0)
-         continue ;                       /* no suitable edge found */
-
-      if (best_neighbors > 1)
-         {
-         random = Zoltan_HG_Rand() % best_neighbors;
+         pstack = 0 ;
+         max_weight = 0.0 ;
          for (j = hg->vindex[vertex] ; j < hg->vindex[vertex+1] ; j++)
             {
             edge = hg->vedge[j] ;
-            size = hg->hindex[edge+1] - hg->hindex[edge] ;
-            if (del_edges[edge]==0 && ((!(hg->ewgt) && size == best_size)
-              || (hg->ewgt && hg->ewgt[edge] == best_ewgt && size == best_size))
-              && --best_neighbors==random)
-                 {
-                 best_edge = edge ;
-                 break ;
-                 }
+            for (k = hg->hindex[edge] ; k < hg->hindex[edge+1] ; k++)
+               if (hg->hvertex[k] == match[hg->hvertex[k]]
+                && hg->hvertex[k] != vertex)
+                   {
+                   weight = sim (hg, vertex, hg->hvertex[k]) ;
+                   if (weight > max_weight)
+                       {
+                       pstack = 1 ;
+                       stack[0] = hg->hvertex[k] ;
+                       max_weight = weight ;
+                       }
+                   else if (weight == max_weight)
+                       stack[pstack++] = hg->hvertex[k] ;
+             /*    else   */
+             /*       continue ; */    /* ignore vertex with low sim() weight */
+                   }
+            }
+         if (pstack > 0)
+            {
+            pick = stack[Zoltan_HG_Rand() % pstack]  ;
+            match[vertex] = pick ;
+            match[pick]   = vertex ;
+            (*limit)-- ;
             }
          }
-
-      for (j = hg->hindex[best_edge] ; j < hg->hindex[best_edge+1] ; j++)
-         if (pack[hg->hvertex[j]] == hg->hvertex[j])
-            {
-            vertex = hg->hvertex[j] ;
-            for (j++ ; j < hg->hindex[best_edge+1] && (*limit)>0 ; j++)
-               if (pack[hg->hvertex[j]] == hg->hvertex[j])
-                  {
-                  pack[vertex] = hg->hvertex[j] ;
-                  pack[hg->hvertex[j]] = vertex ;
-                  (*limit)--;
-                  break ;
-                  }
-            break ;
-            }
-      del_edges[best_edge] = 1 ;
       }
+   ZOLTAN_FREE ((void **) &stack) ;
    ZOLTAN_FREE ((void **) &vertices) ;
-   ZOLTAN_FREE ((void **) &del_edges) ;
    return ZOLTAN_OK ;
-}
+   }
 
 
 /*****************************************************************************/
