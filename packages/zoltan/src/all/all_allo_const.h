@@ -56,10 +56,41 @@ extern double *LB_Realloc(void *ptr, int n, char *filename, int lineno);
 extern void LB_Memory_Stats();
 extern int LB_Memory_Num();
 extern void LB_Free_Structure(LB *);
+
 #ifdef __STDC__
 extern void LB_Multifree(int n, ...);
 #else
 extern void LB_Multifree();
 #endif
+
+/* function prototypes for Fortran allocation functions */
+
+#ifdef PGI
+typedef void LB_FORT_MALLOC_INT_FN(int *arg, int *size, int **ret, int *hidden);
+typedef void LB_FORT_MALLOC_GID_FN(LB_GID *arg, int *size, int **ret, int *hidden);
+typedef void LB_FORT_MALLOC_LID_FN(LB_LID *arg, int *size, int **ret, int *hidden);
+#else
+typedef void LB_FORT_MALLOC_INT_FN(int *arg, int *size, int **ret);
+typedef void LB_FORT_MALLOC_GID_FN(LB_GID *arg, int *size, int **ret);
+typedef void LB_FORT_MALLOC_LID_FN(LB_LID *arg, int *size, int **ret);
+#endif
+
+/* type selector for LB_Special_Malloc */
+
+enum LB_Special_Malloc_Type {
+  LB_SPECIAL_MALLOC_INT,
+  LB_SPECIAL_MALLOC_GID,
+  LB_SPECIAL_MALLOC_LID
+};
+
+typedef enum LB_Special_Malloc_Type LB_SPECIAL_MALLOC_TYPE;
+
+/* function declarations for special malloc */
+
+extern int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
+                      LB_SPECIAL_MALLOC_TYPE type);
+extern void LB_Register_Fort_Malloc(LB_FORT_MALLOC_INT_FN *fort_malloc_int,
+                             LB_FORT_MALLOC_GID_FN *fort_malloc_GID,
+                             LB_FORT_MALLOC_LID_FN *fort_malloc_LID);
 
 #endif
