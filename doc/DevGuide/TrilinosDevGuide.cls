@@ -104,9 +104,9 @@
 
 % We're based on the standard article class and assume certain
 % options. Set those, and pass all others to the article class
-\DeclareOption*{\PassOptionsToClass{\CurrentOption}{report}}
+\DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
 \ProcessOptions
-\LoadClass[letterpaper,twoside,final,notitlepage]{report}
+\LoadClass[letterpaper,twoside,final,notitlepage]{article}
 
 
 %
@@ -804,6 +804,16 @@
   \par\vspace{1ex}%
   {\bf Example:}%
   {\hspace{0.5 in}} {#1} {\par\vspace{1ex}}}
+
+% DisplayCommand
+\newcommand{\DisplayCommand}[1]{%
+  \par\vspace{1ex}%
+  {\bf Command:}%
+  {\hspace{0.5 in}} {\tt #1} {\par\vspace{1ex}}}
+
+% InlineCommand
+\newcommand{\InlineCommand}[1]{
+  {\hspace{0.1 in}} {\tt #1} {\hspace{0.1 in}}}
 
 % Verbatim-quote environment
 \newenvironment{vquote}{\begin{quote}\begin{alltt}}
