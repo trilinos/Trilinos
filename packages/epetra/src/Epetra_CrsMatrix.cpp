@@ -815,7 +815,7 @@ int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epe
   int NumMyCols_ = NumMyCols();
 
   // If upper, point to last row
-  if (Upper) {
+  if ((Upper && !Trans) || (!Upper && Trans)) {
     NumEntriesPerRow += NumMyRows_-1;
     Indices += NumMyRows_-1;
     Values += NumMyRows_-1;
@@ -918,7 +918,7 @@ int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epe
   int NumMyCols_ = NumMyCols();
 
   // If upper, point to last row
-  if (Upper) {
+  if ((Upper && !Trans) || (!Upper && Trans)) {
     NumEntriesPerRow += NumMyRows_-1;
     Indices += NumMyRows_-1;
     Values += NumMyRows_-1;
