@@ -268,7 +268,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
          ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
          max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
 	 Amat->lambda_max = max_eigen; 
-	 Amat->lambda_max = kdata->ML_eigen_min; 
+	 Amat->lambda_min = kdata->ML_eigen_min; 
          ML_Krylov_Destroy( &kdata );
          if ( max_eigen <= 0.0 )
          {
@@ -544,10 +544,15 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
    /* ----------------------------------------------------------------- */
    /* compute I - omega D^{-1} A                                        */
    /* ----------------------------------------------------------------- */
-
+#ifndef MB_MODIF
    for (i = 0; i < row_lengths[0]; i++) 
       values[i] *= (-widget->omega)/diag_val;
    values[diag] += 1.;
+#else
+   for (i = 0; i < row_lengths[0]; i++) 
+      values[i] *= -widget->omega;
+   values[diag] += 1.;
+#endif
 
    return(1);
 }
