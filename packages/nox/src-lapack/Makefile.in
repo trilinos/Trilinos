@@ -146,11 +146,18 @@ NOX_LAPACK = \
 	$(srcdir)/NOX_LAPACK_Group.C 
 
 
+@BUILD_NOX_MULTIVECS_TRUE@LAPACK_MULTIVECS_H = $(srcdir)/NOX_LAPACK_MultiVector.H
+@BUILD_NOX_MULTIVECS_FALSE@LAPACK_MULTIVECS_H = 
+@BUILD_NOX_MULTIVECS_TRUE@LAPACK_MULTIVECS = $(srcdir)/NOX_LAPACK_MultiVector.C
+@BUILD_NOX_MULTIVECS_FALSE@LAPACK_MULTIVECS = 
+
 
 # ------------------------------------------------------------------------
 # Noxblas library specifications
 # ------------------------------------------------------------------------
-libnoxlapack_a_SOURCES = $(NOX_LAPACK) $(NOX_LAPACK_H) 
+libnoxlapack_a_SOURCES = $(NOX_LAPACK) $(NOX_LAPACK_H) \
+			 $(LAPACK_MULTIVECS_H) $(LAPACK_MULTIVECS)
+
 
 libnoxlapack_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
                            -I$(top_srcdir)/src \
@@ -167,7 +174,7 @@ libnoxlapack_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
 
 
 # List of all headers to install in $(includedir)
-@BUILD_LIBNOXLAPACK_TRUE@include_HEADERS = $(NOX_LAPACK_H)
+@BUILD_LIBNOXLAPACK_TRUE@include_HEADERS = $(NOX_LAPACK_H) $(LAPACK_MULTIVECS_H)
 
 
 # ------------------------------------------------------------------------
@@ -203,7 +210,13 @@ am__objects_1 = libnoxlapack_a-NOX_LAPACK_Vector.$(OBJEXT) \
 	libnoxlapack_a-NOX_LAPACK_Matrix.$(OBJEXT) \
 	libnoxlapack_a-NOX_LAPACK_Group.$(OBJEXT)
 am__objects_2 =
-am_libnoxlapack_a_OBJECTS = $(am__objects_1) $(am__objects_2)
+@BUILD_NOX_MULTIVECS_TRUE@am__objects_3 =
+@BUILD_NOX_MULTIVECS_FALSE@am__objects_3 =
+@BUILD_NOX_MULTIVECS_TRUE@am__objects_4 = \
+@BUILD_NOX_MULTIVECS_TRUE@	libnoxlapack_a-NOX_LAPACK_MultiVector.$(OBJEXT)
+@BUILD_NOX_MULTIVECS_FALSE@am__objects_4 =
+am_libnoxlapack_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
+	$(am__objects_3) $(am__objects_4)
 libnoxlapack_a_OBJECTS = $(am_libnoxlapack_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -215,6 +228,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Matrix.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_MultiVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -279,6 +293,8 @@ libnoxlapack_a-NOX_LAPACK_Vector.$(OBJEXT): \
 libnoxlapack_a-NOX_LAPACK_Matrix.$(OBJEXT): \
 	$(srcdir)/NOX_LAPACK_Matrix.C
 libnoxlapack_a-NOX_LAPACK_Group.$(OBJEXT): $(srcdir)/NOX_LAPACK_Group.C
+libnoxlapack_a-NOX_LAPACK_MultiVector.$(OBJEXT): \
+	$(srcdir)/NOX_LAPACK_MultiVector.C
 libnoxlapack.a: $(libnoxlapack_a_OBJECTS) $(libnoxlapack_a_DEPENDENCIES) 
 	-rm -f libnoxlapack.a
 	$(libnoxlapack_a_AR) libnoxlapack.a $(libnoxlapack_a_OBJECTS) $(libnoxlapack_a_LIBADD)
@@ -292,6 +308,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Matrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_MultiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Vector.Po@am__quote@
 
 distclean-depend:
@@ -344,6 +361,18 @@ libnoxlapack_a-NOX_LAPACK_Group.obj: $(srcdir)/NOX_LAPACK_Group.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.Po' tmpdepfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxlapack_a-NOX_LAPACK_Group.obj `cygpath -w $(srcdir)/NOX_LAPACK_Group.C`
+
+libnoxlapack_a-NOX_LAPACK_MultiVector.o: $(srcdir)/NOX_LAPACK_MultiVector.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_LAPACK_MultiVector.C' object='libnoxlapack_a-NOX_LAPACK_MultiVector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_MultiVector.Po' tmpdepfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_MultiVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxlapack_a-NOX_LAPACK_MultiVector.o `test -f '$(srcdir)/NOX_LAPACK_MultiVector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_LAPACK_MultiVector.C
+
+libnoxlapack_a-NOX_LAPACK_MultiVector.obj: $(srcdir)/NOX_LAPACK_MultiVector.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_LAPACK_MultiVector.C' object='libnoxlapack_a-NOX_LAPACK_MultiVector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_MultiVector.Po' tmpdepfile='$(DEPDIR)/libnoxlapack_a-NOX_LAPACK_MultiVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxlapack_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxlapack_a-NOX_LAPACK_MultiVector.obj `cygpath -w $(srcdir)/NOX_LAPACK_MultiVector.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 includeHEADERS_INSTALL = $(INSTALL_HEADER)

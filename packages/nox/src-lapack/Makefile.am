@@ -51,11 +51,24 @@ NOX_LAPACK = \
 	$(srcdir)/NOX_LAPACK_Matrix.C \
 	$(srcdir)/NOX_LAPACK_Group.C 
 
+if BUILD_NOX_MULTIVECS
+
+LAPACK_MULTIVECS_H = $(srcdir)/NOX_LAPACK_MultiVector.H
+LAPACK_MULTIVECS = $(srcdir)/NOX_LAPACK_MultiVector.C
+
+else
+
+LAPACK_MULTIVECS_H = 
+LAPACK_MULTIVECS = 
+
+endif
+
 # ------------------------------------------------------------------------
 # Noxblas library specifications
 # ------------------------------------------------------------------------
 
-libnoxlapack_a_SOURCES = $(NOX_LAPACK) $(NOX_LAPACK_H) 
+libnoxlapack_a_SOURCES = $(NOX_LAPACK) $(NOX_LAPACK_H) \
+			 $(LAPACK_MULTIVECS_H) $(LAPACK_MULTIVECS)
 
 libnoxlapack_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
                            -I$(top_srcdir)/src \
@@ -73,7 +86,7 @@ lib_LIBRARIES = libnoxlapack.a
 
 # List of all headers to install in $(includedir)
 
-include_HEADERS = $(NOX_LAPACK_H)
+include_HEADERS = $(NOX_LAPACK_H) $(LAPACK_MULTIVECS_H)
 
 endif
 

@@ -72,14 +72,14 @@ void DGETRS_F77(const char *trans, const int *n, const int *nrhs,
 
 /* Compute left/right eigenvectors, eigenvalues */
 void DGEEV_F77(const char *jobvl, const char *jobvr, const int *n,
-	       const double *A, const int *lda, double *wr, double *wi,
+	       double *A, const int *lda, double *wr, double *wi,
 	       double *vl, const int *ldvl, double *vr, const int *ldvr,
 	       double *work, const int *lwork, int *info);
 
 #ifdef HAVE_LAPACK_GENEV
 /* Compute left/right generalized eigenvectors, eigenvalues */
 void DGGEV_F77(const char *jobvl, const char *jobvr, const int *n,
-	       const double *A, const int *lda, const double *B, 
+	       double *A, const int *lda, double *B, 
 	       const int *ldb, double *alphar, double *alphai,
 	       double *beta, double *vl, const int *ldvl, double *vr, 
 	       const int *ldvr, double *work, const int *lwork, int *info);

@@ -56,7 +56,7 @@ double DDOT_F77(const int *n, const double *x, const int *incx,
 		const double *y, const int *incy);
 
 /* x <- a*x */
-void DSCAL_F77(const int *n, const double *a, const double *x, 
+void DSCAL_F77(const int *n, const double *a, double *x, 
 	       const int *incx);
 
 /*  v <- ||x||_2 */
