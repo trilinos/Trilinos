@@ -39,13 +39,13 @@
 #include "Epetra_DataAccess.h"
 #include "Epetra_Import.h"
 
-#define USE_ENGPUTVARIABLE
+#include "Epetra_CrsMatrix.h"
 
 using namespace EpetraExt;
 namespace EpetraExt {
 
 //=============================================================================
-MatlabEngine::MatlabEngine (const Epetra_Comm& Comm):Comm_(Comm) {
+EpetraExt_MatlabEngine::EpetraExt_MatlabEngine (const Epetra_Comm& Comm):Comm_(Comm) {
 
     // MATLAB engOpen, to construct the MATLAB engine
 
@@ -56,7 +56,7 @@ MatlabEngine::MatlabEngine (const Epetra_Comm& Comm):Comm_(Comm) {
 } 
  
 //=============================================================================
-MatlabEngine::~MatlabEngine (void) {
+EpetraExt_MatlabEngine::~EpetraExt_MatlabEngine (void) {
 
     // MATLAB engClose, to destruct the MATLAB engine
 
@@ -66,13 +66,7 @@ MatlabEngine::~MatlabEngine (void) {
 }
 
 //=============================================================================
-int MatlabEngine::EvalString (char* command) {
-	
-	// call this.EvalString without an ouputBuffer defined
-	return EvalString(command, NULL, -1);
-}
-
-int MatlabEngine::EvalString (char* command, char* outputBuffer, int outputBufferSize) {
+int EpetraExt_MatlabEngine::EvalString (char* command, char* outputBuffer, int outputBufferSize) {
     // send a string command to the MATLAB engine
     if (Comm_.MyPID() == 0) {
 		if (outputBuffer != NULL) {
@@ -87,7 +81,7 @@ int MatlabEngine::EvalString (char* command, char* outputBuffer, int outputBuffe
 }
 
 //=============================================================================
-int MatlabEngine::PutMultiVector(const Epetra_MultiVector& A, const char * variableName) {
+int EpetraExt_MatlabEngine::PutMultiVector(const Epetra_MultiVector& A, const char * variableName) {
     mxArray* matlabA = 0;
     double* pr = 0;
     if (Comm_.MyPID() == 0) {
@@ -111,11 +105,13 @@ int MatlabEngine::PutMultiVector(const Epetra_MultiVector& A, const char * varia
 }
 
 //=============================================================================
-int MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* variableName, bool transA) {
+int EpetraExt_MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* variableName, bool transA) {
     mxArray* matlabA = 0;
     if (Comm_.MyPID() == 0)
 	  // since matlab uses column major for matrices, switch row and column numbers
-	  matlabA = mxCreateSparse(A.NumGlobalCols(), A.NumGlobalRows(), A.NumGlobalNonzeros(), mxREAL);
+	  matlabA = mxCreateSparse(A.RowMatrixColMap().NumGlobalElements(), A.NumGlobalRows(), A.NumGlobalNonzeros(), mxREAL);
+	
+	//cout << "numrows: " << A.RowMatrixColMap().NumGlobalElements() << " numCols: " << A.NumGlobalRows() << "numNonZeros: " << A.NumGlobalNonzeros() << "\n";
 
 	if (Matlab::CopyRowMatrix(matlabA, A)) {
 	  mxDestroyArray(matlabA);
@@ -123,18 +119,28 @@ int MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* variableNa
 	}
 
 	if (Comm_.MyPID() == 0) {
+
+	  /*cout << "printing matlabA pointers\n";
+		double* matlabAvaluesPtr = mxGetPr(matlabA);
+		int* matlabAcolumnIndicesPtr = mxGetJc(matlabA);
+		int* matlabArowIndicesPtr = mxGetIr(matlabA);
+		for(int i=0; i < A.NumGlobalNonzeros(); i++) {
+		  cout << "*matlabAvaluesPtr: " << *matlabAvaluesPtr++ << " *matlabAcolumnIndicesPtr: " << *matlabAcolumnIndicesPtr++ << " *matlabArowIndicesPtr" << *matlabArowIndicesPtr++ << "\n";
+		}
+		cout << "done printing matlabA pointers\n";
+	  */
 	  if (PutIntoMatlab(variableName, matlabA)) {
 		mxDestroyArray(matlabA);
 		return(-1);
 	  }
 
 	  if (!transA) {
-		char* buff = new char[128];
+		char* buff = new char[128];;
 		sprintf(buff, "%s = %s'", variableName, variableName);
-		  if (EvalString(buff)) {
-			mxDestroyArray(matlabA);
-			return(-3);
-		  }
+		if (EvalString(buff)) {
+		  mxDestroyArray(matlabA);
+		  return(-3);
+		}
 	  }
 	}
 
@@ -143,11 +149,11 @@ int MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* variableNa
 }
 
 //=============================================================================
-int MatlabEngine::PutCrsGraph(const Epetra_CrsGraph& A, const char* variableName, bool transA) {
+int EpetraExt_MatlabEngine::PutCrsGraph(const Epetra_CrsGraph& A, const char* variableName, bool transA) {
 	return(-1);
 }
 
-int MatlabEngine::PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const char* variableName, int proc) {
+int EpetraExt_MatlabEngine::PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const char* variableName, int proc) {
 
   if (proc == 0) {
 	if (Comm_.MyPID() == 0) {
@@ -206,7 +212,7 @@ int MatlabEngine::PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const 
 }
 
 //=============================================================================
-int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName, int proc) {
+int EpetraExt_MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName, int proc) {
   mxArray* matlabA = 0;
   
     if (proc == 0) {
@@ -309,18 +315,20 @@ int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, 
 }
 
 //=============================================================================
-int MatlabEngine::PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName) {
+int EpetraExt_MatlabEngine::PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName) {
 	return(-1);
 }
 
-int MatlabEngine::PutIntoMatlab(const char* variableName, mxArray* matlabA) {
+int EpetraExt_MatlabEngine::PutIntoMatlab(const char* variableName, mxArray* matlabA) {
   if (Comm_.MyPID() != 0)
     return(0);
-#ifdef USE_ENGPUTVARIABLE
-    return engPutVariable(Engine_, variableName, matlabA);
-#else
+#ifdef USE_ENGPUTARRAY
+    // for matlab versions < 6.5 (release 13)
     mxSetName(matlabA, variableName);
     return engPutArray(Engine_, matlabA);
+#else
+    // for matlab versions >= 6.5 (release 13)
+    return engPutVariable(Engine_, variableName, matlabA);
 #endif
 }
 

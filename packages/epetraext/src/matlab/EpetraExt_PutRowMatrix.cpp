@@ -34,10 +34,8 @@
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_Import.h"
+#include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
-
-#include "mex.h"
-#undef printf
 
 using namespace Matlab;
 namespace Matlab {
@@ -50,7 +48,7 @@ int CopyRowMatrix(mxArray* matlabA, const Epetra_RowMatrix& A) {
   const Epetra_Comm & comm = map.Comm();
   int numProc = comm.NumProc();
 
-  if (numProc==1)
+  if (numProc==1) 
     DoCopyRowMatrix(matlabA, valueCount, A);
   else {
     int numRows = map.NumMyElements();
@@ -98,14 +96,16 @@ int CopyRowMatrix(mxArray* matlabA, const Epetra_RowMatrix& A) {
     }
   }
 
-  // set max cap
-  int* matlabAcolumnIndicesPtr = mxGetJc(matlabA);
-  
+  if (A.RowMatrixRowMap().Comm().MyPID() == 0) {
+	// set max cap
+	int* matlabAcolumnIndicesPtr = mxGetJc(matlabA);
+	matlabAcolumnIndicesPtr[A.NumGlobalRows()] = valueCount;
+  }
+
   return(0);
 }
 
 int DoCopyRowMatrix(mxArray* matlabA, int& valueCount, const Epetra_RowMatrix& A) {
-
   int ierr = 0;
   int numRows = A.NumGlobalRows();
   Epetra_Map rowMap = A.RowMatrixRowMap();
@@ -122,32 +122,44 @@ int DoCopyRowMatrix(mxArray* matlabA, int& valueCount, const Epetra_RowMatrix& A
 	int* matlabArowIndicesPtr = mxGetIr(matlabA);
 
 	// set all matlabA pointers to the proper offset
-	matlabAvaluesPtr += sizeof(*matlabAvaluesPtr) * valueCount;
-	matlabArowIndicesPtr += sizeof(*matlabArowIndicesPtr) * valueCount;
+	matlabAvaluesPtr += valueCount;
+	matlabArowIndicesPtr += valueCount;
 
     if (numRows!=A.NumMyRows()) ierr = -1;
     Epetra_SerialDenseVector values(A.MaxNumEntries());
     Epetra_IntSerialDenseVector indices(A.MaxNumEntries());
     for (int i=0; i<numRows; i++) {
-      //int I = rowMap.GID(i) + 1;
+	  
 	  int I = rowMap.GID(i);
-      int numEntries;
+      int numEntries = 0;
       if (A.ExtractMyRowCopy(i, values.Length(), numEntries, 
-			     values.Values(), indices.Values())) return(-1);
+	  		     values.Values(), indices.Values())) return(-1);
 	  matlabAcolumnIndicesPtr[I] = valueCount;  // set the starting index of column I
+	  double* serialValuesPtr = values.Values();
       for (int j=0; j<numEntries; j++) {
-		//int J = colMap.GID(indices[j]) + 1;
 		int J = colMap.GID(indices[j]);
-		*matlabAvaluesPtr = values[j];
+		*matlabAvaluesPtr = *serialValuesPtr++;
 		*matlabArowIndicesPtr = J;
-		// increment all matlabA pointers
+		// increment matlabA pointers
 		matlabAvaluesPtr++;
 		matlabArowIndicesPtr++;
 		valueCount++;
-	//fprintf(handle, "%d %d %22.16e\n", I, J, val);
       }
     }
   }
+
+  /*
+  cout << "printing matlabA pointers\n";
+	double* matlabAvaluesPtr = mxGetPr(matlabA);
+	int* matlabAcolumnIndicesPtr = mxGetJc(matlabA);
+	int* matlabArowIndicesPtr = mxGetIr(matlabA);
+  for(int i=0; i < numRows; i++) {
+	for(int j=0; j < A.MaxNumEntries(); j++) {
+	  cout << "*matlabAvaluesPtr: " << *matlabAvaluesPtr++ << " *matlabAcolumnIndicesPtr: " << *matlabAcolumnIndicesPtr++ << " *matlabArowIndicesPtr" << *matlabArowIndicesPtr++ << "\n";
+	}
+  }
+  */
+
   int ierrGlobal;
   comm.MinAll(&ierr, &ierrGlobal, 1); // If any processor has -1, all return -1
   return(ierrGlobal);

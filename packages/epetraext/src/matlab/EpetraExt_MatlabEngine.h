@@ -55,20 +55,20 @@ namespace EpetraExt {
 /*! The EpetraExt_MatlabEngine class allows Epetra data objects to be
 exported to Matlab and then operated on within Matlab using Matlab commands. 
 
-When a MatlabEngine object is constructed a new instance of the application Matlab
-is started for MatlabEngine to communicate with.  All communicatin between MatlabEngine
+When a EpetraExt_MatlabEngine object is constructed a new instance of the application Matlab
+is started for EpetraExt_MatlabEngine to communicate with.  All communicatin between EpetraExt_MatlabEngine
 and Matlab occurs on the root node (0) only.  For parallel environments all objects are
 collected onto the root node before being put into Matlab.  Object data is put into a mxArray
 which is then sent to the Matlab process.  All objects passed to Matlab
 are copied into the Matlab memory space.  So at the point when Matlab receives its copy
 of the data there is two copies of the mxArray in memory, one in the Epetra application
 and one in Matlab.  Since Matlab has its own memory space the mxArray in the Epetra application
-should be deleted in order to free up memory space.  All methods in MatlabEngine that put Epetra
+should be deleted in order to free up memory space.  All methods in EpetraExt_MatlabEngine that put Epetra
 objects into Matlab delete the temporary mxArray as soon as it is put into Matlab.  If a user
 desires to create his/her own mxArray's and then send them to Matlab the method PutIntoMatlab
 can be used.  It is important to note that PutIntoMatlab does NOT delete the mxArray it is passed.
-When the MatlabEngine deconstructor is called the instance of Matlab that was started
-during construction of the MatlabEngine object exits.
+When the EpetraExt_MatlabEngine deconstructor is called the instance of Matlab that was started
+during construction of the EpetraExt_MatlabEngine object exits.
 
 <b>Error Codes</b>
 <ul>
@@ -78,33 +78,46 @@ during construction of the MatlabEngine object exits.
   <li> -4 engOutputBuffer returned a nonzero result
 </ul>
 */
-class MatlabEngine {
+class EpetraExt_MatlabEngine {
 
   public:
 
   //@{ \name Constructors/destructors.
-  /*! MatlabEngine constructor which creates a MatlabEngine object with a connection to an instance of the
- 	  application Matlab by starting a new Matlab process. 
 
+  //! EpetraExt_MatlabEngine constructor which creates a MatlabEngine object with a connection to an instance of the application Matlab by starting a new Matlab process. 
+  /*!
     \param Comm
            An Epetra_Comm object.
 
-    \return MatlabEngine object
+    \return A MatlabEngine object
   */
-  MatlabEngine(const Epetra_Comm& Comm);
-  //! MatlabEngine destructor which closes the connection to Matlab which causes the Matlab process to also exit.
-  ~MatlabEngine();
+  EpetraExt_MatlabEngine(const Epetra_Comm& Comm);
+
+  //! EpetraExt_MatlabEngine destructor which closes the connection to Matlab which causes the Matlab process to also exit.
+  ~EpetraExt_MatlabEngine();
   //@}
   
   //@{ \name General Matlab Access Methods
 
-  //! EvalString method
-  int EvalString (char* command);
-  int EvalString (char* command, char* outputBuffer, int outputBufferSize);
+  //! Sends a command to Matlab.
+  /*! Any command that can normally be typed in at the Matlab command line can be passed in to EvalString(char* command).  
+	Commands such as 'help desk', 'edit', and 'plot(MATRIX)' will pop up an interactive window.
+
+	\param command
+	       the matlab command to run
+
+	\param outputBuffer
+	       (Optional) a preallocated buffer for Matlab text output
+
+	\param outputBufferSize
+	       (Optional) the size of the outputBuffer
+   */
+  int EvalString (char* command, char* outputBuffer = NULL, int outputBufferSize = -1);
 
   //@}
 
   //@{ \name Epetra to Matlab Data Transfer Methods
+
   //! Put a copy of the serial or distributed MultiVector into the Matlab workspace.
   /*!
 	\param A
@@ -135,6 +148,8 @@ class MatlabEngine {
 	\return Error Codes, see Detailed Description for more information
   */
   int PutRowMatrix(const Epetra_RowMatrix& A, const char* variableName, bool transA);
+
+  //! not implemented yet
   int PutCrsGraph(const Epetra_CrsGraph& A, const char* variableName, bool transA);
 
   //! Put a copy of the SerialDenseMatrix into the Matlab workspace.
@@ -173,6 +188,7 @@ class MatlabEngine {
   */
   int PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName, int proc);
 
+  //! not implemented yet
   int PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName);
   
   //! Put a mxArray into Matlab.
