@@ -25,8 +25,9 @@
 // 
 // ************************************************************************
 //@HEADER
-#include <stdio.h>
-#include "Epetra_RowMatrix.h"
+#include <Epetra_ConfigDefs.h>
+class Epetra_RowMatrix;
+
 namespace EpetraExt {
  
   //! Writes an Epetra_RowMatrix object to a Matrix Market format file

@@ -58,8 +58,8 @@ int MultiVectorToMatrixMarketFile( const char *filename, const Epetra_MultiVecto
 				 const char * matrixName,
 				 const char *matrixDescription, 
 				 bool writeHeader) {
-  int M = A.NumVectors();
-  int N = A.GlobalLength();
+  int M = A.GlobalLength();
+  int N = A.NumVectors();
 
   FILE * handle = 0;
 
@@ -167,8 +167,6 @@ int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A, bool mmForm
 }
 int writeMultiVector(FILE * handle, const Epetra_MultiVector & A, bool mmFormat) {
 
-  // The multivector will be written to file in transpose form, so that
- //  we can write all contributions from a processor at once
   int ierr = 0;
   int length = A.GlobalLength();
   int numVectors = A.NumVectors();

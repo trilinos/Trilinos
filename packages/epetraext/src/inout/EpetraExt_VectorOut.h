@@ -25,8 +25,9 @@
 // 
 // ************************************************************************
 //@HEADER
-#include <stdio.h>
-#include "Epetra_Vector.h"
+#include <Epetra_ConfigDefs.h>
+class Epetra_Vector;
+
 namespace EpetraExt {
  
   //! Writes an Epetra_Vector object to a Matrix Market format file
