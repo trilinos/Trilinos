@@ -44,7 +44,7 @@ double Zoltan_Time(int timer)
 {
   double t = -1.;
 
-#ifndef __PUMAGON__
+#if !defined(__PUMAGON__) && !defined(__LIBCATAMOUNT__)
   clock_t num_ticks;
   static clock_t last_num_ticks = 0;
   static int     clock_rollovers = 0;
@@ -59,8 +59,8 @@ double Zoltan_Time(int timer)
     /* Wall clock */
     t = MPI_Wtime();
   else if (timer==ZOLTAN_TIME_CPU) {
-#ifdef __PUMAGON__
-    /* CPU time on ASCI Red. */
+#if defined(__PUMAGON__) || defined(__LIBCATAMOUNT__)
+    /* CPU time on ASCI Red and Red Storm. */
     t = dclock();
 #else
     /* CPU time */

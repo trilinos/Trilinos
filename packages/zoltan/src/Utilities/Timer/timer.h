@@ -30,8 +30,8 @@
  * but that has not been implemented here. 
  */
 
-#ifdef __PUMAGON__
-/* Tflops with Cougar does not have sysconf() or times() */
+#if defined(__PUMAGON__) || defined(__LIBCATAMOUNT__)
+/* Tflops with Cougar & Red Storm w/Catamount does not have sysconf() or times() */
 #define NO_TIMES
 #endif /* __PUMAGON__ */
 
