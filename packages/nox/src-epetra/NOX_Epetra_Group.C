@@ -489,6 +489,7 @@ Abstract::Group& Group::operator=(const Group& source)
     
   // Never take ownership of the shared preconditioner
   isValidPreconditioner = false;
+  destroyPreconditioner();
     
   // Copy linear solver options
   jacobianOperatorType = source.jacobianOperatorType;
@@ -649,6 +650,9 @@ Abstract::Group::ReturnType Group::computeNewton(NOX::Parameter::List& p)
 
   Abstract::Group::ReturnType status;
   
+  // Zero out Newton Vector
+  NewtonVector.init(0.0);
+
   // Create Epetra problem for the linear solve
   status = applyJacobianInverse(p, RHSVector, NewtonVector);
 
@@ -711,7 +715,7 @@ Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, con
   Vector& nonConstInput = const_cast<Vector&>(input);
   
   // Zero out the delta X of the linear problem
-  result.init(0.0);
+  //result.init(0.0);
 
   // Create Epetra linear problem object for the linear solve
   Epetra_LinearProblem Problem(&Jacobian, 
