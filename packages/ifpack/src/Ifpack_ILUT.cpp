@@ -183,12 +183,13 @@ int Ifpack_ILUT::Compute()
   
   IFPACK_CHK_ERR(U_->InsertGlobalValues(0,RowNnzU,&(RowValuesU[0]),
                                         &(RowIndicesU[0])));
+   // FIXME: DOES IT WORK IN PARALLEL ??
   RowValuesU[0] = 1.0;
   RowIndicesU[0] = 0;
   IFPACK_CHK_ERR(L_->InsertGlobalValues(0,1,&(RowValuesU[0]),
                                         &(RowIndicesU[0])));
 
-  vector<double> AbsRow((int)(A_.MaxNumEntries() * LevelOfFill() * 10)); // a bit overestimated
+  vector<double> AbsRow;
 
   // =================== //
   // start factorization //
@@ -292,6 +293,7 @@ int Ifpack_ILUT::Compute()
 
     // drop elements to satisfy LevelOfFill(), start with L
     count = 0;
+    AbsRow.resize(SingleRowL.size());
     for (where = SingleRowL.begin() ; where != SingleRowL.end() ; ++where) {
       if (IFPACK_ABS((*where).second) > DropTolerance()) {
         AbsRow[count++] = IFPACK_ABS((*where).second);
@@ -314,13 +316,14 @@ int Ifpack_ILUT::Compute()
         DiscardedElements += (*where).second;
     }
 
+    // FIXME: DOES IT WORK IN PARALLEL ???
     // add 1 to the diagonal
-    int tmp = row_i;
     double dtmp = 1.0;
-    IFPACK_CHK_ERR(L_->InsertGlobalValues(row_i,1, &dtmp, &tmp));
+    IFPACK_CHK_ERR(L_->InsertGlobalValues(row_i,1, &dtmp, &row_i));
 
     // same business with U_
     count = 0;
+    AbsRow.resize(SingleRowU.size());
     for (where = SingleRowU.begin() ; where != SingleRowU.end() ; ++where) {
       if ((*where).first >= row_i && IFPACK_ABS((*where).second) > DropTolerance()) {
         AbsRow[count++] = IFPACK_ABS((*where).second);
@@ -335,10 +338,12 @@ int Ifpack_ILUT::Compute()
 
     // sets the factors in U_
     for (where = SingleRowU.begin() ; where != SingleRowU.end() ; ++where) {
-      if ((*where).first >= row_i) {
-        if (IFPACK_ABS((*where).second) >= cutoff) {
-          IFPACK_CHK_ERR(U_->InsertGlobalValues(row_i,1, &((*where).second),
-                                                (int*)&((*where).first)));
+      int col = (*where).first;
+      double val = (*where).second;
+
+      if (col >= row_i) {
+        if (IFPACK_ABS(val) >= cutoff || row_i == col) {
+          IFPACK_CHK_ERR(U_->InsertGlobalValues(row_i,1, &val, &col));
         }
         else
           DiscardedElements += (*where).second;
@@ -379,7 +384,6 @@ int Ifpack_ILUT::Compute()
   RHS1.Update(-1.0, RHS3, 1.0);
   double Norm;
   RHS1.Norm2(&Norm);
-  cout << Norm << endl;
 #endif
 
   IsComputed_ = true;
