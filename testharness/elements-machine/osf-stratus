@@ -3,6 +3,10 @@ CXXFLAGS="-O3 -DMPICH_SKIP_MPICXX"
 TRILINOS_TEMPLATE_OBJS=cxx_repository/*.o
 CFLAGS=-O3
 FFLAGS=-O3
---with-amesos-dscpacklib=/usr/users/jmwille/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a
---with-amesos-dscpackdir=/usr/users/jmwille/Trilinos3PL/DSCPACK1.0
+--with-libs="/usr/users/jmwille/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a
+/usr/users/jmwille/Trilinos3PL/UMFPACKv4.1/UMFPACK/Lib/libumfpack.a
+/usr/users/jmwille/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a"
+--with-incdirs="-I/usr/users/jmwille/Trilinos3PL/DSCPACK1.0/DSC_LIB
+-I/usr/users/jmwille/Trilinos3PL/UMFPACKv4.1/UMFPACK/Include
+-I/usr/users/jmwille/Trilinos3PL/UMFPACKv4.1/AMD/Include"
 --with-trilinos3pldir=/usr/users/jmwille/Trilinos3PL
