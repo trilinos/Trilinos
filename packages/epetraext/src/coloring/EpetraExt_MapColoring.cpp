@@ -52,6 +52,8 @@ using std::vector;
 using std::set;
 using std::map;
 
+#define PRAND(seed) (fmod((double)23*(47594118*seed),(double)10000001))
+
 namespace EpetraExt {
 
 CrsGraph_MapColoring::NewTypeRef
@@ -390,54 +392,152 @@ operator()( OriginalTypeRef orig  )
     if( verbose_ ) cout << "BoundaryMap:\n" << BoundaryMap;
     
     int BoundarySize = BoundaryMap.NumGlobalElements();
-
-    Epetra_Map BoundaryIndexMap( BoundarySize, LocalBoundarySize, 0, RowMap.Comm() );
-    if( verbose_ ) cout << "BoundaryIndexMap:\n" << BoundaryIndexMap;
-
-    Epetra_IntVector bGIDs( View, BoundaryIndexMap, &boundaryGIDs[0] );
-    if( verbose_ ) cout << "BoundaryGIDs:\n" << bGIDs;
-
-    int NumLocalBs = 0;
-    if( !RowMap.Comm().MyPID() ) NumLocalBs = BoundarySize;
-     
-    Epetra_Map LocalBoundaryIndexMap( BoundarySize, NumLocalBs, 0, RowMap.Comm() );
-    if( verbose_ ) cout << "LocalBoundaryIndexMap:\n" << LocalBoundaryIndexMap;
-
-    Epetra_IntVector lbGIDs( LocalBoundaryIndexMap );
-    Epetra_Import lbImport( LocalBoundaryIndexMap, BoundaryIndexMap );
-    lbGIDs.Import( bGIDs, lbImport, Insert );
-    if( verbose_ ) cout << "LocalBoundaryGIDs:\n" << lbGIDs;
-
-    Epetra_Map LocalBoundaryMap( BoundarySize, NumLocalBs, lbGIDs.Values(), 0, RowMap.Comm() );
-    if( verbose_ ) cout << "LocalBoundaryMap:\n" << LocalBoundaryMap;
-
-    Epetra_CrsGraph LocalBoundaryGraph( Copy, LocalBoundaryMap, LocalBoundaryMap, 0 );
-    Epetra_Import LocalBoundaryImport( LocalBoundaryMap, Adj2.RowMap() );
-    LocalBoundaryGraph.Import( Adj2, LocalBoundaryImport, Insert );
-    LocalBoundaryGraph.TransformToLocal();
-    if( verbose_ ) cout << "LocalBoundaryGraph:\n " << LocalBoundaryGraph;
-
-    EpetraExt::CrsGraph_MapColoring BoundaryTrans( algo_, verbose_, reordering_ );
-    Epetra_MapColoring & LocalBoundaryColoring = BoundaryTrans( LocalBoundaryGraph );
-    if( verbose_ ) cout << "LocalBoundaryColoring:\n " << LocalBoundaryColoring;
-
     Epetra_MapColoring BoundaryColoring( BoundaryMap );
-    Epetra_Export BoundaryExport( LocalBoundaryMap, BoundaryMap );
-    BoundaryColoring.Export( LocalBoundaryColoring, BoundaryExport, Insert );
+
+    if( SerialBoundaryColoring_ )
+    {
+      Epetra_Map BoundaryIndexMap( BoundarySize, LocalBoundarySize, 0, RowMap.Comm() );
+      if( verbose_ ) cout << "BoundaryIndexMap:\n" << BoundaryIndexMap;
+
+      Epetra_IntVector bGIDs( View, BoundaryIndexMap, &boundaryGIDs[0] );
+      if( verbose_ ) cout << "BoundaryGIDs:\n" << bGIDs;
+
+      int NumLocalBs = 0;
+      if( !RowMap.Comm().MyPID() ) NumLocalBs = BoundarySize;
+     
+      Epetra_Map LocalBoundaryIndexMap( BoundarySize, NumLocalBs, 0, RowMap.Comm() );
+      if( verbose_ ) cout << "LocalBoundaryIndexMap:\n" << LocalBoundaryIndexMap;
+
+      Epetra_IntVector lbGIDs( LocalBoundaryIndexMap );
+      Epetra_Import lbImport( LocalBoundaryIndexMap, BoundaryIndexMap );
+      lbGIDs.Import( bGIDs, lbImport, Insert );
+      if( verbose_ ) cout << "LocalBoundaryGIDs:\n" << lbGIDs;
+
+      Epetra_Map LocalBoundaryMap( BoundarySize, NumLocalBs, lbGIDs.Values(), 0, RowMap.Comm() );
+      if( verbose_ ) cout << "LocalBoundaryMap:\n" << LocalBoundaryMap;
+
+      Epetra_CrsGraph LocalBoundaryGraph( Copy, LocalBoundaryMap, LocalBoundaryMap, 0 );
+      Epetra_Import LocalBoundaryImport( LocalBoundaryMap, Adj2.RowMap() );
+      LocalBoundaryGraph.Import( Adj2, LocalBoundaryImport, Insert );
+      LocalBoundaryGraph.TransformToLocal();
+      if( verbose_ ) cout << "LocalBoundaryGraph:\n " << LocalBoundaryGraph;
+
+      EpetraExt::CrsGraph_MapColoring BoundaryTrans( algo_, verbose_, reordering_ );
+      Epetra_MapColoring & LocalBoundaryColoring = BoundaryTrans( LocalBoundaryGraph );
+      if( verbose_ ) cout << "LocalBoundaryColoring:\n " << LocalBoundaryColoring;
+
+      Epetra_Export BoundaryExport( LocalBoundaryMap, BoundaryMap );
+      BoundaryColoring.Export( LocalBoundaryColoring, BoundaryExport, Insert );
+    }
+    else
+    {
+    /* Alternative Distrib. Memory Coloring of Boundary based on JonesPlassman(sic) paper
+     * 1.Random number assignment to all boundary nodes using GID as seed to function
+     * (This allows any processor to compute adj. off proc values with a local computation)
+     * 2.Find all nodes greater than any neighbor off processor, color them.
+     * 3.Send colored node info to neighbors
+     * 4.Constrained color all nodes with all off proc neighbors smaller or colored.
+     * 5.Goto 3
+     */
+
+      vector<int> OverlapBoundaryGIDs( boundaryGIDs );
+      for( int i = nRows; i < Adj2.ColMap().NumMyElements(); ++i )
+        OverlapBoundaryGIDs.push_back( Adj2.ColMap().GID(i) );
+
+      int OverlapBoundarySize = OverlapBoundaryGIDs.size();
+      Epetra_Map BoundaryColMap( -1, OverlapBoundarySize, &OverlapBoundaryGIDs[0], 0, RowMap.Comm() );
+
+      Epetra_CrsGraph BoundaryGraph( Copy, BoundaryMap, BoundaryColMap, 0 );
+      Epetra_Import BoundaryImport( BoundaryMap, Adj2.RowMap() );
+      BoundaryGraph.Import( Adj2, BoundaryImport, Insert );
+      BoundaryGraph.TransformToLocal();
+      if( verbose_ ) cout << "BoundaryGraph:\n" << BoundaryGraph;
+
+      Epetra_Import ReverseOverlapBoundaryImport( BoundaryMap, BoundaryColMap );
+      Epetra_Import OverlapBoundaryImport( BoundaryColMap, BoundaryMap );
+
+      int Colored = 0;
+      int GlobalColored = 0;
+      int Level = 0;
+      Epetra_MapColoring OverlapBoundaryColoring( BoundaryColMap );
+
+      if( verbose_ )
+      {
+        cout << MyPID << " PRands: ";
+	for( int i = 0; i < LocalBoundarySize; ++i ) cout << PRAND(boundaryGIDs[i]) << " ";
+	cout << endl;
+      }
+
+      while( GlobalColored < BoundarySize )
+      {
+        if( verbose_ ) cout << "Boundary Coloring Level: " << Level << endl;
+
+	//Find current "Level" of boundary indices to color
+	int NumIndices;
+	int * Indices;
+	vector<int> LevelIndices;
+	for( int i = 0; i < LocalBoundarySize; ++i )
+	{
+          if( !OverlapBoundaryColoring[i] )
+          {
+            int MyVal = PRAND(BoundaryColMap.GID(i));
+            BoundaryGraph.ExtractMyRowView( i, NumIndices, Indices );
+	    bool ColorFlag = true;
+	    int Loc = 0;
+	    while( Loc<NumIndices && Indices[Loc]<LocalBoundarySize ) ++Loc;
+	    for( int j = Loc; j < NumIndices; ++j )
+              if( PRAND(BoundaryColMap.GID(Indices[j])) > MyVal
+	          && !OverlapBoundaryColoring[Indices[j]] )
+              {
+                ColorFlag = false;
+		break;
+              }
+            if( ColorFlag ) LevelIndices.push_back(i);
+          }
+        }
+
+	if( verbose_ )
+        {
+          cout << MyPID << " Level Indices: ";
+	  for( int i = 0; i < LevelIndices.size(); ++i ) cout << LevelIndices[i] << " ";
+	  cout << endl;
+        }
+
+        //Greedy coloring of current level
+        for( int i = 0; i < LevelIndices.size(); ++i )
+        {
+          BoundaryGraph.ExtractMyRowView( LevelIndices[i], NumIndices, Indices );
+
+          set<int> usedColors;
+          int color;
+          for( int j = 0; j < NumIndices; ++j )
+          {
+            color = OverlapBoundaryColoring[ Indices[j] ];
+            if( color > 0 ) usedColors.insert( color );
+            color = 0;
+            int testcolor = 1;
+            while( !color )
+            {
+              if( !usedColors.count( testcolor ) ) color = testcolor;
+              ++testcolor;
+            }
+          }
+          OverlapBoundaryColoring[ LevelIndices[i] ] = color;
+        }
+
+	if( verbose_ ) cout << "Current Level Boundary Coloring:\n" << OverlapBoundaryColoring;
+
+	//Update off processor coloring info
+	BoundaryColoring.Import( OverlapBoundaryColoring, ReverseOverlapBoundaryImport, Insert );
+	OverlapBoundaryColoring.Import( BoundaryColoring, OverlapBoundaryImport, Insert );
+        Colored += LevelIndices.size();
+	Level++;
+
+	RowMap.Comm().SumAll( &Colored, &GlobalColored, 1 );
+      }
+    }
+
     if( verbose_ ) cout << "BoundaryColoring:\n " << BoundaryColoring;
-
-//    Epetra_Map InteriorMap( -1, interiorGIDs.size(), &interiorGIDs[0], 0, RowMap.Comm() );
-//    if( verbose_ ) cout << "InteriorMap:\n " << InteriorMap;
-
-//    Epetra_CrsGraph InteriorGraph( Copy, InteriorMap, InteriorMap, 0 );
-//    Epetra_Import InteriorImport( InteriorMap, Adj2.RowMap() );
-//    InteriorGraph.Import( Adj2, InteriorImport, Insert );
-//    InteriorGraph.TransformToLocal();
-//    if( verbose_ ) cout << "InteriorGraph:\n " << InteriorGraph;
-
-//    EpetraExt::CrsGraph_MapColoring InteriorTrans;
-//    Epetra_MapColoring & InteriorColoring = InteriorTrans( InteriorGraph );
-//    if( verbose_ ) cout << "InteriorColoring:\n " << InteriorColoring;
 
     Epetra_MapColoring RowColorMap( RowMap );
 

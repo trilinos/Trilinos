@@ -214,13 +214,13 @@ int main(int argc, char *argv[]) {
   if( verbose ) cout << "Parallel Map Coloring 1!\n";
   EpetraExt::CrsGraph_MapColoring
     Parallel1MapColoringTransform( EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY,
-		               verbose, 0, 1);
+		               verbose, 0, true);
   Epetra_MapColoring & Parallel1ColorMap = Parallel1MapColoringTransform( A );
 
   if( verbose ) cout << "Parallel Map Coloring 2!\n";
   EpetraExt::CrsGraph_MapColoring
     Parallel2MapColoringTransform( EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY,
-		               verbose, 0, 2);
+		               verbose, 0, true, false);
   Epetra_MapColoring & Parallel2ColorMap = Parallel2MapColoringTransform( A );
 
   int NumColors = Greedy0ColorMap.NumColors();
