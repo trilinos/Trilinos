@@ -142,19 +142,19 @@ int chaco_dist_graph(
       }
     }
     if (*ndim > 0) {
-      send_x = (float *) malloc(max_nvtxs*sizeof(int));
+      send_x = (float *) malloc(max_nvtxs*sizeof(float));
       if (send_x == NULL) {
         Gen_Error(0, "fatal: insufficient memory");
         return 0;
       }
       if (*ndim > 1) {
-        send_y = (float *) malloc(max_nvtxs*sizeof(int));
+        send_y = (float *) malloc(max_nvtxs*sizeof(float));
         if (send_y == NULL) {
           Gen_Error(0, "fatal: insufficient memory");
           return 0;
         }
         if (*ndim > 2) {
-          send_z = (float *) malloc(max_nvtxs*sizeof(int));
+          send_z = (float *) malloc(max_nvtxs*sizeof(float));
           if (send_z == NULL) {
             Gen_Error(0, "fatal: insufficient memory");
             return 0;
