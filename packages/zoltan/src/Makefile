@@ -31,9 +31,10 @@ SUPP_TARGS	= "sgi10k smos sun tflop"
 #
 #   Paths to submodules
 #
-SUB_VPATH	= ../all ../lb ../par ../rcb ../comm ../oct ../driver
+SUB_VPATH	= ../all ../lb ../par ../rcb ../comm ../oct ../driver ../ch \
+		  ../parmetis
 SUBINCPATH	= -I../all -I../lb -I../par -I../rcb -I../comm -I../oct \
-		  -I../driver
+		  -I../driver -I../ch -I../parmetis
 
 #source code from SCCS projects
 
@@ -63,6 +64,10 @@ OCT_INC		= msg_const.h octant_const.h util_const.h octupdate_const.h \
 		  octupdate.h dfs_const.h dfs.h migoct_const.h \
 		  migreg.h hilbert_const.h
 
+PARMETIS_CSRC	= parmetis_part.c parmetis_util.c
+
+PARMETIS_INC	= parmetis_const.h
+
 COMM_CSRC	= comm.c
 COMM_INC	= comm.h
 
@@ -70,35 +75,40 @@ PAR_CSRC	= par_util.c
 PAR_INC		= par_const.h par.h
 
 # source code and defines for driver
-DR_SRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
+DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
 		  dr_util.c dr_exoII_io.c dr_elem.c dr_loadbal.c \
-		  dr_migrate.c dr_output.c
+		  dr_migrate.c dr_output.c dr_chaco_io.c
 DR_INC		= dr_const.h dr_input_const.h dr_util_const.h \
 		  dr_err_const.h dr_par_util_const.h dr_elem_const.h
+
+CH_CSRC		= ch_dist_graph.c ch_input_graph.c
+
+CH_INC		= ch_input.h ch_input_const.h
 
 ROOT_ARCHD	= /Net/pecos/rf_crew/arch
 NEM_LIBS	= -lnemIc -lexoIIc -lnetcdf
 
 # machine independent routines
 INC		= $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(PAR_INC) \
-		  $(RCB_INC) $(COMM_INC) $(OCT_INC)
+		  $(RCB_INC) $(COMM_INC) $(OCT_INC) $(PARMETIS_INC)
 #LIB_SRC_C	= $(GR_CSRC) $(ID_CSRC) $(VX_CSRC) $(ALL_CSRC) 
 LIB_SRC_C	= $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) $(COMM_CSRC) \
-		  $(OCT_CSRC)
+		  $(OCT_CSRC) $(PARMETIS_CSRC)
 LIB_SRC_OBJ	= $(LIB_SRC_C:.c=.o) 
 
 #
 # lint defines
 #
 LINT		= alint
-LINT_INC_PATH	= -Idriver -Iall -Ilb -Ipar -Ircb -Icomm -Ioct \
+LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb \
+		  -Icomm -Ioct -Iparmetis \
 		  -I/Net/local/lang/SC2.0.1/include \
 		  -I/Net/local/lang/SC2.0.1/ansi_include \
 		  -I/Net/pecos/puma/pumatmp1/tools/mpi/include \
 		  -I/Net/pecos/rf_crew/arch/sun/include
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES) -DSUNOS
 LINT_TARGET	= llib-l$(LIB_TARGET).ln
-SUBDIRS		= driver all lb par rcb comm oct
+SUBDIRS		= driver ch all lb par rcb comm oct
 VPATH		= $(SUBDIRS)
 
 #
@@ -122,7 +132,7 @@ SMOS_DEFS	= $(GDEFINES)
 
 # driver stuff
 SMOS_ARCHD	= $(ROOT_ARCHD)/smos
-SMOS_DR_CSRC	= $(DR_SRC)
+SMOS_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
 SMOS_DR_OBJ	= $(SMOS_DR_CSRC:.c=.o)
 SMOS_DR_IPATH	= -I$(SMOS_ARCHD)/include
 SMOS_MPI_LIB	= -L/Net/local/mpi/lib/paragon/sunmos -lmpi
@@ -151,7 +161,7 @@ TFLOP_DEFS	= $(GDEFINES) -DMPI
 
 # driver stuff
 TFLOP_ARCHD	= $(ROOT_ARCHD)/tflop
-TFLOP_DR_CSRC	= $(DR_SRC)
+TFLOP_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
 TFLOP_DR_OBJ	= $(TFLOP_DR_CSRC:.c=.o)
 TFLOP_DR_IPATH	= -I$(TFLOP_ARCHD)/include
 TFLOP_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(TFLOP_ARCHD)/lib $(NEM_LIBS) -lmpi
@@ -180,7 +190,7 @@ SUN_DEFS	= $(GDEFINES) -DSUNOS
 
 # driver stuff
 SUN_ARCHD	= $(ROOT_ARCHD)/sun
-SUN_DR_CSRC	= $(DR_SRC)
+SUN_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
 SUN_DR_OBJ	= $(SUN_DR_CSRC:.c=.o)
 SUN_DR_IPATH	= -I$(SUN_ARCHD)/include
 SUN_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SUN_ARCHD)/lib $(NEM_LIBS) -lmpi
@@ -276,7 +286,7 @@ $(LINT_TARGET): $(LIB_SRC_C)
 	@echo "Generating lint file for library..."
 	$(LINT) $(LINT_FLAGS) $? -y -o $(LIB_TARGET)
 
-lint: $(DR_SRC) $(LINT_TARGET)
+lint: $(DR_CSRC) $(CH_CSRC) $(LINT_TARGET)
 	@echo "running lint..."
 	$(LINT) $(LINT_FLAGS) $?
 
