@@ -181,8 +181,8 @@ fini:
             if (!zz->LB.Single_Proc_Per_Part) {
                /* Part may be spread across multiple procs. Include them all. */
                int j;
-               if (first_proc < zz->LB.Num_Global_Parts - 1)
-                  last_proc = Zoltan_LB_Part_To_Proc (zz, first_proc + 1, NULL);
+               if (i < zz->LB.Num_Global_Parts - 1)
+                  last_proc = Zoltan_LB_Part_To_Proc (zz, i + 1, NULL);
                else
                   last_proc = zz->Num_Proc;
 
