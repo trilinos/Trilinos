@@ -303,7 +303,8 @@ double *<b>Zoltan_Calloc</b>(int <i>num</i>, int <i>size</i>, char
 *<i> file</i>, int <i>line</i>);&nbsp;
 <hr>
 The <b>Zoltan_Calloc</b> function is a wrapper around the standard C calloc
-routine. It allocates a block of memory of size <i>num * size </i> bytes. The principle
+routine. It allocates a block of memory of size <i>num * size </i> bytes and
+initializes the memory to zeros. The principle
 advantage of using the wrapper is that it allows memory leaks to be tracked
 via the DEBUG_MEMORY variable (set in <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>).
 <p>A macro <b>ZOLTAN_CALLOC</b> is defined in <i>zoltan_mem.h</i>.
@@ -326,12 +327,12 @@ call.
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp;<i> num</i></td>
 
-<td>The number of elements of the following <i>size</i> to allocate</td>
+<td>The number of elements of the following <i>size</i> to allocate.</td>
 </tr>
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp;<i> size</i></td>
 
-<td>The size of each element <i>size</i> to allocate.  Hence the total allocation
+<td>The size of each element.  Hence, the total allocation
 is <i>num</i> * <i>size</i> bytes.</td>
 </tr>
 <tr>
@@ -374,15 +375,14 @@ returned if <i>n</i> = 0 or the routine is unsuccessful.</td>
 <tr>
 <td VALIGN=TOP></td>
 
-<td>struct <b>Zoltan_Struct</b> *<i>b</i> = (struct <b>Zoltan_Struct</b> *) <b>ZOLTAN_CALLOC</b>(
-<i>1</i>, <i>sizeof</i>(struct
-<b>Zoltan_Struct</b>));</td>
+<td>int *<i>b</i> = (int *) <b>ZOLTAN_CALLOC</b>(
+<i>10</i>, <i>sizeof</i>(int));</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP></td>
 
-<td>Allocates memory for one <b>Zoltan_Struct</b> data structure.&nbsp;</td>
+<td>Allocates memory for 10 integers and initializes the memory to zeros.&nbsp;</td>
 </tr>
 </table>
 
@@ -662,13 +662,13 @@ utilization. <br>&nbsp;
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>type</i></td>
 
 <td>Integer to request type of information required.&nbsp These integers
-are defined symbolically in <b> zoltan_mem.h</b>.  Valid options include:
+are defined in <i>zoltan_mem.h</i>.  Valid options include:
 <blockquote>
 ZOLTAN_MEM_STAT_TOTAL -- The function will return the current total memory
 allocated via Zoltan's memory allocation routines.
 <br>
 ZOLTAN_MEM_STAT_MAXIMUM -- The function will return the maximum total memory
-allocated via Zoltan's memory allocation routines upto this point.
+allocated via Zoltan's memory allocation routines up to this point.
 </blockquote>
 </td>
 </tr>
@@ -682,7 +682,7 @@ allocated via Zoltan's memory allocation routines upto this point.
 <tr>
 <td VALIGN=TOP></td>
 
-<td>none</td>
+<td><i>type</i> = <i>ZOLTAN_MEM_STAT_MAXIMUM</i></td>
 </tr>
 
 <td><b>Returned Value:</b></td>
