@@ -252,7 +252,7 @@ int Zoltan_PHG_Partition (
           
       /* fill sendbuffer with part data for external matches I owned */    
       for (i = 0; i < finer->LevelCnt; i++)  {
-        int lno = finer->LevelData[i++];          /* skip return lno */
+        ++i;          /* skip return lno */
         finer->LevelData[i] = finer->part[finer->LevelData[i]]; 
       }
             

@@ -189,28 +189,26 @@ int Zoltan_PHG_Coarsening
 
   /* Allocate vertex weight array for coarse hgraph */
   if (hg->nVtx > 0 && hg->VtxWeightDim > 0 &&
-      !(c_hg->vwgt = (float*) ZOLTAN_MALLOC (c_hg->nVtx * hg->VtxWeightDim *
+      !(c_hg->vwgt = (float*) ZOLTAN_CALLOC (c_hg->nVtx * hg->VtxWeightDim,
                                              sizeof(float))))
       MEMORY_ERROR;
   for (i=0; i < hg->nVtx; ++i) {
       int ni=LevelMap[i];
       if (ni>=0)
-          memcpy(&c_hg->vwgt[ni*hg->VtxWeightDim], &hg->vwgt[i*hg->VtxWeightDim],
-                 hg->VtxWeightDim*sizeof(float));
+          for (j=0; j<hg->VtxWeightDim; ++j)
+              c_hg->vwgt[ni*hg->VtxWeightDim+j] += hg->vwgt[i*hg->VtxWeightDim+j];
   }
       
   /* index all received data for rapid lookup */
   for (ip = (int*) rbuffer, i = 0; i < size; )  {
     int j, sz, source_lno=ip[i++];
-    int lno=LevelMap[VTX_GNO_TO_LNO (hg, ip[i++])];
+    int lno=VTX_GNO_TO_LNO (hg, ip[i++]);
     float *pw=(float*) &ip[i];
 
     (*LevelData)[(*LevelCnt)++] = source_lno;
     (*LevelData)[(*LevelCnt)++] = lno;              /* to lookup in part[] */
 
-    if (lno<0 || lno>=c_hg->nVtx)
-        errexit("lno=%d c_hg->nVtx=%d\n", lno, c_hg->nVtx);
-    
+    lno = LevelMap[lno];
     for (j=0; j<hg->VtxWeightDim; ++j)
         c_hg->vwgt[lno*hg->VtxWeightDim+j] += pw[j];
     i += hg->VtxWeightDim;    /* skip vertex weights */
@@ -286,7 +284,7 @@ int Zoltan_PHG_Coarsening
      we need to check if this is good, if not we need to find a better way */
   MPI_Allreduce(lhash, hash, c_hg->nEdge, MPI_LONG, MPI_BXOR, hgc->row_comm);
 
-
+#if 1
   for (i=0; i<hg->nEdge; ++i) /* discard size-1 or 0 nets */
       if (hsize[i]<2) {
           c_hg->nPins -= hlsize[i];
@@ -319,6 +317,7 @@ int Zoltan_PHG_Coarsening
       c_hg->hvertex = c_hvertex;   c_hvertex = NULL;
       c_hg->ewgt = c_ewgt;         c_ewgt = NULL;
   }
+#endif
 
 
   /* We need to compute dist_x, dist_y */
