@@ -277,7 +277,16 @@ EXCLUDE_PATTERNS       = *.x \
 # directories that contain example code fragments that are included (see 
 # the \include command). 
 
-EXAMPLE_PATH           = ../examples/BasicExamples ../examples/Advanced ../examples/TwoLevelDD ../examples/Visualization ../examples/Maxwell ../examples/MLAPI ../examples/MatrixReading ../examples/StandAlone ../
+EXAMPLE_PATH           = ../examples/BasicExamples 
+EXAMPLE_PATH          += ../examples/Advanced
+EXAMPLE_PATH          += ../examples/TwoLevelDD
+EXAMPLE_PATH          += ../examples/Visualization
+EXAMPLE_PATH          += ../examples/Maxwell
+EXAMPLE_PATH          += ../examples/MLAPI
+EXAMPLE_PATH          += ../examples/MatrixReading
+EXAMPLE_PATH          += ../examples/StandAlone
+EXAMPLE_PATH          += ../examples/MLAPI
+EXAMPLE_PATH          += ../
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the 
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
@@ -551,7 +560,7 @@ INCLUDE_FILE_PATTERNS  =
 # or name=definition (no spaces). If the definition and the = are 
 # omitted =1 is assumed. 
 
-PREDEFINED             = HAVE_ML_EPETRA HAVE_ML_ANASAZI HAVE_ML_IFPACK HAVE_ML_TEUCHOS HAVE_MPI HAVE_ML_MPI ML_MPI HAVE_ML_TRIUTILS HAVE_ML_METIS HAVE_ML_PARMETIS2X HAVE_ML_PARMETIS3X HAVE_ML_AMESOS HAVE_ML_AZTECOO ML_WITH_EPETRA
+PREDEFINED             = HAVE_ML_EPETRA HAVE_ML_ANASAZI HAVE_ML_IFPACK HAVE_ML_TEUCHOS HAVE_MPI HAVE_ML_MPI ML_MPI HAVE_ML_TRIUTILS HAVE_ML_METIS HAVE_ML_PARMETIS2X HAVE_ML_PARMETIS3X HAVE_ML_AMESOS HAVE_ML_AZTECOO ML_WITH_EPETRA HAVE_ML_MLAPI
 
 # If the MACRO_EXPANSION and EXPAND_PREDEF_ONLY tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 

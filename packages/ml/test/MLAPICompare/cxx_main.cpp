@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
   Time.ResetStartTime();
 
   MultiLevelPreconditioner* MLPPrec;
-  MLPPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, false);
+  MLPPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
   MLPConstructionTime = Time.ElapsedTime();
   Time.ResetStartTime();
 
@@ -133,12 +133,12 @@ int main(int argc, char *argv[])
   solver.SetPrecOperator(MLPPrec);
   solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_output, 1);
-  //solver.Iterate(1550, 1e-5);
+  solver.Iterate(1550, 1e-5);
 
   MLPIters = solver.NumIters();
   MLPResidual = solver.TrueResidual();
 
-  //delete MLPPrec;
+  delete MLPPrec;
   MLPSolveTime = Time.ElapsedTime();
 
   // ======================================================= //
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
   // ======================================================= //
   
   MLList.set("smoother: type", "symmetric Gauss-Seidel");
-  SetPrintLevel(10);
+
   Init();
   int size = A->NumMyRows();
   Space FineSpace(-1,size);
@@ -156,11 +156,8 @@ int main(int argc, char *argv[])
   Operator AA(FineSpace,FineSpace,A,false);
 
   Time.ResetStartTime();
-  AggregationDataBase  ADB(MLList);
-  SmootherDataBase     SDB(MLList);
-  CoarseSolverDataBase CDB(MLList);
 
-  MultiLevelSA* Cycle = new MultiLevelSA(AA,ADB,SDB,CDB);
+  MultiLevelSA* Cycle = new MultiLevelSA(AA,MLList);
   Epetra_Operator* MLAPIPrec = 
     new EpetraPreconditioner(A->RowMatrixRowMap(),*Cycle);
   MLAPIConstructionTime = Time.ElapsedTime();

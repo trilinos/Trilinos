@@ -709,3 +709,28 @@ Trilinos 4.0 tutorial.
 \include README-ML
 */
 
+/*!
+\page ml_blackboard_cpp BlackBoard.cpp
+\include Blackboard.cpp
+*/
+
+/*!
+\page ml_powermethod PowerMethod.cpp
+\include PowerMethod.cpp
+*/
+
+/*!
+\page ml_multilevel MultiLevel.cpp
+\include MultiLevel.cpp
+*/
+
+/*!
+\page ml_richardson Richardson.cpp
+\include Richardson.cpp
+*/
+
+/*!
+\page ml_adaptivesa AdaptiveSa.cpp
+\include AdaptiveSa.cpp
+*/
+
