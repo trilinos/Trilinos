@@ -9,6 +9,13 @@
  *
  */
 
+/*
+  Current revision: $Revision$
+  Branch:           $Branch$
+  Last modified:    $Date$
+  Modified by:      $Author$
+ */
+
 #include "ml_common.h"
 #include "ml_include.h"
 
