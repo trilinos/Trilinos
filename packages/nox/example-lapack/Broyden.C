@@ -77,7 +77,9 @@ public:
     cout << "Broyden ill-conditioning: lambda = " << lambda << "\n"; 
     
     for (int i=0; i<n; i++) {
-      initialGuess(i) = 0;  // -1;
+      // initialGuess(i) = -100;   // Case for lambdaBar != 1.0
+      initialGuess(i) = 0;      // General testing
+      // initialGuess(i) = -1;     // Standard
       solution(i) = 1;
     }
     fevals = 0;
@@ -163,65 +165,89 @@ int main()
   // specified problem.
   NOX::LAPACK::Group grp(broyden);
 
-  // Set up the status tests
-  //NOX::StatusTest::NormF statusTestA(grp, 1.0e-12);
-  NOX::StatusTest::NormF statusTestA(1.0e-12, 
-				     NOX::StatusTest::NormF::Unscaled);
-  NOX::StatusTest::MaxIters statusTestB(150);
-  NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
-
-  // Set up the solver parameters
+  // Create the top level parameter list
   NOX::Parameter::List solverParameters;
 
-  // Set the level of output (this is the default)
-  solverParameters.setParameter("Output Information", 
-		     NOX::Utils::Warning + 
-		     NOX::Utils::OuterIteration + 
-		     NOX::Utils::InnerIteration + 
-		     NOX::Utils::Parameters);
-
-  // Choose the solver itself
+  // Set the nonlinear solver method
   solverParameters.setParameter("Nonlinear Solver", "Tensor Based");
   
-  // Set up the line search parameters
-  NOX::Parameter::List& lineSearchParameters = 
-    solverParameters.sublist("Line Search");
-  lineSearchParameters.setParameter("Method","Curvilinear");
-  lineSearchParameters.setParameter("Max Iters",20);
+  // Sublist for printing parameters
+  NOX::Parameter::List& printParams = solverParameters.sublist("Printing");
+  //printParams.setParameter("MyPID", 0); 
+  printParams.setParameter("Output Precision", 3);
+  printParams.setParameter("Output Processor", 0);
+  printParams.setParameter("Output Information", 
+			NOX::Utils::OuterIteration + 
+			NOX::Utils::OuterIterationStatusTest + 
+			NOX::Utils::InnerIteration +
+			NOX::Utils::Parameters + 
+			NOX::Utils::Details + 
+			NOX::Utils::Warning);
+  NOX::Utils utils(printParams);
 
-  // Set up the direction parameters
+  // Sublist for direction parameters
   NOX::Parameter::List& directionParameters = 
     solverParameters.sublist("Direction");
   directionParameters.setParameter("Method","Tensor");
 
-  // Set up the local solver parameters
+  // Sublist for local solver parameters
   NOX::Parameter::List& localSolverParameters = 
-    directionParameters.sublist("Linear Solver");
+    directionParameters.sublist("Tensor").sublist("Linear Solver");
+  localSolverParameters.setParameter("Compute Step","Tensor");
   localSolverParameters.setParameter("Tolerance",1e-4);
   localSolverParameters.setParameter("Reorthogonalize","As Needed");
+  localSolverParameters.setParameter("Output Frequency",20);  
+  localSolverParameters.setParameter("Max Restarts",2);
+  localSolverParameters.setParameter("Size of Krylov Subspace",100);
+  localSolverParameters.setParameter("Preconditioning","Placeholder");
+  localSolverParameters.setParameter("Preconditioning Side","None");
+  localSolverParameters.setParameter("Use Shortcut Method",false);
+
+  // Sublist for line search parameters
+  NOX::Parameter::List& lineSearchParameters = 
+    solverParameters.sublist("Line Search");
+  lineSearchParameters.setParameter("Method","Tensor");
+  lineSearchParameters.sublist("Tensor").setParameter("Submethod","Standard");
+  lineSearchParameters.sublist("Tensor").setParameter("Lambda Selection",
+						      "Quadratic");
+  lineSearchParameters.sublist("Tensor").setParameter("Max Iters",20);
+
+
+  // Create the convergence tests
+  //NOX::StatusTest::NormF statusTestA(grp, 1.0e-12);
+  NOX::StatusTest::NormF statusTestA(1.0e-12, 
+				     NOX::StatusTest::NormF::Unscaled);
+  NOX::StatusTest::MaxIters statusTestB(50);
+  NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR,
+					  statusTestA, statusTestB);
 
   // Create the solver
   NOX::Solver::TensorBased solver(grp, statusTestsCombo, solverParameters);
 
   // Print the starting point
   cout << "\n" << "-- Starting Point --" << "\n";
-  cout << "|| F(x0) || = " << NOX::Utils::sci(grp.getNormF()) << endl;
+  cout << "|| F(x0) || = " << utils.sciformat(grp.getNormF()) << endl;
   // grp.print();
 
   // Solve the nonlinear system
   NOX::StatusTest::StatusType status = solver.solve();
 
-  // Print the parameters
-  cout << "\n" << "-- Parameter List Used in Solver --" << "\n";
-  solver.getParameterList().print(cout);
-
   // Get the answer
   grp = solver.getSolutionGroup();
 
-  // Print the answer
-  cout << "\n" << "-- Final Solution From Solver --" << "\n";
-  cout << "|| F(x*) || = " << NOX::Utils::sci(grp.getNormF()) << endl;
-  // grp.print();
+  // Output the parameter list
+  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+    cout << "\n" << "-- Parameter List Used in Solver --" << endl;
+    solver.getParameterList().print(cout);
+    cout << endl;
+  }
 
+  // Print the answer
+  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+    cout << "\n" << "-- Final Solution From Solver --" << "\n";
+    cout << "|| F(x*) || = " << utils.sciformat(grp.getNormF()) << endl;
+    // grp.print();
+  }
+  
 }
 #endif
