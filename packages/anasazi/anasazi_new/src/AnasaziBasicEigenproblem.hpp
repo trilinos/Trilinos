@@ -278,13 +278,15 @@ namespace Anasazi {
       // make sure all the storage required for the eigenproblem exists (check symmetry)
       //
       if ( _isSym ) {
-	if ( _nev <= old_nev )
+	if ( _nev <= old_nev ) {
           _isSet=true;
-	  return Ok;
+       	  return Ok;
+        }
       } else {
-	if ( 2*_nev <= old_nev )
+	if ( 2*_nev <= old_nev ) {
           _isSet=true;
 	  return Ok;
+        }
       }
     }	
     
@@ -357,7 +359,6 @@ namespace Anasazi {
         if ( ret != Ok ) { return ret; }
         (*normvec)[i] = sqrt(DenseOne(0));
       }
-      return Ok;
     } else {
       return Failed;
     }

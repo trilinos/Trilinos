@@ -107,7 +107,7 @@ namespace Anasazi {
     /*! This number will be the product of the length and the blocksize given by the user.
      */
     int GetKrylovFactorizationLength() const { return(_totallength); };
-    
+
     /*! \brief Get a constant reference to the current linear problem, 
       which may include a current solution.
     */
@@ -223,6 +223,7 @@ namespace Anasazi {
   //----------------------------------------------------------------------------------------
   //----------------------------------------------------------------------------------------
   
+
   template <class ScalarType, class MV, class OP>
   void BlockKrylovSchur<ScalarType,MV,OP>::SetBlkTols() {
     const ScalarType two = 2.0;
