@@ -37,22 +37,6 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
-/* Some compilers (in particular the SGI and ASCI Red - TFLOP) 
- * fail to find the max and min function.  Therfore we redefine them 
- * here. 
- */ 
-#ifdef max
-#undef max
-#endif
-
-#define max(a,b) ((a)>(b)) ? (a) : (b);
-
-#ifdef min
-#undef min
-#endif
-
-#define min(a,b) ((a)<(b)) ? (a) : (b);
-
 NOX::Solver::LineSearchBased::LineSearchBased(NOX::Abstract::Group& xGrp, 
 					      NOX::StatusTest::Generic& t, 
 					      NOX::Parameter::List& p) :

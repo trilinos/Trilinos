@@ -122,5 +122,7 @@ using std::ostream;
 using std::map;
 using std::vector;
 
+#define NOX_MAX(a,b) ((a)>(b)) ? (a) : (b)
+#define NOX_MIN(a,b) ((a)<(b)) ? (a) : (b)
 
 #endif

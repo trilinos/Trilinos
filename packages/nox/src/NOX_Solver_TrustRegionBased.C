@@ -42,22 +42,6 @@
 using namespace NOX;
 using namespace NOX::Solver;
 
-/* Some compilers (in particular the SGI and ASCI Red - TFLOP) 
- * fail to find the max and min function.  Therfore we redefine them 
- * here. 
- */ 
-#ifdef max
-#undef max
-#endif
-
-#define max(a,b) ((a)>(b)) ? (a) : (b);
-
-#ifdef min
-#undef min
-#endif
-
-#define min(a,b) ((a)<(b)) ? (a) : (b);
-
 TrustRegionBased::TrustRegionBased(Abstract::Group& grp, StatusTest::Generic& t, Parameter::List& p) :
   solnPtr(&grp),		// pointer to grp
   oldSolnPtr(grp.clone(DeepCopy)), // create via clone
@@ -545,11 +529,11 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
 	else 
 	  radius = newtonVec.norm();
       }
-      radius = max(contractFactor * radius, minRadius);
+      radius = NOX_MAX(contractFactor * radius, minRadius);
     }
     else if ((ratio > expandTriggerRatio) && (dx == radius)) 
     {
-      radius = min(expandFactor * radius, maxRadius);
+      radius = NOX_MIN(expandFactor * radius, maxRadius);
     }
 
   }

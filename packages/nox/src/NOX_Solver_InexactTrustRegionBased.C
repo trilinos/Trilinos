@@ -44,22 +44,6 @@
 using namespace NOX;
 using namespace NOX::Solver;
 
-/* Some compilers (in particular the SGI and ASCI Red - TFLOP) 
- * fail to find the max and min function.  Therfore we redefine them 
- * here. 
- */ 
-#ifdef max
-#undef max
-#endif
-
-#define max(a,b) ((a)>(b)) ? (a) : (b);
-
-#ifdef min
-#undef min
-#endif
-
-#define min(a,b) ((a)<(b)) ? (a) : (b);
-
 //*************************************************************************
 //**** Constructor
 //*************************************************************************
@@ -647,13 +631,13 @@ NOX::Solver::InexactTrustRegionBased::iterateStandard()
       if (stepType == InexactTrustRegionBased::Newton) {
 	radius = computeNorm(newtonVec);
       }
-      radius = max(contractFactor * radius, minRadius);
+      radius = NOX_MAX(contractFactor * radius, minRadius);
     }
     else if ((ratio > expandTriggerRatio) && (dx == radius))
       // RPP Hack
       //else if (ratio > expandTriggerRatio) 
     {
-      radius = min(expandFactor * radius, maxRadius);
+      radius = NOX_MIN(expandFactor * radius, maxRadius);
     }
 
   } // End of While loop over TR inner iteration
@@ -845,7 +829,7 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
 	    else
 	      tauMin = rCauchyVec.dot(residualVec) / (norm * norm);
 
-	    tau = min(tauMin, tau);
+	    tau = NOX_MIN(tauMin, tau);
 	  }
 
 	  // Compute dogleg step
@@ -971,11 +955,11 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
       if (stepType == InexactTrustRegionBased::Newton)
 	radius = computeNorm(newtonVec);
   
-      radius = max(contractFactor * radius, minRadius);
+      radius = NOX_MAX(contractFactor * radius, minRadius);
     }
     else if (ratio > expandTriggerRatio)
     {
-      radius = min(expandFactor * radius, maxRadius);
+      radius = NOX_MIN(expandFactor * radius, maxRadius);
     }
 
   } // End Trust region inner iteration

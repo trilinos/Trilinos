@@ -43,20 +43,6 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Parameter_UserNorm.H"
 
-/* Some compilers (in particular the SGI and ASCI Red - TFLOP) 
- * fail to find the max and min function.  Therfore we redefine them 
- * here. 
- */ 
-#ifdef max
-#undef max
-#endif
-#define max(a,b) ((a)>(b)) ? (a) : (b);
-
-#ifdef min
-#undef min
-#endif
-#define min(a,b) ((a)<(b)) ? (a) : (b);
-
 // **************************************************************************
 // *** Constructor
 // **************************************************************************
@@ -275,9 +261,9 @@ computeForcingTerm(const NOX::Abstract::Group& soln,
       const double alpha = (1.0 + sqrt(5.0)) / 2.0;
       const double eta_km1_alpha = pow(eta_km1, alpha);
       if (eta_km1_alpha > 0.1) 
-	eta_k = max(eta_k, eta_km1_alpha);
-      eta_k = max(eta_k, eta_min);
-      eta_k = min(eta_max, eta_k);
+	eta_k = NOX_MAX(eta_k, eta_km1_alpha);
+      eta_k = NOX_MAX(eta_k, eta_min);
+      eta_k = NOX_MIN(eta_max, eta_k);
     }
   }
     
@@ -324,9 +310,9 @@ computeForcingTerm(const NOX::Abstract::Group& soln,
       // Impose safeguard and constraints ... 
       const double eta_k_alpha = gamma * pow(eta_km1, alpha);
       if (eta_k_alpha > 0.1) 
-	eta_k = max(eta_k, eta_k_alpha);
-      eta_k = max(eta_k, eta_min);
-      eta_k = min(eta_max, eta_k);
+	eta_k = NOX_MAX(eta_k, eta_k_alpha);
+      eta_k = NOX_MAX(eta_k, eta_min);
+      eta_k = NOX_MIN(eta_max, eta_k);
     }
     
   }
