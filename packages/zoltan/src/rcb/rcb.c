@@ -299,6 +299,9 @@ static int rcb_fn(
     timers[3] = 0.0;
   }
 
+  /* if reuse is turned on, turn on gen_tree since it is needed. */
+  if (reuse) gen_tree = 1;
+
   /* create mark and list arrays for dots */
 
   allocflag = 0;

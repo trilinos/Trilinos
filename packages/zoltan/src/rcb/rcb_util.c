@@ -77,6 +77,9 @@ int i, ierr = 0;
       LB_RCB_Free_Structure(lb);
       return(LB_MEMERR);
     }
+    /* initialize dim to -1 to prevent use of cut */
+    for (i = 0; i < lb->Num_Proc; i++)
+       rcb->Tree_Ptr[i].dim = -1;
   }
   else {
     rcb = (RCB_STRUCT *) lb->Data_Structure;
