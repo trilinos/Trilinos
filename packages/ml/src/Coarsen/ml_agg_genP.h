@@ -99,6 +99,9 @@ extern int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
 extern int ML_AGG_Amat_Getrows(void *data, int N_requested_rows, 
                int requested_rows[], int allocated_space, int columns[], 
                double values[], int row_lengths[]);
+extern int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
+			int blk_size);
+
 
 extern int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
         int (*user_next_level)(ML *, int, void *),

@@ -367,6 +367,9 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    ML_Krylov   *kdata;
    ML_Operator *t2 = NULL, *t3 = NULL;
    ML_Aggregate * ag = (ML_Aggregate *) data;
+   struct MLSthing *mls_widget = NULL;
+   ML_Operator *blockMat = NULL, *Ptemp;
+
 #ifdef GEOMETRIC_2D
    int nx, nxcoarse, ii, coarse_me, fine_me, *rowptr, *bindx, k,free_ptr,start;
    int i,j, end;
@@ -386,11 +389,24 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    }
 
    Amat = &(ml->Amat[level]);
+
+   if (Amat->num_PDEs < ag->num_PDE_eqns) Amat->num_PDEs = ag->num_PDE_eqns;
+   if (ag->block_scaled_SA == 1) {
+     /* 
+         Create block scaled and compute its eigenvalues
+	 a) if the user has requested it, save this Amat into
+	    the aggregate data structure.
+      */
+     mls_widget = ML_Smoother_Create_MLS();
+     ML_Gen_BlockScaledMatrix_with_Eigenvalues(Amat, -1, NULL,
+					       &blockMat, mls_widget);
+     max_eigen = blockMat->lambda_max;
+   }
+   else    max_eigen = Amat->lambda_max;
    
    widget.near_bdry = NULL;
    Amat->num_PDEs = ag->num_PDE_eqns;
    prev_P_tentatives = (ML_Operator **) ag->P_tentative;
-   max_eigen = Amat->lambda_max;
 
 #ifdef EXTREME_DEBUG
    printf("### %e %e\n",  ag->smoothP_damping_factor, max_eigen);
@@ -517,7 +533,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    ml->Pmat[clevel].max_nz_per_row = 4;
    ml->Pmat[clevel].N_nonzeros = bindx[Nfine];
    ML_Operator_Set_ApplyFunc (&(ml->Pmat[clevel]), ML_INTERNAL, CSR_matvec);
-   /*   ML_Operator_Print( &(ml->Pmat[clevel]),"Pmat");*/
+   if (mls_widget != NULL) ML_Smoother_Destroy_MLS(mls_widget);
    return 1;
 #endif
    gNfine   = ML_Comm_GsumInt( ml->comm, Nfine);
@@ -596,6 +612,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
         }
         ML_Operator_Destroy(&Pmatrix);
      }
+     if (mls_widget != NULL) ML_Smoother_Destroy_MLS(mls_widget);
      return -1;
    }
 
@@ -762,36 +779,29 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
                           widget.Amat->getrow->pre_comm);
 
-/*
-     if (level == -1)
-     {
-        ML_Operator_Get_Diag(AGGsmoother,AGGsmoother->invec_leng,&smdiag);
-        sprintf(matname,"Aggsm_%d",level);
-        printf("%s\n\n---------------------------------\n\n",matname);
-        fflush(stdout);
-        for (i=0; i<AGGsmoother->invec_leng; i++)
-           printf("%s[%d] = %e\n",matname,i,smdiag[i]);
-        ML_Operator_Get_Diag(Amat,Amat->invec_leng,&smdiag);
-        sprintf(matname,"Amat_%d",level); fflush(stdout);
-        printf("%s\n\n---------------------------------\n\n",matname);
-        fflush(stdout);
-        for (i=0; i<AGGsmoother->invec_leng; i++)
-           printf("%s[%d] = %e\n",matname,i,smdiag[i]);
-        printf("\n\n---------------------------------\n\n");
-     }
-*/
-/*
-     printf("\n\n---------------------------------\n\n");
-     sprintf(matname,"Aggsm_%d",level);
-     ML_Operator_Print(AGGsmoother,matname);
-     printf("\n\n---------------------------------\n\n");
-*/
 #ifdef EXTREME_DEBUG
      printf("\n###the damping parameter is %e\n\n",widget.omega);
 #endif
-     
-     ML_2matmult(AGGsmoother, Pmatrix, &(ml->Pmat[clevel]), ML_CSR_MATRIX );
 
+
+   if (ag->block_scaled_SA == 1) {
+     /* Computed the following:
+      *	a) turn off the usual 2 mat mult.
+      *	b) Ptemp = A*P 
+      *	c) Ptemp = Dinv*Ptemp;
+      *	d) do an ML_Operator_Add() with the original P.
+      */
+
+     Ptemp = ML_Operator_Create(Amat->comm);
+     ML_2matmult(Amat, Pmatrix, Ptemp, ML_CSR_MATRIX );
+     ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs);
+     ML_Operator_Add(Pmatrix,Ptemp, &(ml->Pmat[clevel]),ML_CSR_MATRIX,
+		     -ag->smoothP_damping_factor / max_eigen);
+     ML_Operator_Destroy(&Ptemp);
+   }
+   else 
+     ML_2matmult(AGGsmoother, Pmatrix, &(ml->Pmat[clevel]), ML_CSR_MATRIX );
+     
 #ifdef SYMMETRIZE
      if (t3 != NULL) ML_Operator_Destroy(&t3);
      if (t2 != NULL) ML_Operator_Destroy(&t2);
@@ -830,6 +840,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      printf("Leaving ML_AGG_Gen_Prolongator\n");
      fflush(stdout);
    }
+   if (mls_widget != NULL) ML_Smoother_Destroy_MLS(mls_widget);
+
 #ifdef ML_TIMING
    ml->Pmat[clevel].build_time =  GetClock() - t0;
    ml->timing->total_build_time += ml->Pmat[clevel].build_time;
@@ -2557,3 +2569,133 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
   return 0;
   
 }
+/*
+ * This routine is used for block diagonal scaling in the prolongator
+ * Smoother. Essentially, it takes the matrix Ptemp and multiplies
+ * it by the block diagonal scaling which is inside the MLSthing. 
+ *
+ * The tricky thing is that we want to access Ptemp by Rows ... so
+ * what we do is we transpose it. However, we have to be sure that
+ * we use the funny transpose that leaves all the same data within
+ * processor (and has the funny post communication). After we are
+ * finished doing the computation (which is all local) we need
+ * to transpose things back. The only catch is that this 
+ * tranpose routine does not work with matrices that have 
+ * post communication (which we now have due to the first call
+ * to the transpose function). So we take the transposed data
+ * and put it into the original Ptemp (that has the correct
+ * communication data structure).
+ */
+
+int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
+		 int blk_size)
+{
+  ML_Operator *Rtemp, *P2temp;
+  struct ML_CSR_MSRdata *csr_data;
+  int Num_blocks = 0, i, j, block, column;
+  int *rowptr, *columns;
+  int *new_columns, first, last, nz_ptr;
+  double *new_values, *values;
+  int **perms;
+  double **blockdata;
+  char N[2];
+  unsigned int   itmp=0;
+  int info, one = 1;
+
+
+  Rtemp = ML_Operator_Create(Ptemp->comm);
+  ML_Operator_Transpose(Ptemp, Rtemp);
+
+  csr_data = (struct ML_CSR_MSRdata *) Rtemp->data;
+
+  /* count the total number of blocks */
+
+  rowptr  = csr_data->rowptr;
+  columns = csr_data->columns;
+  values  = csr_data->values;
+  for (i = 0; i < Rtemp->outvec_leng; i++) {
+    ML_az_sort( &(columns[rowptr[i]]), 
+		rowptr[i+1]-rowptr[i+1], NULL, 
+		&(values[rowptr[i]])); 
+    block = -1;
+    for (j = rowptr[i]; j < rowptr[i+1]; j++) {
+      if (columns[j]/blk_size != block) {
+	Num_blocks++;
+	block = columns[j]/blk_size;
+      }
+    }
+  }
+  /* Make sure that all columns within a block */
+  /* are present (i.e. pad with zeros if some  */
+  /* are missing).                             */
+  if (blk_size*Num_blocks != rowptr[Rtemp->outvec_leng]) {
+    new_columns= (int    *) ML_allocate(sizeof(int)*Num_blocks*blk_size);
+    new_values = (double *) ML_allocate(sizeof(double)*Num_blocks*blk_size);
+    first = rowptr[0];
+       nz_ptr = 0;
+       for (i = 0; i < Rtemp->outvec_leng; i++) {
+	 j = first;
+	 last = rowptr[i+1];
+
+	 while ( j < last ) {
+	   block = columns[j]/blk_size;
+	   column = block*blk_size;
+	   while (column < block*blk_size+blk_size) {
+	     new_columns[nz_ptr] = column;
+	     if (  (j < rowptr[i+1]) && (columns[j] == column)) {
+	       new_values[nz_ptr++] = values[j];
+	       j++;
+	     }
+	     else new_values[nz_ptr++] = 0.;
+	     column++;
+	   }
+	 }
+	 first = last;
+	 rowptr[i+1] = nz_ptr;
+       }
+       ML_free(values); ML_free(columns);
+       csr_data->values = new_values;
+       csr_data->columns = new_columns;
+       columns = csr_data->columns;
+       values  = csr_data->values;
+
+     }
+     blockdata  = mls_widget->block_scaling->blockfacts;
+     perms      = mls_widget->block_scaling->perms;
+     strcpy(N,"N");
+
+     for (i = 0; i < Rtemp->outvec_leng; i++) {
+       for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += blk_size) {
+	 block  = csr_data->columns[j]/blk_size;
+	 MLFORTRAN(dgetrs)(N,&blk_size,&one,blockdata[block],&blk_size,
+			   perms[block], &(values[j]),
+			   &blk_size, &info, itmp);
+	 if ( info != 0 ) {
+	   printf("dgetrs returns with %d at block %d\n",info,i); 
+	   exit(1);
+	 }
+       }
+     }
+
+     /* We need to transpose the matrix back. Unfortunately, */
+     /* the routine ML_Operator_Transpose() takes a matrix   */
+     /* with pre-communication and makes a matrix with post- */
+     /* communication. This means that Rtemp has post-       */
+     /* communication ... so the second call to ML_Operator_ */
+     /* Transpose() will not get the communication right.    */
+     /* So what we will do is swap the data pointers with    */
+     /* the original Ptemp (which has the correct            */
+     /* communication pointer).                              */
+	
+     P2temp = ML_Operator_Create(Ptemp->comm);
+     ML_Operator_Transpose(Rtemp, P2temp);
+     ML_Operator_Destroy(&Rtemp);
+
+     csr_data = (struct ML_CSR_MSRdata *) P2temp->data;
+     P2temp->data = Ptemp->data;
+     Ptemp->data = csr_data;
+     ML_Operator_Destroy(&P2temp);
+
+     return 0;
+}
+
