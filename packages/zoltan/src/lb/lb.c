@@ -124,6 +124,7 @@ LB *lb;
   lb->Method = RCB;    
   lb->LB_Fn = LB_rcb;
   lb->Debug_Level = LB_DEBUG_PARAMS;
+  lb->Debug_Proc = 0;
   lb->Fortran = 0;
   lb->Machine_Desc = NULL;
   lb->Params = NULL;
@@ -410,7 +411,7 @@ int LB_Set_Method(LB *lb, char *method_name)
     return (LB_FATAL);
   }
 
-  if (lb->Proc == 0 && lb->Debug_Level >= LB_DEBUG_PARAMS) {
+  if (lb->Proc == lb->Debug_Proc && lb->Debug_Level >= LB_DEBUG_PARAMS) {
     printf("ZOLTAN Load balancing method = %d (%s)\n", lb->Method, method_name);
   }
 
@@ -489,7 +490,7 @@ double lb_time[2] = {0.0,0.0};
 
   LB_TRACE_ENTER(lb, yo);
 
-  if (lb->Proc == 0 && lb->Debug_Level >= LB_DEBUG_PARAMS)
+  if (lb->Proc == lb->Debug_Proc && lb->Debug_Level >= LB_DEBUG_PARAMS)
     LB_Print_Key_Params(lb);
 
   start_time = LB_Time();
@@ -516,7 +517,7 @@ double lb_time[2] = {0.0,0.0};
   }
 
   if (lb->Method == NONE) {
-    if (lb->Proc == 0 && lb->Debug_Level >= LB_DEBUG_PARAMS)
+    if (lb->Proc == lb->Debug_Proc && lb->Debug_Level >= LB_DEBUG_PARAMS)
       printf("%s Balancing method selected == NONE; no balancing performed\n",
               yo);
 
@@ -580,7 +581,7 @@ double lb_time[2] = {0.0,0.0};
      *  is needed.
      */
 
-    if (lb->Proc == 0 && lb->Debug_Level >= LB_DEBUG_PARAMS)
+    if (lb->Proc == lb->Debug_Proc && lb->Debug_Level >= LB_DEBUG_PARAMS)
       printf("%s No changes to the decomposition due to load-balancing; "
              "no migration is needed.\n", yo);
 
@@ -675,7 +676,7 @@ double lb_time[2] = {0.0,0.0};
   
   /* Print timing info */
   if (lb->Debug_Level >= LB_DEBUG_ZTIME) {
-    if (lb->Proc == 0) {
+    if (lb->Proc == lb->Debug_Proc) {
       printf("ZOLTAN Times:  \n");
     }
     LB_Print_Stats (lb, lb_time[0], "ZOLTAN     Balance:     ");
@@ -1429,7 +1430,7 @@ void LB_Eval (LB *lb, int print_stats,
 
     /* Print max-sum of results */
     nproc = lb->Num_Proc; /* convert to float */
-    if (lb->Proc == 0){
+    if (lb->Proc == lb->Debug_Proc){
       printf("\n%s  Statistics for current partitioning/balance:\n", yo2);
       for (i=0; i<lb->Obj_Weight_Dim; i++)
         printf("%s  Object weight #%1d :  Max = %6.1f, Sum = %7.1f, "

@@ -58,7 +58,7 @@ typedef int LB_SET_PARAM_FN(char *, char *);
 
 /* function declarations for parameter modification routines */
 
-extern int LB_Assign_Param_Vals(LB_PARAM *, PARAM_VARS *, int, int);
+extern int LB_Assign_Param_Vals(LB_PARAM *, PARAM_VARS *, int, int, int);
 extern int LB_Bind_Param(PARAM_VARS *, char *, void *);
 extern int LB_Set_Param(LB *, char *, char *);
 extern int LB_Set_Key_Param(LB *, char *, char *);

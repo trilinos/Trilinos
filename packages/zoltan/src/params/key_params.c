@@ -26,6 +26,7 @@ static PARAM_VARS Key_params[] = {
 	{ "OBJ_WEIGHT_DIM", NULL, "INT" },
 	{ "COMM_WEIGHT_DIM", NULL, "INT" },
 	{ "DEBUG_LEVEL", NULL, "INT" },
+	{ "DEBUG_PROCESSOR", NULL, "INT" },
 	{ "DETERMINISTIC", NULL, "INT" },
 	{ NULL, NULL, NULL } };
 /*****************************************************************************/
@@ -94,8 +95,18 @@ char *val)			/* value of variable */
 	lb->Debug_Level = result.ival;
 	status = 3;		/* Don't add to Params field of LB */
         break;
+
+      case 5: 		/* Debug processor  */
+	if (result.ival < 0 || result.ival > lb->Num_Proc) {
+	    fprintf(stderr, "WARNING: Invalid Debug_Processor value (%d) "
+		"being set to 0\n", result.ival);
+	    result.ival = 0;
+	}
+	lb->Debug_Proc = result.ival;
+	status = 3;		/* Don't add to Params field of LB */
+        break;
        
-      case  5: 		/* Deterministic flag */
+      case 6: 		/* Deterministic flag */
 	if (result.ival < 0) {
 	    fprintf(stderr, "WARNING: Invalid Deterministic value (%d) "
 		"being set to TRUE\n", result.ival);
@@ -128,6 +139,8 @@ void LB_Print_Key_Params(LB *lb)
          lb->Comm_Weight_Dim);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[4].name, 
          lb->Debug_Level);
-  printf("ZOLTAN Parameter %s = %s\n", Key_params[5].name, 
+  printf("ZOLTAN Parameter %s = %d\n", Key_params[5].name, 
+         lb->Debug_Proc);
+  printf("ZOLTAN Parameter %s = %s\n", Key_params[6].name, 
          (lb->Deterministic ? "TRUE" : "FALSE"));
 }
