@@ -144,7 +144,7 @@ int ierr = ZOLTAN_OK;
   }
 
   if (hgp->output_level >= HG_DEBUG_PRINT)
-    Zoltan_HG_HGraph_Print(zz, zhg, &(zhg->HG));
+    Zoltan_HG_HGraph_Print(zz, zhg, &(zhg->HG), stdout);
 
 End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {

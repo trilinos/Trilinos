@@ -291,7 +291,8 @@ ZOLTAN_ID_PTR lids    = zoltan_hg->Local_IDs;
 void Zoltan_HG_HGraph_Print(
   ZZ *zz,          /* the Zoltan data structure */
   ZHG *zoltan_hg,
-  HGraph *hg
+  HGraph *hg,
+  FILE *fp
 )
 {
 /* Printing routine. Can be used to print a Zoltan_HGraph or just an HGraph.
@@ -311,17 +312,17 @@ int num_lid = zz->Num_LID;
   Zoltan_Print_Sync_Start(zz->Communicator, 1);
 
   /* Print Vertex Info */
-  printf("%s Proc %d\n", yo, zz->Proc);
-  printf("Vertices (GID, LID, index)\n");
+  fprintf(fp, "%s Proc %d\n", yo, zz->Proc);
+  fprintf(fp, "Vertices (GID, LID, index)\n");
   for (i = 0; i < hg->nVtx; i++) {
-    printf("(");
+    fprintf(fp, "(");
     ZOLTAN_PRINT_GID(zz, &(zoltan_hg->Global_IDs[i * num_gid]));
-    printf(", ");
+    fprintf(fp, ", ");
     ZOLTAN_PRINT_LID(zz, &(zoltan_hg->Local_IDs [i * num_lid]));
-    printf(", %d)\n", i);
+    fprintf(fp, ", %d)\n", i);
   }
 
-  Zoltan_HG_Print(zz, hg);
+  Zoltan_HG_Print(zz, hg, fp);
 
   Zoltan_Print_Sync_End(zz->Communicator, 1);
 }

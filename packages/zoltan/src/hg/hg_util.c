@@ -707,7 +707,8 @@ End:
  * programs. */
 void Zoltan_HG_Print(
   ZZ *zz,
-  HGraph *hg
+  HGraph *hg,
+  FILE *fp
 )
 {
 int i, j;
@@ -723,33 +724,33 @@ char *yo = "Zoltan_HG_Print";
   num_vwgt = hg->VertexWeightDim;
   num_ewgt = hg->EdgeWeightDim;
   if (hg->vwgt != NULL) {
-     printf("Vertices: [weights])\n");
+     fprintf(fp, "Vertices: [weights])\n");
      for (i = 0; i < hg->nVtx; i++) {
-        printf("%d:  [", i);
+        fprintf(fp, "%d:  [", i);
         for (j = 0; j < num_vwgt; j++)
-           printf("%f ", hg->vwgt[i*num_vwgt + j]);
-        printf("])\n");
+           fprintf(fp, "%f ", hg->vwgt[i*num_vwgt + j]);
+        fprintf(fp, "])\n");
         }
      }
 
   /* Print Hyperedge Info */
-  printf("Hyperedges:  (vertices)\n");
+  fprintf(fp, "Hyperedges:  (vertices)\n");
   for (i = 0; i < hg->nEdge; i++) {
-     printf("%d:  ", i);
-     printf("(");
+     fprintf(fp, "%d:  ", i);
+     fprintf(fp, "(");
      for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
-       printf("%d ", hg->hvertex[j]);
-     printf(")\n");
+       fprintf(fp, "%d ", hg->hvertex[j]);
+     fprintf(fp, ")\n");
      }
 
   if (hg->ewgt != NULL) {
-     printf("Hyperedge Weights:  [weights]\n");
+     fprintf(fp, "Hyperedge Weights:  [weights]\n");
      for (i = 0; i < hg->nEdge; i++) {
-        printf("%d:  ", i);
-        printf("[");
+        fprintf(fp, "%d:  ", i);
+        fprintf(fp, "[");
         for (j = 0; j < num_ewgt; j++)
-           printf("%f ", hg->ewgt[i*num_ewgt + j]);
-        printf("])\n");
+           fprintf(fp, "%f ", hg->ewgt[i*num_ewgt + j]);
+        fprintf(fp, "])\n");
         }
      }
   ZOLTAN_TRACE_EXIT(zz, yo);

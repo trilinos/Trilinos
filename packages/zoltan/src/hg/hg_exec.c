@@ -129,7 +129,7 @@ int    base;   /* minimum vertex number in input file; usually 0 or 1. */
   if (hg_readfile(&zz,&hg,hgraphfile,&base))
      return 1;
   if (hgp.output_level >= HG_DEBUG_PRINT)
-     Zoltan_HG_Print(&zz, &hg);
+     Zoltan_HG_Print(&zz, &hg, stdout);
   memory_graph = Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL);
   printf("Initial Memory: %d %d\n", memory_graph,
    Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM) );

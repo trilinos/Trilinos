@@ -148,14 +148,14 @@ int Zoltan_HG_Create_Mirror(ZZ*, HGraph*);
 int Zoltan_HG_Check        (ZZ*, HGraph*);
 int Zoltan_HG_HGraph_to_Graph(ZZ*, HGraph*, Graph*);
 int Zoltan_HG_Graph_to_HGraph(ZZ*, Graph*,  HGraph*);
-void Zoltan_HG_Print(ZZ*, HGraph*);
+void Zoltan_HG_Print(ZZ*, HGraph*, FILE*);
 
 unsigned int Zoltan_HG_Rand (void);
 void         Zoltan_HG_Srand (unsigned int);
 void         Zoltan_HG_Rand_Perm_Int (int*, int);
 
 /* Hypergraph read from file */
-int Zoltan_HG_Readfile (ZZ*, int, FILE*, int*, int*, int*, int**, int**, int*,
+int Zoltan_HG_Readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
  float**, int*, float**, int*);
 
 /* Hypergraph Partitioning */
