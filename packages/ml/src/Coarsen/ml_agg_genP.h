@@ -43,6 +43,7 @@ struct ML_Field_Of_Values
   void * EigenList;
   int choice;
   int compute_field_of_values;
+  int compute_field_of_values_non_scaled;
 };
 
 

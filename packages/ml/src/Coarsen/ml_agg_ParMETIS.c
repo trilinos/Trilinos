@@ -919,7 +919,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    ML_Operator * QQ = NULL;
    ML_Operator *Pstart = NULL;
    int starting_aggr_count;
-   char str[80];
+   char str[80], * str2;
    double * new_nullspace_vect = NULL;
    int * graph_decomposition = NULL;
    double debug_starting_time;
@@ -1828,14 +1828,19 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    Pmatrix2 = ML_Operator_Create( Amatrix->comm );
    
    ML_2matmult(QQ, Pstart, Pmatrix2, ML_CSR_MATRIX );
-
+   
+   ML_Operator_Set_1Levels(Pmatrix2, (*Pmatrix)->from, (*Pmatrix)->to);
+   ML_Operator_Set_BdryPts(Pmatrix2, (*Pmatrix)->bc);
+   str2 = (char *)ML_allocate(80*sizeof(char));
+   sprintf(str2,"%s",(*Pmatrix)->label);
+   ML_Operator_Set_Label( Pmatrix2,str2);
+   
    ML_Operator_Clean( *Pmatrix );
 
    memcpy((void *) *Pmatrix, (void *)Pmatrix2, sizeof(ML_Operator));
-   /* FIXME * !!!!
+   /* FIXME : am I ok  ????? */
    ML_free(Pmatrix2);
-   */
-   
+      
    /* ********************************************************************** */
    /* I have to destroy the tentative local matrix, and the redistribution   */
    /* matrix QQ. This is actually an ML_Operator on the top of an Epetra     */

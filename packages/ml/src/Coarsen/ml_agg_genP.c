@@ -27,6 +27,8 @@ extern int mls_or_gs, mls_order;
 
 extern int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
 						     struct ML_Field_Of_Values * fov );
+extern int ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(ML_Operator * Amat,
+						     struct ML_Field_Of_Values * fov );
 extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
 					       int MaxIters, double Tolerance,
 					       int IsProblemSymmetric,
@@ -2290,6 +2292,32 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    ML_Aggregate_Set_CurrentLevel( ag, level );
 
    /* ********************************************************************** */
+   /* May require computationof field-of-values for non-diagonally scaled A  */
+   /* ********************************************************************** */
+
+   if( ag->field_of_values != NULL ) {
+     
+     fov = (struct ML_Field_Of_Values * )(ag->field_of_values);
+
+     if( fov->compute_field_of_values_non_scaled == ML_YES ) {
+
+       ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(Amat,fov);
+       if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+	 printf("\nNon-Scaled Field of Values Box (level %d) : Max Real = %e\n",
+		level,
+		fov->real_max );
+	 printf("Non-Scaled Field of Values Box (level %d) : Max Imag = %e\n",
+		level,
+		fov->imag_max );
+	 printf("Non-Scaled Field of Values Box (level %d) : eta = %e\n\n",
+		level,
+		fov->eta );
+       } 
+     } 
+   }
+
+       
+   /* ********************************************************************** */
    /* May require field-of-values computations for classic ML                */
    /* ********************************************************************** */
 
@@ -2300,7 +2328,8 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
      if( fov->compute_field_of_values == ML_YES ) {
 
-              ML_Anasazi_Get_FieldOfValuesBox_Interface(Amat,fov);
+       ML_Anasazi_Get_FieldOfValuesBox_Interface(Amat,fov);
+
        if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
 	 printf("\nField of Values Box (level %d) : Max Real = %e\n",
 		level,
@@ -2411,8 +2440,9 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      
      eta = fov->eta;
      dtemp = fov->R_coeff[0] + eta * (fov->R_coeff[1]) + pow(eta,2) * (fov->R_coeff[2]);
+     if( dtemp < 0.0 ) dtemp = 0.000001;
      dtemp2 = fov->real_max;
-		      
+     	      
      ag->smoothP_damping_factor = dtemp;
      Amat->lambda_max = dtemp2;
 
@@ -2498,8 +2528,9 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
     eta = fov->eta;
     
     dtemp = fov->P_coeff[0] + eta * (fov->P_coeff[1]) + pow(eta,2) * (fov->P_coeff[2]);
+    if( dtemp < 0.0 ) dtemp = 0.000001;
     dtemp2 = fov->real_max;
-	      
+ 	      
     ag->smoothP_damping_factor = dtemp;
     Amat->lambda_max = dtemp2;
 
