@@ -8,7 +8,7 @@ extern int Poisson_getrow(ML_Operator *A_data, int N_requested_rows, int request
 
 extern int Poisson_matvec(ML_Operator *A_data, int in_length, double p[], int out_length,
                    double ap[]);
-extern int user_smoothing(void *data, int x_length, double x[],
+extern int user_smoothing(ML_Smoother *data, int x_length, double x[],
                    int rhs_length, double rhs[]);
 
 
@@ -116,7 +116,7 @@ int Poisson_matvec(ML_Operator *A_data, int in_length, double p[], int out_lengt
    return 0;
 }
 
-int user_smoothing(void *data, int x_length, double x[], int rhs_length, double rhs[])
+int user_smoothing(ML_Smoother *data, int x_length, double x[], int rhs_length, double rhs[])
 {
    int i;
    double ap[129], omega = .5; /* temp vector and damping factor */

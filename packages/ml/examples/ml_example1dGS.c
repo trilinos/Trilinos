@@ -11,7 +11,7 @@
 extern int myinterp(ML_Operator *mydata, int, double p[], int, double ap[]);
 extern int mymatvec(ML_Operator *mydata, int, double p[], int, double ap[]);
 extern int myrestrict(ML_Operator *mydata, int, double p[], int, double ap[]);
-extern int mysmooth(void *mydata, int, double x[], int, double rhs[]);
+extern int mysmooth(ML_Smoother *mydata, int, double x[], int, double rhs[]);
 extern int myAgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[]);
 extern int myRgetrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
@@ -125,7 +125,7 @@ int myrestrict(ML_Operator *mydata, int leng1, double p[], int leng2, double ap[
    if (proc_id == 1) ap[0] += ghost;
    return 0;
 }
-int mysmooth(void *mydata, int leng1, double x[], int leng2, double rhs[])
+int mysmooth(ML_Smoother *mydata, int leng1, double x[], int leng2, double rhs[])
 {
    int i, size, ntimes, j, k, color, proc_id;
    struct data *data;
