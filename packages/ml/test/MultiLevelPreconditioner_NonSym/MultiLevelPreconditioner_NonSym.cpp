@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
 
   // initialize the random number generator
 
-  srandom((unsigned int)1);
+  srandom1((unsigned int)1);
 
   // ===================== //
   // create linear problem //
