@@ -179,9 +179,9 @@ int Ifpack_METISPartitioner::ComputePartitions()
 			     &edgecut, &Partition_[0]);
       }
 #else
-      if (Comm().MyPID() == 0) {
-	cerr << ErrorMsg_ << "METIS was not linked; now I put all" << endl;
-	cerr << ErrorMsg_ << "the local nodes in the same partition." << endl;
+      if (Graph_->Comm().MyPID() == 0) {
+	cerr << "METIS was not linked; now I put all" << endl;
+	cerr << "the local nodes in the same partition." << endl;
       }
       for (int i = 0 ; i < NumMyRows() ; ++i) 
 	Partition_[i] = 0;

@@ -127,11 +127,9 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
 	       &numflag, &options[0],
 	       &Reorder_[0], &InvReorder_[0]);
 #else
-      if (Comm().MyPID() == 0) {
-	cerr << ErrorMsg_ << "Please configure with --enable-ifpack-metis\n";
-	cerr << ErrorMsg_ << "to use METIS Reordering." << endl;
-      }
-      exit(EXIT_FAILURE);
+  cerr << "Please configure with --enable-ifpack-metis" << endl;
+  cerr << "to use METIS Reordering." << endl;
+  exit(EXIT_FAILURE);
 #endif
       
   if (SymGraph)
