@@ -66,7 +66,7 @@ any& RefCountPtr_node::get_extra_data( const std::string& type_name, const std::
 	TEST_FOR_EXCEPTION(
 		itr == extra_data_map_->end(), std::invalid_argument
 		,"Error, the type:name pair \'" << type_and_name << "\' is not found!" );
-	return itr->second;
+	return (*itr).second;
 }
 
 } // namespace PrivateUtilityPack

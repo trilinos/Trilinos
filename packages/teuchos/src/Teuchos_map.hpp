@@ -131,6 +131,9 @@ public:
       }
       return end();
     }
+
+    bool empty() const { return list_.empty(); }
+
   //@}
 private:
   list_t list_;
