@@ -197,7 +197,7 @@ SMOS_DR_IPATH	= -I$(SMOS_ARCHD)/include
 SMOS_MPI_LIB	= -L/Net/local/mpi/lib/paragon/sunmos -lmpi
 SMOS_PAR_LPATH  = -L$(PARMETISLIB_PATH)
 SMOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SMOS_ARCHD)/lib $(NEM_LIBS) \
-		   $(SMOS_MPI_LIB) $(SMOS_PAR_LPATH) $(PARMETIS_LIBS)
+		   $(SMOS_PAR_LPATH) $(PARMETIS_LIBS) $(SMOS_MPI_LIB)
 
 ##############################################################################
 # Intel P6 defines
@@ -227,7 +227,7 @@ TFLOP_DR_IPATH	= -I$(TFLOP_ARCHD)/include
 TFLOP_MPI_LIB	= -lmpi
 TFLOP_PAR_LPATH = -L$(PARMETISLIB_PATH)
 TFLOP_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(TFLOP_ARCHD)/lib $(NEM_LIBS) \
-	          $(TFLOP_MPI_LIB) $(TFLOP_PAR_LPATH) $(PARMETIS_LIBS)
+	          $(TFLOP_PAR_LPATH) $(PARMETIS_LIBS) $(TFLOP_MPI_LIB)
 
 #
 ##############################################################################
@@ -395,7 +395,7 @@ smos-dr:
 	"RANLIB=$(SMOS_RANLIB)" "MAIN_OBJ=$(SMOS_DR_OBJ)" \
 	"LNK_LIBS=$(SMOS_DR_LIBS)"
 	@if [ ! -f test/$(TARGET).smos ]; \
-	then ln -s ../Obj_sun/$(TARGET) test/$(TARGET).smos; \
+	then ln -s ../Obj_smos/$(TARGET) test/$(TARGET).smos; \
 	fi
 
 tflop:
@@ -425,7 +425,7 @@ tflop-dr:
 	"RANLIB=$(TFLOP_RANLIB)" "MAIN_OBJ=$(TFLOP_DR_OBJ)" \
 	"LNK_LIBS=$(TFLOP_DR_LIBS)"
 	@if [ ! -f test/$(TARGET).tflop ]; \
-	then ln -s ../Obj_sun/$(TARGET) test/$(TARGET).tflop; \
+	then ln -s ../Obj_tflop/$(TARGET) test/$(TARGET).tflop; \
 	fi
 
 solaris: sun
@@ -491,7 +491,7 @@ sunos-dr:
 	"RANLIB=$(SUNOS_RANLIB)" "MAIN_OBJ=$(SUNOS_DR_OBJ)" \
 	"LNK_LIBS=$(SUNOS_DR_LIBS)"
 	@if [ ! -f test/$(TARGET).sunos ]; \
-	then ln -s ../Obj_sun/$(TARGET) test/$(TARGET).sunos; \
+	then ln -s ../Obj_sunos/$(TARGET) test/$(TARGET).sunos; \
 	fi
 
 cplant:
@@ -521,7 +521,7 @@ cplant-dr:
 	"RANLIB=$(CPLANT_RANLIB)" "MAIN_OBJ=$(CPLANT_DR_OBJ)" \
 	"LNK_LIBS=$(CPLANT_DR_LIBS)"
 	@if [ ! -f test/$(TARGET).cplant ]; \
-	then ln -s ../Obj_sun/$(TARGET) test/$(TARGET).cplant; \
+	then ln -s ../Obj_cplant/$(TARGET) test/$(TARGET).cplant; \
 	fi
 #
 ############################################################################
