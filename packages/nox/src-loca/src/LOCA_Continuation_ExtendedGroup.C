@@ -36,14 +36,12 @@
 LOCA::Continuation::ExtendedGroup::ExtendedGroup(
 				 LOCA::Continuation::AbstractGroup& grp, 
 				 int paramID,
-				 NOX::Parameter::List& linSolverParams,
 				 NOX::Parameter::List& params)
   : grpPtr(&grp),
     conParamID(paramID),
     predictorVec(grp.getX(), 0.0),
     ownsGroup(false),
     isValidPredictor(false),
-    linearSolverParams(linSolverParams),
     theta(params.getParameter("Initial Scale Factor", 1.0))
 {
 }
@@ -51,14 +49,12 @@ LOCA::Continuation::ExtendedGroup::ExtendedGroup(
 LOCA::Continuation::ExtendedGroup::ExtendedGroup(
 			      const LOCA::Continuation::AbstractGroup& grp, 
 			      int paramID,
-			      NOX::Parameter::List& linSolverParams,
 			      NOX::Parameter::List& params)
   : grpPtr(dynamic_cast<LOCA::Continuation::AbstractGroup*>(grp.clone())),
     conParamID(paramID),
     predictorVec(grp.getX(), 0.0),
     ownsGroup(true),
     isValidPredictor(false),
-    linearSolverParams(linSolverParams),
     theta(params.getParameter("Initial Scale Factor", 1.0))
 {
 }
@@ -66,14 +62,12 @@ LOCA::Continuation::ExtendedGroup::ExtendedGroup(
 LOCA::Continuation::ExtendedGroup::ExtendedGroup(
 				 LOCA::Continuation::AbstractGroup& grp, 
 				 string paramID,
-				 NOX::Parameter::List& linSolverParams,
 				 NOX::Parameter::List& params)
   : grpPtr(&grp),
     conParamID(0),
     predictorVec(grp.getX(), 0.0),
     ownsGroup(false),
     isValidPredictor(false),
-    linearSolverParams(linSolverParams),
     theta(params.getParameter("Initial Scale Factor", 1.0))
 {
   const ParameterVector& p = grpPtr->getParams();
@@ -83,14 +77,12 @@ LOCA::Continuation::ExtendedGroup::ExtendedGroup(
 LOCA::Continuation::ExtendedGroup::ExtendedGroup(
 			     const LOCA::Continuation::AbstractGroup& grp, 
 			     string paramID,
-			     NOX::Parameter::List& linSolverParams,
 			     NOX::Parameter::List& params)
   : grpPtr(dynamic_cast<LOCA::Continuation::AbstractGroup*>(grp.clone())),
     conParamID(0),
     predictorVec(grp.getX(), 0.0),
     ownsGroup(true),
     isValidPredictor(false),
-    linearSolverParams(linSolverParams),
     theta(params.getParameter("Initial Scale Factor", 1.0))
 {
   const ParameterVector& p = grpPtr->getParams();
@@ -105,7 +97,6 @@ LOCA::Continuation::ExtendedGroup::ExtendedGroup(
     predictorVec(source.predictorVec),
     ownsGroup(true),
     isValidPredictor(source.isValidPredictor),
-    linearSolverParams(source.linearSolverParams),
     theta(source.theta)
 {
 }
@@ -143,84 +134,10 @@ LOCA::Continuation::ExtendedGroup::operator=(
     conParamID = source.conParamID;
     predictorVec = source.predictorVec;
     isValidPredictor = source.isValidPredictor;
-    linearSolverParams = source.linearSolverParams;
     theta = source.theta;
   }
 
   return *this;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Continuation::ExtendedGroup::computeTangent() {
-  
-  // Get references to x, parameter components of tangent vector
-  NOX::Abstract::Vector& tanX = predictorVec.getXVec();
-  double& tanP = predictorVec.getParam();
-
-  // Compute Jacobian
-  NOX::Abstract::Group::ReturnType res = computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  // Compute derivative of residual w.r.t. parameter
-  NOX::Abstract::Vector* dfdpVec = tanX.clone(NOX::ShapeCopy);
-  res = grpPtr->computeDfDp(conParamID, *dfdpVec);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  // Scale dfdp by -1.0
-  dfdpVec->scale(-1.0);
-  
-  // Solve J*tanX = -df/dp
-  res = grpPtr->applyJacobianInverse(linearSolverParams, *dfdpVec, tanX);
-  // Unconverged linear solve is OK, hope predictor is OK anyway
-  if (res == NOX::Abstract::Group::NotConverged)
-     res = NOX::Abstract::Group::Ok;
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  // Set parameter component equal to 1
-  tanP = 1.0;
-
-  // If we have a previous solution vector, set orientation equal to 
-  // that of the secant vector
-  if (isPrevXVec()) {
-    // Compute secant vector xVec-prevXVec
-    //LOCA::Continuation::ExtendedVector secantVec(getPrevX());
-    //secantVec.update(1.0, getX(), -1.0);
-    
-    // Give tangent vector same orientation as secant vector
-    //if (computeScaledDotProduct(secantVec, predictorVec) < 0.0) 
-    //  predictorVec.scale(-1.0);
-
-    double pold = getPrevX().getParam();
-    double pnew = getContinuationParameter();
-    double deltap = pnew-pold;
-    if (deltap < 0)
-      predictorVec.scale(-1.0);
-   
-  }
-
-  isValidPredictor = true;
-
-  delete dfdpVec;
-
-  return res;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Continuation::ExtendedGroup::computeSecant() {
-
-  if (!isPrevXVec())
-    return NOX::Abstract::Group::Failed;
-  
-  predictorVec = getPrevX();
-  predictorVec.update(1.0, getX(), -1.0);
-  predictorVec.scale(1.0/fabs(predictorVec.getParam()));
-
-  isValidPredictor = true;
-
-  return NOX::Abstract::Group::Ok;
 }
 
 const LOCA::Continuation::ExtendedVector&
@@ -253,6 +170,11 @@ LOCA::Continuation::ExtendedGroup::setContinuationParameter(double val) {
 double
 LOCA::Continuation::ExtendedGroup::getContinuationParameter() const {
   return grpPtr->getParam(conParamID);
+}
+
+int
+LOCA::Continuation::ExtendedGroup::getContinuationParameterID() const {
+  return conParamID;
 }
 
 void

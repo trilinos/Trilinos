@@ -61,13 +61,12 @@ LOCA::Continuation::Manager::reset(NOX::Parameter::List& p)
 
 LOCA::Continuation::ExtendedGroup* 
 LOCA::Continuation::Manager::createContinuationGroup(
-			            LOCA::Continuation::AbstractGroup& grp, 
-				    NOX::Parameter::List& linSolverParams) 
+			            LOCA::Continuation::AbstractGroup& grp) 
 {
   if (method == "Natural") 
-    return new LOCA::Continuation::NaturalGroup(grp, conParamID, linSolverParams, *paramsPtr);
+    return new LOCA::Continuation::NaturalGroup(grp, conParamID, *paramsPtr);
   else if (method == "Arc Length")
-    return new LOCA::Continuation::ArcLengthGroup(grp, conParamID, linSolverParams, *paramsPtr);
+    return new LOCA::Continuation::ArcLengthGroup(grp, conParamID, *paramsPtr);
   else {
     if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
       cout << "LOCA::Continuation::Manager::createContinuationGroup() "

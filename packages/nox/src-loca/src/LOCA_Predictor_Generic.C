@@ -30,47 +30,56 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Predictor_Random.H"
+#include "LOCA_Predictor_Generic.H"
+#include "LOCA_Continuation_ExtendedVector.H"
 #include "LOCA_Continuation_ExtendedGroup.H"
 
-LOCA::Predictor::Random::Random(NOX::Parameter::List& params)
-{
-  reset(params);
-}
+LOCA::Predictor::Generic::Generic()
+  : secantVecPtr(NULL) {}
 
-LOCA::Predictor::Random::~Random()
+LOCA::Predictor::Generic::~Generic()
 {
-}
-
-NOX::Abstract::Group::ReturnType 
-LOCA::Predictor::Random::reset(NOX::Parameter::List& params) 
-{
-  epsilon = params.getParameter("Epsilon", 1.0e-3);
-  return LOCA::Predictor::Generic::reset(params);
+  if (secantVecPtr != NULL)
+    delete secantVecPtr;
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::Predictor::Random::compute(bool baseOnSecant, double stepSize,
-				 LOCA::Continuation::ExtendedGroup& prevGroup,
-				 LOCA::Continuation::ExtendedGroup& curGroup,
-				 LOCA::Continuation::ExtendedVector& result) 
+LOCA::Predictor::Generic::reset(NOX::Parameter::List& params)
 {
-  // Fill predictor with random values
-  result.random();
-  
-  // Scale predictor by solution vector
-  result.scale(curGroup.getX());
-
-  // Scale predictor by epsilon
-  result.scale(epsilon);
-
-  // Set parameter component to 1
-  result.getParam() = 1.0;
-
-  // Set orientation based on parameter change
-  setPredictorOrientation(baseOnSecant, stepSize, prevGroup, curGroup, result);
-
-  curGroup.setPredictorDirection(result);
+  if (secantVecPtr != NULL) {
+    delete secantVecPtr;
+    secantVecPtr = NULL;
+  }
 
   return NOX::Abstract::Group::Ok;
+}
+
+void
+LOCA::Predictor::Generic::setPredictorOrientation(
+				bool baseOnSecant, double ds,
+				LOCA::Continuation::ExtendedGroup& prevGroup,
+				LOCA::Continuation::ExtendedGroup& curGroup,
+				LOCA::Continuation::ExtendedVector& result) 
+{
+  // If orientation is not based on a secant vector (i.e., first or last
+  // steps in a continuation run) make parameter component of predictor
+  // positive
+  if (!baseOnSecant) {
+    if (result.getParam() < 0.0)
+      result.scale(-1.0);
+    return;
+  }
+
+  // Compute secant vector
+  if (secantVecPtr == NULL) {
+    secantVecPtr = 
+      dynamic_cast<LOCA::Continuation::ExtendedVector*>(curGroup.getX().clone(NOX::DeepCopy));
+  }
+  else {
+    *secantVecPtr = curGroup.getX();
+  }
+  secantVecPtr->update(-1.0, prevGroup.getX(), 1.0);
+
+  if (curGroup.computeScaledDotProduct(*secantVecPtr, result)*ds < 0.0)
+    result.scale(-1.0);
 }

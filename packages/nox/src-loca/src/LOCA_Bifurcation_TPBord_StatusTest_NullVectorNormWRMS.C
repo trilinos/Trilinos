@@ -151,7 +151,8 @@ LOCA::Bifurcation::TPBord::StatusTest::NullVectorNormWRMS::print(
   for (int j = 0; j < indent; j++)
     stream << ' ';
   stream << status;
-  stream << "Turning Point Scaled Null Vector Update = " << NOX::Utils::sciformat(normWRMS, 3) << " < " << tol;
+  stream << "Turning Point Scaled Null Vector Update = " 
+	 << NOX::Utils::sciformat(normWRMS, 3) << " < " << tol;
   stream << endl;
 
   return stream;

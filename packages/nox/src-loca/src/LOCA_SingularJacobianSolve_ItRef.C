@@ -32,6 +32,7 @@
 
 #include "LOCA_Continuation_AbstractGroup.H"
 #include "LOCA_SingularJacobianSolve_ItRef.H"
+#include "LOCA_ErrorCheck.H"
 
 LOCA::SingularJacobianSolve::ItRef::ItRef(NOX::Parameter::List& params)
 {
@@ -82,12 +83,19 @@ LOCA::SingularJacobianSolve::ItRef::compute(
 				const NOX::Abstract::Vector& jacApproxNullVec,
 				NOX::Abstract::Vector& result) 
 {
-  NOX::Abstract::Group::ReturnType 
-    res = grp.applyJacobianInverse(params, input, result);
+  string callingFunction = 
+    "LOCA::SingularJacobianSolve::ItRef::compute()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
+  finalStatus = grp.applyJacobianInverse(params, input, result);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   NOX::Abstract::Vector* remainder = input.clone(NOX::ShapeCopy);
 
-  res = grp.applyJacobian(result, *remainder);
+  status = grp.applyJacobian(result, *remainder);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // r = b-Ax
   remainder->update(1.0, input, -1.0);
@@ -95,7 +103,10 @@ LOCA::SingularJacobianSolve::ItRef::compute(
   NOX::Abstract::Vector* refinement = input.clone(NOX::ShapeCopy);
 
   // Ay=r
-  res = grp.applyJacobianInverse(params, *remainder, *refinement);
+  status = grp.applyJacobianInverse(params, *remainder, *refinement);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // x+=y
   result.update(1.0, *refinement, 1.0);
@@ -103,7 +114,7 @@ LOCA::SingularJacobianSolve::ItRef::compute(
   delete remainder;
   delete refinement;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -116,24 +127,35 @@ LOCA::SingularJacobianSolve::ItRef::computeMulti(
 				NOX::Abstract::Vector** results,
 				int nVecs) 
 {
+  string callingFunction = 
+    "LOCA::SingularJacobianSolve::ItRef::computeMulti()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   NOX::Abstract::Vector** remainders = new NOX::Abstract::Vector*[nVecs];
   NOX::Abstract::Vector** refinements = new NOX::Abstract::Vector*[nVecs];
 
-  NOX::Abstract::Group::ReturnType 
-    res = grp.applyJacobianInverseMulti(params, inputs, results, nVecs);
+  finalStatus = grp.applyJacobianInverseMulti(params, inputs, results, nVecs);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   for (int i=0; i<nVecs; i++) {
     remainders[i] = inputs[i]->clone(NOX::ShapeCopy);
     refinements[i] = inputs[i]->clone(NOX::ShapeCopy);
 
-    res = grp.applyJacobian(*(results[i]), *(remainders[i]));
+    status = grp.applyJacobian(*(results[i]), *(remainders[i]));
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
 
     // r = b-Ax
     remainders[i]->update(1.0, *(inputs[i]), -1.0);
   }
 
   // Ay=r
-  res = grp.applyJacobianInverseMulti(params, remainders, refinements, nVecs);
+  status = grp.applyJacobianInverseMulti(params, remainders, refinements, 
+					 nVecs);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // x+=y
   for (int i=0; i<nVecs; i++) {
@@ -145,5 +167,5 @@ LOCA::SingularJacobianSolve::ItRef::computeMulti(
   delete [] remainders;
   delete [] refinements;
 
-  return res;
+  return finalStatus;
 }

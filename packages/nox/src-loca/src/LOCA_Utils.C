@@ -40,6 +40,7 @@ int LOCA::Utils::precision = 3;
 int LOCA::Utils::myPID = 0;
 int LOCA::Utils::printProc = 0;
 int LOCA::Utils::printTest = 0xf;
+LOCA::Utils::SublistMap LOCA::Utils::sublistMap;
 
 LOCA::Utils::Fill LOCA::Utils::fill(int filln, char fillc) 
 {
@@ -75,10 +76,15 @@ ostream& operator<<(ostream& os, const LOCA::Utils::Sci& s)
 
 void LOCA::Utils::setUtils(NOX::Parameter::List& p)
 {
-  printTest = p.getParameter("Output Information", printTest);
-  myPID = p.getParameter("MyPID", myPID);
-  printProc = p.getParameter("Output Processor", printProc);
-  precision = p.getParameter("Output Precision", precision);
+
+  initializeSublistMap(p);
+
+  NOX::Parameter::List& utilParams = getSublist("Utilities");
+
+  printTest = utilParams.getParameter("Output Information", printTest);
+  myPID = utilParams.getParameter("MyPID", myPID);
+  printProc = utilParams.getParameter("Output Processor", printProc);
+  precision = utilParams.getParameter("Output Precision", precision);
 }
 
 bool LOCA::Utils::isPrintProc()
@@ -105,5 +111,81 @@ bool LOCA::Utils::doAllPrint(MsgType type)
 int LOCA::Utils::getMyPID()
 {
   return myPID;
+}
+
+void LOCA::Utils::initializeSublistMap(NOX::Parameter::List& p) {
+
+  // Top level sublist
+  sublistMap["Top Level"] = &p;
+
+  // LOCA sublist
+  NOX::Parameter::List& locaSublist = p.sublist("LOCA");
+  sublistMap["LOCA"] = &locaSublist;
+
+  // Stepper sublist
+  NOX::Parameter::List& stepperSublist = locaSublist.sublist("Stepper");
+  sublistMap["Stepper"] = &stepperSublist;
+
+  // Predictor sublist
+  NOX::Parameter::List& predictorSublist = locaSublist.sublist("Predictor");
+  sublistMap["Predictor"] = &predictorSublist;
+
+  // First Step Predictor sublist
+  NOX::Parameter::List& fspredictorSublist = 
+    predictorSublist.sublist("First Step Predictor");
+  sublistMap["First Step Predictor"] = &fspredictorSublist;
+
+  // Last Step Predictor sublist
+  NOX::Parameter::List& lspredictorSublist = 
+    predictorSublist.sublist("Last Step Predictor");
+  sublistMap["Last Step Predictor"] = &lspredictorSublist;
+
+  // Stepsize sublist
+  NOX::Parameter::List& stepsizeSublist = locaSublist.sublist("Step Size");
+  sublistMap["Step Size"] = &stepsizeSublist;
+
+  // Utilities sublist
+  NOX::Parameter::List& utilitiesSublist = locaSublist.sublist("Utilities");
+  sublistMap["Utilities"] = &utilitiesSublist;
+
+  // NOX sublist
+  NOX::Parameter::List& noxSublist = p.sublist("NOX");
+  sublistMap["NOX"] = &noxSublist;
+
+  // Direction sublist
+  NOX::Parameter::List& directionSublist = noxSublist.sublist("Direction");
+  sublistMap["Direction"] = &directionSublist;
+
+  // Newton sublist
+  NOX::Parameter::List& newtonSublist = directionSublist.sublist("Newton");
+  sublistMap["Newton"] = &newtonSublist;
+
+  // Linear Solver sublist
+  NOX::Parameter::List& lsSublist = newtonSublist.sublist("Linear Solver");
+  sublistMap["Linear Solver"] = &lsSublist;
+
+  // Line Search sublist
+  NOX::Parameter::List& lineSearchSublist = noxSublist.sublist("Line Search");
+  sublistMap["Line Search"] = &lineSearchSublist;
+
+  // Printing sublist
+  NOX::Parameter::List& printingSublist = noxSublist.sublist("Printing");
+  sublistMap["Printing"] = &printingSublist;
+}
+
+NOX::Parameter::List&
+LOCA::Utils::getSublist(const string& name) {
+
+  // Find name in list, if it exists.
+  SublistMapIterator i = sublistMap.find(name);
+
+  // If it does exist return the sublist.
+  // Otherwise, throw an error.
+  if (i != sublistMap.end()) 
+    return *(i->second);
+  else {
+    cerr << "ERROR: Sublist " << name << " is not a valid sublist." << endl;
+    throw "NOX Error";
+  }
 }
 

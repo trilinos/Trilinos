@@ -38,6 +38,7 @@
 #include "LOCA_SingularJacobianSolve_NicDay.H"
 #include "LOCA_SingularJacobianSolve_ItRef.H"
 #include "LOCA_Utils.H"
+#include "LOCA_ErrorCheck.H"
 
 LOCA::SingularJacobianSolve::Manager::Manager(NOX::Parameter::List& params) :
   method(),
@@ -113,11 +114,9 @@ LOCA::SingularJacobianSolve::Manager::reset(NOX::Parameter::List& params)
     else if (method == "Iterative Refinement")
       singularSolverPtr = new LOCA::SingularJacobianSolve::ItRef(params);
     else {
-      if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-	cout << "LOCA::SingularJacobianSolve::Manager::reset() - invalid "
-	     << "choice (" 
-	     << method << ") for singular solve method " << endl;
-      }
+      LOCA::ErrorCheck::throwError(
+			      "LOCA::SingularJacobianSolve::Manager::reset()",
+			      "Invalid choice for singular solve method.");
       return NOX::Abstract::Group::Failed;
     }
   }
@@ -135,10 +134,9 @@ LOCA::SingularJacobianSolve::Manager::compute(
 				NOX::Abstract::Vector& result) 
 {
   if (singularSolverPtr == NULL) {
-    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-      cout << "LOCA::SingularJacobianSolve::Manager::compute - Null pointer"
-	   << " error" << endl;
-    }
+    LOCA::ErrorCheck::throwError(
+			 "LOCA::SingularJacobianSolve::Manager::compute()", 
+			 "Null pointer error");
     return NOX::Abstract::Group::Failed;
   }
 
@@ -160,10 +158,9 @@ LOCA::SingularJacobianSolve::Manager::computeMulti(
 				int nVecs) 
 {
   if (singularSolverPtr == NULL) {
-    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-      cout << "LOCA::SingularJacobianSolve::Manager::compute - Null pointer"
-	   << "error" << endl;
-    }
+    LOCA::ErrorCheck::throwError(
+		       "LOCA::SingularJacobianSolve::Manager::computeMulti()",
+		       "Null pointer error");
     return NOX::Abstract::Group::Failed;
   }
 

@@ -263,6 +263,7 @@ LOCA_PREDICTOR_H = \
 
 
 LOCA_PREDICTOR = \
+	$(srcdir)/LOCA_Predictor_Generic.C \
 	$(srcdir)/LOCA_Predictor_Manager.C \
 	$(srcdir)/LOCA_Predictor_Constant.C \
 	$(srcdir)/LOCA_Predictor_Tangent.C \
@@ -436,7 +437,8 @@ am__objects_8 = libloca_a-LOCA_DerivUtils.$(OBJEXT)
 am__objects_9 = libloca_a-LOCA_Utils.$(OBJEXT) \
 	libloca_a-LOCA_ErrorCheck.$(OBJEXT)
 am__objects_10 = libloca_a-LOCA_Parameter_Vector.$(OBJEXT)
-am__objects_11 = libloca_a-LOCA_Predictor_Manager.$(OBJEXT) \
+am__objects_11 = libloca_a-LOCA_Predictor_Generic.$(OBJEXT) \
+	libloca_a-LOCA_Predictor_Manager.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Constant.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Tangent.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Secant.$(OBJEXT) \
@@ -500,6 +502,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Homotopy_Group.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Constant.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Generic.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Manager.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Random.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Secant.Po \
@@ -631,6 +634,8 @@ libloca_a-LOCA_Utils.$(OBJEXT): $(srcdir)/LOCA_Utils.C
 libloca_a-LOCA_ErrorCheck.$(OBJEXT): $(srcdir)/LOCA_ErrorCheck.C
 libloca_a-LOCA_Parameter_Vector.$(OBJEXT): \
 	$(srcdir)/LOCA_Parameter_Vector.C
+libloca_a-LOCA_Predictor_Generic.$(OBJEXT): \
+	$(srcdir)/LOCA_Predictor_Generic.C
 libloca_a-LOCA_Predictor_Manager.$(OBJEXT): \
 	$(srcdir)/LOCA_Predictor_Manager.C
 libloca_a-LOCA_Predictor_Constant.$(OBJEXT): \
@@ -705,6 +710,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Homotopy_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Constant.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Generic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Random.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Secant.Po@am__quote@
@@ -1108,6 +1114,18 @@ libloca_a-LOCA_Parameter_Vector.obj: $(srcdir)/LOCA_Parameter_Vector.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Parameter_Vector.obj `cygpath -w $(srcdir)/LOCA_Parameter_Vector.C`
+
+libloca_a-LOCA_Predictor_Generic.o: $(srcdir)/LOCA_Predictor_Generic.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Predictor_Generic.C' object='libloca_a-LOCA_Predictor_Generic.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Generic.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Generic.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Predictor_Generic.o `test -f '$(srcdir)/LOCA_Predictor_Generic.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Predictor_Generic.C
+
+libloca_a-LOCA_Predictor_Generic.obj: $(srcdir)/LOCA_Predictor_Generic.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Predictor_Generic.C' object='libloca_a-LOCA_Predictor_Generic.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Generic.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Generic.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Predictor_Generic.obj `cygpath -w $(srcdir)/LOCA_Predictor_Generic.C`
 
 libloca_a-LOCA_Predictor_Manager.o: $(srcdir)/LOCA_Predictor_Manager.C
 @AMDEP_TRUE@	source='$(srcdir)/LOCA_Predictor_Manager.C' object='libloca_a-LOCA_Predictor_Manager.o' libtool=no @AMDEPBACKSLASH@

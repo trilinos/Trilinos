@@ -32,6 +32,7 @@
 
 #include "NOX_Parameter_List.H"
 #include "LOCA_Bifurcation_HopfBord_AbstractGroup.H"
+#include "LOCA_ErrorCheck.H"
 
 NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::HopfBord::AbstractGroup::applyComplexInverseMulti(
@@ -43,16 +44,20 @@ LOCA::Bifurcation::HopfBord::AbstractGroup::applyComplexInverseMulti(
 			     NOX::Abstract::Vector** results_imag,
 			     int nVecs) const
 {
-  NOX::Abstract::Group::ReturnType res;
-
+  string callingFunction = 
+    "LOCA::Bifurcation::HopfBord::AbstractGroup::applyJacobianInverseMulti()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+  finalStatus = NOX::Abstract::Group::Ok;
+  
   for (int i=0; i<nVecs; i++) {
-    res = applyComplexInverse(params, *inputs_real[i], *inputs_imag[i],
+    status = applyComplexInverse(params, *inputs_real[i], *inputs_imag[i],
 			      frequency, *results_real[i], *results_imag[i]);
-    if (res != NOX::Abstract::Group::Ok)
-      return res;
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
   }
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -63,37 +68,41 @@ LOCA::Bifurcation::HopfBord::AbstractGroup::applyComplex(
 				      NOX::Abstract::Vector& result_real,
 				      NOX::Abstract::Vector& result_imag) const
 {
-  NOX::Abstract::Group::ReturnType res;
+  string callingFunction = 
+    "LOCA::Bifurcation::HopfBord::AbstractGroup::applyComplex()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
 
   NOX::Abstract::Vector *tmp = input_real.clone(NOX::ShapeCopy);
 
   // Compute J*y
-  res = applyJacobian(input_real, result_real);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = applyJacobian(input_real, result_real);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // Compute B*z
-  res = applyMassMatrix(input_imag, *tmp);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = applyMassMatrix(input_imag, *tmp);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute J*y - w*B*z
   result_real.update(-frequency, *tmp, 1.0);
 
   // Compute J*z
-  res = applyJacobian(input_imag, result_imag);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = applyJacobian(input_imag, result_imag);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute B*y
-  res = applyMassMatrix(input_real, *tmp);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = applyMassMatrix(input_real, *tmp);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute w*B*y + J*z
   result_imag.update(frequency, *tmp, 1.0);
 
   delete tmp;
 
-  return NOX::Abstract::Group::Ok;
+  return finalStatus;
 }

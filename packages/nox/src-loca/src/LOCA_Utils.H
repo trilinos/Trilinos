@@ -67,8 +67,15 @@ namespace LOCA {
 */
 class Utils {
 
+  //! Parameter container typedef
+  typedef map<string, NOX::Parameter::List*> SublistMap;
+
+  //! Parameter container iterator typedef
+  typedef SublistMap::iterator SublistMapIterator;
+
 
 public:
+
   /*!
     \brief Message types for printing.
 
@@ -138,6 +145,13 @@ public:
   //! Returns the process ID number.
   static int getMyPID();
 
+  //! Returns a sublist of the paramter list given by name
+  /*!
+   * Note that this hard-codes the parameter list structure and does not
+   * do a search to find the sublist
+   */
+  static NOX::Parameter::List& getSublist(const string& name);
+
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
   class Fill {
@@ -189,6 +203,11 @@ public:
   */
   static Sci sci(double dval, int prec = -1);
 
+protected:
+  
+  //! Intializes sublist map with given parameter list
+  static void initializeSublistMap(NOX::Parameter::List& p);
+
 public:
 
   //! Output precision for floats and doubles.
@@ -202,6 +221,11 @@ public:
 
   //! Processor responsible for output. 
   static int printProc;
+
+protected:
+
+  //! Map containing sublist pointers
+  static SublistMap sublistMap;
 
 }; // class Utils
 

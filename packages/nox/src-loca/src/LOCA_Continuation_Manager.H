@@ -82,8 +82,7 @@ namespace LOCA {
   
       //! Creates continuation group for given method
       virtual LOCA::Continuation::ExtendedGroup* 
-      createContinuationGroup(LOCA::Continuation::AbstractGroup& grp, 
-			      NOX::Parameter::List& linSolverParams);
+      createContinuationGroup(LOCA::Continuation::AbstractGroup& grp);
 
       //! Returns method name
       const string& getMethod() const;

@@ -64,12 +64,10 @@ namespace LOCA {
   
       //! Constructor with integer continuation parameter id
       NaturalGroup(LOCA::Continuation::AbstractGroup& g, int paramID,
-		   NOX::Parameter::List& linSolverParams,
 		   NOX::Parameter::List& params);
 
       //! Constructor with string continuation parameter id
       NaturalGroup(LOCA::Continuation::AbstractGroup& g, string paramID,
-		   NOX::Parameter::List& linSolverParams,
 		   NOX::Parameter::List& params);
 
       //! Copy constructor.
@@ -119,6 +117,9 @@ namespace LOCA {
 
       //! Returns true if the previous solution vector has been set
       virtual bool isPrevXVec() const;
+
+      //! Scale predictor direction
+      virtual void scalePredictor(LOCA::Continuation::ExtendedVector& v);
 
       //! Compute and return solution vector, x, where this.x = grp.x + step * d.
       virtual void computeX(const NOX::Abstract::Group& g, 

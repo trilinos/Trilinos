@@ -33,6 +33,7 @@
 #include "LOCA_Predictor_Secant.H"
 #include "LOCA_Predictor_Manager.H"
 #include "LOCA_Continuation_ExtendedGroup.H"
+#include "LOCA_Utils.H"
 
 LOCA::Predictor::Secant::Secant(NOX::Parameter::List& params) :
   firstStepPredictorPtr(NULL)
@@ -49,34 +50,48 @@ NOX::Abstract::Group::ReturnType
 LOCA::Predictor::Secant::reset(NOX::Parameter::List& params) 
 {
   NOX::Parameter::List& firstPredictorList 
-    = params.sublist("First Step Predictor");
+    = LOCA::Utils::getSublist("First Step Predictor");
 
   delete firstStepPredictorPtr;
   firstStepPredictorPtr = new LOCA::Predictor::Manager(firstPredictorList);
 
   isFirstStep = true;
 
-  return NOX::Abstract::Group::Ok;
+  return LOCA::Predictor::Generic::reset(params);
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::Predictor::Secant::compute(LOCA::Continuation::ExtendedGroup& prevGroup,
+LOCA::Predictor::Secant::compute(bool baseOnSecant, double stepSize,
+				 LOCA::Continuation::ExtendedGroup& prevGroup,
 				 LOCA::Continuation::ExtendedGroup& curGroup,
 				 LOCA::Continuation::ExtendedVector& result) 
 {
   NOX::Abstract::Group::ReturnType res;
 
   if (isFirstStep) {
-    firstStepPredictorPtr->compute(prevGroup, curGroup, result);
+    res = firstStepPredictorPtr->compute(baseOnSecant, stepSize, prevGroup, 
+					 curGroup, result);
     isFirstStep = false;
-    res = NOX::Abstract::Group::Ok;
   }
   else {
-    res = curGroup.computeSecant();
-    if (res != NOX::Abstract::Group::Ok)
-      return res;
+
+    // Compute x - xold
+    result.update(1.0, curGroup.getX(), -1.0, prevGroup.getX(), 0.0);
+
+    // Rescale so parameter component = 1
+    result.scale(1.0/fabs(result.getParam()));
+
+    // Rescale predictor
+    curGroup.scalePredictor(result);
+
+    // Set orientation based on parameter change
+    setPredictorOrientation(baseOnSecant, stepSize, prevGroup, curGroup, 
+			    result);
   
-    result = curGroup.getPredictorDirection();
+    // Set predictor in continuation group
+    curGroup.setPredictorDirection(result);
+
+    res = NOX::Abstract::Group::Ok;
   }
 
   return res;

@@ -35,6 +35,7 @@
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Parameter_List.H"
 #include "NOX_LAPACK_Wrappers.H"
+#include "LOCA_ErrorCheck.H"
 
 LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::ModifiedBorderingGroup(
 			      LOCA::Bifurcation::TPBord::AbstractGroup& g,
@@ -119,7 +120,9 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverse(
 					const NOX::Abstract::Vector& input,
 					NOX::Abstract::Vector& result) const 
 {
-  NOX::Abstract::Group::ReturnType res;
+  string callingFunction = 
+    "LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverse()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
 
   // cast vectors to turning point vectors
   const LOCA::Bifurcation::TPBord::ExtendedVector& tp_input = 
@@ -156,44 +159,66 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverse(
   u->scale(1.0/s);
 
   // Compute a
-  res = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, input_x, 
-					     0.0, *a, aa);
+  finalStatus = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, 
+						     input_x, 0.0, *a, aa);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // Compute b
-  res = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, 
-					     *derivResidualParamPtr, 0.0,
-					     *b, bb);
+  status = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, 
+						*derivResidualParamPtr, 0.0,
+						*b, bb);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute input_y - (dJv/dx)*a
-  res = grpPtr->computeDJnDxa(v, *a, Jv, *tmp);
+  status = grpPtr->computeDJnDxa(v, *a, Jv, *tmp);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
   tmp->update(1.0, input_y, -1.0);
 
   // Compute c
-  res = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, *tmp, 0.0,
-					     *c, cc);
+  status = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, *tmp, 
+						0.0, *c, cc);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute d(Jv)/dp - (dJv/dx)*b
-  res = grpPtr->computeDJnDxa(v, *b, Jv, *tmp);
+  status = grpPtr->computeDJnDxa(v, *b, Jv, *tmp);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
   tmp->update(1.0, *derivNullResidualParamPtr, -1.0);
 
   // Compute d
-  res = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, *tmp, 0.0,
-					     *d, dd);
+  status = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, *tmp, 
+						0.0, *d, dd);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute (dJv/dx)*v
-  res = grpPtr->computeDJnDxa(v, v, Jv, *tmp);
+  status = grpPtr->computeDJnDxa(v, v, Jv, *tmp);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute e
-  res = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, *tmp, 0.0,
-					     *e, ee);
+  status = grpPtr->applyBorderedJacobianInverse(false, params, *u, v, *tmp, 
+						0.0, *e, ee);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Fill coefficient arrays
   double A[9], B[3];
-  A[0] = s;   A[1] = ee;  A[2] = -lengthVecPtr->dot(*e)/ lengthVecPtr->length();
-  A[3] = 0.0; A[4] = s;   A[5] =  lengthVecPtr->dot(v)/ lengthVecPtr->length();
-  A[6] = bb;  A[7] = dd;  A[8] = -lengthVecPtr->dot(*d)/ lengthVecPtr->length();
+  A[0] = s;   A[1] = ee;  A[2] = -lTransNorm(*e);
+  A[3] = 0.0; A[4] = s;   A[5] =  lTransNorm(v);
+  A[6] = bb;  A[7] = dd;  A[8] = -lTransNorm(*d);
 
-  B[0] = aa;  B[1] = cc;  B[2] = input_p - lengthVecPtr->dot(*c)/ lengthVecPtr->length();
+  B[0] = aa;  B[1] = cc;  B[2] = input_p - lTransNorm(*c);
 
   // Solve A*C = B
   int one = 1;
@@ -227,34 +252,18 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverse(
   return NOX::Abstract::Group::Ok;
 }
 
-// NOX::Abstract::Group::ReturnType
-// LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverseMulti(
-// 			    NOX::Parameter::List& params,
-// 			    const NOX::Abstract::Vector* const* inputs,
-// 			    NOX::Abstract::Vector** results, int nVecs) const 
-// {
-//   NOX::Abstract::Group::ReturnType res;
-
-//   for (int i=0; i<nVecs; i++) {
-//     res = applyJacobianInverse(params, *(inputs[i]), *(results[i]));
-//     if (res != NOX::Abstract::Group::Ok)
-//       return res;
-//   }
-
-//   return res;
-// }
-
 NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverseMulti(
 			    NOX::Parameter::List& params,
 			    const NOX::Abstract::Vector* const* inputs,
 			    NOX::Abstract::Vector** results, int nVecs) const
 {
+  string callingFunction = 
+    "LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverseMulti()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Number of input vectors
   int m = nVecs; 
-
-  // Return type
-  NOX::Abstract::Group::ReturnType res;
   
   // Build arrays of solution, null vector and parameter components
   const NOX::Abstract::Vector** inputs_x = 
@@ -313,22 +322,30 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverseMulti(
   scalars_null[m+1] = 0.0;
 
   // Solve J*tmp1 = inputs_x
-  res = grpPtr->applyBorderedJacobianInverseMulti(false, params, *u, v,
-						  inputs_x, zeros, tmp1,
-						  scalars_x, m+1);
+  finalStatus = grpPtr->applyBorderedJacobianInverseMulti(false, params, *u, v,
+							  inputs_x, zeros, 
+							  tmp1,
+							  scalars_x, m+1);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // Compute tmp2 = inputs_null - (dJv/dx)*tmp1 
   for (int i=0; i<m+2; i++) {
-    res = grpPtr->computeDJnDxa(v, *tmp1[i], Jv, *tmp2[i]);
+    status = grpPtr->computeDJnDxa(v, *tmp1[i], Jv, *tmp2[i]);
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
 
     if (i < m+1)
       tmp2[i]->update(1.0, *inputs_null[i], -1.0);
   } 
 
   // Solve J*tmp3 = tmp2
-  res = grpPtr->applyBorderedJacobianInverseMulti(false, params, *u, v,
-						  tmp2, zeros, tmp3,
-						  scalars_null, m+2);
+  status = grpPtr->applyBorderedJacobianInverseMulti(false, params, *u, v,
+						     tmp2, zeros, tmp3,
+						     scalars_null, m+2);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Fill coefficient arrays
   double A[9];
@@ -394,5 +411,5 @@ LOCA::Bifurcation::TPBord::ModifiedBorderingGroup::applyJacobianInverseMulti(
   delete [] scalars_null;
   delete [] B;
 
-  return res;
+  return finalStatus;
 }

@@ -151,6 +151,7 @@ LOCA_PREDICTOR_H = \
 	$(srcdir)/LOCA_Predictor_Random.H
 
 LOCA_PREDICTOR = \
+	$(srcdir)/LOCA_Predictor_Generic.C \
 	$(srcdir)/LOCA_Predictor_Manager.C \
 	$(srcdir)/LOCA_Predictor_Constant.C \
 	$(srcdir)/LOCA_Predictor_Tangent.C \

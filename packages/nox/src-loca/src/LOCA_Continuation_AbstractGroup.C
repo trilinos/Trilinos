@@ -32,6 +32,7 @@
 
 #include "NOX_Parameter_List.H"
 #include "LOCA_Continuation_AbstractGroup.H"
+#include "LOCA_ErrorCheck.H"
 
 NOX::Abstract::Group::ReturnType
 LOCA::Continuation::AbstractGroup::applyJacobianInverseMulti(
@@ -39,15 +40,19 @@ LOCA::Continuation::AbstractGroup::applyJacobianInverseMulti(
 			    const NOX::Abstract::Vector* const* inputs,
 			    NOX::Abstract::Vector** outputs, int nVecs) const
 {
-  NOX::Abstract::Group::ReturnType res;
+  string callingFunction = 
+    "LOCA::Continuation::AbstractGroup::applyJacobianInverseMulti()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+  finalStatus = NOX::Abstract::Group::Ok;
 
   for (int i=0; i<nVecs; i++) {
-    res = applyJacobianInverse(params, *inputs[i], *outputs[i]);
-    if (res != NOX::Abstract::Group::Ok)
-      return res;
+    status = applyJacobianInverse(params, *inputs[i], *outputs[i]);
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
   }
 
-  return res;
+  return finalStatus;
 }
 
 double
@@ -62,7 +67,8 @@ NOX::Abstract::Group::ReturnType
 LOCA::Continuation::AbstractGroup::computeEigenvalues(
 					        NOX::Parameter::List& params)
 {
-  errorCheck.throwError("LOCA::Continuation::AbstractGroup::computeEigenvalues",
-			       "No eigensolver defined for group");
+ LOCA::ErrorCheck::throwError(
+		       "LOCA::Continuation::AbstractGroup::computeEigenvalues",
+		       "No eigensolver defined for group");
   return NOX::Abstract::Group::Failed;
 }

@@ -38,7 +38,6 @@
 #include "LOCA_Continuation_AbstractGroup.H"       // class data element
 #include "LOCA_Continuation_ExtendedVector.H"      // class data element
 #include "NOX_Common.H"                            // for string 
-#include "LOCA_ErrorCheck.H"       // class data member
 
 namespace LOCA { 
 
@@ -88,11 +87,7 @@ namespace LOCA {
      * example on how this can be used.  The default implementation here
      * is for no reparameterization (scale factors are identically 1).
      *
-     * The constructors take two parameter list arguments:  the first stores
-     * the linear solver parameters required for the underlying group's 
-     * applyJacobianInverse() routine (used by the computeTangent() method),
-     * and the second stores parameters relevant to the continuation group.
-     * These parameters are:
+     * These parameters relavant to this group are:
      * <ul>
      * <li> "Initial Scale Factor" The initial scale factor for parameter 
      *      componenet scaling (defaults to 1.0).
@@ -106,57 +101,45 @@ namespace LOCA {
       /*!
        * The argument \em grp is the underlying group which implements \f$F\f$,
        * \em paramID is the index of the continuation parameter, 
-       * \em linSolverParams
-       * is the parameter list passed to the underlying groups 
-       * applyJacobianInverse() routine (for computeTangent()), and \em params
+       * \em params
        * is the parameter list for the continuation groups described above.
        *
        * The \em grp argument is a non-const reference and may be modified.
        */
       ExtendedGroup(LOCA::Continuation::AbstractGroup& grp, int paramID,
-		    NOX::Parameter::List& linSolverParams,
 		    NOX::Parameter::List& params);
 
       //! Constructor with const grp, integer continuation parameter id
       /*!
        * The argument \em grp is the underlying group which implements \f$F\f$,
        * \em paramID is the index of the continuation parameter, 
-       * \em linSolverParams
-       * is the parameter list passed to the underlying groups 
-       * applyJacobianInverse() routine (for computeTangent()), and \em params
+       * \em params
        * is the parameter list for the continuation groups described above.
        */
       ExtendedGroup(const LOCA::Continuation::AbstractGroup& grp, int paramID,
-		    NOX::Parameter::List& linSolverParams,
 		    NOX::Parameter::List& params);
 
       //! Constructor with string continuation parameter id
      /*!
        * The argument \em grp is the underlying group which implements \f$F\f$,
        * \em paramID is the index of the continuation parameter, 
-       * \em linSolverParams
-       * is the parameter list passed to the underlying groups 
-       * applyJacobianInverse() routine (for computeTangent()), and \em params
+       * \em params
        * is the parameter list for the continuation groups described above.
        *
        * The \em grp argument is a non-const reference and may be modified.
        */ 
       ExtendedGroup(LOCA::Continuation::AbstractGroup& grp, string paramID,
-		    NOX::Parameter::List& linSolverParams,
 		    NOX::Parameter::List& params);
 
       //! Constructor with const grp, string continuation parameter id
       /*!
        * The argument \em grp is the underlying group which implements \f$F\f$,
        * \em paramID is the index of the continuation parameter, 
-       * \em linSolverParams
-       * is the parameter list passed to the underlying groups 
-       * applyJacobianInverse() routine (for computeTangent()), and \em params
+       * and \em params
        * is the parameter list for the continuation groups described above.
        */
       ExtendedGroup(const LOCA::Continuation::AbstractGroup& grp, 
 		    string paramID,
-		    NOX::Parameter::List& linSolverParams,
 		    NOX::Parameter::List& params);
 
       //! Copy constructor
@@ -196,13 +179,8 @@ namespace LOCA {
       //! Get step size for continuation constraint equation
       virtual double getStepSize() const = 0;
 
-      //! Compute tangent direction of continuation curve
-      virtual NOX::Abstract::Group::ReturnType
-      computeTangent();
-
-      //! Compute secant direction of continuation curve
-      virtual NOX::Abstract::Group::ReturnType
-      computeSecant();
+      //! Scale predictor direction
+      virtual void scalePredictor(LOCA::Continuation::ExtendedVector& v) = 0;
 
       //! Get predictor direction (tangent or secant)
       virtual const LOCA::Continuation::ExtendedVector& 
@@ -220,6 +198,9 @@ namespace LOCA {
 
       //! Returns the continuation parameter value
       virtual double getContinuationParameter() const;
+
+      //! Get the continuation parameter id
+      virtual int getContinuationParameterID() const;
 
       //! Sets the scale factor \f$\theta\f$ 
       virtual void setScaleFactor(double theta);
@@ -276,14 +257,8 @@ namespace LOCA {
       //! True if predictor has been calculated
       bool isValidPredictor;
 
-      //! Stores linear solver parameters for computing tangent vector
-      NOX::Parameter::List& linearSolverParams;
-
       //! Stores scaling factor
       double theta;
-
-      //! Utility to check errors
-      LOCA::ErrorCheck errorCheck; 
     };
 
   } // namespace Continuation

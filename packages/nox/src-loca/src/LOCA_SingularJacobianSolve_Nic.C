@@ -32,6 +32,7 @@
 
 #include "LOCA_Continuation_AbstractGroup.H"
 #include "LOCA_SingularJacobianSolve_Nic.H"
+#include "LOCA_ErrorCheck.H"
 
 LOCA::SingularJacobianSolve::Nic::Nic(NOX::Parameter::List& params)
 {
@@ -82,20 +83,24 @@ LOCA::SingularJacobianSolve::Nic::compute(
 				const NOX::Abstract::Vector& jacApproxNullVec,
 				NOX::Abstract::Vector& result) 
 {
+  string callingFunction = 
+    "LOCA::SingularJacobianSolve::Nic::compute()";
+  NOX::Abstract::Group::ReturnType finalStatus;
+
   double alpha = approxNullVec.dot(input)
                / approxNullVec.dot(jacApproxNullVec);
 
   NOX::Abstract::Vector* tmpInput  = input.clone(NOX::DeepCopy);
   tmpInput->update(-alpha, jacApproxNullVec, 1.0);
 
-  NOX::Abstract::Group::ReturnType
-    res = grp.applyJacobianInverse(params, *tmpInput, result);
+  finalStatus = grp.applyJacobianInverse(params, *tmpInput, result);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   delete tmpInput;
 
   result.update(alpha, approxNullVec, 1.0);
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -108,6 +113,11 @@ LOCA::SingularJacobianSolve::Nic::computeMulti(
 				NOX::Abstract::Vector** results,
 				int nVecs) 
 {
+  string callingFunction = 
+    "LOCA::SingularJacobianSolve::Nic::computeMulti()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+  finalStatus = NOX::Abstract::Group::Ok;
+
   double denom = approxNullVec.dot(jacApproxNullVec);
 
   double* alphas = new double[nVecs];
@@ -119,8 +129,10 @@ LOCA::SingularJacobianSolve::Nic::computeMulti(
     tmpInputs[i]->update(-alphas[i], jacApproxNullVec, 1.0);
   }
 
-  NOX::Abstract::Group::ReturnType
-    res = grp.applyJacobianInverseMulti(params, tmpInputs, results, nVecs);
+  status = grp.applyJacobianInverseMulti(params, tmpInputs, results, nVecs);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   for (int i=0; i<nVecs; i++) {
     results[i]->update(alphas[i], approxNullVec, 1.0);
@@ -130,5 +142,5 @@ LOCA::SingularJacobianSolve::Nic::computeMulti(
   delete [] tmpInputs;
   delete [] alphas;
 
-  return res;
+  return finalStatus;
 }

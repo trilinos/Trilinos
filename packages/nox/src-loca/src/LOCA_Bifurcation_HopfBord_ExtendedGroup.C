@@ -34,6 +34,7 @@
 #include "LOCA_Bifurcation_HopfBord_AbstractGroup.H" 
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Parameter_List.H"
+#include "LOCA_ErrorCheck.H"
 #include "LOCA_Utils.H"
 
 LOCA::Bifurcation::HopfBord::ExtendedGroup::ExtendedGroup(
@@ -123,26 +124,29 @@ LOCA::Continuation::AbstractGroup&
 LOCA::Bifurcation::HopfBord::ExtendedGroup::operator=(
 			     const LOCA::Continuation::AbstractGroup& source)
 {
-  return *this = dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedGroup&>(source);
+  return *this = 
+    dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedGroup&>(source);
 }
 
 LOCA::Extended::AbstractGroup&
 LOCA::Bifurcation::HopfBord::ExtendedGroup::operator=(
 			     const LOCA::Extended::AbstractGroup& source)
 {
-  return *this = dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedGroup&>(source);
+  return *this = 
+    dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedGroup&>(source);
 }
 
 NOX::Abstract::Group&
 LOCA::Bifurcation::HopfBord::ExtendedGroup::operator=(
 				         const NOX::Abstract::Group& source)
 {
-  return *this = dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedGroup&>(source);
+  return *this = 
+    dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedGroup&>(source);
 }
 
 LOCA::Bifurcation::HopfBord::ExtendedGroup&
 LOCA::Bifurcation::HopfBord::ExtendedGroup::operator=(
-			  const LOCA::Bifurcation::HopfBord::ExtendedGroup& source) 
+		    const LOCA::Bifurcation::HopfBord::ExtendedGroup& source) 
 {
 
   // Protect against A = A
@@ -175,7 +179,8 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::clone(NOX::CopyType type) const
 }
 
 void
-LOCA::Bifurcation::HopfBord::ExtendedGroup::setParams(const LOCA::ParameterVector& p) 
+LOCA::Bifurcation::HopfBord::ExtendedGroup::setParams(
+					      const LOCA::ParameterVector& p) 
 {
   isValidF = false;
   isValidJacobian = false;
@@ -203,7 +208,8 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::getParam(int paramID) const
 }
 
 void
-LOCA::Bifurcation::HopfBord::ExtendedGroup::setParam(string paramID, double val)
+LOCA::Bifurcation::HopfBord::ExtendedGroup::setParam(string paramID, 
+						     double val)
 {
   grpPtr->setParam(paramID, val);
 }
@@ -218,33 +224,36 @@ NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::HopfBord::ExtendedGroup::computeDfDp(int paramID, 
 					      NOX::Abstract::Vector& result)
 {
-  NOX::Abstract::Group::ReturnType res;
+  string callingFunction = 
+    "LOCA::Bifurcation::HopfBord::ExtendedGroup::computeDfDp()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
 
   // Cast result to Hopf vector
   LOCA::Bifurcation::HopfBord::ExtendedVector& hopf_result = 
     dynamic_cast<LOCA::Bifurcation::HopfBord::ExtendedVector&>(result);
 
   // Compute f, J, (J+iwB)*(y+iz)
-  res = computeF();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // Compute df/dp
-  res = grpPtr->computeDfDp(paramID, hopf_result.getXVec());
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->computeDfDp(paramID, hopf_result.getXVec());
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute [(J+iwB)*(y+iz)]_p
-  res = grpPtr->computeDCeDp(hopfXVec.getRealEigenVec(),
-			     hopfXVec.getImagEigenVec(),
-			     hopfXVec.getFrequency(),
-			     paramID,
-			     hopfFVec.getRealEigenVec(),
-			     hopfFVec.getImagEigenVec(),
-			     hopf_result.getRealEigenVec(),
-			     hopf_result.getImagEigenVec());
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->computeDCeDp(hopfXVec.getRealEigenVec(),
+				hopfXVec.getImagEigenVec(),
+				hopfXVec.getFrequency(),
+				paramID,
+				hopfFVec.getRealEigenVec(),
+				hopfFVec.getImagEigenVec(),
+				hopf_result.getRealEigenVec(),
+				hopf_result.getImagEigenVec());
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Set frequency  component
   hopf_result.getFrequency() = 0.0;
@@ -252,7 +261,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::computeDfDp(int paramID,
   // Set parameter component
   hopf_result.getBifParam() = 0.0;
 
-  return res;
+  return finalStatus;
 }
 
 double
@@ -272,14 +281,15 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::setBifParam(double param)
 }
 
 void
-LOCA::Bifurcation::HopfBord::ExtendedGroup::setX(const NOX::Abstract::Vector& y) 
+LOCA::Bifurcation::HopfBord::ExtendedGroup::setX(
+					     const NOX::Abstract::Vector& y) 
 {
   setX( dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedVector&>(y) );
 }
 
 void
 LOCA::Bifurcation::HopfBord::ExtendedGroup::setX(
-			       const LOCA::Bifurcation::HopfBord::ExtendedVector& y) 
+			const LOCA::Bifurcation::HopfBord::ExtendedVector& y) 
 {
   grpPtr->setX( y.getXVec() );
   hopfXVec = y;
@@ -296,9 +306,9 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::computeX(
 					     const NOX::Abstract::Vector& d,
 					     double step) 
 {
-  computeX( dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedGroup&>(g),
-	    dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedVector&>(d),
-	    step);
+  computeX(dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedGroup&>(g),
+	   dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedVector&>(d),
+	   step);
 }
 
 void
@@ -322,33 +332,37 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::computeF()
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
-  NOX::Abstract::Group::ReturnType res;
+  string callingFunction = 
+    "LOCA::Bifurcation::HoopfBord::ExtendedGroup::computeF()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
 
   // Compute F
-  res = grpPtr->computeF();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = grpPtr->computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
   
   hopfFVec.getXVec() = grpPtr->getF();
   
   // Compute J
-  res = grpPtr->computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->computeJacobian();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute B
-  res = grpPtr->computeMassMatrix();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->computeMassMatrix();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute (J+iwB)*(y+iz)
-  res = grpPtr->applyComplex(hopfXVec.getRealEigenVec(),
-			     hopfXVec.getImagEigenVec(),
-			     hopfXVec.getFrequency(),
-			     hopfFVec.getRealEigenVec(),
-			     hopfFVec.getImagEigenVec());
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->applyComplex(hopfXVec.getRealEigenVec(),
+				hopfXVec.getImagEigenVec(),
+				hopfXVec.getFrequency(),
+				hopfFVec.getRealEigenVec(),
+				hopfFVec.getImagEigenVec());
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
   
   // Compute l^T*y - 1
   hopfFVec.getFrequency() = hopfXVec.getRealEigenVec().dot(*lengthVecPtr)-1.0;
@@ -358,7 +372,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::computeF()
   
   isValidF = true;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -367,53 +381,63 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::computeJacobian()
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
 
-  NOX::Abstract::Group::ReturnType res = computeF();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  string callingFunction = 
+    "LOCA::Bifurcation::TPBord::ExtendedGroup::computeJacobian()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
+
+  finalStatus = computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // Compute J
-  res = grpPtr->computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->computeJacobian();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute B
-  res = grpPtr->computeMassMatrix();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->computeMassMatrix();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
   
   // Compute dF/dp
-  res = grpPtr->computeDfDp(bifParamId, *derivResidualParamPtr);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->computeDfDp(bifParamId, *derivResidualParamPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute [(J+iwB)*(y+iz)]_p
-  res = grpPtr->computeDCeDp(hopfXVec.getRealEigenVec(),
-			     hopfXVec.getImagEigenVec(),
-			     hopfXVec.getFrequency(),
-			     bifParamId,
-			     hopfFVec.getRealEigenVec(),
-			     hopfFVec.getImagEigenVec(),
-			     *derivRealEigenResidualParamPtr,
-			     *derivImagEigenResidualParamPtr);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->computeDCeDp(hopfXVec.getRealEigenVec(),
+				hopfXVec.getImagEigenVec(),
+				hopfXVec.getFrequency(),
+				bifParamId,
+				hopfFVec.getRealEigenVec(),
+				hopfFVec.getImagEigenVec(),
+				*derivRealEigenResidualParamPtr,
+				*derivImagEigenResidualParamPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute B*y
-  res = grpPtr->applyMassMatrix(hopfXVec.getRealEigenVec(),
-				*massTimesYPtr);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->applyMassMatrix(hopfXVec.getRealEigenVec(),
+				   *massTimesYPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute -B*z
-  res = grpPtr->applyMassMatrix(hopfXVec.getImagEigenVec(),
-				*minusMassTimesZPtr);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->applyMassMatrix(hopfXVec.getImagEigenVec(),
+				   *minusMassTimesZPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
   minusMassTimesZPtr->scale(-1.0);
 
   isValidJacobian = true;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -429,25 +453,30 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::computeNewton(
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
 
-  NOX::Abstract::Group::ReturnType res = computeF();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  string callingFunction = 
+    "LOCA::Bifurcation::HopfBord::ExtendedGroup::computeNewton()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
+  finalStatus = computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
   
-  res = computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = computeJacobian();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // zero out newton vec -- used as initial guess for some linear solvers
   hopfNewtonVec.init(0.0);
 
-  res = applyJacobianInverse(params, hopfFVec, hopfNewtonVec);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = applyJacobianInverse(params, hopfFVec, hopfNewtonVec);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   hopfNewtonVec.scale(-1.0);
   isValidNewton = true;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -455,6 +484,10 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::applyJacobian(
 					  const NOX::Abstract::Vector& input,
 					  NOX::Abstract::Vector& result) const 
 {
+  string callingFunction = 
+    "LOCA::Bifurcation::HopfBord::ExtendedGroup::applyJacobian()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Cast vectors to HopfBordVectors
   const LOCA::Bifurcation::HopfBord::ExtendedVector& hopf_input = 
     dynamic_cast<const LOCA::Bifurcation::HopfBord::ExtendedVector&>(input);
@@ -479,22 +512,19 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::applyJacobian(
   NOX::Abstract::Vector *tmp_real = input_x.clone(NOX::ShapeCopy);
   NOX::Abstract::Vector *tmp_imag = input_x.clone(NOX::ShapeCopy);
 
-  // Return value
-  NOX::Abstract::Group::ReturnType res;
-
   // compute J*X
-  res = grpPtr->applyJacobian(input_x, result_x);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = grpPtr->applyJacobian(input_x, result_x);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // compute J*X + P*dR/dp
   result_x.update(input_param, *derivResidualParamPtr, 1.0);
 
   // compute (J+iwB)*(Y+iZ)
-  res = grpPtr->applyComplex(input_y, input_z, hopfXVec.getFrequency(), 
-			     result_y, result_z);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->applyComplex(input_y, input_z, hopfXVec.getFrequency(), 
+				result_y, result_z);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // compute (J+iwB)*(Y+iZ) + P*d(J+iwB)*(y+iz)/dp + iW*B*(y+iz)
   result_y.update(input_param, *derivRealEigenResidualParamPtr, 
@@ -503,16 +533,17 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::applyJacobian(
 		  input_w, *massTimesYPtr, 1.0);
 
   // compute (d(J+iwB)*(y+iz)/dx)*X
-  res = grpPtr->computeDCeDxa(hopfXVec.getRealEigenVec(), 
-			      hopfXVec.getImagEigenVec(), 
-			      hopfXVec.getFrequency(),
-			      input_x, 
-			      hopfFVec.getRealEigenVec(), 
-			      hopfFVec.getImagEigenVec(),
-			      *tmp_real,
-			      *tmp_imag);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->computeDCeDxa(hopfXVec.getRealEigenVec(), 
+				 hopfXVec.getImagEigenVec(), 
+				 hopfXVec.getFrequency(),
+				 input_x, 
+				 hopfFVec.getRealEigenVec(), 
+				 hopfFVec.getImagEigenVec(),
+				 *tmp_real,
+				 *tmp_imag);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
   
   // (d(J+iwB)*(y+iz)/dx)*X + (J+iwB)*(Y+iZ) + P*d(J+iwB)*(y+iz)/dp + iW*B*(y+iz)
   result_y.update(1.0, *tmp_real, 1.0);
@@ -525,7 +556,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::applyJacobian(
   delete tmp_real;
   delete tmp_imag;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -689,11 +720,12 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::applyJacobianInverseMulti(
 			    const NOX::Abstract::Vector* const* inputs,
 			    NOX::Abstract::Vector** results, int nVecs) const 
 {
+  string callingFunction = 
+    "LOCA::Bifurcation::HopfBord::ExtendedGroup::applyJacobianInverseMulti()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Number of input vectors
   int m = nVecs; 
-
-  // Return type
-   NOX::Abstract::Group::ReturnType res;
   
   // Build arrays of solution, eigenvector and parameter components
   const NOX::Abstract::Vector** inputs_x = 
@@ -754,23 +786,24 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::applyJacobianInverseMulti(
   tmp_imag[m+1] = inputs_x[m]->clone(NOX::ShapeCopy);
 
   // Solve J*results_x = inputs_x
-  res = grpPtr->applyJacobianInverseMulti(params, inputs_x, results_x, m+1);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = grpPtr->applyJacobianInverseMulti(params, inputs_x, 
+						  results_x, m+1);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
   
 
   // Compute tmp = (inputs_y + i*inputs_z) - (dJ(J+iwB)(y+iz)/dx)*results_x
   for (int i=0; i<m+1; i++) {
-    res = grpPtr->computeDCeDxa(hopfXVec.getRealEigenVec(), 
-				hopfXVec.getImagEigenVec(),
-				hopfXVec.getFrequency(),
-				*results_x[i],
-				hopfFVec.getRealEigenVec(), 
-				hopfFVec.getImagEigenVec(),
-				*tmp_real[i],
-				*tmp_imag[i]);
-    if (res != NOX::Abstract::Group::Ok)
-      return res;
+    status = grpPtr->computeDCeDxa(hopfXVec.getRealEigenVec(), 
+				   hopfXVec.getImagEigenVec(),
+				   hopfXVec.getFrequency(),
+				   *results_x[i],
+				   hopfFVec.getRealEigenVec(), 
+				   hopfFVec.getImagEigenVec(),
+				   *tmp_real[i],
+				   *tmp_imag[i]);
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
 
     tmp_real[i]->update(1.0, *inputs_y[i], -1.0);
     tmp_imag[i]->update(1.0, *inputs_z[i], -1.0);
@@ -779,11 +812,12 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::applyJacobianInverseMulti(
   tmp_imag[m+1] = massTimesYPtr;
 
   // Solve (J+iwB)*(results_y + i*results_z) = (tmp_real + i*tmp_imag)
-  res = grpPtr->applyComplexInverseMulti(params, tmp_real, tmp_imag, 
-					 hopfXVec.getFrequency(),
-					 results_y, results_z, m+2);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->applyComplexInverseMulti(params, tmp_real, tmp_imag, 
+					    hopfXVec.getFrequency(),
+					    results_y, results_z, m+2);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
   
   // Compute and set results
   double ltc = lengthVecPtr->dot(*results_y[m+1]);
@@ -832,7 +866,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::applyJacobianInverseMulti(
   delete [] tmp_real;
   delete [] tmp_imag;
 
-  return res;
+  return finalStatus;
 }
 
 bool
@@ -880,7 +914,9 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::getNormF() const
 const NOX::Abstract::Vector&
 LOCA::Bifurcation::HopfBord::ExtendedGroup::getGradient() const 
 {
-  errorCheck.throwError("LOCA::Bifurcation::HopfBord::ExtendedGroup::getGradient()"," - not implemented");
+  LOCA::ErrorCheck::throwError(
+		 "LOCA::Bifurcation::HopfBord::ExtendedGroup::getGradient()",
+		 " - not implemented");
   return getNewton();
 }
 
@@ -893,13 +929,13 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::getNewton() const
 double
 LOCA::Bifurcation::HopfBord::ExtendedGroup::getNormNewtonSolveResidual() const 
 {
+  string callingFunction = 
+    "LOCA::Bifurcation::TPBord::ExtendedGroup::getNormNewtonSolveResidual()";
+  NOX::Abstract::Group::ReturnType finalStatus;
   LOCA::Bifurcation::HopfBord::ExtendedVector residual = hopfFVec;
   
-  NOX::Abstract::Group::ReturnType res = applyJacobian(hopfNewtonVec,residual);
-  if (res != NOX::Abstract::Group::Ok) {
-     errorCheck.throwError("LOCA::Bifurcation::HopfBord::ExtendedGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok"); 
-    return 0.0;
-  }
+  finalStatus = applyJacobian(hopfNewtonVec,residual);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   residual.update(1.0, hopfFVec, 1.0);
   return residual.norm();
@@ -958,7 +994,9 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::init()
   ldz = hopfXVec.getImagEigenVec().dot(*lengthVecPtr);
 
   if (ldy == 0.0) {
-     errorCheck.throwError("LOCA::Bifurcation::HopfBord::ExtendedGroup::init()","Real component of eigenvector cannot be orthogonal to length vector!");
+     LOCA::ErrorCheck::throwError(
+       "LOCA::Bifurcation::HopfBord::ExtendedGroup::init()",
+       "Real component of eigenvector cannot be orthogonal to length vector!");
   }
 
   denom = ldy*ldy + ldz*ldz;

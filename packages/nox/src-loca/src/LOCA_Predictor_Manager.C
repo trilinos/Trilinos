@@ -77,11 +77,12 @@ LOCA::Predictor::Manager::reset(NOX::Parameter::List& params)
     }
   }
 
-  return NOX::Abstract::Group::Ok;
+  return LOCA::Predictor::Generic::reset(params);
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::Predictor::Manager::compute(LOCA::Continuation::ExtendedGroup& prevGroup,
+LOCA::Predictor::Manager::compute(bool baseOnSecant, double stepSize,
+				  LOCA::Continuation::ExtendedGroup& prevGroup,
 				  LOCA::Continuation::ExtendedGroup& curGroup,
 				  LOCA::Continuation::ExtendedVector& result) 
 {
@@ -95,7 +96,8 @@ LOCA::Predictor::Manager::compute(LOCA::Continuation::ExtendedGroup& prevGroup,
   if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails))
     cout << "\n\tCalling Predictor with method: " << method << endl;
 
-  return predictorPtr->compute(prevGroup, curGroup, result);
+  return predictorPtr->compute(baseOnSecant, stepSize, prevGroup, curGroup, 
+			       result);
 }
 
 const string&

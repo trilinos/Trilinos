@@ -31,6 +31,7 @@
 //@HEADER
 
 #include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
+#include "LOCA_ErrorCheck.H"
 
 double
 LOCA::Bifurcation::TPBord::AbstractGroup::innerProduct(
@@ -52,14 +53,19 @@ LOCA::Bifurcation::TPBord::AbstractGroup::applyBorderedJacobianInverseMulti(
 			       double *sResults,
 			       int nVecs) const
 {
-  NOX::Abstract::Group::ReturnType res;
+  string callingFunction = 
+    "LOCA::Bifurcation::TPBord::AbstractGroup::applyBorderedJacobianInverseMulti()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+  finalStatus = NOX::Abstract::Group::Ok;
 
   for (int i=0; i<nVecs; i++) {
-    res = applyBorderedJacobianInverse(trans, params, a, b, *vInputs[i], 
-				       sInputs[i], *vResults[i], sResults[i]);
-    if (res != NOX::Abstract::Group::Ok)
-      return res;
+    status = applyBorderedJacobianInverse(trans, params, a, b, *vInputs[i], 
+					  sInputs[i], *vResults[i], 
+					  sResults[i]);
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
   }
 
-  return res;
+  return finalStatus;
 }

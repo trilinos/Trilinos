@@ -44,17 +44,22 @@ LOCA::Predictor::Constant::~Constant()
 NOX::Abstract::Group::ReturnType 
 LOCA::Predictor::Constant::reset(NOX::Parameter::List& params) 
 {
-  return NOX::Abstract::Group::Ok;
+  return LOCA::Predictor::Generic::reset(params);
 }
 
 NOX::Abstract::Group::ReturnType 
 LOCA::Predictor::Constant::compute(
+				bool baseOnSecant, double stepSize,
 				LOCA::Continuation::ExtendedGroup& prevGroup,
 				LOCA::Continuation::ExtendedGroup& curGroup,
 				LOCA::Continuation::ExtendedVector& result) 
 {
   result.init(0.0);
   result.getParam() = 1.0;
+
+  // Set orientation based on parameter change
+  setPredictorOrientation(baseOnSecant, stepSize, prevGroup, curGroup, result);
+
   curGroup.setPredictorDirection(result);
   return NOX::Abstract::Group::Ok;
 }

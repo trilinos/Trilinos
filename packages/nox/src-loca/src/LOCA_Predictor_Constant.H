@@ -67,7 +67,8 @@ namespace LOCA {
   
       //! Computes the constant predictor as described above.
       virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::Continuation::ExtendedGroup& prevGroup,
+      compute(bool baseOnSecant, double stepSize,
+	      LOCA::Continuation::ExtendedGroup& prevGroup,
 	      LOCA::Continuation::ExtendedGroup& curGroup,
 	      LOCA::Continuation::ExtendedVector& result);
 

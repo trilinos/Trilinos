@@ -47,7 +47,7 @@ LOCA::ErrorCheck::~ErrorCheck()
 
 void LOCA::ErrorCheck::throwError(const string& callingFunction, 
 				  const string& message, 
-				  const string& throwLabel) const
+				  const string& throwLabel)
 {
   if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
     cout << "************************" << "\n";
@@ -61,7 +61,7 @@ void LOCA::ErrorCheck::throwError(const string& callingFunction,
 }
 
 void LOCA::ErrorCheck::printWarning(const string& callingFunction, 
-				    const string& message) const
+				    const string& message)
 {
   if (LOCA::Utils::doPrint(LOCA::Utils::Warning)) {
     cout << "WARNING: " << callingFunction << " - ";
@@ -71,10 +71,29 @@ void LOCA::ErrorCheck::printWarning(const string& callingFunction,
   return;    
 }
 
-void LOCA::ErrorCheck::checkReturnType(NOX::Abstract::Group::ReturnType status,
-				       ActionType action,
-				       const string& callingFunction,
-				       const string& message) const
+void
+LOCA::ErrorCheck::checkReturnType(
+			     const NOX::Abstract::Group::ReturnType& status,
+			     const string& callingFunction)
+{
+  if (status == NOX::Abstract::Group::Ok)
+    return;
+  else if (status == NOX::Abstract::Group::Failed || 
+	   status == NOX::Abstract::Group::NotDefined ||
+	   status == NOX::Abstract::Group::BadDependency)
+    checkReturnType(status, LOCA::ErrorCheck::ThrowError, callingFunction);
+  else if (status == NOX::Abstract::Group::NotConverged)
+    checkReturnType(status, LOCA::ErrorCheck::PrintWarning, 
+		       callingFunction);
+  else 
+    throwError("LOCA::ErrorCheck::checkReturnType", "Unknown status");
+}
+
+void LOCA::ErrorCheck::checkReturnType(
+			       const NOX::Abstract::Group::ReturnType& status,
+			       const ActionType& action,
+			       const string& callingFunction,
+			       const string& message)
 {
   if (status != NOX::Abstract::Group::Ok) {
     
@@ -100,8 +119,41 @@ void LOCA::ErrorCheck::checkReturnType(NOX::Abstract::Group::ReturnType status,
   return;
 }
 
-string LOCA::ErrorCheck::
-getReturnTypeString(NOX::Abstract::Group::ReturnType status) const
+NOX::Abstract::Group::ReturnType 
+LOCA::ErrorCheck::combineReturnTypes(
+			      const NOX::Abstract::Group::ReturnType& status1,
+			      const NOX::Abstract::Group::ReturnType& status2)
+{
+  if (status1 == NOX::Abstract::Group::NotDefined ||
+	   status2 == NOX::Abstract::Group::NotDefined)
+    return NOX::Abstract::Group::NotDefined;
+  else if (status1 == NOX::Abstract::Group::BadDependency ||
+	   status2 == NOX::Abstract::Group::BadDependency)
+    return NOX::Abstract::Group::BadDependency;
+  else if (status1 == NOX::Abstract::Group::Failed ||
+	   status2 == NOX::Abstract::Group::Failed)
+    return NOX::Abstract::Group::Failed;
+  else if (status1 == NOX::Abstract::Group::NotConverged ||
+	   status2 == NOX::Abstract::Group::NotConverged)
+    return NOX::Abstract::Group::NotConverged;
+  else
+    return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::ErrorCheck::combineAndCheckReturnTypes(
+			      const NOX::Abstract::Group::ReturnType& status1,
+			      const NOX::Abstract::Group::ReturnType& status2,
+			      const string& callingFunction)
+{
+  NOX::Abstract::Group::ReturnType status3 = 
+    combineReturnTypes(status1, status2);
+  checkReturnType(status1, callingFunction);
+  return status3;
+}
+
+string LOCA::ErrorCheck::getReturnTypeString(
+			       NOX::Abstract::Group::ReturnType status)
 {
   if (status == NOX::Abstract::Group::Ok)
     return "Ok";

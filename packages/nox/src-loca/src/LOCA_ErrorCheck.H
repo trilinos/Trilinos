@@ -39,8 +39,10 @@
 namespace LOCA { 
   
   //! \brief An Error checking algorithm for NOX/LOCA routines.  
-  /*! This object will check the return types on objects and print a warning or throw an error if appropriate
-  */
+  /*! 
+   * This object will check the return types on objects and print a warning 
+   * or throw an error if appropriate
+   */
 
   class ErrorCheck  {
 
@@ -56,24 +58,69 @@ namespace LOCA {
     enum ActionType {ThrowError, PrintWarning};
 
     //! Generic call to throw that prints info to the screen.
-    void throwError(const string& callingFunction = "<Unknown Method>",
-		    const string& message = "",
-		    const string& throwLabel = "LOCA Error") const;
+    static void throwError(const string& callingFunction = "<Unknown Method>",
+			   const string& message = "",
+			   const string& throwLabel = "LOCA Error");
 
     //! Generic printing algorithm for sending warnings to the screen.
-    void printWarning(const string& callingFunction = "<Unknown Method>",
-		      const string& message = "") const;
+    static void printWarning(
+			  const string& callingFunction = "<Unknown Method>",
+			  const string& message = "");
 
-    //! Checks the return type for the NOX::AbstractGroup and may throw an error or print a warning to the screen based on the ActionType requested.
-    void checkReturnType(NOX::Abstract::Group::ReturnType status,
-			 ActionType action,
-			 const string& callingFunction = string("<Unknown Method>"),
-			 const string& message = string("")) const;
+    //! Checks the supplied return type and performs an appropriate action
+    /*!
+     * This routine performs the following actions depending on the value
+     * of \em status
+     * <ul> 
+     * <li> NOX::Abstract::Group::Ok -- nothing
+     * <li> NOX::Abstract::Group::Failed -- print message and throw a string
+     * <li> NOX::Abstract::Group::NotDefined -- print message and throw a string
+     * <li> NOX::Abstract::Group::BadDependency -- print message and throw a string
+     * <li> NOX::Abstract::Group::NotConverged -- print a warning message
+     * </ul>
+     */
+    static void checkReturnType(
+		  const NOX::Abstract::Group::ReturnType& status,
+		  const string& callingFunction = string("<Unknown Method>"));
 
-  private:
+    /*! 
+     * \brief Checks the return type for the NOX::AbstractGroup and may 
+     * throw an error or print a warning to the screen based on the 
+     * ActionType requested.
+     */
+    static void checkReturnType(
+		  const NOX::Abstract::Group::ReturnType& status,
+		  const ActionType& action,
+		  const string& callingFunction = string("<Unknown Method>"),
+		  const string& message = string(""));
+
+    //! Combines two return types
+    /*!
+     * If either return type is NOX::Abstract::Group::NotDefined, returns 
+     * NotDefined.  Otherwise if either is BadDependcy, returns BadDependency, 
+     * if either is Failed, returns Failed, if either is NotConverged,
+     * returns NotConverged, and otherwise returns Ok.
+     */
+    static NOX::Abstract::Group::ReturnType 
+    combineReturnTypes(const NOX::Abstract::Group::ReturnType& status1,
+		       const NOX::Abstract::Group::ReturnType& status2);
+
+    //! Combines two return types and checks the first
+    /*!
+     * First combines \em status1 and \em status2 using combineReturnTypes()
+     * and checks the first using checkReturnType().  
+     */
+    static NOX::Abstract::Group::ReturnType 
+    combineAndCheckReturnTypes(
+		  const NOX::Abstract::Group::ReturnType& status1,
+		  const NOX::Abstract::Group::ReturnType& status2,
+		  const string& callingFunction = string("<Unknown Method>"));
+
+  protected:
 
     //! Converts the NOX::Abstract::Group::ReturnType to a string
-    string getReturnTypeString(NOX::Abstract::Group::ReturnType status) const;
+    static string getReturnTypeString(
+			       NOX::Abstract::Group::ReturnType status);
 
   };
 } // namespace LOCA

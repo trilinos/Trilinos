@@ -35,6 +35,7 @@
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Parameter_List.H"
 #include "LOCA_Utils.H"
+#include "LOCA_ErrorCheck.H"
 
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::ExtendedGroup(
                          LOCA::Bifurcation::TPBord::AbstractGroup& g,
@@ -153,9 +154,9 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::operator=(
     pfFVec = source.pfFVec;
     pfNewtonVec = source.pfNewtonVec;
     asymVecPtr = source.asymVecPtr->clone(type);
-    lengthVecPtr = source.lengthVecPtr->clone(type);
-    derivResidualParamPtr = source.derivResidualParamPtr->clone(type);
-    derivNullResidualParamPtr = source.derivNullResidualParamPtr->clone(type);
+    *lengthVecPtr = *source.lengthVecPtr;
+    *derivResidualParamPtr = *source.derivResidualParamPtr;
+    *derivNullResidualParamPtr = *source.derivNullResidualParamPtr;
     bifParamId = source.bifParamId;
     isValidF = source.isValidF;
     isValidJacobian = source.isValidJacobian;
@@ -216,27 +217,30 @@ NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeDfDp(int paramID, 
 					      NOX::Abstract::Vector& result)
 {
-  NOX::Abstract::Group::ReturnType res;
+  string callingFunction = 
+    "LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeDfDp()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
 
-  // Cast result to TP vector
+  // Cast result to pitchfork vector
   LOCA::Bifurcation::PitchforkBord::ExtendedVector& pf_result = 
     dynamic_cast<LOCA::Bifurcation::PitchforkBord::ExtendedVector&>(result);
 
   // Compute f, J, J*n
-  res = computeF();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // Compute df/dp
-  res = grpPtr->computeDfDp(paramID, pf_result.getXVec());
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->computeDfDp(paramID, pf_result.getXVec());
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Compute d(Jn)/dp
-  res = grpPtr->computeDJnDp(pfXVec.getNullVec(), paramID,
+  status = grpPtr->computeDJnDp(pfXVec.getNullVec(), paramID,
 			     pfFVec.getNullVec(), pf_result.getNullVec());
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Set slack componenet
   pf_result.getSlackVar() = 0.0;
@@ -244,7 +248,7 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeDfDp(int paramID,
   // Set parameter componenet
   pf_result.getBifParam() = 0.0;
 
-  return res;
+  return finalStatus;
 }
 
 double
@@ -313,8 +317,10 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeF()
 {
   if (isValidF)
     return NOX::Abstract::Group::Ok;
-
-  NOX::Abstract::Group::ReturnType res;
+  
+  string callingFunction = 
+    "LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeF()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
 
   const NOX::Abstract::Vector& x_x = pfXVec.getXVec();
   const NOX::Abstract::Vector& x_null = pfXVec.getNullVec();
@@ -325,19 +331,20 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeF()
   double& f_slack = pfFVec.getSlackVar();
   double& f_param = pfFVec.getBifParam();
 
-  res = grpPtr->computeF();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = grpPtr->computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
   
   f_x.update(1.0, grpPtr->getF(), x_slack, *asymVecPtr, 0.0);
   
-  res = grpPtr->computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->computeJacobian();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
-  res = grpPtr->applyJacobian(x_null, f_null);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->applyJacobian(x_null, f_null);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   f_slack = grpPtr->innerProduct(x_x, *asymVecPtr);
   
@@ -345,7 +352,7 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeF()
   
   isValidF = true;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -354,26 +361,33 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeJacobian()
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
 
-  NOX::Abstract::Group::ReturnType res = computeF();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  string callingFunction = 
+    "LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeJacobian()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
 
-  res = grpPtr->computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+
+  status = grpPtr->computeJacobian();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
   
-  res = grpPtr->computeDfDp(bifParamId, *derivResidualParamPtr);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->computeDfDp(bifParamId, *derivResidualParamPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
-  res = grpPtr->computeDJnDp(pfXVec.getNullVec(), bifParamId,
-			     pfFVec.getNullVec(), *derivNullResidualParamPtr);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->computeDJnDp(pfXVec.getNullVec(), bifParamId,
+				pfFVec.getNullVec(), 
+				*derivNullResidualParamPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   isValidJacobian = true;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -389,25 +403,30 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeNewton(
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
 
-  NOX::Abstract::Group::ReturnType res = computeF();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  string callingFunction = 
+    "LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeNewton()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
+  finalStatus = computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
   
-  res = computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = computeJacobian();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // zero out newton vec -- used as initial guess for some linear solvers
   pfNewtonVec.init(0.0);
 
-  res = applyJacobianInverse(params, pfFVec, pfNewtonVec);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = applyJacobianInverse(params, pfFVec, pfNewtonVec);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   pfNewtonVec.scale(-1.0);
   isValidNewton = true;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -415,6 +434,10 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::applyJacobian(
                                           const NOX::Abstract::Vector& input,
 					  NOX::Abstract::Vector& result) const 
 {
+  string callingFunction = 
+    "LOCA::Bifurcation::PitchforkBord::ExtendedGroup::applyJacobian()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Cast vectors to PitchforkBord::Vectors
   const LOCA::Bifurcation::PitchforkBord::ExtendedVector& pf_input = 
     dynamic_cast<const LOCA::Bifurcation::PitchforkBord::ExtendedVector&>(input);
@@ -436,31 +459,29 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::applyJacobian(
   // Temporary vector
   NOX::Abstract::Vector *tmp = input_null.clone(NOX::ShapeCopy);
 
-  // Return value
-  NOX::Abstract::Group::ReturnType res;
-
   // compute J*x
-  res = grpPtr->applyJacobian(input_x, result_x);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = grpPtr->applyJacobian(input_x, result_x);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // compute J*x + sigma*psi + p*dR/dp
   result_x.update(input_param, *derivResidualParamPtr, input_slack, 
 		  *asymVecPtr, 1.0);
 
   // compute J*y
-  res = grpPtr->applyJacobian(input_null, result_null);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->applyJacobian(input_null, result_null);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // compute J*y + p*dJy/dp
   result_null.update(input_param, *derivNullResidualParamPtr, 1.0);
 
   // compute (dJy/dx)*x
-  res = grpPtr->computeDJnDxa(pfXVec.getNullVec(), input_x, 
+  status = grpPtr->computeDJnDxa(pfXVec.getNullVec(), input_x, 
 			      pfFVec.getNullVec(), *tmp);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
   
   // compute (dJy/dx)*x + J*y + p*dJy/dp
   result_null.update(1.0, *tmp, 1.0);
@@ -473,7 +494,7 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::applyJacobian(
 
   delete tmp;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -505,11 +526,12 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::applyJacobianInverseMulti(
 			    const NOX::Abstract::Vector* const* inputs,
 			    NOX::Abstract::Vector** results, int nVecs) const 
 {
+  string callingFunction = 
+    "LOCA::Bifurcation::PitchforkBord::ExtendedGroup::applyJacobianInverseMulti()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Number of input vectors
   int m = nVecs; 
-
-  // Return type
-   NOX::Abstract::Group::ReturnType res;
   
   // Build arrays of solution, null vector and parameter components
   const NOX::Abstract::Vector** inputs_x = 
@@ -560,21 +582,21 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::applyJacobianInverseMulti(
   tmp[m+1] = inputs_x[m+1]->clone(NOX::ShapeCopy);
 
   // Solve J*results_x = inputs_x
-  res = grpPtr->applySingularJacobianInverseMulti(params, inputs_x, 
-						  pfXVec.getNullVec(),
-						  pfFVec.getNullVec(),
-						  results_x, m+2);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = grpPtr->applySingularJacobianInverseMulti(params, inputs_x, 
+							  pfXVec.getNullVec(),
+							  pfFVec.getNullVec(),
+							  results_x, m+2);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
   
 
   // Compute tmp = inputs_null - (dJy/dx)*results_x
   for (int i=0; i<m+2; i++) {
-    res = grpPtr->computeDJnDxa(pfXVec.getNullVec(), *results_x[i],
+    status = grpPtr->computeDJnDxa(pfXVec.getNullVec(), *results_x[i],
 				pfFVec.getNullVec(), *tmp[i]);
 
-    if (res != NOX::Abstract::Group::Ok)
-      return res;
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
 
     // inputs_null[m+1] is zero so don't do that update
     if (i == m+1)
@@ -584,12 +606,13 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::applyJacobianInverseMulti(
   } 
 
   // Solve J*results_null = tmp
-  res = grpPtr->applySingularJacobianInverseMulti(params, tmp, 
-						  pfXVec.getNullVec(),
-						  pfFVec.getNullVec(),
-						  results_null, m+2);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->applySingularJacobianInverseMulti(params, tmp, 
+						     pfXVec.getNullVec(),
+						     pfFVec.getNullVec(),
+						     results_null, m+2);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
   
   // Compute and set results
   double ipb = grpPtr->innerProduct(*results_x[m],   *asymVecPtr);
@@ -632,7 +655,7 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::applyJacobianInverseMulti(
   delete [] results_params;
   delete [] tmp;
 
-  return res;
+  return finalStatus;
 }
 
 bool
@@ -680,7 +703,9 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getNormF() const
 const NOX::Abstract::Vector&
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getGradient() const 
 {
-  errorCheck.throwError("LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getGradient()"," - not implemented");
+  LOCA::ErrorCheck::throwError(
+	     "LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getGradient()",
+	     " - not implemented");
   return getNewton();
 }
 
@@ -693,13 +718,13 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getNewton() const
 double
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getNormNewtonSolveResidual() const 
 {
+  string callingFunction = 
+    "LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getNormNewtonSolveResidual()";
+  NOX::Abstract::Group::ReturnType finalStatus;
   LOCA::Bifurcation::PitchforkBord::ExtendedVector residual = pfFVec;
   
-  NOX::Abstract::Group::ReturnType res = applyJacobian(pfNewtonVec, residual);
-  if (res != NOX::Abstract::Group::Ok) {
-    errorCheck.throwError("LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok"); 
-    return 0.0;
-  }
+  finalStatus = applyJacobian(pfNewtonVec, residual);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   residual.update(1.0, pfFVec, 1.0);
   return residual.norm();
@@ -745,7 +770,7 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::init()
   double lVecDotNullVec;
   lVecDotNullVec = lengthVecPtr->dot(pfXVec.getNullVec());
   if (lVecDotNullVec == 0.0) {
-    errorCheck.throwError("LOCA::Bifurcation::PitchforkBord::ExtendedGroup::init()","null vector can be orthogonal to length-scaling vector");
+    LOCA::ErrorCheck::throwError("LOCA::Bifurcation::PitchforkBord::ExtendedGroup::init()","null vector can be orthogonal to length-scaling vector");
   }
   if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
     cout << "\tIn LOCA::Bifurcation::PitchforkBord::ExtendedGroup::init, scaling lenVec by:" 

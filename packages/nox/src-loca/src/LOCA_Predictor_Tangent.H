@@ -68,13 +68,15 @@ namespace LOCA {
   
       //! Computes the tangent predictor by calling curGroup.computeTangent().
       virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::Continuation::ExtendedGroup& prevGroup,
+      compute(bool baseOnSecant, double stepSize,
+	      LOCA::Continuation::ExtendedGroup& prevGroup,
 	      LOCA::Continuation::ExtendedGroup& curGroup,
 	      LOCA::Continuation::ExtendedVector& result);
 
     protected:
-      //! Stores parameter list for computeTangent call.
-      NOX::Parameter::List parameters;
+
+      //! Stores derivative of residual w.r.t. parameter
+      NOX::Abstract::Vector* dfdpVecPtr;
 
     };
   } // namespace Predictor

@@ -50,33 +50,68 @@ namespace LOCA {
     
     //! %Generic predictor direction interface.
     /*! 
-      %Generic interface for computing a predictor for continuation.
-    */
+     * %Generic interface for computing a predictor for continuation and 
+     * serves as a base class for all predictor classes.
+     *
+     * Also provides a generic method for determining the orientation of
+     * the predictor vector by comparing to the secant vector.
+     */
     class Generic {
 
     public:
 
       //! Constructor. 
       /*! 
-	Constructors of derived objects should look like reset.
-      */
-      Generic() {};
+       * Constructors of derived objects should look like reset.
+       */
+      Generic();
 
       //! Destructor
-      virtual ~Generic() {};
+      virtual ~Generic();
 
       //! Reset parameters
       virtual NOX::Abstract::Group::ReturnType 
-      reset(NOX::Parameter::List& params) = 0;
+      reset(NOX::Parameter::List& params);
   
       /*! 
-	\brief Compute the predictor direction given the current and
-	previous solution groups.
-      */
+       * \brief Compute the predictor direction given the current and
+       * previous solution groups.  Set \em baseOnSecant to \em false
+       * if the predictor orientation should not be based on the
+       * secant vector (first or last steps of a continuation run).
+       */
       virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::Continuation::ExtendedGroup& prevGroup,
+      compute(bool baseOnSecant, double stepSize,
+	      LOCA::Continuation::ExtendedGroup& prevGroup,
 	      LOCA::Continuation::ExtendedGroup& curGroup,
 	      LOCA::Continuation::ExtendedVector& result) = 0;
+
+    protected:
+      /*! 
+       * \brief Sets orientation of predictor based on parameter change 
+       * from previous steps
+       */
+      /*!
+       * The implementation here looks at the sign of the scaled dot product
+       * between the secant vector and the predictor and changes the sign
+       * of the predictor if this scaled dot product is a different sign
+       * than the step size.  If \em baseOnSecant is \em false, then the
+       * sign is chosen so the parameter component of the predictor is 
+       * positive for cases when a secant vector is not available (first
+       * step in a continuation run) or may give incorrect information
+       * (last step of a continuation run).
+       */
+      virtual void
+      setPredictorOrientation(bool baseOnSecant, double stepSize,
+			      LOCA::Continuation::ExtendedGroup& prevGroup,
+			      LOCA::Continuation::ExtendedGroup& curGroup,
+			      LOCA::Continuation::ExtendedVector& result);
+
+    protected:
+      /*!
+       * \brief Holds secant vector for setting predictor orientation based on
+       * the secant vector orientation.
+       */
+      LOCA::Continuation::ExtendedVector *secantVecPtr;
 
     };
   } // namespace Predictor

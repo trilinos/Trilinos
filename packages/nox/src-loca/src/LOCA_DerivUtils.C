@@ -38,6 +38,7 @@
 #include "NOX_Abstract_Vector.H"
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Common.H"  // For fabs function
+#include "LOCA_ErrorCheck.H"
 
 LOCA::DerivUtils::DerivUtils(double perturb) :
   perturb(perturb)
@@ -67,8 +68,13 @@ LOCA::DerivUtils::computeDfDp(LOCA::Continuation::AbstractGroup& grp,
 			      const int param_id, 
 			      NOX::Abstract::Vector& result) const
 {
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDfDp()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Compute base residual F
-  grp.computeF();
+  finalStatus = grp.computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // Allocate new group that we can perturb
   LOCA::Continuation::AbstractGroup* grpPerturbedPtr = 
@@ -78,7 +84,10 @@ LOCA::DerivUtils::computeDfDp(LOCA::Continuation::AbstractGroup& grp,
   double eps = perturbParam(*grpPerturbedPtr, param_id);
 
   // Compute perturbed residual
-  NOX::Abstract::Group::ReturnType ok = grpPerturbedPtr->computeF(); 
+  status = grpPerturbedPtr->computeF(); 
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Difference perturbed and base vector and return approximate derivative
   NOX::Abstract::Vector *perturbedFPtr = 
@@ -89,10 +98,16 @@ LOCA::DerivUtils::computeDfDp(LOCA::Continuation::AbstractGroup& grp,
   delete grpPerturbedPtr;
 
   // Compute base residual F
-  grp.computeF();
-  grp.computeJacobian();
+  status = grp.computeF();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+  status = grp.computeJacobian();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
-  return ok;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -101,18 +116,31 @@ LOCA::DerivUtils::computeDJnDp(LOCA::Continuation::AbstractGroup& grp,
 			       const int param_id,
 			       NOX::Abstract::Vector& result) const
 {
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDJnDp()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Allocate base Jn vector and fill with J time n
   NOX::Abstract::Vector *baseJnVectorPtr = nullVector.clone(NOX::ShapeCopy);
-  grp.computeJacobian();
-  grp.applyJacobian(nullVector, *baseJnVectorPtr);
+
+  finalStatus = grp.computeJacobian();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+
+  status = grp.applyJacobian(nullVector, *baseJnVectorPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Now that Jn is known, call other routine
-  NOX::Abstract::Group::ReturnType ok = 
+  status = 
     computeDJnDp(grp, nullVector, param_id, *baseJnVectorPtr, result);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   delete baseJnVectorPtr; 
 
-  return ok;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -122,6 +150,10 @@ LOCA::DerivUtils::computeDJnDp(LOCA::Continuation::AbstractGroup& grp,
 			       const NOX::Abstract::Vector& JnVector,
 			       NOX::Abstract::Vector& result) const
 {
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDJnDp()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Form new group that we can perturb
   LOCA::Continuation::AbstractGroup* grpPerturbedPtr = 
     dynamic_cast<LOCA::Continuation::AbstractGroup*>(grp.clone());
@@ -132,9 +164,15 @@ LOCA::DerivUtils::computeDJnDp(LOCA::Continuation::AbstractGroup& grp,
   // Allocate perturbed Jn vector and fill
   NOX::Abstract::Vector *perturbedJnVectorPtr = 
     nullVector.clone(NOX::ShapeCopy);
-  grpPerturbedPtr->computeJacobian();
-  NOX::Abstract::Group::ReturnType ok = 
+
+  finalStatus = grpPerturbedPtr->computeJacobian();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+
+  status = 
     grpPerturbedPtr->applyJacobian(nullVector, *perturbedJnVectorPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Difference perturbed and base vector and return approximate derivative
   result = doDifference(*perturbedJnVectorPtr, JnVector, eps);
@@ -142,9 +180,12 @@ LOCA::DerivUtils::computeDJnDp(LOCA::Continuation::AbstractGroup& grp,
   delete perturbedJnVectorPtr; 
   delete grpPerturbedPtr;
 
-  grp.computeJacobian();
+  status = grp.computeJacobian();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
-  return ok;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -153,18 +194,31 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
 				const NOX::Abstract::Vector& aVector,
 				NOX::Abstract::Vector& result) const
 {
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDJnDxa()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Allocate base Jn vector and fill with J time n
   NOX::Abstract::Vector *baseJnVectorPtr = nullVector.clone(NOX::ShapeCopy);
-  grp.computeJacobian();
-  grp.applyJacobian(nullVector, *baseJnVectorPtr);
+  
+  finalStatus = grp.computeJacobian();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+
+  status = grp.applyJacobian(nullVector, *baseJnVectorPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Now that Jn is known, call other routine
-  NOX::Abstract::Group::ReturnType ok = 
+  status = 
     computeDJnDxa(grp, nullVector, aVector, *baseJnVectorPtr, result);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   delete baseJnVectorPtr; 
 
-  return ok;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -174,6 +228,10 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
 				const NOX::Abstract::Vector& JnVector,
 				NOX::Abstract::Vector& result) const
 {
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDJnDxa()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Form new group that we can perturb
   LOCA::Continuation::AbstractGroup* grpPerturbedPtr = 
     dynamic_cast<LOCA::Continuation::AbstractGroup*>(grp.clone());
@@ -184,9 +242,15 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
   // Allocate perturbed Jn vector and fill
   NOX::Abstract::Vector *perturbedJnVectorPtr = 
     nullVector.clone(NOX::ShapeCopy);
-  grpPerturbedPtr->computeJacobian();
-  NOX::Abstract::Group::ReturnType ok = 
+
+  finalStatus = grpPerturbedPtr->computeJacobian();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  
+  status = 
     grpPerturbedPtr->applyJacobian(nullVector, *perturbedJnVectorPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Difference perturbed and base vector and return approximate derivative
   result = doDifference(*perturbedJnVectorPtr, JnVector, eps);
@@ -194,9 +258,12 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
   delete perturbedJnVectorPtr; 
   delete grpPerturbedPtr;
 
-  grp.computeJacobian();
+  status = grp.computeJacobian();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
-  return ok;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -206,24 +273,41 @@ LOCA::DerivUtils::computeDJnDxaDp(LOCA::Continuation::AbstractGroup& grp,
 				  const int param_id,
 				  NOX::Abstract::Vector& result) const
 {
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDJnDxaDp()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Allocate base Jn vector and fill with J time n
   NOX::Abstract::Vector *baseJnVectorPtr = nullVector.clone(NOX::ShapeCopy);
-  grp.computeJacobian();
-  grp.applyJacobian(nullVector, *baseJnVectorPtr);
+  
+  finalStatus = grp.computeJacobian();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+
+  status = grp.applyJacobian(nullVector, *baseJnVectorPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Now that Jn is known, call other routine
-  NOX::Abstract::Group::ReturnType ok = 
+  status = 
     computeDJnDxa(grp, nullVector, aVector, *baseJnVectorPtr, result);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   NOX::Abstract::Vector *resultVecPtr = nullVector.clone(NOX::ShapeCopy);
-  computeDJnDp(grp, nullVector, param_id, *baseJnVectorPtr, *resultVecPtr);
+  status = computeDJnDp(grp, nullVector, param_id, *baseJnVectorPtr, 
+			*resultVecPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   result.update(1.0, *resultVecPtr, 1.0);
 
   delete baseJnVectorPtr; 
   delete resultVecPtr; 
 
-  return ok;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -236,23 +320,39 @@ LOCA::DerivUtils::computeDCeDp(
 			   NOX::Abstract::Vector& result_real,
 			   NOX::Abstract::Vector& result_imag) const
 {
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDCeDp()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Allocate base Ce vectors and fill with C times e
   NOX::Abstract::Vector *baseCeRealVectorPtr = yVector.clone(NOX::ShapeCopy);
   NOX::Abstract::Vector *baseCeImagVectorPtr = yVector.clone(NOX::ShapeCopy);
-  grp.computeJacobian();
-  grp.computeMassMatrix();
-  grp.applyComplex(yVector, zVector, w, *baseCeRealVectorPtr, 
-		   *baseCeImagVectorPtr);
+
+  finalStatus = grp.computeJacobian();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+
+  status = grp.computeMassMatrix();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+  status = grp.applyComplex(yVector, zVector, w, *baseCeRealVectorPtr, 
+			    *baseCeImagVectorPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Now that Ce is known, call other routine
-  NOX::Abstract::Group::ReturnType ok = 
+  status = 
     computeDCeDp(grp, yVector, zVector, w, param_id, *baseCeRealVectorPtr, 
 		 *baseCeImagVectorPtr, result_real, result_imag);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   delete baseCeRealVectorPtr;
   delete baseCeImagVectorPtr;
 
-  return ok;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -267,6 +367,10 @@ LOCA::DerivUtils::computeDCeDp(
 			   NOX::Abstract::Vector& result_real,
 			   NOX::Abstract::Vector& result_imag) const
 {
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDCeDp()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Form new group that we can perturb
   LOCA::Bifurcation::HopfBord::AbstractGroup* grpPerturbedPtr = 
     dynamic_cast<LOCA::Bifurcation::HopfBord::AbstractGroup*>(grp.clone());
@@ -275,11 +379,20 @@ LOCA::DerivUtils::computeDCeDp(
   double eps = perturbParam(*grpPerturbedPtr, param_id);
 
   // Compute perturbed Ce vectors
-  grpPerturbedPtr->computeJacobian();
-  grpPerturbedPtr->computeMassMatrix();
-  NOX::Abstract::Group::ReturnType ok = 
+  finalStatus = grpPerturbedPtr->computeJacobian();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+
+  status = grpPerturbedPtr->computeMassMatrix();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+
+  status = 
     grpPerturbedPtr->applyComplex(yVector, zVector, w, result_real,
 				  result_imag);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Difference perturbed and base vector and return approximate derivative
   doDifference2(result_real, Ce_real, eps);
@@ -290,7 +403,7 @@ LOCA::DerivUtils::computeDCeDp(
   grp.computeJacobian();
   grp.computeMassMatrix();
 
-  return ok;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -303,23 +416,40 @@ LOCA::DerivUtils::computeDCeDxa(
 			    NOX::Abstract::Vector& result_real,
 			    NOX::Abstract::Vector& result_imag) const
 {
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDCeDxa()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Allocate base Ce vectors and fill with C times e
   NOX::Abstract::Vector *baseCeRealVectorPtr = yVector.clone(NOX::ShapeCopy);
   NOX::Abstract::Vector *baseCeImagVectorPtr = yVector.clone(NOX::ShapeCopy);
-  grp.computeJacobian();
-  grp.computeMassMatrix();
-  grp.applyComplex(yVector, zVector, w, *baseCeRealVectorPtr, 
-		   *baseCeImagVectorPtr);
+
+  finalStatus = grp.computeJacobian();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+
+  status = grp.computeMassMatrix();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+  
+  status = grp.applyComplex(yVector, zVector, w, *baseCeRealVectorPtr, 
+			    *baseCeImagVectorPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Now that Ce is known, call other routine
-  NOX::Abstract::Group::ReturnType ok = 
+  status = 
     computeDCeDxa(grp, yVector, zVector, w, aVector, *baseCeRealVectorPtr, 
 		  *baseCeImagVectorPtr, result_real, result_imag);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   delete baseCeRealVectorPtr; 
   delete baseCeImagVectorPtr; 
 
-  return ok;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -334,6 +464,10 @@ LOCA::DerivUtils::computeDCeDxa(
 			    NOX::Abstract::Vector& result_real,
 			    NOX::Abstract::Vector& result_imag) const
 {
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDCeDxa()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
   // Form new group that we can perturb
   LOCA::Bifurcation::HopfBord::AbstractGroup* grpPerturbedPtr = 
     dynamic_cast<LOCA::Bifurcation::HopfBord::AbstractGroup*>(grp.clone());
@@ -342,11 +476,20 @@ LOCA::DerivUtils::computeDCeDxa(
   double eps = perturbXVec(*grpPerturbedPtr, aVector);
 
   // Compute perturbed Ce vectors
-  grpPerturbedPtr->computeJacobian();
-  grpPerturbedPtr->computeMassMatrix();
-  NOX::Abstract::Group::ReturnType ok = 
+  finalStatus = grpPerturbedPtr->computeJacobian();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+
+  status = grpPerturbedPtr->computeMassMatrix();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+
+  status = 
     grpPerturbedPtr->applyComplex(yVector, zVector, w, result_real,
 				  result_imag);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // Difference perturbed and base vector and return approximate derivative
   doDifference2(result_real, Ce_real, eps);
@@ -354,10 +497,17 @@ LOCA::DerivUtils::computeDCeDxa(
 
   delete grpPerturbedPtr;
 
-  grp.computeJacobian();
-  grp.computeMassMatrix();
+  status = grp.computeJacobian();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
-  return ok;
+  status = grp.computeMassMatrix();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+
+  return finalStatus;
 }
 
 //

@@ -30,13 +30,13 @@
 // ************************************************************************
 //@HEADER
 #include "LOCA_Continuation_NaturalGroup.H"
+#include "LOCA_ErrorCheck.H"
 
 LOCA::Continuation::NaturalGroup::NaturalGroup(
 				  LOCA::Continuation::AbstractGroup& g,
 				  int paramID,
-				  NOX::Parameter::List& linSolverParams,
 				  NOX::Parameter::List& params)
-  : LOCA::Continuation::ExtendedGroup(g, paramID, linSolverParams, params),
+  : LOCA::Continuation::ExtendedGroup(g, paramID, params),
     xVec(g.getX(), g.getParam(paramID)),
     fVec(g.getX(), 0.0),
     newtonVec(g.getX(), 0.0),
@@ -51,9 +51,8 @@ LOCA::Continuation::NaturalGroup::NaturalGroup(
 LOCA::Continuation::NaturalGroup::NaturalGroup(
 				 LOCA::Continuation::AbstractGroup& g,
 				 string paramID,
-				 NOX::Parameter::List& linSolverParams,
 				 NOX::Parameter::List& params)
-  : LOCA::Continuation::ExtendedGroup(g, paramID, linSolverParams, params),
+  : LOCA::Continuation::ExtendedGroup(g, paramID, params),
     xVec(g.getX(), g.getParam(paramID)),
     fVec(g.getX(), 0.0),
     newtonVec(g.getX(), 0.0),
@@ -111,15 +110,12 @@ LOCA::Continuation::NaturalGroup::operator=(
   if (this != &source) {
     LOCA::Continuation::ExtendedGroup::operator=(source);
 
-    // delete old values
-    delete derivResidualParamPtr;
-
     // Copy values
     xVec = source.xVec;
     fVec = source.fVec;
     newtonVec = source.newtonVec;
     prevXVec = source.prevXVec;
-    derivResidualParamPtr = source.derivResidualParamPtr->clone(NOX::DeepCopy);
+    *derivResidualParamPtr = *source.derivResidualParamPtr;
     stepSize = source.stepSize;
     isValidF = source.isValidF;
     isValidJacobian = source.isValidJacobian;
@@ -159,10 +155,11 @@ LOCA::Continuation::NaturalGroup::setX(const NOX::Abstract::Vector& y)
 }
 
 void
-LOCA::Continuation::NaturalGroup::setX(const LOCA::Continuation::ExtendedVector& y) 
+LOCA::Continuation::NaturalGroup::setX(
+				const LOCA::Continuation::ExtendedVector& y) 
 {
-  LOCA::Continuation::ExtendedGroup::grpPtr->setX( y.getXVec() );
-  LOCA::Continuation::ExtendedGroup::grpPtr->setParam(LOCA::Continuation::ExtendedGroup::conParamID, y.getParam());
+  grpPtr->setX( y.getXVec() );
+  grpPtr->setParam(conParamID, y.getParam());
   xVec = y;
 
   resetIsValid();
@@ -175,7 +172,8 @@ LOCA::Continuation::NaturalGroup::setPrevX(const NOX::Abstract::Vector& y)
 }
 
 void
-LOCA::Continuation::NaturalGroup::setPrevX(const LOCA::Continuation::ExtendedVector& y) 
+LOCA::Continuation::NaturalGroup::setPrevX(
+				 const LOCA::Continuation::ExtendedVector& y) 
 {
   prevXVec = y;
 
@@ -197,6 +195,12 @@ LOCA::Continuation::NaturalGroup::isPrevXVec() const
 }
 
 void
+LOCA::Continuation::NaturalGroup::scalePredictor(
+					LOCA::Continuation::ExtendedVector& v)
+{
+}
+
+void
 LOCA::Continuation::NaturalGroup::computeX(const NOX::Abstract::Group& g, 
 					   const NOX::Abstract::Vector& d,
 					   double step) 
@@ -207,13 +211,14 @@ LOCA::Continuation::NaturalGroup::computeX(const NOX::Abstract::Group& g,
 }
 
 void
-LOCA::Continuation::NaturalGroup::computeX(const LOCA::Continuation::NaturalGroup& g, 
-					   const LOCA::Continuation::ExtendedVector& d,
-					   double step) 
+LOCA::Continuation::NaturalGroup::computeX(
+				 const LOCA::Continuation::NaturalGroup& g, 
+				 const LOCA::Continuation::ExtendedVector& d,
+				 double step) 
 {
-  LOCA::Continuation::ExtendedGroup::grpPtr->computeX(*(g.LOCA::Continuation::ExtendedGroup::grpPtr), d.getXVec(), step);
+  grpPtr->computeX(*(g.grpPtr), d.getXVec(), step);
   xVec.update(1.0, g.getX(), step, d, 0.0);
-  LOCA::Continuation::ExtendedGroup::grpPtr->setParam(LOCA::Continuation::ExtendedGroup::conParamID, xVec.getParam());
+  grpPtr->setParam(conParamID, xVec.getParam());
 
   resetIsValid();
 }
@@ -224,19 +229,18 @@ LOCA::Continuation::NaturalGroup::computeF()
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
-  NOX::Abstract::Group::ReturnType res;
+  string callingFunction = "LOCA::Continuation::NaturalGroup::computeF()";
+  NOX::Abstract::Group::ReturnType finalStatus;
 
-  res = LOCA::Continuation::ExtendedGroup::grpPtr->computeF();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = grpPtr->computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
   
-  fVec.getXVec() = LOCA::Continuation::ExtendedGroup::grpPtr->getF();
-
+  fVec.getXVec() = grpPtr->getF();
   fVec.getParam() = xVec.getParam() - prevXVec.getParam() - stepSize;
   
   isValidF = true;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -245,20 +249,22 @@ LOCA::Continuation::NaturalGroup::computeJacobian()
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
 
-  NOX::Abstract::Group::ReturnType res;
+  string callingFunction = 
+    "LOCA::Continuation::NaturalGroup::computeJacobian()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
 
-  res =  LOCA::Continuation::ExtendedGroup::grpPtr->computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus =  grpPtr->computeJacobian();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
-//   res = LOCA::Continuation::ExtendedGroup::grpPtr->computeDfDp(LOCA::Continuation::ExtendedGroup::conParamID, *derivResidualParamPtr);
-
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+//   status = grpPtr->computeDfDp(conParamID, 
+// 			       *derivResidualParamPtr);
+//   finalStatus = 
+//     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+// 						 callingFunction);
 
   isValidJacobian = true;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -273,31 +279,42 @@ LOCA::Continuation::NaturalGroup::computeNewton(NOX::Parameter::List& params)
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
 
-  NOX::Abstract::Group::ReturnType res = computeF();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  string callingFunction = 
+    "LOCA::Continuation::NaturalGroup::computeNewton()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
+  finalStatus = computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
   
-  res = computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = computeJacobian();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // zero out newton vec -- used as initial guess for some linear solvers
   newtonVec.init(0.0);
 
-  res = applyJacobianInverse(params, fVec, newtonVec);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = applyJacobianInverse(params, fVec, newtonVec);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   newtonVec.scale(-1.0);
 
   isValidNewton = true;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Continuation::NaturalGroup::applyJacobian(const NOX::Abstract::Vector& input, NOX::Abstract::Vector& result) const 
+LOCA::Continuation::NaturalGroup::applyJacobian(
+				       const NOX::Abstract::Vector& input, 
+				       NOX::Abstract::Vector& result) const 
 {
+  string callingFunction = 
+    "LOCA::Continuation::NaturalGroup::applyJacobian()";
+  NOX::Abstract::Group::ReturnType finalStatus;
+
   // Cast inputs to continuation vectors
   const LOCA::Continuation::ExtendedVector& c_input = 
     dynamic_cast<const LOCA::Continuation::ExtendedVector&>(input);
@@ -311,32 +328,38 @@ LOCA::Continuation::NaturalGroup::applyJacobian(const NOX::Abstract::Vector& inp
   // Get references to x, param components of result vector
   NOX::Abstract::Vector& result_x = c_result.getXVec();
   double& result_param = c_result.getParam();
-
-  NOX::Abstract::Group::ReturnType res;
  
   // Parameter equation
   result_param = input_param;
 
   // compute J*x
-  res = LOCA::Continuation::ExtendedGroup::grpPtr->applyJacobian(input_x, result_x);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = grpPtr->applyJacobian(input_x, result_x);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // compute J*x + p*dR/dp
   result_x.update(input_param, *derivResidualParamPtr, 1.0);
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Continuation::NaturalGroup::applyJacobianTranspose(const NOX::Abstract::Vector& input, NOX::Abstract::Vector& result) const 
+LOCA::Continuation::NaturalGroup::applyJacobianTranspose(
+					 const NOX::Abstract::Vector& input, 
+					 NOX::Abstract::Vector& result) const 
 {
   return NOX::Abstract::Group::NotDefined;
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Continuation::NaturalGroup::applyJacobianInverse(NOX::Parameter::List& params, const NOX::Abstract::Vector& input, NOX::Abstract::Vector& result) const 
+LOCA::Continuation::NaturalGroup::applyJacobianInverse(
+					 NOX::Parameter::List& params, 
+					 const NOX::Abstract::Vector& input, 
+					 NOX::Abstract::Vector& result) const 
 {
+  string callingFunction = 
+    "LOCA::Continuation::NaturalGroup::applyJacobianInverse()";
+  NOX::Abstract::Group::ReturnType finalStatus;
+
   // Cast inputs to continuation vectors
   const LOCA::Continuation::ExtendedVector& c_input = 
     dynamic_cast<const LOCA::Continuation::ExtendedVector&>(input);
@@ -350,18 +373,14 @@ LOCA::Continuation::NaturalGroup::applyJacobianInverse(NOX::Parameter::List& par
   // Get references to x, param components of result vector
   NOX::Abstract::Vector& result_x = c_result.getXVec();
   double& result_param = c_result.getParam();
-  
-  NOX::Abstract::Group::ReturnType res;
 
   // Parameter equation
   result_param = input_param;
 
   // If result_param = 0, just solve J*result_x = input_x
   if (result_param == 0.0) {
-    res = LOCA::Continuation::ExtendedGroup::grpPtr->applyJacobianInverse(
-								  params,
-								  input_x,
-								  result_x);
+    finalStatus = grpPtr->applyJacobianInverse(params, input_x, result_x);
+    LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
     }
   else {
     // Compute input_x + result_param*df/dp
@@ -369,14 +388,13 @@ LOCA::Continuation::NaturalGroup::applyJacobianInverse(NOX::Parameter::List& par
 //     a->update(result_param, *derivResidualParamPtr, 1.0);
 
     // solve J*result_x = a
-    res = LOCA::Continuation::ExtendedGroup::grpPtr->applyJacobianInverse(params,
-								  *a,
-								  result_x);
+    finalStatus = grpPtr->applyJacobianInverse(params, *a, result_x);
+    LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
     delete a;
   }
 
-  return res;
+  return finalStatus;
 }
 
 bool
@@ -436,15 +454,15 @@ LOCA::Continuation::NaturalGroup::getNewton() const
 double
 LOCA::Continuation::NaturalGroup::getNormNewtonSolveResidual() const 
 {
+  string callingFunction = 
+    "LOCA::Continuation::NaturalGroup::getNormNewtonSolveResidual()";
+  NOX::Abstract::Group::ReturnType finalStatus;
   LOCA::Continuation::ExtendedVector residual = fVec;
   
-  NOX::Abstract::Group::ReturnType res = applyJacobian(newtonVec, residual);
-  if (res != NOX::Abstract::Group::Ok) {
-    errorCheck.throwError("LOCA::Continuation::NaturalGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok");
-    return 0.0;
-  }
+  finalStatus = applyJacobian(newtonVec, residual);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
-  residual = residual.update(1.0, fVec, 1.0);
+  residual.update(1.0, fVec, 1.0);
   return residual.norm();
 }
 

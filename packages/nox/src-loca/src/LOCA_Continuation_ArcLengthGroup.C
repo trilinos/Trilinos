@@ -31,14 +31,14 @@
 //@HEADER
 
 #include "LOCA_Continuation_ArcLengthGroup.H"
+#include "LOCA_ErrorCheck.H"
 #include "LOCA_Utils.H"
 
 LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
 				 LOCA::Continuation::AbstractGroup& g,
 				 int paramID,
-				 NOX::Parameter::List& linSolverParams,
 				 NOX::Parameter::List& params)
-  : LOCA::Continuation::ExtendedGroup(g, paramID, linSolverParams, params), 
+  : LOCA::Continuation::ExtendedGroup(g, paramID, params), 
     xVec(g.getX(), g.getParam(paramID)),
     fVec(g.getX(), 0.0),
     newtonVec(g.getX(), 0.0),
@@ -59,9 +59,8 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
 LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
 				  LOCA::Continuation::AbstractGroup& g,
 				  string paramID,
-				  NOX::Parameter::List& linSolverParams,
 				  NOX::Parameter::List& params)
-  : LOCA::Continuation::ExtendedGroup(g, paramID, linSolverParams, params), 
+  : LOCA::Continuation::ExtendedGroup(g, paramID, params), 
     xVec(g.getX(), g.getParam(paramID)),
     fVec(g.getX(), 0.0),
     newtonVec(g.getX(), 0.0),
@@ -79,7 +78,9 @@ LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
   thetaMin = params.getParameter("Min Scale Factor", 1.0e-3);
 }
 
-LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(const LOCA::Continuation::ArcLengthGroup& source, NOX::CopyType type)
+LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
+			     const LOCA::Continuation::ArcLengthGroup& source,
+			     NOX::CopyType type)
   :  LOCA::Continuation::ExtendedGroup(source, type), 
     xVec(source.xVec, type),
     fVec(source.fVec, type),
@@ -107,27 +108,29 @@ LOCA::Continuation::ArcLengthGroup::~ArcLengthGroup()
 }
 
 LOCA::Continuation::ExtendedGroup&
-LOCA::Continuation::ArcLengthGroup::operator=(const LOCA::Continuation::ExtendedGroup& source)
+LOCA::Continuation::ArcLengthGroup::operator=(
+			      const LOCA::Continuation::ExtendedGroup& source)
 {
-  return *this = dynamic_cast<const LOCA::Continuation::ArcLengthGroup&>(source);
+  return *this = 
+    dynamic_cast<const LOCA::Continuation::ArcLengthGroup&>(source);
 }
 
 NOX::Abstract::Group&
-LOCA::Continuation::ArcLengthGroup::operator=(const NOX::Abstract::Group& source)
+LOCA::Continuation::ArcLengthGroup::operator=(
+					  const NOX::Abstract::Group& source)
 {
-  return *this = dynamic_cast<const LOCA::Continuation::ArcLengthGroup&>(source);
+  return *this = 
+    dynamic_cast<const LOCA::Continuation::ArcLengthGroup&>(source);
 }
 
 LOCA::Continuation::ArcLengthGroup&
-LOCA::Continuation::ArcLengthGroup::operator=(const LOCA::Continuation::ArcLengthGroup& source) 
+LOCA::Continuation::ArcLengthGroup::operator=(
+			    const LOCA::Continuation::ArcLengthGroup& source) 
 {
 
   // Protect against A = A
   if (this != &source) {
     LOCA::Continuation::ExtendedGroup::operator=(source);
-
-    // Delete old values
-    delete derivResidualParamPtr;
 
     // Copy values
     xVec = source.xVec;
@@ -135,7 +138,7 @@ LOCA::Continuation::ArcLengthGroup::operator=(const LOCA::Continuation::ArcLengt
     newtonVec = source.newtonVec;
     prevXVec = source.prevXVec;
     arclengthStep = source.arclengthStep;
-    derivResidualParamPtr = source.derivResidualParamPtr->clone(NOX::DeepCopy);
+    *derivResidualParamPtr = *source.derivResidualParamPtr;
     isValidF = source.isValidF;
     isValidJacobian = source.isValidJacobian;
     isValidNewton = source.isValidNewton;
@@ -180,10 +183,11 @@ LOCA::Continuation::ArcLengthGroup::setX(const NOX::Abstract::Vector& y)
 }
 
 void
-LOCA::Continuation::ArcLengthGroup::setX(const LOCA::Continuation::ExtendedVector& y) 
+LOCA::Continuation::ArcLengthGroup::setX(
+				 const LOCA::Continuation::ExtendedVector& y) 
 {
-  LOCA::Continuation::ExtendedGroup::grpPtr->setX( y.getXVec() );
-  LOCA::Continuation::ExtendedGroup::grpPtr->setParam(LOCA::Continuation::ExtendedGroup::conParamID, y.getParam());
+  grpPtr->setX( y.getXVec() );
+  grpPtr->setParam(conParamID, y.getParam());
   xVec = y;
 
   resetIsValid();
@@ -196,7 +200,8 @@ LOCA::Continuation::ArcLengthGroup::setPrevX(const NOX::Abstract::Vector& y)
 }
 
 void
-LOCA::Continuation::ArcLengthGroup::setPrevX(const LOCA::Continuation::ExtendedVector& y) 
+LOCA::Continuation::ArcLengthGroup::setPrevX(
+				 const LOCA::Continuation::ExtendedVector& y) 
 {
   prevXVec = y;
 
@@ -228,13 +233,14 @@ LOCA::Continuation::ArcLengthGroup::computeX(const NOX::Abstract::Group& g,
 }
 
 void
-LOCA::Continuation::ArcLengthGroup::computeX(const LOCA::Continuation::ArcLengthGroup& g, 
-					     const LOCA::Continuation::ExtendedVector& d,
-					     double step) 
+LOCA::Continuation::ArcLengthGroup::computeX(
+			       const LOCA::Continuation::ArcLengthGroup& g, 
+			       const LOCA::Continuation::ExtendedVector& d,
+			       double step) 
 {
-  LOCA::Continuation::ExtendedGroup::grpPtr->computeX(*(g.LOCA::Continuation::ExtendedGroup::grpPtr), d.getXVec(), step);
+  grpPtr->computeX(*(g.grpPtr), d.getXVec(), step);
   xVec.update(1.0, g.getX(), step, d, 0.0);
-  LOCA::Continuation::ExtendedGroup::grpPtr->setParam(LOCA::Continuation::ExtendedGroup::conParamID, xVec.getParam());
+  grpPtr->setParam(conParamID, xVec.getParam());
 
   resetIsValid();
 }
@@ -245,13 +251,13 @@ LOCA::Continuation::ArcLengthGroup::computeF()
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
-  NOX::Abstract::Group::ReturnType res;
+  string callingFunction = "LOCA::Continuation::NaturalGroup::computeF()";
+  NOX::Abstract::Group::ReturnType finalStatus;
 
-  res = LOCA::Continuation::ExtendedGroup::grpPtr->computeF();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = grpPtr->computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
   
-  fVec.getXVec() = LOCA::Continuation::ExtendedGroup::grpPtr->getF();
+  fVec.getXVec() = grpPtr->getF();
   
   // Compute xVec-prevXVec;
   LOCA::Continuation::ExtendedVector *tmpVec =
@@ -259,13 +265,12 @@ LOCA::Continuation::ArcLengthGroup::computeF()
   tmpVec->update(-1.0, prevXVec, 1.0);
 
   if (!isPredictorDirection()) {
-    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-      cout << "LOCA::Continuation::ArcLengthGroup::computeF() called " 
-	   << "with invalid predictor vector." << endl;
-    }
+    LOCA::ErrorCheck::printWarning(
+		       "LOCA::Continuation::ArcLengthGroup::computeF()", 
+		       "Called with invalid predictor vector.");
     return NOX::Abstract::Group::Failed;
   }
-
+  
   fVec.getParam() =  
     computeScaledDotProduct(predictorVec, *tmpVec) - arclengthStep;
 
@@ -273,7 +278,7 @@ LOCA::Continuation::ArcLengthGroup::computeF()
   
   isValidF = true;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -282,20 +287,21 @@ LOCA::Continuation::ArcLengthGroup::computeJacobian()
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
 
-  NOX::Abstract::Group::ReturnType res;
+  string callingFunction = 
+    "LOCA::Continuation::NaturalGroup::computeJacobian()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
 
-  res = LOCA::Continuation::ExtendedGroup::grpPtr->computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = grpPtr->computeJacobian();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
   
-  res = LOCA::Continuation::ExtendedGroup::grpPtr->computeDfDp(LOCA::Continuation::ExtendedGroup::conParamID, *derivResidualParamPtr);
-
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = grpPtr->computeDfDp(conParamID, *derivResidualParamPtr);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   isValidJacobian = true;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -305,65 +311,48 @@ LOCA::Continuation::ArcLengthGroup::computeGradient()
 }
    
 NOX::Abstract::Group::ReturnType
-LOCA::Continuation::ArcLengthGroup::computeNewton(NOX::Parameter::List& params) 
+LOCA::Continuation::ArcLengthGroup::computeNewton(
+					       NOX::Parameter::List& params) 
 {
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
 
-  NOX::Abstract::Group::ReturnType res = computeF();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  string callingFunction = 
+    "LOCA::Continuation::NaturalGroup::computeNewton()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
+  finalStatus = computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
   
-  res = computeJacobian();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = computeJacobian();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   // zero out newton vec -- used as initial guess for some linear solvers
   newtonVec.init(0.0);
 
-  res = applyJacobianInverse(params, fVec, newtonVec);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  status = applyJacobianInverse(params, fVec, newtonVec);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   newtonVec.scale(-1.0);
 
   isValidNewton = true;
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Continuation::ArcLengthGroup::computeTangent() {
-  
-  // Compute tangent vector using base class which assumes |dp/ds| = 1
-  NOX::Abstract::Group::ReturnType res =
-    LOCA::Continuation::ExtendedGroup::computeTangent();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  scalePredictor();
-
-  return res;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Continuation::ArcLengthGroup::computeSecant() {
-  
-  // Compute secant vector using base class
-  NOX::Abstract::Group::ReturnType res =
-    LOCA::Continuation::ExtendedGroup::computeSecant();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
-
-  if (isPrevXVec())
-    scalePredictor();
-
-  return res;
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Continuation::ArcLengthGroup::applyJacobian(const NOX::Abstract::Vector& input, NOX::Abstract::Vector& result) const 
+LOCA::Continuation::ArcLengthGroup::applyJacobian(
+					  const NOX::Abstract::Vector& input,
+					  NOX::Abstract::Vector& result) const 
 {
+  string callingFunction = 
+    "LOCA::Continuation::NaturalGroup::applyJacobian()";
+  NOX::Abstract::Group::ReturnType finalStatus;
+
   // Cast inputs to continuation vectors
   const LOCA::Continuation::ExtendedVector& c_input = 
     dynamic_cast<const LOCA::Continuation::ExtendedVector&>(input);
@@ -378,12 +367,9 @@ LOCA::Continuation::ArcLengthGroup::applyJacobian(const NOX::Abstract::Vector& i
   NOX::Abstract::Vector& result_x = c_result.getXVec();
   double& result_param = c_result.getParam();
 
-  NOX::Abstract::Group::ReturnType res;
-
   // compute J*x
-  res = LOCA::Continuation::ExtendedGroup::grpPtr->applyJacobian(input_x, result_x);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = grpPtr->applyJacobian(input_x, result_x);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // compute J*x + p*dR/dp
   result_x.update(input_param, *derivResidualParamPtr, 1.0);
@@ -391,28 +377,36 @@ LOCA::Continuation::ArcLengthGroup::applyJacobian(const NOX::Abstract::Vector& i
   // if tangent vector hasn't been computed, we are stuck since this is
   // a const method
   if (!isPredictorDirection()) {
-    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
-      cout << "LOCA::Continuation::ArcLengthGroup::applyJacobian() called " 
-	   << "with invalid predictor vector." << endl;
-    }
+    LOCA::ErrorCheck::printWarning(
+		       "LOCA::Continuation::ArcLengthGroup::applyJacobian()", 
+		       "Called with invalid predictor vector.");
     return NOX::Abstract::Group::Failed;
   }
 
   // compute dx/ds x + dp/ds p
   result_param = computeScaledDotProduct(predictorVec, c_input);
 
-  return res;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Continuation::ArcLengthGroup::applyJacobianTranspose(const NOX::Abstract::Vector& input, NOX::Abstract::Vector& result) const 
+LOCA::Continuation::ArcLengthGroup::applyJacobianTranspose(
+					  const NOX::Abstract::Vector& input, 
+					  NOX::Abstract::Vector& result) const 
 {
   return NOX::Abstract::Group::NotDefined;
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Continuation::ArcLengthGroup::applyJacobianInverse(NOX::Parameter::List& params, const NOX::Abstract::Vector& input, NOX::Abstract::Vector& result) const 
+LOCA::Continuation::ArcLengthGroup::applyJacobianInverse(
+					  NOX::Parameter::List& params, 
+					  const NOX::Abstract::Vector& input, 
+					  NOX::Abstract::Vector& result) const 
 {
+  string callingFunction = 
+    "LOCA::Continuation::NaturalGroup::applyJacobianInverse()";
+  NOX::Abstract::Group::ReturnType finalStatus;
+
   // Cast inputs to continuation vectors
   const LOCA::Continuation::ExtendedVector& c_input = 
     dynamic_cast<const LOCA::Continuation::ExtendedVector&>(input);
@@ -426,8 +420,6 @@ LOCA::Continuation::ArcLengthGroup::applyJacobianInverse(NOX::Parameter::List& p
   // Get references to x, param components of result vector
   NOX::Abstract::Vector& result_x = c_result.getXVec();
   double& result_param = c_result.getParam();
-  
-  NOX::Abstract::Group::ReturnType res;
 
   const NOX::Abstract::Vector** rhs = new const NOX::Abstract::Vector*[2];
   NOX::Abstract::Vector** lhs = new NOX::Abstract::Vector*[2];
@@ -437,15 +429,12 @@ LOCA::Continuation::ArcLengthGroup::applyJacobianInverse(NOX::Parameter::List& p
   lhs[1] = input_x.clone(NOX::ShapeCopy);
 
   // Solve J*lhs = rhs
-  res = grpPtr->applyJacobianInverseMulti(params, rhs, lhs, 2);
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = grpPtr->applyJacobianInverseMulti(params, rhs, lhs, 2);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // Get x, param components of predictor vector
-  const NOX::Abstract::Vector& tanX =  
-    LOCA::Continuation::ExtendedGroup::predictorVec.getXVec();
-  double tanP = 
-    LOCA::Continuation::ExtendedGroup::predictorVec.getParam();
+  const NOX::Abstract::Vector& tanX = predictorVec.getXVec();
+  double tanP = predictorVec.getParam();
 
   // Compute result_param
   result_param =
@@ -461,7 +450,7 @@ LOCA::Continuation::ArcLengthGroup::applyJacobianInverse(NOX::Parameter::List& p
   delete [] rhs;
   delete [] lhs;
 
-  return res;
+  return finalStatus;
 }
 
 bool
@@ -521,13 +510,13 @@ LOCA::Continuation::ArcLengthGroup::getNewton() const
 double
 LOCA::Continuation::ArcLengthGroup::getNormNewtonSolveResidual() const 
 {
+  string callingFunction = 
+    "LOCA::Continuation::NaturalGroup::getNormNewtonSolveResidual()";
+  NOX::Abstract::Group::ReturnType finalStatus;
   LOCA::Continuation::ExtendedVector residual = fVec;
   
-  NOX::Abstract::Group::ReturnType res = applyJacobian(newtonVec, residual);
-  if (res != NOX::Abstract::Group::Ok) {
-    errorCheck.throwError("LOCA::Continuation::ArcLengthGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok");
-    return 0.0;
-  }
+  finalStatus = applyJacobian(newtonVec, residual);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   residual = residual.update(1.0, fVec, 1.0);
   return residual.norm();
@@ -550,13 +539,14 @@ LOCA::Continuation::ArcLengthGroup::resetIsValid() {
 }
 
 void
-LOCA::Continuation::ArcLengthGroup::scalePredictor() {
+LOCA::Continuation::ArcLengthGroup::scalePredictor(
+				       LOCA::Continuation::ExtendedVector& v) {
 
   if (doArcLengthScaling) {
 
     // Estimate dpds
     double dpdsOld = 
-      1.0/sqrt(computeScaledDotProduct(predictorVec, predictorVec));
+      1.0/sqrt(computeScaledDotProduct(v, v));
 
     if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
       cout << endl 
@@ -575,7 +565,7 @@ LOCA::Continuation::ArcLengthGroup::scalePredictor() {
 
     // Calculate new dpds using new scale factor
     double dpdsNew = 
-      1.0/sqrt(computeScaledDotProduct(predictorVec, predictorVec));
+      1.0/sqrt(computeScaledDotProduct(v, v));
 
     if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
       cout << endl 
@@ -589,7 +579,7 @@ LOCA::Continuation::ArcLengthGroup::scalePredictor() {
     }
 
     // Rescale predictor vector
-    predictorVec.scale(dpdsNew);
+    v.scale(dpdsNew);
 
     // Adjust step size scaling factor to reflect changes in 
     // arc-length parameterization

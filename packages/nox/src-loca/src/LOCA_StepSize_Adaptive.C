@@ -34,6 +34,7 @@
 #include "LOCA_Continuation_ExtendedGroup.H"
 #include "LOCA_Stepper.H"
 #include "NOX_Solver_Generic.H"
+#include "LOCA_Utils.H"
 
 LOCA::StepSize::Adaptive::Adaptive(NOX::Parameter::List& params) :
   LOCA::StepSize::Constant(params),
@@ -90,9 +91,7 @@ LOCA::StepSize::Adaptive::compute(
       LOCA::StepSize::Constant::minStepSize *= ds_ratio;
 
       // Get maximum number of nonlinear iterations from stepper parameters
-      const NOX::Parameter::List& locaParams = 
-	stepper.getParameterList().sublist("LOCA");
-      const NOX::Parameter::List& p = locaParams.sublist("Stepper");
+      const NOX::Parameter::List& p = LOCA::Utils::getSublist("Stepper");
       double maxNonlinearSteps 
 	= static_cast<double>(p.getParameter("Max Nonlinear Iterations", 15));
       

@@ -65,12 +65,10 @@ namespace LOCA {
   
       //! Constructor with integer continuation parameter id
       ArcLengthGroup(LOCA::Continuation::AbstractGroup& g, int paramID,
-		     NOX::Parameter::List& linSolverParams,
 		     NOX::Parameter::List& params);
 
       //! Constructor with string continuation parameter id
       ArcLengthGroup(LOCA::Continuation::AbstractGroup& g, string paramID,
-		     NOX::Parameter::List& linSolverParams,
 		     NOX::Parameter::List& params);
 
       //! Copy constructor.
@@ -122,6 +120,9 @@ namespace LOCA {
       //! Returns true if the previous solution vector has been set
       virtual bool isPrevXVec() const;
 
+      //! Scale predictor direction
+      virtual void scalePredictor(LOCA::Continuation::ExtendedVector& v);
+
       //! Compute and return solution vector, x, where this.x = grp.x + step * d.
       virtual void computeX(const NOX::Abstract::Group& g, 
 			    const NOX::Abstract::Vector& d,
@@ -144,18 +145,6 @@ namespace LOCA {
       //! Compute Newton direction for extended continuation system
       virtual NOX::Abstract::Group::ReturnType 
       computeNewton(NOX::Parameter::List& params);
-
-      //! Overloaded Compute tangent from LOCA::Continuation::Group
-      virtual NOX::Abstract::Group::ReturnType
-      computeTangent();
-
-      //! Overloaded Compute secant from LOCA::Continuation::Group
-      virtual NOX::Abstract::Group::ReturnType
-      computeSecant();
-
-       //! Overloaded Compute secant from LOCA::Continuation::Group
-      //virtual NOX::Abstract::Group::ReturnType
-      //computeSecant();
 
       //@}
 
@@ -243,9 +232,6 @@ namespace LOCA {
 
       //! Resets all isValid flags
       void resetIsValid();
-
-      //! Scales predictor to have unit scaled norm
-      void scalePredictor();
 
     protected:
   

@@ -34,7 +34,6 @@
 #define LOCA_CONTINUATION_ABSTRACTGROUP_H
 
 #include "NOX_Abstract_Group.H"    // base class
-#include "LOCA_ErrorCheck.H"       // class data member
 
 namespace NOX {
   namespace Parameter {
@@ -176,11 +175,6 @@ namespace LOCA {
                                  const double conParam) const  {}
 
       //@}
-
-    protected:
-      
-      //! Utility to check errors
-      LOCA::ErrorCheck errorCheck; 
 
     };
   } // namespace Continuation

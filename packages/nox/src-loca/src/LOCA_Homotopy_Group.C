@@ -33,6 +33,8 @@
 #include "LOCA_Homotopy_Group.H"      // class definition
 #include "NOX_Parameter_List.H"      // data member
 #include "LOCA_Parameter_Vector.H"
+#include "LOCA_Utils.H"
+#include "LOCA_ErrorCheck.H"
 
 LOCA::Homotopy::Group::Group(NOX::Parameter::List& locaSublist,
 			     LOCA::Homotopy::AbstractGroup& g,
@@ -132,8 +134,8 @@ LOCA::Homotopy::Group::Group(const LOCA::Homotopy::Group& source,
     resetIsValidFlags();
   }
   else {
-    errorCheck.throwError("LOCA::Homotopy::Group::Group(copy ctor)",
-		     "CopyType is invalid!");
+    LOCA::ErrorCheck::throwError("LOCA::Homotopy::Group::Group(copy ctor)",
+				 "CopyType is invalid!");
   }
 
 }
@@ -247,19 +249,20 @@ NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::Group::computeDfDp(int paramID, 
 				   NOX::Abstract::Vector& result)
 {
-  NOX::Abstract::Group::ReturnType res;
+  string callingFunction = 
+    "LOCA::Homotopy::Group::computeDfDp()";
+  NOX::Abstract::Group::ReturnType finalStatus;
 
   // Compute f
-  res = grpPtr->computeF();
-  if (res != NOX::Abstract::Group::Ok)
-    return res;
+  finalStatus = grpPtr->computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // g = conParam * f(x) + ((1.0 - conParam) * (x - randomVec))
   // dg/dp = f(x) - (x - randomVec) where p = conParam
   result = grpPtr->getF();
   result.update(-1.0, grpPtr->getX(), 1.0, *randomVecPtr, 1.0); 
 
-  return res;
+  return finalStatus;
 }
 
 void
@@ -291,14 +294,12 @@ NOX::Abstract::Group::ReturnType LOCA::Homotopy::Group::computeF()
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
-  NOX::Abstract::Group::ReturnType status;
+  string callingFunction = 
+    "LOCA::Homotopy::Group::computeF()";
+  NOX::Abstract::Group::ReturnType finalStatus;
 
-  status = grpPtr->computeF();
-  errorCheck.checkReturnType(status, ErrorCheck::PrintWarning,
-			"LOCA::Homotopy::Group::computeF",
-			"grpPtr->computeF() failed!");
-  if (status != NOX::Abstract::Group::Ok)
-    return status;
+  finalStatus = grpPtr->computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
   
   // g = conParam * f(x) + ((1.0 - conParam) * (x - randomVec))
   *gVecPtr = grpPtr->getX();
@@ -309,7 +310,7 @@ NOX::Abstract::Group::ReturnType LOCA::Homotopy::Group::computeF()
 
   isValidF = true;
 
-  return status;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -318,19 +319,19 @@ LOCA::Homotopy::Group::computeJacobian()
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
 
-  NOX::Abstract::Group::ReturnType status = grpPtr->computeJacobian();
-  errorCheck.checkReturnType(status, ErrorCheck::PrintWarning,
-			"LOCA::Homotopy::Group::computeJacobian",
-			"grpPtr->computeJacobian() failed!");
-  if (status != NOX::Abstract::Group::Ok)
-    return status;
+  string callingFunction = 
+    "LOCA::Homotopy::Group::computeJacobian()";
+  NOX::Abstract::Group::ReturnType finalStatus;
+
+  finalStatus = grpPtr->computeJacobian();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   // Augment the group's Jacobian for homotopy
   grpPtr->augmentJacobianForHomotopy(conParam);
 
   isValidJacobian = true;
 
-  return status;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -339,17 +340,24 @@ LOCA::Homotopy::Group::computeGradient()
   if (isValidGradient)
     return NOX::Abstract::Group::Ok;
 
-  NOX::Abstract::Group::ReturnType status = computeF();
-  if (status != NOX::Abstract::Group::Ok)
-    return status;
+  string callingFunction = 
+    "LOCA::Homotopy::Group::computeGradient()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
+  finalStatus = computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
   
   status = computeJacobian();
-  if (status != NOX::Abstract::Group::Ok)
-    return status;
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   status = applyJacobianTranspose(*gVecPtr, *gradVecPtr);
-
-  return status;
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+  
+  return finalStatus;
 }
    
 NOX::Abstract::Group::ReturnType
@@ -357,27 +365,32 @@ LOCA::Homotopy::Group::computeNewton(NOX::Parameter::List& params)
 {
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
+
+  string callingFunction = 
+    "LOCA::Homotopy::Group::computeNewton()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
   
   if (newtonVecPtr == 0)
     newtonVecPtr = gVecPtr->clone(NOX::ShapeCopy);
   
-  NOX::Abstract::Group::ReturnType status = computeF();
-  if (status != NOX::Abstract::Group::Ok)
-    return status;
+  finalStatus = computeF();
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
   
   status = computeJacobian();
-  if (status != NOX::Abstract::Group::Ok)
-    return status;
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   status = applyJacobianInverse(params, *gVecPtr, *newtonVecPtr);
-  if (status != NOX::Abstract::Group::Ok)
-    return status;
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
   newtonVecPtr->scale(-1.0);
   
   isValidNewton = true;
   
-  return status;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -386,14 +399,15 @@ LOCA::Homotopy::Group::applyJacobian(const NOX::Abstract::Vector& input,
 {
   if (!isValidJacobian)
     return NOX::Abstract::Group::BadDependency;
+  
+  string callingFunction = 
+    "LOCA::Homotopy::Group::applyJacobian()";
+  NOX::Abstract::Group::ReturnType finalStatus;
 
-  NOX::Abstract::Group::ReturnType status = 
-    grpPtr->applyJacobian(input, result);
+  finalStatus = grpPtr->applyJacobian(input, result);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
-  errorCheck.checkReturnType(status, ErrorCheck::PrintWarning,
-			"LOCA::Homotopy::Group::applyJacobian",
-			"grpPtr->applyJacobian() failed!");
-  return status;
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -404,13 +418,14 @@ LOCA::Homotopy::Group::applyJacobianTranspose(
   if (!isValidJacobian)
     return NOX::Abstract::Group::BadDependency;
 
-  NOX::Abstract::Group::ReturnType status = 
-    grpPtr->applyJacobianTranspose(input, result);
-  
-  errorCheck.checkReturnType(status, ErrorCheck::PrintWarning,
-			"LOCA::Homotopy::Group::applyJacobianTranspose",
-			"grpPtr->applyJacobianTranspose() failed!");
-  return status;
+  string callingFunction = 
+    "LOCA::Homotopy::Group::applyJacobianTranspose()";
+  NOX::Abstract::Group::ReturnType finalStatus; 
+
+  finalStatus = grpPtr->applyJacobianTranspose(input, result);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+
+  return finalStatus;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -418,13 +433,14 @@ LOCA::Homotopy::Group::applyJacobianInverse(NOX::Parameter::List& params,
 					  const NOX::Abstract::Vector& input,
 					  NOX::Abstract::Vector& result) const 
 {
-  NOX::Abstract::Group::ReturnType status = 
-    grpPtr->applyJacobianInverse(params, input, result);
+  string callingFunction = 
+    "LOCA::Homotopy::Group::applyJacobianInverse()";
+  NOX::Abstract::Group::ReturnType finalStatus; 
 
-  errorCheck.checkReturnType(status, ErrorCheck::PrintWarning,
-			"LOCA::Homotopy::Group::applyJacobianInverse",
-			"grpPtr->applyJacobianInverse() failed!");
-  return status;
+  finalStatus = grpPtr->applyJacobianInverse(params, input, result);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+
+  return finalStatus;
 }
 
 bool
@@ -473,8 +489,8 @@ const NOX::Abstract::Vector&
 LOCA::Homotopy::Group::getGradient() const 
 {
   if (gradVecPtr == 0) {
-    errorCheck.throwError("LOCA::Homotopy::Group::getGradient", 
-		     "gradVecPtr is NULL!");
+    LOCA::ErrorCheck::throwError("LOCA::Homotopy::Group::getGradient", 
+				 "gradVecPtr is NULL!");
   }
   return *gradVecPtr;
 }
@@ -483,8 +499,8 @@ const NOX::Abstract::Vector&
 LOCA::Homotopy::Group::getNewton() const 
 {
   if (newtonVecPtr == 0) {
-    errorCheck.throwError("LOCA::Homotopy::Group::getNewton", 
-		     "newtonVecPtr is NULL!");
+    LOCA::ErrorCheck::throwError("LOCA::Homotopy::Group::getNewton", 
+				 "newtonVecPtr is NULL!");
   }
   return *newtonVecPtr;
 }
@@ -492,8 +508,10 @@ LOCA::Homotopy::Group::getNewton() const
 void
 LOCA::Homotopy::Group::printSolution(const double conParam) const 
 {
-  cout << "LOCA::Homotopy::Group::printSolution\n";
-  cout << "Nothing to print at this time!";
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
+    cout << "LOCA::Homotopy::Group::printSolution\n";
+    cout << "Nothing to print at this time!";
+  }
   return;
 }
 
