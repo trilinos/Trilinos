@@ -605,6 +605,45 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
     cout << "Acopy:"<<Acopy<<endl;
   }
 
+  Epetra_Vector x(A->RowMap()), y(A->RowMap());
+
+  x.PutScalar(1.0); y.PutScalar(0.0);
+
+  Epetra_Vector x2(Acopy.RowMap()), y2(Acopy.RowMap());
+
+  x2.PutScalar(1.0); y2.PutScalar(0.0);
+
+  A->Multiply(false, x, y);
+
+  Acopy.Multiply(false, x2, y2);
+
+  double ynorm2, y2norm2;
+
+  y.Norm2(&ynorm2);
+  y2.Norm2(&y2norm2);
+  if (ynorm2 != y2norm2) {
+    cerr << "norm2(A*ones) != norm2(Acopy*ones)"<<endl;
+    return(-99);
+  }
+
+  Epetra_FEVbrMatrix Acopy2(Copy, A->RowMap(), A->ColMap(), 1);
+
+  Acopy2 = Acopy;
+
+  Epetra_Vector x3(Acopy.RowMap()), y3(Acopy.RowMap());
+
+  x3.PutScalar(1.0); y3.PutScalar(0.0);
+
+  Acopy2.Multiply(false, x3, y3);
+
+  double y3norm2;
+  y3.Norm2(&y3norm2);
+
+  if (y3norm2 != y2norm2) {
+    cerr << "norm2(Acopy*ones) != norm2(Acopy2*ones)"<<endl;
+    return(-999);
+  }
+
   int len = 20;
   int* indices = new int[len];
   double* values = new double[len];
