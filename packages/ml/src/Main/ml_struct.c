@@ -1830,18 +1830,23 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
                       + om_loc[1]*om_loc[2]*om_loc[3]*om_loc[4]);
    widget->mlsCf[4] = om_loc[0]*om_loc[1]*om_loc[2]*om_loc[3]*om_loc[4];
 
-   gridStep = rho/(double)nSample;
-   nGrid    = ML_min((int)rint(rho/gridStep)+1, nSample);
+   if (deg > 1) {
+     gridStep = rho/(double)nSample;
+     nGrid    = ML_min((int)rint(rho/gridStep)+1, nSample);
 
-   rho2  = 0.e0;
-   for (j=0; j<nGrid; j++)  {
-	   coord   = (double)(j+1) * gridStep;
-           samplej = 1.e0 - om_loc[0] * coord;
-	   for(i=1; i<deg; i++) { 
-		   samplej *= samplej * coord;
-	   }
-	   samplej *= samplej * coord; 
-if (samplej > rho2) {rho2 = samplej; }
+     rho2  = 0.e0;
+     for (j=0; j<nGrid; j++)  {
+       coord   = (double)(j+1) * gridStep;
+       samplej = 1.e0 - om_loc[0] * coord;
+       for(i=1; i<deg; i++) { 
+	 samplej *= samplej * coord;
+       }
+       samplej *= samplej * coord; 
+       if (samplej > rho2) {rho2 = samplej; }
+     }
+   }
+   else {
+       rho2 = 4.0e0/(27.e0 * om_loc[0]);
    }
 
    
@@ -1851,12 +1856,13 @@ if (samplej > rho2) {rho2 = samplej; }
 	   widget->mlsBoost = 1.025e0;
    }
    rho2 *= widget->mlsBoost;
-   widget->mlsOm2 = 2.e0/rho2; 
+   widget->mlsOm2 = 2.0e0/rho2; 
    for (i=0; i<deg; i++) widget->mlsOm[i] = om_loc[i]; 
 	
    return 0;
 
 }
+
 
 int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
 {
@@ -1892,9 +1898,9 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
 	 widget->mlsBoost = 1.0; 
 	 widget->mlsOver  = 1.1e0 ;
 	 /* @@@ widget->mlsOm[0] = Amat->lambda_max; */
-	 widget->res0     = NULL;
-	 widget->res      = NULL;
-	 widget->y        = NULL;
+	 widget->pAux     = NULL;   /* currently reserved */
+	 widget->res      = NULL;   /* currently reserved */
+	 widget->y        = NULL;   /* currently reserved */
 
 	 if (pre_or_post == ML_PRESMOOTHER) {
 	   ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;

@@ -1,4 +1,7 @@
 #define MB_MODIF
+/*
+#define ML_partition 
+*/
 /*****************************************************************************/
 /* Copyright 1999, Sandia Corporation. The United States Government retains  */
 /* a nonexclusive license in this software as prescribed in AL 88-1 and AL   */
@@ -46,7 +49,7 @@ double *scaling_vect = NULL;
 
 int main(int argc, char *argv[])
 {
-	int num_PDE_eqns=3, N_levels=2, nsmooth=1;
+	int num_PDE_eqns=3, N_levels=8, nsmooth=1;
 
 	int    leng, level, N_grid_pts, coarsest_level;
 
@@ -173,7 +176,11 @@ double max_diag, min_diag, max_sum, sum;
   /* this code is meant to partition the matrices so that things can be */
   /* run in parallel later.                                             */
   /* It is meant to be run on only one processor.                       */
+#ifdef	MB_MODIF
+  fp2 = fopen(".update","w");
+#else
   fp2 = fopen("partition_file","w");
+#endif
 
   ML_Operator_AmalgamateAndDropWeak(&(ml->Amat[N_levels-1]), num_PDE_eqns, 0.0);
   ML_Gen_Blocks_Metis(ml, N_levels-1, &nblocks, &block_list);
@@ -192,6 +199,9 @@ double max_diag, min_diag, max_sum, sum;
   }
   fclose(fp2);
   ML_Operator_UnAmalgamateAndDropWeak(&(ml->Amat[N_levels-1]),num_PDE_eqns,0.0);
+#ifdef	MB_MODIF
+  printf(" partition file dumped in .update\n");
+#endif
   exit(1);
 #endif
 	
@@ -475,7 +485,7 @@ double max_diag, min_diag, max_sum, sum;
    options[AZ_conv]     = AZ_r0;
    options[AZ_conv] = AZ_noscaled;
    options[AZ_output]   = 1;
-   options[AZ_max_iter] = 300;
+   options[AZ_max_iter] = 500;
    options[AZ_poly_ord] = 5;
    options[AZ_kspace]   = 130;
    params[AZ_tol]       = 1.0e-11;

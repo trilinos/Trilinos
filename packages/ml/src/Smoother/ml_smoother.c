@@ -5639,7 +5639,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    ML_Operator     *Amat = smooth_ptr->my_level->Amat;
    struct MLSthing *widget;
    int              deg, dg, n, nn, i;
-   double          *res0, *res, *y, cf, over, *mlsCf;
+   double          *pAux, *res, *y, cf, over, *mlsCf;
 
 #ifdef RST_MODIF
    int             *cols, allocated_space;
@@ -5656,22 +5656,22 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
 #define MB_FORNOW
 #ifdef 	MB_FORNOW
-   res0  = (double *) ML_allocate(n*sizeof(double));
+   pAux  = (double *) ML_allocate(n*sizeof(double));
    res   = (double *) ML_allocate(n*sizeof(double));
    y     = (double *) ML_allocate(n*sizeof(double));
 
-   if (res0 == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+   if (pAux == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
    if (res  == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
    if (y    == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
 #endif
 
    if (smooth_ptr->init_guess == ML_NONZERO)
-     ML_Operator_Apply(Amat, n, x, n, res0);
+     ML_Operator_Apply(Amat, n, x, n, pAux);
    else { 
-     for (i = 0; i < n; i++) res0[i] = 0.0;
+     for (i = 0; i < n; i++) pAux[i] = 0.0;
    }
 
-   for (i = 0; i < n; i++) res0[i] = rhs[i] - res0[i]; 
+   for (i = 0; i < n; i++) pAux[i] = rhs[i] - pAux[i]; 
 #ifdef RST_MODIF
 
    /* ----------------------------------------------------------------- */
@@ -5726,7 +5726,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
 
 
-   for (i = 0; i < Amat->outvec_leng; i++) res0[i] = res0[i]/diagonal[i];
+   for (i = 0; i < Amat->outvec_leng; i++) pAux[i] = pAux[i]/diagonal[i];
 
 #endif
 
@@ -5736,13 +5736,13 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
        cf = over * mlsCf[0]; 
 
-       for (i=0; i<n; i++) x[i] += cf * res0[i]; 
+       for (i=0; i<n; i++) x[i] += cf * pAux[i]; 
 #ifdef 	MB_FORNOW
        /* @@@ clean up later in destructor, right now clean in here .... */
        /* @@@ must deallocate here if we decide to stick with local allocations */
        if (y)    { ML_free(   y);    y = NULL; } 
        if (res)  { ML_free( res);  res = NULL; } 
-       if (res0) { ML_free(res0); res0 = NULL; }
+       if (pAux) { ML_free(pAux); pAux = NULL; }
 #endif
       /*
        * Apply the S_prime operator 
@@ -5758,10 +5758,10 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
    } else { 
 
-       for (i=0;   i < n; i++) y[i]  = mlsCf[0] * res0[i];
+       for (i=0;   i < n; i++) y[i]  = mlsCf[0] * pAux[i];
        for (dg=1; dg < deg; dg++) { 
-            ML_Operator_Apply(Amat, n, res0, n, res);
-	    for (i=0; i < n; i++) res0[i] = res[i];  
+            ML_Operator_Apply(Amat, n, pAux, n, res);
+	    for (i=0; i < n; i++) pAux[i] = res[i];  
 	    for (i=0; i < n; i++) y[i] += mlsCf[dg-1] * res[i];
        }
 
@@ -5774,7 +5774,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    /* @@@ must deallocate here if we decide to stick with local allocations*/
    if (y)    { ML_free(   y);    y = NULL; } 
    if (res)  { ML_free( res);  res = NULL; } 
-   if (res0) { ML_free(res0); res0 = NULL; }
+   if (pAux) { ML_free(pAux); pAux = NULL; }
 #endif
   /*
    * Apply the S_prime operator 
@@ -5797,7 +5797,7 @@ void ML_Smoother_Destroy_MLS(void *data)
 
    if (widget->y)    ML_free(widget->y   );
    if (widget->res)  ML_free(widget->res );
-   if (widget->res0) ML_free(widget->res0);
+   if (widget->pAux) ML_free(widget->pAux);
 
    ML_free(widget);
 }

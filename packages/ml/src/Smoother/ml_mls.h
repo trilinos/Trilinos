@@ -14,7 +14,7 @@ struct MLSthing {
   double  mlsOm[MLS_MAX_DEG];
   double  mlsOm2;
   double  mlsCf[MLS_MAX_DEG];
-  double *res0, *res, *y;  /* workarrays allocated in .... to be reused */
+  double *pAux, *res, *y;  /* workarrays allocated in .... to be reused */
 };
 
 
