@@ -46,6 +46,10 @@
 
 int check_matrixmatrix_product(const Epetra_Comm& Comm, bool verbose);
 
+int check_transpose_matrixmatrix_product(const Epetra_Comm& Comm, bool verbose);
+
+int check_sparsedot();
+
 int main(int argc, char *argv[]) {
 
   int ierr=0, returnierr=0;
@@ -77,6 +81,13 @@ int main(int argc, char *argv[]) {
     Comm.SetTracebackMode(0); // This should shut down error traceback reporting
   }
 
+  ierr = check_sparsedot();
+  if (ierr != 0) {
+    if (verbose && Comm.MyPID()==0) {
+      cout << " sparsedot returned error code "<<ierr <<endl;
+    }
+  }
+
   ierr = check_matrixmatrix_product(Comm, verbose);
   if (ierr != 0) {
     if (verbose && Comm.MyPID()==0) {
@@ -86,6 +97,18 @@ int main(int argc, char *argv[]) {
   else {
     if (verbose && Comm.MyPID()==0) {
       cout << " matrix-matrix product test passed"<<endl;
+    }
+  }
+
+  ierr = check_transpose_matrixmatrix_product(Comm, verbose);
+  if (ierr != 0) {
+    if (verbose && Comm.MyPID()==0) {
+      cout << " transpose matrix-matrix product returned code "<<ierr<<endl;
+    }
+  }
+  else {
+    if (verbose && Comm.MyPID()==0) {
+      cout << " transpose matrix-matrix product test passed"<<endl;
     }
   }
 
@@ -114,94 +137,158 @@ int check_matrixmatrix_product(const Epetra_Comm& Comm, bool verbose)
   int firstGlobalRow = numLocalRows*myPID;
   int i;
 
-  //For this simple test, A and B are tri-diagonal matrices filled with 1's.
+  //For this simple test, A and B are banded matrices filled with 1's, but they
+  //are not symmetric. The bands are shifted to one side (up) of the diagonal.
+  //The bands are of width 3 and include the diagonal and two positions above the
+  //diagonal.
 
   for(i=0; i<numLocalRows; ++i) {
     int row = firstGlobalRow+i;
 
     int col = row;
     double value = 1.0;
-    //double bvalue = value*(row+1);
     A.InsertGlobalValues(row, 1, &value, &col);
     B.InsertGlobalValues(row, 1, &value, &col);
 
-    if (row > 0) {
-      int colm1 = col - 1;
-      //bvalue -= 0.1;
-      A.InsertGlobalValues(row, 1, &value, &colm1);
-      B.InsertGlobalValues(row, 1, &value, &colm1);
-      //bvalue += 0.1;
-    }
-
     if (row < numGlobalRows-1) {
       int colp1 = col + 1;
-      //bvalue += 0.1;
       A.InsertGlobalValues(row, 1, &value, &colp1);
       B.InsertGlobalValues(row, 1, &value, &colp1);
+    }
+
+    if (row < numGlobalRows-2) {
+      int colp2 = col + 2;
+      A.InsertGlobalValues(row, 1, &value, &colp2);
+      B.InsertGlobalValues(row, 1, &value, &colp2);
     }
   }
 
   EPETRA_CHK_ERR( A.FillComplete() );
   EPETRA_CHK_ERR( B.FillComplete() );
 
-  EPETRA_CHK_ERR( EpetraExt::MatrixMatrix::Multiply(A, B, C) );
+  EPETRA_CHK_ERR( EpetraExt::MatrixMatrix::Multiply(A, false, B, false, C) );
 
-  //For these simple operands, the result C should have a simple form which
-  //we can check as follows.
+  if (verbose) {
+//     cout << "********** A **********"<<endl<<A<<endl;
+//     cout << "********** B **********"<<endl<<B<<endl;
+    cout << "********** C = A*B **********"<<endl<<C<<endl;
+  }
 
-  int len = 20;
-  int numIndices;
-  int* indices = new int[len];
-  double* values = new double[len];
+  return(0);
+}
+
+int check_transpose_matrixmatrix_product(const Epetra_Comm& Comm, bool verbose)
+{
+  int numProcs = Comm.NumProc();
+  int myPID = Comm.MyPID();
+
+  int numLocalRows = 4;
+  int numGlobalRows = numLocalRows*numProcs;
+  int indexBase = 0;
+
+  Epetra_Map map(-1, numLocalRows, indexBase, Comm);
+
+  Epetra_CrsMatrix A(Copy, map, 1);
+  Epetra_CrsMatrix B(Copy, map, 1);
+  Epetra_CrsMatrix C1(Copy, map, 1);
+  Epetra_CrsMatrix C2(Copy, map, 1);
+  Epetra_CrsMatrix C3(Copy, map, 1);
+
+  int firstGlobalRow = numLocalRows*myPID;
+  int i;
+
+  //For this simple test, A and B are banded matrices filled with 1's, but they
+  //are not symmetric. The bands are shifted to one side (up) of the diagonal.
+  //The bands are of width 3 and include the diagonal and two positions above the
+  //diagonal.
 
   for(i=0; i<numLocalRows; ++i) {
     int row = firstGlobalRow+i;
 
-    EPETRA_CHK_ERR( C.ExtractGlobalRowCopy(row, len, numIndices,
-					   values, indices) );
+    int col = row;
+    double value = 1.0;
+    A.InsertGlobalValues(row, 1, &value, &col);
+    B.InsertGlobalValues(row, 1, &value, &col);
 
-    double sum = 0;
-    for(int j=0; j<numIndices; ++j) {
-      sum += values[j];
-    }
-
-    if (row == 0 || row == numGlobalRows-1) {
-      if (numIndices != 3) {
-	return(-2);
-      }
-      if (sum != 5.0) {
-	return(-3);
-      }
-    }
-    else if (row == 1 || row == numGlobalRows-2) {
-      if (numIndices != 4) {
-	cout << "row "<<row<<", numIndices ("<<numIndices<<") should be "<<4<<endl;
-	return(-4);
-      }
-      if (sum != 8.0) {
- 	return(-5);
-      }
-    }
-    else {
-      if (numIndices != 5) {
-	cout << "row "<<row<<", numIndices ("<<numIndices<<") should be "<<5<<endl;
-	return(-6);
-      }
-      if (sum != 9.0) {
- 	return(-7);
-      }
+    if (row < numGlobalRows-1) {
+      int colp1 = col + 1;
+      A.InsertGlobalValues(row, 1, &value, &colp1);
+      B.InsertGlobalValues(row, 1, &value, &colp1);
     }
 
+    if (row < numGlobalRows-2) {
+      int colp2 = col + 2;
+      A.InsertGlobalValues(row, 1, &value, &colp2);
+      B.InsertGlobalValues(row, 1, &value, &colp2);
+    }
   }
 
-//  if (verbose) {
-//     cout << "********** A **********"<<endl<<A<<endl;
-//     cout << "********** B **********"<<endl<<B<<endl;
-//     cout << "********** C **********"<<endl<<C<<endl;
-//  }
+  EPETRA_CHK_ERR( A.FillComplete() );
+  EPETRA_CHK_ERR( B.FillComplete() );
 
-  delete [] indices;
-  delete [] values;
+  EPETRA_CHK_ERR( EpetraExt::MatrixMatrix::Multiply(A, false, B, true, C1) );
+  if (verbose) {
+    cout << "C = A*B^T"<<endl;
+    cout << C1 << endl;
+    cout << endl<<"next, C = A^T*B"<<endl;
+  }
+  EPETRA_CHK_ERR( EpetraExt::MatrixMatrix::Multiply(A, true, B, false, C2) );
+  if (verbose) {
+    cout << C2 << endl;
+    cout << endl << "next, C = A^T*B^T"<<endl;
+  }
+  EPETRA_CHK_ERR( EpetraExt::MatrixMatrix::Multiply(A, true, B, true, C3) );
+  if (verbose) {
+    cout << C3 << endl;
+  }
+  return(0);
+}
+
+int check_sparsedot()
+{
+  int u_len = 4;
+  int* u_ind = new int[u_len];
+
+  int v_len = 4;
+  int* v_ind = new int[v_len];
+
+  double* u = new double[u_len];
+  double* v = new double[v_len];
+
+  for(int i=0; i<u_len; ++i) {
+    u[i] = 1.0*i;
+    u_ind[i] = i;
+  }
+
+  for(int j=0; j<v_len; ++j) {
+    v[j] = 1.0*j;
+    v_ind[j] = j;
+  }
+
+  if (EpetraExt::sparsedot(u, u_ind, u_len,
+			   v, v_ind, v_len) != 14.0) {
+    return(-1);
+  }
+
+  u_ind[0] = 3;
+  u_ind[1] = 6;
+  u_ind[2] = 7;
+  u_ind[3] = 9;
+
+  v_ind[0] = 1;
+  v_ind[1] = 3;
+  v_ind[2] = 6;
+  v_ind[3] = 10;
+
+  if (EpetraExt::sparsedot(u, u_ind, u_len,
+			   v, v_ind, v_len) != 2.0) {
+    return(-1);
+  }
+
+  delete [] u_ind;
+  delete [] v_ind;
+  delete [] u;
+  delete [] v;
 
   return(0);
 }

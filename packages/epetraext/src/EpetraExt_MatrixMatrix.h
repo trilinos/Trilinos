@@ -62,11 +62,21 @@ class MatrixMatrix {
              into C, etc.
      */
     static int Multiply(const Epetra_CrsMatrix& A,
+			bool transposeA,
 			const Epetra_CrsMatrix& B,
+			bool transposeB,
 			Epetra_CrsMatrix& C);
 
 };//class MatrixMatrix
 
+
+/**
+ *Method for internal use... sparsedot forms a dot-product between two
+ *sparsely-populated 'vectors'.
+ *Important assumption: assumes the indices in u_ind and v_ind are sorted.
+ */
+ double sparsedot(double* u, int* u_ind, int u_len,
+		  double* v, int* v_ind, int v_len);
 }//namespace EpetraExt
 
 #endif
