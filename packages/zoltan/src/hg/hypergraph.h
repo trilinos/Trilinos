@@ -32,7 +32,7 @@ typedef struct
   int Debug_Level;
   } ZZ ;
 #define ZOLTAN_DEBUG_LIST            1
-#define ZOLTAN_DEBUG_ALL             1
+#define ZOLTAN_DEBUG_ALL             2
 #define ZOLTAN_TRACE_ENTER(a,b)      {}
 #define ZOLTAN_TRACE_EXIT(a,b)       {}
 #define ZOLTAN_TRACE_DETAIL(a,b,c)   {}

@@ -112,7 +112,7 @@ int Zoltan_HG_Info (
   int  	i, size, size_min, size_max;
   float wgt_min, wgt_max, wgt_tot;
 
-  if (zz->Debug_Level < ZOLTAN_DEBUG_ALL)
+  if (zz->Debug_Level < ZOLTAN_DEBUG_LIST)
     return ZOLTAN_OK;
 
   puts("---------- HGraph Information (min/ave/max/tot) --------------------");

@@ -49,16 +49,13 @@ int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
   else                                         hgp->packing = NULL;
 
   if (hgp->packing) {
-
-     /*
-     * If reduction method is a packing, set the improvement and 
-     * edge weight scaling functions accordingly.
-     */
-
-    if      (!strcasecmp(hgp->rli_str, "aug2"))  hgp->packing_rli = packing_aug2;
-    else if (!strcasecmp(hgp->rli_str, "aug3"))  hgp->packing_rli = packing_aug3;
-    else                                         hgp->packing_rli = NULL;
-
+  /*
+  * If reduction method is a packing, set the improvement and 
+  * edge weight scaling functions accordingly.
+  */
+  if      (!strcasecmp(hgp->rli_str, "aug2"))  hgp->packing_rli = packing_aug2;
+  else if (!strcasecmp(hgp->rli_str, "aug3"))  hgp->packing_rli = packing_aug3;
+  else                                         hgp->packing_rli = NULL;
   }
   return  hgp->packing ? 1 : 0 ;
 }

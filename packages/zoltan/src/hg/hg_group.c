@@ -47,14 +47,13 @@ int Zoltan_HG_Set_Grouping_Fn(HGPartParams *hgp)
   else                                         hgp->grouping = NULL;
 
   if (hgp->grouping) {
-
-    /*
-     * If reduction method is a grouping, set the improvement and
-     * edge weight scaling functions accordingly.
-     */
-    if      (!strcasecmp(hgp->rli_str, "aug2")) hgp->grouping_rli = grouping_aug2;
-    else if (!strcasecmp(hgp->rli_str, "aug3")) hgp->grouping_rli = grouping_aug3;
-    else                                        hgp->grouping_rli = NULL;
+  /*
+   * If reduction method is a grouping, set the improvement and
+   * edge weight scaling functions accordingly.
+   */
+  if      (!strcasecmp(hgp->rli_str,"aug2")) hgp->grouping_rli = grouping_aug2;
+  else if (!strcasecmp(hgp->rli_str,"aug3")) hgp->grouping_rli = grouping_aug3;
+  else                                       hgp->grouping_rli = NULL;
   }
 
   return hgp->grouping ? 1 : 0 ;

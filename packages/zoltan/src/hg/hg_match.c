@@ -197,7 +197,7 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
          }
       }
 
-   ZOLTAN_FREE (&v1) ;
+   ZOLTAN_FREE ((void **) &v1) ;
    return ZOLTAN_OK ;
    }
 

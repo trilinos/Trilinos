@@ -271,10 +271,10 @@ static int hmin_max (ZZ *zz, int P, int *q)
       values[0] = MIN(values[0],q[i]);
       values[1] = MAX(values[1],q[i]);
     }
-    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST)
       printf("%9d    %12.2f %9d    %9d\n",values[0], (float)(values[2])/P,
        values[1],values[2]);
-    if (zz->Debug_Level > ZOLTAN_DEBUG_ALL)
+    if (zz->Debug_Level > ZOLTAN_DEBUG_LIST)
     { for (i=0; i<P; i++)
         printf ("%d ",q[i]);
       printf("\n");
@@ -296,9 +296,9 @@ static float hmin_max_float (ZZ *zz, int P, float *q)
       values[0] = MIN(values[0],q[i]);
       values[1] = MAX(values[1],q[i]);
     }
-    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    if (zz->Debug_Level >= ZOLTAN_DEBUG_LIST)
       printf("%12.2f %12.2f %12.2f %12.2f\n",values[0],values[2]/P,values[1],values[2]);
-    if (zz->Debug_Level > ZOLTAN_DEBUG_ALL)
+    if (zz->Debug_Level > ZOLTAN_DEBUG_LIST)
     { for (i=0; i<P; i++)
         printf ("%.2f ",q[i]);
       printf("\n");
@@ -312,7 +312,7 @@ int Zoltan_HG_HPart_Info (ZZ *zz, HGraph *hg, int p, Partition part)
 { int	i, *size, max_size;
   char *yo = "hpart_info" ;
 
-  if (zz->Debug_Level < ZOLTAN_DEBUG_ALL)
+  if (zz->Debug_Level < ZOLTAN_DEBUG_LIST)
     return ZOLTAN_OK;
 
   puts("---------- Partition Information (min/ave/max/tot) ----------------");

@@ -14,8 +14,7 @@ C_flag_linux    = -O -Wall
 DTIME		= -DWITHTIME
 
 
-VPATH		= ../Utilities/Memory
-I		= -I../Utilities/Memory/ #-I../include
+I		= -I../Utilities/Memory
 C		= $(C_pre) $(C_comp) $(C_flag_$(OSTYPE)) $(DTIME) $(I)
 L		= -L. -lhg -lm
 
