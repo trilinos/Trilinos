@@ -96,15 +96,16 @@ int ML_CSolve_Destroy(ML_CSolve **cs)
 
 int ML_CSolve_Clean(ML_CSolve *ml_cs)
 {
-#ifdef ML_TIMING
+#ifdef ML_DETAILED_TIMING
    double t1;
 #endif
 
-   if ( ml_cs->ML_id != ML_ID_CSOLVE ) {
+   if ( ml_cs->ML_id != ML_ID_CSOLVE ) 
+   {
       printf("ML_CSolve_Clean error : wrong object.\n");
       exit(-1);
    }
-#ifdef ML_TIMING
+#ifdef ML_DETAILED_TIMING
    if ( (ml_cs->label != NULL) && ( ml_cs->build_time != 0.0))
       printf(" Build time for %s\t= %e\n",ml_cs->label,ml_cs->build_time);
 
@@ -167,7 +168,7 @@ int ML_CSolve_Set_1Level(ML_CSolve *ml_cs, ML_1Level *mylevel)
 int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, double din[], 
                     int outlen, double dout[])
 {
-#ifdef ML_TIMING
+#if defined(ML_TIMING) || defined(ML_DETAILED_TIMING)
    double t0;
    t0 = GetClock();
 #endif
@@ -177,7 +178,7 @@ int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, double din[],
    if (csolve->func->ML_id == ML_EXTERNAL)
         csolve->func->external(csolve->data, inlen, din, outlen, dout);
    else csolve->func->internal(csolve->data, inlen, din, outlen, dout);
-#ifdef ML_TIMING
+#if defined(ML_TIMING) || defined(ML_DETAILED_TIMING)
    csolve->apply_time += (GetClock() - t0);
 #endif
    return 0;

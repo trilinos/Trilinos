@@ -195,9 +195,14 @@ extern int ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ML*,int nl, int,
                      int ntimes,double omega,int Nblocks,int *blockList);
 extern int ML_Gen_Smoother_VBlockKrylovJacobi(ML*,int nl,int pre_post, int ntimes,
                      double omeg, int Nblocks, int *blockList);
-extern int ML_Gen_Smoother_OverlappedDomainDecomp(ML*,int nl,int pre_post);
+extern int ML_Gen_Smoother_OverlappedDDILUT(ML*,int nl,int pre_post);
+extern int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *,int nl,int pre_or_post,
+                     int ntimes, int length, int *blkinfo);
+extern int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *,int nl,
+                     int pre_or_post, int ntimes, int length, int *blkinfo);
+
 extern int ML_Gen_Smoother_GSextra( ML *ml , int nl, int pre_or_post,
-		int ntimes, double omega, int Nextra, int extra[]);
+		     int ntimes, double omega, int Nextra, int extra[]);
 extern int ML_Set_Smoother(ML *, int nl , int pre_post, void *obj, 
                      int (*func)(void *, int, double *, int, double *));
 

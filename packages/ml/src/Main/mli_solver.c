@@ -439,7 +439,7 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
        ML_Gen_CoarseSolverSuperLU(ml, coarsest_level);
        /*ML_Gen_Smoother_GaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 100);*/
     } else
-       ML_Gen_Smoother_OverlappedDomainDecomp(ml,coarsest_level,ML_PRESMOOTHER);
+       ML_Gen_Smoother_OverlappedDDILUT(ml,coarsest_level,ML_PRESMOOTHER);
 
     /* -------------------------------------------------------- */ 
     /* set up smoother and coarse solver                        */
@@ -516,11 +516,31 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
              }
              break;
           case 7 :
-             ML_Gen_Smoother_OverlappedDomainDecomp(ml,level,ML_PRESMOOTHER);
+             ML_Gen_Smoother_OverlappedDDILUT(ml,level,ML_PRESMOOTHER);
              if ( my_id == 0 && level == nlevels-1)
              {
-                printf("Setting up presmoother : Overlapped DD\n");
+                printf("Setting up presmoother : Overlapped DDILUT\n");
              }
+             break;
+          case 8 :
+             ML_Gen_Smoother_VBlockAdditiveSchwarz(ml,level,ML_PRESMOOTHER,sweeps,
+                                                   0, NULL);
+             if ( my_id == 0 && level == nlevels-1)
+             {
+                printf("Setting up presmoother : Additive Schwarz \n");
+             }
+             break;
+          case 9 :
+             ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ml,level,ML_PRESMOOTHER,
+                                                         sweeps, 0, NULL);
+             if ( my_id == 0 && level == nlevels-1)
+             {
+                printf("Setting up presmoother : Multiplicative Schwarz \n");
+             }
+             break;
+          default :
+             printf("Setting up presmoother : invalid smoother \n");
+             exit(1);
              break;
        }
 
@@ -589,12 +609,9 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
                         wght);
              }
              break;
-          case 7 :
-             ML_Gen_Smoother_OverlappedDomainDecomp(ml,level,ML_POSTSMOOTHER);
-             if ( my_id == 0 && level == nlevels-1)
-             {
-                printf("Setting up postsmoother : Overlapped DD\n");
-             }
+          default :
+             printf("Setting up postsmoother : invalid smoother \n");
+             exit(1);
              break;
        }
     }
@@ -1421,7 +1438,7 @@ int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
 {
     int            i, my_id, nprocs, coarsest_level, level, sweeps, nlevels;
     int            *row_partition, localEqns, length;
-    int            Nblocks, *blockList;
+    int            Nblocks, *blockList, one=1;
     double         wght;
     MLI_Context    *context;
     MLI_CSRMatrix  *mli_mat;
@@ -1453,7 +1470,7 @@ int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
     for (i=2; i<=nprocs; i++) row_partition[i] += row_partition[i-1];
     context = (MLI_Context *) malloc(sizeof(MLI_Context));
     solver->contxt = context;
-    context->comm = 1;
+    context->comm = (USR_COMM) one;
 
     context->globalEqns = Nrows;
     context->partition = NULL;
@@ -1467,7 +1484,7 @@ int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
     /* set up the ML communicator information                   */
     /* -------------------------------------------------------- */ 
 
-    ML_Set_Comm_Communicator(ml, 1);
+    ML_Set_Comm_Communicator(ml, (USR_COMM) one);
     ML_Set_Comm_MyRank(ml, 0);
     ML_Set_Comm_Nprocs(ml, 1);
     ML_Set_Comm_Send(ml, MLI_SSend);
@@ -1547,7 +1564,19 @@ int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
                                          sweeps, wght, Nblocks, blockList);
              break;
           case 7 :
-             ML_Gen_Smoother_OverlappedDomainDecomp(ml,level,ML_PRESMOOTHER);
+             ML_Gen_Smoother_OverlappedDDILUT(ml,level,ML_PRESMOOTHER);
+             break;
+          case 8 :
+             ML_Gen_Smoother_VBlockAdditiveSchwarz(ml,level,ML_PRESMOOTHER,sweeps,
+                                                   0, NULL);
+             break;
+          case 9 :
+             ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ml,level,ML_PRESMOOTHER,
+                                                         sweeps, 0, NULL);
+             break;
+          default :
+             printf("Setting up presmoother : invalid smoother \n");
+             exit(1);
              break;
        }
 
@@ -1588,7 +1617,11 @@ int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
                                          sweeps, wght, Nblocks, blockList);
              break;
           case 7 :
-             ML_Gen_Smoother_OverlappedDomainDecomp(ml,level,ML_POSTSMOOTHER);
+             ML_Gen_Smoother_OverlappedDDILUT(ml,level,ML_POSTSMOOTHER);
+             break;
+          default :
+             printf("Setting up postsmoother : invalid smoother \n");
+             exit(1);
              break;
        }
     }

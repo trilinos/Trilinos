@@ -184,6 +184,9 @@ int ML_Destroy(ML **ml_ptr)
    ML_Comm_Destroy( &(ml->comm) );
    ML_memory_free( (void**) &(ml) );
    (*ml_ptr) = NULL;
+#ifdef ML_DEBUG
+   ML_memory_inquire();
+#endif
    return 0;
 }
 
@@ -1137,10 +1140,10 @@ int ML_Gen_Smoother_VBlockKrylovJacobi( ML *ml , int nl, int pre_or_post,
 }
 
 /* ------------------------------------------------------------------------- */
-/* generate the overlapped domain decomposition smoother                     */
+/* generate the overlapped domain decomposition with ILUT smoother           */
 /* ------------------------------------------------------------------------- */
 
-int ML_Gen_Smoother_OverlappedDomainDecomp( ML *ml , int nl, int pre_or_post )
+int ML_Gen_Smoother_OverlappedDDILUT( ML *ml , int nl, int pre_or_post )
 {
    int             (*fun)(void *, int, double *, int, double *);
    int             total_recv_leng, *recv_lengths, *int_buf, *map, *map2; 
@@ -1150,14 +1153,15 @@ int ML_Gen_Smoother_OverlappedDomainDecomp( ML *ml , int nl, int pre_or_post )
    ML_Operator     *Amat;
    ML_Comm         *comm;
 	
+   /* ---------------------------------------------------------------- */
+   /* initialize the ILUT data object                                  */
+   /* ---------------------------------------------------------------- */
+
    fun = ML_Smoother_OverlappedILUT;
 	
    comm = ml->comm;
    Amat = &(ml->Amat[nl]);
-   ML_memory_alloc((void**) &data, sizeof(ML_Sm_ILUT_Data), "SO2");
-   data->mat_ia    = NULL;
-   data->mat_ja    = NULL;
-   data->mat_aa    = NULL;
+   ML_Smoother_Create_ILUT_Data( &data );
    data->fillin    = 1;
    data->threshold = 1.0e-8;
 
@@ -1174,20 +1178,6 @@ int ML_Gen_Smoother_OverlappedDomainDecomp( ML *ml , int nl, int pre_or_post )
    /* use the local matrix row and the off-processor rows to compose   */
    /* ILUT preconditioner                                              */
    /* ---------------------------------------------------------------- */
-
-   /*
-   MPI_Barrier(MPI_COMM_WORLD);
-   if ( comm->ML_mypid == 10 )
-   {
-      m = 0;
-      for (i=0; i < total_recv_leng; i++)
-      {
-         for (j=0; j < recv_lengths[i]; j++)
-            printf("Amat(%d,%d) = %e\n", i, int_buf[m+j], dble_buf[m+j]);
-         m += recv_lengths[i];
-      }
-   }
-   */
 
    ML_Smoother_ILUTDecomposition(data,Amat,comm,total_recv_leng,recv_lengths, 
                                  int_buf, dble_buf, map, map2, offset);
@@ -1207,6 +1197,176 @@ int ML_Gen_Smoother_OverlappedDomainDecomp( ML *ml , int nl, int pre_or_post )
    else if (pre_or_post == ML_POSTSMOOTH)
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
                              (void *) data, fun, NULL, 1, 0.0));
+   else return(pr_error("Print unknown pre_or_post choice\n"));
+}
+
+/* ------------------------------------------------------------------------- */
+/* generate the variable block additive Schwarz smoother                     */
+/* ------------------------------------------------------------------------- */
+
+int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
+                                          int ntimes, int length, int *blkinfo)
+{
+   int                (*fun)(void *, int, double *, int, double *);
+   int                total_recv_leng, *recv_lengths, *int_buf, *map, *map2; 
+   int                i, maxblk, offset;
+   double             *dble_buf;
+   ML_Sm_Schwarz_Data *data;
+   ML_Operator        *Amat;
+   ML_Comm            *comm;
+	
+   /* ---------------------------------------------------------------------- */
+   /* check for valid incoming data                                          */
+   /* ---------------------------------------------------------------------- */
+
+   if ( length != 0 && length != Amat->outvec_leng )
+   {
+      printf("ML_Gen_Smoother_VBlockAdditiveSchwarz ERROR : invalid length.\n");
+      exit(1);
+   }
+
+   /* ---------------------------------------------------------------------- */
+   /* set the nblock and blk_info data                                       */
+   /* ---------------------------------------------------------------------- */
+
+   fun = ML_Smoother_VBlockAdditiveSchwarz;
+	
+   comm = ml->comm;
+   Amat = &(ml->Amat[nl]);
+   ML_Smoother_Create_Schwarz_Data( &data );
+   data->Nrows   = Amat->outvec_leng;
+   data->blk_info = (int *) malloc(data->Nrows * sizeof(int));
+   if ( blkinfo != NULL && length != 0 )
+   {
+      for ( i = 0; i < length; i++ ) data->blk_info[i] = blkinfo[i];
+      maxblk = 0;
+      for ( i = 0; i < length; i++ ) 
+         if ( blkinfo[i] > maxblk ) maxblk = blkinfo[0];
+      data->nblocks = maxblk + 1;
+   }
+   else 
+   {
+      for ( i = 0; i < data->Nrows; i++ ) data->blk_info[i] = i;
+      data->nblocks = data->Nrows;
+   }
+
+   /* ---------------------------------------------------------------- */
+   /* send the lengths of each row to remote processor at the end,     */
+   /* additional row information should be given in total_recv_leng,   */
+   /* recv_lengths, int_buf, dble_buf                                  */
+   /* ---------------------------------------------------------------- */
+
+   ML_Smoother_ComposeOverlappedMatrix(Amat, comm, &total_recv_leng, 
+              &recv_lengths, &int_buf, &dble_buf, &map, &map2, &offset);
+
+   /* ---------------------------------------------------------------- */
+   /* use the local matrix row and the off-processor rows to compose   */
+   /* Schwarz preconditioner                                           */
+   /* ---------------------------------------------------------------- */
+
+   ML_Smoother_VBlockSchwarzDecomposition(data,Amat,comm,total_recv_leng,
+              recv_lengths, int_buf, dble_buf, map, map2, offset);
+   if ( map  != NULL ) free(map);
+   if ( map2 != NULL ) free(map2);
+   if ( int_buf != NULL ) free(int_buf);
+   if ( dble_buf != NULL ) free(dble_buf);
+   if ( recv_lengths != NULL ) free(recv_lengths);
+
+   /* ---------------------------------------------------------------- */
+   /* set it up as smoother                                            */
+   /* ---------------------------------------------------------------- */
+
+   if (pre_or_post == ML_PRESMOOTH) 
+         return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+                        (void *) data, fun, NULL, ntimes, 0.0));
+   else if (pre_or_post == ML_POSTSMOOTH)
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+                             (void *) data, fun, NULL, ntimes, 0.0));
+   else return(pr_error("Print unknown pre_or_post choice\n"));
+}
+
+/* ------------------------------------------------------------------------- */
+/* generate the variable block additive Schwarz smoother                     */
+/* ------------------------------------------------------------------------- */
+
+int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post,
+                                         int ntimes, int length, int *blkinfo )
+{
+   int                (*fun)(void *, int, double *, int, double *);
+   int                total_recv_leng, *recv_lengths, *int_buf, *map, *map2; 
+   int                i, maxblk, offset;
+   double             *dble_buf;
+   ML_Sm_Schwarz_Data *data;
+   ML_Operator        *Amat;
+   ML_Comm            *comm;
+	
+   /* ---------------------------------------------------------------------- */
+   /* check for valid incoming data                                          */
+   /* ---------------------------------------------------------------------- */
+
+   if ( length != 0 && length != Amat->outvec_leng )
+   {
+      printf("ML_Gen_Smoother_VBlockMultiplicativeSchwarz : invalid length.\n");
+      exit(1);
+   }
+
+   /* ---------------------------------------------------------------------- */
+   /* set the nblock and blk_info data                                       */
+   /* ---------------------------------------------------------------------- */
+
+   fun = ML_Smoother_VBlockMultiplicativeSchwarz;
+	
+   comm = ml->comm;
+   Amat = &(ml->Amat[nl]);
+   ML_Smoother_Create_Schwarz_Data( &data );
+   data->Nrows   = Amat->outvec_leng;
+   data->blk_info = (int *) malloc(data->Nrows * sizeof(int));
+   if ( blkinfo != NULL && length != 0 )
+   {
+      for ( i = 0; i < length; i++ ) data->blk_info[i] = blkinfo[i];
+      maxblk = 0;
+      for ( i = 0; i < length; i++ ) 
+         if ( blkinfo[i] > maxblk ) maxblk = blkinfo[0];
+      data->nblocks = maxblk + 1;
+   }
+   else 
+   {
+      for ( i = 0; i < data->Nrows; i++ ) data->blk_info[i] = i;
+      data->nblocks = data->Nrows;
+   }
+
+   /* ---------------------------------------------------------------- */
+   /* send the lengths of each row to remote processor at the end,     */
+   /* additional row information should be given in total_recv_leng,   */
+   /* recv_lengths, int_buf, dble_buf                                  */
+   /* ---------------------------------------------------------------- */
+
+   ML_Smoother_ComposeOverlappedMatrix(Amat, comm, &total_recv_leng, 
+              &recv_lengths, &int_buf, &dble_buf, &map, &map2, &offset);
+
+   /* ---------------------------------------------------------------- */
+   /* use the local matrix row and the off-processor rows to compose   */
+   /* Schwarz preconditioner                                           */
+   /* ---------------------------------------------------------------- */
+
+   ML_Smoother_VBlockSchwarzDecomposition(data,Amat,comm,total_recv_leng,
+              recv_lengths, int_buf, dble_buf, map, map2, offset);
+   if ( map  != NULL ) free(map);
+   if ( map2 != NULL ) free(map2);
+   if ( int_buf != NULL ) free(int_buf);
+   if ( dble_buf != NULL ) free(dble_buf);
+   if ( recv_lengths != NULL ) free(recv_lengths);
+
+   /* ---------------------------------------------------------------- */
+   /* set it up as smoother                                            */
+   /* ---------------------------------------------------------------- */
+
+   if (pre_or_post == ML_PRESMOOTH) 
+         return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+                        (void *) data, fun, NULL, ntimes, 0.0));
+   else if (pre_or_post == ML_POSTSMOOTH)
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+                             (void *) data, fun, NULL, ntimes, 0.0));
    else return(pr_error("Print unknown pre_or_post choice\n"));
 }
 
@@ -1699,7 +1859,7 @@ double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
    double    norm1, norm2;
 #endif
 
-#ifdef ANALYSIS
+#ifdef ML_ANALYSIS
    short   dummy;
    int     *cols, Nrows, j, allocated_space, ncols, lwork, info;
    double  *squareA, *vals, *eig, *work;
@@ -1723,7 +1883,7 @@ double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
    ML_DVector_GetDataPtr(curr->Amat_Normalization, &normalscales) ;
    for ( i = 0; i < lengf; i++ ) rhss[i] = rhs[i];
 
-#ifdef ANALYSIS
+#ifdef ML_ANALYSIS
    if ( comm->ML_nprocs == 1 && curr->Pmat->to == NULL && lengf < 1000 )
    {
       fp = fopen("mlmatlab.m", "w");
@@ -1797,7 +1957,7 @@ double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
       }
       else for ( i = 0; i < lengf; i++ ) res[i] = rhss[i];
 
-#ifdef ANALYSIS
+#ifdef ML_ANALYSIS
       if ( comm->ML_nprocs == 1 && curr->Pmat->to == NULL && lengf < 1000 )
       {
          fp = fopen("mlmatlab.m", "w");
@@ -1980,7 +2140,7 @@ double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
    ML_Operator_Apply(Amat, lengf, sol, lengf, res);
    for ( i = 0; i < lengf; i++ ) res[i] = rhs[i] - res[i];
 
-#ifdef ANALYSIS
+#ifdef ML_ANALYSIS
       if ( comm->ML_nprocs == 1 && curr->Pmat->to == NULL && lengf < 1000 )
       {
          fp = fopen("mlmatlab.m", "w");
@@ -2041,7 +2201,7 @@ double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
       free(rhs2);
 
       ML_Smoother_Apply(post, lengf, sol, lengf, rhss, ML_NONZERO);
-#ifdef ANALYSIS
+#ifdef ML_ANALYSIS
       if ( comm->ML_nprocs == 1 && curr->Pmat->to == NULL && lengf < 1000 )
       {
          ML_Operator_Apply(Amat, lengf, sol, lengf, res);
@@ -2134,7 +2294,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
    double    norm1, norm2;
 #endif
 
-#ifdef ANALYSIS
+#ifdef ML_ANALYSIS
    short   dummy;
    int     *cols, Nrows, j, allocated_space, ncols, lwork, info;
    double  *squareA, *vals, *eig, *work; 
@@ -2151,7 +2311,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
 
    if (fine_size == 0) fine_size = lengf;
 
-#ifdef ANALYSIS
+#ifdef ML_ANALYSIS
    if ( comm->ML_nprocs == 1 && curr->Pmat->to == NULL && lengf < 1000 )
    {
       fp = fopen("mlmatlab.m", "w");
@@ -2197,7 +2357,8 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
    /* smoothing or coarse solve                                    */
    /* ------------------------------------------------------------ */
 
-   if (Rmat->to == NULL) {    /* coarsest grid */
+   if (Rmat->to == NULL)     /* coarsest grid */
+   {
       if ( ML_CSolve_Check( csolve ) == 1 ) {
          ML_CSolve_Apply(csolve, lengf, sol, lengf, rhs);
       } else {
@@ -2212,7 +2373,8 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          free(res);
       }
    }
-   else {
+   else 
+   {
       res = (double *) malloc(lengf*sizeof(double));
 
       /* --------------------------------------------------------- */
@@ -2229,7 +2391,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
       }
       else for ( i = 0; i < lengf; i++ ) res[i] = rhs[i];
 
-#ifdef ANALYSIS
+#ifdef ML_ANALYSIS
       if ( comm->ML_nprocs == 1 && curr->Pmat->to == NULL && lengf < 1000 )
       {
          fp = fopen("mlmatlab.m", "w");
@@ -2276,7 +2438,8 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          allocated_space = 100;
          cols = (int    *) malloc(allocated_space*sizeof(int   ));
          vals = (double *) malloc(allocated_space*sizeof(double));
-         for (i = 0; i < lengf; i++) {
+         for (i = 0; i < lengf; i++) 
+         {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols) 
                   == 0) 
             {
@@ -2304,10 +2467,13 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          if ( info > 0 ) 
          {
             printf("No convergence in computing the eigenvalues.\n");
-         } else if ( info < 0 )
+         } 
+         else if ( info < 0 )
          {
             printf("Eigenvalue computation:%d-th argument has error.\n",-info);
-         } else {
+         } 
+         else 
+         {
             fp = fopen("mlmatlab.eig", "w");
             fprintf(fp, "%d\n", Nrows);
             for (i=0; i<Nrows; i++) fprintf(fp, "%25.16e\n",eig[i]);
@@ -2333,7 +2499,6 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          printf("   and it should display the residual for each eigenvalue.\n");
          printf("Press y when you are done.");
          scanf("%s", instring);
-      }
 */
 #endif
 
@@ -2382,7 +2547,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
       ML_Operator_Apply(Amat, lengf, sol, lengf, res);
       for ( i = 0; i < lengf; i++ ) res[i] = rhs[i] - res[i];
 
-#ifdef ANALYSIS
+#ifdef ML_ANALYSIS
       if ( comm->ML_nprocs == 1 && curr->Pmat->to == NULL && lengf < 1000 )
       {
          fp = fopen("mlmatlab.m", "w");
@@ -2439,7 +2604,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
 
       ML_Smoother_Apply(post, lengf, sol, lengf, rhs, ML_NONZERO);
 
-#ifdef ANALYSIS
+#ifdef ML_ANALYSIS
       if ( comm->ML_nprocs == 1 && curr->Pmat->to == NULL && lengf < 1000 )
       {
          ML_Operator_Apply(Amat, lengf, sol, lengf, res);
@@ -3108,20 +3273,28 @@ int ML_Print_Timing(ML *ml)
 {
 #ifdef ML_TIMING
    struct ML_Timing *timing;
-   double t1, t2;
+   double t1, t2, t3, t4, t5, t6;
 
    timing = ml->timing;
    t1 = ML_gsum_double(timing->precond_apply_time, ml->comm);
    t2 = ML_gsum_double(timing->total_build_time, ml->comm);
+   t3 = ML_gmax_double(timing->precond_apply_time, ml->comm);
+   t4 = ML_gmax_double(timing->total_build_time, ml->comm);
+   t5 = ML_gmax_double(-timing->precond_apply_time, ml->comm);
+   t6 = ML_gmax_double(-timing->total_build_time, ml->comm);
    if (ml->comm->ML_mypid != 0) return(1);
    t1 = t1/((double) ml->comm->ML_nprocs);
    t2 = t2/((double) ml->comm->ML_nprocs);
+   t5 = - t5;
+   t6 = - t6;
 
-   printf("\nTiming information\n\n");
-   if (timing->precond_apply_time != 0.0) 
-         printf(" Time to apply preconditioner = %e\n",t1);
-   if (timing->total_build_time != 0.0) 
-         printf(" Total of timed building kernels = %e\n",t2);
+   printf("\nML Timing information\n\n");
+   if (t1 != 0.0) printf(" Time to apply preconditioner (average) = %e\n",t1);
+   if (t3 != 0.0) printf(" Time to apply preconditioner (maximum) = %e\n",t3);
+   if (t5 != 0.0) printf(" Time to apply preconditioner (minimum) = %e\n",t5);
+   if (t2 != 0.0) printf(" Time to build kernels        (average) = %e\n",t2);
+   if (t4 != 0.0) printf(" Time to build kernels        (maximum) = %e\n",t4);
+   if (t6 != 0.0) printf(" Time to build kernels        (minimum) = %e\n",t6);
 #endif
    return(0);
 }
