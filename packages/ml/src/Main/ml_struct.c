@@ -2930,7 +2930,7 @@ int ML_ggb_Set_CoarseSolver(int flag)
 int ML_Solve_MGV( ML *ml , double *din, double *dout)
 {
   int    i, leng, dir_leng, *dir_list, k, level;
-  double *diag, *scales, *din_temp, *dout_tmp;
+  double *diag, *scales, *din_temp/*, *dout_tmp*/;
   ML     *ml_ggb;
  
    /* ------------------------------------------------------------ */
@@ -5958,6 +5958,7 @@ int ML_build_ggb(ML *ml, void *data)
   double *zdata, *rap, *values;
   int count, j, one=1;
   double *temp;
+  double * workspace;
 #ifdef ML_TIMING
    double t0;
    t0 = GetClock();
@@ -6167,7 +6168,6 @@ int ML_build_ggb(ML *ml, void *data)
   }
 
   /* Communicate the local dot products to get the sum */ 
-  double *workspace;
   workspace = (double *) ML_allocate( Ncols*Ncols * sizeof(double));
   ML_gsum_vec_double(&rap, &workspace, Ncols*Ncols, ml_ggb->comm); 
   ML_free(workspace);
