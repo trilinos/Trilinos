@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Communication Utilities</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,20 +19,11 @@
      $Date$
      $Revision$
 >
-
-<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
-<html>
-<head>
-   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
-   <meta name="sandia.approved" content="SAND99-1376">
-   <meta name="author" content="karen devine, kddevin@sandia.gov">
-   <title> Zoltan Developer's Guide:  Communication Utilities</title>
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_util_parallel.html">Next</a>&nbsp; |&nbsp; <a href="dev_util_params.html">Previous</a></i></b></div>
-
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_util_parallel.html">Next</a>&nbsp; |&nbsp; <a href="dev_util_params.html">Previous</a></i></b></div>
 
 <h2>
 <a NAME="irreg_comm"></a>Irregular Communication Library</h2>
@@ -36,7 +35,9 @@ communication, and destroy communication maps upon completion.
 <blockquote><b><a href="#LB_Comm_Create">LB_Comm_Create</a>:&nbsp; </b>computes
 a communication plan for sending objects to destination processors.
 <br><b><a href="#LB_Comm_Do">LB_Comm_Do</a>:&nbsp; </b>uses a communication
-plan to send objects to destination processors.
+plan to send data objects to destination processors.
+<br><b><a href="#LB_Comm_Do_Reverse">LB_Comm_Do_Reverse</a></b>: performs
+the reverse (opposite) communication of <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>
 <br><b><a href="#LB_Comm_Destroy">LB_Comm_Destroy</a>:</b>&nbsp; free memory
 associated with a communication plan.</blockquote>
 The Zoltan library uses the irregular communication package in its migration
@@ -55,21 +56,21 @@ to the package to support heterogeneous architectures can then automatically
 propagate to the algorithms.
 <p>The order that messages are processed in the communication package is,
 by default, deterministic.&nbsp; Messages are processed in order of their
-sending processors' ID&nbsp;numbers.&nbsp; Setting the <a href="../ug_html/ug_alg.html#General_Parameters">general
-parameter</a> <b>DETERMINISTIC</b>&nbsp;to FALSE allows the communication
-package to process messages in the order they are received by a processor.
-This non-deterministic logic provides slightly more efficient execution;
-the library reads messages from any processor and sets pointers to the
-storage for that processor sequentially in the receiving buffer. However,
-imported objects may be processed in different orders, depending on the
-order of their sending processors in the communication plan, causing the
-results to vary over several executions of the program.
+sending processors' ID numbers.&nbsp; Setting the <a href="../ug_html/ug_alg.html#General_Parameters">general
+parameter</a> <b>DETERMINISTIC</b> to FALSE allows the communication package
+to process messages in the order they are received by a processor. This
+non-deterministic logic provides slightly more efficient execution; the
+library reads messages from any processor and sets pointers to the storage
+for that processor sequentially in the receiving buffer. However, imported
+objects may be processed in different orders, depending on the order of
+their sending processors in the communication plan, causing the results
+to vary over several executions of the program.
 <br>&nbsp;
 <p>
 <hr><a NAME="LB_Comm_Create"></a>int<b> LB_Comm_Create</b>(struct Comm_Obj&nbsp;
 **<i>plan</i>,<b> </b>int <i>nsend</i>, int *<i>proclist</i>, MPI_Comm
 <i>comm</i>
-, int <i>tag</i>, int *<i>nreturn</i>);&nbsp;
+, int <i>tag</i>, int <i>deterministic</i>, int *<i>nreturn</i>);&nbsp;
 <hr>
 <p>The <b>LB_Comm_Create</b> function sets up the communication plan in
 the irregular communication package. Its input is a count of objects to
@@ -87,7 +88,7 @@ the objects and to import objects to establish a new decomposition. This
 plan is then used by calls to <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>
 to perform the actual communication.
 <br>&nbsp;
-<table WIDTH="100%" >
+<table WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP>
 <td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
 
@@ -123,6 +124,14 @@ each of the objects to be sent.</td>
 <td>&nbsp;&nbsp;&nbsp; <i>tag</i></td>
 
 <td>A tag for MPI communication.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp;&nbsp; <i>deterministic</i></td>
+
+<td NOSAVE>If nonzero, the communication will be deterministic, i.e. the
+result is independent of the order of the messages. Deterministic communication
+is slower than nondeterministic.&nbsp;</td>
 </tr>
 
 <tr>
@@ -215,7 +224,73 @@ by <b><a href="#LB_Comm_Create">LB_Comm_Create.</a></b><i> </i>All objects
 </table>
 
 <p>
-<hr><a NAME="LB_Comm_Destroy"></a>int <b>LB_Comm_Destroy</b>(struct Comm_Obj
+<hr><a NAME="LB_Comm_Do_Reverse"></a>int <b>LB_Comm_Do_Reverse</b>(struct
+Comm_Obj *<i>plan</i>, int <i>tag</i>, char *<i>sendbuf</i>, int <i>nsize</i>,
+char *<i>recvbuf</i>);&nbsp;
+<hr>
+<p>The <b>LB_Comm_Do</b> function performs communication based on a communication
+plan built by <b><a href="#LB_Comm_Create">LB_Comm_Create</a></b>. Using
+the plan, it takes a buffer of object data to be sent and the size (in
+bytes) of each object's data in that buffer and sends the data to other
+processors. The difference from <b>LB_Comm_Do </b>is that
+<br><b>LB_Comm_Do_Reverse </b>uses exactly the reverse (opposite) communication
+pattern.&nbsp; The communication plan describes an action, and this routine
+does the opposite action.&nbsp; <b>LB_Comm_Do_Reverse </b>is particularly
+well suited to return updated data objects to the originating processors.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; plan</i></td>
+
+<td>A pointer to a communication plan built by <b><a href="#LB_Comm_Create">LB_Comm_Create</a></b>.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>tag</i></td>
+
+<td>An MPI message tag.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; sendbuf</i></td>
+
+<td>A buffer filled with object data to be sent to other processors.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; nsize</i></td>
+
+<td>The size (in bytes) of the data for one object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>recvbuf</i></td>
+
+<td>Upon return, a buffer filled with object data received from other processors.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>Error code.</td>
+</tr>
+</table>
+
+<p>
+<hr WIDTH="100%">
+<br><a NAME="LB_Comm_Destroy"></a>int <b>LB_Comm_Destroy</b>(struct Comm_Obj
 **<i>plan</i>);&nbsp;
 <hr>
 <p>The <b>LB_Comm_Destroy</b> function frees all memory associated with
