@@ -744,11 +744,32 @@ AM_CONDITIONAL(BUILD_BELOS_EXAMPLES, test X${ADDON_belos_EXAMPLES} = Xyes)
 # ------------------------------------------------------------------------
 # LOCA Library Check
 # ------------------------------------------------------------------------
+# If inside trilinos, the default is to build loca.  If not,
+# the default is not to build it.
+# We also must turn off loca builds if inside trilinos and 
+# --disable-default-packages is set.
+AC_ARG_ENABLE([default-packages],
+AC_HELP_STRING([--enable-default-packages, flag in trilinos to Turn off default packages including nox and loca]),
+ac_cv_use_default_packages=$enableval, yes)
+
+AC_MSG_CHECKING(whether we should enable default libs)
+
+if test "X$ac_cv_use_default_packages" != "Xno"; then
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
+
+if test X${ac_cv_use_default_packages} != Xyes; then
+  LOCA_DEFAULT=no
+else
+  LOCA_DEFAULT=${INSIDE_TRILINOS}
+fi
 
 AC_ARG_ENABLE(loca,
 [AC_HELP_STRING([--enable-loca],[compile the loca libraries])],
 [BUILD_LIBLOCA=${enableval}],
-[BUILD_LIBLOCA=${INSIDE_TRILINOS}]
+[BUILD_LIBLOCA=${LOCA_DEFAULT}]
 )
 AC_MSG_CHECKING(whether we should build the loca library)
 AC_MSG_RESULT([${BUILD_LIBLOCA}])
