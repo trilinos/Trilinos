@@ -1648,7 +1648,7 @@ if test "${with_trilinos_arch+set}" = set; then
 
 USE_TRILINOS=yes
 USE_TRILINOS_ARCH=yes
-TRILINOS_ARCH_DIR=$enableval
+TRILINOS_ARCH_DIR=$withval
 
 fi;
 
@@ -4433,8 +4433,6 @@ if test -n "\$CONFIG_FILES"; then
   # Protect against being on the right side of a sed subst in config.status.
   sed 's/,@/@@/; s/@,/@@/; s/,;t t\$/@;t t/; /@;t t\$/s/[\\\\&,]/\\\\&/g;
    s/@@/,@/; s/@@/@,/; s/@;t t\$/,;t t/' >\$tmp/subs.sed <<\\CEOF
-s,@TRILINOS_CXXFLAGS@,$TRILINOS_CXXFLAGS,;t t
-s,@TRILINOS_LDADD@,$TRILINOS_LDADD,;t t
 s,@SHELL@,$SHELL,;t t
 s,@PATH_SEPARATOR@,$PATH_SEPARATOR,;t t
 s,@exec_prefix@,$exec_prefix,;t t
@@ -4514,6 +4512,8 @@ s,@ac_ct_CXX@,$ac_ct_CXX,;t t
 s,@CXXDEPMODE@,$CXXDEPMODE,;t t
 s,@RANLIB@,$RANLIB,;t t
 s,@ac_ct_RANLIB@,$ac_ct_RANLIB,;t t
+s,@TRILINOS_CXXFLAGS@,$TRILINOS_CXXFLAGS,;t t
+s,@TRILINOS_LDADD@,$TRILINOS_LDADD,;t t
 s,@BUILD_NOXEPETRA_TRUE@,$BUILD_NOXEPETRA_TRUE,;t t
 s,@BUILD_NOXEPETRA_FALSE@,$BUILD_NOXEPETRA_FALSE,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t

@@ -162,7 +162,7 @@ AC_ARG_WITH(trilinos_arch,
 [
 USE_TRILINOS=yes
 USE_TRILINOS_ARCH=yes
-TRILINOS_ARCH_DIR=$enableval
+TRILINOS_ARCH_DIR=$withval
 ]
 )
 
