@@ -501,8 +501,9 @@ report($SUMMARY);
                         
                         # fix invoke configure
                         my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_configure_log_$hostOS.txt";
-                        my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";
-                        (my $fixFailed, my $brokenPackage) = fixInvokeConfigure($log, $invokeConfigure, $comm);
+                        my $invokeConfigure = "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";
+                        my $packagesMakefile = "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/Makefile";
+                        (my $fixFailed, my $brokenPackage) = fixInvokeConfigure($log, $invokeConfigure, $packagesMakefile, $comm);
                         
                         if ($fixFailed == $SUCCESS || $fixFailed == $IC_FIX_FAIL_NO_CHANGE) {
                             
@@ -576,14 +577,15 @@ report($SUMMARY);
                             # fix invoke configure         
                             my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_build_log_$hostOS.txt";
                             my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";
-                            (my $fixFailed, my $brokenPackage) = fixInvokeConfigure($log, $invokeConfigure, $comm);
+                            my $packagesMakefile = "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/Makefile";
+                            (my $fixFailed, my $brokenPackage) = fixInvokeConfigure($log, $invokeConfigure, $packagesMakefile, $comm);
                             
                             my $command = "";
                             $command .= "cat $options{'TRILINOS_DIR'}[0]/testharness/temp/";
                             $command .= "trilinos_build_log_$hostOS.txt | tail -100 > ";
                             $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
                             $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log";
-                            system $command;
+                            system $command;     
                                 
                             # remove broken package (in recover mode only)
                             if ($flags{r}) {                            
@@ -851,7 +853,8 @@ report($SUMMARY);
     sub fixInvokeConfigure {   
         my $log = $_[0];    
         my $invokeConfigure = $_[1];
-        my $comm = $_[2];
+        my $packagesMakefile = $_[2];
+        my $comm = $_[3];
             
         # open configure/build log for reading
         open (LOG, "<$log")
@@ -869,14 +872,84 @@ report($SUMMARY);
             $file =~ m/.*^Running(.*?)Configure Script/ms;
             if (defined $1) { $brokenPackage = $1; }
         } elsif ($log =~ m/build/) {
-            my $prefix = "";            
-            if ($comm eq "serial") { 
-                $prefix = "$options{'TRILINOS_DIR'}[0]/$options{'SERIAL_DIR'}[0]";
-            } elsif ($comm eq "mpi") {
-                $prefix = "$options{'TRILINOS_DIR'}[0]/$options{'MPI_DIR'}[0]"
-            }                
-            $file =~ m/.*$prefix\/packages\/(\w*)\W/ms;            
-            if (defined $1) { $brokenPackage = $1; }
+        
+            my $lastSuccessfulPackage = "first";
+            $file =~ m/.*^Trilinos package (\w*?) built successfully/ms;        
+            if ($1) { $lastSuccessfulPackage = $1; }
+            
+            $lastSuccessfulPackage = uc($lastSuccessfulPackage);
+            $lastSuccessfulPackage = "$lastSuccessfulPackage"."_SUBDIR";
+            
+            my @enabledPackageSubdirs = ();
+            
+            # parse package/Makefile, compiling a list of enabled packages
+            open (PACKAGES_MAKEFILE, "<$packagesMakefile")
+                or die "can't open $packagesMakefile";
+            while (my $line = <PACKAGES_MAKEFILE>) {
+                $line =~ s/^\s*//;  # trim leading spaces
+                $line =~ s/\s*$//;  # trim trailing spaces
+                if ($line =~ m/^(\w*?_SUBDIR) = \w*$/) {
+                    push (@enabledPackageSubdirs, $1);
+                }                
+            } # while ($line)
+            close PACKAGES_MAKEFILE;
+            
+            my @subdirList = ();
+            push (@subdirList, "FIRST_SUBDIR");
+            
+            # parse package/Makefile, extracting subdir list
+            open (PACKAGES_MAKEFILE, "<$packagesMakefile")
+                or die "can't open $packagesMakefile";
+            my $continue = 0;
+            while (my $line = <PACKAGES_MAKEFILE>) {
+                $line =~ s/^\s*//;  # trim leading spaces
+                $line =~ s/\s*$//;  # trim trailing spaces
+                if ($line =~ m/^SUBDIRS = .*?$/) {
+                    $continue = 1;
+                }                
+                if ($continue) {
+                    while ($line =~ m/\$\((\w*?)\)/) {
+                        push (@subdirList, $1);
+                        $line =~ s/\$\($1\)//;                      
+                    }
+                }                
+                if ($continue && $line =~ m/^.*?\\$/) {
+                    $continue = 1;
+                } else {
+                    $continue = 0;
+                }
+            } # while ($line)
+            close PACKAGES_MAKEFILE;
+            
+            # find position of last successfully built package in subdir list
+            my $i;
+            for ($i=0; $i<$#{@subdirList}; $i++) {
+                if ($subdirList[$i] eq $lastSuccessfulPackage) {
+                    last;   # equivalent to break 
+                }
+            }
+            
+            $i++;
+            my $potentialMatch = $subdirList[$i];
+            my $foundBrokenPackage = 0;
+            
+            # find next enabled package in subdir list
+            while ($i < $#{@subdirList} && !$foundBrokenPackage) {
+                foreach my $entry (@enabledPackageSubdirs) {
+                    if ($entry eq $potentialMatch) {
+                        $foundBrokenPackage = 1;
+                        $brokenPackage = $potentialMatch;
+                        last;   # equivalent to break;
+                    }
+                }
+                $i++;
+                $potentialMatch = $subdirList[$i];
+            }
+            
+            if ($foundBrokenPackage) {
+                $brokenPackage =~ s/_SUBDIR//;
+            }
+                        
         }
         
         if (defined $brokenPackage) {
@@ -966,7 +1039,7 @@ report($SUMMARY);
             
         my $command = "";
         $command .= "./invoke-configure >> $options{'TRILINOS_DIR'}[0]";
-        $command .= "/testharness/temp/trilinos_configure_log_$hostOS.txt".($isLinux?" 2>&1":"");
+        $command .= "/testharness/temp/trilinos_configure_log_$hostOS.txt 2>&1";
         return system $command;
         
     } # configure()
@@ -988,10 +1061,10 @@ report($SUMMARY);
         my $command = "";
         if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
             $command .= "make $options{'MAKE_FLAGS'}[0] >> $options{'TRILINOS_DIR'}[0]";
-            $command .= "/testharness/temp/trilinos_build_log_$hostOS.txt".($isLinux?" 2>&1":"");
+            $command .= "/testharness/temp/trilinos_build_log_$hostOS.txt 2>&1";
         } else {
             $command .= "make >> $options{'TRILINOS_DIR'}[0]";
-            $command .= "/testharness/temp/trilinos_build_log_$hostOS.txt".($isLinux?" 2>&1":"");
+            $command .= "/testharness/temp/trilinos_build_log_$hostOS.txt 2>&1";
         }
         return system $command; 
         
@@ -1014,7 +1087,7 @@ report($SUMMARY);
         # run test script
         my $command = "";
         $command .= "$script $buildDir True >> $options{'TRILINOS_DIR'}[0]";
-        $command .= "/testharness/temp/test_compile_log.txt".($isLinux?" 2>&1":"");
+        $command .= "/testharness/temp/test_compile_log.txt 2>&1";
         return system $command;
         
     } # test()
