@@ -41,19 +41,19 @@ noinst_PROGRAMS = 3d_Poisson
 
 #copy these files over to the build area
 GetNecessaryFiles: $(EXTRA_DIST)
-	@if (! [ -e 3d_Poisson.csh ] ); then cp -f $(srcdir)/3d_Poisson.csh .; fi
-	@if (! [ -e baseline1 ] ); then cp -f $(srcdir)/baseline1 .; fi
-	@if (! [ -e baseline2 ] ); then cp -f $(srcdir)/baseline2 .; fi
-	@if (! [ -e baseline3 ] ); then cp -f $(srcdir)/baseline3 .; fi
-	@if (! [ -e baseline5 ] ); then cp -f $(srcdir)/baseline5 .; fi
-	@if (! [ -e baseline6 ] ); then cp -f $(srcdir)/baseline6 .; fi
-	@if (! [ -e baseline7 ] ); then cp -f $(srcdir)/baseline7 .; fi
-	@if (! [ -e ml_inputfile1 ] ); then cp -f $(srcdir)/ml_inputfile1 .; fi
-	@if (! [ -e ml_inputfile2 ] ); then cp -f $(srcdir)/ml_inputfile2 .; fi
-	@if (! [ -e ml_inputfile3 ] ); then cp -f $(srcdir)/ml_inputfile3 .; fi
-	@if (! [ -e ml_inputfile5 ] ); then cp -f $(srcdir)/ml_inputfile5 .; fi
-	@if (! [ -e ml_inputfile6 ] ); then cp -f $(srcdir)/ml_inputfile6 .; fi
-	@if (! [ -e ml_inputfile7 ] ); then cp -f $(srcdir)/ml_inputfile7 .; fi
+	@if test ! -e 3d_Poisson.csh; then cp -f $(srcdir)/3d_Poisson.csh .; fi
+	@if test ! -e baseline1 ; then cp -f $(srcdir)/baseline1 .; fi
+	@if test ! -e baseline2 ; then cp -f $(srcdir)/baseline2 .; fi
+	@if test ! -e baseline3 ; then cp -f $(srcdir)/baseline3 .; fi
+	@if test ! -e baseline5 ; then cp -f $(srcdir)/baseline5 .; fi
+	@if test ! -e baseline6 ; then cp -f $(srcdir)/baseline6 .; fi
+	@if test ! -e baseline7 ; then cp -f $(srcdir)/baseline7 .; fi
+	@if test ! -e ml_inputfile1 ; then cp -f $(srcdir)/ml_inputfile1 .; fi
+	@if test ! -e ml_inputfile2 ; then cp -f $(srcdir)/ml_inputfile2 .; fi
+	@if test ! -e ml_inputfile3 ; then cp -f $(srcdir)/ml_inputfile3 .; fi
+	@if test ! -e ml_inputfile5 ; then cp -f $(srcdir)/ml_inputfile5 .; fi
+	@if test ! -e ml_inputfile6 ; then cp -f $(srcdir)/ml_inputfile6 .; fi
+	@if test ! -e ml_inputfile7 ; then cp -f $(srcdir)/ml_inputfile7 .; fi
 
 3d_Poisson_DEPENDENCIES = \
     $(top_builddir)/src/libml.a \
