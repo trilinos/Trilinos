@@ -85,7 +85,9 @@ echo `uname -a` >>& $file
 foreach f ( AztecSimple MultiLevelPreconditioner_NonSym MultiLevelPreconditioner_Sym MultiLevelPreconditioner_Maxwell )
 	cd $f
     touch fakefile.exe
-    set exefiles = (*.exe)
+    set tt = (*.exe)
+    # get rid of spaces
+    set exefiles = `echo ${tt} | sed "s/ //g"`
     # avoids problem of no executables in subdirectory
     if ( ${exefiles} != 'fakefile.exe' ) then
       rm -f fakefile.exe
@@ -109,7 +111,7 @@ foreach f ( AztecSimple MultiLevelPreconditioner_NonSym MultiLevelPreconditioner
 		  endif
 	  end
     else
-      echo "******** Test w/ 4 proc did not run, no executable found ********" >>& ../$file
+      echo "*** Test ${f} did not run, no executable found ***" >>& ../$file
       echo "******** Perhaps a package the test depends on didn't build? ****" >>& ../$file
       rm -f fakefile.exe
     endif
