@@ -30,8 +30,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_EIGENSOLVER_LAPACKSTRATEGY_H
-#define LOCA_EIGENSOLVER_LAPACKSTRATEGY_H
+#ifndef LOCA_EIGENSOLVER_DGGEVSTRATEGY_H
+#define LOCA_EIGENSOLVER_DGGEVSTRATEGY_H
 
 #include "LOCA_Eigensolver_AbstractStrategy.H" // base class
 
@@ -39,30 +39,28 @@ namespace LOCA {
 
   namespace Eigensolver {
 
-    //! LAPACK eigensolver strategy
+    //! LAPACK DGGEV eigensolver strategy
     /*!
-     * This class implements an eigensolver strategy using LAPACK routines.
+     * This class implements an eigensolver strategy using LAPACK routines
+     * DGGEV and DGEEV
      */
-    class LAPACKStrategy : public LOCA::Eigensolver::AbstractStrategy {
+    class DGGEVStrategy : public LOCA::Eigensolver::AbstractStrategy {
 
     public:
 
       //! Constructor
-      LAPACKStrategy(
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+      DGGEVStrategy(
+	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	     const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
       
       //! Destructor
-      virtual ~LAPACKStrategy();
+      virtual ~DGGEVStrategy();
 
       //! Compute eigenvalues/eigenvectors
       virtual NOX::Abstract::Group::ReturnType
-      computeEigenvalues(
-		    const Teuchos::RefCountPtr<NOX::Abstract::Group>& group);
+      computeEigenvalues(NOX::Abstract::Group* group);
 
-    protected:
-
-    }; // Class AnasaziStrategy
+    }; // Class DGGEVStrategy
 
   } // Namespace Eigensolver
 

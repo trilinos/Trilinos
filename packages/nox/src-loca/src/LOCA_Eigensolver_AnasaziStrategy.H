@@ -51,13 +51,40 @@ namespace LOCA {
     /*!
      * This class implements an eigensolver strategy using the generic
      * Trilinos eigensolver package Anasazi.  Since Anasazi is a generic
-     * solver, this strategy will work with any group implementation.
+     * solver, this strategy will work with any group implementation.  This
+     * strategy references the following parameters passed through the
+     * \c eigenParams argument to the constructor:
+     * <ul>
+     * <li> "Operator" -- [string] (default: "Jacobian inverse") Operator
+     *      to compute eigenvalues of.
+     * <li> "Block Size" -- [int] (default: 1) Block size
+     * <li> "Arnoldi Size" -- [int] (default: 30) Maximum length of the 
+     *       Arnoldi factorization
+     * <li> "NEV" -- [int] (default: 4) Number of requested eigenvalues
+     * <li> "Tol" -- [double] (default: 1.0e-7) Tolerance for the converged 
+     *       eigenvalues
+     * <li> "Convergence Check" -- [int] (default: 1) Checks convergence 
+     *       every so many steps
+     * <li> "Restarts" -- [int] (default: 1) Number of restarts allowed
+     * <li> "Debug Level" -- [int] (default: 1) Anasazi Debug level
+     * <li> "Sorting Order" -- [string" (default: "LM") Sorting order of 
+     *       printed eigenvalues
+     * <li> "Save Eigenvectors" -- [int] (default: 0) How many eigenvectors
+     *      to save
+     * <li> "Cayley Pole" -- [double] (default: 0.0) Cayley transformation pole
+     * <li> "Cayley Zero" -- [double] (default: 0.0) Cayley tranformation zero
+     * </ul>
      */
     class AnasaziStrategy : public LOCA::Eigensolver::AbstractStrategy {
 
     public:
 
       //! Constructor
+      /*!
+       * \param eigenParams [in] %Eigensolver parameters as described above.
+       * \param solverParams [in] Linear solver parameters passed to linear
+       * solver.
+       */
       AnasaziStrategy(
 	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
 	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);

@@ -106,14 +106,14 @@ liblocalapack_la_DEPENDENCIES =  \
 	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 am__objects_1 = liblocalapack_la-LOCA_LAPACK_Group.lo \
-	liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.lo
+	liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.lo
 am__objects_2 =
 am_liblocalapack_la_OBJECTS = $(am__objects_1) $(am__objects_2)
 liblocalapack_la_OBJECTS = $(am_liblocalapack_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Plo \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -136,7 +136,7 @@ DIST_SOURCES = $(liblocalapack_la_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/LOCA_LAPACK.H \
 	$(srcdir)/LOCA_LAPACK_Group.H \
 	$(srcdir)/LOCA_LAPACK_Interface.H \
-	$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.H
+	$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -370,11 +370,11 @@ LOCA_LAPACK_H = \
 	$(srcdir)/LOCA_LAPACK.H \
 	$(srcdir)/LOCA_LAPACK_Group.H \
 	$(srcdir)/LOCA_LAPACK_Interface.H \
-	$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.H
+	$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.H
 
 LOCA_LAPACK = \
 	$(srcdir)/LOCA_LAPACK_Group.C \
-	$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C
+	$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
 
 
 # ------------------------------------------------------------------------
@@ -480,7 +480,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocalapack_la-LOCA_LAPACK_Group.Plo@am__quote@
 
 .C.o:
@@ -531,29 +531,29 @@ liblocalapack_la-LOCA_LAPACK_Group.lo: $(srcdir)/LOCA_LAPACK_Group.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_LAPACK_Group.lo `test -f '$(srcdir)/LOCA_LAPACK_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Group.C
 
-liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.o: $(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.o -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Tpo" -c -o liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Po"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C' object='liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Po' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.TPo' @AMDEPBACKSLASH@
+liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.o: $(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.o -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo" -c -o liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Po"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' object='liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Po' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
 
-liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.obj: $(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.obj -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Tpo" -c -o liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Po"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C' object='liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Po' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.TPo' @AMDEPBACKSLASH@
+liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.obj: $(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.obj -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo" -c -o liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Po"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' object='liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Po' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; fi`
 
-liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.lo: $(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.lo -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Tpo" -c -o liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.lo `test -f '$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Plo"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C' object='liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.Plo' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.TPlo' @AMDEPBACKSLASH@
+liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.lo: $(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -MT liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.lo -MD -MP -MF "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo" -c -o liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.lo `test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo" "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Plo"; else rm -f "$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' object='liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.Plo' tmpdepfile='$(DEPDIR)/liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_Eigensolver_LAPACKStrategy.lo `test -f '$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_LAPACKStrategy.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_la_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_la-LOCA_Eigensolver_DGGEVStrategy.lo `test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
 
 mostlyclean-libtool:
 	-rm -f *.lo

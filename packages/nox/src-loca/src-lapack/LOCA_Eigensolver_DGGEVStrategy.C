@@ -30,38 +30,39 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Eigensolver_LAPACKStrategy.H"
+#include "LOCA_Eigensolver_DGGEVStrategy.H"
 #include "NOX_Parameter_List.H"
 #include "NOX_LAPACK_Wrappers.H"
 #include "LOCA_LAPACK_Group.H"
 #include "LOCA_Utils.H"
 
-LOCA::Eigensolver::LAPACKStrategy::LAPACKStrategy(
+LOCA::Eigensolver::DGGEVStrategy::DGGEVStrategy(
 		 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigParams,
 		 const Teuchos::RefCountPtr<NOX::Parameter::List>& solParams) 
 {
 }
 
-LOCA::Eigensolver::LAPACKStrategy::~LAPACKStrategy() 
+LOCA::Eigensolver::DGGEVStrategy::~DGGEVStrategy() 
 {
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Eigensolver::LAPACKStrategy::computeEigenvalues(
-		       const Teuchos::RefCountPtr<NOX::Abstract::Group>& group)
+LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
+						 NOX::Abstract::Group* group)
 {
 
   // Get LAPACK group
-  Teuchos::RefCountPtr<LOCA::LAPACK::Group> grp = 
-    Teuchos::rcp_dynamic_cast<LOCA::LAPACK::Group>(group);
+  LOCA::LAPACK::Group* grp = 
+    dynamic_cast<LOCA::LAPACK::Group*>(group);
  
   // Check to make sure we have dggev available if we need generalized 
   // eigenvalues.
 #ifndef HAVE_LAPACK_GENEV
   if (hasMassMatrix) {
     if (LOCA::Utils::doPrint(Utils::StepperIteration)) {
-      errorCheck.printWarning("LOCA::LAPACK::Group::computeEigenvalues",
-				     "LAPACK Generalized eigensolver (dggev) requested but not available!");
+      errorCheck.printWarning(
+	"LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues",
+	"LAPACK Generalized eigensolver (dggev) requested but not available!");
     }
     return LOCA::Abstract::Group::Ok;
   }

@@ -30,52 +30,58 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_EIGENSOLVER_FACTORY_H
-#define LOCA_EIGENSOLVER_FACTORY_H
+#ifndef LOCA_PARAMETER_SUBLISTPARSER_H
+#define LOCA_PARAMETER_SUBLISTPARSER_H
 
-#include "LOCA_Eigensolver_AbstractStrategy.H"
 #include "Teuchos_RefCountPtr.hpp"
+
+#include "NOX_Common.H"
+#include "NOX_Parameter_List.H"
 
 namespace LOCA {
 
-  namespace Eigensolver {
+  namespace Parameter {
 
-    //! Factory for creating %Eigensolver strategy objects
+    //! Class to parse a parameter list for sublists
     /*!
-     * The parameters passed to the create() through the \c eigenParams
-     * argument method should specify the
-     * "Method" as described below, as well as any additional parameters
-     * for the particular strategy.
-     * <ul>
-     * <li> "Method" - Name of the eigensolver method. Valid choices are
-     *   <ul>
-     *   <li> "Default" (LOCA::Eigensolver::DefaultStrategy) [Default]
-     *   <li> "Anasazi" (LOCA::Eigensolver::AnasaziStrategy)
-     *   </ul>
-     * </ul>
+     * This class parses a supplied parameter list and locates various
+     * sublists.  This saves the code from having to traverse the parameter
+     * list to find sublists itself, and puts in one location the
+     * hard-coded structure of the parameter list.
      */
-    class Factory {
+    class SublistParser {
+
+      //! Map type to hold sublists
+      typedef map<string, 
+		  Teuchos::RefCountPtr<NOX::Parameter::List> > SublistMap;
+
+      //! Iterator type to traverse SublistMap
+      typedef SublistMap::iterator SublistMapIterator;
 
     public:
 
       //! Constructor
-      Factory() {}
+      SublistParser();
 
       //! Destructor
-      virtual ~Factory() {}
+      ~SublistParser();
 
-      //! Create eigensolver strategy
-      /*!
-       * \param eigenParams [in] %Eigensolver parameters as described above
-       * \param solverParams [in] Linear solver parameters
-       */
-      Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
-      create(const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+      //! Parse parameter list to find sublists
+      void parseSublists(
+	     const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams);
 
-    }; // Class Factory
+      //! Return sublist of name \c name
+      Teuchos::RefCountPtr<NOX::Parameter::List> 
+      getSublist(const string& name);
 
-  } // Namespace Eigensolver
+    protected:
+
+      //! Map to hold sublists
+      SublistMap sublistMap;
+
+    }; // Class SublistParser
+
+  } // Namespace Parameter
 
 } // Namespace LOCA
 

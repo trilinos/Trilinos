@@ -39,11 +39,13 @@
 
 LOCA_ABSTRACT_H = \
         $(srcdir)/LOCA_Abstract_Group.H \
-	$(srcdir)/LOCA_Abstract_Iterator.H
+	$(srcdir)/LOCA_Abstract_Iterator.H \
+	$(srcdir)/LOCA_Abstract_Factory.H
 
 LOCA_ABSTRACT = \
         $(srcdir)/LOCA_Abstract_Group.C \
-	$(srcdir)/LOCA_Abstract_Iterator.C
+	$(srcdir)/LOCA_Abstract_Iterator.C \
+	$(srcdir)/LOCA_Abstract_Factory.C
 
 LOCA_EXTENDED_H = \
 	$(srcdir)/LOCA_Extended_Vector.H \
@@ -180,11 +182,13 @@ LOCA_PARAMETER_H = \
         $(srcdir)/LOCA_Parameter_Vector.H \
 	$(srcdir)/LOCA_Parameter_Library.H \
 	$(srcdir)/LOCA_Parameter_LibraryT.H \
-	$(srcdir)/LOCA_Parameter_Entry.H
+	$(srcdir)/LOCA_Parameter_Entry.H \
+	$(srcdir)/LOCA_Parameter_SublistParser.H
 
 LOCA_PARAMETER = \
         $(srcdir)/LOCA_Parameter_Vector.C \
-	$(srcdir)/LOCA_Parameter_Library.C 
+	$(srcdir)/LOCA_Parameter_Library.C \
+	$(srcdir)/LOCA_Parameter_SublistParser.C
 
 LOCA_PREDICTOR_H = \
 	$(srcdir)/LOCA_Predictor_Generic.H \
@@ -256,6 +260,12 @@ LOCA_EIGENSOLVER = \
 	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C \
 	$(srcdir)/LOCA_Eigensolver_Factory.C
 
+LOCA_FACTORY_H = \
+	$(srcdir)/LOCA_Factory.H
+
+LOCA_FACTORY = \
+	$(srcdir)/LOCA_Factory.C
+
 
 if BUILD_LOCAANASAZI
 
@@ -302,7 +312,8 @@ LOCA_H = \
 	$(LOCA_STEPPER_H) \
 	$(LOCA_ABSTRACT_H) \
 	$(LOCA_STATUSTEST_H) \
-	$(LOCA_EIGENSOLVER_H)
+	$(LOCA_EIGENSOLVER_H) \
+	$(LOCA_FACTORY_H)
 
 LOCA = \
 	$(LOCA_EXTENDED) \
@@ -321,7 +332,8 @@ LOCA = \
 	$(LOCA_STEPPER) \
 	$(LOCA_ABSTRACT) \
 	$(LOCA_STATUSTEST) \
-	$(LOCA_EIGENSOLVER)
+	$(LOCA_EIGENSOLVER) \
+	$(LOCA_FACTORY)
 
 # ------------------------------------------------------------------------
 # Loca library specifications
