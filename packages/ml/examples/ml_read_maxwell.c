@@ -648,9 +648,6 @@ int main(int argc, char *argv[])
   if ( proc_config[AZ_node] == 0 )
     printf("Coarse level = %d \n", coarsest_level);
 	
-  blocks = (int *) ML_allocate(sizeof(int)*Nlocal_edges);
-
-  /* This should be done somewhere else. */
 
   /* set up smoothers for all levels but the coarsest */
   for (level = N_levels-1; level > coarsest_level; level--)
@@ -704,12 +701,14 @@ int main(int argc, char *argv[])
       /* elasticity problems.  However, I don't believe that this is very */
       /* efficient in parallel.                                           */       
       /*
+         blocks = (int *) ML_allocate(sizeof(int)*ml_edges->Amat[level].invec_leng);
 	nblocks = ml_edges->Amat[level].invec_leng;
 	for (i =0; i < nblocks; i++) blocks[i] = i;
 	ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml_edges , level,
 	ML_PRESMOOTHER, nsmooth, 1., nblocks, blocks);
 	ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml_edges, level,
 	ML_POSTSMOOTHER, nsmooth, 1., nblocks, blocks);
+	ML_free(blocks);
 	*/
 
       /* Jacobi Smoothing                                                 */
@@ -727,9 +726,12 @@ int main(int argc, char *argv[])
       else if (ML_strcmp(context->smoother,"Metis") == 0)
 	{
 	  nblocks = 250;
+	  nblocks = ml_edges->Amat[level].invec_leng/25;
+	  nblocks++;
 	  ML_Gen_Blocks_Metis(ml_edges, level, &nblocks, &blocks);
 	  ML_Gen_Smoother_VBlockSymGaussSeidel(ml_edges , level, ML_BOTH,
 					       nsmooth,1., nblocks, blocks);
+	  ML_free(blocks);
 	}
       else
 	{
@@ -776,9 +778,12 @@ int main(int argc, char *argv[])
   }
   else if (ML_strcmp(context->coarse_solve,"Metis") == 0) {
     nblocks = 250;
+    nblocks = ml_edges->Amat[coarsest_level].invec_leng/25;
+    nblocks++;
     ML_Gen_Blocks_Metis(ml_edges, coarsest_level, &nblocks, &blocks);
     ML_Gen_Smoother_VBlockSymGaussSeidel(ml_edges , coarsest_level, ML_BOTH, 
 					 nsmooth,1., nblocks, blocks);
+    if (blocks != NULL) ML_free(blocks);
   }
   else if (ML_strcmp(context->coarse_solve,"SuperLU") == 0) {
     ML_Gen_CoarseSolverSuperLU( ml_edges, coarsest_level);
@@ -787,7 +792,6 @@ int main(int argc, char *argv[])
     printf("unknown coarse grid solver %s\n",context->coarse_solve);
     exit(1);
   }
-  ML_free(blocks);
 		
   ML_Gen_Solver(ml_edges, ML_MGV, N_levels-1, coarsest_level); 
   AZ_defaults(options, params);
