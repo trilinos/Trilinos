@@ -111,6 +111,7 @@ ZTIMER *Zoltan_Timer_Copy(ZTIMER *from)
 }
 int Zoltan_Timer_Copy_To(ZTIMER **to, ZTIMER *from)
 {
+  ZTIMER *toptr = NULL;
   if (!to){
     return ZOLTAN_FATAL;
   }
@@ -121,7 +122,7 @@ int Zoltan_Timer_Copy_To(ZTIMER **to, ZTIMER *from)
 
   if (from){
     *to = (ZTIMER *)ZOLTAN_MALLOC(sizeof(ZTIMER));
-    ZTIMER *toptr = *to;
+    toptr = *to;
 
     toptr->Timer_Flag = from->Timer_Flag;
     toptr->Length = from->Length;
