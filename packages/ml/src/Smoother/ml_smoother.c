@@ -276,11 +276,12 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
 {
    int i, j, n, *cols, allocated_space;
    ML_Operator *Amat;
-   double *res,omega, *diagonal, *vals, *tdiag;
+   double *res,omega, *diagonal, *vals, *tdiag, *res2 = NULL;
+   double r_z_dot, p_ap_dot;
    ML_Smoother  *smooth_ptr;
 #ifdef ML_SMOOTHER_DEBUG
    ML_Comm      *comm;
-   double *res2, res_norm;
+   double res_norm;
 #endif
 
    smooth_ptr = (ML_Smoother *) sm;
@@ -330,8 +331,11 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
 
    n     = Amat->outvec_leng;
    res   = (double *) malloc(n*sizeof(double));
+   if (smooth_ptr->omega == ML_ONE_STEP_CG) {
+      res2  = (double *) malloc(n*sizeof(double));
+   }
 #ifdef ML_SMOOTHER_DEBUG
-   res2  = (double *) malloc(n*sizeof(double));
+   if (res2 != NULL) res2  = (double *) malloc(n*sizeof(double));
    printf("    ML_Jacobi, omega = %e\n", omega);
 #endif
 
@@ -340,6 +344,17 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
       ML_Operator_Apply(Amat, n, x, n, res);
       for (i = 0; i < n; i++) res[i] = rhs[i] - res[i];
       for (i = 0; i < n; i++) res[i] /= diagonal[i];
+
+      if (smooth_ptr->omega == ML_ONE_STEP_CG) {
+         /* Compute damping parameter that corresonds to one step of CG. */
+         r_z_dot = 0.;
+         for (i = 0; i < n; i++) r_z_dot += res[i]*res[i]*diagonal[i];
+         r_z_dot = ML_gsum_double(r_z_dot, smooth_ptr->my_level->comm);
+         ML_Operator_Apply(Amat, n, res, n, res2);
+         p_ap_dot = ML_gdot(n, res, res2, smooth_ptr->my_level->comm);
+         if (p_ap_dot != 0.0) omega = r_z_dot/p_ap_dot;
+         else omega = 1.;
+      }
       for (i = 0; i < n; i++) x[i] += omega*res[i];
 #ifdef ML_SMOOTHER_DEBUG
       ML_Operator_Apply(Amat, n, x, n, res2);
@@ -348,9 +363,7 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
       printf("      Jacobi : iter = %2d, rnorm = %e\n", j, res_norm);
 #endif
    }
-#ifdef ML_SMOOTHER_DEBUG
-   free(res2);
-#endif
+   if (res2 != NULL) free(res2);
    free(res);
    return 0;
 }
