@@ -43,10 +43,11 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-#  #np# - e-mail address below
-AC_INIT(new_package, 0.0, YourName@cs.sandia.gov)
+#  #np# - package name, version number, and e-mail address below
+AC_INIT(new_package, 0.0, YourName@sandia.gov)
 
 # Hello World!
+#  #np# - package name below
 echo "----------------------------------------"
 echo "Running New_Package Configure Script"
 echo "----------------------------------------"
@@ -68,11 +69,11 @@ AC_CONFIG_SRCDIR(/src/Newp_Hello.cpp)
 #   of files that it looked like it might delete under certain circumstances,
 #   or perhaps put into some tar ball.  Anyway, it scared me off.
 #   In order to get rid of the local config directory, you have to 
-#   references to the config directory in MAkefile.am and in bootstrap
+#   reference the config directory in Makefile.am and in bootstrap
 #   (which should use aclocal -I ../../config)
 #
 AC_CONFIG_AUX_DIR(config)
-
+#  #np# - Change file names in next line 
 # Configure should create src/New_Package_config.h from src/New_Package_config.h.in
 
 AM_CONFIG_HEADER(src/New_Package_config.h:src/New_Package_config.h.in)
@@ -94,27 +95,21 @@ AC_CANONICAL_TARGET
 
 # Use automake
 
-AM_INIT_AUTOMAKE(new_package, 2.0)
+#  #np# - Package name and version below
+AM_INIT_AUTOMAKE(new_package, 0.0)
 
 # Specify required version of autoconf.
 
 AC_PREREQ(2.52)
 
-# Specify revision number of configure.ac that was used to generate
-# configure.
-
-dnl Commented out this line for now because it causes headaches in
-dnl committing.
-dnl AC_REVISION($Revision$)
-
-#  #np# - eliminate f77 if your package does not use fortran
+#  #np# - can eliminate compiler checks below if your package does not use the
+#         language corresponding to the check
 # ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
 
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ gcc c++ cxx)
-BASE_CXX=${CXX}
 AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
 
@@ -124,17 +119,9 @@ AC_PROG_RANLIB
 
 TAC_ARG_CONFIG_MPI
 
-#   These flags are not fully supported as of Jan 2003
-# ------------------------------------------------------------------------
-# Checks for --enable-debug, --enable-optimize, --enable-profile, --enable-purify
-# Changes flags and compiler names accordingly
-# ------------------------------------------------------------------------
-
-TAC_ARG_ENABLE_COMPILER_OPTIONS
-
 # ------------------------------------------------------------------------
 # Checks for extra flags
-# #np# - You can pull fflags if you aren't using fortran 
+# #np# - You can pull flag checks for languages not used in package 
 # ------------------------------------------------------------------------
 # Check if --with-flags present, prepend any specs to FLAGS
 
@@ -155,20 +142,11 @@ TAC_ARG_WITH_AR
 # ------------------------------------------------------------------------
 TAC_ARG_CHECK_MPI
 
+#  #np# - Customize the checks for headers needed in package being added.
+#NOTE: This section still needs to be updated for new_package, it is still 
+# code from Epetra
 # ------------------------------------------------------------------------
-# Special check for case of running on TFLOP
-# ------------------------------------------------------------------------
-AC_MSG_CHECKING([if host is TFLOP (and therefore needs special TFLOP define statement)])
-if test "X${host}" = "Xtflop"; then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(TFLOP,,[define if compiling for ASCI Red, aka TFLOP])
-else
-  AC_MSG_RESULT(no)
-fi
-
-#  #np# - May not be required, but strongly recommended.
-# ------------------------------------------------------------------------
-# Checks for header files - customize Epetra_ConfigDefs.h 
+# Checks for header files - used in Epetra_ConfigDefs.h 
 # ------------------------------------------------------------------------
 
 AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
@@ -231,22 +209,22 @@ AC_CXX_STD_SPRINTF
 
 # ------------------------------------------------------------------------
 # #np# newp_swahili is an example of a package feature which requires both
-# a cpp #define command and one or more source or header files (and hence
-# a change to the makefile).
+# a cpp #define command and one or more source or header files  - ie 
+# conditional compilation which requires a change to the makefile.
 # If configure is called with "--enable-newp_swahili", it will place 
 # a #define HAVE_NEWP_SWAHILI in New_Package_config.h and add source 
 # and header files as specified in Makefile.am 
 #
 # To add an option to your package, you will need to modify this file
-# (i.e. configure.ac), src/Makefile.am and src/New_Package_config.h.in
-# Look for SWAHILI in each of those files.
+# (i.e. configure.ac), and src/Makefile.am.  A bootstrap is also required.
+# Look for SWAHILI in both files listed above.
 #
 # TAC_ARG_ENABLE_OPTION performs several tasks, including:
 #   1)  Setting a help string
 #   2)  Printing a message to standard out
-#   3)  Defining HAVE_NEWP_SWAHILI (For use within Makefile.am)
+#   3)  Defining HAVE_NEWP_SWAHILI (For use in New_Package_config.h)
 #
-# AM_CONDITIONAL puts HAVE_NEWP_SWAHILI in New_Package_config.h
+# AM_CONDITIONAL makes HAVE_NEWP_SWAHILI available for use in Makefile.am
 # ------------------------------------------------------------------------
 #
 TAC_ARG_ENABLE_OPTION(newp_swahili, [enable swahili support], NEWP_SWAHILI, no)
@@ -256,20 +234,23 @@ AM_CONDITIONAL(HAVE_NEWP_SWAHILI, [test "X$ac_cv_use_newp_swahili" != "Xno"])
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
-#  The threads packages do not work yet (Jan 2003)
-# TAC_ARG_ENABLE_OPTION(threads, [enable shared memory threads], THREADS, no)
-# AM_CONDITIONAL(HAVE_THREADS, [test "X$ac_cv_use_threads" != "Xno"])
-
 #
-#  I am not sure what these packages do
-TAC_ARG_ENABLE_OPTION(fatal_messages, [enable printing of fatal error messages], 
-                   FATAL_MESSAGES, yes)
-TAC_ARG_ENABLE_OPTION(warning_messages, [enable printing of warning error messages], 
-                   WARNING_MESSAGES, no)
-TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output], 
-                   FORMAT_IO, yes)
+#  #np# - These options are specific to Epetra and are left only as examples.
+#         If uncommented, the following lines would define HAVE_FATAL_MESSAGES
+#         in the (package)_config.h file.  Developers should use a 
+#         more specific name such as 'new_package-fatal_messages', rather
+#         than 'fatal_messages'.
+#TAC_ARG_ENABLE_OPTION(fatal_messages, [enable printing of fatal error messages], 
+#                   FATAL_MESSAGES, yes)
+#TAC_ARG_ENABLE_OPTION(warning_messages, [enable printing of warning error messages], 
+#                   WARNING_MESSAGES, no)
+#TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output], 
+#                   FORMAT_IO, yes)
 
-# These are specific to Epetra
+#  #np# - These are specific to Epetra and are left only as examples.
+#         If uncommented, the following line would define HAVE_ZOLTAN in
+#         the (package)_config.h file.  Developers should use a more
+#         specific name such as 'new_package-zoltan', rather than 'zoltan'.
 # TAC_ARG_WITH_PACKAGE(zoltan, [Enable Zoltan interface support], ZOLTAN, no)
 # TAC_ARG_WITH_PACKAGE(rtop, [Enable RTOp interface support], RTOP, no)
 # TAC_ARG_WITH_PACKAGE(esi, [Enable ESI interface support], ESI, yes)
@@ -298,13 +279,13 @@ AC_F77_WRAPPERS
 # with the name of an entry point in that library.
 # checks for libraries now
 dnl Replace `main' with a function in -lm:
+#  #np# These lines can be removed if the math lib is not needed.
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
-dnl Check for user-specified names for LAPACK and BLAS
-TAC_ARG_WITH_BLASLIB
-TAC_ARG_WITH_LAPACKLIB
-
+### Include Blas/Lapack example here. ###  For now, developers should see
+### The configure.ac file for epetra (Trilinos/packages/epetra) if blas and
+### or Lapack are needed.
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
@@ -343,7 +324,7 @@ AC_SUBST(ac_aux_dir)
 ##
 #  #np# - Most packages should have an example and a full suite 
 #  of tests.  New package comes only with src and example.
-#  You will need to change AC_CONFIG_FILES belox and Makefile.am
+#  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
 AC_CONFIG_FILES([
 		Makefile 
@@ -354,6 +335,7 @@ AC_CONFIG_FILES([
 AC_OUTPUT()
 
 # Bye World!
+#  #np# change package name
 echo "----------------------------------------"
 echo "Finished Running New_Package Configure Script"
 echo "----------------------------------------"

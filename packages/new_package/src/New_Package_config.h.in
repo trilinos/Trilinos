@@ -29,12 +29,6 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
-/* Define if want to build with fatal_messages enabled */
-#undef HAVE_FATAL_MESSAGES
-
-/* Define if want to build with format_io enabled */
-#undef HAVE_FORMAT_IO
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -104,9 +98,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define if want to build with warning_messages enabled */
-#undef HAVE_WARNING_MESSAGES
-
 /* Name of package */
 #undef PACKAGE
 
@@ -127,9 +118,6 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* define if compiling for ASCI Red, aka TFLOP */
-#undef TFLOP
 
 /* Version number of package */
 #undef VERSION

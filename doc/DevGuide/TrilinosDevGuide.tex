@@ -66,9 +66,9 @@ potential Trilinos developers.  Topics covered include how to configure and
 build Trilinos, what is required to integrate an existing package into Trilinos
 and examples of how those requirements can be met, as well as what tools are 
 available to Trilinos packages.  Also discussed are some common practices that 
-are followed by many Trilinos package developers.  Finally, a graphical depiction of 
-Trilinos package iteroperability is supplied along with a list of platforms 
-that Trilinos has been ported to.
+are followed by many Trilinos package developers.  Finally, a graphical 
+depiction of Trilinos package iteroperability is supplied along with a list of 
+platforms that Trilinos has been ported to.
 
 \end{abstract}
 
@@ -328,6 +328,8 @@ quotes).
 \subsection{Adding and Removing Source Files}
 
 **(bootstrapping, correct AC/AM versions)**
+
+
 % start reading Mike's stuff at 243
 
 \section{Package Requirements}
@@ -339,7 +341,13 @@ Stages of integration:
 This is a minimum requrirement for any package wanting to become a part of 
 Trilinos.  Other than receiving approval from the Trilinos Project Leader to 
 add a new package to Trilinos, there are no prerequisites for adding a new 
-package to the Trilinos repository.  **(Not distributed at this point, should not conflict or even interact with the existing configure/build process.)**
+package to the Trilinos repository.  At this stage, it does not matter if the 
+package is finished, or even if it works.  However, a package in an unstable 
+state should not be added to the configure and build structure.  A package 
+can remain in this predistribution state indefinitely.  When release branches 
+are created, any packages not ready or approved for distribution can easily be 
+ommitted.
+
 \item Package should respond to all relevant configure options.
 \item Package should have a process in place to port to all supported 
 platforms and respond to bug reports in timely manner.
@@ -353,7 +361,7 @@ There are many ways to define an effective software process.  As a result, the
 Trilinos project specifies very few {\it requirements}.  At the same time, 
 many software packages do not have well-defined practices to support good 
 software engineering.  In this section, we discuss suggested practices based 
-on our experience with some common tools and process for software 
+on our experience with some common tools and processes for software 
 engineering.  We want to strongly emphasize that these are {\it suggested} 
 practices only and we discuss them here in order to facilitate adoption of 
 practices for packages that have few existing practices in place.
@@ -404,10 +412,13 @@ generated HTML output to the package development team via the
 {\it package-developers@software.sandia.gov} email list.  This both
 
 \subsection{Implementation}
-Nothing suggested.
+Implementing new capabilites should never take place in a release branch.  
+Changes to release branches should be limited to fixing broken code and 
+related activities.  For example, clarifying vague or incorrect documentation 
+and making changes necessary to port to a new platform.
 
 \subsection{Integration}
-Mention Epetra/TSF. Autotools.
+Mention Epetra/TSF. Autotools.Integration into a release.
 
 \subsection{Maintenance}
 Say something about bugzilla, bonzai, mailman (checkins list), CVS (release 

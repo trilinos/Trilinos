@@ -1,6 +1,6 @@
 How to Add a Script to the Test Harness (Initial DRAFT)
 
--Preliminaries:
+-Preliminaries: (rewrite)
 
 This discussion assumes that the reader has test executables for one or more 
 Trilinos packages that are produced by autotools and would like to add those
@@ -15,6 +15,24 @@ with -v.
 -Platforms that currently run the test harness:
 
 Linux
+SGI64*
+DEC/OSF1*
+Sun*
+
+* Testharness is only partially operational on these platforms.
+
+-Basic Structure
+
+There are three primary components that form the Trilinos test harness.
+
+1) The core file is a perl script (Trilinos/testharness/test-harness).  This 
+script must be executed to run the test harness.  It performs a sequence of 
+tasks necessary to complete periodic testing (update source, rebuild libraries 
+and tests, call scripts that run the tests, send results emails, etc).  A 
+developer does not need to know exactly how this script works, or what it does 
+to add to contribute new tests to the test harness.
+
+2) Shell scripts that are called by 
 
 -Writing a script to call the test executables.
 
