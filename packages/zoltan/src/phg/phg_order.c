@@ -37,6 +37,10 @@ int Zoltan_PHG_Vertex_Visit_Order(
 
   /* Permute order array according to chosen strategy. */
   switch (hgp->visit_order){
+    case 0: 
+      /* linear (natural) node visit order */
+      break;
+
     case 1: 
       /* random node visit order */
       /* Synchronize within column so each column proc visits in same order */
