@@ -287,6 +287,17 @@ TAC_ARG_WITH_INCDIRS
 AC_F77_WRAPPERS
 
 # ------------------------------------------------------------------------
+# Interfaces to other Trilinos packages
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_FEATURE_SUB( default, packages, [Build all default packages unless explicitly disabled.  When this option is disabled, only packages explicitly enabled and packages needed to satisfy the dependencies of enabled packages will be built], DEFAULT_PACKAGES, yes)
+
+TAC_ARG_ENABLE_OPTION(triutils, [Enable TRIUTILS support. Triutils, a Trilinos
+				 package, is used if some Amesos examples to
+				 construct the linear system], AMESOS_TRIUTILS, no)
+AM_CONDITIONAL(HAVE_AMESOS_TRIUTILS, test "X$ac_cv_use_triutils" = "Xyes")
+
+# ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
 
@@ -680,9 +691,9 @@ AC_CONFIG_FILES([
 		src/Makefile
 		test/Makefile
 		example/Makefile
-		example/AmesosDscpack/Makefile
-		example/AmesosFactory/Makefile
-		example/AmesosSuperludist/Makefile
+		test/Test_Epetra_RowMatrix/Makefile
+		test/Test_Epetra_CrsMatrix/Makefile
+		test/Test_Epetra_VbrMatrix/Makefile
 		test/TestOptions/Makefile
 		test/TestWithTriutils/Makefile
 		test/scripts/Makefile
