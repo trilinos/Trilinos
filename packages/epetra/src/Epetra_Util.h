@@ -93,4 +93,82 @@ inline Epetra_Util::Epetra_Util(const Epetra_Util& Util){}
 // Epetra_Util destructor
 inline Epetra_Util::~Epetra_Util(){}
 
+/** Utility function to perform a binary-search on a list of data.
+    Important assumption: data is assumed to be sorted.
+
+    @param item to be searched for
+    @param list to be searched in
+    @param len Length of list
+    @param insertPoint Input/Output. If item is found, insertPoint is not
+    referenced. If item is not found, insertPoint is set to the offset at which
+    item should be inserted in list such that order (sortedness) would be
+    maintained.
+    @return offset Location in list at which item was found. -1 if not found.
+*/
+int Epetra_Util_binary_search(int item,
+                              const int* list,
+                              int len,
+                              int& insertPoint);
+
+/** Function to insert an item in a list, at a specified offset.
+    @return error-code 0 if successful, -1 if an allocation failed or if
+    input parameters seem unreasonable (offset > usedLength, offset<0, etc).
+
+    @param item to be inserted
+    @param offset location at which to insert item
+    @param list array into which item is to be inserted. This array may be
+           re-allocated by this function.
+    @param usedLength number of items already present in list. Will be updated
+          to reflect the new length.
+    @param allocatedLength current allocated length of list. Will be updated
+          to reflect the new allocated-length, if applicable. Re-allocation
+          occurs only if usedLength==allocatedLength on entry.
+    @param allocChunkSize Optional argument, defaults to 1000. Increment by
+          which the array should be expanded, if re-allocation is necessary.
+    @return error-code 0 if successful. -1 if allocation fails or if input
+         parameters don't make sense.
+ */
+template<class T>
+int Epetra_Util_insert(T item, int offset, T*& list,
+                        int& usedLength,
+                        int& allocatedLength,
+                        int allocChunkSize=1000)
+{
+  if (offset < 0 || offset > usedLength) {
+    return(-1);
+  }
+
+  if (usedLength < allocatedLength) {
+    for(int i=usedLength; i>offset; --i) {
+      list[i] = list[i-1];
+    }
+    list[offset] = item;
+    ++usedLength;
+    return(0);
+  }
+
+  T* newlist = new T[allocatedLength+allocChunkSize];
+  if (newlist == NULL) {
+    return(-1);
+  }
+
+  allocatedLength += allocChunkSize;
+  int i;
+  for(i=0; i<offset; ++i) {
+    newlist[i] = list[i];
+  }
+
+  newlist[offset] = item;
+
+  for(i=offset+1; i<=usedLength; ++i) {
+    newlist[i] = list[i-1];
+  }
+
+  ++usedLength;
+  delete [] list;
+  list = newlist;
+  return(0);
+}
+
+
 #endif /* _EPETRA_UTIL_H_ */

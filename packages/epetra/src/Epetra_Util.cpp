@@ -67,3 +67,45 @@ const double Epetra_Util::chopVal_ = 1.0e-15;
   }
 
 }
+
+//----------------------------------------------------------------------------
+int Epetra_Util_binary_search(int item,
+                              const int* list,
+                              int len,
+                              int& insertPoint)
+{
+  if (len < 2) {
+    if (len < 1) {
+      insertPoint = 0;
+      return(-1);
+    }
+
+    if (list[0] == item) return(0);
+    else {
+      insertPoint = list[0] < item ? 1 : 0;
+      return(-1);
+    }
+  }
+
+  unsigned start = 0, end = len - 1;
+
+  while(end - start > 1) {
+    unsigned mid = (start + end) >> 1;
+    if (list[mid] < item) start = mid;
+    else end = mid;
+  }
+
+  if (list[end] < item) {
+    insertPoint = (int)end+1;
+    return(-1);
+  }
+
+  if (list[start] == item) return((int)start);
+  if (list[end] == item) return((int)end);
+
+  if (list[start] < item) insertPoint = (int)end;
+  else insertPoint = (int)start;
+
+  return(-1);
+}
+
