@@ -7398,8 +7398,8 @@ LIBS="$LIBS $FLIBS"
 if test $acx_blas_ok = no; then
 if test "x$BLAS_LIBS" != x; then
 	save_LIBS="$LIBS"; LIBS="$BLAS_LIBS $LIBS"
-	echo "$as_me:$LINENO: checking for $sgemm in $BLAS_LIBS" >&5
-echo $ECHO_N "checking for $sgemm in $BLAS_LIBS... $ECHO_C" >&6
+	echo "$as_me:$LINENO: checking for $dgemm in $BLAS_LIBS" >&5
+echo $ECHO_N "checking for $dgemm in $BLAS_LIBS... $ECHO_C" >&6
 	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -7413,7 +7413,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -7425,7 +7425,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -7470,9 +7470,9 @@ fi
 # BLAS linked to by default?  (happens on some supercomputers)
 if test $acx_blas_ok = no; then
 	save_LIBS="$LIBS"; LIBS="$LIBS"
-	as_ac_var=`echo "ac_cv_func_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm" >&5
-echo $ECHO_N "checking for $sgemm... $ECHO_C" >&6
+	as_ac_var=`echo "ac_cv_func_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm" >&5
+echo $ECHO_N "checking for $dgemm... $ECHO_C" >&6
 if eval "test \"\${$as_ac_var+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -7482,12 +7482,12 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-/* Define $sgemm to an innocuous variant, in case <limits.h> declares $sgemm.
+/* Define $dgemm to an innocuous variant, in case <limits.h> declares $dgemm.
    For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define $sgemm innocuous_$sgemm
+#define $dgemm innocuous_$dgemm
 
 /* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char $sgemm (); below.
+    which can conflict with char $dgemm (); below.
     Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
     <limits.h> exists even on freestanding compilers.  */
 
@@ -7497,7 +7497,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 # include <assert.h>
 #endif
 
-#undef $sgemm
+#undef $dgemm
 
 /* Override any gcc2 internal prototype to avoid an error.  */
 #ifdef __cplusplus
@@ -7506,14 +7506,14 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 /* The GNU C library defines this for functions which it implements
     to always fail with ENOSYS.  Some functions are actually named
     something starting with __ and the normal name is an alias.  */
-#if defined (__stub_$sgemm) || defined (__stub___$sgemm)
+#if defined (__stub_$dgemm) || defined (__stub___$dgemm)
 choke me
 #else
-char (*f) () = $sgemm;
+char (*f) () = $dgemm;
 #endif
 #ifdef __cplusplus
 }
@@ -7530,7 +7530,7 @@ char (*f) () = $sgemm;
 int
 main ()
 {
-return f != $sgemm;
+return f != $dgemm;
   ;
   return 0;
 }
@@ -7651,9 +7651,9 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_lib_atlas_ATL_xerbla" >&5
 echo "${ECHO_T}$ac_cv_lib_atlas_ATL_xerbla" >&6
 if test $ac_cv_lib_atlas_ATL_xerbla = yes; then
-  as_ac_Lib=`echo "ac_cv_lib_f77blas_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lf77blas" >&5
-echo $ECHO_N "checking for $sgemm in -lf77blas... $ECHO_C" >&6
+  as_ac_Lib=`echo "ac_cv_lib_f77blas_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lf77blas" >&5
+echo $ECHO_N "checking for $dgemm in -lf77blas... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -7672,7 +7672,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -7684,7 +7684,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -7810,9 +7810,9 @@ fi
 
 # BLAS in PhiPACK libraries? (requires generic BLAS lib, too)
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_blas_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lblas" >&5
-echo $ECHO_N "checking for $sgemm in -lblas... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_blas_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lblas" >&5
+echo $ECHO_N "checking for $dgemm in -lblas... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -7831,7 +7831,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -7843,7 +7843,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8043,9 +8043,9 @@ fi
 
 # BLAS in Alpha CXML library?
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_cxml_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lcxml" >&5
-echo $ECHO_N "checking for $sgemm in -lcxml... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_cxml_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lcxml" >&5
+echo $ECHO_N "checking for $dgemm in -lcxml... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8064,7 +8064,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8076,7 +8076,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8124,9 +8124,9 @@ fi
 
 # BLAS in Alpha DXML library? (now called CXML, see above)
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_dxml_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -ldxml" >&5
-echo $ECHO_N "checking for $sgemm in -ldxml... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_dxml_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -ldxml" >&5
+echo $ECHO_N "checking for $dgemm in -ldxml... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8145,7 +8145,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8157,7 +8157,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8279,9 +8279,9 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_lib_sunmath_acosp" >&5
 echo "${ECHO_T}$ac_cv_lib_sunmath_acosp" >&6
 if test $ac_cv_lib_sunmath_acosp = yes; then
-  as_ac_Lib=`echo "ac_cv_lib_sunperf_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lsunperf" >&5
-echo $ECHO_N "checking for $sgemm in -lsunperf... $ECHO_C" >&6
+  as_ac_Lib=`echo "ac_cv_lib_sunperf_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lsunperf" >&5
+echo $ECHO_N "checking for $dgemm in -lsunperf... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8300,7 +8300,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8312,7 +8312,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8364,9 +8364,9 @@ fi
 
 # BLAS in SCSL library?  (SGI/Cray Scientific Library)
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_scs_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lscs" >&5
-echo $ECHO_N "checking for $sgemm in -lscs... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_scs_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lscs" >&5
+echo $ECHO_N "checking for $dgemm in -lscs... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8385,7 +8385,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8397,7 +8397,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8445,9 +8445,9 @@ fi
 
 # BLAS in SGIMATH library?
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_complib.sgimath_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lcomplib.sgimath" >&5
-echo $ECHO_N "checking for $sgemm in -lcomplib.sgimath... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_complib.sgimath_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lcomplib.sgimath" >&5
+echo $ECHO_N "checking for $dgemm in -lcomplib.sgimath... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8466,7 +8466,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8478,7 +8478,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8526,9 +8526,9 @@ fi
 
 # BLAS in IBM ESSL library? (requires generic BLAS lib, too)
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_blas_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lblas" >&5
-echo $ECHO_N "checking for $sgemm in -lblas... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_blas_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lblas" >&5
+echo $ECHO_N "checking for $dgemm in -lblas... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8547,7 +8547,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8559,7 +8559,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8600,9 +8600,9 @@ fi
 echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Lib'}'`" >&5
 echo "${ECHO_T}`eval echo '${'$as_ac_Lib'}'`" >&6
 if test `eval echo '${'$as_ac_Lib'}'` = yes; then
-  as_ac_Lib=`echo "ac_cv_lib_essl_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lessl" >&5
-echo $ECHO_N "checking for $sgemm in -lessl... $ECHO_C" >&6
+  as_ac_Lib=`echo "ac_cv_lib_essl_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lessl" >&5
+echo $ECHO_N "checking for $dgemm in -lessl... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8621,7 +8621,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8633,7 +8633,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8683,9 +8683,9 @@ fi
 
 # Generic BLAS library?
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_blas_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lblas" >&5
-echo $ECHO_N "checking for $sgemm in -lblas... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_blas_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lblas" >&5
+echo $ECHO_N "checking for $dgemm in -lblas... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8704,7 +8704,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8716,7 +8716,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8804,13 +8804,13 @@ ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_f77_compiler_gnu
 case $ac_cv_f77_mangling in
-  upper*) ac_val="SGECON" ;;
-  lower*) ac_val="sgecon" ;;
+  upper*) ac_val="DGECON" ;;
+  lower*) ac_val="dgecon" ;;
   *)      ac_val="unknown" ;;
 esac
 case $ac_cv_f77_mangling in *," underscore"*) ac_val="$ac_val"_ ;; esac
 
-sgecon="$ac_val"
+dgecon="$ac_val"
 
 ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -8827,8 +8827,8 @@ fi
 # First, check LAPACK_LIBS environment variable
 if test "x$LAPACK_LIBS" != x; then
         save_LIBS="$LIBS"; LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS"
-        echo "$as_me:$LINENO: checking for $sgecon in $LAPACK_LIBS" >&5
-echo $ECHO_N "checking for $sgecon in $LAPACK_LIBS... $ECHO_C" >&6
+        echo "$as_me:$LINENO: checking for $dgecon in $LAPACK_LIBS" >&5
+echo $ECHO_N "checking for $dgecon in $LAPACK_LIBS... $ECHO_C" >&6
         cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -8842,7 +8842,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgecon ();
+char $dgecon ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8854,7 +8854,7 @@ char $sgecon ();
 int
 main ()
 {
-$sgecon ();
+$dgecon ();
   ;
   return 0;
 }
@@ -8901,9 +8901,9 @@ fi
 # LAPACK linked to by default?  (is sometimes included in BLAS lib)
 if test $acx_lapack_ok = no; then
         save_LIBS="$LIBS"; LIBS="$LIBS $BLAS_LIBS $FLIBS"
-        as_ac_var=`echo "ac_cv_func_$sgecon" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgecon" >&5
-echo $ECHO_N "checking for $sgecon... $ECHO_C" >&6
+        as_ac_var=`echo "ac_cv_func_$dgecon" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgecon" >&5
+echo $ECHO_N "checking for $dgecon... $ECHO_C" >&6
 if eval "test \"\${$as_ac_var+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8913,12 +8913,12 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-/* Define $sgecon to an innocuous variant, in case <limits.h> declares $sgecon.
+/* Define $dgecon to an innocuous variant, in case <limits.h> declares $dgecon.
    For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define $sgecon innocuous_$sgecon
+#define $dgecon innocuous_$dgecon
 
 /* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char $sgecon (); below.
+    which can conflict with char $dgecon (); below.
     Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
     <limits.h> exists even on freestanding compilers.  */
 
@@ -8928,7 +8928,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 # include <assert.h>
 #endif
 
-#undef $sgecon
+#undef $dgecon
 
 /* Override any gcc2 internal prototype to avoid an error.  */
 #ifdef __cplusplus
@@ -8937,14 +8937,14 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgecon ();
+char $dgecon ();
 /* The GNU C library defines this for functions which it implements
     to always fail with ENOSYS.  Some functions are actually named
     something starting with __ and the normal name is an alias.  */
-#if defined (__stub_$sgecon) || defined (__stub___$sgecon)
+#if defined (__stub_$dgecon) || defined (__stub___$dgecon)
 choke me
 #else
-char (*f) () = $sgecon;
+char (*f) () = $dgecon;
 #endif
 #ifdef __cplusplus
 }
@@ -8961,7 +8961,7 @@ char (*f) () = $sgecon;
 int
 main ()
 {
-return f != $sgecon;
+return f != $dgecon;
   ;
   return 0;
 }
@@ -9011,9 +9011,9 @@ fi
 for lapack in lapack lapack_rs6k; do
         if test $acx_lapack_ok = no; then
                 save_LIBS="$LIBS"; LIBS="$BLAS_LIBS $LIBS"
-                as_ac_Lib=`echo "ac_cv_lib_$lapack''_$sgecon" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgecon in -l$lapack" >&5
-echo $ECHO_N "checking for $sgecon in -l$lapack... $ECHO_C" >&6
+                as_ac_Lib=`echo "ac_cv_lib_$lapack''_$dgecon" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgecon in -l$lapack" >&5
+echo $ECHO_N "checking for $dgecon in -l$lapack... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -9032,7 +9032,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgecon ();
+char $dgecon ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -9044,7 +9044,7 @@ char $sgecon ();
 int
 main ()
 {
-$sgecon ();
+$dgecon ();
   ;
   return 0;
 }
