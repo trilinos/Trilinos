@@ -91,7 +91,9 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-noinst_PROGRAMS = bl_pcg_hb bl_cg_hb
+@BUILD_IFPACK_TRUE@BELOS_BCG_IFPACK_EX = bl_pcg_hb
+
+noinst_PROGRAMS = $(BELOS_BCG_IFPACK_EX) bl_cg_hb 
 
 bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp 
 
@@ -135,7 +137,9 @@ subdir = test/BlockCG
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
-noinst_PROGRAMS = bl_pcg_hb$(EXEEXT) bl_cg_hb$(EXEEXT)
+@BUILD_IFPACK_TRUE@noinst_PROGRAMS = bl_pcg_hb$(EXEEXT) \
+@BUILD_IFPACK_TRUE@	bl_cg_hb$(EXEEXT)
+@BUILD_IFPACK_FALSE@noinst_PROGRAMS = bl_cg_hb$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 am_bl_cg_hb_OBJECTS = bl_cg_hb-test_bl_cg_hb.$(OBJEXT)

@@ -3,7 +3,11 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = bl_pcg_hb bl_cg_hb
+if BUILD_IFPACK
+BELOS_BCG_IFPACK_EX = bl_pcg_hb
+endif
+
+noinst_PROGRAMS = $(BELOS_BCG_IFPACK_EX) bl_cg_hb 
 
 bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp 
 

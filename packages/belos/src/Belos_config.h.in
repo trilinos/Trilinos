@@ -14,6 +14,9 @@
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
 
+/* Define if want to build belos-tests */
+#undef HAVE_BELOS_TESTS
+
 /* Define if you have a BLAS library. */
 #undef HAVE_BLAS
 
@@ -31,6 +34,9 @@
 
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
+
+/* Define if want to build ifpack */
+#undef HAVE_IFPACK
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H

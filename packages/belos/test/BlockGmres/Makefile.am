@@ -3,7 +3,11 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = bl_pgmres_hb bl_gmres_hb
+if BUILD_IFPACK
+BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb
+endif
+
+noinst_PROGRAMS = $(BELOS_BGMRES_IFPACK_EX) bl_gmres_hb 
 
 bl_pgmres_hb_SOURCES = $(srcdir)/test_bl_pgmres_hb.cpp
 
