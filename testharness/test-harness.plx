@@ -2310,11 +2310,12 @@ report($SUMMARY);
             print outFile "# - value required: NO\n";
             print outFile "# - the value of the HOST_FILE option can be referred to with the value\n";
             print outFile "#   <HOST_FILE>\n";   
+            print outFile "#   For example:\n";
+            print outFile "#   MPI_STARTUP_CMD                 = \"lamboot <HOST_FILE> -v\"\n";}
             print outFile "\n";
-        }
-        
+ 
         push (@optionsOrder, "MPI_STARTUP_CMD");
-        if (!$silent) { print outFile "MPI_STARTUP_CMD                 = \"lamboot <HOST_FILE> -v\"\n"; }
+        if (!$silent) { print outFile "MPI_STARTUP_CMD                 = \n"; }
         
         if (!$short) {      
             print outFile "\n";  
@@ -2324,11 +2325,13 @@ report($SUMMARY);
             print outFile "#\n";
             print outFile "# - multiple values recognized: NO\n";
             print outFile "# - value required: NO\n";
+	    print outFile "# For example:\n";
+	    print outFile "# MPI_SHUTDOWN_CMD                = lamhalt\n";
             print outFile "\n";
         }
         
         push (@optionsOrder, "MPI_SHUTDOWN_CMD");
-        if (!$silent) { print outFile "MPI_SHUTDOWN_CMD                = lamhalt\n"; }
+        if (!$silent) { print outFile "MPI_SHUTDOWN_CMD                = \n"; }
         
         if (!$short) {      
             print outFile "\n";  
@@ -2338,6 +2341,8 @@ report($SUMMARY);
             print outFile "#\n";
             print outFile "# - multiple values recognized: NO\n";  
             print outFile "# - value required: NO\n";  
+            print outFile "# For example:\n";
+            print outFile "# MAKE_FLAGS                      = \"-j 2\"\n";
             print outFile "\n";
         }
         
