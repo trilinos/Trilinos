@@ -101,17 +101,19 @@ if ML_STANDALONE_MODE
 #specified in AM_CFLAGS, CFLAGS, AM_LDFLAGS, and LDFLAGS.
 mllink = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 ml_libs = $(top_builddir)/src/libml.a        \
+                $(LIBS)             \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \
-                $(LIBS) $(FLIBS)
+                $(FLIBS)
 else
 mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 ml_libs = $(top_builddir)/src/libml.a        \
                 $(top_builddir)/../aztecoo/src/libaztecoo.a        \
                 $(top_builddir)/../epetra/src/libepetra.a         \
+                $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \
-                $(LIBS) $(FLIBS)
+                $(FLIBS)
 endif
 
 # One CXXFLAGS primary can be defined for each exe listed above.  Include 

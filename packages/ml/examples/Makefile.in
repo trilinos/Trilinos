@@ -171,16 +171,18 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 @ML_STANDALONE_MODE_TRUE@mllink = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 @ML_STANDALONE_MODE_FALSE@mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 @ML_STANDALONE_MODE_TRUE@ml_libs = $(top_builddir)/src/libml.a        \
+@ML_STANDALONE_MODE_TRUE@                $(LIBS)             \
 @ML_STANDALONE_MODE_TRUE@                $(LAPACK_LIBS)                            \
 @ML_STANDALONE_MODE_TRUE@                $(BLAS_LIBS)                            \
-@ML_STANDALONE_MODE_TRUE@                $(LIBS) $(FLIBS)
+@ML_STANDALONE_MODE_TRUE@                $(FLIBS)
 
 @ML_STANDALONE_MODE_FALSE@ml_libs = $(top_builddir)/src/libml.a        \
 @ML_STANDALONE_MODE_FALSE@                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
 @ML_STANDALONE_MODE_FALSE@                $(top_builddir)/../epetra/src/libepetra.a         \
+@ML_STANDALONE_MODE_FALSE@                $(LIBS) \
 @ML_STANDALONE_MODE_FALSE@                $(LAPACK_LIBS)                            \
 @ML_STANDALONE_MODE_FALSE@                $(BLAS_LIBS)                            \
-@ML_STANDALONE_MODE_FALSE@                $(LIBS) $(FLIBS)
+@ML_STANDALONE_MODE_FALSE@                $(FLIBS)
 
 
 
