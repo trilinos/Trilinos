@@ -1,8 +1,8 @@
 
 //@HEADER
-// ************************************************************************
+// ***********************************************************************
 // 
-//               Epetra: Linear Algebra Services Package 
+//     EpetraExt: Epetra Extended - Linear Algebra Services Package
 //                 Copyright (2001) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -24,7 +24,7 @@
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
-// ************************************************************************
+// ***********************************************************************
 //@HEADER
 
 #include "EpetraExt_ZoltanMpiComm.h"
