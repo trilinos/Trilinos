@@ -89,7 +89,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
 
 int ML_Operator_Clean( ML_Operator *mat)
 {
-#ifdef ML_DETAILED_TIMING
+#ifdef ML_TIMING_DETAILED
    double t1;
 
    if ( (mat->label != NULL) && ( mat->build_time != 0.0)) 
@@ -435,7 +435,6 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
       pr_error("ML_Operator_ApplyAndRestBdryPts : matvec not defined.\n");
 
    /* apply grid transfer */
-
    if (Op->matvec->ML_id == ML_EXTERNAL)
         Op->matvec->external((void*)Op->data, inlen, din, olen, dout);
    else Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
