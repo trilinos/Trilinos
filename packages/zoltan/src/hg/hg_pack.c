@@ -27,7 +27,6 @@ static ZOLTAN_HG_PACKING_FN packing_lhp;  /* locally heaviest packing */
 static ZOLTAN_HG_PACKING_FN packing_pgp;  /* path growing packing */
 static ZOLTAN_HG_PACKING_FN packing_aug1; /* augmenting path; length 1 */
 static ZOLTAN_HG_PACKING_FN packing_aug2; /* augmenting path; length 2 */
-static ZOLTAN_HG_PACKING_FN packing_aug3; /* augmenting path; length 3 */
 
 /****************************************************************************/
 
@@ -49,7 +48,6 @@ int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
   */
     if      (!strcasecmp(hgp->redmo_str,"aug1")) hgp->packing_opt = packing_aug1;
     else if (!strcasecmp(hgp->redmo_str,"aug2")) hgp->packing_opt = packing_aug2;
-    else if (!strcasecmp(hgp->redmo_str,"aug3")) hgp->packing_opt = packing_aug3;
     else                                         hgp->packing_opt = NULL;
   }
   return  hgp->packing ? 1 : 0 ;
@@ -538,14 +536,6 @@ static int packing_aug2 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
 /****************************************************************************/
 
-static int packing_aug3 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
-{
-/* Placeholder for packing_aug3 */
-  packing_aug1 (zz,hg,pack,limit);
-  return ZOLTAN_OK;
-}
-
-/****************************************************************************/
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

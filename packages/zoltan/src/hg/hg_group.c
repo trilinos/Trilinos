@@ -25,7 +25,6 @@ static ZOLTAN_HG_GROUPING_FN grouping_rhg;  /* random, heavy grouping */
 static ZOLTAN_HG_GROUPING_FN grouping_grg;  /* greedy grouping */
 static ZOLTAN_HG_GROUPING_FN grouping_aug1; /* augmenting path; length 1 */
 static ZOLTAN_HG_GROUPING_FN grouping_aug2; /* augmenting path; length 2 */
-static ZOLTAN_HG_GROUPING_FN grouping_aug3; /* augmenting path; length 3 */
 
 /****************************************************************************/
 
@@ -44,7 +43,6 @@ int Zoltan_HG_Set_Grouping_Fn(HGPartParams *hgp)
    */
     if      (!strcasecmp(hgp->redmo_str,"aug1")) hgp->grouping_opt = grouping_aug1;
     else if (!strcasecmp(hgp->redmo_str,"aug2")) hgp->grouping_opt = grouping_aug2;
-    else if (!strcasecmp(hgp->redmo_str,"aug3")) hgp->grouping_opt = grouping_aug3;
     else                                         hgp->grouping_opt = NULL;
   }
 
@@ -366,15 +364,6 @@ static int grouping_aug1 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 static int grouping_aug2 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
 /* Placeholder for grouping_aug2. */
-  grouping_aug1 (zz,hg,pack,limit);
-  return ZOLTAN_OK;
-}
-
-/****************************************************************************/
-
-static int grouping_aug3 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
-{
-/* Placeholder for grouping_aug3. */
   grouping_aug1 (zz,hg,pack,limit);
   return ZOLTAN_OK;
 }

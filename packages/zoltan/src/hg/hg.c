@@ -171,7 +171,7 @@ int ierr = ZOLTAN_OK;
   /* Set default values */
   hgp->redl = zz->LB.Num_Global_Parts;
   strcpy(hgp->redm_str, "grg");
-  strcpy(hgp->redmo_str, "aug3");
+  strcpy(hgp->redmo_str, "aug2");
   hgp->ews = 1;
   strcpy(hgp->global_str, "gr0");
   strcpy(hgp->local_str, "fm");

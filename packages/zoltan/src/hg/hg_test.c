@@ -59,7 +59,7 @@ int main (int argc, char **argv)
   hgp.bal_tol = 1.1;
   hgp.redl = 0;
   strcpy(hgp.redm_str, "grg");
-  strcpy(hgp.redmo_str, "aug3");
+  strcpy(hgp.redmo_str, "aug2");
   hgp.ews = 1;
   strcpy(hgp.global_str, "gr0");
   strcpy(hgp.local_str, "fm");
@@ -82,7 +82,7 @@ int main (int argc, char **argv)
     puts("-redm   reduction method: {mxm,rem,rrm,rhm,grm,lhm,pgm,");
     puts("                           mxp,rep,rrp,rhp,grp,lhp,pgp,");
     puts("                           mxg,reg,rrg,rhg,(grg)}");
-    puts("-redmo  reduction augment:{no,aug1,aug2,(aug3)}");
+    puts("-redmo  reduction augment:{no,aug1,(aug2)}");
     puts("-reds   reduction scaling:(1)");
     puts("-g      global method:    {ran,lin,bfs,rbfs,bfsh,rbfsh,");
     puts("                           (gr0),gr1,gr2,gr3,gr4}");
