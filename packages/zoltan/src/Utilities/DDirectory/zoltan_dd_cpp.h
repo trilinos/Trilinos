@@ -93,7 +93,7 @@ public:
   
   void Stats () const
     {
-    return Zoltan_DD_Stats (this->DD) ;
+    Zoltan_DD_Stats (this->DD) ;
     }
   
   int Print () const
