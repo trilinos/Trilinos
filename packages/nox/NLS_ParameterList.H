@@ -20,6 +20,10 @@
 //! Manipulating lists of parameters
 class NLS_ParameterList {
 
+// Useful typedefs
+typedef map<string, NLS_Parameter> ParamContainer;
+typedef ParamContainer::const_iterator PCIterator;
+
 public:
 
   //! Constructor
@@ -82,7 +86,7 @@ private:
 private:
 
   //! Parameter list
-  map<string, NLS_Parameter> params;
+  ParamsContainer params;
  
   //! Used to create a string when the getParameter is called with a
   //! char* nominal value. A new string is created for each such
