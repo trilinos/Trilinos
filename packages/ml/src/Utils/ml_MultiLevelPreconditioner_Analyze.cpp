@@ -145,10 +145,6 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixCheap()
   if( Comm().MyPID() == 0 ) {
     cout << endl;
     ML_print_line("-",78);
-    cout << "*******************************************" << endl;
-    cout << "*** Cheap Analysis of each level matrix ***" << endl;
-    cout << "*******************************************" << endl;
-    cout << endl;
   }
 
   // Analyze the Amat for each level.

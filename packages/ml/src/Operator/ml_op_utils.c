@@ -1220,6 +1220,7 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
   return 0;
 }
 
+#include "limits.h"
 #include "float.h"
 #include "ml_cg.h"
 /* ******************************************************************** */
@@ -1240,6 +1241,14 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
   double MyMaxAbsElement=0.0; 
   double MaxAbsElement=0.0;
   int NumNonzeros; /* nonzero elements in a row */
+  int MyMinNumNonzeros = INT_MAX;
+  int MyMaxNumNonzeros = 0;
+  int MinNumNonzeros = INT_MAX;
+  int MaxNumNonzeros = 0;
+  int MyTotalNumNonzeros = 0;
+  int TotalNumNonzeros;
+  int MyTotalNumGivenNonzeros = 0;
+  int TotalNumGivenNonzeros;
 
   int NumMyRows = 0, NumGlobalRows = 0;
   
@@ -1252,7 +1261,6 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
   double* Diagonal = NULL;
   double* SumOffDiagonal = NULL;
   int* IsDiagonallyDominant = NULL;
-  int* NnzRow = NULL;
   double Element, AbsElement; /* generic nonzero element and its abs value */
   int ierr; /* return error code for ML_Operator_Getrow() */
   int NumDiagonallyDominant = 0;
@@ -1261,13 +1269,24 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
   int NumMyWeaklyDiagonallyDominant = 0;
   int NumMyDirichletRows = 0;
   int NumDirichletRows = 0;
-  
+  int NumMyLowerNonzeros = 0;
+  int NumMyUpperNonzeros = 0;
+  int NumLowerNonzeros;
+  int NumUpperNonzeros;
   double Min;
   double MyMin;
   double Max;
   double MyMax;
   int Equation;
   double time;
+  int NumGivenNonzeros;
+  int offset;
+  double* global_id = NULL;
+  int MyMaxBandwidth = 0;
+  int MaxBandwidth;
+  int Nghost;
+  int grow;
+  int gcol;
 
   ML_Krylov data; /* for power-method */
 
@@ -1290,16 +1309,42 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
 
   Diagonal = (double*)ML_allocate(sizeof(double)*NumMyRows);
   SumOffDiagonal = (double*)ML_allocate(sizeof(double)*NumMyRows);
-  NnzRow = (int*)ML_allocate(sizeof(int)*NumMyRows);
   
   for (i=0 ; i<NumMyRows ; ++i) {
     SumOffDiagonal[i] = 0.0;
   }
  
+  /* global column number */
+
+  if (Op->getrow->pre_comm == NULL) Nghost = 0;
+  else {
+    if (Op->getrow->pre_comm->total_rcv_length <= 0)
+      ML_CommInfoOP_Compute_TotalRcvLength(Op->getrow->pre_comm);
+    Nghost = Op->getrow->pre_comm->total_rcv_length;
+  }
+
+  global_id = (double*) ML_allocate(sizeof(double) * (NumMyRows + Nghost));
+  if (global_id == NULL) {
+    fprintf(stderr,
+	    "Not enough memory\n");
+    exit(EXIT_FAILURE);
+  }
+  offset = ML_gpartialsum_int(NumMyRows, Op->comm);
+
+  for (i = 0 ; i < NumMyRows ; ++i) {
+    global_id[i] = (double) (offset + i);
+  }
+
+  ML_exchange_bdry(global_id,Op->getrow->pre_comm, 
+		   Op->invec_leng,Op->comm,ML_OVERWRITE,NULL);
+
   /* cycle over all matrix rows */
+
   for( i=0 ; i<NumMyRows ; ++i ) {
 
-    ierr = ML_Operator_Getrow(Op,1,&i,allocated,colInd,colVal,&NumNonzeros);
+    grow = (int)global_id[i];
+
+    ierr = ML_Operator_Getrow(Op,1,&i,allocated,colInd,colVal,&NumGivenNonzeros);
 
     if( ierr == 0 ) {
       do {
@@ -1309,12 +1354,38 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
 	colInd = (int*)   ML_allocate(sizeof(int)*allocated);
 	colVal = (double*)ML_allocate(sizeof(double)*allocated);
 
-	ierr = ML_Operator_Getrow(Op,1,&i,allocated,colInd,colVal,&NumNonzeros);
+	ierr = ML_Operator_Getrow(Op,1,&i,allocated,colInd,colVal,&NumGivenNonzeros);
       } while( ierr == 0 );
     }
 
-    NnzRow[i] = NumNonzeros;
-    if( NumNonzeros == 1 ) NumMyDirichletRows++;
+    MyTotalNumGivenNonzeros += NumGivenNonzeros;
+
+    /* compute the real number of nonzero elements */
+    
+    NumNonzeros = 0;
+    for (j = 0 ; j < NumGivenNonzeros ; ++j) {
+      /* compute the real number of nonzeros only */
+      if (colVal[j] != 0.0) {
+	++NumNonzeros;
+	gcol = (int)global_id[colInd[j]];
+        if (gcol < grow) 
+	  NumMyLowerNonzeros++;
+	else if (gcol > grow) 
+	  NumMyUpperNonzeros++;
+	/* compute bandwidth */
+	if (abs(gcol - grow) > MyMaxBandwidth)
+	  MyMaxBandwidth = abs(gcol - grow);
+      }
+    }
+
+    MyTotalNumNonzeros += NumNonzeros;
+
+    if (NumNonzeros > MyMaxNumNonzeros)
+      MyMaxNumNonzeros = NumNonzeros;
+    if (NumNonzeros < MyMinNumNonzeros)
+      MyMinNumNonzeros = NumNonzeros;
+    
+    if (NumNonzeros == 1) NumMyDirichletRows++;
     
     /* start looking for min/max element (with and without abs()) */
     /* I consider the following:
@@ -1351,6 +1422,14 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
   FrobeniusNorm =   ML_Comm_GmaxDouble(Op->comm, MyFrobeniusNorm);
   NumDirichletRows = ML_Comm_GsumInt(Op->comm, NumMyDirichletRows);
   
+  MinNumNonzeros   = - ML_Comm_GmaxInt(Op->comm, -MyMinNumNonzeros);
+  MaxNumNonzeros   =   ML_Comm_GmaxInt(Op->comm, MyMaxNumNonzeros);
+  TotalNumNonzeros =   ML_Comm_GsumInt(Op->comm, MyTotalNumNonzeros);
+  TotalNumGivenNonzeros =   ML_Comm_GsumInt(Op->comm, MyTotalNumGivenNonzeros);
+  NumLowerNonzeros =   ML_Comm_GsumInt(Op->comm, NumMyLowerNonzeros);
+  NumUpperNonzeros =   ML_Comm_GsumInt(Op->comm, NumMyUpperNonzeros);
+  MaxBandwidth     =   ML_Comm_GmaxInt(Op->comm, MyMaxBandwidth);
+
   /* a test to see if matrix is diagonally-dominant */
 
   NumMyDiagonallyDominant = 0;
@@ -1374,22 +1453,49 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
       printf("\n\t*** Analysis of ML_Operator `%s' ***\n\n", name);
     else
       printf("\n\t*** Analysis of ML_Operator ***\n\n");
-    printf("\tNumber of global rows      = %d\n", NumGlobalRows);
-    printf("\tNumber of equations        = %d\n", Op->num_PDEs);
-    printf("\t||A||_F                    = %f\n",sqrt(FrobeniusNorm));
-    printf("\tmin_{i,j} ( a_{i,j} )      = %e\n", MinElement);
-    printf("\tmax_{i,j} ( a_{i,j} )      = %e\n", MaxElement);
-    printf("\tmin_{i,j} ( abs(a_{i,j}) ) = %e\n", MinAbsElement);
-    printf("\tmax_{i,j} ( abs(a_{i,j}) ) = %e\n", MaxAbsElement);
-    printf("\tNumber of diagonally dominant rows            = %d (= %5.2f%%)\n",
+    printf("\t%-50s = %d\n", 
+	   "Number of global rows", NumGlobalRows);
+    printf("\t%-50s = %d\n",
+	   "Number of equations", Op->num_PDEs);
+    printf("\t%-50s = %d\n",
+	   "Number of stored elements", TotalNumGivenNonzeros);
+    printf("\t%-50s = %d\n",
+	   "Number of nonzero elements", TotalNumNonzeros);
+    printf("\t%-50s = %d\n",
+	   "Mininum number of nonzero elements/row", MinNumNonzeros);
+    printf("\t%-50s = %d\n",
+	   "Maximum number of nonzero elements/row", MaxNumNonzeros);
+    printf("\t%-50s = %f\n",
+	   "Average number of nonzero elements/rows", 
+	   1.0 * TotalNumNonzeros / NumGlobalRows);
+    printf("\t%-50s = %d\n",
+	   "Nonzero elements in strict lower part", NumLowerNonzeros);
+    printf("\t%-50s = %d\n",
+	   "Nonzero elements in strict upper part", NumUpperNonzeros);
+    printf("\t%-50s = %d\n",
+	   "Max |i-j|, a(i,j) != 0",MaxBandwidth);
+    printf("\t%-50s = %d (= %5.2f%%)\n",
+	   "Number of diagonally dominant rows",
 	   NumDiagonallyDominant,
 	   100.0*NumDiagonallyDominant/NumGlobalRows); 
-    printf("\tNumber of weakly diagonally dominant rows     = %d (= %5.2f%%)\n",
+    printf("\t%-50s = %d (= %5.2f%%)\n",
+	   "Number of weakly diagonally dominant rows",
 	   NumWeaklyDiagonallyDominant,
 	   100.0*NumWeaklyDiagonallyDominant/NumGlobalRows);
-    printf("\tNumber of Dirichlet rows                      = %d (= %5.2f%%)\n",
+    printf("\t%-50s = %d (= %5.2f%%)\n",
+	   "Number of Dirichlet rows",
 	   NumDirichletRows,
 	   100.0*NumDirichletRows/NumGlobalRows);
+    printf("\t%-50s = %f\n",
+	   "||A||_F",sqrt(FrobeniusNorm));
+    printf("\t%-50s = %f\n",
+	   "Min_{i,j} ( a(i,j) )", MinElement);
+    printf("\t%-50s = %f\n",
+	   "Max_{i,j} ( a(i,j) )", MaxElement);
+    printf("\t%-50s = %f\n",
+	   "Min_{i,j} ( abs(a(i,j)) )", MinAbsElement);
+    printf("\t%-50s = %f\n",
+	   "Max_{i,j} ( abs(a(i,j)) )", MaxAbsElement);
 
   }
 
@@ -1405,8 +1511,10 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
 
   if( MyPID == 0 ) {
 
-    printf("\tmin_i ( abs(a_{i,i}) )               = %e\n", Min);
-    printf("\tmax_i ( abs(a_{i,i}) )               = %e\n", Max);
+    printf("\t%-50s = %f\n",
+	   "Min_i ( abs(a(i,i)) )", Min);
+    printf("\t%-50s = %f\n",
+	   "Max_i ( abs(a(i,i)) )", Max);
 
   }
 
@@ -1422,8 +1530,10 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
 
   if( MyPID == 0 ) {
 
-    printf("\tmin_i ( \\sum_{j!=i} abs(a_{i,j}) )  = %e\n", Min);
-    printf("\tmax_i ( \\sum_{j!=i} abs(a_{i,j}) )  = %e\n", Max);
+    printf("\t%-50s = %f\n",
+	   "Min_i ( \\sum_{j!=i} abs(a(i,j)) )", Min);
+    printf("\t%-50s = %f\n",
+	   "Max_i ( \\sum_{j!=i} abs(a(i,j)) )", Max);
 
   }
 
@@ -1446,10 +1556,14 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
 
       if( MyPID == 0 ) {
 
-	printf("\t(Eq %d) min_i ( abs(a_{i,i}) )      = %e\n", 
-	       Equation, Min);
-	printf("\t(Eq %d) max_i ( abs(a_{i,i}) )      = %e\n", 
-	       Equation, Max);
+	printf("\t(Eq %d) %-50s = %f\n",
+	       Equation,
+	       "Min_i ( abs(a(i,i)) )", 
+	       Min);
+	printf("\t(Eq %d) %-50s = %f\n",
+	       Equation,
+	       "Max_i ( abs(a(i,i)) )", 
+	       Max);
 
       }
     }
@@ -1457,12 +1571,12 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
 
   /* free memory */
 
-  if( colInd != NULL ) ML_free(colInd);
-  if( colVal != NULL ) ML_free(colVal);
-  if( Diagonal != NULL ) ML_free(Diagonal);
-  if( SumOffDiagonal != NULL ) ML_free(SumOffDiagonal);
-  if( IsDiagonallyDominant != NULL ) ML_free(IsDiagonallyDominant);
-  if( NnzRow != NULL ) ML_free( NnzRow );
+  if (colInd != NULL) ML_free(colInd);
+  if (colVal != NULL) ML_free(colVal);
+  if (Diagonal != NULL) ML_free(Diagonal);
+  if (SumOffDiagonal != NULL) ML_free(SumOffDiagonal);
+  if (IsDiagonallyDominant != NULL) ML_free(IsDiagonallyDominant);
+  if (global_id != NULL) ML_free(global_id);
 
   data.ML_id = ML_ID_KRYLOVDATA;
   data.ML_matrix = Op;
@@ -1471,13 +1585,15 @@ int ML_Operator_Analyze(ML_Operator * Op, char* name)
   ML_Power_ComputeEigenvalues(&data,NumMyRows,0);
 
   if( MyPID == 0 ) 
-    printf("\tMaximum eigenvalue of A (using power method)       = %e\n",
+    printf("\t%-50s = %f\n",
+	   "max eig(A) (using power method)",
 	   data.ML_eigen_max);
 	   
   ML_Power_ComputeEigenvalues(&data,NumMyRows,1);
 
   if( MyPID == 0 ) 
-    printf("\tMaximum eigenvalue of D^{-1}A (using power method) = %e\n",
+    printf("\t%-50s = %f\n",
+	   "max eig(D^{-1}A) (using power method)",
 	   data.ML_eigen_max);
 
   if( MyPID == 0 )
