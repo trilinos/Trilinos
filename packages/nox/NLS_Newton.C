@@ -17,6 +17,7 @@ NLS_Newton::NLS_Newton(NLS_Group& i, NLS_Group& s, NLS_ParameterList& p) :
   niter(0)
 {
   // Get initial guess for x and corresponding rhs
+  soln.copy(oldsoln);
   soln.computeRHS();
 }
 
@@ -67,7 +68,7 @@ int NLS_Newton::iterate()
   oldsoln.copy(soln);
 
   // update current solution
-  soln.computeX(oldsoln, oldsoln.getNewton(), static_cast<double>(-1.0));
+  soln.computeX(oldsoln, soln.getNewton(), static_cast<double>(-1.0));
 
   // compute RHS for new current solution
   soln.computeRHS();
@@ -96,11 +97,12 @@ int NLS_Newton::solve()
     iterate();
     if (isConverged()) break;
   }
+  return niter;
 }
 
 NLS_Group& NLS_Newton::getSolutionGroup() const
 {
-
+  return soln;
 }
 
 bool NLS_Newton::getProfileInfo(string& name, NLS_Parameter& p) const
