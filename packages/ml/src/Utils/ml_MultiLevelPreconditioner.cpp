@@ -15,7 +15,13 @@
 #include "ml_memory.h"
 #include <iomanip>
 
-extern "C" {
+
+#ifndef ML_CPP
+#ifdef __cplusplus
+extern "C" 
+{
+#endif
+#endif
 
 extern double ML_DD_OneLevel(ML_1Level *curr, double *sol, double *rhs,
 			     int approx_all_zeros, ML_Comm *comm,
@@ -33,9 +39,6 @@ extern int ML_Aggregate_Stats_CleanUp_Info( ML *ml, ML_Aggregate *ag);
 extern int ML_Aggregate_Stats_ComputeCoordinates( ML *ml, ML_Aggregate *ag,
 						 double *x, double *y, double *z);
 
-}
-
-extern "C" {
 
   double ML_DD_OneLevel(ML_1Level *curr, double *sol, double *rhs,
 			int approx_all_zeros, ML_Comm *comm,
@@ -210,7 +213,12 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
   return 0.0;
 }
 
+#ifndef ML_CPP
+#ifdef __cplusplus
 } /* extern "C" */
+#endif
+#endif
+
 
 
 
