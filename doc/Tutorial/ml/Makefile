@@ -29,10 +29,22 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_ARCH)
 MY_COMPILER_FLAGS = -DHAVE_CONFIG_H $(CXXFLAGS) -c -g\
 	            -I$(TRILINOS_LIB)/include/
 
+# finding the correct libraries for ML can be challenging as
+# ML can depend on a variety of packages (depending on
+# you configuration). ML can depend on:
+# - Y12M (if AztecOO has been configured with its support)
+# - IFPACK
+# - Anasazi
+# - Amesos (and henceforth Amesos libraries)
+# - Tuechos
+# - metis/parmetis and all other ML's libraries (like ParaSails, SuperLU, etc)
+# among others.
+ML_LIBS = -lifpack -lteuchos -lamesos 
 MY_LINKER_FLAGS = $(LDFLAGS) $(TEST_C_OBJ) \
 	-L$(TRILINOS_LIB)/lib/ \
 	-L$(HOME)/lib/LINUX_MPI \
-	-laztecoo -lml -ltriutils -lepetra $(LIB_PATHS) $(ARCH_LIBS) -llapack -lblas
+	-laztecoo -lml -ltriutils -lepetra \
+	$(ML_LIBS) $(LIB_PATHS) $(ARCH_LIBS) -llapack -lblas
 
 METIS_DIR = -L/home/msala/lib/Linux
 METIS_INC = -I/home/msala/include
