@@ -278,17 +278,14 @@ AM_CONDITIONAL(BUILD_EXAMPLES, [test "X$ac_cv_use_anasazi_examples" != "Xno"])
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
-#TAC_ARG_ENABLE_FEATURE(triutils, [Build examples which use triutils], TRIUTILS, no)
-#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(triutils, [Build examples which use Triutils], ANASAZI_TRIUTILS, no)
+AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(belos, [Build examples which use belos], BELOS, no)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, [Build examples which use Belos], ANASAZI_BELOS)
 AM_CONDITIONAL(BUILD_BELOS, test "X$ac_cv_use_belos" != "Xno")
 
-TAC_ARG_CHECK_DEFAULT_FEATURE(ifpack, IFPACK)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, [Build examples which use Ifpack], ANASAZI_IFPACK)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
-
-#TAC_ARG_CHECK_DEFAULT_FEATURE(triutils, TRIUTILS)
-#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
 
 # ------------------------------------------------------------------------

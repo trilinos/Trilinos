@@ -9,9 +9,9 @@ ANASAZI_BIRAM_EX_SI_IFPACK = BlockKrylovSchurEpetraExGen
 endif
 endif
 
-#if BUILD_TRIUTILS
+if BUILD_TRIUTILS
 ANASAZI_BIRAM_EX_HB = BlockKrylovSchurEpetraExHB
-#endif 
+endif 
 
 noinst_PROGRAMS = BlockKrylovSchurEpetraEx BlockKrylovSchurEpetraExSVD $(ANASAZI_BIRAM_EX_HB) $(ANASAZI_BIRAM_EX_SI_IFPACK) 
 
