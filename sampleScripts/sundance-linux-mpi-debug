@@ -15,11 +15,13 @@ CXXFLAGS="-g" \
 --enable-tsfextended \
 --enable-tsfcore \
 --enable-tsfcore-epetra \
+--enable-tsfcore-mpi \
 --enable-teuchos \
 --enable-teuchos-extended \
 --disable-new-package \
 --disable-nox \
 --disable-loca \
+--with-install="/usr/bin/install -c -p" \
 --prefix=$BUILD_DIR
 
 
