@@ -118,12 +118,14 @@ bool CompareWithAztecOO(Epetra_LinearProblem* Problem, const string what,
     AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_ilu);
     AztecOOSolver.SetAztecOption(AZ_reorder,1);
   }
+#ifdef HAVE_IFPACK_AMESOS
   else if (what == "LU") {
     Prec = new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(A,Overlap);
     List.set("amesos: solver type", "Klu");
     AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
     AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_lu);
   }
+#endif
   else {
     cerr << "Option not recognized" << endl;
     exit(EXIT_FAILURE);
@@ -257,7 +259,9 @@ int main(int argc, char *argv[])
   //Tests.push_back("ILU no reord");
   //Tests.push_back("ILU reord");
   // following requires --enable-aztecoo-azlu
+#ifdef HAVE_IFPACK_AMESOS
   //Tests.push_back("LU");
+#endif
 
   for (unsigned int i = 0 ; i < Tests.size() ; ++i) {
     for (int overlap = 0 ; overlap < 1 ; overlap += 2) {
