@@ -74,14 +74,8 @@ where \f$ x_k \f$ is the solution vector of the \f$ k \f$-th outer iterate.
   - If the Abstract::Vector::NormType is \c INF, then
     \f[ \alpha = \gamma \max_{i} | \Delta x_i |  \f]
 
-  We set $\beta$ as follows. 
+  $\beta$ is a scalar set by the user in the constructor. 
 
-  - If an initial guess is provided, we use a relative tolerance
-  defined by \f[ \beta = \frac{\mbox{tolerance}}{\alpha_0} \f] Here
-  \f$\alpha_0\f$ is the \f$\alpha\f$ as defined above associated with
-  the initial guess.
-
-  - Otherwise, we use an absolte tolerance defined by
   \f[  \beta  = \mbox{tolerance} \f]
 
   NOTE:  If no iterations have been performed, then there is no information for\f$ x_{k-1} \f$.  If the test is called while the number of iterations is zero (i.e. before an iteration takes place), the code returns the status test as Unconverged and sets the value to -1.0.  Once an iteration has taken place the Norm of the update is calculated as above.  
@@ -99,14 +93,6 @@ public:
     Scaled
   };
 
-  //! Type that determines whether the norm is absolute or relative to the intial guess
-  enum ToleranceType {
-    //! Relative to starting guess
-    Relative, 
-    //! Absolute
-    Absolute
-  };
-
   //! Constructor for absolute norm. 
   /*! This constructor defaults to the \c Absolute tolerance type. */
   NormUpdate(double tolerance, NOX::Abstract::Vector::NormType ntype, ScaleType stype = Scaled);
@@ -114,15 +100,6 @@ public:
   //! Constructor for absolute norm
   /*! This constructor defaults to the \c Absolute ToleranceType and \c TWO NormType. */
   NormUpdate(double tolerance, ScaleType stype = Scaled);
-
-  //! Constructor with initial guess (for relative norms)
-  /*! This constructor defaults to the \c Relative tolerance type. */
-  NormUpdate(NOX::Abstract::Group& initialGuess, double tolerance, 
-	     NOX::Abstract::Vector::NormType ntype, ScaleType stype = Scaled);
-
-  //! Constructor with initial guess (for relative norms)
-  /*! This constructor defaults to the \c Relative ToleranceType and \c TWO NormType. */
-  NormUpdate(NOX::Abstract::Group& initialGuess, double tolerance, ScaleType stype = Scaled);
 
   //! Destructor.
   virtual ~NormUpdate();
@@ -142,13 +119,7 @@ public:
   virtual double getNormUpdate() const;
    
   //! Returns the true tolerance.
-  virtual double getTrueTolerance() const;
-
-  //! Returns the specified tolerance set in the constructor.
-  virtual double getSpecifiedTolerance() const;
-
-  //! Returns the initial tolerance.
-  virtual double getInitialTolerance() const;
+  virtual double getTolerance() const;
 
   //@}
 
@@ -166,17 +137,8 @@ private:
   //! Scaling to use
   ScaleType scaleType;
 
-  //! Tolerance type (i.e., relative or absolute)
-  ToleranceType toleranceType;
-
-  //! Tolerance required for convergence.
-  double specifiedTolerance;
-
-  //! Initial tolerance
-  double initialTolerance;
-
-  //! True tolerance value, i.e., specifiedTolerance / initialTolerance
-  double trueTolerance;
+  //! Tolerance value specified by user in constructor
+  double tolerance;
 
   //! Norm of the update to be compared to trueTolerance
   double normUpdate;

@@ -40,59 +40,22 @@
 using namespace NOX;
 using namespace NOX::StatusTest;
 
-NormUpdate::NormUpdate(double tolerance, Abstract::Vector::NormType ntype, ScaleType stype) :
+NormUpdate::NormUpdate(double tol, Abstract::Vector::NormType ntype, ScaleType stype) :
   status(Unconverged),
   updateVector(0),
   normType(ntype),
   scaleType(stype),
-  toleranceType(Absolute),
-  specifiedTolerance(tolerance),
-  initialTolerance(1.0),
-  trueTolerance(tolerance)
+  tolerance(tol)
 {
 }
 
-NormUpdate::NormUpdate(double tolerance, ScaleType stype) :
+NormUpdate::NormUpdate(double tol, ScaleType stype) :
   status(Unconverged),
   updateVector(0),
   normType(NOX::Abstract::Vector::TwoNorm),
   scaleType(stype),
-  toleranceType(Absolute),
-  specifiedTolerance(tolerance),
-  initialTolerance(1.0),
-  trueTolerance(tolerance)
+  tolerance(tol)
 {
-}
-
-NormUpdate::NormUpdate(Abstract::Group& initialGuess, double tolerance, Abstract::Vector::NormType ntype, ScaleType stype) :
-  status(Unconverged),
-  updateVector(0),
-  normType(ntype),
-  scaleType(stype),
-  toleranceType(Relative),
-  specifiedTolerance(tolerance),
-  initialTolerance(0.0),
-  trueTolerance(0.0)
-{
-  initialGuess.computeF();
-  initialTolerance = initialGuess.getNormF();
-  trueTolerance = specifiedTolerance / initialTolerance;
-}
-
-
-NormUpdate::NormUpdate(Abstract::Group& initialGuess, double tolerance, ScaleType stype) :
-  status(Unconverged),
-  updateVector(0),
-  normType(Abstract::Vector::TwoNorm),
-  scaleType(stype),
-  toleranceType(Relative),
-  specifiedTolerance(tolerance),
-  initialTolerance(0.0),
-  trueTolerance(0.0)
-{
-  initialGuess.computeF();
-  initialTolerance = initialGuess.getNormF();
-  trueTolerance = specifiedTolerance / initialTolerance;
 }
 
 NormUpdate::~NormUpdate()
@@ -142,7 +105,7 @@ StatusType NormUpdate::checkStatus(const Solver::Generic& problem)
 
   }
 
-  if (normUpdate < trueTolerance)
+  if (normUpdate < tolerance)
     status = Converged;
 
   return status;
@@ -158,15 +121,8 @@ ostream& NormUpdate::print(ostream& stream, int indent) const
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
-  if (toleranceType == Absolute) {
-    stream << "Absolute Update-Norm = " << Utils::sciformat(normUpdate, 3) << " < " 
-	   << Utils::sciformat(trueTolerance, 3);
-  }
-  else {
-    stream << "Relative Update-Norm = " << Utils::sciformat(normUpdate, 3) << " < " 
-	   << Utils::sciformat(trueTolerance, 3);
-  }
-  stream << endl;
+  stream << "Absolute Update-Norm = " << Utils::sciformat(normUpdate, 3) 
+	 << " < " << Utils::sciformat(tolerance, 3) << endl;
   return stream;
 }
 
@@ -175,17 +131,7 @@ double NOX::StatusTest::NormUpdate::getNormUpdate() const
   return normUpdate;
 }
 
-double NOX::StatusTest::NormUpdate::getTrueTolerance() const
+double NOX::StatusTest::NormUpdate::getTolerance() const
 {
-  return trueTolerance;
-}
-
-double NOX::StatusTest::NormUpdate::getSpecifiedTolerance() const
-{
-  return specifiedTolerance;
-}
-
-double NOX::StatusTest::NormUpdate::getInitialTolerance() const
-{
-  return initialTolerance;
+  return tolerance;
 }
