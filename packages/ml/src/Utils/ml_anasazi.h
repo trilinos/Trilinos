@@ -2,6 +2,7 @@
 #define _ML_ANASAZI_H_
 
 #include "ml_include.h"
+#include "ml_struct.h"
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_ANASAZI)
 
@@ -35,7 +36,9 @@ namespace ML_Anasazi {
 extern int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVectors,
 		     double RealEigenvalues[], double ImagEigenvalues[],
 		     Teuchos::ParameterList & List,
-		     double RealEigenvectors[] = 0, double ImagEigenvectors[] = 0);
+		     double RealEigenvectors[] = 0, double ImagEigenvectors[] = 0,
+		     int * NumRealEigenvectors = 0, int * NumImagEigenvectors = 0,
+		     ML * ml = 0);
 
   //! Computes the size of a box containing the field of values.
 extern int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix, 

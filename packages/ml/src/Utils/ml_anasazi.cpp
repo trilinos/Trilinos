@@ -28,6 +28,39 @@
 #include "Epetra_CrsMatrix.h"
 #include "ml_anasazi.h"
 
+void Orthogonalize(Anasazi::PetraVec<double> & vec)
+{
+
+  int NumVectors = vec.NumVectors();
+
+  // replace each vector v_i by v_i - rho_ij v_j,
+  // where rho_ij = <v_i, v_j>, for all j <i
+  for( int i=1 ; i<NumVectors ; ++i ) {
+    double norm;
+    // scale previous (possibly modified at previous step)
+    vec(i-1)->Norm2(&norm);
+    if( norm < 1e-10 ) vec(i-1)->Scale(0.0);
+    else               vec(i-1)->Scale(1.0/norm);
+    // scale current (still unscaled)
+    vec(i)->Norm2(&norm);
+    if( norm < 1e-10 ) vec(i)->Scale(0.0);
+    else               vec(i)->Scale(1.0/norm);
+    // orthogonalize, only `i' is modified
+    for( int j=0 ; j<i ; ++j ) {
+      double rho;
+      vec(i)->Dot(*(vec(j)),&rho);
+      vec(i)->Update(-rho,*(vec(j)),1.0);
+      vec(i)->Norm2(&norm);
+      if( norm < 1e-10 ) vec(i)->Scale(0.0);
+      else               vec(i)->Scale(1.0/norm);      
+    }
+  }
+
+  return;
+}
+
+// ================================================ ====== ==== ==== == =
+
 using namespace Anasazi;
 
 // ================================================ ====== ==== ==== == =
@@ -40,7 +73,8 @@ enum MLMatOp { A_MATRIX, I_MINUS_A_MATRIX, A_PLUS_AT_MATRIX,
 template <class TYPE> 
 class MLMat : public virtual Matrix<TYPE> {
 public:
-  MLMat(const Epetra_RowMatrix &, const MLMatOp MatOp, const bool UseDiagScaling);
+  MLMat(const Epetra_RowMatrix &, const MLMatOp MatOp, const bool UseDiagScaling,
+	ML * ml = 0);
   ~MLMat();
   ReturnType ApplyMatrix ( const MultiVec<TYPE>& x, 
 			   MultiVec<TYPE>& y ) const;
@@ -64,18 +98,21 @@ private:
 
   Epetra_Vector * Mask_;
   int NumMyRows_;
+  ML * ml_;
 };
 
 // ================================================ ====== ==== ==== == =
 
 template <class TYPE>
 MLMat<TYPE>::MLMat(const Epetra_RowMatrix & Matrix,
-		   const MLMatOp MatOp, const bool UseDiagScaling) 
+		   const MLMatOp MatOp, const bool UseDiagScaling,
+		   ML * ml) 
   : Mat_(Matrix),
     MatOp_(MatOp),
     UseDiagScaling_(UseDiagScaling),
     Scale_(1.0),
-    tmp_(0)
+    tmp_(0),
+    ml_(ml)
 {
   NumMyRows_ = Matrix.RowMatrixRowMap().NumMyElements();
   
@@ -129,7 +166,7 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
   if( vec_x==0 || vec_y==0 ) return Failed;
 
   int NumVectors = vec_x->NumVectors();
-  double ** tmp_view, ** x_view, * mask_view;
+  double ** tmp_view, ** x_view, ** y_view, * mask_view;
   
   if( tmp_ == 0 ) {
     const_cast<MLMat<TYPE> *>(this)->tmp_ = new Epetra_MultiVector(*vec_x);
@@ -137,11 +174,14 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
   
   // extract views for x and tmp_
   vec_x->ExtractView(&x_view);
+  vec_y->ExtractView(&y_view);
   tmp_->ExtractView(&tmp_view);
   Mask_->ExtractView(&mask_view);
 
   if( MatOp_ == ITERATION_MATRIX ) {
 
+    assert( ml_ != 0 );
+    
     // Here I apply I - ML^{-1} A
     
     const Epetra_RowMatrix & RowMatrix = dynamic_cast<const Epetra_RowMatrix &>(Mat_);
@@ -150,7 +190,7 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
     tmp_->PutScalar(0.0);
 
     // 1- apply the linear system matrix to vec_x
-    info = RowMatrix.Multiply(true,*vec_x,*tmp_);
+    info = RowMatrix.Multiply(false,*vec_x,*tmp_);
     if( info ) return Failed;
 
     // 1.1- damp out Dirichlet nodes (FIXME: am I useful?)
@@ -160,9 +200,9 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
       }    
     }
 
-    // 2- apply the multilevel hierarchy, as defined by `this' operator
-    //    vec_y is zero'd in ApplyInverse
-    //FIXME    this->ApplyInverse(*tmp_, *vec_y);
+    // 2- apply the multilevel hierarchy
+    vec_y->PutScalar(0.0);
+    for( int i=0 ; i<NumVectors ; ++i ) ML_Solve_MGV(ml_,tmp_view[i], y_view[i]);
     
     // 3- add the contribution of the identity matrix
     vec_y->Update (1.0,*vec_x,-1.0);
@@ -223,7 +263,9 @@ namespace ML_Anasazi {
 int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVectors,
 	      double RealEigenvalues[], double ImagEigenvalues[],
 	      Teuchos::ParameterList & List,
-	      double RealEigenvectors[],  double ImagEigenvectors[]) 
+	      double RealEigenvectors[],  double ImagEigenvectors[],
+	      int * NumRealEigenvectors, int *  NumImagEigenvectors,
+	      ML * ml) 
 {
 
   int MyPID = RowMatrix->Comm().MyPID();
@@ -243,7 +285,7 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   else if( MatOpStr == "I-A" ) MatOp = I_MINUS_A_MATRIX;
   else if( MatOpStr == "A+A^T" ) MatOp = A_PLUS_AT_MATRIX;
   else if( MatOpStr == "A-A^T" ) MatOp = A_MINUS_AT_MATRIX;
-  else if( MatOpStr == "I-BA" ) {
+  else if( MatOpStr == "I-ML^{-1}A" ) {
     MatOp = ITERATION_MATRIX;
     UseDiagScaling = false; // doesn't work with iteration matrix
     // note that `which' is usually "LM"
@@ -293,7 +335,7 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   int step = restarts*length*NumBlocks;
   
   // Call the ctor that calls the petra ctor for a matrix
-  MLMat<double> Amat(*RowMatrix,MatOp,UseDiagScaling);
+  MLMat<double> Amat(*RowMatrix,MatOp,UseDiagScaling,ml);
   
   Anasazi::Eigenproblem<double> MyProblem(&Amat, &Vectors);
 
@@ -306,7 +348,7 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   else              MyBlockArnoldi1.setSymmetric(false);
   MyBlockArnoldi1.setDebugLevel(0);
 
-  MyBlockArnoldi1.iterate(5);
+  //  MyBlockArnoldi1.iterate(5);
   
   // Solve the problem to the specified tolerances or length
   MyBlockArnoldi1.solve();
@@ -333,37 +375,46 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
 
   Anasazi::PetraVec<double> vec(EigenVectors.Map(), NumBlocks);
 
-  if( RealEigenvectors ) {
+  if( RealEigenvectors && NumRealEigenvectors ) {
 
-    int count = 0;    
+    *NumRealEigenvectors = 0;    
     MyBlockArnoldi1.getEvecs(vec);
 
+    Orthogonalize(vec);
+    
     int NumRows = EigenVectors.Map().NumMyPoints();
     for( int i=0 ; i<NumBlocks ; ++i ) {
-      if( RealEigenvalues[i] != 0 ) {
+      double norm;
+      vec(i)->Norm2(&norm);
+      if( abs(norm)>1e-8 )  {
 	for( int j=0 ; j<NumRows ; ++j ) {
-	  RealEigenvectors[count*NumRows+j] = vec[i][j];
+	  RealEigenvectors[(*NumRealEigenvectors)*NumRows+j] = vec[i][j];
 	}
-	++count;
+	++(*NumRealEigenvectors);
+      }    
+    }
+  }
+  
+  if( ImagEigenvectors && NumImagEigenvectors ) {
+
+    *NumImagEigenvectors=0;
+    MyBlockArnoldi1.getiEvecs(vec);
+
+    Orthogonalize(vec);
+    
+    int NumRows = EigenVectors.Map().NumMyPoints();    
+    for( int i=0 ; i<NumBlocks ; ++i ) {
+      double norm;
+      vec(i)->Norm2(&norm);
+      if( abs(norm)>1e-8 ) {
+	for( int j=0 ; j<EigenVectors.Map().NumMyPoints() ; ++j ) {
+	  ImagEigenvectors[(*NumImagEigenvectors)*NumRows+j] = vec[i][j];
+	}
+	++(*NumImagEigenvectors);
       }
     }
   }
   
-  if( ImagEigenvectors ) {
-
-    int count=0;
-    MyBlockArnoldi1.getiEvecs(vec);
-
-    int NumRows = EigenVectors.Map().NumMyPoints();    
-    for( int i=0 ; i<NumBlocks ; ++i )
-      if( ImagEigenvalues[i] != 0 ) {
-	for( int j=0 ; j<EigenVectors.Map().NumMyPoints() ; ++j ) {
-	  ImagEigenvectors[count*NumRows+j] = vec[i][j];
-	}
-	++count;
-      }
-  }
-
   // Output results to screen
   if( PrintCurrentStatus && MyPID == 0 ) MyBlockArnoldi1.currentStatus();
 
