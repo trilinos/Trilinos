@@ -149,15 +149,29 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 
-noinst_PROGRAMS = bl_pcg_hb
+noinst_PROGRAMS = bl_pcg_hb bl_cg_hb
 
-bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp
+bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp 
+
+bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp 
 
 bl_pcg_hb_DEPENDENCIES = $(top_builddir)/utils/libbelosutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a
 
 
+bl_cg_hb_DEPENDENCIES = $(top_builddir)/utils/libbelosutils.a \
+			$(top_builddir)/../epetra/src/libepetra.a
+
+
 bl_pcg_hb_CXXFLAGS = -I$(top_srcdir)/utils -I$(top_srcdir)/src \
+		-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+		-I$(top_srcdir)/../ifpack/src \
+		-I$(top_builddir)/../ifpack/src \
+		-I$(top_srcdir)/../triutils/src \
+		-I$(top_builddir)/../triutils/src
+
+
+bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/utils -I$(top_srcdir)/src \
 		-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
 		-I$(top_srcdir)/../ifpack/src \
 		-I$(top_builddir)/../ifpack/src \
@@ -171,13 +185,23 @@ bl_pcg_hb_LDADD = $(top_builddir)/utils/libbelosutils.a \
 		$(top_builddir)/../ifpack/src/libifpack.a $(LAPACK_LIBS) \
 		$(BLAS_LIBS) $(LIBS) $(FLIBS)
 
+
+bl_cg_hb_LDADD = $(top_builddir)/utils/libbelosutils.a \
+		$(top_builddir)/../epetra/src/libepetra.a \
+		$(top_builddir)/../triutils/src/libtriutils.a \
+		$(top_builddir)/../ifpack/src/libifpack.a $(LAPACK_LIBS) \
+		$(BLAS_LIBS) $(LIBS) $(FLIBS)
+
 subdir = test/BlockCG
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
-noinst_PROGRAMS = bl_pcg_hb$(EXEEXT)
+noinst_PROGRAMS = bl_pcg_hb$(EXEEXT) bl_cg_hb$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
+am_bl_cg_hb_OBJECTS = bl_cg_hb-test_bl_cg_hb.$(OBJEXT)
+bl_cg_hb_OBJECTS = $(am_bl_cg_hb_OBJECTS)
+bl_cg_hb_LDFLAGS =
 am_bl_pcg_hb_OBJECTS = bl_pcg_hb-test_bl_pcg_hb.$(OBJEXT)
 bl_pcg_hb_OBJECTS = $(am_bl_pcg_hb_OBJECTS)
 bl_pcg_hb_LDFLAGS =
@@ -185,15 +209,16 @@ bl_pcg_hb_LDFLAGS =
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/bl_pcg_hb-test_bl_pcg_hb.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/bl_pcg_hb-test_bl_pcg_hb.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-DIST_SOURCES = $(bl_pcg_hb_SOURCES)
+DIST_SOURCES = $(bl_cg_hb_SOURCES) $(bl_pcg_hb_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(bl_pcg_hb_SOURCES)
+SOURCES = $(bl_cg_hb_SOURCES) $(bl_pcg_hb_SOURCES)
 
 all: all-am
 
@@ -207,6 +232,9 @@ Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.s
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+bl_cg_hb$(EXEEXT): $(bl_cg_hb_OBJECTS) $(bl_cg_hb_DEPENDENCIES) 
+	@rm -f bl_cg_hb$(EXEEXT)
+	$(CXXLINK) $(bl_cg_hb_LDFLAGS) $(bl_cg_hb_OBJECTS) $(bl_cg_hb_LDADD) $(LIBS)
 bl_pcg_hb$(EXEEXT): $(bl_pcg_hb_OBJECTS) $(bl_pcg_hb_DEPENDENCIES) 
 	@rm -f bl_pcg_hb$(EXEEXT)
 	$(CXXLINK) $(bl_pcg_hb_LDFLAGS) $(bl_pcg_hb_OBJECTS) $(bl_pcg_hb_LDADD) $(LIBS)
@@ -217,6 +245,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_pcg_hb-test_bl_pcg_hb.Po@am__quote@
 
 distclean-depend:
@@ -243,6 +272,28 @@ distclean-depend:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `if test -f '$<'; then $(CYGPATH_W) '$<'; else $(CYGPATH_W) '$(srcdir)/$<'; fi`
+
+bl_cg_hb-test_bl_cg_hb.o: $(srcdir)/test_bl_cg_hb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_cg_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_cg_hb-test_bl_cg_hb.o -MD -MP -MF "$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o bl_cg_hb-test_bl_cg_hb.o `test -f '$(srcdir)/test_bl_cg_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_cg_hb.cpp; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Tpo" "$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_cg_hb.cpp' object='bl_cg_hb-test_bl_cg_hb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Po' tmpdepfile='$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_cg_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_cg_hb-test_bl_cg_hb.o `test -f '$(srcdir)/test_bl_cg_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_cg_hb.cpp
+
+bl_cg_hb-test_bl_cg_hb.obj: $(srcdir)/test_bl_cg_hb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_cg_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_cg_hb-test_bl_cg_hb.obj -MD -MP -MF "$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o bl_cg_hb-test_bl_cg_hb.obj `if test -f '$(srcdir)/test_bl_cg_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_cg_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_cg_hb.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Tpo" "$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_cg_hb.cpp' object='bl_cg_hb-test_bl_cg_hb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.Po' tmpdepfile='$(DEPDIR)/bl_cg_hb-test_bl_cg_hb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_cg_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_cg_hb-test_bl_cg_hb.obj `if test -f '$(srcdir)/test_bl_cg_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_cg_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_cg_hb.cpp'; fi`
 
 bl_pcg_hb-test_bl_pcg_hb.o: $(srcdir)/test_bl_pcg_hb.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pcg_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_pcg_hb-test_bl_pcg_hb.o -MD -MP -MF "$(DEPDIR)/bl_pcg_hb-test_bl_pcg_hb.Tpo" \

@@ -23,7 +23,6 @@
 #include "Ifpack_IlukGraph.h"
 #include "Ifpack_CrsRiluk.h"
 #include "AnasaziPrecondition.hpp"
-#include "Epetra_Operator_Anasazi_Prec.hpp"
 //
 //
 #ifdef EPETRA_MPI
@@ -54,8 +53,8 @@ int main(int argc, char *argv[]) {
 	
 	bool verbose = (MyPID==0);
 	//
-    if(argc < 2 && verbose) {
-     cerr << "Usage: " << argv[0] 
+    	if(argc < 2 && verbose) {
+     	cerr << "Usage: " << argv[0] 
 	 << " HB_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
 	 << "where:" << endl
 	 << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
@@ -67,14 +66,14 @@ int main(int argc, char *argv[]) {
 	 << " preceding values but not any subsequent parameters. Example:" << endl
 	 << "bl_pgmres_hb_mpi.exe mymatrix.hb 1  - loads mymatrix.hb, uses level fill of one, all other values are defaults" << endl
 	 << endl;
-    return(1);
+    	return(1);
 	}
 	//
 	//**********************************************************************
 	//******************Set up the problem to be solved*********************
 	//**********************************************************************
-    //
-    int NumGlobalElements;  // total # of rows in matrix
+    	//
+    	int NumGlobalElements;  // total # of rows in matrix
 	//
 	// *****Read in matrix from HB file******
 	//
@@ -90,7 +89,7 @@ int main(int argc, char *argv[]) {
 	//
 	int NumMyElements = N_update; // # local rows of matrix on processor
 	//
-    // Create an integer vector NumNz that is used to build the Petra Matrix.
+    	// Create an integer vector NumNz that is used to build the Petra Matrix.
 	// NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
 	// on this processor
 	//
@@ -146,8 +145,6 @@ int main(int argc, char *argv[]) {
 	//
 	Ifpack_IlukGraph * ilukGraph=0;
 	Ifpack_CrsRiluk * ilukFactors=0;
-	Epetra_Operator * prec;
-	bool precflag = false;  // true if preconditioning is used, false otherwise
 	//
 	if (Lfill > -1) {
 		ilukGraph = new Ifpack_IlukGraph(A.Graph(), Lfill, Overlap);
@@ -165,26 +162,25 @@ int main(int argc, char *argv[]) {
 		cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
 		cout << endl;
 	}
-	prec = dynamic_cast<Epetra_Operator*>(ilukFactors);
+	Epetra_Operator& prec = dynamic_cast<Epetra_Operator&>(*ilukFactors);
 	//
 	// call the ctor for the preconditioning object
 	//
-	Epetra_Operator_Anasazi_Prec<double> EpetraOpPrec(prec, precflag);
+	AnasaziPetraPrecOp<double> EpetraOpPrec(prec);
 	//
-	//
-    // ********Other information used by block solver***********
+    	// ********Other information used by block solver***********
 	//*****************(can be user specified)******************
 	//
 	int numrhs = 15;  // total number of right-hand sides to solve for
-    int block = 10;  // blocksize used by solver
+    	int block = 10;  // blocksize used by solver
 	int numrestarts = 20; // number of restarts allowed 
-    int maxits = NumGlobalElements/block-1; // maximum number of iterations to run
-    double tol = 5.0e-9;  // relative residual tolerance
+    	int maxits = NumGlobalElements/block-1; // maximum number of iterations to run
+    	double tol = 5.0e-9;  // relative residual tolerance
 	//
 	//************************************************************
 	//*****Construct random right-hand-sides *****
 	//
-    // array represents the users data
+    	// array represents the users data
 	double * array = new double[numrhs*NumMyElements]; 
 	// set the rhs's to zero, then randomize them
 	for (j=0; j<numrhs; j++ ) {
@@ -197,7 +193,7 @@ int main(int argc, char *argv[]) {
 	// or copy is determined by the Petra constructor called by AnasaziPetraVec.
 	// This is possible because I pass in arguements needed by petra.
 	//
-    int stride=NumMyElements;
+    	int stride=NumMyElements;
 	AnasaziPetraVec<double> rhs(Map, array, numrhs, stride);
 	rhs.MvRandom();
 	//
@@ -221,8 +217,6 @@ int main(int argc, char *argv[]) {
 	MyBlockGmres.SetRestart(numrestarts);
  
 	MyBlockGmres.SetDebugLevel(0);
-
-	MyBlockGmres.SetGmresBlkTols();
 	//
 	// **********Print out information about problem*******************
 	//
@@ -234,10 +228,10 @@ int main(int argc, char *argv[]) {
 	   cout << "Number of restarts allowed: " << numrestarts << endl;
 	   cout << "Max number of Gmres iterations per restart cycle: " << maxits << endl; 
 	   cout << "Relative residual tolerance: " << tol << endl;
-       cout << endl;
+       	   cout << endl;
 	}
 	//
-    //
+    	//
 	if (verbose) {
 	   cout << endl << endl;
 	   cout << "Running Block Gmres -- please wait" << endl;

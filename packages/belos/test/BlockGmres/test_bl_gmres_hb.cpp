@@ -1,5 +1,5 @@
 //
-// test_bl_pcg_hb.cpp
+// test_bl_pgmres_hb.cpp
 //
 // This driver reads a problem from a Harwell-Boeing (HB) file.
 // Multiple right-hand-sides are created randomly.
@@ -14,13 +14,13 @@
 // to solve a single right-hand side system in the traditional way, or, set
 // numrhs = 1 and block > 1 to sove a single rhs-system with a block implementation. 
 //
-// 
+// NOTE: No preconditioner is used in this case. 
+//
 #include "BelosConfigDefs.hpp"
 #include "AnasaziPetra.hpp"
-#include "BelosBlockCG.hpp"
+#include "BelosBlockGmres.hpp"
 #include "Trilinos_Util.h"
 #include "Util.h"
-#include "Ifpack_CrsIct.h"
 #include "AnasaziPrecondition.hpp"
 //
 //
@@ -57,13 +57,6 @@ int main(int argc, char *argv[]) {
 	 << " HB_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
 	 << "where:" << endl
 	 << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
-	 << "level_fill         - The amount of fill to use for ICT preconditioner (default 0)" << endl
-	 << "level_overlap      - The amount of overlap used for overlapping Schwarz subdomains (default 0)" << endl
-	 << "absolute_threshold - The minimum value to place on the diagonal prior to factorization (default 0.0)" << endl
-	 << "relative_threshold - The relative amount to perturb the diagonal prior to factorization (default 1.0)" << endl << endl
-	 << "To specify a non-default value for one of these parameters, you must specify all" << endl
-	 << " preceding values but not any subsequent parameters. Example:" << endl
-	 << "bl_pcg_hb_mpi.exe mymatrix.hb 1  - loads mymatrix.hb, uses level fill of one, all other values are defaults" << endl
 	 << endl;
     	return(1);
 	}
@@ -83,17 +76,6 @@ int main(int argc, char *argv[]) {
 	//
 	distrib_msr_matrix(Comm, &NumGlobalElements, &n_nonzeros, &N_update,
 		                             &update, &val, &bindx);
-	//
-	//
-    	// ********Other information used by block solver***********
-	//*****************(can be user specified)******************
-	//
-	int numrhs = 15;  // total number of right-hand sides to solve for
-    	int block = 10;  // blocksize used by solver
-    	int maxits = NumGlobalElements - 1; // maximum number of iterations to run
-    	double tol = 5.0e-9;  // relative residual tolerance
-	//
-	//*************************************************************
 	//
 	// *****Construct the matrix*****
 	//
@@ -136,49 +118,22 @@ int main(int argc, char *argv[]) {
 	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 	//
 	//
-	//*****Select the Preconditioner*****
+	//*****Construct the Preconditioner*****
 	//
-	if (verbose) cout << endl << endl;
-	if (verbose) cout << "Constructing ICT preconditioner" << endl;
-	int Lfill = 0;
-	if (argc > 2) Lfill = atoi(argv[2]);
-	if (verbose) cout << "Using Lfill = " << Lfill << endl;
-	int Overlap = 0;
-	if (argc > 3) Overlap = atoi(argv[3]);
-	if (verbose) cout << "Using Level Overlap = " << Overlap << endl;
-	double Athresh = 0.0;
-	if (argc > 4) Athresh = atof(argv[4]);
-	if (verbose) cout << "Using Absolute Threshold Value of " << Athresh << endl;
-	double Rthresh = 1.0;
-	if (argc >5) Rthresh = atof(argv[5]);
-	if (verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
-	double dropTol = 1.0e-6;
+	// call the default ctor for the preconditioning object
 	//
-	Ifpack_CrsIct* ICT = 0;
+	AnasaziPrecondition<double> Prec;
 	//
-	if (Lfill > -1) {
-		ICT = new Ifpack_CrsIct(A, dropTol, Lfill);
-		ICT->SetAbsoluteThreshold(Athresh);
-		ICT->SetRelativeThreshold(Rthresh);
-		int initerr = ICT->InitValues(A);
-		if (initerr != 0) cout << "InitValues error = " << initerr;
-		assert(ICT->Factor() == 0);
-	}
+    	// ********Other information used by block solver***********
+	//*****************(can be user specified)******************
 	//
-	bool transA = false;
-	double Cond_Est;
-	ICT->Condest(transA, Cond_Est);
-	if (verbose) {
-		cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
-		cout << endl;
-	}
-	Epetra_Operator& prec = dynamic_cast<Epetra_Operator&>(*ICT);
+	int numrhs = 15;  // total number of right-hand sides to solve for
+    	int block = 10;  // blocksize used by solver
+	int numrestarts = 20; // number of restarts allowed 
+    	int maxits = NumGlobalElements/block-1; // maximum number of iterations to run
+    	double tol = 5.0e-9;  // relative residual tolerance
 	//
-	// call the ctor for the preconditioning object
-	//
-	AnasaziPetraPrecOp<double> EpetraOpPrec(prec);
-
-	//
+	//************************************************************
 	//*****Construct random right-hand-sides *****
 	//
     	// array represents the users data
@@ -198,24 +153,11 @@ int main(int argc, char *argv[]) {
 	AnasaziPetraVec<double> rhs(Map, array, numrhs, stride);
 	rhs.MvRandom();
 	//
-	// **********Print out information about problem*******************
-	//
-	if (verbose) {
-	   cout << endl << endl;
-	   cout << "Dimension of matrix: " << NumGlobalElements << endl;
-	   cout << "Number of right-hand sides: " << numrhs << endl;
-	   cout << "Block size used by solver: " << block << endl;
-	   cout << "Max number of CG iterations: " << maxits << endl; 
-	   cout << "Relative residual tolerance: " << tol << endl;
-       	   cout << endl;
-	}
-	//
-	//
 	//*******************************************************************
-	// *************Start the block CG iteration*************************
+	// *************Start the block Gmres iteration*************************
 	//*******************************************************************
 	//
-	BlockCG<double> MyBlockCG(Amat, EpetraOpPrec, rhs, numrhs, tol, maxits, block,verbose);
+	BlockGmres<double> MyBlockGmres(Amat, Prec, rhs, numrhs, tol, maxits, block,verbose);
 	//
 	// Set initial guesses all to zero vectors.
 	//
@@ -224,34 +166,50 @@ int main(int argc, char *argv[]) {
 			array[i + j*NumMyElements]= 0.0;
 		}
 	}
-	
+
 	AnasaziPetraVec<double> iguess(Map, array, numrhs, stride);
-	MyBlockCG.SetInitGuess( iguess );
+	MyBlockGmres.SetInitGuess( iguess );
 
-	MyBlockCG.SetDebugLevel(0);
-
+	MyBlockGmres.SetRestart(numrestarts);
+ 
+	MyBlockGmres.SetDebugLevel(0);
+	//
+	// **********Print out information about problem*******************
+	//
 	if (verbose) {
 	   cout << endl << endl;
-	   cout << "Running Block CG -- please wait" << endl;
+	   cout << "Dimension of matrix: " << NumGlobalElements << endl;
+	   cout << "Number of right-hand sides: " << numrhs << endl;
+	   cout << "Block size used by solver: " << block << endl;
+	   cout << "Number of restarts allowed: " << numrestarts << endl;
+	   cout << "Max number of Gmres iterations per restart cycle: " << maxits << endl; 
+	   cout << "Relative residual tolerance: " << tol << endl;
+       	   cout << endl;
+	}
+	//
+    	//
+	if (verbose) {
+	   cout << endl << endl;
+	   cout << "Running Block Gmres -- please wait" << endl;
 	   cout << (numrhs+block-1)/block 
 		    << " pass(es) through the solver required to solve for " << endl; 
 	   cout << numrhs << " right-hand side(s) -- using a block size of " << block
 			<< endl << endl;
 	}
-	MyBlockCG.Solve(verbose);
+	MyBlockGmres.Solve(verbose);
 
 	if (verbose) {
-		cout << "Final Computed CG Residual Norms" << endl;
+		cout << "Final Computed Gmres Residual Norms" << endl;
 	}
-	MyBlockCG.PrintResids(verbose);
+	MyBlockGmres.PrintResids(verbose);
 
 	if (verbose) {
-		cout << "Final True CG Residual Norms" << endl;
+		cout << "Final True Gmres Residual Norms" << endl;
 	}
-	MyBlockCG.TrueResiduals(verbose);
+	MyBlockGmres.TrueResiduals(verbose);
 
 	AnasaziPetraVec<double> solutions(Map, numrhs);
-	MyBlockCG.GetSolutions( solutions );
+	MyBlockGmres.GetSolutions( solutions );
 
 	
 // Release all objects  
@@ -261,4 +219,4 @@ int main(int argc, char *argv[]) {
 	
   return 0;
   //
-} // end test_bl_pcg_hb.cpp
+} // end test_bl_pgmrs_hb.cpp

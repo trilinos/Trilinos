@@ -14,13 +14,13 @@
 // to solve a single right-hand side system in the traditional way, or, set
 // numrhs = 1 and block > 1 to sove a single rhs-system with a block implementation. 
 //
-// 
+// NOTE:  No preconditioner is used for this test case. 
+//
 #include "BelosConfigDefs.hpp"
 #include "AnasaziPetra.hpp"
 #include "BelosBlockCG.hpp"
 #include "Trilinos_Util.h"
 #include "Util.h"
-#include "Ifpack_CrsIct.h"
 #include "AnasaziPrecondition.hpp"
 //
 //
@@ -57,13 +57,6 @@ int main(int argc, char *argv[]) {
 	 << " HB_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
 	 << "where:" << endl
 	 << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
-	 << "level_fill         - The amount of fill to use for ICT preconditioner (default 0)" << endl
-	 << "level_overlap      - The amount of overlap used for overlapping Schwarz subdomains (default 0)" << endl
-	 << "absolute_threshold - The minimum value to place on the diagonal prior to factorization (default 0.0)" << endl
-	 << "relative_threshold - The relative amount to perturb the diagonal prior to factorization (default 1.0)" << endl << endl
-	 << "To specify a non-default value for one of these parameters, you must specify all" << endl
-	 << " preceding values but not any subsequent parameters. Example:" << endl
-	 << "bl_pcg_hb_mpi.exe mymatrix.hb 1  - loads mymatrix.hb, uses level fill of one, all other values are defaults" << endl
 	 << endl;
     	return(1);
 	}
@@ -138,45 +131,9 @@ int main(int argc, char *argv[]) {
 	//
 	//*****Select the Preconditioner*****
 	//
-	if (verbose) cout << endl << endl;
-	if (verbose) cout << "Constructing ICT preconditioner" << endl;
-	int Lfill = 0;
-	if (argc > 2) Lfill = atoi(argv[2]);
-	if (verbose) cout << "Using Lfill = " << Lfill << endl;
-	int Overlap = 0;
-	if (argc > 3) Overlap = atoi(argv[3]);
-	if (verbose) cout << "Using Level Overlap = " << Overlap << endl;
-	double Athresh = 0.0;
-	if (argc > 4) Athresh = atof(argv[4]);
-	if (verbose) cout << "Using Absolute Threshold Value of " << Athresh << endl;
-	double Rthresh = 1.0;
-	if (argc >5) Rthresh = atof(argv[5]);
-	if (verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
-	double dropTol = 1.0e-6;
+	// call the ctor for the default preconditioning object
 	//
-	Ifpack_CrsIct* ICT = 0;
-	//
-	if (Lfill > -1) {
-		ICT = new Ifpack_CrsIct(A, dropTol, Lfill);
-		ICT->SetAbsoluteThreshold(Athresh);
-		ICT->SetRelativeThreshold(Rthresh);
-		int initerr = ICT->InitValues(A);
-		if (initerr != 0) cout << "InitValues error = " << initerr;
-		assert(ICT->Factor() == 0);
-	}
-	//
-	bool transA = false;
-	double Cond_Est;
-	ICT->Condest(transA, Cond_Est);
-	if (verbose) {
-		cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
-		cout << endl;
-	}
-	Epetra_Operator& prec = dynamic_cast<Epetra_Operator&>(*ICT);
-	//
-	// call the ctor for the preconditioning object
-	//
-	AnasaziPetraPrecOp<double> EpetraOpPrec(prec);
+	AnasaziPrecondition<double> Prec;
 
 	//
 	//*****Construct random right-hand-sides *****
@@ -215,7 +172,7 @@ int main(int argc, char *argv[]) {
 	// *************Start the block CG iteration*************************
 	//*******************************************************************
 	//
-	BlockCG<double> MyBlockCG(Amat, EpetraOpPrec, rhs, numrhs, tol, maxits, block,verbose);
+	BlockCG<double> MyBlockCG(Amat, Prec, rhs, numrhs, tol, maxits, block,verbose);
 	//
 	// Set initial guesses all to zero vectors.
 	//
