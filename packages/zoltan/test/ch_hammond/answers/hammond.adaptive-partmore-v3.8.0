@@ -4,6 +4,7 @@ Zoltan Parameters       = parmetis_method=adaptiverepart
 File Type		= Chaco
 File Name		= hammond
 Parallel Disk Info	= number=0
+Test null export lists  = 1
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
 19	0	-1	-1

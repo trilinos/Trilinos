@@ -3,6 +3,7 @@ Zoltan Parameters	=
 File Type		= Chaco, initial procs = 1
 File Name		= hammond
 Parallel Disk Info	= number=0
+Test null export lists  = 1
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
 3	0	-1	-1

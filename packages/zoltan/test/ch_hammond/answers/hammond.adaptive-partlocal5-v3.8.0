@@ -4,6 +4,7 @@ File Type		= Chaco
 File Name		= hammond
 Parallel Disk Info	= number=0
 test local partitions   = 5
+Test null export lists  = 1
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
 1339	0	-1	-1

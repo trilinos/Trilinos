@@ -6,3 +6,4 @@ File Name		= hammond
 Parallel Disk Info	= number=0
 test local partitions	= 4
 Test Drops		= 1
+Test null export lists  = 1
