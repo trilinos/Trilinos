@@ -30,6 +30,8 @@
 #ifndef LOCA_EPETRANEW_INTERFACE_XYZT_H
 #define LOCA_EPETRANEW_INTERFACE_XYZT_H
 
+#ifdef HAVE_MPI
+
 #include <iostream>
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
@@ -104,4 +106,5 @@ private:
 } // namespace EpetraNew
 } // namespace LOCA
 
+#endif
 #endif

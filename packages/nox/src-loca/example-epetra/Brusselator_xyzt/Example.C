@@ -99,7 +99,7 @@
 #include "Brusselator.H"              
 
 // Comment out following line for usual implicit time stepping on all procs
-#define DO_XYZT 1
+//#define DO_XYZT 1
 
 #ifdef DO_XYZT
 #include "LOCA_EpetraNew_Interface_xyzt.H"              

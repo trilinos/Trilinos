@@ -27,6 +27,7 @@
 // ************************************************************************
 //@HEADER
 
+#ifdef HAVE_MPI
 
 #include "LOCA_EpetraNew_Interface_xyzt.H"
   
@@ -74,3 +75,5 @@ Epetra_RowMatrix& xyzt::getJacobian()
   return  splitJac; 
   //return  jacobian; 
 }
+
+#endif
