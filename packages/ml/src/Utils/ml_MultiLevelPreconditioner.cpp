@@ -925,6 +925,15 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     cout << PrintMsg_ << "***" << endl;
     cout << PrintMsg_ << "Matrix has " << RowMatrix_->NumGlobalRows()
 	 << " rows, distributed over " << Comm().NumProc() << " process(es)" << endl;
+    {
+      const Epetra_CrsMatrix * dummy = dynamic_cast<const Epetra_CrsMatrix *>(RowMatrix_);
+      if( dummy ) cout << "The linear system matrix is an Epetra_CrsMatrix" << endl;
+    }	
+    {
+      const Epetra_VbrMatrix * dummy = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
+      if( dummy ) cout << "The linear system matrix is an Epetra_VbrMatrix" << endl;
+    }	
+    
     if( List_.isParameter("default values") ){
       cout << PrintMsg_ << "Default values for `" << List_.get("default values", "DD") << "'" << endl;
     }
@@ -1102,12 +1111,207 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   if( IsIncreasing == "increasing" ) Direction = ML_INCREASING;
   else                               Direction = ML_DECREASING;
 
-  if( SolvingMaxwell_ == false ){
+  if( SolvingMaxwell_ == false ) {
 
+    sprintf(parameter,"%saggregation: use auxiliary matrix", Prefix_);
+    bool CreateFakeProblem = List_.get(parameter, false);
+
+    // I use FE matrix because I can set off-process elements. This may
+    // help to create symmetric graphs (undirected graphs) from 
+    // non-symmetric matrices (after dropping). 
+
+    Epetra_FECrsMatrix * FakeMatrix = 0;
+
+    if( CreateFakeProblem == true ) {
+    
+      int NumMyRows = RowMatrix_->NumMyRows();
+
+      // create the auxiliary matrix as VBR matrix. This should help
+      // to save memory with respect to the creation of "pure" VBR
+      // matrices.
+
+      FakeMatrix = new Epetra_FECrsMatrix(Copy,RowMatrix_->RowMatrixRowMap(),RowMatrix_->MaxNumEntries());
+      assert( FakeMatrix != 0 ); 
+
+      sprintf(parameter,"%saggregation: dimensions", Prefix_);
+      int NumDimensions = List_.get(parameter,0);
+
+      if( NumDimensions > 3 || NumDimensions <= 0 ) {
+	cerr << ErrorMsg_ << "For `aggregation: use auxiliary matrix,'" << endl
+	     << ErrorMsg_ << "the number of dimensions is incorrect (" << NumDimensions << ")" << endl;
+	exit( EXIT_FAILURE );
+      }
+
+      sprintf(parameter,"%saggregation: x-coordinates", Prefix_);
+      double * x_coord = List_.get(parameter,(double *)0);
+
+      sprintf(parameter,"%saggregation: y-coordinates", Prefix_);
+      double * y_coord = List_.get(parameter,(double *)0);
+
+      if( NumDimensions > 1 && y_coord == 0 ) {
+	cerr << ErrorMsg_ << "For `aggregation: use auxiliary matrix,' you ask" << endl
+	     << ErrorMsg_ << "for d=2,3, but `aggregation: y-coordinates' is empty." << endl;
+	exit( EXIT_FAILURE );
+      }
+
+      sprintf(parameter,"%saggregation: z-coordinates", Prefix_);
+      double * z_coord = List_.get(parameter,(double *)0);
+
+      if( NumDimensions > 2 && z_coord == 0 ) {
+	cerr << ErrorMsg_ << "For `aggregation: use auxiliary matrix,' you ask" << endl
+	     << ErrorMsg_ << "for d=3, but `aggregation: z-coordinates' is empty." << endl;
+	exit( EXIT_FAILURE );
+      }
+
+      sprintf(parameter,"%saggregation: theta", Prefix_);
+      double theta = List_.get(parameter,0.0);
+
+      sprintf(parameter,"%saggregation: use symmetric pattern", Prefix_);
+      bool SymmetricPattern = List_.get(parameter,false);
+
+      // create the auxiliary matrix
+
+      int allocated = 1;
+      int * colInd = new int[allocated];
+      double * colVal = new double[allocated];
+      int NnzRow;
+
+      double coord_i[3], coord_j[3];
+      for( int i = 0; i<3 ; ++i ) {
+	coord_i[i] = 0.0; coord_j[i] = 0.0;
+      }
+
+      // cycle over all rows (also for VBR)
+      for (int i = 0; i < NumMyRows ; ++i ) {
+
+	int GlobalRow = (RowMatrix_->RowMatrixRowMap().MyGlobalElements())[i];
+
+	if( i%NumPDEEqns_ == 0 ) { // do it just once for each block row
+	  switch( NumDimensions ) {
+	  case 3:
+	    coord_i[2] = z_coord[i/NumPDEEqns_];
+	  case 2:
+	    coord_i[1] = y_coord[i/NumPDEEqns_];
+	  case 1:
+	    coord_i[0] = x_coord[i/NumPDEEqns_];
+	  }
+	}
+	
+	int ierr = ML_Operator_Getrow(&(ml_->Amat[LevelID_[0]]),1,&i,allocated,colInd,colVal,&NnzRow);
+
+	if( ierr == 0 ) {
+	  do {
+	    delete [] colInd;
+	    delete [] colVal;
+	    allocated *= 2;
+	    colInd = new int[allocated];
+	    colVal = new double[allocated];
+	    ierr = ML_Operator_Getrow(&(ml_->Amat[LevelID_[0]]),1,&i,allocated,colInd,colVal,&NnzRow);
+	  } while( ierr == 0 );
+	}
+
+	// NOTE: for VBR matrices, the "real" value that will be used in
+	// the subsequent part of the code is only the one for the first
+	// equations. For each block, I replace values with the sum of
+	// the abs of each block entry.
+	
+	for( int j=0 ; j<NnzRow ; j+=NumPDEEqns_ ) {
+	  colVal[j] = abs(colVal[j]);
+	  for( int k=1 ; k<NumPDEEqns_ ; ++k ) {
+	    colVal[j] += abs(colVal[j+k]);
+	  }
+	}
+
+	// work only on the first equations. Theta will blend the
+	// coordinate part with the sub of abs of row elements.
+
+	int GlobalCol;
+	double total = 0.0;
+
+	for( int j=0 ; j<NnzRow ; j+=NumPDEEqns_ ) {
+
+	  // insert diagonal later
+	  if( colInd[j] != i ) {
+	    if( j%NumPDEEqns_ == 0 ) { // do it only once
+	      switch( NumDimensions ) {
+	      case 3:
+		coord_j[2] = z_coord[colInd[j]/NumPDEEqns_];
+	      case 2:
+		coord_j[1] = y_coord[colInd[j]/NumPDEEqns_];
+	      case 1:
+		coord_j[0] = x_coord[colInd[j]/NumPDEEqns_];
+	      }
+	    }
+
+	    double d2 = pow(coord_i[0]-coord_j[0],2) + pow(coord_i[1]-coord_j[1],2) + pow(coord_i[2]-coord_j[2],2);
+	    assert( d2 != 0.0 );
+
+	    double val = -(1.0-theta)*(1.0/d2) + theta*(colVal[j]);
+	    
+	    GlobalCol= (RowMatrix_->RowMatrixColMap().MyGlobalElements())[colInd[j]];
+
+	    // insert this value on all rows
+	    for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
+	      int row = GlobalRow+k;
+	      int col = GlobalCol+k;
+	      // FakeMatrix->InsertGlobalValues(row,1,&val,&col);
+	      if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) {
+		assert( FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val) == 0);
+	      }
+	    }
+
+	    total -= val;
+
+	    // put (j,i) element as well. this works also for
+	    // off-process elements. 
+	    if( SymmetricPattern == true ) {
+	      for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
+		int row = GlobalCol+k;
+		int col = GlobalRow+k;
+		if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&col,&val) != 0 ) { 
+		  assert( FakeMatrix->InsertGlobalValues(1,&row,1,&col,&val) == 0 );
+		}
+		total -= val;
+	      }
+	    }
+	  } 
+	}
+
+	// create lines with zero-row sum
+	for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
+	  int row = GlobalRow+k;
+	  if( FakeMatrix->SumIntoGlobalValues(1,&row,1,&row,&total) != 0) {
+	    assert( FakeMatrix->InsertGlobalValues(1,&row,1,&row,&total) == 0);
+	  }
+	}
+          
+      }
+
+      FakeMatrix->GlobalAssemble();
+
+      delete [] colInd;
+      delete [] colVal;
+
+      // stick pointer in Amat for level 0 (finest level)
+      ml_->Amat[LevelID_[0]].data = (void *)FakeMatrix;
+
+      // tell ML to keep the tentative prolongator
+      ML_Aggregate_Set_Reuse(agg_);
+    }
+    
     NumLevels_ = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
-    //~!@ FIXME: erase this
-    //NumLevels_ = ML_Gen_MGHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
 
+    if( CreateFakeProblem == true ) {
+
+      delete FakeMatrix;
+      
+      ml_->Amat[LevelID_[0]].data = (void *)RowMatrix_;
+
+      // generate new hierarchy with "good" matrix
+      ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ml_, agg_);
+
+    } // nothing special to be done if CreateFakeProblem is false
+      
   } else {
 
     // convert TMatrix to ML_Operator
@@ -1778,7 +1982,9 @@ void MultiLevelPreconditioner::SetCoarse()
     ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_SCALAPACK, MaxProcs);
   else if( CoarseSolution == "do-nothing" ) {
     // do nothing, ML will not use any coarse solver 
-  } ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
+  } else {
+    ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
+  }
     
 }
 
