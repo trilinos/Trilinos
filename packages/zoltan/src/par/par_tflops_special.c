@@ -10,19 +10,17 @@
  *    $Date$
  *    Revision: 1.6.2.1 $
  ****************************************************************************/
+#include <mpi.h>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include "par_tflops_special_const.h"
+#include "zoltan_mem.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <mpi.h>
-#include "par_tflops_special_const.h"
-#include "zoltan_mem.h"
 
 /* Generic Tflops_special routines to avoid certain types of 
    collective communication routines. */
