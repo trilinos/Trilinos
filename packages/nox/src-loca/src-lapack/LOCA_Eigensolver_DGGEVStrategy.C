@@ -30,15 +30,23 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Eigensolver_DGGEVStrategy.H"
 #include "NOX_Parameter_List.H"
-#include "NOX_LAPACK_Wrappers.H"
-#include "LOCA_LAPACK_Group.H"
+
+#include "LOCA_GlobalData.H"
+#include "LOCA_ErrorCheck.H"
 #include "LOCA_Utils.H"
 
+#include "LOCA_Eigensolver_DGGEVStrategy.H"
+
+#include "NOX_LAPACK_Wrappers.H"
+#include "LOCA_LAPACK_Group.H"
+
+
 LOCA::Eigensolver::DGGEVStrategy::DGGEVStrategy(
+		 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 		 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigParams,
-		 const Teuchos::RefCountPtr<NOX::Parameter::List>& solParams) 
+		 const Teuchos::RefCountPtr<NOX::Parameter::List>& solParams) :
+  globalData(global_data)
 {
 }
 
@@ -48,19 +56,19 @@ LOCA::Eigensolver::DGGEVStrategy::~DGGEVStrategy()
 
 NOX::Abstract::Group::ReturnType
 LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
-						 NOX::Abstract::Group* group)
+						 NOX::Abstract::Group& group)
 {
 
   // Get LAPACK group
   LOCA::LAPACK::Group* grp = 
-    dynamic_cast<LOCA::LAPACK::Group*>(group);
+    dynamic_cast<LOCA::LAPACK::Group*>(&group);
  
   // Check to make sure we have dggev available if we need generalized 
   // eigenvalues.
 #ifndef HAVE_LAPACK_GENEV
   if (hasMassMatrix) {
-    if (LOCA::Utils::doPrint(Utils::StepperIteration)) {
-      errorCheck.printWarning(
+    if (globalData->locaUtils->doPrint(Utils::StepperIteration)) {
+      globalData->locaErrorCheck->printWarning(
 	"LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues",
 	"LAPACK Generalized eigensolver (dggev) requested but not available!");
     }
@@ -147,16 +155,16 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
     return NOX::Abstract::Group::Failed;
 
   // Print out eigenvalues
-  if (LOCA::Utils::doPrint(LOCA::Utils::StepperIteration)) {
+  if (globalData->locaUtils->doPrint(LOCA::Utils::StepperIteration)) {
     if (hasMassMatrix) {
       cout << "Generalized eigenvalues: " << endl;
       for (int i=0; i<n; i++)
-	cout << "\t" << LOCA::Utils::sci(alphar[i]/beta[i]) << " + i" << LOCA::Utils::sci(alphai[i]/beta[i]) << endl;
+	cout << "\t" << globalData->locaUtils->sci(alphar[i]/beta[i]) << " + i" << globalData->locaUtils->sci(alphai[i]/beta[i]) << endl;
     }
     else {
       cout << "Eigenvalues: " << endl;
       for (int i=0; i<n; i++)
-	cout << "\t" << LOCA::Utils::sci(alphar[i]) << " + i" << LOCA::Utils::sci(alphai[i]) << endl;
+	cout << "\t" << globalData->locaUtils->sci(alphar[i]) << " + i" << globalData->locaUtils->sci(alphai[i]) << endl;
     }
   }
 

@@ -35,11 +35,23 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 
-#include "LOCA_Abstract_Factory.H"
-#include "LOCA_Parameter_SublistParser.H"
+#include "NOX_Abstract_Group.H"
 
-// Factories
+#include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_Eigensolver_Factory.H"
+
+// Forward declarations
+namespace NOX {
+  namespace Parameter {
+    class List;
+  }
+}
+namespace LOCA {
+  class GlobalData;
+  namespace Abstract {
+    class Factory;
+  }
+}
 
 namespace LOCA {
 
@@ -62,23 +74,29 @@ namespace LOCA {
 
     //! Constructor
     /*!
+     * \param global_data [in] Global data object.  The constructor sets the
+     * factory member of the global data to this.
      * \param topLevelparams [in] Top-level parameter list.  This list will
      * be parsed to determine which strategies to instantiate.
      */
-    Factory(const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams);
+    Factory(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	    const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams);
     
     //! Constructor with user-supplied factory
     /*!
+     * \param global_data [in] Global data object.  The constructor sets the
+     * factory member of the global data to this.
      * \param topLevelparams [in] Top-level parameter list.  This list will
      * be parsed to determine which strategies to instantiate.
      * \param userFactory [in] A user-supplied factory for instantiating
      * user-defined strategies.
      */
-    Factory(const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams,
+    Factory(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	    const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams,
 	    const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory);
 
     //! Destructor
-    ~Factory();
+    virtual ~Factory();
 
     //! Reset
     /*!
@@ -104,12 +122,18 @@ namespace LOCA {
 
     //@}
 
+  private:
+
+    //! Private to prohibit copying
+    Factory(const Factory&);
+
+    //! Private to prohibit copying
+    Factory& operator = (const Factory&);
+
   protected:
 
-    //! Parse parameter list
-    void parseParameters();
-
-  protected:
+    //! Global data
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
     //! User provided factory
     Teuchos::RefCountPtr<LOCA::Abstract::Factory> factory;

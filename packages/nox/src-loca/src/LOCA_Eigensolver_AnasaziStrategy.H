@@ -43,6 +43,16 @@
 #include "AnasaziOperator.hpp"                 // for typedef
 #endif
 
+// Forward declarations
+namespace NOX {
+  namespace Parameter {
+    class List;
+  }
+}
+namespace LOCA {
+  class GlobalData;
+}
+
 namespace LOCA {
 
   namespace Eigensolver {
@@ -81,11 +91,13 @@ namespace LOCA {
 
       //! Constructor
       /*!
+       * \param global_data [in] Global data object
        * \param eigenParams [in] %Eigensolver parameters as described above.
        * \param solverParams [in] Linear solver parameters passed to linear
        * solver.
        */
       AnasaziStrategy(
+	       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
 	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
       
@@ -98,10 +110,20 @@ namespace LOCA {
        * BlockKrylovSchur solver for computing eigenvalues.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeEigenvalues(
-		    const Teuchos::RefCountPtr<NOX::Abstract::Group>& group);
+      computeEigenvalues(NOX::Abstract::Group& group);
+
+    private:
+
+      //! Private to prohibit copying
+      AnasaziStrategy(const AnasaziStrategy&);
+
+      //! Private to prohibit copying
+      AnasaziStrategy& operator = (const AnasaziStrategy&);
 
     protected:
+
+      //! Global data
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
 #ifdef HAVE_LOCA_ANASAZI
       //! Typedef to simplify templating

@@ -36,10 +36,19 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 #include "NOX_Abstract_Group.H"
-#include "NOX_Parameter_List.H"
 
-// Strategies
-#include "LOCA_Eigensolver_AbstractStrategy.H"
+// Forward declarations
+namespace NOX {
+  namespace Parameter {
+    class List;
+  }
+}
+namespace LOCA {
+  class GlobalData;
+  namespace Eigensolver {
+    class AbstractStrategy;
+  }
+}
 
 namespace LOCA {
 
@@ -57,7 +66,9 @@ namespace LOCA {
      * and passing an instance of the derived factory to the LOCA::Factory
      * object.  Any derived class must implement the \c reset() method,
      * which should parse the supplied parameter list for the relevant
-     * strategy parameters.
+     * strategy parameters.  Also derived classes must implement the
+     * \c setGlobalData() method to set the global data object which the
+     * factory can then pass to any instantiated strategies.
      */
     class Factory {
     
@@ -69,6 +80,15 @@ namespace LOCA {
       //! Destructor
       virtual ~Factory() {}
 
+      //! Initialize factory
+      /*!
+       * The LOCA::Factory will call this method to initialize the
+       * user provided factory.  The user-provided factory should perform
+       * any needed initialization here that cannot occur at construction.
+       */
+      virtual void 
+      init(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) = 0;
+
       //! Reset
       /*!
        * Derived classes must implement this method which should parse
@@ -79,10 +99,17 @@ namespace LOCA {
       reset(
 	const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams) = 0;
 
+      /*! 
+       * @name Strategy create methods
+       */
+      //@{
+
       //! Create eigensolver strategy
       virtual bool
       createEigensolver(
 	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy);
+
+      //@}
     
     }; // Class Factory
 

@@ -33,8 +33,20 @@
 #ifndef LOCA_EIGENSOLVER_FACTORY_H
 #define LOCA_EIGENSOLVER_FACTORY_H
 
-#include "LOCA_Eigensolver_AbstractStrategy.H"
 #include "Teuchos_RefCountPtr.hpp"
+
+// forward declarations
+namespace NOX {
+  namespace Parameter {
+    class List;
+  }
+}
+namespace LOCA {
+  class GlobalData;
+  namespace Eigensolver {
+    class AbstractStrategy;
+  }
+}
 
 namespace LOCA {
 
@@ -59,10 +71,10 @@ namespace LOCA {
     public:
 
       //! Constructor
-      Factory() {}
+      Factory(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
 
       //! Destructor
-      virtual ~Factory() {}
+      virtual ~Factory();
 
       //! Create eigensolver strategy
       /*!
@@ -72,6 +84,19 @@ namespace LOCA {
       Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
       create(const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
 	     const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+
+    private:
+
+      //! Private to prohibit copying
+      Factory(const Factory&);
+
+      //! Private to prohibit copying
+      Factory& operator = (const Factory&);
+
+    protected:
+
+      //! Global data
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
     }; // Class Factory
 

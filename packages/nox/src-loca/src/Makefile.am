@@ -261,10 +261,12 @@ LOCA_EIGENSOLVER = \
 	$(srcdir)/LOCA_Eigensolver_Factory.C
 
 LOCA_FACTORY_H = \
-	$(srcdir)/LOCA_Factory.H
+	$(srcdir)/LOCA_Factory.H \
+	$(srcdir)/LOCA_GlobalData.H 
 
 LOCA_FACTORY = \
-	$(srcdir)/LOCA_Factory.C
+	$(srcdir)/LOCA_Factory.C \
+	$(srcdir)/LOCA_GlobalData.C
 
 
 if BUILD_LOCAANASAZI

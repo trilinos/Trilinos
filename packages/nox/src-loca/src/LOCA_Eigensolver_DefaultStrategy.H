@@ -35,6 +35,16 @@
 
 #include "LOCA_Eigensolver_AbstractStrategy.H" // base class
 
+// Forward declarations
+namespace NOX {
+  namespace Parameter {
+    class List;
+  }
+}
+namespace LOCA {
+  class GlobalData;
+}
+
 namespace LOCA {
 
   namespace Eigensolver {
@@ -50,6 +60,7 @@ namespace LOCA {
 
       //! Constructor
       DefaultStrategy(
+	       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
 	       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
       
@@ -62,8 +73,20 @@ namespace LOCA {
        * NOX::Abstract::Group::Ok.
        */
       virtual NOX::Abstract::Group::ReturnType 
-      computeEigenvalues(
-		     const Teuchos::RefCountPtr<NOX::Abstract::Group>& group);
+      computeEigenvalues(NOX::Abstract::Group& group);
+
+    private:
+
+      //! Private to prohibit copying
+      DefaultStrategy(const DefaultStrategy&);
+
+      //! Private to prohibit copying
+      DefaultStrategy& operator = (const DefaultStrategy&);
+
+    protected:
+
+      //! Global data
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
     }; // Class DefaultStrategy
 

@@ -33,8 +33,9 @@
 #ifndef LOCA_EIGENSOLVER_ABSTRACTSTRATEGY_H
 #define LOCA_EIGENSOLVER_ABSTRACTSTRATEGY_H
 
-#include "NOX_Abstract_Group.H" 
 #include "Teuchos_RefCountPtr.hpp" 
+
+#include "NOX_Abstract_Group.H" 
 
 namespace LOCA {
 
@@ -81,12 +82,11 @@ namespace LOCA {
 
       //! Compute eigenvalues/eigenvectors in group \c group
       /*!
-       * \param group [in] Rcp to NOX Group to compute eigenvalues of
+       * \param group [in] NOX Group to compute eigenvalues of
        * \returns ReturnType code indicating success or failure
        */
       virtual NOX::Abstract::Group::ReturnType 
-      computeEigenvalues(
-		 const Teuchos::RefCountPtr<NOX::Abstract::Group>& group) = 0;
+      computeEigenvalues(NOX::Abstract::Group& group) = 0;
 
     }; // Class AbstractStrategy
 

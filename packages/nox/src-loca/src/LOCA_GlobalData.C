@@ -30,24 +30,18 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Eigensolver_DefaultStrategy.H"
+#include "LOCA_GlobalData.H"
 
-
-LOCA::Eigensolver::DefaultStrategy::DefaultStrategy(
-	      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	      const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	      const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams) :
-  globalData(global_data)
+LOCA::GlobalData::GlobalData(
+	       const Teuchos::RefCountPtr<LOCA::Utils>& loca_utils,
+	       const Teuchos::RefCountPtr<LOCA::ErrorCheck>& loca_error_check,
+	       const Teuchos::RefCountPtr<LOCA::Factory>& loca_factory) :
+  locaUtils(loca_utils),
+  locaErrorCheck(loca_error_check),
+  locaFactory(loca_factory)
 {
 }
 
-LOCA::Eigensolver::DefaultStrategy::~DefaultStrategy()
+LOCA::GlobalData::~GlobalData()
 {
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Eigensolver::DefaultStrategy::computeEigenvalues(
-						 NOX::Abstract::Group& group)
-{
-  return NOX::Abstract::Group::Ok;
 }

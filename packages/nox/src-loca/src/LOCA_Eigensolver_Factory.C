@@ -31,10 +31,23 @@
 //@HEADER
 
 #include "NOX_Parameter_List.H"
+#include "LOCA_GlobalData.H"
+#include "LOCA_ErrorCheck.H"
+
 #include "LOCA_Eigensolver_Factory.H"
+#include "LOCA_Eigensolver_AbstractStrategy.H"
 #include "LOCA_Eigensolver_DefaultStrategy.H"
 #include "LOCA_Eigensolver_AnasaziStrategy.H"
-#include "LOCA_ErrorCheck.H"
+
+LOCA::Eigensolver::Factory::Factory(
+	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
+  globalData(global_data)
+{
+}
+
+LOCA::Eigensolver::Factory::~Factory()
+{
+}
 
 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
 LOCA::Eigensolver::Factory::create(
@@ -49,11 +62,13 @@ LOCA::Eigensolver::Factory::create(
 
   if (name == "Default")
     strategy = 
-      Teuchos::rcp(new LOCA::Eigensolver::DefaultStrategy(eigenParams,
+      Teuchos::rcp(new LOCA::Eigensolver::DefaultStrategy(globalData,
+							  eigenParams,
 							  solverParams));
   else if (name == "Anasazi")
     strategy = 
-      Teuchos::rcp(new LOCA::Eigensolver::AnasaziStrategy(eigenParams,
+      Teuchos::rcp(new LOCA::Eigensolver::AnasaziStrategy(globalData,
+							  eigenParams,
 							  solverParams));
   else if (name == "User-Defined") {
 
@@ -65,14 +80,16 @@ LOCA::Eigensolver::Factory::create(
       strategy = eigenParams->
 	getRcpParameter<LOCA::Eigensolver::AbstractStrategy>(userDefinedName);
     else
-       LOCA::ErrorCheck::throwError(methodName,
-				    "Cannot find user-defined strategy: " + 
-				    userDefinedName);
+       globalData->locaErrorCheck->throwError(
+				       methodName,
+				       "Cannot find user-defined strategy: " + 
+				       userDefinedName);
   }
   else
-    LOCA::ErrorCheck::throwError(methodName,
-				 "Invalid eigensolver strategy: " + 
-				 name);
+    globalData->locaErrorCheck->throwError(
+				      methodName,
+				      "Invalid eigensolver strategy: " + 
+				      name);
 
   return strategy;
 }

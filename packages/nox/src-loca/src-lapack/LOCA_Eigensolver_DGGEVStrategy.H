@@ -35,6 +35,16 @@
 
 #include "LOCA_Eigensolver_AbstractStrategy.H" // base class
 
+// Forward declarations
+namespace NOX {
+  namespace Parameter {
+    class List;
+  }
+}
+namespace LOCA {
+  class GlobalData;
+}
+
 namespace LOCA {
 
   namespace Eigensolver {
@@ -50,6 +60,7 @@ namespace LOCA {
 
       //! Constructor
       DGGEVStrategy(
+	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
 	     const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
       
@@ -58,7 +69,20 @@ namespace LOCA {
 
       //! Compute eigenvalues/eigenvectors
       virtual NOX::Abstract::Group::ReturnType
-      computeEigenvalues(NOX::Abstract::Group* group);
+      computeEigenvalues(NOX::Abstract::Group& group);
+
+    private:
+
+      //! Private to prohibit copying
+      DGGEVStrategy(const DGGEVStrategy&);
+
+      //! Private to prohibit copying
+      DGGEVStrategy& operator = (const DGGEVStrategy&);
+
+    protected:
+
+      //! Global data
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
     }; // Class DGGEVStrategy
 

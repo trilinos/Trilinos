@@ -30,29 +30,50 @@
 // ************************************************************************
 //@HEADER
 
+#include "NOX_Parameter_List.H"
+
+#include "LOCA_GlobalData.H"
 #include "LOCA_Factory.H"
+#include "LOCA_Abstract_Factory.H"
+
+// Factories
 #include "LOCA_Eigensolver_Factory.H"
-#include "LOCA_ErrorCheck.H"
 
 LOCA::Factory::Factory(
+	  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	  const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams) :
+  globalData(global_data),
   factory(),
   haveFactory(false),
-  sublistParser(),
-  eigensolverFactory()
+  sublistParser(global_data),
+  eigensolverFactory(global_data)
 {
   reset(topLevelParams);
+
+  // Set the factory member of the global data
+  globalData->locaFactory = Teuchos::rcp(this, false);
+
+  // Initialize user-defined factory
+  factory->init(globalData);
 }
 
 LOCA::Factory::Factory(
+	  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	  const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams,
 	  const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory) :
+  globalData(global_data),
   factory(userFactory),
   haveFactory(true),
-  sublistParser(),
-  eigensolverFactory()
+  sublistParser(global_data),
+  eigensolverFactory(global_data)
 {
   reset(topLevelParams);
+  
+  // Set the factory member of the global data
+  globalData->locaFactory = Teuchos::rcp(this, false);
+
+  // Initialize user-defined factory
+  factory->init(globalData);
 }
 
 LOCA::Factory::~Factory()

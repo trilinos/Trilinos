@@ -30,10 +30,14 @@
 // ************************************************************************
 //@HEADER
 
+#include "NOX_Parameter_List.H"
 #include "LOCA_Parameter_SublistParser.H"
+#include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
-LOCA::Parameter::SublistParser::SublistParser() :
+LOCA::Parameter::SublistParser::SublistParser(
+		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) :
+  globalData(global_data),
   sublistMap()
 {
 }
@@ -123,7 +127,7 @@ LOCA::Parameter::SublistParser::getSublist(const string& name)
 
   // If it does not exist throw an error.
   if (i == sublistMap.end()) {
-    LOCA::ErrorCheck::throwError(
+   globalData->locaErrorCheck->throwError(
 			     "LOCA::Parameter::SublistParser::getSublist()",
 			     "Invalid sublist name: " + name);
   }

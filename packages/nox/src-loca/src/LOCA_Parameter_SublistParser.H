@@ -36,7 +36,16 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 #include "NOX_Common.H"
-#include "NOX_Parameter_List.H"
+
+// Forward declarations
+namespace NOX {
+  namespace Parameter {
+    class List;
+  }
+}
+namespace LOCA {
+  class GlobalData;
+}
 
 namespace LOCA {
 
@@ -61,7 +70,7 @@ namespace LOCA {
     public:
 
       //! Constructor
-      SublistParser();
+      SublistParser(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
 
       //! Destructor
       ~SublistParser();
@@ -74,7 +83,18 @@ namespace LOCA {
       Teuchos::RefCountPtr<NOX::Parameter::List> 
       getSublist(const string& name);
 
+    private:
+
+      //! Private to prohibit copying
+      SublistParser(const SublistParser&);
+
+      //! Private to prohibit copying
+      SublistParser& operator = (const SublistParser&);
+
     protected:
+
+      //! Global data
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
       //! Map to hold sublists
       SublistMap sublistMap;
