@@ -1,0 +1,13 @@
+Decomposition Method 	= jostle
+Zoltan Parameters	= jostle_reduction=off, comm_weight_dim=1
+File Type		= Chaco
+File Name		= ewgt
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+1
+2
+3
+6
+11
+16
+21
