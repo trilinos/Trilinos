@@ -35,19 +35,21 @@ static char *cvs_all_allo_h =
 #   define	PROTO(x)	()
 #endif
 
-#define LB_SMALLOC(a) LB_smalloc((a), __FILE__, __LINE__)
-#define LB_SREALLOC(a, b) LB_srealloc((a), (b), __FILE__, __LINE__)
+#define LB_MALLOC(a) LB_Malloc((a), __FILE__, __LINE__)
+#define LB_REALLOC(a, b) LB_Realloc((a), (b), __FILE__, __LINE__)
 
 /* function declarations for dynamic array allocation */
 
 #ifdef __STDC__
-extern double *LB_array_alloc(char *file, int lineno, int numdim, ...);
+extern double *LB_Array_Alloc(char *file, int lineno, int numdim, ...);
 #else
-extern double *LB_array_alloc();
+extern double *LB_Array_Alloc();
 #endif
 extern int LB_Malloc_Set_Param(char *, char *);
-extern void LB_safe_free(void **ptr);
-extern double *LB_smalloc(int n, char *file, int lineno);
-extern double *LB_srealloc(void *ptr, int n, char *filename, int lineno);
+extern void LB_Free(void **ptr);
+extern double *LB_Malloc(int n, char *file, int lineno);
+extern double *LB_Realloc(void *ptr, int n, char *filename, int lineno);
+extern void LB_Memory_Stats();
+extern int LB_Memory_Num();
 
 #endif

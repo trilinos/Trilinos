@@ -20,6 +20,8 @@ static char *cvs_all_allo_c =
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <malloc.h>
+#include "mpi.h"
 #include "lb_const.h"
 #include "all_allo_const.h"
 #include "params_const.h"
@@ -30,7 +32,21 @@ static char *cvs_all_allo_c =
 #include <varargs.h>
 #endif
 
-static int MALLOC_DEBUG = 0;	/* Flag for detecting memory leaks */
+static int DEBUG_MEMORY = 0;	/* Flag for detecting memory leaks */
+static int bytes_used = 0;	/* Sum of active allocations */
+static int bytes_max = 0;	/* Largest total of active allocations */
+
+static int nmalloc = 0;         /* number of calls to malloc */
+static int nfree = 0;           /* number of calls to free */
+
+static struct malloc_debug_data {
+  int       order;			/* which malloc call is it? */
+  int       size;			/* size of malloc invocation */
+  double   *ptr;			/* memory location returned */
+  struct malloc_debug_data *next;	/* pointer to next element */
+} *top = NULL;
+
+
 
 int LB_Malloc_Set_Param(
 char *name,			/* name of variable */
@@ -40,13 +56,13 @@ char *val)			/* value of variable */
     PARAM_UTYPE result;		/* value returned from Check_Param */
     int index;			/* index returned from Check_Param */
     PARAM_VARS malloc_params[] = {
-	{ "MALLOC_DEBUG", &MALLOC_DEBUG, "INT" },
+	{ "DEBUG_MEMORY", &DEBUG_MEMORY, "INT" },
 	{ NULL, NULL, NULL }
     };
 
     status = LB_Check_Param(name, val, malloc_params, &result, &index);
     if (status == 0 && index == 0) {
-	MALLOC_DEBUG = result.ival;
+	DEBUG_MEMORY = result.ival;
 	status = 3;
     }
 
@@ -69,7 +85,7 @@ char *val)			/* value of variable */
  *
  *      POINT    **points, corner;
  *
- *      points = (POINT **)LB_array_alloc(file, lineno, 2, x, y, sizeof(POINT));
+ *      points = (POINT **)LB_Array_Alloc(file, lineno, 2, x, y, sizeof(POINT));
  *                                        ^     ^       ^  ^  ^
  *                                        |     |       |  |  |
  *                 name of calling file---*     |       |  |  |
@@ -96,7 +112,7 @@ char *val)			/* value of variable */
 *       The following section is a commented section containing
 *       an example main code:
 *******************************************************************************
-*double *LB_array_alloc();
+*double *LB_Array_Alloc();
 *main()
 *{
 *  int ***temp;
@@ -108,7 +124,7 @@ char *val)			/* value of variable */
 *   il = 2;
 *   jl = 3;
 *   kl = 3;
-*   temp = (int ***) array_alloc(__FILE__,__LINE__,3,il,jl,kl,sizeof(int));
+*   temp = (int ***) Array_Alloc(__FILE__,__LINE__,3,il,jl,kl,sizeof(int));
 *   for (i=0; i<il; i++) {
 *      for (j=0; j<jl; j++) {
 *         for (k=0; k<kl; k++) temp[i][j][k] = 1;
@@ -133,11 +149,11 @@ char *val)			/* value of variable */
 
 #ifdef __STDC__
 
-double *LB_array_alloc(char *file, int lineno, int numdim, ...)
+double *LB_Array_Alloc(char *file, int lineno, int numdim, ...)
 
 #else
 
-double *LB_array_alloc(va_alist)
+double *LB_Array_Alloc(va_alist)
 va_dcl
 
 #endif
@@ -147,7 +163,7 @@ va_dcl
 /*****************************************************************************/
 
 {
-  char *yo = "LB_array_alloc";
+  char *yo = "LB_Array_Alloc";
   int i, j;
   struct dimension {
     long index;  /* Number of elements in the dimension  */
@@ -226,7 +242,7 @@ va_dcl
 
   total = dim[numdim-1].off + dim[numdim-1].total * dim[numdim-1].size;
 
-  dfield = (double *) LB_smalloc((int) total, file, lineno); 
+  dfield = (double *) LB_Malloc((int) total, file, lineno); 
 
   if (dfield != NULL) {
     field  = (char *) dfield;
@@ -241,103 +257,225 @@ va_dcl
 
   return dfield;
 
-} /* LB_array_alloc */
+} /* LB_Array_Alloc */
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
+
 
 /* Safe version of malloc.  Does not initialize memory .*/
 
-/* Modified by Scott Hutchinson (1421) 20 January 1993 */
-
-double *LB_smalloc(int n, char *filename, int lineno)
+double *LB_Malloc(int n, char *filename, int lineno)
 
 {
-  char *yo = "LB_smalloc";
+  char *yo = "LB_Malloc";
+  struct malloc_debug_data *new;     /* data structure for malloc data */
+  int       proc;             /* processor ID for debugging msg */
   double *pntr;           /* return value */
 
-  if (n < 0) {
-    fprintf(stderr, "%s (from %s,%d) ERROR: Non-positive argument. (%d)\n", 
-            yo, filename, lineno, n);
-    return ((double *) NULL);
+  if (n > 0) {
+    nmalloc++;
+    pntr = (double *) malloc((unsigned) n);
+    if (pntr == NULL) {
+      MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+      fprintf(stderr, "%s (from %s,%d) No space on proc %d - number of bytes "
+              "requested = %d\n", yo, filename, lineno, proc, n);
+      return ((double *) NULL);
+    }
   }
   else if (n == 0)
     pntr = NULL;
-  else
-    pntr = (double *) malloc((unsigned) n);
-
-  if (pntr == NULL && n != 0) {
-    fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "
-            "requested = %d\n", yo, filename, lineno, n);
+  else {		/* n < 0 */
+    MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+    fprintf(stderr, "%s (from %s,%d) ERROR on proc %d: "
+	    "Negative malloc argument. (%d)\n", yo, filename, lineno, proc, n);
     return ((double *) NULL);
   }
 
+  if (DEBUG_MEMORY > 1 && pntr != NULL) {
+    /* Add allocation to linked list of active allocations. */
+    new = (struct malloc_debug_data *)
+      malloc(sizeof(struct malloc_debug_data));
+
+    if (new == NULL) {
+      MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+      fprintf(stderr, "WARNING: No space on proc %d for malloc_debug %d.\n",
+	proc, n);
+      return (pntr);
+    }
+
+    new->order = nmalloc;
+    new->size = n;
+    new->ptr = pntr;
+    new->next = top;
+    top = new;
+    bytes_used += n;
+    if (bytes_used > bytes_max) {
+      bytes_max = bytes_used;
+    }
+  }
+
+  if (DEBUG_MEMORY > 2) {
+    /* Print out details of allocation. */
+    MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+    fprintf(stderr, "Proc %d: order=%d, size=%d, location=0x%lx\n",
+      proc, nmalloc, n, (long) pntr);
+  }
+
+
   return pntr;
 
-} /* LB_smalloc */
+} /* LB_Malloc */
 
 /* Safe version of realloc. Does not initialize memory. */
 
-double *LB_srealloc(void *ptr, int n, char *filename, int lineno)
+double *LB_Realloc(void *ptr, int n, char *filename, int lineno)
 {
-  char *yo = "LB_srealloc";
+  char *yo = "LB_Realloc";
+  struct malloc_debug_data *dbptr;   /* loops through debug list */
+  int       proc;             /* processor ID */
   double   *p;                /* returned pointer */
 
-  if (ptr == NULL) {
-
+  if (ptr == NULL) {	/* Previous allocation not important */
     if (n == 0) {
-      return ((double *) NULL);
+      p = NULL;
     }
     else {
-      p = LB_smalloc(n, filename, lineno);
+      p = LB_Malloc(n, filename, lineno);
     }
   }
   else {
     if (n == 0) {
-      LB_safe_free((void *) ptr);
-      return ((double *) NULL);
+      LB_Free((void **) &ptr);
+      p = NULL;
     }
     else {
       p = (double *) realloc((char *) ptr, n);
+
+      if (DEBUG_MEMORY > 1) {
+        /* Need to replace item in allocation list */
+        for (dbptr = top; dbptr != NULL && (char *) dbptr->ptr != ptr;
+	   dbptr = dbptr->next);
+	if (dbptr == NULL) {	/* previous allocation not found in list. */
+	   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+	   fprintf(stderr, "Proc %d: Memory error: "
+	     "In realloc, address not found in debug list (0x%lx)\n",
+	     proc, (long) ptr);
+	}
+	else {	/* Update entry in allocation list */
+	  bytes_used += n - dbptr->size;
+	  dbptr->size = n;
+	  dbptr->ptr = p;
+	  if (bytes_used > bytes_max) {
+	    bytes_max = bytes_used;
+	  }
+	}
+      }
+
+      if (p == NULL) {
+        MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+        fprintf(stderr, "%s (from %s,%d) No space on proc %d - "
+		"number of bytes requested = %d\n",
+		yo, filename, lineno, proc, n);
+      }
     }
   }
 
-  if (p == NULL) {
-    fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "
-            "requested = %d\n", yo, filename, lineno, n);
-    return ((double *) NULL);
-  }
-
   return (p);
-}
+} /* LB_Realloc */
 
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_safe_free (void **ptr)
+void LB_Free (void **ptr)
 {
+  struct malloc_debug_data *dbptr;   /* loops through debug list */
+  struct malloc_debug_data **prev;   /* holds previous pointer */
+  int       proc;             /* processor ID */
+
 /*
  *  This version of free calls the system's free function
  *  with maximum error checking. It also doesn't call free if ptr is
  *  the NULL pointer.
  */
  
-  if (*ptr != NULL) {
+  if (ptr == NULL || *ptr == NULL) 
+    return;
+
+  nfree++;
+
+  if (DEBUG_MEMORY > 1) {
+    /* Remove allocation of list of active allocations */
+    prev = &top;
+    for (dbptr = top; dbptr != NULL && (char *) dbptr->ptr != *ptr;
+      dbptr = dbptr->next) {
+      prev = &(dbptr->next);
+    }
+    if (dbptr == NULL) {
+      MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+      fprintf(stderr, "Proc %d: Memory error: In free, address (0x%lx) "
+	"not found in debug list\n", proc, (long) *ptr);
+   }
+   else {
+       *prev = dbptr->next;
+       bytes_used = -dbptr->size;
+       free((char *) dbptr);
+       }
+   }
  
-    free(*ptr);
+  free(*ptr);
  
-    /*
-     *  Set the value of ptr to NULL, so that further references
-     *  to it will be flagged.
-     */
- 
-    *ptr = NULL;
-  }
-}  /* LB_safe_free */
+  /* Set value of ptr to NULL, to flag further references to it. */
+  *ptr = NULL;
+
+}  /* LB_Free */
+
+
+/* Print out status of malloc/free calls.  Flag any memory leaks. */
+
+void      LB_Memory_Stats()
+{
+    struct malloc_debug_data *dbptr;	/* loops through debug list */
+    int       proc;		/* processor ID */
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+
+    if (DEBUG_MEMORY == 1) {
+	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d\n",
+		proc, nmalloc, nfree);
+    }
+    if (DEBUG_MEMORY > 1) {
+	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d, maximum bytes = %d\n",
+		proc, nmalloc, nfree, bytes_max);
+	if (top != NULL) {
+	    fprintf(stderr, "Proc %d: Remaining allocations:\n", proc);
+	    for (dbptr = top; dbptr != NULL; dbptr = dbptr->next) {
+		fprintf(stderr, " order=%d, size=%d, location=0x%lx\n", dbptr->order,
+			dbptr->size, (long) dbptr->ptr);
+	    }
+	}
+    }
+} /* LB_Memory_Stats */
+
+
+/* Return number associated with the most recent malloc call. */
+int       LB_Malloc_Num()
+{
+  return (nmalloc);
+} /* LB_Memory_Num */
+
 
 /*****************************************************************************/
 /*                      END of all_allo.c                                     */
 /*****************************************************************************/
+
+
+
+
+
+
+
+
