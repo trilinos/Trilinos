@@ -36,6 +36,7 @@ set nem_pdisk = (1 2 2) # parallel disk info
 @ no_chaco = 0
 @ no_nemesis = 0
 @ no_parmetis = 0
+@ yes_jostle = 0
 @ yes_fortran = 0
 set out_tag = out
 set logfile = test_zoltan.log
@@ -53,6 +54,9 @@ endif
 if ($?NO_PARMETIS) then
    set no_parmetis = $NO_PARMETIS
 endif
+if ($?YES_JOSTLE) then
+   set yes_jostle = $YES_JOSTLE
+endif
 if ($?YES_FORTRAN) then
    set yes_fortran = $YES_FORTRAN
    set no_nemesis = 1
@@ -68,10 +72,12 @@ while ( $#argv )
      goto usage
   else if ( "$1" == "-no_nemesis" ) then
      @ no_nemesis = 1
-  else if ( "$1" == "-no_parmetis" ) then
-     @ no_parmetis = 1
   else if ( "$1" == "-no_chaco" ) then
      @ no_chaco = 1
+  else if ( "$1" == "-no_parmetis" ) then
+     @ no_parmetis = 1
+  else if ( "$1" == "-yes_jostle" ) then
+     @ yes_jostle = 1
   else if ( "$1" == "-yes_fortran" ) then
      @ yes_fortran = 1
      @ no_nemesis = 1
@@ -191,6 +197,10 @@ else
     set ch_methods = ( rcb rcb-oneproc rib rib-oneproc oct partkway partkway-oneproc partkway-cyclic partgeom diffusion )
     set nem_methods = ( rcb rib oct partkway partgeom diffusion )
   endif
+endif
+# Check for Jostle
+if ( $yes_jostle ) then
+  set ch_methods = ( $ch_methods jostle jostle-diffusion )
 endif
 
 # Set up log file
