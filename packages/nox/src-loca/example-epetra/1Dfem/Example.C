@@ -29,6 +29,7 @@
 // LOCA Objects
 #include "LOCA.H"
 #include "LOCA_Epetra.H"
+#include "LOCA_Abstract_DataOutput.H"
 
 // User's application specific files 
 #include "Problem_Interface.H" // Interface file to NOX
@@ -182,8 +183,8 @@ int main(int argc, char *argv[])
   // 4. Jacobi Preconditioner
   //NOX::Epetra::JacobiPreconditioner Prec(soln);
 
-  // Create the LOCA::Epetra::Vector
-  LOCA::Epetra::Vector locaSoln(soln);
+  // Create the loca vector
+  NOX::Epetra::Vector locaSoln(soln);
 
   // Create the Group
   LOCA::Epetra::Group grp(lsParams, interface, pVector, locaSoln, A);
@@ -199,7 +200,8 @@ int main(int argc, char *argv[])
   combo.addStatusTest(maxiters);
 
   // Create the stepper  
-  LOCA::Stepper stepper(grp, combo, locaParamsList);
+  LOCA::Abstract::DataOutput dataOut;
+  LOCA::Stepper stepper(grp, combo, locaParamsList, dataOut);
   NOX::StatusTest::StatusType status = stepper.solve();
 
   if (status != NOX::StatusTest::Converged)
