@@ -3,7 +3,7 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = FEVbrMatrix
+noinst_PROGRAMS = FEVbrMatrix_test
 
 FEVbrMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp \
                   $(srcdir)/ExecuteTestProblems.cpp \
