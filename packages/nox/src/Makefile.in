@@ -13,6 +13,8 @@
 
 @SET_MAKE@
 
+# $Id$ 
+# $Source$ 
 # @HEADER
 # ************************************************************************
 # 
@@ -101,6 +103,11 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
+TRILINOS_ARCH = @TRILINOS_ARCH@
+TRILINOS_COMM = @TRILINOS_COMM@
+TRILINOS_HOME = @TRILINOS_HOME@
+TRILINOS_ID = @TRILINOS_ID@
+TRILINOS_TARGET = @TRILINOS_TARGET@
 VERSION = @VERSION@
 ac_aux_dir = @ac_aux_dir@
 am__include = @am__include@
