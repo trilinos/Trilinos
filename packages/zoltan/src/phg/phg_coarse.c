@@ -24,16 +24,16 @@ extern "C" {
 
 
 
-/*Procedure to coarsen a hypergraph based on a packing. All vertices of one pack
+/*Procedure to coarsen a hypergraph based on a matching. All vertices of one match
   are clustered to one vertex. Identical hyperedges are collapsed to a single
   hyperedge with combined weight. The array LevelMap is the mapping of the old
   vertices to the new vertices. It will be used to pass a partition of the coarse
   graph back to the original graph. Time O(|I|*log(|I|)), due to sorting. */
 
 int Zoltan_PHG_Coarsening
-( ZZ *zz,  /* the Zoltan data structure */
+( ZZ *zz,             /* the Zoltan data structure */
   PHGraph *hg,
-  int    *pack,      /* Matching, Packing or Grouping array */
+  int    *match,      /* Matching, Packing or Grouping array */
   PHGraph *c_hg,      /* points to a copy of hg structure */
   int    *LevelMap)
 {
@@ -50,16 +50,16 @@ int Zoltan_PHG_Coarsening
   c_hg->ratio = hg->ratio;
   c_hg->redl  = hg->redl;
 
-  /* Calculate the number of coarse vertices. pack[vertex] -> -pack[vertex]-1 */
+  /* Calculate the number of coarse vertices. match[vertex] -> -match[vertex]-1 */
   c_hg->nVtx = 0;
   for (i = 0; i < hg->nVtx; i++)
-    if (pack[i] >= 0) {
+    if (match[i] >= 0) {
       (c_hg->nVtx)++;
       vertex = i;
-      while (pack[vertex] >= 0) {
+      while (match[vertex] >= 0) {
         old       =  vertex;
-        vertex    =  pack[old];
-        pack[old] = -pack[old] - 1;
+        vertex    =  match[old];
+        match[old] = -match[old] - 1;
       }
   }
   if (!(c_hg->vwgt = (float*) ZOLTAN_CALLOC (c_hg->nVtx, sizeof(float)))) {
@@ -68,17 +68,17 @@ int Zoltan_PHG_Coarsening
     return ZOLTAN_MEMERR;
   }
 
-  /* Construct the LevelMap. pack[vertex] is changed back to original value.
+  /* Construct the LevelMap. match[vertex] is changed back to original value.
    * Also sum up the vertex weights. */
   new_vertex = 0;
   for (i = 0; i < hg->nVtx; i++)
-    if (pack[i] < 0) {
+    if (match[i] < 0) {
       vertex = i;
-      while (pack[vertex] < 0) {
+      while (match[vertex] < 0) {
         LevelMap[vertex] = new_vertex;
         c_hg->vwgt[new_vertex] += hg->vwgt ? hg->vwgt[vertex] : 1.0;
-        pack[vertex] = -pack[vertex] - 1;
-        vertex       =  pack[vertex];
+        match[vertex] = -match[vertex] - 1;
+        vertex       =  match[vertex];
       }
       new_vertex++;
     }

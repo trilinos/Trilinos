@@ -25,28 +25,24 @@ extern "C" {
 
 
 
-/*****************************************************************************/
-/* Data structure for Zoltan's base hypergraph.
- * Includes Zoltan IDs corresponding to local objects (vertices) and
- * a HGraph as used by the algorithms. */
+/* Data structure for Zoltan's base hypergraph. Includes Zoltan IDs corresponding
+ * to local objects (vertices) and a PHGraph as used by the algorithms. */
 
 struct Zoltan_PHGraph {
   ZOLTAN_ID_PTR Global_IDs; /* Global IDs for on-processor objects.  */
   ZOLTAN_ID_PTR Local_IDs;  /* Local IDs for on-processor objects.   */
   Partition Parts;          /* Initial partition #s for on-processor objects */
                             /* KDD In parallel version Part may be part of HG */
-  PHGraph HG;                /* Hypergraph for initial objects.       */
+  PHGraph HG;               /* Hypergraph for initial objects.       */
 };
 
 typedef struct Zoltan_PHGraph ZHG;
-
-/*****************************************************************************/
 
 
 
 /* Prototypes */
 extern int Zoltan_PHG_Build_Hypergraph (ZZ*, ZHG**, PHGPartParams*);
-extern void Zoltan_PHG_HGraph_Print(ZZ*, ZHG*,  PHGraph*, FILE*);
+extern void Zoltan_PHG_HGraph_Print (ZZ*, ZHG*,  PHGraph*, FILE*);
 
 
 
