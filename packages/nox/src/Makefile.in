@@ -284,7 +284,7 @@ pkginclude_HEADERS = $(NOX_H)
 # not a default installation directory, so we had to create it
 # special.
 pkgexecincludedir = $(exec_prefix)/include/nox
-pkgexecinclude_HEADERS = NOX_Config.h
+nodist_pkgexecinclude_HEADERS = NOX_Config.h
 
 
 # ------------------------------------------------------------------------
@@ -368,10 +368,10 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(libnox_a_SOURCES)
-HEADERS = $(pkgexecinclude_HEADERS) $(pkginclude_HEADERS)
+HEADERS = $(nodist_pkgexecinclude_HEADERS) $(pkginclude_HEADERS)
 
-DIST_COMMON = $(pkgexecinclude_HEADERS) $(pkginclude_HEADERS) \
-	./stamp-h.in Makefile.am Makefile.in NOX_Config.h.in
+DIST_COMMON = $(pkginclude_HEADERS) ./stamp-h.in Makefile.am \
+	Makefile.in NOX_Config.h.in
 SOURCES = $(libnox_a_SOURCES)
 
 all: NOX_Config.h
@@ -852,19 +852,19 @@ NOX_Utils.obj: $(srcdir)/NOX_Utils.C
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Utils.obj `cygpath -w $(srcdir)/NOX_Utils.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
-install-pkgexecincludeHEADERS: $(pkgexecinclude_HEADERS)
+install-nodist_pkgexecincludeHEADERS: $(nodist_pkgexecinclude_HEADERS)
 	@$(NORMAL_INSTALL)
 	$(mkinstalldirs) $(DESTDIR)$(pkgexecincludedir)
-	@list='$(pkgexecinclude_HEADERS)'; for p in $$list; do \
+	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
 	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f"; \
 	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f; \
 	done
 
-uninstall-pkgexecincludeHEADERS:
+uninstall-nodist_pkgexecincludeHEADERS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(pkgexecinclude_HEADERS)'; for p in $$list; do \
+	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
 	  echo " rm -f $(DESTDIR)$(pkgexecincludedir)/$$f"; \
 	  rm -f $(DESTDIR)$(pkgexecincludedir)/$$f; \
@@ -992,7 +992,8 @@ info-am:
 
 install-data-am: install-pkgincludeHEADERS
 
-install-exec-am: install-libLIBRARIES install-pkgexecincludeHEADERS
+install-exec-am: install-libLIBRARIES \
+	install-nodist_pkgexecincludeHEADERS
 
 install-info: install-info-am
 
@@ -1009,7 +1010,8 @@ mostlyclean: mostlyclean-am
 mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
 uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
-	uninstall-pkgexecincludeHEADERS uninstall-pkgincludeHEADERS
+	uninstall-nodist_pkgexecincludeHEADERS \
+	uninstall-pkgincludeHEADERS
 
 .PHONY: GTAGS all all-am check check-am clean clean-generic \
 	clean-libLIBRARIES distclean distclean-compile distclean-depend \
@@ -1017,13 +1019,18 @@ uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
 	dvi-am info info-am install install-am install-data \
 	install-data-am install-exec install-exec-am install-info \
 	install-info-am install-libLIBRARIES install-man \
-	install-pkgexecincludeHEADERS install-pkgincludeHEADERS \
+	install-nodist_pkgexecincludeHEADERS install-pkgincludeHEADERS \
 	install-strip installcheck installcheck-am installdirs \
 	maintainer-clean maintainer-clean-generic mostlyclean \
 	mostlyclean-compile mostlyclean-generic tags uninstall \
 	uninstall-am uninstall-info-am uninstall-libLIBRARIES \
-	uninstall-pkgexecincludeHEADERS uninstall-pkgincludeHEADERS
+	uninstall-nodist_pkgexecincludeHEADERS \
+	uninstall-pkgincludeHEADERS
 
+
+# ------------------------------------------------------------------------
+# Need to NOT distribute NOX_Config.h
+# ------------------------------------------------------------------------
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -197,7 +197,7 @@ pkginclude_HEADERS = $(NOX_H)
 # special.
 
 pkgexecincludedir = $(exec_prefix)/include/nox
-pkgexecinclude_HEADERS = NOX_Config.h
+nodist_pkgexecinclude_HEADERS = NOX_Config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -211,6 +211,9 @@ MAINTAINERCLEANFILES = Makefile.in
 
 MOSTLYCLEANFILES = $(CXXREPOS)
 
+# ------------------------------------------------------------------------
+# Need to NOT distribute NOX_Config.h
+# ------------------------------------------------------------------------
 
 
 
