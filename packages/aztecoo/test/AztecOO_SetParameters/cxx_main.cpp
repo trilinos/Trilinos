@@ -107,14 +107,18 @@ int main(int argc, char* argv[]) {
   if (params[AZ_tol] != 1.0e-09) {
     if (verbose1) {
       cerr << "SetParameters test failed to correctly set AZ_tol."<<endl;
+      cout << "********* Test failed **********" << endl;
     }
     return(-1);
   }
 #endif
-
-  if (verbose1==true) {
+// Typically we only produce output when the verbose flag is used.
+// Aztecoo has a test harness script that relies on "passed" appearing
+// in the output for the script, so for now we will produce the output
+// below whenever the test passes.
+//  if (verbose1==true) {
     cout << "********* Test passed **********" << endl;
-  }
+//  }
 
 #ifdef HAVE_MPI
   MPI_Finalize();
