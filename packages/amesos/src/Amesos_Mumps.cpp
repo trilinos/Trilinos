@@ -40,7 +40,6 @@
 #include "Epetra_IntVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseMatrix.h"
-#include "Amesos_EpetraBaseSolver.h"
 #include "Epetra_Util.h"
 
 #define ICNTL(I) icntl[(I)-1]
