@@ -1026,22 +1026,22 @@ static int LB_ParMetis_Jostle(
 
   /* Verify that graph is correct */
   if (get_graph_data){
-     ierr = LB_Verify_Graph(lb->Communicator, vtxdist, xadj, adjncy, vwgt, 
-               adjwgt, obj_wgt_dim, comm_wgt_dim, check_graph, 1);
-  }
+    ierr = LB_Verify_Graph(lb->Communicator, vtxdist, xadj, adjncy, vwgt, 
+              adjwgt, obj_wgt_dim, comm_wgt_dim, check_graph, 1);
   
-  /* Special error checks to avoid certain death in ParMETIS */
-  if (xadj[tmp_num_obj] == 0){
-    /* No edges on a proc is a fatal error in ParMETIS 2.0
-       but fine with Jostle.                                */
-    if (strcmp(alg, "JOSTLE")){
-      LB_PRINT_ERROR(lb->Proc, yo, "No edges on this proc; "
-                    "ParMETIS 2.0 will crash. "
-                    "Please use a different load balancing method.");
-      ierr = LB_FATAL;
-      FREE_MY_MEMORY; 
-      LB_TRACE_EXIT(lb, yo);
-      return (ierr);
+    /* Special error checks to avoid certain death in ParMETIS */
+    if (xadj[tmp_num_obj] == 0){
+      /* No edges on a proc is a fatal error in ParMETIS 2.0
+         but fine with Jostle.                                */
+      if (strcmp(alg, "JOSTLE")){
+        LB_PRINT_ERROR(lb->Proc, yo, "No edges on this proc; "
+                      "ParMETIS 2.0 will crash. "
+                      "Please use a different load balancing method.");
+        ierr = LB_FATAL;
+        FREE_MY_MEMORY; 
+        LB_TRACE_EXIT(lb, yo);
+        return (ierr);
+      }
     }
   }
   
