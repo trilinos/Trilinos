@@ -72,8 +72,10 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   }
   
   // may need to clean up after visualization and statistics
-  ML_Aggregate_Stats_CleanUp_Info(ml_, agg_);
-  ML_Aggregate_VizAndStats_Clean( agg_, NumLevels_);
+  if (!SolvingMaxwell_) {
+    ML_Aggregate_Stats_CleanUp_Info(ml_, agg_);
+    ML_Aggregate_VizAndStats_Clean( agg_, NumLevels_);
+  }
 
   // destroy main objects
   if (agg_ != 0) { ML_Aggregate_Destroy(&agg_); agg_ = 0; }
