@@ -21,13 +21,13 @@ enum DataAccess {Copy, View};
 template <class TYPE> 
 class LOCAMat : public Matrix<TYPE> {
 public:
-	LOCAMat( NOX::Parameter::List&, NOX::Abstract::Group& );
+	LOCAMat( NOX::Parameter::List&, LOCA::Continuation::AnasaziGroup& );
 	~LOCAMat();
 	ReturnType ApplyMatrix ( const MultiVec<TYPE>& x, 
 				       MultiVec<TYPE>& y ) const;
 private:
 	NOX::Parameter::List& locaParams;
-	NOX::Abstract::Group& locaGroup;
+	LOCA::Continuation::AnasaziGroup& locaGroup;
 };
 //------------------------------------------------------------
 //
@@ -391,7 +391,7 @@ void LOCAVec<TYPE>::GetNOXVector( NOX::Abstract::Vector& Vec, int index )
 //
 template <class TYPE>
 LOCAMat<TYPE>::LOCAMat(NOX::Parameter::List& params, 
-					NOX::Abstract::Group& group) :
+					LOCA::Continuation::AnasaziGroup& group) :
 					locaParams(params), locaGroup(group) {
 //	cout << "ctor:Anasazi::LOCAMat " << this << endl;
 	}
@@ -414,7 +414,7 @@ ReturnType LOCAMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
 
 	int NumVecs = x_vec->GetNumberVecs();
 	for (int i=0; i<NumVecs; i++) {
-		res = locaGroup.applyJacobianInverse(locaParams, *(x_vec->mvPtrs[i]), 
+		res = locaGroup.applyAnasaziOperator(locaParams, *(x_vec->mvPtrs[i]), 
 						*(y_vec->mvPtrs[i])); 
 //		res = locaGroup.applyJacobian(*(x_vec->mvPtrs[i]), *(y_vec->mvPtrs[i])); 
 	}
