@@ -3181,10 +3181,10 @@ case $target in
   # SGI/IRIX test
   mips-sgi-irix* )
 
-    if $CXX = CC; then
-     COPTIONS="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
+    if test $CXX = CC; then
+     CXXOPTIONS="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
 
-     if X$USE_ALTERNATE_AR != Xyes; then
+     if test X$USE_ALTERNATE_AR != Xyes; then
        USE_ALTERNATE_AR=yes
        ALTERNATE_AR="CC -ar -W,l -W,s -o"
      fi

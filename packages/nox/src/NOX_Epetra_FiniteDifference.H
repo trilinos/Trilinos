@@ -80,9 +80,11 @@ class FiniteDifference : public Epetra_RowMatrix {
 
 #endif // of TRILINOS_OPERATOR
 
+#ifdef TRILINOS_OPERATOR
   virtual const Epetra_BlockMap & DomainMap() const;
 
   virtual const Epetra_BlockMap & RangeMap() const;
+#endif // of TRILINOS_OPERATOR
 
   virtual bool Filled() const;
 

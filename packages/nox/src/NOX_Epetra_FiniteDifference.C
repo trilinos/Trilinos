@@ -86,6 +86,9 @@ bool FiniteDifference::HasNormInf() const
 
 #endif // of TRILINOS_OPERATOR
 
+/* NOTE FROM TAMMY: The next two functions are not supported by
+   slightly older versions of trilinos either. */
+#ifdef TRILINOS_OPERATOR
 const Epetra_BlockMap& FiniteDifference::DomainMap() const
 {
   return jacobian->DomainMap();
@@ -95,6 +98,7 @@ const Epetra_BlockMap& FiniteDifference::RangeMap() const
 {
   return jacobian->RangeMap();
 }
+#endif
 
 bool FiniteDifference::Filled() const
 {
