@@ -35,5 +35,5 @@ SUBDIRS = doc src src-epetra src-lapack example-epetra example-lapack
 ## Documentation
 ## #######################################################################
 
-dox:
+dox: 
 	cd doc; $(MAKE) dox

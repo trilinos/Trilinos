@@ -29,27 +29,32 @@
 # ************************************************************************
 # @HEADER
 
-## #######################################################################
-## Additional files to be included in distribution for 'make dist'
-## #######################################################################
-EXTRA_DIST = Doxyfile
+BOOK_SRCS = loca_book.tex \
+	    loca_chap1.tex \
+            loca_chap2.tex \
+	    loca_chap3.tex \
+            loca_chap4.tex \
+	    loca_chap5.tex \
+	    loca_chap6.tex \
+	    loca_ack.tex \
+            loca.bib
 
-# ------------------------------------------------------------------------
-# Files to be deleted by 'make maintainer-clean'
-# ------------------------------------------------------------------------
+doc: loca_book.pdf manual_html
 
-MAINTAINERCLEANFILES = Makefile.in 
+loca_book.dvi: $(BOOK_SRCS)
+	latex loca_book && \
+	bibtex loca_book && \
+	latex loca_book && \
+	latex loca_book
 
-if BUILD_LIBLOCA
+loca_book.ps: loca_book.dvi
+	dvips -P pdf -o loca_book.ps loca_book.dvi
 
-dox: doxy
-	cd $(srcdir)/loca_v1.0_manual/src_latex; $(MAKE) -f classicMakefile
+loca_book.pdf: loca_book.ps
+	ps2pdf loca_book.ps
 
-doxy: Doxyfile
-	cp Doxyfile $(srcdir); cd $(srcdir); doxygen
+manual_html:
+	latex2html loca_book; touch manual_html
 
-else
-
-dox:
-
-endif
+clean:
+	rm -rf *.ps *.pdf *.dvi *.aux *.toc *.log *.bbl *.blg loca_book

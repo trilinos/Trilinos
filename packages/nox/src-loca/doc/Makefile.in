@@ -251,7 +251,10 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic uninstall uninstall-am uninstall-info-am
 
 
-@BUILD_LIBLOCA_TRUE@dox: Doxyfile
+@BUILD_LIBLOCA_TRUE@dox: doxy
+@BUILD_LIBLOCA_TRUE@	cd $(srcdir)/loca_v1.0_manual/src_latex; $(MAKE) -f classicMakefile
+
+@BUILD_LIBLOCA_TRUE@doxy: Doxyfile
 @BUILD_LIBLOCA_TRUE@	cp Doxyfile $(srcdir); cd $(srcdir); doxygen
 
 @BUILD_LIBLOCA_FALSE@dox:
