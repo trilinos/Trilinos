@@ -25,8 +25,6 @@
 #ifndef KOMPLEX_LINEARPROBLEM_H
 #define KOMPLEX_LINEARPROBLEM_H
 
-#include "Epetra_Object.h"
-#include "Epetra_CrsMatrix.h"
 class Epetra_LinearProblem;
 class Epetra_Map;
 class Epetra_MultiVector;
@@ -34,6 +32,7 @@ class Epetra_Import;
 class Epetra_Export;
 class Epetra_MapColoring;
 class Epetra_IntVector;
+class Epetra_VbrMatrix;
 
 //! Komplex_LinearProblem: A class for explicitly eliminating matrix rows and columns.
 
@@ -53,75 +52,55 @@ class Komplex_LinearProblem {
   //! Komplex_LinearProblem Destructor
   virtual ~Komplex_LinearProblem();
   //@}
-  //@{ \name Analyze methods.
-  //! Analyze the input matrices tat are in Vbr format to determine best Komplex formulation (Unimplemented at this time, defaults to K1 form).
-  /*! This method will analyze the real and imaginary parts of the complex-valued problem to determine the best Komplex
-      formulation.  It is designed to work specifically with Vbr Matrix objects.
-      It is unimplemented at this time.  The K1 formulation is used by default.
-  */
-  int AnalyzeVbrMatrices(const Epetra_VbrMatrix & Ar, const Epetra_VbrMatrix & Ai);
-  //! Analyze the input matrices that implement the Epetra_RowMatrix interface to determine best Komplex formulation (Unimplemented at this time, defaults to K1 form).
-  /*! This method will analyze the real and imaginary parts of the complex-valued problem to determine the best Komplex
-      formulation.  It will work with any matrix that implements the Epetra_RowMatrix interface (including Epetra_VbrMatrix
-      objects).  If the user matrix is an Epetra_VbrMatrix object, the AnalyzeVbrMatrices method is usually a better approach.
-      It is unimplemented at this time.  The K1 formulation is used by default.
-  */
-  int AnalyzeRowMatrices(const Epetra_RowMatrix & Ar, const Epetra_RowMatrix & Ai);
+  //@{ \name Set methods.
+  //! Construct the komplex linear operator from VbrMatrix objects.
+  /*! Constructs the Komplex operator from the user definition 
+      of the complex-valued matrix C = (c0r+i*c0i)*A0 +(c1r+i*c1i)*A1.
+      Using this general expression for the complex matrix allows easy formulation of a variety of common
+      complex problems.
 
-  //! Print statistics about the reduction analysis (Unimplemented at this time).
-  int Statistics() const{return(0);};
-  //@}
+      The operator will be explicitly constructed as an Epetra_VbrMatrix object when the first call to
+      SetKomplexOperator() is made.  Subsequent calls to this method will attempt to reuse the the existing
+      KomplexVbrMatrix object if possible, rather than reconstructing from scratch.  If this is not possible (typically
+      because the structure has changed) then a the previous KomplexVbrMatrix object will be deleted and a new one will be 
+      constructed.
 
-  //@{ \name Construction/update methods.
-  //! Construct a komplex linear problem from VbrMatrix objects based on results of Analyze().
-  /*! Creates a new Epetra_LinearProblem object containing the komplex (equivalent real formulation)
-       based on the results of the Analyze phase.  A pointer
-      to the komplex problem is obtained via a call to KomplexProblem().  
+      \param c0r (In) The real part of the complex coefficient multiplying A0.
+      \param c0i (In) The imag part of the complex coefficient multiplying A0.
+      \param A0 (In) An Epetra_RowMatrix that is one of the matrices used to define the true complex operator.
+      \param c1r (In) The real part of the complex coefficient multiplying A1.
+      \param c1i (In) The imag part of the complex coefficient multiplying A1.
+      \param A1 (In) An Epetra_RowMatrix that is the second of the matrices used to define the true complex operator.
+
+    \return Error code, set to 0 if no error.
+  */
+  int SetKomplexOperator(double c0r, double c0i, const Epetra_RowMatrix & A0,
+			 double c1r, double c1i, const Epetra_RowMatrix & Ai);
+
+  //! Set the left hand side of a Komplex linear problem.
+  /*! 
+    \param Xr (In) The real part of the complex valued LHS.  
+    \param Xi (In) The imag part of the complex valued LHS.  
     	   
     \return Error code, set to 0 if no error.
   */
-  int ConstructKomplexProblemFromVbrMatrices(const Epetra_VbrMatrix & Ar, const Epetra_VbrMatrix & Ai, 
-				     const Epetra_MultiVector & Xr, const Epetra_MultiVector & Xi,
-				     const Epetra_MultiVector & Br, const Epetra_MultiVector & Bi,
-				     );
-  //! Construct a komplex linear problem from RowMatrix objects based on results of Analyze().
-  /*! Creates a new Epetra_LinearProblem object containing the komplex (equivalent real formulation)
-       based on the results of the Analyze phase.  A pointer
-      to the komplex problem is obtained via a call to KomplexProblem().  
-    	   
-    \return Error code, set to 0 if no error.
-  */
-  int ConstructKomplexProblemFromRowMatrices(const Epetra_RowMatrix & Ar, const Epetra_RowMatrix & Ai, 
-				     const Epetra_MultiVector & Xr, const Epetra_MultiVector & Xi,
-				     const Epetra_MultiVector & Br, const Epetra_MultiVector & Bi,
-				     );
+  int SetKomplexLHS(const Epetra_MultiVector & Xr, const Epetra_MultiVector & Xi);
 
-  //! Update an existing Komplex linear problem using new values.
-  /*! Updates an existing Komplex_LinearProblem object using new matrix, LHS and RHS values.  The matrix
-      structure must be \e identical to the matrix that was used to construct the original reduced problem.  
+  //! Set the right hand side of a Komplex linear problem.
+  /*! 
+    \param Br (In) The real part of the complex valued RHS.  
+    \param Bi (In) The imag part of the complex valued RHS.  
     	   
     \return Error code, set to 0 if no error.
   */
-  int UpdateKomplexProblemFromVbrMatrices(const Epetra_VbrMatrix & Ar, const Epetra_VbrMatrix & Ai, 
-					  const Epetra_MultiVector & Xr, const Epetra_MultiVector & Xi,
-					  const Epetra_MultiVector & Br, const Epetra_MultiVector & Bi,
-					  );
-
-  //! Update an existing Komplex linear problem using new values.
-  /*! Updates an existing Komplex_LinearProblem object using new matrix, LHS and RHS values.  The matrix
-      structure must be \e identical to the matrix that was used to construct the original reduced problem.  
-    	   
-    \return Error code, set to 0 if no error.
-  */
-  int UpdateKomplexProblemFromRowMatrices(const Epetra_VbrMatrix & Ar, const Epetra_VbrMatrix & Ai, 
-					  const Epetra_MultiVector & Xr, const Epetra_MultiVector & Xi,
-					  const Epetra_MultiVector & Br, const Epetra_MultiVector & Bi,
-					  );
+  int SetKomplexRHS(const Epetra_MultiVector & Br, const Epetra_MultiVector & Bi);
   //@}
   //@{ \name Methods to extract complex system solution.
   //! Extrac a solution for the original complex-valued problem using the solution of the Komplex problem.
   /*! After solving the komplex linear system, this method can be called to extract the
       solution of the original problem, assuming the solution for the komplex system is valid.
+    \param Xr (In) The real part of the complex valued solution.  
+    \param Xi (In) The imag part of the complex valued solution. 
     
   */
   int ExtractSolution(Epetra_MultiVector * Xr, Epetra_MultiVector * Xi);
@@ -138,8 +117,15 @@ class Komplex_LinearProblem {
  protected:
 
     void InitializeDefaults();
-    int ComputeKomplexMaps();
-    int Setup(Epetra_LinearProblem * Problem);
+    SetKomplexOperatorVbr(double c0r, double c0i, const Epetra_VbrMatrix & A0,
+			  double c1r, double c1i, const Epetra_VbrMatrix & Ai);
+    SetKomplexOperatorRow(double c0r, double c0i, const Epetra_RowMatrix & A0,
+			  double c1r, double c1i, const Epetra_RowMatrix & Ai);
+    int ConstructKomplexMaps(const Epetra_BlockMap & A0DomainMap, const Epetra_BlockMap & A0RangeMap, 
+			     const Epetra_BlockMap & A0RowMap, const Epetra_BlockMap & A0ColMap,
+			     const Epetra_BlockMap & A1DomainMap, const Epetra_BlockMap & A1RangeMap, 
+			     const Epetra_BlockMap & A1RowMap, const Epetra_BlockMap & A1ColMap);
+    int MakeKomplexMap(const Epetra_BlockMap & Map, Epetra_BlockMap * & KMap); 
     int InitFullMatrixAccess();
     int GetRow(int Row, int & NumIndices, int * & Indices);
     int GetRowGCIDs(int Row, int & NumIndices, double * & Values, int * & GlobalIndices);
@@ -147,6 +133,7 @@ class Komplex_LinearProblem {
 
     Epetra_LinearProblem * KomplexProblem_;
     Epetra_VbrMatrix * KomplexMatrix_;
+    Epetra_CrsGraph * KomplexGraph_;
     Epetra_MultiVector * KomplexRHS_;
     Epetra_MultiVector * KomplexLHS_;
 

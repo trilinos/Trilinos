@@ -46,10 +46,10 @@ Komplex_LinearProblem::~Komplex_LinearProblem(){
   if (KomplexMatrix_!=0) delete KomplexMatrix_;
   if (KomplexLHS_!=0) delete KomplexLHS_;
   if (KomplexRHS_!=0) delete KomplexRHS_;
-  if (KomplexMatrixDomainMap_!=KomplexMatrixColMap_) delete KomplexMatrixDomainMap_;
-  if (KomplexMatrixRangeMap_!=KomplexMatrixRowMap_) delete KomplexMatrixRangeMap_;
+  if (KomplexMatrixDomainMap_!=KomplexMatrixRowMap_ && KomplexMatrixDomainMap_!=0) delete KomplexMatrixDomainMap_;
+  if (KomplexMatrixRangeMap_!=KomplexMatrixRowMap_ && KomplexMatrixRangeMap_!=0) delete KomplexMatrixRangeMap_;
+  if (KomplexMatrixColMap_!=KomplexMatrixRowMap_ && KomplexMatrixColMap_!=0) delete KomplexMatrixColMap_;
   if (KomplexMatrixRowMap_!=0) delete KomplexMatrixRowMap_;
-  if (KomplexMatrixColMap_!=0) delete KomplexMatrixColMap_;
 
 }
 //==============================================================================
@@ -60,6 +60,7 @@ void Komplex_LinearProblem::InitializeDefaults() {
   KomplexProblem_ = 0;
   FullMatrix_ = 0;
   KomplexMatrix_ = 0;
+  KomplexGraph_ = 0;
   KomplexRHS_ = 0;
   KomplexLHS_ = 0;
   KomplexMatrixRowMap_ = 0;
@@ -80,7 +81,93 @@ void Komplex_LinearProblem::InitializeDefaults() {
   return;
 }
 //==============================================================================
-int Komplex_LinearProblem::Analyze(Epetra_RowMatrix * FullMatrix) {
+int Komplex_LinearProblem::SetKomplexOperator(double c0r, double c0i, const Epetra_RowMatrix & A0,
+					      double c1r, double c1i, const Epetra_RowMatrix & Ai) {
+
+
+  try {
+    const Epetra_VbrMatrix & VbrA0 = dynamic_cast<const Epetra_VbrMatrix &>(A0);
+    const Epetra_VbrMatrix & VbrA1 = dynamic_cast<const Epetra_VbrMatrix &>(A1);
+
+    EPETRA_CHK_ERR(SetKomplexOperatorVbr(c0r, c0i, VbrA0, c1r, c1i, VbrA1));
+  }
+  catch (...) {
+    EPETRA_CHK_ERR(SetKomplexOperatorRow(c0r, c0i, VbrA0, c1r, c1i, VbrA1));
+  }
+
+  return(0);
+}
+//==============================================================================
+int Komplex_LinearProblem::SetKomplexOperatorVbr(double c0r, double c0i, const Epetra_VbrMatrix & A0,
+						 double c1r, double c1i, const Epetra_VbrMatrix & Ai) {
+
+  if (!A0.Filled()) EPETRA_CHK_ERR(-1); // Matrix is not filled, can't continue
+
+  EPETRA_CHK_ERR(ConstructKomplexMaps(A0.DomainMap(), A0.RangeMap(), A0.RowMap(), A0.ColMap()
+				      A1.DomainMap(), A1.RangeMap(), A1.RowMap(), A1.ColMap()));
+  EPETRA_CHK_ERR(ConstructKomplexGraph(A0.Graph(), A1.Graph()));
+  return(0);
+}
+//==============================================================================
+int Komplex_LinearProblem::SetKomplexOperatorRow(double c0r, double c0i, const Epetra_RowMatrix & A0,
+						 double c1r, double c1i, const Epetra_RowMatrix & Ai) {
+  EPETRA_CHK_ERR(ConstructKomplexMaps(A0.OperatorDomainMap(), A0.OperatorRangeMap(), A0.RowMatrixRowMap(), A0.RowMatrixColMap()
+				       A1.OperatorDomainMap(), A1.OperatorRangeMap(), A1.RowMatrixRowMap(), A1.RowMatrixColMap()));
+
+  try {
+    const Epetra_CrsMatrix & CrsA0 = dynamic_cast<const Epetra_CrsMatrix &>(A0);
+    const Epetra_CrsMatrix & CrsA1 = dynamic_cast<const Epetra_CrsMatrix &>(A1);
+
+   EPETRA_CHK_ERR(ConstructKomplexGraph(CrsA0.Graph(), CrsA1.Graph()));
+  }
+  catch (...) {
+    EPETRA_CHK_ERR(ConstructKomplexGraph(A0, A1));
+  }
+  return(0);
+}
+//==============================================================================
+int Komplex_LinearProblem::ConstructKomplexMaps(const Epetra_BlockMap & A0DomainMap, const Epetra_BlockMap & A0RangeMap, 
+						const Epetra_BlockMap & c1r, c1i, VbrA0RowMap, const Epetra_BlockMap & A0ColMap,
+						const Epetra_BlockMap & A1DomainMap, const Epetra_BlockMap & A1RangeMap, 
+						const Epetra_BlockMap & A1RowMap, const Epetra_BlockMap & A1ColMap) {
+    
+  // Always make a RowMap
+  EPETRA_CHK_ERR(A0RowMap.SameAs(A1.RowMap)); // Make sure A0 and A1 maps are same
+  EPETRA_CHK_ERR(MakeKomplexMap(A0RowMap, KomplexMatrixRowMap_));
+
+  // Remaining maps could be the same as the row map, so we check
+  if (!A0RowMap.SameAs(A0RangeMap)) {
+    EPETRA_CHK_ERR(A0RangeMap.SameAs(A1.RangeMap)); // Make sure A0 and A1 maps are same
+    EPETRA_CHK_ERR(MakeKomplexMap(A0RangeMap, KomplexMatrixRangeMap_));
+  }
+  else KomplexMatrixRangeMap_ = KomplexMatrixRowMap_;
+
+  if (!A0RowMap.SameAs(A0ColMap)) {
+    EPETRA_CHK_ERR(A0ColMap.SameAs(A1.ColMap));
+    EPETRA_CHK_ERR(MakeKomplexMap(A0ColMap, KomplexMatrixColMap_));
+  }
+  else KomplexMatrixColMap_ = KomplexMatrixRowMap_;
+
+  if (!A0RowMap.SameAs(A0DomainMap)) {
+    EPETRA_CHK_ERR(A0DomainMap.SameAs(A1.DomainMap)); 
+    EPETRA_CHK_ERR(MakeKomplexMap(A0DomainMap, KomplexMatrixDomainMap_));
+  }
+  else KomplexMatrixDomainMap_ = KomplexMatrixRowMap_;
+}
+//==============================================================================
+int Komplex_LinearProblem::MakeKomplexMap(const Epetra_BlockMap & Map, Epetra_BlockMap * & KMap) {
+
+  if (Map.LinearMap() && Map.ConstantElementSize()) {
+    KMap = new Epetra_BlockMap(-1, Map.NumMyElements(), Map.MaxElementSize()*2, Map.IndexBase(), Map.Comm());
+  }
+  else {
+    Epetra_IntSerialDenseVector KMapSizes(Copy, Map.ElementSizeList() , Map.NumMyElements());
+    for (int i=0; i<Map.NumMyElements(); i++) KMapSizes[i] *= 2; // double the element sizes
+    KMap = new Epetra_BlockMap(-1, Map.NumMyElements(), KMapSizes.Values(), Map.IndexBase(), Map.Comm());
+  }
+  return(0);
+}
+
 
   int i, j, jj;
 
