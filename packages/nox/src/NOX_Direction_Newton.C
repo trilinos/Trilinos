@@ -31,42 +31,184 @@
 //@HEADER
 
 #include "NOX_Direction_Newton.H" // class definition
+#include "NOX_Common.H"
+#include "NOX_Abstract_Vector.H"
+#include "NOX_Abstract_Group.H"
+#include "NOX_Solver_Generic.H"
 
 using namespace NOX;
 using namespace NOX::Direction;
 
-Newton::Newton(const Parameter::List& params) 
+Newton::Newton(const Parameter::List& p) 
 {
-  reset(params);
+  predrhs = NULL;
+  stepdir = NULL;
+  reset(p);
 }
 
 Newton::~Newton()
 {
-  
+  delete predrhs;
 }
 
-bool Newton::reset(const Parameter::List& params)
+bool Newton::reset(const Parameter::List& p)
 {
+  params = p;
   return true;
 }
 
-bool Newton::operator()(Parameter::List& params,
+bool Newton::operator()(Abstract::Vector& dir, 
 			Abstract::Group& soln, 
-			Abstract::Vector& dir) 
+			const Solver::Generic& solver)
 {
   // Compute RHS at current solution
-  soln.computeRHS();
+  bool ok = soln.computeRHS();
+
+  if (!ok) {
+    cerr << "NOX::Direction::Newton::operator() - Unable to compute RHS." << endl;
+    throw "NOX Error";
+  }
+
+  // Reset the linear solver tolerance
+  if (solver.getNumIterations() >  0)
+    resetForcingTerm(soln, solver.getPreviousSolutionGroup());
 
   // Compute Jacobian at current solution.
-  soln.computeJacobian();
+  ok = soln.computeJacobian();
+
+  if (!ok) {
+    cerr << "NOX::Direction::Newton::operator() - Unable to compute Jacobian." << endl;
+    throw "NOX Error";
+  }
 
   // Compute the Newton direction
-  soln.computeNewton(params.sublist("Linear Solver"));
+  ok = soln.computeNewton(params.sublist("Linear Solver"));
 
   // Set search direction.
   dir = soln.getNewton();
 
-  return true;
+  return ok;
 }
+
+
+// protected
+void Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln)
+{
+  // Reset the forcing term at the beginning on a nonlinear iteration,
+  // based on the last iteration.
+
+  if ((!params.isParameter("Forcing Term Method")) ||
+      (params.isParameterEqual("Forcing Term Method", "None")))
+    return;
+
+  // Get forcing term parameters.
+  const string method = params.getParameter("Forcing Term Method", "");
+  const double eta_min = params.getParameter("Forcing Term Minimum Tolerance", 1.0e-6);
+  const double eta_max = params.getParameter("Forcing Term Maximum Tolerance", 0.01);
+
+  // Get linear solver parameter list and current tolerance.
+  const double eta_km1 = params.sublist("Linear Solver").getParameter("Tolerance", 0.0);
+
+  // New forcing term.
+  double eta_k;
+
+  const string indent = "       ";
+
+  if (Utils::doPrint(Utils::Details)) {
+    cout << indent << "CALCULATING FORCING TERM" << endl;
+    cout << indent << "Method: " << method << endl;
+  }
+
+  if (method == "Constant") {    
+
+    eta_k = eta_min;
+
+  }        
+
+  else if (method == "Type 1") {
+    
+    // Create a new vector to be the predicted RHS
+    if (predrhs == NULL) {
+      predrhs = oldsoln.getRHS().clone(CopyShape);
+      stepdir = oldsoln.getRHS().clone(CopyShape);
+    }
+
+    // stepdir = X - oldX (i.e., the step times the direction)
+    stepdir->update(1.0, soln.getX(), -1.0, oldsoln.getX(), 0);
+
+    // Compute predrhs = Jacobian * step * dir
+    oldsoln.applyJacobian(*stepdir, *predrhs);
+    
+    // Compute predrhs = RHSVector + predrhs (this is the predicted RHS)
+    predrhs->update(1.0, oldsoln.getRHS(), 1.0);
+
+    // Return norm of predicted RHS
+    const double normpredrhs = predrhs->norm();
+
+    // Get other norms
+    const double normrhs = soln.getNormRHS();
+    const double normoldrhs = oldsoln.getNormRHS();
+
+    // Compute forcing term
+    eta_k = fabs(normrhs - normpredrhs) / normoldrhs;
+     
+    // Some output
+    if (Utils::doPrint(Utils::Details)) {
+      cout << indent << "Residual Norm k-1 =             " << normoldrhs << "\n";
+      cout << indent << "Residual Norm Linear Model k =  " << normpredrhs << "\n";
+      cout << indent << "Residual Norm k =               " << normrhs << "\n";
+      cout << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
+    }
+  
+    // Impose safeguard and constraints ...
+    const double alpha = (1.0 + sqrt(5.0)) / 2.0;
+    const double eta_k_alpha = pow(eta_km1, alpha);
+    eta_k = max(eta_k, eta_k_alpha);
+    eta_k = max(eta_k, eta_min);
+    eta_k = min(eta_max, eta_k);
+  }
+    
+  else if (method == "Type 2") {  
+    
+    const double normrhs = soln.getNormRHS();
+    const double normoldrhs = oldsoln.getNormRHS();
+    const double alpha = params.getParameter("Forcing Term Alpha", 1.5);
+    const double gamma = params.getParameter("Forcing Term Gamma", 0.9);
+    const double residual_ratio = normrhs / normoldrhs;
+    
+    eta_k = gamma * pow(residual_ratio, alpha);
+     
+    // Some output
+    if (Utils::doPrint(Utils::Details)) {
+      cout << indent << "Residual Norm k-1 =             " << normoldrhs << "\n";
+      cout << indent << "Residual Norm k =               " << normrhs << "\n";
+      cout << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
+    }
+
+    // Impose safeguard and constraints ... 
+    const double eta_k_alpha = gamma * pow(eta_km1, alpha);
+    eta_k = max(eta_k, eta_k_alpha);
+    eta_k = max(eta_k, eta_min);
+    eta_k = min(eta_max, eta_k);
+    
+  }
+
+  else {
+
+    cerr << "*** Warning: Invalid Forcing Term Method ***" << endl;
+    return;
+  }
+
+  // Reset linear solver tolerance
+  params.sublist("Linear Solver").setParameter("Tolerance", eta_k);
+
+  if (Utils::doPrint(Utils::Details)) {
+    cout << indent << "Forcing Term: " << eta_k << endl;
+  }
+
+}
+
+
+
 
 

@@ -31,6 +31,8 @@
 //@HEADER
 
 #include "NOX_Direction_SteepestDescent.H" // class definition
+#include "NOX_Abstract_Vector.H"
+#include "NOX_Abstract_Group.H"
 
 using namespace NOX;
 using namespace NOX::Direction;
@@ -50,19 +52,34 @@ bool SteepestDescent::reset(const Parameter::List& params)
   return true;
 }
 
-bool SteepestDescent::operator()(Parameter::List& params,
-			Abstract::Group& soln, 
-			Abstract::Vector& dir) 
+bool SteepestDescent::operator()(Abstract::Vector& dir, 
+				 Abstract::Group& soln, 
+				 const Solver::Generic& solver) 
 {
   // Compute RHS at current solution
-  soln.computeRHS();
+  bool ok = soln.computeRHS();
 
+  if (!ok) {
+    cerr << "NOX::Direction::SteepestDescent::operator() - Unable to compute RHS." << endl;
+    throw "NOX Error";
+  }
+  
   // Compute Jacobian at current solution.
-  soln.computeJacobian();
+  ok = soln.computeJacobian();
 
+  if (!ok) {
+    cerr << "NOX::Direction::SteepestDescent::operator() - Unable to compute Jacobian." << endl;
+    throw "NOX Error";
+  }
+  
   // Compute the gradient
-  bool ierr = soln.computeGrad();
+  ok = soln.computeGrad();
 
+  if (!ok) {
+    cerr << "NOX::Direction::SteepestDescent::operator() - Unable to compute gradient." << endl;
+    throw "NOX Error";
+  }
+  
   // Get the gradient direction.
   dir = soln.getGrad();
 
@@ -70,7 +87,7 @@ bool SteepestDescent::operator()(Parameter::List& params,
   double norm = dir.norm();
   dir.scale(-1.0/norm);
 
-  return ierr;
+  return true;
 }
 
 

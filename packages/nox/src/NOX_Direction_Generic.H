@@ -33,24 +33,37 @@
 #ifndef NOX_DIRECTION_GENERIC_H
 #define NOX_DIRECTION_GENERIC_H
 
-#include "NOX_Common.H"
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Parameter_List.H"
-#include "NOX_Utils.H"
+// Forward declarations
+namespace NOX {
+namespace Abstract {
+class Vector;
+class Group;
+}
+namespace Solver {
+class Generic;
+}
+namespace Parameter {
+class List;
+}
+}
 
 namespace NOX {
+
+//! Search direction strategies
 namespace Direction {
 
 //! %Generic direction interface
 /*!
- *
+  %Generic interface to calculating search directions.
  */
 class Generic {
 
 public:
 
-  //! Default constructor
+  //! Default base constructor. 
+  /*! 
+    Constructors of derived objects should look like reset.
+   */
   Generic() {};
 
   //! Destructor
@@ -59,10 +72,15 @@ public:
   //! Reset parameters
   virtual bool reset(const Parameter::List& params) = 0;
   
-  //! Compute the direction vector for a specific method
-  virtual bool operator()(Parameter::List& params,
-			  Abstract::Group& oldgrp, 
-			  Abstract::Vector& dir) = 0;
+  /*!
+    \brief Compute the direction vector for a specific method given
+    the current group.
+
+     Access to the solver is also allowed for getting additional
+     status-type information like iteration number, etc.
+  */
+  virtual bool operator()(Abstract::Vector& dir, Abstract::Group& grp, 
+			  const Solver::Generic& solver) = 0;
 
 };
 } // namespace Direction

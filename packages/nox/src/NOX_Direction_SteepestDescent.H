@@ -56,9 +56,8 @@ public:
   bool reset(const Parameter::List& params);
 
   // derived
-  bool operator()(Parameter::List& params,
-		  Abstract::Group& oldgrp, 
-		  Abstract::Vector& dir);
+  bool operator()(Abstract::Vector& dir, Abstract::Group& grp, 
+		  const Solver::Generic& solver);
 
 private:
 

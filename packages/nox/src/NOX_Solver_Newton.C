@@ -59,12 +59,8 @@ Newton::Newton(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p)
   dir(*dirptr),			// reference to just-created pointer
   testptr(&t),			// pointer to t
   iparams(p),			// copy p
-  oparams(),			// empty list
   linesearch(iparams.sublist("Line Search")), // initialize line search
-  direction(iparams.sublist("Direction")), // initialize direction
-  step(0.0),			// initialize to zero
-  niter(0),			// initialize to zero
-  status(Status::Unconverged)	// initialize convergence status
+  direction(iparams.sublist("Direction")) // initialize direction
 {
   init();
 }
@@ -72,6 +68,11 @@ Newton::Newton(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p)
 // Protected
 void Newton::init()
 {
+  // Initialize 
+  step = 0;
+  niter = 0;
+  status = Status::Unconverged;
+
   // Set up utilities (i.e., set print processor, etc)
   Utils::setUtils(iparams);
   
@@ -103,8 +104,6 @@ bool Newton::reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List
   iparams = p;			
   linesearch.reset(iparams.sublist("Line Search"));	
   direction.reset(iparams.sublist("Direction"));
-  niter = 0;
-  status = Status::Unconverged;
   init();
   return true;
 }
@@ -118,22 +117,22 @@ Newton::~Newton()
 
 Status::StatusType Newton::getStatus()
 {
-  status = testptr->operator()(*this);
   return status;
 }
 
 Status::StatusType Newton::iterate()
 {
+  // First check status
+  if (status != Status::Unconverged) 
+    return status;
+
   // Copy pointers into temporary references
   Abstract::Group& soln = *solnptr;
   Status::Test& test = *testptr;
 
-  // Reset forcing term.
-  resetForcingTerm();
-
   // Compute the direction for the update vector at the current solution.
   /* NOTE FROM TAMMY: Need to check the return status! */
-  direction(iparams,soln,dir);
+  direction(dir, soln, *this);
 
   // Copy current soln to the old soln.
   oldsoln = soln;
@@ -157,7 +156,6 @@ Status::StatusType Newton::iterate()
 
 Status::StatusType Newton::solve()
 {
-  status = testptr->operator()(*this);
   printUpdate();
 
   // Iterate until converged or failed
@@ -225,122 +223,4 @@ void Newton::printUpdate()
     cout << Utils::fill(72) << "\n";
   }
 }
-
-// protected
-void Newton::resetForcingTerm()
-{
-  // Reset the forcing term at the beginning on a nonlinear iteration,
-  // based on the last iteration.
-
-  if (niter == 0)
-    return;
-
-  if ((!iparams.isParameter("Forcing Term Method")) ||
-      (iparams.isParameterEqual("Forcing Term Method", "None")))
-    return;
-
-  // Get forcing term parameters.
-  const string method = iparams.getParameter("Forcing Term Method", "");
-  const double eta_min = iparams.getParameter("Forcing Term Minimum Tolerance", 1.0e-6);
-  const double eta_max = iparams.getParameter("Forcing Term Maximum Tolerance", 0.01);
-
-  // Get linear solver parameter list and current tolerance.
-  Parameter::List& lsparams = iparams.sublist("Linear Solver");
-  const double eta_km1 = lsparams.getParameter("Tolerance", 0.0);
-
-  // New forcing term.
-  double eta_k;
-
-  string indent = "       ";
-
-  if (Utils::doPrint(Utils::Details)) {
-    cout << indent << "CALCULATING FORCING TERM" << endl;
-    cout << indent << "Method: " << method << endl;
-  }
-
-  if (method == "Constant") {    
-
-    eta_k = eta_min;
-
-  }        
-
-  else if (method == "Type 1") {
-    
-    // Create a new vector to be the predicted RHS
-    static Abstract::Vector* predrhs = oldsoln.getRHS().clone(CopyShape);
-
-    // Compute predrhs = Jacobian * dir
-    oldsoln.applyJacobian(dir, *predrhs);
-    
-    // Compute predrhs = RHSVector + step * predrhs (this is the predicted RHS)
-    predrhs->update(1.0, oldsoln.getRHS(), step);
-
-    // Return norm of predicted RHS
-    const double normpredrhs = predrhs->norm();
-
-    // Get other norms
-    const double normrhs = solnptr->getNormRHS();
-    const double normoldrhs = oldsoln.getNormRHS();
-
-    // Compute forcing term
-    eta_k = fabs(normrhs - normpredrhs) / normoldrhs;
-     
-    // Some output
-    if (Utils::doPrint(Utils::Details)) {
-      cout << indent << "Residual Norm k-1 =             " << normoldrhs << "\n";
-      cout << indent << "Residual Norm Linear Model k =  " << normpredrhs << "\n";
-      cout << indent << "Residual Norm k =               " << normrhs << "\n";
-      cout << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
-    }
-  
-    // Impose safeguard and constraints ...
-    const double alpha = (1.0 + sqrt(5.0)) / 2.0;
-    const double eta_k_alpha = pow(eta_km1, alpha);
-    eta_k = max(eta_k, eta_k_alpha);
-    eta_k = max(eta_k, eta_min);
-    eta_k = min(eta_max, eta_k);
-  }
-    
-  else if (method == "Type 2") {  
-    
-    const double normrhs = solnptr->getNormRHS();
-    const double normoldrhs = oldsoln.getNormRHS();
-    const double alpha = iparams.getParameter("Forcing Term Alpha", 1.5);
-    const double gamma = iparams.getParameter("Forcing Term Gamma", 0.9);
-    const double residual_ratio = normrhs / normoldrhs;
-    
-    eta_k = gamma * pow(residual_ratio, alpha);
-     
-    // Some output
-    if (Utils::doPrint(Utils::Details)) {
-      cout << indent << "Residual Norm k-1 =             " << normoldrhs << "\n";
-      cout << indent << "Residual Norm k =               " << normrhs << "\n";
-      cout << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
-    }
-
-    // Impose safeguard and constraints ... 
-    const double eta_k_alpha = gamma * pow(eta_km1, alpha);
-    eta_k = max(eta_k, eta_k_alpha);
-    eta_k = max(eta_k, eta_min);
-    eta_k = min(eta_max, eta_k);
-    
-  }
-
-  else {
-
-    cerr << "*** Warning: Invalid Forcing Term Method ***" << endl;
-    return;
-  }
-
-  // Reset linear solver tolerance
-  lsparams.setParameter("Tolerance", eta_k);
-
-  if (Utils::doPrint(Utils::Details)) {
-    cout << indent << "Forcing Term: " << eta_k << endl;
-  }
-
-}
-
-
-
 

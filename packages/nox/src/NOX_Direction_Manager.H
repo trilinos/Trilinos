@@ -34,6 +34,7 @@
 #define NOX_DIRECTION_MANAGER_H
 
 #include "NOX_Direction_Generic.H" // base class
+#include "NOX_Common.H" // for string
 
 namespace NOX {
 namespace Direction {
@@ -46,7 +47,7 @@ namespace Direction {
    <ul>
    <li> "Method" - Name of the direction method. Valid choices are
    <ul> 
-   <li> "Newton" (NOX::Direction::Newton)
+   <li> "%Newton" (NOX::Direction::Newton)
    <li> "Steepest Descent" (NOX::Direction::SteepestDescent)
    <li> "Dogleg" (NOX::Direction::Dogleg) - not implemented yet
    <li> "Broyden" (NOX::Direction::Broyden) - not implemented yet
@@ -67,9 +68,8 @@ public:
   bool reset(const Parameter::List& params);
 
   // derived
-  bool operator()(Parameter::List& params,
-		  Abstract::Group& oldgrp, 
-		  Abstract::Vector& dir);
+  bool operator()(Abstract::Vector& dir, Abstract::Group& grp, 
+		  const Solver::Generic& solver);
 
 private:
   //! Method name
@@ -81,4 +81,5 @@ private:
 };
 } // namespace Direction
 } // namespace NOX
+
 #endif

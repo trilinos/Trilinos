@@ -34,13 +34,28 @@
 #define NOX_DIRECTION_NEWTON_H
 
 #include "NOX_Direction_Generic.H" // base class
+#include "NOX_Parameter_List.H"
 
 namespace NOX {
 namespace Direction {
 
 //! %Newton direction computation
 /*! 
- *
+  - "Forcing Term Method" - Method to compute the forcing term, i.e.,
+    the tolerance for the linear solver. Defaults to ""
+    (nothing). Choices are "Type 1" and "Type 2".
+
+  - "Forcing Term Minimum Tolerance" - Minimum acceptable linear
+    solver tolerance. Defaults to 1.0e-6.
+
+  - "Forcing Term Maximum Tolerance" = Maximum acceptable linear
+    solver tolerance. Default to 0.01.
+
+  - "Forcing Term Alpha" - Used for the "Type 2" forcing term
+    calcuation. Defaults to 1.5.
+
+  - "Forcing Term Gamma" - Used for the "Type 2" forcing term
+    calcuation. Defaults to 0.9.
  */  
 class Newton : public Generic {
 
@@ -50,17 +65,28 @@ public:
   Newton(const Parameter::List& params);
 
   //! Destructor
-  ~Newton();
+  virtual ~Newton();
 
   // derived
-  bool reset(const Parameter::List& params);
+  virtual bool reset(const Parameter::List& params);
 
   // derived
-  bool operator()(Parameter::List& params,
-		  Abstract::Group& oldgrp, 
-		  Abstract::Vector& dir);
+  virtual bool operator()(Abstract::Vector& dir, Abstract::Group& grp, 
+			  const Solver::Generic& solver);
+
+protected:
+
+  //! Called each iteration to reset the forcing term (ie, the
+  //! convergence tolerance for the linear solver).
+  virtual void resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln);
+
 
 private:
+
+  Parameter::List params;
+  Abstract::Vector* predrhs;
+  Abstract::Vector* stepdir;
+
 
 };
 } // namespace Direction
