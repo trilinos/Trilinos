@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
     printf("Enter the total number of elements on a side\n");
     scanf("%d",&Nglobal_edges);
     printf("Enter value for sigma\n");
-    scanf("%e",&sigma);
+    scanf("%lf",&sigma);
     printf("Smooth Pe?\n"); scanf("%s",&input);
     if (ML_strcmp(input,"yes") == 0) smoothPe_flag = ML_YES;
     else smoothPe_flag = ML_NO;
