@@ -1,0 +1,110 @@
+A Tutorial For Configuring and Building Trilinos Using Autotools
+
+Additional questions and any suggestions can be directed to 
+Jim Willenbring (jmwille@sandia.gov).  If the concern is a bug or enhancement
+request for the Autotools system, please submit a bug report to Bugzilla.
+
+I. Recommended Directory Structure
+
+Two useful terms:
+
+Source tree - The directory structure where source files are found.  A source 
+	tree is obtained by expanding a distribution tar ball, or by checking 
+	out a copy of the Trilinos repository.  Please note: typing 'configure 
+	--help=recursive' from the top level of the source tree will display 
+	the help page for ALL Trilinos packages that use autoconf and automake.
+
+Build tree - The directory structure where object and library files, as well 
+	as executables are located.  
+
+	Although it is possible to run 'configure' from the source tree (in 
+the directory where the configure file is located), it is recommended that a 
+user have separate build trees.  The greatest advantage to having a separate 
+build tree is that multiple builds of the libraries can be maintained.  For 
+example, serial and parallel libraries.  A less obvious advantage is that 
+there can be problems with configuring in a 'dirty' directory (one that has 
+already been configured in).
+
+	Setting up a build tree is very easy.  First, cd to the highest 
+directory in the source tree (Trilinos for a repositry copy, Trilinos-2.1 
+for a distribution).  Now, make a new directory - if planning a serial build, 
+a good name would be SERIAL.  Finally cd into that dirctory.  Please note: a 
+user can set up a build tree anywhere - the highest direcotry in the source 
+tree is merely an example.
+
+II. Configuring 
+
+	To configure from a remote build tree, simply run the configure script 
+in source tree from the root of the build tree.  In the example above, cd to 
+the SERIAL directory and type ../configure <options described below>.
+
+	The user needs to provide two important pieces of information at this 
+stage.  First, the user needs to describe what kind of a build is needed.  For 
+instance, serial or mpi, all of the packages, or just a proper subset.  
+(NOTE: At this time, some of the other options listed on the help screen do 
+not work (--enable-debug, --enable-opt, and others.  For questions please 
+contact jmwille@sandia.gov.)
+
+	For example, to configure for serial libraries, no action is necessary,
+but to configure for parallel libraries, a user must append '--enable-mpi' to 
+the configure line.
+
+	Also, to build all Trilinos libraries, no action is necessary, but to 
+exclude a package, komplex for example, a user must append '--without-komplex' 
+to the configure line.  It is recommended that users always configure from the 
+Trilinos level and use --without-<package> as necessary, rather than trying to 
+configure from a lower level.
+
+NOTE: Ifpack is divided into old and new portions.  Future ifpack developments 
+will replace all of old ifpack, but at this time some users will need to append
+'--with-oldifpack' to the configure line.
+
+NOTE: The configure process is set up to detect when a --without-<package> 
+command would break a package dependency.  For example, ifpack depends on 
+epetra, so if a user wants to build ifpack, but types --without-epetra, epetra 
+will be configured and built anyway.  However, some of the tests and examples 
+have different dependencies than the core package.  These dependencies have not
+yet been accounted for.  Please submit a bug report for any problems found with
+this matter.
+
+	To install libraries and header files in a particular location, use 
+--prefix=<dir>.  If this option is used, libraries will be located in 
+<dir>/lib and header files in <dir>/include.
+
+	The second imporant piece of information that a user must provide at 
+this stage is the name and or location of anything that autotools needs and 
+cannot find on its own.  Also, if autotools selects, for example, the wrong 
+blas library by default, the user must indicate which blas library to use.  
+Other more obscure issues dealing with enjoyable topics such as standard 
+noncompliance are also dealt with here.  If all required libraries (blas, 
+lapack, y12m) and (if doing an mpi build) mpiCC, mpicc, and mpif77, as well as 
+mpi are all located in standard places, try configuring with what you have.  If
+the configure stage completes successfully, move on to part III.  However, keep
+in mind that some issues involving the more 'enjoyable topics' often do not 
+show up until the build stage, so reading on might be worthwhile.
+
+	For a machine that requires additional configure line options, a good 
+place to start is Trilinos(-2.1)/config.  There are configure scripts here for 
+various platforms.  These scripts are named using the following naming 
+convention:
+arch_comm_id
+where id can contain any important information, or can be left blank.  For many
+of the existing scripts, id is the name of the machine that the script was used
+on.  Other uses include id=debug, or opt when those options are completed.
+
+Users who create scripts for other machines are encouraged to check them into 
+the repository for the benefit of other users.  Users who do not have access to
+the repository can send their scripts to jmwille@sandia.gov.
+
+NOTE: The --with-referenceblasandlapack option has been disabled for now, but 
+will return in a different form in the future.
+
+III. Building
+
+If the configure stage completed successfully, just type make, or make install,
+if --prefix was specified.
+
+
+Additional questions and any suggestions can be directed to 
+Jim Willenbring (jmwille@sandia.gov).  If the concern is a bug or enhancement
+request for the Autotools system, please submit a bug report to Bugzilla.

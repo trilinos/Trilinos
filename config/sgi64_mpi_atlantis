@@ -1,0 +1,4 @@
+.././configure --with-referencey12m --with-cxxflags="-LANG:std
+-LANG:ansi-for-init-scope=ON -I/usr/include/CC -ptused
+-DMPI_NO_CPPBIND" --enable-mpi --with-mpi-cxx=CC --with-mpi-cc=cc
+--with-mpi-f77=f77 --with-mpi-libs=-lmpi
