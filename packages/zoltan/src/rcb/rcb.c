@@ -126,8 +126,8 @@ void lb_rcb(
 
   /* setup for parallel */
 
-  MPI_Comm_rank(MPI_COMM_WORLD,&proc);
-  MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
+  proc = LB_Proc;
+  nprocs = LB_Num_Proc;
 
   /*
    *  Build the RCB Data structure and 
@@ -687,6 +687,17 @@ void lb_rcb(
   
   *pdotnum = dotnum;
   *pdottop = dottop;
+
+{
+int i;
+LB_print_sync_start(TRUE);
+  printf("RCB Proc %d  Num_Obj=%d  Num_Keep=%d\n", LB_Proc, *pdotnum, *pdottop);
+  for (i = 0; i < *pdotnum; i++) {
+    printf("    Obj:  %10d      Orig: %4d\n", rcb->Dots[i].Global_ID,
+           rcb->Dots[i].Orig_Proc);
+  }
+LB_print_sync_end(TRUE);
+}
 
 }
 

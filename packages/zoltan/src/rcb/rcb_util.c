@@ -30,12 +30,22 @@ int num_geom;                         /* # values per object used to describe
 int i;
 
   /*
-   * Allocate an RCB data structure if one has not already been allocated
-   * for this load balancing object.
+   * Allocate an RCB data structure for this load balancing object.
+   * If the previous data structure is still there, free the Dots first;
+   * the other fields can be reused.
    */
 
-  if (lb->Data_Structure == NULL)
-    rcb = (RCB_STRUCT *) smalloc(sizeof(RCB_STRUCT));
+  if (lb->Data_Structure == NULL) {
+    rcb = (RCB_STRUCT *) LB_smalloc(sizeof(RCB_STRUCT));
+    lb->Data_Structure = (void *) rcb;
+    rcb->Tree_Ptr = (struct rcb_tree *) LB_array_alloc(1, LB_Num_Proc, 
+                                                       sizeof(struct rcb_tree));
+    rcb->Box = (struct rcb_box *) LB_smalloc(sizeof(struct rcb_box));
+  }
+  else {
+    rcb = (RCB_STRUCT *) lb->Data_Structure;
+    safe_free((void **) &(rcb->Dots));
+  }
 
   /*
    * Allocate space for objects in RCB data structure.  Allow extra space
@@ -44,8 +54,9 @@ int i;
 
   *num_obj = lb->Get_Num_Local_Obj(object_type);
   *max_obj = 1.5 * *num_obj;
-  rcb->Dots = (struct rcb_dot *) array_alloc(1, *max_obj,
-                                             sizeof(struct rcb_dot));
+  rcb->Dots = (struct rcb_dot *) LB_array_alloc(1, *max_obj,
+                                                sizeof(struct rcb_dot));
+
 
   /*
    * Compute the number of geometry fields per object.  For RCB, this
@@ -70,13 +81,13 @@ int i;
      *  dot for each object.
      */
 
-    objs = (LB_ID *) array_alloc(1, *num_obj, sizeof(LB_ID));
+    objs = (LB_ID *) LB_array_alloc(1, *num_obj, sizeof(LB_ID));
     lb->Get_All_Local_Objs(object_type, objs);
 
     for (i = 0; i < *num_obj; i++) {
       initialize_dot(lb, &(rcb->Dots[i]), i, objs[i]);
     }
-    safe_free((void **) &objs);
+    LB_safe_free((void **) &objs);
   }
   else if (lb->Get_Next_Local_Obj != NULL) {
 
@@ -113,7 +124,7 @@ int object_type = lb->Object_Type;
 
   dot->Local_ID = local_id;
   dot->Global_ID = global_id;
-  dot->Orig_Proc = Proc;
+  dot->Orig_Proc = LB_Proc;
   dot->X[0] = dot->X[1] = dot->X[2] = 0.0;
   lb->Get_Obj_Geom(global_id, object_type, dot->X);
   if (lb->Get_Obj_Weight != NULL)
