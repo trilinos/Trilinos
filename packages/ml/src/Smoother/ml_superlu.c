@@ -270,8 +270,13 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
 
      /* deallocate storage and clean up */
      info = flag;
-     if ( A != NULL )
+     if ( A != NULL ) {
+        ML_memory_free((void*)&(((NCformat *) A->Store)->rowind));
+        ML_memory_free((void*)&(((NCformat *) A->Store)->colptr));
+        ML_memory_free((void*)&(((NCformat *) A->Store)->nzval));
+        SUPERLU_FREE( A->Store );
         ML_memory_free((void**) &A);
+     }
      solver->Mat1 = NULL;
      mygroup = (int ) solver->ML_subgroup;
      lugrid_tiles    = solver->gridtiles;
@@ -413,10 +418,12 @@ printf("memory usage: fragments %d free: total %d, largest %d, total_used %d\n",
 
    if ( flag == 0 ) {
      if ( A != NULL ) {
+/*
         ML_memory_free((void*)&(((NCformat *) A->Store)->rowind));
         ML_memory_free((void*)&(((NCformat *) A->Store)->colptr));
         ML_memory_free((void*)&(((NCformat *) A->Store)->nzval));
         SUPERLU_FREE( A->Store );
+*/
         /* to satisfy pdgssvx_ABglobal argument check, postpone
          * ML_memory_free((void**) &A);
          */
