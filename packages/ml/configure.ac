@@ -354,6 +354,8 @@ TAC_ARG_WITH_PACKAGE(ml_parmetis3x, [Enable ParMETIS support, version 3.x. See n
 #
 TAC_ARG_WITH_PACKAGE(ml_arpack, [Enable ARPACK support. See notes for --with-ml_metis.], ML_ARPACK, no) 
 #
+TAC_ARG_WITH_PACKAGE(ml_parpack, [Enable PARPACK support. See notes for --with-ml_metis.], ML_PARPACK, no) 
+#
 ############################################
 #### interfaces to other Trilinos packages
 ############################################
