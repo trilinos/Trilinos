@@ -24,7 +24,7 @@ static char *cvs_vx_c = "$Id$";
 /*****************************************************************************/
 /*****************************************************************************/
 
-VERTEX *new_vertex(
+VERTEX *LB_new_vertex(
   ID *id,                    /* ID to be assigned to the new vertex.         */
   int weight,                /* weight to be assigned to the new vertex.     */
   int num_nbors,             /* degree of the new vertex.                    */
@@ -116,7 +116,7 @@ char *tmp;
 /*****************************************************************************/
 /*****************************************************************************/
 
-void free_vertex(VERTEX **vertex)
+void LB_free_vertex(VERTEX **vertex)
 {
   safe_free((void **) vertex);
 }
