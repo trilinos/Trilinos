@@ -166,6 +166,14 @@
 #endif
 #endif
 
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_TEUCHOS)
+#define HAVE_ML_MLAPI
+#else
+#ifdef HAVE_ML_MLAPI
+#undef HAVE_ML_MLAPI
+#endif
+#endif
+
 #endif /*ifdef HAVE_CONFIG_H*/
 
 #endif
