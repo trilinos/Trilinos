@@ -42,10 +42,12 @@ extern void *ML_allocate(ml_size_t size);
 
 #ifndef ML_MEM_CHECK
 #define ML_allocate(i)    malloc((i + sizeof(double) ))
+#define ML_realloc(i,j)   realloc(i,j)
 extern void *ml_void_mem_ptr;
 #define ML_free(i)        { ml_void_mem_ptr = (void *) i;  if (ml_void_mem_ptr != NULL) {free( (void*) i); i = NULL;} }
 #else
 #define ML_free(i)        { ML_myfree(i); i = NULL; }
+#define ML_realloc(i,j)    ML_myrealloc(i,j)
 #endif
 #define ML_allocate_check(ptr_to_check) \
                          {if ((ptr_to_check) == NULL) {\
@@ -73,7 +75,7 @@ extern  int  ML_memory_clean( char *, int );
 extern void  ML_print_it();
 extern char *ML_allocate(unsigned int isize);
 extern void  ML_myfree(void *vptr);
-extern char *ML_realloc(void *vptr, unsigned int new_size);
+extern char *ML_myrealloc(void *vptr, unsigned int new_size);
 extern void ML_spit_it_out();
 #endif
 extern int ML_MaxAllocatableSize();

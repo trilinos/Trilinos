@@ -542,9 +542,7 @@ void ML_myfree(void *vptr) {
     ml_free_count++;
     if (ptr == NULL) {
        printf("Trying to free a NULL ptr\n");
-i = 0;
-size = 1/i;
-ml_widget_head = NULL;
+       while (1 == 1) ;
     }
     else {
        current = ml_widget_head;
@@ -620,7 +618,7 @@ ml_widget_head = NULL;
 
 }
 
-char *ML_realloc(void *vptr, unsigned int new_size) {
+char *ML_myrealloc(void *vptr, unsigned int new_size) {
 
    struct ml_widget *current, *prev;
    int i, *iptr, size, *new_size_ptr;
