@@ -349,6 +349,7 @@ AC_CONFIG_FILES([
                 test/BTF/Makefile
                 test/Composite/Makefile
                 test/MapColoring/Makefile
+                test/MatrixMatrix/Makefile
                 test/Overlap/Makefile
                 test/Permutation/Makefile
                 test/SingletonFilter/Makefile
