@@ -33,6 +33,19 @@
 #ifndef NOX_ABSTRACT_VECTOR_H
 #define NOX_ABSTRACT_VECTOR_H
 
+#include "NOX_Common.H"  // for NOX_Config.h
+
+// Forward declaration of MultiVector class
+#ifdef HAVE_NOX_MULTIVECS
+
+namespace NOX {
+  namespace Abstract {
+    class MultiVector;
+  }
+}
+
+#endif
+
 //! Nonlinear solvers package namespace
 namespace NOX {
 
@@ -193,6 +206,21 @@ public:
     \return Pointer to newly created vector or NULL if clone is not supported. 
   */
   virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
+
+#ifdef HAVE_NOX_MULTIVECS
+
+  /*! 
+   * \brief Create a MultiVector with \c numVecs columns out of an array of 
+   * Vectors.  The vector stored under \c this will be the first column with
+   * the remaining \c numVecs - 1 columns given by \c vecs.
+   *
+   * The default implementation creates a generic NOX::MultiVector with
+   * either Shape or Deep copies of the supplied vectors.
+   */
+  virtual NOX::Abstract::MultiVector* 
+  createMultiVector(const NOX::Abstract::Vector* const* vecs,
+		    int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
+#endif
 
   //@}
 

@@ -228,7 +228,8 @@ LOCA = \
 
 libloca_a_SOURCES = $(LOCA_H) $(LOCA)
 
-libloca_a_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src-lapack
+libloca_a_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/src-lapack \
+                      $(TRILINOS_CXXFLAGS) 
 
 # ------------------------------------------------------------------------
 # When to turn it on

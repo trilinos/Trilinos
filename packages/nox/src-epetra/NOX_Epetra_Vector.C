@@ -31,6 +31,12 @@
 //@HEADER
 
 #include "NOX_Epetra_Vector.H"
+
+// Included multivector declarations if requested
+#ifdef HAVE_NOX_MULTIVECS
+#include "NOX_Epetra_MultiVector.H"
+#endif
+
 #include "Epetra_Vector.h"
 
 NOX::Epetra::Vector::Vector(Epetra_Vector& source, NOX::CopyType type,
@@ -138,7 +144,7 @@ NOX::Abstract::Vector& NOX::Epetra::Vector::init(double value)
 NOX::Abstract::Vector& NOX::Epetra::Vector::random(bool useSeed, int seed)
 {
   if (useSeed)
-    epetraVec->SetSeed(static_cast<double>(seed));
+    epetraVec->SetSeed(seed);
   epetraVec->Random();
   return *this;
 }
@@ -216,6 +222,43 @@ NOX::Abstract::Vector* NOX::Epetra::Vector::clone(CopyType type) const
   NOX::Abstract::Vector* newVec = new NOX::Epetra::Vector(*epetraVec, type);
   return newVec;
 }
+
+#ifdef HAVE_NOX_MULTIVECS
+
+NOX::Abstract::MultiVector* 
+NOX::Epetra::Vector::createMultiVector(
+				    const NOX::Abstract::Vector* const* vecs,
+				    int numVecs, NOX::CopyType type) const
+{
+  if (numVecs < 0) {
+    cerr << "NOX::Epetra::Vector::createMultiVector:  Error!  Multivector" 
+	 << " must have postive number of columns!" << endl;
+    throw "NOX Error";
+  }
+
+  double** v = new double*[numVecs+1];
+  const Epetra_BlockMap& map = epetraVec->Map();
+  const NOX::Epetra::Vector* noxEpetraVecPtr;
+  const Epetra_Vector* vecPtr;
+ 
+  epetraVec->ExtractView(&(v[0]));
+  for (int i=0; i<numVecs; i++) {
+    noxEpetraVecPtr = dynamic_cast<const NOX::Epetra::Vector*>(vecs[i]);
+    vecPtr = &(noxEpetraVecPtr->getEpetraVector());
+    vecPtr->ExtractView(&(v[i+1]));
+  }
+
+  Epetra_MultiVector epetra_mv(View, map, v, numVecs+1);
+
+  NOX::Epetra::MultiVector* mv = 
+    new NOX::Epetra::MultiVector(epetra_mv, type);
+
+  delete [] v;
+
+  return mv;
+}
+
+#endif
 
 double NOX::Epetra::Vector::norm(NOX::Abstract::Vector::NormType type) const
 {

@@ -80,11 +80,24 @@ EPETRANEW = \
 	$(srcdir)/NOX_EpetraNew_MatrixFree.C \
 	$(srcdir)/NOX_EpetraNew_Scaling.C
 
+if BUILD_NOX_MULTIVECS
+
+EPETRA_MULTIVECS_H = $(srcdir)/NOX_Epetra_MultiVector.H
+EPETRA_MULTIVECS = $(srcdir)/NOX_Epetra_MultiVector.C
+
+else
+
+EPETRA_MULTIVECS_H = 
+EPETRA_MULTIVECS = 
+
+endif
+
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
 
-libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H) $(EPETRANEW) $(EPETRANEW_H)
+libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H) $(EPETRANEW) $(EPETRANEW_H) \
+			 $(EPETRA_MULTIVECS_H) $(EPETRA_MULTIVECS)
 
 libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
 

@@ -177,11 +177,18 @@ EPETRANEW = \
 	$(srcdir)/NOX_EpetraNew_Scaling.C
 
 
+@BUILD_NOX_MULTIVECS_TRUE@EPETRA_MULTIVECS_H = $(srcdir)/NOX_Epetra_MultiVector.H
+@BUILD_NOX_MULTIVECS_FALSE@EPETRA_MULTIVECS_H = 
+@BUILD_NOX_MULTIVECS_TRUE@EPETRA_MULTIVECS = $(srcdir)/NOX_Epetra_MultiVector.C
+@BUILD_NOX_MULTIVECS_FALSE@EPETRA_MULTIVECS = 
+
 
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
-libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H) $(EPETRANEW) $(EPETRANEW_H)
+libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H) $(EPETRANEW) $(EPETRANEW_H) \
+			 $(EPETRA_MULTIVECS_H) $(EPETRA_MULTIVECS)
+
 
 libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
 
@@ -248,8 +255,14 @@ am__objects_3 = libnoxepetra_a-NOX_EpetraNew_Group.$(OBJEXT) \
 	libnoxepetra_a-NOX_EpetraNew_FiniteDifferenceColoring.$(OBJEXT) \
 	libnoxepetra_a-NOX_EpetraNew_MatrixFree.$(OBJEXT) \
 	libnoxepetra_a-NOX_EpetraNew_Scaling.$(OBJEXT)
+@BUILD_NOX_MULTIVECS_TRUE@am__objects_4 =
+@BUILD_NOX_MULTIVECS_FALSE@am__objects_4 =
+@BUILD_NOX_MULTIVECS_TRUE@am__objects_5 = \
+@BUILD_NOX_MULTIVECS_TRUE@	libnoxepetra_a-NOX_Epetra_MultiVector.$(OBJEXT)
+@BUILD_NOX_MULTIVECS_FALSE@am__objects_5 =
 am_libnoxepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
-	$(am__objects_3) $(am__objects_2)
+	$(am__objects_3) $(am__objects_2) $(am__objects_4) \
+	$(am__objects_5)
 libnoxepetra_a_OBJECTS = $(am_libnoxepetra_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -270,6 +283,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MultiVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Scaling.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedOperator.Po \
@@ -359,6 +373,8 @@ libnoxepetra_a-NOX_EpetraNew_MatrixFree.$(OBJEXT): \
 	$(srcdir)/NOX_EpetraNew_MatrixFree.C
 libnoxepetra_a-NOX_EpetraNew_Scaling.$(OBJEXT): \
 	$(srcdir)/NOX_EpetraNew_Scaling.C
+libnoxepetra_a-NOX_Epetra_MultiVector.$(OBJEXT): \
+	$(srcdir)/NOX_Epetra_MultiVector.C
 libnoxepetra.a: $(libnoxepetra_a_OBJECTS) $(libnoxepetra_a_DEPENDENCIES) 
 	-rm -f libnoxepetra.a
 	$(libnoxepetra_a_AR) libnoxepetra.a $(libnoxepetra_a_OBJECTS) $(libnoxepetra_a_LIBADD)
@@ -380,6 +396,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifferenceColoring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MultiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Scaling.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedOperator.Po@am__quote@
@@ -567,6 +584,18 @@ libnoxepetra_a-NOX_EpetraNew_Scaling.obj: $(srcdir)/NOX_EpetraNew_Scaling.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_Scaling.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_EpetraNew_Scaling.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_EpetraNew_Scaling.obj `cygpath -w $(srcdir)/NOX_EpetraNew_Scaling.C`
+
+libnoxepetra_a-NOX_Epetra_MultiVector.o: $(srcdir)/NOX_Epetra_MultiVector.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_MultiVector.C' object='libnoxepetra_a-NOX_Epetra_MultiVector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MultiVector.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MultiVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_MultiVector.o `test -f '$(srcdir)/NOX_Epetra_MultiVector.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_MultiVector.C
+
+libnoxepetra_a-NOX_Epetra_MultiVector.obj: $(srcdir)/NOX_Epetra_MultiVector.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_MultiVector.C' object='libnoxepetra_a-NOX_Epetra_MultiVector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MultiVector.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MultiVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_MultiVector.obj `cygpath -w $(srcdir)/NOX_Epetra_MultiVector.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 includeHEADERS_INSTALL = $(INSTALL_HEADER)

@@ -31,7 +31,11 @@
 //@HEADER
 
 #include "NOX_Abstract_Vector.H"
-#include "NOX_Common.H"
+
+// Included multivector declarations if requested
+#ifdef HAVE_NOX_MULTIVECS
+#include "NOX_MultiVector.H"
+#endif
 
 NOX::Abstract::Vector& NOX::Abstract::Vector::random(bool useSeed, int seed) 
 {
@@ -45,3 +49,30 @@ void NOX::Abstract::Vector::print() const
   return;
 }
 
+#ifdef HAVE_NOX_MULTIVECS
+
+NOX::Abstract::MultiVector* 
+NOX::Abstract::Vector::createMultiVector(
+				    const NOX::Abstract::Vector* const* vecs,
+				    int numVecs, NOX::CopyType type) const
+{
+  if (numVecs < 0) {
+    cerr << "NOX::Abstract::Vector::createMultiVector:  Error!  Multivector" 
+	 << " must have postive number of columns!" << endl;
+    throw "NOX Error";
+  }
+
+  const NOX::Abstract::Vector** tmp = 
+    new const NOX::Abstract::Vector*[numVecs+1];
+
+  tmp[0] = this;
+  for (int i=0; i<numVecs; i++)
+    tmp[i+1] = vecs[i];
+
+  NOX::MultiVector* mv = new NOX::MultiVector(tmp, numVecs, type);
+  delete tmp;
+
+  return mv;
+}
+
+#endif

@@ -39,6 +39,55 @@
 
 LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
 			      LOCA::Bifurcation::TPBord::AbstractGroup& g,
+			      NOX::Parameter::List& bifParamList)
+  : grpPtr(&g),
+    tpXVec(g.getX(), g.getX(), 0.0),
+    tpFVec(g.getX(), g.getX(), 0.0),
+    tpNewtonVec(g.getX(), g.getX(), 0.0),
+    lengthVecPtr(NULL), 
+    bifParamId(0), 
+    derivResidualParamPtr(NULL), 
+    derivNullResidualParamPtr(NULL), 
+    ownsGroup(false),
+    isValidF(false),
+    isValidJacobian(false),
+    isValidNewton(false)
+{
+  if (!bifParamList.isParameter("Bifurcation Parameter")) {
+    LOCA::ErrorCheck::throwError("LOCA::Bifurcation::TPBord::ExtendedGroup()",
+				 "\"Bifurcation Parameter\" name is not set!");
+  }
+  string bifParamName = bifParamList.getParameter("Bifurcation Parameter",
+						  "None");
+  const ParameterVector& p = grpPtr->getParams();
+  bifParamId = p.getIndex(bifParamName);
+
+  if (!bifParamList.isParameter("Length Normalization Vector")) {
+    LOCA::ErrorCheck::throwError(
+			   "LOCA::Bifurcation::TPBord::ExtendedGroup()",
+			   "\"Length Normalization Vector\" is not set!");
+  }
+  NOX::Abstract::Vector* lenVecPtr = 
+    bifParamList.getAnyPtrParameter<NOX::Abstract::Vector>("Length Normalization Vector");
+
+  if (!bifParamList.isParameter("Initial Null Vector")) {
+    LOCA::ErrorCheck::throwError(
+			   "LOCA::Bifurcation::TPBord::ExtendedGroup()",
+			   "\"Initial Null Vector\" is not set!");
+  }
+  const NOX::Abstract::Vector* nullVecPtr = 
+    bifParamList.getAnyConstPtrParameter<NOX::Abstract::Vector>("Initial Null Vector");
+
+  lengthVecPtr = lenVecPtr->clone(NOX::DeepCopy);
+  derivResidualParamPtr = lenVecPtr->clone(NOX::ShapeCopy);
+  derivNullResidualParamPtr = lenVecPtr->clone(NOX::ShapeCopy);
+  tpXVec.getNullVec() = *nullVecPtr;
+
+  init();
+}
+
+LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
+			      LOCA::Bifurcation::TPBord::AbstractGroup& g,
 			      const NOX::Abstract::Vector& lenVec,
 			      const NOX::Abstract::Vector& nullVec,
 			      int paramId)

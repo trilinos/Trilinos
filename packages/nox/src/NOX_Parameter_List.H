@@ -94,6 +94,10 @@ public:
   void setParameter(const string& name, const char* value);
   void setParameter(const string& name, const string& value);
   void setParameter(const string& name, const Arbitrary& value);
+#ifdef HAVE_NOX_ANY
+  template <class T> void setParameter(const string& name, T* value);
+  template <class T> void setParameter(const string& name, const T* value);
+#endif // HAVE_NOX_ANY
   //@}
 
   /** @name Getting Parameters 
@@ -131,6 +135,10 @@ public:
   */
   //@{
   const Arbitrary& getArbitraryParameter(const string& name) const;
+#ifdef HAVE_NOX_ANY
+  template <class T> T* getAnyPtrParameter(const string& name) const;
+  template <class T> const T* getAnyConstPtrParameter(const string& name) const;
+#endif // HAVE_NOX_ANY
   //@}
 
   //! Return true if a parameter with this name exists.
@@ -148,6 +156,9 @@ public:
   bool isParameterString(const string& name) const;
   bool isParameterSublist(const string& name) const;
   bool isParameterArbitrary(const string& name) const;
+#ifdef HAVE_NOX_ANY
+  template <class T> bool isParameterAnyPtr(const string& name) const;
+#endif // HAVE_NOX_ANY
   //@}
 
   /** @name Is Parameter Equal Value?
@@ -194,6 +205,91 @@ private:
 };
 }
 }
+
+//
+// Template definitions here
+//
+#ifdef HAVE_NOX_ANY
+
+#include "NOX_Parameter_AnyPtr.H"
+
+template <class T> 
+void NOX::Parameter::List::setParameter(const string& name, T* value)
+{
+  setParameter(name, NOX::Parameter::AnyPtr(value));
+}
+
+template <class T> 
+void NOX::Parameter::List::setParameter(const string& name, const T* value)
+{
+  setParameter(name, NOX::Parameter::AnyPtr(value));
+}
+
+template <class T> 
+T* NOX::Parameter::List::getAnyPtrParameter(const string& name) const
+{
+  ConstIterator i = params.find(name);
+
+  if ((i != params.end()) && (entry(i).isArbitrary())) {
+    const NOX::Parameter::Arbitrary& arb = entry(i).getArbitraryValue();
+    const NOX::Parameter::AnyPtr* anyPtr = 
+      dynamic_cast<const NOX::Parameter::AnyPtr*>(&arb);
+    if (anyPtr != NULL)
+      return (*anyPtr).template getPointer<T>();
+    else {
+      cerr << "NOX::Parameter::List::getAnyPtrParameter - "
+	   << "parameter " << name << "is not a pointer" << endl;
+      throw "NOX Error";
+    }
+  }
+
+  cerr << "NOX::Parameter::List::getAnyPtrParameter - no such parameter" 
+       << endl;
+  throw "NOX Error";
+}
+
+template <class T> 
+const T* NOX::Parameter::List::getAnyConstPtrParameter(const string& name) const
+{
+  ConstIterator i = params.find(name);
+
+  if ((i != params.end()) && (entry(i).isArbitrary())) {
+    const NOX::Parameter::Arbitrary& arb = entry(i).getArbitraryValue();
+    const NOX::Parameter::AnyPtr* anyPtr = 
+      dynamic_cast<const NOX::Parameter::AnyPtr*>(&arb);
+    if (anyPtr != NULL)
+      return (*anyPtr).template getConstPointer<T>();
+    else {
+      cerr << "NOX::Parameter::List::getAnyPtrParameter - "
+	   << "parameter " << name << "is not a pointer" << endl;
+      throw "NOX Error";
+    }
+  }
+
+  cerr << "NOX::Parameter::List::getAnyPtrParameter - no such parameter" 
+       << endl;
+  throw "NOX Error";
+}
+
+template <class T> 
+bool NOX::Parameter::List::isParameterAnyPtr(const string& name) const
+{
+  ConstIterator i = params.find(name);
+
+  if (i != params.end()) {
+    if (entry(i).isArbitrary()) {
+      const NOX::Parameter::Arbitrary& arb = entry(i).getArbitraryValue();
+      const NOX::Parameter::AnyPtr* anyPtr = 
+	dynamic_cast<const NOX::Parameter::AnyPtr*>(&arb);
+      if (anyPtr != NULL)
+	return (*anyPtr).template isType<T>();
+    }
+  }
+
+  return false;
+}
+
+#endif // HAVE_NOX_ANY
 
 #endif
 

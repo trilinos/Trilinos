@@ -64,7 +64,7 @@ chanContinuation_LDADD = \
 		-L$(top_builddir)/src-lapack \
                 -L$(top_builddir)/src-loca/src \
                 -L$(top_builddir)/src-loca/src-lapack \
-                -llocalapack -lloca -lnoxlapack -lnox
+                -llocalapack -lloca -lnoxlapack -lnox $(LIBS)
 
 chanTP_SOURCES = $(srcdir)/ChanTP.C \
 		$(srcdir)/ChanProblemInterface.H \

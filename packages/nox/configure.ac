@@ -698,6 +698,57 @@ AC_MSG_CHECKING(whether we should build the loca library)
 AC_MSG_RESULT([${BUILD_LIBLOCA}])
 AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
 
+# ------------------------------------------------------------------------
+# Multivector check
+# ------------------------------------------------------------------------
+
+REQUIRE_TEUCHOS=no
+
+AC_ARG_ENABLE(nox-multivectors,
+ [AC_HELP_STRING([--enable-nox-multivectors],[enable NOX multivector support])],
+ [BUILD_NOX_MULTIVECS=$enableval],
+ [BUILD_NOX_MULTIVECS=no]
+)
+
+# If LOCA is enabled, must enable multivector support
+if test X${BUILD_LIBLOCA} = Xyes; then
+   BUILD_NOX_MULTIVECS=yes
+fi
+
+# If multivec support is enabled, must have teuchos
+if test X${BUILD_NOX_MULTIVECS} = Xyes; then
+   REQUIRE_TEUCHOS=yes
+   AC_DEFINE(HAVE_NOX_MULTIVECS,1,[define that multivector support is activated in nox])
+fi
+
+AC_MSG_CHECKING(whether we should enable multivector support)
+AC_MSG_RESULT(${BUILD_NOX_MULTIVECS})
+AM_CONDITIONAL(BUILD_NOX_MULTIVECS, test X${BUILD_NOX_MULTIVECS} = Xyes)
+
+# ------------------------------------------------------------------------
+# Teuchos::any check
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(nox-any,
+ [AC_HELP_STRING([--enable-nox-any],[enable Teuchos::Any support in NOX])],
+ [BUILD_NOX_ANY=$enableval],
+ [BUILD_NOX_ANY=no]
+)
+
+# If LOCA is enabled, must enable any support
+if test X${BUILD_LIBLOCA} = Xyes; then
+   BUILD_NOX_ANY=yes
+fi
+
+# If any support is enabled, must have teuchos
+if test X${BUILD_NOX_ANY} = Xyes; then
+   REQUIRE_TEUCHOS=yes
+   AC_DEFINE(HAVE_NOX_ANY,1,[define that Techos::any support is activated in nox])
+fi
+
+AC_MSG_CHECKING(whether we should enable Teuchos::any support)
+AC_MSG_RESULT(${BUILD_NOX_ANY})
+AM_CONDITIONAL(BUILD_NOX_ANY, test X${BUILD_NOX_ANY} = Xyes)
 
 # ------------------------------------------------------------------------
 # LOCA-LAPACK Library Check
@@ -875,7 +926,7 @@ fi
 if test X${ADDON_lapack} = Xyes || test X${BUILD_ANY_EXAMPLES} = Xyes || test X${BUILD_LIBLOCA} = Xyes; then
 
   AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
-  AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
+  AC_CHECK_FUNCS([pow sqrt])
 
   dnl Checks for libraries.
   AC_F77_LIBRARY_LDFLAGS
@@ -942,6 +993,14 @@ AC_ARG_WITH(ifpack-incdir,
 AC_ARG_WITH(ifpack-libdir,
 [AC_HELP_STRING([--with-ifpack-libdir],[specify location of ifpack library])],
 [ifpack_LIBDIR=$withval])
+
+AC_ARG_WITH(teuchos-incdir,
+[AC_HELP_STRING([--with-teuchos-incdir],[specify location of all teuchos header files])],
+[teuchos_INCDIR=$withval])
+
+AC_ARG_WITH(teuchos-libdir,
+[AC_HELP_STRING([--with-teuchos-libdir],[specify location of teuchos library])],
+[teuchos_LIBDIR=$withval])
 
 AC_ARG_WITH(anasazi-incdir,
 dnl [AC_HELP_STRING([--with-anasazi-incdir],[specify location of all anasazi header files])],
@@ -1088,6 +1147,11 @@ if test X${ADDON_epetra} = Xyes; then
     TRILINOS_HEADER(epetraext,Epetra_Transform.h,src/transform)
   fi
 
+  if test X${REQUIRE_TEUCHOS} = Xyes; then
+    TRILINOS_HEADER(teuchos,Teuchos_config.h,src)
+    TRILINOS_HEADER(teuchos,Teuchos_SerialDenseMatrix.hpp,src)
+  fi
+
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
 
 fi
@@ -1170,6 +1234,11 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes ||
   if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
     TRILINOS_LIB_CHECK(epetraext_trans,epetraext,src/transform)
     AC_DEFINE(HAVE_NOX_EPETRAEXT,1,[define that epetraext is activated in nox])
+  fi
+
+  if test X${REQUIRE_TEUCHOS} = Xyes; then
+    TRILINOS_LIB_CHECK(teuchos,teuchos,src)
+    AC_DEFINE(HAVE_NOX_TEUCHOS,1,[define that Teuchos is activated in nox])
   fi
 
 fi

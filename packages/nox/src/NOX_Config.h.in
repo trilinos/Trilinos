@@ -62,8 +62,23 @@
 /* define if the compiler implements namespaces */
 #undef HAVE_NAMESPACES
 
+/* define that Techos::any support is activated in nox */
+#undef HAVE_NOX_ANY
+
 /* define that epetraext is activated in nox */
 #undef HAVE_NOX_EPETRAEXT
+
+/* define that multivector support is activated in nox */
+#undef HAVE_NOX_MULTIVECS
+
+/* define that Teuchos is activated in nox */
+#undef HAVE_NOX_TEUCHOS
+
+/* Define to 1 if you have the `pow' function. */
+#undef HAVE_POW
+
+/* Define to 1 if you have the `sqrt' function. */
+#undef HAVE_SQRT
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H

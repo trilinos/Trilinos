@@ -48,7 +48,10 @@ libnox_a_SOURCES = \
 	$(PARAMETER) \
 	$(SOLVER) \
 	$(STATUSTEST) \
-	$(UTILS) 
+	$(UTILS) \
+	$(MULTIVECS)
+
+libnox_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(includedir)
@@ -63,7 +66,8 @@ include_HEADERS = \
 	$(PARAMETER_H) \
 	$(SOLVER_H) \
 	$(STATUSTEST_H) \
-	$(UTILS_H) 
+	$(UTILS_H) \
+	$(MULTIVECS_H)
 
 # ------------------------------------------------------------------------
 # Parts of the code that are not ready to be included in nightly release
@@ -130,7 +134,7 @@ ABSTRACT = \
 
 ABSTRACT_H = \
 	$(srcdir)/NOX_Abstract_Vector.H  \
-	$(srcdir)/NOX_Abstract_Group.H
+	$(srcdir)/NOX_Abstract_Group.H 
 
 LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Generic.H \
@@ -174,6 +178,7 @@ PARAMETER_H = \
 	$(srcdir)/NOX_Parameter_DirectionConstructorT.H \
 	$(srcdir)/NOX_Parameter_LineSearchConstructor.H \
 	$(srcdir)/NOX_Parameter_LineSearchConstructorT.H \
+	$(srcdir)/NOX_Parameter_AnyPtr.H \
 	$(srcdir)/NOX_Parameter_List.H 
 
 PARAMETER = \
@@ -221,6 +226,22 @@ UTILS_H = \
 UTILS = \
 	$(srcdir)/NOX_Utils.C \
 	$(srcdir)/NOX_Random.C
+
+if BUILD_NOX_MULTIVECS
+
+MULTIVECS_H = \
+	$(srcdir)/NOX_Abstract_MultiVector.H \
+	$(srcdir)/NOX_MultiVector.H
+
+MULTIVECS = \
+	$(srcdir)/NOX_MultiVector.C
+
+else
+
+MULTIVECS_H =
+MULTIVECS =
+
+endif
 
 
 # ------------------------------------------------------------------------

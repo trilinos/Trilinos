@@ -55,7 +55,7 @@ NOX_LAPACK = \
 # Noxblas library specifications
 # ------------------------------------------------------------------------
 
-libnoxlapack_a_SOURCES = $(NOX_LAPACK) $(NOX_LAPACK_H)
+libnoxlapack_a_SOURCES = $(NOX_LAPACK) $(NOX_LAPACK_H) 
 
 libnoxlapack_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
                            -I$(top_srcdir)/src \

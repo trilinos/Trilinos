@@ -158,8 +158,17 @@ int main()
     NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
+    // Set up Bifurcation list
+    NOX::Parameter::List& bifList = locaParamsList.sublist("Bifurcation");
+    bifList.setParameter("Bifurcation Parameter", "alpha");
+    bifList.setParameter("Length Normalization Vector", 
+			 dynamic_cast<NOX::Abstract::Vector*>(&nullVec));
+    bifList.setParameter("Initial Null Vector",
+			 dynamic_cast<NOX::Abstract::Vector*>(&nullVec));
+
     // Create a turning point group that uses the lapack group
-    LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, nullVec, 0);
+    //LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, nullVec, nullVec, 0);
+    LOCA::Bifurcation::TPBord::ExtendedGroup tpgrp(grp, bifList);
 
     // Create the stepper  
     LOCA::Stepper stepper(tpgrp, combo, paramList);

@@ -43,10 +43,12 @@ rosenbrock_DEPENDENCIES = $(top_builddir)/src-lapack/libnoxlapack.a \
                           $(top_builddir)/src/libnox.a 
 
 rosenbrock_CXXFLAGS = -I$(top_srcdir)/src \
-                      -I$(top_srcdir)/src-lapack
+                      -I$(top_srcdir)/src-lapack \
+                        $(TRILINOS_CXXFLAGS)
 
 rosenbrock_LDADD = $(top_builddir)/src-lapack/libnoxlapack.a \
-                   $(top_builddir)/src/libnox.a
+                   $(top_builddir)/src/libnox.a \
+		   $(LIBS)
 
 if BUILD_PRERELEASE
 
