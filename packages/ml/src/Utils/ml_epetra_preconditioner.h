@@ -34,6 +34,9 @@ namespace ML_Epetra
   //! Sets default parameters for aggregation-based 3-level domain decomposition preconditioners.  
   int SetDefaultsDD_3Levels(Teuchos::ParameterList & List, char * Prefix = "");
   
+  //! Sets default parameters for aggregation-based 3-level domain decomposition preconditioners with LU.
+  int SetDefaultsDD_3Levels_LU(Teuchos::ParameterList & List, char * Prefix = "");
+
   //! Sets default parameters for Maxwell's equations.
   int SetDefaultsMaxwell(Teuchos::ParameterList & List, char * Prefix = "");
   
