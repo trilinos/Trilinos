@@ -31,8 +31,25 @@ EXEEXT = .exe
 
 # One of the input options for this example is the coarse direct solver KLU.
 # KLU is part of amesos, which in turn needs teuchos.
+if ML_USING_TEUCHOS 
+teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
+else
+teuchos_lib =
+endif
+
 if ML_USING_AMESOS
-if ML_USING_TEUCHOS
+# Amesos require Teuchos
+amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
+             $(top_builddir)/../teuchos/src/libteuchos.a
+else
+amesos_lib =
+endif
+
+if ML_USING_IFPACK
+ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
+else
+ifpack_lib =
+endif
 
 EXTRA_DIST= 2d_Poisson.csh baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
 
@@ -59,26 +76,6 @@ GetNecessaryFiles: $(EXTRA_DIST)
 	cp -f $(srcdir)/ml_inputfile7 .
 
 #2d_Poisson$(REALEXT): $(2d_Poisson_SOURCES)
-
-if ML_USING_TEUCHOS 
-teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
-else
-teuchos_lib =
-endif
-
-if ML_USING_AMESOS
-# Amesos require Teuchos
-amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
-             $(top_builddir)/../teuchos/src/libteuchos.a
-else
-amesos_lib =
-endif
-
-if ML_USING_IFPACK
-ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
-else
-ifpack_lib =
-endif
 
 2d_Poisson_DEPENDENCIES = \
 	$(top_builddir)/src/libml.a \
@@ -122,6 +119,3 @@ mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 2d_Poisson_CXXFLAGS = ${ml_common_include_locations} -DML_BENCHMARK
 2d_Poisson_LDADD = ${ml_libs}
 2d_Poisson_LINK = ${mllink}
-
-endif #if ML_USING_TEUCHOS
-endif #if ML_USING_AMESOS

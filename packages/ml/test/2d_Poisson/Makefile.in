@@ -66,7 +66,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@noinst_PROGRAMS = 2d_Poisson$(EXEEXT)
+noinst_PROGRAMS = 2d_Poisson$(EXEEXT)
 subdir = test/2d_Poisson
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -98,24 +98,20 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am__2d_Poisson_SOURCES_DIST = $(top_srcdir)/examples/ml_example2d.c
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@am_2d_Poisson_OBJECTS = 2d_Poisson-ml_example2d.$(OBJEXT)
+am_2d_Poisson_OBJECTS = 2d_Poisson-ml_example2d.$(OBJEXT)
 2d_Poisson_OBJECTS = $(am_2d_Poisson_OBJECTS)
-@ML_USING_AMESOS_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../ifpack/src/libifpack.a
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../amesos/src/libamesos.a \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../ifpack/src/libifpack.a
+@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../amesos/src/libamesos.a \
+@ML_USING_AMESOS_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../teuchos/src/libteuchos.a
 am__DEPENDENCIES_4 =
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_5 = $(top_builddir)/src/libml.a \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	$(am__DEPENDENCIES_1) \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	$(am__DEPENDENCIES_2) \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	$(top_builddir)/../epetra/src/libepetra.a \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	$(am__DEPENDENCIES_3) \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	$(am__DEPENDENCIES_4) \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	$(am__DEPENDENCIES_4) \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	$(am__DEPENDENCIES_4) \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	$(am__DEPENDENCIES_4)
+am__DEPENDENCIES_5 = $(top_builddir)/src/libml.a \
+	$(top_builddir)/../aztecoo/src/libaztecoo.a \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
+	$(am__DEPENDENCIES_4) $(am__DEPENDENCIES_4) \
+	$(am__DEPENDENCIES_4)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -125,7 +121,7 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(2d_Poisson_SOURCES)
-DIST_SOURCES = $(am__2d_Poisson_SOURCES_DIST)
+DIST_SOURCES = $(2d_Poisson_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -259,62 +255,64 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@ML_USING_TEUCHOS_FALSE@teuchos_lib = 
 
 # One of the input options for this example is the coarse direct solver KLU.
 # KLU is part of amesos, which in turn needs teuchos.
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@EXTRA_DIST = 2d_Poisson.csh baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@2d_Poisson_SOURCES = $(top_srcdir)/examples/ml_example2d.c
-
-#2d_Poisson$(REALEXT): $(2d_Poisson_SOURCES)
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_TEUCHOS_TRUE@teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_AMESOS_FALSE@amesos_lib = 
 
 # Amesos require Teuchos
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@             $(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_AMESOS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
+@ML_USING_AMESOS_TRUE@             $(top_builddir)/../teuchos/src/libteuchos.a
 
-@ML_USING_AMESOS_TRUE@@ML_USING_IFPACK_FALSE@@ML_USING_TEUCHOS_TRUE@ifpack_lib = 
-@ML_USING_AMESOS_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@2d_Poisson_DEPENDENCIES = \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	$(top_builddir)/src/libml.a \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@    ${amesos_lib} \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	$(top_builddir)/../epetra/src/libepetra.a \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@    ${teuchos_lib} \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	GetNecessaryFiles
+@ML_USING_IFPACK_FALSE@ifpack_lib = 
+@ML_USING_IFPACK_TRUE@ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
+EXTRA_DIST = 2d_Poisson.csh baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
+2d_Poisson_SOURCES = $(top_srcdir)/examples/ml_example2d.c
 
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@ml_common_include_locations = -I$(top_srcdir)/src/Include          \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_srcdir)/src/Coarsen                  \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_srcdir)/src/Comm                  \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_srcdir)/src/FEGrid                  \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_srcdir)/src/Include                  \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_srcdir)/src/Krylov                  \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_srcdir)/src/Main                  \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_srcdir)/src/Operator                  \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_srcdir)/src/Smoother                  \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_srcdir)/src/Utils                  \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_srcdir)/../aztecoo/src            \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_builddir)/../aztecoo/src \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_srcdir)/../epetra/src            \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_builddir)/../epetra/src          \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_builddir)/../teuchos/src        \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                   -I$(top_builddir)/../amesos/src
+#2d_Poisson$(REALEXT): $(2d_Poisson_SOURCES)
+2d_Poisson_DEPENDENCIES = \
+	$(top_builddir)/src/libml.a \
+	$(top_builddir)/../aztecoo/src/libaztecoo.a \
+    ${amesos_lib} \
+	$(top_builddir)/../epetra/src/libepetra.a \
+    ${teuchos_lib} \
+	GetNecessaryFiles
 
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@ml_libs = $(top_builddir)/src/libml.a        \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                ${ifpack_lib} \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	            ${amesos_lib} \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                $(top_builddir)/../epetra/src/libepetra.a \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	            ${teuchos_lib} \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                $(LIBS) \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                $(LAPACK_LIBS)                            \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                $(BLAS_LIBS)                            \
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@                $(FLIBS)
+ml_common_include_locations = -I$(top_srcdir)/src/Include          \
+                   -I$(top_srcdir)/src/Coarsen                  \
+                   -I$(top_srcdir)/src/Comm                  \
+                   -I$(top_srcdir)/src/FEGrid                  \
+                   -I$(top_srcdir)/src/Include                  \
+                   -I$(top_srcdir)/src/Krylov                  \
+                   -I$(top_srcdir)/src/Main                  \
+                   -I$(top_srcdir)/src/Operator                  \
+                   -I$(top_srcdir)/src/Smoother                  \
+                   -I$(top_srcdir)/src/Utils                  \
+                   -I$(top_srcdir)/../aztecoo/src            \
+                   -I$(top_builddir)/../aztecoo/src \
+                   -I$(top_srcdir)/../epetra/src            \
+                   -I$(top_builddir)/../epetra/src          \
+                   -I$(top_builddir)/../teuchos/src        \
+                   -I$(top_builddir)/../amesos/src
 
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@2d_Poisson_CPPFLAGS = ${ml_common_include_locations} -DML_BENCHMARK
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@2d_Poisson_CXXFLAGS = ${ml_common_include_locations} -DML_BENCHMARK
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@2d_Poisson_LDADD = ${ml_libs}
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@2d_Poisson_LINK = ${mllink}
+ml_libs = $(top_builddir)/src/libml.a        \
+                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
+                ${ifpack_lib} \
+	            ${amesos_lib} \
+                $(top_builddir)/../epetra/src/libepetra.a \
+	            ${teuchos_lib} \
+                $(LIBS) \
+                $(LAPACK_LIBS)                            \
+                $(BLAS_LIBS)                            \
+                $(FLIBS)
+
+mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+2d_Poisson_CPPFLAGS = ${ml_common_include_locations} -DML_BENCHMARK
+2d_Poisson_CXXFLAGS = ${ml_common_include_locations} -DML_BENCHMARK
+2d_Poisson_LDADD = ${ml_libs}
+2d_Poisson_LINK = ${mllink}
 all: all-am
 
 .SUFFIXES:
@@ -558,23 +556,23 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@2d_Poisson$(EXT): $(2d_Poisson_SOURCES)
+2d_Poisson$(EXT): $(2d_Poisson_SOURCES)
 
 #copy these files over to the build area
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@GetNecessaryFiles: $(EXTRA_DIST)
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	cp -f $(srcdir)/2d_Poisson.csh .
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	cp -f $(srcdir)/baseline1 .
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	cp -f $(srcdir)/baseline2 .
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	cp -f $(srcdir)/baseline3 .
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	cp -f $(srcdir)/baseline5 .
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	cp -f $(srcdir)/baseline6 .
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	cp -f $(srcdir)/baseline7 .
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	cp -f $(srcdir)/ml_inputfile1 .
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	cp -f $(srcdir)/ml_inputfile2 .
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	cp -f $(srcdir)/ml_inputfile3 .
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	cp -f $(srcdir)/ml_inputfile5 .
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	cp -f $(srcdir)/ml_inputfile6 .
-@ML_USING_AMESOS_TRUE@@ML_USING_TEUCHOS_TRUE@	cp -f $(srcdir)/ml_inputfile7 .
+GetNecessaryFiles: $(EXTRA_DIST)
+	cp -f $(srcdir)/2d_Poisson.csh .
+	cp -f $(srcdir)/baseline1 .
+	cp -f $(srcdir)/baseline2 .
+	cp -f $(srcdir)/baseline3 .
+	cp -f $(srcdir)/baseline5 .
+	cp -f $(srcdir)/baseline6 .
+	cp -f $(srcdir)/baseline7 .
+	cp -f $(srcdir)/ml_inputfile1 .
+	cp -f $(srcdir)/ml_inputfile2 .
+	cp -f $(srcdir)/ml_inputfile3 .
+	cp -f $(srcdir)/ml_inputfile5 .
+	cp -f $(srcdir)/ml_inputfile6 .
+	cp -f $(srcdir)/ml_inputfile7 .
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
