@@ -472,6 +472,7 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   TMatrix_ = 0;
   ml_edges_ = 0;
   ml_nodes_ = 0;
+  agg_edge_ = 0;
   TMatrixML_ = 0;
   TMatrixTransposeML_ = 0;
   Tmat_array = 0;
