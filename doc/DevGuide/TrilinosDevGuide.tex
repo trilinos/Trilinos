@@ -155,7 +155,7 @@ of the Trilinos Project~\cite{TrilinosOverview}. The current set of
 packages in Trilinos is shown in Figure~\ref{Figure:TrilinosPackages}.
 \begin{figure}
 %\begin{center}
-\includegraphics[height=6in,angle=270]{Trilinos_Packages_Diagram}
+\includegraphics[height=6in,angle=270]{TrilinosPackagesDiagram}
 %\end{center}
 \label{Figure:TrilinosPackages}
 \caption{Current collection of Trilinos Packages}
@@ -323,7 +323,7 @@ use \InlineCommand{--prefix=<dir>} on the configure line.  If this option is
 used, libraries will be located in \InlineDirectory{<dir>/lib} and header files in 
 \InlineDirectory{<dir>/include/<package>}.
 
-	The second imporant piece of information that a user must provide at 
+	The second important piece of information that a user must provide at 
 this stage is the name and or location of anything that autotools needs and 
 cannot find on its own.  Also, if autotools selects, for example, the wrong 
 blas library by default, the user must indicate which blas library to use.  
@@ -336,8 +336,8 @@ you have.
 place to start is Trilinos(-3.0.1)/config.  There are configure invocation 
 scripts here for various platforms.  These scripts are named using the 
 following naming convention:
-arch\_comm\_machine
-For example "sgi64\_mpi\_atlantis".  Note that these scripts are examples 
+\InlineCommand{arch_comm_machine}.
+For example \InlineCommand{sgi64_mpi_atlantis}.  Note that these scripts are examples 
 only.  Users should not necessarily expect to be able to find the perfect 
 script and use it, but rather should choose a script for a similar machine, 
 examine the options used in the script and figure out if those options make 
@@ -345,18 +345,18 @@ sense for the case at hand.  Some of the scripts in the repository are not
 always up to date.  If a user submits a script for a machine that few Trilinos 
 developers have an account on, that script may become obsolete if it is not 
 updated by the user who submitted it.  For reasons such as this, these scripts 
-tend to be primarily useful for the values of options such as LDFLAGS, 
-CPPFLAGS, and CXXFLAGS.  
+tend to be primarily useful for the values of options such as \InlineCommand{LDFLAGS}, 
+\InlineCommand{CPPFLAGS}, and \InlineCommand{CXXFLAGS}.  
 
 Users who create scripts for other machines are encouraged to check them into 
 the repository for the benefit of other users.  Users who do not have access to
-the repository can send their scripts to jmwille@sandia.gov.
+the repository can send their scripts to \InlineCommand{jmwille@sandia.gov}.
 
 \subsection{Building Trilinos}
 
 If the configure stage completed successfully, just type \DisplayCommand{make}
  and if 
---prefix was specified, \DisplayCommand{make install}
+\InlineCommand{--prefix} was specified, \DisplayCommand{make install}
 
 The following section describes the configuration options mentioned above that 
 are common to all Trilinos packages.  These options DO NOT cover all options 
@@ -840,9 +840,9 @@ for issues relating to all of Trilinos.  The names for the lists pertaining to
 individual packages follow the same naming scheme, simply replace ``Trilinos'' 
 with the name of the package.  For example the list for Trilnos users is 
 called Trilinos-Users and the email address is 
-\begin{verbatim}trilinos-users@software.sandia.gov\end{verbatim}  The list 
+\InlineCommand{trilinos-users@software.sandia.gov}  The list 
 for Epetra users is called Epetra-Users and the associated email address is 
-\begin{verbatim}epetra-users@software.sandia.gov\end{verbatim}
+\InlineCommand{epetra-users@software.sandia.gov}
 
 TIP: While those who use Epetra (or any other Trilinos package) are also
 ``Trilinos users'', the lists are not set up to recognize this.  In other 
@@ -852,18 +852,18 @@ is also true of all other list types.  Keep this in mind when subscribing and
 posting to lists.
 \begin{itemize}
 \item Trilinos-Announce 
-\begin{verbatim}trilinos-announce@software.sandia.gov\end{verbatim}
+\InlineCommand{trilinos-announce@software.sandia.gov}
 
 All Trilinos release announcements and other major news.
 
 \item Trilinos-Checkins 
-\begin{verbatim}trilinos-checkins@software.sandia.gov\end{verbatim}
+\InlineCommand{trilinos-checkins@software.sandia.gov}
 
 CVS commit log messages that are releated to Trilinos in general or packages 
 that have not had separate lists established.
 
 \item Trilinos-Developers 
-\begin{verbatim}trilinos-developers@software.sandia.gov\end{verbatim}
+\InlineCommand{trilinos-developers@software.sandia.gov}
 
 All discussions releated to Trilinos-specific development (not specific to a 
 Trilinos package) are conducted via this list.  Important development 
@@ -873,17 +873,17 @@ By doing this, the list archive can provide a record explaining why various
 changes were made over time.
 
 \item Trilinos-regression 
-\begin{verbatim}trilinos-regression@software.sandia.gov\end{verbatim}
+\InlineCommand{trilinos-regression@software.sandia.gov}
 
 All regression test output that is not specific to a package. 
 
 \item Trilinos-Users 
-\begin{verbatim}trilinos-users@software.sandia.gov\end{verbatim}
+\InlineCommand{trilinos-users@software.sandia.gov}
 
 List for Trilinos Users.  General discussions about the use of Trilinos.
 
 \item Trilinos-Leaders
-\begin{verbatim}trilinos-leaders@software.sandia.gov\end{verbatim}
+\InlineCommand{trilinos-leaders@software.sandia.gov}
 
 Mailing list for representatives for each Trilinos package.  There are no 
 leaders lists for individual packages.
@@ -944,17 +944,24 @@ Table~\ref{Table:RequirementsAndPractices}.
 \begin{center}
 \begin{tabular}{|p{2.5in}|p{2.5in}|} \hline
 {\bf Requirement} Package must: & {\bf Suggested Practice} Package can: \\ \hline
-Be under version control. &
+Be under version control. Except in rare cases, the package must follow
+the suggested practice. &
 Keep source files as a self-contained collection in a
 single directory under the
 \InlineDirectory{Trilinos/packages} directory and utilize the Trilinos
 mailman lists to communicate software change logs.\\\hline
-Respond to software faults in a timely manner &  Use
-Trilinos Bugzilla site to record and track software issues, responding
-to issues in order of priority. \\\hline
+Have process in place to port to all supported platforms &
+Use the Trilinos Autotools environment and leverage the existing portability
+facilities already used by numerous packages. \\\hline
 Respond to all relevant configure options & Use Autoconf and Automake,
 utilizing the collection of Trilinos M4 macros to minimize extra
 effort. \\\hline
+Respond to software faults in a timely manner &  Use
+Trilinos Bugzilla site to record and track software issues, responding
+to issues in order of priority. \\\hline
+Provide unit and reqression testing &
+Register test scripts with the Trilinos automatic testing harness,
+which runs nightly on a variety of supported platforms.
 \end{tabular}
 \end{center}
 \caption{\label{Table:RequirementsAndPractices} Trilinos Package
@@ -962,9 +969,8 @@ Requirements and Suggested Practices.}
 
 \end{table}
 
-
-
-In addition to listing package requirements, we also structure the
+Although there are several requirements listed in 
+Table~\ref:RequirementsAndPractices}, we have structured the
 integration
 process so that packages can be incorporated into Trilinos in 
 a gradual manner.  Listed below are four levels of requirement compliance.  
@@ -973,11 +979,12 @@ necessarily in the listed order.
 
 \subsection{Package is Added to the Trilinos Repository}
 
-This is a minimum requrirement for any package wanting to become a part of 
+Except for rare instances, placing a package in the Trilinos CVS
+repository is a minimum requirement for any package to become part of 
 Trilinos.  Other than receiving approval from the Trilinos Project Leader to 
-add a new package to Trilinos, there are no prerequisites for adding a new 
+add a new package to Trilinos, there are no prerequisites for adding a  
 package to the Trilinos repository.  At this stage, it does not matter if the 
-package is finished, or even if it works.  In fact, we encourage
+package is finished.  In fact, we encourage
 developers to keep source files in the repository from package
 inception, so that source code is backed up and properly managed.
 Our primary restrictions are:
@@ -993,7 +1000,13 @@ When release branches are created, any packages not ready or approved for
 distribution can easily be omitted from the distribution.
 
 \subsection{Package has a Process in Place to Port to all Supported Platforms}
-%make dist must work!
+Although use of Trilinos Autotools is the easiest and most robust way
+to ensure portability across all supported platforms, a package is not
+required to them.  At the same time, a package must provide some
+mechanism to build across all platform that Trilinos supports.
+Typically, if not using autotools, this support would be in the form
+of platform-specific makefiles that the installer could invoke for a
+given platform.
 
 \subsection{Package Responds to all Relevant Configure Options}
 
@@ -1003,7 +1016,11 @@ To the extent that each option is appropriate, a package should
 respond to each option.  For example, if a package can be built with
 MPI support, it shoud respond \InlineCommand{--enable-mpi} option.
 
-\subsection{Package Responds to Bug Reports in a Timely Manner}
+Note that this does not mean the package must use Trilinos Autotools,
+but must simply be sensitive to certain defined parameters that are
+generated when the Trilinos autotools scripts are invoked.
+
+\subsection{Package Responds to Fault Reports in a Timely Manner}
 
 The Trilinos Team does not have any specific requirements concerning how 
 bugs should be submitted and processed.  However, packages should have a 
@@ -1033,16 +1050,38 @@ these prelimary steps.
 
 The preliminary steps are:
 \begin{enumerate}
-\item Set up necessary accounts on \InlineDirectory{software.sandia.gov}.
+\item Set up user accounts for each package developer 
+on \InlineDirectory{software.sandia.gov}.
 \item Establish Bugzilla Product and Component Definitions for the new
-package, identifying who will be 
-Discussion of how to define bugzilla pieces.  Should discuss common component 
-definitions.  List Heroux or Kolda or Sery as contacts.
-\item Establish Email Lists
-%\item Others?
+package, identifying who will be default owner of each component.
+\item Establish Email Lists for the package.  Five lists will be
+defined:
+\begin{enumerate}
+\item \InlineCommand{Package_name-Announce@software.sandia.gov}: 
+Announcements such
+new releases, feature lists and any other newsworthy items will be
+sent to this list.  Any person interested in any aspect of the package
+should subscribe to this list.
+\item \InlineCommand{Package_name-Checkins@software.sandia.gov} List
+to which all CVS commit log message for the package are sent.
+Developers with an interest in the day-to-day activity of package
+development can subscribe to this list.
+\item \InlineCommand{Package_name-Developers@software.sandia.gov}
+List by which all development discussions are conducted, or to which
+notes from development discussions are sent and archived.  This is
+also the list to which detailed design documentation is sent for
+review and archiving.
+\item \InlineCommand{Package_name-Regression@software.sandia.gov} List
+to which all automated regression test results are sent for archival purposes.
+\item \InlineCommand{Package_name-Users@software.sandia.gov} User
+forum where package users can communicate with each other.  Developers
+should monitor this list and interject comments as necessary.
 \end{enumerate}
+These preliminary steps can generally be completed in a few hours.
+Once complete, the new package has a set of tools in place that
+address a large fraction of software engineering practices.
 
-\subsection{Practices to Support Software Lifecycle}
+\subsection{Practices to Support the Software Lifecycle}
 
 One common view of software engineering processes breaks the process down into 
 seven phases:
@@ -1148,6 +1187,15 @@ solvers and can bring multiple solvers to bear on a single problem.
 %	**(list formal? process, meet above requirements Overview Doc pg 11,14-15)**
 	
 \section{Interoperability Status for Existing Trilinos Packages}
+Figure~\ref{Figure:PackageDependencies} shows how the present
+\begin{figure}
+%\begin{center}
+\includegraphics[height=6in,angle=270]{TrilinosPackagesDependencies}
+%\end{center}
+\label{Figure:TrilinosPackages}
+\caption{Current Trilinos Package Dependencies}
+\end{figure}
+collection of Trilinos packages depend on each other.
 
 \section{Platform Portablility}
 %	**(List platforms - encourage script submission)**
