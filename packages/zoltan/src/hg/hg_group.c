@@ -147,7 +147,7 @@ char *yo = "grouping_reg";
       edges[i] = i;
 
    for (i = hg->nEdge; i > 0  &&  *limit > 0; i--) {
-      random = Zoltan_HG_Rand() % i;
+      random = Zoltan_Rand() % i;
       edge = edges[random];
       edges[random] = edges[i-1];
 
@@ -193,7 +193,7 @@ char *yo = "grouping_rrg";
       vertices[i] = pack[i] = i;
 
    for (i = hg->nVtx; i > 0  &&  *limit > 0; i--) {
-      random = Zoltan_HG_Rand() % i;
+      random = Zoltan_Rand() % i;
       vertex = vertices[random];
       vertices[random] = vertices[i-1];
       if (pack[vertex] != vertex)
@@ -203,7 +203,7 @@ char *yo = "grouping_rrg";
       if (count == 0)
          continue;
 
-      edge = hg->vedge[hg->vindex[vertex] + (Zoltan_HG_Rand() % count)];  /* random edge */
+      edge = hg->vedge[hg->vindex[vertex] + (Zoltan_Rand() % count)];  /* random edge */
       for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++)
          if (pack[hg->hvertex[j]] == hg->hvertex[j]) {
             first_vertex = vertex = hg->hvertex[j];
@@ -244,7 +244,7 @@ char  *yo = "grouping_rhg";
       vertices[i] = i;
 
    for (i = hg->nVtx; i > 0  &&  *limit > 0; i--) {
-      number = Zoltan_HG_Rand() % i;
+      number = Zoltan_Rand() % i;
       vertex = vertices[number];
       vertices[number] = vertices[i-1];
       if (pack[vertex] != vertex)
@@ -273,7 +273,7 @@ char  *yo = "grouping_rhg";
          continue;                       /* no suitable edge found */
 
       if (best_neighbors > 1) {
-         random = Zoltan_HG_Rand() % best_neighbors;
+         random = Zoltan_Rand() % best_neighbors;
          for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++) {
             edge = hg->vedge[j];
             size = hg->hindex[edge+1] - hg->hindex[edge];

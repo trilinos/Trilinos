@@ -13,7 +13,6 @@
 #include <float.h>
 #include <limits.h>
 #include "phg.h"
-#include "hg_util.h"
 #include "hg_hypergraph.h"
 
 /*****************************************************************************/

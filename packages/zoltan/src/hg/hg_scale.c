@@ -16,7 +16,6 @@
 extern "C" {
 #endif
 #include <float.h>
-#include <hg_util.h>
 #include "zz_const.h"
 #include "hg_hypergraph.h"
 

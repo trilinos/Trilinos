@@ -57,6 +57,8 @@ extern "C" {
  */
 struct Param_List;
 
+#define MIN(A,B)                (((A) < (B)) ? (A) : (B))
+#define MAX(A,B)                (((A) > (B)) ? (A) : (B))
 
 #ifndef TRUE
 #define FALSE (0)

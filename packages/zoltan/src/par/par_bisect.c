@@ -1052,9 +1052,6 @@ static void compute_weight_sums(
   return;
 }
 
-/* MAX should be in some header file? */
-#define MAX(a,b) ((a)>(b) ? (a) : (b))
-
 /* Evaluate cut quality. */
 static double eval_cut_quality(
   int nwgts,          /* Number of weights per dot. */

@@ -214,7 +214,7 @@ char *yo = "matching_rem";
       edges[i] = i;
 
    for (i = hg->nEdge; i > 0  &&  *limit > 0; i--) {
-      random = Zoltan_HG_Rand() % i;
+      random = Zoltan_Rand() % i;
       edge = edges[random];
       edges[random] = edges[i-1];
       for (j = Hindex[edge]++; j < hg->hindex[edge+1]; j = Hindex[edge]++) {
@@ -222,7 +222,7 @@ char *yo = "matching_rem";
          if (match[vertex] == vertex) {
             while (match[vertex]==vertex
              && (j = Hindex[edge]++) < hg->hindex[edge+1]) {
-                random = j + Zoltan_HG_Rand() % (hg->hindex[edge+1] - j);
+                random = j + Zoltan_Rand() % (hg->hindex[edge+1] - j);
                 partner = hg->hvertex[random];
                 hg->hvertex[random] = hg->hvertex[j];
                 hg->hvertex[j]      = partner;
@@ -261,7 +261,7 @@ char *yo = "matching_rrm";
       vertices[i] = i;
 
    for (i = hg->nVtx; i > 0  &&  *limit > 0; i--) {
-      random = Zoltan_HG_Rand() % i;
+      random = Zoltan_Rand() % i;
       vertex = vertices[random];
       vertices[random] = vertices[i-1];
       if (match[vertex] == vertex) {
@@ -275,7 +275,7 @@ char *yo = "matching_rrm";
                }
             }
          if (pstack > 0) {
-            random = stack[Zoltan_HG_Rand() % pstack];
+            random = stack[Zoltan_Rand() % pstack];
             match[vertex] = random;
             match[random] = vertex;
             (*limit)--;
@@ -309,7 +309,7 @@ char *yo = "matching_rrm";
 
    for (i = hg->nVtx; i > 0  &&  *limit > 0; i--) {
       double weight, min_weight ;                  /* added to rrm */
-      random = Zoltan_HG_Rand() % i;
+      random = Zoltan_Rand() % i;
       vertex = vertices[random];
       vertices[random] = vertices[i-1];
       pstack = 0;
@@ -336,7 +336,7 @@ char *yo = "matching_rrm";
                }
             }
          if (pstack > 0) {
-            random = stack[Zoltan_HG_Rand() % pstack];
+            random = stack[Zoltan_Rand() % pstack];
             match[vertex] = random;
             match[random] = vertex;
             (*limit)--;
@@ -373,7 +373,7 @@ char *yo = "matching_rhm";
       vertices[i] = i;
 
    for (i = hg->nVtx; i > 0  &&  *limit > 0; i--) {
-      random = Zoltan_HG_Rand() % i;
+      random = Zoltan_Rand() % i;
       vertex = vertices[random];
       vertices[random] = vertices[i-1];
       if (match[vertex] == vertex) {
@@ -409,7 +409,7 @@ char *yo = "matching_rhm";
                }
             }
          if (pstack > 0) {
-            random = stack[Zoltan_HG_Rand() % pstack];
+            random = stack[Zoltan_Rand() % pstack];
             match[vertex] = random;
             match[random] = vertex;
             (*limit)--;

@@ -159,8 +159,8 @@ UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
 
 ZZ_CSRC		= zz_coord.c zz_obj_list.c zz_struct.c \
 		  zz_init.c zz_set_fn.c zz_util.c zz_gen_files.c \
-                  zz_hash.c zz_heap.c zz_sort.c
-ZZ_INC		= zz_const.h zz_id_const.h zz_util_const.h
+                  zz_hash.c zz_heap.c zz_sort.c zz_rand.c
+ZZ_INC		= zz_const.h zz_id_const.h zz_util_const.h zz_rand.h zz_sort.h
 
 ALL_CSRC	= all_allo.c 
 ALL_INC		= all_const.h all_allo_const.h
@@ -213,12 +213,9 @@ ifdef ZOLTAN_HG
 HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
 		  hg_group.c hg_local.c hg_scale.c \
 		  hg_match.c hg_pack.c hg_rdivide.c \
-		  hg_part.c hg_plot.c hg_hypergraph.c hg_util.c
-HG_INC 		= hg.h hg_hypergraph.h hg_util.h
+		  hg_part.c hg_plot.c hg_hypergraph.c 
+HG_INC 		= hg.h hg_hypergraph.h 
 GDEFINES       += -DZOLTAN_HG
-else
-HG_CSRC		= hg_util.c
-HG_INC		= hg_util.h
 endif
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \

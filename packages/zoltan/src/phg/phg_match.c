@@ -263,6 +263,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
   int *displs=NULL, *each_size=NULL, *each_count=NULL, total_count;
   PHGComm *hgc = hg->comm;  
   char  *yo = "matching_ipm";
+       
    
   /* determine number of basic matching rounds scaled by number of procs */
   nrounds = hg->dist_x[hgc->nProc_x] / (hgc->nProc_x * LOOP_FACTOR);
@@ -296,7 +297,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
 
   /* randomly select matching candidates from available vertices */
   for (i = 0; i < hg->nVtx; i++)  {
-    lno = Zoltan_HG_Rand () % hg->nVtx;
+    lno = Zoltan_Rand () % hg->nVtx;
     /* swap current vertex with randomly selected vertex */
     vertex     = order[lno];
     order[lno] = order[i];
@@ -443,7 +444,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      for (i = 0; i < total_count; i++)
        c_order[i] = i;
      for (i = 0; i < total_count; i++)  {
-       lno = Zoltan_HG_Rand () % total_count;
+       lno = Zoltan_Rand () % total_count;
        /* swap current vertex with randomly selected vertex */
        vertex       = c_order[lno];
        c_order[lno] = c_order[i];

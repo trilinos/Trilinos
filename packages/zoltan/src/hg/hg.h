@@ -29,14 +29,15 @@ extern "C" {
 #include "zz_const.h"
 #include "zz_heap.h"
 #include "zz_sort.h"
+#include "zz_rand.h"
 
 #include "hg_const.h"
 
 #include "params_const.h"
     
 #include "hg_hypergraph.h"
-#include "hg_util.h"
 
+#define EPS 1e-6
     
 
 /* Matching, Packing, and Grouping arrays.  Technically, they are all the same;

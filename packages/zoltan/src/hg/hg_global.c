@@ -167,7 +167,7 @@ static int global_ran (
     order[i] = i;
 
   /* Randomly permute order array */
-  Zoltan_HG_Rand_Perm_Int(order, hg->nVtx);
+  Zoltan_Rand_Perm_Int(order, hg->nVtx);
 
   /* Call sequence partitioning with random order array. */
   ierr = seq_part( zz, hg, order, p, part, hgp);
@@ -341,7 +341,7 @@ static int bfs_order (
       edges[i] = hg->vedge[hg->vindex[vtx]+i];
     if (visit_mode==0)
       /* Randomly permute the edges. */
-      Zoltan_HG_Rand_Perm_Int(edges, num_edges);
+      Zoltan_Rand_Perm_Int(edges, num_edges);
     else if (visit_mode==1)
       /* Sort edges by weight */
       Zoltan_quicksort_pointer_dec_float(edges, hg->ewgt, 0, num_edges-1);
@@ -408,7 +408,7 @@ static int global_bfs (
   /* Find pseudo-peripheral start vertex */
   /* EBEB: Make this a function that can be called
      each time we begin a new connected component. */
-  start = Zoltan_HG_Rand()%(hg->nVtx);
+  start = Zoltan_Rand()%(hg->nVtx);
   for (i=0; i<2; i++){
     ierr = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
@@ -453,7 +453,7 @@ static int global_bfsh (
   }
 
   /* Find pseudo-peripheral start vertex */
-  start = Zoltan_HG_Rand()%(hg->nVtx);
+  start = Zoltan_Rand()%(hg->nVtx);
   for (i=0; i<2; i++){
     ierr = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
@@ -500,7 +500,7 @@ static int global_rbfs (
   }
 
   /* Find pseudo-peripheral start vertex */
-  start = Zoltan_HG_Rand()%(hg->nVtx);
+  start = Zoltan_Rand()%(hg->nVtx);
   for (i=0; i<2; i++){
     ierr = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
@@ -545,7 +545,7 @@ static int global_rbfsh (
   }
 
   /* Find pseudo-peripheral start vertex */
-  start = Zoltan_HG_Rand()%(hg->nVtx);
+  start = Zoltan_Rand()%(hg->nVtx);
   for (i=0; i<2; i++){
     ierr = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
@@ -842,7 +842,7 @@ static int global_greedy (
   }
 
   /* Find pseudo-peripheral start vertex */
-  start = Zoltan_HG_Rand()%(hg->nVtx);
+  start = Zoltan_Rand()%(hg->nVtx);
   for (i=0; i<2; i++){
     ierr = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)

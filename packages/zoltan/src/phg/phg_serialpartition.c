@@ -144,7 +144,7 @@ int i, si, j;
       CoarsePartition = CoarsePartitionFns[phg->comm->myProc % 
                                            NUM_COARSEPARTITION_FNS];
       if (first_time) {
-        Zoltan_HG_Srand(phg->comm->myProc);   /* May need more clever seed. */
+        Zoltan_Srand(phg->comm->myProc);   /* May need more clever seed. */
         first_time = 0;
       }
     }
@@ -451,7 +451,7 @@ static int coarse_part_ran (
         order[i] = i;
 
     /* Randomly permute order array */
-    Zoltan_HG_Rand_Perm_Int (order, hg->nVtx);
+    Zoltan_Rand_Perm_Int (order, hg->nVtx);
         
     /* Call sequence partitioning with random order array. */
     err = seq_part (zz, hg, order, p, part_sizes, part, hgp);
@@ -497,7 +497,7 @@ static int coarse_part_rip (
 
     /* Generate positive random numbers for edges */
     for (j=0; j<hg->nEdge; j++){
-      ran[j] = ((float) Zoltan_HG_Rand())/RAND_MAX; 
+      ran[j] = ((float) Zoltan_Rand())/RAND_MAX; 
     }
 
     /* Compute scaled inner products with random vector. */
@@ -864,7 +864,7 @@ static int coarse_part_greedy (
   }
 
   /* Start at random vertex */
-  start = Zoltan_HG_Rand() % (hg->nVtx);
+  start = Zoltan_Rand() % (hg->nVtx);
 
   /* Call greedy_order. */
   err = greedy_order(zz, hg, order, start, pri_mode, p, part_sizes, part, hgp);
