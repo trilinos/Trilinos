@@ -21,6 +21,7 @@ extern "C" {
 #include "zz_const.h"
 #include "shared.h"
 #include "par_bisect_const.h"
+#include "par_tflops_special_const.h"
 
 /* EBEB: The following constants, structs, and function prototypes should 
    probably be moved to a header file. */
