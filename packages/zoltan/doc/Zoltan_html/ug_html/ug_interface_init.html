@@ -12,18 +12,24 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="Initialization Functions"></A>Initialization Functions</H2>
+Functions used to initialize the library and load-balancing objects are
+described below:
+<UL><A HREF="#LB_Initialize">LB_Initialize</A>
+<BR><A HREF="#LB_Create_Object">LB_Create_Object</A>
+<BR><A HREF="#LB_Initialize_Params_Array">LB_Initialize_Params_Array</A>
+<BR><A HREF="#LB_Set_Fn">LB_Set_Fn</A></UL>
 
+
+<P>
 <HR WIDTH="100%"><A NAME="LB_Initialize"></A>int <B>LB_Initialize</B>(int
 <I>argc</I>, char **<I> argv</I>, float *<I> ver</I>);&nbsp;
 <HR WIDTH="100%">The <B>LB_Initialize</B> function initializes values needed
@@ -72,9 +78,7 @@ their application is linked to.
 <TD VALIGN=TOP><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_Create_Object"></A>struct <B>LB_Struct</B>
@@ -117,9 +121,7 @@ error occurs, NULL will be returned. Any error that occurs in this function
 is assumed to be fatal.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_Initialize_Params_Array"></A>int <B>LB_Initialize_Params_Array</B>(double
@@ -157,9 +159,7 @@ Upon return, all array values are set to a default value.</TD>
 <TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_Set_Fn"></A>int <B>LB_Set_Fn</B>(struct <B>LB_Struct
@@ -214,9 +214,7 @@ to the function pointed to by fn_ptr . May be NULL.</TD>
 <TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
