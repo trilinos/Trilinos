@@ -243,7 +243,7 @@ namespace Teuchos {
   inline ScalarType& SerialDenseVector<OrdinalType, ScalarType>::operator () (int index)
   {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    checkIndex( index );
+    this->checkIndex( index );
 #endif
     return(this->values_[index]);
   }
@@ -252,7 +252,7 @@ namespace Teuchos {
   inline const ScalarType& SerialDenseVector<OrdinalType, ScalarType>::operator () (int index) const
   {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    checkIndex( index );
+    this->checkIndex( index );
 #endif
     return(this->values_[index]);
   }
@@ -261,7 +261,7 @@ namespace Teuchos {
   inline const ScalarType& SerialDenseVector<OrdinalType, ScalarType>::operator [] (int index) const
   {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    checkIndex( index );
+    this->checkIndex( index );
 #endif
     return(this->values_[index]);
   }
@@ -270,7 +270,7 @@ namespace Teuchos {
   inline ScalarType& SerialDenseVector<OrdinalType, ScalarType>::operator [] (int index)
   {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-    checkIndex( index );
+    this->checkIndex( index );
 #endif
     return(this->values_[index]);
   }

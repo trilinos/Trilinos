@@ -119,6 +119,38 @@
 
 #endif
 
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+#define ZGEQRF_F77  F77_FUNC(cgeqrf,CGEQRF)
+#define ZGETRF_F77  F77_FUNC(cgetrf,CGETRF)
+#define ZGETRS_F77  F77_FUNC(cgetrs,CGETRS)
+#define ZGETRI_F77  F77_FUNC(cgetri,CGETRI)
+#define ZGERFS_F77  F77_FUNC(cgerfs,CGERFS)
+#define ZGECON_F77  F77_FUNC(cgecon,CGECON)
+#define ZGESVX_F77  F77_FUNC(cgesvx,CGESVX)
+#define ZGESV_F77   F77_FUNC(cgesv,CGESV)
+#define ZGEEQU_F77  F77_FUNC(cgeequ,CGEEQU)
+#define ZPOTRF_F77  F77_FUNC(cpotrf,CPOTRF)
+#define ZPOTRS_F77  F77_FUNC(cpotrs,CPOTRS)
+#define ZPOTRI_F77  F77_FUNC(cpotri,CPOTRI)
+#define ZPOCON_F77  F77_FUNC(cpocon,CPOCON)
+#define ZPOSV_F77   F77_FUNC(cposv,CPOSV)
+#define ZPOEQU_F77  F77_FUNC(cpoequ,CPOEQU)
+#define ZPORFS_F77  F77_FUNC(cporfs,CPORFS)
+#define ZPOSVX_F77  F77_FUNC(cposvx,CPOSVX)
+#define ZGELS_F77   F77_FUNC(cgels,CGELS)
+#define ZGEEV_F77   F77_FUNC(cgeev,CGEEV)
+#define ZGEHRD_F77  F77_FUNC(cgehrd,CGEHRD)
+#define ZHSEQR_F77  F77_FUNC(chseqr,CHSEQR)
+#define ZTREVC_F77  F77_FUNC(ctrevc,CTREVC)
+#define ZTREXC_F77  F77_FUNC(ctrexc,CTREXC)
+#define ZGEES_F77   F77_FUNC(cgees,CGEES)
+#define ZSTEQR_F77  F77_FUNC(csteqr,CSTEQR)
+#define ZLARND_F77  F77_FUNC(clarnd,CLARND)
+#define ZLARNV_F77  F77_FUNC(clarnv,CLARNV)
+
+#endif
+
 #elif defined(INTEL_CXML)
 
 #define PREFIX __stdcall 
@@ -194,6 +226,38 @@
 
 #endif
 
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+#define ZGEQRF_F77  F77_FUNC(zgeqrf,ZGEQRF)
+#define ZGETRF_F77  F77_FUNC(zgetrf,ZGETRF)
+#define ZGETRS_F77  F77_FUNC(zgetrs,ZGETRS)
+#define ZGETRI_F77  F77_FUNC(zgetri,ZGETRI)
+#define ZGERFS_F77  F77_FUNC(zgerfs,ZGERFS)
+#define ZGECON_F77  F77_FUNC(zgecon,ZGECON)
+#define ZGESVX_F77  F77_FUNC(zgesvx,ZGESVX)
+#define ZGESV_F77   F77_FUNC(zgesv,ZGESV)
+#define ZGEEQU_F77  F77_FUNC(zgeequ,ZGEEQU)
+#define ZPOTRF_F77  F77_FUNC(zpotrf,ZPOTRF)
+#define ZPOTRS_F77  F77_FUNC(zpotrs,ZPOTRS)
+#define ZPOTRI_F77  F77_FUNC(zpotri,ZPOTRI)
+#define ZPOCON_F77  F77_FUNC(zpocon,ZPOCON)
+#define ZPOSV_F77   F77_FUNC(zposv,ZPOSV)
+#define ZPOEQU_F77  F77_FUNC(zpoequ,ZPOEQU)
+#define ZPORFS_F77  F77_FUNC(zporfs,ZPORFS)
+#define ZPOSVX_F77  F77_FUNC(zposvx,ZPOSVX)
+#define ZGELS_F77   F77_FUNC(zgels,ZGELS)
+#define ZGEEV_F77   F77_FUNC(zgeev,ZGEEV)
+#define ZGEHRD_F77  F77_FUNC(zgehrd,ZGEHRD)
+#define ZHSEQR_F77  F77_FUNC(zhseqr,ZHSEQR)
+#define ZTREVC_F77  F77_FUNC(ztrevc,ZTREVC)
+#define ZTREXC_F77  F77_FUNC(ztrexc,ZTREXC)
+#define ZGEES_F77   F77_FUNC(zgees,ZGEES)
+#define ZSTEQR_F77  F77_FUNC(zsteqr,ZSTEQR)
+#define ZLARND_F77  F77_FUNC(zlarnd,ZLARND)
+#define ZLARNV_F77  F77_FUNC(zlarnv,ZLARNV)
+
+#endif
+
 #elif defined(INTEL_MKL)
 
 #define PREFIX
@@ -236,6 +300,38 @@
 #define DLARND_F77  F77_FUNC(dlarnd,DLARND)
 #define DLARNV_F77  F77_FUNC(dlarnv,DLARNV)
 #define ILAENV_F77  F77_FUNC(ilaenv,ILAENV)
+
+#ifdef HAVE_TEUCHOS_COMPLEX
+
+#define ZGEQRF_F77  F77_FUNC(zgeqrf,ZGEQRF)
+#define ZGETRF_F77  F77_FUNC(zgetrf,ZGETRF)
+#define ZGETRS_F77  F77_FUNC(zgetrs,ZGETRS)
+#define ZGETRI_F77  F77_FUNC(zgetri,ZGETRI)
+#define ZGERFS_F77  F77_FUNC(zgerfs,ZGERFS)
+#define ZGECON_F77  F77_FUNC(zgecon,ZGECON)
+#define ZGESVX_F77  F77_FUNC(zgesvx,ZGESVX)
+#define ZGESV_F77   F77_FUNC(zgesv,ZGESV)
+#define ZGEEQU_F77  F77_FUNC(zgeequ,ZGEEQU)
+#define ZPOTRF_F77  F77_FUNC(zpotrf,ZPOTRF)
+#define ZPOTRS_F77  F77_FUNC(zpotrs,ZPOTRS)
+#define ZPOTRI_F77  F77_FUNC(zpotri,ZPOTRI)
+#define ZPOCON_F77  F77_FUNC(zpocon,ZPOCON)
+#define ZPOSV_F77   F77_FUNC(zposv,ZPOSV)
+#define ZPOEQU_F77  F77_FUNC(zpoequ,ZPOEQU)
+#define ZPORFS_F77  F77_FUNC(zporfs,ZPORFS)
+#define ZPOSVX_F77  F77_FUNC(zposvx,ZPOSVX)
+#define ZGELS_F77   F77_FUNC(zgels,ZGELS)
+#define ZGEEV_F77   F77_FUNC(zgeev,ZGEEV)
+#define ZGEHRD_F77  F77_FUNC(zgehrd,ZGEHRD)
+#define ZHSEQR_F77  F77_FUNC(zhseqr,ZHSEQR)
+#define ZTREVC_F77  F77_FUNC(ztrevc,ZTREVC)
+#define ZTREXC_F77  F77_FUNC(ztrexc,ZTREXC)
+#define ZGEES_F77   F77_FUNC(zgees,ZGEES)
+#define ZSTEQR_F77  F77_FUNC(zsteqr,ZSTEQR)
+#define ZLARND_F77  F77_FUNC(zlarnd,ZLARND)
+#define ZLARNV_F77  F77_FUNC(zlarnv,ZLARNV)
+
+#endif
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
