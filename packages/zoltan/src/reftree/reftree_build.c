@@ -30,6 +30,10 @@ static int order_tri_bisect(ZZ *zz, int *vert1, int *order,
 static int order_quad_quad(ZZ *zz, int *vert1, int *order,
                            ZOLTAN_ID_PTR vertices, ZOLTAN_ID_PTR in_vertex,
                            ZOLTAN_ID_PTR out_vertex, ZOLTAN_REFTREE *subroot);
+static int order_hex3d_oct(ZZ *zz, int *vert1, int *order,
+                           ZOLTAN_ID_PTR vertices, ZOLTAN_ID_PTR in_vertex,
+                           ZOLTAN_ID_PTR out_vertex, ZOLTAN_REFTREE *subroot);
+static int hex_nshared(int elem1, int elem2, int *lvertices, int *vert1);
 static int order_other_ref(ZZ *zz, ZOLTAN_REFTREE *parent, int num_child, 
                            int *num_vert, int *vert1, ZOLTAN_ID_PTR vertices,
                            int *order, ZOLTAN_ID_PTR in_vertex,
@@ -1057,7 +1061,6 @@ static int Zoltan_Reftree_Build_Recursive(ZZ *zz,ZOLTAN_REFTREE *subroot)
 /*
  * Recursive function to traverse a tree while building it
  */
-static int TEMP_first_warning = 1; /* TEMP until ref_type is fully supported */
 char *yo = "Zoltan_Reftree_Build_Recursive";
 char msg[256];
 int ierr;                  /* error code called routines */
@@ -1281,27 +1284,6 @@ int existing;              /* existing child that agrees with GET_CHILD data */
    */
 
   /*
-   * TEMP until code is supplied to support these refinement types
-   */
-
-    switch (ref_type) {
-    case ZOLTAN_HEX3D_OCT:
-      if (TEMP_first_warning) {
-        ZOLTAN_PRINT_WARN(zz->Proc, yo, "Currently not supporting "
-                        "automatic ordering of elements for refinement type "
-                        "ZOLTAN_HEX3D_OCT.  Using ZOLTAN_OTHER_REF.");
-        TEMP_first_warning = 0;
-        final_ierr = ZOLTAN_WARN;
-      }
-      ref_type = ZOLTAN_OTHER_REF;
-      break;
-    default:
-      break;
-    }
-
-  /* end TEMP */
-
-  /*
    *  Refinement type dependent determination of the order of the children
    *  and the in/out vertices
    */
@@ -1320,9 +1302,8 @@ int existing;              /* existing child that agrees with GET_CHILD data */
                              subroot);
       break;
     case ZOLTAN_HEX3D_OCT:
-    /* TEMP */
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Oops, still got into case for HEX3D_OCT.");
-      for (i=0; i<num_obj; i++) sorder[i] = i;
+      ierr = order_hex3d_oct(zz,svert1,sorder,svertices,sin_vertex,sout_vertex,
+                             subroot);
       break;
     case ZOLTAN_OTHER_REF:
       ierr = order_other_ref(zz, subroot, num_obj, snum_vert, svert1, svertices,
@@ -1843,6 +1824,505 @@ int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
 
   ZOLTAN_FREE(&shared);
   return(ZOLTAN_OK);
+}
+
+/*****************************************************************************/
+
+static int order_hex3d_oct(ZZ *zz, int *vert1, int *order,
+                           ZOLTAN_ID_PTR vertices, ZOLTAN_ID_PTR in_vertex,
+                           ZOLTAN_ID_PTR out_vertex, ZOLTAN_REFTREE *subroot)
+{
+/*
+ * Function to determine the order of the children and in/out vertices
+ * when refinement is done by octasection of hexahedra.
+ */
+
+int i,j,found,ord[8],vert,count[27],lvertices[64],ecoord[8][3],vcoord[27][3];
+int nshare, nshare2, nshare4, nshare100, nshare010, share2[3];
+int element[2][2][2],elem100,elem010,elem001,vertex[3][3][3];
+ZOLTAN_ID_PTR lvertices_gid;
+char *yo = "order_hex3d_oct";
+int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
+
+  /* verify that 8 vertices were given for each hexadron; if not, punt */
+  for (j=0; j<8; j++) {
+    if (vert1[j] != 8*j) {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Incorrect number of vertices "
+                                  "given for octasected hexahedra.");
+      for (i=0; i<8; i++) {
+        order[i] = i;
+        ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+        ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                          &vertices[(vert1[i]+7)*ngid_ent]);
+      }
+      return(ZOLTAN_WARN);
+    }
+  }
+
+  /* find the child that contains the in_vertex and make it first */
+
+  found = 0;
+  for (i=0; i<8 && !found; i++) {
+    for (j=0; j<8 && !found; j++) {
+      if (ZOLTAN_EQ_GID(zz,&vertices[(8*i+j)*ngid_ent],subroot->in_vertex)) {
+         ord[0] = i;
+         found = 1;
+      }
+    }
+  }
+  if (!found) {
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Couldn't find in_vertex in children");
+    for (i=0; i<8; i++) {
+      order[i] = i;
+      ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+      ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                        &vertices[(vert1[i]+7)*ngid_ent]);
+    }
+    return(ZOLTAN_WARN);
+  }
+
+  /* find the child that contains the out_vertex and make it last */
+
+  found = 0;
+  for (i=0; i<8 && !found; i++) {
+    for (j=0; j<8 && !found; j++) {
+      if (ZOLTAN_EQ_GID(zz,&vertices[(8*i+j)*ngid_ent],subroot->out_vertex)) {
+         ord[7] = i;
+         found = 1;
+      }
+    }
+  }
+  if (!found) {
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Couldn't find out_vertex in children");
+    for (i=0; i<8; i++) {
+      order[i] = i;
+      ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+      ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                        &vertices[(vert1[i]+7)*ngid_ent]);
+    }
+    return(ZOLTAN_WARN);
+  }
+
+  /* Construct a local numbering of the vertices, from 0 to 26 */
+
+  lvertices_gid = ZOLTAN_MALLOC_GID_ARRAY(zz,27);
+  vert = 0;
+  for (i=0; i<64; i++) {
+    found = -1;
+    for (j=0; j<vert-1 && found==-1; j++) {
+      if (ZOLTAN_EQ_GID(zz,&vertices[i*ngid_ent],&lvertices_gid[j*ngid_ent])) {
+        found = j;
+      }
+    }
+    if (found==-1) {
+      ZOLTAN_SET_GID(zz,&lvertices_gid[vert*ngid_ent],&vertices[i*ngid_ent]);
+      found = vert;
+      vert++;
+    }
+    lvertices[i] = found;
+  }
+
+  if (vert != 27) {
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Didn't find 27 distinct vertices in children of hexahedron.");
+    for (i=0; i<8; i++) {
+      order[i] = i;
+      ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+      ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                        &vertices[(vert1[i]+7)*ngid_ent]);
+    }
+    return(ZOLTAN_WARN);
+  }
+
+  /* Determine a local numbering of the children as corners of the unit cube. */
+
+  /* Put the in element at (0,0,0). */
+
+  ecoord[ord[0]][0] = 0;
+  ecoord[ord[0]][1] = 0;
+  ecoord[ord[0]][2] = 0;
+  element[0][0][0] = ord[0];
+
+  /* If the out element shares 4 vertices with the in element, put it at (1,0,0)
+     If the out element shares 2 vertices with the in element, put it at (1,1,0)
+     If the out element shares 1 vertices with the in element, put it at (1,1,1)
+     If none of those apply, the data is erroneous.  */
+
+  nshare = hex_nshared(ord[0],ord[7],lvertices,vert1);
+  if (nshare != 1 && nshare != 2 && nshare != 4) {
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Hexahedral children do not share 1, 2 or 4 vertices.");
+    for (i=0; i<8; i++) {
+      order[i] = i;
+      ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+      ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                        &vertices[(vert1[i]+7)*ngid_ent]);
+    }
+    return(ZOLTAN_WARN);
+  }
+
+  ecoord[ord[7]][0] = 1;
+  if (nshare == 4) {
+    ecoord[ord[7]][1] = 0;
+    nshare4 = 1;
+    element[1][0][0] = ord[7];
+  } else {
+    ecoord[ord[7]][1] = 1;
+    nshare4 = 0;
+  }
+  if (nshare == 1) {
+    ecoord[ord[7]][2] = 1;
+    element[1][1][1] = ord[7];
+  } else {
+    ecoord[ord[7]][2] = 0;
+  }
+  if (nshare == 2) {
+    nshare2 = 1;
+    share2[0] = ord[7];
+    element[1][1][0] = ord[7];
+  } else {
+    nshare2 = 0;
+  }
+
+  /* examine the other six elements for the number of vertices shared
+     with element 0,0,0.  If it 4, then assign it to 1,0,0, then 0,1,0,
+     then 0,0,1.  If it is 2, defer the assignment until the next step.
+     If it is 1, then assign it to 1,1,1
+  */
+
+  for (i=0; i<8; i++) {
+    if (ord[0] != i && ord[7] != i) {
+
+      nshare = hex_nshared(ord[0],i,lvertices,vert1);
+      if (nshare == 4) {
+        ecoord[i][0] = 0;
+        ecoord[i][1] = 0;
+        ecoord[i][2] = 0;
+        ecoord[i][nshare4] = 1;
+        if (nshare4 == 0) {
+          element[1][0][0] = i;
+        } else {
+          if (nshare4 == 1) {
+            element[0][1][0] = i;
+          } else {
+            element[0][0][1] = i;
+          }
+        }
+        nshare4++;
+      } else {
+        if (nshare == 2) {
+          share2[nshare2] = i;
+          nshare2++;
+        } else {
+          if (nshare == 1) {
+            ecoord[i][0] = 1;
+            ecoord[i][1] = 1;
+            ecoord[i][2] = 1;
+            element[1][1][1] = i;
+          } else {
+            ZOLTAN_PRINT_WARN(zz->Proc, yo, "Hexahedral children do not share 1, 2 or 4 vertices.");
+            for (i=0; i<8; i++) {
+              order[i] = i;
+              ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+              ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                                &vertices[(vert1[i]+7)*ngid_ent]);
+            }
+            return(ZOLTAN_WARN);
+          }
+        }
+      }
+    }
+  }
+
+  /* For the three that share 2 vertices with element 0,0,0, see how many
+     they share with 1,0,0 and 0,1,0.  If it is the out element, then
+     swap element 0,0,1 with one of those two to keep the out element at
+     1,1,0.  Otherwise, assign the element to the proper position depending
+     on which elements it shares 4 vertices with.
+  */
+
+  for (i=0; i<3; i++) {
+
+    nshare100 = hex_nshared(element[1][0][0],share2[i],lvertices,vert1);
+    nshare010 = hex_nshared(element[0][1][0],share2[i],lvertices,vert1);
+    if ((nshare100 != 1 && nshare100 != 2 && nshare100 != 4) ||
+        (nshare010 != 1 && nshare010 != 2 && nshare010 != 4)) {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Hexahedral children do not share 1, 2 or 4 vertices.");
+      for (i=0; i<8; i++) {
+        order[i] = i;
+        ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+        ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                          &vertices[(vert1[i]+7)*ngid_ent]);
+      }
+      return(ZOLTAN_WARN);
+    }
+
+    if (share2[i] == ord[7]) {
+      if (nshare100 != 4) {
+        elem001 = element[1][0][0];
+        elem100 = element[0][0][1];
+        ecoord[elem100][0] = 1;
+        ecoord[elem100][1] = 0;
+        ecoord[elem100][2] = 0;
+        element[1][0][0] = elem100;
+        ecoord[elem001][0] = 0;
+        ecoord[elem001][1] = 0;
+        ecoord[elem001][2] = 1;
+        element[0][0][1] = elem001;
+      }
+      if (nshare010 != 4) {
+        elem001 = element[0][1][0];
+        elem010 = element[0][0][1];
+        ecoord[elem010][0] = 1;
+        ecoord[elem010][1] = 0;
+        ecoord[elem010][2] = 0;
+        element[0][1][0] = elem010;
+        ecoord[elem001][0] = 0;
+        ecoord[elem001][1] = 0;
+        ecoord[elem001][2] = 1;
+        element[0][0][1] = elem001;
+      }
+
+    } else {
+
+      if (nshare100 == 4 && nshare010 == 4) {
+        ecoord[share2[i]][0] = 1;
+        ecoord[share2[i]][1] = 1;
+        ecoord[share2[i]][2] = 0;
+        element[1][1][0] = share2[i];
+      } else {
+        if (nshare100 == 4) {
+          ecoord[share2[i]][0] = 1;
+          ecoord[share2[i]][1] = 0;
+          ecoord[share2[i]][2] = 1;
+          element[1][0][1] = share2[i];
+        } else {
+          ecoord[share2[i]][0] = 0;
+          ecoord[share2[i]][1] = 1;
+          ecoord[share2[i]][2] = 1;
+          element[0][1][1] = share2[i];
+        }
+      }
+    }
+  }
+
+  /* Determine a local numbering of the vertices as positions on the 2x2x2 cube.
+     This is found summing the coordinates of all the elements that contain
+     it and multiplying by 2 divided by the number of elements that contain it.
+     Amazing, huh?
+  */
+
+  for (vert=0; vert<27; vert++) {
+    vcoord[vert][0] = 0;
+    vcoord[vert][1] = 0;
+    vcoord[vert][2] = 0;
+    count[vert] = 0;
+  }
+
+  for (i=0; i<8; i++) {
+    for (j=0; j<8; j++) {
+      vert = lvertices[vert1[i]+j];
+      vcoord[vert][0] = vcoord[vert][0] + ecoord[i][0];
+      vcoord[vert][1] = vcoord[vert][1] + ecoord[i][1];
+      vcoord[vert][2] = vcoord[vert][2] + ecoord[i][2];
+      count[vert]++;
+    }
+  }
+
+  for (vert=0; vert<27; vert++) {
+    if (count[vert] == 1 || count[vert] == 2 || count[vert] == 4 ||
+        count[vert] == 8) {
+       vcoord[vert][0] = (vcoord[vert][0]*2)/count[vert];
+       vcoord[vert][1] = (vcoord[vert][1]*2)/count[vert];
+       vcoord[vert][1] = (vcoord[vert][1]*2)/count[vert];
+    }
+    else {
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "A vertex did not appear the right number of times in hexahedral children.");
+      for (i=0; i<8; i++) {
+        order[i] = i;
+        ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+        ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                          &vertices[(vert1[i]+7)*ngid_ent]);
+      }
+      return(ZOLTAN_WARN);
+    }
+  }
+
+  for (vert=0; vert<27; vert++) {
+    vertex[vcoord[vert][0]][vcoord[vert][1]][vcoord[vert][2]] = vert;
+  }
+
+  /* Select one of three templates depending on whether the out element
+     is at (1,0,0), (1,1,0), or (1,1,1) */
+
+  if (element[1][0][0] == ord[7]) {
+
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[0]*ngid_ent],
+                      &lvertices_gid[vertex[0][0][0]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[0]*ngid_ent],
+                      &lvertices_gid[vertex[0][1][0]*ngid_ent]);
+    ord[1] = element[0][1][0];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[1]*ngid_ent],
+                      &lvertices_gid[vertex[0][1][0]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[1]*ngid_ent],
+                      &lvertices_gid[vertex[0][1][1]*ngid_ent]);
+    ord[2] = element[0][1][1];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[2]*ngid_ent],
+                      &lvertices_gid[vertex[0][1][1]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[2]*ngid_ent],
+                      &lvertices_gid[vertex[0][1][2]*ngid_ent]);
+    ord[3] = element[0][0][1];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[3]*ngid_ent],
+                      &lvertices_gid[vertex[0][1][2]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[3]*ngid_ent],
+                      &lvertices_gid[vertex[1][1][2]*ngid_ent]);
+    ord[4] = element[1][0][1];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[4]*ngid_ent],
+                      &lvertices_gid[vertex[1][1][2]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[4]*ngid_ent],
+                      &lvertices_gid[vertex[2][1][2]*ngid_ent]);
+    ord[5] = element[1][1][1];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[5]*ngid_ent],
+                      &lvertices_gid[vertex[2][1][2]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[5]*ngid_ent],
+                      &lvertices_gid[vertex[2][1][1]*ngid_ent]);
+    ord[6] = element[1][1][0];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[6]*ngid_ent],
+                      &lvertices_gid[vertex[2][1][1]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[6]*ngid_ent],
+                      &lvertices_gid[vertex[2][1][0]*ngid_ent]);
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[7]*ngid_ent],
+                      &lvertices_gid[vertex[2][1][0]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[7]*ngid_ent],
+                      &lvertices_gid[vertex[2][0][0]*ngid_ent]);
+
+  } else {
+  if (element[1][1][0] == ord[7]) {
+
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[0]*ngid_ent],
+                      &lvertices_gid[vertex[0][0][0]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[0]*ngid_ent],
+                      &lvertices_gid[vertex[1][0][0]*ngid_ent]);
+    ord[1] = element[1][0][0];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[1]*ngid_ent],
+                      &lvertices_gid[vertex[1][0][0]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[1]*ngid_ent],
+                      &lvertices_gid[vertex[1][0][1]*ngid_ent]);
+    ord[2] = element[1][0][1];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[2]*ngid_ent],
+                      &lvertices_gid[vertex[1][0][1]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[2]*ngid_ent],
+                      &lvertices_gid[vertex[1][0][2]*ngid_ent]);
+    ord[3] = element[0][0][1];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[3]*ngid_ent],
+                      &lvertices_gid[vertex[1][0][2]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[3]*ngid_ent],
+                      &lvertices_gid[vertex[1][1][2]*ngid_ent]);
+    ord[4] = element[0][1][1];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[4]*ngid_ent],
+                      &lvertices_gid[vertex[1][1][2]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[4]*ngid_ent],
+                      &lvertices_gid[vertex[1][1][1]*ngid_ent]);
+    ord[5] = element[0][1][0];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[5]*ngid_ent],
+                      &lvertices_gid[vertex[1][1][1]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[5]*ngid_ent],
+                      &lvertices_gid[vertex[1][2][1]*ngid_ent]);
+    ord[6] = element[1][1][1];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[6]*ngid_ent],
+                      &lvertices_gid[vertex[1][2][1]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[6]*ngid_ent],
+                      &lvertices_gid[vertex[2][2][1]*ngid_ent]);
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[7]*ngid_ent],
+                      &lvertices_gid[vertex[2][2][1]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[7]*ngid_ent],
+                      &lvertices_gid[vertex[2][2][0]*ngid_ent]);
+
+  } else {
+  if (element[1][1][1] == ord[7]) {
+
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[0]*ngid_ent],
+                      &lvertices_gid[vertex[0][0][0]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[0]*ngid_ent],
+                      &lvertices_gid[vertex[1][0][0]*ngid_ent]);
+    ord[1] = element[1][0][0];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[1]*ngid_ent],
+                      &lvertices_gid[vertex[1][0][0]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[1]*ngid_ent],
+                      &lvertices_gid[vertex[1][1][0]*ngid_ent]);
+    ord[2] = element[1][1][0];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[2]*ngid_ent],
+                      &lvertices_gid[vertex[1][1][0]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[2]*ngid_ent],
+                      &lvertices_gid[vertex[1][2][0]*ngid_ent]);
+    ord[3] = element[0][1][0];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[3]*ngid_ent],
+                      &lvertices_gid[vertex[1][2][0]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[3]*ngid_ent],
+                      &lvertices_gid[vertex[1][2][1]*ngid_ent]);
+    ord[4] = element[0][1][1];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[4]*ngid_ent],
+                      &lvertices_gid[vertex[1][2][1]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[4]*ngid_ent],
+                      &lvertices_gid[vertex[1][1][1]*ngid_ent]);
+    ord[5] = element[0][0][1];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[5]*ngid_ent],
+                      &lvertices_gid[vertex[1][1][1]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[5]*ngid_ent],
+                      &lvertices_gid[vertex[1][1][2]*ngid_ent]);
+    ord[6] = element[1][0][1];
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[6]*ngid_ent],
+                      &lvertices_gid[vertex[1][1][2]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[6]*ngid_ent],
+                      &lvertices_gid[vertex[2][1][2]*ngid_ent]);
+    ZOLTAN_SET_GID(zz, &in_vertex[ord[7]*ngid_ent],
+                      &lvertices_gid[vertex[2][1][2]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ord[7]*ngid_ent],
+                      &lvertices_gid[vertex[2][2][2]*ngid_ent]);
+
+  } else {
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Out element is not assigned correctly.");
+    for (i=0; i<8; i++) {
+      order[i] = i;
+      ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+      ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                        &vertices[(vert1[i]+7)*ngid_ent]);
+    }
+    return(ZOLTAN_WARN);
+  }
+  }
+  }
+
+  /* invert the permutation matrix */
+
+  for (i=0; i<8; i++) {
+    order[ord[i]] = i;
+  }
+
+}
+
+/*****************************************************************************/
+
+static int hex_nshared(int elem1, int elem2, int *lvertices, int *vert1)
+{
+/*
+ * This function counts the number of vertices shared by hexahedral elements
+ * elem1 and elem2, where lvertices lists the 8 vertices of elemX starting
+ * at position vert1[X]
+ */
+
+char *yo = "hex_nshared";
+int i,j,count,found;
+
+  count = 0;
+  for (i=0; i<8; i++) {
+    found = 0;
+    for (j=0; j<8 && !found; j++) {
+      if (lvertices[vert1[elem1]+i] == lvertices[vert1[elem2]+j]) {
+        count++;
+        found = 1;
+      }
+    }
+  }
+  return(count);
 }
 
 /*****************************************************************************/
