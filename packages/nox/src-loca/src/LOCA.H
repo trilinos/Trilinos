@@ -31,6 +31,7 @@
 // is required to instantiate to call LOCA!
 
 // Primary LOCA Objects
+#include "Teuchos_RefCountPtr.hpp"
 #include "NOX.H"
 #include "LOCA_Continuation_AbstractGroup.H"
 #include "LOCA_Stepper.H"
@@ -57,6 +58,7 @@
 #include "LOCA_Homotopy_Group.H"
 
 #include "LOCA_Abstract_Group.H"
+#include "LOCA_Abstract_Factory.H"
 
 // Status tests
 #include "LOCA_StatusTest_Wrapper.H"
