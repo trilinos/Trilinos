@@ -329,13 +329,13 @@ int main(int argc, char *argv[])
     nodal_args = ML_Smoother_Arglist_Create(2);
     ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
     Nfine_node = Tmat_array[MaxMgLevels-1]->invec_leng;
-    ML_gsum_vec_int(&Nfine_node, &itmp, 1, ml_edges->comm);
+    ML_gsum_scalar_int(&Nfine_node, &itmp, ml_edges->comm);
   }
   if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
     edge_args = ML_Smoother_Arglist_Create(2);
     ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
     Nfine_edge = Tmat_array[MaxMgLevels-1]->outvec_leng;
-    ML_gsum_vec_int(&Nfine_edge, &itmp, 1, ml_edges->comm);
+    ML_gsum_scalar_int(&Nfine_edge, &itmp, ml_edges->comm);
   }
 
   /***************************************************************
@@ -350,7 +350,7 @@ int main(int argc, char *argv[])
     if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
       if (level != coarsest_level) {
 	Ncoarse_edge = Tmat_array[level-1]->outvec_leng;
-	ML_gsum_vec_int(&Ncoarse_edge, &itmp, 1, ml_edges->comm);
+	ML_gsum_scalar_int(&Ncoarse_edge, &itmp, ml_edges->comm);
 	edge_coarsening_rate =  2.*((double) Nfine_edge)/
                                    ((double) Ncoarse_edge);
       }
@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
     if (nodal_smoother == (void *) ML_Gen_Smoother_MLS) {
       if (level != coarsest_level) {
 	Ncoarse_node = Tmat_array[level-1]->invec_leng;
-	ML_gsum_vec_int(&Ncoarse_node, &itmp, 1, ml_edges->comm);
+	ML_gsum_scalar_int(&Ncoarse_node, &itmp, ml_edges->comm);
 	node_coarsening_rate =  2.*((double) Nfine_node)/ 
                                    ((double) Ncoarse_node);
       }
@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
   free(rhs);
   ML_Operator_Destroy(&Tmat);
   ML_Operator_Destroy(&Tmat_trans);
-  ML_MGHierarchy_ReitzingerDestroy(MaxMgLevels-2, coarsest_level, &Tmat_array,
+  ML_MGHierarchy_ReitzingerDestroy(MaxMgLevels-2, &Tmat_array,
 				   &Tmat_trans_array);
 #ifdef ML_MPI
   MPI_Finalize();

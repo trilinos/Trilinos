@@ -364,12 +364,12 @@ void sample3(struct data *Afine_data, struct data *Acoarse_data,
    ML_Init_Amatrix      (my_ml, grid1, Nfine, Nfine, (void *) Afine_data);
    ML_Set_Amatrix_Matvec(my_ml, grid1, mymatvec  );
    ML_Set_Amatrix_Diag  (my_ml, grid1, Nfine, diagonal);
-   ML_Gen_Smoother_Jacobi(my_ml, grid1, ML_PRESMOOTH, 2, ML_DEFAULT);
+   ML_Gen_Smoother_Jacobi(my_ml, grid1, ML_PRESMOOTHER, 2, ML_DEFAULT);
 
    ML_Init_Amatrix      (my_ml, grid0, Ncoarse, Ncoarse, (void *) Acoarse_data);
    ML_Set_Amatrix_Matvec(my_ml, grid0, mymatvec);
    ML_Set_Amatrix_Diag  (my_ml, grid0, Ncoarse, diagonal);
-   ML_Gen_Smoother_Jacobi(my_ml, grid0, ML_PRESMOOTH, 200, ML_DEFAULT);
+   ML_Gen_Smoother_Jacobi(my_ml, grid0, ML_PRESMOOTHER, 200, ML_DEFAULT);
 
 
    ML_Init_Prolongator(my_ml, grid0, grid1, Ncoarse, Nfine, (void*)Pmat_data);
@@ -409,7 +409,7 @@ void sample1(struct data *Afine_data, struct data *Acoarse_data,
    ML_Set_Amatrix_Getrow(my_ml, grid1,  myAgetrow, my_comm, Nfine+1);
    ML_Set_Amatrix_Matvec(my_ml, grid1,  mymatvec);
    ML_Set_Amatrix_Diag  (my_ml, grid1,  Nfine, diagonal);
-   ML_Gen_Smoother_Jacobi(my_ml, grid1,  ML_PRESMOOTH, 2, ML_DEFAULT);
+   ML_Gen_Smoother_Jacobi(my_ml, grid1,  ML_PRESMOOTHER, 2, ML_DEFAULT);
 
    ML_Init_Prolongator(my_ml, grid0, grid1, Ncoarse,Nfine,(void *)Pmat_data);
    ML_Set_Prolongator_Getrow(my_ml,  grid0, myPgetrow, my_comm, Ncoarse+1);
@@ -423,8 +423,8 @@ void sample1(struct data *Afine_data, struct data *Acoarse_data,
    ML_Gen_AmatrixRAP(my_ml,grid1, grid0);
    ML_Gen_CoarseSolverSuperLU(my_ml, grid0);
 
-/* ML_Gen_Smoother_Jacobi(my_ml, grid0, ML_PRESMOOTH, 200, ML_DEFAULT); */
-/* ML_Gen_Smoother_GaussSeidel(my_ml, grid0, ML_PRESMOOTH, 200, 1.);    */
+/* ML_Gen_Smoother_Jacobi(my_ml, grid0, ML_PRESMOOTHER, 200, ML_DEFAULT); */
+/* ML_Gen_Smoother_GaussSeidel(my_ml, grid0, ML_PRESMOOTHER, 200, 1.);    */
    ML_Gen_Solver    (my_ml, 0, fine_grid, grid0);
    ML_Iterate(my_ml, sol, rhs);
    ML_Destroy(&my_ml);
@@ -466,8 +466,8 @@ void sample2(struct data *Afine_data, struct data *Acoarse_data,
    ML_Init_Prolongator(my_ml, grid0, grid1, Ncoarse, Nfine,(void *)Pmat_data);
    ML_Set_Prolongator_Matvec(my_ml,  grid0, myinterp);
 
-   ML_Set_Smoother   (my_ml, grid1,    ML_PRESMOOTH, (void *)&fsmooth,mysmooth, NULL);
-   ML_Set_Smoother   (my_ml, grid0,    ML_PRESMOOTH, (void *)&csmooth,mysmooth, NULL);
+   ML_Set_Smoother   (my_ml, grid1,    ML_PRESMOOTHER, (void *)&fsmooth,mysmooth, NULL);
+   ML_Set_Smoother   (my_ml, grid0,    ML_PRESMOOTHER, (void *)&csmooth,mysmooth, NULL);
 
    ML_Gen_Solver    (my_ml, 0, fine_grid, grid0 );
    ML_Iterate(my_ml, sol, rhs);
