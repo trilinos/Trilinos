@@ -1,4 +1,3 @@
-
 //@HEADER
 // ************************************************************************
 // 
@@ -27,13 +26,15 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "ml_config.h"
+// Goal of this example is to show the (limited) ML analysis capabilities.
+//
+// \author Marzio Sala, SNL 9214
+// \date Last modified on 17-Nov-04
+
+#include "ml_include.h"
 
 // The C++ interface of ML (more precisely,
-// ML_Epetra::MultiLevelPreconditioner), required Trilinos to be
+// ML_Epetra::MultiLevelPreconditioner), requires Trilinos to be
 // configured with --enable-epetra --enable-teuchos. This example
 // required --enable-triutils (for the definition of the linear systems)
 
@@ -46,15 +47,11 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
-#include "Epetra_SerialDenseVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
-// includes required by ML
-
-#include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"
 
 using namespace Teuchos;
@@ -115,7 +112,7 @@ int main(int argc, char *argv[])
   // V I S U A L I Z A T I O N   P A R T //
   // =================================== //
 
-  // Here we set parameters to visualiza the effect of the actual smoothers
+  // Here we set parameters to visualize the effect of the actual smoothers
   // and the ML cycle on a random vector.
   //
   // First, we get the nodal coordinates. 
@@ -136,14 +133,15 @@ int main(int argc, char *argv[])
   MLList.set("viz: y-coordinates", y_coord);
 
   // create the preconditioning object.
-  // NOTE that users need to set "viz: enable" == true in order to
+  // Note that users need to set "viz: enable" == true in order to
   // visualize!
 
   ML_Epetra::MultiLevelPreconditioner * MLPrec = 
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
 
+  // for 2D Cartesian grid, you can print the stencil of your operator
+  // using this simple function.
   MLPrec->PrintStencil2D(16,16);
-  exit(0);
 
   // =============== //
   // A N A L Y S I S //
@@ -152,8 +150,11 @@ int main(int argc, char *argv[])
   if (ProblemSize < 1024 && Comm.NumProc() == 1) {
 
     // Analysis with "dense" involves dense eigenvalue problems.
-    // This can be very expensive. Also, it can be done only for serial
-    // computations.
+    // This can be very expensive, as the sparse matrix on each level
+    // is converted to a dense one, then LAPACK routines are used
+    // Also, it can be done only for serial computations.
+    // `5,5' refers to the number of pre-smoother and post-smoother
+    // applications to a random vector.
  
     MLPrec->AnalyzeSmoothersDense(5,5);
     MLPrec->AnalyzeMatrixEigenvaluesDense("A");
@@ -178,13 +179,14 @@ int main(int argc, char *argv[])
   // 1.- a "cheap" analysis of the matrix (mainly, whether it is
   //     diagonally domimant and well scaled)
   // 2.- analyze the effect of the ML cycle on a random vector
+  // `5' refers to the application of the ML cycle to a random vector.
 
   MLPrec->AnalyzeMatrixCheap();
   MLPrec->AnalyzeCycle(5);
 
   // Here we set parameters to compare different smoothers.
   // Please refer to the user's guide for more details about the following
-  // parameters.
+  // parameters. Not all smoothers are supported by this testing.
 
   Teuchos::ParameterList MLTestList;
   ML_Epetra::SetDefaults("SA",MLTestList);
@@ -232,11 +234,14 @@ int main(int argc, char *argv[])
     cout << "||x_exact - x||_2 = " << diff << endl;
   }
 
+  if (residual > 1e-5)
+    exit(EXIT_FAILURE);
+
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 
-  return 0 ;
+  exit(EXIT_SUCCESS);
   
 }
 
@@ -253,4 +258,4 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */

@@ -27,13 +27,20 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
+// Goal of this example is to present the visualization capabilities of
+// ML. Using ML, the user can visualize the aggregates for all levels.
+// This requires, as additional input, the coordinates of the fine-grid
+// nodes. The output file is simple collection of 2D or 3D points,
+// each of them containing the (double) value of the aggregate it belongs to.
+// A freely-downloadable software, called XD3D, can for example
+// be used to visualize the aggregates. ML can also visualize the effect
+// of smoothers and the entire ML cycle on random vectors; see the
+// `visualization' section of this example.
+//
+// \author Marzio Sala, SNL 9214
+// \date Last modified on 17-Nov-04
 
-// The following header file contains macro definitions for ML. In particular, HAVE_ML_EPETRA,
-// HAVE_ML_TEUCHOS, HAVE_ML_TRIUTILS are defines in this file.
-#include "ml_config.h"
+#include "ml_include.h"
 
 // the following code cannot be compiled without these Trilinos
 // packages. Note that triutils is required in the examples only (to
@@ -47,21 +54,20 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_SerialDenseVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
-#include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"
-
-
 
 using namespace Teuchos;
 using namespace Trilinos_Util;
+
+// =========== //
+// main driver //
+// =========== //
 
 int main(int argc, char *argv[])
 {
@@ -74,7 +80,7 @@ int main(int argc, char *argv[])
 #endif
 
   // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
-  // Various matrix examples are supported; please refer to the
+  // Several matrix examples are supported; please refer to the
   // Trilinos tutorial for more details.
   // The matrix here is a VBR matrix, but the code works with any matrix
   // as well. Just note that the coordinates refer to the block rows: if
@@ -168,10 +174,9 @@ int main(int argc, char *argv[])
   // =============================== //
 
   // create the preconditioner object and compute hierarchy
-  // See comments in "ml_example_epetra_preconditioner.cpp"
 
   ML_Epetra::MultiLevelPreconditioner * MLPrec = 
-    new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
+    new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   // ============= //
   // visualization //
@@ -185,6 +190,10 @@ int main(int argc, char *argv[])
   //     respectively
   // 3.- print out the effect of the ML cycle on a random vector.
   //     The integer parameter represents the number of cycles.
+  // Below, `5' and `1' refers to the number of pre-smoother and
+  // post-smoother applications. `10' refers to the number of ML
+  // cycle applications. In both cases, smoothers and ML cycle are
+  // applied to a random vector.
 
   MLPrec->VisualizeAggregates();
   MLPrec->VisualizeSmoothers(5,1);
@@ -221,11 +230,14 @@ int main(int argc, char *argv[])
   if( y_coord ) delete [] y_coord;
   if( z_coord ) delete [] z_coord;
   
+  if (residual > 1e-5)
+    exit(EXIT_FAILURE);
+
 #ifdef EPETRA_MPI
-  MPI_Finalize() ;
+  MPI_Finalize();
 #endif
 
-  return 0 ;
+  exit(EXIT_SUCCESS);
   
 }
 
@@ -242,5 +254,5 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */
 

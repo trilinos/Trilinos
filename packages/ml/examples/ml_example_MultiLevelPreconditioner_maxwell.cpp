@@ -1,27 +1,43 @@
-/*****************************************************************************/
-/* Copyright 2002, Sandia Corporation. The United States Government retains  */
-/* a nonexclusive license in this software as prescribed in AL 88-1 and AL   */
-/* 91-7. Export of this program may require a license from the United States */
-/* Government.                                                               */
-/*****************************************************************************/
 
-/*****************************************************************************
- * Sample driver for Maxwell equation AMG solver in the ML package. The
- * software is tested by setting up a 2-dimensional uniform grid example on 
- * a square. For details about the problem at hand, please refer to file
- * ml_simple_max.c, of which this file is the C++ counterpart.
- *
- * This file shows how to use the class
- * ML_Epetra::MultiLevelPreconditioner to solve this formulation of the
- * Maxwell equations. The class takes care of building the node and edge
- * hierarchy, definining the Hiptmair smoother, and setting the coarse
- * solver. More information about MultiLevelPreconditioner can be found of the ML
- * user's guide.
- *****************************************************************************/
+//@HEADER
+// ************************************************************************
+// 
+//               ML: A Multilevel Preconditioner Package
+//                 Copyright (2002) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//  
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
+// Sample driver for Maxwell equation AMG solver in the ML package. The
+// software is tested by setting up a 2-dimensional uniform grid example on 
+// a square. For details about the problem at hand, please refer to file
+// ml_simple_max.c, of which this file is the C++ counterpart.
+//
+// This file shows how to use the class
+// ML_Epetra::MultiLevelPreconditioner to solve this formulation of the
+// Maxwell equations. The class takes care of building the node and edge
+// hierarchy, definining the Hiptmair smoother, and setting the coarse
+// solver. More information about MultiLevelPreconditioner can be found of the ML
+// user's guide.
 
 #include "ml_config.h"
 
@@ -664,5 +680,5 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */
 

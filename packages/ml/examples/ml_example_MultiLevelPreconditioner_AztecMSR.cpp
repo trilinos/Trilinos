@@ -30,20 +30,18 @@
 // Example of wrappers for Aztec MSR or VBR matrices to Epetra_RowMatrix.
 //
 // The code creates a distributed MSR matrix (in the same way of example
-// ml_aztec_simple.cpp and ml_aztec_simple_METIS.cpp), then creates the
+// ml_aztec_simple.cpp), then creates the
 // Epetra objects required by the class ML_Epetra::MultiLevelPreconditioner.
 //
-// This example makes use of Aztec2Petra() (contained in the aztecoo package).
+// This example uses class Epetra_MsrMatrix, which defines a wrapper.
+// Alternatively, one can make use of the Aztec2Petra() function 
+// (contained in the aztecoo package).
 // This function creates shallow copies for vectors and for VBR matrices,
 // while MSR matrices (as in this example) are deep copied. The user
 // has to delete the created objects. For more details, please refer
 // to the documentation in Trilinos/packages/aztecoo/src/Aztec2Petra.h.
 
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
 #include "ml_config.h"
-
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO)
 
 #ifdef HAVE_MPI
@@ -52,11 +50,11 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_RowMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
-#include "Aztec2Petra.h"
 #include "Teuchos_ParameterList.hpp"
+// this include defines the wrapper from Aztec/MSR to Epetra
+#include "Epetra_MsrMatrix.h"
 
 // includes required by ML
 #include "ml_MultiLevelPreconditioner.h"
@@ -103,39 +101,34 @@ int main(int argc, char *argv[])
   BuildPartition(&Partition);
 
   // create a matrix as Aztec matrix (in this case MSR format)
-  AztecMatrix = BuildMatrix( &Partition);
-
-  // create room for solution and rhs. Random numbers will be inserted
-  // later (using Epetra_Vector methods)
-  double * lhs = new double[Partition.Nlocal+Partition.Nghost];
-  double * rhs = new double[Partition.Nlocal];
+  AztecMatrix = BuildMatrix(&Partition);
 
   // =========================================== //
   // conversion from MSR/VBR to Epetra_RowMatrix //
   // =========================================== //
   
-  Epetra_Comm * Comm;                      // communicator for Epetra ( == proc_config)
-  Epetra_RowMatrix * EpetraMatrix;         // matrix ( == AztecMatrix)
-  Epetra_Vector * EpetraLHS, * EpetraRHS;  // solution and rhs
-  Epetra_BlockMap * Map;                   // row decomposition ( == update) 
-  int * global_indices = 0;                // used for VBR
+  // need to set the update list in the `update' field of
+  // AZ_MATRIX struct. Here `Partition.my_global_ids' is the update
+  // list.
+  AztecMatrix->update = Partition.my_global_ids;
   
-  Aztec2Petra(proc_config, AztecMatrix, lhs, rhs, Comm, Map,
-	      EpetraMatrix, EpetraLHS, EpetraRHS, &global_indices);
+  // at this point we can wrap the matrix as Epetra_MsrMatrix, derived
+  // from the Epetra_RowMatrix class. This means that AztecMatrix is
+  // still required to perform the matrix-vector product.
+  Epetra_MsrMatrix EpetraMatrix(proc_config,AztecMatrix);
 
-  // at this point AztecMatrix is no longer required if it is an MSR
-  // matrix (deep copied into EpetraMatrix); AztecMatrix is still reqruired
-  // for VBR matrices (only shallow copied into EpetraMatrix).
-  
-  EpetraLHS->Random();
-  EpetraRHS->Random();
+  // create solution and right-hand side (MultiVectors are fine as well)
+  Epetra_Vector* LHS = new Epetra_Vector(EpetraMatrix.OperatorDomainMap());
+  Epetra_Vector* RHS = new Epetra_Vector(EpetraMatrix.OperatorRangeMap());
+  LHS->Random();
+  RHS->Random();
 
   // ======================== //
   // build the linear problem //
   // ======================== //
 
   // build the epetra linear problem
-  Epetra_LinearProblem Problem(EpetraMatrix, EpetraLHS, EpetraRHS);
+  Epetra_LinearProblem Problem(&EpetraMatrix, LHS, RHS);
 
   // build the AztecOO linear problem (used by AztecOO)
   AztecOO solver(Problem);
@@ -159,7 +152,8 @@ int main(int argc, char *argv[])
 
   // create the preconditioner object and compute hierarchy
   // (see comments contained in file ml_example_epetra_preconditioner.cpp)
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*EpetraMatrix, MLList, true);
+  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+    new ML_Epetra::MultiLevelPreconditioner(EpetraMatrix, MLList, true);
 
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
@@ -183,8 +177,6 @@ int main(int argc, char *argv[])
   // =========== //
   
   // these are the objects of this example
-  delete [] lhs;
-  delete [] rhs;
   if (AztecMatrix != NULL) {
     AZ_free(AztecMatrix->bindx);
     AZ_free(AztecMatrix->val);
@@ -193,11 +185,8 @@ int main(int argc, char *argv[])
   }
     
   // these are the objects created by Aztec2Petra
-  delete EpetraMatrix;
-  delete EpetraLHS;
-  delete EpetraRHS;
-  delete Map;
-  if (global_indices!=0) AZ_free((void *) global_indices);  
+  delete LHS;
+  delete RHS;
   delete MLPrec;
   
 #ifdef ML_MPI

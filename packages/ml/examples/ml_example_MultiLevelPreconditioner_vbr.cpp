@@ -1,4 +1,3 @@
-
 //@HEADER
 // ************************************************************************
 // 
@@ -27,13 +26,12 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
+// Goal of this example if to show how to use ML with Epetra_VbrMatrix's.
+//
+// \author Marzio Sala, SNL 9214
+// \date Last modified on 17-Nov-04
 
-// The following header file contains macro definitions for ML. In particular, HAVE_ML_EPETRA,
-// HAVE_ML_TEUCHOS, HAVE_ML_TRIUTILS are defines in this file.
-#include "ml_config.h"
+#include "ml_include.h"
 
 // the following code cannot be compiled without these Trilinos
 // packages. Note that triutils is required in the examples only (to
@@ -47,7 +45,6 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
-#include "Epetra_SerialDenseVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_LinearProblem.h"
@@ -55,7 +52,6 @@
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
 #include "ml_MultiLevelPreconditioner.h"
-#include "ml_include.h"
 
 using namespace Teuchos;
 using namespace Trilinos_Util;
@@ -77,16 +73,18 @@ int main(int argc, char *argv[])
   // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
   // Various matrix examples are supported; please refer to the
   // Trilinos tutorial for more details.
-  // This matrix is a VBR matrix, essentially replicating the
-  // point-matrix of the example for each unknown. This example is
+  // This matrix is a simple VBR matrix, constructed by replicating
+  // a point-matrix on each unknown. This example is
   // useful to test the vector capabilities of ML, or to debug 
   // code for vector problems. The number of equations is here
   // hardwired as 5, but any positive number (including 1) can be
   // specified.
   //
-  // NOTE: ML cannot work with block matrices with variable block size.
-  // The number of equations for each block row MUST be constant (as in
-  // this example).
+  // NOTE: The epetra interface of ML cannot work with block matrices 
+  // with variable block size (that is, the number of equations for 
+  // each block row MUST be constant). ML has some variable-block
+  // capabilites, see file ml/src/Coarsen/ml_agg_VBMETIS.c.
+  // this example)
   
   int NumPDEEqns = 5;
 
@@ -98,7 +96,7 @@ int main(int argc, char *argv[])
   // length of the x- and y-side of the computational domain. Please
   // refer to the Trilinos tutorial for more details.
   //
-  // Note also that gallery matrices have no boundary nodes.
+  // Note also that this gallery matrix have no boundary nodes.
   
   VbrMatrixGallery Gallery("laplace_2d_9pt", Comm);
   Gallery.Set("problem_size", 10000);
@@ -147,7 +145,7 @@ int main(int argc, char *argv[])
   MLList.set("aggregation: nodes per aggregate", 9);
   
   // smoother is Gauss-Seidel. Example file 
-  // ml_example_epetra_preconditioner_2level.cpp shows how to use
+  // ml_example_MultiLevelPreconditioner_2level.cpp shows how to use
   // AZTEC's preconditioners as smoothers
   MLList.set("smoother: type","Gauss-Seidel");
 
@@ -159,7 +157,8 @@ int main(int argc, char *argv[])
   MLList.set("coarse: type","Amesos-KLU");
   
   // create the preconditioner object and compute hierarchy
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
+  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+    new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
@@ -186,11 +185,14 @@ int main(int argc, char *argv[])
     cout << "||x_exact - x||_2 = " << diff << endl;
   }
 
+  if (residual > 1e-5)
+    exit(EXIT_FAILURE);
+
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 
-  return 0 ;
+  exit(EXIT_SUCCESS);
   
 }
 
@@ -207,4 +209,4 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */

@@ -27,10 +27,23 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "ml_config.h"
+// Goal of this example is to present the basic usage of
+// the ML_Epetra::MultiLevelPreconditioner class.
+// The example builds a simple matrix and solves the corresponding
+// linear system using AztecOO and ML as a preconditioner. It finally
+// checks the accuracy of the computed solution.
+//
+// The problem should converge as follows:
+//
+// proc       iterations       condition number
+//   1             14               1.78
+//   2             15               2.39
+//   4             15               2.20
+
+// \author Marzio Sala, SNL 9214
+// \data Last modified on 17-Nov-04
+
+#include "ml_include.h"
 
 // The C++ interface of ML (more precisely,
 // ML_Epetra::MultiLevelPreconditioner), required Trilinos to be
@@ -39,6 +52,7 @@
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
 
+// epetra objects
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -46,15 +60,14 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
-#include "Epetra_SerialDenseVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
-#include "AztecOO.h"
+// required to build the example matrix
 #include "Trilinos_Util_CrsMatrixGallery.h"
-// includes required by ML
-
-#include "ml_include.h"
+// required by the linear system solver
+#include "AztecOO.h"
+// required by ML
 #include "ml_MultiLevelPreconditioner.h"
 
 using namespace Teuchos;
@@ -79,12 +92,13 @@ int main(int argc, char *argv[])
   // Trilinos tutorial for more details.
   // Most of the examples using the ML_Epetra::MultiLevelPreconditioner
   // class are based on Epetra_CrsMatrix. Example
-  // `ml_example_epetra_preconditioner_vbr.cpp' shows how to define a
+  // `ml_example_MultiLevelPreconditioner_vbr.cpp' shows how to define a
   // Epetra_VbrMatrix.
   
   // `laplace_2d' is a symmetric matrix; an example of non-symmetric
-  // matrices is `recirc_2d' (advection-diffusion in a box, with
-  // recirculating flow). The number of nodes must be a square number
+  // matrix is `recirc_2d' (advection-diffusion in a box, with
+  // recirculating flow). In both cases, the global number of nodes 
+  // must be a square number
 
   CrsMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", 10000);
@@ -103,7 +117,11 @@ int main(int argc, char *argv[])
   // create a parameter list for ML options
   ParameterList MLList;
 
-  // set defaults for classic smoothed aggregation
+  // set defaults for classic smoothed aggregation. After this class,
+  // MLList will contain the default values for the ML parameters,
+  // as required by typical smoothed aggregation for symmetric systems.
+  // Other sets of parameters are available for non-symmetric systems
+  // ("DD" and "DD-ML"), and for the Maxwell equations ("maxwell").
   ML_Epetra::SetDefaults("SA",MLList);
   
   // overwrite some parameters. Please refer to the user's guide
@@ -121,7 +139,7 @@ int main(int argc, char *argv[])
   MLList.set("aggregation: type (level 3)", "MIS");
   
   // smoother is symmetric Gauss-Seidel. Example file 
-  // ml_example_epetra_preconditioner_2level.cpp shows how to use
+  // ml_example_MultiLevelPreconditioner_2level.cpp shows how to use
   // AZTEC's preconditioners as smoothers
 
   MLList.set("smoother: type","symmetric Gauss-Seidel");
@@ -137,7 +155,8 @@ int main(int argc, char *argv[])
   // required by ML and possibly Amesos). This is an issue only if the
   // destructor is called **after** MPI_Finalize().
 
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
+  ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+    new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   // verify unused parameters on process 0 (put -1 to print on all
   // processes)
@@ -152,13 +171,6 @@ int main(int argc, char *argv[])
   solver.SetAztecOption(AZ_output, 32);
 
   // solve with 500 iterations and 1e-12 tolerance  
-  // The problem should converge as follows:
-  //
-  // proc       iterations       condition number
-  //   1             14               1.78
-  //   2             15               2.39
-  //   4             15               2.20
-
   solver.Iterate(500, 1e-12);
 
   delete MLPrec;
@@ -174,12 +186,15 @@ int main(int argc, char *argv[])
     cout << "||x_exact - x||_2 = " << diff << endl;
   }
 
+  if (residual > 1e-5)
+    exit(EXIT_FAILURE);
+
 #ifdef EPETRA_MPI
-  MPI_Finalize() ;
+  MPI_Finalize();
 #endif
 
-  return 0 ;
-  
+  exit(EXIT_SUCCESS);
+ 
 }
 
 #else
@@ -195,4 +210,4 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */

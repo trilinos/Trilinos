@@ -27,10 +27,13 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef HAVE_CONFIG_H
-#define HAVE_CONFIG_H
-#endif
-#include "ml_config.h"
+// Goal of this example is to present how to define domain decomposition
+// preconditioner using class ML_Epetra::MultiLevelPreconditioner.
+//
+// \author Marzio Sala, SNL 9214
+// \date Last modified on 17-Nov-04
+
+#include "ml_include.h"
 
 // The C++ interface of ML (more precisely,
 // ML_Epetra::MultiLevelPreconditioner), required Trilinos to be
@@ -46,17 +49,13 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
-#include "Epetra_SerialDenseVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "AztecOO.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
-
-// includes required by ML
 #include "ml_MultiLevelPreconditioner.h"
-#include "ml_include.h"
 
 using namespace Teuchos;
 using namespace Trilinos_Util;
@@ -180,11 +179,14 @@ int main(int argc, char *argv[])
     cout << "Total Time = " << Time.ElapsedTime() << endl;
   }
 
+  if (residual > 1e-5)
+    exit(EXIT_FAILURE);
+
 #ifdef EPETRA_MPI
-  MPI_Finalize() ;
+  MPI_Finalize();
 #endif
 
-  return 0 ;
+  exit(EXIT_SUCCESS);
   
 }
 
@@ -201,4 +203,4 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) */
