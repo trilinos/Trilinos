@@ -1,0 +1,8 @@
+CFLAGS="-O2 -64"
+FFLAGS="-O2 -64"
+CXXFLAGS="-O2 -64 -LANG:std  -LANG:ansi-for-init-scope=ON
+-ptused -DMPI_NO_CPPBIND" 
+LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:std"
+--with-amesos-dscpacklib=/scratch1/jmwille/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a
+--with-amesos-dscpackdir=/scratch1/jmwille/Trilinos3PL/DSCPACK1.0
+--with-trilinos3pldir=/scratch1/jmwille/Trilinos3PL
