@@ -79,7 +79,7 @@ void BlockCrsMatrix::AllocateBlocks_()
     BaseGraph_.ExtractMyRowView( i, BaseNumIndices[i], BaseIndices[i] );
 
   vector<double*> Values( NumMyRows );
-  vector<int> NumValues;
+  vector<int> NumValues( NumMyRows );
 
   for( int i = 0; i < NumMyRows; ++i )
     ExtractMyRowView( i, NumValues[i], Values[i] );
