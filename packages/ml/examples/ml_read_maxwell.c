@@ -1708,8 +1708,8 @@ nx = nx--; /* rst dirichlet */
 	    }
 	    ML_gsum_vec_int(temp1, temp2, 4, ml_edges->comm);
 	    if (temp1[1] != 0) {
-	      edge_eig_ratio[level] = ((double) temp1[0])/ ((double) temp1[1]);
-	      nodal_eig_ratio[level] = ((double) temp1[2])/ ((double) temp1[3]);
+	      edge_eig_ratio[level] = 2.*((double) temp1[0])/ ((double) temp1[1]);
+	      nodal_eig_ratio[level] = 2.*((double) temp1[2])/ ((double) temp1[3]);
 	    }
 	    if ( edge_eig_ratio[level] < 4.) edge_eig_ratio[level] = 4.;
 	    if (nodal_eig_ratio[level] < 4.) nodal_eig_ratio[level] = 4.;
