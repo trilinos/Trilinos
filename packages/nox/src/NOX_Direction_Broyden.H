@@ -54,33 +54,24 @@ namespace Direction {
 //! %Broyden direction 
 /*!  
   
-  We will calculate a limited-memory Broyden direction 
-
-  &nbsp;&nbsp; 
-  \f$
-  F(x)=0.
-  \f$
-
-  We compute the direction 
+  We will calculate a limited-memory %Broyden direction of the form
 
   &nbsp;&nbsp; 
   \f$d_k = -B_k^{-1} F_k.\f$ 
 
-  Here \f$B_k\f$ is a limited-memory Broyden approximation to
-  the Jacobian of \f$F\f$ at \f$x_k\f$, and \f$F_k =
-  F(x_k)\f$.
-
-  The \f$B_k\f$ is only stored implicitly using information
-  from the \f$m\f$ most recent changes in \f$x\f$.
+  Here \f$B_k\f$ is a limited-memory %Broyden approximation to the
+  Jacobian of \f$F\f$ at \f$x_k\f$, and \f$F_k = F(x_k)\f$. It is
+  based on apply Broyden updates to the Jacobian from some previous
+  step.
 
   \note
-  The Broyden direction can only be used with NOX::Solver::LineSearchBased.
+  The %Broyden direction can only be used with NOX::Solver::LineSearchBased.
   It cannot be used with any other solver, include NOX::Solver::TrustRegionBased.
 
   <b>References</b>
 
   <ul>
-  <li> C. T. Kelley, <em>Iterative Methods for Linear and Nonlinear Equations</em>, SIAM, 1995.
+  <li> C. T. Kelley, <em>Iterative Methods for %Linear and Nonlinear Equations</em>, SIAM, 1995.
   </ul>
   
 
@@ -91,25 +82,23 @@ namespace Direction {
   (see NOX::Direction::Manager for more information on choosing the
   search direction).
 
-  The following options are valid in the "Broyden" sublist of the
-  "Direction" sublist of the parameters that are passed to the
-  nonlinear solver:
+  In "Direction"/"Broyden":
 
-  - "Memory" - Number of saved updates, defaults to 5.
+  <ul>
 
-  - "Memory Restrart" - True is we should scrap the old updates every
-    time memory gets full. Defaults to false.
+  <li>"Restart Frequency" - How often the Jacobian should be
+      refreshed. A value of 5, for example, means that the Jacobian
+      should be updated every 5 iterations. Defaults to 10.
 
-  - "Apply Right Linear Preconditioning" - Defaults to false.
+  <li>"Memory" - The maximum number of past updates that can be saved
+      in memory.  Defaults to the value of "Restart Frequency".
 
-  - "Preconditioning" - parameter list to be passed to
-    NOX::Abstract::Group::ApplyRightPreconditioning if
-    preconditioning is used.
+  <li>"Linear Solver" - optional SUBLIST of linear solver parameters.
 
-  - "Compute Jacobian" - True if the Broyden method should go ahead
-    and compute the Jacobian matrix. This option is here only to
-    facilitate certain line searches that require the Jacobian. It is
-    not recommended. Defaults to false.
+  <li>"Linear Solver"/"Tolerance" - Desired tolerance for linear
+      solve. Defaults to 1.0e-4.  
+
+  </ul>
 
  */  
 
@@ -122,36 +111,57 @@ public:
   //----------------------------------------------------------------------
   
   /*! 
-    \brief Utility class for NOX::Direction::Broyden method
+    \brief Utility class for NOX::Direction::Broyden::BroydenMemory
     
-    Stores an s-vector and associated information for the limited-memory Broyden update 
+    Stores an \f$s\f$-vector and associated information for the limited-memory Broyden update.
+
+    Throughout the docuementation of this class, we make the following associations.
+    - #sptr stores the vector \f$s\f$
+    - #lambda stores the value of \f$\lambda\f$
+    - #snormsqr stores the values of \f$\|s\|_2^2\f$
   */
   class BroydenMemoryUnit {
     
   public:
     
-    //! Constructor
+    /*! 
+      \brief Constructor
+      
+      Sets #sptr to NULL, and #lambda and #snormsqr to zero.
+    */
     BroydenMemoryUnit();
     
-    //! Destuctor
+    /*! 
+      \brief Destuctor
+      
+      Deletes #sptr.
+    */
     ~BroydenMemoryUnit();
     
 
     /*! 
-      \brief Reset this memory unit with the current direction. 
+      \brief Reset this memory unit with a new update vector.
 
-      Also calculates \f$\|s\|_2^2\f$ and sets \f$\lambda\f$ to zero. 
+      Let the vector \f$d\f$ represent the input argument.
+      Then we set \f$s=d\f$.
+      Also recalculates \f$\|s\|_2^2\f$ and sets \f$\lambda = 0\f$.
+
+      \note
+      If #sptr is NULL, space is allocated by cloning the input vector 
+      (see NOX::Abstract::Vector::clone).
     */
     void reset(const NOX::Abstract::Vector& d);
     
      /*! 
-       \brief Step the step length
+       \brief Update the step length
 
-       Set \f$ \lambda \f$. Reset \f$ s = \lambda s \f$ and \f$ \|s\|_2^2 = \lambda^2 \|s\|_2^2 \f$.
+       Set \f$ \lambda \f$ to the input argument. 
+       If \f$ \lambda \neq 1 \f$, then
+       reset \f$ s = \lambda s \f$ and \f$ \|s\|_2^2 = \lambda^2 \|s\|_2^2 \f$.
      */
     void setStep(double step);
 
-    //! Get pointer to s
+    //! Get pointer to \f$s\f$
     const NOX::Abstract::Vector* sPtr() const;
     
     //! Get the step, \f$\lambda\f$
@@ -162,7 +172,7 @@ public:
     
   private:
     
-    //! A pointer to the s-vector
+    //! A pointer to the \f$s\f$-vector
     NOX::Abstract::Vector* sptr;
     
     /*! 
@@ -173,7 +183,7 @@ public:
     */
     double lambda;
     
-    //! The norm of s squared, i.e., \f$s^Ts\f$
+    //! The norm of \f$s\f$ squared, i.e., \f$s^Ts\f$
     double snormsqr;
     
   };
@@ -187,25 +197,62 @@ public:
     Utility class for NOX::Direction::Broyden method
     to manage the information stored in "limited" memory.
     
-    Store up to \f$m\f$ MemoryUnit objects where \f$m\f$ was passed to
-    the constructor or to reset().  Every time push() is called, a new
+    Store up to \f$m\f$ MemoryUnit objects where \f$m\f$ is passed to
+    reset().  Every time push() is called, a new
     MemoryUnit is added. If there are already \f$m\f$ MemoryUnit's, the
-    oldest is bumped off the list. The zero entry is always the oldest.
+    oldest is bumped off the list. The zero-th entry is always the oldest.
+
+    \note In order to avoid allocating and deallocating memory, we
+    reuse the BroydenMemoryUnit objects rather than destroying and
+    re-constructing them. However, this detail should be transparent
+    to users of this class.
   */
   class BroydenMemory {
     
   public:
     
-    //! Constructor. Maximum number of BroydenMemoryUnit's is \c m.
+    //! Constructor. 
+    /*! 
+      Does nothing.
+    */
     BroydenMemory();
     
-    //! Destructor
+    //! Destructor. 
+    /*! 
+      Does nothing.
+    */
     ~BroydenMemory();
     
     //! Reset the memory
-    void reset(NOX::Parameter::List& p);
+    /*! 
+      Sets #mMax to the value of \c m.
+      Sets the size of the #memory vector to be at least mMax.
+      Sets the capacity of the #index vector to be at least mMax.
+      Sets the size of the #index vector to be zero.
+    */
+    void reset(int m);
+    
+    //! Reset the memory
+    /*! 
+      Sets the size of the #index vector to be zero.
+    */
+    void reset();
     
     //! Add new information to the memory
+    /*!  
+      We need to calculate where the new udpate should be stored in
+      #memory and update the information in #index.
+
+      Let k denote the index of where the new update should be stored.
+      If there are current m items stored in memory and m < mMax, then
+      we set k = m.
+      Otherwise, we set k equal to the location of the oldest
+      update. The oldest update is deleted to make room for the new
+      update.
+      In both cases, #index must be updated appropriately so that the
+      first (zero) entry points to the oldest update and the last
+      entry points to the newest update.
+     */
     void push(const NOX::Abstract::Vector& d);
     
     //! Returns true if the memory is empty
@@ -214,31 +261,37 @@ public:
     //! Number of items in memory
     int size() const;
     
+    //! Return the ith MemoryUnit (unchecked access) 
     /*! 
-      \brief Return the ith MemoryUnit (unchecked access) 
-      
       The zero entry is the oldest memory.
-      
       The m-1 entry is the newest entry (where m denotes the memory size).
     */
     BroydenMemoryUnit& operator[](int i);
     
   private:
     
-    //! True is we should scrap the old updates everytime the memory gets full.
-    bool doRestart;
+    //! Maximum number of updates that can be stored
+    int mMax;
 
+    //! Index Into memory vector
     /*!
-      \brief Index Into memory vector
-
-      - <tt>index.size()</tt> is equal to the number of updates stored.
-      - <tt>index[0]</tt> is the index to the oldest update
-      - <tt>index.back() = index[index.size()-1]</tt> is the index to the newest update
-
+      Keeps track of the appropriate index's into the memory vector.
+      <ul>
+      <li><tt>index.size()</tt> is equal to the number of updates stored.
+      <li><tt>index[0]</tt> is the index to the oldest update
+      <li><tt>index.back() = index[index.size()-1]</tt> is the index to the newest update
+      </ul>
      */
     vector<int> index;
     
     //! Memory
+    /*! 
+      The size of this vector is greater than or equal to #mMax. We
+      never decrease the size of memory on a reset() call because we
+      want to reserve the potential to reuse memory that has already
+      been allocated. 
+    */
+    
     vector<BroydenMemoryUnit> memory;
   };
   
@@ -257,7 +310,7 @@ public:
   // derived
   virtual bool reset(NOX::Parameter::List& params);
 
-  // derived
+  //! Not supported for this direction - only works for line search based solver
   virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
 		       const NOX::Solver::Generic& solver);
 
@@ -268,32 +321,64 @@ public:
 private:
 
   //! Print an error message and throw an error
+  /*!  
+    If error printing is enabled for this process (see NOX::Utils),
+    prints the following where \<functionName\> and \<errorMsg\> are
+    replaced by the strings that are passed in.
+
+\verbatim
+NOX::Direction::Broyden::<functionName> - <errorMsg>
+\endverbatim
+
+    Then throws the string "NOX Error".
+  */
   void throwError(const string& functionName, const string& errorMsg);
+
+  //! Determine if it's time to restart
+  /*!
+    A restart should be performed if any of the following conditions hold:
+    <ul>
+    <li> It's the very first iteration
+    <li> The current Jacobian has been used #cntMax times
+    <li> \f$ \|F_{old}\| < \|F_{new}\| \f$
+    </ul>
+  */
+  bool doRestart(NOX::Abstract::Group& soln, 
+		       const NOX::Solver::LineSearchBased& solver);
 
 private:
 
   //! Printing Utils
   const NOX::Utils& utils;
 
-  //! "Direction" sublist with parameters for the direction vector
+  //! "Linear Solver" sublist from "Direction"/"Broyden"
   /*! 
     \note This is pointer rather than a reference to allow for the
-    reset function. It should not be deleted.
+    reset function. It should not be deleted in the destructor.
    */
-  NOX::Parameter::List* paramsPtr;
+  NOX::Parameter::List* lsParamsPtr;
 
-  //! Storage of \f$(s,y)\f$ pairs and related attributes
+  //! Group to hold the "old" Jacobian
+  NOX::Abstract::Group* oldJacobianGrpPtr;
+
+  /*! 
+    \brief Counter of how many times the Jacobian associated with
+    #OldJacobianGrpPtr has been used since its last update 
+  */
+  int cnt;
+
+  /*! 
+    \brief Maximum number of times the Jacboian should be used between updates. 
+    \note Should only be changed by reset() 
+  */ 
+ int cntMax;
+
+  //! Maximum memory size
+  /*! \note Should only be changed by reset() */
+  int memorySizeMax;
+
+  //! Storage of update vectors and related attributes
   BroydenMemory memory;
-
-  //! True if we should compute the Jacobian (even though the Broyden update doesn't use it)
-  bool doComputeJacobian;
-
-  //! True if right preconditioning should be used
-  bool doRightPreconditioning;
-
-  //! "Parameters" sublist with parameters for preconditioning
-  NOX::Parameter::List* precParamsPtr;
-  
 
 };
 } // namespace Direction

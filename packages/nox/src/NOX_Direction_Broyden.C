@@ -101,23 +101,26 @@ NOX::Direction::Broyden::BroydenMemory::BroydenMemory()
 {
 }
 
-void NOX::Direction::Broyden::BroydenMemory::reset(NOX::Parameter::List& p)
+NOX::Direction::Broyden::BroydenMemory::~BroydenMemory()
 {
-  doRestart = p.getParameter("Memory Restart", false);
+}
 
-  int m = p.getParameter("Memory", 5);
+void NOX::Direction::Broyden::BroydenMemory::reset(int m)
+{
+  mMax = m;
 
-  if (memory.size() < m)
-    memory.resize(m);
+  if (memory.size() < mMax)
+    memory.resize(mMax);
 
-  if (index.capacity() < m)
-    index.reserve(m);
+  if (index.capacity() < mMax)
+    index.reserve(mMax);
 
   index.resize(0);
 }
 
-NOX::Direction::Broyden::BroydenMemory::~BroydenMemory()
+void NOX::Direction::Broyden::BroydenMemory::reset()
 {
+  index.resize(0);
 }
 
 void NOX::Direction::Broyden::BroydenMemory::push(const NOX::Abstract::Vector& d)
@@ -127,25 +130,16 @@ void NOX::Direction::Broyden::BroydenMemory::push(const NOX::Abstract::Vector& d
   
   // Adjust the index vector appropriately so that the last entry in
   // index points to the memory location to be used by the new update.
-
-  if (m < memory.size()) // memory is not full - use memory location m
+  if (m < mMax) // memory is not full - use memory location m
   {
     index.push_back(m);
   }
-  else // memory is full
+  else // memory is full, so recycle
   {
-    if (doRestart) // scrap the old updates and use the memory location 0
-    {
-      index.resize(0);
-      index.push_back(0);
-    }
-    else // save the most recent m-1 updates and use the memory location that was freed
-    {
-      int k = index[0];		// save the index of the oldest update
-      for (int i = 0; i < m - 1; i ++)
-	index[i] = index[i+1];
-      index[m-1] = k;		// reuse the oldest update
-    }
+    int k = index[0];		// save the index of the oldest update
+    for (int i = 0; i < m - 1; i ++)
+      index[i] = index[i+1];
+    index[m-1] = k;		// reuse the oldest update
   }
 
   // Save the vector d
@@ -172,24 +166,37 @@ NOX::Direction::Broyden::BroydenMemory::operator[](int i)
 
 NOX::Direction::Broyden::Broyden(const NOX::Utils& u, Parameter::List& p) :
   utils(u),
-  paramsPtr(NULL)
+  lsParamsPtr(NULL),
+  oldJacobianGrpPtr(NULL)
 {
   reset(p);
 }
 
 NOX::Direction::Broyden::~Broyden()
 {
+  delete oldJacobianGrpPtr;
 }
 
 bool NOX::Direction::Broyden::reset(Parameter::List& params)
 {
-  paramsPtr = &params;
-  NOX::Parameter::List& p = params.sublist("Broyden");
-  doComputeJacobian = p.getParameter("Compute Jacobian", false);
-  doRightPreconditioning = p.getParameter("Apply Right Linear Preconditioning", false);
-  if (doRightPreconditioning)
-    precParamsPtr = &(p.sublist("Preconditioning"));    
-  memory.reset(p);
+  NOX::Parameter::List&  p = params.sublist("Broyden");
+
+  // Save a pointer to the Linear Solver sublist
+  lsParamsPtr = &p.sublist("Linear Solver"); 
+
+  // Set the default linear solver tolerance
+  if (!lsParamsPtr->isParameter("Tolerance"))
+    lsParamsPtr->getParameter("Tolerance", 1.0e-4);
+
+  // Get the restart frequency
+  cntMax = p.getParameter("Restart Frequency", 10);
+
+  // Get the memory size
+  memorySizeMax = p.getParameter("Memory", cntMax);
+  
+  // Reset the memory
+  memory.reset(memorySizeMax);
+
   return true;
 }
 
@@ -205,40 +212,54 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
 				      NOX::Abstract::Group& soln, 
 				      const NOX::Solver::LineSearchBased& solver)
 {
+  // Return value for group operations (temp variable)
   NOX::Abstract::Group::ReturnType status;
   
-  // Scale the s-vector from the last iteration
+  // Compute F at current solution
+  status = soln.computeF();
+  if (status != NOX::Abstract::Group::Ok) 
+    throwError("compute", "Unable to compute F");
+
+  // Check for restart
+  if (doRestart(soln, solver))
+  {
+    // Reset memory
+    memory.reset();
+
+    // Update group
+    if (oldJacobianGrpPtr == NULL)
+      oldJacobianGrpPtr = soln.clone(NOX::DeepCopy);
+    else
+      oldJacobianGrpPtr->setX(soln.getX());
+
+    // Calcuate new Jacobian
+    cout << "RECALCULATING JACOBIAN!" << endl;
+ 
+    status = oldJacobianGrpPtr->computeJacobian();
+    if (status != NOX::Abstract::Group::Ok) 
+      throwError("compute", "Unable to compute Jacobian");
+
+    // Reset counter
+    cnt = 0;
+  }
+
+  // In necesary, scale the s-vector from the last iteration
   if (!memory.empty()) 
   {
     double step = solver.getStepSize();
     memory[memory.size() - 1].setStep(step);
   }
 
-  // Compute F at current solution
-  status = soln.computeF();
-  if (status != NOX::Abstract::Group::Ok) 
-    throwError("compute", "Unable to compute F");
-
-  // Optionally calculate the Jacobian
-  if (doComputeJacobian)
-  {
-    status = soln.computeJacobian();
-    if (status != NOX::Abstract::Group::Ok) 
-      throwError("compute", "Unable to compute Jacobian");
-  }
-
   // --- Calculate the Broyden direction ---
-  
-  if (doRightPreconditioning)	// d = - M * F
-  {
-    status = soln.applyRightPreconditioning(false, *precParamsPtr, soln.getF(), dir);
-    if (status != NOX::Abstract::Group::Ok) 
-      throwError("compute", "Unable to apply right preconditioning");
-    dir.scale(-1.0);
-   }
-  else				// d = -F
-    dir.update(-1.0, soln.getF(), 0.0);
 
+  // dir = - J_old^{-1} * F
+  cnt ++;
+  status = oldJacobianGrpPtr->applyJacobianInverse(*lsParamsPtr, soln.getF(), dir);
+  if (status != NOX::Abstract::Group::Ok) 
+    throwError("compute", "Unable to apply right preconditioning");
+  dir.scale(-1.0);
+
+  // Apply the Broyden modifications to the old Jacobian (implicitly)
   if (!memory.empty()) 
   {
     // Number of elements in the memory
@@ -267,8 +288,6 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
       b = step - 1;
       c = sPtr->dot(dir) / memory[i].sNormSqr();
 
-      //cout << "a=" << a << " b=" << b << " c=" << c << endl;
-
       dir.update(a * c, *sPtrNext, b * c, *sPtr, 1.0);
     }
 
@@ -289,12 +308,33 @@ bool NOX::Direction::Broyden::compute(NOX::Abstract::Vector& dir,
   return true;
 }
 
+bool NOX::Direction::Broyden::doRestart(NOX::Abstract::Group& soln, 
+					const NOX::Solver::LineSearchBased& solver)
+{
+  // Test 1 - First iteration!
+  if (solver.getNumIterations() == 0)
+    return true;
+
+  // Test 2 - Frequency
+  if (cnt >= cntMax)
+    return true;
+
+  // Test 3 - Check for decrease in the norm of F in the last two iterations
+  if (soln.getNormF() >= solver.getPreviousSolutionGroup().getNormF())
+    return true;
+
+  return false;
+}
+
+
 void NOX::Direction::Broyden::throwError(const string& functionName, const string& errorMsg)
 {
     if (utils.isPrintProcessAndType(Utils::Error))
       cerr << "NOX::Direction::Broyden::" << functionName << " - " << errorMsg << endl;
     throw "NOX Error";
 }
+
+
 
 
 #endif
