@@ -377,9 +377,9 @@ static int ML_BuildReorderedDecomposition( int starting_decomposition[],
 
   /* count how many nodes belong to each aggregate (locally)                */
 
-  count = (int *) malloc( sizeof(int) * Naggregates );
-  offset = (int *) malloc( sizeof(int) * Naggregates );
-  offset2 = (int *) malloc( sizeof(int) * Naggregates );
+  count = (int *) ML_allocate( sizeof(int) * Naggregates );
+  offset = (int *) ML_allocate( sizeof(int) * Naggregates );
+  offset2 = (int *) ML_allocate( sizeof(int) * Naggregates );
   
   for( i=0 ; i<Naggregates ; i++ ) {
     count[i] = 0;
@@ -413,9 +413,9 @@ static int ML_BuildReorderedDecomposition( int starting_decomposition[],
 
   /* ------------------- that's all folks --------------------------------- */
 
-  (void)free( (void *)count );
-  (void)free( (void *)offset );
-  (void)free( (void *)offset2 );
+  ML_free( (void *)count );
+  ML_free( (void *)offset );
+  ML_free( (void *)offset2 );
 
   if( PARMETIS_DEBUG_LEVEL == 3 ) {
     printf("*ML*DBG* Exiting `ML_BuildReorderedDecomposition'\n");
@@ -547,13 +547,13 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 
   ML_build_global_numbering(Amatrix, comm, &global_numbering);
 
-  offsets = (int     *) malloc( sizeof(int) * (N_procs+1) );
-  vtxdist = (idxtype *) malloc( sizeof(idxtype) * (N_procs+1) );
+  offsets = (int     *) ML_allocate( sizeof(int) * (N_procs+1) );
+  vtxdist = (idxtype *) ML_allocate( sizeof(idxtype) * (N_procs+1) );
   
   ML_DecomposeGraph_BuildOffsets( Nrows, offsets, N_procs,
 				  Amatrix->comm->USR_comm );
 
-  proc_with_parmetis = (int *) malloc( sizeof(int) * N_procs );
+  proc_with_parmetis = (int *) ML_allocate( sizeof(int) * N_procs );
   
   N_procs_with_parmetis = 0;
   vtxdist[0] = 0;
@@ -575,8 +575,8 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
     /* construct the CSR graph information of the LOCAL matrix
        using the get_row function */
     
-    xadj    = (idxtype *) malloc ((Nrows+1)*sizeof(idxtype));
-    adjncy  = (idxtype *) malloc ((N_nonzeros+1)*sizeof(idxtype));
+    xadj    = (idxtype *) ML_allocate ((Nrows+1)*sizeof(idxtype));
+    adjncy  = (idxtype *) ML_allocate ((N_nonzeros+1)*sizeof(idxtype));
     
     if(  xadj==NULL || adjncy==NULL ) {
       fprintf( stderr,
@@ -631,8 +631,8 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   /* to a subset of processors, but that was not the last level).           */
   /* ********************************************************************** */
   
-  part = (idxtype *) malloc( sizeof(idxtype) * (Nrows+1));
-  tpwgts = (float *) malloc( sizeof(float) * N_parts );
+  part = (idxtype *) ML_allocate( sizeof(idxtype) * (Nrows+1));
+  tpwgts = (float *) ML_allocate( sizeof(float) * N_parts );
   
   if( N_parts == 1 ) {
 
@@ -646,8 +646,8 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
       
     /* set parameters for ParMETIS */
       
-    wgtflag = (idxtype *) malloc (4*sizeof(idxtype));
-    options = (int *)     malloc (4*sizeof(int));
+    wgtflag = (idxtype *) ML_allocate (4*sizeof(idxtype));
+    options = (int *)     ML_allocate (4*sizeof(int));
       
     wgtflag[0] = 0;    /* no weights */
     numflag    = 0;    /* C style */
@@ -740,8 +740,8 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 	/* Also, if the part vector contains some junk, recall ParMETIS     */
 	/* **************************************************************** */
 
-	nodes_per_aggre  = (int *) malloc( sizeof(int) * N_parts );
-	nodes_per_aggre2 = (int *) malloc( sizeof(int) * N_parts );
+	nodes_per_aggre  = (int *) ML_allocate( sizeof(int) * N_parts );
+	nodes_per_aggre2 = (int *) ML_allocate( sizeof(int) * N_parts );
 	for( i=0 ; i<N_parts ; i++ ) nodes_per_aggre[i] = 0;
 	for( i=0 ; i<Nrows ; i++ ) {
 	  j = part[i];
@@ -795,11 +795,11 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 	}
 
 	if( nodes_per_aggre != NULL ) {
-	  (void)free( (void *)nodes_per_aggre  );
+	  (void)ML_free( (void *)nodes_per_aggre  );
 	  nodes_per_aggre = NULL;
 	}
 	if( nodes_per_aggre2 != NULL ) {
-	  (void)free( (void *)nodes_per_aggre2 );
+	  (void)ML_free( (void *)nodes_per_aggre2 );
 	  nodes_per_aggre2 = NULL;
 	}
 	
@@ -821,15 +821,15 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   if( rowi_col != NULL ) ML_free(rowi_col); rowi_col = NULL; 
   if( rowi_val != NULL ) ML_free(rowi_val); rowi_val = NULL;
   allocated = 0; 
-  if( part               != NULL ) (void)free( (void*)part );
-  if( proc_with_parmetis != NULL ) (void)free( (void *)proc_with_parmetis );
-  if( offsets            != NULL ) (void)free( (void *)offsets );
-  if( vtxdist            != NULL ) (void)free( (void *)vtxdist );
-  if( tpwgts             != NULL ) (void)free( (void *)tpwgts );
-  if( wgtflag            != NULL ) (void)free( (void *)wgtflag );
-  if( options            != NULL ) (void)free( (void *)options );
-  if( xadj               != NULL ) (void)free( (void *)xadj );
-  if( adjncy             != NULL ) (void)free( (void *)adjncy );
+  if( part               != NULL ) ML_free( (void*)part );
+  if( proc_with_parmetis != NULL ) ML_free( (void *)proc_with_parmetis );
+  if( offsets            != NULL ) ML_free( (void *)offsets );
+  if( vtxdist            != NULL ) ML_free( (void *)vtxdist );
+  if( tpwgts             != NULL ) ML_free( (void *)tpwgts );
+  if( wgtflag            != NULL ) ML_free( (void *)wgtflag );
+  if( options            != NULL ) ML_free( (void *)options );
+  if( xadj               != NULL ) ML_free( (void *)xadj );
+  if( adjncy             != NULL ) ML_free( (void *)adjncy );
   
   t0 = GetClock() - t0;
 
@@ -1053,7 +1053,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    nbytes = (Nrows+Nghost) * sizeof(int);
 
-   if ( nbytes > 0 ) starting_decomposition = (int *)malloc(nbytes);
+   if ( nbytes > 0 ) starting_decomposition = (int *)ML_allocate(nbytes);
    else              starting_decomposition = NULL;
    
    if( starting_decomposition == NULL && nbytes > 0 ) {
@@ -1286,9 +1286,9 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /*                      and after redistribution                          */
    /* ********************************************************************** */
 
-   starting_offset  = (int *)malloc( sizeof(int) * (Nprocs+1));
-   reordered_offset = (int *)malloc( sizeof(int) * (Nprocs+1));
-   nodes_per_aggre = (int *) malloc( sizeof(int) * starting_aggr_count );
+   starting_offset  = (int *)ML_allocate( sizeof(int) * (Nprocs+1));
+   reordered_offset = (int *)ML_allocate( sizeof(int) * (Nprocs+1));
+   nodes_per_aggre = (int *) ML_allocate( sizeof(int) * starting_aggr_count );
 
    if( starting_offset == NULL || reordered_offset == NULL
        || nodes_per_aggre == NULL ) {
@@ -1344,7 +1344,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	     j );
    } 
    
-   reordered_decomposition = (int *) malloc( sizeof(int) * (Nrows+1) );
+   reordered_decomposition = (int *) ML_allocate( sizeof(int) * (Nrows+1) );
    if( reordered_decomposition == NULL ) {
      fprintf( stderr,
 	      "*ML*ERR* Not enough memory to allocate %d bytes\n"
@@ -1377,7 +1377,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
      if( nbytes == 0 ) new_nullspace_vect = NULL;
      else {
-       new_nullspace_vect = (double *) malloc( nbytes );
+       new_nullspace_vect = (double *) ML_allocate( nbytes );
        if( new_nullspace_vect == NULL ) {
 	 fprintf( stderr,
 		  "*ML*ERR* Not enough memory to allocate %d bytes\n"
@@ -1414,11 +1414,11 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #endif
 
    if( starting_decomposition != NULL ) {
-     (void)free( (void *)starting_decomposition );
+     ML_free( (void *)starting_decomposition );
      starting_decomposition = NULL;
    }
    if( reordered_decomposition != NULL ) {
-     (void)free( (void *)reordered_decomposition );
+     ML_free( (void *)reordered_decomposition );
      reordered_decomposition = NULL;
    }
    if( starting_amalg_bdry != NULL ) {
@@ -1426,11 +1426,11 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      starting_amalg_bdry = NULL;
    }
    if( starting_offset != NULL ) {
-     (void)free( (void *)starting_offset );
+     ML_free( (void *)starting_offset );
      starting_offset = NULL;
    }
    if( reordered_offset != NULL ) {
-     (void)free( (void *)reordered_offset );
+     ML_free( (void *)reordered_offset );
      reordered_offset = NULL;
    }
           
@@ -1484,7 +1484,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    }
    
    if( nodes_per_aggre != NULL ) {
-     (void)free( (void *)nodes_per_aggre );
+     ML_free( (void *)nodes_per_aggre );
      nodes_per_aggre = NULL;
    }
 
@@ -1953,7 +1953,7 @@ static int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
     debug_starting_time = GetClock();
   }
 
-  count = (int *) malloc( sizeof(int) * (Naggre) );
+  count = (int *) ML_allocate( sizeof(int) * (Naggre) );
 
   if( count == NULL ) {
     fprintf( stderr,
@@ -2015,7 +2015,7 @@ static int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
     }
   }
 
-  if( count != NULL ) (void)free( (void *)count ); count = NULL;
+  if( count != NULL ) ML_free( (void *)count ); count = NULL;
 
   /* ------------------- that's all folks --------------------------------- */
 

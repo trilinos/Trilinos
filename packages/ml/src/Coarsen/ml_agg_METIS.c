@@ -524,8 +524,8 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
 
   MaxNnzRow *= MaxNnzRow;
   
-  xadj2 = (idxtype *)malloc( sizeof(idxtype) * (Nparts+1) );
-  adjncy2 = (idxtype *)malloc( sizeof(idxtype) * MaxNnzRow * Nparts );
+  xadj2 = (idxtype *)ML_allocate( sizeof(idxtype) * (Nparts+1) );
+  adjncy2 = (idxtype *)ML_allocate( sizeof(idxtype) * MaxNnzRow * Nparts );
   
   if( xadj2 == NULL || adjncy2 == NULL ) {
     fprintf( stderr,
@@ -630,8 +630,8 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
   
   adjncy2 = (idxtype *) realloc( adjncy2, used_mem );
 
-  perm = (idxtype *) malloc( sizeof(idxtype) * Nparts );
-  iperm = (idxtype *) malloc( sizeof(idxtype) * Nparts );
+  perm = (idxtype *) ML_allocate( sizeof(idxtype) * Nparts );
+  iperm = (idxtype *) ML_allocate( sizeof(idxtype) * Nparts );
   
   if( perm == NULL || iperm == NULL ) {
     fprintf( stderr,
@@ -738,10 +738,10 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
   
   /* ------------------- that's all folks --------------------------------- */
 
-  (void)free( (void *)xadj2 ) ;
-  (void)free( (void *) adjncy2 );
-  (void)free( (void *) perm );
-  (void)free( (void *) iperm );
+  ML_free( (void *)xadj2 ) ;
+  ML_free( (void *) adjncy2 );
+  ML_free( (void *) perm );
+  ML_free( (void *) iperm );
 
   t0 = GetClock() - t0;
 
@@ -823,7 +823,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   /* dimension of the problem (NOTE: only local matrices) */
   
   Nrows = Amatrix->getrow->Nrows;
-  perm = (int *) malloc( sizeof(int) * Nrows );
+  perm = (int *) ML_allocate( sizeof(int) * Nrows );
 
   /* for some Epetra_matrices, N_nonzeros is set to -1.
      In this case, get all rows to allocate memory for adjncy.
@@ -862,8 +862,8 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   /* construct the CSR graph information of the LOCAL matrix
      using the get_row function */
 
-  wgtflag = (idxtype *) malloc (4*sizeof(idxtype));
-  options = (int *)     malloc (4*sizeof(int));
+  wgtflag = (idxtype *) ML_allocate (4*sizeof(idxtype));
+  options = (int *)     ML_allocate (4*sizeof(int));
   
   /* set parameters */
    
@@ -871,8 +871,8 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   numflag    = 0;    /* C style */
   options[0] = 0;    /* default options */
    
-  xadj    = (idxtype *) malloc ((NrowsMETIS+1)*sizeof(idxtype));
-  adjncy  = (idxtype *) malloc ((N_nonzeros)*sizeof(idxtype));
+  xadj    = (idxtype *) ML_allocate ((NrowsMETIS+1)*sizeof(idxtype));
+  adjncy  = (idxtype *) ML_allocate ((N_nonzeros)*sizeof(idxtype));
    
   if(  xadj==NULL || adjncy==NULL ) {
     fprintf( stderr,
@@ -970,8 +970,8 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   /* idxtype is by default int, but on some architectures can be
      slightly different (for instance, a short int). */
    
-  part = (idxtype *) malloc( sizeof(idxtype) * NrowsMETIS );
-  nodes_per_aggre  = (int *) malloc( sizeof(int) * N_parts );
+  part = (idxtype *) ML_allocate( sizeof(idxtype) * NrowsMETIS );
+  nodes_per_aggre  = (int *) ML_allocate( sizeof(int) * N_parts );
 
   /* ********************************************************************** */
   /* Before calling METIS, I verify that the two extreme situations are     */
@@ -1178,7 +1178,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 
   if( ML_Get_Compute_GraphRadiusFlag() == ML_YES ) {
   
-    dep = (int *) malloc(sizeof(int) * Nrows );
+    dep = (int *) ML_allocate(sizeof(int) * Nrows );
     for( i=0 ; i<NrowsMETIS ; i++ ) dep[i] = -7;
     
     for( i=0 ; i<NrowsMETIS ; i++ ) {
@@ -1196,7 +1196,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     ML_Compute_AggregateGraphRadius( NrowsMETIS, xadj, adjncy, dep,
 				     radius, &NcenterNodes );
     
-    (void)free( (void *)dep );
+    ML_free( (void *)dep );
     
   }
 
@@ -1206,13 +1206,13 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   rowi_col = NULL; rowi_val = NULL;
   allocated = 0; 
 
-  if( options != NULL ) (void)free( (void *)options );
-  if( wgtflag != NULL ) (void)free( (void *)wgtflag );
-  if( adjncy != NULL  ) (void)free( (void *)adjncy  );
-  if( xadj != NULL    ) (void)free( (void *)xadj    );
-  if( part != NULL    ) (void)free( (void *)part    );
-  if( perm != NULL    ) (void)free( (void *)perm    );
-  if( nodes_per_aggre != NULL ) (void)free( (void *)nodes_per_aggre );
+  if( options != NULL ) ML_free( (void *)options );
+  if( wgtflag != NULL ) ML_free( (void *)wgtflag );
+  if( adjncy != NULL  ) ML_free( (void *)adjncy  );
+  if( xadj != NULL    ) ML_free( (void *)xadj    );
+  if( part != NULL    ) ML_free( (void *)part    );
+  if( perm != NULL    ) ML_free( (void *)perm    );
+  if( nodes_per_aggre != NULL ) ML_free( (void *)nodes_per_aggre );
   
   t0 = GetClock() - t0;
 
@@ -2317,7 +2317,7 @@ static int ML_Aggregates_CheckAggregates( int Naggregates, int N_rows,
 {
 
   int i, j, divided_aggre;
-  int* check = (int *)malloc( sizeof(int) * Naggregates );
+  int* check = (int *)ML_allocate( sizeof(int) * Naggregates );
   
   /* ------------------- execution begins --------------------------------- */
 
