@@ -22,3 +22,9 @@ mkdir ../example/BlockKrylovSchur
 cp ./example/BlockKrylovSchur/*.cpp ../example/BlockKrylovSchur/.
 cp ./example/BlockKrylovSchur/Makefile* ../example/BlockKrylovSchur/.
 
+mkdir ../test
+cp ./test/Makefile* ../test/.
+mkdir ../test/ModalSolverUtils
+cp ./test/ModalSolverUtils/*.cpp ../test/ModalSolverUtils/.
+cp ./test/ModalSolverUtils/Makefile* ../test/ModalSolverUtils/.
+

@@ -21,3 +21,9 @@ rm -rf ../example/ModeLaplace
 rm ../example/BlockKrylovSchur/Makefile*
 rm ../example/BlockKrylovSchur/*.cpp
 rm -rf ../example/BlockKrylovSchur
+
+rm ../test/Makefile*
+rm ../test/ModalSolverUtils/Makefile*
+rm ../test/ModalSolverUtils/*.cpp
+rm -rf ../test/ModalSolverUtils
+rm -rf ../test

@@ -20,5 +20,9 @@ cp ../example/ModeLaplace/*.h ./example/ModeLaplace/.
 cp ../example/BlockKrylovSchur/Makefile* ./example/BlockKrylovSchur/.
 cp ../example/BlockKrylovSchur/*.cpp ./example/BlockKrylovSchur/.
 
+cp ../test/Makefile* ./test/.
+cp ../test/ModalSolverUtils/Makefile* ./test/ModalSolverUtils/.
+cp ../test/ModalSolverUtils/*.cpp ./test/ModalSolverUtils/.
+
 # Remove files from main so that they are not commited
 ./remove_from_main.x

@@ -23,6 +23,9 @@
 /* Define if want to build with ifpack enabled */
 #undef HAVE_ANASAZI_IFPACK
 
+/* Define if want to build anasazi-tests */
+#undef HAVE_ANASAZI_TESTS
+
 /* Define if want to build with triutils enabled */
 #undef HAVE_ANASAZI_TRIUTILS
 
@@ -118,6 +121,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
+
+/* Define if want to build test */
+#undef HAVE_TESTS
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

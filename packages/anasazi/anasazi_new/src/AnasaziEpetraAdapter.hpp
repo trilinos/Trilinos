@@ -87,7 +87,7 @@ namespace Anasazi {
     void SetBlock ( const MultiVec<double>& A, int index[], int numvecs );
     //
     int GetNumberVecs () const { return NumVectors(); }
-    int GetVecLength () const { return MyLength(); }
+    int GetVecLength () const { return GlobalLength(); }
     //
     // *this <- alpha * A * B + beta * (*this)
     //
@@ -495,7 +495,7 @@ namespace Anasazi {
     { return Teuchos::rcp( new Epetra_MultiVector(View, mv, index, numvecs) ); }
     ///
     static int GetVecLength( const Epetra_MultiVector& mv )
-    { return mv.MyLength(); }
+    { return mv.GlobalLength(); }
     ///
     static int GetNumberVecs( const Epetra_MultiVector& mv )
     { return mv.NumVectors(); }

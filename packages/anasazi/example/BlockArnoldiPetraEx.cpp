@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 	// Diffusion coefficient, can be set by user.
 	// When rho*h/2 <= 1, the discrete convection-diffusion operator has real eigenvalues.
 	// When rho*h/2 > 1, the operator has complex eigenvalues.
-	double rho = 0.0;  
+	double rho = 5.0;  
 
 	// Compute coefficients for discrete convection-diffution operator
 	const double one = 1.0;
@@ -225,11 +225,11 @@ int main(int argc, char *argv[]) {
 	int block = 1;
 	int length = 20;
 	int nev = 4;
-	double tol = 1.0e-8;
+	double tol = 1e-8;
 	string which="SM";
 	int restarts = 300;
-	int step = 1;
-	//int step = restarts*length*block;
+	//int step = 1;
+	int step = restarts*length*block;
 
 	// Create a PetraAnasaziVec. Note that the decision to make a view or
 	// or copy is determined by the petra constructor called by Anasazi::PetraVec.
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
 	
 	// Inform the solver that the problem is symmetric
 	MyBlockArnoldi.setSymmetric(rho==0.0); 
-	MyBlockArnoldi.setDebugLevel(0);
+	//MyBlockArnoldi.setDebugLevel(3);
 
 #ifdef UNIX
 	Epetra_Time & timer = *new Epetra_Time(Comm);
