@@ -52,6 +52,7 @@ typedef struct ML_Aggregate_Struct
    int    *vblock_info;                /* for variable blocks (finest)  */
    int    keep_P_tentative;            /* keeping tentative prolongator */
    void   *P_tentative;                /* so it can be reused later.    */
+   int    smooth_existing_P_tentative; /* already have P tent, don't create it*/
 } ML_Aggregate;
 
 /* ************************************************************************* */
@@ -166,6 +167,13 @@ int ML_Aggregate_Set_CoarsenScheme_UncoupledCoupled( ML_Aggregate *ag  );
 
 int ML_Aggregate_Set_Threshold( ML_Aggregate *, double epsilon );
 int ML_Aggregate_Reset_Threshold( ML_Aggregate * );
+
+/* ------------------------------------------------------------------------- */
+/* whether to smooth existing tentative prolongator                          */
+/* ------------------------------------------------------------------------- */
+
+extern int ML_Aggregate_Set_Flag_SmoothExistingTentativeP( ML_Aggregate *, int);
+extern int ML_Aggregate_Get_Flag_SmoothExistingTentativeP( ML_Aggregate *);
 
 /* ------------------------------------------------------------------------- */
 /* damping factor for prolongator smoother                                   */
