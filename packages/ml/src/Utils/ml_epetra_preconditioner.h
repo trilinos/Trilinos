@@ -193,8 +193,9 @@ public:
   /*! Computes the multilevel hierarchy. This function retrives the user's defines parameters (as
     specified in the input ParameterList), or takes default values otherwise, and creates the ML
     objects for aggregation and hierarchy. Allocated data can be freed used DestroyPreconditioner(). */
-  int ComputePreconditioner();
+  int ComputePreconditioner(const bool CheckFiltering = false);
 
+  // FIXME: delete me??
   int ComputeFilteringPreconditioner();
 
   //! Queries whether multilevel hierarchy has been computed or not.
@@ -444,6 +445,7 @@ private:
 
   int SetFiltering();
 
+  bool CheckPreconditioner();
   //@}
 
   //@{ \name Internal data
@@ -555,6 +557,11 @@ private:
   ML * flt_ml_;
   ML_Aggregate * flt_agg_;
   
+  // CheckPreconditioner related stuff
+  Epetra_MultiVector       * SchurDecomposition_;
+  Epetra_SerialDenseMatrix SchurMatrix_;
+  Epetra_SerialDenseSolver SchurSolver_;
+
 }; // class MultiLevelPreconditioner
  
 } // namespace ML_Epetra

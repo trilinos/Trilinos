@@ -222,10 +222,54 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
       
     assert( size<2*NumEigenvalues+1 );
 
+    // ==================================================== //
+    // may need to store the Schur decomposition            //
+    // This means that we have to compute the Schur matrix, //
+    // as Anasazi keep these information as private         //
+    // ==================================================== //
+
+    if( List_.get("filtering: check preconditioner", false) == true ) {
+      
+      assert( SchurDecomposition_ == 0 ); // must be freed at this point
+      
+      // FIXME: use View of map
+      SchurDecomposition_ = new Epetra_MultiVector(Map(),size);
+      assert( SchurDecomposition_ != 0 );
+	
+      for( int i=0 ; i<NumRealEigenvectors ; ++i ) {
+	for( int j=0 ; j<NumMyRows() ; ++j ) 
+	  (*SchurDecomposition_)[i][j] = RealEigenvectors[j+i*NumMyRows()];
+      }
+	
+      for( int i=0 ; i<NumImagEigenvectors ; ++i ) {
+	for( int j=0 ; j<NumMyRows() ; ++j ) 
+	  (*SchurDecomposition_)[NumRealEigenvectors+i][j] = ImagEigenvectors[j+i*NumMyRows()];
+      }
+	
+      SchurMatrix_.Reshape(size,size);
+	
+      Epetra_MultiVector tmp(Map(),size);
+      tmp.PutScalar(0.0);
+	
+      RowMatrix_->Multiply(false,*SchurDecomposition_,tmp);
+
+      for( int i=0 ; i<size ; ++i ) {
+	for( int j=0 ; j<size ; ++j ) {
+	  double value;
+	  (*SchurDecomposition_)(i)->Dot(*((tmp)(j)), &value);
+	  SchurMatrix_(i,j) = value;
+	}
+      }
+    }
+
+    // ================================== //
+    // go on building the filtering stuff //
+    // ================================== //
+
     string PrecType = List_.get(Pre+"filtering: type", "enhanced");
       
     if( PrecType == "projection" ) {
-	
+
       // 4.- build the restriction operator as a collection of vectors
       flt_R_ = new Epetra_MultiVector(Map(),size);
       assert( flt_R_ != 0 );
@@ -264,7 +308,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 	
       // compute the inverse, overwrite the old values of A
       flt_solver_.Invert();
-	
+
     } else if( PrecType == "ml-cycle" ) {
 #ifdef MARZIO_GGB
       if( Comm().NumProc() != 1 ) {
@@ -430,4 +474,65 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
   
 }
 
+// ============================================================================
+
+bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditioner() 
+{
+
+  assert( SchurDecomposition_ ); // must have something
+
+  int size = SchurDecomposition_->NumVectors();
+  assert( size ); // at least one vector
+  assert( size == SchurMatrix_.N() ); // SchurMatrix must be compatible
+  assert( size == SchurMatrix_.M() ); // and squared
+
+  // need an auxiliary vector
+  // FIXME: use View
+  Epetra_MultiVector tmp(Map(),size);
+  tmp.PutScalar(0.0);
+
+  RowMatrix_->Multiply(false,*SchurDecomposition_,tmp);
+
+  Epetra_SerialDenseMatrix NewSchurMatrix;
+  NewSchurMatrix.Reshape(size,size);
+  
+  for( int i=0 ; i<size ; ++i ) {
+    for( int j=0 ; j<size ; ++j ) {
+      double value;
+      (*SchurDecomposition_)(i)->Dot(*((tmp)(j)), &value);
+      NewSchurMatrix(i,j) = value;
+    }
+  }
+
+  // compute SchurMatrix_ - NewSchurMatrix and analyze the difference
+  // actually I don't need NewSchurMatrix, as E can be formed on the fly
+  // FIXME: Change it in the future?
+
+  Epetra_SerialDenseMatrix E;
+  E.Reshape(size,size);
+  
+  for( int i=0 ; i<size ; ++i ) {
+    for( int j=0 ; j<size ; ++j ) {
+      E(i,j) = SchurMatrix_(i,j) - NewSchurMatrix(i,j);
+    }
+  }
+
+  // something has to be done now with E (and maybe SchurDecomposition_
+  // and NewSchurMatrix ???). At this point, I simply check 
+  // two stupid things
+
+  double NormOne = E.NormOne();
+  double NormInf = E.NormInf();
+
+  if( verbose_ ) {
+    cout << PrintMsg_ << "NormOne = " << NormOne << endl;
+    cout << PrintMsg_ << "NormInf = " << NormInf << endl;
+  }
+    
+  if( NormOne*NormInf > 1.0 ) return false;
+  else                        return true;
+
+}
+
+  
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/

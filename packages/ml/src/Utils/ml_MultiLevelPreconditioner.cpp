@@ -6,10 +6,10 @@
 /************************************************************************/
 /*          Utilities for Trilinos/ML users                             */
 /*----------------------------------------------------------------------*/
-/* Authors : Mike Heroux (SNL)                                          */
+/* Authors:  Marzio Sala (SNL)                                          */
+/*           Mike Heroux (SNL)                                          */
 /*           Jonathan Hu  (SNL)                                         */
 /*           Ray Tuminaro (SNL)                                         */
-/*           Marzio Sala (SNL)                                          */
 /************************************************************************/
 
 
@@ -427,14 +427,17 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
   if( flt_ml_ ) { ML_Destroy(&flt_ml_); flt_ml_ = 0; }
   if( flt_agg_ ) { ML_Aggregate_Destroy(&flt_agg_); flt_agg_ = 0; }
   
+  // CheckPreconditioner stuff
+  if( SchurDecomposition_ ) { delete SchurDecomposition_; SchurDecomposition_ = 0; }
+
   IsComputePreconditionerOK_ = false;
 
 #ifdef ML_MEM_CHECK
   // print out allocated memory. It should be zero.
   if( Comm().MyPID() == 0 ) 
     cout << PrintMsg_ << "Calling ML_Print_it()..." << endl
-         << PrintMsg_ << "no memory should be allocated by the ML preconditioner" << endl
-	 << PrintMsg_ << "at this point." << endl;
+         << PrintMsg_ << "no memory should be allocated by the ML preconditioner" 
+	 << " at this point." << endl;
   ML_print_it();
 #endif
 
@@ -822,6 +825,8 @@ void MultiLevelPreconditioner::Initialize()
   flt_ml_ = 0;
   flt_agg_ = 0;
 
+  // CheckPreconditioner stuff
+  SchurDecomposition_ = 0;
 }
 
 
@@ -880,15 +885,42 @@ int MultiLevelPreconditioner::ComputeFilteringPreconditioner()
 
 // ================================================ ====== ==== ==== == =
 
-int MultiLevelPreconditioner::ComputePreconditioner()
+int MultiLevelPreconditioner::ComputePreconditioner(const bool Check)
 {
 
   BreakForDebugger();
 
-  // now start ComputePreconditioner business
+  // ============================================================== //
+  // check whether the old filtering is still ok for the new matrix //
+  // ============================================================== //
+
+  if( Check == true && SchurDecomposition_ == 0 ) {
+
+    // do nothing in this case
+
+  } else if( Check == true && SchurDecomposition_ ) {
+ 
+    // check whether the old preconditioner is still ok for the new matrix
+    // CheckPreconditioner() will return false is the computed preconditioner
+    // is still quite ok for the new matrix. This requires "enable: filtering" to
+    // be set to true in the previous call to ComputePreconditioner().
+    // If CheckPreconditioner() is true, we have already finished out job.
+    
+    if( CheckPreconditioner() == false ) Destroy_ML_Preconditioner();
+    else                                 return 0;
+    
+  } else if( Check == false && IsComputePreconditionerOK_ == true ) {
   
+    // get rid of what done before 
+    Destroy_ML_Preconditioner();
+    
+  } // nothing else if left
+
+  // ======================== //
+  // build the preconditioner //
+  // ======================== //
+
   Epetra_Time Time(Comm());
-  
   {
     int NumCompute = OutputList_.get("number of construction phases", 0);
     OutputList_.set("number of construction phases", ++NumCompute);
@@ -896,12 +928,6 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   
   char parameter[80];
   
-  // get rid of what done before 
-  
-  if( IsComputePreconditionerOK_ == true ) {
-    Destroy_ML_Preconditioner();
-  }
-
 #ifdef HAVE_MPI
   const Epetra_MpiComm * MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm());
   AZ_set_proc_config(ProcConfig_,MpiComm->Comm());
@@ -912,7 +938,6 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   // user's defined output message
   sprintf(parameter,"%soutput prefix", Prefix_);
   PrintMsg_ = List_.get(parameter,PrintMsg_);
-
   
   sprintf(parameter,"%smax levels", Prefix_);
   NumLevels_ = List_.get(parameter,10);  
