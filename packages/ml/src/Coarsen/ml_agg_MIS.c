@@ -245,7 +245,7 @@ int agg_offset, vertex_offset;
    /*= construction of the square of matrix A */
 
    ML_2matmult(tmatrix, Amatrix, Asqrd, ML_CSR_MATRIX );
-   ML_Operator_halfClone_Destroy(tmatrix);
+   if (tmatrix != NULL) ML_Operator_halfClone_Destroy(&tmatrix);
 
    mat_comm        = Asqrd->getrow->pre_comm;
    Asqrd_Nneigh    = ML_CommInfoOP_Get_Nneighbors(mat_comm);
