@@ -48,8 +48,7 @@ int Zoltan_HG_Set_Grouping_Fn(HGPartParams *hgp)
   else                                         hgp->grouping = NULL;
 
   if (hgp->grouping) {
-  /*
-   * If reduction method is a grouping, set the improvement and
+  /* If reduction method is a grouping, set the improvement and
    * edge weight scaling functions accordingly.
    */
     if      (!strcasecmp(hgp->redmo_str,"aug1")) hgp->grouping_opt = grouping_aug1;
@@ -316,34 +315,31 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 /* Sort the hyperedges according to their weight and size */
   if (!(size   = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge))  ||
       !(sorted = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge))   )
-     {
-     ZOLTAN_FREE ((void **) &size) ;
-     ZOLTAN_FREE ((void **) &sorted) ;
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
+  { ZOLTAN_FREE ((void **) &size) ;
+    ZOLTAN_FREE ((void **) &sorted) ;
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
   for (i=0; i<hg->nEdge; i++)
-     size[i] = -(hg->hindex[i+1]-hg->hindex[i]);
+    size[i] = -(hg->hindex[i+1]-hg->hindex[i]);
   for (i=0; i<hg->nEdge; i++)
-     sorted[i] = i;
+    sorted[i] = i;
   quicksort_pointer_dec_float_int(sorted,hg->ewgt,size,0,hg->nEdge-1);
   ZOLTAN_FREE ((void **) &size);
 
   /* Match hyperedges along decreasing weight */
   for (i=0; i<hg->nEdge && (*limit)>0; i++)
-      for (j = hg->hindex[sorted[i]] ; j < hg->hindex[sorted[i]+1] ; j++)
-         if (pack[hg->hvertex[j]] == hg->hvertex[j])
-            {
-            first_vertex = vertex = hg->hvertex[j] ;
-            for (j++ ; j < hg->hindex[sorted[i]+1] && (*limit)>0; j++)
-               if (pack[hg->hvertex[j]] == hg->hvertex[j])
-                  {
-                  vertex = pack[vertex] = hg->hvertex[j] ;
-                  (*limit)--;
-                  }
-            pack[vertex] = first_vertex ;
-            break ;
-            }
+    for (j = hg->hindex[sorted[i]] ; j < hg->hindex[sorted[i]+1] ; j++)
+      if (pack[hg->hvertex[j]] == hg->hvertex[j])
+      { first_vertex = vertex = hg->hvertex[j] ;
+        for (j++ ; j<hg->hindex[sorted[i]+1] && (*limit)>0; j++)
+          if (pack[hg->hvertex[j]] == hg->hvertex[j])
+          { vertex = pack[vertex] = hg->hvertex[j] ;
+            (*limit)--;
+          }
+        pack[vertex] = first_vertex ;
+        break ;
+      }
   ZOLTAN_FREE ((void **) &sorted);
   return ZOLTAN_OK;
   }
