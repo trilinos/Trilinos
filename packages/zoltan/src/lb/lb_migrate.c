@@ -464,7 +464,7 @@ int *actual_exp_to_part = NULL;          /* processor may not be included.  */
   msgtag--;
   ierr = Zoltan_Comm_Resize(comm_plan, sizes, msgtag, &total_recv_size);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    sprintf(msg, "Error %s returned from Zoltan_Comm_Create.", 
+    sprintf(msg, "Error %s returned from Zoltan_Comm_Resize.", 
             (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     ZOLTAN_FREE(&sizes);
