@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -20,7 +20,7 @@ ML_Comm *global_comm = NULL; /* should not be used to avoid side effect */
 /* Create a communicator for ML                                         */
 /* -------------------------------------------------------------------- */
 
-int ML_Comm_Create( ML_Comm ** com ) 
+int ML_Comm_Create( ML_Comm ** com )
 {
    ML_Comm *com_ptr;
 
@@ -202,7 +202,7 @@ int ML_Comm_GmaxInt(ML_Comm *com_ptr, int idata)
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
    /* ----------------------------------------------------------------- */
-   
+
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
       printf("ML_Comm_GmaxInt : wrong Comm object. \n");
@@ -238,8 +238,8 @@ int ML_Comm_GmaxInt(ML_Comm *com_ptr, int idata)
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
             k = sizeof(int);
-            com_ptr->USR_irecvbytes((void*) &indata, k, &partner, 
-                                    &msgtype, com_ptr->USR_comm, 
+            com_ptr->USR_irecvbytes((void*) &indata, k, &partner,
+                                    &msgtype, com_ptr->USR_comm,
 #ifdef ML_CPP
                                     &Request );
 #else
@@ -253,7 +253,7 @@ int ML_Comm_GmaxInt(ML_Comm *com_ptr, int idata)
                                    (void *)&Request );
 #endif
             if ( indata > outdata ) outdata = indata;
-         } 
+         }
          else if (partner < nprocs)
          {
             k = sizeof(int);
@@ -283,7 +283,7 @@ int ML_Comm_GmaxInt(ML_Comm *com_ptr, int idata)
          {
             com_ptr->USR_sendbytes((void*) &outdata, k, partner, msgtype,
                                    com_ptr->USR_comm );
-         } 
+         }
          else if (partner < nprocs)
          {
             com_ptr->USR_irecvbytes((void*) &outdata, k, &partner, &msgtype,
@@ -323,7 +323,7 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
    /* ----------------------------------------------------------------- */
-   
+
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
       printf("ML_Comm_GsumInt : wrong Comm object. \n");
@@ -359,7 +359,7 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
             k = sizeof(int);
-            com_ptr->USR_irecvbytes((void*) &indata, k, &partner, &msgtype, 
+            com_ptr->USR_irecvbytes((void*) &indata, k, &partner, &msgtype,
 #ifdef ML_CPP
                                     com_ptr->USR_comm, &Request );
 #else
@@ -372,7 +372,7 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
                                     com_ptr->USR_comm, (void *)&Request );
 #endif
             outdata = outdata + indata;
-         } 
+         }
          else if (partner < nprocs)
          {
             k = sizeof(int);
@@ -402,7 +402,7 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
          {
             com_ptr->USR_sendbytes((void*) &outdata, k, partner, msgtype,
                                    com_ptr->USR_comm );
-         } 
+         }
          else if (partner < nprocs)
          {
             com_ptr->USR_irecvbytes((void*) &outdata, k, &partner, &msgtype,
@@ -440,7 +440,7 @@ double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
    /* ----------------------------------------------------------------- */
-   
+
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
       printf("ML_Comm_GsumDouble : wrong Comm object. \n");
@@ -476,7 +476,7 @@ double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
             k = sizeof(double);
-            com_ptr->USR_irecvbytes((void*) &indata, k, &partner, &msgtype, 
+            com_ptr->USR_irecvbytes((void*) &indata, k, &partner, &msgtype,
 #ifdef ML_CPP
                                     com_ptr->USR_comm, &Request );
 #else
@@ -489,7 +489,7 @@ double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
                                     com_ptr->USR_comm, (void *)&Request );
 #endif
             outdata = outdata + indata;
-         } 
+         }
          else if (partner < nprocs)
          {
             k = sizeof(double);
@@ -519,7 +519,7 @@ double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
          {
             com_ptr->USR_sendbytes((void*) &outdata, k, partner, msgtype,
                                    com_ptr->USR_comm );
-         } 
+         }
          else if (partner < nprocs)
          {
             com_ptr->USR_irecvbytes((void*) &outdata, k, &partner, &msgtype,
@@ -558,7 +558,7 @@ double ML_Comm_GmaxDouble(ML_Comm *com_ptr, double ddata)
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
    /* ----------------------------------------------------------------- */
-   
+
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
       printf("ML_Comm_GmaxDouble : wrong Comm object. \n");
@@ -594,7 +594,7 @@ double ML_Comm_GmaxDouble(ML_Comm *com_ptr, double ddata)
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
             k = sizeof(double);
-            com_ptr->USR_irecvbytes((void*) &indata, k, &partner, &msgtype, 
+            com_ptr->USR_irecvbytes((void*) &indata, k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -607,7 +607,7 @@ double ML_Comm_GmaxDouble(ML_Comm *com_ptr, double ddata)
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
             outdata = (outdata > indata) ? outdata : indata;
-         } 
+         }
          else if (partner < nprocs)
          {
             k = sizeof(double);
@@ -637,7 +637,7 @@ double ML_Comm_GmaxDouble(ML_Comm *com_ptr, double ddata)
          {
             com_ptr->USR_sendbytes((void*) &outdata, k, partner, msgtype,
                                    com_ptr->USR_comm );
-         } 
+         }
          else if (partner < nprocs)
          {
             com_ptr->USR_irecvbytes((void*) &outdata, k, &partner, &msgtype,
@@ -671,8 +671,8 @@ int ML_Comm_GsumVecInt(ML_Comm *com_ptr, int *idata, int *itmp, int leng)
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
    /* ----------------------------------------------------------------- */
-   
-   if ( com_ptr->ML_id != ML_ID_COMM ) 
+
+   if ( com_ptr->ML_id != ML_ID_COMM )
    {
       printf("ML_Comm_GsumVecInt : wrong Comm object. \n");
       exit(1);
@@ -720,7 +720,7 @@ int ML_Comm_GsumVecInt(ML_Comm *com_ptr, int *idata, int *itmp, int leng)
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
             for ( j = 0; j < leng; j++ ) idata[j] += itmp[j];
-         } 
+         }
          else if (partner < nprocs)
          {
             k = leng * sizeof(int);
@@ -750,7 +750,7 @@ int ML_Comm_GsumVecInt(ML_Comm *com_ptr, int *idata, int *itmp, int leng)
          {
             com_ptr->USR_sendbytes((void*) idata, k, partner, msgtype,
                                    com_ptr->USR_comm );
-         } 
+         }
          else if (partner < nprocs)
          {
             com_ptr->USR_irecvbytes((void*) idata, k, &partner, &msgtype,
@@ -777,7 +777,7 @@ int ML_Comm_GsumVecInt(ML_Comm *com_ptr, int *idata, int *itmp, int leng)
 /* processor number.                                                    */
 /*----------------------------------------------------------------------*/
 
-int ML_Comm_GappendInt(ML_Comm *com_ptr, int *vals, int *cur_length, 
+int ML_Comm_GappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
                     int total_length)
 {
    int     mask, partner, hbit, msgtype, msgbase=145;
@@ -787,7 +787,7 @@ int ML_Comm_GappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
    /* ----------------------------------------------------------------- */
-   
+
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
       printf("ML_Comm_GappendInt : wrong Comm object. \n");
@@ -822,26 +822,26 @@ int ML_Comm_GappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
             k = (total_length - (*cur_length)) * sizeof(int);
-            com_ptr->USR_irecvbytes((void*)&(vals[*cur_length]), k, 
-                                   &partner, &msgtype, 
+            com_ptr->USR_irecvbytes((void*)&(vals[*cur_length]), k,
+                                   &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            nbytes = com_ptr->USR_waitbytes((void*)&(vals[*cur_length]), k, 
-                                   &partner, &msgtype, 
+            nbytes = com_ptr->USR_waitbytes((void*)&(vals[*cur_length]), k,
+                                   &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
             (*cur_length) += (nbytes / sizeof(int));
-         } 
+         }
          else if (partner < nprocs)
          {
             k = (*cur_length) * sizeof(int);
-            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype, 
+            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype,
                                    com_ptr->USR_comm );
          }
       }
@@ -865,12 +865,134 @@ int ML_Comm_GappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
       {
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
-            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype, 
+            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype,
                                    com_ptr->USR_comm );
          }
          else if (partner < nprocs)
          {
-            com_ptr->USR_irecvbytes((void*) vals, k, &partner, &msgtype, 
+            com_ptr->USR_irecvbytes((void*) vals, k, &partner, &msgtype,
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
+            com_ptr->USR_waitbytes((void*) vals, k, &partner, &msgtype,
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
+         }
+      }
+   }
+   (*cur_length) = total_length;
+   return 0;
+}
+
+
+
+/************************************************************************/
+/* This is a modification from Tuminaro's AZ_gappend_int subroutine.    */
+/* The modification is done so that the data are arranged according to  */
+/* processor number.                                                    */
+/* This is the same function as ML_Comm_GappendInt, except the          */
+/* parameter vals is of type ml_big_int
+/*----------------------------------------------------------------------*/
+
+int ML_Comm_GappendBigInt(ML_Comm *com_ptr, ml_big_int *vals, int *cur_length,
+                    int total_length)
+{
+   int     mask, partner, hbit, msgtype, msgbase=145;
+   int     i, k, nbytes, mypid, nprocs;
+   USR_REQ Request;
+
+   /* ----------------------------------------------------------------- */
+   /* check validity of the communication                               */
+   /* ----------------------------------------------------------------- */
+
+   if ( com_ptr->ML_id != ML_ID_COMM )
+   {
+      printf("ML_Comm_GappendInt : wrong Comm object. \n");
+      exit(1);
+   }
+
+   /* ----------------------------------------------------------------- */
+   /* get processor information                                         */
+   /* ----------------------------------------------------------------- */
+
+   mypid  = com_ptr->ML_mypid;
+   nprocs = com_ptr->ML_nprocs;
+
+   /* ----------------------------------------------------------------- */
+   /* Find next higher power of 2.                                      */
+   /* ----------------------------------------------------------------- */
+
+   for (hbit = 0; (nprocs >> hbit) != 0; hbit++);
+   if (nprocs > (1 << hbit)) hbit++;
+
+   /* ----------------------------------------------------------------- */
+   /* do a binary collapae (in processor number ascending order)        */
+   /* ----------------------------------------------------------------- */
+
+   mask = 0;
+   for ( i = 0; i < hbit; i++ )
+   {
+      msgtype = msgbase + i;
+      partner = mypid ^ (1 << i);
+      if ((mypid & mask) == 0)
+      {
+         if (((mypid & (1 << i)) == 0) && (partner < nprocs))
+         {
+            k = (total_length - (*cur_length)) * sizeof(vals[0]);
+            com_ptr->USR_irecvbytes((void*)&(vals[*cur_length]), k,
+                                   &partner, &msgtype,
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
+            nbytes = com_ptr->USR_waitbytes((void*)&(vals[*cur_length]), k,
+                                   &partner, &msgtype,
+#ifdef ML_CPP
+                                     com_ptr->USR_comm, &Request );
+#else
+                                     com_ptr->USR_comm, (void *) &Request );
+#endif
+            (*cur_length) += (nbytes / sizeof(vals[0]));
+         }
+         else if (partner < nprocs)
+         {
+            k = (*cur_length) * sizeof(vals[0]);
+            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype,
+                                   com_ptr->USR_comm );
+         }
+      }
+      mask    = mask | (1 << i);
+   }
+
+   /* ----------------------------------------------------------------- */
+   /* Finally, broadcast this information to every processor in a tree  */
+   /* manner.                                                           */
+   /* ----------------------------------------------------------------- */
+
+   msgbase = 438;
+   mask    = 32767;
+   k       = total_length * sizeof(vals[0]);
+   for ( i = 0; i < hbit; i++ )
+   {
+      msgtype = msgbase + i;
+      partner = mypid ^ (1 << i);
+      mask    = mask << 1;
+      if ((mypid & mask) == 0)
+      {
+         if (((mypid & (1 << i)) == 0) && (partner < nprocs))
+         {
+            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype,
+                                   com_ptr->USR_comm );
+         }
+         else if (partner < nprocs)
+         {
+            com_ptr->USR_irecvbytes((void*) vals, k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -889,13 +1011,16 @@ int ML_Comm_GappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
    return 0;
 }
 
+
+
+
 /************************************************************************/
 /* This is a modification from Tuminaro's AZ_gappend_double subroutine. */
 /* The modification is done so that the data are arranged according to  */
 /* processor number.                                                    */
 /*----------------------------------------------------------------------*/
 
-int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length, 
+int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length,
                             int total_length)
 {
    int     mask, partner, hbit, msgtype, msgbase=245;
@@ -905,7 +1030,7 @@ int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length,
    /* ----------------------------------------------------------------- */
    /* check validity of the communication                               */
    /* ----------------------------------------------------------------- */
-   
+
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
       printf("ML_Comm_GappendDouble : wrong Comm object. \n");
@@ -940,15 +1065,15 @@ int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length,
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
             k = (total_length - (*cur_length)) * sizeof(double);
-            com_ptr->USR_irecvbytes((void*)&(vals[*cur_length]), k, 
-                                    &partner, &msgtype, 
+            com_ptr->USR_irecvbytes((void*)&(vals[*cur_length]), k,
+                                    &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            nbytes = com_ptr->USR_waitbytes((void*)&(vals[*cur_length]), k, 
-                                    &partner, &msgtype, 
+            nbytes = com_ptr->USR_waitbytes((void*)&(vals[*cur_length]), k,
+                                    &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -959,7 +1084,7 @@ int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length,
          else if (partner < nprocs)
          {
             k = (*cur_length) * sizeof(double);
-            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype, 
+            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype,
                                    com_ptr->USR_comm );
          }
       }
@@ -983,12 +1108,12 @@ int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length,
       {
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
-            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype, 
+            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype,
                                    com_ptr->USR_comm );
          }
          else if (partner < nprocs)
          {
-            com_ptr->USR_irecvbytes((void*) vals, k, &partner, &msgtype, 
+            com_ptr->USR_irecvbytes((void*) vals, k, &partner, &msgtype,
                                     com_ptr->USR_comm, (void *) &Request );
             com_ptr->USR_cheapwaitbytes((void*) vals, k, &partner, &msgtype, 
                                     com_ptr->USR_comm, (void *) &Request );
@@ -1117,7 +1242,7 @@ int ML_Comm_Send(void* buf, unsigned int count, int dest, int mid,
 #if defined(ML_MPI) && defined(ML_CATCH_MPI_ERRORS_IN_DEBUGGER)
 
 /*------------------------------------------------------------------------------
- 
+
  Briefly, this function associates *errhandler with the communicator comm.
 
  Sets the behavior of message-passing error trapping.  For MPI, the default

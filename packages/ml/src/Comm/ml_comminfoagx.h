@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -41,12 +41,12 @@ typedef struct ML_CommInfoAGX_Struct
    int    send_cnt;
    int    *send_proc;
    int    *send_ia;
-   int    *send_list;
+   ml_big_int    *send_list;
    int    recv_cur;
    int    recv_cnt;
    int    *recv_proc;
    int    *recv_ia;
-   int    *recv_list;
+   ml_big_int    *recv_list;
    double *recv_xyz;
 
 } ML_CommInfoAGX;
@@ -64,13 +64,13 @@ extern "C"
 
 extern int ML_CommInfoAGX_Create(ML_CommInfoAGX **);
 extern int ML_CommInfoAGX_Setup_Send(ML_CommInfoAGX *, int, int);
-extern int ML_CommInfoAGX_Load_SendList(ML_CommInfoAGX *, int, int, int*);
-extern int ML_CommInfoAGX_Get_SendList(ML_CommInfoAGX *,int,int*,int*,int**);
+extern int ML_CommInfoAGX_Load_SendList(ML_CommInfoAGX *, int, int, ml_big_int*);
+extern int ML_CommInfoAGX_Get_SendList(ML_CommInfoAGX *,int,int*,int*,ml_big_int**);
 extern int ML_CommInfoAGX_Setup_Recv(ML_CommInfoAGX *, int, int);
 extern int ML_CommInfoAGX_Load_RecvInfo(ML_CommInfoAGX *, int, int);
-extern int ML_CommInfoAGX_Load_RecvData(ML_CommInfoAGX*,int,int*,double*,
+extern int ML_CommInfoAGX_Load_RecvData(ML_CommInfoAGX*,int,ml_big_int*,double*,
                                         double*, double*);
-extern int ML_CommInfoAGX_Get_RecvList(ML_CommInfoAGX *,int,int*,int*,int**);
+extern int ML_CommInfoAGX_Get_RecvList(ML_CommInfoAGX *,int,int*,int*,ml_big_int**);
 extern int ML_CommInfoAGX_Destroy(ML_CommInfoAGX **);
 extern int ML_CommInfoAGX_Print(ML_CommInfoAGX *);
 

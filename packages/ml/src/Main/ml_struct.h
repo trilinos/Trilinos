@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -49,7 +49,7 @@ typedef struct ML_Struct ML;
 
 #ifdef WKC
 /* WKC -- added header(s) for the new datastructures */
-#include <Epetra_MultiVector.h> 
+#include <Epetra_MultiVector.h>
 #include <Epetra_LocalMap.h>
 #endif
 
@@ -67,7 +67,7 @@ struct ML_Struct {
    int            ML_init_flag;    /* indicate initialization done */
    int            ML_scheme;       /* which ML scheme to pick      */
    int            ML_num_levels;   /* number of levels available   */
-   int            ML_num_actual_levels; 
+   int            ML_num_actual_levels;
                                    /* number of levels actually used */
                                    /* by the multigrid method.       */
    int            ML_num_transfers;/* number of transfers  */
@@ -88,7 +88,7 @@ struct ML_Struct {
    ML_Mapper      *grid2eqn;
    ML_1Level      *SingleLevel;
    ML_DVector     *Amat_Normalization;
-   struct ML_Timing 
+   struct ML_Timing
                   *timing;       /* Used for timing information.    */
    ML_Comm        *comm;         /* communicator for ML             */
    int            *int_options;  /* optional integer parameters     */
@@ -159,7 +159,7 @@ extern int ML_Set_Grid_GetNElmnt(ML *, int nl, int (*func)(void *));
 extern int ML_Set_Grid_GetElmntNVert(ML *, int nl, int (*func)(void *, int));
 extern int ML_Set_Grid_GetElmntVertList(ML *, int nl, int (*func)(void *, int, int *));
 extern int ML_Set_Grid_GetVertGlobalNum(ML *, int nl, int (*func)(void *, int));
-extern int ML_Set_Grid_GetElmntGlobalNum(ML *, int nl, int (*func)(void *, int));
+extern int ML_Set_Grid_GetElmntGlobalNum(ML *, int nl, ml_big_int (*func)(void *, int));
 extern int ML_Set_Grid_GetVertCoordinate(ML *, int nl, int (*func)(void *, int, double *));
 extern int ML_Set_Grid_ComputeBasisCoef(ML *, int nl, int (*func)(void*,int,double*,int,double*,int*));
 extern int ML_Set_Grid_GetElmntVolume(ML *, int nl, int (*func)(void*,int,int*,double*));
@@ -177,7 +177,7 @@ extern int ML_Get_Amatrix(ML *ml, int level, ML_Operator **matrix);
 extern int ML_Set_Amatrix_Matvec(ML*,int,
                           int (*func)(void*,int,double*,int,double*));
 extern int ML_Set_Amatrix_Diag(ML*,int,int, double *);
-extern int ML_Set_Amatrix_Getrow(ML *ml, int level, 
+extern int ML_Set_Amatrix_Getrow(ML *ml, int level,
                      int (*getrow)(void*,int,int*,int,int*,double*,int*),
 		     int (*comm  )(double *vec, void *data), int comm_vec_leng);
 
@@ -193,28 +193,28 @@ extern void ML_setup_grid_xsfer_op(void *, ML_GridFunc *, void *,
 extern int ML_Init_Restrictor(ML*,int L1,int L2,int,int,void *data);
 extern int ML_Set_Restrictor_Matvec(ML*,int,
                     int (*func)(void*,int,double*,int,double*));
-extern int ML_Set_Restrictor_Getrow(ML *ml, int level, 
+extern int ML_Set_Restrictor_Getrow(ML *ml, int level,
                      int (*getrow)(void*,int,int*,int,int*,double*,int*),
 		     int (*comm  )(double *vec, void *data), int comm_vec_leng);
-extern int ML_Set_Restrictor_GetrowNeighbors(ML *ml,int level,int N_neigh, 
+extern int ML_Set_Restrictor_GetrowNeighbors(ML *ml,int level,int N_neigh,
 	             int *neigh_list);
-extern int ML_Set_Restrictor_GetrowCommInfo(ML *ml,int level,int neighbor, 
+extern int ML_Set_Restrictor_GetrowCommInfo(ML *ml,int level,int neighbor,
                      int N_rcv, int *rcv_list, int N_send, int *send_list);
 
 extern int ML_Init_Prolongator(ML*,int L1,int L2,int,int,void *data);
-extern int ML_Set_Prolongator_Matvec(ML *ml, int level, 
+extern int ML_Set_Prolongator_Matvec(ML *ml, int level,
                      int (*func) (void *, int, double *, int, double *));
-extern int ML_Set_Prolongator_Getrow(ML *ml, int level, 
+extern int ML_Set_Prolongator_Getrow(ML *ml, int level,
                      int (*getrow)(void*,int,int*,int,int*,double*,int*),
 		     int (*comm  )(double *vec, void *data), int comm_vec_leng);
-extern int ML_Set_Prolongator_GetrowNeighbors(ML *ml,int level,int N_neigh, 
+extern int ML_Set_Prolongator_GetrowNeighbors(ML *ml,int level,int N_neigh,
 	             int *neigh_list);
-extern int ML_Set_Prolongator_GetrowCommInfo(ML *ml,int level,int neighbor, 
+extern int ML_Set_Prolongator_GetrowCommInfo(ML *ml,int level,int neighbor,
                      int N_rcv, int *rcv_list, int N_send, int *send_list);
 
 extern int ML_Gen_Blocks_Metis(ML *ml, int level, int *nblocks,int **block_list);
 
-extern int ML_Gen_Smoother_Jacobi( ML *, int nl, int pre_or_post, 
+extern int ML_Gen_Smoother_Jacobi( ML *, int nl, int pre_or_post,
                      int ntimes, double omega );
 extern int ML_Gen_Smoother_GaussSeidel(ML*,int nl,int pre_post,int ntimes,double);
 extern int ML_Gen_Smoother_Hiptmair(ML*,int nl,int pre_post,int ntimes,
@@ -225,7 +225,7 @@ extern int ML_Gen_Smoother_BlockHiptmair(ML*,int nl,int pre_post,int ntimes,
                      ML_Operator**, ML_Operator**, ML_Operator*,
 				    void *, void **,
 				    void *, void **, int);
-extern int ML_Gen_Smoother_SymGaussSeidel(ML*,int nl,int pre_post,int ntimes, 
+extern int ML_Gen_Smoother_SymGaussSeidel(ML*,int nl,int pre_post,int ntimes,
 		     double omega);
 extern int ML_Gen_Smoother_SymGaussSeidelSequential(ML*,int nl,int pre_post,
                      int ntimes, double omega);
@@ -244,7 +244,7 @@ extern int ML_Gen_Smoother_BlockGaussSeidel(ML*,int nl,int pre_post,int ntimes,
 extern void BGS_Clean(void *data);
 extern int ML_Gen_Smoother_VBlockJacobi(ML*,int nl,int pre_post, int ntimes,
                      double omeg, int Nblocks, int *blockList);
-extern int ML_Gen_Smoother_VBlockSymGaussSeidel(ML*,int nl,int pre_post, 
+extern int ML_Gen_Smoother_VBlockSymGaussSeidel(ML*,int nl,int pre_post,
                      int ntimes, double omega, int Nblocks, int *blockList);
 extern int ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ML*,int nl, int,
                      int ntimes,double omega,int Nblocks,int *blockList);
@@ -258,7 +258,7 @@ extern int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *,int nl,
 
 extern int ML_Gen_Smoother_GSextra( ML *ml , int nl, int pre_or_post,
 		     int ntimes, double omega, int Nextra, int extra[]);
-extern int ML_Set_Smoother(ML *, int nl , int pre_post, void *obj, 
+extern int ML_Set_Smoother(ML *, int nl , int pre_post, void *obj,
                      int (*func)(void *, int, double *, int, double *),
                      char *);
 
@@ -267,12 +267,12 @@ extern int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level,
                                           ML_Aggregate *ag);
 
 extern int ML_Gen_AmatrixRAP(ML *ml, int to_level, int from_level);
-extern int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat, 
+extern int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat,
      ML_Matrix_DCSR *outmat, ML_Comm *comm, int *offset);
 
-extern int ML_Set_EqnToGridMapFunc(ML *, int,int fleng,int tleng, 
+extern int ML_Set_EqnToGridMapFunc(ML *, int,int fleng,int tleng,
                                    int (*func)(void*,double*,double*));
-extern int ML_Set_GridToEqnMapFunc(ML *, int,int fleng,int tleng, 
+extern int ML_Set_GridToEqnMapFunc(ML *, int,int fleng,int tleng,
                                    int (*func)(void*,double*,double*));
 extern int ML_Set_BoundaryTypes(ML*,int level,int type,int n,int *data);
 
@@ -291,7 +291,7 @@ int ML_Solve_MGV( ML *ml , const Epetra_MultiVector &in ,
 #endif
 
 extern int ML_Solve_MGFull( ML *ml , double *din, double *dout);
-extern int ML_Solve_Smoother(void *data, int isize, double *x, int osize, 
+extern int ML_Solve_Smoother(void *data, int isize, double *x, int osize,
 			     double *rhs);
 
 extern double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
@@ -299,7 +299,7 @@ extern double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
 
 #ifdef WKC
 /* WKC -- new prototype for V-cycle solve */
-extern double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol, 
+extern double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
                      Epetra_MultiVector &ep_rhs,
                      int approx_all_zeros, ML_Comm *comm, int, ML *ml);
 #endif
@@ -310,8 +310,8 @@ extern int ML_Solve_AMGV( ML *ml , double *din, double *dout);
 extern double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
                      int approx_all_zeros, ML_Comm *comm);
 extern int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout);
-extern int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, 
-				   int ntimes, double omega, int Nextra, 
+extern int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post,
+				   int ntimes, double omega, int Nextra,
 				   int extra[]);
 extern int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize);
 extern int ML_Seg_Solve( ML *ml , double *din, double *dout);

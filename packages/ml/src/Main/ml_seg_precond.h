@@ -132,7 +132,7 @@ extern int ML_Set_Grid_GetNElmnt(ML *, int nl, int (*func)());
 extern int ML_Set_Grid_GetElmntNVert(ML *, int nl, int (*func)());
 extern int ML_Set_Grid_GetElmntVertList(ML *, int nl, int (*func)());
 extern int ML_Set_Grid_GetVertGlobalNum(ML *, int nl, int (*func)());
-extern int ML_Set_Grid_GetElmntGlobalNum(ML *, int nl, int (*func)());
+extern int ML_Set_Grid_GetElmntGlobalNum(ML *, int nl, ml_big_int (*func)());
 extern int ML_Set_Grid_GetVertCoordinate(ML *, int nl, int (*func)());
 extern int ML_Set_Grid_ComputeBasisCoef(ML *, int nl, int (*func)());
 extern int ML_Set_Grid_GetElmntVolume(ML *, int nl, int (*func)());

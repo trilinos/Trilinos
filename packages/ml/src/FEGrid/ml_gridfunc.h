@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -31,7 +31,7 @@ struct ML_GridFunc_Struct
    int  (*USR_grid_get_dimension)( void * );
    int  (*USR_grid_get_nvertices)( void * );
    int  (*USR_grid_get_nelements)( void * );
-   int  (*USR_grid_get_element_global_num)( void *, int );
+   ml_big_int  (*USR_grid_get_element_global_num)( void *, int );
    int  (*USR_grid_get_element_nvertices)( void *, int );
    int  (*USR_grid_get_element_vlist)( void *, int, int * );
    int  (*USR_grid_get_vertex_global_num)( void *, int );
@@ -66,7 +66,7 @@ extern int ML_GridFunc_Set_Function(ML_GridFunc *, int, int (*func)());
 extern int ML_GridFunc_Set_GetDimension(ML_GridFunc *, int (*func)(void *));
 extern int ML_GridFunc_Set_GetNVert(ML_GridFunc *, int (*func)(void *));
 extern int ML_GridFunc_Set_GetNElmnts(ML_GridFunc *, int (*func)(void *));
-extern int ML_GridFunc_Set_GetElmntGlobalNum(ML_GridFunc*,int(*func)(void *, int));
+extern int ML_GridFunc_Set_GetElmntGlobalNum(ML_GridFunc*,ml_big_int(*func)(void *, int));
 extern int ML_GridFunc_Set_GetElmntNVert(ML_GridFunc*,int(*func)(void *, int));
 extern int ML_GridFunc_Set_GetElmntVertList(ML_GridFunc *, int (*func)(void *, int, int *));
 extern int ML_GridFunc_Set_GetVertGlobalNum(ML_GridFunc*,int (*func)(void *, int));

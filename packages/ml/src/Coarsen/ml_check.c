@@ -74,9 +74,11 @@ void ML_interp_check(ML *ml, int coarse_level, int fine_level)
       fine_funs->USR_grid_get_vertex_coordinate(fine_data , ii, coords);
       dtemp = coords[0] + 3.*coords[1] + .5;
       d2 = ML_dabs(dtemp - f_data[ii*stride])/(ML_dabs(dtemp)+1.e-9);    
+      /* Ray debugging
       if ( d2 > 1.e-8)                                      
          printf("%d: f_data[%d] = %e  %e | %e %e\n",ml->comm->ML_mypid,
                 ii,f_data[ii*stride],dtemp,coords[0],coords[1]);
+      */
       if ( d2 > dlargest) {                                 
             dlargest = d2;   
       }                                                     

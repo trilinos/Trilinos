@@ -127,4 +127,20 @@
 /* maximum dimension of the subspace associated with an ML_Operator type */
 #define ML_MAX_SUBSPACE_DIM 3
 
+
+#if defined(ML_GLOB_ELEM_NUM64)
+
+#if defined(ML_LINUX) || defined(ML_TFLOP) || defined(ML_IRIX) || defined(ML_IRIXN32)
+typedef long long ml_big_int;
+#elif defined(ML_IRIX64) || defined(ML_ALPHA)
+typedef long ml_big_int;
+#else
+typedef int ml_big_int;
+#endif
+
+#else
+typedef int ml_big_int;
+#endif
+
+
 #endif

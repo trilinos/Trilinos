@@ -1,10 +1,10 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
-/* Functions for manipulating Grid objects                              */ 
+/* Functions for manipulating Grid objects                              */
 /* ******************************************************************** */
 /* Author        : Charles Tong (LLNL)                                  */
 /* Date          : Sept, 1997                                           */
@@ -44,7 +44,7 @@ int ML_GridAGX_Create(ML_GridAGX **ingrid)
 /* deallocate the grid structure                                        */
 /* -------------------------------------------------------------------- */
 
-int ML_GridAGX_Destroy( ML_GridAGX **ingrid ) 
+int ML_GridAGX_Destroy( ML_GridAGX **ingrid )
 {
    ML_GridAGX *grid;
 
@@ -60,17 +60,17 @@ int ML_GridAGX_Destroy( ML_GridAGX **ingrid )
    }
    if ( grid->global_vertex != 0 )
    {
-      ML_memory_free( (void **) &(grid->global_vertex)); 
+      ML_memory_free( (void **) &(grid->global_vertex));
    }
-   if ( grid->ele_nodes != 0 ) ML_IntList_Destroy(&(grid->ele_nodes)); 
+   if ( grid->ele_nodes != 0 ) ML_IntList_Destroy(&(grid->ele_nodes));
    if ( grid->x != 0 ) ML_memory_free( (void**) &(grid->x) );
    if ( grid->y != 0 ) ML_memory_free( (void**) &(grid->y) );
    if ( grid->z != 0 ) ML_memory_free( (void**) &(grid->z) );
-   if ( grid->elmnt_proc_map != 0 ) { 
+   if ( grid->elmnt_proc_map != 0 ) {
       ML_memory_free( (void **) &(grid->elmnt_proc_map) );
    }
    if ( grid->node_proc_map != 0 )
-   { 
+   {
       ML_memory_free( (void **) &(grid->node_proc_map) );
    }
    grid->ML_id = -1;
@@ -95,7 +95,7 @@ int ML_GridAGX_Get_Element(ML_GridAGX *grid,int index,
    }
    if (index < 0 || index >= grid->Nelements)
    {
-      printf("ML_GridAGX_Get_Element : access error.\n"); 
+      printf("ML_GridAGX_Get_Element : access error.\n");
       exit(-1);
    }
 
@@ -135,21 +135,21 @@ int ML_GridAGX_Print( ML_GridAGX *grid )
    }
    printf("Grid : number of elements    = %d \n",grid->Nelements);
    printf("Grid : number of vertices    = %d \n",grid->Nvertices);
-   for ( i = 0; i < grid->Nelements; i++ ) 
+   for ( i = 0; i < grid->Nelements; i++ )
    {
       printf("Grid : global element %d = %d \n",i,grid->global_element[i]);
    }
-   for ( i = 0; i < grid->Nvertices_expanded; i++ ) 
+   for ( i = 0; i < grid->Nvertices_expanded; i++ )
    {
       printf("Grid : global vertex %d = %d \n",i,grid->global_vertex[i]);
    }
    if ( grid->Ndim == 2 ) {
-      for ( i = 0; i < grid->Nvertices_expanded; i++ ) 
+      for ( i = 0; i < grid->Nvertices_expanded; i++ )
       {
          printf("Grid : (x,y) %d = %e %e \n", i, grid->x[i], grid->y[i]);
       }
    } else {
-      for ( i = 0; i < grid->Nvertices_expanded; i++ ) 
+      for ( i = 0; i < grid->Nvertices_expanded; i++ )
       {
          printf("Grid : (x,y,z) %d = %e %e %e \n", i, grid->x[i], grid->y[i],
                 grid->z[i]);
@@ -205,7 +205,7 @@ int ML_GridAGX_Get_NElmnts( ML_GridAGX *grid )
 /* return the global number of a local element                          */
 /* -------------------------------------------------------------------- */
 
-int ML_GridAGX_Get_ElmntGlobalNum(ML_GridAGX *grid, int index)
+ml_big_int ML_GridAGX_Get_ElmntGlobalNum(ML_GridAGX *grid, int index)
 {
    if ( grid->ML_id != ML_ID_GRIDAGX )
    {
@@ -270,7 +270,7 @@ int ML_GridAGX_Get_ElmntVertList(ML_GridAGX *grid,int index,int *vlist)
 /* return the coordinate of a given local vertex                        */
 /* -------------------------------------------------------------------- */
 
-int ML_GridAGX_Get_VertCoordinate(ML_GridAGX *grid, int index, 
+int ML_GridAGX_Get_VertCoordinate(ML_GridAGX *grid, int index,
                                      double *coord)
 {
    if ( grid->ML_id != ML_ID_GRIDAGX )
@@ -337,7 +337,7 @@ int ML_GridAGX_Set_NElmnts(ML_GridAGX *grid, int nelmnt, int vert_per_ele)
 /* load the global numbers of all local elements                        */
 /* -------------------------------------------------------------------- */
 
-int ML_GridAGX_Load_ElmntGlobalNum(ML_GridAGX *grid, int leng, int *gnum)
+int ML_GridAGX_Load_ElmntGlobalNum(ML_GridAGX *grid, int leng, ml_big_int *gnum)
 {
    int i;
 
@@ -346,11 +346,11 @@ int ML_GridAGX_Load_ElmntGlobalNum(ML_GridAGX *grid, int leng, int *gnum)
       printf("ML_GridAGX_Load_ElmntGlobalNum : wrong object. \n");
       exit(1);
    }
-   if (grid->Nelements != leng) 
+   if (grid->Nelements != leng)
    {
       printf("ML_GridAGX_Load_ElmntGlobalNum : - lengths do not match. \n");
    }
-   ML_memory_alloc((void**) &(grid->global_element),leng*sizeof(int),"GD2");
+   ML_memory_alloc((void**) &(grid->global_element),leng*sizeof(grid->global_element[0]),"GD2");
    for ( i = 0; i < leng; i++ ) grid->global_element[i] = gnum[i];
    return 0;
 }
@@ -408,7 +408,7 @@ int ML_GridAGX_Load_AllVertCoordinates(ML_GridAGX *grid,int leng,
    nbytes = leng * sizeof(double);
    ML_memory_alloc( (void**) &(grid->x), nbytes, "GDX");
    ML_memory_alloc( (void**) &(grid->y), nbytes, "GDY");
-   if (ndim > 2) 
+   if (ndim > 2)
       ML_memory_alloc( (void**) &(grid->z), nbytes, "GDZ");
    for ( i = 0; i < leng; i++ )
    {

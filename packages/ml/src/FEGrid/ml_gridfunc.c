@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -20,10 +20,10 @@
 /* Create a data structure for grid access functions                    */
 /* -------------------------------------------------------------------- */
 
-int ML_GridFunc_Create( ML_GridFunc ** gf ) 
+int ML_GridFunc_Create( ML_GridFunc ** gf )
 {
    ML_GridFunc *gf_ptr;
-  
+
    ML_memory_alloc( (void**) gf, sizeof(ML_GridFunc), "GF1" );
    gf_ptr                                  = (*gf);
    gf_ptr->ML_id                           = ML_ID_GRIDFCN;
@@ -46,7 +46,7 @@ int ML_GridFunc_Create( ML_GridFunc ** gf )
 /* destroy a data structure for grid access functions                   */
 /* -------------------------------------------------------------------- */
 
-int ML_GridFunc_Destroy( ML_GridFunc ** gf ) 
+int ML_GridFunc_Destroy( ML_GridFunc ** gf )
 {
    ML_GridFunc *gf_ptr;
 
@@ -56,13 +56,13 @@ int ML_GridFunc_Destroy( ML_GridFunc ** gf )
    ML_memory_free( (void **) gf );
    return 0;
 }
-  
+
 /* ******************************************************************** */
 /* Check that all grid access functions have been loaded.               */
 /* (return -1 if not)                                                   */
 /* -------------------------------------------------------------------- */
 
-int ML_GridFunc_Check( ML_GridFunc *gf_ptr ) 
+int ML_GridFunc_Check( ML_GridFunc *gf_ptr )
 {
    int ready_flag = 1;
 
@@ -154,7 +154,7 @@ int ML_GridFunc_Set_Function( ML_GridFunc *gf_ptr, int ind, int (*func)())
                 gf_ptr->USR_grid_get_element_volumes    = func; break;
       case ML_GRID_ELEM_MATRIX :
                 gf_ptr->USR_grid_get_element_matrix     = func; break;
-      default : 
+      default :
          printf("ML_GridFunc_Set_Function : function not recognized. \n");
          exit(-1);
          break;
@@ -199,7 +199,7 @@ int ML_GridFunc_Set_GetNElmnts( ML_GridFunc *gf_ptr, int (*func)(void *))
    return 0;
 }
 
-int ML_GridFunc_Set_GetElmntGlobalNum(ML_GridFunc *gf_ptr, int (*func)(void *, int))
+int ML_GridFunc_Set_GetElmntGlobalNum(ML_GridFunc *gf_ptr, ml_big_int (*func)(void *, int))
 {
    if ( gf_ptr->ML_id != ML_ID_GRIDFCN )
    {

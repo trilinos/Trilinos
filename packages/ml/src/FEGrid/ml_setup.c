@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -71,13 +71,13 @@
 
 void ML_setup_grid_xsfer_op(void *f_grid, ML_GridFunc *fgrid_fcns,
                             void *c_grid, ML_GridFunc *cgrid_fcns,
-                            void **xsfer, ML_Comm *comm) 
+                            void **xsfer, ML_Comm *comm)
 {
    int            checkpt=1, mypid;
 #ifdef DEBUG
    int  status;
 #endif
-   ML_IntList     *lfv_list; 
+   ML_IntList     *lfv_list;
    ML_CommInfoAGX *comm_info;
    ML_GridAGX     *g_c_grid;
    ML_OperatorAGX *xsfer_op;
@@ -106,15 +106,15 @@ void ML_setup_grid_xsfer_op(void *f_grid, ML_GridFunc *fgrid_fcns,
    /* Compose a complete coarse grid on each processor from one that is    */
    /* distributed. (in g_c_grid upon return)                               */
    /* -------------------------------------------------------------------- */
- 
+
    mypid = comm->ML_mypid;
    /* ML_debug = -1 ; */
    /* if ( mypid == 1 ) ML_debug = 1;  turn on debug flag on processor 3 */
-   checkpt = ML_Comm_GmaxInt( comm, checkpt ); 
+   checkpt = ML_Comm_GmaxInt( comm, checkpt );
    if ( mypid == 0 )
    {
       printf("ML processing begins : \n");
-      printf("Composing global grid ... \n"); 
+      printf("Composing global grid ... \n");
    }
    ML_compose_global_grid( c_grid, cgrid_fcns, &g_c_grid, comm );
 
@@ -127,7 +127,7 @@ void ML_setup_grid_xsfer_op(void *f_grid, ML_GridFunc *fgrid_fcns,
    /*  outgoing coefficients are also stored temporarily in xsfer_op.)     */
    /* -------------------------------------------------------------------- */
 
-   checkpt = ML_Comm_GmaxInt( comm, checkpt ); 
+   checkpt = ML_Comm_GmaxInt( comm, checkpt );
    if ( mypid == 0 ) printf("Constructing local transfer operator ... \n");
    ML_construct_RP0( c_grid, cgrid_fcns, f_grid, fgrid_fcns, g_c_grid,
                      &xsfer_op, comm );
@@ -139,17 +139,17 @@ void ML_setup_grid_xsfer_op(void *f_grid, ML_GridFunc *fgrid_fcns,
    /* lists).                                                              */
    /* -------------------------------------------------------------------- */
 
-   checkpt = ML_Comm_GmaxInt( comm, checkpt ); 
+   checkpt = ML_Comm_GmaxInt( comm, checkpt );
    if ( mypid == 0 ) printf("Composing grid candidates ... \n");
    ML_IntList_Create( &lfv_list, g_c_grid->Nelements, 0 );
-   ML_remote_grid_candidates(f_grid, fgrid_fcns, cgrid_fcns, g_c_grid, 
+   ML_remote_grid_candidates(f_grid, fgrid_fcns, cgrid_fcns, g_c_grid,
                              lfv_list, xsfer_op, comm);
-      
+
    /* -------------------------------------------------------------------- */
    /* exchange candidates between processors                               */
    /* -------------------------------------------------------------------- */
 
-   checkpt = ML_Comm_GmaxInt( comm, checkpt ); 
+   checkpt = ML_Comm_GmaxInt( comm, checkpt );
    if ( mypid == 0 ) printf("Exchanging candidates ... \n");
    ML_CommInfoAGX_Create( &comm_info );
    ML_exchange_candidates( lfv_list, f_grid, fgrid_fcns, g_c_grid,
@@ -160,27 +160,27 @@ void ML_setup_grid_xsfer_op(void *f_grid, ML_GridFunc *fgrid_fcns,
    /* calculate coefficients for remote processors                         */
    /* -------------------------------------------------------------------- */
 
-   checkpt = ML_Comm_GmaxInt( comm, checkpt ); 
+   checkpt = ML_Comm_GmaxInt( comm, checkpt );
    if ( mypid == 0 ) printf("Getting basis ... \n" );
    ML_get_basis_functions_coef( comm_info, c_grid, cgrid_fcns, xsfer_op );
-   
+
    /* -------------------------------------------------------------------- */
    /* send the results of queries back to the requesting processors        */
    /* -------------------------------------------------------------------- */
 
-   checkpt = ML_Comm_GmaxInt( comm, checkpt ); 
+   checkpt = ML_Comm_GmaxInt( comm, checkpt );
    if ( mypid == 0 ) printf("Exchanging coefficients ... \n" );
-   ML_exchange_coefficients( c_grid, cgrid_fcns, comm_info, 
+   ML_exchange_coefficients( c_grid, cgrid_fcns, comm_info,
                              xsfer_op, comm );
 
    /* -------------------------------------------------------------------- */
    /* construct the remote part of the grid transfer operator              */
    /* -------------------------------------------------------------------- */
 
-   checkpt = ML_Comm_GmaxInt( comm, checkpt ); 
+   checkpt = ML_Comm_GmaxInt( comm, checkpt );
    if ( mypid == 0 ) printf("Constructing remote transfer operator \n");
    xsfer_op->AGX_comm = comm;
-   ML_construct_RP1( f_grid, fgrid_fcns, c_grid, cgrid_fcns, g_c_grid, 
+   ML_construct_RP1( f_grid, fgrid_fcns, c_grid, cgrid_fcns, g_c_grid,
                      comm_info, xsfer_op, comm);
    ML_GridAGX_Destroy( &g_c_grid );
 
@@ -189,8 +189,8 @@ void ML_setup_grid_xsfer_op(void *f_grid, ML_GridFunc *fgrid_fcns,
    /* -------------------------------------------------------------------- */
 
    ML_CommInfoAGX_Destroy( &comm_info );
-   checkpt = ML_Comm_GmaxInt( comm, checkpt ); 
-   if ( mypid == 0 ) printf( "ML processing ends. \n" ); 
+   checkpt = ML_Comm_GmaxInt( comm, checkpt );
+   if ( mypid == 0 ) printf( "ML processing ends. \n" );
 
 }
 
@@ -205,10 +205,11 @@ void ML_setup_grid_xsfer_op(void *f_grid, ML_GridFunc *fgrid_fcns,
 /*          with the grid structure in ml_grid.h.                          */
 /* *********************************************************************** */
 
-void ML_compose_global_grid( void *local_grid, ML_GridFunc *cgrid_fcns, 
+void ML_compose_global_grid( void *local_grid, ML_GridFunc *cgrid_fcns,
                              ML_GridAGX **g_c_grid, ML_Comm *comm )
 {
    int     i, j, k, ndp1, proc_cnt, ivar1, ivar2, ivar3, *ibuf;
+   ml_big_int *bigibuf;
    int     nproc, mypid, tot_elmnt_nvertices, leng, *tlist, tot_leng;
    int     *elmnt_proc_map, *node_proc_map, MAX_VERT_PER_ELE;
    double  *dbuf;
@@ -223,21 +224,21 @@ void ML_compose_global_grid( void *local_grid, ML_GridFunc *cgrid_fcns,
    mypid = comm->ML_mypid;
    nproc = comm->ML_nprocs;
    MAX_VERT_PER_ELE = cgrid_fcns->ML_MaxElmntVert;
-   if (cgrid_fcns->USR_grid_get_nvertices == NULL) 
+   if (cgrid_fcns->USR_grid_get_nvertices == NULL)
       pr_error("ML_compose_global_grid: USR_grid_get_nvertices() not found\n");
-   if (cgrid_fcns->USR_grid_get_dimension == NULL) 
+   if (cgrid_fcns->USR_grid_get_dimension == NULL)
       pr_error("ML_compose_global_grid: USR_grid_get_dimension() not found\n");
-   if (cgrid_fcns->USR_grid_get_nelements == NULL) 
+   if (cgrid_fcns->USR_grid_get_nelements == NULL)
       pr_error("ML_compose_global_grid: USR_grid_get_nelements() not found\n");
-   if (cgrid_fcns->USR_grid_get_element_nvertices == NULL) 
+   if (cgrid_fcns->USR_grid_get_element_nvertices == NULL)
       pr_error("ML_compose_global_grid: USR_grid_get_element_nvertices() not found\n");
-   if (cgrid_fcns->USR_grid_get_element_vlist == NULL) 
+   if (cgrid_fcns->USR_grid_get_element_vlist == NULL)
       pr_error("ML_compose_global_grid: USR_grid_get_element_vlist() not found\n");
-   if (cgrid_fcns->USR_grid_get_vertex_global_num == NULL) 
+   if (cgrid_fcns->USR_grid_get_vertex_global_num == NULL)
       pr_error("ML_compose_global_grid: USR_grid_get_vertex_global_num() not found\n");
-   if (cgrid_fcns->USR_grid_get_element_global_num == NULL) 
+   if (cgrid_fcns->USR_grid_get_element_global_num == NULL)
       pr_error("ML_compose_global_grid: USR_grid_get_element_global_num() not found\n");
-   if (cgrid_fcns->USR_grid_get_vertex_coordinate == NULL) 
+   if (cgrid_fcns->USR_grid_get_vertex_coordinate == NULL)
       pr_error("ML_compose_global_grid: USR_grid_get_vertex_coordinate() not found\n");
 
 
@@ -264,19 +265,19 @@ void ML_compose_global_grid( void *local_grid, ML_GridFunc *cgrid_fcns,
    /* ------------------------------------------------------------------ */
 
    /* 1. compose the element-to-node pointer fields                      */
-  
+
    ivar1++;
    ivar2  += nproc;
    ML_memory_alloc( (void**) &ibuf, ivar2 * sizeof( int ), "ibu" );
    ibuf[0] = 0;
-   for ( i = 1; i < ivar1; i++ ) 
+   for ( i = 1; i < ivar1; i++ )
    {
-      ibuf[i] = ibuf[i-1] + 
+      ibuf[i] = ibuf[i-1] +
                 cgrid_fcns->USR_grid_get_element_nvertices(local_grid, i-1);
    }
    tot_elmnt_nvertices = ibuf[ivar1-1];
 
-   ML_Comm_GappendInt( comm, ibuf, &ivar1, ivar2 ); 
+   ML_Comm_GappendInt( comm, ibuf, &ivar1, ivar2 );
 
    /* 2. allocate storage space for the coarse element to processor map  */
    /*    - this map will indicate the processors where the global        */
@@ -296,11 +297,11 @@ void ML_compose_global_grid( void *local_grid, ML_GridFunc *cgrid_fcns,
       if (ibuf[i] > ibuf[i-1])
       {
          elmnt_proc_map[ivar3++] = proc_cnt;
-         ibuf[ivar3] = ibuf[i] + ivar1; 
+         ibuf[ivar3] = ibuf[i] + ivar1;
       }
       else
       {
-         ivar1 += ibuf[i-1]; 
+         ivar1 += ibuf[i-1];
          proc_cnt++;
       }
    }
@@ -324,10 +325,10 @@ void ML_compose_global_grid( void *local_grid, ML_GridFunc *cgrid_fcns,
    ML_memory_alloc( (void**) &tlist, MAX_VERT_PER_ELE*sizeof(int),"tl1");
    while (tot_leng < ivar1)
    {
-      leng = cgrid_fcns->USR_grid_get_element_vlist(local_grid, i, tlist); 
-      for ( j = 0; j < leng; j++ ) 
+      leng = cgrid_fcns->USR_grid_get_element_vlist(local_grid, i, tlist);
+      for ( j = 0; j < leng; j++ )
       {
-         ibuf[tot_leng+j] = 
+         ibuf[tot_leng+j] =
             cgrid_fcns->USR_grid_get_vertex_global_num(local_grid,tlist[j]);
       }
       i++;
@@ -345,13 +346,13 @@ void ML_compose_global_grid( void *local_grid, ML_GridFunc *cgrid_fcns,
 
    ivar1 = cgrid_fcns->USR_grid_get_nelements( local_grid );
    ivar2 = global_grid->Nelements;
-   ML_memory_alloc( (void**) &ibuf, ivar2 * sizeof( int ), "ib2" );
-   for ( i = 0; i < ivar1; i++ ) 
+   ML_memory_alloc( (void**) &bigibuf, ivar2 * sizeof( bigibuf[0] ), "ib2" );
+   for ( i = 0; i < ivar1; i++ )
    {
-      ibuf[i] = cgrid_fcns->USR_grid_get_element_global_num(local_grid, i);
+      bigibuf[i] = cgrid_fcns->USR_grid_get_element_global_num(local_grid, i);
    }
-   ML_Comm_GappendInt( comm, ibuf, &ivar1, ivar2 );
-   global_grid->global_element = ibuf;
+   ML_Comm_GappendBigInt( comm, bigibuf, &ivar1, ivar2 );
+   global_grid->global_element = bigibuf;
 
    /* ------------------------------------------------------------------ */
    /* Compose the global node  number field of the Grid structure.       */
@@ -363,7 +364,7 @@ void ML_compose_global_grid( void *local_grid, ML_GridFunc *cgrid_fcns,
    ivar1 = global_grid->Nvertices;
    ML_memory_alloc((void**) &(global_grid->global_vertex),
                    ivar1 * sizeof(int), "gv1" );
-   for ( i = 0; i < ivar1; i++ ) 
+   for ( i = 0; i < ivar1; i++ )
    {
       global_grid->global_vertex[i] = i;
    }
@@ -380,7 +381,7 @@ void ML_compose_global_grid( void *local_grid, ML_GridFunc *cgrid_fcns,
    ML_memory_alloc( (void**) &tlist, ivar1 * sizeof( int ), "tl2" );
    ML_memory_alloc( (void**) &node_proc_map,ivar1*sizeof(int), "nmp" );
    ivar3 = cgrid_fcns->USR_grid_get_nvertices( local_grid );
-   for ( i = 0; i < ivar3; i++ ) 
+   for ( i = 0; i < ivar3; i++ )
    {
       tlist[i] = cgrid_fcns->USR_grid_get_vertex_global_num(local_grid, i);
    }
@@ -392,7 +393,7 @@ void ML_compose_global_grid( void *local_grid, ML_GridFunc *cgrid_fcns,
    ivar2   = global_grid->Nvertices * ndp1 + nproc + 1;
    ML_memory_alloc((void**) &dbuf,  ivar2 * sizeof( double ), "dbu" );
    dbuf[0] = (double) - mypid - 1000.0;
-   for ( i = 0; i < ivar3; i++ ) 
+   for ( i = 0; i < ivar3; i++ )
    {
       cgrid_fcns->USR_grid_get_vertex_coordinate( local_grid,
                                         i, &(dbuf[i*ndp1+1]) );
@@ -402,7 +403,7 @@ void ML_compose_global_grid( void *local_grid, ML_GridFunc *cgrid_fcns,
    k = global_grid->Nvertices;
    ML_memory_alloc((void**) &(global_grid->x), k*sizeof(double), "GGX");
    ML_memory_alloc((void**) &(global_grid->y), k*sizeof(double), "GGY");
-   if ( ndp1 > 2 ) 
+   if ( ndp1 > 2 )
    {
       ML_memory_alloc((void**) &(global_grid->z), k*sizeof(double), "GGZ");
    }
@@ -426,7 +427,7 @@ void ML_compose_global_grid( void *local_grid, ML_GridFunc *cgrid_fcns,
    ML_memory_free( (void **) &dbuf );
    ML_memory_free((void **) &tlist );
 }
-  
+
 /* *********************************************************************** */
 /* *********************************************************************** */
 /* *********************************************************************** */
@@ -449,14 +450,15 @@ void ML_compose_global_grid( void *local_grid, ML_GridFunc *cgrid_fcns,
 /*                                                                         */
 /* *********************************************************************** */
 
-void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns, 
+void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
                       void *f_grid, ML_GridFunc *fgrid_fcns,
                       ML_GridAGX *g_c_grid,  ML_OperatorAGX  **xsfer_op2,
-                      ML_Comm *comm) 
+                      ML_Comm *comm)
 {
    int    leng, ndim, ncvert, ncelmnts, nfvert, *elmnt_map, ngcelmnts, mypid;
    int    cur_coef_leng, nfxyz_leng, *coef_ptr, *fvlist, *vlist, gcnt, gpcnt;
-   int    i, j, k, m, index, ggelenum, gcelenum, icnt, icnt2, ibegin, iend;
+   int    i, j, k, m, index, icnt, icnt2, ibegin, iend;
+   ml_big_int ggelenum, gcelenum;
    int    mbegin, mend, ncnt, *fine2coarsecnts, ncand, cele_num;
    int    *coef_ptr2, cur_ptr_leng, *node_proc_map, *fnode_flag;
    int    extern_node_cnt, ext_cnt, cnodenum, cgnodenum, fnodenum;
@@ -477,11 +479,11 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
    /* ----------------------------------------------------------------- */
    /* fetch grid and processor information                              */
    /* ----------------------------------------------------------------- */
-   if (fgrid_fcns->USR_grid_get_nvertices== NULL) 
+   if (fgrid_fcns->USR_grid_get_nvertices== NULL)
       pr_error("ML_construct_RP0: USR_grid_get_nvertices() not found\n");
-   if (fgrid_fcns->USR_grid_get_vertex_coordinate == NULL) 
+   if (fgrid_fcns->USR_grid_get_vertex_coordinate == NULL)
       pr_error("ML_construct_RP0: USR_grid_get_vertex_coordinate() not found\n");
-   if (cgrid_fcns->USR_compute_basis_coefficients == NULL) 
+   if (cgrid_fcns->USR_compute_basis_coefficients == NULL)
       pr_error("ML_construct_RP0: USR_compute_basis_coefficients() not found\n");
 
    ndim       = cgrid_fcns->USR_grid_get_dimension( c_grid );
@@ -490,7 +492,7 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
    nfvert     = fgrid_fcns->USR_grid_get_nvertices( f_grid );
    nfxyz_leng = ndim * nfvert ;
    elmnt_map  = g_c_grid->elmnt_proc_map;
-   ngcelmnts  = g_c_grid->Nelements;    
+   ngcelmnts  = g_c_grid->Nelements;
    mypid      = comm->ML_mypid;
    MAX_VERT_PER_ELE = cgrid_fcns->ML_MaxElmntVert;
 
@@ -506,7 +508,7 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
    {
       fvlist[i] = i;
       fgrid_fcns->USR_grid_get_vertex_coordinate(f_grid,i,&coord[ndim*i]);
-      /* printf("%d : FVERTEX %d : %e %e \n", mypid, i, coord[ndim*i], 
+      /* printf("%d : FVERTEX %d : %e %e \n", mypid, i, coord[ndim*i],
                                                      coord[ndim*i+1]); */
    }
 
@@ -572,7 +574,7 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
             while ( gcelenum != ggelenum && index < ncelmnts )
             {
                index++;
-               gcelenum = 
+               gcelenum =
                   cgrid_fcns->USR_grid_get_element_global_num(c_grid,index);
             }
 
@@ -585,12 +587,12 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
 /* #endif */
 
             leng  = ncand;
-            ML_memory_alloc((void**) &coord_short, 
+            ML_memory_alloc((void**) &coord_short,
                             ndim*leng*sizeof(double),"co2");
             icnt  = 0;
             for ( j = 1; j <= ncand; j++ )
             {
-               icnt2 = vlist[j]; 
+               icnt2 = vlist[j];
                fgrid_fcns->USR_grid_get_vertex_coordinate(f_grid, icnt2,
                                                &(coord_short[ndim*icnt]));
                icnt++;
@@ -608,24 +610,24 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
                                cur_ptr_leng*sizeof(int), "cp2");
                for ( j = 0; j < gpcnt; j++ ) coef_ptr[j] = coef_ptr2[j];
                ML_memory_free( (void**) &coef_ptr2);
-            } 
+            }
             if ((gcnt + leng*MAX_VERT_PER_ELE) > cur_coef_leng)
             {
                coefs2  = coefs;
                cur_coef_leng = gcnt + 5 * leng * MAX_VERT_PER_ELE;
-               ML_memory_alloc((void**) &coefs, 
+               ML_memory_alloc((void**) &coefs,
                                cur_coef_leng*sizeof(double),"ce2");
                for ( j = 0; j < gcnt; j++ ) coefs[j] = coefs2[j];
                ML_memory_free( (void **) &coefs2);
-            } 
+            }
 
-            cgrid_fcns->USR_compute_basis_coefficients(c_grid, index, 
+            cgrid_fcns->USR_compute_basis_coefficients(c_grid, index,
                         coord_short, leng, &coefs[gcnt], &coef_ptr[gpcnt]);
 
             /* need to check coef_ptr to see if any one of the */
             /* candidates got in, and if so, register in the   */
             /* fnode_flag array                                */
-          
+
             for ( j = 0 ; j < leng; j++ )
             {
                if (coef_ptr[gpcnt+j] > 1) fnode_flag[vlist[j+1]] = mypid;
@@ -641,7 +643,7 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
                ML_ElementAGX_Print(element);
                for ( j = 0 ; j < leng; j++ )
                {
-                  if ( ndim == 2 ) 
+                  if ( ndim == 2 )
                      printf("  coord %d = %e %e \n", j, coord_short[j*2],
                                                         coord_short[j*2+1]);
                   else if ( ndim == 3 )
@@ -650,7 +652,7 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
                   if (coef_ptr[gpcnt+j] > (coef_ptr[gpcnt+j-1]+1))
                   {
                      for (k=coef_ptr[gpcnt+j-1]; k<coef_ptr[gpcnt+j]; k++)
-                        printf(" coef = %e \n", coefs[k]); 
+                        printf(" coef = %e \n", coefs[k]);
                   }
                }
                printf(" <=== \n" );
@@ -664,7 +666,7 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
             ML_IntList_Load_Sublist(lfv_list, ncand+1, vlist);
             gpcnt = gpcnt + leng;
             gcnt  = coef_ptr[gpcnt-1];
-          
+
             if (gcnt > cur_coef_leng)
             {
                printf("Error : coefficient array not long enough. \n");
@@ -684,7 +686,7 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
    /*  whether a coarse node is residing within my processor or not).   */
    /* ----------------------------------------------------------------- */
 
-   node_proc_map = g_c_grid->node_proc_map; 
+   node_proc_map = g_c_grid->node_proc_map;
    ML_memory_alloc((void**) &fine2coarsecnts,ncvert * sizeof(int),"f2c");
    ML_memory_alloc((void**) &vlist,  MAX_VERT_PER_ELE*sizeof(int),"f2C");
    for ( i = 0; i < ncvert; i++ ) fine2coarsecnts[i] = 0;
@@ -697,7 +699,7 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
       iend     = lfv_list->start[i+1];
       leng     = iend - ibegin;
       cele_num = lfv_list->members[k];
-      icnt     = cgrid_fcns->USR_grid_get_element_vlist(c_grid, 
+      icnt     = cgrid_fcns->USR_grid_get_element_vlist(c_grid,
                                                         cele_num, vlist);
 
       for ( m = ibegin; m < iend; m++ )
@@ -712,8 +714,8 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
                   cnodenum  = vlist[j-mbegin];
                   cgnodenum = cgrid_fcns->USR_grid_get_vertex_global_num(
                                                           c_grid,cnodenum);
-                  if ( node_proc_map[cgnodenum] == mypid ) 
-                     fine2coarsecnts[cnodenum]++; 
+                  if ( node_proc_map[cgnodenum] == mypid )
+                     fine2coarsecnts[cnodenum]++;
                   else extern_node_cnt++;
                }
             }
@@ -732,7 +734,7 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
       ncnt += fine2coarsecnts[i];
    }
    xsfer_op->local_ia[ncvert] = ncnt;
-   for ( i = 0; i < ncvert; i++ ) 
+   for ( i = 0; i < ncvert; i++ )
       fine2coarsecnts[i] = xsfer_op->local_ia[i];
    if ( ncnt > 0 )
    {
@@ -743,8 +745,8 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
    }
    else
    {
-      xsfer_op->local_ja = NULL; 
-      xsfer_op->local_a  = NULL; 
+      xsfer_op->local_ja = NULL;
+      xsfer_op->local_a  = NULL;
    }
    if ( extern_node_cnt > 0 )
    {
@@ -777,7 +779,7 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
       iend     = lfv_list->start[i+1];
       leng     = iend - ibegin;
       cele_num = lfv_list->members[k];
-      icnt     = cgrid_fcns->USR_grid_get_element_vlist(c_grid, 
+      icnt     = cgrid_fcns->USR_grid_get_element_vlist(c_grid,
                                                   cele_num, vlist);
 
       for ( m = ibegin; m < iend; m++ )
@@ -796,7 +798,7 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
                   cgnodenum = cgrid_fcns->USR_grid_get_vertex_global_num(
                                                         c_grid,cnodenum);
                   if ( node_proc_map[cgnodenum] == mypid )
-                  { 
+                  {
                      index = fine2coarsecnts[cnodenum]++;
                      xsfer_op->local_ja[index] = fnodenum;
                      xsfer_op->local_a[index]  = coefs[j];
@@ -820,7 +822,7 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
    for ( i = 0; i < ncnt; i++ )
    {
       icnt = (fine2coarsecnts[i] - xsfer_op->local_ia[i+1]);
-      if ( icnt != 0 ) 
+      if ( icnt != 0 )
          printf("Error : in local transfer operator (%d) %d.\n",i,icnt);
    }
 /* #endif */
@@ -846,10 +848,10 @@ void ML_construct_RP0(void *c_grid, ML_GridFunc *cgrid_fcns,
 /*   element number stored at the beginning of the sublist.                */
 /* *********************************************************************** */
 
-int ML_remote_grid_candidates(void *f_grid, ML_GridFunc *fgrid_fcns, 
+int ML_remote_grid_candidates(void *f_grid, ML_GridFunc *fgrid_fcns,
                            ML_GridFunc *cgrid_fcns,
-                           ML_GridAGX *g_c_grid, ML_IntList *candidates, 
-                           ML_OperatorAGX  *xsfer_op, ML_Comm *comm) 
+                           ML_GridAGX *g_c_grid, ML_IntList *candidates,
+                           ML_OperatorAGX  *xsfer_op, ML_Comm *comm)
 {
    int    i, ncelmnts, nfvert, ncand, icnt, *fnode_flag;
    int    mypid, *vlist, *fvlist, ndim, nfvert_left, *element_map;
@@ -865,9 +867,9 @@ int ML_remote_grid_candidates(void *f_grid, ML_GridFunc *fgrid_fcns,
    /* ----------------------------------------------------------------- */
 
    ncelmnts    = g_c_grid->Nelements;
-   if (fgrid_fcns->USR_grid_get_nvertices == NULL) 
+   if (fgrid_fcns->USR_grid_get_nvertices == NULL)
       pr_error("ML_remote_grid_candidates: USR_grid_get_nvertices() not found\n");
-   if (fgrid_fcns->USR_grid_get_dimension == NULL) 
+   if (fgrid_fcns->USR_grid_get_dimension == NULL)
       pr_error("ML_remote_grid_candidates: USR_grid_get_dimension() not found\n");
    ndim        = fgrid_fcns->USR_grid_get_dimension(f_grid);
    nfvert      = fgrid_fcns->USR_grid_get_nvertices(f_grid);
@@ -882,7 +884,7 @@ int ML_remote_grid_candidates(void *f_grid, ML_GridFunc *fgrid_fcns,
    /* be considered any more.) If not more left, just return.           */
    /* ----------------------------------------------------------------- */
 
-   nfvert_left = 0; 
+   nfvert_left = 0;
    for (i = 0; i < nfvert; i++) if ( fnode_flag[i] == -1 ) nfvert_left++;
    if ( nfvert_left == 0 ) return 0;
 
@@ -914,7 +916,7 @@ int ML_remote_grid_candidates(void *f_grid, ML_GridFunc *fgrid_fcns,
       if ( fnode_flag[i] == -1 )
       {
          fvlist[icnt] = i;
-         fgrid_fcns->USR_grid_get_vertex_coordinate(f_grid, i, 
+         fgrid_fcns->USR_grid_get_vertex_coordinate(f_grid, i,
                                                 &coord[ndim*icnt]);
          icnt++;
       }
@@ -939,7 +941,7 @@ int ML_remote_grid_candidates(void *f_grid, ML_GridFunc *fgrid_fcns,
 
          /* search fine vertices for candidates for the given element.  */
          /* Upon return, vlist[1...] should contain the indices of the  */
-         /* candidates, and ncand contains the number of such vertices) */ 
+         /* candidates, and ncand contains the number of such vertices) */
          /* fnode_flag is an array to tell the element to ignore those  */
          /* fine nodes with the corresponding entry = -1.               */
 
@@ -957,7 +959,7 @@ int ML_remote_grid_candidates(void *f_grid, ML_GridFunc *fgrid_fcns,
          {
             vlist[0] = i;
             ML_IntList_Load_Sublist(candidates, ncand+1, vlist);
-         } 
+         }
       }
    }
 
@@ -989,13 +991,15 @@ int ML_remote_grid_candidates(void *f_grid, ML_GridFunc *fgrid_fcns,
 /* *********************************************************************** */
 
 void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
-                            ML_GridFunc *fgrid_fcns, ML_GridAGX *g_cgrid, 
+                            ML_GridFunc *fgrid_fcns, ML_GridAGX *g_cgrid,
                             ML_CommInfoAGX *combuf, ML_Comm *comm)
 {
-   int     i, j, k1, k2, leng, nprocs, mypid, proc_id, fromproc; 
+   int     i, j, k1, k2, leng, nprocs, mypid, proc_id, fromproc;
    int     sendproc_cnt, recvproc_cnt, tot_recv_leng, msgtype, index= 0, length;
-   int     *send_proc, **send_list, *send_leng, *itmp, *proc_flag, elenum;
-   int     *recv_proc, *recv_leng, **recv_list, tot_send_leng, *trecv_proc;
+   int     *send_proc, *send_leng, *itmp, *proc_flag;
+   ml_big_int **send_list, elenum, big_index=0;
+   int     *recv_proc, *recv_leng, tot_send_leng, *trecv_proc;
+   ml_big_int **recv_list;
    int     ndim, *trecv_msg, *trecv_leng, *elmnt_proc_map, nbytes, *intarray;
    double  *xyz;
    USR_REQ *Request;
@@ -1064,7 +1068,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
       nbytes = sendproc_cnt * sizeof(int);
       ML_memory_alloc((void**) &send_proc, nbytes, "sp1" );
       ML_memory_alloc((void**) &send_leng, nbytes, "sl1" );
-      ML_memory_alloc((void**) &send_list, nbytes*sizeof(int *)/sizeof(int), "st1" );
+      ML_memory_alloc((void**) &send_list, sendproc_cnt*sizeof(ml_big_int *), "st1" );
    }
    else
    {
@@ -1080,11 +1084,11 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
       {
          send_proc[k2]   = i;
          send_leng[k2]   = 0;
-         ML_memory_alloc((void**) &(send_list[k2]),k1*sizeof(int),"sl3"); 
+         ML_memory_alloc((void**) &(send_list[k2]),k1*sizeof(ml_big_int),"sl3");
          k2++;
-      } 
+      }
    }
- 
+
    /* ----------------------------------------------------------------- */
    /* 'sendproc_cnt' is the number of processors that data are to be    */
    /* sent for querying, 'send_proc' contains the processor numbers,    */
@@ -1105,10 +1109,10 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
       k1      = inlist->start[i];
       k2      = inlist->members[k1];
       proc_id = elmnt_proc_map[k2];
-      elenum  = g_cgrid->global_element[k2]; 
+      elenum  = g_cgrid->global_element[k2];
       if ( proc_id != mypid )
       {
-         for ( j = 0; j < sendproc_cnt; j++ ) 
+         for ( j = 0; j < sendproc_cnt; j++ )
             if ( proc_id == send_proc[j] ) { index = j; break; }
          k1++;
          k2 = inlist->start[i+1];
@@ -1119,7 +1123,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
 
          /* put the fine vertex candidates on the send list */
 
-         for ( j = k1; j < k2; j++) 
+         for ( j = k1; j < k2; j++)
             send_list[index][send_leng[index]++] = inlist->members[j];
       }
       else
@@ -1133,7 +1137,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    /* load the send information to the communication buffer             */
    /* ----------------------------------------------------------------- */
 
-   for ( i = 0; i < sendproc_cnt; i++ ) 
+   for ( i = 0; i < sendproc_cnt; i++ )
       ML_CommInfoAGX_Load_SendList(combuf, send_proc[i], send_leng[i],
                                  send_list[i]);
 
@@ -1151,7 +1155,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    /* loaded to the recv fields of the 'com' variable.                  */
    /* ----------------------------------------------------------------- */
 
-   for ( i = 0; i < nprocs; i++ ) if (proc_flag[i] != 0) proc_flag[i] = 1; 
+   for ( i = 0; i < nprocs; i++ ) if (proc_flag[i] != 0) proc_flag[i] = 1;
    ML_memory_alloc( (void **) &itmp, nprocs * sizeof(int), "itm" );
    /*ML_Comm_GsumVecInt(comm, proc_flag, itmp, nprocs );*/
    ML_gsum_vec_int(&proc_flag, &itmp, nprocs, comm );
@@ -1161,7 +1165,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
       nbytes = k1 * sizeof(int);
       ML_memory_alloc( (void **) &recv_proc, nbytes, "rp1" );
       ML_memory_alloc( (void **) &recv_leng, nbytes, "rl1" );
-      ML_memory_alloc( (void **) &recv_list, k1*sizeof(int*), "rt1" );
+      ML_memory_alloc( (void **) &recv_list, k1*sizeof(ml_big_int*), "rt1" );
    }
    else
    {
@@ -1194,20 +1198,20 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    {
       Request  = NULL;
       intarray = NULL;
-   }   
+   }
    for ( i = 0; i < proc_flag[mypid]; i++)
    {
       fromproc = -1;
-      comm->USR_irecvbytes((void*) &intarray[i], sizeof(int), &fromproc, 
+      comm->USR_irecvbytes((void*) &intarray[i], sizeof(int), &fromproc,
 #ifdef ML_CPP
                            &msgtype, comm->USR_comm, &Request[i]);
 #else
                            &msgtype, comm->USR_comm, (void *)&Request[i]);
 #endif
    }
-   for ( i = 0; i < sendproc_cnt; i++ ) 
+   for ( i = 0; i < sendproc_cnt; i++ )
    {
-      comm->USR_sendbytes((void*) &send_leng[i], sizeof(int), send_proc[i], 
+      comm->USR_sendbytes((void*) &send_leng[i], sizeof(int), send_proc[i],
                           msgtype, comm->USR_comm);
    }
    for ( i = 0; i < proc_flag[mypid]; i++)
@@ -1219,21 +1223,21 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
 #else
                            &msgtype, comm->USR_comm, (void *)&Request[i]);
 #endif
-      itmp[fromproc] = intarray[i]; 
+      itmp[fromproc] = intarray[i];
    }
    if ( proc_flag[mypid] > 0 )
-   {  
-      ML_memory_free((void**) &Request ); 
-      ML_memory_free((void**) &intarray ); 
+   {
+      ML_memory_free((void**) &Request );
+      ML_memory_free((void**) &intarray );
       Request  = NULL;
       intarray = NULL;
    }
-      
+
    /* ----------------------------------------------------------------- */
    /* Compress the information in itmp into the recv_leng and recv_proc */
    /* arrays.  Then set up the communication buffers (using the         */
    /* ML_CommInfoAGX_Setup_Recv function) and indexing information      */
-   /* (using ML_CommInfoAGX_Load_RecvInfo) for receiving data.          */      
+   /* (using ML_CommInfoAGX_Load_RecvInfo) for receiving data.          */
    /* ----------------------------------------------------------------- */
 
    recvproc_cnt = tot_recv_leng = 0;
@@ -1248,7 +1252,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    }
 
    ML_CommInfoAGX_Setup_Recv(combuf, recvproc_cnt, tot_recv_leng);
-   for ( i = 0; i < recvproc_cnt; i++ ) 
+   for ( i = 0; i < recvproc_cnt; i++ )
       ML_CommInfoAGX_Load_RecvInfo(combuf, recv_proc[i], recv_leng[i]);
 
    /* ----------------------------------------------------------------- */
@@ -1278,9 +1282,9 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
       ML_CommInfoAGX_Get_RecvList(combuf,i,&proc_id,&leng,&(recv_list[i]));
       trecv_msg[i]  = 479;
       trecv_proc[i] = proc_id;
-      trecv_leng[i] = leng * sizeof(int);
-      comm->USR_irecvbytes((void*) (recv_list[i]), trecv_leng[i], 
-                           &(trecv_proc[i]), &(trecv_msg[i]), 
+      trecv_leng[i] = leng * sizeof(recv_list[0][0]);
+      comm->USR_irecvbytes((void*) (recv_list[i]), trecv_leng[i],
+                           &(trecv_proc[i]), &(trecv_msg[i]),
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else
@@ -1289,8 +1293,8 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    }
    for ( i = 0; i < sendproc_cnt; i++ )
    {
-      leng = send_leng[i] * sizeof(int);
-      comm->USR_sendbytes((void*) (send_list[i]), leng, send_proc[i], 
+      leng = send_leng[i] * sizeof(send_list[0][0]);
+      comm->USR_sendbytes((void*) (send_list[i]), leng, send_proc[i],
                           msgtype, comm->USR_comm );
    }
    for ( i = 0; i < recvproc_cnt; i++ )
@@ -1314,7 +1318,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
 
    k2      = 0;
    msgtype = 480;
-   for ( i = 0; i < sendproc_cnt; i++ ) 
+   for ( i = 0; i < sendproc_cnt; i++ )
       if (send_leng[i] > k2) k2 = send_leng[i];
    k2  = k2 * ndim * sizeof(double);
    if ( k2 > 0 ) ML_memory_alloc( (void**) &xyz, k2, "xyz" );
@@ -1327,7 +1331,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
       trecv_leng[i] = ndim * recv_leng[i] * sizeof(double);
       trecv_proc[i] = recv_proc[i];
       comm->USR_irecvbytes((void*)&(combuf->recv_xyz[index]), trecv_leng[i],
-                           &(trecv_proc[i]), &(trecv_msg[i]), 
+                           &(trecv_proc[i]), &(trecv_msg[i]),
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else
@@ -1341,10 +1345,10 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
       length = send_leng[i] * sizeof(double);
       for ( j = 0; j < send_leng[i]; j++ )
       {
-         index      = send_list[i][j];
-         if (index >= 0) 
+         big_index      = send_list[i][j];
+         if (big_index >= 0)
          {
-            fgrid_fcns->USR_grid_get_vertex_coordinate(fgrid, index, 
+            fgrid_fcns->USR_grid_get_vertex_coordinate(fgrid, big_index,
                                                       &(xyz[j*ndim]));
          }
          else
@@ -1353,7 +1357,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
             if (ndim > 2) xyz[ndim*j+2] = 0.0;
          }
       }
-      comm->USR_sendbytes((void*) xyz, ndim*length, send_proc[i], msgtype, 
+      comm->USR_sendbytes((void*) xyz, ndim*length, send_proc[i], msgtype,
                           comm->USR_comm );
    }
 
@@ -1374,7 +1378,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    /* Finally, clean up                                                 */
    /* ----------------------------------------------------------------- */
 
-   if ( xyz        != NULL ) ML_memory_free((void**) &xyz); 
+   if ( xyz        != NULL ) ML_memory_free((void**) &xyz);
    if ( trecv_leng != NULL ) ML_memory_free((void**) &trecv_leng);
    if ( trecv_proc != NULL ) ML_memory_free((void**) &trecv_proc);
    if ( trecv_msg  != NULL ) ML_memory_free((void**) &trecv_msg);
@@ -1383,7 +1387,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    if ( send_leng  != NULL ) ML_memory_free((void**) &send_leng);
    if ( send_list  != NULL )
    {
-      for ( i = 0; i < sendproc_cnt; i++ ) 
+      for ( i = 0; i < sendproc_cnt; i++ )
          ML_memory_free( (void**) &(send_list[i]) );
       ML_memory_free((void**) &send_list);
    }
@@ -1393,7 +1397,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
    ML_memory_free((void **) &proc_flag);
    ML_memory_free((void **) &itmp);
 }
-  
+
 /* *********************************************************************** */
 /* *********************************************************************** */
 /* *********************************************************************** */
@@ -1402,12 +1406,13 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
 /*    coefficients in xsfer_op ext2 variables.                             */
 /* *********************************************************************** */
 
-void ML_get_basis_functions_coef(ML_CommInfoAGX *com, void *c_grid, 
-                                 ML_GridFunc *cgrid_fcns, 
+void ML_get_basis_functions_coef(ML_CommInfoAGX *com, void *c_grid,
+                                 ML_GridFunc *cgrid_fcns,
                                  ML_OperatorAGX  *xsfer_op)
 {
-   int    j, m, length, celenum, mcnt, ncnt, index, nodecnt, cur_proc;
-   int    *ev_list, cur_coef_leng, gelenum, ndim, ncelmnts, *coef_ptr;
+   int    j, m, length, mcnt, ncnt, index, nodecnt, cur_proc;
+   int    cur_coef_leng, ndim, ncelmnts, *coef_ptr;
+   ml_big_int celenum, gelenum, *ev_list;
    int    cur_leng, *track_array=NULL, track_leng, prev_track_leng;
    int    MAX_VERT_PER_ELE;
    double *coord, *coefs, *coefs2;
@@ -1435,11 +1440,11 @@ void ML_get_basis_functions_coef(ML_CommInfoAGX *com, void *c_grid,
    MAX_VERT_PER_ELE = cgrid_fcns->ML_MaxElmntVert;
    cur_coef_leng = length * MAX_VERT_PER_ELE + 1;
    ML_memory_alloc((void**) &coefs, cur_coef_leng*sizeof(double), "ce3");
-   coef_ptr[0] = 0; 
+   coef_ptr[0] = 0;
 
    /* ----------------------------------------------------------------- */
    /* The list consists of integer lists of node numbers.  Each sublist */
-   /* is preceded by its coarse element number(with its number negated).*/  
+   /* is preceded by its coarse element number(with its number negated).*/
    /* ----------------------------------------------------------------- */
 
    mcnt     = 0;
@@ -1450,7 +1455,7 @@ void ML_get_basis_functions_coef(ML_CommInfoAGX *com, void *c_grid,
       cur_leng = com->recv_ia[1] - com->recv_ia[0];
       if ( cur_leng > 0 )
          ML_memory_alloc((void**) &track_array,cur_leng*sizeof(int),"ta1");
-      else 
+      else
          track_array = NULL;
       track_leng = 0;
    }
@@ -1465,16 +1470,16 @@ void ML_get_basis_functions_coef(ML_CommInfoAGX *com, void *c_grid,
          if ( track_array != NULL ) ML_memory_free( (void**) &track_array );
          if ( cur_leng > 0 )
             ML_memory_alloc((void**) &track_array,cur_leng*sizeof(int),"ta2");
-         else 
+         else
             track_array = NULL;
          track_leng = 0;
       }
-          
+
       /* fetch the global element number */
 
       celenum = - ev_list[mcnt] - 1;
 
-      /* find out its relative position in the local coarse grid */ 
+      /* find out its relative position in the local coarse grid */
 
       index  = 0;
       gelenum = cgrid_fcns->USR_grid_get_element_global_num(c_grid, index);
@@ -1489,7 +1494,7 @@ void ML_get_basis_functions_coef(ML_CommInfoAGX *com, void *c_grid,
          exit(-1);
       }
 /* #endif */
-         
+
       /* since this is an element number, no coefficient is assigned */
 
       coef_ptr[mcnt+1] = coef_ptr[mcnt];
@@ -1513,25 +1518,25 @@ void ML_get_basis_functions_coef(ML_CommInfoAGX *com, void *c_grid,
          ML_memory_alloc((void**) &coefs, cur_coef_leng*sizeof(double),"ce4");
          for ( j = 0; j < ncnt; j++ ) coefs[j] = coefs2[j];
          ML_memory_free( (void**) &coefs2);
-      } 
+      }
 
       /* call user function to generate coefficients */
       /* for the current set of node coordinates.    */
 
-      cgrid_fcns->USR_compute_basis_coefficients(c_grid, index, 
-                        &coord[ndim*mcnt], nodecnt, &coefs[ncnt], 
+      cgrid_fcns->USR_compute_basis_coefficients(c_grid, index,
+                        &coord[ndim*mcnt], nodecnt, &coefs[ncnt],
                         &coef_ptr[mcnt+1]);
 
       /* To interface to the user function properly,    */
       /* need to adjust the coef_ptr array accordingly. */
-          
-      for ( j = 0 ; j < nodecnt; j++ ) 
+
+      for ( j = 0 ; j < nodecnt; j++ )
          coef_ptr[mcnt+j+1] += coef_ptr[mcnt+j];
 
       /* the processor that gets the debug flag will print out */
-      /* basis coefficient information */ 
+      /* basis coefficient information */
 
-      /*if ( ML_debug >= 0 ) 
+      /*if ( ML_debug >= 0 )
       {
          printf(" ===> (2) \n");
          printf(" Local coarse element = %d \n", index );
@@ -1545,7 +1550,7 @@ void ML_get_basis_functions_coef(ML_CommInfoAGX *com, void *c_grid,
             if (coef_ptr[mcnt+j+1] > (coef_ptr[mcnt+j]+1))
             {
                for ( k = coef_ptr[mcnt+j] ; k < coef_ptr[mcnt+j+1]; k++ )
-                  printf(" coef = %e \n", coefs[k]); 
+                  printf(" coef = %e \n", coefs[k]);
             }
          }
          printf(" <=== (2) \n");
@@ -1568,7 +1573,7 @@ void ML_get_basis_functions_coef(ML_CommInfoAGX *com, void *c_grid,
                   coefs[m] = 0.0;
             }
          }
-      }            
+      }
 
       /* finally update the counters for the next processing */
 
@@ -1602,14 +1607,15 @@ void ML_get_basis_functions_coef(ML_CommInfoAGX *com, void *c_grid,
 /* *********************************************************************** */
 
 void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
-                              ML_CommInfoAGX *combuf, 
+                              ML_CommInfoAGX *combuf,
                               ML_OperatorAGX  *xsfer_op, ML_Comm *comm)
 {
    int     i, j, k, sendproc_cnt, recvproc_cnt, tot_recv_leng;
    int     msgtype, *send_proc, *send_leng, *recv_proc, *recv_leng;
-   int     leng, offset, *coefp_out, *ind_data; 
-   int     index, *coef_ptr, begin, end, icnt, celenum, gelenum;
-   int     *evlist, *vlist, *index_out, ncelmnts, MAX_VERT_PER_ELE;
+   int     leng, offset, *coefp_out, *ind_data;
+   int     index, *coef_ptr, begin, end, icnt;
+   int     *vlist, *index_out, ncelmnts, MAX_VERT_PER_ELE;
+   ml_big_int *evlist, celenum, gelenum;
    double  *coef_out, *coefs;
    USR_REQ *Request;
 
@@ -1655,7 +1661,7 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
       ind_data = NULL;
    }
    icnt         = 0;
-   
+
    while ( icnt < leng )
    {
 
@@ -1667,19 +1673,19 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
          index++;
          gelenum = cgrid_fcns->USR_grid_get_element_global_num(c_grid,index);
       }
-      k = cgrid_fcns->USR_grid_get_element_vlist( c_grid, index, vlist ); 
-      for ( j = 0; j < k; j++ ) 
-         vlist[j] = cgrid_fcns->USR_grid_get_vertex_global_num(c_grid, 
+      k = cgrid_fcns->USR_grid_get_element_vlist( c_grid, index, vlist );
+      for ( j = 0; j < k; j++ )
+         vlist[j] = cgrid_fcns->USR_grid_get_vertex_global_num(c_grid,
                                                                vlist[j]);
       icnt++;
-      
+
       /* return coefficient = 0 if the coarse grid */
       /* point does not reside in my processor */
 
       while ( evlist[icnt] >= 0 && icnt < leng )
       {
          index = coef_ptr[icnt];
-         if ( ( coef_ptr[icnt+1] - index ) > 1 )  
+         if ( ( coef_ptr[icnt+1] - index ) > 1 )
             for ( j = 0; j < k; j++ ) ind_data[index+j] = vlist[j];
          icnt++;
       }
@@ -1695,17 +1701,17 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
    /*     returned)                                                   */
 
    send_proc = combuf->recv_proc;
-   if (sendproc_cnt > 0) 
+   if (sendproc_cnt > 0)
       ML_memory_alloc((void**) &send_leng, sendproc_cnt*sizeof(int), "sl4");
    else
       send_leng = NULL;
 
    for ( i = 0; i < sendproc_cnt; i++ )
    {
-      begin = combuf->recv_ia[i];  
-      end   = combuf->recv_ia[i+1];  
+      begin = combuf->recv_ia[i];
+      end   = combuf->recv_ia[i+1];
       send_leng[i] = coef_ptr[end] - coef_ptr[begin];
-   } 
+   }
 
    /* Then set up the send information                               */
    /*   - to find out the receive length, it requires communicating  */
@@ -1713,7 +1719,7 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
 
    recvproc_cnt = combuf->send_cnt;
    recv_proc    = combuf->send_proc;
-   if (recvproc_cnt > 0) 
+   if (recvproc_cnt > 0)
    {
       ML_memory_alloc((void**) &recv_leng,recvproc_cnt*sizeof(int),"rl3");
       ML_memory_alloc((void**) &Request,recvproc_cnt*sizeof(USR_REQ),"ro3");
@@ -1759,17 +1765,17 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
       ML_memory_alloc((void**) &index_out, tot_recv_leng*sizeof(int), "io2");
    }
    else
-   { 
+   {
       coef_out  = NULL;
       index_out = NULL;
    }
-  
+
    offset = 0;
    for ( i = 0; i < recvproc_cnt; i++ )
    {
       msgtype = 13580;
-      leng = recv_leng[i] * sizeof(double); 
-      comm->USR_irecvbytes((void*) &coef_out[offset], leng, &recv_proc[i], 
+      leng = recv_leng[i] * sizeof(double);
+      comm->USR_irecvbytes((void*) &coef_out[offset], leng, &recv_proc[i],
 #ifdef ML_CPP
                            &msgtype, comm->USR_comm, &Request[i]);
 #else
@@ -1780,9 +1786,9 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
    offset  = 0;
    msgtype = 13580;
    for ( i = 0; i < sendproc_cnt; i++ )
-   { 
+   {
       leng = send_leng[i] * sizeof(double);
-      comm->USR_sendbytes((void*) &coefs[offset], leng, send_proc[i], 
+      comm->USR_sendbytes((void*) &coefs[offset], leng, send_proc[i],
                           msgtype, comm->USR_comm );
       offset = offset + send_leng[i];
    }
@@ -1804,8 +1810,8 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
    for ( i = 0; i < recvproc_cnt; i++ )
    {
       msgtype = 13581;
-      leng = recv_leng[i] * sizeof(int); 
-      comm->USR_irecvbytes((void*) &index_out[offset], leng, &recv_proc[i], 
+      leng = recv_leng[i] * sizeof(int);
+      comm->USR_irecvbytes((void*) &index_out[offset], leng, &recv_proc[i],
 #ifdef ML_CPP
                            &msgtype, comm->USR_comm, &Request[i]);
 #else
@@ -1816,9 +1822,9 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
    offset  = 0;
    msgtype = 13581;
    for ( i = 0; i < sendproc_cnt; i++ )
-   { 
+   {
       leng = send_leng[i] * sizeof(int);
-      comm->USR_sendbytes((void*) &ind_data[offset], leng, send_proc[i], 
+      comm->USR_sendbytes((void*) &ind_data[offset], leng, send_proc[i],
                           msgtype, comm->USR_comm );
       offset = offset + send_leng[i];
    }
@@ -1835,7 +1841,7 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
 #endif
       offset = offset + recv_leng[i];
    }
-   if ( recvproc_cnt > 0 ) 
+   if ( recvproc_cnt > 0 )
    {
       ML_memory_free( (void**) &Request);
    }
@@ -1850,15 +1856,15 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
 
    sendproc_cnt  = combuf->recv_cnt;
    send_proc     = combuf->recv_proc;
-   for ( i = 0; i < sendproc_cnt; i++ ) 
+   for ( i = 0; i < sendproc_cnt; i++ )
    {
-      send_leng[i] = combuf->recv_ia[i+1] - combuf->recv_ia[i] + 1;  
+      send_leng[i] = combuf->recv_ia[i+1] - combuf->recv_ia[i] + 1;
    }
    recvproc_cnt  = combuf->send_cnt;
    recv_proc     = combuf->send_proc;
-   for ( i = 0; i < recvproc_cnt; i++ ) 
+   for ( i = 0; i < recvproc_cnt; i++ )
    {
-      recv_leng[i] = combuf->send_ia[i+1] - combuf->send_ia[i] + 1;  
+      recv_leng[i] = combuf->send_ia[i+1] - combuf->send_ia[i] + 1;
    }
    tot_recv_leng = 0;
    for ( i = 0; i < recvproc_cnt; i++ ) tot_recv_leng += recv_leng[i];
@@ -1870,10 +1876,10 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
    {
       coefp_out = NULL;
    }
-  
+
    /* Then send the coefficient pointers */
 
-   if ( recvproc_cnt > 0 ) 
+   if ( recvproc_cnt > 0 )
    {
       ML_memory_alloc((void**) &Request,recvproc_cnt*sizeof(USR_REQ),"cv5");
    }
@@ -1886,8 +1892,8 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
    for ( i = 0; i < recvproc_cnt; i++ )
    {
       msgtype = 13582;
-      leng = recv_leng[i] * sizeof(int); 
-      comm->USR_irecvbytes((char*) &coefp_out[offset], leng, &recv_proc[i], 
+      leng = recv_leng[i] * sizeof(int);
+      comm->USR_irecvbytes((char*) &coefp_out[offset], leng, &recv_proc[i],
 #ifdef ML_CPP
                            &msgtype, comm->USR_comm, &Request[i]);
 #else
@@ -1898,7 +1904,7 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
    msgtype = 13582;
    offset  = 0;
    for ( i = 0; i < sendproc_cnt; i++ )
-   { 
+   {
       leng = send_leng[i] * sizeof(int);
       comm->USR_sendbytes((void*) &coef_ptr[offset], leng, send_proc[i],
                           msgtype, comm->USR_comm );
@@ -1940,7 +1946,7 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
    xsfer_op->ext2_ptr   = coefp_out;
    xsfer_op->ext2_a     = coef_out;
    xsfer_op->ext2_index = index_out;
-} 
+}
 
 /* *********************************************************************** */
 /* *********************************************************************** */
@@ -1952,14 +1958,16 @@ void ML_exchange_coefficients(void *c_grid, ML_GridFunc *cgrid_fcns,
 
 void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
                       void *c_grid, ML_GridFunc *cgrid_fcns,
-                      ML_GridAGX *g_c_grid, ML_CommInfoAGX *combuf, 
+                      ML_GridAGX *g_c_grid, ML_CommInfoAGX *combuf,
                       ML_OperatorAGX  *xsfer_op, ML_Comm *comm)
 {
    int     i, j, k, m, ext_cnt, *ext_ia, *ext_ja, *ext2_ptr;
    int     *ext2_ind, mypid, nprocs, fnvert, cnvert, gcnvert, *node_proc_map;
    int     *cv_leng, *cv_cur_leng, **cv_list, **cv_cnt, *cv_ia, colind;
-   int     fvnum, com_cnt, cvnum, pnum, *tcv_list, begin, end, rownum, lcnt;
+   ml_big_int fvnum;
+   int     com_cnt, cvnum, pnum, *tcv_list, begin, end, rownum, lcnt;
    int     index, proc_cnt, colbase, colend, colcnt, *tmp_ia, *proc_flag;
+   int     ii, *recv_list32;
    int     int_size=sizeof(int), msgtype, fromsize, fromproc;
    int     *fnode_flag, err_flag, ndim, nbytes, *intarray;
    double  *ext2_a, *ext_a, coord[3];
@@ -2000,21 +2008,21 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    /* - cv_cnt : no. of times coarse indices are accessed         */
    /* ------------------------------------------------------------*/
 
-   ML_memory_alloc((void**) &cv_leng, nprocs * int_size, "cv1" ); 
+   ML_memory_alloc((void**) &cv_leng, nprocs * int_size, "cv1" );
    for ( i = 0; i < nprocs; i++ ) cv_leng[i] = 0;
-   ML_memory_alloc((void**) &cv_cur_leng, nprocs * int_size, "cl1" ); 
+   ML_memory_alloc((void**) &cv_cur_leng, nprocs * int_size, "cl1" );
    m = gcnvert * 3 / nprocs + 1;
    for ( i = 0; i < nprocs; i++ ) cv_cur_leng[i] = m;
-   ML_memory_alloc((void**) &cv_list, nprocs * sizeof(int*), "cv5" ); 
-   ML_memory_alloc((void**) &cv_cnt, nprocs * sizeof(int*), "cc5" ); 
+   ML_memory_alloc((void**) &cv_list, nprocs * sizeof(int*), "cv5" );
+   ML_memory_alloc((void**) &cv_cnt, nprocs * sizeof(int*), "cc5" );
    for ( i = 0; i < nprocs; i++ )
    {
       m = cv_cur_leng[i];
-      ML_memory_alloc((void**) &(cv_list[i]), m * int_size, "cl6" ); 
-      ML_memory_alloc((void**) &(cv_cnt[i]), m * int_size, "cc6" ); 
+      ML_memory_alloc((void**) &(cv_list[i]), m * int_size, "cl6" );
+      ML_memory_alloc((void**) &(cv_cnt[i]), m * int_size, "cc6" );
       for ( j = 0; j < m; j++ ) cv_cnt[i][j] = 0;
    }
-   ML_memory_alloc((void**) &cv_ia, (nprocs + 1) * int_size, "cia" ); 
+   ML_memory_alloc((void**) &cv_ia, (nprocs + 1) * int_size, "cia" );
 
    /* ------------------------------------------------------------*/
    /* process the local coefficient array first                   */
@@ -2029,20 +2037,20 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
          tcv_list = cv_list[pnum];
          cv_cur_leng[pnum] += 20;
          m = cv_cur_leng[pnum];
-         ML_memory_alloc((void**) &(cv_list[pnum]), m * int_size, "cl7" ); 
-         for ( j = 0; j < cv_leng[pnum]; j++ ) 
+         ML_memory_alloc((void**) &(cv_list[pnum]), m * int_size, "cl7" );
+         for ( j = 0; j < cv_leng[pnum]; j++ )
             cv_list[pnum][j] = tcv_list[j];
          ML_memory_free( (void **) &tcv_list );
          tcv_list = cv_cnt[pnum];
-         ML_memory_alloc((void**) &(cv_cnt[pnum]), m * int_size, "cc4" ); 
-         for ( j = 0; j < cv_leng[pnum]; j++ ) 
+         ML_memory_alloc((void**) &(cv_cnt[pnum]), m * int_size, "cc4" );
+         for ( j = 0; j < cv_leng[pnum]; j++ )
             cv_cnt[pnum][j] = tcv_list[j];
          ML_memory_free( (void **) &tcv_list );
       }
-      ML_search_insert_sort( cvnum, cv_list[pnum], &(cv_leng[pnum]), 
+      ML_search_insert_sort( cvnum, cv_list[pnum], &(cv_leng[pnum]),
                             cv_cnt[pnum] );
    }
-   
+
    /* ------------------------------------------------------------*/
    /* now search the incoming coefficient array and its pointer   */
    /* array (from queries) to be added to cv_leng and cv_list.    */
@@ -2079,7 +2087,7 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
          {
 
             /* fetch the beginning and end of */
-            /* the coefficient pointers       */ 
+            /* the coefficient pointers       */
 
             begin = ext2_ptr[index] + colcnt;
             end   = ext2_ptr[index+1] + colcnt;
@@ -2102,15 +2110,15 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
                         tcv_list = cv_list[pnum];
                         cv_cur_leng[pnum] += 20;
                         m = cv_cur_leng[pnum];
-                        ML_memory_alloc((void**) &(cv_list[pnum]), 
-                                        m*int_size, "cl7"); 
-                        for ( j = 0; j < cv_leng[pnum]; j++ ) 
+                        ML_memory_alloc((void**) &(cv_list[pnum]),
+                                        m*int_size, "cl7");
+                        for ( j = 0; j < cv_leng[pnum]; j++ )
                            cv_list[pnum][j] = tcv_list[j];
                         ML_memory_free( (void**) &tcv_list );
                         tcv_list = cv_cnt[pnum];
-                        ML_memory_alloc((void**) &(cv_cnt[pnum]), 
-                                        m*int_size, "cc8"); 
-                        for ( j = 0; j < cv_leng[pnum]; j++ ) 
+                        ML_memory_alloc((void**) &(cv_cnt[pnum]),
+                                        m*int_size, "cc8");
+                        for ( j = 0; j < cv_leng[pnum]; j++ )
                            cv_cnt[pnum][j] = tcv_list[j];
                         ML_memory_free( (void**) &tcv_list );
                      }
@@ -2120,16 +2128,16 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
                }
             }
             colend = colend + end - begin;
-         } 
+         }
 
          /* increment to the next set of coefficients */
 
-         index++; 
+         index++;
       }
 
       /* increment to the next element */
 
-      index++; 
+      index++;
    }
 
    /* ------------------------------------------------------------*/
@@ -2159,7 +2167,7 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    {
       if ( cv_leng[i] > 0 ) proc_flag[i] = 1;
       else                  proc_flag[i] = 0;
-   } 
+   }
    /*ML_Comm_GsumVecInt( comm, proc_flag, tmp_ia, nprocs );*/
    ML_gsum_vec_int( &proc_flag, &tmp_ia, nprocs, comm );
    m = proc_flag[mypid];
@@ -2179,7 +2187,7 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    /* get the length of data to be received from each remote processor */
 
    for ( i = 0; i < nprocs; i++ ) tmp_ia[i] = 0;
-   if ( proc_flag[mypid] > 0 ) 
+   if ( proc_flag[mypid] > 0 )
    {
       k = proc_flag[mypid] * sizeof(USR_REQ);
       ML_memory_alloc((void**)&Request, k, "XT9");
@@ -2196,7 +2204,7 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    for ( i = 0; i < proc_flag[mypid]; i++ )
    {
       fromproc = -1;
-      comm->USR_irecvbytes((void*) &intarray[i], int_size, &fromproc, 
+      comm->USR_irecvbytes((void*) &intarray[i], int_size, &fromproc,
 #ifdef ML_CPP
                            &msgtype, comm->USR_comm, &Request[i]);
 #else
@@ -2205,8 +2213,8 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    }
    for ( i = 0; i < nprocs; i++ )
    {
-      if ( cv_leng[i] > 0 )  
-         comm->USR_sendbytes((void*) &cv_leng[i], int_size, i, msgtype, 
+      if ( cv_leng[i] > 0 )
+         comm->USR_sendbytes((void*) &cv_leng[i], int_size, i, msgtype,
                              comm->USR_comm );
    }
    for ( i = 0; i < proc_flag[mypid]; i++ )
@@ -2220,7 +2228,7 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
 #endif
       tmp_ia[fromproc] = intarray[i];
    }
-   if ( proc_flag[mypid] > 0 ) 
+   if ( proc_flag[mypid] > 0 )
    {
       ML_memory_free( (void**) &Request );
       ML_memory_free( (void**) &intarray );
@@ -2237,13 +2245,14 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    }
    if ( xsfer_op->com->recv_cnt > 0 )
    {
-      for ( i = xsfer_op->com->recv_cnt; i >= 1; i-- ) 
-         xsfer_op->com->recv_ia[i] = xsfer_op->com->recv_ia[i-1]; 
+      for ( i = xsfer_op->com->recv_cnt; i >= 1; i-- )
+         xsfer_op->com->recv_ia[i] = xsfer_op->com->recv_ia[i-1];
       xsfer_op->com->recv_ia[0] = 0;
-      for ( i = 1; i <= xsfer_op->com->recv_cnt; i++ ) 
-         xsfer_op->com->recv_ia[i] += xsfer_op->com->recv_ia[i-1]; 
+      for ( i = 1; i <= xsfer_op->com->recv_cnt; i++ )
+         xsfer_op->com->recv_ia[i] += xsfer_op->com->recv_ia[i-1];
       m = xsfer_op->com->recv_ia[xsfer_op->com->recv_cnt];
-      ML_memory_alloc((void**)&(xsfer_op->com->recv_list),m*int_size,"XSa");
+      ML_memory_alloc((void**)&(xsfer_op->com->recv_list),m*sizeof(xsfer_op->com->recv_list[0]),"XSa");
+      ML_memory_alloc((void**) &recv_list32, m*int_size, "tia" );
    }
    ML_memory_free( (void**) &tmp_ia );
    ML_memory_free( (void**) &proc_flag );
@@ -2255,7 +2264,7 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    if ( k > 0 )
    {
       ML_memory_alloc( (void**) &Request, k*sizeof(USR_REQ), "XW0" );
-   }   
+   }
    else
    {
       Request = NULL;
@@ -2263,10 +2272,10 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    for ( i = 0; i < k; i++ )
    {
       fromproc = xsfer_op->com->recv_proc[i];
-      fromsize = (xsfer_op->com->recv_ia[i+1] - xsfer_op->com->recv_ia[i]) * 
+      fromsize = (xsfer_op->com->recv_ia[i+1] - xsfer_op->com->recv_ia[i]) *
                   int_size;
-      tmp_ia   = &(xsfer_op->com->recv_list[xsfer_op->com->recv_ia[i]]);
-      comm->USR_irecvbytes((void*) tmp_ia, fromsize, &fromproc, &msgtype, 
+      tmp_ia = &(recv_list32[xsfer_op->com->recv_ia[i]]);
+      comm->USR_irecvbytes((void*) tmp_ia, fromsize, &fromproc, &msgtype,
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else
@@ -2276,18 +2285,18 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    for ( i = 0; i < nprocs; i++ )
    {
       if ( cv_leng[i] > 0 )
-      { 
+      {
          m = cv_leng[i] * int_size;
-         comm->USR_sendbytes((void*) cv_list[i], m, i, msgtype, 
+         comm->USR_sendbytes((void*) cv_list[i], m, i, msgtype,
                              comm->USR_comm);
       }
    }
    for ( i = 0; i < xsfer_op->com->recv_cnt; i++ )
    {
       fromproc = xsfer_op->com->recv_proc[i];
-      fromsize = (xsfer_op->com->recv_ia[i+1] - xsfer_op->com->recv_ia[i]) * 
+      fromsize = (xsfer_op->com->recv_ia[i+1] - xsfer_op->com->recv_ia[i]) *
                   int_size;
-      tmp_ia   = &(xsfer_op->com->recv_list[xsfer_op->com->recv_ia[i]]);
+      tmp_ia = &(recv_list32[xsfer_op->com->recv_ia[i]]);
       comm->USR_cheapwaitbytes((void*) tmp_ia, fromsize, &fromproc, &msgtype, 
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
@@ -2299,14 +2308,14 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    if ( k > 0 )
    {
       ML_memory_free( (void**) &Request );
-   }   
+   }
 
    /* convert the incoming indices into local indices */
 
    if ( xsfer_op->com->recv_cnt > 0 )
    {
       m      = xsfer_op->com->recv_ia[xsfer_op->com->recv_cnt];
-      tmp_ia = xsfer_op->com->recv_list;
+      tmp_ia = recv_list32;
       for ( i = 0; i < m; i++ )
       {
          index = tmp_ia[i];
@@ -2314,17 +2323,24 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
          k = cgrid_fcns->USR_grid_get_vertex_global_num( c_grid, j );
          while ( index != k && j < cnvert )
          {
-            j++;      
+            j++;
             k = cgrid_fcns->USR_grid_get_vertex_global_num( c_grid, j );
          }
          if ( j >= cnvert )
          {
             printf("RP1 %d : something wrong. \n", mypid );
             exit(0);
-         } 
+         }
          tmp_ia[i] = j;
-      } 
-   } 
+      }
+
+      for (i=0; i<m; ++i)
+        xsfer_op->com->recv_list[i]=recv_list32[i];
+   }
+
+
+   if ( xsfer_op->com->recv_cnt > 0 )
+     ML_memory_free( (void**) &recv_list32 );
 
    /* ------------------------------------------------------------*/
    /* use the cv_leng, cv_cnt, and cv_list arrays to compute the  */
@@ -2346,13 +2362,13 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
       xsfer_op->com->send_cnt  = 0;
       xsfer_op->com->send_proc = NULL;
       xsfer_op->com->send_ia   = NULL;
-   } 
+   }
 
    /* set up the row index field */
 
    k = 0;
    for ( i = 0; i < nprocs; i++ )
-   { 
+   {
       if (cv_leng[i] > 0)
       {
          xsfer_op->com->send_proc[k++] = i;
@@ -2361,7 +2377,7 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    }
    if ( proc_cnt > 0 ) lcnt = xsfer_op->com->send_ia[k];
    else                lcnt = 0;
-   xsfer_op->Nremote_rows   = lcnt; 
+   xsfer_op->Nremote_rows   = lcnt;
    xsfer_op->com->send_list  = NULL;
 
    /* set up the matrix operator for restriction */
@@ -2372,11 +2388,11 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
       ML_memory_alloc((void**) &(xsfer_op->remote_ia), nbytes, "XSd");
       xsfer_op->remote_ia[0] = 0;
       k = 0;
-      for ( i = 0; i < nprocs; i++ ) 
+      for ( i = 0; i < nprocs; i++ )
       {
          for ( j = 0; j < cv_leng[i]; j++ )
          {
-            xsfer_op->remote_ia[k+1] = xsfer_op->remote_ia[k] + cv_cnt[i][j]; 
+            xsfer_op->remote_ia[k+1] = xsfer_op->remote_ia[k] + cv_cnt[i][j];
             k++;
          }
       }
@@ -2393,16 +2409,16 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
       xsfer_op->remote_a  = NULL;
    }
 
-   /* ------------------------------------------------------------*/ 
-   /* insert the operator coefficients into the operator          */ 
-   /* ------------------------------------------------------------*/ 
-  
+   /* ------------------------------------------------------------*/
+   /* insert the operator coefficients into the operator          */
+   /* ------------------------------------------------------------*/
+
    tmp_ia = NULL;
    if ( lcnt > 0 )
    {
 
       ML_memory_alloc((void**) &tmp_ia,  lcnt * sizeof(int), "tia" );
-      for ( i = 0; i < lcnt; i++ ) tmp_ia[i] = xsfer_op->remote_ia[i]; 
+      for ( i = 0; i < lcnt; i++ ) tmp_ia[i] = xsfer_op->remote_ia[i];
 
       /* insert the coefficients coming from local queries */
 
@@ -2445,15 +2461,15 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
                      {
                         cvnum = ext2_ind[k];
                         pnum  = node_proc_map[cvnum];
-                        m = ML_sorted_search(cvnum, cv_leng[pnum], 
+                        m = ML_sorted_search(cvnum, cv_leng[pnum],
                                              cv_list[pnum]);
                         if ( m < 0 )
                         {
-                           printf("%d : impossible : searching for %d \n", 
+                           printf("%d : impossible : searching for %d \n",
                                   mypid,  cvnum );
                            for ( j = 0; j < cv_leng[pnum]; j++ )
                               printf("    %d : available = %d \n", mypid,
-                                     cv_list[pnum][j]); 
+                                     cv_list[pnum][j]);
                         }
                         rownum = cv_ia[pnum] + m;
                         colind = tmp_ia[rownum]++;
@@ -2463,22 +2479,22 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
                   }
                }
                colend = colend + end - begin;
-            } 
-            index++; 
+            }
+            index++;
          }
-         index++; 
+         index++;
       }
    }
 
-   /* ------------------------------------------------------------*/ 
+   /* ------------------------------------------------------------*/
    /* compress the remote part of the operator, if needed.        */
-   /* ------------------------------------------------------------*/ 
+   /* ------------------------------------------------------------*/
 
    k = xsfer_op->Nremote_rows;
    m = 0;
    for ( i = 0; i < k; i++ )
       m += (tmp_ia[i] - xsfer_op->remote_ia[i]);
-   if ( m > 0 ) 
+   if ( m > 0 )
    {
       ML_memory_alloc((void**) &ext_ja,  m * sizeof(int), "XSh" );
       ML_memory_alloc((void**) &ext_a,  m * sizeof(double), "XSi" );
@@ -2502,9 +2518,9 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    }
    if ( tmp_ia != NULL ) ML_memory_free((void **) &tmp_ia);
 
-   /* ------------------------------------------------------------*/ 
+   /* ------------------------------------------------------------*/
    /* clean up before moving on                                   */
-   /* ------------------------------------------------------------*/ 
+   /* ------------------------------------------------------------*/
 
    ML_memory_free((void **) &cv_leng);
    ML_memory_free((void **) &cv_cur_leng);
@@ -2514,10 +2530,10 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    ML_memory_free( (void **) &cv_cnt );
    ML_memory_free( (void **) &cv_ia );
 
-   /* ------------------------------------------------------------*/ 
+   /* ------------------------------------------------------------*/
    /* find normalization factor for each row for restriction      */
-   /* ------------------------------------------------------------*/ 
- 
+   /* ------------------------------------------------------------*/
+
    ML_memory_alloc((void**) &ext_a, fnvert * sizeof(double), "eta" );
    ML_memory_alloc((void**) &ext2_a, cnvert * sizeof(double), "e2a" );
    for ( i = 0; i < fnvert; i++ ) ext_a[i] = 1.0;
@@ -2532,18 +2548,18 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    ML_OperatorAGX_Restrict( (void*) oper, fnvert, ext_a, cnvert, ext2_a);
    ML_free( oper );
 
-   /* ------------------------------------------------------------*/ 
+   /* ------------------------------------------------------------*/
    /* check normalization factors                                 */
-   /* ------------------------------------------------------------*/ 
- 
+   /* ------------------------------------------------------------*/
+
    err_flag = 0;
    for ( i = 0; i < cnvert; i++ )
-   { 
+   {
       if ( ext2_a[i] == 0.0 ) err_flag++;
    }
-   err_flag = ML_Comm_GmaxInt( comm, err_flag ); 
+   err_flag = ML_Comm_GmaxInt( comm, err_flag );
    if ( err_flag > 0 )
-   { 
+   {
       ndim = cgrid_fcns->USR_grid_get_dimension( c_grid );
       for ( i = 0; i < cnvert; i++ )
       {
@@ -2558,50 +2574,50 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
       }
       exit(1);
    }
-   
-   /* ------------------------------------------------------------*/ 
-   /* if normalization factors are nonzero, get their inverses    */
-   /* ------------------------------------------------------------*/ 
 
-   for ( i = 0; i < cnvert; i++ ) 
+   /* ------------------------------------------------------------*/
+   /* if normalization factors are nonzero, get their inverses    */
+   /* ------------------------------------------------------------*/
+
+   for ( i = 0; i < cnvert; i++ )
       xsfer_op->restrict_wgts[i] = 1.0 / ext2_a[i];
 
-   /* ------------------------------------------------------------*/ 
+   /* ------------------------------------------------------------*/
    /* final clean up                                              */
-   /* ------------------------------------------------------------*/ 
+   /* ------------------------------------------------------------*/
 
    ML_memory_free( (void**) &ext_a );
    ML_memory_free( (void**) &ext2_a );
    xsfer_op->ext_cnt = 0;
    if ( xsfer_op->ext_ia != 0 )
-   { 
+   {
       ML_memory_free( (void**) &(xsfer_op->ext_ia) );
-   } 
+   }
    if ( xsfer_op->ext_ja != 0 )
-   { 
+   {
       ML_memory_free( (void**) &(xsfer_op->ext_ja) );
-   } 
+   }
    if ( xsfer_op->ext_a != 0 )
-   { 
+   {
       ML_memory_free( (void**) &(xsfer_op->ext_a) );
-   } 
+   }
    xsfer_op->ext2_cnt = 0;
    if ( xsfer_op->ext2_a != 0 )
-   { 
+   {
       ML_memory_free( (void**) &(xsfer_op->ext2_a) );
-   } 
+   }
    if ( xsfer_op->ext2_index != 0 )
-   { 
+   {
       ML_memory_free( (void**) &(xsfer_op->ext2_index) );
-   } 
+   }
    if ( xsfer_op->ext2_ptr != 0 )
-   { 
+   {
       ML_memory_free( (void**) &(xsfer_op->ext2_ptr) );
-   } 
+   }
    xsfer_op->fnode_leng = 0;
    if ( xsfer_op->fnode_flag != 0 )
-   { 
+   {
       ML_memory_free( (void**) &(xsfer_op->fnode_flag) );
-   } 
+   }
 }
 

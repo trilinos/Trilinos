@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -28,7 +28,7 @@
 /*  Nvertices         : no. of vertices residing in local processor     */
 /*  Nelements         : no. of elements residing locally                */
 /*  ele_nodes         : element to node list (local node no.)           */
-/*  x[i],y[i],z[i]    : coordinate of local (and ghost) node i          */ 
+/*  x[i],y[i],z[i]    : coordinate of local (and ghost) node i          */
 /*  global_element[i] : global element number of the i-th local element */
 /*  global_vertex[i]  : global vertex number of the i-th local vertex   */
 /*  elmnt_proc_map[i] : processor where element[global_element[i]] is   */
@@ -47,7 +47,7 @@ typedef struct ML_GridAGX_Struct
    int              Nelements;
    ML_IntList       *ele_nodes;
    double           *x, *y, *z;
-   int              *global_element;
+   ml_big_int       *global_element;
    int              *global_vertex;
    int              *elmnt_proc_map;
    int              *node_proc_map;
@@ -60,7 +60,7 @@ typedef struct ML_GridAGX_Struct
 
 #ifndef ML_CPP
 #ifdef __cplusplus
-extern "C" 
+extern "C"
 {
 #endif
 #endif
@@ -73,7 +73,7 @@ extern int  ML_GridAGX_Print( ML_GridAGX * );
 extern int  ML_GridAGX_Get_Dimension( ML_GridAGX * );
 extern int  ML_GridAGX_Get_NVert( ML_GridAGX * );
 extern int  ML_GridAGX_Get_NElmnts( ML_GridAGX * );
-extern int  ML_GridAGX_Get_ElmntGlobalNum( ML_GridAGX *, int );
+extern ml_big_int  ML_GridAGX_Get_ElmntGlobalNum( ML_GridAGX *, int );
 extern int  ML_GridAGX_Get_ElmntNVert( ML_GridAGX *, int );
 extern int  ML_GridAGX_Get_ElmntVertList( ML_GridAGX *, int, int * );
 extern int  ML_GridAGX_Get_VertGlobalNum( ML_GridAGX *, int );
@@ -82,7 +82,7 @@ extern int  ML_GridAGX_Get_VertCoordinate(ML_GridAGX *grid,int,double*);
 extern int  ML_GridAGX_Set_Dimension(ML_GridAGX *, int);
 extern int  ML_GridAGX_Set_NVert(ML_GridAGX *, int);
 extern int  ML_GridAGX_Set_NElmnts(ML_GridAGX *, int, int);
-extern int  ML_GridAGX_Load_ElmntGlobalNum(ML_GridAGX *, int, int *);
+extern int  ML_GridAGX_Load_ElmntGlobalNum(ML_GridAGX *, int, ml_big_int *);
 extern int  ML_GridAGX_Load_VertGlobalNum(ML_GridAGX *, int, int *);
 extern int  ML_GridAGX_Load_ElmntVertList(ML_GridAGX *, int, int *);
 extern int  ML_GridAGX_Load_AllVertCoordinates(ML_GridAGX*,int,double*);

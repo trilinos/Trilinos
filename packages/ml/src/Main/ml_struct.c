@@ -60,7 +60,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    (*ml_ptr)->max_iterations  = 1000;
 
    ML_Comm_Create( &((*ml_ptr)->comm) );
-   if (global_comm == NULL) 
+   if (global_comm == NULL)
      global_comm = (*ml_ptr)->comm;
 
    if ((*ml_ptr)->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() &&
@@ -108,9 +108,9 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    timing->precond_apply_time = 0.;
    timing->total_build_time   = 0.;
    (*ml_ptr)->timing = timing;
-#endif 
+#endif
 
-   for (i = 0; i < Nlevels; i++) 
+   for (i = 0; i < Nlevels; i++)
    {
       ML_Operator_Init(&(Amat[i]), (*ml_ptr)->comm);
       ML_Operator_Set_1Levels(&(Amat[i]), &SingleLevel[i], &SingleLevel[i]);
@@ -166,7 +166,7 @@ int ML_Destroy(ML **ml_ptr)
 {
    int i;
    ML  *ml;
- 
+
    ml = (*ml_ptr);
 
 #ifdef ML_TIMING
@@ -175,7 +175,7 @@ int ML_Destroy(ML **ml_ptr)
 
    if (ml != NULL)
    {
-      for (i = 0; i < ml->ML_num_levels; i++) 
+      for (i = 0; i < ml->ML_num_levels; i++)
       {
          ML_Operator_Clean(&(ml->Amat[i]));
          ML_Operator_Clean(&(ml->Rmat[i]));
@@ -187,7 +187,7 @@ int ML_Destroy(ML **ml_ptr)
          ML_Smoother_Clean(&(ml->post_smoother[i]));
          ML_CSolve_Clean(&(ml->csolve[i]));
       }
-   
+
       ML_memory_free( (void**) &(ml->csolve[0].func ) );
       ML_memory_free( (void**) &(ml->pre_smoother) );
       ML_memory_free( (void**) &(ml->post_smoother) );
@@ -339,7 +339,7 @@ int ML_Set_Comm(ML *ml, ML_Comm *comm )
    int i;
 
    ml->comm = comm;
-   for (i = 0; i < ml->ML_num_levels; i++) 
+   for (i = 0; i < ml->ML_num_levels; i++)
       ml->SingleLevel[i].comm = comm;
    return 0;
 }
@@ -360,11 +360,11 @@ int ML_Init_Grid( ML *ml, int level, void *grid)
 int ML_Set_Grid_GridFunc( ML *ml, int level, ML_GridFunc *gf)
 {
    if ( ml->SingleLevel[level].Grid->gridfcn != NULL &&
-        ml->SingleLevel[level].Grid->gf_SetOrLoad == 2) 
+        ml->SingleLevel[level].Grid->gf_SetOrLoad == 2)
       ML_GridFunc_Destroy(&(ml->SingleLevel[level].Grid->gridfcn));
-      
+
    ml->SingleLevel[level].Grid->gridfcn = gf;
-   ml->SingleLevel[level].Grid->gf_SetOrLoad = 1; 
+   ml->SingleLevel[level].Grid->gf_SetOrLoad = 1;
    return 0;
 }
 
@@ -374,10 +374,10 @@ int ML_Set_Grid( ML *ml, int level, void *grid, ML_GridFunc *gf)
 {
    ml->SingleLevel[level].Grid->Grid = grid;
    if ( ml->SingleLevel[level].Grid->gridfcn != NULL &&
-        ml->SingleLevel[level].Grid->gf_SetOrLoad == 2) 
+        ml->SingleLevel[level].Grid->gf_SetOrLoad == 2)
       ML_GridFunc_Destroy(&(ml->SingleLevel[level].Grid->gridfcn));
    ml->SingleLevel[level].Grid->gridfcn = gf;
-   ml->SingleLevel[level].Grid->gf_SetOrLoad = 1; 
+   ml->SingleLevel[level].Grid->gf_SetOrLoad = 1;
    return 0;
 }
 
@@ -390,7 +390,7 @@ int ML_Set_Grid_MaxVertPerElmnt(ML *ml, int nl, int nvert)
    ML_GridFunc_Set_MaxVertPerElmnt( gf, nvert );
    return 0;
 }
-   
+
 /* ------------------------------------------------------------------------- */
 
 int ML_Set_Grid_GetDimension(ML *ml, int nl, int (*func)(void *))
@@ -443,7 +443,7 @@ int ML_Set_Grid_GetElmntVertList(ML *ml, int nl, int (*func)(void *, int, int *)
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Grid_GetElmntGlobalNum(ML *ml, int nl, int (*func)(void *, int))
+int ML_Set_Grid_GetElmntGlobalNum(ML *ml, int nl, ml_big_int (*func)(void *, int))
 {
    ML_GridFunc *gf;
    gf = ml->SingleLevel[nl].Grid->gridfcn;
@@ -527,8 +527,8 @@ int ML_Init_Amatrix(ML *ml, int level, int ilen, int olen, void *data)
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Amatrix_Matvec(ML *ml, int level, 
-                      int (*matvec)(void *, int, double *, int, double *)) 
+int ML_Set_Amatrix_Matvec(ML *ml, int level,
+                      int (*matvec)(void *, int, double *, int, double *))
 {
    ML_Operator *matrix;
    matrix = &(ml->Amat[level]);
@@ -550,7 +550,7 @@ int ML_Set_Amatrix_Diag(ML *ml, int nl, int size, double diagonal[])
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Amatrix_Getrow(ML *ml, int nl, 
+int ML_Set_Amatrix_Getrow(ML *ml, int nl,
         int (*getrow)(void *, int , int* , int , int*, double* , int*),
 	int (*comm  )(double *vec, void *data), int comm_vec_leng )
 {
@@ -566,7 +566,7 @@ int ML_Set_Amatrix_Getrow(ML *ml, int nl,
          printf("                       matrix's invec_length\n");
          exit(1);
       }
-      ML_CommInfoOP_Generate( &(Amat->getrow->pre_comm), comm, Amat->data, 
+      ML_CommInfoOP_Generate( &(Amat->getrow->pre_comm), comm, Amat->data,
 			      ml->comm, Amat->invec_leng, Nghost);
    }
    else {
@@ -584,7 +584,7 @@ int ML_Set_Amatrix_Getrow(ML *ml, int nl,
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Amatrix_GetrowNeighbors(ML *ml, int level, int N_neigh, 
+int ML_Set_Amatrix_GetrowNeighbors(ML *ml, int level, int N_neigh,
                                    int *neigh_list)
 {
    ML_CommInfoOP_Set_neighbors(&(ml->SingleLevel[level].Amat->getrow->pre_comm),
@@ -594,10 +594,10 @@ int ML_Set_Amatrix_GetrowNeighbors(ML *ml, int level, int N_neigh,
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Amatrix_GetrowCommInfo(ML *ml, int level, int neighbor, 
+int ML_Set_Amatrix_GetrowCommInfo(ML *ml, int level, int neighbor,
            int N_rcv, int *rcv_list, int N_send, int *send_list)
 {
-   ML_CommInfoOP_Set_exch_info(ml->SingleLevel[level].Amat->getrow->pre_comm, 
+   ML_CommInfoOP_Set_exch_info(ml->SingleLevel[level].Amat->getrow->pre_comm,
 			       neighbor, N_rcv, rcv_list, N_send, send_list);
    return(1);
 }
@@ -616,7 +616,7 @@ int ML_Set_Amatrix_NormalizationFactors(ML *ml,int level,int leng,
 /* functions to initialize the restrictor                                    */
 /* ------------------------------------------------------------------------- */
 
-int ML_Init_Restrictor(ML *ml, int level, int level2, int ilen, int olen, 
+int ML_Init_Restrictor(ML *ml, int level, int level2, int ilen, int olen,
                        void *data)
 {
    ML_Operator_Set_1Levels(&(ml->Rmat[level]),&(ml->SingleLevel[level]),
@@ -628,7 +628,7 @@ int ML_Init_Restrictor(ML *ml, int level, int level2, int ilen, int olen,
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Restrictor_Matvec( ML *ml , int from_level, 
+int ML_Set_Restrictor_Matvec( ML *ml , int from_level,
 	int (*func) (void *, int, double *, int, double *))
 {
    ML_Operator *matrix;
@@ -639,7 +639,7 @@ int ML_Set_Restrictor_Matvec( ML *ml , int from_level,
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Restrictor_Getrow(ML *ml, int nl, 
+int ML_Set_Restrictor_Getrow(ML *ml, int nl,
         int (*getrow)(void *, int , int* , int , int*, double* , int*),
         int (*comm  )(double *vec, void *data), int comm_vec_leng )
 {
@@ -670,7 +670,7 @@ int ML_Set_Restrictor_Getrow(ML *ml, int nl,
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Restrictor_GetrowNeighbors(ML *ml, int level, int N_neigh, 
+int ML_Set_Restrictor_GetrowNeighbors(ML *ml, int level, int N_neigh,
                                       int *neigh_list)
 {
    ML_CommInfoOP_Set_neighbors(&(ml->SingleLevel[level].Rmat->getrow->pre_comm),
@@ -680,10 +680,10 @@ int ML_Set_Restrictor_GetrowNeighbors(ML *ml, int level, int N_neigh,
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Restrictor_GetrowCommInfo(ML *ml, int level, int neighbor, 
+int ML_Set_Restrictor_GetrowCommInfo(ML *ml, int level, int neighbor,
             int N_rcv, int *rcv_list, int N_send, int *send_list)
 {
-   ML_CommInfoOP_Set_exch_info(ml->SingleLevel[level].Rmat->getrow->pre_comm, 
+   ML_CommInfoOP_Set_exch_info(ml->SingleLevel[level].Rmat->getrow->pre_comm,
 			       neighbor, N_rcv, rcv_list, N_send, send_list);
    return(1);
 }
@@ -693,7 +693,7 @@ int ML_Set_Restrictor_GetrowCommInfo(ML *ml, int level, int neighbor,
 /* functions to initialize the prolongator                                   */
 /* ------------------------------------------------------------------------- */
 
-int ML_Init_Prolongator(ML *ml, int level, int level2, int ilen, int olen, 
+int ML_Init_Prolongator(ML *ml, int level, int level2, int ilen, int olen,
                         void *data)
 {
    ML_Operator_Set_1Levels(&(ml->Pmat[level]),&(ml->SingleLevel[level]),
@@ -705,7 +705,7 @@ int ML_Init_Prolongator(ML *ml, int level, int level2, int ilen, int olen,
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Prolongator_Matvec( ML *ml , int to_level, 
+int ML_Set_Prolongator_Matvec( ML *ml , int to_level,
 	int (*func) (void *, int, double *, int, double *))
 {
    ML_Operator *matrix;
@@ -716,7 +716,7 @@ int ML_Set_Prolongator_Matvec( ML *ml , int to_level,
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Prolongator_Getrow(ML *ml, int nl, 
+int ML_Set_Prolongator_Getrow(ML *ml, int nl,
         int (*getrow)(void *, int , int* , int , int*, double* , int*),
         int (*comm  )(double *vec, void *data), int comm_vec_leng )
 {
@@ -747,7 +747,7 @@ int ML_Set_Prolongator_Getrow(ML *ml, int nl,
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Prolongator_GetrowNeighbors(ML *ml, int level, int N_neigh, 
+int ML_Set_Prolongator_GetrowNeighbors(ML *ml, int level, int N_neigh,
                                        int *neigh_list)
 {
    ML_CommInfoOP_Set_neighbors(&(ml->SingleLevel[level].Pmat->getrow->pre_comm),
@@ -757,10 +757,10 @@ int ML_Set_Prolongator_GetrowNeighbors(ML *ml, int level, int N_neigh,
 
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Prolongator_GetrowCommInfo(ML *ml, int level, int neighbor, 
+int ML_Set_Prolongator_GetrowCommInfo(ML *ml, int level, int neighbor,
                 int N_rcv, int *rcv_list, int N_send, int *send_list)
 {
-   ML_CommInfoOP_Set_exch_info(ml->SingleLevel[level].Pmat->getrow->pre_comm, 
+   ML_CommInfoOP_Set_exch_info(ml->SingleLevel[level].Pmat->getrow->pre_comm,
 			       neighbor, N_rcv, rcv_list, N_send, send_list);
    return(1);
 }
@@ -774,14 +774,14 @@ int ML_Set_Prolongator_GetrowCommInfo(ML *ml, int level, int neighbor,
 /* set the user-defined smoother                                             */
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_Smoother( ML *ml , int nl , int pre_or_post, void *data, 
+int ML_Set_Smoother( ML *ml , int nl , int pre_or_post, void *data,
                      int (*func)(void *, int, double *, int, double *),
-                     char *str) 
+                     char *str)
 {
    char temp[80], *tptr = NULL;
    if (str != NULL) { sprintf(temp,"%s%d",str,nl); tptr = temp; }
 
-   if (nl == ML_ALL_LEVELS) { 
+   if (nl == ML_ALL_LEVELS) {
       printf("ML_Set_Smoother: ML_ALL_LEVELS not allowed\n");
       return 1;
    }
@@ -810,7 +810,7 @@ int ML_Set_Smoother( ML *ml , int nl , int pre_or_post, void *data,
 /* ------------------------------------------------------------------------- */
 
 int ML_Gen_Smoother_Jacobi( ML *ml , int nl, int pre_or_post, int ntimes,
-        double omega) 
+        double omega)
 {
    int (*fun)(void *, int, double *, int, double *);
    int start_level, end_level, i, status = 1;
@@ -906,7 +906,7 @@ int ML_Gen_Smoother_GaussSeidel( ML *ml , int nl, int pre_or_post, int ntimes,
 /* generate the symmetric Gauss Seidel smoother                              */
 /* ------------------------------------------------------------------------- */
 
-int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post, 
+int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
                                    int ntimes, double omega)
 {
    int         start_level, end_level, i, j, status = 0, Nrows, count;
@@ -925,7 +925,7 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
       printf("ML_Gen_Smoother_SymGaussSeidel: cannot set smoother on level %d\n",start_level);
       return 1;
    }
-	
+
    for (i = start_level; i <= end_level; i++) {
 
       if (omega == ML_DEFAULT) omega = 1.;
@@ -950,17 +950,17 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
 	   num2     = (double *) ML_allocate( Nrows * sizeof(double));
 	   sgs_nums[0] = nums;
 	   sgs_nums[1] = num2;
-	   for (j = 0; j < Nrows; j++) { 
+	   for (j = 0; j < Nrows; j++) {
 	     count = 0;
 	     /*
 	       for (j = bindx[j]; j < bindx[j+1]; j++) if (bindx[j] >= Nrows) count++;
 	       */
-	     
-	     if (bindx[j] != bindx[j+1]) 
-               temp_omega = omega*(1.0 - .5*((double) count) / 
+
+	     if (bindx[j] != bindx[j+1])
+               temp_omega = omega*(1.0 - .5*((double) count) /
 				   ((double) (bindx[j+1]-bindx[j])));
 	     else temp_omega = 1.;
-	     
+
 	     num2[j] = 1. - temp_omega;
 	     if (val[j] != 0.0) nums[j] = temp_omega/val[j];
 	     else { nums[j] = 0.0; num2[j] = 1.; }
@@ -974,22 +974,22 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
 
       if (pre_or_post == ML_PRESMOOTHER) {
          sprintf(str,"SGS_pre%d",i);
-         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
                                   sgs_nums, fun, NULL, ntimes, omega, str);
 	 ml->pre_smoother[i].data_destroy = fun2;
       }
       else if (pre_or_post == ML_POSTSMOOTHER) {
          sprintf(str,"SGS_post%d",i);
-	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, 
+	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
                                   sgs_nums, fun, NULL, ntimes, omega, str);
 	 ml->post_smoother[i].data_destroy = fun2;
       }
       else if (pre_or_post == ML_BOTH) {
          sprintf(str,"SGS_pre%d",i);
-         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
                                   sgs_nums, fun, NULL, ntimes, omega, str);
          sprintf(str,"SGS_post%d",i);
-	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, 
+	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
                                   sgs_nums, fun, NULL, ntimes, omega, str);
 	 ml->post_smoother[i].data_destroy = fun2;
       }
@@ -1055,7 +1055,7 @@ int ML_Gen_Smoother_SymGaussSeidelSequential(ML *ml , int nl, int pre_or_post,
 /* generate some other Gauss Seidel smoother (Ray, what is it ?)             */
 /* ------------------------------------------------------------------------- */
 
-int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, int ntimes, 
+int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, int ntimes,
                             double omega, int Nextra, int extra[])
 {
    int (*fun)(void *, int, double *, int, double *);
@@ -1073,7 +1073,7 @@ int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, int ntimes,
       printf("ML_Gen_SmootherGSextra: cannot set smoother on level %d\n",start_level);
       return 1;
    }
-	
+
    if (omega == ML_DEFAULT) omega = 1.;
    Amat = &(ml->Amat[nl]);
    fun  = ML_Smoother_SGS;
@@ -1097,14 +1097,14 @@ int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, int ntimes,
 sgs_nums[2] = (double *) ML_allocate( 1 * sizeof(double) );
 sgs_nums[2][0] = (double) Nextra;
 sgs_nums[3] = (double *) extra;
-      for (i = 0; i < Nrows; i++) { 
+      for (i = 0; i < Nrows; i++) {
          count = 0;
 /*
-         for (j = bindx[i]; j < bindx[i+1]; j++) 
+         for (j = bindx[i]; j < bindx[i+1]; j++)
             if (bindx[j] >= Nrows) count++;
 */
 
-         if (bindx[i] != bindx[i+1]) 
+         if (bindx[i] != bindx[i+1])
             temp_omega = omega*(1.0 - .5*((double) count)/ ((double) (bindx[i+1]-bindx[i])));
          else temp_omega = 1.;
 
@@ -1115,8 +1115,8 @@ sgs_nums[3] = (double *) extra;
       fun2 = ML_MSR_GSextra_Clean;
    }
 
-	
-   if (pre_or_post == ML_PRESMOOTHER) 
+
+   if (pre_or_post == ML_PRESMOOTHER)
       for (i = start_level; i <= end_level; i++) {
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, sgs_nums,
 				  fun, NULL, ntimes, omega, NULL);
@@ -1151,18 +1151,18 @@ int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
       printf("ML_Gen_Smoother_OrderedSymGaussSeidel: cannot set smoother on level %d\n",start_level);
       return 1;
    }
-	
+
    fun = ML_Smoother_OrderedSGS;
    if (omega == ML_DEFAULT) omega = 1.;
-	
-   if (pre_or_post == ML_PRESMOOTHER) 
+
+   if (pre_or_post == ML_PRESMOOTHER)
       for (i = start_level; i <= end_level; i++) {
 #ifdef ML_TIMING
          t0 = GetClock();
 #endif
          ML_Smoother_Gen_Ordering(&(ml->Amat[i]), &ordering);
          ml->pre_smoother[i].data_destroy = ML_Smoother_Clean_OrderedSGS;
-         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
                          (void *) ordering, fun, NULL, ntimes, omega, NULL);
 #ifdef ML_TIMING
          ml->pre_smoother[i].build_time = GetClock() - t0;
@@ -1176,7 +1176,7 @@ int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
 #endif
          ML_Smoother_Gen_Ordering(&(ml->Amat[i]), &ordering);
          ml->post_smoother[i].data_destroy = ML_Smoother_Clean_OrderedSGS;
-	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, 
+	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
                          (void *) ordering, fun, NULL, ntimes, omega, NULL);
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
@@ -1209,7 +1209,7 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
       printf("ML_Gen_Smoother_BlockGaussSeidel: cannot set smoother on level %d\n",start_level);
       return 1;
    }
-	
+
    fun = ML_Smoother_BlockGS;
    if (omega == ML_DEFAULT) omega = 1.;
 
@@ -1266,15 +1266,15 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 /* generate the variable block Jacobi smoother                               */
 /* ------------------------------------------------------------------------- */
 
-int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post, 
+int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
                  int ntimes, double omega, int nBlocks, int *blockIndices)
 {
    int            (*fun)(void *, int, double *, int, double *);
    double         myomega;
    ML_Sm_BGS_Data *data;
    char           str[80];
-	
-   if (nl == ML_ALL_LEVELS) { 
+
+   if (nl == ML_ALL_LEVELS) {
       printf("ML_Gen_Smoother_VBlockJacobi: ML_ALL_LEVELS not allowed\n");
       return 1;
    }
@@ -1285,7 +1285,7 @@ int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
    fun = ML_Smoother_VBlockJacobi;
    if (omega == ML_DEFAULT) myomega = .5;
    else                     myomega = omega;
-	
+
    ML_Smoother_Create_BGS_Data(&data);
 
    ML_Smoother_Gen_VBGSFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices);
@@ -1293,22 +1293,22 @@ int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
    if (pre_or_post == ML_PRESMOOTHER) {
       sprintf(str,"VBJ_pre%d",nl);
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
-      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
                         (void *) data, fun, NULL, ntimes, myomega, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       sprintf(str,"VBJ_post%d",nl);
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, myomega, str));
    }
    else if (pre_or_post == ML_BOTH) {
       sprintf(str,"VBJ_pre%d",nl);
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
-      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
                         (void *) data, fun, NULL, ntimes, myomega, str);
       sprintf(str,"VBJ_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, myomega, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
@@ -1318,14 +1318,14 @@ int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
 /* generate the variable block Gauss Seidel smoother                         */
 /* ------------------------------------------------------------------------- */
 
-int ML_Gen_Smoother_VBlockSymGaussSeidel( ML *ml , int nl, int pre_or_post, 
+int ML_Gen_Smoother_VBlockSymGaussSeidel( ML *ml , int nl, int pre_or_post,
                       int ntimes, double omega, int nBlocks, int *blockIndices)
 {
    int            (*fun)(void *, int, double *, int, double *);
    ML_Sm_BGS_Data *data;
    char str[80];
-	
-   if (nl == ML_ALL_LEVELS) { 
+
+   if (nl == ML_ALL_LEVELS) {
       printf("ML_Gen_Smoother_VBlockSymGaussSeidel: ML_ALL_LEVELS not allowed\n");
       return 1;
    }
@@ -1334,7 +1334,7 @@ int ML_Gen_Smoother_VBlockSymGaussSeidel( ML *ml , int nl, int pre_or_post,
       return 1;
    }
    fun = ML_Smoother_VBlockSGS;
-	
+
    ML_Smoother_Create_BGS_Data(&data);
 
    ML_Smoother_Gen_VBGSFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices);
@@ -1342,22 +1342,22 @@ int ML_Gen_Smoother_VBlockSymGaussSeidel( ML *ml , int nl, int pre_or_post,
    if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGS_pre%d",nl);
-      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
                         (void *) data, fun, NULL, ntimes, omega, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGS_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, omega, str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGS_pre%d",nl);
-      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
                         (void *) data, fun, NULL, ntimes, omega, str);
       sprintf(str,"VBSGS_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, omega, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
@@ -1367,14 +1367,14 @@ int ML_Gen_Smoother_VBlockSymGaussSeidel( ML *ml , int nl, int pre_or_post,
 /* generate the variable block Gauss Seidel smoother (sequential)            */
 /* ------------------------------------------------------------------------- */
 
-int ML_Gen_Smoother_VBlockSymGaussSeidelSequential( ML *ml , int nl, 
+int ML_Gen_Smoother_VBlockSymGaussSeidelSequential( ML *ml , int nl,
      int pre_or_post, int ntimes, double omega, int nBlocks, int *blockIndices)
 {
    int            (*fun)(void *, int, double *, int, double *);
    ML_Sm_BGS_Data *data;
    char str[80];
-	
-   if (nl == ML_ALL_LEVELS) { 
+
+   if (nl == ML_ALL_LEVELS) {
       printf("ML_Gen_Smoother_VBlockSymGaussSeidelSequential: ML_ALL_LEVELS not allowed\n");
       return 1;
    }
@@ -1383,7 +1383,7 @@ int ML_Gen_Smoother_VBlockSymGaussSeidelSequential( ML *ml , int nl,
       return 1;
    }
    fun = ML_Smoother_VBlockSGSSequential;
-	
+
    ML_Smoother_Create_BGS_Data(&data);
 
    ML_Smoother_Gen_VBGSFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices);
@@ -1391,22 +1391,22 @@ int ML_Gen_Smoother_VBlockSymGaussSeidelSequential( ML *ml , int nl,
    if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGSS_pre%d",nl);
-      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, omega, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGSS_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, omega, str));
    }
    if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBSGSS_pre%d",nl);
-      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, omega, str);
       sprintf(str,"VBSGSS_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, omega, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
@@ -1416,15 +1416,15 @@ int ML_Gen_Smoother_VBlockSymGaussSeidelSequential( ML *ml , int nl,
 /* generate the variable block Jacobi smoother with Krylov(not debugged yet) */
 /* ------------------------------------------------------------------------- */
 
-int ML_Gen_Smoother_VBlockKrylovJacobi( ML *ml , int nl, int pre_or_post, 
+int ML_Gen_Smoother_VBlockKrylovJacobi( ML *ml , int nl, int pre_or_post,
                  int ntimes, double omega, int nBlocks, int *blockIndices)
 {
    int            (*fun)(void *, int, double *, int, double *);
    double         myomega;
    ML_Sm_BGS_Data *data;
    char           str[80];
-	
-   if (nl == ML_ALL_LEVELS) { 
+
+   if (nl == ML_ALL_LEVELS) {
       printf("ML_Gen_Smoother_VBlockKrylovJacobi: ML_ALL_LEVELS not allowed\n");
       return 1;
    }
@@ -1435,7 +1435,7 @@ int ML_Gen_Smoother_VBlockKrylovJacobi( ML *ml , int nl, int pre_or_post,
    fun = ML_Smoother_VBlockKrylovJacobi;
    if (omega == ML_DEFAULT) myomega = .5;
    else                     myomega = omega;
-	
+
    ML_Smoother_Create_BGS_Data(&data);
 
    ML_Smoother_Gen_VBGSFacts(&data, &(ml->Amat[nl]), nBlocks, blockIndices);
@@ -1443,22 +1443,22 @@ int ML_Gen_Smoother_VBlockKrylovJacobi( ML *ml , int nl, int pre_or_post,
    if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBKJ_pre%d",nl);
-      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, myomega,str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBKJ_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, myomega, str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_BGS_Data;
       sprintf(str,"VBKJ_pre%d",nl);
-      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, myomega,str);
       sprintf(str,"VBKJ_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, myomega, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
@@ -1471,18 +1471,18 @@ int ML_Gen_Smoother_VBlockKrylovJacobi( ML *ml , int nl, int pre_or_post,
 int ML_Gen_Smoother_OverlappedDDILUT( ML *ml , int nl, int pre_or_post )
 {
    int             (*fun)(void *, int, double *, int, double *);
-   int             total_recv_leng, *recv_lengths, *int_buf, *map, *map2; 
+   int             total_recv_leng, *recv_lengths, *int_buf, *map, *map2;
    int             offset;
    double          *dble_buf;
    ML_Sm_ILUT_Data *data;
    ML_Operator     *Amat;
    ML_Comm         *comm;
    char            str[80];
-	
+
    /* ---------------------------------------------------------------- */
    /* initialize the ILUT data object                                  */
    /* ---------------------------------------------------------------- */
-   if (nl == ML_ALL_LEVELS) { 
+   if (nl == ML_ALL_LEVELS) {
       printf("ML_Gen_Smoother_OverlappedDDILUT: ML_ALL_LEVELS not allowed\n");
       return 1;
    }
@@ -1492,7 +1492,7 @@ int ML_Gen_Smoother_OverlappedDDILUT( ML *ml , int nl, int pre_or_post )
    }
 
    fun = ML_Smoother_OverlappedILUT;
-	
+
    comm = ml->comm;
    Amat = &(ml->Amat[nl]);
    ML_Smoother_Create_ILUT_Data( &data );
@@ -1505,7 +1505,7 @@ int ML_Gen_Smoother_OverlappedDDILUT( ML *ml , int nl, int pre_or_post )
    /* recv_lengths, int_buf, dble_buf                                  */
    /* ---------------------------------------------------------------- */
 
-   ML_Smoother_ComposeOverlappedMatrix(Amat, comm, &total_recv_leng, 
+   ML_Smoother_ComposeOverlappedMatrix(Amat, comm, &total_recv_leng,
               &recv_lengths, &int_buf, &dble_buf, &map, &map2, &offset);
 
    /* ---------------------------------------------------------------- */
@@ -1513,7 +1513,7 @@ int ML_Gen_Smoother_OverlappedDDILUT( ML *ml , int nl, int pre_or_post )
    /* ILUT preconditioner                                              */
    /* ---------------------------------------------------------------- */
 
-   ML_Smoother_ILUTDecomposition(data,Amat,comm,total_recv_leng,recv_lengths, 
+   ML_Smoother_ILUTDecomposition(data,Amat,comm,total_recv_leng,recv_lengths,
                                  int_buf, dble_buf, map, map2, offset);
    if ( map  != NULL ) ML_free(map);
    if ( map2 != NULL ) ML_free(map2);
@@ -1528,22 +1528,22 @@ int ML_Gen_Smoother_OverlappedDDILUT( ML *ml , int nl, int pre_or_post )
    if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_ILUT_Data;
       sprintf(str,"ODDILUT_pre%d",nl);
-      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
                         (void *) data, fun, NULL, 1, 0.0,str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_ILUT_Data;
       sprintf(str,"ODDILUT_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, 1, 0.0,str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_ILUT_Data;
       sprintf(str,"ODDILUT_pre%d",nl);
-      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
                         (void *) data, fun, NULL, 1, 0.0,str);
       sprintf(str,"ODDILUT_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, 1, 0.0,str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
@@ -1558,18 +1558,18 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
                                           int ntimes, int length, int *blkinfo)
 {
    int                (*fun)(void *, int, double *, int, double *);
-   int                total_recv_leng, *recv_lengths, *int_buf, *map, *map2; 
+   int                total_recv_leng, *recv_lengths, *int_buf, *map, *map2;
    int                i, maxblk, offset;
    double             *dble_buf;
    ML_Sm_Schwarz_Data *data;
    ML_Operator        *Amat;
    ML_Comm            *comm;
    char               str[80];
-	
+
    /* ---------------------------------------------------------------------- */
    /* check for valid incoming data                                          */
    /* ---------------------------------------------------------------------- */
-   if (nl == ML_ALL_LEVELS) { 
+   if (nl == ML_ALL_LEVELS) {
       printf("ML_Gen_Smoother_VBlockAdditiveSchwarz: ML_ALL_LEVELS not allowed\n");
       return 1;
    }
@@ -1590,7 +1590,7 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
    /* ---------------------------------------------------------------------- */
 
    fun = ML_Smoother_VBlockAdditiveSchwarz;
-	
+
    comm = ml->comm;
    ML_Smoother_Create_Schwarz_Data( &data );
    data->Nrows   = Amat->outvec_leng;
@@ -1599,11 +1599,11 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
    {
       for ( i = 0; i < length; i++ ) data->blk_info[i] = blkinfo[i];
       maxblk = 0;
-      for ( i = 0; i < length; i++ ) 
+      for ( i = 0; i < length; i++ )
          if ( blkinfo[i] > maxblk ) maxblk = blkinfo[i];
       data->nblocks = maxblk + 1;
    }
-   else 
+   else
    {
       for ( i = 0; i < data->Nrows; i++ ) data->blk_info[i] = i;
       data->nblocks = data->Nrows;
@@ -1615,7 +1615,7 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
    /* recv_lengths, int_buf, dble_buf                                  */
    /* ---------------------------------------------------------------- */
 
-   ML_Smoother_ComposeOverlappedMatrix(Amat, comm, &total_recv_leng, 
+   ML_Smoother_ComposeOverlappedMatrix(Amat, comm, &total_recv_leng,
               &recv_lengths, &int_buf, &dble_buf, &map, &map2, &offset);
 
    /* ---------------------------------------------------------------- */
@@ -1638,22 +1638,22 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
    if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBASz_pre%d",nl);
-      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
                         (void *) data, fun, NULL, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBASz_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBASz_pre%d",nl);
-      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
                       (void *) data, fun, NULL, ntimes, 0.0, str);
       sprintf(str,"VBASz_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, 0.0, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
@@ -1667,19 +1667,19 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
                                          int ntimes, int length, int *blkinfo )
 {
    int                (*fun)(void *, int, double *, int, double *);
-   int                total_recv_leng, *recv_lengths, *int_buf, *map, *map2; 
+   int                total_recv_leng, *recv_lengths, *int_buf, *map, *map2;
    int                i, maxblk, offset;
    double             *dble_buf;
    ML_Sm_Schwarz_Data *data;
    ML_Operator        *Amat;
    ML_Comm            *comm;
    char               str[80];
-	
+
    /* ---------------------------------------------------------------------- */
    /* check for valid incoming data                                          */
    /* ---------------------------------------------------------------------- */
 
-   if (nl == ML_ALL_LEVELS) { 
+   if (nl == ML_ALL_LEVELS) {
       printf("ML_Gen_Smoother_VBlockMultiplicativeSchwarz: ML_ALL_LEVELS not allowed\n");
       return 1;
    }
@@ -1699,7 +1699,7 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
    /* ---------------------------------------------------------------------- */
 
    fun = ML_Smoother_VBlockMultiplicativeSchwarz;
-	
+
    comm = ml->comm;
    ML_Smoother_Create_Schwarz_Data( &data );
    data->Nrows   = Amat->outvec_leng;
@@ -1708,11 +1708,11 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
    {
       for ( i = 0; i < length; i++ ) data->blk_info[i] = blkinfo[i];
       maxblk = 0;
-      for ( i = 0; i < length; i++ ) 
+      for ( i = 0; i < length; i++ )
          if ( blkinfo[i] > maxblk ) maxblk = blkinfo[i];
       data->nblocks = maxblk + 1;
    }
-   else 
+   else
    {
       for ( i = 0; i < data->Nrows; i++ ) data->blk_info[i] = i;
       data->nblocks = data->Nrows;
@@ -1724,7 +1724,7 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
    /* recv_lengths, int_buf, dble_buf                                  */
    /* ---------------------------------------------------------------- */
 
-   ML_Smoother_ComposeOverlappedMatrix(Amat, comm, &total_recv_leng, 
+   ML_Smoother_ComposeOverlappedMatrix(Amat, comm, &total_recv_leng,
               &recv_lengths, &int_buf, &dble_buf, &map, &map2, &offset);
 
    /* ---------------------------------------------------------------- */
@@ -1747,22 +1747,22 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
    if (pre_or_post == ML_PRESMOOTHER) {
       ml->pre_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBMSz_pre%d",nl);
-      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
                         (void *) data, fun, NULL, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_POSTSMOOTHER) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBMSz_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, 0.0, str));
    }
    else if (pre_or_post == ML_BOTH) {
       ml->post_smoother[nl].data_destroy = ML_Smoother_Destroy_Schwarz_Data;
       sprintf(str,"VBMSz_pre%d",nl);
-      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL,
                         (void *) data, fun, NULL, ntimes, 0.0, str);
       sprintf(str,"VBMSz_post%d",nl);
-      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
                              (void *) data, fun, NULL, ntimes, 0.0, str));
    }
    else return(pr_error("Print unknown pre_or_post choice\n"));
@@ -1778,15 +1778,15 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
 
 #include "ml_mls.h"
 
-int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize) 
-{ /* 
-   * Preset the coefficients for MLS smoothing on current level to 
+int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
+{ /*
+   * Preset the coefficients for MLS smoothing on current level to
    * (rho/2)* ( 1-cos((2Pi*k)/(2*deg+1)) )
    *
    * Returns: 0 on success.
    */
    const int    nSample=20000;
-   double       gridStep, rho, rho2, ddeg, aux0, aux1; 
+   double       gridStep, rho, rho2, ddeg, aux0, aux1;
    double       aux_om, om_loc[MLS_MAX_DEG], coord, samplej;
    const double pi=4.e0 * atan(1.e0); /* 3.141592653589793115998e0; */
    int          i, j, nGrid;
@@ -1799,7 +1799,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
    ML_Operator *Amat = smooth_ptr->my_level->Amat;
    struct MLSthing *widget = (struct MLSthing *) smooth_ptr->smoother->data;
 
-   if (deg > MLS_MAX_DEG) { 
+   if (deg > MLS_MAX_DEG) {
        return (pr_error("*** value of deg larger than MLS_MAX_DEG !\n"));
    }
 
@@ -1830,7 +1830,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
 #endif
      ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
      Amat->lambda_max = ML_Krylov_Get_MaxEigenvalue(kdata);
-     Amat->lambda_min = kdata->ML_eigen_min; 
+     Amat->lambda_min = kdata->ML_eigen_min;
      ML_Krylov_Destroy( &kdata );
      rho = Amat->lambda_max;
 #ifdef SYMMETRIZE
@@ -1862,11 +1862,11 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
    /* I think? that it corresponds to                 */
    /*    (I - om_loc[0] A) * (I - om_loc[1] A) * ...  */
 
-   ddeg = (double)deg; 
-   aux1 = 1.e0/(2.e0 * ddeg + 1.e0); 
+   ddeg = (double)deg;
+   aux1 = 1.e0/(2.e0 * ddeg + 1.e0);
 
-   for (j=0; j<deg; j++) { 
-	   aux0 = 2.e0 * (double)(j+1) * pi;  
+   for (j=0; j<deg; j++) {
+	   aux0 = 2.e0 * (double)(j+1) * pi;
 	   aux_om = rho/2.e0 * (1.e0 - cos(aux0 * aux1));
 	   om_loc[j] = 1.e0/aux_om;
    }
@@ -1911,10 +1911,10 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
      for (j=0; j<nGrid; j++)  {
        coord   = (double)(j+1) * gridStep;
        samplej = 1.e0 - om_loc[0] * coord;
-       for(i=1; i<deg; i++) { 
+       for(i=1; i<deg; i++) {
 	 samplej *= ( 1.e0 -  om_loc[i] * coord );
        }
-       samplej *= samplej * coord; 
+       samplej *= samplej * coord;
        if (samplej > rho2) {rho2 = samplej; }
      }
    }
@@ -1924,7 +1924,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
 
    /* Boost the eigenvalue estimate for p(A)*p(A)*A */
    /* and store coefficients for later application. */
-   
+
    if (deg < 2) {
            widget->mlsBoost = 1.5e0;
 	   widget->mlsBoost = 1.019e0;
@@ -1933,9 +1933,9 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
 	   widget->mlsBoost = 1.025e0;
    }
    rho2 *= widget->mlsBoost;
-   widget->mlsOm2 = 2.0e0/rho2; 
-   for (i=0; i<deg; i++) widget->mlsOm[i] = om_loc[i]; 
-	
+   widget->mlsOm2 = 2.0e0/rho2;
+   for (i=0; i<deg; i++) widget->mlsOm[i] = om_loc[i];
+
    return 0;
 
 }
@@ -1944,7 +1944,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
 int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 			double eig_ratio, int deg)
 {
-   int              start_level, end_level, i, j, errCode=0;   
+   int              start_level, end_level, i, j, errCode=0;
    struct MLSthing *widget;
    ML_Operator     *Amat;
    double          *tdiag;
@@ -1959,7 +1959,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
    double         t0;
 #endif
 
-   if (nl == ML_ALL_LEVELS) { 
+   if (nl == ML_ALL_LEVELS) {
 	  start_level = 0; end_level = ml->ML_num_levels-1;}
    else { start_level = nl; end_level = nl;}
 
@@ -1992,7 +1992,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
    else degree = -iii;
 
 
-	
+
    for (i = start_level; i <= end_level; i++) {
 #ifdef ML_TIMING
      t0 = GetClock();
@@ -2020,7 +2020,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 #endif
      ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
      Amat->lambda_max = ML_Krylov_Get_MaxEigenvalue(kdata);
-     Amat->lambda_min = kdata->ML_eigen_min; 
+     Amat->lambda_min = kdata->ML_eigen_min;
      ML_Krylov_Destroy( &kdata );
 #ifdef SYMMETRIZE
      if (t3 != NULL) ML_Operator_Destroy(&t3);
@@ -2048,7 +2048,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
          widget = (struct MLSthing *) ML_allocate(sizeof(struct MLSthing));
 
 	 widget->mlsDeg   = degree;
-	 widget->mlsBoost = 1.0; 
+	 widget->mlsBoost = 1.0;
 	 widget->mlsOver  = 1.1e0 ;
 	 /* @@@ widget->mlsOm[0] = Amat->lambda_max; */
 	 widget->pAux     = NULL;   /* currently reserved */
@@ -2058,47 +2058,47 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 	 if (pre_or_post == ML_PRESMOOTHER) {
 	   ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
            sprintf(str,"MLS_pre%d",i);
-           errCode=ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
-				  (void *) widget, fun, NULL, 
+           errCode=ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
+				  (void *) widget, fun, NULL,
 				   ntimes, 0.0, str);
 	   /* set up the values needed for MLS  */
 	   if (fun == ML_Smoother_MLS_Apply) {
-	     if (ML_MLS_Setup_Coef(&(ml->pre_smoother[i]), 1,ml->symmetrize_matrix)) { 
-	       return pr_error("*** MLS setup failed!\n");  
+	     if (ML_MLS_Setup_Coef(&(ml->pre_smoother[i]), 1,ml->symmetrize_matrix)) {
+	       return pr_error("*** MLS setup failed!\n");
 	     }
 	   }
 	 }
 	 else if (pre_or_post == ML_POSTSMOOTHER) {
 	   ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
 	   sprintf(str,"MLS_post%d",i);
-	   errCode=ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, 
-				  (void *) widget, fun, NULL, 
+	   errCode=ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
+				  (void *) widget, fun, NULL,
 				  ntimes, 0.0, str);
 	   /* set up the values needed for MLS  */
 	   if (fun == ML_Smoother_MLS_Apply) {
-	     if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1,ml->symmetrize_matrix)) { 
-	       return pr_error("*** MLS setup failed!\n");  
+	     if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1,ml->symmetrize_matrix)) {
+	       return pr_error("*** MLS setup failed!\n");
 	     }
 	   }
 	 }
 	 else if (pre_or_post == ML_BOTH) {
-		 
-	   ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
-	   sprintf(str,"MLS_pre%d",i);     
 
-	   ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
-                        (void *) widget, fun, NULL, ntimes, 
+	   ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
+	   sprintf(str,"MLS_pre%d",i);
+
+	   ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
+                        (void *) widget, fun, NULL, ntimes,
 			0.0, str);
 	   sprintf(str,"MLS_post%d",i);
-	   errCode = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, 
+	   errCode = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
                (void *) widget, fun, NULL, ntimes, 0.0, str);
 
 
 	   /* set up the values needed for MLS  */
 
 	   if (fun == ML_Smoother_MLS_Apply) {
-	     if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1,ml->symmetrize_matrix)) { 
-	       return pr_error("*** MLS setup failed!\n");  
+	     if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1,ml->symmetrize_matrix)) {
+	       return pr_error("*** MLS setup failed!\n");
 	     }
 	   }
 	 }
@@ -2113,7 +2113,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 #endif
      }
    }
-   return errCode; 
+   return errCode;
 }
 #endif/*MB_MODIF*/
 
@@ -2154,7 +2154,7 @@ int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
       printf("ML_Gen_Smoother_ParaSails: cannot set smoother on level %d\n",start_level);
       return 1;
    }
-	
+
    if (sym)
       fun1 = fun2 = ML_Smoother_ParaSailsSym;
    else {
@@ -2168,7 +2168,7 @@ int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
 	 int local_row, allocated_space, *ml_indices;
          double *ml_values;
 	 start_row = ML_gpartialsum_int(nrows, ml->comm);
-	 end_row   = start_row + nrows - 1; 
+	 end_row   = start_row + nrows - 1;
 
 	 mat = MatrixCreate(ml->comm->USR_comm, start_row, end_row);
 
@@ -2176,7 +2176,7 @@ int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
 	                     &(ml->Amat[i].getrow->loc_glob_map),
 	                     ml->Amat[i].getrow->pre_comm, ml->comm);
 	 ml->Amat[i].getrow->use_loc_glob_map = ML_YES;
-	 allocated_space = 10; 
+	 allocated_space = 10;
 	 ml_indices = (int    *) ML_allocate(sizeof(int)*allocated_space);
 	 ml_values  = (double *) ML_allocate(sizeof(double)*allocated_space);
 
@@ -2185,7 +2185,7 @@ int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
 
             local_row = row - start_row;
             ML_get_matrix_row(&(ml->Amat[i]), 1, &local_row,
-                                &allocated_space, &ml_indices, 
+                                &allocated_space, &ml_indices,
 				&ml_values, &row_length, 0);
 /*
 for (j = 0; j < row_length; j++)
@@ -2194,7 +2194,7 @@ for (j = 0; j < row_length; j++)
 
 	    MatrixSetRow(mat, row, row_length, ml_indices, ml_values);
 	 }
-	 ML_free(ml->Amat[i].getrow->loc_glob_map); 
+	 ML_free(ml->Amat[i].getrow->loc_glob_map);
          ml->Amat[i].getrow->loc_glob_map = NULL;
 	 ml->Amat[i].getrow->use_loc_glob_map = ML_NO;
 
@@ -2203,7 +2203,7 @@ for (j = 0; j < row_length; j++)
 	 /* nonsymmetric preconditioner */
 
          widget = (struct widget *) ML_allocate(sizeof(struct widget));
-	 ps  = ParaSailsCreate(ml->comm->USR_comm, start_row, end_row, 
+	 ps  = ParaSailsCreate(ml->comm->USR_comm, start_row, end_row,
 	    parasails_factorized);
          ps->loadbal_beta = parasails_loadbal;
 	 ParaSailsSetupPattern(ps, mat, thresh, num_levels);
@@ -2219,7 +2219,7 @@ for (j = 0; j < row_length; j++)
 /* Turn on temporarily */
          widget->parasails_factorized = parasails_factorized;
          widget->ps                   = ps;
-         
+
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
 			      (void *) widget, fun1, NULL, ntimes, 0.0,NULL);
 
@@ -2292,7 +2292,7 @@ fflush(stdout);
       pr_error("Error: No A matrix getrow on grid %d : \
                        can not do ML_Gen_Amatrix_RAP.\n",i);
 
-   if ((Amat->getrow->pre_comm  == NULL) && 
+   if ((Amat->getrow->pre_comm  == NULL) &&
        (Amat->getrow->post_comm == NULL) && (ml->comm->ML_nprocs > 1) ) {
        if ((ml->comm->ML_mypid == 0) && (output_level > 3)) {
          printf("Warning:No communication information given with Amat's \n");
@@ -2313,7 +2313,7 @@ fflush(stdout);
       pr_error("Error: No R matrix getrow on grid %d : \n\
                        can not do ML_Gen_AmatrixRAP.\n",i);
 
-   if ((Rmat->getrow->pre_comm  == NULL) && 
+   if ((Rmat->getrow->pre_comm  == NULL) &&
        (Rmat->getrow->post_comm == NULL) && (ml->comm->ML_nprocs > 1) ) {
        if ((ml->comm->ML_mypid == 0) && (output_level > 3)) {
          printf("Warning:No communication information given with Rmat's \n");
@@ -2322,7 +2322,7 @@ fflush(stdout);
    }
 
    if (Pmat->matvec->ML_id == ML_EMPTY) {
-      if (output_level > 3) 
+      if (output_level > 3)
       printf("Warning: No Pmat matvec on grid %d (where finest = 0).\n\
 		can not check Pmat's getrow\n",i);
    }
@@ -2334,7 +2334,7 @@ fflush(stdout);
       pr_error("Error: No P matrix getrow on grid %d : \n\
                        can not do ML_Gen_AmatrixRAP.\n",i);
 
-   if ((Pmat->getrow->pre_comm  == NULL) && 
+   if ((Pmat->getrow->pre_comm  == NULL) &&
        (Pmat->getrow->post_comm == NULL) && (ml->comm->ML_nprocs > 1) ) {
        if ((ml->comm->ML_mypid == 0) && (output_level > 3)) {
          printf("Warning:No communication information given with Pmat's \n");
@@ -2343,7 +2343,7 @@ fflush(stdout);
    }
 
 /*ML_Operator_Print(&(ml->Pmat[child_level]),"Pn");*/
-   ML_rap(&(ml->Rmat[parent_level]), &(ml->Amat[parent_level]), 
+   ML_rap(&(ml->Rmat[parent_level]), &(ml->Amat[parent_level]),
           &(ml->Pmat[child_level]), &(ml->Amat[child_level]),
           ML_MSR_MATRIX);
 
@@ -2376,16 +2376,16 @@ int ML_Set_BoundaryTypes(ML *ml, int level, int type, int n, int *data)
 /* functions to set the mapper                                               */
 /* ------------------------------------------------------------------------- */
 
-int ML_Set_EqnToGridMapFunc(ML *ml, int level, int fleng, int tleng, 
+int ML_Set_EqnToGridMapFunc(ML *ml, int level, int fleng, int tleng,
                             int (*func)(void*,double*,double*) )
 {
    ML_Mapper_SetFunc( ml->SingleLevel[level].eqn2grid,fleng,tleng,func);
-   ML_Mapper_SetData( ml->SingleLevel[level].eqn2grid, 
+   ML_Mapper_SetData( ml->SingleLevel[level].eqn2grid,
                       (void*)ml->SingleLevel[level].Grid->Grid);
    return 0;
 }
 
-int ML_Set_GridToEqnMapFunc(ML *ml, int level, int fleng, int tleng, 
+int ML_Set_GridToEqnMapFunc(ML *ml, int level, int fleng, int tleng,
                             int (*func)(void*,double*,double*) )
 {
    ML_Mapper_SetFunc( ml->SingleLevel[level].grid2eqn,fleng,tleng,func);
@@ -2485,7 +2485,7 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
       exit(1);
    }
    */
-      
+
    current_level = &(ml->SingleLevel[finest_level]);
    level = finest_level;
    i = 0;
@@ -2495,8 +2495,8 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
          pr_error("Error: No A matrix on grid %d.\n",level);
       }
 
-      if ((current_level->Amat->getrow->pre_comm  == NULL) && 
-          (current_level->Amat->getrow->post_comm == NULL) && 
+      if ((current_level->Amat->getrow->pre_comm  == NULL) &&
+          (current_level->Amat->getrow->post_comm == NULL) &&
           (current_level->Amat->getrow->ML_id != ML_EMPTY) &&
           (ml->comm->ML_nprocs > 1) ) {
          if (ml->comm->ML_mypid == 0) {
@@ -2518,7 +2518,7 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
 /*
          ML_Operator_Check_Getrow(current_level->Rmat,ml->comm,level,"Rmat");
 */
-         if (level != finest_level && 
+         if (level != finest_level &&
              current_level->Pmat->matvec->ML_id == ML_EMPTY)
             pr_error("Error: No P matvec on grid %d.\n",level);
 /*
@@ -2527,7 +2527,7 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
       }
 
       if ( (current_level->pre_smoother->smoother->ML_id == ML_INTERNAL) &&
-           (current_level->pre_smoother->smoother->internal==ML_Smoother_Jacobi)) 
+           (current_level->pre_smoother->smoother->internal==ML_Smoother_Jacobi))
       {
          if ((temp == NULL) && (current_level->csolve->func->ML_id == ML_EMPTY))
          {
@@ -2547,7 +2547,7 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
          }
 */
       }
-      if (current_level->pre_smoother->ntimes == ML_NOTSET) 
+      if (current_level->pre_smoother->ntimes == ML_NOTSET)
             current_level->pre_smoother->ntimes = 2;
       if (temp != NULL) {
          t1 = current_level->Amat->outvec_leng;
@@ -2555,7 +2555,7 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
          ML_gsum_scalar_int(&t1, &j, ml->comm);
          ML_gsum_scalar_int(&t2, &j, ml->comm);
          if (t2 >= t1) {
-            if (ml->comm->ML_mypid == 0) 
+            if (ml->comm->ML_mypid == 0)
                pr_error("Error: Grid %d (where finest = 0) has %d unknowns \
                        and restricts to a grid with %d (i.e. more) unknowns.\n",
 	                i, t1, t2);
@@ -2580,29 +2580,29 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
          for ( j = 0; j < leng2; j++ ) if ( dtmp2[j] == 1.0 ) leng1++;
          itmp3 = (int*) ML_allocate( leng1 * sizeof(int) );
          leng1 = 0;
-         for ( j = 0; j < leng2; j++ ) 
+         for ( j = 0; j < leng2; j++ )
             if ( dtmp2[j] == 1.0 ) itmp3[leng1++] = j;
          ML_BdryPts_Load_Dirichlet_Eqn(current_level->BCs, leng1, itmp3);
          ML_free( itmp3 );
       } else {
          ML_BdryPts_Copy_Dirichlet_GridToEqn(current_level->BCs);
-      }    
+      }
       current_level = temp;
    }
    ml->ML_num_actual_levels = i;
    /*
-   if ((ml->comm->ML_mypid == 0) && (output_level > 0)) 
+   if ((ml->comm->ML_mypid == 0) && (output_level > 0))
       printf("Total number of levels = %d\n",i);
    */
-  
+
    if ((output_level > 5) && (ml->comm->ML_mypid == 0)) {
       if (i == 1) printf("Warning: Only a one level multilevel scheme!!\n");
       /*
-      if (i > 2) 
+      if (i > 2)
          printf("Warning: Its best to start with 2 levels.\n");
       */
    }
-   
+
    if ( finest_level > coarsest_level ) {
       for ( i = coarsest_level; i < finest_level; i++ )
          ml->Pmat[i].bc = &(ml->BCs[i+1]);
@@ -2639,7 +2639,7 @@ int ML_Solve(ML *ml, int inlen, double *sol, int outlen, double *rhs)
 int ML_Iterate(ML *ml, double *sol, double *rhs)
 {
    int  i = 0, count = 0;
-   double res_norm, prev_res_norm = -1.0, reduction, r0 = 0.0 
+   double res_norm, prev_res_norm = -1.0, reduction, r0 = 0.0
 	  /*, old_reduction = 10.*/;
 
    reduction = 1.;
@@ -2650,9 +2650,9 @@ int ML_Iterate(ML *ml, double *sol, double *rhs)
    }
    else count = 0;
 
-   while ( reduction >= ml->tolerance && i < ml->max_iterations ) 
+   while ( reduction >= ml->tolerance && i < ml->max_iterations )
    {
-      res_norm = ML_Cycle_MG( &(ml->SingleLevel[ml->ML_finest_level]), sol, 
+      res_norm = ML_Cycle_MG( &(ml->SingleLevel[ml->ML_finest_level]), sol,
 				rhs, ML_NONZERO,ml->comm, ML_COMPUTE_RES_NORM,ml);
       count++;
       i++;
@@ -2707,16 +2707,16 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
    ML_BdryPts_Get_Dirichlet_Eqn_Info(&(ml->BCs[level]),&dir_leng,&dir_list);
    if ( dir_leng != 0 )
    {
-      if (ml->Amat[level].diagonal != NULL) { 
+      if (ml->Amat[level].diagonal != NULL) {
          ML_DVector_GetDataPtr(ml->Amat[level].diagonal,&diag);
          for ( i = 0; i < dir_leng; i++ ) {
-            k = dir_list[i]; 
+            k = dir_list[i];
             dout[k] = din[k] / diag[k];
-         } 
+         }
       } else {
          diag = NULL;
          for ( i = 0; i < dir_leng; i++ ) {
-            k = dir_list[i]; 
+            k = dir_list[i];
             dout[k] = din[k];
          }
       }
@@ -2742,24 +2742,24 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
    /* call MG v-cycle                                              */
    /* ------------------------------------------------------------ */
 
-   ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
+   ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
                 ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
 
    /* Input and output vectors are switched */
-   
-   if (ml->void_options != NULL) { 
+
+   if (ml->void_options != NULL) {
      ml_ggb = (ML *) ml->void_options;
-     
-     
-     ML_Cycle_MG(&(ml_ggb->SingleLevel[ml_ggb->ML_finest_level]), dout, 
+
+
+     ML_Cycle_MG(&(ml_ggb->SingleLevel[ml_ggb->ML_finest_level]), dout,
 		 din_temp, ML_NONZERO, ml_ggb->comm, ML_NO_RES_NORM, ml_ggb);
-    
-     ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
+
+     ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
 		 ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
-     
+
 
    }
-   
+
 
    ML_free(din_temp);
    return 0;
@@ -2789,16 +2789,16 @@ int ML_Solve_MGFull( ML *ml , double *din, double *dout)
    ML_BdryPts_Get_Dirichlet_Eqn_Info(&(ml->BCs[level]),&dir_leng,&dir_list);
    if ( dir_leng != 0 )
    {
-      if (ml->Amat[level].diagonal != NULL) { 
+      if (ml->Amat[level].diagonal != NULL) {
          ML_DVector_GetDataPtr(ml->Amat[level].diagonal,&diag);
          for ( i = 0; i < dir_leng; i++ ) {
-            k = dir_list[i]; 
+            k = dir_list[i];
             dout[k] = din[k] / diag[k];
-         } 
+         }
       } else {
          diag = NULL;
          for ( i = 0; i < dir_leng; i++ ) {
-            k = dir_list[i]; 
+            k = dir_list[i];
             dout[k] = din[k];
          }
       }
@@ -2824,14 +2824,14 @@ scales = NULL;
    /* call MG v-cycle                                              */
    /* ------------------------------------------------------------ */
 
-   ML_Cycle_MGFull(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
+   ML_Cycle_MGFull(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
                 ML_ZERO, ml->comm, ML_NO_RES_NORM,ml);
 
    ML_free(din_temp);
    return 0;
 }
 
-void ML_Solve_SmootherDestroy(void *data) 
+void ML_Solve_SmootherDestroy(void *data)
 {
    ML_Destroy( (ML **) &data);
 }
@@ -2888,16 +2888,16 @@ int ML_Seg_Solve( ML *ml , double *din, double *dout)
    ML_BdryPts_Get_Dirichlet_Eqn_Info(&(ml->BCs[level]),&dir_leng,&dir_list);
    if ( dir_leng != 0 )
    {
-      if (ml->Amat[level].diagonal != NULL) { 
+      if (ml->Amat[level].diagonal != NULL) {
          ML_DVector_GetDataPtr(ml->Amat[level].diagonal,&diag);
          for ( i = 0; i < dir_leng; i++ ) {
-            k = dir_list[i]; 
+            k = dir_list[i];
             dout[k] = din[k] / diag[k];
-         } 
+         }
       } else {
          diag = NULL;
          for ( i = 0; i < dir_leng; i++ ) {
-            k = dir_list[i]; 
+            k = dir_list[i];
             dout[k] = din[k];
          }
       }
@@ -2922,7 +2922,7 @@ scales = NULL;
    /* call MG v-cycle                                              */
    /* ------------------------------------------------------------ */
 
-   ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp, 
+   ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
                 ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
 
    ML_free(din_temp);
@@ -3036,8 +3036,8 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       /* --------------------------------------------------------- */
       ML_Smoother_Apply(pre, lengf, sol, lengf, rhss, approx_all_zeros);
 
-      if ( ( approx_all_zeros != ML_ZERO ) || 
-           ( pre->smoother->ML_id != ML_EMPTY ) ) 
+      if ( ( approx_all_zeros != ML_ZERO ) ||
+           ( pre->smoother->ML_id != ML_EMPTY ) )
       {
          ML_Operator_Apply(Amat, lengf, sol, lengf, res);
          for ( i = 0; i < lengf; i++ ) res[i] = rhss[i] - res[i];
@@ -3194,7 +3194,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       /* process the next level and transfer back to this level    */
       /* --------------------------------------------------------- */
       ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
-      if (ml->ML_scheme == ML_MGW) 
+      if (ml->ML_scheme == ML_MGW)
 	ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
 
       /* ------------------------------------------------------------ */
@@ -3466,7 +3466,7 @@ int ML_Solve_AMGV( ML *ml , double *din, double *dout)
    /* call MG v-cycle                                              */
    /* ------------------------------------------------------------ */
 
-   ML_Cycle_AMGV(&(ml->SingleLevel[ml->ML_finest_level]), dout, din, 
+   ML_Cycle_AMGV(&(ml->SingleLevel[ml->ML_finest_level]), dout, din,
                 ML_ZERO, ml->comm);
 
    return 0;
@@ -3474,7 +3474,7 @@ int ML_Solve_AMGV( ML *ml , double *din, double *dout)
 
 /******************************************************************************
    Solve by first projecting out certain user-defined modes and then calling
-   the standard algebraic V-cycle.  We implicitly assume that we are using 
+   the standard algebraic V-cycle.  We implicitly assume that we are using
    CG as the outer solve, so the projection step is also done after the
    multigrid call to make the entire preconditioner symmetric.
 
@@ -3483,7 +3483,7 @@ int ML_Solve_AMGV( ML *ml , double *din, double *dout)
    lengths in varios places need to be changed.
 
    Here is the algorithm, where V' = transpose(V).
-   
+
         1) Solve V'*A*V * x1 = V' * f.
         2) Calculate a residual r1 = f - A*V*x1.
 
@@ -3585,7 +3585,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    for (i=0; i<lengV; i++) {
      vec1[i] = 0.0;
      for (j=0; j<dimV; j++)
-        vec1[i] += x1[j] * V[j][i]; 
+        vec1[i] += x1[j] * V[j][i];
    }
    ML_Operator_Apply(Amat, Amat->invec_leng, vec1, Amat->outvec_leng, res1);
    for (i=0; i<Amat->outvec_leng; i++)
@@ -3595,7 +3595,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    /************************************************
    **** 3) Solve A * x2 = r1 via a multigrid cycle.
    ************************************************/
-   
+
    ML_Solve_AMGV(ml, res1, dout);
 
    /******************************************************
@@ -3636,7 +3636,7 @@ int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
    for (i=0; i<lengV; i++) {
      vec1[i] = 0.0;
      for (j=0; j<dimV; j++)
-        vec1[i] = vec1[i] + x3[j] * V[j][i]; 
+        vec1[i] = vec1[i] + x3[j] * V[j][i];
    }
 
    /* Recall that vec2 = V*x1 + x2  and vec1 = V*x3 */
@@ -3667,7 +3667,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
 #ifdef ML_ANALYSIS
    short   dummy;
    int     *cols, Nrows, j, allocated_space, ncols, lwork, info;
-   double  *squareA, *vals, *eig, *work; 
+   double  *squareA, *vals, *eig, *work;
    char    instring[100], jobz, jobz2;
    FILE    *fp;
 #endif
@@ -3691,7 +3691,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
       cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
       vals = (double *) ML_allocate(allocated_space*sizeof(double));
       for (i = 0; i < lengf; i++) {
-         while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)==0) 
+         while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)==0)
          {
             allocated_space = 2*allocated_space + 1;
             ML_free(vals); ML_free(cols);
@@ -3743,7 +3743,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          ML_free(res);
       }
    }
-   else 
+   else
    {
       res = (double *) ML_allocate(lengf*sizeof(double));
 
@@ -3753,8 +3753,8 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
 
       ML_Smoother_Apply(pre, lengf, sol, lengf, rhs, approx_all_zeros);
 
-      if ( ( approx_all_zeros != ML_ZERO ) || 
-           ( pre->smoother->ML_id != ML_EMPTY ) ) 
+      if ( ( approx_all_zeros != ML_ZERO ) ||
+           ( pre->smoother->ML_id != ML_EMPTY ) )
       {
          ML_Operator_Apply(Amat, lengf, sol, lengf, res);
          for ( i = 0; i < lengf; i++ ) res[i] = rhs[i] - res[i];
@@ -3772,7 +3772,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          vals = (double *) ML_allocate(allocated_space*sizeof(double));
          for (i = 0; i < lengf; i++) {
             while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)
-                  == 0) 
+                  == 0)
             {
                allocated_space = 2*allocated_space + 1;
                ML_free(vals); ML_free(cols);
@@ -3808,10 +3808,10 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          allocated_space = 100;
          cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
          vals = (double *) ML_allocate(allocated_space*sizeof(double));
-         for (i = 0; i < lengf; i++) 
+         for (i = 0; i < lengf; i++)
          {
-            while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols) 
-                  == 0) 
+            while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)
+                  == 0)
             {
                allocated_space = 2*allocated_space + 1;
                ML_free(vals); ML_free(cols);
@@ -3834,20 +3834,20 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          MLFORTRAN(dsyev)(&jobz,&jobz2,&Nrows,squareA,&Nrows,eig,work,&lwork,&info,
                 dummy,dummy);
          printf("returning from dsyev ...\n");
-         if ( info > 0 ) 
+         if ( info > 0 )
          {
             printf("No convergence in computing the eigenvalues.\n");
-         } 
+         }
          else if ( info < 0 )
          {
             printf("Eigenvalue computation:%d-th argument has error.\n",-info);
-         } 
-         else 
+         }
+         else
          {
             fp = fopen("mlmatlab.eig", "w");
             fprintf(fp, "%d\n", Nrows);
             for (i=0; i<Nrows; i++) fprintf(fp, "%25.16e\n",eig[i]);
-            for (i=0; i<Nrows*Nrows; i++) 
+            for (i=0; i<Nrows*Nrows; i++)
                fprintf(fp, "%25.16e\n",squareA[i]);
             fclose(fp);
          }
@@ -3856,11 +3856,11 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          ML_free(work);
          fp = fopen("mlmatlab.m", "w");
          fprintf(fp, "res = [\n");
-         for (i=0; i<Nrows; i++) 
+         for (i=0; i<Nrows; i++)
          {
             work[i] = 0.0;
-            for (j=0; j<Nrows; j++) 
-               work[i] += ( squareA[i*Nrows+j] * rhs[j]); 
+            for (j=0; j<Nrows; j++)
+               work[i] += ( squareA[i*Nrows+j] * rhs[j]);
             fprintf(fp, "    %25.16e \n", work[i]);
          }
          fclose(fp);
@@ -3927,8 +3927,8 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
          vals = (double *) ML_allocate(allocated_space*sizeof(double));
          for (i = 0; i < lengf; i++) {
-            while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols) 
-                  == 0) 
+            while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)
+                  == 0)
             {
                allocated_space = 2*allocated_space + 1;
                ML_free(vals); ML_free(cols);
@@ -3986,8 +3986,8 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
          vals = (double *) ML_allocate(allocated_space*sizeof(double));
          for (i = 0; i < lengf; i++) {
-            while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols) 
-                  == 0) 
+            while(ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&ncols)
+                  == 0)
             {
                allocated_space = 2*allocated_space + 1;
                ML_free(vals); ML_free(cols);
@@ -4026,8 +4026,8 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
 /* Form global matrix in CSR                                                 */
 /*****************************************************************************/
 
-int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat, ML_Matrix_DCSR *outmat, 
-                          ML_Comm *comm, int *offset) 
+int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat, ML_Matrix_DCSR *outmat,
+                          ML_Comm *comm, int *offset)
 {
    int        nprocs, mypid, *mat_ia, *mat_ja, N_internal, N_total;
    int        i, j, k, nnz, *mat2_ia, *mat2_ja, N_external;
@@ -4052,7 +4052,7 @@ int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat, ML_Matrix_DCSR *outmat,
    mat_a      = inmat->mat_a;
    N_internal = inmat->mat_n;
    nnz        = mat_ia[N_internal];
-   if ( inmat->comminfo->neighbors != NULL ) { 
+   if ( inmat->comminfo->neighbors != NULL ) {
       N_external  = inmat->comminfo->total_rcv_length;
       N_total     = N_internal + N_external;
    } else {
@@ -4077,7 +4077,7 @@ int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat, ML_Matrix_DCSR *outmat,
    ML_memory_free( (void**) &itmp );
    (*offset) = proc_array[mypid];
    ML_memory_alloc( (void**) &dtmp, N_total * sizeof(double), "KLC" );
-   for ( i = 0; i < N_internal; i++ ) 
+   for ( i = 0; i < N_internal; i++ )
       dtmp[i] = (double) (proc_array[mypid] + i);
    ML_exchange_bdry(dtmp, inmat->comminfo, N_internal, comm, ML_OVERWRITE,NULL);
    ML_memory_alloc( (void**) &itmp, N_total * sizeof(int), "KLE" );
@@ -4103,10 +4103,10 @@ int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat, ML_Matrix_DCSR *outmat,
       {
          k = mat_ja[j];
          mat2_ja[index] = itmp[k];
-         mat2_a[index++] = mat_a[j];  
+         mat2_a[index++] = mat_a[j];
       }
-      mat2_ia[i] = mat_ia[i+1] - mat_ia[i];  
-   }    
+      mat2_ia[i] = mat_ia[i+1] - mat_ia[i];
+   }
    ML_memory_free( (void **) &itmp );
 
    k = cur_nrows;
@@ -4126,9 +4126,9 @@ int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat, ML_Matrix_DCSR *outmat,
 
 #ifdef ML_PRINT_COARSE_MAT
 if ( comm->ML_mypid == 0 && new_nrows == comm->ML_nprocs)
-for ( i = 0; i < new_nrows; i++ ) 
+for ( i = 0; i < new_nrows; i++ )
 {
-   for ( j = mat2_ia[i]; j < mat2_ia[i+1]; j++ ) 
+   for ( j = mat2_ia[i]; j < mat2_ia[i+1]; j++ )
       printf("A(%4d,%4d) = %e;\n", i+1, mat2_ja[j]+1, mat2_a[j]);
 }
 #endif
@@ -4146,7 +4146,7 @@ for ( i = 0; i < new_nrows; i++ )
 /* clean up                                                                  */
 /* ------------------------------------------------------------------------- */
 
-int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func) 
+int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
 {
    ML_Solver   *solver;
 
@@ -4236,14 +4236,14 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    space   = osize * 5 + 30;
    getrow_flag = 0;
    if ( op->getrow->internal != NULL ) {
-      getrow_flag = 1; 
+      getrow_flag = 1;
    } else if ( op->getrow->external != NULL ) {
-      getrow_flag = 2; 
+      getrow_flag = 2;
    } else {
       printf("ML_Gen_CoarseSolverSuperLU error : no getrow function.\n");
       exit(-1);
    }
-   
+
    flag    = 0;
 
    while (flag == 0) {
@@ -4255,10 +4255,10 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       flag = 1;
       for (i = 0; i < osize; i++) {
          if ( getrow_flag == 1 ) {
-            flag = op->getrow->internal((void*)op, 1, &i, space-nz_ptr, 
+            flag = op->getrow->internal((void*)op, 1, &i, space-nz_ptr,
                               &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
          } else {
-            flag = op->getrow->external(data, 1, &i, space-nz_ptr, 
+            flag = op->getrow->external(data, 1, &i, space-nz_ptr,
                                &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
          }
 
@@ -4304,9 +4304,9 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    ML_free(vals);
    ML_free(csr_mat);
 
-   /* Throw away some information to make it cheaper for LU. We do this   */ 
+   /* Throw away some information to make it cheaper for LU. We do this   */
    /* by using metis to generate some blocks and factor the block matrix. */
-   if (nblocks > 1) { 
+   if (nblocks > 1) {
       mat_ia  = csr2_mat->mat_ia;
       mat_ja  = csr2_mat->mat_ja;
       mat_val = csr2_mat->mat_a;
@@ -4320,7 +4320,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       ML_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
       ML_CommInfoOP_Set_neighbors(&(subml->Amat[0].getrow->pre_comm), 0,
                                NULL, ML_OVERWRITE, NULL, 0);
-      ML_Operator_Set_Getrow(&(subml->Amat[0]), ML_EXTERNAL, 
+      ML_Operator_Set_Getrow(&(subml->Amat[0]), ML_EXTERNAL,
                              subml->Amat[0].outvec_leng, CSR_getrows);
       ML_Gen_Blocks_Metis(subml, 0, &nblocks, &block_list);
       ML_Destroy(&subml);
@@ -4402,19 +4402,19 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
          /* if (solver->Mat1 != NULL )
          {
             Destroy_CompRow_Matrix(solver->Mat1);
-            ML_memory_free(  (void**) &(solver->Mat1) ); 
+            ML_memory_free(  (void**) &(solver->Mat1) );
             solver->Mat1 = NULL;
          }
          if (solver->Mat2 != NULL )
          {
             Destroy_SuperNode_Matrix(solver->Mat2);
-            ML_memory_free(  (void**) &(solver->Mat2) ); 
+            ML_memory_free(  (void**) &(solver->Mat2) );
             solver->Mat2 = NULL;
          }
          if (solver->Mat3 != NULL )
          {
             Destroy_CompCol_Matrix(solver->Mat3);
-            ML_memory_free(  (void**) &(solver->Mat3) ); 
+            ML_memory_free(  (void**) &(solver->Mat3) );
             solver->Mat3 = NULL;
          }*/
       }
@@ -4483,7 +4483,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    /* CSR data object                                                   */
    /* ----------------------------------------------------------------- */
 
-   if ( level < 0 || level >= ml_handle->ML_num_levels ) 
+   if ( level < 0 || level >= ml_handle->ML_num_levels )
    {
       printf("ML_Gen_CoarseSolverSuperLU error : invalid level number.\n");
       exit(-1);
@@ -4491,7 +4491,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    op      = (ML_Operator *) &ml_handle->Amat[level];
    data    = op->data;
    osize   = op->outvec_leng;
-   if (op->invec_leng < 0) 
+   if (op->invec_leng < 0)
    {
       nblocks = -op->invec_leng;
       op->invec_leng = osize;
@@ -4559,9 +4559,9 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    ML_free(row_ptr);
    ML_free(csr_mat);
 
-   /* Throw away some information to make it cheaper for LU. We do this   */ 
+   /* Throw away some information to make it cheaper for LU. We do this   */
    /* by using metis to generate some blocks and factor the block matrix. */
-   if (nblocks > 1) { 
+   if (nblocks > 1) {
       mat_ia  = csr2_mat->mat_ia;
       mat_ja  = csr2_mat->mat_ja;
       mat_val = csr2_mat->mat_a;
@@ -4574,7 +4574,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       ML_Init_Amatrix(subml, 0, nrows, nrows, (void *) temp_ptr);
       ML_CommInfoOP_Set_neighbors(&(subml->Amat[0].getrow->pre_comm), 0,
                                NULL, ML_OVERWRITE, NULL, 0);
-      ML_Operator_Set_Getrow(&(subml->Amat[0]), ML_EXTERNAL, 
+      ML_Operator_Set_Getrow(&(subml->Amat[0]), ML_EXTERNAL,
                              subml->Amat[0].outvec_leng, CSR_getrows);
 
       ML_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
@@ -4809,25 +4809,25 @@ int ML_Gen_GridXsferUsingFEBasis(ML *ml, int L1, int L2, int stride)
                           (void **) &xsfer_op, ml->comm);
    leng = ml->SingleLevel[L1].Grid->gridfcn->USR_grid_get_nvertices(
                                       ml->SingleLevel[L1].Grid->Grid);
-   ML_Operator_Set_1Levels(&(ml->Rmat[L1]), &(ml->SingleLevel[L1]), 
+   ML_Operator_Set_1Levels(&(ml->Rmat[L1]), &(ml->SingleLevel[L1]),
                            &(ml->SingleLevel[L2]));
    leng2 = xsfer_op->Nlocal_rows * stride;
    ML_Operator_Set_ApplyFuncData(&(ml->Rmat[L1]),leng*stride,leng2,
-                          ML_INTERNAL, (void *) xsfer_op, 
+                          ML_INTERNAL, (void *) xsfer_op,
                           xsfer_op->Nlocal_rows,
                           ML_OperatorAGX_Restrict, 1);
 
-   ML_Operator_Set_Getrow(&(ml->Rmat[L1]), ML_INTERNAL, 
+   ML_Operator_Set_Getrow(&(ml->Rmat[L1]), ML_INTERNAL,
 	    (xsfer_op->Nlocal_rows + xsfer_op->Nremote_rows) *stride,
 			  ML_OperatorAGX_Getrows);
    ml->Rmat[L1].data_destroy = ML_Operator2AGX_Destroy;
 
-   ML_Operator_Set_1Levels(&(ml->Pmat[L2]), &(ml->SingleLevel[L2]), 
+   ML_Operator_Set_1Levels(&(ml->Pmat[L2]), &(ml->SingleLevel[L2]),
                            &(ml->SingleLevel[L1]));
-   ML_Operator_Set_ApplyFuncData(&(ml->Pmat[L2]), leng2, leng*stride, 
-                      ML_INTERNAL, (void *) xsfer_op, leng, 
+   ML_Operator_Set_ApplyFuncData(&(ml->Pmat[L2]), leng2, leng*stride,
+                      ML_INTERNAL, (void *) xsfer_op, leng,
                       ML_OperatorAGX_Prolongate, 0);
-   ML_Operator_Set_Getrow(&(ml->Pmat[L2]), ML_INTERNAL, 
+   ML_Operator_Set_Getrow(&(ml->Pmat[L2]), ML_INTERNAL,
             ml->Pmat[L2].outvec_leng, ML_OperatorAGX_Getcols);
    xsfer_op->AGX_stride = stride;
 
@@ -4841,7 +4841,7 @@ int ML_Gen_GridXsferUsingFEBasis(ML *ml, int L1, int L2, int stride)
    ml->Pmat[L2].build_time = t0;
    ml->Rmat[L1].build_time = t0;
 #endif
-   
+
    return 0;
 }
 
@@ -5102,9 +5102,9 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
 /* block version */
 
 int ML_Gen_Smoother_BlockHiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
-			      ML_Operator **Tmat_array, 
-			      ML_Operator **Tmat_trans_array, 
-			      ML_Operator *Tmat_bc, 
+			      ML_Operator **Tmat_array,
+			      ML_Operator **Tmat_trans_array,
+			      ML_Operator *Tmat_bc,
 			      void *edge_smoother, void **edge_args,
 			      void *nodal_smoother, void **nodal_args, int type)
      /*
@@ -5149,12 +5149,12 @@ int ML_Gen_Smoother_BlockHiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          ML_Smoother_Create_BlockHiptmair_Data(&data);
 	     ML_Smoother_Gen_BlockHiptmair_Data(&data, &(ml->Amat[i]),
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
-                                  BClength, BClist, 
+                                  BClength, BClist,
              edge_smoother, edge_args, nodal_smoother, nodal_args );
              data->reduced_smoother = type;
 	     ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_BlockHiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
-         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
 				      (void *) data, fun, NULL, ntimes, 1.0, str);
          ml->pre_smoother[i].pre_or_post = ML_TAG_PRESM;
          BClist = NULL; BClength = 0;
@@ -5191,13 +5191,13 @@ int ML_Gen_Smoother_BlockHiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          ML_Smoother_Create_BlockHiptmair_Data(&data);
 	     ML_Smoother_Gen_BlockHiptmair_Data(&data, &(ml->Amat[i]),
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
-					   BClength, BClist, 
+					   BClength, BClist,
 edge_smoother, edge_args, nodal_smoother, nodal_args );
 	     data->reduced_smoother = type;
 	     ml->post_smoother[i].data_destroy =
 			                            ML_Smoother_Destroy_BlockHiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
-         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
 				      (void *) data, fun, NULL, ntimes, 1.0, str);
          ml->pre_smoother[i].pre_or_post = ML_TAG_PRESM;
          sprintf(str,"Hiptmair_post%d",i);
@@ -5219,9 +5219,9 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 /******************************************************************************/
 
 int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
-			      ML_Operator **Tmat_array, 
-			      ML_Operator **Tmat_trans_array, 
-			      ML_Operator *Tmat_bc, 
+			      ML_Operator **Tmat_array,
+			      ML_Operator **Tmat_trans_array,
+			      ML_Operator *Tmat_bc,
 			      void *edge_smoother, void **edge_args,
 			      void *nodal_smoother, void **nodal_args, int type)
      /*
@@ -5266,12 +5266,12 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          ML_Smoother_Create_Hiptmair_Data(&data);
 	     ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
-                      BClength, BClist, 
+                      BClength, BClist,
 edge_smoother, edge_args, nodal_smoother, nodal_args );
 	     data->reduced_smoother = type;
 	     ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
-         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
 				      (void *) data, fun, NULL, ntimes, 1.0, str);
          ml->pre_smoother[i].pre_or_post = ML_TAG_PRESM;
          BClist = NULL; BClength = 0;
@@ -5291,7 +5291,7 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
          ML_Smoother_Create_Hiptmair_Data(&data);
 	 ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
 				       Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
-				       BClength, BClist, 
+				       BClength, BClist,
 				       edge_smoother, edge_args, nodal_smoother, nodal_args );
 	 data->reduced_smoother = type;
 	 ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
@@ -5317,13 +5317,13 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
          ML_Smoother_Create_Hiptmair_Data(&data);
 	     ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
-					   BClength, BClist, 
+					   BClength, BClist,
 edge_smoother, edge_args, nodal_smoother, nodal_args );
 	     data->reduced_smoother = type;
 	     ml->post_smoother[i].data_destroy =
 			                            ML_Smoother_Destroy_Hiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
-         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
 				      (void *) data, fun, NULL, ntimes, 1.0, str);
          ml->pre_smoother[i].pre_or_post = ML_TAG_PRESM;
          sprintf(str,"Hiptmair_post%d",i);
@@ -5349,8 +5349,8 @@ int ML_build_ggb(ML *ml, void *data)
   struct ML_CSR_MSRdata *csr_data, *mydata;
 
   mydata   = (struct ML_CSR_MSRdata *) data;
-  csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata)); 
-  
+  csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+
 
   Ncols = mydata->Ncols;
   Nrows = mydata->Nrows;
@@ -5360,7 +5360,7 @@ int ML_build_ggb(ML *ml, void *data)
   csr_data->columns = (int    *) ML_allocate(sizeof(int)*(Nnz+1));
   csr_data->values  = (double *) ML_allocate(sizeof(double)*(Nnz+1));
 
-  
+
   /* Imported information about Prolongator */
   csr_data->rowptr  =  mydata->rowptr;
   csr_data->columns =  mydata->columns;
@@ -5371,16 +5371,16 @@ int ML_build_ggb(ML *ml, void *data)
 
   Pmat = &(ml_ggb->Pmat[0]);
 
-  ML_Operator_halfClone_Init( &(ml_ggb->Amat[1]), 
+  ML_Operator_halfClone_Init( &(ml_ggb->Amat[1]),
 			      &(ml->Amat[ml->ML_finest_level]));
-  
-  
-  
+
+
+
   /* Put in the code that builds the interpolation operator */
   /* Here is a simple example that put in a single random   */
   /* vector */
 
-  /*  
+  /*
       Nnz = Ncols*(ml->Amat[ml->ML_finest_level].invec_leng);
       Nnz_per_row = Ncols;
       Nrows = ml->Amat[ml->ML_finest_level].invec_leng;
@@ -5393,12 +5393,12 @@ int ML_build_ggb(ML *ml, void *data)
   /* Set up the row pointers.  */
   /*
     csr_data->rowptr[0] = 0;
-    for (i = 0; i < Nrows; i++) 
+    for (i = 0; i < Nrows; i++)
     csr_data->rowptr[i+1] = csr_data->rowptr[i]+ Nnz_per_row;
   */
   /* Set up the column indices. In this example there is just */
   /* one column                                               */
-  /* for (i = 0; i < Nrows; i++) 
+  /* for (i = 0; i < Nrows; i++)
      csr_data->columns[i] = 0;
   */
   /* Put random data as values */
@@ -5409,26 +5409,26 @@ int ML_build_ggb(ML *ml, void *data)
 
   /* Put sizes and function pointers into ml_ggb */
 
-  ML_Operator_Set_1Levels(Pmat, &(ml_ggb->SingleLevel[0]), 
+  ML_Operator_Set_1Levels(Pmat, &(ml_ggb->SingleLevel[0]),
 			  &(ml_ggb->SingleLevel[1]));
   ML_Operator_Set_ApplyFuncData(Pmat, Ncols, Nrows, ML_EMPTY, csr_data,
 				Nrows, NULL, 0);
- 
+
 
   ML_Operator_Set_Getrow(Pmat, ML_EXTERNAL, Nrows, CSR_getrows);
   ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_denseserialmatvec);
 
   /* ML_Operator_Print(Pmat, "Pmat"); */
- 
+
   ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
-  /*  ML_Operator_Set_ApplyFunc (&(ml_ggb->Rmat[1]), ML_INTERNAL, 
+  /*  ML_Operator_Set_ApplyFunc (&(ml_ggb->Rmat[1]), ML_INTERNAL,
       CSR_denseserialmatvec); */
- 
+
   ML_Gen_AmatrixRAP(ml_ggb, 1, 0);
   ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
   ML_Gen_Solver(ml_ggb, ML_MGV, 1, 0);
-  
- 
+
+
   ml->void_options = (void *) ml_ggb;
 
   return 1;
@@ -5473,19 +5473,19 @@ int ML_Solve_MGV( ML *ml , const Epetra_MultiVector &in, Epetra_MultiVector &out
    ML_BdryPts_Get_Dirichlet_Eqn_Info(&(ml->BCs[level]),&dir_leng,&dir_list);
    if ( dir_leng != 0 )
    {
-      if (ml->Amat[level].diagonal != NULL) { 
+      if (ml->Amat[level].diagonal != NULL) {
          ML_DVector_GetDataPtr(ml->Amat[level].diagonal,&diag);
          for ( i = 0; i < dir_leng; i++ ) {
             for ( int KK = 0 ; KK != in.NumVectors() ; KK++ ) {
-               k = dir_list[i]; 
+               k = dir_list[i];
                out[KK][k] = in_temp[KK][k] / diag[k];
             }
-         } 
+         }
       } else {
          diag = NULL;
          for ( i = 0; i < dir_leng; i++ ) {
             for ( int KK = 0 ; KK != in.NumVectors() ; KK++ ) {
-               k = dir_list[i]; 
+               k = dir_list[i];
                out[KK][k] = in_temp[KK][k];
             }
          }
@@ -5503,7 +5503,7 @@ scales = NULL;
 
 /* This can be made much faster by not copying the data above */
    if ( scales != NULL ) {
-      for ( i = 0; i < leng; i++ ) 
+      for ( i = 0; i < leng; i++ )
       for ( int KK = 0 ; KK != in.NumVectors() ; KK++ )
          in_temp[KK][i] = in[KK][i] / scales[i];
    } else {
@@ -5515,7 +5515,7 @@ scales = NULL;
    /* call MG v-cycle                                              */
    /* ------------------------------------------------------------ */
 
-   ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), out, 
+   ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), out,
                 in_temp, ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
 
    return 0;
@@ -5527,7 +5527,7 @@ scales = NULL;
 
 /* FOR SIMPLICITY,  #ifdef ML_ANALYSIS ... #endif is removed */
 
-double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol, 
+double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
         Epetra_MultiVector &ep_rhs,
 	int approx_all_zeros, ML_Comm *comm, int res_norm_or_not, ML *ml)
 {
@@ -5586,16 +5586,16 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
       /* --------------------------------------------------------- */
       ML_Smoother_Apply(pre, lengf, ep_sol, lengf, ep_rhss, approx_all_zeros);
 
-      if ( ( approx_all_zeros != ML_ZERO ) || 
-           ( pre->smoother->ML_id != ML_EMPTY ) ) 
+      if ( ( approx_all_zeros != ML_ZERO ) ||
+           ( pre->smoother->ML_id != ML_EMPTY ) )
       {
          ML_Operator_Apply(Amat, lengf, ep_sol, lengf, ep_res);
-         for ( i = 0; i < lengf; i++ ) 
+         for ( i = 0; i < lengf; i++ )
             for ( int LL = 0 ; LL != ep_res.NumVectors() ; LL++ )
                ep_res[LL][i] = ep_rhss[LL][i] - ep_res[LL][i];
       }
       else {
-         for ( i = 0; i < lengf; i++ ) 
+         for ( i = 0; i < lengf; i++ )
             for ( int LL = 0 ; LL != ep_res.NumVectors() ; LL++ )
                ep_res[LL][i] = ep_rhss[LL][i];
       }
@@ -5625,7 +5625,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
 
       ML_DVector_GetDataPtr(curr->Amat_Normalization, &normalscales) ;
       if ( normalscales != NULL )
-         for ( i = 0; i < lengf; i++ ) 
+         for ( i = 0; i < lengf; i++ )
             for ( int KK = 0 ; KK != ep_res.NumVectors() ; KK++ )
                ep_res[KK][i] /= normalscales[i];
 
@@ -5638,7 +5638,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
       {
          Epetra_MultiVector dTmp ( ep_rhs2 );
          ML_Mapper_Apply(curr->eqn2grid, ep_res, dTmp );
-         for ( i = 0; i < lengf; i++ ) 
+         for ( i = 0; i < lengf; i++ )
             for ( int KK = 0 ; KK != ep_res.NumVectors() ; KK++ )
                ep_res[KK][i] = dTmp[KK][i];
       }
@@ -5648,14 +5648,14 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
       {
          Epetra_MultiVector dTmp ( ep_rhs2 );
          ML_Mapper_Apply(Rmat->to->grid2eqn, ep_rhs2, dTmp );
-         for ( i = 0; i < lengc; i++ ) 
+         for ( i = 0; i < lengc; i++ )
             for ( int KK = 0 ; KK != ep_sol2.NumVectors() ; KK++ )
                 ep_rhs2[KK][i] = dTmp[KK][i];
       }
 
       ML_DVector_GetDataPtr(Rmat->to->Amat_Normalization,&normalscales);
       if ( normalscales != NULL )
-         for ( i = 0; i < lengc; i++ ) 
+         for ( i = 0; i < lengc; i++ )
             for ( int KK = 0 ; KK != ep_rhs2.NumVectors() ; KK++ )
                ep_rhs2[KK][i] = ep_rhs2[KK][i] * normalscales[i];
 
@@ -5663,7 +5663,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
       /* process the next level and transfer back to this level    */
       /* --------------------------------------------------------- */
       ML_Cycle_MG( Rmat->to, ep_sol2, ep_rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
-      if (ml->ML_scheme == ML_MGW) 
+      if (ml->ML_scheme == ML_MGW)
 	ML_Cycle_MG( Rmat->to, ep_sol2, ep_rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
 
 /*if ( comm->ML_mypid == 0 ) cout << "Recursing up" << endl; */
@@ -5675,7 +5675,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
       {
          Epetra_MultiVector dTmp ( ep_sol2 );
          ML_Mapper_Apply(Rmat->to->eqn2grid, ep_sol2, dTmp);
-         for ( i = 0; i < lengc; i++ ) 
+         for ( i = 0; i < lengc; i++ )
             for ( int KK = 0 ; KK != ep_sol2.NumVectors() ; KK++ )
                 ep_sol2[KK][i] = dTmp[KK][i];
       }
@@ -5687,7 +5687,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
       {
          Epetra_MultiVector dTmp ( ep_res );
          ML_Mapper_Apply(curr->grid2eqn, ep_res, dTmp);
-         for ( i = 0; i < lengf; i++ ) 
+         for ( i = 0; i < lengf; i++ )
             for ( int KK = 0 ; KK != ep_res.NumVectors() ; KK++ )
                ep_res[KK][i] = dTmp[KK][i];
       }
@@ -5695,7 +5695,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
       /* --------------------------------------------------------- */
       /* post-smoothing                                            */
       /* --------------------------------------------------------- */
-      for ( i = 0; i < lengf; i++ ) 
+      for ( i = 0; i < lengf; i++ )
         for ( int KK = 0 ; KK != ep_sol.NumVectors() ; KK++ )
            ep_sol[KK][i] += ep_res[KK][i];
 

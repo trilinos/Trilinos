@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -38,7 +38,7 @@ int ML_CommInfoAGX_Create(ML_CommInfoAGX **combuf)
    com->recv_list = 0;
    com->recv_xyz  = 0;
    return 0;
-} 
+}
 
 /* ******************************************************************** */
 /* Deallocate the storage and destroy this object                       */
@@ -87,11 +87,11 @@ int ML_CommInfoAGX_Setup_Send(ML_CommInfoAGX *com, int count, int count2)
    }
    com->send_cur = 0;
    com->send_cnt = count;
-   nbytes        = ( count + 1 ) * sizeof(int); 
+   nbytes        = ( count + 1 ) * sizeof(int);
    ML_memory_alloc( (void**) &(com->send_ia), nbytes, "CB1" );
    if ( count > 0 )
    {
-      nbytes = count * sizeof(int); 
+      nbytes = count * sizeof(int);
       ML_memory_alloc( (void**) &(com->send_proc), nbytes, "CB2" );
    }
    else
@@ -100,10 +100,10 @@ int ML_CommInfoAGX_Setup_Send(ML_CommInfoAGX *com, int count, int count2)
    }
    if ( count2 > 0 )
    {
-      nbytes = count2 * sizeof(int); 
+      nbytes = count2 * sizeof(ml_big_int);
       ML_memory_alloc( (void**) &(com->send_list), nbytes, "CB3" );
    }
-   else 
+   else
    {
       com->send_list  = 0;
    }
@@ -117,7 +117,7 @@ int ML_CommInfoAGX_Setup_Send(ML_CommInfoAGX *com, int count, int count2)
 /* -------------------------------------------------------------------- */
 
 int ML_CommInfoAGX_Load_SendList(ML_CommInfoAGX *com,int proc,int leng,
-                                 int *list)
+                                 ml_big_int *list)
 {
    int  i, k, offset;
 
@@ -139,7 +139,7 @@ int ML_CommInfoAGX_Load_SendList(ML_CommInfoAGX *com,int proc,int leng,
 /* -------------------------------------------------------------------- */
 
 int ML_CommInfoAGX_Get_SendList(ML_CommInfoAGX *com, int index, int *proc,
-                              int *leng, int **list)
+                              int *leng, ml_big_int **list)
 {
    if ( com->ML_id != ML_ID_COMMINFOAGX )
    {
@@ -174,13 +174,13 @@ int ML_CommInfoAGX_Setup_Recv(ML_CommInfoAGX *com, int count, int count2)
       nbytes = count * sizeof(int);
       ML_memory_alloc( (void **) &(com->recv_proc), nbytes, "CB5" );
    }
-   else 
+   else
    {
       com->recv_proc = 0;
    }
    if ( count2 > 0 )
-   { 
-      nbytes = count2 * sizeof(int);
+   {
+      nbytes = count2 * sizeof(ml_big_int);
       ML_memory_alloc( (void **) &(com->recv_list), nbytes, "CB6" );
       nbytes = 3 * count2 * sizeof(double);
       ML_memory_alloc( (void **) &(com->recv_xyz), nbytes, "CB7" );
@@ -219,7 +219,7 @@ int ML_CommInfoAGX_Load_RecvInfo( ML_CommInfoAGX *com, int proc, int leng )
 /*    structure.                                                        */
 /* -------------------------------------------------------------------- */
 
-int ML_CommInfoAGX_Load_RecvData(ML_CommInfoAGX *com, int proc, int *list,
+int ML_CommInfoAGX_Load_RecvData(ML_CommInfoAGX *com, int proc, ml_big_int *list,
                                 double *x, double *y, double *z)
 {
    int  i, k = 0, flag = 0, j = 0;
@@ -249,7 +249,7 @@ int ML_CommInfoAGX_Load_RecvData(ML_CommInfoAGX *com, int proc, int *list,
 /* -------------------------------------------------------------------- */
 
 int ML_CommInfoAGX_Get_RecvList(ML_CommInfoAGX *com, int index, int *proc,
-                            int *leng, int **list)
+                            int *leng, ml_big_int **list)
 {
    if ( com->ML_id != ML_ID_COMMINFOAGX )
    {
@@ -283,18 +283,18 @@ int ML_CommInfoAGX_Print(ML_CommInfoAGX *com)
       printf("   To : %d , leng = %d \n", com->send_proc[i], leng);
       if (com->send_list != 0)
       {
-         for (j=com->send_ia[i]; j<com->send_ia[i+1]; j++) 
+         for (j=com->send_ia[i]; j<com->send_ia[i+1]; j++)
             printf("    index = %d \n", com->send_list[j]);
       }
    }
    printf("ML_CommInfoAGX : number of sources = %d \n",com->recv_cnt);
    for ( i = 0; i < com->recv_cnt; i++ )
-   { 
+   {
       leng = com->recv_ia[i+1] - com->recv_ia[i];
       printf("   From : %d , leng = %d \n", com->recv_proc[i], leng);
       if (com->recv_list != 0)
       {
-         for (j=com->recv_ia[i]; j<com->recv_ia[i+1]; j++) 
+         for (j=com->recv_ia[i]; j<com->recv_ia[i+1]; j++)
             printf("    index = %d \n", com->recv_list[j]);
       }
    }
