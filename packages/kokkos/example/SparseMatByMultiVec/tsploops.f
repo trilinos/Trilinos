@@ -68,9 +68,9 @@
       implicit none
       integer nnzmax, mmax, nrhsmx
       parameter ( 
-     &    nnzmax   = 1 000 000,   ! Max number of entries in matrix
+     &    nnzmax   = 2 000 000,   ! Max number of entries in matrix
      &    mmax     =  100 000,   ! Max problem dimension
-     &    nrhsmx   =       10)   ! Max problem dimension
+     &    nrhsmx   =      10)   ! Max problem dimension
       logical debug
       parameter(debug=.false.)
 c
