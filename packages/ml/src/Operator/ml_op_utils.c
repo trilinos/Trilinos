@@ -1225,6 +1225,422 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
   Rmat->data_destroy = NULL;
   return 0;
 }
+/*******************************************************************
+ * Build a communication structure for newly received matrix rows.
+ * This entails looking at the new rows and deciding which columns
+ * (global ids) are not already within this overlapped matrix. These
+ * ghost columns are then appended to extern[] and a communication object
+ * is built to obtain them.
+ *******************************************************************/
+int ML_build_overlapped_pre_comm(ML_Operator *tempA, ML_CommInfoOP
+				 *old_comm, int max_per_proc,
+				 int *hash_list, int hash_length, 
+				 int *hash_used, int old_Nrows, 
+				 int *Nexternal, int *external[],
+				 int *Nexternal_allocated)
+{
+  int    i, j, k, NGhost, Nneighbors, *neighbors, Nrcv, *rlist, index;
+  double *global_ids;
+  int allocated = 0, *column = NULL, row_length, current, proc_id;
+  double *val = NULL;
+  int    oldNexternal, *temp;
+
+  oldNexternal = *Nexternal;
+  proc_id      = tempA->comm->ML_mypid;
+  NGhost       = ML_CommInfoOP_Compute_TotalRcvLength(old_comm);
+
+  if ( *Nexternal_allocated - oldNexternal < 2*NGhost) {
+    /* estimate space for new externals.      */
+    /* if not enough, we allocate more later. */
+    k = *Nexternal_allocated;
+    *Nexternal_allocated = oldNexternal + (NGhost+5)*5;
+    temp = (int *) ML_allocate(*Nexternal_allocated*sizeof(int));
+    if (temp==NULL) perror("ML_build_overlapped_pre_comm: Not enough space\n");
+    for (i = 0; i < *Nexternal; i++) temp[i] = (*external)[i];
+    if (k != 0) ML_free(*external);
+    *external = temp;
+  }
+
+  /* look at the newly received matrix rows associated with the ghost */
+  /* unknowns and see who is needed from other processors             */
+
+  for (i = old_Nrows; i < NGhost+old_Nrows ; i++) {
+    ML_get_matrix_row(tempA, 1, &i, &allocated, &column, &val,
+                        &row_length, 0);
+
+    for (j = 0; j < row_length; j++) {
+      current = column[j];
+
+      /* check if a nonlocal guy */
+      if ( (current < max_per_proc*proc_id) ||
+	   (current >= max_per_proc*(proc_id+1))) {
+	/* now check if it is already in the hash table       */
+	/* if not, add to hash table and mark gid as external */
+	index = ML_hash_it( current, hash_list, hash_length, hash_used);
+	if ( hash_list[index] == -1 ) {
+	  hash_list[index] = current;
+
+	  /* we must add current to the list of guys that we need */
+
+	  if (*Nexternal == *Nexternal_allocated) {
+	    *Nexternal_allocated += (NGhost+10+ *Nexternal_allocated-oldNexternal);
+	    temp = (int *) ML_allocate(*Nexternal_allocated*sizeof(int));
+	    if (temp == NULL) perror("ML_build_overlapped_pre_comm: Not enough space\n");	  
+	    for (k = 0; k < *Nexternal; k++) temp[k] = (*external)[k];
+	    ML_free(*external);
+	    *external = temp;
+	  }
+	  (*external)[(*Nexternal)++] = current;
+	}
+      }
+    }
+  }
+  /* external[] contains ghost nodes from previous overlapping steps as   */
+  /* well as the ghost nodes from the current overlapping step. It is     */
+  /* only these ones that we wish to sort and consider when building the  */
+  /* communication object.                                                */
+
+  ML_az_sort(&((*external)[oldNexternal]),*Nexternal-oldNexternal,NULL,NULL);
+  tempA->invec_leng = tempA->outvec_leng;
+  ML_CommInfoOP_GenUsingGIDExternals(*Nexternal - oldNexternal,
+			     &((*external)[oldNexternal]),max_per_proc,tempA);
+
+  if (val != NULL) ML_free(val);
+  if (column != NULL) ML_free(column);
+
+  return 0;
+}
+/*******************************************************************
+ *  Go through the receive list and put the associated global ids
+ *  in hash_list[] and extern[]. At the end 'extern' is sorted.
+ *  This routine is used for ML_Operator_ProcessorSubdomainOverlap().
+ *  We use hash_list[] as a quick and easy way to see if a global id
+ *  has already been processed and extern is used to assign local ids
+ *  for the ghost nodes.
+ *******************************************************************/
+int ML_Operator_HashGlobalRcvList(ML_CommInfoOP *pre_comm, int Nrows, 
+				  int hash_list[], int hash_length, 
+				  int *hash_used, int Gid_assigned_to_proc[], 
+				  ML_Comm *comm, 
+				  int *Nexternal, int **external,
+				  int *Nexternal_allocated) 
+
+{
+  double *global_ids;
+  int    i, j, k, Nneighbors, Nrcv, *neighbors, NGhost, *rlist, index;
+  int    oldNexternal, *temp;
+
+  oldNexternal = *Nexternal;
+  Nneighbors   = ML_CommInfoOP_Get_Nneighbors(pre_comm);
+  neighbors    = ML_CommInfoOP_Get_neighbors(pre_comm);
+  NGhost       = ML_CommInfoOP_Compute_TotalRcvLength(pre_comm);
+
+  /* Estimate space needed for new externals.   */
+  /* is allocated later if there is not enough. */
+  /* Note: we allow for the possibility that    */
+  /* extern[] already has some data that we     */
+  /* wish to preserve.                          */
+
+  if ( *Nexternal_allocated - oldNexternal < 2*NGhost) {
+    j    = oldNexternal + (NGhost+5)*5;
+    temp = (int *) ML_allocate(j*sizeof(int));
+    if (temp==NULL) perror("ML_Operator_HashGlobalRcvlist: Out of space\n");
+    for (i = 0; i < *Nexternal; i++) temp[i] = (*external)[i];
+    if (*Nexternal_allocated != 0) ML_free(*external);
+    *external = temp;
+    *Nexternal_allocated = j;
+  }
+
+  /* Create a vector with global ids for local and ghost nodes */
+  /* This is used to associate global ids with the rcv list    */
+
+  global_ids = (double *) ML_allocate(sizeof(double)*(NGhost+Nrows));
+  if (global_ids == NULL) perror("ML_Operator_HashGlobalRcvlist: No space\n");
+  for (i = 0; i < Nrows; i++) global_ids[i] = Gid_assigned_to_proc[i];
+  ML_exchange_bdry(global_ids,pre_comm, Nrows,comm,ML_OVERWRITE,NULL);
+
+  /* Go through Rcv list, if GID associated with receive is not   */
+  /* already in the hash table, this means that this is the first */
+  /* time that this processor have encountered this GID. We add   */
+  /* it to the hash table and put it in the external list.        */
+
+  for (i = 0; i < Nneighbors; i++) {
+    Nrcv = ML_CommInfoOP_Get_Nrcvlist(pre_comm, neighbors[i]);
+    rlist = ML_CommInfoOP_Get_rcvlist(pre_comm, neighbors[i]);
+    for (j = 0; j < Nrcv; j++) {
+      index = ML_hash_it((int)(global_ids[rlist[j]]),hash_list,hash_length,
+			 hash_used);
+      if (hash_list[index] == -1) {
+	if (*Nexternal == *Nexternal_allocated) {/* Need to increase extern[]*/
+	  *Nexternal_allocated +=(*Nexternal_allocated+NGhost+10-oldNexternal);
+	  temp = (int *) ML_allocate(*Nexternal_allocated*sizeof(int));
+	  if (temp == NULL) perror("ML_build_overlapped_pre_comm: No space\n");
+	  for (k = 0; k < *Nexternal; k++) temp[k] = (*external)[k];
+	  ML_free(*external);
+	  *external = temp;
+	}
+	(*external)[(*Nexternal)++] = (int) global_ids[rlist[j]];
+	hash_list[index]            = (int) global_ids[rlist[j]];
+      }
+    }
+    ML_free(rlist);
+  }
+  ML_free(neighbors);
+  ML_free(global_ids);
+  ML_az_sort(&((*external)[oldNexternal]),*Nexternal-oldNexternal,NULL,NULL);
+
+  return 0;
+}
+
+/*******************************************************************
+ *  Take an ML_Operator corresponding to a square matrix distributed
+ *  over several processors and make a new ML_Operator corresponding
+ *  to an overlapped version of the same matrix. Specifically, each
+ *  processor's piece of the original matrix is considered as a subdomain.
+ *  For overlap = 1, we do the following on each subdomain
+ *      a) make up a set of global indices for the matrix columns
+ *      b) append to the matrix any rows corresponding to the 
+ *         recv list of the subdomain.
+ *      c) Create new send and receive lists to indicate column
+ *         indices within the new appended rows that reside on other 
+ *         processors.
+ *  For overlap > 1, we repeat b) and c) 'overlap' times. When finished,
+ *  we post-process the overlapped matrix in the following way:
+ *      1) Convert the global indices to local indices. This conversion
+ *         is different from the ones in 'ML_back2****' as global column
+ *         indices corresponding to overlap regions should use the correct
+ *         local index within the processor as opposed to an index on another
+ *         processor (that corresponds to this unknown in the 
+ *         nonoverlapped matrix). 
+ *      2) Throw away any column indices that do not reside on processor.
+ *      3) Build a communication object so that we can take unoverlapped 
+ *         vectors and map them to overlapped vectors. 
+ *
+ *
+ *******************************************************************/
+
+int ML_overlap(ML_Operator *oldA, ML_Operator *newA, int overlap,
+	       ML_CommInfoOP **nonOverlapped_2_Overlapped)
+{
+
+  ML_Operator   *tempA, *bogus, *orig_A, *tptr;
+  int           N_input_vector, max_per_proc, i, j, k;
+  ML_CommInfoOP *getrow_comm = NULL;
+  ML_Comm       *comm;
+  int           *hash_list = NULL, hash_length, hash_used, Nrows_orig;
+  int           *map = NULL, old_Nrows;
+  int           nz_ptr, allocated = 0, *column = NULL, row_length;
+  double        *val = NULL, *newval = NULL;
+  int           current, *newcol = NULL, proc_id, index;
+  int           *external = NULL, Nexternal = 0, Nexternal_allocated = 0;
+  int           *permute_array = NULL, *rowptr = NULL;
+  struct ML_CSR_MSRdata *temp;
+
+  orig_A         = oldA;
+  N_input_vector = oldA->invec_leng;
+  getrow_comm    = oldA->getrow->pre_comm;
+  proc_id        = oldA->comm->ML_mypid;
+  comm           = oldA->comm;
+  Nrows_orig = oldA->outvec_leng;
+
+  /* Compute global ids for column indices. This makes        */
+  /* it easier to keep track of things. Once we are filling   */
+  /* the final overlapped matrix, we can replace these global */ 
+  /* columns with the correct local column index and build a  */
+  /* proper communication object.                             */
+
+  ML_create_unique_col_id(N_input_vector, &(oldA->getrow->loc_glob_map),
+			  getrow_comm, &max_per_proc, comm);
+  oldA->getrow->use_loc_glob_map = ML_YES;
+  map = oldA->getrow->loc_glob_map;
+
+  if ((overlap >= 1) && (getrow_comm != NULL) && (comm->ML_nprocs!=1)) {
+    ML_CommInfoOP_Compute_TotalRcvLength(getrow_comm);
+    /* estimated space for new ghost variables (will */
+    /* resize later if needed).                     */
+    Nexternal_allocated = getrow_comm->total_rcv_length;
+    Nexternal_allocated += 10;
+    Nexternal_allocated *= 2;
+    external = (int *) ML_allocate(sizeof(int)*Nexternal_allocated);
+
+    if (max_per_proc == 0 && comm->ML_mypid == 0) {
+      printf("WARNING: In ML_overlap, maximum number of local unknowns\n       on any processor (max_per_proc) is zero !\n");
+      if (external != NULL) ML_free(external);
+      orig_A->getrow->loc_glob_map = NULL;
+      orig_A->getrow->use_loc_glob_map = ML_NO;
+      ML_free(map);
+      return 1;
+    }
+    hash_length = ML_CommInfoOP_Compute_TotalRcvLength(getrow_comm);
+    hash_length = (hash_length + 10)*overlap*overlap;
+    hash_list   = (int *) ML_allocate(hash_length*sizeof(int));
+    ML_hash_init(hash_list, hash_length, &hash_used);
+
+    /* Put the RcvList in the Hash table and record in the extern list  */
+    /* the Gids of the associated Ghost nodes. The hash table will be   */
+    /* used later to determine which nonzeros in newly received rows are*/
+    /* already contained within the subdomain. The external list is used*/
+    /* to build communication structures for the overlapped matrices.   */
+
+    ML_Operator_HashGlobalRcvList(getrow_comm, oldA->outvec_leng,
+				  hash_list, hash_length, 
+				  &hash_used, map, oldA->comm,
+				  &Nexternal, &external,
+				  &Nexternal_allocated);
+
+    /* Increase the overlap in oldA one at a time. We do this by appending */
+    /* the new rows to oldA, building a new communication object which is  */
+    /* needed by ML_exchange_rows(). This object marks all columns that we */
+    /* do not yet own and sets up send and receive lists for them.         */
+
+    for (i = 0; i < overlap; i++) {
+      old_Nrows = oldA->outvec_leng;
+      ML_exchange_rows( oldA, &tempA, getrow_comm);
+      oldA = tempA;
+      if (i != overlap - 1) {
+	ML_build_overlapped_pre_comm(tempA, getrow_comm, max_per_proc,
+				     hash_list, hash_length, &hash_used,
+				     old_Nrows, &Nexternal, 
+				     &external, &Nexternal_allocated);
+
+	getrow_comm = tempA->getrow->pre_comm;
+      }
+    }
+  }
+  else {
+    tempA = oldA;
+    hash_length = 10;
+    hash_list = (int *) ML_allocate(hash_length*sizeof(int));
+    ML_hash_init(hash_list, hash_length, &hash_used);
+  }
+
+  /* clean up the resulting matrix. This means the following:            */
+  /*    1) make new copy of the matrix (so sub_matrix is not used)       */
+  /*       In the new copy reorder the matrix rows so that all rows      */
+  /*       that are received from the same processor are consecutive.    */
+  /*       I believe that we need to do this to be consistent with       */
+  /*       receive list numbering (in ML and Aztec).                     */
+  /*    2) convert global indices to local indices                       */
+  /*    3) make a pre_comm structure that can be used to convert         */
+  /*       nonoverlapped vectors to overlapped ones.                     */
+  /*    4) throw away nonlocal matrix column enties and make an empty    */
+  /*       pre_comm structure for the matrix itself.                     */
+
+ if (tempA->N_nonzeros == -1) 
+   tempA->N_nonzeros = ML_Operator_ComputeNumNzs(tempA);
+
+ permute_array = (int *) ML_allocate((Nexternal+1)*sizeof(int));
+ for (i = 0; i < Nexternal; i++) permute_array[i] = i;
+ ML_az_sort(external,Nexternal,permute_array,NULL);
+ nz_ptr = 0;
+ newcol = (int    *) ML_allocate(sizeof(int   )*(tempA->N_nonzeros+2));
+ newval = (double *) ML_allocate(sizeof(double)*(tempA->N_nonzeros+2));
+ rowptr = (int    *) ML_allocate(sizeof(int   )*(tempA->outvec_leng+1));
+ rowptr[0] = 0;
+
+
+ for (i = 0; i < tempA->outvec_leng; i++ ) {
+    if (i < Nrows_orig) 
+      ML_get_matrix_row(tempA, 1, &i, &allocated, &column, &val,
+                        &row_length, 0);
+    else { /* ghost rows are reordered so that those from the same */
+           /* processor are consecutive.                           */
+      j = permute_array[i - Nrows_orig] + Nrows_orig;
+      ML_get_matrix_row(tempA, 1, &j, &allocated, &column, &val,
+                        &row_length, 0);
+    }
+    for (j = 0; j < row_length; j++) {
+      current = column[j];
+
+      /* check if a local guy */
+      if ( (current >= max_per_proc*proc_id) &&
+	   (current < max_per_proc*(proc_id+1))) {
+	newval[nz_ptr  ] = val[j];
+	newcol[nz_ptr++] = current - max_per_proc*proc_id;
+      }
+      else {
+
+	/* If in the hash table, then it is an element that will be */
+	/* kept in overlapped matrix. Othewise, this element gets   */
+	/* thrown away as it extends too far.                       */
+	index = ML_hash_it( current, hash_list, hash_length, &hash_used);
+	if ( hash_list[index] == -1 ) {
+	  hash_used--;   /* ML_hash_it assumes that the element will be */
+	                 /* added to the hash table and so it increments*/
+                         /* hash_used. Since this is not the case, we   */
+                         /* must decrement hash_used.                   */
+	}
+	else {
+            k = ML_find_index(current,external,Nexternal);
+	    newval[nz_ptr  ] = val[j];
+	    newcol[nz_ptr++] = k + Nrows_orig;
+	}
+      }
+    }
+    rowptr[i+1] = nz_ptr;
+  }
+
+ /* set up new ML operator */
+
+ temp= (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata) );
+ temp->columns       = newcol;
+ temp->values        = newval;
+ temp->rowptr        = rowptr;
+
+ newA->data_destroy = ML_CSR_MSRdata_Destroy;
+ ML_Operator_Set_ApplyFuncData(newA, tempA->outvec_leng,
+			       tempA->outvec_leng, (void*)temp,
+			       tempA->outvec_leng, NULL, 0);
+ ML_Operator_Set_Getrow(newA, tempA->outvec_leng, CSR_getrow);
+ newA->max_nz_per_row = tempA->max_nz_per_row;
+ newA->N_nonzeros     = nz_ptr;
+ ML_Operator_Set_ApplyFunc (newA, CSR_matvec);
+
+ /* Create the communication structure necessary to convert nonoverlapped    */
+ /* vectors to overlapped vectors. Note:ML_CommInfoOP_GenUsingGIDExternals() */
+ /* needs a matrix ... so we create  bogus matrix & set invec_leng (as this  */
+ /* is used within the routine).                                             */
+ bogus = ML_Operator_Create(tempA->comm);
+ bogus->invec_leng = Nrows_orig;
+ ML_CommInfoOP_GenUsingGIDExternals(Nexternal, external, max_per_proc, bogus);
+ *nonOverlapped_2_Overlapped = bogus->getrow->pre_comm;
+ bogus->getrow->pre_comm = NULL;
+ ML_Operator_Destroy(&bogus);
+
+ /* The final overlapped matrix is square and requires no communication. */
+
+ newA->getrow->pre_comm = ML_CommInfoOP_Create();
+
+ if (hash_list != NULL) ML_free(hash_list);
+ if (external != NULL) ML_free(external);
+ if (column   != NULL) ML_free(column);
+ if (map      != NULL) ML_free(map);
+ orig_A->getrow->loc_glob_map = NULL;
+ orig_A->getrow->use_loc_glob_map = ML_NO;
+ if (val      != NULL) ML_free(val);
+ if (permute_array != NULL) ML_free(permute_array);
+
+ /* Now that we have made a copy of the overlapped matrices, we can clear */
+ /* out the memory associated with the intermediate overlapped matrices.  */
+ /* The main tricky thing that we must avoid is getting rid of the        */
+ /* original nonoverlapped matrix. This matrix appears as a submatrix     */
+ /* within tempA .... so we must find this pointer and set it to NULL     */
+ /* before we destroy tempA.                                              */
+
+ if (tempA != orig_A) {
+   tptr = tempA;
+   while ( (tptr!= NULL) && (tptr->sub_matrix != orig_A))
+     tptr = tptr->sub_matrix;
+   if (tptr != NULL) tptr->sub_matrix = NULL;
+   ML_RECUR_CSR_MSRdata_Destroy(tempA);
+   ML_Operator_Destroy(&tempA);
+  }
+  return 0;
+
+}    
+ 
+
+
 
 #include "limits.h"
 #include "float.h"
