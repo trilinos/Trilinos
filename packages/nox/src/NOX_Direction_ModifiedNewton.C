@@ -45,6 +45,8 @@ NOX::Direction::ModifiedNewton::ModifiedNewton(NOX::Parameter::List& p) :
 {
   reset(p);
   ageOfJacobian = -1;
+  if (p.sublist("Modified-Newton").getParameter("Max Age of Jacobian", 10) < 0)
+    p.sublist("Modified-Newton").setParameter("Max Age of Jacobian", 0);
 }
 
 NOX::Direction::ModifiedNewton::~ModifiedNewton()
@@ -85,10 +87,6 @@ bool NOX::Direction::ModifiedNewton::compute(NOX::Abstract::Vector& dir,
   }
   NOX::Abstract::Group& oldJacobianGrp = *oldJacobianGrpPtr;
   
-  // Reset the linear solver tolerance
-  resetForcingTerm(soln, solver.getPreviousSolutionGroup(), 
-                   solver.getNumIterations(), solver.getParameterList());
-
   status = NOX::Abstract::Group::Failed;
   while (status != NOX::Abstract::Group::Ok) {
     // Conditionally compute Jacobian at current solution.
@@ -122,175 +120,6 @@ bool NOX::Direction::ModifiedNewton::compute(NOX::Abstract::Vector& dir,
       throwError("compute", "Unable to compute Newton step");
   }
 
-  return true;
-}
-
-
-// protected
-bool NOX::Direction::ModifiedNewton::resetForcingTerm(const NOX::Abstract::Group& soln, 
-			      const NOX::Abstract::Group& oldsoln, 
-			      int niter,
-			      const NOX::Parameter::List& solverParams)
-{
-  // Reset the forcing term at the beginning on a nonlinear iteration,
-  // based on the last iteration.
-
-  if ((!paramsPtr->sublist("Modified-Newton").isParameter("Forcing Term Method")) ||
-      (paramsPtr->sublist("Modified-Newton").isParameterEqual("Forcing Term Method", "None")))
-    return true;
-
-  // Get forcing term parameters.
-  const string method = paramsPtr->sublist("Modified-Newton").getParameter("Forcing Term Method", "Constant");
-  const double eta_min = paramsPtr->sublist("Modified-Newton").getParameter("Forcing Term Minimum Tolerance", 1.0e-4);  const double eta_max = paramsPtr->sublist("Modified-Newton").getParameter("Forcing Term Maximum Tolerance", 0.9);
-
-  // Get linear solver current tolerance.
-
-  double eta_km1 = 0.0;
-  if (((method == "Type 1") || (method == "Type 2")) 
-	&& (solverParams.sublist("Line Search").isParameterDouble("Adjusted Tolerance"))) {
-    
-    // Tolerance may have been adjusted in a line search algorithm   
-    eta_km1 = solverParams.sublist("Line Search").getParameter("Adjusted Tolerance", 0.0);
-    
-  }
-  else {
-    // Default to the old tolerance
-    eta_km1 = paramsPtr->sublist("Modified-Newton").sublist("Linear Solver").getParameter("Tolerance", 0.0);
-    
-  }
-
-  // New forcing term.
-  double eta_k;
-
-  const string indent = "       ";
-
-  if (Utils::doPrint(Utils::Details)) {
-    cout << indent << "CALCULATING FORCING TERM" << endl;
-    cout << indent << "Method: " << method << endl;
-  }
-
-  if (method == "Constant") {    
-
-    if (eta_km1 != 0.0) 
-      eta_k = eta_km1;
-    else
-      eta_k = eta_min;
-
-  }        
-
-  else if (method == "Type 1") {
-    
-    if (niter == 0) {
-
-      eta_k = paramsPtr->sublist("Modified-Newton").getParameter("Forcing Term Initial Tolerance", 0.01);
-
-    }
-    else {
-
-      // Return norm of predicted F
-
-      // do NOT use the following line!! This does NOT account for 
-      // line search step length taken.
-      //const double normpredf = oldsoln.getNormNewtonSolveResidual();
-      
-      // Create a new vector to be the predicted RHS
-      if (predRhs == NULL) {
-	predRhs = oldsoln.getF().clone(ShapeCopy);
-      }
-      if (stepDir == NULL) {
-	stepDir = oldsoln.getF().clone(ShapeCopy);
-      }
-      
-      // stepDir = X - oldX (i.e., the step times the direction)
-      stepDir->update(1.0, soln.getX(), -1.0, oldsoln.getX(), 0);
-      
-      // Compute predRhs = Jacobian * step * dir
-//      oldsoln.applyJacobian(*stepDir, *predRhs);
-      oldJacobianGrpPtr->applyJacobian(*stepDir, *predRhs);
-      
-      // Compute predRhs = RHSVector + predRhs (this is the predicted RHS)
-      predRhs->update(1.0, oldsoln.getF(), 1.0);
-      
-      // Return norm of predicted RHS
-      const double normpredf = predRhs->norm();
-      
-      if (normpredf < 0) {
-	cerr << "NOX::Direction::ModifiedNewton::resetForcingTerm " 
-	     << "- getNormNewtonSolveResidual returned a negative value" << endl;
-      }
-
-      // Get other norms
-      const double normf = soln.getNormF();
-      const double normoldf = oldsoln.getNormF();
-      
-      // Compute forcing term
-      eta_k = fabs(normf - normpredf) / normoldf;
-      
-      // Some output
-      if (Utils::doPrint(Utils::Details)) {
-	cout << indent << "Residual Norm k-1 =             " << normoldf << "\n";
-	cout << indent << "Residual Norm Linear Model k =  " << normpredf << "\n";
-	cout << indent << "Residual Norm k =               " << normf << "\n";
-	cout << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
-      }
-      
-      // Impose safeguard and constraints ...
-      const double alpha = (1.0 + sqrt(5.0)) / 2.0;
-      const double eta_km1_alpha = pow(eta_km1, alpha);
-      eta_k = max(eta_k, eta_km1_alpha);
-      eta_k = max(eta_k, eta_min);
-      eta_k = min(eta_max, eta_k);
-    }
-  }
-    
-  else if (method == "Type 2") {  
-    
-    if (niter == 0) {
-
-      eta_k = paramsPtr->sublist("Modified-Newton").getParameter("Forcing Term Initial Tolerance", 0.01);
-
-    }
-    else {
-
-      const double normf = soln.getNormF();
-      const double normoldf = oldsoln.getNormF();
-      const double alpha = paramsPtr->sublist("Modified-Newton").getParameter("Forcing Term Alpha", 1.5);
-      const double gamma = paramsPtr->sublist("Modified-Newton").getParameter("Forcing Term Gamma", 0.9);
-      const double residual_ratio = normf / normoldf;
-      
-      eta_k = gamma * pow(residual_ratio, alpha);
-      
-      // Some output
-      if (Utils::doPrint(Utils::Details)) {
-	cout << indent << "Residual Norm k-1 =             " << normoldf << "\n";
-	cout << indent << "Residual Norm k =               " << normf << "\n";
-	cout << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
-      }
-      
-      // Impose safeguard and constraints ... 
-      const double eta_k_alpha = gamma * pow(eta_km1, alpha);
-      eta_k = max(eta_k, eta_k_alpha);
-      eta_k = max(eta_k, eta_min);
-      eta_k = min(eta_max, eta_k);
-    }
-
-  }
-
-  else {
-
-    if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Direction::ModifiedNewton::resetForcingTerm "
-	   << "- invalid forcing term method (" << method << ")" << endl;
-
-    return false;
-  }
-
-  // Reset linear solver tolerance
-  paramsPtr->sublist("Modified-Newton").sublist("Linear Solver").setParameter("Tolerance", eta_k);
-
-  if (Utils::doPrint(Utils::Details)) 
-    cout << indent << "Forcing Term: " << eta_k << endl;
-  
   return true;
 }
 

@@ -111,6 +111,9 @@ int main(int argc, char *argv[])
 
   // Sublist for direction
   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
+//  dirParams.setParameter("Method", "Modified-Newton");
+//  NOX::Parameter::List& newtonParams = dirParams.sublist("Modified-Newton");
+//    newtonParams.setParameter("Max Age of Jacobian", 2);
   dirParams.setParameter("Method", "Newton");
   NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
     newtonParams.setParameter("Forcing Term Method", "Constant");
