@@ -336,8 +336,8 @@ you have.
 place to start is Trilinos(-3.0.1)/config.  There are configure invocation 
 scripts here for various platforms.  These scripts are named using the 
 following naming convention:
-\InlineCommand{arch_comm_machine}.
-For example \InlineCommand{sgi64_mpi_atlantis}.  Note that these scripts are examples 
+\InlineCommand{arch\_comm\_machine}.
+For example \InlineCommand{sgi64\_mpi\_atlantis}.  Note that these scripts are examples 
 only.  Users should not necessarily expect to be able to find the perfect 
 script and use it, but rather should choose a script for a similar machine, 
 examine the options used in the script and figure out if those options make 
@@ -961,7 +961,7 @@ Trilinos Bugzilla site to record and track software issues, responding
 to issues in order of priority. \\\hline
 Provide unit and reqression testing &
 Register test scripts with the Trilinos automatic testing harness,
-which runs nightly on a variety of supported platforms.
+which runs nightly on a variety of supported platforms.\\\hline
 \end{tabular}
 \end{center}
 \caption{\label{Table:RequirementsAndPractices} Trilinos Package
@@ -970,7 +970,7 @@ Requirements and Suggested Practices.}
 \end{table}
 
 Although there are several requirements listed in 
-Table~\ref:RequirementsAndPractices}, we have structured the
+Table~\ref{Table:RequirementsAndPractices}, we have structured the
 integration
 process so that packages can be incorporated into Trilinos in 
 a gradual manner.  Listed below are four levels of requirement compliance.  
@@ -1057,25 +1057,26 @@ package, identifying who will be default owner of each component.
 \item Establish Email Lists for the package.  Five lists will be
 defined:
 \begin{enumerate}
-\item \InlineCommand{Package_name-Announce@software.sandia.gov}: 
+\item \InlineCommand{PackageName-Announce@software.sandia.gov}: 
 Announcements such
 new releases, feature lists and any other newsworthy items will be
 sent to this list.  Any person interested in any aspect of the package
 should subscribe to this list.
-\item \InlineCommand{Package_name-Checkins@software.sandia.gov} List
+\item \InlineCommand{PackageName-Checkins@software.sandia.gov} List
 to which all CVS commit log message for the package are sent.
 Developers with an interest in the day-to-day activity of package
 development can subscribe to this list.
-\item \InlineCommand{Package_name-Developers@software.sandia.gov}
+\item \InlineCommand{PackageName-Developers@software.sandia.gov}
 List by which all development discussions are conducted, or to which
 notes from development discussions are sent and archived.  This is
 also the list to which detailed design documentation is sent for
 review and archiving.
-\item \InlineCommand{Package_name-Regression@software.sandia.gov} List
+\item \InlineCommand{PackageName-Regression@software.sandia.gov} List
 to which all automated regression test results are sent for archival purposes.
-\item \InlineCommand{Package_name-Users@software.sandia.gov} User
+\item \InlineCommand{PackageName-Users@software.sandia.gov} User
 forum where package users can communicate with each other.  Developers
 should monitor this list and interject comments as necessary.
+\end{enumerate}
 \end{enumerate}
 These preliminary steps can generally be completed in a few hours.
 Once complete, the new package has a set of tools in place that
@@ -1105,28 +1106,68 @@ The majority of requirements for Trilinos packages come either directly or
 indirectly from funded research proposals and plans.  Although these 
 requirements are sometimes difficult to elicit from the proposals and plans, 
 we assume that a package is satisfying requirements by virtue of being 
-funded.  Therefore we only suggest that package developers track their 
+funded.  Therefore we suggest that package developers track their 
 requirements as part of the communication with funding sponsors.
+Regardless of the source of requirements, the appropriate documents
+should be kept under source control.
 
 \subsection{Specification/Design}
 Package specifications can be done in many ways.  An effective way for 
 object-oriented, e.g., C++ packages is to use documented header files and a 
 documentation tool such as Doxygen~\cite{doxyen}, and then communicate the 
 generated HTML output to the package development team via the 
-{\it package-developers@software.sandia.gov} email list.  This both
+\InlineCommand{package-developers@software.sandia.gov} email list.  If
+appropriate, the clients for this feature should also be included on
+this correspondence.  This
+approach satisfies both the specification and the design requirements
+in the case of object-oriented engineering of mathematical software.
+Other developers
 
 \subsection{Implementation}
+Assuming that the above approach is used to define a documented header
+file, implementation involves implementing the methods as specified
+and developing test code to verify the correction of the implementation.
 Implementing new capabilites should never take place in a release branch.  
 Changes to release branches should be limited to fixing broken code and 
 related activities.  For example, clarifying vague or incorrect documentation 
 and making changes necessary to port to a new platform.
 
 \subsection{Integration}
-Mention Epetra/TSF. Autotools.Integration into a release.
+Prior to checking any new code into the Trilinos CVS repository, all
+regression tests for any affected package should be run by the
+developer.  Also, the developer should make a special point of
+confirming that nightly automatic regression tests ran successfully.
+
 
 \subsection{Maintenance}
-Say something about bugzilla, bonzai, mailman (checkins list), CVS (release 
-branches) the test harness.
+Trilinos provides a number of tools to facilitate the ongoing
+development and support of packages.  The Trilinos bugzilla site
+allows users and developers to submit issues against a package.
+Issues may be submitted against the follwing components of a package:
+\begin{enumerate}
+\item Configuration and Building.
+\item Documentation and Web Pages.
+\item Examples.
+\item Source code.
+\item Tests.
+\end{enumerate}
+Issue may range from a critical source code bug to a new feature
+request.  When an issue is submitted the owner, submitter and any
+party that was explicitly listed will be notified upon submission of
+the issue, and when any subsequent update is made to the issue.
+
+Trilinos mail lists also support ongoing maintenance by allowing
+developers to subscribe to the package checkins list.  When subscribed
+to this list, all CVS commits made for the package will be sent in
+email form to the checkins list, and subscribers will see exactly what
+has changed.
+
+The other package lists mentioned above also facilitate ongoing
+communication between developers, users and clients.
+
+\paragraph{Automated Test Harness}
+% Jim: In addition to the detailed description of the test harness,
+% please briefly mention it here.
 
 \subsection{Retirement/Replacement}
 To the extent possible checkins to a release branch should not force interface 
@@ -1187,12 +1228,12 @@ solvers and can bring multiple solvers to bear on a single problem.
 %	**(list formal? process, meet above requirements Overview Doc pg 11,14-15)**
 	
 \section{Interoperability Status for Existing Trilinos Packages}
-Figure~\ref{Figure:PackageDependencies} shows how the present
+Figure~\ref{Figure:TrilinosPackageDependencies} shows how the present
 \begin{figure}
 %\begin{center}
-\includegraphics[height=6in,angle=270]{TrilinosPackagesDependencies}
+\includegraphics[height=6in,angle=270]{TrilinosPackageDependencies}
 %\end{center}
-\label{Figure:TrilinosPackages}
+\label{Figure:TrilinosPackageDependencies}
 \caption{Current Trilinos Package Dependencies}
 \end{figure}
 collection of Trilinos packages depend on each other.

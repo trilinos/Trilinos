@@ -81,8 +81,8 @@
 
 
 % Specify what this file provides
-\ProvidesPackage{TrilinosDoc}[\SANDreportVersion]
-\ProvidesFile{TrilinosDoc.cls}[\SANDreportVersion]
+\ProvidesPackage{TrilinosDevGuide}[\SANDreportVersion]
+\ProvidesFile{TrilinosDevGuide.cls}[\SANDreportVersion]
 
 
 % We understand two options: "relax" and "strict".
@@ -136,19 +136,19 @@
   % Do some usage checking
   \ifthenelse{\boolean{SANDnumProvided}}   {
   }{
-    \ClassError{TrilinosDoc.cls}{\@backslashchar SANDnum
+    \ClassError{TrilinosDevGuide.cls}{\@backslashchar SANDnum
       not provided}{Insert \@backslashchar SANDnum in the preamble
       of your document}
   }
   \ifthenelse{\boolean{SANDauthorProvided}}   {
   }{
-    \ClassError{TrilinosDoc.cls}{\@backslashchar SANDauthor
+    \ClassError{TrilinosDevGuide.cls}{\@backslashchar SANDauthor
       not provided}{Insert \@backslashchar SANDauthor in the preamble
       of your document}
   }
   \ifthenelse{\boolean{SANDprintDateProvided}}   {
   }{
-    \ClassError{TrilinosDoc.cls}{\@backslashchar SANDprintDate
+    \ClassError{TrilinosDevGuide.cls}{\@backslashchar SANDprintDate
       not provided}{Insert \@backslashchar SANDprintDate in the
       preamble of your document}
   }
@@ -342,13 +342,13 @@
   % Do some more usage checking
 %   \ifthenelse{\boolean{SANDmainProvided}}   {
 %   }{
-%     \ClassError{TrilinosDoc.cls}{\@backslashchar SANDmain
+%     \ClassError{TrilinosDevGuide.cls}{\@backslashchar SANDmain
 %       not provided}{Add \@backslashchar SANDmain before your
 %       introduction (first) section of your document}
 %   }
 %  \ifthenelse{\boolean{SANDdistributionProvided}}   {
 %  }{
-%    \ClassError{TrilinosDoc.cls}{\@backslashchar SANDdistribution
+%    \ClassError{TrilinosDevGuide.cls}{\@backslashchar SANDdistribution
 %      not provided}{Add \@backslashchar SANDdistribution at the
 %      end of your document}
 %  }
@@ -416,7 +416,7 @@
 \newcommand{\SANDdistInternal}[4]{
   \ifthenelse{\boolean{SANDdistributionProvided}}   {
   }{
-    \ClassError{TrilinosDoc.cls}{\@backslashchar SANDdistribution
+    \ClassError{TrilinosDevGuide.cls}{\@backslashchar SANDdistribution
       not (yet) provided}{\@backslashchar SANDdistribution must
       be used before any \@backslashchar SANDdistInternal}
   }
@@ -429,7 +429,7 @@
 \newcommand{\SANDdistExternal}[2]{
   \ifthenelse{\boolean{SANDdistributionProvided}}   {
   }{
-    \ClassError{TrilinosDoc.cls}{\@backslashchar SANDdistribution
+    \ClassError{TrilinosDevGuide.cls}{\@backslashchar SANDdistribution
       not (yet) provided}{\@backslashchar SANDdistribution must
       be used before any \@backslashchar SANDdistExternal}
   }
