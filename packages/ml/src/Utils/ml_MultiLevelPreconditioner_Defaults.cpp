@@ -425,7 +425,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List,
   List.set("aggregation: threshold",0.0);
 
   // gauss-seidel for all levels
-  List.set("smoother: sweeps",2);
+  List.set("smoother: sweeps",1);
 
   List.set("smoother: damping factor",0.67);
 
