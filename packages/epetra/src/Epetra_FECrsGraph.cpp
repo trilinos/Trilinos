@@ -192,7 +192,7 @@ int Epetra_FECrsGraph::InsertNonlocalRow(int row, int offset)
       ++index;
     }
 
-    newCols[index] = nonlocalCols_[i];
+    newCols[index++] = nonlocalCols_[i];
   }
 
   delete [] nonlocalCols_;

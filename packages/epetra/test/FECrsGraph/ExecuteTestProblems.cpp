@@ -74,70 +74,45 @@ int Drumm1(const Epetra_Map& map, bool verbose)
   int numMyNodes = 2;
   int* myNodes = new int[numMyNodes];
 
-  double* values = new double[9];
-  values[0] = 2.0;
-  values[1] = 1.0;
-  values[2] = 1.0;
-  values[3] = 1.0;
-  values[4] = 2.0;
-  values[5] = 1.0;
-  values[6] = 1.0;
-  values[7] = 1.0;
-  values[8] = 2.0;
-
   if (localProc == 0) {
     myNodes[0] = 0;
     myNodes[1] = 1;
-
-    Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
-
-    delete [] myNodes;
-    numMyNodes = 3;
-    myNodes = new int[numMyNodes];
-    myNodes[0] = 0;
-    myNodes[1] = 1;
-    myNodes[2] = 3;
-
-    int rowLengths = 3;
-    Epetra_FECrsGraph A(Copy, Map, rowLengths);
-
-    EPETRA_TEST_ERR( A.InsertGlobalIndices(numMyNodes, myNodes,
-			  numMyNodes, myNodes),ierr);
-
-    EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
-
-    if (verbose) {
-      A.Print(cout);
-    }
   }
   else {
     myNodes[0] = 2;
     myNodes[1] = 3;
+  }
 
-    Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
+  Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
 
-    int rowLengths = 3;
-    Epetra_FECrsGraph A(Copy, Map, rowLengths);
+  delete [] myNodes;
+  numMyNodes = 3;
+  myNodes = new int[numMyNodes];
 
-    delete [] myNodes;
-    numMyNodes = 3;
-    myNodes = new int[numMyNodes];
+  if (localProc == 0) {
+    myNodes[0] = 0;
+    myNodes[1] = 1;
+    myNodes[2] = 3;
+  }
+  else {
     myNodes[0] = 1;
     myNodes[1] = 2;
     myNodes[2] = 3;
+  }
 
-    EPETRA_TEST_ERR( A.InsertGlobalIndices(numMyNodes, myNodes,
-			  numMyNodes, myNodes),ierr);
+  int rowLengths = 3;
+  Epetra_FECrsGraph A(Copy, Map, rowLengths);
 
-    EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
+  EPETRA_TEST_ERR( A.InsertGlobalIndices(numMyNodes, myNodes,
+					 numMyNodes, myNodes),ierr);
 
-    if (verbose) {
-      A.Print(cout);
-    }
+  EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
+
+  if (verbose) {
+    A.Print(cout);
   }
 
   delete [] myNodes;
-  delete [] values;
 
   return(0);
 }
@@ -175,82 +150,41 @@ int Drumm2(const Epetra_Map& map, bool verbose)
   if (numProcs != 2) return(0);
 
   int indexBase = 0, ierr = 0;
+  int numMyNodes = 3;
+  int* myNodes = new int[numMyNodes];
 
   if (localProc == 0) {
-    int numMyNodes = 3;
-    int* myNodes = new int[numMyNodes];
     myNodes[0] = 0;
     myNodes[1] = 1;
     myNodes[2] = 3;
-
-    double* values = new double[9];
-    values[0] = 2.0;
-    values[1] = 1.0;
-    values[2] = 1.0;
-    values[3] = 1.0;
-    values[4] = 2.0;
-    values[5] = 1.0;
-    values[6] = 1.0;
-    values[7] = 1.0;
-    values[8] = 2.0;
-
-    Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
-
-    int rowLengths = 3;
-    Epetra_FECrsGraph A(Copy, Map, rowLengths);
-
-    EPETRA_TEST_ERR( A.InsertGlobalIndices(numMyNodes, myNodes,
-			  numMyNodes, myNodes),ierr);
-
-    EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
-
-    if (verbose) {
-      A.Print(cout);
-    }
-
-    delete [] myNodes;
-    delete [] values;
   }
   else {
-    int numMyNodes = 1;
-    int* myNodes = new int[numMyNodes];
+    numMyNodes = 1;
     myNodes[0] = 2;
+  }
 
-    double* values = new double[9];
-    values[0] = 2.0;
-    values[1] = 1.0;
-    values[2] = 1.0;
-    values[3] = 1.0;
-    values[4] = 2.0;
-    values[5] = 1.0;
-    values[6] = 1.0;
-    values[7] = 1.0;
-    values[8] = 2.0;
+  Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
 
-    Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
+  int rowLengths = 3;
+  Epetra_FECrsGraph A(Copy, Map, rowLengths);
 
-    int rowLengths = 3;
-    Epetra_FECrsGraph A(Copy, Map, rowLengths);
-
-    delete [] myNodes;
+  if (localProc != 0) {
     numMyNodes = 3;
-    myNodes = new int[numMyNodes];
     myNodes[0] = 1;
     myNodes[1] = 2;
     myNodes[2] = 3;
-
-    EPETRA_TEST_ERR( A.InsertGlobalIndices(numMyNodes, myNodes,
-			  numMyNodes, myNodes),ierr);
-
-    EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
-
-    if (verbose) {
-    A.Print(cout);
-    }
-
-    delete [] myNodes;
-    delete [] values;
   }
+
+  EPETRA_TEST_ERR( A.InsertGlobalIndices(numMyNodes, myNodes,
+					 numMyNodes, myNodes),ierr);
+
+  EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
+
+  if (verbose) {
+    A.Print(cout);
+  }
+
+  delete [] myNodes;
 
   return(0);
 }
@@ -329,7 +263,7 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
 
       err = graph->InsertGlobalIndices(numNodesPerElem, nodes,
                                        numNodesPerElem, nodes);
-      if (err != 0) {
+      if (err < 0) {
         cerr << "ERROR, FECrsGraph error in InsertGlobalIndices, err="
           << err << endl;
         return(-1);
