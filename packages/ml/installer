@@ -59,7 +59,7 @@ export ML_HOME
 USING_MPI=no
 GOT_BLAS=no
 GOT_LAPACK=no
-ARCH=
+#ARCH=
 #PACKAGES=-Dbinary
 PACKAGES=
 INC_PATH=
@@ -71,12 +71,17 @@ ${echo} "What platform you are using?"
 ${echo} "    CPLANT, DEC, HP, PCLINUX, SGI, SMOS, SOLARIS, SP2, SUN, TFLOP"
 ${echo} "Note: To add other machines, create a new etc/makefile.xxx."
 ${echo}
-${echo} -n "What machine? [PCLINUX] " | sed "s/-n//"
-read ARCH
-ARCH=`${echo} ${ARCH},`
-if test `expr $ARCH` = ','
+tARCH=`${echo} ${ARCH},`
+if test `expr $tARCH` = ','
 then
-   ARCH=PCLINUX,
+ARCH=PCLINUX
+fi
+${echo} -n "What machine? [${ARCH}] " | sed "s/-n//"
+read tARCH
+ttARCH=`${echo} ${tARCH},`
+if test `expr $ttARCH` != ','
+then
+   ARCH=$tARCH
 fi
 ARCH=`${echo} ${ARCH} | sed s/,//`
 #
@@ -93,7 +98,7 @@ if test `expr $ARCH` != 'CPLANT'   &&
    test `expr $ARCH` != 'XTFLOP'   &&
    test `expr $ARCH` != 'TFLOP'   
 then
-   ${echo} Unsupported machine
+   ${echo} Unsupported machine: $ARCH
    exit
 fi
 #
