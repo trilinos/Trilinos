@@ -339,7 +339,7 @@ sub sendemail {
   my $mail_to;
   # A valid email address must contain a '@'
   if ($scriptowner =~/@/i) {
-    $mail_to=join ", ", 'jmwill@sandia.gov',$scriptowner or die "$! error forming To: field";
+    $mail_to=join ", ", 'jmwille@sandia.gov',$scriptowner or die "$! error forming To: field";
   }
   else {
     # List where emails without a script owner should be sent
