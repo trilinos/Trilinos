@@ -30,14 +30,9 @@
 #define HAVE_CONFIG_H
 #endif
 
-// The following header file contains macro definitions for ML. In particular, HAVE_ML_EPETRA,
-// HAVE_ML_TEUCHOS, HAVE_ML_TRIUTILS are defines in this file.
 #include "ml_config.h"
 
-// the following code cannot be compiled without these Trilinos
-// packages. Note that triutils is required in the examples only (to
-// generate the linear system), not by the ML library
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_ZOLTAN)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -107,7 +102,7 @@ int main(int argc, char *argv[])
   MLList.set("aggregation: next-level aggregates per process", 1);
 
   MLList.set("aggregation: type (level 0)", "Zoltan");
-  MLList.set("aggregation: type (level 1)", "METIS");
+  MLList.set("aggregation: type (level 1)", "Uncoupled");
   MLList.set("aggregation: type (level 2)", "Zoltan");
 
   int NumMyElements = A->RowMatrixRowMap().NumMyElements() / NumPDEEqns;
@@ -193,10 +188,10 @@ int main(int argc, char *argv[])
 int main(int argc, char *argv[])
 {
   puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo --enable-triutils");
+  puts("--enable-aztecoo --enable-triutils --with-ml_zoltan");
   
   return 0;
 }
 
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+#endif /* #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_ZOLTAN) */
 
