@@ -168,8 +168,9 @@ int main(int argc, char *argv[])
 
   // Various Preconditioner options
   //lsParams.setParameter("Preconditioner", "None");
-  lsParams.setParameter("Preconditioner", "AztecOO");
-  //lsParams.setParameter("Preconditioner", "Ifpack");
+  //lsParams.setParameter("Preconditioner", "AztecOO");
+  lsParams.setParameter("Preconditioner", "Ifpack");
+  lsParams.setParameter("Max Age Of Prec", 5);
 #ifdef HAVE_NOX_ANY
   //lsParams.setParameter("Preconditioner", "New Ifpack");
   Teuchos::ParameterList IfpackList;

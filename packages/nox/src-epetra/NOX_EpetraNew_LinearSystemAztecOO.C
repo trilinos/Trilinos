@@ -1381,6 +1381,12 @@ NOX::EpetraNew::LinearSystemAztecOO::setJacobianOperatorForSolve(
   // Message type tags must be synchronized between processors (az_comm.c)
   AZ_sys_msg_type = AZ_MSG_TYPE;
 
+  // Store existing aztec preconditioner for possible reuse
+  Epetra_Operator* prevPrecOperator = NULL;
+  if( isPrecConstructed && (precAlgorithm != AztecOO_) ) {
+    prevPrecOperator = aztecSolverPtr->GetPrecOperator();
+  }
+
   solveJacOpPtr = const_cast<Epetra_Operator*>(&solveJacOp);
   OperatorType solveOpType = getOperatorType(solveJacOp);
   if ((solveOpType == EpetraRowMatrix) ||
@@ -1390,4 +1396,7 @@ NOX::EpetraNew::LinearSystemAztecOO::setJacobianOperatorForSolve(
   }
   else
     aztecSolverPtr->SetUserOperator(solveJacOpPtr);
+
+  if( prevPrecOperator )
+    aztecSolverPtr->SetPrecOperator(prevPrecOperator);
 }
