@@ -80,13 +80,13 @@
 
 <p>We recommend that users and developers subscribe to the following mailing lists as appropriate.
 <ul>
-<li><a href="http://csmr.ca.sandia.gov/mailman/listinfo/nox-announce">NOX-Announce Mailing List</a> - 
+<li><a href="http://software.sandia.gov/mailman/listinfo/nox-announce">NOX-Announce Mailing List</a> - 
 Low-volume, primarily for release announcements. (Highly Recommended)
-<li><a href="http://csmr.ca.sandia.gov/mailman/listinfo/nox-users">NOX-Users Mailing List</a> - 
+<li><a href="http://software.sandia.gov/mailman/listinfo/nox-users">NOX-Users Mailing List</a> - 
 Discussion forum for users of NOX. (Recommended)
-<li><a href="http://csmr.ca.sandia.gov/mailman/listinfo/nox-developers">NOX-Developers Mailing List</a> - 
+<li><a href="http://software.sandia.gov/mailman/listinfo/nox-developers">NOX-Developers Mailing List</a> - 
 Discussion forum for NOX developers. (Developers)
-<li><a href="http://csmr.ca.sandia.gov/mailman/listinfo/nox-checkins">NOX-Checkins Mailing List</a> - 
+<li><a href="http://software.sandia.gov/mailman/listinfo/nox-checkins">NOX-Checkins Mailing List</a> - 
 CVS Commit Message (Active  Developers)
 </ul>
 
