@@ -338,7 +338,7 @@ static int Zoltan_PHG_Initialize_Params(
   strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);
 
   hgp->use_timers = 0;
-  hgp->proc_split = 0;
+  hgp->proc_split = 1;
   hgp->LocalCoarsePartition = 0;
   hgp->locmatching = NULL;
   hgp->edge_scaling = 0;
@@ -359,7 +359,7 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->fm_max_neg_move = 250;  
   hgp->num_coarse_iter = 10;
   hgp->part_sizes = part_sizes;
-  hgp->EdgeSizeThreshold = 1.0;  /* Default (for now) -- keep all edges */
+  hgp->EdgeSizeThreshold = 0.5;  
 
   /* Get application values of parameters. */
   Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,
