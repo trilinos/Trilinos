@@ -39,21 +39,21 @@
 extern "C" {
 #endif
 
+#define DGESV_F77 F77_FUNC(dgesv,DGESV)
+#define DGETRF_F77 F77_FUNC(dgetrf,DGETRF)
+#define DGETRS_F77 F77_FUNC(dgetrs,DGETRS)
+
 /* B <- A \ B, A <- [L,U], piv <- P where P*A = L*U */
-void dgesv_(const int *n, const int *nrhs, double *A, const int *lda, 
-	    int *piv, double *B, const int *ldb, int *info);
+void DGESV_F77(const int *n, const int *nrhs, double *A, const int *lda, 
+	       int *piv, double *B, const int *ldb, int *info);
 /* A <- [L,U], piv <- P where P*A = L*U */
-void dgetrf_(const int *m, const int *n, double *A, const int *lda, 
-	     int *piv, int *info);
+void DGETRF_F77(const int *m, const int *n, double *A, const int *lda, 
+		int *piv, int *info);
 
 /* B <- A \ B where A = [L,U], piv given from dgetrf_ */
-void dgetrs_(const char *trans, const int *n, const int *nrhs, 
-	     const double *A, const int *lda, const int *piv,
-	     double *B, const int *ldb, int *info);
-
-#define DGESV_F77 F77_FUNC(dgesv,DGESV)
-#define DGETRF_F77 F77_FUNC(dgetrf,DGETRF);
-#define DGETRS_F77 F77_FUNC(dgetrs,DGETRS);
+void DGETRS_F77(const char *trans, const int *n, const int *nrhs, 
+		const double *A, const int *lda, const int *piv,
+		double *B, const int *ldb, int *info);
 
 #ifdef __cplusplus
 }

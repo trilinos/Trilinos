@@ -39,38 +39,6 @@
 extern "C" {
 #endif
 
-/* y <- a*x + y */
-void daxpy_(const int *n, const double *a, const double *x, const int *incx, 
-	    double *y, const int *incy);
-
-/* v <- x'*y */
-double ddot_(const int *n, const double *x, const int *incx, const double *y, 
-	     const int *incy);
-
-/* x <- a*x */
-void dscal_(const int *n, const double *a, const double *x, const int *incx);
-
-/*  v <- ||x||_2 */
-double dnrm2_(const int *n, const double *x, const int *incx);
-
-/* v <- ||x||_1 */
-double dasum_(const int *n, const double *x, const int *incx);
-
-/* y <- a*op(A)*x + b*y where op(A) = A or op(A) = A' */
-void dgemv_(const char *T, const int *m, const int *n, const double *a,
-	    const double *A, const int *lda, const double *x, const int *incx,
-	    const double *b, double *y, const int *incy);
-
-/* C <- a*op(A)*op(B) + b*C  where op(X) = X or op(X) = X' */
-void dgemm_(const char *Ta, const char *Tb, const int *m, const int *n, 
-	    const int *k, const double *a, const double *A, const int *lda, 
-	    const double *B, const int *ldb, const double *b, 
-	    double *C, const int *ldc);
-
-#ifdef __cplusplus
-}
-#endif
-
 #define DAXPY_F77 F77_FUNC(daxpy,DAXPY)
 #define DDOT_F77 F77_FUNC(ddot,DDOT)
 #define DSCAL_F77 F77_FUNC(dscal,DSCAL)
@@ -78,5 +46,38 @@ void dgemm_(const char *Ta, const char *Tb, const int *m, const int *n,
 #define DASUM_F77 F77_FUNC(dasum,DASUM)
 #define DGEMV_F77 F77_FUNC(dgemv,DGEMV)
 #define DGEMM_F77 F77_FUNC(dgemm,DGEMM)
+
+/* y <- a*x + y */
+void DAXPY_F77(const int *n, const double *a, const double *x, 
+	       const int *incx, double *y, const int *incy);
+
+/* v <- x'*y */
+double DDOT_F77(const int *n, const double *x, const int *incx, 
+		const double *y, const int *incy);
+
+/* x <- a*x */
+void DSCAL_F77(const int *n, const double *a, const double *x, 
+	       const int *incx);
+
+/*  v <- ||x||_2 */
+double DNRM2_F77(const int *n, const double *x, const int *incx);
+
+/* v <- ||x||_1 */
+double DASUM_F77(const int *n, const double *x, const int *incx);
+
+/* y <- a*op(A)*x + b*y where op(A) = A or op(A) = A' */
+void DGEMV_F77(const char *T, const int *m, const int *n, const double *a,
+	       const double *A, const int *lda, const double *x, 
+	       const int *incx, const double *b, double *y, const int *incy);
+
+/* C <- a*op(A)*op(B) + b*C  where op(X) = X or op(X) = X' */
+void DGEMM_F77(const char *Ta, const char *Tb, const int *m, const int *n, 
+	       const int *k, const double *a, const double *A, const int *lda, 
+	       const double *B, const int *ldb, const double *b, 
+	       double *C, const int *ldc);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_NOX_BLAS_WRAPPERS_H_

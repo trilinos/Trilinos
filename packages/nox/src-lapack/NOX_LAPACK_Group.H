@@ -182,6 +182,12 @@ namespace NOX {
       //! Jacobian Matrix
       NOX::LAPACK::Matrix jacobianMatrix;
 
+      //! LU factorization of Jacobian Matrix
+      mutable NOX::LAPACK::Matrix jacobianLUFact;
+
+      //! Pivot array for LU factorization
+      mutable vector<int> pivots;
+
       //! Problem interface
       NOX::LAPACK::Interface& problemInterface;
 
@@ -194,6 +200,7 @@ namespace NOX {
       bool isValidJacobian;
       bool isValidGradient;
       bool isValidNewton;
+      mutable bool isValidJacobianLUFact;
       //@}
   
       //! Norm of F

@@ -41,6 +41,8 @@ NOX::LAPACK::Group::Group(NOX::LAPACK::Interface& interface):
   gradientVector(xVector, ShapeCopy),   // new vector of same size
   newtonVector(xVector, ShapeCopy),	// new vector of same size
   jacobianMatrix(xVector.length(), xVector.length()),	// create a Jacobian matrix
+  jacobianLUFact(xVector.length(), xVector.length()),   // create factorization of Jacobian matrix
+  pivots(xVector.length(),0),  // create array of pivots
   problemInterface(interface) // set reference to the problem interface
 {
   normF = 0;
@@ -53,6 +55,8 @@ NOX::LAPACK::Group::Group(const NOX::LAPACK::Group& source, NOX::CopyType type) 
   gradientVector(source.gradientVector, type), 
   newtonVector(source.newtonVector, type),
   jacobianMatrix(source.jacobianMatrix, type),   
+  jacobianLUFact(source.jacobianLUFact, type),
+  pivots(source.pivots),
   problemInterface(source.problemInterface)	
 {
  
@@ -64,6 +68,7 @@ NOX::LAPACK::Group::Group(const NOX::LAPACK::Group& source, NOX::CopyType type) 
     isValidGradient = source.isValidGradient;
     isValidNewton = source.isValidNewton;
     isValidJacobian = source.isValidJacobian;
+    isValidJacobianLUFact = source.isValidJacobianLUFact;
     normF = source.normF;
     break;
 
@@ -89,6 +94,7 @@ void NOX::LAPACK::Group::resetIsValid() //private
   isValidJacobian = false;
   isValidGradient = false;
   isValidNewton = false;
+  isValidJacobianLUFact = false;
 }
 
 NOX::Abstract::Group* NOX::LAPACK::Group::clone(NOX::CopyType type) const 
@@ -114,6 +120,7 @@ NOX::Abstract::Group& NOX::LAPACK::Group::operator=(const Group& source)
     isValidGradient = source.isValidGradient;
     isValidNewton = source.isValidNewton;
     isValidJacobian = source.isValidJacobian;
+    isValidJacobianLUFact = source.isValidJacobianLUFact;
     
     // Only copy vectors that are valid
     if (isValidF) {
@@ -129,6 +136,11 @@ NOX::Abstract::Group& NOX::LAPACK::Group::operator=(const Group& source)
     
     if (isValidJacobian)
       jacobianMatrix = source.jacobianMatrix;
+
+    if (isValidJacobianLUFact) {
+      jacobianLUFact = source.jacobianLUFact;
+      pivots = source.pivots;
+    }
 
   }
 
@@ -312,15 +324,24 @@ NOX::LAPACK::Group::applyJacobianInverse(NOX::Parameter::List& p,
     throw "NOX Error";
   }
 
-  // Must copy jacobianMatrix and xVector into temporary locations 
-  // because the dgesv call overwrites them.
   int n = input.length();
   int info;
-  Matrix J(jacobianMatrix);
-  vector<int> ipiv(n,0);
 
+  // Compute Jacobian LU factorization if invalid
+  if (!isValidJacobianLUFact) {
+    jacobianLUFact = jacobianMatrix;
+    DGETRF_F77(&n, &n, &jacobianLUFact(0,0), &n, &pivots[0], &info);
+
+    if (info != 0)
+      return NOX::Abstract::Group::Failed;
+
+    isValidJacobianLUFact = true;
+  }
+
+  // Backsolve using LU factorization
   result = input;
-  DGESV_F77(&n, &i_one, &J(0,0), &n, &ipiv[0], &result(0), &n, &info);
+  DGETRS_F77("N", &n, &i_one, &jacobianLUFact(0,0), &n, &pivots[0], 
+  	     &result(0), &n, &info);
     
   return (info == 0) ? (NOX::Abstract::Group::Ok) : (NOX::Abstract::Group::Failed);
 }

@@ -44,7 +44,7 @@ NOX_LAPACK_H = \
 	$(srcdir)/NOX_LAPACK_Group.H \
 	$(srcdir)/NOX_LAPACK_Interface.H \
 	$(srcdir)/NOX_BLAS_Wrappers.H \
-	$(srcdir)/NOX_LAPACK_Wrappers.H
+	$(srcdir)/NOX_LAPACK_Wrappers.H 
 
 NOX_LAPACK = \
 	$(srcdir)/NOX_LAPACK_Vector.C \

@@ -35,6 +35,7 @@
 
 #include "NOX_Abstract_Vector.H" // base class
 #include "NOX_Common.H" // for #include<vector>
+#include "NOX_Random.H" // for Random class
 
 namespace NOX {
 
@@ -69,6 +70,12 @@ namespace NOX {
       //@{ \name Initialization methods.
 
       Abstract::Vector& init(double value);
+
+      //! Initialize every element of this vector with random values
+      virtual NOX::Abstract::Vector& random();
+
+      //! Set seed for random number generator
+      virtual NOX::Abstract::Vector& setSeed(double s);
 
       //! Copies y into "this".
       Abstract::Vector& operator=(const vector<double>& y);
@@ -167,6 +174,9 @@ namespace NOX {
 
       //! Pointer to vector owned by this object
       vector<double> x;
+
+      //! Random number generator
+      NOX::Random urand;
 
     };
 
