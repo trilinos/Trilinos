@@ -1,5 +1,5 @@
-"""Set the python search path to include the library directory created by
-distutils."""
+"""Set the python search path to include the library build directory
+created by the python distutils module."""
 
 # System includes
 import commands

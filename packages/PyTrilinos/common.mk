@@ -18,12 +18,6 @@ UNAME       := $(shell uname)
 # Get the host name
 HOSTNAME    := $(shell hostname)
 
-# # Get the location of the python executable
-# PYTHON_HOME := $(shell $(ROOT)pyLocate)
-
-# # Get the python name with version number
-# PYTHON_NAME := $(shell $(ROOT)pyLocate --name)
-
 # Get the full present working directory name
 PWD         := $(shell pwd)
 
@@ -64,9 +58,7 @@ endif
 
 COMMON          := $(ROOT)src
 COMMON_INCLUDE  := -I$(COMMON)
-# PYTHON_INCLUDE  := -I$(PYTHON_HOME)/include/$(PYTHON_NAME)
 PYTHON_INCLUDE  := -I$(shell $(ROOT)pyLocate --include)
-# NUMERIC_INCLUDE := $(PYTHON_INCLUDE)/Numeric
 AUTODEP         := $(ROOT)autodep
 SWIG            := swig
 
@@ -105,17 +97,16 @@ include $(DEPEND)
 # Generate an object file from a C++ file and its header
 %.o: %.cxx %.h
 	$(CXX) $(CXXFLAGS) -DHAVE_CONFIG_H -I. $(PYTHON_INCLUDE) \
-	$(NUMERIC_INCLUDE) $(TRILINOS_INCLUDE2) -c $<
+	$(TRILINOS_INCLUDE2) -c $<
 
 # Generate a dependency file from a SWIG interface file
 $(DEPDIR)%.d: %.i
 	$(AUTODEP) -DHAVE_CONFIG_H -DSWIG $(TRILINOS_INCLUDE1) \
-        $(PYTHON_INCLUDE) $(NUMERIC_INCLUDE) -S_wrap.cxx $< $@
+        $(PYTHON_INCLUDE) -S_wrap.cxx $< $@
 
 # Generate a dependency file from a C++ file
 $(DEPDIR)%.d: %.cxx
-	$(AUTODEP) -DHAVE_CONFIG_H $(TRILINOS_INCLUDE1) $(PYTHON_INCLUDE) \
-        $(NUMERIC_INCLUDE) $< $@
+	$(AUTODEP) -DHAVE_CONFIG_H $(TRILINOS_INCLUDE1) $(PYTHON_INCLUDE) $< $@
 
 # Remove emacs backup files
 sweep: clobber

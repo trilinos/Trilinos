@@ -54,10 +54,16 @@ if sysName == "Linux":
 else:
     swigPath = [ ]
 
+# Standard C++ library
+if sysName == "Linux":
+    stdCXX = ["stdc++"]
+else:
+    stdCXX = [ ]
+
 # Standard extension data
 stdIncDirs = trilIncDir
 stdLibDirs = trilLibDir + swigDir
-stdLibs    = swigLib
+stdLibs    = stdCXX + swigLib
 stdArgs    = swigPath
 
 # Epetra extension module
