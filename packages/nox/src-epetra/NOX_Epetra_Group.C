@@ -642,17 +642,19 @@ Abstract::Group::ReturnType Group::computeNewton(NOX::Parameter::List& p)
   // Create Epetra problem for the linear solve
   status = applyJacobianInverse(p, RHSVector, NewtonVector);
 
-  if( status != Abstract::Group::Ok ) 
-    return status;
-
   // Scale soln by -1
   NewtonVector.scale(-1.0);
 
-  // Update state
+  // Update state EVEN IF LINEAR SOLVE FAILED
+  // We still may want to use the vector even it it just missed it's 
   isValidNewton = true;
 
   // Compute the 2-norm of the Newton solve residual ||Js+f||
   computeNormNewtonSolveResidual();
+
+  // return status of the linear solver
+  if( status != Abstract::Group::Ok ) 
+    return status;
 
   // Return solution
   return Abstract::Group::Ok;
