@@ -18,6 +18,7 @@ struct reader_context {
    double tol, agg_damping;
    char agg_spectral_norm[80];
    char subsmoother[80];
+   char cycle[80];
 };
 
 #define MAX_INPUT_STR_LN 101

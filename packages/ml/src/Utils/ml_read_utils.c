@@ -484,6 +484,17 @@ void ML_Reader_GetSolutionSpecs(FILE *ifp, struct reader_context *context)
       exit(-1);
     }
   }
+
+  /* V or W cycle */
+
+  c_srch = "cycle type";
+  if (!ML_Reader_LookFor(ifp, c_srch, input, '='))
+    sprintf(context->cycle,"v");
+  else {
+    ML_Reader_ReadString(ifp,input, '\n');
+    ML_Reader_Strip(input);
+    strcpy(context->cycle,input);
+  }
 }
 
 /*****************************************************************************/
