@@ -145,6 +145,10 @@ public:
 	/*! \brief Copy the vectors in \c A to a set of vectors in \c *this.  The \c 
   	    numvecs vectors in \c A are copied to a subset of vectors in \c *this
 	    indicated by the indices given in \c index.
+
+	    \note The indices in the \c index array are assumed to be zero-based, i.e. allowing
+		the first vector of a MultiVec to be indexed by 0.  If the underlying linear
+		algebra uses one-based indexing, please alter the inputted \c index array accordingly.
 	*/
 	virtual void SetBlock ( MultiVec<TYPE>& A, int index[], int numvecs ) = 0;
 	

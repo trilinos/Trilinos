@@ -1,12 +1,18 @@
 #include "TSFCoreEpetraMultiVector.hpp"
 #include "TSFCoreEpetraLinearOp.hpp"
-#include "TSFCoreMultiVectorStdOps.hpp"
+#include "TSFCoreEpetraVectorSpace.hpp"
 #include "Trilinos_Util.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
-#include "Teuchos_RefCountPtrDecl.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_Time.hpp"
 #include "BelosTSFCoreInterface.hpp"
+#include "BelosLinearProblemManager.hpp"
+#include "BelosOutputManager.hpp"
+#include "BelosStatusTestMaxIters.hpp"
+#include "BelosStatusTestMaxRestarts.hpp"
+#include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestCombo.hpp"
 #include "BelosBlockGmres.hpp"
 //
 //
@@ -35,38 +41,18 @@ int main(int argc, char *argv[]) {
 	Epetra_SerialComm Comm;	
 #endif
 	
-	int MyPID = Comm.MyPID();
-	int NumProc = Comm.NumProc();
-	// Set verbosity of output
-	bool verbose = false;
-	for( i=1; i<argc; i++ ) {
-		if (argv[i][0]=='-' && argv[i][1]=='v' && MyPID==0 ) { verbose = true; };
-	}
-	if ( verbose ) { argc--; } // Decrement argument counter if one of the arguments is the verbosity flag.
-	//
-	if( argc < 4 ) {
-		if ( verbose ) {
-			cerr
-				<< "Usage: " << argv[0] 
-				<< " HB_filename max_iter tol [-v] " << endl
-				<< "where:" << endl
-				<< "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
-				<< "max_iter           - maximum number of iterations allowed in GMRES solve" <<endl
-				<< "tol                - relative residual tolerance for GMRES solve" << endl
-				<< "[-v]               - verbosity flag for debugging" << endl
-				<< endl;
-		}
-		return(1);
-	}
+        int MyPID = Comm.MyPID();
 
-	if ( verbose ) {
-		std::cout
-			<< std::endl << std::endl
-			<< "***\n"
-			<< "*** Testing simple GMRES solver on test problem \'" << argv[1] << "\'\n"
-			<< "***\n\n";
-	}
-
+        bool verbose = (MyPID==0);
+        //
+        if(argc < 2 && verbose) {
+        cerr << "Usage: " << argv[0]
+         << " HB_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
+         << "where:" << endl
+         << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
+         << endl;
+        return(1);
+        }
 	//
 	//**********************************************************************
 	//******************Set up the problem to be solved*********************
@@ -124,7 +110,8 @@ int main(int argc, char *argv[]) {
 	//
 	// Create the TSFCore/Belos Linear Operator
 	//
-	TSFCore::EpetraLinearOp ELOp( A ); 
+	Teuchos::RefCountPtr<TSFCore::EpetraLinearOp> ELOp =
+	  Teuchos::rcp( new TSFCore::EpetraLinearOp( A ) ); 
 	Belos::TSFCoreMat<double> Amat( ELOp );
 	//
         // ********Other information used by the GMRES block solver***********
@@ -138,60 +125,55 @@ int main(int argc, char *argv[]) {
 	//
 	// Create some Epetra_MultiVectors
 	//
-	Teuchos::RefCountPtr<Epetra_MultiVector> bb = Teuchos::rcp( new Epetra_MultiVector(Copy, Map, b, NumMyElements, numrhs) );
-	Teuchos::RefCountPtr<Epetra_MultiVector> x = Teuchos::rcp( new Epetra_MultiVector(Map, numrhs) ); 
+	Teuchos::RefCountPtr<Epetra_MultiVector> bb = 
+	  Teuchos::rcp( new Epetra_MultiVector(Copy, Map, b, NumMyElements, numrhs) );
+	Teuchos::RefCountPtr<Epetra_MultiVector> x = 
+	  Teuchos::rcp( new Epetra_MultiVector(Map, numrhs) ); 
+	Teuchos::RefCountPtr<Epetra_Map> rcp_map = Teuchos::rcp( &Map, false );
+	Teuchos::RefCountPtr<TSFCore::EpetraVectorSpace> vs = 
+	  Teuchos::rcp( new TSFCore::EpetraVectorSpace( rcp_map ) );
 	// 
 	// Create the TSFCore/Belos Multivectors
 	//
-	TSFCore::EpetraMultiVector RHS( bb );
-	TSFCore::EpetraMultiVector Soln( x );
+	TSFCore::EpetraMultiVector RHS( bb, vs );
+	TSFCore::EpetraMultiVector SOLN( x, vs );
 	Belos::TSFCoreVec<double> rhs( RHS );
-	Belos::TSFCoreVec<double> iguess( Soln );
+	Belos::TSFCoreVec<double> soln( SOLN );
 	//
-	// Set solver characteristics
+	// Set up linear problem instance.
 	//
-	//MyBlockGmres.SetInitGuess( iguess );
-        //MyBlockGmres.SetRestart(numrestarts);
-        //MyBlockGmres.SetDebugLevel(0);
+        Belos::LinearProblemManager<double> My_LP(&Amat, &soln, &rhs);
+	My_LP.SetBlockSize( block );
 	//
 	//*******************************************************************
 	// *************Start the GMRES iteration*************************
 	//*******************************************************************
 	//
-	//timer.start();
-	//MySolver.solve( ELOp, RHS, &Soln, TSFCore::NOTRANS, max_iter, tol );
-	//timer.stop();
-	//
-	// Compute actual residual norm.
-	//
-	//double bnorm = norm_1( RHS );
-	//ELOp.apply( TSFCore::NOTRANS, Soln, &RHS, 1.0, -1.0 );
-	//double final_rel_err = norm_1( RHS ) / bnorm;
+        Belos::StatusTestMaxIters<double> test1( maxits );
+        Belos::StatusTestMaxRestarts<double> test2( numrestarts );
+        Belos::StatusTestCombo<double> test3( Belos::StatusTestCombo<double>::OR, test1, test2 );
+        Belos::StatusTestResNorm<double> test4( tol );
+        Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test3, test4 );
+
+        Belos::OutputManager<double> My_OM( MyPID );
+	//My_OM.SetVerbosity( 3 );
+
+        Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, My_OM, maxits);
+
+	timer.start();
+	MyBlockGmres.Solve();
+	timer.stop();
 	
-	if (verbose) {
-	  //cout << "******************* Results ************************"<<endl;
-	  //cout << "Iteration "<< MySolver.currIteration()<<" of "<<max_iter<< endl;
-	  //cout << "Final Computed GMRES Relative Residual Norm : " << 
-	  //  MySolver.currEstRelResidualNorm() << endl;
-	  //cout << "Actual Computed GMRES Relative Residual Norm : " <<
-	  //  final_rel_err << endl;
-	  //cout << "Solution time:  "<< timer.totalElapsedTime() <<endl;
-	  //cout << "****************************************************"<<endl;
-	}
-      	
+	My_Test.Print(cout);
+
 	// Release all objects  	
 	delete [] NumNz;
 	delete [] bindx;
+	delete [] val;
+	if (xexact) delete [] xexact;
+	if (xguess) delete [] xguess;
+	if (b) delete [] b;
 
-	//bool success = (final_rel_err <= tol);
-
-	/*if (verbose) {
-		if(success)
-			std::cout << "\nCongradualtions! the system was solved to the specified tolerance!\n";
-		else
-			std::cout << "\nOh no! the system was not solved to the specified tolerance!\n";
-	}*/
-	
 	return 0;
 	//return success ? 0 : -1;
 

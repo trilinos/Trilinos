@@ -37,7 +37,6 @@
 #include "BelosStatusTest.hpp"
 #include "BelosLinearProblemManager.hpp"
 #include "BelosMultiVec.hpp"
-#include <vector>
 
 /*! 
   \class Belos::StatusTestResNorm
