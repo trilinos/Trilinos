@@ -1,5 +1,20 @@
+/*****************************************************************************
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
+ * This software is distributed under the GNU Lesser General Public License. *
+ * For more info, see the README file in the top-level Zoltan directory.     *
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <values.h>
 #include "iohb.h"
 
 
@@ -7,6 +22,8 @@ main (int argc, char *argv[])
     {
     int nRow, nCol, nz, nEdge, nPin;
     int *rowindex = NULL, *colstart = NULL;
+    int maxEdgeLen = 0, minEdgeLen = MAXINT;
+    int single = 0;  /* Num of cols with only one non-zero. */
     double *val = NULL;
     int i;
     int column;
@@ -24,8 +41,16 @@ main (int argc, char *argv[])
     nPin = 0;
     for (column = 0; column < nCol; column++)
        {
+       if ((colstart[column+1] - colstart[column]) > maxEdgeLen) 
+          maxEdgeLen = colstart[column+1] - colstart[column];
+       if ((colstart[column+1] - colstart[column]) < minEdgeLen) 
+          minEdgeLen = colstart[column+1] - colstart[column];
+
        if  ((colstart[column+1] - colstart[column]) < 2)
+          {
+          single++;
           continue;  /* surpress self edges */
+          }
        nEdge++;
 
        for (i = colstart[column]; i < colstart[column+1]; i++)
@@ -41,4 +66,6 @@ main (int argc, char *argv[])
     free(colstart);
     free(rowindex);
     if (val) free(val);
+    printf("maxEdgeLen = %d  minEdgeLen = %d  single = %d\n", 
+      maxEdgeLen, minEdgeLen, single);
     }
