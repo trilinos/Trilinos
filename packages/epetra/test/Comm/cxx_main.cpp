@@ -573,13 +573,13 @@ void checkSerialDataClass(int& ierr, bool verbose) {
 	if(verbose) cout << "Testing Reference Counting... ";								
 	Epetra_SerialComm c1;
 	int c1count = c1.ReferenceCount();
-	int c1addr = (int) c1.DataPtr();
+	size_t c1addr = (size_t) c1.DataPtr();
 	EPETRA_TEST_ERR(!(c1count==1),ierr); // count should be 1
 	if(verbose) cout << "Default constructor. \nc1= " << c1count << "  " << c1addr << endl;
 
 	Epetra_SerialComm* c2 = new Epetra_SerialComm(c1);
 	int c2count = c2->ReferenceCount();
-	int c2addr = (int) c2->DataPtr();
+	size_t c2addr = (size_t) c2->DataPtr();
 	int c1countold = c1count;
 	c1count = c1.ReferenceCount();
 	EPETRA_TEST_ERR(!(c2count==c1count && c1count==(c1countold+1)),ierr); // both counts should be 2
@@ -590,13 +590,13 @@ void checkSerialDataClass(int& ierr, bool verbose) {
 	c1countold = c1count;
 	c1count = c1.ReferenceCount();
 	EPETRA_TEST_ERR(!(c1count==c1countold-1),ierr); // count should have decremented (to 1)
-	EPETRA_TEST_ERR(!(c1addr==(int)c1.DataPtr()),ierr); // c1addr should be unchanged
+	EPETRA_TEST_ERR(!(c1addr==(size_t)c1.DataPtr()),ierr); // c1addr should be unchanged
 	if(verbose) cout << "c2 Deleted. \nc1= " << c1count << "  " << c1addr << endl;
 	{ // inside own set of brackets so that c2a will be automatically at end of brackets
 		// so that we can test to make sure objects on the stack deallocate correctly
 		Epetra_SerialComm c2a(c1);
 		c2count = c2a.ReferenceCount();
-		c2addr = (int) c2a.DataPtr();
+		c2addr = (size_t) c2a.DataPtr();
 		c1countold = c1count;
 		c1count = c1.ReferenceCount();
 		EPETRA_TEST_ERR(!(c2count==c1count && c1count==c1countold+1),ierr); // both counts should be 2
@@ -607,19 +607,19 @@ void checkSerialDataClass(int& ierr, bool verbose) {
 	c1countold = c1count;
 	c1count = c1.ReferenceCount();
 	EPETRA_TEST_ERR(!(c1count==c1countold-1),ierr); // count should have decremented (to 1)
-	EPETRA_TEST_ERR(!(c1addr==(int)c1.DataPtr()),ierr); // c1addr should be unchanged
+	EPETRA_TEST_ERR(!(c1addr==(size_t)c1.DataPtr()),ierr); // c1addr should be unchanged
 	if(verbose) cout << "c2a Destroyed. \nc1= " << c1count << "  " << c1addr << endl;
 	if(verbose) cout << "Assignment operator, post construction" << endl;
 	Epetra_SerialComm c3;
 	int c3count = c3.ReferenceCount();
-	int c3addr = (int) c3.DataPtr();
+	size_t c3addr = (size_t) c3.DataPtr();
 	EPETRA_TEST_ERR(!(c3count==1),ierr); // c3count should be 1 initially
 	EPETRA_TEST_ERR(!(c1addr!=c3addr),ierr); // c1 and c3 should have different ptr addresses
 	if(verbose)cout << "Prior to assignment: \nc1=" << c1count << "  " << c1addr 
 									 << "\nc3=" << c3count << "  " << c3addr << endl;
 	c3 = c1;
 	c3count = c3.ReferenceCount();
-	c3addr = (int) c3.DataPtr();
+	c3addr = (size_t) c3.DataPtr();
 	c1countold = c1count;
 	c1count = c1.ReferenceCount();
 	EPETRA_TEST_ERR(!(c3count==c1count && c1count==c1countold+1),ierr); // both counts should be 2
@@ -634,13 +634,13 @@ void checkMpiDataClass(int& ierr, bool verbose) {
 	if(verbose) cout << "Testing Reference Counting... ";								
 	Epetra_MpiComm c1( MPI_COMM_WORLD );
 	int c1count = c1.ReferenceCount();
-	int c1addr = (int) c1.DataPtr();
+	size_t c1addr = (size_t) c1.DataPtr();
 	EPETRA_TEST_ERR(!(c1count==1),ierr); // count should be 1
 	if(verbose) cout << "Default constructor. \nc1= " << c1count << "  " << c1addr << endl;
 
 	Epetra_MpiComm* c2 = new Epetra_MpiComm(c1);
 	int c2count = c2->ReferenceCount();
-	int c2addr = (int) c2->DataPtr();
+	size_t c2addr = (size_t) c2->DataPtr();
 	int c1countold = c1count;
 	c1count = c1.ReferenceCount();
 	EPETRA_TEST_ERR(!(c2count==c1count && c1count==(c1countold+1)),ierr); // both counts should be 2
@@ -651,13 +651,13 @@ void checkMpiDataClass(int& ierr, bool verbose) {
 	c1countold = c1count;
 	c1count = c1.ReferenceCount();
 	EPETRA_TEST_ERR(!(c1count==c1countold-1),ierr); // count should have decremented (to 1)
-	EPETRA_TEST_ERR(!(c1addr==(int)c1.DataPtr()),ierr); // c1addr should be unchanged
+	EPETRA_TEST_ERR(!(c1addr==(size_t)c1.DataPtr()),ierr); // c1addr should be unchanged
 	if(verbose) cout << "c2 Deleted. \nc1= " << c1count << "  " << c1addr << endl;
 	{ // inside own set of brackets so that c2a will be automatically at end of brackets
 		// so that we can test to make sure objects on the stack deallocate correctly
 		Epetra_MpiComm c2a(c1);
 		c2count = c2a.ReferenceCount();
-		c2addr = (int) c2a.DataPtr();
+		c2addr = (size_t) c2a.DataPtr();
 		c1countold = c1count;
 		c1count = c1.ReferenceCount();
 		EPETRA_TEST_ERR(!(c2count==c1count && c1count==c1countold+1),ierr); // both counts should be 2
@@ -668,19 +668,19 @@ void checkMpiDataClass(int& ierr, bool verbose) {
 	c1countold = c1count;
 	c1count = c1.ReferenceCount();
 	EPETRA_TEST_ERR(!(c1count==c1countold-1),ierr); // count should have decremented (to 1)
-	EPETRA_TEST_ERR(!(c1addr==(int)c1.DataPtr()),ierr); // c1addr should be unchanged
+	EPETRA_TEST_ERR(!(c1addr==(size_t)c1.DataPtr()),ierr); // c1addr should be unchanged
 	if(verbose) cout << "c2a Destroyed. \nc1= " << c1count << "  " << c1addr << endl;
 	if(verbose) cout << "Assignment operator, post construction" << endl;
 	Epetra_MpiComm c3( MPI_COMM_WORLD );
 	int c3count = c3.ReferenceCount();
-	int c3addr = (int) c3.DataPtr();
+	size_t c3addr = (size_t) c3.DataPtr();
 	EPETRA_TEST_ERR(!(c3count==1),ierr); // c3count should be 1 initially
 	EPETRA_TEST_ERR(!(c1addr!=c3addr),ierr); // c1 and c3 should have different ptr addresses
 	if(verbose)cout << "Prior to assignment: \nc1=" << c1count << "  " << c1addr 
 									 << "\nc3=" << c3count << "  " << c3addr << endl;
 	c3 = c1;
 	c3count = c3.ReferenceCount();
-	c3addr = (int) c3.DataPtr();
+	c3addr = (size_t) c3.DataPtr();
 	c1countold = c1count;
 	c1count = c1.ReferenceCount();
 	EPETRA_TEST_ERR(!(c3count==c1count && c1count==c1countold+1),ierr); // both counts should be 2
