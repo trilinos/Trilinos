@@ -613,7 +613,8 @@ private:
   bool CheckPreconditionerKrylov();
 
   void AnalyzeMatrixProperties(char * Defaults, bool IsSymmetric = false);
-  void AnalyzeMatrixEigenvalues(char * Defaults, bool IsSymmetric = false);
+  void AnalyzeMatrixEigenvaluesDense(char * Defaults, bool IsSymmetric = false);
+  void AnalyzeMatrixEigenvaluesSparse(char * Defaults, bool IsSymmetric = false);
   void AnalyzeMatrixSmoothers(char * Defaults, bool IsSymmetric = false);
   void AnalyzeMatrixCoarsening(char * Defaults, bool IsSymmetric = false);
 
