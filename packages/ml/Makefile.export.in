@@ -22,9 +22,9 @@
 
 
 ML_EXPORT_LIBS = -L$(ML_BUILD_DIRECTORY)/src -lml \
-                  -L$(AZTECOO_BUILD_DIRECTORY)/src $(AZTECOO_LIBS) \
                   -L$(IFPACK_BUILD_DIRECTORY)/src  $(IFPACK_LIBS) \
                   -L$(AMESOS_BUILD_DIRECTORY)/src  $(AMESOS_LIBS) \
+                  -L$(AZTECOO_BUILD_DIRECTORY)/src $(AZTECOO_LIBS) \
                   -L$(ANASAZI_BUILD_DIRECTORY)/src $(ANASAZI_LIBS) \
                   -L$(TEUCHOS_BUILD_DIRECTORY)/src  $(TEUCHOS_LIBS) \
                   -L$(EPETRAEXT_BUILD_DIRECTORY)/src  $(EPETRAEXT_LIBS) \
