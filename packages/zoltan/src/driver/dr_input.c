@@ -99,10 +99,10 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
           }
           else if (strstr(cptr, "chaco")) {
             pio_info->file_type = CHACO_FILE;
-            cptr = strtok(NULL, ",");
-            if (cptr == NULL) 
-              pio_info->init_dist_type = INITIAL_LINEAR;
-            else {
+            /* Set default values for options here and change them later */
+            pio_info->init_dist_type = INITIAL_LINEAR;
+            pio_info->init_dist_procs = -1;
+            while ((cptr = strtok(NULL, ",")) != NULL){ 
               strip_string(cptr, " \t\n");
               string_to_lower(cptr, '=');
               if (strstr(cptr, "initial distribution")) {
@@ -114,7 +114,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
                 }
                 cptr2++;
                 string_to_lower(cptr2, '\n');
-                if (strstr(cptr2, "linear")) {
+                if (strstr(cptr2, "linear") || strstr(cptr2, "block")) {
                   pio_info->init_dist_type = INITIAL_LINEAR;
                 }
                 else if (strstr(cptr2, "cyclic")) {
@@ -122,6 +122,19 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
                 }
                 else {
                   Gen_Error(0, "Invalid Chaco initial distribution type.");
+                  return 0;
+                }
+              }
+              else if (strstr(cptr, "initial procs")) {
+                cptr2 = strchr(cptr, '=');
+                if (cptr2 == NULL) {
+                  Gen_Error(0, "fatal: initial no. of procs is not "
+                               "specified");
+                  return 0;
+                }
+                cptr2++;
+                if(sscanf(cptr2, "%d", &(pio_info->init_dist_procs)) != 1) {
+                  Gen_Error(0, "fatal: initial no. of procs must be an integer.");
                   return 0;
                 }
               }
@@ -212,7 +225,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
             pio_info->dsk_list_cnt = pio_info->num_dsk_ctrlrs;
             pio_info->num_dsk_ctrlrs = -1;
 
-            /* "{" defines the beginning of the list */
+            /* "{" defines the beginning of the list. } */
             cptr = strchr(cptr, '{');
             if (cptr == NULL) {
               Gen_Error(0, "fatal: disk list must be specified.");

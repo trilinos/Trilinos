@@ -40,8 +40,10 @@ struct Parallel_IO
                         /*     /pfs/tmp_1)                                   */
 
   int     file_type;    /* input file type */
-  int     init_dist_type;            /* Flag indicating how input data
-                                        should be initially distributed.     */
+  int     init_dist_type;      /* Flag indicating how input data
+                                  should be initially distributed.     */
+  int     init_dist_procs;     /* How many procs to use in 
+                                  the initial distribution.            */
 
   /* The root location of the parallel disks */
   char    pdsk_root[FILENAME_MAX+1];
