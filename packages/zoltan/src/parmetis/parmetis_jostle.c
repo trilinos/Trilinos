@@ -42,7 +42,6 @@ static PARAM_VARS Jostle_params[] = {
 /**********  parameters structure used by both ParMetis and Jostle **********/
 static PARAM_VARS Graph_params[] = {
         { "CHECK_GRAPH", NULL, "INT" },
-        { "SCALED_WEIGHT_MAX", NULL, "INT" },
         { NULL, NULL, NULL } };
 
 /***************  prototypes for internal functions ********************/
@@ -283,15 +282,15 @@ static int LB_ParMetis_Jostle(
 {
   static char *yo = "LB_ParMetis_Jostle";
   int i, j, jj, ierr, packet_size, offset, tmp, flag, ndims; 
-  int obj_wgt_dim, comm_wgt_dim, check_graph, scaled_wgt_max; 
+  int obj_wgt_dim, comm_wgt_dim, check_graph;
   int num_obj, nedges, num_edges, cross_edges, max_edges, edgecut;
   int *nbors_proc, *plist;
   int nsend, nrecv, wgtflag, numflag, num_border, max_proc_list_len;
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *ewgt, *part;
   int network[4] = {0, 1, 1, 1};
-  float *float_vwgt, *xyz, scale, min_wgt, max_wgt; 
-  float min_wgt_local, max_wgt_local;
+  int nonint_wgt;
+  float *float_vwgt, *xyz, scale, sum_wgt, sum_wgt_local; 
   double geom_vec[6];
   struct LB_edge_info  *proc_list, *ptr;
   struct LB_hash_node **hashtab, *hash_nodes;
@@ -357,10 +356,8 @@ static int LB_ParMetis_Jostle(
   }
 
   /* Get parameter options shared by ParMetis and Jostle */
-  scaled_wgt_max = 32000;   /* default */
   check_graph = 1;          /* default */
   LB_Bind_Param(Graph_params, "CHECK_GRAPH", (void *) &check_graph);
-  LB_Bind_Param(Graph_params, "SCALED_WEIGHT_MAX", (void *) &scaled_wgt_max);
   LB_Assign_Param_Vals(lb->Params, Graph_params, lb->Debug_Level, lb->Proc,
                        lb->Debug_Proc);
 
@@ -796,41 +793,42 @@ static int LB_ParMetis_Jostle(
       vwgt = (idxtype *)LB_MALLOC(obj_wgt_dim*num_obj
                           * sizeof(idxtype));
 
-      /* Compute local min & max of the obj weights (over all dimensions) */
-      min_wgt_local = MAXFLOAT;
-      max_wgt_local = 0;
+      /* Compute local sum of the obj weights (over all dimensions) */
+      /* Check if all weights are integers */
+      flag = 0;
+      sum_wgt_local = 0;
       for (i=0; i<num_obj*obj_wgt_dim; i++){
-        if ((float_vwgt[i]>0) && (float_vwgt[i]<max_wgt_local)) 
-          min_wgt_local = float_vwgt[i];
-        if (float_vwgt[i]>max_wgt_local) 
-          max_wgt_local = float_vwgt[i];
+        if (!flag){ 
+          tmp = float_vwgt[i]; /* Converts to nearest int */
+          if (fabs((double)tmp-float_vwgt[i]) > .001){
+            flag = 1;
+          }
+        }
+        sum_wgt_local += float_vwgt[i];
       }
-      /* Compute global min & max of the obj weights */
-      MPI_Allreduce(&max_wgt_local, &max_wgt, obj_wgt_dim, 
-          MPI_FLOAT, MPI_MAX, lb->Communicator);
-      MPI_Allreduce(&min_wgt_local, &min_wgt, obj_wgt_dim, 
-          MPI_FLOAT, MPI_MAX, lb->Communicator);
+      /* Compute global sum of the obj weights */
+      MPI_Allreduce(&flag, &nonint_wgt, 1, 
+          MPI_INT, MPI_LOR, lb->Communicator);
+      MPI_Allreduce(&sum_wgt_local, &sum_wgt, 1, 
+          MPI_FLOAT, MPI_SUM, lb->Communicator);
 
-      if (lb->Debug_Level >= LB_DEBUG_ALL)
-        printf("[%1d] Debug: Converting vertex weights, scaled_wgt_max = %d, "
-               "min_wgt = %d, max_wgt = %g\n", lb->Proc, scaled_wgt_max, 
-               min_wgt, max_wgt);
-
-      /* Convert weights to integers between 1 and SCALED_WEIGHT_MAX */
-      scale = 1;
-      if (min_wgt == MAXFLOAT){
+      if (sum_wgt == 0){
         fprintf(stderr, "ZOLTAN ERROR: All object weights are zero.\n");
         FREE_MY_MEMORY;
         LB_TRACE_EXIT(lb, yo);
         return LB_FATAL;
       }
-      if (scaled_wgt_max){
-        /* First try to scale the smallest weight to 1 */
-        scale = 1./min_wgt;
-        /* Check if max weight becomes too large. Adjust if necessary. */
-        if (scale*max_wgt > scaled_wgt_max)
-          scale = scaled_wgt_max/max_wgt;
+
+      /* Convert weights to integers between 1 and MAX_WGT_SUM/sum_wgt */
+      scale = 1;
+      /* Scale unless all weights are integers */
+      if (nonint_wgt || (sum_wgt > MAX_WGT_SUM)){
+        scale = MAX_WGT_SUM/sum_wgt;
       }
+      if (lb->Debug_Level >= LB_DEBUG_ALL)
+        printf("[%1d] Debug: Converting vertex (object) weights, nonint_wgt = %d "
+               "sum_wgt = %g, scale = %g\n", lb->Proc, nonint_wgt, sum_wgt, scale);
+
       for (i=0; i<num_obj*obj_wgt_dim; i++){
         if (scale==1)
            vwgt[i] = (int) float_vwgt[i];

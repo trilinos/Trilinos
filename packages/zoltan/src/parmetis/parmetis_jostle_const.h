@@ -15,6 +15,8 @@
 #ifndef __PARMETIS_JOSTLE_CONST_H
 #define __PARMETIS_JOSTLE_CONST_H
 
+#include <limits.h>
+
 /* ParMetis option defs. These must be identical to the defs
  * in defs.h in the version of ParMetis you are using!
  */
@@ -47,16 +49,19 @@ struct LB_hash_node {
 /* ParMETIS data types and definitions. */
 
 /* Undefine the following #define in order to use short as the idxtype.
- * NB: Make sure these defs are consistent with those in your 
- * ParMetis installation !
+ * Make sure these defs are consistent with those in your 
+ * ParMetis installation ! It is highly recommended to use 
+ * integers, not shorts, if you have weights in your applications.
 */
 
 #ifdef IDXTYPE_IS_SHORT
 typedef short idxtype;
 #define IDX_DATATYPE    MPI_SHORT
+#define MAX_WGT_SUM (.5*SHRT_MAX)
 #else /* the default is int */
 typedef int idxtype;
 #define IDX_DATATYPE    MPI_INT
+#define MAX_WGT_SUM (.5*INT_MAX)
 #endif
 
 /* Zoltan function prototypes */
