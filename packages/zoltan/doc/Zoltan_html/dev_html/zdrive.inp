@@ -63,6 +63,7 @@ Decomposition Method	= rcb
 # The parameter entries should be separated by commas. 
 # When many parameters must be specified, multiple
 # "Zoltan Parameters" lines may be included in the input file.
+# NOTE:  The Fortran90 driver zfdrive can read only one parameter per line.
 #-----------------------------------------------------------------------------
 Zoltan Parameters	= DEBUG_LEVEL=3
 Zoltan Parameters	= RCB_REUSE=0
@@ -108,6 +109,8 @@ Zoltan Parameters	= RCB_REUSE=0
 #     File Type = chaco, initial distribution = cyclic, initial procs = 2
 # will give proc 0 objects 1, 3, 5, ... and proc 1 objects 2, 4, 6, ...
 # while procs 2 and higher get no objects.
+# NOTE:  The Fortran90 driver zfdrive does not read NemesisI files.
+# NOTE:  The Fortran90 driver zfdrive does not accept any Chaco options.
 #-----------------------------------------------------------------------------
 File Type		= NemesisI
 
@@ -166,6 +169,7 @@ File Name	= testa.par
 #                          zeros in the path name, such as on the teraflop
 #                          machine "/pfs/tmp_1/".
 #
+# NOTE:  The Fortran90 driver zfdrive ignores this input line.
 #-----------------------------------------------------------------------------
 Parallel Disk Info	= number=4,zeros
 
@@ -209,6 +213,7 @@ Parallel Disk Info	= number=4,zeros
 #                       .
 #               /usr/tmp/pio_<Parallel Disk Info, number>/run1/input/
 #
+# NOTE:  The Fortran90 driver zfdrive ignores this input line.
 #-----------------------------------------------------------------------------
 Parallel File Location	= root=/pfs/io_, subdir=mmstjohn
 
@@ -249,3 +254,19 @@ Zdrive debug level = 1
 # Default value is 0.
 #-----------------------------------------------------------------------------
 Chaco input assignment inverse = 0
+
+
+#-----------------------------------------------------------------------------
+# Number of Iterations = <integer>
+#
+# This line is optional.  It indicates the number of time the load-balancing
+# method should be run on the input data.  The original input data is passed
+# to the method for each invocation.  
+# Multiple iterations are useful primarily for testing the RCB_REUSE parameter.
+# 
+# Default value is 1.
+#
+# NOTE:  The Fortran90 driver zfdrive ignores this input line.
+#-----------------------------------------------------------------------------
+Number of Iterations = 1
+
