@@ -240,6 +240,7 @@ int main(int argc, char *argv[])
   int itemp;
   int evenodd[2]; int Iwin[4];
   int tiebreaker;
+  int k;
 
   nblocks = -1;
   if (argc < 2) {
