@@ -71,9 +71,4 @@ EpetraExt contains a number of classes.  They can be categorized as follows:
 
 </ul>
 
-\subsection example Example
-
-\include cxx_main.cpp
-\include matlab.README
-     
 */
