@@ -343,7 +343,7 @@ RefCountPtr<T> rcp( T* p, bool owns_mem);
  * @param  dealloc [in] Deallocator policy object (copied by value) that defines
  *                 a function <tt>void Dealloc_T::free(T* p)</tt> that will
  *                 free the underlying object.
- * @param  has_ownership
+ * @param  owns_mem
  *                 [in] If true then <tt>return</tt> is allowed to delete
  *                 the underlying pointer by calling <tt>dealloc.free(p)</tt>.
  *                 when all references have been removed.

@@ -73,12 +73,12 @@ namespace Teuchos {
 
   //@{ \name Comparison methods.
     //! Equality of two matrices.
-    /*! \return True if \c *this vector and \c Operand are of the same length and have the same entries, else False will be returned.
+    /*! \return True if \e this vector and \c Operand are of the same length and have the same entries, else False will be returned.
     */
     bool operator == (const SerialDenseVector<OrdinalType, ScalarType> &Operand);
 
     //! Inequality of two matrices.
-    /*! \return True if \c *this vector and \c Operand are not of the same length or do not have the same entries, else False will be returned.
+    /*! \return True if \e this vector and \c Operand are not of the same length or do not have the same entries, else False will be returned.
     */
     bool operator != (const SerialDenseVector<OrdinalType, ScalarType> &Operand);
   //@}
@@ -90,7 +90,7 @@ namespace Teuchos {
 	The operator= copies the values from one existing SerialDenseVector to
 	another.  If \c Source is a view (i.e. CV = Teuchos::View), then this
 	method will return a view.  Otherwise, it will return a copy of \c Source.
-	\c *this will be resized if it is not large enough to copy \c Source into.
+	\e this will be resized if it is not large enough to copy \c Source into.
     */
     SerialDenseVector<OrdinalType,ScalarType>& operator = (const SerialDenseVector<OrdinalType,ScalarType>& Source);
   //@}

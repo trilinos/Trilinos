@@ -4,35 +4,37 @@
 #ifndef TEUCHOS_COMPOBJECT_HPP
 #define TEUCHOS_COMPOBJECT_HPP
 
+/*! \file Teuchos_CompObject.hpp
+    \brief Object for storing data and providing funtionality that is common to all 
+	computational classes.
+*/
+
 #include "Teuchos_Object.hpp"
 #include "Teuchos_Flops.hpp"
 
-namespace Teuchos
-{
+/*! \class Teuchos::CompObject
+    \brief Functionality and data that is common to all computational classes.
 
-
-//! Teuchos_CompObject: Functionality and data that is common to all computational classes.
-
-/*! The Teuchos_CompObject is a base class for all Teuchos computational objects.  It provides the basic
-    mechanisms and interface specifications for floating point operations using Teuchos_Flops objects. It
-    should be noted that currently, Teuchos_CompObject is an almost exact duplicate of Epetra_CompObject.
+    The Teuchos::CompObject is a base class for all Teuchos computational objects.  It provides the basic
+    mechanisms and interface specifications for floating point operations using Teuchos::Flops objects. 
 */
 
+namespace Teuchos
+{
 class CompObject
 {
 
   public:
 
   //@{ \name Constructors/Destructor.
-  //! Basic Teuchos::CompObject constuctor.
+
+  //! Default constructor
   CompObject();
 
-  //! Teuchos::CompObject copy constructor.
-  
+  //! Copy Constructor
   CompObject(const CompObject &source);
-  
-  
-  //! Teuchos::CompObject destructor.  
+    
+  //! Destructor
   virtual ~CompObject();
   //@}
 
@@ -55,7 +57,7 @@ class CompObject
   void resetFlops() const {if (flopCounter_!=0) flopCounter_->resetFlops(); return;};
 
   //! Returns the number of floating point operations with \e this multi-vector.
-  double flops() const {if (flopCounter_!=0) return(flopCounter_->flops()); else return(0.0);};
+  double getFlops() const {if (flopCounter_!=0) return(flopCounter_->flops()); else return(0.0);};
   //@}
 
   //@{ \name Update flop count methods.
@@ -73,7 +75,6 @@ class CompObject
   //@}
 
  protected:
-
 
   Flops *flopCounter_;
 

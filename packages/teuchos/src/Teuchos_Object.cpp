@@ -12,7 +12,7 @@ Object::Object(int tracebackModeIn) : label_(0)
   tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
 }
 //=============================================================================
-Object::Object(const char* const label, int tracebackModeIn) : label_(0)
+Object::Object(const char* label, int tracebackModeIn) : label_(0)
 {
   setLabel(label);
   tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
@@ -58,7 +58,7 @@ char* Object::label() const
   return(label_);
 }
 //=============================================================================
-void Object::setLabel(const char* const label)
+void Object::setLabel(const char* label)
 { 
   if (label_ != 0)
     delete [] label_;

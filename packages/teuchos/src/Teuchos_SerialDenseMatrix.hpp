@@ -127,7 +127,7 @@ namespace Teuchos {
     /*!
 	The operator= copies the values from one existing SerialDenseMatrix to another. 
 	If \c Source is a view (i.e. CV = Teuchos::View), then this method will 
-	return a view.  Otherwise, it will return a copy of \c Source.  \c *this
+	return a view.  Otherwise, it will return a copy of \c Source.  \e this object
 	will be resized if it is not large enough to copy \c Source into.
     */	
     SerialDenseMatrix& operator= (const SerialDenseMatrix& Source);
@@ -194,20 +194,20 @@ namespace Teuchos {
 
   //@{ \name Mathematical methods.
 
-    //! Add another matrix to \c *this one.
-    /*! Add \c Source to \c *this if the dimension of both matrices are the same.  If not, \c *this matrix
+    //! Add another matrix to \e this matrix.
+    /*! Add \c Source to \e this if the dimension of both matrices are the same.  If not, \e this matrix
 	will be returned unchanged.
     */
     SerialDenseMatrix& operator+= (const SerialDenseMatrix& Source);
 
-    //! Scale \c *this matrix; \c A = \c alpha*A.
+    //! Scale \c this matrix; \c A = \c alpha*A.
     /*!
-	\param alpha Scalar to multiply \c *this by.
+	\param alpha Scalar to multiply \e this by.
 	\return Integer error code, set to 0 if successful.
     */
     int scale ( const ScalarType alpha );
 
-    //! Multiply \c A * \c B and add them to \c *this; \c *this = \c beta*(*this) + \c alpha*A*B.
+    //! Multiply \c A * \c B and add them to \e this; \e this = \c beta * \e this + \c alpha*A*B.
     /*!
 	\param transa - Use the transpose of \c A if transa = Teuchos::TRANS, else don't use the 
 	transpose if transa = Teuchos::NOTRANS.
@@ -216,9 +216,9 @@ namespace Teuchos {
 	\param alpha - The scaling factor for \c A * \c B.
 	\param A - SerialDenseMatrix
 	\param B - SerialDenseMatrix
-	\param beta - The scaling factor for \c *this.
+	\param beta - The scaling factor for \e this.
 
-	If the matrices \c A and \c B are not of the right dimension, consistent with \c *this, then \c *this
+	If the matrices \c A and \c B are not of the right dimension, consistent with \e this, then \e this
 	matrix will not be altered and -1 will be returned.
 	\return Integer error code, set to 0 if successful.
     */
@@ -228,13 +228,13 @@ namespace Teuchos {
   //@{ \name Comparison methods.
 
     //! Equality of two matrices.
-    /*! \return True if \c *this matrix and \c Operand are of the same shape (rows and columns) and have
+    /*! \return True if \e this matrix and \c Operand are of the same shape (rows and columns) and have
 	the same entries, else False will be returned.
     */
     bool operator== (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand);
 
     //! Inequality of two matrices.
-    /*! \return True if \c *this matrix and \c Operand of not of the same shape (rows and columns) or don't
+    /*! \return True if \e this matrix and \c Operand of not of the same shape (rows and columns) or don't
 	have the same entries, else False will be returned.
     */
     bool operator!= (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand);
