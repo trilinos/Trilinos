@@ -257,13 +257,17 @@ SOURCES = $(libamesos_a_SOURCES) $(EXTRA_libamesos_a_SOURCES)
 DIST_SOURCES = $(am__libamesos_a_SOURCES_DIST) \
 	$(EXTRA_libamesos_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
-	$(srcdir)/Amesos_Umfpack.h $(srcdir)/Amesos_Scalapack.h \
-	$(srcdir)/Amesos_Klu.h $(srcdir)/Amesos_Mumps.h \
+	$(srcdir)/DscpackOO.h $(srcdir)/Amesos_Umfpack.h \
+	$(srcdir)/Amesos_Scalapack.h $(srcdir)/klu/klu_btf.h \
+	$(srcdir)/Amesos_Klu.h $(srcdir)/klu/cbtf.h \
+	$(srcdir)/klu/klu.h $(srcdir)/klu/klu_dump.h \
+	$(srcdir)/klu/klu_kernel.h $(srcdir)/Amesos_Mumps.h \
 	$(srcdir)/Amesos_EpetraBaseSolver.h \
 	$(srcdir)/EpetraExt_Redistor.h $(srcdir)/Amesos.h \
 	$(srcdir)/Amesos_Superlu.h $(srcdir)/Amesos_Superludist.h \
 	$(srcdir)/Epetra_CrsKundertSparse.h Amesos_BaseSolver.h \
-	Amesos_ConfigDefs.h $(srcdir)/Amesos_BaseSolver.h
+	Amesos_ConfigDefs.h $(srcdir)/CrsMatrixTranspose.h \
+	$(srcdir)/Amesos_BaseSolver.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -450,7 +454,8 @@ target_vendor = @target_vendor@
 #	$(srcdir)/DscpackOO.h \
 #
 @HAVE_AMESOS_DSCPACK_TRUE@DSCPACK_H = \
-@HAVE_AMESOS_DSCPACK_TRUE@	$(srcdir)/Amesos_Dscpack.h
+@HAVE_AMESOS_DSCPACK_TRUE@	$(srcdir)/Amesos_Dscpack.h \
+@HAVE_AMESOS_DSCPACK_TRUE@	$(srcdir)/DscpackOO.h
 
 @HAVE_AMESOS_DSCPACK_FALSE@DSCPACK = 
 @HAVE_AMESOS_DSCPACK_TRUE@DSCPACK = \
@@ -478,8 +483,17 @@ target_vendor = @target_vendor@
 #-------------------------------------------------------------------------------
 #  Here is where we will add Tim Davis' files 
 #
+#
+#  These files do not need to be copied to the include directory on install,
+#  hence they are commented out from here.  
+#
 @HAVE_AMESOS_KLU_TRUE@KLU_H = \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/Amesos_Klu.h 
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu_btf.h \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/Amesos_Klu.h \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/cbtf.h \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu.h \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu_dump.h \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu/klu_kernel.h
 
 @HAVE_AMESOS_KLU_FALSE@KLU = 
 @HAVE_AMESOS_KLU_TRUE@KLU = \
@@ -551,7 +565,8 @@ target_vendor = @target_vendor@
 #	$(srcdir)/CrsMatrixTranspose.h
 COMP_H = \
 	Amesos_BaseSolver.h \
-	Amesos_ConfigDefs.h 
+	Amesos_ConfigDefs.h \
+	$(srcdir)/CrsMatrixTranspose.h 
 
 COMP = \
 	$(srcdir)/CrsMatrixTranspose.cpp
@@ -1762,6 +1777,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/klu
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

@@ -42,11 +42,14 @@
 # Amesos uses amd, but we don't make amd available outside Amesos_Klu 
 # at this time.  
 #
-# CORE_H = \
-# 	$(srcdir)/amd_internal.h  \
-#	$(srcdir)/amd.h 
 
-CORE_H =
+# I uncommented the following lines so that the files are included in
+# the distribution tarball.  We could probably just list them in an 
+# EXTRA_DIST macro, but there isn't yet a precedent for this with headers. JW
+
+ CORE_H = \
+	$(srcdir)/amd_internal.h  \
+	$(srcdir)/amd.h 
 
 CORE = \
 	$(srcdir)/amd_aat.c \

@@ -85,7 +85,8 @@ endif
 
 if HAVE_AMESOS_DSCPACK
 DSCPACK_H = \
-	$(srcdir)/Amesos_Dscpack.h
+	$(srcdir)/Amesos_Dscpack.h \
+	$(srcdir)/DscpackOO.h
 DSCPACK = \
 	$(srcdir)/DscpackOO.cpp \
 	$(srcdir)/Amesos_Dscpack.cpp
@@ -118,8 +119,17 @@ endif
 #  Here is where we will add Tim Davis' files 
 #
 if HAVE_AMESOS_KLU
+#
+#  These files do not need to be copied to the include directory on install,
+#  hence they are commented out from here.  
+#
 KLU_H = \
-	$(srcdir)/Amesos_Klu.h 
+	$(srcdir)/klu/klu_btf.h \
+	$(srcdir)/Amesos_Klu.h \
+	$(srcdir)/klu/cbtf.h \
+	$(srcdir)/klu/klu.h \
+	$(srcdir)/klu/klu_dump.h \
+	$(srcdir)/klu/klu_kernel.h
 
 KLU = \
 	$(srcdir)/Amesos_Klu.cpp \
@@ -201,7 +211,8 @@ endif
 #	$(srcdir)/CrsMatrixTranspose.h
 COMP_H = \
 	Amesos_BaseSolver.h \
-	Amesos_ConfigDefs.h 
+	Amesos_ConfigDefs.h \
+	$(srcdir)/CrsMatrixTranspose.h 
 COMP = \
 	$(srcdir)/CrsMatrixTranspose.cpp
 

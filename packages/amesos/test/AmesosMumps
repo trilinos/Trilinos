@@ -114,13 +114,13 @@ mpirun -np 3 amesos_test.exe MUMPS   ImpcolE.rua 0 1 1 0 1e-12 1e-11  >>SST.stdo
 #  Test mid sized matrices on 1 and 4 processes, half of them starting out serial, 
 #  half starting out distributed.  (On the single process runs, distributed has no meaning.) 
 #
-mpirun -np 1 amesos_test.exe MUMPS   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
-mpirun -np 4 amesos_test.exe MUMPS   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
-mpirun -np 4 amesos_test.exe MUMPS   bcsstk24.rsa 1 1 1 1 1e-6  1e-1 >>SST.stdout
-mpirun -np 1 amesos_test.exe MUMPS   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
-mpirun -np 4 amesos_test.exe MUMPS   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
-mpirun -np 1 amesos_test.exe MUMPS   bcsstk18.rsa 1 0 1 1 1e-9 1e-4  >>SST.stdout
-mpirun -np 4 amesos_test.exe MUMPS   bcsstk18.rsa 0 0 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT mpirun -np 1 amesos_test.exe MUMPS   bcsstk24.rsa 0 1 1 0 1e-6  1e-1 >>SST.stdout
+# COMMENT mpirun -np 4 amesos_test.exe MUMPS   bcsstk24.rsa 1 1 1 0 1e-6  1e-1 >>SST.stdout
+# COMMENT mpirun -np 4 amesos_test.exe MUMPS   bcsstk24.rsa 1 1 1 1 1e-6  1e-1 >>SST.stdout
+# COMMENT mpirun -np 1 amesos_test.exe MUMPS   bcsstk18.rsa 1 1 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT mpirun -np 4 amesos_test.exe MUMPS   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT mpirun -np 1 amesos_test.exe MUMPS   bcsstk18.rsa 1 0 1 1 1e-9 1e-4  >>SST.stdout
+# COMMENT mpirun -np 4 amesos_test.exe MUMPS   bcsstk18.rsa 0 0 1 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test some tranpose solves
@@ -137,19 +137,19 @@ mpirun -np 4 amesos_test.exe MUMPS   ImpcolA.rua 1 1 -3 1 1e-11 1e-10  >>SST.std
 mpirun -np 1 amesos_test.exe MUMPS   ImpcolA.rua 0 1 2 0 1e-11 1e-10 >>SST.stdout
 mpirun -np 5 amesos_test.exe MUMPS   ImpcolB.rua 0 1 4 0 1e-11 1e-14  >>SST.stdout
 mpirun -np 2 amesos_test.exe MUMPS   ImpcolE.rua 0 1 6 0 1e-12 1e-11  >>SST.stdout
-mpirun -np 4 amesos_test.exe MUMPS   bcsstk24.rsa 0 1 3 1 1e-6  1e-1 >>SST.stdout
-mpirun -np 4 amesos_test.exe MUMPS   bcsstk24.rsa 0 1 -3 1 1e-6  1e-1 >>SST.stdout
-mpirun -np 1 amesos_test.exe MUMPS   bcsstk18.rsa 0 1 5 0 1e-9 1e-4  >>SST.stdout
-mpirun -np 4 amesos_test.exe MUMPS   bcsstk18.rsa 1 1 12 0 1e-9 1e-4  >>SST.stdout
+# COMMENT mpirun -np 4 amesos_test.exe MUMPS   bcsstk24.rsa 0 1 3 1 1e-6  1e-1 >>SST.stdout
+# COMMENT mpirun -np 4 amesos_test.exe MUMPS   bcsstk24.rsa 0 1 -3 1 1e-6  1e-1 >>SST.stdout
+# COMMENT mpirun -np 1 amesos_test.exe MUMPS   bcsstk18.rsa 0 1 5 0 1e-9 1e-4  >>SST.stdout
+# COMMENT mpirun -np 4 amesos_test.exe MUMPS   bcsstk18.rsa 1 1 12 0 1e-9 1e-4  >>SST.stdout
 #
 #  Test multiple right hand sides
 #
 mpirun -np 1 amesos_test.exe MUMPS   ImpcolC.rua 0 1 -1 0 1e-13 1e-13 >>SST.stdout
 mpirun -np 5 amesos_test.exe MUMPS   ImpcolD.rua 0 1 -2 0 1e-12 1e-13  >>SST.stdout
 mpirun -np 2 amesos_test.exe MUMPS   ImpcolE.rua 0 1 -3 0 1e-12 1e-11  >>SST.stdout
-mpirun -np 4 amesos_test.exe MUMPS   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
-mpirun -np 1 amesos_test.exe MUMPS   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
-mpirun -np 4 amesos_test.exe MUMPS   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
+# COMMENT mpirun -np 4 amesos_test.exe MUMPS   bcsstk24.rsa 0 1 -4 0 1e-6  1e-1 >>SST.stdout
+# COMMENT mpirun -np 1 amesos_test.exe MUMPS   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SST.stdout
+# COMMENT mpirun -np 4 amesos_test.exe MUMPS   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test blocked right hand sides with distributed matrix input
@@ -158,9 +158,9 @@ mpirun -np 1 amesos_test.exe MUMPS   ImpcolA.rua 1 1 2 0 1e-11 1e-10 >>SST.stdou
 mpirun -np 5 amesos_test.exe MUMPS   ImpcolB.rua 1 1 4 0 1e-11 1e-14  >>SST.stdout
 mpirun -np 5 amesos_test.exe MUMPS   ImpcolB.rua 1 1 4 1 1e-11 1e-14  >>SST.stdout
 mpirun -np 2 amesos_test.exe MUMPS   ImpcolE.rua 1 1 6 0 1e-12 1e-11  >>SST.stdout
-mpirun -np 4 amesos_test.exe MUMPS   bcsstk24.rsa 1 1 3 0 1e-6  1e-1 >>SST.stdout
-mpirun -np 1 amesos_test.exe MUMPS   bcsstk18.rsa 1 1 5 0 1e-9 1e-4  >>SST.stdout
-mpirun -np 4 amesos_test.exe MUMPS   bcsstk18.rsa 1 1 3 0 1e-9 1e-4  >>SST.stdout
+# COMMENT mpirun -np 4 amesos_test.exe MUMPS   bcsstk24.rsa 1 1 3 0 1e-6  1e-1 >>SST.stdout
+# COMMENT mpirun -np 1 amesos_test.exe MUMPS   bcsstk18.rsa 1 1 5 0 1e-9 1e-4  >>SST.stdout
+# COMMENT mpirun -np 4 amesos_test.exe MUMPS   bcsstk18.rsa 1 1 3 0 1e-9 1e-4  >>SST.stdout
 
 #
 #  Test multiple right hand sides with distributed matrix input
@@ -169,9 +169,9 @@ mpirun -np 1 amesos_test.exe MUMPS   ImpcolC.rua 1 1 -2 0 1e-13 1e-13 >>SST.stdo
 mpirun -np 5 amesos_test.exe MUMPS   ImpcolD.rua 1 1 -3 0 1e-12 1e-13  >>SST.stdout
 mpirun -np 5 amesos_test.exe MUMPS   ImpcolD.rua 1 1 -3 1 1e-12 1e-13  >>SST.stdout
 mpirun -np 2 amesos_test.exe MUMPS   ImpcolE.rua 1 1 -1 0 1e-12 1e-11  >>SST.stdout
-mpirun -np 4 amesos_test.exe MUMPS   bcsstk24.rsa 1 1 -2 0 1e-6  1e-1 >>SST.stdout
-mpirun -np 1 amesos_test.exe MUMPS   bcsstk18.rsa 1 1 -1 0 1e-9 1e-4  >>SST.stdout
-mpirun -np 4 amesos_test.exe MUMPS   bcsstk18.rsa 1 1 -4 0 1e-9 1e-4  >>SST.stdout
+# COMMENT mpirun -np 4 amesos_test.exe MUMPS   bcsstk24.rsa 1 1 -2 0 1e-6  1e-1 >>SST.stdout
+# COMMENT mpirun -np 1 amesos_test.exe MUMPS   bcsstk18.rsa 1 1 -1 0 1e-9 1e-4  >>SST.stdout
+# COMMENT mpirun -np 4 amesos_test.exe MUMPS   bcsstk18.rsa 1 1 -4 0 1e-9 1e-4  >>SST.stdout
 
 
 #

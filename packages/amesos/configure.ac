@@ -55,7 +55,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT([amesos],[0.1],[ksstanl@sandia.gov])
+AC_INIT([amesos],[1.1d],[kstanley@cs.utk.edu])
 
 # Hello World!
 echo "----------------------------------------"
@@ -117,7 +117,7 @@ AC_PREREQ(2.59)
 
 dnl Commented out this line for now because it causes headaches in
 dnl committing.
-dnl AC_REVISION($Revision$)
+dnl AC_REVISION($Revision$) 
 
 # ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
@@ -426,9 +426,11 @@ if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
 #
 #   At this point, LIBS and amesos_libs both have our best shot, if they don't work now
 #   we give up
+
+#   This causes problems when you use build with both superlu and superludist
 #
-   AC_TRY_LINK_FUNC( set_default_options,
-                       AC_DEFINE(OLD_SUPERLUDIST,,[Define if we are using the old Superludist]) ) 
+#    AC_TRY_LINK_FUNC( set_default_options,
+#                        AC_DEFINE(OLD_SUPERLUDIST,,[Define if we are using the old Superludist]) ) 
 
    AC_TRY_LINK_FUNC(pdgssvx,,
       AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-superludistlib, (ex. --with-amesos-superludistlib=/home/username/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  

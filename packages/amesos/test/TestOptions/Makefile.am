@@ -1,16 +1,18 @@
 #@HEADER
 #@HEADER
 
-EXEEXT = .exe
+EXEEXT = .in
 
 TEST = TestOptions 
 
-noinst_PROGRAMS = $(TEST)  Dummy 
+noinst_PROGRAMS = $(TEST) Suppressions
 
 #Specify locations of include files within Trilinos, but outside amesos
 AM_CPPFLAGS = -I$(top_srcdir)/../triutils/src -I$(top_srcdir)/../epetra/src \
   -I$(top_builddir)/../epetra/src -I$(top_builddir)/../triutils/src \
    -I$(top_builddir)/../teuchos/src -I$(top_srcdir)/../teuchos/src
+
+Suppressions_SOURCES =  $(srcdir)/Suppressions
 
 TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
 	$(srcdir)/CreateTridi.cpp \
@@ -46,6 +48,5 @@ TestOptions_LDADD = $(top_builddir)/src/libamesos.a \
         $(LAPACK_LIBS) \
 	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
 
-Dummy$(EXEEXT):  $(srcdir)/Dummy
-	cp $(srcdir)/Dummy Dummy$(EXEEXT)
-	cp $(srcdir)/Suppressions Suppressions.in 
+Suppressions$(EXEEXT):  $(srcdir)/Suppressions
+	cp $(srcdir)/Suppressions Suppressions$(EXEEXT)

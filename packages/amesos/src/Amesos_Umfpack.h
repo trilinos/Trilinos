@@ -41,6 +41,7 @@
 #include "Epetra_Comm.h"
 #endif
 #include "Epetra_CrsGraph.h"
+#include "Epetra_CrsMatrix.h"
 
 //! Amesos_Umfpack:  An object-oriented wrapper for Umfpack.
 /*!  Amesos_Umfpack will solve a linear systems of equations: <TT>A X = B</TT>

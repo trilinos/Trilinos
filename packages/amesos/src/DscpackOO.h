@@ -44,7 +44,7 @@ class Epetra_BlockMap;
 class Epetra_MultiVector;
 class Epetra_RowMatrix;
 #include "Epetra_LinearProblem.h"
-#include "Epetra_LinearProblemRedistor.h"
+//  #include "Epetra_LinearProblemRedistor.h"
 #include "Epetra_Object.h"
 //! DscpackOO:  An object-oriented wrapper for Dscpack.
 /*!  DscpackOO will solve a linear systems of equations: \f$ AX=B

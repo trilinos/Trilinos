@@ -177,7 +177,6 @@ AmesosUmfpackJanus$(EXEEXT): $(srcdir)/AmesosUmfpackJanus
 SpoolesScript$(EXEEXT): $(srcdir)/SpoolesScript
 	cp  $(srcdir)/SpoolesScript  SpoolesScript$(EXEEXT)
 	cp  $(srcdir)/662_bus.rsa  662_bus_out.rsa
-	cp  $(srcdir)/meg1.rua  meg1_out.rua
 	cp  $(srcdir)/In_ImpcolA.rua  ImpcolA.rua
 	cp  $(srcdir)/In_ImpcolB.rua  ImpcolB.rua
 	cp  $(srcdir)/In_ImpcolC.rua  ImpcolC.rua
@@ -185,8 +184,6 @@ SpoolesScript$(EXEEXT): $(srcdir)/SpoolesScript
 	cp  $(srcdir)/In_ImpcolE.rua  ImpcolE.rua
 	cp  $(srcdir)/In_fidapm05.rua  fidapm05.rua
 	cp  $(srcdir)/In_SuperLU.rua  SuperLU.rua
-	cp  $(srcdir)/In_bcsstk18.rsa  bcsstk18.rsa
-	cp  $(srcdir)/In_bcsstk24.rsa  bcsstk24.rsa
 	cp  $(srcdir)/In_K4989.triS  K4989.triS
 	cp  $(srcdir)/In_K5000.triS  K5000.triS
 	cp  $(srcdir)/In_SuperLU.triU  SuperLU.triU
@@ -195,7 +192,6 @@ SpoolesScript$(EXEEXT): $(srcdir)/SpoolesScript
 	cp  $(srcdir)/In_bcsstk02.mtx bcsstk02.mtx 
 	cp  $(srcdir)/In_bcsstk04.mtx bcsstk04.mtx 
 	cp  $(srcdir)/In_bcsstk08.mtx bcsstk08.mtx 
-	cp  $(srcdir)/In_bcsstk13.mtx bcsstk13.mtx 
 	cp  $(srcdir)/In_nos1.mtx nos1.mtx 
 	cp  $(srcdir)/In_nos5.mtx nos5.mtx 
 	cp  $(srcdir)/In_FourByFour.mtx FourByFour.mtx 
@@ -209,14 +205,17 @@ SpoolesScript$(EXEEXT): $(srcdir)/SpoolesScript
 
 
 
-SRC_CXX =  $(srcdir)/SparseDirectTimingVars.cpp $(srcdir)/SparseSolverResult.cpp 
+SRC_CXX =  $(srcdir)/SparseDirectTimingVars.cpp \
+	$(srcdir)/SparseDirectTimingVars.h $(srcdir)/SparseSolverResult.cpp \
+	SparseSolverResult.h 
 
 #	$(srcdir)/Comm_assert_equal.cpp $(srcdir)/Trilinos_Util_CountTriples.cpp \
 #	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp \
 #	$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp \
 #	$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp
 
-amesos_test_SOURCES = $(srcdir)/Amesos_TestDriver.cpp  $(srcdir)/Amesos_TestSolver.cpp \
+amesos_test_SOURCES = $(srcdir)/Amesos_TestDriver.cpp \
+	 $(srcdir)/Amesos_TestSolver.cpp $(srcdir)/Amesos_TestSolver.h \
 	 $(srcdir)/Amesos_TestMultiSolver.cpp  $(srcdir)/Amesos_TestMrhsSolver.cpp \
 	 $(SRC_CXX)
 
@@ -251,6 +250,32 @@ amesos_test_LDADD = $(top_builddir)/src/libamesos.a \
 	$(AMESOS_LIBS)  $(top_builddir)/src/libamesos.a \
 	$(LAPACK_LIBS) \
 	$(BLAS_LIBS) $(FLIBS) $(FLIBS)
+
+EXTRA_DIST = $(srcdir)/662_bus.rsa \
+	$(srcdir)/In_ImpcolA.rua \
+        $(srcdir)/In_ImpcolB.rua \
+        $(srcdir)/In_ImpcolC.rua \
+        $(srcdir)/In_ImpcolD.rua \
+        $(srcdir)/In_ImpcolE.rua \
+        $(srcdir)/In_fidapm05.rua \
+        $(srcdir)/In_SuperLU.rua \
+        $(srcdir)/In_K4989.triS \
+        $(srcdir)/In_K5000.triS \
+        $(srcdir)/In_SuperLU.triU \
+        $(srcdir)/In_Khead.triS \
+        $(srcdir)/In_bcsstk01.mtx \
+        $(srcdir)/In_bcsstk02.mtx \
+        $(srcdir)/In_bcsstk04.mtx \
+        $(srcdir)/In_bcsstk08.mtx \
+        $(srcdir)/In_nos1.mtx \
+        $(srcdir)/In_nos5.mtx \
+        $(srcdir)/In_FourByFour.mtx \
+        $(srcdir)/In_Diagonal.mtx \
+        $(srcdir)/In_KheadK.mtx \
+        $(srcdir)/In_KheadSorted.mtx \
+        $(srcdir)/In_ZD2.triU \
+        $(srcdir)/In_ZD5.triU \
+        $(srcdir)/In_ZD16.triU
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only

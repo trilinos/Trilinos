@@ -40,6 +40,7 @@
 #include "Epetra_Comm.h"
 #endif
 #include "Epetra_CrsGraph.h"
+#include "Epetra_CrsMatrix.h"
 
 
 //! Amesos_Klu:  A serial, unblocked code ideal for getting started and for very sparse matrices, such as circuit matrces.  AmesosKlu computes <p class="code">A<sup>T</sup> X = B</p> more efficiently than <p class="code">A X = B</p>.
