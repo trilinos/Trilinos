@@ -2243,7 +2243,7 @@ int ML_repartition_Acoarse_edge(ML *ml, ML_Operator *Told,
 
   currlevel = (ML_1Level *) Rmat->to;
 
-  status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs, Nprocs_ToUse);
+  status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs, Nprocs_ToUse, NULL, NULL, NULL);
    if (status == 0) {
 
      /* permute T */
