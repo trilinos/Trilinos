@@ -138,14 +138,19 @@ int ML_Operator_Clean( ML_Operator *mat)
       ML_DVector_Destroy( &(mat->diagonal) );
    }
 
-   mat->matvec->ML_id  = ML_ID_DESTROYED;
-   mat->getrow->ML_id  = ML_ID_DESTROYED;
-   if (mat->getrow->row_map != NULL) ML_free(mat->getrow->row_map);
-   ML_CommInfoOP_Destroy(&(mat->getrow->pre_comm));
-   ML_CommInfoOP_Destroy(&(mat->getrow->post_comm));
+   if (mat->matvec != NULL)
+      mat->matvec->ML_id  = ML_ID_DESTROYED;
 
-   if (mat->getrow->loc_glob_map != NULL) 
-      ML_free(mat->getrow->loc_glob_map);
+   if (mat->getrow != NULL)
+   {
+      mat->getrow->ML_id  = ML_ID_DESTROYED;
+      if (mat->getrow->row_map != NULL) ML_free(mat->getrow->row_map);
+      ML_CommInfoOP_Destroy(&(mat->getrow->pre_comm));
+      ML_CommInfoOP_Destroy(&(mat->getrow->post_comm));
+
+      if (mat->getrow->loc_glob_map != NULL) 
+         ML_free(mat->getrow->loc_glob_map);
+   }
    ML_memory_free((void**)&(mat->matvec));
    ML_memory_free((void**)&(mat->getrow));
    if (mat->label != NULL) { free(mat->label); mat->label = NULL; }
