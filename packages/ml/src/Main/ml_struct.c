@@ -1721,11 +1721,12 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
 }
 #endif
 
-/* ------------------------------------------------------------------------- */
-/* generate the sparse approximate inverse smoother */
-/* ------------------------------------------------------------------------- */
 
+#ifdef	MB_MODIF
 
+/* ------------------------------------------------------------------------- */
+/* generate the MLS smoother */
+/* ------------------------------------------------------------------------- */
 
 #include "ml_mls.h"
 
@@ -1737,33 +1738,32 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    * Returns: 0 on success.
    */
    const int    nSample=20000;
-   double        sample[20000], gridStep, rho, rho2, ddeg, aux0, aux1; 
+   double       sample[nSample], gridStep, rho, rho2, ddeg, aux0, aux1; 
    double       aux_om, om_loc[MLS_MAX_DEG], om2, coord;
    const double pi=4.e0 * atan(1.e0); /* 3.141592653589793115998e0; */
    int          i, j, nGrid;
-#ifdef WARNINGS
    int          j_max;
-
    double       x_max;
-#endif
+
    ML_Smoother *smooth_ptr = (ML_Smoother *) sm;
    ML_Operator *Amat = smooth_ptr->my_level->Amat;
    struct MLSthing *widget = (struct MLSthing *) smooth_ptr->smoother->data;
 
-   printf("@@@@@@@@@@@@@@@@@@@ level: %3d\n", widget->mlsLevel);
-   
    if (deg > MLS_MAX_DEG) { 
        return (pr_error("*** value of deg larger than MLS_MAX_DEG !\n"));
    }
    rho = Amat->lambda_max;
-   for (i=0; i<MLS_MAX_DEG; i++) widget->mlsOm[i] = 0.e0;
+   rho *= widget->mlsOver; // @@@ 
+
+   for (i=0; i<MLS_MAX_DEG; i++) { widget->mlsOm[i] = 0.e0; om_loc[i] = 0.e0; }
+
    ddeg = (double)deg; 
    aux1 = 1.e0/(2.e0 * ddeg + 1.e0); 
+
    for (j=0; j<deg; j++) { 
 	   aux0 = 2.e0 * (double)(j+1) * pi;  
 	   aux_om = rho/2.e0 * (1.e0 - cos(aux0 * aux1));
 	   om_loc[j] = 1.e0/aux_om;
-	   printf(" @@@(D) rho_A=%9.3g om[%2d] :%9.3g\n", rho,  j, om_loc[j]);
    }
    widget->mlsCf[0] = + om_loc[0] + om_loc[1] + om_loc[2]+om_loc[3] + om_loc[4];
    widget->mlsCf[1] = -(om_loc[0]*om_loc[1]   + om_loc[0]*om_loc[2]
@@ -1789,7 +1789,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    widget->mlsCf[4] = om_loc[0]*om_loc[1]*om_loc[2]*om_loc[3]*om_loc[4];
 
    gridStep = rho/(double)nSample;
-   nGrid    = (int) ML_min(rint(rho/gridStep)+1, nSample);
+   nGrid    = min((int)rint(rho/gridStep)+1, nSample);
 
    for (j=0; j<nGrid; j++)  {
 	   coord   = (double)(j+1) * gridStep;
@@ -1797,36 +1797,27 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
 	   for(i=1; i<deg; i++) { 
 		   sample[j] *= sample[j] * coord;
 	   }
+	   sample[j] *= sample[j] * coord; 
    }
    rho2  = 0.e0;
-#ifdef WARNINGS
    j_max = 0;
    x_max = 0.e0;
-#endif
 
-   for (j=0; j<nGrid; j++) if (sample[j] > rho2) {
-     rho2 = sample[j]; 
-#ifdef WARNINGS
-     j_max = j;
-#endif
-   }
+   for (j=0; j<nGrid; j++) if (sample[j] > rho2) {rho2 = sample[j]; j_max = j;}
    
-#ifdef WARNINGS
    x_max = (double)j_max * gridStep;
-#endif
 
    if (deg < 2) {
-	   widget->mlsBoost = 1.029e0;
+	   // @@@ widget->mlsBoost = 1.029e0;
+	   widget->mlsBoost = 1.019e0;
    } else {
 	   widget->mlsBoost = 1.025e0;
    }
    rho2 *= widget->mlsBoost;
-   aux_om = rho2/2.e0 * (1.e0 - cos((2.e0 * pi)/3.e0)); 
+   aux_om = rho2 * (1.e0 - cos((2.e0 * pi)/3.e0)) / 2.e0; 
    om2    = 1.e0/aux_om;
-   printf(" @@@(D) rhoAS=%9.3g    om2 :%9.3g\n", rho2,om2);
-   
    widget->mlsOm2 = om2;
-   for (i=0; i<deg; i++) widget->mlsOm[i] = om_loc[i]; /*@@@ do this directly above*/
+   for (i=0; i<deg; i++) widget->mlsOm[i] = om_loc[i]; 
 	
    return 0;
 
@@ -1861,24 +1852,14 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
      if (Amat->matvec->ML_id != ML_EMPTY) {
 
          widget = (struct MLSthing *) ML_allocate(sizeof(struct MLSthing));
-	 printf("@@@ current level = %d\n", i);
-	 widget->mlsLevel = i; /* @@@ wrong notion of level here ... */
+
 	 widget->mlsDeg   = 1;
-	 widget->mlsBoost = 1.1; 
-	 widget->mlsOver  = 1.10e0;
-	 widget->mlsOm[0] = Amat->lambda_max;
-	 widget->mlsOm2   = 1.8;
-	 widget->mlsCf[0] = 2*0.68;
-	 widget->nIsolNod = 0;
-	 widget->pIsolNod = NULL;
+	 widget->mlsBoost = 1.0; 
+	 widget->mlsOver  = 1.1e0 ;
+	 // @@@ widget->mlsOm[0] = Amat->lambda_max;
 	 widget->res0     = NULL;
 	 widget->res      = NULL;
 	 widget->y        = NULL;
-	 widget->mlsReady = 0;  
-
-/*@@@	 if (ML_MLS_Setup_Coef(widget, 1)) { 
-@@@	     return pr_error("*** MLS setup failed!\n");  
-@@@	 } */
 
 	 if (pre_or_post == ML_PRESMOOTHER) {
 	   ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
@@ -1895,11 +1876,13 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
 				  ntimes, 0.0, str);
 	 }
 	 else if (pre_or_post == ML_BOTH) {
+		 
 	   ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
 	   sprintf(str,"MLS_pre%d",i);     
 
 	   ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
-                        (void *) widget, ML_Smoother_MLS_Apply, NULL, ntimes, 0.0, str);
+                        (void *) widget, ML_Smoother_MLS_Apply, NULL, ntimes, 
+			0.0, str);
 	   sprintf(str,"MLS_post%d",i);
 	   errCode = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, 
                (void *) widget, ML_Smoother_MLS_Apply, NULL, ntimes, 0.0, str);
@@ -1922,6 +1905,12 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes)
    }
    return errCode; 
 }
+#endif/*MB_MODIF*/
+
+
+/* ------------------------------------------------------------------------- */
+/* generate the sparse approximate inverse smoother */
+/* ------------------------------------------------------------------------- */
 
 #ifdef PARASAILS
 #include "Matrix.h"
