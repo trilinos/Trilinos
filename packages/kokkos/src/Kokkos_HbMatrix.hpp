@@ -147,19 +147,19 @@ namespace Kokkos {
     //@{ \name Matrix Attribute access methods.
 	
     //! Returns true if the compressed index matrix was formed using a classic HB matrix.
-    bool isClassicHbMatrix() const {return(isClassicHbMatrix_);};
+    bool getIsClassicHbMatrix() const {return(isClassicHbMatrix_);};
 	
     //! Returns true if the compressed index matrix should be interpreted as a row matrix.
-    bool isRowOriented() const {return(isRowOriented_);};
+    bool getIsRowOriented() const {return(isRowOriented_);};
 	
     //! Number of rows
-    OrdinalType numRows() const {return(numRows_);};
+    OrdinalType getNumRows() const {return(numRows_);};
 	
     //! Number of columns
-    OrdinalType numCols() const {return(numCols_)};;
+    OrdinalType getNumCols() const {return(numCols_);};
 	
     //! Number of matrix entries
-    OrdinalType numEntries() const {return(numEntries_);};
+    OrdinalType getNumEntries() const {return(numEntries_);};
 	
     //@}
 
@@ -175,7 +175,7 @@ namespace Kokkos {
     OrdinalType * allIndices_;
 
     OrdinalType * pntr_;
-    OrdinalType ** profile_;
+    OrdinalType * profile_;
     bool isRowOriented_;
 
     bool isClassicHbMatrix_;
@@ -293,7 +293,7 @@ int HbMatrix<OrdinalType, ScalarType>::initializeValues(ScalarType ** values) {
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
-int HbMatrix<OrdinalType, ScalarType>::getIndices(OrdinalType i, OrdinalType & numRowEntries, OrdinalType *& indices) { 
+int HbMatrix<OrdinalType, ScalarType>::getIndices(OrdinalType i, OrdinalType & numRowEntries, OrdinalType *& indices) const { 
   // Generalized HB version
   
   if (isClassicHbMatrix_) {
@@ -315,9 +315,10 @@ int HbMatrix<OrdinalType, ScalarType>::getIndices(OrdinalType i, OrdinalType & n
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
-int HbMatrix<OrdinalType, ScalarType>::getValues(OrdinalType i, ScalarType *& values) { 
+int HbMatrix<OrdinalType, ScalarType>::getValues(OrdinalType i, ScalarType *& values) const { 
   // Generalized HB version
   
+  OrdinalType numRowEntries;
   if (isClassicHbMatrix_) {
     numRowEntries = pntr_[i+1] - pntr_[i];
     values = allValues_ + pntr_[i];
@@ -329,7 +330,7 @@ int HbMatrix<OrdinalType, ScalarType>::getValues(OrdinalType i, ScalarType *& va
 
   if (numRowEntries==0) return(1); // Warning, no nonzeros in this row/column
   if (numRowEntries<0) return(-1); // Fatal, nonsense data
-  if (indices==0) return(-1); // Fatal, null pointer, but numRowEntries is positive
+  if (values==0) return(-1); // Fatal, null pointer, but numRowEntries is positive
   
   return(0);
 }
