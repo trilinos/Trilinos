@@ -46,8 +46,8 @@
 #define Epetra_fcd fcd
 #define PREFIX
 
-#define SL_INIT_F77  F77_FUNC(sl_init_a,SL_INIT)
-#define BLACS_GRIDINFO_F77  F77_FUNC(blacs_gridinfo_a,BLACS_GRIDINFO)
+#define SL_INIT_F77  F77_FUNC_(sl_init,SL_INIT)
+#define BLACS_GRIDINFO_F77  F77_FUNC_(blacs_gridinfo,BLACS_GRIDINFO)
 #define PDGETRF_F77  F77_FUNC(psgetrf,PSGETRF)
 #define PDGETRS_F77  F77_FUNC(psgetrs,PSGETRS)
 #define DESCINIT_F77  F77_FUNC(descinit,DESCINIT)
@@ -58,8 +58,8 @@
 #define Epetra_fcd char *, unsigned int
 #define PREFIX __stdcall
 
-#define SL_INIT_F77  F77_FUNC(sl_init_b,SL_INIT)
-#define BLACS_GRIDINFO_F77  F77_FUNC(blacs_gridinfo_b,BLACS_GRIDINFO)
+#define SL_INIT_F77  F77_FUNC_(sl_init,SL_INIT)
+#define BLACS_GRIDINFO_F77  F77_FUNC_(blacs_gridinfo,BLACS_GRIDINFO)
 #define PDGETRF_F77  F77_FUNC(pdgetrf,PDGETRF)
 #define PDGETRS_F77  F77_FUNC(pdgetrs,PDGETRS)
 #define DESCINIT_F77  F77_FUNC(descinit,DESCINIT)
@@ -70,8 +70,8 @@
 #define Epetra_fcd char *
 #define PREFIX
 
-#define SL_INIT_F77  F77_FUNC(sl_init_c,SL_INIT_)
-#define BLACS_GRIDINFO_F77  F77_FUNC(blacs_gridinfo_c,BLACS_GRIDINFO_)
+#define SL_INIT_F77  F77_FUNC_(sl_init,SL_INIT_)
+#define BLACS_GRIDINFO_F77  F77_FUNC_(blacs_gridinfo,BLACS_GRIDINFO_)
 #define PDGETRF_F77  F77_FUNC(pdgetrf,PDGETRF)
 #define PDGETRS_F77  F77_FUNC(pdgetrs,PDGETRS)
 #define DESCINIT_F77  F77_FUNC(descinit,DESCINIT)
@@ -105,13 +105,10 @@
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 #endif /* HAVE_CONFIG_H */
 
-#ifdef TFLOP
-#define SL_INIT_F77  sl_init_
-#define BLACS_GRIDINFO_F77  blacs_gridinfo_
-#else
-#define SL_INIT_F77  F77_FUNC(sl_init_,SL_INIT_)
-#define BLACS_GRIDINFO_F77  F77_FUNC(blacs_gridinfo_,BLACS_GRIDINFO_)
-#endif /* TFLOP */
+
+#define SL_INIT_F77  F77_FUNC_(sl_init,SL_INIT)
+#define BLACS_GRIDINFO_F77  F77_FUNC_(blacs_gridinfo,BLACS_GRIDINFO)
+
 #define PDGETRF_F77  F77_FUNC(pdgetrf,PDGETRF)
 #define PDGETRS_F77  F77_FUNC(pdgetrs,PDGETRS)
 #define DESCINIT_F77  F77_FUNC(descinit,DESCINIT)
