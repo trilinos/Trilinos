@@ -62,7 +62,7 @@ typedef struct ML_AMG_Struct
    int    coarsen_scheme;              /* MIS                           */
    int    amg_scheme;                  /* scalar(0),unknown(1),system(2)*/
    int    num_PDE_eqns;                /* block size                    */
-   int    blk_info;                    /* store dof information         */
+   int    *blk_info;                   /* store dof information         */
    int    max_levels;                  /* maximum number of levels      */
    int    begin_level;                 /* finest grid level             */
    int    cur_level;                   /* temporary variable            */

@@ -31,7 +31,7 @@
 int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start, 
                                 int increment_or_decrement, ML_AMG *amg)
 {
-   int    level, idata=0;
+   int    i, j, level, idata=0, nrows, blksize;
    double dnnz;
    ML_AMG *ml_amg;
 
@@ -43,6 +43,24 @@ int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
    else               ml_amg = amg;
    ML_AMG_Set_MaxLevels( ml_amg, ml->ML_num_levels);
    ML_AMG_Set_StartLevel( ml_amg, start );
+
+   /* ----------------------------------------------------------------- */
+   /* if system AMG is requested, set appropriate parameters            */
+   /* ----------------------------------------------------------------- */
+
+   blksize = ml_amg->num_PDE_eqns;
+   if ( blksize > 1 && ml_amg->amg_scheme == ML_AMG_SYSTEM_UNKNOWN )
+   {
+      nrows = ml->Amat[start].outvec_leng;
+      if ( nrows % blksize != 0 )
+      {
+         printf("Gen_AMG ERROR : local nrows not divisible by blksize\n");
+         exit(1);
+      }
+      ML_memory_alloc(&(ml_amg->blk_info), nrows*sizeof(int), "AM1");
+      for ( i = 0; i < nrows; i+= blksize )
+         for ( j = 0; j < blksize; j++ ) ml_amg->blk_info[i+j] = j;
+   }
 
    /* ----------------------------------------------------------------- */
    /* create multilevel hierarchy                                       */
