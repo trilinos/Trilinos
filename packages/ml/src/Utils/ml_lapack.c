@@ -6522,6 +6522,7 @@ m
 
 /* +       WHILE( C.EQ.A )LOOP */
 L20:
+	qtr =  MLFORTRAN(dlamc3)(&c, &a); /* needed for tflop compiler */
 	if (c == a) {
 	    b *= 2;
 	    c = MLFORTRAN(dlamc3)(&a, &b);
