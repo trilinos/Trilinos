@@ -67,10 +67,10 @@ int Poisson_getrow(void *A_data, int N_requested_rows, int requested_rows[],
       if (allocated_space < count+3) return(0);
       start = count;
       row = requested_rows[i];
-      if ( (row >= 0) || (row <= 4) ) {
+      if ( (row >= 0) || (row <= (5-1)) ) {
          columns[count] = row; values[count++] = 2.;
          if (row != 0) { columns[count] = row-1; values[count++] = -1.; }
-         if (row != 4) { columns[count] = row+1; values[count++] = -1.; }
+         if (row != (5-1)) { columns[count] = row+1; values[count++] = -1.; }
       }
       row_lengths[i] = count - start;
    }
@@ -84,7 +84,7 @@ int Poisson_matvec(void *A_data, int in_length, double p[], int out_length,
    for (i = 0; i < 5; i++ ) {
       ap[i] = 2*p[i];
       if (i != 0) ap[i] -= p[i-1];
-      if (i != 4) ap[i] -= p[i+1];
+      if (i != (5-1)) ap[i] -= p[i+1];
    }
    return 0;
 }
