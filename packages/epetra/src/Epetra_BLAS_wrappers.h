@@ -22,6 +22,9 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
+#ifndef _EPETRA_BLAS_WRAPPERS_H_
+#define _EPETRA_BLAS_WRAPPERS_H_
+
 #ifndef NO_AUTOTOOLS
 #include "Epetra_config.h"
 #endif /*This file doesn't exist in old make and configure system*/
@@ -108,7 +111,7 @@
 #endif
 
 
-#define F77_FUNC(lcase,UCASE) PREFIX UCASE
+#define F77_FUNC(lcase,UCASE) UCASE
 
 #else /* Define Epetra_fcd for all other machines */
 
@@ -125,9 +128,9 @@
 #endif
 
 #ifdef TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE
-#define F77_FUNC(lcase,UCASE) PREFIX lcase
+#define F77_FUNC(lcase,UCASE) lcase
 #else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
-#define F77_FUNC(lcase,UCASE) PREFIX lcase ## _
+#define F77_FUNC(lcase,UCASE) lcase ## _
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 #endif /* NO_AUTOTOOLS */
 
@@ -173,68 +176,70 @@ extern "C" {
 #endif
 
 /* Double precision BLAS 1 */
-double DASUM_F77(int* n, double x[], int* incx);
-void DAXPY_F77(int* n, double* alpha, double x[], int* incx, double y[], int* incy);
-void DCOPY_F77(int* n, double *x, int* incx, double *y, int* incy);
-double DDOT_F77(int* n, double x[], int* incx, double y[], int* incy);
-double DNRM2_F77(int* n, double x[], int* incx);
-void DSCAL_F77(int* n, double* alpha, double *x, int* incx);
-int IDAMAX_F77(int* n, double *x, int* incx);
+double PREFIX DASUM_F77(int* n, double x[], int* incx);
+void PREFIX DAXPY_F77(int* n, double* alpha, double x[], int* incx, double y[], int* incy);
+void PREFIX DCOPY_F77(int* n, double *x, int* incx, double *y, int* incy);
+double PREFIX DDOT_F77(int* n, double x[], int* incx, double y[], int* incy);
+double PREFIX DNRM2_F77(int* n, double x[], int* incx);
+void PREFIX DSCAL_F77(int* n, double* alpha, double *x, int* incx);
+int PREFIX IDAMAX_F77(int* n, double *x, int* incx);
 
 /* Single precision BLAS 1 */
-float SASUM_F77(int* n, float x[], int* incx);
-void SAXPY_F77(int* n, float* alpha, float x[], int* incx, float y[], int* incy);
-void SCOPY_F77(int* n, float *x, int* incx, float *y, int* incy);
-float SDOT_F77(int* n, float x[], int* incx, float y[], int* incy);
-float SNRM2_F77(int* n, float x[], int* incx);
-void SSCAL_F77(int* n, float* alpha, float *x, int* incx);
-int ISAMAX_F77(int* n, float *x, int* incx);
+float PREFIX SASUM_F77(int* n, float x[], int* incx);
+void PREFIX SAXPY_F77(int* n, float* alpha, float x[], int* incx, float y[], int* incy);
+void PREFIX SCOPY_F77(int* n, float *x, int* incx, float *y, int* incy);
+float PREFIX SDOT_F77(int* n, float x[], int* incx, float y[], int* incy);
+float PREFIX SNRM2_F77(int* n, float x[], int* incx);
+void PREFIX SSCAL_F77(int* n, float* alpha, float *x, int* incx);
+int PREFIX ISAMAX_F77(int* n, float *x, int* incx);
 
 /* Double precision BLAS 2 */
-void DGEMV_F77(Epetra_fcd, int* m, int* n, double* alpha, double A[], int* lda,
+void PREFIX DGEMV_F77(Epetra_fcd, int* m, int* n, double* alpha, double A[], int* lda,
 		       double x[], int* incx, double* beta, double y[], int* incy);
-void DTRMV_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, int *n, 
+void PREFIX DTRMV_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, int *n, 
 		      double *a, int *lda, double *x, int *incx);
-void DGER_F77(int *m, int *n, double *alpha, double *x, int *incx, double *y, 
+void PREFIX DGER_F77(int *m, int *n, double *alpha, double *x, int *incx, double *y, 
 		     int *incy, double *a, int *lda);
 
 
 /* Single precision BLAS 2 */
-void SGEMV_F77(Epetra_fcd, int* m, int* n, float* alpha, float A[], int* lda,
+void PREFIX SGEMV_F77(Epetra_fcd, int* m, int* n, float* alpha, float A[], int* lda,
 		       float x[], int* incx, float* beta, float y[], int* incy);
-void STRMV_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, int *n, 
+void PREFIX STRMV_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, int *n, 
 		      float *a, int *lda, float *x, int *incx);
-void SGER_F77(int *m, int *n, float *alpha, float *x, int *incx, float *y, 
+void PREFIX SGER_F77(int *m, int *n, float *alpha, float *x, int *incx, float *y, 
 		     int *incy, float *a, int *lda);
 
 /* Double precision BLAS 3 */
-void DGEMM_F77(Epetra_fcd, Epetra_fcd, int *m, int *
+void PREFIX DGEMM_F77(Epetra_fcd, Epetra_fcd, int *m, int *
 		      n, int *k, double *alpha, double *a, int *lda, 
 		      double *b, int *ldb, double *beta, double *c, int *ldc);
-void DSYMM_F77(Epetra_fcd, Epetra_fcd, int *m, int * n,
+void PREFIX DSYMM_F77(Epetra_fcd, Epetra_fcd, int *m, int * n,
 		      double *alpha, double *a, int *lda, 
 		      double *b, int *ldb, double *beta, double *c, int *ldc);
-void DTRMM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
+void PREFIX DTRMM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
 		      int *m, int *n, double *alpha, double *a, int * lda, double *b, int *ldb);
-void DTRSM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
+void PREFIX DTRSM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
 		      int *m, int *n, double *alpha, double *a, int *
 		      lda, double *b, int *ldb);
 
 /* Single precision BLAS 3 */
-void SGEMM_F77(Epetra_fcd, Epetra_fcd, int *m, int *
+void PREFIX SGEMM_F77(Epetra_fcd, Epetra_fcd, int *m, int *
 		      n, int *k, float *alpha, float *a, int *lda, 
 		      float *b, int *ldb, float *beta, float *c, int *ldc);
-void SSYMM_F77(Epetra_fcd, Epetra_fcd, int *m, int * n,
+void PREFIX SSYMM_F77(Epetra_fcd, Epetra_fcd, int *m, int * n,
 		      float *alpha, float *a, int *lda, 
 		      float *b, int *ldb, float *beta, float *c, int *ldc);
-void STRMM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
+void PREFIX STRMM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
 		      int *m, int *n, float *alpha, float *a, int * lda, float *b, int *ldb);
-void STRSM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
+void PREFIX STRSM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
 		      int *m, int *n, float *alpha, float *a, int *
 		      lda, float *b, int *ldb);
 
-void XERBLA_F77(Epetra_fcd, int *info);
+void PREFIX XERBLA_F77(Epetra_fcd, int *info);
 
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _EPETRA_BLAS_WRAPPERS_H_ */
