@@ -4493,7 +4493,11 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
    t0 = GetClock();
 #endif
 
-   if (nl == ML_ALL_LEVELS) {start_level = 0; end_level = ml->ML_num_levels-1;}
+   if (nl == ML_ALL_LEVELS) {start_level = 0; end_level = ml->ML_num_levels-1;
+#ifdef ML_TIMING
+      printf("Timing is incorrect when ML_ALL_LEVELS is used with Hiptmair\n");
+#endif
+}
    else { start_level = nl; end_level = nl;}
    if (start_level < 0) {
       printf("ML_Gen_Smoother_Hiptmair: cannot set smoother on level %d\n",
@@ -4515,6 +4519,10 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
              sprintf(str,"Hiptmair_pre%d",i);
              status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
 				      (void *) data, fun, NULL, ntimes, omega, str);
+#ifdef ML_TIMING
+         ml->pre_smoother[i].build_time = GetClock() - t0;
+         ml->timing->total_build_time   += ml->pre_smoother[i].build_time;
+#endif
       }
    }
    else if (pre_or_post == ML_POSTSMOOTHER)
@@ -4525,7 +4533,13 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
              sprintf(str,"Hiptmair_post%d",i);
              status = ML_Smoother_Set(&(ml->post_smoother[i]),ML_INTERNAL,
 				      (void *) data, fun, NULL, ntimes, omega, str);
+#ifdef ML_TIMING
+         ml->post_smoother[i].build_time = GetClock() - t0;
+         ml->timing->total_build_time   += ml->post_smoother[i].build_time;
+#endif
+
       }
+
    }
    else if (pre_or_post == ML_BOTH)
    {
@@ -4534,8 +4548,6 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
              ML_Smoother_Create_Hiptmair_Data(&data);
 	         ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
 			          Tmat_array[i], Tmat_trans_array[i]);
-	         ml->pre_smoother[i].data_destroy =
-			                            ML_Smoother_Destroy_Hiptmair_Data;
 	         ml->post_smoother[i].data_destroy =
 			                            ML_Smoother_Destroy_Hiptmair_Data;
              sprintf(str,"Hiptmair_pre%d",i);
@@ -4544,13 +4556,13 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
              sprintf(str,"Hiptmair_post%d",i);
              status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
 				      (void *) data, fun, NULL, ntimes, omega, str);
+#ifdef ML_TIMING
+         ml->post_smoother[i].build_time = GetClock() - t0;
+         ml->timing->total_build_time   += ml->post_smoother[i].build_time;
+#endif
       }
    }
    else return(pr_error("ML_Gen_Smoother_Hiptmair: unknown "
                         "pre_or_post choice\n"));
-#ifdef ML_TIMING
-         ml->pre_smoother[i].build_time = GetClock() - t0;
-         ml->timing->total_build_time   += ml->pre_smoother[i].build_time;
-#endif
    return(status);
 }
