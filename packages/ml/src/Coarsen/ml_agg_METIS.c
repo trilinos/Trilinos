@@ -21,6 +21,7 @@
 #include "ml_agg_METIS.h"
 #include "ml_viz_stats.h"
 #include "ml_agg_info.h"
+#include "limits.h"
 
 #if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR) || (ML_AGGR_MARKINAGGR)
 #ifndef MAXWELL
@@ -74,24 +75,6 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
 
 #define OPTIMAL_VALUE (27*27)
 
-#ifdef EXTREME_DEBUGGING
-static int MyPID_ = 0;
-void set_print(int MyPID ) 
-{
-  MyPID_ = MyPID;
-}
-#include <stdarg.h>
-void print(char * str, ...) 
-{
-  
-  va_list ArgList;
-  va_start(ArgList, str);
-  printf("===%d=== ", MyPID_);
-  vprintf(str,ArgList);
-  return;
-}
-#endif
-
 int ML_Aggregate_Options_Defaults( ML_Aggregate_Options * pointer,
 				   int NumLevels )
 {
@@ -112,19 +95,8 @@ int ML_Aggregate_Options_Defaults( ML_Aggregate_Options * pointer,
   
 }
 
-int USE_DROPPING = ML_YES;
-
-int ML_Aggregate_Set_UseDropping(int i)
-{
-  USE_DROPPING = i;
-  return 0;
-}
-
-int ML_Aggregate_Get_UseDropping() 
-{
-  return USE_DROPPING;
-}
-
+int ML_USE_EDGE_WEIGHT = ML_NO;
+double ML_WEIGHT_THRES = 0.0;
 
 /* ======================================================================== */
 /*!
@@ -484,7 +456,8 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
     
   }
   
-  if( Nparts < 3 ) return Nparts; /* do nothing if 2 nodes only... */
+  /* FIXME: DELELE ME?
+   * if( Nparts < 3 ) return Nparts;  do nothing if 2 nodes only... */
   
   /* ********************************************************************** */
   /* In order to compute the fill-in reducin ordering, I need to form the   */
@@ -496,17 +469,17 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
   /* ********************************************************************** */
 
   MaxNnzRow = 0;
-  for( i=0 ; i<Nrows ; i++ ) {
-    if( (xadj[i+1] - xadj[i])> MaxNnzRow )
+  for (i = 0 ; i < Nrows ; i++) {
+    if ((xadj[i+1] - xadj[i])> MaxNnzRow)
       MaxNnzRow = xadj[i+1] - xadj[i];
   }
 
   MaxNnzRow *= MaxNnzRow;
   
-  xadj2 = (idxtype *)ML_allocate( sizeof(idxtype) * (Nparts+1) );
-  adjncy2 = (idxtype *)ML_allocate( sizeof(idxtype) * MaxNnzRow * Nparts );
+  xadj2 = (idxtype *)ML_allocate(sizeof(idxtype) * (Nparts+1));
+  adjncy2 = (idxtype *)ML_allocate(sizeof(idxtype) * MaxNnzRow * Nparts);
   
-  if( xadj2 == NULL || adjncy2 == NULL ) {
+  if((xadj2 == NULL) || (adjncy2 == NULL)) {
     fprintf( stderr,
 	     "*ML*ERR* not nough memory to allocated %d and %d bytex\n"
 	     "*ML*ERR* (file %s, line %d)\n",
@@ -525,36 +498,38 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
   /* will be used to enumerate the local aggregates.                        */
   /* ********************************************************************** */
 
-  for( i=0 ; i<Nparts+1 ; i++ ) xadj2[i] = 0;
-  for( i=0 ; i<Nparts*MaxNnzRow ; i++ ) adjncy2[i] = -1;
+  for (i = 0 ; i < Nparts + 1 ; i++) 
+    xadj2[i] = 0;
+  for (i = 0 ; i < Nparts * MaxNnzRow ; i++) 
+    adjncy2[i] = -1;
   
-  /* cycle over the rows of finest lever */
+  /* cycle over the rows */
 
-  for( i=0 ; i<Nrows ; i++ ) {
+  for (i = 0 ; i < Nrows ; i++) {
 
     row_coarsest = part[i];
     
     /* cycle over the columns of the finest level */
-    for( j=xadj[i] ; j<xadj[i+1] ; j++ ) {
+    for (j = xadj[i] ; j < xadj[i+1] ; j++) {
       
       col = adjncy[j];
 
       col_coarsest = part[col];
 
       /* discard element diagonal */
-      if( col_coarsest != row_coarsest ) {
+      if (col_coarsest != row_coarsest) {
       
-	for( k= 0 ; k<xadj2[row_coarsest+1] ; k++ ) {
+	for (k= 0 ; k < xadj2[row_coarsest+1] ; k++) {
 
-	  if( adjncy2[row_coarsest*MaxNnzRow+k] == col_coarsest ) {
+	  if (adjncy2[row_coarsest*MaxNnzRow+k] == col_coarsest) {
 	    k = -1;
 	    break;
 	  }
-	  if( adjncy2[row_coarsest*MaxNnzRow+k] == -1 ) break;
+	  if (adjncy2[row_coarsest*MaxNnzRow+k] == -1) break;
 
 	}
-	if( k == -1 ) continue;
-	else if( k == MaxNnzRow ) {
+	if (k == -1) continue;
+	else if (k == MaxNnzRow) {
 	  fprintf( stderr,
 		   "*ML*ERR* something went wrong: k=%d, MaxNnzRow=%d\n"
 		   "*ML*ERR* (file %s, line %d)\n",
@@ -741,6 +716,8 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
 /* (that is, ignoring any inter-domain connections)                          */
 /* ************************************************************************* */
 
+#include "float.h"
+
 static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 					 int N_parts,
 					 int graph_decomposition[],
@@ -752,7 +729,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 					 int *total_nz)
 {
 
-  int i, j,jj,  count, count2, col;
+  int i, j,jj,  count, count2, count_start, delta;
   int Nrows, Nrows_global,NrowsMETIS, N_nonzeros, N_bdry_nodes;
   int *wgtflag=NULL, numflag, *options=NULL, edgecut;
   idxtype *xadj=NULL, *adjncy=NULL;
@@ -769,12 +746,9 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   int ok = 0;
   int * nodes_per_aggre = NULL;
   double t0;
-  int * dep = NULL;
-  int NcenterNodes;
   int * perm = NULL;
   char str[80];
-  struct amalg_drop * temp = 0;
-  double * scaled_diag = 0;
+  double diag_i = 0.0;
   
   /* ------------------- execution begins --------------------------------- */
   
@@ -784,22 +758,6 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   
   comm = Amatrix->comm;
 
-  /* forget dropping for a moment */
-  /* better to avoid this part ??? */
-  if( ML_Aggregate_Get_UseDropping() == ML_NO ) {
-    
-    if( comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() ) {
-      printf( "%s Warning : Dropping is not used\n", str);
-    }
-    
-    temp = (struct amalg_drop *) Amatrix->data;
-    scaled_diag  = temp->scaled_diag;
-    if (temp->scaled_diag != NULL) 
-      ML_free(temp->scaled_diag); /* what is going on here */
-    temp->scaled_diag = NULL;
-    
-  }
-  
   /* dimension of the problem (NOTE: only local matrices) */
   
   Nrows = Amatrix->getrow->Nrows;
@@ -848,14 +806,23 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   
   /* set parameters */
    
-  wgtflag[0] = 0;    /* no weights */
-  numflag    = 0;    /* C style */
-  options[0] = 0;    /* default options */
+  if (ML_USE_EDGE_WEIGHT == ML_NO) {
+    wgtflag[0] = 0;    /* no weights */
+    numflag    = 0;    /* C style */
+    options[0] = 0;    /* default options */
+  }
+  else {
+    wgtflag[0] = 1;    /* weights on edges only */
+    numflag    = 0;    /* C style */
+    options[0] = 0;    /* default options */
+    adjwgt = (idxtype*) ML_allocate((N_nonzeros) * sizeof(idxtype));
+    assert (adjwgt != NULL);
+  }
    
   xadj    = (idxtype *) ML_allocate ((NrowsMETIS+1)*sizeof(idxtype));
   adjncy  = (idxtype *) ML_allocate ((N_nonzeros)*sizeof(idxtype));
    
-  if(  xadj==NULL || adjncy==NULL ) {
+  if (xadj == NULL || adjncy == NULL) {
     fprintf( stderr,
 	     "on proc %d, not enought space for %d bytes.\n"
 	     "file %s, line %d\n",
@@ -881,6 +848,8 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
       /* Nrows, so columns corresponding to external nodes can not*/
       /* be given as input to perm                                */
 
+      count_start = count;
+
       for( j=0 ; j<rowi_N ; j++ ) {
 	jj = rowi_col[j];
 	if( jj<Nrows ) {
@@ -891,56 +860,33 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 	}
       }
       count2++;
+
+      if (ML_USE_EDGE_WEIGHT == ML_YES) {
+        delta = 0;
+        for (j = 0 ; j < rowi_N ; ++j) {
+          if (rowi_col[j] == i) {
+            diag_i = rowi_val[j];
+          }
+        }
+        for (j = 0 ; j < rowi_N ; ++j) {
+          jj = rowi_col[j];
+          if ((jj >= Nrows) || (jj == i) || (perm[jj] == -1))
+            continue;
+          if (rowi_val[j] > ML_WEIGHT_THRES * diag_i)
+            /* I am not really sure of this 1000, but it seems that
+             * larger numbers do not change the shape of the aggregates */
+            adjwgt[count_start++] = 1000;
+          else
+            adjwgt[count_start++] = 1;
+          ++delta;
+        }
+      }
     }      
   }
 
   *total_nz = count;
-  if( ML_Aggregate_Get_UseDropping() == ML_NO ) {
-    if( temp == 0 ) {
-      fprintf( stderr, "Something wrong here...\n" );
-      exit( EXIT_FAILURE );
-    }
-    temp->scaled_diag = scaled_diag;
-  }
 
-#ifdef DUMP_MATLAB_FILE
-      sprintf( str, "METIS_proc%d.m", comm->ML_mypid);
-      fp = fopen(str,"w");
-      fprintf(fp,"NrowsMETIS = %d;\n", NrowsMETIS);
-      fprintf(fp,"xadj = zeros(NrowsMETIS,1);\n");
-      for( i=0 ; i<NrowsMETIS+1 ; i++ ) {
-	fprintf(fp,"xadj(%d) = %d;\n", i+1, xadj[i]+1);
-      }
-      fprintf(fp,"Nonzeros = %d;\n", count);
-      fprintf(fp,"adjncy = zeros(Nonzeros,1);\n");
-      for( i=0 ; i<count ; i++ ) {
-	fprintf(fp,"adjncy(%d) = %d;\n", i+1, adjncy[i]+1);
-      }
-      fprintf(fp,"A = zeros(%d,%d)\n", NrowsMETIS,NrowsMETIS);
-      for( i=0 ; i<NrowsMETIS ; i++ ) {
-	for( j=xadj[i] ; j<xadj[i+1] ; j++ ) {
-	  fprintf(fp,"A(%d,%d) = 1;\n",
-		  i+1,adjncy[j]+1);
-	}
-      }
-      fclose(fp);
-#endif
-
-#ifdef DUMP_WEST
-      sprintf( str, "METIS_proc%d.m", comm->ML_mypid);
-      fp = fopen(str,"w");
-      fprintf(fp,"Nrows = %d\n", NrowsMETIS);
-      for( i=0 ; i<NrowsMETIS+1 ; i++ ) {
-	fprintf(fp,"%d\n", xadj[i]);
-      }
-      fprintf(fp,"Nonzeros = %d\n", count);
-      for( i=0 ; i<count ; i++ ) {
-	fprintf(fp,"%d\n", adjncy[i]);
-      }
-      fclose(fp);
-#endif
-      
-  if( count > N_nonzeros || count2 != NrowsMETIS ) {
+  if (count > N_nonzeros || count2 != NrowsMETIS) {
     fprintf( stderr,
 	     "*ML*WRN* On proc %d, count  > N_nonzeros (%d>%d)\n"
 	     "*ML*WRN* and count2 != NrowsMETIS (%d>%d)\n"
@@ -955,8 +901,8 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
      slightly different (for instance, a short int). */
    
   if (N_parts != 0) {
-    part = (idxtype *) ML_allocate( sizeof(idxtype) * NrowsMETIS );
-    nodes_per_aggre  = (int *) ML_allocate( sizeof(int) * N_parts );
+    part = (idxtype *) ML_allocate( sizeof(idxtype) * NrowsMETIS);
+    nodes_per_aggre  = (int *) ML_allocate( sizeof(int) * N_parts);
   }
 
   /* ********************************************************************** */
@@ -967,13 +913,13 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   if (N_parts == 0) {
     /* do nothing */
   }
-  else if( N_parts == 1 ) {
+  else if (N_parts == 1) {
 
     for( i=0 ; i<NrowsMETIS ; i++ ) part[i] = 0;
     edgecut = 0;
     
   } 
-  else if( N_parts == NrowsMETIS ) {
+  else if (N_parts == NrowsMETIS) {
 
     fprintf( stderr,
 	     "*ML*WRN*: on proc %d, N_part == N_rows_noDirichlet (%d==%d)\n",
@@ -1169,6 +1115,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   if( part != NULL    ) ML_free( part    );
   if( perm != NULL    ) ML_free( perm    );
   if( nodes_per_aggre != NULL ) ML_free( nodes_per_aggre );
+  if (adjwgt != NULL  ) ML_free( adjwgt );
   
   t0 = GetClock() - t0;
 
@@ -1242,10 +1189,6 @@ int agg_offset, vertex_offset;
  int optimal_value;
  char * unamalg_bdry = NULL;
  
-#ifdef EXTREME_DEBUGGING
- set_print(comm->ML_mypid);
-#endif
- 
  /* ------------------- execution begins --------------------------------- */
 
  sprintf( str, "METIS (level %d) :", ml_ag->cur_level );
@@ -1272,10 +1215,6 @@ int agg_offset, vertex_offset;
    /* check the system size versus null dimension size              */
    /* ============================================================= */
 
-#ifdef EXTREME_DEBUGGING
-   print("# rows orig = %d, # PDE eqns = %d\n", Nrows, num_PDE_eqns);
-#endif
- 
    if ( Nrows % num_PDE_eqns != 0 )
    {
       printf("ML_Aggregate_CoarsenMIS ERROR : Nrows must be multiples");
@@ -1290,25 +1229,33 @@ int agg_offset, vertex_offset;
    /* ============================================================= */
 
    diff_level = ml_ag->begin_level - ml_ag->cur_level;
-   if ( diff_level == 0 ) ml_ag->curr_threshold = ml_ag->threshold;
+   if (diff_level == 0) 
+     ml_ag->curr_threshold = ml_ag->threshold;
    epsilon = ml_ag->curr_threshold;
    ml_ag->curr_threshold *= 0.5;
 
-   if ( mypid == 0 && 7 < ML_Get_PrintLevel())
-   {
-      printf("%s current eps = %e\n",
-	     str,
-	     epsilon);
-      if( epsilon != 0.0 ) {
-	fprintf( stderr,
-		 "%s (note that METIS may not work with dropping)\n",
-		 str );
-      }
-      
+   if (ML_USE_EDGE_WEIGHT == ML_YES) {
+     epsilon = 0.0;
    }
-   /*
-     epsilon = epsilon * epsilon;
-   */
+
+   if (mypid == 0 && 7 < ML_Get_PrintLevel())
+   {
+     if (ML_USE_EDGE_WEIGHT == ML_YES) {
+       printf("%s no dropping because edge weighting is enabled\n", 
+              str);
+     }
+     else {
+       printf("%s current eps = %e\n", str, epsilon);
+
+       if (epsilon != 0.0) {
+         fprintf( stderr,
+                 "%s (note that METIS may not work with dropping)\n",
+                 str );
+       }
+     }
+   }
+
+   epsilon = epsilon * epsilon;
 
    ML_Operator_AmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
    Nrows /= num_PDE_eqns;
@@ -1337,13 +1284,6 @@ int agg_offset, vertex_offset;
 
    for( i=0 ; i<Nrows*num_PDE_eqns ; i++ ) aggr_index[i] = -1;
    
-#ifdef EXTREME_DEBUGGING
-   print("aggr_index has size %d bytes\n", nbytes);
-   print("aggr_options pointer is %x\n", aggr_options);
-   print("ml_ag->aggr_viz_and_stats pointer is  %x\n",
-	 ml_ag->aggr_viz_and_stats );
-#endif
-
    /* ********************************************************************** */
    /* retrive the pointer to the ML_Aggregate_Options, which contains the    */
    /* number of aggregates (or their size), as well as few options for the   */
@@ -1533,12 +1473,6 @@ int agg_offset, vertex_offset;
      exit( EXIT_FAILURE );
    }
 
-#ifdef EXTREME_DEBUGGING
-   print("# requested local aggregates = %d, # rows_METIS = %d\n",
-	 aggr_count,
-	 Nrows );
-#endif
-
    aggr_count = ML_DecomposeGraph_with_METIS( Amatrix,aggr_count,
 					      aggr_index, unamalg_bdry,
 					      ML_LOCAL_INDICES, NULL,
@@ -1646,10 +1580,6 @@ int agg_offset, vertex_offset;
 
    ML_Operator_UnAmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
 
-#ifdef EXTREME_DEBUGGING
-   print("After `ML_Operator_UnAmalgamateAndDropWeak'\n");
-#endif   
-   
    Nrows      *= num_PDE_eqns;
    exp_Nrows  *= num_PDE_eqns;
 
@@ -1758,10 +1688,6 @@ int agg_offset, vertex_offset;
    /* Form tentative prolongator                                    */
    /* ============================================================= */
 
-#ifdef EXTREME_DEBUGGING
-   print("Form tentative prolongatoe\n");
-#endif
-
    Ncoarse = aggr_count;
    
    /* ============================================================= */
@@ -1793,11 +1719,6 @@ int agg_offset, vertex_offset;
    /* set up the new operator                                       */
    /* ------------------------------------------------------------- */
 
-#ifdef EXTREME_DEBUGGING
-   print("nullspace_dim = %d\n", nullspace_dim );
-   print("Nrows = %d\n", Nrows );
-#endif
-   
    new_Nrows = Nrows;
    exp_Ncoarse = Nrows;
    
@@ -2075,10 +1996,6 @@ int agg_offset, vertex_offset;
    /* set up the csr_data data structure                            */
    /* ------------------------------------------------------------- */
 
-#ifdef EXTREME_DEBUGGING
-   print("set up the csr_data data structure\n");
-#endif
-   
    ML_memory_alloc((void**) &csr_data, sizeof(struct ML_CSR_MSRdata),"CSR");
    csr_data->rowptr  = new_ia;
    csr_data->columns = new_ja;
@@ -2097,9 +2014,6 @@ int agg_offset, vertex_offset;
    /* ------------------------------------------------------------- */
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
-#ifdef EXTREME_DEBUGGING
-   print("clean up\n");
-#endif
    
    ML_free(unamalg_bdry);
    ML_memory_free((void**)&aggr_index);
