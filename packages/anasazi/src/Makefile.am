@@ -27,7 +27,8 @@ CORE_H = \
 	$(srcdir)/AnasaziLOCAInterface.hpp \
 	$(srcdir)/AnasaziReturnType.hpp
 
-CORE = 
+CORE = \
+	$(srcdir)/AnasaziVersion.cpp
 
 UTIL_H = 
 

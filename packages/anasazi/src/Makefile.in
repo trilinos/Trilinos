@@ -118,7 +118,9 @@ CORE_H = \
 	$(srcdir)/AnasaziReturnType.hpp
 
 
-CORE = 
+CORE = \
+	$(srcdir)/AnasaziVersion.cpp
+
 
 UTIL_H = 
 
@@ -278,12 +280,13 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
 libanasazi_a_DEPENDENCIES =
-am__objects_1 =
-@HAVE_MPI_TRUE@am__objects_2 = $(am__objects_1)
-@HAVE_MPI_FALSE@am__objects_2 =
-am_libanasazi_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
-	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
-	$(am__objects_1) $(am__objects_2)
+am__objects_1 = AnasaziVersion.$(OBJEXT)
+am__objects_2 =
+@HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
+@HAVE_MPI_FALSE@am__objects_3 =
+am_libanasazi_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
+	$(am__objects_2) $(am__objects_2) $(am__objects_2) \
+	$(am__objects_2) $(am__objects_3)
 libanasazi_a_OBJECTS = $(am_libanasazi_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -291,11 +294,15 @@ DEFAULT_INCLUDES =  -I. -I$(srcdir) -I.
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
-CFLAGS = @CFLAGS@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+am__depfiles_maybe = depfiles
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AnasaziVersion.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(libanasazi_a_SOURCES) $(EXTRA_libanasazi_a_SOURCES)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
 
@@ -307,6 +314,7 @@ all: Anasazi_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --foreign  src/Makefile
@@ -361,6 +369,7 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+AnasaziVersion.$(OBJEXT): $(srcdir)/AnasaziVersion.cpp
 libanasazi.a: $(libanasazi_a_OBJECTS) $(libanasazi_a_DEPENDENCIES) 
 	-rm -f libanasazi.a
 	$(libanasazi_a_AR) libanasazi.a $(libanasazi_a_OBJECTS) $(libanasazi_a_LIBADD)
@@ -371,6 +380,36 @@ mostlyclean-compile:
 
 distclean-compile:
 	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AnasaziVersion.Po@am__quote@
+
+distclean-depend:
+	-rm -rf ./$(DEPDIR)
+
+.cpp.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
+
+.cpp.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+
+AnasaziVersion.o: $(srcdir)/AnasaziVersion.cpp
+@AMDEP_TRUE@	source='$(srcdir)/AnasaziVersion.cpp' object='AnasaziVersion.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AnasaziVersion.Po' tmpdepfile='$(DEPDIR)/AnasaziVersion.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AnasaziVersion.o `test -f '$(srcdir)/AnasaziVersion.cpp' || echo '$(srcdir)/'`$(srcdir)/AnasaziVersion.cpp
+
+AnasaziVersion.obj: $(srcdir)/AnasaziVersion.cpp
+@AMDEP_TRUE@	source='$(srcdir)/AnasaziVersion.cpp' object='AnasaziVersion.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AnasaziVersion.Po' tmpdepfile='$(DEPDIR)/AnasaziVersion.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AnasaziVersion.obj `cygpath -w $(srcdir)/AnasaziVersion.cpp`
+CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 install-includeHEADERS: $(include_HEADERS)
@@ -509,8 +548,8 @@ clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 
-distclean-am: clean-am distclean-compile distclean-generic distclean-hdr \
-	distclean-tags
+distclean-am: clean-am distclean-compile distclean-depend \
+	distclean-generic distclean-hdr distclean-tags
 
 dvi: dvi-am
 
@@ -542,7 +581,7 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
 .PHONY: GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES distclean distclean-compile \
+	clean-libLIBRARIES distclean distclean-compile distclean-depend \
 	distclean-generic distclean-hdr distclean-tags distdir dvi \
 	dvi-am info info-am install install-am install-data \
 	install-data-am install-exec install-exec-am \
