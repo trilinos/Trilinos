@@ -1,0 +1,5 @@
+Decomposition Method 	= bsfc
+Zoltan Parameters	= obj_weight_dim=1
+File Type		= Chaco, initial distribution = file
+File Name		= drake
+Parallel Disk Info	= number=0
