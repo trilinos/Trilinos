@@ -496,7 +496,7 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
     /* oldvalue = options[AZ_max_iter];
        options[AZ_max_iter] = -42;
        ML_Gen_SmootherAztec(ml, coarsest_level, options, params, 
-            proc_config, status, 2, ML_PRESMOOTHER,ML_precondition);
+            proc_config, status, 2, ML_PRESMOOTHER,NULL);
        options[AZ_max_iter] = oldvalue;
      */
 

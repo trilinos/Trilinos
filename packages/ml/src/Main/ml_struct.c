@@ -3166,7 +3166,7 @@ int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level)
    ML_Matrix_DCSR *csr_mat, *csr2_mat;
 struct ML_CSR_MSRdata *temp_ptr;
 ML *subml;
-int nblocks = 1, *block_list, old_lower, old_upper, count, newptr, me, nnzs;
+int nblocks = 1, *block_list, old_upper, count, newptr, me, nnzs;
 #ifdef ML_TIMING
    double t0;
 
@@ -3290,7 +3290,6 @@ int nblocks = 1, *block_list, old_lower, old_upper, count, newptr, me, nnzs;
       }
       ML_free(block_list);
 
-      if (nrows > 0) old_lower = mat_ia[0];
       if (nrows > 0) old_upper = mat_ia[0];
       nnzs = mat_ia[nrows];
       for (i = 0; i < nrows; i++) {
@@ -3298,7 +3297,6 @@ int nblocks = 1, *block_list, old_lower, old_upper, count, newptr, me, nnzs;
         for (j = old_upper; j < mat_ia[i+1]; j++) {
            if ( mat_ja[j] != -1) count++;
         }
-        old_lower = old_upper;
         old_upper = mat_ia[i+1];
         mat_ia[i+1] = mat_ia[i] + count;
       }
@@ -3432,7 +3430,7 @@ int nblocks = 1, *block_list, old_lower, old_upper, count, newptr, me, nnzs;
    SuperMatrix       *A;
    ML_Matrix_DCSR    *csr_mat, *csr2_mat;
    struct ML_CSR_MSRdata *temp_ptr;
-int nblocks = 1, *block_list, old_lower, old_upper, count, newptr, me, nnzs;
+int nblocks = 1, *block_list, old_upper, count, newptr, me, nnzs;
    ML *subml;
 
    /* ----------------------------------------------------------------- */
@@ -3543,7 +3541,6 @@ int nblocks = 1, *block_list, old_lower, old_upper, count, newptr, me, nnzs;
       }
       ML_free(block_list);
 
-      if (nrows > 0) old_lower = mat_ia[0];
       if (nrows > 0) old_upper = mat_ia[0];
       nnzs = mat_ia[nrows];
       for (i = 0; i < nrows; i++) {
@@ -3551,7 +3548,6 @@ int nblocks = 1, *block_list, old_lower, old_upper, count, newptr, me, nnzs;
         for (j = old_upper; j < mat_ia[i+1]; j++) {
            if ( mat_ja[j] != -1) count++;
         }
-        old_lower = old_upper;
         old_upper = mat_ia[i+1];
         mat_ia[i+1] = mat_ia[i] + count;
       }
