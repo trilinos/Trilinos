@@ -157,7 +157,7 @@ int flag;
   lb->Get_First_Border_Obj_Fort = NULL;
   lb->Get_Next_Border_Obj_Fort = NULL;
 
-  lb->Migrate.Help_Migrate = FALSE;
+  lb->Migrate.Auto_Migrate = FALSE;
   lb->Migrate.Pre_Process = NULL;
   lb->Migrate.Post_Process = NULL;
   lb->Migrate.Pack_Obj = NULL;
@@ -561,7 +561,7 @@ double lb_time[2] = {0.0,0.0};
    *  If the Help_Migrate flag is set, perform migration for the application.
    */
 
-  if (lb->Migrate.Help_Migrate) {
+  if (lb->Migrate.Auto_Migrate) {
     start_time = LB_Time();
     LB_Help_Migrate(lb, *num_import_objs, *import_global_ids,
                     *import_local_ids, *import_procs,

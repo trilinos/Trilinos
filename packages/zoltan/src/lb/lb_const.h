@@ -115,8 +115,9 @@ struct LB_Tag_Struct {
  */
 
 struct LB_Migrate_Struct {
-  int Help_Migrate;                   /*  Flag indicating whether the load
-                                          balancer should help the application
+  int Auto_Migrate;                   /*  Flag indicating whether the load
+                                          balancer should automatically
+                                          help the application
                                           migrate data.  Some applications may
                                           prefer to do it themselves.        */
   /*

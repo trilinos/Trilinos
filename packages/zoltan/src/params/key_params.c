@@ -56,7 +56,7 @@ char *val)			/* value of variable */
 	status = 3;		/* Don't add to Params field of LB */
       }
       else if (index == 1) {		/* Help_Migrate */
-	lb->Migrate.Help_Migrate = result.ival;
+	lb->Migrate.Auto_Migrate = result.ival;
 	status = 3;		/* Don't add to Params field of LB */
       }
    }
