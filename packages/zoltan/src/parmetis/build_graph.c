@@ -547,7 +547,7 @@ int Zoltan_Build_Graph(
   /* Successful finish */
   ierr = ZOLTAN_OK; 
 
-free:
+End:
   /* Free all local arrays */
   ZOLTAN_FREE(&sendbuf);
   ZOLTAN_FREE(&recvbuf);

@@ -107,13 +107,13 @@ int Zoltan_ParMetis(
   ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
   int **imp_procs,      /* list of processors to import from */
   int **imp_to_part,    /* list of partitions to which imported objects are 
-                           assigned.  KDDKDD Currently unused. */
+                           assigned.  */
   int *num_exp,         /* number of objects to be exported */
   ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
   ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
   int **exp_procs,      /* list of processors to export to */
   int **exp_to_part     /* list of partitions to which exported objects are
-                           assigned. KDDKDD Currently assumes #parts==#procs. */
+                           assigned. */
 )
 {
   return Zoltan_ParMetis_Shared(zz, num_imp, imp_gids, imp_lids,
@@ -311,13 +311,13 @@ int Zoltan_Jostle(
   ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
   int **imp_procs,      /* list of processors to import from */
   int **imp_to_part,    /* list of partitions to which imported objects are 
-                           assigned.  KDDKDD Currently assume #parts == #proc.*/
+                           assigned.  */
   int *num_exp,         /* number of objects to be exported */
   ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
   ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
   int **exp_procs,      /* list of processors to export to */
   int **exp_to_part     /* list of partitions to which exported objects are
-                           assigned. KDDKDD Currently assume #parts == #proc. */
+                           assigned. */
 )
 {
 #ifndef ZOLTAN_JOSTLE
@@ -489,11 +489,11 @@ static int Zoltan_ParMetis_Jostle(
   char msg[256];
   int num_gid_entries = zz->Num_GID;
   int num_lid_entries = zz->Num_LID;
-  int num_proc = zz->Num_Proc;     /* Temporary variables whose addresses are */
-                                   /* passed to Jostle and ParMETIS.  Don't   */
-  MPI_Comm comm = zz->Communicator;/* want to risk letting external packages  */
-                                   /* change our zz struct.                   */
-  int i99;                         /* Variables used for debugging.           */
+  int num_proc = zz->Num_Proc;     /* Temporary variables whose addresses are*/
+  int num_part = zz->LB.Num_Global_Parts;/* passed to Jostle/ParMETIS. Don't */
+  MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
+                                   /* change our zz struct.                  */
+  int i99;                         /* Variables used for debugging.          */
 #ifdef ZOLTAN_JOSTLE
   int nnodes;
   int network[4] = {0, 1, 1, 1};
@@ -583,7 +583,7 @@ static int Zoltan_ParMetis_Jostle(
     }
 
     /* Allocate space for separator sizes */
-    sep_sizes = (idxtype *) ZOLTAN_MALLOC(2*num_proc*sizeof(idxtype));
+    sep_sizes = (idxtype *) ZOLTAN_MALLOC(2*num_part*sizeof(idxtype));
     if (!sep_sizes){
       /* Not enough memory */
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
@@ -625,14 +625,16 @@ static int Zoltan_ParMetis_Jostle(
   if (!(order_opt && order_opt->reorder)){
     ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids,
                                obj_wgt_dim, &float_vwgt, &parts);
-    ZOLTAN_FREE((void **) &parts);  /* KDD parts is currently UNUSED; free it */
-                                    /* KDD Should we be using part here? */
-                                    /* KDD Are partitions input to ParMETIS? */
-
     if (ierr){
       /* Return error */
       ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
     }
+
+    /* Copy parts array to part, in case ParMetis needs it. */
+    /* EBEB: part not defined yet!
+      for (i=0; i<num_obj; i++)
+      part[i] = parts[i];
+    */
   }
   
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
@@ -846,14 +848,14 @@ static int Zoltan_ParMetis_Jostle(
   /* Select the desired ParMetis or Jostle function */
 
 #if (PARMETIS_MAJOR_VERSION >= 3)
-  tpwgt = (float *) ZOLTAN_MALLOC(ncon*num_proc * sizeof(float));
+  tpwgt = (float *) ZOLTAN_MALLOC(ncon*num_part * sizeof(float));
   if (!tpwgt){
     /* Not enough memory */
     ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
   /* For now, all desired partition sizes are equal */
-  for (i=0; i<ncon*num_proc; i++)
-    tpwgt[i] = 1.0/num_proc;
+  for (i=0; i<ncon*num_part; i++)
+    tpwgt[i] = 1.0/num_part;
 #else /* PARMETIS_MAJOR_VERSION < 3 */
   if ((ncon >= 2) && strcmp(alg, "JOSTLE")) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
@@ -902,14 +904,14 @@ static int Zoltan_ParMetis_Jostle(
   else if (strcmp(alg, "PARTKWAY") == 0){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
     ParMETIS_V3_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, 
-      &wgtflag, &numflag, &ncon, &num_proc, tpwgt,
+      &wgtflag, &numflag, &ncon, &num_part, tpwgt,
       imb_tols, options, &edgecut, part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOMKWAY") == 0){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
     ParMETIS_V3_PartGeomKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag,
-      &numflag, &ndims, xyz, &ncon, &num_proc, tpwgt,
+      &numflag, &ndims, xyz, &ncon, &num_part, tpwgt,
       imb_tols, options, &edgecut, part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
@@ -921,14 +923,14 @@ static int Zoltan_ParMetis_Jostle(
   else if (strcmp(alg, "ADAPTIVEREPART") == 0){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
     ParMETIS_V3_AdaptiveRepart (vtxdist, xadj, adjncy, vwgt, vsize, adjwgt, 
-      &wgtflag, &numflag, &ncon, &num_proc, tpwgt, imb_tols, 
+      &wgtflag, &numflag, &ncon, &num_part, tpwgt, imb_tols, 
       itr, options, &edgecut, part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REFINEKWAY") == 0){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
     ParMETIS_V3_RefineKway (vtxdist, xadj, adjncy, vwgt, adjwgt, 
-      &wgtflag, &numflag, &ncon, &num_proc, tpwgt, imb_tols,
+      &wgtflag, &numflag, &ncon, &num_part, tpwgt, imb_tols,
       options, &edgecut, part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
@@ -952,13 +954,13 @@ static int Zoltan_ParMetis_Jostle(
   else if (strcmp(alg, "PARTKWAY") == 0){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
     ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
-      &numflag, &num_proc, options, &edgecut, part, &comm);
+      &numflag, &num_part, options, &edgecut, part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOMKWAY") == 0){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
     ParMETIS_PartGeomKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag,
-      &numflag, &ndims, xyz, &num_proc, options, &edgecut, 
+      &numflag, &ndims, xyz, &num_part, options, &edgecut, 
       part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
@@ -1098,9 +1100,14 @@ static int Zoltan_ParMetis_Jostle(
   else{
     /* Partitioning */
     /* Determine number of objects to export */
+    /* EBEB: Assume we export if partition number has changed. */
     nsend = 0;
-    for (i=0; i<num_obj; i++)
-      if (part[i] != zz->Proc) nsend++;
+    for (i=0; i<num_obj; i++){
+      if (part[i] != parts[i]) nsend++;
+      if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+        printf("[%1d] DEBUG: local object %1d: old part = %1d, new part = %1d\n", 
+        zz->Proc, i, parts[i], part[i]);
+    }
   
     /* Create export lists */
     if (zz->LB.Return_Lists){
@@ -1126,14 +1133,17 @@ static int Zoltan_ParMetis_Jostle(
         }
         j = 0;
         for (i=0; i<num_obj; i++){
-          if (part[i] != zz->Proc){
+          if (part[i] != parts[i]){ /* object should move to new partition */
             ZOLTAN_SET_GID(zz, &((*exp_gids)[j*num_gid_entries]),
                            &(global_ids[i*num_gid_entries]));
             if (num_lid_entries)
               ZOLTAN_SET_LID(zz, &((*exp_lids)[j*num_lid_entries]),
                              &(local_ids[i*num_lid_entries]));
-            (*exp_procs)[j] = part[i];
-            (*exp_to_part)[j] = part[i];  /* Assumes #part == #proc */
+            (*exp_to_part)[j] = part[i];  
+            if (Zoltan_LB_Part_To_Proc == NULL)
+              (*exp_procs)[j] = part[i];
+            else
+              (*exp_procs)[j] = Zoltan_LB_Part_To_Proc(zz, part[i]);
             j++;
           }
         }
@@ -1144,7 +1154,7 @@ static int Zoltan_ParMetis_Jostle(
   /* Successful finish */
   ierr = ZOLTAN_OK;
 
-free:
+End:
   /* If an error was encountered, the following data may need to be freed */
   if (vwgt)      ZOLTAN_FREE(&vwgt); 
   if (adjwgt)    ZOLTAN_FREE(&adjwgt); 
@@ -1167,6 +1177,7 @@ free:
   ZOLTAN_FREE(&adjncy);
   ZOLTAN_FREE(&xyz);
   ZOLTAN_FREE(&part);
+  ZOLTAN_FREE(&parts);
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);

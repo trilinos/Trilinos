@@ -128,7 +128,7 @@ struct Hash_Node {
 
 /* Macro for error handling */
 #define ZOLTAN_PARMETIS_ERROR(error,str) {ierr = error ; \
- ZOLTAN_PRINT_ERROR(zz->Proc, yo, str) ; goto free ;}
+ ZOLTAN_PRINT_ERROR(zz->Proc, yo, str) ; goto End ;}
 
 /* Extern function prototypes. Should be in a separate header file? */
 extern int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
