@@ -1,0 +1,9 @@
+../configure --enable-referencey12m \
+    --with-mpi-cxx=CC --with-mpi-cc=cc --with-mpi-f77=f77 \
+    --with-mpi-libs="-lmpich -lnsl -lsocket -lrt" --enable-mpi \
+    --with-mpi-include=-I/sierra/Release/MPICH/1.2.4/include \
+    --with-mpi-incdir=/sierra/Release/MPICH/1.2.4/include \
+    --with-mpi-libdir=-L/sierra/Release/MPICH/1.2.4/lib \
+    --enable-nox --enable-nox-epetra CXX=CC CC=cc F77=f77 \
+    CXXFLAGS="-g -pto" CPPFLAGS=-D_RWSTD_COMPILE_INSTANTIATE \
+    LDFLAGS="-z muldefs"

@@ -1,0 +1,14 @@
+../configure --host=powerpc-ibm-aix4.3.2.0 \
+	--with-blas="-lblas -lxlf90" \
+	--with-lapack=-llapack \
+        --with-libdirs=-L/sierra/Release/lapack/3.0/lib/rs6000-ibm-aix4.3.2.0/dp \
+	--enable-referencey12m \
+	CXX=KCC CC=xlc F77=xlf \
+	CXXFLAGS="-g -tused" \
+	CPPFLAGS="-g -tused" \
+	--enable-mpi --with-mpi-cxx=mpKCC \
+        --enable-nox --enable-nox-epetra \
+        --with-mpi-incdir=. \
+	--with-mpi-cc=mpcc --with-mpi-f77=mpxlf \
+     --with-mpi-include=-I. --with-mpi-libdir=-L. 
+

@@ -1,0 +1,14 @@
+../configure --host=i686-intel-linux \
+        --with-ar="xar rs" \
+	--with-blas=$TFLOPS_XDEV/tflops/lib/libcsmath.a \
+	--with-lapack=$TFLOPS_XDEV/tflops/lib/scalapack/liblapack.a \
+	--enable-referencey12m \
+	CXX=ciCC CC=cicc F77=cif77 \
+	CXXFLAGS="-g -rwstl -Wc,-tlocal -DTFLOP" \
+	CPPFLAGS="-g -rwstl -Wc,-tlocal -DTFLOP" \
+	--enable-mpi --with-mpi-cxx=ciCC \
+        --enable-nox --enable-nox-epetra \
+        --with-mpi-incdir=. \
+	--with-mpi-cc=cicc --with-mpi-f77=cif77 \
+     --with-mpi-include=-I. --with-mpi-libdir=-L. --with-mpi-libs=-lmpi
+
