@@ -718,7 +718,6 @@ printf("WHOA XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n");
 ML_print_it();
 }
 #endif
- 
 
 /*****************************************************************************
  *  ML_memory_check: 
@@ -876,10 +875,13 @@ char * ML_memory_check(char *fmt, ... )
      davgvec[i] = dsrcvec[i];
    }
 #endif
+/* uncomment lines below if you want individual processor information */
+/*
    printf("%s(%d): blks = %d, free = %d, max free = %d, used = %d, total = %d, %% used = %e, time = %e\n",
 	  ml_memory_label,id,fragments, total_free, largest_free, total_used,
 	  total_free+total_used, 
           ((double)total_used)/((double)(total_free+total_used)),elapsed_time);
+*/
 
 
    if (id == 0)  {
