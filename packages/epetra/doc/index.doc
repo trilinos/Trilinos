@@ -155,7 +155,7 @@ corresponding eigenvector.
 
 The point of this example is to illustrate the flow of calls when
 using Epetra.  This example program can be found in the file
-Trilinos/examples/Epetra_power_method/cxx_main.cpp.  
+Trilinos/packages/epetra/examples/petra_power_method/cxx_main.cpp.  
 
 \verbinclude cxx_main.cpp
 */
