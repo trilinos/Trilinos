@@ -610,9 +610,19 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      for (i1 = 0; i1 < Tcoarse->outvec_leng; i1++) 
        if (Tcoarse_vec[i1] < 0) Tcoarse_vec[i1] = -Tcoarse_vec[i1];
 
+     /* turn off the scaling */
+     /* in Pn for the test. */
+
      tmp_fun = Pn_coarse->matvec->func_ptr;
-     Pn_coarse->matvec->func_ptr = CSR_ones_matvec; /* turn off the scaling */
-                                                    /* in Pn for the test. */
+     if (tmp_fun == CSR_matvec)
+       Pn_coarse->matvec->func_ptr = CSR_ones_matvec; 
+     else if (tmp_fun == sCSR_matvec)
+       Pn_coarse->matvec->func_ptr = sCSR_ones_matvec; 
+     else {
+       printf("ML_Gen_MGHierarchy_UsingReitzinger: Expected CSR_matvec for projection operator and found something else?\n");
+       exit(1);
+     }
+
      Pn_vec = (double *) ML_allocate(sizeof(double)*(Pn_coarse->outvec_leng
 						     +1));
      if (Pn_vec == NULL)
@@ -664,9 +674,19 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         exit(1);
      }
 
+     /* turn off the scaling */
+     /* in Pn for the test. */
+
      tmp_fun = Pn_coarse->matvec->func_ptr;
-     Pn_coarse->matvec->func_ptr = CSR_ones_matvec; /* turn off the scaling */
-                                                    /* in Pn for the test. */
+     if (tmp_fun == CSR_matvec)
+       Pn_coarse->matvec->func_ptr = CSR_ones_matvec; 
+     else if (tmp_fun == sCSR_matvec)
+       Pn_coarse->matvec->func_ptr = sCSR_ones_matvec; 
+     else {
+       printf("ML_Gen_MGHierarchy_UsingReitzinger: Expected CSR_matvec for projection operator and found something else?\n");
+       exit(1);
+     }
+
      ML_Operator_Apply(Pn_coarse, Pn_coarse->invec_leng, pid_coarse_node,
 		       Pn_coarse->outvec_leng, pid_fine_node);
      Pn_coarse->matvec->func_ptr = tmp_fun;      /* turn on the scaling */
@@ -996,7 +1016,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      /********************************************************************/
      /* Create Tcoarse_trans.                                            */
      /*------------------------------------------------------------------*/
-
      ML_Operator_ChangeToSinglePrecision(Tcoarse);
      sprintf(str,"Tmat_%d",grid_level); ML_Operator_Set_Label( Tcoarse,str);
 
