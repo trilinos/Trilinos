@@ -37,6 +37,7 @@
 #include "BelosStatusTest.hpp"
 #include "BelosLinearProblemManager.hpp"
 #include "BelosMultiVec.hpp"
+#include "BelosMultiVecTraits.hpp"
 
 /*! 
   \class Belos::StatusTestResNorm
@@ -265,6 +266,7 @@ class StatusTestResNorm: public StatusTest<TYPE> {
 
   //@}
 
+  typedef MultiVecTraits<TYPE,MultiVec<TYPE> >  MVT;
 };
 
 
@@ -361,31 +363,31 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     //
     if (scaletype_== NormOfRHS) {
       const MultiVec<TYPE>& rhs = *lp.GetRHS();
-      numrhs_ = rhs.GetNumberVecs();
+      numrhs_ = MVT::GetNumberVecs( rhs );
       scalevector_ = new TYPE[ numrhs_ ];
       resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
       testvector_ = new TYPE[ numrhs_ ];
-      const_cast<MultiVec<TYPE>&>(rhs).MvNorm( scalevector_, scalenormtype_ );
+      MVT::MvNorm( rhs, scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfInitRes) {
       const MultiVec<TYPE> &init_res = lp.GetInitResVec();
-      numrhs_ = init_res.GetNumberVecs();
+      numrhs_ = MVT::GetNumberVecs( init_res );
       scalevector_ = new TYPE[ numrhs_ ];
       resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
       testvector_ = new TYPE[ numrhs_ ];
-      const_cast<MultiVec<TYPE>&>(init_res).MvNorm( scalevector_, scalenormtype_ );
+      MVT::MvNorm( init_res, scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfPrecInitRes) {
       const MultiVec<TYPE>& init_res = lp.GetInitResVec();
-      numrhs_ = init_res.GetNumberVecs();
+      numrhs_ = MVT::GetNumberVecs( init_res );
       scalevector_ = new TYPE[ numrhs_ ];
       resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
       testvector_ = new TYPE[ numrhs_ ];
-      RefCountPtr<MultiVec<TYPE> > prec_init_res = rcp( const_cast<MultiVec<TYPE>&>(init_res).Clone( numrhs_ ) );
+      RefCountPtr<MultiVec<TYPE> > prec_init_res = MVT::Clone( init_res, numrhs_ );
       if (lp.ApplyLeftPrec( init_res, *prec_init_res ) != Undefined)
-          prec_init_res->MvNorm( scalevector_, scalenormtype_ );
+          MVT::MvNorm( *prec_init_res, scalevector_, scalenormtype_ );
       else 
-          const_cast<MultiVec<TYPE>&>(init_res).MvNorm( scalevector_, scalenormtype_ );
+          MVT::MvNorm( init_res, scalevector_, scalenormtype_ );
     }
 
     // Initialize the testvector.
@@ -420,7 +422,7 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     //
     RefCountPtr<const MultiVec<TYPE> > residMV = iSolver->GetNativeResiduals( resvector_ + cur_rhs_num_ );     
     if ( residMV.get() != NULL ) { 
-  	const_cast<MultiVec<TYPE>&>(*residMV).MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );    
+  	MVT::MvNorm( *residMV, resvector_ + cur_rhs_num_, resnormtype_ );    
     } 
   }
   else if (restype_==Explicit) {
@@ -431,7 +433,7 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     //
     if ( lp.IsSolutionUpdated() ) {
       const MultiVec<TYPE>& cur_res = lp.GetCurrResVec();
-      ret = const_cast<MultiVec<TYPE>&>(cur_res).MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );
+      ret = MVT::MvNorm( cur_res, resvector_ + cur_rhs_num_, resnormtype_ );
       if ( ret != Ok ) {
         status_ = Failed;
         return(status_);
@@ -439,7 +441,7 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     } else {
       RefCountPtr<const MultiVec<TYPE> > cur_soln = iSolver->GetCurrentSoln();
       const MultiVec<TYPE> &cur_res = lp.GetCurrResVec( &*cur_soln );
-      ret = const_cast<MultiVec<TYPE>&>(cur_res).MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );
+      ret = MVT::MvNorm( cur_res, resvector_ + cur_rhs_num_, resnormtype_ );
       if ( ret != Ok ) {
         status_ = Failed;
         return(status_);

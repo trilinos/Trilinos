@@ -297,8 +297,11 @@ int main(int argc, char *argv[]) {
 	delete [] actual_resids;
 	delete [] rhs_norm;	
 
-	if (My_Test.GetStatus() == Belos::Converged)
+	if (My_Test.GetStatus() == Belos::Converged) {
+	  cout<< "***************** The test PASSED !!!********************"<<endl;
   	  return 0;
+        }
+	cout<< "********************The test FAILED!!! ********************"<<endl;
 	return 1;
   //
 } // end test_bl_pgmres_hb.cpp

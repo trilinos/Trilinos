@@ -26,27 +26,44 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef BELOS_NORM_TYPE_HPP
-#define BELOS_NORM_TYPE_HPP
+#ifndef BELOS_OPERATOR_TRAITS_HPP
+#define BELOS_OPERATOR_TRAITS_HPP
 
-/*!	\file BelosNormType.hpp
-	\brief Enumerated list for Belos::MultiVec or Belos::Vector norm types.
+/*!     \file BelosOperatorTraits.hpp
+        \brief Virtual base class which defines the operator interface 
+	required by the iterative linear solver.
 */
 
-/*!	\enum Belos::NormType
-	\brief The norm method in the Belos::MultiVec or Belos::Vector class may 
-	not be defined, this information needs to be passed back to the algorithm.
-*/
+#include "BelosMultiVec.hpp"
+#include "BelosOperator.hpp"
+#include "BelosTypes.hpp"
+#include "BelosConfigDefs.hpp"
 
 namespace Belos {
 
-  //! \enum Enumerated list for describing the multivector norm type.
-  enum NormType {   OneNorm,       /*!< Compute the one-norm \f$\sum_{i=1}^{n}(|x_i w_i|)\f$ for each vector. */
-		    TwoNorm,       /*!< Compute the two-norm *\f$\sqrt(\sum_{i=1}^{n}((x_i w_i)^2)\f$ for each vector. */
-		    InfNorm       /*!< Compute the infinity-norm \f$(\max_{i=1}^{n}\{|x_i w_i|\})\f$ for each vector. */
-  };
+template <class TYPE, class MV, class OP>
+class OperatorTraits {};
 
-}
+template <class TYPE> 
+class OperatorTraits < TYPE, MultiVec<TYPE>, Operator<TYPE> > 
+{
+public:
 
-#endif
-// end of file BelosNormType.hpp
+  ///
+  static ReturnType Apply ( const Operator<TYPE>& Op, const MultiVec<TYPE>& x, 
+			    MultiVec<TYPE>& y, ETrans trans=NOTRANS )
+  { return Op.Apply( x, y, trans ); }
+  
+  ///
+  static ReturnType ApplyInverse ( const Operator<TYPE>& Op, const MultiVec<TYPE>& x,
+				   MultiVec<TYPE>& y, ETrans trans=NOTRANS )
+  { return Op.ApplyInverse( x, y, trans ); }
+
+};
+  
+  
+} // end Belos namespace
+
+#endif // BELOS_OPERATOR_TRAITS_HPP
+
+// end of file BelosOperatorTraits.hpp

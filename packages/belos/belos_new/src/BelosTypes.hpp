@@ -38,6 +38,14 @@
 
 namespace Belos {
 
+/*!
+	\enum Belos::ETrans
+	\brief Enumerated list for describing the application of an operator.
+*/
+	enum ETrans     {	NOTRANS = 0, /*!< The operator should not be transposed during this application */
+				TRANS = 1 /*!< The operator should be transposed during this application */
+			};
+
 /*! 	\enum Belos::NormType
 	\brief Enumerated list for describing the multivector norm type.
 */

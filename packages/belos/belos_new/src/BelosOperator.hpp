@@ -56,10 +56,6 @@
 
 namespace Belos {
 
-	enum ETrans     {	NOTRANS = 0, /*!< The operator should not be transposed during this application */
-				TRANS = 1 /*!< The operator should be transposed during this application */
-			};
-
 template <class TYPE>
 class Operator {
 public:

@@ -33,8 +33,9 @@
 /*! \file BelosLinearProblemManager.hpp
     \brief Class which describes the linear problem to be solved by the iterative solver.
 */
-#include "BelosOperator.hpp"
-#include "BelosMultiVec.hpp"
+
+#include "BelosMultiVecTraits.hpp"
+#include "BelosOperatorTraits.hpp"
 
 /*! \class Belos::LinearProblemManager  
   \brief The Belos::LinearProblemManager class is a wrapper that encapsulates the 
@@ -333,6 +334,9 @@ class LinearProblemManager {
   bool solutionUpdated_;    
   bool solutionFinal_;
   bool initresidsComputed_;
+
+  typedef MultiVecTraits<TYPE,MultiVec<TYPE> >  MVT;
+  typedef OperatorTraits<TYPE,MultiVec<TYPE>,Operator<TYPE> >  OPT;
 };
 
   //--------------------------------------------
@@ -375,7 +379,7 @@ LinearProblemManager<TYPE>::LinearProblemManager(const RefCountPtr<const Operato
   solutionFinal_(true),
   initresidsComputed_(false)
 {
-  R0_ = rcp( X_->Clone( X_->GetNumberVecs() ) );
+  R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
 }
 
 template<class TYPE>
@@ -421,7 +425,7 @@ void LinearProblemManager<TYPE>::SetUpBlocks()
   // we create a multivector and copy the left over LHS and RHS vectors into them.
   // The rest of the multivector is populated with random vectors (RHS) or zero vectors (LHS).
   //
-  num_to_solve_ = X_->GetNumberVecs() - rhs_index_;
+  num_to_solve_ = MVT::GetNumberVecs(*X_) - rhs_index_;
   //
   // Return the NULL pointer if we don't have any more systems to solve for.
   if ( num_to_solve_ <= 0 ) { return; }  
@@ -439,34 +443,34 @@ void LinearProblemManager<TYPE>::SetUpBlocks()
     }
     //
     // First create multivectors of blocksize and fill the RHS with random vectors LHS with zero vectors.
-    CurX_ = rcp( X_->Clone(blocksize_) );
-    CurX_->MvInit();
-    CurB_ = rcp( const_cast<MultiVec<TYPE>&>(*B_).Clone(blocksize_) );
-    CurB_->MvRandom();
-    R_ = rcp( X_->Clone(blocksize_) );
+    CurX_ = MVT::Clone( *X_, blocksize_ );
+    MVT::MvInit(*CurX_);
+    CurB_ = MVT::Clone( *B_, blocksize_ );
+    MVT::MvRandom(*CurB_);
+    R_ = MVT::Clone( *X_, blocksize_);
     //
-    RefCountPtr<MultiVec<TYPE> > tptr = rcp( const_cast<MultiVec<TYPE>&>(*B_).CloneView(index,num_to_solve_) );
-    CurB_->SetBlock( *tptr, &index2[0], num_to_solve_);
+    RefCountPtr<const MultiVec<TYPE> > tptr = MVT::CloneView( *B_, index, num_to_solve_);
+    MVT::SetBlock( *tptr, &index2[0], num_to_solve_, *CurB_ );
     //
-    RefCountPtr<MultiVec<TYPE> > tptr2 = rcp( X_->CloneView(index,num_to_solve_) );
-    CurX_->SetBlock( *tptr2, &index2[0], num_to_solve_);
+    RefCountPtr<MultiVec<TYPE> > tptr2 = MVT::CloneView( *X_, index, num_to_solve_);
+    MVT::SetBlock( *tptr2, &index2[0], num_to_solve_, *CurX_ );
   } else { 
     //
     // If the number of linear systems left are more than or equal to the current blocksize, then
     // we create a view into the LHS and RHS.
     //
     num_to_solve_ = blocksize_;
-    CurX_ = rcp( X_->CloneView( index, num_to_solve_) );
-    CurB_ = rcp( const_cast<MultiVec<TYPE>&>(*B_).CloneView( index, num_to_solve_) );
-    R_ = rcp( X_->Clone( num_to_solve_ ) );
+    CurX_ = MVT::CloneView( *X_, index, num_to_solve_);
+    CurB_ = rcp_const_cast< MultiVec<TYPE> >(MVT::CloneView( *B_, index, num_to_solve_));
+    R_ = MVT::Clone( *X_, num_to_solve_ );
     //
   }
   //
   // Compute the current residual.
   // 
   if (R_.get()) {
-    A_->Apply( *CurX_, *R_ );
-    R_->MvAddMv( 1.0, *CurB_, -1.0, *R_ );
+    OPT::Apply( *A_, *CurX_, *R_ );
+    MVT::MvAddMv( 1.0, *CurB_, -1.0, *R_, *R_ );
     solutionUpdated_ = false;
   }
   delete [] index; index=0;
@@ -476,7 +480,7 @@ template<class TYPE>
 void LinearProblemManager<TYPE>::SetLHS(const RefCountPtr<MultiVec<TYPE> > &X)
 {
   X_ = X; 
-  R0_ = rcp( X_->Clone( X_->GetNumberVecs() ) ); 
+  R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) ); 
 }
 
 template<class TYPE>
@@ -497,14 +501,14 @@ void LinearProblemManager<TYPE>::SetCurrLSVec()
     for (i=0; i<num_to_solve_; i++) { 
       index[i] = i;	
     }
-    tptr = rcp( CurX_->CloneView( index, num_to_solve_ ) );
+    tptr = MVT::CloneView( *CurX_, index, num_to_solve_ );
     //
     // Copy the correction vector to the solution vector.
     //
     for (i=0; i<num_to_solve_; i++) { 
       index[i] = rhs_index_ + i; 
     }
-    X_->SetBlock( *tptr, index, num_to_solve_);
+    MVT::SetBlock( *tptr, index, num_to_solve_, *X_ );
     //
     // Clean up.
     //
@@ -524,11 +528,11 @@ void LinearProblemManager<TYPE>::SolutionUpdated( const MultiVec<TYPE>* SolnUpda
     if (Right_Prec_) {
       //
       // Apply the right preconditioner before computing the current solution.
-      RefCountPtr<MultiVec<TYPE> > TrueUpdate = rcp( const_cast<MultiVec<TYPE>*>(SolnUpdate)->Clone( SolnUpdate->GetNumberVecs() ) );
-      RP_->Apply( *SolnUpdate, *TrueUpdate ); 
-      CurX_->MvAddMv( 1.0, *CurX_, 1.0, *TrueUpdate ); 
+      RefCountPtr<MultiVec<TYPE> > TrueUpdate = MVT::Clone( *SolnUpdate, MVT::GetNumberVecs( *SolnUpdate ) );
+      OPT::Apply( *RP_, *SolnUpdate, *TrueUpdate ); 
+      MVT::MvAddMv( 1.0, *CurX_, 1.0, *TrueUpdate, *CurX_ ); 
     } else {
-      CurX_->MvAddMv( 1.0, *CurX_, 1.0, const_cast<MultiVec<TYPE>&>(*SolnUpdate) ); 
+      MVT::MvAddMv( 1.0, *CurX_, 1.0, *SolnUpdate, *CurX_ ); 
     }
   }
   solutionUpdated_ = true; 
@@ -557,9 +561,9 @@ const MultiVec<TYPE>& LinearProblemManager<TYPE>::GetInitResVec()
   if (!initresidsComputed_ && A_.get() && X_.get() && B_.get()) 
     {
       if (R0_.get()) R0_ = null;
-      R0_ = rcp( X_->Clone( X_->GetNumberVecs() ) );
-      A_->Apply( *X_, *R0_ );
-      R0_->MvAddMv( 1.0, const_cast<MultiVec<TYPE>&>(*B_), -1.0, *R0_ );
+      R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
+      OPT::Apply( *A_, *X_, *R0_ );
+      MVT::MvAddMv( 1.0, *B_, -1.0, *R0_, *R0_ );
       initresidsComputed_ = true;
     }
   return (*R0_);
@@ -576,14 +580,14 @@ const MultiVec<TYPE>& LinearProblemManager<TYPE>::GetCurrResVec( const MultiVec<
   //
   if (solutionUpdated_) 
     {
-      A_->Apply( *GetCurrLHSVec(), *R_ );
-      R_->MvAddMv( 1.0, *GetCurrRHSVec(), -1.0, *R_ ); 
+      OPT::Apply( *A_, *GetCurrLHSVec(), *R_ );
+      MVT::MvAddMv( 1.0, *GetCurrRHSVec(), -1.0, *R_, *R_ ); 
       solutionUpdated_ = false;
     }
   else if (CurrSoln) 
     {
-      A_->Apply( *CurrSoln, *R_ );
-      R_->MvAddMv( 1.0, *GetCurrRHSVec(), -1.0, *R_ ); 
+      OPT::Apply( *A_, *CurrSoln, *R_ );
+      MVT::MvAddMv( 1.0, *GetCurrRHSVec(), -1.0, *R_, *R_ ); 
     }
   return (*R_);
 }
@@ -611,7 +615,7 @@ RefCountPtr<MultiVec<TYPE> > LinearProblemManager<TYPE>::GetCurrRHSVec()
 template<class TYPE>
 ReturnType LinearProblemManager<TYPE>::Apply( const MultiVec<TYPE>& x, MultiVec<TYPE>& y )
 {
-  RefCountPtr<MultiVec<TYPE> > ytemp = rcp(y.Clone(y.GetNumberVecs()));
+  RefCountPtr<MultiVec<TYPE> > ytemp = MVT::Clone( y, MVT::GetNumberVecs( y ) );
   //
   // No preconditioning.
   // 
@@ -621,25 +625,25 @@ ReturnType LinearProblemManager<TYPE>::Apply( const MultiVec<TYPE>& x, MultiVec<
   //
   else if( Left_Prec_ && Right_Prec_ ) 
     {
-      RP_->Apply( x, y );   
-      A_->Apply( y, *ytemp );
-      LP_->Apply( *ytemp, y );
+      OPT::Apply( *RP_, x, y );   
+      OPT::Apply( *A_, y, *ytemp );
+      OPT::Apply( *LP_, *ytemp, y );
     }
   //
   // Preconditioning is only being done on the left side
   //
   else if( Left_Prec_ ) 
     {
-      A_->Apply( x, *ytemp );
-      LP_->Apply( *ytemp, y );
+      OPT::Apply( *A_, x, *ytemp );
+      OPT::Apply( *LP_, *ytemp, y );
     }
   //
   // Preconditioning is only being done on the right side
   //
   else 
     {
-      RP_->Apply( x, *ytemp );
-      A_->Apply( *ytemp, y );
+      OPT::Apply( *RP_, x, *ytemp );
+      OPT::Apply( *A_, *ytemp, y );
     }  
   return Ok;
 }
@@ -648,7 +652,7 @@ template<class TYPE>
 ReturnType LinearProblemManager<TYPE>::ApplyOp( const MultiVec<TYPE>& x, MultiVec<TYPE>& y )
 {
   if (A_.get())
-    return ( A_->Apply(x, y) );   
+    return ( OPT::Apply( *A_,x, y) );   
   else
     return Undefined;
 }
@@ -657,7 +661,7 @@ template<class TYPE>
 ReturnType LinearProblemManager<TYPE>::ApplyLeftPrec( const MultiVec<TYPE>& x, MultiVec<TYPE>& y )
 {
   if (Left_Prec_)
-    return (LP_->Apply(x, y) );
+    return ( OPT::Apply( *LP_,x, y) );
   else 
     return Undefined;
 }
@@ -666,7 +670,7 @@ template<class TYPE>
 ReturnType LinearProblemManager<TYPE>::ApplyRightPrec( const MultiVec<TYPE>& x, MultiVec<TYPE>& y )
 {
   if (Right_Prec_)
-    return (RP_->Apply(x, y) );
+    return ( OPT::Apply( *RP_,x, y) );
   else
     return Undefined;
 }
@@ -678,15 +682,15 @@ ReturnType LinearProblemManager<TYPE>::ComputeResVec( MultiVec<TYPE>* R, const M
     {
       if (Left_Prec_)
 	{
-	  RefCountPtr<MultiVec<TYPE> > R_temp = rcp( const_cast<MultiVec<TYPE>*>(X)->Clone( X->GetNumberVecs() ) );
-	  A_->Apply( *X, *R_temp );
-	  R_temp->MvAddMv( -1.0, *R_temp, 1.0, const_cast<MultiVec<TYPE>&>(*B) );
-	  LP_->Apply( *R_temp, *R );
+	  RefCountPtr<MultiVec<TYPE> > R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
+	  OPT::Apply( *A_, *X, *R_temp );
+	  MVT::MvAddMv( -1.0, *R_temp, 1.0, *B, *R_temp );
+	  OPT::Apply( *LP_, *R_temp, *R );
 	}
       else 
 	{
-	  A_->Apply( *X, *R );
-	  R->MvAddMv( -1.0, *R, 1.0, const_cast<MultiVec<TYPE>&>(*B) );
+	  OPT::Apply( *A_, *X, *R );
+	  MVT::MvAddMv( -1.0, *R, 1.0, *B, *R );
 	}
     }
   else { 
@@ -694,15 +698,15 @@ ReturnType LinearProblemManager<TYPE>::ComputeResVec( MultiVec<TYPE>* R, const M
     // Later we may want to check to see which multivec is not specified, and use what is specified.
     if (Left_Prec_)
 	{
-	  RefCountPtr<MultiVec<TYPE> > R_temp = rcp( X_->Clone( X_->GetNumberVecs() ) );
-	  A_->Apply( *X_, *R_temp );
-	  R_temp->MvAddMv( -1.0, *R_temp, 1.0, const_cast<MultiVec<TYPE>&>(*B_) );
-	  LP_->Apply( *R_temp, *R );
+	  RefCountPtr<MultiVec<TYPE> > R_temp = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
+	  OPT::Apply( *A_, *X_, *R_temp );
+	  MVT::MvAddMv( -1.0, *R_temp, 1.0, *B_, *R_temp );
+	  OPT::Apply( *LP_, *R_temp, *R );
 	}
       else 
 	{
-	  A_->Apply( *X_, *R );
-	  R->MvAddMv( -1.0, *R, 1.0, const_cast<MultiVec<TYPE>&>(*B_) );
+	  OPT::Apply( *A_, *X_, *R );
+	  MVT::MvAddMv( -1.0, *R, 1.0, *B_, *R );
 	}
   }    
   return Ok;

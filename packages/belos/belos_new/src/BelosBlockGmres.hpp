@@ -61,8 +61,6 @@
 #include "BelosLinearProblemManager.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTest.hpp"
-#include "BelosOperator.hpp"
-#include "BelosMultiVec.hpp"
 #include "BelosMultiVecTraits.hpp"
 
 /*!	
@@ -443,17 +441,13 @@ namespace Belos {
 	  //	  
 	  _lp->SolutionUpdated( &*solnUpdate );
         }
-	//
-	// Print out solver status
-	// 
 	if (_om->doOutput( 0 )) {
-	  _stest->Print(*_os);
 	  if (exit_flg) {
 	    *_os << " Exiting Block GMRES --- " << endl;
 	    *_os << "  Reason: Failed to compute new block of orthonormal basis vectors" << endl;
 	    *_os << "  ***Solution from previous step will be returned***"<< endl<< endl;
 	  }
-	} 
+	}
 	if (U_vec.get()) {U_vec = null;}
 	//
 	// Break out of this loop before the _restartiter is incremented if we are finished.
@@ -477,6 +471,14 @@ namespace Belos {
       if (index) {delete [] index; index=0;}
       if (beta) {delete [] beta; beta=0; }
       //
+      // Print out solver status
+      // 
+      if (_om->doOutput( 0 )) {
+	*_os << endl;
+	_stest->Print(*_os); 
+	*_os << endl;
+	*_os << "===================================================" << endl;
+      }
     } // end while( _cur_block_sol && _cur_block_rhs )
     //
   } // end Solve()

@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
 	//
 	// Construct an unpreconditioned linear problem instance.
 	//
-	Belos::LinearProblemManager<double> My_LP(&Amat, &soln, &rhs);
+	Belos::LinearProblemManager<double> My_LP( rcp(&Amat, false), rcp(&soln,false), rcp(&rhs,false));
 	My_LP.SetBlockSize( block );
 	//
 	//*******************************************************************
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
 	if (verbose)
 	  My_OM.SetVerbosity( 2 );
 
-	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, My_OM, maxits);
+	Belos::BlockGmres<double> MyBlockGmres( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), maxits);
 
 	//
 	// **********Print out information about problem*******************
@@ -230,8 +230,11 @@ int main(int argc, char *argv[]) {
   if (xguess) delete [] xguess;
   if (b) delete [] b;
 	
-  if (My_Test.GetStatus() == Belos::Converged)
+  if (My_Test.GetStatus() == Belos::Converged) {
+    cout<< "***************** The test PASSED !!!********************"<<endl;
     return 0;
+  }
+  cout<< "********************The test FAILED!!! ********************"<<endl;
   return 1;
   //
 } // end test_bl_gmres_hb.cpp
