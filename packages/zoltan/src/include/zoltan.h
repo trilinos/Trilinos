@@ -2106,6 +2106,32 @@ extern int Zoltan_Set_Param(
 
 /*****************************************************************************/
 /*
+ *  Function to change a vector parameter value within Zoltan.
+ *  Default values will be used for all parameters not explicitly altered
+ *  by a call to this routine.
+ *
+ *  Input
+ *    zz                  --  The Zoltan structure to which this
+ *                            parameter alteration applies.
+ *    name                --  The name of the parameter to have its
+ *                            value changed.
+ *    val                 --  The new value of the parameter.
+ *    index               --  The index of the parameter entry
+ *                            to be set. By convention, the
+ *                            first index is 0 (not 1).
+ *
+ *  Returned value:       --  Error code
+ */
+
+extern int Zoltan_Set_Param_Vec(
+  struct Zoltan_Struct *zz, 
+  char *name, 
+  char *val,
+  int index
+);
+
+/*****************************************************************************/
+/*
  *  Function to invoke the partitioner.
  *
  *  Input:
