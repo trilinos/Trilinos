@@ -79,7 +79,7 @@ public:
   virtual bool reset(NOX::Parameter::List& params) = 0;
   
   /*!
-    \brief Compute the direction vector, \c d, for a specific method given
+    \brief Compute the direction vector, \c dir, for a specific method given
     the current group, \c grp. 
 
     The \c grp is not const so that we can compute the F vector, the
@@ -89,7 +89,7 @@ public:
     information such as the past solution, the iteration number, and
     so on.
   */
-  virtual bool compute(NOX::Abstract::Vector& d, NOX::Abstract::Group& g, const NOX::Solver::Generic& s) = 0;
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, const NOX::Solver::Generic& solver) = 0;
 
   /*!
     \brief Same as compute(NOX::Abstract::Vector&, NOX::Abstract::Group&, const NOX::Solver::Generic&)
@@ -101,7 +101,7 @@ public:
     If it is not redefined in the derived class, it will just call the
     compute with the NOX::Solver::Generic argument.
   */
-  virtual bool compute(NOX::Abstract::Vector& d, NOX::Abstract::Group& g, const NOX::Solver::LineSearchBased& s);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, const NOX::Solver::LineSearchBased& solver);
 };
 } // namespace Direction
 } // namespace NOX

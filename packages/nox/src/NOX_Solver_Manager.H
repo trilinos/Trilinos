@@ -80,7 +80,7 @@ public:
   //! Destructor.
   ~Manager();
 
-  bool reset(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &t, NOX::Parameter::List& p);
+  bool reset(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &tests, NOX::Parameter::List& params);
 
   NOX::StatusTest::StatusType getStatus();
 
