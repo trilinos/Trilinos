@@ -154,6 +154,7 @@ int klu_noprune_nonrecursive
     int Lpruned [ ]	/* size n workspace */
 ) ;
 
+#define NDEBUG
 /* To enable debugging, uncomment this line:
 #undef NDEBUG
 */

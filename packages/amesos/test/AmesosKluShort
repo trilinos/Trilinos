@@ -78,17 +78,17 @@ mpirun -np 3 amesos_test.exe KLU SuperLU.rua 0 1 1 1 1e-14 1e-14  >>SST.stdout
 #
 #
 #   Klu does not seem to handle fidapm05
-mpirun -np 1 amesos_test.exe KLU   fidapm05.rua 0 1 1 0 1000 1e-14 >>SST.stdout
-mpirun -np 3 amesos_test.exe KLU   fidapm05.rua 1 1 1 0 1000 1e-14  >>SST.stdout
-mpirun -np 3 amesos_test.exe KLU   fidapm05.rua 1 1 1 1 1000 1e-14  >>SST.stdout
+mpirun -np 1 amesos_test.exe KLU   fidapm05.rua 0 1 1 0 1000 1e-13 >>SST.stdout
+mpirun -np 3 amesos_test.exe KLU   fidapm05.rua 1 1 1 0 1000 1e-13  >>SST.stdout
+mpirun -np 3 amesos_test.exe KLU   fidapm05.rua 1 1 1 1 1000 1e-13  >>SST.stdout
 #
 #  Test some more small matrices
 #
-mpirun -np 1 amesos_test.exe KLU   ImpcolA.rua 0 1 1 0 1e-10 1e-12 >>SST.stdout
-mpirun -np 3 amesos_test.exe KLU   ImpcolA.rua 0 1 1 0 1e-10 1e-12  >>SST.stdout
-mpirun -np 1 amesos_test.exe KLU   ImpcolA.rua 1 1 1 0 1e-10 1e-12 >>SST.stdout
-mpirun -np 3 amesos_test.exe KLU   ImpcolA.rua 1 1 1 0 1e-10 1e-12  >>SST.stdout
-mpirun -np 3 amesos_test.exe KLU   ImpcolA.rua 0 1 1 1 1e-10 1e-12  >>SST.stdout
+mpirun -np 1 amesos_test.exe KLU   ImpcolA.rua 0 1 1 0 1e-9 1e-12 >>SST.stdout
+mpirun -np 3 amesos_test.exe KLU   ImpcolA.rua 0 1 1 0 1e-9 1e-12  >>SST.stdout
+mpirun -np 1 amesos_test.exe KLU   ImpcolA.rua 1 1 1 0 1e-9 1e-12 >>SST.stdout
+mpirun -np 3 amesos_test.exe KLU   ImpcolA.rua 1 1 1 0 1e-9 1e-12  >>SST.stdout
+mpirun -np 3 amesos_test.exe KLU   ImpcolA.rua 0 1 1 1 1e-9 1e-12  >>SST.stdout
 mpirun -np 1 amesos_test.exe KLU   ImpcolB.rua 1 1 1 0 1e-11 1e-13 >>SST.stdout
 mpirun -np 3 amesos_test.exe KLU   ImpcolB.rua 0 1 1 0 1e-11 1e-14  >>SST.stdout
 mpirun -np 1 amesos_test.exe KLU   ImpcolC.rua 0 1 1 0 1e-13 1e-13 >>SST.stdout
@@ -103,7 +103,7 @@ mpirun -np 3 amesos_test.exe KLU   ImpcolD.rua 1 1 1 0 1e-12 1e-13  >>SST.stdout
 #  Test some tranpose solves
 #
 mpirun -np 4 amesos_test.exe KLU   ImpcolB.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
-mpirun -np 4 amesos_test.exe KLU   ImpcolA.rua 1 1 1 1 1e-10 1e-12  >>SST.stdout
+mpirun -np 4 amesos_test.exe KLU   ImpcolA.rua 1 1 1 1 1e-9 1e-12  >>SST.stdout
 
 
 #

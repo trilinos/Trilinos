@@ -18,7 +18,7 @@
 #  Each time that this script is run, it appends the result of any previous runs to 
 #  AME.summary.  
 #
-#  More detailed loggin information can be found in SST.log
+#  More detailed logging information can be found in SST.log
 #
 #  Planned enhancements:
 #    0)  It should provde some output to reassure the user 

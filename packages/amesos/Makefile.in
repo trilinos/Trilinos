@@ -139,8 +139,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 
 
 #SUBDIRS = src
-#SUBDIRS = src test example
-SUBDIRS = src test
+SUBDIRS = src test example
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -459,6 +458,7 @@ uninstall-info: uninstall-info-recursive
 	uninstall uninstall-am uninstall-info-am \
 	uninstall-info-recursive uninstall-recursive
 
+#SUBDIRS = src test
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

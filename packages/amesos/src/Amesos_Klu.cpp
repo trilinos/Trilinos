@@ -22,6 +22,9 @@
    * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
 #include "Amesos_Klu.h"
+extern "C" {
+#include "klu_dump.h"
+}
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
@@ -201,7 +204,7 @@ bool Amesos_Klu::MatrixShapeOK() const {
 
 int Amesos_Klu::SymbolicFactorization() {
 
-  cout << " SymbolicFactorization() B = " << *(Problem_->GetRHS()) << endl ; 
+  //  cout << " SymbolicFactorization() B = " << *(Problem_->GetRHS()) << endl ; 
 
   ConvertToSerial() ; 
   
@@ -214,7 +217,7 @@ int Amesos_Klu::SymbolicFactorization() {
 
 int Amesos_Klu::NumericFactorization() {
   
-  cout << " NumericFactorization() B = " << *(Problem_->GetRHS()) << endl ; 
+  //  cout << " NumericFactorization() B = " << *(Problem_->GetRHS()) << endl ; 
 
   PerformNumericFactorization( );
   return 0;
@@ -285,6 +288,7 @@ int Amesos_Klu::Solve() {
       double *Control = (double *) NULL, *Info = (double *) NULL ;
 
       int status = 0 ; 
+#if 0
       cout << " B = " << 
 	SerialBvalues[0] << " " <<
 	SerialBvalues[1] << " " <<
@@ -296,33 +300,46 @@ int Amesos_Klu::Solve() {
 	P[2] << " " << 
 	P[3] << " " << 
 	P[4] << endl ; 
+#endif
+#if 0
+      defined in klu_dump
+      assert( klu_valid( NumGlobalElements_, Lp, Li, Lx ) ) ; 
+      assert( klu_valid( NumGlobalElements_, Up, Ui, Ux ) ) ; 
+#endif
+
       klu_permute( NumGlobalElements_, P, 
 		   &SerialBvalues[j*SerialBlda],
 		   &SerialXvalues[j*SerialXlda] ) ;
+#if 0
       cout << " X = " << 
 	SerialXvalues[0] << " " <<
 	SerialXvalues[1] << " " <<
 	SerialXvalues[2] << " " <<
 	SerialXvalues[3] << " " <<
 	SerialXvalues[4] << " before the left solve" << endl ; 
+#endif
       klu_lsolve(  NumGlobalElements_, 
 		   Lp, Li, Lx, &SerialXvalues[j*SerialXlda] );
+#if 0
       cout << " X = " << 
 	SerialXvalues[0] << " " <<
 	SerialXvalues[1] << " " <<
 	SerialXvalues[2] << " " <<
 	SerialXvalues[3] << " " <<
 	SerialXvalues[4] << " before the right solve" << endl ; 
+#endif
       klu_usolve(  NumGlobalElements_, 
 		   Up, Ui, Ux, &SerialXvalues[j*SerialXlda] );
-				    
+	
+#if 0			    
       cout << " X = " << 
 	SerialXvalues[0] << " " <<
 	SerialXvalues[1] << " " <<
 	SerialXvalues[2] << " " <<
 	SerialXvalues[3] << " " <<
 	SerialXvalues[4] << " after the right solve" << endl ; 
-#if 0      
+#endif
+#if 0
       int status = umfpack_di_solve (KluRequest, &Ap[0], 
 				     &Ai[0], &Aval[0], 
 				     &SerialXvalues[j*SerialXlda], 

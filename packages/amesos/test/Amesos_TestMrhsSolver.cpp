@@ -180,6 +180,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   passx->SetSeed(11.231) ; 
   passx->Random();
 
+  passb->PutScalar( 0.0 );
   passA->Multiply( transpose, *passxexact, *passb ) ; 
 
   double Anorm = passA->NormInf() ; 
@@ -443,6 +444,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     //
     vector <double> residual(numsolves) ; 
   
+    passtmp->PutScalar(0.0);
     passA->Multiply( transpose, *passx, *passtmp);
     passresid->Update(1.0, *passtmp, -1.0, *passb, 0.0); 
     passresid->Norm2(&residual[0]);
