@@ -101,7 +101,7 @@ public:
   //@{ \name Attribute access functions
   
   //! Return the label of the operator.
-  char* Label() const { return(Solver); };
+  const char* Label() const { return(Solver); };
   
   //! Return whether the operator is using the transpose.
   bool UseTranspose() const { return(false); };
