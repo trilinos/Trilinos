@@ -108,6 +108,7 @@ A NOX::ParameterList is supplied in the constructor and during calls to the NOX:
 <li> "Tolerance" - tolerance used by AztecOO to determine if a linear solve has converged.
 
 <li> "Ill-Conditioning Threshold" - If the upper hessenberg matrix during GMRES generates a condition number greater than this parameter value, aztec will exit the linear solve returning the it's current solution.  The default is 1.0e11.  
+<li> "Preconditioner Iterations" - Number of iterations an AztecOO_Operator should take when solving the preconditioner.  This is only used if an AztecOO preconditioner is used and the solver makes a call to NOX::Epetra::Group::applyRightPreconditioning().
 
 <li> "Max Iterations" - maximum number of linear iterations in the linear solve.  Defaults to 
 
@@ -289,6 +290,8 @@ public:
   //! See above
   virtual bool applyJacobianDiagonalInverse(const Abstract::Vector& input, Abstract::Vector& result) const;
   
+  virtual bool applyRightPreconditioning(Parameter::List& params, const Vector& input, Vector& result) const;
+
   //@}
 
   /** @name "Is" functions

@@ -40,6 +40,7 @@
 
 // External include files - linking to Aztec00 and Epetra in Trilinos
 #include "AztecOO.h"
+#include "AztecOO_Operator.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Vector.h" 
 #include "Epetra_Map.h"
@@ -805,7 +806,77 @@ bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
   return true;
 }
 
+bool Group::applyRightPreconditioning(Parameter::List& params, const Vector& input, Vector& result) const
+{
 
+  // Check validity of the Jacobian
+  if (!isJacobian()) 
+    return false;
+
+  int errorCode =1;
+
+  // Do preconditioning based on the "preconditioner" member
+  if (preconditioner == "None") {
+    return true;
+  }
+  else if ((preconditioner == "AztecOO: Jacobian Matrix") || 
+	   (preconditioner == "AztecOO: User RowMatrix")) {
+
+    // NOTE: Using Aztec preconditioning in this method is very inefficient.  
+    // Eventually we will switch to an ifpack preconditioner, but until 
+    // VBR format is supported in ifpack, we can use an AztecOO object to 
+    // generate an Aztec_Operator to act as the preconditioner - RPP
+
+    // Make sure the Jacobian is at least an Epetra_RowMatrix
+    // If so, get the address
+    Epetra_RowMatrix* Jacobian = 0;
+    Jacobian = dynamic_cast<Epetra_RowMatrix*>(&(sharedJacobian.getOperator(this)));
+    // Throw an error if Jacobian is not an Epetra_RowMatrix
+    if (Jacobian == 0) {
+      cout << "ERROR: NOX::Epetra::Group::applyRightPreconditioning() - "
+	   << "The Jacobian must be derived from the Epetra_RowMatrix class!"
+	   << endl;
+      throw "NOX Error";
+    }
+    
+    // Create the temporary vector 
+    if (tmpVectorPtr == 0) {
+      tmpVectorPtr = new Epetra_Vector(RHSVector.getEpetraVector());
+    }
+    tmpVectorPtr->PutScalar(0.0);
+    
+    // Create a linear problem
+    Epetra_LinearProblem problem(Jacobian, tmpVectorPtr, tmpVectorPtr);
+    
+    // Create the solver
+    AztecOO solver(problem);
+    
+    // Get the number of iterations in the preconditioner
+    int numIters = params.getParameter("Preconditioner Iterations", 20);
+    
+    AztecOO_Operator prec(&solver, numIters);
+    
+    errorCode = prec.ApplyInverse(input.getEpetraVector(), 
+				  result.getEpetraVector());
+  
+  }
+  else if (preconditioner == "User Supplied Preconditioner") {
+    Epetra_Operator& prec = sharedPreconditionerPtr->getOperator(this);
+    errorCode = prec.ApplyInverse(input.getEpetraVector(), 
+				  result.getEpetraVector());
+  }
+  else { 
+    cout << "ERROR: NOX::Epetra::Group::applyRightPreconditioning() - "
+	 << "Parameter \"preconditioner\" is not vaild for this method"
+	 << endl;
+    throw "NOX Error";
+  }
+
+  if (errorCode == 0) 
+    return true;
+  else
+    return false;
+}
 
 bool Group::isF() const 
 {   
