@@ -436,8 +436,8 @@ int LB_Balance(
  */
 
 char *yo = "LB_Balance";
-int gmax_imports;              /* Maximum number of imported objects over 
-                                  all processors.                           */
+int gmax;              /* Maximum number of imported/exported objects 
+                          over all processors.                       */
 double LB_start_time, LB_end_time;
 double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
 
@@ -477,12 +477,17 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
   LB_perform_error_checking(lb);
 
   lb->LB_Fn(lb, num_import_objs, import_global_ids, import_local_ids,
-            import_procs);
+            import_procs, num_export_objs, export_global_ids, 
+            export_local_ids, export_procs);
 
-  MPI_Allreduce(num_import_objs, &gmax_imports, 1, MPI_INT, MPI_MAX, 
+  if (num_import_objs >= 0)
+    MPI_Allreduce(num_import_objs, &gmax, 1, MPI_INT, MPI_MAX, 
+                lb->Communicator);
+  else /* use export data */
+    MPI_Allreduce(num_export_objs, &gmax, 1, MPI_INT, MPI_MAX, 
                 lb->Communicator);
 
-  if (gmax_imports == 0) {
+  if (gmax == 0) {
 
     /*
      *  Decomposition was not changed by the load balancing; no migration
@@ -497,16 +502,40 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
   }
 
   /*
-   *  We now know what the new decomposition should look like on the
+   *  Check whether we know the import data, export data, or both.
+   *
+   *  If we were given the import data,
+   *  we know what the new decomposition should look like on the
    *  processor, but we don't know which of our local objects we have
    *  to export to other processors to establish the new decomposition.
-   *  Compute the destination map.
+   *  Reverse the argument if we were given the export data.
+   *
+   *  Unless we were given both maps, compute the inverse map.
    */
 
-  LB_Compute_Destinations(lb, *num_import_objs, *import_global_ids, 
-                          *import_local_ids, *import_procs,
-                          num_export_objs, export_global_ids,
-                          export_local_ids, export_procs);
+  if (*num_import_objs >= 0){
+    if (*num_export_objs >= 0)
+      /* Both maps already available; nothing to do. */;
+    else
+      /* Compute export map */
+      LB_Compute_Destinations(lb, *num_import_objs, *import_global_ids, 
+                              *import_local_ids, *import_procs,
+                              num_export_objs, export_global_ids,
+                              export_local_ids, export_procs);
+  }
+  else { /* if (*num_import_objs < 0) */
+    if (*num_export_objs >= 0)
+      /* Compute export map */
+      LB_Compute_Destinations(lb, *num_export_objs, *export_global_ids, 
+                              *export_local_ids, *export_procs,
+                              num_import_objs, import_global_ids,
+                              import_local_ids, import_procs);
+    else{
+      /* No map at all available */
+      printf("%s Error: Load-balancing function returned neither import nor export data.\n", yo);
+      return LB_WARN;
+    }
+  }
 
   LB_end_time = MPI_Wtime();
   LB_time[0] = LB_end_time - LB_start_time;
@@ -609,14 +638,13 @@ int i;
    */
 
   if (num_import > 0) {
-    proc_list = (int *) LB_Malloc(num_import*sizeof(int), __FILE__, __LINE__);
+    proc_list = (int *) LB_MALLOC(num_import*sizeof(int));
     if (!proc_list) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
       return (LB_MEMERR);
     }
-    import_objs = (LB_TAG *) LB_Malloc(num_import*sizeof(LB_TAG),
-	__FILE__, __LINE__);
+    import_objs = (LB_TAG *) LB_MALLOC(num_import*sizeof(LB_TAG));
     if (!import_objs) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
@@ -647,8 +675,7 @@ int i;
    */
 
   if (*num_export > 0) {
-    export_objs = (LB_TAG *) LB_Malloc((*num_export)*sizeof(LB_TAG),
-	__FILE__, __LINE__);
+    export_objs = (LB_TAG *) LB_MALLOC((*num_export)*sizeof(LB_TAG));
     if (!export_objs) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
@@ -656,8 +683,7 @@ int i;
       LB_FREE(&import_objs);
       return (LB_MEMERR);
     }
-    *export_global_ids  = (LB_GID *) LB_Malloc((*num_export)*sizeof(LB_GID),
-	__FILE__, __LINE__);
+    *export_global_ids  = (LB_GID *) LB_MALLOC((*num_export)*sizeof(LB_GID));
     if (!(*export_global_ids)) { 
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
@@ -666,8 +692,7 @@ int i;
       LB_FREE(&export_objs);
       return (LB_MEMERR);
     }
-    *export_local_ids   = (LB_LID *) LB_Malloc((*num_export)*sizeof(LB_LID),
-        __FILE__, __LINE__);
+    *export_local_ids   = (LB_LID *) LB_MALLOC((*num_export)*sizeof(LB_LID));
     if (!(*export_local_ids)) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
@@ -677,8 +702,7 @@ int i;
       LB_FREE(export_local_ids);
       return (LB_MEMERR);
     }
-    *export_procs = (int *) LB_Malloc((*num_export)*sizeof(int),
-	__FILE__, __LINE__);
+    *export_procs = (int *) LB_MALLOC((*num_export)*sizeof(int));
     if (!(*export_procs)) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
@@ -838,14 +862,14 @@ int ierr = 0;
 
 
   if (num_export > 0) {
-    export_buf = (char *) LB_Malloc(num_export*size, __FILE__, __LINE__);
+    export_buf = (char *) LB_MALLOC(num_export*size);
     if (!export_buf) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
       return (LB_FATAL);
     }
 
-    proc_list = (int *) LB_Malloc(num_export*sizeof(int), __FILE__, __LINE__);
+    proc_list = (int *) LB_MALLOC(num_export*sizeof(int));
     if (!proc_list) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
@@ -886,7 +910,7 @@ int ierr = 0;
   }
 
   if (num_import > 0) {
-    import_buf = (char *) LB_Malloc(num_import*size, __FILE__, __LINE__);
+    import_buf = (char *) LB_MALLOC(num_import*size);
     if (!import_buf) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
