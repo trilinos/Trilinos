@@ -73,20 +73,20 @@ Decomposition Info	= method=rcb, tol=0.9
 Zoltan Parameters	= 0=3.0, 1=0.05
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# FEM File Type = <file type>
+# File Type = <file type>
 #
 # This line is OPTIONAL. If it is not included, then it is assumed that
 # the file type is parallel nemesis.
 #
-# This line contains tells which format the FEM file is in. The current
+# This line contains tells which format the file is in. The current
 # options for this line are:
 #	NemesisI	- parallel ExodusII/NemesisI files (1 per processor)
 #	Chaco		- Chaco graph and/or geometry file(s)
 #-----------------------------------------------------------------------------
-FEM File Type		= NemesisI
+File Type		= NemesisI
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# FEM File Name = <filename>
+# File Name = <filename>
 #
 # This line contains the filename for the input finite element mesh.
 #
@@ -94,15 +94,20 @@ FEM File Type		= NemesisI
 # of the parallel ExodusII files that contain the results. The base
 # name is the parallel filename without the trailing .<# proc>.<file #>
 # on it. This file must contain the Nemesis global information.
+#
+# If the file type is Chaco, this name refers to the base name of the
+# Chaco files containing graph and/or coordinates information.  The
+# file <filename>.graph will be read for the Chaco graph information;
+# The file <filename>.coords will be read for Chaco geometry information.
 #-----------------------------------------------------------------------------
-FEM File Name	= testa.par
+File Name	= testa.par
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # Parallel Disk Info = <options>
 #
 # This line is OPTIONAL. If this line is left blank, then it is assumed
 # that there is no parallel disk information, and all of the files are
-# in a single directory.
+# in a single directory.  This line is used only for Nemesis files.
 #
 # This line gives all of the information about the parallel file system
 # being used. There are a number of options that can be used with it,
@@ -140,7 +145,8 @@ Parallel Disk Info	= number=4,zeros
 # This line is OPTIONAL, only if the above line is excluded as well, or
 # the number of raids is specified as zero (0). If this line is excluded,
 # then the root directory is set to the execution directory, ".", and all
-# files should be in that directory.
+# files should be in that directory.  This line is used only for Nemesis 
+# files.
 #
 # This line gives all of the information about where the parallel files are
 # located. There are only two options for this line, and both must be
