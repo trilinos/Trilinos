@@ -24,31 +24,30 @@ $(ZOD)/farg.o: $(FARG).f
 
 $(ZOD)/fdr_main.o: 	fdr_main.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \
 			$(ZOD)/fdr_input.o $(ZOD)/fdr_chaco_io.o \
-			$(ZOD)/fdr_loadbal.o $(ZOD)/libzoltan.a
+			$(ZOD)/fdr_loadbal.o 
 	$(F90) $(ZOM) -c fdr_main.f90
 	/bin/mv *.o $(ZOD)
 
 $(ZOD)/fdr_migrate.o: 	fdr_migrate.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \
-			$(ZOD)/fdr_chaco_io.o $(ZOD)/libzoltan.a
+			$(ZOD)/fdr_chaco_io.o
 	$(F90) $(ZOM) -c fdr_migrate.f90
 	/bin/mv *.o *.mod $(ZOD)
 
 $(ZOD)/fdr_loadbal.o: 	fdr_loadbal.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \
-			$(ZOD)/fdr_migrate.o $(ZOD)/libzoltan.a
+			$(ZOD)/fdr_migrate.o
 	$(F90) $(ZOM) -c fdr_loadbal.f90
 	/bin/mv *.o *.mod $(ZOD)
 
-$(ZOD)/fdr_input.o: 	fdr_input.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \
-			$(ZOD)/libzoltan.a
+$(ZOD)/fdr_input.o: 	fdr_input.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o 
 	$(F90) $(ZOM) -c fdr_input.f90
 	/bin/mv *.o *.mod $(ZOD)
 
 $(ZOD)/fdr_chaco_io.o: 	fdr_chaco_io.f90 $(ZOD)/mpi_h.o $(ZOD)/fdr_const.o \
-			$(ZOD)/fdr_input.o $(ZOD)/libzoltan.a
+			$(ZOD)/fdr_input.o 
 	$(F90) $(ZOM) -c fdr_chaco_io.f90
 	/bin/mv *.o *.mod $(ZOD)
 
-$(ZOD)/fdr_const.o: 	fdr_const.f90 $(ZOD)/libzoltan.a
+$(ZOD)/fdr_const.o: 	fdr_const.f90 
 	$(F90) $(ZOM) -c fdr_const.f90
 	/bin/mv *.o *.mod $(ZOD)
 

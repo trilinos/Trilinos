@@ -41,24 +41,23 @@ contains
 !/*****************************************************************************/
 !/*****************************************************************************/
 
-logical function run_zoltan(Proc, prob, elements)
+logical function run_zoltan(Proc, prob)
 integer(LB_INT) :: Proc
 type(PROB_INFO) :: prob
-type(ELEM_INFO), pointer :: elements(:)
 
 !/* Local declarations. */
   type(LB_Struct), pointer :: lb_obj
 
 !  /* Variables returned by the load balancer */
-  integer(LB_INT), pointer :: import_gids(:)  !/* Global node nums of nodes to
+  integer(LB_INT),pointer :: import_gids(:)  !/* Global node nums of nodes to
                                              ! be imported
-  integer(LB_INT), pointer :: import_lids(:)  !/* Pointers to nodes to be
+  integer(LB_INT),pointer :: import_lids(:)  !/* Pointers to nodes to be
                                              ! imported
   integer(LB_INT), pointer :: import_procs(:) !/* Proc IDs of procs owning
                                              ! nodes to be imported.
-  integer(LB_INT), pointer :: export_gids(:)  !/* Global node nums of nodes to
+  integer(LB_INT),pointer :: export_gids(:)  !/* Global node nums of nodes to
                                              ! be exported
-  integer(LB_INT), pointer :: export_lids(:)  !/* Pointers to nodes to be
+  integer(LB_INT),pointer :: export_lids(:)  !/* Pointers to nodes to be
                                              ! exported
   integer(LB_INT), pointer :: export_procs(:) !/* Proc IDs of destination procs
                                              ! for nodes to be exported.
@@ -69,16 +68,17 @@ type(ELEM_INFO), pointer :: elements(:)
 
   integer(LB_INT) :: i            !/* Loop index
   integer(LB_INT) :: ierr         !   Return code
-  type(LB_User_Data_1) :: elements_wrapper ! wrapper to pass elements to query
+  integer(LB_INT) :: num_gid_entries  ! # of array entries in global IDs
+  integer(LB_INT) :: num_lid_entries  ! # of array entries in local IDs
+  type(LB_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
 
 !/***************************** BEGIN EXECUTION ******************************/
 
   nullify(lb_obj, import_gids, import_lids, import_procs, &
                   export_gids, export_lids, export_procs)
 
-! make elements passable to the callback functions
-
-  elements_wrapper%ptr => elements
+! make Mesh passable to the callback functions
+  mesh_wrapper%ptr => Mesh
 
 !  /*
 !   *  Create a load-balancing object.
@@ -116,14 +116,14 @@ type(ELEM_INFO), pointer :: elements(:)
   endif
 
   if (LB_Set_Fn(lb_obj, LB_FIRST_OBJ_FN_TYPE, get_first_element, &
-                elements_wrapper) == LB_FATAL) then
+                mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     run_zoltan = .false.
     return
   endif
 
   if (LB_Set_Fn(lb_obj, LB_NEXT_OBJ_FN_TYPE, get_next_element, &
-                elements_wrapper) == LB_FATAL) then
+                mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     run_zoltan = .false.
     return
@@ -137,7 +137,7 @@ type(ELEM_INFO), pointer :: elements(:)
   endif
 
   if (LB_Set_Fn(lb_obj, LB_GEOM_FN_TYPE, get_geom, &
-      elements_wrapper) == LB_FATAL) then
+                mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     run_zoltan = .false.
     return
@@ -145,14 +145,14 @@ type(ELEM_INFO), pointer :: elements(:)
 
 !  /* Functions for geometry based algorithms */
   if (LB_Set_Fn(lb_obj, LB_NUM_EDGES_FN_TYPE, get_num_edges, &
-                elements_wrapper) == LB_FATAL) then
+                mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     run_zoltan = .false.
     return
   endif
 
   if (LB_Set_Fn(lb_obj, LB_EDGE_LIST_FN_TYPE, get_edge_list, &
-                elements_wrapper) == LB_FATAL) then
+                mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     run_zoltan = .false.
     return
@@ -170,7 +170,8 @@ type(ELEM_INFO), pointer :: elements(:)
 !  /*
 !   * Call the load balancer
 !   */
-  if (LB_Balance(lb_obj, new_decomp, num_imported, import_gids,        &
+  if (LB_Balance(lb_obj, new_decomp, num_gid_entries, num_lid_entries, &
+                 num_imported, import_gids,        &
                  import_lids, import_procs, num_exported, export_gids, &
                  export_lids, export_procs) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Balance()"
@@ -182,7 +183,9 @@ type(ELEM_INFO), pointer :: elements(:)
 !   * Call another routine to perform the migration
 !   */
   if (new_decomp) then
-    if (.not.migrate_elements(Proc,elements,lb_obj,num_imported,import_gids, &
+    if (.not.migrate_elements(Proc,lb_obj, &
+                          num_gid_entries, num_lid_entries, &
+                          num_imported,import_gids, &
                           import_lids,import_procs,num_exported,export_gids, &
                           export_lids,export_procs)) then
       print *, "fatal:  error returned from migrate_elements()"
@@ -225,19 +228,25 @@ end function get_num_elements
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-integer(LB_INT) function get_first_element(data, global_id, local_id, &
+integer(LB_INT) function get_first_element(data, &
+                                          num_gid_entries, num_lid_entries, &
+                                          global_id, local_id, &
                                           wdim, wgt, ierr)
 
-  type(LB_User_Data_1) :: data
-  integer(LB_INT) :: global_id
-  integer(LB_INT) :: local_id
+  type(LB_User_Data_2) :: data
+  integer(LB_INT) :: num_gid_entries
+  integer(LB_INT) :: num_lid_entries
+  integer(LB_INT) :: global_id(*)
+  integer(LB_INT) :: local_id(*)
   integer(LB_INT) :: wdim
   real(LB_FLOAT) :: wgt
   integer(LB_INT) :: ierr
 
   type(ELEM_INFO), pointer :: elem(:)
+  type(MESH_INFO), pointer :: mesh_data
 
-  elem => data%ptr
+  mesh_data => data%ptr
+  elem => mesh_data%elements
 
   if (.not. associated(elem)) then
     ierr = LB_FATAL
@@ -245,11 +254,11 @@ integer(LB_INT) function get_first_element(data, global_id, local_id, &
     return
   endif
   
-  local_id = 0
-  global_id = elem(local_id)%globalID
+  local_id(1) = 0
+  global_id(1) = elem(local_id(1))%globalID
 
   if (wdim>0) then
-    wgt = elem(local_id)%cpu_wgt
+    wgt = elem(local_id(1))%cpu_wgt
   endif
 
   if (wdim>1) then
@@ -264,20 +273,24 @@ end function get_first_element
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-integer(LB_INT) function get_next_element(data, global_id, local_id, &
+integer(LB_INT) function get_next_element(data, &
+                     num_gid_entries, num_lid_entries, global_id, local_id, &
                      next_global_id, next_local_id, wdim, next_wgt, ierr)
-  type(LB_User_Data_1) :: data
-  integer(LB_INT) :: global_id, next_global_id
-  integer(LB_INT) :: local_id, next_local_id
+  type(LB_User_Data_2) :: data
+  integer(LB_INT) :: num_gid_entries, num_lid_entries
+  integer(LB_INT) :: global_id(*), next_global_id(*)
+  integer(LB_INT) :: local_id(*), next_local_id(*)
   integer(LB_INT) :: wdim
   real(LB_FLOAT)  :: next_wgt
   integer(LB_INT) :: ierr
 
   integer(LB_INT) :: found
   type(ELEM_INFO), pointer :: elem(:)
+  type(MESH_INFO), pointer :: mesh_data
 
   found = 0
-  elem => data%ptr
+  mesh_data => data%ptr
+  elem => mesh_data%elements
 
   if (.not. associated(elem)) then
     ierr = LB_FATAL
@@ -285,13 +298,13 @@ integer(LB_INT) function get_next_element(data, global_id, local_id, &
     return
   endif
   
-  if (local_id+1 < Mesh%num_elems) then
+  if (local_id(1)+1 < Mesh%num_elems) then
     found = 1
-    next_local_id = local_id + 1
-    next_global_id = elem(next_local_id)%globalID
+    next_local_id(1) = local_id(1) + 1
+    next_global_id(1) = elem(next_local_id(1))%globalID
 
     if (wdim>0) then
-      next_wgt = elem(next_local_id)%cpu_wgt
+      next_wgt = elem(next_local_id(1))%cpu_wgt
     endif
 
     if (wdim>1) then
@@ -319,25 +332,32 @@ end function get_num_geom
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-subroutine get_geom(data, global_id, local_id, coor, ierr)
-type (LB_User_Data_1) :: data
-integer(LB_INT) :: global_id
-integer(LB_INT) :: local_id
+subroutine get_geom(data, num_gid_entries, num_lid_entries, &
+                    global_id, local_id, coor, ierr)
+type (LB_User_Data_2) :: data
+integer(LB_INT) :: num_gid_entries, num_lid_entries
+integer(LB_INT) :: global_id(*)
+integer(LB_INT) :: local_id(*)
 real(LB_DOUBLE) :: coor(*)
 integer(LB_INT) :: ierr
 
   type(ELEM_INFO), pointer :: elem(:)
+  type(ELEM_INFO), pointer :: current_elem
+  type(MESH_INFO), pointer :: mesh_data
   integer(LB_INT) :: i, j
   real(LB_DOUBLE) :: tmp
 
-  elem => data%ptr
+  mesh_data => data%ptr
+  elem => mesh_data%elements
 
   if (.not. associated(elem)) then
     ierr = LB_FATAL
     return
   endif
 
-  if (Mesh%eb_nnodes(elem(local_id)%elem_blk) == 0) then
+  current_elem => elem(local_id(1))
+
+  if (Mesh%eb_nnodes(current_elem%elem_blk) == 0) then
     !/* No geometry info was read. */
     ierr = LB_FATAL
     return
@@ -349,11 +369,11 @@ integer(LB_INT) :: ierr
 !   */
   do i = 0, Mesh%num_dims-1
     tmp = 0.0_LB_DOUBLE
-    do j = 0, Mesh%eb_nnodes(elem(local_id)%elem_blk)-1
-      tmp = tmp + elem(local_id)%coord(i,j)
+    do j = 0, Mesh%eb_nnodes(current_elem%elem_blk)-1
+      tmp = tmp + current_elem%coord(i,j)
     end do
 
-    coor(i+1) = tmp / Mesh%eb_nnodes(elem(local_id)%elem_blk)
+    coor(i+1) = tmp / Mesh%eb_nnodes(current_elem%elem_blk)
   end do
 
   ierr = LB_OK
@@ -362,15 +382,19 @@ end subroutine get_geom
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-integer(LB_INT) function get_num_edges(data, global_id, local_id, ierr)
-type(LB_User_Data_1) :: data
-integer(LB_INT) :: global_id
-integer(LB_INT) :: local_id
+integer(LB_INT) function get_num_edges(data, num_gid_entries, num_lid_entries, &
+                                       global_id, local_id, ierr)
+type(LB_User_Data_2) :: data
+integer(LB_INT) :: num_gid_entries, num_lid_entries
+integer(LB_INT) :: global_id(*)
+integer(LB_INT) :: local_id(*)
 integer(LB_INT) :: ierr
 
 type(ELEM_INFO), pointer :: elem(:)
+type(MESH_INFO), pointer :: mesh_data
 
-  elem => data%ptr
+  mesh_data => data%ptr
+  elem => mesh_data%elements
 
   if (.not. associated(elem)) then
     ierr = LB_FATAL
@@ -380,51 +404,58 @@ type(ELEM_INFO), pointer :: elem(:)
 
   ierr = LB_OK;
 
-  get_num_edges = elem(local_id)%nadj
+  get_num_edges = elem(local_id(1))%nadj
 end function get_num_edges
 
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-subroutine get_edge_list (data, global_id, local_id, nbor_global_id, &
+subroutine get_edge_list (data, num_gid_entries, num_lid_entries, &
+                          global_id, local_id, nbor_global_id, &
                           nbor_procs, get_ewgts, nbor_ewgts, ierr)
-type(LB_User_Data_1) :: data
-integer(LB_INT) :: global_id, nbor_global_id(*)
-integer(LB_INT) :: local_id
+type(LB_User_Data_2) :: data
+integer(LB_INT) :: num_gid_entries, num_lid_entries
+integer(LB_INT) :: global_id(*), nbor_global_id(*)
+integer(LB_INT) :: local_id(*)
 integer(LB_INT) :: nbor_procs(*), get_ewgts, nbor_ewgts(*), ierr
 
   type(ELEM_INFO), pointer :: elem(:)
+  type(ELEM_INFO), pointer :: current_elem
+  type(MESH_INFO), pointer :: mesh_data
   integer(LB_INT) :: i, j, proc, local_elem, mpierr
 
-  elem => data%ptr
+  mesh_data => data%ptr
+  elem => mesh_data%elements
 
   if (.not. associated(elem)) then
     ierr = LB_FATAL
     return
   endif
 
+  current_elem => elem(local_id(1))
+
 !  /* get the processor number */
   call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
 
   j = 1
-  do i = 0, elem(local_id)%adj_len-1
+  do i = 0, current_elem%adj_len-1
 
 !    /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-    if (elem(local_id)%adj(i) == -1) cycle
+    if (current_elem%adj(i) == -1) cycle
 
-    if (elem(local_id)%adj_proc(i) == proc) then
-      local_elem = elem(local_id)%adj(i)
-      nbor_global_id(j) = elem(local_elem)%globalID
+    if (current_elem%adj_proc(i) == proc) then
+      local_elem = current_elem%adj(i)
+      nbor_global_id(1+(j-1)*num_gid_entries) = elem(local_elem)%globalID
     else  ! /* adjacent element on another processor */
-      nbor_global_id(j) = elem(local_id)%adj(i)
+      nbor_global_id(1+(j-1)*num_gid_entries) = current_elem%adj(i)
     endif
-    nbor_procs(j) = elem(local_id)%adj_proc(i)
+    nbor_procs(j) = current_elem%adj_proc(i)
 
     if (get_ewgts /= 0) then
-      if (.not. associated(elem(local_id)%edge_wgt)) then
+      if (.not. associated(current_elem%edge_wgt)) then
         nbor_ewgts(j) = 1 !/* uniform weights is default */
       else
-        nbor_ewgts(j) = elem(local_id)%edge_wgt(i)
+        nbor_ewgts(j) = current_elem%edge_wgt(i)
       endif
     endif
     j = j+1

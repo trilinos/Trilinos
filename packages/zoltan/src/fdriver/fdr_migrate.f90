@@ -73,64 +73,66 @@ contains
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-logical function migrate_elements(Proc, elements, lb_obj, num_imp, imp_gids, &
+logical function migrate_elements(Proc, lb_obj, &
+                                  num_gid_entries, num_lid_entries, &
+                                  num_imp, imp_gids, &
                                   imp_lids, imp_procs, num_exp, exp_gids, &
                                   exp_lids, exp_procs)
   integer(LB_INT) :: Proc
-  type(ELEM_INFO), pointer :: elements(:)
   type(LB_Struct) :: lb_obj
+  integer(LB_INT) :: num_gid_entries, num_lid_entries
   integer(LB_INT) :: num_imp
-  integer(LB_INT), pointer :: imp_gids(:)
-  integer(LB_INT), pointer :: imp_lids(:)
+  integer(LB_INT),pointer :: imp_gids(:)
+  integer(LB_INT),pointer :: imp_lids(:)
   integer(LB_INT), pointer :: imp_procs(:)
   integer(LB_INT) :: num_exp
-  integer(LB_INT), pointer :: exp_gids(:)
-  integer(LB_INT), pointer :: exp_lids(:)
+  integer(LB_INT),pointer :: exp_gids(:)
+  integer(LB_INT),pointer :: exp_lids(:)
   integer(LB_INT), pointer :: exp_procs(:)
 
 !/* Local declarations. */
-type(LB_User_Data_1) :: elements_wrapper ! wrapper to pass elements to query
+type(LB_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
 
 !/***************************** BEGIN EXECUTION ******************************/
 
-! make elements passable to the callback functions
-
-  elements_wrapper%ptr => elements
+! make Mesh passable to the callback functions
+  mesh_wrapper%ptr => Mesh
 
 !  /*
 !   * register migration functions
 !   */
   if (LB_Set_Fn(lb_obj, LB_PRE_MIGRATE_FN_TYPE, migrate_pre_process, &
-                elements_wrapper) == LB_FATAL) then
+                mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
   if (LB_Set_Fn(lb_obj, LB_POST_MIGRATE_FN_TYPE, migrate_post_process, &
-                elements_wrapper) == LB_FATAL) then
+                mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
   if (LB_Set_Fn(lb_obj, LB_OBJ_SIZE_FN_TYPE, migrate_elem_size, &
-               elements_wrapper) == LB_FATAL) then
+               mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
   if (LB_Set_Fn(lb_obj, LB_PACK_OBJ_FN_TYPE, migrate_pack_elem, &
-                elements_wrapper) == LB_FATAL) then
+                mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
   if (LB_Set_Fn(lb_obj, LB_UNPACK_OBJ_FN_TYPE, migrate_unpack_elem, &
-                elements_wrapper) == LB_FATAL) then
+                mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
-  if (LB_Help_Migrate(lb_obj, num_imp, imp_gids, imp_lids, imp_procs, &
+  if (LB_Help_Migrate(lb_obj, num_gid_entries, num_lid_entries, &
+                      num_imp, imp_gids, imp_lids, imp_procs, &
                       num_exp, exp_gids, exp_lids, exp_procs) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Help_Migrate()"
     migrate_elements = .false.; return
@@ -142,14 +144,17 @@ end function migrate_elements
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-subroutine migrate_pre_process(data, num_import, import_global_ids, &
+subroutine migrate_pre_process(data, num_gid_entries, num_lid_entries, &
+                               num_import, import_global_ids, &
                                import_local_ids, import_procs, num_export, &
                                export_global_ids, export_local_ids, &
                                export_procs, ierr)
-type(LB_User_Data_1) :: data
+type(LB_User_Data_2) :: data
+integer(LB_INT) :: num_gid_entries, num_lid_entries
 integer(LB_INT) :: num_import, num_export, ierr
-integer(LB_INT) :: import_global_ids(*), import_local_ids(*), import_procs(*), &
-                   export_global_ids(*), export_local_ids(*), export_procs(*)
+integer(LB_INT) :: import_global_ids(*), import_local_ids(*), &
+                    export_global_ids(*), export_local_ids(*)
+integer(LB_INT) :: import_procs(*), export_procs(*)
 
 integer(LB_INT) :: i, j, k, idx, maxlen, proc, offset, mpierr, allocstat
 integer(LB_INT), allocatable :: proc_ids(:) !/* Temp array of processor assignments for elements.*/
@@ -159,10 +164,12 @@ integer(LB_INT) :: new_proc  !/* New processor assignment for nbor element.
 integer(LB_INT) :: exp_elem  !/* index of an element being exported */
 integer(LB_INT) :: bor_elem  !/* index of an element along the processor border
 integer(LB_INT), allocatable :: send_vec(:), recv_vec(:) !/* Communication vecs.
-type(ELEM_INFO), pointer :: elements(:)
+type(ELEM_INFO), pointer :: elements(:), tmp(:)
+type(MESH_INFO), pointer :: mesh_data
 logical :: flag
 
-  elements => data%ptr
+  mesh_data => data%ptr
+  elements => mesh_data%elements
 
   ierr = LB_OK
 
@@ -217,7 +224,7 @@ logical :: flag
   end do
 
   do i = 1, num_export
-    exp_elem = export_local_ids(i)
+    exp_elem = export_local_ids(1 + (i-1)*num_lid_entries)
     New_Elem_Index(exp_elem) = -1
     proc_ids(exp_elem) = export_procs(i)
   end do
@@ -228,7 +235,7 @@ logical :: flag
       if (New_Elem_Index(j) == -1) exit
     end do
 
-    New_Elem_Index(j) = import_global_ids(i)
+    New_Elem_Index(j) = import_global_ids(1+(i-1)*num_gid_entries)
   end do
 
 !  /* 
@@ -238,7 +245,7 @@ logical :: flag
 !  /* Set change flag for elements whose adjacent elements are being exported */
 
   do i = 1, num_export
-    exp_elem = export_local_ids(i)
+    exp_elem = export_local_ids(1+(i-1)*num_lid_entries)
     do j = 0, elements(exp_elem)%adj_len-1
 
 !     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
@@ -354,16 +361,36 @@ logical :: flag
 if (allocated(recv_vec)) deallocate(recv_vec)
 if (allocated(send_vec)) deallocate(send_vec)
 
+  if (Mesh%elem_array_len < New_Elem_Index_Size) then
+    allocate(tmp(0:New_Elem_Index_Size-1),stat=allocstat)
+    if (allocstat /= 0) then
+      print *, "fatal: insufficient memory"
+      ierr = LB_MEMERR
+      return
+    endif
+    tmp(0:Mesh%num_elems-1) = Mesh%elements(0:Mesh%num_elems-1)
+    deallocate(Mesh%elements)
+    Mesh%elements => tmp
+    Mesh%elem_array_len = New_Elem_Index_Size
+
+!    /* initialize the new spots */
+    do i = Mesh%num_elems, Mesh%elem_array_len-1
+      call initialize_element(Mesh%elements(i))
+    end do
+  endif
+
 end subroutine migrate_pre_process
 
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-subroutine migrate_post_process(data, num_import, import_global_ids, &
+subroutine migrate_post_process(data, num_gid_entries, num_lid_entries, &
+                                num_import, import_global_ids, &
                                 import_local_ids, import_procs, num_export, &
                                 export_global_ids, export_local_ids, &
                                 export_procs, ierr)
-type(LB_User_Data_1) :: data
+type(LB_User_Data_2) :: data
+integer(LB_INT) :: num_gid_entries, num_lid_entries
 integer(LB_INT) :: num_import, num_export, ierr
 integer(LB_INT) :: import_global_ids(*), import_local_ids(*), import_procs(*), &
                    export_global_ids(*), export_local_ids(*), export_procs(*)
@@ -372,8 +399,10 @@ type(ELEM_INFO), pointer :: element(:)
 integer(LB_INT) :: proc, num_proc
 integer(LB_INT) :: i, j, k, last, mpierr
 integer(LB_INT) :: adj_elem
+type(MESH_INFO), pointer :: mesh_data
 
-  element => data%ptr
+  mesh_data => data%ptr
+  element => mesh_data%elements
 
   call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
   call MPI_Comm_size(MPI_COMM_WORLD, num_proc, mpierr)
@@ -447,7 +476,7 @@ end subroutine migrate_post_process
 !/*****************************************************************************/
 !/*****************************************************************************/
 integer(LB_INT) function migrate_elem_size(data, ierr)
-type(LB_User_Data_1) :: data
+type(LB_User_Data_2) :: data
 integer(LB_INT) :: ierr
 !/*
 ! * Function to return size of element information for a single element.
@@ -461,8 +490,10 @@ integer(LB_INT) :: i, size, mpierr
 type(ELEM_INFO), pointer :: elements(:)
 integer(LB_INT) :: retval(1) ! an array of length 1 for MPI return arrays
 integer, parameter :: SIZE_OF_INT = 4, SIZE_OF_FLOAT = 4
+type(MESH_INFO), pointer :: mesh_data
 
-  elements => data%ptr
+  mesh_data => data%ptr
+  elements => mesh_data%elements
   ierr = LB_OK
 
 !  /* 
@@ -516,10 +547,12 @@ end function migrate_elem_size
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-subroutine migrate_pack_elem(data, elem_gid, elem_lid,  mig_proc, &
+subroutine migrate_pack_elem(data, num_gid_entries, num_lid_entries, &
+                             elem_gid, elem_lid,  mig_proc, &
                              elem_data_size, buf, ierr)
-type(LB_User_Data_1) :: data
-integer(LB_INT) :: elem_gid, elem_lid
+type(LB_User_Data_2) :: data
+integer(LB_INT) :: num_gid_entries, num_lid_entries
+integer(LB_INT) :: elem_gid(*), elem_lid(*)
 integer(LB_INT) :: mig_proc, elem_data_size, ierr
 integer(LB_INT) :: buf(*)
 
@@ -533,11 +566,13 @@ integer(LB_INT) :: buf(*)
   integer(LB_INT) :: proc
   integer(LB_INT) :: num_nodes
   integer(LB_INT) :: mpierr
+  type(MESH_INFO), pointer :: mesh_data
 
   call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
 
-  elem => data%ptr !/* this is the head of the element struct array */
-  current_elem => elem(elem_lid)
+  mesh_data => data%ptr
+  elem => mesh_data%elements !/* this is the head of the element struct array */
+  current_elem => elem(elem_lid(1))
   num_nodes = Mesh%eb_nnodes(current_elem%elem_blk)
 
 !  /*
@@ -627,16 +662,20 @@ end subroutine migrate_pack_elem
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-subroutine migrate_unpack_elem(data, elem_gid, elem_data_size, buf, ierr)
-type(LB_User_Data_1) :: data
-integer(LB_INT) :: elem_gid, elem_data_size, ierr
+subroutine migrate_unpack_elem(data, num_gid_entries, &
+                               elem_gid, elem_data_size, buf, ierr)
+type(LB_User_Data_2) :: data
+integer(LB_INT) :: num_gid_entries
+integer(LB_INT) :: elem_gid(*)
+integer(LB_INT) :: elem_data_size, ierr
 integer(LB_INT) :: buf(*)
 
-  type(ELEM_INFO), pointer :: elem(:), tmp(:)
+  type(ELEM_INFO), pointer :: elem(:)
   type(ELEM_INFO), pointer :: current_elem
   integer(LB_INT) :: size, num_nodes
   integer(LB_INT) :: i, j, idx, mpierr, allocstat
   integer(LB_INT) :: proc
+  type(MESH_INFO), pointer :: mesh_data
 
   call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
 
@@ -644,27 +683,11 @@ integer(LB_INT) :: buf(*)
 !   * check if the element array has any space
 !   * if not, allocate some new space
 !   */
-  if (Mesh%elem_array_len < New_Elem_Index_Size) then
-    allocate(tmp(0:New_Elem_Index_Size-1),stat=allocstat)
-    if (allocstat /= 0) then
-      print *, "fatal: insufficient memory"
-      ierr = LB_MEMERR
-      return
-    endif
-    tmp(0:Mesh%num_elems-1) = data%ptr(0:Mesh%num_elems-1)
-    deallocate(data%ptr)
-    data%ptr => tmp
-    Mesh%elem_array_len = New_Elem_Index_Size
 
-!    /* initialize the new spots */
-    do i = Mesh%num_elems, Mesh%elem_array_len-1
-      data%ptr(i)%globalID = -1
-    end do
-  endif
+  mesh_data => data%ptr
+  elem => mesh_data%elements
 
-  elem => data%ptr
-
-  idx = in_list(elem_gid, New_Elem_Index_Size, New_Elem_Index)
+  idx = in_list(elem_gid(1), New_Elem_Index_Size, New_Elem_Index)
   if (idx == -1) then
     print *, "fatal: Unable to locate position for element"
     ierr = LB_FATAL
@@ -754,7 +777,6 @@ integer(LB_INT) :: buf(*)
     end do
     size = size + num_nodes * Mesh%num_dims
   endif
-
 
 !  /* and update the Mesh struct */
   Mesh%num_elems = Mesh%num_elems + 1

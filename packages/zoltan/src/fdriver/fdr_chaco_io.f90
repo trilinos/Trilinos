@@ -19,7 +19,7 @@ use dr_input
 implicit none
 private
 
-public :: read_chaco_mesh, free_element_arrays, in_list, build_elem_comm_maps
+public :: read_chaco_mesh, free_element_arrays, in_list, build_elem_comm_maps, initialize_element
 
 !/*                                                                          */
 !/*--------------------------------------------------------------------------*/
@@ -418,6 +418,7 @@ integer(LB_INT) :: nints_read    ! number of integers on last input line read
 
 ! for each input line
 
+  if (narcs > 0) then
     do
         call read_graph_line(fin,ints_read,nints_read)
         i = 1
@@ -598,6 +599,7 @@ integer(LB_INT) :: nints_read    ! number of integers on last input line read
 	sum_edges = sum_edges + nedge
 	start(vertex) = sum_edges
     end do
+  endif ! narcs > 0
 
 !/* Make sure there's nothing else in file. */
     call read_graph_line(fin,ints_read,nints_read)
@@ -1121,7 +1123,6 @@ type(ELEM_INFO) :: elem
 !/*
 ! * Frees all memory malloc'ed for an individual element.
 ! */
-integer j
 
   if (associated(elem%coord)) deallocate(elem%coord)
   if (associated(elem%connect)) deallocate(elem%connect)
