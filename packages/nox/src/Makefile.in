@@ -272,8 +272,8 @@ CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(libnox_a_SOURCES) $(libnoxepetra_a_SOURCES)
 HEADERS = $(include_HEADERS)
 
-DIST_COMMON = $(include_HEADERS) ./stamp-h.in ChangeLog Makefile.am \
-	Makefile.in NOX_Config.h.in
+DIST_COMMON = $(include_HEADERS) ./stamp-h.in Makefile.am Makefile.in \
+	NOX_Config.h.in
 SOURCES = $(libnox_a_SOURCES) $(libnoxepetra_a_SOURCES)
 
 all: NOX_Config.h
@@ -283,7 +283,7 @@ all: NOX_Config.h
 .SUFFIXES: .C .o .obj
 $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  src/Makefile
+	  $(AUTOMAKE) --gnu  src/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
