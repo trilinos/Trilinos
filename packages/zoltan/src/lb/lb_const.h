@@ -47,9 +47,9 @@ static char *cvs_lbconsth_id = "$Id$";
 #endif /* !TRUE */
 
 typedef struct LB_Struct LB;
-typedef struct LB_Comm_Struct LB_COMM;
+typedef struct LB_Tag_Struct LB_TAG;
 
-typedef void LB_FN(LB *, int*, int*, int *, LB_TAG **);
+typedef void LB_FN(LB *, int*, LB_ID**, LB_ID**, int **);
 
 /*
  *  Define the possible load balancing methods allowed.
@@ -67,7 +67,27 @@ typedef enum LB_Method {
 /*****************************************************************************/
 /*****************************************************************************/
 
+/*
+ *  Define a data structure for object information.
+ */
 
+struct LB_Tag_Struct {
+  LB_ID Global_ID;                /* Global ID for the object; provided by 
+                                     the application.                        */
+  LB_ID Local_ID;                 /* Local ID for the object; the application
+                                     determines what is meant by "local ID";
+                                     the load-balancer stores this field only
+                                     so the application can take advantage of
+                                     local indexing in the query routines.   */
+  int   Proc;                     /* A processor ID for the tag.  Could be 
+                                     the destination of an object to be 
+                                     exported or the source of an object to
+                                     be imported.                            */
+};
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 
 /* 
  *  Define a communication structure for load balancing results.  This
@@ -123,14 +143,6 @@ struct LB_Struct {
   double Tolerance;               /*  Tolerance to which to load balance;
                                       tolerance = 0.9 implies 10% imbalance
                                       is acceptable.                         */
-  int Object_Type;                /*  The application-specified object type
-                                      for objects being balanced.  The
-                                      application can use this value to 
-                                      distinguish which objects (e.g.,
-                                      elements or surfaces) are being used
-                                      in this load-balancing object.  This
-                                      value is not used specifically by the
-                                      load balancer.                         */
   void *Data_Structure;           /*  Data structure used by the load 
                                       balancer; cast by the method routines
                                       to the appropriate data type.          */
