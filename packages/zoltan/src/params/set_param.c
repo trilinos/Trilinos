@@ -93,6 +93,10 @@ char *val1)			/* value to set this parameter to */
 
     /* All parameter setting routines have been called, now finish up. */
 
+    if (status == 1)		/* Parameter name never found */
+	printf("Warning: parameter `%s' not found; not reset to `%s'.\n",
+	       name, val);
+
     if (status == 0)		/* Parameter OK, add it to list */
 	add_param(lb, name, val);
     else {
@@ -100,13 +104,9 @@ char *val1)			/* value to set this parameter to */
 	LB_FREE(&val);
     }
 
-    if (status == 1)		/* Parameter name never found */
-	printf("Warning: parameter `%s' not found; not reset to `%s'.\n",
-	       name, val);
-
     if (status == 0)
 	flag = LB_OK;
-    if (status == 1 || status == 2)
+    else if (status == 1 || status == 2)
 	flag = LB_WARN;
     else
 	flag = status;
