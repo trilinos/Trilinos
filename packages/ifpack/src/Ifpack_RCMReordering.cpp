@@ -176,8 +176,17 @@ int Ifpack_RCMReordering::Compute(const Ifpack_Graph& Graph)
   
   // build inverse reorder (will be used by ExtractMyRowCopy() 
   InvReorder_.resize(NumMyRows_);
+
+  for (int i = 0 ; i < NumMyRows_ ; ++i)
+    InvReorder_[i] = -1;
+
   for (int i = 0 ; i < NumMyRows_ ; ++i)
     InvReorder_[Reorder_[i]] = i;
+
+  for (int i = 0 ; i < NumMyRows_ ; ++i) {
+    if (InvReorder_[i] == -1)
+      IFPACK_CHK_ERR(-1);
+  }
 
   IsComputed_ = true;
   return(0);
