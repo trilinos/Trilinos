@@ -736,6 +736,68 @@ void ML_add_appended_rows(ML_CommInfoOP *comm_info, ML_Operator *matrix,
 
 }
 
+void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc)
+{
+   int    lower, upper, next_nz, col, i, j, k, Nexternal, ii;
+   int    *bindx, *externals, *rowptr;
+   double *val, dtemp;
+   struct ML_CSR_MSRdata *temp;
+   int    allocated, row_length;
+   ML_Comm *comm;
+
+   comm  = imatrix->comm;
+   lower = max_per_proc*comm->ML_mypid;
+   upper = lower + max_per_proc;
+
+   allocated = 100;
+   bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
+   val   = (double *)  ML_allocate( allocated*sizeof(double));
+   if (val == NULL) 
+     pr_error("ML_back_to_csrlocal: out of space\n");
+
+   Nexternal = 0;
+   for (i = 0 ; i < imatrix->getrow->Nrows; i++) {
+      ML_get_matrix_row(imatrix, 1, &i, &allocated, &bindx, &val,
+                        &row_length, Nexternal);
+      k = 0;
+      for (j = 0; j < row_length; j++) {
+         if (  (bindx[Nexternal+j] < lower) || (bindx[Nexternal+j] >= upper)){
+            bindx[Nexternal+k++] = bindx[Nexternal+j];
+         }
+      }
+      Nexternal += k;
+   }
+   ML_az_sort(bindx, Nexternal, NULL, NULL);
+   ML_rm_duplicates(bindx, &Nexternal);
+   externals = (int *) ML_allocate( (Nexternal+1)*sizeof(int));
+   for (i = 0; i < Nexternal; i++) externals[i] = bindx[i];
+   ML_free(bindx); bindx = NULL;
+   ML_free(val); val = NULL;
+
+   temp = (struct ML_CSR_MSRdata *) imatrix->data;
+
+   next_nz   = 0;
+   for (i = 0 ; i < temp->rowptr[imatrix->getrow->Nrows]; i++) {
+     col   = temp->columns[i];
+     if ( (col >= lower) && (col < upper) ) col -= lower;
+     else {
+       j = ML_find_index(col,externals,Nexternal);
+       if (j == -1) {
+	 printf("Column not found: %d\n",col);
+	 exit(1);
+       }
+       else col = j + imatrix->invec_leng;
+     }
+     temp->columns[i] = col;
+   }
+
+   ML_set_message_info(Nexternal, externals, max_per_proc,imatrix);
+
+   ML_free(externals);
+
+}
+
+
 /******************************************************************************/
 /* Create a map between local variables on this processor and a unique
  * global number where local variables on different processors which
