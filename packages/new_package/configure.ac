@@ -95,7 +95,11 @@ AM_INIT_AUTOMAKE(1.6.3)
 AC_PREREQ(2.57)
 
 #  #np# - can eliminate compiler checks below if your package does not use the
-#         language corresponding to the check
+#         language corresponding to the check.  Please note that if you use
+#	  F77_FUNC to determine Fortran name mangling, you should not remove
+#	  the Fortran compiler check or the check for Fortran flags.  Doing
+#	  so will prevent the detection of the proper name mangling in some
+#	  cases.
 # ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
@@ -113,7 +117,11 @@ TAC_ARG_CONFIG_MPI
 
 # ------------------------------------------------------------------------
 # Checks for extra flags
-# #np# - You can pull flag checks for languages not used in package 
+# #np# - You can pull flag checks for languages not used in package.  Please 
+#	  note that if you use F77_FUNC to determine Fortran name mangling, 
+#	  you should not remove the Fortran compiler check or the check for 
+#	  Fortran flags.  Doing so will prevent the detection of the proper 
+#	  name mangling in some cases.
 # ------------------------------------------------------------------------
 # Check if --with-flags present, prepend any specs to FLAGS
 
