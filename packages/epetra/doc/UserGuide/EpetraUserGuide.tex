@@ -154,7 +154,7 @@ implementation of these methods.  Instead, Epetra contains
 several derived classes that implement the \comm{} interface,
 providing the needed functionality.  In this way, Epetra is not
 explicitly dependent on any one communication library or interface.
-Presently we have three implementations of \comm{}:
+Presently we have four implementations of \comm{}:
 \begin{enumerate}
 \item {\bf \serialcomm{}: } Implements the \comm{}
 methods to run on a serial computer.  In this case, the majority of
@@ -193,7 +193,7 @@ Coupled with distributed memory communications, Epetra also provides
 support for distributed data objects.  Users can constructed,
 manipulate and redistribute Epetra objects in a flexible and powerful
 way.  The primary classes that are used to describe the layout of
-distributed objects are the \blockmap{} and \map{} classes.  Both of
+distributed objects are the {\bf \blockmap{}} and \{ \map{}} classes.  Both of
 these classes encode information about the distribution of {\it global
 IDs (GIDs)}. GIDs are integer labels that can be associated
 with elements of  Epetra distributed objects.  For example, the
@@ -486,7 +486,7 @@ and \crsmatrix{} classes to implement the power method.  Line 24
 computes the 2-norm of the vector z and returns it in the variable
 normz.  Note that the Norm2() method is actually defined in the
 \multivector{} class.  Norm2() returns an array of doubles containing
-the 2-norm of each vector in the \multivector{} object.  An \vector is
+the 2-norm of each vector in the \multivector{} object.  An \vector{} is
 an \multivector{} with one vector.  Therefore we can use the Norm2()
 interface by passing the address of a double (in this case
 ``\&normz'') as an array of doubles of length one.
@@ -527,7 +527,7 @@ with a constant block size of one.  However, to simplify discussion,
 we first introduce the \map{} class.
 
 An \map{} object contains all information needed to work with
-distributed memory objects.  Its primary data is a collection of {\it
+distributed memory objects.  Its primary data are a collection of {\it
 elements}.  Each element of a map has a global ID (GID) and a local ID
 (LID).  Elements are ordered on each processor by their LIDs.  On each
 processor, LID values range from 0 to the number of elements on the 
@@ -548,7 +548,8 @@ GIDs to each element in a contiguous, increasing order starting with
 processor 0.  Figure~\ref{Figure:MapExamples} shows the details for a
 map with 100 elements on 3 processors.
 \item {\bf Non-uniform linear map:}  This form of map is a small
-generalization where the calling processor specifies the number of
+generalization of the previous case, 
+where the calling processor specifies the number of
 elements it want assigned to itself.  The constructor will determine
 the total number of elements in the map and will assign GIDs in a
 contiguous, increasing order.
