@@ -539,6 +539,7 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
       /* set up smoothers */
 
       for (level = N_levels-1; level > coarsest_level; level--) {
+         ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 0.0, 1, 0.0);
 /*
          ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth, .67);
          ML_Gen_Smoother_GaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth,1.);
@@ -546,9 +547,9 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
          ML_Gen_Smoother_DDILUT(ml,level,ML_PRESMOOTHER);
          ML_Gen_Smoother_VBlockAdditiveSchwarz(ml,level,ML_PRESMOOTHER,nsmooth,
                                                0,NULL);
-*/
          ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ml,level,ML_PRESMOOTHER,
                                                      nsmooth,0,NULL);
+*/
 /*
          options[AZ_precond]=AZ_dom_decomp; options[AZ_subdomain_solve]=AZ_ilut;
          ML_Gen_SmootherAztec(ml, level, options, params, proc_config, status,
@@ -571,8 +572,11 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
          ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
       }
       else if ( coarse_iterations == 1 )
+         ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 0.0, 1, 0.0);
+/*
          ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
                                         coarse_iterations,1.);
+*/
       else
       {
          options[AZ_precond]=AZ_dom_decomp; options[AZ_subdomain_solve]=AZ_ilut;
@@ -923,13 +927,13 @@ void add_row_5pt(int row, int location, double val[],
    * neighbor exists.
    */
 
-  bindx[k] = row + NP;   if ((row/NP)%m !=     m-1) val[k++] = -100.00;
-  bindx[k] = row - NP;   if ((row/NP)%m !=       0) val[k++] = -100.00;
+  bindx[k] = row + NP;   if ((row/NP)%m !=     m-1) val[k++] = -1.00;
+  bindx[k] = row - NP;   if ((row/NP)%m !=       0) val[k++] = -1.00;
   bindx[k] = row + m*NP; if ((row/(NP*m))%m != m-1) val[k++] = -1.00;
   bindx[k] = row - m*NP; if ((row/(NP*m))%m !=   0) val[k++] = -1.00;
 
   bindx[location+1] = k;
-  val[location]     = 202.0;
+  val[location]     = 4.0;
 
 } /* add_row_5pt */
 

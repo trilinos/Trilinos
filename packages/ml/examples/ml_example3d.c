@@ -32,6 +32,13 @@ int choice;
 int num_PDE_eqns=1;
 int nsmooth = 1;
 
+int    parasails_factorized = 0;
+int    parasails_sym        = 0;
+double parasails_thresh     = 0.;
+int    parasails_nlevels    = 0;
+double parasails_filter     = 0.;
+double parasails_loadbal    = 0.;
+
 /*****************************************************************************/
 /* Set up and solve a test problem defined in the subroutine                 */
 /* init_matrix_vector_structures().                                          */
@@ -109,6 +116,19 @@ int main(int argc, char *argv[])
      printf("number of smoothing step : \n");
      scanf("%d", &nsmooth);
      printf("number of smoothing step = %d\n", nsmooth);
+
+     printf("ParaSails factorized, (1=true or 0=false) : \n");
+     scanf("%d",  &parasails_factorized);
+     printf("ParaSails symmetric smoother, (1=true or 0=false) : \n");
+     scanf("%d",  &parasails_sym);
+     printf("ParaSails threshold, (0.01 or 0.1) : \n");
+     scanf("%lf", &parasails_thresh);
+     printf("ParaSails number of levels, (0 or higher) : \n");
+     scanf("%d",  &parasails_nlevels);
+     printf("ParaSails filter value, (0. or 0.05 or 0.10) : \n");
+     scanf("%lf", &parasails_filter);
+     printf("ParaSails loadbal param, (0. or 0.9) : \n");
+     scanf("%lf", &parasails_loadbal);
   }
   AZ_broadcast((char *) &coarse_iterations,  sizeof(int), proc_config, AZ_PACK);
   AZ_broadcast((char *) &use_cg,  sizeof(int), proc_config, AZ_PACK);
@@ -119,6 +139,12 @@ int main(int argc, char *argv[])
   AZ_broadcast((char *) &refine_factor, sizeof(int), proc_config, AZ_PACK);
   AZ_broadcast((char *) &choice       , sizeof(int), proc_config, AZ_PACK);
   AZ_broadcast((char *) &nsmooth      , sizeof(int), proc_config, AZ_PACK);
+  AZ_broadcast((char *) &parasails_factorized, sizeof(int), proc_config, AZ_PACK);
+  AZ_broadcast((char *) &parasails_sym,     sizeof(int), proc_config, AZ_PACK);
+  AZ_broadcast((char *) &parasails_thresh,  sizeof(double), proc_config, AZ_PACK);
+  AZ_broadcast((char *) &parasails_nlevels, sizeof(int), proc_config, AZ_PACK);
+  AZ_broadcast((char *) &parasails_filter,  sizeof(double), proc_config, AZ_PACK);
+  AZ_broadcast((char *) &parasails_loadbal, sizeof(double), proc_config, AZ_PACK);
   AZ_broadcast((char *) NULL        ,   0          , proc_config, AZ_SEND);
   i = proc_config[AZ_N_procs];
   i = (int) pow( (double) i, 0.50001 );
@@ -391,10 +417,9 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
            (*Amat_f)->data_org[AZ_N_border];
     AZ_ML_Set_Amat(ml, N_levels-1, leng, leng, *Amat_f, proc_config);
 
-/*
-    coarsest_level = ML_Gen_MGHierarchyVanek(ml, N_levels-1, ML_DECREASING);
-*/
     ML_Aggregate_Create( &ag );
+ML_Aggregate_Set_MaxCoarseSize(ag, 10);
+ML_Aggregate_Set_Threshold(ag, 0.0);
     coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, ML_DECREASING,ag);
     coarsest_level = N_levels - coarsest_level;
     if ( proc_config[AZ_node] == 0 )
@@ -412,9 +437,16 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
        ML_Gen_Smoother_VBlockSymGaussSeidel( ml , level, ML_POSTSMOOTHER, 
  					     nsmooth, 1.0, 
                                              nblocks, blocks);
-*/
-       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth,1.);
        ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth,1.);
+*/
+/*
+       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth,1.);
+*/
+
+       ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 
+          parasails_sym, parasails_thresh, parasails_nlevels, parasails_filter);
+
+
 /*
 ML_Gen_Smoother_OrderedSymGaussSeidel(ml , level, ML_PRESMOOTHER,nsmooth,1.);
 ML_Gen_Smoother_OrderedSymGaussSeidel(ml , level, ML_POSTSMOOTHER,nsmooth,1.);
@@ -446,9 +478,14 @@ ML_Gen_Smoother_OrderedSymGaussSeidel(ml , level, ML_POSTSMOOTHER,nsmooth,1.);
                                 options[AZ_output] = 1;
                                } */
 
-    else ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
-                                    coarse_iterations,1.);
+    else {/* ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
+                                    coarse_iterations,1.); */
 
+       ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 
+                                 0, 0.0, 0, 0.0);  /* 0 means nonsymmetric */
+
+
+}
     ML_Gen_Solver( ml, ML_MGV, N_levels-1, coarsest_level);
     ML_Aggregate_Destroy(&ag);
 
@@ -822,6 +859,7 @@ int nx,ny,nz;
   bindx[k] = row + m*m*NP; if (bindx[k]    < m*m*m*NP) val[k++] = -1.0;
   bindx[k] = row - m*m*NP; if (bindx[k]          >= 0) val[k++] = -1.0;
 */
+
 nx = (row/NP)%m;
 ny = (row/(NP*m))%m;
 nz = (row/(NP*m*m));
