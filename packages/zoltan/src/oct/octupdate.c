@@ -112,6 +112,7 @@ int Zoltan_Octpart(
   int **export_to_part          /* Not computed. */
 ) 
 {
+char *yo = "Zoltan_Octpart";
 int oct_dim = 3;              /* Dimension of method to be used (2D or 3D)   */
 int oct_method = 2;           /* Flag specifying curve to be used.           */
 int oct_maxoctregions=MAXOCTREGIONS_DEF; /* max # of objs in leaves of octree.*/
@@ -137,27 +138,39 @@ int error = FALSE;            /* error flag                                  */
   *num_import = -1;
   *num_export = -1;  /* We don't compute any export data */
 
+  /* Error checking for unimplemented features */
+  if (zz->LB.PartDist) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+            "# partitions != # processors not yet implemented.  "
+            "Try a different LB_METHOD.");
+    error = TRUE;
+  }
+  if (!zz->LB.Uniform_Parts) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+            "Non-uniform partition sizes not yet implemented.  "
+            "Try a different LB_METHOD.");
+    error = TRUE;
+  }
+
   /* Error checking for parameters */
   if (oct_dim < 2 || oct_dim > 3) {
-    fprintf(stderr, "OCT Error in OCTPART: OCT_DIM must be 2 or 3\n");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "OCT_DIM must be 2 or 3. ");
     error = TRUE;
   }
   if (oct_method < 0 || oct_method > 2) {
-    fprintf(stderr, "OCT Error in OCTPART: OCT_METHOD must be 0, 1, or 2\n");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "OCT_METHOD must be 0, 1, or 2");
     error = TRUE;
   }
   if (oct_maxoctregions < 1) {
-    fprintf(stderr, "OCT Error in OCTPART: OCT_MAXOBJECTS "
-                    "must be greater than 0\n");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "OCT_MAXOBJECTS must be greater than 0");
     error = TRUE;
   }
   if (oct_minoctregions < 1) {
-    fprintf(stderr, "OCT Error in OCTPART: OCT_MINOCTREGIONS "
-                    "must be greater than 0\n");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "OCT_MINOBJECTS must be greater than 0");
     error = TRUE;
   }
   if (oct_output_level < 0 || oct_output_level > 3) {
-    fprintf(stderr, "OCT Error in OCTPART: OCT_OUTPUT_LEVEL must be 0, 1, 2, or 3\n");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "OCT_OUTPUT_LEVEL must be 0, 1, 2, or 3");
     error = TRUE;
   }
 
