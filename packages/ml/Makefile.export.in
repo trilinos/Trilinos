@@ -7,6 +7,17 @@
 # To link with everything required by ml, simply add 
 # $(ML_EXPORT_LIBS) to the linker command line in your Makefile.
 #
+# To add a new ML dependency called XX, add or modify as appropriate
+# the following variables:
+#
+#       1) ML_EXPORT_LIBS
+#
+#       2) XX_BUILD_DIRECTORY
+#
+#       3) XX_LIBS.
+#
+# See anasazi as an example.
+#
 ##########################################################################
 
 
