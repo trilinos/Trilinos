@@ -773,6 +773,25 @@ AC_MSG_RESULT([${BUILD_LIBLOCAEPETRA}])
 AM_CONDITIONAL(BUILD_LIBLOCAEPETRA, test X${BUILD_LIBLOCAEPETRA} = Xyes)
 
 # ------------------------------------------------------------------------
+# LOCA-BLAS Library Check
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(loca-blas,
+[AC_HELP_STRING([--enable-loca-blas],[compile the locablas library])],
+[BUILD_LIBLOCABLAS=${enableval}],
+[BUILD_LIBLOCABLAS=no]
+)
+
+# Cannot build the locablas library if we don't build the loca library
+if test X${BUILD_LIBLOCA} != Xyes; then
+   BUILD_LIBLOCABLAS=no
+fi
+
+AC_MSG_CHECKING(whether we should build the locablas library)
+AC_MSG_RESULT([${BUILD_LIBLOCABLAS}])
+AM_CONDITIONAL(BUILD_LIBLOCABLAS, test X${BUILD_LIBLOCABLAS} = Xyes)
+
+# ------------------------------------------------------------------------
 # Checks for building simple examples
 # ------------------------------------------------------------------------
 
@@ -844,11 +863,30 @@ AC_MSG_CHECKING(whether we should build the locaepetra examples)
 AC_MSG_RESULT(${BUILD_LOCA_EPETRA_EXAMPLES})
 
 # ------------------------------------------------------------------------
+# Checks for building loca blas examples 
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(loca-blas-examples,
+[AC_HELP_STRING([--enable-loca-blas-examples],[compile loca blas examples])],
+[BUILD_LOCA_BLAS_EXAMPLES=${enableval}],
+[BUILD_LOCA_BLAS_EXAMPLES=no]
+)
+
+# Cannot build the blas examples if we don't build the loca-blas libraries
+if test X${BUILD_LIBLOCABLAS} != Xyes; then
+   BUILD_LOCA_BLAS_EXAMPLES=no
+fi
+
+AC_MSG_CHECKING(whether we should build the locablas examples)
+AC_MSG_RESULT(${BUILD_LOCA_BLAS_EXAMPLES})
+
+# ------------------------------------------------------------------------
 # Checks for basic libraries for examples
 # ------------------------------------------------------------------------
 
 if test ${BUILD_EXAMPLES} = yes || test ${BUILD_EPETRA_EXAMPLES} = yes || 
-   test ${BUILD_LOCA_EPETRA_EXAMPLES} = yes; then
+   test ${BUILD_LOCA_EPETRA_EXAMPLES} = yes || 
+   test ${BUILD_LOCA_BLAS_EXAMPLES} = yes; then
 
   AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
   AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
@@ -1062,6 +1100,7 @@ AM_CONDITIONAL(BUILD_PETSC_EXAMPLES, test X${BUILD_PETSC_EXAMPLES} = Xyes)
 # ------------------------------------------------------------------------
 
 AM_CONDITIONAL(BUILD_LOCA_EPETRA_EXAMPLES, test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes)
+AM_CONDITIONAL(BUILD_LOCA_BLAS_EXAMPLES, test X${BUILD_LOCA_BLAS_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
 # Checks for types
@@ -1160,8 +1199,11 @@ AC_CONFIG_FILES([
 		src-loca/Makefile
 		src-loca/src/Makefile
                 src-loca/src-epetra/Makefile
+		src-loca/src-blas/Makefile
                 src-loca/example-epetra/Makefile
                 src-loca/example-epetra/1Dfem/Makefile
+		src-loca/example-blas/Makefile
+		src-loca/example-blas/Chan/Makefile
 		])
 
 AC_OUTPUT()

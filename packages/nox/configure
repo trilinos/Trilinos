@@ -826,12 +826,15 @@ Optional Features:
   --enable-petsc          compile noxpetsc library
   --enable-loca           compile the loca library
   --enable-loca-epetra    compile the locaepetra library
+  --enable-loca-blas      compile the locablas library
   --enable-examples       compile simple examples
   --enable-epetra-examples
                           compile epetra examples
   --enable-petsc-examples compile petsc examples
   --enable-loca-epetra-examples
                           compile loca epetra examples
+  --enable-loca-blas-examples
+                          compile loca blas examples
   --enable-prerelease     Enable compilation and documentation of prerelease
                           code.
 
@@ -4763,6 +4766,38 @@ else
 fi
 
 # ------------------------------------------------------------------------
+# LOCA-BLAS Library Check
+# ------------------------------------------------------------------------
+
+# Check whether --enable-loca-blas or --disable-loca-blas was given.
+if test "${enable_loca_blas+set}" = set; then
+  enableval="$enable_loca_blas"
+  BUILD_LIBLOCABLAS=${enableval}
+else
+  BUILD_LIBLOCABLAS=no
+
+fi;
+
+# Cannot build the locablas library if we don't build the loca library
+if test X${BUILD_LIBLOCA} != Xyes; then
+   BUILD_LIBLOCABLAS=no
+fi
+
+echo "$as_me:$LINENO: checking whether we should build the locablas library" >&5
+echo $ECHO_N "checking whether we should build the locablas library... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${BUILD_LIBLOCABLAS}" >&5
+echo "${ECHO_T}${BUILD_LIBLOCABLAS}" >&6
+
+
+if test X${BUILD_LIBLOCABLAS} = Xyes; then
+  BUILD_LIBLOCABLAS_TRUE=
+  BUILD_LIBLOCABLAS_FALSE='#'
+else
+  BUILD_LIBLOCABLAS_TRUE='#'
+  BUILD_LIBLOCABLAS_FALSE=
+fi
+
+# ------------------------------------------------------------------------
 # Checks for building simple examples
 # ------------------------------------------------------------------------
 
@@ -4862,11 +4897,35 @@ echo "$as_me:$LINENO: result: ${BUILD_LOCA_EPETRA_EXAMPLES}" >&5
 echo "${ECHO_T}${BUILD_LOCA_EPETRA_EXAMPLES}" >&6
 
 # ------------------------------------------------------------------------
+# Checks for building loca blas examples
+# ------------------------------------------------------------------------
+
+# Check whether --enable-loca-blas-examples or --disable-loca-blas-examples was given.
+if test "${enable_loca_blas_examples+set}" = set; then
+  enableval="$enable_loca_blas_examples"
+  BUILD_LOCA_BLAS_EXAMPLES=${enableval}
+else
+  BUILD_LOCA_BLAS_EXAMPLES=no
+
+fi;
+
+# Cannot build the blas examples if we don't build the loca-blas libraries
+if test X${BUILD_LIBLOCABLAS} != Xyes; then
+   BUILD_LOCA_BLAS_EXAMPLES=no
+fi
+
+echo "$as_me:$LINENO: checking whether we should build the locablas examples" >&5
+echo $ECHO_N "checking whether we should build the locablas examples... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${BUILD_LOCA_BLAS_EXAMPLES}" >&5
+echo "${ECHO_T}${BUILD_LOCA_BLAS_EXAMPLES}" >&6
+
+# ------------------------------------------------------------------------
 # Checks for basic libraries for examples
 # ------------------------------------------------------------------------
 
 if test ${BUILD_EXAMPLES} = yes || test ${BUILD_EPETRA_EXAMPLES} = yes ||
-   test ${BUILD_LOCA_EPETRA_EXAMPLES} = yes; then
+   test ${BUILD_LOCA_EPETRA_EXAMPLES} = yes ||
+   test ${BUILD_LOCA_BLAS_EXAMPLES} = yes; then
 
   echo "$as_me:$LINENO: checking for library containing pow" >&5
 echo $ECHO_N "checking for library containing pow... $ECHO_C" >&6
@@ -5185,7 +5244,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5188:" \
+echo "$as_me:5247:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5352,7 +5411,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5355: \"$ac_link\") >&5
+(eval echo $as_me:5414: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5431,7 +5490,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5434: \"$ac_link\") >&5
+(eval echo $as_me:5493: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8841,6 +8900,15 @@ else
   BUILD_LOCA_EPETRA_EXAMPLES_FALSE=
 fi
 
+
+if test X${BUILD_LOCA_BLAS_EXAMPLES} = Xyes; then
+  BUILD_LOCA_BLAS_EXAMPLES_TRUE=
+  BUILD_LOCA_BLAS_EXAMPLES_FALSE='#'
+else
+  BUILD_LOCA_BLAS_EXAMPLES_TRUE='#'
+  BUILD_LOCA_BLAS_EXAMPLES_FALSE=
+fi
+
 # ------------------------------------------------------------------------
 # Checks for types
 # ------------------------------------------------------------------------
@@ -8933,7 +9001,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile doc/Makefile doc/Doxyfile src/Makefile src-epetra/Makefile example/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile src-loca/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile"
+ac_config_files="$ac_config_files Makefile doc/Makefile doc/Doxyfile src/Makefile src-epetra/Makefile example/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile src-loca/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-blas/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile src-loca/example-blas/Makefile src-loca/example-blas/Chan/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9436,8 +9504,11 @@ do
   "src-loca/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/Makefile" ;;
   "src-loca/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/src/Makefile" ;;
   "src-loca/src-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/src-epetra/Makefile" ;;
+  "src-loca/src-blas/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/src-blas/Makefile" ;;
   "src-loca/example-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-epetra/Makefile" ;;
   "src-loca/example-epetra/1Dfem/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-epetra/1Dfem/Makefile" ;;
+  "src-loca/example-blas/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-blas/Makefile" ;;
+  "src-loca/example-blas/Chan/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-blas/Chan/Makefile" ;;
   "default-1" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
   "src/NOX_Config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/NOX_Config.h:src/NOX_Config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -9579,6 +9650,8 @@ s,@BUILD_LIBLOCA_TRUE@,$BUILD_LIBLOCA_TRUE,;t t
 s,@BUILD_LIBLOCA_FALSE@,$BUILD_LIBLOCA_FALSE,;t t
 s,@BUILD_LIBLOCAEPETRA_TRUE@,$BUILD_LIBLOCAEPETRA_TRUE,;t t
 s,@BUILD_LIBLOCAEPETRA_FALSE@,$BUILD_LIBLOCAEPETRA_FALSE,;t t
+s,@BUILD_LIBLOCABLAS_TRUE@,$BUILD_LIBLOCABLAS_TRUE,;t t
+s,@BUILD_LIBLOCABLAS_FALSE@,$BUILD_LIBLOCABLAS_FALSE,;t t
 s,@BUILD_EXAMPLES_TRUE@,$BUILD_EXAMPLES_TRUE,;t t
 s,@BUILD_EXAMPLES_FALSE@,$BUILD_EXAMPLES_FALSE,;t t
 s,@F77@,$F77,;t t
@@ -9601,6 +9674,8 @@ s,@BUILD_PETSC_EXAMPLES_TRUE@,$BUILD_PETSC_EXAMPLES_TRUE,;t t
 s,@BUILD_PETSC_EXAMPLES_FALSE@,$BUILD_PETSC_EXAMPLES_FALSE,;t t
 s,@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@,$BUILD_LOCA_EPETRA_EXAMPLES_TRUE,;t t
 s,@BUILD_LOCA_EPETRA_EXAMPLES_FALSE@,$BUILD_LOCA_EPETRA_EXAMPLES_FALSE,;t t
+s,@BUILD_LOCA_BLAS_EXAMPLES_TRUE@,$BUILD_LOCA_BLAS_EXAMPLES_TRUE,;t t
+s,@BUILD_LOCA_BLAS_EXAMPLES_FALSE@,$BUILD_LOCA_BLAS_EXAMPLES_FALSE,;t t
 s,@CXXREPOS@,$CXXREPOS,;t t
 s,@BUILD_PRERELEASE_TRUE@,$BUILD_PRERELEASE_TRUE,;t t
 s,@BUILD_PRERELEASE_FALSE@,$BUILD_PRERELEASE_FALSE,;t t
