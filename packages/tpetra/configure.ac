@@ -98,6 +98,12 @@ AM_INIT_AUTOMAKE(1.8.2)
 AC_PREREQ(2.59)
 
 # ------------------------------------------------------------------------
+# Check to see if MPI enabled and if any special configuration done
+# ------------------------------------------------------------------------
+
+TAC_ARG_CONFIG_MPI
+
+# ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
 
@@ -105,12 +111,6 @@ AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ gcc c++ cxx)
 AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
-
-# ------------------------------------------------------------------------
-# Check to see if MPI enabled and if any special configuration done
-# ------------------------------------------------------------------------
-
-TAC_ARG_CONFIG_MPI
 
 # ------------------------------------------------------------------------
 # Check if --with-flags present, prepend any specs to FLAGS
