@@ -472,6 +472,7 @@ AC_CONFIG_FILES([
 		test/BLAS/Makefile
 		test/LAPACK/Makefile
 		test/DenseMatrix/Makefile
+		test/dyn_cast/Makefile
 		test/ParameterList/Makefile
 		test/Containers/Makefile
 		test/Time/Makefile

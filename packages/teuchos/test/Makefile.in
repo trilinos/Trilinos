@@ -100,7 +100,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = scripts BLAS DenseMatrix LAPACK ParameterList \
+DIST_SUBDIRS = scripts BLAS DenseMatrix dyn_cast LAPACK ParameterList \
 	RefCountPtr Time
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
@@ -224,8 +224,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@HAVE_TEUCHOS_EXTENDED_FALSE@SUBDIRS = scripts BLAS DenseMatrix LAPACK ParameterList RefCountPtr Time
-@HAVE_TEUCHOS_EXTENDED_TRUE@SUBDIRS = scripts BLAS Containers DenseMatrix LAPACK ParameterList RefCountPtr Time XML
+@HAVE_TEUCHOS_EXTENDED_FALSE@SUBDIRS = scripts BLAS DenseMatrix dyn_cast LAPACK ParameterList RefCountPtr Time
+@HAVE_TEUCHOS_EXTENDED_TRUE@SUBDIRS = scripts BLAS Containers DenseMatrix dyn_cast LAPACK ParameterList RefCountPtr Time XML
 all: all-recursive
 
 .SUFFIXES:

@@ -28,10 +28,10 @@
 
 if HAVE_TEUCHOS_EXTENDED
 
-SUBDIRS = scripts BLAS Containers DenseMatrix LAPACK ParameterList RefCountPtr Time XML
+SUBDIRS = scripts BLAS Containers DenseMatrix dyn_cast LAPACK ParameterList RefCountPtr Time XML
 
 else
 
-SUBDIRS = scripts BLAS DenseMatrix LAPACK ParameterList RefCountPtr Time
+SUBDIRS = scripts BLAS DenseMatrix dyn_cast LAPACK ParameterList RefCountPtr Time
 
 endif
