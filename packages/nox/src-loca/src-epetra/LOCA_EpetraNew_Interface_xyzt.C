@@ -72,8 +72,10 @@ xyzt::xyzt(LOCA::EpetraNew::Interface::Required &iReq_,
    jacobian = new EpetraExt::BlockCrsMatrix(splitJac, *rowStencil, *rowIndex, globalComm);
 
    // Construct global solution vector, the overlap vector, and importer between them
-   solution = new EpetraExt::BlockVector(splitVec.Map(), jacobian->RowMap());
-   solutionOverlap = new EpetraExt::BlockVector(splitVec.Map(), jacobian->ColMap());
+   //solution = new EpetraExt::BlockVector(splitVec.Map(), jacobian->RowMap());
+   //solutionOverlap = new EpetraExt::BlockVector(splitVec.Map(), jacobian->ColMap());
+   solution = new EpetraExt::BlockVector(splitJac.RowMatrixRowMap(), jacobian->RowMap());
+   solutionOverlap = new EpetraExt::BlockVector(splitJac.RowMatrixRowMap(), jacobian->ColMap());
   
    overlapImporter = new Epetra_Import(solutionOverlap->Map(), solution->Map());
 
