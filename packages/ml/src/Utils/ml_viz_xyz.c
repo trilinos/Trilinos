@@ -48,6 +48,7 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
   char filemode[2];
   int Nlocal = info.Nlocal;
   int * reorder = NULL, ok;
+  int offset;
 
   /* ------------------- execution begins --------------------------------- */
 
@@ -120,17 +121,33 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 	exit( EXIT_FAILURE );
       }
     }
+#if 0
+    j = 0;
+    for( i=0 ; i<Naggregates ; ++i ) {
+      if (reorder[i] == i)
+        ++j;
+    }
+    printf("On processor %d, reorder effectiveness = %f\n",
+           comm->ML_mypid, (double)j / Naggregates);
+#endif
 #else
     for (i = 0 ; i < Naggregates ; ++i)
       reorder[i] = i;
 #endif
   }
 
+#ifdef ML_MPI
+  MPI_Scan (&Naggregates, &offset, 1, MPI_INT, MPI_SUM, comm->USR_comm);
+  offset -= Naggregates;
+#else
+  offset = 0;
+#endif  
+
   /* cycle over all local rows, plot corresponding value on file */
 
-  for( ipid=0 ; ipid<nprocs ; ++ipid ) {
-    if( ipid == mypid ) {
-      if( (fp = fopen( base_filename, filemode )) == NULL ) {
+  for (ipid=0 ; ipid < nprocs ; ++ipid) {
+    if (ipid == mypid) {
+      if ((fp = fopen( base_filename, filemode )) == NULL ) {
 	fprintf( stderr,
 		"*VIZ*ERR* cannot open file `%s'\n",
 		base_filename );
@@ -142,10 +159,10 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 	else if( AggrToVisualize != -1 ) { 
 	  if( graph_decomposition[irow] == AggrToVisualize ) val = 1.0;
 	  else                                               val = 0.0;
-	} else 
-	  val = ipid +  nprocs * 1.0*graph_decomposition[irow];
+	} else
+	  val = (double)(reorder[graph_decomposition[irow]] + offset);
 
-	/* XD3D does not work in 3D, but maybe other codes will */
+	/* XD3D does not work in 3D, other codes will */
 	if( z == NULL ) 
 	  fprintf( fp,
 		  "%f %f %f\n",

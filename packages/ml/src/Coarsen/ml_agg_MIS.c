@@ -1551,33 +1551,35 @@ Here is how we do all this:
 
      if( comm->ML_nprocs > 1 ) {
        fprintf( stderr,
-	       "*ML*ERR* visualization for MIS works only in serial...\n");
-       exit( EXIT_FAILURE );
+	       "*ML*WRN* visualization for MIS works only in serial...\n");
      }
 
-     graph_decomposition = (int *)ML_allocate(sizeof(int)*(Nrows/num_PDE_eqns+1));
-     if( graph_decomposition == NULL ) {
-       fprintf( stderr,
-		"*ML*ERR* Not enough memory for %d bytes\n"
-		"*ML*ERR* (file %s, line %d)\n",
-		(int)sizeof(int)*Nrows/num_PDE_eqns,
-		__FILE__,
-	      __LINE__ );
-       exit( EXIT_FAILURE );
-     }
+     /* prints out in serial only */
+     if (comm->ML_nprocs == 1) {
+       graph_decomposition = (int *)ML_allocate(sizeof(int)*(Nrows/num_PDE_eqns+1));
+       if( graph_decomposition == NULL ) {
+         fprintf( stderr,
+                 "*ML*ERR* Not enough memory for %d bytes\n"
+                 "*ML*ERR* (file %s, line %d)\n",
+                 (int)sizeof(int)*Nrows/num_PDE_eqns,
+                 __FILE__,
+                 __LINE__ );
+         exit( EXIT_FAILURE );
+       }
 
-     for( i=0 ; i<Nrows ; i+=num_PDE_eqns ) {
-       graph_decomposition[i/num_PDE_eqns] = aggr_index[i];
+       for( i=0 ; i<Nrows ; i+=num_PDE_eqns ) {
+         graph_decomposition[i/num_PDE_eqns] = aggr_index[i];
+       }
+
+       aggr_viz_and_stats = (ML_Aggregate_Viz_Stats *) (ml_ag->aggr_viz_and_stats);
+       aggr_viz_and_stats[ml_ag->cur_level].graph_decomposition = graph_decomposition;
+       aggr_viz_and_stats[ml_ag->cur_level].Nlocal = Nrows/num_PDE_eqns;
+       aggr_viz_and_stats[ml_ag->cur_level].Naggregates = aggr_count;
+       aggr_viz_and_stats[ml_ag->cur_level].local_or_global = ML_LOCAL_INDICES;
+       aggr_viz_and_stats[ml_ag->cur_level].is_filled = ML_YES;
+       aggr_viz_and_stats[ml_ag->cur_level].Amatrix = Amatrix;
+       aggr_viz_and_stats[ml_ag->cur_level].graph_radius = -1;
      }
-     
-     aggr_viz_and_stats = (ML_Aggregate_Viz_Stats *) (ml_ag->aggr_viz_and_stats);
-     aggr_viz_and_stats[ml_ag->cur_level].graph_decomposition = graph_decomposition;
-     aggr_viz_and_stats[ml_ag->cur_level].Nlocal = Nrows/num_PDE_eqns;
-     aggr_viz_and_stats[ml_ag->cur_level].Naggregates = aggr_count;
-     aggr_viz_and_stats[ml_ag->cur_level].local_or_global = ML_LOCAL_INDICES;
-     aggr_viz_and_stats[ml_ag->cur_level].is_filled = ML_YES;
-     aggr_viz_and_stats[ml_ag->cur_level].Amatrix = Amatrix;
-     aggr_viz_and_stats[ml_ag->cur_level].graph_radius = -1;
    }
 
 
