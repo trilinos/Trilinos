@@ -224,6 +224,59 @@ zdrive_comm comm:
 	"LNK_LIBS=$(COMM_DRIVER_LIBS)"		\
 	"DEP_LIBS=$(COMM_DRIVER_DEP)"
 	
+
+zscript:
+	@echo "Building Utilities zoltan_script..."
+	@if [ -f zoltan_script ]; \
+	then /bin/rm zoltan_script; \
+	fi
+	@echo "#!/bin/sh" > zoltan_script
+	@echo "unalias rm" >> zoltan_script
+	@echo DEFS='"$$1"' >> zoltan_script
+	@echo CC='"$$2"' >> zoltan_script
+	@echo CFLAGS='"$$3"' >> zoltan_script
+	@echo F90CFLAGS='"$$4"' >> zoltan_script
+	@echo INCLUDE_PATH='"$$5"' >> zoltan_script
+	@echo PARMETIS_FLAG='"$${6:+-DLB_PARMETIS}"' >> zoltan_script
+	@echo JOSTLE_FLAG='"$${7:+-DLB_JOSTLE}"' >> zoltan_script
+	@echo JOSTLE_INCPATH='"$$8"' >> zoltan_script
+	@echo AR='"$$9"' >> zoltan_script
+	@echo shift 9 >> zoltan_script
+	@echo RANLIB='"$$1"' >> zoltan_script
+	@echo ZOLTAN_ARCH='"$${2:-generic}"' >> zoltan_script
+	@echo ZOLTAN_LIB_DIR='"$$3"' >> zoltan_script
+	@echo CCOMP='"$$CC $$CFLAGS $$F90CFLAGS $$INCLUDE_PATH $$JOSTLE_INCPATH"' >> zoltan_script
+	@echo GDEFINES='"-DDEBUG $$PARMETIS_FLAG $$JOSTLE_FLAG"' >> zoltan_script
+	@echo ZOLTAN_OBJ_DIR='"Obj_$$ZOLTAN_ARCH"' >> zoltan_script
+	@echo 'if [ ! -d $$ZOLTAN_OBJ_DIR ]; ' >> zoltan_script
+	@echo 'then mkdir $$ZOLTAN_OBJ_DIR ;' >> zoltan_script
+	@echo 'fi' >> zoltan_script
+	@echo 'rm -f $$ZOLTAN_OBJ_DIR/*' >> zoltan_script
+	@echo 'cd $$ZOLTAN_OBJ_DIR' >> zoltan_script
+	@echo "echo 'Zoltan:  Compiling Utilities/Memory'" >> zoltan_script
+	@for iii in $(MEM_CSRC)  ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../Memory/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo Zoltan:  Linking $(MEM_LIB)" >> zoltan_script
+	@echo '$$AR' $(MEM_LIB) $(MEM_CSRC:.c=.o) >> zoltan_script
+	@echo '$$RANLIB' $(MEM_LIB) >> zoltan_script
+	@echo 'if [ $$ZOLTAN_LIB_DIR ] ; ' >> zoltan_script
+	@echo 'then cp -f $(MEM_LIB) $$ZOLTAN_LIB_DIR ; ' >> zoltan_script
+	@echo 'else cp -f $(MEM_LIB) ../../$$ZOLTAN_OBJ_DIR ; ' >> zoltan_script
+	@echo 'fi' >> zoltan_script
+	@echo "echo 'Zoltan:  Compiling Utilities/Communication'" >> zoltan_script
+	@for iii in $(COMM_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../Communication/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo Zoltan:  Linking $(COMM_LIB)" >> zoltan_script
+	@echo '$$AR' $(COMM_LIB) $(COMM_CSRC:.c=.o) >> zoltan_script
+	@echo '$$RANLIB' $(COMM_LIB) >> zoltan_script
+	@echo 'if [ $$ZOLTAN_LIB_DIR ] ; ' >> zoltan_script
+	@echo 'then cp -f $(COMM_LIB) $$ZOLTAN_LIB_DIR ; ' >> zoltan_script
+	@echo 'else cp -f $(COMM_LIB) ../../$$ZOLTAN_OBJ_DIR ; ' >> zoltan_script
+	@echo 'fi' >> zoltan_script
+	@echo "cd .." >> zoltan_script
+	@chmod +x zoltan_script
 #
 ############################################################################
 #         LINT TARGETS
