@@ -89,6 +89,8 @@ int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
      ML_Set_Amatrix_Getrow(ml_handle,level,az_msrgetrow_wrapper,az_comm_wrapper,
                            isize+(Amat->data_org)[AZ_N_external]);
      ML_Set_Amatrix_Diag(  ml_handle, level, osize,   Amat->val);
+     ml_handle->Amat[level].N_nonzeros =
+                            msr_mat->columns[ml_handle->Amat[level].invec_leng];
    }
 	 else if (Amat->matrix_type ==AZ_USER_MATRIX) {
 		 context->getrowstuff = (void *)Amat->matvec_data;
@@ -324,8 +326,8 @@ void AZ_ML_set_userdiagonal(ML *ml, int mesh_level, AZ_MATRIX *matrix)
   fixed_leng = matrix->data_org[AZ_N_internal] + matrix->data_org[AZ_N_border];
   diagonal = (double *) ML_allocate( (fixed_leng)*sizeof(double));
 
-	cols = (int *) malloc(max_nnz_per_row*sizeof(int));
-	vals = (double *)malloc(max_nnz_per_row*sizeof(double));
+	cols = (int *) ML_allocate(max_nnz_per_row*sizeof(int));
+	vals = (double *)ML_allocate(max_nnz_per_row*sizeof(double));
 	if (vals == NULL) {
 		printf("AZ_ML_set_userdiagonal: memory allocation error\n");
 		exit(-1);
@@ -339,8 +341,8 @@ void AZ_ML_set_userdiagonal(ML *ml, int mesh_level, AZ_MATRIX *matrix)
 			free(cols);
 			free(vals);
 			max_nnz_per_row=max_nnz_per_row*2+1;
-			cols=(int *)malloc(max_nnz_per_row*sizeof(int));
-			vals=(double *)malloc(max_nnz_per_row*sizeof(double));
+			cols=(int *)ML_allocate(max_nnz_per_row*sizeof(int));
+			vals=(double *)ML_allocate(max_nnz_per_row*sizeof(double));
 			tmp = matrix->getrow(cols, vals, &row_len, matrix, 1, 
 													 &i, max_nnz_per_row);
 		}
@@ -437,7 +439,7 @@ void ML_precondition(double ff[], int options[], int proc_config[],
 
   /* then apply a two level preconditioning */
 
-  ffout = (double*) malloc(lenf * sizeof(double));
+  ffout = (double*) ML_allocate(lenf * sizeof(double));
 #ifdef        MB_MODIF
    if (ml->ML_scheme == ML_MGFULLV)    ML_Solve_MGFull( ml, ff, ffout );
    else if (ml->ML_scheme == ML_SAAMG) ML_Solve_AMGV( ml, ff, ffout);
@@ -667,7 +669,7 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
       op      = (ML_Operator *) &ml_handle->Amat[level];
       data    = op->data;
       osize   = op->outvec_leng;
-      row_ptr = (int *) malloc(sizeof(int)*(osize+1));
+      row_ptr = (int *) ML_allocate(sizeof(int)*(osize+1));
       space   = osize * 5 + 30;
       getrow_flag = 0;
       if ( op->getrow->internal != NULL ) {
@@ -682,8 +684,8 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
       flag    = 0;
    
       while (flag == 0) {
-         cols    = (int    *) malloc(sizeof(int)*space);
-         vals    = (double *) malloc(sizeof(double)*space);
+         cols    = (int    *) ML_allocate(sizeof(int)*space);
+         vals    = (double *) ML_allocate(sizeof(double)*space);
    
          nz_ptr = 0;
          row_ptr[0] = nz_ptr;
@@ -721,7 +723,7 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
             ML_free(cols);
          }
       }
-      csr_mat = (ML_Matrix_DCSR *) malloc(sizeof(ML_Matrix_DCSR));
+      csr_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
       csr_mat->mat_n  = osize;
       csr_mat->mat_ja = cols;
       csr_mat->mat_a  = vals;
@@ -732,7 +734,7 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
       /* form a global matrix                                              */
       /* ----------------------------------------------------------------- */
    
-      csr2_mat = (ML_Matrix_DCSR *) malloc(sizeof(ML_Matrix_DCSR));
+      csr2_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
       ML_Gen_Amatrix_Global( csr_mat, csr2_mat, ml_handle->comm, &offset);
       free(row_ptr);
       free(cols);
@@ -740,7 +742,7 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
       free(csr_mat);
       nrows = csr2_mat->mat_n;
       AZ_Amat = AZ_matrix_create(nrows);
-      sub_proc_config = (int *) malloc(AZ_PROC_SIZE*sizeof(int));
+      sub_proc_config = (int *) ML_allocate(AZ_PROC_SIZE*sizeof(int));
       sub_proc_config[AZ_node] = 0;
       sub_proc_config[AZ_N_procs] = 1;
 #ifdef ML_MPI
@@ -904,8 +906,8 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
       }
 #ifdef ML_EXPERIMENT
 size = data_org[AZ_N_internal] + data_org[AZ_N_border];
-xxx  = (double *) malloc( sizeof(double)*size );
-rhss = (double *) malloc( sizeof(double)*size );
+xxx  = (double *) ML_allocate( sizeof(double)*size );
+rhss = (double *) ML_allocate( sizeof(double)*size );
 az_wrap_solvers(context, 1, xxx, 1, rhss);
 free(rhss);
 free(xxx);
@@ -1296,7 +1298,7 @@ int  wrapper_DCSR_getrow(int columns[], double values[], int row_lengths[],
 
    csr2_mat = (ML_Matrix_DCSR *) Amat->getrow_data;
 
-   temp_ptr = (struct ML_CSR_MSRdata *) malloc(sizeof(struct ML_CSR_MSRdata));
+   temp_ptr = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
    temp_ptr->rowptr = csr2_mat->mat_ia;
    temp_ptr->columns= csr2_mat->mat_ja;
    temp_ptr->values = csr2_mat->mat_a;
@@ -1318,7 +1320,7 @@ void wrapper_DCSR_matvec(double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
    }
    csr2_mat = (ML_Matrix_DCSR *) Amat->getrow_data;
 
-   temp_ptr = (struct ML_CSR_MSRdata *) malloc(sizeof(struct ML_CSR_MSRdata));
+   temp_ptr = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
    temp_ptr->rowptr = csr2_mat->mat_ia;
    temp_ptr->columns= csr2_mat->mat_ja;
    temp_ptr->values = csr2_mat->mat_a;

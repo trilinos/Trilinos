@@ -245,8 +245,8 @@ int ML_sort(int nlist, int *list)
    key = list[0];
    count1 = 0;
    count2 = 0;
-   cnt1_array = (int*) malloc( nlist * sizeof(int) );
-   cnt2_array = (int*) malloc( nlist * sizeof(int) );
+   cnt1_array = (int*) ML_allocate( nlist * sizeof(int) );
+   cnt2_array = (int*) ML_allocate( nlist * sizeof(int) );
    for ( i = 1; i < nlist; i++ ) 
    {
       if ( list[i] <  key ) cnt1_array[count1++] = list[i];
@@ -289,9 +289,9 @@ int ML_split_dsort(double *dlist, int nlist, int *ilist, int limit)
    }
    count1 = 0;
    count2 = 0;
-   iarray1 = (int *)   malloc( 2 * nlist * sizeof(int) );
+   iarray1 = (int *)   ML_allocate( 2 * nlist * sizeof(int) );
    iarray2 = iarray1 + nlist;
-   darray1 = (double*) malloc( 2 * nlist * sizeof(double) );
+   darray1 = (double*) ML_allocate( 2 * nlist * sizeof(double) );
    darray2 = darray1 + nlist;
 
    if ( darray2 == NULL )
@@ -354,11 +354,11 @@ int ML_selection_dsort(double *vals, int length, int *cols, int limit)
    /* set up data structure */
 
    expLeng    = pow(2., (float) (level+1));
-   iarray     = (int    *)  malloc(expLeng   * sizeof(int));
-   darray     = (double *)  malloc(expLeng   * sizeof(double));
-   treeLengs  = (int *)     malloc((level+1) * sizeof(int));
-   treeArray  = (double **) malloc((level+1) * sizeof(double*));
-   treeIArray = (int **)    malloc((level+1) * sizeof(int*));
+   iarray     = (int    *)  ML_allocate(expLeng   * sizeof(int));
+   darray     = (double *)  ML_allocate(expLeng   * sizeof(double));
+   treeLengs  = (int *)     ML_allocate((level+1) * sizeof(int));
+   treeArray  = (double **) ML_allocate((level+1) * sizeof(double*));
+   treeIArray = (int **)    ML_allocate((level+1) * sizeof(int*));
    treeLengs[level]  = length;
    base              = expLeng >> 1;
    treeArray[level]  = &(darray[base]);
@@ -1182,10 +1182,10 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
   /**************************** execution begins ****************************/
 
-  finished_send_messg = (int *) malloc( (num_neighbors+10)*sizeof(int));
-  finished_recv_messg = (int *) malloc( (num_neighbors+10)*sizeof(int));
-  start_recv_proc     = (int *) malloc( (num_neighbors+10)*sizeof(int));
-  request             = (USR_REQ *) malloc( (num_neighbors+10)*sizeof(USR_REQ));
+  finished_send_messg = (int *) ML_allocate( (num_neighbors+10)*sizeof(int));
+  finished_recv_messg = (int *) ML_allocate( (num_neighbors+10)*sizeof(int));
+  start_recv_proc     = (int *) ML_allocate( (num_neighbors+10)*sizeof(int));
+  request             = (USR_REQ *) ML_allocate( (num_neighbors+10)*sizeof(USR_REQ));
   if ( (request == NULL) || (start_recv_proc == NULL))
      pr_error("ML_splitup_big_msg: out of space\n");
 
@@ -1272,7 +1272,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
            total_send_size += actual_send_length[n];
         }
 
-        send_buffer =(char *) malloc((total_send_size+1)*element_size);
+        send_buffer =(char *) ML_allocate((total_send_size+1)*element_size);
         if (send_buffer == NULL) {
            (void) fprintf(stderr,
                           "no space in ML_splitup_big_msg: send_buffer \n");
@@ -1461,7 +1461,7 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
         for (n = 0; n < num_neighbors; n++) {
            total_send_size += actual_send_length[n];
         }
-        send_buffer = (char *) malloc((total_send_size+1)*element_size);
+        send_buffer = (char *) ML_allocate((total_send_size+1)*element_size);
         if (send_buffer == NULL) {
            (void) fprintf(stderr,"no space ML_splitup_big_msg: send_buffer \n");
            exit(-1);

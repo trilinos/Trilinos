@@ -97,7 +97,7 @@ void ML_Reader_ReadInput(char *cmd_file_name, struct reader_context **context)
 
   /*********************** BEGIN EXECUTION ***********************************/
   
-  *context =(struct reader_context *) malloc(sizeof(struct reader_context));
+  *context =(struct reader_context *) ML_allocate(sizeof(struct reader_context));
   ML_Reader_InitContext(*context);
 
   /* Open the command input file */
@@ -563,8 +563,8 @@ int ML_strcmp(char *input, char *string)
   int i;
   char *input_copy, *string_copy;
 
-  input_copy = (char *) malloc(sizeof(char)*(strlen(input)+1));
-  string_copy = (char *) malloc(sizeof(char)*(strlen(string)+1));
+  input_copy = (char *) ML_allocate(sizeof(char)*(strlen(input)+1));
+  string_copy = (char *) ML_allocate(sizeof(char)*(strlen(string)+1));
   strcpy(input_copy,input);
   strcpy(string_copy,string);
   i = 0;
