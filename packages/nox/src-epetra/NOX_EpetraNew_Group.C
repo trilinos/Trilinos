@@ -396,7 +396,7 @@ Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, con
 
   bool status = sharedLinearSystem.getObject(this).applyJacobianInverse(p, input, result);
 
-  return status == true ? Abstract::Group::Ok : Abstract::Group::Failed;
+  return status == true ? Abstract::Group::Ok : Abstract::Group::NotConverged;
 }
 
 Abstract::Group::ReturnType Group::applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const
