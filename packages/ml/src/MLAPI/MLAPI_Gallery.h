@@ -7,7 +7,21 @@
 #include "ml_include.h"
 #include <iostream>
 
+namespace Teuchos {
+  class ParameterList;
+};
+
 namespace MLAPI {
+
+/*!
+\file MLAPI_Gallery
+
+\brief Matrix creation functions.
+
+\author Marzio Sala, SNL 9214
+
+\date Last updated on Mar-05.
+*/
 
   class Space;
   class Operator;
@@ -44,6 +58,13 @@ namespace MLAPI {
   
   Operator GetRecirc2D(const int NX, const int NY, const double conv,
                        const double diff);
+
+  // ====================================================================== 
+  //! Populates a list from specified file.
+  // ====================================================================== 
+  
+  Teuchos::ParameterList ReadParameterList(const char* FileName);
+
 }
 
 #endif // HAVE_ML_MLAPI

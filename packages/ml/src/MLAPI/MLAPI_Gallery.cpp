@@ -1,7 +1,8 @@
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
-#include "ml_include.h"
 #include <iostream>
+#include "ml_include.h"
+#include "Teuchos_ParameterList.hpp"
 #include "MLAPI_Error.h"
 #include "MLAPI_Space.h"
 #include "MLAPI_Workspace.h"
@@ -272,6 +273,49 @@ Operator GetRecirc2D(const int NX, const int NY, const double conv,
   Operator A(FineSpace, FineSpace, MatA, true);
 
   return(A);
+}
+
+// ====================================================================== 
+Teuchos::ParameterList ReadParameterList(const char* FileName)
+{
+  std::ifstream fp;
+
+  fp.open(FileName);
+  if (!fp.good()) 
+    ML_THROW("Error opening file " + string(FileName), -1);
+
+  Teuchos::ParameterList List;
+
+  string line;
+  while (getline(fp, line, '\n'))
+  {
+    char type = line[0];
+    if (type == '#')
+      continue;
+
+    int i = line.find(" = ");
+    string name = line.substr(2, i - 2);
+    string value = line.substr(i + 3);
+
+    if (type == 'i') 
+      List.set(name, atoi(value.c_str()));
+    else if (type == 'f')
+      List.set(name, (double)atof(value.c_str()));
+    else if (type == 's')
+      List.set(name, value);
+    else if (type == 'b') {
+      if (value == "true")
+        List.set(name, true);
+      else
+        List.set(name, false);
+    }
+    else
+      ML_THROW("Type not valid", -1);
+  }
+
+  fp.close();
+
+  return(List);
 }
 
 // ====================================================================== 
