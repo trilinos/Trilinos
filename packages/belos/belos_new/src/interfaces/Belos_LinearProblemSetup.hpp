@@ -222,11 +222,8 @@ public:
 	///
 	/** Set the status test.
 	 *
-	 * @param  statusTest  [in] Defines the status test.
-	 *
-	 * Preconditions:<ul>
-	 * <li><tt>statusTest.get() != NULL</tt>
-	 * </ul>
+	 * @param  statusTest  [in] Defines the status test.  It is allowed for <tt>statusTest.get()==NULL</tt>
+	 *                     in which case the status test will be unset.
 	 *
 	 * Postconditions:<ul>
 	 * <li><tt>getStatusTest.get() ==  statusTest.get()</tt>
@@ -240,7 +237,10 @@ public:
 	/** Complete setup of the linear problem
 	 *
 	 * Preconditions:<ul>
-	 * <li> A valid linear problem has been setup (ToDo: Make this explicit ...)
+	 * <li><tt>this->getOperator().op().get() != NULL</tt>
+	 * <li><tt>this->getRhs().get() != NULL</tt>
+	 * <li><tt>this->getLhs().get() != NULL</tt>
+	 * <li> Spaces for all opeators and multi-vectors must agree (ToDo: Make more explicit!)
 	 * </ul>
 	 *
 	 * Postconditions:<ul>
