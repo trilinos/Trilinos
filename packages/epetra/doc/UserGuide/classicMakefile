@@ -1,4 +1,4 @@
-TARGET=TrilinosDevGuide
+TARGET=EpetraUserGuide
 
 $(TARGET).pdf: $(TARGET).tex
 	pdflatex $(TARGET)

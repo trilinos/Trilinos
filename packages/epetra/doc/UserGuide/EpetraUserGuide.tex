@@ -1,0 +1,194 @@
+ \documentclass[12pt,relax]{EpetraUserGuide}
+\usepackage{array}
+    \title{\EpetraTM{} User Guide}
+\SANDsubtitle{}
+
+    \author{Michael A. Heroux \\
+      	  Computational Mathematics \& Algorithms Department \\
+	    Robert J. Hoekstra\\
+      	  rjh:GroupName \\
+         Alan Williams \\
+            aw:GroupName \\
+	    Sandia National Laboratories\\
+	    P.O. Box 5800\\
+	    Albuquerque, NM 87185-1110 \\
+	    maherou@sandia.gov \\
+	    rjhoeks@sandia.gov \\
+	    william@sandia.gov \\
+	 }
+
+    % There is a "Printed" date on the title page of a SAND report, so
+    % the generic \date should generally be empty.
+    \date{\today} % Remove ``\today'' in final version
+
+
+\SANDnum{SAND2003-xxxx}
+\SANDprintDate{April 2003}
+\SANDauthor{Michael A. Heroux, Robert J. Hoekstra, Alan Williams, Sandia National Laboratories}
+
+
+\SANDreleaseType{Unlimited Release}
+
+
+\SANDdistcategory{UC-999}    
+% New commands
+
+\newcommand{\comm}{Epetra\_Comm}
+\newcommand{\serialcomm}{Epetra\_SerialComm}
+\newcommand{\mpicomm}{Epetra\_MpiComm}
+\newcommand{\mpismpcomm}{Epetra\_MpiSmpComm}
+\newcommand{\lbcomm}{Epetra\_LbComm}
+\newcommand{\map}{Epetra\_Map}
+\newcommand{\blockmap}{Epetra\_BlockMap}
+\newcommand{\crsgraph}{Epetra\_CrsGraph}
+\newcommand{\crsmatrix}{Epetra\_CrsMatrix}
+\newcommand{\vbrmatrix}{Epetra\_VbrMatrix}
+\newcommand{\rowmatrix}{Epetra\_RowMatrix}
+
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+
+The \TrilinosTM{} Project is an effort to facilitate the design, development,
+integration and ongoing support of mathematical software libraries.
+One special Trilinos package is \EpetraTM{}.  Epetra provides a collections of
+vector, graph and matrix objects that can be used on serial
+and parallel computers.  It is designed to make construction, use and redistribution
+of these objects as efficient and easy as possible.  Epetra objects are compatible with all
+other Trilinos packages, including all linear, nonlinear and eigen solvers and all
+preconditioners packages.  It also implements all Trilinos abstract interfaces and 
+provides access to the Zoltan~\cite{zoltan-ug} load balancing package, and an object-oriented
+interface to the BLAS~\cite{BLAS1,BLAS2,BLAS3} and LAPACK~\cite{lapack}.
+
+
+This user guide is designed to address two types of users: 
+(i) those who
+are primarily interested in using already-constructed Epetra objects (such as 
+numerical algorithm developers who want to implement algorithms via 
+operations on Epetra vector, graph and matrix objects) and 
+(ii) those who, in addition to using Epetra
+objects, are also constructing Epetra vector, graphs and matrices.  This group
+includes application developers who are constructing these objects for the purpose
+of solving linear, nonlinear and eigensystems.
+
+\end{abstract}
+
+
+\section*{Acknowledgement}
+The authors would like to acknowledge the support of the ASCI and LDRD 
+programs that funded development of Epetra.
+
+\clearpage
+\tableofcontents
+\listoffigures
+\listoftables
+
+\clearpage
+
+\section*{Nomenclature}
+\addcontentsline{toc}{section}{Nomenclature}
+\begin{itemize}
+\item[Trilinos]
+The name of the project of which Epetra is one of the packages.  Also a Greek term which,
+loosely translated means ``a string of pearls,'' 
+meant to evoke an image that each Trilinos package is a pearl in its 
+own right, but is even more valuable when combined with other 
+packages.
+\item[Petra]
+A Greek term meaning ``foundation.''  Trilinos has three Petra 
+libraries: Epetra, Tpetra and Jpetra that provide basic classes 
+for constructing and manipulating matrix, graph and vector
+objects.  Epetra is the current production version that is
+split into two packages, one core and one extensions.
+\item[Comm Object]
+An instance of one of the Epetra Comm classes.  Presently we support
+an MPI, Serial and SMP/MPI implementation of the base Epetra_Comm interface.
+\item[Map Object] 
+Object-oriented algebraic preconditioner, compatible with 
+Epetra and AztecOO.
+\end{itemize}
+
+NOTE: Add section on repeated use of Epetra objects.
+
+
+\section{Introduction}
+\label{Section:Introduction}
+
+
+\subsection{Overview of Major Epetra Feautures}
+
+\subsubsection{Distributed Memory Communication Support}
+Epetra is written to run on parallel, distributed memory computers.  It accomplishes 
+this via its abstract \comm{} class.  \comm{} is a pure virtual class,
+specifying the methods that Epetra needs in order to execute on a
+distributed memory computer.  However, \comm{} provides no
+implementation itself of these methods.  Instead, Epetra contains
+several derived classes that implement the \comm{} interface,
+providing the needed functionality.  In this way, Epetra is not
+explicitly dependent on any one communication library or interface.
+Presently we have three implementations of \comm{}:
+\begin{enumerate}
+\item {\bf \serialcomm{}: } Implements of the \comm{}
+methods to run on a serial computers.  In this case, the majority of
+the methods have trivial implementations.  However, having the
+\serialcomm{} class allows the rest of Epetra classes to be used
+completely independent the type of parallel computer being used,
+including the serial case.
+\item {\bf \mpicomm{}: } Uses a user-provided MPI
+communicator to implement the \comm{} methods.  In fact, many of the
+\comm{} methods have a name similar to an existing MPI function.
+Since MPI is by far the most common communication interface and
+library used with Epetra, this bias to MPI function names is
+intentional.
+\item {\bf \mpismpcomm{}:} An experimental implementation that
+incorporates information about shared memory threads.  This
+implementation of \comm{} is intended for situations where threads,
+e.g.~pthreads, are created and retained as part of the call to the 
+\mpismpcomm{} constructor.  These threads can then be used by any
+kernels in Epetra that have been instrumented to run with threads.  At
+this point, \mpismpcomm{} is purely for research purposes.
+\item {\bf \lbcomm{}: } A new version of \comm{} built using an MPI
+communicator and special tuned implementations of basic communication
+operations coming from the LB_Comm library that is part of the Zoltan
+load balancing library.
+\end{enumerate}
+
+By using an abstract interface to provide distributed memory support,
+Epetra allows for future development of novel parallel communication.
+Also, although MPI is by far the most commonly used implementation of
+\comm{}, Epetra has no explicit dependence on MPI and therefore MPI is
+not required to build Epetra.
+
+\subsubsection{Distributed Data Support}
+
+Coupled with distributed memory communications, Epetra also provides
+support for distributed data objects.  Users can constructed,
+manipulate and redistribute Epetra objects in a flexible and powerful
+way.  The primary classes that are used to describe the layout of
+distributed objects are the \blockmap{} and \map{} classes.  Both of
+these classes encode information about the distribution of {\it global
+IDs (GIDs)}. GIDs are integer labels that can be associated
+with elements of  Epetra distributed objects.  For example, the
+elements of an \vector{} are the vector values and each
+value of an \vector{} object is associated with a GID.
+Similarly, each row of an \crsgraph{}, an \crsmatrix{} and an
+\multivector{} is an element and is associated with a GID.  Multiple
+elements can be associated with the same GID, but each element has a
+unique GID.
+
+
+\clearpage
+\bibliographystyle{plain}
+\bibliography{EpetraUserGuide}
+\addcontentsline{toc}{section}{References}
+
+\appendix
+\section{Commonly Used CVS Commands}
+\label{Section:CVS}
+\section{Common Bugzilla Tasks}
+\label{Section:Bugzilla}
+
+
+\end{document}
