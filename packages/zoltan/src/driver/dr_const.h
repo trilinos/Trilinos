@@ -49,7 +49,10 @@ struct Element_Description
   int      elem_blk;    /* element block number which this element is in */
   float    cpu_wgt;	/* the computational weight associated with the elem */
   float    mem_wgt;	/* the memory weight associated with the elem */
-  float  **coord;	/* array for the coordinates of the element */
+  float  **coord;	/* array for the coordinates of the element.
+                             for Nemesis meshes, nodal coordinates are stored;
+                             for Chaco graphs with geometry, one set of coords
+                                 is stored. */
   int     *connect;	/* list of nodes that make up this element, the node
 			   numbers in this list are global and not local    */
   int     *adj;		/* list of adjacent elements */
@@ -64,7 +67,7 @@ typedef struct Element_Description *ELEM_INFO_PTR;
 /*
  * structure for general mesh information
  */
-/* Structure used to store information about the FEM mesh */
+/* Structure used to store information about the mesh */
 struct Mesh_Description
 {
   int     num_nodes;		/* number of nodes on this processor         */
@@ -77,7 +80,11 @@ struct Mesh_Description
   int    *eb_ids;		/* element block ids                         */
   int    *eb_cnts;		/* number of elements in each element block  */
   int    *eb_nnodes;		/* number of nodes per element in each
-				   element block                             */
+				   element block                           
+                                      for Nemesis meshes, this value depends
+                                          on element type;
+                                      for Chaco graphs, only one "node" per
+                                          element.                           */
   int    *eb_nattrs;		/* number of attributes per element in each
 				   element block                             */
   int     elem_array_len;	/* length that the ELEM_INFO array is
