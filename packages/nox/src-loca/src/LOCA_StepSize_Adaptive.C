@@ -72,9 +72,11 @@ LOCA::StepSize::Adaptive::compute(
   // If this is the first step, set step size to initial value
   if (isFirstStep) {
     double dpds = predictor.getParam();
-    LOCA::StepSize::Constant::startStepSize /= dpds;
-    LOCA::StepSize::Constant::maxStepSize /= dpds;
-    LOCA::StepSize::Constant::minStepSize /= dpds;
+    if (dpds != 0.0) {
+      LOCA::StepSize::Constant::startStepSize /= dpds;
+      LOCA::StepSize::Constant::maxStepSize /= dpds;
+      LOCA::StepSize::Constant::minStepSize /= dpds;
+    }
     LOCA::StepSize::Constant::isFirstStep = false;
     stepSize = LOCA::StepSize::Constant::startStepSize;
     prevStepSize = 0.0;
@@ -132,9 +134,11 @@ LOCA::StepSize::Adaptive::compute(
   // If this is the first step, set step size to initial value
   if (isFirstStep) {
     double dpds = predictor.getScalar(0);
-    LOCA::StepSize::Constant::startStepSize /= dpds;
-    LOCA::StepSize::Constant::maxStepSize /= dpds;
-    LOCA::StepSize::Constant::minStepSize /= dpds;
+    if (dpds != 0.0) {
+      LOCA::StepSize::Constant::startStepSize /= dpds;
+      LOCA::StepSize::Constant::maxStepSize /= dpds;
+      LOCA::StepSize::Constant::minStepSize /= dpds;
+    }
     LOCA::StepSize::Constant::isFirstStep = false;
     stepSize = LOCA::StepSize::Constant::startStepSize;
     prevStepSize = 0.0;

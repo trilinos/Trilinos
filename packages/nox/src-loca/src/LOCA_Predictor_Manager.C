@@ -36,6 +36,7 @@
 #include "LOCA_Predictor_Tangent.H"
 #include "LOCA_Predictor_Secant.H"
 #include "LOCA_Predictor_Random.H"
+#include "LOCA_Predictor_Restart.H"
 #include "LOCA_Utils.H"
 #include "LOCA_MultiContinuation_ExtendedGroup.H"
 
@@ -69,6 +70,8 @@ LOCA::Predictor::Manager::reset(NOX::Parameter::List& params)
       predictorPtr = new LOCA::Predictor::Secant(params);
     else if (method == "Random")
       predictorPtr = new LOCA::Predictor::Random(params);
+    else if (method == "Restart")
+      predictorPtr = new LOCA::Predictor::Restart(params);
     else {
       if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
 	cout << "LOCA::Predictor::Manager::reset() - invalid choice (" 

@@ -162,6 +162,7 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Predictor_Tangent.H \
 	$(srcdir)/LOCA_Predictor_Secant.H \
 	$(srcdir)/LOCA_Predictor_Random.H \
+	$(srcdir)/LOCA_Predictor_Restart.H \
 	$(srcdir)/LOCA_StepSize_Generic.H \
 	$(srcdir)/LOCA_StepSize_Manager.H \
 	$(srcdir)/LOCA_StepSize_Constant.H \
@@ -235,6 +236,7 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Predictor_Tangent.C \
 	$(srcdir)/LOCA_Predictor_Secant.C \
 	$(srcdir)/LOCA_Predictor_Random.C \
+	$(srcdir)/LOCA_Predictor_Restart.C \
 	$(srcdir)/LOCA_StepSize_Manager.C \
 	$(srcdir)/LOCA_StepSize_Constant.C \
 	$(srcdir)/LOCA_StepSize_Adaptive.C $(srcdir)/LOCA_Stepper.C \
@@ -318,7 +320,8 @@ am__objects_14 = libloca_a-LOCA_Predictor_Generic.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Constant.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Tangent.$(OBJEXT) \
 	libloca_a-LOCA_Predictor_Secant.$(OBJEXT) \
-	libloca_a-LOCA_Predictor_Random.$(OBJEXT)
+	libloca_a-LOCA_Predictor_Random.$(OBJEXT) \
+	libloca_a-LOCA_Predictor_Restart.$(OBJEXT)
 am__objects_15 = libloca_a-LOCA_StepSize_Manager.$(OBJEXT) \
 	libloca_a-LOCA_StepSize_Constant.$(OBJEXT) \
 	libloca_a-LOCA_StepSize_Adaptive.$(OBJEXT)
@@ -407,6 +410,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Generic.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Manager.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Random.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Secant.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Predictor_Tangent.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_Default.Po \
@@ -498,6 +502,7 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Predictor_Tangent.H \
 	$(srcdir)/LOCA_Predictor_Secant.H \
 	$(srcdir)/LOCA_Predictor_Random.H \
+	$(srcdir)/LOCA_Predictor_Restart.H \
 	$(srcdir)/LOCA_StepSize_Generic.H \
 	$(srcdir)/LOCA_StepSize_Manager.H \
 	$(srcdir)/LOCA_StepSize_Constant.H \
@@ -844,7 +849,8 @@ LOCA_PREDICTOR_H = \
 	$(srcdir)/LOCA_Predictor_Constant.H \
 	$(srcdir)/LOCA_Predictor_Tangent.H \
 	$(srcdir)/LOCA_Predictor_Secant.H \
-	$(srcdir)/LOCA_Predictor_Random.H
+	$(srcdir)/LOCA_Predictor_Random.H \
+	$(srcdir)/LOCA_Predictor_Restart.H
 
 LOCA_PREDICTOR = \
 	$(srcdir)/LOCA_Predictor_Generic.C \
@@ -852,7 +858,8 @@ LOCA_PREDICTOR = \
 	$(srcdir)/LOCA_Predictor_Constant.C \
 	$(srcdir)/LOCA_Predictor_Tangent.C \
 	$(srcdir)/LOCA_Predictor_Secant.C \
-	$(srcdir)/LOCA_Predictor_Random.C
+	$(srcdir)/LOCA_Predictor_Random.C \
+	$(srcdir)/LOCA_Predictor_Restart.C
 
 LOCA_STEPSIZE_H = \
 	$(srcdir)/LOCA_StepSize_Generic.H \
@@ -1130,6 +1137,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Generic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Random.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Secant.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Predictor_Tangent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_SingularJacobianSolve_Default.Po@am__quote@
@@ -2121,6 +2129,22 @@ libloca_a-LOCA_Predictor_Random.obj: $(srcdir)/LOCA_Predictor_Random.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Random.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Random.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Predictor_Random.obj `if test -f '$(srcdir)/LOCA_Predictor_Random.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Predictor_Random.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Predictor_Random.C'; fi`
+
+libloca_a-LOCA_Predictor_Restart.o: $(srcdir)/LOCA_Predictor_Restart.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Predictor_Restart.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.Tpo" -c -o libloca_a-LOCA_Predictor_Restart.o `test -f '$(srcdir)/LOCA_Predictor_Restart.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Predictor_Restart.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.Tpo" "$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Predictor_Restart.C' object='libloca_a-LOCA_Predictor_Restart.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Predictor_Restart.o `test -f '$(srcdir)/LOCA_Predictor_Restart.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Predictor_Restart.C
+
+libloca_a-LOCA_Predictor_Restart.obj: $(srcdir)/LOCA_Predictor_Restart.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Predictor_Restart.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.Tpo" -c -o libloca_a-LOCA_Predictor_Restart.obj `if test -f '$(srcdir)/LOCA_Predictor_Restart.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Predictor_Restart.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Predictor_Restart.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.Tpo" "$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Predictor_Restart.C' object='libloca_a-LOCA_Predictor_Restart.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Predictor_Restart.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Predictor_Restart.obj `if test -f '$(srcdir)/LOCA_Predictor_Restart.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Predictor_Restart.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Predictor_Restart.C'; fi`
 
 libloca_a-LOCA_StepSize_Manager.o: $(srcdir)/LOCA_StepSize_Manager.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_StepSize_Manager.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_StepSize_Manager.Tpo" -c -o libloca_a-LOCA_StepSize_Manager.o `test -f '$(srcdir)/LOCA_StepSize_Manager.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_StepSize_Manager.C; \

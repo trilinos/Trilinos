@@ -933,6 +933,7 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::init(bool perturbSoln,
     perturb->random();
     perturb->scale(pfXVec.getXVec());
     pfXVec.getXVec().update(perturbSize, *perturb, 1.0);
+    grpPtr->setX(pfXVec.getXVec());
     delete perturb;
   }
 }

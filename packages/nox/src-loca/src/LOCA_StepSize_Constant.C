@@ -77,9 +77,11 @@ LOCA::StepSize::Constant::compute(
   // to predicted change in parameter
   if (isFirstStep) {
     double dpds = predictor.getParam();
-    startStepSize /= dpds;
-    maxStepSize /= dpds;
-    minStepSize /= dpds;
+    if (dpds != 0.0) {
+      startStepSize /= dpds;
+      maxStepSize /= dpds;
+      minStepSize /= dpds;
+    }
     stepSize = startStepSize;
     isFirstStep = false;
     prevStepSize = 0.0;
@@ -137,9 +139,11 @@ LOCA::StepSize::Constant::compute(
   // to predicted change in parameter
   if (isFirstStep) {
     double dpds = predictor.getScalar(0);
-    startStepSize /= dpds;
-    maxStepSize /= dpds;
-    minStepSize /= dpds;
+    if (dpds != 0.0) {
+      startStepSize /= dpds;
+      maxStepSize /= dpds;
+      minStepSize /= dpds;
+    }
     stepSize = startStepSize;
     isFirstStep = false;
     prevStepSize = 0.0;
