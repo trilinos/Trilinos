@@ -11356,7 +11356,11 @@ echo "$as_me: error: Cannot find epetraext include directory containing Epetra_T
 
   fi
 
-  if test X${REQUIRE_TEUCHOS} = Xyes; then
+  TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
+
+fi
+
+if test X${REQUIRE_TEUCHOS} = Xyes; then
 
   save_CPPFLAGS=$CPPFLAGS
   done=no
@@ -11793,10 +11797,7 @@ echo "$as_me: error: Cannot find teuchos include directory containing Teuchos_Se
    { (exit 1); exit 1; }; }
   fi
 
-  fi
-
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
-
 fi
 
 
@@ -12929,7 +12930,9 @@ _ACEOF
 
   fi
 
-  if test X${REQUIRE_TEUCHOS} = Xyes; then
+fi
+
+if test X${REQUIRE_TEUCHOS} = Xyes; then
 
   LIBS="-lteuchos ${LIBS}"
   save_LDFLAGS=$LDFLAGS
@@ -13117,8 +13120,6 @@ echo "$as_me: error: Cannot find teuchos library." >&2;}
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_NOX_TEUCHOS 1
 _ACEOF
-
-  fi
 
 fi
 

@@ -1147,13 +1147,14 @@ if test X${ADDON_epetra} = Xyes; then
     TRILINOS_HEADER(epetraext,Epetra_Transform.h,src/transform)
   fi
 
-  if test X${REQUIRE_TEUCHOS} = Xyes; then
-    TRILINOS_HEADER(teuchos,Teuchos_config.h,src)
-    TRILINOS_HEADER(teuchos,Teuchos_SerialDenseMatrix.hpp,src)
-  fi
-
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
 
+fi
+
+if test X${REQUIRE_TEUCHOS} = Xyes; then
+  TRILINOS_HEADER(teuchos,Teuchos_config.h,src)
+  TRILINOS_HEADER(teuchos,Teuchos_SerialDenseMatrix.hpp,src)
+  TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
 fi
 
 AC_SUBST(TRILINOS_CXXFLAGS)
@@ -1236,11 +1237,11 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes ||
     AC_DEFINE(HAVE_NOX_EPETRAEXT,1,[define that epetraext is activated in nox])
   fi
 
-  if test X${REQUIRE_TEUCHOS} = Xyes; then
-    TRILINOS_LIB_CHECK(teuchos,teuchos,src)
-    AC_DEFINE(HAVE_NOX_TEUCHOS,1,[define that Teuchos is activated in nox])
-  fi
+fi
 
+if test X${REQUIRE_TEUCHOS} = Xyes; then
+  TRILINOS_LIB_CHECK(teuchos,teuchos,src)
+  AC_DEFINE(HAVE_NOX_TEUCHOS,1,[define that Teuchos is activated in nox])
 fi
 
 # ------------------------------------------------------------------------
