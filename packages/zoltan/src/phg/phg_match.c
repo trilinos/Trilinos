@@ -296,13 +296,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      order[i] = i;     /* select (visit) vertices in lno order */
 
   /* randomly select matching candidates from available vertices */
-  for (i = 0; i < hg->nVtx; i++)  {
-    lno = Zoltan_Rand () % hg->nVtx;
-    /* swap current vertex with randomly selected vertex */
-    vertex     = order[lno];
-    order[lno] = order[i];
-    order[i]   = vertex;
-    }
+  Zoltan_Rand_Perm_Int (order, hg->nVtx);
 
   if (hgc->nProc_x > 0 && (
       !(select     = (int*) ZOLTAN_MALLOC (ncandidates  * sizeof(int)))
@@ -442,15 +436,9 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
                
      /* initialize array to process recv'd candidates in random order */
      for (i = 0; i < total_count; i++)
-       c_order[i] = i;
-     for (i = 0; i < total_count; i++)  {
-       lno = Zoltan_Rand () % total_count;
-       /* swap current vertex with randomly selected vertex */
-       vertex       = c_order[lno];
-       c_order[lno] = c_order[i];
-       c_order[i]   = vertex;
-     }
-         
+       c_order[i] = i;            /* at this point, visit in recv'd order */
+     Zoltan_Rand_Perm_Int (c_order, total_count);
+     
      /* for each candidate vertex, compute all local partial inner products */
      for (k = 0; k < total_count; k++)  {
        vertex = c_order[k];
