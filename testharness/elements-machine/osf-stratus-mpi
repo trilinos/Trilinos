@@ -1,3 +1,4 @@
 --enable-mpi
 --with-mpi-libs=-lmpi
+--enable-pliris
 --enable-amesos-dscpack
