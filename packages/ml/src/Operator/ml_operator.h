@@ -147,8 +147,10 @@ extern "C" {
 #endif
 #endif
 
-extern int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, 
-        int *nblk, int *pnode_part, int *ndwts /*=NULL*/, int *egwts/*=NULL*/, int nedges /*= 0*/ , int );
+extern int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
+                          int *pnode_part, int which_partitioner, 
+		          double *x_coord, double *y_coord, double *z_coord);
+
 extern ML_Operator *ML_Operator_Create(ML_Comm *comm);
 extern int ML_Operator_Destroy(ML_Operator **);
 
