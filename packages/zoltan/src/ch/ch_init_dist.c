@@ -32,6 +32,11 @@
  *                     gets the first vertex, proc 1 gets the second vertex,
  *                     ..., proc p-1 gets the pth vertex, proc 0 gets the
  *                     (p+1)th vertex, proc 1 gets the (p+2)th vertex, etc.
+ *
+ *  It is possible to distribute objects to a subset of the
+ *  the procs. The variable Num_Proc_Dist indicates that only
+ *  procs 0 through (Num_Proc_Dist-1) should be assigned any
+ *  vertices, the rest will have no objects.
  */
 
 /*****************************************************************************/
@@ -41,6 +46,8 @@
  */
 static int Gnvtxs;          /* Global number of vertices (across all procs)  */
 static int Num_Proc;        /* Global number of processors                   */
+static int Num_Proc_Dist;   /* Number of processors to distribute data; 
+                               Num_Proc_Dist may be < Num_Proc!              */
 static int Initial_Method;  /* Flag indicating which initial decomposition
                                method to use.                                */
 
@@ -71,9 +78,13 @@ void ch_dist_init(int num_proc, int gnvtxs, PARIO_INFO_PTR pio_info)
  * graph data.
  */
 
-  Num_Proc = num_proc;
+  Num_Proc = num_proc; 
   Gnvtxs = gnvtxs;
   Initial_Method = pio_info->init_dist_type;
+  Num_Proc_Dist  = pio_info->init_dist_procs;
+  /* If Num_Proc_Dist has an invalid value, set it to Num_Proc by default */ 
+  if ((Num_Proc_Dist <= 0) || (Num_Proc_Dist > Num_Proc)) 
+     Num_Proc_Dist = Num_Proc;
 
   switch(Initial_Method) {
   case INITIAL_LINEAR:
@@ -111,9 +122,13 @@ int num;
     num = Vtxdist[target_proc+1] - Vtxdist[target_proc];
     break;
   case INITIAL_CYCLIC:
-    num = Gnvtxs / Num_Proc;
-    if ((Gnvtxs % Num_Proc) > target_proc)
-      num++;
+    if (target_proc < Num_Proc_Dist){
+      num = Gnvtxs / Num_Proc_Dist;
+      if ((Gnvtxs % Num_Proc_Dist) > target_proc)
+        num++;
+    }
+    else
+      num = 0;
     break;
   default:
     Gen_Error(0, "Invalid Initial Distribution Type in ch_dist_num_vtx");
@@ -167,8 +182,10 @@ int i;
       vtx_list[(*nvtx)++] = i;
     break;
   case INITIAL_CYCLIC:
-    for (i = target_proc; i < Gnvtxs; i+=Num_Proc) 
+    if (target_proc < Num_Proc_Dist){
+      for (i = target_proc; i < Gnvtxs; i+=Num_Proc_Dist) 
         vtx_list[(*nvtx)++] = i;
+    }
     break;
   default:
     Gen_Error(0, "Invalid Initial Distribution Type in ch_dist_vtx_list");
@@ -192,13 +209,13 @@ int p;
 
   switch(Initial_Method) {
   case INITIAL_LINEAR:
-    for (p = 0; p < Num_Proc; p++)
+    for (p = 0; p < Num_Proc_Dist; p++)
       /* Compare with <= since v is 1-based and Vtxdist is 0-based. */
       if (v <= Vtxdist[p+1]) break;
     break;
   case INITIAL_CYCLIC:
     /* test for (v-1) as v is 1-based and INITIAL_CYCLIC equations are 0-based */
-    p = (v-1) % Num_Proc;
+    p = (v-1) % Num_Proc_Dist;
     break;
   default:
     Gen_Error(0, "Invalid Initial Distribution Type in ch_dist_proc");
@@ -231,11 +248,16 @@ int rest, i, n;
     }
   }
   /* Calculate uniform vertex distribution */
-  (Vtxdist)[0] = 0;
+  Vtxdist[0] = 0;
   rest = Gnvtxs;
-  for (i=0; i<Num_Proc; i++){
-    n = rest/(Num_Proc-i);
-    (Vtxdist)[i+1] = (Vtxdist)[i] + n;
+  for (i=0; i<Num_Proc_Dist; i++){
+    n = rest/(Num_Proc_Dist-i);
+    Vtxdist[i+1] = Vtxdist[i] + n;
     rest -= n;
   }
+  /* Procs >= Num_Proc_Dist get no vertices */
+  for (i=Num_Proc_Dist; i<Num_Proc; i++){
+    Vtxdist[i+1] = Vtxdist[i];
+  }
+
 }
