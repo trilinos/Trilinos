@@ -11,13 +11,119 @@ class Epetra_CrsMatrix;
 class Epetra_Vector;
 class Epetra_MultiVector;
 
-//! Ifpack_CrsRiluk: A class for constructing and using real-valued double-precision sparse compressed row matrices.
+//! Ifpack_CrsRiluk: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Epetra_RowMatrix.
 
-/*! The Ifpack_CrsRiluk enable the piecewise construction and use of real-valued double-precision sparse matrices
-    where matrix entries are intended for row access.
+/*! The Ifpack_CrsRiluk class computes a "Relaxed" ILU factorization with level k fill 
+    of a given Epetra_RowMatrix.  The factorization 
+    that is produced is a function of several parameters:
+<ol>
+  <li> The pattern of the matrix - All fill is derived from the original matrix nonzero structure.  Level zero fill
+       is defined as the original matrix pattern (nonzero structure), even if the matrix value at an entry is stored
+       as a zero. (Thus it is possible to add entries to the ILU factors by adding zero entries the original matrix.)
+  <li> Level of fill - Starting with the original matrix pattern as level fill of zero, the next level of fill is
+       determined by analyzing the graph of the previous level and determining nonzero fill that is a result of combining
+       entries that were from previous level only (not the current level).  This rule limits fill to entries that
+       are direct decendents from the previous level graph.  Fill for level k is determined by applying this rule
+       recursively.  For sufficiently large values of k, the fill would eventually be complete and an exact LU
+       factorization would be computed.
+  <li> Level of overlap - All Ifpack preconditioners work on parallel distributed memory computers by using
+       the row partitioning the user input matrix to determine the partitioning for local ILU factors.  If the level of
+       overlap is set to zero,
+       the rows of the user matrix that are stored on a given processor are treated as a self-contained local matrix
+       and all column entries that reach to off-processor entries are ignored.  Setting the level of overlap to one
+       tells Ifpack to increase the size of the local matrix by adding rows that are reached to by rows owned by this
+       processor.  Increasing levels of overlap are defined recursively in the same way.  For sufficiently large levels
+       of overlap, the entire matrix would be part of each processor's local ILU factorization process.
 
-    At this time, the primary function provided by Ifpack_CrsRiluk is matrix time vector and matrix 
-    times multi-vector multiplication.  It is also possible to extract matrix rows from a constructed matrix.
+       Once the factorization is computed, applying the factorization \(LUy = x\) 
+       results in redundant approximations for any elements of y that correspond to 
+       rows that are part of more than one local ILU factor.  The OverlapMode (changed by calling SetOverlapMode())
+       defines how these redundancies are
+       handled using the Epetra_CombineMode enum.  The default is to zero out all values of y for rows that
+       were not part of the original matrix row distribution.
+
+  <li> Degree of relaxation - Ifpack_CrsRiluk computes the ILU factorization row-by-row.  As entries at a given
+       row are computed, some number of them will be dropped because they do match the prescribed sparsity pattern.
+       The relaxation factor determines how these dropped values will be handled.  If the RelaxValue (changed by calling
+       SetRelaxValue()) is zero, then these extra entries will by dropped.  This is a classical ILU approach.
+       If the RelaxValue is 1, then the sum
+       of the extra entries will be added to the diagonal.  This is a classical Modified ILU (MILU) approach.  If
+       RelaxValue is between 0 and 1, then RelaxValue times the sum of extra entries will be added to the diagonal.
+
+       For most situations, RelaxValue should be set to zero.  For certain kinds of problems, e.g., reservoir modeling,
+       there is a conservation principle involved such that any operator should obey a zero row-sum property.  MILU 
+       was designed for these cases and you should set the RelaxValue to 1.  For other situations, setting RelaxValue to
+       some nonzero value may improve the stability of factorization, and can be used if the computed ILU factors
+       are poorly conditioned.
+  <li> Shift values - Prior to computing the factorization, it is possible to modify the diagonal entries of the matrix
+       for which the factorization will be computing.  If the absolute and relative shift values are both zero, the
+       factorization will be compute for the original user matrix A.  If these shift values are nonzero, the factorization
+       will computed for a matrix that differs from the original user matrix in the diagonal values only as follows
+
+       We often have difficulty computing usable incomplete
+       factorizations for our problems.  The most common source of problems
+       is that the factorization may encounter a small or zero pivot,
+       in which case the factorization can fail, or even if the factorization
+       succeeds, the factors may be so poorly conditioned that use of them in
+       the iterative phase produces meaningless results.  Before we can fix
+       this problem, we must be able to detect it.  To this end, we use a
+       simple but effective condition number estimate for $(LU)^{-1}$.
+
+       <b>Estimating Preconditioner Condition Numbers</b>
+
+       The condition of a matrix $B$, called $cond_p(B)$, is defined as
+       $cond_p(B)
+       = \|B\|_p\|B^{-1}\|_p$ in some appropriate norm $p$.  $cond_p(B)$
+       gives some indication of how many accurate floating point
+       digits can be expected from operations involving the matrix and its
+       inverse.  A condition number approaching the accuracy of a given
+       floating point number system, about 15 decimal digits in IEEE double
+       precision, means that any results involving $B$ or $B^{-1}$ may be
+       meaningless.
+       
+       The $\infty$-norm of a vector $y$ is defined as the maximum of the
+       absolute values of the vector entries, and the $\infty$-norm of a
+       matrix C is defined as
+       $\|C\|_\infty = \max_{\|y\|_\infty = 1} \|Cy\|_\infty$.
+       A crude lower bound for the $cond_\infty(C)$ is
+       $\|C^{-1}e\|_\infty$ where $e = (1, 1, \ldots, 1)^T$.  It is a
+       lower bound because $cond_\infty(C) = \|C\|_\infty\|C^{-1}\|_\infty
+       \ge \|C^{-1}\|_\infty \ge |C^{-1}e\|_\infty$.
+       
+       For our purposes, we want to estimate $cond_\infty(LU)$, where $L$ and
+       $U$ are our incomplete factors.  Chow~\cite{Chow:97} demonstrates that
+       $\|(LU)^{-1}e\|_\infty$ provides an effective estimate for
+       $cond_\infty(LU)$.  Furthermore, since finding $z$ such that $LUz = y$
+       is a basic kernel for applying the preconditioner, computing this
+       estimate of $cond_\infty(LU)$ is performed by setting $y = e$, calling
+       the solve kernel to compute $z$ and then
+       computing $\|z\|_\infty$.  The condition number estimates reported
+       in Section~\ref{s:test_problems} are obtained using this approach.
+       
+
+       <b>{\it A priori} Diagonal Perturbations</b>
+
+       Given the above method to estimate the conditioning of the incomplete factors,
+       if we detect that our factorization is too ill-conditioned
+       we can improve the conditioning by perturbing the matrix diagonal and
+       restarting the factorization using
+       this more diagonally dominant matrix.  In order to apply perturbation,
+       prior to starting
+       the factorization, we compute a diagonal perturbation of our matrix
+       $A$ in Eq.~\ref{e:axb} and perform the factorization on this perturbed
+       matrix.  The overhead cost of perturbing the diagonal is minimal since
+       the first step in computing the incomplete factors is to copy the
+       matrix $A$ into the memory space for the incomplete factors.  We
+       simply compute the perturbed diagonal at this point.  The actual
+       perturbation values we use are discussed below.
+       
+       we replace the diagonal values $(d_1, d_2, \ldots, d_n)$
+       with $d_i = \sign(d_i)\alpha + d_i\rho$, $i=1, 2, \ldots, n$, where
+       $n$ is the matrix dimension and $\sign(d_i)$ returns
+       the sign of the diagonal entry.  This has the effect of
+       forcing the diagonal values to have minimal magnitude of $\alpha$ and
+       to increase each by an amount proportional to $\rho$, and still keep
+       the sign of the original diagonal entry.
 
 <b>Constructing Ifpack_CrsRiluk objects</b>
 

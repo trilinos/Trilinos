@@ -79,10 +79,17 @@ Epetra contains a number of classes.  They can be categorized as follows:
 
 <ol>
 
-<li> General dense matrix class: Epetra_SerialDenseMatrix - Provides dense matrix services such as 
+<li> General dense matrix/vector classes: Epetra_SerialDenseMatrix, Epetra_SerialDenseVector - 
+     Lightweight dense matrix and vector classes used to define matrices, left-hand-sides and 
+     right-hand-sides for the serial solver classes.
+
+<li> General dense solver class: Epetra_SerialDenseSolver - Provides dense matrix services such as 
      factorizations, solves, QR, SVD, etc., with special attention focused on numerically robust solutions.
 
-<li> Symmetric definite dense matrix class: Epetra_SerialSpdDenseMatrix - Similar to Epetra_SerialDenseMatrix 
+<li> Symmetric dense matrix class: Epetra_SerialSymDenseMatrix - Similar to Epetra_SerialDenseMatrix 
+     except focused specifically on symmetric matrices.
+
+<li> Symmetric definite dense solver: Epetra_SerialSpdDenseSolver - Similar to Epetra_SerialDenseSolver 
      except focused specifically on symmetric definite systems.
 
 </ol>
