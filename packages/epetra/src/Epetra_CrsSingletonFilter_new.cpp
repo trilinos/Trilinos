@@ -93,6 +93,13 @@ void Epetra_CrsSingletonFilter::InitializeDefaults() {
   AbsoluteThreshold_ = 0;
   RelativeThreshold_ = 0;
 
+  NumMyRowSingletons_ = -1;
+  NumMyColSingletons_ = -1;
+  NumGlobalRowSingletons_ = -1;
+  NumGlobalColSingletons_ = -1;
+  RatioOfDimensions_ = -1.0;
+  RatioOfNonzeros_ = -1.0;
+
   HaveReducedProblem_ = false;
   UserDefinedEliminateMaps_ = false;
   AnalysisDone_ = false;
@@ -120,6 +127,10 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
   FullMatrix_ = FullMatrix; 
 
   if (AnalysisDone_) EPETRA_CHK_ERR(-1); // Analysis already done once.  Cannot do it again
+  if (FullMatrix==0) EPETRA_CHK_ERR(-2); // Input matrix pointer is zero
+  if (FullMatrix->NumGlobalRows()==0) EPETRA_CHK_ERR(-3); // Full matrix has zero dimension.
+  if (FullMatrix->NumGlobalNonzeros()==0) EPETRA_CHK_ERR(-4); // Full matrix has no nonzero terms.
+
 
   // First check for columns with single entries and find columns with singleton rows
   Epetra_IntVector ColProfiles(FullMatrixColMap()); ColProfiles.PutValue(0);
@@ -147,7 +158,7 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
   // Scan matrix for singleton rows, build up column profiles
   int NumIndices;
   int * Indices;
-  NumRowSingletons_ = 0;
+  NumMyRowSingletons_ = 0;
   for (i=0; i<NumMyRows; i++) {
     // Get ith row
     EPETRA_CHK_ERR(GetRow(i, NumIndices, Indices));
@@ -164,7 +175,7 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
       ColHasRowWithSingleton[j]++;
       RowMapColors[i] = 1;
       ColMapColors[j] = 1;
-      NumRowSingletons_++;
+      NumMyRowSingletons_++;
     }
   }
 
@@ -203,7 +214,7 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
   Epetra_IntVector RowHasColWithSingleton(FullMatrix->RowMatrixRowMap()); // Use to check for errors
   RowHasColWithSingleton.PutValue(0);
  
-  NumColSingletons_ = 0;
+  NumMyColSingletons_ = 0;
   // Count singleton columns (that were not already counted as singleton rows)
   for (j=0; j<NumMyCols; j++) {
     int i = RowIDs[j];
@@ -214,7 +225,7 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
 	RowHasColWithSingleton[i]++; // Increment col singleton counter for ith row
 	RowMapColors[i] = 2; // Use 2 for now, to distinguish between row eliminated directly or via column singletons
 	ColMapColors[j] = 1;
-	NumColSingletons_++;
+	NumMyColSingletons_++;
 	// If we delete a row, we need to keep track of associated column entries that were also deleted 
 	// in case all entries in a column are eventually deleted, in which case the column should
 	// also be deleted.
@@ -241,6 +252,8 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
 
   if (RowIDs!=0) delete [] RowIDs;
 
+  FullMatrix->RowMatrixRowMap().Comm().SumAll(&NumMyRowSingletons_, &NumGlobalRowSingletons_, 1);
+  FullMatrix->RowMatrixRowMap().Comm().SumAll(&NumMyColSingletons_, &NumGlobalColSingletons_, 1);
   AnalysisDone_ = true;
   return(0);
 }
@@ -402,6 +415,13 @@ int Epetra_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProblem * Pr
 
   ReducedProblem_ = new Epetra_LinearProblem(ReducedMatrix_, ReducedLHS_, ReducedRHS_);
 
+  double fn = FullMatrix()->NumGlobalRows();
+  double fnnz = FullMatrix()->NumGlobalNonzeros();
+  double rn = ReducedMatrix()->NumGlobalRows();
+  double rnnz = ReducedMatrix()->NumGlobalNonzeros();
+
+  RatioOfDimensions_ = (fn-rn)/fn;
+  RatioOfNonzeros_ = (fnnz-rnnz)/fnnz;
   HaveReducedProblem_ = true;
   
   return(0);
@@ -464,7 +484,7 @@ int Epetra_CrsSingletonFilter::UpdateReducedProblem(Epetra_LinearProblem * Probl
     }
   }
 
-  assert(ColSingletonCounter==NumColSingletons_); // Sanity test
+  assert(ColSingletonCounter==NumMyColSingletons_); // Sanity test
 
   // Update Reduced LHS (Puts any initial guess values into reduced system)
 
@@ -498,51 +518,6 @@ int Epetra_CrsSingletonFilter::UpdateReducedProblem(Epetra_LinearProblem * Probl
   ReducedRHS_->PutScalar(0.0);
   EPETRA_CHK_ERR(ReducedRHS_->Import(*tempB_, *Full2ReducedRHSImporter_, Insert));
     return(0);
-}
-//==============================================================================
-int Epetra_CrsSingletonFilter::Statistics() const {
-
-  if (!HaveReducedProblem_) {
-    EPETRA_CHK_ERR(-1); // No stats to report
-  }
-
-  double fn = FullMatrix()->NumGlobalRows();
-  double fnnz = FullMatrix()->NumGlobalNonzeros();
-  double rn = ReducedMatrix()->NumGlobalRows();
-  double rnnz = ReducedMatrix()->NumGlobalNonzeros();
-  int NumRowSingletons, NumColSingletons, GlobalMaxNumEntries;
-  int tmprow = NumRowSingletons_;
-  int tmpcol = NumColSingletons_;
-  int maxentries = FullMatrix()->MaxNumEntries();
-  FullMatrix()->RowMatrixRowMap().Comm().SumAll(&tmprow, &NumRowSingletons, 1);
-  FullMatrix()->RowMatrixRowMap().Comm().SumAll(&tmpcol, &NumColSingletons, 1);
-  FullMatrix()->RowMatrixRowMap().Comm().SumAll(&maxentries, &GlobalMaxNumEntries, 1);
-  
-  if (FullMatrix()->RowMatrixRowMap().Comm().MyPID()!=0) return(0);
-  if (fn==0.0 || fnnz==0.0) {
-    cout << "Full problem has zero size." << endl;
-    return(0);
-  }
-
-  cout << "Full System characteristics:" << endl << endl
-       << "  Dimension                             = " << FullMatrix()->NumGlobalRows() << endl
-       << "  Number of nonzeros                    = " << FullMatrix()->NumGlobalNonzeros() << endl
-       << "  Maximum Number of Row Entries         = " << GlobalMaxNumEntries << endl << endl
-       << "Reduced System characteristics:" << endl << endl
-       << "  Dimension                             = " << ReducedMatrix()->NumGlobalRows() << endl
-       << "  Number of nonzeros                    = " << ReducedMatrix()->NumGlobalNonzeros() << endl
-       << "  Maximum Number of Row Entries         = " << ReducedMatrix()->GlobalMaxNumEntries() << endl << endl
-       << "Singleton information: " << endl
-       << "  Number of rows with single entries    = " << NumRowSingletons << endl
-       << "  Number of columns with single entries " << endl
-       << "    (that were not already counted as " << endl
-       << "     row singletons)                    = " << NumColSingletons << endl << endl
-       << "Ratios: " << endl
-       << "  Percent reduction in dimension        = " << (fn-rn)/fn*100.0 << endl
-       << "  Percent reduction in nonzero count    = " << (fnnz-rnnz)/fnnz*100.0 << endl << endl;
-
-  return(0);
-
 }
 //==============================================================================
 int Epetra_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * SourceMap, Epetra_Map * TargetMap,
@@ -584,11 +559,6 @@ int Epetra_CrsSingletonFilter::ConstructRedistributeExporter(Epetra_Map * Source
   return(0);
 }
 //==============================================================================
-int Epetra_CrsSingletonFilter::Analyze(int AbsoluteThreshold, double RelativeThreshold) {
-  EPETRA_CHK_ERR(-1); // Not implemented
-  return(0);
-}
-//==============================================================================
 int Epetra_CrsSingletonFilter::ComputeFullSolution() {
 
   int jj, k;
@@ -613,7 +583,7 @@ int Epetra_CrsSingletonFilter::ComputeFullSolution() {
   // solution for these equations.
 
   int NumVectors = tempB_->NumVectors();
-  for (k=0; k<NumColSingletons_; k++) {
+  for (k=0; k<NumMyColSingletons_; k++) {
     int i = ColSingletonRowLIDs_[k];
     int j = ColSingletonColLIDs_[k];
     double pivot = ColSingletonPivots_[k];
@@ -696,27 +666,27 @@ int Epetra_CrsSingletonFilter::CreatePostSolveArrays(int * RowIDs,
 
   int j;
 
-  if (NumColSingletons_==0) return(0); // Nothing to do
+  if (NumMyColSingletons_==0) return(0); // Nothing to do
 
   Epetra_MapColoring & ColMapColors = *ColMapColors_;
 
   int NumMyCols = FullMatrix()->NumMyCols();
 
   // We will need these arrays for the post-solve phase
-  ColSingletonRowLIDs_ = new int[NumColSingletons_];
-  ColSingletonColLIDs_ = new int[NumColSingletons_];
-  ColSingletonPivotLIDs_ = new int[NumColSingletons_];
-  ColSingletonPivots_ = new double[NumColSingletons_];
+  ColSingletonRowLIDs_ = new int[NumMyColSingletons_];
+  ColSingletonColLIDs_ = new int[NumMyColSingletons_];
+  ColSingletonPivotLIDs_ = new int[NumMyColSingletons_];
+  ColSingletonPivots_ = new double[NumMyColSingletons_];
   
   // Register singleton columns (that were not already counted as singleton rows)
   // Check to see if any columns disappeared because all associated rows were eliminated
-  int NumColSingletonstmp = 0;
+  int NumMyColSingletonstmp = 0;
   for (j=0; j<NumMyCols; j++) {
     int i = RowIDs[j];
     if ( ColProfiles[j]==1 && RowMapColors[i]!=1) {
-      ColSingletonRowLIDs_[NumColSingletonstmp] = i;
-      ColSingletonColLIDs_[NumColSingletonstmp] = j;
-      NumColSingletonstmp++;
+      ColSingletonRowLIDs_[NumMyColSingletonstmp] = i;
+      ColSingletonColLIDs_[NumMyColSingletonstmp] = j;
+      NumMyColSingletonstmp++;
     }
     // Also check for columns that were eliminated implicitly by 
     // having all associated row eliminated
@@ -725,9 +695,9 @@ int Epetra_CrsSingletonFilter::CreatePostSolveArrays(int * RowIDs,
     }
   }
 
-  assert(NumColSingletonstmp==NumColSingletons_); //Sanity check
+  assert(NumMyColSingletonstmp==NumMyColSingletons_); //Sanity check
   Epetra_Util sorter;
-  sorter.Sort(true, NumColSingletons_, ColSingletonRowLIDs_, 0, 0, 1, &ColSingletonColLIDs_);
+  sorter.Sort(true, NumMyColSingletons_, ColSingletonRowLIDs_, 0, 0, 1, &ColSingletonColLIDs_);
     
   return(0);
 }

@@ -68,31 +68,6 @@ class Epetra_CrsSingletonFilter {
 
   //! Returns true if singletons were detected in this matrix (must be called after Analyze() to be effective).
   bool SingletonsDetected() const {if (!AnalysisDone_) return(false); else return(RowMapColors_->MaxNumColors()>1);};
-
-  //! Analyze the input matrix using density thresholds and detection of singletons to determine rows/cols to eliminate.
-  /*! Analyzes the user's input matrix to determine rows and columns that should be explicitly
-      eliminated to create the reduced system.  First, look for rows and columns that have single entries.  
-      These rows/columns
-      can easily be removed from the problem.  Second, if one or both of AbsoluteThreshold and RelativeThreshold are
-      nonzero, rows/columns above the threshold will be eliminated.
-      The results of calling this method are two Epetra_Maps, RowEliminateMap and ColEliminateMap,
-      that contain the list of global IDs of the row and columns to be eliminated.  These two maps can be access via
-      RowEliminateMap() and ColEliminateMap() accessor methods.
-    
-    \param In 
-           AbsoluteThreshold - If any row or column has a count above this value, the row/column
-	   pair will be formally eliminated from the reduced matrix.  Setting this value to 0 will
-	   turn off this test.
-    \param In 
-           RelativeThreshold - If the ratio of the nonzero count of any row or column over the average
-	   row or column count is above the relative threshold, the row/column
-	   pair will be formally eliminated from the reduced matrix.  Setting this value to 0 will
-	   turn off this test.
-  */
-  int Analyze(int AbsoluteThreshold, double RelativeThreshold);
-
-  //! Print statistics about the reduction analysis.
-  int Statistics() const;
   //@}
 
   //@{ \name Reduce methods.
@@ -112,22 +87,6 @@ class Epetra_CrsSingletonFilter {
   */
   int UpdateReducedProblem(Epetra_LinearProblem * Problem);
 
-  //! Return a reduced linear problem using user-defined elimination maps.
-  /*! Creates a new Epetra_LinearProblem object based on the maps that the user
-      provides.  A pointer
-      to the reduced problem is obtained via a call to ReducedProblem().  
-    
-    \param In 
-           RowEliminateMap - An Epetra_Map specifying the global IDs of rows and columns that
-	   should be explicitly eliminated from the matrix.
-    \param In 
-           RowEliminateMap - An Epetra_Map specifying the global IDs of rows and columns that
-	   should be explicitly eliminated from the matrix.
-	   
-    \return Error code, set to 0 if no error.
-  */
-  int ConstructReducedProblem(const Epetra_Map & RowEliminateMap, const Epetra_Map & ColEliminateMap);
-
   //@}
   //@{ \name Methods to construct Full System Solution.
   //! Compute a solution for the full problem using the solution of the reduced problem, put in LHS of FullProblem().
@@ -137,6 +96,28 @@ class Epetra_CrsSingletonFilter {
     
   */
   int ComputeFullSolution();
+  //@}
+  //@{ \name Filter Statistics.
+  //! Return number of rows that contain a single entry, returns -1 if Analysis not performed yet.
+  int NumRowSingletons() const {return(NumGlobalRowSingletons_);};
+
+  //! Return number of columns that contain a single entry that are \e not associated with singleton row, returns -1 if Analysis not performed yet.
+  int NumColSingletons() const {return(NumGlobalColSingletons_);};
+
+  //! Return total number of singletons detected, returns -1 if Analysis not performed yet.
+  /*! Return total number of singletons detected across all processors.  This method will not return a
+      valid result until after the Analyze() method is called.  The dimension of the reduced system can 
+      be computed by subtracting this number from dimension of full system.
+      \warning This method returns -1 if Analyze() method has not been called.
+  */
+  int NumSingletons() const {return(NumColSingletons()+NumRowSingletons());};
+
+  //! Returns ratio of reduced system to full system dimensions, returns -1.0 if reduced problem not constructed.
+  double RatioOfDimensions() const {return(RatioOfDimensions_);};
+
+  //! Returns ratio of reduced system to full system nonzero count, returns -1.0 if reduced problem not constructed.
+  double RatioOfNonzeros() const {return(RatioOfNonzeros_);};
+
   //@}
   //@{ \name Attribute Access Methods.
 
@@ -150,22 +131,7 @@ class Epetra_CrsSingletonFilter {
   Epetra_RowMatrix * FullMatrix() const {return(FullMatrix_);};
 
   //! Returns pointer to Epetra_CrsMatrix from full problem.
-  Epetra_CrsMatrix * FullCrsMatrix() const {return(FullCrsMatrix_);};
-
-  //! Returns pointer to Epetra_CrsMatrix from full problem.
   Epetra_CrsMatrix * ReducedMatrix() const {return(ReducedMatrix_);};
-
-  //! Returns Epetra_Map containing global row IDs of full matrix.
-  const Epetra_Map & FullMatrixRowMap() const {return(FullMatrix()->RowMatrixRowMap());};
-
-  //! Returns Epetra_Map containing column map of full matrix.
-  const Epetra_Map & FullMatrixColMap() const {return(FullMatrix()->RowMatrixColMap());};
-
-  //! Returns Epetra_Map containing domain map of full matrix.
-  const Epetra_Map & FullMatrixDomainMap() const {return((FullMatrix()->OperatorDomainMap()));};
-
-  //! Returns Epetra_Map containing range map of full matrix.
-  const Epetra_Map & FullMatrixRangeMap() const {return((FullMatrix()->OperatorRangeMap()));};
 
   //! Returns pointer to Epetra_MapColoring object: color 0 rows are part of reduced system.
   Epetra_MapColoring * RowMapColors() const {return(RowMapColors_);};
@@ -188,72 +154,85 @@ class Epetra_CrsSingletonFilter {
 
  protected:
 
-    void InitializeDefaults();
-    int ComputeEliminateMaps();
-    int Setup(Epetra_LinearProblem * Problem);
-    int InitFullMatrixAccess();
-    int GetRow(int Row, int & NumIndices, int * & Indices);
-    int GetRowGCIDs(int Row, int & NumIndices, double * & Values, int * & GlobalIndices);
-    int GetRow(int Row, int & NumIndices, double * & Values, int * & Indices);
-    int CreatePostSolveArrays(int * RowIDs,
-			      const Epetra_MapColoring & RowMapColors,
-			      const Epetra_IntVector & ColProfiles,
-			      const Epetra_IntVector & NewColProfiles,
-			      const Epetra_IntVector & ColHasRowWithSingleton);
+ 
 
-    int ConstructRedistributeExporter(Epetra_Map * SourceMap, Epetra_Map * TargetMap,
-				      Epetra_Export * & RedistributeExporter,
-				      Epetra_Map * & RedistributeMap);
+  //  This pointer will be zero if full matrix is not a CrsMatrix.
+  Epetra_CrsMatrix * FullCrsMatrix() const {return(FullCrsMatrix_);};
 
-    Epetra_LinearProblem * FullProblem_;
-    Epetra_LinearProblem * ReducedProblem_;
-    Epetra_RowMatrix * FullMatrix_;
-    Epetra_CrsMatrix * FullCrsMatrix_;
-    Epetra_CrsMatrix * ReducedMatrix_;
-    Epetra_MultiVector * ReducedRHS_;
-    Epetra_MultiVector * ReducedLHS_;
+  const Epetra_Map & FullMatrixRowMap() const {return(FullMatrix()->RowMatrixRowMap());};
+  const Epetra_Map & FullMatrixColMap() const {return(FullMatrix()->RowMatrixColMap());};
+  const Epetra_Map & FullMatrixDomainMap() const {return((FullMatrix()->OperatorDomainMap()));};
+  const Epetra_Map & FullMatrixRangeMap() const {return((FullMatrix()->OperatorRangeMap()));};
+  void InitializeDefaults();
+  int ComputeEliminateMaps();
+  int Setup(Epetra_LinearProblem * Problem);
+  int InitFullMatrixAccess();
+  int GetRow(int Row, int & NumIndices, int * & Indices);
+  int GetRowGCIDs(int Row, int & NumIndices, double * & Values, int * & GlobalIndices);
+  int GetRow(int Row, int & NumIndices, double * & Values, int * & Indices);
+  int CreatePostSolveArrays(int * RowIDs,
+			    const Epetra_MapColoring & RowMapColors,
+			    const Epetra_IntVector & ColProfiles,
+			    const Epetra_IntVector & NewColProfiles,
+			    const Epetra_IntVector & ColHasRowWithSingleton);
+  
+  int ConstructRedistributeExporter(Epetra_Map * SourceMap, Epetra_Map * TargetMap,
+				    Epetra_Export * & RedistributeExporter,
+				    Epetra_Map * & RedistributeMap);
+  
+  Epetra_LinearProblem * FullProblem_;
+  Epetra_LinearProblem * ReducedProblem_;
+  Epetra_RowMatrix * FullMatrix_;
+  Epetra_CrsMatrix * FullCrsMatrix_;
+  Epetra_CrsMatrix * ReducedMatrix_;
+  Epetra_MultiVector * ReducedRHS_;
+  Epetra_MultiVector * ReducedLHS_;
+  
+  Epetra_Map * ReducedMatrixRowMap_;
+  Epetra_Map * ReducedMatrixColMap_;
+  Epetra_Map * ReducedMatrixDomainMap_;
+  Epetra_Map * ReducedMatrixRangeMap_;
+  Epetra_Map * OrigReducedMatrixDomainMap_;
+  Epetra_Import * Full2ReducedRHSImporter_;
+  Epetra_Import * Full2ReducedLHSImporter_;
+  Epetra_Export * RedistributeDomainExporter_;
+  
+  int * ColSingletonRowLIDs_;
+  int * ColSingletonColLIDs_;
+  int * ColSingletonPivotLIDs_;
+  double * ColSingletonPivots_;
+  
+  
+  int AbsoluteThreshold_;
+  double RelativeThreshold_;
 
-    Epetra_Map * ReducedMatrixRowMap_;
-    Epetra_Map * ReducedMatrixColMap_;
-    Epetra_Map * ReducedMatrixDomainMap_;
-    Epetra_Map * ReducedMatrixRangeMap_;
-    Epetra_Map * OrigReducedMatrixDomainMap_;
-    Epetra_Import * Full2ReducedRHSImporter_;
-    Epetra_Import * Full2ReducedLHSImporter_;
-    Epetra_Export * RedistributeDomainExporter_;
-    
-    int * ColSingletonRowLIDs_;
-    int * ColSingletonColLIDs_;
-    int * ColSingletonPivotLIDs_;
-    double * ColSingletonPivots_;
-
-    
-    int AbsoluteThreshold_;
-    double RelativeThreshold_;
-
-    int NumRowSingletons_;
-    int NumColSingletons_;
-
-    bool HaveReducedProblem_;
-    bool UserDefinedEliminateMaps_;
-    bool AnalysisDone_;
-    bool SymmetricElimination_;
-
-    Epetra_MultiVector * tempExportX_;
-    Epetra_MultiVector * tempX_;
-    Epetra_MultiVector * tempB_;
-    Epetra_MultiVector * RedistributeReducedLHS_;
-    int * Indices_;
-    double * Values_;
-
-    Epetra_MapColoring * RowMapColors_;
-    Epetra_MapColoring * ColMapColors_;
-    bool FullMatrixIsCrsMatrix_;
-    int MaxNumMyEntries_;
-	
-    
+  int NumMyRowSingletons_;
+  int NumMyColSingletons_;
+  int NumGlobalRowSingletons_;
+  int NumGlobalColSingletons_;
+  double RatioOfDimensions_;
+  double RatioOfNonzeros_;
+  
+  bool HaveReducedProblem_;
+  bool UserDefinedEliminateMaps_;
+  bool AnalysisDone_;
+  bool SymmetricElimination_;
+  
+  Epetra_MultiVector * tempExportX_;
+  Epetra_MultiVector * tempX_;
+  Epetra_MultiVector * tempB_;
+  Epetra_MultiVector * RedistributeReducedLHS_;
+  int * Indices_;
+  double * Values_;
+  
+  Epetra_MapColoring * RowMapColors_;
+  Epetra_MapColoring * ColMapColors_;
+  bool FullMatrixIsCrsMatrix_;
+  int MaxNumMyEntries_;
+  
+  
  private:
- //! Copy constructor (defined as private so it is unavailable to user).
+  //! Copy constructor (defined as private so it is unavailable to user).
   Epetra_CrsSingletonFilter(const Epetra_CrsSingletonFilter & Problem){};
 };
 #endif /* _EPETRA_CRSSINGLETONFILTER_H_ */
