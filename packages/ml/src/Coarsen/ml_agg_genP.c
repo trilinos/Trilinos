@@ -2303,7 +2303,9 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
             __FILE__, __LINE__);
     exit(EXIT_FAILURE);
   }
-  Pmat->getrow->func_ptr = CSR_get_one_row;
+
+  if (0 && PDEs == 1)
+    Pmat->getrow->func_ptr = CSR_get_one_row;
   
   if (Amat->grid_info == NULL) 
   {
@@ -2326,6 +2328,12 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     Nghost = Cmat->getrow->pre_comm->total_rcv_length;
   }
   
+  /*
+   * I need to amalgamate Cmat because I need to exchange
+   * the coordinates of x_coord and the others for external
+   * nodes (even if they will not be used too much in the code)
+   */
+
   ML_Operator_AmalgamateAndDropWeak(Cmat, PDEs, 0.);
 
   if (Amat->grid_info->x!= NULL) 
@@ -2384,7 +2392,9 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   ML_Operator_UnAmalgamateAndDropWeak(Pmat, PDEs, 0.);
   ML_Operator_UnAmalgamateAndDropWeak(Cmat, PDEs, 0.);
 
-  Pmat->getrow->func_ptr = CSR_getrow;
+  if (0 && PDEs == 1)
+    Pmat->getrow->func_ptr = CSR_getrow;
+
   ML_Operator_Destroy(&Rmat);
 }
 
