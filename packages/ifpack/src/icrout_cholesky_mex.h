@@ -1,5 +1,10 @@
 
 #undef IFPACK
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Data structure for sparse matrices is CSR, 0-based indexing.
  */
@@ -25,3 +30,8 @@ void crout_ict(
     int lfil,
     Matrix *L,
     double **pdiag);
+
+#ifdef __cplusplus
+}
+#endif
+

@@ -293,6 +293,9 @@ class Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virt
 
     //! Returns the Epetra_Map object associated with the range of this operator.
     const Epetra_Map & OperatorRangeMap() const{return(A_.RangeMap());};
+
+    //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
+    const Epetra_Comm & Comm() const{return(Comm_);};
   //@}
 
  protected:
@@ -308,6 +311,7 @@ class Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virt
   int Allocate();
     
   const Epetra_CrsMatrix &A_;
+  const Epetra_Comm & Comm_;
   Epetra_CrsMatrix * U_;
   Epetra_Vector * D_;
   bool UseTranspose_;

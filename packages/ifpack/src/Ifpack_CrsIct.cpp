@@ -11,6 +11,7 @@
 //==============================================================================
 Ifpack_CrsIct::Ifpack_CrsIct(const Epetra_CrsMatrix & A, double Droptol, int Lfil) 
   : A_(A),
+    Comm_(A.Comm()),
     Allocated_(false),
     ValuesInitialized_(false),
     Factored_(false),
@@ -33,6 +34,7 @@ Ifpack_CrsIct::Ifpack_CrsIct(const Epetra_CrsMatrix & A, double Droptol, int Lfi
 //==============================================================================
 Ifpack_CrsIct::Ifpack_CrsIct(const Ifpack_CrsIct & FactoredMatrix) 
   : A_(FactoredMatrix.A_),
+    Comm_(FactoredMatrix.Comm_),
     Allocated_(FactoredMatrix.Allocated_),
     ValuesInitialized_(FactoredMatrix.ValuesInitialized_),
     Factored_(FactoredMatrix.Factored_),
@@ -201,11 +203,13 @@ int Ifpack_CrsIct::Factor() {
   int i;
 
   int m, n, nz, Nrhs, ldrhs, ldlhs;
-  int * ptr, * ind;
+  int * ptr=0, * ind;
   double * val, * rhs, * lhs;
 
-  EPETRA_CHK_ERR(Epetra_Util_ExtractHbData(U_, 0, 0, m, n, nz, ptr, ind,
-			    val, Nrhs, rhs, ldrhs, lhs, ldlhs));
+  int ierr = Epetra_Util_ExtractHbData(U_, 0, 0, m, n, nz, ptr, ind,
+			    val, Nrhs, rhs, ldrhs, lhs, ldlhs);
+  if (ierr<0) EPETRA_CHK_ERR(ierr);
+
   Matrix * Aict;
   if (Aict_==0) {
     Aict = new Matrix;
@@ -254,6 +258,8 @@ int Ifpack_CrsIct::Factor() {
     double * Values = val+ptr[i];
     U_->InsertMyValues(i, NumEntries, Values, Indices);
   }
+
+  U_->TransformToLocal(&(A_.OperatorDomainMap()), &(A_.OperatorRangeMap()));
   
   D_->Reciprocal(*D_); // Put reciprocal of diagonal in this vector
   // Add up flops
