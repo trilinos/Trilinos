@@ -757,13 +757,13 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType, float>::ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* C, const OrdinalType ldc, float* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
-    SORMQR(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
+    SORMQR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
   }
 
   template<typename OrdinalType>
   void LAPACK<OrdinalType, float>::ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
-    SORGQR( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
+    SORGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
   }
   
   template<typename OrdinalType>
@@ -1073,13 +1073,13 @@ namespace Teuchos
   template<typename OrdinalType>
   void LAPACK<OrdinalType, double>::ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* C, const OrdinalType ldc, double* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
-    DORMQR(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
+    DORMQR_F77(CHAR_MACRO(SIDE), CHAR_MACRO(TRANS), &m, &n, &k, A, &lda, TAU, C, &ldc, WORK, &lwork, info);
   }
 
   template<typename OrdinalType>
   void LAPACK<OrdinalType, double>::ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
-    DORGQR( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
+    DORGQR_F77( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
   }
   
   template<typename OrdinalType>
