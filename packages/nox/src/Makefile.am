@@ -107,10 +107,6 @@ NOXEPETRA_LIB = libnoxepetra.a
 
 NOXEPETRA_H = $(EPETRA_H)
 
-else
-
-NOXEPETRA =
-
 endif
 
 libnoxepetra_a_SOURCES = $(EPETRA)
@@ -130,7 +126,14 @@ lib_LIBRARIES = $(NOX_LIB) $(NOXEPETRA_LIB)
 # List of all headers to install in package directory
 # ------------------------------------------------------------------------
 
-include_HEADERS = $(NOX_H) $(NOXEPETRA_H)
+pkginclude_HEADERS = $(NOX_H) $(NOXEPETRA_H)
+
+# ------------------------------------------------------------------------
+# Special stuff to install machine-dependent config file
+# ------------------------------------------------------------------------
+
+pkgexecincludedir = $(exec_prefix)/include
+pkgexecinclude_HEADERS = NOX_Config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

@@ -190,8 +190,6 @@ libnox_a_SOURCES = \
 
 @BUILD_NOXEPETRA_TRUE@NOXEPETRA_H = $(EPETRA_H)
 
-@BUILD_NOXEPETRA_FALSE@NOXEPETRA = 
-
 libnoxepetra_a_SOURCES = $(EPETRA)
 
 libnoxepetra_a_CXXFLAGS = \
@@ -209,7 +207,14 @@ lib_LIBRARIES = $(NOX_LIB) $(NOXEPETRA_LIB)
 # ------------------------------------------------------------------------
 # List of all headers to install in package directory
 # ------------------------------------------------------------------------
-include_HEADERS = $(NOX_H) $(NOXEPETRA_H)
+pkginclude_HEADERS = $(NOX_H) $(NOXEPETRA_H)
+
+
+# ------------------------------------------------------------------------
+# Special stuff to install machine-dependent config file
+# ------------------------------------------------------------------------
+pkgexecincludedir = $(exec_prefix)/include
+pkgexecinclude_HEADERS = NOX_Config.h
 
 
 # ------------------------------------------------------------------------
@@ -270,10 +275,10 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(libnox_a_SOURCES) $(libnoxepetra_a_SOURCES)
-HEADERS = $(include_HEADERS)
+HEADERS = $(pkgexecinclude_HEADERS) $(pkginclude_HEADERS)
 
-DIST_COMMON = $(include_HEADERS) ./stamp-h.in Makefile.am Makefile.in \
-	NOX_Config.h.in
+DIST_COMMON = $(pkgexecinclude_HEADERS) $(pkginclude_HEADERS) \
+	./stamp-h.in Makefile.am Makefile.in NOX_Config.h.in
 SOURCES = $(libnox_a_SOURCES) $(libnoxepetra_a_SOURCES)
 
 all: NOX_Config.h
@@ -283,7 +288,7 @@ all: NOX_Config.h
 .SUFFIXES: .C .o .obj
 $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/Makefile
+	  $(AUTOMAKE) --foreign  src/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
@@ -601,22 +606,39 @@ libnoxepetra_a-NOX_Epetra_SharedJacobian.obj: $(srcdir)/NOX_Epetra_SharedJacobia
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_SharedJacobian.obj `cygpath -w $(srcdir)/NOX_Epetra_SharedJacobian.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
-install-includeHEADERS: $(include_HEADERS)
+install-pkgexecincludeHEADERS: $(pkgexecinclude_HEADERS)
 	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(includedir)
-	@list='$(include_HEADERS)'; for p in $$list; do \
+	$(mkinstalldirs) $(DESTDIR)$(pkgexecincludedir)
+	@list='$(pkgexecinclude_HEADERS)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(includedir)/$$f"; \
-	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(includedir)/$$f; \
+	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f"; \
+	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f; \
 	done
 
-uninstall-includeHEADERS:
+uninstall-pkgexecincludeHEADERS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(include_HEADERS)'; for p in $$list; do \
+	@list='$(pkgexecinclude_HEADERS)'; for p in $$list; do \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(includedir)/$$f"; \
-	  rm -f $(DESTDIR)$(includedir)/$$f; \
+	  echo " rm -f $(DESTDIR)$(pkgexecincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	done
+install-pkgincludeHEADERS: $(pkginclude_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(pkgincludedir)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  $(INSTALL_HEADER) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f; \
+	done
+
+uninstall-pkgincludeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(pkgincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(pkgincludedir)/$$f; \
 	done
 
 tags: TAGS
@@ -678,7 +700,7 @@ check: check-am
 all-am: Makefile $(LIBRARIES) $(HEADERS) NOX_Config.h
 
 installdirs:
-	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
+	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(pkgexecincludedir) $(DESTDIR)$(pkgincludedir)
 
 install: install-am
 install-exec: install-exec-am
@@ -721,9 +743,9 @@ info: info-am
 
 info-am:
 
-install-data-am: install-includeHEADERS
+install-data-am: install-pkgincludeHEADERS
 
-install-exec-am: install-libLIBRARIES
+install-exec-am: install-libLIBRARIES install-pkgexecincludeHEADERS
 
 install-info: install-info-am
 
@@ -739,21 +761,21 @@ mostlyclean: mostlyclean-am
 
 mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-uninstall-am: uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLIBRARIES
+uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
+	uninstall-pkgexecincludeHEADERS uninstall-pkgincludeHEADERS
 
 .PHONY: GTAGS all all-am check check-am clean clean-generic \
 	clean-libLIBRARIES distclean distclean-compile distclean-depend \
 	distclean-generic distclean-hdr distclean-tags distdir dvi \
 	dvi-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am \
-	install-includeHEADERS install-info install-info-am \
-	install-libLIBRARIES install-man install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic tags uninstall uninstall-am \
-	uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLIBRARIES
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-libLIBRARIES install-man \
+	install-pkgexecincludeHEADERS install-pkgincludeHEADERS \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic tags uninstall \
+	uninstall-am uninstall-info-am uninstall-libLIBRARIES \
+	uninstall-pkgexecincludeHEADERS uninstall-pkgincludeHEADERS
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
