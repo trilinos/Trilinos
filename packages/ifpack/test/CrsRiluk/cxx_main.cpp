@@ -14,6 +14,8 @@
 #include "Epetra_Map.h"
 #include "Epetra_Time.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Vector.h"
+
 
 // prototype
 int power_method(Epetra_CrsMatrix& A, 
