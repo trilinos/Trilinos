@@ -272,7 +272,7 @@ revert to their default values.
   //
   Epetra_RowMatrix *RowMatrixA_ ;  // Problem_->GetOperator()
   int iam_;                        // Comm_.MyPID() ;
-
+  int NumProcs_;
 
   Epetra_RowMatrix *SuperluMat_ ;  // As passed to Superludist
 

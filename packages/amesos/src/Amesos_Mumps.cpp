@@ -61,7 +61,7 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   NumericFactorizationOK_(false),
   KeepMatrixDistributed_(true),
   MaxProcs_(-1),
-  MaxProcsInputMatrix_(-1),
+  MaxProcsInputMatrix_(-4),
   UseMpiCommSelf_(false),
   Map_(0),
   NumMUMPSNonzeros_(0),
@@ -579,7 +579,7 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
 
   // on how many processes distribute the matrix
   if( ParameterList.isParameter("MaxProcsMatrix") )
-    MaxProcsInputMatrix_ = ParameterList.get("MaxProcsMatrix",-1);
+    MaxProcsInputMatrix_ = ParameterList.get("MaxProcsMatrix",-4);
 
   // define on how many processes matrix should be converted into MUMPS
   // format. (this value must be less than available procs)
@@ -723,16 +723,17 @@ void Amesos_Mumps::CheckParameters()
     MaxProcsInputMatrix_ = OptNumProcs2;
     break;
   case -3:
-    MaxProcsInputMatrix_ = MaxProcs_;
+    MaxProcsInputMatrix_ = NumProcs_;
     break;  
+  case -4:
+    MaxProcsInputMatrix_ = MaxProcs_;
+    break;
   }
   
-  // check available processes; -1 means use all available processes
-  if( MaxProcs_ < -3 || MaxProcs_ > NumProcs_ ) MaxProcs_ = NumProcs_;
+  // few checks
+  if( MaxProcs_ > NumProcs_ ) MaxProcs_ = NumProcs_;
 
-  // check available processes; -1 means use all available processes
-  if( MaxProcsInputMatrix_ < -3 ||  MaxProcsInputMatrix_ > MaxProcs_ )
-    MaxProcsInputMatrix_ = MaxProcs_;
+  if( MaxProcsInputMatrix_ > MaxProcs_ ) MaxProcsInputMatrix_ = MaxProcs_;
 
   // cannot distribute input matrix to this number,
   // use all the processes instead

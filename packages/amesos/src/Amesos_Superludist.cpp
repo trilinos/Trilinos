@@ -64,45 +64,47 @@ int Superludist_NumProcRows( int NumProcs ) {
   //=============================================================================
 Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob ) :
   Problem_(&prob),
-    GridCreated_(0), 
-    FactorizationDone_(0), 
-    NumRows_(0), 
-    NumGlobalNonzeros_(0), 
-    UniformMap_(0), 
-    UniformMatrix_(0) ,
-    ExportToDist_(0),
-    ImportToDistributed_(0),
-    ImportBackToOriginal_(0),
-    RowMatrixA_(0), 
-    SuperluMat_(0),
-    vecBdistributed_(0),
-    vecXdistributed_(0),
-    nprow_(0),
-    npcol_(0),
-    PrintNonzeros_(false),
-    ColPerm_("MMD_AT_PLUS_A"),
-    RowPerm_("NATURAL"),
-    perm_c_(0),
-    perm_r_(0),
-    IterRefine_("DOUBLE"),
-    ReplaceTinyPivot_(false),
-    FactorizationOK_(false), 
-    UseTranspose_(false),
-    PrintStatus_(false),
-    PrintTiming_(false),    
-    verbose_(1),
-    debug_(0),
-    NumTime_(0.0),
-    SolTime_(0.0),
-    ConTime_(0.0),
-    VecTime_(0.0),
-    MatTime_(0.0),
-    Time_(0),
-    NumSymbolicFact_(0),
-    NumNumericFact_(0),
-    NumSolve_(0),
-    ComputeTrueResidual_(false),
-    ComputeVectorNorms_(false)
+  GridCreated_(0), 
+  FactorizationDone_(0), 
+  NumRows_(0), 
+  NumGlobalNonzeros_(0), 
+  UniformMap_(0), 
+  UniformMatrix_(0) ,
+  ExportToDist_(0),
+  ImportToDistributed_(0),
+  ImportBackToOriginal_(0),
+  RowMatrixA_(0), 
+  iam_(-1),
+  NumProcs_(-1),
+  SuperluMat_(0),
+  vecBdistributed_(0),
+  vecXdistributed_(0),
+  nprow_(0),
+  npcol_(0),
+  PrintNonzeros_(false),
+  ColPerm_("MMD_AT_PLUS_A"),
+  RowPerm_("NATURAL"),
+  perm_c_(0),
+  perm_r_(0),
+  IterRefine_("DOUBLE"),
+  ReplaceTinyPivot_(false),
+  FactorizationOK_(false), 
+  UseTranspose_(false),
+  PrintStatus_(false),
+  PrintTiming_(false),    
+  verbose_(1),
+  debug_(0),
+  NumTime_(0.0),
+  SolTime_(0.0),
+  ConTime_(0.0),
+  VecTime_(0.0),
+  MatTime_(0.0),
+  Time_(0),
+  NumSymbolicFact_(0),
+  NumNumericFact_(0),
+  NumSolve_(0),
+  ComputeTrueResidual_(false),
+  ComputeVectorNorms_(false)
 {
   Teuchos::ParameterList ParamList ;
   SetParameters( ParamList ) ; 
@@ -813,6 +815,7 @@ int Amesos_Superludist::NumericFactorization() {
 
   const Epetra_Comm &Comm_ = RowMatrixA_->Comm();
   iam_ = Comm_.MyPID() ;
+  NumProcs_ = Comm_.NumProc() ;
 
   if ( FactorizationOK_ && ReuseSymbolic_ ) {
     ReFactor() ; 
@@ -985,25 +988,19 @@ int Amesos_Superludist::Solve() {
 
 void Amesos_Superludist::PrintStatus() 
 {
-  if( Comm().MyPID() ) return;
-
-  if( Problem_->GetMatrix() == 0 ) {
-    cerr << "Epetra_LinearProblem.GetMatrix() is NULL !" << endl;
-    return;
-  }
+  if( iam_ ) return;
   
   cout << "----------------------------------------------------------------------------" << endl;
-  cout << "Amesos_Superludist : Matrix has " << Problem_->GetMatrix()->NumGlobalRows() << " rows"
-       << " and " << Problem_->GetMatrix()->NumGlobalNonzeros()
+  cout << "Amesos_Superludist : Matrix has " << NumRows_ << " rows"
+       << " and " << NumGlobalNonzeros_
        << " nonzeros" << endl;
   cout << "Amesos_Superludist : Nonzero elements per row = "
-       << 1.0*Problem_->GetMatrix()->NumGlobalNonzeros()/Problem_->GetMatrix()->NumGlobalRows() << endl;
+       << 1.0*NumGlobalNonzeros_/NumRows_ << endl;
   cout << "Amesos_Superludist : Percentage of nonzero elements = "
-       << 100.0*Problem_->GetMatrix()->NumGlobalNonzeros() /
-       pow(Problem_->GetMatrix()->NumGlobalRows(), 2.0) << endl;
+       << 100.0*NumGlobalNonzeros_ /pow(NumRows_, 2.0) << endl;
   cout << "Amesos_Superludist : Use transpose = " << UseTranspose_ << endl;
   cout << "Amesos_Superludist : Redistribute = " << Redistribute_ << endl;
-  cout << "Amesos_Superludist : # available processes = " << Comm().NumProc() << endl;
+  cout << "Amesos_Superludist : # available processes = " << NumProcs_ << endl;
   cout << "Amesos_Superludist : # processes used in computation = " << nprow_*npcol_
        << " ( = " << nprow_ << "x" << npcol_ << ")" << endl;
   cout << "Amesos_Superludist : Equil = " << Equil_ << endl;
@@ -1022,7 +1019,7 @@ void Amesos_Superludist::PrintStatus()
 
 void Amesos_Superludist::PrintTiming()
 {
-  if( Comm().MyPID() ) return;
+  if( iam_ ) return;
   
   cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Superludist : Time to convert matrix to SuperLU_dist format = "
@@ -1030,7 +1027,7 @@ void Amesos_Superludist::PrintTiming()
   if( Redistribute_ ) 
     cout << "Amesos_Superludist : Time to redistribute matrix = "
 	 << MatTime_ << " (s)" << endl;
-  if( Comm().NumProc()>1 )
+  if( NumProcs_ > 1 )
     cout << "Amesos_Superludist : Time to redistribute vectors = "
        << VecTime_ << " (s)" << endl;
   cout << "Amesos_Superludist : Number of numeric factorizations = "

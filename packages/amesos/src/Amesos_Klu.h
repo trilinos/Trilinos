@@ -330,7 +330,7 @@ private:
   vector <double> Aval;
 
   int iam;                 //  Process number (i.e. Comm().MyPID() 
-  
+  int NumProcs_;
   int IsLocal_;            //  1 if Problem_->GetOperator() is stored entirely on process 0
                            //  Note:  Local Problems do not require redistribution of
                            //  the matrix A or vectors X and B.

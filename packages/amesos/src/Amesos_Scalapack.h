@@ -272,6 +272,7 @@ revert to their default values.
   int iam_;                              //  Process number (i.e. Comm().MyPID() 
   
   int NumGlobalElements_;                //  Number of rows and columns in the Problem_->GetOperator()
+  int NumGlobalNonzeros_; 
 
   //
   //  The following variables are required for the ScaLAPACK interface:

@@ -615,21 +615,15 @@ int Amesos_Umfpack::Solve() {
 void Amesos_Umfpack::PrintStatus() 
 {
 
-  if( Comm().MyPID() != 0  ) return;
-
-  if( Problem_->GetMatrix() == 0 ) {
-    cerr << "Epetra_LinearProblem.GetMatrix() is NULL !" << endl;
-    return;
-  }
+  if( iam != 0  ) return;
 
   cout << "----------------------------------------------------------------------------" << endl;
-  cout << "Amesos_Umfpack : Matrix has " << Problem_->GetMatrix()->NumGlobalRows() << " rows"
-       << " and " << Problem_->GetMatrix()->NumGlobalNonzeros() << " nonzeros" << endl;
+  cout << "Amesos_Umfpack : Matrix has " << NumGlobalElements_ << " rows"
+       << " and " << numentries_ << " nonzeros" << endl;
   cout << "Amesos_Umfpack : Nonzero elements per row = "
-       << 1.0*Problem_->GetMatrix()->NumGlobalNonzeros()/Problem_->GetMatrix()->NumGlobalRows() << endl;
+       << 1.0*numentries_/NumGlobalElements_ << endl;
   cout << "Amesos_Umfpack : Percentage of nonzero elements = "
-	 << 100.0*Problem_->GetMatrix()->NumGlobalNonzeros()/
-	 pow(Problem_->GetMatrix()->NumGlobalRows(),2.0) << endl;
+       << 100.0*numentries_/(pow(NumGlobalElements_,2.0)) << endl;
   cout << "Amesos_Umfpack : Use transpose = " << UseTranspose_ << endl;
   cout << "----------------------------------------------------------------------------" << endl;
 
@@ -641,7 +635,7 @@ void Amesos_Umfpack::PrintStatus()
 
 void Amesos_Umfpack::PrintTiming()
 {
-  if( Comm().MyPID() ) return;
+  if( iam ) return;
   
   cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Umfpack : Time to convert matrix to UMFPACK format = "

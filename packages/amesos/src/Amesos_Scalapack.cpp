@@ -446,6 +446,8 @@ int Amesos_Scalapack::NumericFactorization() {
   const Epetra_Map &OriginalMap = RowMatrixA->RowMatrixRowMap() ; 
   NumGlobalElements_ = OriginalMap.NumGlobalElements();
 
+  NumGlobalNonzeros_ = RowMatrixA->NumGlobalNonzeros();
+
   RedistributeA();
   ConvertToScalapack();
 
@@ -614,16 +616,15 @@ int Amesos_Scalapack::Solve() {
 void Amesos_Scalapack::PrintStatus() 
 {
 
-  if( Comm().MyPID() != 0  ) return;
+  if( iam_ != 0  ) return;
 
   cout << "----------------------------------------------------------------------------" << endl;
-  cout << "Amesos_Scalapack : Matrix has " << Problem_->GetMatrix()->NumGlobalRows() << " rows"
-       << " and " << Problem_->GetMatrix()->NumGlobalNonzeros() << " nonzeros" << endl;
+  cout << "Amesos_Scalapack : Matrix has " << NumGlobalElements_ << " rows"
+       << " and " << NumGlobalNonzeros_ << " nonzeros" << endl;
   cout << "Amesos_Scalapack : Nonzero elements per row = "
-       << 1.0*Problem_->GetMatrix()->NumGlobalNonzeros()/Problem_->GetMatrix()->NumGlobalRows() << endl;
+       << 1.0*NumGlobalNonzeros_/NumGlobalRows_ << endl;
   cout << "Amesos_Scalapack : Percentage of nonzero elements = "
-       << 100.0*Problem_->GetMatrix()->NumGlobalNonzeros()/
-    (pow(Problem_->GetMatrix()->NumGlobalRows(),2.0)) << endl;
+       << 100.0*NumGlobalNonzeros_/(pow(NumGlobalRows_,2.0)) << endl;
   cout << "Amesos_Scalapack : Use transpose = " << UseTranspose_ << endl;
   cout << "----------------------------------------------------------------------------" << endl;
 
@@ -635,7 +636,7 @@ void Amesos_Scalapack::PrintStatus()
 
 void Amesos_Scalapack::PrintTiming()
 {
-  if( Comm().MyPID() ) return;
+  if( iam_ ) return;
   
   cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Scalapack : Time to convert matrix to ScaLAPACK format = "
