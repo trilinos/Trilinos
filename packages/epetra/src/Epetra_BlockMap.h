@@ -470,12 +470,11 @@ class Epetra_BlockMap: public Epetra_Object {
   //@{ \name Expert Users and Developers Only
 
 	//! Returns the reference count of BlockMapData.
-	/*! (Intended for testing purposes).*/
+	/*! (Intended for testing purposes.) */
 	int ReferenceCount() const {return(BlockMapData_->ReferenceCount());};
 
 	//! Returns a pointer to the BlockMapData instance this BlockMap uses. 
-	/*! Intended for developer use only for testing purposes. This will probably 
-		  be removed before being merged into main Epetra branch.*/
+	/*! (Intended for developer use only for testing purposes.) */
 	const Epetra_BlockMapData * DataPtr() const {return(BlockMapData_);};
 
   //@}

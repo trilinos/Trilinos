@@ -295,12 +295,11 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   //@{ \name Expert Users and Developers Only
 
 	//! Returns the reference count of MpiCommData.
-	/*! (Intended for testing purposes).*/
+	/*! (Intended for testing purposes.) */
 	int ReferenceCount() const {return(MpiCommData_->ReferenceCount());};
 
 	//! Returns a pointer to the MpiCommData instance this MpiComm uses. 
-	/*! Intended for developer use only for testing purposes. This will probably 
-		be removed before being merged into main Epetra branch.*/
+	/*! (Intended for developer use only for testing purposes.) */
 	const Epetra_MpiCommData * DataPtr() const {return(MpiCommData_);};
 
   //@}
