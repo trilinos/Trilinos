@@ -211,12 +211,14 @@ int Zoltan_Order(
     Zoltan_Print_Sync_Start(zz->Communicator, TRUE);
     printf("ZOLTAN: rank for ordering on Proc %d\n", zz->Proc);
     for (i = 0; i < nobjs; i++) {
-      printf("%3d ", rank[i]);
+      printf("GID = ");
+      ZOLTAN_PRINT_GID(zz, &(gids[i*(*num_gid_entries)]));
+      printf(", rank = %3d\n", rank[i]);
     }
     printf("\n");
     printf("ZOLTAN: inverse permutation on Proc %d\n", zz->Proc);
     for (i = 0; i < nobjs; i++) {
-      printf("%3d ", iperm[i]);
+      printf("iperm[%3d] = %3d\n", i, iperm[i]);
     }
     printf("\n");
     Zoltan_Print_Sync_End(zz->Communicator, TRUE);

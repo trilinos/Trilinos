@@ -420,12 +420,12 @@ static int Zoltan_ParMetis_Jostle(
   ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
   int **exp_procs,      /* list of processors to export to */
   char *alg,            /* algorithm to use */
-  int  *options,        /* option array */
+  int  *options,        /* ParMetis option array */
   float *itr,    	/* ParMetis 3.0 parameter for adaptive repart. */
-  int *rank,            /* rank[i] is the rank of gids[i] */
-  int *iperm,           /* inverse permutation of rank */
-  ZOOS *order_opt, 	/* Ordering options */
-  ZOS *order_info	/* Zoltan ordering struct, only for ordering */
+  int *rank,            /* Ordering only: rank[i] is the rank of gids[i] */
+  int *iperm,           /* Ordering only: inverse permutation of rank */
+  ZOOS *order_opt, 	/* Ordering only: options */
+  ZOS *order_info	/* Ordering only: Zoltan ordering struct */
 )
 {
   static char *yo = "Zoltan_ParMetis_Jostle";
@@ -584,8 +584,12 @@ static int Zoltan_ParMetis_Jostle(
     printf("[%1d] Debug: num_obj =%d\n", zz->Proc, num_obj);
 
   if (num_obj>0){
-    /* For ordering, the ids may be given as input */
-    if (compute_order && order_opt && order_opt->reorder){
+    /* For ordering, the ids are passed in through the *imp_ids
+       parameters. These id lists are only populated if
+       reorder=True, otherwise we need to initialize them. 
+    */
+
+    if (compute_order){
       global_ids = *imp_gids;
       local_ids =  *imp_lids;
     }
@@ -600,7 +604,10 @@ static int Zoltan_ParMetis_Jostle(
       /* Not enough memory */
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
-    Zoltan_Get_Obj_List(zz, global_ids, local_ids, obj_wgt_dim, float_vwgt, &ierr);
+    /* If reorder is true, we already have the id lists. Ignore weights. */
+    if (!(order_opt && order_opt->reorder)){
+      Zoltan_Get_Obj_List(zz, global_ids, local_ids, obj_wgt_dim, float_vwgt, &ierr);
+    }
     if (ierr){
       /* Return error */
       ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
@@ -1113,7 +1120,7 @@ free:
   if (sep_sizes) ZOLTAN_FREE(&sep_sizes);
 
   /* Free local_ids and global_ids if they were allocated here */
-  if (!(compute_order && order_opt && order_opt->reorder)){
+  if (!compute_order){
     ZOLTAN_FREE(&local_ids);
     ZOLTAN_FREE(&global_ids);
   }
