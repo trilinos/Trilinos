@@ -4,6 +4,15 @@
 /*  
  *    U0**2 + U1**2 - 2 = 0
  *    exp(U0-1) + U1**3 -2 = 0
+ *
+ *  NOTE: To reproduce the results from the reference, the linesearch option
+ *        must be set to polynomial.  This can be done either from the 
+ *        command line using "-nox_linesearch_type polynomial" or by 
+ *        placing the same option specification in an input file, 
+ *        eg ${HOME}/.petscrc
+ *        Also, the solver must be -nox_linesearch_based with
+ *        "-nox_direction_type newton", which can be used by not
+ *        explicitly setting either of these since they are the defaults.
  */
 
 static char help[] = 
@@ -27,6 +36,7 @@ static char help[] =
 #include "NOX_Petsc_Vector.H"
 #include "NOX_Petsc_SharedJacobian.H"
 #include "NOX_Petsc_Group.H"
+#include "NOX_Petsc_Options.H"
 
 // User's application specific files 
 #include "Problem_Interface.H" // Interface file to NOX
@@ -85,67 +95,7 @@ int main(int argc, char *argv[])
   // Create the top level parameter list
   NOX::Parameter::List nlParams;
 
-  // Specify nonlinear solver method
-  nlParams.setParameter("Nonlinear Solver", "Line Search Based");
-  //nlParams.setParameter("Nonlinear Solver", "Trust Region Based");
-
-  // Set the printing parameters in the "Printing" sublist
-  NOX::Parameter::List& printParams = nlParams.sublist("Printing");
-  printParams.setParameter("MyPID", MyPID);
-  printParams.setParameter("Output Precision", 3);
-  printParams.setParameter("Output Processor", 0);
-  printParams.setParameter("Output Information",
-                        NOX::Utils::OuterIteration +
-                        NOX::Utils::OuterIterationStatusTest +
-                        NOX::Utils::InnerIteration +
-                        NOX::Utils::Parameters +
-                        NOX::Utils::Details +
-                        NOX::Utils::Warning);
-
-  // Sublist for line search
-  NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  //searchParams.setParameter("Method", "Full Step");
-  //searchParams.setParameter("Method", "Interval Halving");
-  searchParams.setParameter("Method", "Polynomial");
-  //searchParams.setParameter("Method", "NonlinearCG");
-  //searchParams.setParameter("Method", "Quadratic");
-  //searchParams.setParameter("Method", "More'-Thuente");
-
-  // Sublist for direction
-  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-  //
-  // Popular choices include the following (others may also exist)
-  //
-  dirParams.setParameter("Method", "Newton");
-  NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
-    newtonParams.setParameter("Forcing Term Method", "Constant");
-    //newtonParams.setParameter("Forcing Term Method", "Type 1");
-    //newtonParams.setParameter("Forcing Term Method", "Type 2");
-    //newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-4);
-    //newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
-  // OR
-  //dirParams.setParameter("Method", "Steepest Descent");
-  //NOX::Parameter::List& sdParams = dirParams.sublist("Steepest Descent");
-    //sdParams.setParameter("Scaling Type", "None");
-    //sdParams.setParameter("Scaling Type", "2-Norm");
-    //sdParams.setParameter("Scaling Type", "Quadratic Model Min");
-  // OR
-  //dirParams.setParameter("Method", "NonlinearCG");
-  //NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
-    //nlcgParams.setParameter("Restart Frequency", 2000);
-    //nlcgParams.setParameter("Precondition", "On");
-    //nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
-    //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
-
-  // Sublist for linear solver
-  // Note that preconditioning options as well as the following can be
-  // specified on the command line or via the file .petscrc
-  // See Petsc documentation for more info.
-  NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
-  lsParams.setParameter("Max Iterations", 800);  
-  lsParams.setParameter("Tolerance", 1e-4);
-  lsParams.setParameter("Iteration Output Frequency", 50);    
-  lsParams.setParameter("Preconditioning Matrix Type", "None"); 
+  NOX::Petsc::Options setOptions(nlParams, MyPID);
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created using inheritance of the abstract base class:
@@ -156,7 +106,7 @@ int main(int argc, char *argv[])
   Mat& A = Problem.getJacobian();
 
   // Create the Group
-  NOX::Petsc::Group grp(lsParams, interface, soln, A);
+  NOX::Petsc::Group grp(interface, soln, A);
   grp.computeF(); // Needed to establish the initial convergence state
 
   // Create the convergence tests
