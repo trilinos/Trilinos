@@ -244,6 +244,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       }
    }
    else B_total_Nnz = Bmatrix->N_nonzeros;
+   B_total_Nnz++; /* avoid possible division by zero below */
 
    index_length = 2*accum_size;
    dtemp = 2.*((double) accum_size);
