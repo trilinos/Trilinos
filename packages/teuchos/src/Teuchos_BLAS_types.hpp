@@ -6,18 +6,21 @@
 
 /*! 	\file Teuchos_BLAS_types.hpp
 	\brief Enumerated types for BLAS input characters.
-	
-	These enumerated lists are used in compile time checking of the input characters
+*/
+
+///@{
+/*! \defgroup BLASEnum_grp Enumerations for character inputs in Teuchos::BLAS methods
+    \brief These enumerated lists are used in compile time checking of the input characters
 	for BLAS methods.  
 
 	\note Any other input other than those specified here will result
-	in an error at compile time and are not supported by the templated BLAS interface.
+	in an error at compile time and are not supported by the templated BLAS/LAPACK interface.
 
 	<ul>
 	<li><b>Teuchos::ESide</b> : Enumerated list for BLAS character input "SIDE".
 		<ul>
-		<li>LEFT_SIDE : The matrix/vector is on the left side of the equation
-		<li>RIGHT_SIDE : The matrix/vector is on the right side of the equation
+		<li>LEFT_SIDE : The matrix/vector is on, or applied to, the left side of the equation
+		<li>RIGHT_SIDE : The matrix/vector is on, or applied to, the right side of the equation
 		</ul><br>
 	<li><b>Teuchos::ETransp</b> : Enumerated list for BLAS character input "TRANS".
 		<ul>
@@ -34,31 +37,32 @@
 		<ul>
 		<li>UNIT_DIAG : The matrix has all ones on its diagonal
 		<li>NON_UNIT_DIAG : The matrix does not have all ones on its diagonal
-		</ul>
-	</ul>
+		</ul><br>
+        </ul>
 */
+///@}
 
 namespace Teuchos {
-	enum ESide { 	
-		 LEFT_SIDE,	/*!< Left side */ 
-		 RIGHT_SIDE 	/*!< Right side */
-		 };
+  enum ESide { 	
+    LEFT_SIDE,	/*!< Left side */ 
+    RIGHT_SIDE 	/*!< Right side */
+  };
 
-	enum ETransp { 	
-		NO_TRANS,	/*!< Not transposed */ 
-		TRANS, 		/*!< Transposed */
-		CONJ_TRANS 	/*!< Conjugate transposed */
-		};
-
-	enum EUplo { 	
-		UPPER_TRI,	/*!< Upper triangular */ 
-		LOWER_TRI 	/*!< Lower triangular */
-		};
-
-	enum EDiag { 	
-		UNIT_DIAG,	/*!< Unit diagaonal */ 
-		NON_UNIT_DIAG	/*!< Not unit diagonal */ 
-		};
+  enum ETransp { 	
+    NO_TRANS,	/*!< Not transposed */ 
+    TRANS, 		/*!< Transposed */
+    CONJ_TRANS 	/*!< Conjugate transposed */
+  };
+  
+  enum EUplo { 	
+    UPPER_TRI,	/*!< Upper triangular */ 
+    LOWER_TRI 	/*!< Lower triangular */
+  };
+  
+  enum EDiag { 	
+    UNIT_DIAG,	/*!< Unit diagaonal */ 
+    NON_UNIT_DIAG	/*!< Not unit diagonal */ 
+  };
 }
 
 #endif // TEUCHOS_BLAS_TYPES_HPP

@@ -68,15 +68,15 @@
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 #define ZROTG_F77   F77_FUNC(crotg,CROTG)
-#define ZASUM_F77   F77_FUNC(casum,CASUM) 
+#define ZASUM_F77   F77_FUNC(scasum,SCASUM) 
 #define ZAXPY_F77   F77_FUNC(caxpy,CAXPY)
 #define ZCOPY_F77   F77_FUNC(ccopy,CCOPY)
-#define ZDOT_F77    F77_FUNC(cdot,CDOT)
-#define ZNRM2_F77   F77_FUNC(cnrm2,CNRM2)
+#define ZDOT_F77    F77_FUNC(cdotc,CDOTC)
+#define ZNRM2_F77   F77_FUNC(scnrm2,SCNRM2)
 #define ZSCAL_F77   F77_FUNC(cscal,CSCAL)
 #define IZAMAX_F77  F77_FUNC(icamax,ICAMAX)
 #define ZGEMV_F77   F77_FUNC(cgemv,CGEMV)
-#define ZGER_F77    F77_FUNC(cger,CGER)
+#define ZGER_F77    F77_FUNC(cgerc,CGERC)
 #define ZTRMV_F77   F77_FUNC(ctrmv,CTRMV)
 #define ZGEMM_F77   F77_FUNC(cgemm,CGEMM)
 #define ZSYMM_F77   F77_FUNC(csymm,CSYMM)
@@ -109,15 +109,15 @@
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 #define ZROTG_F77   F77_FUNC(zrotg,ZROTG)
-#define ZASUM_F77   F77_FUNC(zasum,ZASUM)
+#define ZASUM_F77   F77_FUNC(dzasum,DZASUM)
 #define ZAXPY_F77   F77_FUNC(zaxpy,ZAXPY)
 #define ZCOPY_F77   F77_FUNC(zcopy,ZCOPY)
-#define ZDOT_F77    F77_FUNC(zdot,ZDOT)  
-#define ZNRM2_F77   F77_FUNC(znrm2,ZNRM2)
+#define ZDOT_F77    F77_FUNC(zdotc,ZDOTC)  
+#define ZNRM2_F77   F77_FUNC(dznrm2,DZNRM2)
 #define ZSCAL_F77   F77_FUNC(zscal,ZSCAL)
 #define IZAMAX_F77  F77_FUNC(izamax,IZAMAX)
 #define ZGEMV_F77   F77_FUNC(zgemv,ZGEMV)
-#define ZGER_F77    F77_FUNC(zger,ZGER)
+#define ZGER_F77    F77_FUNC(zgerc,ZGERC)
 #define ZTRMV_F77   F77_FUNC(ztrmv,ZTRMV)
 #define ZGEMM_F77   F77_FUNC(zgemm,ZGEMM)
 #define ZSYMM_F77   F77_FUNC(zsymm,ZSYMM)
@@ -150,15 +150,15 @@
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 #define ZROTG_F77   F77_FUNC(zrotg,ZROTG)
-#define ZASUM_F77   F77_FUNC(zasum,ZASUM)
+#define ZASUM_F77   F77_FUNC(dzasum,DZASUM)
 #define ZAXPY_F77   F77_FUNC(zaxpy,ZAXPY)
 #define ZCOPY_F77   F77_FUNC(zcopy,ZCOPY)
-#define ZDOT_F77    F77_FUNC(zdot,ZDOT)  
-#define ZNRM2_F77   F77_FUNC(znrm2,ZNRM2)
+#define ZDOT_F77    F77_FUNC(zdotc,ZDOTC)  
+#define ZNRM2_F77   F77_FUNC(dznrm2,DZNRM2)
 #define ZSCAL_F77   F77_FUNC(zscal,ZSCAL)
 #define IZAMAX_F77  F77_FUNC(izamax,IZAMAX)
 #define ZGEMV_F77   F77_FUNC(zgemv,ZGEMV)
-#define ZGER_F77    F77_FUNC(zger,ZGER)
+#define ZGER_F77    F77_FUNC(zgerc,ZGERC)
 #define ZTRMV_F77   F77_FUNC(ztrmv,ZTRMV)
 #define ZGEMM_F77   F77_FUNC(zgemm,ZGEMM)
 #define ZSYMM_F77   F77_FUNC(zsymm,ZSYMM)
@@ -220,15 +220,15 @@
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 #define ZROTG_F77   F77_FUNC(zrotg,ZROTG)
-#define ZASUM_F77   F77_FUNC(zasum,ZASUM)
+#define ZASUM_F77   F77_FUNC(dzasum,DZASUM)
 #define ZAXPY_F77   F77_FUNC(zaxpy,ZAXPY)
 #define ZCOPY_F77   F77_FUNC(zcopy,ZCOPY)
-#define ZDOT_F77    F77_FUNC(zdot,ZDOT)  
-#define ZNRM2_F77   F77_FUNC(znrm2,ZNRM2)
+#define ZDOT_F77    F77_FUNC(zdotc,ZDOTC)  
+#define ZNRM2_F77   F77_FUNC(dznrm2,DZNRM2)
 #define ZSCAL_F77   F77_FUNC(zscal,ZSCAL)
 #define IZAMAX_F77  F77_FUNC(izamax,IZAMAX)
 #define ZGEMV_F77   F77_FUNC(zgemv,ZGEMV)
-#define ZGER_F77    F77_FUNC(zger,ZGER)
+#define ZGER_F77    F77_FUNC(zgerc,ZGERC)
 #define ZTRMV_F77   F77_FUNC(ztrmv,ZTRMV)
 #define ZGEMM_F77   F77_FUNC(zgemm,ZGEMM)
 #define ZSYMM_F77   F77_FUNC(zsymm,ZSYMM)
@@ -262,15 +262,15 @@
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 #define CROTG_F77   F77_FUNC(crotg,CROTG)
-#define CASUM_F77   F77_FUNC(casum,CASUM) 
+#define CASUM_F77   F77_FUNC(scasum,SCASUM) 
 #define CAXPY_F77   F77_FUNC(caxpy,CAXPY)
 #define CCOPY_F77   F77_FUNC(ccopy,CCOPY)
-#define CDOT_F77    F77_FUNC(cdot,CDOT)
-#define CNRM2_F77   F77_FUNC(cnrm2,CNRM2)
+#define CDOT_F77    F77_FUNC(cdotc,CDOTC)
+#define CNRM2_F77   F77_FUNC(scnrm2,SCNRM2)
 #define CSCAL_F77   F77_FUNC(cscal,CSCAL)
 #define ICAMAX_F77  F77_FUNC(icamax,ICAMAX)
 #define CGEMV_F77   F77_FUNC(cgemv,CGEMV)
-#define CGER_F77    F77_FUNC(cger,CGER)
+#define CGER_F77    F77_FUNC(cgerc,CGERC)
 #define CTRMV_F77   F77_FUNC(ctrmv,CTRMV)
 #define CGEMM_F77   F77_FUNC(cgemm,CGEMM)
 #define CSYMM_F77   F77_FUNC(csymm,CSYMM)
@@ -297,12 +297,12 @@ int PREFIX IDAMAX_F77(const int* n, const double *x, const int* incx);
 /* Double complex precision BLAS 1 */
 #ifdef HAVE_TEUCHOS_COMPLEX
 
-void PREFIX ZROTG_F77(complex<double>* da, complex<double>* db, complex<double>* c, complex<double>* s);
-complex<double> PREFIX ZASUM_F77(const int* n, const complex<double> x[], const int* incx);
+void PREFIX ZROTG_F77(complex<double>* da, complex<double>* db, double* c, complex<double>* s);
+double PREFIX ZASUM_F77(const int* n, const complex<double> x[], const int* incx);
 void PREFIX ZAXPY_F77(const int* n, const complex<double>* alpha, const complex<double> x[], const int* incx, complex<double> y[], const int* incy);
 void PREFIX ZCOPY_F77(const int* n, const complex<double> *x, const int* incx, complex<double> *y, const int* incy);
 complex<double> PREFIX ZDOT_F77(const int* n, const complex<double> x[], const int* incx, const complex<double> y[], const int* incy);
-complex<double> PREFIX ZNRM2_F77(const int* n, const complex<double> x[], const int* incx); 
+double PREFIX ZNRM2_F77(const int* n, const complex<double> x[], const int* incx); 
 void PREFIX ZSCAL_F77(const int* n, const complex<double>* alpha, complex<double> *x, const int* incx);
 int PREFIX IZAMAX_F77(const int* n, const complex<double> *x, const int* incx);
 
@@ -321,12 +321,12 @@ int PREFIX ISAMAX_F77(const int* n, const float *x, const int* incx);
 /* Single complex precision BLAS 1 */ 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
-void PREFIX CROTG_F77(complex<float>* da, complex<float>* db, complex<float>* c, complex<float>* s);
-complex<float> PREFIX CASUM_F77(const int* n, const complex<float> x[], const int* incx);
+void PREFIX CROTG_F77(complex<float>* da, complex<float>* db, float* c, complex<float>* s);
+float PREFIX CASUM_F77(const int* n, const complex<float> x[], const int* incx);
 void PREFIX CAXPY_F77(const int* n, const complex<float>* alpha, const complex<float> x[], const int* incx, complex<float> y[], const int* incy);
 void PREFIX CCOPY_F77(const int* n, const complex<float> *x, const int* incx, complex<float> *y, const int* incy);
 complex<float> PREFIX CDOT_F77(const int* n, const complex<float> x[], const int* incx, const complex<float> y[], const int* incy);
-complex<float> PREFIX CNRM2_F77(const int* n, const complex<float> x[], const int* incx); 
+float PREFIX CNRM2_F77(const int* n, const complex<float> x[], const int* incx); 
 void PREFIX CSCAL_F77(const int* n, const complex<float>* alpha, complex<float> *x, const int* incx);
 int PREFIX ICAMAX_F77(const int* n, const complex<float> *x, const int* incx);
 
