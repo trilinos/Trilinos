@@ -26,9 +26,8 @@ extern "C" {
 /* EBEB: The following constants, structs, and function prototypes should 
    probably be moved to a header file. */
 
-#define NO_DEBUG 
+/* #define DEBUG_BISECT  Turns on extra debugging in this file. */
 #define MYHUGE 1.0e30
-#define TINY   1.0e-6
 #define FRACTION_SMALL 0.001  /* Smallest fraction of load allowed on 
                                  either side of cut */
 #define ALMOST_ONE 0.99       /* For scaling, should be slightly < 1.0 */
@@ -166,7 +165,7 @@ int Zoltan_RB_find_bisector(
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
   printf("[%2d] Debug: Entering Zoltan_find_bisection, nwgts=%2d, fraclo[0] = %lf \n", proc, nwgts, fraclo[0]);
   printf("[%2d] Debug: %d dots on this proc\n", proc, dotnum);
   printf("[%2d] Debug: Coordinates = (", proc);
@@ -409,7 +408,7 @@ int Zoltan_RB_find_bisector(
 
   /* Verify that input 'weight' equals computed 'wtsum'. */
   for (j=0; j<nwgts; j++){
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
       printf("[%2d] Debug: computed wtsum[%1d] = %lf, input weight = %lf\n", proc, j, wtsum[j], weight[j]);
 #endif
     /* Disable sanity check because 'weight' is sometimes incorrect. */
@@ -480,7 +479,7 @@ int Zoltan_RB_find_bisector(
         /* Note: could do interpolated search to improve convergence */
         tmp_half = 0.5 * (valuemin + valuemax);
 
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
       printf("[%2d] Debug: Iteration %d,  tmp_half = %lf\n", proc, iteration, tmp_half);
 #endif
 
@@ -500,14 +499,14 @@ int Zoltan_RB_find_bisector(
       /* mark all active dots on one side or other of bisector */
       /* also set all fields in bisector data struct */
       /* save indices of closest dots on either side */
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
       {int nlo=0, nhi=0;
 #endif
 
       for (j = 0; j < numlist; j++) {
         i = dotlist[j];
         if (dots[i] <= tmp_half) {            /* in lower part */
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
           nlo++;
 #endif
           for (k=0; k<nwgts; k++)
@@ -527,7 +526,7 @@ int Zoltan_RB_find_bisector(
           }
         }
         else {                                         /* in upper part */
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
           nhi++;
 #endif
           for (k=0; k<nwgts; k++)
@@ -547,7 +546,7 @@ int Zoltan_RB_find_bisector(
           }
         }
       }
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
       printf("[%2d] Debug: %d active dots, %d in lower, %d in upper\n",
       proc, nlo+nhi, nlo, nhi);
       }
@@ -577,7 +576,7 @@ int Zoltan_RB_find_bisector(
       Zoltan_daxpy(nwgts, 1., weighthi, med->totalhi, tmphi);
       normhi = Zoltan_norm(mcnorm, nwgts, tmphi, scalehi);
 
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
       printf("[%2d] Debug: med->valuelo = %lf, med->valuehi = %lf\n", 
               proc, med->valuelo, med->valuehi);
       printf("[%2d] Debug: medme->totallo = (%lf, %lf), medme->totalhi = (%lf, %lf)\n", 
@@ -665,11 +664,11 @@ int Zoltan_RB_find_bisector(
             /* MPI_Scan is inclusive, we want to exclude my local weight */
             Zoltan_daxpy(nwgts, -1., localsum, wtupto, wtupto);
             breakflag = 1;
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
             printf("[%2d] Debug: breakflag = %d, moving some dots on boundary across\n", proc, breakflag);
 #endif 
           }                                      
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
           else
             printf("[%2d] Debug: breakflag = %d, moving all dots on boundary across\n", proc, breakflag);
 #endif 
@@ -694,7 +693,7 @@ int Zoltan_RB_find_bisector(
               if (breakflag){              /* only move if better */
                 /* tmplo += wgts[i] */
                 Zoltan_daxpy(nwgts, 1., &wgts[i*nwgts], tmplo, tmplo);
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
                 printf("[%2d] Examining dot %2d = %lf, norm= %lf, oldnorm= %lf\n",
                   proc, i, dots[i], Zoltan_norm(mcnorm, nwgts, tmplo, scalelo), oldnorm);
                 printf("[%2d] tmplo = (%lf, %lf)\n", proc, tmplo[0], tmplo[1]);
@@ -703,7 +702,7 @@ int Zoltan_RB_find_bisector(
                 if (Zoltan_norm(mcnorm, nwgts, tmplo, scalelo) < oldnorm){
                   dotmark[i] = 0;  /* weightlo will be updated later */
                   Zoltan_daxpy(nwgts, 1., &wgts[i*nwgts], wtsum, wtsum);
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
             printf("[%2d] Debug: moving dot %d to other half, norm(tmplo) = %g, norm(tmphi) = %g\n", proc, i, Zoltan_norm(mcnorm, nwgts, tmplo, scalelo), Zoltan_norm(mcnorm, nwgts, tmphi, scalehi));
 #endif 
                 }
@@ -716,7 +715,7 @@ int Zoltan_RB_find_bisector(
             }
           }
 
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
           printf("[%2d] Debug: bisect value too small, breakflag = %d\n", proc, breakflag);
 #endif
 
@@ -751,7 +750,7 @@ int Zoltan_RB_find_bisector(
         /* update weighthi to include weights in the active upper half */
         for (k=0; k<nwgts; k++)
           weighthi[k] += med->totalhi[k];
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
       printf("[%2d] Debug: new weighthi = (%lf, %lf)\n", 
               proc, weighthi[0], weighthi[1]);
 #endif
@@ -809,7 +808,7 @@ int Zoltan_RB_find_bisector(
             for (k=0; k<nwgts; k++)
               localsum[k] = medme->wtlo[k];
           }
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
           printf("[%2d] Debug: tmplo = (%lf, %lf)\n", proc, tmplo[0], tmplo[1]);
           printf("[%2d] Debug: tmphi = (%lf, %lf)\n", proc, tmphi[0], tmphi[1]);
 #endif 
@@ -826,11 +825,11 @@ int Zoltan_RB_find_bisector(
             /* MPI_Scan is inclusive, we want to exclude my local weight */
             Zoltan_daxpy(nwgts, -1., localsum, wtupto, wtupto);
             breakflag = 1;
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
             printf("[%2d] Debug: breakflag = %d, moving some dots on boundary across\n", proc, breakflag);
 #endif 
           } 
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
           else
             printf("[%2d] Debug: breakflag = %d, moving all dots on boundary across\n", proc, breakflag);
 #endif 
@@ -855,7 +854,7 @@ int Zoltan_RB_find_bisector(
               if (breakflag){              /* only move if better */
                 /* tmphi += wgts[i] */
                 Zoltan_daxpy(nwgts, 1., &wgts[i*nwgts], tmphi, tmphi);
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
                 printf("[%2d] Examining dot %2d = %lf, norm= %lf, oldnorm= %lf\n",
                   proc, i, dots[i], Zoltan_norm(mcnorm, nwgts, tmphi, scalehi), oldnorm);
                 printf("[%2d] tmplo = (%lf, %lf)\n", proc, tmplo[0], tmplo[1]);
@@ -864,7 +863,7 @@ int Zoltan_RB_find_bisector(
                 if (Zoltan_norm(mcnorm, nwgts, tmphi, scalehi) < oldnorm){
                   dotmark[i] = 1;  /* weighthi will be updated later */
                   Zoltan_daxpy(nwgts, 1., &wgts[i*nwgts], wtsum, wtsum);
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
             printf("[%2d] Debug: moving dot %d to other half, norm(tmplo) = %g, norm(tmphi) = %g\n", proc, i, Zoltan_norm(mcnorm, nwgts, tmplo, scalelo), Zoltan_norm(mcnorm, nwgts, tmphi, scalehi));
 #endif 
                 }
@@ -876,7 +875,7 @@ int Zoltan_RB_find_bisector(
                 dotmark[i] = 1;  /* weighthi will be updated later */
             }
           }
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
           printf("[%2d] Debug: bisect value too big, breakflag = %d\n", proc, breakflag);
 #endif
           if (breakflag){                  /* done if moved enough */
@@ -895,14 +894,14 @@ int Zoltan_RB_find_bisector(
           }        
         }
   
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
       printf("[%2d] Debug: A weighthi = (%lf, %lf)\n", 
               proc, weighthi[0], weighthi[1]);
 #endif
         /* Didn't break out, so must have moved all closest dots across */
         for (k=0; k<nwgts; k++)
           weighthi[k] += med->wtlo[k];
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
       printf("[%2d] Debug: B weighthi = (%lf, %lf)\n", 
               proc, weighthi[0], weighthi[1]);
 #endif
@@ -935,7 +934,7 @@ int Zoltan_RB_find_bisector(
 
   /* found bisector */
   *valuehalf = tmp_half;
-#ifdef DEBUG
+#ifdef DEBUG_BISECT
   printf("[%2d] Final bisector valuehalf = %lf\n", proc, *valuehalf);
 #endif
 
