@@ -346,6 +346,7 @@ revert to their default values.
   int NumNumericFact_;
   int NumSolve_;
 
+  double AddToDiag_;
   bool ComputeTrueResidual_;
   bool ComputeVectorNorms_;
   

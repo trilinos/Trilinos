@@ -72,6 +72,7 @@ Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   Problem_(&prob),
   PrintTiming_(false),
   PrintStatus_(false),
+  AddToDiag_(0.0),
   ComputeVectorNorms_(false),
   ComputeTrueResidual_(false),
   verbose_(1),
@@ -271,6 +272,13 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime){
 	ColIndices = &ColIndicesV_[0];
       }
 
+      if (AddToDiag_ != 0.0) {
+        for (int i = 0 ; i < NumEntriesThisRow ; ++i)
+          if (ColIndices[i] == MyRow) {
+            RowValues[i] += AddToDiag_;
+            break;
+          }
+      }
 
       if ( firsttime ) {
 	Ap[MyRow] = Ai_index ;
@@ -317,6 +325,10 @@ int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
   // print some statistics (on process 0). Do not include timing
   if( ParameterList.isParameter("PrintStatus") )
     PrintStatus_ = ParameterList.get("PrintStatus", false);
+
+  // add this value to diagonal
+  if( ParameterList.isParameter("AddToDiag") )
+    AddToDiag_ = ParameterList.get("AddToDiag", 0.0);
 
   // compute norms of some vectors
   if( ParameterList.isParameter("ComputeVectorNorms") )

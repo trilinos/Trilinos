@@ -282,6 +282,8 @@ private:
   bool PrintTiming_;
   //! If \c true, print additional information in the destructor.
   bool PrintStatus_;
+  //! Add \c this value to the diagonal.
+  double AddToDiag_;
   //! If \c true, prints the norms of X and B in Solve().
   bool ComputeVectorNorms_;
   //! If \c true, computes the true residual in Solve().

@@ -229,6 +229,11 @@ int Amesos_Mumps::ConvertToTriplet(const bool OnlyValues)
 	Row[count] = GlobalRow + 1;
 	Col[count] = ptr->RowMatrixColMap().GID(Indices[j]) + 1;
       }
+      
+      // MS // Added on 15-Mar-05.
+      if (AddToDiag_ && Indices[j] == i)
+        Values[j] += AddToDiag_;
+
       Val[count] = Values[j];
       count++;
     }

@@ -53,6 +53,7 @@ Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
   RcondValidOnAllProcs_(true), 
   PrintTiming_(false),
   PrintStatus_(false),
+  AddToDiag_(0.0),
   ComputeVectorNorms_(false),
   ComputeTrueResidual_(false),
   verbose_(1),
@@ -178,6 +179,16 @@ int Amesos_Umfpack::ConvertToUmfpackCRS()
       if (ierr)
 	AMESOS_CHK_ERR(-1);
 
+      // MS // added on 15-Mar-05
+      if (AddToDiag_ != 0.0) {
+        for (int i = 0 ; i < NumEntriesThisRow ; ++i) {
+          if (Indices[i] == MyRow) {
+            Values[i] += AddToDiag_;
+            break;
+          }
+        }
+      }
+
       Ap[MyRow] = Ai_index ; 
       for ( int j = 0; j < NumEntriesThisRow; j++ ) { 
 	Ai[Ai_index] = Indices[j] ; 
@@ -217,6 +228,10 @@ int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList ) {
   // print some statistics (on process 0). Do not include timing
   if( ParameterList.isParameter("PrintStatus") )
     PrintStatus_ = ParameterList.get("PrintStatus", false);
+
+  // add this value to diagonal
+  if( ParameterList.isParameter("AddToDiag") )
+    AddToDiag_ = ParameterList.get("AddToDiag", 0.0);
 
   // compute norms of some vectors
   if( ParameterList.isParameter("ComputeVectorNorms") )

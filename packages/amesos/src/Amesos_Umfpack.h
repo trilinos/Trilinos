@@ -246,6 +246,8 @@ private:
   bool PrintTiming_;
   //! If \c true, prints additional information in the destructor.
   bool PrintStatus_;
+  //! Adds the specified value to the diagonal.
+  double AddToDiag_;
   //! If \c true, prints the norm of LHS and RHS in Solve().
   bool ComputeVectorNorms_;
   //! If \c true, prints the norm of the computed residual in Solve().

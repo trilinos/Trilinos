@@ -102,6 +102,7 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob ) :
   Time_(0),
   NumNumericFact_(0),
   NumSolve_(0),
+  AddToDiag_(0.0),
   ComputeTrueResidual_(false), // Overwritten by call to SetParameters below
   ComputeVectorNorms_(false)   // Overwritten by call to SetParameters below
 {
@@ -195,6 +196,7 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
   ComputeVectorNorms_ = false;
   PrintStatus_ = false ; 
   PrintTiming_ = false ; 
+  AddZeroToDiag_ = 0.0;
   
   // Ken, I modified so that parameters are not added to the list if not present.
   // Is it fine for you ????
@@ -206,11 +208,9 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   if( ParameterList.isParameter("AddZeroToDiag") )
     AddZeroToDiag_ = ParameterList.get("AddZeroToDiag",AddZeroToDiag_); 
-  // Ken, should we have a parameter like AddToDiag too ???
-  /*
+
   if( ParameterList.isParameter("AddToDiag") )
     AddToDiag_ = ParameterList.get("AddToDiag", 0.0);
-  */
 
   // print some statistics (on process 0). Do not include timing
   if( ParameterList.isParameter("PrintStatus") )
@@ -517,6 +517,17 @@ int Amesos_Superludist::Factor( ) {
       RowValues =  &RowValuesV_[0];
       ColIndices = &ColIndicesV_[0];
     }
+
+    // MS // Added on 15-Mar-05
+    if (AddToDiag_ != 0.0) {
+      for (int i = 0 ; i < NzThisRow ; ++i) {
+        if (ColIndices[i] == MyRow) {
+          RowValues[i] += AddToDiag_;
+          break;
+        }
+      }
+    }
+
     Ap_[MyRow] = Ai_index ; 
     for ( int j = 0; j < NzThisRow; j++ ) { 
       Ai_[Ai_index] = Global_Columns_[ColIndices[j]] ; 
