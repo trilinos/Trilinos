@@ -56,6 +56,7 @@ libnoxtsf_a_CXXFLAGS = \
 	-I$(top_srcdir)/src-loca/src \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/../TSFExtended/src/LinearSolvers \
+	-I$(top_srcdir)/../TSFExtended/src/Preconditioners \
 	-I$(top_srcdir)/../TSFExtended/src/Operators \
 	-I$(top_srcdir)/../TSFExtended/src/Utils \
 	-I$(top_srcdir)/../TSFExtended/src/Vectors \

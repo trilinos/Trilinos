@@ -69,11 +69,13 @@ TSFEXTENDED_INCLUDES =  \
 -I$(top_srcdir)/../TSFExtended/src/Concrete \
 -I$(top_srcdir)/../TSFExtended/src/Operators \
 -I$(top_srcdir)/../TSFExtended/src/LinearSolvers \
+-I$(top_srcdir)/../TSFExtended/src/Preconditioners \
 -I$(top_builddir)/../TSFExtended/src/Utils \
 -I$(top_builddir)/../TSFExtended/src/Vectors \
 -I$(top_builddir)/../TSFExtended/src/Concrete \
 -I$(top_builddir)/../TSFExtended/src/Operators \
--I$(top_builddir)/../TSFExtended/src/LinearSolvers 
+-I$(top_builddir)/../TSFExtended/src/LinearSolvers \
+-I$(top_builddir)/../TSFExtended/src/Preconditioners 
 
 TSFCORE_INCLUDES =  \
 -I$(top_builddir)/../TSFCore/src \
