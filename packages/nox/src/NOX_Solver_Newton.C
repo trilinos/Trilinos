@@ -178,10 +178,6 @@ void Newton::printUpdate()
     cout << "\n" << Utils::fill(72) << "\n" << endl;
   }
   
-  if ((status > 0) && (Utils::doPrint(1)))
-    cout << "\n" << "Solution is CONVERGED!" << "\n" << endl;
-  
-
   if ((status != 0) && (Utils::doPrint(Utils::OuterIteration))) {
     cout << Utils::fill(72) << "\n";
     cout << "-- Final Status Test Results --\n";    
