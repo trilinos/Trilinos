@@ -41,7 +41,7 @@ ifpack = \
 --with-ml_ifpack
 
 kokkos = \
---enable-kokkos
+--enable-kokkos \
 --enable-tpetra
 
 komplex = \
