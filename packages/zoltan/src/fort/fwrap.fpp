@@ -43,9 +43,7 @@ public :: &
    LB_User_Data_1, &
    LB_User_Data_2, &
    LB_User_Data_3, &
-   LB_User_Data_4, &
-   LB_GID, &
-   LB_LID
+   LB_User_Data_4
 
 public :: &
    LB_Struct, &
@@ -107,6 +105,9 @@ public :: &
    LB_Box_Assign, &
    LB_Compute_Destinations, &
    LB_Help_Migrate
+
+public :: &
+   LB_Get_Child_Order ! TEMP child_order
 
 !--------------------------------------------------------------------------
 ! user defined types corresponding to the C structs
@@ -216,26 +217,6 @@ use lb_user_const
 integer(LB_INT) :: arg
 integer(LB_INT), intent(out) :: ret_addr
 end subroutine LB_fw_Get_Address_int
-end interface
-
-interface
-!NAS$ ALIEN "F77 lb_fw_get_address_gid"
-subroutine LB_fw_Get_Address_GID(arg,ret_addr)
-use zoltan_types
-use lb_user_const
-type(LB_GID) :: arg
-integer(LB_INT), intent(out) :: ret_addr
-end subroutine LB_fw_Get_Address_GID
-end interface
-
-interface
-!NAS$ ALIEN "F77 lb_fw_get_address_lid"
-subroutine LB_fw_Get_Address_LID(arg,ret_addr)
-use zoltan_types
-use lb_user_const
-type(LB_LID) :: arg
-integer(LB_INT), intent(out) :: ret_addr
-end subroutine LB_fw_Get_Address_LID
 end interface
 
 interface
@@ -654,80 +635,26 @@ end function LB_fw_Set_Param
 end interface
 
 interface
-!NAS$ ALIEN "F77 lb_fw_balance11"
-function LB_fw_Balance11(lb,nbytes,changes,num_import,import_global_ids, &
+!NAS$ ALIEN "F77 lb_fw_balance"
+function LB_fw_Balance(lb,nbytes,changes,num_gid_entries,num_lid_entries, &
+                       num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
 use zoltan_types
 use lb_user_const
 implicit none
-integer(LB_INT) :: LB_fw_Balance11
+integer(LB_INT) :: LB_fw_Balance
 integer(LB_INT), dimension(*) INTENT_IN lb
 integer(LB_INT) INTENT_IN nbytes
 integer(LB_INT), intent(out) :: changes
-integer(LB_INT), intent(out) :: num_import, num_export
-type(LB_GID), pointer, dimension(:) :: import_global_ids, export_global_ids
-type(LB_LID), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-end function LB_fw_Balance11
-end interface
-
-interface
-!NAS$ ALIEN "F77 lb_fw_balance12"
-function LB_fw_Balance12(lb,nbytes,changes,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-use zoltan_types
-use lb_user_const
-implicit none
-integer(LB_INT) :: LB_fw_Balance12
-integer(LB_INT), dimension(*) INTENT_IN lb
-integer(LB_INT) INTENT_IN nbytes
-integer(LB_INT), intent(out) :: changes
-integer(LB_INT), intent(out) :: num_import, num_export
-type(LB_GID), pointer, dimension(:) :: import_global_ids, export_global_ids
-integer(LB_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-end function LB_fw_Balance12
-end interface
-
-interface
-!NAS$ ALIEN "F77 lb_fw_balance21"
-function LB_fw_Balance21(lb,nbytes,changes,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-use zoltan_types
-use lb_user_const
-implicit none
-integer(LB_INT) :: LB_fw_Balance21
-integer(LB_INT), dimension(*) INTENT_IN lb
-integer(LB_INT) INTENT_IN nbytes
-integer(LB_INT), intent(out) :: changes
-integer(LB_INT), intent(out) :: num_import, num_export
-integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
-type(LB_LID), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-end function LB_fw_Balance21
-end interface
-
-interface
-!NAS$ ALIEN "F77 lb_fw_balance22"
-function LB_fw_Balance22(lb,nbytes,changes,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-use zoltan_types
-use lb_user_const
-implicit none
-integer(LB_INT) :: LB_fw_Balance22
-integer(LB_INT), dimension(*) INTENT_IN lb
-integer(LB_INT) INTENT_IN nbytes
-integer(LB_INT), intent(out) :: changes
+integer(LB_INT), intent(out) :: num_gid_entries, num_lid_entries
 integer(LB_INT), intent(out) :: num_import, num_export
 integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
 integer(LB_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
 integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-end function LB_fw_Balance22
+end function LB_fw_Balance
 end interface
+
 
 interface
 !NAS$ ALIEN "F77 lb_fw_eval"
@@ -777,82 +704,18 @@ end function LB_fw_Box_Assign
 end interface
 
 interface
-!NAS$ ALIEN "F77 lb_fw_compute_destinations11"
-function LB_fw_Compute_Destinations11(lb,nbytes,num_import,import_global_ids, &
+!NAS$ ALIEN "F77 lb_fw_compute_destinations"
+function LB_fw_Compute_Destinations(lb,nbytes,num_gid_entries,num_lid_entries, &
+                       num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
 use zoltan_types
 use lb_user_const
 implicit none
-integer(LB_INT) :: LB_fw_Compute_Destinations11
+integer(LB_INT) :: LB_fw_Compute_Destinations
 integer(LB_INT), dimension(*) INTENT_IN lb
 integer(LB_INT) INTENT_IN nbytes
-integer(LB_INT) INTENT_IN num_import
-integer(LB_INT), intent(out) :: num_export
-type(LB_GID), dimension(*) INTENT_IN import_global_ids
-type(LB_GID), pointer, dimension(:) :: export_global_ids
-type(LB_LID), dimension(*) INTENT_IN import_local_ids
-type(LB_LID), pointer, dimension(:) :: export_local_ids
-integer(LB_INT), dimension(*) INTENT_IN import_procs
-integer(LB_INT), pointer, dimension(:) :: export_procs
-end function LB_fw_Compute_Destinations11
-end interface
-
-interface
-!NAS$ ALIEN "F77 lb_fw_compute_destinations12"
-function LB_fw_Compute_Destinations12(lb,nbytes,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-use zoltan_types
-use lb_user_const
-implicit none
-integer(LB_INT) :: LB_fw_Compute_Destinations12
-integer(LB_INT), dimension(*) INTENT_IN lb
-integer(LB_INT) INTENT_IN nbytes
-integer(LB_INT) INTENT_IN num_import
-integer(LB_INT), intent(out) :: num_export
-type(LB_GID), dimension(*) INTENT_IN import_global_ids
-type(LB_GID), pointer, dimension(:) :: export_global_ids
-integer(LB_INT), dimension(*) INTENT_IN import_local_ids
-integer(LB_INT), pointer, dimension(:) :: export_local_ids
-integer(LB_INT), dimension(*) INTENT_IN import_procs
-integer(LB_INT), pointer, dimension(:) :: export_procs
-end function LB_fw_Compute_Destinations12
-end interface
-
-interface
-!NAS$ ALIEN "F77 lb_fw_compute_destinations21"
-function LB_fw_Compute_Destinations21(lb,nbytes,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-use zoltan_types
-use lb_user_const
-implicit none
-integer(LB_INT) :: LB_fw_Compute_Destinations21
-integer(LB_INT), dimension(*) INTENT_IN lb
-integer(LB_INT) INTENT_IN nbytes
-integer(LB_INT) INTENT_IN num_import
-integer(LB_INT), intent(out) :: num_export
-integer(LB_INT), dimension(*) INTENT_IN import_global_ids
-integer(LB_INT), pointer, dimension(:) :: export_global_ids
-type(LB_LID), dimension(*) INTENT_IN import_local_ids
-type(LB_LID), pointer, dimension(:) :: export_local_ids
-integer(LB_INT), dimension(*) INTENT_IN import_procs
-integer(LB_INT), pointer, dimension(:) :: export_procs
-end function LB_fw_Compute_Destinations21
-end interface
-
-interface
-!NAS$ ALIEN "F77 lb_fw_compute_destinations22"
-function LB_fw_Compute_Destinations22(lb,nbytes,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-use zoltan_types
-use lb_user_const
-implicit none
-integer(LB_INT) :: LB_fw_Compute_Destinations22
-integer(LB_INT), dimension(*) INTENT_IN lb
-integer(LB_INT) INTENT_IN nbytes
+integer(LB_INT) INTENT_IN num_gid_entries, num_lid_entries
 integer(LB_INT) INTENT_IN num_import
 integer(LB_INT), intent(out) :: num_export
 integer(LB_INT), dimension(*) INTENT_IN import_global_ids
@@ -861,94 +724,39 @@ integer(LB_INT), dimension(*) INTENT_IN import_local_ids
 integer(LB_INT), pointer, dimension(:) :: export_local_ids
 integer(LB_INT), dimension(*) INTENT_IN import_procs
 integer(LB_INT), pointer, dimension(:) :: export_procs
-end function LB_fw_Compute_Destinations22
+end function LB_fw_Compute_Destinations
 end interface
 
-
 interface
-!NAS$ ALIEN "F77 lb_fw_help_migrate11"
-function LB_fw_Help_Migrate11(lb,nbytes,num_import,import_global_ids, &
+!NAS$ ALIEN "F77 lb_fw_help_migrate"
+function LB_fw_Help_Migrate(lb,nbytes,num_gid_entries,num_lid_entries, &
+                       num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
 use zoltan_types
 use lb_user_const
 implicit none
-integer(LB_INT) :: LB_fw_Help_Migrate11
+integer(LB_INT) :: LB_fw_Help_Migrate
 integer(LB_INT), dimension(*) INTENT_IN lb
 integer(LB_INT) INTENT_IN nbytes
-integer(LB_INT) INTENT_IN num_import, num_export
-type(LB_GID), dimension(*) INTENT_IN import_global_ids, export_global_ids
-type(LB_LID), dimension(*) INTENT_IN import_local_ids, export_local_ids
-integer(LB_INT), dimension(*) INTENT_IN import_procs, export_procs
-end function LB_fw_Help_Migrate11
-end interface
-
-interface
-!NAS$ ALIEN "F77 lb_fw_help_migrate12"
-function LB_fw_Help_Migrate12(lb,nbytes,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-use zoltan_types
-use lb_user_const
-implicit none
-integer(LB_INT) :: LB_fw_Help_Migrate12
-integer(LB_INT), dimension(*) INTENT_IN lb
-integer(LB_INT) INTENT_IN nbytes
-integer(LB_INT) INTENT_IN num_import, num_export
-type(LB_GID), dimension(*) INTENT_IN import_global_ids, export_global_ids
-integer(LB_INT), dimension(*) INTENT_IN import_local_ids, export_local_ids
-integer(LB_INT), dimension(*) INTENT_IN import_procs, export_procs
-end function LB_fw_Help_Migrate12
-end interface
-
-interface
-!NAS$ ALIEN "F77 lb_fw_help_migrate21"
-function LB_fw_Help_Migrate21(lb,nbytes,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-use zoltan_types
-use lb_user_const
-implicit none
-integer(LB_INT) :: LB_fw_Help_Migrate21
-integer(LB_INT), dimension(*) INTENT_IN lb
-integer(LB_INT) INTENT_IN nbytes
-integer(LB_INT) INTENT_IN num_import, num_export
-integer(LB_INT), dimension(*) INTENT_IN import_global_ids, export_global_ids
-type(LB_LID), dimension(*) INTENT_IN import_local_ids, export_local_ids
-integer(LB_INT), dimension(*) INTENT_IN import_procs, export_procs
-end function LB_fw_Help_Migrate21
-end interface
-
-interface
-!NAS$ ALIEN "F77 lb_fw_help_migrate22"
-function LB_fw_Help_Migrate22(lb,nbytes,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-use zoltan_types
-use lb_user_const
-implicit none
-integer(LB_INT) :: LB_fw_Help_Migrate22
-integer(LB_INT), dimension(*) INTENT_IN lb
-integer(LB_INT) INTENT_IN nbytes
+integer(LB_INT) INTENT_IN num_gid_entries, num_lid_entries
 integer(LB_INT) INTENT_IN num_import, num_export
 integer(LB_INT), dimension(*) INTENT_IN import_global_ids, export_global_ids
 integer(LB_INT), dimension(*) INTENT_IN import_local_ids, export_local_ids
 integer(LB_INT), dimension(*) INTENT_IN import_procs, export_procs
-end function LB_fw_Help_Migrate22
+end function LB_fw_Help_Migrate
 end interface
 
 interface
 !NAS$ ALIEN "F77 lb_fw_register_fort_malloc"
-subroutine LB_fw_Register_Fort_Malloc(malloc_int,malloc_gid,malloc_lid, &
-                                      free_int,free_gid,free_lid)
+subroutine LB_fw_Register_Fort_Malloc(malloc_int,free_int)
 use zoltan_types
 use lb_user_const
 implicit none
 #ifdef NASOFTWARE
-type(address), intent(in) :: malloc_int,malloc_gid,malloc_lid, &
-                             free_int,free_gid,free_lid
+type(address), intent(in) :: malloc_int, free_int
 #else
-external malloc_int,malloc_gid,malloc_lid,free_int,free_gid,free_lid
+external malloc_int,free_int
 #endif
 end subroutine LB_fw_Register_Fort_Malloc
 end interface
@@ -964,6 +772,33 @@ integer(LB_INT), dimension(*) INTENT_IN lb
 integer(LB_INT) INTENT_IN nbytes
 end function LB_fw_Get_Wgt_Dim
 end interface
+
+interface
+!NAS$ ALIEN "F77 lb_fw_get_comm_dim"
+function LB_fw_Get_Comm_Dim(lb,nbytes)
+use zoltan_types
+use lb_user_const
+implicit none
+integer(LB_INT) :: LB_fw_Get_Comm_Dim
+integer(LB_INT), dimension(*) INTENT_IN lb
+integer(LB_INT) INTENT_IN nbytes
+end function LB_fw_Get_Comm_Dim
+end interface
+
+! TEMP child_order
+interface
+!NAS$ ALIEN "F77 lb_fw_get_child_order"
+subroutine LB_fw_Get_Child_Order(lb,nbytes,order,ierr)
+use zoltan_types
+use lb_user_const
+implicit none
+integer(LB_INT), dimension(*) INTENT_IN lb
+integer(LB_INT) INTENT_IN nbytes
+integer(LB_INT), intent(inout), dimension(*) :: order
+integer(LB_INT), intent(out) :: ierr
+end subroutine LB_fw_Get_Child_Order
+end interface
+! end TEMP child_order
 
 !--------------------------------------------------------------------------
 ! generic names for the Fortran wrapper procedures
@@ -1013,10 +848,7 @@ interface LB_Set_Param
 end interface
 
 interface LB_Balance
-   module procedure f90LB_Balance11
-   module procedure f90LB_Balance12
-   module procedure f90LB_Balance21
-   module procedure f90LB_Balance22
+   module procedure f90LB_Balance
 end interface
 
 interface LB_Eval
@@ -1024,10 +856,7 @@ interface LB_Eval
 end interface
 
 interface LB_Free_Data
-   module procedure f90LB_Free_Data11
-   module procedure f90LB_Free_Data12
-   module procedure f90LB_Free_Data21
-   module procedure f90LB_Free_Data22
+   module procedure f90LB_Free_Data
 end interface
 
 interface LB_Point_Assign
@@ -1039,17 +868,16 @@ interface LB_Box_Assign
 end interface
 
 interface LB_Compute_Destinations
-   module procedure f90LB_Compute_Destinations11
-   module procedure f90LB_Compute_Destinations12
-   module procedure f90LB_Compute_Destinations21
-   module procedure f90LB_Compute_Destinations22
+   module procedure f90LB_Compute_Destinations
 end interface
 
 interface LB_Help_Migrate
-   module procedure f90LB_Help_Migrate11
-   module procedure f90LB_Help_Migrate12
-   module procedure f90LB_Help_Migrate21
-   module procedure f90LB_Help_Migrate22
+   module procedure f90LB_Help_Migrate
+end interface
+
+! TEMP child_order
+interface LB_Get_Child_Order
+   module procedure f90LB_Get_Child_Order
 end interface
 
 contains
@@ -1074,40 +902,6 @@ else
 endif
 end subroutine fort_malloc_int
 
-subroutine fort_malloc_gid(array,n,ret_addr)
-! This gets called by the C special_malloc to do the allocation
-type(LB_GID), pointer :: array(:)
-integer(LB_INT), intent(in) :: n
-integer(LB_INT), intent(out) :: ret_addr
-integer :: stat
-! Allocate the space
-allocate(array(n),stat=stat)
-if (stat==0) then
-! Send the address of the allocated space to C
-   call LB_fw_Get_Address_GID(array(1),ret_addr)
-else
-   write(stderr,*) "Error: out of memory during allocation from Fortran"
-   ret_addr = 0
-endif
-end subroutine fort_malloc_gid
-
-subroutine fort_malloc_lid(array,n,ret_addr)
-! This gets called by the C special_malloc to do the allocation
-type(LB_LID), pointer :: array(:)
-integer(LB_INT), intent(in) :: n
-integer(LB_INT), intent(out) :: ret_addr
-integer :: stat
-! Allocate the space
-allocate(array(n),stat=stat)
-if (stat==0) then
-! Send the address of the allocated space to C
-   call LB_fw_Get_Address_LID(array(1),ret_addr)
-else
-   write(stderr,*) "Error: out of memory during allocation from Fortran"
-   ret_addr = 0
-endif
-end subroutine fort_malloc_lid
-
 subroutine fort_free_int(array)
 ! This gets called by the C special_free to do the deallocation
 integer(LB_INT), pointer :: array(:)
@@ -1118,26 +912,6 @@ if (stat /= 0) then
 endif
 end subroutine fort_free_int
 
-subroutine fort_free_gid(array)
-! This gets called by the C special_free to do the deallocation
-type(LB_GID), pointer :: array(:)
-integer :: stat
-deallocate(array,stat=stat)
-if (stat /= 0) then
-   write(stderr,*) "Warning: failed to deallocate memory from Fortran"
-endif
-end subroutine fort_free_gid
-
-subroutine fort_free_lid(array)
-! This gets called by the C special_free to do the deallocation
-type(LB_LID), pointer :: array(:)
-integer :: stat
-deallocate(array,stat=stat)
-if (stat /= 0) then
-   write(stderr,*) "Warning: failed to deallocate memory from Fortran"
-endif
-end subroutine fort_free_lid
-
 !--------------------------------------------------------------------------
 ! Fortran wrapper procedures
 
@@ -1145,12 +919,9 @@ function f90LB_Initialize(ver)
 integer(LB_INT) :: f90LB_Initialize
 real(LB_FLOAT), intent(out) :: ver
 #ifdef NASOFTWARE
-call LB_fw_Register_Fort_Malloc(loc(fort_malloc_int),loc(fort_malloc_gid), &
-                                loc(fort_malloc_lid),loc(fort_free_int), &
-                                loc(fort_free_gid),loc(fort_free_lid))
+call LB_fw_Register_Fort_Malloc(loc(fort_malloc_int),loc(fort_free_int))
 #else
-call LB_fw_Register_Fort_Malloc(fort_malloc_int,fort_malloc_gid,fort_malloc_lid,&
-                                fort_free_int,fort_free_gid,fort_free_lid)
+call LB_fw_Register_Fort_Malloc(fort_malloc_int,fort_free_int)
 #endif
 f90LB_Initialize = LB_fw_Initialize(ver)
 end function f90LB_Initialize
@@ -1163,12 +934,9 @@ real(LB_FLOAT), intent(out) :: ver
 integer(LB_INT), allocatable, dimension(:) :: int_argv,starts
 integer(LB_INT) :: i, j, leng
 #ifdef NASOFTWARE
-call LB_fw_Register_Fort_Malloc(loc(fort_malloc_int),loc(fort_malloc_gid), &
-                                loc(fort_malloc_lid),loc(fort_free_int), &
-                                loc(fort_free_gid),loc(fort_free_lid))
+call LB_fw_Register_Fort_Malloc(loc(fort_malloc_int),loc(fort_free_int))
 #else
-call LB_fw_Register_Fort_Malloc(fort_malloc_int,fort_malloc_gid,fort_malloc_lid,&
-                                fort_free_int,fort_free_gid,fort_free_lid)
+call LB_fw_Register_Fort_Malloc(fort_malloc_int,fort_free_int)
 #endif
 allocate(starts(argc+1), int_argv(len(argv)*argc))
 starts(1) = 1
@@ -1564,81 +1332,14 @@ f90LB_Set_Param = LB_fw_Set_Param(lb_addr,nbytes,int_param_name, &
                                     param_name_len,int_new_value,new_value_len)
 end function f90LB_Set_Param
 
-function f90LB_Balance11(lb,changes,num_import,import_global_ids, &
+function f90LB_Balance(lb,changes,num_gid_entries,num_lid_entries, &
+                       num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Balance11
+integer(LB_INT) :: f90LB_Balance
 type(LB_Struct) INTENT_IN lb
 logical, intent(out) :: changes
-integer(LB_INT), intent(out) :: num_import, num_export
-type(LB_GID), pointer, dimension(:) :: import_global_ids, export_global_ids
-type(LB_LID), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i, int_changes
-nbytes = LB_PTR_LENGTH
-do i=1,nbytes
-   lb_addr(i) = ichar(lb%addr%addr(i:i))
-end do
-f90LB_Balance11 = LB_fw_Balance11(lb_addr,nbytes,int_changes, &
-                             num_import,import_global_ids,import_local_ids, &
-                             import_procs,num_export,export_global_ids, &
-                             export_local_ids,export_procs)
-changes = .not.(int_changes==0)
-end function f90LB_Balance11
-
-function f90LB_Balance12(lb,changes,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Balance12
-type(LB_Struct) INTENT_IN lb
-logical, intent(out) :: changes
-integer(LB_INT), intent(out) :: num_import, num_export
-type(LB_GID), pointer, dimension(:) :: import_global_ids, export_global_ids
-integer(LB_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i, int_changes
-nbytes = LB_PTR_LENGTH
-do i=1,nbytes
-   lb_addr(i) = ichar(lb%addr%addr(i:i))
-end do
-f90LB_Balance12 = LB_fw_Balance12(lb_addr,nbytes,int_changes, &
-                             num_import,import_global_ids,import_local_ids, &
-                             import_procs,num_export,export_global_ids, &
-                             export_local_ids,export_procs)
-changes = .not.(int_changes==0)
-end function f90LB_Balance12
-
-function f90LB_Balance21(lb,changes,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Balance21
-type(LB_Struct) INTENT_IN lb
-logical, intent(out) :: changes
-integer(LB_INT), intent(out) :: num_import, num_export
-integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
-type(LB_LID), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i, int_changes
-nbytes = LB_PTR_LENGTH
-do i=1,nbytes
-   lb_addr(i) = ichar(lb%addr%addr(i:i))
-end do
-f90LB_Balance21 = LB_fw_Balance21(lb_addr,nbytes,int_changes, &
-                             num_import,import_global_ids,import_local_ids, &
-                             import_procs,num_export,export_global_ids, &
-                             export_local_ids,export_procs)
-changes = .not.(int_changes==0)
-end function f90LB_Balance21
-
-function f90LB_Balance22(lb,changes,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Balance22
-type(LB_Struct) INTENT_IN lb
-logical, intent(out) :: changes
+integer(LB_INT), intent(out) :: num_gid_entries, num_lid_entries
 integer(LB_INT), intent(out) :: num_import, num_export
 integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
 integer(LB_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
@@ -1649,20 +1350,21 @@ nbytes = LB_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-f90LB_Balance22 = LB_fw_Balance22(lb_addr,nbytes,int_changes, &
+f90LB_Balance = LB_fw_Balance(lb_addr,nbytes,int_changes, &
+                             num_gid_entries,num_lid_entries, &
                              num_import,import_global_ids,import_local_ids, &
                              import_procs,num_export,export_global_ids, &
                              export_local_ids,export_procs)
 changes = .not.(int_changes==0)
-end function f90LB_Balance22
+end function f90LB_Balance
 
 function f90LB_Eval(lb,print_stats,nobj,obj_wgt, &
-                      cut_wgt,nboundary,nadj)
-integer(LB_INT), intent(out) :: f90LB_Eval
+                    ncuts,cut_wgt,nboundary,nadj)
+integer(LB_INT) :: f90LB_Eval
 type(LB_Struct) INTENT_IN lb
 logical INTENT_IN print_stats
-integer(LB_INT), intent(out), optional :: nobj, cut_wgt, nboundary, nadj
-real(LB_FLOAT), intent(out), optional :: obj_wgt(*)
+integer(LB_INT), intent(out), optional :: nobj, ncuts, nboundary, nadj
+real(LB_FLOAT), intent(out), optional :: obj_wgt(*), cut_wgt(*)
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
 integer(LB_INT) :: nbytes, i, int_print_stats, dim, edim
 integer(LB_INT) :: loc_nobj, loc_ncuts, loc_nboundary, loc_nadj
@@ -1713,7 +1415,7 @@ else
    is_cut_wgt = 0
    allocate(loc_cut_wgt(1))
 endif
-call LB_fw_Eval(lb_addr,nbytes,int_print_stats,loc_nobj,loc_obj_wgt, &
+f90LB_Eval = LB_fw_Eval(lb_addr,nbytes,int_print_stats,loc_nobj,loc_obj_wgt, &
                 loc_ncuts,loc_cut_wgt,loc_nboundary,loc_nadj,is_nobj, &
                 is_obj_wgt,is_ncuts,is_cut_wgt,is_nboundary,is_nadj)
 if (present(nobj)) nobj = loc_nobj
@@ -1733,121 +1435,34 @@ if (present(nadj)) nadj = loc_nadj
 deallocate(loc_obj_wgt)
 end function f90LB_Eval
 
-function f90LB_Free_Data11(import_global_ids, import_local_ids,import_procs, &
+function f90LB_Free_Data(import_global_ids, import_local_ids,import_procs, &
                          export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Free_Data11
-type(LB_GID), pointer, dimension(:) :: import_global_ids, export_global_ids
-type(LB_LID), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-integer :: stat
-stat = 0
-f90LB_Free_Data11 = LB_OK
-if (associated(import_global_ids)) deallocate(import_global_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data11 = LB_WARN
-nullify(import_global_ids)
-if (associated(import_local_ids)) deallocate(import_local_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data11 = LB_WARN
-nullify(import_local_ids)
-if (associated(import_procs)) deallocate(import_procs,stat=stat)
-if (stat /= 0) f90LB_Free_Data11 = LB_WARN
-nullify(import_procs)
-if (associated(export_global_ids)) deallocate(export_global_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data11 = LB_WARN
-nullify(export_global_ids)
-if (associated(export_local_ids)) deallocate(export_local_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data11 = LB_WARN
-nullify(export_local_ids)
-if (associated(export_procs)) deallocate(export_procs,stat=stat)
-if (stat /= 0) f90LB_Free_Data11 = LB_WARN
-nullify(export_procs)
-end function f90LB_Free_Data11
-
-function f90LB_Free_Data12(import_global_ids, import_local_ids,import_procs, &
-                         export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Free_Data12
-type(LB_GID), pointer, dimension(:) :: import_global_ids, export_global_ids
-integer(LB_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-integer :: stat
-stat = 0
-f90LB_Free_Data12 = LB_OK
-if (associated(import_global_ids)) deallocate(import_global_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data12 = LB_WARN
-nullify(import_global_ids)
-if (associated(import_local_ids)) deallocate(import_local_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data12 = LB_WARN
-nullify(import_local_ids)
-if (associated(import_procs)) deallocate(import_procs,stat=stat)
-if (stat /= 0) f90LB_Free_Data12 = LB_WARN
-nullify(import_procs)
-if (associated(export_global_ids)) deallocate(export_global_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data12 = LB_WARN
-nullify(export_global_ids)
-if (associated(export_local_ids)) deallocate(export_local_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data12 = LB_WARN
-nullify(export_local_ids)
-if (associated(export_procs)) deallocate(export_procs,stat=stat)
-if (stat /= 0) f90LB_Free_Data12 = LB_WARN
-nullify(export_procs)
-end function f90LB_Free_Data12
-
-function f90LB_Free_Data21(import_global_ids, import_local_ids,import_procs, &
-                         export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Free_Data21
-integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
-type(LB_LID), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-integer :: stat
-stat = 0
-f90LB_Free_Data21 = LB_OK
-if (associated(import_global_ids)) deallocate(import_global_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data21 = LB_WARN
-nullify(import_global_ids)
-if (associated(import_local_ids)) deallocate(import_local_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data21 = LB_WARN
-nullify(import_local_ids)
-if (associated(import_procs)) deallocate(import_procs,stat=stat)
-if (stat /= 0) f90LB_Free_Data21 = LB_WARN
-nullify(import_procs)
-if (associated(export_global_ids)) deallocate(export_global_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data21 = LB_WARN
-nullify(export_global_ids)
-if (associated(export_local_ids)) deallocate(export_local_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data21 = LB_WARN
-nullify(export_local_ids)
-if (associated(export_procs)) deallocate(export_procs,stat=stat)
-if (stat /= 0) f90LB_Free_Data21 = LB_WARN
-nullify(export_procs)
-end function f90LB_Free_Data21
-
-function f90LB_Free_Data22(import_global_ids, import_local_ids,import_procs, &
-                         export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Free_Data22
+integer(LB_INT) :: f90LB_Free_Data
 integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
 integer(LB_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
 integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
 integer :: stat
 stat = 0
-f90LB_Free_Data22 = LB_OK
+f90LB_Free_Data = LB_OK
 if (associated(import_global_ids)) deallocate(import_global_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data22 = LB_WARN
+if (stat /= 0) f90LB_Free_Data = LB_WARN
 nullify(import_global_ids)
 if (associated(import_local_ids)) deallocate(import_local_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data22 = LB_WARN
+if (stat /= 0) f90LB_Free_Data = LB_WARN
 nullify(import_local_ids)
 if (associated(import_procs)) deallocate(import_procs,stat=stat)
-if (stat /= 0) f90LB_Free_Data22 = LB_WARN
+if (stat /= 0) f90LB_Free_Data = LB_WARN
 nullify(import_procs)
 if (associated(export_global_ids)) deallocate(export_global_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data22 = LB_WARN
+if (stat /= 0) f90LB_Free_Data = LB_WARN
 nullify(export_global_ids)
 if (associated(export_local_ids)) deallocate(export_local_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data22 = LB_WARN
+if (stat /= 0) f90LB_Free_Data = LB_WARN
 nullify(export_local_ids)
 if (associated(export_procs)) deallocate(export_procs,stat=stat)
-if (stat /= 0) f90LB_Free_Data22 = LB_WARN
+if (stat /= 0) f90LB_Free_Data = LB_WARN
 nullify(export_procs)
-end function f90LB_Free_Data22
+end function f90LB_Free_Data
 
 function f90LB_Point_Assign(lb,coords,proc)
 integer(LB_INT) :: f90LB_Point_Assign
@@ -1879,95 +1494,13 @@ f90LB_Box_Assign = LB_fw_Box_Assign(lb_addr,nbytes,xmin,ymin,zmin,xmax,ymax, &
                                     zmax,procs,numprocs)
 end function f90LB_Box_Assign
 
-function f90LB_Compute_Destinations11(lb,num_import,import_global_ids, &
+function f90LB_Compute_Destinations(lb,num_gid_entries,num_lid_entries, &
+                       num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Compute_Destinations11
+integer(LB_INT) :: f90LB_Compute_Destinations
 type(LB_Struct) INTENT_IN lb
-integer(LB_INT) INTENT_IN num_import
-integer(LB_INT), intent(out) :: num_export
-type(LB_GID), pointer, dimension(:) :: import_global_ids, export_global_ids
-type(LB_LID), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i
-if (.not.associated(import_global_ids) .or. .not.associated(import_local_ids) &
-    .or. .not.associated(import_procs)) then
-   write(stderr,*) "Error from LB_Compute_Destinations: import pointers are not associated"
-   f90LB_Compute_Destinations11 = LB_WARN
-   return
-endif
-nbytes = LB_PTR_LENGTH
-do i=1,nbytes
-   lb_addr(i) = ichar(lb%addr%addr(i:i))
-end do
-f90LB_Compute_Destinations11 = LB_fw_Compute_Destinations11(lb_addr,nbytes, &
-                             num_import,import_global_ids,import_local_ids, &
-                             import_procs,num_export,export_global_ids, &
-                             export_local_ids,export_procs)
-end function f90LB_Compute_Destinations11
-
-function f90LB_Compute_Destinations12(lb,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Compute_Destinations12
-type(LB_Struct) INTENT_IN lb
-integer(LB_INT) INTENT_IN num_import
-integer(LB_INT), intent(out) :: num_export
-type(LB_GID), pointer, dimension(:) :: import_global_ids, export_global_ids
-integer(LB_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i
-if (.not.associated(import_global_ids) .or. .not.associated(import_local_ids) &
-    .or. .not.associated(import_procs)) then
-   write(stderr,*) "Error from LB_Compute_Destinations: import pointers are not associated"
-   f90LB_Compute_Destinations12 = LB_WARN
-   return
-endif
-nbytes = LB_PTR_LENGTH
-do i=1,nbytes
-   lb_addr(i) = ichar(lb%addr%addr(i:i))
-end do
-f90LB_Compute_Destinations12 = LB_fw_Compute_Destinations12(lb_addr,nbytes, &
-                             num_import,import_global_ids,import_local_ids, &
-                             import_procs,num_export,export_global_ids, &
-                             export_local_ids,export_procs)
-end function f90LB_Compute_Destinations12
-
-function f90LB_Compute_Destinations21(lb,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Compute_Destinations21
-type(LB_Struct) INTENT_IN lb
-integer(LB_INT) INTENT_IN num_import
-integer(LB_INT), intent(out) :: num_export
-integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
-type(LB_LID), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i
-if (.not.associated(import_global_ids) .or. .not.associated(import_local_ids) &
-    .or. .not.associated(import_procs)) then
-   write(stderr,*) "Error from LB_Compute_Destinations: import pointers are not associated"
-   f90LB_Compute_Destinations21 = LB_WARN
-   return
-endif
-nbytes = LB_PTR_LENGTH
-do i=1,nbytes
-   lb_addr(i) = ichar(lb%addr%addr(i:i))
-end do
-f90LB_Compute_Destinations21 = LB_fw_Compute_Destinations21(lb_addr,nbytes, &
-                             num_import,import_global_ids,import_local_ids, &
-                             import_procs,num_export,export_global_ids, &
-                             export_local_ids,export_procs)
-end function f90LB_Compute_Destinations21
-
-function f90LB_Compute_Destinations22(lb,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Compute_Destinations22
-type(LB_Struct) INTENT_IN lb
+integer(LB_INT) INTENT_IN num_gid_entries, num_lid_entries
 integer(LB_INT) INTENT_IN num_import
 integer(LB_INT), intent(out) :: num_export
 integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
@@ -1978,133 +1511,122 @@ integer(LB_INT) :: nbytes, i
 if (.not.associated(import_global_ids) .or. .not.associated(import_local_ids) &
     .or. .not.associated(import_procs)) then
    write(stderr,*) "Error from LB_Compute_Destinations: import pointers are not associated"
-   f90LB_Compute_Destinations22 = LB_WARN
+   f90LB_Compute_Destinations = LB_WARN
    return
 endif
 nbytes = LB_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-f90LB_Compute_Destinations22 = LB_fw_Compute_Destinations22(lb_addr,nbytes, &
+f90LB_Compute_Destinations = LB_fw_Compute_Destinations(lb_addr,nbytes, &
+                             num_gid_entries,num_lid_entries, &
                              num_import,import_global_ids,import_local_ids, &
                              import_procs,num_export,export_global_ids, &
                              export_local_ids,export_procs)
-end function f90LB_Compute_Destinations22
+end function f90LB_Compute_Destinations
 
-function f90LB_Help_Migrate11(lb,num_import,import_global_ids, &
+
+function f90LB_Help_Migrate(lb,num_gid_entries,num_lid_entries, &
+                       num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
                        export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Help_Migrate11
+integer(LB_INT) :: f90LB_Help_Migrate
 type(LB_Struct) INTENT_IN lb
-integer(LB_INT) INTENT_IN num_import, num_export
-type(LB_GID), pointer, dimension(:) :: import_global_ids, export_global_ids
-type(LB_LID), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i
-if (.not.associated(import_global_ids) .or. .not.associated(import_local_ids) &
-    .or. .not.associated(import_procs) .or. .not.associated(export_procs) &
-    .or. .not.associated(export_global_ids) &
-    .or. .not.associated(export_local_ids)) then
-   write(stderr,*) "Error from LB_Help_Migrate: import or export pointers are not associated"
-   f90LB_Help_Migrate11 = LB_WARN
-   return
-endif
-nbytes = LB_PTR_LENGTH
-do i=1,nbytes
-   lb_addr(i) = ichar(lb%addr%addr(i:i))
-end do
-f90LB_Help_Migrate11 = LB_fw_Help_Migrate11(lb_addr,nbytes, &
-                             num_import,import_global_ids,import_local_ids, &
-                             import_procs,num_export,export_global_ids, &
-                             export_local_ids,export_procs)
-end function f90LB_Help_Migrate11
-
-function f90LB_Help_Migrate12(lb,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Help_Migrate12
-type(LB_Struct) INTENT_IN lb
-integer(LB_INT) INTENT_IN num_import, num_export
-type(LB_GID), pointer, dimension(:) :: import_global_ids, export_global_ids
-integer(LB_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i
-if (.not.associated(import_global_ids) .or. .not.associated(import_local_ids) &
-    .or. .not.associated(import_procs) .or. .not.associated(export_procs) &
-    .or. .not.associated(export_global_ids) &
-    .or. .not.associated(export_local_ids)) then
-   write(stderr,*) "Error from LB_Help_Migrate: import or export pointers are not associated"
-   f90LB_Help_Migrate12 = LB_WARN
-   return
-endif
-nbytes = LB_PTR_LENGTH
-do i=1,nbytes
-   lb_addr(i) = ichar(lb%addr%addr(i:i))
-end do
-f90LB_Help_Migrate12 = LB_fw_Help_Migrate12(lb_addr,nbytes, &
-                             num_import,import_global_ids,import_local_ids, &
-                             import_procs,num_export,export_global_ids, &
-                             export_local_ids,export_procs)
-end function f90LB_Help_Migrate12
-
-function f90LB_Help_Migrate21(lb,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Help_Migrate21
-type(LB_Struct) INTENT_IN lb
-integer(LB_INT) INTENT_IN num_import, num_export
-integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
-type(LB_LID), pointer, dimension(:) :: import_local_ids, export_local_ids
-integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
-integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i
-if (.not.associated(import_global_ids) .or. .not.associated(import_local_ids) &
-    .or. .not.associated(import_procs) .or. .not.associated(export_procs) &
-    .or. .not.associated(export_global_ids) &
-    .or. .not.associated(export_local_ids)) then
-   write(stderr,*) "Error from LB_Help_Migrate: import or export pointers are not associated"
-   f90LB_Help_Migrate21 = LB_WARN
-   return
-endif
-nbytes = LB_PTR_LENGTH
-do i=1,nbytes
-   lb_addr(i) = ichar(lb%addr%addr(i:i))
-end do
-f90LB_Help_Migrate21 = LB_fw_Help_Migrate21(lb_addr,nbytes, &
-                             num_import,import_global_ids,import_local_ids, &
-                             import_procs,num_export,export_global_ids, &
-                             export_local_ids,export_procs)
-end function f90LB_Help_Migrate21
-
-function f90LB_Help_Migrate22(lb,num_import,import_global_ids, &
-                       import_local_ids,import_procs,num_export, &
-                       export_global_ids,export_local_ids,export_procs)
-integer(LB_INT) :: f90LB_Help_Migrate22
-type(LB_Struct) INTENT_IN lb
+integer(LB_INT) INTENT_IN num_gid_entries, num_lid_entries
 integer(LB_INT) INTENT_IN num_import, num_export
 integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
 integer(LB_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
 integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
 integer(LB_INT) :: nbytes, i
-if (.not.associated(import_global_ids) .or. .not.associated(import_local_ids) &
-    .or. .not.associated(import_procs) .or. .not.associated(export_procs) &
-    .or. .not.associated(export_global_ids) &
-    .or. .not.associated(export_local_ids)) then
-   write(stderr,*) "Error from LB_Help_Migrate: import or export pointers are not associated"
-   f90LB_Help_Migrate22 = LB_WARN
+logical :: free_import_global_ids, free_import_local_ids, free_import_procs
+logical :: free_export_global_ids, free_export_local_ids, free_export_procs
+
+if ((num_import.gt.0).and.(.not.associated(import_global_ids) .or. &
+                           .not.associated(import_local_ids)  .or. &
+                           .not.associated(import_procs))) then
+   write(stderr,*) "Error from LB_Help_Migrate: import pointers are not associated"
+   f90LB_Help_Migrate = LB_WARN
    return
 endif
+if ((num_export.gt.0).and.(.not.associated(export_procs) .or. &
+                           .not.associated(export_global_ids) .or. &
+                           .not.associated(export_local_ids))) then
+   write(stderr,*) "Error from LB_Help_Migrate: export pointers are not associated"
+
+   f90LB_Help_Migrate = LB_WARN
+   return
+endif
+
+! generate place-holders to make call to LB_fw_Help_Migrate valid;
+! can't call it with non-associated arrays, even if we aren't importing
+! or exporting items.
+free_import_global_ids = .false.
+free_import_local_ids  = .false.
+free_import_procs      = .false.
+free_export_global_ids = .false.
+free_export_local_ids  = .false.
+free_export_procs      = .false.
+
+if (.not.associated(import_global_ids)) then
+   free_import_global_ids = .true.
+   allocate(import_global_ids(0)) 
+endif
+if (.not.associated(import_local_ids)) then
+   free_import_local_ids = .true.
+   allocate(import_local_ids(0)) 
+endif
+if (.not.associated(import_procs)) then
+   free_import_procs = .true.
+   allocate(import_procs(0)) 
+endif
+if (.not.associated(export_global_ids)) then
+   free_export_global_ids = .true.
+   allocate(export_global_ids(0)) 
+endif
+if (.not.associated(export_local_ids)) then
+   free_export_local_ids = .true.
+   allocate(export_local_ids(0)) 
+endif
+if (.not.associated(export_procs)) then
+   free_export_procs = .true.
+   allocate(export_procs(0)) 
+endif
+
 nbytes = LB_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-f90LB_Help_Migrate22 = LB_fw_Help_Migrate22(lb_addr,nbytes, &
+f90LB_Help_Migrate = LB_fw_Help_Migrate(lb_addr,nbytes, &
+                             num_gid_entries,num_lid_entries, &
                              num_import,import_global_ids,import_local_ids, &
                              import_procs,num_export,export_global_ids, &
                              export_local_ids,export_procs)
-end function f90LB_Help_Migrate22
+
+! clean up the place holders
+if (free_import_global_ids) deallocate(import_global_ids)
+if (free_import_local_ids) deallocate(import_local_ids)
+if (free_import_procs) deallocate(import_procs)
+if (free_export_global_ids) deallocate(export_global_ids)
+if (free_export_local_ids) deallocate(export_local_ids)
+if (free_export_procs) deallocate(export_procs)
+
+end function f90LB_Help_Migrate
+
+! TEMP child_order
+subroutine f90LB_Get_Child_Order(lb,order,ierr)
+type(LB_Struct), pointer :: lb
+integer(LB_INT), intent(inout), dimension(*) :: order
+integer(LB_INT), intent(out) :: ierr
+integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
+integer(LB_INT) :: nbytes, i
+nbytes = LB_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+call LB_fw_Get_Child_Order(lb_addr,nbytes,order,ierr)
+end subroutine f90LB_Get_Child_Order
+! end TEMP child_order
+
 
 end module zoltan
