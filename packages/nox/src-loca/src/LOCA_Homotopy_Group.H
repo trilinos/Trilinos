@@ -30,54 +30,47 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_HOMOTOPYGROUP_H
-#define LOCA_HOMOTOPYGROUP_H
+#ifndef LOCA_HOMOTOPY_GROUP_H
+#define LOCA_HOMOTOPY_GROUP_H
 
-#include "LOCA_Abstract_Group.H"    // base class
+#include "LOCA_Continuation_AbstractGroup.H"    // base class
+#include "LOCA_Homotopy_AbstractGroup.H"        // class data element
 
-#include "LOCA_Parameter_Vector.H"  // class data member
 #include "LOCA_ErrorCheck.H"        // class data member
-
-namespace NOX {
-  namespace Abstract {
-    class Vector;
-  }
-}
-
-namespace LOCA {
-  class ParameterVector;
-}
+#include "LOCA_Parameter_Vector.H"  // class data member
 
 namespace LOCA { 
+
+  namespace Homotopy {
   
-  /*! 
-    \brief %LOCA's Homotopy Algorithm.  
-  */
-  /*!
-    The %HomotopyGroup is a concrete implementation of the 
-    LOCA::Abstract::Group that modifies the set of nonlinear equations to be solved to allow for Homotopy to be applied to the system.  This object should be used in conjunction with the LOCA::Stepper object to drive the continuation.  This algorithm solves a system of nonlinear equations supplied by the user (\f$ F(x) \f$) through continuation.  An artificial parameter \f$ \lambda \f$ is used to control the continuation.  The idea is to solve a simple equation starting at \f$ \lambda \f$ = 0 and, using the solution from the previous step, solve systems of equations that gets progressively closer to the true system of interest ( at \f$ \lambda \f$ = 1.0 we recover the original equations \f$ F(x) \f$).  By constraining the definition of \f$ g(x, \lambda) \f$ and using artificial parameter contiuation, the continuation branch should be free of multiplicity and bifurcation phenomena.
+    /*! 
+      \brief %LOCA's Homotopy Algorithm.  
+    */
+    /*!
+      The %HomotopyGroup is a concrete implementation of the 
+      LOCA::Continuation::AbstractGroup that modifies the set of nonlinear equations to be solved to allow for Homotopy to be applied to the system.  This object should be used in conjunction with the LOCA::Stepper object to drive the continuation.  This algorithm solves a system of nonlinear equations supplied by the user (\f$ F(x) \f$) through continuation.  An artificial parameter \f$ \lambda \f$ is used to control the continuation.  The idea is to solve a simple equation starting at \f$ \lambda \f$ = 0 and, using the solution from the previous step, solve systems of equations that gets progressively closer to the true system of interest ( at \f$ \lambda \f$ = 1.0 we recover the original equations \f$ F(x) \f$).  By constraining the definition of \f$ g(x, \lambda) \f$ and using artificial parameter contiuation, the continuation branch should be free of multiplicity and bifurcation phenomena.
  
-    The modified system of equations, \f$ g(x, \lambda) \f$, supplied by the HomotopyGroup is defined as:
+      The modified system of equations, \f$ g(x, \lambda) \f$, supplied by the HomotopyGroup is defined as:
 
-    \f[ g(x, \lambda) = \lambda F(x) + (1.0 - \lambda)(x - a) \f]
+      \f[ g(x, \lambda) = \lambda F(x) + (1.0 - \lambda)(x - a) \f]
     
-    where \f$x\f$ is the solution vector, \f$ \lambda \f$ is an artificial 
-    parameter, \f$ F(x) \f$ is the set of nonlinear equations the user 
-    supplies, \f$ g(x) \f$ is the corresponding set of 
-    homotopy equations that LOCA will solve, and \f$ a \f$ is a random vector.
+      where \f$x\f$ is the solution vector, \f$ \lambda \f$ is an artificial 
+      parameter, \f$ F(x) \f$ is the set of nonlinear equations the user 
+      supplies, \f$ g(x) \f$ is the corresponding set of 
+      homotopy equations that LOCA will solve, and \f$ a \f$ is a random vector.
 
-    This group requires the loca Stepper for continuation
-    from \f$ \lambda \f$ = 0.0 (a simple set of equations to solve) to 
-    \f$ \lambda \f$ = 1.0 (the set of equations requested by the user, 
-    \f$ F(x) \f$).  The HomotopyGroup will generate the Stepper parameter sublist in the parameter list that is passed in to the constructor.  The user is free to modify this list (it sets default values) before passing it into the stepper object but should NOT change the starting and stopping values for the continuation parameter.
+      This group requires the loca Stepper for continuation
+      from \f$ \lambda \f$ = 0.0 (a simple set of equations to solve) to 
+      \f$ \lambda \f$ = 1.0 (the set of equations requested by the user, 
+      \f$ F(x) \f$).  The Homotopy::Group will generate the Stepper parameter sublist in the parameter list that is passed in to the constructor.  The user is free to modify this list (it sets default values) before passing it into the stepper object but should NOT change the starting and stopping values for the continuation parameter.
    
-    References:
+      References:
 
-     - ALGORITHM 652 HOMPACK: A Suite of Codes for Globally Convergent Homotopy Algorithms, Watson, L.T., Billups, S.C, and Morgan, A.P., ACM Transactions on Mathematical Software, Vol. 13, No. 3, September 1987, pp281-310.
+      - ALGORITHM 652 HOMPACK: A Suite of Codes for Globally Convergent Homotopy Algorithms, Watson, L.T., Billups, S.C, and Morgan, A.P., ACM Transactions on Mathematical Software, Vol. 13, No. 3, September 1987, pp281-310.
 
-  */
+    */
 
-    class HomotopyGroup : public virtual LOCA::Abstract::Group {
+    class Group : public virtual LOCA::Continuation::AbstractGroup {
 
     public:
   
@@ -87,43 +80,48 @@ namespace LOCA {
 
 	The variables scalarRandomVector and scalarInitialGuess are used to give some control over the generation of the random vector.  In certain instances we have seen the random vector force the solution to a set of variables that are unphysical and could break the function evaluations (cause them to return nan).  For example, in heat transfer problems, the temperature could be the dependent variable.  If the solution vector has an unphysical temperature (the random vector could force the temperature to negative or near zero values for the solution at \f$ \lambda = 0\f$) then property evaluations could break.  The random vector can be modified to keep the values near the initial guess based on values supplied to the constructor of the HomotopyGroup: 
 
-\f[
-    a = abs(r) * \mbox{scalarRandom} + x_o * \mbox{scalarInitialGuess}
-\f]
+	\f[
+	a = abs(r) * \mbox{scalarRandom} + x_o * \mbox{scalarInitialGuess}
+	\f]
 
-where \f$ r \f$ is the random vector generated by a call to NOX::Abstract::Vector::random(), \f$ \mbox{scalarRandom} \f$ is a scalar value, \f$ x_o \f$ is the initial guess to the solution vector, and \f$ \mbox{scalarInitialGuess} \f$ is a scalar value.  The defualt values force the random vector to be calculated as:
+	where \f$ r \f$ is the random vector generated by a call to NOX::Abstract::Vector::random(), \f$ \mbox{scalarRandom} \f$ is a scalar value, \f$ x_o \f$ is the initial guess to the solution vector, and \f$ \mbox{scalarInitialGuess} \f$ is a scalar value.  The defualt values force the random vector to be calculated as:
 
-\f[
-    a = abs(r)
-\f]
+	\f[
+	a = abs(r)
+	\f]
 
-      IMPORTANT: For homotopy to work correctly you should not change the starting and stopping parameter values (0.0 and 1.0 respectively) set in the "%Stepper" sublist.
-       */
-      HomotopyGroup(NOX::Parameter::List& locaSublist,
-		    const LOCA::Abstract::Group& g,
-		    double scaleRandom = 1.0,
-		    double scaleInitialGuess = 0.0);
+	IMPORTANT: For homotopy to work correctly you should not change the starting and stopping parameter values (0.0 and 1.0 respectively) set in the "%Stepper" sublist.
+      */
+      Group(NOX::Parameter::List& locaSublist,
+	    LOCA::Homotopy::AbstractGroup& g,
+	    double scaleRandom = 1.0,
+	    double scaleInitialGuess = 0.0);
 
       //! Constructor with a user supplied random vector.
-      HomotopyGroup(NOX::Parameter::List& locaSublist,
-		    const LOCA::Abstract::Group& g,
-		    const NOX::Abstract::Vector& randomVector);
+      Group(NOX::Parameter::List& locaSublist,
+	    LOCA::Homotopy::AbstractGroup& g,
+	    const NOX::Abstract::Vector& randomVector);
 
       //! Copy constructor.
-      HomotopyGroup(const HomotopyGroup& source, NOX::CopyType type = NOX::DeepCopy);
+      Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
-      virtual ~HomotopyGroup();
+      virtual ~Group();
   
       //! Assignment operator
-      virtual LOCA::Abstract::Group& operator=(const LOCA::Abstract::Group& source);
+      virtual LOCA::Continuation::AbstractGroup& 
+      operator=(const LOCA::Continuation::AbstractGroup& source);
+
       //! Assignment operator
-      virtual NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
+      virtual NOX::Abstract::Group& 
+      operator=(const NOX::Abstract::Group& source);
+
       //! Assignment operator
-      virtual HomotopyGroup& operator=(const HomotopyGroup& source);
+      virtual Group& operator=(const Group& source);
      
       //! Cloning function
-      virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
+      virtual NOX::Abstract::Group* 
+      clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Set the parameter list in the group to p (pVector = p).  
       virtual void setParams(const ParameterVector& p);
@@ -143,6 +141,10 @@ where \f$ r \f$ is the random vector generated by a call to NOX::Abstract::Vecto
       //! Return copy of parameter indexed by paramID
       virtual double getParam(string paramID) const;
 
+      //! Compute \f$dF/dp\f$ for the extended system
+      virtual NOX::Abstract::Group::ReturnType
+      computeDfDp(int paramID, NOX::Abstract::Vector& result);
+
       //@{ \name "Compute" functions.
 
       //! Set the solution vector, x, to y.
@@ -154,7 +156,7 @@ where \f$ r \f$ is the random vector generated by a call to NOX::Abstract::Vecto
 			    double step);
 
       //! Compute and return solution vector, x, where this.x = grp.x + step * d.
-      virtual void computeX(const LOCA::HomotopyGroup& g, 
+      virtual void computeX(const Group& g, 
 			    const NOX::Abstract::Vector& d,
 			    double step);
 
@@ -196,11 +198,6 @@ where \f$ r \f$ is the random vector generated by a call to NOX::Abstract::Vecto
       applyJacobianInverse(NOX::Parameter::List& params, 
 			   const NOX::Abstract::Vector& input, 
 			   NOX::Abstract::Vector& result) const;
-
-      virtual NOX::Abstract::Group::ReturnType 
-      applyRightPreconditioning(NOX::Parameter::List& params,
-				const NOX::Abstract::Vector& input, 
-				NOX::Abstract::Vector& result) const;
       //@}
 
       /** @name "Is" functions.
@@ -253,11 +250,13 @@ where \f$ r \f$ is the random vector generated by a call to NOX::Abstract::Vecto
       //! Calls groups print function for solution vector null vec, and params 
       virtual void printSolution(const double conParam) const;
 
-      //! Set scale vector
-      virtual void setScaleVec(const NOX::Abstract::Vector& s);
-
-      //! Get scale vector
-      virtual const NOX::Abstract::Vector& getScaleVec() const;
+      //! Return underlying group
+      virtual const LOCA::Continuation::AbstractGroup& 
+      getUnderlyingGroup() const;
+      
+      //! Return underlying group
+      virtual LOCA::Continuation::AbstractGroup& 
+      getUnderlyingGroup();
 
     protected:
       
@@ -273,7 +272,7 @@ where \f$ r \f$ is the random vector generated by a call to NOX::Abstract::Vecto
     protected:
 
       //! Stores the underlying loca group.
-      LOCA::Abstract::Group* grpPtr;   
+      LOCA::Homotopy::AbstractGroup* grpPtr;   
   
       //! Stores the homotopy residual vector, \f$ g \f$.
       NOX::Abstract::Vector* gVecPtr;
@@ -305,7 +304,7 @@ where \f$ r \f$ is the random vector generated by a call to NOX::Abstract::Vecto
       
       //! Value of the homotopy continuation parameter.
       /*! Ranges from 0.0 (easy solution) to 1.0 (solution to the system of 
-	  interest).
+	interest).
       */
       double conParam;
 
@@ -318,10 +317,12 @@ where \f$ r \f$ is the random vector generated by a call to NOX::Abstract::Vecto
       //! Utility to check return types, print warnings and throw errors.
       LOCA::ErrorCheck utils;
 
-      //! Tells whether the underlying group was created by the HomotopyGroup.  If so, the destructor should destroy the group.  
+      //! Tells whether the underlying group was created by the Group.  If so, the destructor should destroy the group.  
       bool ownsGroup;
 
     };
+
+  } // namespace Homotopy
 } // namespace LOCA
 
 #endif
