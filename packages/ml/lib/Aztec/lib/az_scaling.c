@@ -2218,15 +2218,13 @@ void AZ_sum_bdry(double x[], int data_org[], int proc_config[])
 
 {
   static int type = 0; /* avoid AZ_sys_msg_type bug */
-  int name, total, i, j, count=0, st, from, N_unpadded, N;
-  int p, nwords;
+  int name, total, i, j, count=0, st, from, N_unpadded;
+  int nwords;
   MPI_AZRequest request[AZ_MAX_NEIGHBORS];  /* Message handle */
   double *buffer;                    /* for incoming messages */
   N_unpadded = data_org[AZ_N_internal] + data_org[AZ_N_border];
-  N          = N_unpadded + data_org[AZ_N_external];
   name       = data_org[AZ_name];
   type       = (type += 1) % AZ_NUM_MSGS;
-  p          = proc_config[AZ_node];
 
   /* Send the external points to neighbors */
   total = 0;
