@@ -84,25 +84,35 @@ echo `uname -a` >>& $file
 ## if directory structure is like that of epetra.
 foreach f ( AztecSimple MultiLevelPreconditioner_NonSym MultiLevelPreconditioner_Sym MultiLevelPreconditioner_Maxwell )
 	cd $f
-	foreach g(*.exe)
-		echo "############" $g "##############" >>& ../$file
-		if( "$2" == "True" ) then
-		    mpirun -np 4 ./$g >>& ../$file
+    touch fakefile.exe
+    set exefiles = (*.exe)
+    # avoids problem of no executables in subdirectory
+    if ( ${exefiles} != 'fakefile.exe' ) then
+      rm -f fakefile.exe
+	  foreach g(*.exe)
+		  echo "############" $g "##############" >>& ../$file
+		  if( "$2" == "True" ) then
+		      mpirun -np 4 ./$g >>& ../$file
                     # run with 1 process		    
-		    if( $status != 0 ) then
-		    # A test failed.
-			set AnError = True
-			echo "  ******** Test w/ 4 proc failed ********" >>& ../$file
-			echo "Errors for script " $g " are listed above." >>& ../$file2
-		    else
-		    # Tests passed
-			echo "******** Test w/ 4 proc passed ********" >>& ../$file
-		    endif
-		else
-		# This is not an automated test.
+		      if( $status != 0 ) then
+		        # A test failed.
+			    set AnError = True
+			    echo "  ******** Test w/ 4 proc failed ********" >>& ../$file
+			    echo "Errors for script " $g " are listed above." >>& ../$file2
+		      else
+		        # Tests passed
+			    echo "******** Test w/ 4 proc passed ********" >>& ../$file
+		      endif
+		  else
+		    # This is not an automated test.
 		    ./$g -v >>& ../$file
-		endif
-	end
+		  endif
+	  end
+    else
+      echo "******** Test w/ 4 proc did not run, no executable found ********" >>& ../$file
+      echo "******** Perhaps a package the test depends on didn't build? ****" >>& ../$file
+      rm -f fakefile.exe
+    endif
 	cd ..
 end
 
