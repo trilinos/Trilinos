@@ -1,0 +1,25 @@
+/* src/NOX_Config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if you have the `m' library (-lm). */
+#undef HAVE_LIBM
+
+/* define if the compiler supports the mutable keyword */
+#undef HAVE_MUTABLE
+
+/* define if the compiler implements namespaces */
+#undef HAVE_NAMESPACES
+
+/* Define if you have the `pow' function. */
+#undef HAVE_POW
+
+/* define if the compiler supports ISO C++ standard library */
+#undef HAVE_STD
+
+/* define if the compiler supports Standard Template Library */
+#undef HAVE_STL
+
+/* Name of package */
+#undef PACKAGE
+
+/* Version number of package */
+#undef VERSION
