@@ -109,7 +109,7 @@ double ML_gdot_H2(ML_Operator *Amat, double *vec1, double *vec2)
 
 double ML_GetSmoothingConst(ML_Operator *Amat, double *err_h, ML_Smoother *sm)
 {
-   double alpha, eH1norm, eH2norm, smerrH1norm, *rhs, *sm_err;
+   double alpha, eH1norm, eH2norm, smerrH1norm, *sm_err;
    int ntimes;
 
    /* Calculate ||e||^2_H1 and ||e||^2_H2. */
