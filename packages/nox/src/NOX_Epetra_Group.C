@@ -298,6 +298,20 @@ bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) co
   // Put a copy of the diagonal of the Jacobian into tmpVector
   int retcode = Jacobian.ExtractDiagonalCopy(tmpVector);
   
+  // Take element-wise absolute value of diagonal vector
+  retcode = tmpVector.Abs(tmpVector);
+  
+  // Check minimum absolute value of diagonal vector
+  double minAbsValue = 0;
+  retcode = tmpVector.MinValue(&minAbsValue);
+
+  if(minAbsValue <= 1.e-6) // This minimum threshold can be adjusted
+  {
+    cout << "Poor scaling on Jacobian diagonal (min abs value: " <<
+             minAbsValue << " ) --> NO nonlinear Preconditioning !!" << endl;
+    return false; 
+  }
+  
   // Check if ExtractDiagonalCopy is supported
   if (retcode != 0)
     return false;
