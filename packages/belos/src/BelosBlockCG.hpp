@@ -424,7 +424,7 @@ void BlockCG<TYPE>::Solve (bool vb) {
 	Anasazi::MultiVec<TYPE> *precond_resid=0, *cur_sol=0;
 	TYPE * ptr_T1 = 0;
 	TYPE * ptr_T2 = 0;
-	TYPE * cur_resid_norms = new TYPE[cur_blksz]; assert(cur_resid_norms!=NULL);
+	TYPE * cur_resid_norms = new TYPE[_blocksize]; assert(cur_resid_norms!=NULL);
 	TYPE * init_resid_norms= new TYPE[_blocksize]; assert(init_resid_norms!=NULL);
 	int *index1 = new int[_numrhs + _blocksize]; assert(index1!=NULL);
        int *index2 = new int[_numrhs + _blocksize]; assert(index2!=NULL);
