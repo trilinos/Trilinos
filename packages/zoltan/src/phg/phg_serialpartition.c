@@ -76,7 +76,18 @@ PHGraph *shg;                  /* Serial hypergraph gathered from phg */
 int *spart = NULL;             /* Partition vector for shg. */
 int i, si;
 
-return hgp->CoarsePartition(zz, phg, numPart, part, hgp);
+ 
+/* take care of all special cases first */
+ if (numPart == 1) {            /* everything goes in the one partition */
+     for (i =  0; i < phg->nVtx; i++)
+         part[i] = 0;
+ }
+ else if (numPart >= phg->dist_x[phg->comm->nProc_x]) { /* more partitions than vertices, trivial answer */
+     for (i = 0; i < phg->nVtx; i++)
+         part[i] = phg->dist_x[phg->comm->myProc_x]+i;
+ }
+ else
+     return hgp->CoarsePartition(zz, phg, numPart, part, hgp);
   
 #ifdef KDDKDD_NOT_READY_YET
   /* 
