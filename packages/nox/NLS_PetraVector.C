@@ -18,13 +18,11 @@ NLS_PetraVector::NLS_PetraVector(const Epetra_Vector& copyFrom, ConstructorType 
   case DeepCopy:		// default behavior
 
     petraVec = new Epetra_Vector(copyFrom); 
-    doDeletePetraVec = true;	
     break;
 
   case CopyShape:
 
     petraVec = new Epetra_Vector(copyFrom.Map()); 
-    doDeletePetraVec = true;
     break;  
 
   }
@@ -32,32 +30,17 @@ NLS_PetraVector::NLS_PetraVector(const Epetra_Vector& copyFrom, ConstructorType 
 
 NLS_PetraVector::~NLS_PetraVector()
 {
-  // delete this if it was created by a deep copy
-  if (doDeletePetraVec)
-    delete petraVec;
-
-  // regardless, set the pointer to NULL
-  petraVec = NULL;
+  delete petraVec;
 }
 
 NLS_Vector& NLS_PetraVector::operator=(const NLS_Vector& copyFrom)
 {
-  throw;
+  return operator=(dynamic_cast<const NLS_PetraVector&>(copyFrom));
 }
 
 NLS_PetraVector& NLS_PetraVector::operator=(const NLS_PetraVector& copyFrom)
 {
-  if (petraVec == NULL) {
-    // If petraVec is empty, fill it...
-    petraVec = new Epetra_Vector(copyFrom.getPetraVector()); // deep copy
-    doDeletePetraVec = true;
-  }
-
-  else {
-    // Otherwise, copy into existing petraVec
-    petraVec->Update(1.0, copyFrom.getPetraVector(), 0.0);
-  }
-  
+  petraVec->Scale(1.0, copyFrom.getPetraVector());
   return *this;
 }
 
@@ -79,55 +62,12 @@ NLS_Vector& NLS_PetraVector::init(double value)
 
 NLS_Vector& NLS_PetraVector::abs(const NLS_Vector& base)
 {
-  throw; 
+  return abs(dynamic_cast<const NLS_PetraVector&>(base));
 }
 
 NLS_Vector& NLS_PetraVector::abs(const NLS_PetraVector& base)
 {
   petraVec->Abs(base.getPetraVector());
-  return *this;
-}
-
-NLS_Vector& NLS_PetraVector::copy(const NLS_Vector& y, double scale) 
-{
-  throw;
-}
-
-NLS_Vector& NLS_PetraVector::copy(const NLS_PetraVector& y, double scale)
-{
-  petraVec->Update(scale, y.getPetraVector(), 0.0);
-  return *this;
-}
-
-NLS_Vector& NLS_PetraVector::update(const NLS_Vector& x, double alpha, 
-				    const NLS_Vector& y, double beta,
-				    double gamma)
-{
-  cout << "ERROR: NLS_PetraVector::update - must pass specific NLS_Vector class!" << endl;
-  throw;
-}
-
-NLS_Vector& NLS_PetraVector::update(const NLS_PetraVector& x, double alpha, 
-				    const NLS_PetraVector& y, double beta,
-				    double gamma)
-{
-  petraVec->Update(alpha, x.getPetraVector(), beta, y.getPetraVector(), gamma);
-  return *this;
-}
-
-NLS_Vector& NLS_PetraVector::update(const NLS_Vector& x, const NLS_Vector& d, double step)
-{
-  petraVec->Update(1.0, 
-		   dynamic_cast<const NLS_PetraVector&>(x).getPetraVector(), 
-		   step, 
-		   dynamic_cast<const NLS_PetraVector&>(d).getPetraVector(), 
-		   0.0);
-  return *this;
-}
-
-NLS_Vector& NLS_PetraVector::update(const NLS_PetraVector& x, const NLS_PetraVector& d, double step)
-{
-  petraVec->Update(1.0, x.getPetraVector(), step, d.getPetraVector(), 0.0);
   return *this;
 }
 
@@ -137,48 +77,85 @@ NLS_Vector& NLS_PetraVector::scale(double alpha)
   return *this;
 }
 
+NLS_Vector& NLS_PetraVector::update(double alpha, const NLS_Vector& a, 
+				    double gamma)
+{
+  return update(alpha, dynamic_cast<const NLS_PetraVector&>(a), gamma);
+}
+
+NLS_Vector& NLS_PetraVector::update(double alpha, const NLS_PetraVector& a, 
+				    double gamma)
+{
+  petraVec->Update(alpha, a.getPetraVector(), gamma);
+  return *this;
+}
+
+NLS_Vector& NLS_PetraVector::update(double alpha, const NLS_Vector& a, 
+				    double beta, const NLS_Vector& b,
+				    double gamma)
+{
+  return update(alpha, dynamic_cast<const NLS_PetraVector&>(a), 
+		beta, dynamic_cast<const NLS_PetraVector&>(b), gamma);
+}
+
+NLS_Vector& NLS_PetraVector::update(double alpha, const NLS_PetraVector& a, 
+			     double beta, const NLS_PetraVector& b,
+				    double gamma)
+{
+  petraVec->Update(alpha, a.getPetraVector(), beta, b.getPetraVector(), gamma);
+  return *this;
+}
+
+
 NLS_Vector* NLS_PetraVector::newcopy() const
 {
   NLS_PetraVector* newVec = new NLS_PetraVector(*petraVec);
   return newVec;
 }
 
-double NLS_PetraVector::infnorm() const
+double NLS_PetraVector::norm(NLS_Vector::NormType type) const
 {
-  double norm;
-  petraVec->NormInf(&norm);
-  return norm;
+  double n;
+  switch (type) {
+  case INF:
+    petraVec->NormInf(&n);
+    break;
+  case ONE:
+    petraVec->Norm1(&n);
+    break;
+  case TWO:
+  default:
+   petraVec->Norm2(&n);
+   break;
+  }
+  return n;
 }
 
-double NLS_PetraVector::onenorm() const
+double NLS_PetraVector::norm(const NLS_Vector& weights, NLS_Vector::NormType type) const
 {
-  double norm;
-  petraVec->Norm1(&norm);
-  return norm;
+  return norm(dynamic_cast<const NLS_PetraVector&>(weights), type);
 }
 
-double NLS_PetraVector::norm() const
+double  NLS_PetraVector::norm(const NLS_PetraVector& weights, NLS_Vector::NormType type) const
 {
-  double norm;
-  petraVec->Norm2(&norm);
-  return norm;
-}
-
-double NLS_PetraVector::norm(const NLS_Vector& weights) const
-{
-  throw;
-}
-
-double NLS_PetraVector::norm(const NLS_PetraVector& weights) const
-{
-  double norm;
-  petraVec->NormWeighted(weights.getPetraVector(), &norm);
-  return norm;
+  double n;
+  switch (type) {
+  case INF:
+  case ONE:
+    cerr << "Norm type not supported for weighted norm" << endl;
+    throw;
+    break;
+  case TWO:
+  default:
+    petraVec->NormWeighted(weights.getPetraVector(), &n);
+    break;
+  }
+  return n;
 }
 
 double NLS_PetraVector::dot(const NLS_Vector& y) const
 {
-  throw;
+  return dot(dynamic_cast<const NLS_PetraVector&>(y));
 }
 
 double NLS_PetraVector::dot(const NLS_PetraVector& y) const

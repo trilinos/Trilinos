@@ -62,7 +62,7 @@ public:
 
   //! Compute and return norm of predicted RHS for given update vector.
   //! Throws an error if RHS and Jacobian have not been computed.
-  virtual double computeNormPredictedRHS(const NLS_Vector& update) = 0;
+  virtual double computeNormPredictedRHS(const NLS_Vector& d, double step = 1.0) = 0;
 
   //@}
 

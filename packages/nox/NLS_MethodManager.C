@@ -63,17 +63,17 @@ void NLS_MethodManager::resetParameters(NLS_ParameterList& p)
   ptr->resetParameters(p);
 }
 
-bool NLS_MethodManager::isConverged()
+NLS_Method::STATUS NLS_MethodManager::isConverged()
 {
   return ptr->isConverged();
 }
 
-int NLS_MethodManager::iterate()
+NLS_Method::STATUS NLS_MethodManager::iterate()
 {
   return ptr->iterate();
 }
 
-int NLS_MethodManager::solve()
+NLS_Method::STATUS NLS_MethodManager::solve()
 {
   return ptr->solve();
 }

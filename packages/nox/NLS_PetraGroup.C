@@ -109,7 +109,7 @@ const NLS_Vector& NLS_PetraGroup::computeX(const NLS_PetraGroup& grp, const NLS_
 					   double step) 
 {
   resetIsValid();
-  xVector.update(grp.xVector, d, step);
+  xVector.update(1.0, grp.xVector, step, d);
   return xVector;
 }
 
@@ -167,13 +167,6 @@ const NLS_Vector& NLS_PetraGroup::computeGrad()
 
   // Return result
   return gradVector;
-}
-
-const NLS_Vector& NLS_PetraGroup::computeNewton() 
-{
-  cout << "ERROR: No direct methods are avialable for linear solves yet!\n"
-       << "Use the iterative solver call!" << endl;
-  throw;
 }
 
 //! Compute and return Newton direction, using desired accuracy for nonlinear solve
@@ -236,7 +229,7 @@ const NLS_Vector& NLS_PetraGroup::computeNewton(NLS_ParameterList& p)
   return NewtonVector;
 }
 
-double NLS_PetraGroup::computeNormPredictedRHS(const NLS_Vector& s) 
+double NLS_PetraGroup::computeNormPredictedRHS(const NLS_Vector& dvec, double step) 
 {  
   if (!isRHS()) {
     cout << "ERROR: computePredictedRHSNorm() - RHS is out of date wrt X!" << endl;
@@ -248,7 +241,7 @@ double NLS_PetraGroup::computeNormPredictedRHS(const NLS_Vector& s)
   }
   
   // Cast s to a const NLS_PetraVector
-  const NLS_PetraVector& petras = dynamic_cast <const NLS_PetraVector&> (s);
+  const NLS_PetraVector& d = dynamic_cast <const NLS_PetraVector&> (dvec);
 
   // Create a new vector to be the predicted RHS
   NLS_PetraVector v(RHSVector.getPetraVector(), NLS_PetraVector::CopyShape);
@@ -256,12 +249,12 @@ double NLS_PetraGroup::computeNormPredictedRHS(const NLS_Vector& s)
   // Get a reference to the Jacobian (it's validity was check above)
   const Epetra_RowMatrix& Jacobian = sharedJacobian.getJacobian();
 
-  // Compute v = Jacobian * petras
+  // Compute v = Jacobian * d
   bool NoTranspose = false;
-  Jacobian.Multiply(NoTranspose, petras.getPetraVector(), v.getPetraVector());
+  Jacobian.Multiply(NoTranspose, d.getPetraVector(), v.getPetraVector());
 
-  // Compute v = RHSVector + v (this is the predicted RHS)
-  v.update(RHSVector, v, 1.0);
+  // Compute v = RHSVector + step * v (this is the predicted RHS)
+  v.update(1.0, RHSVector, step);
 
   // Return norm of predicted RHS
   return v.norm();

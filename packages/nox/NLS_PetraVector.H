@@ -21,6 +21,7 @@ class NLS_PetraVector : public NLS_Vector {
 
  public:			
 
+  //! Constructor type 
   enum ConstructorType { DeepCopy, CopyShape };
 
   //! Construct an NLS_PetraVector by copying map and/or elements of
@@ -28,63 +29,84 @@ class NLS_PetraVector : public NLS_Vector {
   NLS_PetraVector(const Epetra_Vector& copyFrom, ConstructorType type = DeepCopy);
 
   //! Deconstruct NLS_PetraVector
-  /*! The memory for the actual Epetra_Vector should only be
-      deleted if this object created that memory itself. */
   ~NLS_PetraVector();
 
-  //! Deep copy operator. Copies both the vector and its map.
-  NLS_Vector& operator=(const NLS_Vector& copyFrom);
-
-  //! Deep copy operator. Copies both the vector and its map.
-  NLS_PetraVector& operator=(const NLS_PetraVector& copyFrom);
+  //@{ \name Get underlying Petra vector
 
   //! Returns the underlying vector that NLS wraps (EPetra_Vector).  
-  Epetra_Vector& getPetraVector();
+  virtual Epetra_Vector& getPetraVector();
 
   //! Returns the underlying vector that NLS wraps (EPetra_Vector).  
-  const Epetra_Vector& getPetraVector() const;
+  virtual const Epetra_Vector& getPetraVector() const;
  
-  NLS_Vector& init(double value);
+  //@}
+
+  //@{ \name  Value initialization methods  
+
+  virtual NLS_Vector& init(double value);
+
+  //@}
+
+  //@{ \name Vector initialization methods
+
+  virtual NLS_Vector& operator=(const NLS_Vector& copyFrom);
+
+  //! See above
+  virtual NLS_PetraVector& operator=(const NLS_PetraVector& copyFrom);
 
   virtual NLS_Vector& abs(const NLS_Vector& y);
 
-  //! See above for definition
+  //! See above 
   virtual NLS_Vector& abs(const NLS_PetraVector& y);
 
-  virtual NLS_Vector& copy(const NLS_Vector& y, double scale = 1.0);
+  //@}
 
-  //! See above for definition
-  virtual NLS_Vector& copy(const NLS_PetraVector& y, double scale = 1.0);
+  //@{ \name Update methods
 
-  virtual NLS_Vector& update(const NLS_Vector& x, double alpha, const NLS_Vector& y, double beta, double gamma);
+  virtual NLS_Vector& scale(double gamma);
 
-  //! See above for definition.
-  virtual NLS_Vector& update(const NLS_PetraVector& x, double alpha, const NLS_PetraVector& y, double beta, double gamma);
+  virtual NLS_Vector& update(double alpha, const NLS_Vector& a, 
+			     double gamma = 0.0);
 
-  virtual NLS_Vector& update(const NLS_Vector& x, const NLS_Vector& d, double step);
+  virtual NLS_Vector& update(double alpha, const NLS_PetraVector& a, 
+			     double gamma = 0.0);
 
-  //! See above for definition.
-  virtual NLS_Vector& update(const NLS_PetraVector& x, const NLS_PetraVector& d, double step);
+  virtual NLS_Vector& update(double alpha, const NLS_Vector& a, 
+			     double beta, const NLS_Vector& b,
+			     double gamma = 0.0);
 
-  NLS_Vector& scale(double alpha);
+  virtual NLS_Vector& update(double alpha, const NLS_PetraVector& a, 
+			     double beta, const NLS_PetraVector& b,
+			     double gamma = 0.0);
+
+
+  //@}
+
+  //@{ \name Creating new NLS_Vectors 
 
   virtual NLS_Vector* newcopy() const;
 
-  double infnorm() const;
+  //@}
 
-  double onenorm() const;
-  
-  double norm() const;
+  //@{ \name Norms
 
-  double norm(const NLS_Vector& weights) const;
+  virtual double norm(NormType type = TWO) const;
 
-  //! Weighted 2-norm.  See above for definition.
-  double norm(const NLS_PetraVector& weights) const;
+  virtual double norm(const NLS_Vector& weights, NormType type = TWO) const;
+
+  //! See above
+  virtual double norm(const NLS_PetraVector& weights, NormType type = TWO) const;
+
+  //@}
+
+  //@{ \name Dot products
 
   double dot(const NLS_Vector& y) const;
 
   //! See above for definition.
   double dot(const NLS_PetraVector& y) const;
+
+  //@}
 
   //! Print Function
   void print() const;
@@ -95,10 +117,6 @@ class NLS_PetraVector : public NLS_Vector {
   
   //! Pointer to petra vector owned by this object
   Epetra_Vector* petraVec;		
-
-  //! True if we should delete x when this object is deconstructed.
-  bool doDeletePetraVec; 
-
 };
 
 

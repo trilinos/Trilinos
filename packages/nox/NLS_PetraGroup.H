@@ -62,7 +62,7 @@ public:
 
   virtual const NLS_Vector& computeNewton(NLS_ParameterList& params);
 
-  virtual double computeNormPredictedRHS(const NLS_Vector& update);  
+  virtual double computeNormPredictedRHS(const NLS_Vector& d, double step = 1.0);  
 
   //@}
 

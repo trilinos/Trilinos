@@ -17,11 +17,12 @@
 
 class NLS_Vector {
 
-private:
-
 public:
 
-  //! NLS_Vector constructor
+  //! Norm types
+  enum NormType {TWO, ONE, INF};
+
+  //! NLS_Vector constructor.
   NLS_Vector() {};
 
   //! NLS_Vector deconstructor
@@ -36,27 +37,26 @@ public:
 
   //@{ \name Vector initialization methods
 
-  //! Puts element-wise absolute values of input vector in target.
+  //! Puts element-wise absolute values of input vector in "this".
   virtual NLS_Vector& abs(const NLS_Vector& y) = 0;
 
-  //! Copies scaled version of y into "this"
-  virtual NLS_Vector& copy(const NLS_Vector& y, double scale = 1.0) = 0;
-
-  //! Operator= (should define or compiler will do it for us!)
+  //! Copies y into "this".
   virtual NLS_Vector& operator=(const NLS_Vector& y) = 0;
 
   //@}
 
   //@{ \name Update methods
 
-  //! Compute this = (alpha * x) + (beta * y) + (gamma * this)
-  virtual NLS_Vector& update(const NLS_Vector& x, double alpha, const NLS_Vector& y, double beta, double gamma) = 0;
+  //! this = gamma * this
+  virtual NLS_Vector& scale(double gamma) = 0;
 
-  //! Compute this = x + (step * d)
-  virtual NLS_Vector& update(const NLS_Vector& x, const NLS_Vector& d, double step) = 0;
+  //! this = (alpha * a) + (gamma * this) 
+  virtual NLS_Vector& update(double alpha, const NLS_Vector& a, double gamma = 0.0) = 0;
 
-  //! this = alpha * this
-  virtual NLS_Vector& scale(double alpha) = 0;
+  //! this = (alpha * a) + (beta * b) + (gamma * this)
+  virtual NLS_Vector& update(double alpha, const NLS_Vector& a, 
+			     double beta, const NLS_Vector& b,
+			     double gamma = 0.0) = 0;
 
   //@}
 
@@ -70,17 +70,11 @@ public:
 
   //@{ \name Norms
 
-  //! Infinity-norm. Compute max(|this|).
-  virtual double infnorm() const = 0;
+  //! Norm
+  virtual double norm(NormType type = TWO) const = 0;
 
-  //! 1-norm
-  virtual double onenorm() const = 0;
-
-  //! 2-norm
-  virtual double norm() const = 0;
-
-  //! Weighted 2-norm
-  virtual double norm(const NLS_Vector& weights) const = 0;
+  //! Weighted Norm
+  virtual double norm(const NLS_Vector& weights, NormType type = TWO) const = 0;
 
   //@}
 
