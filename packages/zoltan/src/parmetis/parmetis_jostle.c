@@ -237,16 +237,20 @@ static int pmv3method( char *alg)
 
 int Zoltan_ParMetis_Order(
   ZZ *zz,               /* Zoltan structure */
+  int num_obj,		/* Number of (local) objects to order. */
   ZOLTAN_ID_PTR gids,   /* List of global ids (local to this proc) */
                         /* The application must allocate enough space */
   ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
                         /* The application must allocate enough space */
   int *rank,		/* rank[i] is the rank of gids[i] */
   int *iperm,		/* inverse permutation of rank */
-  ZOOS *order_opt, 	/* Ordering options */
+  ZOOS *order_opt, 	/* Ordering options, parsed by Zoltan_Order */
   ZOS *order_info       /* Ordering info for this particular ordering */
 )
 {
+  static char *yo = "Zoltan_ParMetis_Order";
+  int n, ierr;
+
   if (!order_opt){
     /* If for some reason order_opt is NULL, allocate a new ZOOS here. */
     /* This should really never happen. */
@@ -254,13 +258,23 @@ int Zoltan_ParMetis_Order(
     strcpy(order_opt->method,"PARMETIS");
   }
 
-  /* If method = PARMETIS, replace with NODEND */
-  if (strcmp(order_opt->method,"PARMETIS")==0)
-    strcpy(order_opt->method,"NODEND");
-
   /* ParMetis only computes the rank vector */
   order_opt->return_args = RETURN_RANK;
 
+  /* Check that num_obj equals the number of objects on this proc. */
+  /* This constraint may be removed in the future. */
+  n = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
+  if ((ierr!= ZOLTAN_OK) && (ierr!= ZOLTAN_WARN)){
+    /* Return error code */
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Get_Num_Obj returned error.");
+    return(ZOLTAN_FATAL);
+  }
+  if (n != num_obj){
+    /* Currently this is a fatal error. */
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input num_obj does not equal the number of objects."); 
+    return(ZOLTAN_FATAL);
+  }
+   
   /* Call ParMetis_Shared */
   return Zoltan_ParMetis_Shared(zz, NULL, &gids, &lids, NULL,
          NULL, NULL, NULL, NULL, rank, iperm, order_opt, order_info);
@@ -571,7 +585,7 @@ static int Zoltan_ParMetis_Jostle(
   }
 
   num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
-  if (ierr){
+  if ((ierr!= ZOLTAN_OK) && (ierr!= ZOLTAN_WARN)){
     /* Return error code */
     ZOLTAN_PARMETIS_ERROR(ierr, "Get_Num_Obj returned error.");
   }

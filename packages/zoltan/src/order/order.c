@@ -42,6 +42,7 @@ int Zoltan_Order(
   ZZ *zz,               /* Zoltan structure */
   int *num_gid_entries, /* # of entries for a global id */
   int *num_lid_entries, /* # of entries for a local id */
+  int num_obj,		/* Number of objects to order */
   ZOLTAN_ID_PTR gids,   /* List of global ids (local to this proc) */
                         /* The application must allocate enough space */
   ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
@@ -150,9 +151,20 @@ int Zoltan_Order(
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_WARN);
   }
-  else if ((!strcmp(opt.method, "PARMETIS")) 
-            || (!strcmp(opt.method, "NODEND"))) {
+  else if (!strcmp(opt.method, "NODEND")) {
     Order_fn = Zoltan_ParMetis_Order;
+  }
+  else if (!strcmp(opt.method, "METIS")) {
+    Order_fn = Zoltan_ParMetis_Order;
+    /* Set ORDER_METHOD to NODEND and ORDER_TYPE to LOCAL */
+    strcpy(opt.method, "NODEND");
+    strcpy(opt.order_type, "LOCAL");
+  }
+  else if (!strcmp(opt.method, "PARMETIS")) {
+    Order_fn = Zoltan_ParMetis_Order;
+    /* Set ORDER_METHOD to NODEND and ORDER_TYPE to LOCAL */
+    strcpy(opt.method, "NODEND");
+    strcpy(opt.order_type, "GLOBAL");
   }
   else {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unknown ordering method");
@@ -177,7 +189,7 @@ int Zoltan_Order(
    * Call the actual ordering function.
    */
 
-  ierr = (*Order_fn)(zz, gids, lids, rank, iperm, &opt, order_info);
+  ierr = (*Order_fn)(zz, num_obj, gids, lids, rank, iperm, &opt, order_info);
 
   if (ierr) {
     sprintf(msg, "Ordering routine returned error code %d.", ierr);

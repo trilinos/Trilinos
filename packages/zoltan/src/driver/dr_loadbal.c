@@ -163,7 +163,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   int num_lid_entries;           /* Number of array entries in a local ID.   */
 
   int i;                         /* Loop index                               */
-  int *order;			/* Ordering vector */
+  int *order;			 /* Ordering vector(s) */
   ZOLTAN_ID_PTR order_gids = NULL;  /* List of all gids for ordering */
   ZOLTAN_ID_PTR order_lids = NULL;  /* List of all lids for ordering */
   double stime = 0.0, mytime = 0.0, maxtime = 0.0;
@@ -259,7 +259,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
 
     if (Zoltan_Order(zz, &num_gid_entries, &num_lid_entries,
-        order_gids, order_lids,
+        mesh->num_elems, order_gids, order_lids,
         order, &order[mesh->num_elems], NULL) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Order()\n");
       return 0;

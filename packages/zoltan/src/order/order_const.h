@@ -55,7 +55,7 @@ typedef struct Zoltan_Order_Options ZOOS;
  * ordering method or uses the ordering struct.
  */
 
-typedef int ZOLTAN_ORDER_FN(ZZ *, 
+typedef int ZOLTAN_ORDER_FN(ZZ *, int, 
                          ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, 
                          int *, int *, ZOOS *, ZOS *);
 
