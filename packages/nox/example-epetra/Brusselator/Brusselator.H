@@ -97,6 +97,7 @@ private:
   int NumProc;            // Total number of processes
 
   int NumSpecies;         // Number of unknowns owned by this process
+  enum { NUMSPECIES = 2}; // Needed for SGI build
   int NumMyNodes;         // Number of nodes owned by this process
   int NumGlobalNodes;     // Total Number of nodes
   int NumMyUnknowns;      // Number of unknowns owned by this process

@@ -24,6 +24,7 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm) :
   NumProc = Comm->NumProc();  // Total number of processes
 
   // Here we assume a 2-species Brusselator model, ie 2 dofs per node
+  // Note that this needs to be echoed in thew anonymous enum for NUMSPECIES.
   NumSpecies = 2;
   NumGlobalUnknowns = NumSpecies * NumGlobalNodes;
 
@@ -231,8 +232,8 @@ bool Brusselator::evaluate(FillType f,
   double beta = 2.0;
   double jac11, jac12, jac21, jac22;
   double xx[2];
-  double uu[2*NumSpecies];
-  double uuold[2*NumSpecies];
+  double uu[2*NUMSPECIES]; // Use of the anonymous enum is needed for SGI builds
+  double uuold[2*NUMSPECIES];
   Basis basis(NumSpecies);
 
   
