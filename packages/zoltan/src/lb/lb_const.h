@@ -87,9 +87,10 @@ struct Zoltan_part_info {
   float Size;          /*  Desired partition size. */
   int Part_id;         /*  Partition id.           */
   int Idx;             /*  Partition weight index. */
+  int Global_num;      /*  Global partition numbers? */
 };
 
-/* LB_struct. Contains all information about an LB "object" */
+/* LB_struct. Contains all information about a load balancing "object" */
 
 struct Zoltan_LB_Struct {
   int Part_Info_Len;              /*  Actual length of Part_Info arrays. */
@@ -233,8 +234,6 @@ extern int Zoltan_LB_Set_LB_Method(struct Zoltan_Struct *, char *);
 extern void Zoltan_LB_Free_Struct(struct Zoltan_LB_Struct *);
 extern int Zoltan_LB_Part_To_Proc(struct Zoltan_Struct *, int, ZOLTAN_ID_PTR);
 extern int Zoltan_LB_Proc_To_Part(struct Zoltan_Struct *, int, int *, int *);
-extern int Zoltan_LB_Set_Part_Sizes(struct Zoltan_Struct *, int, int,
-             int *, int *, float *);
 extern int Zoltan_LB_Get_Part_Sizes(struct Zoltan_Struct *, int, int, float *);
 
 /* PARTITIONING FUNCTIONS */
