@@ -50,7 +50,7 @@ ifdef NO_NEMESIS
 GDEFINES       += -DLB_NO_NEMESIS
 endif
 
-TARGET		= zdrive
+TARGET		= ../test/zdrive
 LIB_TARGET	= zoltan
 LIB_NAME	= libzoltan.a
 
@@ -71,9 +71,9 @@ PARMETISLIB_PATH = parmetis/ParMetis
 #   Paths to submodules
 #
 SUB_VPATH	= ../all ../lb ../par ../rcb ../comm ../oct ../driver ../ch \
-		  ../parmetis
+		  ../params ../parmetis
 SUBINCPATH	= -I../all -I../lb -I../par -I../rcb -I../comm -I../oct \
-		  -I../driver -I../ch -I../parmetis
+		  -I../params -I../driver -I../ch -I../parmetis
 
 #source code from SCCS projects
 
@@ -102,6 +102,10 @@ OCT_CSRC	= msg.c octant.c util.c octupdate.c dfs.c costs.c migoct.c \
 OCT_INC		= msg_const.h octant_const.h util_const.h octupdate_const.h \
 		  octupdate.h dfs_const.h dfs.h migoct_const.h \
 		  migreg.h hilbert_const.h
+
+PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c
+PARAMS_INC	= params_const.h
+
 
 COMM_CSRC	= comm.c
 COMM_INC	= comm.h
@@ -140,15 +144,15 @@ INC		= $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(PAR_INC) \
 		  $(RCB_INC) $(COMM_INC) $(OCT_INC) $(PARMETIS_INC)
 #LIB_SRC_C	= $(GR_CSRC) $(ID_CSRC) $(VX_CSRC) $(ALL_CSRC) 
 LIB_SRC_C	= $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) $(COMM_CSRC) \
-		  $(OCT_CSRC) $(PARMETIS_CSRC)
+		  $(OCT_CSRC) $(PARAMS_CSRC) $(PARMETIS_CSRC)
 LIB_SRC_OBJ	= $(LIB_SRC_C:.c=.o) 
 
 #
 # lint defines
 #
-#LINT		= alint # SunOs4
-LINT		= lint
-LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb \
+LINT		= alint # SunOs4
+#LINT		= lint
+LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams\
 		  -Icomm -Ioct -Iparmetis \
 		  -I/Net/local/lang/SC3.0.1/include \
 		  -I/Net/local/lang/SC3.0.1/ansi_include \
@@ -158,7 +162,7 @@ LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb \
 		  -I/Net/pecos/rf_crew/arch/sun/include
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 LINT_TARGET	= llib-l$(LIB_TARGET).ln
-SUBDIRS		= driver ch all lb par rcb comm oct parmetis
+SUBDIRS		= driver ch all lb par rcb comm oct parmetis params
 VPATH		= $(SUBDIRS)
 
 ##############################################################################
@@ -516,7 +520,7 @@ default:
 
 $(LINT_TARGET): $(LIB_SRC_C)
 	@echo "Generating lint file for library..."
-	$(LINT) $(LINT_FLAGS) $? -y -o $(LIB_TARGET)
+	$(LINT) $(LINT_FLAGS) $? -o $(LIB_TARGET)
 
 lint: $(DR_CSRC) $(CH_CSRC) $(LINT_TARGET)
 	@echo "running lint..."
