@@ -20,6 +20,9 @@ extern "C" {
 
 #include "zz_const.h"
 #include <limits.h>
+#ifndef FLOAT_MAX
+#define FLOAT_MAX (1e38)
+#endif
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -80,6 +83,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   char msg[256];
   /* Arrays for partition data. */
   int *nobj_arr, *cut_arr, *bndry_arr, *nadj_arr, *all_arr, *part_count;
+  float *vwgt_arr, *ewgt_arr;
   
   
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -91,14 +95,11 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   global_ids = NULL;
   local_ids = NULL;
   part = NULL;
-  tmp_vwgt = NULL;
-  tmp_cutwgt = NULL;
-  vwgts = NULL;
-  ewgts = NULL;
-  nbors_global = NULL;
-  nbors_proc = NULL;
+  tmp_vwgt = tmp_cutwgt = NULL;
+  vwgts = ewgts = NULL;
+  nbors_global = nbors_proc = NULL;
   proc_count = part_count = NULL;
-
+  vwgt_arr = ewgt_arr = NULL;
   nobj_arr = cut_arr = bndry_arr = nadj_arr = all_arr = NULL;
 
   ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, 
@@ -118,7 +119,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   if (compute_part){
     /* Allocate space. */
     all_arr = (int *)  ZOLTAN_CALLOC((NUM_STATS+1)*nparts, sizeof(int));
-    if (!all_arr){
+    vwgt_arr = (float *) ZOLTAN_CALLOC(nparts*zz->Obj_Weight_Dim, sizeof(float));
+    if (!all_arr || (zz->Obj_Weight_Dim && !vwgt_arr)){
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
@@ -136,16 +138,17 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
   /* Compute object weight sums */
   if (zz->Obj_Weight_Dim>0){
-    tmp_vwgt = (float *) ZOLTAN_MALLOC(4*zz->Obj_Weight_Dim * sizeof(float));
+    tmp_vwgt = (float *) ZOLTAN_CALLOC(6*zz->Obj_Weight_Dim,  sizeof(float));
     if (!tmp_vwgt){
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
-    for (j=0; j<zz->Obj_Weight_Dim; j++)
-      tmp_vwgt[j] = 0;
     for (i=0; i<num_obj; i++){
       for (j=0; j<zz->Obj_Weight_Dim; j++){
         tmp_vwgt[j] += vwgts[i*zz->Obj_Weight_Dim+j];
+        if (compute_part)
+          vwgt_arr[part[i]*zz->Obj_Weight_Dim+j] += 
+                   vwgts[i*zz->Obj_Weight_Dim+j];
       }
     }
   }
@@ -233,15 +236,18 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
           proc_count[nbors_proc[j]]++;
         }
         if (compute_part){
-          p = zz->Get_Partition(zz->Get_Partition_Data,
+          if (nbors_proc[j] == zz->Proc)
+            p = zz->Get_Partition(zz->Get_Partition_Data,
                     num_gid_entries, 0,
                     &(nbors_global[j*num_gid_entries]), NULL, &ierr);
-          if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+          else
+            p = -1;
+          if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)) {
             ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                                "Error returned from ZOLTAN_PARTITION_FN");
             goto End;
           }
-          if ((nbors_proc[j] != zz->Proc) || (p != part[k])){
+          if (p != part[k]){
             cut_arr[part[k]]++;
             /* part_count[nbors_proc[j]]++; */
           }
@@ -307,8 +313,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
               : 1.));
  
       for (i=0; i<zz->Obj_Weight_Dim; i++){
-        printf("%s  Object weight #%1d :  %8.3g %8.3g %8.3g  %5.3f\n",
-          yo, i+1, tmp_vwgt[imin*zz->Obj_Weight_Dim+i], 
+        printf("%s  Object weight #%1d :  %7.3g %7.3g %7.3g  %5.3f\n",
+          yo, i, tmp_vwgt[imin*zz->Obj_Weight_Dim+i], 
           tmp_vwgt[imax*zz->Obj_Weight_Dim+i], 
           tmp_vwgt[isum*zz->Obj_Weight_Dim+i], 
           (tmp_vwgt[isum*zz->Obj_Weight_Dim+i] > 0 
@@ -367,9 +373,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   }
 
 
-  if (compute_part){
+  if (compute_part && print_stats){
     /* Compute statistics w.r.t. partitions. */
-    /* Assume for now that each partition is WHOLLY CONTAINED WITHIN A PROC. */
+    /* Assume that each partition is WHOLLY CONTAINED WITHIN A PROC. */
 
     /* Find local min, max, sum. */
     for (i=0; i<6*NUM_STATS; i++)
@@ -377,13 +383,16 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     for (i=0; i<NUM_STATS; i++)
       stats[i] = INT_MAX; /* set min to very large number */
  
-    for (j=0; j<NUM_STATS; j++){
-      for (i=0; i<nparts; i++){
-        if (all_arr[j*nparts+i] < stats[j])           /* min */
-          stats[j] = all_arr[j*nparts+i];
-        if (all_arr[j*nparts+i] > stats[NUM_STATS+j]) /* max */
-          stats[NUM_STATS+j] = all_arr[j*nparts+i];
-        stats[2*NUM_STATS+j] += all_arr[j*nparts+i];  /* sum */
+    for (i=0; i<nparts; i++){
+      if ((zz->LB.PartDist == NULL) || 
+          (Zoltan_LB_Part_To_Proc(zz, i) == zz->Proc)){
+        for (j=0; j<NUM_STATS; j++){
+          if (all_arr[j*nparts+i] < stats[j])           /* min */
+            stats[j] = all_arr[j*nparts+i];
+          if (all_arr[j*nparts+i] > stats[NUM_STATS+j]) /* max */
+            stats[NUM_STATS+j] = all_arr[j*nparts+i];
+          stats[2*NUM_STATS+j] += all_arr[j*nparts+i];  /* sum */
+        }
       }
     }
 
@@ -398,6 +407,36 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     MPI_Allreduce(&stats[2*NUM_STATS], &stats[isum*NUM_STATS], NUM_STATS, 
                   MPI_INT, MPI_SUM, zz->Communicator);
 
+    /* Local and global reduction for object weights. */
+    if (zz->Obj_Weight_Dim>0){
+      for (i=0; i<zz->Obj_Weight_Dim; i++)
+        tmp_vwgt[i] = FLOAT_MAX; /*min */
+      for (i=zz->Obj_Weight_Dim; i<6*zz->Obj_Weight_Dim; i++)
+        tmp_vwgt[i] = 0; /* max and sum */
+      for (j=0; j<nparts; j++){
+        if ((zz->LB.PartDist == NULL) ||
+            (Zoltan_LB_Part_To_Proc(zz, j) == zz->Proc)){
+          for (i=0; i<zz->Obj_Weight_Dim; i++){
+            if (vwgt_arr[j*zz->Obj_Weight_Dim+i] < tmp_vwgt[i]) 
+              tmp_vwgt[i] = vwgt_arr[j*zz->Obj_Weight_Dim+i];
+            if (vwgt_arr[j*zz->Obj_Weight_Dim+i] > tmp_vwgt[zz->Obj_Weight_Dim+i]) 
+              tmp_vwgt[zz->Obj_Weight_Dim+i] = vwgt_arr[j*zz->Obj_Weight_Dim+i];
+            tmp_vwgt[2*zz->Obj_Weight_Dim+i] += vwgt_arr[j*zz->Obj_Weight_Dim+i]; 
+          }
+        }
+      }
+
+      
+      MPI_Allreduce(tmp_vwgt, &tmp_vwgt[imin*zz->Obj_Weight_Dim], 
+                    zz->Obj_Weight_Dim, MPI_FLOAT, MPI_MIN, zz->Communicator);
+      MPI_Allreduce(&tmp_vwgt[zz->Obj_Weight_Dim], 
+                    &tmp_vwgt[imax*zz->Obj_Weight_Dim], 
+                    zz->Obj_Weight_Dim, MPI_FLOAT, MPI_MAX, zz->Communicator);
+      MPI_Allreduce(&tmp_vwgt[2*zz->Obj_Weight_Dim], 
+                    &tmp_vwgt[isum*zz->Obj_Weight_Dim], 
+                    zz->Obj_Weight_Dim, MPI_FLOAT, MPI_SUM, zz->Communicator);
+    }
+
     /* Print min-max-sum of results */
     if (zz->Proc == zz->Debug_Proc){
       printf("\n%s  Statistics with respect to partitions: \n", yo);
@@ -410,17 +449,19 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
               ? stats[imax*NUM_STATS]*nparts/ (float) stats[isum*NUM_STATS]
               : 1.));
  
-/*
-      EBEB: Not Yet Implemeted!
       for (i=0; i<zz->Obj_Weight_Dim; i++){
-        printf("%s  Object weight #%1d :  %8.3g %8.3g %8.3g  %5.3f\n",
-          yo, i+1, tmp_vwgt[1*zz->Obj_Weight_Dim+i], 
-          tmp_vwgt[2*zz->Obj_Weight_Dim+i], 
-          tmp_vwgt[3*zz->Obj_Weight_Dim+i], 
-          (tmp_vwgt[3*zz->Obj_Weight_Dim+i] > 0 
-           ? tmp_vwgt[2*zz->Obj_Weight_Dim+i]*nparts/tmp_vwgt[3*zz->Obj_Weight_Dim+i]
+        printf("%s  Object weight #%1d :  %7.3g %7.3g %7.3g  %5.3f\n",
+          yo, i, tmp_vwgt[imin*zz->Obj_Weight_Dim+i], 
+          tmp_vwgt[imax*zz->Obj_Weight_Dim+i], 
+          tmp_vwgt[isum*zz->Obj_Weight_Dim+i], 
+          (tmp_vwgt[isum*zz->Obj_Weight_Dim+i] > 0 
+           ? tmp_vwgt[imax*zz->Obj_Weight_Dim+i]*nparts/
+             tmp_vwgt[isum*zz->Obj_Weight_Dim+i]
            : 1.));
       }
+
+/*
+      EBEB: Weighted cuts Not Yet Implemeted!
 
       if (zz->Get_Num_Edges && zz->Get_Edge_List){
         for (i=0; i<zz->Edge_Weight_Dim; i++){
@@ -473,6 +514,8 @@ End:
   ZOLTAN_FREE(&nbors_global);
   ZOLTAN_FREE(&nbors_proc);
   ZOLTAN_FREE(&proc_count);
+  ZOLTAN_FREE(&vwgt_arr);
+  ZOLTAN_FREE(&ewgt_arr);
   ZOLTAN_TRACE_EXIT(zz, yo);
 
   return ierr;
