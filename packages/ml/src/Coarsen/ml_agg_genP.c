@@ -2230,6 +2230,23 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    if( ag->smoothP_damping_factor != 0.0 && ag->Restriction_smoothagg_transpose == ML_TRUE ) {
      
      fov = (struct ML_Field_Of_Values * )(ag->field_of_values);
+
+     /* compute box surrounding field-of-values */
+     
+     ML_Anasazi_Get_FiledOfValuesBox_Interface(Amat,fov);
+
+     if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+       printf("Field of Values Box (level %d) : Max Real = %e\n",
+	      level,
+	      fov->real_max );
+       printf("Field of Values Box (level %d) : Max Imag = %e\n",
+	      level,
+	      fov->imag_max );
+       printf("Field of Values Box (level %d) : eta = %e\n",
+	      level,
+	      fov->eta );
+     }
+     
      eta = fov->eta;
      dtemp = fov->R_coeff[0] + eta * fov->R_coeff[1] + pow(eta,2) * fov->R_coeff[2];
      ag->smoothP_damping_factor = dtemp;
