@@ -49,7 +49,7 @@
     ------ testSerialDense.py
     ------ testStatusTest.py
 
-****** Change -c swig option to -noruntime
+[Done] Change -c swig option to -noruntime
 
 ****** Re-wrap Epetra_Object.Print() method
 
