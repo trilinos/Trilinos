@@ -3,6 +3,7 @@
 --enable-amesos-klu
 --enable-anasazi
 --enable-loca
+--with-loca-anasazi
 --enable-tsf
 --disable-tsfcore
 --disable-tsfcoreutils
