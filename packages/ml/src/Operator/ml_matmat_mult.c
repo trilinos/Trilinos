@@ -131,6 +131,9 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 #endif
       current = current->sub_matrix;
    }
+#ifdef charles
+   printf("\n\n%d: Next_est = %d\n\n",Bmatrix->comm->ML_mypid,Next_est);
+#endif
 
    /* Estimate the total number of columns in Bmatrix. Actually,  */
    /* we need a crude estimate. We will use twice this number for */
@@ -356,10 +359,11 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    tcols = 0;
    hash_used = 0;
    for (i = 0; i < subB_Nnz; i++) {
-     if (hash_used >= index_length) {
+     if (hash_used >= ((int) (.75 * index_length)) ) {
 #ifdef charles
-       printf("%d: running out of hashing space %d %d\n",
-	      Bmatrix->comm->ML_mypid,tcols,index_length);
+       printf("%d: running out of hashing space: row = %d, tcols=%d"
+              " hash_length=%d, hash_used = %d\n",
+	          Bmatrix->comm->ML_mypid,i,tcols,index_length,hash_used);
        fflush(stdout);
 #endif
        ML_free(accum_index);
@@ -923,7 +927,7 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
 
 int ML_hash_it( int new_val, int hash_list[], int hash_length,int *hash_used) {
 
-  int index;
+  int index, origindex;
 
   index = new_val<<1;
   if (index < 0) index = new_val;
@@ -933,9 +937,16 @@ int ML_hash_it( int new_val, int hash_list[], int hash_length,int *hash_used) {
      index = (++index)%hash_length;
   }
   */
+  origindex = index;
   while ( hash_list[index] != new_val) {
     if (hash_list[index] == -1) { (*hash_used)++; break;}
     index = (++index)%hash_length;
+#ifdef charles
+    if (origindex == index)
+       fprintf(stderr,"ML_hash_it: looped around"
+       " original index = %d, new_val = %d, hash_length = %d, hash_used =
+       %d\n");
+#endif
   }
 
   return(index);
