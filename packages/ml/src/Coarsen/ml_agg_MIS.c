@@ -80,6 +80,7 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int     total_recv_leng = 0, total_send_leng = 0, offset, msgtype;
    int     aggr_count, index, mypid, num_PDE_eqns;
    int     *aggr_index = NULL, *itmp_array = NULL, nullspace_dim;
+   int     *dof_accounted_for = NULL;
    int     *sendlist_proc = NULL, Ncoarse, count, *int_buf = NULL;
    int     *int_buf2, *aggr_stat = NULL, procnum;
    int     index4, *new_send_leng = NULL, new_N_send;
@@ -158,7 +159,7 @@ int agg_offset, vertex_offset;
 
     /*= the following two lines are for the solution of elasticity
      problems on fine grid */
-  
+
    diff_level = ml_ag->max_levels - ml_ag->cur_level - 1;
    if ( diff_level > 0 ) num_PDE_eqns = nullspace_dim; /* ## 12/20/99 */
 
@@ -450,7 +451,7 @@ int agg_offset, vertex_offset;
    count = 0;
    for ( i = 0; i < N_neighbors; i++ ) {
      /*= build one big send list for A */
-     for (j = 0; j < send_leng[i]; j++)
+         for (j = 0; j < send_leng[i]; j++)
             send_list[count++] = 
                getrow_obj->pre_comm->neighbors[i].send_list[j];
    }
@@ -475,7 +476,7 @@ int agg_offset, vertex_offset;
       else {
          /* still get the rows to count nonzeros */
          ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-                           &rowi_N, 0);
+			   &rowi_N, 0);
       }
       total_nz += rowi_N;
    }
@@ -507,7 +508,7 @@ int agg_offset, vertex_offset;
    temp_leng  = (int *) ML_allocate(sizeof(int)*(N_neighbors+1));
 
     /*= update aggregate ghost nodes */
-  ML_aggr_index_communicate(N_neighbors, temp_leng, send_leng, recv_leng, send_list, 
+   ML_aggr_index_communicate(N_neighbors, temp_leng, send_leng, recv_leng, send_list, 
 			     recv_list, nvertices, comm, aggr_index, 1563, tem2_index, 
 			     neighbors, temp_index,1);
 
@@ -580,7 +581,7 @@ int agg_offset, vertex_offset;
    ML_free(bdry);
 
    /*= unamalgamate point matrices to block matrices */
-  for (i = exp_Nrows - 1; i >= 0; i-- ) {
+   for (i = exp_Nrows - 1; i >= 0; i-- ) {
       for (j = num_PDE_eqns-1; j >= 0; j--) {
          aggr_index[i*num_PDE_eqns+j] = aggr_index[i];
       }
@@ -627,11 +628,11 @@ int agg_offset, vertex_offset;
    printf("Read in %d aggregates\n\n",aggr_count);
 #endif /*ifdef ML_AGGR_INAGGR*/
 
-   /* I'm not sure if I need most of this 'if' code. I just took it from */
-   /* Charles ... but I guess that the majority of it is not needed.     */
+   /* We have to recompute the send and receive lists. In particular, */
+   /* we must assure that all degrees of freedom at a node point are  */
+   /* in the send and receive lists (not just those in Amat).         */
 
-   /*= recompute send/recv stuff for unamalgamanted matrix */
-  if ( num_PDE_eqns != 1 )
+   if ( num_PDE_eqns != 1 )
    {
       ML_memory_free((void**) &neighbors);
       ML_memory_free((void**) &recv_leng);
@@ -661,158 +662,90 @@ int agg_offset, vertex_offset;
       }
       total_recv_leng = 0;
       for ( i = 0; i < N_neighbors; i++ ) total_recv_leng += recv_leng[i];
-      total_send_leng = 0;
-      for ( i = 0; i < N_neighbors; i++ ) total_send_leng += send_leng[i];
-      nbytes = total_send_leng * num_PDE_eqns * sizeof( int );
+
+      /* fix the send lists so that all degree of freedom associated with a */
+      /* vertex in the original send_list is in the new send_list */
+
+      /* first we need to count things up */
+      nbytes = (Nrows + total_recv_leng*num_PDE_eqns) * sizeof( int );
+               /* This needs to be big enough to hold all the receives */
+      if ( nbytes > 0 ) ML_memory_alloc((void**) &dof_accounted_for,nbytes,"AGQ");
+
+      count3 = 0;
+      for ( i = 0; i < N_neighbors; i++ ) {
+         for ( j = 0; j < Nrows; j++ ) dof_accounted_for[j] = -1;
+         for (j = 0; j < send_leng[i]; j++) {
+            index3 = getrow_obj->pre_comm->neighbors[i].send_list[j];
+            k      = index3 / num_PDE_eqns;
+            index3 = k * num_PDE_eqns;
+            for (k = 0; k < num_PDE_eqns; k++) {
+               if ( dof_accounted_for[index3+k] < 0 ) 
+		 dof_accounted_for[index3+k] = count3++;
+	    }
+	 }
+      }
+      total_send_leng = count3;
+
+      count3 = 0;
+      for ( i = 0; i < N_neighbors; i++ ) {
+         for ( j = nvertices-1; j < nvertices + total_recv_leng*num_PDE_eqns; j++ ) 
+	   dof_accounted_for[j] = -1;
+         for (j = 0; j < recv_leng[i]; j++) {
+            index3 = getrow_obj->pre_comm->neighbors[i].rcv_list[j];
+            k      = index3 / num_PDE_eqns;
+            index3 = k * num_PDE_eqns;
+            for (k = 0; k < num_PDE_eqns; k++) {
+               if ( dof_accounted_for[index3+k] < 0 ) 
+		 dof_accounted_for[index3+k] = count3++;
+	    }
+	 }
+      }
+      total_recv_leng = count3;
+
+      nbytes = total_send_leng * sizeof( int );
       if ( nbytes > 0 ) ML_memory_alloc((void**) &send_list,nbytes,"AGO");
       else              send_list = NULL;
       nbytes = total_recv_leng * sizeof( int );
       if ( nbytes > 0 ) ML_memory_alloc((void**) &recv_list,nbytes,"AGP");
       else              recv_list = NULL;
 
-      /* ---------------------------------------------------------- */
-      /* set up true external indices to be shipped to receive      */
-      /* processors (true in view of that num_PDE_eqns can be > 1)  */
-      /* ---------------------------------------------------------- */
 
-      nbytes = Nrows * sizeof( int );
-      if ( nbytes > 0 ) ML_memory_alloc((void**) &itmp_array,nbytes,"AGQ");
-      count = 0;
-      for ( i = 0; i < N_neighbors; i++ )
-      {
-         for ( j = 0; j < Nrows; j++ ) itmp_array[j] = -1;
-         count3 = 0;
-         for (j = 0; j < send_leng[i]; j++)
-         {
+      count3 = 0;
+      for ( i = 0; i < N_neighbors; i++ ) {
+	count = count3;
+         for ( j = 0; j < Nrows; j++ ) dof_accounted_for[j] = -1;
+         for (j = 0; j < send_leng[i]; j++) {
             index3 = getrow_obj->pre_comm->neighbors[i].send_list[j];
-            index3 = index3 / num_PDE_eqns * num_PDE_eqns;
-            for (k = 0; k < num_PDE_eqns; k++)
-            {
-               if ( itmp_array[index3+k] < 0 )
-                  itmp_array[index3+k] = count3++;
-            }
-         }
-         for (j = 0; j < send_leng[i]; j++)
-         {
-            send_list[count+j] =
-               getrow_obj->pre_comm->neighbors[i].send_list[j];
-         }
-         for ( j = 0; j < send_leng[i]; j++ )
-         {
-            index = send_list[count+j];
-            if (itmp_array[index] >= 0) send_list[count+j] = itmp_array[index];
-         }
-         count += send_leng[i];
+            k      = index3 / num_PDE_eqns;
+            index3 = k * num_PDE_eqns;
+            for (k = 0; k < num_PDE_eqns; k++) {
+	      if ( dof_accounted_for[index3+k] < 0 ) {
+		send_list[count3] = index3 + k;
+		dof_accounted_for[index3+k] = count3++;
+	      }
+	    }
+	 }
+	 send_leng[i] = count3 - count;
       }
-      ML_memory_free((void**) &itmp_array);
-
-      /* ---------------------------------------------------------- */
-      /* send the adjusted indices to the receive processors        */
-      /* ---------------------------------------------------------- */
-
-      if ( N_neighbors > 0 )
-         request = (USR_REQ *) ML_allocate(N_neighbors*sizeof(USR_REQ));
-
-      offset = 0;
-      for (i = 0; i < N_neighbors; i++)
-      {
-         msgtype = 2000;
-         length = recv_leng[i] * sizeof( int );
-         procnum = neighbors[i];
-         comm->USR_irecvbytes((void *) &(recv_list[offset]),length,&procnum,
-                              &msgtype, comm->USR_comm, request+i);
-         offset += recv_leng[i];
+      count3 = 0;
+      for ( i = 0; i < N_neighbors; i++ ) {
+	count = count3;
+	for ( j = nvertices-1; j < nvertices + total_recv_leng*num_PDE_eqns; j++ ) 
+	  dof_accounted_for[j] = -1;
+         for (j = 0; j < recv_leng[i]; j++) {
+            index3 = getrow_obj->pre_comm->neighbors[i].rcv_list[j];
+            k      = index3 / num_PDE_eqns;
+            index3 = k * num_PDE_eqns;
+            for (k = 0; k < num_PDE_eqns; k++) {
+	      if ( dof_accounted_for[index3+k] < 0 ) {
+		recv_list[count3] = index3 + k;
+		dof_accounted_for[index3+k] = count3++;
+	      }
+	    }
+	 }
+	 recv_leng[i] = count3 - count;
       }
-      offset = 0;
-      for (i = 0; i < N_neighbors; i++)
-      {
-         msgtype = 2000;
-         length = send_leng[i] * sizeof( int );
-         procnum = neighbors[i];
-         comm->USR_sendbytes((void *) &(send_list[offset]),length,procnum,
-                              msgtype, comm->USR_comm);
-         offset += send_leng[i];
-      }
-      offset = 0;
-      for (i = 0; i < N_neighbors; i++)
-      {
-         msgtype = 2000;
-         length = recv_leng[i] * sizeof( int );
-         procnum = neighbors[i];
-         comm->USR_cheapwaitbytes((void *) &(recv_list[offset]),length,&procnum,
-                              &msgtype, comm->USR_comm, request+i);
-         for (j = 0; j < recv_leng[i]; j++) recv_list[offset+j] += offset;
-         offset += recv_leng[i];
-      }
-      if ( N_neighbors > 0 ) ML_free( request );
-
-      ML_memory_free((void**) &recv_list);
-
-      /* ---------------------------------------------------------- */
-      /* update the send_list and send_leng's in line with remap    */
-      /* ---------------------------------------------------------- */
-
-      nbytes = Nrows * sizeof( int );
-      if (nbytes > 0) ML_memory_alloc((void**) &itmp_array,nbytes,"AGR");
-      total_send_leng = 0;
-      for ( i = 0; i < N_neighbors; i++ )
-      {
-         count = 0;
-         for ( j = 0; j < Nrows; j++ ) itmp_array[j] = -1;
-         for (j = 0; j < send_leng[i]; j++)
-         {
-            index3 = getrow_obj->pre_comm->neighbors[i].send_list[j];
-            index3 = index3 / num_PDE_eqns * num_PDE_eqns;
-            for (k = 0; k < num_PDE_eqns; k++)
-               itmp_array[index3+k] = 0;
-         }
-         for ( j = 0; j < Nrows; j++ )
-         {
-            if ( itmp_array[j] == 0 ) send_list[total_send_leng+count++] = j;
-         }
-         send_leng[i] = count;
-         total_send_leng += count;
-      }
-      total_send_leng = 0;
-      for ( i = 0; i < N_neighbors; i++ ) total_send_leng += send_leng[i];
-
-      ML_memory_free((void**) &itmp_array);
-
-      /* ---------------------------------------------------------- */
-      /* update other processors with the new communication pattern */
-      /* ---------------------------------------------------------- */
-
-      if ( N_neighbors > 0 )
-         request = (USR_REQ *) ML_allocate(N_neighbors*sizeof(USR_REQ));
-
-      for (i = 0; i < N_neighbors; i++)
-      {
-         msgtype = 2002;
-         length = sizeof( int );
-         procnum = neighbors[i];
-         comm->USR_irecvbytes((void *) &(recv_leng[i]), length, &procnum,
-                              &msgtype, comm->USR_comm, request+i);
-      }
-      for (i = 0; i < N_neighbors; i++)
-      {
-         msgtype = 2002;
-         length = sizeof( int );
-         procnum = neighbors[i];
-         comm->USR_sendbytes((void *) &(send_leng[i]), length, procnum,
-                              msgtype, comm->USR_comm);
-      }
-      for (i = 0; i < N_neighbors; i++)
-      {
-         msgtype = 2002;
-         length = sizeof( int );
-         procnum = neighbors[i];
-         comm->USR_cheapwaitbytes((void *) &(recv_leng[i]), length, &procnum,
-                              &msgtype, comm->USR_comm, request+i);
-      }
-      if ( N_neighbors > 0 ) ML_free( request );
-
-      total_recv_leng = 0;
-      for (i = 0; i < N_neighbors; i++) total_recv_leng += recv_leng[i];
+      ML_memory_free((void**) &dof_accounted_for);
       exp_Nrows = Nrows + total_recv_leng;
    }
 
@@ -892,6 +825,39 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    /* update aggr_index to find out which local fine node is mapped */
    /* to which coarse aggregate in remote processors                */
    /* ------------------------------------------------------------- */
+
+/****************************************************************************
+*****************************************************************************
+
+We want to assign local ghost aggregate numbers to local nodes that are 
+within another processors aggregate. We also need to update communication 
+information so that it now corresponds to aggregates.
+
+Here is how we do all this:
+  1) int_buf2[.] corresponds to rcv_list[] and contains the local aggr_index[]
+     or -1 (if not assigned to any local aggregate).
+  2) int_buf corresponds to send_list[] and contains remote aggr_index[] or 
+     -1 (if not assigned to the corresponding remote processor). 'int_buf' is 
+     filled via  ML_Aggregate_ExchangeData().
+  3) for each neighbor ...
+       a) find largest remote aggregate index in int_buf
+       b) reallocate int_buf2 to hold largest remote index
+       c) compute int_buf2 such that int_buf2[i] = 
+          # of local nodes assigned to remote aggregate i.
+       d) count number of remote aggregates for this neighbor
+          and set int_buf2[i] = 1 or 0 depending on whether there
+          is a remote aggregate with this neighbor.
+       e) redefine int_buf2[i] in the following way
+              int_buf2[i+1] - int_buf2[i] = 1 indicates that there is
+              a remote aggregate i and int_buf2[i] is the local ghost 
+              number associated with that remote aggregate.
+       f) record the appropriate recv_length, recv_neighbors, etc.
+       g) Now jam in the right ghost number into aggr_index[]. I'm
+          not really sure why we need the first condition in the
+          double condition if statement?
+
+*****************************************************************************
+****************************************************************************/
 
    nbytes = total_send_leng * sizeof(int);
    if ( nbytes > 0 ) ML_memory_alloc((void**) &int_buf, nbytes, "AGg");
@@ -1009,12 +975,15 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
          /* int_buf2 contains local indices of remote aggregates    */
          /* ------------------------------------------------------- */
 
-         if ( aggr_index[index] <= -100 && int_buf[offset+j] >= 0 ) 
+	 /* I have replaced the double condition with just a single
+	    one. I hope I haven't made a mistake, rst 
+	    if ( aggr_index[index] <= -100 && int_buf[offset+j] >= 0 )*/ 
+         if ( int_buf[offset+j] >= 0 ) 
          {
             k = int_buf[offset+j];
             aggr_index[index] = int_buf2[k] + Ncoarse + m;
  	    /*= this is the ghost number for remote aggregates */
-        } 
+         } 
       }
       if (nbytes > 0) ML_memory_free((void **) &int_buf2);
       m += count;
