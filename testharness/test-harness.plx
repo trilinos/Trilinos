@@ -855,7 +855,7 @@ report($SUMMARY);
         
         # link to MIME::Lite module
         if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
-            use lib "./lib/MIME-Lite-3.01/lib";     # cvs checkin MIME::Lite
+            use lib "/home/jmwille/Trilinos/testharness/lib/MIME-Lite-3.01/lib";     # cvs checkin MIME::Lite
             use MIME::Lite;                         # might need Net::SMTP
         }
         
@@ -1184,10 +1184,13 @@ report($SUMMARY);
         if ($code == $TRILINOS_CONFIGURE_ERROR && -f "trilinos_configure_log.txt") {
             $attachmentsExist = 1;
             my $log = "trilinos_configure_log.txt";
-            my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
+	    my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
             if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
-                $attachmentText .= "    $log\n";
-                $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+		my $gzLog = "trilinos_configure_log.txt.gz";
+		my $gzLogPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$gzLog";
+		system "gzip $logPath"; 
+                $attachmentText .= "    $gzLog\n";
+                $email->attach(Type=>'APPLICATION', Path=>"$gzLogPath", Disposition=>'attachment');
             } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
                 $attachmentText .= appendFile($log, $logPath);                
             }
@@ -1196,11 +1199,14 @@ report($SUMMARY);
         # trilinos build failed
         if ($code == $TRILINOS_BUILD_ERROR && -f "trilinos_build_log.txt") {
             $attachmentsExist = 1;
-            my $log = "trilinos_build_log.txt";   
+            my $log = "trilinos_build_log.txt";  
             my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";         
             if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
-                $attachmentText .= "    $log\n";
-                $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+		my $gzLog = "trilinos_build_log.txt.gz";
+                my $gzLogPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$gzLog";
+                system "gzip $logPath";
+                $attachmentText .= "    $gzLog\n";
+                $email->attach(Type=>'APPLICATION', Path=>"$gzLogPath", Disposition=>'attachment');
             } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") {
                 $attachmentText .= appendFile($log, $logPath);                
             }
@@ -1456,9 +1462,11 @@ report($SUMMARY);
         
         system "rm -f update_log.txt";
         system "rm -f trilinos_configure_log.txt";
-        system "rm -f trilinos_build_log.txt";
-        system "rm -f test_compile_log.txt";
-        system "rm -f $options{'TRILINOS_DIR'}[0]/logErrors.txt";
+        system "rm -f trilinos_configure_log.txt.gz";
+	system "rm -f trilinos_build_log.txt";
+        system "rm -f trilinos_build_log.txt.gz";
+	system "rm -f test_compile_log.txt";
+	system "rm -f $options{'TRILINOS_DIR'}[0]/logErrors.txt";
         system "rm -f $options{'TRILINOS_DIR'}[0]/logMpiErrors.txt";
         system "rm -f $options{'TRILINOS_DIR'}[0]/log$hostOS.txt";
         if ($code == $SUMMARY) {
