@@ -222,6 +222,7 @@ CORE_H = \
 	$(srcdir)/AnasaziReturnType.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
 	$(srcdir)/AnasaziPrecondition.hpp \
+	$(srcdir)/BelosConfigDefs.hpp \
 	$(srcdir)/BelosPetraInterface.hpp \
 	$(srcdir)/BelosEpetraOperator.hpp \
 	$(srcdir)/BelosBlockGmres.hpp \
