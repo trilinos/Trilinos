@@ -59,6 +59,9 @@
 /* define that mpi is being used */
 #undef HAVE_MPI
 
+/* define if the compiler implements namespaces */
+#undef HAVE_NAMESPACES
+
 /* define that epetraext is activated in nox */
 #undef HAVE_NOX_EPETRAEXT
 
@@ -82,6 +85,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* define if STL map key is required to be const */
+#undef MUST_CONST_STL_MAP_KEY
 
 /* define if "using std::ostream" is not okay */
 #undef NO_USING_STD_OSTREAM
