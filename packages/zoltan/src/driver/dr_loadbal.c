@@ -157,7 +157,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   if (Debug_Driver > 0) {
     if (Proc == 0) printf("\nBEFORE load balancing\n");
     driver_eval(mesh);
-    LB_Eval(lb, 1, NULL, NULL, NULL, NULL, NULL, NULL, &i);
+    i = LB_Eval(lb, 1, NULL, NULL, NULL, NULL, NULL, NULL);
     if (i) printf("Warning: LB_Eval returned error code %d\n", i);
   }
 
@@ -187,7 +187,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   if (Debug_Driver > 0) {
     if (Proc == 0) printf("\nAFTER load balancing\n");
     driver_eval(mesh);
-    LB_Eval(lb, 1, NULL, NULL, NULL, NULL, NULL, NULL, &i);
+    i = LB_Eval(lb, 1, NULL, NULL, NULL, NULL, NULL, NULL);
     if (i) printf("Warning: LB_Eval returned error code %d\n", i);
   }
 
