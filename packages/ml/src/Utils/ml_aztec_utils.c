@@ -1475,6 +1475,8 @@ void AZ_transform_norowreordering(int proc_config[], int *external[],
    */
 
   if (!AZ_using_fortran) {
+    if (*update_index != NULL) ML_free(*update_index);
+    if (*extern_index != NULL) ML_free(*extern_index);
     *update_index = (int *) AZ_allocate((N_update + 1)*sizeof(int));
     *extern_index = (int *) AZ_allocate((N_extern + 1)*sizeof(int));
   }
@@ -1502,6 +1504,7 @@ void AZ_transform_norowreordering(int proc_config[], int *external[],
    * the external points.
    */
 
+  if (!AZ_using_fortran && *data_org != NULL) ML_free(*data_org);
   AZ_set_message_info(N_extern, *extern_index, N_update, *external, extern_proc,
                       update, *update_index, proc_config, tcnptr, data_org,
                       mat_type);
