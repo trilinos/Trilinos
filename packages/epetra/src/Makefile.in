@@ -111,12 +111,15 @@ UTIL_H = \
 	$(srcdir)/Epetra_Time.h \
 	$(srcdir)/Epetra_Util.h \
 	$(srcdir)/Epetra_DataAccess.h \
-	$(srcdir)/Epetra_HashTable.h
+	$(srcdir)/Epetra_HashTable.h \
+	$(srcdir)/Epetra_CrsMatrixTransposer.h
+
 
 UTIL = \
 	$(srcdir)/Epetra_Flops.cpp \
 	$(srcdir)/Epetra_Time.cpp \
-	$(srcdir)/Epetra_Util.cpp
+	$(srcdir)/Epetra_Util.cpp \
+	$(srcdir)/Epetra_CrsMatrixTransposer.cpp
 
 
 ENUM_H = \
@@ -357,6 +360,7 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_Flops.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_Time.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_Util.$(OBJEXT) \
+@HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_CrsMatrixTransposer.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_SerialDenseMatrix.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_SerialSpdDenseSolver.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_SerialDenseSolver.$(OBJEXT) \
@@ -393,6 +397,7 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_Flops.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_Time.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_Util.$(OBJEXT) \
+@HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_CrsMatrixTransposer.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_SerialDenseMatrix.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_SerialSpdDenseSolver.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_SerialDenseSolver.$(OBJEXT) \
@@ -427,6 +432,7 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_Flops.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_Time.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_Util.$(OBJEXT) \
+@HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_CrsMatrixTransposer.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_SerialDenseMatrix.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_SerialSpdDenseSolver.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_SerialDenseSolver.$(OBJEXT) \
@@ -465,6 +471,7 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_Flops.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_Time.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_Util.$(OBJEXT) \
+@HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_CrsMatrixTransposer.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_SerialDenseMatrix.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_SerialSpdDenseSolver.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_SerialDenseSolver.$(OBJEXT) \
@@ -508,6 +515,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_CompObject.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_CrsGraph.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_CrsMatrix.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Epetra_CrsMatrixTransposer.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_CrsSingletonFilter.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_DistObject.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_Export.Po \
@@ -625,6 +633,8 @@ Epetra_Object.$(OBJEXT): $(srcdir)/Epetra_Object.cpp
 Epetra_Flops.$(OBJEXT): $(srcdir)/Epetra_Flops.cpp
 Epetra_Time.$(OBJEXT): $(srcdir)/Epetra_Time.cpp
 Epetra_Util.$(OBJEXT): $(srcdir)/Epetra_Util.cpp
+Epetra_CrsMatrixTransposer.$(OBJEXT): \
+	$(srcdir)/Epetra_CrsMatrixTransposer.cpp
 Epetra_SerialDenseMatrix.$(OBJEXT): \
 	$(srcdir)/Epetra_SerialDenseMatrix.cpp
 Epetra_SerialSpdDenseSolver.$(OBJEXT): \
@@ -678,6 +688,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_CompObject.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_CrsGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_CrsMatrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_CrsMatrixTransposer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_CrsSingletonFilter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_DistObject.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_Export.Po@am__quote@
@@ -794,6 +805,18 @@ Epetra_Util.obj: $(srcdir)/Epetra_Util.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_Util.Po' tmpdepfile='$(DEPDIR)/Epetra_Util.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_Util.obj `cygpath -w $(srcdir)/Epetra_Util.cpp`
+
+Epetra_CrsMatrixTransposer.o: $(srcdir)/Epetra_CrsMatrixTransposer.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_CrsMatrixTransposer.cpp' object='Epetra_CrsMatrixTransposer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_CrsMatrixTransposer.Po' tmpdepfile='$(DEPDIR)/Epetra_CrsMatrixTransposer.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_CrsMatrixTransposer.o `test -f $(srcdir)/Epetra_CrsMatrixTransposer.cpp || echo '$(srcdir)/'`$(srcdir)/Epetra_CrsMatrixTransposer.cpp
+
+Epetra_CrsMatrixTransposer.obj: $(srcdir)/Epetra_CrsMatrixTransposer.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_CrsMatrixTransposer.cpp' object='Epetra_CrsMatrixTransposer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_CrsMatrixTransposer.Po' tmpdepfile='$(DEPDIR)/Epetra_CrsMatrixTransposer.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_CrsMatrixTransposer.obj `cygpath -w $(srcdir)/Epetra_CrsMatrixTransposer.cpp`
 
 Epetra_SerialDenseMatrix.o: $(srcdir)/Epetra_SerialDenseMatrix.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Epetra_SerialDenseMatrix.cpp' object='Epetra_SerialDenseMatrix.o' libtool=no @AMDEPBACKSLASH@

@@ -29,11 +29,14 @@ UTIL_H = \
 	$(srcdir)/Epetra_Time.h \
 	$(srcdir)/Epetra_Util.h \
 	$(srcdir)/Epetra_DataAccess.h \
-	$(srcdir)/Epetra_HashTable.h
+	$(srcdir)/Epetra_HashTable.h \
+	$(srcdir)/Epetra_CrsMatrixTransposer.h
+
 UTIL = \
 	$(srcdir)/Epetra_Flops.cpp \
 	$(srcdir)/Epetra_Time.cpp \
-	$(srcdir)/Epetra_Util.cpp
+	$(srcdir)/Epetra_Util.cpp \
+	$(srcdir)/Epetra_CrsMatrixTransposer.cpp
 
 ENUM_H = \
 	$(srcdir)/Epetra_CombineMode.h \

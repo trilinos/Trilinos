@@ -16,13 +16,13 @@
 # The PROJECT_NAME tag is a single word (or a sequence of words surrounded 
 # by quotes) that should identify the project. 
 
-PROJECT_NAME           = "Petra Matrix/Vector Services"
+PROJECT_NAME           = "Epetra Matrix/Vector Services"
 
 # The PROJECT_NUMBER tag can be used to enter a project or revision number. 
 # This could be handy for archiving the generated documentation or 
 # if some version control system is used.
 
-PROJECT_NUMBER         = "Version 2.0"
+PROJECT_NUMBER         = "Version 3.0"
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
 # base path where the generated documentation will be put. 
@@ -414,7 +414,7 @@ EXTRA_PACKAGES         =
 # the first chapter. If it is left blank doxygen will generate a 
 # standard header. Notice: only use this tag if you know what you are doing! 
 
-LATEX_HEADER           = header.tex
+#LATEX_HEADER           = header.tex
 
 # If the PDF_HYPERLINKS tag is set to YES, the LaTeX that is generated 
 # is prepared for conversion to pdf (using ps2pdf). The pdf file will 
@@ -684,7 +684,7 @@ DOC_ABSPATH            =
 # The BIN_ABSPATH tag must point to the directory where the doxysearch binary 
 # is installed. 
 
-BIN_ABSPATH            = /usr/local/bin/
+BIN_ABSPATH            = /usr/local/doxygen-1.2.18/bin/
 
 # The EXT_DOC_PATHS tag can be used to specify one or more paths to 
 # documentation generated for other projects. This allows doxysearch to search 
