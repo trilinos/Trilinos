@@ -284,6 +284,10 @@ AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_ml_aztecoo" != "Xyes")
 # these are OFF by default
 ###########################
  TAC_ARG_WITH_PACKAGE(ml_superlu, [Enable SuperLU support.  Note 1: SuperLU is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of the SuperLU headers and libraries via the configure options --with-ldflags=<SuperLU-library-path/library-name> and --with-incdirs=SuperLU-include-directory.], ML_SUPERLU, no)
+#
+ TAC_ARG_WITH_PACKAGE(ml_superlu_dist, [Enable SuperLU_DIST support.  Note 1: SuperLU_DIST is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of the SuperLU_DIST headers and libraries via the configure options --with-ldflags=<SuperLU_DIST-library-path/library-name> and --with-incdirs=SuperLU_DIST-include-directory.], ML_SUPERLU_DIST, no)
+#
+ TAC_ARG_WITH_PACKAGE(ml_element_number64, [Enable 64-bit global element numbers.  This is required if ML is intended to be used with MPSalsa because MPSalsa uses 64-bit global element numbers.], ML_ELEMENT_NUM64, no)
  #
  TAC_ARG_ENABLE_OPTION(ml_complex_maxwell, [Enable complex maxwell solver capability], ML_COMPLEX_MAXWELL, no)
  #

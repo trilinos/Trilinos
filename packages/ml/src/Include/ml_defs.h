@@ -134,7 +134,7 @@
 #define ML_MAX_SUBSPACE_DIM 3
 
 
-#if defined(ML_GLOB_ELEM_NUM64)
+#if defined(ML_GLOBAL_ELEMENT_NUM64)
 
 #if defined(ML_LINUX) || defined(ML_TFLOP) || defined(ML_IRIX) || defined(ML_IRIXN32)
 typedef long long ml_big_int;
