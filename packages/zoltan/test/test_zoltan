@@ -17,7 +17,7 @@
 #
 # Usage: test_zoltan [-arch arch-type] [-cmd command] 
 #
-# where arch-type is one of {generic, solaris, gcc, smos, tflop, cplant, dec}.
+# where arch-type is one of {generic, solaris, gcc, linux, smos, tflop, cplant, dec}.
 # Alternatively, give a run command with the -cmd option.
 #
 
@@ -130,7 +130,9 @@ if (! $?run ) then
     switch ( $arch )
     case generic:
     case gcc:
+    case linux:
     case solaris:
+    case sgi32:
     case sgi64:
       set run = "mpirun -np"
       breaksw

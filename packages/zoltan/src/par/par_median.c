@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    $Revision$
+ *    Revision: 1.6.2.1 $
  ****************************************************************************/
 
 #include <stdio.h>
@@ -80,8 +80,6 @@ int LB_find_median(
 )
 {
 /* Local declarations. */
-  char    yo[] = "LB_find_median";
-
   struct median med, medme;          /* median data */
 
   double  wtmax, wtsum, wtok, wtupto;/* temporary wts */
@@ -90,7 +88,7 @@ int LB_find_median(
   double  weightlo, weighthi;        /* wt in lower/upper half of non-active */
   double  tmp_half;
 
-  int     i, j, k, wtflag = 0, numlist;
+  int     i, j, k, numlist;
   int     first_iteration;
   int     indexlo, indexhi;          /* indices of dot closest to median */
   int     breakflag;                 /* for breaking out of median iteration */
@@ -592,7 +590,6 @@ static void LB_sum_double(
    int      mask;             /* mask to determine communication partner */
    int      nprocs_small;     /* largest power of 2 contained in nprocs */
    int      hbit;             /* 2^hbit = nproc_small */
-   int      i;                /* loop counter */
    MPI_Status status;
 
    /* This routine sums doubles on a subset of processors */
@@ -645,7 +642,6 @@ static void LB_max_double(
    int      mask;             /* mask to determine communication partner */
    int      nprocs_small;     /* largest power of 2 contained in nprocs */
    int      hbit;             /* 2^hbit = nproc_small */
-   int      i;                /* loop counter */
    MPI_Status status;
 
    /* This routine finds the global max */

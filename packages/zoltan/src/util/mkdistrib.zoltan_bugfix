@@ -1,0 +1,52 @@
+#!/bin/sh
+#
+# This script works for SunOS
+#
+TIME="`date +%H%M`"
+DATE="`date +%d%h%y`"
+#
+# Get rid of blanks in the date
+TAGVAL="distrib_${TIME}_${DATE}"
+CURDIR="`pwd`"
+#
+# Get rid of space when day of the month is a single digit
+ACT_TAG="`echo "$TAGVAL"|sed s/' '//g`"
+rm -rf Zoltan ParMETIS
+rm -f zoltan_distrib.tar.gz
+cvs checkout -r Zoltan_v1_23_bugfix -P Zoltan
+cvs checkout -P ParMETIS
+find . -name 'CVS' -exec rm -rf {} \;
+find . -name '*.sh' -exec rm -f {} \;
+find . -name '.cvsignore' -exec rm -f {} \;
+cd Zoltan; /bin/rm -f docs/Zoltan_html/lgpl.pl; gmake zscript; cd ..
+rm -rf tmp
+FLIST="`find Zoltan -name '*.[ch]' -print`"
+for i in ${FLIST}  ; do \
+  echo $i
+  sed -e 's/\$Revision/Revision/' $i > tmp; \
+  /bin/mv tmp $i; \
+done;
+FLIST="`find Zoltan -name '*.f??' -print`"
+for i in ${FLIST}  ; do \
+  echo $i
+  sed -e 's/\$Revision/Revision/' $i > tmp; \
+  /bin/mv tmp $i; \
+done;
+FLIST="`find Zoltan -name '[mM]akefile*' -print`"
+for i in ${FLIST}  ; do \
+  echo $i
+  sed -e 's/\$Revision/Revision/' $i > tmp; \
+  /bin/mv tmp $i; \
+done;
+FLIST="`find Zoltan -name 'Config*' -print`"
+for i in ${FLIST}  ; do \
+  echo $i
+  sed -e 's/\$Revision/Revision/' $i > tmp; \
+  /bin/mv tmp $i; \
+done;
+chmod -R ogu+r *
+tar cvf zoltan_distrib.tar Zoltan ParMETIS
+gzip zoltan_distrib.tar
+cvs rtag ${ACT_TAG} -r Zoltan_v1_23_bugfix Zoltan 
+cvs rtag ${ACT_TAG} ParMETIS 
+exit 0

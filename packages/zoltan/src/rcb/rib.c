@@ -8,7 +8,7 @@
  *    $RCSfile$
  *    $Author$
  *    $Date$
- *    $Revision$
+ *    Revision: 1.6.2.2 $
  ****************************************************************************/
 
 #include <stdio.h>
@@ -679,7 +679,6 @@ static void LB_min_max(
    int      mask;             /* mask to determine communication partner */
    int      nprocs_small;     /* largest power of 2 contained in nprocs */
    int      hbit;             /* 2^hbit = nproc_small */
-   int      i;                /* loop counter */
    MPI_Status status;
 
    /* This routine finds the global min of min and the global max of max */
