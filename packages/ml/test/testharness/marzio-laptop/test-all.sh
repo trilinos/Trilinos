@@ -21,6 +21,7 @@ cd ${TRILINOS_HOME}/testharness
 # trilinos      this should be the basic usage of ML within Trilinos
 # parmetis      Epetra + Teuchos + ParMETIS (only MPI)
 # all           My script, with all I have on my machien (only MPI)
+lamboot
 TEST="standalone epetra basic trilinos parmetis all"
 StartTime=`date`
 for t in $TEST
@@ -29,15 +30,17 @@ do
   echo "Testing $t..."
   echo "--------------------------------"
   perl test-harness.plx $OPT ${TEST_HOME}/$t-input
-  /bin/rm -rf ${TRILINOS_HOME}/$t-results
-  cp -r ${TRILINOS_HOME}/testharness/results ${TRILINOS_HOME}/$t-results/
+  /bin/rm -rf ${TRILINOS_HOME}/ml-test
+  mkdir ${TRILINOS_HOME}/ml-test
+  cp -r ${TRILINOS_HOME}/testharness/results ${TRILINOS_HOME}/ml-test/$t-results/
   echo 
   echo "Analyzing results:"
   echo "1) build error files:"
-  ls -1 $t-results/ | grep -i error
+  ls -1 ${TRILINOS_HOME}/ml-test/$t-results/ | grep -i error
   echo "2) test failed files:"
-  ls -1 $t-results/ | grep -i failed
+  ls -1 ${TRILINOS_HOME}/ml-test/$t-results/ | grep -i failed
 done
 EndTime=`date`
 echo "Test started on $StartTime,"
 echo "ended on $EndTime"
+lamhalt
