@@ -506,7 +506,7 @@ if test ${USE_TRILINOS} = yes; then
 
    LDFLAGS="-L${TRILINOS_LIB_DIR} $LDFLAGS"
    TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${TRILINOS_EPETRA_INC} -I${TRILINOS_AZTECOO_INC}"
-   TRILINOS_LDADD="-lepetra -laztecoo -lifpack -ly12m"
+   TRILINOS_LDADD="-lepetra -laztecoo"
 
   dnl find a valid blas and lapack library
   AC_LANG_SAVE
@@ -519,6 +519,10 @@ if test ${USE_TRILINOS} = yes; then
   AC_LANG_FORTRAN77
   AC_SEARCH_LIBS(dcopy,[cxml blas])
   AC_SEARCH_LIBS(dgetrs,[cxml lapack])
+  AC_LANG_CPLUSPLUS
+  AC_CHECK_LIB(ifpack,az2ifp_blockmatrix)
+#  AC_CHECK_LIB(aztecoo,[AztecOO::Iterate(int a, double b)])
+#  AC_CHECK_LIB(epetra,)
   AC_LANG_RESTORE
 
 fi

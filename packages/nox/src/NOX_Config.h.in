@@ -18,6 +18,9 @@
 /* Define if you have the `g2c' library (-lg2c). */
 #undef HAVE_LIBG2C
 
+/* Define if you have the `ifpack' library (-lifpack). */
+#undef HAVE_LIBIFPACK
+
 /* Define if you have the `y12m' library (-ly12m). */
 #undef HAVE_LIBY12M
 
