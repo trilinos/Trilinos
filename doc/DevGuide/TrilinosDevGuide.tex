@@ -194,7 +194,7 @@ Notation & Example & Description \\ \hline
 \InlineCommand{Verbatim text} & \InlineCommand{../configure --enable-mpi} & 
 Commands, directory and file name examples, and other text associated
 with text displayed in a computer terminal window. \\ \hline
-\InlineCommand{CAPITALIZED\_TEXT} & \InlineCommand{CXX\_FLAGS} & 
+\InlineCommand{CAPITALIZED\_TEXT} & \InlineCommand{CXXFLAGS} & 
 Environment variables used to configure how tools such as compilers behave. \\ \hline
 \InlineCommand{[text in angle brackets]} & \InlineCommand{../configure
 <user parameters>} & 
@@ -229,7 +229,7 @@ out a copy of the Trilinos repository.
 as executables are located.  
 \end{itemize}
  
-Although it is possible to run \InlineCommand{configure} from the source tree (in 
+Although it is possible to run \InlineCommand{./configure} from the source tree (in 
 the directory where the configure file is located), we recommend that a 
 user have separate build trees.  The greatest advantage to having a separate 
 build tree is that multiple builds of the libraries can be maintained
@@ -246,18 +246,27 @@ Figure~\ref{Figure:TrilinosDirectoryStructure} illustrates the
 \end{center}
 \label{Figure:TrilinosDirectoryStructure}
 \caption{Recommended Layout for Trilinos Build Directories}
-\end{figure}recommended layout.  First, \InlineCommand{cd} to the highest 
+\end{figure}recommended layout.  First, from the highest 
 directory in the source tree (Trilinos for a repository copy, Trilinos-3.0.1 
-for a distribution).  Now, make a new directory - for an MPI build
+for a distribution), make a new directory - for an MPI build
 on a Linux platform, a 
 typical name could be \InlineDirectory{LINUX\_MPI}.  
-Finally \InlineDirectory{cd} into that dirctory.  In summary:
+Finally, from the new dirctory, type
+
+\DisplayCommand{../configure --with-mpi-compilers}
+
+(Note that various configure options might be necessary, see Section~\ref{Subsection:ConfiguringTrilinos} for details.)  Finally, type
+
+\DisplayCommand{make}
+
+
+In summary:
 
 \begin{verbatim}
        cd Trilinos
        mkdir LINUX_MPI
        cd LINUX_MPI
-       ../configure --enable-mpi
+       ../configure --with-mpi-compilers
        make
 \end{verbatim}
 At this point, the MPI version of Trilinos on a Linux platform is
@@ -276,12 +285,12 @@ the SOLARIS\_SERIAL directory and type
 \DisplayCommand{../configure <options as described below>}
 
 A detailed list of configure options can be seen by typing
-\DisplayCommand{configure --help=recursive} from the top level of the 
+\DisplayCommand{./configure --help=recursive} from the top level of the 
 source tree.  This will display the help page for the Trilinos level as well as all 
 Trilinos packages that use autoconf and automake.  The output from this command
 is quite extensive.  To view the help page for an individual package, cd to 
 the home directory for the package in the source tree and type 
-\DisplayCommand{configure --help} 
+\DisplayCommand{./configure --help} 
 This command will also display the help page for Trilinos level 
 options when used from the Trilinos home directory in the source tree.
 
@@ -304,7 +313,7 @@ invocation line.  It is recommended that users always configure from the
 Trilinos level and use \InlineCommand{--disable-<package>} as necessary, 
 rather than trying to configure from a lower level.  To see which packages 
 build by default and which ones don't, simply cd to the Trilinos home 
-directory and type \DisplayCommand{configure --help}.
+directory and type \DisplayCommand{./configure --help}.
 
 NOTE: Ifpack is divided into old and new portions.  Future ifpack developments 
 will replace all of old ifpack, but at this time some users will need to append
@@ -334,20 +343,21 @@ blas, and lapack) are located in standard places, try configuring with what
 you have.
 
 	For a machine that requires additional configure line options, a good 
-place to start is Trilinos(-3.0.1)/config.  There are configure invocation 
-scripts here for various platforms.  These scripts are named using the 
-following naming convention:
+place to start is \InlineDirectory{Trilinos(-3.0.1)/config}.  There are 
+configure invocation scripts here for various platforms.  These scripts are 
+named using the following naming convention:
 \InlineCommand{arch\_comm\_machine}.
-For example \InlineCommand{sgi64\_mpi\_atlantis}.  Note that these scripts are examples 
-only.  Users should not necessarily expect to be able to find the perfect 
-script and use it, but rather should choose a script for a similar machine, 
-examine the options used in the script and figure out if those options make 
-sense for the case at hand.  Some of the scripts in the repository are not 
-always up to date.  If a user submits a script for a machine that few Trilinos 
-developers have an account on, that script may become obsolete if it is not 
-updated by the user who submitted it.  For reasons such as this, these scripts 
-tend to be primarily useful for the values of options such as \InlineCommand{LDFLAGS}, 
-\InlineCommand{CPPFLAGS}, and \InlineCommand{CXXFLAGS}.  
+For example \InlineCommand{sgi64\_mpi\_atlantis}.  Note that these scripts are 
+examples only.  Users should not necessarily expect to be able to find the 
+perfect script and use it, but rather should choose a script for a similar 
+machine, examine the options used in the script and figure out if those 
+options make sense for the case at hand.  Some of the scripts in the 
+repository are not always up to date.  If a user submits a script for a 
+machine that few Trilinos developers have an account on, that script may 
+become obsolete if it is not updated by the user who submitted it.  Therefore, 
+these scripts are primarily useful for the values of options such as 
+\InlineCommand{LDFLAGS}, \InlineCommand{CPPFLAGS}, 
+and \InlineCommand{CXXFLAGS}.  
 
 Users who create scripts for other machines are encouraged to check them into 
 the repository for the benefit of other users.  Users who do not have access to
@@ -370,7 +380,7 @@ the option doesn't make sense for a particular package (for example, a
 package that does not include any Fortran code will not be sensitive to 
 \InlineCommand{F77=g77}), or otherwise noted.  For options specific to 
 individual package, cd to the home directory of the source code of the 
-individual package and type \DisplayCommand{configure --help}.
+individual package and type \DisplayCommand{./configure --help}.
 
 Basic Options
 
@@ -456,12 +466,12 @@ turn MPI on.
 
 \item \InlineCommand{--with-mpi-compilers}
 
-Sets the MPI c++ compiler = mpicxx (or mpiCC if mpicxx not available), 
-the MPI C compiler = mpicc and the MPI Fortran compiler = mpif77.  
-Automatically enables MPI mode.  To use compilers other than these, 
-specify mpi locations with the below options.  If none of these options 
-are necessary, don't forget to use --enable-mpi.  CXX, CC, and F77 may also 
-have to be set if autoconf does not choose the correct compilers by default.
+Sets CXX = mpicxx (or mpiCC if mpicxx not available), the CC = mpicc and 
+F77 = mpif77.  Automatically enables MPI mode.  To use compilers other than 
+these, specify mpi locations with the below options.  If none of these options 
+are necessary, don't forget to use \InlineCommand{--enable-mpi}.  In this 
+case, CXX, CC, and F77 may also have to be set if the correct compilers are 
+not chosen by default.
 
 \item \InlineCommand{--with-mpi=MPIROOT}
 
@@ -475,9 +485,9 @@ these default locations are not correct.
 
 \item \InlineCommand{--with-mpi-libdir=DIR}
 
-Specify the MPI libraries location. Defaults to MPIROOT/lib if --with-mpi 
-is specified. If multiple directories must be specified, try 
-\InlineCommand{--with-ldflags="-L<dir1> -L<dir2>"} instead. 
+Specify the MPI libraries location. Defaults to MPIROOT/lib if 
+\InlineCommand{--with-mpi} is specified. If multiple directories must be 
+specified, try \InlineCommand{--with-ldflags="-L<dir1> -L<dir2>"} instead. 
 
 \item \InlineCommand{--with-mpi-libs="LIBS"} 
 
@@ -500,23 +510,32 @@ Enable make rules and dependencies not useful (and sometimes confusing) to
 the casual installer.
 \end{itemize}
 
-Other important notes about the configure/build process.
+Other important notes about the configure and build processes.
 \begin{itemize}
-\item Any code that links to Trilinos should define \InlineCommand{HAVE\_CONFIG\_H}.
+\item Any code that links to Trilinos should define 
+\InlineCommand{HAVE\_CONFIG\_H}.
+
 \item Often the output from configure will be inadequate for diagnosing 
 problems.  A developer should look (in the buildtree) at the config.log file 
 for the package that failed to configure properly.  To figure out which 
 package failed to configure, simply look at the bottom of the output from the 
-'configure' command.  One of the last lines should say something like:
+\InlineCommand{configure} command.  One of the last lines should say something 
+like:
 
 \begin{verbatim}
     configure: error: /bin/sh '../../../packages/epetra/configure' 
     failed for packages/epetra.
 \end{verbatim}
 
-This particular error indicates to look in \InlineDirectory{packages/epetra/config.log}.  This 
-file is useful for developers trying to build Trilinos, and those who are 
+This particular error indicates to look in 
+\InlineDirectory{packages/epetra/config.log}.  This file is useful for 
+developers trying to build Trilinos, and those who are 
 adding or editing autoconf-specific files such as configure.ac.
+
+\item The ``classic'' build system and Autotools do not mix.  Trying to build 
+with Autotools in a directory that contains a classic build will not work.  
+Before attempting an autotools build, the classic build object, library, and 
+executable files within the source tree should be removed.
 \end{itemize}
 
 \subsection{Adding and Removing Source Files}
@@ -537,7 +556,8 @@ be merged back into the development branch.
 \item Obtain the supported versions of Autoconf and Automake.
 
 The current supported versions of Autoconf and Automake are documented in 
-the Trilinos repository.  Trilinos/config/AutotoolsVersionInfo contains the 
+the Trilinos repository.  
+\InlineDirectory{Trilinos/config/AutotoolsVersionInfo} contains the 
 information.  The Trilinos team does not attempt to keep up with the latest 
 versions of Autoconf and Automake, so please do not assume that the most 
 recent versions are supported.  The supported versions of Autoconf and 
@@ -548,25 +568,24 @@ mpi implementation installed.
 \item Update source code from Trilinos repository
 
 Obtain the most current version of Trilinos (for the branch being worked on).  
-First, cd to the top Trilinos directory, then type
+From the top Trilinos directory type
 
 \DisplayCommand{cvs -q update -dP}
 
 \item Add new files to or remove obsolete files from the Trilinos repository
 
-To add new files abc.cpp and abc.h to the Trilinos repository, cd to the 
-directory in which the files are located in a checked out version of the 
-Trilinos repository and type
+To add new files abc.cpp and abc.h to the Trilinos repository, type
 
 \DisplayCommand{cvs add abc.cpp abc.h}
 
-To remove the same files, type
+in the directory where the files are located (in a checked out version of the 
+Trilinos repository).  To remove the same files, type
 
 \DisplayCommand{cvs remove abc.cpp abc.h}
 
-The above commands do not actually add the files to or remove the files 
-from the repository, but simply prepare for the addition or removal of the 
-files.  The files will really be added or removed later using 
+The above commands do not actually add the files to or remove the files from 
+the repository, but simply prepare for the addition or removal of the files.  
+The initial version of the file will be added to the repository later using 
 \InlineCommand{cvs commit}.  However, this is a necessary step in the process.
 
 \item List new files in or remove obsolete files from Makefile.am
@@ -586,12 +605,12 @@ appropriate Makefile.am.
 
 \item Bootstrap
 
-First, cd to the top-level directory of the appropriate Trilinos package.  
-For example Trilinos/packages/epetra.  Then type 
+First, from the top-level directory of the appropriate Trilinos package (for 
+example Trilinos/packages/epetra), type 
 
 \DisplayCommand{./bootstrap}
 
-The process should complete without any errors, but the following warnings do 
+The bootstrap should complete without any errors, but the following warnings 
 commonly occur:
 
 \begin{verbatim}
@@ -605,7 +624,11 @@ Reconfigure and rebuild the Trilinos package.  Perform tests associated with
 the new code, as well as the rest of the tests for the package to insure that 
 both the new code works and existing code has not been broken.  When changes 
 could possibly affect other packages, tests for affected packages should also 
-be run.
+be run.  The simple way to run all of the required tests is to use the 
+checkin test harness.  This script can be found in 
+\InlineDirectory{Trilinos/testharness/checkin-test-harness}.  Directions 
+explaining how to run the tests associated with the checkin test harness can 
+be found in the comments at the top of the script itself.
 
 \item Update source code from Trilinos repository
 
@@ -622,9 +645,9 @@ collisions (for example configure, Makefile.in, or aclocal.m4), while the
 changes in the files created by developers (for example configure.ac or 
 Makefile.am) will be successfully merged by CVS.  In this case, the best 
 course of action is to remove the files with collisions, cd to the top level 
-of the Trilinos package, perform a cvs update, and then begin the above 
-process again from ``Bootstrap'' step.  As long as the changes are merged in 
-the non-generated files, bootstrapping should resolve the problem.
+of the Trilinos package, perform a \InlineCommand{cvs update}, and then begin 
+the above process again from ``Bootstrap'' step.  As long as the changes are 
+merged in the non-generated files, bootstrapping should resolve the problem.
 
 An even better reason to update again before committing changes is to avoid 
 confusion.  After a bootstrap, all of the generated files will get an updated 
@@ -694,9 +717,9 @@ the code will do when complete.
 
 \section{Services Available to Trilinos Packages}
 \label{Section:AvailableServices}
-A number of services exist for Trilinos packages.  Many of these 
-services relate directly to some of the requirements and suggested practices 
-for Trilinos packages.  For example the CVS repository is discussed below, and 
+A number of services exist for Trilinos packages.  Many of these services 
+relate directly to the requirements and suggested practices for Trilinos 
+packages.  For example, the CVS repository is discussed below, and 
 Trilinos packages must make use of this repository.  Also, Bonsai, Bugzilla 
 and Mailman are all tools that relate to suggested practices.  (It should be 
 noted that these services are not simply meant to satisfy SQE requirements.  
@@ -723,8 +746,8 @@ that new\_package is a work in progess, suggestions and contributions are
 welcome, especially for FAQ's.
 
 Trilinos provides a set of M4~\cite{M4} macros that can be used by any other
-package that wants to use Autoconf and Automake for configuring and
-building libraries.  These macros perform common configuration tasks such as
+package when its Autoconf and Automake configure and build system is being 
+setup.  These macros perform common configuration tasks such as
 locating a valid LAPACK~\cite{lapack} library, or checking for a user-
 defined MPI C compiler.  The macros can be found in the Trilinos CVS 
 repository in Trilinos/config.  These macros minimize the amount of redudant
@@ -737,36 +760,39 @@ testing capabilities.  Within a number of Trilinos packages, we employ
 used and probed.  In addition, Trilinos performs ``black box'' testing
 of packages via the Trilinos Solver Framework (TSF) virtual class
 interfaces.  Any package that implements the TSF interfaces (see
-Section~\ref{subsect:InteropTSF} below)
-%**(Add this section)), 
-can be tested via this black box
+Section~\ref{subsect:InteropTSF} below) can be tested via this black box
 test environment.  ({\bf NOTE: Black box testing via TSF is not in
 place at this time})
-	\subsection{Test Harness}
+
+\subsection{Test Harness}
 Trilinos Packages that configure and build using Autotools can easily 
 utilize the the Trilinos test harness.  The Trilinos test harness is composed 
 of two components.  
 
-One part of the test harness is used to run nightly tests 
-on a number of platforms.  This portion of the test harness performs a CVS 
-update (gets the most recent source code) every night and then builds the 
-libraries and runs any tests that have been integrated into the test harness.  
+One part of the test harness is used to run nightly tests on a number of 
+platforms.  This portion of the test harness performs a 
+\InlineCommand{cvs update} (gets the most recent source code) every night and 
+then builds the libraries and runs any tests that have been integrated into 
+the test harness.  
+
 Tests that are added as ``daily'' tests are run six time a week, while 
 ``weekly'' tests are run once a week.  Currently the nightly test harness only 
 runs on Linux, IRIX64, and DEC/OSF1, but it will eventually run on 5-8 
 platforms.  Packages that have not ported to a particular platform can be 
 excluded from the testing process on that platform.  Packages that do not have 
-any tests integrated into the test harness can still benefit by ensuring that 
+any tests integrated into the test harness can still benefit by testing that 
 libraries build without errors.  
 
 The second component of the test harness is a script that should be executed 
 by users before checking updates into the repository.  This script is located 
-in Trilinos/testharness/checkin-test-harness.  The script provides an easy way 
-for users to run all of the ``daily'' tests that have been added to the test 
-harness for all packages from one location.  
+in \InlineDirectory{Trilinos/testharness/checkin-test-harness}.  The script 
+provides an easy way for users to run all of the ``daily'' tests that have 
+been added to the test harness for all packages from one location.  
+Instructions for running the script can be found within the script itself.
 
 Integrating existing tests into the testharness is not difficult.  
-The process is discussed in Trilinos/testharness/HowToAddToTestHarness.  
+The process is discussed in 
+\InlineDirectory{Trilinos/testharness/HowToAddToTestHarness}.  
 Please note that this document is a work in progress.
 
 \subsection{CVS Repository}
@@ -794,15 +820,15 @@ repository.  The tool can be especially useful when trying to figure out which
 changes may have introduced bugs into a piece of code.  Developers can search 
 for changes based on filename, directory, branch, date, user who made the 
 change, or any combination of these criteria.  The entire revision histories of
-individual files returned in a search can be utilized in finding the source of 
-bugs.  The differences between any two versions of a file may be viewed.  
+individual files can be utilized in finding the source of 
+bugs.  The differences between any two versions of a file may also be viewed.  
 
 \subsection{Bugzilla}
 \label{subsect:Bugzilla}
-Features and bug reports are tracked using Bugzilla~\cite{Bugzilla}.  Bugzilla 
-can be found on the web at ``http://software.sandia.gov/bugzilla''.  A 
-Bugzilla account is necessary for submitting bugs.  Those interested can sign 
-up at the website.  All bugs related to any package of Trilnos that uses 
+Feature and issue reports are tracked using Bugzilla~\cite{Bugzilla}.  
+Bugzilla can be found on the web at ``http://software.sandia.gov/bugzilla''.  
+A Bugzilla account is necessary for submitting bugs.  Those interested can 
+sign up at the website.  All bugs related to any package of Trilnos that uses 
 Bugzilla should be submitted to Bugzilla.  This even applies to cases in which 
 one developer diagnoses and fixes a bug within a short period of time.  A bug 
 report is still very valuable in this case because it provides an artifact 
@@ -815,7 +841,8 @@ NOTE: In the context of Bugzilla, ``bug'' can refer not only to an error in
 existing code, but also to a desired enhancement.  For example, a bug report 
 should be submitted to Bugzilla to report a segmentation fault that occurs 
 when using an existing Ifpack preconditioner, and a bug report should also be
-submitted to request a new Ifpack preconditioner.
+submitted to request a new Ifpack preconditioner.  ``Issue'' and ``bug'' are 
+used interchangably in the discussion of Bugzilla in this guide.
 
 \subsection{Mailman}
 
@@ -881,9 +908,6 @@ Mailing list for representatives for each Trilinos package.  There are no
 leaders lists for individual packages.
 \end{itemize}
 
-All tools are accessible from the main Trilinos 
-website~\cite{Trilinos-home-page}.
-
 %**Consider an example showing how tools can work together to fix bugs.**
 
 %	**(Add a section comp to Epetra and TSF: Two special packages - minimixe redundant work.)**
@@ -909,16 +933,18 @@ other packages.
 The philosophy of the Trilinos project is to minimize the number of
 explicit requirements placed on packages.  Instead, we attempt to
 describe high-level requirements coupled with {\it suggested
-practices}. This approach allows freedom to define how
+practices}.  This approach allows freedom to define how
 requirements are satisfied yet, at the same time, provides guidance
 and support for packages that do not have a full set of established
-software engineering practices. 
+software engineering practices.  In rare cases, requirements may be waived for 
+packages on a case-by-case basis with the approval of the Trilinos Project 
+Leader.
 
 Package requirements can be split into two basic categories:
 \begin{enumerate}
 \item Interoperability mechanisms: Depending what a new Trilinos
 package does, it should be able to interact with one or more other
-Trilinos packages.  Often this means being able to accept application
+Trilinos packages.  Often this means being able to accept an application
 matrix and vector objects as either TSF objects or Epetra objects, and
 that the package implements relevant TSF abstract interfaces.
 Response to Trilinos configuration options also falls in this category.
@@ -929,19 +955,18 @@ design, source control, user documentation, issue tracking and product
 release.
 \end{enumerate}
 
-Trilinos package requirements and suggest practices are summarized in
+Trilinos package requirements and suggested practices are summarized in
 Table~\ref{Table:RequirementsAndPractices}.
 \begin{table}[ht]
 \scriptsize
 \begin{center}
 \begin{tabular}{|p{2.5in}|p{2.5in}|} \hline
 {\bf Requirement} Package must: & {\bf Suggested Practice} Package can: \\ \hline
-Be under version control. Except in rare cases, the package must follow
-the suggested practice. &
-Keep source files as a self-contained collection in a
-single directory under the
-\InlineDirectory{Trilinos/packages} directory and utilize the Trilinos
-mailman lists to communicate software change logs.\\\hline
+Keep source files as a self-contained collection in a 
+single directory under the \InlineDirectory{Trilinos/packages} directory in 
+the Trilinos CVS repository.  Change logs must be archieved and communicated 
+to interested Trilinos developers.  & Utilize Trilinos
+Mailman lists to archieve and communicate software change logs.\\\hline
 Have process in place to port to all supported platforms &
 Use the Trilinos Autotools environment and leverage the existing portability
 facilities already used by numerous packages. \\\hline
@@ -952,8 +977,9 @@ Respond to software faults in a timely manner &  Use
 Trilinos Bugzilla site to record and track software issues, responding
 to issues in order of priority. \\\hline
 Provide unit and reqression testing &
-Register test scripts with the Trilinos automatic testing harness,
-which runs nightly on a variety of supported platforms.\\\hline
+Register test scripts with the Trilinos test harness,
+which runs nightly on a variety of supported platforms and can be used by 
+developers before checking in changes.\\\hline
 \end{tabular}
 \end{center}
 \caption{\label{Table:RequirementsAndPractices} Trilinos Package
@@ -994,7 +1020,7 @@ distribution can easily be omitted from the distribution.
 \subsection{Package has a Process in Place to Port to all Supported Platforms}
 Although use of Trilinos Autotools is the easiest and most robust way
 to ensure portability across all supported platforms, a package is not
-required to them.  At the same time, a package must provide some
+required to use them.  At the same time, a package must provide some
 mechanism to build across all platform that Trilinos supports.
 Typically, if not using autotools, this support would be in the form
 of platform-specific makefiles that the installer could invoke for a
@@ -1006,7 +1032,7 @@ The Trilinos top-level configure script accept numerous configuration
 options as described in Section~\ref{Subsection:ConfiguringTrilinos}.
 To the extent that each option is appropriate, a package should
 respond to each option.  For example, if a package can be built with
-MPI support, it shoud respond \InlineCommand{--enable-mpi} option.
+MPI support, it should respond to the \InlineCommand{--enable-mpi} option.
 
 Note that this does not mean the package must use Trilinos Autotools,
 but must simply be sensitive to certain defined parameters that are
@@ -1050,7 +1076,7 @@ package, identifying who will be default owner of each component.
 defined:
 \begin{enumerate}
 \item \InlineCommand{PackageName-Announce@software.sandia.gov}: 
-Announcements such
+Announcements such as 
 new releases, feature lists and any other newsworthy items will be
 sent to this list.  Any person interested in any aspect of the package
 should subscribe to this list.
@@ -1106,19 +1132,19 @@ should be kept under source control.
 \subsection{Specification/Design}
 Package specifications can be done in many ways.  An effective way for 
 object-oriented, e.g., C++ packages is to use documented header files and a 
-documentation tool such as Doxygen~\cite{doxyen}, and then communicate the 
+documentation tool such as Doxygen~\cite{Doxygen}, and then communicate the 
 generated HTML output to the package development team via the 
 \InlineCommand{package-developers@software.sandia.gov} email list.  If
 appropriate, the clients for this feature should also be included on
 this correspondence.  This
 approach satisfies both the specification and the design requirements
 in the case of object-oriented engineering of mathematical software.
-Other developers
+%Other developers
 
 \subsection{Implementation}
 Assuming that the above approach is used to define a documented header
 file, implementation involves implementing the methods as specified
-and developing test code to verify the correction of the implementation.
+and developing test code to verify the correctness of the implementation.
 Implementing new capabilites should never take place in a release branch.  
 Changes to release branches should be limited to fixing broken code and 
 related activities.  For example, clarifying vague or incorrect documentation 
@@ -1143,8 +1169,8 @@ Issues may be submitted against the follwing components of a package:
 \item Source code.
 \item Tests.
 \end{enumerate}
-Issue may range from a critical source code bug to a new feature
-request.  When an issue is submitted the owner, submitter and any
+Issues may range from a critical source code bug to a new feature
+request.  When an issue is submitted, the owner, submitter and any
 party that was explicitly listed will be notified upon submission of
 the issue, and when any subsequent update is made to the issue.
 
@@ -1188,8 +1214,7 @@ packages interact with these kinds of objects via abstract interfaces that
 allow a package to define what services and behaviors are expected from the objects,
 without enforcing a specific implementation.  However, in order to use
 these packages, some concrete
-implementation must be selected.  Epetra (and in the future other packages described
-in Section~\ref{subsect:PetraObjectModel}) is a collection of concrete
+implementation must be selected.  Epetra (and in the future Tpetra and Jpetra) is a collection of concrete
 classes that supports the construction and use of vectors, sparse
 graphs, and dense and sparse matrices.  It provides serial, parallel and
  distributed memory
@@ -1199,7 +1224,7 @@ result has good performance characteristics.
 \subsection{TSF}
 \label{subsect:InteropTSF}
 Many different algorithms are available to solve any given numerical
-problems.  For example, there are many algorithms for solving a system
+problem.  For example, there are many algorithms for solving a system
 of linear equations, and many solver packages are available to solve
 linear systems.  Which package is appropriate is a function of
 many details about the problem being solved and the platform on which
@@ -1230,7 +1255,7 @@ Figure~\ref{Figure:TrilinosPackageDependencies} shows how the present
 \end{figure}
 collection of Trilinos packages depend on each other.
 
-\section{Platform Portablility}
+%\section{Platform Portablility}
 %	**(List platforms - encourage script submission)**
 
 \clearpage
@@ -1241,9 +1266,9 @@ collection of Trilinos packages depend on each other.
 \appendix
 \section{Commonly Used CVS Commands}
 \label{Section:CVS}
+\begin{itemize}
 
-
-Checking Out a Working Copy
+\item[Checking Out a Working Copy]
 
 To get started, checkout a copy of the development branch of the repository.
 (Releases branches can be obtained by by checking out the appropriate 
@@ -1251,15 +1276,16 @@ tagged version of the repository.)
 
 \DisplayCommand{cvs checkout Trilinos}
 
-Updating a Woring Copy
+\item[Updating a Working Copy]
+
 To update after a version has been obtained use the \InlineCommand{cvs update} 
-command.  First, cd to the directory that is to be updated 
-(usually the Trilinos root directory).  Then type:
+command.  First, cd to the directory that is to be updated (usually the 
+Trilinos root directory).  Then type:
 
 \DisplayCommand{cvs -q update -dP}
 
-The ``-q'' option means ``be somewhat quiet''.  Try the command without this
-option to see what it does.  
+The ``-q'' option means ``be somewhat quiet''.  Try an update without the 
+``-q'' to see exactly what the option does.  
 
 The ``-d'' option means to get any new directories.  For example, if a new 
 package is added to the repository, but the ``-d'' option is not used, that 
@@ -1276,7 +1302,17 @@ repository, but the directory structures will remain if this option is not
 specified.  If an empty directory is needed, simply issue one update 
 command without the ``-P'' and the empty directories will be restored.
 
-%... Must be expanded, add info about when to check in, and which branch...
+%\item[Viewing Local Changes]
+
+
+%\item[Checking in Changes]
+%update!
+
+%\item[Working with Branches]
+%cvs status
+
+%... Must be expanded, add info about when to check in, and which branch... also move much of the cvs stuff from the add/remove file section to here
+\end{itemize}
 
 \section{Common Bugzilla Tasks}
 \label{Section:Bugzilla}
