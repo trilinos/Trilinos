@@ -784,36 +784,28 @@ char  *yo = "matching_pgm";
 
 static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
 {
-    int   i, j, k, v1, v2, edge, weight, ip, maxip, maxindex, maxweight;
-    int   *checked, *vector;
+    int   i, j, n, v1, v2, edge, maxip, maxindex;
+    int   *ips, *adj;
     char  *yo = "matching_ipm";
-    static const float heavy_ratio = 0.2;
 
-    if (!(checked = (int*) ZOLTAN_MALLOC(hg->nVtx  * sizeof(int))) 
-     || !(vector  = (int*) ZOLTAN_MALLOC(hg->nEdge * sizeof(int)))) {
-        Zoltan_Multifree(__FILE__, __LINE__, 2, &checked, &vector);
+    if (!(ips = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int))) 
+     || !(adj = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))) {
+        Zoltan_Multifree(__FILE__, __LINE__, 2, &ips, &adj);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
     }
     
     //print_debug(hg);
-        
+
     for (i = 0; i < hg->nVtx; i++)
-        checked[i] = -1;
-    for (i = 0; i < hg->nEdge; i++)
-        vector[i] = -1;
-    
+        ips[i] = 0;
+        
     /* for every vertex */
     for (v1 = 0; v1 < hg->nVtx  &&  *limit > 0; v1++) {
-        if(match[v1] != v1)
+        if (match[v1] != v1)
             continue;
         
-        maxip = 0;
-        maxindex = -1;
-        maxweight = INT_MAX;
-        for (i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++)
-            vector[hg->vedge[i]] = v1;
-            
+        n=0;
         /* for every hyperedge containing the vertex */
         for (i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
             edge = hg->vedge[i];
@@ -821,36 +813,26 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
             /* for every other vertex in the hyperedge */
             for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
                 v2 = hg->hvertex[j];
-                
-                weight = hg->vindex[v2+1] - hg->vindex[v2];
-                if (match[v2] != v2 
-                  || checked[v2] == v1 
-                  || v1 == v2 
-                  || weight < maxip 
-                  || weight > hg->hindex[hg->nEdge] * heavy_ratio)
-                    continue;
-
-                /* compute inner product of vertex v1 with vertex v2 */
-                ip = 0;
-                for (k = hg->vindex[v2]; k < hg->vindex[v2+1]; k++) {
-                    if (vector[hg->vedge[k]] == v1)
-                        ip++;
-                }
-                checked[v2] = v1;
-                
-                /* keep track of best match seen */
-                if (maxip < ip || (maxip == ip && maxweight > weight)) {
-                    maxip = ip;
-                    maxindex = v2;
-                    maxweight = weight;
-                }
+                if (!ips[v2]++)
+                    adj[n++] = v2;
             }
         }
 
+        /* match v1 with v2 having greatest inner product */
+        maxip = 0;
+        maxindex = -1;
+        for (i = 0; i < n; i++) {
+            v2 = adj[i];
+            if (ips[v2] > maxip && v2 != v1 && match[v2] == v2) {
+                maxip = ips[v2];
+                maxindex = v2;
+            }
+            ips[v2] = 0;
+        }
+        
         //printf("Done with %d, best match is %d with product %d\n",
         //        v1, maxindex, maxip);
-
-        /* match v1 with v2 having greatest inner product */
+        
         if (maxindex != -1) {
             match[v1] = maxindex;
             match[maxindex] = v1;
@@ -866,7 +848,7 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
     //    printf("%2d ",match[i]);
     //printf("\n");
 
-    Zoltan_Multifree(__FILE__, __LINE__, 2, &checked, &vector);
+    Zoltan_Multifree(__FILE__, __LINE__, 2, &ips, &adj);
     return ZOLTAN_OK;
 }
 
