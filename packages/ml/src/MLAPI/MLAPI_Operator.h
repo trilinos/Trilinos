@@ -94,10 +94,10 @@ public:
     DomainSpace_       = DomainSpace;
 
     RCPOperatorBox_    = Teuchos::rcp(new ML_Operator_Box(Op,Ownership));
-    RCPRowMatrix_      = Teuchos::rcp(new ML_Epetra::RowMatrix(Op,&(GetEpetra_Comm())),Ownership);
+    // FIXME: I am not so sure about the following ownership
+    RCPRowMatrix_      = Teuchos::rcp(new ML_Epetra::RowMatrix(Op,&(GetEpetra_Comm())));
     RCPAuxOperatorBox_ = AuxOp;
 
-    BuildColumnSpace();
   }
 
   //! Reshape with given already FillComplete()'d object.
@@ -115,8 +115,6 @@ public:
 
     RCPRowMatrix_ = Teuchos::rcp(Matrix,Ownership);
     Epetra2MLMatrix(RCPRowMatrix_.get(), GetML_Operator());
-
-    BuildColumnSpace();
 
   }
 
@@ -174,31 +172,37 @@ public:
     return(ColumnSpace_);
   }
 
+  //! Returns the number of global rows.
   inline int GetNumGlobalRows() const 
   {
     return(GetRangeSpace().GetNumGlobalElements());
   }
 
+  //! Returns the number of local rows.
   inline int GetNumMyRows() const 
   {
     return(GetRangeSpace().GetNumMyElements());
   }
 
+  //! Returns the number of global columns.
   inline int GetNumGlobalCols() const 
   {
-    return(GetDomainSpace().GetNumGlobalElements());
+    return(GetRowMatrix()->NumGlobalCols());
   }
 
+  //! Returns the number of local columns.
   inline int GetNumMyCols() const 
   {
-    return(GetDomainSpace().GetNumMyElements());
+    return(GetRowMatrix()->NumMyCols());
   }
 
+  //! Returns the global number of nonzeros.
   inline int GetNumGlobalNonzeros() const 
   {
     return(GetRowMatrix()->NumGlobalNonzeros());
   }
 
+  //! Returns the local number of nonzeros.
   inline int GetNumMyNonzeros() const 
   {
     return(GetRowMatrix()->NumMyNonzeros());
@@ -231,6 +235,26 @@ public:
   inline const Teuchos::RefCountPtr<Epetra_RowMatrix>& GetRCPRowMatrix() const
   {
     return(RCPRowMatrix_);
+  }
+
+  //! Returns the global ID of local row ID \c LRID.
+  int GetGRID(const int LRID) const
+  {
+#ifdef MLAPI_CHECK
+    if (LRID < 0 || LRID >= GetNumMyRows())
+      ML_THROW("LRID in invalid", -1);
+#endif
+    return(GetRangeSpace()(LRID));
+  }
+
+  //! Returns the global ID of local column ID \c LCID.
+  int GetGCID(const int LCID) const
+  {
+#ifdef MLAPI_CHECK
+    if (LCID < 0 || LCID >= GetRowMatrix()->NumMyCols())
+      ML_THROW("LRID in invalid", -1);
+#endif
+    return(GetRowMatrix()->RowMatrixColMap().GID(LCID));
   }
 
   // @}
@@ -302,7 +326,10 @@ public:
       os << "Number of columns = " << GetDomainSpace().GetNumGlobalElements() << endl;
       os << "Flop count        = " << GetFlops() << endl;
       os << "Cumulative time   = " << GetTime() << endl;
-      os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << endl;
+      if (GetTime() != 0.0)
+        os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << endl;
+      else
+        os << "MFlops rate       = 0.0" << endl;
       os << endl;
     }
 
@@ -334,7 +361,8 @@ public:
                             &row_length, 0);
           for  (int j = 0; j < row_length; j++) {
             int GlobalRow = GetRangeSpace()(i);
-            int GlobalCol = GetColumnSpace()(bindx[j]);
+            //int GlobalCol = GetColumnSpace()(bindx[j]);
+            int GlobalCol = GetRowMatrix()->RowMatrixColMap().GID(bindx[j]);
             os.width(10);
             os << iproc;
             os.width(20);
@@ -357,13 +385,14 @@ public:
     return (os);
   }
 
-  // @}
-  
-private:
-  
   //! Build the column space, by computing the GID of all local columns.
   void BuildColumnSpace()
   {
+
+    if (GetNumProcs() == 1) {
+      ColumnSpace_ = DomainSpace_;
+      return;
+    }
 
     vector<double> dtemp;
     vector<int> GlobalElements;
@@ -398,6 +427,10 @@ private:
     return;
   }
 
+  // @}
+  
+private:
+  
   //! Destroys all internal data and resets \c this object.
   void Destroy() 
   { 

@@ -127,8 +127,8 @@ public:
           ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
                             &row_length, 0);
           for  (int j = 0; j < row_length; j++) {
-            int GlobalRow = obj.GetDomainSpace()(i) + 1;
-            int GlobalCol = obj.GetColumnSpace()(bindx[j]) + 1;
+            int GlobalRow = obj.GetGRID(i) + 1;
+            int GlobalCol = obj.GetGCID(bindx[j]) + 1;
             fprintf(fp_,"%s(%d,%d) = %e;\n",
                     obj.GetLabel().c_str(), GlobalRow, GlobalCol, val[j]);
           }

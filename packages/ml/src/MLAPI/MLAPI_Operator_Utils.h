@@ -66,11 +66,14 @@ Operator GetRAP(const Operator& R, const Operator& A,
 //! Returns a newly created transpose of \c A.
 // ====================================================================== 
 
-Operator GetTranspose(const Operator& A) 
+Operator GetTranspose(const Operator& A, const bool byrow = true) 
 {
   ML_Operator* ML_transp;
   ML_transp = ML_Operator_Create(GetML_Comm());
-  ML_Operator_Transpose_byrow(A.GetML_Operator(),ML_transp);
+  if (byrow)
+    ML_Operator_Transpose_byrow(A.GetML_Operator(),ML_transp);
+  else
+    ML_Operator_Transpose(A.GetML_Operator(),ML_transp);
 
   Operator transp(A.GetRangeSpace(),A.GetDomainSpace(), ML_transp,true);
   return(transp);
@@ -95,7 +98,7 @@ Operator GetIdentity(const Space& DomainSpace, const Space& RangeSpace)
 //! Returns a vector containing the diagonal elements of \c A.
 // ====================================================================== 
 
-MultiVector GetDiagonal(const Operator& A, const int offset = 0)
+MultiVector GetDiagonal(const Operator& A)
 {
   // FIXME
   if (A.GetDomainSpace() != A.GetRangeSpace())
@@ -115,12 +118,53 @@ MultiVector GetDiagonal(const Operator& A, const int offset = 0)
   double* val   = (double *)  ML_allocate(allocated*sizeof(double));
 
   for (int i = 0 ; i < matrix->getrow->Nrows; i++) {
-    int GlobalRow = A.GetRangeSpace()(i);
     ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
                       &row_length, 0);
     for  (int j = 0; j < row_length; j++) {
       D(i) = 0.0;
-      if (A.GetColumnSpace()(bindx[j]) == GlobalRow + offset) {
+      if (i == bindx[j]) {
+        D(i) = val[j];
+        break;
+      }
+    }
+  }
+
+  ML_free(val);
+  ML_free(bindx);
+  return (D);
+
+}
+
+// ====================================================================== 
+//! Returns a vector containing the diagonal elements of \c A.
+// ====================================================================== 
+
+MultiVector GetDiagonal(const Operator& A, const int offset)
+{
+  // FIXME
+  if (A.GetDomainSpace() != A.GetRangeSpace())
+    ML_THROW("Currently only square matrices are supported", -1);
+
+  MultiVector D(A.GetDomainSpace());
+  D = 0.0;
+  
+  ML_Operator* matrix = A.GetML_Operator();
+
+  if (matrix->getrow == NULL)
+    ML_THROW("getrow() not set!", -1);
+
+  int row_length;
+  int allocated = 128;
+  int*    bindx = (int    *)  ML_allocate(allocated*sizeof(int   ));
+  double* val   = (double *)  ML_allocate(allocated*sizeof(double));
+
+  for (int i = 0 ; i < matrix->getrow->Nrows; i++) {
+    int GlobalRow = A.GetGRID(i);
+    ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
+                      &row_length, 0);
+    for  (int j = 0; j < row_length; j++) {
+      D(i) = 0.0;
+      if (A.GetGCID(bindx[j]) == GlobalRow + offset) {
         D(i) = val[j];
         break;
       }
@@ -180,7 +224,7 @@ static void diag_destroy(void* data)
 //! Returns a newly created operator, containing D on the diagonal.
 // ====================================================================== 
 
-Operator GetDiagonal(const MultiVector& D, const int offset = 0)
+Operator GetDiagonal(const MultiVector& D)
 {
   if (D.GetNumVectors() != 1)
     ML_THROW("D.GetNumVectors() != 1", -1);
@@ -245,16 +289,13 @@ Operator GetJacobiIterationOperator(const Operator& Amat, double Damping)
                                 widget->Amat->outvec_leng, widget,
                                 widget->Amat->matvec->Nrows, NULL, 0);
 
-  // FIXME-RST: is this the right way to do it??
   tmp_ML->data_destroy = widget_destroy;
 
   ML_Operator_Set_Getrow(tmp_ML, widget->Amat->getrow->Nrows, 
                          ML_AGG_JacobiSmoother_Getrows);
-  // FIXME-RST:
-  // is this creating a brand new comm info, or just a clone?
-  // It would be nice to have a new comm info, so that the
-  // old operator could be destroyed if necessary...
 
+  // Creates a new copy of pre_comm, so that the old pre_comm
+  // can be destroyed without worry
   ML_CommInfoOP_Clone(&(tmp_ML->getrow->pre_comm),
                       widget->Amat->getrow->pre_comm);
 
@@ -354,16 +395,10 @@ Operator GetPtent1D(const MultiVector& D, const int offset = 0)
   return(Diag);
 }
 
+// ====================================================================== 
 // Creates C = scalarA * A + scalarB * B.
-//
-// FIXME-RST
-// - This function is a duplicate of ML_Operator_Add. Should we have
-//   just one version? 
-// - does it work with ML_EpetraCRS_MATRIX? On my computer was computer
-//   was crashing (but some time ago)
-// - it there a memory leak in the allocation of columns and values?
-//   Isn't it allocated twice?
-//
+// ====================================================================== 
+
 int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
 		    int matrix_type, double scalarA, double scalarB)
 {
@@ -460,6 +495,9 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
   }
   nz_ptr++;
 
+  columns = 0;
+  values = 0;
+
   rowptr = (int    *) ML_allocate(sizeof(int)*(A->outvec_leng+1));
   if (matrix_type == ML_CSR_MATRIX) {
     columns= (int    *) ML_allocate(sizeof(int)*nz_ptr);
@@ -474,12 +512,6 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
   else {
     pr_error("ML_Operator_Add: Unknown matrix type\n");
   }
-
-
-  columns= (int    *) ML_allocate(sizeof(int)*nz_ptr);
-  values = (double *) ML_allocate(sizeof(double)*nz_ptr);
-  if (values == NULL) pr_error("ML_Operator_Add: out of space\n");
-
 
   nz_ptr = 0;
   rowptr[0] = 0;
@@ -609,6 +641,35 @@ void PrintSparsity(const Operator& A, int NumPDEEquations = 1)
           
   ML_Operator_PrintSparsity(A.GetML_Operator(), title,
                             filename, ML_TRUE, NumPDEEquations = 1);
+}
+
+// ====================================================================== 
+//! Multiply A by a double value, \c alpha.
+// ====================================================================== 
+
+Operator GetScaledOperator(const Operator& A, const double alpha) 
+{
+  ML_Operator* ScaledA = 0;
+  ScaledA = ML_Operator_ExplicitlyScale(A.GetML_Operator(),
+                                        (double)alpha);
+
+  if (ScaledA == 0)
+    ML_THROW("ML_Operator_ExplicitlyScale returned 0", -1);
+
+  Operator res;
+  res.Reshape(A.GetDomainSpace(), A.GetRangeSpace(), ScaledA,
+              true, A.GetRCPOperatorBox());
+    
+  return(res);
+}
+
+// ====================================================================== 
+//! Duplicates a given operator.
+// ====================================================================== 
+
+Operator Duplicate(const Operator& A)
+{
+  return(GetScaledOperator(A, 1.0));
 }
 
 } // namespace MLAPI

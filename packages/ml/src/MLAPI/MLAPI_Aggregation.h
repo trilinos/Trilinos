@@ -43,17 +43,6 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
               Operator& Ptent, MultiVector& NextNS)
 {
 
-  // FIXME-RST
-  // Ray, I would appreciate if you check and fix (or tell me how to fix)
-  // the following:
-  // - number of PDEs
-  // - dimension of the null space
-  // - settings of all the parameters to call ML_Aggregate_Coarsen()
-  // - set/get of null space, before and after the call to ML_Aggregate_Coarsen()
-  // - for output, how to set the current level?
-  // - something else has to be fixed? Memory leaks?
-  // Thanks
-  
   string CoarsenType     = List.get("aggregation: type", "Uncoupled");
   int    NodesPerAggr    = List.get("aggregation: per aggregate", 64);
   double Threshold       = List.get("aggregation:", 0.0);
@@ -72,16 +61,21 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
   if (ThisNS.GetNumVectors() == 0)
     ML_THROW("zero-dimension null space", -1);
              
-  int size = A.GetDomainSpace().GetNumMyElements() * ThisNS.GetNumVectors();
+  int size = ThisNS.GetMyTotalLength();
 
-  // FIXME-RST HOW TO FREE THIS MEMORY??
-  ML_memory_alloc((void **)&(agg_object->nullspace_vect), 
-                  sizeof(double) * size, "ns");
-  for (int i = 0 ; i < size ; ++i)
-    agg_object->nullspace_vect[i] = ThisNS.GetValues()[i];
+  double* null_vect = 0;
+  ML_memory_alloc((void **)&null_vect, sizeof(double) * size, "ns");
 
-  agg_object->nullspace_dim = ThisNS.GetNumVectors();
-  agg_object->num_PDE_eqns = NumPDEEquations;
+  int incr = 1;
+  DCOPY_F77(&size, (double*)ThisNS.GetValues(), &incr,
+            null_vect, &incr);
+
+  ML_Aggregate_Set_NullSpace(agg_object, NumPDEEquations,
+                             ThisNS.GetNumVectors(), null_vect, 
+                             ThisNS.GetMyLength());
+
+  //DELETE agg_object->nullspace_dim = ThisNS.GetNumVectors();
+  //agg_object->num_PDE_eqns = NumPDEEquations;
 
   int NextSize;
   
@@ -109,14 +103,13 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
   Space CoarseSpace(-1,NumMyElements);
   Ptent.Reshape(CoarseSpace,A.GetRangeSpace(),ML_Ptent,true);
 
-  // FIXME: this is broken
   assert (NextSize * ThisNS.GetNumVectors() != 0);
 
   NextNS.Reshape(CoarseSpace, ThisNS.GetNumVectors());
 
-  // FIXME: is it correct?
-  for (int i = 0 ; i < NextNS.GetMyTotalLength() ; ++i)
-    NextNS.GetValues()[i] = agg_object->nullspace_vect[i];
+  size = NextNS.GetMyTotalLength();
+  DCOPY_F77(&size, agg_object->nullspace_vect, &incr,
+            NextNS.GetValues(), &incr);
 
   ML_Aggregate_Destroy(&agg_object);
 

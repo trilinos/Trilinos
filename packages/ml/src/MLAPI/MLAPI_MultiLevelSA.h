@@ -105,39 +105,45 @@ public:
       GetPtent(A, List, ThisNS, Ptent, NextNS);
       ThisNS = NextNS;
       
-      if (EigenAnalysis == "Anorm")
-        LambdaMax = MaxEigAnorm(A,true);
-      else if (EigenAnalysis == "cg")
-        LambdaMax = MaxEigCG(A,true);
-      else if (EigenAnalysis == "power-method")
-        LambdaMax = MaxEigPowerMethod(A,true);
-      else
-        ML_THROW("incorrect parameter (" + EigenAnalysis + ")", -1);
+      if (Damping) {
+
+        if (EigenAnalysis == "Anorm")
+          LambdaMax = MaxEigAnorm(A,true);
+        else if (EigenAnalysis == "cg")
+          LambdaMax = MaxEigCG(A,true);
+        else if (EigenAnalysis == "power-method")
+          LambdaMax = MaxEigPowerMethod(A,true);
+        else
+          ML_THROW("incorrect parameter (" + EigenAnalysis + ")", -1);
+
+#if 0
+        MultiVector Diag = GetDiagonal(A);
+        Diag.Reciprocal();
+        Diag.Scale(Damping / LambdaMax);
+        Operator Dinv = GetDiagonal(Diag);
+        Operator DinvA = Dinv * A;
+        Operator I = GetIdentity(A.GetDomainSpace(),A.GetRangeSpace());
+        Operator IminusA = I - DinvA;
+#else
+        IminusA = GetJacobiIterationOperator(A,Damping / LambdaMax);
+#endif
+        P = IminusA * Ptent;
+      }
+      else {
+        P = Ptent;
+        LambdaMax = -1.0;
+      }
 
       if (GetPrintLevel()) {
         cout << "omega                   = " << Damping << endl;
-        cout << "lambda max              = " << LambdaMax << endl;
-        cout << "damping factor          = " << Damping / LambdaMax << endl;
+        if (LambdaMax != -1.0) {
+          cout << "lambda max              = " << LambdaMax << endl;
+          cout << "damping factor          = " << Damping / LambdaMax << endl;
+        }
         cout << "smoother type           = " << SmootherType << endl;
         cout << "relaxation sweeps       = " << List.get("smoother: sweeps", 1) << endl;
         cout << "smoother damping        = " << List.get("smoother: damping factor", 0.67) << endl;
       }
-
-      /* this is valid as well
-      MultiVector Diag;
-      Diag = GetDiagonal(A);
-      Diag = (Damping / LambdaMax) / Diag;
-      Operator Dinv = GetDiagonal(A.GetDomainSpace(),A.GetRangeSpace(),Diag);
-      Operator I = Identity(A.GetDomainSpace(),A.GetRangeSpace());
-      Operator DinvA = Dinv * A;
-      Operator IminusA = I - (Damping / LambdaMax) * DinvA;
-      */
-      if (Damping) {
-        IminusA = GetJacobiIterationOperator(A,Damping / LambdaMax);
-        P = IminusA * Ptent;
-      }
-      else
-        P = Ptent;
 
       R = GetTranspose(P);
       C = GetRAP(R,A,P);
@@ -157,28 +163,28 @@ public:
       }
     }
 
+    // set coarse solver
+    S.Reshape(A_[level], CoarseType, List);
+    S_[level] = S;
+    MaxLevels_ = level + 1;
+
+    // set the label
+    SetLabel("SA, L = " + GetString(MaxLevels_) +
+             ", smoother = " + SmootherType);
+
+    // FIXME: update flops!
+    UpdateTime();
+
     if (GetPrintLevel()) {
       ML_print_line("-", 80);
       cout << "final level             = " << level << endl;
       cout << "number of global rows   = " << A_[level].GetNumGlobalRows() << endl;
       cout << "number of global nnz    = " << A_[level].GetNumGlobalNonzeros() << endl;
       cout << "coarse solver           = " << CoarseType << endl;
+      cout << "time spent in constr.   = " << GetTime() << " (s)" << endl;
+      ML_print_line("-", 80);
     }
 
-    // set coarse solver
-    S.Reshape(A_[level], CoarseType, List);
-    S_[level] = S;
-    MaxLevels_ = level + 1;
-
-    if (GetPrintLevel())
-      ML_print_line("-", 80);
-
-    // set the label
-    SetLabel("SA, L = " + GetString(level) +
-             " smoother = " + SmootherType);
-
-    // FIXME: update flops!
-    UpdateTime();
   }
 
   //! Destructor.
@@ -309,7 +315,10 @@ public:
       os << "Number of levels = " << GetMaxLevels() << endl;
       os << "Flop count       = " << GetFlops() << endl;
       os << "Cumulative time  = " << GetTime() << endl;
-      os << "MFlops rate      = " << 1.0e-6 * GetFlops() / GetTime() << endl;
+      if (GetTime() != 0.0)
+        os << "MFlops rate      = " << 1.0e-6 * GetFlops() / GetTime() << endl;
+      else
+        os << "MFlops rate      = 0.0" << endl;
       os << endl;
     }
     return(os);

@@ -109,6 +109,24 @@ Operator operator*(const Operator& A, const Operator& B)
 }
 
 // ====================================================================== 
+//! Creates a new Operator, defined as A * alpha
+// ====================================================================== 
+
+Operator operator*(const Operator& A, const double alpha) 
+{
+  return(GetScaledOperator(A, alpha));
+}
+
+// ====================================================================== 
+//! Creates a new Operator, defined as alpha * A
+// ====================================================================== 
+
+Operator operator*(const double alpha, const Operator& A) 
+{
+  return(GetScaledOperator(A, alpha));
+}
+
+// ====================================================================== 
 //! Creates a new MultiVector, defined as x * alpha
 // ====================================================================== 
 

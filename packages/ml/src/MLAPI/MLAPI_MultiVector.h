@@ -516,7 +516,10 @@ public:
       os << "Number of vectors = " << GetNumVectors() << endl;
       os << "Flop count        = " << GetFlops() << endl;
       os << "Cumulative time   = " << GetTime() << endl;
-      os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << endl;
+      if (GetTime() != 0.0)
+        os << "MFlops rate       = " << 1.0e-6 * GetFlops() / GetTime() << endl;
+      else
+        os << "MFlops rate       = 0.0" << endl;
       os << endl << endl;
     }
 
