@@ -54,7 +54,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
             the map is defined to be a local replicated
             map.  In this case, objects constructed using this map will be identically replicated across
 	    all processors in the communicator.
-       <li> If NumGlobalElements = 0 and NumMyElements is passed in then NumGlobalElements will
+       <li> If NumGlobalElements = -1 and NumMyElements is passed in then NumGlobalElements will
             be computed as the sum of NumMyElements across all processors.
        <li> If neither of the above is true, NumGlobalElements will be checked against the sum of 
             NumMyElements across all processors.  An error is issued if the comparison is not equal.

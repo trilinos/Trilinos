@@ -1317,8 +1317,9 @@ int Epetra_CrsGraph::PackAndPrepare(const Epetra_SrcDistObject& Source,
 
   VarSizes = true;
 
-  if(NumExportIDs <= 0) 
-    return(0);
+  SizeOfPacket = sizeof(int); 
+
+  if(NumExportIDs <= 0) return(0);
 
   try {
     const Epetra_CrsGraph& A = dynamic_cast<const Epetra_CrsGraph&>(Source);
@@ -1347,7 +1348,6 @@ int Epetra_CrsGraph::PackAndPrepare(const Epetra_SrcDistObject& Source,
     }
   }
 
-  SizeOfPacket = sizeof(int); 
   CrsGraphData_->ReAllocateAndCast(Exports, LenExports, TotalSendSize*SizeOfPacket);
 
   try {
