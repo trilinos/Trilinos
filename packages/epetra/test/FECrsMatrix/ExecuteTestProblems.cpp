@@ -88,7 +88,9 @@ int Drumm1(const Epetra_Map& map, bool verbose)
 
     EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
 
+    if (verbose) {
     A.Print(cout);
+    }
 
     delete [] myNodes;
     delete [] values;
@@ -128,7 +130,9 @@ int Drumm1(const Epetra_Map& map, bool verbose)
 
     EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
 
+    if (verbose) {
     A.Print(cout);
+    }
 
     delete [] myNodes;
     delete [] values;
@@ -199,18 +203,22 @@ int Drumm2(const Epetra_Map& map, bool verbose)
 
     EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
 
+    if (verbose) {
     A.Print(cout);
+    }
 
     //now let's make sure we can do a matvec with this matrix.
     Epetra_Vector x(Map), y(Map);
     x.PutScalar(1.0);
     EPETRA_TEST_ERR( A.Multiply(false, x, y), ierr);
 
-    if (verbose) {
+    if (verbose&&localProc==0) {
       cout << "y = A*x, x=1.0's"<<endl;
     }
 
+    if (verbose) {
     y.Print(cout);
+    }
 
     delete [] myNodes;
     delete [] values;
@@ -249,14 +257,18 @@ int Drumm2(const Epetra_Map& map, bool verbose)
 
     EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
 
+    if (verbose) {
     A.Print(cout);
+    }
 
     //now let's make sure we can do a matvec with this matrix.
     Epetra_Vector x(Map), y(Map);
     x.PutScalar(1.0);
     EPETRA_TEST_ERR( A.Multiply(false, x, y), ierr);
 
+    if (verbose) {
     y.Print(cout);
+    }
 
     delete [] myNodes;
     delete [] values;
@@ -361,13 +373,20 @@ int Drumm3(const Epetra_Map& map, bool verbose)
 
   b.GlobalAssemble();
 
-  cout << "b:" << endl;
+  if (verbose&&MyPID==0) cout << "b:" << endl;
+  if (verbose) {
   b.Print(cout);
+  }
 
   x0 = b;
 
+  if (verbose&&MyPID==0) {
   cout << "x:"<<endl;
+  }
+
+  if (verbose) {
   x0.Print(cout);
+  }
 
   delete [] Values;
   delete [] Indices;
@@ -390,7 +409,7 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
   
   // Construct FECrsMatrix
   
-  if (verbose) cout << "constructing Epetra_FECrsMatrix" << endl;
+  if (verbose&&MyPID==0) cout << "constructing Epetra_FECrsMatrix" << endl;
 
   //
   //we'll set up a tri-diagonal matrix.
@@ -403,7 +422,7 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
 
   Epetra_FECrsMatrix A(Copy, Map, rowLengths);
  
-  if (verbose) {
+  if (verbose&&MyPID==0) {
     cout << "calling A.SumIntoGlobalValues with 1-D data array"<<endl;
   }
 
@@ -460,7 +479,7 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
     int row = minGID+i;
 
     if (i%2==0) {
-      if (verbose) {
+      if (verbose&&MyPID==0) {
         cout << "calling A.SumIntoGlobalValues with "<<numCols<<" values"<<endl;
       }
       EPETRA_TEST_ERR( A.SumIntoGlobalValues(1, &row,
@@ -469,7 +488,7 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
                                              Epetra_FECrsMatrix::ROW_MAJOR), ierr );
     }
     else {
-      if (verbose) {
+      if (verbose&&MyPID==0) {
         cout << "calling A.ReplaceGlobalValues with "<<numCols<<" values"<<endl;
       }
       EPETRA_TEST_ERR( A.ReplaceGlobalValues(1, &row,
@@ -479,16 +498,18 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
     }
   }}
 
-  if (verbose) {
+  if (verbose&&MyPID==0) {
     cout << "calling A.GlobalAssemble()" << endl;
   }
 
   EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
 
-  if (verbose) {
+  if (verbose&&MyPID==0) {
   cout << "after globalAssemble"<<endl;
   }
+  if (verbose) {
   A.Print(cout);
+  }
 
   delete [] values_1d;
   delete [] ptIndices;

@@ -446,7 +446,7 @@ int main(int argc, char *argv[])
   }
   */
 
-  EPETRA_TEST_ERR( checkMergeRedundantEntries(Comm, verbose), ierr);
+  EPETRA_TEST_ERR( checkMergeRedundantEntries(Comm, verbose1), ierr);
 			
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
@@ -839,11 +839,13 @@ int checkMergeRedundantEntries(Epetra_Comm& comm, bool verbose)
     }
   }
 
-  if (verbose) {
+  if (verbose&&localProc==0) {
     cout << "checkMergeRedundantEntries, A:" << endl;
   }
 
+  if (verbose) {
   A.Print(cout);
+  }
 
   delete [] BlockIndices;
   delete [] myCols;

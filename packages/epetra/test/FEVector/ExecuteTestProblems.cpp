@@ -33,7 +33,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   
   // Construct FEVector
   
-  if (verbose) cout << "constructing Epetra_FEVector" << endl;
+  if (verbose&&MyPID==0) cout << "constructing Epetra_FEVector" << endl;
 
   Epetra_FEVector A(Map);
  
@@ -55,21 +55,23 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
     ptCoefs[i] = 1.0;
   }}
 
-  if (verbose) {
+  if (verbose&&MyPID==0) {
     cout << "calling A.SumIntoGlobalValues with " << numGlobalIDs << " values"<<endl;
   }
   EPETRA_TEST_ERR( A.SumIntoGlobalValues(numGlobalIDs, ptIndices, ptCoefs), ierr);
 
-  if (verbose) {
+  if (verbose&&MyPID==0) {
     cout << "calling A.GlobalAssemble()" << endl;
   }
 
   EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
 
-  if (verbose) {
+  if (verbose&&MyPID==0) {
   cout << "after globalAssemble"<<endl;
   }
+  if (verbose) {
   A.Print(cout);
+  }
 
   delete [] ptIndices;
   delete [] ptCoefs;
@@ -128,19 +130,23 @@ int fevec1(Epetra_Comm& Comm, bool verbose)
 
   EPETRA_TEST_ERR( b.GlobalAssemble(), ierr);
 
-  if (verbose) {
+  if (verbose&&MyPID==0) {
     cout << "b:"<<endl;
   }
 
+  if (verbose) {
   b.Print(cout);
+  }
 
   x0 = b;
 
-  if (verbose) {
+  if (verbose&&MyPID==0) {
     cout << "x:"<<endl;
   }
 
+  if (verbose) {
   x0.Print(cout);
+  }
 
   delete [] Values;
   delete [] Indices;
@@ -213,19 +219,23 @@ int fevec2(Epetra_Comm& Comm, bool verbose)
 
   EPETRA_TEST_ERR( b.GlobalAssemble(), ierr);
 
-  if (verbose) {
+  if (verbose&&MyPID==0) {
     cout << "b:"<<endl;
   }
 
+  if (verbose) {
   b.Print(cout);
+  }
 
   x0 = b;
 
-  if (verbose) {
+  if (verbose&&MyPID==0) {
     cout << "x:"<<endl;
   }
 
+  if (verbose) {
   x0.Print(cout);
+  }
 
   delete [] Values;
   delete [] Indices;

@@ -118,10 +118,12 @@ int quad1(const Epetra_Map& map, bool verbose)
 
   EPETRA_TEST_ERR( A.GlobalAssemble(), ierr);
 
-  if (verbose) {
+  if (verbose && localProc==0) {
     cout << "after globalAssemble"<<endl;
   }
-  A.Print(cout);
+  if (verbose) {
+    A.Print(cout);
+  }
 
   delete [] elemMatrix;
   delete [] myNodes;
@@ -244,10 +246,13 @@ int quad2(const Epetra_Map& map, bool verbose)
 
   EPETRA_TEST_ERR( A.GlobalAssemble(), ierr);
 
-  if (verbose) {
+  if (verbose && localProc==0) {
     cout << "after globalAssemble"<<endl;
   }
+
+  if (verbose) {
   A.Print(cout);
+  }
 
   //now let's make sure that we can perform a matvec...
   Epetra_FEVector x(blkMap), y(blkMap);
@@ -255,10 +260,12 @@ int quad2(const Epetra_Map& map, bool verbose)
 
   EPETRA_TEST_ERR( A.Multiply(false, x, y), ierr);
 
-  if (verbose) {
+  if (verbose && localProc==0) {
     cout << "quad2, y:"<<endl;
   }
-  y.Print(cout);
+  if (verbose) {
+    y.Print(cout);
+  }
 
   delete [] elemMatrix;
   delete [] myNodes;
@@ -279,7 +286,7 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
   
   // Construct FEVbrMatrix
   
-  if (verbose) cout << "constructing Epetra_FEVbrMatrix" << endl;
+  if (verbose && MyPID==0) cout << "constructing Epetra_FEVbrMatrix" << endl;
 
   //
   //we'll set up a tri-diagonal matrix.
@@ -292,7 +299,7 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
 
   Epetra_FEVbrMatrix A(Copy, Map, rowLengths);
  
-  if (verbose) {
+  if (verbose && MyPID==0) {
     cout << "calling A.InsertGlobalValues with 1-D data array"<<endl;
   }
 
@@ -357,16 +364,18 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
 
   }}
 
-  if (verbose) {
+  if (verbose&&MyPID==0) {
     cout << "calling A.GlobalAssemble()" << endl;
   }
 
   EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
 
-  if (verbose) {
+  if (verbose&&MyPID==0) {
   cout << "after globalAssemble"<<endl;
   }
+  if (verbose) {
   A.Print(cout);
+  }
 
   delete [] values_1d;
   delete [] ptIndices;

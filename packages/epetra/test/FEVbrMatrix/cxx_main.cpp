@@ -41,6 +41,12 @@ int main(int argc, char *argv[]) {
   // Check if we should print results to standard out
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
+  int localverbose = verbose ? 1 : 0;
+  int globalverbose=0;
+  MPI_Allreduce(&localverbose, &globalverbose, 1, MPI_INT, MPI_SUM,
+		MPI_COMM_WORLD);
+  verbose = (globalverbose>0);
+
   //  char tmp;
   //  if (rank==0) cout << "Press any key to continue..."<< endl;
   //  if (rank==0) cin >> tmp;
@@ -51,7 +57,7 @@ int main(int argc, char *argv[]) {
   if (verbose) cout << Comm <<endl;
 
   // Redefine verbose to only print on PE 0
-  if (verbose && rank!=0) verbose = false;
+  //if (verbose && rank!=0) verbose = false;
 
   int NumVectors = 1;
   int NumMyElements = 4;
@@ -60,7 +66,7 @@ int main(int argc, char *argv[]) {
   
   // Test Petra-defined uniform linear distribution constructor
 
-  if (verbose) {
+  if (verbose && rank==0) {
     cout << "\n*********************************************************"<<endl;
     cout << "Checking Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm)" << endl;
     cout << "*********************************************************" << endl;
