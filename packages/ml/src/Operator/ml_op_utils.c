@@ -3113,7 +3113,7 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits)
   ML_free(xvec);
   ML_free(bvec);
 #else
-  if (A->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5)
+  if (A->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 5 && numits > 0)
     printf("ML_Operator_Profile: not compiled with -DML_TIMING\n");
 #endif
 }
@@ -3128,4 +3128,26 @@ void ML_Operator_Profile_SetIterations(int numits)
 int ML_Operator_Profile_GetIterations()
 {
   return ML_profile_num_its;
+}
+
+int ML_Operator_Get_Nnz(ML_Operator *A)
+{
+  int i;
+  int space=0, *columns=NULL, row_lengths;
+  double *values;
+
+
+  if (A == NULL) return 0;
+  if (A->getrow == NULL) return 0;
+  if (A->getrow->func_ptr == NULL) return 0;
+
+  if (A->N_nonzeros == -1) {
+    A->N_nonzeros = 0;
+    for (i=0; i<A->outvec_leng; i++) {
+      ML_get_matrix_row(A, 1, &i, &space, &columns, &values, &row_lengths, 0);
+      A->N_nonzeros += row_lengths;
+    }
+    printf("\n\n*** Ke fine nnz = %d\n",A->N_nonzeros);
+  }
+  return A->N_nonzeros; 
 }
