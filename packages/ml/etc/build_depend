@@ -77,8 +77,8 @@ foreach $srcfile (@srcfiles) {
 
 }
 
-@INCDIR = ("../src"); #,"../lib/DSuperLU/SRC");# list of include directories
-@SRCDIR = ("../src","../examples");       # list of src directories
+@INCDIR = ("../flat"); #,"../lib/DSuperLU/SRC");# list of include directories
+@SRCDIR = ("../flat","../examples");       # list of src directories
 $FILENAME = "depends.ml";
 open(OUTFILE,">$FILENAME") || die "Can't open $FILENAME\n";
 &build_depends(*INCDIR,*SRCDIR,OUTFILE);
