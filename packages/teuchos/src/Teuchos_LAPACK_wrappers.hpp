@@ -48,6 +48,8 @@
 #define DTREXC_F77  F77_FUNC(strexc,STREXC)
 #define DGEES_F77   F77_FUNC(sgees,SGEES)
 #define DLAPY2_F77  F77_FUNC(slapy2,SLAPY2)
+#define DLARND_F77  F77_FUNC(slarnd,SLARND)
+#define DLARNV_F77  F77_FUNC(slarnv,SLARNV)
 
 #elif defined(INTEL_CXML)
 
@@ -81,6 +83,8 @@
 #define DTREXC_F77  F77_FUNC(dtrexc,DTREXC)
 #define DGEES_F77   F77_FUNC(dgees,DGEES)
 #define DLAPY2_F77  F77_FUNC(dlapy2,DLAPY2)
+#define DLARND_F77  F77_FUNC(dlarnd,DLARND)
+#define DLARNV_F77  F77_FUNC(dlarnv,DLARNV)
 
 #elif defined(INTEL_MKL)
 
@@ -114,6 +118,8 @@
 #define DTREXC_F77  F77_FUNC(dtrexc,DTREXC)
 #define DGEES_F77   F77_FUNC(dgees,DGEES)
 #define DLAPY2_F77  F77_FUNC(dlapy2,DLAPY2)
+#define DLARND_F77  F77_FUNC(dlarnd,DLARND)
+#define DLARNV_F77  F77_FUNC(dlarnv,DLARNV)
 
 #endif 
 
@@ -175,6 +181,8 @@
 #define DTREXC_F77  F77_FUNC(dtrexc,DTREXC)
 #define DGEES_F77   F77_FUNC(dgees,DGEES)
 #define DLAPY2_F77  F77_FUNC(dlapy2,DLAPY2)
+#define DLARND_F77  F77_FUNC(dlarnd,DLARND)
+#define DLARNV_F77  F77_FUNC(dlarnv,DLARNV)
 
 #define SGETRF_F77  F77_FUNC(sgetrf,SGETRF)
 #define SGETRS_F77  F77_FUNC(sgetrs,SGETRS)
@@ -203,6 +211,8 @@
 #define SLAMCH_F77  F77_FUNC(slamch,SLAMCH)
 #define SGEES_F77   F77_FUNC(sgees,SGEES)
 #define SLAPY2_F77  F77_FUNC(slapy2,SLAPY2)
+#define SLARND_F77  F77_FUNC(slarnd,SLARND)
+#define SLARNV_F77  F77_FUNC(slarnv,SLARNV)
 
 
 #ifdef __cplusplus
@@ -268,11 +278,18 @@ void PREFIX SORMHR_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, con
 void PREFIX STREVC_F77(Teuchos_fcd, Teuchos_fcd, int* select, const int* n, const float* t, const int* ldt, float* vl, const int* ldvl, float* vr, const int* ldvr, const int* mm, int* m, float* work, int* info); 
 void PREFIX STREXC_F77(Teuchos_fcd, const int* n, float* t, const int* ldt, float* q, const int* ldq, int* ifst, int* ilst, float* work, int* info);
 
-float SLAMCH_F77(Teuchos_fcd);
-double DLAMCH_F77(Teuchos_fcd);
+float PREFIX SLARND_F77(const int* idist, int* seed);
+double PREFIX DLARND_F77(const int* idist, int* seed);
+
+void PREFIX SLARNV_F77(const int* idist, int* seed, const int* n, float* v);
+void PREFIX DLARNV_F77(const int* idist, int* seed, const int* n, double* v);
+
+float PREFIX SLAMCH_F77(Teuchos_fcd);
+double PREFIX DLAMCH_F77(Teuchos_fcd);
 
 float PREFIX SLAPY2_F77(const float* x, const float* y);
 double PREFIX DLAPY2_F77(const double* x, const double* y);
+
 
 #ifdef __cplusplus
 }

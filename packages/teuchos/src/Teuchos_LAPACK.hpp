@@ -172,6 +172,14 @@ namespace Teuchos
     void TREXC(const char COMPQ, const OrdinalType n, ScalarType* T, const OrdinalType ldt, ScalarType* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, ScalarType* WORK, OrdinalType* info) const;
     //@}
 
+    //@{ \name Random number generators
+    //! Returns a random number from a uniform or normal distribution.
+    ScalarType LARND( const OrdinalType idist, OrdinalType* seed ) const;
+
+    //! Returns a vector of random numbers from a chosen distribution.
+    void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, ScalarType* v ) const;    
+    //@}
+
     //@{ \name Machine Characteristics Routines.
     //! Determines machine parameters for floating point characteristics.
     ScalarType LAMCH(const char CMACH) const;
@@ -360,6 +368,20 @@ namespace Teuchos
     return 0.0;
   }
 
+  template<typename OrdinalType, typename ScalarType>
+  ScalarType LAPACK<OrdinalType, ScalarType>::LARND( const OrdinalType idist, OrdinalType* seed ) const
+  {
+    std::cout << "Warning: default LAPACK::LARND() not yet implemented" << std::endl;
+    return 0.0;
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, ScalarType* v ) const    
+  {
+    std::cout << "Warning: default LAPACK::LARNV() not yet implemented" << std::endl;
+    return 0.0;
+  }
+
   // END GENERAL TEMPLATE IMPLEMENTATION //
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -408,6 +430,10 @@ namespace Teuchos
     // Triangular matrix routines.
     void TREVC(const char SIDE, const char HOWMNY, OrdinalType* SELECT, const OrdinalType n, const float* T, const OrdinalType ldt, float* VL, const OrdinalType ldvl, float* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, float* WORK, OrdinalType* info) const;
     void TREXC(const char COMPQ, const OrdinalType n, float* T, const OrdinalType ldt, float* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, float* WORK, OrdinalType* info) const;
+
+    // Random number generators
+    float LARND( const OrdinalType idist, OrdinalType* seed ) const;
+    void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, float* v ) const;    
 
     // Machine characteristics.
     float LAMCH(const char CMACH) const;
@@ -578,6 +604,18 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
+  float LAPACK<OrdinalType, float>::LARND( const OrdinalType idist, OrdinalType* seed ) const
+  {
+    return(SLARND_F77(&idist, seed));
+  }
+
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, float>::LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, float* v ) const
+  {
+    SLARNV_F77(&idist, seed, &n, v);
+  }
+
+  template<typename OrdinalType>
   float LAPACK<OrdinalType, float>::LAMCH(const char CMACH) const
   {
     return(SLAMCH_F77(CHAR_MACRO(CMACH)));
@@ -635,6 +673,10 @@ namespace Teuchos
     // Triangular matrix routines.
     void TREVC(const char SIDE, const char HOWMNY, OrdinalType* SELECT, const OrdinalType n, const double* T, const OrdinalType ldt, double* VL, const OrdinalType ldvl, double* VR, const OrdinalType ldvr, const OrdinalType mm, OrdinalType* m, double* WORK, OrdinalType* info) const;
     void TREXC(const char COMPQ, const OrdinalType n, double* T, const OrdinalType ldt, double* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, double* WORK, OrdinalType* info) const;
+
+    // Random number generators
+    double LARND( const OrdinalType idist, OrdinalType* seed ) const;
+    void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, double* v ) const;    
 
     // Machine characteristic routines.
     double LAMCH(const char CMACH) const;
@@ -803,6 +845,18 @@ namespace Teuchos
   void LAPACK<OrdinalType, double>::TREXC(const char COMPQ, const OrdinalType n, double* T, const OrdinalType ldt, double* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, double* WORK, OrdinalType* info) const
   {
     DTREXC_F77(CHAR_MACRO(COMPQ), &n, T, &ldt, Q, &ldq, &ifst, &ilst, WORK, info);
+  }
+
+  template<typename OrdinalType>
+  double LAPACK<OrdinalType, double>::LARND( const OrdinalType idist, OrdinalType* seed ) const
+  {
+    return(DLARND_F77(&idist, seed));
+  }
+
+  template<typename OrdinalType>
+  void LAPACK<OrdinalType, double>::LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, double* v ) const
+  {
+    DLARNV_F77(&idist, seed, &n, v);
   }
 
   template<typename OrdinalType>
