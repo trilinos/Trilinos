@@ -56,6 +56,7 @@
 %ignore Epetra_MultiVector::operator=(const Epetra_MultiVector &);
 %ignore Epetra_MultiVector::operator[](int);         // See %extend MultiVector
 %ignore Epetra_MultiVector::operator[](int) const;   //       __getitem__()
+%ignore Epetra_MultiVector::operator()(int) const;
 %ignore Epetra_IntVector::operator=(const Epetra_IntVector &);
 %ignore Epetra_IntVector::operator[](int);           // See %extend IntVector
 %ignore Epetra_IntVector::operator[](int) const;     //       __getitem__()
@@ -64,6 +65,7 @@
 %ignore Epetra_CrsGraph::operator[](int) const;      //       __getitem__()
 %ignore Epetra_MapColoring::operator[](int);         // See %extend Mapcoloring
 %ignore Epetra_MapColoring::operator[](int) const;   //       __getitem__()
+%ignore Epetra_MapColoring::operator()(int) const;
 %ignore Epetra_CrsMatrix::operator=(const Epetra_CrsMatrix &);
 %ignore Epetra_CrsMatrix::operator[](int);           // See %extend CrsMatrix
 %ignore Epetra_CrsMatrix::operator[](int) const;     //       __getitem__()
@@ -77,6 +79,8 @@
 %ignore Epetra_SerialDenseMatrix::operator=(const Epetra_SerialDenseMatrix &);
 %ignore Epetra_SerialDenseMatrix::operator[](int);
 %ignore Epetra_SerialDenseMatrix::operator[](int) const;
+%ignore Epetra_SerialDenseMatrix::operator()(int,int) const;
+%ignore Epetra_SerialDenseMatrix::A() const;
 %ignore Epetra_SerialDenseVector::operator=(const Epetra_SerialDenseVector &);
 %ignore Epetra_SerialDenseVector::operator[](int);
 %ignore Epetra_SerialDenseVector::operator[](int) const;
@@ -85,6 +89,8 @@
 %ignore NumPyArrayBase::print(std::ostream &) const;       // faciltated by __str__
 %ignore NumPyArray::print(std::ostream &) const;           // faciltated by __str__
 %ignore NumPyArrayContiguous::print(std::ostream &) const; // faciltated by __str__
+%ignore NumPyArrayBase::getDataArray() const;
+%ignore NumPyArrayBase::getArrayObject() const;
 
 // Rename directives
 %rename(Object              ) Epetra_Object;

@@ -61,6 +61,7 @@ COMMON_INCLUDE  := -I$(COMMON)
 PYTHON_INCLUDE  := -I$(shell $(ROOT)pyLocate --include)
 AUTODEP         := $(ROOT)autodep
 SWIG            := swig
+SWIG_FLAGS      := -Wall -noruntime -python -c++
 
 # The wrapper files
 WRAPPERS        := $(patsubst %.i, %_wrap.cxx, $(INTERFACES))
@@ -92,7 +93,7 @@ include $(DEPEND)
 
 # Generate a C++ wrapper and proxy file from a SWIG interface
 %_wrap.cxx %.py: %.i
-	$(SWIG) $(COMMON_INCLUDE) $(TRILINOS_INCLUDE1) -noruntime -python -c++ $<
+	$(SWIG) $(COMMON_INCLUDE) $(TRILINOS_INCLUDE1) $(SWIG_FLAGS) $<
 
 # # Generate an object file from a C++ file and its header
 # %.o: %.cxx %.h

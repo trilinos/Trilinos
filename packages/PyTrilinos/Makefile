@@ -8,7 +8,7 @@ TARBALL    := PyTrilinos.tgz
 SRC_DIR    := src/
 
 # Sub-directories
-SUBDIRS    := $(SRC_DIR) $(SRC_DIR)NOX
+SUBDIRS    := test $(SRC_DIR) $(SRC_DIR)NOX
 
 # Common Makefile macros
 include $(ROOT)common.mk

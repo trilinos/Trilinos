@@ -6,7 +6,7 @@
 #include "NumPyWrapper.h"
 
 Epetra_Vector * Epetra_VectorHelper::new_Epetra_Vector(Epetra_BlockMap & map,
-							 PyObject * p_pyObject)
+						       PyObject        * p_pyObject)
 {
   assert (0 != p_pyObject && "PyObject pointer passed to function is NULL.");
 

@@ -78,7 +78,7 @@ Epetra_NumPyVector::Epetra_NumPyVector(PyObject * pyObject):
 }
 
 // =============================================================================
-// Destrtuctor
+// Destructor
 Epetra_NumPyVector::~Epetra_NumPyVector()
 {
   Py_XDECREF(array);

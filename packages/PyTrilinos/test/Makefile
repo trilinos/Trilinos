@@ -75,3 +75,11 @@ testExample:
 	@grep -v time $@.out > TEMP
 	@mv TEMP $@.out
 	$(MAKE) TEST_OUT=$@.out test_diff
+
+clean:
+	rm -rf *.out
+
+clobber: clean
+
+sweep: clobber
+	rm -rf *~
