@@ -76,7 +76,7 @@ NOX_SUBDIR=NOX
 SUBDIRS = $(NOX_SUBDIR)
 
 SWIG       = swig
-SWIG_FLAGS = -Wall -noruntime -python -c++
+SWIG_FLAGS = -I$(top_srcdir)/src -Wall -c -python -c++
 
 EPETRA_INC    = -I$(top_srcdir)/../epetra/src
 EPETRAEXT_INC = -I$(top_srcdir)/../epetraext/src/transform \

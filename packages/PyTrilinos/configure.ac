@@ -325,7 +325,9 @@ AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 dnl Check for user-specified names for BLAS lib
 TAC_ARG_WITH_BLASLIB
 
-  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+  ACX_BLAS([LIBS="${BLAS_LIBS} ${LIBS}"], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+
+  ACX_LAPACK([LIBS=" ${LAPACK_LIBS} ${LIBS}"], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (for example --with-lapack=/usr/path/lib/libcxml.a)]])])
 
 fi
 # end of the list of libraries that don't need to be checked for if

@@ -78,6 +78,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_new_for_scoping.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
+	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
@@ -147,6 +148,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -240,7 +242,7 @@ MAINTAINERCLEANFILES = Makefile.in \
 NOX_SUBDIR = NOX
 SUBDIRS = $(NOX_SUBDIR)
 SWIG = swig
-SWIG_FLAGS = -Wall -noruntime -python -c++
+SWIG_FLAGS = -I$(top_srcdir)/src -Wall -c -python -c++
 EPETRA_INC = -I$(top_srcdir)/../epetra/src
 EPETRAEXT_INC = -I$(top_srcdir)/../epetraext/src/transform \
                 -I$(top_srcdir)/../epetraext/src/coloring
