@@ -57,6 +57,13 @@ struct ML_SmootherFunc_Struct
    void *data;
 };
 
+/*******************************************************************************
+   pre_or_post      flag that the smoother toggles to determine whether it is
+                    in pre or post smoothing phase
+   envelope         message-passing information that is used in
+                    ML_exchange_bdry
+*******************************************************************************/
+
 struct ML_Smoother_Struct 
 {
    int                     ML_id;
@@ -69,6 +76,8 @@ struct ML_Smoother_Struct
    void                    (*data_destroy)(void *);
    double                  build_time, apply_time;
    char                    *label;
+   int                     pre_or_post;
+   ML_Comm_Envelope        *envelope;
 };
 
 struct ML_Sm_BGS_Data_Struct 
@@ -115,6 +124,14 @@ struct ML_Sm_Schwarz_Data_Struct
 #endif
 };
 
+/*******************************************************************************
+Hiptmair Smoother data structure
+    sm_nodal    pointer to nodal smoother structure 
+    max_eig     eigenvalue calculated for damping parameter
+    omega       damping parameter for edge and/or nodal smoother inside
+                Hiptmair smoother
+*******************************************************************************/
+
 struct ML_Sm_Hiptmair_Data_Struct
 {
    ML_Operator *Tmat;
@@ -122,11 +139,13 @@ struct ML_Sm_Hiptmair_Data_Struct
    ML_Operator *ATmat_trans;
    double      *TtAT_diag;
    ML_Operator *TtATmat;
-   ML_Smoother *sm;
+   ML_Smoother *sm_nodal;
    double *res_edge;
    double *rhs_nodal;
    double *x_nodal;
    double *edge_update;
+   double max_eig;
+   double omega;
 };
 
 /* ******************************************************************** */
@@ -175,6 +194,8 @@ extern  int ML_Smoother_Hiptmair(void *, int, double *, int, double *);
 extern  int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data);
 extern  int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data**,
                          ML_Operator*, ML_Operator*, ML_Operator*);
+extern  int ML_Smoother_Gen_Hiptmair_DataReuse(ML_Sm_Hiptmair_Data**,
+                         ML_Operator* Ke_mat);
 extern void ML_Smoother_Destroy_Hiptmair_Data(void *data);
 extern  int ML_Smoother_Create_BGS_Data(ML_Sm_BGS_Data **data);
 extern void ML_Smoother_Destroy_BGS_Data(void *data);
