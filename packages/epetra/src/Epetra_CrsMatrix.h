@@ -193,6 +193,8 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful. Note that if the
     allocated length of the row has to be expanded, a positive warning code
     will be returned.
+    \pre IndicesAreLocal()==false && IndiciesAreContiguous()==false
+    \post The given global row of the matrix has been updated as described above.
   */
 	int InsertGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
 	
@@ -244,6 +246,9 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful. Note that if the
     allocated length of the row has to be expanded, a positive warning code
     will be returned.
+    \pre IndicesAreGlobal()==false && (IndicesAreContiguous()==false || CV_==View)
+    \post The given local row of the matrix has been updated as described above.
+ 
   */
 	int InsertMyValues(int MyRow, int NumEntries, double* Values, int* Indices);
 
@@ -546,6 +551,8 @@ or if the number of entries in this row exceed the Length parameter.
                 uniquely owned, the distribution of x can be that of the RowMap() or the RangeMap().
                                                                                                      
     \return Integer error code, set to 0 if successful.
+    \pre Filled()==true
+    \post Unchanged.
   */
         int InvRowSums(Epetra_Vector& x) const;
 
@@ -560,6 +567,8 @@ or if the number of entries in this row exceed the Length parameter.
 		x can be that of the RowMap() or the RangeMap().
 		
     \return Integer error code, set to 0 if successful.
+    \pre Filled()==true
+    \post Unchanged.
   */
 	int InvRowMaxs(Epetra_Vector& x) const;
 	
@@ -570,6 +579,8 @@ or if the number of entries in this row exceed the Length parameter.
 		x -A Epetra_Vector to solve for.
 		
     \return Integer error code, set to 0 if successful.
+    \pre Filled()==true
+    \post The matrix will be scaled as described above.
   */
 	int LeftScale(const Epetra_Vector& x);
 	
@@ -589,6 +600,8 @@ or if the number of entries in this row exceed the Length parameter.
                 uniquely owned, the distribution of x can be that of the ColMap() or the DomainMap().
 		
     \return Integer error code, set to 0 if successful.
+    \pre Filled()==true
+    \post Unchanged.
   */
 	int InvColSums(Epetra_Vector& x) const;
 
@@ -603,6 +616,8 @@ or if the number of entries in this row exceed the Length parameter.
                 uniquely owned, the distribution of x can be that of the ColMap() or the DomainMap().
 		
     \return Integer error code, set to 0 if successful.
+    \pre Filled()==true
+    \post Unchanged.
   */
 	int InvColMaxs(Epetra_Vector& x) const;
 
