@@ -10473,3 +10473,1693 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 } /* dorml2_ */
 #endif
 
+
+extern int MLFORTRAN(dpotf2)(char *uplo, integer *n, doublereal *a, integer *
+		   lda, integer *info, int);
+extern int MLFORTRAN(dsyrk)(char *uplo, char *trans, integer *n, integer *k, 
+	doublereal *alpha, doublereal *a, integer *lda, doublereal *beta, 
+		  doublereal *c, integer *ldc, int, int);
+extern int MLFORTRAN(dlaic1)(integer *job, integer *j, doublereal *x, 
+	doublereal *sest, doublereal *w, doublereal *gamma, doublereal *
+		   sestpr, doublereal *s, doublereal *c);
+extern int MLFORTRAN(dgetri)(integer *n, doublereal *a, integer *lda, integer 
+		   *ipiv, doublereal *work, integer *lwork, integer *info);
+extern int MLFORTRAN(dpotrf)(char *uplo, integer *n, doublereal *a, integer *
+		   lda, integer *info, int);
+extern int MLFORTRAN(dtrtri)(char *uplo, char *diag, integer *n, doublereal *
+		   a, integer *lda, integer *info, int, int);
+extern int MLFORTRAN(dtrti2)(char *uplo, char *diag, integer *n, doublereal *
+		   a, integer *lda, integer *info, int dummy1, int dummy2);
+
+
+/*  -- translated by f2c (version 19940927).
+   You must link the resulting object file with the libraries:
+	-lf2c -lm   (in that order)
+*/
+
+#ifndef ML_DSYRK_FUNC
+/* Subroutine */ int MLFORTRAN(dsyrk)(char *uplo, char *trans, integer *n, integer *k, 
+	doublereal *alpha, doublereal *a, integer *lda, doublereal *beta, 
+	doublereal *c, integer *ldc, int dummy1 , int dummy2)
+{
+
+
+    /* System generated locals */
+    integer i__1, i__2, i__3;
+
+    /* Local variables */
+    static integer info;
+    static doublereal temp;
+    static integer i, j, l;
+    static integer nrowa;
+    static logical upper;
+
+
+/*  Purpose   
+    =======   
+
+    DSYRK  performs one of the symmetric rank k operations   
+
+       C := alpha*A*A' + beta*C,   
+
+    or   
+
+       C := alpha*A'*A + beta*C,   
+
+    where  alpha and beta  are scalars, C is an  n by n  symmetric matrix 
+  
+    and  A  is an  n by k  matrix in the first case and a  k by n  matrix 
+  
+    in the second case.   
+
+    Parameters   
+    ==========   
+
+    UPLO   - CHARACTER*1.   
+             On  entry,   UPLO  specifies  whether  the  upper  or  lower 
+  
+             triangular  part  of the  array  C  is to be  referenced  as 
+  
+             follows:   
+
+                UPLO = 'U' or 'u'   Only the  upper triangular part of  C 
+  
+                                    is to be referenced.   
+
+                UPLO = 'L' or 'l'   Only the  lower triangular part of  C 
+  
+                                    is to be referenced.   
+
+             Unchanged on exit.   
+
+    TRANS  - CHARACTER*1.   
+             On entry,  TRANS  specifies the operation to be performed as 
+  
+             follows:   
+
+                TRANS = 'N' or 'n'   C := alpha*A*A' + beta*C.   
+
+                TRANS = 'T' or 't'   C := alpha*A'*A + beta*C.   
+
+                TRANS = 'C' or 'c'   C := alpha*A'*A + beta*C.   
+
+             Unchanged on exit.   
+
+    N      - INTEGER.   
+             On entry,  N specifies the order of the matrix C.  N must be 
+  
+             at least zero.   
+             Unchanged on exit.   
+
+    K      - INTEGER.   
+             On entry with  TRANS = 'N' or 'n',  K  specifies  the number 
+  
+             of  columns   of  the   matrix   A,   and  on   entry   with 
+  
+             TRANS = 'T' or 't' or 'C' or 'c',  K  specifies  the  number 
+  
+             of rows of the matrix  A.  K must be at least zero.   
+             Unchanged on exit.   
+
+    ALPHA  - DOUBLE PRECISION.   
+             On entry, ALPHA specifies the scalar alpha.   
+             Unchanged on exit.   
+
+    A      - DOUBLE PRECISION array of DIMENSION ( LDA, ka ), where ka is 
+  
+             k  when  TRANS = 'N' or 'n',  and is  n  otherwise.   
+             Before entry with  TRANS = 'N' or 'n',  the  leading  n by k 
+  
+             part of the array  A  must contain the matrix  A,  otherwise 
+  
+             the leading  k by n  part of the array  A  must contain  the 
+  
+             matrix A.   
+             Unchanged on exit.   
+
+    LDA    - INTEGER.   
+             On entry, LDA specifies the first dimension of A as declared 
+  
+             in  the  calling  (sub)  program.   When  TRANS = 'N' or 'n' 
+  
+             then  LDA must be at least  ML_max( 1, n ), otherwise  LDA must 
+  
+             be at least  ML_max( 1, k ).   
+             Unchanged on exit.   
+
+    BETA   - DOUBLE PRECISION.   
+             On entry, BETA specifies the scalar beta.   
+             Unchanged on exit.   
+
+    C      - DOUBLE PRECISION array of DIMENSION ( LDC, n ).   
+             Before entry  with  UPLO = 'U' or 'u',  the leading  n by n 
+  
+             upper triangular part of the array C must contain the upper 
+  
+             triangular part  of the  symmetric matrix  and the strictly 
+  
+             lower triangular part of C is not referenced.  On exit, the 
+  
+             upper triangular part of the array  C is overwritten by the 
+  
+             upper triangular part of the updated matrix.   
+             Before entry  with  UPLO = 'L' or 'l',  the leading  n by n 
+  
+             lower triangular part of the array C must contain the lower 
+  
+             triangular part  of the  symmetric matrix  and the strictly 
+  
+             upper triangular part of C is not referenced.  On exit, the 
+  
+             lower triangular part of the array  C is overwritten by the 
+  
+             lower triangular part of the updated matrix.   
+
+    LDC    - INTEGER.   
+             On entry, LDC specifies the first dimension of C as declared 
+  
+             in  the  calling  (sub)  program.   LDC  must  be  at  least 
+  
+             ML_max( 1, n ).   
+             Unchanged on exit.   
+
+
+    Level 3 Blas routine.   
+
+    -- Written on 8-February-1989.   
+       Jack Dongarra, Argonne National Laboratory.   
+       Iain Duff, AERE Harwell.   
+       Jeremy Du Croz, Numerical Algorithms Group Ltd.   
+       Sven Hammarling, Numerical Algorithms Group Ltd.   
+
+
+
+       Test the input parameters.   
+
+    
+   Parameter adjustments   
+       Function Body */
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+#define C(I,J) c[(I)-1 + ((J)-1)* ( *ldc)]
+
+    if (MLFORTRAN(lsame)(trans, "N")) {
+	nrowa = *n;
+    } else {
+	nrowa = *k;
+    }
+    upper = MLFORTRAN(lsame)(uplo, "U");
+
+    info = 0;
+    if (! upper && ! MLFORTRAN(lsame)(uplo, "L")) {
+	info = 1;
+    } else if (! MLFORTRAN(lsame)(trans, "N") && ! MLFORTRAN(lsame)(trans, "T") &&
+	     ! MLFORTRAN(lsame)(trans, "C")) {
+	info = 2;
+    } else if (*n < 0) {
+	info = 3;
+    } else if (*k < 0) {
+	info = 4;
+    } else if (*lda < ML_max(1,nrowa)) {
+	info = 7;
+    } else if (*ldc < ML_max(1,*n)) {
+	info = 10;
+    }
+    if (info != 0) {
+	MLFORTRAN(xerbla)("DSYRK ", &info);
+	return 0;
+    }
+
+/*     Quick return if possible. */
+
+    if (*n == 0 || ((*alpha == 0. || *k == 0) && *beta == 1.)) {
+	return 0;
+    }
+
+/*     And when  alpha.eq.zero. */
+
+    if (*alpha == 0.) {
+	if (upper) {
+	    if (*beta == 0.) {
+		i__1 = *n;
+		for (j = 1; j <= *n; ++j) {
+		    i__2 = j;
+		    for (i = 1; i <= j; ++i) {
+			C(i,j) = 0.;
+/* L10: */
+		    }
+/* L20: */
+		}
+	    } else {
+		i__1 = *n;
+		for (j = 1; j <= *n; ++j) {
+		    i__2 = j;
+		    for (i = 1; i <= j; ++i) {
+			C(i,j) = *beta * C(i,j);
+/* L30: */
+		    }
+/* L40: */
+		}
+	    }
+	} else {
+	    if (*beta == 0.) {
+		i__1 = *n;
+		for (j = 1; j <= *n; ++j) {
+		    i__2 = *n;
+		    for (i = j; i <= *n; ++i) {
+			C(i,j) = 0.;
+/* L50: */
+		    }
+/* L60: */
+		}
+	    } else {
+		i__1 = *n;
+		for (j = 1; j <= *n; ++j) {
+		    i__2 = *n;
+		    for (i = j; i <= *n; ++i) {
+			C(i,j) = *beta * C(i,j);
+/* L70: */
+		    }
+/* L80: */
+		}
+	    }
+	}
+	return 0;
+    }
+
+/*     Start the operations. */
+
+    if (MLFORTRAN(lsame)(trans, "N")) {
+
+/*        Form  C := alpha*A*A' + beta*C. */
+
+	if (upper) {
+	    i__1 = *n;
+	    for (j = 1; j <= *n; ++j) {
+		if (*beta == 0.) {
+		    i__2 = j;
+		    for (i = 1; i <= j; ++i) {
+			C(i,j) = 0.;
+/* L90: */
+		    }
+		} else if (*beta != 1.) {
+		    i__2 = j;
+		    for (i = 1; i <= j; ++i) {
+			C(i,j) = *beta * C(i,j);
+/* L100: */
+		    }
+		}
+		i__2 = *k;
+		for (l = 1; l <= *k; ++l) {
+		    if (A(j,l) != 0.) {
+			temp = *alpha * A(j,l);
+			i__3 = j;
+			for (i = 1; i <= j; ++i) {
+			    C(i,j) += temp * A(i,l);
+/* L110: */
+			}
+		    }
+/* L120: */
+		}
+/* L130: */
+	    }
+	} else {
+	    i__1 = *n;
+	    for (j = 1; j <= *n; ++j) {
+		if (*beta == 0.) {
+		    i__2 = *n;
+		    for (i = j; i <= *n; ++i) {
+			C(i,j) = 0.;
+/* L140: */
+		    }
+		} else if (*beta != 1.) {
+		    i__2 = *n;
+		    for (i = j; i <= *n; ++i) {
+			C(i,j) = *beta * C(i,j);
+/* L150: */
+		    }
+		}
+		i__2 = *k;
+		for (l = 1; l <= *k; ++l) {
+		    if (A(j,l) != 0.) {
+			temp = *alpha * A(j,l);
+			i__3 = *n;
+			for (i = j; i <= *n; ++i) {
+			    C(i,j) += temp * A(i,l);
+/* L160: */
+			}
+		    }
+/* L170: */
+		}
+/* L180: */
+	    }
+	}
+    } else {
+
+/*        Form  C := alpha*A'*A + beta*C. */
+
+	if (upper) {
+	    i__1 = *n;
+	    for (j = 1; j <= *n; ++j) {
+		i__2 = j;
+		for (i = 1; i <= j; ++i) {
+		    temp = 0.;
+		    i__3 = *k;
+		    for (l = 1; l <= *k; ++l) {
+			temp += A(l,i) * A(l,j);
+/* L190: */
+		    }
+		    if (*beta == 0.) {
+			C(i,j) = *alpha * temp;
+		    } else {
+			C(i,j) = *alpha * temp + *beta * C(i,j);
+		    }
+/* L200: */
+		}
+/* L210: */
+	    }
+	} else {
+	    i__1 = *n;
+	    for (j = 1; j <= *n; ++j) {
+		i__2 = *n;
+		for (i = j; i <= *n; ++i) {
+		    temp = 0.;
+		    i__3 = *k;
+		    for (l = 1; l <= *k; ++l) {
+			temp += A(l,i) * A(l,j);
+/* L220: */
+		    }
+		    if (*beta == 0.) {
+			C(i,j) = *alpha * temp;
+		    } else {
+			C(i,j) = *alpha * temp + *beta * C(i,j);
+		    }
+/* L230: */
+		}
+/* L240: */
+	    }
+	}
+    }
+
+    return 0;
+
+/*     End of DSYRK . */
+
+} /* dsyrk_ */
+#endif
+
+#ifndef ML_DLAIC1_FUNC
+
+/* Subroutine */ int MLFORTRAN(dlaic1)(integer *job, integer *j, doublereal *x, 
+	doublereal *sest, doublereal *w, doublereal *gamma, doublereal *
+	sestpr, doublereal *s, doublereal *c)
+{
+/*  -- LAPACK auxiliary routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       October 31, 1992   
+
+
+    Purpose   
+    =======   
+
+    DLAIC1 applies one step of incremental condition estimation in   
+    its simplest version:   
+
+    Let x, twonorm(x) = 1, be an approximate singular vector of an j-by-j 
+  
+    lower triangular matrix L, such that   
+             twonorm(L*x) = sest   
+    Then DLAIC1 computes sestpr, s, c such that   
+    the vector   
+                    [ s*x ]   
+             xhat = [  c  ]   
+    is an approximate singular vector of   
+                    [ L     0  ]   
+             Lhat = [ w' gamma ]   
+    in the sense that   
+             twonorm(Lhat*xhat) = sestpr.   
+
+    Depending on JOB, an estimate for the largest or smallest singular   
+    value is computed.   
+
+    Note that [s c]' and sestpr**2 is an eigenpair of the system   
+
+        diag(sest*sest, 0) + [alpha  gamma] * [ alpha ]   
+                                              [ gamma ]   
+
+    where  alpha =  x'*w.   
+
+    Arguments   
+    =========   
+
+    JOB     (input) INTEGER   
+            = 1: an estimate for the largest singular value is computed. 
+  
+            = 2: an estimate for the smallest singular value is computed. 
+  
+
+    J       (input) INTEGER   
+            Length of X and W   
+
+    X       (input) DOUBLE PRECISION array, dimension (J)   
+            The j-vector x.   
+
+    SEST    (input) DOUBLE PRECISION   
+            Estimated singular value of j by j matrix L   
+
+    W       (input) DOUBLE PRECISION array, dimension (J)   
+            The j-vector w.   
+
+    GAMMA   (input) DOUBLE PRECISION   
+            The diagonal element gamma.   
+
+    SEDTPR  (output) DOUBLE PRECISION   
+            Estimated singular value of (j+1) by (j+1) matrix Lhat.   
+
+    S       (output) DOUBLE PRECISION   
+            Sine needed in forming xhat.   
+
+    C       (output) DOUBLE PRECISION   
+            Cosine needed in forming xhat.   
+
+    ===================================================================== 
+  
+
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* Table of constant values */
+    static integer c__1 = 1;
+    static doublereal c_b5 = 1.;
+    
+    /* System generated locals */
+    doublereal d__1, d__2, d__3, d__4;
+    /* Builtin functions */
+    /* Local variables */
+    static doublereal sine, test, zeta1, zeta2, b, t, alpha, norma, s1, s2;
+    static doublereal absgam, absalp, cosine, absest, eps, tmp;
+
+
+
+#define W(I) w[(I)-1]
+#define X(I) x[(I)-1]
+
+
+    eps = MLFORTRAN(dlamch)("Epsilon");
+    alpha = MLFORTRAN(ddot)(j, &X(1), &c__1, &W(1), &c__1);
+
+    absalp = abs(alpha);
+    absgam = abs(*gamma);
+    absest = abs(*sest);
+
+    if (*job == 1) {
+
+/*        Estimating largest singular value   
+
+          special cases */
+
+	if (*sest == 0.) {
+	    s1 = ML_max(absgam,absalp);
+	    if (s1 == 0.) {
+		*s = 0.;
+		*c = 1.;
+		*sestpr = 0.;
+	    } else {
+		*s = alpha / s1;
+		*c = *gamma / s1;
+		tmp = sqrt(*s * *s + *c * *c);
+		*s /= tmp;
+		*c /= tmp;
+		*sestpr = s1 * tmp;
+	    }
+	    return 0;
+	} else if (absgam <= eps * absest) {
+	    *s = 1.;
+	    *c = 0.;
+	    tmp = ML_max(absest,absalp);
+	    s1 = absest / tmp;
+	    s2 = absalp / tmp;
+	    *sestpr = tmp * sqrt(s1 * s1 + s2 * s2);
+	    return 0;
+	} else if (absalp <= eps * absest) {
+	    s1 = absgam;
+	    s2 = absest;
+	    if (s1 <= s2) {
+		*s = 1.;
+		*c = 0.;
+		*sestpr = s2;
+	    } else {
+		*s = 0.;
+		*c = 1.;
+		*sestpr = s1;
+	    }
+	    return 0;
+	} else if (absest <= eps * absalp || absest <= eps * absgam) {
+	    s1 = absgam;
+	    s2 = absalp;
+	    if (s1 <= s2) {
+		tmp = s1 / s2;
+		*s = sqrt(tmp * tmp + 1.);
+		*sestpr = s2 * *s;
+		*c = *gamma / s2 / *s;
+		*s = ml_d_sign(&c_b5, &alpha) / *s;
+	    } else {
+		tmp = s2 / s1;
+		*c = sqrt(tmp * tmp + 1.);
+		*sestpr = s1 * *c;
+		*s = alpha / s1 / *c;
+		*c = ml_d_sign(&c_b5, gamma) / *c;
+	    }
+	    return 0;
+	} else {
+
+/*           normal case */
+
+	    zeta1 = alpha / absest;
+	    zeta2 = *gamma / absest;
+
+	    b = (1. - zeta1 * zeta1 - zeta2 * zeta2) * .5;
+	    *c = zeta1 * zeta1;
+	    if (b > 0.) {
+		t = *c / (b + sqrt(b * b + *c));
+	    } else {
+		t = sqrt(b * b + *c) - b;
+	    }
+
+	    sine = -zeta1 / t;
+	    cosine = -zeta2 / (t + 1.);
+	    tmp = sqrt(sine * sine + cosine * cosine);
+	    *s = sine / tmp;
+	    *c = cosine / tmp;
+	    *sestpr = sqrt(t + 1.) * absest;
+	    return 0;
+	}
+
+    } else if (*job == 2) {
+
+/*        Estimating smallest singular value   
+
+          special cases */
+
+	if (*sest == 0.) {
+	    *sestpr = 0.;
+	    if (ML_max(absgam,absalp) == 0.) {
+		sine = 1.;
+		cosine = 0.;
+	    } else {
+		sine = -(*gamma);
+		cosine = alpha;
+	    }
+/* Computing MAX */
+	    d__1 = abs(sine), d__2 = abs(cosine);
+	    s1 = ML_max(d__1,d__2);
+	    *s = sine / s1;
+	    *c = cosine / s1;
+	    tmp = sqrt(*s * *s + *c * *c);
+	    *s /= tmp;
+	    *c /= tmp;
+	    return 0;
+	} else if (absgam <= eps * absest) {
+	    *s = 0.;
+	    *c = 1.;
+	    *sestpr = absgam;
+	    return 0;
+	} else if (absalp <= eps * absest) {
+	    s1 = absgam;
+	    s2 = absest;
+	    if (s1 <= s2) {
+		*s = 0.;
+		*c = 1.;
+		*sestpr = s1;
+	    } else {
+		*s = 1.;
+		*c = 0.;
+		*sestpr = s2;
+	    }
+	    return 0;
+	} else if (absest <= eps * absalp || absest <= eps * absgam) {
+	    s1 = absgam;
+	    s2 = absalp;
+	    if (s1 <= s2) {
+		tmp = s1 / s2;
+		*c = sqrt(tmp * tmp + 1.);
+		*sestpr = absest * (tmp / *c);
+		*s = -(*gamma / s2) / *c;
+		*c = ml_d_sign(&c_b5, &alpha) / *c;
+	    } else {
+		tmp = s2 / s1;
+		*s = sqrt(tmp * tmp + 1.);
+		*sestpr = absest / *s;
+		*c = alpha / s1 / *s;
+		*s = -ml_d_sign(&c_b5, gamma) / *s;
+	    }
+	    return 0;
+	} else {
+
+/*           normal case */
+
+	    zeta1 = alpha / absest;
+	    zeta2 = *gamma / absest;
+
+/* Computing MAX */
+	    d__3 = zeta1 * zeta1 + 1. + (d__1 = zeta1 * zeta2, abs(d__1)), 
+		    d__4 = (d__2 = zeta1 * zeta2, abs(d__2)) + zeta2 * zeta2;
+	    norma = ML_max(d__3,d__4);
+
+/*           See if root is closer to zero or to ONE */
+
+	    test = (zeta1 - zeta2) * 2. * (zeta1 + zeta2) + 1.;
+	    if (test >= 0.) {
+
+/*              root is close to zero, compute directly */
+
+		b = (zeta1 * zeta1 + zeta2 * zeta2 + 1.) * .5;
+		*c = zeta2 * zeta2;
+		t = *c / (b + sqrt((d__1 = b * b - *c, abs(d__1))));
+		sine = zeta1 / (1. - t);
+		cosine = -zeta2 / t;
+		*sestpr = sqrt(t + eps * 4. * eps * norma) * absest;
+	    } else {
+
+/*              root is closer to ONE, shift by that amount */
+
+		b = (zeta2 * zeta2 + zeta1 * zeta1 - 1.) * .5;
+		*c = zeta1 * zeta1;
+		if (b >= 0.) {
+		    t = -(*c) / (b + sqrt(b * b + *c));
+		} else {
+		    t = b - sqrt(b * b + *c);
+		}
+		sine = -zeta1 / t;
+		cosine = -zeta2 / (t + 1.);
+		*sestpr = sqrt(t + 1. + eps * 4. * eps * norma) * absest;
+	    }
+	    tmp = sqrt(sine * sine + cosine * cosine);
+	    *s = sine / tmp;
+	    *c = cosine / tmp;
+	    return 0;
+
+	}
+    }
+    return 0;
+
+/*     End of DLAIC1 */
+
+} /* dlaic1_ */
+#endif
+
+#ifndef ML_DGETRI_FUNC
+/* Subroutine */ int MLFORTRAN(dgetri)(integer *n, doublereal *a, integer *lda, integer 
+	*ipiv, doublereal *work, integer *lwork, integer *info)
+{
+/*  -- LAPACK routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       September 30, 1994   
+
+
+    Purpose   
+    =======   
+
+    DGETRI computes the inverse of a matrix using the LU factorization   
+    computed by DGETRF.   
+
+    This method inverts U and then computes inv(A) by solving the system 
+  
+    inv(A)*L = inv(U) for inv(A).   
+
+    Arguments   
+    =========   
+
+    N       (input) INTEGER   
+            The order of the matrix A.  N >= 0.   
+
+    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)   
+            On entry, the factors L and U from the factorization   
+            A = P*L*U as computed by DGETRF.   
+            On exit, if INFO = 0, the inverse of the original matrix A.   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A.  LDA >= ML_max(1,N).   
+
+    IPIV    (input) INTEGER array, dimension (N)   
+            The pivot indices from DGETRF; for 1<=i<=N, row i of the   
+            matrix was interchanged with row IPIV(i).   
+
+    WORK    (workspace/output) DOUBLE PRECISION array, dimension (LWORK) 
+  
+            On exit, if INFO=0, then WORK(1) returns the optimal LWORK.   
+
+    LWORK   (input) INTEGER   
+            The dimension of the array WORK.  LWORK >= ML_max(1,N).   
+            For optimal performance LWORK >= N*NB, where NB is   
+            the optimal blocksize returned by ILAENV.   
+
+    INFO    (output) INTEGER   
+            = 0:  successful exit   
+            < 0:  if INFO = -i, the i-th argument had an illegal value   
+            > 0:  if INFO = i, U(i,i) is exactly zero; the matrix is   
+                  singular and its inverse could not be computed.   
+
+    ===================================================================== 
+  
+
+
+       Test the input parameters.   
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* Table of constant values */
+    static integer c__1 = 1;
+    static integer c_n1 = -1;
+    static integer c__2 = 2;
+    static doublereal c_b20 = -1.;
+    static doublereal c_b22 = 1.;
+    
+    /* System generated locals */
+    integer i__1, i__2, i__3;
+    /* Local variables */
+    static integer i, j;
+    static integer nbmin;
+    static integer jb, nb, jj, jp, nn;
+    static integer ldwork;
+    static integer iws;
+
+
+
+#define IPIV(I) ipiv[(I)-1]
+#define WORK(I) work[(I)-1]
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+
+    *info = 0;
+    WORK(1) = (doublereal) ML_max(*n,1);
+    if (*n < 0) {
+	*info = -1;
+    } else if (*lda < ML_max(1,*n)) {
+	*info = -3;
+    } else if (*lwork < ML_max(1,*n)) {
+	*info = -6;
+    }
+    if (*info != 0) {
+	i__1 = -(*info);
+	MLFORTRAN(xerbla)("DGETRI", &i__1);
+	return 0;
+    }
+
+/*     Quick return if possible */
+
+    if (*n == 0) {
+	return 0;
+    }
+
+/*     Form inv(U).  If INFO > 0 from DTRTRI, then U is singular,   
+       and the inverse is not computed. */
+
+    MLFORTRAN(dtrtri)("Upper", "Non-unit", n, &A(1,1), lda, info,
+            strlen("Upper"), strlen("Non-unit"));
+    if (*info > 0) {
+	return 0;
+    }
+
+/*     Determine the block size for this environment. */
+
+    nb = MLFORTRAN(ilaenv)(&c__1, "DGETRI", " ", n, &c_n1, &c_n1, &c_n1, 6L, 1L);
+    nbmin = 2;
+    ldwork = *n;
+    if (nb > 1 && nb < *n) {
+/* Computing MAX */
+	i__1 = ldwork * nb;
+	iws = ML_max(i__1,1);
+	if (*lwork < iws) {
+	    nb = *lwork / ldwork;
+/* Computing MAX */
+	    i__1 = 2, i__2 = MLFORTRAN(ilaenv)(&c__2, "DGETRI", " ", n, &c_n1, &c_n1, &
+		    c_n1, 6L, 1L);
+	    nbmin = ML_max(i__1,i__2);
+	}
+    } else {
+	iws = *n;
+    }
+
+/*     Solve the equation inv(A)*L = inv(U) for inv(A). */
+
+    if (nb < nbmin || nb >= *n) {
+
+/*        Use unblocked code. */
+
+	for (j = *n; j >= 1; --j) {
+
+/*           Copy current column of L to WORK and replace with zer
+os. */
+
+	    i__1 = *n;
+	    for (i = j + 1; i <= *n; ++i) {
+		WORK(i) = A(i,j);
+		A(i,j) = 0.;
+/* L10: */
+	    }
+
+/*           Compute current column of inv(A). */
+
+	    if (j < *n) {
+		i__1 = *n - j;
+		MLFORTRAN(dgemv)("No transpose", n, &i__1, &c_b20, &A(1,j+1), lda, &WORK(j + 1), &c__1, &c_b22, &A(1,j), &c__1, strlen("No transpose"));
+	    }
+/* L20: */
+	}
+    } else {
+
+/*        Use blocked code. */
+
+	nn = (*n - 1) / nb * nb + 1;
+	i__1 = -nb;
+	for (j = nn; -nb < 0 ? j >= 1 : j <= 1; j += -nb) {
+/* Computing MIN */
+	    i__2 = nb, i__3 = *n - j + 1;
+	    jb = ML_min(i__2,i__3);
+
+/*           Copy current block column of L to WORK and replace wi
+th   
+             zeros. */
+
+	    i__2 = j + jb - 1;
+	    for (jj = j; jj <= j+jb-1; ++jj) {
+		i__3 = *n;
+		for (i = jj + 1; i <= *n; ++i) {
+		    WORK(i + (jj - j) * ldwork) = A(i,jj);
+		    A(i,jj) = 0.;
+/* L30: */
+		}
+/* L40: */
+	    }
+
+/*           Compute current block column of inv(A). */
+
+	    if (j + jb <= *n) {
+		i__2 = *n - j - jb + 1;
+		MLFORTRAN(dgemm)("No transpose", "No transpose", n, &jb, &i__2, &c_b20, 
+			&A(1,j+jb), lda, &WORK(j + jb), &
+			ldwork, &c_b22, &A(1,j), lda,
+		       strlen("No transpose"), strlen("No transpose"));
+	    }
+	    MLFORTRAN(dtrsm)("Right", "Lower", "No transpose", "Unit", n, &jb, &c_b22, &
+		    WORK(j), &ldwork, &A(1,j), lda
+         ,strlen("Right"),strlen("Lower"),strlen("No transpose"),strlen("Unit")
+                  );
+/* L50: */
+	}
+    }
+
+/*     Apply column interchanges. */
+
+    for (j = *n - 1; j >= 1; --j) {
+	jp = IPIV(j);
+	if (jp != j) {
+	    MLFORTRAN(dswap)(n, &A(1,j), &c__1, &A(1,jp), &c__1);
+	}
+/* L60: */
+    }
+
+    WORK(1) = (doublereal) iws;
+    return 0;
+
+/*     End of DGETRI */
+
+} /* dgetri_ */
+#endif
+
+#ifndef ML_DPOTRF_FUNC
+
+/* Subroutine */ int MLFORTRAN(dpotrf)(char *uplo, integer *n, doublereal *a, integer *
+	lda, integer *info, int dummy1)
+{
+/*  -- LAPACK routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       March 31, 1993   
+
+
+    Purpose   
+    =======   
+
+    DPOTRF computes the Cholesky factorization of a real symmetric   
+    positive definite matrix A.   
+
+    The factorization has the form   
+       A = U**T * U,  if UPLO = 'U', or   
+       A = L  * L**T,  if UPLO = 'L',   
+    where U is an upper triangular matrix and L is lower triangular.   
+
+    This is the block version of the algorithm, calling Level 3 BLAS.   
+
+    Arguments   
+    =========   
+
+    UPLO    (input) CHARACTER*1   
+            = 'U':  Upper triangle of A is stored;   
+            = 'L':  Lower triangle of A is stored.   
+
+    N       (input) INTEGER   
+            The order of the matrix A.  N >= 0.   
+
+    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)   
+            On entry, the symmetric matrix A.  If UPLO = 'U', the leading 
+  
+            N-by-N upper triangular part of A contains the upper   
+            triangular part of the matrix A, and the strictly lower   
+            triangular part of A is not referenced.  If UPLO = 'L', the   
+            leading N-by-N lower triangular part of A contains the lower 
+  
+            triangular part of the matrix A, and the strictly upper   
+            triangular part of A is not referenced.   
+
+            On exit, if INFO = 0, the factor U or L from the Cholesky   
+            factorization A = U**T*U or A = L*L**T.   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A.  LDA >= ML_max(1,N).   
+
+    INFO    (output) INTEGER   
+            = 0:  successful exit   
+            < 0:  if INFO = -i, the i-th argument had an illegal value   
+            > 0:  if INFO = i, the leading minor of order i is not   
+                  positive definite, and the factorization could not be   
+                  completed.   
+
+    ===================================================================== 
+  
+
+
+       Test the input parameters.   
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* Table of constant values */
+    static integer c__1 = 1;
+    static integer c_n1 = -1;
+    static doublereal c_b13 = -1.;
+    static doublereal c_b14 = 1.;
+    
+    /* System generated locals */
+    integer i__1, i__2, i__3, i__4;
+    /* Local variables */
+    static integer j;
+    static logical upper;
+    static integer jb, nb;
+
+
+
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+
+    *info = 0;
+    upper = MLFORTRAN(lsame)(uplo, "U");
+    if (! upper && ! MLFORTRAN(lsame)(uplo, "L")) {
+	*info = -1;
+    } else if (*n < 0) {
+	*info = -2;
+    } else if (*lda < ML_max(1,*n)) {
+	*info = -4;
+    }
+    if (*info != 0) {
+	i__1 = -(*info);
+	MLFORTRAN(xerbla)("DPOTRF", &i__1);
+	return 0;
+    }
+
+/*     Quick return if possible */
+
+    if (*n == 0) {
+	return 0;
+    }
+
+/*     Determine the block size for this environment. */
+
+    nb = MLFORTRAN(ilaenv)(&c__1, "DPOTRF", uplo, n, &c_n1, &c_n1, &c_n1, 6L, 1L);
+    if (nb <= 1 || nb >= *n) {
+
+/*        Use unblocked code. */
+
+	MLFORTRAN(dpotf2)(uplo, n, &A(1,1), lda, info, strlen(uplo));
+    } else {
+
+/*        Use blocked code. */
+
+	if (upper) {
+
+/*           Compute the Cholesky factorization A = U'*U. */
+
+	    i__1 = *n;
+	    i__2 = nb;
+	    for (j = 1; nb < 0 ? j >= *n : j <= *n; j += nb) {
+
+/*              Update and factorize the current diagonal bloc
+k and test   
+                for non-positive-definiteness.   
+
+   Computing MIN */
+		i__3 = nb, i__4 = *n - j + 1;
+		jb = ML_min(i__3,i__4);
+		i__3 = j - 1;
+		MLFORTRAN(dsyrk)("Upper", "Transpose", &jb, &i__3, &c_b13, &A(1,j), lda, &c_b14, &A(j,j), lda, strlen("Upper"), strlen("Transpose"));
+		MLFORTRAN(dpotf2)("Upper", &jb, &A(j,j), lda, info, strlen("Upper"));
+		if (*info != 0) {
+		    goto L30;
+		}
+		if (j + jb <= *n) {
+
+/*                 Compute the current block row. */
+
+		    i__3 = *n - j - jb + 1;
+		    i__4 = j - 1;
+		    MLFORTRAN(dgemm)("Transpose", "No transpose", &jb, &i__3, &i__4, &
+			    c_b13, &A(1,j), lda, &A(1,j+jb), lda, &c_b14, &A(j,j+jb), lda
+                          ,strlen("Transpose"),strlen("No transpose")
+);
+		    i__3 = *n - j - jb + 1;
+		    MLFORTRAN(dtrsm)("Left", "Upper", "Transpose", "Non-unit", &jb, &
+			    i__3, &c_b14, &A(j,j), lda, &A(j,j+jb), lda
+ ,strlen("Left"),strlen("Upper"),strlen("Transpose"),strlen("Non-unit")
+);
+		}
+/* L10: */
+	    }
+
+	} else {
+
+/*           Compute the Cholesky factorization A = L*L'. */
+
+	    i__2 = *n;
+	    i__1 = nb;
+	    for (j = 1; nb < 0 ? j >= *n : j <= *n; j += nb) {
+
+/*              Update and factorize the current diagonal bloc
+k and test   
+                for non-positive-definiteness.   
+
+   Computing MIN */
+		i__3 = nb, i__4 = *n - j + 1;
+		jb = ML_min(i__3,i__4);
+		i__3 = j - 1;
+		MLFORTRAN(dsyrk)("Lower", "No transpose", &jb, &i__3, &c_b13, &A(j,1), lda, &c_b14, &A(j,j), lda, strlen("Lower"), strlen("No transpose"));
+		MLFORTRAN(dpotf2)("Lower", &jb, &A(j,j), lda, info, strlen("Lower"));
+		if (*info != 0) {
+		    goto L30;
+		}
+		if (j + jb <= *n) {
+
+/*                 Compute the current block column. */
+
+		    i__3 = *n - j - jb + 1;
+		    i__4 = j - 1;
+		    MLFORTRAN(dgemm)("No transpose", "Transpose", &i__3, &jb, &i__4, &
+			    c_b13, &A(j+jb,1), lda, &A(j,1), 
+			    lda, &c_b14, &A(j+jb,j), lda
+                          ,strlen("No transpose"), strlen("Transpose")   );
+		    i__3 = *n - j - jb + 1;
+		    MLFORTRAN(dtrsm)("Right", "Lower", "Transpose", "Non-unit", &i__3, &
+			    jb, &c_b14, &A(j,j), lda, &A(j+jb,j), lda
+ ,strlen("Right"),strlen("Lower"),strlen("Transpose"),strlen("Non-unit"));
+		}
+/* L20: */
+	    }
+	}
+    }
+    goto L40;
+
+L30:
+    *info = *info + j - 1;
+
+L40:
+    return 0;
+
+/*     End of DPOTRF */
+
+} /* dpotrf_ */
+
+#endif
+
+#ifndef ML_DTRTRI_FUNC
+
+/* Subroutine */ int MLFORTRAN(dtrtri)(char *uplo, char *diag, integer *n, doublereal *
+	a, integer *lda, integer *info, int dummy1, int dummy2)
+{
+/*  -- LAPACK routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       March 31, 1993   
+
+
+    Purpose   
+    =======   
+
+    DTRTRI computes the inverse of a real upper or lower triangular   
+    matrix A.   
+
+    This is the Level 3 BLAS version of the algorithm.   
+
+    Arguments   
+    =========   
+
+    UPLO    (input) CHARACTER*1   
+            = 'U':  A is upper triangular;   
+            = 'L':  A is lower triangular.   
+
+    DIAG    (input) CHARACTER*1   
+            = 'N':  A is non-unit triangular;   
+            = 'U':  A is unit triangular.   
+
+    N       (input) INTEGER   
+            The order of the matrix A.  N >= 0.   
+
+    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)   
+            On entry, the triangular matrix A.  If UPLO = 'U', the   
+            leading N-by-N upper triangular part of the array A contains 
+  
+            the upper triangular matrix, and the strictly lower   
+            triangular part of A is not referenced.  If UPLO = 'L', the   
+            leading N-by-N lower triangular part of the array A contains 
+  
+            the lower triangular matrix, and the strictly upper   
+            triangular part of A is not referenced.  If DIAG = 'U', the   
+            diagonal elements of A are also not referenced and are   
+            assumed to be 1.   
+            On exit, the (triangular) inverse of the original matrix, in 
+  
+            the same storage format.   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A.  LDA >= ML_max(1,N).   
+
+    INFO    (output) INTEGER   
+            = 0: successful exit   
+            < 0: if INFO = -i, the i-th argument had an illegal value   
+            > 0: if INFO = i, A(i,i) is exactly zero.  The triangular   
+                 matrix is singular and its inverse can not be computed. 
+  
+
+    ===================================================================== 
+  
+
+
+       Test the input parameters.   
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* Table of constant values */
+    static integer c__1 = 1;
+    static integer c_n1 = -1;
+    static integer c__2 = 2;
+    static doublereal c_b18 = 1.;
+    static doublereal c_b22 = -1.;
+    
+    /* System generated locals */
+    address a__1[2];
+    integer i__1, i__2[2], i__3, i__4, i__5;
+    char ch__1[2];
+
+    /* Local variables */
+    static integer j;
+    static logical upper;
+    static integer jb, nb, nn;
+    static logical nounit;
+
+
+
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+
+    *info = 0;
+    upper = MLFORTRAN(lsame)(uplo, "U");
+    nounit = MLFORTRAN(lsame)(diag, "N");
+    if (! upper && ! MLFORTRAN(lsame)(uplo, "L")) {
+	*info = -1;
+    } else if (! nounit && ! MLFORTRAN(lsame)(diag, "U")) {
+	*info = -2;
+    } else if (*n < 0) {
+	*info = -3;
+    } else if (*lda < ML_max(1,*n)) {
+	*info = -5;
+    }
+    if (*info != 0) {
+	i__1 = -(*info);
+	MLFORTRAN(xerbla)("DTRTRI", &i__1);
+	return 0;
+    }
+
+/*     Quick return if possible */
+
+    if (*n == 0) {
+	return 0;
+    }
+
+/*     Check for singularity if non-unit. */
+
+    if (nounit) {
+	i__1 = *n;
+	for (*info = 1; *info <= i__1; ++(*info)) {
+	    if (A(*info,*info) == 0.) {
+		return 0;
+	    }
+/* L10: */
+	}
+	*info = 0;
+    }
+
+/*     Determine the block size for this environment.   
+
+   Writing concatenation */
+    i__2[0] = 1, a__1[0] = uplo;
+    i__2[1] = 1, a__1[1] = diag;
+    ml_s_cat(ch__1, a__1, i__2, &c__2, 2L);
+    nb = MLFORTRAN(ilaenv)(&c__1, "DTRTRI", ch__1, n, &c_n1, &c_n1, &c_n1, 6L, 2L);
+    if (nb <= 1 || nb >= *n) {
+
+/*        Use unblocked code */
+
+	MLFORTRAN(dtrti2)(uplo, diag, n, &A(1,1), lda, info,strlen(uplo),strlen(diag));
+    } else {
+
+/*        Use blocked code */
+
+	if (upper) {
+
+/*           Compute inverse of upper triangular matrix */
+
+	    i__1 = *n;
+	    i__3 = nb;
+	    for (j = 1; nb < 0 ? j >= *n : j <= *n; j += nb) {
+/* Computing MIN */
+		i__4 = nb, i__5 = *n - j + 1;
+		jb = ML_min(i__4,i__5);
+
+/*              Compute rows 1:j-1 of current block column */
+
+		i__4 = j - 1;
+		MLFORTRAN(dtrmm)("Left", "Upper", "No transpose", diag, &i__4, &jb, &
+			c_b18, &A(1,1), lda, &A(1,j), lda
+ ,strlen("Left"),strlen("Upper"),strlen("No transpose"),strlen(diag));
+
+		i__4 = j - 1;
+		MLFORTRAN(dtrsm)("Right", "Upper", "No transpose", diag, &i__4, &jb, &
+			c_b22, &A(j,j), lda, &A(1,j), 
+			lda
+ ,strlen("Right"),strlen("Upper"),strlen("No transpose"), strlen(diag));
+
+
+/*              Compute inverse of current diagonal block */
+
+		MLFORTRAN(dtrti2)("Upper", diag, &jb, &A(j,j), lda, info,strlen("Upper"),strlen(diag));
+/* L20: */
+	    }
+	} else {
+
+/*           Compute inverse of lower triangular matrix */
+
+	    nn = (*n - 1) / nb * nb + 1;
+	    i__3 = -nb;
+	    for (j = nn; -nb < 0 ? j >= 1 : j <= 1; j += -nb) {
+/* Computing MIN */
+		i__1 = nb, i__4 = *n - j + 1;
+		jb = ML_min(i__1,i__4);
+		if (j + jb <= *n) {
+
+/*                 Compute rows j+jb:n of current block co
+lumn */
+
+		    i__1 = *n - j - jb + 1;
+		    MLFORTRAN(dtrmm)("Left", "Lower", "No transpose", diag, &i__1, &jb, 
+			    &c_b18, &A(j+jb,j+jb), lda, &A(j+jb,j), lda
+ ,strlen("Left"),strlen("Lower"),strlen("No transpose"),strlen(diag));
+
+		    i__1 = *n - j - jb + 1;
+		    MLFORTRAN(dtrsm)("Right", "Lower", "No transpose", diag, &i__1, &jb,
+			     &c_b22, &A(j,j), lda, &A(j+jb,j), lda
+ ,strlen("Right"),strlen("Lower"),strlen("No transpose"),strlen(diag));
+		}
+
+/*              Compute inverse of current diagonal block */
+
+		MLFORTRAN(dtrti2)("Lower", diag, &jb, &A(j,j), lda, info,strlen("Lower"),strlen(diag));
+/* L30: */
+	    }
+	}
+    }
+
+    return 0;
+
+/*     End of DTRTRI */
+
+} /* dtrtri_ */
+#endif
+
+#ifndef ML_DPOTF2_FUNC
+
+/* Subroutine */ int MLFORTRAN(dpotf2)(char *uplo, integer *n, doublereal *a, integer *
+	lda, integer *info, int dummy1)
+{
+/*  -- LAPACK routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       February 29, 1992   
+
+
+    Purpose   
+    =======   
+
+    DPOTF2 computes the Cholesky factorization of a real symmetric   
+    positive definite matrix A.   
+
+    The factorization has the form   
+       A = U' * U ,  if UPLO = 'U', or   
+       A = L  * L',  if UPLO = 'L',   
+    where U is an upper triangular matrix and L is lower triangular.   
+
+    This is the unblocked version of the algorithm, calling Level 2 BLAS. 
+  
+
+    Arguments   
+    =========   
+
+    UPLO    (input) CHARACTER*1   
+            Specifies whether the upper or lower triangular part of the   
+            symmetric matrix A is stored.   
+            = 'U':  Upper triangular   
+            = 'L':  Lower triangular   
+
+    N       (input) INTEGER   
+            The order of the matrix A.  N >= 0.   
+
+    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)   
+            On entry, the symmetric matrix A.  If UPLO = 'U', the leading 
+  
+            n by n upper triangular part of A contains the upper   
+            triangular part of the matrix A, and the strictly lower   
+            triangular part of A is not referenced.  If UPLO = 'L', the   
+            leading n by n lower triangular part of A contains the lower 
+  
+            triangular part of the matrix A, and the strictly upper   
+            triangular part of A is not referenced.   
+
+            On exit, if INFO = 0, the factor U or L from the Cholesky   
+            factorization A = U'*U  or A = L*L'.   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A.  LDA >= ML_max(1,N).   
+
+    INFO    (output) INTEGER   
+            = 0: successful exit   
+            < 0: if INFO = -k, the k-th argument had an illegal value   
+            > 0: if INFO = k, the leading minor of order k is not   
+                 positive definite, and the factorization could not be   
+                 completed.   
+
+    ===================================================================== 
+  
+
+
+       Test the input parameters.   
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* Table of constant values */
+    static integer c__1 = 1;
+    static doublereal c_b10 = -1.;
+    static doublereal c_b12 = 1.;
+    
+    /* System generated locals */
+    integer i__1, i__2, i__3;
+    doublereal d__1;
+
+    /* Local variables */
+    static integer j;
+    static logical upper;
+    static doublereal ajj;
+
+
+
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+
+    *info = 0;
+    upper = MLFORTRAN(lsame)(uplo, "U");
+    if (! upper && ! MLFORTRAN(lsame)(uplo, "L")) {
+	*info = -1;
+    } else if (*n < 0) {
+	*info = -2;
+    } else if (*lda < ML_max(1,*n)) {
+	*info = -4;
+    }
+    if (*info != 0) {
+	i__1 = -(*info);
+	MLFORTRAN(xerbla)("DPOTF2", &i__1);
+	return 0;
+    }
+
+/*     Quick return if possible */
+
+    if (*n == 0) {
+	return 0;
+    }
+
+    if (upper) {
+
+/*        Compute the Cholesky factorization A = U'*U. */
+
+	i__1 = *n;
+	for (j = 1; j <= *n; ++j) {
+
+/*           Compute U(J,J) and test for non-positive-definiteness
+. */
+
+	    i__2 = j - 1;
+	    ajj = A(j,j) - MLFORTRAN(ddot)(&i__2, &A(1,j), &c__1, 
+		    &A(1,j), &c__1);
+	    if (ajj <= 0.) {
+		A(j,j) = ajj;
+		goto L30;
+	    }
+	    ajj = sqrt(ajj);
+	    A(j,j) = ajj;
+
+/*           Compute elements J+1:N of row J. */
+
+	    if (j < *n) {
+		i__2 = j - 1;
+		i__3 = *n - j;
+		MLFORTRAN(dgemv)("Transpose", &i__2, &i__3, &c_b10, &A(1,j+1), lda, &A(1,j), &c__1, &c_b12, &A(j,j+1), lda
+ ,strlen("Transpose"));
+		i__2 = *n - j;
+		d__1 = 1. / ajj;
+		MLFORTRAN(dscal)(&i__2, &d__1, &A(j,j+1), lda);
+	    }
+/* L10: */
+	}
+    } else {
+
+/*        Compute the Cholesky factorization A = L*L'. */
+
+	i__1 = *n;
+	for (j = 1; j <= *n; ++j) {
+
+/*           Compute L(J,J) and test for non-positive-definiteness
+. */
+
+	    i__2 = j - 1;
+	    ajj = A(j,j) - MLFORTRAN(ddot)(&i__2, &A(j,1), lda, &A(j,1), lda);
+	    if (ajj <= 0.) {
+		A(j,j) = ajj;
+		goto L30;
+	    }
+	    ajj = sqrt(ajj);
+	    A(j,j) = ajj;
+
+/*           Compute elements J+1:N of column J. */
+
+	    if (j < *n) {
+		i__2 = *n - j;
+		i__3 = j - 1;
+		MLFORTRAN(dgemv)("No transpose", &i__2, &i__3, &c_b10, &A(j+1,1), lda, &A(j,1), lda, &c_b12, &A(j+1,j), &c__1, strlen("No transpose"));
+		i__2 = *n - j;
+		d__1 = 1. / ajj;
+		MLFORTRAN(dscal)(&i__2, &d__1, &A(j+1,j), &c__1);
+	    }
+/* L20: */
+	}
+    }
+    goto L40;
+
+L30:
+    *info = j;
+
+L40:
+    return 0;
+
+/*     End of DPOTF2 */
+
+} /* dpotf2_ */
+#endif
+
+#ifndef ML_DTRTI2_FUNC
+
+/* Subroutine */ int MLFORTRAN(dtrti2)(char *uplo, char *diag, integer *n, doublereal *
+	a, integer *lda, integer *info, int dummy1, int dummy2)
+{
+/*  -- LAPACK routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       February 29, 1992   
+
+
+    Purpose   
+    =======   
+
+    DTRTI2 computes the inverse of a real upper or lower triangular   
+    matrix.   
+
+    This is the Level 2 BLAS version of the algorithm.   
+
+    Arguments   
+    =========   
+
+    UPLO    (input) CHARACTER*1   
+            Specifies whether the matrix A is upper or lower triangular. 
+  
+            = 'U':  Upper triangular   
+            = 'L':  Lower triangular   
+
+    DIAG    (input) CHARACTER*1   
+            Specifies whether or not the matrix A is unit triangular.   
+            = 'N':  Non-unit triangular   
+            = 'U':  Unit triangular   
+
+    N       (input) INTEGER   
+            The order of the matrix A.  N >= 0.   
+
+    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)   
+            On entry, the triangular matrix A.  If UPLO = 'U', the   
+            leading n by n upper triangular part of the array A contains 
+  
+            the upper triangular matrix, and the strictly lower   
+            triangular part of A is not referenced.  If UPLO = 'L', the   
+            leading n by n lower triangular part of the array A contains 
+  
+            the lower triangular matrix, and the strictly upper   
+            triangular part of A is not referenced.  If DIAG = 'U', the   
+            diagonal elements of A are also not referenced and are   
+            assumed to be 1.   
+
+            On exit, the (triangular) inverse of the original matrix, in 
+  
+            the same storage format.   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A.  LDA >= ML_max(1,N).   
+
+    INFO    (output) INTEGER   
+            = 0: successful exit   
+            < 0: if INFO = -k, the k-th argument had an illegal value   
+
+    ===================================================================== 
+  
+
+
+       Test the input parameters.   
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* Table of constant values */
+    static integer c__1 = 1;
+    
+    /* System generated locals */
+    integer i__1, i__2;
+    /* Local variables */
+    static integer j;
+    static logical upper;
+    static logical nounit;
+    static doublereal ajj;
+
+
+
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+
+    *info = 0;
+    upper = MLFORTRAN(lsame)(uplo, "U");
+    nounit = MLFORTRAN(lsame)(diag, "N");
+    if (! upper && ! MLFORTRAN(lsame)(uplo, "L")) {
+	*info = -1;
+    } else if (! nounit && ! MLFORTRAN(lsame)(diag, "U")) {
+	*info = -2;
+    } else if (*n < 0) {
+	*info = -3;
+    } else if (*lda < ML_max(1,*n)) {
+	*info = -5;
+    }
+    if (*info != 0) {
+	i__1 = -(*info);
+	MLFORTRAN(xerbla)("DTRTI2", &i__1);
+	return 0;
+    }
+
+    if (upper) {
+
+/*        Compute inverse of upper triangular matrix. */
+
+	i__1 = *n;
+	for (j = 1; j <= *n; ++j) {
+	    if (nounit) {
+		A(j,j) = 1. / A(j,j);
+		ajj = -A(j,j);
+	    } else {
+		ajj = -1.;
+	    }
+
+/*           Compute elements 1:j-1 of j-th column. */
+
+	    i__2 = j - 1;
+	    MLFORTRAN(dtrmv)("Upper", "No transpose", diag, &i__2, &A(1,1), lda, &
+		    A(1,j), &c__1);
+	    i__2 = j - 1;
+	    MLFORTRAN(dscal)(&i__2, &ajj, &A(1,j), &c__1);
+/* L10: */
+	}
+    } else {
+
+/*        Compute inverse of lower triangular matrix. */
+
+	for (j = *n; j >= 1; --j) {
+	    if (nounit) {
+		A(j,j) = 1. / A(j,j);
+		ajj = -A(j,j);
+	    } else {
+		ajj = -1.;
+	    }
+	    if (j < *n) {
+
+/*              Compute elements j+1:n of j-th column. */
+
+		i__1 = *n - j;
+		MLFORTRAN(dtrmv)("Lower", "No transpose", diag, &i__1, &A(j+1,j+1), lda, &A(j+1,j), &c__1);
+		i__1 = *n - j;
+		MLFORTRAN(dscal)(&i__1, &ajj, &A(j+1,j), &c__1);
+	    }
+/* L20: */
+	}
+    }
+
+    return 0;
+
+/*     End of DTRTI2 */
+
+} /* dtrti2_ */
+
+#endif

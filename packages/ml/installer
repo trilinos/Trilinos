@@ -66,6 +66,7 @@ ARCH=
 PACKAGES=
 INC_PATH=
 LIBRARIES=
+PWD=`pwd`
 ML_HOME=$PWD
 
 ${echo}
@@ -117,6 +118,7 @@ fi
 #
 rm -f .arch_env
 #grep "=" etc/makefile.${ARCH} | grep -v "^\#"  \
+echo "export ARCH" >  .arch_env
 echo "export ARCH_FLAGS" >  .arch_env
 echo "export CC"         >> .arch_env
 echo "export FC"         >> .arch_env

@@ -52,6 +52,15 @@ void MLFORTRAN(dnrm2)(void );
 void MLFORTRAN(dlapy2)(void );
 void MLFORTRAN(dlamch)(void );
 
+void MLFORTRAN(dpotf2)(void);
+void MLFORTRAN(dsyrk)( void);
+void MLFORTRAN(dlaic1)(void);
+void MLFORTRAN(dgetri)(void);
+void MLFORTRAN(dpotrf)(void);
+void MLFORTRAN(dtrtri)(void);
+void MLFORTRAN(dtrti2)(void);
+
+
 
 
 int main(int argc, char *argv[]){
@@ -106,5 +115,12 @@ int main(int argc, char *argv[]){
  MLFORTRAN(dnrm2)( );
  MLFORTRAN(dlapy2)( );
  MLFORTRAN(dlamch)( );
+ MLFORTRAN(dpotf2)();
+ MLFORTRAN(dsyrk)( );
+ MLFORTRAN(dlaic1)();
+ MLFORTRAN(dgetri)();
+ MLFORTRAN(dpotrf)();
+ MLFORTRAN(dtrtri)();
+ MLFORTRAN(dtrti2)();
   return 0;
 }

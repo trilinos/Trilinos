@@ -26,14 +26,15 @@ then
   exit
 fi
 cd ..
-pwd
+ML_HOME=`pwd`
+tLAPACK=`echo ${LAPACK_LIB} | sed "s/ /x/g"`
 ###############################################################3
-if test `expr ${LAPACK_LIB}` != 'no'
+if test `expr ${tLAPACK}` != 'no'
 then
 #
 #  no Aztec with superlu and blas and lapack
 #
-echo "testing with Superlu and aztec and blas"
+echo "testing with Superlu and aztec and lapack"
 etc/clean_all
 cd Obj
 make clean
@@ -48,7 +49,7 @@ then
    echo NA >> .compile_input
 else
    T3=`echo ${LAPACK_LIB} | grep ":::"`
-   T4=`echo ${T3}x`
+   T4=`echo ${T3}x | sed "s/ /x/g"`
    if test `expr ${T4}` != 'x'
    then
       echo ${LAPACK_LIB} | sed s"/:::.*//" >> .compile_input
@@ -66,7 +67,7 @@ then
    echo NA >> .compile_input
 else
    T3=`echo ${BLAS_LIB} | grep ":::"`
-   T4=`echo ${T3}x`
+   T4=`echo ${T3}x | sed "s/ /x/g"`
    if test `expr ${T4}` != 'x'
    then
       echo ${BLAS_LIB} | sed s"/:::.*//" >> .compile_input
@@ -84,7 +85,7 @@ echo yes >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
 ./installer < .compile_input
-mv Obj/mlguide superlapack
+mv ${ML_HOME}/Obj/mlguide ${ML_HOME}/superlapack
 fi
 ###############################################################3
 if test `expr ${BLAS_LIB}` != 'no'
@@ -108,7 +109,7 @@ then
    echo NA >> .compile_input
 else
    T3=`echo ${BLAS_LIB} | grep ":::"`
-   T4=`echo ${T3}x`
+   T4=`echo ${T3}x | sed "s/ /x/g"`
    if test `expr ${T4}` != 'x'
    then
       echo ${BLAS_LIB} | sed s"/:::.*//" >> .compile_input
@@ -129,7 +130,7 @@ echo yes >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
 ./installer < .compile_input
-mv Obj/mlguide aztecsuperblas
+mv ${ML_HOME}/Obj/mlguide ${ML_HOME}/aztecsuperblas
 fi
 ###############################################################3
 if test `expr ${USE_MPI}` = 'yes'
@@ -175,8 +176,10 @@ echo  >> .compile_input
 echo yes >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
+cat .compile_input
+exit
 ./installer < .compile_input
-mv Obj/mlguide aztecsupermpi
+mv ${ML_HOME}/Obj/mlguide ${ML_HOME}/aztecsupermpi
 fi
 ###############################################################3
 #
@@ -205,7 +208,7 @@ echo no >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
 ./installer < .compile_input
-mv Obj/mlguide aztecnosuper
+mv ${ML_HOME}/Obj/mlguide ${ML_HOME}/aztecnosuper
 #
 # SuperLU no aztec
 #
@@ -226,7 +229,7 @@ echo yes >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
 ./installer < .compile_input
-mv Obj/mlguide noaztecsuper
+mv ${ML_HOME}/Obj/mlguide ${ML_HOME}/noaztecsuper
 #
 #  Aztec with superlu
 #
@@ -250,7 +253,7 @@ echo yes >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
 ./installer < .compile_input
-mv Obj/mlguide aztecsuper
+mv ${ML_HOME}/Obj/mlguide ${ML_HOME}/aztecsuper
 #
 #  no Aztec no superlu
 #
@@ -270,4 +273,5 @@ echo no >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
 ./installer < .compile_input
-mv Obj/mlguide noaztecnosuper
+mv ${ML_HOME}/Obj/mlguide ${ML_HOME}/noaztecnosuper
+

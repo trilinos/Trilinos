@@ -119,8 +119,26 @@ extern FSUB_TYPE MLFORTRAN(dgels)(char *trans, int *m, int *n, int *
 extern FSUB_TYPE MLFORTRAN(dorgqr)(int *m, int *n, int *k, double *
 				 a, int *lda, double *tau, double *work, int *lwork, 
 				 int *info);
+extern FSUB_TYPE MLFORTRAN(dpotf2)(char *uplo, int *n, double *a, int *
+		   lda, int *info, int);
+extern FSUB_TYPE MLFORTRAN(dsyrk)(char *uplo, char *trans, int *n, int *k, 
+	double *alpha, double *a, int *lda, double *beta, 
+		  double *c, int *ldc, int, int);
+extern FSUB_TYPE MLFORTRAN(dlaic1)(int *job, int *j, double *x, 
+	double *sest, double *w, double *gamma, double *
+		   sestpr, double *s, double *c);
+extern FSUB_TYPE MLFORTRAN(dgetri)(int *n, double *a, int *lda, int 
+		   *ipiv, double *work, int *lwork, int *info);
+extern FSUB_TYPE MLFORTRAN(dpotrf)(char *uplo, int *n, double *a, int *
+		   lda, int *info, int);
+extern FSUB_TYPE MLFORTRAN(dtrtri)(char *uplo, char *diag, int *n, double *
+		   a, int *lda, int *info, int, int);
+extern FSUB_TYPE MLFORTRAN(dtrti2)(char *uplo, char *diag, int *n, double *
+		   a, int *lda, int *info, int dummy1, int dummy2);
+
+
 extern long int MLFORTRAN(lsame)(char *, char *);
-extern int MLFORTRAN(ilaenv)(int *, char *, char *, int *, int *, 
+extern FSUB_TYPE MLFORTRAN(ilaenv)(int *, char *, char *, int *, int *, 
 				 int *, int *, ftnlen, ftnlen);
 extern double MLFORTRAN(dlamc3)(double *, double *);
 extern double MLFORTRAN(dlange)(char *, int *, int *, double *, int *, double *);

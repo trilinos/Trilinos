@@ -3,7 +3,7 @@
 # It is intended that users invoke `installer' which will eventually
 # invoke this function.
 #
-
+PWD=`pwd`
 #
 # See what packages are needed and take appropriate action
 #
@@ -18,26 +18,30 @@ yes_or_no=`${echo} ${yes_or_no}s`
 if test `expr $yes_or_no` = 'yess'
 #   test `expr $yes_or_no` = 's'
 then
-   ${echo} -n "Where is the Lapack library (enter NA if not needed)? [/usr/local/lib] "
+   ${echo} "Where is the Lapack library?"
+   grep "LAPACK PATH" etc/makefile.${ARCH} | sed "s/.*Note/  Note/"
+   ${echo} -n "  Enter NA if not needed? [/usr/local/lib] "
    read directory
-   tdirectory=`${echo} ${directory}x`
+   tdirectory=`${echo} ${directory}x | sed "s/ /x/g"`
    if test `expr $tdirectory` = 'x'
    then
       directory=/usr/local/lib
    fi
-   ${echo} -n "What is the name of the Lapack library (enter NA if not needed)? [lapack] "
+   ${echo} "What is the name of the Lapack library?"
+   grep "LAPACK LIB" etc/makefile.${ARCH} | sed "s/.*Note/  Note/"
+   ${echo} -n "  Enter NA if not needed? [lapack] "
    read library
-   tlibrary=`${echo} ${library}x`
+   tlibrary=`${echo} ${library}x | sed "s/ /x/g"`
    if test `expr $tlibrary ` = 'x'
    then
       library=lapack
    fi
    PACKAGES=`${echo} $PACKAGES -DUSE_VENDOR_LAPACK`
-   if test `expr $directory ` != 'NA'
+   if test `expr $tdirectory ` != 'NAx'
    then
       LIBRARIES=`${echo} $LIBRARIES -L${directory}`
    fi
-   if test `expr $library ` != 'NA'
+   if test `expr $tlibrary ` != 'NAx'
    then
       LIBRARIES=`${echo} $LIBRARIES -l${library}`
    fi
@@ -53,14 +57,18 @@ if test `expr $yes_or_no` = 'yess'
 then
    GOT_BLAS=yes
    PACKAGES=`${echo} $PACKAGES -DUSE_VENDOR_BLAS` 
-   ${echo} -n "Where is the Blas library (enter NA if not needed)? [/usr/local/lib] "
+   ${echo} "Where is the Blas library?"
+   grep "BLAS PATH" etc/makefile.${ARCH} | sed "s/.*Note/  Note/"
+   ${echo} "  Enter NA if not needed? [/usr/local/lib] "
    read directory
    tdirectory=`${echo} ${directory}x`
    if test `expr $tdirectory` = 'x'
    then
       directory=/usr/local/lib
    fi
-   ${echo} -n "What is the name of the Blas library (enter NA if not needed)? [blas] "
+   ${echo}    "What is the name of the Blas library?"
+   grep "BLAS LIB" etc/makefile.${ARCH} | sed "s/.*Note/  Note/"
+   ${echo} -n "  Enter NA if not needed? [blas] "
    read library
    tlibrary=`${echo} ${library}x`
    if test `expr $tlibrary ` = 'x'
@@ -443,7 +451,7 @@ rm -f make_${ARCH}.variables
 ${echo} ARCH=$ARCH                    >  make_${ARCH}.variables
 ${echo} PACKAGES=$PACKAGES  \\          >> make_${ARCH}.variables
 cd etc
-find_undefs "${CC}" "${ARCH_FLAGS}" "${LINKER}" "$LIBRARIES"
+find_undefs "${CC}" "${ARCH_FLAGS}" "${LINKER}" "$LIBRARIES" "$ARCH_LIBS"
 cd ..
 cat etc/.thedefs >>  make_${ARCH}.variables
 ${echo} INC_PATH=$INC_PATH            >> make_${ARCH}.variables
