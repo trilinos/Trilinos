@@ -91,8 +91,7 @@ char  *yo = "Zoltan_PHG_Matching";
       struct {
           int matchcnt;
           int rank;
-      } rootin, root;
-      
+      } root;
       
       if (hgp->matching)
           err = hgp->locmatching (zz, hg, match, &limit);
@@ -101,17 +100,17 @@ char  *yo = "Zoltan_PHG_Matching";
       uprintf(hgc, "there are %d matches\n", matchcnt);
 #endif
           
-      /* find the index of the proc in column group with the best match; it will be our root proc */
-      rootin.matchcnt = hg->nVtx-limit; 
-      rootin.rank = hgc->myProc_y;
-      MPI_Allreduce(&rootin, &root, 1, MPI_2INT, MPI_MAXLOC, hgc->col_comm);
+      /* find the index of the proc in column group with the best match; it 
+         will be our root proc */
+      Zoltan_PHG_Find_Root(hg->nVtx-limit, hgc->myProc_y, hgc->col_comm,
+                           &root.matchcnt, &root.rank);
       
 #ifdef _DEBUG    
       uprintf(hgc, "root is %d with matchcnt=%d \n", root.rank, root.matchcnt);
 #endif
       
-      
       MPI_Bcast(match, hg->nVtx, MPI_INT, root.rank, hgc->col_comm);
+
     
   } else if (hgp->matching)
      err = hgp->matching (zz, hg, match);

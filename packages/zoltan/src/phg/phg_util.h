@@ -22,10 +22,20 @@ extern "C" {
 #include <stdarg.h>
 #include "phg_comm.h"
 
-    /* UVC: some utility functions not particularly related to hypergraph */
-extern char *uMe(PHGComm *);
-extern void uprintf(PHGComm *, char *,...);
-extern void errexit(char *,...);
+/* Definitions to allow simplicity in PHG code 
+ * while protecting application namespace. 
+ */
+#define uMe Zoltan_PHG_uMe
+#define uprintf Zoltan_PHG_uprintf
+#define errexit Zoltan_PHG_errexit
+
+/* UVC: some utility functions not particularly related to hypergraph */
+extern char *Zoltan_PHG_uMe(PHGComm *);
+extern void Zoltan_PHG_uprintf(PHGComm *, char *,...);
+extern void Zoltan_PHG_errexit(char *,...);
+
+extern void Zoltan_PHG_Find_Root(int, int, MPI_Comm, int *, int *);
+
     
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -292,9 +292,9 @@ static int refine_fm2 (
     char   *yo="local_fm2";
     PHGComm *hgc=&hgp->comm;
     struct {
-        int nPins;
+        int nPins; 
         int rank;
-    } rootin, root;
+    } root;
 
     /*    SelectFunc select_func = fm2_select;*/
         
@@ -327,11 +327,12 @@ static int refine_fm2 (
     if (hg->nEdge == 0 || hg->nVtx == 0)
         return ZOLTAN_OK;
 
-    /* find the index of the proc in column group with the most #nonzeros; it will be our root
-       proc for computing moves since it has better knowedge about global hypergraph */
-    rootin.nPins = hg->nPins; 
-    rootin.rank = hgc->myProc_y;
-    MPI_Allreduce(&rootin, &root, 1, MPI_2INT, MPI_MAXLOC, hgc->col_comm);
+    /* find the index of the proc in column group with 
+       the most #nonzeros; it will be our root
+       proc for computing moves since it has better 
+       knowedge about global hypergraph */
+    Zoltan_PHG_Find_Root(hg->nPins, hgc->myProc_y, hgc->col_comm, 
+                         &root.nPins, &root.rank);
     
     /* Calculate the weights in each partition and total, then maxima */
     weights[0] = weights[1] = 0.0;
@@ -368,8 +369,8 @@ static int refine_fm2 (
 
     if (hgc->myProc_y==root.rank) { /* only root needs mark, adj, gain and heaps*/
         if (!(mark     = (int*)   ZOLTAN_CALLOC(hg->nVtx, sizeof(int)))
-            || !(adj      = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))                
-            || !(gain     = (float*) ZOLTAN_CALLOC(hg->nVtx, sizeof(float)))) {
+            || !(adj   = (int*)   ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))   
+            || !(gain  = (float*) ZOLTAN_CALLOC(hg->nVtx, sizeof(float)))) {
          Zoltan_Multifree(__FILE__,__LINE__, 3, &mark, &adj, &gain);
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
          return ZOLTAN_MEMERR;

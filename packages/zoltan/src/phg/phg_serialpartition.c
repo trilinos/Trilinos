@@ -215,13 +215,18 @@ static int local_coarse_partitioner(
  */
 PHGComm *hgc = hg->comm;
 int err=0;
+int rootnpins, rootrank;
 
-  if (!hgc->myProc_y)  /* only first row */
+  /* The column processor with the most pins will be our root.  */
+  Zoltan_PHG_Find_Root(hg->nPins, hgc->myProc_y, hgc->col_comm, 
+                       &rootnpins, &rootrank);
+
+  if (hgc->myProc_y==rootrank)   /* only root of each column does this */
     err = CoarsePartition(zz, hg, p, part, hgp); 
 
-  MPI_Bcast(&err, 1, MPI_INT, 0, hgc->col_comm);
+  MPI_Bcast(&err, 1, MPI_INT, rootrank, hgc->col_comm);
   if (!err)
-    MPI_Bcast(part, hg->nVtx, MPI_INT, 0, hgc->col_comm);
+    MPI_Bcast(part, hg->nVtx, MPI_INT, rootrank, hgc->col_comm);
     
   return err;
 }
@@ -231,7 +236,8 @@ int err=0;
 
 /* Sequence partitioning on the vertices of a hypergraph
    in a given order. Currently, even partition sizes
-   are assumed. Multi-weights are not yet supported.
+   are assumed. Multi-weights are not yet supported; only the
+   first weight is used in computing the partition.
 
    This function is called by coarse_part_lin and coarse_part_ran.
 
@@ -248,15 +254,12 @@ static int seq_part (
 )
 {
   int i, j, number;
+  int vwgtdim = hg->VtxWeightDim;
   double weight_sum = 0.0, part_sum = 0.0, old_sum, cutoff;
 
   /* First sum up all the weights. */
-  if (hg->vwgt) {
-    for (i=0; i<hg->nVtx; i++)
-      weight_sum += hg->vwgt[i];
-  }
-  else
-    weight_sum = (double) hg->nVtx;
+  for (i=0; i<hg->nVtx; i++)
+    weight_sum += hg->vwgt[i*vwgtdim];
 
   number = 0; /* Assign next vertex to partition no. number */
   cutoff = weight_sum/p;  /* Cutoff for current partition */
@@ -268,7 +271,7 @@ static int seq_part (
     j = order ? order[i] : i;
     part[j] = number;
     old_sum = part_sum;
-    part_sum += hg->vwgt ? hg->vwgt[j] : 1.0;
+    part_sum += hg->vwgt[j*vwgtdim];
     /* Check if we passed the cutoff and should start a new partition */
     if ((number+1) < p && part_sum > cutoff) {
       number++;
@@ -280,7 +283,7 @@ static int seq_part (
       weight_sum -= part_sum;
       cutoff = weight_sum/(p-number);
       if (part[j] == number)
-        part_sum = hg->vwgt ? hg->vwgt[j] : 1.0;
+        part_sum = hg->vwgt[j*vwgtdim];
       else
         part_sum = 0.0;
     }
@@ -358,6 +361,7 @@ static int bfs_order (
 {
   int i, j, vtx, edge, bfsnumber, pnumber, nbor, next_vtx, *rank = NULL;
   int first, last, num_edges, *edges = NULL;
+  int vwgtdim = hg->VtxWeightDim;
   int err = ZOLTAN_OK;
   double weight_sum = 0.0, part_sum = 0.0, old_sum, cutoff;
   char msg[128], *mark_edge = NULL;
@@ -407,12 +411,8 @@ static int bfs_order (
 
   if (p) {
     /* If partitioning is chosen, sum up all the weights. */
-    if (hg->vwgt) {
-      for (i=0; i<hg->nVtx; i++)
-        weight_sum += hg->vwgt[i];
-    }
-    else
-      weight_sum = (double) hg->nVtx;
+    for (i=0; i<hg->nVtx; i++)
+      weight_sum += hg->vwgt[i*vwgtdim];
 
     cutoff = weight_sum/p;  /* Cutoff for current partition */
     if (hgp->output_level >= PHG_DEBUG_ALL)
@@ -457,7 +457,7 @@ static int bfs_order (
     }
     if (p) {
       old_sum = part_sum;
-      part_sum += hg->vwgt ? hg->vwgt[vtx] : 1.0;
+      part_sum += hg->vwgt[vtx*vwgtdim];
       part[vtx] = pnumber;
       if (hgp->output_level >= PHG_DEBUG_ALL)
         printf("COARSE_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d, part_sum=%f\n",
@@ -478,7 +478,7 @@ static int bfs_order (
       weight_sum -= part_sum;
       cutoff = weight_sum/(p-pnumber);
       if (part[vtx] == pnumber)
-        part_sum = hg->vwgt ? hg->vwgt[vtx] : 1.0;
+        part_sum = hg->vwgt[vtx*vwgtdim];
       else
         part_sum = 0.0;
       if (hgp->output_level >= PHG_DEBUG_ALL)
@@ -793,6 +793,7 @@ static int greedy_order (
 {
   int i, j, vtx, edge, bfsnumber, pnumber, nbor, *rank;
   int esize, *vtx_count=NULL, *visited=NULL, *cut[2];
+  int vwgtdim = hg->VtxWeightDim;
   int err=ZOLTAN_OK;
   double weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
   double *gain = NULL, *edge_sum = NULL, delta;
@@ -861,12 +862,8 @@ static int greedy_order (
 
   if (p) {
     /* If partitioning is chosen, sum up all the weights. */
-    if (hg->vwgt) {
-      for (i=0; i<hg->nVtx; i++)
-        weight_sum += hg->vwgt[i];
-    }
-    else
-      weight_sum = (double) hg->nVtx;
+    for (i=0; i<hg->nVtx; i++)
+      weight_sum += hg->vwgt[i*vwgtdim];
 
     cutoff = weight_sum/p;  /* Cutoff for current partition */
     if (hgp->output_level >= PHG_DEBUG_ALL)
@@ -909,7 +906,7 @@ static int greedy_order (
     }
     if (p) {
       old_sum = part_sum;
-      part_sum += hg->vwgt ? hg->vwgt[vtx] : 1.0;
+      part_sum += hg->vwgt[vtx*vwgtdim];
       part[vtx] = pnumber;
       if (hgp->output_level >= PHG_DEBUG_ALL)
         printf("COARSE_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d, part_sum=%f\n",
@@ -930,7 +927,7 @@ static int greedy_order (
       weight_sum -= part_sum;
       cutoff = weight_sum/(p-pnumber);
       if (part[vtx] == pnumber){
-        part_sum = hg->vwgt ? hg->vwgt[vtx] : 1.0;
+        part_sum = hg->vwgt[vtx*vwgtdim];
         j = -1;
       }
       else { /* part[vtx] == pnumber-1 */

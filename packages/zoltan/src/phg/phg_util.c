@@ -19,7 +19,7 @@ extern "C" {
 #include "phg.h"
 
 
-char *uMe(PHGComm *hgc)
+char *Zoltan_PHG_uMe(PHGComm *hgc)
 {
     static char msg[1024];
 
@@ -27,7 +27,7 @@ char *uMe(PHGComm *hgc)
     return msg;
 }
 
-void uprintf(PHGComm *hgc, char *f_str,...)
+void Zoltan_PHG_uprintf(PHGComm *hgc, char *f_str,...)
 {
 va_list argp;
 
@@ -43,7 +43,7 @@ fflush(stdout);
 /*************************************************************************
 * -------------------------- Error Exit ----------------------------------
 **************************************************************************/
-void errexit(char *f_str,...)
+void Zoltan_PHG_errexit(char *f_str,...)
 {
 va_list argp;
 
@@ -57,6 +57,35 @@ va_end(argp);
 fprintf(stderr," ******\n");
 fflush(stderr);
 exit(1);
+}
+
+
+/*****************************************************************************/
+
+void Zoltan_PHG_Find_Root(
+  int val,
+  int rank,
+  MPI_Comm comm,
+  int *bestval,
+  int *bestrank
+)
+{
+/* Based on local input value val, find the processor with the best val.
+ * Return that processor and its value.
+ * (Used when performing, say, local matching in each processor of a column 
+ * and want to compute the best match in the column.)
+ */
+struct {
+  int val;
+  int rank;
+} rootin, root;
+
+    rootin.val = val;
+    rootin.rank = rank;
+    MPI_Allreduce(&rootin, &root, 1, MPI_2INT, MPI_MAXLOC, comm);
+
+    *bestval = root.val;
+    *bestrank = root.rank;
 }
 
 
