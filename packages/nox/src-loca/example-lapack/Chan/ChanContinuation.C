@@ -149,7 +149,7 @@ int main()
 				   maxIters);
 
     // Create the stepper  
-    LOCA::Stepper stepper(grp, comboOR, paramList);
+    LOCA::NewStepper stepper(grp, comboOR, paramList);
 
     // Perform continuation run
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
