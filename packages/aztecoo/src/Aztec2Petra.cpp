@@ -174,8 +174,16 @@ int Aztec2Petra(int * proc_config,
 
   // Create x vector, note that it is a "long" vector (has ghost entries).
   x = new Epetra_Vector(View, A->RowMatrixColMap(),az_x);
-
-  b = new Epetra_Vector (View, A->OperatorRangeMap(), az_b);
+  
+  // RPP: Can not use the OperatorRangeMap in the ctor of the "b" vector 
+  // below.  In MPSalsa, we delete the VbrMatrix yet still use the vector "b".
+  // Deleting the matrix deletes the OperatorRangeMap that the b vector is 
+  // based on.  Losing the map means "b" and all vectors that are created 
+  // with the copy constructor of "b" break.  Mike has suggested 
+  // using reference counting (Boost smart pointers) so the map is not 
+  // deleted.  For now we will use the "map" variable as the base map for "b". 
+  //b = new Epetra_Vector (View, A->OperatorRangeMap(), az_b);
+  b = new Epetra_Vector (View, *map, az_b);
 
   if (!Amat->has_global_indices) {
     AZ_free((void *) global_bindx);
