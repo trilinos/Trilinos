@@ -14,14 +14,20 @@
 /* Define if F77 and FC dummy `main' functions are identical. */
 #undef FC_DUMMY_MAIN_EQ_F77
 
+/* Define if want to build with belos enabled */
+#undef HAVE_ANASAZI_BELOS
+
 /* Define if want to build anasazi-examples */
 #undef HAVE_ANASAZI_EXAMPLES
 
+/* Define if want to build with ifpack enabled */
+#undef HAVE_ANASAZI_IFPACK
+
+/* Define if want to build with triutils enabled */
+#undef HAVE_ANASAZI_TRIUTILS
+
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
-
-/* Define if want to build belos */
-#undef HAVE_BELOS
 
 /* Define if you have a BLAS library. */
 #undef HAVE_BLAS
@@ -43,9 +49,6 @@
 
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
-
-/* Define if want to build ifpack */
-#undef HAVE_IFPACK
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
