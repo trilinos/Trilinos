@@ -49,7 +49,7 @@ int LB_Scatter_Graph(
   char     msg[256];
   idxtype *old_vtxdist, *old_xadj, *old_adjncy, *old_vwgt, *old_adjwgt;
   float   *old_xyz;
-  int *ptr, *proclist, *proclist2;
+  int *ptr, *proclist = NULL, *proclist2;
   int i, j, num_obj, old_num_obj, num_edges, nrecv;
   int vwgt_dim= lb->Obj_Weight_Dim, ewgt_dim= lb->Comm_Weight_Dim;
   struct Comm_Obj *plan2;
@@ -96,14 +96,16 @@ int LB_Scatter_Graph(
   if (ndims)
     *xyz = (float *) LB_MALLOC(ndims*num_obj*sizeof(float));
 
-  /* Set up the communication plan for the vertex data */
-  proclist = (int *) LB_MALLOC(old_num_obj * sizeof(int));
-  /* Let j be the new owner of vertex old_vtxdist[lb->Proc]+i */
-  j = 0;
-  while (old_vtxdist[lb->Proc] >= (*vtxdist)[j+1]) j++;
-  for (i=0; i<old_num_obj; i++){
-    if (old_vtxdist[lb->Proc]+i >= (*vtxdist)[j+1]) j++;
-    proclist[i] = j;
+  if (old_num_obj > 0) {
+    /* Set up the communication plan for the vertex data */
+    proclist = (int *) LB_MALLOC(old_num_obj * sizeof(int));
+    /* Let j be the new owner of vertex old_vtxdist[lb->Proc]+i */
+    j = 0;
+    while (old_vtxdist[lb->Proc] >= (*vtxdist)[j+1]) j++;
+    for (i=0; i<old_num_obj; i++){
+      if (old_vtxdist[lb->Proc]+i >= (*vtxdist)[j+1]) j++;
+      proclist[i] = j;
+    }
   }
 
   LB_Comm_Create(plan, old_num_obj, proclist, lb->Communicator, TAG1, &nrecv);
