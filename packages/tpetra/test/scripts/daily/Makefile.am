@@ -32,4 +32,6 @@ else
 SERIAL_SUBDIR = serial
 endif
 
-SUBDIRS = $(SERIAL_SUBDIR) $(MPI_SUBDIR)
+# pmsext 2005/01/25 - MPI testharness temporarily disabled until problems with script can be fixed.
+#SUBDIRS = $(SERIAL_SUBDIR) $(MPI_SUBDIR)
+SUBDIRS = $(SERIAL_SUBDIR)

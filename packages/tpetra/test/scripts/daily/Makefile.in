@@ -99,7 +99,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = serial mpi
+DIST_SUBDIRS = serial
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -218,7 +218,10 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 @HAVE_MPI_TRUE@MPI_SUBDIR = mpi
 @HAVE_MPI_FALSE@SERIAL_SUBDIR = serial
-SUBDIRS = $(SERIAL_SUBDIR) $(MPI_SUBDIR)
+
+# pmsext 2005/01/25 - MPI testharness temporarily disabled until problems with script can be fixed.
+#SUBDIRS = $(SERIAL_SUBDIR) $(MPI_SUBDIR)
+SUBDIRS = $(SERIAL_SUBDIR)
 all: all-recursive
 
 .SUFFIXES:
