@@ -42,7 +42,7 @@ FARG      		= farg_typical
 MPI_LIB			= 
 MPI_LIBPATH		=
 
-PARMETIS_LIBPATH 	= -L.
+PARMETIS_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib
 
 #JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib
 #JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
