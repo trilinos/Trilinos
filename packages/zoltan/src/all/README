@@ -17,13 +17,6 @@ ALL DIRECTORY -- Routines for memory allocation and deallocation.
 
 Files compiled into Zoltan:
 
-mem_const.h        -- Prototypes for memory allocation and deallocation
-                      routines in mem.c.  Definition of LB_MALLOC.
-
-mem.c              -- Memory allocation routines LB_array_alloc and LB_malloc.
-                      Memory deallocation routine LB_free.
-		      Parameter setting routing LB_Set_Malloc_Param.
-
 all_allo_const.h   -- Prototypes for Zoltan-specific memory allocation and 
                       deallocation routines in all_allo.c.  
 
