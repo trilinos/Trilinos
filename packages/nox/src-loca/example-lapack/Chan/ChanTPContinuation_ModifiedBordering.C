@@ -46,7 +46,7 @@ int main()
     //int maxNewtonIters = 6;
 
     // Create output file to save solutions
-    ofstream outFile("ChanTPContinuation.dat");
+    ofstream outFile("ChanTPContinuation_ModifiedBordering.dat");
     outFile.setf(ios::scientific, ios::floatfield);
     outFile.precision(14);
 
