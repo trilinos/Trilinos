@@ -858,6 +858,10 @@ private:
     else
       P = Ptent;
 
+    // fix the number of equations in P, so that GetRAP() will
+    // get the correct number for C= RAP
+    P.GetML_Operator()->num_PDEs = Ptent.GetML_Operator()->num_PDEs;
+
     return;
   }
 
