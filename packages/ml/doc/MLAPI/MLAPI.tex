@@ -112,8 +112,7 @@ Printed February 2005
 \vspace{0.2in}
 
 \begin{center}
-{\Large {\bf \MLAPIns: an Object-Oriented Framework 
-  for the Development of Scalable Parallel Multilevel Preconditioners}}
+{\Large {\bf \MLAPIns: a C++ Framework For Multilevel Preconditioners}}
 %\footnote{ Sandia is a multiprogram laboratory operated by Sandia Corporation,
 %a Lockheed Martin Company, for the United States Department of Energy's
 %National Nuclear Security Administration under contract DE-AC04-94AL85000.}}}
@@ -140,7 +139,9 @@ We discuss the design of \MLAPIns, an object oriented framework that enables
 the development and usage of efficient,
 scalable and portable implementations of multilevel preconditioners for
 general distributed sparse matrices, in
-both serial and (massively) parallel environments. 
+both serial and parallel environments. 
+
+\smallskip
 
 The main feature of this framework is the use of several programming
  paradigms for the different implementation layes, with a strong emphasis on
@@ -153,11 +154,11 @@ package of Trilinos~\cite{Trilinos-home-page}.
 \smallskip
 
 We report several numerical experiments, obtained on serial and parallel
-computers, to show that the overload required by the object-oriented approach
-is very modest, therefore allowing developers of new algorithms to focus on
-the method itself, rather than the implementation details, yet obtaining a
+computers, to show that the overload required by the object-oriented layer
+is very modest, therefore allowing developers to focus on
+the new algorithm they are developing and testing, rather than the implementation details, yet obtaining a
 code whose efficiency and scalability is comparable with that of C or FORTRAN
-codes.
+layers underneath.
 
 %\smallskip
 
@@ -389,64 +390,33 @@ not what happens in most codes.  Traditionally, coding is made complex by
 dimension of the input and output vector, of flags for the smoother or the
 matrix-matrix product, or the parallel data layout.
 
-Since there ``details'' are necessary to compile and run the program, 
-  our aim is the following: {\em let the
-compiler take care of the details, and let the programmer-developer to
-focus on the algorithm}. For example, any well designed implementation of a linear
-operator already contains the number of rows and columns, and the
-implementation of a vector contains the number of elements in the vector.
-By using operator C++ overloading (see, for example, \cite{stroustrup91cpp}), 
-  one can instruct the compiler on how to
-look for all the necessary information, so that all operations are properly
-executed.
+Since there ``details'' are necessary to compile and run the program, our aim
+is the following: {\em let the compiler take care of the details, and let the
+  programmer-developer to focus on the algorithm}. For example, any well
+  designed implementation of a linear operator already contains the number of
+  rows and columns, and the implementation of a vector contains the number of
+  elements in the vector.  By using a light layer of C++ and taking advantage
+  of operator overloading (see, for example, \cite{stroustrup91cpp}), one can
+  instruct the compiler on how to look for all the necessary information, so
+  that all operations are properly executed.
 
 \smallskip
 
-Several start-of-the-art scientific computing libraries have recently adopted
-OO programming (OOP) to make them easier to use and more flexible. An
-incomplete list of 
-such libraries includes are Diffpack~\cite{bruaset97object}, 
-ISIS++~\cite{isis-guide}, BPKIT~\cite{bpkit}, \petsc\cite{petsc-guide},
-  \hypre~\cite{hypre}, and almost all \trilinos\ packages, like \ifpack~\cite{ifpack-guide}, \ML~\cite{ml-guide}.
-  Perhaps \hypre~and \ML~are the best suited framework to use and develop
-  multilevel preconditioners, the former somehow more focused on geometric and
-  classic AMG, while the latter with a strong focus on smoothed aggregation.
-  We believe that none of these libraries allows the developer to focus on the
-  high-level view of the algorithm as the library presented in this paper,
-  \mlapi, does. 
-
-\smallskip
-
-In this paper, we want to show
-that it is possible to take advantage of OOP to obtain intuitive,
-easy-to-read and easy-to-develop codes, that are {\sl at the same time}
-efficient and scalable. The approach we have followed in the development of
-the \mlapi library is the following:
-first, a set of C structures and functions has been developed for all 
-required operations. Then, few classes have been defined, to define
-operators, smoothers and coarse solvers, and operators \verb!*!, \verb!-! and
-\verb!+! have been overloaded. Finally, a smoothed aggregation multilevel
-code, written in plain C, is compared with an OO code, implementing the 
-{\sl same} algorithm.  We will show that the overhead
-required by OO on modern compilers is negligible, the C++ being remarkably
-shorter and easier to read and understand, and simpler to maintain and test.
-
-%Goal of \MLAPI, the Abstract Programming Interface of ML~\cite{ml-guide}, is
-%to allow developers to write MATLAB-like code to define multilevel
-%preconditioners in a C++ (parallel) environment, so that the compiler can
-%convert this easy-to-develop code into efficient, parallel and scalable code
-%(by calling functions usually written in C or FORTRAN).
-
-\smallskip
-
-This paper is organized as follows. First, in Section~\ref{sec:design}
-we will outline why an object-oriented interface can be useful to develop
-multilevel preconditioners (and, more general, multilevel solvers).
-Section~\ref{sec:basic} introduces the most important \MLAPI classes, whose
-usage is presented in Section~\ref{sec:usage}. The MATLAB~\copyright~interface is
-detailed in Section~\ref{sec:matlab}. Numerical results are reported
-in Section~\ref{sec:results}.
-Section~\ref{sec:conclusions} outlines the conclusions.
+In this paper, we want to show that it is possible to obtain intuitive,
+  easy-to-read and easy-to-develop codes, that are {\sl at the same time}
+  efficient and scalable.  This paper is organized as follows. First, in
+  Section~\ref{sec:design} we will outline why an object-oriented interface
+  can be useful to develop multilevel preconditioners (and, more general,
+                                                       multilevel solvers).
+  Section~\ref{sec:basic} introduces the most important \MLAPI classes, whose
+  usage is presented in Section~\ref{sec:usage}. The
+  MATLAB~\copyright~interface is detailed in Section~\ref{sec:matlab}.
+  Numerical results are reported in Section~\ref{sec:results}, where a
+  smoothed aggregation multilevel code, written in plain C, is compared with
+  an OO code, implementing the {\sl same} algorithm.  We will show that the
+  overhead required by OO on modern compilers is negligible, the C++ being
+  remarkably shorter and easier to read and understand, and simpler to
+  maintain and test.  Section~\ref{sec:conclusions} outlines the conclusions.
 
 %-----------------------------------------------------------------------------%
 \section{Software Design}
@@ -520,7 +490,7 @@ desired parameters in a parameter list.
 
 \noindent
 {\bf High performance.} A good numerical package that utilizes
-OOP must exhibit a computational efficiency that is comparable to FORTRAN and
+OO programming must exhibit a computational efficiency that is comparable to FORTRAN and
 C codes. This puts severe limitations to the OO design. It is certain easy to
 generate elegant but inefficient C++ code. 
 We implemented \MLAPI as a light layer of
@@ -594,17 +564,18 @@ templates (see for instance~\cite{vandevoorde03cpp}); instead, we
 create temporary vectors, then perform vector operations (like updates,
 scaling, or DAXPY operations) using optimized BLAS routines 
 (which use would not be possible using expressions templates). 
-However, each overloaded operator can be replaced by class methods, therefore
+However, each overloaded operator can be replaced, in a secondary
+optimization phase, by class methods, therefore
 avoiding the creation of temporary objects, at the price of a more
 ``conventional'' coding. For example, the operation {\tt x = a + b} can be
-replaced by method {\tt Update()} of vector {\tt x}.
+replaced by method {\tt Update()} of {\tt x}.
 
 %-----------------------------------------------------------------------------%
 \section{\MLAPI Classes}
 \label{sec:basic}
 %-----------------------------------------------------------------------------%
 
-Int this section we introduce the
+In this section we introduce the
 most important classes of \MLAPI: {\tt Space} 
 (analyzed in Section~\ref{sec:space}), {\tt MultiVector}
 (analyzed in Section~\ref{sec:multivector}),
@@ -923,14 +894,11 @@ rows, as well as elements hosted by another process). In the following
 DistributedMatrix A_Dist(MySpace, MySpace);
 
 if (GetMyPID() == 0) {
-
   for (int i = 0 ; i < MySpace.GetNumGlobalElements() ; ++i) {
-
     if (i) A_Dist.SetElement(i, i - 1, -1.0);
     A_Dist.SetElement(i, i, 2.0);
     if (i + 1 != A_Dist.NumGlobalCols())
       A_Dist.SetElement(i, i + 1, -1.0);
-
   }
 }
 \end{verbatim}
@@ -1057,13 +1025,6 @@ action of the inverse of an operator on a given vector.
 \label{sec:results}
 %-----------------------------------------------------------------------------%
 
-We now report some numerical results to compare the \mlapi implementation with
-a more ``standard'' C code based on the \ML\ library. The matrix arises from a 2D
-or 3D Laplacian, discretized with a classical 5-point or 7-point formula.
-The multilevel hierarchy is constructed using classical smoothed aggregation
-for symmetric problems, with symmetric Gauss-Seidel smoother, and LU solver on
-the coarsest level.
-
 \begin{table}
 \begin{center}
 \begin{tabular}{| p{2cm}  p{10cm} |}
@@ -1173,29 +1134,11 @@ $768^2$  &   5.59 &  32.32 & 37.91  &  6.69 &  34.10 & 40.79 & 7.59  \\
 $1024^2$ &   9.16 &  64.55 & 73.71  & 11.12 &  68.49 & 79.61 & 8.00  \\
 \hline
 \end{tabular}
-\caption{LINUX: 2D-Laplacian.}
+\caption{LINUX: PCG solution of linear system (\ref{eq:lin_sys}) with
+  a multilevel preconditioner.}
 \label{tab:linux-2d}
 \end{center}
 \end{table}
-
-\begin{table}
-\begin{center}
-\begin{tabular}{| c | c c c | c c c | c |}
-\hline
-    & \multicolumn{3}{ c |}{\ML} & \multicolumn{3}{ c |}{\MLAPI}  & \\
-$n$ & {\tt const}  & {\tt appl}  & {\tt total}  & {\tt constr}  
-    & {\tt appl}   & {\tt total} & {\tt diff}  \\
-\hline
-$32^3$ &   0.74 &   1.21 &  1.86  &  0.79 &   1.23 &  1.91 & 2.68  \\
-$64^3$ &   3.76 &  12.03 & 15.79  &  4.28 &  12.92 & 17.20 & 8.92  \\
-$96^3$ &  11.73 &  53.20 & 64.93  & 13.53 &  56.02 & 69.55 & 7.11  \\
-\hline
-\end{tabular}
-\caption{LINUX: 3D-Laplacian on LINUX.}
-\label{tab:linux-3d}
-\end{center}
-\end{table}
-
 
 
 \begin{table}
@@ -1212,7 +1155,8 @@ $768^2$  &  44.94 & 379.09 &424.03  & 59.08 & 408.17 &467.25 &10.19  \\
 $1024^2$ &  79.06 & 746.16 &815.22  &105.11 & 812.26 &917.37 &11.16  \\
 \hline
 \end{tabular}
-\caption{SUN: 2D-Laplacian on SUN.}
+\caption{SUN: PCG solution of linear system (\ref{eq:lin_sys}) with
+  a multilevel preconditioner.}
 \label{tab:sun-2d}
 \end{center}
 \end{table}
@@ -1231,7 +1175,8 @@ $768^2$  &  28.04 & 193.01 &221.05  & 34.49 & 198.88 &233.37 & 5.57  \\
 $1024^2$ &  49.95 & 388.99 &438.94  & 60.78 & 397.13 &457.92 & 4.23  \\
 \hline
 \end{tabular}
-\caption{DEC: 2D-Laplacian.}
+\caption{DEC: PCG solution of linear system (\ref{eq:lin_sys}) with
+  a multilevel preconditioner.}
 \label{tab:dec-2d}
 \end{center}
 \end{table}
@@ -1249,7 +1194,9 @@ $p$ & {\tt const}  & {\tt iter}  & {\tt constr}
 16  &   9.45 &  3.38  & 14.12 &   3.34  \\
 \hline
 \end{tabular}
-\caption{CPLANT: 2D-Laplacian problem.  The matrix has size $512^2 \times p$.}
+\caption{CPLANT: PCG solution of linear system (\ref{eq:lin_sys}) with
+  a multilevel preconditioner.
+ The matrix has size $512^2 \times p$.}
 \label{tab:cplant-2d}
 \end{center}
 \end{table}
@@ -1267,15 +1214,15 @@ $p$ & {\tt const}  & {\tt iter}  & {\tt constr}
 16  &  19.45 &  8.40  & 23.78 &   8.59  \\
 \hline
 \end{tabular}
-\caption{SGI: 2D-Laplacian problem.  The matrix has size $512^2 \times p$.}
+\caption{SGI: PCG solution of linear system (\ref{eq:lin_sys}) with
+  a multilevel preconditioner.
+ The matrix has size $512^2 \times p$.}
 \label{tab:sgi-2d}
 \end{center}
 \end{table}
 
-
-
-
-
+We now report some numerical results to compare the \mlapi implementation with
+a more ``standard'' C code based on the \ML\ library. 
 A list of symbols used in this Section in reported in Table~\ref{tab:symbol},
 and the computers used in the numerical experiments are described in
 Table~\ref{tab:machines}. 
@@ -1303,23 +1250,29 @@ optimize \MLAPI is only slightly slower that the C code.
 
 \smallskip
 
-Tables~\ref{tab:linux-2d}, \ref{tab:linux-3d},
-\ref{tab:sun-2d} and \ref{tab:dec-2d} compare the time required by \ML\ and
-\MLAPI for serial computations. The difference between the \ML\ and \MLAPI time
-can vary considerably on different architectures, the C++ code being slower on
-order machines (like SUN). 
-Tables~\ref{tab:cplant-2d} and
-\ref{tab:sgi-2d} investigate how the two approaches compare in parallel
-environments, using a Linux cluster (CPLANT) or an SGI Origin 3800. We
-keep constant the size of the local matrix, by storing $512 \times 512$ rows
-on each processor. 
+We now consider the solution of linear system (\ref{eq:lin_sys}) using the
+conjugate gradient method, preconditioned with a multilevel smoothed
+aggregation preconditioner.
+Tables~\ref{tab:linux-2d}, \ref{tab:sun-2d} and
+\ref{tab:dec-2d} compare the time required by \ML\ and \MLAPI for serial
+computations, while Tables~\ref{tab:cplant-2d} and \ref{tab:sgi-2d}
+investigate how the two approaches compare in parallel environments, using a
+Linux cluster (CPLANT) or an SGI Origin 3800.  The matrix arises from a 2D or
+3D Laplacian, discretized with a classical 5-point formula.  The multilevel
+hierarchy is constructed using classical smoothed aggregation for symmetric
+problems, with symmetric Gauss-Seidel smoother, and LU solver on the coarsest
+level.  For the parallel runs, we keep constant the size of the local matrix, by
+storing $512 \times 512$ rows on each processor. 
 
 We note that the time per iteration is almost equivalent, while the
 \mlapi construction time can be up to 50\% larger than the \ML\ time. This is
 due to the design requirements of \MLAPI: in order to extend flexibility, all
 \MLAPI operators are wrapped as {\tt Epetra\_RowMatrix}, and the global ID of
 all local rows and columns in computed, while \ML\ avoids this step for some the
-operators in the hierarchy. Finally, we note that the overhead of \mlapi 
+operators in the hierarchy. The difference between the \ML\ and \MLAPI time can vary considerably
+on different architectures, the C++ code being slower on order machines 
+(like SUN).
+However, we note that the overhead of \mlapi 
 can be quantified in about 10\%
 of the \ML\ time. This holds for both serial and parallel computations. This
 difference could be reduced by optimizing the creation of the multilevel
@@ -1343,16 +1296,11 @@ that the developer can focus on the algorithm itself, without spending time on
 details that can be fixed by the compiler. This reduces the time spent in
 writing and debugging the algorithm, at the only expense of a minimal increase
 in the CPU time, that can be quantified in about 10\% of increase with respect
-to optimize C code. We believe that 10\% is a negligible 
+to optimize C code. We believe that this is a negligible 
 factor in the development and testing of new
 ideas, especially considering the time saved by the developer to write the
 code itself. Besides, reported results show that the \MLAPI code can be
 improved in a secondary optimization phase.
-
-\smallskip
-
-The \MLAPI library will be made available with GNU LGPL license within
-Trilinos 6.0.
 
 %-----------------------------------------------------------------------------%
 \section*{Acknowledgments}
