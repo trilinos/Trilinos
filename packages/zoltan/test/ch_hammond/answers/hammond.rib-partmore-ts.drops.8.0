@@ -1,0 +1,39 @@
+
+-------------------------------------------------------
+0 Zoltan_LB_Box_Assign not tested.
+0 Zoltan_LB_Box_PP_Assign LO: (0.000000e+00 0.000000e+00 0.000000e+00)
+0                         HI: (1.000000e+00 1.000000e+00 1.000000e+00)
+       On 7 Procs: 0 1 2 3 4 6 7 
+       In 14 Parts: 0 1 2 3 4 5 6 7 8 9 12 14 15 16 
+0 Zoltan_LB_Point_Assign not tested.
+0 Zoltan_LB_Point_PP_Assign (0.000000e+00 0.000000e+00 0.000000e+00) on proc 7 part 16
+0 Zoltan_LB_Point_Assign not tested.
+0 Zoltan_LB_Point_PP_Assign (1.000000e+00 1.000000e+00 1.000000e+00) on proc 0 part 0
+0 Zoltan_LB_Point_Assign not tested.
+0 Zoltan_LB_Point_PP_Assign (5.000000e-01 5.000000e-01 5.000000e-01) on proc 0 part 0
+
+-------------------------------------------------------
+0 Zoltan_LB_Box_Assign not tested.
+0 Zoltan_LB_Box_PP_Assign LO: (7.896130e-01 7.815590e-02 0.000000e+00)
+0                         HI: (1.789613e+00 2.078156e+00 3.000000e+00)
+       On 1 Procs: 0 
+       In 2 Parts: 0 1 
+0 Zoltan_LB_Point_Assign not tested.
+0 Zoltan_LB_Point_PP_Assign (7.896130e-01 7.815590e-02 0.000000e+00) on proc 0 part 1
+0 Zoltan_LB_Point_Assign not tested.
+0 Zoltan_LB_Point_PP_Assign (1.789613e+00 2.078156e+00 3.000000e+00) on proc 0 part 0
+0 Zoltan_LB_Point_Assign not tested.
+0 Zoltan_LB_Point_PP_Assign (1.289613e+00 1.078156e+00 1.500000e+00) on proc 0 part 0
+
+-------------------------------------------------------
+0 Zoltan_LB_Box_Assign not tested.
+0 Zoltan_LB_Box_PP_Assign LO: (-1.000000e+06 -1.000000e+06 -1.000000e+06)
+0                         HI: (1.000000e+06 1.000000e+06 1.000000e+06)
+       On 8 Procs: 0 1 2 3 4 5 6 7 
+       In 17 Parts: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 
+0 Zoltan_LB_Point_Assign not tested.
+0 Zoltan_LB_Point_PP_Assign (-1.000000e+06 -1.000000e+06 -1.000000e+06) on proc 7 part 16
+0 Zoltan_LB_Point_Assign not tested.
+0 Zoltan_LB_Point_PP_Assign (1.000000e+06 1.000000e+06 1.000000e+06) on proc 0 part 0
+0 Zoltan_LB_Point_Assign not tested.
+0 Zoltan_LB_Point_PP_Assign (0.000000e+00 0.000000e+00 0.000000e+00) on proc 7 part 16

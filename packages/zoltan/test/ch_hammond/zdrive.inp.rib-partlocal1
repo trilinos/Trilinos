@@ -5,3 +5,4 @@ File Type		= Chaco
 File Name		= hammond
 Parallel Disk Info	= number=0
 test local partitions	= 1
+Test Drops		= 1

@@ -5,6 +5,7 @@ Zoltan Parameters	= debug_level=3, timer=cpu
 File Type		= Chaco
 File Name		= grid20x19
 Parallel Disk Info	= number=0
+Test Drops		= 1
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
 1	0	-1	-1

@@ -5,3 +5,4 @@ File Type		= Chaco
 File Name		= grid20x19
 Parallel Disk Info	= number=0
 Test local partitions   = 2
+Test Drops		= 1
