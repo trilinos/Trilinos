@@ -131,7 +131,7 @@ Trilinos packages.
 of templated scalar type.  This means a SerialDenseMatrix object can be created for any scalar type 
 supported by Teuchos::ScalarTraits (Section \ref{sec:teuchos:ScalarTraits}).  Boundschecking
 can be enabled for this class by configuring Teuchos with {\tt --enable-teuchos-abc}.
-An exception will be thrown everytime a matrix bound is violated by any method.  This 
+An exception will be thrown every time a matrix bound is violated by any method.  This 
 incurs a lot of overhead for this class, so boundschecking is only recommended as a debugging tool.
 
 To use the Teuchos::SerialDenseMatrix class, include the header:
@@ -149,9 +149,9 @@ Teuchos::SerialDenseMatrix<int,double> Empty_Matrix;
 Teuchos::SerialDenseMatrix<int,double> My_Matrix( 3, 4 );
 // Basic copy of My_Matrix
 Teuchos::SerialDenseMatrix<int,double> My_Copy1( My_Matrix ),
-// (Deep) Copy of principle 3x3 submatrix of My_Matrix
+// (Deep) Copy of principle 3x3 sub-matrix of My_Matrix
                   My_Copy2( Teuchos::Copy, My_Matrix, 3, 3 ),
-// (Shallow) Copy of 2x3 submatrix of My_Matrix
+// (Shallow) Copy of 2x3 sub-matrix of My_Matrix
                   My_Copy3( Teuchos::View, My_Matrix, 2, 3, 1, 1 );
 \end{verbatim}}
 The matrix dimensions and strided storage information can be obtained:
@@ -381,7 +381,7 @@ This example can be found in \TriExe{teuchos/ex3.cpp}.
  & bounds and backward error estimates for the solution [ Use after GETRF/GETRS ].\\\hline
 \_GESVX & Expert driver:  Uses GETRF/GETRS to compute the solution to a real system of linear \\
  & equations, returning error bounds on the solution and a condition estimate. \\\hline
-\_GEHRD & Reduces a real general matrix to upper Hessenber form by orthogonal similarity \\
+\_GEHRD & Reduces a real general matrix to upper Hessenberg form by orthogonal similarity \\
  & transformations \\\hline
 \_HSEQR & Compute the eigenvalues of a real upper Hessenberg matrix and, optionally, the \\
  & Schur decomposition. \\\hline
@@ -469,7 +469,7 @@ Now this parameter list can be filled with values:
 Prec_List.set("Type", "ILU");
 Prec_List.set("Drop Tolerance", 1e-3);
 \end{verbatim}}
-The parameter list can be queried about the existance of a parameter, sublist, or type:
+The parameter list can be queried about the existence of a parameter, sublist, or type:
 {\small
 \begin{verbatim}
 // Has a solver been chosen?
@@ -538,7 +538,7 @@ Preconditioner ->
 Solver = GMRES   [unused]
 Tolerance = 1e-10
 \end{verbatim}}
-\noindent It is important to note that mispelled parameters 
+\noindent It is important to note that misspelled parameters 
 (with additional space characters, capitalizations, etc.) may be ignored.  
 Therefore, it is important to be aware that a given parameter has not been used. 
 Unused parameters can be printed with method:
@@ -571,7 +571,7 @@ To use the \verb!Teuchos::RefCountPtr! class, include the header:
 #include "Teuchos_RefCountPtr.hpp"
 \end{verbatim}}
 The data type used with {\tt Teuchos::RefCountPtr} should not 
-be a built-in data type (like {\tt int} or {\tt double}), this creates unneccessary 
+be a built-in data type (like {\tt int} or {\tt double}), this creates unnecessary 
 overhead.  Instead, it should be used to manage dynamic objects 
 and data members that need to be shared with many clients.  This means that the data type 
 will most likely be a C++ class.  Consider the class hierarchy:
@@ -583,7 +583,9 @@ class A {
    virtual ~A(){}; 
    virtual void f(){}; 
 };   
-class B : virtual public A {};
+class B1 : virtual public A {};
+class B2 : virtual public A {};
+class C : public B1, public B2 {};
 \end{verbatim}}
 
 Creating a reference-counted pointer to a dynamically allocated object (of type {\tt A}) can be done several ways:
@@ -603,12 +605,12 @@ const RefCountPtr<const A> ca_cptr = rcp(new A);
 \end{verbatim}}
 
 The {\tt Teuchos::RefCountPtr} class can also perform implicit conversions between a derived
-class ({\tt B}) and its base class ({\tt A}):
+class ({\tt B1}) and its base class ({\tt A}):
 
 {\small
 \begin{verbatim}
-RefCountPtr<B> b_ptr  = rcp(new B);
-RefCountPtr<A> a_ptr  = b_ptr;
+RefCountPtr<B1> b1_ptr  = rcp(new B1);
+RefCountPtr<A> a_ptr1 = b1_ptr;
 \end{verbatim}}
 
 \noindent Other non-implicit type conversions like static, dynamic, or const casts
@@ -616,15 +618,15 @@ can be taken care of by non-member template functions:
 
 {\small
 \begin{verbatim}
-RefCountPtr<const B> b_ptr = rcp(new B);
-// Implicit cast from B to A.
-RefCountPtr<const A> ca_ptr = b_ptr;                              
-// Safe cast, type-checked.
-RefCountPtr<const B> ba_ptr1 = rcp_dynamic_cast<const B>(ca_ptr); 
-// Unsafe cast, non-type-checked.
-RefCountPtr<const B> ba_ptr2 = rcp_static_cast<const B>(ca_ptr);  
-// Cast away const from A.
-RefCountPtr<A>       a_ptr = rcp_const_cast<A>(ca_ptr);           
+RefCountPtr<const C> c_ptr = rcp(new C);
+// Implicit cast from C to B2.
+RefCountPtr<const B2> b2_ptr = c_ptr;                              
+// Safe cast, type-checked, from C to A.
+RefCountPtr<const A> ca_ptr1 = rcp_dynamic_cast<const A>(c_ptr); 
+// Unsafe cast, non-type-checked, from C to A.
+RefCountPtr<const A> ca_ptr2 = rcp_static_cast<const A>(c_ptr);  
+// Cast away const from B2.
+RefCountPtr<B2>       nc_b2_ptr = rcp_const_cast<B2>(b2_ptr);           
 \end{verbatim}}
 
 Using a reference-counted pointer is very similar to using a raw C++ pointer.  Some
@@ -632,17 +634,17 @@ of the operations that are common to both are:
 {\small
 \begin{verbatim}
 RefCountPtr<A>
-   a_ptr1 = rcp(new A), // Initialize reference-counted pointers.
-   a_ptr2 = rcp(new A); // ""
-A  *ra_ptr1 = new A,    // Initialize non-reference counted pointers.
-   *ra_ptr2 = new A;    // ""
-a_ptr1 = rcp(ra_ptr2);  // Assign from a raw pointer (only do this once!)
-a_ptr2 = a_ptr1;        // Assign one smart pointer to another.
-a_ptr1 = rcp(ra_ptr1);  // Assign from a raw pointer (only do this once!)
-a_ptr1->f();            // Access a member of A using ->
-ra_ptr1->f();           // ""
-*a_ptr1 = *a_ptr2;      // Dereference the objects and assign.
-*ra_ptr1 = *ra_ptr2;    // ""
+   a_ptr2 = rcp(new A), // Initialize reference-counted pointers.
+   a_ptr3 = rcp(new A); // ""
+A  *ra_ptr2 = new A,    // Initialize non-reference counted pointers.
+   *ra_ptr3 = new A;    // ""
+a_ptr2 = rcp(ra_ptr3);  // Assign from a raw pointer (only do this once!)
+a_ptr3 = a_ptr2;        // Assign one smart pointer to another.
+a_ptr2 = rcp(ra_ptr2);  // Assign from a raw pointer (only do this once!)
+a_ptr2->f();            // Access a member of A using ->
+ra_ptr2->f();           // ""
+*a_ptr2 = *a_ptr3;      // Dereference the objects and assign.
+*ra_ptr2 = *ra_ptr3;    // ""
 \end{verbatim}}
 
 \noindent However, a reference-counted pointer cannot be used everywhere a raw C++ pointer
@@ -651,12 +653,12 @@ can.  For instance, these statements will not compile:
 \begin{verbatim}
 // Pointer arithmetic ++, --, +, - etc. not defined!
 a_ptr1++;            // error  
-// Comparision operators ==, !=, <=, >= etc. not defined!
+// Comparison operators ==, !=, <=, >= etc. not defined!
 a_ptr1 == ra_ptr1;   // error 
 \end{verbatim}}
 
-\noindent Because the two are not equivalent, there is a way for getting the 
-raw C++ pointer held by any {\tt RefCountPtr<A>} object:
+\noindent Because the two are not equivalent, the {\tt Teuchos::RefCountPtr} class provides 
+a way of getting the raw C++ pointer held by any {\tt RefCountPtr<A>} object:
 {\small
 \begin{verbatim}
 A* true_ptr = a_ptr1.get();
@@ -664,7 +666,7 @@ A* true_ptr = a_ptr1.get();
 These are just some of the basic features found in the {\tt Teuchos::RefCountPtr} class.  
 A more extensive tutorial of this powerful tool is ``in the works'' and will be made available
 to Teuchos users as soon as it is finished.  The examples presented in this section can be found in
-\TriExe{teuchos/ex7.cpp}.  
+\TriExe{teuchos/ex5.cpp}.  
 
 %%%
 %%%
