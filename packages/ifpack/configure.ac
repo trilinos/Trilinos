@@ -209,6 +209,44 @@ AC_CXX_NEW_FOR_SCOPING
 AC_CXX_STD_SPRINTF
 
 # ------------------------------------------------------------------------
+# Checks for other Trilinos packages and external libraries
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_DEFAULT_FEATURE(aztecoo, [Enable AztecOO support. AztecOO, a Trilinos package.], IFPACK_AZTECOO, yes)
+AM_CONDITIONAL(HAVE_IFPACK_AZTECOO, test "X$ac_cv_use_aztecoo" = "Xyes")
+#
+TAC_ARG_ENABLE_OPTION(triutils, [Enable TRIUTILS support. Triutils, a Trilinos package, is used if some IFPACK examples to construct the linear system.], IFPACK_TRIUTILS, no)
+AM_CONDITIONAL(HAVE_IFPACK_TRIUTILS, test "X$ac_cv_use_triutils" = "Xyes")
+#
+TAC_ARG_ENABLE_OPTION(teuchos, [Enable TEUCHOS support.], IFPACK_TEUCHOS, no)
+AM_CONDITIONAL(HAVE_IFPACK_TEUCHOS, test "X$ac_cv_use_teuchos" = "Xyes")
+#
+TAC_ARG_ENABLE_OPTION(amesos, [Enable AMESOS support. Amesos, a Trilinos package.  ], IFPACK_AMESOS, no)
+AM_CONDITIONAL(HAVE_IFPACK_AMESOS, test "X$ac_cv_use_amesos" = "Xyes")
+
+AC_ARG_ENABLE(ifpack-metis, [AC_HELP_STRING([--enable-ifpack-metis],[Enable
+			     Ifpack support for METIS.  METIS can be used to
+			     decompose the local graph into subgraphs. Note 1:
+			     METIS is a third party library.  As such,
+			     configure assumes that it has already been built.
+			     Note 2: You must also specify the location of
+			     headers and libraries like, for instance:
+			     configure --with-libs="<other libraries> -lmetis"
+			     --with-ldflags="-L<METIS-library-path>" and
+			     --with-incdirs="<METIS-include-path>".])], ac_cv_use_ifpack_metis=$enableval, ac_cv_use_ifpack_metis=no) 
+#
+AC_MSG_CHECKING(whether to use ifpack-metis)
+#
+if test "X$ac_cv_use_ifpack_metis" != "Xno"; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE([HAVE_IFPACK_METIS],,[Define if you want to build Ifpack's ParameterList interface])
+else
+ AC_MSG_RESULT(no)
+fi
+#
+AM_CONDITIONAL(HAVE_IFPACK_METIS, [test "X$ac_cv_use_ifpack_metis" != "Xno"])
+
+# ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
@@ -219,16 +257,16 @@ AC_CXX_STD_SPRINTF
 AC_ARG_ENABLE(ifpack-teuchos,
  [AC_HELP_STRING([--enable-ifpack-teuchos],[Enable Ifpack Teuchos::ParameterList interface. Default is no. Requires Teuchos package.])],
  ac_cv_use_ifpack_teuchos=$enableval, ac_cv_use_ifpack_teuchos=no)
-
+#
 AC_MSG_CHECKING(whether to use ifpack-teuchos)
-
+#
 if test "X$ac_cv_use_ifpack_teuchos" != "Xno"; then
   AC_MSG_RESULT(yes)
   AC_DEFINE([HAVE_IFPACK_TEUCHOS],,[Define if you want to build Ifpack's ParameterList interface])
 else
  AC_MSG_RESULT(no)
 fi
-
+#
 AM_CONDITIONAL(HAVE_IFPACK_TEUCHOS, [test "X$ac_cv_use_ifpack_teuchos" != "Xno"])
 
 # ------------------------------------------------------------------------
@@ -345,6 +383,10 @@ AC_CONFIG_FILES([
 		test/IlukGraph/Makefile.include
 		test/SetParameters/Makefile
 		test/SetParameters/Makefile.include
+		test/AdditiveSchwarz/Makefile
+		test/AdditiveSchwarz/Makefile.include
+		test/CrsAdditiveSchwarz/Makefile
+		test/CrsAdditiveSchwarz/Makefile.include
 		test/scripts/Makefile
           test/scripts/daily/Makefile
           test/scripts/daily/mpi/Makefile
