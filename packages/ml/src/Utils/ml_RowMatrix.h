@@ -6,7 +6,11 @@
 #if defined(HAVE_ML_EPETRA)
 
 #include <vector>
-#include "Epetra_Comm.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
 #include "ml_epetra.h"
 #include "Epetra_Operator.h"
 class Epetra_MultiVector;
@@ -22,7 +26,13 @@ class RowMatrix : public virtual Epetra_RowMatrix {
  public:
   //@{ \name Constructor.
     //! Constructor
-    RowMatrix(ML_Operator* Op, Epetra_Comm& Comm);
+    RowMatrix(ML_Operator* Op, 
+#ifdef HAVE_MPI
+	      Epetra_MpiComm& Comm
+#else
+	      Epetra_SerialComm& Comm
+#endif
+	      );
 
   //@}
   //@{ \name Destructor.
@@ -265,7 +275,7 @@ class RowMatrix : public virtual Epetra_RowMatrix {
   const Epetra_Comm & Comm() const{return(Comm_);};
   
   //! Returns the Epetra_Map object associated with the domain of this operator.
-  const Epetra_Map & OperatorDomainMap() const {return(*ColMap_);};
+  const Epetra_Map & OperatorDomainMap() const {return(*RowMap_);};
   
   //! Returns the Epetra_Map object associated with the range of this operator.
   const Epetra_Map & OperatorRangeMap() const {return(*RowMap_);};
@@ -278,22 +288,18 @@ class RowMatrix : public virtual Epetra_RowMatrix {
   //!  Returns a reference to RowMatrix->Map().
   const Epetra_BlockMap & Map() const
   {
-    return *ColMap_;
+    return *RowMap_;
   }
 
 private:
 
-#ifdef NEIN
-  RowMatrix(const ML_Epetra::RowMatrix&) :
-    Comm_(RowMatrix->Comm())
-  {
-    // empty
-  }
-#endif
-
   // FIXME: I still do not support rows != cols
   ML_Operator* Op_;
-  Epetra_Comm& Comm_;        // Comm object
+#ifdef HAVE_MPI
+  Epetra_MpiComm Comm_;        // Comm object
+#else
+  Epetra_SerialComm Comm_;
+#endif
   int NumMyRows_;            // number of local rows
   int NumGlobalRows_;        // number of global rows
   int NumMyCols_;            // number of local cols

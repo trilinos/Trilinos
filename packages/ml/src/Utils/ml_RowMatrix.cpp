@@ -11,7 +11,12 @@
 
 //==============================================================================
 ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
-				Epetra_Comm& Comm) :
+#ifdef HAVE_MPI
+				Epetra_MpiComm& Comm
+#else
+				Epetra_SerialComm& Comm
+#endif
+			       ) :
   Op_(0),
   Comm_(Comm),
   NumMyRows_(-1),
@@ -66,7 +71,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   Values_.resize(Allocated_);
 
   int ncnt; // ma che cavolo di nome e`???
-  int MaxMyNumEntries;
+  int MaxMyNumEntries = 0;
   double MyNormInf = -1.0;
 
   for (int i = 0; i < NumMyCols() ; ++i) {
@@ -212,17 +217,8 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
   int ierr = ML_Operator_Getrow(Op_,1,&MyRow,Length,
 				Indices,Values,&NumEntries);
 
-  ML_CHK_ERR(ierr); // if ierr is zero, the ML_Operator has changed
-
   if (NumEntries != NumMyRowEntries_[MyRow])
     ML_CHK_ERR(-4); // something went wrong
-
-  // need to convert from local (ML) indices to global indices
-  for (int i = 0 ; i < NumEntries ; ++i) {
-    int GCID = ColMap_->GID(Indices[i]);
-    assert (GCID != -1);
-    Indices[i] = GCID;
-  }
 
   return(0);
 
