@@ -342,7 +342,7 @@ they can be set up anywhere.
 	To configure from a remote build tree, simply run the configure script 
 in source tree from the root of the build tree.  In the example above, cd to 
 the SOLARIS\_SERIAL directory and type 
-\DisplayCommand{../configure <options as described below>}
+\DisplayCommand{../configure <configure options>}
 
 A detailed list of configure options can be seen by typing
 \DisplayCommand{./configure --help=recursive} from the top level of the 
@@ -355,25 +355,24 @@ This command will also display the help page for Trilinos level
 options when used from the Trilinos home directory in the source tree.
 
 
-	The user needs to provide two important pieces of information at this 
-stage.  First, the user needs to describe what kind of a build is needed.  For 
+To Configure Trilinos, the user needs to provide two important pieces of 
+information.  First, the user needs to describe the details of the build.  For 
 instance, serial or mpi, all of the packages, or just a proper subset.  
 
-	For example, to configure for serial libraries, no action is necessary,
+To configure for serial libraries, no action is necessary,
 but to configure for parallel libraries, a user must append appropriate 
 arguments to the configure invocation line as described in ``Trilinos 
 Configuration Options'', section~\ref{subsect:TrilinosConfigOptions}.
 
-	Also, to build the default set of Trilinos libraries, no action is 
-necessary, but to exclude a default package, komplex for example, a user must 
-append \InlineCommand{--disable-komplex} to the configure invocation  line.  
-Similarly, to include a package that is not currently built by default, NOX 
-for example, users must append \InlineCommand{--enable-nox} to the configure 
-invocation line.  It is recommended that users always configure from the 
-Trilinos level and use \InlineCommand{--disable-<package>} as necessary, 
-rather than trying to configure from a lower level.  To see which packages 
-build by default and which ones don't, simply cd to the Trilinos home 
-directory and type \DisplayCommand{./configure --help}
+Also, to build the default set of Trilinos libraries, no action is 
+necessary, but to exclude a package that is built by default, komplex for 
+example, a user must append \InlineCommand{--disable-komplex} to the configure 
+invocation  line.  Similarly, to include a package that is not currently built 
+by default, NOX for example, users must append \InlineCommand{--enable-nox} to 
+the configure invocation line.  It is recommended that users always configure 
+from the Trilinos level and use \InlineCommand{--disable-<package>} as 
+necessary, rather than trying to configure from a lower level.  To see which 
+packages are built by default and which ones aren't, simply cd to the Trilinos home directory and type \DisplayCommand{./configure --help}
 
 
 {\bf NOTES:} 
@@ -400,34 +399,31 @@ used, libraries will be located in \InlineDirectory{<dir>/lib} and header files 
 \InlineDirectory{<dir>/include/<package>}.
 
 \item {\bf Providing additional information to autotools:}
-Although autotools will attempt to determine all configuration
-information on its own, in some situations the user must provide 
-the name or location, or both, of anything that autotools needs and 
-cannot find on its own.  Also, if autotools selects, for example, the wrong 
+Although autotools will try to determine all configuration
+information, the user must provide anything that autotools needs and 
+cannot find.  Also, if autotools selects, for example, the wrong 
 BLAS library by default, the user must indicate which blas library to use.  
-Other more obscure issues dealing with topics such as standards 
+More obscure issues such as standards 
 non-compliance are also dealt with here.  If all required libraries (often 
-BLAS, and LAPACK) are located in standard places, try configuring with what 
-you have.
+the BLAS and LAPACK) are located in standard places, try configuring without
+providing additional information.
 
 \item {\bf Sample configure invocation scripts:}
 For a machine that requires additional configure line options, a good 
 place to look for examples is  \newline
 \InlineDirectory{Trilinos/config}.  There are 
 configure invocation scripts here for various platforms.  These scripts are 
-named using the following naming convention:
+named using the following convention:
 \InlineCommand{arch\_comm\_machine}.
 For example \InlineCommand{sgi64\_mpi\_atlantis}.  Note that these scripts are 
-examples only.  Users should not necessarily expect to be able to find the 
-perfect script and use it, but rather should choose a script for a similar 
-machine, examine the options used in the script and figure out if those 
-options make sense for the case at hand.  Some of the scripts in the 
+examples only and are primarily useful for the values of options such as 
+\InlineCommand{LDFLAGS}, \InlineCommand{CPPFLAGS}, 
+and \InlineCommand{CXXFLAGS}.  Users should not expect to be able to find a 
+script that can be used without modification, but rather should start with a script for a similar 
+machine, and use that script as a guide.  The scripts in the 
 repository are not always up to date.  If a user submits a script for a 
 machine that few Trilinos developers have an account on, that script may 
-become obsolete if it is not updated by the user who submitted it.  Therefore, 
-these scripts are primarily useful for the values of options such as 
-\InlineCommand{LDFLAGS}, \InlineCommand{CPPFLAGS}, 
-and \InlineCommand{CXXFLAGS}.  
+become obsolete if it is not updated by the user who submitted it.
 
 Users who create scripts for other machines are encouraged to check them into 
 the repository for the benefit of other users.  Users who do not have access to
@@ -437,7 +433,7 @@ the repository can send their scripts to \InlineCommand{jmwille@sandia.gov}.
 \subsection{Building Trilinos}
 
 If the configure stage completed successfully, just type \DisplayCommand{make}
- and if 
+ and then, if 
 \InlineCommand{--prefix} was specified, \DisplayCommand{make install}
 
 The following section describes the configuration options mentioned above that 
@@ -537,11 +533,11 @@ turn MPI on.
 
 \item \InlineCommand{--with-mpi-compilers}
 
-Sets CXX = mpicxx (or mpiCC if mpicxx not available), the CC = mpicc and 
+Sets CXX = mpicxx (or mpiCC if mpicxx not available), CC = mpicc and 
 F77 = mpif77.  Automatically enables MPI mode.  To use compilers other than 
 these, specify mpi locations with the below options.  If none of these options 
-are necessary, don't forget to use \InlineCommand{--enable-mpi}.  In this 
-case, CXX, CC, and F77 may also have to be set if the correct compilers are 
+are necessary, use \InlineCommand{--enable-mpi} to enable MPI mode.  In this 
+case, CXX, CC, and F77 have to be set if the correct compilers are 
 not chosen by default.
 
 \item \InlineCommand{--with-mpi=MPIROOT}
@@ -549,10 +545,9 @@ not chosen by default.
 Specify the MPI root directory. Automatically enables MPI mode.  If this 
 option is set, \InlineCommand{--with-mpi-incdir} and 
 \InlineCommand{--with-mpi-libdir} should not be used.  
-\InlineCommand{--with-mpi} is meant to be a shortcut for setting \newline
+\InlineCommand{--with-mpi} is a shortcut for setting \newline
 \InlineCommand{--with-mpi-libdir=MPIROOT/lib} 
-and \InlineCommand{--with-mpi-incdir=MPIROOT/include}.  Use these two options instead if 
-these default locations are not correct.
+and \InlineCommand{--with-mpi-incdir=MPIROOT/include}.
 
 \item \InlineCommand{--with-mpi-libdir=DIR}
 
@@ -602,7 +597,7 @@ like:
 
 This particular error indicates to look in 
 \InlineDirectory{packages/epetra/config.log}.  This file is useful for 
-developers trying to build Trilinos, and those who are 
+developers trying to build Trilinos and those who are 
 adding or editing autoconf-specific files such as configure.ac.
 
 \item The ``classic'' build system and Autotools do not mix.  Trying to build 
@@ -634,15 +629,13 @@ be merged back into the development branch.
 \begin{enumerate}
 \item Obtain the supported versions of Autoconf and Automake.
 
-The current supported versions of Autoconf and Automake are documented in 
-the Trilinos repository.  
-\InlineDirectory{Trilinos/config/AutotoolsVersionInfo} contains the 
-information.  The Trilinos team does not attempt to keep up with the latest 
+The current supported versions of Autoconf and Automake are documented in   
+\InlineDirectory{Trilinos/config/AutotoolsVersionInfo}, which can be found in 
+the Trilinos repository.  The Trilinos team does not keep up with the latest 
 versions of Autoconf and Automake, so please do not assume that the most 
 recent versions are supported.  The supported versions of Autoconf and 
 Automake can always be found on software.sandia.gov.  This makes software a 
-good machine to bootstrap on.  However, software does not currently have an
-mpi implementation installed.
+good machine to bootstrap on.
 
 \item Update source code from Trilinos repository
 
@@ -665,7 +658,7 @@ Trilinos repository).  To remove the same files, type
 The above commands do not actually add the files to or remove the files from 
 the repository, but simply prepare for the addition or removal of the files.  
 The initial version of the file will be added to the repository later using 
-\InlineCommand{cvs commit}.  However, this is a necessary step in the process.
+\InlineCommand{cvs commit}.
 
 \item List new files in or remove obsolete files from Makefile.am
 
@@ -673,14 +666,8 @@ New source files should be placed into a category in the appropriate
 Makefile.am.  Typically, the directory in which the new files are located will 
 contain a Makefile.am.  If not, the appropriate Makefile.am will be found in 
 the Makefile.am that is in the parent directory directly above the directory 
-in which the new files are located.  The number of possibly categories to add 
-files to varies a lot.  For a test or example a developer will typically just 
-add the files directly to a SOURCES primary.  For a Trilinos package, there 
-may be several categores of files.  For example UTIL, CORE, and DIST, to name 
-a few.  Do not worry too much about which macro category to add the files to.  
-The categories are simply a way to sort files into logical groups.  To remove 
-files from the build process, simply delete the file names from the 
-appropriate Makefile.am.
+in which the new files are located.  To remove files from the build process, 
+delete the file names from the appropriate Makefile.am.
 
 \item Bootstrap
 
@@ -689,13 +676,7 @@ example Trilinos/packages/epetra), type
 
 \DisplayCommand{./bootstrap}
 
-The bootstrap should complete without any errors, but the following warnings 
-commonly occur:
-
-\begin{verbatim}
-warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
-warning: do not use m4_regexp: use regexp or m4_bregexp
-\end{verbatim}
+The bootstrap should complete without any errors.
 
 \item Test the new code
 
@@ -711,14 +692,13 @@ be found in the comments at the top of the script itself.
 
 \item Update source code from Trilinos repository
 
-Didn't we just do this?  Yes, but there are two good reasons to do it again.
-
-Other developers could have committed changes during the past several 
-steps of this process.  Though is not likely, it is worth checking.  If 
+There are two good reasons to update the source code again. First, other 
+developers could have committed changes during the past several 
+steps of this process.  Though this is unlikely, it is worth checking.  If 
 changes were committed, minimally the testing step will need to be redone.  
 If files related to configuring or building were modified, more will have to 
 be done if collisions occur.  Some of the possibilities are beyond the scope 
-of this introductory document, however we will briefly discuss the most 
+of this introductory document; however, we will briefly discuss the most 
 common collision scenario.  Typically the generated files will contain 
 collisions (for example configure, Makefile.in, or aclocal.m4), while the 
 changes in the files created by developers (for example configure.ac or 
@@ -728,15 +708,14 @@ of the Trilinos package, perform a \InlineCommand{cvs update}, and then begin
 the above process again from ``Bootstrap'' step.  As long as the changes are 
 merged in the non-generated files, bootstrapping should resolve the problem.
 
-An even better reason to update again before committing changes is to avoid 
+A second reason to update again before committing changes is to avoid 
 confusion.  After a bootstrap, all of the generated files will get an updated 
 timestamp, but in most cases only some of the files will actually be 
 modified.  If a developer commits changes before updating, all of the 
 generated files will be viewed as having been modified.  This is bad for 
 several reasons.  One of the most important is that when committing changes, a 
 developer should always verify that the list of files that are about to be 
-committed makes sense.  The list is guaranteed to not make sense if files are 
-going to be committed that have not been changed.  A cvs update will check to 
+committed makes sense. A cvs update will check to 
 see if the file has really been changed or if it simply has a new timestamp.
 
 \item Commit the changes to the Trilinos repository
@@ -753,25 +732,34 @@ the list of files to be added.  Conversely, to remove a file, don't forget to
 use \InlineCommand{cvs remove}.  
 
 Here are a few helpful tips to use when verifying the list of files 
-to be committed.  First, make sure that all files you modified directly appear 
-in the list.  Second, when modifying a Makefile.am, the corresponding 
-Makefile.in will change also.  Third, when modifying configure.ac, configure 
-will also change, but some Makefile.in files may also change when using macros 
-such as AC\_SUBST.  Finally, when unsure about whether or not a 
+to be committed.  
+\begin{itemize}
+\item Make sure that all directly modified files appear in the list.  
+\item Make sure that files generated from files that were modified 
+appear in the list.  When modifying a Makefile.am, the corresponding 
+Makefile.in will change also.  When modifying configure.ac, configure will 
+also change, but some Makefile.in files will also change when using macros 
+such as AC\_SUBST.  
+\item If unsure about whether or not a 
 file should be in the commit list, abort the commit by closing the edior 
 without saving, and chosing \InlineCommand{abort}.  Then, if abc.cpp is in 
 question, type 
 
 \DisplayCommand{cvs diff abc.cpp}
 
-Then look at the diff output and see if it makes sense for the changes that 
+Next, look at the diff output and see if it makes sense for the changes that 
 were made.  After verifying that all of the files that are in the list belong 
-there, and that all files that belong in the list are, in fact, listed, remove 
-unnecessary instances of ``CVS: `` from the log message and enter an 
-appropriate description of the changes that are to be committed.  Don't forget 
-to reference any appropriate Bugzilla bug numbers.  Further, detailed log 
-messages make it easier to track problems in the future.  It is a good habit 
-to indicate which tests were run before making the change.
+there and that all files that belong in the list are listed, enter an 
+appropriate description of the changes that were made.  Detailed log 
+messages make it easier to track problems in the future.  Also, reference any 
+associated Bugzilla issue numbers and indicate which tests were run before 
+making the change.  Note that lines in the log message that begin with 
+``CVS:'' will be removed.  Lines describing files that are to be added, 
+removed or modified should appear in the log message, so remove the ``CVS:'' 
+from the beginning of these lines.  (Typically this means that the ``CVS:'' 
+should be removed from every line except line two.)
+
+\end{itemize}
 
 Finally, save the file, and exit the CVS editor to commit the changes.
 
@@ -868,7 +856,7 @@ the test harness.
 
 Tests that are added as ``daily'' tests are run six time a week, while 
 ``weekly'' tests are run once a week.  Currently the nightly test harness only 
-runs on Linux, IRIX64, and DEC/OSF1, but it will eventually run on 5-8 
+runs on Linux, IRIX64, Solaris and DEC/OSF1, but it will eventually run on 5-8 
 platforms.  Packages that have not ported to a particular platform can be 
 excluded from the testing process on that platform.  Packages that do not have 
 any tests integrated into the test harness can still benefit by testing that 
@@ -903,18 +891,17 @@ common CVS commands is available in~\ref{Section:CVS}.  For a more complete
 listing of CVS commands, see the Gnu CVS Home Page~\cite{CVS}.
 
 \subsection{Bonsai}
-A lot of useful information related to CVS history is accessible via a
+The CVS history of the Trilinos project is accessible via a
 web-based interface package called Bonsai~\cite{Bonsai}.  This tool can be 
 found on the web at 
 \newline
 \InlineDirectory{http://software.sandia.gov/bonsai}.  Bonsai gives a 
 developer the ability to view the changes made to the files in the 
-repository.  The tool can be especially useful when trying to figure out which 
-changes may have introduced bugs into a piece of code.  Developers can search 
-for changes based on filename, directory, branch, date, user who made the 
-change, or any combination of these criteria.  The entire revision histories of
-individual files can be utilized in finding the source of 
-bugs.  The differences between any two versions of a file may also be viewed.  
+repository. Developers can search 
+based on filename, directory, branch, date, user who made the 
+change, or any combination of these criteria.  The differences between any two 
+versions of a file may also be viewed, which can be very helpful when 
+debugging.  
 
 \subsection{Bugzilla}
 \label{subsect:Bugzilla}
