@@ -14,11 +14,10 @@
 	+ We use simple non-symmetric ARPACK mode                            
                                                               
 	*/        
-#define HAVE_ML_PARPACK
 
 
 #ifdef HAVE_ML_PARPACK
-# include <mpi.h>
+#include <mpi.h>
 #else 
 #define MPI_COMM_WORLD 0
 #endif
@@ -247,13 +246,18 @@ void  ML_ARPACK_driver(char which[],
 	     &ncv, v, &ldv, iparam, ipntr, workd, workl,
 	     &lworkl, &info );
     
-    
-#else
+#else    
+#ifdef HAVE_ML_ARPACK
     
     dnaupd_(&ido, bmat, &nloc, which, &nev, &tol, resid,
 	    &ncv, v, &ldv, iparam, ipntr, workd, workl,
 	    &lworkl, &info );
+#else
+    fprintf(stderr, "ERROR with arpack/parpack\n");
+    exit( EXIT_FAILURE );
 #endif
+#endif
+
     
 
     if ( (ido == -1) || (ido == 1) ) {
@@ -320,13 +324,16 @@ void  ML_ARPACK_driver(char which[],
     ierr = 0;
     sprintf(string,"A");
     
-
+#if defined(HAVE_ML_ARPACK) || defined(HAVE_ML_PARPACK)
     /* C to Fortran wraper function */
     ml_pdneupc__(&comm,&rvec, string, select, d, v, &ldv,
 		workev, bmat, &nloc, which, &nev,
 		&tol, resid, &ncv, iparam, ipntr, workd, workl,
 		&lworkl, &ierr, (ftnlen)1, (ftnlen)1, (ftnlen) 2);
-    
+#else
+   fprintf( stderr, "ERROR with ARPACK or PARPACK\n");
+   exit( EXIT_FAILURE );
+#endif    
     
     /*----------------------------------------------
       | The real part of the eigenvalue is returned   |
@@ -498,7 +505,7 @@ void  ML_ARPACK_driver(char which[],
 
 	   dummy1 = 6; dummy2 = 3; dummy3 = ncv; dummy4 = -6;
 	
-	  //	  cpdmout_(&comm, &dummy1, &nconv, &dummy2, d, &dummy3, &dummy4);
+	  /*	  cpdmout_(&comm, &dummy1, &nconv, &dummy2, d, &dummy3,&dummy4); */
 
      	  ml_pdmout__(&comm, &dummy1, &nconv, &dummy2, d, &dummy3, &dummy4);
 
