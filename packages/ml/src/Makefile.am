@@ -145,6 +145,8 @@ $(srcdir)/Utils/ml_amesos.h       \
 $(srcdir)/Utils/ml_amesos_wrap.h  \
 $(srcdir)/Utils/ml_ifpack.h       \
 $(srcdir)/Utils/ml_ifpack_wrap.h  \
+$(srcdir)/Utils/ml_self.h         \
+$(srcdir)/Utils/ml_self_wrap.h    \
 $(srcdir)/Utils/ml_epetra_preconditioner.h             \
 $(srcdir)/Utils/ml_anasazi.h                           \
 $(srcdir)/Utils/ml_epetra.h                            \
@@ -208,6 +210,8 @@ $(srcdir)/Utils/ml_amesos.c                                 \
 $(srcdir)/Utils/ml_amesos_wrap.cpp                          \
 $(srcdir)/Utils/ml_ifpack.c                                 \
 $(srcdir)/Utils/ml_ifpack_wrap.cpp                          \
+$(srcdir)/Utils/ml_self.c                                   \
+$(srcdir)/Utils/ml_self_wrap.cpp                            \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp             \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Filtering.cpp   \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_NullSpace.cpp   \
