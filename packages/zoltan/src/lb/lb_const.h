@@ -98,8 +98,6 @@ struct Zoltan_LB_Struct {
   int Part_Info_Len;              /*  Actual length of Part_Info arrays. */
   int Part_Info_Max_Len;          /*  Allocated length of Part_Info arrays. */
   struct Zoltan_part_info *Part_Info; /*  Array of partition size info.  */
-  int *Part_Info_Pids;            /*  Array of partition ids. */
-  int *Part_Info_Idx;             /*  Array of partition weight indices. */
   int Num_Global_Parts;           /*  The total number of partitions.
                                       Set in Zoltan_LB_Build_PartDist.       */
   int Num_Global_Parts_Param;     /*  The number of global partitions specified.
