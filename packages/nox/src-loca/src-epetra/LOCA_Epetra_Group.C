@@ -40,6 +40,7 @@
 #include "NOX_Epetra_SharedOperator.H"
 #include "Epetra_Vector.h"
 #include "LOCA_Utils.H"
+#include "LOCA_ErrorCheck.H"
 #include "LOCA_Epetra_BorderedOp.H"
 
 // Trilinos Objects
@@ -276,7 +277,9 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
   }
 
   // Otherwise this alg won't work
-  errorCheck.throwError("LOCA::Epetra::Group::augmentJacobianForHomotopy()","the Jacobian must be either an Epetra_CrsMatrix or an Epetra_VbrMatrix!");
+  LOCA::ErrorCheck::throwError(
+    "LOCA::Epetra::Group::augmentJacobianForHomotopy()",
+    "the Jacobian must be either an Epetra_CrsMatrix or an Epetra_VbrMatrix!");
 
   return LOCA::Abstract::Group::Ok;
 }
@@ -287,7 +290,7 @@ LOCA::Epetra::Group::computeScaledDotProduct(
 				       const NOX::Abstract::Vector& b) const
 {
   if (scaleVecPtr == NULL)
-    return a.dot(b);
+    return a.dot(b) / a.length();
   else {
     NOX::Abstract::Vector* as = a.clone(NOX::DeepCopy);
     NOX::Abstract::Vector* bs = b.clone(NOX::DeepCopy);
