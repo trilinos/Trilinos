@@ -750,7 +750,7 @@ AM_CONDITIONAL(BUILD_BELOS_EXAMPLES, test X${ADDON_belos_EXAMPLES} = Xyes)
 # --disable-default-packages is set.
 AC_ARG_ENABLE([default-packages],
 AC_HELP_STRING([--enable-default-packages, flag in trilinos to Turn off default packages including nox and loca]),
-ac_cv_use_default_packages=$enableval, yes)
+ac_cv_use_default_packages=$enableval, ac_cv_use_default_packages=yes)
 
 AC_MSG_CHECKING(whether we should enable default libs)
 

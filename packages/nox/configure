@@ -6303,7 +6303,7 @@ if test "${enable_default_packages+set}" = set; then
   enableval="$enable_default_packages"
   ac_cv_use_default_packages=$enableval
 else
-  yes
+  ac_cv_use_default_packages=yes
 fi;
 
 echo "$as_me:$LINENO: checking whether we should enable default libs" >&5
