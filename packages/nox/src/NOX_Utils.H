@@ -84,7 +84,7 @@ public:
     Parameters = 0x8,		     // 2^3
     Details = 0x10,		     // 2^4
     OuterIterationStatusTest = 0x20, // 2^5
-    Loca = 0x40                      // 2^6
+    LinearSolverDetails = 0x40        // 2^6
   };
 
 public:

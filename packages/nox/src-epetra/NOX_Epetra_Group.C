@@ -31,6 +31,7 @@
 //@HEADER
 
 #include "NOX_Epetra_Group.H"	// class definition
+
 #include "NOX_Epetra_Interface.H"
 #include "NOX_Epetra_SharedOperator.H"
 #include "NOX_Parameter_List.H"
@@ -38,6 +39,7 @@
 #include "NOX_Epetra_FiniteDifference.H"
 #include "NOX_Epetra_FiniteDifferenceColoring.H"
 #include "NOX_Epetra_Operator.H"
+#include "NOX_Utils.H"
 
 // External include files - linking to Aztec00 and Epetra in Trilinos
 #include "AztecOO.h"
@@ -357,7 +359,7 @@ void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
   // Turns on RCM reordering in conjunction with domain decomp preconditioning
   // default is "Disabled" = no reordering
   string RcmReordering = p.getParameter("RCM Reordering", "Disabled");
-  if (RcmReordering == "Enabled") 
+  if (RcmReordering == "Enabled")
     aztec.SetAztecOption(AZ_reorder, 1);
   else if (RcmReordering == "Disabled")
     aztec.SetAztecOption(AZ_reorder, 0);
@@ -412,6 +414,12 @@ void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
   // Frequency of linear solve residual output
   aztec.SetAztecOption(AZ_output, 
 		       p.getParameter("Output Frequency", AZ_last));
+
+  // Print a summary of the aztec options if "Details" is enabled
+  if (Utils::doAllPrint(Utils::LinearSolverDetails)) {
+    aztec.CheckInput();
+  }
+
 }
 
 Abstract::Group* Group::clone(CopyType type) const 
@@ -702,9 +710,14 @@ bool Group::applyJacobianInverse (Parameter::List &p, const Vector &input, Vecto
 
     test->InvRowSums(*tmpVectorPtr);
     Problem.LeftScale(*tmpVectorPtr);
+    
+    if (Utils::doPrint(Utils::LinearSolverDetails))
+      cout << endl << "       Linear Problem Scaling: Row Sum" << endl;
+
   }
   else if (scalingOption == "None") {
-    // Do nothing
+    if (Utils::doPrint(Utils::LinearSolverDetails))
+      cout << endl << "       Linear Problem Scaling: None" << endl;
   }
   else {
     // Throw an error, the requested scaling option is not vaild
