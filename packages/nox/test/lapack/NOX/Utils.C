@@ -1,6 +1,6 @@
 
 #include "Utils.H"
-#include "Common.H"
+#include "NOX_Common.H"
 
 bool getNextQuotedString(const string& line, string::size_type& pos, string& value)
 {
