@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) $(chanTP_SOURCES) $(chanTPContinuation_SOURCES) $(chanTPContinuation_ModifiedBordering_SOURCES) $(chanTP_ModifiedBordering_SOURCES)
+SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) $(chanTP_SOURCES) $(chanTPContinuation_SOURCES) $(chanTPContinuation_ModifiedBordering_SOURCES) $(chanTPContinuation_NicDayModifiedBordering_SOURCES) $(chanTP_ModifiedBordering_SOURCES) $(chanTP_NicDayModifiedBordering_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -67,7 +67,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	$(am__EXEEXT_4) $(am__EXEEXT_5) $(am__EXEEXT_6)
+	$(am__EXEEXT_4) $(am__EXEEXT_5) $(am__EXEEXT_6) \
+	$(am__EXEEXT_7) $(am__EXEEXT_8)
 subdir = src-loca/example-lapack/Chan
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -89,6 +90,8 @@ CONFIG_CLEAN_FILES =
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@am__EXEEXT_4 = chanHomotopy$(EXEEXT)
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@am__EXEEXT_5 = chanTP_ModifiedBordering$(EXEEXT)
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@am__EXEEXT_6 = chanTPContinuation_ModifiedBordering$(EXEEXT)
+@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@am__EXEEXT_7 = chanTP_NicDayModifiedBordering$(EXEEXT)
+@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@am__EXEEXT_8 = chanTPContinuation_NicDayModifiedBordering$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_chanContinuation_OBJECTS =  \
 	chanContinuation-ChanContinuation.$(OBJEXT) \
@@ -110,11 +113,19 @@ am_chanTPContinuation_ModifiedBordering_OBJECTS = chanTPContinuation_ModifiedBor
 	chanTPContinuation_ModifiedBordering-ChanProblemInterface.$(OBJEXT)
 chanTPContinuation_ModifiedBordering_OBJECTS =  \
 	$(am_chanTPContinuation_ModifiedBordering_OBJECTS)
+am_chanTPContinuation_NicDayModifiedBordering_OBJECTS = chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.$(OBJEXT) \
+	chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.$(OBJEXT)
+chanTPContinuation_NicDayModifiedBordering_OBJECTS =  \
+	$(am_chanTPContinuation_NicDayModifiedBordering_OBJECTS)
 am_chanTP_ModifiedBordering_OBJECTS =  \
 	chanTP_ModifiedBordering-ChanTP_ModifiedBordering.$(OBJEXT) \
 	chanTP_ModifiedBordering-ChanProblemInterface.$(OBJEXT)
 chanTP_ModifiedBordering_OBJECTS =  \
 	$(am_chanTP_ModifiedBordering_OBJECTS)
+am_chanTP_NicDayModifiedBordering_OBJECTS = chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.$(OBJEXT) \
+	chanTP_NicDayModifiedBordering-ChanProblemInterface.$(OBJEXT)
+chanTP_NicDayModifiedBordering_OBJECTS =  \
+	$(am_chanTP_NicDayModifiedBordering_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -129,8 +140,12 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation-ChanTPContinuation.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Po
+@AMDEP_TRUE@	./$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanProblemInterface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -143,11 +158,15 @@ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) \
 	$(chanTP_SOURCES) $(chanTPContinuation_SOURCES) \
 	$(chanTPContinuation_ModifiedBordering_SOURCES) \
-	$(chanTP_ModifiedBordering_SOURCES)
+	$(chanTPContinuation_NicDayModifiedBordering_SOURCES) \
+	$(chanTP_ModifiedBordering_SOURCES) \
+	$(chanTP_NicDayModifiedBordering_SOURCES)
 DIST_SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) \
 	$(chanTP_SOURCES) $(chanTPContinuation_SOURCES) \
 	$(chanTPContinuation_ModifiedBordering_SOURCES) \
-	$(chanTP_ModifiedBordering_SOURCES)
+	$(chanTPContinuation_NicDayModifiedBordering_SOURCES) \
+	$(chanTP_ModifiedBordering_SOURCES) \
+	$(chanTP_NicDayModifiedBordering_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -310,6 +329,8 @@ target_vendor = @target_vendor@
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@CHANHOMOTOPY = chanHomotopy
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@CHANTPMOD = chanTP_ModifiedBordering
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@CHANTPCONTMOD = chanTPContinuation_ModifiedBordering
+@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@CHANTPNDMOD = chanTP_NicDayModifiedBordering
+@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@CHANTPCONTNDMOD = chanTPContinuation_NicDayModifiedBordering
 chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
 		$(srcdir)/ChanProblemInterface.C
@@ -371,6 +392,24 @@ chanTPContinuation_ModifiedBordering_DEPENDENCIES = \
 
 chanTPContinuation_ModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 chanTPContinuation_ModifiedBordering_LDADD = $(chanContinuation_LDADD)
+chanTP_NicDayModifiedBordering_SOURCES = \
+		$(srcdir)/ChanTP_NicDayModifiedBordering.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
+chanTP_NicDayModifiedBordering_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
+chanTP_NicDayModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
+chanTP_NicDayModifiedBordering_LDADD = $(chanContinuation_LDADD)
+chanTPContinuation_NicDayModifiedBordering_SOURCES = \
+		$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
+chanTPContinuation_NicDayModifiedBordering_DEPENDENCIES = \
+	$(chanContinuation_DEPENDENCIES)
+
+chanTPContinuation_NicDayModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
+chanTPContinuation_NicDayModifiedBordering_LDADD = $(chanContinuation_LDADD)
 all: all-am
 
 .SUFFIXES:
@@ -422,9 +461,15 @@ chanTPContinuation$(EXEEXT): $(chanTPContinuation_OBJECTS) $(chanTPContinuation_
 chanTPContinuation_ModifiedBordering$(EXEEXT): $(chanTPContinuation_ModifiedBordering_OBJECTS) $(chanTPContinuation_ModifiedBordering_DEPENDENCIES) 
 	@rm -f chanTPContinuation_ModifiedBordering$(EXEEXT)
 	$(CXXLINK) $(chanTPContinuation_ModifiedBordering_LDFLAGS) $(chanTPContinuation_ModifiedBordering_OBJECTS) $(chanTPContinuation_ModifiedBordering_LDADD) $(LIBS)
+chanTPContinuation_NicDayModifiedBordering$(EXEEXT): $(chanTPContinuation_NicDayModifiedBordering_OBJECTS) $(chanTPContinuation_NicDayModifiedBordering_DEPENDENCIES) 
+	@rm -f chanTPContinuation_NicDayModifiedBordering$(EXEEXT)
+	$(CXXLINK) $(chanTPContinuation_NicDayModifiedBordering_LDFLAGS) $(chanTPContinuation_NicDayModifiedBordering_OBJECTS) $(chanTPContinuation_NicDayModifiedBordering_LDADD) $(LIBS)
 chanTP_ModifiedBordering$(EXEEXT): $(chanTP_ModifiedBordering_OBJECTS) $(chanTP_ModifiedBordering_DEPENDENCIES) 
 	@rm -f chanTP_ModifiedBordering$(EXEEXT)
 	$(CXXLINK) $(chanTP_ModifiedBordering_LDFLAGS) $(chanTP_ModifiedBordering_OBJECTS) $(chanTP_ModifiedBordering_LDADD) $(LIBS)
+chanTP_NicDayModifiedBordering$(EXEEXT): $(chanTP_NicDayModifiedBordering_OBJECTS) $(chanTP_NicDayModifiedBordering_DEPENDENCIES) 
+	@rm -f chanTP_NicDayModifiedBordering$(EXEEXT)
+	$(CXXLINK) $(chanTP_NicDayModifiedBordering_LDFLAGS) $(chanTP_NicDayModifiedBordering_OBJECTS) $(chanTP_NicDayModifiedBordering_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -442,8 +487,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation-ChanTPContinuation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanProblemInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation_ModifiedBordering-ChanTPContinuation_ModifiedBordering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanProblemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -621,6 +670,38 @@ chanTPContinuation_ModifiedBordering-ChanProblemInterface.obj: $(srcdir)/ChanPro
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_ModifiedBordering-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
 
+chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.o: $(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.o -MD -MP -MF "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.Tpo" -c -o chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.o `test -f '$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.Tpo" "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C' object='chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.o `test -f '$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C
+
+chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.obj: $(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.obj -MD -MP -MF "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.Tpo" -c -o chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.obj `if test -f '$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.Tpo" "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C' object='chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_NicDayModifiedBordering-ChanTPContinuation_NicDayModifiedBordering.obj `if test -f '$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C'; fi`
+
+chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.Tpo" -c -o chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+
+chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.Tpo" -c -o chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTPContinuation_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTPContinuation_NicDayModifiedBordering-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
+
 chanTP_ModifiedBordering-ChanTP_ModifiedBordering.o: $(srcdir)/ChanTP_ModifiedBordering.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTP_ModifiedBordering-ChanTP_ModifiedBordering.o -MD -MP -MF "$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Tpo" -c -o chanTP_ModifiedBordering-ChanTP_ModifiedBordering.o `test -f '$(srcdir)/ChanTP_ModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_ModifiedBordering.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Tpo" "$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Po"; else rm -f "$(DEPDIR)/chanTP_ModifiedBordering-ChanTP_ModifiedBordering.Tpo"; exit 1; fi
@@ -652,6 +733,38 @@ chanTP_ModifiedBordering-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterfac
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTP_ModifiedBordering-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_ModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_ModifiedBordering-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
+
+chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.o: $(srcdir)/ChanTP_NicDayModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.o -MD -MP -MF "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.Tpo" -c -o chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.o `test -f '$(srcdir)/ChanTP_NicDayModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_NicDayModifiedBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.Tpo" "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.Po"; else rm -f "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP_NicDayModifiedBordering.C' object='chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.Po' tmpdepfile='$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.o `test -f '$(srcdir)/ChanTP_NicDayModifiedBordering.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP_NicDayModifiedBordering.C
+
+chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.obj: $(srcdir)/ChanTP_NicDayModifiedBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.obj -MD -MP -MF "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.Tpo" -c -o chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.obj `if test -f '$(srcdir)/ChanTP_NicDayModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTP_NicDayModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTP_NicDayModifiedBordering.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.Tpo" "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.Po"; else rm -f "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanTP_NicDayModifiedBordering.C' object='chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.Po' tmpdepfile='$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_NicDayModifiedBordering-ChanTP_NicDayModifiedBordering.obj `if test -f '$(srcdir)/ChanTP_NicDayModifiedBordering.C'; then $(CYGPATH_W) '$(srcdir)/ChanTP_NicDayModifiedBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanTP_NicDayModifiedBordering.C'; fi`
+
+chanTP_NicDayModifiedBordering-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTP_NicDayModifiedBordering-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanProblemInterface.Tpo" -c -o chanTP_NicDayModifiedBordering-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTP_NicDayModifiedBordering-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_NicDayModifiedBordering-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+
+chanTP_NicDayModifiedBordering-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -MT chanTP_NicDayModifiedBordering-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanProblemInterface.Tpo" -c -o chanTP_NicDayModifiedBordering-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanProblemInterface.Tpo" "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanTP_NicDayModifiedBordering-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanTP_NicDayModifiedBordering-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_NicDayModifiedBordering_CXXFLAGS) $(CXXFLAGS) -c -o chanTP_NicDayModifiedBordering-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

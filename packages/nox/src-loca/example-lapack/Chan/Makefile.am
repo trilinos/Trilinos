@@ -37,11 +37,14 @@ CHANTPCONT = chanTPContinuation
 CHANHOMOTOPY = chanHomotopy
 CHANTPMOD = chanTP_ModifiedBordering
 CHANTPCONTMOD = chanTPContinuation_ModifiedBordering
+CHANTPNDMOD = chanTP_NicDayModifiedBordering
+CHANTPCONTNDMOD = chanTPContinuation_NicDayModifiedBordering
 
 endif
 
 noinst_PROGRAMS = $(CHANCONT) $(CHANTP) $(CHANTPCONT) $(CHANHOMOTOPY) \
-	          $(CHANTPMOD) $(CHANTPCONTMOD)
+	          $(CHANTPMOD) $(CHANTPCONTMOD) $(CHANTPNDMOD) \
+		  $(CHANTPCONTNDMOD)
 
 chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
@@ -117,3 +120,26 @@ chanTPContinuation_ModifiedBordering_DEPENDENCIES = \
 chanTPContinuation_ModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
 chanTPContinuation_ModifiedBordering_LDADD = $(chanContinuation_LDADD)
+
+chanTP_NicDayModifiedBordering_SOURCES = \
+		$(srcdir)/ChanTP_NicDayModifiedBordering.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
+chanTP_NicDayModifiedBordering_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
+
+chanTP_NicDayModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
+
+chanTP_NicDayModifiedBordering_LDADD = $(chanContinuation_LDADD)
+
+chanTPContinuation_NicDayModifiedBordering_SOURCES = \
+		$(srcdir)/ChanTPContinuation_NicDayModifiedBordering.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
+chanTPContinuation_NicDayModifiedBordering_DEPENDENCIES = \
+	$(chanContinuation_DEPENDENCIES)
+
+chanTPContinuation_NicDayModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
+
+chanTPContinuation_NicDayModifiedBordering_LDADD = $(chanContinuation_LDADD)
