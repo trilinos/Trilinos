@@ -17,6 +17,7 @@
 
 typedef struct ML_CommInfoOP_Struct ML_CommInfoOP;
 typedef struct ML_NeighborList_Struct ML_NeighborList;
+typedef struct ML_Comm_Envelope_Struct ML_Comm_Envelope;
 
 /* ******************************************************************** */
 /* ******************************************************************** */
@@ -63,6 +64,17 @@ struct ML_CommInfoOP_Struct {
    int             minimum_vec_size, remap_length, remap_max;
 };
 
+/* -------------------------------------------------------------------- 
+   'Comm_Envelope' holds message envelope information (e.g., message    
+   tag). The motivation is to avoid asynchronous communication behavior.        
+
+   tag              the message tag
+   -------------------------------------------------------------------- */
+
+struct ML_Comm_Envelope_Struct {
+   int             tag;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -73,7 +85,7 @@ extern int  ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
 extern int  ML_CommInfoOP_Clone(ML_CommInfoOP **newone, ML_CommInfoOP *oldone);
 
 extern ML_CommInfoOP *ML_CommInfoOP_Create();
-extern void ML_CommInfoOP_Destroy(ML_CommInfoOP *comm_info);
+extern void ML_CommInfoOP_Destroy(ML_CommInfoOP **comm_info);
 
 extern int  ML_CommInfoOP_Get_Nneighbors(ML_CommInfoOP *c_info);
 extern int *ML_CommInfoOP_Get_neighbors( ML_CommInfoOP *c_info);
@@ -97,9 +109,19 @@ extern void ML_cheap_exchange_bdry(double dtemp[], ML_CommInfoOP *comm_info,
                                    int start_location, int total_send,
                                    ML_Comm *comm);
 extern void ML_exchange_bdry(double dtemp[], ML_CommInfoOP *comm_info,
-                             int start_location, ML_Comm *comm, int );
+                             int start_location, ML_Comm *comm,
+                             int overwrite_or_add, ML_Comm_Envelope *envelope);
 extern void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
                      int start_location, ML_Comm *comm, int overwrite_or_add); 
+
+extern int ML_Comm_Envelope_Create(ML_Comm_Envelope**);
+extern int ML_Comm_Envelope_Init(ML_Comm_Envelope* envelope);
+extern int ML_Comm_Envelope_Destroy(ML_Comm_Envelope*);
+extern int ML_Comm_Envelope_Clean(ML_Comm_Envelope*);
+extern int ML_Comm_Envelope_Get_Tag(ML_Comm_Envelope*, int* tag);
+extern int ML_Comm_Envelope_Set_Tag(ML_Comm_Envelope*, int, int);
+extern int ML_Comm_Envelope_Increment_Tag(ML_Comm_Envelope*);
+#define ML_Comm_Envelope_Print
 
 #ifdef __cplusplus
 }
