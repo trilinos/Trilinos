@@ -137,6 +137,8 @@ static int matching_local(ZZ *zz, HGraph *hg, Matching match)
        have access to parameter structure. So there is no way to figure
        out which "local" matching needs to be called. Hence we do it
        in Zoltan_PHG_Matching */
+    /* EBEB TODO: We should add the parameter struct as an input argument
+       to all the matching routines. */
     return ZOLTAN_OK;
 }
 
