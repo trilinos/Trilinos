@@ -35,6 +35,7 @@
 #include "AnasaziOperatorTraits.hpp"
 #include "AnasaziSortManager.hpp"
 #include "AnasaziOutputManager.hpp"
+#include "AnasaziModalSolverTools.hpp"
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_BLAS.hpp"
@@ -57,16 +58,16 @@
 
 namespace Anasazi {
   
-  template <class TYPE, class MV, class OP>
-  class BlockDavidson : public Eigensolver<TYPE,MV,OP> { 
+  template <class STYPE, class MV, class OP>
+  class BlockDavidson : public Eigensolver<STYPE,MV,OP> { 
   public:
     //@{ \name Constructor/Destructor.
     
     //! %Anasazi::BlockDavidson constructor.
-    BlockDavidson( const Teuchos::RefCountPtr<Eigenproblem<TYPE,MV,OP> > &problem, 
-		      const Teuchos::RefCountPtr<SortManager<TYPE,MV,OP> > &sm,
-		      const Teuchos::RefCountPtr<OutputManager<TYPE> > &om,
-		      const TYPE tol=1.0e-6,
+    BlockDavidson( const Teuchos::RefCountPtr<Eigenproblem<STYPE,MV,OP> > &problem, 
+		      const Teuchos::RefCountPtr<SortManager<STYPE,MV,OP> > &sm,
+		      const Teuchos::RefCountPtr<OutputManager<STYPE> > &om,
+		      const STYPE tol=1.0e-6,
 		      const int length=25, 
 		      const int step=25, 
 		      const int maxIter=300 
@@ -88,10 +89,10 @@ namespace Anasazi {
     //@{ \name Solver status methods.
     
     //! This method returns the computed Ritz values.
-    Teuchos::RefCountPtr<const std::vector<TYPE> > GetRitzValues() const { return(_ritzvalues); };
+    Teuchos::RefCountPtr<const std::vector<STYPE> > GetRitzValues() const { return(_ritzvalues); };
     
     //! This method returns the Ritz residuals for the computed eigenpairs.
-    Teuchos::RefCountPtr<const std::vector<TYPE> > GetRitzResiduals() const { return(_ritzresiduals); };
+    Teuchos::RefCountPtr<const std::vector<STYPE> > GetRitzResiduals() const { return(_ritzresiduals); };
 
     //! Get the current iteration count.
     int GetNumIters() const { return(_iter); };
@@ -115,12 +116,12 @@ namespace Anasazi {
       by the calling routine.
       </ol>
     */
-    Teuchos::RefCountPtr<const MV> GetNativeResiduals( TYPE* normvec ) const { return Teuchos::null; };
+    Teuchos::RefCountPtr<const MV> GetNativeResiduals( STYPE* normvec ) const { return Teuchos::null; };
     
     /*! \brief Get a constant reference to the current linear problem, 
       which may include a current solution.
     */
-    Eigenproblem<TYPE,MV,OP>& GetEigenproblem() const { return(*_problem); };
+    Eigenproblem<STYPE,MV,OP>& GetEigenproblem() const { return(*_problem); };
     
     //@}
     
@@ -137,19 +138,19 @@ namespace Anasazi {
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
-    Teuchos::RefCountPtr<Eigenproblem<TYPE,MV,OP> > _problem; 
-    Teuchos::RefCountPtr<SortManager<TYPE,MV,OP> > _sm; 
-    Teuchos::RefCountPtr<OutputManager<TYPE> > _om; 
+    Teuchos::RefCountPtr<Eigenproblem<STYPE,MV,OP> > _problem; 
+    Teuchos::RefCountPtr<SortManager<STYPE,MV,OP> > _sm; 
+    Teuchos::RefCountPtr<OutputManager<STYPE> > _om; 
 
     const int _numBlocks, _restarts, _step, _maxIter;
-    const TYPE _residual_tolerance;
+    const STYPE _residual_tolerance;
     int _restartiter, _iter, _dimSearch;
     //
     // Internal storage for eigensolver
     //
     Teuchos::RefCountPtr<MV> _X, _MX, _KX;
-    Teuchos::SerialDenseMatrix<int,TYPE> _KK, _tmpKK, _S;
-    std::vector<TYPE> _theta, _normR;
+    Teuchos::SerialDenseMatrix<int,STYPE> _KK, _tmpKK, _S;
+    std::vector<STYPE> _theta, _normR;
     //
     // Information obtained from the eigenproblem
     //
@@ -158,21 +159,22 @@ namespace Anasazi {
     Teuchos::RefCountPtr<OP> _Prec;
     Teuchos::RefCountPtr<MV> _evecs;
     const int _nev, _blockSize;  
-    TYPE* _evals;
+    STYPE* _evals;
 
-    typedef MultiVecTraits<TYPE,MV> MVT;
-    typedef OperatorTraits<TYPE,MV,OP> OPT;
+    typedef MultiVecTraits<STYPE,MV> MVT;
+    typedef OperatorTraits<STYPE,MV,OP> OPT;
+    typedef ModalSolverUtils<STYPE,MV,OP> MSUtils;
   };
   //
   // Implementation
   //
   // Note: I should define a copy constructor and overload = because of the use of new
   //
-  template <class TYPE, class MV, class OP>
-  BlockDavidson<TYPE,MV,OP>::BlockDavidson(const Teuchos::RefCountPtr<Eigenproblem<TYPE,MV,OP> > &problem, 
-					   const Teuchos::RefCountPtr<SortManager<TYPE,MV,OP> > &sm,
-					   const Teuchos::RefCountPtr<OutputManager<TYPE> > &om,
-					   const TYPE tol, 
+  template <class STYPE, class MV, class OP>
+  BlockDavidson<STYPE,MV,OP>::BlockDavidson(const Teuchos::RefCountPtr<Eigenproblem<STYPE,MV,OP> > &problem, 
+					   const Teuchos::RefCountPtr<SortManager<STYPE,MV,OP> > &sm,
+					   const Teuchos::RefCountPtr<OutputManager<STYPE> > &om,
+					   const STYPE tol, 
 					   const int numBlocks, 
 					   const int step, 
 					   const int maxIter
@@ -249,8 +251,8 @@ namespace Anasazi {
         
   }
   
-  template <class TYPE, class MV, class OP>
-  void BlockDavidson<TYPE,MV,OP>::solve () 
+  template <class STYPE, class MV, class OP>
+  void BlockDavidson<STYPE,MV,OP>::solve () 
   {
     int i, j;
     int info, nb;
@@ -260,10 +262,10 @@ namespace Anasazi {
     bool reStart = false;
     bool criticalExit = false;
     Teuchos::RefCountPtr<MV> Xcurrent, Xprev, Xtotal, Xnext;
-    TYPE one = Teuchos::ScalarTraits<TYPE>::one();
-    TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
-    Teuchos::BLAS<int,TYPE> blas;
-    Teuchos::LAPACK<int,TYPE> lapack;
+    STYPE one = Teuchos::ScalarTraits<STYPE>::one();
+    STYPE zero = Teuchos::ScalarTraits<STYPE>::zero();
+    Teuchos::BLAS<int,STYPE> blas;
+    Teuchos::LAPACK<int,STYPE> lapack;
     //
     // Determine the maximum number of blocks for this factorization.
     // ( NOTE:  This will be the _numBlocks since we don't know about already converged vectors here )
@@ -307,16 +309,16 @@ namespace Anasazi {
 	if (nb == bStart) {
 	  if (nFound > 0) {
 	    if (knownEV == 0) {
-	      info = modalTool.massOrthonormalize(_problem, Xcurrent, MX, Xprev, nFound, 2, tmpKK.values() );
+	      info = MSUtils::massOrthonormalize(_problem, Xcurrent, MX, Xprev, nFound, 2, tmpKK.values() );
 	    }
 	    else {
-	      info = modalTool.massOrthonormalize(_problem, Xcurrent, MX, Xprev, nFound, 0, tmpKK.values() );
+	      info = MSUtils::massOrthonormalize(_problem, Xcurrent, MX, Xprev, nFound, 0, tmpKK.values() );
 	    }
 	  }
 	  nFound = 0;
 	} 
 	else {
-	  info = modalTool.massOrthonormalize(_problem, Xcurrent, MX, Xprev, _blockSize, 0, tmpKK.values() );
+	  info = MSUtils::massOrthonormalize(_problem, Xcurrent, MX, Xprev, _blockSize, 0, tmpKK.values() );
 	}
 	//
 	// Exit the code if there has been a problem.
@@ -344,13 +346,13 @@ namespace Anasazi {
 	for (i=0; i < localSize + _blockSize; i++)
 	  index[i] = knownEV + i;
 	Xtotal = MVT::CloneView( *_X, &index[0], localSize + _blockSize );
-	Teuchos::SerialDenseMatrix<int,TYPE> subKK( View, _KK, 0, localSize+_blockSize, _blockSize, 0, localSize );
+	Teuchos::SerialDenseMatrix<int,STYPE> subKK( View, _KK, 0, localSize+_blockSize, _blockSize, 0, localSize );
 	MVT::MvTransMv( *Xtotal, *_KX, KKsub );
 	//
 	// Perform spectral decomposition
 	//
-	info = modalTool.directSolver(localSize+_blockSize, KK, _dimSearch, 0, 0,
-				      localSize+_blockSize, S, _dimSearch, theta, localVerbose, 10);
+	info = MSUtils::directSolver(localSize+_blockSize, KK, _dimSearch, 0, 0,
+				     localSize+_blockSize, S, _dimSearch, theta, localVerbose, 10);
 	//
 	// Exit the code if there has been a problem.
 	//
@@ -381,7 +383,7 @@ namespace Anasazi {
 	// Update the search space :
 	// KX = Xtotal * S where S is the eigenvectors of the projected problem.
 	//
-	Teuchos::SerialDenseMatrix<int,TYPE> subS( View, _S, localSize+_blockSize, _blockSize );
+	Teuchos::SerialDenseMatrix<int,STYPE> subS( View, _S, localSize+_blockSize, _blockSize );
 	MVT::MvTimesMatAddMv( one, *_Xtotal, subS, zero, *_KX );
 	//
 	// Apply the mass matrix for the next block
@@ -396,7 +398,7 @@ namespace Anasazi {
 	// Compute the residual :
 	// R = KX - diag(theta)*MX
 	// 
-	Teuchos::SerialDenseMatrix<int,TYPE> D(_blockSize, _blockSize);
+	Teuchos::SerialDenseMatrix<int,STYPE> D(_blockSize, _blockSize);
 	for (i=0; i<_blockSize; i++ )
 	  D(i,i) = -theta[i];
 	//
@@ -623,13 +625,13 @@ namespace Anasazi {
     // Sort the eigenvectors
     //
     if ((info==0) && (knownEV > 0))
-      mySort.sortScalars_Vectors(knownEV, _evals, _evecs);
+      MSUtils::sortScalars_Vectors(knownEV, _evals, _evecs);
  
   } // end solve()
 
 
-  template <class TYPE, class MV, class OP>
-  void BlockDavidson<TYPE,MV,OP>::accuracyCheck(const MV *X, const MV *MX, const MV *Q) const 
+  template <class STYPE, class MV, class OP>
+  void BlockDavidson<STYPE,MV,OP>::accuracyCheck(const MV *X, const MV *MX, const MV *Q) const 
     {
       
       cout.precision(2);
@@ -641,16 +643,16 @@ namespace Anasazi {
       if (X) {
 	if (M) {
 	  if (MX) {
-	    tmp = myVerify.errorEquality(X, MX, M);
+	    tmp = MSUtils::errorEquality(X, MX, M);
 	    if (myPid == 0)
 	      cout << " >> Difference between MX and M*X = " << tmp << endl;
 	  }
-	  tmp = myVerify.errorOrthonormality(X, M);
+	  tmp = MSUtils::errorOrthonormality(X, M);
 	  if (myPid == 0)
 	    cout << " >> Error in X^T M X - I = " << tmp << endl;
 	}
 	else {
-	  tmp = myVerify.errorOrthonormality(X, 0);
+	  tmp = MSUtils::errorOrthonormality(X, 0);
 	  if (myPid == 0)
 	    cout << " >> Error in X^T X - I = " << tmp << endl;
 	}
@@ -660,21 +662,21 @@ namespace Anasazi {
 	return;
       
       if (M) {
-	tmp = myVerify.errorOrthonormality(Q, M);
+	tmp = MSUtils::errorOrthonormality(Q, M);
 	if (myPid == 0)
 	  cout << " >> Error in Q^T M Q - I = " << tmp << endl;
 	if (X) {
-	  tmp = myVerify.errorOrthogonality(Q, X, M);
+	  tmp = MSUtils::errorOrthogonality(Q, X, M);
 	  if (myPid == 0)
 	    cout << " >> Orthogonality Q^T M X up to " << tmp << endl;
 	}
       }
       else {
-	tmp = myVerify.errorOrthonormality(Q, 0);
+	tmp = MSUtils::errorOrthonormality(Q, 0);
 	if (myPid == 0)
 	  cout << " >> Error in Q^T Q - I = " << tmp << endl;
 	if (X) {
-	  tmp = myVerify.errorOrthogonality(Q, X, 0);
+	  tmp = MSUtils::errorOrthogonality(Q, X, 0);
 	  if (myPid == 0)
 	    cout << " >> Orthogonality Q^T X up to " << tmp << endl;
 	}
