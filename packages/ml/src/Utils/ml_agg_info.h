@@ -24,9 +24,9 @@ extern "C" {
 				    char *base_filename );
   extern int ML_Info_DomainDecomp( ML_Aggregate_Info info,
 				   ML_Comm *comm, double *H, double *h );
-  
-
-
+  extern int ML_Compute_AggregateGraphRadius( int Nrows, int ia[], int ja[],
+				     int dep [],
+				     int *pradius, int *pNcenter );  
 
 #ifndef ML_CPP
 #ifdef __cplusplus
