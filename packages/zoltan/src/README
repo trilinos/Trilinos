@@ -131,7 +131,6 @@ Utilities 	-- Zoltan utilities, including the memory management and
 		   shared configuration files for Zoltan compilation.
 
 
-
 OTHER CODE (not compiled into the Zoltan library)
 -------------------------------------------------
 
