@@ -248,7 +248,7 @@ Abstract::Group& Group::operator=(const Group& source)
   isValidGrad = source.isValidGrad;
   isValidNewton = source.isValidNewton;
   isValidJacobian = source.isValidJacobian;
-  isValidJacobian = source.isValidPreconditioner;
+  isValidPreconditioner = source.isValidPreconditioner;
 
   // Only copy vectors that are valid
   if (isValidRHS) {
