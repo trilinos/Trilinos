@@ -1051,6 +1051,9 @@ AC_DEFUN(TRILINOS_HEADER,
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
+#ifndef HAVE_CONFIG_H
+#define HAVE_CONFIG_H
+#endif
 #include "$2"
   ]])],[done=yes],[])
   CPPFLAGS=$save_CPPFLAGS
@@ -1067,6 +1070,9 @@ AC_DEFUN(TRILINOS_HEADER,
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
+#ifndef HAVE_CONFIG_H
+#define HAVE_CONFIG_H
+#endif
 #include "$2"
   ]])],[ done=yes
       REL_TRILINOS_CPPFLAGS="-I${$1_INCDIR} ${REL_TRILINOS_CPPFLAGS}"
@@ -1087,6 +1093,9 @@ AC_DEFUN(TRILINOS_HEADER,
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
+#ifndef HAVE_CONFIG_H
+#define HAVE_CONFIG_H
+#endif
 #include "$2"
   ]])],[ done=yes
       REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../$1/$3 ${REL_TRILINOS_CPPFLAGS}"
@@ -1107,6 +1116,9 @@ AC_DEFUN(TRILINOS_HEADER,
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
+#ifndef HAVE_CONFIG_H
+#define HAVE_CONFIG_H
+#endif
 #include "$2"
   ]])],[ done=yes
       REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../$1/$3 ${REL_TRILINOS_CPPFLAGS}"
@@ -1143,9 +1155,10 @@ if test X${ADDON_epetra} = Xyes; then
   fi
 
   if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
+    TRILINOS_HEADER(epetraext,EpetraExt_config.h,src)
     TRILINOS_HEADER(epetraext,EpetraExt_ConfigDefs.h,src)
     TRILINOS_HEADER(epetraext,EpetraExt_Transform.h,src/transform)
-    TRILINOS_HEADER(epetraext,EpetraExt_config.h,src)
+    #TRILINOS_HEADER(epetraext,EpetraExt_config.h,src)
     TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
   fi
 
