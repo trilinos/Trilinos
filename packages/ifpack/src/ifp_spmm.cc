@@ -39,7 +39,8 @@
  */
 
 #include <stdlib.h>
-#include <iostream.h>
+#include <iostream>
+using namespace std;
 #include "ifp_spblas.h"
 
 #define _SpMatVal(_a,_lda,_row,_col) ((_a)[(_lda)*(_col)+(_row)])

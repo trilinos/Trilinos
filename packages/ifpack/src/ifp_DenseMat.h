@@ -67,7 +67,7 @@ public:
         {register double *p = a;
          register double *q = ((ifp_DenseMat *)&A)->a;
          for (int i=0; i<nrow*ncol; i++) *p++ = *q++;}
-    void Print(ostream&) const;
+    void Print(std::ostream&) const;
 
     // virtual mathematical functions
 
@@ -83,7 +83,7 @@ public:
     inline void Mat_Trans_Vec_Solve(const ifp_BlockVec& B, ifp_BlockVec& C) const;
 };
 
-ostream& operator << (ostream& os, const ifp_DenseMat& mat);
+std::ostream& operator << (std::ostream& os, const ifp_DenseMat& mat);
 
 class ifp_DenseMat_LU : public ifp_DenseMat
 {

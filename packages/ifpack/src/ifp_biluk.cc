@@ -5,8 +5,8 @@
 #include "ifp_ifpack.h"
 #include "ifp_SparseUtil.h"
 #include "ifp_DenseMat.h"
-#include <iostream.h>
-#include <iomanip.h>
+#include <iostream>
+using namespace std;
 /*int ifp_biluk::growth = 10; */
 
 ifp_biluk::ifp_biluk()

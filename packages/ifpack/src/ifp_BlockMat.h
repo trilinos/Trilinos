@@ -1,7 +1,7 @@
 #ifndef _IFP_BLOCKMAT_H_
 #define _IFP_BLOCKMAT_H_
 
-#include <iostream.h>
+#include <iostream>
 #include "ifp_Matrix.h"
 
 class ifp_LocalMat;
@@ -47,6 +47,6 @@ public:
     void trans_mult(int, int, const double *, int, double *, int) const;
 };
 
-ostream& operator << (ostream& os, const ifp_BlockMat& mat);
+std::ostream& operator << (std::ostream& os, const ifp_BlockMat& mat);
 
 #endif // _IFP_BLOCKMAT_H_

@@ -7,6 +7,7 @@
 #include "ifp_ifpack.h"
 
 #ifdef __cplusplus
+using namespace std;
 extern "C" {
 #endif
 

@@ -1,6 +1,7 @@
 #include "ifp_ifpack.h"
 #include "ifp_SparseUtil.h"
 #include "stdio.h" // kludge
+using namespace std;
 /* #define DEBUG */
 // shell sort
 // stable, so it is fast if already sorted

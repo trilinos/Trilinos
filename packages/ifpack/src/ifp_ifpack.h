@@ -1,7 +1,7 @@
 #ifndef _IFP_IFPACK_H_
 #define _IFP_IFPACK_H_
 
-#include <iostream.h>
+#include <iostream>
 #include <stdlib.h>
 #include "ifp_arch.h"
 
@@ -10,7 +10,7 @@ extern "C" { void exit(int); }
 #endif
 
 #define ifp_error(msg,code) \
-{ cerr << "IFPACK: " << msg << "    CODE " << code << endl; exit(1); }
+{ std::cerr << "IFPACK: " << msg << "    CODE " << code << std::endl; exit(1); }
 
 #define MIN(x,y) ((x)<(y) ? (x) : (y))
 #define MAX(x,y) ((x)>(y) ? (x) : (y))

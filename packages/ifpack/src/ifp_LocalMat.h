@@ -1,7 +1,7 @@
 #ifndef _IFP_LOCALMAT_H_
 #define _IFP_LOCALMAT_H_
 
-#include <iostream.h>
+#include <iostream>
 #include "ifp_BlockVec.h"
 class ifp_LocalPrecon;
 
@@ -19,7 +19,7 @@ public:
     virtual ifp_LocalMat *CreateInv(ifp_LocalPrecon&) const = 0;
     virtual void SetToZero(int, int) = 0;
     virtual void MatCopy(const ifp_LocalMat& A) = 0;
-    virtual void Print(ostream&) const = 0;
+    virtual void Print(std::ostream&) const = 0;
 
     virtual void Mat_Trans(ifp_LocalMat *B) const = 0;
     virtual void Mat_Mat_Add(const ifp_LocalMat *B, ifp_LocalMat *C, 
