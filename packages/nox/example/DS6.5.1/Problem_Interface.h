@@ -34,6 +34,12 @@ public:
   //! Register objects from the main code required to call the fill routines
   void registerFill(Fill * tmpFill);
 
+  //! Compute the matrix M that will be used as the preconditioner.
+  void computePreconditioner(Epetra_RowMatrix& M){};
+
+  //! Return the action of the preconditioner on a vector.
+  void preconditionVector(Epetra_Vector& y){};
+
   //! Object to store the auxiliary data from user's code required 
   //! for RHS and Jacobian fills.
   Fill* LO;

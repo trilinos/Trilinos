@@ -42,6 +42,10 @@ namespace Epetra {
 
   /*! \brief Used by NOX::Epetra::Group to provide a link to the
    *  external code for RHS and Jacobian fills. */
+  /*! At a minimum the user should only supply a RHS fill.  Jacobian fills 
+   * and preconditioning options need only be supplied if certain methods 
+   * require it. Therefore the implemetations below are set to throw an
+   * error if not supplied.*/
 
 class Interface {
 
@@ -58,6 +62,12 @@ public:
   
   //! Compute Jacobian given the specified input vector, x.
   virtual void computeJacobian(const Epetra_Vector& x, Epetra_RowMatrix& Jac) = 0;
+
+  //! Compute the matrix M that will be used as the preconditioner.
+  virtual void computePreconditioner(Epetra_RowMatrix& M) = 0;
+
+  //! Return the action of the preconditioner on a vector.
+  virtual void preconditionVector(Epetra_Vector& y) = 0;
 
 };
 } // namespace Epetra

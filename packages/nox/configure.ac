@@ -177,9 +177,9 @@ AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile 
 		example/Makefile 
-		example/DS6.5.1/Makefile
-		example/simple_linear/Makefile
-		example/simple_nonlinear/Makefile
+		example/epetra_DS6.5.1/Makefile
+		example/epetra_1Dfem_linear/Makefile
+		example/epetra_1Dfem_nonlinear/Makefile
 		])
 
 AC_OUTPUT()

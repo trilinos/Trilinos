@@ -148,8 +148,8 @@ int main(int argc, char *argv[])
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
 //  searchParams.setParameter("Method", "Full Step");
 //  searchParams.setParameter("Method", "Interval Halving");
-//  searchParams.setParameter("Method", "Polynomial");
-  searchParams.setParameter("Method", "More'-Thuente");
+  searchParams.setParameter("Method", "Polynomial");
+  //searchParams.setParameter("Method", "More'-Thuente");
   searchParams.setParameter("Default Step", 1.0);
 
   // Create the interface between the test problem and the nonlinear solver

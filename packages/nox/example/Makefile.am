@@ -3,4 +3,4 @@
 #@HEADER
 #@HEADER
 
-SUBDIRS = DS6.5.1 simple_linear simple_nonlinear
+SUBDIRS = epetra_DS6.5.1 epetra_1Dfem_linear epetra_1Dfem_nonlinear  
