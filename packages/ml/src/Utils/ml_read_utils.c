@@ -166,11 +166,6 @@ void ML_Reader_GetGeneralSpecs(FILE *ifp, struct reader_context *context)
   }
   ML_Reader_ReadString(ifp,input, '\n');
   ML_Reader_Strip(input);
-  context->partition_file = (char *) malloc(sizeof(char)*(strlen(input)+1));
-  if (context->partition_file == NULL) {
-    fprintf(stderr, "%s: ERROR, not enough space while reading inputfile\n");
-    exit(-1);
-  }
   strcpy(context->partition_file,input);
 
   /* How often should the residual be printed */
@@ -399,11 +394,6 @@ void ML_Reader_GetSolutionSpecs(FILE *ifp, struct reader_context *context)
   }
   ML_Reader_ReadString(ifp,input, '\n');
   ML_Reader_Strip(input);
-  context->smoother = (char *) malloc(sizeof(char)*(strlen(input)+1));
-  if (context->smoother == NULL) {
-    fprintf(stderr, "%s: ERROR, not enough space while reading inputfile\n");
-    exit(-1);
-  }
   strcpy(context->smoother,input);
 
   /* select the number of smoother iterations per level */
@@ -429,11 +419,6 @@ void ML_Reader_GetSolutionSpecs(FILE *ifp, struct reader_context *context)
   }
   ML_Reader_ReadString(ifp,input, '\n');
   ML_Reader_Strip(input);
-  context->coarse_solve = (char *) malloc(sizeof(char)*(strlen(input)+1));
-  if (context->coarse_solve == NULL) {
-    fprintf(stderr, "%s: ERROR, not enough space while reading inputfile\n");
-    exit(-1);
-  }
   strcpy(context->coarse_solve,input);
 
   /* select the number of coarse grid iterations */
@@ -459,11 +444,6 @@ void ML_Reader_GetSolutionSpecs(FILE *ifp, struct reader_context *context)
   }
   ML_Reader_ReadString(ifp,input, '\n');
   ML_Reader_Strip(input);
-  context->krylov = (char *) malloc(sizeof(char)*(strlen(input)+1));
-  if (context->krylov == NULL) {
-    fprintf(stderr, "%s: ERROR, not enough space while reading inputfile\n");
-    exit(-1);
-  }
   strcpy(context->krylov,input);
 }
 
@@ -497,11 +477,6 @@ void ML_Reader_GetAggregationSpecs(FILE *ifp, struct reader_context *context)
   }
   ML_Reader_ReadString(ifp,input, '\n');
   ML_Reader_Strip(input);
-  context->agg_coarsen_scheme= (char *) malloc(sizeof(char)*(strlen(input)+1));
-  if (context->agg_coarsen_scheme == NULL) {
-    fprintf(stderr, "%s: ERROR, not enough space while reading inputfile\n");
-    exit(-1);
-  }
   strcpy(context->agg_coarsen_scheme,input);
 
   /* select aggregation drop tolerance */
@@ -556,11 +531,6 @@ void ML_Reader_GetAggregationSpecs(FILE *ifp, struct reader_context *context)
   }
   ML_Reader_ReadString(ifp,input, '\n');
   ML_Reader_Strip(input);
-  context->agg_spectral_norm = (char *) malloc(sizeof(char)*(strlen(input)+1));
-  if (context->agg_spectral_norm == NULL) {
-    fprintf(stderr, "%s: ERROR, not enough space while reading inputfile\n");
-    exit(-1);
-  }
   strcpy(context->agg_spectral_norm,input);
 
 }
@@ -578,15 +548,15 @@ void ML_Reader_InitContext(struct reader_context *context)
    context->coarse_its    = 0;
    context->N_dofPerNode  = 0;
    context->agg_thresh    = 0.0;
-   context->smoother      = NULL;
-   context->agg_coarsen_scheme = NULL;
-   context->coarse_solve  = NULL;
-   context->krylov        = NULL;
-   context->partition_file = NULL;
+   context->smoother[0]      = '\0';
+   context->agg_coarsen_scheme[0] = '\0';
+   context->coarse_solve[0]  = '\0';
+   context->krylov[0]        = '\0';
+   context->partition_file[0] = '\0';
    context->output         = 1;
    context->tol            = 1.e-6;
    context->agg_damping    = 1.33333;
-   context->agg_spectral_norm = NULL;
+   context->agg_spectral_norm[0] = '\0';
 
 
 }

@@ -9,11 +9,11 @@ struct reader_context {
    int N_levels, nsmooth, maxcoarsesize, coarse_its;
    int N_dofPerNode;
    double agg_thresh;
-   char *smoother, *agg_coarsen_scheme, *coarse_solve, *krylov;
-   char *partition_file;
+   char smoother[80], agg_coarsen_scheme[80], coarse_solve[80], krylov[80];
+   char partition_file[80];
    int  output;
    double tol, agg_damping;
-   char *agg_spectral_norm;
+   char agg_spectral_norm[80];
 };
 
 #define MAX_INPUT_STR_LN 101
