@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
    <TITLE>Zoltan User's Guide:  Query Functions</TITLE>
 <!
   ------------------------
@@ -12,22 +12,19 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="ug_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="Load-Balancing Query Functions"></A>Load-Balancing Query Functions</H2>
 The following registered functions are provided for use by various load-balancing
 algorithms in the Zoltan library:
 <BLOCKQUOTE><A HREF="#General Functions">General Functions</A>
-<BLOCKQUOTE><B><A HREF="#LB_OBJ_WEIGHT_FN">LB_OBJ_WEIGHT_FN</A></B>
-<BR><B><A HREF="#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B>
+<BLOCKQUOTE><B><A HREF="#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B>
 <BR><B><A HREF="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
 <BR><B><A HREF="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>
 <BR><B><A HREF="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B>
@@ -42,86 +39,10 @@ algorithms in the Zoltan library:
 <BLOCKQUOTE><B><A HREF="#LB_NUM_EDGES">LB_NUM_EDGES_FN</A></B>
 <BR><B><A HREF="#LB_EDGE_LIST_FN">LB_EDGE_LIST_FN</A></B></BLOCKQUOTE>
 </BLOCKQUOTE>
-
-
-<P>&nbsp;
+&nbsp;
 <H2>
 <A NAME="General Functions"></A>General Functions</H2>
 
-<HR WIDTH="100%"><A NAME="LB_OBJ_WEIGHT_FN"></A>typedef double <B>LB_OBJ_WEIGHT_FN</B>(void
-*<I> data, </I><B>LB_GID</B><I>global_id</I>, <B>LB_LID</B> <I>local_id</I>,
-int <I>*ierr</I>);&nbsp;
-<HR WIDTH="100%">An <B>LB_OBJ_WEIGHT_FN</B> query function returns the
-weight of a given object. The weight values are used by the load-balancing
-routines to assign loads of equal total weight to processors.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
-
-<TD><B>LB_OBJ_WEIGHT_FN_TYPE</B></TD>
-</TR>
-
-<TR>
-<TD><B>Parameters:</B></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
-
-<TD>Pointer to user-defined data.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
-
-<TD>The global ID of the object whose weight is requested.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; local_id</I></TD>
-
-<TD>The local ID of the object whose weight is requested.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
-
-<TD>Error code to be set by function.</TD>
-</TR>
-
-<TR>
-<TD><B>Returned Value:</B></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; double</TD>
-
-<TD>The weight of the object</TD>
-</TR>
-
-<TR>
-<TD><B>Default:</B></TD>
-
-<TD></TD>
-</TR>
-
-<TR>
-<TD></TD>
-
-<TD>If an <B>LB_OBJ_WEIGHT_FN</B> is not registered, all objects' weights
-are 1.0.</TD>
-</TR>
-</TABLE>
-
-
-<P>&nbsp;
-
-<P>
 <HR WIDTH="100%"><A NAME="LB_NUM_OBJ_FN"></A>typedef int <B>LB_NUM_OBJ_FN</B>(void
 *<I> data</I>,<I> </I>int<I> *ierr</I>);&nbsp;
 <HR WIDTH="100%">An <B>LB_NUM_OBJ_FN</B> query function returns the number
@@ -164,25 +85,23 @@ of objects to be balanced that are currently assigned to the processor.
 <TD>The number of objects to be balanced that are assigned to the processor.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_OBJ_LIST_FN"></A>typedef void<B> LB_OBJ_LIST_FN</B>(void
 *<I> data</I>, <B>LB_GID</B> *<I> global_ids</I>, <B>LB_LID</B> *<I> local_ids</I>,
-int<I> *ierr</I>);&nbsp;
-<HR WIDTH="100%">An <B>LB_OBJ_LIST_FN</B> query function fills two arrays
-with information about the objects currently assigned to the processor.
-Both arrays are allocated (and subsequently freed) by the load-balancing
-library using a query to an <B><A HREF="#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B>
+int <I>wgt_dim</I>, float * <I>obj_wgts,</I> int<I> *ierr</I>);&nbsp;
+<HR WIDTH="100%">An <B>LB_OBJ_LIST_FN</B> query function fills two (three
+if weights are used) arrays with information about the objects currently
+assigned to the processor. Both arrays are allocated (and subsequently
+freed) by the load-balancing library using a query to an <B><A HREF="#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B>
 query function to get the array size. For many algorithms, either an <B>LB_OBJ_LIST_FN</B>
 query function or an <B><A HREF="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A></B>/<B><A HREF="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></B>
 query-function pair must be registered to allow the load-balancing library
 to obtain needed object information; however, both query options need not
 be provided.
 <BR>&nbsp;
-<TABLE WIDTH="100%" >
+<TABLE WIDTH="100%" NOSAVE >
 <TR>
 <TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
 
@@ -214,20 +133,34 @@ be provided.
 application, for all objects assigned to the processor.</TD>
 </TR>
 
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+
+<TD>Dimension of the weights (typically 1), or 0 if&nbsp; weights are not
+requested.</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>obj_wgts</I></TD>
+
+<TD>An array of object weights. Weight <I>i </I>is stored in o<I>bj_wgts[(i-1)*wgt_dim:i*wgt_dim-1]</I>.&nbsp;
+If <I>wgt_dim</I>=0, the return value of <I>obj_wgts</I> is undefined and
+may be NULL.</TD>
+</TR>
+
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
 
 <TD>Error code to be set by function.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_FIRST_OBJ_FN"></A>typedef int <B>LB_FIRST_OBJ_FN</B>(void
 *<I> data, </I><B>LB_GID </B>*<I> first_global_id</I>, <B>LB_LID</B> *<I>
-first_local_id</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+first_local_id</I>, int <I>wgt_dim,</I> float * <I>first_obj_wgt</I>,&nbsp;<I>
+</I>int<I> *ierr</I>);&nbsp;
 <HR WIDTH="100%">An <B>LB_FIRST_OBJ_FN</B> query function initializes an
 iteration over objects assigned to the processor. It returns the global
 and local IDs of the first object on the processor. Subsequent calls to
@@ -276,6 +209,19 @@ is ignored if there are no objects.</TD>
 </TR>
 
 <TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+
+<TD>Dimension of the weights (typically 1), or 0 if&nbsp; weights are not
+requested.</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>first_obj_wgt</I></TD>
+
+<TD>Object weight, an array of length <I>wgt_dim. </I>Undefined if <I>wgt_dim=0.</I></TD>
+</TR>
+
+<TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
 
 <TD>Error code to be set by function.</TD>
@@ -300,15 +246,13 @@ of the first object.</TD>
 <TD>If no objects are available.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_NEXT_OBJ_FN"></A>typedef int <B>LB_NEXT_OBJ_FN</B>(void
-*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID</B><I>local_id</I>,
+*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID </B><I>local_id</I>,
 <B>LB_GID </B>*<I> next_global_id</I>, <B>LB_LID</B> *<I> next_local_id</I>,
-int<I> *ierr</I>);&nbsp;
+int <I>wgt_dim,</I> float * <I>next_obj_wgt</I>, int<I> *ierr</I>);&nbsp;
 <HR WIDTH="100%">An <B>LB_NEXT_OBJ_FN</B> query function is an iterator
 function which, when given an object assigned to the processor, returns
 the next object assigned to the processor. The first object of the iteration
@@ -368,6 +312,19 @@ ignored if there are no more objects.</TD>
 </TR>
 
 <TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+
+<TD>Dimension of the weights (typically 1), or 0 if&nbsp; weights are not
+requested.</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>next_obj_wgt</I></TD>
+
+<TD>Object weight, an array of length <I>wgt_dim. </I>Undefined if <I>wgt_dim=0.</I></TD>
+</TR>
+
+<TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
 
 <TD>Error code to be set by function.</TD>
@@ -392,9 +349,7 @@ of the next object.</TD>
 <TD>If no more objects are available.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_NUM_BORDER_OBJ_FN"></A>typedef int <B>LB_NUM_BORDER_OBJ_FN</B>(void
@@ -448,14 +403,13 @@ should be returned.</TD>
 <I>nbor_proc</I>.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_BORDER_OBJ_LIST_FN"></A>typedef void <B>LB_BORDER_OBJ_LIST_FN</B>(void
 *<I> data</I>, int <I>nbor_proc</I>, <B>LB_GID </B>*<I> global_ids</I>,
-<B>LB_LID</B> *<I> local_ids</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+<B>LB_LID</B> *<I> local_ids</I>,<I> </I>int <I>wgt_dim</I>, float * <I>obj_wgts,
+</I>int<I> *ierr</I>);&nbsp;
 <HR WIDTH="100%">An <B>LB_BORDER_OBJ_LIST_FN</B> query function fills two
 arrays with information about the objects currently assigned to the processor
 that share a processor subdomain border (in the communication graph of
@@ -467,7 +421,7 @@ query-function pair must be registered to allow the load-balancing library
 to obtain needed object information; however, both query options need not
 be provided.
 <BR>&nbsp;
-<TABLE WIDTH="100%" >
+<TABLE WIDTH="100%" NOSAVE >
 <TR>
 <TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
 
@@ -509,19 +463,32 @@ border with <I>nbor_proc</I>.</TD>
 </TR>
 
 <TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+
+<TD>Dimension of the weights (typically 1), or 0 if&nbsp; weights are not
+requested.</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>obj_wgts</I></TD>
+
+<TD>An array of object weights. Weight <I>i </I>is stored in <I>obj_wgts[(i-1)*wgt_dim:i*wgt_dim-1]</I>.&nbsp;
+If <I>wgt_dim=0,</I> <I>obj_wgts</I> is undefined and may be NULL.</TD>
+</TR>
+
+<TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
 
 <TD>Error code to be set by function.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_FIRST_BORDER_OBJ_FN"></A>typedef int <B>LB_FIRST_BORDER_OBJ_FN</B>(void
 *<I> data</I>, int <I>nbor_proc</I>, <B>LB_GID</B> *<I> first_global_id</I>,
-<B>LB_LID </B>*<I> first_local_id</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+<B>LB_LID </B>*<I> first_local_id</I>,<I> </I>int<I> wgt_dim, </I>float<I>
+* first_obj_wgt, </I>int<I> *ierr</I>);&nbsp;
 <HR WIDTH="100%">An <B>LB_FIRST_BORDER_OBJ_FN</B> query function initializes
 an iteration over objects assigned to the processor that share a processor
 subdomain border with a given processor. It returns the global and local
@@ -579,6 +546,19 @@ is ignored if there are no objects along the border.</TD>
 </TR>
 
 <TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+
+<TD>Dimension of the weights (typically 1), or 0 if&nbsp; weights are not
+requested.</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>first_obj_wgt</I></TD>
+
+<TD>First object weight. Undefined if&nbsp; <I>wgt_dim=</I>0.</TD>
+</TR>
+
+<TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
 
 <TD>Error code to be set by function.</TD>
@@ -603,15 +583,14 @@ of the first object along the processor border.</TD>
 <TD>If no objects are available along this processor border.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_NEXT_BORDER_OBJ_FN"></A>typedef int <B>LB_NEXT_BORDER_OBJ_FN</B>(void
 *<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID</B> <I>local_id</I>,
 int <I>nbor_proc</I>, <B>LB_GID</B> *<I> next_global_id</I>, <B>LB_LID</B>
-*<I> next_local_id</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+*<I> next_local_id</I>,<I> </I>int <I>wgt_dim, </I>float <I>*next_obj_wgt,,
+</I>int<I> *ierr</I>);&nbsp;
 <HR WIDTH="100%">An <B>LB_NEXT_BORDER_OBJ_FN</B> query function is an iterator
 function which, when given an object assigned to the processor and a neighboring
 processor ID, returns the next object assigned to the processor that shares
@@ -680,6 +659,19 @@ ignored if there are no more objects along the border.</TD>
 </TR>
 
 <TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+
+<TD>Dimension of the weights (typically 1), or 0 if&nbsp; weights are not
+requested.</TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>next_obj_wgt</I></TD>
+
+<TD>Weight of the next object. Undefined if <I>wgt_dim</I>=0.</TD>
+</TR>
+
+<TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
 
 <TD>Error code to be set by function.</TD>
@@ -704,9 +696,7 @@ of the next object along the processor border.</TD>
 <TD>If no more objects are available along this processor border.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 <H2>
 <A NAME="Geometry-based Functions"></A>Geometry-based Functions</H2>
 
@@ -756,9 +746,7 @@ application, the return value should be three.
 <TD>The number of values needed to express the geometry of an object.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_GEOM_FN"></A>typedef void <B>LB_GEOM_FN</B>(void
@@ -812,15 +800,13 @@ query function.
 <TD>Error code to be set by function.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 <BR>&nbsp;
 <H2>
 <A NAME="Graph-based Functions"></A>Graph-based Functions</H2>
 
 <HR WIDTH="100%"><A NAME="LB_NUM_EDGES"></A>typedef int <B>LB_NUM_EDGES_FN</B>(void
-*<I> data</I>, <B>LB_GID</B><I>global_id</I>, <B>LB_LID</B> <I>local_id</I>,
+*<I> data</I>, <B>LB_GID </B><I>global_id</I>, <B>LB_LID</B> <I>local_id</I>,
 int<I> *ierr</I>);&nbsp;
 <HR WIDTH="100%">An <B>LB_NUM_EDGES_FN</B> query function returns the number
 of edges for a given object in the communication graph of the application
@@ -878,23 +864,21 @@ returned.</TD>
 <I>local_id</I>.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_EDGE_LIST_FN"></A>typedef void <B>LB_EDGE_LIST_FN</B>(void
 *<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID </B><I>local_id</I>,
-<B>LB_GID</B> *<I> nbor_global_id</I>, <B>LB_LID</B> *<I> nbor_local_id</I>,
-int<I> *ierr</I>);&nbsp;
+<B>LB_GID</B> *<I> nbor_global_id</I>, int * <I>nbor_procs</I>, int <I>wgt_dim</I>,
+int * <I>ewgts,</I> int<I> *ierr</I>);&nbsp;
 <HR WIDTH="100%">An <B>LB_EDGE_LIST_FN</B> query function returns lists
-of global IDs and local IDs for objects sharing an edge with a given object
-(i.e., objects that must share information with the given object). The
-arrays for the returned neighbor lists are allocated by the load-balancing
-library; their size is determined by a call to an <B><A HREF="#LB_NUM_EDGES">LB_NUM_EDGES_FN</A></B>
-query function.
+of global IDs, local IDs, and optionally edge weights for objects sharing
+an edge with a given object (i.e., objects that must share information
+with the given object). The arrays for the returned neighbor lists are
+allocated by the load-balancing library; their size is determined by a
+call to an <B><A HREF="#LB_NUM_EDGES">LB_NUM_EDGES_FN</A></B> query function.
 <BR>&nbsp;
-<TABLE WIDTH="100%" >
+<TABLE WIDTH="100%" NOSAVE >
 <TR>
 <TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
 
@@ -933,10 +917,25 @@ given object.</TD>
 </TR>
 
 <TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>nbor_local_id</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>nbor_procs</I></TD>
 
-<TD>Upon return, an array of local IDs of objects sharing edges with the
-given object.</TD>
+<TD>Upon return, an array of processor IDs that identifies where the neighboring
+objects reside.</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+
+<TD>Dimension of the edge weights (typically 1), or 0 if edge weights are
+not requested.</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>ewgts</I></TD>
+
+<TD>Upon return, an array of edge weights, where <I>ewgts[i*wgt_dim: (i+1)*wgt_dim-1]</I>
+<BR>corresponds to the <I>i</I>th edge weight. If <I>wgt_dim=0 </I>the
+return value of <I>ewgts </I>is undefined and may be NULL.</TD>
 </TR>
 
 <TR>
@@ -945,9 +944,7 @@ given object.</TD>
 <TD>Error code to be set by function.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
