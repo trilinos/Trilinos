@@ -12,28 +12,38 @@
 # Note: This script is often used with the executable ml_readfile
 #        which contains comments on setting up problems. 
 #
-#echo "Usage: tester [bench_directory executable scratch_directory]
+#echo "Usage: run_benchmarks [bench_directory executable scratch_directory]
 
 BENCH_DIRECTORY=/home/tuminaro/ml_bench
 EXECUTABLE=/home/tuminaro/codes/Aztec/ml/Obj/ml_readfile
 SCRATCH_DIRECTORY=/tmp/poop
 
-#echo "Usage: tester [bench_directory executable scratch_directory]
+#echo "Usage: run_benchmarks [bench_directory executable scratch_directory]
 
+echo $* $#
 #
 # Take command line arguments and replace defaults
 #
-if test $2
+#if test `expr ${*}` -ge `expr 3`
+if test $# -ge 4
 then
+  echo "Usage: run_benchmarks [bench_directory executable scratch_directory]"
+  exit
+fi
+if test $# -ge 1
+then
+  echo at least one argument
+  BENCH_DIRECTORY=$1
+fi
+if test $# -ge 2
+then
+  echo at least two argument
   EXECUTABLE=$2
 fi
-if test $3
+if test $# -ge 3
 then
+  echo at least three argument
   SCRATCH_DIRECTORY=$3
-fi
-if test $1
-then
-  BENCH_DIRECTORY=$1
 fi
 
 #
@@ -52,12 +62,14 @@ fi
 #
 #  Check for the executable 
 #
+temp=`echo ${EXECUTABLE} | sed "s/ .*//"`
+echo $temp
 
-if test -f ${EXECUTABLE}
+if test -f ${temp}
 then
-  touch ${EXECUTABLE}
+  ls ${temp} > /dev/null
 else
-  echo "The executable ${EXECUTABLE} does not exist?"
+  echo "The executable ${temp} does not exist?"
   exit
 fi
 
@@ -108,7 +120,8 @@ do
         /bin/rm -f ${SCRATCH_DIRECTORY}/${i}/output${ttt} ${SCRATCH_DIRECTORY}/${i}/difs${ttt}
         /bin/rm -f ml_inputfile
         cp $j ml_inputfile
-        ${EXECUTABLE} | grep -v ime > ${SCRATCH_DIRECTORY}/${i}/output${ttt}
+        Nprocs=`grep -i "^Number of processors" ml_inputfile | sed s"/.*=//"`
+        ${EXECUTABLE} ${Nprocs} | grep -v ime > ${SCRATCH_DIRECTORY}/${i}/output${ttt}
         diff -w output${ttt} ${SCRATCH_DIRECTORY}/${i}/output${ttt} > \
                                     ${SCRATCH_DIRECTORY}/${i}/difs${ttt}
         wc ${SCRATCH_DIRECTORY}/${i}/difs${ttt} >> ${SCRATCH_DIRECTORY}/summary
