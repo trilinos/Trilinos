@@ -1,11 +1,17 @@
 # !/bin/sh
-~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/cube27p_32n_natural.hb
-~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/cube7p_64n_natural.hb
-~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/defroll.hb
-~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/DIE3D.hb
-~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/goma_braze_npspg.hb
-~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/hutch3.hb
-~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/NIMROD2.hb
-~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/RHPentium_new_rcm.hb
-~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/small.hb
-~pmsexton/Trilinos/SERIAL/packages/tpetra/example/EpetraTpetraProfile/EpetraTpetraProfile.exe ~pmsexton/HB_files/viscoelastic.hb
+# This script calls the EpetraTpetraProfile example multiple times, each time with a different dataset.
+# You should set the location of your build directory and the location of your hb files below.
+
+set BUILDHOME=~pmsexton/Trilinos/THESIS/packages/tpetra/example/EpetraTpetraProfile
+set DATAHOME=~pmsexton/HB_files
+
+#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/cube27p_32n_natural.hb
+#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/cube7p_64n_natural.hb
+#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/defroll.hb
+#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/DIE3D.hb
+$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/goma_braze_npspg.hb
+#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/hutch3.hb
+#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/NIMROD2.hb
+#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/RHPentium_new_rcm.hb
+$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/small.hb
+#$BUILDHOME/EpetraTpetraProfile.exe $DATAHOME/viscoelastic.hb
