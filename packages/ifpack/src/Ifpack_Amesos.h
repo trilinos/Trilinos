@@ -116,9 +116,9 @@ public:
   //! Sets all the parameters for the preconditioner.
   virtual int SetParameters(Teuchos::ParameterList& List);
 
-  virtual const Epetra_RowMatrix* Matrix() const
+  virtual const Epetra_RowMatrix& Matrix() const
   {
-    return(Matrix_);
+    return(*Matrix_);
   }
   
 private:
