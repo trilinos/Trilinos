@@ -26,6 +26,7 @@ $(ZOD)/fwrap.o: 	$(ZOD)/fwrap.f90 \
 
 $(ZOD)/fwrap.f90: 	fwrap.fpp lbif.fpp lbfn.fpp \
 		set_numgeom.if			set_numgeom.fn \
+		set_geommulti.if		set_geommulti.fn \
 		set_geom.if			set_geom.fn \
 		set_numedges.if 		set_numedges.fn \
 		set_edgelist.if			set_edgelist.fn \

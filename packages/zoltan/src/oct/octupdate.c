@@ -31,7 +31,7 @@ extern "C" {
 /***************************  PROTOTYPES *************************************/
 static int Zoltan_Oct_nUniqueRegions(OCT_Global_Info *OCT_info, pOctant oct);
 static int Zoltan_Oct_CompareCoords(int dim, COORD pt1, COORD pt2);
-static void initialize_region(ZZ *, pRegion *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int, float);
+static void initialize_region(ZZ *, pRegion *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int, float, int, double *);
 static int lb_oct_init(ZZ *, int *, ZOLTAN_ID_PTR *,
   ZOLTAN_ID_PTR *, int **, int **, int, int, int, int, int, int); 
 static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int, int *c1, int *c2,
@@ -245,15 +245,6 @@ static int lb_oct_init(
   timers[3] = 0.0;
 
   count = nsentags = nrectags = 0;
-
-  /* Check for needed query functions. */
-  /* Check only for coordinates; Zoltan_Oct_get_bounds will check for others. */
-  if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-      "ZOLTAN_NUM_GEOM_FN and ZOLTAN_GEOM_FN must be registered "
-      "for OCTPART method");
-    return ZOLTAN_FATAL;
-  }
 
   if(zz->LB.Data_Structure == NULL) {
     OCT_info = Zoltan_Oct_POct_init(zz, zz->Proc, oct_dim);
@@ -636,12 +627,15 @@ static void Zoltan_Oct_get_bounds(ZZ *zz, pRegion *ptr1, int *num_objs,
   char *yo = "Zoltan_Oct_get_bounds";
   ZOLTAN_ID_PTR obj_global_ids = NULL; 
   ZOLTAN_ID_PTR obj_local_ids = NULL;
-  ZOLTAN_ID_PTR lid;       /* Temporary pointer to a local ID; used to pass NULL 
-                          to query functions when NUM_LID_ENTRIES == 0. */
-  ZOLTAN_ID_PTR next_lid;  /* Temporary pointer to a local ID; used to pass NULL 
-                          to query functions when NUM_LID_ENTRIES == 0. */
+  int *parts = NULL;   /* Input partition assignments; currently unused. */
   float *obj_wgts = NULL;
-  int i, found;
+  double *geom_vec = NULL;
+  float objwgt;        /* Temporary value of an object weight; used to pass
+                          0. to initialize_regions when wgtflag == 0. */
+  ZOLTAN_ID_PTR lid;   /* Temporary pointer to a local ID; used to pass NULL 
+                          to initialize_regions when NUM_LID_ENTRIES == 0. */
+  int num_dim;
+  int i;
   pRegion tmp, ptr;
   COORD global_min, global_max;
   double PADDING = 0.0000001;
@@ -653,89 +647,31 @@ static void Zoltan_Oct_get_bounds(ZZ *zz, pRegion *ptr1, int *num_objs,
   max[0] = max[1] = max[2] = -MAXDOUBLE;
   min[0] = min[1] = min[2] =  MAXDOUBLE;
 
-  *num_objs = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
+  ierr = Zoltan_Get_Obj_List(zz, num_objs, &obj_global_ids, &obj_local_ids,
+                             wgtflag, &obj_wgts, &parts);
   if (ierr) {
-    fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
-                    "Get_Num_Obj function.\n", zz->Proc, yo);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                   "Error returned from user function Zoltan_Get_Obj_List.");
     exit (-1);
   }
 
-  if (*num_objs > 0) {
-    obj_global_ids = ZOLTAN_MALLOC_GID_ARRAY(zz,(*num_objs));
-    obj_local_ids  = ZOLTAN_MALLOC_LID_ARRAY(zz,(*num_objs));
-    obj_wgts       = (float *) ZOLTAN_MALLOC((*num_objs) * sizeof(float));
-    if (!obj_global_ids || (num_lid_entries && !obj_local_ids) || !obj_wgts) {
-      fprintf(stderr, "OCT [%d] Error from %s: Insufficient memory\n",zz->Proc,yo);
-      exit(-1);
-    }
-    if (wgtflag == 0)
-      for (i = 0; i < *num_objs; i++) obj_wgts[i] = 0.;
+  ierr = Zoltan_Get_Coordinates(zz, *num_objs, obj_global_ids, obj_local_ids,
+                                &num_dim, &geom_vec);
 
-
-    if(zz->Get_Obj_List == NULL &&
-      (zz->Get_First_Obj == NULL || zz->Get_Next_Obj == NULL)) {
-      fprintf(stderr, "OCT Error in octree load balance:  user must declare " 
-              "function Get_Obj_List or Get_First_Obj/Get_Next_Obj.");
-      abort();
-    }
-
-    lid = (num_lid_entries ? &(obj_local_ids[0]) : NULL);
-    if (zz->Get_Obj_List != NULL) {
-      zz->Get_Obj_List(zz->Get_Obj_List_Data,
-                       num_gid_entries, num_lid_entries,
-                       obj_global_ids, obj_local_ids,
-                       wgtflag, obj_wgts, &ierr);
-      found = TRUE;
-    }
-    else {
-      found = zz->Get_First_Obj(zz->Get_First_Obj_Data, 
-                                num_gid_entries, num_lid_entries,
-                                &(obj_global_ids[0]), lid, 
-                                wgtflag, &(obj_wgts[0]), &ierr);
-    }
-    if (ierr) {
-      fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
-                      "Get_Obj_List/Get_First_Obj function.\n", zz->Proc, yo);
-      exit (-1);
-    }
-
-    if(found) {
-      initialize_region(zz, &tmp, &(obj_global_ids[0]), lid,
-                        wgtflag, obj_wgts[0]);
+  for (i = 0; i < (*num_objs); i++) {
+    lid = (num_lid_entries ? obj_local_ids + i*num_lid_entries : NULL);
+    objwgt = (wgtflag ? obj_wgts[i] : 0.);
+    initialize_region(zz, &(ptr), obj_global_ids + i*num_gid_entries,
+                      lid, wgtflag, objwgt,
+                      num_dim, geom_vec + i*num_dim);
+    if (i == 0) {
+      tmp = ptr;
       *c0 = (float)tmp->Weight;
       vector_set(min, tmp->Coord);
       vector_set(max, tmp->Coord);
+      *ptr1 = tmp;
     }
-    *ptr1 = tmp;
-    for (i = 1; i < (*num_objs); i++) {
-      if (num_lid_entries) {
-        lid = &(obj_local_ids[(i-1)*num_lid_entries]);
-        next_lid = &(obj_local_ids[i*num_lid_entries]);
-      }
-      else
-        lid = next_lid = NULL;
-      if (zz->Get_Obj_List == NULL) {
-        found = zz->Get_Next_Obj(zz->Get_Next_Obj_Data, 
-                                 num_gid_entries, num_lid_entries,
-                                 &(obj_global_ids[(i-1)*num_gid_entries]),
-                                 lid,
-                                 &(obj_global_ids[i*num_gid_entries]),
-                                 next_lid,
-                                 wgtflag, &(obj_wgts[i]), &ierr);
-        if (ierr) {
-          fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
-                          "Get_Next_Obj function.\n", zz->Proc, yo);
-          exit (-1);
-        }
-      }
-      if (!found) {
-        fprintf(stderr, "OCT Error in octree load balance:  number of objects "
-               "declared by ZOLTAN_NUM_OBJ_FN %d != number obtained by "
-               "GET_NEXT_OBJ %d\n", *num_objs, i);
-        exit(-1);
-      }
-      initialize_region(zz, &(ptr), &(obj_global_ids[i*num_gid_entries]), 
-                        next_lid, wgtflag, obj_wgts[i]);
+    else {
       *c0 += (float)ptr->Weight;
       /* the following is really a hack, since it has no real basis 
          in vector mathematics.... */
@@ -753,13 +689,15 @@ static void Zoltan_Oct_get_bounds(ZZ *zz, pRegion *ptr1, int *num_objs,
         max[2] = ptr->Coord[2];
       tmp->next = ptr;
       tmp = tmp->next;
-  
-      ptr = NULL;
     }
-    ZOLTAN_FREE(&obj_global_ids);
-    ZOLTAN_FREE(&obj_local_ids);
-    ZOLTAN_FREE(&obj_wgts);
+  
+    ptr = NULL;
   }
+  ZOLTAN_FREE(&obj_global_ids);
+  ZOLTAN_FREE(&obj_local_ids);
+  ZOLTAN_FREE(&parts);
+  ZOLTAN_FREE(&obj_wgts);
+  ZOLTAN_FREE(&geom_vec);
   
   MPI_Allreduce(&(min[0]), &(global_min[0]), 3, 
 		MPI_DOUBLE, MPI_MIN, zz->Communicator);
@@ -792,10 +730,11 @@ static void Zoltan_Oct_get_bounds(ZZ *zz, pRegion *ptr1, int *num_objs,
  *  global ID, coordinates and weight provided by the application.  
  */
 static void initialize_region(ZZ *zz, pRegion *ret, ZOLTAN_ID_PTR global_id,
-                              ZOLTAN_ID_PTR local_id, int wgtflag, float wgt) 
+                              ZOLTAN_ID_PTR local_id, int wgtflag, float wgt,
+                              int num_dim, double *geom_vec) 
 {
   pRegion reg;
-  int ierr = 0;
+  int i, ierr = 0;
   char *yo = "initialize_region";
   reg = (pRegion) ZOLTAN_MALLOC(sizeof(Region));
   *ret = reg;
@@ -806,13 +745,8 @@ static void initialize_region(ZZ *zz, pRegion *ret, ZOLTAN_ID_PTR global_id,
   reg->Proc = zz->Proc;
   /* reg->Proc = 0; */
   reg->Coord[0] = reg->Coord[1] = reg->Coord[2] = 0.0;
-  zz->Get_Geom(zz->Get_Geom_Data, zz->Num_GID, zz->Num_LID,
-               global_id, local_id, reg->Coord, &ierr);
-  if (ierr) {
-    fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
-                    "Get_Geom function.\n", zz->Proc, yo);
-    exit (-1);
-  }
+  for (i = 0; i < num_dim; i++)
+    reg->Coord[i] = geom_vec[i];
 
 #if 0
   Zoltan_Print_Sync_Start(zz->Communicator, TRUE);
@@ -826,12 +760,6 @@ static void initialize_region(ZZ *zz, pRegion *ret, ZOLTAN_ID_PTR global_id,
     reg->Weight = wgt;
   else
     reg->Weight = 1;
-
-  if (ierr) {
-    fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
-                    "Get_Obj_Weight function.\n", zz->Proc, yo);
-    exit (-1);
-  }
 
   reg->next = NULL;
 }

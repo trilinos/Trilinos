@@ -76,6 +76,7 @@ int Zoltan_HSFC(
    float     *work_fraction   = NULL;   /* % of load in each partition */
    double    *delta           = NULL;   /* refinement interval */
    double    *tsum            = NULL;
+   double    *geom_vec        = NULL;   /* Temporary coordinates array. */
    HSFC_Data *d               = NULL;   /* pointer to persistant data storage */
 
    /* other (non malloc'd) variables */
@@ -103,13 +104,6 @@ int Zoltan_HSFC(
    *num_export = *num_import = -1;              /* in case of early error exit */
    MPI_Op_create(&Zoltan_HSFC_mpi_sum_max_min, 1, &mpi_op); /* register method */
 
-  /* Check for needed query functions. */
-  /* Check only for coordinates; Zoltan_Get_Obj_List will check for others. */
-  if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL)
-    ZOLTAN_HSFC_ERROR(ZOLTAN_FATAL,
-      "ZOLTAN_NUM_GEOM_FN and ZOLTAN_GEOM_FN must be registered "
-      "for HSFC method");
-
    /* allocate persistant storage required by box assign and point assign */
    Zoltan_HSFC_Free_Structure (zz);
    zz->LB.Data_Structure = (void*) ZOLTAN_MALLOC (sizeof (HSFC_Data));
@@ -117,11 +111,6 @@ int Zoltan_HSFC(
       ZOLTAN_HSFC_ERROR(ZOLTAN_MEMERR, "Error returned by malloc");
    d = (HSFC_Data*) zz->LB.Data_Structure;
    memset ((void*)d, 0, sizeof (HSFC_Data));
-
-   /* Determine if dots have legal dimensions */
-   d->ndimension = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &err);
-   if (d->ndimension < 1 || d->ndimension > 3 || err)
-      ZOLTAN_HSFC_ERROR(ZOLTAN_FATAL, "Get_Num_Geom error or illegal dimension");
 
    /* obtain dot information: gids, lids, weights  */
    err = Zoltan_Get_Obj_List (zz, &ndots, &gids, &lids, zz->Obj_Weight_Dim,
@@ -148,12 +137,20 @@ int Zoltan_HSFC(
    ZOLTAN_FREE (&weights);
 
    /* get dots' coordinates */
+   err = Zoltan_Get_Coordinates(zz, ndots, gids, lids, &(d->ndimension),
+                                &geom_vec);
+
+   if (err != 0) 
+      ZOLTAN_HSFC_ERROR(ZOLTAN_FATAL, "Error in Zoltan_Get_Coordinates.");
+
    for (i = 0; i < ndots; i++) {
-      zz->Get_Geom (zz->Get_Geom_Data, zz->Num_GID, zz->Num_LID,
-       gids + i*zz->Num_GID, lids + i*zz->Num_LID, dots[i].x, &err);
-      if (err != 0)
-         ZOLTAN_HSFC_ERROR(ZOLTAN_FATAL, "Error in Get_Geom.");
-      }
+      tmp = i*d->ndimension;
+      for (j = 0; j < d->ndimension; j++)
+         dots[i].x[j] = geom_vec[tmp + j];
+   }
+
+   ZOLTAN_FREE(&geom_vec);
+
    ZOLTAN_TRACE_DETAIL (zz, yo, "Obtained dot information");
 
    /* allocate storage for partitions and "binned" weights */

@@ -40,6 +40,7 @@ enum Zoltan_Fn_Type {
   ZOLTAN_NUM_EDGES_FN_TYPE,
   ZOLTAN_EDGE_LIST_FN_TYPE,
   ZOLTAN_NUM_GEOM_FN_TYPE,
+  ZOLTAN_GEOM_MULTI_FN_TYPE,
   ZOLTAN_GEOM_FN_TYPE,
   ZOLTAN_NUM_OBJ_FN_TYPE,
   ZOLTAN_OBJ_LIST_FN_TYPE,
@@ -244,6 +245,53 @@ typedef int ZOLTAN_NUM_GEOM_FN(
 
 typedef int ZOLTAN_NUM_GEOM_FORT_FN(
   void *data, 
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return the geometry information (e.g., coordinates) for 
+ *  all objects.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    num_obj             --  number of objects whose coordinates are needed.
+ *    global_id           --  array of Global IDs for the objects
+ *    local_id            --  array of Local IDs for the objects; 
+ *                            NULL if num_lid_entries == 0.
+ *    num_dim             --  dimension of coordinates for each object.
+ *  Output:
+ *    geom_vec            --  the geometry info for the objects; 
+ *                            (e.g., coordinates)
+ *                            If num_dim == n, geom_vec[i*n+j] is the 
+ *                            jth coordinate for object i.
+ *    ierr                --  error code
+ */
+
+typedef void ZOLTAN_GEOM_MULTI_FN(
+  void *data, 
+  int num_gid_entries, 
+  int num_lid_entries,
+  int num_obj,
+  ZOLTAN_ID_PTR global_id, 
+  ZOLTAN_ID_PTR local_id,
+  int num_dim,
+  double *geom_vec, 
+  int *ierr
+);
+
+typedef void ZOLTAN_GEOM_MULTI_FORT_FN(
+  void *data, 
+  int *num_gid_entries, 
+  int *num_lid_entries,
+  int *num_obj,
+  ZOLTAN_ID_PTR global_id, 
+  ZOLTAN_ID_PTR local_id,
+  int *num_dim,
+  double *geom_vec, 
   int *ierr
 );
 
@@ -1894,6 +1942,12 @@ extern int Zoltan_Set_Edge_List_Fn(
 extern int Zoltan_Set_Num_Geom_Fn(
   struct Zoltan_Struct *zz, 
   ZOLTAN_NUM_GEOM_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_Geom_Multi_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_GEOM_MULTI_FN *fn_ptr, 
   void *data_ptr
 );
 

@@ -237,6 +237,12 @@ struct Zoltan_Struct {
   void *Get_Num_Geom_Data;                     /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Num_Geom()             */
+  ZOLTAN_GEOM_MULTI_FN *Get_Geom_Multi;        /* Fn ptr to get all objects'
+                                                  geometry values.           */
+  ZOLTAN_GEOM_MULTI_FORT_FN *Get_Geom_Multi_Fort; /* Fortran version         */
+  void *Get_Geom_Multi_Data;                   /* Ptr to user defined data
+                                                  to be passed to
+                                                  Get_Geom_Multi()           */
   ZOLTAN_GEOM_FN *Get_Geom;                    /* Fn ptr to get an object's
                                                   geometry values.           */
   ZOLTAN_GEOM_FORT_FN *Get_Geom_Fort;          /* Fortran version            */
@@ -489,6 +495,9 @@ typedef struct Zoltan_Struct ZZ;
 /* PROTOTYPES */
 extern int Zoltan_Get_Obj_List(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
                                int, float**, int **);
+
+extern int Zoltan_Get_Coordinates(ZZ *, int, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
+  int *, double **);
 
 
 #ifdef __cplusplus

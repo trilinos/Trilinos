@@ -172,7 +172,7 @@ int Zoltan_BSFC(
 					 levels of bin refinement have been performed */
   int max_cuts_in_bin, max_refinement_level,
     subbins_per_bin, hashtable_divider, bins_per_proc; /* tuning parameters */
-  double* coords; /* array for objects coordinates */
+  double* coords = NULL; /* array for objects coordinates */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -213,32 +213,9 @@ int Zoltan_BSFC(
     subbins_per_bin = BINS_PER_PROC;
   }
 
-  /* Check for needed query functions. */
-  /* Check only for coordinates; Zoltan_Get_Obj_List will check for others. */
-  if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-      "ZOLTAN_NUM_GEOM_FN and ZOLTAN_GEOM_FN must be registered "
-      "for BSFC method");
-    return ZOLTAN_FATAL;
-  }
-
   /* Initializations in case of early exit. */
   *num_import = -1;  /* We don't compute the import map. */
   *num_export = -1;  
-
-  /* get the dimension of the problem and make sure that it is either 2 or 3 */
-  num_dims = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &ierr);
-  if(ierr != 0) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                   "Error returned from user function Get_Num_Geom.");
-    return(ierr);
-  }
-
-  if(num_dims != 2 && num_dims != 3) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                   "Incompatible space dimension for BSFC. Space dimension must be 2 or 3.");
-    return(ZOLTAN_FATAL);
-  }
 
   /*for heterogeneous systems where the size of an unsigned integer may be different,
     find the minimum size bytes used to store an unsigned integer*/
@@ -274,22 +251,23 @@ int Zoltan_BSFC(
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
   }
-  coords = (double*) ZOLTAN_MALLOC(sizeof(double) * num_local_objects * num_dims);
-  if(num_local_objects != 0 && coords == NULL) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    return(ZOLTAN_MEMERR);
-  }
+
   /* get the geometric coordinates of the objects */
-  for(i=0;i<num_local_objects;i++) {
-    zz->Get_Geom(zz->Get_Geom_Data, num_gid_entries, num_lid_entries,
-		 &(global_ids[i*num_gid_entries]), &(local_ids[i*num_lid_entries]),
-		 (coords+i*num_dims), &ierr);
-    
-    if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                     "Error returned from user defined Get_Geom function.");
-      return(ierr);
-    }  
+
+  ierr = Zoltan_Get_Coordinates(zz, num_local_objects, global_ids, local_ids,
+                                &num_dims, &coords);
+
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                       "Error returned from Zoltan_Get_Coordinates.");
+    return(ierr);
+  }
+
+  if (num_dims != 2 && num_dims != 3) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                   "Incompatible space dimension for BSFC. "
+                   "Space dimension must be 2 or 3.");
+    return(ZOLTAN_FATAL);
   }
 
   /* go through and find bounding box for entire domain */  

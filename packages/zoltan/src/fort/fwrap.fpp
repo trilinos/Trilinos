@@ -58,6 +58,7 @@ public :: &
    ZOLTAN_NUM_EDGES_FN_TYPE, &
    ZOLTAN_EDGE_LIST_FN_TYPE, &
    ZOLTAN_NUM_GEOM_FN_TYPE, &
+   ZOLTAN_GEOM_MULTI_FN_TYPE, &
    ZOLTAN_GEOM_FN_TYPE, &
    ZOLTAN_NUM_OBJ_FN_TYPE, &
    ZOLTAN_OBJ_LIST_FN_TYPE, &
@@ -128,7 +129,7 @@ public :: &
    Zoltan_Set_First_Obj_Fn, Zoltan_Set_Next_Obj_Fn, &
    Zoltan_Set_Num_Border_Obj_Fn, Zoltan_Set_Border_Obj_List_Fn, &
    Zoltan_Set_First_Border_Obj_Fn, Zoltan_Set_Next_Border_Obj_Fn, &
-   Zoltan_Set_Num_Geom_Fn, Zoltan_Set_Geom_Fn, &
+   Zoltan_Set_Num_Geom_Fn, Zoltan_Set_Geom_Multi_Fn, Zoltan_Set_Geom_Fn, &
    Zoltan_Set_Partition_Fn, &
    Zoltan_Set_Num_Edges_Fn, Zoltan_Set_Edge_List_Fn, &
    Zoltan_Set_Num_Coarse_Obj_Fn, Zoltan_Set_Coarse_Obj_List_Fn, &
@@ -183,18 +184,18 @@ type(ZOLTAN_FN_TYPEF), parameter :: &
 #endif
    ZOLTAN_NUM_EDGES_FN_TYPE        = ZOLTAN_FN_TYPEF(0_Zoltan_INT), &
    ZOLTAN_NUM_GEOM_FN_TYPE         = ZOLTAN_FN_TYPEF(2_Zoltan_INT), &
-   ZOLTAN_NUM_OBJ_FN_TYPE          = ZOLTAN_FN_TYPEF(4_Zoltan_INT), &
-   ZOLTAN_FIRST_OBJ_FN_TYPE        = ZOLTAN_FN_TYPEF(6_Zoltan_INT), &
-   ZOLTAN_NEXT_OBJ_FN_TYPE         = ZOLTAN_FN_TYPEF(7_Zoltan_INT), &
-   ZOLTAN_NUM_BORDER_OBJ_FN_TYPE   = ZOLTAN_FN_TYPEF(8_Zoltan_INT), &
-   ZOLTAN_FIRST_BORDER_OBJ_FN_TYPE = ZOLTAN_FN_TYPEF(10_Zoltan_INT), &
-   ZOLTAN_NEXT_BORDER_OBJ_FN_TYPE  = ZOLTAN_FN_TYPEF(11_Zoltan_INT), &
-   ZOLTAN_OBJ_SIZE_FN_TYPE         = ZOLTAN_FN_TYPEF(18_Zoltan_INT), &
-   ZOLTAN_NUM_COARSE_OBJ_FN_TYPE   = ZOLTAN_FN_TYPEF(21_Zoltan_INT), &
-   ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE = ZOLTAN_FN_TYPEF(23_Zoltan_INT), &
-   ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE  = ZOLTAN_FN_TYPEF(24_Zoltan_INT), &
-   ZOLTAN_NUM_CHILD_FN_TYPE        = ZOLTAN_FN_TYPEF(25_Zoltan_INT), &
-   ZOLTAN_PARTITION_FN_TYPE        = ZOLTAN_FN_TYPEF(31_Zoltan_INT)
+   ZOLTAN_NUM_OBJ_FN_TYPE          = ZOLTAN_FN_TYPEF(5_Zoltan_INT), &
+   ZOLTAN_FIRST_OBJ_FN_TYPE        = ZOLTAN_FN_TYPEF(7_Zoltan_INT), &
+   ZOLTAN_NEXT_OBJ_FN_TYPE         = ZOLTAN_FN_TYPEF(8_Zoltan_INT), &
+   ZOLTAN_NUM_BORDER_OBJ_FN_TYPE   = ZOLTAN_FN_TYPEF(9_Zoltan_INT), &
+   ZOLTAN_FIRST_BORDER_OBJ_FN_TYPE = ZOLTAN_FN_TYPEF(11_Zoltan_INT), &
+   ZOLTAN_NEXT_BORDER_OBJ_FN_TYPE  = ZOLTAN_FN_TYPEF(12_Zoltan_INT), &
+   ZOLTAN_OBJ_SIZE_FN_TYPE         = ZOLTAN_FN_TYPEF(19_Zoltan_INT), &
+   ZOLTAN_NUM_COARSE_OBJ_FN_TYPE   = ZOLTAN_FN_TYPEF(22_Zoltan_INT), &
+   ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE = ZOLTAN_FN_TYPEF(24_Zoltan_INT), &
+   ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE  = ZOLTAN_FN_TYPEF(25_Zoltan_INT), &
+   ZOLTAN_NUM_CHILD_FN_TYPE        = ZOLTAN_FN_TYPEF(26_Zoltan_INT), &
+   ZOLTAN_PARTITION_FN_TYPE        = ZOLTAN_FN_TYPEF(32_Zoltan_INT)
 
 #ifdef SUNSOFT
 ! bug in SunSoft compiler prevents using parameter
@@ -203,23 +204,24 @@ type(ZOLTAN_FN_TYPES) :: &
 type(ZOLTAN_FN_TYPES), parameter :: &
 #endif
    ZOLTAN_EDGE_LIST_FN_TYPE        = ZOLTAN_FN_TYPES(1_Zoltan_INT), &
-   ZOLTAN_GEOM_FN_TYPE             = ZOLTAN_FN_TYPES(3_Zoltan_INT), &
-   ZOLTAN_OBJ_LIST_FN_TYPE         = ZOLTAN_FN_TYPES(5_Zoltan_INT), &
-   ZOLTAN_BORDER_OBJ_LIST_FN_TYPE  = ZOLTAN_FN_TYPES(9_Zoltan_INT), &
-   ZOLTAN_PRE_MIGRATE_PP_FN_TYPE   = ZOLTAN_FN_TYPES(12_Zoltan_INT), &
-   ZOLTAN_MID_MIGRATE_PP_FN_TYPE   = ZOLTAN_FN_TYPES(13_Zoltan_INT), &
-   ZOLTAN_POST_MIGRATE_PP_FN_TYPE  = ZOLTAN_FN_TYPES(14_Zoltan_INT), &
-   ZOLTAN_PRE_MIGRATE_FN_TYPE      = ZOLTAN_FN_TYPES(15_Zoltan_INT), &
-   ZOLTAN_MID_MIGRATE_FN_TYPE      = ZOLTAN_FN_TYPES(16_Zoltan_INT), &
-   ZOLTAN_POST_MIGRATE_FN_TYPE     = ZOLTAN_FN_TYPES(17_Zoltan_INT), &
-   ZOLTAN_PACK_OBJ_FN_TYPE         = ZOLTAN_FN_TYPES(19_Zoltan_INT), &
-   ZOLTAN_UNPACK_OBJ_FN_TYPE       = ZOLTAN_FN_TYPES(20_Zoltan_INT), &
-   ZOLTAN_COARSE_OBJ_LIST_FN_TYPE  = ZOLTAN_FN_TYPES(22_Zoltan_INT), &
-   ZOLTAN_CHILD_LIST_FN_TYPE       = ZOLTAN_FN_TYPES(26_Zoltan_INT), &
-   ZOLTAN_CHILD_WEIGHT_FN_TYPE     = ZOLTAN_FN_TYPES(27_Zoltan_INT), &
-   ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(28_Zoltan_INT), &
-   ZOLTAN_PACK_OBJ_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(29_Zoltan_INT), &
-   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE = ZOLTAN_FN_TYPES(30_Zoltan_INT)
+   ZOLTAN_GEOM_MULTI_FN_TYPE       = ZOLTAN_FN_TYPES(3_Zoltan_INT), &
+   ZOLTAN_GEOM_FN_TYPE             = ZOLTAN_FN_TYPES(4_Zoltan_INT), &
+   ZOLTAN_OBJ_LIST_FN_TYPE         = ZOLTAN_FN_TYPES(6_Zoltan_INT), &
+   ZOLTAN_BORDER_OBJ_LIST_FN_TYPE  = ZOLTAN_FN_TYPES(10_Zoltan_INT), &
+   ZOLTAN_PRE_MIGRATE_PP_FN_TYPE   = ZOLTAN_FN_TYPES(13_Zoltan_INT), &
+   ZOLTAN_MID_MIGRATE_PP_FN_TYPE   = ZOLTAN_FN_TYPES(14_Zoltan_INT), &
+   ZOLTAN_POST_MIGRATE_PP_FN_TYPE  = ZOLTAN_FN_TYPES(15_Zoltan_INT), &
+   ZOLTAN_PRE_MIGRATE_FN_TYPE      = ZOLTAN_FN_TYPES(16_Zoltan_INT), &
+   ZOLTAN_MID_MIGRATE_FN_TYPE      = ZOLTAN_FN_TYPES(17_Zoltan_INT), &
+   ZOLTAN_POST_MIGRATE_FN_TYPE     = ZOLTAN_FN_TYPES(18_Zoltan_INT), &
+   ZOLTAN_PACK_OBJ_FN_TYPE         = ZOLTAN_FN_TYPES(20_Zoltan_INT), &
+   ZOLTAN_UNPACK_OBJ_FN_TYPE       = ZOLTAN_FN_TYPES(21_Zoltan_INT), &
+   ZOLTAN_COARSE_OBJ_LIST_FN_TYPE  = ZOLTAN_FN_TYPES(23_Zoltan_INT), &
+   ZOLTAN_CHILD_LIST_FN_TYPE       = ZOLTAN_FN_TYPES(27_Zoltan_INT), &
+   ZOLTAN_CHILD_WEIGHT_FN_TYPE     = ZOLTAN_FN_TYPES(28_Zoltan_INT), &
+   ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(29_Zoltan_INT), &
+   ZOLTAN_PACK_OBJ_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(30_Zoltan_INT), &
+   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE = ZOLTAN_FN_TYPES(31_Zoltan_INT)
 
 ! Type of refinement used when building a refinement tree
 ! These values must agree with the values in zoltan.h
@@ -1069,6 +1071,7 @@ interface Zoltan_Get_Child_Order
 end interface
 
 #include "set_numgeom.if"
+#include "set_geommulti.if"
 #include "set_geom.if"
 #include "set_partition.if"
 #include "set_numedges.if"
@@ -2141,6 +2144,7 @@ end subroutine Zf90_Reftree_Get_Child_Order
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #include "set_numgeom.fn"
+#include "set_geommulti.fn"
 #include "set_geom.fn"
 #include "set_partition.fn"
 #include "set_numedges.fn"

@@ -122,14 +122,16 @@ int ierr = ZOLTAN_OK;
     Zoltan_HG_Graph_Free(&graph);
   }
 
-  if (zz->Get_Num_Geom != NULL && zz->Get_Geom != NULL) {
+  if (zz->Get_Num_Geom != NULL && 
+      (zz->Get_Geom != NULL || zz->Get_Geom_Multi != NULL)) {
     /* 
      * Geometric callbacks are registered;
      * get coordinates for hypergraph objects. 
      */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Getting Coordinates.");
     ierr = Zoltan_Get_Coordinates(zz, hgraph->nVtx, zhg->Global_IDs,
-                                  zhg->Local_IDs, &(hgraph->coor));
+                                  zhg->Local_IDs, &(hgraph->nDim),
+                                  &(hgraph->coor));
   }
 
   if (hgp->check_graph) {
@@ -383,20 +385,6 @@ static int hash_lookup(
   }
   /* Key not in hash table */
   return -1;
-}
-
-/*****************************************************************************/
-
-int Zoltan_Get_Coordinates(
-  ZZ *zz,    /* Zoltan data structure */
-  int num_obj,
-  ZOLTAN_ID_PTR gids,
-  ZOLTAN_ID_PTR lids,
-  double *coor
-)
-{
-  /* KDD  -- Placeholder; should be in zz directory */
-  return ZOLTAN_OK;
 }
 
 

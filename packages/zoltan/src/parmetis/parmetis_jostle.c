@@ -490,7 +490,7 @@ static int Zoltan_ParMetis_Jostle(
   idxtype *sep_sizes, *part_orig;
   int num_obj_orig, ncon, start_index, compute_order=0;
   float *float_vwgt, *ewgts, *xyz, *imb_tols; 
-  double geom_vec[6];
+  double *geom_vec;
   ZOLTAN_ID_PTR local_ids;
   ZOLTAN_ID_PTR global_ids;    
   ZOLTAN_ID_PTR lid;        /* Temporary pointer to a local id; used to pass
@@ -526,6 +526,7 @@ static int Zoltan_ParMetis_Jostle(
   vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
   vsize = sep_sizes = NULL;
   float_vwgt = ewgts = xyz = imb_tols = NULL;
+  geom_vec = NULL;
   local_ids = NULL;
   global_ids = NULL;
   parts = part_orig = NULL;
@@ -746,38 +747,22 @@ static int Zoltan_ParMetis_Jostle(
     }
 
   if (get_geom_data){
-    /* Check for needed query functions. */
-    if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL) {
-      ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, 
-        "ZOLTAN_NUM_GEOM_FN and ZOLTAN_GEOM_FN must be registered "
-        "for ParMETIS PartGeom methods.");
-    }
 
-    /* Determine how many dimensions the data have */
-    ndims = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &ierr);
-    if (ierr){
-      /* Return error */
-      ZOLTAN_PARMETIS_ERROR(ierr, "Get_Num_Geom returned error.");
+    /* Get coordinate information */
+    ierr = Zoltan_Get_Coordinates(zz, num_obj, global_ids, local_ids, 
+                                  &ndims, &geom_vec);
+    if (ierr) {
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, 
+        "Error returned from Zoltan_Get_Coordinates");
     }
-    /* Allocate space for the geometry data */
-    xyz = (float *) ZOLTAN_MALLOC(ndims*num_obj * sizeof(float));
-    if (ndims && num_obj && !xyz){
-      /* Not enough space */
-      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
-    }
-    /* Get the geometry data */
-    for (i=0; i<num_obj; i++){
-      lid = (num_lid_entries ? &(local_ids[i*num_lid_entries]) : NULL);
-      zz->Get_Geom(zz->Get_Geom_Data, 
-                   num_gid_entries, num_lid_entries,
-                   &(global_ids[i*num_gid_entries]), 
-                   lid, geom_vec, &ierr);
-      if (ierr) {
-        /* Return error code */
-        ZOLTAN_PARMETIS_ERROR(ierr, "Get_Geom returned error.");
+    /* Convert geometry info from double to float for ParMETIS */
+    if (num_obj && ndims) {
+      xyz = (float *) ZOLTAN_MALLOC(num_obj * ndims * sizeof(float));
+      if (xyz == NULL)  {
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Memory error.");
       }
-      for (j=0; j<ndims; j++)
-        xyz[i*ndims+j] = geom_vec[j];
+      for (i = 0; i < num_obj * ndims; i++) xyz[i] = (float) geom_vec[i];
+      ZOLTAN_FREE(&geom_vec);
     }
   }
 

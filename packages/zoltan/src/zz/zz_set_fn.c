@@ -73,6 +73,10 @@ int ierr;
     ierr = Zoltan_Set_Num_Geom_Fn(zz, 
                   (ZOLTAN_NUM_GEOM_FN *) fn, data);
     break;
+  case ZOLTAN_GEOM_MULTI_FN_TYPE:
+    ierr = Zoltan_Set_Geom_Multi_Fn(zz, 
+                  (ZOLTAN_GEOM_MULTI_FN *) fn, data);
+    break;
   case ZOLTAN_GEOM_FN_TYPE:
     ierr = Zoltan_Set_Geom_Fn(zz, 
                   (ZOLTAN_GEOM_FN *) fn, data);
@@ -272,6 +276,21 @@ int Zoltan_Set_Num_Geom_Fn(
 
 /*****************************************************************************/
 
+int Zoltan_Set_Geom_Multi_Fn(
+  ZZ *zz, 
+  ZOLTAN_GEOM_MULTI_FN *fn, 
+  void *data
+)
+{
+  zz->Get_Geom_Multi = fn;
+  zz->Get_Geom_Multi_Data = data;
+  zz->Get_Geom = NULL;
+  zz->Get_Geom_Data = NULL;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
 int Zoltan_Set_Geom_Fn(
   ZZ *zz, 
   ZOLTAN_GEOM_FN *fn, 
@@ -280,6 +299,8 @@ int Zoltan_Set_Geom_Fn(
 {
   zz->Get_Geom = fn;
   zz->Get_Geom_Data = data;
+  zz->Get_Geom_Multi = NULL;
+  zz->Get_Geom_Multi_Data = NULL;
   return ZOLTAN_OK;
 }
 

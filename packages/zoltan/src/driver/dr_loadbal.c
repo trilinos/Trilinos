@@ -52,6 +52,7 @@ ZOLTAN_FIRST_OBJ_FN get_first_element;
 ZOLTAN_NEXT_OBJ_FN get_next_element;
 
 ZOLTAN_NUM_GEOM_FN get_num_geom;
+ZOLTAN_GEOM_MULTI_FN get_geom_multi;
 ZOLTAN_GEOM_FN get_geom;
 
 ZOLTAN_NUM_EDGES_FN get_num_edges;
@@ -201,10 +202,20 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     return 0;
   }
 
-  if (Zoltan_Set_Fn(zz, ZOLTAN_GEOM_FN_TYPE, (void (*)()) get_geom,
-                    (void *) mesh) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-    return 0;
+  if (Test.Multi_Callbacks) {
+    if (Zoltan_Set_Fn(zz, ZOLTAN_GEOM_MULTI_FN_TYPE,
+                      (void (*)()) get_geom_multi,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+  }
+  else {
+    if (Zoltan_Set_Fn(zz, ZOLTAN_GEOM_FN_TYPE, (void (*)()) get_geom,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
   }
 
   /* Functions for graph based algorithms */
@@ -630,6 +641,24 @@ void get_geom(void *data, int num_gid_entries, int num_lid_entries,
   }
 
   *ierr = ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void get_geom_multi(void *data, int num_gid_entries, int num_lid_entries,
+              int num_obj, ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
+              int num_dim, double *coor, int *ierr)
+{
+ZOLTAN_ID_PTR lid;
+int i;
+
+  for (i = 0; i < num_obj; i++) {
+    lid = (num_lid_entries ? local_id + i*num_lid_entries : NULL);
+    get_geom(data, num_gid_entries, num_lid_entries,
+             global_id+i*num_gid_entries, lid, coor+i*num_dim, ierr);
+    if (*ierr != ZOLTAN_OK) break;
+  }
 }
 
 /*****************************************************************************/

@@ -226,12 +226,23 @@ type(PARIO_INFO) :: pio_info
     return
   endif
 
-! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_GEOM_FN_TYPE, get_geom, &
-!                mesh_wrapper) == ZOLTAN_FATAL) then
-  if (Zoltan_Set_Geom_Fn(zz_obj, get_geom, mesh_wrapper) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_Set_Fn()"
-    run_zoltan = .false.
-    return
+  if (Test_Multi_Callbacks.eq.1) then
+
+    if (Zoltan_Set_Geom_Multi_Fn(zz_obj, get_geom_multi, mesh_wrapper) &
+        == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      run_zoltan = .false.
+      return
+    endif
+
+  else
+!   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_GEOM_FN_TYPE, get_geom, &
+!                  mesh_wrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Geom_Fn(zz_obj, get_geom, mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      run_zoltan = .false.
+      return
+    endif
   endif
 
 !  /* Functions for geometry based algorithms */
@@ -561,6 +572,37 @@ integer(Zoltan_INT), intent(out) :: ierr
 
   ierr = ZOLTAN_OK
 end subroutine get_geom
+
+!/*****************************************************************************/
+!/*****************************************************************************/
+!/*****************************************************************************/
+subroutine get_geom_multi(data, num_gid_entries, num_lid_entries, &
+                    num_obj, global_id, local_id, num_dim, coor, ierr)
+type (Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
+integer(Zoltan_INT), intent(in) :: num_obj, num_dim
+integer(Zoltan_INT), intent(in) :: global_id(*)
+integer(Zoltan_INT), intent(in) :: local_id(*)
+real(Zoltan_DOUBLE), intent(out) :: coor(*)
+integer(Zoltan_INT), intent(out) :: ierr
+
+integer(Zoltan_INT) :: i
+
+  do i = 1, num_obj
+    if (num_lid_entries .gt. 0) then
+      call get_geom(data, num_gid_entries, num_lid_entries, &
+                    global_id((i-1)*num_gid_entries + 1),   &
+                    local_id, coor((i-1)*num_dim + 1), ierr)
+    else
+      call get_geom(data, num_gid_entries, num_lid_entries, &
+                    global_id((i-1)*num_gid_entries + 1),   &
+                    local_id((i-1)*num_lid_entries + 1),    &
+                    coor((i-1)*num_dim + 1), ierr)
+    endif
+    if (ierr.ne.ZOLTAN_OK) exit
+  enddo
+    
+end subroutine get_geom_multi
 
 !/*****************************************************************************/
 !/*****************************************************************************/

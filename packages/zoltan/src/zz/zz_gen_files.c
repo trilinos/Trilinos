@@ -19,6 +19,7 @@ extern "C" {
 #include "zz_const.h"
 #include "hypergraph.h"
 #include "hg.h"
+#include "parmetis_jostle.h"
 
 #define ZOLTAN_PRINT_VTX_NUM  0  /* print vertex number at beginning of line? */
 
@@ -155,15 +156,10 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
 
 #if 1 /* EBEB - Temporarily take out geometry part for Xyce runs */
   /* Write geometry to file, if applicable. */
-  if (zz->Get_Num_Geom != NULL && zz->Get_Geom != NULL) {
-    num_geom = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &error);
-    if (error != ZOLTAN_OK) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-             "Error returned from user function Get_Num_Geom.");
-      goto End;
-    }
-    if (num_geom>0)
-      xyz = (double *) ZOLTAN_MALLOC (num_geom * sizeof(double));
+  if (zz->Get_Num_Geom != NULL && 
+     (zz->Get_Geom != NULL || zz->Get_Geom_Multi != NULL)) {
+    error = Zoltan_Get_Coordinates(zz, num_obj, global_ids, local_ids,
+                                   &num_geom, &xyz);
 
     sprintf(full_fname, "%s.coords", fname);
     if (zz->Proc == 0)
@@ -176,16 +172,8 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
       goto End;
     }
     for (i=0; i<num_obj; i++){
-      zz->Get_Geom(zz->Get_Geom_Data, zz->Num_GID, zz->Num_LID,
-              &(global_ids[i*zz->Num_GID]), &(local_ids[i*zz->Num_LID]),
-              xyz, &error);
-      if (error == ZOLTAN_FATAL || error == ZOLTAN_MEMERR) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-             "Error returned from user function Get_Geom.");
-        goto End;
-      }
       for (j=0; j<num_geom; j++)
-        fprintf(fp, "%f ", xyz[j]);
+        fprintf(fp, "%f ", xyz[i*num_geom + j]);
       fprintf(fp, "\n");
     }
     fclose(fp);

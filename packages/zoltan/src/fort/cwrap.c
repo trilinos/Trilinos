@@ -348,6 +348,16 @@ int Zoltan_Num_Geom_Fort_Wrapper(void *data, int *ierr)
 }
 
 /*****************************************************************************/
+void Zoltan_Geom_Multi_Fort_Wrapper(
+  void *data, int num_gid_entries, int num_lid_entries, int num_obj,
+  ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int num_dim,
+  double *geom_vec, int *ierr)
+{
+   Zoltan_Current->Get_Geom_Multi_Fort(data, &num_gid_entries, &num_lid_entries,
+                                       &num_obj, global_id, local_id,
+                                       &num_dim, geom_vec, ierr);
+}
+/*****************************************************************************/
 void Zoltan_Geom_Fort_Wrapper(
   void *data, int num_gid_entries, int num_lid_entries,
   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
@@ -899,6 +909,11 @@ int Zfw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
       lb->Get_Num_Geom_Fort = (ZOLTAN_NUM_GEOM_FORT_FN *) fn;
       return Zoltan_Set_Fn(lb, *type, 
                (void (*)())Zoltan_Num_Geom_Fort_Wrapper, data);
+      break;
+   case ZOLTAN_GEOM_MULTI_FN_TYPE:
+      lb->Get_Geom_Multi_Fort = (ZOLTAN_GEOM_MULTI_FORT_FN *) fn;
+      return Zoltan_Set_Fn(lb, *type, 
+               (void (*)())Zoltan_Geom_Multi_Fort_Wrapper, data);
       break;
    case ZOLTAN_GEOM_FN_TYPE:
       lb->Get_Geom_Fort = (ZOLTAN_GEOM_FORT_FN *) fn;

@@ -50,6 +50,8 @@ int Zoltan_Get_Obj_List(
   ZOLTAN_ID_PTR lid, next_lid; /* Temporary pointers to local IDs; used to pass 
                                   NULL to query functions when 
                                   NUM_LID_ENTRIES == 0. */
+  float *next_objwgt;          /* Temporarry pointer to an object weight; used
+                                  to pass NULL to query functions when wdim=0 */
   int ierr = ZOLTAN_OK;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -91,7 +93,7 @@ int Zoltan_Get_Obj_List(
 
     if ((*global_ids == NULL) || (num_lid_entries > 0 && *local_ids == NULL) ||
         (wdim > 0 && *objwgts == NULL)) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory Error.");
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
@@ -117,12 +119,13 @@ int Zoltan_Get_Obj_List(
           lid = (num_lid_entries ? &((*local_ids)[lid_off]) : NULL);
           next_lid = (num_lid_entries ? &((*local_ids)[lid_off+num_lid_entries]) 
                                       : NULL);
+          next_objwgt = (wdim ? (*objwgts) + (i+1)*wdim : NULL);
           zz->Get_Next_Obj(zz->Get_Next_Obj_Data, 
                            num_gid_entries, num_lid_entries, 
                            &((*global_ids)[gid_off]), lid, 
                            &((*global_ids)[gid_off+num_gid_entries]),
                            next_lid,
-                           wdim, &((*objwgts)[(i+1)*wdim]), &ierr);
+                           wdim, next_objwgt, &ierr);
           i++;
         }
       }
@@ -138,7 +141,7 @@ int Zoltan_Get_Obj_List(
     /* Call user-callback if provided; otherwise, all parts == zz->Proc */
     *parts = (int *) ZOLTAN_MALLOC(*num_obj * sizeof(int));
     if (*parts == NULL) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory Error.");
       ierr = ZOLTAN_MEMERR;
       goto End;
     }

@@ -30,7 +30,7 @@ extern "C" {
 /* PROTOTYPES */
 
 static int initialize_dot(ZZ *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int *,
-                          struct Dot_Struct *, int, int, float *);
+                          struct Dot_Struct *, int, int *, int, float *);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -63,41 +63,10 @@ int Zoltan_RB_Build_Structure(
  *  RCB and RIB.
  */
 char *yo = "Zoltan_RB_Build_Structure";
-char msg[256];
 float *objs_wgt = NULL;               /* Array of object weights returned by 
                                          the application.                    */
 int *parts = NULL;
 int ierr = ZOLTAN_OK;
-
-  /* Check for needed query functions. */
-  /* Check only for coordinates; Zoltan_Get_Obj_List will check for others. */
-  if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-      "ZOLTAN_NUM_GEOM_FN and ZOLTAN_GEOM_FN must be registered "
-      "for RCB and RIB methods.");
-    ierr = ZOLTAN_FATAL;
-    goto End;
-  }
-
-  /*
-   * Compute the number of geometry fields per object.  This
-   * value should be one, two or three, describing the x-, y-, and z-coords.
-   */
-
-  *num_geom = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &ierr);
-  if (ierr) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                   "Error returned from user function Get_Num_Geom.");
-    goto End;
-  }
-  if (*num_geom > 3 || *num_geom < 1) {
-    sprintf(msg, "Number of geometry fields %d is "
-                  "invalid; valid range is 1-3\n",
-                  *num_geom);
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-    ierr = ZOLTAN_FATAL;
-    goto End;
-  }
 
   /*
    * Allocate space for objects.  Get object info.
@@ -125,15 +94,13 @@ int ierr = ZOLTAN_OK;
     goto End;
   }
 
-  if (*num_obj > 0) {
 
-    ierr = initialize_dot(zz, *global_ids, *local_ids, parts, *dots,
-                          *num_obj, wgtflag, objs_wgt);
-    if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                     "Error returned from user function initialize_dot.");
-      goto End;
-    }
+  ierr = initialize_dot(zz, *global_ids, *local_ids, parts, *dots,
+                        *num_obj, num_geom, wgtflag, objs_wgt);
+  if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                   "Error returned from user function initialize_dot.");
+    goto End;
   }
 
 End:
@@ -170,6 +137,7 @@ static int initialize_dot(
   int *parts,
   struct Dot_Struct *dots, 
   int num_obj,
+  int *num_geom,
   int wgtflag, 
   float *wgt)
 {
@@ -178,11 +146,17 @@ static int initialize_dot(
  *  It uses the global ID, coordinates and weight provided by the application.  
  */
 int ierr = ZOLTAN_OK;
-int i, np, fpart;
-int num_gid_entries = zz->Num_GID;
-int num_lid_entries = zz->Num_LID;
+int i, j, tmp, np, fpart;
+double *geom_vec = NULL;
 struct Dot_Struct *dot;
 char *yo = "initialize_dot";
+
+  ierr = Zoltan_Get_Coordinates(zz, num_obj, gid, lid, num_geom, &geom_vec);
+  if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                   "Error returned from Zoltan_Get_Coordinates.");
+    goto End;
+  }
 
   for (i = 0; i < num_obj; i++) {
     dot = &(dots[i]);
@@ -190,18 +164,16 @@ char *yo = "initialize_dot";
     dot->Input_Part = parts[i];
     Zoltan_LB_Proc_To_Part(zz, zz->Proc, &np, &fpart);
     dot->Part = fpart;
-    dot->X[0] = dot->X[1] = dot->X[2] = 0.0;
-    zz->Get_Geom(zz->Get_Geom_Data, num_gid_entries, num_lid_entries,
-                 &(gid[i*num_gid_entries]), &(lid[i*num_lid_entries]),
-                 dot->X, &ierr);
-    if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                     "Error returned from user defined Get_Geom function.");
-      return(ierr);
-    }
+    tmp = i*(*num_geom);
+    for (j = 0; j < *num_geom; j++)
+      dot->X[j] = geom_vec[tmp + j];
+    for (j = *num_geom; j < 3; j++)
+      dot->X[j] = 0.;
     if (wgtflag)
        dot->Weight = wgt[i];
   }
+End:
+  ZOLTAN_FREE(&geom_vec);
   return(ierr);
 }
 
