@@ -35,8 +35,11 @@
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif
-#ifdef HAVE_SYS_UTSNAME_H
-#include <sys/utsname.h>
+//
+//  utsname does not work on Paunchy (SunOS) so I disabled this
+//
+#ifdef HAVE_SYS_UTSNAME_WORKS_H
+#include  "utsname.h"
 #endif
 
 
@@ -111,7 +114,7 @@ main(int argc, char **argv)
   int exit_value = 0 ; 
   const int MAXNAMELENGTH = 800;
 
-#ifdef HAVE_SYS_UTSNAME_H
+#ifdef HAVE_SYS_UTSNAME_WORKS_H
   utsname uname_buf; 
 #endif
   char timebuffer[MAXNAMELENGTH];
@@ -156,7 +159,7 @@ main(int argc, char **argv)
   }
  
   if ( MyPID == 0 ) {
-#ifdef HAVE_SYS_UTSNAME_H 
+#ifdef HAVE_SYS_UTSNAME_WORKS_H 
     int uname_stat = uname( &uname_buf ) ; 
 #endif
     
@@ -362,12 +365,12 @@ main(int argc, char **argv)
   }
     
 
-#ifdef HAVE_SYS_UTSNAME_H
+#ifdef HAVE_SYS_UTSNAME_WORKS_H
 	char *hostname = uname_buf.nodename ; 
 	char *releasenum = uname_buf.release;
 #else
-	char *hostname = "unknown";
-	char *releasenum = "unknown";
+	char *hostname = "";
+	char *releasenum = "";
 #endif
 	
 
@@ -387,7 +390,7 @@ main(int argc, char **argv)
       SparseDirectTimingVars::log_file << endl << "TIMESTAMP:" << hostname << " " 
 				       << argv[1] << " " << timebuffer 
 				       << " BEGIN RUN" << endl ; 
-#ifdef HAVE_SYS_UTSNAME_H     
+#ifdef HAVE_SYS_UTSNAME_WORKS_H     
       SparseDirectTimingVars::log_file << uname_buf.sysname << 
 	hostname << releasenum << uname_buf.version << 
 	  uname_buf.machine << endl ;

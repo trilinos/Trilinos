@@ -139,8 +139,8 @@ mpirun -np 1 amesos_test.exe SuperLUdist SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.
 # COMMENT  Fails on atlantis, paunchy, cygwin, works on herouxsmp -  mpirun -np 1 amesos_test.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-13 >>SST.stdout
 # COMMENT  Fails on atlantis, paunchy, cygwin, works intermittently on herouxsmp  - mpirun -np 4 amesos_test.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-13 >>SST.stdout
 
-
-echo "\nCOMMENT End AmesosShortScript.exe" >> SST.summary 
+echo "" >> SST.summary
+echo "COMMENT End AmesosShortScript.exe" >> SST.summary 
 
 #
 #  Make sure that the tests ran 
