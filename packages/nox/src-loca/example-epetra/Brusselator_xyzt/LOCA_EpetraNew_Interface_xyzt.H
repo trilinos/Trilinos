@@ -33,6 +33,7 @@
 #include "NOX_Common.H"
 #include "NOX_EpetraNew_Interface_Required.H"
 #include "NOX_EpetraNew_Interface_Jacobian.H"
+#include "LOCA_EpetraNew_Interface_MassMatrix.H"
   
 #ifdef HAVE_MPI
 #ifdef HAVE_NOX_EPETRAEXT
@@ -42,6 +43,7 @@
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_DistObject.h"
+#include "Epetra_Import.h"
 #include "Epetra_MpiComm.h"
 
 #include "EpetraExt_BlockVector.h"
@@ -76,8 +78,9 @@ public:
 
   //! Constructor
   xyzt(NOX::EpetraNew::Interface::Required &iReq,  NOX::EpetraNew::Interface::Jacobian &iJac,
-     Epetra_Vector &splitVec, Epetra_CrsMatrix &splitJac, Epetra_MpiComm &globalComm,
-     int replica);
+       LOCA::EpetraNew::Interface::MassMatrix &iMass, Epetra_Vector &splitVec,
+       Epetra_CrsMatrix &splitJac,  Epetra_CrsMatrix &splitMass, 
+       Epetra_MpiComm &globalComm, int replica);
 
   //! Destructor
   virtual ~xyzt();
@@ -92,13 +95,16 @@ public:
   virtual EpetraExt::BlockCrsMatrix& getJacobian();
 
 private:
-  //  void createGlobalVector();
+  void setOldSolution();
+
   
   // Info from split (3D) problem
   NOX::EpetraNew::Interface::Required &iReq;
   NOX::EpetraNew::Interface::Jacobian &iJac;
+  LOCA::EpetraNew::Interface::MassMatrix &iMass;
   Epetra_Vector& splitVec;
   Epetra_CrsMatrix& splitJac;
+  Epetra_CrsMatrix& splitMass; // can be same object as splitJac
   Epetra_MpiComm& globalComm;
   int replica;
 
@@ -106,6 +112,8 @@ private:
   Epetra_Vector& splitRes;
   EpetraExt::BlockCrsMatrix* jacobian;
   EpetraExt::BlockVector* solution;
+  EpetraExt::BlockVector* solutionOverlap;
+  Epetra_Import* overlapImporter;
   int numReplicas;
   std::vector<int>* stencil;
 

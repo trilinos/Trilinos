@@ -267,6 +267,12 @@ void Brusselator::initializeSoln()
   *oldSolution = soln;
 } 
 
+// Change time step
+void Brusselator::setdt(const double newDt)
+{
+  dt = newDt;
+}
+
 // Matrix and Residual Fills
 bool Brusselator::evaluate(NOX::EpetraNew::Interface::Required::FillType fType, 
 				    const Epetra_Vector* soln, 

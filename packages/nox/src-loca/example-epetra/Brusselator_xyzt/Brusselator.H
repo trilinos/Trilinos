@@ -80,6 +80,9 @@ public:
   // Set initial condition for solution vector
   void initializeSoln();
 
+  // Change time step
+  void setdt(const double newDt);
+
   // Evaluates the function (F) and/or the Jacobian using the solution 
   // values in solnVector.
   bool evaluate(NOX::EpetraNew::Interface::Required::FillType fType, 

@@ -33,6 +33,8 @@
 
 // ----------   User Defined Includes   ----------
 #include "Brusselator.H"
+#include "Epetra_CrsMatrix.h"
+#include "EpetraExt_MatrixMatrix.h"
 
 //-----------------------------------------------------------------------------
 Problem_Interface::Problem_Interface(Brusselator& Problem) :
@@ -67,9 +69,33 @@ bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, NOX::Param
 
 bool Problem_Interface::computeMassMatrix(const Epetra_Vector& x)
 {
-  cout << "ERROR: Problem_Interface::computeMassMatrix() - not yet implemented for this test problem!" << endl;
-  throw 1;
-  //return problem.evaluate(NOX::EpetraNew::Interface::Required::Jac, &x, 0, 0);
+  int ierr = 0;
+  double dtOrig = problem.getdt();
+
+  // Create temp copy of Jacobian for dt=dtOrig
+  ierr += problem.evaluate(NOX::EpetraNew::Interface::Required::Jac, &x, 0, 0);
+  Epetra_CrsMatrix tmpJac(problem.getJacobian());
+
+  // Create Jacobian for dt= 2 * dtOrig
+  problem.setdt(2.0*dtOrig);
+  ierr += problem.evaluate(NOX::EpetraNew::Interface::Required::Jac, &x, 0, 0);
+  Epetra_CrsMatrix& JacRef = problem.getJacobian();
+  problem.setdt(dtOrig);
+
+  // Construct mass matrix by:  M/dt =  -2*(J - M/dt) + 2*(J - M/(2*dt)) 
+  cout << "Negative Sign Not Verified On Mass Matrix Computation " << endl;
+  ierr = EpetraExt::MatrixMatrix::Add(tmpJac, false, -2.0, JacRef, 2.0);
+
+  if (ierr != 0) {
+    cout << "ERROR: Problem_Interface::computeMassMatrix: ierr != 0:   " << ierr << endl;
+    throw 1;
+  }
+  return true;
+}
+
+void Problem_Interface::setOldSolution(const Epetra_Vector& xOld)
+{
+  problem.reset(xOld);
 }
 //-----------------------------------------------------------------------------
 

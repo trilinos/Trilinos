@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 
   // Divide in chunks of spatialProcs = 2
 
-  int spatialProcs=2;
+  int spatialProcs=1;
   int replica = rank/spatialProcs;
   if (size % spatialProcs != 0) {
     cout << "ERROR: num spatial procs " << spatialProcs
@@ -146,6 +146,11 @@ int main(int argc, char *argv[])
 
   ierrmpi = MPI_Comm_size(split_MPI_Comm, &sizesplit);
   ierrmpi = MPI_Comm_rank(split_MPI_Comm, &ranksplit);
+
+  /*
+  cout << "  BACKWARDS ORDERING OF REPLICAS " << endl;
+  replica = num_replicas - replica - 1;
+  */
 
   cout << "XYZT: Global rank(size) = " << rank << "(" << size <<  "), replica = " << replica
        << ":  rank(size) = " << ranksplit << "("<< sizesplit << ")" << endl;
@@ -250,7 +255,7 @@ int main(int argc, char *argv[])
   NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
   lsParams.setParameter("Aztec Solver", "GMRES");  
   lsParams.setParameter("Max Iterations", 800);  
-  lsParams.setParameter("Tolerance", 1e-4);
+  lsParams.setParameter("Tolerance", 1e-6);
   lsParams.setParameter("Output Frequency", 50);    
   lsParams.setParameter("Preconditioner", "AztecOO"); 
   //lsParams.setParameter("Aztec Preconditioner", "ilu"); 
@@ -312,8 +317,8 @@ int main(int argc, char *argv[])
 
 
 #ifdef DO_XYZT
-  LOCA::EpetraNew::Interface::xyzt ixyzt(interface, interface, soln, A,
-		                        globalComm, replica);
+  LOCA::EpetraNew::Interface::xyzt ixyzt(interface, interface, interface,
+                                         soln, A, A, globalComm, replica);
   Epetra_CrsMatrix& Axyzt = ixyzt.getJacobian();
   Epetra_Vector& solnxyzt = ixyzt.getSolution();
 
@@ -357,7 +362,7 @@ int main(int argc, char *argv[])
   //converged.addStatusTest(relresid);
   //converged.addStatusTest(wrms);
   //converged.addStatusTest(update);
-  NOX::StatusTest::MaxIters maxiters(25);
+  NOX::StatusTest::MaxIters maxiters(50);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
   combo.addStatusTest(absresid);
   combo.addStatusTest(maxiters);
@@ -366,7 +371,11 @@ int main(int argc, char *argv[])
   NOX::Solver::Manager solver(grp, combo, nlParams);
 
   // Initialize time integration parameters
-  int maxTimeSteps = 3;
+#ifdef DO_XYZT
+  int maxTimeSteps = 1;
+#else
+  int maxTimeSteps =20;
+#endif
   int timeStep = 0;
   double time = 0.;
   double dt = Problem.getdt();
@@ -376,7 +385,7 @@ int main(int argc, char *argv[])
   FILE *ifp;
   Epetra_Vector& xMesh = Problem.getMesh();
   int NumMyNodes = xMesh.Map().NumMyElements();
-  (void) sprintf(file_name, "output.%d_%d",MyPID,timeStep);
+  (void) sprintf(file_name, "output.%03d_%05d",MyPID,timeStep);
   ifp = fopen(file_name, "w");
   for (i=0; i<NumMyNodes; i++)
     fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, 
@@ -406,7 +415,11 @@ int main(int argc, char *argv[])
     // End Nonlinear Solver **************************************
 
     // Print solution
+#ifdef DO_XYZT
+    (void) sprintf(file_name, "output.%03d_%05d",MyPID,replica+1);
+#else
     (void) sprintf(file_name, "output.%03d_%05d",MyPID,timeStep);
+#endif
     ifp = fopen(file_name, "w");
     for (i=0; i<NumMyNodes; i++)
       fprintf(ifp, "%d  %E  %E  %E\n", soln.Map().MinMyGID()+i,

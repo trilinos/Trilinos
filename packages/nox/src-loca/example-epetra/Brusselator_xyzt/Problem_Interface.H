@@ -72,6 +72,9 @@ public:
   //! Compute an explicit MassMatrix
   bool computeMassMatrix(const Epetra_Vector& x);
 
+  //! Set the old solution, the one from the preious time step
+  void setOldSolution(const Epetra_Vector& xOld);
+
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 
    *  auxiliary data required by the user's application for function/Jacobian
