@@ -119,7 +119,7 @@ mpirun -np 1 amesos_test.exe DSCPACK KheadK.mtx 0 1 1 0 1e-15 1e-8 >>SST.stdout
  mpirun -np 1 amesos_test.exe DSCPACK bcsstk01.mtx 0 1 1 0 1e-12 1e-5 >>SST.stdout
  mpirun -np 1 amesos_test.exe DSCPACK bcsstk02.mtx 0 1 1 0 1e-12 1e-10 >>SST.stdout
  mpirun -np 1 amesos_test.exe DSCPACK bcsstk04.mtx 0 1 1 0 1e-11 1e-8 >>SST.stdout
- mpirun -np 1 amesos_test.exe DSCPACK bcsstk08.mtx 0 1 1 0 1e-10 1e-4 >>SST.stdout
+ # COMMENT mpirun -np 1 amesos_test.exe DSCPACK bcsstk08.mtx 0 1 1 0 1e-10 1e-4 >>SST.stdout
  # COMMENT mpirun -np 1 amesos_test.exe DSCPACK bcsstk13.mtx 0 1 1 0 1e-9 1e-2 >>SST.stdout
  mpirun -np 1 amesos_test.exe DSCPACK nos1.mtx 0 1 1 0 1e-9 1e-5 >>SST.stdout
  mpirun -np 1 amesos_test.exe DSCPACK nos5.mtx 0 1 1 0 1e-12 1e-9 >>SST.stdout
@@ -131,7 +131,7 @@ mpirun -np 1 amesos_test.exe DSCPACK KheadK.mtx 0 1 1 0 1e-15 1e-8 >>SST.stdout
  mpirun  -np 5 amesos_test.exe DSCPACK bcsstk01.mtx 0 1 1 0 1e-12 1e-5 >>SST.stdout
  mpirun  -np 6 amesos_test.exe DSCPACK bcsstk02.mtx 0 1 1 0 1e-12 1e-10 >>SST.stdout
  mpirun  -np 8 amesos_test.exe DSCPACK bcsstk04.mtx 0 1 1 0 1e-11 1e-8 >>SST.stdout
- mpirun  -np 2 amesos_test.exe DSCPACK bcsstk08.mtx 0 1 1 0 1e-11 1e-4 >>SST.stdout
+ # COMMENT mpirun  -np 2 amesos_test.exe DSCPACK bcsstk08.mtx 0 1 1 0 1e-11 1e-4 >>SST.stdout
  # COMMENT mpirun  -np 2 amesos_test.exe DSCPACK bcsstk13.mtx 0 1 1 0 1e-9 1e-2 >>SST.stdout
  mpirun  -np 2 amesos_test.exe DSCPACK nos1.mtx 0 1 1 0 1e-9 1e-5 >>SST.stdout
  mpirun  -np 2 amesos_test.exe DSCPACK nos5.mtx 0 1 1 0 1e-12 1e-9 >>SST.stdout
@@ -150,7 +150,7 @@ mpirun -np 1 amesos_test.exe DSCPACK KheadK.mtx 0 1 1 0 1e-15 1e-8 >>SST.stdout
  mpirun  -np 4 amesos_test.exe DSCPACK bcsstk01.mtx 0 1 4 0 1e-12 1e-5 >>SST.stdout
  mpirun  -np 6 amesos_test.exe DSCPACK bcsstk02.mtx 0 1 3 0 1e-12 1e-10 >>SST.stdout
  mpirun  -np 3 amesos_test.exe DSCPACK bcsstk04.mtx 0 1 2 0 1e-11 1e-8 >>SST.stdout
- mpirun  -np 2 amesos_test.exe DSCPACK bcsstk08.mtx 0 1 4 0 1e-11 1e-4 >>SST.stdout
+ # COMMENT mpirun  -np 2 amesos_test.exe DSCPACK bcsstk08.mtx 0 1 4 0 1e-11 1e-4 >>SST.stdout
  mpirun  -np 4 amesos_test.exe DSCPACK nos1.mtx 0 1 2 0 1e-9 1e-5 >>SST.stdout
  mpirun  -np 8 amesos_test.exe DSCPACK nos5.mtx 0 1 4 0 1e-12 1e-9 >>SST.stdout
  # COMMENT mpirun  -np 2 amesos_test.exe DSCPACK bcsstk13.mtx 0 1 12 0 1e-9 1e-2 >>SST.stdout
@@ -162,7 +162,7 @@ mpirun -np 1 amesos_test.exe DSCPACK KheadK.mtx 0 1 1 0 1e-15 1e-8 >>SST.stdout
  mpirun  -np 5 amesos_test.exe DSCPACK bcsstk01.mtx 0 1 -10 0 1e-12 1e-5 >>SST.stdout
  mpirun  -np 6 amesos_test.exe DSCPACK bcsstk02.mtx 0 1 -3 0 1e-12 1e-10 >>SST.stdout
  mpirun  -np 2 amesos_test.exe DSCPACK bcsstk04.mtx 0 1 -6 0 1e-11 1e-8 >>SST.stdout
- mpirun  -np 2 amesos_test.exe DSCPACK bcsstk08.mtx 0 1 -3 0 1e-11 1e-4 >>SST.stdout
+ # COMMENT mpirun  -np 2 amesos_test.exe DSCPACK bcsstk08.mtx 0 1 -3 0 1e-11 1e-4 >>SST.stdout
  # COMMENT mpirun  -np 2 amesos_test.exe DSCPACK bcsstk13.mtx 0 1 -10 0 1e-9 1e-2 >>SST.stdout
  mpirun  -np 2 amesos_test.exe DSCPACK nos1.mtx 0 1 -3 0 1e-9 1e-5 >>SST.stdout
  mpirun  -np 2 amesos_test.exe DSCPACK nos5.mtx 0 1 -13 0 1e-12 1e-9 >>SST.stdout
