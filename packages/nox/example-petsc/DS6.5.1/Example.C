@@ -84,8 +84,6 @@ int main(int argc, char *argv[])
   doubleArray[1] = 0.5;
   ierr = VecSetValues(soln,2,globalIndex,doubleArray,
                                          INSERT_VALUES);CHKERRQ(ierr);
-//         Assemble vector, using the 2-step process:
-//         VecAssemblyBegin(), VecAssemblyEnd()
 
   ierr = VecAssemblyBegin(soln);CHKERRQ(ierr);
   ierr = VecAssemblyEnd(soln);CHKERRQ(ierr);
@@ -95,7 +93,12 @@ int main(int argc, char *argv[])
   // Create the top level parameter list
   NOX::Parameter::List nlParams;
 
-  NOX::Petsc::Options setOptions(nlParams, MyPID);
+  NOX::Petsc::Options optionHandler(nlParams, MyPID);
+
+  // Do a check to see if the correct linesearch is set.
+  if(!nlParams.sublist("Line Search").isParameterEqual("Method", "Polynomial"))
+    if(MyPID==0) cout << "\n\tWARNING: Linesearch is not set to "
+                      << "polynomial !!\n" << endl;
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created using inheritance of the abstract base class:
@@ -109,13 +112,8 @@ int main(int argc, char *argv[])
   NOX::Petsc::Group grp(interface, soln, A);
   grp.computeF(); // Needed to establish the initial convergence state
 
-  // Create the convergence tests
-  NOX::StatusTest::NormF testNormF(1.0e-6);
-  NOX::StatusTest::MaxIters testMaxIters(1000);
-  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, testNormF, testMaxIters);
-
   // Create the method and solve
-  NOX::Solver::Manager solver(grp, combo, nlParams);
+  NOX::Solver::Manager solver(grp, optionHandler.getStatusTest(), nlParams);
   NOX::StatusTest::StatusType status = solver.solve();
 
   if (status != NOX::StatusTest::Converged)
