@@ -266,7 +266,6 @@ int Amesos_Superludist::PerformNumericFactorization( ) {
 
     NRformat_loc *Astore;
     Astore = (NRformat_loc *) superluA_.Store;
-    printf("Amesos_Superludist.cpp::276 Astore->rowptr = %lx *(Astore->rowptr)=%d\n", Astore->rowptr, *(Astore->rowptr) );
 
     int info ;
     double berr ;    //  Should be untouched
@@ -277,9 +276,7 @@ int Amesos_Superludist::PerformNumericFactorization( ) {
 	    &LUstruct_, &SOLVEstruct_, &berr, &stat, &info);
     EPETRA_CHK_ERR( info ) ; 
 
-    printf("Amesos_Superludist.cpp::287 Astore->rowptr = %lx *(Astore->rowptr)=%d\n", Astore->rowptr, *(Astore->rowptr) );
     PStatFree(&stat);
-    printf("Amesos_Superludist.cpp::289 Astore->rowptr = %lx *(Astore->rowptr)=%d\n", Astore->rowptr, *(Astore->rowptr) );
   }
 
   return 0;
@@ -315,7 +312,6 @@ int Amesos_Superludist::Solve() {
 
     NRformat_loc *Astore;
     Astore = (NRformat_loc *) superluA_.Store;
-    printf("Amesos_Superludist.cpp::324 Astore->rowptr = %lx *(Astore->rowptr)=%d\n", Astore->rowptr, *(Astore->rowptr) );
 
   Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
   Epetra_MultiVector   *vecB = Problem_->GetRHS() ; 
@@ -345,7 +341,6 @@ int Amesos_Superludist::Solve() {
   Epetra_MultiVector* vecBptr; 
 
   
-    printf("Amesos_Superludist.cpp::354 Astore->rowptr = %lx *(Astore->rowptr)=%d\n", Astore->rowptr, *(Astore->rowptr) );
   if ( redistribute_ ) {
     Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
     Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
@@ -367,8 +362,8 @@ int Amesos_Superludist::Solve() {
   EPETRA_CHK_ERR( vecBptr->ExtractView( &bValues, &ldb ) )  ; 
   EPETRA_CHK_ERR( vecXptr->ExtractView( &xValues, &ldx ) ) ; 
   EPETRA_CHK_ERR( ! ( ldx == ldb ) ) ; 
+  EPETRA_CHK_ERR( ! ( ldx == NumMyElements ) ) ; 
 
-    printf("Amesos_Superludist.cpp::377 Astore->rowptr = %lx *(Astore->rowptr)=%d\n", Astore->rowptr, *(Astore->rowptr) );
   //
   //  pdgssvx returns x in b, so we copy b into x.  
   //
@@ -389,9 +384,19 @@ int Amesos_Superludist::Solve() {
     assert( GridCreated_ ) ; 
     assert( FactorizationDone_ ) ; 
     options_.Fact = FACTORED ;       
-    pdgssvx(&options_, &superluA_, &ScalePermstruct_, &xValues[0], ldx, nrhs, &grid_,
-	    &LUstruct_, &SOLVEstruct_, &berr[0], &stat, &info);
-    EPETRA_CHK_ERR( info ) ; 
+
+    bool BlockSolve = false ; 
+    if ( BlockSolve ) { 
+      pdgssvx(&options_, &superluA_, &ScalePermstruct_, &xValues[0], ldx, 1, &grid_,
+	      &LUstruct_, &SOLVEstruct_, &berr[0], &stat, &info);
+      EPETRA_CHK_ERR( info ) ;
+    } else {
+      for ( int j =0 ; j < nrhs; j++ ) { 
+	pdgssvx(&options_, &superluA_, &ScalePermstruct_, &xValues[j*ldx], ldx, 1, &grid_,
+		&LUstruct_, &SOLVEstruct_, &berr[0], &stat, &info);
+	EPETRA_CHK_ERR( info ) ;
+      }
+    } 
     
     PStatFree(&stat);
   }
@@ -405,6 +410,5 @@ int Amesos_Superludist::Solve() {
     vecX->Import( *vecXptr, ImportBackToOriginal, Insert ) ;
   }
 
-    printf("Amesos_Superludist.cpp::414 Astore->rowptr = %lx *(Astore->rowptr)=%d\n", Astore->rowptr, *(Astore->rowptr) );
   return(0) ; 
 }

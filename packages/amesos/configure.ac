@@ -366,6 +366,7 @@ if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
   amesos_libs="${amesos_libs} ${tac_with_amesos_superludistlib}"
 
   AM_CONDITIONAL(HAVE_AMESOS_SUPERLUDIST, true ) 
+  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
 else
   AM_CONDITIONAL(HAVE_AMESOS_SUPERLUDIST, false ) 
 fi

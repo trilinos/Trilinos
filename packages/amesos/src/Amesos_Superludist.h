@@ -174,7 +174,9 @@ public:
 
   //
   //!  Amesos_Superludist does not support transpose at this time.
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(13);};
+  /*!  returns 0 if UseTranspose is set to false, else 1 (failure)
+   */
+  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return( UseTranspose_?1:0 );};
 
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
