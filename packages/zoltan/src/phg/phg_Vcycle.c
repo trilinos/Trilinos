@@ -441,8 +441,10 @@ End:
                         &vcycle->LevelData);
     del = vcycle;
     vcycle = vcycle->finer;
-    Zoltan_Timer_PrintAll(del->timer, zz->Proc, stdout);
-    if (hgp->use_timers > 2) Zoltan_Timer_Destroy(&del->timer);
+    if (hgp->use_timers > 2) {
+      Zoltan_Timer_PrintAll(del->timer, zz->Proc, stdout);
+      Zoltan_Timer_Destroy(&del->timer);
+    }
     ZOLTAN_FREE(&del);
   }
 
