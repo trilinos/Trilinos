@@ -1484,16 +1484,16 @@ collection of Trilinos packages depend on each other.
 
 \item[Checking Out a Working Copy]
 
-To get started, checkout a copy of the development branch of the repository.
-(Releases branches can be obtained by by checking out the appropriate 
-tagged version of the repository.)
+To get started, checkout a working copy of the development branch from the CVS 
+repository.  (Releases branches can be obtained by by checking out the 
+appropriate tagged version of the repository.  More about this below.)
 
 \DisplayCommand{cvs checkout Trilinos}
 
 \item[Updating a Working Copy]
 
 To update after a version has been obtained use the \InlineCommand{cvs update} 
-command.  First, cd to the directory that is to be updated (usually the 
+command.  First, cd to the directory that is to be updated (often the 
 Trilinos root directory).  Then type:
 
 \DisplayCommand{cvs -q update -dP}
@@ -1516,13 +1516,30 @@ repository, but the directory structures will remain if this option is not
 specified.  If an empty directory is needed, simply issue one update 
 command without the ``-P'' and the empty directories will be restored.
 
-%\item[Viewing Local Changes]
+\item{Viewing Local Changes}
 
+After saving changes to a working copy of a branch of the Trilinos repository, 
+the differences between the most recently obtained version of the edited 
+file(s) and the current local version of the file(s) can be viewed using the 
+following command:
 
-%\item[Checking in Changes]
+\DisplayCommand{cvs -q diff}
+
+The ``-q'' option again means ``be somewhat quiet''.  Try a diff without the 
+``-q'' to see exactly what the option does.  
+
+The diff command works recursively, but optionally accepts options that 
+specify specific files and/or directories.  For example, to see the diff's 
+associated only with a file in the current directory named 
+\InlineDirectory{abc.cpp}, as well as all files located (recursively) in the 
+relative directory \InlineDirectory'{examples}, type
+
+\DisplayCommand{cvs -q diff abc.cpp examples}
+
+%\item{Committing Changes}
 %update!
 
-%\item[Working with Branches]
+%\item{Working with Branches}
 %cvs status
 
 %... Must be expanded, add info about when to check in, and which branch... also move much of the cvs stuff from the add/remove file section to here
