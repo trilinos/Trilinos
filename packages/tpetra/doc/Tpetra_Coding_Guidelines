@@ -1,0 +1,32 @@
+1. Everything should be in namespace Tpetra.
+
+2. When more than one template argument is used, they should be ordered from most general to most specific: PacketType, OrdinalType, ScalarType.
+		Right: <OrdinalType, ScalarType>
+		Wrong: <ScalarType, PacketType>
+
+3. All header files should be bracketed with a preprocessor directive to prevent multiple inclusion. This should be the name of the file, in all uppercase, with an underscore between words, as well as at the beginning and end. Example:
+		#ifndef _TPETRA_SOMEHEADER_HPP_
+		#define _TPETRA_SOMEHEADER_HPP_
+
+		...
+
+		#endif // _TPETRA_SOMEHEADER_HPP_
+
+4. When multiple closing braces occur in sequence, add comments to make it easier to determine which goes with which.
+
+5. Placement of const: For consistency, and so that certain macro-expansions work, const is to follow whatever is being made const.
+
+		variable:												int const 				someVar
+		reference to variable:					int const & 			someRef
+		non-const pointer to const obj:	int const * 			somePtr
+		const pointer to non-const obj:	int 			* const somePtr
+		const pointer to const obj:			int const * const somePtr
+
+This also makes const usage consistent with functions and function return types.
+
+6. The name of a class's data member(s) should end with an underscore. 
+
+7. All variable and instance names should start with a lowercase letter, and use an uppercase letter for the beginning of each subsequent rule. There are two exceptions to this rule: 1) A member that is a pointer or reference to an object may start with an uppercase letter to show that it represents a seperate object. 2) Acronyms occuring in names should be capitalized the way they would be in English, even if the acronym occurs at the beginning of a variable name.
+
+8. Member initializations in a constructor should be in the same order as the members are listed in the class declaration.
+
