@@ -24,58 +24,99 @@
 
 
 #include "Epetra_IntSerialDenseVector.h"
+
 //=============================================================================
-Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(void)
+Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector()
   : Epetra_IntSerialDenseMatrix()
 {
+	SetLabel("Epetra::IntSerialDenseVector");
 }
 
 //=============================================================================
 Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(int Length)
   : Epetra_IntSerialDenseMatrix(Length, 1)
 {
+	SetLabel("Epetra::IntSerialDenseVector");
 }
 
 //=============================================================================
-Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(Epetra_DataAccess CV, int *Values, int Length)
+Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(Epetra_DataAccess CV, int* Values, int Length)
   : Epetra_IntSerialDenseMatrix(CV, Values, Length, Length, 1)
-{}
+{
+	SetLabel("Epetra::IntSerialDenseVector");
+}
+
 //=============================================================================
 Epetra_IntSerialDenseVector::Epetra_IntSerialDenseVector(const Epetra_IntSerialDenseVector& Source)
   : Epetra_IntSerialDenseMatrix(Source)
 {}
+
 //=============================================================================
 Epetra_IntSerialDenseVector::~Epetra_IntSerialDenseVector()
 {}
-//=========================================================================
-int& Epetra_IntSerialDenseVector::operator() (int Index)  {
 
-  if (Index>=M_) throw ReportError("Index = " +toString(Index) + 
-				   " Out of Range 0 - " + toString(M_-1),-1);
+//=========================================================================
+int& Epetra_IntSerialDenseVector::operator() (int Index) {
+  if(Index >= M_ || Index < 0) 
+		throw ReportError("Index = " + toString(Index) + 
+											" Out of Range 0 - " + toString(M_-1),-1);
   return(A_[Index]);
 }
 
 //=========================================================================
-const int& Epetra_IntSerialDenseVector::operator() (int Index) const  {
+const int& Epetra_IntSerialDenseVector::operator() (int Index) const {
+  if(Index >= M_ || Index < 0) 
+		throw ReportError("Index = " + toString(Index) + 
+											" Out of Range 0 - " + toString(M_-1),-1);
+   return(A_[Index]);
+}
 
-  if (Index>=M_) throw ReportError("Index = " +toString(Index) + 
-				   " Out of Range 0 - " + toString(M_-1),-1);
+//=========================================================================
+const int& Epetra_IntSerialDenseVector::operator [] (int Index) const {
    return(A_[Index]);
 }
-//=========================================================================
-const int& Epetra_IntSerialDenseVector::operator [] (int Index) const  {
-   return(A_[Index]);
-}
-//=========================================================================
-int& Epetra_IntSerialDenseVector::operator [] (int Index)  {
 
-  if (Index>=M_) throw ReportError("Index = " +toString(Index) + 
-				   " Out of Range 0 - " + toString(M_-1),-1);
+//=========================================================================
+int& Epetra_IntSerialDenseVector::operator [] (int Index) {
+  if(Index >= M_ || Index < 0) 
+		throw ReportError("Index = " + toString(Index) + 
+											" Out of Range 0 - " + toString(M_-1),-1);
    return(A_[Index]);
 }
+
 //=========================================================================
 Epetra_IntSerialDenseVector& Epetra_IntSerialDenseVector::operator = (const Epetra_IntSerialDenseVector& Source) {
-	if(this != &Source)
-		Epetra_IntSerialDenseMatrix::operator=(Source); // call this->Epetra_IntSerialDenseMatrix::operator =
+	Epetra_IntSerialDenseMatrix::operator=(Source); // call this->Epetra_IntSerialDenseMatrix::operator =
 	return(*this);
+}
+
+//=============================================================================
+int Epetra_IntSerialDenseVector::MakeViewOf(const Epetra_IntSerialDenseVector& Source) {
+	int errorcode = Epetra_IntSerialDenseMatrix::MakeViewOf(Source);
+	return(errorcode);
+}
+
+//=========================================================================
+void Epetra_IntSerialDenseVector::Print(ostream& os) const {
+	if(CV_ == Copy)
+		os << "Data access mode: Copy" << endl;
+	else
+		os << "Data access mode: View" << endl;
+	if(A_Copied_)
+		os << "A_Copied: yes" << endl;
+	else
+		os << "A_Copied: no" << endl;
+	os << "Length(M): " << M_ << endl;
+	if(M_ == 0)
+		os << "(vector is empty, no values to display)";
+	else
+		for(int i = 0; i < M_; i++)
+      os << (*this)(i) << " ";
+	os << endl;
+}
+
+//=========================================================================
+int Epetra_IntSerialDenseVector::Random() {
+	int errorcode = Epetra_IntSerialDenseMatrix::Random();
+	return(errorcode);
 }

@@ -331,6 +331,7 @@ AC_CONFIG_FILES([
 		test/FEVbrMatrix/Makefile
 		test/FEVector/Makefile
 		test/ImportExport/Makefile
+                test/IntSerialDense/Makefile
 		test/Map/Makefile
 		test/MapColoring/Makefile
 		test/MultiVector/Makefile

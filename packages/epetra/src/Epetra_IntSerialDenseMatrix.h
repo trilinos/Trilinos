@@ -54,7 +54,27 @@ two data access modes (specified by the Epetra_DataAccess argument):
 Therefore, we strongly encourage users to develop code using Copy mode first and 
 only use the View mode in a secondary optimization phase.
 
-<b>Extracting Data from Epetra_IntSerialDenseMatrix Objects</b>
+Epetra_IntSerialDenseMatrix constructors will throw an exception if an error occurrs.  
+These exceptions will alway be negative integer values as follows:
+<ol>
+  <li> -1  Invalid dimension specified.
+  <li> -2  Shape returned non-zero.
+  <li> -3  Null pointer specified for user's data.
+  <li> -99 Internal Epetra_IntSerialDenseMatrix error.  Contact developer.
+</ol>
+
+Other Epetra_IntSerialDenseMatrix functions that do not return an integer error code
+(such as operators () and [] ) will throw an exception if an error occurrs. 
+These exceptions will be integer values as follows:
+<ol>
+  <li> -1  Invalid row specified.
+  <li> -2  Invalid column specified.
+	<li> -5  Invalid assignment (type mismatch).
+  <li> -99 Internal Epetra_IntSerialDenseMatrix error.  Contact developer.
+</ol>
+
+
+b<b>Extracting Data from Epetra_IntSerialDenseMatrix Objects</b>
 
 Once a Epetra_IntSerialDenseMatrix is constructed, it is possible to view the data via access functions.
 
@@ -86,8 +106,8 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
     Shape() or Reshape functions.  
     Values should be defined by using the [] or () operators.
    */
-  Epetra_IntSerialDenseMatrix(void);
-
+  Epetra_IntSerialDenseMatrix();
+  
   //! Shaped constructor; defines a variable-sized object
   /*!
     \param In 
@@ -101,7 +121,7 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
     Values should be defined by using the [] or () operators.
    */
   Epetra_IntSerialDenseMatrix(int NumRows, int NumCols);
-  
+
   //! Set object values from two-dimensional array.
   /*!
     \param In 
@@ -118,10 +138,12 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
 
 	   See Detailed Description section for further discussion.
   */
-  Epetra_IntSerialDenseMatrix(Epetra_DataAccess CV, int *A, int LDA, int NumRows, int NumCols);
+  Epetra_IntSerialDenseMatrix(Epetra_DataAccess CV, int* A, int LDA, int NumRows, int NumCols);
   
   //! Epetra_IntSerialDenseMatrix copy constructor.
-  
+	/*!
+		This matrix will take on the data access mode of the Source matrix.
+	*/
   Epetra_IntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& Source);
 
   //! Epetra_IntSerialDenseMatrix destructor.  
@@ -182,14 +204,14 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
   */
     int& operator () (int RowIndex, int ColIndex);
 
-  //! Value copy from one matrix to another.
+  //! Copy from one matrix to another.
   /*!
-    The operator= allows one to copy the values from one existing IntSerialDenseMatrix to another, as
-    long as there is enough room in the target to hold the source.
+    The operator= allows one to copy the values from one existing IntSerialDenseMatrix to another.
+		The left hand side matrix will take on the data access mode of the right hand side matrix. 
 
     \return Values of the left hand side matrix are modified by the values of the right hand side matrix.
   */
-    Epetra_IntSerialDenseMatrix & operator = (const Epetra_IntSerialDenseMatrix & Source);
+    Epetra_IntSerialDenseMatrix& operator = (const Epetra_IntSerialDenseMatrix& Source);
 
   //! Element access function.
   /*!
@@ -224,38 +246,76 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
     \warning No bounds checking can be done for the index i in the expression A[j][i].
   */
     const int* operator [] (int ColIndex) const;
+
+  //! Set matrix values to random numbers.
+  /*! The random number generator is based on the algorithm described in
+      "Random Number Generators: Good Ones Are Hard To Find", S. K. Park and K. W. Miller, 
+      Computing Practices, vol 88, pp 1000-1192.
+
+    \return Integer error code, set to 0 if successful.
+
+  */
+  int Random();
     
   //! Returns row dimension of system.
-  int M()  const {return(M_);};
+  int M() const {return(M_);};
 
   //! Returns column dimension of system.
-  int N()  const {return(N_);};
+  int N() const {return(N_);};
+
+  //! Returns const pointer to the \e this matrix.
+  const int* A() const {return(A_);};
 
   //! Returns pointer to the \e this matrix.
-  int * A()  const {return(A_);};
-
-  //! Returns pointer to the \e this matrix.
-  int * A() {return(A_);};
+  int* A() {return(A_);};
 
   //! Returns the leading dimension of the \e this matrix.
-  int LDA()  const {return(LDA_);};
+  int LDA() const {return(LDA_);};
+
+	//! Returns the data access mode of the \e this matrix.
+	Epetra_DataAccess CV() const {return(CV_);};
   //@}
   
   //@{ \name I/O methods
   //! Print service methods; defines behavior of ostream << operator.
   virtual void Print(ostream& os) const;
   //@}
+
+  //@{ \name Expert-only unsupported methods
+
+  //! Reset an existing IntSerialDenseMatrix to point to another Matrix.
+	/*! Allows an existing IntSerialDenseMatrix to become a View of another
+		matrix's data, regardless of the DataAccess mode of the Source matrix.
+		It is assumed that the Source matrix is an independent matrix, and 
+		no checking is done to verify this.
+
+		This is used by Epetra_CrsGraph in the OptimizeStorage method. It is used so that
+		an existing (Copy) matrix can be converted to a View. This frees up
+		memory that CrsGraph no longer needs.
+		
+		@param Source The IntSerialDenseMatrix this will become a view of.
+		
+		\return Integer error code, set to 0 if successful, and set to -1 
+		if a type mismatch occured.
+		
+		\warning This method is extremely dangerous and should only be used by experts.
+	*/
+	
+	int MakeViewOf(const Epetra_IntSerialDenseMatrix& Source);
+	//@}
+
  protected:
 
-  void CopyMat(int * A, int LDA, int NumRows, int NumCols, int * B, int LDB);
-  void DeleteArrays(void);
+	void CopyMat(int* Source, int Source_LDA, int NumRows, int NumCols, int* Target, int Target_LDA);
+  //void CopyMat(int* A, int LDA, int NumRows, int NumCols, int* B, int LDB);
+  void CleanupData();
 
+	Epetra_DataAccess CV_;
+	bool A_Copied_;
   int M_;
   int N_;
   int LDA_;
-  bool A_Copied_;
-  int * A_;
-
+  int* A_;
 
 };
 

@@ -75,7 +75,7 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
     Size() or Resize functions.  
     Values should be defined by using the [] or () operators.
    */
-  Epetra_IntSerialDenseVector(void);
+  Epetra_IntSerialDenseVector();
   
   //! Sized constructor; defines a variable-sized object
   /*!
@@ -100,7 +100,7 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
 
 	   See Detailed Description section for further discussion.
   */
-  Epetra_IntSerialDenseVector(Epetra_DataAccess CV, int *Values, int Length);
+  Epetra_IntSerialDenseVector(Epetra_DataAccess CV, int* Values, int Length);
   
   //! Epetra_IntSerialDenseVector copy constructor.
   
@@ -159,7 +159,7 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
   */
     int& operator [] (int Index);
 
-  //! Column access function.
+  //! Element access function.
   /*!
     Returns the specified element of the vector.
     \return Specified element in vector.
@@ -167,21 +167,64 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
     \warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const int& operator [] (int Index) const;
+    
+  //! Set vector values to random numbers.
+  /*! The random number generator is based on the algorithm described in
+      "Random Number Generators: Good Ones Are Hard To Find", S. K. Park and K. W. Miller, 
+      Computing Practices, vol 88, pp 1000-1192.
 
-  //! Value copy from one vector to another.
+    \return Integer error code, set to 0 if successful.
+
+  */
+  int Random();
+
+  //! Returns length of vector.
+  int Length() const {return(M_);};
+
+  //! Returns pointer to the values in vector.
+  int* Values() {return(A_);};
+
+  //! Returns const pointer to the values in vector.
+  const int* Values() const {return(A_);};
+
+	//! Returns the data access mode of the \e this vector.
+	Epetra_DataAccess CV() const {return(CV_);};
+
+	//! Copy from one vector to another.
   /*!
-    The operator= allows one to copy the values from one existing IntSerialDenseVector to another, as
-    long as there is enough room in the target to hold the source.
+    The operator= allows one to copy the values from one existing IntSerialDenseVector to another.
+		The left hand side vector will take on the data access mode of the right hand side vector. 
 
     \return Values of the left hand side vector are modified by the values of the right hand side vector.
   */
     Epetra_IntSerialDenseVector& operator = (const Epetra_IntSerialDenseVector& Source);
-    
-  //! Returns length of vector.
-  int Length()  const {return(M_);};
 
-  //! Returns pointer to the values in vector.
-  int * Values()  const {return(A_);};
+  //@{ \name I/O methods
+  //! Print service methods; defines behavior of ostream << operator.
+  virtual void Print(ostream& os) const;
+  //@}
+
+  //@{ \name Expert-only unsupported methods
+
+  //! Reset an existing IntSerialDenseVector to point to another Vector.
+	/*! Allows an existing IntSerialDenseVector to become a View of another
+		vector's data, regardless of the DataAccess mode of the Source vector.
+		It is assumed that the Source vector is an independent vector, and 
+		no checking is done to verify this.
+
+		This is used by Epetra_CrsGraph in the OptimizeStorage method. It is used so that
+		an existing (Copy) vector can be converted to a View. This frees up
+		memory that CrsGraph no longer needs.
+		
+		@param Source The IntSerialDenseVector this will become a view of.
+		
+		\return Integer error code, set to 0 if successful.
+		
+		\warning This method is extremely dangerous and should only be used by experts.
+	*/
+	
+	int MakeViewOf(const Epetra_IntSerialDenseVector& Source);
+	//@}
 };
 
 #endif /* EPETRA_INTSERIALDENSEVECTOR_H */
