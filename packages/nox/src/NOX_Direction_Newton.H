@@ -96,8 +96,8 @@ namespace Direction {
 
   - "Rescue Bad Newton Solve" (Boolean) - Says whether or not we should
     try to use the solution from a bad linear solve. If set to true, 
-    we will accept the solution if it produces any reduction whatsoever
-    in the linear residual. Defaults to true.
+    we will accept the solution regardless of the status of the linear
+    solver. Defaults to true.
 
   - "Forcing Term Method" - Method to compute the forcing term, i.e.,
     the tolerance for the linear solver. Choices are "Constant", 
@@ -180,27 +180,14 @@ protected:
 
 private:
 
-  //! Printing Utils
-  const NOX::Utils& utils;
-
-  //! Return true if we can recover from a bad Newton solve
-  /*!
-    In other words, sometimes we'll use the calculated Newton
-    direction even if it doesn't satisfy the convergence tolerance.
-
-    If doRescue is true,
-    \f[
-    \|J s - (-F) \| / \|F\| < 1,
-    \f]
-    and we don't encounter any other errors, return true.
-  */
-  bool rescueBadNewtonSolve(const NOX::Abstract::Group& soln) const;
-
   //! Print an error message
   void throwError(const string& functionName, const string& errorMsg);
 
 
 private:
+
+  //! Printing Utilities
+  const NOX::Utils& utils;
 
   //! "Direction" sublist with parameters for the direction vector
   /*! 
@@ -209,7 +196,7 @@ private:
    */
   NOX::Parameter::List* paramsPtr;
 
-  //! Determined based on "Rescue Bad Newton Solve". Used in rescueBadNewtonSolve
+  //! Determined based on "Rescue Bad Newton Solve". 
   bool doRescue;
 
   //! Vector containing the predicted RHS

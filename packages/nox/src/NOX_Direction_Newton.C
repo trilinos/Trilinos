@@ -87,15 +87,20 @@ bool NOX::Direction::Newton::compute(NOX::Abstract::Vector& dir,
   // Compute the Newton direction
   status = soln.computeNewton(paramsPtr->sublist("Newton").sublist("Linear Solver"));
   
-  // It didn't converge, but maybe we can recover. Otherwise, we throw an error.
-  if (status == NOX::Abstract::Group::NotConverged)
-  { 
-    if (!NOX::Direction::Newton::rescueBadNewtonSolve(soln))
-      return false;
+  // It didn't converge, but maybe we can recover. 
+  if ((status != NOX::Abstract::Group::Ok) &&
+      (doRescue == false)) {
+    NOX::Direction::Newton::throwError("compute", 
+				       "Unable to solve Newton system");
   }
-  else if (status != NOX::Abstract::Group::Ok) 
-    NOX::Direction::Newton::throwError("compute", "Unable to solve Newton system");
-    
+  else if ((status != NOX::Abstract::Group::Ok) &&
+	   (doRescue == true)) {
+    if (utils.isPrintProcessAndType(NOX::Utils::Warning))
+      cout << "WARNING: NOX::Direction::Newton::compute() - Linear solve "
+	   << "failed to achieve convergence - using the step anyway " 
+	   << "since \"Rescue Bad Newton Solve\" is true " << endl;
+  }
+
   // Set search direction.
   dir = soln.getNewton();
 
@@ -275,39 +280,6 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
   
   return true;
 }
-
-
-bool  NOX::Direction::Newton::rescueBadNewtonSolve(const NOX::Abstract::Group& grp) const
-{
-  //! Check if the "rescue" option has been selected
-  if (!doRescue)
-    return false;
-
-  //! See if the group has compute the accuracy
-  double accuracy;
-  NOX::Abstract::Group::ReturnType status = grp.getNormLastLinearSolveResidual(accuracy);
-    
-  // If this functionality is not supported in the group, return false
-  /* NOTE FROM TAMMY: We could later modify this to acutally caluclate
-     the error itself if it's just a matter of the status being
-     NotDefined. */
-  if (status != NOX::Abstract::Group::Ok) 
-    return false;
-
-  // Check if there is any improvement in the relative residual
-  double normF = grp.getNormF();
-
-  // If we can't reduce the relative norm at all, we're not happy
-  if (accuracy >= normF) 
-    return false;
-
-  // Otherwise, we just print a warning and keep going
-  if (utils.isPrintProcessAndType(Utils::Warning)) 
-    cout << "WARNING: NOX::Direction::Newton::compute - Unable to achieve desired linear solve accuracy." << endl;
-
-  return true;
-}
-
 
 void NOX::Direction::Newton::throwError(const string& functionName, const string& errorMsg)
 {
