@@ -13,7 +13,6 @@
 
 #include "lb_const.h"
 #include "comm_const.h"
-#include "all_allo_const.h"
 #include "create_proc_list_const.h"
 
 int LB_Create_Proc_List(

@@ -530,13 +530,13 @@ static int rcb_fn(
     message_tag = 1;
     ierr = LB_Comm_Create(&cobj, outgoing, proc_list, local_comm, message_tag,
                           lb->Deterministic, &incoming);
-    if (ierr != LB_OK && ierr != LB_WARN) {
+    if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
       LB_FREE(&proc_list);
       LB_FREE(&dotmark);
       LB_FREE(&coord);
       LB_FREE(&wgts);
       LB_TRACE_EXIT(lb, yo);
-      return (ierr);
+      return (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
     }
 
     if (outgoing) LB_FREE(&proc_list);
@@ -599,12 +599,12 @@ static int rcb_fn(
 
     ierr = LB_Comm_Do(cobj, message_tag, (char *) dotbuf, 
                       sizeof(struct rcb_dot), (char *) (&dotpt[keep]));
-    if (ierr != LB_OK && ierr != LB_WARN) {
+    if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
       LB_FREE(&dotmark);
       LB_FREE(&coord);
       LB_FREE(&wgts);
       LB_TRACE_EXIT(lb, yo);
-      return (ierr);
+      return (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
     }
 
     ierr = LB_Comm_Destroy(&cobj);
