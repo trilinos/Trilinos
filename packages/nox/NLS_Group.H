@@ -33,17 +33,21 @@ private:
   //! Disallow copy operator
   virtual NLS_Group& operator=(const NLS_Group& copyFrom) {};
 
+protected:
+  //! NLS_Group constructor
+  NLS_Group() {};
+
 public:
 
-  //! NLS_Group constructor
-  NLS_Group();
-  
   //! NLS_Group deconstructor
-  virtual ~NLS_Group() = 0;
+  virtual ~NLS_Group() {};
+
+  //! Copies the values of all vectors in source group to this group
+  virtual NLS_Group& copy(const NLS_Group& source) = 0;
   
   //@{ \name "Compute" functions
 
-  //! Compute and return solution vector, x, where x = grp.x() + step * d
+  //! Compute and return solution vector, x, where this.x = grp.x() + step * d
   virtual NLS_Vector& computeX(const NLS_Group& grp, const NLS_Vector& d, double step) = 0;
 
   //! Compute and return RHS

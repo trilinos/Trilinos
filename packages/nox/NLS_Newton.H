@@ -20,7 +20,10 @@ class NLS_Newton : public NLS_Method {
 public:
 
   //! Newton-method constructor
-  NLS_Newton(NLS_Group& group, NLS_ParameterList& params);
+  NLS_Newton(NLS_Group& initialGuess, 
+	     NLS_Group& solutionSpace, 
+	     NLS_ParameterList& params);
+  ~NLS_Newton();
 
   void resetParameters(NLS_ParameterList& p);
   bool isConverged();
@@ -28,14 +31,21 @@ public:
   int solve();
   NLS_Group& getSolutionGroup() const;
   bool getProfileInfo(string& name, NLS_Parameter& p) const;
+  double getNormRHS() const;
 
 private:
   
-  //NLS_Interface& f;		//!< Problem 
   NLS_Group& soln;		//!< Solution
   NLS_Group& oldsoln;		//!< Old solution
   double normrhs;		//!< Norm of RHS
-  int niter;			//!< Number of nonlinear iterations
+
+  // Statistics
+  int niter;                    //!< Number of nonlinear iterations
+
+  // Parameter List
+  int maxiter;			//!< Max. # of nonlinear iterations
+  double reltol;                //!< Relative Tolerance
+  double abstol;                //!< Absolute Tolerance
 };
 
 

@@ -11,7 +11,9 @@
 #include "NLS_Newton.H"
 #include "NLS_MethodManager.H"
 
-NLS_MethodManager::NLS_MethodManager(NLS_Group& i, NLS_ParameterList& p) :
+NLS_MethodManager::NLS_MethodManager(NLS_Group& i, 
+				     NLS_Group& s, 
+				     NLS_ParameterList& p) :
   ptr(NULL)
 {
 
@@ -20,7 +22,7 @@ NLS_MethodManager::NLS_MethodManager(NLS_Group& i, NLS_ParameterList& p) :
   cout << "Nonlinear Solver: " << method << endl; 
   
   if (method == "Newton") {
-    ptr = new NLS_Newton(i, p);
+    ptr = new NLS_Newton(i, s, p);
   } 
   else {
     cout << "ERROR: invalid choice for nonlinear solver "

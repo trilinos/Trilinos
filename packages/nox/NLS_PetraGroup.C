@@ -11,23 +11,31 @@
 #include "NLS_PetraGroup.H"
 
 NLS_PetraGroup::NLS_PetraGroup(Epetra_Vector& x) :
-  xVector(new NLS_PetraVector(x,true)),
-  RHSVector(new NLS_PetraVector(x,false)),
-  gradVector(new NLS_PetraVector(x,false)),
-  NewtonVector(new NLS_PetraVector(x,false)),
+  xVector(NULL),
+  RHSVector(NULL),
+  gradVector(NULL),
+  NewtonVector(NULL),
   Jac(NULL)
 {
+  xVector = new NLS_PetraVector(x);
+  RHSVector = new NLS_PetraVector(x,false);
+  gradVector = new NLS_PetraVector(x,false);
+  NewtonVector = new NLS_PetraVector(x,false);
   resetVectorStatus();
   doDeleteJacobian = false;
 }
 
 NLS_PetraGroup::NLS_PetraGroup(Epetra_Vector& x, Epetra_RowMatrix& J) :
-  xVector(new NLS_PetraVector(x,true)),
-  RHSVector(new NLS_PetraVector(x,false)),
-  gradVector(new NLS_PetraVector(x,false)),
-  NewtonVector(new NLS_PetraVector(x,false)),
+  xVector(NULL),
+  RHSVector(NULL),
+  gradVector(NULL),
+  NewtonVector(NULL),
   Jac(&J)
 {
+  xVector = new NLS_PetraVector(x);
+  RHSVector = new NLS_PetraVector(x,false);
+  gradVector = new NLS_PetraVector(x,false);
+  NewtonVector = new NLS_PetraVector(x,false);
   resetVectorStatus();
   doDeleteJacobian = false;
 }
@@ -93,10 +101,42 @@ NLS_PetraGroup::~NLS_PetraGroup()
 
 }
 
+//! Copies the values of all vectors in source group to this group
+NLS_Group& NLS_PetraGroup::copy(const NLS_Group& source)
+{
+    cout << "ERROR: NLS_PetraGroup::copy() - requires a PetraGroup object be passed in!" << endl;
+  throw;
+}
+
+//! Copies the values of all vectors in source group to this group
+NLS_Group& NLS_PetraGroup::copy(const NLS_PetraGroup& source)
+{
+  // Update the vectors
+  xVector->copy(*source.xVector, 1.0);
+  RHSVector->copy(*source.RHSVector, 1.0);
+  gradVector->copy(*source.gradVector, 1.0);
+  NewtonVector->copy(*source.NewtonVector, 1.0);
+  // Update the statusVectors
+  statusRHS = source.statusRHS;
+  statusJacobian = source.statusJacobian;
+  statusGrad = source.statusGrad;
+  statusNewton = source.statusNewton;
+}
+
 //! Compute and return solution vector
-NLS_Vector& NLS_PetraGroup::computeX(NLS_Group& x, NLS_Vector& d, double step) {
+NLS_Vector& NLS_PetraGroup::computeX(const NLS_Group& x, const NLS_Vector& d, double step) {
+  cout << "ERROR: NLS_PetraGroup::computeX() - Pass Petra objects in call!" << endl;
+  throw;
+}
+
+//! Compute and return solution vector
+NLS_Vector& NLS_PetraGroup::computeX(const NLS_PetraGroup& x, 
+				     const NLS_PetraVector& d, 
+				     double step) {
+  xVector->copy(x.getX());
   xVector->update(1.0, d, step);
   resetVectorStatus();
+  return *xVector;
 }
 
 //! Compute and return RHS
@@ -141,7 +181,7 @@ NLS_Vector& NLS_PetraGroup::computeNewton() {
 
 //! Compute and return Newton direction, using desired accuracy for nonlinear solve
 /*! Throws an error if RHS and Jacobian have not been computed */
-NLS_Vector& NLS_PetraGroup::computeNewton(string& name, NLS_Parameter& parameter) {
+NLS_Vector& NLS_PetraGroup::computeNewton(NLS_ParameterList& parameter) {
   if (!isRHS()) {
     cout << "ERROR: computeNewton() - RHS is out of date wrt X!" << endl;
     throw;
@@ -164,28 +204,28 @@ NLS_Vector& NLS_PetraGroup::computeNewton(string& name, NLS_Parameter& parameter
  * called since the last update to the solution vector (via
  * instantiation or computeX). */
 
-bool NLS_PetraGroup::isRHS() {   
+bool NLS_PetraGroup::isRHS() const {   
   if (statusRHS) return true; 
   else return false; 
 }
-bool NLS_PetraGroup::isJacobian() {   
+bool NLS_PetraGroup::isJacobian() const {   
   if (statusJacobian) return true; 
   else return false; 
 }
-bool NLS_PetraGroup::isGrad() {   
+bool NLS_PetraGroup::isGrad() const {   
   if (statusGrad) return true; 
   else return false; 
 }
-bool NLS_PetraGroup::isNewton() {   
+bool NLS_PetraGroup::isNewton() const {   
   if (statusNewton) return true; 
   else return false;
 }
 
 //! Return solution vector
-NLS_Vector& NLS_PetraGroup::getX() {return *xVector;}
+NLS_Vector& NLS_PetraGroup::getX() const {return *xVector;}
 
 //! Return rhs (throws an error if RHS has not been computed)
-NLS_Vector& NLS_PetraGroup::getRHS() {  
+NLS_Vector& NLS_PetraGroup::getRHS() const {  
   if (isRHS()) return *RHSVector;
   else {
     cout << "ERROR: RHS Vector does NOT correspond to current Group "
@@ -195,7 +235,7 @@ NLS_Vector& NLS_PetraGroup::getRHS() {
 }
 
 //! Return gradient (throws an error if gradient has not been computed)
-NLS_Vector& NLS_PetraGroup::getGrad() { 
+NLS_Vector& NLS_PetraGroup::getGrad() const { 
   if (isGrad()) return *gradVector;
   else {
     cout << "ERROR: Grad Vector does NOT correspond to current Group "
@@ -205,7 +245,7 @@ NLS_Vector& NLS_PetraGroup::getGrad() {
 }
 
 //! Return Newton direction (throws an error if newton direction has not been computed)
-NLS_Vector& NLS_PetraGroup::getNewton() {
+NLS_Vector& NLS_PetraGroup::getNewton() const {
   if (isNewton()) return *NewtonVector;
   else {
     cout << "ERROR: Newton Vector does NOT correspond to current Group "

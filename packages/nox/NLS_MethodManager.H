@@ -25,7 +25,9 @@ class NLS_MethodManager : public NLS_Method {
 
 public:
   //! Generic interface to any of the various methods. 
-  NLS_MethodManager(NLS_Group& initial_guess, NLS_ParameterList& p);
+  NLS_MethodManager(NLS_Group& initial_guess, 
+		    NLS_Group& solution_space, 
+		    NLS_ParameterList& p);
 
   //! Destructor
   ~NLS_MethodManager();

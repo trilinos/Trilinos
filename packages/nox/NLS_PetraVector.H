@@ -46,6 +46,8 @@ class NLS_PetraVector : public NLS_Vector {
   //! Deep copy operator. Copies both the vector and its map.
   NLS_PetraVector& operator=(const NLS_PetraVector& copyFrom);
 
+  //! Returns the underlying vector that NLS wraps (EPetra_Vector).  
+  Epetra_Vector& getPetraVector();
  
   NLS_Vector& init(double value);
 

@@ -10,14 +10,27 @@
 
 #include "NLS_Newton.H"
 
-NLS_Newton::NLS_Newton(NLS_Interface& i, NLS_ParameterList& p) :
-  interface(i),
-  soln(interface.getInitialGuess()),
-  oldsoln(interface.createNewGroup()),
+NLS_Newton::NLS_Newton(NLS_Group& i, NLS_Group& s, NLS_ParameterList& p) :
+  oldsoln(i),
+  soln(s),
   niter(0)
 {
   // Get initial guess for x and corresponding rhs
   soln.computeRHS();
+}
+
+NLS_Newton::~NLS_Newton() 
+{
+}
+
+void NLS_Newton::resetParameters(NLS_ParameterList& p)
+{
+
+}
+
+bool NLS_Newton::isConverged() 
+{
+
 }
 
 int NLS_Newton::iterate()
@@ -26,10 +39,10 @@ int NLS_Newton::iterate()
   soln.computeJacobian();
 
   // compute Newton direction for current solution
-  soln.computeNewtonDirection();
+  soln.computeNewton();
 
-  // copy current solution to old solution
-  oldsoln = soln;
+  // copy current group to the old group
+  oldsoln.copy(soln);
 
   // update current solution
   soln.computeX(oldsoln, oldsoln.getNewton(), static_cast<double>(1.0));
@@ -45,6 +58,21 @@ int NLS_Newton::iterate()
 
   // completed successful iteration
   return true;
+}
+
+int NLS_Newton::solve()
+{
+
+}
+
+NLS_Group& NLS_Newton::getSolutionGroup() const
+{
+
+}
+
+bool NLS_Newton::getProfileInfo(string& name, NLS_Parameter& p) const
+{
+
 }
 
 double NLS_Newton::getNormRHS() const

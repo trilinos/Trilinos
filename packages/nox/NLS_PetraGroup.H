@@ -35,11 +35,13 @@ class NLS_PetraGroup : public NLS_Group {
 
 public:
 
-  //! Constructor.  All vectors in group (solution, RHS, gradient and Newton) 
+  //! Constructor.  The supplied vector is the solution vector and all
+  //! other vectors in the group (RHS, gradient and Newton) 
   //! are deep copies based on the Epetra Vector passed in.
   NLS_PetraGroup(Epetra_Vector& x);
 
-  //! Constructor.  All vectors in group (solution, RHS, gradient and Newton) 
+  //! Constructor.  The supplied vector is the solution vector and all
+  //! other vectors in the group (RHS, gradient and Newton) 
   //! are deep copies based on the Epetra Vector passed in.
   NLS_PetraGroup(Epetra_Vector& x, Epetra_RowMatrix& J);
 
@@ -57,13 +59,22 @@ public:
   //! Deconstructor
   virtual ~NLS_PetraGroup();
 
+  virtual NLS_Group& copy(const NLS_Group& source);
+
+  virtual NLS_Group& copy(const NLS_PetraGroup& source);
+
   virtual NLS_Group* newcopy(bool newJacobian=false);
 
   /** @name "Compute" functions */
   //@{
 
   //! Compute and return solution vector
-  virtual NLS_Vector& computeX(NLS_Group& x, NLS_Vector& d, double step);
+  virtual NLS_Vector& computeX(const NLS_Group& x, const NLS_Vector& d, double step);
+
+  //! Compute and return solution vector
+  virtual NLS_Vector& computeX(const NLS_PetraGroup& x, 
+			       const NLS_PetraVector& d, 
+			       double step);
 
   //! Compute and return RHS
   virtual NLS_Vector& computeRHS();
@@ -81,7 +92,7 @@ public:
 
   //! Compute and return Newton direction, using desired accuracy for nonlinear solve
   /*! Throws an error if RHS and Jacobian have not been computed */
-  virtual NLS_Vector& computeNewton(string& name, NLS_Parameter& parameter);
+  virtual NLS_Vector& computeNewton(NLS_ParameterList& params);
 
   //@}
 
@@ -92,10 +103,10 @@ public:
    * instantiation or computeX). */
   //@{
 
-  virtual bool isRHS();
-  virtual bool isJacobian();
-  virtual bool isGrad();
-  virtual bool isNewton();
+  virtual bool isRHS() const;
+  virtual bool isJacobian() const;
+  virtual bool isGrad() const;
+  virtual bool isNewton() const;
 
   //@}
 
@@ -103,16 +114,16 @@ public:
   //@{
 
   //! Return solution vector
-  virtual NLS_Vector& getX();
+  virtual NLS_Vector& getX() const;
 
   //! Return rhs (throws an error if RHS has not been computed)
-  virtual NLS_Vector& getRHS();
+  virtual NLS_Vector& getRHS() const;
 
   //! Return gradient (throws an error if gradient has not been computed)
-  virtual NLS_Vector& getGrad();
+  virtual NLS_Vector& getGrad() const;
 
   //! Return Newton direction (throws an error if newton direction has not been computed)
-  virtual NLS_Vector& getNewton();
+  virtual NLS_Vector& getNewton() const;
 
   //@}
 

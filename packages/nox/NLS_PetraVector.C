@@ -61,6 +61,11 @@ NLS_PetraVector& NLS_PetraVector::operator=(const NLS_PetraVector& copyFrom)
   return *this;
 }
 
+Epetra_Vector& NLS_PetraVector::getPetraVector()
+{
+  return *petraVec;
+}
+
 NLS_Vector& NLS_PetraVector::init(double value)
 {
   petraVec->PutScalar(value);
