@@ -1,6 +1,7 @@
 Decomposition Method 	= rcb
+Zoltan Parameters	= remap=0
 Zoltan Parameters	= obj_weight_dim=2
-Zoltan Parameters       = keep_cuts=1
+Zoltan Parameters       = rcb_multicriteria_norm=3
 File Type		= Chaco
-File Name		= hammond2
+File Name		= vwgt2
 Parallel Disk Info	= number=0

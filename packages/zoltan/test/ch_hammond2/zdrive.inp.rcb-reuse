@@ -1,6 +1,9 @@
 Decomposition Method 	= rcb
-Zoltan Parameters	= obj_weight_dim=2
+Zoltan Parameters	= rcb_reuse=1
 Zoltan Parameters       = keep_cuts=1
 File Type		= Chaco
 File Name		= hammond2
 Parallel Disk Info	= number=0
+Test Drops		= 1
+Test null export lists  = 1
+Number of iterations	= 3
