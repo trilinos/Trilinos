@@ -200,9 +200,9 @@ int sfc_create_bins(LB* lb, int num_local_objects,
     
     i = MPI_Allreduce(dbg1, dbg2, lb->Num_Proc * bins_per_proc*2, MPI_FLOAT, MPI_SUM, lb->Communicator);
 
-/*    if(lb->Proc==0)
+    if(lb->Proc==0)
       for(i=0;i<lb->Num_Proc * bins_per_proc*2;i++)
-	printf("global sum wgt array: bin = %d wgt = %e\n",i, dbg2[i]);*/
+	printf("global sum wgt array: bin = %d wgt = %e\n",i, dbg2[i]);
 
     LB_FREE(&dbg1);
     LB_FREE(&dbg2);
@@ -302,6 +302,8 @@ int sfc_create_bins(LB* lb, int num_local_objects,
 			      actual_work_allocated, 2*bins_per_proc, 
 			      number_of_cuts, current_proc, SFC_COARSE_LEVEL_FLAG);
   }
+  /* -1 is used to make sure that the last bin does not have a cut in it */
+  bin_proc_array[0] = -1;
 
   ierr = MPI_Allreduce(actual_work_allocated, global_actual_work_allocated, 
 		       (lb->Num_Proc)*wgt_dim, MPI_FLOAT, MPI_MAX, lb->Communicator);
@@ -313,9 +315,9 @@ int sfc_create_bins(LB* lb, int num_local_objects,
 		       MPI_MIN, lb->Communicator);
 
   LB_FREE(&bin_proc_array);
-  if(lb->Proc == 0)
+/*  if(lb->Proc == 0)
     for(i=0;i<lb->Num_Proc;i++)
-      printf("global_bin_proc_array[%d]= %d\n",i, global_bin_proc_array[i]);
+      printf("global_bin_proc_array[%d]= %d\n",i, global_bin_proc_array[i]); */
 
 
   /* specify which processor an object belongs to,
@@ -402,6 +404,9 @@ void single_wgt_calc_partition(int wgt_dim, float work_prev_allocated,
   int i;
   int number_of_cuts2 = 0;
   *number_of_cuts = 0;
+
+/*  printf("part is checking work_percent %e for proc %d!@!@!@!@!@!@!\n",
+	 work_percent_array[current_loc],lb->Proc);*/
   
   for(i=number_of_bins-1;i>=0;i--) {
     work_prev_allocated += binned_weight_array[i*wgt_dim];
@@ -504,9 +509,7 @@ int get_array_location(int number_of_bins, int number_of_bits, int prev_used_bit
 {
   int counter = 0;
   unsigned ilocation, ilocation2;
-
-  
-  
+ 
   if(prev_used_bits == 0)
     ilocation = (sfc_vert_ptr->sfc_key[0]) >> (size_of_unsigned*8 - number_of_bits);
   else {

@@ -31,9 +31,10 @@
 #define HASHTABLE_DIVIDER 20
 #define MAX_CUTS_PER_BIN 10 /* maximum amount of cuts in a coarse level bin */
 
-void create_refinement_info(LB* lb, int* number_of_cuts, float* global_actual_work_allocated,
+int create_refinement_info(LB* lb, int* number_of_cuts, float* global_actual_work_allocated,
 			   int wgt_dim, float* total_weight_array, float* work_percent_array,
-			   int num_vert_in_cut, SFC_VERTEX_PTR vert_in_cut_ptr);
+			   int num_vert_in_cut, SFC_VERTEX_PTR vert_in_cut_ptr,
+			   float* wgts_in_cut_ptr, float** work_prev_allocated_ptr);
 
 int sfc_create_bins(LB* lb, int num_local_objects, 
 		    int wgt_dim, SFC_VERTEX_PTR sfc_vert_ptr, float objs_wgt[], int* amount_of_bits_used,
@@ -275,7 +276,7 @@ int LB_sfc(
       global_bounding_box[i+num_dims] = global_bounding_box[i+num_dims] + SFC_BOUNDING_BOX_EPSILON;
     }
   }
-  /*done creating global bounding box*/
+  /* done creating global bounding box */
   /* Normalize space coordinates and fill in sfc_vertex info */
   sfc_create_info(lb, global_bounding_box, (global_bounding_box+num_dims), 
 		  num_dims, num_local_objects, wgt_dim, sfc_vert_ptr, SFC_KEYLENGTH);
@@ -308,7 +309,7 @@ int LB_sfc(
 
   /* for debugging */
   if(lb->Proc ==0) {
-    printf("input balanced %d or unbalanced %d\n",SFC_BALANCED, SFC_NOT_BALANCED);
+    printf("coarse bins: input balanced %d or unbalanced %d\n",SFC_BALANCED, SFC_NOT_BALANCED);
     scanf("%d",&balanced_flag);
     printf("\n");    
   } 
@@ -320,19 +321,27 @@ int LB_sfc(
 						   that all partitions need to be rebalanced */
     int max_cuts_in_bin;
     int* ll_bins_head;  /* used to indicate the beginning of the linklist */
+    float* work_prev_allocated = NULL; /* stores the weights of all objects before a cut */
     if(num_vert_in_cut == 0 || lb->Proc == 0) 
       local_balanced_flag = SFC_BALANCED;
-    create_refinement_info(lb, &number_of_cuts, global_actual_work_allocated, wgt_dim,
-			   total_weight_array, work_percent_array, num_vert_in_cut, vert_in_cut_ptr);
-    max_cuts_in_bin = number_of_cuts;
-    ll_bins_head = (int*) LB_MALLOC(sizeof(int) * number_of_cuts);
+    ierr = create_refinement_info(lb, &number_of_cuts, global_actual_work_allocated, wgt_dim,
+				  total_weight_array, work_percent_array, num_vert_in_cut,
+				  vert_in_cut_ptr, wgts_in_cut_ptr, &work_prev_allocated);
+    if(ierr != LB_OK && ierr != LB_WARN) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Error in create_refinement_info function.");
+      return(ierr);
+    }    
+
+    ll_bins_head = (int*) LB_MALLOC(sizeof(int) * (1+number_of_cuts));
     if(ll_bins_head == NULL && number_of_cuts > 0) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory."); 
       return(LB_MEMERR);
     }
+    max_cuts_in_bin= number_of_cuts;
+
     if(ll_bins_head != NULL)
-       ll_bins_head[0] = 0;  /* the first link list starts off at array location 0 ! */
-    for(i=1;i<number_of_cuts;i++)
+      ll_bins_head[number_of_cuts] = 0;  /* the first link list starts off at array location number_of_cuts-1 ! */
+    for(i=0;i<number_of_cuts;i++)
       ll_bins_head[i] = -1;
     /* refine bins until a satisfactory partition tolerance is attained */
     while(balanced_flag != SFC_BALANCED) { 
@@ -343,7 +352,8 @@ int LB_sfc(
 					  SFC_KEYLENGTH, size_of_unsigned, imax, wgt_dim,
 					  wgts_in_cut_ptr, work_percent_array,
 					  total_weight_array, global_actual_work_allocated, 
-					  number_of_cuts, &max_cuts_in_bin, ll_bins_head);
+					  number_of_cuts, &max_cuts_in_bin, ll_bins_head,
+					  work_prev_allocated);
 	if(ierr != LB_OK && ierr != LB_WARN) {
 	  LB_PRINT_ERROR(lb->Proc, yo, "Error in sfc_refine_partition_level function.");
 	  return(ierr);
@@ -353,7 +363,18 @@ int LB_sfc(
       j = local_balanced_flag;
       i = MPI_Allreduce(&j, &balanced_flag, 1, MPI_INT, MPI_MAX, lb->Communicator);
       balanced_flag = SFC_BALANCED; /* take this out!!! */
+
+      /* for debugging */
+      if(lb->Proc ==0) {
+	printf("input balanced %d or unbalanced %d\n",SFC_BALANCED, SFC_NOT_BALANCED);
+	scanf("%d",&balanced_flag);
+	printf("\n");    
+      } 
+      i = MPI_Bcast(&balanced_flag, 1, MPI_INT, 0, lb->Communicator);
+      /* done debugging */
+
     }
+    LB_FREE(&work_prev_allocated);
     LB_FREE(&ll_bins_head);
   }
   
@@ -451,24 +472,28 @@ int LB_sfc(
 
 
 
+
 /* create info before starting the multi-level refinement of the bins */
 
-void create_refinement_info(LB* lb, int* number_of_cuts, float* global_actual_work_allocated,
+int create_refinement_info(LB* lb, int* number_of_cuts, float* global_actual_work_allocated,
 			   int wgt_dim, float* total_weight_array, float* work_percent_array,
-			   int num_vert_in_cut, SFC_VERTEX_PTR vert_in_cut_ptr)
+			   int num_vert_in_cut, SFC_VERTEX_PTR vert_in_cut_ptr,
+			   float* wgts_in_cut_ptr, float** work_prev_allocated_ptr)
 {
+  char    yo[] = "create_refinement_info";
+  float my_work, *work_array;
+  int i = 0, j;
 
-  float my_work;
-  int i = 0;
-
-  /* find out how many cuts are in this bin */
+  /* find out how many cuts are in this bin.  NOTE:  this only works for objects
+     with one weight!
+  */
   my_work = global_actual_work_allocated[(lb->Proc)*wgt_dim];
   while(my_work > total_weight_array[0] * work_percent_array[lb->Proc-i])
     i++;
   *number_of_cuts = i;
   if(num_vert_in_cut == 0 || lb->Proc ==0) {
     *number_of_cuts = 0;
-    return;
+    return LB_OK;
   }
   printf("originally I count %d cuts on proc %d\n",*number_of_cuts,lb->Proc);
 
@@ -477,6 +502,31 @@ void create_refinement_info(LB* lb, int* number_of_cuts, float* global_actual_wo
   for(i=0;i<(num_vert_in_cut-1);i++)
     vert_in_cut_ptr[i].next_sfc_vert_index = i+1;
   vert_in_cut_ptr[num_vert_in_cut-1].next_sfc_vert_index = -1;
-   
-  return;
+
+  /* update work previously allocated to include work in all bins with higher keys than this bin */
+  work_array = (float*) LB_MALLOC(sizeof(float) * wgt_dim);
+  if(work_array == NULL) {
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    return(LB_MEMERR);
+  }
+
+  for(i=0;i<wgt_dim;i++)
+    work_array[i] = 0;
+  for(i=0;i<num_vert_in_cut;i++) 
+    for(j=0;j<wgt_dim;j++)
+      work_array[j] += wgts_in_cut_ptr[i*wgt_dim+j];
+
+  *work_prev_allocated_ptr = (float*) LB_MALLOC(sizeof(float) * wgt_dim * (*number_of_cuts+1));
+  if(*work_prev_allocated_ptr == NULL) {
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    return(LB_MEMERR);
+  }
+      
+  /* update work previously allocated to include work in all bins with higher keys than this bin */
+  for(i=0;i<wgt_dim;i++)
+    *((*work_prev_allocated_ptr)+wgt_dim*(*number_of_cuts)+i) = global_actual_work_allocated[(lb->Proc)*wgt_dim+i] -
+      work_array[i];
+
+  LB_FREE(&work_array);
+  return LB_OK;
 }
