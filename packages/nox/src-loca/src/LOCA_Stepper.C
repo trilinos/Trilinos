@@ -385,7 +385,7 @@ LOCA::Stepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
   if (res == NOX::Abstract::Group::Failed)
     return LOCA::Abstract::Iterator::Unsuccessful;
 
-  stepSize *= powf(tangentFactor, tangentFactorExponent);
+  stepSize *= pow(tangentFactor, tangentFactorExponent);
   
   // Cap the con parameter so we don't go past bounds
   double prevValue = curGroupPtr->getContinuationParameter();
