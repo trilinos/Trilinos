@@ -91,6 +91,9 @@ Zoltan Parameters	= RCB_REUSE=0
 #                  the second object to proc 1, ..., the pth object to 
 #                  proc (p-1),the (p+1)th object to proc 0, the (p+2)th 
 #                  object to proc 1, etc.
+#       file    -- reads an initial distribution from the input file
+#                  <filename>.assign, where File Name is specified by
+#                  the "File Name" command line below.
 # If an initial distribution is not specified, the default is linear.
 #
 # A second Chaco option is to distribute the objects over a subset
@@ -122,6 +125,10 @@ File Type		= NemesisI
 # Chaco files containing graph and/or coordinates information.  The
 # file <filename>.graph will be read for the Chaco graph information;
 # The file <filename>.coords will be read for Chaco geometry information.
+# The optional file <filename>.assign may be read for an initial decomposition
+# by specifying "initial distribution=file" on the "File Type" input line.
+# For more information about the format of these files, see
+# the Chaco user's guide.
 #-----------------------------------------------------------------------------
 File Name	= testa.par
 
@@ -218,7 +225,7 @@ Parallel File Location	= root=/pfs/io_, subdir=mmstjohn
 #               through calls to driver_eval and LB_Eval.
 #	2   --  Function call traces through major driver functions are
 #               printed.
-#       3   --  Not used yet.
+#       3   --  Debug Chaco input files.
 #       4   --  Entire distributed mesh (elements, adjacencies, communication
 #               maps, etc.) is printed.  This output is done serially and can
 #               be big and slow.
@@ -226,3 +233,19 @@ Parallel File Location	= root=/pfs/io_, subdir=mmstjohn
 # Default value is 1.
 #-----------------------------------------------------------------------------
 Zdrive debug level = 1
+
+
+#-----------------------------------------------------------------------------
+# Chaco input assignment inverse = <integer>
+#
+# This line is optional.  It sets the IN_ASSIGN_INV flag, indicating that
+# the "inverse" Chaco assignment format should be used if a Chaco assignment
+# file is read for the initial decomposition.  If this flag is 0, the assignment
+# file lists, for each vertex, the processor to which it is assigned.  If this
+# flag is 1, the assignment file includes, for each processor, the number of
+# vertices assigned to the processor followed by a list of those vertices.
+# See the Chaco User's guide for a more detailed description of this parameter.
+#
+# Default value is 0.
+#-----------------------------------------------------------------------------
+Chaco input assignment inverse = 0
