@@ -534,7 +534,10 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   int PutScalar (double ScalarConstant);
   
   //! Set multi-vector values to random numbers.
-  /*!
+  /*! The random number generator is based on the algorithm described in
+      "Random Number Generators: Good Ones Are Hard To Find", S. K. Park and K. W. Miller, 
+      Computing Practices, vol 88, pp 1000-1192.
+
     \return Integer error code, set to 0 if successful.
 
   */
