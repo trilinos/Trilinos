@@ -139,8 +139,8 @@ int ML_Operator_Clean( ML_Operator *mat)
    mat->matvec->ML_id  = ML_ID_DESTROYED;
    mat->getrow->ML_id  = ML_ID_DESTROYED;
    if (mat->getrow->row_map != NULL) ML_free(mat->getrow->row_map);
-   ML_CommInfoOP_Destroy(mat->getrow->pre_comm);
-   ML_CommInfoOP_Destroy(mat->getrow->post_comm);
+   ML_CommInfoOP_Destroy(&(mat->getrow->pre_comm));
+   ML_CommInfoOP_Destroy(&(mat->getrow->post_comm));
 
    if (mat->getrow->loc_glob_map != NULL) 
       ML_free(mat->getrow->loc_glob_map);
@@ -717,7 +717,7 @@ int ML_Operator_UnAmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
  
    if ( (block_size > 1) || (drop_tolerance >= 0.0)) {
       temp = (struct amalg_drop *) Amat->data;
-      ML_CommInfoOP_Destroy(Amat->getrow->pre_comm);
+      ML_CommInfoOP_Destroy(&(Amat->getrow->pre_comm));
       ML_memory_free((void**)&(Amat->getrow));
       Amat->data         = temp->original_data;
       Amat->getrow       = temp->original_getrow;
@@ -782,7 +782,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
 
      if (Amat->getrow->pre_comm != NULL) {
        ML_exchange_bdry(dtemp,Amat->getrow->pre_comm, Amat->invec_leng,
-                        comm, ML_OVERWRITE);
+                        comm, ML_OVERWRITE,NULL);
      }
      for (i = 0; i < Amat->invec_leng; i++)
         new_data->blk_inds[i] = (int) dtemp[i];
@@ -858,7 +858,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
       
         if ( Amat->getrow->pre_comm != NULL )
            ML_exchange_bdry(scaled_diag,Amat->getrow->pre_comm,Nrows, comm, 
-                            ML_OVERWRITE);
+                            ML_OVERWRITE,NULL);
 
         new_data->scaled_diag = scaled_diag;
      }
@@ -1004,7 +1004,7 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
    for (i = 0; i < nrows; i++) dbuf[i] = (double) blkinfo[i];
 
    if (Amat->getrow->pre_comm != NULL)
-       ML_exchange_bdry(dbuf,Amat->getrow->pre_comm,nrows,comm,ML_OVERWRITE);
+       ML_exchange_bdry(dbuf,Amat->getrow->pre_comm,nrows,comm,ML_OVERWRITE,NULL);
 
    /* ----------------------------------------------------------------- */
    /* allocate buffers for the getrow function                          */
