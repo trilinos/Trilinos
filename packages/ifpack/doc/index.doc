@@ -2,17 +2,19 @@
 
 \image html ../IFPACKLogo.gif
 
-\section table Table of Contents
+\section ifp_table Table of Contents
 
-- \ref intro
-- \ref download
-- \ref example 
-- \ref note 
-- \ref tools 
-- \ref error 
-- \ref copyright
+- \ref ifp_intro
+- \ref ifp_download
+- \ref ifp_configure
+- \ref ifp_example 
+- \ref ifp_params
+- \ref ifp_note 
+- \ref ifp_tools 
+- \ref ifp_error 
+- \ref ifp_copyright
 
-\section intro Introduction
+\section ifp_intro Introduction
 
 IFPACK, developed by Micheal Heroux and Marzio Sala (SNL 9214), 
 provides a suite of object-oriented algebraic preconditioners
@@ -46,29 +48,17 @@ following:
 - an exact LU solve (using Amesos' factorizations).
 
 More precisely, the choices for \f$A_i^{-1}\f$ are:
-- point preconditioners:
+- point relaxation preconditioners (through class Ifpack_PointRelaxation).
+  Point relaxation preconditioners are probably the simplest iterative methods,
+  and are generally used as smoothers in multilevel
+  methods (for instance, within ML). Available choices are:
   - Jacobi
   - Gauss-Seidel
   - symmetric Guass-Seidel
   - SOR
   - SSOR
-- block preconditioners:
-  - block Jacobi
-  - block Gauss-Seidel
-  - block symmetric Gauss-Seidel
-- point incomplete factorizations:
-  - ICT(K) for symmetric problems
-  - RILU(K) for general problems
-- exact factorizations:
-  - all Amesos classes can be used to compute the LU factorization
-    of a given matrix.
-
-Point preconditioners are probably the simplest iterative methods,
-and are generally used as smoothers in multilevel
-methods (for instance, within ML). The user can select the damping factor,
-and the number of sweeps.
-
-Block preconditioners represent an extension of point preconditioners.  The
+- block relaxation preconditioners (through class Ifpack_BlockRelaxation).
+Block relaxation preconditioners represent an extension of point preconditioners.  The
 local matrix \f$A_i\f$ is divided into blocks, than the Jacobi or the
 Gauss-Seidel methods are applied on the block structure rather than
 point-wise. The code extracts the diagonal blocks (the application of whose
@@ -78,26 +68,59 @@ functions will be used to factorize the block and to perform the backsolve.
 For large blocks, instead, it is suggested to store the blocks are sparse
 matrices (Epetra_CrsMatrix's). Any IFPACK preconditioner derived from
 Ifpack_Preconditioner can be used to apply the inverse of the diagonal blocks.
-As IFPACK contains an interface to Amesos (this requires IFPACK to be
-configured with \c --enable-amesos), all Amesos-supported (and enables)
-factorizations can be used to apply the inverse of each block.
+  Available choices are:
+  - block Jacobi
+  - block Gauss-Seidel
+  - block symmetric Gauss-Seidel
+- point incomplete factorizations (through classes Ifpack_gIct, Ifpack_vIct,
+  Ifpack_gRiluk, Ifpack_vRiluk). Incomplete factorizations represent a
+  very successful class of algebriac preconditioners. IFPACK offers the
+  following:
+  - ICT(K) for symmetric problems
+  - RILU(K) for general problems
+- exact factorizations (through class Ifpack_Amesos):
+  - all Amesos classes can be used to compute the LU factorization
+    of a given matrix.
 
-\note For block Jacobi preconditioner, the user can specify the amount
-of overlap among blocks (which is a-priori different from the amount
-of overlap among the processes.
+Note that all the above preconditioners should be used through
+class Ifpack_AdditiveSchwarz only.
 
-\section download Download IFPACK
+
+\section ifp_download Download IFPACK
 
 IFPACK can be downloaded from the web page http://software.sandia.gov/trilinos/downloads.html
 
-\section example Examples of Usage
+\section ifp_configure Configuring IFPACK
+
+IFPACK is configured with autotools. IFPACK is enabled by default
+if configured at the Trilinos level (please refer to the Trilinos
+documentation for more details). This section briefly recalls some
+of the configure parameters that affect the IFPACK compilation. For
+a complete list of parameters, please type
+\code
+$ $TRILINOS_HOME/packages/ifpack/configure --help
+\endcode
+
+- \c "enable-amesos" enables the support for Amesos (off by default).
+- \c "enable-aztecoo" enables the support for AztecOO (on by default).
+- \c "enable-teuchos" enables the support for Teuchos (off by default).
+- \c "enable-triutils" enables the support for Triutils (on by default).
+- \c "enable-ifpack-metis" enables the support for the METIS package. The
+  location of the header files should be specified using 
+  \c "--with-incdirs=-=I/include/location", the path of the METIS library with
+  \c "--with-ldflags=-L/lib/location", and the library name using
+  \c "--with-libs=-lmetis".
+
+\note IFPACK depends on the Epetra library.
+  
+\section ifp_example Examples of Usage
 
 This section details how to use the IFPACK Factory class.
 
 <P>Probably, the easiest way to use IFPACK is through the function class
 Ifpack. This is a \e factory class, that contains only one method,
 Create(). A call to Create() returns a pointer to a newly-created
-IFPACK object. 
+IFPACK object. (The user is responsible of deleting this object.)
 
 An example of usage is reported by the following code:
 \code
@@ -154,9 +177,9 @@ Ifpack_AdditiveSchwarz Prec<Ifpack_BlockJacobi<Ifpack_SparseContainer<Ifpack_Ame
 
 <P>Other examples are reported in the \c example subdirectory with several
 comments:
-- \ref ex_factory shows how to use Ifpack factory to create
+- \ref ifp_ex_factory shows how to use Ifpack factory to create
                             a variety of IFPACK preconditioners.  This is the simplest way to use IFPACK.  The example details all the phases of IFPACK. Difficulty = beginners.
-- \ref ex_mm reads an MatrixMarket matrix (a simple
+- \ref ifp_ex_mm reads an MatrixMarket matrix (a simple
                              format that contains i,j and a(i,j) of
                              all nonzero elements), redistribute
                              the matrix to all avaialble processes
@@ -167,11 +190,11 @@ comments:
                              format can be used with this example. A
                              small example is reported.
                              Difficulty = beginners.
-- \ref ex_amesos      shows how to use exact LU solvers on
+- \ref ifp_ex_amesos      shows how to use exact LU solvers on
                             each subdomain, using Amesos. This example
                             is very similar to the previous one.
                             Difficulty = beginners.
-- \ref ex_vict     shows how to define incomplete Cholesky
+- \ref ifp_ex_vict     shows how to define incomplete Cholesky
                             factorizations (with dropping based on values),
 			    and tune parameters. Although
                             an vICT factorization can be constructed using
@@ -181,12 +204,113 @@ comments:
                             Ifpack_AdditiveSchwar which uses vICT on
                             each subdomain.
                             Difficulty: intermediate.
-- \ref ex_block  shows how to define block preconditioner
+- \ref ifp_ex_block  shows how to define block preconditioner
                             in the more general case, using
                             Ipfack_AdditiveSchwarz.
                             Difficulty: advanced.
 
-\section note Note On IFPACK Classes
+\section ifp_params List of Supported Parameters
+
+The complete list of supported parameters is reported below.
+
+- \c "relaxation: type": specifies the type of point and block relaxation scheme. Valid
+  values: 
+  - \c "Jacobi";
+  - \c "Gauss-Seidel";
+  - \c "symmetric Gauss-Seidel";
+
+- \c "relaxation: sweeps": specifies the number of sweeps in the application
+  of point relaxation schemes. 
+
+- \c "relaxation: damping factor": specifies the damping factor in the
+  application of point relaxation schemes. 
+
+- \c "block: type": specifies the type of block relaxation scheme. Valid
+  values: \c "Jacobi", \c "Gauss-Seidel", \c "symmetric Gauss-Seidel".
+
+- \c "relaxation: min diagonal value": replace
+  diagonal values below this value with this value (only for point relaxation).
+
+- \c "partitioner: type": specifies the scheme to adopt to partition
+  the graph. Valid values: 
+  - \c "linear" (uses a linear decomposition);
+  - \c "greedy" (uses a simple greedy algorithm);
+  - \c "metis" (calls METIS, this required \c --enable-ifpack-metis).
+
+- \c "partitioner: overlap": specifies the overlap among the blocks
+  which can differ from the overlap among the processors. Note that
+  only the Jacobi block relaxation scheme can take advantage
+  of non-zero overlaps.
+
+- \c "partitioner: local parts": specifies the number of local blocks.
+
+- \c "partitioner: root node": specifies the root node for greedy algorithm.
+
+- \c "partitioner: use symmetric graph": if \c true, METIS will partition
+  the graph of A + A<sup>T</sup>. If \c false, METIS will partition the graph
+  of A. Note that METIS can core dump if the input graph is non-symmetric.
+  Users should set this option to \c false only when the graph is
+  symmetric. If the non-symmetry is determined by Dirichlet nodes, then
+  the singleton filter should create a symmetric graph. Note also that
+  dropping techniques applied to non-symmetric matrices can result in
+  non-symmetric graph.
+
+- \c "amesos: solver type": defines the Amesos solver to be
+  used by class Ifpack_Amesos. Valid values:
+  - \c "Amesos_Lapack" (use Amesos interface to LAPACK);
+  - \c "Amesos_Klu" (use Amesos' internal solver KLU);
+  - \c "Amesos_Umfpack" (use UMFPACK interface);
+  - \c "Amesos_Superlu" (use serial SuperLU interface);
+  - \c "Amesos_Mumps" (use MUMPS interface);
+  - \c "Amesos_Dscpack" (use DSCPACK interface).
+ 
+- \c "schwarz: combine mode": defines how values corresponding to
+  overlapping nodes are handled (after the solution of the local problem).
+  Any Epetra_CombineMode is valid. Users should set this value to
+  \c Add if interested in a symmetric preconditioner. Otherwise,
+  the default value of \c "Zero" usually results in better convergence.
+
+<P>The table below reports the C++ type and the default value of each
+parameter.
+<center>
+<table>
+<tr>
+<td><b>Parameter name</b></td><td><b>C++ type</b></td><td><b>Defaut value</b></td>
+</tr> <tr>
+<td>\c "relaxation: type"              </td><td>\c string </td><td>\c "Jacobi" </td>
+</tr> <tr>
+<td>\c "relaxation: sweeps"            </td><td>\c int    </td><td>\c "1" </td>
+</tr> <tr>
+<td>\c "relaxation: damping factor"    </td><td>\c double </td><td>\c "1.0" </td>
+</tr> <tr>
+<td>\c "relaxation: min diagonal value" </td><td>\c double </td><td>\c "0.0" </td>
+</tr> <tr>
+<td>\c "partitioner: type"        </td><td>\c string </td><td>\c "greedy" </td>
+</tr> <tr>
+<td>\c "partitioner: overlap"     </td><td>\c int    </td><td>\c "0" </td>
+</tr> <tr>
+<td>\c "partitioner: local parts" </td><td>\c int    </td><td>\c "1" </td>
+</tr> <tr>
+<td>\c "partitioner: root node"   </td><td>\c int    </td><td>\c "0" </td>
+</tr> <tr>
+<td>\c "partitioner: use symmetric graph"</td><td>\c bool </td><td>\c "true" </td>
+</tr> <tr>
+<td>\c "amesos: solver type"      </td><td>\c string </td><td>\c "Amesos_Klu" </td>
+</tr> <tr>
+<td>\c "schwarz: combine mode"    </td><td>\c Epetra_CombineMode </td><td>\c "Zero" </td>
+</tr>
+</table>
+</center>
+
+\note Whenever possible, the Teuchos::ParameterList given in input
+to SetParameters() is only parsed. There are cases, however, where the
+solver needs to store a copy of this list, because it will be used
+in a later stage. This happens, for example, in block relaxation schemes that
+use Amesos as local solver. As the the list given in input to SetParameters()
+is parsed or copied, this list can go out of scope after this function
+returns. 
+
+\section ifp_note Note On IFPACK Classes
 
 The only class the IFPACK users should consider  is
 Ifpack_AdditiveSchwarz.
@@ -202,7 +326,7 @@ coincide). A robust code should use them directly only
 to specify templates for Ifpack_AdditiveSchwarz objects.
 
 
-\section tools Developers' Tools 
+\section ifp_tools Developers' Tools 
 
 IFPACK contains several classes, meant for developers rather than
 for users:
@@ -225,11 +349,8 @@ for users:
 - Available filters are Ifpack_LocalFilter (whose documentation
   explains the creation and use of filters), Ifpack_ReorderFilter,
   Ifpack_DropFilter, Ifpack_SparsityFilter;
-- Semi-virtual classes are Ifpack_PointPreconditioner and
-  Ifpack_BlockPreconditioner, which contain the main functionalities
-  of Jacobi, Gauss-Seidel and other point- and block-preconditioners.
 
-\section error Error Table
+\section ifp_error Error Table
 
 The following table defines the class of IFPACK errors.
 Return code should be checked using the IFPACK_CHK_ERR() macro.
@@ -270,7 +391,7 @@ function or method successfully completed;
 </table>
 
 </tr>
-\section copyright Copyright
+\section ifp_copyright Copyright
 
 \verbatim
 Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -294,34 +415,32 @@ USA
 
 */
 
-/*! \page ex_factory
+/*! \page ifp_ex_factory Ex_Factory
 
 \include Ifpack_ex_Factory.cpp
 
 */
 
-/*! \page ex_amesos
+/*! \page ifp_ex_amesos Ex_AmesosPrec
 
 \include Ifpack_ex_Amesos.cpp
 
 */
 
-/*! \page ex_vict
+/*! \page ifp_ex_vict Ex_vIctPrec
 
 \include Ifpack_ex_vIct.cpp
 
 */
 
-/*! \page ex_block
+/*! \page ifp_ex_block Ex_BlockRelaxationPrec
 
 \include Ifpack_ex_BlockPrec.cpp
 
 */
 
-/*! \page ex_mm
+/*! \page ifp_ex_mm Ex_MatrixMarket
 
 \include Ifpack_ex_MatrixMarket.cpp
 
 */
-
-
