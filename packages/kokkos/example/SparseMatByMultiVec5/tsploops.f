@@ -198,7 +198,7 @@ c     -----------------------
 C           soln(i) = 1.0
  15     continue
 
-      ntrials = max(20,min(mod(n*nrhs,1000),10))
+      ntrials = max(30,min(100000000/(n*nrhs),100))
       fnops = 2.0 * float(nrhs)  * float(nnz) * float(ntrials)
 c
 c     *********************
@@ -206,7 +206,7 @@ c     Sparse Column Version 1
 c     *********************
       t1 = second()
       do itrials = 1,ntrials
-      call scscmm1(n, n, valt, indxt, pntrt, soln, rhsc1, nrhs)
+      call scscmm1(n, n, val, indx, pntr, soln, rhsc1, nrhs)
       end do
       tmmc1 = second() - t1
       fmflops_mmc1 = fnops/tmmc1*1.0D-6
@@ -217,7 +217,7 @@ c     Sparse Column Version 2
 c     *********************
       t1 = second()
       do itrials = 1,ntrials
-      call scscmm2(n, n, valt, indxt, pntrt, soln, rhsc2, nrhs)
+      call scscmm2(n, n, val, indx, pntr, soln, rhsc2, nrhs)
       end do
       tmmc2 = second() - t1
       fmflops_mmc2 = fnops/tmmc2*1.0D-6
@@ -228,7 +228,7 @@ c     Sparse Row Version 1
 c     *********************
       t1 = second()
       do itrials = 1,ntrials
-      call scsrmm1(n, n, val, indx, pntr, soln, rhsr1, nrhs)
+      call scsrmm1(n, n, valt, indxt, pntrt, soln, rhsr1, nrhs)
       end do
       tmmr1 = second() - t1
       fmflops_mmr1 = fnops/tmmr1*1.0D-6
@@ -239,7 +239,7 @@ c     Sparse Row Version 2
 c     *********************
       t1 = second()
       do itrials = 1,ntrials
-      call scsrmm2(n, n, val, indx, pntr, soln, rhsr2, nrhs)
+      call scsrmm2(n, n, valt, indxt, pntrt, soln, rhsr2, nrhs)
       end do
       tmmr2 = second() - t1
       fmflops_mmr2 = fnops/tmmr2*1.0D-6

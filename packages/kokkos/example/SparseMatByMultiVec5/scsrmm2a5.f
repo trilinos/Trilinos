@@ -17,7 +17,7 @@
 *     ----------------------------------
 *     Specifications for local variables
 *     ----------------------------------
-      integer i,j,jbgn, jend, indxi, rem, chunk, k, incn
+      integer i,j,jbgn, jend, indxi, rem, chunk, k, incx, incy
       real*8 vali, yj1, yj2, yj3, yj4, yj5
 
 *
@@ -29,16 +29,11 @@
       do 110 j = 1, n
          jbgn = pntr(j)
          jend = pntr(j+1) - 1
-         incn = 0
          yj1 = 0.0
          do 120 i = jbgn, jend
-           indxi = indx(i)
-           vali = val(i)
-           incn = indx(i)
-           yj1 = yj1 + val(i) * x(incn)
+           yj1 = yj1 + val(i) * x(indx(i))
  120     continue
-         incn = j
-         y(incn) = yj1
+         y(j) = yj1
  110    continue
 
 
@@ -47,21 +42,20 @@
       do 210 j = 1, n
          jbgn = pntr(j)
          jend = pntr(j+1) - 1
-         incn = 0
          yj1 = 0.0
          yj2 = 0.0
          do 220 i = jbgn, jend
            indxi = indx(i)
            vali = val(i)
-           incn = indx(i)
-           yj1 = yj1 + val(i) * x(incn)
-           incn = incn + n
-           yj2 = yj2 + val(i) * x(incn)
+           incx = indx(i)
+           yj1 = yj1 + val(i) * x(incx)
+           incx = incx + n
+           yj2 = yj2 + val(i) * x(incx)
  220     continue
-         incn = j
-         y(incn) = yj1
-         incn = incn + n
-         y(incn) = yj2
+         incy = j
+         y(incy) = yj1
+         incy = incy + n
+         y(incy) = yj2
  210  continue
 
       else if (nrhs.eq.3) then
@@ -69,26 +63,26 @@
       do 310 j = 1, n
          jbgn = pntr(j)
          jend = pntr(j+1) - 1
-         incn = 0
+         incx = 0
          yj1 = 0.0
          yj2 = 0.0
          yj3 = 0.0
          do 320 i = jbgn, jend
            indxi = indx(i)
            vali = val(i)
-           incn = indx(i)
-           yj1 = yj1 + val(i) * x(incn)
-           incn = incn + n
-           yj2 = yj2 + val(i) * x(incn)
-           incn = incn + n
-           yj3 = yj3 + val(i) * x(incn)
+           incx = indx(i)
+           yj1 = yj1 + val(i) * x(incx)
+           incx = incx + n
+           yj2 = yj2 + val(i) * x(incx)
+           incx = incx + n
+           yj3 = yj3 + val(i) * x(incx)
  320     continue
-         incn = j
-         y(incn) = yj1
-         incn = incn + n
-         y(incn) = yj2
-         incn = incn + n
-         y(incn) = yj3
+         incy = j
+         y(incy) = yj1
+         incy = incy + n
+         y(incy) = yj2
+         incy = incy + n
+         y(incy) = yj3
  310  continue
 
       else if (nrhs.eq.4) then
@@ -96,7 +90,6 @@
       do 410 j = 1, n
          jbgn = pntr(j)
          jend = pntr(j+1) - 1
-         incn = 0
          yj1 = 0.0
          yj2 = 0.0
          yj3 = 0.0
@@ -104,23 +97,23 @@
          do 420 i = jbgn, jend
            indxi = indx(i)
            vali = val(i)
-           incn = indx(i)
-           yj1 = yj1 + val(i) * x(incn)
-           incn = incn + n
-           yj2 = yj2 + val(i) * x(incn)
-           incn = incn + n
-           yj3 = yj3 + val(i) * x(incn)
-           incn = incn + n
-           yj4 = yj4 + val(i) * x(incn)
+           incx = indx(i)
+           yj1 = yj1 + val(i) * x(incx)
+           incx = incx + n
+           yj2 = yj2 + val(i) * x(incx)
+           incx = incx + n
+           yj3 = yj3 + val(i) * x(incx)
+           incx = incx + n
+           yj4 = yj4 + val(i) * x(incx)
  420     continue
-         incn = j
-         y(incn) = yj1
-         incn = incn + n
-         y(incn) = yj2
-         incn = incn + n
-         y(incn) = yj3
-         incn = incn + n
-         y(incn) = yj4
+         incy = j
+         y(incy) = yj1
+         incy = incy + n
+         y(incy) = yj2
+         incy = incy + n
+         y(incy) = yj3
+         incy = incy + n
+         y(incy) = yj4
  410  continue
 
       else if (nrhs.eq.5) then
@@ -128,7 +121,6 @@
       do 510 j = 1, n
          jbgn = pntr(j)
          jend = pntr(j+1) - 1
-         incn = 0
          yj1 = 0.0
          yj2 = 0.0
          yj3 = 0.0
@@ -137,27 +129,27 @@
          do 520 i = jbgn, jend
            indxi = indx(i)
            vali = val(i)
-           incn = indx(i)
-           yj1 = yj1 + val(i) * x(incn)
-           incn = incn + n
-           yj2 = yj2 + val(i) * x(incn)
-           incn = incn + n
-           yj3 = yj3 + val(i) * x(incn)
-           incn = incn + n
-           yj4 = yj4 + val(i) * x(incn)
-           incn = incn + n
-           yj5 = yj5 + val(i) * x(incn)
+           incx = indx(i)
+           yj1 = yj1 + val(i) * x(incx)
+           incx = incx + n
+           yj2 = yj2 + val(i) * x(incx)
+           incx = incx + n
+           yj3 = yj3 + val(i) * x(incx)
+           incx = incx + n
+           yj4 = yj4 + val(i) * x(incx)
+           incx = incx + n
+           yj5 = yj5 + val(i) * x(incx)
  520     continue
-         incn = j
-         y(incn) = yj1
-         incn = incn + n
-         y(incn) = yj2
-         incn = incn + n
-         y(incn) = yj3
-         incn = incn + n
-         y(incn) = yj4
-         incn = incn + n
-         y(incn) = yj5
+         incy = j
+         y(incy) = yj1
+         incy = incy + n
+         y(incy) = yj2
+         incy = incy + n
+         y(incy) = yj3
+         incy = incy + n
+         y(incy) = yj4
+         incy = incy + n
+         y(incy) = yj5
  510  continue
 
 
