@@ -48,24 +48,24 @@
 #endif
 
 /*! \struct Teuchos::ScalarTraits
-    \brief This structure defines some basic traits for the scalar field type.
+    \brief This structure defines some basic traits for a scalar field type.
 
     Scalar traits are an essential part of templated codes.  This structure offers
     the basic traits of the templated scalar type, like defining zero and one,
     and basic functions on the templated scalar type, like performing a square root.
 
-    For the general type, or default implementation, an aborting function
-    is defined which should restrict implementations from using scalar traits other than
-    the defined specializations.
+    The functions in the templated base unspecialized struct are designed not to
+    compile (giving a nice compile-time error message) and therefore specializations
+    must be written for Scalar types actually used.
 
     \note 
      <ol>
-       <li> The default defined specializations for ScalarTraits are: \c int, \c float, and \c double.
-     	 <li> If Teuchos is configured with \c --enable-teuchos-complex then ScalarTraits also has the specializations:
-            \c complex<float> and \c complex<double>.
-     	<li> ScalarTraits can be used with the Arbitrary Precision Library ( \c http://crd.lbl.gov/~dhbailey/mpdist/ )
-           by configuring Teuchos with \c --enable-teuchos-arprec and giving the appropriate paths to ARPREC.
-           Then ScalarTraits has the specialization: \c mp_real.
+       <li> The default defined specializations are provided for \c int, \c float, and \c double.
+     	 <li> ScalarTraits can be used with the Arbitrary Precision Library ( \c http://crd.lbl.gov/~dhbailey/mpdist/ )
+            by configuring Teuchos with \c --enable-teuchos-arprec and giving the appropriate paths to ARPREC.
+            Then ScalarTraits has the specialization: \c mp_real.
+     	 <li> If Teuchos is configured with \c --enable-teuchos-complex then ScalarTraits also has
+            a parital specialization for all complex numbers of the form <tt>complex<T></tt>.
      </ol>
 */
 
@@ -116,7 +116,7 @@ namespace Teuchos {
     //! Returns a random number (between -one() and +one()) of this scalar type.
     static inline T random()                   { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns the name of this scalar type.
-    static inline const char* name()           { (void)UndefinedScalarTraits<T>::notDefined(); return 0; };
+    static inline std::string name()           { (void)UndefinedScalarTraits<T>::notDefined(); return 0; };
     //! Returns a number of magnitudeType that is the square root of this scalar type \c x. 
     static inline magnitudeType squareroot(T x) { return UndefinedScalarTraits<T>::notDefined(); };
   };
@@ -135,7 +135,7 @@ namespace Teuchos {
     static inline void seedrandom(unsigned int s) { srand(s); };
     //static inline int random() { return (-1 + 2*rand()); };  // RAB: This version should be used to be consistent with others
     static inline int random() { return rand(); };             // RAB: This version should be used for an unsigned int, not int
-    static inline const char * name() { return "int"; };
+    static inline std::string name() { return "int"; };
     static inline int squareroot(int x) { return (int) sqrt((double) x); };
   };
   
@@ -159,10 +159,9 @@ namespace Teuchos {
     static inline float one()   { return(1.0); };    
     static inline void seedrandom(unsigned int s) { srand(s); };
     static inline float random() { float rnd = (float) rand() / RAND_MAX; return (float)(-1.0 + 2.0 * rnd); };
-    static inline const char* name() { return "float"; };
+    static inline std::string name() { return "float"; };
     static inline float squareroot(float x) { return sqrt(x); };
   };
-  
   
   template<>
   struct ScalarTraits<double>
@@ -184,101 +183,9 @@ namespace Teuchos {
     static inline double rmax()  { LAPACK<int, double> lp; return lp.LAMCH('O'); };
     static inline void seedrandom(unsigned int s) { srand(s); };
     static inline double random() { double rnd = (double) rand() / RAND_MAX; return (double)(-1.0 + 2.0 * rnd); };
-    static inline const char* name() { return "double"; };
+    static inline std::string name() { return "double"; };
     static inline double squareroot(double x) { return sqrt(x); };
   };
- 
-#if ( defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H) ) && defined(HAVE_TEUCHOS_COMPLEX)
-
-#if defined(HAVE_COMPLEX)
-  typedef std::complex<float>   ComplexFloat;
-#elif  defined(HAVE_COMPLEX_H)
-  typedef ::complex<float>      ComplexFloat;
-#endif
-  
-  template<> 
-  struct ScalarTraits<ComplexFloat>
-  {
-    typedef float magnitudeType;
-    static inline bool haveMachineParameters() { return true; };
-    static inline float eps()   { LAPACK<int, float> lp; return lp.LAMCH('E'); };
-    static inline float sfmin() { LAPACK<int, float> lp; return lp.LAMCH('S'); };
-    static inline float base()  { LAPACK<int, float> lp; return lp.LAMCH('B'); };
-    static inline float prec()  { LAPACK<int, float> lp; return lp.LAMCH('P'); };
-    static inline float t()     { LAPACK<int, float> lp; return lp.LAMCH('N'); };
-    static inline float rnd()   { LAPACK<int, float> lp; return lp.LAMCH('R'); };
-    static inline float emin()  { LAPACK<int, float> lp; return lp.LAMCH('M'); };
-    static inline float rmin()  { LAPACK<int, float> lp; return lp.LAMCH('U'); };
-    static inline float emax()  { LAPACK<int, float> lp; return lp.LAMCH('L'); };
-    static inline float rmax()  { LAPACK<int, float> lp; return lp.LAMCH('O'); };
-    static magnitudeType magnitude(ComplexFloat a) { return std::abs(a); };
-    static inline ComplexFloat zero()  { return ComplexFloat(0.0, 0.0); };
-    static inline ComplexFloat one()   { return ComplexFloat(1.0, 0.0); };
-    static inline void seedrandom(unsigned int s) { ScalarTraits<magnitudeType>::seedrandom(s); };
-    static inline ComplexFloat random()
-    {
-      float rnd1 = ScalarTraits<magnitudeType>::random();
-      float rnd2 = ScalarTraits<magnitudeType>::random();
-      return ComplexFloat(rnd1, rnd2);
-    };
-    static inline const char* name() { return "std::complex<float>"; };
-    // This will only return one of the square roots of x, the other can be obtained by taking its conjugate
-    static inline ComplexFloat squareroot(ComplexFloat x)
-    {
-      float r = x.real(), i = x.imag();
-      float a = sqrt((r * r) + (i * i));
-      float nr = sqrt((a + r) / 2);
-      float ni = sqrt((a - r) / 2);
-      ComplexFloat result = ComplexFloat(nr, ni);
-      return result;
-    };
-  };
-
-#if defined(HAVE_COMPLEX)
-  typedef std::complex<double>   ComplexDouble;
-#elif  defined(HAVE_COMPLEX_H)
-  typedef ::complex<double>      ComplexDouble;
-#endif
-
-  template<>
-  struct ScalarTraits<ComplexDouble>
-  {
-    typedef double magnitudeType;
-    static inline bool haveMachineParameters() { return true; };
-    static inline double eps()   { LAPACK<int, double> lp; return lp.LAMCH('E'); };
-    static inline double sfmin() { LAPACK<int, double> lp; return lp.LAMCH('S'); };
-    static inline double base()  { LAPACK<int, double> lp; return lp.LAMCH('B'); };
-    static inline double prec()  { LAPACK<int, double> lp; return lp.LAMCH('P'); };
-    static inline double t()     { LAPACK<int, double> lp; return lp.LAMCH('N'); };
-    static inline double rnd()   { LAPACK<int, double> lp; return lp.LAMCH('R'); };
-    static inline double emin()  { LAPACK<int, double> lp; return lp.LAMCH('M'); };
-    static inline double rmin()  { LAPACK<int, double> lp; return lp.LAMCH('U'); };
-    static inline double emax()  { LAPACK<int, double> lp; return lp.LAMCH('L'); };
-    static inline double rmax()  { LAPACK<int, double> lp; return lp.LAMCH('O'); };
-    static magnitudeType magnitude(ComplexDouble a) { return std::abs(a); };
-    static inline ComplexDouble zero()  {return ComplexDouble(0.0,0.0); };
-    static inline ComplexDouble one()   {return ComplexDouble(1.0,0.0); };    
-    static inline void seedrandom(unsigned int s) { ScalarTraits<magnitudeType>::seedrandom(s); };
-    static inline ComplexDouble random()
-    {
-      double rnd1 = ScalarTraits<magnitudeType>::random();
-      double rnd2 = ScalarTraits<magnitudeType>::random();
-      return ComplexDouble(rnd1, rnd2);
-    };
-    static inline const char* name() { return "std::complex<double>"; };
-    // This will only return one of the square roots of x, the other can be obtained by taking its conjugate
-    static inline ComplexDouble squareroot(ComplexDouble x)
-    {
-      double r = x.real(), i = x.imag();
-      double a = sqrt((r * r) + (i * i));
-      double nr = sqrt((a + r) / 2);
-      double ni = sqrt((a - r) / 2);
-      ComplexDouble result = ComplexDouble(nr, ni);
-      return result;
-    };
-  };
-
-#endif  //  HAVE_COMPLEX || HAVE_COMPLEX_H
 
 #ifdef HAVE_TEUCHOS_ARPREC
 
@@ -293,11 +200,65 @@ namespace Teuchos {
     static inline mp_real one() { mp_real one = 1.0; return one; };    
     static inline void seedrandom(unsigned int s) { mp_srand(s); };
     static inline mp_real random() { return mp_rand(); };
-    static inline const char* name() { return "mp_real"; };
+    static inline std::string name() { return "mp_real"; };
     static inline mp_real squareroot(mp_real x) { return sqrt(x); };
   };
   
+#endif // HAVE_TEUCHOS_ARPREC
+ 
+#if ( defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H) ) && defined(HAVE_TEUCHOS_COMPLEX)
+
+  // Partial specialization for complex numbers templated on real type T
+  template<class T> 
+  struct ScalarTraits<
+#if defined(HAVE_COMPLEX)
+    std::complex<T>
+#elif  defined(HAVE_COMPLEX_H)
+    ::complex<T>
 #endif
+    >
+  {
+#if defined(HAVE_COMPLEX)
+    typedef std::complex<T>  ComplexT;
+#elif  defined(HAVE_COMPLEX_H)
+    typedef ::complex<T>     ComplexT;
+#endif
+    typedef typename ScalarTraits<T>::magnitudeType magnitudeType;
+    static inline bool haveMachineParameters() { return true; };
+    static inline magnitudeType eps()          { return ScalarTraits<magnitudeType>::eps(); };
+    static inline magnitudeType sfmin()        { return ScalarTraits<magnitudeType>::sfmin(); };
+    static inline magnitudeType base()         { return ScalarTraits<magnitudeType>::base(); };
+    static inline magnitudeType prec()         { return ScalarTraits<magnitudeType>::prec(); };
+    static inline magnitudeType t()            { return ScalarTraits<magnitudeType>::t(); };
+    static inline magnitudeType rnd()          { return ScalarTraits<magnitudeType>::rnd(); };
+    static inline magnitudeType emin()         { return ScalarTraits<magnitudeType>::emin(); };
+    static inline magnitudeType rmin()         { return ScalarTraits<magnitudeType>::rmin(); };
+    static inline magnitudeType emax()         { return ScalarTraits<magnitudeType>::emax(); };
+    static inline magnitudeType rmax()         { return ScalarTraits<magnitudeType>::rmax(); };
+    static magnitudeType magnitude(ComplexT a) { return std::fabs(a); };
+    static inline ComplexT zero()              { return ComplexT(ScalarTraits<magnitudeType>::zero(),ScalarTraits<magnitudeType>::zero()); };
+    static inline ComplexT one()               { return ComplexT(ScalarTraits<magnitudeType>::one(),ScalarTraits<magnitudeType>::zero());; };
+    static inline void seedrandom(unsigned int s) { ScalarTraits<magnitudeType>::seedrandom(s); };
+    static inline ComplexT random()
+    {
+      const T rnd1 = ScalarTraits<magnitudeType>::random();
+      const T rnd2 = ScalarTraits<magnitudeType>::random();
+      return ComplexT(rnd1,rnd2);
+    };
+    static inline std::string name() { return std::string("std::complex<")+std::string(ScalarTraits<magnitudeType>::name())+std::string(">"); };
+    // This will only return one of the square roots of x, the other can be obtained by taking its conjugate
+    static inline ComplexT squareroot(ComplexT x)
+    {
+      typedef ScalarTraits<magnitudeType>  STMT;
+      const T r  = x.real(), i = x.imag();
+      const T a  = STMT::squareroot((r*r)+(i*i));
+      const T nr = STMT::squareroot((a+r)/2);
+      const T ni = STMT::squareroot((a-r)/2);
+      return ComplexT(nr,ni);
+    };
+  };
+
+#endif //  HAVE_COMPLEX || HAVE_COMPLEX_H
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
