@@ -79,7 +79,8 @@ class MatrixFree : public Epetra_Operator,
   enum DifferenceType {Forward, Backward, Centered};
 
   //! Constructor 
-  MatrixFree(NOX::EpetraNew::Interface::Required& i, const Epetra_Vector& x);
+  MatrixFree(NOX::EpetraNew::Interface::Required& i, const Epetra_Vector& x,
+	     bool useNewPerturbation = false);
 
   //! Pure virtual destructor
   virtual ~MatrixFree();
@@ -212,6 +213,9 @@ protected:
   //! Flag to enables the use of a group instead of the interface for the computeF() calls in the directional difference calculation.
   bool useGroupForComputeF;
   
+  //! A new perturbation formulation developed by C. T. Kelley and A. G. Salniger can be used by the constructor flag useNewPerturbation = true.
+  bool useNewPerturbation;
+
   //! Pointer to the group for computeF() calls.
   NOX::Abstract::Group* groupPtr;
 

@@ -40,7 +40,8 @@
 using namespace NOX;
 using namespace NOX::EpetraNew;
 
-MatrixFree::MatrixFree(Interface::Required& i, const Epetra_Vector& x) :
+MatrixFree::MatrixFree(Interface::Required& i, const Epetra_Vector& x,
+		       bool p) :
   label("NOX::Matrix-Free"),
   interface(i),
   currentX(x),
@@ -56,6 +57,7 @@ MatrixFree::MatrixFree(Interface::Required& i, const Epetra_Vector& x) :
   userEta(1.0e-6),
   computeEta(true),
   useGroupForComputeF(false),
+  useNewPerturbation(p),
   groupPtr(0)
 {
   // Zero out Vectors
@@ -161,8 +163,20 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if ( diffType == Backward )
   scaleFactor = -1.0;
 
-  if (computeEta)
-    eta = lambda*(lambda + solutionNorm/vectorNorm);
+  if (computeEta) {
+    if (useNewPerturbation) {
+      double dotprod;
+      test  = currentX.Dot(X, &dotprod);
+      if (dotprod==0.0) dotprod = 1.0e-12;
+      //eta = lambda*(1.0e-8/lambda + fabs(dotprod)/vectorNorm);
+      eta = lambda*(1.0e-8/lambda + fabs(dotprod)/vectorNorm) * dotprod/fabs(dotprod); 
+    }
+    else
+      eta = lambda*(lambda + solutionNorm/vectorNorm);
+    
+    //cout << "New Pert = " << eta << endl;
+    //cout << "Old Pert = " << lambda*(lambda + solutionNorm/vectorNorm) << endl;
+  }
   else
     eta = userEta;
 
