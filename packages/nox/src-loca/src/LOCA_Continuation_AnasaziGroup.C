@@ -118,8 +118,11 @@ LOCA::Continuation::AnasaziGroup::computeEigenvalues(
   // Anasazi Debug level
   int debug = aList.getParameter("Debug Level",1);
   
-  //  Which eigenvalues are of interest.
-  string which = aList.getParameter("Sorting Order","LM");   
+  //  Which eigenvalues are of interest. Different defaults for Cayley and others.
+  string which = "";
+  if (aList.getParameter("Operator","Jacobian Inverse") == "Cayley")
+    which = aList.getParameter("Sorting Order","CA");   
+  else  which = aList.getParameter("Sorting Order","LM");   
 
   //  How many eigenvectors/eigenvalues to we save
   int saveEV = aList.getParameter("Save Eigenvectors", 0);
@@ -156,7 +159,10 @@ LOCA::Continuation::AnasaziGroup::computeEigenvalues(
 
   // Initialize the solver
   Anasazi::BlockArnoldi<double> LOCABlockArnoldi(LOCAProblem, tol, nev, length,
-						 blksz, which, step, restart);
+						 blksz, which, step, restart,
+                                                 aList.getParameter("Cayley Pole",0.0),
+                                                 aList.getParameter("Cayley Zero",0.0));
+
 
   // Print out debugging information on single proc
   LOCABlockArnoldi.setDebugLevel(debug);

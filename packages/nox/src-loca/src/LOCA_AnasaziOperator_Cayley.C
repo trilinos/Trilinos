@@ -140,8 +140,8 @@ LOCA::AnasaziOperator::Cayley::transformEigenvalue(double& ev_r,
 {
   // compute inverse of eigenvalue, then shift
   double mag = (1.0 - ev_r)*(1.0 - ev_r) + ev_i*ev_i;
-  ev_r = (mu*(ev_r*ev_r + ev_i*ev_i) - (sigma+mu)*ev_r + sigma) / mag;
-  ev_i = (sigma-mu)*ev_i/mag;
+  ev_r = (sigma*(ev_r*ev_r + ev_i*ev_i) - (sigma+mu)*ev_r + mu) / mag;
+  ev_i = (mu-sigma)*ev_i/mag;
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -168,7 +168,7 @@ LOCA::AnasaziOperator::Cayley::rayleighQuotient(
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
 
-  // Compute z^T J z
+  // Compute z^h J z
   status = grp->applyJacobian(evec_r, *tmp_r);
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
@@ -188,7 +188,7 @@ LOCA::AnasaziOperator::Cayley::rayleighQuotient(
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
 
-  // Compute z^T M z
+  // Compute z^h M z
   status = grp->applyMassMatrix(evec_r, *tmp_r);
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
@@ -203,9 +203,10 @@ LOCA::AnasaziOperator::Cayley::rayleighQuotient(
   double m_i = evec_r.dot(*tmp_i) - evec_i.dot(*tmp_r);
   double m = m_r*m_r + m_i*m_i;
 
-  // Compute z^T J z / z^T M z
-  rq_r = (rq_r*m_r + rq_i*m_i) / m;
+  // Compute z^h J z / z^h M z
+  double tmp = (rq_r*m_r + rq_i*m_i) / m;
   rq_i = (rq_i*m_r - rq_r*m_i) / m;
+  rq_r = tmp;
 
   return finalStatus;
 }
