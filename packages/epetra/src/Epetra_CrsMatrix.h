@@ -812,6 +812,14 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 		     int NumSameIDs, 
 		     int NumPermuteIDs, int * PermuteToLIDs,
 		     int *PermuteFromLIDs);
+  int CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix& A,
+		     int NumSameIDs, 
+		     int NumPermuteIDs, int * PermuteToLIDs,
+		     int *PermuteFromLIDs);
+  int CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
+		     int NumSameIDs, 
+		     int NumPermuteIDs, int * PermuteToLIDs,
+		     int *PermuteFromLIDs);
   
   int PackAndPrepare(const Epetra_SrcDistObject& Source,int NumExportIDs, int * ExportLIDs,
 				      int Nsend, int Nrecv,

@@ -38,7 +38,7 @@ Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& Ro
     ColMap_(0),
     CV_(CV) {
   InitializeDefaults();
-  assert(Allocate(NumIndicesPerRow, 1)==0);
+  Allocate(NumIndicesPerRow, 1);
 }
 
 //==============================================================================
@@ -47,7 +47,7 @@ Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& Ro
     ColMap_(0),
     CV_(CV) {
   InitializeDefaults();
-  assert(Allocate(&NumIndicesPerRow, 0)==0);
+  Allocate(&NumIndicesPerRow, 0);
 }
 //==============================================================================
 Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, 
@@ -56,7 +56,7 @@ Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& Ro
     ColMap_(0),
     CV_(CV) {
   InitializeDefaults();
-  assert(Allocate(NumIndicesPerRow, 1)==0);
+  Allocate(NumIndicesPerRow, 1);
   ColMap_ = new Epetra_BlockMap(ColMap);
 }
 
@@ -67,7 +67,7 @@ Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& Ro
     ColMap_(0),
     CV_(CV) {
   InitializeDefaults();
-  assert(Allocate(&NumIndicesPerRow, 0)==0);
+  Allocate(&NumIndicesPerRow, 0);
   ColMap_ = new Epetra_BlockMap(ColMap);
 }
 //==============================================================================
@@ -121,7 +121,7 @@ Epetra_CrsGraph::Epetra_CrsGraph(const Epetra_CrsGraph & Graph)
     All_Indices_(0),
     CV_(Copy)
 {
-  assert(Allocate(Graph.NumIndicesPerRow(), 1)==0);
+  Allocate(Graph.NumIndicesPerRow(), 1);
   for (int i=0; i<NumMyBlockRows_; i++) {
     NumIndicesPerRow_[i] = NumAllocatedIndicesPerRow_[i];
     for (int j=0; j< NumIndicesPerRow_[i]; j++) Indices_[i][j] = Graph.Indices_[i][j];
@@ -1083,17 +1083,19 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph & A,
     if (A.IndicesAreLocal()) {
       for (i=0; i<NumSameIDs; i++) {
 	Row = GRID(i);
-	assert(A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, Indices)==0);
+	EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumIndices, Indices));
 	// Place into target graph.  
-	assert(InsertGlobalIndices(Row, NumIndices, Indices)>=0); 
+	int ierr = InsertGlobalIndices(Row, NumIndices, Indices); 
+	if (ierr<0) EPETRA_CHK_ERR(ierr); 
       }
     }
     else { // A.IndiceAreGlobal()
       for (i=0; i<NumSameIDs; i++) {
 	Row = GRID(i);
-	assert(A.ExtractGlobalRowView(Row, NumIndices, Indices)==0); // Set pointer	
+	EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumIndices, Indices)); // Set pointer	
 	// Place into target graph.
-	  assert(InsertGlobalIndices(Row, NumIndices, Indices)>=0); 
+	  int ierr = InsertGlobalIndices(Row, NumIndices, Indices); 
+	  if (ierr<0) EPETRA_CHK_ERR(ierr); 
       }
     }	
   }
@@ -1104,19 +1106,21 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph & A,
       for (i=0; i<NumPermuteIDs; i++) {
 	FromRow = A.GRID(PermuteFromLIDs[i]);
 	ToRow = GRID(PermuteToLIDs[i]);
-	assert(A.ExtractGlobalRowCopy(FromRow, MaxNumIndices, NumIndices, Indices)==0);
+	EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, MaxNumIndices, NumIndices, Indices));
 	// Place into target graph.
-	assert(InsertGlobalIndices(ToRow, NumIndices, Indices)>=0); 
+	int ierr = InsertGlobalIndices(ToRow, NumIndices, Indices); 
+	if (ierr<0) EPETRA_CHK_ERR(ierr); 
       }
     }
     else { // A.IndiceAreGlobal()
       for (i=0; i<NumPermuteIDs; i++) {
 	FromRow = A.GRID(PermuteFromLIDs[i]);
 	ToRow = GRID(PermuteToLIDs[i]);
-	assert(A.ExtractGlobalRowView(FromRow, NumIndices, Indices)==0); // Set pointer
+	EPETRA_CHK_ERR(A.ExtractGlobalRowView(FromRow, NumIndices, Indices)); // Set pointer
 	// Place into target graph.
-	assert(InsertGlobalIndices(ToRow, NumIndices, Indices)>=0); 
-      }
+	int ierr = InsertGlobalIndices(ToRow, NumIndices, Indices); 
+ 	if (ierr<0) EPETRA_CHK_ERR(ierr); 
+     }
     }
   }	
 
@@ -1362,7 +1366,8 @@ int Epetra_CrsGraph::UnpackAndCombine(const Epetra_SrcDistObject & Source,
     NumIndices = intptr[1];
     Indices = intptr + 2; 
     // Insert indices
-    assert(InsertGlobalIndices(ToRow, NumIndices, Indices)>=0);
+    int ierr = InsertGlobalIndices(ToRow, NumIndices, Indices);
+    if (ierr<0) EPETRA_CHK_ERR(ierr);
     intptr += IntPacketSize; // Point to next segment
   }
   
