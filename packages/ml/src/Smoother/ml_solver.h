@@ -54,7 +54,7 @@ typedef struct ML_Solver_Struct
 
 /* Changed void ML_subcomm to int ML_subgroup */
 
-#ifdef __cpluscplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -62,7 +62,7 @@ int ML_Solver_Create( ML_Solver **sol );
 int ML_Solver_Destroy( ML_Solver **sol );
 int ML_Solver_Check( ML_Solver *sol );
 
-#ifdef __cpluscplus
+#ifdef __cplusplus
 }
 #endif
 #endif
