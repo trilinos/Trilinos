@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
 
   int num_PDE_eqns=1, N_levels=3, nsmooth=2;
   int Nglobal_edges, Nglobal_nodes, Nlocal_edges, Nlocal_nodes;
-  int level, coarsest_level;
+  int level, coarsest_level, finest_level;
 
   /* See Aztec User's Guide for more information on the */
   /* variables that follow.                             */
@@ -1692,6 +1692,7 @@ nx = nx--; /* rst dirichlet */
 						         N_levels-1, ML_DECREASING, ag, Tmat,
                                  Tmat_trans, &Tmat_array, &Tmat_trans_array,
                                  smoothPe_flag, 1.5);
+  finest_level = ml_edges->ML_finest_level;
 #ifdef ReuseOps
   {printf("Starting reuse\n"); fflush(stdout);}
   ML_Operator_Clean(&(ml_edges->Amat[N_levels-1]));
@@ -2336,7 +2337,7 @@ nx = nx--; /* rst dirichlet */
   free(Kn_bindx);
   ML_Operator_Destroy(&Tmat);
   ML_Operator_Destroy(&Tmat_trans);
-  ML_MGHierarchy_ReitzingerDestroy(N_levels-2, coarsest_level, &Tmat_array, &Tmat_trans_array);
+  ML_MGHierarchy_ReitzingerDestroy(finest_level,&Tmat_array, &Tmat_trans_array);
 
 
 #ifdef ML_MPI
