@@ -205,6 +205,7 @@ int ML_Aggregate_Set_CoarsenScheme_UncoupledCoupled( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_METIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_ParMETIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_Zoltan( ML_Aggregate *ag  );
+int ML_Aggregate_Set_CoarsenScheme_User( ML_Aggregate *ag  );
 int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 				  int *aggr_count, int nvertices, 
 				  int *aggr_index, int exp_Nrows, 
@@ -218,6 +219,7 @@ int ML_Aggregate_Set_CoarsenSchemeLevel_MIS( int level, int, ML_Aggregate *ag  )
 int ML_Aggregate_Set_CoarsenSchemeLevel_METIS( int level, int, ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS( int level, int, ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenSchemeLevel_Zoltan( int level, int, ML_Aggregate *ag  );
+int ML_Aggregate_Set_CoarsenSchemeLevel_User( int level, int, ML_Aggregate *ag  );
 
 /* ------------------------------------------------------------------------- */
 /* set threshold for pruning matrix graph                                    */
