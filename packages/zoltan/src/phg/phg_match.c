@@ -564,7 +564,7 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
       }  
     nselect = nsend;                          /* save for later use */
                         
-    /* fill send buff as list of <gno, gno's edge count, list of edge gno's> */
+    /* fill send buff as list of <gno, gno's edge count, list of edge lno's> */
     /* NOTE: can't overfill send buffer by definition of initial sizing */
     s = send ;
     for (i = 0; i < nsend; i++)   {
@@ -625,7 +625,7 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
       s = send;                        /* start at send buffer origin */
       for (k = kstart; k < nTotal; k++)   {   
         r     = &edgebuf[permute[k]];     
-        gno   = *r++;
+        gno   = *r++;                        /* gno of candidate vertex */
         count = *r++;                        /* count of following hyperedges */
         
         /* now compute the row's nVtx inner products for kth candidate */
@@ -638,21 +638,21 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
               sums [hg->hvertex[j]] += 1.0;
             }
         else if ((hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
-          for (i = 0; i < count; i++)
+          for (i = 0; i < count; r++, i++)
             for (j = hg->hindex [*r]; j < hg->hindex [*r + 1]; j++) {
               if (sums [hg->hvertex[j]] == 0.0)
                 index [m++] = hg->hvertex[j];
               sums [hg->hvertex[j]] += hgp->vtx_scal[hg->hvertex[j]];
             }
         else if ((hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
-          for (i = 0; i < count; i++)
+          for (i = 0; i < count; r++, i++)
             for (j = hg->hindex [*r]; j < hg->hindex [*r + 1]; j++)  {
               if (sums [hg->hvertex[j]] == 0.0)
                 index [m++] = hg->hvertex[j];
               sums [hg->hvertex[j]] += hg->ewgt [*r];
             }
         else     /* if ((hg->ewgt != NULL) && (hgp->vtx_scal != NULL)) */
-          for (i = 0; i < count; i++)
+          for (i = 0; i < count; r++, i++)
             for (j = hg->hindex [*r]; j < hg->hindex [*r + 1]; j++)  {
               if (sums [hg->hvertex[j]] == 0.0)
                 index [m++] = hg->hvertex[j];
