@@ -479,6 +479,69 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
 
 }
 
+// ======================================================================
+int ML_ApplyQ(int StartingNumElements,
+	      int ReorderedNumElements,
+	      int NumVectors,
+	      double* StartingVectors,
+	      double* ReorderedVectors)
+{
+
+  int NumPDEEqns = Q->OperatorRangeMap().NumMyElements() / StartingNumElements;
+
+  if (NumPDEEqns == 1) {
+ 
+    // in this case I can go on with pointers
+    double** StartArrayOfPointers = new double * [NumVectors];
+    double** ReordArrayOfPointers = new double * [NumVectors];
+
+    for (int k = 0 ; k < NumVectors ; ++k) {
+      StartArrayOfPointers[k] = StartingVectors + k * StartingNumElements;
+      ReordArrayOfPointers[k] = ReorderedVectors + k * ReorderedNumElements;
+    }
+
+    Epetra_MultiVector startNS(View,Q->OperatorRangeMap(),
+			       StartArrayOfPointers,NumVectors);
+    Epetra_MultiVector reordNS(View,Q->OperatorDomainMap(),
+			       ReordArrayOfPointers,NumVectors);
+    Q->Multiply(true,startNS,reordNS);
+
+    delete [] StartArrayOfPointers;
+    delete [] ReordArrayOfPointers;
+
+  }
+  else {
+    // here instead I must allocate, can be coded better
+    assert (Q->OperatorRangeMap().NumMyElements() == StartingNumElements * NumPDEEqns);
+    assert (Q->OperatorDomainMap().NumMyElements() == ReorderedNumElements * NumPDEEqns);
+
+    Epetra_MultiVector startNS(Q->OperatorRangeMap(), NumVectors);
+    Epetra_MultiVector reordNS(Q->OperatorDomainMap(), NumVectors);
+    startNS.PutScalar(0.0);
+    reordNS.PutScalar(0.0);
+
+    for (int k = 0 ; k < NumVectors ; ++k) {
+      for (int i = 0 ; i < StartingNumElements ; ++i) {
+	startNS[k][i * NumPDEEqns] = StartingVectors[i + k * StartingNumElements];
+      }
+    }
+    for (int k = 0 ; k < NumVectors ; ++k) {
+      for (int i = 0 ; i < ReorderedNumElements ; ++i) {
+	reordNS[k][i * NumPDEEqns] = ReorderedVectors[i + k * ReorderedNumElements];
+      }
+    }
+
+    Q->Multiply(true,startNS,reordNS);
+
+    for (int k = 0 ; k < NumVectors ; ++k) {
+      for (int i = 0 ; i < ReorderedNumElements ; ++i) {
+	ReorderedVectors[i + k * ReorderedNumElements] = reordNS[k][i * NumPDEEqns];
+      }
+    }
+
+  }
+
+}
 
 void ML_DestroyQ(void) 
 {
