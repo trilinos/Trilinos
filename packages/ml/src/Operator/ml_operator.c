@@ -103,7 +103,7 @@ int ML_Operator_Clean( ML_Operator *mat)
 #if defined(ML_TIMING) || defined(ML_FLOPS)
    double t1;
 #endif
-#ifdef ML_FLOPS
+#if defined(ML_FLOPS) || defined(ML_TIMING_DETAILED)
    int i;
    double mflops, maxfl,minfl,avgfl;
 #endif
