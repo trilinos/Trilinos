@@ -26,7 +26,7 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_TRANSFORM_EXAMPLES
+if BUILD_INOUT_EXAMPLES
 
 SUBDIRS = inout
 
