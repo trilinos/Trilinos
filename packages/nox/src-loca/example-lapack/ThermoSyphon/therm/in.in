@@ -1,0 +1,15 @@
+0		*debug		*
+32                 *m            *
+0  		*n            *
+10.0000           *delta is the Prandtl number *
+0            *sigma is the aspect ratio* 
+16.0000  lambda is the rayleigh number,  *
+0.d0		*boundary val 1	*
+0.d0		*boundary val 2
+1               *bc_case, 1 is dirichlet  *
+1.d-14             *tol*
+1.d0           *ra_step*
+16.0000	*ra_final*
+10.0000              *pr_final*
+'v'               * v computes left gen evect, n does not*
+'v'               * v computes right gen evect, n does not*
