@@ -37,7 +37,8 @@ matlab_example_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a
 
-matlab_example_CXXFLAGS = -I$(top_builddir)/src \
+matlab_example_CXXFLAGS = -I$(top_srcdir)/src/matlab \
+                         -I$(top_builddir)/src \
                          -I$(top_srcdir)/src \
                          -I$(top_srcdir)/../epetra/src \
                          -I$(top_builddir)/../epetra/src 
