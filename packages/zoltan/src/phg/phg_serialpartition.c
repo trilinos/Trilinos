@@ -19,48 +19,48 @@ extern "C" {
 
 #include "phypergraph.h"
 
-static ZOLTAN_PHG_SERIALPARTITION_FN global_ran;
-static ZOLTAN_PHG_SERIALPARTITION_FN global_lin;
-static ZOLTAN_PHG_SERIALPARTITION_FN global_bfs;
-static ZOLTAN_PHG_SERIALPARTITION_FN global_bfsh;
-static ZOLTAN_PHG_SERIALPARTITION_FN global_rbfs;
-static ZOLTAN_PHG_SERIALPARTITION_FN global_rbfsh;
-static ZOLTAN_PHG_SERIALPARTITION_FN global_gr0;
-static ZOLTAN_PHG_SERIALPARTITION_FN global_gr1;
-static ZOLTAN_PHG_SERIALPARTITION_FN global_gr2;
-static ZOLTAN_PHG_SERIALPARTITION_FN global_gr3;
-static ZOLTAN_PHG_SERIALPARTITION_FN global_gr4;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_ran;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_lin;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_bfs;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_bfsh;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rbfs;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rbfsh;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr0;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr1;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr2;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr3;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr4;
 
 
 /****************************************************************************/
 
-ZOLTAN_PHG_SERIALPARTITION_FN *Zoltan_PHG_Set_SerialPartition_Fn (char *str)
+ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn (char *str)
 {
-  if      (!strcasecmp(str, "ran"))   return global_ran;
-  else if (!strcasecmp(str, "lin"))   return global_lin;
-  else if (!strcasecmp(str, "bfs"))   return global_bfs;
-  else if (!strcasecmp(str, "rbfs"))  return global_rbfs;
-  else if (!strcasecmp(str, "bfsh"))  return global_bfsh;
-  else if (!strcasecmp(str, "rbfsh")) return global_rbfsh;
-  else if (!strcasecmp(str, "gr0"))   return global_gr0;
-  else if (!strcasecmp(str, "gr1"))   return global_gr1;
-  else if (!strcasecmp(str, "gr2"))   return global_gr2;
-  else if (!strcasecmp(str, "gr3"))   return global_gr3;
-  else if (!strcasecmp(str, "gr4"))   return global_gr4;
+  if      (!strcasecmp(str, "ran"))   return coarse_part_ran;
+  else if (!strcasecmp(str, "lin"))   return coarse_part_lin;
+  else if (!strcasecmp(str, "bfs"))   return coarse_part_bfs;
+  else if (!strcasecmp(str, "rbfs"))  return coarse_part_rbfs;
+  else if (!strcasecmp(str, "bfsh"))  return coarse_part_bfsh;
+  else if (!strcasecmp(str, "rbfsh")) return coarse_part_rbfsh;
+  else if (!strcasecmp(str, "gr0"))   return coarse_part_gr0;
+  else if (!strcasecmp(str, "gr1"))   return coarse_part_gr1;
+  else if (!strcasecmp(str, "gr2"))   return coarse_part_gr2;
+  else if (!strcasecmp(str, "gr3"))   return coarse_part_gr3;
+  else if (!strcasecmp(str, "gr4"))   return coarse_part_gr4;
   else                                return NULL;
 }
 
 /****************************************************************************/
 
-/* Zoltan_PHG_SerialPartition computes a global partitioning of a hypergraph.
+/* Zoltan_PHG_CoarsePartition computes a global partitioning of a hypergraph.
  * Typically, this routine is called at the bottom level in a
  * multilevel scheme (V-cycle).
  */
 
-int Zoltan_PHG_SerialPartition(ZZ *zz, PHGraph *hg, int p, Partition part,
+int Zoltan_PHG_CoarsePartition(ZZ *zz, PHGraph *hg, int p, Partition part,
 PHGPartParams *hgp)
 {
-  return hgp->SerialPartition(zz, hg, p, part, hgp);
+  return hgp->CoarsePartition(zz, hg, p, part, hgp);
 }
 
 /****************************************************************************/
@@ -69,7 +69,7 @@ PHGPartParams *hgp)
    in a given order. Currently, even partition sizes
    are assumed. Multi-weights are not yet supported.
 
-   This function is called by global_lin and global_ran.
+   This function is called by coarse_part_lin and coarse_part_ran.
 
    EBEB: This is a quick heuristic. We could alternatively use
    a more expensive but optimal algorithm, see e.g. Ali Pinar's thesis. */
@@ -97,7 +97,7 @@ static int seq_part (
   number = 0; /* Assign next vertex to partition no. number */
   cutoff = weight_sum/p;  /* Cutoff for current partition */
   if (hgp->output_level >= PHG_DEBUG_ALL)
-    printf("GLOBAL_PART weight_sum=%f, cutoff=%f\n", weight_sum, cutoff);
+    printf("COARSE_PART weight_sum=%f, cutoff=%f\n", weight_sum, cutoff);
 
   for (i=0; i<hg->nVtx; i++) {
     /* If order==NULL, then use linear order. */
@@ -121,7 +121,7 @@ static int seq_part (
         part_sum = 0.0;
     }
     if (hgp->output_level >= PHG_DEBUG_ALL)
-      printf("GLOBAL_PART i=%2d, part[%2d] = %2d, part_sum=%f\n", i, j, part[j],
+      printf("COARSE_PART i=%2d, part[%2d] = %2d, part_sum=%f\n", i, j, part[j],
        part_sum);
   }
   return ZOLTAN_OK;
@@ -131,7 +131,7 @@ static int seq_part (
 
 /****************************************************************************/
 /* Linear partitioning. Sequence partitioning with vertices in linear order. */
-static int global_lin (
+static int coarse_part_lin (
   ZZ *zz, 
   PHGraph *hg, 
   int p, 
@@ -147,7 +147,7 @@ static int global_lin (
 
 /****************************************************************************/
 /* Random partitioning. Sequence partitioning with vertices in random order. */
-static int global_ran (
+static int coarse_part_ran (
   ZZ *zz,
   PHGraph *hg,
   int p,
@@ -156,7 +156,7 @@ static int global_ran (
 )
 {
   int i, err, *order=NULL;
-  char *yo = "global_ran";
+  char *yo = "coarse_part_ran";
 
   if (!(order  = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
     ZOLTAN_FREE ((void**) &order);
@@ -253,7 +253,7 @@ static int bfs_order (
 
     cutoff = weight_sum/p;  /* Cutoff for current partition */
     if (hgp->output_level >= PHG_DEBUG_ALL)
-      printf("GLOBAL_PART weight_sum=%f, cutoff=%f\n", weight_sum, cutoff);
+      printf("COARSE_PART weight_sum=%f, cutoff=%f\n", weight_sum, cutoff);
   }
 
   if (hgp->output_level >= PHG_DEBUG_ALL)
@@ -297,7 +297,7 @@ static int bfs_order (
       part_sum += hg->vwgt ? hg->vwgt[vtx] : 1.0;
       part[vtx] = pnumber;
       if (hgp->output_level >= PHG_DEBUG_ALL)
-        printf("GLOBAL_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d, part_sum=%f\n",
+        printf("COARSE_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d, part_sum=%f\n",
          vtx, bfsnumber-1, vtx,part[vtx], part_sum);
     }
 
@@ -309,7 +309,7 @@ static int bfs_order (
         part[vtx]++;
         part_sum = old_sum;
         if (hgp->output_level >= PHG_DEBUG_ALL)
-          printf("GLOBAL_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d\n",
+          printf("COARSE_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d\n",
            vtx, bfsnumber-1, vtx, part[vtx]);
       }
       weight_sum -= part_sum;
@@ -319,7 +319,7 @@ static int bfs_order (
       else
         part_sum = 0.0;
       if (hgp->output_level >= PHG_DEBUG_ALL)
-        printf("GLOBAL_PART initializing for partition %2d, cutoff = %f\n",
+        printf("COARSE_PART initializing for partition %2d, cutoff = %f\n",
          pnumber, cutoff);
 
       /* Clean out queue to restart bfs. */
@@ -383,7 +383,7 @@ error:
 /****************************************************************************/
 /* BFS partitioning. Sequence partitioning with vertices in breadth-first
  * search order. Random visit order for hyperedges. */
-static int global_bfs (
+static int coarse_part_bfs (
   ZZ *zz, 
   PHGraph *hg, 
   int p, 
@@ -392,7 +392,7 @@ static int global_bfs (
 )
 {
   int i, err, start, *order=NULL;
-  char *yo = "global_bfs";
+  char *yo = "coarse_part_bfs";
 
   if (!(order  = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
     ZOLTAN_FREE ((void**) &order);
@@ -429,7 +429,7 @@ error:
 /****************************************************************************/
 /* BFS partitioning. Sequence partitioning with vertices in breadth-first
  * search order.  Heavy-first visit order for hyperedges. */
-static int global_bfsh (
+static int coarse_part_bfsh (
   ZZ *zz, 
   PHGraph *hg, 
   int p, 
@@ -438,7 +438,7 @@ static int global_bfsh (
 )
 {
   int i, err, start, *order=NULL;
-  char *yo = "global_bfsh";
+  char *yo = "coarse_part_bfsh";
 
   if (!(order  = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
     ZOLTAN_FREE ((void**) &order);
@@ -474,7 +474,7 @@ error:
 /* BFS partitioning with restart. Sequence partitioning with vertices in
  * breadth-first search order, breaking of pieces as we go; that is, the BFS
  * is restarted for each partition.  Random visit order for hyperedges. */
-static int global_rbfs (
+static int coarse_part_rbfs (
   ZZ *zz,
   PHGraph *hg,
   int p,
@@ -484,7 +484,7 @@ static int global_rbfs (
 {
   int i, start, *order;
   int err = ZOLTAN_OK;
-  char *yo = "global_rbfs";
+  char *yo = "coarse_part_rbfs";
 
   if (!(order  = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -518,7 +518,7 @@ error:
 /* BFS partitioning with restart. Sequence partitioning with vertices in 
    breadth-first search order, breaking of pieces as we go; that is, the BFS is
    restarted for each partition.  Heavy-first visit order for hyperedges. */
-static int global_rbfsh (
+static int coarse_part_rbfsh (
   ZZ *zz,
   PHGraph *hg,
   int p,
@@ -528,7 +528,7 @@ static int global_rbfsh (
 {
   int i, start, *order;
   int err = ZOLTAN_OK;
-  char *yo = "global_rbfsh";
+  char *yo = "coarse_part_rbfsh";
 
   if (!(order  = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -651,7 +651,7 @@ static int greedy_order (
 
     cutoff = weight_sum/p;  /* Cutoff for current partition */
     if (hgp->output_level >= PHG_DEBUG_ALL)
-      printf("GLOBAL_PART weight_sum=%f, cutoff=%f\n",weight_sum, cutoff);
+      printf("COARSE_PART weight_sum=%f, cutoff=%f\n",weight_sum, cutoff);
   }
 
   if (hgp->output_level >= PHG_DEBUG_ALL)
@@ -693,7 +693,7 @@ static int greedy_order (
       part_sum += hg->vwgt ? hg->vwgt[vtx] : 1.0;
       part[vtx] = pnumber;
       if (hgp->output_level >= PHG_DEBUG_ALL)
-        printf("GLOBAL_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d, part_sum=%f\n",
+        printf("COARSE_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d, part_sum=%f\n",
                vtx,bfsnumber-1,vtx,part[vtx],part_sum);
     }
 
@@ -705,7 +705,7 @@ static int greedy_order (
         part[vtx]++;
         part_sum = old_sum;
         if (hgp->output_level >= PHG_DEBUG_ALL)
-          printf("GLOBAL_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d\n",
+          printf("COARSE_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d\n",
            vtx, bfsnumber-1, vtx, part[vtx]);
       }
       weight_sum -= part_sum;
@@ -719,7 +719,7 @@ static int greedy_order (
         j = Zoltan_PHG_heap_peek_max(h); /* j will be the first vertex in the next part. */
       }
       if (hgp->output_level >= PHG_DEBUG_ALL)
-        printf("GLOBAL_PART initializing for partition %2d, cutoff = %f\n",
+        printf("COARSE_PART initializing for partition %2d, cutoff = %f\n",
          pnumber, cutoff);
 
       if (priority_mode > 0) {
@@ -812,7 +812,7 @@ error:
  * Priority function 2:
  *    gain(v,S) = \sum_e wgt(e)/edge_sum(v) * |e \intersect S| / |e|
  */
-static int global_greedy (
+static int coarse_part_greedy (
   ZZ *zz,
   PHGraph *hg,
   int p,
@@ -823,7 +823,7 @@ static int global_greedy (
 {
   int i, start, *order;
   int err = ZOLTAN_OK;
-  char *yo = "global_greedy";
+  char *yo = "coarse_part_greedy";
 
   if (!(order  = (int*) ZOLTAN_MALLOC (sizeof(int) * hg->nVtx))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -855,34 +855,34 @@ error:
 
 /*****************************************************************/
 /* Entry points for all the greedy methods. */
-static int global_gr0 (ZZ *zz, PHGraph *hg, int p, Partition part,
+static int coarse_part_gr0 (ZZ *zz, PHGraph *hg, int p, Partition part,
   PHGPartParams *hgp)
 {
-  return global_greedy(zz, hg, p, part, 0, hgp);
+  return coarse_part_greedy(zz, hg, p, part, 0, hgp);
 }
 
-static int global_gr1 (ZZ *zz, PHGraph *hg, int p, Partition part,
+static int coarse_part_gr1 (ZZ *zz, PHGraph *hg, int p, Partition part,
   PHGPartParams *hgp)
 {
-  return global_greedy(zz, hg, p, part, 1, hgp);
+  return coarse_part_greedy(zz, hg, p, part, 1, hgp);
 }
 
-static int global_gr2 (ZZ *zz, PHGraph *hg, int p, Partition part,
+static int coarse_part_gr2 (ZZ *zz, PHGraph *hg, int p, Partition part,
   PHGPartParams *hgp)
 {
-  return global_greedy(zz, hg, p, part, 2, hgp);
+  return coarse_part_greedy(zz, hg, p, part, 2, hgp);
 }
 
-static int global_gr3 (ZZ *zz, PHGraph *hg, int p, Partition part,
+static int coarse_part_gr3 (ZZ *zz, PHGraph *hg, int p, Partition part,
   PHGPartParams *hgp)
 {
-  return global_greedy(zz, hg, p, part, 3, hgp);
+  return coarse_part_greedy(zz, hg, p, part, 3, hgp);
 }
 
-static int global_gr4 (ZZ *zz, PHGraph *hg, int p, Partition part,
+static int coarse_part_gr4 (ZZ *zz, PHGraph *hg, int p, Partition part,
   PHGPartParams *hgp)
 {
-  return global_greedy(zz, hg, p, part, 4, hgp);
+  return coarse_part_greedy(zz, hg, p, part, 4, hgp);
 }
 
 #ifdef __cplusplus

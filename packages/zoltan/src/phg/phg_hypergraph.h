@@ -43,15 +43,15 @@ typedef struct {
    /* arrays to look up the neighbors of a vertex */
    int *nindex;  /* length |V|+1 index to neigh, last is 2|E| */
    int *neigh;   /* length 2|E|, list of neighbors for each vertex */
-   } PGraph;
+} PGraph;
   
 typedef struct {
   int info;       /* primarily for debugging recursive algorithms;initially 0 */
-  int RowBlocks;  /* number of processor blocks containing rows (hyperedges) */
-  int ColBlocks;  /* number of processor blocks containing columns (vertices) */
-                  /* RowBlocks * ColBlocks should equal number of processors! */
-  int myRowBlock; /* my processor's row block number in [0,RowBlock-1] */
-  int myColBlock; /* my processor's column block number in [0,ColBlock-1] */
+  int nProc_x;    /* number of processors in x-direction of 2D data distrib.  */
+  int nProc_y;    /* number of processors in y-direction of 2D data distrib.  */
+                  /* nProc_x * nProc_y should equal number of processors!     */
+  int myProc_x;   /* my processor's row block number in [0,nProc_x-1] */
+  int myProc_y;   /* my processor's column block number in [0,nProc_y-1] */
   int *vtxdist;   /* distributions of vertices to processor blocks. Vertices
                    * vtxdist[n] to vtxdist[n+1]-1 are stored in colblock n */
   int *hedgedist; /* distribution of hyperedges to rowblocks as above */                  
@@ -62,7 +62,7 @@ typedef struct {
   int nEdge;            /* number of hyperedges on this processor */
   int nInput;           /* number of inputs, |I|, (pins) on this processor */
   
-  int nDim;             /* number of coordinate dimensions for a vertex's */
+  int nDim;             /* number of coordinate dimensions for a vertex */
   int VertexWeightDim;  /* number of weight dimensions for a vertex */
   int EdgeWeightDim;    /* number of weight dimensions for a hyperedge */
   int redl;             /* working reduction limit */
@@ -84,7 +84,7 @@ typedef struct {
   
   int *vmap;        /* used when recursively dividing for p > 2 */
   double ratio;     /* split when recursively dividing for p > 2 */
-  } PHGraph;
+} PHGraph;
 
 
 #ifdef __cplusplus

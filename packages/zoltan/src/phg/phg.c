@@ -33,20 +33,23 @@ extern "C" {
 
 /*****************************************************************************/
 /*  Parameters structure for HG method.  */
-static PARAM_VARS HG_params[] = {
+static PARAM_VARS PHG_params[] = {
   /* Add parameters here. */
   {"PHG_REDUCTION_LIMIT",             NULL, "INT",    0},
   {"PHG_EDGE_WEIGHT_SCALING",         NULL, "INT",    0},
   {"PHG_REDUCTION_METHOD",            NULL, "STRING", 0},
-  {"PHG_GLOBAL_PARTITIONING",         NULL, "STRING", 0},
-  {"PHG_LOCAL_REFINEMENT",            NULL, "STRING", 0},
+  {"PHG_COARSE_PARTITIONING",         NULL, "STRING", 0},
+  {"PHG_REFINEMENT",                  NULL, "STRING", 0},
   {"PHG_REDUCTION_LOCAL_IMPROVEMENT", NULL, "STRING", 0},
+  {"PHG_NPROC_X",                     NULL, "INT",    0},
+  {"PHG_NPROC_Y",                     NULL, "INT",    0},
   {"PCHECK_GRAPH",                    NULL, "INT",    0},
   {"PHG_OUTPUT_LEVEL",                NULL, "INT",    0},
   {NULL,                              NULL,  NULL,    0} 
 };
 
 /* prototypes for static functions: */
+static int set_proc_distrib(int, int, int*, int*, int*, int*);
 static int Zoltan_PHG_Initialize_Params (ZZ*, PHGPartParams*);
 static int Zoltan_PHG_Return_Lists (ZZ*, ZHG*, Partition, int*,
  ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*, int**, int**);
@@ -60,8 +63,9 @@ static int Zoltan_PHG_Return_Lists (ZZ*, ZHG*, Partition, int*,
 
 int Zoltan_PHG(
   ZZ *zz,                    /* The Zoltan structure  */
-  float *part_sizes,   /* Input:  Array of size zz->Num_Global_Parts containing
-                       /* the percentage of work assigned to each partition. */
+  float *part_sizes,         /* Input:  Array of size zz->Num_Global_Parts 
+                                containing the percentage of work assigned 
+                                to each partition. */
   int *num_imp,              /* not computed */
   ZOLTAN_ID_PTR *imp_gids,   /* not computed */
   ZOLTAN_ID_PTR *imp_lids,   /* not computed */
@@ -80,7 +84,6 @@ int Zoltan_PHG(
   PHGPartParams hgp;               /* Hypergraph parameters. */
   Partition output_parts = NULL;   /* Output partition from HG partitioner. */
   int err = ZOLTAN_OK;
-  int i;
   char *yo = "Zoltan_PHG";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -162,34 +165,57 @@ static int Zoltan_PHG_Initialize_Params(
   PHGPartParams *hgp
 )
 {
-  Zoltan_Bind_Param(HG_params,"PHG_OUTPUT_LEVEL",    (void*) &hgp->output_level);
-  Zoltan_Bind_Param(HG_params,"PHG_REDUCTION_LIMIT",     (void*) &hgp->redl);
-  Zoltan_Bind_Param(HG_params,"PHG_REDUCTION_METHOD",    (void*) hgp->redm_str);
-  Zoltan_Bind_Param(HG_params,"PHG_EDGE_WEIGHT_SCALING", (void*) &hgp->ews);
-  Zoltan_Bind_Param(HG_params,"PHG_GLOBAL_PARTITIONING", (void*) hgp->serialpartition_str);
-  Zoltan_Bind_Param(HG_params,"PHG_LOCAL_REFINEMENT",    (void*) hgp->refinement_str);
-  Zoltan_Bind_Param(HG_params,"PCHECK_GRAPH",          (void*) &hgp->check_graph);
-  Zoltan_Bind_Param(HG_params,"PHG_REDUCTION_LOCAL_IMPROVEMENT",
-                              (void*) hgp->redmo_str);
+int ierr;
+
+  Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL",
+                                (void*) &hgp->output_level);
+  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X",
+                                (void*) &(hgp->nProc_x));
+  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y",
+                                (void*) &(hgp->nProc_y));
+  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT",
+                                (void*) &hgp->redl);
+  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD",
+                                (void*) hgp->redm_str);
+  Zoltan_Bind_Param(PHG_params, "PHG_EDGE_WEIGHT_SCALING",
+                                (void*) &hgp->ews);
+  Zoltan_Bind_Param(PHG_params, "PHG_COARSE_PARTITIONING", 
+                                (void*) hgp->coarsepartition_str);
+  Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT",
+                                (void*) hgp->refinement_str);
+  Zoltan_Bind_Param(PHG_params, "PCHECK_GRAPH",
+                                (void*) &hgp->check_graph);
+  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LOCAL_IMPROVEMENT",
+                                (void*) hgp->redmo_str);
 
   /* Set default values */
-  strncpy(hgp->redm_str,            "no", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->redmo_str,           "no", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->serialpartition_str, "no", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->refinement_str,      "no", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->redm_str,            "no",  MAX_PARAM_STRING_LEN);
+  strncpy(hgp->redmo_str,           "no",  MAX_PARAM_STRING_LEN);
+  strncpy(hgp->coarsepartition_str, "gr0", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->refinement_str,      "no",  MAX_PARAM_STRING_LEN);
   
   hgp->ews = 1;
   hgp->check_graph = 1;
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
   hgp->redl = zz->LB.Num_Global_Parts;
   hgp->output_level = PHG_DEBUG_LIST;
+  hgp->nProc_x = -1;
+  hgp->nProc_y = -1;
 
   /* Get application values of parameters. */
-  Zoltan_Assign_Param_Vals(zz->Params, HG_params, zz->Debug_Level, zz->Proc,
-   zz->Debug_Proc);
+  Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,
+                           zz->Debug_Proc);
+
+  ierr = set_proc_distrib(zz->Proc, zz->Num_Proc, &hgp->nProc_x, &hgp->nProc_y,
+                          &hgp->myProc_x, &hgp->myProc_y);
+  if (ierr != ZOLTAN_OK) 
+    goto End;
 
   /* Convert strings to function pointers. */
-  return Zoltan_PHG_Set_Part_Options (zz, hgp);
+  ierr = Zoltan_PHG_Set_Part_Options (zz, hgp);
+
+End:
+  return ierr;
 }
 
 /*****************************************************************************/
@@ -200,11 +226,11 @@ int Zoltan_PHG_Set_Param(
   char *name,                     /* name of variable */
   char *val)                      /* value of variable */
 {
-  /* associates value to named variable for hypergraph partitioning parameters */
+/* associates value to named variable for hypergraph partitioning parameters */
   PARAM_UTYPE result;         /* value returned from Check_Param */
   int index;                  /* index returned from Check_Param */
 
-  return Zoltan_Check_Param (name, val, HG_params, &result, &index);
+  return Zoltan_Check_Param (name, val, PHG_params, &result, &index);
 }
 
 /*****************************************************************************/
@@ -222,7 +248,7 @@ static int Zoltan_PHG_Return_Lists(
   int **exp_to_part
 )
 {
-  /* Routine to build export lists of ZOLTAN_LB_FN. */
+/* Routine to build export lists of ZOLTAN_LB_FN. */
   int i, j;
   int eproc;
   int num_gid_entries   = zz->Num_GID;
@@ -291,10 +317,10 @@ void Zoltan_PHG_HGraph_Print(
   FILE *fp
 )
 {
-  /* Printing routine. Can be used to print a Zoltan_HGraph or just an HGraph.
-   * Set zoltan_hg to NULL if want to print only an HGraph.
-   * Lots of output; synchronized across processors, so is a bottleneck.
-   */
+/* Printing routine. Can be used to print a Zoltan_HGraph or just an HGraph.
+ * Set zoltan_hg to NULL if want to print only an HGraph.
+ * Lots of output; synchronized across processors, so is a bottleneck.
+ */
   int i;
   int num_gid = zz->Num_GID;
   int num_lid = zz->Num_LID;
@@ -324,6 +350,62 @@ void Zoltan_PHG_HGraph_Print(
 
 /*****************************************************************************/
 
+static int set_proc_distrib(
+  int proc,          /* Input:  Rank of current processor */
+  int nProc,         /* Input:  Total # of processors */
+  int *nProc_x,      /* Input/Output:  # processors in x-direction of 2D 
+                        data distrib; if -1 on input, compute. */
+  int *nProc_y,      /* Input/Output:  # processors in y-direction of 2D 
+                        data distrib; if -1 on input, compute. */
+  int *myProc_x,     /* Output:  x block of proc in [0,nProc_x-1]. */
+  int *myProc_y      /* Output:  y block of proc in [0,nProc_y-1]. */
+)
+{
+/* Computes the processor distribution for the 2D data distrib.
+ * Sets nProc_x, nProc_y.
+ * Constraint:  nProc_x * nProc_y == nProc. 
+ * For 2D data distrib, default should approximate sqrt(nProc).
+ * If nProc_x and nProc_y both equal -1 on input, compute default.
+ * Otherwise, compute valid values and/or return error.
+ */
+char *yo = "set_proc_distrib";
+int tmp;
+int ierr = ZOLTAN_OK;
+
+  if (*nProc_x == -1 && *nProc_y == -1) {
+    /* Compute default */
+    tmp = (int) sqrt((double)nProc+0.1);
+    while (nProc % tmp) tmp--;
+    *nProc_y = tmp;
+    *nProc_x = nProc / tmp;
+  }
+  else if (*nProc_x == -1) {
+    /* nProc_y set by user parameter */
+    *nProc_x = nProc / *nProc_y;
+  }
+  else if (*nProc_y == -1) {
+    /* nProc_x set by user parameter */
+    *nProc_y = nProc / *nProc_x;
+  }
+
+  /* Error check */
+  if (*nProc_x * *nProc_y != nProc) {
+    ZOLTAN_PRINT_ERROR(proc, yo,
+      "Values for PHG_NPROC_X and PHG_NPROC_Y do not evenly divide the "
+      "total number of processors.");
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  *myProc_x = proc % *nProc_x;
+  *myProc_y = proc / *nProc_x;
+
+  printf("%d of %d KDDKDD nProc (%d,%d)  myProc (%d,%d)\n", 
+         proc, nProc, *nProc_x, *nProc_y, *myProc_x, *myProc_y);
+End:
+
+  return ierr;
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

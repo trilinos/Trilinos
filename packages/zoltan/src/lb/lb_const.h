@@ -59,6 +59,7 @@ typedef enum Zoltan_LB_Method {
   RIB,
   HSFC,
   HG,
+  PHG,
   ZOLTAN_LB_MAX_METHODS          /*  This entry should always be last.      */
 } ZOLTAN_LB_METHOD;
 
@@ -254,6 +255,7 @@ extern ZOLTAN_LB_FN Zoltan_Reftree_Part;
 extern ZOLTAN_LB_FN Zoltan_RIB;
 extern ZOLTAN_LB_FN Zoltan_HSFC;
 extern ZOLTAN_LB_FN Zoltan_HG;
+extern ZOLTAN_LB_FN Zoltan_PHG;
 
 /* FREE DATA_STRUCTURE FUNCTIONS */
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_RCB_Free_Structure;
@@ -262,6 +264,7 @@ extern ZOLTAN_LB_FREE_DATA_FN Zoltan_Oct_Free_Structure;
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_Reftree_Free_Structure;
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_HSFC_Free_Structure;
 extern ZOLTAN_LB_FREE_DATA_FN Zoltan_HG_Free_Structure;
+extern ZOLTAN_LB_FREE_DATA_FN Zoltan_PHG_Free_Structure;
 
 /* POINT_ASSIGN FUNCTIONS */
 extern ZOLTAN_LB_POINT_ASSIGN_FN Zoltan_RB_Point_Assign;

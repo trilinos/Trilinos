@@ -18,16 +18,16 @@ extern "C" {
 
 #include "phypergraph.h"
 
-static ZOLTAN_PHG_REFINEMENT_FN local_no;
-static ZOLTAN_PHG_REFINEMENT_FN local_grkway;
+static ZOLTAN_PHG_REFINEMENT_FN refine_no;
+static ZOLTAN_PHG_REFINEMENT_FN refine_grkway;
 
 /****************************************************************************/
 
 ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char *str)
 {
   
-  if      (!strcasecmp(str, "grkway"))         return local_grkway;
-  else if (!strcasecmp(str, "no"))             return local_no;
+  if      (!strcasecmp(str, "grkway"))         return refine_grkway;
+  else if (!strcasecmp(str, "no"))             return refine_no;
   else                                         return NULL;
 }
 
@@ -43,7 +43,7 @@ PHGPartParams *hgp)
 
 
 /****************************************************************************/
-static int local_no (
+static int refine_no (
   ZZ *zz,     /* Zoltan data structure */
   PHGraph *hg,
   int p,
@@ -89,7 +89,7 @@ static int gain_check (PHGraph *hg, double *gain, int *part, int **cut)
 
 /* This algorithm is loosely based on "A Coarse-Grained Parallel Formulation */
 /* of Multilevel k-way Graph Partitioning Algorithm", Karypis & Kumar, 1997. */
-/* It is implimented in serial as a testbed for future parallel development  */
+/* It is implemented in serial as a testbed for future parallel development  */
 
 typedef struct
    {
@@ -164,7 +164,7 @@ int Zoltan_PHG_move_vertex (PHGraph *hg, int vertex, int sour, int dest,
 
 
 
-static int local_grkway (
+static int refine_grkway (
   ZZ *zz,
   PHGraph *hg,
   int p,
@@ -180,7 +180,7 @@ static int local_grkway (
   int   **cuts, *store1, *listend, *movect;
   Vdata **lists, *store2;
   int     bestpart;
-  char   *yo="local_grkway";
+  char   *yo="refine_grkway";
 
   double smallest;
   int found, smallpart;

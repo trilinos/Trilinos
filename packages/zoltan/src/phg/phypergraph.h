@@ -11,8 +11,8 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifndef ZOLTAN_HYPERGRAPH_H
-#define ZOLTAN_HYPERGRAPH_H
+#ifndef ZOLTAN_PHYPERGRAPH_H
+#define ZOLTAN_PHYPERGRAPH_H
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -58,7 +58,7 @@ typedef struct {
 /* Function types for options to hypergraph partitioning */
 struct PHGPartParamsStruct;  /* Forward declaration */
 typedef int ZOLTAN_PHG_MATCHING_FN   (ZZ*, PHGraph*, Matching, int*);
-typedef int ZOLTAN_PHG_SERIALPARTITION_FN(ZZ*, PHGraph*, int, Partition,
+typedef int ZOLTAN_PHG_COARSEPARTITION_FN(ZZ*, PHGraph*, int, Partition,
                                      struct PHGPartParamsStruct*);
 typedef int ZOLTAN_PHG_REFINEMENT_FN  (ZZ*, PHGraph*, int, Partition,
                                      struct PHGPartParamsStruct*, float);
@@ -70,28 +70,31 @@ typedef int ZOLTAN_PHG_MATCHING_EWS_FN (ZZ*, PGraph*);
 
 /* Parameters to the hypergraph functions */
 struct PHGPartParamsStruct {
-  float bal_tol;                       /* Balance tolerance in % of average */
-  int kway;                             /* 1 -> direct kway, 0->recursive bisection */
-  int redl;                             /* Reduction limit (constant). */
-
-  char redm_str[MAX_PARAM_STRING_LEN];  /* Reduction method string. */
-  ZOLTAN_PHG_MATCHING_FN *matching;      /* Pointers to Matching, Packing and */
-
-  char redmo_str[MAX_PARAM_STRING_LEN];  /* Matching optimization string*/
-  ZOLTAN_PHG_MATCHING_FN *matching_opt;  /* Pointers to Matching, Packing and */
+  float bal_tol;                 /* Balance tolerance in % of average */
+  int kway;                      /* 1 -> direct kway, 0->recursive bisection */
+  int redl;                      /* Reduction limit (constant). */
+  char redm_str[MAX_PARAM_STRING_LEN];   /* Reduction method string. */
+  ZOLTAN_PHG_MATCHING_FN *matching;      /* Pointers to Matching function */
+  char redmo_str[MAX_PARAM_STRING_LEN];  /* Matching optimization string */
+  ZOLTAN_PHG_MATCHING_FN *matching_opt;  /* Pointers to Matching opt function */
   int ews;                               /* type of hyperedge weight scaling */
-                        
-  char serialpartition_str[MAX_PARAM_STRING_LEN]; /* Global partitioning string and */
-  ZOLTAN_PHG_SERIALPARTITION_FN *SerialPartition;/* pointer to Global partitioning fn */
-
-  char refinement_str[MAX_PARAM_STRING_LEN];   /* Local refinement string and */
-  ZOLTAN_PHG_REFINEMENT_FN *Refinement;    /* pointer to Local refinement fn */
-
+  char coarsepartition_str[MAX_PARAM_STRING_LEN]; 
+                                         /* Coarse partitioning string */
+  ZOLTAN_PHG_COARSEPARTITION_FN *CoarsePartition;
+                                         /* pointer to coarse partitioning fn */
+  char refinement_str[MAX_PARAM_STRING_LEN]; /* Refinement string and */
+  ZOLTAN_PHG_REFINEMENT_FN *Refinement;      /* pointer to refinement fn */
   int check_graph;      /* Flag indicating whether the input hypergraph should 
                          * be checked for errors. */
   int output_level;     /* Flag indicating amount of output from HG algorithms.
                          * See levels PHG_DEBUG_* below.  */
+  int nProc_x;    /* number of processors in x-direction of 2D data distrib.  */
+  int nProc_y;    /* number of processors in y-direction of 2D data distrib.  */
+                  /* nProc_x * nProc_y should equal number of processors!     */
+  int myProc_x;   /* my processor's row block number in [0,nProc_x-1] */
+  int myProc_y;   /* my processor's column block number in [0,nProc_y-1] */
 };
+
 typedef struct PHGPartParamsStruct PHGPartParams;
 
 /* Hypergraph output levels: */
@@ -120,13 +123,13 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams*);
 /* Coarsening */
 int Zoltan_PHG_Coarsening   (ZZ*, PHGraph*, Matching, PHGraph*, int*);
 
-/* Serial Partitioning functions */
-int Zoltan_PHG_SerialPartition (ZZ*, PHGraph*, int, Partition, PHGPartParams*);
-ZOLTAN_PHG_SERIALPARTITION_FN *Zoltan_PHG_Set_SerialPartition_Fn(char*);
+/* Coarse Partitioning functions */
+int Zoltan_PHG_CoarsePartition (ZZ*, PHGraph*, int, Partition, PHGPartParams*);
+ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(char*);
 
 /* Refinement functions */ /* KDD Placeholder for later. */
 int Zoltan_PHG_Refinement (ZZ*, PHGraph*, int, Partition, PHGPartParams*);
-ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Local_Ref_Fn(char*);
+ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char*);
 
 /* Sorting */
 void Zoltan_quicksort_pointer_dec_float_int (int*, float*, int*, int, int);
@@ -162,7 +165,6 @@ int  Zoltan_PHG_heap_extract      (HEAP*, int);
 
 int  Zoltan_PHG_move_vertex (PHGraph*, int, int, int, int*, int**, double*, HEAP*);
 void Zoltan_PHG_Plot(int, int, int, int*, int*, int*, char*);
-void Zoltan_PHG_Free_Structure (ZZ *zz);
 
 
 

@@ -37,15 +37,15 @@ int Zoltan_PHG_Set_Part_Options (ZZ *zz, PHGPartParams *hgp)
     return ZOLTAN_FATAL;
   }
 
-  /* Set serial partitioning method */
-  if (!(hgp->SerialPartition = Zoltan_PHG_Set_SerialPartition_Fn(hgp->serialpartition_str))) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_GLOBAL_PARTITIONING.");
+  /* Set coarse partitioning method */
+  if (!(hgp->CoarsePartition = Zoltan_PHG_Set_CoarsePartition_Fn(hgp->coarsepartition_str))) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_COARSE_PARTITIONING.");
     return ZOLTAN_FATAL;
   }
 
   /* Set refinement method. */
   if (!(hgp->Refinement = Zoltan_PHG_Set_Refinement_Fn(hgp->refinement_str))) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_LOCAL_REFINEMENT.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_REFINEMENT.");
     return ZOLTAN_FATAL;
   }
   return ZOLTAN_OK;
@@ -83,7 +83,7 @@ int Zoltan_PHG_HPart_Lib (
   if (hgp->output_level >= PHG_DEBUG_LIST) {
     printf("START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s-%s/%s-%s p=%d...\n",
      hg->info, hg->nVtx, hg->nEdge, hg->nInput, hg->redl, hgp->redm_str,
-     hgp->redmo_str, hgp->serialpartition_str, hgp->refinement_str, p);
+     hgp->redmo_str, hgp->coarsepartition_str, hgp->refinement_str, p);
     if (hgp->output_level > PHG_DEBUG_LIST) {
       err = Zoltan_PHG_Info(zz, hg);
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
@@ -113,7 +113,7 @@ int Zoltan_PHG_HPart_Lib (
   }
   else if (hg->nVtx <= hg->redl || hg->nEdge == 0 || hgp->matching == NULL)  {
     /* fewer vertices than desired or no edges or no coarsening requested */
-    err = Zoltan_PHG_SerialPartition (zz, hg, p, part, hgp);
+    err = Zoltan_PHG_CoarsePartition (zz, hg, p, part, hgp);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
       return err;
   }
@@ -212,7 +212,7 @@ int Zoltan_PHG_HPart_Lib (
   if (hgp->output_level >= PHG_DEBUG_LIST)
     printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s-%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
      hg->info, hg->nVtx, hg->nEdge, hg->nInput, hg->redl, hgp->redm_str,
-     hgp->redmo_str, hgp->serialpartition_str, hgp->refinement_str, p,
+     hgp->redmo_str, hgp->coarsepartition_str, hgp->refinement_str, p,
      Zoltan_PHG_HPart_balance(zz, hg, p, part),
      Zoltan_PHG_hcut_size_links(zz, hg, part));
 
