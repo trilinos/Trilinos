@@ -113,41 +113,13 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   Epetra_LinearProblem *Amesos_LinearProblem = new Epetra_LinearProblem;
   Amesos_LinearProblem->SetOperator( Amesos_CrsMatrix ) ; 
 
-  Teuchos::ParameterList ParamList ;
+  Teuchos::ParameterList AmesosList;
 
-  Teuchos::ParameterList & SluParamList=ParamList.sublist("Superludist");
-
-  // this is specific to Superludist-2.0
-  if( choice == ML_AMESOS_SUPERLUDIST ) {
-    
-    if( MaxProcs == -2 ) {
-      if( Amesos_CrsMatrix->RowMatrixRowMap().LinearMap() == true ) {
-	ParamList.set("Redistribute",false);
-      } else {
-#ifdef TFLOP
-	if( Amesos_CrsMatrix->Comm().MyPID() == 0 ) {
- 	  printf("*ML*WRN* in Amesos_Smoother, you can set MaxProcs = -1\n");
-	  printf("*ML*WRN* (that is, matrix will not be redistributed)\n");
-	  printf("*ML*WRN* ONLY if the matrix map is linear. Now proceeding\n");
-	  printf("*ML*WRN* with redistribution of the matrix\n");
-	  printf("*ML*WRN* (file %s line %d)\n",__FILE__,__LINE__);
-	}
-#else
-	if( Amesos_CrsMatrix->Comm().MyPID() == 0 ) {
-	  cout << "*ML*WRN* in Amesos_Smoother, you can set MaxProcs = -1\n"
-	       << "*ML*WRN* (that is, matrix will not be redistributed)\n"
-	       << "*ML*WRN* ONLY if the matrix map is linear. Now proceeding\n"
-	       << "*ML*WRN* with redistribution of the matrix\n"
-	       << "*ML*WRN* (file " << __FILE__ << ", line "
-	       << __LINE__ << ")\n";
-	}
-#endif
-      }
-    } else {
-      ParamList.set("Redistribute",true);
-      SluParamList.set("MaxProcesses",MaxProcs);
-    }
+  if( ML_Get_PrintLevel() > 8 ) {
+    AmesosList.set("PrintTiming",true);
+    AmesosList.set("PrintStatus",true);
   }
+  AmesosList.set("MaxProcs",MaxProcs);
 
   Amesos_BaseSolver* A_Base;
   Amesos A_Factory;
@@ -243,7 +215,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
     }
  }
 
-  A_Base->SetParameters(ParamList);
+  A_Base->SetParameters(AmesosList);
 
   Epetra_Time Time(Amesos_CrsMatrix->Comm());
 
