@@ -166,6 +166,8 @@ void SCLOP_solver::determine_ownership()
     cout << "Warning: number of null constraints = " << ncon_zero;
   }
   int *count1 = new int[ndof]; myzero(count1, ndof);
+  int *flag_con = new int[NumberMpc]; myzero(flag_con, NumberMpc);
+  int *flag_con_max = new int[NumberMpc];
   nmpc_loc = 0;
   for (i=0; i<NumberMpc; i++) {
     if (MpcVector[i].NumEntries() > 0) nmpc_loc++;
@@ -174,10 +176,26 @@ void SCLOP_solver::determine_ownership()
       dof  = MpcVector[i].NodalDof(j);
       for (k=nodebeg[node]; k<nodebeg[node+1]; k++) {
 	if (nodedof[k] == dof) {
+	  flag_con[i] = 1;
 	  count1[k]++;
 	  break;
 	}
       }
+    }
+  }
+  Comm->MaxAll(flag_con, flag_con_max, NumberMpc);
+  delete [] flag_con;
+  //
+  // determine number of constraints with no active dofs (each of these 
+  // constraints will be ignored)
+  //
+  if (MyPID == 0) {
+    int ncon_no_active(0);
+    for (i=0; i<NumberMpc; i++) if (flag_con_max[i] == 0) ncon_no_active++;
+    if (ncon_no_active > 0) {
+      cout << "Warning: number of constraints with no active dofs = " 
+	   << ncon_no_active << endl;
+      cout << "These constraint equations will be ignored" << endl;
     }
   }
   int *con2 = new int[ndof+1]; con2[0] = 0;
@@ -189,24 +207,27 @@ void SCLOP_solver::determine_ownership()
   locvec = new double[nmpc_loc]; nmpc_loc = 0;
   int NumberMpc_keep(0);
   for (i=0; i<NumberMpc; i++) {
-    for (j=0; j<MpcVector[i].NumEntries(); j++) {
-      node = MpcVector[i].LocalId(j);
-      dof  = MpcVector[i].NodalDof(j);
-      for (k=nodebeg[node]; k<nodebeg[node+1]; k++) {
-	if (nodedof[k] == dof) {
-	  con1[con2[k] + count1[k]] = NumberMpc_keep;
-	  coef[con2[k] + count1[k]] = MpcVector[i].Coef(j);
-	  count1[k]++;
-	  break;
+    if (flag_con_max[i] > 0) {
+      for (j=0; j<MpcVector[i].NumEntries(); j++) {
+	node = MpcVector[i].LocalId(j);
+	dof  = MpcVector[i].NodalDof(j);
+	for (k=nodebeg[node]; k<nodebeg[node+1]; k++) {
+	  if (nodedof[k] == dof) {
+	    con1[con2[k] + count1[k]] = NumberMpc_keep;
+	    coef[con2[k] + count1[k]] = MpcVector[i].Coef(j);
+	    count1[k]++;
+	    break;
+	  }
 	}
       }
+      if (MpcVector[i].NumEntries() > 0) {
+	mpc_loc[nmpc_loc] = NumberMpc_keep;
+	nmpc_loc++;
+      }
+      if (MpcVector[i].NumEntriesGlobal() > 0) NumberMpc_keep++;
     }
-    if (MpcVector[i].NumEntries() > 0) {
-      mpc_loc[nmpc_loc] = NumberMpc_keep;
-      nmpc_loc++;
-    }
-    if (MpcVector[i].NumEntriesGlobal() > 0) NumberMpc_keep++;
   }
+  delete [] flag_con_max;
   Epetra_Map RowMapCon(NumberMpc_keep, 0, *Comm);
   MpcLocalMap = new Epetra_Map(-1, nmpc_loc, mpc_loc, 0, *Comm);
   Epetra_CrsMatrix ConSubdomain(View, *SubMap, count1);

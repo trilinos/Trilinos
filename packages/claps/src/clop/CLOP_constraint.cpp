@@ -276,10 +276,12 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
       if (row_flag[con_row[i]] == true) ivec[con_row[i]] = 1;
     }
   }
+  double con_tol(1e-10);
   for (i=0; i<ncol; i++) {
     for (j=0; j<nnzcol[i]; j++) {
       row = colrows[i][j];
-      if (row_flag[row] == false) ivec[row]++;
+      if ((row_flag[row] == false) && 
+	  (fabs(colvals[i][j]) > con_tol)) ivec[row]++;
     }
   }
   int *val2 = new int[nrow+1]; val2[0] = 0;
@@ -296,7 +298,6 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
       }
     }
   }
-  double con_tol(1e-10);
   for (i=0; i<ncol; i++) {
     for (j=0; j<nnzcol[i]; j++) {
       row = colrows[i][j];
@@ -397,7 +398,53 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
   //
   Epetra_Map RowMapMyCon1(-1, nc1, mycons, 0, Comm);
   Epetra_CrsMatrix ConMat1(Copy, RowMapMyCon1, 0);
+
   Epetra_Export Exporter(ConMat_Loc.RowMap(), RowMapMyCon1);
+  //
+  // write out data for debugging
+  //
+  /*
+  char fname[101]; int NumIndices;
+  sprintf(fname,"%s%d","test", MyPID);
+  sprintf(fname, "%s.dat", fname);
+  ofstream ffout;
+  ffout.open(fname);
+  ffout << ConMat_Loc.NumMyRows() << " number of rows in A" << endl;
+  for (i=0; i<ConMat_Loc.NumMyRows(); i++) ffout << ConMat_Loc.GRID(i) << endl;
+
+  ffout << ConMat_Loc.NumMyCols() << " number of columns in A" << endl;
+  for (i=0; i<ConMat_Loc.NumMyCols(); i++) ffout << ConMat_Loc.GCID(i) << endl;
+
+  int nn = ConMat_Loc.DomainMap().NumMyPoints(); 
+  ffout << nn << " number of rows in A domainmap" << endl;
+  int *inta = new int[nn];
+  ConMat_Loc.DomainMap().MyGlobalElements(inta);
+  for (i=0; i<nn; i++) ffout << inta[i] << endl;
+  delete [] inta;
+
+  nn = ConMat_Loc.RangeMap().NumMyPoints(); 
+  ffout << nn << " number of rows in A rangemap" << endl;
+  inta = new int[nn];
+  ConMat_Loc.RangeMap().MyGlobalElements(inta);
+  for (i=0; i<nn; i++) ffout << inta[i] << endl;
+  delete [] inta;
+
+  ffout << ConMat1.NumMyRows() << " number of rows in B" << endl;
+  for (i=0; i<ConMat1.NumMyRows(); i++) ffout << ConMat1.GRID(i) << endl;
+  nn = ConMat_Loc.MaxNumEntries();
+
+  ffout << nn << " max number entries in any row of A" << endl;
+
+  for (i=0; i<ConMat_Loc.NumMyRows(); i++) {
+    ConMat_Loc.ExtractMyRowView(i, NumIndices, Values, Indices);
+    ffout << NumIndices << endl;
+    for (int j=0; j<NumIndices; j++) ffout << Indices[j] << " " 
+					   << Values[j] << endl;
+  }
+  ffout << "All done" << endl;
+  ffout.close();
+  */  
+  //
   ConMat1.Export(ConMat_Loc, Exporter, Insert);
   ConMat1.FillComplete(A->RowMap(), RowMapMyCon1);
   //  cout << ConMat1 << endl;
@@ -567,8 +614,13 @@ void CLOP_constraint::get_best_row(int col, int icol, int & iproc)
       if (fabs(colv) > max_value) max_value = fabs(colv);
     }
   }
+  int iamax[2], iamax_g[2], max_icol;
+  iamax[0] = max_iproc; iamax[1] = icol;
   Comm.MaxAll(&max_value, &max_value_g, 1);
-  Comm.MaxAll(&max_iproc, &max_iproc_g, 1);
+  Comm.MaxAll(iamax, iamax_g, 2);
+  max_iproc_g = iamax_g[0];
+  max_icol    = iamax_g[1];
+  assert(max_icol > -1);
   if (icol != -1) {
     if (max_value_g < tol_con) red_flag = 1;
   }
