@@ -191,7 +191,6 @@ int main()
   NOX::Parameter::List& directionParameters = 
     solverParameters.sublist("Direction");
   directionParameters.setParameter("Method","Tensor");
-  directionParameters.setParameter("Compute Step","Tensor");
 
   // Sublist for local solver parameters
   NOX::Parameter::List& localSolverParameters = 
@@ -206,12 +205,17 @@ int main()
   //localSolverParameters.setParameter("Use Shortcut Method",false);
 
   // Sublist for line search parameters
-  NOX::Parameter::List& lineSearchParameters = 
+  NOX::Parameter::List& globalStrategyParameters = 
     solverParameters.sublist("Line Search");
-  lineSearchParameters.setParameter("Method","Tensor");
-  lineSearchParameters.sublist("Tensor").setParameter("Submethod","Curvilinear");
-  lineSearchParameters.sublist("Tensor").setParameter("Lambda Selection","Halving");
-  lineSearchParameters.sublist("Tensor").setParameter("Max Iters",20);
+  globalStrategyParameters.setParameter("Method","Curvilinear");
+  
+  // Sublist for line search parameters
+  NOX::Parameter::List& lineSearchParameters =
+    globalStrategyParameters.sublist(globalStrategyParameters.
+				     getParameter("Method","Curvilinear"));
+
+  lineSearchParameters.setParameter("Lambda Selection","Halving");
+  lineSearchParameters.setParameter("Max Iters",20);
 
 
   // Create the convergence tests

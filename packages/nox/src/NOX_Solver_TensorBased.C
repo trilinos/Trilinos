@@ -174,8 +174,8 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
   // *** Reset direction parameters ***
   dirParams = paramsPtr->sublist("Direction");
 
-  // bwb: Do we just want to use Method instead of "Compute Step"?
-  string choice = dirParams.getParameter("Compute Step", "Tensor");
+  // Determine the specific type of direction to compute
+  string choice = dirParams.getParameter("Method", "Tensor");
   if (choice == "Tensor")
   {
     requestedBaseStep = TensorStep;
@@ -190,10 +190,18 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
   {
     if (utils.isPrintProcessAndType(NOX::Utils::Error))
       cerr << "NOX::Direction::Tensor::reset() - The choice of "
-	   << "\"Compute Step\" parameter \"" << choice
+	   << "\"Method\" parameter \"" << choice
 	   << "\" is invalid." << endl;
     throw "NOX error";
   }
+  // Make a reference to the sublist holding the global strategy parameters
+  NOX::Parameter::List& teParams = dirParams.sublist(choice);
+
+  //  Copy Method into "Compute Step" (temporary hack for data scripts)
+  dirParams.setParameter("Compute Step", choice);
+
+  // Initialize direction parameters for this object
+  doRescue = teParams.getParameter("Rescue Bad Newton Solve", true);
 
   // Determine whether we should use the Modified Tensor method
   useModifiedMethod = false;
@@ -206,27 +214,12 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
       cout << "Using Modifed Bouaricha method" << endl;
   }
 
-  NOX::Parameter::List& teParams =
-    dirParams.sublist(dirParams.getParameter("Method","Tensor"));
-  doRescue = teParams.getParameter("Rescue Bad Newton Solve", true);
-
   
   // *** Reset parameters for Line Search ***
   lsParams = paramsPtr->sublist("Line Search");
 
-  // Make a reference to the sublist holding the global strategy parameters
-  NOX::Parameter::List& gsParams =
-    lsParams.sublist(lsParams.getParameter("Method", "Tensor"));
-  
-  // Initialize linesearch parameters for this object
-  minStep = gsParams.getParameter("Minimum Step", 1.0e-12);
-  defaultStep = gsParams.getParameter("Default Step", 1.0);
-  recoveryStep = gsParams.getParameter("Recovery Step", 0.0); // exit on fail
-  maxIters = gsParams.getParameter("Max Iters", 40);
-  alpha = gsParams.getParameter("Alpha Factor", 1.0e-4);
-
   // Determine the specific type of tensor linesearch to perform
-  choice = gsParams.getParameter("Submethod", "Curvilinear");
+  choice = lsParams.getParameter("Method", "Curvilinear");
 
   if (choice == "Curvilinear")
     lsType = Curvilinear;
@@ -234,6 +227,8 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
     lsType = Dual;
   else if (choice == "Standard")
     lsType = Standard;
+  else if (choice == "Full Step")
+    lsType = FullStep;
   else if (choice == "Newton")
     lsType = Newton;
   else
@@ -244,6 +239,18 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
 	   << " is invalid." << endl;
     throw "NOX Error";
   }
+  // Make a reference to the sublist holding the global strategy parameters
+  NOX::Parameter::List& gsParams = lsParams.sublist(choice);
+    
+  //  Copy Method into "Submethod" (temporary hack for data scripts)
+  lsParams.setParameter("Submethod", choice);
+
+  // Initialize linesearch parameters for this object
+  minStep = gsParams.getParameter("Minimum Step", 1.0e-12);
+  defaultStep = gsParams.getParameter("Default Step", 1.0);
+  recoveryStep = gsParams.getParameter("Recovery Step", 0.0); // exit on fail
+  maxIters = gsParams.getParameter("Max Iters", 40);
+  alpha = gsParams.getParameter("Alpha Factor", 1.0e-4);
 
   choice = gsParams.getParameter("Lambda Selection", "Halving");
   if (choice == "Halving")
@@ -871,10 +878,16 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newsoln,
   if (print.isPrintProcessAndType(NOX::Utils::InnerIteration))
   {
     cout << "\n" << NOX::Utils::fill(72) << "\n";
-    cout << "-- Tensor Line Search ("
-	 << paramsPtr->sublist("Line Search").sublist("Tensor").
-      getParameter("Submethod","Curvilinear")
-	 << ") -- \n";
+    cout << "-- Tensor Line Search (";
+    if (lsType == Curvilinear)
+      cout << "Curvilinear";
+    else if (lsType == Standard)
+      cout << "Standard";
+    else if (lsType == FullStep)
+      cout << "Full Step";
+    else if (lsType == Dual)
+      cout << "Dual";
+    cout << ") -- " << endl;
   }
 
   // Local variables
@@ -896,6 +909,13 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newsoln,
   newsoln.computeF();    
   double fNew = 0.5 * newsoln.getNormF() * newsoln.getNormF();  
 
+  // Stop here if only using the full step
+  if (lsType == FullStep)
+  {
+      print.printStep(lsIterations, step, fOld, fNew, message);
+      return (!isFailed);
+  }
+  
   // Compute directional derivative
   double fprime;
   if ((lsType == Curvilinear)  &&  !(isNewtonDirection)) 

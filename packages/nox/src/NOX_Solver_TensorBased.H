@@ -416,6 +416,7 @@ protected:
       Curvilinear,
       Standard,
       Dual,
+      FullStep,
       Newton
     };
   
