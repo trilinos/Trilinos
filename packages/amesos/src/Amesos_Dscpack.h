@@ -195,14 +195,15 @@ public:
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
   //@}
 
+ private:  
+  int PerformSymbolicFactorization();
+  int PerformNumericFactorization();
+
  protected:
 
   bool UseTranspose_;
-
   const Epetra_LinearProblem * Problem_;
-  
   const AMESOS::Parameter::List * ParameterList_ ; 
-
 
   DSC_Solver	MyDSCObject;
   MPI_Comm MPIC ; 
@@ -218,11 +219,11 @@ public:
   int MyDscRank ; 
   int DscNumProcs ; 
   int NumLocalCols; 
-  //  I don't see why the next three belong here (if they do)
   int NumGlobalCols;
-#if 0
-  int NumLocalPPPStructs ; 
-#endif
+  int NumLocalStructs;
+  int NumLocalNonz ; 
+
+
 
 };  // End of  class Amesos_Dscpack  
 #endif /* _EPETRA_DSCPACK_H_ */

@@ -33,8 +33,8 @@
 // ************************************************************************
 //@HEADER
 
-#include "Amesos_Parameter_Entry.H" // class definition
-#include "Amesos_Parameter_List.H"	 // for sublists
+#include "Amesos_Parameter_Entry.h" // class definition
+#include "Amesos_Parameter_List.h"	 // for sublists
 
 using namespace AMESOS::Parameter;
 

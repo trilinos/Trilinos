@@ -235,6 +235,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       AMESOS::Parameter::List ParamList ;
       Amesos_Dscpack A_dscpack( Problem, ParamList ) ; 
       EPETRA_CHK_ERR( A_dscpack.Solve(  ) ); 
+      //      cout << " After the call to A_dscpack.Solve() " << endl ; 
    }
 #endif
 #ifdef TEST_SPOOLES

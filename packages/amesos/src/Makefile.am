@@ -19,6 +19,12 @@ SLUDIST_H =
 SLUDIST =
 endif
 
+#
+#  If the parameter list cannot be made portable to all 
+#  platforms, we will have to add a NEED_PARAMETER_LIST
+#  flag to configure.ac 
+#
+if NEED_PARAMETER_LIST
 PARAM_H = \
 	$(srcdir)/Amesos_Parameter_List.h \
 	$(srcdir)/Amesos_Parameter_Arbitrary.h \
@@ -26,6 +32,12 @@ PARAM_H = \
 PARAM = \
 	$(srcdir)/Amesos_Parameter_List.cpp \
 	$(srcdir)/Amesos_Parameter_Entry.cpp
+else
+PARAM_H = 
+PARAM = 
+endif
+
+
 
 
 if HAVE_AMESOS_DSCPACK

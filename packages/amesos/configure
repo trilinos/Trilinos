@@ -6390,6 +6390,15 @@ echo "$as_me: error: Must specify at least one third party library, e.g. --with-
 fi
 
 
+if false ; then
+  NEED_PARAMETER_LIST_TRUE=
+  NEED_PARAMETER_LIST_FALSE='#'
+else
+  NEED_PARAMETER_LIST_TRUE='#'
+  NEED_PARAMETER_LIST_FALSE=
+fi
+
+
 
 #
 #  Test to see if everything is where it ought to be:
@@ -6908,6 +6917,15 @@ if true ; then
 else
   HAVE_AMESOS_DSCPACK_TRUE='#'
   HAVE_AMESOS_DSCPACK_FALSE=
+fi
+
+
+if true ; then
+  NEED_PARAMETER_LIST_TRUE=
+  NEED_PARAMETER_LIST_FALSE='#'
+else
+  NEED_PARAMETER_LIST_TRUE='#'
+  NEED_PARAMETER_LIST_FALSE=
 fi
   amesos_libs="${amesos_libs} ${tac_with_amesos_dscpacklib}"
 else
@@ -8760,7 +8778,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8763: \"$ac_link\") >&5
+(eval echo $as_me:8781: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8839,7 +8857,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8842: \"$ac_link\") >&5
+(eval echo $as_me:8860: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9672,6 +9690,8 @@ s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
 s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
 s,@CXXCPP@,$CXXCPP,;t t
 s,@FLIBS@,$FLIBS,;t t
+s,@NEED_PARAMETER_LIST_TRUE@,$NEED_PARAMETER_LIST_TRUE,;t t
+s,@NEED_PARAMETER_LIST_FALSE@,$NEED_PARAMETER_LIST_FALSE,;t t
 s,@HAVE_AMESOS_SLUD_TRUE@,$HAVE_AMESOS_SLUD_TRUE,;t t
 s,@HAVE_AMESOS_SLUD_FALSE@,$HAVE_AMESOS_SLUD_FALSE,;t t
 s,@HAVE_AMESOS_SLUD2_TRUE@,$HAVE_AMESOS_SLUD2_TRUE,;t t

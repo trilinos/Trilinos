@@ -275,6 +275,7 @@ if test "X$ac_cv_use_amesos_slud" = "Xno"; then
       fi				 
    fi
 fi
+AM_CONDITIONAL(NEED_PARAMETER_LIST, false ) 
 
 
 
@@ -398,6 +399,7 @@ if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
       AC_MSG_ERROR([[Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/kstanley/Trilinos3PL/DSCPACK1.0/dsclibdbl.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]]))  
     LIBS="${SAVE_LIBS}"
   AM_CONDITIONAL(HAVE_AMESOS_DSCPACK, true ) 
+  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
   amesos_libs="${amesos_libs} ${tac_with_amesos_dscpacklib}"
 else
   AM_CONDITIONAL(HAVE_AMESOS_DSCPACK, false ) 
