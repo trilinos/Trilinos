@@ -268,3 +268,9 @@ ostream& operator<<(ostream& stream, const Vector& v)
 {
   return v.leftshift(stream);
 }
+
+bool Vector::print() const
+{
+  cout << *this << endl;
+  return true;
+}

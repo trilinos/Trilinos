@@ -143,6 +143,9 @@ class Vector : public Abstract::Vector {
   */
   ostream& leftshift(ostream& stream) const;
 
+  //! Prints out the vector to the cout stream. 
+  bool print() const;
+
 private:
 
   //! Return the i-th element
