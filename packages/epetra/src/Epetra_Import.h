@@ -200,9 +200,21 @@ All of these classes have Import and Export methods that will fill new objects w
 the target map, taking elements from the source object whose distribution is described by the source map.  Details of usage
 for each class is given in the appropriate class documentation.
 
+Note that the reverse operation, an export, using this importer is also possible and appropriate in some instances.
+For example, if we compute y = A^Tx, the transpose matrix-multiplication operation, then we can use the importer we constructed
+in the above example to do an export operation to y, adding the contributions that come from multiple processors.
+
   */ 
 
   //! Constructs a Epetra_Import object from the source and target maps.
+  /*! This constructor builds an Epetra_Import object by comparing the GID lists of the source and 
+      target maps, as discussed above.  
+      \param TargetMap (In) Map containing the GIDs from which data should be imported to each processor from 
+             the source map whenever an import operation is performed using this importer.
+      \param  SourceMap (In) Map containing the GIDs that should be used for importing data.
+
+      \warning Note that the SourceMap \e must have GIDs uniquely owned, each GID of the source map can occur only once.
+  */
   Epetra_Import( const Epetra_BlockMap & TargetMap, const Epetra_BlockMap & SourceMap );
   
   //! Epetra_Import copy constructor. 

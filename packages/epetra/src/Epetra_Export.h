@@ -210,6 +210,14 @@ and entries 5 and 6 on PEs 1 and 2.
   */ 
 
   //! Constructs a Epetra_Export object from the source and target maps.
+  /*! This constructor builds an Epetra_Export object by comparing the GID lists of the source and 
+      target maps, as discussed above.  
+      \param SourceMap (In) Map containing the GIDs from which data should be exported from each processor to 
+             the target map whenever an export operation is performed using this exporter.
+      \param  TargetMap (In) Map containing the GIDs that should be used for exporting data.
+
+      \warning Note that the TargetMap \e must have GIDs uniquely owned, each GID of the target map can occur only once.
+  */
   Epetra_Export( const Epetra_BlockMap & SourceMap, const Epetra_BlockMap & TargetMap );
   
   //! Epetra_Export copy constructor. 
