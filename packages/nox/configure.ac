@@ -1488,6 +1488,7 @@ AC_CONFIG_FILES([
                 test/scripts/daily/mpi/Makefile
                 test/utils/Makefile
                 test/lapack/Makefile
+		test/lapack/NOX/Makefile
                 test/lapack/NOX_NewTest/Makefile
                 test/lapack/NOX_Group/Makefile
                 test/lapack/LOCA_NewTest/Makefile
