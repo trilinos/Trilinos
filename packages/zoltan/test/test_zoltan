@@ -337,6 +337,7 @@ else
       set ch_methods = ( $ch_methods rcb-partlocal2 rcb-partlocal2-ts )
       set ch_methods = ( $ch_methods rcb-partlocal3 rcb-partlocal3-ts )
       set ch_methods = ( $ch_methods rcb-partlocal4 rcb-partlocal4-ts )
+      set ch_methods = ( $ch_methods rcb-comparable rcb-norm2 rcb-norm3)
     endif
     set nem_methods = ( $nem_methods rcb rcb-ts )
     if (! $old_interface) then
@@ -485,7 +486,7 @@ if (! $no_chaco ) then
     # Add special test cases for some multiweight problems
     if ((${ch_name[1]} == "vwgt2") || (${ch_name[1]} == "hammond2")) then
        if ($pmversion > 2) then
-          set methods = ( rcb-comparable rcb-norm2 rcb-norm3 partkway-imbal-v$pmversion )
+          set methods = ( partkway-imbal-v$pmversion )
        else
           set methods = ( )
        endif
