@@ -29,7 +29,7 @@ static int Zoltan_Reftree_Partition(ZZ *zz, int *num_export,
        int **export_procs);
 static void Zoltan_Reftree_Part_Recursive(ZZ *zz, ZOLTAN_REFTREE *subroot, int *part,
        float *current_size, int *num_exp, float *cutoff,
-       int num_part, float partition_size, float eps);
+       int num_part);
 static void Zoltan_Reftree_Mark_and_Count(ZOLTAN_REFTREE *subroot, int part, 
        int *num_exp);
 static void Zoltan_Reftree_Export_Lists(ZZ *zz, ZOLTAN_REFTREE *subroot, 
@@ -531,12 +531,16 @@ char *yo = "Zoltan_Reftree_Partition";
 char msg[256];
 int num_exp;          /* count the number of export objects */
 ZOLTAN_REFTREE *root;     /* root of the tree */
-float partition_size; /* amount of weight for each partition */
-float cutoff;         /* the value at which the current partition is full */
+float *cutoff;        /* the relative sizes of the partitions */
 int part;             /* partition under construction */
 float current_size;   /* amount of weight consumed so far */
-float eps;            /* allowed deviation from average partition size */
 int num_part;         /* number of partitions */
+
+/* TEMP SINGLE WEIGHT
+        Currently, it has not been decided how to handle multi-component
+        weights.  This code just uses the first component.  To find all
+        locations where the code would change if a different reduction
+        is defined, search for "TEMP SINGLE WEIGHT" */
 
   root = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->reftree_root;
 
@@ -544,18 +548,69 @@ int num_part;         /* number of partitions */
    * determine the size of the partitions and tolerance interval
    */
 
-/* TEMP equal sizes does not support heterogeneous computer.  Can at least
-        make the partition sizes proportional to the computational power
-        of the processors.  Probably should set up an array of cutoff
-        points up front, creating intervals whose sizes reflect the power
-        of the processors.
-        Don't know what to do about unequal communication */
+/* TEMP HA Support for heterogeneous architectures.
+        To find all places where changes may be needed to support
+        heterogeneous architectures, search for "TEMP HA".
+        Support is provided for different processing power by producing
+        unequal sized partitions.
+        Support is NOT provided for unequal communication.  I don't know
+        how to do that.  Presumably it would involve mapping the partitions
+        to the processors in a way that the smaller boundary interfaces go
+        to the slower communication channels.  Currently this algorithm
+        doesn't even consider the mapping of partitions to processors.  */
 
-/* TEMP using Num_Proc for number of partitions */
+/* TEMP k != p Support for number of partitions not equal to number of procs.
+        To find all places where changes may be needed to support a
+        different number of partitions than the number of processors,
+        search for "TEMP k != p".
+        Currently no support is provided. */
+
+/* TEMP k != p
+        using Num_Proc for number of partitions */
 
   num_part = zz->Num_Proc;
-  partition_size = root->summed_weight[0]/num_part;
-  eps = (zz->LB.Imbalance_Tol - 1.0)*partition_size/2.0;
+
+/* Set the cutoff points of summed weights for the end of each partition */
+
+/* TEMP HA
+        Determine a partition of unity for the sizes of the partitions
+        relative to the processing power of the processors, to support
+        heterogeneous architectures.
+        cutoff(0) = is the percent of work that should be assigned to
+        partition 0
+        cutoff(i) - cutoff(i-1) is the percent of work that should be
+        assigned to partition i.
+        cutoff(num_part-1) = 1.0
+        When support for heterogeneous architectures is added to Zoltan,
+        there should be a "vector of partition sizes" passed into this
+        routine, which would be used to define cutoff.  For now, it is
+        just set to be equal sizes.
+*/
+
+  cutoff = (float *)ZOLTAN_MALLOC((num_part)*sizeof(float));
+  if (cutoff == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return(ZOLTAN_MEMERR);
+  }
+
+  for (part=0; part<num_part; part++) {
+    cutoff[part] = ((float)(part+1))/((float)num_part);
+  }
+  cutoff[num_part-1] = 1.0; /* just to make sure roundoff doesn't bite us */
+
+/* multiply cutoff by the total weight so that cutoff gives the desired
+   actual weight of each partition instead of relative sizes */
+
+/* TEMP HA
+   It is quite possible that once we know what is passed into this
+   routine to determine relative partition sizes, then this can be combined
+   with the above partition of unity to simplify the code.  I just did it
+   this way to make it clear what is happening.
+*/
+
+  for (part=0; part<num_part; part++) {
+    cutoff[part] = cutoff[part]*root->summed_weight[0]; /* TEMP SINGLE WEIGHT */
+  }
 
   /*
    * traverse the tree to define the partition and count the number of exports
@@ -564,9 +619,9 @@ int num_part;         /* number of partitions */
   num_exp = 0;
   part = 0;
   current_size = 0.0;
-  cutoff = partition_size;
-  Zoltan_Reftree_Part_Recursive(zz,root,&part,&current_size,&num_exp,&cutoff,
-                            num_part,partition_size,eps);
+  Zoltan_Reftree_Part_Recursive(zz,root,&part,&current_size,&num_exp,cutoff,
+                                num_part);
+  ZOLTAN_FREE(&cutoff);
 
   /*
    * if no exports, we're done
@@ -623,7 +678,7 @@ int num_part;         /* number of partitions */
 
 static void Zoltan_Reftree_Part_Recursive(ZZ *zz, ZOLTAN_REFTREE *subroot, int *part,
                               float *current_size, int *num_exp, float *cutoff,
-                              int num_part, float partition_size, float eps)
+                              int num_part)
 
 {
 /*
@@ -631,12 +686,15 @@ static void Zoltan_Reftree_Part_Recursive(ZZ *zz, ZOLTAN_REFTREE *subroot, int *
  */
 int i;         /* loop counter */
 float newsize; /* size of partition if this subroot gets added to it */
+float eps;     /* imbalance tolerance in units of weight */
 
-/* TEMP don't know what to do with multicomponent weights.  Just using
-        the first component */
-  newsize = *current_size + subroot->summed_weight[0];
+  newsize = *current_size + subroot->summed_weight[0]; /* TEMP SINGLE WEIGHT */
+  if (*part != num_part-1)
+    eps = (zz->LB.Imbalance_Tol - 1.0)*(cutoff[*part+1]-cutoff[*part])/2.0;
+  else
+    eps = 0.0;
 
-  if (newsize <= *cutoff + eps) {
+  if (newsize <= cutoff[*part] + eps || *part == num_part-1) {
 
   /*
    * This subtree fits in the current partition
@@ -665,9 +723,13 @@ float newsize; /* size of partition if this subroot gets added to it */
    * See if it is close enough to filling the partition
    */
 
-    if (*current_size >= *cutoff - eps && *part < num_part-1) {
+    if (*part != 0)
+      eps = (zz->LB.Imbalance_Tol - 1.0)*(cutoff[*part]-cutoff[*part-1])/2.0;
+    else
+      eps = (zz->LB.Imbalance_Tol - 1.0)*(cutoff[*part])/2.0;
+
+    if (*current_size >= cutoff[*part] - eps && *part < num_part-1) {
       *part += 1;
-      *cutoff = (*part + 1)*partition_size;
     }
   }
   else {
@@ -684,7 +746,7 @@ float newsize; /* size of partition if this subroot gets added to it */
       subroot->partition = -1;
       for (i=0; i<subroot->num_child; i++)
         Zoltan_Reftree_Part_Recursive(zz, &(subroot->children[i]),part,
-               current_size, num_exp, cutoff, num_part, partition_size, eps);
+               current_size, num_exp, cutoff, num_part);
     }
     else {
 
@@ -692,9 +754,17 @@ float newsize; /* size of partition if this subroot gets added to it */
    * If there are no children, move on to the next partition
    */
 
-      while (newsize > *cutoff+eps && *part < num_part-1) {
+      if (*part != num_part-1)
+        eps = (zz->LB.Imbalance_Tol - 1.0)*(cutoff[*part+1]-cutoff[*part])/2.0;
+      else
+        eps = 0.0;
+
+      while (newsize > cutoff[*part]+eps && *part < num_part-1) {
         *part += 1;
-        *cutoff = (*part + 1)*partition_size;
+        if (*part != num_part-1)
+         eps = (zz->LB.Imbalance_Tol - 1.0)*(cutoff[*part+1]-cutoff[*part])/2.0;
+        else
+         eps = 0.0;
       }
       subroot->partition = *part;
       *current_size = newsize;
