@@ -454,6 +454,7 @@ cd etc
 ./find_undefs "${CC}" "${ARCH_FLAGS}" "${LINKER}" "$LIBRARIES" "$ARCH_LIBS"
 cd ..
 cat etc/.thedefs >>  make_${ARCH}.variables
+\rm -f etc/.thedefs
 ${echo} INC_PATH=$INC_PATH            >> make_${ARCH}.variables
 ${echo} LIBRARIES=$LIBRARIES          >> make_${ARCH}.variables
 

@@ -44,6 +44,6 @@ done
 ${echo} -DML_NOTHING >> .thedefs
 ${echo}
 
-\rm -f capper mygrep .undefs .undefs2  temprog.c temprog.o
+\rm -f capper mygrep .undefs .undefs2  temprog.c temprog.o a.out
 
 
