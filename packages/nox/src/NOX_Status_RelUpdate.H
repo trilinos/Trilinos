@@ -84,9 +84,10 @@ private:
   //! %Status
   StatusType status;
 
-  // Temporary vector used in computation
+  //! Temporary vector used in computation
   Abstract::Vector* u;
-  // Temporary vector used in computation
+
+  //! Temporary vector used in computation
   Abstract::Vector* v;
 
 };

@@ -29,7 +29,8 @@ namespace Solver{
    <ul>
    <li> "Nonlinear %Solver" - Name of the solver method. Valid choices are
    <ul> 
-   <li> "%Newton" (NOX::Solver::Newton) [Default]
+   <li> "%Newton" (NOX::Solver::LineSearch) [Default]
+   <li> "Line Search" (NOX::Solver::LineSearch)
    <li> "Nonlinear CG" (NOX::Solver::NonlinearCG)
    <li> "Trust Region" (NOX::Solver::TrustRegion)
    </ul>

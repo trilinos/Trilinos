@@ -159,14 +159,14 @@ PARAMETER = \
 SOLVER_H = \
 	$(srcdir)/NOX_Solver_Generic.H \
 	$(srcdir)/NOX_Solver_Manager.H \
-	$(srcdir)/NOX_Solver_Newton.H \
+	$(srcdir)/NOX_Solver_LineSearch.H \
 	$(srcdir)/NOX_Solver_TrustRegion.H \
 	$(srcdir)/NOX_Solver_NonlinearCG.H 
 
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
-	$(srcdir)/NOX_Solver_Newton.C \
+	$(srcdir)/NOX_Solver_LineSearch.C \
 	$(srcdir)/NOX_Solver_TrustRegion.C \
 	$(srcdir)/NOX_Solver_NonlinearCG.C 
 
@@ -318,7 +318,7 @@ am_libnox_a_OBJECTS = NOX_Linesearch_FullStep.$(OBJEXT) \
 	NOX_Direction_Manager.$(OBJEXT) NOX_Direction_Newton.$(OBJEXT) \
 	NOX_Direction_SteepestDescent.$(OBJEXT) \
 	NOX_Parameter_Entry.$(OBJEXT) NOX_Parameter_List.$(OBJEXT) \
-	NOX_Solver_Manager.$(OBJEXT) NOX_Solver_Newton.$(OBJEXT) \
+	NOX_Solver_Manager.$(OBJEXT) NOX_Solver_LineSearch.$(OBJEXT) \
 	NOX_Solver_TrustRegion.$(OBJEXT) \
 	NOX_Solver_NonlinearCG.$(OBJEXT) NOX_Status_Test.$(OBJEXT) \
 	NOX_Status_AbsResid.$(OBJEXT) NOX_Status_Combo.$(OBJEXT) \
@@ -352,8 +352,8 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_Polynomial.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_Entry.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_List.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_LineSearch.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_Manager.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_Newton.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_NonlinearCG.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_TrustRegion.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_AbsResid.Po \
@@ -460,7 +460,7 @@ NOX_Direction_SteepestDescent.$(OBJEXT): \
 NOX_Parameter_Entry.$(OBJEXT): $(srcdir)/NOX_Parameter_Entry.C
 NOX_Parameter_List.$(OBJEXT): $(srcdir)/NOX_Parameter_List.C
 NOX_Solver_Manager.$(OBJEXT): $(srcdir)/NOX_Solver_Manager.C
-NOX_Solver_Newton.$(OBJEXT): $(srcdir)/NOX_Solver_Newton.C
+NOX_Solver_LineSearch.$(OBJEXT): $(srcdir)/NOX_Solver_LineSearch.C
 NOX_Solver_TrustRegion.$(OBJEXT): $(srcdir)/NOX_Solver_TrustRegion.C
 NOX_Solver_NonlinearCG.$(OBJEXT): $(srcdir)/NOX_Solver_NonlinearCG.C
 NOX_Status_Test.$(OBJEXT): $(srcdir)/NOX_Status_Test.C
@@ -505,8 +505,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_Polynomial.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_Entry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_List.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_LineSearch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_Manager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_Newton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_NonlinearCG.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_TrustRegion.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_AbsResid.Po@am__quote@
@@ -670,17 +670,17 @@ NOX_Solver_Manager.obj: $(srcdir)/NOX_Solver_Manager.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_Manager.obj `cygpath -w $(srcdir)/NOX_Solver_Manager.C`
 
-NOX_Solver_Newton.o: $(srcdir)/NOX_Solver_Newton.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_Newton.C' object='NOX_Solver_Newton.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_Newton.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_Newton.TPo' @AMDEPBACKSLASH@
+NOX_Solver_LineSearch.o: $(srcdir)/NOX_Solver_LineSearch.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_LineSearch.C' object='NOX_Solver_LineSearch.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_LineSearch.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_LineSearch.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_Newton.o `test -f $(srcdir)/NOX_Solver_Newton.C || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_Newton.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_LineSearch.o `test -f $(srcdir)/NOX_Solver_LineSearch.C || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_LineSearch.C
 
-NOX_Solver_Newton.obj: $(srcdir)/NOX_Solver_Newton.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_Newton.C' object='NOX_Solver_Newton.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_Newton.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_Newton.TPo' @AMDEPBACKSLASH@
+NOX_Solver_LineSearch.obj: $(srcdir)/NOX_Solver_LineSearch.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_LineSearch.C' object='NOX_Solver_LineSearch.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_LineSearch.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_LineSearch.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_Newton.obj `cygpath -w $(srcdir)/NOX_Solver_Newton.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_LineSearch.obj `cygpath -w $(srcdir)/NOX_Solver_LineSearch.C`
 
 NOX_Solver_TrustRegion.o: $(srcdir)/NOX_Solver_TrustRegion.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_TrustRegion.C' object='NOX_Solver_TrustRegion.o' libtool=no @AMDEPBACKSLASH@

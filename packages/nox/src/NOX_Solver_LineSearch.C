@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Solver_Newton.H"	// class definition
+#include "NOX_Solver_LineSearch.H"	// class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
@@ -56,7 +56,7 @@ using namespace NOX::Solver;
 
 #define min(a,b) ((a)<(b)) ? (a) : (b);
 
-Newton::Newton(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) :
+LineSearch::LineSearch(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) :
   solnptr(&xgrp),		// pointer to xgrp
   oldsolnptr(xgrp.clone(DeepCopy)), // create via clone
   oldsoln(*oldsolnptr),		// reference to just-created pointer
@@ -71,7 +71,7 @@ Newton::Newton(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p)
 }
 
 // Protected
-void Newton::init()
+void LineSearch::init()
 {
   // Initialize 
   step = 0;
@@ -91,7 +91,7 @@ void Newton::init()
   // Compute RHS of initital guess
   bool ok = solnptr->computeRHS();
   if (!ok) {
-    cout << "NOX::Solver::Newton::init - Unable to compute RHS" << endl;
+    cout << "NOX::Solver::LineSearch::init - Unable to compute RHS" << endl;
     throw "NOX Error";
   }
 
@@ -106,7 +106,7 @@ void Newton::init()
 
 }
 
-bool Newton::reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) 
+bool LineSearch::reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) 
 {
   solnptr = &xgrp;
   testptr = &t;
@@ -117,19 +117,19 @@ bool Newton::reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List
   return true;
 }
 
-Newton::~Newton() 
+LineSearch::~LineSearch() 
 {
   delete oldsolnptr;
   delete dirptr;
 }
 
 
-Status::StatusType Newton::getStatus()
+Status::StatusType LineSearch::getStatus()
 {
   return status;
 }
 
-Status::StatusType Newton::iterate()
+Status::StatusType LineSearch::iterate()
 {
   // First check status
   if (status != Status::Unconverged) 
@@ -143,7 +143,7 @@ Status::StatusType Newton::iterate()
   bool ok;
   ok = direction(dir, soln, *this);
   if (!ok) {
-    cout << "NOX::Solver::Newton::iterate - unable to calculate Newton direction" << endl;
+    cout << "NOX::Solver::LineSearch::iterate - unable to calculate direction" << endl;
     status = Status::Failed;
     return status;
   }
@@ -155,18 +155,18 @@ Status::StatusType Newton::iterate()
   ok = linesearch(soln, step, oldsoln, dir);
   if (!ok) {
     if (step == 0) {
-      cout << "NOX::Solver::Newton::iterate - linesearch failed" << endl;
+      cout << "NOX::Solver::LineSearch::iterate - linesearch failed" << endl;
       status = Status::Failed;
       return status;
     }
     else if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Solver::Newton::iterate - using recovery step for linesearch" << endl;
+      cout << "NOX::Solver::LineSearch::iterate - using recovery step for linesearch" << endl;
   }
 
   // Compute RHS for new current solution.
   ok = soln.computeRHS();
   if (!ok) {
-    cout << "NOX::Solver::Newton::iterate - unable to compute RHS" << endl;
+    cout << "NOX::Solver::LineSearch::iterate - unable to compute RHS" << endl;
     status = Status::Failed;
     return status;
   }
@@ -181,7 +181,7 @@ Status::StatusType Newton::iterate()
   return status;
 }
 
-Status::StatusType Newton::solve()
+Status::StatusType LineSearch::solve()
 {
   printUpdate();
 
@@ -194,22 +194,22 @@ Status::StatusType Newton::solve()
   return status;
 }
 
-const Abstract::Group& Newton::getSolutionGroup() const
+const Abstract::Group& LineSearch::getSolutionGroup() const
 {
   return *solnptr;
 }
 
-const Abstract::Group& Newton::getPreviousSolutionGroup() const
+const Abstract::Group& LineSearch::getPreviousSolutionGroup() const
 {
   return oldsoln;
 }
 
-int Newton::getNumIterations() const
+int LineSearch::getNumIterations() const
 {
   return niter;
 }
 
-const Parameter::List& Newton::getOutputParameters() const
+const Parameter::List& LineSearch::getOutputParameters() const
 {
   oparams.setParameter("Nonlinear Iterations", niter);
   oparams.setParameter("2-Norm of Residual", solnptr->getNormRHS());
@@ -217,7 +217,7 @@ const Parameter::List& Newton::getOutputParameters() const
 }
 
 // protected
-void Newton::printUpdate() 
+void LineSearch::printUpdate() 
 {
   double norm_soln;
   double norm_step;
@@ -231,7 +231,7 @@ void Newton::printUpdate()
   // ...But only the print process actually prints the result.
   if (Utils::doPrint(Utils::OuterIteration)) {
     cout << "\n" << Utils::fill(72) << "\n";
-    cout << "-- Newton Step " << niter << " -- \n";
+    cout << "-- Line Search Method Step " << niter << " -- \n";
     cout << "f = " << Utils::sci(norm_soln);
     cout << "  step = " << Utils::sci(step);
     cout << "  dx = " << Utils::sci(norm_step);

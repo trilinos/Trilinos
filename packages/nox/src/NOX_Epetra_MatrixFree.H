@@ -25,8 +25,10 @@
 #ifndef _EPETRA_MATRIXFREE_H_
 #define _EPETRA_MATRIXFREE_H_
 
-#include "Epetra_RowMatrix.h"	// base class
+#include "Epetra_Comm.h"
+#include "Epetra_Operator.h"	// base class
 
+#include "NOX_Common.H"
 #include "Epetra_Import.h"
 #include "Epetra_Vector.h"
 
@@ -44,14 +46,15 @@ namespace NOX {
 
 namespace Epetra {
 
-//! Concrete implementation for creating an Epetra_RowMatrix in Matrix-Free mode.
-/*! Inherits the pure virtual classes Epetra_RowMatrix.
- * NOTE: This will change when Mike adds the 
- * pure virtual "Operator" class to Trilinos.  This will be a subset 
- * of the Epetra_RowMatrix class that contains only the essentials 
- * for needed for linear solves and matrix operations.
- */ 
-class MatrixFree : public Epetra_RowMatrix {
+/*! \brief Concrete implementation for creating an Epetra_Operator Jacobian.
+
+Matrix-Free Newton-Krylov is a method that takes advantage of the fact the Newton Krylov solvers do not require an explicit Jacobian matrix.  Newton-Krylov solvers only require the matrix-vector product \f$Jy\f$ in the iteration sequence.  This product can approximated by the following:
+
+\f[ Jy = \frac{F(x + \delta y) - F(x)}{\delta} \f]
+
+where \f$J\f$ is the Jacobian, \f$F\f$ is the function evaluation, \f$x\f$ is the solution vector, \f$y\f$ is the vector to be operated on, and \f$\delta\f$ is a scalar perturbation.
+ */
+class MatrixFree : public Epetra_Operator {
       
  public:
 
@@ -61,80 +64,75 @@ class MatrixFree : public Epetra_RowMatrix {
   //! Pure virtual destructor
   virtual ~MatrixFree();
 
+  //! If set true, transpose of this operator will be applied.
+  /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
+    affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
+    does not support transpose use, this method should return a value of -1.      
+    \param In
+    UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
+    
+    \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
+  */
   virtual int SetUseTranspose(bool UseTranspose);
 
+  //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
+  /*! 
+    \param In
+    X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+    \param Out
+    Y -A Epetra_MultiVector of dimension NumVectors containing result.
+    
+    \return Integer error code, set to 0 if successful.
+  */
   virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
+  //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
+  /*! 
+    \param In
+    X - A Epetra_MultiVector of dimension NumVectors to solve for.
+    \param Out
+    Y -A Epetra_MultiVector of dimension NumVectors containing result.
+    
+    \return Integer error code, set to 0 if successful.
+    
+    \warning In order to work with AztecOO, any implementation of this method must 
+    support the case where X and Y are the same object.
+  */
   virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-
+  
+  //! Returns the infinity norm of the global matrix.
+  /* Returns the quantity \f$ \| A \|_\infty\f$ such that
+     \f[\| A \|_\infty = \max_{1\lei\lem} \sum_{j=1}^n |a_{ij}| \f].
+     
+     \warning This method must not be called unless HasNormInf() returns true.    */ 
+  virtual double NormInf() const;
+  
+  //! Returns a character string describing the operator
+  virtual char* Label () const;
+  
+  //! Returns the current UseTranspose setting.
   virtual bool UseTranspose() const;
 
+  //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
   virtual bool HasNormInf() const;
 
-  virtual const Epetra_BlockMap & DomainMap() const;
-
-  virtual const Epetra_BlockMap & RangeMap() const;
-
-  virtual bool Filled() const;
-
-  virtual int NumMyRowEntries(int MyRow, int & NumEntries) const;
-  
-  virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
-  
-  virtual int ExtractDiagonalCopy(Epetra_Vector & Diagonal) const;
-
-  virtual int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-
-  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X,  Epetra_MultiVector& Y) const;
-
-  virtual int InvRowSums(Epetra_Vector& x) const;
-  
-  virtual int LeftScale(const Epetra_Vector& x);
-  
-  virtual int InvColSums(Epetra_Vector& x) const;
-  
-  virtual int RightScale(const Epetra_Vector& x);
-  
-  virtual double NormInf() const;
-
-  virtual double NormOne() const;
-  
-  virtual int NumGlobalNonzeros() const;
-  
-  virtual int NumGlobalRows() const;
-  
-  virtual int NumGlobalCols() const;
-  
-  virtual int NumGlobalDiagonals() const;
-  
-  virtual int NumMyNonzeros() const;
-  
-  virtual int NumMyRows() const;
-  
-  virtual int NumMyCols() const;
-  
-  virtual int NumMyDiagonals() const;
-  
-  virtual bool LowerTriangular() const;
-
-  virtual bool UpperTriangular() const;
-
+  //! Returns a reference to the Epetra_Comm communicator associated with this operator.
   virtual const Epetra_Comm & Comm() const;
 
-  virtual const Epetra_BlockMap & BlockRowMap() const;
+  //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
+  virtual const Epetra_BlockMap& DomainMap () const;
 
-  virtual const Epetra_BlockMap & BlockImportMap() const;
-  
-  virtual const Epetra_Import * Importer() const;
+  //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
+  virtual const Epetra_BlockMap& RangeMap () const;
 
   //! Compute Jacobian given the specified input vector, x.  Returns true if computation was successful.
-  virtual bool computeJacobian(const Epetra_Vector& x, Epetra_RowMatrix& Jac);
-
+  virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
+ 
 protected:
-  
-  //! Dummy Importer
-  Epetra_Import importer;
 
+  //! Label for matrix
+  string label;
+  
   //! User provided interface function
   Interface& interface;
 

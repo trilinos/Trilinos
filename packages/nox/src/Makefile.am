@@ -77,13 +77,13 @@ PARAMETER = \
 SOLVER_H = \
 	$(srcdir)/NOX_Solver_Generic.H \
 	$(srcdir)/NOX_Solver_Manager.H \
-	$(srcdir)/NOX_Solver_Newton.H \
+	$(srcdir)/NOX_Solver_LineSearch.H \
 	$(srcdir)/NOX_Solver_TrustRegion.H \
 	$(srcdir)/NOX_Solver_NonlinearCG.H 
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
-	$(srcdir)/NOX_Solver_Newton.C \
+	$(srcdir)/NOX_Solver_LineSearch.C \
 	$(srcdir)/NOX_Solver_TrustRegion.C \
 	$(srcdir)/NOX_Solver_NonlinearCG.C 
 

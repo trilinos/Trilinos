@@ -33,8 +33,9 @@
 #ifndef NOX_PETRA_SHARED_JACOBIAN_H
 #define NOX_PETRA_SHARED_JACOBIAN_H
 
-class Epetra_CrsMatrix;
-class Epetra_RowMatrix;
+#include "NOX_Common.H"
+
+class Epetra_Operator;
 
 namespace NOX {
 namespace Epetra {
@@ -58,39 +59,39 @@ class SharedJacobian {
 public:
 
   //! Constructor
-  SharedJacobian(Epetra_RowMatrix& j);
+  SharedJacobian(Epetra_Operator& j);
 
   //! Constructor with separate Matrices for the Jacobian and preconditioner 
-  SharedJacobian(Epetra_RowMatrix& j, Epetra_RowMatrix& p);
+  SharedJacobian(Epetra_Operator& j, Epetra_Operator& p);
 
   //! Destructor
   ~SharedJacobian();
 
   //! Get a reference to the Jacobian AND take ownership
-  Epetra_RowMatrix& getJacobian(const Group* newowner);
+  Epetra_Operator& getJacobian(const Group* newowner);
 
   //! Return a const pointer to the Jacobian
-  const Epetra_RowMatrix& getJacobian() const;
+  const Epetra_Operator& getJacobian() const;
 
   //! Return true if grp is the owner of the Jacobian
   bool isOwner(const Group* grp) const;
 
-  //! Get a reference to the Jacobian AND take ownership
-  Epetra_RowMatrix& getPrec(const Group* newowner);
+  //! Get a reference to the Preconditioner AND take ownership
+  Epetra_Operator& getPrec(const Group* newowner);
 
-  //! Return a const pointer to the Jacobian
-  const Epetra_RowMatrix& getPrec() const;
+  //! Return a const pointer to the Preconditioner
+  const Epetra_Operator& getPrec() const;
 
-  //! This is a hack that is needed to get MPSalsa running.  I will remove this when the Epetra_Vbr is fixed to get a view with Aztec2Petra.
-  bool setJacobian(Epetra_RowMatrix& j);
+  //! RPP: This is a hack that is needed to get MPSalsa running.  I will remove this when the Epetra_Vbr is fixed to get a view with Aztec2Petra.
+  bool setJacobian(Epetra_Operator& j);
 
 protected:
 
   //! Pointer to Epetra Jacobian matrix 
-  Epetra_RowMatrix* jacobian;
+  Epetra_Operator* jacobian;
 
   //! Pointer to Epetra Preconditioning Matrix 
-  Epetra_RowMatrix* prec;
+  Epetra_Operator* prec;
 
   //! Pointer to const group that owns Jacobian
   const Group* owner;

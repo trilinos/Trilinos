@@ -8,6 +8,7 @@
 // ---------- Standard Includes ----------
 #include <iostream>
 #include "Epetra_Vector.h"
+#include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
 #include "NOX_Epetra_Interface.H"
 
@@ -24,13 +25,13 @@ public:
   bool computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS);
 
   //! Compute an explicit Jacobian
-  bool computeJacobian(const Epetra_Vector& x, Epetra_RowMatrix& Jac);
+  bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
 
-  //! Compute the matrix M that will be used as the preconditioner.
-  bool computePreconditioner(Epetra_RowMatrix& M);
-
-  //! Return the action of the preconditioner on a vector.
-  bool preconditionVector(Epetra_Vector& y);
+  //! Compute the Epetra_RowMatrix M, that will be used by the Aztec preconditioner instead of the Jacobian.  This is used when there is no explicit Jacobian present (i.e. Matrix-Free Newton-Krylov).  This MUST BE an Epetra_RowMatrix since the Aztec preconditioners need to know the sparsity pattern of the matrix.  Returns true if computation was successful.
+  bool computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M);
+  
+  //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.
+  bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M);
 
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 

@@ -43,7 +43,7 @@ AC_INIT(nox, 0.1b)
 # This is to protect against accidentally specifying the wrong
 # directory with --srcdir.
 
-AC_CONFIG_SRCDIR(src/NOX_Solver_Newton.C)
+AC_CONFIG_SRCDIR(src/NOX_Solver_LineSearch.C)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.

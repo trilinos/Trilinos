@@ -33,7 +33,7 @@ using namespace NOX;
 using namespace NOX::Epetra;
 
 MatrixFree::MatrixFree(Interface& i, const Epetra_Vector& x) :
-  importer(x.Map(),x.Map()),
+  label("NOX::Matrix-Free"),
   interface(i),
   currentX(x),
   perturbX(x),
@@ -52,67 +52,17 @@ MatrixFree::~MatrixFree()
 
 int MatrixFree::SetUseTranspose(bool UseTranspose) 
 {
+  if (UseTranspose == true) {
+    cout << "ERROR: NOX::Epetra::MatrixFree::SetUseTranspose() - Transpose is "
+	 << "unavailable in Matrix-Free mode!" << endl;
+    throw "NOX Error";
+  }
   return (-1);
 }
 
 int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  return Multiply(false, X, Y);
-}
 
-int MatrixFree::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
-{
-  cout << "ERROR: NOX::MatrixFree::ApplyInverse - Not available for Matrix Free!"
-       << endl;
-  throw "NOX Error";
-  return (-1);
-}
-
-bool MatrixFree::UseTranspose() const
-{
-  return false;
-}
-
-bool MatrixFree::HasNormInf() const
-{
-  return false;
-}
-
-const Epetra_BlockMap& MatrixFree::DomainMap() const
-{
-  return currentX.Map();
-}
-
-const Epetra_BlockMap& MatrixFree::RangeMap() const
-{
-  return currentX.Map();
-}
-
-bool MatrixFree::Filled() const
-{
-  return true;
-}
-
-int MatrixFree::NumMyRowEntries(int MyRow, int & NumEntries) const
-{
-  cout << "throw NumMyRowEntires" << endl;
-  throw;
-}
-  
-int MatrixFree::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const
-{
-  cout << "throw ExtractMyRowCopy" << endl;
-  throw;
-}
-  
-int MatrixFree::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
-{
-  cout << "throw ExtractDiagonalCopy" << endl;
-  throw;
-}
-
-int MatrixFree::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
-{
   // Use a directional derivative to compute y = Jx
   /*
    * eta = scalar perturbation
@@ -123,15 +73,8 @@ int MatrixFree::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiV
    *               eta
    */
 
-  // Check if the transpose matrix is required.  Throw for now until we 
-  // figure out how to handle this in a matrix free mode. 
-  if (TransA == true) {
-    cout << "ERROR: Matrix-Free can not compute a Transpose!" << endl;
-    throw;  
-  }
-
   // Compute eta
-  double eta = 1.0e-4;
+  double eta = 1.0e-6;
 
   // Compute the perturbed RHS
   perturbX = currentX;
@@ -147,78 +90,56 @@ int MatrixFree::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiV
   return 0;
 }
 
-int MatrixFree::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X,  Epetra_MultiVector& Y) const
+int MatrixFree::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  // Check that flags we can't handle are not set.
-  if (Upper == true) {
-    cout << "ERROR: Matrix-Free can not compute an Upper Multiply!" << endl;
-    throw 1;  
-  }
-  else if (UnitDiagonal == true) {
-    cout << "ERROR: Matrix-Free can not compute a Diagonal Multiply!" << endl;
-    throw 1;  
-  }
-
-  Multiply(Trans, X, Y);
-  return 0;
+  cout << "ERROR: NOX::MatrixFree::ApplyInverse - Not available for Matrix Free!"
+       << endl;
+  throw "NOX Error";
+  return (-1);
 }
 
-int MatrixFree::InvRowSums(Epetra_Vector& x) const{return 1;}
-  
-int MatrixFree::LeftScale(const Epetra_Vector& x){return 1;}
-  
-int MatrixFree::InvColSums(Epetra_Vector& x) const{return 1;}
-  
-int MatrixFree::RightScale(const Epetra_Vector& x){return 1;}
-  
-double MatrixFree::NormInf() const{return 1.0;}
-
-double MatrixFree::NormOne() const{return 1.0;}
-  
-int MatrixFree::NumGlobalNonzeros() const{return 1;}
-  
-int MatrixFree::NumGlobalRows() const{return 1;}
-  
-int MatrixFree::NumGlobalCols() const{return 1;}
-  
-int MatrixFree::NumGlobalDiagonals() const{return 1;}
-  
-int MatrixFree::NumMyNonzeros() const{return 1;}
-  
-int MatrixFree::NumMyRows() const{return 1;}
-  
-int MatrixFree::NumMyCols() const{return 1;}
-  
-int MatrixFree::NumMyDiagonals() const{return 1;}
-  
-bool MatrixFree::LowerTriangular() const{return false;}
-
-bool MatrixFree::UpperTriangular() const{return false;}
-
-const Epetra_Comm& MatrixFree::Comm() const
+double MatrixFree::NormInf() const
 {
-  return currentX.Comm();
+  cout << "ERROR: NOX::Epetra::MatrixFree::NormInf() - Not Available for "
+       << "Matrix-Free mode!" << endl;
+  throw "NOX Error";
+  return 1.0;
 }
 
-const Epetra_BlockMap& MatrixFree::BlockRowMap() const
+
+char* MatrixFree::Label () const
+{
+  return const_cast<char*>(label.c_str());
+}
+  
+bool MatrixFree::UseTranspose() const
+{
+  return false;
+}
+
+bool MatrixFree::HasNormInf() const
+{
+  return false;
+}
+
+const Epetra_Comm & MatrixFree::Comm() const
+{
+  return currentX.Map().Comm();
+}
+const Epetra_BlockMap& MatrixFree::DomainMap() const
 {
   return currentX.Map();
 }
 
-const Epetra_BlockMap& MatrixFree::BlockImportMap() const
+const Epetra_BlockMap& MatrixFree::RangeMap() const
 {
   return currentX.Map();
 }
-  
-const Epetra_Import* MatrixFree::Importer() const
-{
-  return &importer;
-}
 
-bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_RowMatrix& Jac)
+bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 {
   // Since we have no explicit Jacobian we set our currentX to the 
-  // incoming value and evaluate the RHS.  When the Jacobian is used,
+  // incoming value and evaluate the RHS.  When the Jacobian is applied,
   // we compute the perturbed residuals and the directional 
   // derivative.
   currentX = x;

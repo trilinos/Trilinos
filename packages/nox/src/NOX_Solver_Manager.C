@@ -12,7 +12,7 @@
 #include "NOX_Utils.H"		// for static function doPrint
 
 // Header files for different solvers
-#include "NOX_Solver_Newton.H"		// Newton's method
+#include "NOX_Solver_LineSearch.H"	// LineSearch method
 #include "NOX_Solver_NonlinearCG.H"	// Nonlinear Conjugate Gradient method
 #include "NOX_Solver_TrustRegion.H"     // Trust region method
 
@@ -43,7 +43,10 @@ bool Manager::reset(Abstract::Group& grp, Status::Test& tests, const Parameter::
     ptr = NULL;
     
     if (method == "Newton") {
-      ptr = new Newton(grp, tests, params);
+      ptr = new LineSearch(grp, tests, params);
+    } 
+    else if (method == "Line Search") {
+      ptr = new LineSearch(grp, tests, params);
     } 
     else if (method == "NonlinearCG") {
       ptr = new NonlinearCG(grp, tests, params);

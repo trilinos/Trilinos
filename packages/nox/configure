@@ -104,7 +104,7 @@ SHELL=${CONFIG_SHELL-/bin/sh}
 # only ac_max_sed_lines should be used.
 : ${ac_max_here_lines=38}
 
-ac_unique_file="src/NOX_Solver_Newton.C"
+ac_unique_file="src/NOX_Solver_LineSearch.C"
 
 # Initialize some variables set by options.
 ac_init_help=

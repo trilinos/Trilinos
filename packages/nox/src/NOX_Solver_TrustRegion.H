@@ -245,7 +245,10 @@ protected:
   //! %Status of nonlinear solver.
   Status::StatusType status;
 
+  //! Enumerated list for each direction that may be required in the Trust region computation.
   enum StepType {Newton, Cauchy, Dogleg};
+
+  //! Type of step to be taken.
   StepType stepType;
 
 

@@ -60,15 +60,15 @@ namespace Solver {
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
 
-class Newton : public Generic {
+class LineSearch : public Generic {
 
 public:
 
-  //! %Newton-method constructor. 
-  Newton(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
+  //! %LineSearch-method constructor. 
+  LineSearch(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
 
   //! Destructor
-  virtual ~Newton();
+  virtual ~LineSearch();
 
   virtual bool reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
   virtual Status::StatusType getStatus();

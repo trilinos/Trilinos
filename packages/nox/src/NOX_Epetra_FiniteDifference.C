@@ -28,7 +28,6 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_RowMatrix.h"
 #include "NOX_Epetra_Interface.H"
 #include "NOX_Utils.H"
 
@@ -225,14 +224,14 @@ const Epetra_Import* FiniteDifference::Importer() const
   return jacobian->Importer();
 }
 
-bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_RowMatrix& Jac)
+bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 {
   // First check to make sure Jac is a NOX::Epetra::FiniteDifference object
   FiniteDifference* testMatrix = dynamic_cast<FiniteDifference*>(&Jac);
   if (testMatrix == 0) {
     cout << "ERROR: NOX::Epetra::FiniteDifference::computeJacobian() - "
 	 << "Jacobian to evaluate is not a FiniteDifference object!" << endl;
-    throw 1;
+    throw "NOX Error";
   } 
 
   // We need the Epetra_CrsMatrix inside the FiniteDifference object 
@@ -294,6 +293,11 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_RowMatrix&
   jac.TransformToLocal();
 
   return true;
+}
+
+bool FiniteDifference::computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M)
+{
+  return computeJacobian(x, M);
 }
 
 Epetra_CrsMatrix*  FiniteDifference::createJacobian(Interface& i, 

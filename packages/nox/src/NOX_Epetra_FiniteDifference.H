@@ -25,6 +25,8 @@
 #ifndef _EPETRA_FINITEDIFFERENCE_H_
 #define _EPETRA_FINITEDIFFERENCE_H_
 
+#include "Epetra_RowMatrix.h"
+
 // Forward Declarations
 class Epetra_Comm;
 class Epetra_Map;
@@ -32,7 +34,6 @@ class Epetra_Import;
 class Epetra_Vector;
 class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
-class Epetra_RowMatrix;
 
 namespace NOX {
   class Utils;
@@ -45,13 +46,16 @@ namespace NOX {
 
 namespace Epetra {
 
-//! Concrete implementation for creating a Jacobian Epetra_RowMatrix using finite differencing.
-/*! Inherits the pure virtual classes Epetra_RowMatrix. 
- * NOTE: This will change when Mike adds the 
- * pure virtual "Operator" class to Trilinos.  This will be a subset 
- * of the Epetra_RowMatrix class that contains only the essentials 
- * for needed for linear solves and matrix operations.
- */ 
+  /*! \brief Concrete implementation for creating an Epetra_RowMatrix Jacobian via finite differencing of the residual.
+  
+The Jacobian entries are calculated via 1st order finite differencing:
+
+  \f[ J_{ij} = \frac{\partial F_i}{\partial x_j} = \frac{F_i(x+\delta) - F_i(x)}{\delta}  \f]
+
+where \f$J\f$ is the Jacobian, \f$F\f$ is the function evaluation, \f$x\f$ is the solution vector, and \f$\delta\f$ is a small perturbation to the \f$x_j\f$ entry.
+
+  Since this inherits from the Epetra_RowMatrix class, it can be used as the preconditioning matrix for AztecOO preconditioners.  This method is very inefficient when computing the Jacobian and is not recommended for large-scale systems.
+  */
 class FiniteDifference : public Epetra_RowMatrix {
       
  public:
@@ -86,60 +90,89 @@ class FiniteDifference : public Epetra_RowMatrix {
   //!Returns the Epetra_BlockMap object associated with the range of this matrix operator.
   virtual const Epetra_BlockMap & RangeMap() const;
 
+  //! See Epetra_RowMatrix documentation.
   virtual bool Filled() const;
 
+  //! See Epetra_RowMatrix documentation.
   virtual int NumMyRowEntries(int MyRow, int & NumEntries) const;
   
+  //! See Epetra_RowMatrix documentation.
   virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
   
+  //! See Epetra_RowMatrix documentation.
   virtual int ExtractDiagonalCopy(Epetra_Vector & Diagonal) const;
 
+  //! See Epetra_RowMatrix documentation.
   virtual int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
+  //! See Epetra_RowMatrix documentation.
   virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X,  Epetra_MultiVector& Y) const;
 
+  //! See Epetra_RowMatrix documentation.
   virtual int InvRowSums(Epetra_Vector& x) const;
   
+  //! See Epetra_RowMatrix documentation.
   virtual int LeftScale(const Epetra_Vector& x);
   
+  //! See Epetra_RowMatrix documentation.
   virtual int InvColSums(Epetra_Vector& x) const;
   
+  //! See Epetra_RowMatrix documentation.
   virtual int RightScale(const Epetra_Vector& x);
   
+  //! See Epetra_RowMatrix documentation.
   virtual double NormInf() const;
 
+  //! See Epetra_RowMatrix documentation.
   virtual double NormOne() const;
   
+  //! See Epetra_RowMatrix documentation.
   virtual int NumGlobalNonzeros() const;
   
+  //! See Epetra_RowMatrix documentation.
   virtual int NumGlobalRows() const;
   
+  //! See Epetra_RowMatrix documentation.
   virtual int NumGlobalCols() const;
   
+  //! See Epetra_RowMatrix documentation.
   virtual int NumGlobalDiagonals() const;
   
+  //! See Epetra_RowMatrix documentation.
   virtual int NumMyNonzeros() const;
   
+  //! See Epetra_RowMatrix documentation.
   virtual int NumMyRows() const;
   
+  //! See Epetra_RowMatrix documentation.
   virtual int NumMyCols() const;
   
+  //! See Epetra_RowMatrix documentation.
   virtual int NumMyDiagonals() const;
   
+  //! See Epetra_RowMatrix documentation.
   virtual bool LowerTriangular() const;
 
+  //! See Epetra_RowMatrix documentation.
   virtual bool UpperTriangular() const;
 
+  //! See Epetra_RowMatrix documentation.
   virtual const Epetra_Comm & Comm() const;
 
+  //! See Epetra_RowMatrix documentation.
   virtual const Epetra_BlockMap & BlockRowMap() const;
 
+  //! See Epetra_RowMatrix documentation.
   virtual const Epetra_BlockMap & BlockImportMap() const;
   
+  //! See Epetra_RowMatrix documentation.
   virtual const Epetra_Import * Importer() const;
 
   //! Compute Jacobian given the specified input vector, x. Returns true if computation was successful.
-  virtual bool computeJacobian(const Epetra_Vector& x, Epetra_RowMatrix& Jac);
+  virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
+
+  //! Compute an Epetra_RowMatrix to be used by Aztec preconditioners given the specified input vector, x. Returns true if computation was successful.
+  virtual bool computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M);
 
 protected:
 

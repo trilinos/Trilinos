@@ -31,17 +31,16 @@
 //@HEADER
 
 #include "NOX_Epetra_SharedJacobian.H" // class definition
-// External include from Trilinos
-#include "Epetra_CrsMatrix.h"
 
 using namespace NOX::Epetra;
 
-SharedJacobian::SharedJacobian(Epetra_RowMatrix& j)
+SharedJacobian::SharedJacobian(Epetra_Operator& j)
 {
   jacobian = &j;
+  prec = 0;
 }
 
-SharedJacobian::SharedJacobian(Epetra_RowMatrix& j, Epetra_RowMatrix& p)
+SharedJacobian::SharedJacobian(Epetra_Operator& j, Epetra_Operator& p)
 {
   jacobian = &j;
   prec = &p;
@@ -52,13 +51,13 @@ SharedJacobian::~SharedJacobian()
   // Do nothing
 }
 
-Epetra_RowMatrix& SharedJacobian::getJacobian(const Group* newowner)
+Epetra_Operator& SharedJacobian::getJacobian(const Group* newowner)
 {
   owner = newowner;
   return *jacobian;
 }
 
-const Epetra_RowMatrix& SharedJacobian::getJacobian() const
+const Epetra_Operator& SharedJacobian::getJacobian() const
 {
   return *jacobian;
 }
@@ -68,18 +67,42 @@ bool SharedJacobian::isOwner(const Group* grp) const
   return (owner == grp);
 }
 
-Epetra_RowMatrix& SharedJacobian::getPrec(const Group* newowner)
+Epetra_Operator& SharedJacobian::getPrec(const Group* newowner)
 {
   owner = newowner;
+
+  // Make sure a preconditioner was supplied
+  if (prec == 0) {
+    cout << "WARNING: NOX::Epetra::SharedJacobian::getPrec() - getPrec() was "
+	 << "called but no preconditioner object was supplied by the user!" 
+	 << endl;
+    // We should throw here, but NOX::Epetra::Group has better checks 
+    // that catch this and alerts the user that the chosen preconditioning 
+    // option does not coincide with the objects they supplied.  
+    //throw "NOX Error"; 
+  }
+  
   return *prec;
 }
 
-const Epetra_RowMatrix& SharedJacobian::getPrec() const
+const Epetra_Operator& SharedJacobian::getPrec() const
 {
+  // Make sure a preconditioner was supplied
+  if (prec == 0) {
+    cout << "WARNING: NOX::Epetra::SharedJacobian::getPrec() - getPrec() was "
+	 << "called but no preconditioner object was supplied by the user!" 
+	 << endl;
+    // We should throw here, but NOX::Epetra::Group has better checks 
+    // that catch this and alerts the user that the chosen preconditioning 
+    // option does not coincide with the objects they supplied.  
+    //throw "NOX Error"; 
+  }
+  
   return *prec;
 }
 
-bool SharedJacobian::setJacobian(Epetra_RowMatrix& j)
+bool SharedJacobian::setJacobian(Epetra_Operator& j)
 {
   jacobian = & j;
+  return true;
 }

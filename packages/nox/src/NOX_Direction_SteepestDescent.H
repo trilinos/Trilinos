@@ -83,10 +83,10 @@ public:
 
 private:
 
-  // Temporary vector used in Cauchy scaling factor calculation
+  //! Temporary vector used in Cauchy scaling factor calculation
   NOX::Abstract::Vector* tmpVecPtr;
 
-  // Type of scaling of the Cauchy direction
+  //! Type of scaling of the Cauchy direction
   ScalingType scaleType;
 
 };

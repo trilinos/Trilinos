@@ -86,8 +86,13 @@ protected:
 
 private:
 
+  //! "Direction" sublist with parameters for the direction vector
   Parameter::List* paramsptr;
+
+  //! Vector containing the predicted RHS
   Abstract::Vector* predrhs;
+
+  //! Vector containing the computed direction
   Abstract::Vector* stepdir;
 
 

@@ -84,22 +84,34 @@ int main(int argc, char *argv[])
   NOX::Parameter::List nlParams;
   nlParams.setParameter("Output Level", 4);
   nlParams.setParameter("MyPID", MyPID); 
-  nlParams.setParameter("Nonlinear Solver", "Newton"); 
+  //nlParams.setParameter("Nonlinear Solver", "Newton");
+  nlParams.setParameter("Nonlinear Solver", "Line Search");
+  //nlParams.setParameter("Nonlinear Solver", "Trust Region"); 
+  //nlParams.setParameter("Nonlinear Solver", "NonlinearCG"); 
+  //nlParams.setParameter("Diagonal Precondition", "On");  // default = "Off"
+  //nlParams.setParameter("Direction", "Steepest Descent");  // default
+  //nlParams.setParameter("Direction", "Richardson"); 
+  //nlParams.setParameter("Max Iterations", 100); 
+  //nlParams.setParameter("Orthogonalize", "Fletcher-Reeves");  // default
+  //nlParams.setParameter("Orthogonalize", "Polak-Ribiere"); 
+  //nlParams.setParameter("Restart Frequency", 5);  // default = 10
+  //nlParams.setParameter("Output Frequency", 10);  // default = 1 
 
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   searchParams.setParameter("Method", "Full Step");
+  //searchParams.setParameter("Full Step", 0.01);
   //searchParams.setParameter("Method", "Interval Halving");
   //searchParams.setParameter("Method", "Polynomial");
   //searchParams.setParameter("Method", "More'-Thuente");
-  searchParams.setParameter("Default Step", 1.0);
+  searchParams.setParameter("Default Step", 1.0000);
+  //searchParams.setParameter("Recovery Step", 0.0001);
+  //searchParams.setParameter("Minimum Step", 0.0001);
 
   // Sublist for direction
   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
   dirParams.setParameter("Method", "Newton");
   //dirParams.setParameter("Method", "Steepest Descent");
-  //dirParams.setParameter("Method", "Dogleg Trust Region");
-  //dirParams.setParameter("Method", "Broyden");
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
@@ -110,19 +122,32 @@ int main(int argc, char *argv[])
   NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
   lsParams.setParameter("Max Iterations", 800);  
   lsParams.setParameter("Tolerance", 1e-4);
-  lsParams.setParameter("Iteration Output Frequency", 50);   
-  lsParams.setParameter("Preconditioning Matrix Type", "None"); 
+  lsParams.setParameter("Output Frequency", 50);    
+  lsParams.setParameter("Preconditioning", "None");           
+  //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
+  //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
+  //lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
+  //lsParams.setParameter("Aztec Preconditioner", "ilu"); 
+  //lsParams.setParameter("Overlap", 2);  
+  //lsParams.setParameter("Graph Fill", 2); 
+  //lsParams.setParameter("Aztec Preconditioner", "ilut"); 
+  //lsParams.setParameter("Overlap", 2);   
+  //lsParams.setParameter("Fill Factor", 2.0);   
+  //lsParams.setParameter("Drop Tolerance", 1.0e-6);   
+  //lsParams.setParameter("Aztec Preconditioner", "Polynomial"); 
+  //lsParams.setParameter("Polynomial Order", 6); 
 
-  // Create the Epetra_RowMatrix.  Uncomment one of the following:
-  // 1. User supplied
+  // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
+  // 1. User supplied (Epetra_RowMatrix)
   Epetra_RowMatrix& A = Problem.getJacobian();
-  // 2. Matrix-Free
-  //NOX::Epetra::MatrixFree A(interface, soln);
-  // 3. Finite Difference
-  //NOX::Epetra::FiniteDifference A(interface, soln);
+  // 2. Matrix-Free (Epetra_Operator)
+  //NOX::Epetra::MatrixFree AA(interface, soln);
+  // 3. Finite Difference (Epetra_RowMatrix)
+  //NOX::Epetra::FiniteDifference AAA(interface, soln);
 
   // Create the Group
   NOX::Epetra::Group grp(lsParams, interface, soln, A); 
+  //NOX::Epetra::Group grp(lsParams, interface, soln, AA, AAA); 
   grp.computeRHS();
 
   // Create the convergence tests
@@ -132,7 +157,7 @@ int main(int argc, char *argv[])
   converged.addTest(absresid);
   converged.addTest(relresid);
   NOX::Status::MaxResid maxresid(1.0e-10);
-  NOX::Status::MaxIters maxiters(20);
+  NOX::Status::MaxIters maxiters(2000);
   NOX::Status::Combo combo(NOX::Status::Combo::OR);
   combo.addTest(converged);
   combo.addTest(maxresid);

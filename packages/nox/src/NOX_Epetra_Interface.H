@@ -36,6 +36,7 @@
 // Forward declarations
 class Epetra_Vector;
 class Epetra_RowMatrix;
+class Epetra_Operator;
 
 namespace NOX {
 namespace Epetra {
@@ -59,17 +60,17 @@ public:
   //! Destructor
   virtual ~Interface() {};
 
-  //! Compute RHS given the specified input vector, x.  Returns true if computation was successful.
+  //! Compute RHS given the specified input vector x.  Returns true if computation was successful.
   virtual bool computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS) = 0;
   
-  //! Compute Jacobian given the specified input vector, x.  Returns true if computation was successful.
-  virtual bool computeJacobian(const Epetra_Vector& x, Epetra_RowMatrix& Jac) = 0;
+  //! Compute Jacobian given the specified input vector x.  Returns true if computation was successful.
+  virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac) = 0;
 
-  //! Compute the matrix M that will be used as the preconditioner.  Returns true if computation was successful.
-  virtual bool computePreconditioner(Epetra_RowMatrix& M) = 0;
+  //! Compute the Epetra_RowMatrix M, that will be used by the Aztec preconditioner instead of the Jacobian.  This is used when there is no explicit Jacobian present (i.e. Matrix-Free Newton-Krylov).  This MUST BE an Epetra_RowMatrix since the Aztec preconditioners need to know the sparsity pattern of the matrix.  Returns true if computation was successful.
+  virtual bool computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M) = 0;
 
-  //! Return the action of the preconditioner on a vector.  Returns true if computation was successful.
-  virtual bool preconditionVector(Epetra_Vector& y) = 0;
+  //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.
+  virtual bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M) = 0;
 
 };
 } // namespace Epetra
