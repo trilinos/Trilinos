@@ -102,27 +102,6 @@ namespace LOCA {
 	    Epetra_Operator& J, 
 	    Epetra_Operator& M);
 
-      //! Constructor with Jacobian Operator only.  
-      /*! Either there is no preconditioning or the Jacobian will be used
-       * for preconditioning.  An Epetra_Operator must be supplied for 
-       * the Jacobian even in Matrix-Free mode. linearSolverParams is 
-       * the "Linear Solver" sublist of parameter list.
-       */
-      Group(NOX::Parameter::List& printParams, 
-	    NOX::Parameter::List& linearSolverParams, Interface& i, 
-	    const ParameterVector& p, NOX::Epetra::Vector& x, 
-	    Epetra_Operator& J,
-	    const NOX::Epetra::Vector& s);
-
-      
-      //! Constructor with a separate Jacobian (J) and %Preconditioner (M).  
-      //! linearSolverParams is the "Linear %Solver" sublist of parameter list.
-      Group(NOX::Parameter::List& printParams, 
-	    NOX::Parameter::List& linearSolverParams, Interface& i, 
-	    const ParameterVector& p, NOX::Epetra::Vector& x, 
-	    Epetra_Operator& J, 
-	    Epetra_Operator& M, const NOX::Epetra::Vector& s);
-
       /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
 	valid shared Jacobian and shared preconditioning matrix. */
       Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
@@ -188,22 +167,8 @@ namespace LOCA {
       virtual void printSolution(const NOX::Abstract::Vector& x,
                                  const double conParam) const;
 
-      //! Set the scale vector
-      virtual void setScaleVec(const NOX::Abstract::Vector& s);
-
-      //! Set the scale vector
-      void setScaleVec(const NOX::Epetra::Vector& s);
-
-      //! Get the scale vector
-      virtual const NOX::Abstract::Vector& getScaleVec() const;
-
       virtual NOX::Abstract::Group::ReturnType 
       augmentJacobianForHomotopy(double conParamValue);
-
-    protected:
-  
-      //! Compute a default scale vector (vector of all one's)
-      void computeScaleVec();
 
     protected:
 
@@ -219,9 +184,6 @@ namespace LOCA {
 
       //! Reference to the user supplied interface functions
       Interface& userInterface;
-
-      //! Scale vector
-      NOX::Epetra::Vector scaleVec;
 
       //! Extra vector needed for intermediate calculations of LOCA routines.
       /*! NOTE: there already is a tmpVectorPtr in the NOX::Epetra::Group.  This is a second temporary vector if that one extra isn't enough.
