@@ -13,7 +13,7 @@ hello_test_SOURCES = $(srcdir)/cxx_main.cpp
 #  
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 
-# REQUIRED CHANGE - Change the nam eof the library
+# REQUIRED CHANGE - Change the name of the library
 hello_test_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libnew_package.a 

@@ -95,7 +95,14 @@ These warnings will be fixed in the future.
 3.  Test/debug your autoconf/automake files
 
 After you have run bootstrap, run configure in a clean BUILD directory.
-Wehnever I tried to take shortcuts, it ended up costing me time.  
+Whenever I tried to take shortcuts, it ended up costing me time.  
+Disable all packages that you will not need, and while you are debugging
+the configure.ac script itself, disable all p[ackages other than the 
+one you are working with.
+
+echo is one way to print out variables.  AC_CHECK_FILE can be used 
+to check for the existence of a particular file or directory.  
+
 
 Do not run configure in the source directory.  If you have done so,
 you will have to claen up the source directory before you can run

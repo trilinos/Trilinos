@@ -5327,6 +5327,17 @@ fi
 # If configure is called with "--enable-newp_swahili", it will place
 # a #define HAVE_NEWP_SWAHILI in New_Package_config.h and add source
 # and header files as specified in Makefile.am
+#
+# To add an option to your package, you will need to modify this file
+# (i.e. configure.ac), src/Makefile.am and src/New_Package_config.h.in
+# Look for SWAHILI in each of those files.
+#
+# TAC_ARG_ENABLE_OPTION performs several tasks, including:
+#   1)  Setting a help string
+#   2)  Printing a message to standard out
+#   3)  Defining HAVE_NEWP_SWAHILI (For use within Makefile.am)
+#
+# AM_CONDITIONAL puts HAVE_NEWP_SWAHILI in New_Package_config.h
 # ------------------------------------------------------------------------
 #
 
@@ -5550,7 +5561,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5553: \"$ac_link\") >&5
+(eval echo $as_me:5564: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5629,7 +5640,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5632: \"$ac_link\") >&5
+(eval echo $as_me:5643: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6520,7 +6531,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6523: \"$ac_link\") >&5
+(eval echo $as_me:6534: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6599,7 +6610,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6602: \"$ac_link\") >&5
+(eval echo $as_me:6613: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6794,6 +6805,8 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 ##
 #  #np# - Most packages should have an example and a full suite
 #  of tests.  New package comes only with src and example.
+#  You will need to change AC_CONFIG_FILES belox and Makefile.am
+#  to add a new directory.
 ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile"
 
 

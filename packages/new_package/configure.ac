@@ -236,6 +236,17 @@ AC_CXX_STD_SPRINTF
 # If configure is called with "--enable-newp_swahili", it will place 
 # a #define HAVE_NEWP_SWAHILI in New_Package_config.h and add source 
 # and header files as specified in Makefile.am 
+#
+# To add an option to your package, you will need to modify this file
+# (i.e. configure.ac), src/Makefile.am and src/New_Package_config.h.in
+# Look for SWAHILI in each of those files.
+#
+# TAC_ARG_ENABLE_OPTION performs several tasks, including:
+#   1)  Setting a help string
+#   2)  Printing a message to standard out
+#   3)  Defining HAVE_NEWP_SWAHILI (For use within Makefile.am)
+#
+# AM_CONDITIONAL puts HAVE_NEWP_SWAHILI in New_Package_config.h
 # ------------------------------------------------------------------------
 #
 TAC_ARG_ENABLE_OPTION(newp_swahili, [enable swahili support], NEWP_SWAHILI, no)
@@ -332,6 +343,8 @@ AC_SUBST(ac_aux_dir)
 ##
 #  #np# - Most packages should have an example and a full suite 
 #  of tests.  New package comes only with src and example.
+#  You will need to change AC_CONFIG_FILES belox and Makefile.am
+#  to add a new directory.
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
