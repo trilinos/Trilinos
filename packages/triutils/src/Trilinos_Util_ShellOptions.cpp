@@ -26,111 +26,59 @@
 // ************************************************************************
 //@HEADER
 
-/* ======================================================================== */
-/*!
- \class ShellOptions
-
- \brief ShellOptions: a class to manage the input arguments and shell variables.
-
- With this class, it is easy to handle input line arguments and shell
- varibles. For instance, the user can write
- \verbatim
- $ ./a.out -nx 10 -tol 1e-6 -solver=cg
- \endverbatim
- and then easily retrive the value of \c nx, \c tol, and \c solver.
- 
- A simple code using this class is as follows:
- \verbatim
- int main(int argc, char *argv[])
-  {
-
-   ShellOptions Args(argc,argv);
-   int nx = Args.GetIntOption("-nx", 123);
-   int ny = Args.GetIntOption("-ny", 145);
-   double tol = Args.GetDoubleOption("-tol", 1e-12);
-   string solver = Args.GetIntOption("-solver");
-
-   cout << "nx = " << nx << endl;
-   cout << "ny = " << ny << " (default value)" << endl;
-   cout << "tol = " << tol << endl;
-   cout << "solver = " << solver << endl;
-
-   return 0;
-   
- }
- \endverbatim
-
- Each line option can have a value or not. For options with a value,
- the user can specify this values as follows. Let \c -tolerance be the
- name of the option and \c 1e-12 its value. Both choices are valid:
- - \c -option \c 1e-12 (with one or more spaces)
- - \c -option=1e-12 (an `=' sign and no spaces)
-
- Options are indentified with one or more dashes (`-'). Each option
- cannot have more than one value.
-
- Note that the user can specify some values without giving them a name.
- This can be done as follows:
-  \verbatim
-  $ ./a.out value1 value2 value 3 -nx 10 -tol 1e-6 -solver=cg
-  \endverbatim
- Here, \c valueX, (X=1,...,9) is stored in the database entry
- \c ARGV_X. 
-
- To use this class, the user has to build the database using the \c
- argc,argv input arguments. Then, to retrive the option value, the user
- has to use one of the following functions:
- - GetIntOption
- - GetDoubleOption
- - GetStringOption
- 
- If option name is not found in the database, a value of 0, 0.0 or an
- empty string is returned. If needed, the user can also specify a
- default value to return when the option name is not found in the
- database. Method \c HaveOption can be used to query the database for
- an option.
-
- The user can modify the database as well, using
- - SetOption
- - AddOption
-
- Finally, the user can retrive the integer, double or string value of a
- shell environmental variable using:
- - GetIntShellVariable
- - GetDoubleShellVariable
- - GetStringShellVariable
- 
- \date Albuquerque, 01.-Oct-03
- 
- \author Marzio Sala, SNL 9214
-
-*/
 /* ------------------------------------------------------------------------ */
 
 #include "Trilinos_Util.h"
 #include "Trilinos_Util_ShellOptions.h"
 
-/* ======================================================================== */
-/*!
- \brief Initialize the database using the options given at the shell line.
+Trilinos_Util_Map::Trilinos_Util_Map(void)
+{
 
-*/
-/* ------------------------------------------------------------------------ */
+  SetLabel("Trilinos_Util_Map");
+  
+#ifndef TRILINOS_UTIL_MAP_WITH_STL
+  Allocated_ = 100;
+  MapName_ = new string[Allocated_];
+  MapValue_ = new string[Allocated_];
+  NumEntries_ = 0;
+#endif
+
+  return;
+  
+}
+
+void Trilinos_Util_Map::Reset(void)
+{
+
+  SetLabel("");
+  
+#ifdef TRILINOS_UTIL_MAP_WITH_STL
+  for( map<string,string>::const_iterator ci = Map_.begin();
+       ci != Map_.end() ; ++ci ) {
+    ci->pop_back();
+  }
+#else
+  NumEntries_ = 0;
+#endif
+
+  return;
+  
+}
+
+// ================================================ ====== ==== ==== == =
 
 Trilinos_Util_ShellOptions::Trilinos_Util_ShellOptions(int argc, char *argv[])
 {
 
-#ifndef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
-  NumOptions = 0;
-#endif
+  SetLabel("Trilinos_Util_ShellOptions");
 
   char str[80];
   string value, param;
 
-  SetOption("PROGRAM_NAME_",argv[0]);
+  Set("PROGRAM_NAME_",argv[0]);
 
   sprintf(str,"%d",argc);
-  SetOption("_N_ARGS_",str);
+  Set("_N_ARGS_",str);
 
   // first, manage possible arguments without specifier
   // (e.g., a.out 12 -nx 10 -ny 20)
@@ -146,11 +94,11 @@ Trilinos_Util_ShellOptions::Trilinos_Util_ShellOptions(int argc, char *argv[])
     sprintf( str, "ARGV_%d", N_args );
     string param3;
     param3 = argv[i];
-    SetOption(param3,value);
+    Set(param3,value);
   }
 
   sprintf(str,"%d%",N_args);
-  SetOption("_N_UNNAMED_ARGS_",str);
+  Set("_N_UNNAMED_ARGS_",str);
 
   // now only arguments with a dash (possibly followed by one
   // other specifier)
@@ -162,113 +110,82 @@ Trilinos_Util_ShellOptions::Trilinos_Util_ShellOptions(int argc, char *argv[])
     if( pos != NULL ) {
       *pos = '\0';
       param = argv[i], value = pos+1;
-      SetOption(param,value);
+      Set(param,value);
     } else if( i<argc-1 ) {
       if( *(argv[i+1]) != '-' ) {
 	param = argv[i], value = argv[i+1];
-	SetOption(param,value);
+	Set(param,value);
 	++i;
       } else {
 	param = argv[i], value = "";
-	SetOption(param,value);
+	Set(param,value);
       }
     } else {
       param = argv[i], value = "";
-      SetOption(param,value);
+      Set(param,value);
     }
     
   }
 
 }
 
-/* ======================================================================== */
-/*!
- \brief Get the value of the specified option as an integer
+// ================================================ ====== ==== ==== == =
 
- This method returns the integer value assigned to option \c input.
- If \c input is not in the database, or it cannot be converted to an integer,
- returns 0.
-
-*/
-/* ------------------------------------------------------------------------ */
-
-int Trilinos_Util_ShellOptions::GetIntOption( const string input )
+int Trilinos_Util_Map::GetInt( const string input )
 {
 
-#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
-  for( map<string,string>::const_iterator ci = OptionDatabase.begin();
-       ci != OptionDatabase.end() ; ++ci ) {
+#ifdef TRILINOS_UTIL_MAP_WITH_STL
+  for( map<string,string>::const_iterator ci = Map_.begin();
+       ci != Map_.end() ; ++ci ) {
     if( (*ci).first == input ) 
-      return( atoi(OptionDatabase[input].c_str()) );
+      return( atoi(Map_[input].c_str()) );
   }
 #else
-  for( int i=0 ; i<NumOptions ; ++i ) {
-    if( OptionName[i] == input ) {
-      return( atoi(OptionValue[i].c_str()) );
+  for( int i=0 ; i<NumEntries_ ; ++i ) {
+    if( MapName_[i] == input ) {
+      return( atoi(MapValue_[i].c_str()) );
     }
   }
 #endif
   
   return 0;
   
-} /* GetIntOption */
+} /* GetInt */
 
-/* ======================================================================== */
-/*!
- \brief Get the value of the specified option as an integer
-
- This method returns the integer value assigned to option \c input.
- If \c input is not in the database, or it cannot be converted to an integer,
- returns the specified default value.
-
-*/
-/* ------------------------------------------------------------------------ */
-
-int Trilinos_Util_ShellOptions::GetIntOption( const string input, const int def_value)
+int Trilinos_Util_Map::GetInt( const string input, const int def_value)
 {
 
-#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
-  for( map<string,string>::const_iterator ci = OptionDatabase.begin();
-       ci != OptionDatabase.end() ; ++ci ) {
+#ifdef TRILINOS_UTIL_MAP_WITH_STL
+  for( map<string,string>::const_iterator ci = Map_.begin();
+       ci != Map_.end() ; ++ci ) {
     if( (*ci).first == input ) 
-      return( atoi(OptionDatabase[input].c_str()) );
+      return( atoi(Map_[input].c_str()) );
   }
 #else
-  for( int i=0 ; i<NumOptions ; ++i ) {
-    if( OptionName[i] == input ) {
-      return( atoi(OptionValue[i].c_str()) );
+  for( int i=0 ; i<NumEntries_ ; ++i ) {
+    if( MapName_[i] == input ) {
+      return( atoi(MapValue_[i].c_str()) );
     }
   }
 #endif
   
   return def_value;
    
-} /* GetIntOption */
+} /* GetInt */
 
-/* ======================================================================== */
-/*!
- \brief Get the value of the specified option as a double.
-
- This method returns the double value assigned to option \c input.
- If \c input is not in the database, or it cannot be converted to an integer,
- returns 0.0.
-
-*/
-/* ------------------------------------------------------------------------ */
-
-double Trilinos_Util_ShellOptions::GetDoubleOption( const string input)
+double Trilinos_Util_Map::GetDouble( const string input)
 {
 
-#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
-  for( map<string,string>::const_iterator ci = OptionDatabase.begin();
-       ci != OptionDatabase.end() ; ++ci ) {
+#ifdef TRILINOS_UTIL_MAP_WITH_STL
+  for( map<string,string>::const_iterator ci = Map_.begin();
+       ci != Map_.end() ; ++ci ) {
     if( (*ci).first == input ) 
-      return( atof(OptionDatabase[input].c_str()) );
+      return( atof(Map_[input].c_str()) );
   }
 #else
-  for( int i=0 ; i<NumOptions ; ++i ) {
-    if( OptionName[i] == input ) {
-      return( atof(OptionValue[i].c_str()) );
+  for( int i=0 ; i<NumEntries_ ; ++i ) {
+    if( MapName_[i] == input ) {
+      return( atof(MapValue_[i].c_str()) );
     }
   }
 #endif
@@ -277,30 +194,19 @@ double Trilinos_Util_ShellOptions::GetDoubleOption( const string input)
 
 } /* GetDoubleOption */
 
-/* ======================================================================== */
-/*!
- \brief Get the value of the specified option as a double.
-
- This method returns the double value assigned to option \c input.
- If \c input is not in the database, or it cannot be converted to an integer,
- returns the specified default value.
-
-*/
-/* ------------------------------------------------------------------------ */
-
-double Trilinos_Util_ShellOptions::GetDoubleOption( const string input, const double def_value)
+double Trilinos_Util_Map::GetDouble( const string input, const double def_value)
 {
 
-#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
-  for( map<string,string>::const_iterator ci = OptionDatabase.begin();
-       ci != OptionDatabase.end() ; ++ci ) {
+#ifdef TRILINOS_UTIL_MAP_WITH_STL
+  for( map<string,string>::const_iterator ci = Map_.begin();
+       ci != Map_.end() ; ++ci ) {
     if( (*ci).first == input ) 
-      return( atof(OptionDatabase[input].c_str()) );
+      return( atof(Map_[input].c_str()) );
   }
 #else
-  for( int i=0 ; i<NumOptions ; ++i ) {
-    if( OptionName[i] == input ) {
-      return( atof(OptionValue[i].c_str()) );
+  for( int i=0 ; i<NumEntries_ ; ++i ) {
+    if( MapName_[i] == input ) {
+      return( atof(MapValue_[i].c_str()) );
     }
   }
 #endif
@@ -309,92 +215,60 @@ double Trilinos_Util_ShellOptions::GetDoubleOption( const string input, const do
 
 } /* GetDoubleOption */
 
-/* ======================================================================== */
-/*!
- \brief Get the value of the specified option as a C++ string.
-
- This method returns the string value assigned to option \c input.
- If \c input is not in the database, or it cannot be converted to an integer,
- returns an empty string ("").
-
-*/
-/* ------------------------------------------------------------------------ */
-
-string Trilinos_Util_ShellOptions::GetStringOption( const string input)
+string Trilinos_Util_Map::GetString( const string input)
 {
 
-#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
-  for( map<string,string>::const_iterator ci = OptionDatabase.begin();
-       ci != OptionDatabase.end() ; ++ci ) {
+#ifdef TRILINOS_UTIL_MAP_WITH_STL
+  for( map<string,string>::const_iterator ci = Map_.begin();
+       ci != Map_.end() ; ++ci ) {
     if( (*ci).first == input ) 
-      return( OptionDatabase[input] );
+      return( Map_[input] );
   }
 #else
-  for( int i=0 ; i<NumOptions ; ++i ) {
-    if( OptionName[i] == input ) {
-      return( OptionValue[i] );
+  for( int i=0 ; i<NumEntries_ ; ++i ) {
+    if( MapName_[i] == input ) {
+      return( MapValue_[i] );
     }
   }
 #endif
     
   return "";
   
-} /* GetStringOption */
+} /* GetString */
 
-/* ======================================================================== */
-/*!
- \brief Get the value of the specified option as a C++ string.
-
- This method returns the string value assigned to option \c input.
- If \c input is not in the database, or it cannot be converted to an integer,
- returns the default value.
-
-*/
-/* ------------------------------------------------------------------------ */
-
-string Trilinos_Util_ShellOptions::GetStringOption( const string input, const string def_value)
+string Trilinos_Util_Map::GetString( const string input, const string def_value)
 {
 
-#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
-  for( map<string,string>::const_iterator ci = OptionDatabase.begin();
-       ci != OptionDatabase.end() ; ++ci ) {
+#ifdef TRILINOS_UTIL_MAP_WITH_STL
+  for( map<string,string>::const_iterator ci = Map_.begin();
+       ci != Map_.end() ; ++ci ) {
     if( (*ci).first == input ) 
-      return( OptionDatabase[input] );
+      return( Map_[input] );
   }
 #else
-  for( int i=0 ; i<NumOptions ; ++i ) {
-    if( OptionName[i] == input ) {
-      return( OptionValue[i] );
+  for( int i=0 ; i<NumEntries_ ; ++i ) {
+    if( MapName_[i] == input ) {
+      return( MapValue_[i] );
     }
   }
 #endif
   
   return def_value;
   
-} /* GetStringOption */
+} /* GetString */
 
-/* ======================================================================== */
-/*!
- \brief Check wheter an option is in the database or not
-
- This method checks whether option \c input is in the databse or not.
- It returns \c true if it is, \c false otherwise.
-
-*/
-/* ------------------------------------------------------------------------ */
-
-bool Trilinos_Util_ShellOptions::HaveOption( const string input)
+bool Trilinos_Util_Map::Have( const string input)
 {
   
-#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
-  for( map<string,string>::const_iterator ci = OptionDatabase.begin();
-       ci != OptionDatabase.end() ; ++ci ) {
+#ifdef TRILINOS_UTIL_MAP_WITH_STL
+  for( map<string,string>::const_iterator ci = Map_.begin();
+       ci != Map_.end() ; ++ci ) {
     if( (*ci).first == input ) 
       return true;
   }
 #else
-  for( int i=0 ; i<NumOptions ; ++i ) {
-    if( OptionName[i] == input ) {
+  for( int i=0 ; i<NumEntries_ ; ++i ) {
+    if( MapName_[i] == input ) {
       return( true );
     }
   }
@@ -404,154 +278,131 @@ bool Trilinos_Util_ShellOptions::HaveOption( const string input)
   
 } /* HaveOption */
 
-/* ======================================================================== */
-/*!
- \brief Show all the databse entries
-
-*/
-/* ------------------------------------------------------------------------ */
-
-void Trilinos_Util_ShellOptions::ShowAll() const 
+void Trilinos_Util_Map::ShowAll() const 
 {
 
-  cout << "\nTrilinos_Util_ShellOptions :: \n";
+  cout << "\n" << Label_ << " :: \n";
   
-#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
-  for( map<string,string>::const_iterator ci = OptionDatabase.begin();
-       ci != OptionDatabase.end() ; ++ci ) {
+#ifdef TRILINOS_UTIL_MAP_WITH_STL
+  for( map<string,string>::const_iterator ci = Map_.begin();
+       ci != Map_.end() ; ++ci ) {
     if( (*ci).first.at(0) != '_' ) 
       cout << (*ci).first << " = " << (*ci).second << endl;
   }
 #else
-  for( int i=0 ; i<NumOptions ; ++i ) {
-    if( OptionName[i].at(0) != '_' ) 
-      cout << OptionName[i] << " = " << OptionValue[i] << endl;
+  for( int i=0 ; i<NumEntries_ ; ++i ) {
+    if( MapName_[i].at(0) != '_' ) 
+      cout << MapName_[i] << " = " << MapValue_[i] << endl;
   }
 #endif
   
 } /* ShowAll */
 
-/* ======================================================================== */
-/*!
- \brief Show all the databse entries
-
-*/
-/* ------------------------------------------------------------------------ */
-
-void Trilinos_Util_ShellOptions::ShowReallyAll() const 
+void Trilinos_Util_Map::ShowReallyAll() const 
 {
 
   cout << "\nTrilinos_Util_ShellOptions :: \n";
 
-#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
-  for( map<string,string>::const_iterator ci = OptionDatabase.begin();
-       ci != OptionDatabase.end() ; ++ci ) {
+#ifdef TRILINOS_UTIL_MAP_WITH_STL
+  for( map<string,string>::const_iterator ci = Map_.begin();
+       ci != Map_.end() ; ++ci ) {
     cout << (*ci).first << " = " << (*ci).second << endl;
   }
 #else
-  for( int i=0 ; i<NumOptions ; ++i ) {
-    cout << OptionName[i] << " = " << OptionValue[i] << endl;
+  for( int i=0 ; i<NumEntries_ ; ++i ) {
+    cout << MapName_[i] << " = " << MapValue_[i] << endl;
   }
 #endif
   
 } /* ShowReallyAll */
 
-/* ======================================================================== */
-/*!
- \brief Add an entry to the databse
-
- This method add an entry to the databse. First, it checks that this
- entry does not exist. If it exists, the method returns \c
- false. Otherwise, it adds the entry and returns \c true.
- 
-*/
-/* ------------------------------------------------------------------------ */
-
-bool Trilinos_Util_ShellOptions::AddOption( const string input, const string value )
+bool Trilinos_Util_Map::Add( const string input, const string value )
 {
 
   // check that "input" has not been already inserted
-  if( this->HaveOption(input) == true )
+  if( this->Have(input) == true )
     return false;
 
-#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
-  OptionDatabase[input] = value;
+#ifdef TRILINOS_UTIL_MAP_WITH_STL
+  Map_[input] = value;
 #else
-  OptionName[NumOptions] = input;
-  OptionValue[NumOptions] = value;
-  NumOptions++;
+  MapName_[NumEntries_] = input;
+  MapValue_[NumEntries_] = value;
+  NumEntries_++;
+  if( NumEntries_ == Allocated_ ) {
+    string * MapName2 = new string[Allocated_*2];
+    string * MapValue2 = new string[Allocated_*2];
+    for( int i=0 ; i<Allocated_ ; i++ ) {
+      MapName2[i] = MapName_[i];
+      MapValue2[i] = MapValue_[i];
+    }
+    Allocated_ *= 2;
+    delete [] MapName_;
+    delete [] MapValue_;
+
+    MapName_ = MapName2;
+    MapValue_ = MapValue2;
+  }
 #endif
   
   return true;
 
 } /* AddOption */
 
-/* ======================================================================== */
-/*!
- \brief Modify the value of a database entry.
-
- This method modifies the value of a database entry. If the entry does
- not exist in the database, return \c false. Otherwise, returns \c true.
- 
-*/
-/* ------------------------------------------------------------------------ */
-
-bool Trilinos_Util_ShellOptions::SetOption( const string input, const string value )
+bool Trilinos_Util_Map::Set( const string input, const int value )
 {
 
-#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
-  OptionDatabase[input] = value;
+  char value2[80];
+  sprintf( value2, "%d", value);
+  return( Set(input,value2) );
+}
+
+bool Trilinos_Util_Map::Set( const string input, const string value )
+{
+
+#ifdef TRILINOS_UTIL_MAP_WITH_STL
+  Map_[input] = value;
 #else
   bool found = false;
   
-  for( int i=0 ; i<NumOptions ; ++i ) {
-    if( OptionName[i] == input ) {
-      OptionValue[i] = value;
+  for( int i=0 ; i<NumEntries_ ; ++i ) {
+    if( MapName_[i] == input ) {
+      MapValue_[i] = value;
       found = true;
       break;
     }
   }
   if( found == false ) {
-    OptionName[NumOptions] = input;
-    OptionValue[NumOptions] = value;
-    NumOptions++;
+    MapName_[NumEntries_] = input;
+    MapValue_[NumEntries_] = value;
+    NumEntries_++;
+  }
+  
+  if( NumEntries_ == Allocated_ ) {
+    string * MapName2 = new string[Allocated_*2];
+    string * MapValue2 = new string[Allocated_*2];
+    for( int i=0 ; i<Allocated_ ; i++ ) {
+      MapName2[i] = MapName_[i];
+      MapValue2[i] = MapValue_[i];
+    }
+    Allocated_ *= 2;
+    delete [] MapName_;
+    delete [] MapValue_;
+
+    MapName_ = MapName2;
+    MapValue_ = MapValue2;
   }
 #endif
   
   return true;
 
-} /* SetOption */
+} /* Set */
 
-/* ======================================================================== */
-/*!
- \brief Returns the name of the program as a C++ string.
-
-*/
-/* ------------------------------------------------------------------------ */
-
-string  Trilinos_Util_ShellOptions::GetProgramName( void )
+string Trilinos_Util_ShellOptions::GetProgramName( void )
 {
-#ifdef TRILINOS_UTIL_SHELL_OPTIONS_WITH_STL
-  return OptionDatabase["_PROGRAM_NAME_"];
-#else
-  for( int i=0 ; i<NumOptions ; ++i ) {
-    if( OptionName[i] == "_PROGRAM_NAME_" ) 
-      return OptionValue[i];
-  }
-#endif
+  return( GetString("_PROGRAM_NAME_", "UNDEFINED" ) );
   
 }
-
-/* ======================================================================== */
-/*!
-  
- \brief Returns the value of the environmenta variable \c str as an integer.
-
- This methods returns the value of the environmenta variable \c
- str. If the variable does not exists, returns \c 0.
-
-*/
-/* ------------------------------------------------------------------------ */
 
 int Trilinos_Util_ShellOptions::GetIntShellVariable( const char *str )
 {
@@ -566,17 +417,6 @@ int Trilinos_Util_ShellOptions::GetIntShellVariable( const char *str )
   
 } /* GetIntShellVariable */
 
-/* ======================================================================== */
-/*!
-  
- \brief Returns the value of the environmenta variable \c str as a double.
- 
- This methods returns the value of the environmenta variable \c
- str. If the variable does not exists, returns \c 0.0.
-
-*/
-/* ------------------------------------------------------------------------ */
-
 double Trilinos_Util_ShellOptions::GetDoubleShellVariable( const char *str )
 {
 
@@ -590,18 +430,7 @@ double Trilinos_Util_ShellOptions::GetDoubleShellVariable( const char *str )
   
 } /* GetDoubleShellVariable */
 
-/* ======================================================================== */
-/*!
-  
- \brief Returns the value of the environmenta variable \c str as a C++ string.
-
- This methods returns the value of the environmenta variable \c
- str. If the variable does not exists, returns \c "".
-
-*/
-/* ------------------------------------------------------------------------ */
-
-string Trilinos_Util_ShellOptions::GetCharShellVariable( const char *str ) 
+string Trilinos_Util_ShellOptions::GetStringShellVariable( const char *str ) 
 {
 
   char * buffer;
@@ -617,9 +446,250 @@ string Trilinos_Util_ShellOptions::GetCharShellVariable( const char *str )
 // ================================================ ====== ==== ==== == =
 
 ostream & operator << (ostream & os,
-		       const Trilinos_Util_ShellOptions & S)
+		       const Trilinos_Util_Map & S)
 {
   S.ShowAll();
   return os;
 }
 
+
+namespace Trilinos_Util_ShellOptions_Database
+{
+  Trilinos_Util_ShellOptions * Data = NULL;
+}
+
+void Trilinos_Util_ShellOptions_Set(int argc, char * argv[])
+{
+  
+  if( Trilinos_Util_ShellOptions_Database::Data != NULL ) {
+    delete Trilinos_Util_ShellOptions_Database::Data;
+  }
+
+  Trilinos_Util_ShellOptions_Database::Data = new Trilinos_Util_ShellOptions(argc,argv);
+
+} /* Trilinos_Util_ShellOptions_Set */
+
+int Trilinos_Util_ShellOptions_GetInt( const string input)
+{
+
+  if( Trilinos_Util_ShellOptions_Database::Data == NULL ) {
+    cerr << "ERROR : Database never set!\n";
+    return 0;
+  }
+
+  return( Trilinos_Util_ShellOptions_Database::Data->GetInt(input) );
+}
+
+int Trilinos_Util_ShellOptions_GetInt( const string input, const int def_value)
+{
+  
+  if( Trilinos_Util_ShellOptions_Database::Data == NULL ) {
+    cerr << "ERROR : Database never set!\n";
+    return 0;
+  }
+
+  return( Trilinos_Util_ShellOptions_Database::Data->GetInt(input,def_value) );
+}
+
+double Trilinos_Util_ShellOptions_GetDouble( const string input)
+{
+  
+  if( Trilinos_Util_ShellOptions_Database::Data == NULL ) {
+    cerr << "ERROR : Database never set!\n";
+    return 0.0;
+  }
+
+  return( Trilinos_Util_ShellOptions_Database::Data->GetDouble(input) );
+}
+
+double Trilinos_Util_ShellOptions_GetDouble( const string input, const double def_value)
+{
+    
+  if( Trilinos_Util_ShellOptions_Database::Data == NULL ) {
+    cerr << "ERROR : Database never set!\n";
+    return 0.0;
+  }
+
+  return( Trilinos_Util_ShellOptions_Database::Data->GetDouble(input,def_value) );
+}
+
+string Trilinos_Util_ShellOptions_GetString( const string input)
+{
+    
+  if( Trilinos_Util_ShellOptions_Database::Data == NULL ) {
+    cerr << "ERROR : Database never set!\n";
+    return "";
+  }
+
+  return( Trilinos_Util_ShellOptions_Database::Data->GetString(input) );
+}
+  
+string Trilinos_Util_ShellOptions_GetString( const string input, const string def_value )
+{
+    
+  if( Trilinos_Util_ShellOptions_Database::Data == NULL ) {
+    cerr << "ERROR : Database never set!\n";
+    return "";
+  }
+
+  return( Trilinos_Util_ShellOptions_Database::Data->GetString(input,def_value) );
+}
+  
+bool Trilinos_Util_ShellOptions_Set(const string input, const string value)
+{
+    
+  if( Trilinos_Util_ShellOptions_Database::Data == NULL ) {
+    cerr << "ERROR : Database never set!\n";
+    return false;
+  }
+
+  return( Trilinos_Util_ShellOptions_Database::Data->Set(input,value) );
+}
+
+bool Trilinos_Util_ShellOptions_Set(const string input, const int value)
+{
+  
+  if( Trilinos_Util_ShellOptions_Database::Data == NULL ) {
+    cerr << "ERROR : Database never set!\n";
+    return false;
+  }
+
+  return( Trilinos_Util_ShellOptions_Database::Data->Set(input,value) );
+}
+
+bool Trilinos_Util_ShellOptions_Have(const string input)
+{
+  
+  if( Trilinos_Util_ShellOptions_Database::Data == NULL ) {
+    cerr << "ERROR : Database never set!\n";
+    return false;
+  }
+  
+  return( Trilinos_Util_ShellOptions_Database::Data->Have(input) );
+}
+
+bool Trilinos_Util_ShellOptions_Add( const string input, const string value )
+{
+  
+  if(Trilinos_Util_ShellOptions_Database:: Data == NULL ) {
+    cerr << "ERROR : Database never set!\n";
+    return false;
+  }
+  
+  return( Trilinos_Util_ShellOptions_Database::Data->Add(input,value) );
+}
+
+void Trilinos_Util_ShellOptions_ShowAll()
+{
+  
+  if( Trilinos_Util_ShellOptions_Database::Data == NULL ) {
+    cerr << "ERROR : Database never set!\n";
+    return;
+  }
+  
+  Trilinos_Util_ShellOptions_Database::Data->ShowAll();
+}
+
+void Trilinos_Util_ShellOptions_ShowReallyAll()
+{
+  
+  if( Trilinos_Util_ShellOptions_Database::Data == NULL ) {
+    cerr << "ERROR : Database never set!\n";
+    return;
+  }
+  
+  Trilinos_Util_ShellOptions_Database::Data->ShowReallyAll();
+}
+
+// ================================================ ====== ==== ==== == =
+
+Trilinos_Util_FileOptions::Trilinos_Util_FileOptions(const char FileName[]) :
+  FileName_(FileName), CommentChars_("#"), SeparationChars_("="),
+  FileHasBeenRead_(false)
+{
+}
+
+Trilinos_Util_FileOptions::~Trilinos_Util_FileOptions() 
+{
+  FileName_ = "";
+  CommentChars_ = "";
+  SeparationChars_ = "";
+  Reset();
+  FileHasBeenRead_ = false;
+}
+
+string Trilinos_Util_FileOptions::GetFileName() const
+{
+  return FileName_;
+}
+
+void Trilinos_Util_FileOptions::SetCommentChars(const string c)
+{
+  CommentChars_ = c;
+  return;
+}
+
+void Trilinos_Util_FileOptions::SetSeparationChars(const string c)
+{
+  SeparationChars_ = c;
+  return;
+}
+
+#include <iostream>
+#include <fstream>
+
+int Trilinos_Util_FileOptions::ReadFile(const char * FileName) 
+{
+  FileName_ = FileName;
+
+  return( ReadFile() );
+}
+
+int Trilinos_Util_FileOptions::ReadFile()
+{
+  
+  ifstream File(FileName_.c_str());
+
+  if( File.good() == false ) {
+    std::cerr << "Error opening file `" << FileName_ << "'\n";
+    return -1;
+  }
+
+  const int CharMax = 255;
+  char line[CharMax];
+  string Option, Value;
+
+  while( File.eof() == false ) {
+    
+    File.getline(line,255);
+    string StrLine = line;
+    for( int k=0 ; k<CommentChars_.length() ; ++k ) {
+      int CommentPos = StrLine.find(CommentChars_.at(k));
+      if( CommentPos != -1 ) {
+	StrLine = StrLine.substr(0,CommentPos);
+      }
+    }
+    int Length = StrLine.length();
+    for( int k=0 ; k<SeparationChars_.length() ; ++k ) {    
+      int SepPos = StrLine.find(SeparationChars_.at(k));
+      if( SepPos > 0 ) {
+	Option = StrLine.substr(0,SepPos);
+	Value = StrLine.substr(SepPos+1,Length);
+	// ~!@ to erase spaces...
+	if( Option.length() > 0 ) Set(Option,Value);
+	break;
+      }
+    }
+  }
+  
+  // close file
+  File.close();
+
+  return 0;
+  
+}
+
+
+  
+
+  

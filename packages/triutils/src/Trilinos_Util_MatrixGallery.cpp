@@ -340,8 +340,8 @@ int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
   
   for( int i=0 ; i<count ; i++ ) {
     string parameter = "-"+Options[i];    
-    if( S.HaveOption(parameter) == true ) {
-      string value = S.GetStringOption(parameter);
+    if( S.Have(parameter) == true ) {
+      string value = S.GetString(parameter);
       Set(Options[i],value);
       
     }
@@ -359,8 +359,8 @@ int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
 
   for(  int i=0 ; i<8 ; i++ ) {
     string parameter = "-"+Options[i];   
-    if( S.HaveOption(parameter) == true ) {
-      Set(Options[i],S.GetIntOption(parameter));
+    if( S.Have(parameter) == true ) {
+      Set(Options[i],S.GetInt(parameter));
     }
   }
   
@@ -374,8 +374,8 @@ int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
   Options[6] = "g";
   for( int i=0 ; i<7 ; i++ ) {
     string parameter = "-"+Options[i];   
-    if( S.HaveOption(parameter) == true ) {
-      Set(Options[i],S.GetDoubleOption(parameter));
+    if( S.Have(parameter) == true ) {
+      Set(Options[i],S.GetDouble(parameter));
     }
   }
 
@@ -1877,8 +1877,6 @@ int Trilinos_Util_MatrixGallery::CreateVbrMatrix(void)
     VbrMatrix_->BeginInsertGlobalValues(GlobalNode, CrsNumEntries, VbrIndices);
 
     int ExpandTypeInt;
-
-    cout << ExpandType_ << endl;
     
     if( ExpandType_ == "zero_off_diagonal" ) ExpandTypeInt=0;
     else if( ExpandType_ == "random_off_diagonal" ) ExpandTypeInt=1;
