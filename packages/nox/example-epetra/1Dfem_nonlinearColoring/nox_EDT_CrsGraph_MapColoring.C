@@ -14,7 +14,7 @@
 
 namespace Epetra_Transform {
 
-std::auto_ptr<Epetra_MapColoring> CrsGraph_MapColoring::operator()( const Epetra_CrsGraph & original )
+Epetra_MapColoring* CrsGraph_MapColoring::operator()( const Epetra_CrsGraph & original )
 {
   int err;
 
@@ -26,7 +26,7 @@ std::auto_ptr<Epetra_MapColoring> CrsGraph_MapColoring::operator()( const Epetra
 
   //Generate Local Distance-1 Adjacency Graph
   //(Transpose of original excluding non-local column indices)
-  std::auto_ptr<Epetra_CrsGraph> Adj1 = CrsGraph_Transpose( true )( original );
+  Epetra_CrsGraph* Adj1 = CrsGraph_Transpose( true )( original );
   if( verbose_ ) cout << "Adjacency 1 Graph!\n" << *Adj1;
 
   int Delta = Adj1->MaxNumIndices();
@@ -83,7 +83,7 @@ std::auto_ptr<Epetra_MapColoring> CrsGraph_MapColoring::operator()( const Epetra
 
   if( verbose_ ) cout << "ColorMap!\n" << *ColorMap;
 
-  return std::auto_ptr<Epetra_MapColoring> ( ColorMap );
+  return ColorMap;
 }
 
 }

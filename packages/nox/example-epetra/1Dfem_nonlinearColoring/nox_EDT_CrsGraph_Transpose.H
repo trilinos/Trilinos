@@ -20,7 +20,7 @@ class CrsGraph_Transpose : public SameTypeDistTransform<Epetra_CrsGraph> {
   : ignoreNonLocalCols_(IgnoreNonLocalCols)
   {}
 
-  std::auto_ptr<Epetra_CrsGraph> operator()( const Epetra_CrsGraph & original );
+  Epetra_CrsGraph* operator()( const Epetra_CrsGraph & original );
 
 };
 

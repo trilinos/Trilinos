@@ -10,7 +10,7 @@
 
 namespace Epetra_Transform {
 
-std::auto_ptr<Epetra_CrsGraph> CrsGraph_Transpose::operator()( const Epetra_CrsGraph & original )
+Epetra_CrsGraph* CrsGraph_Transpose::operator()( const Epetra_CrsGraph & original )
 {
   int err;
 
@@ -91,7 +91,7 @@ std::auto_ptr<Epetra_CrsGraph> CrsGraph_Transpose::operator()( const Epetra_CrsG
     TransposeGraph->TransformToLocal();
   }
 
-  return std::auto_ptr<Epetra_CrsGraph>( TransposeGraph );
+  return TransposeGraph;
 }
 
 }

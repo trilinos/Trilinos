@@ -12,7 +12,7 @@
 
 namespace Epetra_Transform {
 
-std::auto_ptr< vector<Epetra_IntVector> > CrsGraph_MapColoringIndex::operator()( const Epetra_CrsGraph & original )
+vector<Epetra_IntVector>* CrsGraph_MapColoringIndex::operator()( const Epetra_CrsGraph & original )
 {
   int err;
 
@@ -27,7 +27,7 @@ std::auto_ptr< vector<Epetra_IntVector> > CrsGraph_MapColoringIndex::operator()(
 
   //initial setup of stl vector of IntVectors for indexing
   vector<int> dummy( nRows, -1 );
-  std::auto_ptr< vector<Epetra_IntVector> > IndexVec(
+  vector<Epetra_IntVector>* IndexVec(
 	new vector<Epetra_IntVector>( NumColors, Epetra_IntVector( Copy, RowMap, &dummy[0] ) ) );
 
   int MaxNumIndices = original.MaxNumIndices();

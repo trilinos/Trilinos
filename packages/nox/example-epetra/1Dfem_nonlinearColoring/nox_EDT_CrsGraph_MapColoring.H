@@ -21,7 +21,7 @@ class CrsGraph_MapColoring : public DistTransform<Epetra_CrsGraph,Epetra_MapColo
   : verbose_(verbose)
   {}
 
-  std::auto_ptr<Epetra_MapColoring> operator()( const Epetra_CrsGraph & original );
+  Epetra_MapColoring* operator()( const Epetra_CrsGraph & original );
 
 };
 

@@ -19,9 +19,9 @@ class Transform
 
   virtual ~Transform() {}
 
-  virtual std::auto_ptr<newType> operator()( const originalType & old ) = 0;
+  virtual newType* operator()( const originalType & old ) = 0;
 
-  virtual std::auto_ptr<originalType> reverse( const newType & old ) { return std::auto_ptr<originalType>(0); }
+  virtual originalType* reverse( const newType & old ) { return (originalType*)(0); }
 
 };
 

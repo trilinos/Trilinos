@@ -14,8 +14,8 @@ struct DistTransform : public Transform<T,U>
 {
   virtual ~DistTransform() {}
 
-  virtual std::auto_ptr<Epetra_Import> importer() { return std::auto_ptr<Epetra_Import>(0); }
-  virtual std::auto_ptr<Epetra_Export> exporter() { return std::auto_ptr<Epetra_Export>(0); }
+  virtual Epetra_Import* importer() { return (Epetra_Import*)(0); }
+  virtual Epetra_Export* exporter() { return (Epetra_Export*)(0); }
 
 };
 

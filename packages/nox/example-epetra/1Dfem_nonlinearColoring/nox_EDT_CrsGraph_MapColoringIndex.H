@@ -24,7 +24,7 @@ class CrsGraph_MapColoringIndex : public DistTransform< Epetra_CrsGraph,vector<E
   : ColorMap_( ColorMap )
   {}
 
-  std::auto_ptr< vector<Epetra_IntVector> > operator()( const Epetra_CrsGraph & original );
+  vector<Epetra_IntVector>* operator()( const Epetra_CrsGraph & original );
 
 };
 
