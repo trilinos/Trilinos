@@ -714,7 +714,7 @@ void ML_GGB2CSR (double *v, int nconv, int MatSize, int proc_id,
     
     for (i = 0; i < ncolumns; i++) {
       fprintf(eig,"EIG NUM = %d\n",i+1);
-      for (j = 0; j < nrows; j++) {
+      for (j = 0; j < ncolumns; j++) {
       	fprintf(eig,"\t %20.13f\n ",v[j*nrows+i]);
       }
     }
