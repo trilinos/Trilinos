@@ -24,7 +24,10 @@
 
 void      LB_Assign_Param_Vals(
 LB_PARAM * change_list,		/* list of parameter values being changed */
-PARAM_VARS * params)		/* structure describing parameters */
+PARAM_VARS * params,		/* structure describing parameters */
+int debug_level,                /* level for output of debugging info */
+int proc                        /* processor # (controls debug printing) */
+)
 {	
     char     *name;		/* name of parameter being reset */
     char     *val;		/* new value for parameter */
@@ -57,10 +60,20 @@ PARAM_VARS * params)		/* structure describing parameters */
 		else {
 		    *((int *) param_ptr->ptr) = atoi(val);
 		}
+ 
+                if (debug_level > 0 && proc == 0) {
+                    printf("Assign Parameter %s = %d\n", 
+                            param_ptr->name, *((int *) param_ptr->ptr));
+                }
 	    }
 
 	    else if (!strcmp(param_ptr->type, "DOUBLE")) {
 		*((double *) param_ptr->ptr) = atof(val);
+ 
+                if (debug_level > 0 && proc == 0) {
+                    printf("Assign Parameter %s = %lf\n", 
+                            param_ptr->name, *((double *) param_ptr->ptr));
+                }
 	    }
 
 	    else if (!strcmp(param_ptr->type, "LONG")) {
@@ -72,14 +85,29 @@ PARAM_VARS * params)		/* structure describing parameters */
 		else {
 		    *((long *) param_ptr->ptr) = atol(val);
 		}
+ 
+                if (debug_level > 0 && proc == 0) {
+                    printf("Assign Parameter %s = %ld\n", 
+                            param_ptr->name, *((long *) param_ptr->ptr));
+                }
 	    }
 
 	    else if (!strcmp(param_ptr->type, "STRING")) {
 		strncpy((char *) param_ptr->ptr, val, MAX_PARAM_STRING_LEN);
+ 
+                if (debug_level > 0 && proc == 0) {
+                    printf("Assign Parameter %s = %s\n", 
+                            param_ptr->name, (char *) param_ptr->ptr);
+                }
 	    }
 
 	    else if (!strcmp(param_ptr->type, "CHAR")) {
 		*((char *) param_ptr->ptr) = *val;
+ 
+                if (debug_level > 0 && proc == 0) {
+                    printf("Assign Parameter %s = %c\n", 
+                            param_ptr->name, *((char *) param_ptr->ptr));
+                }
 	    }
 	}
 

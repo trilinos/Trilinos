@@ -21,7 +21,7 @@
 
 
 void LB_Free_Params(
-LB *lb)				/* load balance object */
+LB *lb)				/* load balance structure */
 {
 /*
  * Free the list of new parameter values.

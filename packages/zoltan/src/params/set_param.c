@@ -32,7 +32,7 @@ static int clean_string(char *, char **);
 
 
 int       LB_Set_Param(
-LB *lb,				/* load balance object */
+LB *lb,				/* load balance structure */
 char *name1,			/* parameter name */
 char *val1)			/* value to set this parameter to */
 {
@@ -155,7 +155,7 @@ char **pstring2) 		/* cleaned string to return */
 
 
 static int add_param(
-LB *lb,				/* load balance object */
+LB *lb,				/* load balance structure */
 char *name,			/* parameter name */
 char *val)			/* value to set this parameter to */
 {

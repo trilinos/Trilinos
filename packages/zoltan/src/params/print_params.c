@@ -18,7 +18,7 @@
 
 
 void      LB_Print_Params(
-LB *lb)				/* load balance object */
+LB *lb)				/* load balance structure */
 {
 /*
  *  Function to print out list of set parameter values.
