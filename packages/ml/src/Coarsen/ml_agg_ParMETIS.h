@@ -9,10 +9,6 @@
 
 #ifndef __MLAGGPARMETIS__
 #define __MLAGGPARMETIS__
-
-extern int ML_Aggregate_Set_ReqLocalCoarseSize( ML *ml, ML_Aggregate *ag, 
-					 int level,
-					 int desired_aggre_per_proc );
 					 
 #ifndef ML_CPP
 #ifdef __cplusplus
@@ -22,6 +18,12 @@ extern "C" {
 
 #include "ml_comm.h"
 
+  extern int ML_Aggregate_Set_ReqLocalCoarseSize( ML *ml, ML_Aggregate *ag, 
+	 				 int level,
+					 int desired_aggre_per_proc );
+  extern int ML_DecomposeGraph_BuildOffsets( int N_parts,
+				    int offsets[],
+				    int N_procs );
   extern int ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate( int optimal_value );
   extern int ML_Aggregate_Set_ReqLocalCoarseSize( ML *ml, ML_Aggregate *ag, 
 						  int level,
@@ -29,8 +31,9 @@ extern "C" {
   extern int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag,
 					   ML_Operator *Amatrix, 
 					   ML_Operator **Pmatrix,
-					   ML_Comm *comm);
-  
+					   ML_Comm *comm);  
+  extern int ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate( int optimal_value );
+  extern int ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate( );
 
   
 #ifndef ML_CPP

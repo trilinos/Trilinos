@@ -34,6 +34,8 @@ extern "C" {
 					    int level, int nodes_per_aggre );
   extern int ML_Aggregate_Set_LocalNumber( ML *ml, ML_Aggregate *ag, 
 					   int level, int Nlocal  );
+  extern int ML_Aggregate_Set_GlobalNumber( ML *ml, ML_Aggregate *ag, 
+					    int level, int Nglobal  );
   extern int ML_Aggregate_Set_ReorderingFlag( ML *ml, ML_Aggregate *ag, 
 					      int level, int reordering_flag);
   extern int ML_Aggregate_CoarsenMETIS( ML_Aggregate *ml_ag,
@@ -42,9 +44,10 @@ extern "C" {
   extern int ML_DecomposeGraph_BuildOffsets( int N_parts,
 					     int offsets[],
 					     int N_procs );
-  extern int ML_Aggregates_CheckAggregates( int Naggregates, int N_rows,
-					    int graph_decomposition[],
-					    int mypid);
+  extern int ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate( int optimal_value );
+  extern int ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate( );
+  
+  
   
 
 #ifndef ML_CPP
