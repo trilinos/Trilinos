@@ -85,7 +85,7 @@
   Trilinos (includes %NOX as well as other packages such as Epetra, Ifpack, and more):
 
   <ul>
-  <li> Download site to be announced soon!
+  <li> <a href="http://software.sandia.gov/trilinos">Trilinos Home Page</a>
   </ul>
 
 
@@ -319,7 +319,7 @@ Go on to \ref step2.
   library developed by 
   <a href="http://www.sandia.gov">Sandia National Labs</a>; 
   for more information see the 
-  <a href="http://software.sandia.gov/Trilinos">Trilinos Home Page</a>. 
+  <a href="http://software.sandia.gov/trilinos">Trilinos Home Page</a>. 
   If you download %NOX with Trilinos (see \ref downloads),
   then Epetra is included in the distribution.
   To compile the NOX::Epetra library and examples, use the
@@ -1373,7 +1373,7 @@ immediately before the word that is causing the link. For example,
   Trilinos/Epetra library developed by 
   <a href="http://www.sandia.gov">Sandia National Labs</a>; 
   for more information see the 
-  <a href="http://software.sandia.gov/Trilinos">Trilinos Home Page</a>.
+  <a href="http://software.sandia.gov/trilinos">Trilinos Home Page</a>.
 
   The \b PETSc interface is an interface with the PETSc library. PETSc
   was developed at 
