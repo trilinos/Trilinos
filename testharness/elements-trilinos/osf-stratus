@@ -29,4 +29,6 @@
 --enable-kokkos
 --enable-komplex
 --enable-triutils
+--enable-shared
+--disable-static
 --disable-default-packages
