@@ -1,32 +1,32 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* See the file COPYRIGHT for a complete copyright notice, contact person    */
+/* and disclaimer.                                                           */
+/* ************************************************************************* */
 
-/* ******************************************************************** */
-/* ******************************************************************** */
-/* Functions to set up AMG multigrid structure                          */
-/* ******************************************************************** */
-/* ML_AMG_Create                                                        */
-/* ML_AMG_Destroy                                                       */
-/* ML_AMG_Set_OutputLevel                                               */
-/* ML_AMG_Set_MaxCoarseSize                                             */
-/* ML_AMG_Set_CoarsenScheme_MIS                                         */
-/* ML_AMG_Set_Threshold                                                 */
-/* ML_AMG_Set_MaxLevels                                                 */
-/* ML_AMG_Set_CurrentLevel                                              */
-/* ML_AMG_Set_StartLevel                                                */
-/* ML_AMG_Set_Coarsen                                                   */
-/* ML_AMG_Set_Smoother                                                  */
-/* ML_AMG_Set_SmootherAztec                                             */
-/* ML_AMG_Set_CoarseSolve                                               */
-/* ML_AMG_Print                                                         */
-/* ML_AMG_Print_Complexity                                              */
-/* ******************************************************************** */
-/* Author        : Charles Tong (LLNL)                                  */
-/* Date          : October, 2000                                        */
-/* ******************************************************************** */
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* Functions to set up AMG multigrid structure                               */
+/* ************************************************************************* */
+/* ML_AMG_Create                                                             */
+/* ML_AMG_Destroy                                                            */
+/* ML_AMG_Set_OutputLevel                                                    */
+/* ML_AMG_Set_MaxCoarseSize                                                  */
+/* ML_AMG_Set_CoarsenScheme_MIS                                              */
+/* ML_AMG_Set_Threshold                                                      */
+/* ML_AMG_Set_MaxLevels                                                      */
+/* ML_AMG_Set_CurrentLevel                                                   */
+/* ML_AMG_Set_StartLevel                                                     */
+/* ML_AMG_Set_Coarsen                                                        */
+/* ML_AMG_Set_Smoother                                                       */
+/* ML_AMG_Set_SmootherAztec                                                  */
+/* ML_AMG_Set_CoarseSolve                                                    */
+/* ML_AMG_Print                                                              */
+/* ML_AMG_Print_Complexity                                                   */
+/* ************************************************************************* */
+/* Author        : Charles Tong (LLNL)                                       */
+/* Date          : October, 2000                                             */
+/* ************************************************************************* */
+/* ************************************************************************* */
 
 #include <assert.h>
 #include <stdlib.h>
@@ -35,17 +35,17 @@
 #include "ml_amg.h"
 #include "ml_operator.h"
 
-/* ******************************************************************** */
-/* Constructor                                                          */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* Constructor                                                               */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Create( ML_AMG **amg )
 {
    ML_memory_alloc( (void **) amg, sizeof(ML_AMG), "MG1" );
    (*amg)->ML_id                      = ML_ID_AMG;
    (*amg)->print_flag                 = 1;
-   (*amg)->max_coarse_size            = 100;
-   (*amg)->threshold                  = 0.2;
+   (*amg)->max_coarse_size            = 10;
+   (*amg)->threshold                  = 0.5;
    (*amg)->curr_threshold             = 0.2;
    (*amg)->amg_scheme                 = ML_AMG_SCALAR;
    (*amg)->coarsen_scheme             = ML_AMG_MIS;
@@ -81,9 +81,9 @@ int ML_AMG_Create( ML_AMG **amg )
    return 0;
 }
 
-/* ******************************************************************** */
-/* destructor                                                           */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* destructor                                                                */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Destroy( ML_AMG **amg )
 {
@@ -98,9 +98,9 @@ int ML_AMG_Destroy( ML_AMG **amg )
    return 0;
 }
 
-/* ******************************************************************** */
+/* ************************************************************************* */
 /* set output level                                                     */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Set_OutputLevel( ML_AMG *amg, int level )
 {
@@ -113,9 +113,9 @@ int ML_AMG_Set_OutputLevel( ML_AMG *amg, int level )
    return 0;
 }
 
-/* ******************************************************************** */
-/* set maximum coarsest grid size                                       */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* set maximum coarsest grid size                                            */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Set_MaxCoarseSize( ML_AMG *amg, int size  )
 {
@@ -128,9 +128,9 @@ int ML_AMG_Set_MaxCoarseSize( ML_AMG *amg, int size  )
    return 0;
 }
 
-/* ******************************************************************** */
+/* ************************************************************************* */
 /* select AMG scheme (scalar, system (unknown), system (nodal)          */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Set_AMGScheme_Scalar( ML_AMG *amg  )
 {
@@ -143,7 +143,7 @@ int ML_AMG_Set_AMGScheme_Scalar( ML_AMG *amg  )
    return 0;
 }
 
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Set_AMGScheme_SystemUnknown( ML_AMG *amg, int numPDE  )
 {
@@ -157,7 +157,7 @@ int ML_AMG_Set_AMGScheme_SystemUnknown( ML_AMG *amg, int numPDE  )
    return 0;
 }
 
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Set_AMGScheme_SystemNodal( ML_AMG *amg, int numPDE  )
 {
@@ -171,9 +171,9 @@ int ML_AMG_Set_AMGScheme_SystemNodal( ML_AMG *amg, int numPDE  )
    return 0;
 }
 
-/* ******************************************************************** */
-/* select coarsening scheme                                             */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* select coarsening scheme                                                  */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Set_CoarsenScheme_MIS( ML_AMG *amg  )
 {
@@ -186,9 +186,9 @@ int ML_AMG_Set_CoarsenScheme_MIS( ML_AMG *amg  )
    return 0;
 }
 
-/* ******************************************************************** */
-/* set/reset strength of connection threshold                           */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* set/reset strength of connection threshold                                */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Set_Threshold( ML_AMG *amg, double thresh )
 {
@@ -202,9 +202,9 @@ int ML_AMG_Set_Threshold( ML_AMG *amg, double thresh )
    return 0;
 }
 
-/* ******************************************************************** */
+/* ************************************************************************* */
 /* set max number of levels and other level information                 */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Set_MaxLevels( ML_AMG *amg, int level )
 {
@@ -217,7 +217,7 @@ int ML_AMG_Set_MaxLevels( ML_AMG *amg, int level )
    return 0;
 }
 
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Set_CurrentLevel( ML_AMG *amg, int level )
 {
@@ -230,7 +230,7 @@ int ML_AMG_Set_CurrentLevel( ML_AMG *amg, int level )
    return 0;
 }
 
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Set_StartLevel( ML_AMG *amg, int level )
 {
@@ -243,9 +243,9 @@ int ML_AMG_Set_StartLevel( ML_AMG *amg, int level )
    return 0;
 }
 
-/* ******************************************************************** */
-/* Coarsening routine                                                   */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* Coarsening routine                                                        */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Coarsen(ML_AMG *amg,ML_Operator *Amatrix,ML_Operator **Pmatrix, 
                    ML_Comm *comm)
@@ -292,9 +292,9 @@ int ML_AMG_Coarsen(ML_AMG *amg,ML_Operator *Amatrix,ML_Operator **Pmatrix,
    return Ncoarse;
 }
 
-/* ******************************************************************** */
-/* set smoother and smoother parameters                                 */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* set smoother and smoother parameters                                      */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Set_Smoother(ML_AMG *amg,int smoother_type, int pre_or_post,
                         ML_Operator *Amatrix,int ntimes, double weight)
@@ -320,9 +320,9 @@ int ML_AMG_Set_Smoother(ML_AMG *amg,int smoother_type, int pre_or_post,
 }
   
 #ifdef AZTEC
-/* ******************************************************************** */
-/* set Aztec-related smoother parameters                                */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* set Aztec-related smoother parameters                                     */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Set_SmootherAztec(ML_AMG *amg, int pre_or_post, int *options, 
                        double *params, int *proc_config, double *status, 
@@ -349,9 +349,9 @@ int ML_AMG_Set_SmootherAztec(ML_AMG *amg, int pre_or_post, int *options,
 }
 #endif
 
-/* ******************************************************************** */
-/* set coarse grid solver                                               */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* set coarse grid solver                                                    */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Set_CoarseSolve(ML_AMG *amg, int solve_type, int ntimes, 
                            double weight)
@@ -364,9 +364,9 @@ int ML_AMG_Set_CoarseSolve(ML_AMG *amg, int solve_type, int ntimes,
    return 0;
 }
 
-/* ******************************************************************** */
-/* Print information about current state of ML_AMG                      */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* Print information about current state of ML_AMG                           */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Print( ML_AMG *amg )
 {
@@ -433,9 +433,9 @@ int ML_AMG_Print( ML_AMG *amg )
    return 1;
 }
 
-/* ******************************************************************** */
-/* Print information about operator complexity                          */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* Print information about operator complexity                               */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Print_Complexity( ML_AMG *amg )
 {

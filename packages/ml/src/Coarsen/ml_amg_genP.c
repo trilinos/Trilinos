@@ -1,32 +1,32 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* See the file COPYRIGHT for a complete copyright notice, contact person    */
+/* and disclaimer.                                                           */
+/* ************************************************************************* */
 
-/* ******************************************************************** */
-/* ******************************************************************** */
-/* Functions to create AMG prolongator                                  */
-/* -------------------------------------------------------------------- */
-/* ML_Gen_MGHierarchy_UsingAMG (top level - set up AMG context)         */
-/* ML_AMG_Gen_MGHierarchy (2nd level - loop over all levels)            */
-/* ML_AMG_Gen_Prolongator (3rd level - call coarsening routine)         */
-/* ML_AMG_Increment_Level (advance to next level - ascending)           */
-/* ML_AMG_Decrement_Level (advance to next level - descending)          */
-/* ML_AMG_Identity_Getrows (a kludge - to be fixed later)               */
-/* ******************************************************************** */
-/* Author        : Charles Tong (LLNL)                                  */
-/* Date          : October, 2000                                        */
-/* ******************************************************************** */
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* Functions to create AMG prolongator                                       */
+/* ------------------------------------------------------------------------- */
+/* ML_Gen_MGHierarchy_UsingAMG (top level - set up AMG context)              */
+/* ML_AMG_Gen_MGHierarchy (2nd level - loop over all levels)                 */
+/* ML_AMG_Gen_Prolongator (3rd level - call coarsening routine)              */
+/* ML_AMG_Increment_Level (advance to next level - ascending)                */
+/* ML_AMG_Decrement_Level (advance to next level - descending)               */
+/* ML_AMG_Identity_Getrows (a kludge - to be fixed later)                    */
+/* ************************************************************************* */
+/* Author        : Charles Tong (LLNL)                                       */
+/* Date          : October, 2000                                             */
+/* ************************************************************************* */
+/* ************************************************************************* */
 
 #include <math.h>
 #include "ml_amg_genP.h"
 /*#include "ml_op_utils.h"*/
 
-/* ******************************************************************** */
-/* Top level call to RS AMG coarsener - create AMG context and then     */
-/* call second level routine to do coarsening based on traversal scheme */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* Top level call to RS AMG coarsener - create AMG context and then          */
+/* call second level routine to do coarsening based on traversal scheme      */
+/* ------------------------------------------------------------------------- */
 
 int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start, 
                                 int increment_or_decrement, ML_AMG *amg)
@@ -34,6 +34,9 @@ int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
    int    i, j, level, idata=0, nrows, blksize;
    double dnnz;
    ML_AMG *ml_amg;
+#ifdef ML_TIMING
+   double t0;
+#endif
 
    /* ----------------------------------------------------------------- */
    /* if user does not provide a ML_AMG object, create a default        */
@@ -68,6 +71,9 @@ int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
 
    idata = ML_gmax_int(idata, ml->comm);
    if ( ml->comm->ML_mypid == 0 && ml_amg->print_flag ) ML_AMG_Print(ml_amg);
+#ifdef ML_TIMING
+   t0 = GetClock();
+#endif
    idata = ML_gmax_int(idata, ml->comm);
 
    if (increment_or_decrement == ML_INCREASING)
@@ -86,6 +92,11 @@ int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
          printf("ML_Gen_MGHierarchy_UsingAMG : unknown inc_or_dec choice\n");
       exit(1);
    }
+#ifdef ML_TIMING
+   t0 = GetClock() - t0;
+   if ( ml->comm->ML_mypid == 0 && ml_amg->print_flag ) 
+      printf("AMG total setup time = %e\n", t0);
+#endif
 
    /* ----------------------------------------------------------------- */
    /* compute operator complexity                                       */
@@ -107,10 +118,10 @@ int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
    return(level);
 }
 
-/* ******************************************************************** */
-/* generate multilevel hierarchy given a subroutine for generating      */
-/* prolongation operators                                               */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* generate multilevel hierarchy given a subroutine for generating           */
+/* prolongation operators                                                    */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Gen_MGHierarchy(ML *ml, int fine_level,
         int (*next_level)(ML *, int, ML_Operator *, ML_AMG *amg2),
@@ -118,8 +129,11 @@ int ML_AMG_Gen_MGHierarchy(ML *ml, int fine_level,
         void *data, int internal_or_external, ML_AMG *amg)
 {
    int  level, next, flag, count=1;
-#ifdef ML_AMG_DEBUG
+#ifdef ML_DEBUG_AMG
    char string[40];
+#endif
+#ifdef ML_TIMING
+   double t0;
 #endif
 
    level = fine_level;
@@ -143,7 +157,15 @@ int ML_AMG_Gen_MGHierarchy(ML *ml, int fine_level,
       if ( ml->comm->ML_mypid == 0 && amg->print_flag ) 
          printf("ML_AMG : generate Galerkin coarse matrix \n");
 
+#ifdef ML_TIMING
+      t0 = GetClock();
+#endif
       ML_Gen_AmatrixRAP(ml, level, next);
+#ifdef ML_TIMING
+      t0 = GetClock() - t0;
+      if ( ml->comm->ML_mypid == 0 && amg->print_flag ) 
+         printf("AMG RAP time at level %3d = %e\n", level, t0);
+#endif
 
       if ( ml->comm->ML_mypid == 0 && amg->print_flag ) 
       {
@@ -151,7 +173,7 @@ int ML_AMG_Gen_MGHierarchy(ML *ml, int fine_level,
          printf("-----------------------------------------------\n");
       }
       level = next;
-#ifdef ML_AMG_DEBUG
+#ifdef ML_DEBUG_AMG
       if ( level == 1 )
       {
          sprintf(string,"AC%d_%d", ml->comm->ML_mypid, level);
@@ -165,9 +187,9 @@ int ML_AMG_Gen_MGHierarchy(ML *ml, int fine_level,
    return(count);
 }
 
-/* ******************************************************************** */
-/* call coarsening and create prolongation operator                     */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* call coarsening and create prolongation operator                          */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
                            ML_AMG *amg)
@@ -215,10 +237,10 @@ int ML_AMG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    return 0;
 }
 
-/* ******************************************************************** */
-/* function for advancing to the next coarser level with coarse level   */
-/* number larger than the fine levels                                   */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* function for advancing to the next coarser level with coarse level        */
+/* number larger than the fine levels                                        */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Increment_Level(ML *ml, int current_level, ML_Operator *Amat,
                            ML_AMG *amg)
@@ -234,10 +256,10 @@ int ML_AMG_Increment_Level(ML *ml, int current_level, ML_Operator *Amat,
    return(current_level+1);
 }
 
-/* ******************************************************************** */
-/* function for advancing to the next coarser level with coarse level   */
-/* number smaller than the fine levels                                  */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* function for advancing to the next coarser level with coarse level        */
+/* number smaller than the fine levels                                       */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Decrement_Level(ML *ml, int current_level, ML_Operator *Amat,
                            ML_AMG *amg)
@@ -253,9 +275,9 @@ int ML_AMG_Decrement_Level(ML *ml, int current_level, ML_Operator *Amat,
    return(current_level-1);
 }
 
-/* ******************************************************************** */
-/* getrow function for identity matrix                                  */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* getrow function for identity matrix                                       */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_Identity_Getrows(void *data, int N_requested_rows, 
            int requested_rows[], int allocated_space, int columns[], 

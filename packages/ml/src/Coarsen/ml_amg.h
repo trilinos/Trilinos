@@ -1,30 +1,29 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* See the file COPYRIGHT for a complete copyright notice, contact person    */
+/* and disclaimer.                                                           */
+/* ************************************************************************* */
 
-/* ******************************************************************** */
-/* data structure to hold AMG information                               */
-/* ******************************************************************** */
-/* Author        : Charles Tong (LLNL)                                  */
-/* Date          : October, 2000                                        */
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* data structure to hold AMG information                                    */
+/* ************************************************************************* */
+/* Author        : Charles Tong (LLNL)                                       */
+/* Date          : October, 2000                                             */
+/* ************************************************************************* */
 
 #ifndef __MLAMGH__
 #define __MLAMGH__
 
 #include <stdio.h>
 #include <stdlib.h>
-
+#include "ml_defs.h"
 #ifdef AZTEC
 #include "az_aztec.h"
 #endif
 
-/* ******************************************************************** */
-/* local defines                                                        */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* local defines                                                             */
+/* ------------------------------------------------------------------------- */
 
-#define ML_ID_AMG              127
 #define ML_AMG_MIS              21
 #define ML_AMG_SCALAR            0
 #define ML_AMG_SYSTEM_UNKNOWN    1
@@ -39,18 +38,18 @@
 #define ML_AMG_SM_MSCHWARZ      18
 #define ML_AMG_SM_SUPERLU       19
 
-/* ******************************************************************** */
-/* other ML include files                                               */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* other ML include files                                                    */
+/* ------------------------------------------------------------------------- */
 
 #include "ml_defs.h"
 #include "ml_comm.h"
 #include "ml_memory.h"
 #include "ml_operator.h"
 
-/* ******************************************************************** */
-/* definition of the AMG structure                                      */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* definition of the AMG structure                                           */
+/* ------------------------------------------------------------------------- */
 
 typedef struct ML_AMG_Struct
 {
@@ -97,19 +96,19 @@ typedef struct ML_AMG_Struct
 #endif
 } ML_AMG;
 
-/* ******************************************************************** */
-/* ******************************************************************** */
-/* functions to manipulate the AMG data structure                       */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* functions to manipulate the AMG data structure                            */
+/* ------------------------------------------------------------------------- */
 
 #ifdef __cplusplus
 extern "C" 
 {
 #endif
 
-/* -------------------------------------------------------------------- */
-/* constructor/destructor and level control                             */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* constructor/destructor and level control                                  */
+/* ------------------------------------------------------------------------- */
 
 extern int  ML_AMG_Create( ML_AMG ** );
 extern int  ML_AMG_Destroy( ML_AMG ** );
@@ -120,46 +119,46 @@ extern int  ML_AMG_Set_MaxLevels( ML_AMG *amg, int level );
 extern int  ML_AMG_Set_CurrentLevel( ML_AMG *amg, int level );
 extern int  ML_AMG_Set_StartLevel( ML_AMG *amg, int level );
 
-/* -------------------------------------------------------------------- */
-/* control when to stop coarsening                                      */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* control when to stop coarsening                                           */
+/* ------------------------------------------------------------------------- */
 
 extern int  ML_AMG_Set_MaxCoarseSize( ML_AMG *amg, int size );
 
-/* -------------------------------------------------------------------- */
-/* different AMG scheme (scalar, unknown, system)                       */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* different AMG scheme (scalar, unknown, system)                            */
+/* ------------------------------------------------------------------------- */
 
 extern int  ML_AMG_Set_AMGScheme_Scalar( ML_AMG *amg  );
 extern int  ML_AMG_Set_AMGScheme_SystemUnknown( ML_AMG *amg, int  );
 extern int  ML_AMG_Set_AMGScheme_SystemNodal( ML_AMG *amg, int  );
 
-/* -------------------------------------------------------------------- */
-/* different parallel coarsening schemes                                */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* different parallel coarsening schemes                                     */
+/* ------------------------------------------------------------------------- */
 
 extern int  ML_AMG_Set_CoarsenScheme_MIS( ML_AMG *amg  );
 
-/* -------------------------------------------------------------------- */
-/* set threshold for pruning matrix graph                               */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* set threshold for pruning matrix graph                                    */
+/* ------------------------------------------------------------------------- */
 
 extern int  ML_AMG_Set_Threshold( ML_AMG *amg, double epsilon );
 
-/* -------------------------------------------------------------------- */
-/* functions for performing coarsening                                  */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* functions for performing coarsening                                       */
+/* ------------------------------------------------------------------------- */
 
 extern int  ML_AMG_Coarsen(ML_AMG *amg, ML_Operator *Amatrix,
                            ML_Operator **Pmatrix, ML_Comm *comm);
 extern int  ML_AMG_CoarsenMIS(ML_AMG *ml_amg,ML_Operator *Amatrix,
                               ML_Operator **Pmatrix, ML_Comm *comm);
 
-/* -------------------------------------------------------------------- */
-/* miscellaneous functions                                              */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* miscellaneous functions                                                   */
+/* ------------------------------------------------------------------------- */
 
-extern int  ML_AMG_Set_Smoother(ML_AMG *ml_amg,int smoother_type, int pre_or_post,
+extern int  ML_AMG_Set_Smoother(ML_AMG *ml_amg,int smoother_type,int pre_or_post,
                         ML_Operator *Amatrix,int ntimes, double weight);
 
 #ifdef AZTEC
@@ -173,9 +172,9 @@ extern int  ML_AMG_Set_SmootherAztec(ML_AMG *ml_amg, int pre_or_post,
 extern int  ML_AMG_Set_CoarseSolve(ML_AMG *ml_amg, int solve_type, int ntimes, 
                                    double weight);
 
-/* -------------------------------------------------------------------- */
-/* miscellaneous functions                                              */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* miscellaneous functions                                                   */
+/* ------------------------------------------------------------------------- */
 
 extern int  ML_AMG_Print(ML_AMG *);
 extern int  ML_AMG_Print_Complexity(ML_AMG *);

@@ -1,14 +1,14 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* See the file COPYRIGHT for a complete copyright notice, contact person    */
+/* and disclaimer.                                                           */
+/* ************************************************************************* */
 
-/* ******************************************************************** */
-/* data structures to hold aggregation information                      */
-/* ******************************************************************** */
-/* Author        : Ray Tuminaro (SNL), Charles Tong (LLNL)              */
-/* Date          : August, 1999                                         */
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* data structures to hold aggregation information                           */
+/* ************************************************************************* */
+/* Author        : Ray Tuminaro (SNL), Charles Tong (LLNL)                   */
+/* Date          : August, 1999                                              */
+/* ************************************************************************* */
 
 #ifndef __MLGENP__
 #define __MLGENP__
@@ -16,22 +16,22 @@
 #include "ml_operator.h"
 #include "ml_aggregate.h"
 
-/* ******************************************************************** */
-/* data structure to hold getrow function                               */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* data structure to hold getrow function                                    */
+/* ------------------------------------------------------------------------- */
 
 struct ML_AGG_Matrix_Context 
 {
    ML_Operator *Amat;
    double      omega;
    double      drop_tol;
-   int         *aggr_info;
    char        *near_bdry;
+   int         *aggr_info;
 };
 
-/* ******************************************************************** */
-/* external functions                                                   */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* external functions                                                        */
+/* ------------------------------------------------------------------------- */
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,24 +42,24 @@ extern void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
 }
 #endif
 
-/* ******************************************************************** */
-/* functions defined here                                               */
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* functions defined here                                                    */
+/* ************************************************************************* */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* ******************************************************************** */
-/* functions called by users                                            */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* functions called by users                                                 */
+/* ------------------------------------------------------------------------- */
 
 extern int ML_Gen_MGHierarchy_UsingAggregation(ML *, int start, 
                        int increment_or_decrement, ML_Aggregate *);
 
-/* ******************************************************************** */
-/* internal functions called by developers                              */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* internal functions called by developers                                   */
+/* ------------------------------------------------------------------------- */
 
 extern int ML_Gen_MGHierarchy(ML *, int fine_level,
                int (*next_level)(ML *, int, ML_Operator *, ML_Aggregate *),
@@ -84,7 +84,6 @@ extern int  ML_AGG_Extract_Diag( ML_Operator *, double *diag);
 extern void ML_AGG_Matrix_Context_Clean(void *data);
 extern int  ML_AGG_DD_Solve(void *data, int, double *, int, double *);
 extern int  ML_AGG_Extract_Matrix(ML_Operator *mat, int *, int **, double ***);
-extern int ML_AGG_Compute_Near_Bdry(ML_Operator *Amatrix, char *near_bdry);
 
 #ifdef __cplusplus
 }

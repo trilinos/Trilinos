@@ -596,7 +596,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
 
    if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
       printf("Aggregation : building multilevel hierarchy at level %d\n",level);
-   widget.near_bdry = NULL; 
+   widget.near_bdry = NULL;
    Amat     = (ML_Operator *) data;
    Nfine    = Amat->outvec_leng;
    getrow_obj = Amat->getrow;
@@ -658,7 +658,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
    ML_Aggregate_Set_OutputLevel( newag, 0 );
    ML_Aggregate_Set_CoarsenScheme_Uncoupled( newag );
    ML_Aggregate_Set_Threshold( newag, 0.08 );
-ML_Aggregate_Set_DampingFactor( newag, 0.0/3.0 );
+   ML_Aggregate_Set_DampingFactor( newag, 0.0/3.0 );
    ML_Aggregate_Set_MaxCoarseSize( newag, 1 );
    ML_Aggregate_Set_PSmootherType( newag, 0 );
    newClevel = ML_Gen_MGHierarchy_UsingAggregation(newml, newNlevels-1,
@@ -1294,7 +1294,7 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data,
    for (i = 0; i < Nfine; i++) new_ja[i] = 0;
 /*
    norm = sqrt((double) Nfine);
-norm = 1.0;
+   norm = 1.0;
    for (i = 0; i < Nfine; i++) new_val[i] = 1.0 / norm;
 */
    ML_memory_alloc((void**) &csr_data,sizeof(struct ML_CSR_MSRdata),"AVP");
@@ -1304,7 +1304,7 @@ norm = 1.0;
 /*
    tentP = &(ml->Pmat[clevel]);
 */
-tentP = ML_Operator_Create(ml->comm);
+   tentP = ML_Operator_Create(ml->comm);
    ML_Operator_Set_ApplyFuncData(tentP,1,Nfine,ML_EMPTY,csr_data,Nfine,NULL,0);
    tentP->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
    ML_memory_alloc((void**) &aggr_comm, sizeof(ML_Aggregate_Comm), "AD4");

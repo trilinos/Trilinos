@@ -162,8 +162,8 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    /* ============================================================= */
 
    Nghost = Amatrix->getrow->pre_comm->total_rcv_length;
-   unamalg_bdry = (char *) ML_allocate(sizeof(char)*(Nrows+Nghost+1));
-   dtemp = (double *) ML_allocate(sizeof(double)*(Nrows+Nghost+1));
+   unamalg_bdry = (char *) malloc(sizeof(char)*(Nrows+Nghost+1));
+   dtemp = (double *) malloc(sizeof(double)*(Nrows+Nghost+1));
    if (dtemp == NULL) pr_error("ml_agg_MIS: out of space.\n");
 
    for (i = 0; i < Nrows+Nghost; i++) dtemp[i] = 0.;
@@ -185,7 +185,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
       if (dtemp[i] == 1.) unamalg_bdry[i] = 'T';
       else unamalg_bdry[i] = 'F';
    }
-   ML_free(dtemp);
+   free(dtemp);
 
    /* ============================================================= */
    /* set up the threshold for weight-based coarsening              */
@@ -314,7 +314,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
    /* record the Dirichlet boundary */
 
-   bdry = (char *) AZ_allocate(sizeof(char)*(exp_Nrows + 1));
+   bdry = (char *) malloc(sizeof(char)*(exp_Nrows + 1));
    for (i = Nrows ; i < exp_Nrows; i++) bdry[i] = 'F';
    for (i = 0; i < Nrows; i++) {
       bdry[i] = 'T';
@@ -325,7 +325,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
    /* communicate the boundary information */
 
-   dtemp = (double *) ML_allocate(sizeof(double)*(exp_Nrows+1));
+   dtemp = (double *) malloc(sizeof(double)*(exp_Nrows+1));
    for (i = nvertices; i < exp_Nrows; i++) dtemp[i] = 0;
    for (i = 0; i < nvertices; i++) {
       if (bdry[i] == 'T') dtemp[i] = 1.;
@@ -336,7 +336,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
       if (dtemp[i] == 1.) bdry[i] = 'T';
       else bdry[i] = 'F';
    }
-   ML_free(dtemp);
+   free(dtemp);
 
 
    aggr_index = (int *) malloc(sizeof(int)* Asqrd_ntotal*num_PDE_eqns);
@@ -965,7 +965,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
          fprintf(fp,"%d %d\n",k, aggr_index[j]+agg_offset);
    }
 
-   dtemp = (double *) ML_allocate(sizeof(double)*(exp_Nrows+1));
+   dtemp = (double *) malloc(sizeof(double)*(exp_Nrows+1));
    for (i = 0; i < nvertices; i++) dtemp[i] = (double) (i + vertex_offset);
    ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm, nvertices, comm, ML_OVERWRITE);
    for (i = 0; i < exp_Nrows-nvertices; i++) {
@@ -1656,7 +1656,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
 
-   ML_free(unamalg_bdry);
+   free(unamalg_bdry);
    ML_memory_free((void**) &comm_val);
    ML_memory_free((void**) &neighbors);
    ML_memory_free((void**) &recv_leng);

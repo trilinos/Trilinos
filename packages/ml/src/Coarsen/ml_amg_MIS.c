@@ -1,16 +1,16 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* See the file COPYRIGHT for a complete copyright notice, contact person    */
+/* and disclaimer.                                                           */
+/* ************************************************************************* */
 
-/* ******************************************************************** */
-/* ******************************************************************** */
-/* Functions to create AMG prolongators                                 */
-/* ******************************************************************** */
-/* Author        : Charles Tong (LLNL)                                  */
-/* Date          : October, 2000                                        */
-/* ******************************************************************** */
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* Functions to create AMG prolongators                                      */
+/* ************************************************************************* */
+/* Author        : Charles Tong (LLNL)                                       */
+/* Date          : October, 2000                                             */
+/* ************************************************************************* */
+/* ************************************************************************* */
 
 #include <assert.h>
 #include <stdio.h>
@@ -19,11 +19,12 @@
 #include "ml_mat_formats.h"
 #include "ml_amg.h"
 #include "ml_aggregate.h"
+#include "ml_smoother.h"
 #include "ml_lapack.h"
 
-/* ******************************************************************** */
-/* function to be declared later on in this file                        */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* function to be declared later on in this file                             */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
            char *vertex_state, char *vertex_type, int nvertices, int *rptr, 
@@ -32,32 +33,53 @@ int ML_AMG_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
            int **recv_buf, int *recv_proc, int *recv_leng, int **recv_list, 
            int msgtype, ML_Comm *comm, int amg_index[]);
 
-#define dabs(x) (((x) >= 0) ? x : -x)
+int ML_AMG_GetCommInfo(ML_CommInfoOP *mat_comm, int Nrows, int *A_Nneigh, 
+           int **A_neigh, int ***A_sendlist, int ***A_recvlist, 
+           int ***A_sndbuf, int ***A_rcvbuf, int **A_sndleng, 
+           int **A_rcvleng, int *Nghost);
 
-/* ******************************************************************** */
-/* construct the prolongator using Mark Adam's MIS algorithm            */
-/* -------------------------------------------------------------------- */
+int ML_AMG_UpdateVertexStates(int N_remaining_vertices, char vertex_state[], 
+           int recv_cnt, int recv_proc[], int recv_leng[], int **recv_buf, 
+           int **recv_list, int proc_flag[], int *NremainingRcvProcs, 
+           int send_cnt, int send_proc[], int send_leng[], int **send_buf, 
+           int *send_flag, USR_REQ *Request, ML_Comm *comm, int msgtype);
+
+int ML_AMG_CompatibleRelaxation(ML_AMG *ml_amg, int *CF_array,
+           ML_Operator *Amat, int *Ncoarse, int limit);
+
+/* ************************************************************************* */
+/* local defines                                                             */
+/* ------------------------------------------------------------------------- */
+
+#define dabs(x) (((x) >= 0) ? x : -x)
+#define dmin(x,y) (((x) < (y)) ? (x) : (y))
+#define dmax(x,y) (((x) > (y)) ? (x) : (y))
+
+/* ************************************************************************* */
+/* construct the prolongator using Mark Adam's MIS algorithm                 */
+/* ------------------------------------------------------------------------- */
 
 int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix, 
                        ML_Operator **Pmatrix, ML_Comm *comm)
 {
    int     i, j, k, m, nbytes, offset, count, index, ind2, col, *vlist;
    int     num_PDE_eqns, Nrows, exp_Nrows, Ncoarse, exp_Ncoarse, total_nnz;
-   int     max_element, *rowptr, *column, *new_ia=NULL, *new_ja=NULL;
-   int     *CF_array, *sort_array, sortleng, bitindex,intindex;
+   int     *rowptr, *column, *new_ia=NULL, *new_ja=NULL, *short_list;
+   int     *CF_array, *sort_array, sortleng, bitindex,intindex, short_leng;
    int     printflag, sizeint, logsizeint, offnrows, *offibuffer, *offmap;
    int     *offmap2, *offlengths, numCi, *Ci_array, *int_array, *int_buf;
    int     allocated=0, *rowi_col=NULL, rowi_N, nnz_per_row, *sys_array;
    int     msgtype, mypid, nprocs, *send_leng=NULL, *recv_leng=NULL;
    int     N_neighbors, *neighbors=NULL, *send_list=NULL, sys_unk_filter;
-   int     *recv_list=NULL, total_recv_leng=0, total_send_leng=0;
+   int     *recv_list=NULL, total_recv_leng=0, total_send_leng=0, idiag;
    int     A_ntotal, A_Nneigh, *A_rcvleng=NULL, *A_sndleng=NULL, *sys_info;
    int     *A_neigh=NULL, Nghost, **A_sndbuf=NULL, **A_rcvbuf=NULL;
-   int     **A_sendlist=NULL, **A_recvlist=NULL, **proclist, *templist;
+   int     **A_sendlist=NULL, **A_recvlist=NULL, **proclist, *templist, nbdry;
    int     new_Nsend, new_Nrecv, *new_send_leng, *new_recv_leng, A_nnz;
    int     *new_send_list, *new_send_neigh, *new_recv_neigh, tmpcnt;
+   int     *short_size;
    double  *new_val=NULL, epsilon, *rowi_val=NULL, *darray, rowmax, diag;
-   double  *values, *offdbuffer, *dsumCij, dsumCi, rowsum;
+   double  *values, *offdbuffer, *dsumCij, dsumCi, rowsum, dtemp;
    char    *vtype, *state, *bdry, *border_flag;
    ML_GetrowFunc *getrow_obj;
    ML_CommInfoOP *getrow_comm, *mat_comm;
@@ -116,38 +138,24 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    /* fetch getrow/comm information of the Amat                     */
    /* ============================================================= */
 
-   A_Nneigh    = ML_CommInfoOP_Get_Nneighbors(mat_comm);
-   if ( A_Nneigh > 0 )
-   {
-      A_neigh     = ML_CommInfoOP_Get_neighbors(mat_comm);
-      A_sendlist  = (int **) malloc(sizeof(int *)*A_Nneigh);
-      A_recvlist  = (int **) malloc(sizeof(int *)*A_Nneigh);
-      A_rcvbuf    = (int **) malloc(sizeof(int *)*A_Nneigh);
-      A_sndbuf    = (int **) malloc(sizeof(int *)*A_Nneigh);
-      A_rcvleng   = (int  *) malloc(sizeof(int  )*A_Nneigh);
-      A_sndleng   = (int  *) malloc(sizeof(int  )*A_Nneigh);
-   }
-   else
-   {
-      A_sendlist = A_recvlist = A_rcvbuf = A_sndbuf = NULL;
-      A_neigh = A_rcvleng = A_sndleng = NULL;
-   }
+   ML_AMG_GetCommInfo(mat_comm, Nrows, &A_Nneigh, &A_neigh, &A_sendlist, 
+                      &A_recvlist, &A_sndbuf, &A_rcvbuf, &A_sndleng, 
+                      &A_rcvleng, &Nghost);
 
-   max_element = Nrows - 1;
-   for (i = 0; i < A_Nneigh; i++) 
-   {
-      A_recvlist[i] = ML_CommInfoOP_Get_rcvlist(mat_comm, A_neigh[i]);
-      A_rcvleng[i]  = ML_CommInfoOP_Get_Nrcvlist (mat_comm, A_neigh[i]);
-      A_sendlist[i] = ML_CommInfoOP_Get_sendlist (mat_comm, A_neigh[i]);
-      A_sndleng[i]  = ML_CommInfoOP_Get_Nsendlist(mat_comm, A_neigh[i]);
-      A_rcvbuf[i]   = (int *) malloc(sizeof(int)*(A_rcvleng[i]+1));
-      A_sndbuf[i]   = (int *) malloc(sizeof(int)*(A_sndleng[i]+1));
-                           /* +1 needed inside ML_AMG_LabelVertices */
-      for (j = 0; j < A_rcvleng[i]; j++) 
-         if (A_recvlist[i][j] > max_element ) max_element = A_recvlist[i][j];
-   }
-   Nghost = max_element - Nrows + 1;
    A_ntotal = Nrows + Nghost;
+
+   /* ============================================================= */
+   /* set up the proclist array for labeling                        */
+   /* ============================================================= */
+   /* templist[i] tabulates how many processors vertex i is to be   */
+   /* sent to.  Then allocate proclist to record the processors and */
+   /* indices each of my local vertices are to send.  The first     */
+   /* element of the array proclist[i][0] is a counter of how many  */
+   /* processors, followed by a number of processor (not processor  */
+   /* number, but processor osfset) and index pairs.                */
+   /* For the receive vertices, proclist[i][0] indicates which      */
+   /* processor (offset) the data is coming from                    */
+   /* ============================================================= */
 
    if ( Nrows > 0 ) templist = (int *) malloc(sizeof(int)*Nrows);
    else             templist = NULL;
@@ -165,20 +173,6 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
          templist[index]++;
       }
    }
-
-   /* ============================================================= */
-   /* set up the proclist array for labeling                        */
-   /* ============================================================= */
-   /* templist[i] tabulates how many processors vertex i is to be   */
-   /* sent to.  Then allocate proclist to record the processors and */
-   /* indices each of my local vertices are to send.  The first     */
-   /* element of the array proclist[i][0] is a counter of how many  */
-   /* processors, followed by a number of processor (not processor  */
-   /* number, but processor osfset) and index pairs.                */
-   /* For the receive vertices, proclist[i][0] indicates which      */
-   /* processor (offset) the data is coming from                    */
-   /* ============================================================= */
-
    if (A_ntotal > 0) proclist = (int **) malloc(A_ntotal * sizeof(int *));
    else              proclist = NULL;
    for ( i = 0; i < Nrows; i++ ) 
@@ -215,38 +209,48 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    if ( templist != NULL ) free(templist);
 
    /* ============================================================= */
-   /* record the Dirichlet boundary and then create the S matrix in */
-   /* (rowptr, column)                                              */
-   /* (A_ntotal - Nrows + Nghost for SYSTEM)                        */
+   /* record the Dirichlet boundary and processor boundaries        */
    /* ============================================================= */
 
    if (A_ntotal > 0) bdry = (char *) malloc(sizeof(char)*(A_ntotal + 1));
    else              bdry = NULL;
    if ( Nrows > 0 ) border_flag = (char *) malloc(sizeof(char)*Nrows);
    else             border_flag = NULL;
-   total_nnz   = 0;
+   total_nnz = 0;
+   nbdry     = 0;
    for (i = 0; i < Nrows; i++) 
    {
       bdry[i] = 'T';
       border_flag[i] = 'F';
       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
                         &rowi_N, 0);
-      if (rowi_N > 1) bdry[i] = 'F';
       rowsum = diag = 0.0;
+      count = 0;
       for (j = 0; j < rowi_N; j++) 
       {
          if ( rowi_col[j] == i ) diag = dabs( rowi_val[j] );
          else                    rowsum += dabs( rowi_val[j] );
          if ( rowi_col[j] >= Nrows ) border_flag[i] = 'T';
+         if ( rowi_val[j] != 0.0 ) count++;
       }
+      if (count > 1) bdry[i] = 'F';
       if ( diag != 0.0 )
       {
-         if ( (rowsum / diag) < 0.01 ) bdry[i] = 'T';
+         if ( (rowsum / diag) < 0.0e-8 ) bdry[i] = 'T';
       }
       total_nnz += rowi_N;
+      if ( bdry[i] == 'T' ) nbdry++;
    }
+   m = ML_Comm_GsumInt( comm, nbdry );
+   if ( mypid == 0 && printflag )
+      printf("AMG Phase 1  - total number of bndry points  = %6d \n",m); 
+
+   /* ============================================================= */
+   /* create the strength matrix in (rowptr, column)                */
+   /* ============================================================= */
+
    A_nnz = total_nnz;
-   rowptr = (int *)    malloc( (Nrows + 1)* sizeof(int) );
+   rowptr = (int *) malloc( (Nrows + 1)* sizeof(int) );
    if ( total_nnz > 0 ) 
    {
       column = (int *)    malloc( total_nnz * sizeof(int) );
@@ -268,34 +272,57 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
          for (j = 0; j < rowi_N; j++) 
             if (sys_info[rowi_col[j]] != sys_info[i]) rowi_val[j] = 0.0; 
       } 
+      diag = 0.0;
+      for (j = 0; j < rowi_N; j++) 
+         if ( rowi_col[j] == i ) diag = rowi_val[j];
       rowmax = 0.0;
-      for (j = 0; j < rowi_N; j++) 
-         /*if ( rowi_col[j] != i && dabs(rowi_val[j]) > rowmax ) 
-            rowmax = dabs( rowi_val[j] );*/
-         if ( rowi_col[j] != i && (-rowi_val[j]) > rowmax ) 
-            rowmax = - rowi_val[j];
-      rowmax *= epsilon;
-      for (j = 0; j < rowi_N; j++) 
+      if ( diag >= 0. )
       {
-         /*if ( rowi_val[j] != 0 && dabs(rowi_val[j]) > rowmax ) */
-         if ( rowi_val[j] != 0 && (-rowi_val[j]) > rowmax ) 
+         for (j = 0; j < rowi_N; j++) 
+            if (rowi_col[j] != i) rowmax = dmin(rowmax, rowi_val[j]); 
+      }
+      else
+      {
+         for (j = 0; j < rowi_N; j++) 
+            if (rowi_col[j] != i) rowmax = dmax(rowmax, rowi_val[j]); 
+      }
+      rowmax *= epsilon;
+      if ( diag >= 0. )
+      {
+         for (j = 0; j < rowi_N; j++) 
          {
-            values[total_nnz]   = rowi_val[j];
-            column[total_nnz++] = rowi_col[j];
+            if ( rowi_col[j] != i && rowi_val[j] != 0 && rowi_val[j] < rowmax ) 
+            {
+               values[total_nnz]   = rowi_val[j];
+               column[total_nnz++] = rowi_col[j];
+            }
+         }
+      }
+      else
+      {
+         for (j = 0; j < rowi_N; j++) 
+         {
+            if ( rowi_col[j] != i && rowi_val[j] != 0 && rowi_val[j] > rowmax ) 
+            {
+               values[total_nnz]   = rowi_val[j];
+               column[total_nnz++] = rowi_col[j];
+            }
          }
       }
       rowptr[i+1] = total_nnz;
    }
    free( rowi_col );
    free( rowi_val );
+   dtemp = A_nnz;
+   dtemp = ML_gsum_double(dtemp, comm);
    if ( ml_amg->operator_complexity == 0.0 )
    {
-      ml_amg->fine_complexity = 1.0 * total_nnz;
-      ml_amg->operator_complexity = 1.0 * total_nnz;
+      ml_amg->fine_complexity = dtemp;
+      ml_amg->operator_complexity = dtemp;
    }
    else
    {
-      ml_amg->operator_complexity += 1.0 * total_nnz;
+      ml_amg->operator_complexity += dtemp;
    }
 
    /* ============================================================= */
@@ -308,7 +335,8 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       if (bdry[i] == 'T') darray[i] = 1.;
       else  darray[i] = 0.;
    }
-   ML_exchange_bdry(darray,Amatrix->getrow->pre_comm,Nrows,comm,ML_OVERWRITE);
+   ML_exchange_bdry(darray,Amatrix->getrow->pre_comm,Nrows,comm,
+                    ML_OVERWRITE);
    for (i = Nrows; i < A_ntotal; i++) 
    {
       if (darray[i] == 1.) bdry[i] = 'T';
@@ -337,7 +365,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
 
    /* ============================================================= */
    /* Phase 1 : compute an initial MIS                              */
-   /* delete nodes that are just isolated Dirichlet points          */
+   /* delete nodes that are just isolated Dirichlet points (B)      */
    /* then label the vertices as selected(S) or deleted (D)         */
    /* ============================================================= */
 
@@ -348,13 +376,14 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       printf("AMG Phase 1 begins, total_nrows, total_nnz   = %d %d\n", m, k); 
       fflush(stdout);
    }
-   for (i = 0; i < Nrows ; i++) if (bdry[i] == 'T') state[i] = 'D'; 
+   for (i = 0; i < A_ntotal ; i++) if (bdry[i] == 'T') state[i] = 'B'; 
 
    k = ML_AMG_LabelVertices(Nrows, vlist, 'x', state, vtype, 
                       Nrows, rowptr, column, mypid, proclist, 
                       A_Nneigh,A_sndbuf,A_neigh, A_sndleng, A_Nneigh,
                       A_rcvbuf, A_neigh, A_rcvleng, A_recvlist, 1532, 
                       comm, CF_array);
+
    Ncoarse = 0;
    for (i = 0; i < Nrows ; i++) if ( state[i] == 'S' ) Ncoarse++;
    m = ML_Comm_GsumInt( comm, Ncoarse );
@@ -385,7 +414,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    exp_Nrows = Nrows + offnrows;
    for ( i = 0; i < offnrows; i++ )
    {
-      rowmax = 0.0;
+      diag = 0.0;
       for ( j = offset; j < offset+offlengths[i]; j++ )
       {
          index = offibuffer[j];
@@ -396,18 +425,37 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
             if ( count >= 0 ) offibuffer[j] = offmap2[count] + Nrows;
             else              offibuffer[j] = -1;
          }
-         /*if ( offibuffer[j] != (i+Nrows) && dabs(offdbuffer[j]) > rowmax )
-            rowmax = dabs( offdbuffer[j] );*/
-         if ( offibuffer[j] != (i+Nrows) && (-offdbuffer[j]) > rowmax )
-            rowmax = - offdbuffer[j];
+         if ( index == (i+Nrows) ) diag = offdbuffer[j];
+      }
+      if ( diag >= 0.0 ) rowmax =  1.0e20;
+      else               rowmax = -1.0e20;
+      for ( j = offset; j < offset+offlengths[i]; j++ )
+      {
+         index = offibuffer[j];
+         if ( index != (i+Nrows) )
+         {
+            if ( diag >= 0. ) rowmax = dmin(rowmax, offdbuffer[j]); 
+            else              rowmax = dmax(rowmax, offdbuffer[j]); 
+         }
       }
       rowmax *= epsilon;
       for ( j = offset; j < offset+offlengths[i]; j++ )
       {
          index = offibuffer[j];
-         if ( index >= 0 && dabs(offdbuffer[j]) < rowmax )
-         /*if ( index >= 0 && (-offdbuffer[j]) < rowmax )*/
-            offibuffer[j] = - index - 2;
+         if ( index != (i+Nrows) )
+         {
+            if ( diag >= 0. )
+            {
+               if ( offdbuffer[j] != 0. && offdbuffer[j] >= rowmax ) 
+                  offibuffer[j] = - index - 2;
+            }
+            else
+            {
+               if ( offdbuffer[j] != 0. && offdbuffer[j] <= rowmax ) 
+                  offibuffer[j] = - index - 2;
+            }
+         }
+         else offibuffer[j] = - index - 2;
       }
       offset += offlengths[i];
    }
@@ -468,7 +516,7 @@ for ( i = 0; i < Nrows; i++ )
 
    for ( i = 0; i < Nrows; i++ )
    {
-      if (state[i] != 'D' && CF_array[i] < 0 && border_flag[i] == 'T')
+      if (state[i] != 'B' && CF_array[i] < 0 && border_flag[i] == 'T')
       { /* -- border F -- */
          /* ----- register my C neighbors ----- */
 
@@ -505,12 +553,14 @@ for ( i = 0; i < Nrows; i++ )
                   if ( k == rowptr[col+1] ) /* --- not found --- */
                   {
                      CF_array[i] = Ncoarse++;
+                     break;
                   }
                } 
                else /* --- case 3, 4, and 5 --- */
                {
                   if ( (col-Nrows) == 0 ) index = 0;
                   else                    index = offlengths[col-Nrows-1];
+
                   for (k = index; k < offlengths[col-Nrows] ; k++) 
                   {
                      ind2 = offibuffer[k];
@@ -542,11 +592,21 @@ for ( i = 0; i < Nrows; i++ )
                         count = Nrows;
                         for ( m = 0; m < A_Nneigh; m++ )
                            if ( col < count ) count += A_rcvleng[m];
+
+/* ############################################################### */
+/* don't decide on coarse point on other processors        
                         if ( mypid < A_neigh[m-1] ) 
                         {
                            CF_array[col] = Ncoarse++;
                         }
                         else 
+*/
+/* ############################################################### */
+/* taking this if statement out improves convergence dramatically,
+   but also increase the operator complexity
+*/
+                        if ( mypid > A_neigh[m-1] ) 
+/* ############################################################### */
                         {
                            CF_array[i] = Ncoarse++; 
                            break;
@@ -604,9 +664,149 @@ for ( i = 0; i < Nrows; i++ )
    /* 1. F1 on P0, F2 on P0, C on P0                                */
    /* ------------------------------------------------------------- */
 
+   short_leng = 0;
+   short_list = (int *) malloc( Nrows * sizeof(int) );
+   short_size = (int *) malloc( Nrows * sizeof(int) );
    for ( i = 0; i < Nrows; i++ )
    {
-      if (state[i] != 'D' && CF_array[i] < 0 && border_flag[i] == 'F') 
+      if (state[i] != 'B' && CF_array[i] < 0 && border_flag[i] == 'F') 
+      {
+         short_list[short_leng] = i;
+         short_size[short_leng] = 0;
+         for ( j = rowptr[i]; j < rowptr[i+1]; j++ )
+            if ( CF_array[column[j]] < 0 ) short_size[short_leng]++;
+         short_leng++;
+      }
+   }
+   ML_az_sort( short_size, short_leng, short_list, NULL );
+   for ( i = 0; i < short_leng/2; i++ )
+   {
+      j = short_list[i];
+      short_list[i] = short_list[short_leng-1-i];
+      short_list[short_leng-1-i] = j;
+      j = short_size[i];
+      short_size[i] = short_size[short_leng-1-i];
+      short_size[short_leng-1-i] = j;
+   }
+   if ( short_leng > 0 ) index = short_list[0];
+   if ( short_leng > 0 ) j     = short_size[0];
+   count = 0;
+   for ( i = 1; i < short_leng; i++ )
+   {
+      if ( short_size[i] != j )
+      {
+         ML_az_sort( &short_list[count], i-count, NULL, NULL );
+         index = short_list[i];
+         j     = short_size[i];
+         count = i; 
+      }
+   }
+   for ( i = 0; i < short_leng; i++ )
+   {
+      index = short_list[i];
+      for ( j = rowptr[index]; j < rowptr[index+1] ; j++) 
+      {
+         col = column[j];
+         if ( col != index && CF_array[col] >= 0 ) 
+         {
+            intindex = col >> logsizeint;
+            bitindex = col % sizeint;
+            sort_array[intindex] |= ( 1 << bitindex );
+         }
+      }
+      for (j = rowptr[index]; j < rowptr[index+1] ; j++) 
+      {
+         col = column[j];
+         if ( col != index && CF_array[col] < 0 ) /* --- F-F --- */
+         {
+            for (k = rowptr[col]; k < rowptr[col+1] ; k++) 
+            {
+               ind2 = column[k];
+               if ( ind2 != col && CF_array[ind2] >= 0 ) 
+               {
+                  intindex = ind2 >> logsizeint;
+                  bitindex = ind2 % sizeint;
+                  if (sort_array[intindex] & (1 << bitindex)) break;
+               }
+            }
+            if ( k == rowptr[col+1] ) /* --- shared C not found --- */
+            {
+               CF_array[index] = Ncoarse++;
+               break;
+            }
+         }
+      }
+      for ( j = rowptr[index]; j < rowptr[index+1] ; j++ ) 
+      {
+         col = column[j];
+         if ( col != index && CF_array[col] >= 0 ) 
+         {
+            intindex = col >> logsizeint;
+            sort_array[intindex] = 0;
+         }
+      }
+   } 
+
+/* #ifdef ML_DEBUG_AMG */
+   for ( i = 0; i < short_leng; i++ )
+   {
+      index = short_list[i];
+      if ( CF_array[index] < 0 )
+      {
+         for ( j = rowptr[index]; j < rowptr[index+1] ; j++) 
+         {
+            col = column[j];
+            if ( col != index && CF_array[col] >= 0 ) 
+            {
+               intindex = col >> logsizeint;
+               bitindex = col % sizeint;
+               sort_array[intindex] |= ( 1 << bitindex );
+            }
+         }
+         for (j = rowptr[index]; j < rowptr[index+1] ; j++) 
+         {
+            col = column[j];
+            if ( col != index && CF_array[col] < 0 ) /* --- F-F --- */
+            {
+               for (k = rowptr[col]; k < rowptr[col+1] ; k++) 
+               {
+                  ind2 = column[k];
+                  if ( ind2 != col && CF_array[ind2] >= 0 ) 
+                  {
+                     intindex = ind2 >> logsizeint;
+                     bitindex = ind2 % sizeint;
+                     if (sort_array[intindex] & (1 << bitindex)) break;
+                  }
+               }
+               if ( k == rowptr[col+1] ) /* --- shared C not found --- */
+               {
+                  printf("%d : AMG Rule C1 violated.\n", mypid);
+                  break;
+               }
+            }
+         }
+         for ( j = rowptr[index]; j < rowptr[index+1] ; j++ ) 
+         {
+            col = column[j];
+            if ( col != index && CF_array[col] >= 0 ) 
+            {
+               intindex = col >> logsizeint;
+               sort_array[intindex] = 0;
+            }
+         }
+      } 
+   } 
+/* #endif */
+
+   free( short_list );
+   free( short_size );
+
+#ifdef obsolete
+   /* This is obsolete because I want to give preference to vertices */
+   /* with the highest number of F neighbors                         */
+   for ( i = 0; i < Nrows; i++ )
+   {
+      if (state[i] != 'B' && CF_array[i] < 0 && border_flag[i] == 'F') 
       {  /* -- interior F -- */
          /* ----- register my C neighbors ----- */
 
@@ -659,6 +859,7 @@ for ( i = 0; i < Nrows; i++ )
          }
       }
    } 
+#endif
    m = ML_Comm_GsumInt( comm, Ncoarse );
    if ( mypid == 0 && printflag )
    {
@@ -673,6 +874,108 @@ for ( i = 0; i < Nrows; i++ )
 for ( i = 0; i < Nrows; i++ )
    if ( CF_array[i] >= 0 ) printf("%d : C point = %d\n",mypid,i);
 */
+
+   /* ============================================================= */
+   /* checking                                                      */
+   /* ============================================================= */
+
+   count = 0;
+   for ( i = 0; i < Nrows; i++ )
+   {
+      m = 1;
+      if ( bdry[i] == 'T' ) m = 0;
+      if ( (rowptr[i+1]-rowptr[i]) == 0 ) m = 0;
+      if ( m == 1 && CF_array[i] < 0 )
+      {
+         for ( j = rowptr[i]; j < rowptr[i+1]; j++ )
+            if ( CF_array[column[j]] >= 0 ) {m = 0; break;}
+      } else m = 0;
+      count += m;
+      if ( mypid == 0  && m == 1 && i == 0 ) 
+      {
+         printf("BAD ROW = %d (%d)\n", i, Nrows);
+         allocated = 0;
+         rowi_col = NULL;
+         rowi_val = NULL;
+         ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+                           &rowi_N, 0);
+         for ( j = 0; j < rowi_N; j++ )
+         {
+            col = rowi_col[j];
+            if ( col < Nrows )
+            {
+               for (k = rowptr[col]; k < rowptr[col+1] ; k++) 
+                  printf("   COL,VAL = %7d %e\n", column[k], values[k]);
+            }
+            else
+            {
+               if ( (col-Nrows) == 0 ) ind2 = 0;
+               else                    ind2 = offlengths[col-Nrows-1];
+            }
+         }
+      }
+   }
+   k = ML_Comm_GsumInt( comm, count );
+   if ( mypid == 0 && printflag )
+   {
+      printf("AMG Coarsen  - total number of bad points    = %6d\n", k); 
+   }
+ 
+   /* ============================================================= */
+   /* compatible relaxation                                         */
+   /* ------------------------------------------------------------- */
+
+/* Haven't proved it to be useful yet, but may continue to try
+   ML_AMG_CompatibleRelaxation(ml_amg,CF_array,Amatrix,&Ncoarse,Ncoarse/10+1);
+*/
+
+   m = ML_Comm_GsumInt( comm, Ncoarse );
+   if ( mypid == 0 && printflag )
+   {
+      printf("AMG Phase 2c - total number of coarse points = %6d\n", m); 
+   }
+
+   /* ============================================================= */
+   /* communicate of offprocessor C/F information                   */
+   /* ------------------------------------------------------------- */
+
+   if ( count > 0 )
+   {
+      for ( i = 0; i < Nrows; i++ )
+      {
+         m = 1;
+         if ( bdry[i] == 'T' ) m = 0;
+         if ( (rowptr[i+1]-rowptr[i]) == 0 ) m = 0;
+         if ( m == 1 && CF_array[i] < 0 )
+         {
+            for ( j = rowptr[i]; j < rowptr[i+1]; j++ )
+               if ( CF_array[column[j]] >= 0 ) {m = 0; break;}
+         } else m = 0;
+         if ( m == 1 ) CF_array[i] = Ncoarse++; 
+      }
+   }
+   if ( k > 0 )
+   {
+      nbytes = total_send_leng * sizeof(int);
+      if ( nbytes > 0 ) int_buf = (int *) malloc( nbytes );
+      else              int_buf = NULL;
+      offset = 0;
+      for ( i = 0; i < A_Nneigh; i++ ) 
+      {
+         for ( j = 0; j < A_sndleng[i]; j++ ) 
+            int_buf[offset+j] = CF_array[A_sendlist[i][j]];
+         offset += A_sndleng[i];
+      }
+      msgtype = 35736;
+      ML_Aggregate_ExchangeData((char*) &(CF_array[Nrows]), (char*) int_buf,
+         A_Nneigh, A_neigh, A_rcvleng, A_sndleng, msgtype, ML_INT, comm);
+      if ( int_buf != NULL ) free(int_buf);
+      m = ML_Comm_GsumInt( comm, Ncoarse );
+      if ( mypid == 0 && printflag )
+      {
+         printf("AMG Phase 2d - total number of coarse points = %6d\n", m); 
+      }
+   }
 
    /* ============================================================= */
    /* register system information for the next level, as needed by  */
@@ -882,7 +1185,11 @@ for ( i = 0; i < Nrows; i++ )
          /* ----- fetch the row i ----- */
 
          diag = 0.0;
-         ML_get_matrix_row(Amatrix,1,&i,&allocated,&rowi_col,&rowi_val,&rowi_N,0);
+         ML_get_matrix_row(Amatrix,1,&i,&allocated,&rowi_col,&rowi_val,
+                           &rowi_N,0);
+
+         /* ----- look for diagonal element ----- */
+
          if ( sys_unk_filter )
          {
             for (j = 0; j < rowi_N; j++) 
@@ -894,6 +1201,12 @@ for ( i = 0; i < Nrows; i++ )
                } 
             } 
          } 
+         else
+         {
+            for (j = 0; j < rowi_N; j++) 
+               if ( rowi_col[j] == i ) diag = rowi_col[j]; 
+         }
+         if ( diag >= 0.0 ) idiag = 0; else idiag = -1;
 
          /* ----- compute row max and find number of C's connected ----- */
 
@@ -902,13 +1215,11 @@ for ( i = 0; i < Nrows; i++ )
          for (j = 0; j < rowi_N; j++) 
          {
             col = rowi_col[j];
-            /*if (col != i && dabs(rowi_val[j]) > rowmax) 
-               rowmax = dabs( rowi_val[j] );*/
-            if (col != i && (-rowi_val[j]) > rowmax) 
-               rowmax = - rowi_val[j];
+            if ( idiag >= 0 ) rowmax = dmin(rowmax, rowi_val[j]);
+            else              rowmax = dmax(rowmax, rowi_val[j]);
             if ( CF_array[col] >= 0 ) numCi++;
          }
-         rowmax  *= epsilon;
+         rowmax *= epsilon;
 
          /* ----- get a list for C_i ----- */
 
@@ -918,13 +1229,16 @@ for ( i = 0; i < Nrows; i++ )
          for (j = 0; j < rowi_N; j++) 
          {
             col = rowi_col[j];
-            /*if (CF_array[col] >= 0 && dabs(rowi_val[j]) > rowmax)  */
-            if (CF_array[col] >= 0 && (-rowi_val[j]) > rowmax)  
+            if ( CF_array[col] >= 0 )
             {
-               Ci_array[numCi++] = col;
-               intindex = col >> logsizeint;
-               bitindex = col % sizeint;
-               sort_array[intindex] |= ( 1 << bitindex );
+               if ( (idiag >= 0 && (rowi_val[j] < rowmax)) ||
+                    (idiag <  0 && (rowi_val[j] > rowmax)) )  
+               {
+                  Ci_array[numCi++] = col;
+                  intindex = col >> logsizeint;
+                  bitindex = col % sizeint;
+                  sort_array[intindex] |= ( 1 << bitindex );
+               }
             }
          }
          ML_sort( numCi, Ci_array );
@@ -937,6 +1251,7 @@ for ( i = 0; i < Nrows; i++ )
 
          /* ----- examine each of i's neighbors ----- */
 
+         diag = 0.0;
          for (j = 0; j < rowi_N; j++) 
          {
             col = rowi_col[j];
@@ -944,11 +1259,13 @@ for ( i = 0; i < Nrows; i++ )
             else
             {
                /* ----- weak couplings, add to diagonal ----- */
-               /*if ( dabs(rowi_val[j]) < rowmax )  */
-               if ( (-rowi_val[j]) < rowmax )  
+
+               if ( (idiag >= 0 && ( rowi_val[j] >= rowmax ) ) || 
+                    (idiag <  0 && ( rowi_val[j] <= rowmax ) ) ) 
                   diag += rowi_val[j];
 
                /* ----- strong coupling to 'C', put into array ----- */ 
+
                else if ( CF_array[col] >= 0 ) 
                {
                   k = ML_sorted_search(col, numCi, Ci_array);
@@ -956,12 +1273,14 @@ for ( i = 0; i < Nrows; i++ )
                }
 
                /* ----- strong coupling to 'F' ----- */ 
+
                else if ( CF_array[col] < 0 ) 
                {
                   dsumCi = 0.0;
                   for (k = 0; k < numCi; k++) dsumCij[k] = 0.0; 
 
                   /* --- the F point is local to my processor ----- */
+
                   if ( col < Nrows )
                   {
                      for (k = rowptr[col]; k < rowptr[col+1] ; k++) 
@@ -981,6 +1300,7 @@ for ( i = 0; i < Nrows; i++ )
                      }
                   }
                   else
+
                   /* --- the F point is in remote processor ----- */
                   {
                      if ( (col-Nrows) == 0 ) index = 0;
@@ -1131,6 +1451,11 @@ MPI_Barrier(MPI_COMM_WORLD);
    csr_data->rowptr  = new_ia;
    csr_data->columns = new_ja;
    csr_data->values  = new_val;
+/*
+for ( i = 0; i < Nrows; i++ )
+   for ( j = new_ia[i]; j < new_ia[i+1]; j++ )
+      printf("P(%4d,%4d) = %e\n", i, new_ja[j], new_val[j]);
+*/
    (*Pmatrix) = ML_Operator_Create(comm);
    ML_Operator_Set_ApplyFuncData(*Pmatrix, Ncoarse, Nrows, ML_EMPTY, csr_data, 
                                  Nrows, NULL, 0);
@@ -1182,11 +1507,11 @@ MPI_Barrier(MPI_COMM_WORLD);
    return Ncoarse;
 }
 
-/* ******************************************************************** */
-/* A subroutine to label vertices of a particular type                  */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* A subroutine to label vertices of a particular type                       */
+/* ------------------------------------------------------------------------- */
 
-int ML_AMG_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
+int ML_AMG_LabelVertices(int vlist_cnt2, int *vlist2, char Vtype,
                           char *vertex_state, char *vertex_type,
                           int nvertices, int *rptr, int *cptr, 
                           int myrank, int **proclist, int send_cnt, 
@@ -1198,132 +1523,134 @@ int ML_AMG_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
    int     i, j, k, m, N_remaining_vertices, index, select_flag, fproc, col;
    int     NremainingRcvProcs, change_flag, *proc_flag, send_flag,nselected;
    int     *pref_list=NULL, col2, loop_cnt, nbytes, *tlist=NULL, pref_cnt;
-   int     pref_flag, pref_index, rootv, maxv;
+   int     pref_index, rootv, *vlist, vlist_cnt;
+   int     *pref_rank, vlist_ind;
    char    *in_preflist=NULL;
    USR_REQ *Request;
    int msg_type = 1041;
 
+   /* ------------------------------------------------------------- */
+   /* take out boundary vertices from the vertex list               */
+   /* ------------------------------------------------------------- */
+
+   nbytes = vlist_cnt2 * sizeof(int);
+   if ( nbytes > 0 ) 
+   {
+      vlist = (int *) malloc( nbytes );
+      if ( vlist == NULL ) printf("MALLOC ERROR (LabelVertices) : vlist\n");
+   }
+   else              vlist = NULL;
+   vlist_cnt = 0;
+   for ( i = 0; i < vlist_cnt2; i++ )
+   {
+      index = vlist2[i];
+      if ( vertex_state[index] == 'F' ) 
+         vlist[vlist_cnt++] = index;
+   }
    N_remaining_vertices = vlist_cnt;
-   NremainingRcvProcs   = recv_cnt;
-   send_flag            = 0;
+
+   /* ------------------------------------------------------------- */
+   /* set up communication buffers                                  */
+   /* ------------------------------------------------------------- */
+
+   NremainingRcvProcs = recv_cnt;
+   send_flag          = 0;
    if ( recv_cnt > 0 )
    {
       nbytes    = recv_cnt * sizeof( USR_REQ );
       Request   = (USR_REQ *) malloc( nbytes );
       nbytes    = recv_cnt * sizeof( int );
       proc_flag = (int *) malloc( nbytes );
+      if (proc_flag == NULL) printf("MALLOC ERROR (LabelVertices) : pflag.\n");
       for ( i = 0; i < recv_cnt; i++ ) proc_flag[i] = 0;
    }
    for ( j = 0; j < send_cnt; j++ )
       for ( k = 0; k <= send_leng[j]; k++ ) send_buf[j][k] = 0;
 
-   /* First clear out any already deleted vertices (for example corresponding */
-   /* to Dirichlet BC points. */
+   /* ------------------------------------------------------------- */
+   /* each processor updates the state of nodes belonging to other  */
+   /* processors especially to take node of the boundary nodes      */
+   /* ------------------------------------------------------------- */
 
-   for ( i = 0; i < vlist_cnt; i++ ) 
+   for ( i = 0; i < vlist_cnt2; i++ ) 
    {
-      index = vlist[i];
-      if (vertex_state[index] == 'D') 
+      index = vlist2[i];
+      if (vertex_state[index] == 'B' )
       {
-         N_remaining_vertices--;
          if ( proclist[index] != NULL )
          {
             for ( k = 0; k < proclist[index][0]; k++ ) 
             {
                fproc = proclist[index][2*k+1];
                m     = proclist[index][2*k+2];
-               send_buf[fproc][m] = 2;
+               send_buf[fproc][m] = 3;
             }
          }
       }
    }
+   ML_AMG_UpdateVertexStates(N_remaining_vertices, vertex_state,
+	                     recv_cnt, recv_proc, recv_leng, recv_buf,
+                     	     recv_list, proc_flag, &NremainingRcvProcs,
+                     	     send_cnt, send_proc, send_leng, send_buf,
+                     	     &send_flag, Request, comm, msg_type);
 
-   ML_Aggregate_UpdateVertexStates(N_remaining_vertices, vertex_state,
-	recv_cnt, recv_proc, recv_leng, recv_buf,
-	recv_list, proc_flag, &NremainingRcvProcs,
-	send_cnt, send_proc, send_leng, send_buf,
-	&send_flag, Request, comm, msg_type);
-
-   /* ---------------------------------------------------------- */
-   /* give the vertices with higher degree preferences (10/19/00)*/
-   /* ---------------------------------------------------------- */
+   /* ------------------------------------------------------------- */
+   /* give the vertices with higher degree preferences (10/19/00)   */
+   /* ------------------------------------------------------------- */
 
    if ( vlist_cnt > 0 )
    {
-      maxv  = 0;
-      rootv = 0;
+      nbytes      = vlist_cnt2 * sizeof(char);
+      in_preflist = (int *) malloc( nbytes );
+      if (in_preflist == NULL) printf("MALLOC ERROR (LabelVertices) : inplist\n");
+      for (i = 0; i < vlist_cnt2; i++) in_preflist[i] = 'f';
+
+      nbytes    = vlist_cnt * sizeof(int);
+      pref_rank = (int *) malloc( nbytes );
+      if ( pref_rank == NULL) printf("MALLOC ERROR (LabelVertices) : prank\n");
       for ( i = 0; i < vlist_cnt; i++ )
       {
          index = vlist[i];
-         m     = rptr[index+1] - rptr[index];
-         if ( vertex_state[index] != 'D' && m > maxv ) {rootv = i; maxv = m;}
+         pref_rank[i] = rptr[index+1] - rptr[index];
       }
-   }
-      
-   /* ---------------------------------------------------------- */
-   /* give the vertices adjacent to deleted vertices preferences */
-   /* ---------------------------------------------------------- */
+      ML_az_sort(pref_rank, vlist_cnt, vlist, NULL);
+      free( pref_rank );
 
-   if ( vlist_cnt > 0 )
-   {
-      in_preflist = (char *) malloc(vlist_cnt*sizeof(char) );
-      for (i = 0; i < vlist_cnt; i++) in_preflist[i] = 'f';
-      nbytes = vlist_cnt * sizeof( int );
-      tlist  = (int *) malloc( nbytes );
-      for ( i = 0; i < vlist_cnt; i++ ) tlist[i] = vlist[i];
-      for ( i = 0; i < vlist_cnt; i++ )
+      for ( i = 0; i < vlist_cnt/2; i++ )
       {
-         index = tlist[i];
-         for ( j = rptr[index]; j < rptr[index+1]; j++ )
-         {
-            col = cptr[j];
-            if ( vertex_state[col] == 'D' )
-            {
-               tlist[i] = - index;
-               break;
-            }
-         }
+         j = vlist[i];
+         vlist[i] = vlist[vlist_cnt-1-i];
+         vlist[vlist_cnt-1-i] = j;
       }
-      m = 0;
-      for ( i = 0; i < vlist_cnt; i++ )
-      {
-         if ( tlist[i] < 0 ) vlist[m++] = - tlist[i];
-      }
-      vlist[m++] = rootv;
-      for ( i = 0; i < vlist_cnt; i++ )
-      {
-         if ( tlist[i] >= 0 && tlist[i] != rootv ) vlist[m++] = tlist[i];
-      }
-      free( tlist );
-   }
-   if ( nvertices > 0 )
-   {
-      nbytes = nvertices * sizeof( int );
+      nbytes    = vlist_cnt * sizeof( int );
       pref_list = (int *) malloc( nbytes );
+      if (pref_list == NULL) printf("MALLOC ERROR (LabelVertices) : plist\n");
+      pref_list[0] = vlist[0];
+      in_preflist[vlist[0]] = 't';
+      pref_cnt = 1;
    }   
-   pref_cnt = 0;
-   
-   /* -------------------------------------------------------- */
-   /* get ready for the coarsening                             */
-   /* -------------------------------------------------------- */
+   else 
+   {
+      pref_list = NULL;
+      pref_cnt = 0;
+   }
 
-   nselected = 0;
+   /* ------------------------------------------------------------- */
+   /* let's actually do coarsening                                  */
+   /* ------------------------------------------------------------- */
 
-   /* -------------------------------------------------------- */
-   /* let's actually do coarsening                             */
-   /* -------------------------------------------------------- */
-
+   nselected   = 0;
    change_flag = 1;
-   loop_cnt = 0;
-   pref_index = 0;     /* pointer to a stack of vertex numbers */
+   loop_cnt    = 0;     /* used to monitor the performance of coarsening */
 
    do {
-      pref_index = 0;     /* pointer to a stack of vertex numbers */
-      /* loop_cnt is to monitor the performance of coarsening */
-
+      pref_index = 0;
       loop_cnt++;
+      vlist_ind = 0;
 
-      /* reset all buffers to zero only if it has been changed */
+      /* ---------------------------------------------------------- */
+      /* reset all buffers to zero only if it has been changed      */
+      /* ---------------------------------------------------------- */
 
       if ( change_flag == 1 )
       {
@@ -1332,281 +1659,225 @@ int ML_AMG_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
          change_flag = 0;
       }
 
-      /* examine the vertices in vlist */
+      /* ---------------------------------------------------------- */
+      /* examine the vertices in vlist                              */
+      /* ---------------------------------------------------------- */
 
       for ( i = 0; i < vlist_cnt; i++ )
       {
-
-         /* handle the preference list first, if there is any */
-         /* Note : we want to fetch the pref_list from the    */
-         /*        front                                      */
+         /* ------------------------------------------------------- */
+         /* handle the preference list first, if there is any       */
+         /* Note : we want to fetch the pref_list from the front    */
+         /* ------------------------------------------------------- */
 
          index = -1;
-         pref_flag = 0;
          if ( pref_cnt > pref_index ) 
          {
+            /* ---------------------------------------------------- */
+            /* search for the first F(ree) vertex                   */
+            /* ---------------------------------------------------- */
+
             for (j = pref_index; j < pref_cnt; j++) 
             {
                index = pref_list[j];    
-               if ( vertex_state[index] == 'F' )
+               if ( index < 0 || index >= nvertices )
                {
-                  maxv  = rptr[index+1] - rptr[index];
-                  rootv = j;
-                  break;
+                  printf("LabelVertices ERROR : in pref_list %d %d\n",j,index);
+                  exit(1);
                }
+               if ( vertex_state[index] == 'F' ) break;
             }
-            if ( j != pref_cnt )
+
+            /* ---------------------------------------------------- */
+            /* if found, take it off from the pref_list             */
+            /* ---------------------------------------------------- */
+
+            if ( j != pref_cnt ) pref_index = j + 1;
+            else 
             {
-               for (k = j+1; k < pref_cnt; k++) 
-               {
-                  index = pref_list[k];    
-                  m     = rptr[index+1] - rptr[index];
-                  if ( m > maxv ) { rootv = k; maxv = m;}
-               }
-               index = pref_list[rootv];    
-               in_preflist[index] = 'f';
-               for (j = rootv+1; j < pref_cnt; j++) 
-                  pref_list[j-1] = pref_list[j];
-               pref_cnt--;
-            } 
-            else index = -1;
-            pref_flag = 1;
+               index = -1;
+               pref_index = pref_cnt;
+            }
          }
+
+         /* ------------------------------------------------------- */
+         /* if not found from the pref_list, look for one in the    */
+         /* incoming vertex list (sorted)                           */
+         /* ------------------------------------------------------- */
+
          if ( index == -1 )
          {
-            rootv = -1;
-            for ( j = 0; j < vlist_cnt; j++ )
+            for ( j = vlist_ind; j < vlist_cnt; j++ )
             {
                index = vlist[j];
-               if ( vertex_state[index] == 'F' ) 
-               {
-                  rootv = j;
-                  maxv  = rptr[index+1] - rptr[index];
-                  break;
-               }
+               if ( vertex_state[index] == 'F' ) break;
             }
-            for ( k = j+1; k < vlist_cnt; k++ )
-            {
-               index = vlist[k];
-               m     = rptr[index+1] - rptr[index];
-               if ( vertex_state[index] == 'F' && m > maxv ) {rootv = k; maxv = m;}
-            }
-            if ( rootv >= 0 ) index = vlist[rootv];
-            else              index = -1;
+            if ( j == vlist_cnt ) break;
+            else                  vlist_ind = j + 1;
          }
-         if ( index == -1 ) break;
 
-         /* if the vertex in question has not been considered F(ree) */
+         /* ------------------------------------------------------- */
+         /* at this point it is assumed that vertex_state[index]    */
+         /* is F(ree)                                               */
+         /* ------------------------------------------------------- */
 
-         if ( vertex_state[index] == 'F' )
+         select_flag = 1;
+         for ( j = rptr[index]; j < rptr[index+1]; j++ )
          {
-            select_flag = 1;
-            for ( j = rptr[index]; j < rptr[index+1]; j++ )
+            /* if any of its neighbor is selected, delete this node */
+
+            col = cptr[j];
+            if ( vertex_state[col] == 'S' )
             {
-               /* if its neighbor is selected, delete this vertex */
-
-               col = cptr[j];
-               if ( vertex_state[col] == 'S' )
-               {
-                  if (vertex_state[index] == 'F') {
-                     vertex_state[index] = 'D';
-                     N_remaining_vertices--;
-                     if ( proclist[index] != NULL )
-                     {
-                        for ( k = 0; k < proclist[index][0]; k++ ) 
-                        {
-                           fproc = proclist[index][2*k+1];
-                           m     = proclist[index][2*k+2];
-                           send_buf[fproc][m] = 2;
-                           change_flag = 1;
-                        }
-                     }
-
-                     /* also, put the next set of vertices into the  */
-                     /* preference list (try to mimic the sequential */
-                     /* maximally independent set algorithm          */
-
-                        for ( k = rptr[index]; k < rptr[index+1]; k++ ) {
-                           col2 = cptr[k];
-                           if (col2 < nvertices && 
-                               vertex_state[col2] == 'F' &&
-                               vertex_type[col2] == Vtype ) {
-                              if (in_preflist[col2] != 't') {
-                                 pref_list[pref_cnt++] = col2;
-                                 in_preflist[col2] = 't';
-                              }
-                           }
-                        }
-                  }
-                  select_flag = 0;
-                  break;
-               }
-               
-               /* If its neighbor is of the same type and not been   */
-               /* considered. Furthermore, if it is a remote vertex  */
-               /* and its owner processor has rank smaller than mine,*/
-               /* my processor should wait(thus turn off select_flag)*/
-
-               else if ( vertex_type[col] == Vtype && 
-                         vertex_state[col] == 'F')
-               {
-                  if ( col >= nvertices )
-                  {
-                     if ( proclist[col][0] < myrank )
-                     {
-                        select_flag = 0;
-                        break;
-                     }
-                  }
-               }
-            }
-
-            /* if the vertex in question is not any of those considered */
-            /* above, select this vertex.                               */
-
-            if ( select_flag == 1 )
-            {
-               if ((vertex_state[index] == 'F') &&(index < nvertices)) 
-                  N_remaining_vertices--;
-               vertex_state[index] = 'S';
-               amg_index[index] = nselected;
-               nselected++;
-
-               /* set the flag that this vertex has been selected in */
-               /* the buffer which is to be sent to other processors */
-
+               vertex_state[index] = 'D';
+               N_remaining_vertices--;
                if ( proclist[index] != NULL )
                {
-                  for ( k = 0; k < proclist[index][0]; k++ )
+                  for ( k = 0; k < proclist[index][0]; k++ ) 
                   {
                      fproc = proclist[index][2*k+1];
                      m     = proclist[index][2*k+2];
-                     send_buf[fproc][m] = 1;
+                     send_buf[fproc][m] = 2;
                      change_flag = 1;
                   }
                }
 
-               /* delete all vertices adjacent to this vertex and */
-               /* indicate that also in the communication buffer  */
+               /* ------------------------------------------------- */
+               /* put the next set of vertices into the preference  */
+               /* list (try to mimic the sequential MIS algorithm)  */
+               /* ------------------------------------------------- */
 
-               for ( j = rptr[index]; j < rptr[index+1]; j++ )
+               for ( k = rptr[index]; k < rptr[index+1]; k++ ) 
                {
-                  col = cptr[j];
-                  if (vertex_state[col] == 'F') {
-                     vertex_state[col] = 'D';
-                     if ( col < nvertices ) {
-                        N_remaining_vertices--;
-                        if ( proclist[col] != NULL )
+                  col2 = cptr[k];
+                  if (col2 < nvertices && vertex_state[col2] == 'F' &&
+                      vertex_type[col2] == Vtype ) 
+                  {
+                     if (in_preflist[col2] != 't') 
+                     {
+                        if ( pref_cnt >= vlist_cnt ) 
                         {
-                           for ( k = 0; k < proclist[col][0]; k++ ) 
-                           {
-                              fproc = proclist[col][2*k+1];
-                              m     = proclist[col][2*k+2];
-                              send_buf[fproc][m] = 2;
-                              change_flag = 1;
-                           }
+                           printf("LabelVertices ERROR : pref_cnt too long\n");
+                           exit(1);
                         }
+                        pref_list[pref_cnt++] = col2;
+                        in_preflist[col2] = 't';
+                     }
+                  }
+               }
+               select_flag = 0;
+               break;
+            }
+               
+            /* ---------------------------------------------------- */
+            /* If its neighbor is of the same type and not been     */
+            /* considered. Furthermore, if it is a remote vertex    */
+            /* and its owner processor has rank smaller than mine,  */
+            /* my processor should wait(thus turn off select_flag)  */
+            /* ---------------------------------------------------- */
 
-                        /* also, put the next set of vertices into the  */
-                        /* preference list (try to mimic the sequential */
-                        /* maximally independent set algorithm          */
+            else if (vertex_type[col] == Vtype && vertex_state[col] == 'F')
+            {
+               if ( col >= nvertices )
+               {
+                  if ( proclist[col][0] < myrank )
+                  {
+                     select_flag = 0;
+                     break;
+                  }
+               }
+            }
+         }
 
-                        for ( k = rptr[col]; k < rptr[col+1]; k++ ) {
-                           col2 = cptr[k];
-                           if (col2 < nvertices && 
-                               vertex_state[col2] == 'F' &&
-                               vertex_type[col2] == Vtype ) {
-                              if (in_preflist[col2] != 't') {
-                                 pref_list[pref_cnt++] = col2;
-                                 in_preflist[col2] = 't';
-                              }
+         /* ------------------------------------------------------- */
+         /* if the vertex in question is not any of those           */
+         /* considered above, select this vertex.                   */
+         /* ------------------------------------------------------- */
+
+         if ( select_flag == 1 )
+         {
+            if ((vertex_state[index] == 'F') && (index < nvertices)) 
+               N_remaining_vertices--;
+            vertex_state[index] = 'S';
+            amg_index[index] = nselected;
+            nselected++;
+
+            /* ---------------------------------------------------- */
+            /* set the flag that this vertex has been selected in   */
+            /* the buffer which is to be sent to other processors   */
+            /* ---------------------------------------------------- */
+
+            if ( proclist[index] != NULL )
+            {
+               for ( k = 0; k < proclist[index][0]; k++ )
+               {
+                  fproc = proclist[index][2*k+1];
+                  m     = proclist[index][2*k+2];
+                  send_buf[fproc][m] = 1;
+                  change_flag = 1;
+               }
+            }
+
+            /* ---------------------------------------------------- */
+            /* put the next set of vertices into the preference     */
+            /* list (try to mimic the sequential MIS algorithm)     */
+            /* ---------------------------------------------------- */
+
+            for ( j = rptr[index]; j < rptr[index+1]; j++ ) 
+            {
+               col = cptr[j];
+               if (col < nvertices && vertex_state[col] == 'F' &&
+                   vertex_type[col] == Vtype ) 
+               {
+                  if (in_preflist[col] != 't') 
+                  {
+                     if ( pref_cnt >= vlist_cnt ) 
+                     {
+                        printf("LabelVertices ERROR : pref_cnt too long\n");
+                        exit(1);
+                     }
+                     pref_list[pref_cnt++] = col;
+                     in_preflist[col] = 't';
+                  }
+               }
+/*
+               if (col2 < nvertices && vertex_state[col2] == 'F' &&
+                   vertex_type[col2] == Vtype ) 
+               {
+                  for ( k = rptr[col]; k < rptr[col+1]; k++ ) 
+                  {
+                     col2 = cptr[k];
+                     if (col2 < nvertices && vertex_state[col2] == 'F' &&
+                         vertex_type[col2] == Vtype ) 
+                     {
+                        if (in_preflist[col2] != 't') 
+                        {
+                           if ( pref_cnt >= vlist_cnt ) 
+                           {
+                              printf("LabelVertices ERROR : pref_cnt too long\n");
+                              exit(1);
                            }
+                           pref_list[pref_cnt++] = col2;
+                           in_preflist[col2] = 't';
                         }
                      }
                   }
-               } 
-            }
-         }
-
-         /* if after the steps above, the vertex is still not */
-         /* selected.  Well, do something about it.           */
-
-         if ( vertex_state[index] == 'F' )
-         {
-            /* if a vertex in the pref_list has been considered */
-            /* but not selected, need to put the vertex back to */
-            /* the list, and move on to consider the next one   */
-            /* (i.e. advance pref_index)                        */
-
-            if ( pref_flag == 1 )
-            {
-               for (j = pref_cnt-1; j >= pref_index; j--) 
-                  pref_list[j+1] = pref_list[j];
-               pref_list[pref_index] = index;
-               in_preflist[index] = 't';
-               pref_index++; pref_cnt++;
-            }
-         }
-      }
-      ML_Aggregate_UpdateVertexStates(N_remaining_vertices, vertex_state,
-	recv_cnt, recv_proc, recv_leng, recv_buf,
-	recv_list, proc_flag, &NremainingRcvProcs,
-	send_cnt, send_proc, send_leng, send_buf,
-	&send_flag, Request, comm, msg_type);
-
-#ifdef ML_AMG_out
-      /* update the states to/from other processors */
-
-      msgtype += 131;
-      for ( j = 0; j < recv_cnt; j++ )
-      {
-         if ( proc_flag[j] == 0 )
-         {
-            fproc = recv_proc[j];
-            nbytes = (recv_leng[j] + 1) * sizeof( int );
-            comm->USR_irecvbytes((char*) recv_buf[j], nbytes, &fproc,
-                    &msgtype, comm->USR_comm, (void *) &Request[j] );
-         }
-      }
-      if ( send_flag == 0 ) {
-      for ( j = 0; j < send_cnt; j++ )
-      {
-         nbytes = (send_leng[j] + 1) * sizeof( int );
-         if ( N_remaining_vertices <= 0 ) { 
-            send_buf[j][send_leng[j]] = 1; send_flag = 1; 
-         }
-         comm->USR_sendbytes((void*) send_buf[j], nbytes,
-                             send_proc[j], msgtype, comm->USR_comm );
-      }
-      }
-      for ( j = 0; j < recv_cnt; j++ )
-      {
-         if ( proc_flag[j] == 0 )
-         {
-            fproc = recv_proc[j];
-            nbytes = (recv_leng[j] + 1) * sizeof( int );
-            comm->USR_waitbytes((char*) recv_buf[j], nbytes, &fproc,
-                     &msgtype, comm->USR_comm, (void *) &Request[j] );
-            for ( k = 0; k < recv_leng[j]; k++ )
-            {
-               kkk = recv_list[j][k];
-               if      (recv_buf[j][k] == 1)
-               {
-                  vertex_state[kkk] = 'S';
                }
-               else if (recv_buf[j][k] == 2)
-               {
-                  vertex_state[kkk] = 'D';
-               }
-            }
-            if ( recv_buf[j][recv_leng[j]] == 1 )
-            {
-               proc_flag[j] = 1;
-               NremainingRcvProcs--;
+*/
             }
          }
       }
-#endif
+
+      /* ---------------------------------------------------------- */
+      /* communicate the state information to other processors      */ 
+      /* ---------------------------------------------------------- */
+
+      ML_AMG_UpdateVertexStates(N_remaining_vertices, vertex_state,
+	                  recv_cnt, recv_proc, recv_leng, recv_buf,
+	                  recv_list, proc_flag, &NremainingRcvProcs,
+	                  send_cnt, send_proc, send_leng, send_buf,
+	                  &send_flag, Request, comm, msg_type);
+
    } while ( NremainingRcvProcs > 0 || N_remaining_vertices > 0 );
 
    if ( recv_cnt > 0 )
@@ -1614,8 +1885,255 @@ int ML_AMG_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
       free( proc_flag );
       free( Request );
    }
-   if ( nvertices > 0 ) free( pref_list );
-   if ( in_preflist != NULL ) free(in_preflist);
+   if ( vlist_cnt  > 0 ) free( pref_list );
+   if ( vlist_cnt2 > 0 ) free( vlist );
+   if ( vlist_cnt  > 0 ) free( in_preflist );
    /* return nselected; */
    return loop_cnt;
 }
+
+/* ************************************************************************* */
+/* A subroutine to update vertex states                                      */
+/* ------------------------------------------------------------------------- */
+
+int ML_AMG_UpdateVertexStates(int N_remaining_vertices, char vertex_state[], 
+                 int recv_cnt, int recv_proc[], int recv_leng[], 
+                 int **recv_buf, int **recv_list, int proc_flag[], 
+                 int *NremainingRcvProcs, int send_cnt, int send_proc[], 
+                 int send_leng[], int **send_buf, int *send_flag, 
+                 USR_REQ *Request, ML_Comm *comm, int msgtype) 
+{
+   int j, k, kkk, nbytes, fproc;
+
+   /* update the states to/from other processors */
+
+   msgtype += 131;
+   for ( j = 0; j < recv_cnt; j++ )
+   {
+      if ( proc_flag[j] == 0 )
+      {
+         fproc = recv_proc[j];
+         nbytes = (recv_leng[j] + 1) * sizeof( int );
+         comm->USR_irecvbytes((char*) recv_buf[j], nbytes, &fproc,
+                    &msgtype, comm->USR_comm, (void *) &Request[j] );
+      }
+   }
+   if ( *send_flag == 0 ) 
+   {
+      for ( j = 0; j < send_cnt; j++ ) 
+      {
+         nbytes = (send_leng[j] + 1) * sizeof( int );
+         if ( N_remaining_vertices <= 0 ) 
+         { 
+            send_buf[j][send_leng[j]] = 1; 
+            *send_flag = 1;
+         }
+         comm->USR_sendbytes((void*) send_buf[j], nbytes,
+                            send_proc[j], msgtype, comm->USR_comm );
+      }
+   }
+   for ( j = 0; j < recv_cnt; j++ )
+   {
+      if ( proc_flag[j] == 0 )
+      {
+         fproc = recv_proc[j];
+         nbytes = (recv_leng[j] + 1) * sizeof( int );
+         comm->USR_waitbytes((char*) recv_buf[j], nbytes, &fproc,
+                     &msgtype, comm->USR_comm, (void *) &Request[j] );
+         for ( k = 0; k < recv_leng[j]; k++ )
+         {
+            kkk = recv_list[j][k];
+            if      (recv_buf[j][k] == 1) vertex_state[kkk] = 'S';
+            else if (recv_buf[j][k] == 2) vertex_state[kkk] = 'D';
+            else if (recv_buf[j][k] == 3) vertex_state[kkk] = 'B';
+         }
+         if ( recv_buf[j][recv_leng[j]] == 1 )
+         {
+            proc_flag[j] = 1;
+            (*NremainingRcvProcs)--;
+         }
+      }
+   }
+   return 0;
+}
+
+/* ************************************************************************* */
+/* A subroutine to get communication information                             */
+/* ------------------------------------------------------------------------- */
+
+int ML_AMG_GetCommInfo(ML_CommInfoOP *mat_comm, int Nrows, int *A_Nneigh, 
+                       int **A_neigh, int ***A_sendlist, int ***A_recvlist, 
+                       int ***A_sndbuf, int ***A_rcvbuf, int **A_sndleng, 
+                       int **A_rcvleng, int *Nghost)
+{
+   int i, j, max_element;
+
+   if ( mat_comm == NULL )
+   {
+      (*A_Nneigh)   = 0;
+      (*A_neigh)    = NULL;
+      (*A_sendlist) = NULL;
+      (*A_recvlist) = NULL;
+      (*A_sndbuf)   = NULL;
+      (*A_rcvbuf)   = NULL;
+      (*A_sndleng)  = NULL;
+      (*A_rcvleng)  = NULL;
+      (*Nghost)     = 0;
+      return 0;
+   }
+      
+   (*A_Nneigh) = ML_CommInfoOP_Get_Nneighbors(mat_comm);
+   if ( (*A_Nneigh) > 0 )
+   {
+      (*A_neigh)    = ML_CommInfoOP_Get_neighbors(mat_comm);
+      (*A_sendlist) = (int **) malloc(sizeof(int *)*(*A_Nneigh));
+      (*A_recvlist) = (int **) malloc(sizeof(int *)*(*A_Nneigh));
+      (*A_sndbuf)   = (int **) malloc(sizeof(int *)*(*A_Nneigh));
+      (*A_rcvbuf)   = (int **) malloc(sizeof(int *)*(*A_Nneigh));
+      (*A_sndleng)  = (int  *) malloc(sizeof(int  )*(*A_Nneigh));
+      (*A_rcvleng)  = (int  *) malloc(sizeof(int  )*(*A_Nneigh));
+   }
+   else
+   {
+      (*A_sendlist) = (*A_recvlist) = (*A_rcvbuf) = (*A_sndbuf) = NULL;
+      (*A_neigh) = (*A_rcvleng) = (*A_sndleng) = NULL;
+   }
+
+   max_element = Nrows - 1;
+   for (i = 0; i < (*A_Nneigh); i++) 
+   {
+      (*A_recvlist)[i] = ML_CommInfoOP_Get_rcvlist(mat_comm,(*A_neigh)[i]);
+      (*A_rcvleng)[i]  = ML_CommInfoOP_Get_Nrcvlist (mat_comm,(*A_neigh)[i]);
+      (*A_sendlist)[i] = ML_CommInfoOP_Get_sendlist (mat_comm,(*A_neigh)[i]);
+      (*A_sndleng)[i]  = ML_CommInfoOP_Get_Nsendlist(mat_comm,(*A_neigh)[i]);
+      (*A_rcvbuf)[i]   = (int *) malloc(sizeof(int)*((*A_rcvleng)[i]+1));
+      (*A_sndbuf)[i]   = (int *) malloc(sizeof(int)*((*A_sndleng)[i]+1));
+      for (j = 0; j < (*A_rcvleng)[i]; j++) 
+         if ((*A_recvlist)[i][j] > max_element ) 
+            max_element = (*A_recvlist)[i][j];
+   }
+   (*Nghost) = max_element - Nrows + 1;
+   return 0;
+}
+
+/* ************************************************************************* */
+/* newly added to generate coarse grid based on compatible relaxation        */
+/* using symmetric Gauss Seidel                                              */
+/* ------------------------------------------------------------------------- */
+
+int ML_AMG_CompatibleRelaxation(ML_AMG *ml_amg, int *CF_array,
+                                ML_Operator *Amat, int *Ncoarse, int limit)
+{
+   int           i, j, iter, Nrows, length, allocated, *cols, col;
+   int           *indices, count;
+   double        *initsol, *rhs, *sol, *res;
+   double        dtemp, diag_term, *vals, omega=1.0;
+   ML_Comm       *comm;
+   ML_CommInfoOP *getrow_comm;
+
+   /* ------------------------------------------------------------- */
+   /* fetch Amatrix information                                     */
+   /* ------------------------------------------------------------- */
+
+   comm        = Amat->comm;
+   Nrows       = Amat->getrow->Nrows;
+   getrow_comm = Amat->getrow->pre_comm;
+
+   /* ------------------------------------------------------------- */
+   /* set up arrays (rhs and initial guesses)                       */
+   /* ------------------------------------------------------------- */
+
+   indices = (int *)    malloc( Nrows * sizeof(int) );
+   initsol = (double *) malloc( Nrows * sizeof(double) );
+   sol     = (double *) malloc((Nrows+getrow_comm->total_rcv_length+1)*
+                               sizeof(double));
+   rhs     = (double *) malloc( Nrows * sizeof(double) );
+   for ( i = 0; i < Nrows; i++ ) rhs[i] = 0.0;
+   ML_random_vec(initsol, Nrows, comm);
+   for ( i = 0; i < Nrows; i++ ) initsol[i] += 1.0;
+   for ( i = 0; i < Nrows; i++ ) sol[i] = initsol[i];
+   for ( i = 0; i < Nrows; i++ ) 
+      if ( CF_array[i] >= 0 ) sol[i] = 0.0;
+
+   /* ------------------------------------------------------------- */
+   /* allocate matrix buffers                                       */
+   /* ------------------------------------------------------------- */
+
+   allocated = Amat->max_nz_per_row+1;
+   cols = (int    *) malloc(allocated * sizeof(int   ));
+   vals = (double *) malloc(allocated * sizeof(double));
+
+   /* ------------------------------------------------------------- */
+   /* iterate                                                       */
+   /* ------------------------------------------------------------- */
+
+   for (iter = 0; iter < 2; iter++)
+   {
+      if (getrow_comm != NULL)
+         ML_exchange_bdry(sol, getrow_comm, Nrows, comm, ML_OVERWRITE);
+
+      for (i = 0; i < Nrows; i++)
+      {
+         if ( CF_array[i] < 0 )
+         {
+            dtemp = 0.0;
+            diag_term = 0.0;
+            ML_get_matrix_row(Amat,1,&i,&allocated,&cols,&vals,&length,0);
+            for (j = 0; j < length; j++)
+            {
+               col = cols[j];
+               dtemp += vals[j]*sol[col];
+               if (col == i) diag_term = vals[j];
+            }
+            if (diag_term != 0.0)
+               sol[i] += omega*(rhs[i] - dtemp)/diag_term;
+         }
+      }
+
+      if (getrow_comm != NULL)
+         ML_exchange_bdry(sol, getrow_comm, Nrows, comm, ML_OVERWRITE);
+
+      for (i = Nrows-1; i >= 0; i--)
+      {
+         if ( CF_array[i] < 0 )
+         {
+            dtemp = 0.0;
+            diag_term = 0.0;
+            ML_get_matrix_row(Amat,1,&i,&allocated,&cols,&vals,&length,0);
+            for (j = 0; j < length; j++)
+            {
+               col = cols[j];
+               dtemp += vals[j]*sol[col];
+               if (col == i) diag_term = vals[j];
+            }
+            if (diag_term != 0.0)
+               sol[i] += omega*(rhs[i] - dtemp)/diag_term;
+         }
+      }
+   }
+   free(vals); free(cols);
+
+   /* ------------------------------------------------------------- */
+   /* sort the solution                                             */
+   /* ------------------------------------------------------------- */
+
+   for ( i = 0; i < Nrows; i++ ) indices[i] = i;
+   for ( i = 0; i < Nrows; i++ ) sol[i] = dabs(sol[i]) / initsol[i];
+   ML_split_dsort( sol, Nrows, indices, limit );
+   count = 0;
+   for ( i = 0; i < Nrows; i++ )
+   {
+      if ( CF_array[indices[i]] < 0 ) 
+      {
+         CF_array[indices[i]] = (*Ncoarse)++;
+         count++;
+         if ( count >= limit ) break;
+      }
+   }
+   free(indices);
+   free(initsol);
+   free(sol);
+   free(rhs);
+   return 0;
+}
+

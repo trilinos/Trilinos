@@ -1,14 +1,14 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* See the file COPYRIGHT for a complete copyright notice, contact person    */
+/* and disclaimer.                                                           */
+/* ************************************************************************* */
 
-/* ******************************************************************** */
-/* data structure to hold aggregation information                       */
-/* ******************************************************************** */
-/* Author        : Charles Tong (LLNL)                                  */
-/* Date          : August, 1999                                         */
-/* ******************************************************************** */
+/* ************************************************************************* */
+/* data structure to hold aggregation information                            */
+/* ************************************************************************* */
+/* Author        : Charles Tong (LLNL)                                       */
+/* Date          : August, 1999                                              */
+/* ************************************************************************* */
 
 #ifndef __MLAGGH__
 #define __MLAGGH__
@@ -16,9 +16,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* ******************************************************************** */
-/* definition of the aggregate structure                                */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* definition of the aggregate structure                                     */
+/* ------------------------------------------------------------------------- */
 
 typedef struct ML_Aggregate_Struct
 {
@@ -50,18 +50,18 @@ typedef struct ML_Aggregate_Struct
    int    *vblock_info;                /* for variable blocks (finest)  */
 } ML_Aggregate;
 
-/* ******************************************************************** */
+/* ************************************************************************* */
 /* other ML include files                                               */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 
 #include "ml_defs.h"
 #include "ml_comm.h"
 #include "ml_memory.h"
 #include "ml_operator.h"
 
-/* ******************************************************************** */
+/* ************************************************************************* */
 /* linked list structures for holding free node information             */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 
 typedef struct ML_Node_Struct
 {
@@ -69,9 +69,9 @@ typedef struct ML_Node_Struct
    struct ML_Node_Struct *next;
 } ML_Node;
 
-/* ******************************************************************** */
+/* ************************************************************************* */
 /* definition of the structure for holding aggregate information        */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 
 typedef struct ML_SuperNode_Struct
 {
@@ -83,10 +83,10 @@ typedef struct ML_SuperNode_Struct
 
 } ML_SuperNode;
 
-/* ******************************************************************** */
+/* ************************************************************************* */
 /* definition of the structure for holding communication information in */
 /* aggregation procedure                                                */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
 
 typedef struct ML_Aggregate_Comm_Struct
 {
@@ -99,19 +99,19 @@ typedef struct ML_Aggregate_Comm_Struct
 
 } ML_Aggregate_Comm;
 
-/* ******************************************************************** */
-/* ******************************************************************** */
-/* functions to manipulate the aggregate data structure                 */
-/* -------------------------------------------------------------------- */
+/* ************************************************************************* */
+/* ************************************************************************* */
+/* functions to manipulate the aggregate data structure                      */
+/* ------------------------------------------------------------------------- */
 
 #ifdef __cplusplus
 extern "C" 
 {
 #endif
 
-/* -------------------------------------------------------------------- */
-/* constructor/destructor and level control                             */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* constructor/destructor and level control                                  */
+/* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_Create( ML_Aggregate ** );
 int ML_Aggregate_Destroy( ML_Aggregate ** );
@@ -122,61 +122,61 @@ int ML_Aggregate_Set_MaxLevels( ML_Aggregate *, int level );
 int ML_Aggregate_Set_CurrentLevel( ML_Aggregate *, int level );
 int ML_Aggregate_Set_StartLevel( ML_Aggregate *, int level );
 
-/* -------------------------------------------------------------------- */
-/* aggregate size and shape control                                     */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* aggregate size and shape control                                          */
+/* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_Set_MinNodesPerAggregate(ML_Aggregate *,int n);
 int ML_Aggregate_Set_AttachScheme_MaxLink( ML_Aggregate * );
 int ML_Aggregate_Set_AttachScheme_MinRank( ML_Aggregate * );
 
-/* -------------------------------------------------------------------- */
-/* aggregation node traversal control                                   */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* aggregation node traversal control                                        */
+/* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_Set_NaturalOrdering( ML_Aggregate * );
 int ML_Aggregate_Set_RandomOrdering( ML_Aggregate * );
 int ML_Aggregate_Set_GraphOrdering( ML_Aggregate * );
 
-/* -------------------------------------------------------------------- */
-/* control when to stop coarsening                                      */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* control when to stop coarsening                                           */
+/* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_Set_MaxCoarseSize( ML_Aggregate *, int size );
 
-/* -------------------------------------------------------------------- */
-/* different parallel coarsening schemes                                */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* different parallel coarsening schemes                                     */
+/* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_Set_CoarsenScheme_Uncoupled( ML_Aggregate * );
 int ML_Aggregate_Set_CoarsenScheme_Coupled( ML_Aggregate * );
 int ML_Aggregate_Set_CoarsenScheme_MIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_DD( ML_Aggregate *ag  );
 
-/* -------------------------------------------------------------------- */
-/* set threshold for pruning matrix graph                               */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* set threshold for pruning matrix graph                                    */
+/* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_Set_Threshold( ML_Aggregate *, double epsilon );
 int ML_Aggregate_Reset_Threshold( ML_Aggregate * );
 
-/* -------------------------------------------------------------------- */
-/* damping factor for prolongator smoother                              */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* damping factor for prolongator smoother                                   */
+/* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_Set_DampingFactor( ML_Aggregate *, double factor );
 int ML_Aggregate_Set_PSmootherType( ML_Aggregate *, int stype );
 
-/* -------------------------------------------------------------------- */
-/* set up scheme to compute spectral radius of A at each level          */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* set up scheme to compute spectral radius of A at each level               */
+/* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_Set_SpectralNormScheme_Calc( ML_Aggregate * );
 int ML_Aggregate_Set_SpectralNormScheme_Anorm( ML_Aggregate * );
 
-/* -------------------------------------------------------------------- */
-/* accessing aggregation information                                    */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* accessing aggregation information                                         */
+/* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_Get_AggrCount( ML_Aggregate *, int level );
 int ML_Aggregate_Get_AggrMap( ML_Aggregate *, int level, int**);
@@ -184,18 +184,18 @@ extern int ML_Gen_Blocks_Aggregates(ML_Aggregate *ag, int level,
                                     int *nblocks, int **block_list);
 
 
-/* -------------------------------------------------------------------- */
-/* set null space for the finest grid                                   */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* set null space for the finest grid                                        */
+/* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_Set_NullSpace(ML_Aggregate *, int, int, double *, int);
 
 int ML_Aggregate_Coarsen( ML_Aggregate *, ML_Operator *A,
                           ML_Operator **P, ML_Comm *comm );
 
-/* -------------------------------------------------------------------- */
-/* functions for performing aggregation                                 */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* functions for performing aggregation                                      */
+/* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_CoarsenCoupled( ML_Aggregate *, ML_Operator *A,
                                  ML_Operator **P, ML_Comm *comm );
@@ -209,15 +209,15 @@ int ML_Aggregate_CoarsenMIS(ML_Aggregate *ml_ag,ML_Operator *Amatrix,
 int ML_Aggregate_CoarsenDomainDecomp(ML_Aggregate *ml_ag,
            ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm);
 
-int ML_Aggregate_CoarsenUncoupledVBlock(ML_Aggregate *ml_ag,
+int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
            ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm);
 
-int ML_Aggregate_CoarsenCoupledVBlock(ML_Aggregate *ml_ag,
+int ML_Aggregate_CoarsenCoupled(ML_Aggregate *ml_ag,
            ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm);
 
-/* -------------------------------------------------------------------- */
-/* miscellaneous local functions                                        */
-/* -------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/* miscellaneous local functions                                             */
+/* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_LabelVertices(int, int *, char, char *,char *,int,
               int *, int *, int, int **, int, int **, int *, int *,
