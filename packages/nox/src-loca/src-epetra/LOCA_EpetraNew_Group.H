@@ -37,6 +37,7 @@
 #include "NOX_EpetraNew_Group.H"    // base class
 #include "LOCA_Parameter_Vector.H"  // class data element
 #include "NOX_Common.H"             // class data element (string)
+#include "LOCA_EpetraNew_Interface_TimeDependent.H"
 
 // Forward declares
 namespace NOX {
@@ -103,6 +104,13 @@ namespace LOCA {
 	    NOX::Epetra::Vector& initialGuess, 
 	    NOX::EpetraNew::LinearSystem& linSys,
 	    const LOCA::ParameterVector& p);
+
+      Group(NOX::Parameter::List& printingParams,
+            LOCA::EpetraNew::Interface::TimeDependent& i,
+            NOX::Epetra::Vector& initialGuess,
+            NOX::EpetraNew::LinearSystem& linSys,
+	    const LOCA::ParameterVector& p);
+
 
       /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
 	valid shared Jacobian and shared preconditioning matrix. */
@@ -281,6 +289,13 @@ namespace LOCA {
       //! Sets the scale vector.  
       void setScaleVector(const NOX::Abstract::Vector& s);
 
+      virtual NOX::Abstract::Group::ReturnType computeMassMatrix();
+
+      virtual NOX::Abstract::Group::ReturnType applyMassMatrix(const NOX::Abstract::Vector& input,
+                                                               NOX::Abstract::Vector& result) const;
+
+      virtual bool isMassMatrix();
+
       /*! 
        * @name Implementation of LOCA::Bifurcation::TPBord::AbstractGroup virtual methods.
        */
@@ -337,7 +352,9 @@ namespace LOCA {
       LOCA::ParameterVector params;
 
       //! Reference to the user supplied interface functions
-      LOCA::EpetraNew::Interface::Required& userInterface;
+      LOCA::EpetraNew::Interface::Required& userInterfaceReq;
+
+      LOCA::EpetraNew::Interface::TimeDependent* userInterfaceTime;
 
       //! Extra vector needed for intermediate calculations of LOCA routines.
       /*! NOTE: there already is a tmpVectorPtr in the NOX::Epetra::Group.  This is a second temporary vector if that one extra isn't enough.
