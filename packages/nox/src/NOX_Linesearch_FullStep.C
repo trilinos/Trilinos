@@ -47,13 +47,13 @@ FullStep::~FullStep()
 
 void FullStep::reset(const Parameter::List& params)
 {
-  defaultstep = params.getParameter("Default Step", 1.0);
+  fullstep = params.getParameter("Full Step", 1.0);
 }
 
 bool FullStep::operator()(Abstract::Group& newgrp, double& step, 
 			  const Abstract::Group& oldgrp, const Abstract::Vector& dir)
 {
-  step = defaultstep;
+  step = fullstep;
   newgrp.computeX(oldgrp, dir, step);
   return true;
 }
