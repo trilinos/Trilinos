@@ -26,6 +26,7 @@
 #include "lbi_const.h"
 #include "mem_const.h"
 #include "par_const.h"
+#include "timer_const.h"
 
 /*
  *  See bottom for other included files.
@@ -122,6 +123,7 @@ typedef enum LB_Method {
 #define LB_COMM_WEIGHT_DEF   0
 #define LB_AUTO_MIGRATE_DEF  FALSE
 #define LB_DETERMINISTIC_DEF TRUE
+#define LB_TIMER_DEF         LB_TIME_WALL
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -306,6 +308,7 @@ struct LB_Struct {
                                       usually 0 (no weights) or 1            */
   int Comm_Weight_Dim;            /*  Dimension of the communication weights, 
                                       usually 0 (no weights) or 1            */
+  int Timer;                      /*  Timer type that is currently active */
   void *Data_Structure;           /*  Data structure used by the load 
                                       balancer; cast by the method routines
                                       to the appropriate data type.          */

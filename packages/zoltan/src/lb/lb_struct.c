@@ -83,6 +83,7 @@ LB *lb;
   lb->Debug_Level = LB_DEBUG_LEVEL_DEF;
   lb->Debug_Proc = LB_DEBUG_PROC_DEF;
   lb->Fortran = 0;
+  lb->Timer = LB_TIMER_DEF;
   lb->Machine_Desc = NULL;
   lb->Params = NULL;
   lb->Imbalance_Tol = LB_IMBALANCE_TOL_DEF;
