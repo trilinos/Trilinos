@@ -23,8 +23,8 @@ DEFS 			=
 RANLIB			= ranlib
 AR			= ar r
 
-CC          		= cc
-INCLUDE_PATH		= -I/usr/local/cplant/current/include
+CC          		= /Net/mp/cplant/current/bin/cc
+INCLUDE_PATH		= -I/Net/mp/cplant/current/include
 DBG_FLAGS		= -g
 OPT_FLAGS		= -O
 CFLAGS = $(DBG_FLAGS)
@@ -38,14 +38,14 @@ F90_MODULE_PREFIX 	= -M
 FARG      		= farg_typical
 
 MPI_LIB			= -lmpi
-MPI_LIBPATH		= -L/usr/local/cplant/current/lib
+MPI_LIBPATH		= -L/Net/mp/cplant/current/lib
 
-PARMETIS_LIBPATH 	= -L../../ParMETIS
-PARMETIS_INCPATH 	= -I../../ParMETIS
+#PARMETIS_LIBPATH 	= -L.
+#PARMETIS_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
 
 #JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/alpha/lib
 #JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
 #JOSTLE_SRCPATH 	= /Net/proj/zoltan/arch/all/src
 
-NEMESIS_LIBPATH		= -L/home/glhenni/arch/cplant/lib
-NEMESIS_INCPATH		= -I/home/glhenni/arch/cplant/include
+NEMESIS_LIBPATH		= -L/Net/proj/zoltan/arch/alpha/lib
+NEMESIS_INCPATH		= -I/Net/proj/zoltan/arch/alpha/include
