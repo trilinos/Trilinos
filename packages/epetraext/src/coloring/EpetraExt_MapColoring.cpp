@@ -134,33 +134,43 @@ operator()( OriginalTypeRef orig  )
   if( verbose_ ) cout << endl << "Delta: " << Delta << endl;
 
   //Generation of Local Distance-2 Adjacency Graph
-  Epetra_CrsGraph Adj2( Copy, ColMap, ColMap, 0 );
-  int NumAdj1Indices;
-  int * Adj1Indices;
-  for( int i = 0; i < nCols; ++i )
-  {
-    Adj1.ExtractMyRowView( i, NumAdj1Indices, Adj1Indices );
+  Epetra_CrsGraph * Adj2 = &Adj1;
 
-    set<int> Cols;
-    for( int j = 0; j < NumAdj1Indices; ++j )
+  if( !distance1_ )
+  {
+    Adj2 = new Epetra_CrsGraph( Copy, ColMap, ColMap, 0 );
+    int NumAdj1Indices;
+    int * Adj1Indices;
+    for( int i = 0; i < nCols; ++i )
     {
-      base->ExtractMyRowView( Adj1Indices[j], NumIndices, Indices );
-      for( int k = 0; k < NumIndices; ++k )
-        if( Indices[k] < nCols ) Cols.insert( Indices[k] );
+      Adj1.ExtractMyRowView( i, NumAdj1Indices, Adj1Indices );
+
+      set<int> Cols;
+      for( int j = 0; j < NumAdj1Indices; ++j )
+      {
+        base->ExtractMyRowView( Adj1Indices[j], NumIndices, Indices );
+        for( int k = 0; k < NumIndices; ++k )
+          if( Indices[k] < nCols ) Cols.insert( Indices[k] );
+      }
+      int nCols2 = Cols.size();
+      vector<int> ColVec( nCols2 );
+      set<int>::iterator iterIS = Cols.begin();
+      set<int>::iterator iendIS = Cols.end();
+      for( int j = 0 ; iterIS != iendIS; ++iterIS, ++j ) ColVec[j] = *iterIS;
+      Adj2->InsertMyIndices( i, nCols2, &ColVec[0] );
     }
-    int nCols2 = Cols.size();
-    vector<int> ColVec( nCols2 );
-    set<int>::iterator iterIS = Cols.begin();
-    set<int>::iterator iendIS = Cols.end();
-    for( int j = 0 ; iterIS != iendIS; ++iterIS, ++j ) ColVec[j] = *iterIS;
-    Adj2.InsertMyIndices( i, nCols2, &ColVec[0] );
+    Adj2->TransformToLocal();
+    if( verbose_ ) cout << "Adjacency 2 Graph!\n" << *Adj2;
+
+#ifdef EPETRAEXT_TIMING
+    wTime2 = timer.WallTime();
+    cout << "EpetraExt::MapColoring [GEN DIST-2 GRAPH] Time: " << wTime2-wTime1 << endl;
+#endif
+
   }
-  Adj2.TransformToLocal();
-  if( verbose_ ) cout << "Adjacency 2 Graph!\n" << Adj2;
 
 #ifdef EPETRAEXT_TIMING
   wTime2 = timer.WallTime();
-  cout << "EpetraExt::MapColoring [GEN DIST-2 GRAPH] Time: " << wTime2-wTime1 << endl;
 #endif
 
   ColorMap = new Epetra_MapColoring( ColMap );
@@ -171,7 +181,7 @@ operator()( OriginalTypeRef orig  )
     multimap<int,int> adjMap;
     typedef multimap<int,int>::value_type adjMapValueType;
     for( int i = 0; i < nCols; ++i )
-      adjMap.insert( adjMapValueType( Adj2.NumMyIndices(i), i ) );
+      adjMap.insert( adjMapValueType( Adj2->NumMyIndices(i), i ) );
     multimap<int,int>::iterator iter = adjMap.begin();
     multimap<int,int>::iterator end = adjMap.end();
     if( reordering_ == 0 ) //largest first (less colors)
@@ -204,7 +214,7 @@ operator()( OriginalTypeRef orig  )
     //Application of Greedy Algorithm to generate Color Map
     for( int col = 0; col < nCols; ++col )
     {
-      Adj2.ExtractMyRowView( rowOrder[col], NumIndices, Indices );
+      Adj2->ExtractMyRowView( rowOrder[col], NumIndices, Indices );
 
       set<int> usedColors;
       int color;
@@ -258,7 +268,7 @@ operator()( OriginalTypeRef orig  )
 #ifdef EPETRAEXT_TEST_LUBI
             cout << "Testing Node: " << col << " " << State[col] << " " << Keys[col] << endl;
 #endif
-            Adj2.ExtractMyRowView( col, NumIndices, Indices );
+            Adj2->ExtractMyRowView( col, NumIndices, Indices );
             int MyKey = Keys[col];
             for( int j = 0; j < NumIndices; ++j )
               if( col != Indices[j] && State[ Indices[j] ] < 0 )
@@ -288,7 +298,7 @@ operator()( OriginalTypeRef orig  )
         for( int col = 0; col < nCols; ++col )
           if( State[col] == 0 )
           {
-            Adj2.ExtractMyRowView( col, NumIndices, Indices );
+            Adj2->ExtractMyRowView( col, NumIndices, Indices );
 	    bool flag = false;
             for( int i = 0; i < NumIndices; ++i )
               if( col != Indices[i] && State[ Indices[i] ] == CurrentColor )
@@ -332,6 +342,7 @@ operator()( OriginalTypeRef orig  )
 #endif
 
     if( distributedGraph ) delete base;
+    if( !distance1_ ) delete Adj2;
   }
   else
     abort(); //UNKNOWN ALGORITHM
@@ -345,45 +356,49 @@ operator()( OriginalTypeRef orig  )
     Epetra_CrsGraph & OverlapGraph = OverlapTrans( orig );
     if( verbose_ && verbosityLevel_ > 1 ) cout << "OverlapGraph:\n" << OverlapGraph;
 
+    Epetra_CrsGraph * Adj2 = &orig;
 
-    Epetra_CrsGraph Adj2( Copy, RowMap, OverlapGraph.ColMap(), 0 );
     int NumIndices;
     int * Indices;
-    int NumAdj1Indices;
-    int * Adj1Indices;
-    for( int i = 0; i < nRows; ++i )
+    if( !distance1_ )
     {
-      OverlapGraph.ExtractMyRowView( i, NumAdj1Indices, Adj1Indices );
-
-      set<int> Cols;
-      for( int j = 0; j < NumAdj1Indices; ++j )
+      Adj2 = new Epetra_CrsGraph( Copy, RowMap, OverlapGraph.ColMap(), 0 );
+      int NumAdj1Indices;
+      int * Adj1Indices;
+      for( int i = 0; i < nRows; ++i )
       {
-        int GID = OverlapGraph.LRID( OverlapGraph.GCID( Adj1Indices[j] ) );
-        OverlapGraph.ExtractMyRowView( GID, NumIndices, Indices );
-        for( int k = 0; k < NumIndices; ++k ) Cols.insert( Indices[k] );
+        OverlapGraph.ExtractMyRowView( i, NumAdj1Indices, Adj1Indices );
+
+        set<int> Cols;
+        for( int j = 0; j < NumAdj1Indices; ++j )
+        {
+          int GID = OverlapGraph.LRID( OverlapGraph.GCID( Adj1Indices[j] ) );
+          OverlapGraph.ExtractMyRowView( GID, NumIndices, Indices );
+          for( int k = 0; k < NumIndices; ++k ) Cols.insert( Indices[k] );
+        }
+        int nCols2 = Cols.size();
+        vector<int> ColVec( nCols2 );
+        set<int>::iterator iterIS = Cols.begin();
+        set<int>::iterator iendIS = Cols.end();
+        for( int j = 0 ; iterIS != iendIS; ++iterIS, ++j ) ColVec[j] = *iterIS;
+        Adj2->InsertMyIndices( i, nCols2, &ColVec[0] );
       }
-      int nCols2 = Cols.size();
-      vector<int> ColVec( nCols2 );
-      set<int>::iterator iterIS = Cols.begin();
-      set<int>::iterator iendIS = Cols.end();
-      for( int j = 0 ; iterIS != iendIS; ++iterIS, ++j ) ColVec[j] = *iterIS;
-      Adj2.InsertMyIndices( i, nCols2, &ColVec[0] );
+      assert( Adj2->TransformToLocal() == 0 );
+      RowMap.Comm().Barrier();
+      if( verbose_ && verbosityLevel_ > 1 ) cout << "Adjacency 2 Graph!\n" << *Adj2;
     }
-    assert( Adj2.TransformToLocal() == 0 );
-    RowMap.Comm().Barrier();
-    if( verbose_ && verbosityLevel_ > 1 ) cout << "Adjacency 2 Graph!\n" << Adj2;
 
     //collect GIDs on boundary
     vector<int> boundaryGIDs;
     vector<int> interiorGIDs;
     for( int row = 0; row < nRows; ++row )
     {
-      Adj2.ExtractMyRowView( row, NumIndices, Indices );
+      Adj2->ExtractMyRowView( row, NumIndices, Indices );
       bool testFlag = false;
       for( int i = 0; i < NumIndices; ++i )
         if( Indices[i] >= nRows ) testFlag = true;
-      if( testFlag ) boundaryGIDs.push_back( Adj2.GRID(row) );
-      else           interiorGIDs.push_back( Adj2.GRID(row) );
+      if( testFlag ) boundaryGIDs.push_back( Adj2->GRID(row) );
+      else           interiorGIDs.push_back( Adj2->GRID(row) );
     }
 
     int LocalBoundarySize = boundaryGIDs.size();
@@ -418,8 +433,8 @@ operator()( OriginalTypeRef orig  )
       if( verbose_  && verbosityLevel_ > 1) cout << "LocalBoundaryMap:\n" << LocalBoundaryMap;
 
       Epetra_CrsGraph LocalBoundaryGraph( Copy, LocalBoundaryMap, LocalBoundaryMap, 0 );
-      Epetra_Import LocalBoundaryImport( LocalBoundaryMap, Adj2.RowMap() );
-      LocalBoundaryGraph.Import( Adj2, LocalBoundaryImport, Insert );
+      Epetra_Import LocalBoundaryImport( LocalBoundaryMap, Adj2->RowMap() );
+      LocalBoundaryGraph.Import( *Adj2, LocalBoundaryImport, Insert );
       LocalBoundaryGraph.TransformToLocal();
       if( verbose_ && verbosityLevel_ > 1 ) cout << "LocalBoundaryGraph:\n " << LocalBoundaryGraph;
 
@@ -442,15 +457,15 @@ operator()( OriginalTypeRef orig  )
      */
 
       vector<int> OverlapBoundaryGIDs( boundaryGIDs );
-      for( int i = nRows; i < Adj2.ColMap().NumMyElements(); ++i )
-        OverlapBoundaryGIDs.push_back( Adj2.ColMap().GID(i) );
+      for( int i = nRows; i < Adj2->ColMap().NumMyElements(); ++i )
+        OverlapBoundaryGIDs.push_back( Adj2->ColMap().GID(i) );
 
       int OverlapBoundarySize = OverlapBoundaryGIDs.size();
       Epetra_Map BoundaryColMap( -1, OverlapBoundarySize, &OverlapBoundaryGIDs[0], 0, RowMap.Comm() );
 
       Epetra_CrsGraph BoundaryGraph( Copy, BoundaryMap, BoundaryColMap, 0 );
-      Epetra_Import BoundaryImport( BoundaryMap, Adj2.RowMap() );
-      BoundaryGraph.Import( Adj2, BoundaryImport, Insert );
+      Epetra_Import BoundaryImport( BoundaryMap, Adj2->RowMap() );
+      BoundaryGraph.Import( *Adj2, BoundaryImport, Insert );
       BoundaryGraph.TransformToLocal();
       if( verbose_  && verbosityLevel_ > 1) cout << "BoundaryGraph:\n" << BoundaryGraph;
 
@@ -575,8 +590,8 @@ operator()( OriginalTypeRef orig  )
       RowColorMap(GID) = BoundaryColoring(GID);
     }
 
-    Epetra_MapColoring Adj2ColColorMap( Adj2.ColMap() );
-    Epetra_Import Adj2Import( Adj2.ColMap(), RowMap );
+    Epetra_MapColoring Adj2ColColorMap( Adj2->ColMap() );
+    Epetra_Import Adj2Import( Adj2->ColMap(), RowMap );
     Adj2ColColorMap.Import( RowColorMap, Adj2Import, Insert );
 
     if( verbose_ && verbosityLevel_ > 1 ) cout << "RowColoringMap:\n " << RowColorMap;
@@ -588,7 +603,7 @@ operator()( OriginalTypeRef orig  )
       multimap<int,int> adjMap;
       typedef multimap<int,int>::value_type adjMapValueType;
       for( int i = 0; i < nRows; ++i )
-        adjMap.insert( adjMapValueType( Adj2.NumMyIndices(i), i ) );
+        adjMap.insert( adjMapValueType( Adj2->NumMyIndices(i), i ) );
       multimap<int,int>::iterator iter = adjMap.begin();
       multimap<int,int>::iterator end = adjMap.end();
       if( reordering_ == 0 ) //largest first (less colors)
@@ -617,7 +632,7 @@ operator()( OriginalTypeRef orig  )
     {
       if( !RowColorMap[ rowOrder[row] ] )
       {
-        Adj2.ExtractMyRowView( rowOrder[row], NumIndices, Indices );
+        Adj2->ExtractMyRowView( rowOrder[row], NumIndices, Indices );
 
         set<int> usedColors;
         int color;
@@ -641,8 +656,10 @@ operator()( OriginalTypeRef orig  )
     if( verbose_ && verbosityLevel_ > 1 ) cout << "RowColorMap after Greedy:\n " << RowColorMap;
 
     ColorMap = new Epetra_MapColoring( ColMap );
-    Epetra_Import ColImport( ColMap, Adj2.ColMap() );
+    Epetra_Import ColImport( ColMap, Adj2->ColMap() );
     ColorMap->Import( Adj2ColColorMap, ColImport, Insert );
+
+    if( !distance1_ ) delete Adj2;
   }
 
   if( verbose_ && verbosityLevel_ > -1 ) cout << MyPID << " ColorMap Color Count: " << ColorMap->NumColors() << endl;
