@@ -49,6 +49,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 {
 
   char parameter[80];
+  Epetra_Time Time(Comm());
 
   sprintf(parameter,"%ssmoother: sweeps", Prefix_);
   int num_smoother_steps = List_.get(parameter, 1);
@@ -79,11 +80,43 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   int MLSPolynomialOrder = List_.get(parameter,3);
 
   sprintf(parameter,"%ssmoother: MLS alpha",Prefix_);
-  double MLSalpha = List_.get(parameter,30.0);;
+  double MLSalpha = List_.get(parameter,30.0);
   
   int SmootherLevels = (NumLevels_>1)?(NumLevels_-1):1;
 
+  sprintf(parameter,"%ssmoother: ParaSails levels",Prefix_);
+  int ParaSailsN = List_.get(parameter,0);
+
+  // this can be:
+  // 0) nonsymmetric and/or indefinite
+  // 1) SPD
+  // (The ParaSails manual seems to allow also 2, but not ML)
+  sprintf(parameter,"%ssmoother: ParaSails matrix",Prefix_);
+  int ParaSailsSym = List_.get(parameter,0);
+
+  sprintf(parameter,"%ssmoother: ParaSails threshold",Prefix_);
+  double ParaSailsThresh = List_.get(parameter,0.01);
+
+  sprintf(parameter,"%ssmoother: ParaSails filter",Prefix_);
+  double ParaSailsFilter = List_.get(parameter,0.05);
+
+  sprintf(parameter,"%ssmoother: ParaSails load balancing",Prefix_);
+  double ParaSailsLB = List_.get(parameter,0.0);
+
+  sprintf(parameter,"%ssmoother: ParaSails factorized", Prefix_);
+  int ParaSailsFactorized = List_.get(parameter,0);
+
+  // ===================== //
+  // cycle over all levels //
+  // ===================== //
+ 
   for( int level=0 ; level<SmootherLevels ; ++level ) {
+
+    if(  verbose_ ) cout << endl;
+
+    Time.ResetStartTime();
+
+    // general parameters for more than one smoother
 
     sprintf(parameter,"%ssmoother: sweeps (level %d)", Prefix_, LevelID_[level] );
     num_smoother_steps = List_.get(parameter,num_smoother_steps);
@@ -105,31 +138,59 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
     char msg[80];
     sprintf(msg,"Smoother (level %d) : ", LevelID_[level]);
+
     if( Smoother == "Jacobi" ) {
+
+      // ============ //
+      // point Jacobi //
+      // ============ //
+
       if( verbose_ ) cout << msg << "Jacobi (sweeps="
 			 << num_smoother_steps << ",omega=" << omega << ","
 			 << PreOrPostSmoother << ")" << endl;
       ML_Gen_Smoother_Jacobi(ml_, LevelID_[level], pre_or_post,
 			     num_smoother_steps, omega);
+     
     } else if( Smoother == "Gauss-Seidel" ) {
+
+      // ================== //
+      // point Gauss-Seidel //
+      // ================== //
+
       if( verbose_ ) cout << msg << "Gauss-Seidel (sweeps="
 			 << num_smoother_steps << ",omega=" << omega << ","
 			 << PreOrPostSmoother << ")" << endl;
       ML_Gen_Smoother_GaussSeidel(ml_, LevelID_[level], pre_or_post,
 				  num_smoother_steps, omega);
+
     } else if( Smoother == "symmetric Gauss-Seidel" ) {
+
+      // ====================== //
+      // symmetric Gauss-Seidel //
+      // ====================== //
+
       if( verbose_ ) cout << msg << "symmetric Gauss-Seidel (sweeps="
 			  << num_smoother_steps << ",omega=" << omega << ","
 			  << PreOrPostSmoother << ")" << endl;
       ML_Gen_Smoother_SymGaussSeidel(ml_, LevelID_[level], pre_or_post,
 				     num_smoother_steps, omega);
     } else if( Smoother == "block Gauss-Seidel" ) {
+
+      // ================== //
+      // block Gauss-Seidel //
+      // ================== //
+      
       if( verbose_ ) cout << msg << "block Gauss-Seidel (sweeps="
 			  << num_smoother_steps << ",omega=" << omega << ","
 			  << PreOrPostSmoother << ")" << endl;
       ML_Gen_Smoother_BlockGaussSeidel(ml_, LevelID_[level], pre_or_post,
 				       num_smoother_steps, omega, NumPDEEqns_);
     } else if( Smoother == "MLS" ) {
+
+      // === //
+      // MLS //
+      // === //
+
       sprintf(parameter,"smoother: MLS polynomial order (level %d)", LevelID_[level]);
       if( verbose_ ) cout << msg << "MLS,"
 			 << PreOrPostSmoother << endl;
@@ -138,6 +199,10 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 			  MLSPolynomialOrder);
       
     } else if( Smoother == "Aztec" ) {
+      
+      // ======= //
+      // AztecOO //
+      // ======= //
       
       sprintf(parameter,"%ssmoother: Aztec options (level %d)", Prefix_, LevelID_[level]);
       SmootherOptionsPtr = List_.get(parameter, SmootherOptionsPtr);
@@ -199,23 +264,100 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 			   aztec_its, pre_or_post, NULL);
       
     } else if( Smoother == "IFPACK" ) {
+
+      // ====== //
+      // IFPACK //
+      // ====== //
+
       if( verbose_ ) cout << msg << "IFPACK" << ","
 			 << PreOrPostSmoother << endl;
       // get ifpack options from list ??? pass list ???
       ML_Gen_Smoother_Ifpack(ml_, LevelID_[level], pre_or_post, NULL, NULL);
+
+    } else if( Smoother == "ParaSails" ) {
+
+#ifdef HAVE_ML_PARASAILS
+      // ========= //
+      // ParaSails //
+      // ========= //
+
+      sprintf(parameter,"%ssmoother: ParaSails levels (level %d)",
+	      Prefix_, level);
+      ParaSailsN = List_.get(parameter,ParaSailsN);
+
+      sprintf(parameter,"%ssmoother: ParaSails matrix (level %d)",
+	      Prefix_, level);
+      ParaSailsSym = List_.get(parameter,ParaSailsSym);
+
+      sprintf(parameter,"%ssmoother: ParaSails threshold (level %d)",
+	      Prefix_, level);
+      ParaSailsThresh = List_.get(parameter,ParaSailsThresh);
+
+      sprintf(parameter,"%ssmoother: ParaSails filter (level %d)",
+	      Prefix_, level);
+      ParaSailsFilter = List_.get(parameter,ParaSailsFilter);
+
+      sprintf(parameter,"%ssmoother: ParaSails load balancing (level %d)",
+	      Prefix_, level);
+      ParaSailsLB = List_.get(parameter,ParaSailsLB);
+
+      sprintf(parameter,"%ssmoother: ParaSails factorized (level %d)",
+	      Prefix_, level);
+      ParaSailsFactorized = List_.get(parameter,ParaSailsFactorized);
+
+      if( verbose_ ) 
+	cout << msg << "ParaSails "
+	     << "(n=" << ParaSailsN
+	     << ",sym=" << ParaSailsSym 
+	     << ",thresh=" << ParaSailsThresh 
+	     << ",filter=" << ParaSailsFilter 
+	     << ",lb=" << ParaSailsLB
+	     << ")" << endl;
+      
+      // I am not sure about the ending `0' and of ML
+      ML_Gen_Smoother_ParaSails(ml_, LevelID_[level], 
+				pre_or_post, num_smoother_steps,
+				ParaSailsSym, ParaSailsThresh,
+				ParaSailsN,
+				ParaSailsFilter, (int)ParaSailsLB, 
+				ParaSailsFactorized);
+#else
+      cerr << ErrorMsg_ << "ParaSails not available." << endl
+	   << ErrorMsg_ << "ML must be configure with --with-ml_parasails" << enld
+	   << ErrorMsg_ << "to use ParaSails as a smoother" << endl
+	   << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
+#endif
+
     } else if( Smoother == "do-nothing" ) {
+
+      // ======================== //
+      // do-nothing (no smoother) //
+      // ======================== //
+
       if( verbose_ ) cout << msg << "do-nothing smoother" << endl;
+
     } else {
+
+      // ======================================= //
+      // error: no smoother found with this name //
+      // ======================================= //
+
       if( ProcConfig_[AZ_node] == 0 )
 	cerr << ErrorMsg_ << "Smoother not recognized!" << endl
 	     << ErrorMsg_ << "(file " << __FILE__ << ",line " << __LINE__ << ")" << endl
 	     << ErrorMsg_ << "Now is: " << Smoother << ". It should be: " << endl
-	     << ErrorMsg_ << "<Jacobi> / <Gauss-Seidel> / <block Gauss-Seidel> / <MLS>" << endl
-	     << ErrorMsg_ << "<symmetric Gauss-Seidel> / <Aztec> / <IFPACK>" << endl;
+	     << ErrorMsg_ << "<Jacobi> / <Gauss-Seidel> / <block Gauss-Seidel>" << endl
+	     << ErrorMsg_ << "<symmetric Gauss-Seidel> / <Aztec> / <IFPACK>" << endl
+	     << ErrorMsg_ << "<MLS> / <ParaSails>" << endl;
       exit( EXIT_FAILURE );
     }
     
+    if( verbose_ ) 
+      cout << msg << "Setup time : " << Time.ElapsedTime() << " (s)" << endl;
+    
   } /* for */
+
+  if(  verbose_ ) cout << endl;
 
   return;
 }
