@@ -65,7 +65,7 @@ static int RCB_CHECK = 1;
 /*  RCB_OUTPUT_LEVEL = 0  No statistics logging */
 /*  RCB_OUTPUT_LEVEL = 1  Log times and counts, print summary */
 /*  RCB_OUTPUT_LEVEL = 2  Log times and counts, print for each proc */
-static int RCB_OUTPUT_LEVEL = 1;
+static int RCB_OUTPUT_LEVEL = 0;
 
 
 /*  Parameters structure for RCB method.  Used in  */

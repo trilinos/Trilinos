@@ -52,7 +52,7 @@ static int IRB_CHECK = 1;
 /*  IRB_OUTPUT_LEVEL = 0  No statistics logging */
 /*  IRB_OUTPUT_LEVEL = 1  Log times and counts, print summary */
 /*  IRB_OUTPUT_LEVEL = 2  Log times and counts, print for each proc */
-static int IRB_OUTPUT_LEVEL = 1;
+static int IRB_OUTPUT_LEVEL = 0;
 
 /*  Parameters structure for IRB method.  Used in  */
 /*  LB_Set_IRB_Param and LB_IRB.                      */
