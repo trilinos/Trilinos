@@ -27,6 +27,7 @@
 
 class Epetra_MultiVector;
 class Epetra_BlockMap;
+class Epetra_Comm;
 
 //! Epetra_Operator: A pure virtual class for using real-valued double-precision operators.
 /*! The Epetra_Operator class is a pure virtual class (specifies interface only) that 
