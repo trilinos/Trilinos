@@ -1,0 +1,35 @@
+#!/bin/sh
+#
+#
+#   Usage: etc/change_cvsroot old_string new_string
+#
+#       Look for occurrences of 'old_string' in all files 
+#       called Root within the ml directory tree and change
+#       them to 'new_string'
+#
+#       Note: this command should be issued from the ml directory
+#
+if test $# -ge 3
+then
+  echo
+  echo "Usage: etc/change_cvsroot old_string new_string"
+  exit
+fi
+if test $# -le 1
+then
+  echo
+  echo "Usage: etc/change_cvsroot old_string new_string"
+  exit
+fi
+ttt=`pwd | sed "s,.*/,," | grep ml | wc| sed "s/^ *//" | sed "s/ .*//"`
+if test $ttt -ne 1
+then
+   echo
+   echo "Command must be executed from ml directory"
+   echo "That is ==>"
+   echo "       cd .."
+   echo "       etc/change_cvsroot old_string new_string"
+   exit
+fi
+
+find . -name Root -exec etc/cvsroot_util {} $1 $2 \;

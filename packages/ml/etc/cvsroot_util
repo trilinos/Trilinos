@@ -1,0 +1,5 @@
+#!/bin/sh
+# 
+\rm -f .cvsroot_temp
+sed "s,$2,$3," $1 > .cvsroot_temp
+mv .cvsroot_temp $1
