@@ -5,10 +5,10 @@
 C_comp		= cc -DHTEST -DZOLTAN_NO_MPI
 
 # Assume that environment OSTYPE is set to 'solaris' or 'linux'!
-# OSTYPE        = solaris
+ OSTYPE        = solaris
 # OSTYPE        = linux
-#C_flag_solaris  = -fast
-C_flag_linux    = -g -Wall
+C_flag_solaris  = -fast
+#C_flag_linux    = -g -Wall
 
 # Use to switch off time measurement
 DTIME		= -DWITHTIME

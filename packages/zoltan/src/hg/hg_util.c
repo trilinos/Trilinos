@@ -678,6 +678,32 @@ int num_ewgt;
   }
 }
 
+/****************************************************************************/
+
+/*  Random Number generator due to Knuth found in Numerical Recipes in C
+   (2nd edition) by Press, Vetterling, Teukolsky, Flannery (Page 284.)
+   For use in the hypergraph library only. Needed because different
+   random number implimentations on different machines produced different
+   answers! Hence a single portable, fast, adequate random number
+   generation is required. */
+
+
+static unsigned long idum = 123456789 ;
+
+unsigned long hg_rand (void)
+   {
+   return idum = 1664525L * idum + 1013904223L ;
+   }
+
+void hg_srand (unsigned long seed)
+   {
+   idum = seed ;
+   }
+
+
+
+
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

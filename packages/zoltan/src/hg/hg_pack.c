@@ -33,13 +33,6 @@ static ZOLTAN_HG_PACKING_FN packing_aug3; /* augmenting path; length 3 */
 
 int Zoltan_HG_Set_Packing_Fn(HGPartParams *hgp)
 {
-  static int srand_set = 0;
-
-  if (srand_set == 0)
-  { srand_set = 1 ;
-    srand ((unsigned long) RANDOM_SEED) ;
-  }
-
   if      (!strcasecmp(hgp->redm_str, "mxp"))  hgp->packing = packing_mxp;
   else if (!strcasecmp(hgp->redm_str, "rep"))  hgp->packing = packing_rep;
   else if (!strcasecmp(hgp->redm_str, "rrp"))  hgp->packing = packing_rrp;
@@ -139,7 +132,7 @@ static int packing_rep (ZZ *zz, HGraph *hg, Packing pack, int *limit)
     pack[i]  = i ;
 
   for (i = hg->nEdge ; i > 0 && (*limit) > 0; i--)
-  { edge = edges[random=rand()%i] ;
+  { edge = edges[random=hg_rand()%i] ;
     edges[random] = edges[i-1] ;
 
     for (j = hg->hindex[edge] ; j < hg->hindex[edge+1] ; j++)
@@ -176,7 +169,7 @@ static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
     vertices[i] = pack[i] = i ;
 
   for (i = hg->nVtx ; i > 0 && (*limit) > 0; i--)
-  { vertex = vertices[random=rand()%i] ;
+  { vertex = vertices[random=hg_rand()%i] ;
     vertices[random] = vertices[i-1] ;
     if (pack[vertex] != vertex)
       continue ;          /* vertex already packed, move on */
@@ -198,7 +191,7 @@ static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
     if (count == 0)
       continue ;                  /* vertex has no free edges available */
 
-    random = rand() % count;      /* randomly select from available edges */
+    random = hg_rand() % count;      /* randomly select from available edges */
     for (k = hg->vindex[vertex] ; k < hg->vindex[vertex+1] ; k++)
     { edge = hg->vedge[k] ;
       if (del_edges[edge] == 0 && --count == random)
@@ -238,7 +231,7 @@ static int packing_rhp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
    for (i = hg->nVtx ; i > 0 && (*limit) > 0 ; i--)
       {
-      vertex = vertices[number=rand()%i] ;
+      vertex = vertices[number=hg_rand()%i] ;
       vertices[number] = vertices[i-1] ;
       if (pack[vertex] != vertex)
          continue ;            /* vertex is already matched, move on */
@@ -270,7 +263,7 @@ static int packing_rhp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
       if (best_neighbors > 1)
          {
-         random = rand() % best_neighbors;
+         random = hg_rand() % best_neighbors;
          for (j = hg->vindex[vertex] ; j < hg->vindex[vertex+1] ; j++)
             {
             edge = hg->vedge[j] ;

@@ -120,13 +120,7 @@ static int global_ran (
 )
 { 
   int i, ierr, number, temp, *order=NULL;
-  static int srand_set=0;
   char *yo = "global_ran" ;
-
-  if (srand_set == 0)
-  { srand_set = 1 ;
-    srand ((unsigned long) RANDOM_SEED) ;
-  }
 
   if (!(order  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
   { ZOLTAN_FREE ((void **) &order) ;
@@ -138,7 +132,7 @@ static int global_ran (
 
   /* Randomly permute order array */
   for (i=hg->nVtx; i>0; i--)
-  { number=rand()%i;
+  { number=hg_rand()%i;
     temp = order[number];
     order[number] = order[i-1];
     order[i-1] = temp;
@@ -165,14 +159,10 @@ static int global_bfs (
 )
 { 
   int i, ierr, start, *order=NULL;
-  static int srand_set = 0;
   static int bfs_order();
   char *yo = "global_bfs" ;
 
-  if (srand_set == 0)
-  { srand_set = 1 ;
-    srand ((unsigned long) RANDOM_SEED) ;
-  }
+
 
   if (!(order  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
   { ZOLTAN_FREE ((void **) &order) ;
@@ -181,7 +171,7 @@ static int global_bfs (
   }
 
   /* Find pseudo-peripheral start vertex */
-  start = rand()%(hg->nVtx);
+  start = hg_rand()%(hg->nVtx);
   for (i=0; i<2; i++){
     ierr = bfs_order(zz, hg, order, &start, NULL, NULL, NULL);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
@@ -348,13 +338,7 @@ static int global_bfsr (
   int i, j, number, start, index, old_index, *rank, *order;
   int ierr = ZOLTAN_OK;
   float weight_sum = 0.0, cutoff;
-  static int srand_set = 0;
   char *yo = "global_bfsr" ;
-
-  if (srand_set == 0)
-  { srand_set = 1 ;
-    srand ((unsigned long) RANDOM_SEED) ;
-  }
 
   if ((!(order  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx))) ||
       (!(rank   = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))) {
@@ -375,7 +359,7 @@ static int global_bfsr (
     printf("GLOBAL_PART weight_sum:%f\n",weight_sum);
 
   /* Find pseudo-peripheral start vertex */
-  start = rand()%(hg->nVtx);
+  start = hg_rand()%(hg->nVtx);
   for (j=0; j<2; j++){
     ierr = bfs_order(zz, hg, order, &start, NULL, NULL, NULL);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)

@@ -107,6 +107,8 @@ int main (int argc, char **argv)
   memory_graph = Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL);
   printf("Initial Memory: %d %d\n", memory_graph,
          Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM) );
+  printf ("local %s, global %s, redl %d\n", hgp.local_str, hgp.global_str, hgp.redl) ;
+
   if (Zoltan_HG_Info (&zz,&hg))
     return 1;
   if (Zoltan_HG_Check (&zz,&hg))
@@ -128,6 +130,11 @@ int main (int argc, char **argv)
 /* free hypergraph */
   if (Zoltan_HG_HGraph_Free (&hg))
     return 1;
+  if (Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL) > 0)
+  { printf("ERROR: remaining memory: %d\n",Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL));
+    return 1;
+
+  }
 
   ADD_NEW_TIME(t_rest);
   END_TIME();
@@ -141,3 +148,4 @@ int main (int argc, char **argv)
 
   return 0;
 }
+

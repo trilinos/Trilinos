@@ -31,15 +31,6 @@ static ZOLTAN_HG_GROUPING_FN grouping_aug3; /* augmenting path; length 3 */
 
 int Zoltan_HG_Set_Grouping_Fn(HGPartParams *hgp)
 {
-  static int srand_set = 0;
-
-  if (srand_set == 0)
-     {
-     srand_set = 1 ;
-     srand ((unsigned long) RANDOM_SEED) ;
-     }
-
-
   if      (!strcasecmp(hgp->redm_str, "mxg"))  hgp->grouping = grouping_mxg;
   else if (!strcasecmp(hgp->redm_str, "reg"))  hgp->grouping = grouping_reg;
   else if (!strcasecmp(hgp->redm_str, "rrg"))  hgp->grouping = grouping_rrg;
@@ -143,7 +134,7 @@ static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
    for (i = hg->nEdge ; i > 0 && (*limit)>0 ; i--)
       {
-      random = rand() % i ;
+      random = hg_rand() % i ;
       edge = edges[random] ;
       edges[random] = edges[i-1] ;
 
@@ -182,7 +173,7 @@ static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
    for (i = hg->nVtx ; i > 0 && (*limit)>0; i--)
       {
-      random = rand() % i ;
+      random = hg_rand() % i ;
       vertex = vertices[random] ;
       vertices[random] = vertices[i-1] ;
       if (pack[vertex] != vertex)
@@ -192,7 +183,7 @@ static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
       if (count == 0)
          continue ;
 
-      edge = hg->vedge[hg->vindex[vertex] + (rand() % count)] ;  /* random edge */
+      edge = hg->vedge[hg->vindex[vertex] + (hg_rand() % count)] ;  /* random edge */
       for (j = hg->hindex[edge] ; j < hg->hindex[edge+1] ; j++)
          if (pack[hg->hvertex[j]] == hg->hvertex[j])
             {
@@ -233,7 +224,7 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
    for (i = hg->nVtx ; i > 0 && (*limit)>0 ; i--)
       {
-      number = rand() % i ;
+      number = hg_rand() % i ;
       vertex = vertices[number] ;
       vertices[number] = vertices[i-1] ;
       if (pack[vertex] != vertex)
@@ -267,7 +258,7 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
       if (best_neighbors > 1)
          {
-         random = rand() % best_neighbors;
+         random = hg_rand() % best_neighbors;
          for (j = hg->vindex[vertex] ; j < hg->vindex[vertex+1] ; j++)
             {
             edge = hg->vedge[j] ;
