@@ -6348,4 +6348,5 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    ML_free(dk);
    ML_free(res);
    ML_free(pAux);
+   return 0;
 }
