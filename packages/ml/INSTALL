@@ -12,6 +12,9 @@ or
      b) edit install_options
      c) ml_install install_options
 
+
 If these scripts don't work, tooo bad. There are some comments given
 in the top of 'installer' for doing things manually.
+
+
 
