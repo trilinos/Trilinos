@@ -10,13 +10,12 @@
  *    $Date$
  *    $Revision$
  ****************************************************************************/
+#include "zz_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include "zz_const.h"
 
 #define COPY_BUFFER(buf, type, num) \
   if (from->buf) { \
@@ -55,6 +54,10 @@ int proc = fromZZ->Proc;
   struct Zoltan_LB_Struct *from = &(fromZZ->LB);
 
   Zoltan_LB_Free_Struct(&(toZZ->LB));
+
+  if (!from){
+    return ZOLTAN_OK;
+  }
 
   COPY_FIELD(Part_Info_Len);
   COPY_FIELD(Part_Info_Max_Len);
@@ -109,6 +112,10 @@ int proc = fromZZ->Proc;
 void Zoltan_Migrate_Copy_Struct(struct Zoltan_Migrate_Struct *to, 
                                 struct Zoltan_Migrate_Struct *from)
 {
+  if (!from || !to){
+    return;
+  }
+
   COPY_FIELD(Auto_Migrate);
   COPY_FIELD(Only_Proc_Changes);
   COPY_FIELD(Pre_Migrate_PP );
