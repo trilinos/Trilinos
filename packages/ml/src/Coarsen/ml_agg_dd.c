@@ -39,6 +39,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    double  epsilon, *nullspace_vect=NULL, *qr_tmp=NULL;
    double  *tmp_vect=NULL, *work=NULL, *new_null=NULL;
    int     (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
+   void    *getrowdata;
    struct ML_CSR_MSRdata *csr_data;
    ML_Aggregate_Comm     *aggr_comm;
    ML_GetrowFunc         *getrow_obj;
@@ -77,8 +78,14 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    /* ============================================================= */
 
    getrow_obj = Amatrix->getrow;
-   if (getrow_obj->ML_id == ML_EXTERNAL) getrowfunc = getrow_obj->external;
-   else                                  getrowfunc = getrow_obj->internal;
+   if (getrow_obj->ML_id == ML_EXTERNAL) {
+     getrowfunc = getrow_obj->external;
+     getrowdata = Amatrix->data;
+   }
+   else {
+     getrowfunc = getrow_obj->internal;
+     getrowdata = (void *) Amatrix;
+   }
    if ( getrowfunc == NULL )
    {
       printf("ML_Aggregate_DomainDecomp ERROR : null getrowfunc.\n");
@@ -110,7 +117,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    for ( i = 0; i < Nrows; i++ )
    {
       diagonal[i]     = 0.0;
-      while (getrowfunc(Amatrix->data,1,&i,maxnnz_per_row,col_ind,
+      while (getrowfunc(getrowdata,1,&i,maxnnz_per_row,col_ind,
                         col_val, &m) == 0 )
       {
          ML_memory_free((void**) &col_ind);
@@ -167,7 +174,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    mat_indx[0] = nz_cnt;
    for ( i = 0; i < Nrows; i++ )
    {
-      getrowfunc(Amatrix->data,1,&i,maxnnz_per_row,col_ind,col_val,&m);
+      getrowfunc(getrowdata,1,&i,maxnnz_per_row,col_ind,col_val,&m);
       length = 0;
       for (j = 0; j < m; j++)
       {
