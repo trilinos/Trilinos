@@ -138,7 +138,62 @@ namespace Tpetra
   template<typename OrdinalType, typename ScalarType>
   void BLAS<OrdinalType, ScalarType>::GEMM(char transa, char transb, int m, int n, int k, ScalarType alpha, ScalarType* a, int lda, ScalarType* b, int ldb, ScalarType beta, ScalarType* c, int ldc)
   {
-    std::cout << "Warning: default BLAS::GEMM() not yet implemented" << std::endl;
+    std::cout << "Warning: default BLAS::GEMM() still experimental" << std::endl;
+    int incra, incca, incrb, inccb;
+    if (transa=='N')
+      {
+	incra = lda; 
+	incca = 1;
+      }
+    else
+      {
+	incca = lda; 
+	incra = 1;
+      }
+    if (transb=='N')
+      {
+	incrb = ldb; 
+	inccb = 1;
+      }
+    else
+      {
+	inccb = ldb; 
+	incrb = 1;
+      }
+    ScalarType* curC = c;
+    ScalarType* curB = b;
+    ScalarType* curA = a;
+    ScalarType zero = ScalarTraits<ScalarType>::zero();
+    ScalarType one =  ScalarTraits<ScalarType>::one();
+    if (beta==zero) 
+      for (int i=0; i<m; i++) 
+	c[i] = zero;
+    else 
+      for (int i=0; i<m; i++) 
+	c[i] *= beta;
+    
+    for (int i=0; i<m; i++)
+      {
+	for (int j=0; j<n; j++)
+	  {
+	    ScalarType* tmpB = curB;
+	    ScalarType* tmpA = curA;
+	    ScalarType  tmpC = zero;
+	    for (int l=0; l<k; l++)
+	      {
+		tmpC += (*tmpA) * (*tmpB); // Note: This is not optimal.  work on it later
+		tmpA += incra;
+		tmpB += inccb;
+	      }
+	    *curC += alpha * tmpC;
+	    curC += ldc;
+	    curB += incrb;
+	  }
+	curA += incca;
+	curB = b;
+	curC = c+i+1;
+      }
+    return;
   }
   
   template<typename OrdinalType, typename ScalarType>
