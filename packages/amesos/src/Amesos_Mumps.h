@@ -66,37 +66,52 @@ extern "C" {
 #endif
 }
 
-//! Amesos_Mumps:  An object-oriented wrapper for Mumps.
-/*!  Amesos_Mumps will solve a linear systems of equations: <TT>A X = B</TT>
-   using Epetra objects and the Mumps solver library, where
-  <TT>A</TT> is an Epetra_RowMatrix and <TT>X</TT> and <TT>B</TT> are 
-  Epetra_MultiVector objects.
+//! Amesos_Mumps:  An object-oriented wrapper for CERFACS' MUMPS.
+/*!  Amesos_Mumps is an interface to the CERFACS' sparse parallel direct
+  solver MUMPS.  Given an Epetra_RowMatrix A, and two
+  Epetra_MultiVectors X and B, the solution with Amesos_Mumps reads as
+  follows:
 
-  Mumps execution can be tuned through a variety of parameters.
-  Amesos_Mumps.h allows control of these parameters through the
-  following named parameters, ignoring parameters with names that it
-  does not recognize.  Where possible, the parameters are common to
-  all direct solvers (although some may ignore them).  However, some
-  parameters, in particular tuning parameters, are unique to each
-  solver.
+  -# Epetra_LinearProblem Problem; Amesos_BaseSolver *
+  Solver; Amesos Amesos_Factory;
+  -# Solver = Amesos_Factory.Create("Amesos_Mumps", Problem);
+  -# if( Solver == 0 ) cerr << "library not available" << endl;
+  -# Problem.SetMatrix(&A);
+  -# Solver->SymbolicFactorization();
+  -# Solver->NumericFactorization();
+  -# Problem.SetLHS(&X);
+  -# Problem.SetLHS(&B);
+  -# Solver->Solve();
+  
+  A number of parameters is available to tune the performances of
+  MUMPS. We refer to the Amesos Reference Guide for a detailed overview
+  of these parameters. Here, we just recall that it is possible to solve
+  the linear system on a subset of the processes contained in the Comm
+  object of the Epetra_LinearProblem.
 
-  MUMPS will not perform column permutation on a matrix provided
-  in distributed form.  Amesos_Mumps will match this, allowing
-  column permutation only if the matrix is provided in serial form.
-  This is unfortunate because it is an exception to the general rule
-  that the capability (given adequate memory) of any class
-  implementing the Amesos_BaseSolver base class does not depend on
-  the distribution of the input matrix.  However, neither of the
-  other options are attractive.  Coalescing the matrix to a single
-  process independent of whether column permutation is requested
-  unnecessarily limits the size problem that can be solved.
-  Coalescing the matrix to a single process only when column
-  permutation is requested would cause some problems to run out of memory
-  when column permutation is requested.
+  Amesos_Mumps accepts any Epetra_RowMatrix derived class. However,
+  special functions are available for Epetra_CrsMatrix and
+  Epetra_VbrMatrix objects.
 
+  The single-precision version of MUMPS can be used by enabling the
+  option \c --enable-amesos-smumps.  Note that this option overwrites
+  --enable-amesos-mumps.  The choice between single-precision and
+  double-precision must be done at configuration (and compilation)
+  time.
 
-  \Note This class should be used with MUMPS 4.3 or 4.3.1 (never tested
-  with older versions of MUMPS, and developed with 4.3.1).
+  As Amesos is based on Epetra, and Epetra is only double-precision, we
+  still require an Epetra_LinearProblem composed by a double-precision
+  matrix, and two double-precision vectors. The solution vector is
+  casted to \c double after solution. Single precision may be of
+  interest if Amesos is used with ML, to solve the coarse problem (for
+  which single-precision can be enough in term of numerical error, and
+  usually save memory and CPU time).
+
+  Amesos_Mumps is based on Amesos_EpetraBaseSolver, that is derived from
+  Amesos_BaseSolver. The main redistribution utilities, as well as a
+  getrow function, is obtained by EpetraBaseSolver.
+  
+  \warning This interface has been developed with MUMPS 4.3.1.
 
   \author Marzio Sala, 9214
   
@@ -108,16 +123,12 @@ public:
   //@{ \name Constructor methods
   //! Amesos_Mumps Constructor.
   /*! Creates an Amesos_Mumps instance, using an Epetra_LinearProblem,
-      passing in an already-defined Epetra_LinearProblem object. 
-
-      Note: The operator in LinearProblem must be an
-      Epetra_RowMatrix.
-
+    
   */
   Amesos_Mumps(const Epetra_LinearProblem& LinearProblem);
 
   //! Amesos_Mumps Destructor.
-  /*! Completely deletes an Amesos_Mumps object.  
+  /*! Deletes an Amesos_Mumps object.  
   */
   ~Amesos_Mumps(void);
   //@}
@@ -130,95 +141,86 @@ public:
       the call to SymbolicFactorization() implies that no change will
       be made to the non-zero structure of the underlying matrix without 
       a subsequent call to SymbolicFactorization().
+
+      At this point, the numerical values of A are not required.
       
-      preconditions:<ul>
-      <li>GetProblem().GetOperator() != 0 (return -1)
-      </ul>
-
-      postconditions:<ul>
-      <li>Symbolic Factorization will be performed (or marked to be performed) 
-      allowing NumericFactorization() and Solve() to be called.
-      <li>MDS will be modified to reflect the symbolic factorization 
-      which has been performed.
-      </ul>
-
     \return Integer error code, set to 0 if successful.
   */
-    int SymbolicFactorization() ;
+  int SymbolicFactorization() ;
 
     //! Performs NumericFactorization on the matrix A.
-    /*!  In addition to performing numeric factorization (and symbolic
-      factorization if necessary) on the matrix A, the call to
-      NumericFactorization() implies that no change will be made to
-      the underlying matrix without a subsequent call to
-      NumericFactorization().  
+    /*! Performs the numeric factorization (and symbolic factorization
+      if necessary) on the matrix A. It is supposed that the structure
+      of the matrix A has not changed since the previous call the
+      SymbolicFactorization() (if any).
 
-      preconditions:<ul>
-      <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>The non-zero structure of the matrix should not have changed
-          since the last call to SymbolicFactorization().  
-      <li>The distribution of the matrix should not have changed 
-          since the last call to SymbolicFactorization()
-      </ul>
-
-      postconditions:<ul>
-      <li>Numeric Factorization will be performed (or marked to be performed) 
-      allowing Solve() to be performed correctly despite a potential change in 
-      in the matrix values (though not in the non-zero structure).
-      <li>MDS will be modified to reflect the numeric factorization 
-      which has been performed.
-      </ul>
-
+      At this point, LHS and RHS of the Epetra_LinearProblem are not required.
      \return Integer error code, set to 0 if successful.
   */
-    int NumericFactorization() ;
+  int NumericFactorization() ;
 
     //! Solves A X = B (or A<SUP>T</SUP> x = B) 
-    /*! 
+    /*! Solve the linear system for all vectors contained in the
+      Epetra_MultiVector RHS(), and store the solution in LHS().
 
-      preconditions:<ul>
-      <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for return values)
-      <li>The non-zero structure of the matrix should not have changed
-          since the last call to SymbolicFactorization().
-      <li>The distribution of the matrix should not have changed 
-          since the last call to SymbolicFactorization()
-      <li>The matrix should not have changed
-          since the last call to NumericFactorization().
-      </ul>
-
-      postconditions:<ul> 
-      <li>X will be set such that A X = B (or
-      A<SUP>T</SUP> X = B), within the limits of the accuracy of the
-      underlying solver.  
-      </ul>
-
+      By default, Solve() will solve the problem with A, and not with
+      A<SUP>T</SUP>.  Users can solve the problem with A<SUP>T</SUP> by
+      creating a Teuchos::ParameterList (say, AmesosList), set
+      AmesosList.set("UseTranspose",true), and calling
+      SetParameters(AmesosList).
+      
      \return Integer error code, set to 0 if successful.
   */
-    int Solve();
+  int Solve();
 
+  //! Destroys all data associated with \sl this object.
   void Destroy();
+  
+  //  char * Label() const {return(Epetra_Object::Label());};
+
+  //! If set true, solve the problem with A<SUP>T</SUP>
+  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+  
+  //! Returns the current UseTranspose setting.
+  bool UseTranspose() const {return(UseTranspose_);};
+
+  //! Sets parameters for \sl this object from input list
+  /*! Sets all the parameters for \sl this object, retriving them form
+    the input Teuchos::ParameterList. This call can modify the input
+    list; default values (not found in the list) are added. For a
+    detailed overview of the available parameters, please refer to the
+    Amesos Reference Guide (in \c
+    Trilinos/packages/amesos/doc/AmesosReferenceGuide/AmesosReferenceGuide.pdf).
+  */
+  int SetParameters(Teuchos::ParameterList &ParameterList );
   
   //@}
 
-#if 0
-  //! Returns a character string describing the operator
-  char * Label() const {return(Epetra_Object::Label());};
-#endif
-    
-  //! Returns true if MUMPS can handle this matrix shape 
-  /*! Returns true if the matrix shape is one that MUMPS can
-    handle. MUMPS only works with square matrices.  
-  */
+  //@{ \name Print functions
+  
+  //! Prints timing information.
+  /*! In the destruction phase, prints out detailed information about
+    the various phases: symbolic and numeric factorization, solution,
+    gather/scatter for vectors and matrices.
+   */
+  void PrintTiming();
+  
+  //! Prints information about the factorization and solution phases.
+  /*! In the destruction phase, prints out some information furnished by
+    MUMPS, like the amount of required memory, the MFLOPS.
+   */
+  void PrintStatus();
 
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+  //@}
 
+  //@{ \name MUMPS' specify functions
 
+  
   //! Returns the Schur complement matrix as an Epetra_CrsMatrix.
   /*! Returns the (dense) Schur complement matrix as an Epetra_CrsMatrix. This
       matrix is defined on all the processes in the Epetra Communicator. However,
       it has rows on the host process only.
-      If \in flag : if \c true, MUMPS will compute the Schur complement matrix,
+      If \In flag : if \c true, MUMPS will compute the Schur complement matrix,
       with respect to the (global) rows defined in the integer array
       \c SchurComplementRows, of size \c NumSchurComplementRows.
       Those two arrays are defined on the host only.
@@ -242,17 +244,14 @@ public:
   */
   Epetra_SerialDenseMatrix * GetDenseSchurComplement();
   
-  //! Returns the current UseTranspose setting.
-  bool UseTranspose() const {return(UseTranspose_);};
-
-  int SetParameters(Teuchos::ParameterList &ParameterList );
   
-  //@}
-
   //! Set prescaling.
   /*! Use double precision vectors of size N (global dimension of the matrix) as
       scaling for columns and rows. \c ColSca and \c RowSca must be defined on the host
       only, and allocated by the user, if the user sets ICNTL(8) = -1.
+
+      Both input vectors are \c float with --enable-amesos-smumps, \c double otherwise.
+      
   */
   int SetPrecscaling(AMESOS_TYPE * ColSca, AMESOS_TYPE * RowSca )
   {
@@ -261,19 +260,31 @@ public:
     return 0;
   }
 
+  //! Set row scaling
+  /*! Use double precision vectors of size N (global dimension of the matrix) for row
+      scaling.
+
+      \param \In RowSca: \c float pointer with --enable-amesos-smumps, \c double pointer otherwise.
+  */
   int SetRowScaling(AMESOS_TYPE * RowSca )
   {
     RowSca_ = RowSca;
     return 0;
   }
 
+  //! Set column scaling
+  /*! Use double precision vectors of size N (global dimension of the matrix) for column
+      scaling.
+
+      \param \in ColSca: \c float pointer with --enable-amesos-smumps, \c double pointer otherwise.
+  */
   int SetColScaling(AMESOS_TYPE * ColSca )
   {
     ColSca_ = ColSca;
     return 0;
   }
 
-  //! Set ordering.
+  //! Sets ordering.
   /*! Use integer vectors of size N (global dimension of the matrix) as
       given ordering. \c PermIn must be defined on the host
       only, and allocated by the user, if the user sets ICNTL(7) = 1.
@@ -284,193 +295,174 @@ public:
     return 0;
   }
 
+  //! Sets the Maxis value (see MUMPS' manual)
   int SetMaxis(int Maxis)
   {
     Maxis_ = Maxis;
     return 0;
   }
 
+  //! Sets the Maxs value (see MUMPS' manual)
   int SetMaxs( int Maxs) 
   {
     Maxs_ = Maxs;
     return 0;
   }
 
-  //! Get the pointer to the RINFO array (defined on all processes).
+  //! Gets the pointer to the RINFO array (defined on all processes).
+  /*! Gets the pointer to the internally stored RINFO array, of type \c
+    float if option \c --enable-amesos-smumps is enabled, \c double
+    otherwise.
+   */
   AMESOS_TYPE * GetRINFO() 
   {
     return (MDS.rinfo);
   }
 
-  //! Get the pointer to the INFO array (defined on all processes).
+  //! Gets the pointer to the INFO array (defined on all processes).
+  /*! Gets the pointer to the internally stored INFO array, of type \c int.
+   */
   int * GetINFO() 
   {
     return (MDS.info);
   }
 
-  //! Get the pointer to the RINFOG array (defined on host only).
+  //! Gets the pointer to the RINFOG array (defined on host only).
+  /*! Gets the pointer to the internally stored RINFOG array (defined on
+    the host process only), of type \c float if option \c
+    --enable-amesos-smumps is enabled, \c double otherwise.
+   */
   AMESOS_TYPE * GetRINFOG()
   {
     return (MDS.rinfog);
   }
 
   //! Get the pointer to the INFOG array (defined on host only).
+  /*! Gets the pointer to the internally stored INFOG (defined on the
+    host process only) array, of type \c int.
+   */
   int * GetINFOG()
   {
     return (MDS.infog);
   }
 
-  //! Copy the input array into the internally stored ICNTL array.
+  //! Copies the input array (of size 40) into the internally stored ICNTL array.
   int SetICNTL(int * ictnl);
 
   //! Set ICNTL[pos] to value. pos is expressed in FORTRAN style (starting from 1).
   int SetICNTL(int pos, int value);
 
-  //! Copy the input array into the internally stored CNTL array.
+  //! Copy the input array (of size 5) into the internally stored CNTL array.
   int SetCNTL(double * ctnl);
 
   //! Set CNTL[pos] to value. pos is expressed in FORTRAN style (starting from 1).
   int SetCNTL(int pos, double value);
 
-  //! Print timing information
-  void PrintTiming();
-  
-  //! Print information about the factorization and solution phases.
-  void PrintStatus();
-
   void SetUseMpiCommSelf() {
     UseMpiCommSelf_ = true;
   }
 
+  //@}
+  
 protected:
   
-  /*
-    ConvertToTriplet - Convert matrix to form expected by Mumps: Row, Col, Val
-    Preconditions:
-      numentries_, NumGloalElements_ and SerialMatrix_ must be set.
-    Postconditions:
-      Row, Col, Val are resized and populated with values that reflect
-      the input matrix A.
-
-  */
+  //! Converts to MUMPS format (COO format).
   int ConvertToTriplet();     
-  int ConvertToTripletValues();
-  /*
-    PerformSymbolicFactorization - Call Mumps to perform symbolic factorization
-    Preconditions:
-      Row, Col and Val must be set
 
-    Postconditions:
-      MDS will be modified to reflect the symbolic factorization 
-      which has been performed.
-      SymbolicFactorizationOK_ = true; 
-    Note:  All action is performed on process 0
-  */
-      
+  //! Converts to MUMPS format (for the values only).
+  int ConvertToTripletValues();
+
+  //! Performs the symbolic factorization.      
   int PerformSymbolicFactorization(); 
 
-  /*
-    PerformNumericFactorization - Call Mumps to perform numeric factorization
-    Preconditions:
-      IsLocal must be set to 1 if the input matrix is entirely stored on process 0
-      Row, Col and Val must be set
-    Postconditions:
-      MDS will be modified to reflect the numeric factorization 
-      which has been performed.
-      NumericFactorizationOK_ = true; 
-    Note:  All action is performed on process 0
-  */
+  //! Performs the numeric factorization
   int PerformNumericFactorization(); 
 
+  //! Checks for MUMPS error, prints them if any. See MUMPS' manual.
   void CheckError();
 
+  //! Check input parameters.
   void CheckParameters();
   
   void SetICNTLandCNTL();
 
+  //! Redistributed input matrix over the specified number of processes.
   void RedistributeMatrix(const int NumProcs);
 
+  //! Redistributed matrix values over the specified number of processes.
   void RedistributeMatrixValues(const int NumProcs);
   
-  bool SymbolicFactorizationOK_;   // True if SymbolicFactorization has been done
-  bool NumericFactorizationOK_;    // True if NumericFactorization has been done
-  bool IsConvertToTripletOK_;
-  bool IsComputeSchurComplementOK_;
-  bool UseMpiCommSelf_;
+  bool SymbolicFactorizationOK_;   //! \c true if SymbolicFactorization has been done
+  bool NumericFactorizationOK_;    //! \c true if NumericFactorization has been done
+  bool IsConvertToTripletOK_;      //! \c true if matrix has already been converted to COO format
+  bool IsComputeSchurComplementOK_; //! \c true if the Schur complement has been computed (need to free memory)
+  bool UseMpiCommSelf_;            //! \c true if only local entries must be considered
 
-  // AMESOS_SMUMPS is NOT defined by default. If a single-precision solver
-  // is required, the user must define -DAMESOS_SMUMPS as a C++ compiler flag,
-  // and add -lsmumps to LIBS (or --with-libs)
-  // NOTE: Still experimental
 #ifndef HAVE_AMESOS_SMUMPS  
-  DMUMPS_STRUC_C MDS ;             // Mumps data structure 
+  DMUMPS_STRUC_C MDS ;             //! Mumps data structure for double-precision
 #else
-  SMUMPS_STRUC_C MDS ;             // Mumps data structure
+  SMUMPS_STRUC_C MDS ;             //! Mumps data structure for single-precision
 #endif
   
-  //
-  //  Row, Col, Val form the triplet representation used by Mumps
-  //
-  Epetra_IntSerialDenseVector * Row; // store COO format in epetra vectors
-  Epetra_IntSerialDenseVector * Col;
-  Epetra_SerialDenseVector    * Val;
+  Epetra_IntSerialDenseVector * Row; //! row indices of nonzero elements
+  Epetra_IntSerialDenseVector * Col; //! column indices of nonzero elements
+  Epetra_SerialDenseVector    * Val; //! values of nonzero elements
 
 #ifdef HAVE_AMESOS_SMUMPS
-  float * SVal;
-  float * SVector;
+  float * SVal;    //! single-precision values of nonzero elements
+  float * SVector; //! single-precision solution vector (on host only)
 #endif
   
-  int MyPID;               //  Process number (i.e. Comm().MyPID() 
+  int MyPID;               //!  Process number (i.e. Comm().MyPID() 
   
-  int numentries_;         //  Number of non-zero entries in Problem_->GetOperator()
-  int NumGlobalElements_;  //  Number of rows and columns in the Problem_->GetOperator()
+  int numentries_;         //!  Number of non-zero entries in Problem_->GetOperator()
+  int NumGlobalElements_;  //!  Number of rows and columns in the Problem_->GetOperator()
 
-  bool  KeepMatrixDistributed_;          // this governs the ICNTL(18) parameter.
-                                         // If false, then matrix is redistributed
-                                         // to proc 0 before converting it to
-                                         // triplet format. Then, MUMPS will take care
-                                         // of reditribution. If true, the input
-                                         // distributed matrix is passed to MUMPS.
+  bool  KeepMatrixDistributed_;          /*! this governs the ICNTL(18) parameter.
+                                            If false, then matrix is redistributed
+                                            to proc 0 before converting it to
+                                            triplet format. Then, MUMPS will take care
+                                            of reditribution. If true, the input
+                                            distributed matrix is passed to MUMPS. */
 
-  int MaxProcs_;
-  int MaxProcsInputMatrix_;
+  int MaxProcs_;            //! Maximum number of processors in the MUMPS' communicator
+  int MaxProcsInputMatrix_; //! Maximum number of processors that contains at least one element of A
   
-  const Epetra_Map * Map_;
+  const Epetra_Map * Map_;  //! Maps to redistribute from Matrix' Map to MaxProcs_ Map
 
-  int NumMUMPSNonzeros_;                  // actual number of nonzeros in the matrix
-  int NumMyMUMPSNonzeros_;                // actual number of nonzeros in the matrix
+  int NumMUMPSNonzeros_;                  //! actual number of global nonzeros in the matrix
+  int NumMyMUMPSNonzeros_;                //! actual number of local nonzeros in the matrix
   
-  bool UseTranspose_;
-  bool AddDiagElement_;
+  bool UseTranspose_;  //! If \c true, solve the problem with AT.
+  bool AddDiagElement_; //! If \c true, add a the value AddToDiag_ on the diagonal
   
-  double AddToDiag_;
+  double AddToDiag_;    //! Value to add to the diagonal if specified
   
-  bool PrintTiming_;
-  bool PrintStatus_;
-  bool ComputeVectorNorms_;
-  bool ComputeTrueResidual_;
+  bool PrintTiming_;           //! If \c true, print timing in the destruction phase
+  bool PrintStatus_;           //! If \c true, print status in the destruction phase
+  bool ComputeVectorNorms_;    //! If \c true, compute the norms of solution and RHS.
+  bool ComputeTrueResidual_;   //! If \c true, compute the true residual after solution
 
-  /* Set the matrix property as follows:
-     - 0 : general unsymmetric matrix;
-     - 1 : SPD;
-     - 2 : general symmetric matrix.
-  */
-  int MatrixProperty_;
+  int MatrixProperty_;       /*! Set the matrix property:
+			         -# 0 : general unsymmetric matrix;
+				 -# 1 : SPD;
+				 -# 2 : general symmetric matrix.
+			     */
   
-  double Threshold_;
+  double Threshold_;  //! Discard all elements whose absolute value is below this value
   
-  int icntl_[40];                         // to allow users overwrite default settings
-  double cntl_[5];                        // as specified by Amesos
+  int icntl_[40];        
+  AMESOS_TYPE cntl_[5];  
 
-  AMESOS_TYPE * RowSca_, * ColSca_;
+  AMESOS_TYPE * RowSca_, * ColSca_; //! Row and column scaling
 
   int * PermIn_;
   int Maxis_, Maxs_;  
 
-  int NumSchurComplementRows_;            // Schur complement section
-  int * SchurComplementRows_;
+  int NumSchurComplementRows_;            //! Number of rows in the Schur complement (if required)
+  int * SchurComplementRows_;             //! Rows for the Schur complement (if required)
 
-  Epetra_CrsMatrix * CrsSchurComplement_;
+  Epetra_CrsMatrix * CrsSchurComplement_; 
   Epetra_SerialDenseMatrix * DenseSchurComplement_;
 
   int MyPID_;
@@ -485,21 +477,21 @@ protected:
   Epetra_MultiVector * TargetVector_;
 
   // some timing internal to MUMPS
-  double ConTime_;                        // time to convert to MUMPS format
-  double SymTime_;                        // time for symbolic factorization
-  double NumTime_;                        // time for numeric factorization
-  double SolTime_;                        // time for solution
-  double VecTime_;                        // time to redistribute vectors
-  double MatTime_;                        // time to redistribute matrix
+  double ConTime_;                        //! time to convert to MUMPS format
+  double SymTime_;                        //! time for symbolic factorization
+  double NumTime_;                        //! time for numeric factorization
+  double SolTime_;                        //! time for solution
+  double VecTime_;                        //! time to redistribute vectors
+  double MatTime_;                        //! time to redistribute matrix
   
-  int NumSymbolicFact_;
-  int NumNumericFact_;
-  int NumSolve_;  
+  int NumSymbolicFact_;                   //! Number of symbolic factorization phases
+  int NumNumericFact_;                    //! Number of symbolic numeric phases
+  int NumSolve_;                          //! Number of symbolic solution phases
 
-  Epetra_Time * Time_;
+  Epetra_Time * Time_;                    //! Used to track timing
   
 #ifdef EPETRA_MPI
-  MPI_Comm MUMPSComm_;
+  MPI_Comm MUMPSComm_;                    //! MPI communicator used by MUMPS
 #endif
   
 };  // End of  class Amesos_Mumps

@@ -68,6 +68,7 @@ class Epetra_MultiVector;
   operates in \c Copy mode for \c Epetra_RowMatrix, and in \c View mode
   (hence faster) for \c Epetra_CrsMatrix and \c Epetra_VbrMatrix.
 
+  \author Marzio Sala, SNL 9214
 */
 
 class Amesos_EpetraBaseSolver : public Amesos_BaseSolver {
@@ -78,52 +79,83 @@ public:
   
   ~Amesos_EpetraBaseSolver();
 
-  
+  //! Sets the interface.  
   int SetInterface(Epetra_RowMatrix * Mat);
+
+  //! Gets a given row of Epetra_RowMatrix.
+  /*! Returns the pointers to the nonzero columns and values for
+    specified row. If the linear system matrix is an Epetra_VbrMatrix,
+    then the specified row refers to a given block row, and this
+    function returns all the nonzero elements in the block
+    row. (However, in this case, \c RowIndices and \c ColIndices refer
+    to non-block rows and columns.)
+
+    \param \in BlockRow: number of (local) row (or block row for \c Epetra_RowMatrix) to obtain
+
+    \param \out NumIndices: number of nonzero elements in specified row
+
+    \param \our RowIndices:  pointer to an integer vector, containing all the row
+    indices of nonzero elements in the specified block row. For VBR
+    matrices, output row indices refers to the NON-BLOCK map.
+
+    \param \our ColIndices:  pointer to an integer vector, containing all the column
+    indices of nonzero elements in the specified block row
+
+    \param \out Values: pointer to a double vector, containing the values.
+  */
   int GetRow(int BlockRow, int & NumIndices,
 	     int * & RowIndices, 
 	     int * & ColIndices, double * & Values);
 
+  //! Gets the matrix type (SPD, symmetric, or general).
   inline int MatrixType() const
   {
     return MatrixType_;
   }
-  
+
+  //! Returns the number of  rows in the calling process.
   inline int NumMyRows() const
   {
     return NumMyRows_;
   }
 
+  //! Returns the number of block rows in the calling process.
   inline int NumMyBlockRows() const 
   {
     return NumMyBlockRows_;
   }
-  
+
+  //! Returns the number of global rows.
   inline int NumGlobalRows() const
   {
     return NumGlobalRows_;
   }
-  
+
+  //! Returns the number of global block rows.
   inline int NumMyNonzeros() const 
   {
     return NumMyNonzeros_;
   }
-  
+
+  //! Returns the number of global nonzero elements.
   inline int NumGlobalNonzeros() const
   {
     return NumGlobalNonzeros_;
   }
-  
+
+  //! Returns the maximum number of nonzero entries in a row.
   inline int MaxNumEntries() const 
   {
     return MaxNumEntries_;
   }
-  
+
+  //! Returns the local numbering for local element \c i.
   inline int MyGlobalElements(int i) const 
   {
     return MyGlobalElements_[i];
   }
 
+  //! Returns the number of points for each element in BlockMap.
   inline int NumPDEEqns() const 
   {
     return NumPDEEqns_;
@@ -144,34 +176,40 @@ public:
     return Values_->Values();
   }
 
+  //! Returns a pointer to the linear system matrix, as Epetra_RowMatrix
   inline Epetra_RowMatrix * RowA() const
   {
     return RowA_;
   }
-  
+
+  //! Returns a pointer to the linear system matrix, as Epetra_CrsMatrix (or 0 if cast fails)
   inline Epetra_CrsMatrix * CrsA() const
   {
     return CrsA_;
   }
 
+  //! Returns a pointer to the linear system matrix, as Epetra_VbrMatrix (or 0 if cast fails)
   inline Epetra_VbrMatrix * VbrA() const
   {
     return VbrA_;
   }
 
+  //! Returns the index base.
   int IndexBase() const;
   
-  //! Get a pointer to the Problem.
+  //! Gets a pointer to the Epetra_LinearProblem.
   const Epetra_LinearProblem * GetProblem() const { return(&Problem_); };
 
   //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
+  //! Returns true if the linear problem is defined only on the calling process.
   inline bool IsLocal() const
   {
     return( IsLocal_);
   }
 
+  //! If true, ignores off-processor contributions.
   inline int SetIsLocal(const bool flag) 
   {
     IsLocal_ = flag;
@@ -180,9 +218,9 @@ public:
   
   //! Set the matrix property (unsymmetric, SPD, general symmetric).
   /*! Set the matrix property as follows:
-     - 0 : general unsymmetric matrix;
-     - 1 : SPD;
-     - 2 : general symmetric matrix.
+     -# 0 : general unsymmetric matrix;
+     -# 1 : SPD;
+     -# 2 : general symmetric matrix.
   */
   int SetMatrixProperty(const int property) 
   {
@@ -209,11 +247,13 @@ public:
     return( Problem_.GetMatrix() );
   }
 
+  //! Returns a pointer to  LHS
   inline Epetra_MultiVector * GetLHS() const
   {
     return( Problem_.GetLHS() );
   }
 
+  //! Returns a pointer to  RHS
   inline Epetra_MultiVector * GetRHS() const
   {
     return( Problem_.GetRHS() );
@@ -241,8 +281,8 @@ private:
   int * MyGlobalElements_;
   
   Epetra_RowMatrix * RowA_; 
-  Epetra_CrsMatrix * CrsA_;               // MS // cast RowMatrix to Crs (if possible)
-  Epetra_VbrMatrix * VbrA_;               // MS // cast RowMatrix to Vbr (if possible)
+  Epetra_CrsMatrix * CrsA_;               // cast RowMatrix to Crs (if possible)
+  Epetra_VbrMatrix * VbrA_;               // cast RowMatrix to Vbr (if possible)
 
   Epetra_IntSerialDenseVector * RowIndices_;
   Epetra_IntSerialDenseVector * ColIndices_;
