@@ -76,10 +76,10 @@ AZ_transform).
 /**********************************************************************/
 
 #ifndef NO_AUTOTOOLS
-#include <Komplex_config.h>
+/*#include <Komplex_config.h>
 #ifdef HAVE_MPI
 #define AZTEC_MPI
-#endif
+#endif*/
 #endif
 
 /* Define some constants for the user */
