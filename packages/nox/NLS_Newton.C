@@ -114,7 +114,7 @@ NLS_Group& NLS_Newton::getSolutionGroup() const
 
 bool NLS_Newton::getProfileInfo(string& name, NLS_Parameter& p) const
 {
-
+  return false;
 }
 
 double NLS_Newton::getNormRHS() const

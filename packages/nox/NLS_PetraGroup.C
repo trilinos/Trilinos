@@ -66,6 +66,7 @@ NLS_Group* NLS_PetraGroup::newCopy(bool isJacobianEnabled) const
 NLS_Group& NLS_PetraGroup::copy(const NLS_Group& source)
 {
   copy(dynamic_cast<const NLS_PetraGroup&> (source));
+  return *this;
 }
 
 NLS_Group& NLS_PetraGroup::copy(const NLS_PetraGroup& copyFrom)
@@ -89,6 +90,7 @@ NLS_Group& NLS_PetraGroup::copy(const NLS_PetraGroup& copyFrom)
     gradVector.copy(copyFrom.gradVector);
   if (isValidNewton)
     NewtonVector.copy(copyFrom.NewtonVector);
+  return *this;
 }
 
 const NLS_Vector& NLS_PetraGroup::computeX(const NLS_Group& grp, const NLS_Vector& d, double step) 
@@ -96,7 +98,7 @@ const NLS_Vector& NLS_PetraGroup::computeX(const NLS_Group& grp, const NLS_Vecto
  computeX(dynamic_cast<const NLS_PetraGroup&> (grp),
 	  dynamic_cast<const NLS_PetraVector&> (d),
 	  step); 
-
+ return xVector;
 }
 
 //! Compute and return solution vector
