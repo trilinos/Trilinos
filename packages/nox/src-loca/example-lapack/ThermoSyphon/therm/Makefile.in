@@ -98,7 +98,6 @@ CXXREPOS = @CXXREPOS@
 DEPDIR = @DEPDIR@
 EXEEXT = @EXEEXT@
 FLIBS = @FLIBS@
-HAVE_DOXYGEN_DOT = @HAVE_DOXYGEN_DOT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LAPACK_LIBS = @LAPACK_LIBS@
 MAINT = @MAINT@
@@ -185,7 +184,7 @@ MAINTAINERCLEANFILES = Makefile.in
 subdir = src-loca/example-lapack/ThermoSyphon/therm
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
-CONFIG_CLEAN_FILES = in oldfile
+CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
 libtherm_a_DEPENDENCIES =
@@ -216,7 +215,7 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(libtherm_a_SOURCES) $(therm_SOURCES)
-DIST_COMMON = Makefile.am Makefile.in in.in oldfile.in
+DIST_COMMON = Makefile.am Makefile.in
 SOURCES = $(libtherm_a_SOURCES) $(therm_SOURCES)
 
 all: all-am
@@ -230,10 +229,6 @@ Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.s
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
 	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
-in: $(top_builddir)/config.status in.in
-	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= CONFIG_LINKS= $(SHELL) ./config.status
-oldfile: $(top_builddir)/config.status oldfile.in
-	cd $(top_builddir) && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= CONFIG_LINKS= $(SHELL) ./config.status
 
 AR = ar
 install-libLIBRARIES: $(lib_LIBRARIES)
