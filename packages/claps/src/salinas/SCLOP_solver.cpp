@@ -472,7 +472,8 @@ void SCLOP_solver::MpcForces( double *cvals)
 {
   int i;
   CS->mpcforces(uLocal, ImporterStLam2Loc);
-  for (i=0; i<nmpc_loc; i++) cvals[i] = locvec[i];
+  //  for (i=0; i<nmpc_loc; i++) cvals[i] = locvec[i];
+  for (i=0; i<nmpc_loc; i++) cvals[i] = 0;
 }
 
 void SCLOP_solver::EPmat_datfile(Epetra_CrsMatrix* A, char fname[])
