@@ -173,9 +173,9 @@ int Aztec2Petra(int * proc_config,
   else cerr << "Not a supported AZ_MATRIX data type" << endl;
 
   // Create x vector, note that it is a "long" vector (has ghost entries).
-  x = new Epetra_Vector(View, A->BlockImportMap(),az_x);
+  x = new Epetra_Vector(View, A->RowMatrixColMap(),az_x);
 
-  b = new Epetra_Vector (View, *map, az_b);
+  b = new Epetra_Vector (View, A->OperatorRangeMap(), az_b);
 
   if (!Amat->has_global_indices) {
     AZ_free((void *) global_bindx);

@@ -24,6 +24,7 @@
 
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_BlockMap.h"
+#include "Epetra_Map.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_Vector.h"
@@ -186,6 +187,16 @@ void Epetra_VbrMatrix::InitializeDefaults() { // Initialize all attributes that 
   // State variable for extracting block diagonal entries
   CurBlockDiag_ = -1; // Set to -1 to allow a simple sanity check when extracting entries
 
+	// Atributes that support the Epetra_RowMatrix and Epetra_Operator interfaces
+	RowMatrixRowMap_ = 0;
+	RowMatrixColMap_ = 0;
+	RowMatrixImporter_ = 0;
+	OperatorDomainMap_ = 0;
+	OperatorRangeMap_ = 0;
+	HavePointObjects_ = false;
+
+	OperatorX_ = 0;
+	OperatorY_ = 0;
   return;
 }
 
@@ -272,6 +283,21 @@ Epetra_VbrMatrix::~Epetra_VbrMatrix(){
     delete [] TempLDAs_;
     delete [] TempValues_;
   }
+
+	// Delete any objects related to supporting the RowMatrix and Operator interfaces
+	if (HavePointObjects_) {
+		if (!RowMatrixColMap().SameAs(RowMatrixRowMap())) delete RowMatrixColMap_;
+		if (!OperatorDomainMap().SameAs(RowMatrixRowMap())) delete OperatorDomainMap_;
+		if (!OperatorRangeMap().SameAs(RowMatrixRowMap())) delete OperatorRangeMap_;
+		delete RowMatrixRowMap_;
+		delete RowMatrixImporter_;
+		HavePointObjects_ = false;
+	}
+		
+	if (OperatorX_!=0) {
+		delete OperatorX_;
+		delete OperatorY_;
+	}
   
   InitializeDefaults(); // Reset all basic pointers to zero
   Allocated_ = false;
@@ -1159,7 +1185,7 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
     // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
     if (Importer()!=0) {
       if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ColMap(),1); // Create import vector if needed
-      ImportVector_->Import(x, *Importer(), Insert);
+      EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer(), Insert));
       xp = (double*)ImportVector_->Values();
       ColElementSizeList = ColMap().ElementSizeList(); // The Import map will always have an existing ElementSizeList
       ColFirstPointInElementList = ColMap().FirstPointInElementList(); // Import map will always have an existing ...
@@ -1184,17 +1210,19 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
       double * cury = yp + *FirstPointInElement++;
       int      RowDim = *ElementSize++;
       for (j=0; j < NumEntries; j++) {
-	//sum += BlockRowValues[j] * xp[BlockRowIndices[j]];
-	double * A = BlockRowValues[j];
-	int LDA = BlockRowLDAs[j];
-	int Index = BlockRowIndices[j];
-	double * curx = xp + ColFirstPointInElementList[Index];
-	int ColDim = ColElementSizeList[Index];
-	GEMV('N', RowDim, ColDim, 1.0, A, LDA, curx, 1.0, cury);
-	
+				//sum += BlockRowValues[j] * xp[BlockRowIndices[j]];
+				double * A = BlockRowValues[j];
+				int LDA = BlockRowLDAs[j];
+				int Index = BlockRowIndices[j];
+				double * curx = xp + ColFirstPointInElementList[Index];
+				int ColDim = ColElementSizeList[Index];
+				GEMV('N', RowDim, ColDim, 1.0, A, LDA, curx, 1.0, cury);
+				
       }
-      if (Exporter()!=0) y.Export(*ExportVector_, *Exporter(), Add); // Fill y with Values from export vector
-    }
+      if (Exporter()!=0) {
+				EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
+			}
+		}
   }
   
   else { // Transpose operation
@@ -1204,7 +1232,7 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
     
     if (Exporter()!=0) {
       if (ExportVector_==0) ExportVector_ = new Epetra_MultiVector(RowMap(),1); // Create Export vector if needed
-      ExportVector_->Import(x, *Exporter(), Insert);
+      EPETRA_CHK_ERR(ExportVector_->Import(x, *Exporter(), Insert));
       xp = (double*)ExportVector_->Values();
     }
     
@@ -1238,8 +1266,10 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
 	
       }
     }
-    if (Importer()!=0) y.Export(*ImportVector_, *Importer(), Add); // Fill y with Values from export vector
-  }
+    if (Importer()!=0) {
+			EPETRA_CHK_ERR(y.Export(*ImportVector_, *Importer(), Add)); // Fill y with Values from export vector
+		}
+	}
   
   UpdateFlops(2*NumGlobalNonzeros());
   return(0);
@@ -1280,7 +1310,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
        // Create import vector if needed
       if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ColMap(),NumVectors);
 
-      ImportVector_->Import(X, *Importer(), Insert);
+      EPETRA_CHK_ERR(ImportVector_->Import(X, *Importer(), Insert));
       Xp = (double**)ImportVector_->Pointers();
       ColElementSizeList = ColMap().ElementSizeList();
       ColFirstPointInElementList = ColMap().FirstPointInElementList();
@@ -1314,8 +1344,10 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 		       ColFirstPointInElementList, ColElementSizeList, 
 		       1.0, BlockRowValues, BlockRowLDAs, Xp, 1.0, Yp, NumVectors);
     }
-    if (Exporter()!=0) Y.Export(*ExportVector_, *Exporter(), Add); // Fill Y with Values from export vector
-  }
+    if (Exporter()!=0) {
+			EPETRA_CHK_ERR(Y.Export(*ExportVector_, *Exporter(), Add)); // Fill Y with Values from export vector
+		}
+	}
   else { // Transpose operation
     
     
@@ -1328,7 +1360,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
        // Create Export vector if needed
       if (ExportVector_==0) ExportVector_ = new Epetra_MultiVector(RowMap(),NumVectors);
 
-      ExportVector_->Import(X, *Exporter(), Insert);
+      EPETRA_CHK_ERR(ExportVector_->Import(X, *Exporter(), Insert));
       Xp = (double**)ExportVector_->Pointers();
       ColElementSizeList = RowMap().ElementSizeList();
       ColFirstPointInElementList = RowMap().FirstPointInElementList();
@@ -1364,8 +1396,10 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 		       1.0, BlockRowValues, BlockRowLDAs, Xp, 1.0, Yp, NumVectors);
     }
 
-    if (Importer()!=0) Y.Export(*ImportVector_, *Importer(), Add); // Fill Y with Values from export vector
-  }
+    if (Importer()!=0) {
+			EPETRA_CHK_ERR(Y.Export(*ImportVector_, *Importer(), Add)); // Fill Y with Values from export vector
+		}
+	}
 
   UpdateFlops(2*NumVectors*NumGlobalNonzeros());
   return(0);
@@ -1579,7 +1613,7 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
 
   if (!DoRows) {
     if (Importer()!=0){
-      x.Export(*x_tmp, *Importer(), Add); // Fill x with Values from import vector
+      EPETRA_CHK_ERR(x.Export(*x_tmp, *Importer(), Add)); // Fill x with Values from import vector
       delete x_tmp;
       xp = (double*) x.Values();
     }
@@ -1649,7 +1683,7 @@ int Epetra_VbrMatrix::Scale(bool DoRows, const Epetra_Vector& x) {
   if (!DoRows) {
     if (Importer()!=0) {
       x_tmp = new Epetra_Vector(ColMap()); // Create import vector if needed
-      x_tmp->Import(x,*Importer(), Insert); // x_tmp will have all the values we need
+      EPETRA_CHK_ERR(x_tmp->Import(x,*Importer(), Insert)); // x_tmp will have all the values we need
       xp = (double*)x_tmp->Values();
     }
   }
@@ -1787,7 +1821,9 @@ double Epetra_VbrMatrix::NormOne() const {
     BlockRowNormOne(RowDim, NumEntries, BlockRowIndices, BlockRowColDims, 
 		    BlockRowLDAs, BlockRowValues,  ColFirstPointInElementList, xp);
   }
-  if (Importer()!=0) x->Export(*x_tmp, *Importer(), Add); // Fill x with Values from temp vector
+  if (Importer()!=0) {
+		EPETRA_CHK_ERR(x->Export(*x_tmp, *Importer(), Add));
+	} // Fill x with Values from temp vector
   x->MaxValue(&NormOne_); // Find max
   if (x_tmp!=0) delete x_tmp;
   delete x;
@@ -2044,6 +2080,109 @@ int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_DistObject & Source,
   }
   
   return(0);
+}
+//=========================================================================
+int Epetra_VbrMatrix::GeneratePointObjects() const {
+
+	if (HavePointObjects_)  return(0); // Already done
+
+	// Generate a point-wise compatible row map
+	EPETRA_CHK_ERR(BlockMap2PointMap(RowMap(), RowMatrixRowMap_));
+
+	// For each of the next maps, first check if the corresponding block map
+	// is the same as the block row map for this matrix.  If so, then we simply
+	// copy the pointer.  Otherwise we create a new point map.
+
+	// This check can save storage and time since it will often be the case that the
+	// domain, range and row block maps will be the same.  Also, in the serial case,
+	// the column block map will also often be the same as the row block map.
+
+	if (ColMap().SameAs(RowMap())) {
+		RowMatrixColMap_ = RowMatrixRowMap_;
+	}
+	else {
+		EPETRA_CHK_ERR(BlockMap2PointMap(ColMap(), RowMatrixColMap_));
+	}
+
+	if (DomainMap().SameAs(RowMap())) {
+		OperatorDomainMap_ = RowMatrixRowMap_;
+	}
+	else {
+		EPETRA_CHK_ERR(BlockMap2PointMap(DomainMap(), OperatorDomainMap_));
+	}
+	if (RangeMap().SameAs(RowMap())) {
+		OperatorRangeMap_ = RowMatrixRowMap_;
+	}
+	else {
+		EPETRA_CHK_ERR(BlockMap2PointMap(RangeMap(), OperatorRangeMap_));
+	}
+
+	// Finally generate Importer that will migrate needed domain elements to the column map
+	// layout.
+	RowMatrixImporter_ = new Epetra_Import(*RowMatrixColMap_, *OperatorDomainMap_);
+
+	HavePointObjects_ = true;
+  return(0);
+}
+//=========================================================================
+int Epetra_VbrMatrix::BlockMap2PointMap(const Epetra_BlockMap & BlockMap, Epetra_Map * & PointMap) const {
+	// Generate an Epetra_Map that has the same number and distribution of points
+	// as the input Epetra_BlockMap object.  The global IDs for the output PointMap
+	// are computed by using the MaxElementSize of the BlockMap.  For variable block
+	// sizes this will create gaps in the GID space, but that is OK for Epetra_Maps.
+
+	int MaxElementSize = BlockMap.MaxElementSize();
+	int PtNumMyElements = BlockMap.NumMyPoints();
+	int * PtMyGlobalElements = 0;
+	if (PtNumMyElements>0) PtMyGlobalElements = new int[PtNumMyElements];
+
+	int NumMyElements = BlockMap.NumMyElements();
+
+	int curID = 0;
+	for (int i=0; i<NumMyElements; i++) {
+		int StartID = BlockMap.GID(i)*MaxElementSize;
+		int ElementSize = BlockMap.ElementSize(i);
+		for (int j=0; j<ElementSize; j++) PtMyGlobalElements[curID++] = StartID+j;
+	}
+	assert(curID==PtNumMyElements); // Sanity test
+
+	PointMap = new Epetra_Map(-1, PtNumMyElements, PtMyGlobalElements, BlockMap.IndexBase(), BlockMap.Comm());
+
+	if (PtNumMyElements>0) delete [] PtMyGlobalElements;
+
+	if (!BlockMap.PointSameAs(*PointMap)) {EPETRA_CHK_ERR(-1);} // Maps not compatible
+  return(0);
+}
+//=========================================================================
+int Epetra_VbrMatrix::UpdateOperatorXY(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+
+	if (OperatorX_!=0)
+		if (OperatorX_->NumVectors()!=X.NumVectors()) {delete OperatorX_; OperatorX_ = 0; delete OperatorY_; OperatorY_=0;}
+	if (OperatorX_==0) {
+		if (!X.Map().PointSameAs(DomainMap())) EPETRA_CHK_ERR(-1); // X not point-wise compatible with the block domain map
+		if (!Y.Map().PointSameAs(RowMap())) EPETRA_CHK_ERR(-2); // Y not point-wise compatible with the block col map
+		OperatorX_ = new Epetra_MultiVector(View, ColMap(), X.Pointers(), X.NumVectors());
+		OperatorY_ = new Epetra_MultiVector(View, RowMap(), Y.Pointers(), Y.NumVectors());
+	}
+	else {
+		EPETRA_CHK_ERR(OperatorX_->ResetView(X.Pointers()));
+		EPETRA_CHK_ERR(OperatorY_->ResetView(Y.Pointers()));
+	}
+	return(0);
+}
+//=========================================================================
+int Epetra_VbrMatrix::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+
+		EPETRA_CHK_ERR(UpdateOperatorXY(X,Y)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
+    EPETRA_CHK_ERR(Epetra_VbrMatrix::Multiply(Epetra_VbrMatrix::UseTranspose(), *OperatorX_, *OperatorY_));
+		return(0);
+}
+//=========================================================================
+int Epetra_VbrMatrix::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+
+		EPETRA_CHK_ERR(UpdateOperatorXY(X,Y)); // Update X and Y vector whose maps are compatible with the Vbr Matrix
+    EPETRA_CHK_ERR(Solve(UpperTriangular(), Epetra_VbrMatrix::UseTranspose(), NoDiagonal(), *OperatorX_, *OperatorY_));
+		return(0);
 }
 //=========================================================================
 void Epetra_VbrMatrix::Print(ostream& os) const {

@@ -13,8 +13,6 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph)
   : UserMatrixIsVbr_(false),
     UserMatrixIsCrs_(false),
     Graph_(Graph),
-    DomainMap_(Graph.DomainMap()),
-    RangeMap_(Graph.RangeMap()),
     IlukRowMap_(0),
     Comm_(Graph.Comm()),
     UseTranspose_(false),
@@ -31,7 +29,7 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph)
     OverlapMode_(Zero)
 {
   // Test for non-trivial overlap here so we can use it later.
-  IsOverlapped_ = (Graph_.LevelOverlap()>0 && DomainMap_.DistributedGlobal());
+  IsOverlapped_ = (Graph.LevelOverlap()>0 && Graph.DomainMap().DistributedGlobal());
 }
 
 //==============================================================================
@@ -40,8 +38,6 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_CrsRiluk & FactoredMatrix)
     UserMatrixIsCrs_(FactoredMatrix.UserMatrixIsCrs_),
     IsOverlapped_(FactoredMatrix.IsOverlapped_),
     Graph_(FactoredMatrix.Graph_),
-    DomainMap_(FactoredMatrix.DomainMap_),
-    RangeMap_(FactoredMatrix.RangeMap_),
     IlukRowMap_(FactoredMatrix.IlukRowMap_),
     Comm_(FactoredMatrix.Comm_),
     UseTranspose_(FactoredMatrix.UseTranspose_),

@@ -97,8 +97,8 @@ int Poisson2dOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   // This is a very brain-dead implementation of a 5-point finite difference stencil, but
   // it should illustrate the basic process for implementing the Epetra_Operator interface.
 
-  if (!X.Map().SameAs(DomainMap())) abort();  // These aborts should be handled as int return codes.
-  if (!Y.Map().SameAs(RangeMap())) abort();
+  if (!X.Map().SameAs(OperatorDomainMap())) abort();  // These aborts should be handled as int return codes.
+  if (!Y.Map().SameAs(OperatorRangeMap())) abort();
   if (Y.NumVectors()!=X.NumVectors()) abort();
 
   if (comm_.NumProc()>1) {

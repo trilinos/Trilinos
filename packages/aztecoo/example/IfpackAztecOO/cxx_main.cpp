@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) {
   int Niters = 1200;
   solver.SetAztecOption(AZ_kspace, Niters);
    
-  solver.Iterate(Niters, 5.0e-16);
+  solver.Iterate(Niters, 5.0e-10);
 
   elapsed_time = timer.ElapsedTime() - elapsed_time;
   total_flops = counter.Flops();

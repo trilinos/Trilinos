@@ -221,14 +221,14 @@ class Epetra_RowMatrix: public virtual Epetra_Operator {
     //! If matrix is upper triangular, this query returns true, otherwise it returns false.
     virtual bool UpperTriangular() const = 0;
 
-    //! Returns the Epetra_BlockMap object associated with the rows of this matrix.
-    virtual const Epetra_BlockMap & BlockRowMap() const = 0;
+    //! Returns the Epetra_Map object associated with the rows of this matrix.
+    virtual const Epetra_Map & RowMatrixRowMap() const = 0;
 
-    //! Returns the Epetra_BlockMap object that describes the import vector for distributed operations.
-    virtual const Epetra_BlockMap & BlockImportMap() const = 0;
+    //! Returns the Epetra_Map object associated with the columns of this matrix.
+    virtual const Epetra_Map & RowMatrixColMap() const = 0;
 
     //! Returns the Epetra_Import object that contains the import operations for distributed operations.
-    virtual const Epetra_Import * Importer() const = 0;
+    virtual const Epetra_Import * RowMatrixImporter() const = 0;
   //@}
 };
 

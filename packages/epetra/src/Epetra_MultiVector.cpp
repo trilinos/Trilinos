@@ -1850,6 +1850,19 @@ void Epetra_MultiVector::Assign(const Epetra_MultiVector& A) {
     // UpdateFlops(0);  No serial Flops in this function
     return(0);
   }
+//=======================================================================
+int Epetra_MultiVector::ResetView(double ** ArrayOfPointers) {
+	
+	if (!UserAllocated_) {
+		EPETRA_CHK_ERR(-1); // Can't reset view if multivector was not allocated as a view
+	}
+
+  for (int i = 0; i< NumVectors_; i++) Pointers_[i] = ArrayOfPointers[i];
+  DoView();
+  
+	return(0);
+  }
+//=======================================================================
 void Epetra_MultiVector::Print(ostream& os) const {
   int MyPID = Map().Comm().MyPID();
   int NumProc = Map().Comm().NumProc();

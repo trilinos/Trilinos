@@ -49,9 +49,9 @@ int main(int argc, char *argv[])
 
   
   // Generate vectors (xx will be used to generate RHS b)
-  Epetra_Vector xx(A.DomainMap());
-  Epetra_Vector x(A.DomainMap());
-  Epetra_Vector b(A.RangeMap());
+  Epetra_Vector xx(A.OperatorDomainMap());
+  Epetra_Vector x(A.OperatorDomainMap());
+  Epetra_Vector b(A.OperatorRangeMap());
 
   xx.Random();
   A.Apply(xx, b);
@@ -83,10 +83,10 @@ int main(int argc, char *argv[])
 
   solver.Iterate(Niters, 1.0E-12);
  
-  Epetra_Vector bcomp(A.RangeMap());
+  Epetra_Vector bcomp(A.OperatorRangeMap());
   A.Apply(x, bcomp); 
  
-  Epetra_Vector resid(A.RangeMap());
+  Epetra_Vector resid(A.OperatorRangeMap());
  
   resid.Update(1.0, b, -1.0, bcomp, 0.0);
 

@@ -44,7 +44,6 @@ foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix FECrsMatrix FEVector I
 	if( "$5" == "True" ) then
 	    make -f classicMakefile $1 $2 $3 $4 clobber
 	else
-	    make TRILINOS_ID= TRILINOS_COMM=SERIAL clobber
 	    make -f classicMakefile TRILINOS_ID= TRILINOS_COMM=SERIAL clobber
 	endif
 	cd ..

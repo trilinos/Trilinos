@@ -17,7 +17,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_ML_Operator.h"
+#include "ml_epetra_operator.h"
 #include "AztecOO.h"
 #include "ml_epetra_utils.h"
 
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
 
   //solver.SetAztecOption(AZ_reorder, 2);
 
-  int Niters = 150;
+  int Niters = 500;
   solver.SetAztecOption(AZ_kspace, 160);
    
   double norminf = A.NormInf();

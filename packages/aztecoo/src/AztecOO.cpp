@@ -35,7 +35,6 @@
 #include "Epetra_Import.h"
 
 
-
 //=============================================================================
 AztecOO::AztecOO(Epetra_Operator * A, 
                    Epetra_MultiVector * X,
@@ -147,16 +146,21 @@ void AztecOO::DeleteMemory() {
     AZ_matrix_destroy(&Amat_);
     Amat_ = 0;
   }
+
+	if (UserOperatorData_!=0) {delete UserOperatorData_; UserOperatorData_ = 0;}
+	if (UserMatrixData_!=0) {delete UserMatrixData_; UserMatrixData_ = 0;}
+	if (PrecOperatorData_!=0) {delete PrecOperatorData_; PrecOperatorData_ = 0;}
+	if (PrecMatrixData_!=0) {delete PrecMatrixData_; PrecMatrixData_ = 0;}
 }
 
 //=============================================================================
 int AztecOO::SetAztecDefaults() {
 
  AZ_defaults(options_, params_);
- UserOperator_ = 0;
- UserMatrix_ = 0;
- PrecOperator_ = 0;
- PrecMatrix_ = 0;
+ UserOperatorData_ = 0;
+ UserMatrixData_ = 0;
+ PrecOperatorData_ = 0;
+ PrecMatrixData_ = 0;
  X_ = 0;
  B_ = 0;
  
@@ -179,6 +183,7 @@ int AztecOO::SetAztecDefaults() {
  rthresholds_ = 0;
  condestThreshold_ = 0.0;
  procConfigSet_ = false;
+
  return(0);
 
 }
@@ -218,18 +223,20 @@ int AztecOO::SetUserOperator(Epetra_Operator * UserOperator) {
     AZ_matrix_destroy(&Amat_);
     Amat_ = 0;
   }
-  UserOperator_ = UserOperator;
 
-  SetProcConfig(UserOperator_->Comm());
+	if (UserOperatorData_!=0) delete UserOperatorData_;
+	UserOperatorData_ = new OperatorData(UserOperator); // Initialize User Operator Data
 
-  N_local_ =  UserOperator_->RangeMap().NumMyPoints();
+  SetProcConfig(UserOperator->Comm());
+
+  N_local_ =  UserOperator->OperatorRangeMap().NumMyPoints();
 
   Amat_ = AZ_matrix_create(N_local_);
-  AZ_set_MATFREE(Amat_, (void *) UserOperator_, Epetra_Aztec_operatorvec);
+  AZ_set_MATFREE(Amat_, (void *) UserOperatorData_, Epetra_Aztec_operatorvec);
   
   // Aztec needs upper bound for matrix norm if doing polynomial preconditioning
-  if (UserOperator_->HasNormInf())
-    AZ_set_MATFREE_matrix_norm(Amat_, UserOperator_->NormInf()); 
+  if (UserOperator->HasNormInf())
+    AZ_set_MATFREE_matrix_norm(Amat_, UserOperator->NormInf()); 
 
   return(0);
 }
@@ -240,13 +247,14 @@ int AztecOO::SetUserMatrix(Epetra_RowMatrix * UserMatrix) {
   if (UserMatrix == 0 && inConstructor_ == true) return(0);
   if (UserMatrix == 0) EPETRA_CHK_ERR(-1);
 
-  UserMatrix_ = UserMatrix;
+	if (UserMatrixData_!=0) delete UserMatrixData_;
+  UserMatrixData_ = new MatrixData(UserMatrix); // Initialize user matrix data
 
-  SetProcConfig(UserMatrix_->Comm());
+  SetProcConfig(UserMatrix->Comm());
   EPETRA_CHK_ERR(SetUserOperator(UserMatrix));
-  AZ_set_MATFREE(Amat_, (void *) UserMatrix_, Epetra_Aztec_matvec);
-  int N_ghost = UserMatrix_->NumMyCols() - UserMatrix_->NumMyRows();
-  AZ_set_MATFREE_getrow(Amat_, (void *) UserMatrix_, Epetra_Aztec_getrow,
+  AZ_set_MATFREE(Amat_, (void *) UserMatrixData_, Epetra_Aztec_matvec);
+  int N_ghost = UserMatrix->NumMyCols() - UserMatrix->NumMyRows();
+  AZ_set_MATFREE_getrow(Amat_, (void *) UserMatrixData_, Epetra_Aztec_getrow,
 			Epetra_Aztec_comm_wrapper,N_ghost,proc_config_);
 
   // If preconditioner not defined, set up to possibly use native Aztec precons
@@ -270,15 +278,16 @@ int AztecOO::SetPrecMatrix(Epetra_RowMatrix * PrecMatrix) {
     Pmat_ = 0;
   }
 
-  PrecMatrix_ = PrecMatrix;
-  SetProcConfig(PrecMatrix_->Comm());
+	if (PrecMatrixData_!=0) delete PrecMatrixData_;
+  PrecMatrixData_ = new MatrixData(PrecMatrix); // Initialize preconditioner matrix data
+  SetProcConfig(PrecMatrix->Comm());
   Pmat_ = AZ_matrix_create(N_local_);
-  AZ_set_MATFREE(Pmat_, (void *) PrecMatrix_, Epetra_Aztec_matvec);
+  AZ_set_MATFREE(Pmat_, (void *) PrecMatrixData_, Epetra_Aztec_matvec);
   
   // Aztec needs upper bound for matrix norm if doing polynomial preconditioning
-  AZ_set_MATFREE_matrix_norm(Pmat_, PrecMatrix_->NormInf()); 
-  int N_ghost = PrecMatrix_->NumMyCols() - PrecMatrix_->NumMyRows();
-  AZ_set_MATFREE_getrow(Pmat_, (void *) PrecMatrix_, Epetra_Aztec_getrow,
+  AZ_set_MATFREE_matrix_norm(Pmat_, PrecMatrix->NormInf()); 
+  int N_ghost = PrecMatrix->NumMyCols() - PrecMatrix->NumMyRows();
+  AZ_set_MATFREE_getrow(Pmat_, (void *) PrecMatrixData_, Epetra_Aztec_getrow,
 			Epetra_Aztec_comm_wrapper,N_ghost,proc_config_);
     
 
@@ -305,15 +314,16 @@ int AztecOO::SetPrecOperator(Epetra_Operator * PrecOperator) {
     Pmat_ = 0;
   }
 
-  PrecOperator_ = PrecOperator;
-  SetProcConfig(PrecOperator_->Comm());
+	if (PrecOperatorData_!=0) delete PrecOperatorData_;
+  PrecOperatorData_ = new OperatorData(PrecOperator); // Initialize preconditioner operator data
+  SetProcConfig(PrecOperator->Comm());
 
   if (Amat_==0) EPETRA_CHK_ERR(-2); // UserOperator must be defined first
 
-   Prec_ = AZ_precond_create(Amat_, Epetra_Aztec_precond, (void *) PrecOperator_);
+   Prec_ = AZ_precond_create(Amat_, Epetra_Aztec_precond, (void *) PrecOperatorData_);
 
    options_[AZ_precond] = AZ_user_precond;
-   char * label = PrecOperator_->Label();
+   char * label = PrecOperator->Label();
    if (label==0)
      AZ_set_precond_print_string(Prec_,"User-defined preconditioner");
    else
@@ -442,7 +452,9 @@ int AztecOO::SetPreconditioner(void  (*prec_function)
 //=============================================================================
 int AztecOO::ConstructPreconditioner(double & condest) {
 
-  if (PrecMatrix_==0) EPETRA_CHK_ERR(-1); // No matrix yet
+  if (PrecMatrixData_==0) EPETRA_CHK_ERR(-1); // No matrix yet
+
+	Epetra_RowMatrix * PrecMatrix = PrecMatrixData_->A; // Extract Preconditioner matrix
 
   int precond_flag = options_[AZ_precond];
 
@@ -457,7 +469,7 @@ int AztecOO::ConstructPreconditioner(double & condest) {
   AZ_mk_context(options_, params_, Pmat_->data_org, Prec_, proc_config_);
 
 
-    int NN = PrecMatrix_->NumMyCols();
+    int NN = PrecMatrix->NumMyCols();
     double * condvec = new double[NN];
     for (int i = 0 ; i < N_local_ ; i++ ) condvec[i] = 1.0;
     Prec_->prec_function(condvec,options_,proc_config_,params_,Pmat_,Prec_);
@@ -469,9 +481,9 @@ int AztecOO::ConstructPreconditioner(double & condest) {
     options_[AZ_pre_calc] = AZ_reuse;
     double tmp_condest = condest_;
     // if any processor has a tmp_condest==0.0, then it has a singular preconditioner, check for that first
-    PrecMatrix_->Comm().MinAll(&tmp_condest, &condest_, 1); // Get the min of all condition estimates
+    PrecMatrix->Comm().MinAll(&tmp_condest, &condest_, 1); // Get the min of all condition estimates
     if (condest_!=0.0)
-      PrecMatrix_->Comm().MaxAll(&tmp_condest, &condest_, 1); // Get the worst of all condition estimates
+      PrecMatrix->Comm().MaxAll(&tmp_condest, &condest_, 1); // Get the worst of all condition estimates
 
     condest = condest_;
   }
@@ -545,7 +557,7 @@ int AztecOO::recursiveIterate(int MaxIters, double Tolerance)
 //=============================================================================
 int AztecOO::Iterate(int MaxIters, double Tolerance)
 {
-  if (X_ == 0 || B_ == 0 || UserOperator_ == 0) EPETRA_CHK_ERR(-1);
+  if (X_ == 0 || B_ == 0 || UserOperatorData_ == 0) EPETRA_CHK_ERR(-1);
 
   SetAztecOption(AZ_max_iter, MaxIters);
   SetAztecParam(AZ_tol, Tolerance);
@@ -830,32 +842,51 @@ int AztecOO::AdaptiveIterate(int MaxIters, int MaxSolveAttempts, double Toleranc
 //=============================================================================
 void Epetra_Aztec_matvec(double x[], double y[], AZ_MATRIX *Amat, int proc_config[]) {
 
-  Epetra_RowMatrix * A = (Epetra_RowMatrix *) AZ_get_matvec_data(Amat);
-  Epetra_Vector X(View, A->DomainMap(), x); X.SetLabel("Epetra_Aztec_matvec X Vector");
-  Epetra_Vector Y(View, A->RangeMap(), y); Y.SetLabel("Epetra_Aztec_matvec Y Vector");
+	
+  AztecOO::MatrixData * Data = (AztecOO::MatrixData *) AZ_get_matvec_data(Amat);
+  Epetra_RowMatrix * A = (Epetra_RowMatrix *) Data->A;
+	Epetra_Vector * X = (Epetra_Vector *) Data->X;
+	Epetra_Vector * Y = (Epetra_Vector *) Data->Y;
 
-  //cout << X << endl;
-  //cout << Y << endl;
+  if (X==0) {
+		X = new Epetra_Vector(View, A->OperatorDomainMap(), x);
+		X->SetLabel("Epetra_Aztec_matvec X Vector");
+		Data->X = X;
+		Y = new Epetra_Vector(View, A->OperatorRangeMap(), y);
+		Y->SetLabel("Epetra_Aztec_matvec Y Vector");
+		Data->Y = Y;
+	}
+	else {
+		X->ResetView(x);
+		Y->ResetView(y);
+	}
 
-  A->Apply(X, Y);
-  //cout << X << endl;
-  //cout << Y << endl;
+  A->Apply(*X, *Y);
 
 }
 
 //=============================================================================
 void Epetra_Aztec_operatorvec(double x[], double y[], AZ_MATRIX *Amat, int proc_config[]) {
 
-  Epetra_Operator * A = (Epetra_Operator *) AZ_get_matvec_data(Amat);
-  Epetra_Vector X(View, A->DomainMap(), x);
-  Epetra_Vector Y(View, A->RangeMap(), y);
+  AztecOO::OperatorData * Data = (AztecOO::OperatorData *) AZ_get_matvec_data(Amat);
+  Epetra_Operator * A = (Epetra_Operator *) Data->A;
+	Epetra_Vector * X = (Epetra_Vector *) Data->X;
+	Epetra_Vector * Y = (Epetra_Vector *) Data->Y;
 
-  //cout << X << endl;
-  //cout << Y << endl;
+  if (X==0) {
+		X = new Epetra_Vector(View, A->OperatorDomainMap(), x);
+		X->SetLabel("Epetra_Aztec_operatorvec X Vector");
+		Data->X = X;
+		Y = new Epetra_Vector(View, A->OperatorRangeMap(), y);
+		Y->SetLabel("Epetra_Aztec_operatorvec Y Vector");
+		Data->Y = Y;
+	}
+	else {
+		X->ResetView(x);
+		Y->ResetView(y);
+	}
 
-  A->Apply(X, Y);
-  //cout << X << endl;
-  //cout << Y << endl;
+  A->Apply(*X, *Y);
 
 }
 
@@ -864,16 +895,25 @@ void Epetra_Aztec_precond(double x[], int input_options[],
 			  int proc_config[], double input_params[], AZ_MATRIX *Amat,
 			  AZ_PRECOND *prec) {
 
-  Epetra_Operator * A = (Epetra_Operator *) AZ_get_precond_data(prec);
-  Epetra_Vector X(View, A->DomainMap(), x);
-  Epetra_Vector Y(View, A->RangeMap(), x);
+  AztecOO::OperatorData * Data = (AztecOO::OperatorData *) AZ_get_precond_data(prec);
+  Epetra_Operator * A = (Epetra_Operator *) Data->A;
+	Epetra_Vector * X = (Epetra_Vector *) Data->X;
+	Epetra_Vector * Y = (Epetra_Vector *) Data->Y;
 
-  //cout << X << endl;
-  //cout << Y << endl;
+  if (X==0) {
+		X = new Epetra_Vector(View, A->OperatorDomainMap(), x);
+		X->SetLabel("Epetra_Aztec_precond X Vector");
+		Data->X = X;
+		Y = new Epetra_Vector(View, A->OperatorRangeMap(), x);
+		Y->SetLabel("Epetra_Aztec_precond Y Vector");
+		Data->Y = Y;
+	}
+	else {
+		X->ResetView(x);
+		Y->ResetView(x);
+	}
 
-  A->ApplyInverse(X, Y);
-  //cout << X << endl;
-  //cout << Y << endl;
+  A->ApplyInverse(*X, *Y);
 
 }
 
@@ -905,7 +945,8 @@ int Epetra_Aztec_getrow(int columns[], double values[],
  *                  'values' for storing nonzeros. If more space is needed,
  *                  return 0.
  */
-  Epetra_RowMatrix * A = (Epetra_RowMatrix *) AZ_get_matvec_data(Amat);
+  AztecOO::MatrixData * Data = (AztecOO::MatrixData *) AZ_get_matvec_data(Amat);
+  Epetra_RowMatrix * A = (Epetra_RowMatrix *) Data->A;
   int NumEntries;
 
   double *Values = values;
@@ -945,126 +986,27 @@ int Epetra_Aztec_comm_wrapper(double vec[], AZ_MATRIX *Amat) {
  */
 
 
-  Epetra_RowMatrix * A = (Epetra_RowMatrix *) AZ_get_matvec_data(Amat);
-
-
+  AztecOO::MatrixData * Data = (AztecOO::MatrixData *) AZ_get_matvec_data(Amat);
+  Epetra_RowMatrix * A = (Epetra_RowMatrix *) Data->A;
   if (A->Comm().NumProc()==1) return(1); // Nothing to do in serial mode
 
-  Epetra_Vector X_target(View, A->Importer()->TargetMap(), vec);
-  Epetra_Vector X_source(View, A->Importer()->SourceMap(), vec);
+	Epetra_Vector * SourceVec = (Epetra_Vector *) Data->SourceVec;
+	Epetra_Vector * TargetVec = (Epetra_Vector *) Data->TargetVec;
 
-  assert(X_target.Import(X_source, *(A->Importer()),Insert)==0);
+  if (SourceVec==0) {
+		SourceVec = new Epetra_Vector(View, A->RowMatrixImporter()->SourceMap(), vec);
+		SourceVec->SetLabel("Epetra_Aztec_comm_wrapper X source");
+		Data->SourceVec = SourceVec;
+		TargetVec = new Epetra_Vector(View, A->RowMatrixImporter()->TargetMap(), vec);
+		TargetVec->SetLabel("Epetra_Aztec_comm_wrapper X target");
+		Data->TargetVec = TargetVec;
+	}
+	else {
+		SourceVec->ResetView(vec);
+		TargetVec->ResetView(vec);
+	}
 
-  return(1);
-}
-
-#ifdef AZTEC_OO_WITH_ML
-//=============================================================================
-int AztecOO::PetraMatrix2MLMatrix(ML *ml_handle, int level, 
-						Epetra_RowMatrix * A)
-{
-  int isize, osize;
-
-  osize = A->NumMyRows();
-  isize = osize;
-  int N_ghost = A->NumMyCols() - A->NumMyRows();
-
-  
-  ML_Init_Amatrix(ml_handle, level,isize, osize, (void *) A);
-  ML_Set_Amatrix_Getrow(ml_handle, level, Epetra_ML_getrow,
-			Epetra_ML_comm_wrapper,	isize+N_ghost);
-
-  ML_Set_Amatrix_Matvec(ml_handle,  level, Epetra_ML_matvec);
-
-  return 1;
-}
-int Epetra_ML_matvec(void *data, int in, double *p, int out, double *ap) {
-
-  Epetra_RowMatrix * A = (Epetra_RowMatrix *) data;
-  Epetra_Vector X(View, A->DomainMap(), p);
-  Epetra_Vector Y(View, A->RangeMap(), ap);
-  
-  A->Multiply(false, X, Y);
-  
-
-  return 1;
-}
-
-//=============================================================================
-int Epetra_ML_getrow(void *data, int N_requested_rows, int requested_rows[], 
-		    int allocated_space, int columns[], double values[],
-		    int row_lengths[]) {
-  /*
- * Supply local matrix (without ghost node columns) for rows given by
- * requested_rows[0 ... N_requested_rows-1].  Return this information in
- * 'row_lengths, columns, values'.  If there is not enough space to complete
- * this operation, return 0. Otherwise, return 1.
- *
- * Parameters
- * ==========
- * Amat             On input, points to user's data containing matrix values.
- * N_requested_rows On input, number of rows for which nonzero are to be
- *                  returned.
- * requested_rows   On input, requested_rows[0...N_requested_rows-1] give the
- *                  row indices of the rows for which nonzero values are
- *                  returned.
- * row_lengths      On output, row_lengths[i] is the number of nonzeros in the
- *                  row 'requested_rows[i]'
- * columns,values   On output, columns[k] and values[k] contains the column
- *                  number and value of a matrix nonzero where all nonzeros for
- *                  requested_rows[i] appear before requested_rows[i+1]'s
- *                  nonzeros.  NOTE: Arrays are of size 'allocated_space'.
- * allocated_space  On input, indicates the space available in 'columns' and
- *                  'values' for storing nonzeros. If more space is needed,
- *                  return 0.
- */
-  Epetra_RowMatrix * A = (Epetra_RowMatrix *) data;
-  int nz_ptr = 0;
-  int NumRows = A->NumMyRows();
-  int NumEntries;
-  double * Values;
-  int * Indices;
-  for (int i = 0; i < N_requested_rows; i++) {
-    int LocalRow = requested_rows[i];
-    A->ExtractMyRowView (LocalRow, NumEntries, Values, Indices);
-    row_lengths[i] = NumEntries;
-    if (nz_ptr+NumEntries>allocated_space) return(0);
-    for (int j=0; j<NumEntries; j++) {
-      columns[nz_ptr] = Indices[j];
-      values[nz_ptr++] = Values[j];
-    }
-  }
+  assert(TargetVec->Import(*SourceVec, *(A->RowMatrixImporter()),Insert)==0);
 
   return(1);
 }
-//=============================================================================
-int Epetra_ML_comm_wrapper(double vec[], void *data) {
-  /*
-   * Update vec's ghost node via communication. Note: the length of vec is
-   * given by N_local + N_ghost where Amat was created via
-   *                 AZ_matrix_create(N_local);
-   * and a 'getrow' function was supplied via
-   *                 AZ_set_MATFREE_getrow(Amat, , , , N_ghost, );
- *
- * Parameters
- * ==========
- * vec              On input, vec contains data. On output, ghost values
- *                  are updated.
- *
- * Amat             On input, points to user's data containing matrix values.
- *                  and communication information.
- */
-
-
-  Epetra_RowMatrix * A = (Epetra_RowMatrix *) data;
-
-
-  if (A->Comm().NumProc()==1) return(1); // Nothing to do in serial mode
-
-  Epetra_Vector X(View, A->ImportMap(), vec);
-
-  assert(X.Import(X, *(A->Importer()),Insert)==0);
-
-  return(1);
-}
-#endif // AZTEC_OO_WITH_ML

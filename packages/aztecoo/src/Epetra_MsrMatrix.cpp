@@ -58,8 +58,7 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * Amat)
   if (MyGlobalElements==0) 
     throw Comm_->ReportError("Aztec matrix has no update list: Check if AZ_Transform was called.", -2);
 
-  DomainMap_ = (Epetra_BlockMap *) new Epetra_Map(-1, NumMyRows_, MyGlobalElements, 0, *Comm_);
-  RangeMap_ = DomainMap_;
+  DomainMap_ = new Epetra_Map(-1, NumMyRows_, MyGlobalElements, 0, *Comm_);
 
   double * dbleColGIDs = new double[NumMyCols_];
   int * ColGIDs = new int[NumMyCols_];
@@ -67,9 +66,9 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * Amat)
   AZ_exchange_bdry(dbleColGIDs, Amat->data_org, proc_config);
   {for (int i=0; i<NumMyCols_; i++) ColGIDs[i] = (int) dbleColGIDs[i];}
 
-  ImportMap_ = (Epetra_BlockMap *) new Epetra_Map(-1, NumMyCols_, ColGIDs, 0, *Comm_);
+  ColMap_ = new Epetra_Map(-1, NumMyCols_, ColGIDs, 0, *Comm_);
 
-  Importer_ = new Epetra_Import(*ImportMap_, *DomainMap_);
+  Importer_ = new Epetra_Import(*ColMap_, *DomainMap_);
   
   delete [] dbleColGIDs;
   delete [] ColGIDs;
@@ -78,7 +77,7 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * Amat)
 Epetra_MsrMatrix::~Epetra_MsrMatrix(){
   if (ImportVector_!=0) delete ImportVector_;
   delete Importer_;
-  delete ImportMap_;
+  delete ColMap_;
   delete DomainMap_;
   delete Comm_;
 
@@ -98,7 +97,7 @@ int Epetra_MsrMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, do
 int Epetra_MsrMatrix::NumMyRowEntries(int Row, int & NumEntries) const 
 {
 
-  if (BlockRowMap().MyLID(Row)) NumEntries = Amat_->bindx[Row+1] - Amat_->bindx[Row] + 1;
+  if (RowMatrixRowMap().MyLID(Row)) NumEntries = Amat_->bindx[Row+1] - Amat_->bindx[Row] + 1;
   else {
     EPETRA_CHK_ERR(-1);
   }
@@ -121,12 +120,12 @@ int Epetra_MsrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
   double ** yptrs;
   X.ExtractView(&xptrs);
   Y.ExtractView(&yptrs);
-  if (Importer()!=0) {
+  if (RowMatrixImporter()!=0) {
     if (ImportVector_!=0) {
       if (ImportVector_->NumVectors()!=NumVectors) { delete ImportVector_; ImportVector_= 0;}
     }
-    if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(BlockImportMap(),NumVectors); // Create import vector if needed
-    ImportVector_->Import(X, *Importer(), Insert);
+    if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(RowMatrixColMap(),NumVectors); // Create import vector if needed
+    ImportVector_->Import(X, *RowMatrixImporter(), Insert);
     ImportVector_->ExtractView(&xptrs);
   }
   for (int i=0; i<NumVectors; i++)
@@ -174,7 +173,7 @@ int Epetra_MsrMatrix::InvRowSums(Epetra_Vector& x) const {
 // Put inverse of the sum of absolute values of the ith row of A in x[i].
 //
 
-  if (!RangeMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
+  if (!OperatorRangeMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
 
   int ierr = 0;
   int i, j;
@@ -203,7 +202,7 @@ int Epetra_MsrMatrix::InvColSums(Epetra_Vector& x) const {
 //
 
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
-  if (!DomainMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
+  if (!OperatorDomainMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
   
 
   Epetra_Vector * xp;
@@ -211,8 +210,8 @@ int Epetra_MsrMatrix::InvColSums(Epetra_Vector& x) const {
   
 
   // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
-  if (Importer()!=0) {
-    x_tmp = new Epetra_Vector(BlockImportMap()); // Create import vector if needed
+  if (RowMatrixImporter()!=0) {
+    x_tmp = new Epetra_Vector(RowMatrixColMap()); // Create import vector if needed
     xp = x_tmp;
   }
   int ierr = 0;
@@ -225,8 +224,8 @@ int Epetra_MsrMatrix::InvColSums(Epetra_Vector& x) const {
     for (j=0; j < NumEntries; j++) (*xp)[Indices_[j]] += fabs(Values_[j]);
   }
 
-  if (Importer()!=0){
-    x.Export(*x_tmp, *Importer(), Add); // Fill x with Values from import vector
+  if (RowMatrixImporter()!=0){
+    x.Export(*x_tmp, *RowMatrixImporter(), Add); // Fill x with Values from import vector
     delete x_tmp;
     xp = &x;
   }
@@ -254,7 +253,7 @@ int Epetra_MsrMatrix::LeftScale(const Epetra_Vector& x) {
   // For this method, we have no choice but to work with the UGLY MSR data structures.
 
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
-  if (!RangeMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
+  if (!OperatorRangeMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
 
   int i, j;
   int * bindx = Amat_->bindx;
@@ -284,7 +283,7 @@ int Epetra_MsrMatrix::RightScale(const Epetra_Vector& x) {
   // For this method, we have no choice but to work with the UGLY MSR data structures.
 
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
-  if (!DomainMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
+  if (!OperatorDomainMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
 
   int * bindx = Amat_->bindx;
   double * val = Amat_->val;
@@ -292,9 +291,9 @@ int Epetra_MsrMatrix::RightScale(const Epetra_Vector& x) {
   Epetra_Vector * x_tmp = 0;
 
   // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
-  if (Importer()!=0) {
-    x_tmp = new Epetra_Vector(BlockImportMap()); // Create import vector if needed
-    x_tmp->Import(x,*Importer(), Insert); // x_tmp will have all the values we need
+  if (RowMatrixImporter()!=0) {
+    x_tmp = new Epetra_Vector(RowMatrixColMap()); // Create import vector if needed
+    x_tmp->Import(x,*RowMatrixImporter(), Insert); // x_tmp will have all the values we need
     xp = x_tmp;
   }
 
@@ -339,15 +338,15 @@ double Epetra_MsrMatrix::NormOne() const {
 
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
-  Epetra_Vector * x = new Epetra_Vector(BlockRowMap()); // Need temp vector for column sums
+  Epetra_Vector * x = new Epetra_Vector(RowMatrixRowMap()); // Need temp vector for column sums
   
   Epetra_Vector * xp;
   Epetra_Vector * x_tmp = 0;
   
 
   // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
-  if (Importer()!=0) {
-    x_tmp = new Epetra_Vector(BlockImportMap()); // Create temporary import vector if needed
+  if (RowMatrixImporter()!=0) {
+    x_tmp = new Epetra_Vector(RowMatrixColMap()); // Create temporary import vector if needed
     xp = x_tmp;
   }
   int i, j;
@@ -358,7 +357,7 @@ double Epetra_MsrMatrix::NormOne() const {
     int NumEntries = GetRow(i);
     for (j=0; j < NumEntries; j++) (*xp)[Indices_[j]] += fabs(Values_[j]);
   }
-  if (Importer()!=0) x->Export(*x_tmp, *Importer(), Add); // Fill x with Values from temp vector
+  if (RowMatrixImporter()!=0) x->Export(*x_tmp, *RowMatrixImporter(), Add); // Fill x with Values from temp vector
   x->MaxValue(&NormOne_); // Find max
   if (x_tmp!=0) delete x_tmp;
   delete x;
@@ -367,8 +366,8 @@ double Epetra_MsrMatrix::NormOne() const {
 }
 //=============================================================================
 void Epetra_MsrMatrix::Print(ostream& os) const {
-  int MyPID = BlockRowMap().Comm().MyPID();
-  int NumProc = BlockRowMap().Comm().NumProc();
+  int MyPID = RowMatrixRowMap().Comm().MyPID();
+  int NumProc = RowMatrixRowMap().Comm().NumProc();
 
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
@@ -419,7 +418,7 @@ void Epetra_MsrMatrix::Print(ostream& os) const {
 	os << endl;
       }
       for (i=0; i<NumMyRows_; i++) {
-	int Row = BlockRowMap().GID(i); // Get global row number
+	int Row = RowMatrixRowMap().GID(i); // Get global row number
 	int NumEntries = GetRow(i); // ith row is now in Values_ and Indices_
 	
 	for (j = 0; j < NumEntries ; j++) {   
@@ -428,7 +427,7 @@ void Epetra_MsrMatrix::Print(ostream& os) const {
 	  os.width(10);
 	  os <<  Row ; os << "    ";	
 	  os.width(10);
-	  os <<  BlockImportMap().GID(Indices_[j]); os << "    ";
+	  os <<  RowMatrixColMap().GID(Indices_[j]); os << "    ";
 	  os.width(20);
 	  os <<  Values_[j]; os << "    ";
 	  os << endl;
@@ -440,9 +439,9 @@ void Epetra_MsrMatrix::Print(ostream& os) const {
       
     }
     // Do a few global ops to give I/O a chance to complete
-    BlockRowMap().Comm().Barrier();
-    BlockRowMap().Comm().Barrier();
-    BlockRowMap().Comm().Barrier();
+    RowMatrixRowMap().Comm().Barrier();
+    RowMatrixRowMap().Comm().Barrier();
+    RowMatrixRowMap().Comm().Barrier();
   }}
 
   return;

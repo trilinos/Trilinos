@@ -54,8 +54,8 @@ class Epetra_ML_Operator: public virtual Epetra_Operator {
     \param In - An Epetra range map
   */
   Epetra_ML_Operator(ML * ml_handle, const Epetra_Comm & myComm,
-                     const Epetra_BlockMap & DomainMap,
-                     const Epetra_BlockMap & RangeMap);
+                     const Epetra_Map & DomainMap,
+                     const Epetra_Map & RangeMap);
   //@{ \name Destructor.
     //! Destructor
   ~Epetra_ML_Operator();
@@ -124,10 +124,10 @@ class Epetra_ML_Operator: public virtual Epetra_Operator {
   //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
   const Epetra_Comm & Comm() const{return(Comm_);};
   
-  //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-  const Epetra_BlockMap & DomainMap() const {return(DomainMap_);};
-  //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-  const Epetra_BlockMap & RangeMap() const {return(RangeMap_);};
+  //! Returns the Epetra_Map object associated with the domain of this operator.
+  const Epetra_Map & OperatorDomainMap() const {return(DomainMap_);};
+  //! Returns the Epetra_Map object associated with the range of this operator.
+  const Epetra_Map & OperatorRangeMap() const {return(RangeMap_);};
   //@}
   
  protected:
@@ -136,8 +136,8 @@ class Epetra_ML_Operator: public virtual Epetra_Operator {
   char * Label_;
 
  private:
-  const Epetra_BlockMap & DomainMap_;
-  const Epetra_BlockMap & RangeMap_;
+  const Epetra_Map & DomainMap_;
+  const Epetra_Map & RangeMap_;
   const Epetra_Comm & Comm_;
 };
 

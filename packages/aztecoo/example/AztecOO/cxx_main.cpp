@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
   if (comm.MyPID()==0) 
     cout << "\n Inf-norm of A before scaling = " << norminf 
 	 << "\n One-norm of A before scaling = " << normone<< endl << endl;
-  solver.Iterate(Niters, 0.0e-100);
+  solver.Iterate(Niters, 1.0e-10);
   norminf = A.NormInf();
   normone = A.NormOne(); 
   if (comm.MyPID()==0) 

@@ -26,7 +26,7 @@
 #define _EPETRA_OPERATOR_H_
 
 class Epetra_MultiVector;
-class Epetra_BlockMap;
+class Epetra_Map;
 class Epetra_Comm;
 
 //! Epetra_Operator: A pure virtual class for using real-valued double-precision operators.
@@ -111,11 +111,11 @@ class Epetra_Operator {
     //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
     virtual const Epetra_Comm & Comm() const = 0;
 
-    //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-    virtual const Epetra_BlockMap & DomainMap() const = 0;
+    //! Returns the Epetra_Map object associated with the domain of this operator.
+    virtual const Epetra_Map & OperatorDomainMap() const = 0;
 
-    //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-    virtual const Epetra_BlockMap & RangeMap() const = 0;
+    //! Returns the Epetra_Map object associated with the range of this operator.
+    virtual const Epetra_Map & OperatorRangeMap() const = 0;
   //@}
 
 };

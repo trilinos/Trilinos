@@ -37,13 +37,12 @@ int main(int argc, char *argv[])
   AZ_set_proc_config(proc_config,0);
 #endif
 
-  cout << comm << endl;
-
-  int temp;
-  if (comm.MyPID()==0) cin >> temp;
-  comm.Barrier();
+  int temp; if (comm.MyPID()==0) {cout << "Type 1 and enter to continue" <<endl; cin >> temp; } comm.Barrier();
 
   if(argc != 2) cerr << "Error: enter name of data file on command line" << endl; 
+
+  cout << comm << endl;
+
   /* Set exact solution to NULL */
 
   int    *update;                  /* vector elements updated on this node. */
@@ -80,14 +79,12 @@ int main(int argc, char *argv[])
 	       N_update, 0, 0, 0, 0,
                AZ_MSR_MATRIX);
 
-  cout << comm << ": Completed AZ_transform." << endl;
-
   AZ_MATRIX * Amat = AZ_matrix_create(N_update);
   AZ_set_MSR(Amat, bindx, val, data_org, N_update, update, AZ_LOCAL);
 
   Epetra_MsrMatrix A(proc_config, Amat); // Create Epetra_MsrMatrix
 
-  const Epetra_BlockMap & map = A.BlockRowMap();
+  const Epetra_BlockMap & map = A.RowMatrixRowMap();
 
 
   // Create vectors for Power method
@@ -119,7 +116,7 @@ int main(int argc, char *argv[])
   double total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
   double MFLOPs = total_flops/elapsed_time/1000000.0;
   
-  if (verbose) cout << "\n\nTotal MFLOPs for first solve = " << MFLOPs << endl<< endl;
+  if (verbose) cout << "\n\nTotal MFLOPs for solve = " << MFLOPs << endl<< endl;
 
 
   free ((void *) xguess);

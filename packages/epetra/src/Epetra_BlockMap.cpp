@@ -580,6 +580,26 @@ bool Epetra_BlockMap::SameAs(const Epetra_BlockMap & Map) const
 
 
 //==============================================================================
+bool Epetra_BlockMap::PointSameAs(const Epetra_BlockMap & Map) const
+{
+
+  if (this == &Map) return(true);
+    
+  if (NumGlobalPoints_!=Map.NumGlobalPoints() ) return(false);
+  
+	// If we get this far, we need to check local properties and then check across
+	// all processors to see if local properties are all true
+
+	int MySameMap = 1; // Assume not needed
+	if (NumMyPoints_!=Map.NumMyPoints()) MySameMap = 0;
+	
+	int GlobalSameMap = 0;
+	assert(Comm().MinAll(&MySameMap, &GlobalSameMap, 1)==0);
+	
+	return(GlobalSameMap==1);
+}
+
+//==============================================================================
 int Epetra_BlockMap::MyGlobalElements(int * MyGlobalElements) const
 {
   // If the global element list is not create, then do so.  This can only happen when

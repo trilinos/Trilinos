@@ -77,10 +77,8 @@ int main(int argc, char *argv[]) {
 
   }
 
-  // Uncomment the next three lines to debug in mpi mode
-  int tmp=0;
-  if (MyPID==0) cin >> tmp;
-  Comm.Barrier();
+  // Uncomment the next line to debug in mpi mode
+	//int tmp=0; if (MyPID==0) { cout << "Type any key plus enter to continue" << endl; cin >> tmp; } Comm.Barrier();
 
   Epetra_BlockMap * readMap;
   Epetra_VbrMatrix * readA; 
@@ -231,8 +229,8 @@ int main(int argc, char *argv[]) {
   //                                               " Rthresh = " + toString(Rthresh); 
   //ILUK->SetLabel(label.c_str());
 
-  int Maxiter = 500;
-  double Tolerance = 1.0E-14;
+  //int Maxiter = 500;
+  //double Tolerance = 1.0E-14;
 
   Epetra_Vector xcomp(*map);
   Epetra_Vector resid(*map);
@@ -289,7 +287,7 @@ int main(int argc, char *argv[]) {
   int Niters = 1200;
   solver.SetAztecOption(AZ_kspace, Niters);
    
-  solver.Iterate(Niters, 5.0e-16);
+  solver.Iterate(Niters, 5.0e-10);
 
   elapsed_time = timer.ElapsedTime() - elapsed_time;
   total_flops = counter.Flops();

@@ -74,8 +74,8 @@ double AZK_residual_norm_no_copy(double *xr, double *xi, double *br, double *bi,
 
   AZ_MATRIX  *Amat;   /* Structure representing matrix to be solved.          */
   double *x, *b;      /* Solution  and right-hand side to linear system.      */
-  int N_equations, ione = 1;
-  double *y_tmp, neg_one = -1.0, result;
+  int N_equations, i;
+  double *y_tmp, result;
 
   /* Transform complex system into komplex system */
   
@@ -94,7 +94,9 @@ double AZK_residual_norm_no_copy(double *xr, double *xi, double *br, double *bi,
   Amat->matvec(x, y_tmp, Amat, proc_config);
 
   /* Compute r = b - A*x (put in y_tmp) */
-  daxpy_(&N_equations, &neg_one, b, &ione, y_tmp, &ione);
+  /*daxpy_(&N_equations, &neg_one, b, &ione, y_tmp, &ione);*/
+
+	for (i=0; i<N_equations; i++) y_tmp[i] = y_tmp[i] - b[i];
 
   /* Use Aztec function to compute norm */
 
@@ -162,8 +164,8 @@ double AZK_residual_norm(double *xk, double *bk,
 
 
 {
-  int N_equations, ione = 1;
-  double *y_tmp, neg_one = -1.0, result;
+  int N_equations, i;
+  double *y_tmp, result;
 
   /* Allocate temp vector y */
   
@@ -178,7 +180,8 @@ double AZK_residual_norm(double *xk, double *bk,
   Amat_komplex->matvec(xk, y_tmp, Amat_komplex, proc_config);
 
   /* Compute r = b - A*x (put in y_tmp) */
-  daxpy_(&N_equations, &neg_one, bk, &ione, y_tmp, &ione);
+  /*daxpy_(&N_equations, &neg_one, bk, &ione, y_tmp, &ione);*/
+	for (i=0; i<N_equations; i++) y_tmp[i] = y_tmp[i] - bk[i];
 
   /* Use Aztec function to compute norm */
 

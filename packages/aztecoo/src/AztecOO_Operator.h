@@ -117,10 +117,10 @@ class AztecOO_Operator: public virtual Epetra_Operator {
   const Epetra_Comm & Comm() const{return(solver_->GetUserOperator()->Comm());};
   
   //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-  const Epetra_BlockMap & DomainMap() const {return(solver_->GetUserOperator()->DomainMap());};
+  const Epetra_Map & OperatorDomainMap() const {return(solver_->GetUserOperator()->OperatorDomainMap());};
   
   //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-  const Epetra_BlockMap & RangeMap() const {return(solver_->GetUserOperator()->RangeMap());};
+  const Epetra_Map & OperatorRangeMap() const {return(solver_->GetUserOperator()->OperatorRangeMap());};
   //@}
   
  protected:

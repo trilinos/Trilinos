@@ -950,6 +950,31 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   virtual void Print(ostream & os) const;
     //@}
 
+  //@{ \name Expert-only unsupported methods
+
+  //! Reset the view of an existing multivector to point to new user data.
+	/*! Allows the (very) light-weight replacement of multivector values for an
+		  existing multivector that was constructed using an Epetra_DataAccess mode of View.
+			No checking is performed to see if the array of values passed in contains valid 
+			data.  It is assumed that the user has verified the integrity of data before calling
+			this method. This method is useful for situations where a multivector is needed
+			for use with an Epetra operator or matrix and the user is not passing in a multivector,
+			or the multivector is being passed in with another map that is not exactly compatible
+			with the operator, but has the correct number of entries.
+
+			This method is used by AztecOO and Ifpack in the matvec, and solve methods to improve
+			performance and reduce repeated calls to constructors and destructors.
+
+			@param ArrayOfPointers Contains the array of pointers containing the multivector data.
+
+			\return Integer error code, set to 0 if successful, -1 if the multivector was not created as a View.
+
+			\warning This method is extremely dangerous and should only be used by experts.
+	*/
+
+	int ResetView(double ** ArrayOfPointers);
+	//@}
+
  protected:
 
   //! Get pointer to MultiVector values

@@ -35,12 +35,12 @@
 #include "ml_epetra_operator.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
-#include "Epetra_BlockMap.h"
+#include "Epetra_Map.h"
 
 //==============================================================================
 // constructor -- it's presumed that the user has constructed the ML
 // object somewhere else
-Epetra_ML_Operator::Epetra_ML_Operator(ML *ml_handle, const Epetra_Comm &myComm,const Epetra_BlockMap &dm, const Epetra_BlockMap &rm)
+Epetra_ML_Operator::Epetra_ML_Operator(ML *ml_handle, const Epetra_Comm &myComm,const Epetra_Map &dm, const Epetra_Map &rm)
   : solver_(ml_handle),
     Label_(0),
     Comm_(myComm),
@@ -54,8 +54,8 @@ Epetra_ML_Operator::~Epetra_ML_Operator() {
 //==============================================================================
 int Epetra_ML_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
 
-  if (!X.Map().SameAs(DomainMap())) EPETRA_CHK_ERR(-1);
-  if (!Y.Map().SameAs(RangeMap())) EPETRA_CHK_ERR(-2);
+  if (!X.Map().SameAs(OperatorDomainMap())) EPETRA_CHK_ERR(-1);
+  if (!Y.Map().SameAs(OperatorRangeMap())) EPETRA_CHK_ERR(-2);
   if (Y.NumVectors()!=X.NumVectors()) EPETRA_CHK_ERR(-3);
 
   Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled

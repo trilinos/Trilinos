@@ -407,12 +407,12 @@ int Epetra_CrsMatrix::SumIntoMyValues(int Row, int NumEntries, double * Values, 
 
 //==========================================================================
 int Epetra_CrsMatrix::TransformToLocal() {
-  EPETRA_CHK_ERR(TransformToLocal((Epetra_BlockMap *) (&RowMap()), (Epetra_BlockMap *) (&RowMap())));
+  EPETRA_CHK_ERR(TransformToLocal((Epetra_Map *) (&RowMap()),(Epetra_Map *) (&RowMap())));
   return(0);
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::TransformToLocal(Epetra_BlockMap *DomainMap, Epetra_BlockMap *RangeMap) {
+int Epetra_CrsMatrix::TransformToLocal(Epetra_Map *DomainMap, Epetra_Map *RangeMap) {
   
   if (!StaticGraph()) EPETRA_CHK_ERR(Graph_->MakeIndicesLocal(*DomainMap, *RangeMap));
   SortEntries();  // Sort column entries from smallest to largest
@@ -714,7 +714,7 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
       if (ImportVector_!=0) {
 	if (ImportVector_->NumVectors()!=1) { delete ImportVector_; ImportVector_= 0;}
       }
-      if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ImportMap(),1); // Create import vector if needed
+      if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ColMap(),1); // Create import vector if needed
       ImportVector_->Import(x, *Importer(), Insert);
       xp = (double*)ImportVector_->Values();
     }
@@ -762,7 +762,7 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
       if (ImportVector_!=0) {
 	if (ImportVector_->NumVectors()!=1) { delete ImportVector_; ImportVector_= 0;}
       }
-      if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ImportMap(),1); // Create import vector if needed
+      if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ColMap(),1); // Create import vector if needed
       yp = (double*)ImportVector_->Values();
     }
 
@@ -821,7 +821,7 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       if (ImportVector_!=0) {
 	if (ImportVector_->NumVectors()!=NumVectors) { delete ImportVector_; ImportVector_= 0;}
       }
-      if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ImportMap(),NumVectors); // Create import vector if needed
+      if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ColMap(),NumVectors); // Create import vector if needed
       ImportVector_->Import(X, *Importer(), Insert);
       Xp = (double**)ImportVector_->Pointers();
     }
@@ -868,7 +868,7 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       if (ImportVector_!=0) {
 	if (ImportVector_->NumVectors()!=NumVectors) { delete ImportVector_; ImportVector_= 0;}
       }
-      if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ImportMap(),NumVectors); // Create import vector if needed
+      if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ColMap(),NumVectors); // Create import vector if needed
       Yp = (double**)ImportVector_->Pointers();
     }
 
@@ -1167,7 +1167,7 @@ int Epetra_CrsMatrix::InvColSums(Epetra_Vector& x) const {
 
   // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
   if (Importer()!=0) {
-    x_tmp = new Epetra_Vector(ImportMap()); // Create import vector if needed
+    x_tmp = new Epetra_Vector(ColMap()); // Create import vector if needed
     xp = (double*)x_tmp->Values();
   }
   int ierr = 0;
@@ -1247,7 +1247,7 @@ int Epetra_CrsMatrix::RightScale(const Epetra_Vector& x) {
 
   // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
   if (Importer()!=0) {
-    x_tmp = new Epetra_Vector(ImportMap()); // Create import vector if needed
+    x_tmp = new Epetra_Vector(ColMap()); // Create import vector if needed
     x_tmp->Import(x,*Importer(), Insert); // x_tmp will have all the values we need
     xp = (double*)x_tmp->Values();
   }
@@ -1306,7 +1306,7 @@ double Epetra_CrsMatrix::NormOne() const {
 
   // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
   if (Importer()!=0) {
-    x_tmp = new Epetra_Vector(ImportMap()); // Create temporary import vector if needed
+    x_tmp = new Epetra_Vector(ColMap()); // Create temporary import vector if needed
     xp = (double*)x_tmp->Values();
   }
   int i, j;

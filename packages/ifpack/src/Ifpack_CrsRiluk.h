@@ -16,7 +16,7 @@ class Epetra_RowMatrix;
 class Epetra_Vector;
 class Epetra_MultiVector;
 
-//! Ifpack_CrsRiluk: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Epetra_CrsMatrix.
+//! Ifpack_CrsRiluk: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Epetra_RowMatrix.
 
 /*! The Ifpack_CrsRiluk class computes a "Relaxed" ILU factorization with level k fill 
     of a given Epetra_CrsMatrix.  The factorization 
@@ -378,19 +378,19 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
     double NormInf() const {return(0.0);};
 
     //! Returns false because this class cannot compute an Inf-norm.
-    virtual bool HasNormInf() const {return(false);};
+    bool HasNormInf() const {return(false);};
 
     //! Returns the current UseTranspose setting.
-    virtual bool UseTranspose() const {return(UseTranspose_);};
+    bool UseTranspose() const {return(UseTranspose_);};
 
-    //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-    virtual const Epetra_BlockMap & DomainMap() const {return(DomainMap_);};
+    //! Returns the Epetra_Map object associated with the domain of this operator.
+    const Epetra_Map & OperatorDomainMap() const {return(U_->OperatorDomainMap());};
+
+    //! Returns the Epetra_Map object associated with the range of this operator.
+    const Epetra_Map & OperatorRangeMap() const{return(L_->OperatorRangeMap());};
 
     //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-    virtual const Epetra_BlockMap & RangeMap() const{return(RangeMap_);};
-
-    //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-    virtual const Epetra_Comm & Comm() const{return(Comm_);};
+    const Epetra_Comm & Comm() const{return(Comm_);};
   //@}
 
  protected:
@@ -410,8 +410,6 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   bool UserMatrixIsCrs_;
   bool IsOverlapped_;
   const Ifpack_IlukGraph & Graph_;
-  const Epetra_BlockMap & DomainMap_;
-  const Epetra_BlockMap & RangeMap_;
   Epetra_Map * IlukRowMap_;
   const Epetra_Comm & Comm_;
   Epetra_CrsMatrix * L_;

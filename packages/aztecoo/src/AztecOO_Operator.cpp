@@ -23,7 +23,7 @@
 
 #include "AztecOO_Operator.h"
 #include "Epetra_MultiVector.h"
-#include "Epetra_BlockMap.h"
+#include "Epetra_Map.h"
 
 //==============================================================================
 AztecOO_Operator::AztecOO_Operator(AztecOO * solver, int NumIters) 
@@ -40,8 +40,8 @@ AztecOO_Operator::~AztecOO_Operator() {
 int AztecOO_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
 
 
-  if (!X.Map().SameAs(DomainMap())) EPETRA_CHK_ERR(-1);
-  if (!Y.Map().SameAs(RangeMap())) EPETRA_CHK_ERR(-2);
+  if (!X.Map().SameAs(OperatorDomainMap())) EPETRA_CHK_ERR(-1);
+  if (!Y.Map().SameAs(OperatorRangeMap())) EPETRA_CHK_ERR(-2);
   if (Y.NumVectors()!=X.NumVectors()) EPETRA_CHK_ERR(-3);
 
   Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled in solver or if X = Y

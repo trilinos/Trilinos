@@ -420,6 +420,12 @@ class Epetra_BlockMap: public Epetra_Object {
 
   //! Returns true if \e this and Map are identical maps
   bool SameAs(const Epetra_BlockMap & Map) const;
+
+  //! Returns true if \e this and Map have identical point-wise structure
+	/*! If both maps have the same number of global points and the same point
+		  distribution across processors then this method returns true.
+	*/
+  bool PointSameAs(const Epetra_BlockMap & Map) const;
   
   //! Returns true if the global ID space is contiguously divided (but not necessarily uniformly) across all processors.
   bool  LinearMap() const {return(LinearMap_);};

@@ -31,6 +31,7 @@ class Epetra_MultiVector;
 class Epetra_RowMatrix;
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Object.h"
+#include "Epetra_Vector.h"
 #include "az_aztec.h"
 
 
@@ -254,13 +255,13 @@ class AztecOO {
     return(AZ_check_input(Amat_->data_org, options_, params_, proc_config_));};
 
   //! Get a pointer to the user operator A.
-  Epetra_Operator * GetUserOperator() const {return(UserOperator_);};
+  Epetra_Operator * GetUserOperator() const {return(UserOperatorData_->A);};
   //! Get a pointer to the user matrix A.
-  Epetra_RowMatrix * GetUserMatrix() const {return(UserMatrix_);};
+  Epetra_RowMatrix * GetUserMatrix() const {return(UserMatrixData_->A);};
   //! Get a pointer to the preconditioner operator.
-  Epetra_Operator * GetPrecOperator() const {return(PrecOperator_);};
+  Epetra_Operator * GetPrecOperator() const {return(PrecOperatorData_->A);};
   //! Get a pointer to the matrix used to construct the preconditioner.
-  Epetra_RowMatrix * GetPrecMatrix() const {return(PrecMatrix_);};
+  Epetra_RowMatrix * GetPrecMatrix() const {return(PrecMatrixData_->A);};
   //! Get a pointer to the left-hand-side X.
   Epetra_MultiVector * GetLHS() const {return(X_);};
   //! Get a pointer to the right-hand-side B.
@@ -400,6 +401,39 @@ class AztecOO {
   //@}
 
 
+	struct MatrixData {
+		Epetra_RowMatrix * A;
+		Epetra_Vector * X;
+		Epetra_Vector * Y;
+		Epetra_Vector * SourceVec;
+		Epetra_Vector * TargetVec;
+
+		MatrixData(Epetra_RowMatrix * inA = 0, Epetra_Vector * inX = 0, 
+							 Epetra_Vector * inY = 0, Epetra_Vector * inSourceVec = 0,
+							 Epetra_Vector * inTargetVec = 0)
+			: A(inA), X(inX), Y(inY), SourceVec(inSourceVec), TargetVec(inTargetVec){};
+
+		~MatrixData(void) {
+			if (X!=0) delete X;
+			if (Y!=0) delete Y;
+			if (SourceVec!=0) delete SourceVec;
+			if (TargetVec!=0) delete TargetVec;
+		};
+	};
+
+	struct OperatorData {
+		Epetra_Operator * A;
+		Epetra_Vector * X;
+		Epetra_Vector * Y;
+		OperatorData(Epetra_Operator * inA = 0, Epetra_Vector * inX = 0, 
+							 Epetra_Vector * inY = 0)
+			: A(inA), X(inX), Y(inY) {};
+		~OperatorData(void) {
+			if (X!=0) delete X;
+			if (Y!=0) delete Y;
+		};
+	};
+
  protected:
 
   int AllocAzArrays();
@@ -412,10 +446,6 @@ class AztecOO {
   void DeleteMemory();
   
 
-  Epetra_Operator * UserOperator_;
-  Epetra_RowMatrix * UserMatrix_;
-  Epetra_Operator * PrecOperator_;
-  Epetra_RowMatrix * PrecMatrix_;
   Epetra_MultiVector * X_;
   Epetra_MultiVector * B_;
 
@@ -443,6 +473,12 @@ class AztecOO {
   double condestThreshold_;
   bool inConstructor_; // Shuts down zero pointer error reporting while in a constructor
   bool procConfigSet_;
+
+	MatrixData * UserMatrixData_;
+	MatrixData * PrecMatrixData_;
+	OperatorData * UserOperatorData_;
+	OperatorData * PrecOperatorData_;
+
 };
 
 // External prototypes
@@ -455,29 +491,6 @@ extern "C" int Epetra_Aztec_getrow(int columns[], double values[], int row_lengt
 				   AZ_MATRIX *Amat, int N_requested_rows,
 				   int requested_rows[], int allocated_space);
 extern "C" int Epetra_Aztec_comm_wrapper(double vec[], AZ_MATRIX *Amat);
-
-#ifdef AZTEC_OO_WITH_ML
-
-extern "C" int Epetra_ML_matvec(void *data, int in, double *p, int out, double *ap);
-
-extern "C" int Epetra_ML_getrow(void *data, int N_requested_rows, int requested_rows[],
-                    int allocated_space, int columns[], double values[],
-                    int row_lengths[]);
-
-extern "C" int Epetra_ML_comm_wrapper(double vec[], void *data);
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  //! Trilinos_LinearProblem Convert Petra Matrix To ML matrix.
-  /*! Take a Petra matrix and convert it to an ML matrix and stick it
-      in a multigrid hierarchy at 'level'. This function should probably
-      not sit here but be inside some ML_Petra wrapper object.
-   */
-  int  PetraMatrix2MLMatrix(ML *ml_handle, int level,
-			    Epetra_RowMatrix * Amat);
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-#endif // AZTEC_OO_WITH_ML
-
+		
 #endif /* _AZTECOO_H_ */
 

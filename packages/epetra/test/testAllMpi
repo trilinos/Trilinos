@@ -23,9 +23,9 @@ echo `uname -a` >>& $file
 foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix FECrsMatrix FEVector ImportExport Map MapColoring MultiVector Object VbrMatrix Vector)
 	cd $f
 	if( "$5" == "True" ) then
-	    make -f classicMakefile $1 $2 $3 $4 clobber; make -f classicMakefile $1 $2 $3 $4
+	    gmake -f classicMakefile $1 $2 $3 $4 clobber; gmake -f classicMakefile $1 $2 $3 $4
 	else
-	    make -f classicMakefile TRILINOS_ID= TRILINOS_COMM=MPI clobber; make -f classicMakefile TRILINOS_ID= TRILINOS_COMM=MPI
+	    gmake -f classicMakefile TRILINOS_ID=LAM TRILINOS_COMM=MPI clobber; gmake -f classicMakefile TRILINOS_ID=LAM TRILINOS_COMM=MPI
 	endif
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
@@ -41,9 +41,9 @@ foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix FECrsMatrix FEVector I
 		endif
 	end
 	if( "$5" == "True" ) then
-	    make -f classicMakefile $1 $2 $3 $4 clobber
+	    gmake -f classicMakefile $1 $2 $3 $4 clobber
 	else
-	    make -f classicMakefile TRILINOS_ID= TRILINOS_COMM=MPI clobber
+	    gmake -f classicMakefile TRILINOS_ID=LAM TRILINOS_COMM=MPI clobber
 	endif
 	cd ..
 end

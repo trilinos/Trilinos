@@ -12,7 +12,7 @@
 #endif
 #include "Epetra_SerialComm.h"
 #include "Epetra_Map.h"
-#include "Epetra_BlockMap.h"
+#include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_MsrMatrix.h"
@@ -33,9 +33,7 @@ int main(int argc, char *argv[])
 
   cout << comm << endl;
 
-  int temp;
-  if (comm.MyPID()==0) cin >> temp;
-  comm.Barrier();
+  // int temp; if (comm.MyPID()==0) cin >> temp; comm.Barrier();
 
   if(argc != 2) cerr << "Error: enter name of data file on command line" << endl; 
   /* Set exact solution to NULL */
@@ -81,7 +79,7 @@ int main(int argc, char *argv[])
 
   Epetra_MsrMatrix A(proc_config, Amat); // Create Epetra_MsrMatrix
 
-  const Epetra_BlockMap & map = A.BlockRowMap();
+  const Epetra_Map & map = A.RowMatrixRowMap();
   Epetra_Vector xx(Copy, map, xexact);
 
   Epetra_Vector bb(Copy, map, b);

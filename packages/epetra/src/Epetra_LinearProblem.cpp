@@ -26,7 +26,7 @@
 #include "Epetra_LinearProblem.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
-#include "Epetra_BlockMap.h"
+#include "Epetra_Map.h"
 
 
 //=============================================================================
@@ -124,8 +124,8 @@ int Epetra_LinearProblem::CheckInput() const {
 
   if (A_==0) EPETRA_CHK_ERR(1); // Return warning error because this problem has no matrix (just an operator)
 
-  if (!A_->DomainMap().SameAs(X_->Map())) ierr = -4;
-  if (!A_->RangeMap().SameAs(B_->Map())) ierr = -5;
+  if (!A_->OperatorDomainMap().SameAs(X_->Map())) ierr = -4;
+  if (!A_->OperatorRangeMap().SameAs(B_->Map())) ierr = -5;
 
   EPETRA_CHK_ERR(ierr);
   return(0);

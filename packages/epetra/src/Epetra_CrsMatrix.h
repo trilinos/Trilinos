@@ -32,7 +32,6 @@
 #include "Epetra_Operator.h"
 #include "Epetra_CrsGraph.h"
 class Epetra_Map;
-class Epetra_BlockMap;
 class Epetra_Import;
 class Epetra_Export;
 class Epetra_Vector;
@@ -277,7 +276,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
            RangeMap - Map that describes the distribution of vector and multi-vectors in the
 	               matrix range.
     */
-    int TransformToLocal(Epetra_BlockMap *DomainMap, Epetra_BlockMap *RangeMap);
+    int TransformToLocal(Epetra_Map *DomainMap, Epetra_Map *RangeMap);
     
     //! Sort column entries, row-by-row, in ascending order.
     int SortEntries();
@@ -638,23 +637,17 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     //! Returns the Epetra_Map object that describes the column distribution across processors.
     const Epetra_Map & ColMap() const {return((Epetra_Map &) Graph_->ColMap());};
 
+    //! Returns the Epetra_Map object associated with the domain of this matrix operator.
+    const Epetra_Map & DomainMap() const {return((Epetra_Map &)Graph_->DomainMap());}
+
+    //! Returns the Epetra_Map object associated with the range of this matrix operator.
+    const Epetra_Map & RangeMap() const  {return((Epetra_Map &)Graph_->RangeMap());}
+
     //! Returns the Epetra_Import object that contains the import operations for distributed operations.
     const Epetra_Import * Importer() const {return(Graph_->Importer());};
 
     //! Returns the Epetra_Export object that contains the export operations for distributed operations.
     const Epetra_Export * Exporter() const {return(Graph_->Exporter());};
-
-    //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-    const Epetra_BlockMap & DomainMap() const {return((Epetra_BlockMap &)Graph_->DomainMap());}
-
-    //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-    const Epetra_BlockMap & RangeMap() const  {return((Epetra_BlockMap &)Graph_->RangeMap());}
-
-    //! Returns the RowMap object as an Epetra_BlockMap (the Epetra_Map base class) needed for implementing Epetra_RowMatrix.
-    const Epetra_BlockMap & BlockRowMap() const {return((Epetra_BlockMap &)Graph_->RowMap());};
-
-    //! Returns the Import object as an Epetra_BlockMap (the Epetra_Map base class) needed for implementing Epetra_RowMatrix.
-    const Epetra_BlockMap & BlockImportMap() const {return((Epetra_BlockMap &)Graph_->ImportMap());};
 
     //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
     const Epetra_Comm & Comm() const {return(Epetra_DistObject::Comm());};
@@ -742,11 +735,17 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
     return(Solve(UpperTriangular(), Epetra_CrsMatrix::UseTranspose(), NoDiagonal(), X, Y));};
 
-    //! Returns true because this class can compute an Inf-norm.
-    virtual bool HasNormInf() const {return(true);};
-
-    //! Returns the current UseTranspose setting.
-    virtual bool UseTranspose() const {return(UseTranspose_);};
+	//! Returns true because this class can compute an Inf-norm.
+	bool HasNormInf() const {return(true);};
+	
+	//! Returns the current UseTranspose setting.
+	bool UseTranspose() const {return(UseTranspose_);};
+	
+	//! Returns the Epetra_Map object associated with the domain of this matrix operator.
+	const Epetra_Map & OperatorDomainMap() const {return(DomainMap());};
+	
+	//! Returns the Epetra_Map object associated with the range of this matrix operator.
+	const Epetra_Map & OperatorRangeMap() const {return(RangeMap());};
 
   //@}
   //@{ \name Additional methods required to implement RowMatrix interface.
@@ -762,6 +761,16 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful.
   */
     int NumMyRowEntries(int MyRow, int & NumEntries) const;
+
+    //! Returns the Epetra_Map object associated with the rows of this matrix.
+    const Epetra_Map & RowMatrixRowMap() const {return(RowMap());};
+
+    //! Returns the Epetra_Map object associated with columns of this matrix.
+    const Epetra_Map & RowMatrixColMap() const {return(ColMap());};
+
+    //! Returns the Epetra_Import object that contains the import operations for distributed operations.
+    const Epetra_Import * RowMatrixImporter() const {return(Importer());};
+
   //@}
 
   //@{ \name Inlined Operator Methods.

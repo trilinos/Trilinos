@@ -358,16 +358,16 @@ class Ifpack_CrsRick: public Epetra_Object, public Epetra_CompObject, public vir
     double NormInf() const {return(0.0);};
 
     //! Returns false because this class cannot compute an Inf-norm.
-    virtual bool HasNormInf() const {return(false);};
+    bool HasNormInf() const {return(false);};
 
     //! Returns the current UseTranspose setting.
-    virtual bool UseTranspose() const {return(UseTranspose_);};
+    bool UseTranspose() const {return(UseTranspose_);};
 
-    //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-    virtual const Epetra_BlockMap & DomainMap() const {return(A_.DomainMap());};
+    //! Returns the Epetra_Map object associated with the domain of this operator.
+    const Epetra_Map & OperatorDomainMap() const {return(A_.DomainMap());};
 
-    //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-    virtual const Epetra_BlockMap & RangeMap() const{return(A_.RangeMap());};
+    //! Returns the Epetra_Map object associated with the range of this operator.
+    const Epetra_Map & OperatorRangeMap() const{return(A_.RangeMap());};
   //@}
 
  protected:

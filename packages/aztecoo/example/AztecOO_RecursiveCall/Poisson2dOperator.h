@@ -119,11 +119,11 @@ class Poisson2dOperator: public virtual Epetra_Operator {
   //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
   const Epetra_Comm & Comm() const{return(comm_);};
   
-  //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-  const Epetra_BlockMap & DomainMap() const {return(*(Epetra_BlockMap *)map_);};
+  //! Returns the Epetra_Map object associated with the domain of this matrix operator.
+  const Epetra_Map & OperatorDomainMap() const {return(*map_);};
   
   //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-  const Epetra_BlockMap & RangeMap() const {return(*(Epetra_BlockMap *)map_);};
+  const Epetra_Map & OperatorRangeMap() const {return(*map_);};
   //@}
   
   //@{ \name Approximate matrix generators

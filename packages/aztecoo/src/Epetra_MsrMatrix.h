@@ -37,7 +37,6 @@
 
 
 class Epetra_Map;
-class Epetra_BlockMap;
 class Epetra_Import;
 class Epetra_Export;
 class Epetra_Vector;
@@ -213,40 +212,40 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
     int NumGlobalNonzeros() const {return(NumGlobalNonzeros_);};
 
     //! Returns the number of global matrix rows.
-    int NumGlobalRows() const {return(RangeMap().NumGlobalPoints());};
+    int NumGlobalRows() const {return(OperatorRangeMap().NumGlobalPoints());};
 
     //! Returns the number of global matrix columns.
-    int NumGlobalCols() const {return(DomainMap().NumGlobalPoints());};
+    int NumGlobalCols() const {return(OperatorDomainMap().NumGlobalPoints());};
 
     //! Returns the number of global nonzero diagonal entries.
-    int NumGlobalDiagonals() const{return(DomainMap().NumGlobalPoints());};
+    int NumGlobalDiagonals() const{return(OperatorDomainMap().NumGlobalPoints());};
     
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
     int NumMyNonzeros() const {return(NumMyNonzeros_);};
 
     //! Returns the number of matrix rows owned by the calling processor.
-    int NumMyRows() const {return(RangeMap().NumMyPoints());};
+    int NumMyRows() const {return(OperatorRangeMap().NumMyPoints());};
 
     //! Returns the number of matrix columns owned by the calling processor.
-    int NumMyCols() const {return(BlockImportMap().NumMyPoints());};
+    int NumMyCols() const {return(RowMatrixColMap().NumMyPoints());};
 
     //! Returns the number of local nonzero diagonal entries.
-    int NumMyDiagonals() const {return(RangeMap().NumMyPoints());};
+    int NumMyDiagonals() const {return(OperatorRangeMap().NumMyPoints());};
 
-    //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-    const Epetra_BlockMap & DomainMap() const {return(*DomainMap_);};
+    //! Returns the Epetra_Map object associated with the domain of this operator.
+    const Epetra_Map & OperatorDomainMap() const {return(*DomainMap_);};
 
-    //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-    const Epetra_BlockMap & RangeMap() const  {return(*RangeMap_);};
+    //! Returns the Epetra_Map object associated with the range of this operator (same as domain).
+    const Epetra_Map & OperatorRangeMap() const  {return(*DomainMap_);};
 
-    //! Returns the RowMap object as an Epetra_BlockMap (the Epetra_Map base class) needed for implementing Epetra_RowMatrix.
-    const Epetra_BlockMap & BlockRowMap() const {return(RangeMap());};
+    //! Returns the Row Map object needed for implementing Epetra_RowMatrix.
+    const Epetra_Map & RowMatrixRowMap() const {return(OperatorRangeMap());};
 
-    //! Returns the Import object as an Epetra_BlockMap (the Epetra_Map base class) needed for implementing Epetra_RowMatrix.
-    const Epetra_BlockMap & BlockImportMap() const {return(*ImportMap_);};
+    //! Returns the Column Map object needed for implementing Epetra_RowMatrix.
+    const Epetra_Map & RowMatrixColMap() const {return(*ColMap_);};
 
     //! Returns the Epetra_Import object that contains the import operations for distributed operations.
-    virtual const Epetra_Import * Importer() const {return(Importer_);};
+    virtual const Epetra_Import * RowMatrixImporter() const {return(Importer_);};
 
     //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
     const Epetra_Comm & Comm() const {return(*Comm_);};
@@ -340,9 +339,8 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
 #else
   Epetra_SerialComm * Comm_;
 #endif  
-    Epetra_BlockMap * DomainMap_;
-    Epetra_BlockMap * RangeMap_;
-    Epetra_BlockMap * ImportMap_;
+    Epetra_Map * DomainMap_;
+    Epetra_Map * ColMap_;
     Epetra_Import * Importer_;
     mutable Epetra_MultiVector * ImportVector_;
  

@@ -32,6 +32,7 @@
 #include "Epetra_Operator.h"
 #include "Epetra_CrsGraph.h"
 class Epetra_BlockMap;
+class Epetra_Map;
 class Epetra_Import;
 class Epetra_Export;
 class Epetra_Vector;
@@ -839,12 +840,6 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     //! Returns a pointer to the Epetra_CrsGraph object associated with this matrix.
     const Epetra_CrsGraph & Graph() const {return(*Graph_);};
 
-    //! Returns the Epetra_BlockMap object associated with the rows of this matrix.
-    const Epetra_BlockMap & RowMap() const {return((Epetra_BlockMap &)Graph_->RowMap());};
-
-    //! Returns the Epetra_BlockMap object associated with columns of this matrix.
-    const Epetra_BlockMap & ColMap() const {return((Epetra_BlockMap &)Graph_->ColMap());};
-
     //! Returns the Epetra_Import object that contains the import operations for distributed operations.
     const Epetra_Import * Importer() const {return(Graph_->Importer());};
 
@@ -852,21 +847,22 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     const Epetra_Export * Exporter() const {return(Graph_->Exporter());};
 
     //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-    const Epetra_BlockMap & DomainMap() const {return((Epetra_BlockMap &)Graph_->DomainMap());}
+    const Epetra_BlockMap & DomainMap() const {return(Graph_->DomainMap());};
 
     //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-    const Epetra_BlockMap & RangeMap() const  {return((Epetra_BlockMap &)Graph_->RangeMap());}
+    const Epetra_BlockMap & RangeMap() const  {return(Graph_->RangeMap());};
 
     //! Returns the RowMap object as an Epetra_BlockMap (the Epetra_Map base class) needed for implementing Epetra_RowMatrix.
-    const Epetra_BlockMap & BlockRowMap() const {return((Epetra_BlockMap &)Graph_->RowMap());};
+    const Epetra_BlockMap & RowMap() const {return(Graph_->RowMap());};
 
     //! Returns the ColMap as an Epetra_BlockMap (the Epetra_Map base class) needed for implementing Epetra_RowMatrix.
-    const Epetra_BlockMap & BlockColMap() const {return((Epetra_BlockMap &)Graph_->ColMap());};
+    const Epetra_BlockMap & ColMap() const {return(Graph_->ColMap());};
 
     //! Fills a matrix with rows from a source matrix based on the specified importer.
 
     //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
     const Epetra_Comm & Comm() const {return(Graph_->Comm());};
+
   //@}
   
   //@{ \name Local/Global ID methods
@@ -930,8 +926,7 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
     \return Integer error code, set to 0 if successful.
   */
-  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-    return(Epetra_VbrMatrix::Multiply(Epetra_VbrMatrix::UseTranspose(), X, Y));};
+  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
     //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
     /*! In this implementation, we use several existing attributes to determine how virtual
@@ -947,14 +942,21 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
     \return Integer error code, set to 0 if successful.
   */
-  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-    return(Solve(UpperTriangular(), Epetra_VbrMatrix::UseTranspose(), NoDiagonal(), X, Y));};
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
     //! Returns true because this class can compute an Inf-norm.
-    virtual bool HasNormInf() const {return(true);};
+    bool HasNormInf() const {return(true);};
 
     //! Returns the current UseTranspose setting.
-    virtual bool UseTranspose() const {return(UseTranspose_);};
+		bool UseTranspose() const {return(UseTranspose_);};
+
+    //! Returns the Epetra_Map object associated with the domain of this matrix operator.
+    const Epetra_Map & OperatorDomainMap() const 
+			{ if (!HavePointObjects_) GeneratePointObjects(); return(*OperatorDomainMap_); };
+
+    //! Returns the Epetra_Map object associated with the range of this matrix operator.
+    const Epetra_Map & OperatorRangeMap() const 
+			{ if (!HavePointObjects_) GeneratePointObjects(); return(*OperatorRangeMap_); };
 
   //@}
   //@{ \name Additional methods required to implement RowMatrix interface.
@@ -1003,12 +1005,25 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful.
   */
     int NumMyRowEntries(int MyRow, int & NumEntries) const;
+
+    //! Returns the EpetraMap object associated with the rows of this matrix.
+    const Epetra_Map & RowMatrixRowMap() const 
+			{ if (!HavePointObjects_) GeneratePointObjects(); return(*RowMatrixRowMap_); };
+
+    //! Returns the Epetra_Map object associated with columns of this matrix.
+    const Epetra_Map & RowMatrixColMap() const 
+			{ if (!HavePointObjects_) GeneratePointObjects(); return(*RowMatrixColMap_); };
+
+    //! Returns the Epetra_Import object that contains the import operations for distributed operations.
+    const Epetra_Import * RowMatrixImporter() const 
+			{ if (!HavePointObjects_) GeneratePointObjects(); return(RowMatrixImporter_); };
+
   //@}
 
   //@{ \name Deprecated methods:  These methods still work, but will be removed in a future version.
 
     //! Use BlockColMap() instead. 
-    const Epetra_BlockMap & BlockImportMap() const {return((Epetra_BlockMap &)Graph_->ColMap());};
+    const Epetra_BlockMap & BlockImportMap() const {return(Graph_->ImportMap());};
   //@}
 
  protected:
@@ -1085,6 +1100,9 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
   bool StaticGraph() const {return(StaticGraph_);};
 
+	int GeneratePointObjects() const;
+	int BlockMap2PointMap(const Epetra_BlockMap & BlockMap, Epetra_Map * & PointMap) const;
+	int Epetra_VbrMatrix::UpdateOperatorXY(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   Epetra_CrsGraph * Graph_;
   bool Allocated_;
@@ -1137,6 +1155,20 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
   // State variable for extracting block diagonal entries
   mutable int CurBlockDiag_;
+
+	// Maps and importer that support the Epetra_RowMatrix interface
+	mutable Epetra_Map * RowMatrixRowMap_;
+	mutable Epetra_Map * RowMatrixColMap_;
+	mutable Epetra_Import * RowMatrixImporter_;
+
+	// Maps that support the Epetra_Operator interface
+	mutable Epetra_Map * OperatorDomainMap_;
+	mutable Epetra_Map * OperatorRangeMap_;
+	mutable Epetra_MultiVector * OperatorX_;
+	mutable Epetra_MultiVector * OperatorY_;
+
+	// bool to indicate if above four point maps and importer have already been created
+	mutable bool HavePointObjects_;
 
 };
 
