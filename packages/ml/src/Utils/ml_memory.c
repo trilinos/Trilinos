@@ -209,6 +209,7 @@ int ML_memory_free(void ** var_ptr)
 */
 
       int_ptr = (int *) ((long) char_ptr - ndouble);
+
       ML_free(int_ptr);
    }
    (*var_ptr) = NULL;
@@ -463,9 +464,13 @@ char *ML_allocate(unsigned int isize) {
     size = (int) isize;
 
     size = size + 7*sizeof(double);
-    ml_widget = (struct ml_widget *) ML_allocate(sizeof(struct ml_widget));
+    ml_widget = (struct ml_widget *) malloc(sizeof(struct ml_widget));
+                                     /* THIS MALLOC NEEDS TO STAY A */
+                                     /* MALLOC AND NOT AN ML_ALLOCATE */
     if (ml_widget == NULL) return(NULL);
-    ptr = (char *) ML_allocate(size);
+    ptr = (char *) malloc(size);     /* THIS MALLOC NEEDS TO STAY A */
+                                     /* MALLOC AND NOT AN ML_ALLOCATE */
+
     if (ptr == NULL) {
        ML_free(ml_widget);
        return(NULL);
@@ -512,7 +517,6 @@ printf("allocating 0 space %u (%d)\n",ptr,size);
        *header_start = 'x';
        header_start++;
     }
-
     return( (char *) &(dptr[4]) );
 }
 
@@ -606,10 +610,10 @@ ml_widget_head = NULL;
 
            /* free the space and the ml_widget */
 
-           ML_free(ptr);
+           free(ptr);  /* THIS FREE SHOULD NOT BE CHANGE TO ML_FREE */
            if (ml_widget_head == current) ml_widget_head = current->next;
            else prev->next = current->next;
-           ML_free(current);
+           free(current);  /* THIS FREE SHOULD NOT BE CHANGE TO ML_FREE */
 
        }
    }
@@ -667,7 +671,8 @@ data1 = ptr;
 
 
     newmsize = new_size + 7*sizeof(double);
-    new_ptr = (char *) ML_allocate(newmsize);
+    new_ptr = (char *) malloc(newmsize);  /* THIS MALLOC NEEDS TO STAY A */
+                                          /* MALLOC AND NOT AN ML_ALLOCATE */
     if (new_ptr == NULL) return(NULL);
 
 
@@ -762,6 +767,8 @@ char * ML_memory_check(char *fmt, ... )
 
   if (ml_memory_label == NULL) {
     ml_memory_label = (char *) malloc(sizeof(char)*200);
+                                    /* THIS MALLOC NEEDS TO STAY A */
+                                    /* MALLOC AND NOT AN ML_ALLOCATE */
     ml_memory_label[0] = '\0';
   }
 

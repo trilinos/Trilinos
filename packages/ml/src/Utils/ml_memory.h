@@ -30,8 +30,10 @@ extern "C"
 {
 #endif
 #endif
+#ifndef ML_MEM_CHECK
 extern void ML_free(void *);
 extern void *ML_allocate(ml_size_t size);
+#endif
 #ifndef ML_CPP
 #ifdef __cplusplus
 }
