@@ -190,14 +190,14 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
     /* Compute vertex visit order. */
     Zoltan_PHG_Vertex_Visit_Order(zz, hg, hgp, order);
 
-    /* for every (local) vertex */
+    /* for every vertex */
     for (k = 0; k < hg->nVtx; k++) {
         v1 = order[k];
 
-        if (match[v1] != v1)  /* v1 is already matched, so skip to next */
+        if (match[v1] != v1)
             continue;
 
-        nadj = 0;  /* number of neighbors (nonzero inner products) */
+        nadj = 0;  /* number of neighbors */
 
         /* for every hyperedge containing the vertex */
         for (i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
@@ -399,7 +399,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
           }
         } 
 
-        /* broadcast the winner, best_vertex, to entire proc column */
+        /* broadcast the winner, best_vertex */
         MPI_Bcast(&best_vertex, 1, MPI_INT, 0, hgc->col_comm); 
 
         /* match if inner product > 0 */
@@ -452,6 +452,8 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
 #define TSUM_THRESHOLD 0.0    /* ignore inner products (i.p.) < threshold */
 #define IPM_TAG        28731
 
+/* This routine encapsulates the common calls to use the Zoltan unstructured
+** communications library for the matching code */
 static int communication_by_plan (ZZ* zz, int nsend, int* dest, int* size, 
  int scale, int* send, int* nrec, int* recsize, int* nRec, int** rec,
  MPI_Comm comm, int tag);
@@ -478,6 +480,7 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
   int err = ZOLTAN_OK, old_row, row, col, nPins, nVtx;
   int *rows[hgc->nProc_y + 1], bestlno, vertex, nselect;
   char *yo = "matching_ipm";
+int *master_data = NULL, *master_procs = NULL, *mp = NULL, mcount = 0;
   
   /* this restriction will be removed later, but for now NOTE this test */
   if (sizeof(int) != sizeof (float))  {
@@ -486,7 +489,7 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
     goto fini;
   }
   
-  /* determine basic working limits and row rank */
+  /* determine basic working parameters */
   nRounds     = hgc->nProc_x * ROUNDS_CONSTANT;
   nCandidates = calc_nCandidates (hg->nVtx, hgc->nProc_x) ;
   
@@ -511,7 +514,9 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
   if (hg->nVtx)  
     if (!(cmatch = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
      || !(visit  = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
-     || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof (float))))  {
+     || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof (float)))
+     || !(master_data = (int*) ZOLTAN_MALLOC (3*nTotal*sizeof (int)))
+     || !(master_procs= (int*) ZOLTAN_MALLOC (nTotal * sizeof (int))))  {
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
        err = ZOLTAN_MEMERR;
        goto fini;
@@ -551,8 +556,9 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
    * No conflict resolution required because temp locking prevents conflicts. */
   
   pvisit = 0;                                    /* marks position in visit[] */
+  mp = master_data;
   for (round = 0; round < nRounds; round++)  {
-    memcpy (cmatch, match, hg->nVtx * sizeof(int));   /* for temporary locking */
+    memcpy (cmatch, match, hg->nVtx * sizeof(int));  /* for temporary locking */
          
     /************************ PHASE 1: ***************************************/
             
@@ -808,7 +814,7 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
        
       /* Determine best vertex and best sum for each candidate */
       s = send;
-      nsend = 0;
+      nsend = 0;      
       if (hgc->myProc_y == 0)
         for (r = rec; r < rec + recsize;)  {
           gno   = *r++;                    /* candidate's GNO */
@@ -829,95 +835,110 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
           
           if (bestsum > TSUM_THRESHOLD)  {
             cmatch[bestlno] = -1;  /* mark pending match to avoid conflicts */
-            *s++ = gno;
-            *s++ = VTX_LNO_TO_GNO (hg, bestlno);
-             f = (float*) s++;
+            *mp++ = gno;
+            *mp++ = VTX_LNO_TO_GNO (hg, bestlno);
+             f = (float*) mp++;
             *f = bestsum;
-            dest[nsend++] = VTX_TO_PROC_X (hg, gno);
+            master_procs[mcount++] = VTX_TO_PROC_X (hg, gno);
           }
-        }
-        
-      /* MASTER ROW only: send best results to candidates' owners */
-      err = communication_by_plan (zz, nsend, dest, NULL, 3, send, &nrec,
-       &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
-      if (err != ZOLTAN_OK)
-        goto fini;
+        } 
+    }                                       /* DONE: kstart < nTotal loop */
 
-               
-      /* read each message (candidate id, best match id, and best i.p.) */ 
-      if (hgc->myProc_y == 0) 
-        for (r = rec; r < rec + 3 * nrec; )   {
-          gno    = *r++;
-          vertex = *r++;
-          f      = (float*) r++;
-          bestsum = *f;            
+    /* MASTER ROW only: send best results to candidates' owners */
+    err = communication_by_plan (zz, mcount, master_procs, NULL, 3, master_data,
+     &nrec, &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
+    if (err != ZOLTAN_OK)
+      goto fini;
+    mcount = 0;
+    mp = master_data;
+
+    /* read each message (candidate id, best match id, and best i.p.) */ 
+    if (hgc->myProc_y == 0) 
+      for (r = rec; r < rec + 3 * nrec; )   {
+        gno    = *r++;
+        vertex = *r++;
+        f      = (float*) r++;
+        bestsum = *f;            
                      
-          /* Note: ties are broken to favor local over global matches */   
-          lno =  VTX_GNO_TO_LNO (hg, gno);  
-          if ((bestsum > sums [lno]) || (bestsum == sums[lno]
-           && VTX_TO_PROC_X (hg, gno)    != hgc->myProc_x
-           && VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x))    {        
-              index [lno] = vertex;
-              sums  [lno] = bestsum;
-          }                   
-        }   
+        /* Note: ties are broken to favor local over global matches */   
+        lno =  VTX_GNO_TO_LNO (hg, gno);  
+        if ((bestsum > sums [lno]) || (bestsum == sums[lno]
+         && VTX_TO_PROC_X (hg, gno)    != hgc->myProc_x
+         && VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x))    {        
+            index [lno] = vertex;
+            sums  [lno] = bestsum;
+        }                   
+      }   
                                     
-      /************************ PHASE 4: ************************************/
+    /************************ PHASE 4: ************************************/
         
-      /* fill send buffer with messages. A message is two matched gno's */
-      /* Note: match to self if inner product is below threshold */
-      s = send; 
-      nsend = 0;
-      if (hgc->myProc_y == 0)
-        for (i = 0; i < nselect; i++)   {
-          int d1, d2;
-          lno = select[i];
-          *s++ = gno = VTX_LNO_TO_GNO (hg, lno);
-          *s++ = vertex = (sums [lno] > TSUM_THRESHOLD) ? index[lno] : gno;
+    /* fill send buffer with messages. A message is two matched gno's */
+    /* Note: match to self if inner product is below threshold */
+    s = send; 
+    nsend = 0;
+    if (hgc->myProc_y == 0)
+      for (i = 0; i < nselect; i++)   {
+        int d1, d2;
+        lno = select[i];
+        *s++ = gno = VTX_LNO_TO_GNO (hg, lno);
+        *s++ = vertex = (sums [lno] > TSUM_THRESHOLD) ? index[lno] : gno;
           
-          /* each distict owner (gno or vertex) needs its copy of the message */
-          d1 = VTX_TO_PROC_X (hg, gno);
-          d2 = VTX_TO_PROC_X (hg, vertex);
-          dest[nsend++] = d1;
-          if (d1 != d2)  {
-            *s++ = gno;
-            *s++ = vertex;        
-            dest[nsend++] = d2;
-          }
+        /* each distict owner (gno or vertex) needs its copy of the message */
+        d1 = VTX_TO_PROC_X (hg, gno);
+        d2 = VTX_TO_PROC_X (hg, vertex);
+        dest[nsend++] = d1;
+        if (d1 != d2)  {
+          *s++ = gno;
+          *s++ = vertex;        
+          dest[nsend++] = d2;
         }
+      }
         
-      /* send match results only to impacted parties */
-      err = communication_by_plan (zz, nsend, dest, NULL, 2, send, &nrec,
-       &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+10);
-      if (err != ZOLTAN_OK)
-        goto fini;
+    /* send match results only to impacted parties */
+    err = communication_by_plan (zz, nsend, dest, NULL, 2, send, &nrec,
+     &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+10);
+    if (err != ZOLTAN_OK)
+      goto fini;
                     
-      /* update match array with current selections */
-      /* Note: -gno-1 designates an external match as a negative number */
-      if (hgc->myProc_y == 0)
-        for (r = rec; r < rec + 2 * nrec; )  {
-          gno    = *r++;
-          vertex = *r++;
+    /* update match array with current selections */
+    /* Note: -gno-1 designates an external match as a negative number */
+    if (hgc->myProc_y == 0)
+      for (r = rec; r < rec + 2 * nrec; )  {
+        gno    = *r++;
+        vertex = *r++;
 
-          if (VTX_TO_PROC_X (hg, gno)    == hgc->myProc_x
-           && VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x)   {
-              int v1 = VTX_GNO_TO_LNO (hg, vertex);             
-              int v2 = VTX_GNO_TO_LNO (hg, gno);                
-              match [v1] = v2;
-              match [v2] = v1;
-          }                            
-          else if (VTX_TO_PROC_X (hg, gno) == hgc->myProc_x)
-            match [VTX_GNO_TO_LNO (hg, gno)]    = -vertex - 1;
-          else              
-            match [VTX_GNO_TO_LNO (hg, vertex)] = -gno - 1;
-        }      
-    }                            /* DONE: kstart < nTotal loop */
-              
+        if (VTX_TO_PROC_X (hg, gno)    == hgc->myProc_x
+         && VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x)   {
+            int v1 = VTX_GNO_TO_LNO (hg, vertex);             
+            int v2 = VTX_GNO_TO_LNO (hg, gno);                
+            match [v1] = v2;
+            match [v2] = v1;
+        }                         
+        else if (VTX_TO_PROC_X (hg, gno) == hgc->myProc_x)
+          match [VTX_GNO_TO_LNO (hg, gno)]    = -vertex - 1;
+        else              
+          match [VTX_GNO_TO_LNO (hg, vertex)] = -gno - 1;
+      }      
+    
     /* update match array to the entire column */   
-    MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
-  }      
-                                       /* DONE: loop over rounds */
-#ifdef RTHRTH 
+    MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);   
+  }                                             /* DONE: loop over rounds */
+
+#ifdef RTHRTH      
+uprintf (hgc, "RTHRTH about to test for valid match\n");
+
+{
+int local = 0, global = 0, unmatched = 0;
+for (i = 0; i < hg->nVtx; i++)
+  {
+  if (match[i] == i)  unmatched++;
+  if (match[i] < 0)   global++;
+  }
+uprintf (hgc, "RTHRTH %d unmatched, %d external, %d local of %d\n",
+ unmatched, global, hg->nVtx-unmatched-global, hg->nVtx);
+}
+
+#endif
 /* The following tests that the global match array is a valid permutation */                                    
 for (i = 0; i < hg->nVtx; i++)
   if (match[i] < 0)  cmatch[i] = -match[i] - 1;
@@ -950,11 +971,12 @@ for (i = 0; i < recsize; i++)
     count++;
 if (count)    
   uprintf (hgc, "RTHRTH %d FINAL MATCH ERRORS of %d\n", count, recsize); 
-#endif
+
 
 fini:
-  Zoltan_Multifree (__FILE__, __LINE__, 12, &cmatch, &visit, &sums, &send,
-   &dest, &size, &rec, &index, &aux, &permute, &edgebuf, &select);
+  Zoltan_Multifree (__FILE__, __LINE__, 14, &cmatch, &visit, &sums, &send,
+   &dest, &size, &rec, &index, &aux, &permute, &edgebuf, &select,
+   &master_data, &master_procs);
   return err;
 }
 
