@@ -346,6 +346,7 @@ static int rcb_fn(
           dottop++;
 
       /* move dots */
+      allocflag = 0;
       ierr = LB_RB_Send_Dots(lb, &gidpt, &lidpt, &dotpt, dotmark, proc_list,
                              outgoing, &dotnum, &dotmax, proc, &allocflag,
                              overalloc, stats, reuse_count, lb->Communicator);
@@ -357,6 +358,16 @@ static int rcb_fn(
         LB_FREE(&wgts);
         LB_TRACE_EXIT(lb, yo);
         return (ierr);
+      }
+
+      if (allocflag) {
+        /*
+         * gidpt, lidpt and dotpt were reallocated in LB_RB_Send_Dots;
+         * store their values in rcb.
+         */
+        rcb->Global_IDs = gidpt;
+        rcb->Local_IDs = lidpt;
+        rcb->Dots = dotpt;
       }
 
       /* update counters */
@@ -538,6 +549,7 @@ static int rcb_fn(
         rcbbox->lo[dim] = valuehalf;
     }
 
+    allocflag = 0;
     ierr = LB_RB_Send_Outgoing(lb, &gidpt, &lidpt, &dotpt, dotmark, &dottop,
                                &dotnum, &dotmax, set, &allocflag, overalloc,
                                stats, counters, local_comm, proclower,

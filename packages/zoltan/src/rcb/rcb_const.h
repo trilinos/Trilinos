@@ -52,7 +52,6 @@ typedef struct RCB_Struct {
   struct Dot_Struct *Dots;     
   struct rcb_tree *Tree_Ptr;
   struct rcb_box *Box;
-  int Dot_Top;
 } RCB_STRUCT;
 
 extern int LB_RCB_Build_Structure(LB *, int *, int *, int);
