@@ -83,7 +83,7 @@ by removing the comment character from lines defining DLB_DEF and DLB_LIB.
 For example, in MPSalsa's <I>Obj_smos/Makefile</I>, the following lines
 should be included:
 <BLOCKQUOTE>DLB_DEF = -DDLB
-<BR>DLB_LIB =-L../../DLB/Obj_smos -ldlb -L/Net/mp/mpi/new/lib/paragon/sunmos-nx
+<BR>DLB_LIB =-L../../DLB/Obj_smos -lzoltan -L/Net/mp/mpi/new/lib/paragon/sunmos-nx
 -lmpi</BLOCKQUOTE>
 An MPSalsa executable is then built using gmake and specifying the target
 architecture; e.g.,
