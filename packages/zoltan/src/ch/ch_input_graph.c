@@ -7,7 +7,7 @@
 #include "all_allo_const.h"
 #include "ch_input_const.h"
 
-int LB_chaco_input_graph(fin, inname, start, adjacency, nvtxs, vweights, eweights)
+int chaco_input_graph(fin, inname, start, adjacency, nvtxs, vweights, eweights)
 FILE     *fin;			/* input file */
 char     *inname;		/* name of input file */
 int     **start;		/* start of edge list for each vertex */

@@ -82,8 +82,32 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
       strcpy(inp_copy, inp_line);
       clean_string(inp_line, " \t");
       cptr = strtok(inp_line, "\t=");
-      /****** The parallel ExodusII file name ******/
-      if (token_compare(cptr, "parallel file name")) {
+      /****** The FEM file type ******/
+      if (token_compare(cptr, "fem file type")) {
+        if(pio_info->file_type < 0) {
+          cptr = strtok(NULL, "\t=");
+          strip_string(cptr, " \t\n");
+          if (cptr == NULL || strlen(cptr) == 0) {
+            Gen_Error(0, "fatal: must specify FEM file type");
+            Gen_Error(0, cmesg);
+            return 0;
+          }
+
+          if (strcmp(cptr, "nemesisi") == 0) {
+            pio_info->file_type = NEMESIS_FILE;
+          }
+          else if (strcmp(cptr, "chaco") == 0) {
+            pio_info->file_type = CHACO_FILE;
+          }
+          else {
+            sprintf(cmesg, "fatal: unknown file type, %s", cptr);
+            Gen_Error(0, cmesg);
+            return 0;
+          }
+        }
+      }
+      /****** The FEM file name ******/
+      if (token_compare(cptr, "fem file name")) {
         if(strlen(pio_info->pexo_fname) == 0)
         {
           cptr = strtok(NULL, "\t=");
@@ -346,7 +370,6 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
 
 
   /* Close the command file */
-  printf("\n\n");
   fclose(file_cmd);
 
   return 1;
@@ -375,6 +398,9 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 
   /* default is not to have preceeding 0's in the disk names */
   if (pio_info->zeros < 0) pio_info->zeros = 0;
+
+  /* default file type is nemesis */
+  if (pio_info->file_type < 0) pio_info->file_type = NEMESIS_FILE;
 
   /* most systems that we deal with start their files systems with 1 not 0 */
   if (pio_info->pdsk_add_fact < 0) pio_info->pdsk_add_fact = 1;
@@ -419,6 +445,18 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
   else if (strcasecmp(prob->method, "OCTPART") == 0) {
     prob->read_coord = 1;
     prob->gen_graph = 0;
+  }
+  else if (strcasecmp(prob->method, "PARMETIS_PART") == 0) {
+    prob->read_coord = 0;
+    prob->gen_graph = 1;
+  }
+  else if (strcasecmp(prob->method, "PARMETIS_REPART") == 0) {
+    prob->read_coord = 0;
+    prob->gen_graph = 1;
+  }
+  else if (strcasecmp(prob->method, "PARMETIS_REFINE") == 0) {
+    prob->read_coord = 0;
+    prob->gen_graph = 1;
   }
   /*
    * Add information about new methods here

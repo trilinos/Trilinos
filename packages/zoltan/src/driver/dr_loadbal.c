@@ -57,6 +57,9 @@ LB_OBJ_WEIGHT_FN get_elem_weight;
 LB_NUM_GEOM_FN get_num_geom;
 LB_GEOM_FN get_geom;
 
+LB_NUM_EDGES_FN get_num_edges;
+LB_EDGE_LIST_FN get_edge_list;
+
 int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
 {
 /* Local declarations. */
@@ -134,6 +137,21 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
     }
 
     if (LB_Set_Fn(lb_obj, LB_GEOM_FN_TYPE, (void *) get_geom,
+                  (void *) *elements) == DLB_FATAL) {
+      Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+      return 0;
+    }
+  }
+
+  /* functions for geometry based algorithms */
+  if (prob->gen_graph) {
+    if (LB_Set_Fn(lb_obj, LB_NUM_EDGES_FN_TYPE, (void *) get_num_edges,
+                  (void *) *elements) == DLB_FATAL) {
+      Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
+      return 0;
+    }
+
+    if (LB_Set_Fn(lb_obj, LB_EDGE_LIST_FN_TYPE, (void *) get_edge_list,
                   (void *) *elements) == DLB_FATAL) {
       Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
       return 0;
@@ -233,8 +251,7 @@ int get_next_element(void *data, LB_GID global_id, LB_LID local_id,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-double get_elem_weight(void *data, LB_GID global_id,
-                       LB_LID local_id, int *ierr)
+float get_elem_weight(void *data, LB_GID global_id, LB_LID local_id, int *ierr)
 {
   ELEM_INFO *elem;
 
@@ -288,6 +305,66 @@ void get_geom(void *data, LB_GID global_id, LB_LID local_id,
       tmp += elem[local_id].coord[j][i];
 
     coor[i] = tmp / Mesh.num_dims;
+  }
+
+  *ierr = DLB_OK;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+int get_num_edges(void *data, LB_GID global_id, LB_LID local_id, int *ierr)
+{
+  ELEM_INFO *elem;
+
+  if (data == NULL) {
+    *ierr = DLB_FATAL;
+    return;
+  }
+
+  elem = (ELEM_INFO *) data;
+
+  *ierr = DLB_OK;
+
+  return(elem[local_id].nadj);
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void edge_list_fn (void *data, LB_GID global_id, LB_LID local_id,
+                   LB_GID *nbor_global_id, int *nbor_procs,
+                   int get_ewgts, int *nbor_ewgts, int *ierr)
+{
+  ELEM_INFO *elem;
+  int i, proc, local_elem;
+
+  if (data == NULL) {
+    *ierr = DLB_FATAL;
+    return;
+  }
+
+  elem = (ELEM_INFO *) data;
+
+  /* get the processor number */
+  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+
+  for (i = 0; i < elem[local_id].nadj; i++) {
+    if (elem[local_id].adj_proc[i] == proc) {
+      local_elem = elem[local_id].adj[i];
+      nbor_global_id[i] = elem[local_elem].globalID;
+    }
+    else { /* adjacent element on another processor */
+      nbor_global_id[i] = elem[local_id].adj[i];
+    }
+    nbor_procs[i] = elem[local_id].adj_proc[i];
+
+    if (get_ewgts) {
+      if (elem[local_id].edge_wgt == NULL)
+        nbor_ewgts[i] = (int) elem[local_id].edge_wgt[i];
+      else /* return uniform weights */
+        nbor_ewgts[i] = 1;
+    }
   }
 
   *ierr = DLB_OK;

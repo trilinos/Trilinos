@@ -20,6 +20,10 @@ static char *cvs_dr_input_const = "$Id$";
 #ifndef _DR_INPUT_CONST_H_
 #define _DR_INPUT_CONST_H_
 
+/* define the FEM input file types */
+#define NEMESIS_FILE 0
+#define CHACO_FILE   1
+
 /* Structure used to store the information necessary for parallel I/O. */
 struct Parallel_IO
 {
@@ -37,6 +41,8 @@ struct Parallel_IO
                         /*     uses /pfs/io_01)                              */
                         /* 0 - if it does not (eg - the tflop uses           */
                         /*     /pfs/tmp_1)                                   */
+
+  int     file_type;    /* input file type */
 
   /* The root location of the parallel disks */
   char    pdsk_root[FILENAME_MAX+1];

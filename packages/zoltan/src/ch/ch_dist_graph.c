@@ -31,7 +31,7 @@ static char *cvs_chaco_dist_graph_id = "$Id$";
  * Geometry information is not supported in this version.
  */
 
-int LB_chaco_dist_graph(
+int chaco_dist_graph(
   MPI_Comm Comm,		/* MPI Communicator */
   int     host_proc,		/* processor where all the data is initially */
   int     *nvtxs,		/* number of vertices in graph */
@@ -69,7 +69,7 @@ int LB_chaco_dist_graph(
   if (*vtxdist == NULL){
     if (myproc==host_proc) flag=1;
     *vtxdist = (int *)LB_SMALLOC((nprocs+1) * sizeof(int));
-    if (*vtxdist == NULL) return DLB_MEMERR;
+    if (*vtxdist == NULL) return 1;
   }
   if (myproc==host_proc){
     if (flag){
@@ -98,11 +98,11 @@ int LB_chaco_dist_graph(
   n = (*vtxdist)[myproc+1]- (*vtxdist)[myproc]; /* local # of nodes */
   *nvtxs = n;
   *xadj = (int *)LB_SMALLOC((n+1)*sizeof(int));
-  if (*xadj == NULL) return DLB_MEMERR;
+  if (*xadj == NULL) return 1;
   if (use_vwgts){
     old_vwgts = *vwgts;
     *vwgts = (int *)LB_SMALLOC((n+1)*sizeof(int));
-    if (*vwgts == NULL) return DLB_MEMERR;
+    if (*vwgts == NULL) return 1;
   }
 
   /* Distribute graph data to all procs */
@@ -110,7 +110,7 @@ int LB_chaco_dist_graph(
   /* First send xadj data */
   if (myproc== host_proc){
     size = (int *)LB_SMALLOC(nprocs*sizeof(int));
-    if (size == NULL) return DLB_MEMERR;
+    if (size == NULL) return 1;
     for (p=0; p<nprocs; p++){
       size[p] = old_xadj[(*vtxdist)[myproc+1]]-old_xadj[(*vtxdist)[myproc]];
       offset = (*vtxdist)[myproc];
@@ -142,11 +142,11 @@ int LB_chaco_dist_graph(
     (*xadj)[i] -= offset;
   nedges = (*xadj)[ *nvtxs];
   *adjncy = (int *)LB_SMALLOC(nedges * sizeof (int));
-  if (*adjncy == NULL) return DLB_MEMERR;
+  if (*adjncy == NULL) return 1;
   if (use_ewgts){
     old_ewgts = *ewgts;
     *ewgts = (float *)LB_SMALLOC(nedges * sizeof (float));
-    if (*ewgts == NULL) return DLB_MEMERR;
+    if (*ewgts == NULL) return 1;
   }
 
   /* Next send adjncy data */
@@ -187,5 +187,5 @@ int LB_chaco_dist_graph(
   if (DEBUG_INPUT > 0) {
     if (myproc==0) printf("Done distributing graph \n");
   }
-  return DLB_OK;
+  return 0;
 }

@@ -51,11 +51,11 @@ int find_adjacency(int, ELEM_INFO *, int **, int *, int);
 int read_comm_map_info(int, int, PROB_INFO_PTR, ELEM_INFO *);
 
 
-int read_mesh(int Proc,
-              int Num_Proc,
-              PROB_INFO_PTR prob,
-              PARIO_INFO_PTR pio_info,
-              ELEM_INFO **elements)
+int read_exoII_mesh(int Proc,
+                    int Num_Proc,
+                    PROB_INFO_PTR prob,
+                    PARIO_INFO_PTR pio_info,
+                    ELEM_INFO **elements)
 {
   /* Local declarations. */
   char   par_nem_fname[FILENAME_MAX+1], title[MAX_LINE_LENGTH+1];

@@ -7,7 +7,7 @@
 #include "all_allo_const.h"
 #include "ch_input_const.h"
 
-int LB_chaco_input_geom(fingeom, geomname, nvtxs, igeom, x, y, z)
+int chaco_input_geom(fingeom, geomname, nvtxs, igeom, x, y, z)
 FILE     *fingeom;		/* geometry input file */
 char     *geomname;		/* name of geometry file */
 int       nvtxs;		/* number of coordinates to read */

@@ -44,9 +44,10 @@ static char *cvs_dr_main = "$Id$";
 /* global mesh information struct variable */
 MESH_INFO Mesh;
 
-extern int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, ELEM_INFO_PTR *);
 extern int run_zoltan(int, PROB_INFO_PTR, ELEM_INFO_PTR *);
 extern int output_results(int, int, PARIO_INFO_PTR, ELEM_INFO *);
+
+int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, ELEM_INFO_PTR *);
 
 int main(int argc, char *argv[])
 {
@@ -115,6 +116,7 @@ int main(int argc, char *argv[])
   pio_info.num_dsk_ctrlrs	= -1;
   pio_info.pdsk_add_fact	= -1;
   pio_info.zeros		= -1;
+  pio_info.file_type		= -1;
   pio_info.pdsk_root[0]		= '\0';
   pio_info.pdsk_subdir[0]	= '\0';
   pio_info.pexo_fname[0]	= '\0';
@@ -186,6 +188,38 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 
   return 0;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/* This function determines which input FEM file type is being used,
+ * and calls the appropriate read function. If a new type of input
+ * file is added to the driver, then a section needs to be added for
+ * it here.
+ *---------------------------------------------------------------------------*/
+int read_mesh(int Proc,
+              int Num_Proc,
+              PROB_INFO_PTR prob,
+              PARIO_INFO_PTR pio_info,
+              ELEM_INFO **elements)
+{
+/* local declarations */
+/*-----------------------------Execution Begins------------------------------*/
+  if (pio_info->file_type == CHACO_FILE) {
+    if (!read_chaco_mesh(Proc, Num_Proc, &prob, &pio_info, &elements)) {
+        Gen_Error(0, "fatal: Error returned from read_chaco_mesh\n");
+        return 0;
+    }
+  }
+#ifdef NEMESIS_IO
+  else if (pio_info->file_type == NEMESIS_FILE) {
+    if (!read_exoII_mesh(Proc, Num_Proc, &prob, &pio_info, &elements)) {
+        Gen_Error(0, "fatal: Error returned from read_exoII_mesh\n");
+        return 0;
+    }
+  }
+#endif
 }
 
 /*****************************************************************************/
