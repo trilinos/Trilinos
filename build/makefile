@@ -3,7 +3,7 @@ TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
 include makefile.$(TRILINOS_TARGET)
 
 allbutesipetra: aztecoo epetra ifpack komplex triutils
-all: aztecoo epetra epetra_esi ifpack komplex petra triutils
+all: aztecoo epetra epetra_esi ifpack komplex triutils
 
 libinstall:
 	@echo " "
@@ -45,16 +45,6 @@ komplex:
 		TRILINOS_ID="$(TRILINOS_ID)"\
 		 libinstall CUR_LIB=komplex
 
-petra:
-	$(MAKE) TRILINOS_ARCH="$(TRILINOS_ARCH)" TRILINOS_COMM="$(TRILINOS_COMM)"\
-		TRILINOS_ID="$(TRILINOS_ID)"\
-		libinstall CUR_LIB=petra
-
-tsf:
-	$(MAKE) TRILINOS_ARCH="$(TRILINOS_ARCH)" TRILINOS_COMM="$(TRILINOS_COMM)"\
-		TRILINOS_ID="$(TRILINOS_ID)"\
-		 libinstall CUR_LIB=tsf
-
 triutils:
 	$(MAKE) TRILINOS_ARCH="$(TRILINOS_ARCH)" TRILINOS_COMM="$(TRILINOS_COMM)"\
 		TRILINOS_ID="$(TRILINOS_ID)"\
@@ -63,7 +53,7 @@ triutils:
 
 
 clean: clean_aztecoo clean_epetra clean_epetra_esi clean_ifpack \
-       clean_komplex clean_petra clean_triutils
+       clean_komplex clean_triutils
 
 objclean:
 	@echo " "
@@ -89,18 +79,13 @@ clean_ifpack:
 clean_komplex:
 	$(MAKE) objclean CUR_LIB=komplex
 
-clean_petra:
-	$(MAKE) objclean CUR_LIB=petra
-
 clean_triutils:
 	$(MAKE) objclean CUR_LIB=triutils
 
-clean_tsf:
-	$(MAKE) objclean CUR_LIB=tsf
 
 clobber: clobber_aztecoo clobber_epetra clobber_epetra_esi \
          clobber_ifpack clobber_komplex \
-         clobber_petra clobber_triutils
+         clobber_triutils
 	rm -rf $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)
 
 libclobber:
@@ -127,13 +112,7 @@ clobber_ifpack: clean_ifpack
 clobber_komplex: clean_komplex
 	$(MAKE) libclobber CUR_LIB=komplex
 
-clobber_petra: clean_petra
-	$(MAKE) libclobber CUR_LIB=petra
-
 clobber_triutils: clean_triutils
 	$(MAKE) libclobber CUR_LIB=triutils
-
-clobber_tsf: clean_tsf
-	$(MAKE) libclobber CUR_LIB=tsf
 
 again: clobber all
