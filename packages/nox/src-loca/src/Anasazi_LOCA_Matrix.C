@@ -34,34 +34,34 @@
 #include "Anasazi_LOCA_MultiVec.H"
 #include "LOCA_ErrorCheck.H"
 
-Anasazi::LOCA::Matrix::Matrix(::LOCA::AnasaziOperator::Generic& op) :
+Anasazi::LOCAMatrix::LOCAMatrix(::LOCA::AnasaziOperator::Generic& op) :
   locaOp(op) 
 {
 }
 
-Anasazi::LOCA::Matrix::~Matrix() 
+Anasazi::LOCAMatrix::~LOCAMatrix() 
 {
 }
 
 Anasazi::ReturnType 
-Anasazi::LOCA::Matrix::Apply (const Anasazi::MultiVec<double>& x, 
-			      Anasazi::MultiVec<double>& y) const 
+Anasazi::LOCAMatrix::Apply(const Anasazi::MultiVec<double>& x, 
+			   Anasazi::MultiVec<double>& y) const 
 {
-  string callingFunction = "Anasazi::LOCA::Matrix::ApplyMatrix()";
+  string callingFunction = "Anasazi::LOCAMatrix::ApplyMatrix()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
   
-  const Anasazi::LOCA::MultiVec& x_vec = 
-    dynamic_cast<const Anasazi::LOCA::MultiVec&>(x); 
-  Anasazi::LOCA::MultiVec& y_vec = 
-    dynamic_cast<Anasazi::LOCA::MultiVec&>(y); 
+  const Anasazi::LOCAMultiVec& x_vec = 
+    dynamic_cast<const Anasazi::LOCAMultiVec&>(x); 
+  Anasazi::LOCAMultiVec& y_vec = 
+    dynamic_cast<Anasazi::LOCAMultiVec&>(y); 
   
   int NumVecs = x_vec.GetNumberVecs();
   for (int i=0; i<NumVecs; i++) {
     status = locaOp.apply(x_vec.GetNOXVector(i),y_vec.GetNOXVector(i)); 
     finalStatus = 
-      ::LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						     callingFunction);
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
   }
 
   if (finalStatus != NOX::Abstract::Group::Failed)

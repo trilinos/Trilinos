@@ -107,11 +107,13 @@ host_triplet = @host@
 DIST_COMMON = $(am__dist_locaPythonexec_PYTHON_DIST) \
 	$(srcdir)/GNUmakefile.in $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/__init__.py.in \
+	$(top_srcdir)/config/libtool_macros.am \
 	$(top_srcdir)/config/swig.am
 subdir = src-loca/python
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
+	$(top_srcdir)/config/ac_libtoolize_flags.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/ac_python_devel.m4 \
 	$(top_srcdir)/config/ac_python_module.m4 \
@@ -135,6 +137,7 @@ LTLIBRARIES = $(locaPythonexec_LTLIBRARIES)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = $(top_builddir)/src-loca/src/libloca.la \
 	$(top_builddir)/src/libnox.a $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 _Abstract_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am__Abstract_la_OBJECTS = _Abstract_la-wrap_LOCA_Abstract.lo
@@ -338,7 +341,16 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-LIBTOOL = @LIBTOOL@
+
+###############################################################################
+# Changes to the standard libtool command:
+# 1)  Force libtool to use the CXX tag.  Otherwise it gets confused on some
+#     platforms, e.g., janus.  This is fixed in automake 1.9.4.
+###############################################################################
+LIBTOOL = $(SHELL) $(top_builddir)/libtool --tag=CXX
+LIBTOOL_CCLINKER_FLAGS = @LIBTOOL_CCLINKER_FLAGS@
+LIBTOOL_COMPILER_FLAGS = @LIBTOOL_COMPILER_FLAGS@
+LIBTOOL_LINKER_FLAGS = @LIBTOOL_LINKER_FLAGS@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
@@ -522,6 +534,7 @@ SWIG_LOCA_CXXFLAGS = \
 	$(PYTHON_CPPFLAGS) \
 	$(SWIG_PYTHON_CPPFLAGS) \
 	$(TRILINOS_CXXFLAGS) \
+	$(LIBTOOL_COMPILER_FLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/python \
 	-I$(top_srcdir)/src-loca/src \
@@ -537,11 +550,12 @@ SWIG_LDFLAGS = -avoid-version -module
 SWIG_LOCA_LIBADD = \
 	$(top_builddir)/src-loca/src/libloca.la \
 	$(top_builddir)/src/libnox.a \
-	$(SWIG_PYTHON_LIBS) $(LIBS) $(XTRALDADD)
+	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) \
+	$(LIBS) $(SWIG_PYTHON_LIBS)
 
 SWIG_LAPACK_LIBADD = \
 	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
-	$(top_builddir)/src-lapack/libnoxlapack.a 
+	$(top_builddir)/src-lapack/libnoxlapack.a
 
 
 # ------------------------------------------------------------------------
@@ -627,6 +641,11 @@ _Chan_la_LIBADD = $(SWIG_LAPACK_LIBADD) $(SWIG_LOCA_LIBADD)
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+MOSTLYCLEANFILES = $(CXXREPOS)
 CLEANFILES = $(DEPDIR)/*.Pi
 
 #$(srcdir)/wrap_%.C: $(srcdir)/%.i 
@@ -636,7 +655,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .C .lo .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/swig.am $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/libtool_macros.am $(top_srcdir)/config/swig.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1146,6 +1165,7 @@ install-strip:
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
+	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
@@ -1243,6 +1263,10 @@ $(srcdir)/%.py: $(srcdir)/wrap_%.C
 
 swigclean:
 	rm -f $(srcdir)/wrap_* $(WRAPPERS) 
+
+# ------------------------------------------------------------------------
+# Include global libtool definitions
+# ------------------------------------------------------------------------
 
 # Include swig rules
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

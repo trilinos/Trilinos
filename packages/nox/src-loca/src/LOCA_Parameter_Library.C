@@ -41,16 +41,16 @@ LOCA::Parameter::Library::~Library() {
   for (paramIt = library.begin(); paramIt != library.end(); paramIt++) {
 
     // Loop over all value entries
-    for (valueIt = paramIt->second->begin(); 
-	 valueIt != paramIt->second->end(); 
+    for (valueIt = (*paramIt).second->begin(); 
+	 valueIt != (*paramIt).second->end(); 
 	 valueIt++) {
 
       // Delete entry
-      delete valueIt->second;
+      delete (*valueIt).second;
 
     }
 
-    delete paramIt->second;
+    delete (*paramIt).second;
 
   }
 
@@ -74,5 +74,5 @@ LOCA::Parameter::Library::ValueTypeMapIterator
 LOCA::Parameter::Library::getEntryIterator(
 				   const string& valueTypeString, 
 				   const ParameterMapIterator& paramIterator) {
-  return paramIterator->second->find(valueTypeString);
+  return (*paramIterator).second->find(valueTypeString);
 }

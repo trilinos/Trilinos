@@ -54,10 +54,15 @@ LOCA_MF = \
 
 liblocamf_la_SOURCES = $(LOCA_MF) $(LOCA_MF_H)
 
-liblocamf_la_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
-                        -I$(top_srcdir)/src \
-                        -I$(MF_INCDIR) \
-                        $(TRILINOS_CXXFLAGS) 
+liblocamf_la_CXXFLAGS = \
+	-I$(top_srcdir)/src-loca/src \
+	-I$(top_srcdir)/src \
+	-I$(MF_INCDIR) \
+	$(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS)
+
+liblocamf_la_LIBADD = \
+	$(top_builddir)/src-loca/src/libloca.la \
+	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS)
 
 # ------------------------------------------------------------------------
 # When to turn it on
@@ -76,36 +81,21 @@ include_HEADERS = $(LOCA_MF_H)
 endif
 
 # ------------------------------------------------------------------------
-# For using a special archiver
-# ------------------------------------------------------------------------
-
-# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
-# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
-# define it manually.
-
-if USE_ALTERNATE_AR
-
-liblocamf_la_AR = $(ALTERNATE_AR)
-
-else
-
-liblocamf_la_AR = $(AR) cru
-
-endif
-
-# ------------------------------------------------------------------------
-# Some C++ compilers create extra .o-files for templates. We need to
-# be sure to include these, and this is the hack to do it.
-# ------------------------------------------------------------------------
-
-liblocamf_la_LIBADD = $(XTRALDADD)
-
-# ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
 
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYCLEANFILES = $(CXXREPOS)
+
+# ------------------------------------------------------------------------
+# Include global libtool definitions
+# ------------------------------------------------------------------------
+include $(top_srcdir)/config/libtool_macros.am
 
 
 

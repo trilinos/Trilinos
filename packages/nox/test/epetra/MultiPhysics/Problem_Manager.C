@@ -137,7 +137,7 @@ Problem_Manager::~Problem_Manager()
 
 void Problem_Manager::addProblem(GenericEpetraProblem& problem)
 {
-  Problems.insert(pair<int, GenericEpetraProblem*>(++problemCount, &problem));
+  Problems[++problemCount] = &problem;
   problem.setId(problemCount);
   problem.setManager(this);
 
@@ -150,8 +150,8 @@ void Problem_Manager::addProblem(GenericEpetraProblem& problem)
     problem.setName(name);
   }
 
-  Names.insert( pair<int, string> (problemCount, problem.getName()) );
-  NameLookup.insert( pair<string, int> (problem.getName(), problemCount) );
+  Names[problemCount] = problem.getName();
+  NameLookup[problem.getName()] = problemCount;
 
   // Keep a running total of dofs for use in constructing composite objects
   NumMyNodes += problem.NumMyNodes;
@@ -298,8 +298,7 @@ void Problem_Manager::registerComplete()
     problem.createDependentVectors();
 
     // Create index mapping for this problem into the composite problem
-    ProblemToCompositeIndices.insert( pair<int, Epetra_IntVector*>
-      (probId, new Epetra_IntVector(*problem.StandardMap)));
+    ProblemToCompositeIndices[probId] = new Epetra_IntVector(*problem.StandardMap);
     Epetra_IntVector &indices = *ProblemToCompositeIndices.find(probId)->second;
 
     for (int i=0; i<problem.NumMyNodes; i++) {
@@ -323,8 +322,7 @@ void Problem_Manager::registerComplete()
     GenericEpetraProblem& problem = *(*iter).second;
     int probId = problem.getId();
 
-    Interfaces.insert( pair<int, Problem_Interface*>
-		       (probId, new Problem_Interface(problem)));
+    Interfaces[probId] = new Problem_Interface(problem);
     NOX::EpetraNew::Interface::Required& reqInt = 
       dynamic_cast<NOX::EpetraNew::Interface::Required&>
          (*Interfaces.find(probId)->second);
@@ -336,21 +334,19 @@ void Problem_Manager::registerComplete()
     NOX::EpetraNew::Interface::Jacobian& jacInt = 
       dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>
          (*Interfaces.find(probId)->second);
-    LinearSystems.insert( pair<int, NOX::EpetraNew::LinearSystemAztecOO*>
-     ( probId, new NOX::EpetraNew::LinearSystemAztecOO(
+    LinearSystems[probId] = new NOX::EpetraNew::LinearSystemAztecOO(
       nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
       reqInt,
       jacInt,
       problem.getJacobian(),
-      problem.getSolution())) );
+      problem.getSolution() );
 
-    Groups.insert( pair<int, NOX::EpetraNew::Group*>
-     ( probId, new NOX::EpetraNew::Group(
+    Groups[probId] = new NOX::EpetraNew::Group(
       nlParams->sublist("Printing"),
       reqInt,
       nox_soln,
-      *LinearSystems.find(probId)->second)) );
+      *LinearSystems.find(probId)->second );
 
     // OR use this to fill matrices using Finite-Differences with Coloring
 #else
@@ -360,39 +356,33 @@ void Problem_Manager::registerComplete()
 
     EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType =
       EpetraExt::CrsGraph_MapColoring::GREEDY;
-    TmpMapColorings.insert( pair<int, EpetraExt::CrsGraph_MapColoring*>
-      (probId, new EpetraExt::CrsGraph_MapColoring(algType)));
-    ColorMaps.insert( pair<int, Epetra_MapColoring*>
-      (probId, &((*TmpMapColorings.find(probId)->second)(problem.getGraph()))) );
-    ColorMapIndexSets.insert( pair<int, EpetraExt::CrsGraph_MapColoringIndex*>
-      (probId, new EpetraExt::CrsGraph_MapColoringIndex(*ColorMaps.find(probId)->second)) );
-    ColumnsSets.insert( pair<int, vector<Epetra_IntVector>* >
-      (probId, &(*ColorMapIndexSets.find(probId)->second)(problem.getGraph())) );
+    TmpMapColorings[probId] = new EpetraExt::CrsGraph_MapColoring(algType);
+    ColorMaps[probId] = &((*TmpMapColorings.find(probId)->second)(problem.getGraph()) );
+    ColorMapIndexSets[probId] = new EpetraExt::CrsGraph_MapColoringIndex(*ColorMaps.find(probId)->second );
+    ColumnsSets[probId] = &(*ColorMapIndexSets.find(probId)->second)(problem.getGraph() );
 
     if (MyPID == 0)
       printf("\n\tTime to color Jacobian # %d --> %e sec. \n\n",
                   icount++,fillTime.ElapsedTime());
-    MatrixOperators.insert( pair<int, NOX::EpetraNew::FiniteDifferenceColoring*>
-      (probId, new NOX::EpetraNew::FiniteDifferenceColoring(*Interfaces.find(probId)->second, 
+    MatrixOperators[probId] = new NOX::EpetraNew::FiniteDifferenceColoring(
+        *Interfaces.find(probId)->second, 
         problem.getSolution(), problem.getGraph(), *ColorMaps.find(probId)->second, 
-        *ColumnsSets.find(probId)->second)) );
+        *ColumnsSets.find(probId)->second );
     NOX::EpetraNew::Interface::Jacobian& jacInt = 
       dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*MatrixOperators.find(probId)->second);
-    LinearSystems.insert( pair<int, NOX::EpetraNew::LinearSystemAztecOO*>
-      (probId, new NOX::EpetraNew::LinearSystemAztecOO(
+    LinearSystems[probId] = new NOX::EpetraNew::LinearSystemAztecOO(
       nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
       reqInt,
       jacInt,
       *MatrixOperators.find(probId)->second,
-      problem.getSolution())) );
+      problem.getSolution() );
 
-    Groups.insert( pair<int, NOX::EpetraNew::Group*>
-      (probId, new NOX::EpetraNew::Group(
+    Groups[probId] = new NOX::EpetraNew::Group(
       nlParams->sublist("Printing"),
       reqInt,
       nox_soln,
-      *LinearSystems.find(probId)->second)) );
+      *LinearSystems.find(probId)->second );
 #else
     if(MyPID==0)
       cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
@@ -403,9 +393,8 @@ void Problem_Manager::registerComplete()
     // Needed to establish initial convergence state
     Groups.find(probId)->second->computeF(); 
    
-    Solvers.insert( pair<int, NOX::Solver::Manager*>
-      (probId, new NOX::Solver::Manager(*Groups.find(probId)->second, 
-					*statusTest, *nlParams)) );
+    Solvers[probId] = new NOX::Solver::Manager(*Groups.find(probId)->second, 
+					*statusTest, *nlParams );
     iter++;
   }
 
@@ -1329,8 +1318,7 @@ void Problem_Manager::generateGraph()
 //      Off_Graphs.insert( pair<int, vector<Epetra_CrsGraph*> >
 //                         (probId, offGraphs) );
 //      createFDCobjects(probId);
-      OffBlock_Managers.insert( pair<int, vector<OffBlock_Manager*> >
-                         (probId, OffBlock_ManagersVec) );
+      OffBlock_Managers[probId] = OffBlock_ManagersVec;
     }
 #endif
   } // end doOffBlocks
@@ -1359,13 +1347,13 @@ void Problem_Manager::outputSolutions(int timeStep)
 
     Epetra_Vector& xMesh = problem.getMesh();
     Epetra_Vector& problemSoln = problem.getSolution();
-    int NumMyNodes = xMesh.Map().NumMyElements();
+    int numNodes = xMesh.Map().NumMyElements();
 
     char file_name[25];
     FILE *ifp;
     (void) sprintf(file_name, "output.%03d.%03d_%05d",probId,MyPID,timeStep);
     ifp = fopen(file_name, "w");
-    for (int i=0; i<NumMyNodes; i++)
+    for (int i = 0; i < numNodes; i++)
       fprintf(ifp, "%d  %E  %E \n", i, xMesh[i], problemSoln[i]);
     fclose(ifp);
   }

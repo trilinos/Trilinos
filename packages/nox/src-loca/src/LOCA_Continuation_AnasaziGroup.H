@@ -38,9 +38,7 @@
 // forward declarations
 #ifdef HAVE_LOCA_ANASAZI
 namespace Anasazi {
-  namespace LOCA {
-    class MultiVec;
-  }
+  class LOCAMultiVec;
 }
 #endif
 
@@ -106,7 +104,7 @@ namespace LOCA {
        */
       virtual void
       saveEigenVectors(int nev, const std::vector<double>& evals, 
-		       const Anasazi::LOCA::MultiVec& evecs ) const;
+		       const Anasazi::LOCAMultiVec& evecs ) const;
 #endif
 
     protected:

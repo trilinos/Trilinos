@@ -68,11 +68,13 @@ POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
 	$(am__EXEEXT_4) $(am__EXEEXT_5) $(am__EXEEXT_6)
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(top_srcdir)/config/libtool_macros.am
 subdir = src-loca/example-epetra/Tcubed
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
+	$(top_srcdir)/config/ac_libtoolize_flags.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/ac_python_devel.m4 \
 	$(top_srcdir)/config/ac_python_module.m4 \
@@ -111,9 +113,8 @@ exampleMultiContinuation_OBJECTS =  \
 	$(am_exampleMultiContinuation_OBJECTS)
 am__DEPENDENCIES_2 =  \
 	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
-	$(top_builddir)/src-loca/src/libloca.la \
-	$(top_builddir)/src-epetra/libnoxepetra.a \
-	$(top_builddir)/src/libnox.a $(am__DEPENDENCIES_1)
+	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 am_exampleTP_OBJECTS = exampleTP-ExampleTP.$(OBJEXT) \
 	exampleTP-FiniteElementProblem.$(OBJEXT) \
 	exampleTP-Basis.$(OBJEXT) \
@@ -308,7 +309,16 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-LIBTOOL = @LIBTOOL@
+
+###############################################################################
+# Changes to the standard libtool command:
+# 1)  Force libtool to use the CXX tag.  Otherwise it gets confused on some
+#     platforms, e.g., janus.  This is fixed in automake 1.9.4.
+###############################################################################
+LIBTOOL = $(SHELL) $(top_builddir)/libtool --tag=CXX
+LIBTOOL_CCLINKER_FLAGS = @LIBTOOL_CCLINKER_FLAGS@
+LIBTOOL_COMPILER_FLAGS = @LIBTOOL_COMPILER_FLAGS@
+LIBTOOL_LINKER_FLAGS = @LIBTOOL_LINKER_FLAGS@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
@@ -423,7 +433,7 @@ example_DEPENDENCIES = \
 	$(top_builddir)/src-loca/src/libloca.la \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
 
-example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
+example_CXXFLAGS = $(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS) \
 		   -I$(top_srcdir)/src \
                    -I$(top_srcdir)/src-epetra \
 		   -I$(top_srcdir)/src-loca/src \
@@ -432,9 +442,9 @@ example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 example_LDADD = \
 	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
 	$(top_builddir)/src-loca/src/libloca.la \
-	$(top_builddir)/src-epetra/libnoxepetra.a \
-	$(top_builddir)/src/libnox.a \
-	$(LIBS)
+	-L$(top_builddir)/src-epetra -lnoxepetra \
+	-L$(top_builddir)/src -lnox \
+	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 exampleTP_SOURCES = $(srcdir)/ExampleTP.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
@@ -487,11 +497,21 @@ exampleMultiContinuation_LDADD = $(top_builddir)/src-loca/src-mf/liblocamf.la \
                                  -L$(MF_LIBDIR) -lMF -lExpCmp \
                                  $(example_LDADD)
 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+MOSTLYCLEANFILES = $(CXXREPOS)
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .C .lo .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/libtool_macros.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1234,6 +1254,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/../../../config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -1279,6 +1300,7 @@ install-strip:
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
+	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 
@@ -1288,6 +1310,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
 clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
@@ -1351,6 +1374,10 @@ uninstall-am: uninstall-info-am
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-info-am
 
+
+# ------------------------------------------------------------------------
+# Include global libtool definitions
+# ------------------------------------------------------------------------
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -42,13 +42,30 @@ example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-loca/src/libloca.la \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
 
-example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
+example_CXXFLAGS = $(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS) \
 	-I$(top_srcdir)/src -I$(top_srcdir)/src-epetra \
 	-I$(top_srcdir)/src-loca/src -I$(top_srcdir)/src-loca/src-epetra
 
 example_LDADD = \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
-        $(top_builddir)/src-epetra/libnoxepetra.a \
+        -L$(top_builddir)/src-epetra -lnoxepetra \
         $(top_builddir)/src-loca/src/libloca.la \
-        $(top_builddir)/src/libnox.a \
-        $(LIBS)
+        -L$(top_builddir)/src -lnox \
+        $(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+
+MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYCLEANFILES = $(CXXREPOS)
+
+# ------------------------------------------------------------------------
+# Include global libtool definitions
+# ------------------------------------------------------------------------
+include $(top_srcdir)/config/libtool_macros.am

@@ -61,11 +61,13 @@ brusselatorHopf_DEPENDENCIES = $(brusselatorContinuation_DEPENDENCIES)
 
 brusselatorHopfContinuation_DEPENDENCIES = $(brusselatorContinuation_DEPENDENCIES)
 
-brusselatorContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
-		   -I$(top_srcdir)/src \
-		   -I$(top_srcdir)/src-lapack \
-		   -I$(top_srcdir)/src-loca/src \
-                   -I$(top_srcdir)/src-loca/src-lapack
+brusselatorContinuation_CXXFLAGS = \
+	$(TRILINOS_CXXFLAGS) \
+	$(LIBTOOL_COMPILER_FLAGS)\
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src-lapack \
+	-I$(top_srcdir)/src-loca/src \
+        -I$(top_srcdir)/src-loca/src-lapack
 
 brusselatorHopf_CXXFLAGS = $(brusselatorContinuation_CXXFLAGS)
 
@@ -74,10 +76,27 @@ brusselatorHopfContinuation_CXXFLAGS = $(brusselatorContinuation_CXXFLAGS)
 brusselatorContinuation_LDADD = \
 	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
 	$(top_builddir)/src-loca/src/libloca.la \
-	$(top_builddir)/src-lapack/libnoxlapack.a \
-	$(top_builddir)/src/libnox.a \
-	$(LIBS)
+	-L$(top_builddir)/src-lapack -lnoxlapack \
+	-L$(top_builddir)/src -lnox \
+	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 brusselatorHopf_LDADD = $(brusselatorContinuation_LDADD)
 
 brusselatorHopfContinuation_LDADD = $(brusselatorContinuation_LDADD)
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+
+MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYCLEANFILES = $(CXXREPOS)
+
+# ------------------------------------------------------------------------
+# Include global libtool definitions
+# ------------------------------------------------------------------------
+include $(top_srcdir)/config/libtool_macros.am

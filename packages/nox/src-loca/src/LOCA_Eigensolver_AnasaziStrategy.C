@@ -87,7 +87,7 @@ LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
 
   // Create a sorting manager to handle the sorting of eigenvalues 
   LOCASort =
-    Teuchos::rcp(new Anasazi::LOCA::Sort<double, MV, OP>(which, 
+    Teuchos::rcp(new Anasazi::LOCASort<double, MV, OP>(which, 
 							 cayleyPole,
 							 cayleyZero));
 #endif
@@ -114,10 +114,10 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   // Create the operator and initial vector
   LOCA::AnasaziOperator::Manager anasaziOperator(*eigenParams, *solverParams, 
 						 *group);
-  Teuchos::RefCountPtr<Anasazi::LOCA::Matrix> Amat = 
-    Teuchos::rcp( new Anasazi::LOCA::Matrix(anasaziOperator) );
-  Teuchos::RefCountPtr<Anasazi::LOCA::MultiVec> ivec =
-    Teuchos::rcp( new Anasazi::LOCA::MultiVec(xVector, blksz) );
+  Teuchos::RefCountPtr<Anasazi::LOCAMatrix> Amat = 
+    Teuchos::rcp( new Anasazi::LOCAMatrix(anasaziOperator) );
+  Teuchos::RefCountPtr<Anasazi::LOCAMultiVec> ivec =
+    Teuchos::rcp( new Anasazi::LOCAMultiVec(xVector, blksz) );
   ivec->MvRandom();
 
   // Create an instance of the eigenproblem
@@ -157,8 +157,8 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
   // Obtain the eigenvectors
   // The real part is stored in the first "nev" vectors and the imaginary 
   // in the second "nev" vectors.
-  Anasazi::LOCA::MultiVec 
-    evecs( *dynamic_cast<Anasazi::LOCA::MultiVec *>(LOCAProblem->GetEvecs().
+  Anasazi::LOCAMultiVec 
+    evecs( *dynamic_cast<Anasazi::LOCAMultiVec *>(LOCAProblem->GetEvecs().
 						    get()) );
 
   // Real & imaginary components of Rayleigh quotient

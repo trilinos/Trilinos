@@ -1134,6 +1134,7 @@ AC_SUBST([INSTALL_STRIP_PROGRAM])])
 
 m4_include([config/ac_cxx_namespaces.m4])
 m4_include([config/ac_cxx_stl_map_key_const.m4])
+m4_include([config/ac_libtoolize_flags.m4])
 m4_include([config/ac_pkg_swig.m4])
 m4_include([config/ac_python_devel.m4])
 m4_include([config/ac_python_module.m4])

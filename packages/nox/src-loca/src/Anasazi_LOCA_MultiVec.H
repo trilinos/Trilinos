@@ -44,110 +44,117 @@
 namespace Anasazi {
 
   enum DataAccess {Copy, View};
-
-  namespace LOCA {
-    
-    /*!
-     * \brief Implementation of the Anasazi::MultiVec for 
-     * NOX::Abstract::Vectors.
-     */
-    /*!
-     * This class provides an implementation of the Anasazi::MultiVec class
-     * for NOX::Abstract::Vector's, to be used in conjunction with the
-     * Anasazi::LOCA::Matrix class.  In its current implementation, this class
-     * holds an array of NOX::Abstract::Vector pointers, an implements the
-     * multi-vector operations defined by the Anasazi::MultiVec interface
-     * serially.
-     */
-    class MultiVec : public Anasazi::MultiVec<double> {
-    public:
-      
-      //! Constructor
-      MultiVec(const NOX::Abstract::Vector& N_vec, int NumVecs );
-
-      //! Constructor
-      MultiVec(const vector<NOX::Abstract::Vector*> N_vecPtrs, 
-	       Anasazi::DataAccess type = Anasazi::Copy );
-
-      //! Constructor
-      MultiVec(const MultiVec& source, 
-	       Anasazi::DataAccess type = Anasazi::Copy );
-
-      //! Constructor
-      MultiVec(Anasazi::DataAccess type, const MultiVec& source, 
-	      const std::vector<int>& index); 
-    
-      //! Destructor
-      ~MultiVec();
-      
-      //! Create a new MultiVec with \em n columns
-      virtual Anasazi::MultiVec<double>* Clone(const int n) const;
-      
-      //! Create a new MultiVec as a copy of \em this
-      virtual Anasazi::MultiVec<double>* CloneCopy() const;
-      
-      //! Create a new MultiVec as a copy of selected columns
-      virtual Anasazi::MultiVec<double>* CloneCopy( const std::vector<int>& index ) const;
-      
-      //! Create a new MultiVec as a view of selected columns
-      virtual Anasazi::MultiVec<double>* CloneView( const std::vector<int>& index );
-      
-      //! Returns number of vectors
-      virtual int GetNumberVecs () const;
-
-      //! Returns vector length
-      virtual int GetVecLength () const;
-
-      /*! 
-       * \brief Set a block of this multivec with the multivecs specified by
-       *the index.
-       */
-      virtual void SetBlock(const Anasazi::MultiVec<double>& A, const std::vector<int>& index);
-
-      //! *this <- alpha * A * B + beta * (*this)
-      virtual void MvTimesMatAddMv(const double alpha, const Anasazi::MultiVec<double>& A, 
-				   const Teuchos::SerialDenseMatrix<int,double>& B,
-				   const double beta);
-
-      //!*this <- alpha * A + beta * B
-      virtual void MvAddMv(const double alpha, const Anasazi::MultiVec<double>& A, 
-			   const double beta, const Anasazi::MultiVec<double>& B);
-      
-      //! B <- alpha * A^T * (*this)
-      virtual void MvTransMv(const double alpha, const Anasazi::MultiVec<double>& A, 
-			     Teuchos::SerialDenseMatrix<int,double>& B) const;
-      
-      //! b[i] = \c A[i]^T*\c this[i] where \c A[i] is the i-th column of A.
-      virtual void MvDot ( const Anasazi::MultiVec<double>& A, std::vector<double>* b ) const;
-
-      //! alpha[i] = norm of i-th column of (*this)
-      virtual void MvNorm(std::vector<double>* normvec) const;
-      
-      //! random vectors in i-th column of (*this)
-      virtual void MvRandom();
-
-      //! initializes each element of (*this) with alpha
-      virtual void MvInit (const double alpha);
-
-      //! print (*this)
-      virtual void MvPrint() const;
-
-      //! Return a reference to NOX::Abstract::Vector
-      virtual NOX::Abstract::Vector& GetNOXVector(int index);
-
-      //! Return a const reference to NOX::Abstract::Vector
-      virtual const NOX::Abstract::Vector& GetNOXVector(int index) const;
   
-    protected:
+  /*!
+   * \brief Implementation of the Anasazi::MultiVec for 
+   * NOX::Abstract::Vectors.
+   */
+  /*!
+   * This class provides an implementation of the Anasazi::MultiVec class
+   * for NOX::Abstract::Vector's, to be used in conjunction with the
+   * Anasazi::LOCA::Matrix class.  In its current implementation, this class
+   * holds an array of NOX::Abstract::Vector pointers, an implements the
+   * multi-vector operations defined by the Anasazi::MultiVec interface
+   * serially.
+   */
+  class LOCAMultiVec : public Anasazi::MultiVec<double> {
+  public:
+      
+    //! Constructor
+    LOCAMultiVec(const NOX::Abstract::Vector& N_vec, int NumVecs );
 
-      //! Array of vectors
-      vector< NOX::Abstract::Vector* > mvPtrs;
+    //! Constructor
+    LOCAMultiVec(const vector<NOX::Abstract::Vector*> N_vecPtrs, 
+		 Anasazi::DataAccess type = Anasazi::Copy );
 
-      //! View or Copy
-      Anasazi::DataAccess CV;
+    //! Constructor
+    LOCAMultiVec(const LOCAMultiVec& source, 
+		 Anasazi::DataAccess type = Anasazi::Copy );
 
-    }; // class MultiVec
-  } // namespace LOCA
+    //! Constructor
+    LOCAMultiVec(Anasazi::DataAccess type, const LOCAMultiVec& source, 
+		 const std::vector<int>& index); 
+    
+    //! Destructor
+    ~LOCAMultiVec();
+      
+    //! Create a new MultiVec with \em n columns
+    virtual Anasazi::MultiVec<double>* 
+    Clone(const int n) const;
+      
+    //! Create a new MultiVec as a copy of \em this
+    virtual Anasazi::MultiVec<double>* 
+    CloneCopy() const;
+      
+    //! Create a new MultiVec as a copy of selected columns
+    virtual Anasazi::MultiVec<double>* 
+    CloneCopy( const std::vector<int>& index ) const;
+      
+    //! Create a new MultiVec as a view of selected columns
+    virtual Anasazi::MultiVec<double>* 
+    CloneView( const std::vector<int>& index );
+      
+    //! Returns number of vectors
+    virtual int GetNumberVecs () const;
+
+    //! Returns vector length
+    virtual int GetVecLength () const;
+
+    /*! 
+     * \brief Set a block of this multivec with the multivecs specified by
+     *the index.
+     */
+    virtual void 
+    SetBlock(const Anasazi::MultiVec<double>& A, 
+	     const std::vector<int>& index);
+
+    //! *this <- alpha * A * B + beta * (*this)
+    virtual void 
+    MvTimesMatAddMv(const double alpha, const Anasazi::MultiVec<double>& A, 
+		    const Teuchos::SerialDenseMatrix<int,double>& B,
+		    const double beta);
+
+    //!*this <- alpha * A + beta * B
+    virtual void 
+    MvAddMv(const double alpha, const Anasazi::MultiVec<double>& A, 
+	    const double beta, const Anasazi::MultiVec<double>& B);
+      
+    //! B <- alpha * A^T * (*this)
+    virtual void 
+    MvTransMv(const double alpha, const Anasazi::MultiVec<double>& A, 
+	      Teuchos::SerialDenseMatrix<int,double>& B) const;
+      
+    //! b[i] = \c A[i]^T*\c this[i] where \c A[i] is the i-th column of A.
+    virtual void 
+    MvDot (const Anasazi::MultiVec<double>& A, std::vector<double>* b) const;
+
+    //! alpha[i] = norm of i-th column of (*this)
+    virtual void MvNorm(std::vector<double>* normvec) const;
+      
+    //! random vectors in i-th column of (*this)
+    virtual void MvRandom();
+
+    //! initializes each element of (*this) with alpha
+    virtual void MvInit (const double alpha);
+
+    //! print (*this)
+    virtual void MvPrint() const;
+
+    //! Return a reference to NOX::Abstract::Vector
+    virtual NOX::Abstract::Vector& GetNOXVector(int index);
+
+    //! Return a const reference to NOX::Abstract::Vector
+    virtual const NOX::Abstract::Vector& GetNOXVector(int index) const;
+  
+  protected:
+
+    //! Array of vectors
+    vector< NOX::Abstract::Vector* > mvPtrs;
+
+    //! View or Copy
+    Anasazi::DataAccess CV;
+
+  }; // class LOCAMultiVec
 } // namespace Anasazi
 
 #endif 

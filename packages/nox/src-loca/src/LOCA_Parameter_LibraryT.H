@@ -107,8 +107,8 @@ LOCA::Parameter::Library::addParameterEntry(
   if (paramIterator == library.end()) {
     ValueTypeMap* paramMap = new ValueTypeMap;
     entry->setIsInLibrary();
-    paramMap->insert(pair<string, AbstractEntry*>(valueTypeString, entry));
-    library.insert(pair<string, ValueTypeMap*>(name, paramMap));
+    (*paramMap)[valueTypeString] = entry;
+    library[name] = paramMap;
   }
   
   else {
@@ -118,9 +118,9 @@ LOCA::Parameter::Library::addParameterEntry(
 							  paramIterator);
 
     // If it does not, add it
-    if (valueIterator == paramIterator->second->end()) {
+    if (valueIterator == (*paramIterator).second->end()) {
       entry->setIsInLibrary();
-      paramIterator->second->insert(pair<string, AbstractEntry*>(name, entry));
+      (*paramIterator).second->insert(pair<string, AbstractEntry*>(name, entry));
     }
 
     else {
@@ -159,7 +159,7 @@ LOCA::Parameter::Library::getEntry(const string& name) {
   // Find entry corresponding to this ValueType
   ValueTypeMapIterator valueIterator = getEntryIterator(valueTypeString, 
 							paramIterator);
-  if (valueIterator == paramIterator->second->end()) {
+  if (valueIterator == (*paramIterator).second->end()) {
     LOCA::ErrorCheck::throwError(
 	   func,
 	   string("Parameter library has no entry for parameter ") + 
@@ -168,7 +168,7 @@ LOCA::Parameter::Library::getEntry(const string& name) {
 
   // Cast entry to LOCA::Parameter::Entry<ValueType>
   LOCA::Parameter::Entry<ValueType>* entry = 
-    dynamic_cast<LOCA::Parameter::Entry<ValueType>*>(valueIterator->second);
+    dynamic_cast<LOCA::Parameter::Entry<ValueType>*>((*valueIterator).second);
   if (entry == NULL) {
     LOCA::ErrorCheck::throwError(
 	   func,

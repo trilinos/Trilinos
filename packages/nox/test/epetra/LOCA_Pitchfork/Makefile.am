@@ -47,12 +47,14 @@ pitchfork_exe_DEPENDENCIES = \
 	$(top_builddir)/src-loca/src/libloca.la \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
 
-pitchfork_exe_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
+pitchfork_exe_CXXFLAGS = \
+	$(TRILINOS_CXXFLAGS) \
+	$(LIBTOOL_COMPILER_FLAGS) \
 	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/src-epetra \
+        -I$(top_srcdir)/src-epetra \
 	-I$(top_srcdir)/src-loca/src \
         -I$(top_srcdir)/src-loca/src-epetra \
-	-I$(top_srcdir)/test/utils 
+	-I$(top_srcdir)/test/utils
 
 pitchfork_exe_LDADD = \
 	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
@@ -60,4 +62,22 @@ pitchfork_exe_LDADD = \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
 	$(top_builddir)/src-epetra/libnoxepetra.a \
 	$(top_builddir)/src/libnox.a \
-	$(LIBS)
+	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+
+MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYCLEANFILES = $(CXXREPOS)
+
+# ------------------------------------------------------------------------
+# Include global libtool definitions
+# ------------------------------------------------------------------------
+include $(top_srcdir)/config/libtool_macros.am
+

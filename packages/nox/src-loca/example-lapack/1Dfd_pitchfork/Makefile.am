@@ -54,7 +54,7 @@ pitchfork_DEPENDENCIES = \
 
 pitchforkContinuation_DEPENDENCIES = $(pitchfork_DEPENDENCIES)
 
-pitchfork_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
+pitchfork_CXXFLAGS = $(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS) \
 		   -I$(top_srcdir)/src \
 		   -I$(top_srcdir)/src-lapack \
 		   -I$(top_srcdir)/src-loca/src \
@@ -65,8 +65,25 @@ pitchforkContinuation_CXXFLAGS = $(pitchfork_CXXFLAGS)
 pitchfork_LDADD = \
 	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
 	$(top_builddir)/src-loca/src/libloca.la \
-	$(top_builddir)/src-lapack/libnoxlapack.a \
-	$(top_builddir)/src/libnox.a \
-        $(LIBS)
+	-L$(top_builddir)/src-lapack -lnoxlapack \
+	-L$(top_builddir)/src -lnox \
+        $(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 pitchforkContinuation_LDADD = $(pitchfork_LDADD)
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+
+MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYCLEANFILES = $(CXXREPOS)
+
+# ------------------------------------------------------------------------
+# Include global libtool definitions
+# ------------------------------------------------------------------------
+include $(top_srcdir)/config/libtool_macros.am

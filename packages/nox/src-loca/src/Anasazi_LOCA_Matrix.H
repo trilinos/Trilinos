@@ -44,38 +44,34 @@
 
 namespace Anasazi {
 
-  //! LOCA interface to Anasazi eigensolvers
-  namespace LOCA {
+  /*!
+   * \brief Implementation of the Anasazi::Matrix for LOCA operators.
+   */
+  /*!
+   * This class provides an implementation of the Anasazi::Matrix class
+   * using LOCA operators.  The operator is represented by the 
+   * LOCA::AnasaziOperator::Generic class which serves as a base class
+   * for many different types of operators, including shift-invert and
+   * Generalized Cayley transformations.
+   */
+  class LOCAMatrix : public Anasazi::Operator<double> {
+  public:
 
-    /*!
-     * \brief Implementation of the Anasazi::Matrix for LOCA operators.
-     */
-    /*!
-     * This class provides an implementation of the Anasazi::Matrix class
-     * using LOCA operators.  The operator is represented by the 
-     * LOCA::AnasaziOperator::Generic class which serves as a base class
-     * for many different types of operators, including shift-invert and
-     * Generalized Cayley transformations.
-     */
-    class Matrix : public Anasazi::Operator<double> {
-    public:
-
-      //! Constructor
-      Matrix(::LOCA::AnasaziOperator::Generic& op);
-
-      //! Destructor
-      ~Matrix();
-
-      //! Apply operator
-      Anasazi::ReturnType Apply(const Anasazi::MultiVec<double>& x, 
-				Anasazi::MultiVec<double>& y ) const;
-    protected:
-
-      //! Reference to LOCA operator
-      ::LOCA::AnasaziOperator::Generic& locaOp;
-
-    }; // class Matrix
-  } // namespace LOCA
+    //! Constructor
+    LOCAMatrix(::LOCA::AnasaziOperator::Generic& op);
+    
+    //! Destructor
+    ~LOCAMatrix();
+    
+    //! Apply operator
+    Anasazi::ReturnType Apply(const Anasazi::MultiVec<double>& x, 
+			      Anasazi::MultiVec<double>& y ) const;
+  protected:
+    
+    //! Reference to LOCA operator
+    ::LOCA::AnasaziOperator::Generic& locaOp;
+    
+  }; // class Matrix
 } // namespace Anasazi
 
 #endif 

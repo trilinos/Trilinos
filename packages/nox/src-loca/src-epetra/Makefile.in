@@ -74,12 +74,13 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-subdir = src-loca/src-epetra
 DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in
+	$(srcdir)/Makefile.in $(top_srcdir)/config/libtool_macros.am
+subdir = src-loca/src-epetra
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
+	$(top_srcdir)/config/ac_libtoolize_flags.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/ac_python_devel.m4 \
 	$(top_srcdir)/config/ac_python_module.m4 \
@@ -100,7 +101,10 @@ CONFIG_CLEAN_FILES =
 am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
-liblocaepetra_la_DEPENDENCIES =
+am__DEPENDENCIES_1 =
+liblocaepetra_la_DEPENDENCIES =  \
+	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 am__objects_1 = liblocaepetra_la-LOCA_Epetra_Group.lo \
 	liblocaepetra_la-LOCA_Epetra_BorderedOp.lo \
 	liblocaepetra_la-LOCA_Epetra_HouseholderJacOp.lo \
@@ -271,7 +275,16 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
-LIBTOOL = @LIBTOOL@
+
+###############################################################################
+# Changes to the standard libtool command:
+# 1)  Force libtool to use the CXX tag.  Otherwise it gets confused on some
+#     platforms, e.g., janus.  This is fixed in automake 1.9.4.
+###############################################################################
+LIBTOOL = $(SHELL) $(top_builddir)/libtool --tag=CXX
+LIBTOOL_CCLINKER_FLAGS = @LIBTOOL_CCLINKER_FLAGS@
+LIBTOOL_COMPILER_FLAGS = @LIBTOOL_COMPILER_FLAGS@
+LIBTOOL_LINKER_FLAGS = @LIBTOOL_LINKER_FLAGS@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
@@ -398,13 +411,21 @@ LOCA_EPETRANEW = \
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
-liblocaepetra_la_SOURCES = $(LOCA_EPETRA) $(LOCA_EPETRA_H) \
-	                   $(LOCA_EPETRANEW) $(LOCA_EPETRANEW_H)
+liblocaepetra_la_SOURCES = \
+	$(LOCA_EPETRA) \
+	$(LOCA_EPETRA_H) \
+	$(LOCA_EPETRANEW) \
+	$(LOCA_EPETRANEW_H)
 
-liblocaepetra_la_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
-                            -I$(top_srcdir)/src \
-                            -I$(top_srcdir)/src-epetra \
-                            $(TRILINOS_CXXFLAGS) 
+liblocaepetra_la_CXXFLAGS = \
+	-I$(top_srcdir)/src-loca/src \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src-epetra \
+	$(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS)
+
+liblocaepetra_la_LIBADD = \
+	$(top_builddir)/src-loca/src/libloca.la \
+	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS)
 
 
 # ------------------------------------------------------------------------
@@ -416,32 +437,21 @@ liblocaepetra_la_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
 
 # List of all headers to install in $(includedir)
 @BUILD_LIBLOCAEPETRA_TRUE@include_HEADERS = $(LOCA_EPETRA_H) $(LOCA_EPETRANEW_H)
-@USE_ALTERNATE_AR_FALSE@liblocaepetra_la_AR = $(AR) cru
-
-# ------------------------------------------------------------------------
-# For using a special archiver
-# ------------------------------------------------------------------------
-
-# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
-# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
-# define it manually.
-@USE_ALTERNATE_AR_TRUE@liblocaepetra_la_AR = $(ALTERNATE_AR)
-
-# ------------------------------------------------------------------------
-# Some C++ compilers create extra .o-files for templates. We need to
-# be sure to include these, and this is the hack to do it.
-# ------------------------------------------------------------------------
-liblocaepetra_la_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+MOSTLYCLEANFILES = $(CXXREPOS)
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .C .lo .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/libtool_macros.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -755,6 +765,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/../../config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -801,6 +812,7 @@ install-strip:
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
+	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 
@@ -877,6 +889,10 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLTLIBRARIES
 
+
+# ------------------------------------------------------------------------
+# Include global libtool definitions
+# ------------------------------------------------------------------------
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

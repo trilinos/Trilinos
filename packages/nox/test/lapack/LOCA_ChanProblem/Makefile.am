@@ -49,13 +49,14 @@ chanContinuation_exe_DEPENDENCIES = \
 	$(top_builddir)/src-loca/src/libloca.la \
         $(top_builddir)/src-loca/src-lapack/liblocalapack.la
 
-chanContinuation_exe_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
-		   -I$(top_srcdir)/src \
-		   -I$(top_srcdir)/src-lapack \
-		   -I$(top_srcdir)/src-loca/src \
-                   -I$(top_srcdir)/src-loca/src-lapack \
-                   -I$(top_srcdir)/test/utils \
-	           $(TRILINOS_CXXFLAGS)
+chanContinuation_exe_CXXFLAGS = \
+	$(TRILINOS_CXXFLAGS) \
+	$(LIBTOOL_COMPILER_FLAGS) \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src-lapack \
+	-I$(top_srcdir)/src-loca/src \
+        -I$(top_srcdir)/src-loca/src-lapack \
+        -I$(top_srcdir)/test/utils 
 
 chanContinuation_exe_LDADD = \
                 $(top_builddir)/src-loca/src-lapack/liblocalapack.la \
@@ -64,7 +65,7 @@ chanContinuation_exe_LDADD = \
 		-L$(top_builddir)/src-lapack \
 		-L$(top_builddir)/test/utils \
                 -lnoxtestutils -lnoxlapack -lnox \
-                $(LIBS) $(FLIBS)
+                $(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 chanTPContinuation_exe_SOURCES = \
                 $(srcdir)/ChanTPContinuation.C \
@@ -87,3 +88,20 @@ chanHomotopy_exe_DEPENDENCIES = $(chanContinuation_exe_DEPENDENCIES)
 chanHomotopy_exe_CXXFLAGS = $(chanContinuation_exe_CXXFLAGS)
 
 chanHomotopy_exe_LDADD = $(chanContinuation_exe_LDADD)
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+
+MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYCLEANFILES = $(CXXREPOS)
+
+# ------------------------------------------------------------------------
+# Include global libtool definitions
+# ------------------------------------------------------------------------
+include $(top_srcdir)/config/libtool_macros.am

@@ -465,7 +465,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 AR ac_ct_AR RANLIB ac_ct_RANLIB HAVE_DOXYGEN_DOT USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR HAVE_MPI_TRUE HAVE_MPI_FALSE EGREP BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE BUILD_LIBNOXTSF_TRUE BUILD_LIBNOXTSF_FALSE BUILD_TSF_EXAMPLES_TRUE BUILD_TSF_EXAMPLES_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON PYTHON_VERSION PYTHON_PREFIX PYTHON_EXEC_PREFIX PYTHON_PLATFORM pythondir pkgpythondir pyexecdir pkgpyexecdir PYTHON_CPPFLAGS PYTHON_LDFLAGS PYTHON_SITE_PKG PYTHON_EXTRA_LIBS IMPORT_LAPACK IMPORT_EPETRA LN_S ECHO CPP LIBTOOL HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS BUILD_NOX_MULTIVECS_TRUE BUILD_NOX_MULTIVECS_FALSE HAVE_NOX_MULTIVECS_SUBST BUILD_NOX_ANY_TRUE BUILD_NOX_ANY_FALSE HAVE_NOX_ANY_SUBST BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE ADDON_lapack_TESTS ADDON_loca_lapack_TESTS BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE ADDON_epetra_TESTS ADDON_loca_epetra_TESTS BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE ADDON_petsc_TESTS ADDON_loca_petsc_TESTS BUILD_PYTHON_TESTS_TRUE BUILD_PYTHON_TESTS_FALSE BUILD_LOCA_PYTHON_TESTS_TRUE BUILD_LOCA_PYTHON_TESTS_FALSE ADDON_python_TESTS ADDON_loca_python_TESTS BUILD_LOCAANASAZI_TRUE BUILD_LOCAANASAZI_FALSE BUILD_LIBLOCAMF_TRUE BUILD_LIBLOCAMF_FALSE FLIBS BLAS_LIBS LAPACK_LIBS MF_INCDIR TRILINOS_CXXFLAGS MF_LIBDIR PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir abs_builddir abs_top_builddir MPI_LIBS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB HAVE_DOXYGEN_DOT USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE AR ac_ct_AR ALTERNATE_AR HAVE_MPI_TRUE HAVE_MPI_FALSE EGREP BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE BUILD_LIBNOXTSF_TRUE BUILD_LIBNOXTSF_FALSE BUILD_TSF_EXAMPLES_TRUE BUILD_TSF_EXAMPLES_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON PYTHON_VERSION PYTHON_PREFIX PYTHON_EXEC_PREFIX PYTHON_PLATFORM pythondir pkgpythondir pyexecdir pkgpyexecdir PYTHON_CPPFLAGS PYTHON_LDFLAGS PYTHON_SITE_PKG PYTHON_EXTRA_LIBS IMPORT_LAPACK IMPORT_EPETRA LN_S ECHO CPP LIBTOOL HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS BUILD_NOX_MULTIVECS_TRUE BUILD_NOX_MULTIVECS_FALSE HAVE_NOX_MULTIVECS_SUBST BUILD_NOX_ANY_TRUE BUILD_NOX_ANY_FALSE HAVE_NOX_ANY_SUBST BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE ADDON_lapack_TESTS ADDON_loca_lapack_TESTS BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE ADDON_epetra_TESTS ADDON_loca_epetra_TESTS BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE ADDON_petsc_TESTS ADDON_loca_petsc_TESTS BUILD_PYTHON_TESTS_TRUE BUILD_PYTHON_TESTS_FALSE BUILD_LOCA_PYTHON_TESTS_TRUE BUILD_LOCA_PYTHON_TESTS_FALSE ADDON_python_TESTS ADDON_loca_python_TESTS BUILD_LOCAANASAZI_TRUE BUILD_LOCAANASAZI_FALSE BUILD_LIBLOCAMF_TRUE BUILD_LIBLOCAMF_FALSE FLIBS BLAS_LIBS LAPACK_LIBS MF_INCDIR TRILINOS_CXXFLAGS MF_LIBDIR PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir abs_builddir abs_top_builddir MPI_LIBS LIBTOOL_COMPILER_FLAGS LIBTOOL_LINKER_FLAGS LIBTOOL_CCLINKER_FLAGS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1085,6 +1085,12 @@ Optional Packages:
   --with-cflags           add extra C compiler flags
   --with-fflags           add extra FORTRAN compiler flags
   --with-ldflags          add extra linker (typically -L) flags
+  --with-libtool-compiler-flags
+                          add extra libtool compiler flags
+  --with-libtool-linker-flags
+                          add extra libtool linker flags
+  --with-libtool-cclinker-flags
+                          add extra libtool linker flagsfor the C++ linker
   --with-ar               specify archiver command ["ar cru"]
   --with-mpi-compilers=PATH
                           use MPI compilers mpicc, mpif77, and mpicxx, mpic++
@@ -2219,6 +2225,18 @@ if test -n "${LDFLAGS}"; then
   USERDEF_LDFLAGS=yes
 fi
 
+if test -n "${LIBTOOL_COMPILER_FLAGS}"; then
+  USERDEF_LIBTOOL_COMPILER_FLAGS=yes
+fi
+
+if test -n "${LIBTOOL_LINKER_FLAGS}"; then
+  USERDEF_LIBTOOL_LINKER_FLAGS=yes
+fi
+
+if test -n "${LIBTOOL_CCLINKER_FLAGS}"; then
+  USERDEF_LIBTOOL_CCLINKER_FLAGS=yes
+fi
+
 # ------------------------------------------------------------------------
 # Checks for extra flags, etc
 # ------------------------------------------------------------------------
@@ -2266,6 +2284,30 @@ fi;
 if test "${with_ldflags+set}" = set; then
   withval="$with_ldflags"
   EXTRA_LDFLAGS=${withval}
+
+fi;
+
+
+# Check whether --with-libtool-compiler-flags or --without-libtool-compiler-flags was given.
+if test "${with_libtool_compiler_flags+set}" = set; then
+  withval="$with_libtool_compiler_flags"
+  EXTRA_LIBTOOL_COMPILER_FLAGS=${withval}
+
+fi;
+
+
+# Check whether --with-libtool-linker-flags or --without-libtool-linker-flags was given.
+if test "${with_libtool_linker_flags+set}" = set; then
+  withval="$with_libtool_linker_flags"
+  EXTRA_LIBTOOL_LINKER_FLAGS=${withval}
+
+fi;
+
+
+# Check whether --with-libtool-cclinker-flags or --without-libtool-cclinker-flags was given.
+if test "${with_libtool_cclinker_flags+set}" = set; then
+  withval="$with_libtool_cclinker_flags"
+  EXTRA_LIBTOOL_CCLINKER_FLAGS=${withval}
 
 fi;
 
@@ -4307,7 +4349,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4310:" \
+echo "$as_me:4352:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4450,86 +4492,6 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}ar", so it can be a program name with args.
-set dummy ${ac_tool_prefix}ar; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_AR+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$AR"; then
-  ac_cv_prog_AR="$AR" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_AR="${ac_tool_prefix}ar"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-fi
-fi
-AR=$ac_cv_prog_AR
-if test -n "$AR"; then
-  echo "$as_me:$LINENO: result: $AR" >&5
-echo "${ECHO_T}$AR" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-fi
-if test -z "$ac_cv_prog_AR"; then
-  ac_ct_AR=$AR
-  # Extract the first word of "ar", so it can be a program name with args.
-set dummy ar; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_prog_ac_ct_AR+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$ac_ct_AR"; then
-  ac_cv_prog_ac_ct_AR="$ac_ct_AR" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ac_ct_AR="ar"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-  test -z "$ac_cv_prog_ac_ct_AR" && ac_cv_prog_ac_ct_AR="ar"
-fi
-fi
-ac_ct_AR=$ac_cv_prog_ac_ct_AR
-if test -n "$ac_ct_AR"; then
-  echo "$as_me:$LINENO: result: $ac_ct_AR" >&5
-echo "${ECHO_T}$ac_ct_AR" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-  AR=$ac_ct_AR
-else
-  AR="$ac_cv_prog_AR"
-fi
 
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
@@ -4713,6 +4675,7 @@ case $target in
      CXXFLAGS_MISC="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
      F77_MISC=f77
      FFLAGS_MISC="-64"
+     LIBTOOL_CCLINKER_FLAGS_MISC = "-64"
      SPECIAL_AR="CC -ar -W,l -W,s -o"
     fi
 
@@ -4815,6 +4778,69 @@ echo "${ECHO_T}${FFLAGS}" >&6
 
 fi
 
+# Test for user-defined LIBTOOL_COMPILER flags
+echo "$as_me:$LINENO: checking for libtool compiler flags" >&5
+echo $ECHO_N "checking for libtool compiler flags... $ECHO_C" >&6
+
+if test "X${USERDEF_LIBTOOL_COMPILER_FLAGS}" = "Xyes"; then
+
+  echo "$as_me:$LINENO: result: ${LIBTOOL_COMPILER_FLAGS} (user-specified via LIBTOOL_COMPILER_FLAGS)" >&5
+echo "${ECHO_T}${LIBTOOL_COMPILER_FLAGS} (user-specified via LIBTOOL_COMPILER_FLAGS)" >&6
+
+# Otherwise, determine the flags automatically
+else
+
+  if test -n "${LIBTOOL_COMPILER_FLAGS_MISC}"; then
+    LIBTOOL_COMPILER_FLAGS="${LIBTOOL_COMPILER_FLAGS} ${LIBTOOL_COMPILER_FLAGS_MISC}"
+  fi
+
+  echo "$as_me:$LINENO: result: ${LIBTOOL_COMPILER_FLAGS}" >&5
+echo "${ECHO_T}${LIBTOOL_COMPILER_FLAGS}" >&6
+
+fi
+
+# Test for user-defined LIBTOOL_LINKER flags
+echo "$as_me:$LINENO: checking for libtool linker flags" >&5
+echo $ECHO_N "checking for libtool linker flags... $ECHO_C" >&6
+
+if test "X${USERDEF_LIBTOOL_LINKER_FLAGS}" = "Xyes"; then
+
+  echo "$as_me:$LINENO: result: ${LIBTOOL_LINKER_FLAGS} (user-specified via LIBTOOL_LINKER_FLAGS)" >&5
+echo "${ECHO_T}${LIBTOOL_LINKER_FLAGS} (user-specified via LIBTOOL_LINKER_FLAGS)" >&6
+
+# Otherwise, determine the flags automatically
+else
+
+  if test -n "${LIBTOOL_LINKER_FLAGS_MISC}"; then
+    LIBTOOL_LINKER_FLAGS="${LIBTOOL_LINKER_FLAGS} ${LIBTOOL_LINKER_FLAGS_MISC}"
+  fi
+
+  echo "$as_me:$LINENO: result: ${LIBTOOL_LINKER_FLAGS}" >&5
+echo "${ECHO_T}${LIBTOOL_LINKER_FLAGS}" >&6
+
+fi
+
+# Test for user-defined LIBTOOL_CCLINKER flags
+echo "$as_me:$LINENO: checking for libtool cclinker flags" >&5
+echo $ECHO_N "checking for libtool cclinker flags... $ECHO_C" >&6
+
+if test "X${USERDEF_LIBTOOL_CCLINKER_FLAGS}" = "Xyes"; then
+
+  echo "$as_me:$LINENO: result: ${LIBTOOL_CCLINKER_FLAGS} (user-specified via LIBTOOL_CCLINKER_FLAGS)" >&5
+echo "${ECHO_T}${LIBTOOL_CCLINKER_FLAGS} (user-specified via LIBTOOL_CCLINKER_FLAGS)" >&6
+
+# Otherwise, determine the flags automatically
+else
+
+  if test -n "${LIBTOOL_CCLINKER_FLAGS_MISC}"; then
+    LIBTOOL_CCLINKER_FLAGS="${LIBTOOL_CCLINKER_FLAGS} ${LIBTOOL_CCLINKER_FLAGS_MISC}"
+  fi
+
+  echo "$as_me:$LINENO: result: ${LIBTOOL_CCLINKER_FLAGS}" >&5
+echo "${ECHO_T}${LIBTOOL_CCLINKER_FLAGS}" >&6
+
+fi
+
 # Add on any extra CXXFLAGS
 echo "$as_me:$LINENO: checking for extra C++ compiler flags" >&5
 echo $ECHO_N "checking for extra C++ compiler flags... $ECHO_C" >&6
@@ -4874,6 +4900,63 @@ else
 echo "${ECHO_T}${EXTRA_LDFLAGS}" >&6
   LDFLAGS="${LDFLAGS} ${EXTRA_LDFLAGS}"
 fi
+
+# Add on any extra LIBTOOL_COMPILER_FLAGS
+echo "$as_me:$LINENO: checking for extra libtool compiler flags" >&5
+echo $ECHO_N "checking for extra libtool compiler flags... $ECHO_C" >&6
+if test -z "${EXTRA_LIBTOOL_COMPILER_FLAGS}"; then
+  echo "$as_me:$LINENO: result: none" >&5
+echo "${ECHO_T}none" >&6
+else
+  echo "$as_me:$LINENO: result: ${EXTRA_LIBTOOL_COMPILER_FLAGS}" >&5
+echo "${ECHO_T}${EXTRA_LIBTOOL_COMPILER_FLAGS}" >&6
+  LIBTOOL_COMPILER_FLAGS="${LIBTOOL_COMPILER_FLAGS} ${EXTRA_LIBTOOL_COMPILER_FLAGS}"
+fi
+
+# Add on any extra LIBTOOL_LINKER_FLAGS
+echo "$as_me:$LINENO: checking for extra libtool linker flags" >&5
+echo $ECHO_N "checking for extra libtool linker flags... $ECHO_C" >&6
+if test -z "${EXTRA_LIBTOOL_LINKER_FLAGS}"; then
+  echo "$as_me:$LINENO: result: none" >&5
+echo "${ECHO_T}none" >&6
+else
+  echo "$as_me:$LINENO: result: ${EXTRA_LIBTOOL_LINKER_FLAGS}" >&5
+echo "${ECHO_T}${EXTRA_LIBTOOL_LINKER_FLAGS}" >&6
+  LIBTOOL_LINKER_FLAGS="${LIBTOOL_LINKER_FLAGS} ${EXTRA_LIBTOOL_LINKER_FLAGS}"
+fi
+
+# Add on any extra LIBTOOL_CCLINKER_FLAGS
+echo "$as_me:$LINENO: checking for extra libtool cclinker flags" >&5
+echo $ECHO_N "checking for extra libtool cclinker flags... $ECHO_C" >&6
+if test -z "${EXTRA_LIBTOOL_CCLINKER_FLAGS}"; then
+  echo "$as_me:$LINENO: result: none" >&5
+echo "${ECHO_T}none" >&6
+else
+  echo "$as_me:$LINENO: result: ${EXTRA_LIBTOOL_CCLINKER_FLAGS}" >&5
+echo "${ECHO_T}${EXTRA_LIBTOOL_CCLINKER_FLAGS}" >&6
+  LIBTOOL_CCLINKER_FLAGS="${LIBTOOL_CCLINKER_FLAGS} ${EXTRA_LIBTOOL_CCLINKER_FLAGS}"
+fi
+
+# libtoolize LIBTOOL flags (i.e., add -Xcompiler, -Xlinker, -XCClinker flags
+# respectively)
+ac_libtoolize_flags_temp=""
+   for i in $LIBTOOL_COMPILER_FLAGS
+   do
+     ac_libtoolize_flags_temp="$ac_libtoolize_flags_temp -Xcompiler $i"
+   done
+   LIBTOOL_COMPILER_FLAGS="$ac_libtoolize_flags_temp"
+ac_libtoolize_flags_temp=""
+   for i in $LIBTOOL_LINKER_FLAGS
+   do
+     ac_libtoolize_flags_temp="$ac_libtoolize_flags_temp -Xlinker $i"
+   done
+   LIBTOOL_LINKER_FLAGS="$ac_libtoolize_flags_temp"
+ac_libtoolize_flags_temp=""
+   for i in $LIBTOOL_CCLINKER_FLAGS
+   do
+     ac_libtoolize_flags_temp="$ac_libtoolize_flags_temp -XCClinker $i"
+   done
+   LIBTOOL_CCLINKER_FLAGS="$ac_libtoolize_flags_temp"
 
 # ------------------------------------------------------------------------
 # ------------------------------------------------------------------------
@@ -5076,6 +5159,14 @@ if test -n "${SPECIAL_AR}" && test -z "${ALTERNATE_AR}"; then
   ALTERNATE_AR="${SPECIAL_AR}"
 fi
 
+# Note:  We now overwrite the AR and AR_FLAGS variables with the alternate
+# archiver.  This is necessary for libtool to respect the alternate archiver.
+# Note that the AR_FLAGS is specifically set to a space instead of being
+# empty because libtool.m4 automatically sets AR_FLAGS=cru if AR_FLAGS has
+# zero length.  We don't want this when using an alternate archiver.
+#
+# It may no longer be necessary to explicitly specify ALTERNATE_AR in each
+# Makefile.am with this change.
 echo "$as_me:$LINENO: checking for special archiver command" >&5
 echo $ECHO_N "checking for special archiver command... $ECHO_C" >&6
 if test -n "${ALTERNATE_AR}"; then
@@ -5091,6 +5182,8 @@ else
   USE_ALTERNATE_AR_FALSE=
 fi
 
+   AR="${ALTERNATE_AR}"
+   AR_FLAGS=" "
 else
    echo "$as_me:$LINENO: result: none" >&5
 echo "${ECHO_T}none" >&6
@@ -5104,6 +5197,91 @@ else
   USE_ALTERNATE_AR_FALSE=
 fi
 
+   if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}ar", so it can be a program name with args.
+set dummy ${ac_tool_prefix}ar; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_AR+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$AR"; then
+  ac_cv_prog_AR="$AR" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_AR="${ac_tool_prefix}ar"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+fi
+fi
+AR=$ac_cv_prog_AR
+if test -n "$AR"; then
+  echo "$as_me:$LINENO: result: $AR" >&5
+echo "${ECHO_T}$AR" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+fi
+if test -z "$ac_cv_prog_AR"; then
+  ac_ct_AR=$AR
+  # Extract the first word of "ar", so it can be a program name with args.
+set dummy ar; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_ac_ct_AR+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$ac_ct_AR"; then
+  ac_cv_prog_ac_ct_AR="$ac_ct_AR" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_ac_ct_AR="ar"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  test -z "$ac_cv_prog_ac_ct_AR" && ac_cv_prog_ac_ct_AR="false"
+fi
+fi
+ac_ct_AR=$ac_cv_prog_ac_ct_AR
+if test -n "$ac_ct_AR"; then
+  echo "$as_me:$LINENO: result: $ac_ct_AR" >&5
+echo "${ECHO_T}$ac_ct_AR" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  AR=$ac_ct_AR
+else
+  AR="$ac_cv_prog_AR"
+fi
+
+   if test "X${AR}" = "Xfalse" ; then
+      { { echo "$as_me:$LINENO: error: Default archiver ar not found.  Specify an archiver with --with-ar configure flag." >&5
+echo "$as_me: error: Default archiver ar not found.  Specify an archiver with --with-ar configure flag." >&2;}
+   { (exit 1); exit 1; }; }
+   fi
 fi
 
 
@@ -7576,7 +7754,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 7579 "configure"' > conftest.$ac_ext
+  echo '#line 7757 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -9033,11 +9211,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9036: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9214: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9040: \$? = $ac_status" >&5
+   echo "$as_me:9218: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -9276,11 +9454,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9279: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9457: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9283: \$? = $ac_status" >&5
+   echo "$as_me:9461: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -9336,11 +9514,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9339: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9517: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9343: \$? = $ac_status" >&5
+   echo "$as_me:9521: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -11521,7 +11699,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 11524 "configure"
+#line 11702 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11619,7 +11797,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 11622 "configure"
+#line 11800 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13812,11 +13990,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13815: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13993: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13819: \$? = $ac_status" >&5
+   echo "$as_me:13997: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -13872,11 +14050,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13875: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14053: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13879: \$? = $ac_status" >&5
+   echo "$as_me:14057: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15233,7 +15411,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 15236 "configure"
+#line 15414 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -15331,7 +15509,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 15334 "configure"
+#line 15512 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -16168,11 +16346,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16171: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16349: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16175: \$? = $ac_status" >&5
+   echo "$as_me:16353: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -16228,11 +16406,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16231: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16409: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16235: \$? = $ac_status" >&5
+   echo "$as_me:16413: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18267,11 +18445,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18270: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18448: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:18274: \$? = $ac_status" >&5
+   echo "$as_me:18452: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -18510,11 +18688,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18513: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18691: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:18517: \$? = $ac_status" >&5
+   echo "$as_me:18695: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -18570,11 +18748,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18573: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18751: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:18577: \$? = $ac_status" >&5
+   echo "$as_me:18755: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -20755,7 +20933,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 20758 "configure"
+#line 20936 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -20853,7 +21031,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 20856 "configure"
+#line 21034 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -22807,7 +22985,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:22810: \"$ac_link\") >&5
+(eval echo $as_me:22988: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -22885,7 +23063,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:22888: \"$ac_link\") >&5
+(eval echo $as_me:23066: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -23884,7 +24062,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:23887: \"$ac_link\") >&5
+(eval echo $as_me:24065: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -23962,7 +24140,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:23965: \"$ac_link\") >&5
+(eval echo $as_me:24143: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -39156,6 +39334,9 @@ echo "${ECHO_T}$WITH_PRERELEASE" >&6
 
 
 
+
+
+
 # ------------------------------------------------------------------------
 # Output files
 # ------------------------------------------------------------------------
@@ -40225,13 +40406,13 @@ s,@CXXCPP@,$CXXCPP,;t t
 s,@F77@,$F77,;t t
 s,@FFLAGS@,$FFLAGS,;t t
 s,@ac_ct_F77@,$ac_ct_F77,;t t
-s,@AR@,$AR,;t t
-s,@ac_ct_AR@,$ac_ct_AR,;t t
 s,@RANLIB@,$RANLIB,;t t
 s,@ac_ct_RANLIB@,$ac_ct_RANLIB,;t t
 s,@HAVE_DOXYGEN_DOT@,$HAVE_DOXYGEN_DOT,;t t
 s,@USE_ALTERNATE_AR_TRUE@,$USE_ALTERNATE_AR_TRUE,;t t
 s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
+s,@AR@,$AR,;t t
+s,@ac_ct_AR@,$ac_ct_AR,;t t
 s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
 s,@HAVE_MPI_TRUE@,$HAVE_MPI_TRUE,;t t
 s,@HAVE_MPI_FALSE@,$HAVE_MPI_FALSE,;t t
@@ -40343,6 +40524,9 @@ s,@ac_aux_dir@,$ac_aux_dir,;t t
 s,@abs_builddir@,$abs_builddir,;t t
 s,@abs_top_builddir@,$abs_top_builddir,;t t
 s,@MPI_LIBS@,$MPI_LIBS,;t t
+s,@LIBTOOL_COMPILER_FLAGS@,$LIBTOOL_COMPILER_FLAGS,;t t
+s,@LIBTOOL_LINKER_FLAGS@,$LIBTOOL_LINKER_FLAGS,;t t
+s,@LIBTOOL_CCLINKER_FLAGS@,$LIBTOOL_CCLINKER_FLAGS,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF

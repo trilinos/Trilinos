@@ -33,8 +33,8 @@
 #include "Anasazi_LOCA_MultiVec.H"
 #include "LOCA_ErrorCheck.H"
 
-Anasazi::LOCA::MultiVec::MultiVec(const NOX::Abstract::Vector& N_vec, 
-				  int NumVecs) :
+Anasazi::LOCAMultiVec::LOCAMultiVec(const NOX::Abstract::Vector& N_vec, 
+				    int NumVecs) :
   mvPtrs(NumVecs), CV(Anasazi::Copy)
 {
   for (int i=0; i<NumVecs; i++) {
@@ -43,7 +43,7 @@ Anasazi::LOCA::MultiVec::MultiVec(const NOX::Abstract::Vector& N_vec,
   }
 }
 
-Anasazi::LOCA::MultiVec::MultiVec(
+Anasazi::LOCAMultiVec::LOCAMultiVec(
 			      const vector<NOX::Abstract::Vector*> N_vecPtrs,
 			      Anasazi::DataAccess type) : 
   mvPtrs(N_vecPtrs.size()), CV(type)
@@ -57,8 +57,8 @@ Anasazi::LOCA::MultiVec::MultiVec(
       mvPtrs[i] = N_vecPtrs[i];
 }
 
-Anasazi::LOCA::MultiVec::MultiVec(const Anasazi::LOCA::MultiVec& source, 
-				  Anasazi::DataAccess type ) : 
+Anasazi::LOCAMultiVec::LOCAMultiVec(const Anasazi::LOCAMultiVec& source, 
+				    Anasazi::DataAccess type ) : 
   mvPtrs(source.mvPtrs.size()),
   CV(type)
 {
@@ -71,9 +71,9 @@ Anasazi::LOCA::MultiVec::MultiVec(const Anasazi::LOCA::MultiVec& source,
       mvPtrs[i] = source.mvPtrs[i];
 }
 
-Anasazi::LOCA::MultiVec::MultiVec(Anasazi::DataAccess type, 
-				  const Anasazi::LOCA::MultiVec& source, 
-				  const std::vector<int>& index): 
+Anasazi::LOCAMultiVec::LOCAMultiVec(Anasazi::DataAccess type, 
+				    const Anasazi::LOCAMultiVec& source, 
+				    const std::vector<int>& index): 
   mvPtrs(index.size()), CV(type)
 {
   int i;
@@ -87,7 +87,7 @@ Anasazi::LOCA::MultiVec::MultiVec(Anasazi::DataAccess type,
       mvPtrs[i] = source.mvPtrs[ index[i] ];
 }
 
-Anasazi::LOCA::MultiVec::~MultiVec()
+Anasazi::LOCAMultiVec::~LOCAMultiVec()
 {
   if (CV == Anasazi::Copy)
     for (unsigned int i=0; i<mvPtrs.size(); i++)
@@ -95,47 +95,48 @@ Anasazi::LOCA::MultiVec::~MultiVec()
 }
 
 Anasazi::MultiVec<double>* 
-Anasazi::LOCA::MultiVec::Clone(const int NumVecs) const
+Anasazi::LOCAMultiVec::Clone(const int NumVecs) const
 {
-  return new Anasazi::LOCA::MultiVec(*(mvPtrs[0]),NumVecs);
+  return new Anasazi::LOCAMultiVec(*(mvPtrs[0]),NumVecs);
 }
 
 Anasazi::MultiVec<double>* 
-Anasazi::LOCA::MultiVec::CloneCopy() const
+Anasazi::LOCAMultiVec::CloneCopy() const
 {
-  return new Anasazi::LOCA::MultiVec(*this);
+  return new Anasazi::LOCAMultiVec(*this);
 }
 
 Anasazi::MultiVec<double>* 
-Anasazi::LOCA::MultiVec::CloneCopy( const std::vector<int>& index ) const
+Anasazi::LOCAMultiVec::CloneCopy( const std::vector<int>& index ) const
 {
-  return new Anasazi::LOCA::MultiVec( Copy, *this, index );
+  return new Anasazi::LOCAMultiVec( Copy, *this, index );
 }
 
 Anasazi::MultiVec<double>* 
-Anasazi::LOCA::MultiVec::CloneView( const std::vector<int>& index ) 
+Anasazi::LOCAMultiVec::CloneView( const std::vector<int>& index ) 
 {
-  return  new Anasazi::LOCA::MultiVec( View, *this, index );
+  return  new Anasazi::LOCAMultiVec( View, *this, index );
 }
 
 int 
-Anasazi::LOCA::MultiVec::GetNumberVecs() const 
+Anasazi::LOCAMultiVec::GetNumberVecs() const 
 {
   return mvPtrs.size();
 }
 
 int 
-Anasazi::LOCA::MultiVec::GetVecLength() const 
+Anasazi::LOCAMultiVec::GetVecLength() const 
 {
   return mvPtrs[0]->length();
 }
 
 void 
-Anasazi::LOCA::MultiVec::SetBlock(const Anasazi::MultiVec<double>& A, const std::vector<int>& index)
+Anasazi::LOCAMultiVec::SetBlock(const Anasazi::MultiVec<double>& A, 
+				const std::vector<int>& index)
 {
   int i, ind;
-  Anasazi::LOCA::MultiVec *A_vec = 
-    dynamic_cast<Anasazi::LOCA::MultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); assert(A_vec!=NULL);
+  Anasazi::LOCAMultiVec *A_vec = 
+    dynamic_cast<Anasazi::LOCAMultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); assert(A_vec!=NULL);
   int MyNumVecs = mvPtrs.size();
   for (i=0; i<index.size(); i++) {
     ind = index[i];
@@ -147,21 +148,21 @@ Anasazi::LOCA::MultiVec::SetBlock(const Anasazi::MultiVec<double>& A, const std:
 }
 
 void 
-Anasazi::LOCA::MultiVec::MvTimesMatAddMv(
-				    const double alpha, 
-				    const Anasazi::MultiVec<double>& A, 
-				    const Teuchos::SerialDenseMatrix<int,double>& B, 
-				    const double beta) 
+Anasazi::LOCAMultiVec::MvTimesMatAddMv(
+			     const double alpha, 
+			     const Anasazi::MultiVec<double>& A, 
+			     const Teuchos::SerialDenseMatrix<int,double>& B, 
+			     const double beta) 
 {
   int i,j;
-  Anasazi::LOCA::MultiVec *A_vec = 
-    dynamic_cast<Anasazi::LOCA::MultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); assert(A_vec!=NULL);
+  Anasazi::LOCAMultiVec *A_vec = 
+    dynamic_cast<Anasazi::LOCAMultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); assert(A_vec!=NULL);
   int m = B.numRows();
   int n = B.numCols();
   int ldb = B.stride();
   double *Bvals = B.values();  	
-  Anasazi::LOCA::MultiVec *temp_vec = 
-    new Anasazi::LOCA::MultiVec(*(mvPtrs[0]),n);
+  Anasazi::LOCAMultiVec *temp_vec = 
+    new Anasazi::LOCAMultiVec(*(mvPtrs[0]),n);
   temp_vec->MvInit(0.0);
   double one = 1.0;
   //
@@ -177,14 +178,16 @@ Anasazi::LOCA::MultiVec::MvTimesMatAddMv(
 }
 
 void 
-Anasazi::LOCA::MultiVec::MvAddMv(const double alpha, const Anasazi::MultiVec<double>& A, 
-				 const double beta, const Anasazi::MultiVec<double>& B) 
+Anasazi::LOCAMultiVec::MvAddMv(const double alpha, 
+			       const Anasazi::MultiVec<double>& A, 
+			       const double beta, 
+			       const Anasazi::MultiVec<double>& B) 
 {
   const double zero = 0.0;
-  Anasazi::LOCA::MultiVec *A_vec = 
-    dynamic_cast<Anasazi::LOCA::MultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); assert(A_vec!=NULL);
-  Anasazi::LOCA::MultiVec *B_vec = 
-    dynamic_cast<Anasazi::LOCA::MultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(B)); assert(B_vec!=NULL);
+  Anasazi::LOCAMultiVec *A_vec = 
+    dynamic_cast<Anasazi::LOCAMultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); assert(A_vec!=NULL);
+  Anasazi::LOCAMultiVec *B_vec = 
+    dynamic_cast<Anasazi::LOCAMultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(B)); assert(B_vec!=NULL);
 
   for (unsigned int i=0; i<mvPtrs.size(); i++)
     mvPtrs[i]->update(alpha, *(A_vec->mvPtrs[i]), beta, *(B_vec->mvPtrs[i]), 
@@ -192,12 +195,14 @@ Anasazi::LOCA::MultiVec::MvAddMv(const double alpha, const Anasazi::MultiVec<dou
 }
 
 void 
-Anasazi::LOCA::MultiVec::MvTransMv(const double alpha, const Anasazi::MultiVec<double>& A,
-				   Teuchos::SerialDenseMatrix<int,double>& B) const
+Anasazi::LOCAMultiVec::MvTransMv(
+			     const double alpha, 
+			     const Anasazi::MultiVec<double>& A,
+			     Teuchos::SerialDenseMatrix<int,double>& B) const
 {
   int i,j;
-  Anasazi::LOCA::MultiVec *A_vec = 
-    dynamic_cast<Anasazi::LOCA::MultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); assert(A_vec!=NULL);
+  Anasazi::LOCAMultiVec *A_vec = 
+    dynamic_cast<Anasazi::LOCAMultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); assert(A_vec!=NULL);
   int m = B.numRows();
   int n = B.numCols();
   int ldb = B.stride();
@@ -210,12 +215,13 @@ Anasazi::LOCA::MultiVec::MvTransMv(const double alpha, const Anasazi::MultiVec<d
 
 
 void
-Anasazi::LOCA::MultiVec::MvDot(const Anasazi::MultiVec<double>& A, std::vector<double>* b ) const
+Anasazi::LOCAMultiVec::MvDot(const Anasazi::MultiVec<double>& A, 
+			     std::vector<double>* b ) const
 {
   int j;
   int n = mvPtrs.size();
-  Anasazi::LOCA::MultiVec *A_vec = 
-    dynamic_cast<Anasazi::LOCA::MultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); assert(A_vec!=NULL);
+  Anasazi::LOCAMultiVec *A_vec = 
+    dynamic_cast<Anasazi::LOCAMultiVec *>(&const_cast<Anasazi::MultiVec<double> &>(A)); assert(A_vec!=NULL);
   if (A_vec && b && ( b->size() >= n )) {
     for (j=0; j<n; j++)
       (*b)[j] = mvPtrs[j]->dot(*(A_vec->mvPtrs[j]));
@@ -224,7 +230,7 @@ Anasazi::LOCA::MultiVec::MvDot(const Anasazi::MultiVec<double>& A, std::vector<d
 
 
 void 
-Anasazi::LOCA::MultiVec::MvNorm(std::vector<double>* normvec) const 
+Anasazi::LOCAMultiVec::MvNorm(std::vector<double>* normvec) const 
 {
   if (normvec)
     for (unsigned int i=0; i<mvPtrs.size(); i++)
@@ -232,43 +238,43 @@ Anasazi::LOCA::MultiVec::MvNorm(std::vector<double>* normvec) const
 }
 
 void 
-Anasazi::LOCA::MultiVec::MvRandom() 
+Anasazi::LOCAMultiVec::MvRandom() 
 {
   for (unsigned int i=0; i<mvPtrs.size(); i++)
     mvPtrs[i]->random();	
 }
 
 void 
-Anasazi::LOCA::MultiVec::MvInit(double alpha) 
+Anasazi::LOCAMultiVec::MvInit(double alpha) 
 {
   for (unsigned int i=0; i<mvPtrs.size(); i++)
     mvPtrs[i]->init(alpha);	
 }
 
 void 
-Anasazi::LOCA::MultiVec::MvPrint() const
+Anasazi::LOCAMultiVec::MvPrint() const
 {
 }
 
 NOX::Abstract::Vector&
-Anasazi::LOCA::MultiVec::GetNOXVector(int index) 
+Anasazi::LOCAMultiVec::GetNOXVector(int index) 
 {
   if (index < static_cast<int>(mvPtrs.size())) 
     return *(mvPtrs[index]);
   else {
-    ::LOCA::ErrorCheck::throwError("Anasazi::LOCA::MultiVec::GetNOXVector()",
+    ::LOCA::ErrorCheck::throwError("Anasazi::LOCAMultiVec::GetNOXVector()",
 				   "Invalid index");
     return *(mvPtrs[0]);
   }
 }
 
 const NOX::Abstract::Vector&
-Anasazi::LOCA::MultiVec::GetNOXVector(int index) const
+Anasazi::LOCAMultiVec::GetNOXVector(int index) const
 {
   if (index < static_cast<int>(mvPtrs.size())) 
     return *(mvPtrs[index]);
   else {
-    ::LOCA::ErrorCheck::throwError("Anasazi::LOCA::MultiVec::GetNOXVector()",
+    ::LOCA::ErrorCheck::throwError("Anasazi::LOCAMultiVec::GetNOXVector()",
 				   "Invalid index");
     return *(mvPtrs[0]);
   }

@@ -124,6 +124,18 @@ if test -n "${LDFLAGS}"; then
   USERDEF_LDFLAGS=yes
 fi
 
+if test -n "${LIBTOOL_COMPILER_FLAGS}"; then
+  USERDEF_LIBTOOL_COMPILER_FLAGS=yes
+fi
+
+if test -n "${LIBTOOL_LINKER_FLAGS}"; then
+  USERDEF_LIBTOOL_LINKER_FLAGS=yes
+fi
+
+if test -n "${LIBTOOL_CCLINKER_FLAGS}"; then
+  USERDEF_LIBTOOL_CCLINKER_FLAGS=yes
+fi
+
 # ------------------------------------------------------------------------
 # Checks for extra flags, etc
 # ------------------------------------------------------------------------
@@ -157,6 +169,21 @@ AC_ARG_WITH(fflags,
 AC_ARG_WITH(ldflags,
 [AC_HELP_STRING([--with-ldflags],[add extra linker (typically -L) flags])],
 [EXTRA_LDFLAGS=${withval}]
+)
+
+AC_ARG_WITH(libtool-compiler-flags,
+[AC_HELP_STRING([--with-libtool-compiler-flags],[add extra libtool compiler flags])],
+[EXTRA_LIBTOOL_COMPILER_FLAGS=${withval}]
+)
+
+AC_ARG_WITH(libtool-linker-flags,
+[AC_HELP_STRING([--with-libtool-linker-flags],[add extra libtool linker flags])],
+[EXTRA_LIBTOOL_LINKER_FLAGS=${withval}]
+)
+
+AC_ARG_WITH(libtool-cclinker-flags,
+[AC_HELP_STRING([--with-libtool-cclinker-flags],[add extra libtool linker flagsfor the C++ linker])],
+[EXTRA_LIBTOOL_CCLINKER_FLAGS=${withval}]
 )
 
 # ------------------------------------------------------------------------
@@ -329,7 +356,6 @@ AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ gcc c++ cxx)
 AC_PROG_CXXCPP
 AC_PROG_F77(f77 g77 f90 xlf90)
-AC_CHECK_TOOL(AR, ar, ar)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -388,6 +414,7 @@ case $target in
      CXXFLAGS_MISC="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
      F77_MISC=f77
      FFLAGS_MISC="-64"
+     LIBTOOL_CCLINKER_FLAGS_MISC = "-64"
      SPECIAL_AR="CC -ar -W,l -W,s -o"
     fi
 
@@ -481,6 +508,60 @@ else
 
 fi
 
+# Test for user-defined LIBTOOL_COMPILER flags
+AC_MSG_CHECKING([for libtool compiler flags])
+
+if test "X${USERDEF_LIBTOOL_COMPILER_FLAGS}" = "Xyes"; then
+
+  AC_MSG_RESULT([${LIBTOOL_COMPILER_FLAGS} (user-specified via LIBTOOL_COMPILER_FLAGS)])
+
+# Otherwise, determine the flags automatically
+else
+
+  if test -n "${LIBTOOL_COMPILER_FLAGS_MISC}"; then
+    LIBTOOL_COMPILER_FLAGS="${LIBTOOL_COMPILER_FLAGS} ${LIBTOOL_COMPILER_FLAGS_MISC}"
+  fi
+
+  AC_MSG_RESULT([${LIBTOOL_COMPILER_FLAGS}])
+
+fi
+
+# Test for user-defined LIBTOOL_LINKER flags
+AC_MSG_CHECKING([for libtool linker flags])
+
+if test "X${USERDEF_LIBTOOL_LINKER_FLAGS}" = "Xyes"; then
+
+  AC_MSG_RESULT([${LIBTOOL_LINKER_FLAGS} (user-specified via LIBTOOL_LINKER_FLAGS)])
+
+# Otherwise, determine the flags automatically
+else
+
+  if test -n "${LIBTOOL_LINKER_FLAGS_MISC}"; then
+    LIBTOOL_LINKER_FLAGS="${LIBTOOL_LINKER_FLAGS} ${LIBTOOL_LINKER_FLAGS_MISC}"
+  fi
+
+  AC_MSG_RESULT([${LIBTOOL_LINKER_FLAGS}])
+
+fi
+
+# Test for user-defined LIBTOOL_CCLINKER flags
+AC_MSG_CHECKING([for libtool cclinker flags])
+
+if test "X${USERDEF_LIBTOOL_CCLINKER_FLAGS}" = "Xyes"; then
+
+  AC_MSG_RESULT([${LIBTOOL_CCLINKER_FLAGS} (user-specified via LIBTOOL_CCLINKER_FLAGS)])
+
+# Otherwise, determine the flags automatically
+else
+
+  if test -n "${LIBTOOL_CCLINKER_FLAGS_MISC}"; then
+    LIBTOOL_CCLINKER_FLAGS="${LIBTOOL_CCLINKER_FLAGS} ${LIBTOOL_CCLINKER_FLAGS_MISC}"
+  fi
+
+  AC_MSG_RESULT([${LIBTOOL_CCLINKER_FLAGS}])
+
+fi
+
 # Add on any extra CXXFLAGS
 AC_MSG_CHECKING([for extra C++ compiler flags])
 if test -z "${EXTRA_CXXFLAGS}"; then
@@ -526,6 +607,39 @@ else
   LDFLAGS="${LDFLAGS} ${EXTRA_LDFLAGS}"
 fi
 
+# Add on any extra LIBTOOL_COMPILER_FLAGS
+AC_MSG_CHECKING([for extra libtool compiler flags])
+if test -z "${EXTRA_LIBTOOL_COMPILER_FLAGS}"; then
+  AC_MSG_RESULT(none)
+else
+  AC_MSG_RESULT([${EXTRA_LIBTOOL_COMPILER_FLAGS}])
+  LIBTOOL_COMPILER_FLAGS="${LIBTOOL_COMPILER_FLAGS} ${EXTRA_LIBTOOL_COMPILER_FLAGS}"
+fi
+
+# Add on any extra LIBTOOL_LINKER_FLAGS
+AC_MSG_CHECKING([for extra libtool linker flags])
+if test -z "${EXTRA_LIBTOOL_LINKER_FLAGS}"; then
+  AC_MSG_RESULT(none)
+else
+  AC_MSG_RESULT([${EXTRA_LIBTOOL_LINKER_FLAGS}])
+  LIBTOOL_LINKER_FLAGS="${LIBTOOL_LINKER_FLAGS} ${EXTRA_LIBTOOL_LINKER_FLAGS}"
+fi
+
+# Add on any extra LIBTOOL_CCLINKER_FLAGS
+AC_MSG_CHECKING([for extra libtool cclinker flags])
+if test -z "${EXTRA_LIBTOOL_CCLINKER_FLAGS}"; then
+  AC_MSG_RESULT(none)
+else
+  AC_MSG_RESULT([${EXTRA_LIBTOOL_CCLINKER_FLAGS}])
+  LIBTOOL_CCLINKER_FLAGS="${LIBTOOL_CCLINKER_FLAGS} ${EXTRA_LIBTOOL_CCLINKER_FLAGS}"
+fi
+
+# libtoolize LIBTOOL flags (i.e., add -Xcompiler, -Xlinker, -XCClinker flags
+# respectively)
+AC_LIBTOOLIZE_COMPILER_FLAGS(LIBTOOL_COMPILER_FLAGS)
+AC_LIBTOOLIZE_LINKER_FLAGS(LIBTOOL_LINKER_FLAGS)
+AC_LIBTOOLIZE_CCLINKER_FLAGS(LIBTOOL_CCLINKER_FLAGS)
+
 # ------------------------------------------------------------------------
 # ------------------------------------------------------------------------
 TAC_ARG_WITH_LIBS
@@ -549,13 +663,27 @@ if test -n "${SPECIAL_AR}" && test -z "${ALTERNATE_AR}"; then
   ALTERNATE_AR="${SPECIAL_AR}"
 fi
 
+# Note:  We now overwrite the AR and AR_FLAGS variables with the alternate
+# archiver.  This is necessary for libtool to respect the alternate archiver.
+# Note that the AR_FLAGS is specifically set to a space instead of being
+# empty because libtool.m4 automatically sets AR_FLAGS=cru if AR_FLAGS has
+# zero length.  We don't want this when using an alternate archiver.
+#
+# It may no longer be necessary to explicitly specify ALTERNATE_AR in each
+# Makefile.am with this change.
 AC_MSG_CHECKING(for special archiver command)
 if test -n "${ALTERNATE_AR}"; then
    AC_MSG_RESULT([${ALTERNATE_AR}])
    AM_CONDITIONAL(USE_ALTERNATE_AR, true)
+   AR="${ALTERNATE_AR}"
+   AR_FLAGS=" "
 else
    AC_MSG_RESULT([none])
    AM_CONDITIONAL(USE_ALTERNATE_AR, false)
+   AC_CHECK_TOOL(AR, ar, false)
+   if test "X${AR}" = "Xfalse" ; then
+      AC_MSG_ERROR([Default archiver ar not found.  Specify an archiver with --with-ar configure flag.])
+   fi
 fi
 
 AC_SUBST(ALTERNATE_AR)
@@ -1823,6 +1951,9 @@ AC_SUBST(abs_builddir)
 AC_SUBST(abs_top_builddir)
 
 AC_SUBST(MPI_LIBS)
+AC_SUBST(LIBTOOL_COMPILER_FLAGS)
+AC_SUBST(LIBTOOL_LINKER_FLAGS)
+AC_SUBST(LIBTOOL_CCLINKER_FLAGS)
 
 # ------------------------------------------------------------------------
 # Output files

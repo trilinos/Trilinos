@@ -160,6 +160,9 @@ public:
   // Print status of Problem Manager, problems and dependencies
   void outputStatus();
 
+  // Return my name
+  string getName() { return GenericEpetraProblem::getName(); };
+
   // Return the problem name queries
   string getName(int id) { return Names.find(id)->second; };
 

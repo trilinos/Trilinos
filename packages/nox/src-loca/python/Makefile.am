@@ -152,6 +152,7 @@ SWIG_LOCA_CXXFLAGS = \
 	$(PYTHON_CPPFLAGS) \
 	$(SWIG_PYTHON_CPPFLAGS) \
 	$(TRILINOS_CXXFLAGS) \
+	$(LIBTOOL_COMPILER_FLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/python \
 	-I$(top_srcdir)/src-loca/src \
@@ -169,11 +170,12 @@ SWIG_LDFLAGS = -avoid-version -module
 SWIG_LOCA_LIBADD = \
 	$(top_builddir)/src-loca/src/libloca.la \
 	$(top_builddir)/src/libnox.a \
-	$(SWIG_PYTHON_LIBS) $(LIBS) $(XTRALDADD)
+	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) \
+	$(LIBS) $(SWIG_PYTHON_LIBS)
 
 SWIG_LAPACK_LIBADD = \
 	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
-	$(top_builddir)/src-lapack/libnoxlapack.a 
+	$(top_builddir)/src-lapack/libnoxlapack.a
 
 # ------------------------------------------------------------------------
 # Definitions for _TopLevel.la
@@ -293,6 +295,17 @@ _Chan_la_LIBADD = $(SWIG_LAPACK_LIBADD) $(SWIG_LOCA_LIBADD)
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYCLEANFILES = $(CXXREPOS)
+
+# ------------------------------------------------------------------------
+# Include global libtool definitions
+# ------------------------------------------------------------------------
+include $(top_srcdir)/config/libtool_macros.am
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am

@@ -60,7 +60,7 @@ chanContinuation_DEPENDENCIES = \
 	$(top_builddir)/src-loca/src/libloca.la \
         $(top_builddir)/src-loca/src-lapack/liblocalapack.la
 
-chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
+chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS) \
 		   -I$(top_srcdir)/src \
 		   -I$(top_srcdir)/src-lapack \
 		   -I$(top_srcdir)/src-loca/src \
@@ -69,9 +69,9 @@ chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 chanContinuation_LDADD = \
 	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
 	$(top_builddir)/src-loca/src/libloca.la \
-	$(top_builddir)/src-lapack/libnoxlapack.a \
-	$(top_builddir)/src/libnox.a \
-        $(LIBS)
+	-L$(top_builddir)/src-lapack -lnoxlapack \
+	-L$(top_builddir)/src -lnox \
+	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 chanTP_SOURCES = $(srcdir)/ChanTP.C \
 		$(srcdir)/ChanProblemInterface.H \
@@ -164,3 +164,20 @@ chanMultiContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS) \
 chanMultiContinuation_LDADD = $(top_builddir)/src-loca/src-mf/liblocamf.la \
                               -L$(MF_LIBDIR) -lMF -lExpCmp \
                               $(chanContinuation_LDADD)
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+
+MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYCLEANFILES = $(CXXREPOS)
+
+# ------------------------------------------------------------------------
+# Include global libtool definitions
+# ------------------------------------------------------------------------
+include $(top_srcdir)/config/libtool_macros.am

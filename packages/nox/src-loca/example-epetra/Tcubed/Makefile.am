@@ -57,7 +57,7 @@ example_DEPENDENCIES = \
 	$(top_builddir)/src-loca/src/libloca.la \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
 
-example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
+example_CXXFLAGS = $(TRILINOS_CXXFLAGS) $(LIBTOOL_COMPILER_FLAGS) \
 		   -I$(top_srcdir)/src \
                    -I$(top_srcdir)/src-epetra \
 		   -I$(top_srcdir)/src-loca/src \
@@ -66,9 +66,9 @@ example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 example_LDADD = \
 	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
 	$(top_builddir)/src-loca/src/libloca.la \
-	$(top_builddir)/src-epetra/libnoxepetra.a \
-	$(top_builddir)/src/libnox.a \
-	$(LIBS)
+	-L$(top_builddir)/src-epetra -lnoxepetra \
+	-L$(top_builddir)/src -lnox \
+	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 exampleTP_SOURCES = $(srcdir)/ExampleTP.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
@@ -132,3 +132,20 @@ exampleMultiContinuation_CXXFLAGS = $(example_CXXFLAGS) \
 exampleMultiContinuation_LDADD = $(top_builddir)/src-loca/src-mf/liblocamf.la \
                                  -L$(MF_LIBDIR) -lMF -lExpCmp \
                                  $(example_LDADD)
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+
+MAINTAINERCLEANFILES = Makefile.in 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYCLEANFILES = $(CXXREPOS)
+
+# ------------------------------------------------------------------------
+# Include global libtool definitions
+# ------------------------------------------------------------------------
+include $(top_srcdir)/config/libtool_macros.am

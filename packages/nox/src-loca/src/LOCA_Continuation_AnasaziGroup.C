@@ -168,17 +168,19 @@ LOCA::Continuation::AnasaziGroup::computeEigenvalues(
   LOCA_OM->SetVerbosity( debug );  
 
   // Create a sorting manager to handle the sorting of eigenvalues in the solver
-  Teuchos::RefCountPtr<Anasazi::LOCA::Sort<double, MV, OP> > LOCASort =
-    Teuchos::rcp( new Anasazi::LOCA::Sort<double, MV, OP>(which, 
-							  aList.getParameter("Cayley Pole",0.0),
-							  aList.getParameter("Cayley Zero",0.0)));
+  Teuchos::RefCountPtr<Anasazi::LOCASort<double, MV, OP> > LOCASort =
+    Teuchos::rcp( 
+	new Anasazi::LOCASort<double, MV, OP>(
+				       which, 
+				       aList.getParameter("Cayley Pole",0.0),
+				       aList.getParameter("Cayley Zero",0.0)));
 
   // Create the operator and initial vector
   LOCA::AnasaziOperator::Manager anasaziOperator(aList, solverList, *this);
-  Teuchos::RefCountPtr<Anasazi::LOCA::Matrix> Amat = 
-    Teuchos::rcp( new Anasazi::LOCA::Matrix(anasaziOperator) );
-  Teuchos::RefCountPtr<Anasazi::LOCA::MultiVec> ivec =
-    Teuchos::rcp( new Anasazi::LOCA::MultiVec(xVector, blksz) );
+  Teuchos::RefCountPtr<Anasazi::LOCAMatrix> Amat = 
+    Teuchos::rcp( new Anasazi::LOCAMatrix(anasaziOperator) );
+  Teuchos::RefCountPtr<Anasazi::LOCAMultiVec> ivec =
+    Teuchos::rcp( new Anasazi::LOCAMultiVec(xVector, blksz) );
   ivec->MvRandom();
   
   // Create an instance of the eigenproblem
@@ -214,7 +216,7 @@ LOCA::Continuation::AnasaziGroup::computeEigenvalues(
   
   // Obtain the eigenvectors
   // The real part is stored in the first "nev" vectors and the imaginary in the second "nev" vectors.
-  Anasazi::LOCA::MultiVec evecs( *dynamic_cast<Anasazi::LOCA::MultiVec *>(LOCAProblem->GetEvecs().get()) );
+  Anasazi::LOCAMultiVec evecs( *dynamic_cast<Anasazi::LOCAMultiVec *>(LOCAProblem->GetEvecs().get()) );
 
   // Real & imaginary components of Rayleigh quotient
   double rq_r, rq_i;
@@ -284,7 +286,7 @@ LOCA::Continuation::AnasaziGroup::computeEigenvalues(
 void
 LOCA::Continuation::AnasaziGroup::saveEigenVectors(
 				  int nev, const std::vector<double>& evals,
-				  const Anasazi::LOCA::MultiVec& evecs ) const
+				  const Anasazi::LOCAMultiVec& evecs ) const
 {
 }
 #endif

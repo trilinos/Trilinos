@@ -129,7 +129,7 @@ namespace LOCA {
       Teuchos::RefCountPtr<Anasazi::OutputManager<double> > LOCA_OM;
 
       //! Sorting manager to handle the sorting of eigenvalues
-      Teuchos::RefCountPtr<Anasazi::LOCA::Sort<double, MV, OP> > LOCASort;
+      Teuchos::RefCountPtr<Anasazi::LOCASort<double, MV, OP> > LOCASort;
 #endif
 
     }; // Class AnasaziStrategy
