@@ -2297,6 +2297,8 @@ int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
     order[ord[i]] = i;
   }
 
+  return(ZOLTAN_OK);
+
 }
 
 /*****************************************************************************/
