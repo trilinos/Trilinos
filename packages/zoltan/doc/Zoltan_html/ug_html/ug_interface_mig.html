@@ -29,6 +29,9 @@ are included below.
 
 <HR WIDTH="100%"><A NAME="LB_Set_Migration"></A>int <B>LB_Set_Migration</B>(struct
 <B>LB_Struct</B> * <I>lb</I>, int <I>auto_migrate_flag</I>);&nbsp;
+<HR WIDTH="100%">FUNCTION <B>LB_Set_Migration</B>(<I>lb,auto_migrate_flag</I>)<BR>
+TYPE(LB_Struct), INTENT(IN) :: lb<BR>
+LOGICAL, INTENT(IN) :: auto_migrate_flag<BR>
 <HR WIDTH="100%"><B>LB_Set_Migration</B> allows the application to tell
 the load-balancing library to automatically perform data migration for
 it during calls to <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.
@@ -92,6 +95,19 @@ help tools.</TD>
 <B>LB_LID</B> * <I>import_local_ids</I>,&nbsp; int * <I>import_procs</I>,
 int * <I>num_export</I>, <B>LB_GID</B> ** <I>export_global_ids</I>, <B>LB_LID</B>
 ** <I>export_local_ids</I>, int ** <I>export_procs</I>);&nbsp;
+<HR WIDTH="100%">FUNCTION <B>LB_Compute_Destinations</B>(<I>lb, num_import,
+import_global_ids, import_local_ids, import_procs, num_export,
+export_global_ids, export_local_ids, export_procs</I>)<BR>
+INTEGER(LB_INT) :: LB_Compute_Destinations<BR>
+TYPE(LB_Struct),INTENT(IN) :: lb<BR>
+INTEGER(LB_INT), INTENT(IN) :: num_import<BR>
+INTEGER(LB_INT), INTENT(OUT) :: num_export<BR>
+<<I>type-gid</I>>, POINTER, DIMENSION(:) :: import_global_ids, export_global_ids<BR>
+<<I>type-lid</I>>, POINTER, DIMENSION(:) :: import_local_ids, export_local_ids<BR>
+INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs<BR>
+<BR>
+<<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)<BR>
+<<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)<BR>
 <HR WIDTH="100%"><B>LB_Compute_Destinations</B> computes the inverse communication
 map needed to export data. That is, given, for each processor, a list of
 non-local objects assigned to the processor, <B>LB_Compute_Destinations</B>
@@ -193,6 +209,18 @@ IDs of processors that need the sent objects (i.e., the destination processors).
 <B>LB_LID</B> * <I>import_local_ids</I>, int * <I>import_procs</I>, int
 <I>num_export</I>, <B>LB_GID</B> * <I>export_global_ids</I>, <B>LB_LID</B>
 * <I>export_local_ids</I>,&nbsp; int * <I>export_procs</I>);&nbsp;
+<HR WIDTH="100%">FUNCTION <B>LB_Help_Migrate</B>(<I>lb, num_import,
+import_global_ids, import_local_ids, import_procs, num_export,
+export_global_ids, export_local_ids, export_procs</I>)<BR>
+INTEGER(LB_INT) :: LB_Help_Migrate<BR>
+TYPE(LB_Struct),INTENT(IN) :: lb<BR>
+INTEGER(LB_INT), INTENT(IN) :: num_import, num_export<BR>
+<<I>type-gid</I>>, POINTER, DIMENSION(:) :: import_global_ids, export_global_ids<BR>
+<<I>type-lid</I>>, POINTER, DIMENSION(:) :: import_local_ids, export_local_ids<BR>
+INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs<BR>
+<BR>
+<<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)<BR>
+<<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)<BR>
 <HR WIDTH="100%"><B>LB_Help_Migrate</B> takes lists of objects to be sent
 to other processors, along with the destinations of those objects, and
 performs the operations necessary to send the data associated with those

@@ -31,6 +31,10 @@ Zoltan library; their descriptions are included below.
 
 <HR WIDTH="100%"><A NAME="LB_Set_Method"></A>int <B>LB_Set_Method</B>(struct
 <B>LB_Struct</B> *<I> lb</I>, char * <I>string</I>);&nbsp;
+<HR WIDTH="100%">FUNCTION <B>LB_Set_Method</B>(<I>lb</I>, <I>string</I>)<BR>
+INTEGER(LB_INT) :: LB_Set_Method<BR>
+TYPE(LB_Struct), INTENT(IN) :: lb<BR>
+CHARACTER(LEN=*), INTENT(IN) :: string &nbsp;
 <HR WIDTH="100%"><B>LB_Set_Method</B> is used to specify which load-balancing
 technique should be used by the application.
 <BR>&nbsp;
@@ -153,6 +157,19 @@ being set. As above, the string is case-insensitive.&nbsp;
 int ** <I>import_procs</I>, int * <I>num_export</I>, <B>LB_GID </B>**<I>
 export_global_ids</I>, <B>LB_LID</B> ** <I>export_local_ids</I>, int **
 <I>export_procs</I>);&nbsp;
+<HR WIDTH="100%">FUNCTION <B>LB_Balance</B>(<I>lb, changes, num_import,
+import_global_ids, import_local_ids, import_procs, num_export,
+export_global_ids, export_local_ids, export_procs</I>)<BR>
+INTEGER(LB_INT) :: LB_Balance<BR>
+TYPE(LB_Struct),INTENT(IN) :: lb<BR>
+INTEGER(LB_INT), INTENT(OUT) :: changes<BR>
+INTEGER(LB_INT), INTENT(OUT) :: num_import, num_export<BR>
+<<I>type-gid</I>>, POINTER, DIMENSION(:) :: import_global_ids, export_global_ids<BR>
+<<I>type-lid</I>>, POINTER, DIMENSION(:) :: import_local_ids, export_local_ids<BR>
+INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs<BR>
+<BR>
+<<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)<BR>
+<<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)<BR>
 <HR WIDTH="100%"><B>LB_Balance</B> invokes the load-balancing routine specified
 by <B><A HREF="#LB_Set_Method">LB_Set_Method</A></B>.
 <BR>&nbsp;
@@ -257,10 +274,21 @@ IDs of processors that will own the exported objects in the new decomposition
 ** <I>import_global_ids</I>, <B>LB_LID</B> ** <I>import_local_ids</I>,
 int ** <I>import_procs</I>, <B>LB_GID </B>** <I>export_global_ids</I>,
 <B>LB_LID</B> ** <I>export_local_ids</I>, int ** <I>export_procs</I>);&nbsp;
+<HR WIDTH="100%">FUNCTION <B>LB_Free_Data</B>(<I>import_global_ids,
+import_local_ids, import_procs, export_global_ids, export_local_ids,
+export_procs</I>)<BR>
+INTEGER(LB_INT) :: LB_Free_Data<BR>
+<<I>type-gid</I>>, POINTER, DIMENSION(:) :: import_global_ids, export_global_ids<BR>
+<<I>type-lid</I>>, POINTER, DIMENSION(:) :: import_local_ids, export_local_ids<BR>
+INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs<BR>
+<BR>
+<<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)<BR>
+<<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)<BR>
 <HR WIDTH="100%"><B>LB_Free_Data</B> frees the memory allocated by the
 load-balancing routines to return the results of <B><A HREF="#LB_Balance">LB_Balance</A></B>.
 Memory pointed to by the arguments is freed and the arguments are set to
-NULL. Note that this does not destroy the load balancing object itself.
+NULL in C or nullified in Fortran.
+Note that this does not destroy the load balancing object itself.
 That requires a call to <B><A HREF="#LB_Destroy_Object">LB_Destroy_Object</A></B>.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
