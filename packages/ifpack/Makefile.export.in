@@ -23,9 +23,9 @@ IFPACK_INCLUDES= -I$(top_builddir)/src -I$(top_srcdir)/src            \
 	$(TRIUTILS_INCLUDES) 
 
 IFPACK_LIBS= $(top_builddir)/src/libifpack.a      \
-	$(TEUCHOS_LIB)                            \
 	$(AMESOS_LIB)                             \
 	$(AZTECOO_LIB)                            \
 	$(EPETRAEXT_LIB)                          \
 	$(TRIUTILS_LIB)                           \
-	$(top_builddir)/../epetra/src/libepetra.a
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(TEUCHOS_LIB)                            
