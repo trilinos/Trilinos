@@ -95,7 +95,6 @@ void Group::resetIsValid() //private
   isValidJacobian = false;
   isValidGradient = false;
   isValidNewton = false;
-  isValidPrecMatrix = false;
 }
 
 Abstract::Group* Group::clone(CopyType type) const 
@@ -119,7 +118,6 @@ Abstract::Group& Group::operator=(const Group& source)
   isValidGradient = source.isValidGradient;
   isValidNewton = source.isValidNewton;
   isValidJacobian = source.isValidJacobian;
-  isValidPrecMatrix = source.isValidPrecMatrix;
 
   // Only copy vectors that are valid
   if (isValidF) {
@@ -262,14 +260,6 @@ bool Group::computeNewton(NOX::Parameter::List& p)
   return isValidNewton;
 }
 
-bool Group::computePrecMatrix()
-{
-  cout << "ERROR: NOX::Example::Group::computePrecMatrix() is not implemented"
-       << " since only direct solvers are used." << endl;
-  throw "NOX Error";
-  return false;
-}
-
 bool Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const
 {
   const Vector& exampleinput = dynamic_cast<const Vector&> (input);
@@ -320,40 +310,6 @@ bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
   return true;
 }
 
-bool Group::applyJacobianDiagonalInverse(const Abstract::Vector& input, Abstract::Vector& result) const
-{
-  const Vector& exampleinput = dynamic_cast<const Vector&> (input);
-  Vector& exampleresult = dynamic_cast<Vector&> (result);
-  return applyJacobianDiagonalInverse(exampleinput, exampleresult);
-}
-
-bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) const
-{
-  if (!isJacobian()) 
-    return false;
-
-  // Compute result = J * input
-  int n = input.length();
-  for (int i = 0; i < n; i ++) { 
-    result(i) = input(i) / jacobianMatrix(i,i);
-  }
-
-  return true;
-}
-
-bool Group::applyPrecMatrixInverse(const Abstract::Vector& input, Abstract::Vector& result) const
-{
-  const Vector& exampleinput = dynamic_cast<const Vector&> (input);
-  Vector& exampleresult = dynamic_cast<Vector&> (result);
-  return applyPrecMatrixInverse(exampleinput, exampleresult);
-}
-
-bool Group::applyPrecMatrixInverse(const Vector& input, Vector& result) const
-{
-  cerr << "Warning - NOX::Example::Group::preconditionVector - not supported" << endl;
-  return false;
-}
-
 bool Group::isF() const 
 {   
   return isValidF;
@@ -374,11 +330,6 @@ bool Group::isNewton() const
   return isValidNewton;
 }
 
-bool Group::isPrecMatrix() const 
-{   
-  return isValidPrecMatrix;
-}
-
 const Abstract::Vector& Group::getX() const 
 {
   return xVector;
@@ -386,11 +337,6 @@ const Abstract::Vector& Group::getX() const
 
 const Abstract::Vector& Group::getF() const 
 {  
-  if (!isF()) {
-    cerr << "ERROR: NOX::Example::Group::getF() - invalid F" << endl;
-    throw "NOX Error";
-  }
-    
   return fVector;
 }
 

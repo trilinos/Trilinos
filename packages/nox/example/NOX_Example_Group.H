@@ -88,8 +88,6 @@ public:
 
   bool computeNewton(Parameter::List& params);
 
-  bool computePrecMatrix();
-
   //@}
 
   /** @name Jacobian operations.
@@ -109,16 +107,6 @@ public:
   //! See above
   bool applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const;
   
-  bool applyJacobianDiagonalInverse(const Vector& input, Vector& result) const;
-
-  //! See above
-  bool applyJacobianDiagonalInverse(const Abstract::Vector& input, Abstract::Vector& result) const;
-  
-  bool applyPrecMatrixInverse(const Vector& input, Vector& result) const;
-
-  //! See above
-  bool applyPrecMatrixInverse(const Abstract::Vector& input, Abstract::Vector& result) const;
-
   //@}
 
   /** @name "Is" functions
@@ -133,7 +121,6 @@ public:
   bool isJacobian() const;
   bool isGradient() const;
   bool isNewton() const;
-  bool isPrecMatrix() const;
 
   //@}
 
@@ -196,7 +183,6 @@ private:
   bool isValidJacobian;
   bool isValidGradient;
   bool isValidNewton;
-  bool isValidPrecMatrix;
   //@}
   
   //! Norm of F
