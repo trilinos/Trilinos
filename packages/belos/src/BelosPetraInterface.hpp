@@ -171,21 +171,11 @@ Anasazi::MultiVec<TYPE>* PetraVec<TYPE>::CloneView ( int index[], int numvecs ) 
 template<class TYPE>
 void PetraVec<TYPE>::SetBlock(Anasazi::MultiVec<TYPE>& A, int index[], int numvecs ) 
 {	
-	int i,j,ind;
-	PetraVec *A_vec = dynamic_cast<PetraVec *>(&A); assert(A_vec!=NULL);
-	int MyNumVecs = (*this).GetNumberVecs();
-	int VecLength = A.GetVecLength();
-
-	// Set the vector values in the right order, careful that the index
-	// doesn't go beyond the bounds of the multivector
-	for ( j=0; j< numvecs; j++) {
-		ind = index[j];
-		if (ind < MyNumVecs) {
-			for ( i=0; i<VecLength; i++) {
-				(*this)[ind][i] = (*A_vec)[j][i];	
-			}
-		}
-	}
+	PetraVec * temp = new PetraVec(View, *this, index, numvecs );
+	Epetra_MultiVector *A_vec = dynamic_cast<Epetra_MultiVector *>(&A); assert(A_vec!=NULL);
+	Epetra_MultiVector *temp_vec = dynamic_cast<Epetra_MultiVector *>(temp); assert(temp_vec!=NULL);
+	temp_vec->Update( 1.0, *A_vec, 0.0 );   
+	delete temp;
 }								
 		
 template<class TYPE>
