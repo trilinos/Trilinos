@@ -857,22 +857,6 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& DomainMap, const Ep
       }
     }
   }
-  else { // Indices are already local
-		
-    // Do a sanity check on column indices.  They must all be in the range 0 to NumMyBlockCols_
-    // Indices will be sorted so we only need to check the last one
-		
-    if(!Sorted()) 
-      SortIndices();  // Must have sorted index set
-		
-    const int numMyBlockCols = NumMyBlockCols();
-    for(int i = 0; i < numMyBlockRows; i++) {
-      int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
-      if(NumIndices > 0) 
-	if(CrsGraphData_->Indices_[i][NumIndices-1] >= numMyBlockCols) 
-	  EPETRA_CHK_ERR(-1);
-    }
-  }
 	
   SetIndicesAreLocal(true);
   SetIndicesAreGlobal(false);
