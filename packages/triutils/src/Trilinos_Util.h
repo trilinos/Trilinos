@@ -9,11 +9,11 @@ class Epetra_VbrMatrix;
 #define Trilinos_Util_min(x,y) (( x < y ) ? x : y)     /* min function */
 
 #ifndef NO_AUTOTOOLS
-#include "Triutils_config.h"
+/*#include "Triutils_config.h"
 
 #ifdef HAVE_DEBUG
 #define DEBUG
-#endif
+#endif*/
 #endif /*NO_AUTOTOOLS*/
 
 void Trilinos_Util_read_hb(char *data_file, int MyPID,
