@@ -22,6 +22,22 @@
 # Alternatively, give a run command with the -cmd option.
 #
 
+# Chaco problems to run
+set ch_name  = (simple nograph vwgt ewgt bug onedbug grid20x19 film hammond)
+set ch_nproc = (4 4 3 4 3 3 5 6 8) # no. of procs
+# Nemesis problems to run  
+set nem_name = (box_064 ti_300 ti_4k)
+set nem_nproc = (5 6 9) # no. of procs
+set nem_pdisk = (1 2 2) # parallel disk info
+
+# Hypergraph problems to run, and methods to use
+set hg_name = (ibm01 ibm02 ibm03 ibm04 ibm05 ibm06 ibm07 ibm08 ibm09 ibm10 \
+               ibm11 ibm12 ibm13 ibm14 ibm15 ibm16 ibm17 ibm18)
+#set hg_name = (ibm01 ibm02 ibm03 ibm04 ibm05 ibm06 ibm07)
+#set hg_methods = (mxm rrm rem rhm grm lhm pgm gm2 rm2 gm3 gm4 mxp rep rhp grp \
+#                  lhp rrp pgp mxg reg rhg grg rrg ipm)
+set hg_methods = (mxm rem rhm grm lhm pgm gm2 gm3 gm4 mxg reg rhg grg ipm)
+
 # Set default options
 set out_tag = out
 set logfile = test_zoltan.log
@@ -36,6 +52,7 @@ if ($?ZOLTAN_ARCH) then
    set arch = $ZOLTAN_ARCH
 endif
 
+set no_hg = $?ZOLTAN_NO_HG
 set no_chaco = $?ZOLTAN_NO_CHACO
 set no_nemesis = $?ZOLTAN_NO_NEMESIS
 set no_rcb = $?ZOLTAN_NO_RCB
@@ -57,6 +74,8 @@ while ( $#argv )
 
   if ( ("$1" == "-h") || ("$1" == "-help") ) then
      goto usage
+  else if ( "$1" == "-no_hg" ) then
+     @ no_hg = 1
   else if ( "$1" == "-no_nemesis" ) then
      @ no_nemesis = 1
   else if ( "$1" == "-no_chaco" ) then
@@ -786,6 +805,64 @@ if (! $no_nemesis ) then
 
 endif # Nemesis
 
+# Loop over hg problems
+if (! $no_hg) then
+  @ nprob = $#hg_name
+
+  cd hg_test
+  if (-e ./zdrive) /bin/rm ./zdrive
+  /bin/cp ../$zdrive .
+
+  # Check output directories 
+  if (! -d $outdir ) mkdir $outdir
+  if (! -d $answers ) mkdir $answers
+ 
+  # Save input file 
+  if (-e zdrive.inp ) /bin/cp zdrive.inp zdrive.inp.bak
+  
+  foreach name ( $hg_name )
+
+    echo "Running test case ${name}" | tee -a ../$logfile
+
+    # Loop over all methods
+    foreach mtd ( $hg_methods )
+
+        # Check input file
+        if (-e zdrive.inp.${name} ) then
+            /bin/rm  zdrive.inp
+            /bin/cp  zdrive.inp.${name} zdrive.inp
+
+            # add some parameters not already in the input file
+            /bin/echo "Zoltan Parameters = hg_reduction_method=$mtd" \
+                >> zdrive.inp
+            /bin/echo "Zoltan Parameters = hg_reduction_local_improvement=no" \
+                >> zdrive.inp
+            /bin/echo "Zoltan Parameters = hg_local_refinement=no" \
+                >> zdrive.inp
+            /bin/echo "Zoltan Parameters = hg_reduction_limit=5000" \
+                >> zdrive.inp
+            #/bin/echo "Zoltan Parameters = hg_global partitioning=ran" \
+            #    >> zdrive.inp
+            /bin/echo "number of iterations = 10" >> zdrive.inp
+            # Run the driver
+            ./zdrive > $outdir/${name}.$mtd
+
+        else
+            echo "Warning: Can't find hg_test/zdrive.inp.${name}, skipping..." \
+                | tee -a ../$logfile
+        endif
+
+    end # foreach method
+
+    # Restore zdrive.inp
+    if (-e zdrive.inp.bak ) /bin/mv zdrive.inp.bak zdrive.inp
+  end # foreach name
+  cd ..  
+endif # Hypergraph
+
+
+###
+
 # Exit successfully
 echo "Test final = `date`" >> $logfile
 exit 0
@@ -809,6 +886,7 @@ usage:
   echo "   -no_order"
   echo "   -no_nemesis"
   echo "   -no_chaco"
+  echo "   -no_hg"
   echo "   -yes_fortran"
   echo "   -yes_jostle"
   echo "   -old_interface"
