@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
   MLList.set("coarse: max size", 30);
   MLList.set("aggregation: threshold", 0.0);
 
-  MLList.set("coarse: type", "Amesos_KLU");
+  MLList.set("coarse: type", "Amesos-KLU");
 
   // this creates the multilevel hierarchy, set the smoother as
   // Hiptmair, prepare the coarse solver, etc...

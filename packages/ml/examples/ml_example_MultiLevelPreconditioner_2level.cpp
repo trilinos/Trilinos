@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
 
   MLList.set("aggregation: nodes per aggregate", 16);
   MLList.set("smoother: pre or post", "pre");
-  MLList.set("coarse: type","Amesos_KLU");
+  MLList.set("coarse: type","Amesos-KLU");
   
   // now we need to define the solvers on each subdomain (== processor).
   // Here we use an incomplete Cholesky factorization, with no fill-in

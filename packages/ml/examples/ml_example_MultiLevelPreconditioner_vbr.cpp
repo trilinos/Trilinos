@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
   MLList.set("smoother: pre or post", "both");
   
   // solve with serial direct solver KLU
-  MLList.set("coarse: type","Amesos_KLU");
+  MLList.set("coarse: type","Amesos-KLU");
   
   // create the preconditioner object and compute hierarchy
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
