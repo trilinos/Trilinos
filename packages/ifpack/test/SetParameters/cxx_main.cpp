@@ -28,6 +28,7 @@
 
 // SetParameters Test routine
 #include <Ifpack_ConfigDefs.h>
+#include <Epetra_CrsGraph.h>
 
 #ifdef HAVE_IFPACK_TEUCHOS
 #include <Teuchos_ParameterList.hpp>
