@@ -77,7 +77,7 @@ namespace Teuchos {
 
     //! Default Constructor
     /*! Creates a empty matrix of no dimension.  The Shaping methods should be used to size this matrix.
-	Values of this matrix should be set using the [] or the () operators.	
+	Values of this matrix should be set using the [], (), or = operators.	
     */
     SerialDenseMatrix();
 
@@ -162,11 +162,19 @@ namespace Teuchos {
     //! Copies values from one matrix to another.
     /*!
 	The operator= copies the values from one existing SerialDenseMatrix to another. 
-	If \c Source is a view (i.e. CV = Teuchos::View), then this method will 
-	return a view.  Otherwise, it will return a copy of \c Source.  \e this object
-	will be resized if it is not large enough to copy \c Source into.
+        If \c Source is a view (i.e. CV = Teuchos::View), then this method will
+        return a view.  Otherwise, it will return a copy of \c Source.  \e this object
+        will be resized if it is not large enough to copy \c Source into.
     */	
-    SerialDenseMatrix& operator= (const SerialDenseMatrix& Source);
+    SerialDenseMatrix<OrdinalType, ScalarType>& operator= (const SerialDenseMatrix<OrdinalType, ScalarType>& Source);
+
+    //! Copies values from one matrix to another.
+    /*!
+	The operator= copies the values from one existing SerialDenseMatrix to another 
+        if the dimension of both matrices are the same.  If not, \e this matrix
+	will be returned unchanged.
+    */	
+    SerialDenseMatrix<OrdinalType, ScalarType>& assign (const SerialDenseMatrix<OrdinalType, ScalarType>& Source);
 
     //! Set all values in the matrix to a constant value.
     /*!
@@ -234,14 +242,29 @@ namespace Teuchos {
     /*! Add \c Source to \e this if the dimension of both matrices are the same.  If not, \e this matrix
 	will be returned unchanged.
     */
-    SerialDenseMatrix& operator+= (const SerialDenseMatrix& Source);
+    SerialDenseMatrix<OrdinalType, ScalarType>& operator+= (const SerialDenseMatrix<OrdinalType, ScalarType>& Source);
 
-    //! Scale \c this matrix; \c A = \c alpha*A.
+    //! Subtract another matrix from \e this matrix.
+    /*! Subtract \c Source from \e this if the dimension of both matrices are the same.  If not, \e this matrix
+	will be returned unchanged.
+    */
+    SerialDenseMatrix<OrdinalType, ScalarType>& operator-= (const SerialDenseMatrix<OrdinalType, ScalarType>& Source);
+
+    //! Scale \c this matrix by \c alpha; \c *this = \c alpha*\c *this.
     /*!
 	\param alpha Scalar to multiply \e this by.
 	\return Integer error code, set to 0 if successful.
     */
     int scale ( const ScalarType alpha );
+
+    //! Point-wise scale \c this matrix by \c A; i.e. *this(i,j) *= A(i,j)
+    /*! The values of \c *this matrix will be point-wise scaled by the values in A.
+	If A and \c this matrix are not the same dimension \c this will be returned unchanged.
+
+	\param B Teuchos::SerialDenseMatrix used to perform element-wise scaling of \e this.
+	\return Integer error code, set to 0 if successful.
+    */
+    int scale ( const SerialDenseMatrix<OrdinalType, ScalarType>& A );
 
     //! Multiply \c A * \c B and add them to \e this; \e this = \c beta * \e this + \c alpha*A*B.
     /*!
@@ -307,7 +330,7 @@ namespace Teuchos {
 
   //@}
   protected:
-    void copyMat(ScalarType* inputMatrix, int strideInput, int numRows, int numCols, ScalarType* outputMatrix, int strideOutput, int startRow, int startCol, bool add);
+    void copyMat(ScalarType* inputMatrix, int strideInput, int numRows, int numCols, ScalarType* outputMatrix, int strideOutput, int startRow, int startCol, ScalarType alpha = ScalarTraits<ScalarType>::zero() );
     void deleteArrays();
     void checkIndex( int rowIndex, int colIndex = 0 ) const;
     int numRows_;
@@ -525,7 +548,35 @@ namespace Teuchos {
       {
 	TEUCHOS_CHK_REF(*this); // Return *this without altering it.
       }
-    copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0, true);
+    copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0, 1.0);
+    return(*this);
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  SerialDenseMatrix<OrdinalType, ScalarType>& SerialDenseMatrix<OrdinalType, ScalarType>::operator-= (const SerialDenseMatrix<OrdinalType,ScalarType>& Source )
+  {
+    // Check for compatible dimensions
+    if ((numRows_ != Source.numRows_) || (numCols_ != Source.numCols_))
+      {
+	TEUCHOS_CHK_REF(*this); // Return *this without altering it.
+      }
+    copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0, -1.0);
+    return(*this);
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  SerialDenseMatrix<OrdinalType,ScalarType>& SerialDenseMatrix<OrdinalType, ScalarType>::assign (const SerialDenseMatrix<OrdinalType,ScalarType>& Source) {
+    if(this == &Source)
+      return(*this); // Special case of source same as target
+    if((!valuesCopied_) && (!Source.valuesCopied_) && (values_ == Source.values_))
+      return(*this); // Special case of both are views to same data.
+
+    // Check for compatible dimensions
+    if ((numRows_ != Source.numRows_) || (numCols_ != Source.numCols_))
+      {
+	TEUCHOS_CHK_REF(*this); // Return *this without altering it.
+      }
+    copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0 );
     return(*this);
   }
 
@@ -683,6 +734,24 @@ namespace Teuchos {
     return(0);
   }
 
+  template<typename OrdinalType, typename ScalarType>
+  int SerialDenseMatrix<OrdinalType, ScalarType>::scale( const SerialDenseMatrix<OrdinalType,ScalarType>& A )
+  {
+    int i, j;
+    ScalarType* ptr;
+    
+    // Check for compatible dimensions
+    if ((numRows_ != A.numRows_) || (numCols_ != A.numCols_))
+      {
+	TEUCHOS_CHK_ERR(-1); // Return error
+      }    
+    for (j=0; j<numCols_; j++) {
+      ptr = values_ + j*stride_;
+      for (i=0; i<numRows_; i++) { *ptr = A(i,j) * (*ptr); ptr++; }
+    }
+    updateFlops( numRows_*numCols_ );
+    return(0);
+  }
 
   template<typename OrdinalType, typename ScalarType>
   int  SerialDenseMatrix<OrdinalType, ScalarType>::multiply(ETransp transa, ETransp transb, ScalarType alpha, const SerialDenseMatrix<OrdinalType, ScalarType> &A, const SerialDenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta)
@@ -755,7 +824,7 @@ namespace Teuchos {
   }
   
   template<typename OrdinalType, typename ScalarType>
-  void SerialDenseMatrix<OrdinalType, ScalarType>::copyMat(ScalarType* inputMatrix, int strideInput, int numRows, int numCols, ScalarType* outputMatrix, int strideOutput, int startRow, int startCol, bool add)
+  void SerialDenseMatrix<OrdinalType, ScalarType>::copyMat(ScalarType* inputMatrix, int strideInput, int numRows, int numCols, ScalarType* outputMatrix, int strideOutput, int startRow, int startCol, ScalarType alpha)
   {
     int i, j;
     ScalarType* ptr1;
@@ -763,10 +832,10 @@ namespace Teuchos {
     for(j = 0; j < numCols; j++) {
 	ptr1 = outputMatrix + (j * strideOutput);
 	ptr2 = inputMatrix + (j + startCol) * strideInput + startRow;
-	if (add) {
+	if (alpha != Teuchos::ScalarTraits<ScalarType>::zero() ) {
 	  for(i = 0; i < numRows; i++)
 	    {
-	      *ptr1++ += *ptr2++;
+	      *ptr1++ += alpha*(*ptr2++);
 	    }
 	} else {
 	  for(i = 0; i < numRows; i++)
@@ -779,6 +848,5 @@ namespace Teuchos {
   
 } // namespace Teuchos
 
-// #include "Teuchos_SerialDenseMatrix.cpp"
 
 #endif /* _TEUCHOS_SERIALDENSEMATRIX_HPP_ */

@@ -315,10 +315,21 @@ int main(int argc, char* argv[])
   //  Check scale methods.
   //
   DMatrix ScalTest( 8, 8 );
-  //  Scale the entries by some number, it should still be 0.
-  if (verbose) cout << "scale() -- scale zero matrix by some number ";
+  ScalTest.putScalar( 1.0 );
+  //  Scale the entries by 8, it should be 8.
+  if (verbose) cout << "scale() -- scale matrix by some number ";
   returnCode = ScalTest.scale( 8.0 );
-  if (ScalTest(2, 3) == 0.0) {
+  if (ScalTest(2, 3) == 8.0) {
+	if (verbose) cout<< "successful." <<endl;
+  } else {
+	if (verbose) cout<< "unsuccessful." <<endl;
+	numberFailedTests++;
+  }
+  //  Pointwise scale the entries by zero, they all should be zero.
+  DMatrix ScalTest2( 8, 8 );
+  if (verbose) cout << "scale() -- point-wise scale matrix ";
+  ScalTest.scale( ScalTest2 );
+  if (ScalTest.normOne() == 0.0) {
 	if (verbose) cout<< "successful." <<endl;
   } else {
 	if (verbose) cout<< "unsuccessful." <<endl;
@@ -333,9 +344,19 @@ int main(int argc, char* argv[])
   returnCode = CCC.random();
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
   //  Set the entries of CCC to 1.0.
-  testName = "putScalar(1.0) -- set every entry of this matrix to 1.0";
+  testName = "putScalar() -- set every entry of this matrix to 1.0";
   returnCode = CCC.putScalar(1.0);
   numberFailedTests += ReturnCodeCheck(testName, returnCode, 0, verbose);
+  //  Check assignment operator.
+  DMatrix CCC2( 5, 5 );
+  CCC2.assign( CCC );
+  if (verbose) cout <<  "assign() -- copy the values of an input matrix ";  
+  if ( CCC( 3, 4 ) == 1.0 ) {
+    if (verbose) cout<< "successful" <<endl;
+  } else {
+    if (verbose) cout<< "unsuccessful" <<endl;
+    numberFailedTests++;
+  }
   //  Create a view into a submatrix of CCC
   DMatrix CCCview( Teuchos::View, CCC, 3, 3 );   
   DMatrix CCCtest1( 2, 3 );
@@ -373,6 +394,7 @@ int main(int argc, char* argv[])
     if (verbose) cout<<"unsuccessful"<<endl;
     numberFailedTests++;   
   }  
+  
   DMatrix CCCtest3( CCCview );
   CCCtest1 += CCCtest3;
   if (verbose) cout << "operator+= -- add two matrices of the same size, but different leading dimension ";
