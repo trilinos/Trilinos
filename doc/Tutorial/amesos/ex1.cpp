@@ -29,9 +29,10 @@
 
 // Trilinos Tutorial
 // -----------------
-// Solve a linear system with SuperLU
+// Solve a linear system with KLU
 //
-// Marzio Sala, SNL, 9214, 20-Nov-2003
+// NOTE: The Makefile may change, depending on how Amesos has been configured.
+//       Please check linker flags
 
 #include "Epetra_config.h"
 #ifdef HAVE_MPI
@@ -40,19 +41,9 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Epetra_Map.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_SerialDenseVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Time.h"
-#include "Amesos_Umfpack.h"
-#include "Amesos_Parameter_List.h"
-#include <Amesos_Superludist.h>
-
-void  get_neighbours( const int i, const int nx, const int ny,
-		      int & left, int & right, 
-		      int & lower, int & upper);
+#include "Amesos_Factory.h"
+#include "Trilinos_Util_ShellOptions.h"
+#include "Trilinos_Util_MatrixGallery.h"
 
 int main(int argc, char *argv[]) {
 
@@ -63,157 +54,74 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
-  int nx = 5;
-  int ny = 6;
-  int NumGlobalElements = nx * ny;
+  // initialize the command line parser
+  Trilinos_Util_CommandLineParser CLP(argc,argv);
 
-  // create a map
-  Epetra_Map Map(NumGlobalElements,0,Comm);
-  // local number of rows
-  int NumMyElements = Map.NumMyElements();
-  // get update list
-  int * MyGlobalElements = new int [NumMyElements];
-  Map.MyGlobalElements( MyGlobalElements );
+  // initialize an Gallery object
+  Trilinos_Util_CrsMatrixGallery Gallery("", Comm);
 
-  // Create an integer vector NumNz that is used to build the Petra Matrix.
-  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
-  // on this processor
+  // add default values
+  if( CLP.Has("-problem_type") == false ) CLP.Add("-problem_type", "laplace_2d" ); 
+  if( CLP.Has("-problem_size") == false ) CLP.Add("-problem_size", "100" ); 
 
-  int * NumNz = new int[NumMyElements];
+  // initialize the gallery as specified in the command line
+  Gallery.Set(CLP);
+
+  // retrive pointers to matrix, StartingSolution, RHS, and linear problem
+  // NOTE: StartingSolution and RHS are pointers to Gallery's internally stored
+  // vectors. Using StartingSolution and RHS, we can verify the residual
+  // after the solution of the linear system. However, users may define as well
+  // their own vectors for solution and RHS. 
+  Epetra_CrsMatrix * Matrix = Gallery.GetMatrix();
+  Epetra_Vector * LHS = Gallery.GetStartingSolution();
+  Epetra_Vector * RHS = Gallery.GetRHS();
   
-  double off_left  = -1.0;
-  double off_right = -1.0;
-  double off_lower = -1.0;
-  double off_upper = -1.0;
-  double diag      =  4.0;
-  int left, right, lower, upper;
+  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
+
+  // initialize Amesos solver  
+  Amesos_BaseSolver * Solver;
+  Amesos_Factory A_Factory;
+
+  // empty parameter list
+  Teuchos::ParameterList List;
   
-  for ( int i=0; i<NumMyElements; i++) {
-    NumNz[i] = 1;
-    get_neighbours( MyGlobalElements[i], nx, ny, 
-		    left, right, lower, upper); 
-    if( left  != -1 ) ++NumNz[i];
-    if( right != -1 ) ++NumNz[i];
-    if( lower != -1 ) ++NumNz[i];
-    if( upper != -1 ) ++NumNz[i];
+  // use KLU (other choices are valid as well)
+  int choice = 0;
+
+  switch( choice ) {
+  case 0:
+    Solver = A_Factory.Create(AMESOS_KLU, *Problem, List );
+    break;
+
+  case 1:
+    Solver = A_Factory.Create(AMESOS_UMFPACK, *Problem, List );
+    break;
+
   }
   
-  // Create a Epetra_Matrix
-  // create a CRS matrix
+  // start solving
+  Solver->SymbolicFactorization();
+  Solver->NumericFactorization();
+  Solver->Solve();
 
-  Epetra_CrsMatrix A(Copy,Map,NumNz);
+  // verify that residual is really small  
+  double residual, diff;
 
-  // Add  rows one-at-a-time
-  // Need some vectors to help
-  // Off diagonal Values will always be -1
+  Gallery.ComputeResidual(residual);
+  Gallery.ComputeDiffBetweenStartingAndExactSolutions(diff);
 
-  double *Values = new double[4];
-  int *Indices = new int[4];
-  int NumEntries;
-
-  for( int i=0 ; i<NumMyElements; ++i ) {
-    int NumEntries=0;
-    get_neighbours(  MyGlobalElements[i], nx, ny, 
-		     left, right, lower, upper);
-    if( left != -1 ) {
-	Indices[NumEntries] = left;
-	Values[NumEntries] = off_left;
-	++NumEntries;
-    }
-    if( right != -1 ) {
-      Indices[NumEntries] = right;
-      Values[NumEntries] = off_right;
-      ++NumEntries;
-    }
-    if( lower != -1 ) {
-      Indices[NumEntries] = lower;
-      Values[NumEntries] = off_lower;
-      ++NumEntries;
-    }
-    if( upper != -1 ) {
-      Indices[NumEntries] = upper;
-      Values[NumEntries] = off_upper;
-      ++NumEntries;
-    }
-    // put the off-diagonal entries
-    assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, 
-				Values, Indices)==0);
-    // Put in the diagonal entry
-    assert(A.InsertGlobalValues(MyGlobalElements[i], 1, 
-				&diag, MyGlobalElements+i)==0);
+  if( Comm.MyPID() == 0 ) {
+    cout << "||b-Ax||_2 = " << residual << endl;
+    cout << "||x_exact - x||_2 = " << diff << endl;
   }
-  
-  // Finish up
-  assert(A.TransformToLocal()==0);
 
-  // create x and b vectors
-  Epetra_Vector x(Map);
-  Epetra_Vector b(Map);
-  x.PutScalar(1.0);
-
-  A.Multiply(false,x,b);
-
-  x.PutScalar(0.0);
-  
-  // create linear problem
-  Epetra_LinearProblem Problem(&A,&x,&b);
-
-  AMESOS::Parameter::List params;
-   
-  Amesos_Umfpack UmfpackProblem(Problem,params);
-
-   
-  UmfpackProblem.SymbolicFactorization();
-  UmfpackProblem.NumericFactorization();
-  
-  UmfpackProblem.Solve();
-
-   
-  Amesos_Superludist SuperludistProblem(Problem,params);
-   
-  SuperludistProblem.Solve();
-  cout << x;
-  
- 
-
+  // delete Solver
+  delete Solver;
+    
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
   return( EXIT_SUCCESS );
-
-}
-
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
-
-void  get_neighbours( const int i, const int nx, const int ny,
-		      int & left, int & right, 
-		      int & lower, int & upper) 
-{
-
-  int ix, iy;
-  ix = i%nx;
-  iy = (i - ix)/nx;
-
-  if( ix == 0 ) 
-    left = -1;
-  else 
-    left = i-1;
-  if( ix == nx-1 ) 
-    right = -1;
-  else
-    right = i+1;
-  if( iy == 0 ) 
-    lower = -1;
-  else
-    lower = i-nx;
-  if( iy == ny-1 ) 
-    upper = -1;
-  else
-    upper = i+nx;
-
-  return;
 
 }
