@@ -141,6 +141,10 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
 				CrsMatrix, int & MaxNumNonzeros,
 				bool CheckNonzeroRow, double &);
 
+Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm);
+Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,
+                                            Epetra_Comm& comm);
+
 #ifdef FIXME
 string ML_toString(const int& x);
 string ML_toString(const double& x);

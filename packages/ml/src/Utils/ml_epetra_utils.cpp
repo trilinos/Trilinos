@@ -31,7 +31,6 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-
 // ====================================================================== 
 
 int Epetra_ML_matvec(ML_Operator *data, int in, double *p, int out, double *ap)
@@ -1309,6 +1308,127 @@ string ML_toString(const double& x) {
   sprintf(s, "%g", x);
   return string(s);
 }
+
+
+Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm)
+{
+  char  buffer[200];
+  char* bptr      = 0;
+  int numeq_total = 0;
+  int numeq       = 0;
+  Epetra_Map* map = 0;
+  int proc        = comm.MyPID();
+  int nproc       = comm.NumProc();
+  
+  FILE *fp = fopen(filename,"r");
+  if (!fp) return 0;
+  if (proc) 
+  {
+    fclose(fp);
+    fp = 0;
+  }
+
+  int ok = 1;
+  if (proc==0)
+  {
+     fgets(buffer,199,fp);
+     numeq_total = strtol(buffer,&bptr,10); // read number of global rows
+     int j = strtol(bptr,&bptr,10);
+     if (j != nproc) ok = 0;
+     else            ok = numeq_total;
+     fgets(buffer,199,fp);
+  }
+  comm.Broadcast(&ok,1,0);
+  if (!ok) return 0;
+  else numeq_total = ok;
+  
+  int* gupdate = new int[numeq_total];
+  if (proc==0)
+  {
+     for (int i=0; i<numeq_total; i++)
+     {
+        int row = strtol(buffer,&bptr,10);
+        int thisproc = strtol(bptr,&bptr,10);
+        gupdate[row] = thisproc;
+        fgets(buffer,199,fp);
+     }
+     fclose(fp); fp = 0;
+  }
+   
+  comm.Broadcast(gupdate,numeq_total,0);
+  for (int i=0; i< numeq_total; i++)
+     if (gupdate[i]==proc) numeq++;
+     
+  int* update = new int[numeq];
+  
+  int counter=0;
+  for (int i=0; i<numeq_total; i++)
+  {
+     if (gupdate[i]==proc)
+     {
+        update[counter] = i;
+        ++counter;
+     }
+  }   
+  cout << numeq << endl;
+  cout << counter << endl;  
+  
+  delete [] gupdate; gupdate = 0;
+  
+  map = new Epetra_Map(numeq_total,numeq,update,0,comm);
+  
+  return map;
+}
+
+Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetra_Comm& comm)
+{
+   char  buffer[10000];
+   char* bptr      = 0;
+   Epetra_CrsMatrix* A = 0;
+   double* val = 0;
+   int* bindx  = 0;
+
+   int  numeq_total = map.NumGlobalElements();
+   int  numeq       = map.NumMyElements();
+   int  nproc       = comm.NumProc();
+   int  proc        = comm.MyPID();
+   
+   A = new Epetra_CrsMatrix(Copy,map,map,0);
+   
+   for (int activeproc=0; activeproc<nproc; activeproc++)
+   {
+      int ok=0;
+      FILE* fp = 0;
+      if (activeproc==proc)
+      {
+         fp = fopen(filename,"r");
+         if (fp) 
+         {
+            ok=1;
+            fgets(buffer,9999,fp);
+            int readnumeq = strtol(buffer,&bptr,10);
+            if (readnumeq != numeq_total)
+            ok = 0;
+         }
+         else ok = 0;
+      }
+      comm.Broadcast(&ok,1,activeproc);
+      if (!ok)
+      {
+         delete A;
+         return 0;
+      }
+      if (activeproc==proc)
+      {
+         fgets(buffer,9999,fp);   
+      }
+   }
+   
+   
+   return A;
+}
+
+
 
 #else
 
