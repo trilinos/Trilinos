@@ -506,9 +506,6 @@ extern int LB_Set_Fn(struct LB_Struct *lb, LB_FN_TYPE fn_type,
  *    struct LB_Struct *lb       --  The load balancing object to which this
  *                                   method applies.
  *    char *string               --  String specifying the desired method.
- *    double *params             --  Params needed by desired method.
- *                                   (This field depends upon the particular
- *                                   method.)
  *  Output:
  *    struct LB_Struct *lb       --  Appropriate fields set to designated
  *                                   values.
