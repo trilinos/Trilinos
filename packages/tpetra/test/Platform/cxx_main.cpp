@@ -36,28 +36,36 @@
 #include "Tpetra_Version.hpp"
 
 int main(int argc, char* argv[]) {
-    bool verbose = false;
-    if (argc>1 && argv[1][0]=='-' && argv[1][1]=='v')
-        verbose = true;
+	// initialize verbose & debug flags
+	bool verbose = false;
+	bool debug = false;
+	if(argc > 1) {
+		if(argv[1][0] == '-' && argv[1][1] == 'v')
+			verbose = true;
+		if(argv[1][0] == '-' && argv[1][1] == 'd') {
+			debug = true;
+			verbose = true;
+		}
+	}
 
-    int size = 1; // Serial case (not using MPI)
-    int rank = 0;
+	int size = 1; // Serial case (not using MPI)
+	int rank = 0;
 
-    if(verbose)
-	cout << Tpetra::Tpetra_Version() << endl << endl;
-
-    if(verbose) cout << "Creating SerialPlatform object...";
-    Tpetra::SerialPlatform<ORDINALTYPE, SCALARTYPE> platform;
-    //if(debug) cout << platform.label() << endl;
+	if(verbose)
+		cout << Tpetra::Tpetra_Version() << endl << endl;
+	
+	if(verbose) cout << "Creating SerialPlatform object...";
+	Tpetra::SerialPlatform<ORDINALTYPE, SCALARTYPE> platform;
+	//if(debug) cout << platform.label() << endl;
 	if(verbose) cout << "Successful." << endl;
-
+	
 	if(verbose) cout << "Creating Comm objects...";
 	Tpetra::Comm<SCALARTYPE, ORDINALTYPE>* comm1 = platform.createScalarComm();
 	Tpetra::Comm<ORDINALTYPE, ORDINALTYPE>* comm2 = platform.createOrdinalComm();
 	delete comm1;
 	delete comm2;
 	if(verbose) cout << "Successful." << endl;
-
+	
 	if(verbose) cout << "Creating Distributor objects...";
 	Tpetra::Distributor<SCALARTYPE, ORDINALTYPE>* distributor1 = platform.createScalarDistributor();
 	Tpetra::Distributor<ORDINALTYPE, ORDINALTYPE>* distributor2 = platform.createOrdinalDistributor();
@@ -66,6 +74,6 @@ int main(int argc, char* argv[]) {
 	if(verbose) cout << "Successful." << endl;
   
 	if(verbose) cout << "Platform test successful." << endl;
-
+	
 	return(0);
 }

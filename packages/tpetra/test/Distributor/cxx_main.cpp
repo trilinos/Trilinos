@@ -26,23 +26,27 @@
 // ***********************************************************************
 // @HEADER
 
-// Tpetra Distributor tester
-// Modified: 21-Jan-2003
-
 #define PACKETTYPE float
 #define ORDINALTYPE int
-
 
 #include "Tpetra_SerialDistributor.hpp"
 #include "Tpetra_Version.hpp"
 
 int main(int argc, char* argv[]) {
+	// initialize verbose & debug flags
 	bool verbose = false;
-	if (argc>1 && argv[1][0]=='-' && argv[1][1]=='v') 
-		verbose = true;
+	bool debug = false;
+	if(argc > 1) {
+		if(argv[1][0] == '-' && argv[1][1] == 'v')
+			verbose = true;
+		if(argv[1][0] == '-' && argv[1][1] == 'd') {
+			debug = true;
+			verbose = true;
+		}
+	}
 
   if(verbose)
-	cout << Tpetra::Tpetra_Version() << endl << endl;
+		cout << Tpetra::Tpetra_Version() << endl << endl;
 
   if(verbose) cout << "Creating SerialDistributor object...";
   Tpetra::SerialDistributor<PACKETTYPE, ORDINALTYPE> distributor;

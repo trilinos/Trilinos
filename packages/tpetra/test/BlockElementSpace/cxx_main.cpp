@@ -26,13 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-/*Paul
-03-August-2002 BES tester. Initial writeup.
-18-Oct-2002 Modified.
-22-Oct-2002 Changed to test out BES/BESData friend wrinkles.
-21-Jan-2003 Updated for .hpp
-*/
-
 #define ORDINALTYPE int
 
 #include <iostream>

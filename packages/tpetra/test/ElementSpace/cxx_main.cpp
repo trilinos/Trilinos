@@ -26,9 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-// Tpetra ElementSpace tester
-// Modified: 06-Feb-2003
-
 #define ORDINALTYPE int
 
 #include <iostream>

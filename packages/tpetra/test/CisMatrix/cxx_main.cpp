@@ -26,8 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-// Tpetra CisMatrix tester
-
 #include "Tpetra_ConfigDefs.hpp" // for <iostream> and <stdlib>
 #include "Tpetra_CisMatrix.hpp"
 #include "Tpetra_SerialPlatform.hpp"

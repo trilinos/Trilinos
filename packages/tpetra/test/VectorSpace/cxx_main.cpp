@@ -26,9 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-// Tpetra VectorSpace tester
-// Modified: 06-Feb-2003
-
 #include <iostream>
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_ScalarTraits.hpp"

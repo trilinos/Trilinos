@@ -26,10 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-/*Paul
-04-Dec-2002 Modified from the earlier tpetra/test/ScalarTraits/cc_main.cc
-*/
-
 #include "Tpetra_ScalarTraits.hpp"
 #include "Tpetra_Version.hpp"
 

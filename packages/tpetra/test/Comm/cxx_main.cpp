@@ -26,13 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-/*Paul
-16-July-2002 CommTester.
-21-Sept-2002 Updated for Comm/Platform split.
-12-Nov-2002 Updated for new templating scheme (no changes).
-21-Jan-2003 Updated for .hpp
-*/
-
 #include <iostream>
 #include "Tpetra_SerialComm.hpp"
 #include "Tpetra_Version.hpp"
@@ -43,9 +36,17 @@ template<typename PacketType, typename OrdinalType> void setToZero(PacketType& v
 template<typename PacketType, typename OrdinalType> void commTest(Tpetra::SerialComm<PacketType, OrdinalType>& comm, bool verbose);
 
 int main(int argc, char* argv[]) {
+	// initialize verbose & debug flags
 	bool verbose = false;
-	if (argc>1 && argv[1][0]=='-' && argv[1][1]=='v') 
-		verbose = true;
+	bool debug = false;
+	if(argc > 1) {
+		if(argv[1][0] == '-' && argv[1][1] == 'v')
+			verbose = true;
+		if(argv[1][0] == '-' && argv[1][1] == 'd') {
+			debug = true;
+			verbose = true;
+		}
+	}
 
 	if(verbose)
 		cout << Tpetra::Tpetra_Version() << endl << endl;
