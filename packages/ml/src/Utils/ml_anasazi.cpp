@@ -66,7 +66,8 @@ using namespace Anasazi;
 // ================================================ ====== ==== ==== == =
 
 enum MLMatOp { A_MATRIX, I_MINUS_A_MATRIX, A_PLUS_AT_MATRIX,
-	       A_MINUS_AT_MATRIX, ITERATION_MATRIX };
+	       A_MINUS_AT_MATRIX, ITERATION_MATRIX,
+               PREC_MATRIX };
 
 
 // ================================================ ====== ==== ==== == =
@@ -81,6 +82,7 @@ enum MLMatOp { A_MATRIX, I_MINUS_A_MATRIX, A_PLUS_AT_MATRIX,
  * - (A + A^T) * x
  * - (A - A^T) * x
  * - (I - ML^{-1} A ) * x
+ * - (ML^{-1} A) * x
  * 
  * Optionally, the matrix can be scaled by the diagonal.
  *
@@ -100,7 +102,8 @@ public:
       - A_MINUS_A_MATRIX (compute the eigenvalue of A-A^T)
       - A_PLUS_A_MATRIX (compute the eigenvalue of A+A^T)
       - ITERATION_MATRIX (compute the eigenvalue of I-ML^{-1}A, 
-        where ML is an already build ML preconditioner.
+        where ML is an already build ML preconditioner
+      - PREC_MATRIX (compute the eigenvalues of ML^{-1}A).	
     \param UseDiagScaling (In) : if \c true, the matrix is scaled by the
       diagonal
     \param ml (In) : pointer to an already built ML hierarchy.
@@ -214,6 +217,37 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
   tmp_->ExtractView(&tmp_view);
   Mask_->ExtractView(&mask_view);
 
+  if( MatOp_ == PREC_MATRIX ) {
+
+    assert( ml_ != 0 );
+    
+    // Here I apply ML^{-1} A
+    
+    const Epetra_RowMatrix & RowMatrix = dynamic_cast<const Epetra_RowMatrix &>(Mat_);
+
+    // 0- zero out tmp_
+    tmp_->PutScalar(0.0);
+
+    // 1- apply the linear system matrix to vec_x
+    info = RowMatrix.Multiply(false,*vec_x,*tmp_);
+    if( info ) return Failed;
+
+    // 1.1- damp out Dirichlet nodes (FIXME: am I useful?)
+    for( int j=0 ; j<NumVectors ; ++j ) {
+      for( int i=0 ; i<NumMyRows_ ; ++i ) {
+	tmp_view[j][i] *= mask_view[i];
+      }    
+    }
+
+    // 2- apply the multilevel hierarchy
+    vec_y->PutScalar(0.0);
+    for( int i=0 ; i<NumVectors ; ++i ) ML_Solve_MGV(ml_,tmp_view[i], y_view[i]);
+    
+    // 4- return and skip the crap below
+    return Ok;
+    
+  }
+
   if( MatOp_ == ITERATION_MATRIX ) {
 
     assert( ml_ != 0 );
@@ -317,10 +351,12 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   MLMatOp MatOp = A_MATRIX;
   string MatOpStr = "A";
   MatOpStr = List.get("eigen-analysis: matrix operation", MatOpStr);
+
   if( MatOpStr == "A" ) MatOp = A_MATRIX;
   else if( MatOpStr == "I-A" ) MatOp = I_MINUS_A_MATRIX;
   else if( MatOpStr == "A+A^T" ) MatOp = A_PLUS_AT_MATRIX;
   else if( MatOpStr == "A-A^T" ) MatOp = A_MINUS_AT_MATRIX;
+  else if( MatOpStr == "ML^{-1}A" ) MatOp = PREC_MATRIX;
   else if( MatOpStr == "I-ML^{-1}A" ) {
     MatOp = ITERATION_MATRIX;
     UseDiagScaling = false; // doesn't work with iteration matrix
