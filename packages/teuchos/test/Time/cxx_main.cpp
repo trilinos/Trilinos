@@ -49,7 +49,7 @@ int main(int argc, void** argv)
         }
       
     }
-  catch(exception& e)
+  catch(std::exception& e)
     {
       Out::println("caught exception");
     }

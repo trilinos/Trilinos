@@ -49,7 +49,7 @@ int main(int argc, char** argv)
             {
               double z = y[10];
             }
-          catch(exception& eb)
+          catch(std::exception& eb)
             {
               caughtBoundsError = true;
               Out::println(string("caught bounds error: \n") + eb.what());
@@ -160,7 +160,7 @@ int main(int argc, char** argv)
       
       return 0;
     }
-  catch(exception& e)
+  catch(std::exception& e)
     {
       cerr << e.what() << endl;
     }

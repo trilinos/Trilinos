@@ -40,7 +40,7 @@ int main(int argc, void** argv)
 
       return 0;
     }
-  catch(exception& e)
+  catch(std::exception& e)
     {
       cerr << e.what() << endl;
     }
