@@ -94,7 +94,8 @@ main(int argc, char **argv)
 
   /* Initialize  Zoltan */
   LB_Initialize(argc, argv, &version);
-  LB_Initialize_Params_Array(params);
+/* BAH: need to put in new parameter initialization. */
+  /*LB_Initialize_Params_Array(params);*/
 
   if (DEBUG_TRACE) 
     printf("[%1d] Debug: Creating Zoltan LB object...\n",myproc);
