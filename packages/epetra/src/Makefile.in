@@ -180,8 +180,8 @@ am__objects_6 = Epetra_CompObject.$(OBJEXT) Epetra_CrsGraph.$(OBJEXT) \
 	Epetra_VbrMatrix.$(OBJEXT) Epetra_Vector.$(OBJEXT) \
 	Epetra_CrsSingletonFilter.$(OBJEXT) \
 	Epetra_FECrsGraph.$(OBJEXT) Epetra_FECrsMatrix.$(OBJEXT) \
-	Epetra_FEVbrMatrix.$(OBJEXT) \
-	Epetra_FEVector.$(OBJEXT) Epetra_IntVector.$(OBJEXT)
+	Epetra_FEVbrMatrix.$(OBJEXT) Epetra_FEVector.$(OBJEXT) \
+	Epetra_IntVector.$(OBJEXT)
 am__objects_7 = Epetra_MpiComm.$(OBJEXT) Epetra_MpiCommData.$(OBJEXT) \
 	Epetra_MpiDistributor.$(OBJEXT)
 @HAVE_MPI_TRUE@am__objects_8 = $(am__objects_7)
@@ -289,10 +289,10 @@ am__include_HEADERS_DIST = $(srcdir)/Epetra_BLAS.h \
 	$(srcdir)/Epetra_MultiVector.h $(srcdir)/Epetra_VbrMatrix.h \
 	$(srcdir)/Epetra_Vector.h \
 	$(srcdir)/Epetra_CrsSingletonFilter.h \
-	$(srcdir)/Epetra_FECrsGraph.h \
-	$(srcdir)/Epetra_FECrsMatrix.h $(srcdir)/Epetra_FEVbrMatrix.h \
-	$(srcdir)/Epetra_FEVector.h $(srcdir)/Epetra_IntVector.h \
-	$(srcdir)/Epetra_MpiComm.h $(srcdir)/Epetra_MpiCommData.h \
+	$(srcdir)/Epetra_FECrsGraph.h $(srcdir)/Epetra_FECrsMatrix.h \
+	$(srcdir)/Epetra_FEVbrMatrix.h $(srcdir)/Epetra_FEVector.h \
+	$(srcdir)/Epetra_IntVector.h $(srcdir)/Epetra_MpiComm.h \
+	$(srcdir)/Epetra_MpiCommData.h \
 	$(srcdir)/Epetra_MpiDistributor.h \
 	$(srcdir)/Epetra_MpiSmpComm.h \
 	$(srcdir)/Epetra_MpiSmpCommData.h
@@ -1435,14 +1435,6 @@ Epetra_CrsSingletonFilter.obj: $(srcdir)/Epetra_CrsSingletonFilter.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_CrsSingletonFilter.obj `if test -f '$(srcdir)/Epetra_CrsSingletonFilter.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_CrsSingletonFilter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_CrsSingletonFilter.cpp'; fi`
 
-Epetra_FECrsMatrix.o: $(srcdir)/Epetra_FECrsMatrix.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_FECrsMatrix.o -MD -MP -MF "$(DEPDIR)/Epetra_FECrsMatrix.Tpo" -c -o Epetra_FECrsMatrix.o `test -f '$(srcdir)/Epetra_FECrsMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_FECrsMatrix.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Epetra_FECrsMatrix.Tpo" "$(DEPDIR)/Epetra_FECrsMatrix.Po"; else rm -f "$(DEPDIR)/Epetra_FECrsMatrix.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_FECrsMatrix.cpp' object='Epetra_FECrsMatrix.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Epetra_FECrsMatrix.Po' tmpdepfile='$(DEPDIR)/Epetra_FECrsMatrix.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_FECrsMatrix.o `test -f '$(srcdir)/Epetra_FECrsMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_FECrsMatrix.cpp
-
 Epetra_FECrsGraph.o: $(srcdir)/Epetra_FECrsGraph.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_FECrsGraph.o -MD -MP -MF "$(DEPDIR)/Epetra_FECrsGraph.Tpo" -c -o Epetra_FECrsGraph.o `test -f '$(srcdir)/Epetra_FECrsGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_FECrsGraph.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Epetra_FECrsGraph.Tpo" "$(DEPDIR)/Epetra_FECrsGraph.Po"; else rm -f "$(DEPDIR)/Epetra_FECrsGraph.Tpo"; exit 1; fi
@@ -1451,14 +1443,6 @@ Epetra_FECrsGraph.o: $(srcdir)/Epetra_FECrsGraph.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_FECrsGraph.o `test -f '$(srcdir)/Epetra_FECrsGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_FECrsGraph.cpp
 
-Epetra_FECrsMatrix.obj: $(srcdir)/Epetra_FECrsMatrix.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_FECrsMatrix.obj -MD -MP -MF "$(DEPDIR)/Epetra_FECrsMatrix.Tpo" -c -o Epetra_FECrsMatrix.obj `if test -f '$(srcdir)/Epetra_FECrsMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_FECrsMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_FECrsMatrix.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Epetra_FECrsMatrix.Tpo" "$(DEPDIR)/Epetra_FECrsMatrix.Po"; else rm -f "$(DEPDIR)/Epetra_FECrsMatrix.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_FECrsMatrix.cpp' object='Epetra_FECrsMatrix.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Epetra_FECrsMatrix.Po' tmpdepfile='$(DEPDIR)/Epetra_FECrsMatrix.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_FECrsMatrix.obj `if test -f '$(srcdir)/Epetra_FECrsMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_FECrsMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_FECrsMatrix.cpp'; fi`
-
 Epetra_FECrsGraph.obj: $(srcdir)/Epetra_FECrsGraph.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_FECrsGraph.obj -MD -MP -MF "$(DEPDIR)/Epetra_FECrsGraph.Tpo" -c -o Epetra_FECrsGraph.obj `if test -f '$(srcdir)/Epetra_FECrsGraph.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_FECrsGraph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_FECrsGraph.cpp'; fi`; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Epetra_FECrsGraph.Tpo" "$(DEPDIR)/Epetra_FECrsGraph.Po"; else rm -f "$(DEPDIR)/Epetra_FECrsGraph.Tpo"; exit 1; fi
@@ -1466,6 +1450,22 @@ Epetra_FECrsGraph.obj: $(srcdir)/Epetra_FECrsGraph.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Epetra_FECrsGraph.Po' tmpdepfile='$(DEPDIR)/Epetra_FECrsGraph.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_FECrsGraph.obj `if test -f '$(srcdir)/Epetra_FECrsGraph.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_FECrsGraph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_FECrsGraph.cpp'; fi`
+
+Epetra_FECrsMatrix.o: $(srcdir)/Epetra_FECrsMatrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_FECrsMatrix.o -MD -MP -MF "$(DEPDIR)/Epetra_FECrsMatrix.Tpo" -c -o Epetra_FECrsMatrix.o `test -f '$(srcdir)/Epetra_FECrsMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_FECrsMatrix.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Epetra_FECrsMatrix.Tpo" "$(DEPDIR)/Epetra_FECrsMatrix.Po"; else rm -f "$(DEPDIR)/Epetra_FECrsMatrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_FECrsMatrix.cpp' object='Epetra_FECrsMatrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Epetra_FECrsMatrix.Po' tmpdepfile='$(DEPDIR)/Epetra_FECrsMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_FECrsMatrix.o `test -f '$(srcdir)/Epetra_FECrsMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_FECrsMatrix.cpp
+
+Epetra_FECrsMatrix.obj: $(srcdir)/Epetra_FECrsMatrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_FECrsMatrix.obj -MD -MP -MF "$(DEPDIR)/Epetra_FECrsMatrix.Tpo" -c -o Epetra_FECrsMatrix.obj `if test -f '$(srcdir)/Epetra_FECrsMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_FECrsMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_FECrsMatrix.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Epetra_FECrsMatrix.Tpo" "$(DEPDIR)/Epetra_FECrsMatrix.Po"; else rm -f "$(DEPDIR)/Epetra_FECrsMatrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_FECrsMatrix.cpp' object='Epetra_FECrsMatrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Epetra_FECrsMatrix.Po' tmpdepfile='$(DEPDIR)/Epetra_FECrsMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_FECrsMatrix.obj `if test -f '$(srcdir)/Epetra_FECrsMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_FECrsMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_FECrsMatrix.cpp'; fi`
 
 Epetra_FEVbrMatrix.o: $(srcdir)/Epetra_FEVbrMatrix.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_FEVbrMatrix.o -MD -MP -MF "$(DEPDIR)/Epetra_FEVbrMatrix.Tpo" -c -o Epetra_FEVbrMatrix.o `test -f '$(srcdir)/Epetra_FEVbrMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_FEVbrMatrix.cpp; \
