@@ -25,7 +25,7 @@ extern "C" {
 #include "zz_const.h"
 #endif
 
-extern int Zoltan_RB_find_bisector(ZZ *, double *, double *, 
+extern int Zoltan_RB_find_bisector(ZZ *, int, double *, double *, 
   int *, int, int, int, double *, MPI_Comm,
   double *, int, int *, int, int, int, double, double, 
   double *, double *, double *, int *, int, int);

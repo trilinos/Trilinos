@@ -82,6 +82,7 @@ static void Zoltan_daxpy(int n, double a, double *x, double *y, double *z);
 
 int Zoltan_RB_find_bisector(
   ZZ *zz,               /* Zoltan struct, contains lots of fields. */
+  int Tflops_Special,   /* usually same as zz->Tflops_Special */
   double *dots,         /* array of coordinates                              */
   double *wgts,         /* array of (multidimensional) weights associated with dots  */
   int *dotmark,         /* returned list of which side of the bisector
@@ -332,7 +333,7 @@ int Zoltan_RB_find_bisector(
       localsum[j] += wgts[i*nwgts+j];
   }
 
-  if (zz->Tflops_Special) {
+  if (Tflops_Special) {
      rank = proc - proclower;
      tmp = (double *) ZOLTAN_MALLOC(nprocs*sizeof(double));
      if (!tmp) {
@@ -534,7 +535,7 @@ int Zoltan_RB_find_bisector(
 
       /* combine bisector data struct across current subset of procs */
       if (counter != NULL) (*counter)++;
-      if (zz->Tflops_Special) {
+      if (Tflops_Special) {
          i = 1;
          Zoltan_reduce(num_procs, rank, proc, 1, medme, med, &i, med_type,
                    local_comm);
@@ -635,7 +636,7 @@ int Zoltan_RB_find_bisector(
             /* move some dots and all done */
             /* scan to figure out how many dots to move */
             /* wtupto will contain cumulative sum up to current proc */
-            if (zz->Tflops_Special)
+            if (Tflops_Special)
               Zoltan_scan(localsum, wtupto, nwgts, local_comm, proc, rank, num_procs);
             else
               MPI_Scan(localsum, wtupto, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);
@@ -793,7 +794,7 @@ int Zoltan_RB_find_bisector(
             /* move some dots and all done */
             /* scan to figure out how many dots to move */
             /* wtupto will contain cumulative sum up to current proc */
-            if (zz->Tflops_Special)
+            if (Tflops_Special)
                Zoltan_scan(localsum, wtupto, nwgts, local_comm, proc, rank, num_procs);
             else
                MPI_Scan(localsum, wtupto, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);

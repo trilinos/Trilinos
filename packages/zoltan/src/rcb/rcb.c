@@ -69,8 +69,8 @@ static int cut_dimension(int, struct rcb_tree *, int, int, int *, int *,
   struct rcb_box *);
 static int set_preset_dir(int, int, int, struct rcb_box *, int **);
 static int serial_rcb(ZZ *, struct Dot_Struct *, int *, int *, int, int,
-  struct rcb_box *, double, int, int, int *, int *, int, int, int, int,
-  int, int, int, int, int, int *, struct rcb_tree *, int *, int,
+  struct rcb_box *, double *, int, int, int *, int *, int, int, int, int,
+  int, int, int, int, int, int, int, int *, struct rcb_tree *, int *, int,
   double *, double *, float *);
 
 
@@ -655,7 +655,7 @@ static int rcb_fn(
     }
     else { 
       if (Zoltan_RB_find_bisector(
-             zz, coord, wgts, dotmark, dotnum, 
+             zz, zz->Tflops_Special, coord, wgts, dotmark, dotnum, 
              wgtflag, mcnorm, fraclo, local_comm, 
              &valuehalf, first_guess, counters,
              old_nprocs, proclower, old_nparts, 
@@ -793,11 +793,12 @@ static int rcb_fn(
     for (i = 0; i < dotnum; i++)
       dindx[i] = i;
     ierr = serial_rcb(zz, rcb->Dots, dotmark, dotlist, old_set, root,
-               rcbbox, weight[0], dotnum, num_parts,
+               rcbbox, weight, dotnum, num_parts,
                &(dindx[0]), &(tmpdindx[0]), partlower, 
                proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
                preset_dir, 
-               rectilinear_blocks, counters, treept, dim_spec, level,
+               rectilinear_blocks, obj_wgt_comp, mcnorm,
+               counters, treept, dim_spec, level,
                coord, wgts, part_sizes);
     ZOLTAN_FREE(&dindx);
     if (ierr < 0) {
@@ -1144,7 +1145,7 @@ static int serial_rcb(
                                 for last cut */
   int root,                  /* partition for which last cut was stored. */
   struct rcb_box *rcbbox,    /* bounding box of RCB sub-domain */
-  double weight,             /* weight for current set */
+  double *weight,            /* weight(s) for current set */
   int dotnum,                /* number of input dots */
   int num_parts,             /* number of partitions to create. */
   int *dindx,                /* Index into dotpt for dotnum dots to be 
@@ -1163,6 +1164,8 @@ static int serial_rcb(
                                  1: xyz,        2: xzy,      3: yzx,
                                  4: yxz,        5: zxy,      6: zyx  */
   int rectilinear_blocks,    /* (0) do (1) don't break ties in find_median*/
+  int obj_wgt_comp,          /* (1) obj wgts have same units, no scaling */
+  int mcnorm,                /* norm for multicriteria bisection */
   int counters[],            /* diagnostic counts */
   struct rcb_tree *treept,   /* tree of RCB cuts */
   int *dim_spec,             /* specified direction for preset_dir */
@@ -1182,9 +1185,9 @@ int dim;
 int first_guess;
 int new_nparts;
 int partmid;
-double fractionlo;
 double valuehalf;
-double weightlo, weighthi;
+double fractionlo[RB_MAX_WGTS];
+double weightlo[RB_MAX_WGTS], weighthi[RB_MAX_WGTS];
 int set0, set1;
 struct rcb_box tmpbox;
 
@@ -1194,7 +1197,7 @@ struct rcb_box tmpbox;
   }
   else {
     ierr = Zoltan_Divide_Parts(zz, zz->Obj_Weight_Dim, part_sizes, num_parts,
-                               &partlower, &partmid, &fractionlo);
+                               &partlower, &partmid, fractionlo);
 
     dim = cut_dimension(lock_direction, treept, partmid, 
                         preset_dir, dim_spec, &level, rcbbox);
@@ -1213,16 +1216,34 @@ struct rcb_box tmpbox;
     else
       first_guess = 0;
 
-    /* Call find_median with Tflops_Special == 0; avoids communication */
-    if (!Zoltan_RB_find_median(0, coord, wgts, dotmark, dotnum, proc, 
-                               fractionlo, MPI_COMM_SELF, &valuehalf,
-                               first_guess, &(counters[0]), 1, 1,
-                               proc, num_parts, wgtflag, rcbbox->lo[dim], 
-                               rcbbox->hi[dim], weight, &weightlo, &weighthi,
-                               dotlist, rectilinear_blocks)) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_find_median");
-      ierr = ZOLTAN_FATAL;
-      goto End;
+    if (wgtflag <= 1){
+      /* Call find_median with Tflops_Special == 0; avoids communication */
+      if (!Zoltan_RB_find_median(0, coord, wgts, dotmark, dotnum, proc, 
+                                 fractionlo[0], MPI_COMM_SELF, &valuehalf,
+                                 first_guess, counters, 1, 1, 0, 
+                                 num_parts, wgtflag, rcbbox->lo[dim], 
+                                 rcbbox->hi[dim], weight[0], weightlo, weighthi,
+                                 dotlist, rectilinear_blocks)) {
+        ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from Zoltan_RB_find_median");
+        ierr = ZOLTAN_FATAL;
+        goto End;
+      }
+    }
+    else{
+      /* Call find_bisector with Tflops_Special == 0; avoids communication */
+      if (Zoltan_RB_find_bisector(
+             zz, 0, coord, wgts, dotmark, dotnum, 
+             wgtflag, mcnorm, fractionlo, MPI_COMM_SELF, 
+             &valuehalf, first_guess, counters,
+             1, 0, num_parts, 
+             rcbbox->lo[dim], rcbbox->hi[dim], 
+             weight, weightlo, weighthi,
+             dotlist, rectilinear_blocks, obj_wgt_comp)
+        != ZOLTAN_OK) {
+        ZOLTAN_PRINT_ERROR(proc, yo,"Error returned from Zoltan_RB_find_bisector.");
+        ierr = ZOLTAN_FATAL;
+        goto End;
+      }
     }
 
     treept[partmid].dim = dim;
@@ -1255,7 +1276,8 @@ struct rcb_box tmpbox;
                         &(dindx[0]), &(tmpdindx[0]), partlower, 
                         proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
                         preset_dir, 
-                        rectilinear_blocks, counters, treept, dim_spec, level,
+                        rectilinear_blocks, obj_wgt_comp, mcnorm,
+                        counters, treept, dim_spec, level,
                         coord, wgts, part_sizes);
       if (ierr < 0) {
         goto End;
@@ -1272,8 +1294,8 @@ struct rcb_box tmpbox;
                         &tmpbox, weighthi, dotnum-set0, new_nparts,
                         &(dindx[set1]), &(tmpdindx[set1]), partmid, 
                         proc, wgtflag, lock_direction, reuse, stats, gen_tree, 
-                        preset_dir, 
-                        rectilinear_blocks, counters, treept, dim_spec, level,
+                        preset_dir, rectilinear_blocks, obj_wgt_comp, mcnorm,
+                        counters, treept, dim_spec, level,
                         coord, wgts, part_sizes);
       if (ierr < 0) {
         goto End;
