@@ -951,12 +951,10 @@ Optional Packages:
   --with-amesos-mumpsdir  Set MUMPS directory (default is
                           ${tac_with_trilinos3pldir}/MUMPS_4.2_beta/, )
   --with-amesos-mumpslib  Set MUMPS library (default is
-                          ${tac_with_amesos_mumpsdir}/libdmumps.a, )
-  --with-amesos-scalapacklib
-                          Set ScaLAPACK library (default is
-                          ${tac_with_trilinos3pldir}/ScaLAPACK/libscalpack.a, )
-  --with-amesos-blacslib  Set BLACS library (default is
-                          ${tac_with_trilinos3pldir}/BLACS/libblacs.a, )
+                          ${tac_with_amesos_mumpsdir}/lib/libdmumps.a, )
+  --with-amesos-mumpspordlib
+                          Set MUMPS PORD library (default is
+                          ${tac_with_amesos_mumpsdir}/lib/libpord.a, )
   --with-amesos-mumpsincdir
                           Set MUMPS include directory (default is
                           ${tac_with_amesos_mumpsdir}include, )
@@ -3556,7 +3554,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3559:" \
+echo "$as_me:3557:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5163,8 +5161,8 @@ done
 
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
-  { { echo "$as_me:$LINENO: error: Cannot find cstdlib or stdlib.h.  Amesos requires at least one or the other.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details" >&5
-echo "$as_me: error: Cannot find cstdlib or stdlib.h.  Amesos requires at least one or the other.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details" >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find cstdlib or stdlib.h.  Amesos requires at least one or the other.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details" >&5
+echo "$as_me: error: Cannot find cstdlib or stdlib.h.  Amesos requires at least one or the other.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -5950,7 +5948,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5953: \"$ac_link\") >&5
+(eval echo $as_me:5951: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6030,7 +6028,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6033: \"$ac_link\") >&5
+(eval echo $as_me:6031: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6850,8 +6848,8 @@ if test "X$ac_cv_use_amesos_slud" = "Xno"; then
          if test "X$ac_cv_use_amesos_umfpack" = "Xno"; then
             if test "X$ac_cv_use_amesos_mumps" = "Xno"; then
 	       if test "X$ac_cv_use_amesos_kundert" = "Xno"; then
-                 { { echo "$as_me:$LINENO: error: Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details" >&5
-echo "$as_me: error: Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details" >&2;}
+                 { { echo "$as_me:$LINENO: error: Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details" >&5
+echo "$as_me: error: Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details" >&2;}
    { (exit 1); exit 1; }; }
                fi
             fi
@@ -6907,8 +6905,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 if test "X$ac_cv_use_amesos_slud" != "Xno"; then
 
   if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-    { { echo "$as_me:$LINENO: error: Amesos/SuperludistOO requires MPI.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details" >&5
-echo "$as_me: error: Amesos/SuperludistOO requires MPI.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details" >&2;}
+    { { echo "$as_me:$LINENO: error: Amesos/SuperludistOO requires MPI.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details" >&5
+echo "$as_me: error: Amesos/SuperludistOO requires MPI.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details" >&2;}
    { (exit 1); exit 1; }; }
   fi
 
@@ -7049,8 +7047,8 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sludincdir, --with-amesos-sluddir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
-echo "$as_me: error: Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sludincdir, --with-amesos-sluddir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sludincdir, --with-amesos-sluddir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&5
+echo "$as_me: error: Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sludincdir, --with-amesos-sluddir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -7197,8 +7195,8 @@ echo $ECHO_N "checking  Here we are after the slud2 stuff ... $ECHO_C" >&6
 if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
 
   if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-    { { echo "$as_me:$LINENO: error: Amesos_Dscpack requires MPI.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
-echo "$as_me: error: Amesos_Dscpack requires MPI.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
+    { { echo "$as_me:$LINENO: error: Amesos_Dscpack requires MPI.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&5
+echo "$as_me: error: Amesos_Dscpack requires MPI.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
   fi
 
@@ -7339,8 +7337,8 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&5
-echo "$as_me: error: Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details. " >&5
+echo "$as_me: error: Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details. " >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -7398,8 +7396,8 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/kstanley/Trilinos3PL/DSCPACK1.0/dsclibdbl.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
-echo "$as_me: error: Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/kstanley/Trilinos3PL/DSCPACK1.0/dsclibdbl.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/kstanley/Trilinos3PL/DSCPACK1.0/dsclibdbl.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&5
+echo "$as_me: error: Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/kstanley/Trilinos3PL/DSCPACK1.0/dsclibdbl.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
@@ -7613,8 +7611,8 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find umfpack.h in ${tac_with_amesos_umfpack} , specify a location using --with-amesos-umfpackincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&5
-echo "$as_me: error: Cannot find umfpack.h in ${tac_with_amesos_umfpack} , specify a location using --with-amesos-umfpackincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find umfpack.h in ${tac_with_amesos_umfpack} , specify a location using --with-amesos-umfpackincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details. " >&5
+echo "$as_me: error: Cannot find umfpack.h in ${tac_with_amesos_umfpack} , specify a location using --with-amesos-umfpackincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details. " >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -7672,8 +7670,8 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: Cannot find the UMFPACK library, specify a location using --with-amesos-umfpacklib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/libumfpack.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
-echo "$as_me: error: Cannot find the UMFPACK library, specify a location using --with-amesos-umfpacklib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/libumfpack.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the UMFPACK library, specify a location using --with-amesos-umfpacklib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/libumfpack.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&5
+echo "$as_me: error: Cannot find the UMFPACK library, specify a location using --with-amesos-umfpacklib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/libumfpack.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
@@ -7724,8 +7722,8 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: Cannot find the AMD library needed by Umfpack, specify a location using --with-amesos-umfpackamdlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
-echo "$as_me: error: Cannot find the AMD library needed by Umfpack, specify a location using --with-amesos-umfpackamdlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the AMD library needed by Umfpack, specify a location using --with-amesos-umfpackamdlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&5
+echo "$as_me: error: Cannot find the AMD library needed by Umfpack, specify a location using --with-amesos-umfpackamdlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
@@ -7768,14 +7766,14 @@ fi
 
 #
 #  --enable-amesos-mumps, --with-amesos-mumpsdir, --with-amesos-mumpslib,
-#    --with-amesos-umfpackamdlib,
+#    --with-amesos-mumpspordlib,
 #    --with-amesos-mumpsincdir
 #
 #
 #  Test to see if everything is where it ought to be:
 #    Make sure that umfmain.h is in the directory pointed to by amesos-mumpsincdic
 #    Make sure that umfpack_di_default is in the library pointed to by amesos-mumpslib
-#    Make sure that amd_default is in the library pointed to by amesos-umfpackamdlib
+#    Make sure that amd_default is in the library pointed to by amesos-mumpspordlib
 #
 if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
@@ -7809,11 +7807,6 @@ echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
 echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 
 
-#
-#  The following hack allows me to compile locally even though I cannot compile mumps
-#  on my laptop without an f90 compiler.
-#
-if test "X$target" == "Xsgi"; then
 
 
 # Check whether --with-amesos-mumpslib or --without-amesos-mumpslib was given.
@@ -7821,7 +7814,7 @@ if test "${with_amesos_mumpslib+set}" = set; then
   withval="$with_amesos_mumpslib"
   tac_with_amesos_mumpslib=$withval
 else
-  tac_with_amesos_mumpslib=${tac_with_amesos_mumpsdir}/libdmumps.a
+  tac_with_amesos_mumpslib=${tac_with_amesos_mumpsdir}/lib/libdmumps.a
 fi;
 
     as_ac_File=`echo "ac_cv_file_${tac_with_amesos_mumpslib}" | $as_tr_sh`
@@ -7846,17 +7839,17 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 
 
 
-# Check whether --with-amesos-scalapacklib or --without-amesos-scalapacklib was given.
-if test "${with_amesos_scalapacklib+set}" = set; then
-  withval="$with_amesos_scalapacklib"
-  tac_with_amesos_scalapacklib=$withval
+# Check whether --with-amesos-mumpspordlib or --without-amesos-mumpspordlib was given.
+if test "${with_amesos_mumpspordlib+set}" = set; then
+  withval="$with_amesos_mumpspordlib"
+  tac_with_amesos_mumpspordlib=$withval
 else
-  tac_with_amesos_scalapacklib=${tac_with_trilinos3pldir}/ScaLAPACK/libscalpack.a
+  tac_with_amesos_mumpspordlib=${tac_with_amesos_mumpsdir}/lib/libpord.a
 fi;
 
-    as_ac_File=`echo "ac_cv_file_${tac_with_amesos_scalapacklib}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_scalapacklib}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_scalapacklib}... $ECHO_C" >&6
+    as_ac_File=`echo "ac_cv_file_${tac_with_amesos_mumpspordlib}" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for ${tac_with_amesos_mumpspordlib}" >&5
+echo $ECHO_N "checking for ${tac_with_amesos_mumpspordlib}... $ECHO_C" >&6
 if eval "test \"\${$as_ac_File+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -7864,7 +7857,7 @@ else
   { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
 echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
    { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_scalapacklib}"; then
+if test -r "${tac_with_amesos_mumpspordlib}"; then
   eval "$as_ac_File=yes"
 else
   eval "$as_ac_File=no"
@@ -7874,36 +7867,15 @@ echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
 echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 
 
-
-
-# Check whether --with-amesos-blacslib or --without-amesos-blacslib was given.
-if test "${with_amesos_blacslib+set}" = set; then
-  withval="$with_amesos_blacslib"
-  tac_with_amesos_blacslib=$withval
-else
-  tac_with_amesos_blacslib=${tac_with_trilinos3pldir}/BLACS/libblacs.a
-fi;
-
-    as_ac_File=`echo "ac_cv_file_${tac_with_amesos_scalapacklib}" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for ${tac_with_amesos_scalapacklib}" >&5
-echo $ECHO_N "checking for ${tac_with_amesos_scalapacklib}... $ECHO_C" >&6
-if eval "test \"\${$as_ac_File+set}\" = set"; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${tac_with_amesos_scalapacklib}"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_File'}'`" >&5
-echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
-
-fi
+#
+#  We don't support amesos-scalapacklib or amesos-blacslib yet.  Too many unknowns right now.
+#  For now, use LIBS=" "
+#
+#    TAC_ARG_WITH_SUB( amesos, scalapacklib, [Set ScaLAPACK library],  ${tac_with_trilinos3pldir}/ScaLAPACK/libscalpack.a )
+#    AC_CHECK_FILE(${tac_with_amesos_scalapacklib})
+#
+#    TAC_ARG_WITH_SUB( amesos, blacslib, [Set BLACS library],  ${tac_with_trilinos3pldir}/BLACS/libblacs.a )
+#    AC_CHECK_FILE(${tac_with_amesos_scalapacklib})
 
 
 
@@ -7961,8 +7933,8 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find dmumps_c.h in ${tac_with_amesos_mumps} , specify a location using --with-amesos-mumpsincdir, --with-amesos-mumpsdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&5
-echo "$as_me: error: Cannot find dmumps_c.h in ${tac_with_amesos_mumps} , specify a location using --with-amesos-mumpsincdir, --with-amesos-mumpsdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find dmumps_c.h in ${tac_with_amesos_mumps} , specify a location using --with-amesos-mumpsincdir, --with-amesos-mumpsdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details. " >&5
+echo "$as_me: error: Cannot find dmumps_c.h in ${tac_with_amesos_mumps} , specify a location using --with-amesos-mumpsincdir, --with-amesos-mumpsdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details. " >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -7974,10 +7946,6 @@ fi
 
 
     SAVE_LIBS="${LIBS}"
-#
-#   This has not yet been switched to MUMPS
-#
-    if test "X$target" == "Xsgi"; then
       LIBS="${tac_with_amesos_mumpslib} ${MPI_LIBS} ${LIBS}"
       cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -7993,7 +7961,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char umfpack_di_defaults ();
+char dmumps_164_ ();
 #ifdef F77_DUMMY_MAIN
 #  ifdef __cplusplus
      extern "C"
@@ -8003,7 +7971,7 @@ char umfpack_di_defaults ();
 int
 main ()
 {
-umfpack_di_defaults ();
+dmumps_164_ ();
   ;
   return 0;
 }
@@ -8025,12 +7993,12 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: Cannot find the MUMPS library, specify a location using --with-amesos-mumpslib, (ex. --with-amesos-mumpslib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/libumfpack.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
-echo "$as_me: error: Cannot find the MUMPS library, specify a location using --with-amesos-mumpslib, (ex. --with-amesos-mumpslib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/libumfpack.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the MUMPS library, specify a location using --with-amesos-mumpslib, (ex. --with-amesos-mumpslib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libdmumps.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&5
+echo "$as_me: error: Cannot find the MUMPS library, specify a location using --with-amesos-mumpslib, (ex. --with-amesos-mumpslib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libdmumps.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-    LIBS="${tac_with_amesos_umfpackamdlib} ${MPI_LIBS} ${LIBS}"
+    LIBS="${tac_with_amesos_mumpspordlib} ${MPI_LIBS} ${LIBS}"
       cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 /* confdefs.h.  */
@@ -8045,7 +8013,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char amd_defaults ();
+char qsortUpInts ();
 #ifdef F77_DUMMY_MAIN
 #  ifdef __cplusplus
      extern "C"
@@ -8055,7 +8023,7 @@ char amd_defaults ();
 int
 main ()
 {
-amd_defaults ();
+qsortUpInts ();
   ;
   return 0;
 }
@@ -8077,13 +8045,12 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: Cannot find the AMD library needed by Umfpack, specify a location using --with-amesos-umfpackamdlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
-echo "$as_me: error: Cannot find the AMD library needed by Umfpack, specify a location using --with-amesos-umfpackamdlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the PORD library needed by MUMPS, specify a location using --with-amesos-mumpspordlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libpord.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&5
+echo "$as_me: error: Cannot find the PORD library needed by MUMPS, specify a location using --with-amesos-mumpspordlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libpord.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
     LIBS="${SAVE_LIBS}"
-  fi
 
 
 if true ; then
@@ -8104,7 +8071,7 @@ else
   NEED_PARAMETER_LIST_FALSE=
 fi
 
-  amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_umfpackamdlib}"
+  amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_mumpspordlib} -lfortran"
 else
 
 
@@ -8270,8 +8237,8 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find supermatrix.h in ${tac_with_amesos_slusincdir} , specify a location using --with-amesos-slusincdir, --with-amesos-slusdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&5
-echo "$as_me: error: Cannot find supermatrix.h in ${tac_with_amesos_slusincdir} , specify a location using --with-amesos-slusincdir, --with-amesos-slusdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find supermatrix.h in ${tac_with_amesos_slusincdir} , specify a location using --with-amesos-slusincdir, --with-amesos-slusdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details. " >&5
+echo "$as_me: error: Cannot find supermatrix.h in ${tac_with_amesos_slusincdir} , specify a location using --with-amesos-slusincdir, --with-amesos-slusdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details. " >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -8329,8 +8296,8 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-{ { echo "$as_me:$LINENO: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
-echo "$as_me: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&5
+echo "$as_me: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
@@ -8463,7 +8430,7 @@ AMESOS_LIBS=${amesos_libs}
 
 ## if test "X$ADDON_SLUD" != "Xno"; then
 ##   AC_SEARCH_LIBS(SuperLU_timer_,[superludist],,
-##   AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-ldflags (ex. --with-ldflags=-L/usr/path/lib).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]]))
+##   AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-ldflags (ex. --with-ldflags=-L/usr/path/lib).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details.]]))
 ## fi
 
 #AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
@@ -9729,8 +9696,8 @@ _ACEOF
         :
 else
         acx_blas_ok=no
-        { { echo "$as_me:$LINENO: error: Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
-echo "$as_me: error: Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
+        { { echo "$as_me:$LINENO: error: Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&5
+echo "$as_me: error: Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -10005,8 +9972,8 @@ _ACEOF
         :
 else
         acx_lapack_ok=no
-        { { echo "$as_me:$LINENO: error: Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
-echo "$as_me: error: Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
+        { { echo "$as_me:$LINENO: error: Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&5
+echo "$as_me: error: Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -10067,7 +10034,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10070: \"$ac_link\") >&5
+(eval echo $as_me:10037: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10147,7 +10114,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10150: \"$ac_link\") >&5
+(eval echo $as_me:10117: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
