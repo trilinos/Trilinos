@@ -26,21 +26,21 @@
 //#include "Epetra_ConfigDefs.h" //DATA_DEBUG
 
 //=============================================================================
-Epetra_MpiSmpCommData::Epetra_MpiSmpCommData(MPI_Comm & Comm) :
-	Comm_(Comm),
-	curTag_(minTag_),
-	ThreadID_(0),
-	NumThreads_(1)
+Epetra_MpiSmpCommData::Epetra_MpiSmpCommData(MPI_Comm& Comm) 
+	: Comm_(Comm),
+		curTag_(minTag_),
+		ThreadID_(0),
+		NumThreads_(1)
 {
 	MPI_Comm_size(Comm, &size_);
 	MPI_Comm_rank(Comm, &rank_);
 	minTag_ = 24050;
 	maxTag_ = 24099;
 	NodeID_ = rank_;
-	//cout << "--MSCD created (dc), addr: " << (int) this << endl; //DATA_DEBUG
+	//cout << "--MSCD created (dc), addr: " << this << endl; //DATA_DEBUG
 }
 
 //=============================================================================
 Epetra_MpiSmpCommData::~Epetra_MpiSmpCommData() {
-	//cout << "--MSCD destroyed, addr: " << (int) this << endl; //DATA_DEBUG
+	//cout << "--MSCD destroyed, addr: " << this << endl; //DATA_DEBUG
 }

@@ -30,10 +30,10 @@ Epetra_SerialCommData::Epetra_SerialCommData()
 	: MyPID_(0), 
 		NumProc_(1) 
 {
-	//cout << "--SCD created (dc), addr: " << (int) this << endl; //DATA_DEBUG
+	//cout << "--SCD created (dc), addr: " << this << endl; //DATA_DEBUG
 }
 
 //=============================================================================
 Epetra_SerialCommData::~Epetra_SerialCommData() {
-	//cout << "--SCD destroyed, addr: " << (int) this << endl; //DATA_DEBUG
+	//cout << "--SCD destroyed, addr: " << this << endl; //DATA_DEBUG
 }

@@ -243,13 +243,13 @@ int checkMapDataClass(Epetra_Comm& Comm, int verbose) {
 
 	Epetra_Map m1(NumGlobalElements, IndexBase, Comm);
 	int m1count = m1.ReferenceCount();
-	size_t m1addr = (size_t) m1.DataPtr(); // cast int* to int
+	const Epetra_BlockMapData* m1addr = m1.DataPtr();
 	EPETRA_TEST_ERR(!(m1count==1),returnierr); // count should be 1
 	if(verbose) cout << "Default constructor. \nm1= " << m1count << "  " << m1addr << endl;
 	
 	Epetra_Map* m2 = new Epetra_Map(m1);
 	int m2count = m2->ReferenceCount();
-	size_t m2addr = (size_t) m2->DataPtr(); // cast int* to int
+	const Epetra_BlockMapData* m2addr = m2->DataPtr();
 	int m1countold = m1count;
 	m1count = m1.ReferenceCount();
 	EPETRA_TEST_ERR(!(m2count==m1count && m1count==(m1countold+1)),returnierr); // both counts should be 2
@@ -261,21 +261,21 @@ int checkMapDataClass(Epetra_Comm& Comm, int verbose) {
 	m1countold = m1count;
 	m1count = m1.ReferenceCount();
 	EPETRA_TEST_ERR(!(m1count == m1countold-1), returnierr); // count should have decremented (to 1)
-	EPETRA_TEST_ERR(!(m1addr == (size_t) m1.DataPtr()),returnierr); // m1addr should be unchanged
+	EPETRA_TEST_ERR(!(m1addr == m1.DataPtr()),returnierr); // m1addr should be unchanged
 	if(verbose) cout << "m2 destroyed. \nm1= " << m1count << "  " << m1addr << endl;
 
 	{ // inside of braces to test stack deallocation.
 		if(verbose) cout << "Assignment operator, post construction" << endl;
 		Epetra_Map m3(NumGlobalElements, IndexBase+1, Comm);
 		int m3count = m3.ReferenceCount();
-		size_t m3addr = (size_t) m3.DataPtr(); // cast int* to int
+		const Epetra_BlockMapData* m3addr = m3.DataPtr();
 		EPETRA_TEST_ERR(!(m3count==1),returnierr); // m3count should be 1 initially
 		EPETRA_TEST_ERR(!(m1addr!=m3addr),returnierr); // m1 and m3 should have different ptr addresses
 		if(verbose) cout << "Prior to assignment: \nm1= " << m1count << "  " << m1addr 
 										 << "\nm3= " << m3count << "  " << m3addr << endl;
 		m3 = m1;
 		m3count = m3.ReferenceCount();
-		m3addr = (size_t) m3.DataPtr(); // cast int* to int
+		m3addr = m3.DataPtr();
 		m1countold = m1count;
 		m1count = m1.ReferenceCount();
 		EPETRA_TEST_ERR(!(m3count==m1count && m1count==m1countold+1),returnierr); // both counts should be 2
@@ -286,7 +286,7 @@ int checkMapDataClass(Epetra_Comm& Comm, int verbose) {
 	m1countold = m1count;
 	m1count = m1.ReferenceCount();
 	EPETRA_TEST_ERR(!(m1count==m1countold-1), returnierr); // count should have decremented (to 1)
-	EPETRA_TEST_ERR(!(m1addr== (size_t) m1.DataPtr()),returnierr); // m1addr should be unchanged
+	EPETRA_TEST_ERR(!(m1addr== m1.DataPtr()),returnierr); // m1addr should be unchanged
 	if(verbose) cout << "m3 destroyed. \nm1= " << m1count << "  " << m1addr << endl;
 
 	return(returnierr);
@@ -299,13 +299,13 @@ int checkLocalMapDataClass(Epetra_Comm& Comm, int verbose) {
 
 	Epetra_LocalMap m1(NumMyElements, IndexBase, Comm);
 	int m1count = m1.ReferenceCount();
-	size_t m1addr = (size_t) m1.DataPtr(); // cast int* to int
+	const Epetra_BlockMapData* m1addr = m1.DataPtr();
 	EPETRA_TEST_ERR(!(m1count==1),returnierr); // count should be 1
 	if(verbose) cout << "Default constructor. \nm1= " << m1count << "  " << m1addr << endl;
 	
 	Epetra_LocalMap* m2 = new Epetra_LocalMap(m1);
 	int m2count = m2->ReferenceCount();
-	size_t m2addr = (size_t) m2->DataPtr(); // cast int* to int
+	const Epetra_BlockMapData* m2addr = m2->DataPtr();
 	int m1countold = m1count;
 	m1count = m1.ReferenceCount();
 	EPETRA_TEST_ERR(!(m2count==m1count && m1count==(m1countold+1)),returnierr); // both counts should be 2
@@ -317,21 +317,21 @@ int checkLocalMapDataClass(Epetra_Comm& Comm, int verbose) {
 	m1countold = m1count;
 	m1count = m1.ReferenceCount();
 	EPETRA_TEST_ERR(!(m1count == m1countold-1), returnierr); // count should have decremented (to 1)
-	EPETRA_TEST_ERR(!(m1addr == (size_t) m1.DataPtr()),returnierr); // m1addr should be unchanged
+	EPETRA_TEST_ERR(!(m1addr == m1.DataPtr()),returnierr); // m1addr should be unchanged
 	if(verbose) cout << "m2 destroyed. \nm1= " << m1count << "  " << m1addr << endl;
 
 	{ // inside of braces to test stack deallocation.
 		if(verbose) cout << "Assignment operator, post construction" << endl;
 		Epetra_LocalMap m3(NumMyElements, IndexBase+1, Comm);
 		int m3count = m3.ReferenceCount();
-		size_t m3addr = (size_t) m3.DataPtr(); // cast int* to int
+		const Epetra_BlockMapData* m3addr = m3.DataPtr();
 		EPETRA_TEST_ERR(!(m3count==1),returnierr); // m3count should be 1 initially
 		EPETRA_TEST_ERR(!(m1addr!=m3addr),returnierr); // m1 and m3 should have different ptr addresses
 		if(verbose) cout << "Prior to assignment: \nm1= " << m1count << "  " << m1addr 
 										 << "\nm3= " << m3count << "  " << m3addr << endl;
 		m3 = m1;
 		m3count = m3.ReferenceCount();
-		m3addr = (size_t) m3.DataPtr(); // cast int* to int
+		m3addr = m3.DataPtr(); // cast int* to int
 		m1countold = m1count;
 		m1count = m1.ReferenceCount();
 		EPETRA_TEST_ERR(!(m3count==m1count && m1count==m1countold+1),returnierr); // both counts should be 2
@@ -342,7 +342,7 @@ int checkLocalMapDataClass(Epetra_Comm& Comm, int verbose) {
 	m1countold = m1count;
 	m1count = m1.ReferenceCount();
 	EPETRA_TEST_ERR(!(m1count==m1countold-1), returnierr); // count should have decremented (to 1)
-	EPETRA_TEST_ERR(!(m1addr== (size_t) m1.DataPtr()),returnierr); // m1addr should be unchanged
+	EPETRA_TEST_ERR(!(m1addr== m1.DataPtr()),returnierr); // m1addr should be unchanged
 	if(verbose) cout << "m3 destroyed. \nm1= " << m1count << "  " << m1addr << endl;
 
 	return(returnierr);

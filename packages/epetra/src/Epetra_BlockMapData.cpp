@@ -29,16 +29,16 @@
 //#include "Epetra_ConfigDefs.h" //DATA_DEBUG
 
 //=============================================================================
-Epetra_BlockMapData::Epetra_BlockMapData(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm & Comm) : 
-  Comm_(Comm.Clone()),
-  Directory_(0),
-  NumGlobalElements_(NumGlobalElements),
-  IndexBase_(IndexBase),
-  ElementSize_(ElementSize),
-  LastContiguousGIDLoc_(0),
-  LIDHash_(0)
+Epetra_BlockMapData::Epetra_BlockMapData(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm & Comm) 
+	: Comm_(Comm.Clone()),
+		Directory_(0),
+		NumGlobalElements_(NumGlobalElements),
+		IndexBase_(IndexBase),
+		ElementSize_(ElementSize),
+		LastContiguousGIDLoc_(0),
+		LIDHash_(0)
 {
-	//cout << "--BMD created, addr: " << (int) this << endl; //DATA_DEBUG
+	//cout << "--BMD created, addr: " << this << endl; //DATA_DEBUG
 }
 
 //=============================================================================
@@ -55,5 +55,5 @@ Epetra_BlockMapData::~Epetra_BlockMapData() {
 		delete Comm_;
 		Comm_ = 0;
 	}
-	//cout << "--BMD destroyed, addr: " << (int) this << endl; //DATA_DEBUG
+	//cout << "--BMD destroyed, addr: " << this << endl; //DATA_DEBUG
 }

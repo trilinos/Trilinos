@@ -244,12 +244,14 @@ int main(int argc, char *argv[]) {
     delete SmallMap;
   }
 
-  delete [] ElementSizeList;
-  delete [] MyGlobalElements;
+  delete[] ElementSizeList;
+  delete[] MyGlobalElements;
   delete Map;
   delete Map1;
 	
 	// test reference counting
+	ierr = 0;
+
 	if (verbose) 
     cout << endl << endl
 				 << "*******************************************************************************************" << endl
@@ -258,49 +260,51 @@ int main(int argc, char *argv[]) {
 				 << endl;
 	Epetra_BlockMap b1(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm);
 	int b1count = b1.ReferenceCount();
-	size_t b1addr = (size_t) b1.DataPtr();
-	EPETRA_TEST_ERR(!(b1count==1),returnierr); // count should be 1
+	const Epetra_BlockMapData* b1addr = b1.DataPtr();
+	EPETRA_TEST_ERR(!(b1count==1),ierr); // count should be 1
 	if(verbose) cout << "Default constructor. \nb1= " << b1count << "  " << b1addr << endl;
 	
-	Epetra_BlockMap * b2 = new Epetra_BlockMap(b1);
+	Epetra_BlockMap* b2 = new Epetra_BlockMap(b1);
 	int b2count = b2->ReferenceCount();
-	size_t b2addr = (size_t) b2->DataPtr();
+	const Epetra_BlockMapData* b2addr = b2->DataPtr();
 	int b1countold = b1count;
 	b1count = b1.ReferenceCount();
-	EPETRA_TEST_ERR(!(b2count==b1count && b1count==(b1countold+1)),returnierr); // both counts should be 2
-	EPETRA_TEST_ERR(!(b1addr==b2addr),returnierr); // addresses should be same
+	EPETRA_TEST_ERR(!(b2count==b1count && b1count==(b1countold+1)),ierr); // both counts should be 2
+	EPETRA_TEST_ERR(!(b1addr==b2addr),ierr); // addresses should be same
 	if(verbose) cout << "Copy constructor. \nb1= " << b1count << "  " << b1addr << "\nb2= " << b2count << "  " << b2addr << endl;
 
 	delete b2;
 	b1countold = b1count;
 	b1count = b1.ReferenceCount();
-	EPETRA_TEST_ERR(!(b1count==b1countold-1), returnierr); // count should have decremented (to 1)
-	EPETRA_TEST_ERR(!(b1addr==(size_t)b1.DataPtr()),returnierr); // b1addr should be unchanged
+	EPETRA_TEST_ERR(!(b1count==b1countold-1), ierr); // count should have decremented (to 1)
+	EPETRA_TEST_ERR(!(b1addr==b1.DataPtr()), ierr); // b1addr should be unchanged
 	if(verbose) cout << "b2 destroyed. \nb1= " << b1count << "  " << b1addr << endl;
 
 	{ // inside of braces to test stack deallocation.
 		if(verbose) cout << "Assignment operator, post construction" << endl;
 		Epetra_BlockMap b3(NumGlobalElements, NumMyElements, ElementSize, IndexBase-1, Comm);
 		int b3count = b3.ReferenceCount();
-		size_t b3addr = (size_t) b3.DataPtr();
-		EPETRA_TEST_ERR(!(b3count==1),returnierr); // b3count should be 1 initially
-		EPETRA_TEST_ERR(!(b1addr!=b3addr),returnierr); // b1 and b3 should have different ptr addresses
+		const Epetra_BlockMapData* b3addr = b3.DataPtr();
+		EPETRA_TEST_ERR(!(b3count==1),ierr); // b3count should be 1 initially
+		EPETRA_TEST_ERR(!(b1addr!=b3addr),ierr); // b1 and b3 should have different ptr addresses
 		if(verbose) cout << "Prior to assignment: \nb1= " << b1count << "  " << b1addr << "\nb3= " << b3count << "  " << b3addr << endl;
 		b3 = b1;
 		b3count = b3.ReferenceCount();
-		b3addr = (size_t) b3.DataPtr();
+		b3addr = b3.DataPtr();
 		b1countold = b1count;
 		b1count = b1.ReferenceCount();
-		EPETRA_TEST_ERR(!(b3count==b1count && b1count==b1countold+1),returnierr); // both counts should be 2
-		EPETRA_TEST_ERR(!(b1addr==b3addr),returnierr); // addresses should be same
+		EPETRA_TEST_ERR(!(b3count==b1count && b1count==b1countold+1),ierr); // both counts should be 2
+		EPETRA_TEST_ERR(!(b1addr==b3addr),ierr); // addresses should be same
 		if(verbose) cout << "After assignment: \nb1= " << b1count << "  " << b1addr << "\nb3= " << b3count << "  " << b3addr << endl;
 	}
 	b1countold = b1count;
 	b1count = b1.ReferenceCount();
-	EPETRA_TEST_ERR(!(b1count==b1countold-1), returnierr); // count should have decremented (to 1)
-	EPETRA_TEST_ERR(!(b1addr==(size_t)b1.DataPtr()),returnierr); // b1addr should be unchanged
-	if(verbose) cout << "b3 destroyed. \nb1= " << b1count << "  " << b1addr << endl;
+	EPETRA_TEST_ERR(!(b1count==b1countold-1), ierr); // count should have decremented (to 1)
+	EPETRA_TEST_ERR(!(b1addr==b1.DataPtr()), ierr); // b1addr should be unchanged
+	if (verbose) cout << "b3 destroyed. \nb1= " << b1count << "  " << b1addr << endl;
 
+	EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && (ierr == 0)) cout << "Checked OK\n\n" <<endl;
 	// done with reference counting testing
 
 #ifdef EPETRA_MPI

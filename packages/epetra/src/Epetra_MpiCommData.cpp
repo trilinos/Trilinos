@@ -26,16 +26,16 @@
 //#include "Epetra_ConfigDefs.h" //DATA_DEBUG
 
 //=============================================================================
-Epetra_MpiCommData::Epetra_MpiCommData(MPI_Comm & Comm) :
-	Comm_(Comm),
-	curTag_(minTag_)
+Epetra_MpiCommData::Epetra_MpiCommData(MPI_Comm& Comm) 
+	: Comm_(Comm),
+		curTag_(minTag_)
 {
 	MPI_Comm_size(Comm, &size_);
 	MPI_Comm_rank(Comm, &rank_);
-	//cout << "--MCD created (dc), addr: " << (int) this << endl; //DATA_DEBUG
+	//cout << "--MCD created (dc), addr: " << this << endl; //DATA_DEBUG
 }
 
 //=============================================================================
 Epetra_MpiCommData::~Epetra_MpiCommData() {
-	//cout << "--MCD destroyed, addr: " << (int) this << endl; //DATA_DEBUG
+	//cout << "--MCD destroyed, addr: " << this << endl; //DATA_DEBUG
 }
