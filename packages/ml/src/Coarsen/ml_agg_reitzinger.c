@@ -27,6 +27,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   ML_Operator *SPn_mat;
   /*char filename[80];*/
 #endif
+#ifdef ENRICH
+  ML_Operator *TTtransPe;
+  ML_Operator *newPe;
+  double dtemp, beta = 2./3.;
+#endif
   struct ML_CSR_MSRdata *csr_data;
   int Nlevels_nodal, grid_level;
   int created_ag_obj = 0;
@@ -1139,6 +1144,42 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
         Pe->N_nonzeros = nz_ptr;
      }
+#ifdef ENRICH
+
+     /* ************************************************************************* */
+     /* Generate enriched smoothed prolongator                                    */
+     /* The idea is that we want to smooth the enriched prolongator:              */
+     /*      =  (I + alpha inv(diag(S))*S) * (I + beta inv(diag(T*T'))*(T*T'))    */
+     /*      =  (I + alpha inv(diag(S))*S + beta inv(diag(T*T'))*(T*T'))          */
+     /*      =  (I + alpha inv(diag(S))*S + T*T'*beta/2)                          */
+     /* ------------------------------------------------------------------------- */
+
+     if (beta != 0.0) {
+       if (ml_nodes->comm->ML_mypid == 0) 
+	 { printf("\n\nDoing enriched prolongator\n\n");fflush(stdout);}
+
+       TTtransPe = ML_Operator_Create(Pn_coarse->comm);
+       ML_rap((*Tmat_array)[grid_level+1], (*Tmat_trans_array)[grid_level+1], 
+	      Pe,TTtransPe,ML_CSR_MATRIX);
+
+       /* scale TTtransPe by -beta/2 */
+
+       dtemp = -beta/2;
+       csr_data = (struct ML_CSR_MSRdata *) TTtransPe->data;
+       for (i = 0; i < csr_data->rowptr[TTtransPe->outvec_leng]; i++)
+	 csr_data->values[i] *= dtemp;
+
+       newPe = ML_Operator_Create(ml_edges->comm);
+       ML_Operator_Add(Pe, TTtransPe, newPe);
+
+       ML_Operator_Destroy(&TTtransPe);
+
+       ML_Operator_Move2HierarchyAndDestroy_fragile(newPe,
+						    &(ml_edges->Pmat[grid_level]));
+     }
+
+#endif
+
 
     if (ag->print_flag < ML_Get_PrintLevel()) {
         Pe = &(ml_edges->Pmat[grid_level]);
