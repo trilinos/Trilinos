@@ -116,15 +116,6 @@ report($SUMMARY);
         $cwd = dirname($cwd);           # ?/Trilinos
         $options{'TRILINOS_DIR'} = ();
         push (@{$options{'TRILINOS_DIR'}}, $cwd);
-        
-        # detect frequency =====================================================
-        $options{'FREQUENCY'} = ();
-        my $date = `date`;
-        if ($date =~ m/sun/i) {
-            push (@{$options{'FREQUENCY'}}, "weekly");
-        } else {
-            push (@{$options{'FREQUENCY'}}, "daily");
-        }            
                 
         $reportCount = "000";          
         @optionsOrder = ();
@@ -236,13 +227,12 @@ report($SUMMARY);
 
         # grab flabs
         use Getopt::Std;
-        getopts("f:p:g:snthuek", \%flags);
+        getopts("f:p:g:snthuekw", \%flags);
         
-        # parse config file and exit
-        if ($flags{p}) {                         
-            parseConfig($flags{p});                  
-            validateOptions();        
-            exit;            
+        # print help and exit
+        if ($flags{h}) { 
+            printHelp();
+            exit;
         }
         
         # generate config file and exit
@@ -251,10 +241,19 @@ report($SUMMARY);
             exit;            
         }
         
-        # print help and exit
-        if ($flags{h}) { 
-            printHelp();
-            exit;
+        # parse config file and exit
+        if ($flags{p}) {                         
+            parseConfig($flags{p});                  
+            validateOptions();        
+            exit;            
+        }
+        
+        # detect if running weekly tests
+        $options{'FREQUENCY'} = ();
+        if ($flags{w}) {
+            push (@{$options{'FREQUENCY'}}, "weekly");
+        } else {
+            push (@{$options{'FREQUENCY'}}, "daily");
         }
         
         # nonsensical flags passed ---------------------------------------------
@@ -1887,6 +1886,9 @@ report($SUMMARY);
         print "             Trilinos/testharness/results (by default--see RESULTS_DIR\n";
         print "             option to change this).\n";
         print "\n";
+        print "  -wf FILE : Run tests in PACKAGE/test/scripts/weekly instead of the\n";
+        print "             default, PACKAGE/test/scripts/daily.\n";
+        print "\n";
         print "  -nf FILE : Run test harness with given test harness config file, but\n";
         print "             don't run tests (for cross-compiling machines)\n";
         print "\n";
@@ -1895,7 +1897,8 @@ report($SUMMARY);
         print "             compiling machines)\n";
         print "\n";
         print "  -kf FILE : Run test harness with given test harness config file, but\n";
-        print "             keep build directory intact--don't blow it away.\n";
+        print "             keep build directory intact--don't blow it away before\n";
+        print "             running.\n";
         print "\n";
         print "  -p FILE  : Parse given test harness config file and exit. This is useful\n";
         print "             for catching errors and inconsistencies without running the\n";
@@ -1915,6 +1918,9 @@ report($SUMMARY);
         print "  -h       : Print this help page and exit\n";
         print "\n";
         print "Notes:\n";
+        print "  - Some sensible combinations of flags will work: \"-ewf FILE\",\n";
+        print "    \"-twf FILE\", \"-kwf FILE\", \"-tkf FILE\", \"-ekf FILE\",\n";
+        print "    \"-ekwf FILE\", etc.\n";
         print "  - Options with FILE require a filename--absolute or relative to\n";
         print "    Trilinos/testharness.\n";
         print "  - For more information, see README in Trilinos/testharness\n";
@@ -2115,8 +2121,10 @@ report($SUMMARY);
             }         
         }         
         
-        # if MPIGO_CMD is specified, enforce one and only one trailing space and
-        # set environment variable so scripts can access it
+        # If MPIGO_CMD is specified, enforce one and only one trailing space and
+        # set environment variable so scripts can access it.
+        # NOTE: Setting the environment variable manually will not work--it will
+        # get overriden. Value must be set via the config file.
         if (defined $options{'MPIGO_CMD'} && defined $options{'MPIGO_CMD'}[0]) {
             $options{'MPIGO_CMD'}[0] =~ s/\s*$//;  # trim trailing spaces
             $options{'MPIGO_CMD'}[0] .= " ";       # append trailing space 
