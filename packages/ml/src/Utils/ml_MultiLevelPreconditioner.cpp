@@ -888,6 +888,35 @@ ComputePreconditioner(const bool CheckPreconditioner)
       ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
     }
 
+    // ========================================= //
+    // repartition of matrices                   //
+    // - the non-Maxwell only supports ParMETIS; //
+    // - parameter names are slightly different  //
+    //   (no node/edge in the name);             //
+    // ========================================= //
+    
+    if (List_.get("repartition: enable",false))
+    {
+
+#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
+      ML_Repartition_Activate(ml_);
+
+      double minmax = List_.get("repartition: min max ratio", 1.1);
+      ML_Repartition_Set_LargestMinMaxRatio(ml_,minmax);
+      int minperproc = List_.get("repartition: min per proc", 512);
+      ML_Repartition_Set_MinPerProc(ml_,minperproc);
+
+      ML_Repartition_Set_Partitioner(ml_,ML_USEPARMETIS);
+#else
+      if (verbose_)
+      {
+        cerr << ErrorMsg_ << "Option `repartition: enable' == `true' requires" << endl;
+        cerr << ErrorMsg_ << "ML to be compiled with support for ParMETIS." << endl;
+        cerr << ErrorMsg_ << "Now continuing without repatition." << endl;
+      }
+#endif
+    } 
+
   } else {
 
     // ====================================================================== //
@@ -1170,18 +1199,22 @@ ComputePreconditioner(const bool CheckPreconditioner)
       int NumDimensions  = 0;
 
       ML_Operator* AAA = &(ml_->Amat[LevelID_[0]]);
-      if (NumPDEEqns_ != 1)
-        ML_Operator_AmalgamateAndDropWeak(AAA, NumPDEEqns_, 0.);
 
-      int n = AAA->invec_leng, Nghost;
+      int n = AAA->invec_leng, Nghost = 0;
 
-      if (AAA->getrow->pre_comm == NULL)
-        Nghost = 0;
-      else {
+      if (AAA->getrow->pre_comm) 
+      {
         if (AAA->getrow->pre_comm->total_rcv_length <= 0)
           ML_CommInfoOP_Compute_TotalRcvLength(AAA->getrow->pre_comm);
         Nghost = AAA->getrow->pre_comm->total_rcv_length;
       }
+
+      vector<double> tmp(Nghost + n);
+      for (int i = 0 ; i < Nghost + n ; ++i)
+        tmp[i] = 0.0;
+
+      n /= NumPDEEqns_;
+      Nghost /= NumPDEEqns_;
 
       if (in_x_coord) 
       {
@@ -1189,10 +1222,16 @@ ComputePreconditioner(const bool CheckPreconditioner)
         double* x_coord;
         ML_memory_alloc((void**)&x_coord, sizeof(double) * (Nghost + n),
                            "x_coord");
-        for (int i = 0 ; i < n ; ++i)
-          x_coord[i] = in_x_coord[i];
 
-        ML_exchange_bdry(x_coord,AAA->getrow->pre_comm,n, AAA->comm, ML_OVERWRITE,NULL);
+        for (int i = 0 ; i < n ; ++i)
+            tmp[i * NumPDEEqns_] = in_x_coord[i];
+
+        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
+                         AAA->comm, ML_OVERWRITE,NULL);
+
+        for (int i = 0 ; i < n + Nghost ; ++i)
+            x_coord[i] = tmp[i * NumPDEEqns_];
+
         ml_->Amat[LevelID_[0]].grid_info->x = x_coord;
       }
 
@@ -1200,12 +1239,18 @@ ComputePreconditioner(const bool CheckPreconditioner)
       {
         NumDimensions++;
         double* y_coord;
-        ML_memory_alloc((void**)&y_coord, sizeof(double) * (Nghost + n),
+        ML_memory_alloc((void**)&y_coord, sizeof(double) * NumPDEEqns_ * (Nghost + n),
                         "y_coord");
-        for (int i = 0 ; i < n ; ++i)
-          y_coord[i] = in_y_coord[i];
 
-        ML_exchange_bdry(y_coord,AAA->getrow->pre_comm,n, AAA->comm, ML_OVERWRITE,NULL);
+        for (int i = 0 ; i < n ; ++i)
+            tmp[i * NumPDEEqns_] = in_y_coord[i];
+
+        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
+                         AAA->comm, ML_OVERWRITE,NULL);
+
+        for (int i = 0 ; i < n + Nghost ; ++i)
+            y_coord[i] = tmp[i * NumPDEEqns_];
+
         ml_->Amat[LevelID_[0]].grid_info->y = y_coord;
       }
 
@@ -1213,24 +1258,26 @@ ComputePreconditioner(const bool CheckPreconditioner)
       {
         NumDimensions++;
         double* z_coord;
-        ML_memory_alloc((void**)&z_coord, sizeof(double) * (Nghost + n),
+        ML_memory_alloc((void**)&z_coord, sizeof(double) * NumPDEEqns_ * (Nghost + n),
                         "z_coord");
-        for (int i = 0 ; i < n ; ++i)
-          z_coord[i] = in_z_coord[i];
 
-        ML_exchange_bdry(z_coord,AAA->getrow->pre_comm,n,
+        for (int i = 0 ; i < n ; ++i)
+            tmp[i * NumPDEEqns_] = in_z_coord[i];
+
+        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
                          AAA->comm, ML_OVERWRITE,NULL);
+
+        for (int i = 0 ; i < n + Nghost ; ++i)
+            z_coord[i] = tmp[i * NumPDEEqns_];
+
         ml_->Amat[LevelID_[0]].grid_info->z = z_coord;
       }
 
       ml_->Amat[LevelID_[0]].grid_info->Ndim = NumDimensions;
-      
-      if (NumPDEEqns_ != 1)
-        ML_Operator_UnAmalgamateAndDropWeak(AAA, NumPDEEqns_, 0.);
-
       ml_->Amat[LevelID_[0]].aux_data->threshold = Threshold;
       ml_->Amat[LevelID_[0]].aux_data->enable = 1;
       ml_->Amat[LevelID_[0]].aux_data->max_level = MaxAuxLevels;
+      ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
     }
 
     Time.ResetStartTime();
@@ -2082,8 +2129,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
          // projected for ALL levels independently of the 
          // aggregation scheme.
 
-         double * coord = List_.get("aggregation: coordinates",
-                        (double *)0);
+         double * coord = List_.get("aggregation: coordinates", (double *)0);
          int NumDimensions = List_.get("aggregation: dimensions", 0);
 
          ML_Aggregate_Set_NodalCoordinates(ml_, agg_, coord);

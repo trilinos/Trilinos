@@ -2219,9 +2219,11 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   double* new_y_coord = NULL;
   double* new_z_coord = NULL;
   int PDEs = Cmat->num_PDEs;
-  int Nghost;
+  int Nghost, i;
   ML_Operator* Rmat;
   char name[80];
+  int size_old, size_new;
+  double* tmp_old,* tmp_new;
 
   if (Pmat->getrow->func_ptr != CSR_getrow) 
   {
@@ -2242,10 +2244,20 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     exit(EXIT_FAILURE);
   }
   
-  ML_Operator_AmalgamateAndDropWeak(Pmat, PDEs, 0.);
-  /* ML_Operator_ImplicitTranspose(Pmat,Rmat,ML_FALSE); */
   Rmat = ML_Operator_Create(Pmat->comm);
+#if 0
   ML_Operator_Transpose(Pmat,Rmat);
+#else
+  ML_CommInfoOP_TransComm(Pmat->getrow->pre_comm,&(Rmat->getrow->post_comm),
+			    Pmat->invec_leng);
+
+  ML_Operator_Set_ApplyFuncData(Rmat, Pmat->outvec_leng,
+                                Pmat->invec_leng, 
+                                Pmat->data, -1, CSR_trans_matvec, 0);
+
+  Rmat->getrow->func_ptr = NULL;
+  Rmat->data_destroy = NULL;
+#endif
 
   if (Cmat->getrow->pre_comm == NULL)
     Nghost = 0;
@@ -2255,69 +2267,75 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     Nghost = Cmat->getrow->pre_comm->total_rcv_length;
   }
   
-  /*
-   * I need to amalgamate Cmat because I need to exchange
-   * the coordinates of x_coord and the others for external
-   * nodes (even if they will not be used too much in the code)
-   */
+  size_old = Rmat->invec_leng + 1;
+  size_new = Rmat->outvec_leng + Nghost + 1;
+  tmp_old = (double*) ML_allocate(sizeof(double) * size_old);
+  tmp_new = (double*) ML_allocate(sizeof(double) * size_new);
 
-  ML_Operator_AmalgamateAndDropWeak(Cmat, PDEs, 0.);
+  for (i = 0 ; i < size_old ; ++i)
+    tmp_old[i] = 0.0;
 
   if (Amat->grid_info->x!= NULL) 
   {
-    sprintf(name, "x_coord_%d", Rmat->outvec_leng + Nghost);
-    ML_memory_alloc((void**)&new_x_coord, sizeof(double)*(Rmat->outvec_leng + Nghost + 1),
-                    name);
-    ML_Operator_Apply(Rmat, Rmat->invec_leng, Amat->grid_info->x, Rmat->outvec_leng,
-                      new_x_coord);
-    if (Cmat->grid_info->x) 
-    {
-      ML_memory_free((void**)&(Cmat->grid_info->x));
-      Cmat->grid_info->x = NULL;
-    }
-    ML_exchange_bdry(new_x_coord,Cmat->getrow->pre_comm,Cmat->outvec_leng,
+    for (i = 0 ; i < Rmat->invec_leng ; i+=PDEs)
+      tmp_old[i] = Amat->grid_info->x[i / PDEs];
+
+    ML_Operator_Apply(Rmat, Rmat->invec_leng, tmp_old, Rmat->outvec_leng, tmp_new);
+
+    sprintf(name, "x_coord_%d", size_new / PDEs);
+    ML_memory_alloc((void**)&new_x_coord, sizeof(double) * (size_new / PDEs + 1), name);
+
+    ML_exchange_bdry(tmp_new,Cmat->getrow->pre_comm,Cmat->outvec_leng,
                      Cmat->comm, ML_OVERWRITE,NULL);
+
+    for (i = 0 ; i < size_new ; i+=PDEs)
+      new_x_coord[i / PDEs] = tmp_new[i];
+
     Cmat->grid_info->x = new_x_coord;
   }
 
   if (Amat->grid_info->y != NULL) 
   {
-    sprintf(name, "y_coord_%d", Rmat->outvec_leng + Nghost);
-    ML_memory_alloc((void**)&new_y_coord, sizeof(double)*(Rmat->outvec_leng + Nghost + 1),
-                    name);
-    ML_Operator_Apply(Rmat, Rmat->invec_leng, Amat->grid_info->y, Rmat->outvec_leng,
-                      new_y_coord);
-    if (Cmat->grid_info->y)
-    {
-      ML_memory_free((void**)&(Cmat->grid_info->y));
-      Cmat->grid_info->y= NULL;
-    }
-    ML_exchange_bdry(new_y_coord,Cmat->getrow->pre_comm,Cmat->outvec_leng,
+    for (i = 0 ; i < Rmat->invec_leng ; i+=PDEs)
+      tmp_old[i] = Amat->grid_info->y[i / PDEs];
+
+    ML_Operator_Apply(Rmat, Rmat->invec_leng, tmp_old, Rmat->outvec_leng, tmp_new);
+
+    sprintf(name, "y_coord_%d", size_new / PDEs);
+    ML_memory_alloc((void**)&new_y_coord, sizeof(double) * (size_new / PDEs + 1), name);
+
+    ML_exchange_bdry(tmp_new,Cmat->getrow->pre_comm,Cmat->outvec_leng,
                      Cmat->comm, ML_OVERWRITE,NULL);
+
+    for (i = 0 ; i < size_new ; i+=PDEs)
+      new_y_coord[i / PDEs] = tmp_new[i];
+
     Cmat->grid_info->y = new_y_coord;
   }
 
   if (Amat->grid_info->z != NULL) 
   {
-    sprintf(name, "z_coord_%d", Rmat->outvec_leng + Nghost);
-    ML_memory_alloc((void**)&new_z_coord, sizeof(double)*(Rmat->outvec_leng + Nghost + 1),
-                    name);
-    ML_Operator_Apply(Rmat, Rmat->invec_leng, Amat->grid_info->z, Rmat->outvec_leng,
-                      new_z_coord);
-    if (Cmat->grid_info->z) 
-    {
-      ML_memory_free((void**)&(Cmat->grid_info->z));
-      Cmat->grid_info->z = NULL;
-    }
-    ML_exchange_bdry(new_y_coord,Cmat->getrow->pre_comm,Cmat->outvec_leng,
+    for (i = 0 ; i < Rmat->invec_leng ; i+=PDEs)
+      tmp_old[i] = Amat->grid_info->z[i / PDEs];
+
+    ML_Operator_Apply(Rmat, Rmat->invec_leng, tmp_old, Rmat->outvec_leng, tmp_new);
+
+    sprintf(name, "z_coord_%d", size_new / PDEs);
+    ML_memory_alloc((void**)&new_z_coord, sizeof(double) * (size_new / PDEs + 1), name);
+
+    ML_exchange_bdry(tmp_new,Cmat->getrow->pre_comm,Cmat->outvec_leng,
                      Cmat->comm, ML_OVERWRITE,NULL);
+
+    for (i = 0 ; i < size_new ; i+=PDEs)
+      new_z_coord[i / PDEs] = tmp_new[i];
+
     Cmat->grid_info->z = new_z_coord;
   }
 
-  Cmat->grid_info->Ndim = Amat->grid_info->Ndim;
+  ML_free(tmp_old);
+  ML_free(tmp_new);
 
-  ML_Operator_UnAmalgamateAndDropWeak(Pmat, PDEs, 0.);
-  ML_Operator_UnAmalgamateAndDropWeak(Cmat, PDEs, 0.);
+  Cmat->grid_info->Ndim = Amat->grid_info->Ndim;
 
   if (0 && PDEs == 1)
     Pmat->getrow->func_ptr = CSR_getrow;
