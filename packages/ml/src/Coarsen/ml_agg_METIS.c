@@ -479,7 +479,7 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
 
   t0 = GetClock();
 
-  if ( mypid == 0 &&  ML_Get_PrintLevel() > 8 ) {
+  if ( mypid == 0 &&  ML_Get_PrintLevel() > 7 ) {
     
     printf("Entering METIS reordering (level %d)\n",
 	   level );
@@ -650,7 +650,7 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
   nbytes_max = ML_gmax_int( nbytes, comm );
   nbytes = ML_gsum_int( nbytes, comm);
   
-  if( mypid == 0 &&  ML_Get_PrintLevel() > 8 ) {
+  if( mypid == 0 &&  ML_Get_PrintLevel() > 7 ) {
    
     printf("METIS reordering (level %d) estimated required mem = %d Kb\n"
 	   "METIS reordering (level %d) max estimated mem = %d Kb\n",
@@ -1098,7 +1098,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   nbytes_max = ML_gmax_int( nbytes, comm );
   nbytes = ML_gsum_int( nbytes, comm);
 
-  if( Amatrix->comm->ML_mypid == 0 &&  ML_Get_PrintLevel() > 8 ) {
+  if( Amatrix->comm->ML_mypid == 0 &&  ML_Get_PrintLevel() > 7 ) {
    
     printf("%s Estimated required mem for METIS = %d Kb\n"
 	   "%s Max estimated mem for METIS = %d Kb\n",
@@ -1194,7 +1194,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   
   t0 = GetClock() - t0;
 
-  if ( comm->ML_mypid == 0 &&  ML_Get_PrintLevel() > 8 ) {
+  if ( comm->ML_mypid == 0 &&  ML_Get_PrintLevel() > 7 ) {
    
     printf("%s Time to partition graph = %e (s)\n",
 	   str,
@@ -1319,7 +1319,7 @@ int agg_offset, vertex_offset;
    epsilon = ml_ag->curr_threshold;
    ml_ag->curr_threshold *= 0.5;
 
-   if ( mypid == 0 && printflag < ML_Get_PrintLevel())
+   if ( mypid == 0 && 7 < ML_Get_PrintLevel())
    {
       printf("%s current eps = %e\n",
 	     str,
@@ -1413,7 +1413,7 @@ int agg_offset, vertex_offset;
      case ML_NUM_LOCAL_AGGREGATES:
 
        aggr_count = aggr_options[ml_ag->cur_level].Naggregates_local;
-       if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+       if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
 	 printf( "%s Objective : %d local (block) aggregates (on proc 0)\n",
 		 str,
 		 aggr_count );
@@ -1423,7 +1423,7 @@ int agg_offset, vertex_offset;
      case ML_NUM_GLOBAL_AGGREGATES:
        
        aggr_count = aggr_options[ml_ag->cur_level].Naggregates_global;
-       if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+       if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
 	 printf( "%s Objective : %d global aggregates\n",
 		 str,
 		 aggr_count );
@@ -1469,7 +1469,7 @@ int agg_offset, vertex_offset;
        
        aggr_count = aggr_options[ml_ag->cur_level].Nnodes_per_aggregate;
 
-       if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+       if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
 	 printf( "%s Objective : %d nodes per aggregate\n",
 		 str,
 		 aggr_count );
@@ -1482,7 +1482,7 @@ int agg_offset, vertex_offset;
 	 aggr_count = Nrows/OPTIMAL_VALUE;
 	 if( aggr_count == 0 ) aggr_count = 1;
 	 
-	 if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+	 if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
 	   fprintf( stderr,
 		    "*ML*WRN* # (block) nodes per (block) aggregate (%d) > # (block) nodes (%d)\n"
 		    "*ML*WRN* (on proc 0). Now proceeding with aggr_count = %d\n",
@@ -1506,7 +1506,7 @@ int agg_offset, vertex_offset;
        i = aggr_count;
 #endif
        
-       if ( mypid == 0 && 8 < ML_Get_PrintLevel() )  {
+       if ( mypid == 0 && 7 < ML_Get_PrintLevel() )  {
 	 printf("%s avg %f (block) aggr/process\n",
 		str,
 		1.0*i/Nprocs );
@@ -1578,7 +1578,7 @@ int agg_offset, vertex_offset;
    j = aggr_count;
 #endif
 
-   if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+   if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
      printf("%s Using %d (block) aggregates (globally)\n",
 	    str,
 	    j );
@@ -1596,7 +1596,7 @@ int agg_offset, vertex_offset;
    }
    */
    j = ML_gsum_int( aggr_count, comm );
-   if ( mypid == 0 && 8 < ML_Get_PrintLevel() )  {
+   if ( mypid == 0 && 7 < ML_Get_PrintLevel() )  {
      printf("%s %d (block) aggregates (globally)\n",
 	    str,
 	    j );
@@ -1644,7 +1644,7 @@ int agg_offset, vertex_offset;
    total_nz = ML_Comm_GsumInt( comm, total_nz);
    i = ML_Comm_GsumInt( comm, Nrows);
 
-   if ( mypid == 0 && 8 < ML_Get_PrintLevel())
+   if ( mypid == 0 && 7 < ML_Get_PrintLevel())
      printf("%s Total (block) nnz = %d ( = %5.2f/(block)row)\n",
 	    str,
 	    total_nz,1.0*total_nz/i);

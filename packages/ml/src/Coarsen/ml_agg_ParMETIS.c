@@ -831,7 +831,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   
   t0 = GetClock() - t0;
 
-  if ( mypid == 0 &&  ML_Get_PrintLevel() > 8 ) {
+  if ( mypid == 0 &&  ML_Get_PrintLevel() > 7 ) {
    
     printf("ParMETIS (level %d) : time required = %e\n",
 	   current_level,
@@ -984,7 +984,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    epsilon = ml_ag->curr_threshold;
    ml_ag->curr_threshold *= 0.5;
 
-   if ( mypid == 0 && printflag < ML_Get_PrintLevel() )
+   if ( mypid == 0 && 8 < ML_Get_PrintLevel() )
    {
       printf("%s current eps = %e\n",
 	     str,
@@ -1101,7 +1101,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
      case ML_NUM_LOCAL_AGGREGATES:
        i = aggr_options[ml_ag->cur_level].Naggregates_local;
-       if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+       if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
 	 printf( "%s Requested %d local aggregates (on proc 0)\n",
 		 str,
 		 i );
@@ -1116,7 +1116,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      case ML_NUM_GLOBAL_AGGREGATES:
 
        starting_aggr_count = aggr_options[ml_ag->cur_level].Naggregates_global;
-       if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+       if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
 	 printf( "%s Requested %d global aggregates\n",
 		 str,
 		 starting_aggr_count );
@@ -1128,7 +1128,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
        starting_aggr_count = aggr_options[ml_ag->cur_level].Nnodes_per_aggregate;
 
-       if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+       if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
 	 printf( "%s Requested %d nodes per aggregate\n",
 		 str,
 		 starting_aggr_count );
@@ -1141,12 +1141,14 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	 starting_aggr_count = Nrows/OPTIMAL_VALUE;
 	 if( starting_aggr_count == 0) starting_aggr_count = 1;
 	 
-	 if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+	 if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
 	   fprintf( stderr,
-		    "*ML*WRN* # nodes per aggregate (%d) > # nodes (%d)\n"
-		    "*ML*WRN* now proceeding with # aggregates = %d\n",
+		    "%s WARNING : # nodes per aggregate (%d) > # nodes (%d)\n"
+		    "%s WARNING : now proceeding with # aggregates = %d\n",
+		    str,
 		    i,
 		    Nrows,
+		    str,
 		    starting_aggr_count);
 	 }
 
@@ -1195,12 +1197,12 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      exit( EXIT_FAILURE );
    }
    
-   if( mypid == 0 && 8 < ML_Get_PrintLevel() ) 
+   if( mypid == 0 && 7 < ML_Get_PrintLevel() ) 
      printf("%s Using %d aggregates (globally)\n",
 	    str,
 	    starting_aggr_count );
 
-     if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+     if( mypid == 0 && 7 < ML_Get_PrintLevel() ) {
      printf("%s # aggre/ # (block) rows = %7.3f %%  (= %d/%d)\n",
 	    str,
 	    100.0*starting_aggr_count/Nrows_global,
