@@ -180,8 +180,9 @@ user_return_owned_nodes, NULL);&nbsp;&nbsp;</TT>&nbsp;
 <BR><TT>}&nbsp;</TT>&nbsp;
 
 <P><TT>void user_return_owned_nodes(void *data,&nbsp;&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID *global_ids, LB_LID *local_ids,
-int *ierr)&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID *global_ids, LB_LID *local_ids,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; int wgt_dim, float *obj_wgts,</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; int *ierr)&nbsp;</TT>&nbsp;
 <BR><TT>{&nbsp;</TT>&nbsp;
 <BR><TT>int i;&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; /* <I>return global node numbers as global_ids.</I>
@@ -352,8 +353,9 @@ user_return_owned_nodes, NULL);&nbsp;</TT>&nbsp;
 <BR><TT>}</TT>&nbsp;
 
 <P><TT>void user_return_owned_nodes(void *data,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID *global_ids, LB_LID *local_ids,
-int *ierr)</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID *global_ids, LB_LID *local_ids,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; int wgt_dim, float *obj_wgts,</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; int *ierr)&nbsp;</TT>&nbsp;
 <BR><TT>{</TT>&nbsp;
 <BR><TT>int i;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; /* <I>return global node numbers as global_ids.</I>
@@ -537,8 +539,9 @@ user_return_owned_nodes, <FONT COLOR="#FF0000">&amp;mesh</FONT>);&nbsp;</TT>&nbs
 <BR><TT>}</TT>&nbsp;
 
 <P><TT>void user_return_owned_nodes(void *data,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID *global_ids, LB_LID *local_ids,
-int *ierr)</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID *global_ids, LB_LID *local_ids,</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; int wgt_dim, float *obj_wgts,</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; int *ierr)&nbsp;</TT>&nbsp;
 <BR><TT>{</TT>&nbsp;
 <BR><TT>int i;&nbsp;</TT>&nbsp;
 <BR><TT><FONT COLOR="#FF0000">/* <I>cast data pointer to type Mesh_Type.</I>
