@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
   // read the Epetra_RowMatrix
   sprintf(filename,"%s/data_matrix.txt",argv[1]);
   Epetra_CrsMatrix* Afine = Epetra_ML_readaztecmatrix(filename,*map,comm);
-     
+  exit(0);   
      
 
 #ifdef HAVE_MPI
