@@ -446,7 +446,7 @@ int AZ_block_MSR(int **param_bindx, double **param_val,
    val   = *param_val;
 
    allocated  = (int     ) (((double)(bindx[N_update]+5))*1.2);
-   block_list = (int    *) AZ_allocate( 300*sizeof(int));
+   block_list = (int    *) AZ_allocate( N_update*sizeof(int));
 
    newbindx   = (int    *) AZ_allocate( allocated*sizeof(int));
    newval     = (double *) AZ_allocate( allocated*sizeof(double));
