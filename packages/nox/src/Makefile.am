@@ -225,11 +225,13 @@ STATUSTEST = \
 UTILS_H = \
 	$(srcdir)/NOX_Utils.H \
         $(srcdir)/NOX_SharedObjectTemplate.H \
-	$(srcdir)/NOX_Random.H
+	$(srcdir)/NOX_Random.H \
+        $(srcdir)/NOX_Version.H
 
 UTILS = \
 	$(srcdir)/NOX_Utils.C \
-	$(srcdir)/NOX_Random.C
+	$(srcdir)/NOX_Random.C \
+        $(srcdir)/NOX_Version.C
 
 if BUILD_NOX_MULTIVECS
 

@@ -45,3 +45,4 @@
 #include "NOX_StatusTest_Stagnation.H"
 #include "NOX_StatusTest_Divergence.H"
 #include "NOX_Utils.H"
+#include "NOX_Version.H"
