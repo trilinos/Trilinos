@@ -33,10 +33,8 @@ set nem_pdisk = (1 2 2) # parallel disk info
 # Hypergraph problems to run, and methods to use
 set hg_name = (ibm01 ibm02 ibm03 ibm04 ibm05 ibm06 ibm07 ibm08 ibm09 ibm10 \
                ibm11 ibm12 ibm13 ibm14 ibm15 ibm16 ibm17 ibm18)
-#set hg_name = (ibm01 ibm02 ibm03 ibm04 ibm05 ibm06 ibm07)
-#set hg_methods = (mxm rrm rem rhm grm lhm pgm gm2 rm2 gm3 gm4 mxp rep rhp grp \
-#                  lhp rrp pgp mxg reg rhg grg rrg ipm)
-set hg_methods = (mxm rem rhm grm lhm pgm gm2 gm3 gm4 mxg reg rhg grg ipm)
+set hg_methods = (mxm rrm rem rhm grm lhm pgm gm2 rm2 gm3 gm4 mxp rep rhp grp \
+                  lhp rrp pgp mxg reg rhg grg rrg ipm)
 
 # Set default options
 set out_tag = out
