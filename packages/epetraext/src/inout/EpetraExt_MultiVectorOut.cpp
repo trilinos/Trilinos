@@ -25,7 +25,7 @@
 // 
 // ************************************************************************
 //@HEADER
-#include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_MultiVectorOut.h"
 #include "EpetraExt_mmio.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -39,30 +39,29 @@
 using namespace EpetraExt;
 namespace EpetraExt {
 
-int RowMatrixToMatlabFile( const char *filename, const Epetra_RowMatrix & A) {
+int MultiVectorToMatlabFile( const char *filename, const Epetra_MultiVector & A) {
 
   // Simple wrapper to make it clear what can be used to write to Matlab format
-  return(RowMatrixToMatrixMarketFile(filename, A, 0, 0, false));
+  return(MultiVectorToMatrixMarketFile(filename, A, 0, 0, false));
 }
 
-int RowMatrixToMatrixMarketFile( const char *filename, const Epetra_RowMatrix & A, 
+int MultiVectorToMatrixMarketFile( const char *filename, const Epetra_MultiVector & A, 
 				 const char * matrixName,
 				 const char *matrixDescription, 
 				 bool writeHeader) {
-  int M = A.NumGlobalRows();
-  int N = A.NumGlobalCols();
-  int nz = A.NumGlobalNonzeros();
+  int M = A.NumVectors();
+  int N = A.GlobalLength();
 
   FILE * handle = 0;
 
-  if (A.RowMatrixRowMap().Comm().MyPID()==0) { // Only PE 0 does this section
+  if (A.Map().Comm().MyPID()==0) { // Only PE 0 does this section
 
     handle = fopen(filename,"w");
     if (!handle) return(-1);
     MM_typecode matcode;
     mm_initialize_typecode(&matcode);
     mm_set_matrix(&matcode);
-    mm_set_coordinate(&matcode);
+    mm_set_array(&matcode);
     mm_set_real(&matcode);
 
     if (writeHeader==true) { // Only write header if requested (true by default)
@@ -72,25 +71,25 @@ int RowMatrixToMatrixMarketFile( const char *filename, const Epetra_RowMatrix & 
       if (matrixName!=0) fprintf(handle, "%% \n%% %s\n", matrixName);
       if (matrixDescription!=0) fprintf(handle, "%% %s\n%% \n", matrixDescription);
       
-      if (mm_write_mtx_crd_size(handle, M, N, nz)) return(-1);
+      if (mm_write_mtx_array_size(handle, M, N)) return(-1);
     }
   }
     
-  if (RowMatrixToHandle(handle, A)) return(-1); // Everybody calls this routine
+  if (MultiVectorToHandle(handle, A)) return(-1); // Everybody calls this routine
 
-  if (A.RowMatrixRowMap().Comm().MyPID()==0) // Only PE 0 opened a file
+  if (A.Map().Comm().MyPID()==0) // Only PE 0 opened a file
     if (fclose(handle)) return(-1);
   return(0);
 }
 
-int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A) {
+int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A) {
 
-  Epetra_Map map = A.RowMatrixRowMap();
+  Epetra_Map map = A.Map();
   const Epetra_Comm & comm = map.Comm();
   int numProc = comm.NumProc();
 
   if (numProc==1)
-    writeRowMatrix(handle, A);
+    writeMultiVector(handle, A);
   else {
     int numRows = map.NumMyElements();
     
@@ -99,7 +98,7 @@ int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A) {
     Epetra_IntVector allGids(allGidsMap);
     for (int i=0; i<numRows; i++) allGids[i] = map.GID(i);
     
-    // Now construct a RowMatrix on PE 0 by strip-mining the rows of the input matrix A.
+    // Now construct a MultiVector on PE 0 by strip-mining the rows of the input matrix A.
     int numChunks = numProc;
     int stripSize = allGids.GlobalLength()/numChunks;
     int remainder = allGids.GlobalLength()%numChunks;
@@ -128,40 +127,32 @@ int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A) {
       // The following import map will be non-trivial only on PE 0.
       Epetra_Map importMap(-1, importGids.MyLength(), importGids.Values(), 0, comm);
       Epetra_Import importer(importMap, map);
-      Epetra_CrsMatrix importA(Copy, importMap, 0);
+      Epetra_MultiVector importA(importMap, A.NumVectors());
       if (importA.Import(A, importer, Insert)) return(-1); 
-      if (importA.FillComplete()) return(-1);
 
       // Finally we are ready to write this strip of the matrix to ostream
-      if (writeRowMatrix(handle, importA)) return(-1);
+      if (writeMultiVector(handle, importA)) return(-1);
     }
   }
   return(0);
 }
-int writeRowMatrix(FILE * handle, const Epetra_RowMatrix & A) {
+int writeMultiVector(FILE * handle, const Epetra_MultiVector & A) {
 
+  // The multivector will be written to file in transpose form, so that
+ //  we can write all contributions from a processor at once
   int ierr = 0;
-  int numRows = A.NumGlobalRows();
-  Epetra_Map rowMap = A.RowMatrixRowMap();
-  Epetra_Map colMap = A.RowMatrixColMap();
-  const Epetra_Comm & comm = rowMap.Comm();
+  int length = A.GlobalLength();
+  int numVectors = A.NumVectors();
+  const Epetra_Comm & comm = A.rowMap.Comm();
   if (comm.MyPID()!=0) {
-    if (A.NumMyRows()!=0) ierr = -1;
-    if (A.NumMyCols()!=0) ierr = -1;
+    if (A.MyLength()!=0) ierr = -1;
   }
   else {
-    if (numRows!=A.NumMyRows()) ierr = -1;
-    Epetra_SerialDenseVector values(A.MaxNumEntries());
-    Epetra_IntSerialDenseVector indices(A.MaxNumEntries());
-    for (int i=0; i<numRows; i++) {
-      int I = rowMap.GID(i) + 1;
-      int numEntries;
-      if (A.ExtractMyRowCopy(i, values.Length(), numEntries, 
-			     values.Values(), indices.Values())) return(-1);
-      for (int j=0; j<numEntries; j++) {
-	int J = colMap.GID(indices[j]) + 1;
-	double val = values[j];
-	fprintf(handle, "%d %d %22.16e\n", I, J, val);
+    if (length!=A.MyLength()) ierr = -1;
+    for (int i=0; i<length; i++) {
+      for (int j=0; j<numVectors; j++) {
+	double val = A[j][i];
+	fprintf(handle, "%22.16e\n", val);
       }
     }
   }

@@ -248,10 +248,8 @@ int mm_read_mtx_array_size(FILE *f, int *M, int *N)
 
 int mm_write_mtx_array_size(FILE *f, int M, int N)
 {
-    if (fprintf(f, "%d %d\n", M, N) != 2)
-        return MM_COULD_NOT_WRITE_FILE;
-    else 
-        return 0;
+    fprintf(f, "%d %d\n", M, N);
+    return 0;
 }
 
 

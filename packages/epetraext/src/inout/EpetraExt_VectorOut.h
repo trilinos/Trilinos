@@ -26,11 +26,11 @@
 // ************************************************************************
 //@HEADER
 #include <stdio.h>
-#include "Epetra_RowMatrix.h"
+#include "Epetra_Vector.h"
 namespace EpetraExt {
  
-  //! Writes an Epetra_RowMatrix object to a Matrix Market format file
-  /*! This function takes any matrix that implements the Epetra_RowMatrix interface and writes it
+  //! Writes an Epetra_Vector object to a Matrix Market format file
+  /*! This function takes any matrix that implements the Epetra_Vector interface and writes it
       to the specified file.  The matrix can be distributed or serial.  The user can provide
       a strings containing the matrix name, a matrix description, and specify that header information
       should or should not be printed to the file.
@@ -40,8 +40,8 @@ namespace EpetraExt {
 		      followed by the matrix coefficients.  The file will contain a row for each matrix entry
 		      The first column is the global row index, using base 1, the second column is the global
 		      column index of the entry, the third value is the matrix value for that entry.
-      \param A (In) An Epetra_RowMatrix Object containing the user matrix to be dumped to file.  Any object
-                    that implements the Epetra_RowMatrix interface can be passed in.  In particular, the 
+      \param A (In) An Epetra_Vector Object containing the user matrix to be dumped to file.  Any object
+                    that implements the Epetra_Vector interface can be passed in.  In particular, the 
 		    Epetra_CrsMatrix, Epetra_VbrMatrix, Epetra_FECrsMatrix, Epetra_FEVbrMatrix and Epetra_MsrMatrix
 		    classes are compatible with this interface.
       \param matrixName (In) A C-style string pointer to a name that will be stored in the comment field of the file.
@@ -55,15 +55,15 @@ namespace EpetraExt {
       \return Returns 0 if no error, -1 if any problems with file system.
 
   */
-  int RowMatrixToMatrixMarketFile( const char *filename, const Epetra_RowMatrix & A, 
+  int VectorToMatrixMarketFile( const char *filename, const Epetra_Vector & A, 
 				   const char * matrixName=0,
 				   const char *matrixDescription=0, 
 				   bool writeHeader=true);
 
-  //! Writes an Epetra_RowMatrix object to a file that is compatible with Matlab.
-  /*! This function takes any matrix that implements the Epetra_RowMatrix interface and writes it
+  //! Writes an Epetra_Vector object to a file that is compatible with Matlab.
+  /*! This function takes any matrix that implements the Epetra_Vector interface and writes it
       to the specified file.  The matrix can be distributed or serial.  This function is a convenience wrapper 
-      around RowMatrixToMatrixMarketFile.  The following Matlab commands can be used to read the resulting file
+      around VectorToMatrixMarketFile.  The following Matlab commands can be used to read the resulting file
       and convert to it to a Matlab sparse matrix:
       <ol>
       <li> load \e filename;
@@ -80,35 +80,35 @@ namespace EpetraExt {
                       it will be deleted.  On exit, this file will contain a row for each matrix entry
 		      The first column is the global row index, using base 1, the second column is the global
 		      column index of the entry, the third value is the matrix value for that entry.
-      \param A (In) An Epetra_RowMatrix Object containing the user matrix to be dumped to file.  Any object
-                    that implements the Epetra_RowMatrix interface can be passed in.  In particular, the 
+      \param A (In) An Epetra_Vector Object containing the user matrix to be dumped to file.  Any object
+                    that implements the Epetra_Vector interface can be passed in.  In particular, the 
 		    Epetra_CrsMatrix, Epetra_VbrMatrix, Epetra_FECrsMatrix, Epetra_FEVbrMatrix and Epetra_MsrMatrix
 		    classes are compatible with this interface.
 
       \return Returns 0 if no error, -1 if any problems with file system.
 
   */
-  int RowMatrixToMatlabFile( const char *filename, const Epetra_RowMatrix & A);
+  int VectorToMatlabFile( const char *filename, const Epetra_Vector & A);
    
 
-  //! Writes an Epetra_RowMatrix object to a format file that is compatible with Matlab.
-  /*! This function takes any matrix that implements the Epetra_RowMatrix interface and writes it
+  //! Writes an Epetra_Vector object to a format file that is compatible with Matlab.
+  /*! This function takes any matrix that implements the Epetra_Vector interface and writes it
       to the specified file handle.  The matrix can be distributed or serial.  This function is a convenience wrapper 
-      around RowMatrixToMatrixMarketFile.
+      around VectorToMatrixMarketFile.
 
       \param handle (In) A C-style file handle, already opened.  On exit, the file associated with this handle will
                       have appended to it a row for each matrix entry
 		      The first column is the global row index, using base 1, the second column is the global
 		      column index of the entry, the third value is the matrix value for that entry.
-      \param A (In) An Epetra_RowMatrix Object containing the user matrix to be dumped to file.  Any object
-                    that implements the Epetra_RowMatrix interface can be passed in.  In particular, the 
+      \param A (In) An Epetra_Vector Object containing the user matrix to be dumped to file.  Any object
+                    that implements the Epetra_Vector interface can be passed in.  In particular, the 
 		    Epetra_CrsMatrix, Epetra_VbrMatrix, Epetra_FECrsMatrix, Epetra_FEVbrMatrix and Epetra_MsrMatrix
 		    classes are compatible with this interface.
 
       \return Returns 0 if no error, -1 if any problems with file system.
 
   */
-  int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A);
-  int writeRowMatrix(FILE * handle, const Epetra_RowMatrix & A);
+  int VectorToHandle(FILE * handle, const Epetra_Vector & A);
+  int writeVector(FILE * handle, const Epetra_Vector & A);
 
 } // namespace EpetraExt
