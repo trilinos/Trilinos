@@ -6,7 +6,7 @@
 #       architecture and communication mode.
 #
 
-include $(TRILINOS_HOME)/build/TARGET
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
 TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
 LIBTRIUTILS = $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libtriutils.a
 LIBIFPACK= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libifpack.a
