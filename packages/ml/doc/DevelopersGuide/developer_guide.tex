@@ -115,17 +115,24 @@ programs that funded development of ML.
 
 \section{Introduction}
 
-This document was written with the\ML is a large software project (composed by more than 100 thousand
-lines), developed during about five years by several programmers. The
-kernel of \ML is written in ANSI C, but it offers a rich C++ interface
+%This document was written with the\ML is a large software project (composed by more than 100 thousand
+%lines),
+\ML development was started in 1997 by Ray Tuminaro and Charles Tong.
+Currently, there are 5 full- and part-time developers.
+The kernel of \ML is written in ANSI C, and there is a rich C++ interface
 for Trilinos users and developers. 
 
 \ML can be customized to run geometric and algebraic multigrid; it can
 solve a scalar or a vector equation (with constant number of equations
-per grid node), and it can solve the Maxwell equations. For a general
+per grid node), and it can solve a form of Maxwell's equations.
+For a general
 introduction to \ML and its applications, we refer to the Users
-Guide~\cite{ml_users_guide}, and to the \ML web site. 
+Guide~\cite{ml_users_guide}, and to the \ML web site,
+http://software.sandia.gov/ml. 
 
+\subsection{Extensibility}
+\label{extensibility}
+%
 \ML is designed to be {\sl flexible}. Developers can easily add, for example,
 \begin{itemize}
 %\setlength{\itemsep}{-2pt}
@@ -140,7 +147,7 @@ However, developers should keep the following goals in mind:
 \item Code should be easy to use and understand.
 \item Code should be easy to maintain.
 \end{enumerate}
-This guide furnished guides, suggestions, and guidelines, to help present and
+This guide furnished guides, suggestions, and guidelines to help present and
 future \ML developers. 
 
 Although all sections of this guide will be useful to most developers,
@@ -159,8 +166,10 @@ development activities:
   As a note, we recall that guidelines for \ML coding style and other
   suggestions are just that, guidelines and
   suggestions. They are not intended to be obeyed zealously.
-  In fact, as most of the \ML code was developed when this developer's
-  guide did not exist yet, part of \ML does not follow these guidelines.
+  In fact, much of \ML does not strictly adhere to these guidelines because
+  most of the \ML code was developed when this developer's
+  guide did not yet exist.
+  
 \end{remark}
 
 %%%
@@ -170,33 +179,33 @@ development activities:
 \section{How To Use This Guide}
 \label{sec:how}
 
-Goal of this document is to provide a guide to new \ML
-developers to:
+The goal of this document is to guide new \ML developers in:
 \begin{itemize}
 %\setlength{\itemsep}{-2pt}
-\item How to get started (in Section~\ref{sec:started});
-\item Modify how \ML is configured and built (in Section~\ref{sec:configure});
-\item know what to do to extend \ML (in Section~\ref{sec:extend});
-\item Use the Bugzilla, Mailman, and the CVS repository 
+\item getting started (in Section~\ref{sec:started});
+\item modifying how \ML is configured and built (in Section~\ref{sec:configure});
+\item knowing what to do to extend \ML (in Section~\ref{sec:extend});
+\item using available development tools: Bonsai, Bugzilla, Mailman, and the
+cvs repository 
   (in Section~\ref{sec:tools});
-\item Write Doxygen documentation (in Section~\ref{sec:doxygen});
-\item Add a new test to the \ML repository (in Section~\ref{sec:add_test});
-\item Define some suggested practices to write code for \ML (in Section~\ref{sec:code});
-\item Better understand the \ML structures (in Section~\ref{sec:structures});
-\item Give a look to the planned current and future developments for \ML (in
+\item writing Doxygen documentation (in Section~\ref{sec:doxygen});
+\item adding a new test to the \ML repository (in Section~\ref{sec:add_test});
+\item defining some suggested practices to write code for \ML (in Section~\ref{sec:code});
+\item better understanding the \ML structures (in Section~\ref{sec:structures});
+\item understanding current and future \ML developments (in
   Section~\ref{sec:to-do}).
 \end{itemize}
 
 \begin{remark}
-  Aim of the following section is to be useful in that part of code
-  development that has proved to be painful in the part. Unfortunately,
-  only a limited part of the \ML capabilities will be unleashed in this
-  document. The reader is
-  encouraged to
+  The aim of the following section is to be useful in that part of code
+  development that has proved to be painful in the past. Unfortunately,
+  only a limited part of \ML's capabilities will be covered in this
+  document.
+  Developers are encouraged to
   \begin{enumerate}
     \item keep this guide up to date after each relevant change;
-    \item add his/her own experience;
-    \item extend the manuscript when it languishes of important details.
+    \item add his own experience;
+    \item extend the manuscript whenever important topics arise.
   \end{enumerate}
 \end{remark}
 
@@ -241,10 +250,10 @@ working copy of \ML in the current directory, type
 cvs checkout ml
 \end{verbatim}
 For a more detailed description of CVS commands, we refer to the
-Trilinos Developers Guide~\cite{Trilinos-Dev-Guide}, and to the GNU CVS Home
+Trilinos Developers Guide~\cite{Trilinos-Dev-Guide}, and to the GNU CVS home.
 
-To understand how to configure \ML, please refer to the ML Users Guide.It is
-suggested to create a simple script, containing all the parameters for {\tt
+Please refer to the ML Users Guide for guidance in configuring \ML,
+We suggest creating a simple script that contains all the parameters for {\tt
 configure}. Be sure to use continuation characters ('\verb!\!') properly.
 The characters should be at the end of every line, except the last line, and
 should not be followed by any space.  Recall that autoconf cannot detect
@@ -332,17 +341,19 @@ macro \verb!ML_FOO! inside the ml source.
 \section{How and Why to Add a New Test}
 \label{sec:add_test}
 
-As most Trilinos packages, \ML has a test suite that is automatically
+\ML has a test suite that is automatically
 executed every night on a variety of platforms.
 This suite verifies
-that the most important part of the code can be executed correctly, and
-that developers' changes do not affect the old code.  For more details
+that important part of the code execute correctly, and
+that developers' changes do not affect existing code.  For more details
 on the test harness, we refer to \cite[Section 3.3]{Trilinos-Dev-Guide}.
 
-In order to add a new test, the following procedure can be followed:
+There are two ways of adding a new test:
+\begin{enumerate}
+\item Method 1: Adding a separate executable just for testing.
 \begin{enumerate}
 \item Create a new subdirectory in \verb!<ml-dir>/test! (for example,
-  {\tt new-test}).;
+  {\tt new-test}).
 \item Put the test source code and the corresponding makefile in {\tt
     new-test}.
 \item Add {\tt new-test} to the script file(s), that is located in one or all
@@ -357,7 +368,34 @@ of the following:
 the {\tt foreach} block.
 \item Modify {\tt <ml-dir>/configure.ac}, by adding {\tt new-test} to
   the list contained in {\tt AC\_CONFIG\_FILES}.
-\item Run {\tt boostrap}.
+\item Run {\tt bootstrap}.
+\end{enumerate}
+\item Method 2: Using an example from ml/examples for testing.
+\begin{enumerate}
+\item Create a new subdirectory in \verb!<ml-dir>/test! (for example,
+  {\tt new-test}).
+\item Create an appropriate \verb!Makefile.am! in {\tt new-test}.
+We suggest copying and modifying the \verb!Makefile.am! from
+\verb!ml/test/2d_Poisson!.
+\item Create an appropriate driver script in {\tt new-test} by
+copying and modifying the \verb!2d_Poisson.csh! script from
+\verb!ml/test/2d_Poisson!.
+You should only need to change the value of the executable name at the top
+of the script.
+\item Add {\tt new-test} to the script file \verb!Test_MLExamples! located in
+one or all of the following:
+\begin{verbatim}
+<ml-dir>/test/scripts/daily/mpi
+<ml-dir>/test/scripts/daily/serial
+<ml-dir>/test/scripts/weekly/mpi
+<ml-dir>/test/scripts/weekly/serial
+\end{verbatim}
+(Currently, \ML only has daily tests.) {\tt new-test} should be added to
+the {\tt foreach} block.
+\item Modify {\tt ml/configure.ac}, by adding {\tt new-test} to
+  the list contained in {\tt AC\_CONFIG\_FILES}.
+\item Run {\tt bootstrap}.
+\end{enumerate}
 \end{enumerate}
 
 A new test should be added to the test harness suite when a new feature
@@ -431,9 +469,21 @@ This allows the automatic generation of HTML documentation.
 
 \section{Related Tools}
 \label{sec:tools}
-
+%
+\subsection{Bonsai}
+\label{bonsai}
+Bonsai is a viewer for the CVS repository that runs via a web browser.
+Some of its capabilities include
+        \begin{enumerate}
+	\item file browsing, with or without "blame" annotation
+	\item differencing of file versions
+	\item repository searches based on file or directory names
+	\item determining CVS changes based on date or time
+        \end{enumerate}
+Bonsai is located at http://software.sandia.gov/bonsai.
+%
 \subsection{Bugzilla}
-
+%
 Users and developers are encouraged to use Bugzilla~\ref{bugzilla}, to
 report configuration problems, bugs, suggest enhancements, or request
 new features. Bugzilla can be found on the web at 
