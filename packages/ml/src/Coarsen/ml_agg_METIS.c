@@ -612,9 +612,10 @@ int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
 
   j = 0;
   i = 4;
+#ifdef HAVE_ML_METIS
   METIS_EstimateMemory( &Nrows, xadj, adjncy, &j,
 			&i, &nbytes );
-
+#endif
   nbytes /= 1024;
   
   nbytes_max = ML_gmax_int( nbytes, comm );
@@ -639,9 +640,21 @@ int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
   /* ********************************************************************** */
 
   i = 0; /* offset, C or FORTRAN */
-  
+#ifdef HAVE_ML_METIS
   METIS_NodeND( &Nparts, xadj2, adjncy2, &i, options, perm, iperm );
-  
+#else
+  fprintf( stderr,
+	   "*ERR*ML* This function has been compiled without -DHAVE_ML_METIS\n"
+	   "*ERR*ML* To use METIS, please add --with-ml_metis to your\n"
+	   "*ERR*ML* configure script (recall to specify include dir and\n"
+	   "*ERR*ML* location of the METIS lib; see configure --help\n"
+	   "*ERR*ML* for more defailts).\n"
+	   "*ERR*ML* (file %s, line %d)\n",
+	   __FILE__,
+	   __LINE__);
+  exit( EXIT_FAILURE );  
+#endif
+
   /* ********************************************************************** */
   /* replace previous ordering in part with this fill-in reducing one       */
   /* Also, compute the bandwidth before and after reordering                */
@@ -854,8 +867,6 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   
   } else {
 
-#ifdef HAVE_ML_METIS
-
     /* ******************************************************************** */
     /* Put -1 in part, so that I can verify that METIS has filled each pos  */
     /* ******************************************************************** */
@@ -873,24 +884,29 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
      
       i = 1; /* optype in the METIS manual */
       numflag = 0;
+#ifdef HAVE_ML_METIS
       METIS_EstimateMemory( &Nrows, xadj, adjncy, &numflag,
 			    &i, &nbytes );
 			   
       METIS_PartGraphRecursive (&Nrows, xadj, adjncy, vwgt, adjwgt,
 				wgtflag, &numflag, &N_parts, options,
 				&edgecut, part);
-     
+#else
+      fprintf( stderr,
+	       "*ML*ERR* Compile with metis...\n");
+      exit( EXIT_FAILURE );
+#endif
     } else {
      
       i = 2;
       numflag = 0;
+#ifdef HAVE_ML_METIS
       METIS_EstimateMemory( &Nrows, xadj, adjncy, &numflag,
 			    &i, &nbytes );
 
       METIS_PartGraphKway (&Nrows, xadj, adjncy, vwgt, adjwgt,
 			   wgtflag, &numflag, &N_parts, options,
 			   &edgecut, part);
-    }
 #else
     if( Amatrix->comm->ML_mypid == 0 ) {
       fprintf( stderr,
@@ -905,7 +921,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     }
     exit( EXIT_FAILURE );
 #endif
-
+    }
     /* ******************************************************************** */
     /* I verify that METIS did a good job. Problems may arise when the # of */
     /* aggregates is too high. In this case, we may end up with some        */
