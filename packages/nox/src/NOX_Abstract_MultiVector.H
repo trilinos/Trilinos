@@ -95,35 +95,24 @@ namespace NOX {
       //@{ \name Accessor methods
 
       /*!
-       * \brief Return a pointer to the i-th column of the multivector as
+       * \brief Return a reference to the i-th column of the multivector as
        * an abstract vector.  
        */
       /*!
        * It is assumed that any implementation of this method returns a 
-       * vector that has a view of the underlying data in the multivector,
-       * and therefore the returned pointer should not be deleted.  This
-       * requires a careful implementation of this method to avoid a heap
-       * leak.
+       * vector that has a view of the underlying data in the multivector
        */
-      virtual NOX::Abstract::Vector* operator [] (int i) = 0;
+      virtual NOX::Abstract::Vector& operator [] (int i) = 0;
     
       /*!
-       * \brief Return a pointer to the i-th column of the multivector as
-       * an abstract vector.  
+       * \brief Return a const reference to the i-th column of the 
+       * multivector as an abstract vector.  
        */
       /*!
        * It is assumed that any implementation of this method returns a 
-       * vector that has a view of the underlying data in the multivector,
-       * and therefore the returned pointer should not be deleted.  This
-       * requires a careful implementation of this method to avoid a heap
-       * leak.
+       * vector that has a view of the underlying data in the multivector.
        */
-      virtual const NOX::Abstract::Vector* operator [] (int i) const = 0;
-
-      /*!
-       * \brief Copy the column vector given by \c i into vector \c vec.
-       */
-      virtual void copyVector(NOX::Abstract::Vector& vec, int i) const = 0;
+      virtual const NOX::Abstract::Vector& operator [] (int i) const = 0;
 
       //@}
 
