@@ -5613,8 +5613,9 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
 
    local_ml->Amat[local_nlevels-1].data_destroy = ( void (*)(void *)) ML_Matrix_DCSR_Destroy;
    local_ml->Amat[local_nlevels-1].N_nonzeros = csr2_mat->mat_ia[N_local];
-   ML_Set_Amatrix_Getrow(local_ml,local_nlevels-1,ML_Matrix_DCSR_Getrow,NULL,
-                         N_local);
+   ML_Operator_Set_Getrow(&(local_ml->Amat[local_nlevels-1]),ML_INTERNAL, 
+			  local_ml->Amat[local_nlevels-1].outvec_leng,ML_Matrix_DCSR_Getrow);
+
    diagonal = (double *) ML_allocate(N_local * sizeof(double));
    for ( i = 0; i < N_local; i++ )
    {

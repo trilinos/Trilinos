@@ -1174,16 +1174,18 @@ int ML_Matrix_DCSR_Set_Comm(ML_Matrix_DCSR *mat,ML_CommInfoOP *comminfo,
 /* get a single row                                                       */
 /* ---------------------------------------------------------------------- */
 
-int ML_Matrix_DCSR_Getrow(void *data, int N_req_rows, int req_rows[],
+int ML_Matrix_DCSR_Getrow(void *mat_in, int N_req_rows, int req_rows[],
         int allocated, int columns[], double values[], int row_lengths[])
 {
    int             *rowptr,  row, itemp;
    register int    i, *bindx;
    register double *val;
    ML_Matrix_DCSR  *Amat;
+   ML_Operator     *mat;
 
+   mat = (ML_Operator *) mat_in;
    row  = *req_rows;
-   Amat = (ML_Matrix_DCSR *) data;
+   Amat = (ML_Matrix_DCSR *) ML_Get_MyGetrowData(mat);
    rowptr = Amat->mat_ia;
    itemp  = rowptr[row];
    *row_lengths = rowptr[row+1] - itemp;
