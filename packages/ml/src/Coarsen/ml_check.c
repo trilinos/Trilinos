@@ -173,6 +173,8 @@ ML_Check( ML * ml )
                          break;
          case ML_MG2CGC: printf("ML scheme is 2-level MG.\n");
                          break;
+         case ML_MGW :   printf("ML scheme is MGW.\n");
+                         break;
          default:        printf("ML scheme not defined.\n");
                          break;
       }
