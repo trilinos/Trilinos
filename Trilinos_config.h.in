@@ -12,6 +12,9 @@
 /* Define if want to build belos */
 #undef HAVE_BELOS
 
+/* Define if want to build default-packages */
+#undef HAVE_DEFAULT_PACKAGES
+
 /* Define if want to build epetra */
 #undef HAVE_EPETRA
 

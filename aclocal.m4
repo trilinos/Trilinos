@@ -647,4 +647,6 @@ fi
 INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 AC_SUBST([INSTALL_STRIP_PROGRAM])])
 
+m4_include([config/tac_arg_enable_default_feature.m4])
 m4_include([config/tac_arg_enable_feature.m4])
+m4_include([config/tac_arg_enable_feature_sub.m4])

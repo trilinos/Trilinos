@@ -814,26 +814,40 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-maintainer-mode  enable make rules and dependencies not useful
 			  (and sometimes confusing) to the casual installer
+  --enable-default-packages
+                          Build all default packages unless explicitly
+                          disabled. When this option is disabled, only
+                          packages explicitly enabled and packages needed to
+                          satisfy the dependencies of enabled packages will be
+                          built (default is yes)
   --enable-amesos         Build amesos (default is no)
-  --enable-loca           Build loca (default is yes)
-  --enable-nox            Build nox (default is yes)
+  --enable-loca           Build loca (default is yes unless the
+                          --disable-default-packages option is used
+  --enable-nox            Build nox (default is yes unless the
+                          --disable-default-packages option is used
   --enable-meros          Build meros (default is no)
   --enable-tsf            Build TSF (default is no)
   --enable-tsfextended    Build TSFExtended (default is no)
   --enable-tsfcore        Build TSFCore (default is no)
   --enable-tsfcoreutils   Build TSFCoreUtils (default is no)
   --enable-komplex        Build komplex (default is no)
-  --enable-aztecoo        Build aztecoo (default is yes)
+  --enable-aztecoo        Build aztecoo (default is yes unless the
+                          --disable-default-packages option is used
   --enable-belos          Build belos (default is no)
   --enable-anasazi        Build anasazi (default is no)
-  --enable-ifpack         Build ifpack (default is yes)
+  --enable-ifpack         Build ifpack (default is yes unless the
+                          --disable-default-packages option is used
   --enable-triutils       Build triutils (default is no)
-  --enable-epetraext      Build epetraext (default is yes)
+  --enable-epetraext      Build epetraext (default is yes unless the
+                          --disable-default-packages option is used
   --enable-tpetra         Build tpetra (default is no)
   --enable-teuchos        Build teuchos (default is no)
-  --enable-ml             Build ml (default is yes)
-  --enable-new_package    Build new_package (default is yes)
-  --enable-epetra         Build epetra (default is yes)
+  --enable-ml             Build ml (default is yes unless the
+                          --disable-default-packages option is used
+  --enable-new_package    Build new_package (default is yes unless the
+                          --disable-default-packages option is used
+  --enable-epetra         Build epetra (default is yes unless the
+                          --disable-default-packages option is used
   --enable-kokkos         Build kokkos (default is no)
 
 
@@ -1794,6 +1808,32 @@ echo "automatically be configured and built, even if"
 echo "the list below does not indicate so."
 
 
+# Check whether --enable-default-packages or --disable-default-packages was given.
+if test "${enable_default_packages+set}" = set; then
+  enableval="$enable_default_packages"
+  ac_cv_use_default_packages=$enableval
+else
+  ac_cv_use_default_packages=yes
+fi;
+
+echo "$as_me:$LINENO: checking whether to use default-packages" >&5
+echo $ECHO_N "checking whether to use default-packages... $ECHO_C" >&6
+
+if test "X$ac_cv_use_default_packages" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_DEFAULT_PACKAGES
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
 # Check whether --enable-amesos or --disable-amesos was given.
 if test "${enable_amesos+set}" = set; then
   enableval="$enable_amesos"
@@ -1835,7 +1875,7 @@ if test "${enable_loca+set}" = set; then
   enableval="$enable_loca"
   ac_cv_use_loca=$enableval
 else
-  ac_cv_use_loca=yes
+  ac_cv_use_loca=$ac_cv_use_default_packages
 fi;
 
 echo "$as_me:$LINENO: checking whether to use loca" >&5
@@ -1864,7 +1904,7 @@ if test "${enable_nox+set}" = set; then
   enableval="$enable_nox"
   ac_cv_use_nox=$enableval
 else
-  ac_cv_use_nox=yes
+  ac_cv_use_nox=$ac_cv_use_default_packages
 fi;
 
 echo "$as_me:$LINENO: checking whether to use nox" >&5
@@ -2121,7 +2161,7 @@ if test "${enable_aztecoo+set}" = set; then
   enableval="$enable_aztecoo"
   ac_cv_use_aztecoo=$enableval
 else
-  ac_cv_use_aztecoo=yes
+  ac_cv_use_aztecoo=$ac_cv_use_default_packages
 fi;
 
 echo "$as_me:$LINENO: checking whether to use aztecoo" >&5
@@ -2230,7 +2270,7 @@ if test "${enable_ifpack+set}" = set; then
   enableval="$enable_ifpack"
   ac_cv_use_ifpack=$enableval
 else
-  ac_cv_use_ifpack=yes
+  ac_cv_use_ifpack=$ac_cv_use_default_packages
 fi;
 
 echo "$as_me:$LINENO: checking whether to use ifpack" >&5
@@ -2306,7 +2346,7 @@ if test "${enable_epetraext+set}" = set; then
   enableval="$enable_epetraext"
   ac_cv_use_epetraext=$enableval
 else
-  ac_cv_use_epetraext=yes
+  ac_cv_use_epetraext=$ac_cv_use_default_packages
 fi;
 
 echo "$as_me:$LINENO: checking whether to use epetraext" >&5
@@ -2421,7 +2461,7 @@ if test "${enable_ml+set}" = set; then
   enableval="$enable_ml"
   ac_cv_use_ml=$enableval
 else
-  ac_cv_use_ml=yes
+  ac_cv_use_ml=$ac_cv_use_default_packages
 fi;
 
 echo "$as_me:$LINENO: checking whether to use ml" >&5
@@ -2458,7 +2498,7 @@ if test "${enable_new_package+set}" = set; then
   enableval="$enable_new_package"
   ac_cv_use_new_package=$enableval
 else
-  ac_cv_use_new_package=yes
+  ac_cv_use_new_package=$ac_cv_use_default_packages
 fi;
 
 echo "$as_me:$LINENO: checking whether to use new_package" >&5
@@ -2511,7 +2551,7 @@ if test "${enable_epetra+set}" = set; then
   enableval="$enable_epetra"
   ac_cv_use_epetra=$enableval
 else
-  ac_cv_use_epetra=yes
+  ac_cv_use_epetra=$ac_cv_use_default_packages
 fi;
 
 echo "$as_me:$LINENO: checking whether to use epetra" >&5

@@ -70,7 +70,10 @@ DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/Trilinos_config.h.in \
 	$(top_srcdir)/configure install-sh missing mkinstalldirs
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_enable_feature.m4 \
+am__aclocal_m4_deps =  \
+	$(top_srcdir)/config/tac_arg_enable_default_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)

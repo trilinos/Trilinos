@@ -41,15 +41,17 @@ echo "package that has been enabled, it will"
 echo "automatically be configured and built, even if"
 echo "the list below does not indicate so."
 
+TAC_ARG_ENABLE_FEATURE_SUB( default, packages, [Build all default packages unless explicitly disabled.  When this option is disabled, only packages explicitly enabled and packages needed to satisfy the dependencies of enabled packages will be built], DEFAULT_PACKAGES, yes)
+ 
 TAC_ARG_ENABLE_FEATURE(amesos, [Build amesos], AMESOS, no)
 AM_CONDITIONAL(BUILD_AMESOS, test "X$ac_cv_use_amesos" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(loca, [Build loca], LOCA, yes)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(loca, [Build loca], LOCA)
 #The following line is not necessary for LOCA because LOCA
 #lives in the NOX directory structure
 #AM_CONDITIONAL(BUILD_NOX, test "X$ac_cv_use_nox" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(nox, [Build nox], NOX, yes)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(nox, [Build nox], NOX)
 AM_CONDITIONAL(BUILD_NOX, test "X$ac_cv_use_nox" != "Xno" ||
 	test "X$ac_cv_use_loca" != "Xno")
 
@@ -75,7 +77,7 @@ AM_CONDITIONAL(BUILD_TSFCOREUTILS, test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
 TAC_ARG_ENABLE_FEATURE(komplex, [Build komplex], KOMPLEX, no)
 AM_CONDITIONAL(BUILD_KOMPLEX, test "X$ac_cv_use_komplex" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(aztecoo, [Build aztecoo], AZTECOO, yes)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(aztecoo, [Build aztecoo], AZTECOO)
 AM_CONDITIONAL(BUILD_AZTECOO, test "X$ac_cv_use_aztecoo" != "Xno" || 
 	test "X$ac_cv_use_komplex" != "Xno")
 
@@ -85,7 +87,7 @@ AM_CONDITIONAL(BUILD_BELOS, test "X$ac_cv_use_belos" != "Xno")
 TAC_ARG_ENABLE_FEATURE(anasazi, [Build anasazi], ANASAZI, no)
 AM_CONDITIONAL(BUILD_ANASAZI, test "X$ac_cv_use_anasazi" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(ifpack, [Build ifpack], IFPACK, yes)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(ifpack, [Build ifpack], IFPACK)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, no)
@@ -95,7 +97,7 @@ AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" || 
 	test "X$ac_cv_use_amesos" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(epetraext, [Build epetraext], EPETRAEXT, yes)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(epetraext, [Build epetraext], EPETRAEXT)
 AM_CONDITIONAL(BUILD_EPETRAEXT, test "X$ac_cv_use_epetraext" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(tpetra, [Build tpetra], TPETRA, no)
@@ -111,11 +113,11 @@ AM_CONDITIONAL(BUILD_TEUCHOS, test "X$ac_cv_use_teuchos" != "Xno" ||
  	test "X$ac_cv_use_belos" != "Xno" || 
 	test "X$ac_cv_use_anasazi" != "Xno") 
 
-TAC_ARG_ENABLE_FEATURE(ml, [Build ml], ML, yes)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(ml, [Build ml], ML)
 AM_CONDITIONAL(BUILD_ML, test "X$ac_cv_use_ml" != "Xno")
 
 ## #np# - Copy the next two lines, and change the name
-TAC_ARG_ENABLE_FEATURE(new_package, [Build new_package], NEW_PACKAGE, yes)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(new_package, [Build new_package], NEW_PACKAGE)
 AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$ac_cv_use_new_package" != "Xno")
 
 
@@ -132,7 +134,7 @@ fi
 ## #np# - If your package requires epetra - you should add
 ## it to the following list
 ##	test "X$ac_cv_use_new_package" != "Xno" || 
-TAC_ARG_ENABLE_FEATURE(epetra, [Build epetra], EPETRA, yes)
+TAC_ARG_ENABLE_DEFAULT_FEATURE(epetra, [Build epetra], EPETRA)
 AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" || 
 	test "X$ac_cv_use_ifpack" != "Xno" || 
 	test "X$ac_cv_use_tsf" != "Xno" || 
