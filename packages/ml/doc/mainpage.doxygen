@@ -1,11 +1,12 @@
-/*! \mainpage ML: Multi Level Preconditioning Package File List
+/*! \mainpage ML: Multi Level Preconditioning Package
 
-\image html ml-logo.jpg
+\image html ml-image.jpg
 \image latex ml-logo.eps
 
 \section table Table of Contents
 
 - \ref intro
+- \ref download
 - \ref desc
 - \ref dev
 - \ref doc
@@ -21,21 +22,6 @@
 - \ref copyright
 
 \section intro Introduction
-
-ML, developed at the Sandia National Laboratories,
-is a multigrid preconditioning package intended to solve linear
-systems of equations A x = b where A is a user supplied n x n
-sparse matrix, b is a user supplied vector of length n and x is a
-vector of length n to be computed. ML should be used on large sparse
-linear systems arising from partial differential equation (PDE)
-discretizations.  While technically any linear system can be considered,
-ML should be used on linear systems that correspond to things that work
-well with multigrid methods (e.g. elliptic PDEs). ML can be used as a
-stand-alone package or to generate preconditioners for a traditional
-iterative solver package (e.g. Krylov methods). We have supplied support
-for working with the Aztec 2.1 and AztecOO iterative package
-Aztec.  However, other solvers can be used by supplying a few
-functions.
 
 ML is a multigrid preconditioning package intended to solve large sparse linear
 systems of equations arising from primarily elliptic PDE discretizations. Several
@@ -55,6 +41,11 @@ We have built-in interfaces for using methods from Aztec as smoothers and using
 SuperLU as a coarse grid direct solver. Using the Amesos it is possible to access
 other direct solvers such as MUMPS for use as a coarse grid solver.
 
+ML can be used as a stand-alone package or to generate preconditioners for a
+traditional iterative solver package (e.g. Krylov methods). We have supplied
+support for working with the Aztec 2.1 and AztecOO iterative package Aztec.
+However, other solvers can be used by supplying a few functions.
+
 ML can also be used as a framework to generate new multigrid methods. Using ML's
 built in aggregation routines and Galerkin products, it is possible to focus on
 new types of inter-grid transfer operators without having to address the
@@ -66,7 +57,9 @@ ML has been used within a number of applications at Sandia and a few application
 outside of Sandia. ML is released for external distribution and can be obtained as
 part of the Trilinos development environment. 
 
+\section download Download ML
 
+ML can be donwloaded from the web page http://software.sandia.gov/trilinos/downloads.html
 
 \section desc Project Description
 
@@ -89,6 +82,22 @@ have used ML in the following ways:
   SP2, ...
 - Data-Neutral Interface: Matrices are accessed via getrow() and matvec()
   functions.
+
+Primary Multilevel Schemes:
+- Smoothed Aggregation;
+- Edge Element Eddy Current AMG;
+- Finite Element Based Two-Level Schemes;
+- Refinement Based Multigrid;
+- Classical AMG.
+
+Parallel Smoother Methods:
+- Processor-based Gauss-Seidel type methods (point and block version,
+  symmetric and non-symmetric versions);
+- Polynomial-Based Smoothers;
+- One step CG smoothing;
+- all Aztec preconditioners as smoothers;
+- arbitrary number of Krylov solver iterations (through Aztec);
+- Two-stage distributed relaxation hybrid for eddy currents.
 
 As mentioned above, a unique feature of ML is its ability to solve the eddy
 current Maxwell Equations. This is done by having the user supply the discrete
