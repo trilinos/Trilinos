@@ -826,6 +826,10 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   if( offsets != NULL ) ML_free( offsets );
   if( vtxdist != NULL ) ML_free( vtxdist );
   if( tpwgts != NULL ) ML_free( tpwgts );
+  if( wgtflag != NULL ) ML_free( wgtflag );
+  if( options != NULL ) ML_free( options );
+  if( xadj != NULL ) ML_free( xadj );
+  if( adjncy != NULL ) ML_free( adjncy );
   
   t0 = GetClock() - t0;
 
@@ -1040,16 +1044,19 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       }
    }
 
-  i = ML_Comm_GsumInt(comm, N_bdry_nodes);
-
-  if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
-    printf("%s # bdry (block) nodes = %d, # (block) nodes = %d\n",
-	   str,
-	   i, Nrows_global);
-  }
+   if( rowi_col != NULL ) ML_free(rowi_col );
+   if( rowi_val != NULL ) ML_free(rowi_val );
+   
+   i = ML_Comm_GsumInt(comm, N_bdry_nodes);
+   
+   if( mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+     printf("%s # bdry (block) nodes = %d, # (block) nodes = %d\n",
+	    str,
+	    i, Nrows_global);
+   }
    
    /* communicate the boundary information */
-
+   
    ML_exchange_bdry(starting_amalg_bdry,Amatrix->getrow->pre_comm,
 		    Nrows,comm, ML_OVERWRITE,NULL);
 
@@ -1229,9 +1236,9 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ********************************************************************** */
    
    if( ml_ag->aggr_viz_and_stats != NULL ) {
-     
-     ML_memory_alloc((void*)&graph_decomposition,
-		     sizeof(int)*Nrows,"aggr_index for viz");
+
+     graph_decomposition = (int *) ML_allocate(sizeof(int)*Nrows );
+
      if( graph_decomposition == NULL ) {
        fprintf( stderr,
 		"*ML*ERR* Not enough memory for %d bytes\n"
