@@ -340,19 +340,19 @@ public:
     bindx = (int    *)  ML_allocate(allocated*sizeof(int   ));
     val   = (double *)  ML_allocate(allocated*sizeof(double));
 
-    for (int iproc = 0 ; iproc < GetNumProcs() ; ++iproc) {
+    if (GetMyPID() == 0) {
+      os.width(10);
+      os << "ProcID";
+      os.width(20);
+      os << "Global Row";
+      os.width(20);
+      os << "Global Col";
+      os.width(20);
+      os << "Value" << endl;
+      os << endl;
+    }
 
-      if (GetMyPID() == 0) {
-        os.width(10);
-        os << "ProcID";
-        os.width(20);
-        os << "Global Row";
-        os.width(20);
-        os << "Global Col";
-        os.width(20);
-        os << "Value" << endl;
-        os << endl;
-      }
+    for (int iproc = 0 ; iproc < GetNumProcs() ; ++iproc) {
 
       if (GetMyPID() == iproc) {
 
@@ -379,6 +379,8 @@ public:
 
     if (GetMyPID() == 0)
       os << endl;
+
+    Barrier();
 
     ML_free(val);
     ML_free(bindx);

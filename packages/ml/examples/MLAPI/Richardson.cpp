@@ -137,11 +137,8 @@ int main(int argc, char *argv[])
     Finalize();
 
   }
-  catch (exception& e) {
-    cout << e.what() << endl;
-  } 
-  catch (int e) {
-    cout << "Integer exception, code = " << e << endl;
+  catch (const int e) {
+    cout << "Caught integer exception, code = " << e << endl;
   } 
   catch (...) {
     cout << "problems here..." << endl;

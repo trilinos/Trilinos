@@ -56,13 +56,13 @@ int main(int argc, char *argv[])
     // in several ways. The simplest is to specify the number of global
     // elements:
     
-    Space MySpace(10);
+    Space MySpace(2 * GetNumProcs());
 
-    // MLAPI::Matrix is a very simple and convenient Epetra_RowMatrix derived
+    // MLAPI::SerialMatrix is a very simple and convenient Epetra_RowMatrix derived
     // class. Inserting a new element is just A(row, col) = val.
-    // Most of the methods of Epetra_RowMatrix are implemented in MLAPI::Matrix.
+    // Most of the methods of Epetra_RowMatrix are implemented in MLAPI::SerialMatrix.
     //
-    // MLAPI::Matrix can be used for serial computations only. Furthermore, it
+    // MLAPI::SerialMatrix can be used for serial computations only. Furthermore, it
     // is *not* meant to be efficient, just easy-to-use. Users should consider
     // other Epetra_RowMatrix derived classes (like Epetra_CrsMatrix or
     // Epetra_VbrMatrix) in order to define parallel and scalable matrices.
@@ -71,24 +71,67 @@ int main(int argc, char *argv[])
     //
     // NOTE: each time A(row,col) is called, a zero element is inserted if
     // not already present in the matrix!
-    
-    Matrix A_Mat(MySpace, MySpace);
-    for (int i = 0 ; i < 10 ; ++i) {
-      if (i) A_Mat(i, i - 1) = -1.0;
-      A_Mat(i,i) = 2.0;
-      if (i + 1 != A_Mat.NumGlobalCols())
-        A_Mat(i, i + 1) = -1.0;
+
+    if (GetNumProcs() == 1) {
+
+      SerialMatrix A_Mat(MySpace, MySpace);
+      for (int i = 0 ; i < MySpace.GetNumGlobalElements() ; ++i) {
+        if (i) A_Mat(i, i - 1) = -1.0;
+        A_Mat(i,i) = 2.0;
+        if (i + 1 != A_Mat.NumGlobalCols())
+          A_Mat(i, i + 1) = -1.0;
+      }
     }
 
-    // Note that MLAPI::Matrix cannot be copied or reassigned, and no
+    // Class MLAPI::DistributedMatrix is another simple way to define
+    // matrices. This class is a little bit more complex to be used
+    // than MLAPI::SerialMatrix, but it works with any numbers of
+    // processors. Elements can be set usign SetElement(row, col, value),
+    // where `row' and `col' refer to the GLOBAL numbering. Any processor
+    // can set any element (that is, also non-local elements).
+    // Note that DistributedMatrix's MUST be FillComplete()'d in order
+    // to be wrapped as Operator's. After the call to FillComplete(),
+    // no new elements can be inserted into the matrix (although, elements
+    // already inserted can be changed).
+
+    DistributedMatrix A_Dist(MySpace, MySpace);
+
+    // As any processor can set any element, here we fill the entire
+    // matrix on processor 1 only. Clearly, each processor can fill
+    // its own part only.
+
+    if (GetMyPID() == 0) {
+
+      for (int i = 0 ; i < MySpace.GetNumGlobalElements() ; ++i) {
+
+        if (i) A_Dist.SetElement(i, i - 1, -1.0);
+        A_Dist.SetElement(i, i, 2.0);
+        if (i + 1 != A_Dist.NumGlobalCols())
+          A_Dist.SetElement(i, i + 1, -1.0);
+
+      }
+    }
+
+    A_Dist.FillComplete(); 
+
+    // To get the (row, col) value of the matrix, use method
+    // value = GetElement(row, col). Note that both `row' and `col'
+    // refer to global indices; however row must be a locally hosted row.
+    // If (row, col) is not found, value is set to 0.0.
+
+    cout << A_Dist;
+
+    // Note that both MLAPI::SerialMatrix and MLAPI::DistributedMatrix 
+    // cannot be copied or reassigned, and no
     // operators are overloaded on this class. The only way to use an
-    // MLAPI::Matrix with other MLAPI objects is to wrap it into an
-    // MLAPI::Operator, as done in the following line.
+    // MLAPI::SerialMatrix and MLAPI::DistributedMatrix with other MLAPI 
+    // objects is to wrap it into an MLAPI::Operator, as done in the 
+    // following line.
     //
     // NOTE: The last parameter has be to `false' because the Operator 
-    // should not delete the A_Mat object.
+    // should not delete the A_Dist object.
 
-    Operator A(MySpace, MySpace, &A_Mat, false);
+    Operator A(MySpace, MySpace, &A_Dist, false);
 
     // Here we define 3 vectors. The last, z, is empty.
     
@@ -162,7 +205,8 @@ int main(int argc, char *argv[])
     // V will contain the eigenvalues.
     
     MultiVector ER, EI, V;
-    Eig(A, ER, EI, V);
+    if (GetNumProcs() == 1)
+      Eig(A, ER, EI, V);
 
     for (int i = 0 ; i < ER.GetMyLength() ; ++i)
       for (int j = 0 ; j < ER.GetNumVectors() ; ++j)
@@ -189,11 +233,9 @@ int main(int argc, char *argv[])
 
     ER.SetLabel("ER");
     EI.SetLabel("EI");
-    V.SetLabel("V");
 
     matlab << ER;
     matlab << EI;
-    matlab << V;
     matlab << "plot(ER, EI, 'o')\n";
 
     // Finalize the MLAPI work space before leaving the application
@@ -201,10 +243,7 @@ int main(int argc, char *argv[])
     Finalize();
 
   } 
-  catch (exception& e) {
-    cout << e.what() << endl;
-  } 
-  catch (int e) {
+  catch (const int e) {
     cout << "Integer exception, code = " << e << endl;
   } 
   catch (...) {

@@ -93,8 +93,8 @@ int main(int argc, char *argv[])
 
     cout << Prec;
   }
-  catch (const char e[]) {
-    cerr << "Caught exception: " << e << endl;
+  catch (const int e) {
+    cerr << "Caught exception, code = " << e << endl;
   }
   catch (...) {
     cerr << "Caught exception..." << endl;

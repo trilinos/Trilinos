@@ -36,7 +36,7 @@ public:
     // Creates a new stream, deletes old stream with the same name.
     if (GetMyPID() == 0) {
       Open(true);
-      fprintf(fp_, "%%beginning of MLAPI::MATLABStream\n");
+      fprintf(fp_, "%% beginning of MLAPI::MATLABStream\n");
       Close();
     }
   }
@@ -46,7 +46,7 @@ public:
   {
     if (GetMyPID() == 0) {
       Open();
-      fprintf(fp_, "%%end of MLAPI::MATLABStream\n");
+      fprintf(fp_, "%% end of MLAPI::MATLABStream\n");
       Close();
     }
   }
@@ -133,6 +133,7 @@ public:
                     obj.GetLabel().c_str(), GlobalRow, GlobalCol, val[j]);
           }
         }
+
         Close();
       }
       Barrier();

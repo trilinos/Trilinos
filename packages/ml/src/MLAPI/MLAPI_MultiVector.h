@@ -507,8 +507,8 @@ public:
   virtual std::ostream& Print(std::ostream& os,
                               const bool verbose = true) const
   {
-    os << std::endl;
     if (GetMyPID() == 0) {
+      os << endl;
       os << "*** MLAPI::MultiVector ***" << endl;
       os << "Label             = " << GetLabel() << endl;
       os << "Local length      = " << GetMyLength() << endl;
@@ -560,6 +560,8 @@ public:
 
         Barrier();
       }
+      if (GetMyPID() == 0)
+        os << endl;
     }
 
     return(os);

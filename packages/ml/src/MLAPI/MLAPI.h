@@ -16,4 +16,5 @@
 #include "MLAPI_Krylov.h"
 #include "MLAPI_Aggregation.h"
 #include "MLAPI_Eig.h"
-#include "MLAPI_Matrix.h"
+#include "MLAPI_SerialMatrix.h"
+#include "MLAPI_DistributedMatrix.h"

@@ -208,6 +208,10 @@ public:
   //! Returns the global ID of local element \c i.
   inline int operator() (int i) const
   {
+#ifdef MLAPI_CHECK
+    if ((i < 0) || (i >= NumMyElements_))
+      ML_THROW("not valid index, " + toString(i), -1);
+#endif
     if (IsLinear())
       return(i + GetOffset());
     else
@@ -255,8 +259,8 @@ public:
   std::ostream& Print(std::ostream& os,
                       const bool verbose = true) const
   {
-    os << std::endl;
     if (GetMyPID() == 0) {
+      os << endl;
       os << "*** MLAPI::Space ***" << endl;
       os << "Label               = " << GetLabel() << endl;
       os << "NumMyElements()     = " << GetNumMyElements() << endl;
@@ -270,26 +274,38 @@ public:
     }
 
     if (verbose) {
-      if (GetMyPID() == 0) {
-        os.width(10);
-        os << "ProcID";
-        os.width(20);
-        os << "LID";
-        os.width(20);
-        os << "GID" << endl << endl;
-      }
 
+      for (int iproc = 0 ; iproc < GetNumProcs() ; ++iproc) {
+
+        if (GetMyPID() == iproc) {
+
+          if (GetMyPID() == 0) {
+            os.width(10);
+            os << "ProcID";
+            os.width(20);
+            os << "LID";
+            os.width(20);
+            os << "GID" << endl << endl;
+          }
+
+          for (int i = 0 ; i < GetNumMyElements() ; ++i) {
+            os.width(10);
+            os << GetMyPID();
+            os.width(20);
+            os << i;
+            os.width(20);
+            os << (*this)(i) << endl;
+          }
+        }
+        Barrier();
+      }
       Barrier();
 
-      for (int i = 0 ; i < GetNumMyElements() ; ++i) {
-        os.width(10);
-        os << GetMyPID();
-        os.width(20);
-        os << i;
-        os.width(20);
-        os << (*this)(i) << endl;
-      }
+      if (GetMyPID() == 0)
+        os << endl;
     }
+
+    Barrier();
 
     return(os);
   }

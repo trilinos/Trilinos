@@ -162,7 +162,8 @@ $(srcdir)/MLAPI/MLAPI_Gallery.h              \
 $(srcdir)/MLAPI/MLAPI_InverseOperator.h      \
 $(srcdir)/MLAPI/MLAPI_Krylov.h               \
 $(srcdir)/MLAPI/MLAPI_MATLABStream.h         \
-$(srcdir)/MLAPI/MLAPI_Matrix.h               \
+$(srcdir)/MLAPI/MLAPI_SerialMatrix.h         \
+$(srcdir)/MLAPI/MLAPI_DistributedMatrix.h    \
 $(srcdir)/MLAPI/MLAPI_MultiLevelSA.h         \
 $(srcdir)/MLAPI/MLAPI_MultiVector.h          \
 $(srcdir)/MLAPI/MLAPI_MultiVector_Utils.h    \
