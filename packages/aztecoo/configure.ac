@@ -235,20 +235,20 @@ fi
 
 # The following section is required to decide if the AztecOO ParameterList
 # interface should be built.
-AC_ARG_ENABLE(aztecoo-teuchos,
- [AC_HELP_STRING([--enable-aztecoo-teuchos],[Enable AztecOO Teuchos::ParameterList interface. Default is no. Requires Teuchos package.])],
- ac_cv_use_aztecoo_teuchos=$enableval, ac_cv_use_aztecoo_teuchos=no)
+AC_ARG_ENABLE(teuchos,
+ [AC_HELP_STRING([--enable-teuchos],[Enable AztecOO Teuchos::ParameterList interface. Default is no. Requires Teuchos package.])],
+ ac_cv_use_teuchos=$enableval, ac_cv_use_teuchos=no)
 
 AC_MSG_CHECKING(whether to use aztecoo-teuchos)
 
-if test "X$ac_cv_use_aztecoo_teuchos" != "Xno"; then
+if test "X$ac_cv_use_teuchos" != "Xno"; then
   AC_MSG_RESULT(yes)
   AC_DEFINE([HAVE_AZTECOO_TEUCHOS],,[Define if you want to build AztecOO's ParameterList interface])
 else
  AC_MSG_RESULT(no)
 fi
 
-AM_CONDITIONAL(HAVE_AZTECOO_TEUCHOS, [test "X$ac_cv_use_aztecoo_teuchos" != "Xno"])
+AM_CONDITIONAL(HAVE_AZTECOO_TEUCHOS, [test "X$ac_cv_use_teuchos" != "Xno"])
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built

@@ -877,8 +877,7 @@ Optional Features:
   --enable-dependency-tracking   do not reject slow dependency extractors
   --enable-aztecoo-azlu   Enable az-lu preconditioner. Default is no. Requires
                           y12m.
-  --enable-aztecoo-teuchos
-                          Enable AztecOO Teuchos::ParameterList interface.
+  --enable-teuchos        Enable AztecOO Teuchos::ParameterList interface.
                           Default is no. Requires Teuchos package.
   --enable-tests          Build tests for all Trilinos packages (not all
                           packages are sensitive to this option) (default is
@@ -3809,7 +3808,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3812:" \
+echo "$as_me:3811:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7116,18 +7115,18 @@ fi
 
 # The following section is required to decide if the AztecOO ParameterList
 # interface should be built.
-# Check whether --enable-aztecoo-teuchos or --disable-aztecoo-teuchos was given.
-if test "${enable_aztecoo_teuchos+set}" = set; then
-  enableval="$enable_aztecoo_teuchos"
-  ac_cv_use_aztecoo_teuchos=$enableval
+# Check whether --enable-teuchos or --disable-teuchos was given.
+if test "${enable_teuchos+set}" = set; then
+  enableval="$enable_teuchos"
+  ac_cv_use_teuchos=$enableval
 else
-  ac_cv_use_aztecoo_teuchos=no
+  ac_cv_use_teuchos=no
 fi;
 
 echo "$as_me:$LINENO: checking whether to use aztecoo-teuchos" >&5
 echo $ECHO_N "checking whether to use aztecoo-teuchos... $ECHO_C" >&6
 
-if test "X$ac_cv_use_aztecoo_teuchos" != "Xno"; then
+if test "X$ac_cv_use_teuchos" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
@@ -7142,7 +7141,7 @@ fi
 
 
 
-if test "X$ac_cv_use_aztecoo_teuchos" != "Xno"; then
+if test "X$ac_cv_use_teuchos" != "Xno"; then
   HAVE_AZTECOO_TEUCHOS_TRUE=
   HAVE_AZTECOO_TEUCHOS_FALSE='#'
 else
@@ -7415,7 +7414,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7418: \"$ac_link\") >&5
+(eval echo $as_me:7417: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7493,7 +7492,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7496: \"$ac_link\") >&5
+(eval echo $as_me:7495: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10446,7 +10445,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10449: \"$ac_link\") >&5
+(eval echo $as_me:10448: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10524,7 +10523,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10527: \"$ac_link\") >&5
+(eval echo $as_me:10526: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
