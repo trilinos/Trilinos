@@ -1,4 +1,5 @@
 #include "ifp_DenseMat.h"
+#include "Epetra_Object.h" // Bring in Epetra_fmtflags typedef
 
 ifp_DenseMat::ifp_DenseMat(const ifp_DenseMat& A)
 {
@@ -15,8 +16,8 @@ void ifp_DenseMat::Print(ostream& os) const
         // check not an implicit inverse
         assert (a != NULL);
 
-        long olda = os.setf(ios::right,ios::adjustfield);
-        long oldf = os.setf(ios::scientific,ios::floatfield);
+        Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
+        Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
         int oldp = os.precision(12);
 
         const double *p = a;
@@ -35,8 +36,8 @@ ostream& operator << (ostream& os, const ifp_DenseMat& mat)
 {
         // should check not an implicit inverse
 
-        long olda = os.setf(ios::right,ios::adjustfield);
-        long oldf = os.setf(ios::scientific,ios::floatfield);
+        Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
+        Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
         int oldp = os.precision(12);
 
         const double *a = &mat(0,0);

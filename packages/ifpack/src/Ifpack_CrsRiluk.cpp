@@ -392,8 +392,8 @@ int Ifpack_CrsRiluk::Solve(bool Trans, const Epetra_MultiVector& X,
 
 ostream& operator << (ostream& os, const Ifpack_CrsRiluk& A)
 {
-  long olda = os.setf(ios::right,ios::adjustfield);
-  long oldf = os.setf(ios::scientific,ios::floatfield);
+  Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
+  Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
   int oldp = os.precision(12);
   int LevelFill = A.Graph().LevelFill();
   int LevelOverlap = A.Graph().LevelOverlap();

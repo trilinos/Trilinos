@@ -353,8 +353,8 @@ int Ifpack_IlukGraph::ComputeLevels(int NumThreads)
 
 ostream& operator << (ostream& os, const Ifpack_IlukGraph& A)
 {
-  long olda = os.setf(ios::right,ios::adjustfield);
-  long oldf = os.setf(ios::scientific,ios::floatfield);
+  Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
+  Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
   int oldp = os.precision(12);
   int LevelFill = A.LevelFill();
   Epetra_CrsGraph & L = (Epetra_CrsGraph &) A.L_Graph();
