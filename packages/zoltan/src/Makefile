@@ -122,10 +122,11 @@ TIMER_INC	= timer_const.h
 # source code and defines for driver
 DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
 		  dr_util.c dr_exoII_io.c dr_elem.c dr_loadbal.c \
-		  dr_migrate.c dr_output.c dr_chaco_io.c dr_elem_util.c
+		  dr_migrate.c dr_output.c dr_chaco_io.c dr_elem_util.c \
+		  dr_maps.c dr_eval.c
 DR_INC		= dr_const.h dr_input_const.h dr_util_const.h \
 		  dr_err_const.h dr_par_util_const.h dr_elem_const.h \
-		  dr_elem_util_const.h
+		  dr_elem_util_const.h dr_maps_const.h dr_eval_const.h
 
 CH_CSRC		= ch_dist_graph.c ch_input_geom.c ch_input_graph.c \
                   ch_input_read.c
