@@ -39,6 +39,9 @@
 #endif
 #include "Trilinos_Util.h"
 
+void testEpetra(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vector*& xexact,
+								Epetra_Vector*& b, int dim, int nnz, bool verbose, bool smallProblem);
+
 int main(int argc, char *argv[]) {
 
 #ifdef EPETRA_MPI
@@ -74,11 +77,11 @@ int main(int argc, char *argv[]) {
   //if (MyPID==0) cin >> tmp;
   //comm.Barrier();
 
-  Epetra_Map * map;
-  Epetra_CrsMatrix * A;
-  Epetra_Vector * x; 
-  Epetra_Vector * b;
-  Epetra_Vector * xexact;
+  Epetra_Map* map;
+  Epetra_CrsMatrix* A;
+  Epetra_Vector* x; 
+  Epetra_Vector* b;
+  Epetra_Vector* xexact;
 
   Trilinos_Util_ReadHb2Epetra(argv[1], comm, map, A, x, b, xexact);
 
@@ -96,13 +99,42 @@ int main(int argc, char *argv[]) {
   if (verbose)
     cout << "Problem Dimension        = " << dim << endl
 	 << "Number of matrix entries = " << nnz << endl;
-  
+
+	// ------------------------------------------------------------------
+	// start of performance testing
+	// ------------------------------------------------------------------
+
+	testEpetra(comm, map, A, xexact, b, dim, nnz, verbose, smallProblem);
+
+	// ------------------------------------------------------------------
+	// end of performance testing
+	// ------------------------------------------------------------------
+    
+  // These objects were explicitly "new'ed" in ReadHb2Epetra
+  delete A;
+  delete x;
+  delete b;
+  delete xexact;
+  delete map;
+
+#ifdef EPETRA_MPI
+  MPI_Finalize() ;
+#endif
+
+	return(0);
+}
+
+// ------------------------------------------------------------------
+// ------------------------------------------------------------------
+
+void testEpetra(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vector*& xexact, 
+								Epetra_Vector*& b, int dim, int nnz, bool verbose, bool smallProblem) {
   Epetra_Time timer(comm);
   comm.Barrier();
 
   int numEntries;
-  double * values;
-  int * indices;
+  double* values;
+  int* indices;
 
   double tstart = timer.ElapsedTime();
   Epetra_CrsMatrix Ae(Copy, *map, 0);
@@ -152,17 +184,4 @@ int main(int argc, char *argv[]) {
     cout << "2-norm of computed RHS                               = " << normb << endl
 	 << "2-norm of exact RHS                                  = " << normbexact << endl
 	 << "2-norm of difference between computed and exact RHS  = " << residual << endl;
-    
-  // These objects were explicitly "new'ed" in ReadHb2Epetra
-  delete A;
-  delete x;
-  delete b;
-  delete xexact;
-  delete map;
-
-#ifdef EPETRA_MPI
-  MPI_Finalize() ;
-#endif
-
-return 0 ;
 }
