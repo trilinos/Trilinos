@@ -183,6 +183,10 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H \
+	$(srcdir)/LOCA_Eigensolver_AbstractStrategy.H \
+	$(srcdir)/LOCA_Eigensolver_DefaultStrategy.H \
+	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H \
+	$(srcdir)/LOCA_Eigensolver_Factory.H \
 	$(srcdir)/LOCA_Extended_Vector.C \
 	$(srcdir)/LOCA_Extended_MultiVector.C \
 	$(srcdir)/LOCA_Extended_AbstractGroup.C \
@@ -255,14 +259,17 @@ am__libloca_la_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C \
+	$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C \
+	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C \
+	$(srcdir)/LOCA_Eigensolver_Factory.C
 am__objects_1 =
 am__objects_2 = $(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
-	$(am__objects_1)
+	$(am__objects_1) $(am__objects_1)
 am__objects_3 = libloca_la-LOCA_Extended_Vector.lo \
 	libloca_la-LOCA_Extended_MultiVector.lo \
 	libloca_la-LOCA_Extended_AbstractGroup.lo
@@ -340,13 +347,16 @@ am__objects_18 = libloca_la-LOCA_Solver_Wrapper.lo \
 	libloca_la-LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.lo \
 	libloca_la-LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.lo \
 	libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.lo
-am__objects_19 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
+am__objects_19 = libloca_la-LOCA_Eigensolver_DefaultStrategy.lo \
+	libloca_la-LOCA_Eigensolver_AnasaziStrategy.lo \
+	libloca_la-LOCA_Eigensolver_Factory.lo
+am__objects_20 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
 	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
 	$(am__objects_12) $(am__objects_13) $(am__objects_14) \
 	$(am__objects_15) $(am__objects_16) $(am__objects_17) \
-	$(am__objects_18)
-am_libloca_la_OBJECTS = $(am__objects_2) $(am__objects_19)
+	$(am__objects_18) $(am__objects_19)
+am_libloca_la_OBJECTS = $(am__objects_2) $(am__objects_20)
 libloca_la_OBJECTS = $(am_libloca_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -393,6 +403,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Continuation_StatusTest_ParameterResidualNorm.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Continuation_StatusTest_ParameterUpdateNorm.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_DerivUtils.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_ErrorCheck.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Extended_AbstractGroup.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_la-LOCA_Extended_MultiVector.Plo \
@@ -527,7 +540,11 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H \
+	$(srcdir)/LOCA_Eigensolver_AbstractStrategy.H \
+	$(srcdir)/LOCA_Eigensolver_DefaultStrategy.H \
+	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H \
+	$(srcdir)/LOCA_Eigensolver_Factory.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -956,6 +973,17 @@ LOCA_STATUSTEST = \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C
 
+LOCA_EIGENSOLVER_H = \
+	$(srcdir)/LOCA_Eigensolver_AbstractStrategy.H \
+	$(srcdir)/LOCA_Eigensolver_DefaultStrategy.H \
+	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H \
+	$(srcdir)/LOCA_Eigensolver_Factory.H
+
+LOCA_EIGENSOLVER = \
+	$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C \
+	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C \
+	$(srcdir)/LOCA_Eigensolver_Factory.C
+
 @BUILD_LOCAANASAZI_FALSE@LOCA_ANASAZI_H = 
 @BUILD_LOCAANASAZI_TRUE@LOCA_ANASAZI_H = \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_Generic.H \
@@ -993,7 +1021,8 @@ LOCA_H = \
 	$(LOCA_STEPSIZE_H) \
 	$(LOCA_STEPPER_H) \
 	$(LOCA_ABSTRACT_H) \
-	$(LOCA_STATUSTEST_H)
+	$(LOCA_STATUSTEST_H) \
+	$(LOCA_EIGENSOLVER_H)
 
 LOCA = \
 	$(LOCA_EXTENDED) \
@@ -1011,7 +1040,8 @@ LOCA = \
 	$(LOCA_STEPSIZE) \
 	$(LOCA_STEPPER) \
 	$(LOCA_ABSTRACT) \
-	$(LOCA_STATUSTEST)
+	$(LOCA_STATUSTEST) \
+	$(LOCA_EIGENSOLVER)
 
 
 # ------------------------------------------------------------------------
@@ -1168,6 +1198,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Continuation_StatusTest_ParameterResidualNorm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Continuation_StatusTest_ParameterUpdateNorm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_DerivUtils.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_ErrorCheck.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Extended_AbstractGroup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_la-LOCA_Extended_MultiVector.Plo@am__quote@
@@ -3076,6 +3109,78 @@ libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.lo: $(srcdir)/LOCA_
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.lo `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C
+
+libloca_la-LOCA_Eigensolver_DefaultStrategy.o: $(srcdir)/LOCA_Eigensolver_DefaultStrategy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Eigensolver_DefaultStrategy.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Tpo" -c -o libloca_la-LOCA_Eigensolver_DefaultStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Tpo" "$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C' object='libloca_la-LOCA_Eigensolver_DefaultStrategy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Eigensolver_DefaultStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C
+
+libloca_la-LOCA_Eigensolver_DefaultStrategy.obj: $(srcdir)/LOCA_Eigensolver_DefaultStrategy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Eigensolver_DefaultStrategy.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Tpo" -c -o libloca_la-LOCA_Eigensolver_DefaultStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Tpo" "$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C' object='libloca_la-LOCA_Eigensolver_DefaultStrategy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Eigensolver_DefaultStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C'; fi`
+
+libloca_la-LOCA_Eigensolver_DefaultStrategy.lo: $(srcdir)/LOCA_Eigensolver_DefaultStrategy.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Eigensolver_DefaultStrategy.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Tpo" -c -o libloca_la-LOCA_Eigensolver_DefaultStrategy.lo `test -f '$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Tpo" "$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C' object='libloca_la-LOCA_Eigensolver_DefaultStrategy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_DefaultStrategy.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Eigensolver_DefaultStrategy.lo `test -f '$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C
+
+libloca_la-LOCA_Eigensolver_AnasaziStrategy.o: $(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Eigensolver_AnasaziStrategy.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Tpo" -c -o libloca_la-LOCA_Eigensolver_AnasaziStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Tpo" "$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C' object='libloca_la-LOCA_Eigensolver_AnasaziStrategy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Eigensolver_AnasaziStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C
+
+libloca_la-LOCA_Eigensolver_AnasaziStrategy.obj: $(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Eigensolver_AnasaziStrategy.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Tpo" -c -o libloca_la-LOCA_Eigensolver_AnasaziStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Tpo" "$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C' object='libloca_la-LOCA_Eigensolver_AnasaziStrategy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Eigensolver_AnasaziStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C'; fi`
+
+libloca_la-LOCA_Eigensolver_AnasaziStrategy.lo: $(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Eigensolver_AnasaziStrategy.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Tpo" -c -o libloca_la-LOCA_Eigensolver_AnasaziStrategy.lo `test -f '$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Tpo" "$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C' object='libloca_la-LOCA_Eigensolver_AnasaziStrategy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_AnasaziStrategy.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Eigensolver_AnasaziStrategy.lo `test -f '$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C
+
+libloca_la-LOCA_Eigensolver_Factory.o: $(srcdir)/LOCA_Eigensolver_Factory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Eigensolver_Factory.o -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Tpo" -c -o libloca_la-LOCA_Eigensolver_Factory.o `test -f '$(srcdir)/LOCA_Eigensolver_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_Factory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_Factory.C' object='libloca_la-LOCA_Eigensolver_Factory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Eigensolver_Factory.o `test -f '$(srcdir)/LOCA_Eigensolver_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_Factory.C
+
+libloca_la-LOCA_Eigensolver_Factory.obj: $(srcdir)/LOCA_Eigensolver_Factory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Eigensolver_Factory.obj -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Tpo" -c -o libloca_la-LOCA_Eigensolver_Factory.obj `if test -f '$(srcdir)/LOCA_Eigensolver_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_Factory.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Po"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_Factory.C' object='libloca_la-LOCA_Eigensolver_Factory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Po' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Eigensolver_Factory.obj `if test -f '$(srcdir)/LOCA_Eigensolver_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_Factory.C'; fi`
+
+libloca_la-LOCA_Eigensolver_Factory.lo: $(srcdir)/LOCA_Eigensolver_Factory.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -MT libloca_la-LOCA_Eigensolver_Factory.lo -MD -MP -MF "$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Tpo" -c -o libloca_la-LOCA_Eigensolver_Factory.lo `test -f '$(srcdir)/LOCA_Eigensolver_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_Factory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Tpo" "$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Plo"; else rm -f "$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Eigensolver_Factory.C' object='libloca_la-LOCA_Eigensolver_Factory.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.Plo' tmpdepfile='$(DEPDIR)/libloca_la-LOCA_Eigensolver_Factory.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_la_CXXFLAGS) $(CXXFLAGS) -c -o libloca_la-LOCA_Eigensolver_Factory.lo `test -f '$(srcdir)/LOCA_Eigensolver_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_Factory.C
 
 mostlyclean-libtool:
 	-rm -f *.lo
