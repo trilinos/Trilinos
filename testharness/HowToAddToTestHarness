@@ -39,9 +39,9 @@ to add to contribute new tests to the test harness.
 Scripts used in the test harness must follow certain requirements.  These
 requirements are easy to follow for packages using a directory structure like
 that of epetra.  Other directory structures require slightly more work.
-See Trilinos/packages/epetra/test/scripts/daily/mpi/autotoolsTestAllMpi for 
+See Trilinos/packages/epetra/test/scripts/daily/mpi/epetraTestAllMpi for 
 an example of how to write a script that will run tests in parallel.  See 
-Trilinos/packages/epetra/test/scripts/daily/serial/autotoolsTestAll for an 
+Trilinos/packages/epetra/test/scripts/daily/serial/epetraTestAll for an 
 example of how to write a script that will run tests in serial.  When 
 customizing these files, pay special attention to the lines beginning with
 '##'.  Also, keep in mind that paths must be specified relatively.  Reading
@@ -57,7 +57,7 @@ to be run in parallel or serial, and if the script should be run daily or
 weekly.  For example, if a script is to be run in parallel on a daily basis,
 check it into the repository in the
 Trilinos/packages/(name_of_package)/test/scripts/daily/mpi/ directory.  If
-this directory does not exist, simply create it, the test harness will find it.
+this directory does not exist, create it; the test harness will find it.
 The owner listed inside the script will receive emails with test results.
 
 
