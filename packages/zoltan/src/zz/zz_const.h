@@ -213,171 +213,185 @@ struct Zoltan_Struct {
   int Edge_Weight_Dim;            /*  Dimension of the edge weights, 
                                       usually 0 (no weights) or 1            */
   int Timer;                      /*  Timer type that is currently active */
-  ZOLTAN_PARTITION_FN *Get_Partition;          /* Fn ptr to get an object's
-                                                  partition assignment.      */
-  ZOLTAN_PARTITION_FORT_FN *Get_Partition_Fort;/* Fortran version            */
-  void *Get_Partition_Data;                    /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Partition()            */
-  ZOLTAN_NUM_EDGES_FN *Get_Num_Edges;          /* Fn ptr to get an object's
-                                                  number of edges.           */
-  ZOLTAN_NUM_EDGES_FORT_FN *Get_Num_Edges_Fort;/* Fortran version            */
-  void *Get_Num_Edges_Data;                    /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Num_Edges()            */
-  ZOLTAN_EDGE_LIST_FN *Get_Edge_List;          /* Fn ptr to get an object's
-                                                  edge list.                 */
-  ZOLTAN_EDGE_LIST_FORT_FN *Get_Edge_List_Fort;/* Fortran version            */
-  void *Get_Edge_List_Data;                    /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Edge_List()            */
-  ZOLTAN_NUM_GEOM_FN *Get_Num_Geom;            /* Fn ptr to get an object's
-                                                  number of geometry values. */
-  ZOLTAN_NUM_GEOM_FORT_FN *Get_Num_Geom_Fort;  /* Fortran version            */
-  void *Get_Num_Geom_Data;                     /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Num_Geom()             */
-  ZOLTAN_GEOM_MULTI_FN *Get_Geom_Multi;        /* Fn ptr to get all objects'
-                                                  geometry values.           */
-  ZOLTAN_GEOM_MULTI_FORT_FN *Get_Geom_Multi_Fort; /* Fortran version         */
-  void *Get_Geom_Multi_Data;                   /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Geom_Multi()           */
-  ZOLTAN_GEOM_FN *Get_Geom;                    /* Fn ptr to get an object's
-                                                  geometry values.           */
-  ZOLTAN_GEOM_FORT_FN *Get_Geom_Fort;          /* Fortran version            */
-  void *Get_Geom_Data;                         /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Geom()                 */
-  ZOLTAN_NUM_OBJ_FN *Get_Num_Obj;              /* Fn ptr to get a proc's  
-                                                  number of local objects.   */
-  ZOLTAN_NUM_OBJ_FORT_FN *Get_Num_Obj_Fort;    /* Fortran version            */
-  void *Get_Num_Obj_Data;                      /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Num_Obj()              */
-  ZOLTAN_OBJ_LIST_FN *Get_Obj_List;            /* Fn ptr to get all local
-                                                  objects on a proc.         */
-  ZOLTAN_OBJ_LIST_FORT_FN *Get_Obj_List_Fort;  /* Fortran version            */
-  void *Get_Obj_List_Data;                     /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Obj_List()             */
-  ZOLTAN_FIRST_OBJ_FN *Get_First_Obj;          /* Fn ptr to get the first   
-                                                  local obj on a proc.       */
-  ZOLTAN_FIRST_OBJ_FORT_FN *Get_First_Obj_Fort;/* Fortran version            */
-  void *Get_First_Obj_Data;                    /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_First_Obj()            */
-  ZOLTAN_NEXT_OBJ_FN *Get_Next_Obj;            /* Fn ptr to get the next   
-                                                  local obj on a proc.       */
-  ZOLTAN_NEXT_OBJ_FORT_FN *Get_Next_Obj_Fort;  /* Fortran version            */
-  void *Get_Next_Obj_Data;                     /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Next_Obj()             */
-  ZOLTAN_NUM_BORDER_OBJ_FN *Get_Num_Border_Obj;/* Fn ptr to get a proc's 
-                                                  number of border objs wrt
-                                                  a given processor.         */
+  ZOLTAN_PARTITION_MULTI_FN *Get_Partition_Multi;
+                                       /* Fn ptr to get objects'
+                                          partition assignments.     */
+  ZOLTAN_PARTITION_MULTI_FORT_FN *Get_Partition_Multi_Fort;
+                                       /* Fortran version            */
+  void *Get_Partition_Multi_Data;      /* Ptr to user defined data to be 
+                                          passed to Get_Partition_Multi()    */
+  ZOLTAN_PARTITION_FN *Get_Partition;          
+                                       /* Fn ptr to get an object's
+                                          partition assignment.      */
+  ZOLTAN_PARTITION_FORT_FN *Get_Partition_Fort;
+                                       /* Fortran version            */
+  void *Get_Partition_Data;            /* Ptr to user defined data
+                                          to be passed to Get_Partition()    */
+  ZOLTAN_NUM_EDGES_FN *Get_Num_Edges;  /* Fn ptr to get an object's
+                                          number of edges.           */
+  ZOLTAN_NUM_EDGES_FORT_FN *Get_Num_Edges_Fort;
+                                       /* Fortran version            */
+  void *Get_Num_Edges_Data;            /* Ptr to user defined data
+                                          to be passed to Get_Num_Edges()    */
+  ZOLTAN_EDGE_LIST_FN *Get_Edge_List;  /* Fn ptr to get an object's edge list.*/
+  ZOLTAN_EDGE_LIST_FORT_FN *Get_Edge_List_Fort;
+                                       /* Fortran version            */
+  void *Get_Edge_List_Data;            /* Ptr to user defined data
+                                          to be passed to Get_Edge_List()    */
+  ZOLTAN_NUM_GEOM_FN *Get_Num_Geom;    /* Fn ptr to get an object's
+                                          number of geometry values. */
+  ZOLTAN_NUM_GEOM_FORT_FN *Get_Num_Geom_Fort;  
+                                       /* Fortran version            */
+  void *Get_Num_Geom_Data;             /* Ptr to user defined data
+                                          to be passed to Get_Num_Geom()     */
+  ZOLTAN_GEOM_MULTI_FN *Get_Geom_Multi;        
+                                       /* Fn ptr to get all objects'
+                                          geometry values.           */
+  ZOLTAN_GEOM_MULTI_FORT_FN *Get_Geom_Multi_Fort; 
+                                       /* Fortran version         */
+  void *Get_Geom_Multi_Data;           /* Ptr to user defined data
+                                          to be passed to Get_Geom_Multi()   */
+  ZOLTAN_GEOM_FN *Get_Geom;            /* Fn ptr to get an object's
+                                          geometry values.           */
+  ZOLTAN_GEOM_FORT_FN *Get_Geom_Fort;  /* Fortran version            */
+  void *Get_Geom_Data;                 /* Ptr to user defined data
+                                          to be passed to Get_Geom()         */
+  ZOLTAN_NUM_OBJ_FN *Get_Num_Obj;      /* Fn ptr to get a proc's  
+                                          number of local objects.   */
+  ZOLTAN_NUM_OBJ_FORT_FN *Get_Num_Obj_Fort;    
+                                       /* Fortran version            */
+  void *Get_Num_Obj_Data;              /* Ptr to user defined data
+                                          to be passed to Get_Num_Obj()      */
+  ZOLTAN_OBJ_LIST_FN *Get_Obj_List;    /* Fn ptr to get all local
+                                          objects on a proc.         */
+  ZOLTAN_OBJ_LIST_FORT_FN *Get_Obj_List_Fort;  
+                                       /* Fortran version            */
+  void *Get_Obj_List_Data;             /* Ptr to user defined data
+                                          to be passed to Get_Obj_List()     */
+  ZOLTAN_FIRST_OBJ_FN *Get_First_Obj;  /* Fn ptr to get the first   
+                                          local obj on a proc.       */
+  ZOLTAN_FIRST_OBJ_FORT_FN *Get_First_Obj_Fort;
+                                       /* Fortran version            */
+  void *Get_First_Obj_Data;            /* Ptr to user defined data
+                                          to be passed to Get_First_Obj()    */
+  ZOLTAN_NEXT_OBJ_FN *Get_Next_Obj;    /* Fn ptr to get the next   
+                                          local obj on a proc.       */
+  ZOLTAN_NEXT_OBJ_FORT_FN *Get_Next_Obj_Fort;  
+                                       /* Fortran version            */
+  void *Get_Next_Obj_Data;             /* Ptr to user defined data
+                                          to be passed to Get_Next_Obj()     */
+  ZOLTAN_NUM_BORDER_OBJ_FN *Get_Num_Border_Obj;
+                                       /* Fn ptr to get a proc's 
+                                          number of border objs wrt
+                                          a given processor.         */
   ZOLTAN_NUM_BORDER_OBJ_FORT_FN *Get_Num_Border_Obj_Fort; 
-                                               /* Fortran version     */ 
-  void *Get_Num_Border_Obj_Data;               /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Num_Border_Obj()       */
+                                       /* Fortran version     */ 
+  void *Get_Num_Border_Obj_Data;       /* Ptr to user defined data
+                                          to be passed to
+                                          Get_Num_Border_Obj()       */
   ZOLTAN_BORDER_OBJ_LIST_FN *Get_Border_Obj_List;  
-                                               /* Fn ptr to get all objects
-                                                  sharing a border with a
-                                                  given processor.           */
+                                       /* Fn ptr to get all objects
+                                          sharing a border with a
+                                          given processor.           */
   ZOLTAN_BORDER_OBJ_LIST_FORT_FN *Get_Border_Obj_List_Fort; 
-                                               /* Fortran version   */
-  void *Get_Border_Obj_List_Data;              /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Border_Obj_List()      */
+                                       /* Fortran version   */
+  void *Get_Border_Obj_List_Data;      /* Ptr to user defined data
+                                          to be passed to
+                                          Get_Border_Obj_List()      */
   ZOLTAN_FIRST_BORDER_OBJ_FN *Get_First_Border_Obj;
-                                               /* Fn ptr to get the first 
-                                                  object sharing a border 
-                                                  with a given processor.    */
+                                       /* Fn ptr to get the first 
+                                          object sharing a border 
+                                          with a given processor.    */
   ZOLTAN_FIRST_BORDER_OBJ_FORT_FN *Get_First_Border_Obj_Fort; 
-                                               /* Fortran version */
-  void *Get_First_Border_Obj_Data;             /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_First_Border_Obj()     */
+                                       /* Fortran version */
+  void *Get_First_Border_Obj_Data;     /* Ptr to user defined data
+                                          to be passed to
+                                          Get_First_Border_Obj()     */
   ZOLTAN_NEXT_BORDER_OBJ_FN *Get_Next_Border_Obj;  
-                                               /* Fn ptr to get the next 
-                                                  object sharing a border 
-                                                  with a given processor.    */
+                                       /* Fn ptr to get the next 
+                                          object sharing a border 
+                                          with a given processor.    */
   ZOLTAN_NEXT_BORDER_OBJ_FORT_FN *Get_Next_Border_Obj_Fort; 
-                                               /* Fortran version   */
-  void *Get_Next_Border_Obj_Data;              /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Next_Border_Obj()      */
-  ZOLTAN_NUM_COARSE_OBJ_FN *Get_Num_Coarse_Obj;/* Fn ptr to get the number of
-                                                  elements in the coarse grid*/
+                                       /* Fortran version   */
+  void *Get_Next_Border_Obj_Data;      /* Ptr to user defined data
+                                          to be passed to
+                                          Get_Next_Border_Obj()      */
+  ZOLTAN_NUM_COARSE_OBJ_FN *Get_Num_Coarse_Obj;
+                                       /* Fn ptr to get the number of
+                                          elements in the coarse grid*/
   ZOLTAN_NUM_COARSE_OBJ_FORT_FN *Get_Num_Coarse_Obj_Fort; 
-                                               /* Fortran version     */
-  void *Get_Num_Coarse_Obj_Data;               /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Num_Coarse_Obj()       */
+                                       /* Fortran version     */
+  void *Get_Num_Coarse_Obj_Data;       /* Ptr to user defined data
+                                          to be passed to
+                                          Get_Num_Coarse_Obj()       */
   ZOLTAN_COARSE_OBJ_LIST_FN *Get_Coarse_Obj_List;  
-                                               /* Fn ptr to get all
-                                                  elements in the coarse grid*/
+                                       /* Fn ptr to get all
+                                          elements in the coarse grid*/
   ZOLTAN_COARSE_OBJ_LIST_FORT_FN *Get_Coarse_Obj_List_Fort; 
-                                               /* Fortran version   */
-  void *Get_Coarse_Obj_List_Data;              /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Coarse_Obj_List()      */
+                                       /* Fortran version   */
+  void *Get_Coarse_Obj_List_Data;      /* Ptr to user defined data
+                                          to be passed to
+                                          Get_Coarse_Obj_List()      */
   ZOLTAN_FIRST_COARSE_OBJ_FN *Get_First_Coarse_Obj;
-                                               /* Fn ptr to get the first coarse
-                                                  obj on a proc.             */
+                                       /* Fn ptr to get the first coarse
+                                          obj on a proc.             */
   ZOLTAN_FIRST_COARSE_OBJ_FORT_FN *Get_First_Coarse_Obj_Fort; 
-                                               /* Fortran version */
-  void *Get_First_Coarse_Obj_Data;             /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_First_Coarse_Obj()     */
+                                       /* Fortran version */
+  void *Get_First_Coarse_Obj_Data;     /* Ptr to user defined data
+                                          to be passed to
+                                          Get_First_Coarse_Obj()     */
   ZOLTAN_NEXT_COARSE_OBJ_FN *Get_Next_Coarse_Obj;  
-                                               /* Fn ptr to get the next coarse
-                                                  obj on a proc.             */
+                                       /* Fn ptr to get the next coarse
+                                          obj on a proc.             */
   ZOLTAN_NEXT_COARSE_OBJ_FORT_FN *Get_Next_Coarse_Obj_Fort; 
-                                               /* Fortran version   */
-  void *Get_Next_Coarse_Obj_Data;              /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Next_Coarse_Obj()      */
-  ZOLTAN_NUM_CHILD_FN *Get_Num_Child;          /* Fn ptr to get the number of
-                                                  children of an element     */
-  ZOLTAN_NUM_CHILD_FORT_FN *Get_Num_Child_Fort;/* Fortran version            */
-  void *Get_Num_Child_Data;                    /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Num_Child()            */
-  ZOLTAN_CHILD_LIST_FN *Get_Child_List;        /* Fn ptr to get all
-                                                  children of an element     */
+                                       /* Fortran version   */
+  void *Get_Next_Coarse_Obj_Data;      /* Ptr to user defined data
+                                          to be passed to
+                                          Get_Next_Coarse_Obj()      */
+  ZOLTAN_NUM_CHILD_FN *Get_Num_Child;  /* Fn ptr to get the number of
+                                          children of an element     */
+  ZOLTAN_NUM_CHILD_FORT_FN *Get_Num_Child_Fort;
+                                       /* Fortran version            */
+  void *Get_Num_Child_Data;            /* Ptr to user defined data
+                                          to be passed to
+                                          Get_Num_Child()            */
+  ZOLTAN_CHILD_LIST_FN *Get_Child_List;        
+                                       /* Fn ptr to get all
+                                          children of an element     */
   ZOLTAN_CHILD_LIST_FORT_FN *Get_Child_List_Fort;  
-                                               /* Fortran version            */
-  void *Get_Child_List_Data;                   /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Child_List()           */
-  ZOLTAN_CHILD_WEIGHT_FN *Get_Child_Weight;    /* Fn ptr to get the weight
-                                                  of an element              */
+                                       /* Fortran version            */
+  void *Get_Child_List_Data;           /* Ptr to user defined data
+                                          to be passed to
+                                          Get_Child_List()           */
+  ZOLTAN_CHILD_WEIGHT_FN *Get_Child_Weight;    
+                                       /* Fn ptr to get the weight
+                                          of an element              */
   ZOLTAN_CHILD_WEIGHT_FORT_FN *Get_Child_Weight_Fort; 
-                                               /* Fortran version         */
-  void *Get_Child_Weight_Data;                 /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Child_Weight()         */
-  ZOLTAN_NUM_HG_EDGES_FN *Get_Num_HG_Edges;    /* Fn ptr to get an object's
-                                                  number of hypergraph edges.*/
-  ZOLTAN_NUM_HG_EDGES_FORT_FN *Get_Num_HG_Edges_Fort;/* Fortran version      */
-  void *Get_Num_HG_Edges_Data;                 /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Num_HG_Edges()         */
-  ZOLTAN_HG_EDGE_LIST_FN *Get_HG_Edge_List;    /* Fn ptr to get an object's
-                                                  hyper-edge list.           */
+                                       /* Fortran version         */
+  void *Get_Child_Weight_Data;         /* Ptr to user defined data
+                                          to be passed to
+                                          Get_Child_Weight()         */
+  ZOLTAN_NUM_HG_EDGES_FN *Get_Num_HG_Edges;    
+                                       /* Fn ptr to get an object's
+                                          number of hypergraph edges.*/
+  ZOLTAN_NUM_HG_EDGES_FORT_FN *Get_Num_HG_Edges_Fort;
+                                       /* Fortran version      */
+  void *Get_Num_HG_Edges_Data;         /* Ptr to user defined data
+                                          to be passed to
+                                          Get_Num_HG_Edges()         */
+  ZOLTAN_HG_EDGE_LIST_FN *Get_HG_Edge_List;    
+                                       /* Fn ptr to get an object's
+                                          hyper-edge list.           */
   ZOLTAN_HG_EDGE_LIST_FORT_FN *Get_HG_Edge_List_Fort;/* Fortran version      */
-  void *Get_HG_Edge_List_Data;                 /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_HG_Edge_List()         */
-  ZOLTAN_NUM_HG_PINS_FN *Get_Num_HG_Pins;      /* Fn ptr to get the total
-                                                  # pins in local hypergraph */
+  void *Get_HG_Edge_List_Data;         /* Ptr to user defined data
+                                          to be passed to Get_HG_Edge_List() */
+  ZOLTAN_NUM_HG_PINS_FN *Get_Num_HG_Pins;      
+                                       /* Fn ptr to get the total
+                                          # pins in local hypergraph */
   ZOLTAN_NUM_HG_PINS_FORT_FN *Get_Num_HG_Pins_Fort; 
-                                              /* Fortran version             */
-  void *Get_Num_HG_Pins_Data;                 /* Ptr to user defined data
-                                                  to be passed to
-                                                  Get_Num_HG_Pins()          */
+                                       /* Fortran version             */
+  void *Get_Num_HG_Pins_Data;          /* Ptr to user defined data
+                                           to be passed to Get_Num_HG_Pins() */
   ZOLTAN_OBJ_SIZE_FN *Get_Obj_Size;    /* Function that returns the size of
                                           contiguous memory needed to store
                                           the data for a single object for
@@ -428,8 +442,8 @@ struct Zoltan_Struct {
   void *Unpack_Obj_Multi_Data;         /* Ptr to user defined data to be
                                           passed to Unpack_Obj_Multi()       */
   ZOLTAN_GET_PROCESSOR_NAME_FN *Get_Processor_Name; 
-                                               /* Fn ptr to get proc name   */
-  void *Get_Processor_Name_Data;               /* Ptr to user defined data   */
+                                       /* Fn ptr to get proc name   */
+  void *Get_Processor_Name_Data;       /* Ptr to user defined data   */
 
   struct Zoltan_LB_Struct LB;          /* Struct with info for load balancing */
   struct Zoltan_Migrate_Struct Migrate;/* Struct with info for migration.     */

@@ -271,10 +271,20 @@ type(PARIO_INFO) :: pio_info
     goto 9999
   endif
 
-  if (Zoltan_Set_Partition_Fn(zz_obj, get_partition, mesh_wrapper) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_Set_Fn()"
-    run_zoltan = .false.
-    goto 9999
+  if (Test_Multi_Callbacks .eq. 1) then
+    if (Zoltan_Set_Partition_Multi_Fn(zz_obj, get_partition_multi, &
+                                      mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      run_zoltan = .false.
+      goto 9999
+    endif
+  else
+    if (Zoltan_Set_Partition_Fn(zz_obj, get_partition, &
+                                mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      run_zoltan = .false.
+      goto 9999
+    endif
   endif
 
 !  /* Evaluate the old balance */
@@ -526,6 +536,51 @@ integer(Zoltan_INT), intent(out) :: ierr
 
   get_num_geom = data%ptr%num_dims
 end function get_num_geom
+
+!/*****************************************************************************/
+!/*****************************************************************************/
+!/*****************************************************************************/
+subroutine get_partition_multi(data, num_gid_entries, num_lid_entries, &
+                    num_obj, global_id, local_id, parts, ierr)
+integer(Zoltan_INT) :: get_partition
+type (Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries, num_obj
+integer(Zoltan_INT), intent(in) :: global_id(*)
+integer(Zoltan_INT), intent(in) :: local_id(*)
+integer(Zoltan_INT), intent(out) :: parts(*), ierr
+
+  type(ELEM_INFO), pointer :: current_elem
+  type(MESH_INFO), pointer :: mesh_data
+  integer(Zoltan_INT) :: i, j
+  real(Zoltan_DOUBLE) :: tmp
+  integer(Zoltan_INT) :: idx
+  integer(Zoltan_INT) :: gid  ! Temporary variables to change positioning of IDs.
+  integer(Zoltan_INT) :: lid
+
+  gid = num_gid_entries
+  lid = num_lid_entries
+
+  mesh_data => data%ptr
+
+  if (.not. associated(mesh_data%elements)) then
+    ierr = ZOLTAN_FATAL
+    return
+  endif
+
+  do i=0,num_obj-1
+    if (num_lid_entries.gt.0) then
+      current_elem => mesh_data%elements(local_id(i*num_lid_entries+lid))
+    else
+      current_elem => search_by_global_id(mesh_data, &
+                                          global_id(i*num_gid_entries+gid), idx)
+    endif
+
+    parts(i+1) = current_elem%my_part
+  end do
+
+  ierr = ZOLTAN_OK
+
+end subroutine get_partition_multi
 
 !/*****************************************************************************/
 !/*****************************************************************************/

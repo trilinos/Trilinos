@@ -106,6 +106,7 @@ ZZ *zz;
   zz->Obj_Weight_Dim = ZOLTAN_OBJ_WEIGHT_DEF;
   zz->Edge_Weight_Dim = ZOLTAN_EDGE_WEIGHT_DEF;
 
+  zz->Get_Partition_Multi = NULL;
   zz->Get_Partition = NULL;
   zz->Get_Num_Edges = NULL;
   zz->Get_Edge_List = NULL;

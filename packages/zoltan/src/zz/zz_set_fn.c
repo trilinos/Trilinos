@@ -61,6 +61,10 @@ int ierr;
     ierr = Zoltan_Set_Partition_Fn(zz, 
                   (ZOLTAN_PARTITION_FN *) fn, data);
     break;
+  case ZOLTAN_PARTITION_MULTI_FN_TYPE:
+    ierr = Zoltan_Set_Partition_Multi_Fn(zz, 
+                  (ZOLTAN_PARTITION_MULTI_FN *) fn, data);
+    break;
   case ZOLTAN_NUM_EDGES_FN_TYPE:
     ierr = Zoltan_Set_Num_Edges_Fn(zz, 
                   (ZOLTAN_NUM_EDGES_FN *) fn, data);
@@ -224,6 +228,21 @@ int ierr;
 /*****************************************************************************/
 /*****************************************************************************/
 
+int Zoltan_Set_Partition_Multi_Fn(
+  ZZ *zz, 
+  ZOLTAN_PARTITION_MULTI_FN *fn, 
+  void *data
+)
+{
+  zz->Get_Partition_Multi = fn;
+  zz->Get_Partition_Multi_Data = data;
+  zz->Get_Partition = NULL;
+  zz->Get_Partition_Data = NULL;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
 int Zoltan_Set_Partition_Fn(
   ZZ *zz, 
   ZOLTAN_PARTITION_FN *fn, 
@@ -232,6 +251,8 @@ int Zoltan_Set_Partition_Fn(
 {
   zz->Get_Partition = fn;
   zz->Get_Partition_Data = data;
+  zz->Get_Partition_Multi = NULL;
+  zz->Get_Partition_Multi_Data = NULL;
   return ZOLTAN_OK;
 }
 

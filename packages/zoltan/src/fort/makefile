@@ -31,6 +31,8 @@ $(ZOD)/fwrap.f90: 	fwrap.fpp lbif.fpp lbfn.fpp \
 		set_numedges.if 		set_numedges.fn \
 		set_edgelist.if			set_edgelist.fn \
 		set_numobj.if 			set_numobj.fn \
+		set_partition.if 		set_partition.fn \
+		set_partitionmulti.if		set_partitionmulti.fn \
 		set_objlist.if			set_objlist.fn \
 		set_firstobj.if			set_firstobj.fn \
 		set_nextobj.if			set_nextobj.fn \

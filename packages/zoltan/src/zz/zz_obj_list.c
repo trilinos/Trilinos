@@ -145,9 +145,19 @@ int Zoltan_Get_Obj_List(
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
-    if (zz->Get_Partition == NULL) {
+    if (zz->Get_Partition == NULL && zz->Get_Partition_Multi == NULL) {
       for (i = 0; i < *num_obj; i++) 
         (*parts)[i] = zz->Proc;
+    }
+    else if (zz->Get_Partition_Multi) {
+      zz->Get_Partition_Multi(zz->Get_Partition_Multi_Data, 
+                              num_gid_entries, num_lid_entries, *num_obj,
+                              *global_ids, *local_ids, *parts, &ierr);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                           "Error returned from ZOLTAN_PARTITION_MULTI_FN");
+        goto End;
+      }
     }
     else {
       for (i = 0; i < *num_obj; i++) {

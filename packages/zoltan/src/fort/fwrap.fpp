@@ -55,6 +55,7 @@ public :: &
 
 public :: &
    ZOLTAN_PARTITION_FN_TYPE, &
+   ZOLTAN_PARTITION_MULTI_FN_TYPE, &
    ZOLTAN_NUM_EDGES_FN_TYPE, &
    ZOLTAN_EDGE_LIST_FN_TYPE, &
    ZOLTAN_NUM_GEOM_FN_TYPE, &
@@ -130,7 +131,7 @@ public :: &
    Zoltan_Set_Num_Border_Obj_Fn, Zoltan_Set_Border_Obj_List_Fn, &
    Zoltan_Set_First_Border_Obj_Fn, Zoltan_Set_Next_Border_Obj_Fn, &
    Zoltan_Set_Num_Geom_Fn, Zoltan_Set_Geom_Multi_Fn, Zoltan_Set_Geom_Fn, &
-   Zoltan_Set_Partition_Fn, &
+   Zoltan_Set_Partition_Fn, Zoltan_Set_Partition_Multi_Fn, &
    Zoltan_Set_Num_Edges_Fn, Zoltan_Set_Edge_List_Fn, &
    Zoltan_Set_Num_Coarse_Obj_Fn, Zoltan_Set_Coarse_Obj_List_Fn, &
    Zoltan_Set_First_Coarse_Obj_Fn, Zoltan_Set_Next_Coarse_Obj_Fn, &
@@ -221,7 +222,8 @@ type(ZOLTAN_FN_TYPES), parameter :: &
    ZOLTAN_CHILD_WEIGHT_FN_TYPE     = ZOLTAN_FN_TYPES(28_Zoltan_INT), &
    ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(29_Zoltan_INT), &
    ZOLTAN_PACK_OBJ_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(30_Zoltan_INT), &
-   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE = ZOLTAN_FN_TYPES(31_Zoltan_INT)
+   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE = ZOLTAN_FN_TYPES(31_Zoltan_INT), &
+   ZOLTAN_PARTITION_MULTI_FN_TYPE  = ZOLTAN_FN_TYPES(33_Zoltan_INT)
 
 ! Type of refinement used when building a refinement tree
 ! These values must agree with the values in zoltan.h
@@ -1074,6 +1076,7 @@ end interface
 #include "set_geommulti.if"
 #include "set_geom.if"
 #include "set_partition.if"
+#include "set_partitionmulti.if"
 #include "set_numedges.if"
 #include "set_edgelist.if"
 #include "set_numobj.if"
@@ -2147,6 +2150,7 @@ end subroutine Zf90_Reftree_Get_Child_Order
 #include "set_geommulti.fn"
 #include "set_geom.fn"
 #include "set_partition.fn"
+#include "set_partitionmulti.fn"
 #include "set_numedges.fn"
 #include "set_edgelist.fn"
 #include "set_numobj.fn"

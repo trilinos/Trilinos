@@ -959,13 +959,23 @@ int result;
   *ierr = ZOLTAN_OK;
 
 /* if the user registered a partition function, then use it */
-
   if (zz->Get_Partition != NULL) {
     result = zz->Get_Partition(zz->Get_Partition_Data,zz->Num_GID,zz->Num_LID,
                                subroot->global_id,subroot->local_id, ierr);
     if (*ierr != ZOLTAN_OK && *ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                          "Error returned from ZOLTAN_PARTITION_FN");
+    }
+  }
+  else if (zz->Get_Partition_Multi != NULL) {
+/* Not the best use of Multi function, but best I can do. KDD */
+    zz->Get_Partition_Multi(zz->Get_Partition_Multi_Data,
+                            zz->Num_GID,zz->Num_LID,1,
+                            subroot->global_id,subroot->local_id,
+                            &result,ierr);
+    if (*ierr != ZOLTAN_OK && *ierr != ZOLTAN_WARN) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                         "Error returned from ZOLTAN_PARTITION_MULTI_FN");
     }
   }
   else {
