@@ -317,9 +317,9 @@ template functions {}\texttt{rcp\-\_static\-\_cast<>( ...)},
 \end{commandment}
 
 A developer should never never never try to convert between
-{}\texttt{Ref\-Count\-Ptr<>} using the {}\texttt{get()} member function
-(which violates Commandment {}\ref{rcp:cmnd:converstion}).  For
-example, the following piece of code
+{}\texttt{Ref\-Count\-Ptr<>} objects using the {}\texttt{get()} member
+function (which violates Commandment {}\ref{rcp:cmnd:converstion}).
+For example, the following piece of code
 
 {\scriptsize\begin{verbatim}
   {
@@ -344,7 +344,10 @@ In this section we describe some advanced features of
 use and therefore may never need to know about.  However, there are
 certain challenging use cases where this functionality is critical to
 the success of {}\texttt{Ref\-Count\-Ptr<>} and therefore are
-discussed here.
+discussed here.  It is the inclusion of these advanced features that
+makes {}\texttt{Ref\-Count\-Ptr<>} an almost universal ``band aide''
+for the use of poorly designed (from a memory management standpoint)
+software.
 
 %
 \subsection{Accessing reference-count information}
@@ -374,8 +377,9 @@ This type of information must be used very carefully but can be very
 helpful in simplifying the logic in certain types of use cases. If
 this type of logic is to be used then it must be documented very
 clearly since it is easy to falsely show a reference count higher than
-the number of clients that really own {}\texttt{Ref\-Count\-Ptr<>} objects
-to the reference-counted object.
+the number of clients that really own {}\texttt{Ref\-Count\-Ptr<>}
+objects to the reference-counted object (i.e.~due to temporary object
+creation that allow implicit conversions).
 
 %
 \subsection{Associating extra data with a {}\texttt{Ref\-Count\-Ptr<>} object}
@@ -500,7 +504,7 @@ function will remain valid but a memory leak will have been created.
 If the function {}\texttt{create\-Base(...)}  is only called a few
 times in a program then this memory leak will most likely be harmless
 but if this function is called too many times, memory exhaustion will
-occur.
+occur (resulting in a program crash in most cases).
 
 The solution to this type of problem is to attach a
 {}\texttt{RefCountPtr<Utility>} object to the created
@@ -515,6 +519,7 @@ template<class T1, class T2>
 void set_extra_data(
   const T1 &extra_data, const std::string& name
   ,RefCountPtr<T2> *p, bool force_unique = true
+  ,EPrePostDestruction destroy_when = POST_DESTROY 
   );
 \end{verbatim}}
 
@@ -523,13 +528,26 @@ extra data of any type\footnote{Note: the type {}\texttt{T1} used for
 extra data must support value semantics (i.e.~have default and copy
 constructors defined)} to an existing {}\texttt{RefCountPtr<T2>}
 object.  A string \texttt{name} is associated with each piece of extra
-data to disambiguate from other pieces of extra data with the same
+data to disambiguate it from other pieces of extra data with the same
 type and to facilitate later retrieval.  The boolean argument
 \texttt{force\-\_unique} (which has a default value of \texttt{true})
 is used to allow or disallow overwriting existing data of the same
-type and name.  A piece of extra data is keyed both on the type of the
-extra data and its string name and access is granted by using one of
-the following nonmember functions.
+type and name.  The enumeration argument {}\texttt{destroy\-\_when}
+can take on the values {}\texttt{POST\-\_DESTROY} and
+{}\texttt{PRE\-\_DESTROY} (and takes the default value of
+{}\texttt{POST\-\_DESTROY}).  For the class of use cases described
+here the default value of {}\texttt{destroy\-\_when=POST\-\_DESTROY}
+is the correct value.  However, in other use cases, it is useful to
+allow pieces of extra data to be destroyed before a reference-counted
+object is destroyed.  At its essences, the extra data facility allows
+a developer to allow some action or set of actions to be performed
+just before or just after an object is destroyed.  This is a very
+powerful feature that is not supported in most memory management
+classes.
+
+A piece of extra data is keyed both on the type of the extra data and
+its string name and access is granted by using one of the following
+nonmember functions.
 
 {\scriptsize\begin{verbatim}
 template<class T1, class T2>
@@ -573,18 +591,18 @@ RefCountPtr<Base> createBase(bool someFlag)
 }
 \end{verbatim}}
 
-{}\noindent{}Now when the last {}\texttt{Ref\-Count\-Ptr<>} object to the
-dynamically allocated {}\texttt{Derived2} object is removed and the
-{}\texttt{Derived2} object is deleted, the associated dynamically
+{}\noindent{}Now when the last {}\texttt{Ref\-Count\-Ptr<>} object to
+the dynamically allocated {}\texttt{Derived2} object is removed and
+the {}\texttt{Derived2} object is deleted, the associated dynamically
 allocated {}\texttt{Utility} object will also be deleted.  Note that
-extra data associated with a {}\texttt{Ref\-Count\-Ptr<>} object is only
-deleted \underline{after} the reference-counted object is deleted.
-This is the correct behavior in use cases like described above where
-the destructor for {}\texttt{Derived2} may need to call functions on
-its aggregate {}\texttt{Utility} object and therefore the utility
-object must be valid at this point.  Added pieces of extra data are
-destroyed in a first-in last-out manner (just as is done on the
-stack).
+extra data associated with a {}\texttt{Ref\-Count\-Ptr<>} object by
+default is deleted \underline{after} the reference-counted object is
+deleted.  This is the correct behavior in use cases like described
+above where the destructor for {}\texttt{Derived2} may need to call
+functions on its aggregate {}\texttt{Utility} object and therefore the
+utility object must be valid at this point.  Added pieces of extra
+data are destroyed in a first-in last-out manner (just as is done on
+the stack).
 
 Note that the ability to add extra data to a
 {}\texttt{Ref\-Count\-Ptr<>} object is an advanced feature that that
@@ -636,13 +654,13 @@ these situations include:
 \item
 When reference counts for objects are managed by requiring clients to
 explicitly call increment and decrement functions.  This situation
-occues when using CORBA {}\cite{ref:corba} and COM {}\cite{ref:com}
+occurs when using CORBA {}\cite{ref:corba} and COM {}\cite{ref:com}
 for instance.  Such an approach is also presented in {}\cite[Item
 29]{ref:meyers_1996} in the subsection ``A Reference-Counting Base
 Class''.  In these protocols, deallocation occurs automatically behind
 the scenes when this other reference count goes to zero and does not
 occur through an explicit call to operator {}\texttt{delete} as with
-the default behavior for {}\texttt{Ref\-Count\-Ptr<>'}.
+the default behavior for {}\texttt{Ref\-Count\-Ptr<>}.
 \item
 When objects are managed by certain types of object databases.  In
 some object databases, an object that is grabbed from the database must
@@ -742,7 +760,7 @@ class DeallocObjectADB
 public:
   DeallocObjectADB( ObjectjADB* db, int id ) : db_(db), id_(id) {}
   typedef A ptr_t;
-  void free( T* ptr ) { db_->release(id); }
+  void free( T* ptr ) { db_->release(id_); }
 private:
   ObjectjADB* db_;
   int id_;
@@ -805,9 +823,9 @@ maintain a private data member to another object which is of an
 abstract type or is an object that is shared with other clients.  As
 described in the beginner's guide
 {}\cite{ref:RefCountPtrBeginnersGuide} this is an example of a
-{}\textit{non-trnasitive} relationship and
+{}\textit{persisting} relationship and
 {}\texttt{Ref\-Count\-Ptr<>} should be used for all
-{}\textit{non-trnasitive} relationships.  Note that
+{}\textit{persisting} relationships.  Note that
 {}\texttt{Ref\-Count\-Ptr<>} usually should not be used for built-in
 data types such as {}\texttt{int} or {}\texttt{double} unless there is
 a desire to allow one client to change the value and then have this
@@ -898,12 +916,12 @@ each of the use cases shown in Appendix D in
 As a basic rule of thumb, {}\texttt{Ref\-Count\-Ptr<>} objects should
 be passed around as though they where raw C++ pointers to the
 underlying objects.  The main difference between passing
-{}\texttt{Ref\-Count\-Ptr<>} and and raw C++ pointers, however, is
-that it usually a good idea to pass {}\texttt{Ref\-Count\-Ptr<>}
-objects by {}\texttt{const} reference instead of by value since
-passing {}\texttt{Ref\-Count\-Ptr<>} objects by value results in
-unnecessary calls to copy constructors and destructors that, if
-nothing else, make stepping through code in debugger more difficult.
+{}\texttt{Ref\-Count\-Ptr<>} and raw C++ pointers, however, is that it
+is usually a good idea to pass {}\texttt{Ref\-Count\-Ptr<>} objects by
+{}\texttt{const} reference instead of by value since passing
+{}\texttt{Ref\-Count\-Ptr<>} objects by value results in unnecessary
+calls to copy constructors and destructors that, if nothing else, make
+stepping through code in debugger more difficult.
 
 %
 \subsection{Detailed discussion/justification for idioms}
@@ -935,14 +953,14 @@ for raw data types, the may not be as familiar with how
 
 As stated in the beginner's guide
 {}\cite{ref:RefCountPtrBeginnersGuide}, it is recommended to use raw
-object references for passing transitive arguments (i.e.~those that
+object references for passing non-persisting arguments (i.e.~those that
 are only accessed during a function call) to a function.  Here, the
 term reference is used in a more abstract sense where a reference can
 be implemented as a C++ reference such as {}\texttt{const A \&a} or as
 a C++ pointer such as {}\texttt{A *a}.  On the other hand, it is
 recommended to pass {}\texttt{Ref\-Count\-Ptr<>} wrapped object
 references (i.e.~{}\texttt{const Ref\-Count\-Ptr<A> \&a}) for any
-non-transitive arguments (i.e.~those where a ``memory'' of the object
+persisting arguments (i.e.~those where a ``memory'' of the object
 in the server implementing the function persists after the function
 returns).
 
@@ -1017,8 +1035,8 @@ for such an argument is usually not advised and this issue is
 addressed a little later.
 
 Note that the above function {}\texttt{foo(...)} involved all
-transitive (i.e.~only accessed with the function) arguments which is
-often the case.  Now lets consider the use of non-transitive argument
+non-persisting (i.e.~only accessed with the function) arguments which is
+often the case.  Now lets consider the use of persisting argument
 types as supported using {}\texttt{Ref\-Count\-Ptr<>}.
 
 {\scriptsize\begin{verbatim}
@@ -1041,7 +1059,7 @@ private:
 \end{verbatim}}
 
 {}\noindent{}The above example function
-{}\texttt{SomeClass\-::foo2(...)} is an example where a non-transitive
+{}\texttt{SomeClass\-::foo2(...)} is an example where a persisting
 argument, {}\texttt{y}, is passed into a function and is then
 ``remembered''.  In this case, the {}\texttt{Ref\-Count\-Ptr<>}
 argument {}\texttt{y} is delivering a
@@ -1052,7 +1070,7 @@ for the class object.
 \subsubsection{Passing non-mutable objects}
 %
 
-Non-mutable transitive objects (i.e.~objects that are passed into a
+Non-mutable non-persisting objects (i.e.~objects that are passed into a
 function, are not modified and no memory of these objects is
 maintained) can be passed by value or by reference (i.e.~through a C++
 pointer or a C++ reference) and as either single objects or as an
@@ -1125,7 +1143,7 @@ whether an array of objects being passed to a function is optional or
 not.  When passing arrays of objects, it must be documented whether
 the arrays are required or optional.
 
-Non-mutable non-transitive objects (i.e.~objects that are passed into
+Non-mutable persisting objects (i.e.~objects that are passed into
 a function, are not modified but some memory of these objects is
 maintained after the function call) should be passed through
 {}\texttt{Ref\-Count\-Ptr<>} wrapped objects.  Single object
@@ -1150,7 +1168,7 @@ underlying object is required, then the precondition
 object is optional, then it should be documented that
 {}\texttt{a.get()==NULL} is allowed.
 
-Passing an array of non-mutable non-transitive objects wrapped in
+Passing an array of non-mutable persisting objects wrapped in
 {}\texttt{Ref\-Count\-Ptr<>} objects is a little different from arrays
 for raw C++ objects or object references.  While it is recommended to
 pass single object references using {}\texttt{const}
@@ -1439,7 +1457,7 @@ where a pointer to a {}\texttt{const} {}\texttt{Ref\-Count\-Ptr<>}
 object (i.e.~{}\texttt{Ref\-Count\-Ptr<>*}) should be passed instead.
 This occurs when the calling client code is to acquire a
 {}\texttt{Ref\-Count\-Ptr<>} to an object held by the server code, or
-in other words form non-transitive relation between the returned
+in other words form persisting relation between the returned
 object and the client.  When only a single
 {}\texttt{Ref\-Count\-Ptr<>} is to be acquired for a single object,
 then it usually best to just return a {}\texttt{Ref\-Count\-Ptr<>}

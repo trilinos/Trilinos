@@ -58,11 +58,11 @@ class ConcreteClass1 : public AbstractClass {
 public:
   ConcreteClass1() {}
   ConcreteClass1( const RefCountPtr<A>& a, const RefCountPtr<B>&  b )
-  { initialize(a,b); }
+    { initialize(a,b); }
   void initialize( const RefCountPtr<A>& a, const RefCountPtr<B>& b )
-  { a_ = a; b_ = b; }
+    { a_ = a; b_ = b; }
   void uninitialize( RefCountPtr<A> *a = NULL, RefCountPtr<B> *b = NULL )
-  { if(a) *a = a_; if(b) *b = b_; a_ = null; b_ = null; }
+    { if(a) *a = a_; if(b) *b = b_; a_ = null; b_ = null; }
   ...
 private:
     RefCountPtr<A>  a_;
@@ -74,6 +74,8 @@ Note that in the above implementation of {}\texttt{ConcreteClass1}
 that an object can be default constructed to an ``uninitialized''
 state or can be fully initialized on object creation (using the second
 constructor that calls the {}\texttt{initialize()} function).
+Therefore, this idiom trivially also supports the ``initilaization on
+construction'' use case as well.
 
 A client can later uninitialize an object of type
 {}\texttt{Concrete\-Class1} and take ownership of the aggregate
