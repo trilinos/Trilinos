@@ -751,7 +751,7 @@ The process is discussed in Trilinos/testharness/HowToAddToTestHarness.
 Please note that this document is a work in progress.
 
 \subsection{CVS Repository}
-%**Add an appendix for a lot of this info.**
+
 Trilinos source code is maintained in a CVS~\cite{CVS} repository.  It is 
 very easy to add new packages to the repository.  Packages that already use 
 CVS can even retain their CVS history!  To access the repository, one must 
@@ -762,37 +762,9 @@ with your user name on software):
 \DisplayCommand{CVSROOT :ext:your\_user\_name@software.sandia.gov:/space/CVS}
 \DisplayCommand{CVS\_RSH ssh}
 
-For those not familiar with CVS, below is a brief discussion covering some 
-of the most common CVS commands.  For more information, see the Gnu CVS Home
-Page~\cite{CVS}.
-
-Checking Out a Working Copy
-
-To get started, checkout a copy of the development branch of the repository.
-(Releases branches can be obtained by by checking out the appropriate 
-tagged version of the repository.)
-
-\DisplayCommand{cvs checkout Trilinos}
-
-Updating a Woring Copy
-To update after a version has been obtained use the \InlineCommand{cvs update} 
-command.  First, cd to the directory that is to be updated 
-(usually the Trilinos root directory).  Then type:
-
-\DisplayCommand{cvs -q update -dP}
-
-The ``-q'' option means ``be somewhat quiet''.  Try the command without this
-option to see what it does.  
-
-The ``-d'' option means to get any new directories.  For example, if a new 
-package is added to the repository, but the ``-d'' option is not used, that 
-new package will never appear in the working copy.  However, the first time 
-that the ``-d'' option is used, all of the new package directories will be 
-downloaded, and from that time on, all CVS updates will update the 
-directories that were downloaded.  It is good practice to include this 
-option for every CVS update.
-
-%... Decide if this subsection is worth it, or if people should read the doc.  If expanded, add info about when to check in, and which branch...
+For those not familiar with CVS, a brief discussion covering some of the most 
+common CVS commands is available in~\ref{Section:CVS}.  For a more complete 
+listing of CVS commands, see the Gnu CVS Home Page~\cite{CVS}.
 
 \subsection{Bonsai}
 A lot of useful information related to CVS history is accessible via a
@@ -1250,6 +1222,43 @@ collection of Trilinos packages depend on each other.
 \appendix
 \section{Commonly Used CVS Commands}
 \label{Section:CVS}
+
+
+Checking Out a Working Copy
+
+To get started, checkout a copy of the development branch of the repository.
+(Releases branches can be obtained by by checking out the appropriate 
+tagged version of the repository.)
+
+\DisplayCommand{cvs checkout Trilinos}
+
+Updating a Woring Copy
+To update after a version has been obtained use the \InlineCommand{cvs update} 
+command.  First, cd to the directory that is to be updated 
+(usually the Trilinos root directory).  Then type:
+
+\DisplayCommand{cvs -q update -dP}
+
+The ``-q'' option means ``be somewhat quiet''.  Try the command without this
+option to see what it does.  
+
+The ``-d'' option means to get any new directories.  For example, if a new 
+package is added to the repository, but the ``-d'' option is not used, that 
+new package will never appear in the working copy.  However, the first time 
+that the ``-d'' option is used, all of the new package directories will be 
+downloaded, and from that time on, all CVS updates will update the 
+directories that were downloaded.  It is good practice to include this 
+option for every CVS update.
+
+Finally the ``-P'' option ``prunes'' empty directories.  This helps to keep 
+the directory structure from getting more cluttered than it needs to.  For 
+example, the old ``petra'' and ``tsf'' packages were removed from the 
+repository, but the directory structures will remain if this option is not 
+specified.  If an empty directory is needed, simply issue one update 
+command without the ``-P'' and the empty directories will be restored.
+
+%... Must be expanded, add info about when to check in, and which branch...
+
 \section{Common Bugzilla Tasks}
 \label{Section:Bugzilla}
 
