@@ -13,9 +13,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_ch_init_dist_id = "$Id$";
-#endif
 
 #include "dr_const.h"
 #include "dr_input_const.h"

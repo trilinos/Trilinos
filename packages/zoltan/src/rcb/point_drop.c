@@ -12,9 +12,6 @@
  * $Revision$ 
  * 
  *====================================================================*/ 
-#ifndef lint
-static char *point_dropc_id = "$Id$";
-#endif
 
 /* Locate which rcb_box a point is inside within the rcb tree. */
 

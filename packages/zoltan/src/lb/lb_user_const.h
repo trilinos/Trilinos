@@ -15,10 +15,6 @@
 #ifndef __LB_USER_CONST_H
 #define __LB_USER_CONST_H
 
-#ifndef lint
-static char *cvs_lbuserconsth_id = "$Id$";
-#endif
-
 /*
  *  This file contains the user-defined data types and comparison functions
  *  for global and local IDs used by the application and the

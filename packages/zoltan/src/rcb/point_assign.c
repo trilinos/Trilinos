@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_point_assign_c = "$Id$";
-#endif
 
 /* Locate which rcb_box a point is inside within the rcb tree. */
 

@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_timerc_id = "$Id$";
-#endif
 
 #include "lb_const.h"
 #include "params_const.h"

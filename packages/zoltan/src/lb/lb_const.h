@@ -15,10 +15,6 @@
 #ifndef __LB_CONST_H
 #define __LB_CONST_H
 
-#ifndef lint
-static char *cvs_lbconsth_id = "$Id$";
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>

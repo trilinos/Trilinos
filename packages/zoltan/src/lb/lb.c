@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_lbc_id = "$Id$";
-#endif
 
 #include "lb_const.h"
 #include "lb_util_const.h"
@@ -183,7 +180,6 @@ void LB_Destroy_Object(LB **lb)
  *    LB *               --  Pointer to a LB object.
  *
  */
-char *yo = "LB_Destroy_Object";
 
   LB_Free_Structure(*lb);
 

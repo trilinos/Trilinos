@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_box_assign_c = "$Id$";
-#endif
 
 /* Determine which processors a box intersects. */
 /* Currently assumes that partitioning has used RCB, */

@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_lbutilc_id = "$Id$";
-#endif
 
 #include "lb_const.h"
 #include "lb_util_const.h"

@@ -16,10 +16,6 @@
 #ifndef __LBI_CONST_H
 #define __LBI_CONST_H
 
-#ifndef lint
-static char *cvs_lbiconsth_id = "$Id$";
-#endif
-
 #include <mpi.h>
 
 /*

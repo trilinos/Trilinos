@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *box_dropc_id = "$Id$";
-#endif
 
 /* recursive drop of an extended box thru an RCB tree */
 
