@@ -1,7 +1,10 @@
+/* NOTE: This timer assumes it is being called from Fortran on a 
+         machine that appends underscores.  
+*/
 #if defined(UseClock)
 
 #include <time.h>
-double mytimer(void)
+double second_(void)
 {
    clock_t t1;
    static clock_t t0=0;
@@ -19,7 +22,7 @@ double mytimer(void)
 #include <stdlib.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-double mytimer(void)
+double second_(void)
 {
    struct timeval tp;
    static long start=0, startu;
@@ -39,7 +42,7 @@ double mytimer(void)
 #include <stdlib.h>
 #include <sys/times.h>
 #include <unistd.h>
-double mytimer(void)
+double second_(void)
 {
    struct tms ts;
    static double ClockTick=0.0;
@@ -54,7 +57,7 @@ double mytimer(void)
 #include <stdlib.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-double mytimer(void)
+double second_(void)
 {
    struct rusage ruse;
    getrusage(RUSAGE_SELF, &ruse);
