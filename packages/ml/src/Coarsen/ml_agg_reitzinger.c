@@ -74,6 +74,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   int  nprocs = ml_edges->comm->ML_nprocs;
   int  maxproc, minproc, maxrows, minrows, NumActiveProc, active_proc=0;
 
+  ML_Operator **perm; /*necessary if repartitioning matrices */
+  ML_Operator *Tnew;   /*necessary if repartitioning matrices */
+  ML_Aggregate *ag_edge=NULL;
 
   int nzctr;
 
@@ -156,7 +159,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   if (ag->print_flag < ML_Get_PrintLevel())
   {
     Pe = &(ml_edges->Amat[fine_level]);
-    if (Pe->invec_leng > 0) active_proc = 1;
+    if (Pe->invec_leng > 0 || Pe->outvec_leng > 0) active_proc = 1;
     else active_proc = 0;
     NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
     nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
@@ -179,12 +182,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
     minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
                            Pe->comm);
 
+    /*
     if (Pe->getrow->pre_comm != NULL) {
        ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
        printf("(level %d, pid %d) Ke: Total receive length = %d\n",
               fine_level, Pe->comm->ML_mypid,
               Pe->getrow->pre_comm->total_rcv_length);
     }
+    */
 
     if (ml_edges->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
       printf("(level %d) Ke: Global nonzeros = %d, global rows = %d, avg num neighbors = %e, largest num of rows = %d (pid %d), smallest num of rows = %d (pid %d)\n",
@@ -197,7 +202,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   {
     Pe = &(ml_nodes->Amat[fine_level]);
     ML_Operator_Profile(Pe, "node", ML_NUMITS);
-    if (Pe->invec_leng > 0) active_proc = 1;
+    if (Pe->invec_leng > 0 || Pe->outvec_leng > 0) active_proc = 1;
     else active_proc = 0;
     NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
     nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
@@ -220,6 +225,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
     minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
                            Pe->comm);
 
+    /*
     if (Pe->getrow->pre_comm != NULL) {
        ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
        printf("(level %d, pid %d) Kn: Total receive length = %d\n",
@@ -227,6 +233,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
               Pe->getrow->pre_comm->total_rcv_length);
        fflush(stdout);
     }
+    */
 
     if (ml_edges->comm->ML_mypid==0 && ML_Get_PrintLevel() > 0)
       printf("(level %d) Kn: Global nonzeros = %d, global rows = %d, avg num neighbors = %e, num active proc = %d, largest num of rows = %d (pid %d), smallest num of rows = %d (pid %d)\n",
@@ -517,7 +524,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      if (ag->print_flag < ML_Get_PrintLevel())
      {
         Pe = &(ml_nodes->Amat[grid_level]);
-        if (Pe->invec_leng > 0) active_proc = 1;
+        if (Pe->invec_leng > 0 || Pe->outvec_leng > 0) active_proc = 1;
         else active_proc = 0;
         NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
         nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
@@ -539,6 +546,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         minproc = ML_gmax_int((minrows == Pe->outvec_leng ? Pe->comm->ML_mypid:0),
                            Pe->comm);
 
+        /*
         if (Pe->getrow->pre_comm != NULL) {
           ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
           printf("(level %d, pid %d) Kn: Total receive length = %d\n",
@@ -546,6 +554,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                  Pe->getrow->pre_comm->total_rcv_length);
           fflush(stdout);
         }
+        */
 
         /* printf("level %d) pid %d owns %d rows of Kn\n",grid_level, Pe->comm->ML_mypid, Pe->outvec_leng); */
 
@@ -1414,7 +1423,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
     if (ag->print_flag < ML_Get_PrintLevel())
     {
         Pe = &(ml_edges->Pmat[grid_level]);
-        if (Pe->invec_leng > 0) active_proc = 1;
+        if (Pe->invec_leng > 0 || Pe->outvec_leng > 0) active_proc = 1;
         else active_proc = 0;
         NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
         nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
@@ -1447,18 +1456,16 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      if (ag->print_flag < ML_Get_PrintLevel())
      {
         Pe = &(ml_edges->Amat[grid_level]);
-        if (Pe->invec_leng > 0) active_proc = 1;
+        if (Pe->invec_leng > 0 || Pe->outvec_leng > 0) active_proc = 1;
         else active_proc = 0;
         NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
         nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
         i = Pe->outvec_leng;
-        /* printf("level %d) pid %d owns %d rows of Ke (edge)\n",grid_level, ml_edges->comm->ML_mypid, Pe->outvec_leng); */
         ML_gsum_scalar_int(&i,&j,ml_edges->comm);
         j = 0;
         if (Pe->getrow->pre_comm != NULL) {
           j = Pe->getrow->pre_comm->N_neighbors;
-          /*printf("(pid %d) num nbrs = %d, active proc = %d\n",ml_edges->comm->ML_mypid,j,NumActiveProc);*/
-          }
+        }
         j = ML_Comm_GsumInt(ml_edges->comm, j);
 
         maxrows = ML_gmax_int( Pe->outvec_leng , Pe->comm);
@@ -1490,8 +1497,31 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      }
 
      ML_memory_check("L%d EdgeRepartition",grid_level);
-     Pe = Tcoarse;
-     ML_repartition_Acoarse_edge(ml_edges, Tcoarse, Tcoarse_trans, grid_level+1, grid_level, ML_TRUE);
+     Pe = &(ml_edges->Amat[grid_level]);
+     /*Repartitioning with Zoltan requires an aggregate object*/
+     if (ag->coarsen_scheme == 9) { /* 9 -> Zoltan */
+       ML_Aggregate_Create(&ag_edge);
+       ML_Aggregate_Set_CoarsenScheme_Zoltan(ag_edge);
+       ML_Aggregate_Set_DampingFactor(ag_edge,0.0);
+       ML_Aggregate_Set_Threshold( ag_edge, 0.0);
+     }
+     ML_Operator_Profile(Pe, "edge_before_repartition", ML_NUMITS);
+     perm = ML_repartition_Acoarse(ml_edges, grid_level+1, grid_level, ag_edge,
+                                   ML_TRUE, ML_TRUE);
+     /* permute T */
+     Tnew = ML_Operator_Create(Tcoarse->comm);
+     ML_2matmult(perm[0], Tcoarse, Tnew, ML_CSR_MATRIX); 
+     ML_Operator_Move2HierarchyAndDestroy(&Tnew, Tcoarse);
+     /* permute T trans */
+     Tnew = ML_Operator_Create(Tcoarse_trans->comm);
+     ML_2matmult(Tcoarse_trans, perm[1], Tnew, ML_CSR_MATRIX); 
+     ML_Operator_Move2HierarchyAndDestroy(&Tnew, Tcoarse_trans);
+
+     ML_Operator_Clean(perm[0]);
+     ML_Operator_Clean(perm[1]);
+     ML_free(perm);
+     ML_Aggregate_Destroy(&ag_edge);
+
      ML_memory_check("L%d EdgeRepartition end",grid_level);
      ML_Operator_Profile(Tcoarse, NULL, ML_NUMITS);
      ML_Operator_Profile(Tcoarse_trans, NULL, ML_NUMITS);
@@ -1544,7 +1574,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      {
         Pe = &(ml_edges->Amat[grid_level]);
         ML_Operator_Profile(Pe, "edge", ML_NUMITS);
-        if (Pe->invec_leng > 0) active_proc = 1;
+        if (Pe->invec_leng > 0 || Pe->outvec_leng > 0) active_proc = 1;
         else active_proc = 0;
         NumActiveProc = ML_gsum_int(active_proc, Pe->comm);
         nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
