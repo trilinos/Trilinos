@@ -285,7 +285,8 @@ int AztecOO::SetPrecMatrix(Epetra_RowMatrix * PrecMatrix) {
   AZ_set_MATFREE(Pmat_, (void *) PrecMatrixData_, Epetra_Aztec_matvec);
   
   // Aztec needs upper bound for matrix norm if doing polynomial preconditioning
-  AZ_set_MATFREE_matrix_norm(Pmat_, PrecMatrix->NormInf()); 
+  if (PrecMatrix->HasNormInf())
+		AZ_set_MATFREE_matrix_norm(Pmat_, PrecMatrix->NormInf()); 
   int N_ghost = PrecMatrix->NumMyCols() - PrecMatrix->NumMyRows();
   AZ_set_MATFREE_getrow(Pmat_, (void *) PrecMatrixData_, Epetra_Aztec_getrow,
 			Epetra_Aztec_comm_wrapper,N_ghost,proc_config_);
