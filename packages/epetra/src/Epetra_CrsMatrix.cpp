@@ -474,35 +474,26 @@ int Epetra_CrsMatrix::MergeRedundantEntries() {
   if (!Sorted()) EPETRA_CHK_ERR(-1);  // Must have sorted entries
 
   // For each row, remove column indices that are repeated.
-  // Also, determine if matrix is upper or lower triangular or has no diagonal
+  // Also, determine if matrix is upper or lower triangular or has no diagonal (Done in graph)
   // Note:  This function assumes that SortEntries was already called.
 
-  for (i=0; i<NumMyRows_; i++)
-  {
+  for (i=0; i<NumMyRows_; i++) {
     int NumEntries = NumEntriesPerRow_[i];
-    if (NumEntries>0)
-    {
+    if (NumEntries>1) {
       double * const Values = Values_[i];
       int * const Indices = Indices_[i];
-
-      int offset = 0;
-      int loc = 0;
-
-      while( offset < NumEntries-1 )
-      {
-        int index = Indices[offset];
-        int shift = 1;
-        while( Indices[offset+shift] == index )
-        {
-          Values[offset] += Values[offset+shift];
-          ++shift;
-        }
-        //slide value down
-        Indices[loc] = Indices[offset];
-        Values[loc] = Values[offset];
-        ++loc;
-        offset += shift;
+			
+			int curEntry =0;
+			double curValue = Values[0];
+			for (int k=1; k<NumEntries; k++) {
+				if (Indices[k]==Indices[k-1]) curValue += Values[k];
+				else {
+					Values[curEntry++] = curValue;
+					curValue = Values[k];
+				}
       }
+			Values[curEntry] = curValue;
+
     }
   }
 
