@@ -37,7 +37,6 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    int     Nrows, *mat_indx=NULL;
    int     maxnnz_per_row=500, *col_ind;
    int     mypid;
-   int     nprocs;
    int     aggr_count, *aggr_index;
    int     *aggr_cnt_array, max_agg_size, **rows_in_aggs;
    int     Ncoarse, *new_ia, *new_ja, new_Nrows;
@@ -55,7 +54,6 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    /* ============================================================= */
 
    mypid          = comm->ML_mypid;
-   nprocs         = comm->ML_nprocs;
    nullspace_dim  = ml_ag->nullspace_dim;
    nullspace_vect = ml_ag->nullspace_vect;
    Nrows          = Amatrix->outvec_leng;
