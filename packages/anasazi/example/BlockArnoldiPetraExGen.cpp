@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
 	int debuglevel = 0; // debuglevel of solver; how much information should be displayed.
         double btol = 1.0e-7;  // relative residual tolerance
 
-	Belos::EpetraOperator<double> BelosOp( BelosMat, EpetraOpPrec, "BlockCG", btol, maxits, block, debuglevel, verbose );
+	Belos::EpetraOperator<double> BelosOp( BelosMat, EpetraOpPrec, "BlockCG", btol, maxits, block, debuglevel, 0 );
 
 	//************************************
 	// Start the block Arnoldi iteration

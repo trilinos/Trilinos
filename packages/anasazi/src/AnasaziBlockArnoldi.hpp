@@ -220,6 +220,10 @@ namespace Anasazi {
     // _maxoffset if the block ends with one eigenvalue of a complex conjugate pair.
     //
     _nevblock = _nev/_block + 1;
+    // TEST CODE:  This part has changed from saving another block to compare with ARPACK.
+    //_nevblock = _nev/_block;  
+    //if (_nev%_block) 
+    //_nevblock++;    
     _maxoffset = (_length-_nevblock)/2;
     //
     // Retrieve the initial vector from the Anasazi::Eigenproblem.
@@ -291,6 +295,12 @@ namespace Anasazi {
   template <class TYPE>
   void BlockArnoldi<TYPE>::getEvecs(MultiVec<TYPE>& evecs) {
     //
+    // Return zero vectors if we haven't started the factorization.
+    if (!_jstart) {
+      evecs.MvInit(0.0);
+      return;
+    }
+    //
     //  Compute the current eigenvectors if they are not current.
     //
     if (!_isevecscurrent) { ComputeEvecs(); }
@@ -309,6 +319,12 @@ namespace Anasazi {
   
   template <class TYPE>
   void BlockArnoldi<TYPE>::getiEvecs(MultiVec<TYPE>& ievecs) {
+    //
+    // Return zero vectors if we haven't started the factorization.
+    if (!_jstart) {
+      ievecs.MvInit(0.0);
+      return;
+    }
     //
     //  Compute the current eigenvectors if they are not current.
     //
@@ -469,17 +485,25 @@ namespace Anasazi {
     if (_issym) {
       cout<<"Eigenvalue\tRitz Residual"<<endl;
       cout<<"------------------------------------------------------"<<endl;
-      for (i=0; i<_nevtemp; i++) {
-	cout.width(10);
-	cout<<_evalr[i]<<"\t"<<_ritzresiduals[i]<<endl;
+      if ( _nevtemp == 0 ) {
+	cout<<"[none computed]"<<endl;
+      } else {
+	for (i=0; i<_nevtemp; i++) {
+	  cout.width(10);
+	  cout<<_evalr[i]<<"\t"<<_ritzresiduals[i]<<endl;
+	}
       }
       cout<<"------------------------------------------------------"<<endl;
     } else {
       cout<<"Real Part\tImag Part\tRitz Residual"<<endl;
       cout<<"------------------------------------------------------"<<endl;
-      for (i=0; i<_nevtemp; i++) {
-	cout.width(10);
-	cout<<_evalr[i]<<"\t"<<_evali[i]<<"\t\t"<<_ritzresiduals[i]<<endl;
+      if ( _nevtemp == 0 ) {
+	cout<<"[none computed]"<<endl;
+      } else {
+	for (i=0; i<_nevtemp; i++) {
+	  cout.width(10);
+	  cout<<_evalr[i]<<"\t"<<_evali[i]<<"\t\t"<<_ritzresiduals[i]<<endl;
+	}
       }
       cout<<"------------------------------------------------------"<<endl;
       cout<<" "<<endl;
@@ -588,13 +612,16 @@ namespace Anasazi {
       // If we don't need to restart, just get it over with and return.
       if (_jstart+tempsteps < _length) {
 	_jend = _jstart+tempsteps;
+	BlockReduction();
+	//
+	// We need to leave before we move the pointer if the orthogonalization failed.
+	if (_exit_flg ) { break; } 
+	//
+	// Move the pointer and update the iteration count.
+	//
 	_iter += tempsteps;
 	tempsteps = 0;
-	BlockReduction();
-	if (_exit_flg && (_block > 1 )) { break; } 
-	// We need to leave before we move the pointer if the blocksize is > 1,
-	// otherwise it's a lucky breakdown.
-	_jstart = _jend;  // Move the pointer
+	_jstart = _jend;  
 	ComputeResiduals( false );		
 	_isdecompcurrent = false;
 	// Output current information if necessary
@@ -605,14 +632,17 @@ namespace Anasazi {
       // Finish off this factorization and restart.
       else {  
 	_jend = _length;
+	BlockReduction();
+	//
+	// We need to leave before we move the pointer if the orthogonalization failed.
+	if (_exit_flg ) { break; } 
+	//
+	// Move the pointer and update the iteration count.
+	//
 	temp = _length-_jstart;
 	_iter += temp;
 	tempsteps -= temp;
-	BlockReduction();
-	// We need to leave before we move the pointer if the blocksize is > 1,
-	// otherwise it's a lucky breakdown.
-	if (_exit_flg && (_block > 1)) { break; } 
-	_jstart = _length; // Move the pointer
+	_jstart = _length; 
 	//
 	//  Compute the Schur factorization and prepare for a restart.  Don't
 	//  compute restart if at end of iterations.
@@ -698,7 +728,7 @@ namespace Anasazi {
       // If we cannot go any further with the factorization, then we need to exit
       // this method.
       //
-      if (_exit_flg) { return; }
+      if (_exit_flg) { break; }
     }
     delete [] index;
   } // end BlockReduction()
@@ -756,6 +786,19 @@ namespace Anasazi {
     //
     F_vec->MvNorm(norm1);
     //
+    // Check the norm of the candidate block of vectors to make sure they're
+    // not zero.  [ This might happen if the matrix is the zero matrix ]
+    //
+    for (i=0; i<_block; i++) {
+      if (norm1[i] == zero) {
+	_dep_flg = true;
+	if (_debuglevel > 2 ){
+	  cout << "Col " << num_prev+i << " is the zero vector" << endl;
+	  cout << endl;
+	}
+      }	  
+    }
+    //
     // Perform two steps of block classical Gram-Schmidt so that
     // F_vec is B-orthogonal to the columns of V_prev.
     //
@@ -784,7 +827,7 @@ namespace Anasazi {
     F_vec->MvNorm(norm2);
     //
     // Check to make sure the new block of Arnoldi vectors are
-    // not dependent on previous Arnoldi vectors
+    // not dependent on previous Arnoldi vectors.  
     //
     for (i=0; i<_block; i++){
       if (norm2[i] < norm1[i] * _blk_tol) {
@@ -891,6 +934,17 @@ namespace Anasazi {
       // with a 2nd correction step if needed.
       //
       q_vec->MvNorm(norm1);
+      //
+      // Leave if this is the zero vector, there is no more we can do here.
+      //
+      if (norm1[0] == zero) { 
+	if (_debuglevel > 2) {
+	  cout << "Column " << num_prev << " of _basisvecs is the zero vector" 
+	       << endl<<endl;
+	}
+	_exit_flg = true; 
+	break; 
+      }
       //
       // Compute trans(Q_vec)*B*q_vec
       //
@@ -1192,6 +1246,7 @@ namespace Anasazi {
   
   template<class TYPE>
   void BlockArnoldi<TYPE>::ComputeResiduals( const bool apply ) {
+    //
     int i=0,j=0;
     int m = _jstart*_block, n=_jstart*_block;
     int mm1 = (_jstart-1)*_block;
@@ -1311,6 +1366,7 @@ namespace Anasazi {
   
   template<class TYPE>
   void BlockArnoldi<TYPE>::ComputeEvecs() {
+    //
     int i=0,j=0,k=0;
     int n=_jstart*_block, info=0;
     const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
