@@ -21,12 +21,16 @@ extern "C" {
 #endif
 
 #include "ml_comm.h"
+  
+  extern int ML_Aggregate_Set_ReqLocalCoarseSize( ML *ml, ML_Aggregate *ag, 
+						  int level,
+						  int desired_aggre_per_proc );
+  extern int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag,
+					   ML_Operator *Amatrix, 
+					   ML_Operator **Pmatrix,
+					   ML_Comm *comm);
+  
 
-  extern ML_Operator * ML_BuildQt( int StartingNumElements,
-				   int ReorderedNumElements,
-				   int reordered_decomposition[],
-				   USR_COMM mpi_communicator,
-				   ML_Comm *ml_communicator );
   
 #ifndef ML_CPP
 #ifdef __cplusplus

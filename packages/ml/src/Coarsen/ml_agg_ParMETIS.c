@@ -1,7 +1,29 @@
 /* ************************************************************************* */
 /* ************************************************************************* */
-/* Functions to create tentative prolongators using METIS to create the      */
-/* aggregate.                                                                */
+/* Functions to create tentative prolongators using ParMETIS                 */
+/*                                                                           */
+/* NOTE ABOUT METIS AND PARMETIS: you can compile using ParMETIS version 2.x */
+/* or 3.x. In the former case, run configure using the option                */
+/*   --with-ml_partmetis2x,                                                  */
+/* otherwise using                                                           */
+/*   --with-ml_parmetis3x.                                                   */
+/* Note that the two versions of ParMETIS seems to require the METIS library */
+/* included in the distribution of ParMETIS, so you may need to change the   */
+/* library you are linking while switching from version 2.x to 3.x.          */
+/* A typical configure script may read as follows:                           
+
+./configure \
+ --prefix=/home/msala/Trilinos/LINUX_MPI/ \
+ --enable-mpi --with-mpi-compilers \
+ --enable-ml_timing \
+ --enable-ml_flops \
+ --with-ml_superlu \
+ --with-ml_metis \
+ --with-ml_parmetis3x \
+ --with-ldflags="-L/home/msala/lib -lsuperlu -lparmetis-3.1 -lmetis-4.0" \
+ --with-incdirs="-I/home/msala/Trilinos3PL/DSuperLU/SRC -I/home/msala/include/"
+
+                                                                             */
 /* ************************************************************************* */
 /* Author        : Marzio Sala (SNL)                                         */
 /* Date          : November 2003                                             */
@@ -18,6 +40,28 @@
 #include "ml_agg_METIS.h"
 #include "ml_viz_stats.h"
 #include "ml_agg_ParMETIS.h"
+
+static int ML_BuildReorderedOffset( int starting_offset[],
+				    int desired_aggre_per_proc, int Nprocs,
+				    int nodes_per_aggre[], int Naggregates,
+				    int reordered_offset[], int mypid );
+static int ML_BuildReorderedDecomposition( int starting_decomposition[],
+					   int reordered_decomposition[],
+					   int Nrows, int Naggregates,
+					   int nodes_per_aggre[],
+					   USR_COMM comm );
+static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
+					    int N_parts,
+					    int graph_decomposition[],
+					    double bdry_nodes[] );
+static int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
+					int Naggre, int * NnodesPerAggre,
+					USR_COMM Comm);
+extern ML_Operator * ML_BuildQt( int StartingNumElements,
+				 int ReorderedNumElements,
+				 int reordered_decomposition[],
+				 USR_COMM mpi_communicator,
+				 ML_Comm *ml_communicator );
 
 /* ********************************************************************** */
 /* parmetis.h is required to properly define idxtype, and to declare the  */
@@ -128,100 +172,6 @@ int ML_Aggregate_Set_ReqLocalCoarseSize( ML *ml, ML_Aggregate *ag,
   return 0;
   
 } /* ML_Aggregate_Set_ReqLocalCoarseSize */
-#ifdef FIXME_LATER
-/* ======================================================================== */
-/*!
- \brief stored the required number of aggregates for the specified level
-
- This function is used to specify the global number of aggregates which
- will be created by \c ML_Aggregate_CoarsenParMETIS. The input variable
- \c level should reflect the structure of the multilevel solver. 
- 
- Parameter list:
- - ml : ML object
- - ag : ML_Aggregate object, where the number of aggregates
- - level :
-
-*/
-/* ------------------------------------------------------------------------ */
-
-int ML_Aggregate_Set_GlobalNumber( ML *ml, ML_Aggregate *ag, 
-				   int level, int Nglobal  )
-{
-
-  int i;
-  ML_Aggregate_Options *pointer = NULL;
-  int diff_level;
-  int Nlevels = ml->ML_num_levels;
-
-  /* ********************************************************************** */
-  /* control on the input parameters                                        */
-  /* ********************************************************************** */
-
-  if ( ag->ML_id != ML_ID_AGGRE ) {
-      printf("ML_Aggregate_SetGlobalNumber : wrong object. \n");
-      exit( EXIT_FAILURE );
-  }
-
-  if( Nglobal <= 0 ) {
-    fprintf( stderr,
-	     "*ML*ERR* Nlocal has an invalid value (%d)\n"
-	     "*ML*ERR* (file %s, line %d)\n",
-	     Nglobal,
-	     __FILE__,
-	     __LINE__ );
-    exit( EXIT_FAILURE );
-  }
-  
-  /* ********************************************************************** */
-  /* take the pointer from the ag object. If it is NULL, this is the first  */
-  /* time that this function is called, so allocate memory for all levels   */
-  /* ********************************************************************** */
-
-  pointer = (ML_Aggregate_Options *)ag->aggr_options;
-  
-  if( pointer == NULL ) {
-    ML_memory_alloc((void*)&pointer, sizeof(ML_Aggregate_Options)*Nlevels,
-		    "aggr_options");
-    if( pointer == NULL ) {
-      fprintf( stderr,
-	       "*ML*ERR* not enough space to allocate %d bytes\n"
-	       "*ML*ERR* (file %s, line %d)\n",
-	       sizeof(int)*Nlevels,
-	       __FILE__,
-	       __LINE__ );
-      exit( EXIT_FAILURE );
-    }
-
-    /* ******************************************************************** */
-    /* set to the default values                                            */
-    /* ******************************************************************** */
-    
-    for( i=0 ; i<Nlevels ; i++ ) {
-      pointer[i].id = ML_AGGREGATE_OPTIONS_ID;
-      pointer[i].Naggregates = -1;
-      pointer[i].Nnodes_per_aggregate = -1;
-      pointer[i].local_or_global = ML_LOCAL_INDICES;
-      pointer[i].reordering_flag = ML_NO;
-    }
-    
-    ag->aggr_options = (void *)pointer;
-  }
-  
-  if( level >= 0 ) {
-    pointer[level].Naggregates = Nglobal;
-    pointer[level].local_or_global = ML_GLOBAL_INDICES;
-  } else {
-    for( i=0 ; i<Nlevels ; i++ ) {
-      pointer[i].Naggregates = Nglobal;
-      pointer[i].local_or_global = ML_GLOBAL_INDICES;
-    }
-  }
-   
-  return 0;
-  
-} /* ML_Aggregate_SetGlobalNumber */
-#endif
 
 /* ********************************************************************** */
 /* The goal of this function is to define a reordered offset, so that the */
@@ -232,10 +182,10 @@ int ML_Aggregate_Set_GlobalNumber( ML *ml, ML_Aggregate *ag,
 /* on the coarser level.                                                  */
 /* ********************************************************************** */
 
-int ML_BuildReorderedOffset( int starting_offset[],
-			     int desired_aggre_per_proc, int Nprocs,
-			     int nodes_per_aggre[], int Naggregates,
-			     int reordered_offset[], int mypid ) 
+static int ML_BuildReorderedOffset( int starting_offset[],
+				    int desired_aggre_per_proc, int Nprocs,
+				    int nodes_per_aggre[], int Naggregates,
+				    int reordered_offset[], int mypid ) 
 {
 
   int i, iaggre, aggre_owner;
@@ -301,11 +251,11 @@ int ML_BuildReorderedOffset( int starting_offset[],
   
 }
 
-int  ML_BuildReorderedDecomposition( int starting_decomposition[],
-				     int reordered_decomposition[],
-				     int Nrows, int Naggregates,
-				     int nodes_per_aggre[],
-				     USR_COMM comm )
+static int ML_BuildReorderedDecomposition( int starting_decomposition[],
+					    int reordered_decomposition[],
+					    int Nrows, int Naggregates,
+					    int nodes_per_aggre[],
+					    USR_COMM comm )
 {
 
   int i, j, iaggre;
@@ -364,7 +314,7 @@ int  ML_BuildReorderedDecomposition( int starting_decomposition[],
   
   return 0;
 
-}
+} /* ML_BuildReorderedDecomposition */
 
 /* ======================================================================== */
 /*!
@@ -379,10 +329,10 @@ int  ML_BuildReorderedDecomposition( int starting_decomposition[],
 */
 /* ------------------------------------------------------------------------ */
 
-int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
-				     int N_parts,
-				     int graph_decomposition[],
-				     double bdry_nodes[] )
+static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
+					    int N_parts,
+					    int graph_decomposition[],
+					    double bdry_nodes[] )
 {
 
   int i, j,jj,  count;
@@ -609,15 +559,15 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 			options, &edgecut, part, &ParMETISComm);
 #elif defined(HAVE_ML_PARMETIS_3x)
       /* never tested right now... */
-      ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt,
-			 wgtflag, &numflag, &ncon, &N_parts, tpwgts,
-			 &ubvec,options,
-			 &edgecut, part, &ParMETISComm);
+      ParMETIS_V3_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt,
+			    wgtflag, &numflag, &ncon, &N_parts, tpwgts,
+			    &ubvec,options,
+			    &edgecut, part, &ParMETISComm);
 #else
       if( Amatrix->comm->ML_mypid == 0 ) {
 	fprintf( stderr,
 		 "*ML*WRN* This function has been compiled without the configure\n"
-		 "*ML*WRN* option --with-ml_parmetis_2x or --with-ml_parmetis_3x\n"
+		 "*ML*WRN* option --with-ml_parmetis2x or --with-ml_parmetis3x\n"
 		 "*ML*WRN* I will put all the nodes in the same aggreagate, this time...\n"
 		 "*ML*WRN* (file %s, line %d)\n",
 		 __FILE__,
@@ -1580,11 +1530,12 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 } /* ML_Aggregate_CoarsenParMETIS */
 
 /* ********************************************************************** */
-/*                                                                        */
+/* Count the nodes contained in each global aggregate                     */
 /* ********************************************************************** */
 
-int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
-   		          int Naggre, int * NnodesPerAggre, USR_COMM Comm) 
+static int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
+				 int Naggre, int * NnodesPerAggre,
+				 USR_COMM Comm) 
 {
   
   int i, iaggre;
@@ -1647,93 +1598,4 @@ int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
   
   return 0;
   
-}
-
-#ifdef FIXME_LATER
-/* ******************************************************************** */
-/* Create global numbering for a ML_Operator. I suppose that tML uses a */
-/* linear decomposition among the processes (that is, proc 0 is assigned*/
-/* the first Nrows elements, and so on). This is enough to define the   */
-/* global numbering of local nodes. For the ghost nodes (columns), I use*/
-/* ML_exhcange_bdry.                                                    */
-/*                                                                      */
-/* Albuquerque, 30-Oct-03                                               */
-/* ******************************************************************** */
-
-int ML_build_global_numbering( ML_Operator *Amat,
-			       ML_Comm *comm,
-			       int **pglobal_numbering )
-{
-
-  int    i;
-  int    Nrows, Nghosts, offset;
-  double * dtemp = NULL;
-  int * global_numbering;
-  
-  Nrows = Amat->getrow->Nrows;
-  Nghosts = Amat->getrow->pre_comm->total_rcv_length;
-  
-  dtemp = (double *) malloc( sizeof(double) * (Nrows+Nghosts));
-  if( dtemp == NULL ) {
-    fprintf( stderr,
-	     "*ML*ERR* not enough memory to allocated %d bytes\n"
-	     "*ML*ERR* (file %s, line %d)\n",
-	     sizeof(double) * (Nrows+Nghosts),
-	     __FILE__,
-	     __LINE__ );
-    exit( EXIT_FAILURE );
-  }
-
-#ifdef ML_MPI
-  MPI_Scan ( &Nrows, &offset, 1, MPI_INT, MPI_SUM,
-	     Amat->comm->USR_comm );
-  offset -= Nrows;
-#else
-  offset = 0;
-#endif
-
-  /* global numbering for local nodes. Note that ML always
-     supposes to have continugous local nodes (that is, the
-     global set of nodes has been subdivided into contiguous
-     chuncks). This may not be true for the first level
-     (ML uses an order which is not the physical one). So, dont't
-     be surprised that a tridiagonal matrix (before AZ_transform)
-     is no longer tridiagonal, for instance... */
-    
-  for( i=0 ; i<Nrows ; i++ ) dtemp[i] = 1.0*(i+offset);
-
-  /* I exchange those information using ML_exchange_bdry,
-     which is coded for double vectors. */
-    
-  ML_exchange_bdry(dtemp,Amat->getrow->pre_comm,
-		   Amat->outvec_leng,
-		   comm, ML_OVERWRITE,NULL);
-
-  /* allocates memory for global_ordering */
-    
-  ML_memory_alloc((void*)&global_numbering, sizeof(int)*(Nrows+Nghosts),
-		  "global numbering 1812");
-       
-  if( global_numbering == NULL ) {
-    fprintf( stderr,
-	     "*ML*ERR* not enough memory to allocated %d bytes\n"
-	     "*ML*ERR* (file %s, line %d)\n",
-	     sizeof(int) * (Nrows+Nghosts),
-	     __FILE__,
-	     __LINE__ );
-    exit( EXIT_FAILURE );
-  }
-
-  /* put the received double vectors in the integer vector */
-
-  for( i=0 ; i<Nrows+Nghosts ; i++ )
-    global_numbering[i] = (int)dtemp[i];
-
-  *pglobal_numbering = global_numbering;
-  
-  free( dtemp ); dtemp = NULL;
-
-  return 0;
-    
-}
-#endif
+} /* ML_CountNodesPerAggre */
