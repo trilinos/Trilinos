@@ -29,7 +29,7 @@
 #include "Epetra_MapColoring.h"
 #include "Epetra_Util.h"
 //=============================================================================
-Epetra_MapColoring::Epetra_MapColoring(int * ElementColors, const Epetra_BlockMap& Map,
+Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap& Map, int * ElementColors, 
 				       const int DefaultColor)
   : Epetra_DistObject(Map, "Epetra::MapColoring"),
     DefaultColor_(DefaultColor),
@@ -63,7 +63,7 @@ Epetra_MapColoring::Epetra_MapColoring(const Epetra_MapColoring& Source)
     ColorIDs_(0),
     FirstColor_(0),
     NumColors_(0),
-    Allocated_(Source.Allocated_),
+    Allocated_(false),
     ListsAreGenerated_(false),
     ListsAreValid_(false)
 {
@@ -174,13 +174,15 @@ bool Epetra_MapColoring::InItemList(int ColorValue) const {
 int Epetra_MapColoring::NumElementsWithColor(int Color) const  {
   if (!ListsAreValid_) GenerateLists(); 
   int arrayIndex = ColorIDs_->Get(Color);
-  return(ColorCount_[arrayIndex]);
+  if (arrayIndex>-1) return(ColorCount_[arrayIndex]);
+  else return(0);
 }
 //=========================================================================
 int * Epetra_MapColoring::ColorLIDList(int Color) const  {
   if (!ListsAreValid_) GenerateLists(); 
   int arrayIndex = ColorIDs_->Get(Color);
-  return(ColorLists_[arrayIndex]);
+  if (arrayIndex>-1) return(ColorLists_[arrayIndex]);
+  else return(0);
 }
 //=========================================================================
 Epetra_Map * Epetra_MapColoring::GenerateMap(int Color) const {
@@ -225,6 +227,12 @@ void Epetra_MapColoring::Print(ostream& os) const {
   int MyPID = Map().Comm().MyPID();
   int NumProc = Map().Comm().NumProc();
   
+  if (MyPID==0) os 
+    << endl 
+    << " *****************************************" << endl
+    << " Coloring information arranged map element" << endl 
+    << " *****************************************" << endl
+    << endl;
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       int NumMyElements1 =Map(). NumMyElements();
@@ -265,7 +273,7 @@ void Epetra_MapColoring::Print(ostream& os) const {
     << endl;
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
-      if (NumColors()==0) os << " No colored elements on this processor" << endl;
+      if (NumColors()==0) os << " No colored elements on processor " << MyPID << endl;
       else {
 	os << "Number of colors in map = " << NumColors() << endl
 	   << "Default color           = " << DefaultColor() << endl << endl;

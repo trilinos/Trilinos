@@ -34,7 +34,25 @@ class Epetra_Map;
 /*! This class allows the user to associate an integer value, i.e., a color, to each element of 
     an existing Epetra_Map or Epetra_BlockMap object.  Colors may be assigned at construction, or 
     via set methods.  Any elements that are not explicitly assigned a color are assigned the color 
-    0 (integer zero).  Color information may be accessed in three basic ways:
+    0 (integer zero).  
+
+This class has the following features:
+
+<ul>
+
+ <li> A color (arbitrary integer label) can be associated locally with each element of a map. 
+  Color assignment can be done 
+<ol>
+  <li> all-at-once via the constructor, or 
+  <li> via operator[] (using LIDs) one-at-a-time
+  <li> operator() (using GIDs) one-at-a-time
+  <li> or some combination of the above.
+</ol>
+
+Any element that is not explicitly colored takes on the default color.  The default
+color is implicitly zero, unless specified differently at the time of construction.
+
+<li> Color information may be accessed in the following ways:
   <ol> 
   <li> By local element ID (LID) - Returns the color of a specified LID, where the LID is associated
        with the Epetra_Map or BlockMap that was passed in to the Epetra_MapColoring constructor.
@@ -42,9 +60,22 @@ class Epetra_Map;
        for accessing GIDs, one assumes the request is for GIDs owned by the calling processor,
        the second allows arbitrary requested for GIDs, as long as the GID is defined on some processor
        for the Epetra_Map or Epetra_BlockMap.
-  <li> By color groups - LIDs and GIDs are grouped by color so that all elements of a given color can
+  <li> By color groups - Elements are grouped by color so that all elements of a given color can
        be accessed.
+  <li> Epetra_Map/Epetra_BlockMap pointers for a specified color -  This facilitates
+     use of coloring with Epetra distributed objects that are distributed via the map
+     that was colored.  For example, if users want to work with all rows of a matrix that have 
+     a certain color, they can create a map for that color and use it to access only those rows.
   </ol>
+
+
+<li> The Epetra_MapColoring class implements the Epetra_DistObject interface.  Therefore, a map coloring
+  can be computed for a map with a given distribution and then redistributed across the parallel machine.
+  For example, it would be possible to compute a map coloring on a single processor (perhaps because the 
+  algorithm for computing the color assignment is too difficult to implement in parallel or because it
+  is cheap to run and not worth parallelizing), and then re-distribute the coloring using an Epetra_Export
+  or Epetra_Import object.
+</ul>
 
 */
 
@@ -70,19 +101,23 @@ class Epetra_MapColoring: public Epetra_DistObject {
   //! Epetra_MapColoring constructor.
   /*!
     \param In
-            ColorList - Array of dimension Map.NumMyElements() containing the list of colors
-            that should be assigned the map elements on this processor. If this argument is
-	    set to 0 (zero), all elements will initially be assigned color 0 (zero).  Element
-	    colors can be modified by using methods described below.
-    
-    \param In
             Map - An Epetra_Map or Epetra_BlockMap (Note: Epetra_BlockMap is a base class of
 	    Epetra_Map, so either can be passed in to this constructor.
 
+    \param In
+            ElementColors - Array of dimension Map.NumMyElements() containing the list of colors
+            that should be assigned the map elements on this processor. If this argument is
+	    set to 0 (zero), all elements will initially be assigned color 0 (zero).  Element
+	    colors can be modified by using methods described below.
+    \param In
+            DefaultColor - The color that will be assigned by default when no other value is specified.
+	    This value has no meaning for this constructor, but is used by certain methods now and 
+	    in the future.
+    
     \return Pointer to a Epetra_MapColoring object.
 
   */ 
-  Epetra_MapColoring(int * ElementColors, const Epetra_BlockMap& Map, const int DefaultColor = 0);
+  Epetra_MapColoring(const Epetra_BlockMap& Map, int * ElementColors, const int DefaultColor = 0);
 
   //! Epetra_MapColoring copy constructor.
   

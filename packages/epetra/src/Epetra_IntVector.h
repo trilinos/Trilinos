@@ -191,6 +191,9 @@ class Epetra_IntVector : public Epetra_DistObject {
     
   //@{ \name Attribute access functions
 
+  //! Returns a pointer to an array containing the values of this vector.
+  int * Values() const {return(Values_);};
+
   //! Returns the local vector length on the calling processor of vectors in the multi-vector.
   int MyLength() const {return(Map().NumMyPoints());};
 
