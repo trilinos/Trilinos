@@ -40,6 +40,11 @@
 
 AC_INIT(nox, 0.2a, nox-developers@software.sandia.gov)
 
+# Hello World!
+echo "----------------------------------------"
+echo "Running NOX Configure Script"
+echo "----------------------------------------"
+
 # This is to protect against accidentally specifying the wrong
 # directory with --srcdir.
 
@@ -79,11 +84,15 @@ AM_INIT_AUTOMAKE(${PACKAGE_NAME}, ${PACKAGE_VERSION})
 AC_PREREQ(2.52)
 
 # ------------------------------------------------------------------------
-# Check for user overrides (to be used later)
+# Check for user overrides (some to be used later)
 # ------------------------------------------------------------------------
 
 if test -n "${CXXFLAGS}"; then
   USERDEF_CXXFLAGS=yes
+fi
+
+if test -n "${CFLAGS}"; then
+  USERDEF_CFLAGS=yes
 fi
 
 if test -n "${CPPFLAGS}"; then
@@ -98,26 +107,41 @@ if test -n "${FFLAGS}"; then
   USERDEF_FFLAGS=yes
 fi
 
+if test -n "${LDFLAGS}"; then
+  USERDEF_LDFLAGS=yes
+fi
+
 # ------------------------------------------------------------------------
 # Checks for extra flags, etc
 # ------------------------------------------------------------------------
 
+# Since this is the first "with" command, we skip a line
+
 AC_ARG_WITH(cppflags,
-[  --with-cppflags         add extra preprocessor flags (e.g., "-Dflag -Idir")],
+[AC_HELP_STRING([--with-cppflags],[add extra preprocessor flags])
+AC_HELP_STRING([],[(e.g., "-DDEBUG -I$HOME/whatever/include")])],
 [EXTRA_CPPFLAGS=${withval}]
 )
 
+
 AC_ARG_WITH(cxxflags,
-[  --with-cxxflags         add extra C++ compiler flags],
+[AC_HELP_STRING([--with-cxxflags],[add extra C++ compiler flags])],
 [EXTRA_CXXFLAGS=${withval}]
+)
+
+
+AC_ARG_WITH(ldflags,
+[AC_HELP_STRING([--with-ldflags],[add extra linker (typically -L) flags])],
+[EXTRA_LDFLAGS=${withval}]
 )
 
 # ------------------------------------------------------------------------
 # Alternate archiver
 # ------------------------------------------------------------------------
 
+
 AC_ARG_WITH(ar,
-[  --with-ar               specify archiver command (default is "ar cru")],
+[AC_HELP_STRING([--with-ar],[specify archiver command @<:@"ar cru"@:>@])],
 [
 AC_MSG_CHECKING(user-defined archiver)
 AC_MSG_RESULT([${withval}])
@@ -128,8 +152,13 @@ ALTERNATE_AR="${withval}"
 # ------------------------------------------------------------------------
 # MPI configure command line option
 # ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(mpi,
+[AC_HELP_STRING([--enable-mpi],[MPI support])],
+[HAVE_PKG_MPI=yes])
+
 AC_ARG_WITH(mpi-cxx,
-[  --with-mpi-cxx          specify MPI C++ compiler (uses mpiCC if no argument)],
+[AC_HELP_STRING([--with-mpi-cxx],[use MPI C++ compiler (enables MPI) @<:@mpiCC@:>@])],
 [
 HAVE_PKG_MPI=yes 
 if test X${withval} = Xyes; then
@@ -142,8 +171,9 @@ AC_MSG_RESULT([${MPI_CXX}])
 ]
 )
 
+
 AC_ARG_WITH(mpi,
-[  --with-mpi              specify root directory of MPI installation],
+[AC_HELP_STRING([--with-mpi=MPIROOT],[use MPI root directory (enables MPI)])],
 [
 HAVE_PKG_MPI=yes
 MPI_DIR=${withval}
@@ -152,30 +182,30 @@ AC_MSG_RESULT([${MPI_DIR}])
 ]
 )
 
+
 AC_ARG_WITH(mpi-libs,
-[  --with-mpi-libs         specify MPI libraries],
+[AC_HELP_STRING([--with-mpi-libs="LIBS"],[MPI libraries @<:@"-lmpi"@:>@])],
 [
-HAVE_PKG_MPI=yes
 MPI_LIBS=${withval}
 AC_MSG_CHECKING(user-defined MPI libraries)
 AC_MSG_RESULT([${MPI_LIBS}])
 ]
 )
 
-AC_ARG_WITH(mpi-include,
-[  --with-mpi-include      specify include directory for MPI],
+
+AC_ARG_WITH(mpi-incdir,
+[AC_HELP_STRING([--with-mpi-incdir=DIR],[MPI include directory @<:@MPIROOT/include@:>@])],
 [
-HAVE_PKG_MPI=yes
 MPI_INC=${withval}
 AC_MSG_CHECKING(user-defined MPI includes)
 AC_MSG_RESULT([${MPI_INC}])
 ]
 )
 
+
 AC_ARG_WITH(mpi-libdir,
-[  --with-mpi-libdir       specify location of MPI libraries],
+[AC_HELP_STRING([--with-mpi-libdir=DIR],[MPI library directory @<:@MPIROOT/lib@:>@])],
 [
-HAVE_PKG_MPI=yes
 MPI_LIBDIR=${withval}
 AC_MSG_CHECKING(user-defined MPI library directory)
 AC_MSG_RESULT([${MPI_LIBDIR}])
@@ -200,6 +230,10 @@ if test -n "${MPI_CXX}"; then
   if test "X${MPI_CXX_EXISTS}" = "Xyes"; then
     CXX=${MPI_CXX}
   else
+    echo "-----"
+    echo "Cannot find MPI C++ compiler ${MPI_CXX}."
+    echo "Specify with --with-mpi-cxx."
+    echo "-----"
     AC_MSG_ERROR([MPI C++ compiler (${MPI_CXX}) not found.])
   fi
 
@@ -218,7 +252,7 @@ AC_PROG_RANLIB
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(debug,
-[  --enable-debug          compile with debugging],
+[AC_HELP_STRING([--enable-debug],[compile with debugging])],
 [DEBUG=${enableval}],
 [DEBUG="default"]
 )
@@ -226,7 +260,7 @@ AC_MSG_CHECKING(whether debugging is on)
 AC_MSG_RESULT([${DEBUG}])
 
 AC_ARG_ENABLE(opt,
-[  --enable-opt            compile with optimization],
+[AC_HELP_STRING([--enable-opt],[compile with optimization])],
 [OPT=${enableval}],
 [OPT=default]
 )
@@ -235,11 +269,15 @@ AC_MSG_RESULT([${OPT}])
 
 # options needed only for optimization
 CXXFLAGS_OPT=-O
+
 # options needed only for debugging
 CXXFLAGS_DBG=-g
+
 # options that are always needed
 CXXFLAGS_MISC=
 
+
+# Checks for special cases...
 case $target in
 
   # IBM test
@@ -265,7 +303,7 @@ case $target in
 
   ;;
 
-  # SGI/IRIX test
+  # Solaris test
   sparc-sun-solaris* ) 
 
     if test "${CXX}" = "CC"; then
@@ -276,44 +314,55 @@ case $target in
 
 esac
 
+
+# Process the C++ flags
 AC_MSG_CHECKING([for C++ flags])
 
+# Test for user-defined CXXFLAGS
 if test "X${USERDEF_CXXFLAGS}" = "Xyes"; then
 
   AC_MSG_RESULT([${CXXFLAGS} (user-specified via CXXFLAGS)])
 
+# Otherwise, determine the flags automatically
 else
 
+  # Test for adding debug flags
   if test ${DEBUG} = yes; then
 
-  CXXFLAGS=${CXXFLAGS_DBG}
+    CXXFLAGS=${CXXFLAGS_DBG}
 
+  # Otherwise, test for adding optimization flags
   elif test ${OPT} = yes; then
 
-  CXXFLAGS=${CXXFLAGS_OPT}
+    CXXFLAGS=${CXXFLAGS_OPT}
 
   fi
 
+  # Add on any additional automatically determined flags
   if test -n "${CXXFLAGS_MISC}"; then
     CXXFLAGS="${CXXFLAGS} ${CXXFLAGS_MISC}"
   fi			  
 
+  # Print the result
   AC_MSG_RESULT([${CXXFLAGS}])
 
 fi
 
+# Check for user-defined F77 compiler (used only for compiler checks)
 if test "X${USERDEF_F77}" != "Xyes"; then
   if test -n "${F77_MISC}"; then
     F77="${F77_MISC}"
   fi			  
 fi
 
+# Test for user-defined FFLAGS flags
 AC_MSG_CHECKING([for F77 flags])
 
 if test "X${USERDEF_FFLAGS}" = "Xyes"; then
 
   AC_MSG_RESULT([${FFLAGS} (user-specified via FFLAGS)])
 
+# Otherwise, determine the flags automatically
 else
 
   if test -n "${FFLAGS_MISC}"; then
@@ -324,24 +373,35 @@ else
 
 fi
 
+# Add on any user-defined CXXFLAGS
 AC_MSG_CHECKING([for extra C++ compiler flags])
-if test -z "${EXTRA_CPPFLAGS}"; then
-  AC_MSG_RESULT(none)
-else
-  AC_MSG_RESULT([${EXTRA_CPPFLAGS}])
-  CXXFLAGS="${CXXFLAGS} ${EXTRA_CPPFLAGS}"
-fi
-
-AC_MSG_CHECKING([for extra preprocessor flags])
 if test -z "${EXTRA_CXXFLAGS}"; then
   AC_MSG_RESULT(none)
 else
   AC_MSG_RESULT([${EXTRA_CXXFLAGS}])
-  CPPFLAGS="${CPPFLAGS} ${EXTRA_CXXFLAGS}"
+  CXXFLAGS="${CXXFLAGS} ${EXTRA_CXXFLAGS}"
+fi
+
+# Add on any user-defined CPPFLAGS
+AC_MSG_CHECKING([for extra preprocessor flags])
+if test -z "${EXTRA_CPPFLAGS}"; then
+  AC_MSG_RESULT(none)
+else
+  AC_MSG_RESULT([${EXTRA_CPPFLAGS}])
+  CPPFLAGS="${CPPFLAGS} ${EXTRA_CPPFLAGS}"
+fi
+
+# Add on any user-defined LDFLAGS
+AC_MSG_CHECKING([for extra linker flags])
+if test -z "${EXTRA_LDFLAGS}"; then
+  AC_MSG_RESULT(none)
+else
+  AC_MSG_RESULT([${EXTRA_LDFLAGS}])
+  LDFLAGS="${LDFLAGS} ${EXTRA_LDFLAGS}"
 fi
 
 # ------------------------------------------------------------------------
-# Set up alternate archiver
+# Set up alternate archiver (option -with-ar above)
 # ------------------------------------------------------------------------
 
 if test -n "${SPECIAL_AR}" && test -z "${ALTERNATE_AR}"; then
@@ -356,9 +416,8 @@ else
    AC_MSG_RESULT([none])
    AM_CONDITIONAL(USE_ALTERNATE_AR, false)
 fi
+
 AC_SUBST(ALTERNATE_AR)
-
-
 
 # ------------------------------------------------------------------------
 # MPI cpp check
@@ -379,6 +438,11 @@ if test "X${HAVE_PKG_MPI}" = "Xyes"; then
   AC_TRY_CPP([#include "mpi.h"],
     [AC_MSG_RESULT(yes)], 
     [AC_MSG_RESULT(no)  
+     echo "---"
+     echo "Cannot find header file mpi.h."
+     echo "Either compile without mpi (no --with-mpi directives)"
+     echo "or specify --with-mpi-incdir=<dir>."
+     echo "---"
      AC_MSG_ERROR(cannot find mpi.h)]
   )
 
@@ -486,29 +550,14 @@ AC_TRY_COMPILE(
 )
 
 # ------------------------------------------------------------------------
-# With Trilinos
+# Epetra library?
 # ------------------------------------------------------------------------
 
-
 AC_ARG_ENABLE(epetra,
-[  --enable-epetra         compile noxepetra library],
+[AC_HELP_STRING([--enable-epetra],[compile noxepetra library])],
 [BUILD_LIBNOXEPETRA=$enableval],
 [BUILD_LIBNOXEPETRA=no]
 )
-
-dnl TRILINOS_DIR=${TRILINOS_HOME}
-dnl AC_ARG_WITH(trilinos,
-dnl [  --with-trilinos        specify Trilinos root directory
-dnl                           (uses TRILINOS_HOME if no argument)],
-dnl [
-dnl   BUILD_LIBNOXEPETRA=yes
-dnl   if test ${withval} = yes; then
-dnl     TRILINOS_DIR=${TRILINOS_HOME}
-dnl   else
-dnl     TRILINOS_DIR=${withval}
-dnl   fi  
-dnl ]
-dnl )
 
 AC_MSG_CHECKING(whether we should build the noxepetra library)
 AC_MSG_RESULT(${BUILD_LIBNOXEPETRA})
@@ -519,13 +568,10 @@ AC_MSG_RESULT(${BUILD_LIBNOXEPETRA})
 
 
 AC_ARG_ENABLE(petsc,
-[  --enable-petsc          compile noxpetsc library],
+[AC_HELP_STRING([--enable-petsc],[compile noxpetsc library])],
 [BUILD_LIBNOXPETSC=$enableval],
 [BUILD_LIBNOXPETSC=no]
 )
-
-#PETSC_BOPT=g_c++
-#PETSC_ARCH=linux
 
 AC_MSG_CHECKING(whether we should build the noxpetsc library)
 AC_MSG_RESULT(${BUILD_LIBNOXPETSC})
@@ -534,16 +580,45 @@ AC_MSG_RESULT(${BUILD_LIBNOXPETSC})
 # Trilinos include file check for building noxepetra library
 # ------------------------------------------------------------------------
 
-AC_DEFUN(TRILINOS_INCLUDE_WITH,
-[
-  AC_ARG_WITH($1-include,
-  [  --with-$1-include=<dir>  specify location of all $1 header files],
-  [$1_INCDIR=$withval])
-])
 
+AC_ARG_WITH(epetra-incdir,
+[AC_HELP_STRING([--with-epetra-incdir],[specify location of all epetra header files])],
+[epetra_INCDIR=$withval])
+
+AC_ARG_WITH(aztecoo-incdir,
+[AC_HELP_STRING([--with-aztecoo-incdir],[specify location of all aztecoo header files])],
+[aztecoo_INCDIR=$withval])
+
+AC_ARG_WITH(ifpack-incdir,
+[AC_HELP_STRING([--with-ifpack-incdir],[specify location of all ifpack header files])],
+[ifpack_INCDIR=$withval])
+
+AC_ARG_WITH(epetra-libdir,
+[AC_HELP_STRING([--with-epetra-libdir],[specify location of epetra library])],
+[epetra_LIBDIR=$withval])
+
+AC_ARG_WITH(aztecoo-libdir,
+[AC_HELP_STRING([--with-aztecoo-libdir],[specify location of aztecoo library])],
+[aztecoo_LIBDIR=$withval])
+
+AC_ARG_WITH(ifpack-libdir,
+[AC_HELP_STRING([--with-ifpack-libdir],[specify location of ifpack library])],
+[ifpack_LIBDIR=$withval])
+
+AC_ARG_WITH(y12m-libdir,
+[AC_HELP_STRING([--with-y12m-libdir],[specify location of y12m library])],
+[y12m_LIBDIR=$withval])
+
+
+# Relative path to Trilinos include files, to be used in Makefiles
 REL_TRILINOS_CPPFLAGS=
+
+# Absolute path to Trilinos include files from location that configure
+# is run - to be used in configuration tests
 ABS_TRILINOS_CPPFLAGS=
 
+# Determine if anything needs to be added to REL/ABS_TRILINOS_FLAGS.
+# Does not modify CPPFLAGS.
 AC_DEFUN(TRILINOS_HEADER,
 [
   save_CPPFLAGS=$CPPFLAGS
@@ -554,7 +629,7 @@ AC_DEFUN(TRILINOS_HEADER,
   AC_TRY_CPP([#include "$2"],[done=yes],)
   CPPFLAGS=$save_CPPFLAGS
 
-  # Next  try the specified incdir
+  # Next  try the specified incdir (if any)
   if test $done = no && test -n ${$1_INCDIR}; then
     CPPFLAGS="-I${$1_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     AC_TRY_CPP([#include "$2"],
@@ -587,13 +662,10 @@ AC_DEFUN(TRILINOS_HEADER,
     CPPFLAGS=$save_CPPFLAGS
   fi   
 
-#   AC_MSG_CHECKING([For $2])
-#   AC_MSG_RESULT([$REL_TRILINOS_CPPFLAGS])
-
   if test $done = no; then
     echo "------"
     echo "Cannot find the include file $2, part of the $1 package."
-    echo "Try --with-$1-libdir=<dir> to specify a single directory or"
+    echo "Try --with-$1-incdir=<dir> to specify a single directory or"
     echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
     echo "------"
     AC_MSG_ERROR([Cannot find $1 include directory containing $2])
@@ -602,9 +674,8 @@ AC_DEFUN(TRILINOS_HEADER,
 
 if test X${BUILD_LIBNOXEPETRA} = Xyes; then
 
-  TRILINOS_INCLUDE_WITH(epetra)
-  TRILINOS_INCLUDE_WITH(aztec00)
-  TRILINOS_INCLUDE_WITH(ifpack)
+  # We have to check for the standard Trilinos headers as well as
+  # those created by configure.
   TRILINOS_HEADER(epetra,Epetra_config.h)
   TRILINOS_HEADER(epetra,Epetra_Vector.h)
   TRILINOS_HEADER(aztecoo,AztecOO_config.h)
@@ -612,13 +683,13 @@ if test X${BUILD_LIBNOXEPETRA} = Xyes; then
   TRILINOS_HEADER(ifpack,Ifpack_config.h)
   TRILINOS_HEADER(ifpack,Ifpack_CrsRiluk.h)
 
+  # Not sure if we still need this!?!
   if test "X${HAVE_PKG_MPI}" = "Xyes"; then
     TRILINOS_COMM="MPI"
   else
     TRILINOS_COMM="SERIAL"
   fi
 
-#  TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${epetra_INC} -I${aztecoo_INC} -I${ifpack_INC}"
   TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} ${REL_TRILINOS_CPPFLAGS}"
 
 fi
@@ -629,12 +700,14 @@ AC_SUBST(TRILINOS_CXXFLAGS)
 # Petsc include file check for building noxpetsc library
 # ------------------------------------------------------------------------
 
+
+AC_ARG_WITH(petsc-incdir,
+[  --with-petsc-incdir     specify location of PETSc header files],
+[petsc_INC=$withval])
+
+
 AC_DEFUN(PETSC_INCLUDE_CHECK,
 [
-  AC_ARG_WITH($1-include,
-  [  --with-$1-include    specify location of $1 header files],
-  [$1_INC=$withval])
-
   AC_MSG_CHECKING(for $1 include directory)
   if test -n "${$1_INC}" && test -f ${$1_INC}/$2; then
     AC_MSG_RESULT([${$1_INC}])
@@ -660,26 +733,18 @@ if test X${BUILD_LIBNOXPETSC} = Xyes; then
   PETSC_INCLUDE_CHECK(petsccommon,base)
   PETSC_INCLUDE_CHECK(petscbmake,petscconf.h)
 
-#  if test "X${HAVE_PKG_MPI}" = "Xyes"; then
-#    TRILINOS_COMM="MPI"
-#  else
-#    TRILINOS_COMM="SERIAL"
-#  fi
-#
   PETSC_CXXFLAGS="-I${petsc_INC} -I${petsccommon_INC} -I${petscbmake_INC}"
 
   AC_SUBST(PETSC_CXXFLAGS)
 
 fi
 
-#AC_SUBST(PETSC_CXXFLAGS)
-
 # ------------------------------------------------------------------------
 # LOCA Library Check
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(loca,
-[  --enable-loca           compile the loca library],
+[AC_HELP_STRING([--enable-loca],[compile the loca library])],
 [BUILD_LIBLOCA=${enableval}],
 [BUILD_LIBLOCA=no]
 )
@@ -692,7 +757,7 @@ AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(loca-epetra,
-[  --enable-loca-epetra    compile the locaepetra library],
+[AC_HELP_STRING([--enable-loca-epetra],[compile the locaepetra library])],
 [BUILD_LIBLOCAEPETRA=${enableval}],
 [BUILD_LIBLOCAEPETRA=no]
 )
@@ -711,7 +776,7 @@ AM_CONDITIONAL(BUILD_LIBLOCAEPETRA, test X${BUILD_LIBLOCAEPETRA} = Xyes)
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(examples,
-[  --enable-examples       compile simple examples],
+[AC_HELP_STRING([--enable-examples],[compile simple examples])],
 [BUILD_EXAMPLES=${enableval}],
 [BUILD_EXAMPLES=no]
 )
@@ -725,7 +790,7 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test X${BUILD_EXAMPLES} = Xyes)
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(epetra-examples,
-[  --enable-epetra-examples   compile epetra examples],
+[AC_HELP_STRING([--enable-epetra-examples],[compile epetra examples])],
 [BUILD_EPETRA_EXAMPLES=${enableval}],
 [BUILD_EPETRA_EXAMPLES=no]
 )
@@ -743,7 +808,7 @@ AC_MSG_RESULT(${BUILD_EPETRA_EXAMPLES})
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(petsc-examples,
-[  --enable-petsc-examples    compile petsc examples],
+[AC_HELP_STRING([--enable-petsc-examples],[compile petsc examples])],
 [BUILD_PETSC_EXAMPLES=${enableval}],
 [BUILD_PETSC_EXAMPLES=no]
 )
@@ -761,7 +826,7 @@ AC_MSG_RESULT(${BUILD_PETSC_EXAMPLES})
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(loca-epetra-examples,
-[  --enable-loca-epetra-examples   compile loca epetra examples],
+[AC_HELP_STRING([--enable-loca-epetra-examples],[compile loca epetra examples])],
 [BUILD_LOCA_EPETRA_EXAMPLES=${enableval}],
 [BUILD_LOCA_EPETRA_EXAMPLES=no]
 )
@@ -781,7 +846,8 @@ AC_MSG_RESULT(${BUILD_LOCA_EPETRA_EXAMPLES})
 # Checks for basic libraries for examples
 # ------------------------------------------------------------------------
 
-if test ${BUILD_EXAMPLES} = yes || test ${BUILD_EPETRA_EXAMPLES} = yes || test ${BUILD_LOCA_EPETRA_EXAMPLES} = yes; then
+if test ${BUILD_EXAMPLES} = yes || test ${BUILD_EPETRA_EXAMPLES} = yes || 
+   test ${BUILD_LOCA_EPETRA_EXAMPLES} = yes; then
 
   AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
   AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
@@ -790,7 +856,7 @@ if test ${BUILD_EXAMPLES} = yes || test ${BUILD_EPETRA_EXAMPLES} = yes || test $
   AC_F77_LIBRARY_LDFLAGS
   LIBS=" ${FLIBS} ${LIBS}"
 
-  # Define F77_FUNC
+  # Define F77_FUNC - used for correctly munging Fortran function calls
   AC_F77_WRAPPERS
 
   # Find valid BLAS
@@ -829,6 +895,12 @@ if test "X${HAVE_PKG_MPI}" = "Xyes" && test X${BUILD_EPETRA_EXAMPLES} = Xyes; th
   [int c; char** v; MPI_Init(&c,&v);],
   [AC_MSG_RESULT(yes)], 
   [AC_MSG_RESULT(no)  
+   echo "-----"
+   echo "Cannot link simple MPI program."
+   echo "Try --with-mpi-cxx to specify MPI C++ compile script."
+   echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
+   echo "to specify all the specific MPI compile options."
+   echo "-----"
    AC_MSG_ERROR(MPI cannot link)]
   )
 
@@ -840,74 +912,48 @@ fi
 
 AC_DEFUN(TRILINOS_LIB_CHECK,
 [
-  AC_ARG_WITH($1-libdir,
-  [  --with-$1-libdir    specify location of $1 library],
-  [$1_LIBDIR=$withval])
+  LIBS="-l$1 ${LIBS}"
+  save_LDFLAGS=$LDFLAGS
+  done=no
 
-  AC_MSG_CHECKING(for $1)
-  if test -n "${$1_LIBDIR}" && test -f ${$1_LIBDIR}/lib$1.a; then
-    LDFLAGS="-L${$1_LIBDIR} ${LDFLAGS}"
-    AC_MSG_RESULT(yes)
-  elif test -f ${TRILINOS_DIR}/lib/lib$1.a; then
-    LDFLAGS="-L${TRILINOS_DIR}/lib ${LDFLAGS}"
-    AC_MSG_RESULT(yes)
-  elif test -f ${TRILINOS_DIR}/lib/$1/lib$1.a; then
-    LDFLAGS="-L${TRILINOS_DIR}/lib/$1 ${LDFLAGS}"
-    AC_MSG_RESULT(yes)
-  elif test -f ${TRILINOS_DIR}/lib/${TRILINOS_TARGET}/lib$1.a; then
-    LDFLAGS="-L${TRILINOS_DIR}/lib/${TRILINOS_TARGET} ${LDFLAGS}"
+  # First, see if we can link without doing anything
+  AC_LANG_CPLUSPLUS
+  AC_TRY_LINK(,,[done=yes],)
+  LDFLAGS=$save_LDFLAGS
+
+  # Next try the specified libdir (if any)
+   if test $done = no && test -n ${$1_LIBDIR}; then
+     LDFLAGS="-L${$1_LIBDIR} $save_LDFLAGS"
+     AC_TRY_LINK(,,[done=yes],[LDFLAGS=$save_LDFLAGS])
+   fi   
+
+  # Next try the Trilinos build dir
+   if test $done = no; then
+    PWD=`pwd`
+    LDFLAGS="-L$PWD/../$1/src $save_LDFLAGS"
+    AC_TRY_LINK(,,[done=yes],[LDFLAGS=$save_LDFLAGS])
+   fi   
+
+  AC_MSG_CHECKING([for $1 library])
+  
+  if test $done = yes; then
     AC_MSG_RESULT(yes)
   else
     AC_MSG_RESULT(no)
-    AC_MSG_ERROR([Cannot find $1 library])
-  fi  
-
-  LIBS="-l$1 ${LIBS}"
+    echo "------"
+    echo "Cannot find the library $1."
+    echo "Try --with-$1-libdir=<dir> to specify a single directory or"
+    echo "--with-ldflags=\"-L<dir1> -L<dir2>\" for multiple directories."
+    echo "------"
+    AC_MSG_ERROR([Cannot find $1 library.])
+  fi 
 
 ])
 
 if test X${BUILD_EPETRA_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes; then
 
-  # Determine TRILINOS_TARGET
-  AC_MSG_CHECKING(whether TRILINOS_ARCH is defined)
-  if test -n "${TRILINOS_ARCH}"; then
-    AC_MSG_RESULT([yes (${TRILINOS_ARCH})])
-  else
-    case $target in
-      rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
-   	TRILINOS_ARCH="AIX"
-	;;
-      alpha-unknown-linux-gnu)
- 	TRILINOS_ARCH="LINUXALPHA"
- 	;;	
-      *)
- 	TRILINOS_ARCH="LINUX"
-   	;;
-    esac
-    AC_MSG_RESULT([no (using ${TRILINOS_ARCH})])
-  fi
- 
-  AC_MSG_CHECKING(whether TRILINOS_ID is defined)
-  if test -n "${TRILINOS_ID}"; then
-     AC_MSG_RESULT([yes (${TRILINOS_ID})])
-  else
-     AC_MSG_RESULT(no)
-  fi
- 
-  AC_MSG_CHECKING(whether TRILINOS_TARGET is defined)
-  if test -n "${TRILINOS_TARGET}"; then
-     AC_MSG_RESULT([yes (${TRILINOS_TARGET})])
-  else
-     TRILINOS_TARGET="${TRILINOS_ARCH}.${TRILINOS_COMM}${TRILINOS_ID}"
-     AC_MSG_RESULT([no (using ${TRILINOS_TARGET})])
-  fi
-
   # Find a valid y12m
   AC_LANG_FORTRAN77
-
-  AC_ARG_WITH(y12m-libdir,
-  [  --with-y12m-libdir      specify location of y12m library],
-  [y12m_LIBDIR=$withval])
 
   AC_MSG_CHECKING(for y12m)
   if test -n "${y12m_LIBDIR}" && test -f ${y12m_LIBDIR}/liby12m.a; then
@@ -918,16 +964,22 @@ if test X${BUILD_EPETRA_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} 
     AC_MSG_RESULT(yes)
   else
     AC_MSG_RESULT(no)
+    echo "---"
+    echo "Cannot find y12m library."
+    echo "Try --with-y12m-libdir=<dir> to specify the library location."
+    echo "If requiring the y12m library annoys you, vote for Bug 106 by visiting"
+    echo "http://software.sandia.gov/bugzilla/show_bug.cgi?id=106."
+    echo "---"
     AC_MSG_ERROR([Cannot find y12m library])
   fi  
 
-  AC_SEARCH_LIBS(y12mae,[y12m],,AC_MSG_ERROR([Cannot find y12m library]))
+  AC_SEARCH_LIBS(y12mae,[y12m],,AC_MSG_ERROR([Cannot find function y12mae in y12m library]))
 
 
   # Check for ifpack
+  TRILINOS_LIB_CHECK(epetra)
   TRILINOS_LIB_CHECK(ifpack)
   TRILINOS_LIB_CHECK(aztecoo)
-  TRILINOS_LIB_CHECK(epetra)
 
 fi
 
@@ -945,7 +997,7 @@ AM_CONDITIONAL(BUILD_EPETRA_EXAMPLES, test X${BUILD_EPETRA_EXAMPLES} = Xyes)
 AC_DEFUN(PETSC_LIB_CHECK,
 [
   AC_ARG_WITH($1-libdir,
-  [  --with-$1-libdir    specify location of $1 library],
+  [AC_HELP_STRING([--with-$1-libdir],[specify location of $1 library])],
   [$1_LIBDIR=$withval])
 
   AC_MSG_CHECKING(whether PETSC_BOPT is defined)
@@ -1008,20 +1060,6 @@ AM_CONDITIONAL(BUILD_LOCA_EPETRA_EXAMPLES, test X${BUILD_LOCA_EPETRA_EXAMPLES} =
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
-
-# THIS TEST ISN'T WORKING - WILL COME BACK TO IT LATER.
-# Check that all libraries will link with C++
-dnl if test X${LIBS} != X; then
-dnl   AC_MSG_CHECKING([[whether libraries (${LIBS}) will link]])
-dnl   AC_LANG_CPLUSPLUS 
-dnl   AC_TRY_LINK([],[],
-dnl   [AC_MSG_RESULT(yes)],
-dnl   [
-dnl   AC_MSG_RESULT(no)
-dnl   AC_MSG_ERROR(cannot link)
-dnl   ]
-dnl   )
-dnl fi
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
@@ -1091,4 +1129,12 @@ AC_CONFIG_FILES([
 
 AC_OUTPUT()
 
+
+# ------------------------------------------------------------------------
+# Bye World!
+# ------------------------------------------------------------------------
+
+echo "----------------------------------------"
+echo "Finished Running NOX Configure Script"
+echo "----------------------------------------"
 
