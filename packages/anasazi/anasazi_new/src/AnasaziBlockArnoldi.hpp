@@ -114,15 +114,6 @@ namespace Anasazi {
     TYPE * getResiduals();
     //@}
     
-    //@{ \name Problem attribute method.
-    
-    /*! \brief This method allows the user to inform the solver of a problem's symmetry.
-      Some computational work can be avoided by setting this properly in the
-      symmetric case.
-    */
-    void setSymmetric( const bool );
-    //@}
-    
     //@{ \name Output methods.
     
     /*! \brief This method allows the user to set the solver's level of visual output
@@ -157,7 +148,7 @@ namespace Anasazi {
     int *_order;
     int _restartiter, _iter, _jstart, _jend, _nevblock, _debuglevel, _defblock;
     int _offset, _maxoffset;
-    bool _initialguess, _issym, _isdecompcurrent, _isevecscurrent, _exit_flg, _dep_flg;
+    bool _initialguess, _isdecompcurrent, _isevecscurrent, _exit_flg, _dep_flg;
     TYPE _schurerror, _scalefactor, _dep_tol, _blk_tol, _sing_tol, _def_tol;
   };
   //
@@ -202,7 +193,6 @@ namespace Anasazi {
     _offset(0),
     _maxoffset(0),
     _initialguess(true), 
-    _issym(false),
     _isdecompcurrent(false),
     _isevecscurrent(false),
     _exit_flg(false),
@@ -442,11 +432,6 @@ namespace Anasazi {
   }
   
   template <class TYPE>
-  void BlockArnoldi<TYPE>::setSymmetric( const bool sym ) {
-    _issym = sym;
-  }
-  
-  template <class TYPE>
   void BlockArnoldi<TYPE>::currentStatus() {
     int i;
     cout<<" "<<endl;
@@ -483,7 +468,7 @@ namespace Anasazi {
     int _nevtemp = _nev;
     if (_jstart < _nevblock) { _nevtemp = _jstart*_block; }
     //
-    if (_issym) {
+    if (_problem.IsSymmetric()) {
       cout<<"Eigenvalue\tRitz Residual"<<endl;
       cout<<"------------------------------------------------------"<<endl;
       if ( _nevtemp == 0 ) {
@@ -1422,7 +1407,7 @@ namespace Anasazi {
     //  So, copy the Ritz vectors.  Else, we need to compute the eigenvectors of the
     //  Schur form to compute the eigenvectors of the non-symmetric operator.
     //
-    if (_issym) {
+    if (_problem.IsSymmetric()) {
       _evecr->SetBlock( *basistemp, index, curr_nev );
     } else {  
       //
@@ -1539,7 +1524,7 @@ namespace Anasazi {
     //  If the operator is symmetric, analyze the block tridiagonal matrix
     //  and enforce symmetry.
     //
-    if (_issym) {
+    if (_problem.IsSymmetric()) {
       if (_restartiter > 0 && _restarts!=0) {
 	//
 	// The method has been restarted, so more caution must be used in
@@ -1626,7 +1611,7 @@ namespace Anasazi {
     // Determine largest off diagonal element of Schur matrix for symmetric case.
     //
     TYPE _maxsymmelem = zero;
-    if (_issym) {
+    if (_problem.IsSymmetric()) {
       for(j=0; j<n; j++){
 	for(i=0; i<j; i++) {
 	  if(Teuchos::ScalarTraits<TYPE>::magnitude(H(i, j))>_maxsymmelem) { _maxsymmelem = H(i, j); }
@@ -1720,7 +1705,7 @@ namespace Anasazi {
     // Sort eigenvalues in increasing order of magnitude
     //---------------------------------------------------------------
     if (!_which.compare("SM")) {
-      if (_issym) {  // The eigenvalues are real
+      if (_problem.IsSymmetric()) {  // The eigenvalues are real
 	for (j=1; j < n; ++j) {
 	  tempr = _evalr[j]; 
 	  tempord = _order[j];
@@ -1749,7 +1734,7 @@ namespace Anasazi {
     // Sort eigenvalues in increasing order of real part
     //---------------------------------------------------------------
     if (!_which.compare("SR")) {
-      if (_issym) {  // The eigenvalues are real
+      if (_problem.IsSymmetric()) {  // The eigenvalues are real
 	for (j=1; j < n; ++j) {
 	  tempr = _evalr[j]; 
 	  tempord = _order[j];
@@ -1790,7 +1775,7 @@ namespace Anasazi {
     // Sort eigenvalues in decreasing order of magnitude
     //---------------------------------------------------------------
     if (!_which.compare("LM")) {
-      if (_issym) {  // The eigenvalues are real
+      if (_problem.IsSymmetric()) {  // The eigenvalues are real
 	for (j=1; j < n; ++j) {
 	  tempr = _evalr[j]; 
 	  tempord = _order[j];
@@ -1819,7 +1804,7 @@ namespace Anasazi {
     // Sort eigenvalues in decreasing order of real part
     //---------------------------------------------------------------
     if (!_which.compare("LR")) {
-      if (_issym) {  // The eigenvalues are real
+      if (_problem.IsSymmetric()) {  // The eigenvalues are real
 	for (j=1; j < n; ++j) {
 	  tempr = _evalr[j]; 
 	  tempord = _order[j];

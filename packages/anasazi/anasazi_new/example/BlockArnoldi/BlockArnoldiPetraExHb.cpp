@@ -144,20 +144,23 @@ int main(int argc, char *argv[]) {
         // or copy is determined by the petra constructor called by Anasazi::PetraVec.
         // This is possible because I pass in arguements needed by petra.
 
-        Anasazi::PetraVec<double> ivec(Map, block);
+        Anasazi::PetraVec ivec(Map, block);
         ivec.MvRandom();
 
         // call the ctor that calls the petra ctor for a matrix
 
-        Anasazi::PetraMat<double> Amat(A);
+        Anasazi::PetraMat Amat(A);
         Anasazi::Eigenproblem<double> MyProblem(&Amat, &ivec);
+
+	// Inform the eigenproblem that the matrix A is symmetric
+	//MyProblem.SetSymmetric(true);
+
 	//
 	//  Initialize the Block Arnoldi solver
 	//
         Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, tol, nev, length, block,
                                          which, step, restarts);
 
-	//MyBlockArnoldi.setSymmetric(true);
         MyBlockArnoldi.setDebugLevel(0);
 
 #ifdef UNIX
@@ -181,9 +184,9 @@ int main(int argc, char *argv[]) {
         double* evali = MyBlockArnoldi.getiEvals();
 
         // retrieve eigenvectors
-        Anasazi::PetraVec<double> evecr(Map, nev);
+        Anasazi::PetraVec evecr(Map, nev);
         MyBlockArnoldi.getEvecs( evecr );
-        Anasazi::PetraVec<double> eveci(Map, nev);
+        Anasazi::PetraVec eveci(Map, nev);
         MyBlockArnoldi.getiEvecs( eveci );
 
         // output results to screen

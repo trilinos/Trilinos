@@ -203,7 +203,6 @@ int main(int argc, char *argv[]) {
                 cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
                 cout << endl;
         } 
-        Epetra_Operator& prec = dynamic_cast<Epetra_Operator&>(*ICT);
 	//
 	//*******************************************************
 	// Set up Belos Block GMRES operator for inner iteration
@@ -216,7 +215,7 @@ int main(int argc, char *argv[]) {
         // Create the Belos::LinearProblemManager
         //
 	Belos::PetraMat<double> BelosMat(&A);
-        Belos::PetraPrec<double> BelosPrec(&prec);
+        Belos::PetraPrec<double> BelosPrec(ICT);
 	Belos::LinearProblemManager<double> My_LP;
 	My_LP.SetOperator( &BelosMat );
 	My_LP.SetLeftPrec( &BelosPrec );
@@ -260,22 +259,23 @@ int main(int argc, char *argv[]) {
 	// or copy is determined by the petra constructor called by AnasaziPetraVec.
 	// This is possible because I pass in arguements needed by petra.
 
-	Anasazi::PetraVec<double> ivec(Map, block);
+	Anasazi::PetraVec ivec(Map, block);
 	ivec.MvRandom();
     
 	// call the ctor that calls the petra ctor for a matrix
 
-	Anasazi::PetraMat<double> Amat(A);
-	Anasazi::PetraMat<double> Bmat(B);
-	Anasazi::PetraGenOp<double> Aop(BelosOp, B);	
+	Anasazi::PetraMat Amat(A);
+	Anasazi::PetraMat Bmat(B);
+	Anasazi::PetraGenOp Aop(BelosOp, B);	
 	Anasazi::Eigenproblem<double> MyProblem(&Amat, &Bmat, &Aop, &ivec);
+
+	// inform the eigenproblem that the matrix pencil (A,B) is symmetric
+	MyProblem.SetSymmetric(true);
 
 	// initialize the Block Arnoldi solver
 	Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, tol, nev, length, block, 
 						which, step, restarts);
 	
-	// inform the solver that the problem is symmetric
-	MyBlockArnoldi.setSymmetric(true);
 	//MyBlockArnoldi.setDebugLevel(3);
 	
 #ifdef UNIX
@@ -299,7 +299,7 @@ int main(int argc, char *argv[]) {
 	double* evalr = MyBlockArnoldi.getEvals(); 
 
 	// retrieve real and imaginary parts of the eigenvectors
-	Anasazi::PetraVec<double> evecr(Map, nev);
+	Anasazi::PetraVec evecr(Map, nev);
 	MyBlockArnoldi.getEvecs( evecr );
 
 	Teuchos::SerialDenseMatrix<int,double> dmatr(nev,nev);

@@ -108,6 +108,12 @@ class Eigenproblem {
 	*/
 	void SetMatrixB( Matrix<TYPE>* B ) { _Bmat = B; }
 
+        //! Inform the eigenproblem that this problem is symmetric.
+        /*! This knowledge may allow the solver to take advantage of the eigenproblems' symmetry.
+	  Some computational work can be avoided by setting this properly.
+	*/
+        void SetSymmetric( const bool isSym = true ){ _isSym = isSym; };
+
 	//@}
 
 	//@{ \name Accessor Methods.
@@ -135,6 +141,9 @@ class Eigenproblem {
 
 	//! Get a pointer to the imaginary part of the eigenvectors of the operator.
 	MultiVec<TYPE>* GetIEvecs() { return(_IEvecs); };
+
+        //! Get the symmetry information for this eigenproblem.
+        bool IsSymmetric() const { return(_isSym); }
 
 	//@}	
 
@@ -194,6 +203,7 @@ class Eigenproblem {
         MultiVec<TYPE> *_InitVec;
 	TYPE *_REvals, *_IEvals;
 	MultiVec<TYPE> *_REvecs, *_IEvecs; 	
+        bool _isSym;
 };		
 
 //=============================================================================
@@ -203,7 +213,7 @@ class Eigenproblem {
 template<class TYPE>
 Eigenproblem<TYPE>::Eigenproblem(void) : 
 	_Op(0), _Amat(0), _Bmat(0), _InitVec(0),_REvals(0), 
-	_IEvals(0), _REvecs(0), _IEvecs(0)
+	_IEvals(0), _REvecs(0), _IEvecs(0), _isSym(false)
 {
 }
 
@@ -212,7 +222,7 @@ Eigenproblem<TYPE>::Eigenproblem(void) :
 template<class TYPE>
 Eigenproblem<TYPE>::Eigenproblem( Matrix<TYPE>* A, MultiVec<TYPE>* Ivec ) :
 	_Op(0), _Amat(A), _Bmat(0), _InitVec(Ivec), _REvals(0), 
-	_IEvals(0), _REvecs(0), _IEvecs(0)
+	_IEvals(0), _REvecs(0), _IEvecs(0), _isSym(false)
 {
 }
 
@@ -222,7 +232,7 @@ template<class TYPE>
 Eigenproblem<TYPE>::Eigenproblem( Matrix<TYPE>* A, Operator<TYPE>* Op,
 			MultiVec<TYPE>* Ivec ) :
 	_Op(Op), _Amat(A), _Bmat(0), _InitVec(Ivec), _REvals(0),
-	_IEvals(0), _REvecs(0), _IEvecs(0)
+	_IEvals(0), _REvecs(0), _IEvecs(0), _isSym(false)
 {
 }
 
@@ -232,7 +242,7 @@ template<class TYPE>
 Eigenproblem<TYPE>::Eigenproblem( Operator<TYPE>* Op , Matrix<TYPE>* B,
 			MultiVec<TYPE>* Ivec ) :
 	_Op(Op), _Amat(0), _Bmat(B), _InitVec(Ivec), _REvals(0),
-	_IEvals(0), _REvecs(0), _IEvecs(0)
+	_IEvals(0), _REvecs(0), _IEvecs(0), _isSym(false)
 {
 }
 
@@ -242,7 +252,7 @@ template<class TYPE>
 Eigenproblem<TYPE>::Eigenproblem( Matrix<TYPE>* A, Matrix<TYPE>* B,
 			Operator<TYPE>* Op, MultiVec<TYPE>* Ivec ) :
 	_Op(Op), _Amat(A), _Bmat(B), _InitVec(Ivec), _REvals(0),
-	_IEvals(0), _REvecs(0), _IEvecs(0)
+	_IEvals(0), _REvecs(0), _IEvecs(0), _isSym(false)
 {
 }
 
@@ -251,7 +261,7 @@ Eigenproblem<TYPE>::Eigenproblem( Matrix<TYPE>* A, Matrix<TYPE>* B,
 template<class TYPE>
 Eigenproblem<TYPE>::Eigenproblem( Operator<TYPE>* Op, MultiVec<TYPE>* Ivec ) :
 	_Op(Op), _Amat(0), _Bmat(0), _InitVec(Ivec), _REvals(0),
-	_IEvals(0), _REvecs(0), _IEvecs(0)
+	_IEvals(0), _REvecs(0), _IEvecs(0), _isSym(false)
 {
 }
 
@@ -262,7 +272,7 @@ Eigenproblem<TYPE>::Eigenproblem( const Eigenproblem<TYPE>& Problem ) :
 	_Op(Problem._Op), _Amat(Problem._Amat), _Bmat(Problem._Bmat),
 	_InitVec(Problem._InitVec), _REvals(Problem._REvals),
 	_IEvals(Problem._IEvals), _REvecs(Problem._REvecs),
-	_IEvecs(Problem._IEvecs)
+	_IEvecs(Problem._IEvecs), _isSym(Problem._isSym)
 {
 }
 	

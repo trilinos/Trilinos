@@ -234,19 +234,19 @@ int main(int argc, char *argv[]) {
 	// Create a PetraAnasaziVec. Note that the decision to make a view or
 	// or copy is determined by the petra constructor called by Anasazi::PetraVec.
 	// This is possible because I pass in arguements needed by petra.
-	Anasazi::PetraVec<double> ivec(Map, block);
+	Anasazi::PetraVec ivec(Map, block);
 	ivec.MvRandom();
 
 	// Call the ctor that calls the petra ctor for a matrix
-	Anasazi::PetraMat<double> Amat(A);	
+	Anasazi::PetraMat Amat(A);	
 	Anasazi::Eigenproblem<double> MyProblem(&Amat, &ivec);
+
+	// Inform the eigenproblem that the matrix A is symmetric
+	MyProblem.SetSymmetric(rho==0.0); 
 
 	// Initialize the Block Arnoldi solver
 	Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, tol, nev, length, block, 
-						which, step, restarts);
-	
-	// Inform the solver that the problem is symmetric
-	MyBlockArnoldi.setSymmetric(rho==0.0); 
+						which, step, restarts);	
 	MyBlockArnoldi.setDebugLevel(0);
 
 #ifdef UNIX
@@ -271,9 +271,9 @@ int main(int argc, char *argv[]) {
 	double* evali = MyBlockArnoldi.getiEvals();
 
 	// Retrieve eigenvectors
-	Anasazi::PetraVec<double> evecr(Map, nev);
+	Anasazi::PetraVec evecr(Map, nev);
 	MyBlockArnoldi.getEvecs( evecr );
-	Anasazi::PetraVec<double> eveci(Map, nev);
+	Anasazi::PetraVec eveci(Map, nev);
 	MyBlockArnoldi.getiEvecs( eveci );
 
 	// Output results to screen
@@ -281,8 +281,8 @@ int main(int argc, char *argv[]) {
 	
 	// Compute residuals.
 	Teuchos::LAPACK<int,double> lapack;
-	Anasazi::PetraVec<double> tempevecr(Map,nev), tempeveci(Map,nev);
-	Anasazi::PetraVec<double> tempAevec(Map,nev);
+	Anasazi::PetraVec tempevecr(Map,nev), tempeveci(Map,nev);
+	Anasazi::PetraVec tempAevec(Map,nev);
 	Teuchos::SerialDenseMatrix<int,double> Breal(nev,nev), Bimag(nev,nev);
 	Teuchos::SerialDenseMatrix<int,double> Breal2(nev,nev), Bimag2(nev,nev);
 	double* normA = new double[nev];
