@@ -17,24 +17,27 @@
 #include "all_allo_const.h"
 #include "comm_const.h"
 #include "parmetis_jostle_const.h"
-#include "params_const.h"
 
 /*********************************************************************/
 /* Verify ParMetis graph structure.                                  */
-/*                                                                   */
-/* Fatal error :                                                     */
-/*   - non-symmetric graph                                           */
-/*   - incorrect vertex number                                       */
-/*   - negative vertex or edge weight                                */
-/* Warning :                                                         */
-/*   - zero sum of vertex or edge weights                            */
-/*   - self-edge                                                     */
-/*   - multiple edges between a pair of vertices                     */
 /*                                                                   */
 /* Input parameter check_graph specifies the level of verification:  */
 /*   0 - perform no checks at all                                    */
 /*   1 - verify on-processor part of graph                           */
 /*   2 - verify complete graph (requires communication)              */
+/*                                                                   */
+/* Output: an error code (the same on all procs)                     */
+/*                                                                   */
+/* Fatal error :                                                     */
+/*   - non-symmetric graph                                           */
+/*   - incorrect vertex number                                       */
+/*   - negative vertex or edge weight                                */
+/*                                                                   */
+/* Warning :                                                         */
+/*   - zero sum of vertex or edge weights                            */
+/*   - self-edge                                                     */
+/*   - multiple edges between a pair of vertices                     */
+/*                                                                   */
 /*********************************************************************/
 
 int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj, 
@@ -43,7 +46,7 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
 {
   int i, j, ii, jj, k, kk, num_obj, nedges, ierr;
   int flag, cross_edges, mesg_size, sum;
-  int nprocs, proc, *proclist;
+  int nprocs, proc, *proclist, errors, global_errors;
   idxtype global_i, global_j;
   idxtype *ptr1, *ptr2;
   char *sendbuf, *recvbuf;
@@ -66,10 +69,10 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
        sum = 0;
        for (k=0; k<vwgt_dim; k++){
          if (vwgt[i*vwgt_dim+k] < 0) {
-            fprintf(stderr, "Zoltan error: Negative object weight of %g in %s\n", 
+            fprintf(stderr, "Zoltan error: Negative object weight of %d in %s\n", 
                     vwgt[i*vwgt_dim+k], yo);
             ierr = LB_FATAL;
-            return ierr;
+            goto barrier1;
          }
          sum += vwgt[i*vwgt_dim+k];
        }
@@ -88,10 +91,10 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
       sum = 0;
       for (k=0; k<ewgt_dim; k++){
         if (adjwgt[j*ewgt_dim+k] < 0) {
-          fprintf(stderr, "Zoltan error: Negative communication weight of %g in %s\n", 
+          fprintf(stderr, "Zoltan error: Negative communication weight of %d in %s\n", 
           vwgt[j], yo);
           ierr = LB_FATAL;
-          return ierr;
+          goto barrier1;
         }
         sum += adjwgt[j*ewgt_dim+k];
       }
@@ -116,7 +119,7 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
         fprintf(stderr, "Zoltan error: Edge to invalid vertex %d detected in %s.\n", 
                 global_j, yo);
         ierr = LB_FATAL;
-        return ierr;
+        goto barrier1;
       }
       /* Self edge? */
       if (global_j == global_i){
@@ -151,17 +154,34 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
           }
         }
         if (!flag) {
-          fprintf(stderr, "Zoltan error: Graph in not symmetric in %s. "
+          fprintf(stderr, "Zoltan error: Graph is not symmetric in %s. "
                   "Edge (%d,%d) exists, but no edge (%d,%d).\n", 
                   yo, global_i, global_j, global_j, global_i);
           ierr = LB_FATAL;
-          return ierr;
+          goto barrier1;
         }
       }
       else {
         cross_edges++;
       }
     }
+  }
+
+barrier1:
+  /* Check if any processor has encountered a fatal error so far */
+  errors = 0;
+  if (ierr == LB_WARN)
+    errors |= 1;
+  if (ierr == LB_MEMERR)
+    errors |= 2;
+  if (ierr == LB_FATAL)
+    errors |= 4;
+
+  MPI_Allreduce(&errors, &global_errors, 1, MPI_INT, MPI_BOR, comm);
+
+  if (global_errors & 4){
+    /* Fatal error: return now */
+    return LB_FATAL;
   }
 
   if ((check_graph >= 2) && cross_edges) {
@@ -174,7 +194,6 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
     if (!(sendbuf && recvbuf && proclist)){
        fprintf(stderr, "Zoltan error: Out of memory in %s\n", yo);
        ierr = LB_MEMERR;
-       goto error;
     }
 
     /* Second pass: Copy data to send buffer */
@@ -206,7 +225,6 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
         fprintf(stderr, "Zoltan error: Incorrect number of edges to/from proc %d\n",
                 proc);
         ierr = LB_FATAL;
-        goto error;
     }
 
     LB_Comm_Do(comm_plan, TAG2, sendbuf, mesg_size, recvbuf);
@@ -228,7 +246,6 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
               fprintf(stderr, "Zoltan error: edge weight (%d,%d) is not symmetric: "
                       "%d != %d\n", ptr1[0], ptr1[1], ptr1[2+k], ptr2[2+k]);
               ierr = LB_FATAL;
-              goto error;
             }
           }
         }
@@ -238,18 +255,39 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
                 "Edge (%d,%d) exists, but not (%d,%d)\n", 
                 yo, ptr1[0], ptr1[1], ptr1[1], ptr1[0]);
         ierr = LB_FATAL;
-        goto error;
       }
     }
 
-error:
+barrier2:
     /* Free memory */
     LB_FREE(&sendbuf);
     LB_FREE(&recvbuf);
     LB_FREE(&proclist);
   }
 
-  /* Return error code */
-  return ierr;
+  /* Compute global error code */
+  errors = 0;
+  if (ierr == LB_WARN)
+    errors |= 1;
+  if (ierr == LB_MEMERR)
+    errors |= 2;
+  if (ierr == LB_FATAL)
+    errors |= 4;
+
+  MPI_Allreduce(&errors, &global_errors, 1, MPI_INT, MPI_BOR, comm);
+
+  if (global_errors & 4){
+    return LB_FATAL;
+  }
+  else if (global_errors & 2){
+    return LB_MEMERR;
+  }
+  else if (global_errors & 1){
+    return LB_WARN;
+  }
+  else {
+    return LB_OK;
+  }
+
 }
 
