@@ -220,9 +220,6 @@ ml_vec.o : ../Obj/ml_vec.c ../Obj/ml_comm.h ../Obj/ml_defs.h \
         ../Obj/ml_memory.h ../Obj/ml_vec.h
 	$(CC) -c $(CFLAGS) ../Obj/ml_vec.c -o $@
 
-ml_recirc : ../Obj/ml_recirc
-	$(CC) -c $(CFLAGS) ../Obj/ml_recirc -o $@
-
 convertSund2AZdatafile.o : ../examples/convertSund2AZdatafile.c
 	$(CC) -c $(CFLAGS) ../examples/convertSund2AZdatafile.c -o $@
 
