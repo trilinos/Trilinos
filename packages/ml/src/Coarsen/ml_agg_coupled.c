@@ -1415,7 +1415,7 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    for ( i = 0; i < Nrows; i++ ) dbuf[i] = i / num_PDE_eqns;
    getrow_comm = getrow_obj->pre_comm;
    if ( getrow_comm != NULL )
-      ML_exchange_bdry(dbuf, getrow_comm, Nrows, comm, ML_OVERWRITE);
+      ML_exchange_bdry(dbuf, getrow_comm, Nrows, comm, ML_OVERWRITE,NULL);
 
    count = Nrows;
    total_recv_leng = 0; 
@@ -2826,7 +2826,7 @@ int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       if ( dble_buf != NULL ) free(dble_buf);
       getrow_comm = getrow_obj->pre_comm;
       if ( getrow_comm != NULL )
-         ML_exchange_bdry(diagonal,getrow_comm,Nrows,comm,ML_OVERWRITE);
+         ML_exchange_bdry(diagonal,getrow_comm,Nrows,comm,ML_OVERWRITE,NULL);
    }
 
    /* ============================================================= */

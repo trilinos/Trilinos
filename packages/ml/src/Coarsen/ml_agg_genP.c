@@ -1428,7 +1428,7 @@ int ML_AGG_Compute_Near_Bdry(ML_Operator *Amatrix, char *near_bdry)
 
    
    ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm,Amatrix->outvec_leng,
-                    Amatrix->comm, ML_OVERWRITE);
+                    Amatrix->comm, ML_OVERWRITE,NULL);
    for (i = 0; i < Nrows+Nghost; i++) {
       if (dtemp[i] == 1.) near_bdry[i] = 'T';
       else near_bdry[i] = 'F';

@@ -189,7 +189,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    allocated = 0; 
 
    ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm,Amatrix->outvec_leng,
-                    comm, ML_OVERWRITE);
+                    comm, ML_OVERWRITE,NULL);
    for (i = 0; i < Nrows+Nghost; i++) {
       if (dtemp[i] == 1.) unamalg_bdry[i] = 'T';
       else unamalg_bdry[i] = 'F';
@@ -340,7 +340,8 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
       if (bdry[i] == 'T') dtemp[i] = 1.;
       else  dtemp[i] = 0.;
    }
-   ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm,nvertices,comm,ML_OVERWRITE);
+   ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm,nvertices,comm,
+                    ML_OVERWRITE,NULL);
    for (i = nvertices; i < exp_Nrows; i++) {
       if (dtemp[i] == 1.) bdry[i] = 'T';
       else bdry[i] = 'F';
@@ -1001,7 +1002,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    dtemp = (double *) ML_allocate(sizeof(double)*(exp_Nrows+1));
    for (i = 0; i < nvertices; i++) dtemp[i] = (double) (i + vertex_offset);
    ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm, nvertices, comm,
-                    ML_OVERWRITE);
+                    ML_OVERWRITE,NULL);
    for (i = 0; i < exp_Nrows-nvertices; i++)
    {
 #ifndef MAXWELL
