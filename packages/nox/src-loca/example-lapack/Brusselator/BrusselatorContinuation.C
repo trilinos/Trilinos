@@ -84,6 +84,7 @@ int main()
     stepperList.setParameter("Min Scale Factor", 1.0e-8);
     stepperList.setParameter("Min Tangent Factor", -1.0);
     stepperList.setParameter("Tangent Factor Exponent",1.0);
+    stepperList.setParameter("Compute Eigenvalues",false);
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
@@ -126,7 +127,7 @@ int main()
     //NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
 
     // Set up the status tests
-    NOX::StatusTest::NormF statusTestA(grp, 1.0e-8);
+    NOX::StatusTest::NormF statusTestA(1.0e-8);
     NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
