@@ -43,7 +43,7 @@
  * has.
  */
 #define UTIL_NAME "zoltan"
-#define LB_VER   1.02
+#define LB_VER   1.1
 
 
 /*
