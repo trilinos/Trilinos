@@ -30,8 +30,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_LINESEARCH_POLYNOMIAL_H
-#define NOX_LINESEARCH_POLYNOMIAL_H
+#ifndef NOX_LINESEARCH_POLYNOMIALNEW_H
+#define NOX_LINESEARCH_POLYNOMIALNEW_H
 
 #include "NOX_LineSearch_Generic.H" // base class
 
@@ -40,64 +40,74 @@
 #include "NOX_LineSearch_Utils_Slope.H"     // class data member
 
 namespace NOX {
-  namespace Parameter {
-    class UserNorm;
-    class MeritFunction;
-  }
+namespace Parameter {
+class UserNorm;
+class MeritFunction;
+}
 }
 
 namespace NOX {
 namespace LineSearch {
 
-//! Use quad/cubic polynomial fit from Dennis & Schnabel Sec. 6.3.2 with modifications for Homer Walker's Ared/Pred inexact Newton methods.
 /*!
-  
-  This line search is based on materials in the following materials:
+  \brief
+  A polynomial line search, either quadratic or cubic.
 
-  - Section 6.3.2 and Algorithm 6.3.1 of "Numerical Methods for
-    Unconstrained Optimization and Nonlinear Equations," J. E. Dennis
-    Jr. and Robert B.  Schnabel, Prentice Hall, 1983.
-
-  - Section 3.4 of "Numerical Optimization," Jorge Nocedal and Stephen
-    J. Wright, Springer, 1999.
-
-  - "An Inexact Newton Method for Fully Coupled Solution of the Navier-Stokes 
-    Equations with Heat and Mass Transfer", Shadid, J. N., Tuminaro, R. S., 
-    and Walker, H. F., Journal of Computational Physics, 137, 155-185 (1997)
-
-  The line search can be called via NOX::LineSearch::Manager.
+  This line search can be called via NOX::LineSearch::Manager.
  
-  We are given the following information at %solver step \f$ n \f$: 
-  -# Old solution group: \f$ x_{\rm old} \f$ 
-  -# Direction vector: \f$ s \f$ 
+  The goal of the line search is to find a step \f$\lambda\f$ for the
+  calculation \f$x_{\rm new} = x_{\rm old} + \lambda d\f$, given
+  \f$x_{\rm old}\f$ and \f$ d \f$.  To accomplish this goal, we
+  minimize a merit function \f$ \phi(\lambda) \f$ that measures the
+  "goodness" of the step \f$\lambda\f$.  The standard merit function is
 
-  The line search attempts to minimize the merit function \f$ \phi \f$ along a line in the direction \f$ s \f$ by controlling the step length \f$ \lambda \f$. The merit function can be defined in one of two choices:<br><br>
-  - "Norm-F Squared"  
- 
   \f[ 
-  \phi(\lambda) \equiv \frac{1}{2}||F (x_{\rm old} + \lambda s)||^2 
+  \phi(\lambda) \equiv \frac{1}{2}||F (x_{\rm old} + \lambda s)||^2,
   \f]
 
-  - User defined object derived from the NOX::Parameter::MeritFunction class 
-    (see NOX::Parameter::MeritFunction for implementation details).
+  but a user defined merit function can be used instead (see
+  computePhi() for details).  Our first attempt is
+  always to try a step \f$ \lambda_0 \f$, and then check the stopping
+  criteria. The value of \f$ \lambda_0 \f$ is the specified by the
+  "Default Step" parameter. If the first try doesn't work, then we
+  successively minimize polynomial approximations, \f$ p_k(\lambda)
+  \approx \phi(\lambda) \f$.
 
-  We compute \f$ \lambda \f$ based on polynomial fits to information
-  on \f$ \phi \f$ and its derivative \f$ \phi' \f$ at the old solution and
-  newly computed values of \f$ \phi \f$.
+  <b>Stopping Criteria</b>
 
-  The polynomial linesearch starts by setting \f$ \lambda_0 \f$
-  to the value specified by "Default Step" (see below).
+  The inner iterations continue until:
 
-  We generally check that the default step satisfies the acceptability
-  criteria (see below) before doing any interpolation.  However, that
-  behavior can be overridden by setting "Force Interpolation" to
-  true.
-  
+  <ul>
+
+  <li>The sufficient decrease condition is met; see checkConvergence()
+  for details.
+
+  <li>The maximum iterations are reached; see parameter 
+  "Max Iters". 
+  This is considered a failure and the recovery step is
+  used; see parameter "Recovery Step".
+
+  <li>The minimum step length is reached; see parameter 
+  "Minimum Step". 
+  This is considered a line search failure
+  and the recovery step is used; see parameter 
+  "Recovery Step".
+
+  </ul>
+
+  <b> %Polynomial Models of the Merit Function </b>
+
+  We compute \f$ p_k(\lambda) \f$ by interpolating \f$f\f$. For the
+  quadratic fit, we interpolate \f$ \phi(0) \f$, \f$ \phi'(0) \f$, and
+  \f$ \phi(\lambda_{k-1}) \f$ where \f$ \lambda_{k-1} \f$ is the \f$
+  k-1 \f$st approximation to the step. For the cubit fit, we
+  additionally include \f$\phi(\lambda{k-2})\f$.
+
   The first interpolation step is always quadratic.  Depending on the
-  choice of "Interpolation Type" (see below), the following steps are
-  either quadratic or cubic.
+  choice of "Interpolation Type" parameter, the
+  following steps are either quadratic or cubic.
   
-  If we are using a \b quadratic \b model, the \f$k\f$-th step approximation is
+  If we are using a <b>quadratic model</b>, the \f$k\f$-th step approximation is
   calculated as
 
   \f[ 
@@ -105,9 +115,7 @@ namespace LineSearch {
   -\phi'(0) \lambda_{k-1} \right]} 
   \f]
 
-  where \f$ \phi'(0) = s^T \left(J_{\rm old}^T F_{\rm old} \right) \f$ if using "Norm-F Squared" as the merit function.  Otherwise it is defined by the user.
-
-  If we are using a \b cubic \b model, the \f$k\f$-th step (\f$ k>1
+  If we are using a <b>cubic model</b>, the \f$k\f$-th step (\f$ k>1
   \f$) approximation is calculated as
 
   \f[ 
@@ -128,122 +136,149 @@ namespace LineSearch {
                               \phi'(0)\lambda_{k-2} \end{array} \right]
   \f]
 
-  <b>Step Length Termination</b>
+  In either case, see computeSlope() for details on how \f$ \phi'(0) \f$ is
+  calculated.
 
-  The line search iterates over the computation of \f$ \lambda \f$ until:
-
-- The "Sufficient Decrease Condition" is met (the user has two choices): 
-  -# "Armijo-Goldstein" conditions: \f$ \phi(x_{n-1}+ \lambda s) \le
-     \phi(x_{n-1}) +\alpha \lambda \phi'(0) \f$ 
-  -# "Ared/Pred" conditions: \f$ \| F(x_{\rm old}+ \lambda s) \| \le
-     \| F(x_{\rm old}) \| (1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the 
-     linear solve tolerance in the inexact Newton method. 
-  -# "None" - If "Force Interpolation" is true, accept the result of
-     the first interpolation. Otherwise, accept the default step.
-- The maximum iterations are reached. This is considered a failure
-  and the recovery step is taken.
-- The minimum step length is reached. This is considered a line search
-  failure and the recovery step is taken.
-
-  <B> Step bounds </B> 
+  <B> Bounds on the step length </B> 
  
-  The following bounds are currently enforced on the step length calculation:
+  We do not allow the step to grow or shrink too quickly by enforcing
+  the following bounds:
 
-  - For \f$ k>0 \f$, \f$ \lambda_k \ge \gamma_{min} \lambda_{k-1} \f$
+  \f[ 
+  \gamma_{min} \; \lambda_{k-1} \leq \lambda_k \le \gamma_{max} \; \lambda_{k-1}
+  \f]
 
-  - For \f$ k>1 \f$, \f$ \lambda_k \le \gamma_{max} \lambda_{k-1} \f$ 
-
-  where \f$ \gamma_{min} \f$ and \f$ \gamma_{max} \f$ are bounds
-  factors that limit the change in step size between the iterations of
-  the step length calculation (\f$ k \f$).
+  Here \f$ \gamma_{min} \f$ and \f$ \gamma_{max} \f$ are defined by
+  parameters "Min Bounds Factor" and 
+  "Max Bounds Factor".
 
   <B> Input Parameters </B> 
 
-  The following parameters can be specified in the "Polynomial"
-  sublist of the "Line Search" sublist.
+  "Line Search": 
+
+  <ul>
+  <li>"Method" = "Polynomial" [required]
+  </ul>
+
+  "Line Search"/"Polynomial": 
+
+  <ul>
  
-  - "Default Step" - starting step length (defaults to 1.0)
+  <li> "Default Step" - Starting step length, i.e., \f$\lambda_0\f$.
+  Defaults to 1.0.
 
-  - "Minimum Step" - minimum acceptable step length (defaults to 1.0e-12)
+  <li> "Max Iters" - Maximum number of line search iterations. The
+  search fails if the number of iterations exceeds this
+  value. Defaults to 100.
 
-  - "Recovery Step" - step to take when the line search fails
-    (defaults to value for "Default Step")
+  <li> "Minimum Step" - Minimum acceptable step length. The search
+  fails if the computed \f$\lambda_k\f$ is less than this
+  value. Defaults to 1.0e-12.
 
-  - "Max Iters" - maximum number of line search iterations (default to 100)
+  <li> "Recovery Step" - The step to take when the line search fails.
+    Defaults to value for "Default Step".
 
-  - "Sufficient Decrease Condition" - choice of algorithm used to determine if
-    the line search algorithm has converged (defaults to
-    "Armijo-Goldstein").  Choices are (See above for explanations):
+  <li> "Interpolation Type" - Type of interpolation that should be
+    used. Choices are
+    
+     <ul>
+     <li> "Cubic" [default]
+     <li> "Quadratic"
+     </ul>
 
-    -# "Armijo-Goldstein" 
-    -# "Ared/Pred" 
-    -# "None"
+  <li> "Min Bounds Factor" - Choice for \f$ \gamma_{min} \f$, i.e.,
+    the factor that limits the minimum size of the new step based on
+    the previous step. Defaults to 0.1.
 
-  - "User Defined Norm" - The user can redefine the norm that is used
-    in the Ared/Pred sufficient decrease condition by supplying a
-    NOX::Parameter::UserNorm derived object in the parameter list with
-    this key (see NOX::Parameter::UserNorm for implementation details). 
+  <li> "Max Bounds Factor" - Choice for \f$ \gamma_{max} \f$, i.e.,
+    the factor that limits the maximum size of the new step based on
+    the previous step.  Defaults to 0.5.
 
-  - "User Defined Merit Function" - NOX::Parameter::MeritFunction derived 
-    object - an object derived from the NOX::Parameter::MeritFunction 
-    class that allows the user to define their own merit function
-    (see NOX::Parameter::MeritFunction for implementation details).
+  <li> "Sufficient Decrease Condition" - See checkConvergence() for
+  details. Choices are:
+    
+    <ul>
 
-  - "Alpha Factor" - Used in Armijo-Goldstein stopping criteria \f$
-    \alpha \f$ (defaults to 1.0e-4)
+    <li> "Armijo-Goldstein" [default]
+    <li> "Ared/Pred" 
+    <li> "None"
 
-  - "Min Bounds Factor" - \f$ \gamma_{min} \f$, the factor that limits
-    the minimum size of the new step based on the previous step
-    (defaults to 0.1)
+    </ul>
 
-  - "Max Bounds Factor" - \f$ \gamma_{max} \f$, the factor that limits
-    the maximum size of the new step based on the previous step
-    (defaults to 0.5)
+  <li> "Alpha Factor" - %Parameter choice for sufficient decrease
+  condition. See checkConvergence() for details. Defaults to 1.0e-4.
 
-  - "Force Interpolation" (boolean) - Set to true at least one
+  <li> "Force Interpolation" (boolean) - Set to true if at least one
     interpolation step should be used. The default is false which
     means that the line search will stop if the default step length
-    satisfies the convergence criteria. (defaults to false)
+    satisfies the convergence criteria. Defaults to false.
 
-  - "Interpolation Type" - Type of interpolation that should be used. Choices are
-    
-     <ol>
-     <li> "Cubic" (Quadratic for the first iteration)
-     <li> "Quadratic"
-     </ol>
+  <li> "Use Counters" (boolean) - Set to true if we should use
+  counters and then output the result to the paramter list as
+  described in \ref outputparameters "Output Parameters". Defaults to
+  true.
 
-  <B> Output Parameters </B> 
+  <li> "Maximum Iteration for Increase" - Maximum index of the
+  nonlinear iteration for which we allow a relative increase. See
+  checkConvergence() for further details. Defaults to 0 (zero).
 
-A sublist for output parameters will be created called "Output" in the
-parameter list used to instantiate or reset the class.  Valid output
-parameters are:
+  <li> "Allowed Relative Increase" - See checkConvergence() for
+  details.  Defaults to 100.
 
-  - "Total Number of Line Search Calls" - Total number of calls to the compute() method of this line search.
+  <li> "User Defined Merit Function" - The user can redefine the merit
+  function used; see computePhi() and NOX::Parameter::MeritFunction
+  for details.
 
-  - "Total Number of Non-trivial Line Searches" - The total number of
+  <li> "User Defined Norm" - The user can redefine the norm that is
+    used in the Ared/Pred sufficient decrease condition; see
+    computeValue() and NOX::Parameter::UserNorm for details.
+
+  </ul>   
+
+  \anchor outputparameters <B> Output Parameters </B> 
+
+  If the "Use Counters" parameter is set to true, then a sublist
+  for output parameters called "Output" will be created in the
+  parameter list used to instantiate or reset the class.  Valid output
+  parameters are:
+
+  <ul>
+
+  <li> "Total Number of Line Search Calls" - Total number of calls to
+  the compute() method of this line search.
+
+  <li> "Total Number of Non-trivial Line Searches" - Total number of
     steps that could not directly take a full step and meet the
-    required "Sufficient Decrease Condition" (i.e. The line search had to
-    reduce the step length using inner iteration calculations over
-    iterate \f$ k \f$).
+    required "Sufficient Decrease Condition" (i.e., the line search had to
+    do at least one interpolation).
 
-  - "Total Number of Failed Line Searches" - total number of line
+  <li> "Total Number of Failed Line Searches" - Total number of line
     searches that failed and used a recovery step.
 
-  - "Total Number of Line Search Inner Iterations" - total number of
-    inner iterations \f$ k \f$ performed by this object.
+  <li> "Total Number of Line Search Inner Iterations" - Total number of
+    inner iterations of all calls to compute().
 
-  <B> Flexible step acceptance capability </B> <br>
+  </ul>
 
-Line searches typically allow steps to be accepted only if they meet sufficient decrease and curvature criteria, eg Armijo-Goldstein conditions.  It can sometimes happen that such a requirement leads to very many nonlinear iterations being taken before the solution falls into a much steeper basin of attraction.  The following two parameters allow the user to relax the curvature and decrease conditions.  !! WARNING !! Convergence proofs and other guarantees associated with this Line Search no longer pertain when using these options.  
+  <b>References</b>
 
-  - "Allowed Relative Increase" - (default 100) - the allowed value \f$ k > 0 \f$ for which 
-  \f$
-  \frac{||F (x_{\rm old} + \lambda s)||_2}{||F (x_{\rm old})||_2} \le k
-  \f$
+  This line search is based on materials in the following:
 
-  - "Maximum Increase Steps" - (defaults to "Max Iters") - maximum number of outer iterations for which the preceding acceptability criterion is allowed.  After this number of outer iterations, the original curvature and decrease conditions must be met for a step to be accepted.
+  - Section 8.3.1 in C.T. Kelley, "Iterative Methods for %Linear and
+    Nonlinear Equations", SIAM, 1995.
 
-  \author Russ Hooper, Org. 9233, Sandia National Labs
+  - Section 6.3.2 and Algorithm 6.3.1 of J. E. Dennis Jr. and Robert
+    B.  Schnabel, "Numerical Methods for Unconstrained Optimization
+    and Nonlinear Equations," Prentice Hall, 1983.
+
+  - Section 3.4 of Jorge Nocedal and Stephen J. Wright, "Numerical
+    Optimization,"Springer, 1999.
+
+  - "An Inexact Newton Method for Fully Coupled Solution of the Navier-Stokes 
+    Equations with Heat and Mass Transfer", Shadid, J. N., Tuminaro, R. S., 
+    and Walker, H. F., Journal of Computational Physics, 137, 155-185 (1997)
+
+  \author Russ Hooper, Roger Pawlowski, Tammy Kolda
 */
 
 class Polynomial : public Generic {
@@ -266,45 +301,175 @@ public:
 	       
 protected:
 
-  //! Check for convergence
-  /*!
-    In the case of "Armijo-Goldstein" criteria, we return true if
-    \f[
-    f_{\rm new} \leq f_{\rm old} + \alpha \; \lambda \; {\rm slope}.
-    \f]
-    Here \f$\lambda\f$ represents the step and the slope should be 
-    \f$d^T \nabla f(x_{\rm old})\f$ where \f$d\f$ is the search direction.
-    The slope can be computed via NOX::LineSearch::Common::computeSlope.
+  //! Returns true if converged.
+  /*!  
+    We go through the following checks for convergence.
 
-    In the case of "Ared/Pred", we return true if
+    <ol>
+  
+    <li> If the "Force Interpolation" parameter is true and this is the
+    first inner iteration (i.e., nIters is 1), then we return \b false.
+
+    <li> Next, it checks to see if the "Relative Increase" condition
+    is satisfied. If so, then we return \b true.  The "Relative
+    Increase" condition is satisfied if \e both of the following two
+    conditions hold.
+
+    - The number of nonlinear iterations is less than or equal to the
+       value specified in the "Maximum Iteration for Increase"
+       parameter
+
+    - The ratio of newValue to oldValue is less than the value
+       specified in "Allowed Relative Increase".
+
+    <li> Last, we check the sufficient decrease condition. We return
+    \b true if it's satisfied, and \b false otherwise. The condition
+    depends on the value of the "Sufficient Decrease Condition
+    Parameter", as follows.
+    
+    <ul>
+    <li> "Armijo-Goldstein": Return true if
     \f[
-    F_{\rm new} \leq F_{\rm old} + (1 - \alpha (1 - \eta))
+    \phi(\lambda) \leq \phi(0) + \alpha \; \lambda \; \phi'(0)
     \f]
+
+    <li>"Ared/Pred": Return true if
+    \f[
+    \| F(x_{\rm old} + \lambda d )\| \leq \| F(x_{\rm old}) \| (1 - \alpha (1 - \eta))
+    \f]
+
+
+    <li> "None": Always return true.
+    </ul>
+
+    For the first two cases, \f$\alpha\f$ is specified by the
+    parameter "Alpha".
+
+    </ol>
+    
+    \param newValue Depends on the "Sufficient Decrease Condition" parameter.
+    <ul>
+    <li>"Armijo-Goldstein" - \f$ \phi(\lambda) \f$
+    <li>"Ared/Pred" - \f$ \| F(x_{\rm old} + \lambda d )\| \f$ 
+    <li>"None" - N/A
+    </ul>
+    
+    \param oldValue Depends on the "Sufficient Decrease Condition" parameter.
+    <ul>
+    <li>"Armijo-Goldstein" - \f$ \phi(0) \f$
+    <li>"Ared/Pred" - \f$ \| F(x_{\rm old} )\| \f$ 
+    <li>"None" - N/A
+    </ul>
+
+    \param oldSlope Only applicable to "Armijo-Goldstein", in which
+    case it should be \f$\phi'(0)\f$.
+
+    \param step The current step, \f$\lambda\f$.
+
+    \param eta Only applicable to "Ared/Pred", in which case it
+    should be the value of \f$\eta\f$ for last forcing term
+    calculation in NOX::Direction::Newton
+  
+    \param nIters Number of inner iterations.
+
+    \param nNonlinearIters Number of nonlinear iterations.
+
+    \note The norm used for "Ared/Pred" can be specified by the user
+    by using the "User Defined Norm" parameter; this parameter is any
+    object derived from NOX::Parameter::UserNorm.
+
   */
-  bool isSufficientDecrease(double step, double eta) const;
+  bool checkConvergence(double newValue, double oldValue, double oldSlope, 
+			double step, double eta, int nIters, int nNonlinearIters) const;
 
-  //! Updates the newGrpand computes the values of newf_1, newf_2 and newf_interp
-  bool computeNewF(NOX::Abstract::Group& newGrp, 
-		   const NOX::Abstract::Group& oldGrp,
-		   const NOX::Abstract::Vector& dir, 
-		   double step);
+  //! Updates the newGrp by computing a new x and a new F(x)
+  /*!
+    Let
+    
+    - \f$x_{\rm new}\f$ denote the new solution to be calculated (corresponding to \c newGrp)
+    - \f$x_{\rm old}\f$ denote the previous solution (i.e., the result of oldGrp.getX())
+    - \f$d\f$ denotes the search direction (\c dir).
+    - \f$\lambda\f$ denote the step (\c step), 
 
-  //! Provides a check to see if a step leading to an increase in the residual is allowed
-  bool isIncreaseAllowed(int nOuterIters) const;
+    We compute
+    \f[
+    x_{\rm new} = x_{\rm old} + \lambda d,
+    \f]
+    and \f$ F(x_{\rm new})\f$. The results are stored in \c newGrp.
+   */
+  bool updateGrp(NOX::Abstract::Group& newGrp, 
+		 const NOX::Abstract::Group& oldGrp,
+		 const NOX::Abstract::Vector& dir, 
+		 double step) const;
+
+
+  //! Computes the value of the merit function
+  /*!
+    If a "User Defined Merit Function" parameter is specified, then
+    the NOX::Parameter::MeritFunction::computeF function on the
+    user-supplied merit function is used.
+
+    Otherwise, we compute and return
+
+    \f[
+    \frac{1}{2} \| F(x) \|^2
+    \f]
+   */
+  double computePhi(const NOX::Abstract::Group& grp);
+
+  //! Compute the value used to determine sufficient decrease
+  /*!
+    If the "Sufficient Decrease Condition" is set to "Ared/Pred", then
+    we do the following.  If a "User Defined Norm" parameter is
+    specified, then the NOX::Parameter::UserNorm::norm function on the
+    user-supplied merit function is used. If the user does not provide
+    a norm, we return \f$ \|F(x)\|  \f$.
+
+    If the "Sufficient Decrease Condition" is <em>not</em> set to
+    "Ared/Pred", then we simply return phi.
+
+    \param phi - Should be equal to computePhi(grp).
+  */
+  double computeValue(const NOX::Abstract::Group& grp, double phi);
+
+
+  //! Compute \f$ \phi'(0) \f$
+  /*!
+
+    If a "User Defined Merit Function" is provided, then we use
+    NOX::Parameter::MeritFunction::computeSlope to compute this value.
+
+    Otherwise, we are using the standard merit function, so we want to
+    compute
+    \f[
+    d^T (J(x_{\rm old})^T F(x_{\rm old}))
+    \f]
+    To do this, we use NOX::LineSearch::Utils::Slope.
+
+    \param grp Should correspond to s.getPreviousSolutionGroup() from compute().
+   */
+  double computeSlope(const NOX::Abstract::Vector& dir, 
+		      const NOX::Abstract::Group& grp);
+
+  //! Used to print opening remarks for each call to compute().
+  void printOpeningRemarks() const;
+
+  //! Prints a warning message saying that the slope is negative
+  void printBadSlopeWarning(double slope) const;
 
 protected:
 
-  //! Algorithms used to determine termination of the line search
+  //! Types of sufficient decrease conditions used by checkConvergence()
   enum SufficientDecreaseType {
-    //! Sufficient decrease condition
+    //! Armijo-Goldstein conditions
     ArmijoGoldstein, 
     //! Ared/Pred condition
     AredPred,
-    //! Just accept the first step
+    //! No condition
     None
   };
 
-  //! Interpolation Type
+  //! Interpolation types used by compute().
   enum InterpolationType {
     //! Use quadratic interpolation throughout
     Quadratic, 
@@ -312,46 +477,64 @@ protected:
     Cubic
   };
 
-  //! Choice for sufficient decrease condition
+  //! Choice for sufficient decrease condition; uses "Sufficient Decrease Condition" parameter
   SufficientDecreaseType suffDecrCond;
 
-  //! Choice of interpolation type
+  //! Choice of interpolation type; uses "Interpolation Type" parameter
   InterpolationType interpolationType;
 
-  //! True is we should do at least one interpolation step
-  bool doForceInterpolation;
-
-  //! True is we should allow residual increases constrained by relIncrease
-  bool allowIncrease;
-
-  //! Allowable relative increase for residual norm
-  double relIncrease;
-
-  //! Maximum number relative increase steps allowed
-  int numAllowed;
-
-   //! Minimum step length (i.e., when we give up)
+   //! Minimum step length (i.e., when we give up); uses "Mimimum Step" parameter
   double minStep;
  
- //! Default step
+  //! Default step; uses "Default Step"  parameter
   double defaultStep;
 
-  //! Default step for linesearch failure
+  //! Default step for linesearch failure; uses "Recovery Step" parameter
   double recoveryStep;
 
-  //! Maximum iterations
+  //! Maximum iterations; uses "Max Iters" parameter
   int maxIters;
 
-  //! Scaling factor for the Armijo-Goldstein condition
+  /*! \brief The \f$ \alpha \f$ for the Armijo-Goldstein condition, or
+      the \f$ \alpha \f$ for the Ared/Pred condition; see
+      checkConvergence().  Uses "Alpha" parameter. */
   double alpha;
 
-  //! Factor that limits the minimum size of the new step based on the previous step.
+  /*! \brief Factor that limits the minimum size of the new step based
+      on the previous step; uses "Min Bounds Factor" parameter */
   double minBoundFactor;
 
-  //! Factor that limits the maximum size of the new step based on the previous step.
+  /*! \brief Factor that limits the maximum size of the new step based
+      on the previous step; uses "Max Bounds Factor" parameter. */
   double maxBoundFactor;
 
-  //! Pointer to the input parameter list.  We need this to create an "Output" sublist to store output parameters from the counter object.  
+  /*! \brief True is we should force at least one interpolation step;
+      uses "Force Interpolation" parameter. */
+  bool doForceInterpolation;
+
+  /*! \brief No increases are allowed if the number of nonlinear
+    iterations is greater than this value; uses "Maximum Iterations
+    for Increase" */
+  int maxIncreaseIter;
+
+  /*! \brief True if we sometimes allow an increase(!) in the decrease
+    measure, i.e., maxIncreaseIter > 0. */
+  bool doAllowIncrease;
+
+  /*! \brief Maximum allowable relative increase for decrease meausre (if
+    allowIncrease is true); uses "Allowed Relative Increase" parameter */
+  double maxRelativeIncrease;
+
+  /*! \brief True if we should use #counterUtil and output the results; uses
+    "Use Counters" parameter.*/
+  bool useCounter;
+
+  //! Pointer to the input parameter list. 
+  /*! We need this to later create an "Output" sublist to store output
+      parameters from #counterUtil. 
+
+      This should not be deleted in the destructor 
+  */
   NOX::Parameter::List* paramsPtr;
 
   //! Common line search printing utilities.
@@ -361,27 +544,14 @@ protected:
   NOX::LineSearch::Utils::Counters counter;
 
   //! Common slope calculations for line searches.
-  NOX::LineSearch::Utils::Slope slopeObj;
-
-  //! Norm of \f$ F(x) \f$ at the old solution.
-  double normFOld;
-
-  //! Value of the merit function at the old solution.
-  double meritFuncOld;
-
-  //! Slope of the merit function at theold solution.
-  double slopeOld;
-
-  //! Norm of \f$ F(x) \f$ at the new solution.
-  double normFNew;
-
-  //! Value of the merit function at the new solution.
-  double meritFuncNew;
+  NOX::LineSearch::Utils::Slope slopeUtil;
 
   //! Pointer to a user supplied norm.
+  /*! This should not be deleted in the destructor */
   NOX::Parameter::UserNorm* userNormPtr;
 
   //! Pointer to a user supplied merit function.
+  /*! This should not be deleted in the destructor */
   NOX::Parameter::MeritFunction* meritFuncPtr;
 
 };

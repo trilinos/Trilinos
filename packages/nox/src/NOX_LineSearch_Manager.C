@@ -45,7 +45,6 @@
 #include "NOX_LineSearch_Secant.H"
 #ifdef WITH_PRERELEASE
 #include "NOX_LineSearch_Quadratic.H"
-#include "NOX_LineSearch_PolynomialNew.H"
 #include "NOX_LineSearch_PolynomialWalker.H"
 #include "NOX_LineSearch_MoreThuente2.H"
 #endif
@@ -94,8 +93,6 @@ bool Manager::reset(Parameter::List& params)
 #ifdef WITH_PRERELEASE
     else if (method == "Quadratic")
       ptr = new Quadratic(utils, params);
-    else if (method == "PolynomialNew")
-      ptr = new PolynomialNew(utils, params);
     else if (method == "PolynomialWalker")
       ptr = new PolynomialWalker(utils, params);
     else if (method == "More'-Thuente2")
