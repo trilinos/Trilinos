@@ -40,7 +40,11 @@ Options::Options()
 }
 
 Options::Options(NOX::Parameter::List& params, int rank_) :
-  rank(rank_)
+  rank(rank_),
+  testMaxIters(0),
+  testNormF(0),
+  testNormUpdate(0),
+  testCombo(0)
 {
   setOptions(params);
 }
@@ -53,7 +57,64 @@ Options::~Options()
 bool Options::setOptions(NOX::Parameter::List& nlParams)
 {
 
-  // First allow solution-type to be specified
+  // Set status tests if not already set
+  if(!testCombo)
+  {
+    // Check for MaxIters option
+    int maxIters;
+    PetscTruth lflg;  // Needed to permit two ways of specification
+    ierr = PetscOptionsGetInt(PETSC_NULL,"-snes_max_it",
+                 &maxIters, &flg);CHKERRQ(ierr);
+    ierr = PetscOptionsGetInt(PETSC_NULL,"-nox_conv_maxiters",
+                 &maxIters, &lflg);CHKERRQ(ierr);
+    if(flg || lflg)
+    {
+      testMaxIters = new NOX::StatusTest::MaxIters(maxIters);
+      if(!testCombo)
+        testCombo = new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
+                                               *testMaxIters);
+      else
+        testCombo->addStatusTest(*testMaxIters);
+    }
+   
+    // Check for (absolute) residual norm (L2-norm) tolerance
+    double absResNorm;
+    PetscReal petscVal;
+    ierr = PetscOptionsGetReal(PETSC_NULL,"-snes_atol",
+                 &petscVal, &flg);CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(PETSC_NULL,"-nox_conv_abs_res",
+                 &petscVal, &lflg);CHKERRQ(ierr);
+    if(flg || lflg)
+    {
+      absResNorm = (double) petscVal;
+      testNormF = new NOX::StatusTest::NormF(absResNorm);
+      if(!testCombo)
+        testCombo = new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
+                                               *testNormF);
+      else
+        testCombo->addStatusTest(*testNormF);
+    }
+
+    // Check for update norm (L2-norm) tolerance
+    double absUpdateNorm;
+    ierr = PetscOptionsGetReal(PETSC_NULL,"-snes_stol",
+                 &petscVal, &flg);CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(PETSC_NULL,"-nox_conv_update",
+                 &petscVal, &lflg);CHKERRQ(ierr);
+    if(flg || lflg)
+    {
+      absUpdateNorm = (double) petscVal;
+      testNormUpdate = new NOX::StatusTest::NormUpdate(absUpdateNorm);
+      if(!testCombo)
+        testCombo = new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
+                                               *testNormUpdate);
+      else
+        testCombo->addStatusTest(*testNormUpdate);
+    }
+  } // End of StatusTest construction
+
+
+  // Allow solution-type to be specified
   ierr = PetscOptionsHasName(PETSC_NULL,"-nox_trustregion_based",&flg);
          CHKERRQ(ierr);
   if(flg)
@@ -149,4 +210,9 @@ bool Options::setOptions(NOX::Parameter::List& nlParams)
                         NOX::Utils::Warning);
 
   return true;
+}
+
+NOX::StatusTest::Combo& Options::getStatusTest()
+{
+  return *testCombo;
 }

@@ -34,6 +34,7 @@
 #define NOX_PETSC_OPTIONS_H
   
 #include "petscsys.h"
+#include "NOX.H" // Needed for NOX::StatusTest classes
 
 namespace NOX {
 namespace Petsc {
@@ -58,6 +59,9 @@ public:
   //! Set parameter list based on options on command line or from file
   bool setOptions(NOX::Parameter::List& params);
 
+  //! Get reference to the final (combo) status test
+  NOX::StatusTest::Combo& getStatusTest();
+
 private:
 
   enum {maxStringLength = 256};
@@ -65,6 +69,12 @@ private:
   PetscTruth flg;  // Boolean flag
   int ierr;   // Used in Petsc CHKERRQ macro
   int rank;   // proc ID used with output utils
+ 
+  //! Supported convergence criteria
+  NOX::StatusTest::MaxIters* testMaxIters;
+  NOX::StatusTest::NormF* testNormF;
+  NOX::StatusTest::NormUpdate* testNormUpdate;
+  NOX::StatusTest::Combo* testCombo;
   
 };
 } // namespace Petsc
