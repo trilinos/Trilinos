@@ -812,8 +812,13 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
 
   // Apply Scaling
   Epetra_LinearProblem Problem(jacPtr, tmpVectorPtr, tmpVectorPtr);
-  if (scaling != 0)
+  if (scaling != 0) {
+    if (!manualScaling)
+      scaling->computeScaling(Problem);
+    
     scaling->scaleLinearSystem(Problem);
+  }
+
 
   if (utils.isPrintProcessAndType(Utils::LinearSolverDetails))
     cout << "\n       Computing a new precondtioner" << endl;;
