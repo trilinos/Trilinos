@@ -1,0 +1,611 @@
+# Makefile.in generated automatically by automake 1.5 from Makefile.am.
+
+# Copyright 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001
+# Free Software Foundation, Inc.
+# This Makefile.in is free software; the Free Software Foundation
+# gives unlimited permission to copy and/or distribute it,
+# with or without modifications, as long as this notice is preserved.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY, to the extent permitted by law; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+@SET_MAKE@
+
+#@HEADER
+#@HEADER
+
+SHELL = @SHELL@
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+
+bindir = @bindir@
+sbindir = @sbindir@
+libexecdir = @libexecdir@
+datadir = @datadir@
+sysconfdir = @sysconfdir@
+sharedstatedir = @sharedstatedir@
+localstatedir = @localstatedir@
+libdir = @libdir@
+infodir = @infodir@
+mandir = @mandir@
+includedir = @includedir@
+oldincludedir = /usr/include
+pkgdatadir = $(datadir)/@PACKAGE@
+pkglibdir = $(libdir)/@PACKAGE@
+pkgincludedir = $(includedir)/@PACKAGE@
+top_builddir = ..
+
+ACLOCAL = @ACLOCAL@
+AUTOCONF = @AUTOCONF@
+AUTOMAKE = @AUTOMAKE@
+AUTOHEADER = @AUTOHEADER@
+
+INSTALL = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA = @INSTALL_DATA@
+INSTALL_SCRIPT = @INSTALL_SCRIPT@
+INSTALL_HEADER = $(INSTALL_DATA)
+transform = @program_transform_name@
+NORMAL_INSTALL = :
+PRE_INSTALL = :
+POST_INSTALL = :
+NORMAL_UNINSTALL = :
+PRE_UNINSTALL = :
+POST_UNINSTALL = :
+ALTERNATE_AR = @ALTERNATE_AR@
+AMESOS_LIBS = @AMESOS_LIBS@
+AMTAR = @AMTAR@
+AWK = @AWK@
+BLAS_LIBS = @BLAS_LIBS@
+CC = @CC@
+CXX = @CXX@
+DEPDIR = @DEPDIR@
+FLIBS = @FLIBS@
+INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+LAPACK_LIBS = @LAPACK_LIBS@
+MAINT = @MAINT@
+MPI_CC_EXISTS = @MPI_CC_EXISTS@
+MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
+MPI_F77_EXISTS = @MPI_F77_EXISTS@
+OBJEXT = @OBJEXT@
+PACKAGE = @PACKAGE@
+RANLIB = @RANLIB@
+VERSION = @VERSION@
+XTRALDADD = @XTRALDADD@
+ac_aux_dir = @ac_aux_dir@
+am__include = @am__include@
+am__quote = @am__quote@
+install_sh = @install_sh@
+
+EXEEXT = .exe
+
+
+#
+#  All of the AmeosShellScript and TestAmesosScript stuff is designed to 
+#  copy some files form the source tree to the build tree
+#
+#  The idea behind the mechanism is to fool autotools into thinking that
+#  AmesosShellScript is an executable and that the way that you create
+#  that executable is the "cp" command.
+#
+#  The files are renamed as they are copied so that configure can work 
+#  within the source directory (even though we recommend that users 
+#  run configure from a separate build directory.
+#
+noinst_PROGRAMS = amesos_test AmesosShellScript
+
+AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
+
+SRC_CXX = $(srcdir)/SparseDirectTimingVars.cpp $(srcdir)/SparseSolverResult.cpp \
+	$(srcdir)/Comm_assert_equal.cpp $(srcdir)/Trilinos_Util_CountTriples.cpp \
+	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp
+
+
+amesos_test_SOURCES = $(srcdir)/Amesos_TestDriver.cpp  $(srcdir)/Amesos_TestSolver.cpp \
+	 $(srcdir)/Amesos_TestMultiSolver.cpp  $(srcdir)/Amesos_TestMrhsSolver.cpp \
+	 $(SRC_CXX)
+
+
+#Specify locations of include files within Trilinos, but outside amesos
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src 
+
+
+amesos_test_DEPENDENCIES = \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/src/libamesos.a \
+	$(top_builddir)/../triutils/src/libtriutils.a 
+
+
+amesos_test_CXXFLAGS = -I$(top_srcdir)/src
+
+KLAPACK_LIBS = -lg2c -llapack -lblas -lm 
+
+amesos_test_LDADD = -L$(top_builddir)/src -lamesos \
+	-L$(top_builddir)/../epetra/src -lepetra \
+	-L$(top_builddir)/../triutils/src -ltriutils \
+	$(AMESOS_LIBS) $(KLAPACK_LIBS) $(LAPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)
+
+
+#np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
+#np# List all subdirectories even if one or more are configured/built only
+#np# conditionally.
+#np# For packages whose examples are located in this directory, rather than
+#np# in a subdirectory of this directory, use the Makefile.am located in
+#np# example1/ rather than this file.
+# SUBDIRS = example1
+SUBDIRS = 
+subdir = test
+mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
+CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
+CONFIG_CLEAN_FILES =
+noinst_PROGRAMS = amesos_test$(EXEEXT) AmesosShellScript$(EXEEXT)
+PROGRAMS = $(noinst_PROGRAMS)
+
+am_AmesosShellScript_OBJECTS =
+AmesosShellScript_OBJECTS = $(am_AmesosShellScript_OBJECTS)
+AmesosShellScript_LDADD = $(LDADD)
+AmesosShellScript_DEPENDENCIES =
+AmesosShellScript_LDFLAGS =
+am_amesos_test_OBJECTS = amesos_test-Amesos_TestDriver.$(OBJEXT) \
+	amesos_test-Amesos_TestSolver.$(OBJEXT) \
+	amesos_test-Amesos_TestMultiSolver.$(OBJEXT) \
+	amesos_test-Amesos_TestMrhsSolver.$(OBJEXT) \
+	amesos_test-SparseDirectTimingVars.$(OBJEXT) \
+	amesos_test-SparseSolverResult.$(OBJEXT) \
+	amesos_test-Comm_assert_equal.$(OBJEXT) \
+	amesos_test-Trilinos_Util_CountTriples.$(OBJEXT) \
+	amesos_test-Trilinos_Util_ReadTriples2Epetra.$(OBJEXT)
+amesos_test_OBJECTS = $(am_amesos_test_OBJECTS)
+amesos_test_LDFLAGS =
+
+DEFS = @DEFS@
+DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
+CPPFLAGS = @CPPFLAGS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/amesos_test-Amesos_TestDriver.Po \
+@AMDEP_TRUE@	$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po \
+@AMDEP_TRUE@	$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po \
+@AMDEP_TRUE@	$(DEPDIR)/amesos_test-Amesos_TestSolver.Po \
+@AMDEP_TRUE@	$(DEPDIR)/amesos_test-Comm_assert_equal.Po \
+@AMDEP_TRUE@	$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po \
+@AMDEP_TRUE@	$(DEPDIR)/amesos_test-SparseSolverResult.Po \
+@AMDEP_TRUE@	$(DEPDIR)/amesos_test-Trilinos_Util_CountTriples.Po \
+@AMDEP_TRUE@	$(DEPDIR)/amesos_test-Trilinos_Util_ReadTriples2Epetra.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+CXXFLAGS = @CXXFLAGS@
+CFLAGS = @CFLAGS@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+DIST_SOURCES = $(AmesosShellScript_SOURCES) $(amesos_test_SOURCES)
+
+RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
+	uninstall-info-recursive all-recursive install-data-recursive \
+	install-exec-recursive installdirs-recursive install-recursive \
+	uninstall-recursive check-recursive installcheck-recursive
+DIST_COMMON = Makefile.am Makefile.in
+DIST_SUBDIRS = $(SUBDIRS)
+SOURCES = $(AmesosShellScript_SOURCES) $(amesos_test_SOURCES)
+
+all: all-recursive
+
+.SUFFIXES:
+.SUFFIXES: .cpp .o .obj
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
+	cd $(top_srcdir) && \
+	  $(AUTOMAKE) --foreign  test/Makefile
+Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
+	cd $(top_builddir) && \
+	  CONFIG_HEADERS= CONFIG_LINKS= \
+	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
+
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+amesos_test-Amesos_TestDriver.$(OBJEXT): $(srcdir)/Amesos_TestDriver.cpp
+amesos_test-Amesos_TestSolver.$(OBJEXT): $(srcdir)/Amesos_TestSolver.cpp
+amesos_test-Amesos_TestMultiSolver.$(OBJEXT): \
+	$(srcdir)/Amesos_TestMultiSolver.cpp
+amesos_test-Amesos_TestMrhsSolver.$(OBJEXT): \
+	$(srcdir)/Amesos_TestMrhsSolver.cpp
+amesos_test-SparseDirectTimingVars.$(OBJEXT): \
+	$(srcdir)/SparseDirectTimingVars.cpp
+amesos_test-SparseSolverResult.$(OBJEXT): \
+	$(srcdir)/SparseSolverResult.cpp
+amesos_test-Comm_assert_equal.$(OBJEXT): $(srcdir)/Comm_assert_equal.cpp
+amesos_test-Trilinos_Util_CountTriples.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_CountTriples.cpp
+amesos_test-Trilinos_Util_ReadTriples2Epetra.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp
+amesos_test$(EXEEXT): $(amesos_test_OBJECTS) $(amesos_test_DEPENDENCIES) 
+	@rm -f amesos_test$(EXEEXT)
+	$(CXXLINK) $(amesos_test_LDFLAGS) $(amesos_test_OBJECTS) $(amesos_test_LDADD) $(LIBS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT) core *.core
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-Amesos_TestDriver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-Amesos_TestSolver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-Comm_assert_equal.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-SparseSolverResult.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-Trilinos_Util_CountTriples.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-Trilinos_Util_ReadTriples2Epetra.Po@am__quote@
+
+distclean-depend:
+	-rm -rf $(DEPDIR)
+
+.cpp.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `test -f $< || echo '$(srcdir)/'`$<
+
+.cpp.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+
+amesos_test-Amesos_TestDriver.o: $(srcdir)/Amesos_TestDriver.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_TestDriver.cpp' object='amesos_test-Amesos_TestDriver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestDriver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestDriver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestDriver.o `test -f $(srcdir)/Amesos_TestDriver.cpp || echo '$(srcdir)/'`$(srcdir)/Amesos_TestDriver.cpp
+
+amesos_test-Amesos_TestDriver.obj: $(srcdir)/Amesos_TestDriver.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_TestDriver.cpp' object='amesos_test-Amesos_TestDriver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestDriver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestDriver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestDriver.obj `cygpath -w $(srcdir)/Amesos_TestDriver.cpp`
+
+amesos_test-Amesos_TestSolver.o: $(srcdir)/Amesos_TestSolver.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_TestSolver.cpp' object='amesos_test-Amesos_TestSolver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestSolver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestSolver.o `test -f $(srcdir)/Amesos_TestSolver.cpp || echo '$(srcdir)/'`$(srcdir)/Amesos_TestSolver.cpp
+
+amesos_test-Amesos_TestSolver.obj: $(srcdir)/Amesos_TestSolver.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_TestSolver.cpp' object='amesos_test-Amesos_TestSolver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestSolver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestSolver.obj `cygpath -w $(srcdir)/Amesos_TestSolver.cpp`
+
+amesos_test-Amesos_TestMultiSolver.o: $(srcdir)/Amesos_TestMultiSolver.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_TestMultiSolver.cpp' object='amesos_test-Amesos_TestMultiSolver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestMultiSolver.o `test -f $(srcdir)/Amesos_TestMultiSolver.cpp || echo '$(srcdir)/'`$(srcdir)/Amesos_TestMultiSolver.cpp
+
+amesos_test-Amesos_TestMultiSolver.obj: $(srcdir)/Amesos_TestMultiSolver.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_TestMultiSolver.cpp' object='amesos_test-Amesos_TestMultiSolver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestMultiSolver.obj `cygpath -w $(srcdir)/Amesos_TestMultiSolver.cpp`
+
+amesos_test-Amesos_TestMrhsSolver.o: $(srcdir)/Amesos_TestMrhsSolver.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_TestMrhsSolver.cpp' object='amesos_test-Amesos_TestMrhsSolver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestMrhsSolver.o `test -f $(srcdir)/Amesos_TestMrhsSolver.cpp || echo '$(srcdir)/'`$(srcdir)/Amesos_TestMrhsSolver.cpp
+
+amesos_test-Amesos_TestMrhsSolver.obj: $(srcdir)/Amesos_TestMrhsSolver.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_TestMrhsSolver.cpp' object='amesos_test-Amesos_TestMrhsSolver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po' tmpdepfile='$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Amesos_TestMrhsSolver.obj `cygpath -w $(srcdir)/Amesos_TestMrhsSolver.cpp`
+
+amesos_test-SparseDirectTimingVars.o: $(srcdir)/SparseDirectTimingVars.cpp
+@AMDEP_TRUE@	source='$(srcdir)/SparseDirectTimingVars.cpp' object='amesos_test-SparseDirectTimingVars.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po' tmpdepfile='$(DEPDIR)/amesos_test-SparseDirectTimingVars.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-SparseDirectTimingVars.o `test -f $(srcdir)/SparseDirectTimingVars.cpp || echo '$(srcdir)/'`$(srcdir)/SparseDirectTimingVars.cpp
+
+amesos_test-SparseDirectTimingVars.obj: $(srcdir)/SparseDirectTimingVars.cpp
+@AMDEP_TRUE@	source='$(srcdir)/SparseDirectTimingVars.cpp' object='amesos_test-SparseDirectTimingVars.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po' tmpdepfile='$(DEPDIR)/amesos_test-SparseDirectTimingVars.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-SparseDirectTimingVars.obj `cygpath -w $(srcdir)/SparseDirectTimingVars.cpp`
+
+amesos_test-SparseSolverResult.o: $(srcdir)/SparseSolverResult.cpp
+@AMDEP_TRUE@	source='$(srcdir)/SparseSolverResult.cpp' object='amesos_test-SparseSolverResult.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-SparseSolverResult.Po' tmpdepfile='$(DEPDIR)/amesos_test-SparseSolverResult.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-SparseSolverResult.o `test -f $(srcdir)/SparseSolverResult.cpp || echo '$(srcdir)/'`$(srcdir)/SparseSolverResult.cpp
+
+amesos_test-SparseSolverResult.obj: $(srcdir)/SparseSolverResult.cpp
+@AMDEP_TRUE@	source='$(srcdir)/SparseSolverResult.cpp' object='amesos_test-SparseSolverResult.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-SparseSolverResult.Po' tmpdepfile='$(DEPDIR)/amesos_test-SparseSolverResult.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-SparseSolverResult.obj `cygpath -w $(srcdir)/SparseSolverResult.cpp`
+
+amesos_test-Comm_assert_equal.o: $(srcdir)/Comm_assert_equal.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Comm_assert_equal.cpp' object='amesos_test-Comm_assert_equal.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Comm_assert_equal.Po' tmpdepfile='$(DEPDIR)/amesos_test-Comm_assert_equal.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Comm_assert_equal.o `test -f $(srcdir)/Comm_assert_equal.cpp || echo '$(srcdir)/'`$(srcdir)/Comm_assert_equal.cpp
+
+amesos_test-Comm_assert_equal.obj: $(srcdir)/Comm_assert_equal.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Comm_assert_equal.cpp' object='amesos_test-Comm_assert_equal.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Comm_assert_equal.Po' tmpdepfile='$(DEPDIR)/amesos_test-Comm_assert_equal.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Comm_assert_equal.obj `cygpath -w $(srcdir)/Comm_assert_equal.cpp`
+
+amesos_test-Trilinos_Util_CountTriples.o: $(srcdir)/Trilinos_Util_CountTriples.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_CountTriples.cpp' object='amesos_test-Trilinos_Util_CountTriples.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Trilinos_Util_CountTriples.Po' tmpdepfile='$(DEPDIR)/amesos_test-Trilinos_Util_CountTriples.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Trilinos_Util_CountTriples.o `test -f $(srcdir)/Trilinos_Util_CountTriples.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_CountTriples.cpp
+
+amesos_test-Trilinos_Util_CountTriples.obj: $(srcdir)/Trilinos_Util_CountTriples.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_CountTriples.cpp' object='amesos_test-Trilinos_Util_CountTriples.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Trilinos_Util_CountTriples.Po' tmpdepfile='$(DEPDIR)/amesos_test-Trilinos_Util_CountTriples.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Trilinos_Util_CountTriples.obj `cygpath -w $(srcdir)/Trilinos_Util_CountTriples.cpp`
+
+amesos_test-Trilinos_Util_ReadTriples2Epetra.o: $(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp' object='amesos_test-Trilinos_Util_ReadTriples2Epetra.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Trilinos_Util_ReadTriples2Epetra.Po' tmpdepfile='$(DEPDIR)/amesos_test-Trilinos_Util_ReadTriples2Epetra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Trilinos_Util_ReadTriples2Epetra.o `test -f $(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp
+
+amesos_test-Trilinos_Util_ReadTriples2Epetra.obj: $(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp' object='amesos_test-Trilinos_Util_ReadTriples2Epetra.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Trilinos_Util_ReadTriples2Epetra.Po' tmpdepfile='$(DEPDIR)/amesos_test-Trilinos_Util_ReadTriples2Epetra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Trilinos_Util_ReadTriples2Epetra.obj `cygpath -w $(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp`
+CXXDEPMODE = @CXXDEPMODE@
+uninstall-info-am:
+
+# This directory's subdirectories are mostly independent; you can cd
+# into them and run `make' without going through this Makefile.
+# To change the values of `make' variables: instead of editing Makefiles,
+# (1) if the variable is set in `config.status', edit `config.status'
+#     (which will cause the Makefiles to be regenerated when you run `make');
+# (2) otherwise, pass the desired values on the `make' command line.
+$(RECURSIVE_TARGETS):
+	@set fnord $(MAKEFLAGS); amf=$$2; \
+	dot_seen=no; \
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    dot_seen=yes; \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+	done; \
+	if test "$$dot_seen" = "no"; then \
+	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
+	fi; test -z "$$fail"
+
+mostlyclean-recursive clean-recursive distclean-recursive \
+maintainer-clean-recursive:
+	@set fnord $(MAKEFLAGS); amf=$$2; \
+	dot_seen=no; \
+	case "$@" in \
+	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
+	  *) list='$(SUBDIRS)' ;; \
+	esac; \
+	rev=''; for subdir in $$list; do \
+	  if test "$$subdir" = "."; then :; else \
+	    rev="$$subdir $$rev"; \
+	  fi; \
+	done; \
+	rev="$$rev ."; \
+	target=`echo $@ | sed s/-recursive//`; \
+	for subdir in $$rev; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+	done && test -z "$$fail"
+tags-recursive:
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
+	done
+
+tags: TAGS
+
+ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	mkid -fID $$unique $(LISP)
+
+TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+		$(TAGS_FILES) $(LISP)
+	tags=; \
+	here=`pwd`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test -f $$subdir/TAGS && tags="$$tags -i $$here/$$subdir/TAGS"; \
+	  fi; \
+	done; \
+	list='$(SOURCES) $(HEADERS) $(TAGS_FILES)'; \
+	unique=`for i in $$list; do \
+	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
+	  done | \
+	  $(AWK) '    { files[$$0] = 1; } \
+	       END { for (i in files) print i; }'`; \
+	test -z "$(ETAGS_ARGS)$$unique$(LISP)$$tags" \
+	  || etags $(ETAGS_ARGS) $$tags  $$unique $(LISP)
+
+GTAGS:
+	here=`CDPATH=: && cd $(top_builddir) && pwd` \
+	  && cd $(top_srcdir) \
+	  && gtags -i $(GTAGS_ARGS) $$here
+
+distclean-tags:
+	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH
+
+DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
+
+top_distdir = ..
+distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
+
+distdir: $(DISTFILES)
+	@for file in $(DISTFILES); do \
+	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
+	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
+	  if test "$$dir" != "$$file" && test "$$dir" != "."; then \
+	    $(mkinstalldirs) "$(distdir)/$$dir"; \
+	  fi; \
+	  if test -d $$d/$$file; then \
+	    cp -pR $$d/$$file $(distdir) \
+	    || exit 1; \
+	  else \
+	    test -f $(distdir)/$$file \
+	    || cp -p $$d/$$file $(distdir)/$$file \
+	    || exit 1; \
+	  fi; \
+	done
+	for subdir in $(SUBDIRS); do \
+	  if test "$$subdir" = .; then :; else \
+	    test -d $(distdir)/$$subdir \
+	    || mkdir $(distdir)/$$subdir \
+	    || exit 1; \
+	    (cd $$subdir && \
+	      $(MAKE) $(AM_MAKEFLAGS) \
+	        top_distdir="$(top_distdir)" \
+	        distdir=../$(distdir)/$$subdir \
+	        distdir) \
+	      || exit 1; \
+	  fi; \
+	done
+check-am: all-am
+check: check-recursive
+all-am: Makefile $(PROGRAMS)
+installdirs: installdirs-recursive
+installdirs-am:
+
+install: install-recursive
+install-exec: install-exec-recursive
+install-data: install-data-recursive
+uninstall: uninstall-recursive
+
+install-am: all-am
+	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
+
+installcheck: installcheck-recursive
+install-strip:
+	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
+	  `test -z '$(STRIP)' || \
+	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
+mostlyclean-generic:
+
+clean-generic:
+
+distclean-generic:
+	-rm -f Makefile $(CONFIG_CLEAN_FILES) stamp-h stamp-h[0-9]*
+
+maintainer-clean-generic:
+	@echo "This command is intended for maintainers to use"
+	@echo "it deletes files that may require special tools to rebuild."
+clean: clean-recursive
+
+clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+
+distclean: distclean-recursive
+
+distclean-am: clean-am distclean-compile distclean-depend \
+	distclean-generic distclean-tags
+
+dvi: dvi-recursive
+
+dvi-am:
+
+info: info-recursive
+
+info-am:
+
+install-data-am:
+
+install-exec-am:
+
+install-info: install-info-recursive
+
+install-man:
+
+installcheck-am:
+
+maintainer-clean: maintainer-clean-recursive
+
+maintainer-clean-am: distclean-am maintainer-clean-generic
+
+mostlyclean: mostlyclean-recursive
+
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
+
+uninstall-am: uninstall-info-am
+
+uninstall-info: uninstall-info-recursive
+
+.PHONY: $(RECURSIVE_TARGETS) GTAGS all all-am check check-am clean \
+	clean-generic clean-noinstPROGRAMS clean-recursive distclean \
+	distclean-compile distclean-depend distclean-generic \
+	distclean-recursive distclean-tags distdir dvi dvi-am \
+	dvi-recursive info info-am info-recursive install install-am \
+	install-data install-data-am install-data-recursive \
+	install-exec install-exec-am install-exec-recursive \
+	install-info install-info-am install-info-recursive install-man \
+	install-recursive install-strip installcheck installcheck-am \
+	installdirs installdirs-am installdirs-recursive \
+	maintainer-clean maintainer-clean-generic \
+	maintainer-clean-recursive mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-recursive tags tags-recursive \
+	uninstall uninstall-am uninstall-info-am \
+	uninstall-info-recursive uninstall-recursive
+
+
+AmesosShellScript$(EXEEXT): $(srcdir)/AmesosShellScript
+	cp  $(srcdir)/AmesosShellScript  AmesosShellScript$(EXEEXT)
+	cp  $(srcdir)/AmesosShortScript  AmesosShortScript$(EXEEXT)
+	cp  $(srcdir)/AmesosJanusScript  AmesosJanusScript$(EXEEXT)
+	cp  $(srcdir)/SpoolesJanusScript  SpoolesJanusScript$(EXEEXT)
+	cp  $(srcdir)/SpoolesScript  SpoolesScript$(EXEEXT)
+	cp  $(srcdir)/In_ImpcolA.rua  ImpcolA.rua
+	cp  $(srcdir)/In_ImpcolB.rua  ImpcolB.rua
+	cp  $(srcdir)/In_ImpcolC.rua  ImpcolC.rua
+	cp  $(srcdir)/In_ImpcolD.rua  ImpcolD.rua
+	cp  $(srcdir)/In_ImpcolE.rua  ImpcolE.rua
+	cp  $(srcdir)/In_fidapm05.rua  fidapm05.rua
+	cp  $(srcdir)/In_SuperLU.rua  SuperLU.rua
+	cp  $(srcdir)/In_bcsstk18.rsa  bcsstk18.rsa
+	cp  $(srcdir)/In_bcsstk24.rsa  bcsstk24.rsa
+	cp  $(srcdir)/In_K4989.triS  K4989.triS
+	cp  $(srcdir)/In_K5000.triS  K5000.triS
+	cp  $(srcdir)/In_SuperLU.triU  SuperLU.triU
+	cp  $(srcdir)/In_Khead.triS  Khead.triS
+# Tell versions [3.59,3.63) of GNU make to not export all variables.
+# Otherwise a system limit (for SysV at least) may be exceeded.
+.NOEXPORT:
