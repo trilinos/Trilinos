@@ -375,9 +375,12 @@ Nodes array entries for local_ids.</FONT></I> */</TT>&nbsp;
 <BR><TT>{</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; /* <I>use local_id to <FONT COLOR="#FF0000">address</FONT>
 the requested node.</I> */</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[0] = ((struct Node_Type *) local_id)->Coordinates[0];</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[1] = ((struct Node_Type *) local_id)->Coordinates[1];</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[2] = ((struct Node_Type *) local_id)->Coordinates[2];</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[0] = </tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;((struct Node_Type *) local_id)->Coordinates[0];</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[1] = </tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;((struct Node_Type *) local_id)->Coordinates[1];</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[2] = </tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;((struct Node_Type *) local_id)->Coordinates[2];</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
 <BR><TT>}</TT></TD>
 </TR>

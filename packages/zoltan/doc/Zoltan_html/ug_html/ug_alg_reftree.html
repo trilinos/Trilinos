@@ -47,8 +47,8 @@ vertex of one element being the same as the in vertex of the next element
 in the path.
 
 <P>The user may allow Zoltan to determine the order of the coarse grid
-elements, or may specify the order, which might be faster.  If the user
-gives the order, the in/out vertices must also be supplied.  Similarly, the
+elements, or may specify the order, which might be faster.  In the latter case,
+the in/out vertices must also be supplied.  Similarly, the
 user may specify the order and in/out vertices of the child elements, or
 allow Zoltan to determine them.  If the user knows how to provide a good
 ordering for the children, this may be significantly faster than the default
@@ -64,7 +64,7 @@ only on the leaves (the elements of the final grid), but can also be on
 interior nodes (for example, to represent work on coarse grids of a multigrid
 algorithm).  The default weights are 1.0 at the leaves and 0.0 at the
 interior nodes, which equidistributes the number elements over the
-partitions.  A tree traversal is used to sum the weights, and a second traversal
+partitions.  An initial tree traversal is used to sum the weights, and a second traversal
 to cut the space-filling curve into equal sized pieces and assign elements to
 partitions.
 

@@ -28,8 +28,11 @@
 
 <H2>
 <A NAME="Load-Balancing Query Functions"></A>Load-Balancing Query Functions</H2>
-The following registered functions are provided for use by various load-balancing
-algorithms in the Zoltan library:
+The following registered functions are used by various load-balancing
+algorithms in the Zoltan library.  No single algorithm uses
+all the query functions; the <a href="ug_alg.html">algorithm
+descriptions</a> indicate which query functions are required by individual
+algorithms.
 <BLOCKQUOTE><A HREF="#General Functions">General Functions</A>
 <BLOCKQUOTE><B><A HREF="#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B>
 <BR><B><A HREF="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
@@ -204,7 +207,7 @@ application, for all objects assigned to the processor.</TD>
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
 
-<TD>Dimension of the weights (typically 1), or 0 if&nbsp; weights are not
+<TD>The number of weights associated with an object (typically 1), or 0 if weights are not
 requested.</TD>
 </TR>
 
@@ -308,9 +311,9 @@ is ignored if there are no objects.</TD>
 </TR>
 
 <TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
 
-<TD>Dimension of the weights (typically 1), or 0 if&nbsp; weights are not
+<TD>The number of weights associated with an object (typically 1), or 0 if weights are not
 requested.</TD>
 </TR>
 
@@ -444,9 +447,9 @@ ignored if there are no more objects.</TD>
 </TR>
 
 <TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
 
-<TD>Dimension of the weights (typically 1), or 0 if&nbsp; weights are not
+<TD>The number of weights associated with an object (typically 1), or 0 if weights are not
 requested.</TD>
 </TR>
 
@@ -651,9 +654,9 @@ border with <I>nbor_proc</I>.</TD>
 </TR>
 
 <TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
 
-<TD>Dimension of the weights (typically 1), or 0 if&nbsp; weights are not
+<TD>The number of weights associated with an object (typically 1), or 0 if weights are not
 requested.</TD>
 </TR>
 
@@ -766,9 +769,9 @@ is ignored if there are no objects along the border.</TD>
 </TR>
 
 <TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
 
-<TD>Dimension of the weights (typically 1), or 0 if&nbsp; weights are not
+<TD>The number of weights associated with an object (typically 1), or 0 if weights are not
 requested.</TD>
 </TR>
 
@@ -913,9 +916,9 @@ ignored if there are no more objects along the border.</TD>
 </TR>
 
 <TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
 
-<TD>Dimension of the weights (typically 1), or 0 if&nbsp; weights are not
+<TD>The number of weights associated with an object (typically 1), or 0 if weights are not
 requested.</TD>
 </TR>
 
@@ -1292,7 +1295,7 @@ objects reside.</TD>
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
 
-<TD>Dimension of the edge weights (typically 1), or 0 if edge weights are
+<TD>The number of weights associated with an edge (typically 1), or 0 if edge weights are
 not requested.</TD>
 </TR>
 
@@ -1424,7 +1427,7 @@ objects (elements) of the initial coarse grid.  The vertices are a designation
 on the local processor of the vertices such that if two elements share a
 vertex then the same integer designates that vertex in both elements.  The
 user may choose to provide the order in which the elements should be
-traversed, or have Zoltan determine the order.  If the user provides the
+traversed or have Zoltan determine the order.  If the user provides the
 order, then entry and exit vertices for a path through the elements may also
 be provided.  The arrays for the returned values are
 allocated by the load-balancing library; their size is determined by a
@@ -2112,8 +2115,9 @@ for an explanation.&nbsp;</TD>
 </TABLE>
 
 <HR WIDTH="100%">An <B>LB_CHILD_WEIGHT_FN</B> query function returns the
-weight of an object.  Interior nodes of the refinement tree are allowed to
-have weights as well as the leaves.
+weight of an object.  Interior nodes of the refinement tree as well as
+the leaves are allowed to
+have weights.
 <BR>&nbsp;
 <TABLE WIDTH="100%" NOSAVE >
 <TR>
@@ -2149,7 +2153,7 @@ have weights as well as the leaves.
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <I>wgt_dim</I></TD>
 
-<TD>Dimension of the weight (typically 1), or 0 if&nbsp; weights are not
+<TD>The number of weights associated with an object (typically 1), or 0 if weights are not
 requested.</TD>
 </TR>
 

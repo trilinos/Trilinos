@@ -93,9 +93,9 @@ is a completely separate library. If you do not wish to install ParMETIS,
 it is possible to compile Zoltan without any references to ParMETIS&nbsp;
 (when you 'make' Zoltan, comment out the PARMETIS_LIBPATH variable in the
 lower-level makefile <i><a href="ug_usage.html#Building the Library">Makefiles/Makefile.&lt;platform></a></i>).
-<p>The current version of Zoltan ignores the imbalance tolerance parameter,
-IMBALANCE_TOL, when ParMETIS is used. The reason is that the corresponding
-imbalance parameter is fixed at 1.05 in ParMETIS 2.0. We expect that future
+<p>The current version of Zoltan ignores the imbalance tolerance parameter
+IMBALANCE_TOL when ParMETIS is used, as ParMETIS 2.0 fixes the corresponding
+imbalance parameter at 1.05. We expect that future
 versions of ParMETIS will allow the user to select the tolerance for load
 imbalance. When this feature becomes available in ParMETIS, it will also
 be supported through IMBALANCE_TOL in Zoltan.
@@ -116,7 +116,7 @@ be supported through IMBALANCE_TOL in Zoltan.
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; PARMETIS_METHOD</i></td>
 
-<td>The ParMETIS method to be used.; currently eight are available.&nbsp;
+<td>The ParMETIS method to be used; currently eight are available.&nbsp;
 <br><i>PartKway</i> - multilevel Kernighan-Lin partitioning&nbsp;
 <br><i>PartGeom</i> - space filling curves (coordinate based)&nbsp;
 <br><i>PartGeomKway</i> - hybrid method based on PartKway and PartGeom
@@ -159,7 +159,7 @@ more information (for example, 3=1+2, 5=1+4, 6=2+4).</td>
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp; <i>CHECK_GRAPH</i></td>
 
-<td NOSAVE>Level of error checking for graph input.: 0 = no checking, 1
+<td NOSAVE>Level of error checking for graph input: 0 = no checking, 1
 = on-processor checking, 2 = full checking (this is very slow and should
 only be used during debugging).</td>
 </tr>

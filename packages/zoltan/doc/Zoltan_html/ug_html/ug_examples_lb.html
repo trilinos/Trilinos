@@ -52,7 +52,7 @@ in this <A HREF="#LB Example Fig">figure</A> but will be addressed in the
 is completed, the arrays of information about imported and exported nodes
 returned by <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
 are freed by a call to <B><A HREF="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A></B>.
-Finally, when the application is all finished with the load balancing operations,
+Finally, when the application is finished with the load balancing operations,
 it calls <B><A HREF="ug_interface_lb.html#LB_Destroy">LB_Destroy</A></B>.
 <BR>&nbsp;
 <BR>&nbsp;
@@ -151,8 +151,8 @@ user_return_owned_nodes)</TT>&nbsp;
 <P><TT>! <I>Perform computations</I></TT>&nbsp;
 <BR><TT>...</TT>&nbsp;
 <BR><TT>! <I>Perform load balancing</I></TT>&nbsp;
-<BR><TT>ierr = <A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,new,num_imp,imp_global_ids,imp_local_ids,imp_procs, &amp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_exp,exp_global_ids,exp_local_ids,exp_procs)&nbsp;</TT>&nbsp;
+<BR><TT>ierr = <A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,new,num_imp,imp_global_ids,imp_local_ids, &amp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; imp_procs,num_exp,exp_global_ids,exp_local_ids,exp_procs)&nbsp;</TT>&nbsp;
 <BR><TT>if (new) then</TT>&nbsp;
 <BR><TT>&nbsp; perform_data_migration(...)</TT>&nbsp;
 <BR><TT>endif</TT>&nbsp;

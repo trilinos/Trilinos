@@ -33,7 +33,9 @@ processors to realize the new decomposition. This functionality will be
 performed as part of the call to <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
 if the <B><A HREF="ug_alg.html#General_Parameters">AUTO_MIGRATE</A></B>
 parameter is set to TRUE (nonzero) via a call to <B><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B>.
-Alternatively, the application can leave <B><A HREF="ug_alg.html#General_Parameters">AUTO_MIGRATE</A></B>
+This approach is effective for when the data to be moved is relatively
+simple.  For more complicated data movement,
+the application can leave <B><A HREF="ug_alg.html#General_Parameters">AUTO_MIGRATE</A></B>
 FALSE and call <B><A HREF="#LB_Help_Migrate">LB_Help_Migrate</A></B> itself.
 In either case, <A HREF="ug_query_mig.html#Migration Query Functions">routines
 to pack and unpack object data</A> must be provided by the application.
