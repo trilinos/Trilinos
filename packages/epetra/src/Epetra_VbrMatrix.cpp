@@ -584,13 +584,13 @@ int Epetra_VbrMatrix::EndInsertValues()
 
   int NumValidBlockIndices = CurNumBlockEntries_;
   int * ValidBlockIndices = new int[CurNumBlockEntries_];
-  for( j=0; j < CurNumBlockEntries_; ++j ) ValidBlockIndices[j] = j;
+  for ( j=0; j < CurNumBlockEntries_; ++j ) ValidBlockIndices[j] = j;
     
   if( Graph_->HaveColMap() ) { //test and discard indices not in ColMap
     NumValidBlockIndices = 0;
     const Epetra_BlockMap& map = Graph_->ColMap();
 
-    for( j = 0; j < CurNumBlockEntries_; ++j ) {
+    for ( j = 0; j < CurNumBlockEntries_; ++j ) {
       bool myID = CurIndicesAreLocal_ ?
 	map.MyLID(CurBlockIndices_[j]) : map.MyGID(CurBlockIndices_[j]);
 
@@ -634,7 +634,7 @@ int Epetra_VbrMatrix::EndInsertValues()
 
   delete [] ValidBlockIndices;
 
-  for(j=0; j<CurNumBlockEntries_; ++j) {
+  for (j=0; j<CurNumBlockEntries_; ++j) {
     delete TempEntries_[j];
   }
 
@@ -980,13 +980,25 @@ int Epetra_VbrMatrix::ExtractEntryCopy(int SizeOfValues, double * Values, int LD
   if (LDA*CurColDim>SizeOfValues) EPETRA_CHK_ERR(-2);  // Not enough space
 
   Epetra_SerialDenseMatrix* CurEntries = Entries_[CurExtractBlockRow_][CurExtractEntry_];
+  int CurRowDim = CurEntries->M();
   int CurLDA = CurEntries->LDA();
 
   CurExtractEntry_++; // Increment Entry Pointer
 
   double* vals = CurEntries->A();
-  for(int ii=0; ii<LDA*CurEntries->N(); ++ii) {
-    Values[ii] = vals[ii];
+  if (LDA==CurRowDim && CurLDA==CurRowDim) // Columns of the entry are contiguous, can treat as single array
+    for (int ii=0; ii<CurRowDim*CurColDim; ++ii)
+      Values[ii] = vals[ii];
+  else {
+    double * CurTargetCol = Values;
+    double * CurSourceCol = vals;
+
+    for (int jj=0; jj<CurColDim; jj++) {
+      for (int ii=0; ii<CurRowDim; ++ii) 
+	CurTargetCol[ii] = CurSourceCol[ii];
+      CurTargetCol += LDA;
+      CurSourceCol += CurLDA;
+    }
   }
 
   return(0);
@@ -1076,7 +1088,7 @@ int Epetra_VbrMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
   if (!Filled()) EPETRA_CHK_ERR(-1); // Can't get diagonal unless matrix is filled
   if (!RowMap().SameAs(Diagonal.Map())) EPETRA_CHK_ERR(-2); // Maps must be the same
   double * diagptr = Diagonal.Values();
-  for(int i=0; i<NumMyBlockRows_; i++){
+  for (int i=0; i<NumMyBlockRows_; i++){
     int BlockRow = GRID(i);
     int RowDim = ElementSizeList_[i];
     int NumEntries = NumBlockEntriesPerRow_[i];
@@ -1099,7 +1111,7 @@ int Epetra_VbrMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
   if (!RowMap().SameAs(Diagonal.Map())) EPETRA_CHK_ERR(-2); // Maps must be the same
   int ierr = 0;
   double * diagptr = (double *) Diagonal.Values(); // Dangerous but being lazy
-  for(int i=0; i<NumMyBlockRows_; i++){
+  for (int i=0; i<NumMyBlockRows_; i++){
     int BlockRow = GRID(i);
     int RowDim = ElementSizeList_[i];
     int NumEntries = NumBlockEntriesPerRow_[i];
@@ -1215,7 +1227,7 @@ int Epetra_VbrMatrix::MaxNumEntries() const {
 
   int outval = 0;
 
-  for(int i=0; i<NumMyBlockRows_; i++){
+  for (int i=0; i<NumMyBlockRows_; i++){
     int NumBlockEntries = NumMyBlockEntries(i);
     int NumEntries = 0;
     for (int j=0; j<NumBlockEntries; j++) NumEntries += Entries_[i][j]->N();
@@ -1574,8 +1586,8 @@ void Epetra_VbrMatrix::BlockRowMultiply(bool TransA,
 	double * cury = Y[k] + RowOff;
 
 	GEMV('N', RowDim, ColDim, Alpha, A, LDA, curx, Beta, cury);
-      }//end for(k
-    }//end for(j
+      }//end for (k
+    }//end for (j
   }
   else { //TransA == true
     for (j=0; j < NumEntries; j++) {
@@ -1689,8 +1701,8 @@ void Epetra_VbrMatrix::BlockRowMultiply(bool TransA,
 	default:
 	  GEMV('N', RowDim, ColDim, 1.0, A, LDA, x, 1.0, y);
 	}//end switch
-      }//end for(k
-    }//end for(j
+      }//end for (k
+    }//end for (j
   }
   else { //TransA == true
     for (j=0; j < NumEntries; j++) {

@@ -107,10 +107,11 @@ int main(int argc, char *argv[])
   if (verbose && rank!=0) verbose = false;
 
 //  int NumMyElements = 1000;
-  int NumMyElements = 10;
+  int NumMyElements = 10; 
   if (MyPID < 3) NumMyElements++;
+  if (NumMyElements<2) NumMyElements = 2; // This value must be greater than one on each processor
 
-  // Define pseudo-random block sizes using a Petra Vector of random numbers
+  // Define pseudo-random block sizes using an Epetra Vector of random numbers
   Epetra_Map randmap(-1, NumMyElements, 0, Comm);
   Epetra_Vector randvec(randmap);
   randvec.Random(); // Fill with random numbers
@@ -120,10 +121,12 @@ int main(int argc, char *argv[])
   int SizeRange = MaxSize - MinSize + 1;
   double DSizeRange = SizeRange;
   
-  for (i=0; i<NumMyElements; i++) {
+  for (i=1; i<NumMyElements-1; i++) {
     int curSize = 3 + (int) (DSizeRange * fabs(randvec[i]) + .99);
     ElementSizeList[i] = EPETRA_MAX(MinSize, EPETRA_MIN(MaxSize, curSize));
   }
+  ElementSizeList[0] = MaxSize;
+  ElementSizeList[NumMyElements-1] = MaxSize;
 
   // Construct a Map
 
@@ -209,11 +212,11 @@ int main(int argc, char *argv[])
 	Indices[1] = CurRow;
 	Indices[2] = CurRow+1;
 	NumEntries = 3;
-	if (i==0) ColDims[0] = EPETRA_MAX(MinSize, EPETRA_MIN(MaxSize, MyPID-1)) - MinSize; // ElementSize on MyPID-1
+	if (i==0) ColDims[0] = MaxSize - MinSize; // ElementSize on MyPID-1
 	else ColDims[0] = ElementSizeList[i-1] - MinSize;
 	ColDims[1] = ElementSizeList[i] - MinSize;
 	// ElementSize on MyPID+1
-	if (i==NumMyElements-1) ColDims[2] = EPETRA_MAX(MinSize, EPETRA_MIN(MaxSize, MyPID)) - MinSize;
+	if (i==NumMyElements-1) ColDims[2] = MaxSize - MinSize;
 	else ColDims[2] = ElementSizeList[i+1] - MinSize;
       }
     EPETRA_TEST_ERR(!(A.BeginInsertGlobalValues(CurRow, NumEntries, Indices)==0),ierr);
@@ -221,6 +224,8 @@ int main(int argc, char *argv[])
     for (j=0; j < NumEntries; j++) {
       Epetra_SerialDenseMatrix * AD = &(BlockEntries[RowDim][ColDims[j]]);
       NumMyNonzeros += AD->M() * AD->N();	  
+      //cout << " PID, i, j, M, N, NNZ = " <<Comm.MyPID()<<", " << i<< ", " << j<<", "<<AD->M()<<", "<<AD->N()
+      //	   <<", "<<NumMyNonzeros<<endl;
       forierr += !(A.SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N())==0);
     }
     EPETRA_TEST_ERR(forierr,ierr);
@@ -565,12 +570,13 @@ int check(Epetra_VbrMatrix& A,
   int NumMyRows = A.NumMyRows();
   if (verbose) cout << "\n\nNumber of local Rows = " << NumMyRows << endl<< endl;
   // TEMP
-  if (verbose) cout << "\n\nNumber of local Rows should = " << NumMyRows1 << endl<< endl;
+  //if (verbose) cout << "\n\nNumber of local Rows should = " << NumMyRows1 << endl<< endl;
 
   EPETRA_TEST_ERR(!(NumMyRows==NumMyRows1),ierr);
 
   int NumMyNonzeros = A.NumMyNonzeros();
   if (verbose) cout << "\n\nNumber of local Nonzero entries = " << NumMyNonzeros << endl<< endl;
+  //if (verbose) cout << "                            Should  = " << NumMyNonzeros1 << endl<< endl;
 
   EPETRA_TEST_ERR(!(NumMyNonzeros==NumMyNonzeros1),ierr);
 
