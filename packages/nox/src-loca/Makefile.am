@@ -29,7 +29,7 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = doc src src-epetra src-lapack example-epetra example-lapack
+SUBDIRS = doc src src-epetra src-lapack src-mf example-epetra example-lapack
 
 ## #######################################################################
 ## Documentation

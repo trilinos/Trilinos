@@ -33,6 +33,7 @@
 #ifndef LOCA_LAPACK_INTERFACE_H
 #define LOCA_LAPACK_INTERFACE_H
 
+#include "NOX_LAPACK_Vector.H"
 #include "NOX_LAPACK_Interface.H"
 
 // Forward declarations
@@ -71,6 +72,17 @@ namespace LOCA {
       //! Compute mass matrix.  Returns true if computation was successful.
       virtual bool computeMass(NOX::LAPACK::Matrix& M, 
 			       const NOX::LAPACK::Vector & x) { return false; }
+
+      //! Projects solution to a few scalars for multiparameter continuation
+      /*! Default implementation is the max norm 
+       */
+      virtual void projectToDraw(const NOX::LAPACK::Vector& x,
+				 double *px) const {
+	px[0] = x.norm(NOX::Abstract::Vector::MaxNorm);
+      }
+
+      //! Returns the dimension of the project to draw array
+      virtual int projectToDrawDimension() const { return 1; }
 
     };
   } // namespace LAPACK

@@ -235,6 +235,21 @@ LOCA::Epetra::Group::printSolution(const NOX::Abstract::Vector& x_,
   printSolution(dynamic_cast<const NOX::Epetra::Vector&>(x_), conParam);
 }
 
+void
+LOCA::Epetra::Group::projectToDraw(const NOX::Abstract::Vector& x,
+				   double *px) const
+{
+  const NOX::Epetra::Vector& ex = 
+    dynamic_cast<const NOX::Epetra::Vector&>(x);
+  userInterface.projectToDraw(ex, px);
+}
+
+int
+LOCA::Epetra::Group::projectToDrawDimension() const
+{
+  return userInterface.projectToDrawDimension();
+}
+
 NOX::Abstract::Group::ReturnType 
 LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
 {

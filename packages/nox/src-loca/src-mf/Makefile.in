@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-#@HEADER
+# @HEADER
 # ************************************************************************
 # 
 #            NOX: An Object-Oriented Nonlinear Solver Package
@@ -41,10 +41,17 @@
 # (rppawlo@sandia.gov), Sandia National Laboratories.
 # 
 # ************************************************************************
-#@HEADER
+# @HEADER
+
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside NOX. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
 
 
-SOURCES = $(libnoxtestutils_a_SOURCES)
+SOURCES = $(liblocamf_a_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -67,8 +74,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-subdir = test/utils
-DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
+subdir = src-loca/src-mf
+DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
@@ -86,17 +93,23 @@ ARFLAGS = cru
 am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
-am__DEPENDENCIES_1 =
-libnoxtestutils_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__objects_1 = libnoxtestutils_a-NOX_TestUtils.$(OBJEXT)
+liblocamf_a_DEPENDENCIES =
+am__objects_1 = liblocamf_a-MFLOCA.$(OBJEXT) \
+	liblocamf_a-MFLOCANVector.$(OBJEXT) \
+	liblocamf_a-MFLOCANSpace.$(OBJEXT) \
+	liblocamf_a-MFLOCANRegion.$(OBJEXT) \
+	liblocamf_a-LOCA_MultiStepper.$(OBJEXT)
 am__objects_2 =
-am_libnoxtestutils_a_OBJECTS = $(am__objects_1) $(am__objects_2)
-libnoxtestutils_a_OBJECTS = $(am_libnoxtestutils_a_OBJECTS)
+am_liblocamf_a_OBJECTS = $(am__objects_1) $(am__objects_2)
+liblocamf_a_OBJECTS = $(am_liblocamf_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES =  \
-@AMDEP_TRUE@	./$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/liblocamf_a-LOCA_MultiStepper.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/liblocamf_a-MFLOCA.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/liblocamf_a-MFLOCANRegion.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/liblocamf_a-MFLOCANSpace.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/liblocamf_a-MFLOCANVector.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -106,8 +119,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libnoxtestutils_a_SOURCES)
-DIST_SOURCES = $(libnoxtestutils_a_SOURCES)
+SOURCES = $(liblocamf_a_SOURCES)
+DIST_SOURCES = $(liblocamf_a_SOURCES)
+am__include_HEADERS_DIST = $(srcdir)/MFLOCA.H \
+	$(srcdir)/LOCA_MultiStepper.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -281,28 +296,38 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+LOCA_MF_H = \
+	$(srcdir)/MFLOCA.H  \
+	$(srcdir)/LOCA_MultiStepper.H 
 
-# Needed so this is installed with distributions
-include_HEADERS = \
-        $(srcdir)/NOX_TestError.H 
+LOCA_MF = \
+	$(srcdir)/MFLOCA.C \
+	$(srcdir)/MFLOCANVector.C \
+	$(srcdir)/MFLOCANSpace.C \
+	$(srcdir)/MFLOCANRegion.C \
+	$(srcdir)/LOCA_MultiStepper.C 
 
-NOX_TEST_UTILS = \
-	$(srcdir)/NOX_TestUtils.C
-
-lib_LIBRARIES = libnoxtestutils.a
 
 # ------------------------------------------------------------------------
-# Noxtestutils library specifications
+# locamf library specifications
 # ------------------------------------------------------------------------
-libnoxtestutils_a_SOURCES = $(NOX_TEST_UTILS) $(include_HEADERS) 
-libnoxtestutils_a_CXXFLAGS = \
-	-I$(top_srcdir)/src-loca/src \
-	-I$(top_srcdir)/src \
-	$(TRILINOS_CXXFLAGS) 
+liblocamf_a_SOURCES = $(LOCA_MF) $(LOCA_MF_H)
+liblocamf_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
+                       -I$(top_srcdir)/src \
+                       -I$(MF_INCDIR) \
+                        $(TRILINOS_CXXFLAGS) 
 
-@USE_ALTERNATE_AR_FALSE@libnoxtestutils_a_AR = $(AR) cru
 
-#lib_LIBRARIES = libnoxtestutils.a
+# ------------------------------------------------------------------------
+# When to turn it on
+# ------------------------------------------------------------------------
+
+# List of all libraries to install in $(libexecdir)
+@BUILD_LIBLOCAMF_TRUE@lib_LIBRARIES = liblocamf.a
+
+# List of all headers to install in $(includedir)
+@BUILD_LIBLOCAMF_TRUE@include_HEADERS = $(LOCA_MF_H)
+@USE_ALTERNATE_AR_FALSE@liblocamf_a_AR = $(AR) cru
 
 # ------------------------------------------------------------------------
 # For using a special archiver
@@ -311,23 +336,18 @@ libnoxtestutils_a_CXXFLAGS = \
 # SPECIAL NOTE: Why is the "else" there?  For some reason, automake
 # fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
 # define it manually.
-@USE_ALTERNATE_AR_TRUE@libnoxtestutils_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_TRUE@liblocamf_a_AR = $(ALTERNATE_AR)
 
 # ------------------------------------------------------------------------
 # Some C++ compilers create extra .o-files for templates. We need to
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
-libnoxtestutils_a_LIBADD = $(CXXREPOS) $(XTRALDADD)
+liblocamf_a_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
-
-# ------------------------------------------------------------------------
-# Files to be deleted by 'make clean'
-# ------------------------------------------------------------------------
-MOSTLYCLEANFILES = $(CXXREPOS)
 all: all-am
 
 .SUFFIXES:
@@ -341,9 +361,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/utils/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src-loca/src-mf/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/utils/Makefile
+	  $(AUTOMAKE) --foreign  src-loca/src-mf/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -390,10 +410,10 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libnoxtestutils.a: $(libnoxtestutils_a_OBJECTS) $(libnoxtestutils_a_DEPENDENCIES) 
-	-rm -f libnoxtestutils.a
-	$(libnoxtestutils_a_AR) libnoxtestutils.a $(libnoxtestutils_a_OBJECTS) $(libnoxtestutils_a_LIBADD)
-	$(RANLIB) libnoxtestutils.a
+liblocamf.a: $(liblocamf_a_OBJECTS) $(liblocamf_a_DEPENDENCIES) 
+	-rm -f liblocamf.a
+	$(liblocamf_a_AR) liblocamf.a $(liblocamf_a_OBJECTS) $(liblocamf_a_LIBADD)
+	$(RANLIB) liblocamf.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -401,7 +421,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocamf_a-LOCA_MultiStepper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocamf_a-MFLOCA.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocamf_a-MFLOCANRegion.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocamf_a-MFLOCANSpace.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocamf_a-MFLOCANVector.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -419,21 +443,85 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-libnoxtestutils_a-NOX_TestUtils.o: $(srcdir)/NOX_TestUtils.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxtestutils_a-NOX_TestUtils.o -MD -MP -MF "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo" -c -o libnoxtestutils_a-NOX_TestUtils.o `test -f '$(srcdir)/NOX_TestUtils.C' || echo '$(srcdir)/'`$(srcdir)/NOX_TestUtils.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo" "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po"; else rm -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_TestUtils.C' object='libnoxtestutils_a-NOX_TestUtils.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po' tmpdepfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.TPo' @AMDEPBACKSLASH@
+liblocamf_a-MFLOCA.o: $(srcdir)/MFLOCA.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -MT liblocamf_a-MFLOCA.o -MD -MP -MF "$(DEPDIR)/liblocamf_a-MFLOCA.Tpo" -c -o liblocamf_a-MFLOCA.o `test -f '$(srcdir)/MFLOCA.C' || echo '$(srcdir)/'`$(srcdir)/MFLOCA.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocamf_a-MFLOCA.Tpo" "$(DEPDIR)/liblocamf_a-MFLOCA.Po"; else rm -f "$(DEPDIR)/liblocamf_a-MFLOCA.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MFLOCA.C' object='liblocamf_a-MFLOCA.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocamf_a-MFLOCA.Po' tmpdepfile='$(DEPDIR)/liblocamf_a-MFLOCA.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtestutils_a-NOX_TestUtils.o `test -f '$(srcdir)/NOX_TestUtils.C' || echo '$(srcdir)/'`$(srcdir)/NOX_TestUtils.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocamf_a-MFLOCA.o `test -f '$(srcdir)/MFLOCA.C' || echo '$(srcdir)/'`$(srcdir)/MFLOCA.C
 
-libnoxtestutils_a-NOX_TestUtils.obj: $(srcdir)/NOX_TestUtils.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxtestutils_a-NOX_TestUtils.obj -MD -MP -MF "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo" -c -o libnoxtestutils_a-NOX_TestUtils.obj `if test -f '$(srcdir)/NOX_TestUtils.C'; then $(CYGPATH_W) '$(srcdir)/NOX_TestUtils.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_TestUtils.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo" "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po"; else rm -f "$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_TestUtils.C' object='libnoxtestutils_a-NOX_TestUtils.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po' tmpdepfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.TPo' @AMDEPBACKSLASH@
+liblocamf_a-MFLOCA.obj: $(srcdir)/MFLOCA.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -MT liblocamf_a-MFLOCA.obj -MD -MP -MF "$(DEPDIR)/liblocamf_a-MFLOCA.Tpo" -c -o liblocamf_a-MFLOCA.obj `if test -f '$(srcdir)/MFLOCA.C'; then $(CYGPATH_W) '$(srcdir)/MFLOCA.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MFLOCA.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocamf_a-MFLOCA.Tpo" "$(DEPDIR)/liblocamf_a-MFLOCA.Po"; else rm -f "$(DEPDIR)/liblocamf_a-MFLOCA.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MFLOCA.C' object='liblocamf_a-MFLOCA.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocamf_a-MFLOCA.Po' tmpdepfile='$(DEPDIR)/liblocamf_a-MFLOCA.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtestutils_a-NOX_TestUtils.obj `if test -f '$(srcdir)/NOX_TestUtils.C'; then $(CYGPATH_W) '$(srcdir)/NOX_TestUtils.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_TestUtils.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocamf_a-MFLOCA.obj `if test -f '$(srcdir)/MFLOCA.C'; then $(CYGPATH_W) '$(srcdir)/MFLOCA.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MFLOCA.C'; fi`
+
+liblocamf_a-MFLOCANVector.o: $(srcdir)/MFLOCANVector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -MT liblocamf_a-MFLOCANVector.o -MD -MP -MF "$(DEPDIR)/liblocamf_a-MFLOCANVector.Tpo" -c -o liblocamf_a-MFLOCANVector.o `test -f '$(srcdir)/MFLOCANVector.C' || echo '$(srcdir)/'`$(srcdir)/MFLOCANVector.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocamf_a-MFLOCANVector.Tpo" "$(DEPDIR)/liblocamf_a-MFLOCANVector.Po"; else rm -f "$(DEPDIR)/liblocamf_a-MFLOCANVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MFLOCANVector.C' object='liblocamf_a-MFLOCANVector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocamf_a-MFLOCANVector.Po' tmpdepfile='$(DEPDIR)/liblocamf_a-MFLOCANVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocamf_a-MFLOCANVector.o `test -f '$(srcdir)/MFLOCANVector.C' || echo '$(srcdir)/'`$(srcdir)/MFLOCANVector.C
+
+liblocamf_a-MFLOCANVector.obj: $(srcdir)/MFLOCANVector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -MT liblocamf_a-MFLOCANVector.obj -MD -MP -MF "$(DEPDIR)/liblocamf_a-MFLOCANVector.Tpo" -c -o liblocamf_a-MFLOCANVector.obj `if test -f '$(srcdir)/MFLOCANVector.C'; then $(CYGPATH_W) '$(srcdir)/MFLOCANVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MFLOCANVector.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocamf_a-MFLOCANVector.Tpo" "$(DEPDIR)/liblocamf_a-MFLOCANVector.Po"; else rm -f "$(DEPDIR)/liblocamf_a-MFLOCANVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MFLOCANVector.C' object='liblocamf_a-MFLOCANVector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocamf_a-MFLOCANVector.Po' tmpdepfile='$(DEPDIR)/liblocamf_a-MFLOCANVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocamf_a-MFLOCANVector.obj `if test -f '$(srcdir)/MFLOCANVector.C'; then $(CYGPATH_W) '$(srcdir)/MFLOCANVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MFLOCANVector.C'; fi`
+
+liblocamf_a-MFLOCANSpace.o: $(srcdir)/MFLOCANSpace.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -MT liblocamf_a-MFLOCANSpace.o -MD -MP -MF "$(DEPDIR)/liblocamf_a-MFLOCANSpace.Tpo" -c -o liblocamf_a-MFLOCANSpace.o `test -f '$(srcdir)/MFLOCANSpace.C' || echo '$(srcdir)/'`$(srcdir)/MFLOCANSpace.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocamf_a-MFLOCANSpace.Tpo" "$(DEPDIR)/liblocamf_a-MFLOCANSpace.Po"; else rm -f "$(DEPDIR)/liblocamf_a-MFLOCANSpace.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MFLOCANSpace.C' object='liblocamf_a-MFLOCANSpace.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocamf_a-MFLOCANSpace.Po' tmpdepfile='$(DEPDIR)/liblocamf_a-MFLOCANSpace.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocamf_a-MFLOCANSpace.o `test -f '$(srcdir)/MFLOCANSpace.C' || echo '$(srcdir)/'`$(srcdir)/MFLOCANSpace.C
+
+liblocamf_a-MFLOCANSpace.obj: $(srcdir)/MFLOCANSpace.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -MT liblocamf_a-MFLOCANSpace.obj -MD -MP -MF "$(DEPDIR)/liblocamf_a-MFLOCANSpace.Tpo" -c -o liblocamf_a-MFLOCANSpace.obj `if test -f '$(srcdir)/MFLOCANSpace.C'; then $(CYGPATH_W) '$(srcdir)/MFLOCANSpace.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MFLOCANSpace.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocamf_a-MFLOCANSpace.Tpo" "$(DEPDIR)/liblocamf_a-MFLOCANSpace.Po"; else rm -f "$(DEPDIR)/liblocamf_a-MFLOCANSpace.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MFLOCANSpace.C' object='liblocamf_a-MFLOCANSpace.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocamf_a-MFLOCANSpace.Po' tmpdepfile='$(DEPDIR)/liblocamf_a-MFLOCANSpace.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocamf_a-MFLOCANSpace.obj `if test -f '$(srcdir)/MFLOCANSpace.C'; then $(CYGPATH_W) '$(srcdir)/MFLOCANSpace.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MFLOCANSpace.C'; fi`
+
+liblocamf_a-MFLOCANRegion.o: $(srcdir)/MFLOCANRegion.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -MT liblocamf_a-MFLOCANRegion.o -MD -MP -MF "$(DEPDIR)/liblocamf_a-MFLOCANRegion.Tpo" -c -o liblocamf_a-MFLOCANRegion.o `test -f '$(srcdir)/MFLOCANRegion.C' || echo '$(srcdir)/'`$(srcdir)/MFLOCANRegion.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocamf_a-MFLOCANRegion.Tpo" "$(DEPDIR)/liblocamf_a-MFLOCANRegion.Po"; else rm -f "$(DEPDIR)/liblocamf_a-MFLOCANRegion.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MFLOCANRegion.C' object='liblocamf_a-MFLOCANRegion.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocamf_a-MFLOCANRegion.Po' tmpdepfile='$(DEPDIR)/liblocamf_a-MFLOCANRegion.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocamf_a-MFLOCANRegion.o `test -f '$(srcdir)/MFLOCANRegion.C' || echo '$(srcdir)/'`$(srcdir)/MFLOCANRegion.C
+
+liblocamf_a-MFLOCANRegion.obj: $(srcdir)/MFLOCANRegion.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -MT liblocamf_a-MFLOCANRegion.obj -MD -MP -MF "$(DEPDIR)/liblocamf_a-MFLOCANRegion.Tpo" -c -o liblocamf_a-MFLOCANRegion.obj `if test -f '$(srcdir)/MFLOCANRegion.C'; then $(CYGPATH_W) '$(srcdir)/MFLOCANRegion.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MFLOCANRegion.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocamf_a-MFLOCANRegion.Tpo" "$(DEPDIR)/liblocamf_a-MFLOCANRegion.Po"; else rm -f "$(DEPDIR)/liblocamf_a-MFLOCANRegion.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MFLOCANRegion.C' object='liblocamf_a-MFLOCANRegion.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocamf_a-MFLOCANRegion.Po' tmpdepfile='$(DEPDIR)/liblocamf_a-MFLOCANRegion.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocamf_a-MFLOCANRegion.obj `if test -f '$(srcdir)/MFLOCANRegion.C'; then $(CYGPATH_W) '$(srcdir)/MFLOCANRegion.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MFLOCANRegion.C'; fi`
+
+liblocamf_a-LOCA_MultiStepper.o: $(srcdir)/LOCA_MultiStepper.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -MT liblocamf_a-LOCA_MultiStepper.o -MD -MP -MF "$(DEPDIR)/liblocamf_a-LOCA_MultiStepper.Tpo" -c -o liblocamf_a-LOCA_MultiStepper.o `test -f '$(srcdir)/LOCA_MultiStepper.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiStepper.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocamf_a-LOCA_MultiStepper.Tpo" "$(DEPDIR)/liblocamf_a-LOCA_MultiStepper.Po"; else rm -f "$(DEPDIR)/liblocamf_a-LOCA_MultiStepper.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiStepper.C' object='liblocamf_a-LOCA_MultiStepper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocamf_a-LOCA_MultiStepper.Po' tmpdepfile='$(DEPDIR)/liblocamf_a-LOCA_MultiStepper.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocamf_a-LOCA_MultiStepper.o `test -f '$(srcdir)/LOCA_MultiStepper.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiStepper.C
+
+liblocamf_a-LOCA_MultiStepper.obj: $(srcdir)/LOCA_MultiStepper.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -MT liblocamf_a-LOCA_MultiStepper.obj -MD -MP -MF "$(DEPDIR)/liblocamf_a-LOCA_MultiStepper.Tpo" -c -o liblocamf_a-LOCA_MultiStepper.obj `if test -f '$(srcdir)/LOCA_MultiStepper.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiStepper.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiStepper.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocamf_a-LOCA_MultiStepper.Tpo" "$(DEPDIR)/liblocamf_a-LOCA_MultiStepper.Po"; else rm -f "$(DEPDIR)/liblocamf_a-LOCA_MultiStepper.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_MultiStepper.C' object='liblocamf_a-LOCA_MultiStepper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocamf_a-LOCA_MultiStepper.Po' tmpdepfile='$(DEPDIR)/liblocamf_a-LOCA_MultiStepper.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocamf_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocamf_a-LOCA_MultiStepper.obj `if test -f '$(srcdir)/LOCA_MultiStepper.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_MultiStepper.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_MultiStepper.C'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
@@ -546,7 +634,6 @@ install-strip:
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:
-	-test -z "$(MOSTLYCLEANFILES)" || rm -f $(MOSTLYCLEANFILES)
 
 clean-generic:
 

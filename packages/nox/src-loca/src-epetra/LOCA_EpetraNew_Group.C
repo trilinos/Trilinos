@@ -331,6 +331,21 @@ LOCA::EpetraNew::Group::scaleVector(NOX::Abstract::Vector& x) const
     x.scale(*scaleVecPtr);
 }
 
+void
+LOCA::EpetraNew::Group::projectToDraw(const NOX::Abstract::Vector& x,
+				   double *px) const
+{
+  const NOX::Epetra::Vector& ex = 
+    dynamic_cast<const NOX::Epetra::Vector&>(x);
+  userInterface.projectToDraw(ex, px);
+}
+
+int
+LOCA::EpetraNew::Group::projectToDrawDimension() const
+{
+  return userInterface.projectToDrawDimension();
+}
+
 // NOX::Abstract::Group::ReturnType 
 // LOCA::EpetraNew::Group::applyBorderedJacobianInverse(
 // 				     bool trans,

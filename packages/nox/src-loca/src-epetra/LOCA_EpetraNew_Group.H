@@ -236,6 +236,34 @@ namespace LOCA {
 
       //@}
 
+      /*! 
+       * @name Implementation of LOCA::MultiContinuation::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Projects solution to a few scalars for multiparameter continuation
+      /*! 
+       * This method is called every time a solution is saved by the 
+       * multiparameter continuation code MF for later visualization
+       * and should project the solution vector down to a few scalars.
+       * The array \c px will be preallocated to the proper length
+       * given by projectToDrawDimension().
+       *
+       * The implementation here is to call the corresponding method
+       * in the interface.
+       */
+      virtual void projectToDraw(const NOX::Abstract::Vector& x,
+				 double *px) const;
+
+      //! Returns the dimension of the project to draw array
+      /*!
+       * The implementation here is to call the corresponding method 
+       * in the interface.
+       */
+      virtual int projectToDrawDimension() const;
+
+      //@}
+
       //! Return the userInterface.
       virtual NOX::EpetraNew::Interface::Required& getUserInterface();
 

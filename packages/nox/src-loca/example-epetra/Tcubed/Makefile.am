@@ -37,10 +37,14 @@ EXAMPLETPCONT = exampleTPContinuation
 EXAMPLETPMOD = exampleTP_ModifiedBordering
 EXAMPLETPCONTMOD = exampleTPContinuation_ModifiedBordering
 
+if BUILD_LIBLOCAMF
+EXAMPLEMULTICONTINUATION = exampleMultiContinuation
+endif
+
 endif
 
 noinst_PROGRAMS = $(EXAMPLE) $(EXAMPLETP) $(EXAMPLETPCONT) $(EXAMPLETPMOD) \
-		  $(EXAMPLETPCONTMOD)
+		  $(EXAMPLETPCONTMOD) $(EXAMPLEMULTICONTINUATION)
 
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
@@ -109,3 +113,21 @@ exampleTPContinuation_ModifiedBordering_DEPENDENCIES = $(example_DEPENDENCIES)
 exampleTPContinuation_ModifiedBordering_CXXFLAGS = $(example_CXXFLAGS)
 
 exampleTPContinuation_ModifiedBordering_LDADD = $(example_LDADD)
+
+exampleMultiContinuation_SOURCES = $(srcdir)/ExampleMultiContinuation.C \
+        $(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
+        $(srcdir)/Basis.C $(srcdir)/Basis.H \
+        $(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
+
+exampleMultiContinuation_DEPENDENCIES = $(example_DEPENDENCIES) \
+                                 $(top_builddir)/src-loca/src-mf/liblocamf.a \
+                                 $(MF_LIBDIR)/libExpCmp.a \
+                                 $(MF_LIBDIR)/libMF.a
+
+exampleMultiContinuation_CXXFLAGS = $(example_CXXFLAGS) \
+                                    -I$(top_srcdir)/src-loca/src-mf \
+                                    -I$(MF_INCDIR)
+
+exampleMultiContinuation_LDADD = -L$(top_builddir)/src-loca/src-mf -llocamf \
+                                 -L$(MF_LIBDIR) -lMF -lExpCmp \
+                                 $(example_LDADD)

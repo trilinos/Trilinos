@@ -40,11 +40,15 @@ CHANTPCONTMOD = chanTPContinuation_ModifiedBordering
 CHANTPNDMOD = chanTP_NicDayModifiedBordering
 CHANTPCONTNDMOD = chanTPContinuation_NicDayModifiedBordering
 
+if BUILD_LIBLOCAMF
+CHANMULTICONT = chanMultiContinuation
+endif
+
 endif
 
 noinst_PROGRAMS = $(CHANCONT) $(CHANTP) $(CHANTPCONT) $(CHANHOMOTOPY) \
 	          $(CHANTPMOD) $(CHANTPCONTMOD) $(CHANTPNDMOD) \
-		  $(CHANTPCONTNDMOD)
+		  $(CHANTPCONTNDMOD) $(CHANMULTICONT)
 
 chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
@@ -143,3 +147,20 @@ chanTPContinuation_NicDayModifiedBordering_DEPENDENCIES = \
 chanTPContinuation_NicDayModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
 chanTPContinuation_NicDayModifiedBordering_LDADD = $(chanContinuation_LDADD)
+
+chanMultiContinuation_SOURCES = $(srcdir)/ChanMultiContinuation.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
+chanMultiContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES) \
+                                 $(top_builddir)/src-loca/src-mf/liblocamf.a \
+                                 $(MF_LIBDIR)/libExpCmp.a \
+                                 $(MF_LIBDIR)/libMF.a
+
+chanMultiContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS) \
+                                    -I$(top_srcdir)/src-loca/src-mf \
+                                    -I$(MF_INCDIR)
+
+chanMultiContinuation_LDADD = -L$(top_builddir)/src-loca/src-mf -llocamf \
+                              -L$(MF_LIBDIR) -lMF -lExpCmp \
+                                 $(chanContinuation_LDADD)

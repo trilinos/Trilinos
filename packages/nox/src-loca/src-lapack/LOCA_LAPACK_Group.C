@@ -247,6 +247,20 @@ LOCA::LAPACK::Group::getParam(string paramID) const
   return params.getValue(paramID);
 }
 
+double
+LOCA::LAPACK::Group::computeScaledDotProduct(
+				       const NOX::Abstract::Vector& a,
+				       const NOX::Abstract::Vector& b) const
+{
+  return a.dot(b) / a.length();
+}
+
+void
+LOCA::LAPACK::Group::scaleVector(NOX::Abstract::Vector& x) const
+{
+  x.scale(1.0 / sqrt(static_cast<double>(x.length())));
+}
+
 void 
 LOCA::LAPACK::Group::printSolution(const double conParam) const
 {
@@ -377,6 +391,21 @@ LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
   delete [] work;
 
   return NOX::Abstract::Group::Ok;
+}
+
+void
+LOCA::LAPACK::Group::projectToDraw(const NOX::Abstract::Vector& x,
+				   double *px) const
+{
+  const NOX::LAPACK::Vector& lx = 
+    dynamic_cast<const NOX::LAPACK::Vector&>(x);
+  locaProblemInterface.projectToDraw(lx, px);
+}
+
+int
+LOCA::LAPACK::Group::projectToDrawDimension() const
+{
+  return locaProblemInterface.projectToDrawDimension();
 }
 
 NOX::Abstract::Group::ReturnType 

@@ -35,6 +35,7 @@
 
 #include "NOX_Common.H"
 #include "NOX_EpetraNew_Interface_Required.H"
+#include "NOX_Epetra_Vector.H"
   
 // Forward declarations
 class Epetra_Vector;
@@ -75,6 +76,17 @@ namespace LOCA {
 	//! Call user's own print routine for vector-parameter pair
 	virtual void printSolution(const Epetra_Vector& x_, 
 				   double conParam) const {}
+
+	//! Projects solution to a few scalars for multiparameter continuation
+	/*! Default implementation is the max norm 
+	 */
+	virtual void projectToDraw(const NOX::Epetra::Vector& x,
+				   double *px) const {
+	  px[0] = x.norm(NOX::Abstract::Vector::MaxNorm);
+	}
+	
+	//! Returns the dimension of the project to draw array
+	virtual int projectToDrawDimension() const { return 1; }
 
       };
     } // namespace Interface

@@ -179,6 +179,21 @@ namespace LOCA {
       //! Return copy of parameter indexed by paramID
       virtual double getParam(string paramID) const;
 
+      //! Compute a scaled dot product
+      /*! 
+       * The implementation here is a.dot(b) / a.length()
+       */
+      virtual double
+      computeScaledDotProduct(const NOX::Abstract::Vector& a,
+			      const NOX::Abstract::Vector& b) const;
+
+      //! Scales a vector
+      /*! 
+       * The implementation here is x.scale(1.0/sqrt(x.length))
+       */
+      virtual void
+      scaleVector(NOX::Abstract::Vector& x) const;
+
       //! applyJacobianInverse for multiple right-hand sides
       virtual NOX::Abstract::Group::ReturnType
       applyJacobianInverseMulti(NOX::Parameter::List& params,
@@ -195,6 +210,37 @@ namespace LOCA {
       //! Print out a vector and a parameter
       void printSolution(const NOX::Abstract::Vector& x_, 
 			 const double conParam) const;
+
+      //@}
+
+      
+      /*! 
+       * @name Implementation of LOCA::MultiContinuation::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Projects solution to a few scalars for multiparameter continuation
+      /*! 
+       * This method is called every time a solution is saved by the 
+       * multiparameter continuation code MF for later visualization
+       * and should project the solution vector down to a few scalars.
+       * The array \c px will be preallocated to the proper length
+       * given by projectToDrawDimension().
+       *
+       * The implementation here is to call the corresponding method
+       * in the interface.
+       */
+      virtual void projectToDraw(const NOX::Abstract::Vector& x,
+				 double *px) const;
+
+      //! Returns the dimension of the project to draw array
+      /*!
+       * The implementation here is to call the corresponding method 
+       * in the interface.
+       */
+      virtual int projectToDrawDimension() const;
+
+      //@}
 
       /*! 
        * @name Implementation of LOCA::Bifurcation::TPBord::AbstractGroup virtual methods.

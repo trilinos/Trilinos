@@ -929,6 +929,19 @@ AC_MSG_CHECKING(whether we should build anasazi support into loca library)
 AC_MSG_RESULT([${BUILD_LOCA_ANASAZI_SUPPORT}])
 
 # ------------------------------------------------------------------------
+# LOCA-MF support
+# ------------------------------------------------------------------------
+
+AC_ARG_WITH(loca-mf,
+[AC_HELP_STRING([--with-loca-mf],[compile MF support into libloca])],
+[BUILD_LOCA_MF_SUPPORT=${withval}],
+[BUILD_LOCA_MF_SUPPORT=no]
+)
+AC_MSG_CHECKING(whether we should build MF support into loca library)
+AC_MSG_RESULT([${BUILD_LOCA_MF_SUPPORT}])
+AM_CONDITIONAL(BUILD_LIBLOCAMF, test X${BUILD_LOCA_MF_SUPPORT} = Xyes)
+
+# ------------------------------------------------------------------------
 # Check for MPI library
 # ------------------------------------------------------------------------
 
@@ -1071,23 +1084,27 @@ AC_ARG_WITH(teuchos-libdir,
 
 AC_ARG_WITH(anasazi-incdir,
 [AC_HELP_STRING([--with-anasazi-incdir],[specify location of all anasazi header files])],
-[],
 [anasazi_INCDIR=$withval])
 
 AC_ARG_WITH(anasazi-libdir,
 [AC_HELP_STRING([--with-anasazi-libdir],[specify location of anasazi library])],
-[],
 [anasazi_LIBDIR=$withval])
 
 AC_ARG_WITH(belos-incdir,
 [AC_HELP_STRING([--with-belos-incdir],[specify location of all belos header files])],
-[],
 [belos_INCDIR=$withval])
 
 AC_ARG_WITH(belos-libdir,
 [AC_HELP_STRING([--with-belos-libdir],[specify location of belos library])],
-[],
 [belos_LIBDIR=$withval])
+
+AC_ARG_WITH(mf-incdir,
+[AC_HELP_STRING([--with-mf-incdir],[specify location of all MF header files])],
+[MF_INCDIR=$withval])
+
+AC_ARG_WITH(mf-libdir,
+[AC_HELP_STRING([--with-mf-libdir],[specify location of MF library])],
+[MF_LIBDIR=$withval])
 
 # Relative path to Trilinos include files, to be used in Makefiles
 REL_TRILINOS_CPPFLAGS=
@@ -1252,6 +1269,8 @@ if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"	
 fi
 
+AC_SUBST(MF_INCDIR)
+
 AC_SUBST(TRILINOS_CXXFLAGS)
 
 # ------------------------------------------------------------------------
@@ -1349,6 +1368,8 @@ if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
   TRILINOS_LIB_CHECK(anasazi,anasazi,src)
   AC_DEFINE(HAVE_LOCA_ANASAZI,1,[define that anasazi is activated in loca])
 fi
+
+AC_SUBST(MF_LIBDIR)
 
 # ------------------------------------------------------------------------
 # Petsc include file check for building noxpetsc library
@@ -1578,6 +1599,7 @@ AC_CONFIG_FILES([
 		src-loca/src/Makefile
                 src-loca/src-epetra/Makefile
 		src-loca/src-lapack/Makefile
+		src-loca/src-mf/Makefile
                 src-loca/example-epetra/Makefile
                 src-loca/example-epetra/1Dfem/Makefile
                 src-loca/example-epetra/Tcubed/Makefile

@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) $(chanTP_SOURCES) $(chanTPContinuation_SOURCES) $(chanTPContinuation_ModifiedBordering_SOURCES) $(chanTPContinuation_NicDayModifiedBordering_SOURCES) $(chanTP_ModifiedBordering_SOURCES) $(chanTP_NicDayModifiedBordering_SOURCES)
+SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) $(chanMultiContinuation_SOURCES) $(chanTP_SOURCES) $(chanTPContinuation_SOURCES) $(chanTPContinuation_ModifiedBordering_SOURCES) $(chanTPContinuation_NicDayModifiedBordering_SOURCES) $(chanTP_ModifiedBordering_SOURCES) $(chanTP_NicDayModifiedBordering_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -68,7 +68,7 @@ POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
 	$(am__EXEEXT_4) $(am__EXEEXT_5) $(am__EXEEXT_6) \
-	$(am__EXEEXT_7) $(am__EXEEXT_8)
+	$(am__EXEEXT_7) $(am__EXEEXT_8) $(am__EXEEXT_9)
 subdir = src-loca/example-lapack/Chan
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -92,6 +92,7 @@ CONFIG_CLEAN_FILES =
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@am__EXEEXT_6 = chanTPContinuation_ModifiedBordering$(EXEEXT)
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@am__EXEEXT_7 = chanTP_NicDayModifiedBordering$(EXEEXT)
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@am__EXEEXT_8 = chanTPContinuation_NicDayModifiedBordering$(EXEEXT)
+@BUILD_LIBLOCAMF_TRUE@@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@am__EXEEXT_9 = chanMultiContinuation$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_chanContinuation_OBJECTS =  \
 	chanContinuation-ChanContinuation.$(OBJEXT) \
@@ -102,6 +103,10 @@ am_chanHomotopy_OBJECTS = chanHomotopy-ChanHomotopy.$(OBJEXT) \
 	chanHomotopy-ChanProblemInterface.$(OBJEXT)
 chanHomotopy_OBJECTS = $(am_chanHomotopy_OBJECTS)
 am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
+am_chanMultiContinuation_OBJECTS =  \
+	chanMultiContinuation-ChanMultiContinuation.$(OBJEXT) \
+	chanMultiContinuation-ChanProblemInterface.$(OBJEXT)
+chanMultiContinuation_OBJECTS = $(am_chanMultiContinuation_OBJECTS)
 am_chanTP_OBJECTS = chanTP-ChanTP.$(OBJEXT) \
 	chanTP-ChanProblemInterface.$(OBJEXT)
 chanTP_OBJECTS = $(am_chanTP_OBJECTS)
@@ -134,6 +139,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/chanContinuation-ChanProblemInterface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/chanHomotopy-ChanHomotopy.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/chanHomotopy-ChanProblemInterface.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanMultiContinuation-ChanMultiContinuation.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/chanMultiContinuation-ChanProblemInterface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/chanTP-ChanProblemInterface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/chanTP-ChanTP.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Po \
@@ -156,13 +163,15 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) \
-	$(chanTP_SOURCES) $(chanTPContinuation_SOURCES) \
+	$(chanMultiContinuation_SOURCES) $(chanTP_SOURCES) \
+	$(chanTPContinuation_SOURCES) \
 	$(chanTPContinuation_ModifiedBordering_SOURCES) \
 	$(chanTPContinuation_NicDayModifiedBordering_SOURCES) \
 	$(chanTP_ModifiedBordering_SOURCES) \
 	$(chanTP_NicDayModifiedBordering_SOURCES)
 DIST_SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) \
-	$(chanTP_SOURCES) $(chanTPContinuation_SOURCES) \
+	$(chanMultiContinuation_SOURCES) $(chanTP_SOURCES) \
+	$(chanTPContinuation_SOURCES) \
 	$(chanTPContinuation_ModifiedBordering_SOURCES) \
 	$(chanTPContinuation_NicDayModifiedBordering_SOURCES) \
 	$(chanTP_ModifiedBordering_SOURCES) \
@@ -194,6 +203,8 @@ BUILD_LIBLOCAEPETRA_FALSE = @BUILD_LIBLOCAEPETRA_FALSE@
 BUILD_LIBLOCAEPETRA_TRUE = @BUILD_LIBLOCAEPETRA_TRUE@
 BUILD_LIBLOCALAPACK_FALSE = @BUILD_LIBLOCALAPACK_FALSE@
 BUILD_LIBLOCALAPACK_TRUE = @BUILD_LIBLOCALAPACK_TRUE@
+BUILD_LIBLOCAMF_FALSE = @BUILD_LIBLOCAMF_FALSE@
+BUILD_LIBLOCAMF_TRUE = @BUILD_LIBLOCAMF_TRUE@
 BUILD_LIBLOCA_FALSE = @BUILD_LIBLOCA_FALSE@
 BUILD_LIBLOCA_TRUE = @BUILD_LIBLOCA_TRUE@
 BUILD_LIBNOXBELOS_FALSE = @BUILD_LIBNOXBELOS_FALSE@
@@ -266,6 +277,8 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
+MF_INCDIR = @MF_INCDIR@
+MF_LIBDIR = @MF_LIBDIR@
 MPI_CC_EXISTS = @MPI_CC_EXISTS@
 MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
@@ -342,6 +355,7 @@ target_vendor = @target_vendor@
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@CHANTPCONTMOD = chanTPContinuation_ModifiedBordering
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@CHANTPNDMOD = chanTP_NicDayModifiedBordering
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@CHANTPCONTNDMOD = chanTPContinuation_NicDayModifiedBordering
+@BUILD_LIBLOCAMF_TRUE@@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@CHANMULTICONT = chanMultiContinuation
 chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
 		$(srcdir)/ChanProblemInterface.C
@@ -421,6 +435,23 @@ chanTPContinuation_NicDayModifiedBordering_DEPENDENCIES = \
 
 chanTPContinuation_NicDayModifiedBordering_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 chanTPContinuation_NicDayModifiedBordering_LDADD = $(chanContinuation_LDADD)
+chanMultiContinuation_SOURCES = $(srcdir)/ChanMultiContinuation.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
+chanMultiContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES) \
+                                 $(top_builddir)/src-loca/src-mf/liblocamf.a \
+                                 $(MF_LIBDIR)/libExpCmp.a \
+                                 $(MF_LIBDIR)/libMF.a
+
+chanMultiContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS) \
+                                    -I$(top_srcdir)/src-loca/src-mf \
+                                    -I$(MF_INCDIR)
+
+chanMultiContinuation_LDADD = -L$(top_builddir)/src-loca/src-mf -llocamf \
+                              -L$(MF_LIBDIR) -lMF -lExpCmp \
+                                 $(chanContinuation_LDADD)
+
 all: all-am
 
 .SUFFIXES:
@@ -463,6 +494,9 @@ chanContinuation$(EXEEXT): $(chanContinuation_OBJECTS) $(chanContinuation_DEPEND
 chanHomotopy$(EXEEXT): $(chanHomotopy_OBJECTS) $(chanHomotopy_DEPENDENCIES) 
 	@rm -f chanHomotopy$(EXEEXT)
 	$(CXXLINK) $(chanHomotopy_LDFLAGS) $(chanHomotopy_OBJECTS) $(chanHomotopy_LDADD) $(LIBS)
+chanMultiContinuation$(EXEEXT): $(chanMultiContinuation_OBJECTS) $(chanMultiContinuation_DEPENDENCIES) 
+	@rm -f chanMultiContinuation$(EXEEXT)
+	$(CXXLINK) $(chanMultiContinuation_LDFLAGS) $(chanMultiContinuation_OBJECTS) $(chanMultiContinuation_LDADD) $(LIBS)
 chanTP$(EXEEXT): $(chanTP_OBJECTS) $(chanTP_DEPENDENCIES) 
 	@rm -f chanTP$(EXEEXT)
 	$(CXXLINK) $(chanTP_LDFLAGS) $(chanTP_OBJECTS) $(chanTP_LDADD) $(LIBS)
@@ -492,6 +526,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanContinuation-ChanProblemInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanHomotopy-ChanHomotopy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanHomotopy-ChanProblemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanMultiContinuation-ChanMultiContinuation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanMultiContinuation-ChanProblemInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTP-ChanProblemInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTP-ChanTP.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Po@am__quote@
@@ -584,6 +620,38 @@ chanHomotopy-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanHomotopy-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanHomotopy-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
+
+chanMultiContinuation-ChanMultiContinuation.o: $(srcdir)/ChanMultiContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT chanMultiContinuation-ChanMultiContinuation.o -MD -MP -MF "$(DEPDIR)/chanMultiContinuation-ChanMultiContinuation.Tpo" -c -o chanMultiContinuation-ChanMultiContinuation.o `test -f '$(srcdir)/ChanMultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanMultiContinuation.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanMultiContinuation-ChanMultiContinuation.Tpo" "$(DEPDIR)/chanMultiContinuation-ChanMultiContinuation.Po"; else rm -f "$(DEPDIR)/chanMultiContinuation-ChanMultiContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanMultiContinuation.C' object='chanMultiContinuation-ChanMultiContinuation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanMultiContinuation-ChanMultiContinuation.Po' tmpdepfile='$(DEPDIR)/chanMultiContinuation-ChanMultiContinuation.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanMultiContinuation-ChanMultiContinuation.o `test -f '$(srcdir)/ChanMultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanMultiContinuation.C
+
+chanMultiContinuation-ChanMultiContinuation.obj: $(srcdir)/ChanMultiContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT chanMultiContinuation-ChanMultiContinuation.obj -MD -MP -MF "$(DEPDIR)/chanMultiContinuation-ChanMultiContinuation.Tpo" -c -o chanMultiContinuation-ChanMultiContinuation.obj `if test -f '$(srcdir)/ChanMultiContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanMultiContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanMultiContinuation.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanMultiContinuation-ChanMultiContinuation.Tpo" "$(DEPDIR)/chanMultiContinuation-ChanMultiContinuation.Po"; else rm -f "$(DEPDIR)/chanMultiContinuation-ChanMultiContinuation.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanMultiContinuation.C' object='chanMultiContinuation-ChanMultiContinuation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanMultiContinuation-ChanMultiContinuation.Po' tmpdepfile='$(DEPDIR)/chanMultiContinuation-ChanMultiContinuation.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanMultiContinuation-ChanMultiContinuation.obj `if test -f '$(srcdir)/ChanMultiContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanMultiContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanMultiContinuation.C'; fi`
+
+chanMultiContinuation-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT chanMultiContinuation-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/chanMultiContinuation-ChanProblemInterface.Tpo" -c -o chanMultiContinuation-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanMultiContinuation-ChanProblemInterface.Tpo" "$(DEPDIR)/chanMultiContinuation-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanMultiContinuation-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanMultiContinuation-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanMultiContinuation-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanMultiContinuation-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanMultiContinuation-ChanProblemInterface.o `test -f '$(srcdir)/ChanProblemInterface.C' || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+
+chanMultiContinuation-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanMultiContinuation_CXXFLAGS) $(CXXFLAGS) -MT chanMultiContinuation-ChanProblemInterface.obj -MD -MP -MF "$(DEPDIR)/chanMultiContinuation-ChanProblemInterface.Tpo" -c -o chanMultiContinuation-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/chanMultiContinuation-ChanProblemInterface.Tpo" "$(DEPDIR)/chanMultiContinuation-ChanProblemInterface.Po"; else rm -f "$(DEPDIR)/chanMultiContinuation-ChanProblemInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanProblemInterface.C' object='chanMultiContinuation-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/chanMultiContinuation-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanMultiContinuation-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanMultiContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanMultiContinuation-ChanProblemInterface.obj `if test -f '$(srcdir)/ChanProblemInterface.C'; then $(CYGPATH_W) '$(srcdir)/ChanProblemInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanProblemInterface.C'; fi`
 
 chanTP-ChanTP.o: $(srcdir)/ChanTP.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanTP_CXXFLAGS) $(CXXFLAGS) -MT chanTP-ChanTP.o -MD -MP -MF "$(DEPDIR)/chanTP-ChanTP.Tpo" -c -o chanTP-ChanTP.o `test -f '$(srcdir)/ChanTP.C' || echo '$(srcdir)/'`$(srcdir)/ChanTP.C; \
