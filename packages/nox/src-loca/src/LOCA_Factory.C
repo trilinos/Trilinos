@@ -52,9 +52,6 @@ LOCA::Factory::Factory(
 
   // Set the factory member of the global data
   globalData->locaFactory = Teuchos::rcp(this, false);
-
-  // Initialize user-defined factory
-  factory->init(globalData);
 }
 
 LOCA::Factory::Factory(
