@@ -383,7 +383,7 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus)
 
     // Get underyling solution group
     LOCA::Continuation::AbstractGroup& underlyingGroup 
-      = dynamic_cast<LOCA::Continuation::AbstractGroup&>(getSolutionGroup());
+      = dynamic_cast<LOCA::Continuation::AbstractGroup&>(prevGroupPtr->getUnderlyingGroup());
 
     // Make a copy of the parameter list, change continuation method to 
     // natural, predictor method to constant
@@ -619,7 +619,7 @@ LOCA::Stepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
 LOCA::Continuation::AbstractGroup& 
 LOCA::Stepper::getSolutionGroup()
 {
-  return curGroupPtr->getGroup();
+  return curGroupPtr->getUnderlyingGroup();
 }
 
 const NOX::Parameter::List& 
