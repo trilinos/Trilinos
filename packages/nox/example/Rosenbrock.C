@@ -138,11 +138,14 @@ int main()
   // Solve the nonlinesar system
   NOX::StatusTest::StatusType status = solver.solve();
 
-  // 
+  // Print the answer
+  cout << "\n" << "-- Parameter List From Solver --" << "\n";
+  solver.getParameterList().print(cout);
 
   // Get the answer
   grp = solver.getSolutionGroup();
   
+
   // Print the answer
   cout << "\n" << "-- Final Solution From Solver --" << "\n";
   grp.print();
