@@ -244,6 +244,17 @@ typedef enum Zoltan_Ref_Type LB_REF_TYPE;
 #define LB_REALLOC                  ZOLTAN_REALLOC
 #define LB_FREE                     ZOLTAN_FREE
 
+/*******  Unstructured communication package ********/
+
+#define LB_Comm_Create          Zoltan_Comm_Create
+#define LB_Comm_Destroy         Zoltan_Comm_Destroy
+#define LB_Comm_Invert_Map      Zoltan_Comm_Invert_Map
+#define LB_Comm_Sort_Ints       Zoltan_Comm_Sort_Ints
+#define LB_Comm_Exchange_Sizes  Zoltan_Comm_Exchange_Sizes
+#define LB_Comm_Resize          Zoltan_Comm_Resize
+#define LB_Comm_Do              Zoltan_Comm_Do
+#define LB_Comm_Do_Reverse      Zoltan_Comm_Do_Reverse
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
