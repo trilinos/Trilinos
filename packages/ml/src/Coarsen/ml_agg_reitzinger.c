@@ -11,7 +11,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   int coarsest_level, counter, Nghost, i, *Tcoarse_bindx = NULL;
   int *Tcoarse_rowptr, nz_ptr, row_length, j, *bindx = NULL;
   double *Tcoarse_val = NULL, *node2proc, *val = NULL;
-  int allocated = 0, lower;
+  int allocated = 50, lower;
   ML_Operator *Kn_coarse, *Rn_coarse, *Tcoarse, *Pn_coarse;
   ML_Operator *Pe, *Tcoarse_trans, *Tfine;
   struct ML_CSR_MSRdata *csr_data;
@@ -19,6 +19,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   int created_ag_obj = 0;
   double *vec, *Tcoarse_vec, *Pn_vec, *Tfine_Pn_vec;
   int i1, old_nzptr, i3, *index;
+  int *encoded_dir_node, *temp_bindx, Npos_dirichlet = 0, Nneg_dirichlet = 0;
+  int Nnondirichlet;
+  double *pos_coarse_dirichlet, *neg_coarse_dirichlet, *temp_val, d1, d2;
 
   /*
   double *fido,*yyy, *vvv, dtemp;
@@ -112,12 +115,95 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
             Kn_coarse->invec_leng+Nghost, Kn_coarse->invec_leng);
 #endif /* ifdef DEBUG_T_BUILD */
 
+#ifdef NEW_T_PE
+     /* let's figure out who corresponds to a Dirichlet point */
+
+     allocated = 100;
+     temp_bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
+     temp_val   = (double *)  ML_allocate( allocated*sizeof(double));
+     encoded_dir_node = (int *) ML_allocate((Tfine->outvec_leng+1)*sizeof(int));
+
+     for (i = 0 ; i < Tfine->getrow->Nrows; i++) {
+       ML_get_matrix_row(Tfine, 1, &i, &allocated, &temp_bindx, &temp_val,
+			 &row_length, 0);
+       if (row_length == 2) {
+	 if (temp_val[1] == 0.) row_length--;
+	 if (temp_val[0] == 0.) {
+	   row_length--;
+	   if (row_length != 0) {
+	     temp_bindx[1] = temp_bindx[0];
+	     temp_val[1] = temp_val[0];
+	   }
+	 }
+       }
+       if (row_length == 1) {
+	 if      (temp_val[0] ==  1.) encoded_dir_node[i] = (1 + temp_bindx[0]);
+	 else if (temp_val[0] == -1.) encoded_dir_node[i] = -(1 + temp_bindx[0]);
+	 else printf("Warning uknown value T(%d,%d) = %e\n",
+		     i,temp_bindx[0],temp_val[0]); 
+       }
+       else encoded_dir_node[i] = 0;
+     }
+     ML_free(temp_bindx);
+     ML_free(temp_val);
+     allocated = 0;
+
+
+     vec = (double *) ML_allocate(sizeof(double)*(Rn_coarse->invec_leng
+						     +1));
+
+     pos_coarse_dirichlet = (double *) ML_allocate(sizeof(double)*(Rn_coarse->outvec_leng
+						     +1));
+     if (pos_coarse_dirichlet == NULL) {
+        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space"
+               " allocated to check T.\n\n");
+        exit(1);
+     }
+     for (i = 0; i < Rn_coarse->invec_leng; i++) vec[i] = 0.;
+     for (i = 0; i < Tfine->outvec_leng; i++) {
+       if(encoded_dir_node[i] > 0) vec[encoded_dir_node[i]-1] = 1.;
+     }
+     ML_Operator_Apply(Rn_coarse, Rn_coarse->invec_leng, vec,
+		       Rn_coarse->outvec_leng,pos_coarse_dirichlet);
+     Npos_dirichlet = 0;
+     for (i = 0; i < Rn_coarse->outvec_leng; i++) {
+       if (pos_coarse_dirichlet[i] != 0) {
+	 Npos_dirichlet++;
+       }
+     }
+
+     neg_coarse_dirichlet = (double *) ML_allocate(sizeof(double)*(Rn_coarse->outvec_leng
+						     +1));
+     if (neg_coarse_dirichlet == NULL) {
+        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space"
+               " allocated to check T.\n\n");
+        exit(1);
+     }
+     for (i = 0; i < Rn_coarse->invec_leng; i++) vec[i] = 0.;
+     for (i = 0; i < Tfine->outvec_leng; i++) {
+       if(encoded_dir_node[i] < 0) vec[-encoded_dir_node[i]-1] = 1.;
+     }
+     ML_Operator_Apply(Rn_coarse, Rn_coarse->invec_leng, vec,
+		       Rn_coarse->outvec_leng,neg_coarse_dirichlet);
+     ML_free(vec);
+     Nneg_dirichlet = 0;
+     for (i = 0; i < Rn_coarse->outvec_leng; i++) {
+       if (neg_coarse_dirichlet[i] != 0) {
+	 Nneg_dirichlet++;
+       }
+     }
+#endif
+
+
      Tcoarse_bindx =(int *)
-                    ML_allocate( 2*Kn_coarse->N_nonzeros *sizeof(int) );
+                    ML_allocate((2*Kn_coarse->N_nonzeros + Nneg_dirichlet +
+				 Npos_dirichlet + 1)*sizeof(int) );
      Tcoarse_val = (double *)
-                    ML_allocate( 2*Kn_coarse->N_nonzeros *sizeof(double) );
+                    ML_allocate((2*Kn_coarse->N_nonzeros + Nneg_dirichlet +
+				 Npos_dirichlet + 1)*sizeof(double) );
      Tcoarse_rowptr= (int *)
-                     ML_allocate(Kn_coarse->N_nonzeros *sizeof(int));
+                     ML_allocate((Kn_coarse->N_nonzeros + Nneg_dirichlet +
+				  Npos_dirichlet + 1)*sizeof(int));
      Tcoarse_rowptr[0] = 0;
      counter = 0; nz_ptr = 0;
      nzctr = 0;
@@ -167,6 +253,27 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                " allocated to build T.\n\n");
         exit(1);
      }
+#ifdef NEW_T_PE
+     for (i = 0; i < Rn_coarse->outvec_leng; i++) {
+       if (pos_coarse_dirichlet[i] != 0) {
+	 Tcoarse_bindx[nz_ptr] = i;
+	 Tcoarse_val[nz_ptr++] = 1;
+	 Tcoarse_rowptr[counter+1] = nz_ptr;
+	 counter++;
+       }
+     }
+     for (i = 0; i < Rn_coarse->outvec_leng; i++) {
+       if (neg_coarse_dirichlet[i] != 0) {
+	 Tcoarse_bindx[nz_ptr] = i;
+	 Tcoarse_val[nz_ptr++] = -1;
+	 Tcoarse_rowptr[counter+1] = nz_ptr;
+	 counter++;
+       }
+     }
+     ML_free(pos_coarse_dirichlet);
+     ML_free(neg_coarse_dirichlet);
+#endif
+
 #ifdef DEBUG_T_BUILD
      else
         if (Kn_coarse->comm->ML_mypid == 0 && grid_level == 7)
@@ -428,7 +535,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                Tcoarse_trans->outvec_leng);
         exit(1);
      }
-   
+
      ML_rap(Tfine, &(ml_nodes->Pmat[grid_level]), Tcoarse_trans, 
         &(ml_edges->Pmat[grid_level]),ML_CSR_MATRIX);
    
@@ -445,20 +552,46 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      /* MG grid hierarchy.                                               */
      /*------------------------------------------------------------------*/
    
-     for (j = 0; j < csr_data->rowptr[Pe->outvec_leng] ; j++)
-     {
-        if (csr_data->values[j] == 2) csr_data->values[j] = 1;
-        else if (csr_data->values[j] == -2) csr_data->values[j] = -1;
-        else if (csr_data->values[j] == -1) csr_data->values[j] = 0;
-        else if (csr_data->values[j] ==  1) csr_data->values[j] = 0;
-        else if (csr_data->values[j] != 0.0)
-        {
-           printf("ML_Gen_MGHierarchy_UsingReitzinger:"
-                  " Error in building Pe.   Found entry %e, expecting"
-                  " either +/-1 or -2.\n",csr_data->values[j]);
-           fflush(stdout);
-        }
+     Nnondirichlet = Pe->invec_leng - Npos_dirichlet - Nneg_dirichlet;
+     for (i = 0; i < Pe->outvec_leng ; i++) {
+#ifdef NEW_T_PE
+       if (encoded_dir_node[i] > 0) {
+	 for (j = csr_data->rowptr[i]; j < csr_data->rowptr[i+1] ; j++) {
+	   if ( (csr_data->columns[j] < Nnondirichlet) ||
+		(csr_data->columns[j] >= Nnondirichlet+Npos_dirichlet)) {
+	     csr_data->values[j] = 0.;
+	   }
+	 }
+       }
+       if (encoded_dir_node[i] < 0) {
+	 for (j = csr_data->rowptr[i]; j < csr_data->rowptr[i+1] ; j++) {
+	   if (csr_data->columns[j] < Nnondirichlet+Npos_dirichlet) {
+	     csr_data->values[j] = 0.;
+	   }
+	 }
+       }
+       if (encoded_dir_node[i] == 0) {
+#endif
+	 for (j = csr_data->rowptr[i]; j < csr_data->rowptr[i+1] ; j++) {
+	   if (csr_data->values[j] == 2) csr_data->values[j] = 1;
+	   else if (csr_data->values[j] == -2) csr_data->values[j] = -1;
+	   else if (csr_data->values[j] == -1) csr_data->values[j] = 0;
+	   else if (csr_data->values[j] ==  1) csr_data->values[j] = 0;
+	   else if (csr_data->values[j] != 0.0)
+	     {
+	       printf("ML_Gen_MGHierarchy_UsingReitzinger:"
+		      " Error in building Pe.   Found entry %e, expecting"
+		      " either +/-1 or -2.\n",csr_data->values[j]);
+	       fflush(stdout);
+	     }
+	 }
+#ifdef NEW_T_PE
+       }
+#endif
      }
+#ifdef NEW_T_PE
+     ML_free(encoded_dir_node);
+#endif
     
      /*******************************************************************/
      /* weed out zeros in Pe.                                           */
@@ -490,6 +623,30 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      Pe->matvec->ML_id = ML_INTERNAL;
    
 /****************** Check the construction of Pe ***********************/
+     vec = (double *) ML_allocate(sizeof(double)*(Pn_coarse->invec_leng+1+
+						  Pe->outvec_leng));
+     Pn_vec = (double *) ML_allocate(sizeof(double)*(Pn_coarse->outvec_leng+
+						     Tcoarse->outvec_leng+1));
+     Tfine_Pn_vec = (double *) ML_allocate(sizeof(double)*(Tfine->outvec_leng+1));
+     ML_random_vec(vec, Pn_coarse->invec_leng, ml_edges->comm);
+
+     ML_Operator_Apply(Pn_coarse, Pn_coarse->invec_leng, vec,
+		       Pn_coarse->outvec_leng,Pn_vec);
+     ML_Operator_Apply(Tfine, Tfine->invec_leng, Pn_vec,
+		       Tfine->outvec_leng,Tfine_Pn_vec);
+     ML_Operator_Apply(Tcoarse, Tcoarse->invec_leng, vec,
+		       Tcoarse->outvec_leng,Pn_vec);
+     ML_Operator_Apply(Pe, Pe->invec_leng, Pn_vec,
+		       Pe->outvec_leng,vec);
+     ML_free(Pn_vec);
+     d1 = ML_gdot(Pe->outvec_leng, vec,vec, Pe->comm);
+     d2 = ML_gdot(Pe->outvec_leng, Tfine_Pn_vec,Tfine_Pn_vec, Pe->comm);
+     if (ml_edges->comm->ML_mypid == 0) {
+       if ( fabs(d1 - d2) > 1.0e-3)  
+	 printf("ML_agg_reitzinger: Pe TH != Th Pn %e %e\n",d1,d2);
+     }
+     ML_free(vec); ML_free(Tfine_Pn_vec);
+
    
 #ifdef postprocessscheck
       printf("Checking product Pe * e_i\n");
