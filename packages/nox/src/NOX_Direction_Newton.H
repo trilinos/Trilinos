@@ -144,7 +144,11 @@ protected:
 private:
 
   //! "Direction" sublist with parameters for the direction vector
-  Parameter::List* paramsptr;
+  /*! 
+    \note This is pointer rather than a reference to allow for the
+    reset function. 
+   */
+  Parameter::List* paramsPtr;
 
 };
 } // namespace Direction
