@@ -1,0 +1,7 @@
+ARCH_FLAGS=-O2 -Dmatched
+CC=mpcc
+FC=mpxlf
+RANLIB=ranlib
+LINKER=$(CC)
+ARCH_LIBS=-lxlf90
+AR=ar

@@ -1,0 +1,8 @@
+ARCH_FLAGS= -Wall -g # -Wall 
+#ARCH_FLAGS=-pg # -Wall 
+CC=gcc
+FC=g77
+RANLIB=ranlib
+LINKER=$(CC)
+ARCH_LIBS=/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66/libg2c.a
+AR=ar
