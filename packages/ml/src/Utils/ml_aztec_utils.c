@@ -438,7 +438,9 @@ void MLsmoother_precondition(double ff[], int options[], int proc_config[],
   ML_free(rhs);
 }
 
-#ifdef ML_NEWNORM
+#if defined(ML_NEWNORM)
+
+#if defined(GREG)
 void new_norm(AZ_PRECOND *prec, double res[], double *result)
 {
   ML          *ml;
@@ -497,23 +499,94 @@ temp+globbie->outvec_leng);
     dtemp4 = sqrt(ML_gdot(globbie->outvec_leng*2, temp, temp, ml->comm));
     /*if (ml->comm->ML_mypid ==0) printf("second term weighting %e\n",dtemp4);*/    weighting = dtemp3 / dtemp4;
     ML_free(randvec); ML_free(product);
-    /*if (ml->comm->ML_mypid == 0) printf("(|r|,|T^t r|, ratio) %e %e * %e\n",dtemp3,dtemp4,weighting);*/
+    if (ml->comm->ML_mypid == 0) printf("(|r|,|T^t r|, ratio) %e %e * %e\n",dtemp3,dtemp4,weighting);
   }
 #endif
   dtemp2 = dtemp2 * weighting;
 
   *result = dtemp2 + dtemp;
-  /*
   if (r0 == -1.) {
     r0 = *result;
   }
   *result = *result/r0;
-  */
-  /*  printf("do nothing %d   %e %e\n",NN,dtemp, dtemp2); */
+  printf("do nothing %d   %e %e\n",NN,dtemp, dtemp2);
   ML_free(temp);
 
 }
+
+#else
+void new_norm(AZ_PRECOND *prec, double res[], double *result)
+{
+  ML          *ml;
+  int         i,NN;
+  extern ML_Operator *globbie; /* T transpose */
+  double *randvec, *product, dtemp3, dtemp4;
+  ML_Operator *Amat;
+  double dtemp, dtemp2, *temp;
+  static double r0 = -1.;
+  static double r0_2 = -1.;
+  double r_2;
+  static double weighting = 0.0;
+
+  ml    = (ML *) AZ_get_precond_data(prec);
+  Amat = &(ml->Amat[ml->ML_finest_level]);
+  NN = globbie->invec_leng;                     /* number of local edges */
+
+  /** ||r||   **/
+  dtemp = sqrt(ML_gdot(NN, res, res, ml->comm));
+  /** ||T'r|| **/
+  temp = (double *) ML_allocate(sizeof(double)*globbie->outvec_leng);
+  ML_Operator_Apply(globbie, globbie->invec_leng,res,globbie->outvec_leng,temp);
+  dtemp2 = sqrt(ML_gdot(globbie->outvec_leng, temp, temp, ml->comm));
+  /*
+  if (ml->comm->ML_mypid == 0) printf("in t-norm: %e %e\n",dtemp,dtemp2);
+  */
+  /* warning!!!! if matrix changes, then this won't work anymore */
+  if (weighting == 0.0) {
+#ifdef OLD
+    /** calculate ||Av||, where v is random and ||v||_2 = 1 **/
+    randvec = (double *) ML_allocate(sizeof(double)*Amat->invec_leng);
+    ML_random_vec(randvec, Amat->invec_leng, Amat->comm);
+    dtemp3 = sqrt(ML_gdot(Amat->invec_leng, randvec, randvec, ml->comm));
+    for (i=0; i<Amat->invec_leng; i++) randvec[i] = randvec[i] / dtemp3;
+    product = (double *) ML_allocate(sizeof(double)*Amat->outvec_leng);
+    ML_Operator_Apply(Amat,Amat->invec_leng,randvec,Amat->outvec_leng,product);
+    dtemp3 = sqrt(ML_gdot(Amat->outvec_leng, product, product, ml->comm));
+
+    /*if (ml->comm->ML_mypid == 0) printf("first term weighting %e\n",dtemp3);*/
+
+    /** calculate ||T'Av|| **/
+    ML_Operator_Apply(globbie, globbie->invec_leng, product,
+                      globbie->outvec_leng, temp);
+    dtemp4 = sqrt(ML_gdot(globbie->outvec_leng, temp, temp, ml->comm));
+    /*if (ml->comm->ML_mypid ==0) printf("second term weighting %e\n",dtemp4);*/
+    /** now calculate ||Av|| / ||T'Av|| to get them on same scale initially */
+    weighting = dtemp3 / dtemp4;
+    ML_free(randvec); ML_free(product);
+    if (ml->comm->ML_mypid == 0) printf("(|r|,|T^t r|, ratio) %e %e * %e\n",dtemp3,dtemp4,weighting);
 #endif
+    weighting = dtemp / dtemp2;
+    if (ml->comm->ML_mypid == 0) printf("(|r|,|T^t r|, ratio) %e %e * %e\n",dtemp,dtemp2,weighting);
+  }
+  dtemp2 = dtemp2 * weighting;
+
+  *result = dtemp2 + dtemp;
+  if (r0 == -1.) {
+    r0 = *result;
+  }
+  if (r0_2 == -1.) {
+    r0_2 = dtemp;
+  }
+  *result = *result/r0;
+  /* printf("do nothing %d   %e %e\n",NN,dtemp, dtemp2); */
+  if (ml->comm->ML_mypid == 0)
+    printf("%e\n",dtemp/r0_2);
+  ML_free(temp);
+
+}
+#endif /* if defined(GREG) */
+
+#endif /* if defined(ML_NEWNORM) */
 
 #ifdef MARZIO
 extern double ML_DD_OneLevel(ML_1Level *curr, double *sol, double *rhs,
@@ -1816,7 +1889,7 @@ file specified by the input argument datafile instead from a file called
   }
 
   else {
-#ifdef binary
+#ifdef ML_BINARY
     dfp = fopen(datafile, "rb");
 #else
     dfp = fopen(datafile, "r");
@@ -1837,7 +1910,7 @@ file specified by the input argument datafile instead from a file called
 
     /* read past cnptr info (not used) */
 
-#ifdef binary
+#ifdef ML_BINARY
     kkk = fread(&total, sizeof(int), 1, dfp);
 #else
     kkk = fscanf(dfp, "%d", &total);  /* read in number of elements */
@@ -1884,7 +1957,7 @@ file specified by the input argument datafile instead from a file called
 		       &column0);
       }
       else {
-#ifdef binary
+#ifdef ML_BINARY
         kkk = fread(&temp, sizeof(int), 1, dfp);
 #else
         kkk = fscanf(dfp, "%d", &temp);
@@ -1899,7 +1972,7 @@ file specified by the input argument datafile instead from a file called
         j = 0;
 
         while (temp != -1) {
-#ifdef binary
+#ifdef ML_BINARY
           kkk = fread(&dtemp, sizeof(double), 1, dfp);
 #else
           kkk = fscanf(dfp, "%lf", &dtemp);
@@ -1941,7 +2014,7 @@ file specified by the input argument datafile instead from a file called
           for (kkk = 0 ; kkk < (int) sizeof(double); kkk++ ) 
              str[j+kkk] = tchar[kkk];
           j += sizeof(double);
-#ifdef binary
+#ifdef ML_BINARY
           kkk = fread(&temp, sizeof(int), 1, dfp);
 #else
           kkk = fscanf(dfp, "%d", &temp);
@@ -2074,7 +2147,7 @@ void AZ_add_new_row_nodiag(int therow, int *nz_ptr, int *current, double **val,
   old_nz = *nz_ptr;
 
   if (input == 0) { 
-#ifdef binary
+#ifdef ML_BINARY
     kk  = fread(&temp,sizeof(int),1,dfp);
 #else
     kk  = fscanf(dfp, "%d", &temp);
@@ -2098,7 +2171,7 @@ void AZ_add_new_row_nodiag(int therow, int *nz_ptr, int *current, double **val,
 
   while (temp != -1) {
     if (input == 0) {
-#ifdef binary
+#ifdef ML_BINARY
        kk = fread(&dtemp, sizeof(double), 1, dfp);
 #else
        kk = fscanf(dfp, "%lf", &dtemp);
@@ -2134,7 +2207,7 @@ void AZ_add_new_row_nodiag(int therow, int *nz_ptr, int *current, double **val,
       (*nz_ptr)++;
 
     if (input == 0) {
-#ifdef binary
+#ifdef ML_BINARY
        kk  = fread(&temp,sizeof(int),1,dfp);
 #else
        kk = fscanf(dfp, "%d", &temp);
