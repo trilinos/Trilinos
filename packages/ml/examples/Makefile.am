@@ -15,9 +15,9 @@ if HAVE_MPI
 noinst_PROGRAMS = mlguide mlguide_par
 else
 noinst_PROGRAMS = mlguide
-endif
+endif #HAVE_MPI
 
-else
+else # not standalone
 
 if HAVE_MPI
 if ML_BENCHMARKING
@@ -53,10 +53,11 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 		  ml_example_MultiLevelPreconditioner_vbr \
 		  ml_example_MultiLevelPreconditioner_viz \
 		  ml_example_MultiLevelPreconditioner_analyze \
-		  ml_example_MultiLevelPreconditioner_maxwell 
+		  ml_example_MultiLevelPreconditioner_maxwell  \
+          ml_multiple_rhs
 
-endif
-else
+endif #ML_BENCHMARKING
+else #no mpi
 noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
                   ml_aztec_simple_METIS ml_aztec_simple_ParMETIS \
@@ -72,11 +73,12 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
 		  ml_example_MultiLevelPreconditioner_vbr \
 		  ml_example_MultiLevelPreconditioner_viz \
 		  ml_example_MultiLevelPreconditioner_analyze \
-		  ml_example_MultiLevelPreconditioner_maxwell 
+		  ml_example_MultiLevelPreconditioner_maxwell  \
+          ml_multiple_rhs
 
-endif
+endif #HAVE_MPI
 
-endif
+endif # ML_STANDALONE_MODE
 #The following line cleans up bootstrap problems because these programs
 #are not built when nothing is defined.
 EXTRA_PROGRAMS = ml_read_maxwell mlguide_par
@@ -111,11 +113,12 @@ ml_example_MultiLevelPreconditioner_vbr_SOURCES= $(srcdir)/ml_example_MultiLevel
 ml_example_MultiLevelPreconditioner_viz_SOURCES= $(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp
 ml_example_MultiLevelPreconditioner_analyze_SOURCES= $(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp
 ml_example_MultiLevelPreconditioner_maxwell_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp
+ml_multiple_rhs_SOURCES = $(srcdir)/ml_multiple_rhs.cpp
 
 if ML_BENCHMARKING
 ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
-endif
-endif
+endif # ML_BENCHMARKING
+endif # !ML_STANDALONE_MODE
 
 # One DEPENDENCIES primary is needed for each exe listed above.  List any
 # libraries that the exe depends on.  (This primary is not absolutely
@@ -327,9 +330,14 @@ ml_example_MultiLevelPreconditioner_maxwell_CXXFLAGS = ${ml_common_include_locat
 ml_example_MultiLevelPreconditioner_maxwell_LDADD = ${ml_libs}
 ml_example_MultiLevelPreconditioner_maxwell_LINK = ${mllink}
 
+ml_multiple_rhs_CPPFLAGS = ${ml_common_include_locations}
+ml_multiple_rhs_CXXFLAGS = ${ml_common_include_locations}
+ml_multiple_rhs_LDADD = ${ml_libs}
+ml_multiple_rhs_LINK = ${mllink}
+
 if ML_BENCHMARKING
 ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
 ml_read_maxwell_LDADD = ${ml_libs}
 ml_read_maxwell_LINK = ${mllink}
-endif
-endif
+endif #ML_BENCHMARKING
+endif #!ML_STANDALONE_MODE
