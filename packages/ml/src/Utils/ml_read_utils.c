@@ -200,7 +200,7 @@ void ML_Reader_GetGeneralSpecs(FILE *ifp, struct reader_context *context)
 
   c_srch = "print level";
   if (!ML_Reader_LookFor(ifp, c_srch, input, '='))
-    output_level = 3;       /* Defaults to 3 */
+    output_level = 0;       /* Defaults to 0 */
   else {
     ML_Reader_ReadString(ifp, input, '\n');
     if (sscanf(input, "%d", &output_level) != 1) {
@@ -209,7 +209,8 @@ void ML_Reader_GetGeneralSpecs(FILE *ifp, struct reader_context *context)
       exit(-1);
     }
   }
-  ML_Set_PrintLevel(output_level);
+  context->output_level = output_level;
+
 
 }
 
@@ -581,6 +582,7 @@ void ML_Reader_InitContext(struct reader_context *context)
    context->tol            = 1.e-6;
    context->agg_damping    = 1.33333;
    context->agg_spectral_norm[0] = '\0';
+   context->output_level = 0;
 
 
 }

@@ -12,7 +12,7 @@ struct reader_context {
    double agg_thresh;
    char smoother[80], agg_coarsen_scheme[80], coarse_solve[80], krylov[80];
    char partition_file[80];
-   int  output;
+   int  output, output_level;
    double tol, agg_damping;
    char agg_spectral_norm[80];
    char subsmoother[80];
