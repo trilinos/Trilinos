@@ -134,7 +134,7 @@ CH_CSRC		= ch_dist_graph.c ch_input_geom.c ch_input_graph.c \
 CH_INC		= ch_input.h ch_input_const.h
 
 # libraries and paths
-ROOT_ARCHD	= /Net/pecos/rf_crew/arch
+ROOT_ARCHD	= /Net/proj/zoltan/arch
 
 ifndef NO_NEMESIS
 NEM_LIBS	= -lnemIc -lexoIIc -lnetcdf
@@ -165,7 +165,7 @@ LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams\
 		  -I/Net/local/mpi/include \
 		  -I/Net/local/mpi/mpich/include \
                   -I/Net/local/mpi/build/solaris/ch_p4/include \
-		  -I/Net/pecos/rf_crew/arch/sun/include
+		  -I/Net/proj/zoltan/arch/sun/include
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 LINT_TARGET	= llib-l$(LIB_TARGET).ln
 SUBDIRS		= driver ch all lb par rcb comm oct parmetis params timer
