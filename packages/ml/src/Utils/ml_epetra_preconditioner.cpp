@@ -212,7 +212,7 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 
 
 
-#if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
