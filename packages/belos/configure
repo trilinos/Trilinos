@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_BELOS_TESTS_TRUE BUILD_BELOS_TESTS_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE FLIBS BLAS_LIBS LAPACK_LIBS ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_TSFCORE_EPETRA_TRUE BUILD_TSFCORE_EPETRA_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_BELOS_TESTS_TRUE BUILD_BELOS_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -875,10 +875,10 @@ Optional Features:
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
   --enable-mpi            MPI support
-  --enable-belos-tests    Build belos tests (default is yes)
+
   --enable-tests          Build tests for all Trilinos packages (default is
                           yes)
-  --enable-ifpack         Build examples which use ifpack (default is yes)
+  --enable-belos-tests    Build Belos tests (default is yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -905,6 +905,9 @@ Optional Packages:
                           to CFLAGS
   --with-fflags           additional FFLAGS flags to be added: will prepend
                           to FFLAGS
+  --with-libs             List additional libraries here. For example,
+                          --with-libs=-lsuperlu or
+                          --with-libs=/path/libsuperlu.a
   --with-ldflags          additional LDFLAGS flags to be added: will prepend
                           to LDFLAGS
   --with-ar               override archiver command (default is "ar cru")
@@ -1425,9 +1428,6 @@ ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
           ac_config_headers="$ac_config_headers src/Belos_config.h:src/Belos_config.h.in"
 
 
-# Allow users to specify their own "install" command.  If none is specified,
-# the default is install-sh found in the config subdirectory.
-
 
 # Check whether --with-install or --without-install was given.
 if test "${with_install+set}" = set; then
@@ -1440,7 +1440,8 @@ if test "${with_install+set}" = set; then
 
 fi;
 
-# AM_MAINTAINER_MODE turns off maintainer-only makefile targets by
+# AM_MAINTAINER_MODE turns off maintainer-only makefile
+targets by
 # default, and changes configure to understand a
 # --enable-maintainer-mode option. --enable-maintainer-mode turns the
 # maintainer-only targets back on. The maintainer-only makefile
@@ -3399,7 +3400,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3402:" \
+echo "$as_me:3403:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4038,6 +4039,25 @@ else
 echo "${ECHO_T}no" >&6
 
 fi;
+
+
+echo "$as_me:$LINENO: checking whether additional libraries are needed" >&5
+echo $ECHO_N "checking whether additional libraries are needed... $ECHO_C" >&6
+
+# Check whether --with-libs or --without-libs was given.
+if test "${with_libs+set}" = set; then
+  withval="$with_libs"
+
+LIBS="${withval} ${LIBS}"
+echo "$as_me:$LINENO: result: LIBS = ${LIBS}" >&5
+echo "${ECHO_T}LIBS = ${LIBS}" >&6
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+fi;
+
 
 
 echo "$as_me:$LINENO: checking whether additional LDFLAGS flags should be added" >&5
@@ -5796,40 +5816,93 @@ fi
 # Checks if tests should be built and which ones should be built
 # ------------------------------------------------------------------------
 
+#TAC_ARG_CHECK_DEFAULT_FEATURE(epetra, EPETRA)
+#AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno")
 
-# Check whether --enable-belos-tests or --disable-belos-tests was given.
-if test "${enable_belos_tests+set}" = set; then
-  enableval="$enable_belos_tests"
-  ac_cv_use_belos_tests=$enableval
+
+# Check whether --enable-default-packages or --disable-default-packages was given.
+if test "${enable_default_packages+set}" = set; then
+  enableval="$enable_default_packages"
+  ac_cv_use_default_packages=$enableval
 else
-  ac_cv_use_belos_tests=yes
+  ac_cv_use_default_packages=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use belos-tests" >&5
-echo $ECHO_N "checking whether to use belos-tests... $ECHO_C" >&6
+# Check whether --enable-ifpack or --disable-ifpack was given.
+if test "${enable_ifpack+set}" = set; then
+  enableval="$enable_ifpack"
+  ac_cv_use_ifpack=$enableval
+else
+  ac_cv_use_ifpack=$ac_cv_use_default_packages
+fi;
 
-if test "X$ac_cv_use_belos_tests" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
+if test "X$ac_cv_use_ifpack" != "Xno"; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_BELOS_TESTS
+#define HAVE_IFPACK
 _ACEOF
 
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
 fi
 
 
 
-if test "X$ac_cv_use_belos_tests" != "Xno"; then
-  BUILD_BELOS_TESTS_TRUE=
-  BUILD_BELOS_TESTS_FALSE='#'
+if test "X$ac_cv_use_ifpack" != "Xno"; then
+  BUILD_IFPACK_TRUE=
+  BUILD_IFPACK_FALSE='#'
 else
-  BUILD_BELOS_TESTS_TRUE='#'
-  BUILD_BELOS_TESTS_FALSE=
+  BUILD_IFPACK_TRUE='#'
+  BUILD_IFPACK_FALSE=
 fi
+
+
+#TAC_ARG_CHECK_DEFAULT_FEATURE(triutils, TRIUTILS)
+#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+
+
+# Check whether --enable-tsfcore or --disable-tsfcore was given.
+if test "${enable_tsfcore+set}" = set; then
+  enableval="$enable_tsfcore"
+  ac_cv_use_tsfcore=$enableval
+else
+  ac_cv_use_tsfcore=no
+fi;
+
+if test "X$ac_cv_use_tsfcore" != "Xno"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TSFCORE
+_ACEOF
+
+fi
+
+
+# Check whether --enable-tsfcore-epetra or --disable-tsfcore-epetra was given.
+if test "${enable_tsfcore_epetra+set}" = set; then
+  enableval="$enable_tsfcore_epetra"
+  ac_cv_use_tsfcore_epetra=$enableval
+else
+  ac_cv_use_tsfcore_epetra=no
+fi;
+
+if test "X$ac_cv_use_tsfcore_epetra" != "Xno"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TSFCORE_EPETRA
+_ACEOF
+
+fi
+
+
+
+if test "X$ac_cv_use_tsfcore" != "Xno" &&
+					test "X$ac_cv_use_tsfcore_epetra" != "Xno"; then
+  BUILD_TSFCORE_EPETRA_TRUE=
+  BUILD_TSFCORE_EPETRA_FALSE='#'
+else
+  BUILD_TSFCORE_EPETRA_TRUE='#'
+  BUILD_TSFCORE_EPETRA_FALSE=
+fi
+
 
 
 # Check whether --enable-tests or --disable-tests was given.
@@ -5867,23 +5940,24 @@ else
 fi
 
 
-# Check whether --enable-ifpack or --disable-ifpack was given.
-if test "${enable_ifpack+set}" = set; then
-  enableval="$enable_ifpack"
-  ac_cv_use_ifpack=$enableval
+
+# Check whether --enable-belos-tests or --disable-belos-tests was given.
+if test "${enable_belos_tests+set}" = set; then
+  enableval="$enable_belos_tests"
+  ac_cv_use_belos_tests=$enableval
 else
-  ac_cv_use_ifpack=yes
+  ac_cv_use_belos_tests=yes
 fi;
 
-echo "$as_me:$LINENO: checking whether to use ifpack" >&5
-echo $ECHO_N "checking whether to use ifpack... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use belos-tests" >&5
+echo $ECHO_N "checking whether to use belos-tests... $ECHO_C" >&6
 
-if test "X$ac_cv_use_ifpack" != "Xno"; then
+if test "X$ac_cv_use_belos_tests" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_IFPACK
+#define HAVE_BELOS_TESTS
 _ACEOF
 
 else
@@ -5893,16 +5967,14 @@ fi
 
 
 
-if test "X$ac_cv_use_ifpack" != "Xno"; then
-  BUILD_IFPACK_TRUE=
-  BUILD_IFPACK_FALSE='#'
+if test "X$ac_cv_use_belos_tests" != "Xno"; then
+  BUILD_BELOS_TESTS_TRUE=
+  BUILD_BELOS_TESTS_FALSE='#'
 else
-  BUILD_IFPACK_TRUE='#'
-  BUILD_IFPACK_FALSE=
+  BUILD_BELOS_TESTS_TRUE='#'
+  BUILD_BELOS_TESTS_FALSE=
 fi
 
-#TAC_ARG_ENABLE_FEATURE(ifpack, [Build examples which use triutils], TRIUTILS, no)
-#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
 # ------------------------------------------------------------------------
 # Specify other directories
@@ -5945,6 +6017,271 @@ else
 echo "${ECHO_T}no" >&6
 
 fi;
+
+
+# ------------------------------------------------------------------------
+# Checks for libraries
+# ------------------------------------------------------------------------
+
+echo "$as_me:$LINENO: checking for library containing pow" >&5
+echo $ECHO_N "checking for library containing pow... $ECHO_C" >&6
+if test "${ac_cv_search_pow+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+ac_cv_search_pow=no
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char pow ();
+int
+main ()
+{
+pow ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_pow="none required"
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+if test "$ac_cv_search_pow" = no; then
+  for ac_lib in m; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char pow ();
+int
+main ()
+{
+pow ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_pow="-l$ac_lib"
+break
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+  done
+fi
+LIBS=$ac_func_search_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_search_pow" >&5
+echo "${ECHO_T}$ac_cv_search_pow" >&6
+if test "$ac_cv_search_pow" != no; then
+  test "$ac_cv_search_pow" = "none required" || LIBS="$ac_cv_search_pow $LIBS"
+
+else
+  { { echo "$as_me:$LINENO: error: Cannot find math library" >&5
+echo "$as_me: error: Cannot find math library" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+echo "$as_me:$LINENO: checking for library containing sqrt" >&5
+echo $ECHO_N "checking for library containing sqrt... $ECHO_C" >&6
+if test "${ac_cv_search_sqrt+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+ac_cv_search_sqrt=no
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char sqrt ();
+int
+main ()
+{
+sqrt ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_sqrt="none required"
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+if test "$ac_cv_search_sqrt" = no; then
+  for ac_lib in m; do
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char sqrt ();
+int
+main ()
+{
+sqrt ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_search_sqrt="-l$ac_lib"
+break
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+  done
+fi
+LIBS=$ac_func_search_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_search_sqrt" >&5
+echo "${ECHO_T}$ac_cv_search_sqrt" >&6
+if test "$ac_cv_search_sqrt" != no; then
+  test "$ac_cv_search_sqrt" = "none required" || LIBS="$ac_cv_search_sqrt $LIBS"
+
+else
+  { { echo "$as_me:$LINENO: error: Cannot find math library" >&5
+echo "$as_me: error: Cannot find math library" >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 
 
@@ -5999,7 +6336,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6002: \"$ac_link\") >&5
+(eval echo $as_me:6339: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6077,7 +6414,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6080: \"$ac_link\") >&5
+(eval echo $as_me:6417: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6765,305 +7102,7 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
-# ------------------------------------------------------------------------
-# Checks for libraries
-# ------------------------------------------------------------------------
-
-echo "$as_me:$LINENO: checking for library containing pow" >&5
-echo $ECHO_N "checking for library containing pow... $ECHO_C" >&6
-if test "${ac_cv_search_pow+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-ac_cv_search_pow=no
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char pow ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-pow ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_search_pow="none required"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-if test "$ac_cv_search_pow" = no; then
-  for ac_lib in m; do
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char pow ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-pow ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_search_pow="-l$ac_lib"
-break
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-  done
-fi
-LIBS=$ac_func_search_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_search_pow" >&5
-echo "${ECHO_T}$ac_cv_search_pow" >&6
-if test "$ac_cv_search_pow" != no; then
-  test "$ac_cv_search_pow" = "none required" || LIBS="$ac_cv_search_pow $LIBS"
-
-else
-  { { echo "$as_me:$LINENO: error: Cannot find math library" >&5
-echo "$as_me: error: Cannot find math library" >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
-echo "$as_me:$LINENO: checking for library containing sqrt" >&5
-echo $ECHO_N "checking for library containing sqrt... $ECHO_C" >&6
-if test "${ac_cv_search_sqrt+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-ac_cv_search_sqrt=no
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char sqrt ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-sqrt ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_search_sqrt="none required"
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-if test "$ac_cv_search_sqrt" = no; then
-  for ac_lib in m; do
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char sqrt ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-sqrt ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_search_sqrt="-l$ac_lib"
-break
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-  done
-fi
-LIBS=$ac_func_search_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_search_sqrt" >&5
-echo "${ECHO_T}$ac_cv_search_sqrt" >&6
-if test "$ac_cv_search_sqrt" != no; then
-  test "$ac_cv_search_sqrt" = "none required" || LIBS="$ac_cv_search_sqrt $LIBS"
-
-else
-  { { echo "$as_me:$LINENO: error: Cannot find math library" >&5
-echo "$as_me: error: Cannot find math library" >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
-
 ### Belos requires both BLAS and LAPACK
-
 
 
 
@@ -7129,8 +7168,8 @@ LIBS="$LIBS $FLIBS"
 if test $acx_blas_ok = no; then
 if test "x$BLAS_LIBS" != x; then
 	save_LIBS="$LIBS"; LIBS="$BLAS_LIBS $LIBS"
-	echo "$as_me:$LINENO: checking for $sgemm in $BLAS_LIBS" >&5
-echo $ECHO_N "checking for $sgemm in $BLAS_LIBS... $ECHO_C" >&6
+	echo "$as_me:$LINENO: checking for $dgemm in $BLAS_LIBS" >&5
+echo $ECHO_N "checking for $dgemm in $BLAS_LIBS... $ECHO_C" >&6
 	cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -7144,7 +7183,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -7156,7 +7195,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -7201,9 +7240,9 @@ fi
 # BLAS linked to by default?  (happens on some supercomputers)
 if test $acx_blas_ok = no; then
 	save_LIBS="$LIBS"; LIBS="$LIBS"
-	as_ac_var=`echo "ac_cv_func_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm" >&5
-echo $ECHO_N "checking for $sgemm... $ECHO_C" >&6
+	as_ac_var=`echo "ac_cv_func_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm" >&5
+echo $ECHO_N "checking for $dgemm... $ECHO_C" >&6
 if eval "test \"\${$as_ac_var+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -7213,12 +7252,12 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-/* Define $sgemm to an innocuous variant, in case <limits.h> declares $sgemm.
+/* Define $dgemm to an innocuous variant, in case <limits.h> declares $dgemm.
    For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define $sgemm innocuous_$sgemm
+#define $dgemm innocuous_$dgemm
 
 /* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char $sgemm (); below.
+    which can conflict with char $dgemm (); below.
     Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
     <limits.h> exists even on freestanding compilers.  */
 
@@ -7228,7 +7267,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 # include <assert.h>
 #endif
 
-#undef $sgemm
+#undef $dgemm
 
 /* Override any gcc2 internal prototype to avoid an error.  */
 #ifdef __cplusplus
@@ -7237,14 +7276,14 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 /* The GNU C library defines this for functions which it implements
     to always fail with ENOSYS.  Some functions are actually named
     something starting with __ and the normal name is an alias.  */
-#if defined (__stub_$sgemm) || defined (__stub___$sgemm)
+#if defined (__stub_$dgemm) || defined (__stub___$dgemm)
 choke me
 #else
-char (*f) () = $sgemm;
+char (*f) () = $dgemm;
 #endif
 #ifdef __cplusplus
 }
@@ -7261,7 +7300,7 @@ char (*f) () = $sgemm;
 int
 main ()
 {
-return f != $sgemm;
+return f != $dgemm;
   ;
   return 0;
 }
@@ -7382,9 +7421,9 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_lib_atlas_ATL_xerbla" >&5
 echo "${ECHO_T}$ac_cv_lib_atlas_ATL_xerbla" >&6
 if test $ac_cv_lib_atlas_ATL_xerbla = yes; then
-  as_ac_Lib=`echo "ac_cv_lib_f77blas_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lf77blas" >&5
-echo $ECHO_N "checking for $sgemm in -lf77blas... $ECHO_C" >&6
+  as_ac_Lib=`echo "ac_cv_lib_f77blas_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lf77blas" >&5
+echo $ECHO_N "checking for $dgemm in -lf77blas... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -7403,7 +7442,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -7415,7 +7454,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -7541,9 +7580,9 @@ fi
 
 # BLAS in PhiPACK libraries? (requires generic BLAS lib, too)
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_blas_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lblas" >&5
-echo $ECHO_N "checking for $sgemm in -lblas... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_blas_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lblas" >&5
+echo $ECHO_N "checking for $dgemm in -lblas... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -7562,7 +7601,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -7574,7 +7613,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -7774,9 +7813,9 @@ fi
 
 # BLAS in Alpha CXML library?
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_cxml_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lcxml" >&5
-echo $ECHO_N "checking for $sgemm in -lcxml... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_cxml_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lcxml" >&5
+echo $ECHO_N "checking for $dgemm in -lcxml... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -7795,7 +7834,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -7807,7 +7846,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -7855,9 +7894,9 @@ fi
 
 # BLAS in Alpha DXML library? (now called CXML, see above)
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_dxml_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -ldxml" >&5
-echo $ECHO_N "checking for $sgemm in -ldxml... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_dxml_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -ldxml" >&5
+echo $ECHO_N "checking for $dgemm in -ldxml... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -7876,7 +7915,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -7888,7 +7927,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8010,9 +8049,9 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_lib_sunmath_acosp" >&5
 echo "${ECHO_T}$ac_cv_lib_sunmath_acosp" >&6
 if test $ac_cv_lib_sunmath_acosp = yes; then
-  as_ac_Lib=`echo "ac_cv_lib_sunperf_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lsunperf" >&5
-echo $ECHO_N "checking for $sgemm in -lsunperf... $ECHO_C" >&6
+  as_ac_Lib=`echo "ac_cv_lib_sunperf_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lsunperf" >&5
+echo $ECHO_N "checking for $dgemm in -lsunperf... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8031,7 +8070,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8043,7 +8082,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8095,9 +8134,9 @@ fi
 
 # BLAS in SCSL library?  (SGI/Cray Scientific Library)
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_scs_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lscs" >&5
-echo $ECHO_N "checking for $sgemm in -lscs... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_scs_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lscs" >&5
+echo $ECHO_N "checking for $dgemm in -lscs... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8116,7 +8155,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8128,7 +8167,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8176,9 +8215,9 @@ fi
 
 # BLAS in SGIMATH library?
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_complib.sgimath_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lcomplib.sgimath" >&5
-echo $ECHO_N "checking for $sgemm in -lcomplib.sgimath... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_complib.sgimath_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lcomplib.sgimath" >&5
+echo $ECHO_N "checking for $dgemm in -lcomplib.sgimath... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8197,7 +8236,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8209,7 +8248,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8257,9 +8296,9 @@ fi
 
 # BLAS in IBM ESSL library? (requires generic BLAS lib, too)
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_blas_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lblas" >&5
-echo $ECHO_N "checking for $sgemm in -lblas... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_blas_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lblas" >&5
+echo $ECHO_N "checking for $dgemm in -lblas... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8278,7 +8317,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8290,7 +8329,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8331,9 +8370,9 @@ fi
 echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Lib'}'`" >&5
 echo "${ECHO_T}`eval echo '${'$as_ac_Lib'}'`" >&6
 if test `eval echo '${'$as_ac_Lib'}'` = yes; then
-  as_ac_Lib=`echo "ac_cv_lib_essl_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lessl" >&5
-echo $ECHO_N "checking for $sgemm in -lessl... $ECHO_C" >&6
+  as_ac_Lib=`echo "ac_cv_lib_essl_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lessl" >&5
+echo $ECHO_N "checking for $dgemm in -lessl... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8352,7 +8391,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8364,7 +8403,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8414,9 +8453,9 @@ fi
 
 # Generic BLAS library?
 if test $acx_blas_ok = no; then
-	as_ac_Lib=`echo "ac_cv_lib_blas_$sgemm" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgemm in -lblas" >&5
-echo $ECHO_N "checking for $sgemm in -lblas... $ECHO_C" >&6
+	as_ac_Lib=`echo "ac_cv_lib_blas_$dgemm" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgemm in -lblas" >&5
+echo $ECHO_N "checking for $dgemm in -lblas... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8435,7 +8474,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgemm ();
+char $dgemm ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8447,7 +8486,7 @@ char $sgemm ();
 int
 main ()
 {
-$sgemm ();
+$dgemm ();
   ;
   return 0;
 }
@@ -8535,13 +8574,13 @@ ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_f77_compiler_gnu
 case $ac_cv_f77_mangling in
-  upper*) ac_val="SGECON" ;;
-  lower*) ac_val="sgecon" ;;
+  upper*) ac_val="DGECON" ;;
+  lower*) ac_val="dgecon" ;;
   *)      ac_val="unknown" ;;
 esac
 case $ac_cv_f77_mangling in *," underscore"*) ac_val="$ac_val"_ ;; esac
 
-sgecon="$ac_val"
+dgecon="$ac_val"
 
 ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -8558,8 +8597,8 @@ fi
 # First, check LAPACK_LIBS environment variable
 if test "x$LAPACK_LIBS" != x; then
         save_LIBS="$LIBS"; LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS"
-        echo "$as_me:$LINENO: checking for $sgecon in $LAPACK_LIBS" >&5
-echo $ECHO_N "checking for $sgecon in $LAPACK_LIBS... $ECHO_C" >&6
+        echo "$as_me:$LINENO: checking for $dgecon in $LAPACK_LIBS" >&5
+echo $ECHO_N "checking for $dgecon in $LAPACK_LIBS... $ECHO_C" >&6
         cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -8573,7 +8612,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgecon ();
+char $dgecon ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8585,7 +8624,7 @@ char $sgecon ();
 int
 main ()
 {
-$sgecon ();
+$dgecon ();
   ;
   return 0;
 }
@@ -8632,9 +8671,9 @@ fi
 # LAPACK linked to by default?  (is sometimes included in BLAS lib)
 if test $acx_lapack_ok = no; then
         save_LIBS="$LIBS"; LIBS="$LIBS $BLAS_LIBS $FLIBS"
-        as_ac_var=`echo "ac_cv_func_$sgecon" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgecon" >&5
-echo $ECHO_N "checking for $sgecon... $ECHO_C" >&6
+        as_ac_var=`echo "ac_cv_func_$dgecon" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgecon" >&5
+echo $ECHO_N "checking for $dgecon... $ECHO_C" >&6
 if eval "test \"\${$as_ac_var+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8644,12 +8683,12 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-/* Define $sgecon to an innocuous variant, in case <limits.h> declares $sgecon.
+/* Define $dgecon to an innocuous variant, in case <limits.h> declares $dgecon.
    For example, HP-UX 11i <limits.h> declares gettimeofday.  */
-#define $sgecon innocuous_$sgecon
+#define $dgecon innocuous_$dgecon
 
 /* System header to define __stub macros and hopefully few prototypes,
-    which can conflict with char $sgecon (); below.
+    which can conflict with char $dgecon (); below.
     Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
     <limits.h> exists even on freestanding compilers.  */
 
@@ -8659,7 +8698,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 # include <assert.h>
 #endif
 
-#undef $sgecon
+#undef $dgecon
 
 /* Override any gcc2 internal prototype to avoid an error.  */
 #ifdef __cplusplus
@@ -8668,14 +8707,14 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgecon ();
+char $dgecon ();
 /* The GNU C library defines this for functions which it implements
     to always fail with ENOSYS.  Some functions are actually named
     something starting with __ and the normal name is an alias.  */
-#if defined (__stub_$sgecon) || defined (__stub___$sgecon)
+#if defined (__stub_$dgecon) || defined (__stub___$dgecon)
 choke me
 #else
-char (*f) () = $sgecon;
+char (*f) () = $dgecon;
 #endif
 #ifdef __cplusplus
 }
@@ -8692,7 +8731,7 @@ char (*f) () = $sgecon;
 int
 main ()
 {
-return f != $sgecon;
+return f != $dgecon;
   ;
   return 0;
 }
@@ -8742,9 +8781,9 @@ fi
 for lapack in lapack lapack_rs6k; do
         if test $acx_lapack_ok = no; then
                 save_LIBS="$LIBS"; LIBS="$BLAS_LIBS $LIBS"
-                as_ac_Lib=`echo "ac_cv_lib_$lapack''_$sgecon" | $as_tr_sh`
-echo "$as_me:$LINENO: checking for $sgecon in -l$lapack" >&5
-echo $ECHO_N "checking for $sgecon in -l$lapack... $ECHO_C" >&6
+                as_ac_Lib=`echo "ac_cv_lib_$lapack''_$dgecon" | $as_tr_sh`
+echo "$as_me:$LINENO: checking for $dgecon in -l$lapack" >&5
+echo $ECHO_N "checking for $dgecon in -l$lapack... $ECHO_C" >&6
 if eval "test \"\${$as_ac_Lib+set}\" = set"; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -8763,7 +8802,7 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char $sgecon ();
+char $dgecon ();
 #ifdef F77_DUMMY_MAIN
 
 #  ifdef __cplusplus
@@ -8775,7 +8814,7 @@ char $sgecon ();
 int
 main ()
 {
-$sgecon ();
+$dgecon ();
   ;
   return 0;
 }
@@ -8901,7 +8940,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8904: \"$ac_link\") >&5
+(eval echo $as_me:8943: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8979,7 +9018,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8982: \"$ac_link\") >&5
+(eval echo $as_me:9021: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9342,10 +9381,17 @@ echo "$as_me: error: conditional \"USE_ALTERNATE_AR\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_BELOS_TESTS_TRUE}" && test -z "${BUILD_BELOS_TESTS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_BELOS_TESTS\" was never defined.
+if test -z "${BUILD_IFPACK_TRUE}" && test -z "${BUILD_IFPACK_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_IFPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_BELOS_TESTS\" was never defined.
+echo "$as_me: error: conditional \"BUILD_IFPACK\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_TSFCORE_EPETRA_TRUE}" && test -z "${BUILD_TSFCORE_EPETRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TSFCORE_EPETRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TSFCORE_EPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -9356,10 +9402,10 @@ echo "$as_me: error: conditional \"BUILD_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_IFPACK_TRUE}" && test -z "${BUILD_IFPACK_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_IFPACK\" was never defined.
+if test -z "${BUILD_BELOS_TESTS_TRUE}" && test -z "${BUILD_BELOS_TESTS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_BELOS_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_IFPACK\" was never defined.
+echo "$as_me: error: conditional \"BUILD_BELOS_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -9972,12 +10018,14 @@ s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
 s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
 s,@CXXCPP@,$CXXCPP,;t t
 s,@EGREP@,$EGREP,;t t
-s,@BUILD_BELOS_TESTS_TRUE@,$BUILD_BELOS_TESTS_TRUE,;t t
-s,@BUILD_BELOS_TESTS_FALSE@,$BUILD_BELOS_TESTS_FALSE,;t t
-s,@BUILD_TESTS_TRUE@,$BUILD_TESTS_TRUE,;t t
-s,@BUILD_TESTS_FALSE@,$BUILD_TESTS_FALSE,;t t
 s,@BUILD_IFPACK_TRUE@,$BUILD_IFPACK_TRUE,;t t
 s,@BUILD_IFPACK_FALSE@,$BUILD_IFPACK_FALSE,;t t
+s,@BUILD_TSFCORE_EPETRA_TRUE@,$BUILD_TSFCORE_EPETRA_TRUE,;t t
+s,@BUILD_TSFCORE_EPETRA_FALSE@,$BUILD_TSFCORE_EPETRA_FALSE,;t t
+s,@BUILD_TESTS_TRUE@,$BUILD_TESTS_TRUE,;t t
+s,@BUILD_TESTS_FALSE@,$BUILD_TESTS_FALSE,;t t
+s,@BUILD_BELOS_TESTS_TRUE@,$BUILD_BELOS_TESTS_TRUE,;t t
+s,@BUILD_BELOS_TESTS_FALSE@,$BUILD_BELOS_TESTS_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t

@@ -10,16 +10,20 @@
 # ------------------------------------------------------------------------
 
 CORE_H = \
-	$(srcdir)/AnasaziMatrix.hpp \
-	$(srcdir)/AnasaziReturnType.hpp \
-	$(srcdir)/AnasaziMultiVec.hpp \
-	$(srcdir)/AnasaziPrecondition.hpp \
-	$(srcdir)/BelosConfigDefs.hpp \
-	$(srcdir)/BelosPetraInterface.hpp \
-	$(srcdir)/BelosEpetraOperator.hpp \
+	$(srcdir)/BelosBlockCG.hpp \
 	$(srcdir)/BelosBlockGmres.hpp \
-	$(srcdir)/BelosBlockCG.hpp 
-
+	$(srcdir)/BelosConfigDefs.hpp \
+	$(srcdir)/BelosEpetraOperator.hpp \
+	$(srcdir)/BelosIterativeSolver.hpp \
+	$(srcdir)/BelosLinearProblemManager.hpp \
+	$(srcdir)/BelosMultiVec.hpp \
+	$(srcdir)/BelosOperator.hpp \
+	$(srcdir)/BelosPetraInterface.hpp \
+	$(srcdir)/BelosStatusTest.hpp \
+	$(srcdir)/BelosStatusTestMaxIters.hpp \
+	$(srcdir)/BelosStatusTestMaxRestarts.hpp \
+	$(srcdir)/BelosStatusTestResNorm.hpp \
+	$(srcdir)/BelosTypes.hpp
 
 CORE = 
 
@@ -28,7 +32,7 @@ UTIL = \
 
 ### add in paths as needed
 
-AM_CPPFLAGS =-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
+AM_CPPFLAGS =-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 #	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
 
 SERIAL_H = 

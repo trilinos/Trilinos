@@ -17,7 +17,7 @@
 #@HEADER
 #@HEADER
 
-SOURCES = $(bl_gmres_hb_SOURCES) $(bl_pgmres_hb_SOURCES)
+SOURCES = $(bl_gmres_hb_SOURCES) $(bl_gmres_tsfcore_SOURCES) $(bl_pgmres_hb_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -40,7 +40,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_2)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
 subdir = test/BlockGmres
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -52,6 +52,9 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
+	$(top_srcdir)/config/tac_arg_check_default_feature.m4 \
+	$(top_srcdir)/config/tac_arg_check_feature.m4 \
+	$(top_srcdir)/config/tac_arg_check_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
@@ -60,32 +63,40 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
+	$(top_srcdir)/config/tac_arg_with_libs.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
-@BUILD_IFPACK_TRUE@am__EXEEXT_1 = bl_pgmres_hb$(EXEEXT)
-am__EXEEXT_2 = $(am__EXEEXT_1) bl_gmres_hb$(EXEEXT)
+am__EXEEXT_1 = bl_gmres_hb$(EXEEXT)
+@BUILD_IFPACK_TRUE@am__EXEEXT_2 = bl_pgmres_hb$(EXEEXT)
+@BUILD_TSFCORE_EPETRA_TRUE@am__EXEEXT_3 = bl_gmres_tsfcore$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_bl_gmres_hb_OBJECTS = bl_gmres_hb-test_bl_gmres_hb.$(OBJEXT)
 bl_gmres_hb_OBJECTS = $(am_bl_gmres_hb_OBJECTS)
 am__DEPENDENCIES_1 =
+am_bl_gmres_tsfcore_OBJECTS =  \
+	bl_gmres_tsfcore-test_bl_gmres_tsfcore.$(OBJEXT)
+bl_gmres_tsfcore_OBJECTS = $(am_bl_gmres_tsfcore_OBJECTS)
 am_bl_pgmres_hb_OBJECTS = bl_pgmres_hb-test_bl_pgmres_hb.$(OBJEXT)
 bl_pgmres_hb_OBJECTS = $(am_bl_pgmres_hb_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(bl_gmres_hb_SOURCES) $(bl_pgmres_hb_SOURCES)
-DIST_SOURCES = $(bl_gmres_hb_SOURCES) $(bl_pgmres_hb_SOURCES)
+SOURCES = $(bl_gmres_hb_SOURCES) $(bl_gmres_tsfcore_SOURCES) \
+	$(bl_pgmres_hb_SOURCES)
+DIST_SOURCES = $(bl_gmres_hb_SOURCES) $(bl_gmres_tsfcore_SOURCES) \
+	$(bl_pgmres_hb_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -105,6 +116,8 @@ BUILD_IFPACK_FALSE = @BUILD_IFPACK_FALSE@
 BUILD_IFPACK_TRUE = @BUILD_IFPACK_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
+BUILD_TSFCORE_EPETRA_FALSE = @BUILD_TSFCORE_EPETRA_FALSE@
+BUILD_TSFCORE_EPETRA_TRUE = @BUILD_TSFCORE_EPETRA_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -206,9 +219,11 @@ target_vendor = @target_vendor@
 
 #if BUILD_TRIUTILS
 @BUILD_IFPACK_TRUE@BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb
-BELOS_BGMRES_HB_EX = $(BELOS_BGMRES_IFPACK_EX) bl_gmres_hb
+@BUILD_TSFCORE_EPETRA_TRUE@BELOS_BGMRES_TSFCORE_EX = bl_gmres_tsfcore
+BELOS_BGMRES_HB_EX = bl_gmres_hb 
 bl_pgmres_hb_SOURCES = $(srcdir)/test_bl_pgmres_hb.cpp
 bl_gmres_hb_SOURCES = $(srcdir)/test_bl_gmres_hb.cpp
+bl_gmres_tsfcore_SOURCES = $(srcdir)/test_bl_gmres_tsfcore.cpp
 bl_pgmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a			
@@ -216,6 +231,9 @@ bl_pgmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 bl_gmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
+
+bl_gmres_tsfcore_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+			$(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a
 
 bl_pgmres_hb_CXXFLAGS = -I$(top_srcdir)/src \
 		-I$(top_srcdir)/../epetra/src \
@@ -235,6 +253,25 @@ bl_gmres_hb_CXXFLAGS = -I$(top_srcdir)/src \
 		-I$(top_srcdir)/../teuchos/src \
 		-I$(top_builddir)/../teuchos/src
 
+bl_gmres_tsfcore_CXXFLAGS = -I$(top_srcdir)/src \
+		-I$(top_srcdir)/../TSFCore/src/interfaces/Core \
+		-I$(top_srcdir)/../TSFCore/src/utilities/Core \
+		-I$(top_srcdir)/../TSFCore/src/adapters/epetra \
+		-I$(top_srcdir)/../TSFCore/src/adapters/mpi-base \
+		-I$(top_srcdir)/../TSFCore/src/ \
+		-I$(top_builddir)/../TSFCore/src \
+		-I$(top_srcdir)/../TSFCoreUtils/src/MoochoUtilities \
+		-I$(top_srcdir)/../TSFCoreUtils/src/RTOpPack \
+		-I$(top_srcdir)/../TSFCoreUtils/src/RTOpStdOps \
+		-I$(top_srcdir)/../TSFCoreUtils/src \
+		-I$(top_builddir)/../TSFCoreUtils/src \
+		-I$(top_srcdir)/../epetra/src \
+		-I$(top_builddir)/../epetra/src \
+		-I$(top_srcdir)/../triutils/src \
+		-I$(top_builddir)/../triutils/src \
+		-I$(top_srcdir)/../teuchos/src \
+		-I$(top_builddir)/../teuchos/src
+
 bl_pgmres_hb_LDADD = $(top_builddir)/../triutils/src/libtriutils.a \
 		$(top_builddir)/../ifpack/src/libifpack.a \
 		$(top_builddir)/../epetra/src/libepetra.a \
@@ -242,6 +279,13 @@ bl_pgmres_hb_LDADD = $(top_builddir)/../triutils/src/libtriutils.a \
 		$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 bl_gmres_hb_LDADD = $(top_builddir)/../triutils/src/libtriutils.a \
+		$(top_builddir)/../epetra/src/libepetra.a \
+		$(top_builddir)/../teuchos/src/libteuchos.a \
+		$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
+
+bl_gmres_tsfcore_LDADD = $(top_builddir)/../triutils/src/libtriutils.a \
+		$(top_builddir)/../TSFCore/src/libTSFCore.a \
+		$(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a \
 		$(top_builddir)/../epetra/src/libepetra.a \
 		$(top_builddir)/../teuchos/src/libteuchos.a \
 		$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
@@ -285,6 +329,9 @@ clean-noinstPROGRAMS:
 bl_gmres_hb$(EXEEXT): $(bl_gmres_hb_OBJECTS) $(bl_gmres_hb_DEPENDENCIES) 
 	@rm -f bl_gmres_hb$(EXEEXT)
 	$(CXXLINK) $(bl_gmres_hb_LDFLAGS) $(bl_gmres_hb_OBJECTS) $(bl_gmres_hb_LDADD) $(LIBS)
+bl_gmres_tsfcore$(EXEEXT): $(bl_gmres_tsfcore_OBJECTS) $(bl_gmres_tsfcore_DEPENDENCIES) 
+	@rm -f bl_gmres_tsfcore$(EXEEXT)
+	$(CXXLINK) $(bl_gmres_tsfcore_LDFLAGS) $(bl_gmres_tsfcore_OBJECTS) $(bl_gmres_tsfcore_LDADD) $(LIBS)
 bl_pgmres_hb$(EXEEXT): $(bl_pgmres_hb_OBJECTS) $(bl_pgmres_hb_DEPENDENCIES) 
 	@rm -f bl_pgmres_hb$(EXEEXT)
 	$(CXXLINK) $(bl_pgmres_hb_LDFLAGS) $(bl_pgmres_hb_OBJECTS) $(bl_pgmres_hb_LDADD) $(LIBS)
@@ -296,6 +343,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Po@am__quote@
 
 .cpp.o:
@@ -329,6 +377,22 @@ bl_gmres_hb-test_bl_gmres_hb.obj: $(srcdir)/test_bl_gmres_hb.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.Po' tmpdepfile='$(DEPDIR)/bl_gmres_hb-test_bl_gmres_hb.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_hb_CXXFLAGS) $(CXXFLAGS) -c -o bl_gmres_hb-test_bl_gmres_hb.obj `if test -f '$(srcdir)/test_bl_gmres_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_gmres_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_gmres_hb.cpp'; fi`
+
+bl_gmres_tsfcore-test_bl_gmres_tsfcore.o: $(srcdir)/test_bl_gmres_tsfcore.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_tsfcore_CXXFLAGS) $(CXXFLAGS) -MT bl_gmres_tsfcore-test_bl_gmres_tsfcore.o -MD -MP -MF "$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.Tpo" -c -o bl_gmres_tsfcore-test_bl_gmres_tsfcore.o `test -f '$(srcdir)/test_bl_gmres_tsfcore.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_gmres_tsfcore.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.Tpo" "$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.Po"; else rm -f "$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_gmres_tsfcore.cpp' object='bl_gmres_tsfcore-test_bl_gmres_tsfcore.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.Po' tmpdepfile='$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_tsfcore_CXXFLAGS) $(CXXFLAGS) -c -o bl_gmres_tsfcore-test_bl_gmres_tsfcore.o `test -f '$(srcdir)/test_bl_gmres_tsfcore.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_gmres_tsfcore.cpp
+
+bl_gmres_tsfcore-test_bl_gmres_tsfcore.obj: $(srcdir)/test_bl_gmres_tsfcore.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_tsfcore_CXXFLAGS) $(CXXFLAGS) -MT bl_gmres_tsfcore-test_bl_gmres_tsfcore.obj -MD -MP -MF "$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.Tpo" -c -o bl_gmres_tsfcore-test_bl_gmres_tsfcore.obj `if test -f '$(srcdir)/test_bl_gmres_tsfcore.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_gmres_tsfcore.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_gmres_tsfcore.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.Tpo" "$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.Po"; else rm -f "$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_bl_gmres_tsfcore.cpp' object='bl_gmres_tsfcore-test_bl_gmres_tsfcore.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.Po' tmpdepfile='$(DEPDIR)/bl_gmres_tsfcore-test_bl_gmres_tsfcore.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_gmres_tsfcore_CXXFLAGS) $(CXXFLAGS) -c -o bl_gmres_tsfcore-test_bl_gmres_tsfcore.obj `if test -f '$(srcdir)/test_bl_gmres_tsfcore.cpp'; then $(CYGPATH_W) '$(srcdir)/test_bl_gmres_tsfcore.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_bl_gmres_tsfcore.cpp'; fi`
 
 bl_pgmres_hb-test_bl_pgmres_hb.o: $(srcdir)/test_bl_pgmres_hb.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bl_pgmres_hb_CXXFLAGS) $(CXXFLAGS) -MT bl_pgmres_hb-test_bl_pgmres_hb.o -MD -MP -MF "$(DEPDIR)/bl_pgmres_hb-test_bl_pgmres_hb.Tpo" -c -o bl_pgmres_hb-test_bl_pgmres_hb.o `test -f '$(srcdir)/test_bl_pgmres_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_bl_pgmres_hb.cpp; \
@@ -508,6 +572,9 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+			$(top_builddir)/../TSFCore/src/libTSFCore.a
+			$(top_builddir)/../epetra/src/libepetra.a \
+			$(top_builddir)/../teuchos/src/libteuchos.a
 
 #
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

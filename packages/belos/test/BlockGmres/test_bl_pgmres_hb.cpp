@@ -41,6 +41,12 @@
 //
 // 
 #include "BelosConfigDefs.hpp"
+#include "BelosLinearProblemManager.hpp"
+#include "BelosOutputManager.hpp"
+#include "BelosStatusTestMaxIters.hpp"
+#include "BelosStatusTestMaxRestarts.hpp"
+#include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestCombo.hpp"
 #include "BelosPetraInterface.hpp"
 #include "BelosBlockGmres.hpp"
 #include "Trilinos_Util.h"
@@ -59,7 +65,7 @@
 
 int main(int argc, char *argv[]) {
 	//
-	int i, j;
+	int i;
 	int n_nonzeros, N_update;
 	int *bindx=0, *update=0, *col_inds=0;
 	double *val=0, *row_vals=0;
@@ -73,7 +79,6 @@ int main(int argc, char *argv[]) {
 #endif
 	
 	int MyPID = Comm.MyPID();
-	int NumProc = Comm.NumProc();
 	
 	bool verbose = (MyPID==0);
 	//
@@ -146,7 +151,7 @@ int main(int argc, char *argv[]) {
 	//
 	// call the ctor that calls the petra ctor for a matrix
 	//
-	Belos::PetraMat<double> Amat(A);
+	Belos::PetraMat<double> Amat( &A );
 	//
 	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 	//
@@ -191,7 +196,7 @@ int main(int argc, char *argv[]) {
 	//
 	// call the ctor for the preconditioning object
 	//
-	Belos::PetraPrec<double> EpetraOpPrec(prec);
+	Belos::PetraPrec<double> EpetraOpPrec( &prec );
 	//
     	// ********Other information used by block solver***********
 	//*****************(can be user specified)******************
@@ -199,30 +204,38 @@ int main(int argc, char *argv[]) {
 	int numrhs = 15;  // total number of right-hand sides to solve for
     	int block = 10;  // blocksize used by solver
 	int numrestarts = 20; // number of restarts allowed 
-    	int maxits = NumGlobalElements/block-1; // maximum number of iterations to run
-    	double tol = 5.0e-9;  // relative residual tolerance
+    	int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
+	int length = 15;
+    	double tol = 1.0e-6;  // relative residual tolerance
 	//
-	//*****Construct random right-hand-sides *****
+	//*****Construct solution vector and random right-hand-sides *****
 	//
+	Belos::PetraVec<double> soln(Map, numrhs);
 	Belos::PetraVec<double> rhs(Map, numrhs);
 	rhs.MvRandom();
+	Belos::LinearProblemManager<double> My_LP( &Amat, &soln, &rhs);
+	My_LP.SetRightPrec( &EpetraOpPrec );
+	//My_LP.SetLeftPrec( &EpetraOpPrec );
+	My_LP.SetBlockSize( block );
+
+	Belos::StatusTestMaxIters<double> test1( maxits );
+	Belos::StatusTestMaxRestarts<double> test2( numrestarts );
+	Belos::StatusTestCombo<double> BasicTest( Belos::StatusTestCombo<double>::OR, test1, test2 );
+	Belos::StatusTestResNorm<double> test3( tol );
+	test3.DefineScaleForm( Belos::StatusTestResNorm<double>::NormOfPrecInitRes, Belos::TwoNorm );
+	BasicTest.AddStatusTest( test3 );
+	Belos::StatusTestResNorm<double> ExpTest( tol );
+	ExpTest.DefineResForm( Belos::StatusTestResNorm<double>::Explicit, Belos::TwoNorm ); 
+	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::SEQ, BasicTest, ExpTest );
+
+	Belos::OutputManager<double> My_OM( MyPID );
+	//My_OM.SetVerbosity( 1 );
 	//
 	//*******************************************************************
 	// *************Start the block Gmres iteration*************************
 	//*******************************************************************
 	//
-	Belos::BlockGmres<double> MyBlockGmres(Amat, EpetraOpPrec, rhs, numrhs, tol, 
-						maxits, block,verbose);
-	//
-	// Set initial guesses all to zero vectors.
-	//
-	Belos::PetraVec<double> iguess(Map, numrhs);
-	iguess.MvInit(0.0);
-	MyBlockGmres.SetInitGuess( iguess );
-
-	MyBlockGmres.SetRestart(numrestarts);
- 
-	MyBlockGmres.SetDebugLevel(0);
+	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, My_OM, length);
 	//
 	// **********Print out information about problem*******************
 	//
@@ -232,7 +245,8 @@ int main(int argc, char *argv[]) {
 	   cout << "Number of right-hand sides: " << numrhs << endl;
 	   cout << "Block size used by solver: " << block << endl;
 	   cout << "Number of restarts allowed: " << numrestarts << endl;
-	   cout << "Max number of Gmres iterations per restart cycle: " << maxits << endl; 
+	   cout << "Length of block Arnoldi factorization: " << length*block << " ( "<< length << " blocks ) " <<endl;
+	   cout << "Max number of Gmres iterations: " << maxits << endl; 
 	   cout << "Relative residual tolerance: " << tol << endl;
        	   cout << endl;
 	}
@@ -246,27 +260,32 @@ int main(int argc, char *argv[]) {
 	   cout << numrhs << " right-hand side(s) -- using a block size of " << block
 			<< endl << endl;
 	}
-	MyBlockGmres.Solve(verbose);
-
-	if (verbose) {
-		cout << "Final Computed Gmres Residual Norms" << endl;
+	MyBlockGmres.Solve();
+	My_Test.Print(cout);	
+	//
+	// Compute actual residuals.
+	//
+	double* actual_resids = new double[numrhs];
+	double* rhs_norm = new double[numrhs];
+	Belos::PetraVec<double> resid( Map, numrhs );
+	Amat.Apply( soln, resid );
+	resid.MvAddMv( -1.0, resid, 1.0, rhs ); 
+	resid.MvNorm( actual_resids );
+	rhs.MvNorm( rhs_norm );
+	cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+	for (i=0; i<numrhs; i++) {
+		cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
 	}
-	MyBlockGmres.PrintResids(verbose);
 
-	if (verbose) {
-		cout << "Final True Gmres Residual Norms" << endl;
-	}
-	MyBlockGmres.TrueResiduals(verbose);
-
-	Belos::PetraVec<double> solutions(Map, numrhs);
-	MyBlockGmres.GetSolutions( solutions );
-
-	
-// Release all objects  
-
-  delete [] NumNz;
-  delete [] bindx, update, col_inds;
-  delete [] val, row_vals;
+	// Release all objects  
+	if (ilukGraph) delete ilukGraph;
+	if (ilukFactors) delete ilukFactors;
+	delete [] NumNz; 
+	delete [] bindx;
+	delete [] update;
+	delete [] val;
+	delete [] actual_resids;
+	delete [] rhs_norm;	
 	
   return 0;
   //

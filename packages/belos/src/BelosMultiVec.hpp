@@ -26,13 +26,19 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ANASAZI_MULTI_VEC_HPP
-#define ANASAZI_MULTI_VEC_HPP
+#ifndef BELOS_MULTI_VEC_HPP
+#define BELOS_MULTI_VEC_HPP
+
+/*! \file BelosMultiVec.hpp
+    \brief Virtual base class which defines the multivector interface required 
+	by the iterative linear solver.
+*/
 
 #include "Teuchos_SerialDenseMatrix.hpp"
+#include "BelosTypes.hpp"
 #include "BelosConfigDefs.hpp"
 
-/*! 	\class Anasazi::MultiVec
+/*! 	\class Belos::MultiVec
 
 	\brief Belos's templated pure virtual class for constructing multivectors that 
 	are used by the eigensolver.
@@ -40,60 +46,59 @@
 	A concrete implementation of this class is necessary.  The user can create
 	their own implementation if those supplied are not suitable for their needs.
 
-	\author Rich Lehoucq, Heidi Thornquist
+	\author Michael Heroux, Rich Lehoucq, and Heidi Thornquist
 */
 
-namespace Anasazi {
+namespace Belos {
 
 template <class TYPE>
 class MultiVec {
 public:
-	//@{ \name Constructor/Destructor.
+	//@{ \name Constructor/Destructor
 
-	//! %Anasazi::MultiVec constructor.
+	//! Default Constructor.
 	MultiVec() {};
 
-	//! %Anasazi::MultiVec destructor.
+	//! Destructor.
 	virtual ~MultiVec () {};
 
 	//@}
-	//@{ \name Creation methods for new multivectors.
 
-	/*! \brief Creates a new empty %Anasazi::MultiVec containing \c numvecs columns.
+	//@{ \name Creation methods
 
-	    \return Pointer to the new multivector	
+	/*! \brief Creates a new empty %Belos::MultiVec containing \c numvecs columns.
+
+	    \return Pointer to the new MultiVec	
 	*/
-
 	virtual MultiVec<TYPE> * Clone ( const int numvecs ) = 0;
 
-	/*! \brief Creates a new %Anasazi::MultiVec and copies contents of \c *this into
+	/*! \brief Creates a new %Belos::MultiVec and copies contents of \c *this into
 	    the new vector (deep copy).
 	
-	    \return Pointer to the new multivector	
+	    \return Pointer to the new MultiVec	
 	*/
-	
 	virtual MultiVec<TYPE> * CloneCopy () = 0;
 	
-	/*! \brief Creates a new %Anasazi::MultiVec and copies the selected contents of \c *this 
+	/*! \brief Creates a new %Belos::MultiVec and copies the selected contents of \c *this 
 	    into the new vector (deep copy).  The number (\c numvecs) of copied 
 	    vectors from \c *this are indicated by the indices in \c index.
 
-	    \return Pointer to the new multivector	
+	    \return Pointer to the new MultiVec	
 	*/
-
 	virtual MultiVec<TYPE> * CloneCopy ( int index[], int numvecs ) = 0;
 	
-	/*! \brief Creates a new %Anasazi::MultiVec that shares the selected contents of \c *this.
+	/*! \brief Creates a new %Belos::MultiVec that shares the selected contents of \c *this (shallow copy).
 	    The index of the \c numvecs vectors copied from \c *this are indicated by the
 	    indices given in \c index.
 
-	    \return Pointer to the new multivector	
+	    \return Pointer to the new MultiVec	
 	*/
-
 	virtual MultiVec<TYPE> * CloneView ( int index[], int numvecs ) = 0;
+
 	//@}
 
-	//@{ \name Dimension information methods.	
+	//@{ \name  Accessor methods	
+
 	//! Obtain the vector length of *this multivector block.
 
 	virtual int GetVecLength () const = 0;
@@ -103,16 +108,15 @@ public:
 	virtual int GetNumberVecs () const = 0;
 
 	//@}
-	//@{ \name Update methods.
-	/*! \brief Update \c *this with \c alpha * \c A * \c B + \c beta * (\c *this).
-	*/
+	//@{ \name Update methods
 
+	/*! \brief Update \c *this with \c alpha * \c A * \c B + \c beta * (\c *this).
+	 */
 	virtual void MvTimesMatAddMv ( TYPE alpha, MultiVec<TYPE>& A, 
 		Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta ) = 0;
 
-	/*! \brief Replace \c *this with \c alpha * \c A + \c beta * \c B.
-	*/
-
+        /*! \brief Replace \c *this with \c alpha * \c A + \c beta * \c B.
+	 */
 	virtual void MvAddMv ( TYPE alpha, MultiVec<TYPE>& A, TYPE beta, MultiVec<TYPE>& B ) = 0;
 
 	/*! \brief Compute a dense matrix \c B through the matrix-matrix multiply 
@@ -122,41 +126,50 @@ public:
 	virtual void MvTransMv ( TYPE alpha, MultiVec<TYPE>& A, Teuchos::SerialDenseMatrix<int,TYPE>& B) = 0;
 
 	//@}
-	//@{ \name Norm method.
+	//@{ \name Norm method
 
-	/*! \brief Compute the 2-norm of each individual vector of \c *this.  
-	   Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
+	/*! \brief Compute the norm of each individual vector of \c *this.  
+
+	   Upon return, \c normvec[i] holds the given norm of the \c i-th vector of \c *this
+	   
+	   \note <b> The two-norm must be supported by any implementation of this virtual base class.</b>
+	   The other norm implementations should be implemented to allow more flexibility in 
+	   designing status tests for the iterative solvers.
 	*/
-
-	virtual void MvNorm ( TYPE* normvec ) = 0;
+	virtual ReturnType MvNorm ( TYPE *normvec, NormType norm_type = TwoNorm ) = 0;
 
 	//@}
-	//@{ \name Initialization methods.
+	//@{ \name Initialization methods
+
 	/*! \brief Copy the vectors in \c A to a set of vectors in \c *this.  The \c 
   	    numvecs vectors in \c A are copied to a subset of vectors in \c *this
 	    indicated by the indices given in \c index.
-	*/
 
+	    \note The indices in the \c index array are assumed to be zero-based, i.e. allowing
+		the first vector of a MultiVec to be indexed by 0.  If the underlying linear
+		algebra uses one-based indexing, please alter the inputted \c index array accordingly.
+	*/
 	virtual void SetBlock ( MultiVec<TYPE>& A, int index[], int numvecs ) = 0;
 	
 	/*! \brief Replace the vectors in \c *this with random vectors.
 	*/
-
 	virtual void MvRandom () = 0;
 
 	/*! \brief Replace each element of the vectors in \c *this with \c alpha.
 	*/
-
-	virtual void MvInit ( TYPE alpha ) = 0;
+	virtual void MvInit ( TYPE alpha = Teuchos::ScalarTraits<TYPE>::zero() ) = 0;
 
 	//@}
 	//@{ \name Print method.
-	/*! \brief Print the \c *this multivector.
+
+	/*! \brief Print the \c *this multivector.  
+
+	    \note This does not have to be implemented, a general statement will be sent to the output stream if it is not.
 	*/
-	virtual void MvPrint () = 0;
+        virtual void MvPrint (ostream& os) { os << "Belos::MultiVec::MvPrint() is not supported." <<endl; };
 	//@}
 };
 
 }
 #endif
-// end of file AnasaziMultiVec.hpp
+// end of file BelosMultiVec.hpp

@@ -60,6 +60,9 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
+	$(top_srcdir)/config/tac_arg_check_default_feature.m4 \
+	$(top_srcdir)/config/tac_arg_check_feature.m4 \
+	$(top_srcdir)/config/tac_arg_check_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
@@ -68,6 +71,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
+	$(top_srcdir)/config/tac_arg_with_libs.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -119,6 +123,8 @@ BUILD_IFPACK_FALSE = @BUILD_IFPACK_FALSE@
 BUILD_IFPACK_TRUE = @BUILD_IFPACK_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
+BUILD_TSFCORE_EPETRA_FALSE = @BUILD_TSFCORE_EPETRA_FALSE@
+BUILD_TSFCORE_EPETRA_TRUE = @BUILD_TSFCORE_EPETRA_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -218,15 +224,20 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 CORE_H = \
-	$(srcdir)/AnasaziMatrix.hpp \
-	$(srcdir)/AnasaziReturnType.hpp \
-	$(srcdir)/AnasaziMultiVec.hpp \
-	$(srcdir)/AnasaziPrecondition.hpp \
-	$(srcdir)/BelosConfigDefs.hpp \
-	$(srcdir)/BelosPetraInterface.hpp \
-	$(srcdir)/BelosEpetraOperator.hpp \
+	$(srcdir)/BelosBlockCG.hpp \
 	$(srcdir)/BelosBlockGmres.hpp \
-	$(srcdir)/BelosBlockCG.hpp 
+	$(srcdir)/BelosConfigDefs.hpp \
+	$(srcdir)/BelosEpetraOperator.hpp \
+	$(srcdir)/BelosIterativeSolver.hpp \
+	$(srcdir)/BelosLinearProblemManager.hpp \
+	$(srcdir)/BelosMultiVec.hpp \
+	$(srcdir)/BelosOperator.hpp \
+	$(srcdir)/BelosPetraInterface.hpp \
+	$(srcdir)/BelosStatusTest.hpp \
+	$(srcdir)/BelosStatusTestMaxIters.hpp \
+	$(srcdir)/BelosStatusTestMaxRestarts.hpp \
+	$(srcdir)/BelosStatusTestResNorm.hpp \
+	$(srcdir)/BelosTypes.hpp
 
 CORE = 
 UTIL = \
@@ -234,7 +245,7 @@ UTIL = \
 
 
 ### add in paths as needed
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 #	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
 SERIAL_H = 
 SERIAL = 

@@ -27,25 +27,22 @@
 // @HEADER
 //
 // This driver reads a problem from a Harwell-Boeing (HB) file.
-// Multiple right-hand-sides are created randomly.
+// The right-hand-side from the HB file is used instead of random vectors.
 // The initial guesses are all set to zero. 
 //
-// As currently set up, this driver tests the case when the number of right-hand
-// sides (numrhs = 15) is greater than the blocksize (block = 10) used by 
-// the solver. Here, 2 passes through the solver are required to solve 
-// for all right-hand sides. This information can be edited (see below - other
-// information used by block solver - can be user specified) to solve for
-// other sizes of systems. For example, one could set numrhs = 1 and block = 1,
-// to solve a single right-hand side system in the traditional way, or, set
-// numrhs = 1 and block > 1 to sove a single rhs-system with a block implementation. 
-//
-// NOTE:  No preconditioner is used for this test case. 
+// NOTE: No preconditioner is used in this case. 
 //
 #include "BelosConfigDefs.hpp"
+#include "BelosLinearProblemManager.hpp"
+#include "BelosOutputManager.hpp"
+#include "BelosStatusTestMaxIters.hpp"
+#include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestCombo.hpp"
 #include "BelosPetraInterface.hpp"
 #include "BelosBlockCG.hpp"
 #include "Trilinos_Util.h"
 #include "Epetra_CrsMatrix.h"
+#include "Teuchos_Time.hpp"
 //
 //
 #ifdef EPETRA_MPI
@@ -62,6 +59,8 @@ int main(int argc, char *argv[]) {
 	int n_nonzeros, N_update;
 	int *bindx=0, *update=0, *col_inds=0;
 	double *val=0, *row_vals=0;
+	double *xguess=0, *b=0, *xexact=0;
+	Teuchos::Time timer("BelosCG");
 	
 #ifdef EPETRA_MPI	
 	// Initialize MPI	
@@ -73,8 +72,7 @@ int main(int argc, char *argv[]) {
 	
 	int MyPID = Comm.MyPID();
 	int NumProc = Comm.NumProc();
-	
-	bool verbose = (MyPID==0);
+	bool verbose = (MyPID == 0);
 	//
     	if(argc < 2 && verbose) {
      	cerr << "Usage: " << argv[0] 
@@ -93,24 +91,13 @@ int main(int argc, char *argv[]) {
 	//
 	// *****Read in matrix from HB file******
 	//
-	Trilinos_Util_read_hb(argv[1], MyPID, &NumGlobalElements, &n_nonzeros, &val, 
-		                    &bindx);
-	//
-	// *****Distribute data among processors*****
-	//
-	Trilinos_Util_distrib_msr_matrix(Comm, &NumGlobalElements, &n_nonzeros, &N_update,
-		                             &update, &val, &bindx);
-	//
-	//
-    	// ********Other information used by block solver***********
-	//*****************(can be user specified)******************
-	//
-	int numrhs = 15;  // total number of right-hand sides to solve for
-    	int block = 10;  // blocksize used by solver
-    	int maxits = NumGlobalElements - 1; // maximum number of iterations to run
-    	double tol = 5.0e-9;  // relative residual tolerance
-	//
-	//*************************************************************
+        Trilinos_Util_read_hb(argv[1], MyPID, &NumGlobalElements, &n_nonzeros,
+                              &val, &bindx, &xguess, &b, &xexact);
+        // 
+        // *****Distribute data among processors*****
+        //
+        Trilinos_Util_distrib_msr_matrix(Comm, &NumGlobalElements, &n_nonzeros, &N_update,
+                                         &update, &val, &bindx, &xguess, &b, &xexact);
 	//
 	// *****Construct the matrix*****
 	//
@@ -146,25 +133,45 @@ int main(int argc, char *argv[]) {
 	//
 	assert(A.TransformToLocal()==0);
 	assert(A.OptimizeStorage()==0);
-	//
-	// call the ctor that calls the petra ctor for a matrix
-	//
-	Belos::PetraMat<double> Amat(A);
-	//
 	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 	//
+	// Construct a Belos::Operator instance through the Petra interface.
 	//
-	//*****Select the Preconditioner*****
+	Belos::PetraMat<double> Amat( &A );
 	//
-	// call the ctor for the default preconditioning object
+    	// ********Other information used by block solver***********
+	//*****************(can be user specified)******************
 	//
-	Anasazi::Precondition<double> Prec;
-
+	int numrhs = 1;  // total number of right-hand sides to solve for
+    	int block = 1;  // blocksize used by solver
+	int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
+    	double tol = 1.0e-6;  // relative residual tolerance
 	//
-	//*****Construct random right-hand-sides *****
+	// Construct the right-hand side and solution multivectors.
 	//
-	Belos::PetraVec<double> rhs(Map, numrhs);
-	rhs.MvRandom();
+	Belos::PetraVec<double> rhs(Map, b, numrhs, NumMyElements);
+	//Belos::PetraVec<double> rhs( Map, numrhs );
+	//rhs.MvRandom();
+	Belos::PetraVec<double> soln( Map, numrhs );
+	Belos::PetraVec<double> xx(Map, xexact, numrhs, NumMyElements);
+	//
+	//  Construct an unpreconditioned linear problem instance.
+	//
+	Belos::LinearProblemManager<double> My_LP( &Amat, &soln, &rhs );
+	My_LP.SetBlockSize( block );
+	//
+	//*******************************************************************
+	// *************Start the block CG iteration*************************
+	//*******************************************************************
+	//
+	Belos::StatusTestMaxIters<double> test1( maxits );
+ 	Belos::StatusTestResNorm<double> test2( tol );
+	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
+	//
+	Belos::OutputManager<double> My_OM( MyPID );
+	//My_OM.SetVerbosity( 1 );
+	//
+	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, My_OM);
 	//
 	// **********Print out information about problem*******************
 	//
@@ -178,21 +185,7 @@ int main(int argc, char *argv[]) {
        	   cout << endl;
 	}
 	//
-	//
-	//*******************************************************************
-	// *************Start the block CG iteration*************************
-	//*******************************************************************
-	//
-	Belos::BlockCG<double> MyBlockCG(Amat, Prec, rhs, numrhs, tol, maxits, block,verbose);
-	//
-	// Set initial guess to zero vectors.
-	//
-	Belos::PetraVec<double> iguess(Map, numrhs);
-	iguess.MvInit(0.0);
-	MyBlockCG.SetInitGuess( iguess );
-
-	MyBlockCG.SetDebugLevel(0);
-
+    	//
 	if (verbose) {
 	   cout << endl << endl;
 	   cout << "Running Block CG -- please wait" << endl;
@@ -201,28 +194,28 @@ int main(int argc, char *argv[]) {
 	   cout << numrhs << " right-hand side(s) -- using a block size of " << block
 			<< endl << endl;
 	}
-	MyBlockCG.Solve(verbose);
+	timer.start();
+	MyBlockCG.Solve();
+	timer.stop();
+	My_Test.Print(cout);
 
 	if (verbose) {
-		cout << "Final Computed CG Residual Norms" << endl;
+		cout << "Solution time : "<< timer.totalElapsedTime()<<endl;
 	}
-	MyBlockCG.PrintResids(verbose);
-
-	if (verbose) {
-		cout << "Final True CG Residual Norms" << endl;
-	}
-	MyBlockCG.TrueResiduals(verbose);
-
-	Belos::PetraVec<double> solutions(Map, numrhs);
-	MyBlockCG.GetSolutions( solutions );
-
 	
 // Release all objects  
 
   delete [] NumNz;
-  delete [] bindx, update, col_inds;
-  delete [] val, row_vals;
-	
+  delete [] val;
+  delete [] xexact; 
+  delete [] b; 
+  delete [] xguess;
+  delete [] update; 
+  delete [] bindx;
   return 0;
   //
-} // end test_bl_cg_hb.cpp
+} // end test_bl_pgmrs_hb.cpp
+
+
+
+

@@ -27,21 +27,18 @@
 // @HEADER
 //
 // This driver reads a problem from a Harwell-Boeing (HB) file.
-// Multiple right-hand-sides are created randomly.
-// The initial guesses are all set to zero. 
-//
-// As currently set up, this driver tests the case when the number of right-hand
-// sides (numrhs = 15) is greater than the blocksize (block = 10) used by 
-// the solver. Here, 2 passes through the solver are required to solve 
-// for all right-hand sides. This information can be edited (see below - other
-// information used by block solver - can be user specified) to solve for
-// other sizes of systems. For example, one could set numrhs = 1 and block = 1,
-// to solve a single right-hand side system in the traditional way, or, set
-// numrhs = 1 and block > 1 to sove a single rhs-system with a block implementation. 
+// The right-hand-side from the problem is being used instead of multiple
+// random right-hand-sides.  The initial guesses are all set to zero. 
 //
 // NOTE: No preconditioner is used in this case. 
 //
 #include "BelosConfigDefs.hpp"
+#include "BelosLinearProblemManager.hpp"
+#include "BelosOutputManager.hpp"
+#include "BelosStatusTestMaxIters.hpp"
+#include "BelosStatusTestMaxRestarts.hpp"
+#include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestCombo.hpp"
 #include "BelosPetraInterface.hpp"
 #include "BelosBlockGmres.hpp"
 #include "Trilinos_Util.h"
@@ -59,7 +56,7 @@
 
 int main(int argc, char *argv[]) {
 	//
-	int i, j;
+	int i;
 	int n_nonzeros, N_update;
 	int *bindx=0, *update=0, *col_inds=0;
 	double *val=0, *row_vals=0;
@@ -75,7 +72,6 @@ int main(int argc, char *argv[]) {
 #endif
 	
 	int MyPID = Comm.MyPID();
-	int NumProc = Comm.NumProc();
 	
 	bool verbose = (MyPID==0);
 	//
@@ -138,70 +134,47 @@ int main(int argc, char *argv[]) {
 	//
 	assert(A.TransformToLocal()==0);
 	assert(A.OptimizeStorage()==0);
-	//
-	// call the ctor that calls the petra ctor for a matrix
-	//
-	Belos::PetraMat<double> Amat(A);
-	//
 	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 	//
+	// Construct a Belos::Operator instance through the Epetra interface.
 	//
-	//*****Construct the Preconditioner*****
-	//
-	// call the default ctor for the preconditioning object
-	//
-	Anasazi::Precondition<double> Prec;
+	Belos::PetraMat<double> Amat( &A );
 	//
     	// ********Other information used by block solver***********
 	//*****************(can be user specified)******************
 	//
 	int numrhs = 1;  // total number of right-hand sides to solve for
     	int block = 1;  // blocksize used by solver
-	int numrestarts = 0; // number of restarts allowed 
-	//int maxits = 1200;
-	int maxits = NumGlobalElements/block-1; // maximum number of iterations to run
+	int numrestarts = 3; // number of restarts allowed 
+	int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
     	double tol = 1.0e-6;  // relative residual tolerance
 	//
-	//************************************************************
-	//*****Construct random right-hand-sides *****
-	//
-    	// array represents the users data
-	double * array = new double[numrhs*NumMyElements]; 
-	// set the rhs's to zero, then randomize them
-	for (j=0; j<numrhs; j++ ) {
-		for (i=0; i<NumMyElements; i++ ) {
-			array[i + j*NumMyElements]= 0.0;
-		}
-	}
-	//
-	// create a Belos::PetraVec. Note that the decision to make a view or
-	// or copy is determined by the Petra constructor called by Belos::PetraVec.
-	// This is possible because I pass in arguements needed by petra.
+	// Construct the right-hand side and solution multivectors.
 	//
 	Belos::PetraVec<double> rhs(Map, b, numrhs, NumMyElements);
+	Belos::PetraVec<double> soln( Map, numrhs );
 	Belos::PetraVec<double> xx(Map, xexact, numrhs, NumMyElements);
+	//
+	// Construct an unpreconditioned linear problem instance.
+	//
+	Belos::LinearProblemManager<double> My_LP(&Amat, &soln, &rhs);
+	My_LP.SetBlockSize( block );
 	//
 	//*******************************************************************
 	// *************Start the block Gmres iteration*************************
 	//*******************************************************************
 	//
-	Belos::BlockGmres<double> MyBlockGmres(Amat, Prec, rhs, numrhs, 
-						tol, maxits, block,verbose);
-	//
-	// Set initial guesses all to zero vectors.
-	//
-	for (j=0; j<numrhs; j++ ) {
-		for (i=0; i<NumMyElements; i++ ) {
-			array[i + j*NumMyElements]= 0.0;
-		}
-	}
+	Belos::StatusTestMaxIters<double> test1( maxits );
+	Belos::StatusTestMaxRestarts<double> test2( numrestarts );
+	Belos::StatusTestCombo<double> test3( Belos::StatusTestCombo<double>::OR, test1, test2 );
+	Belos::StatusTestResNorm<double> test4( tol );
+	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test3, test4 );
 
-	Belos::PetraVec<double> iguess( Map, numrhs );
-	MyBlockGmres.SetInitGuess( iguess );
+	Belos::OutputManager<double> My_OM( MyPID );
+	//My_OM.SetVerbosity( 1 );
 
-	MyBlockGmres.SetRestart(numrestarts);
- 
-	MyBlockGmres.SetDebugLevel(0);
+	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, My_OM, maxits);
+
 	//
 	// **********Print out information about problem*******************
 	//
@@ -227,31 +200,24 @@ int main(int argc, char *argv[]) {
 	}
 	
 	timer.start();
-	MyBlockGmres.Solve(verbose);
+	MyBlockGmres.Solve();
 	timer.stop();
+	My_Test.Print(cout);
 
-	if (verbose) {
-		cout << "Final Computed Gmres Residual Norms" << endl;
-	}
-	MyBlockGmres.PrintResids(verbose);
-
-	if (verbose) {
-		cout << "Final True Gmres Residual Norms" << endl;
-	}
-	MyBlockGmres.TrueResiduals(verbose);
 	if (verbose) {
 		cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
 	}
-
-	Belos::PetraVec<double> solutions(Map, numrhs);
-	MyBlockGmres.GetSolutions( solutions );
-
 	
 // Release all objects  
 
   delete [] NumNz;
-  delete [] array;
+  delete [] update;
+  delete [] val;
+  delete [] bindx;
+  if (xexact) delete [] xexact;
+  if (xguess) delete [] xguess;
+  if (b) delete [] b;
 	
   return 0;
   //
-} // end test_bl_pgmrs_hb.cpp
+} // end test_bl_gmres_hb.cpp

@@ -67,9 +67,6 @@ AC_CONFIG_AUX_DIR(config)
 
 AM_CONFIG_HEADER(src/Belos_config.h:src/Belos_config.h.in)
 
-# Allow users to specify their own "install" command.  If none is specified,
-# the default is install-sh found in the config subdirectory.
-                                                                                
 AC_ARG_WITH(install,
  [AC_HELP_STRING([--with-install=INSTALL_PROGRAM],
  [Use the installation program INSTALL_PROGRAM rather the default that is provided.  For example --with-install="/path/install -p"])],
@@ -79,8 +76,9 @@ AC_ARG_WITH(install,
    INSTALL_SCRIPT=$withval
    INSTALL_DATA="$withval -m 644"
  ],)
-                                                                                
-# AM_MAINTAINER_MODE turns off maintainer-only makefile targets by
+
+# AM_MAINTAINER_MODE turns off maintainer-only makefile 
+targets by
 # default, and changes configure to understand a
 # --enable-maintainer-mode option. --enable-maintainer-mode turns the
 # maintainer-only targets back on. The maintainer-only makefile
@@ -127,6 +125,7 @@ TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
 # ------------------------------------------------------------------------
@@ -197,14 +196,25 @@ AC_CXX_STD_SPRINTF
 # Checks if tests should be built and which ones should be built
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_FEATURE_SUB( belos, tests, [Build belos tests], BELOS_TESTS, yes)
-AM_CONDITIONAL(BUILD_BELOS_TESTS, [test "X$ac_cv_use_belos_tests" != "Xno"])
+#TAC_ARG_CHECK_DEFAULT_FEATURE(epetra, EPETRA)
+#AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno")
+
+TAC_ARG_CHECK_DEFAULT_FEATURE(ifpack, IFPACK)
+AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
+
+#TAC_ARG_CHECK_DEFAULT_FEATURE(triutils, TRIUTILS)
+#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+
+TAC_ARG_CHECK_FEATURE(tsfcore, TSFCORE)
+TAC_ARG_CHECK_FEATURE_SUB(tsfcore, epetra, TSFCORE_EPETRA)
+AM_CONDITIONAL(BUILD_TSFCORE_EPETRA, test "X$ac_cv_use_tsfcore" != "Xno" &&
+					test "X$ac_cv_use_tsfcore_epetra" != "Xno")
+				
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages], TESTS, yes)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
-TAC_ARG_ENABLE_FEATURE(ifpack, [Build examples which use ifpack], IFPACK, yes)
-AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
-#TAC_ARG_ENABLE_FEATURE(ifpack, [Build examples which use triutils], TRIUTILS, no)
-#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE_SUB( belos, tests, [Build Belos tests], BELOS_TESTS, yes)
+AM_CONDITIONAL(BUILD_BELOS_TESTS, [test "X$ac_cv_use_belos_tests" != "Xno"])
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -215,8 +225,6 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-AC_F77_WRAPPERS
-
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
@@ -224,10 +232,11 @@ AC_F77_WRAPPERS
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
-### Belos requires both BLAS and LAPACK
+AC_F77_WRAPPERS
 
-  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
+### Belos requires both BLAS and LAPACK
+ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics

@@ -104,6 +104,12 @@
 /* Define if want to build tests */
 #undef HAVE_TESTS
 
+/* Define if want to build tsfcore */
+#undef HAVE_TSFCORE
+
+/* Define if want to build tsfcore-epetra */
+#undef HAVE_TSFCORE_EPETRA
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 

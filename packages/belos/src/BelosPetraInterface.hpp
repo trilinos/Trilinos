@@ -29,23 +29,25 @@
 #ifndef BELOS_PETRA_HPP
 #define BELOS_PETRA_HPP
 
+/*! \file BelosPetraInterface.hpp
+    \brief Provides several interfaces between Belos virtual classes and Epetra concrete classes.
+*/
+
 #include "Epetra_MultiVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 
 #include "BelosConfigDefs.hpp"
-#include "AnasaziMatrix.hpp"
-#include "AnasaziMultiVec.hpp"
-#include "AnasaziPrecondition.hpp"
-#include "AnasaziReturnType.hpp"
+#include "BelosMultiVec.hpp"
+#include "BelosOperator.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Belos {
 
 //--------template class BelosPetraVec-------------------------------------
 template <class TYPE>
-class PetraVec : public Anasazi::MultiVec<TYPE>, public Epetra_MultiVector {
+class PetraVec : public MultiVec<TYPE>, public Epetra_MultiVector {
 public:
 // constructors
 	PetraVec(const Epetra_BlockMap&, TYPE *, const int, const int stride=0);
@@ -54,60 +56,60 @@ public:
 	PetraVec(const Epetra_MultiVector & P_vec);
 	~PetraVec();
 	//
-	//  member functions inherited from Anasazi::MultiVec
+	//  member functions inherited from MultiVec
 	//
 	//  the following is a virtual copy constructor returning
 	//  a pointer to the pure virtual class. vector values are
 	//  not copied; instead a new MultiVec is created containing
 	//  a non-zero amount of columns.
 	//
-	Anasazi::MultiVec<TYPE> * Clone ( const int numvecs );
+	MultiVec<TYPE> * Clone ( const int numvecs );
 	//
 	//  the following is a virtual copy constructor returning
 	//  a pointer to the pure virtual class. vector values are
 	//  copied and a new stand-alone MultiVector is created.
 	//  (deep copy).
 	//
-	Anasazi::MultiVec<TYPE> * CloneCopy ();
+	MultiVec<TYPE> * CloneCopy ();
 	//
 	//  the following is a virtual copy constructor returning
 	//  a pointer to the pure virtual class. vector values are
 	//  copied and a new stand-alone MultiVector is created
 	//  where only selected columns are chosen.  (deep copy).
 	//
-	Anasazi::MultiVec<TYPE> * CloneCopy ( int index[], int numvecs );
+	MultiVec<TYPE> * CloneCopy ( int index[], int numvecs );
 	//
 	//  the following is a virtual view constructor returning
 	//  a pointer to the pure virtual class. vector values are 
 	//  shared and hence no memory is allocated for the columns.
 	//
-	Anasazi::MultiVec<TYPE> * CloneView ( int index[], int numvecs );
+	MultiVec<TYPE> * CloneView ( int index[], int numvecs );
 	//
 	//  this routine sets a subblock of the multivector, which
 	//  need not be contiguous, and is given by the indices.
 	//
-	void SetBlock ( Anasazi::MultiVec<TYPE>& A, int index[], int numvecs );
+	void SetBlock ( MultiVec<TYPE>& A, int index[], int numvecs );
 	//
 	int GetNumberVecs () const;
 	int GetVecLength () const;
 	//
 	// *this <- alpha * A * B + beta * (*this)
 	//
-	void MvTimesMatAddMv ( TYPE alpha, Anasazi::MultiVec<TYPE>& A, 
-		Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta );
+        void MvTimesMatAddMv ( TYPE alpha, MultiVec<TYPE>& A, 
+			       Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta );
 	//
 	// *this <- alpha * A + beta * B
 	//
-	void MvAddMv ( TYPE alpha , Anasazi::MultiVec<TYPE>& A, TYPE beta,
-		Anasazi::MultiVec<TYPE>& B);
+	void MvAddMv ( TYPE alpha , MultiVec<TYPE>& A, TYPE beta,
+		       MultiVec<TYPE>& B);
 	//
 	// B <- alpha * A^T * (*this)
 	//
-	void MvTransMv ( TYPE alpha, Anasazi::MultiVec<TYPE>& A, Teuchos::SerialDenseMatrix<int,TYPE>& B );
+	void MvTransMv ( TYPE alpha, MultiVec<TYPE>& A, Teuchos::SerialDenseMatrix<int,TYPE>& B );
 	//
-	// alpha[i] = norm of i-th column of (*this)
+	// alpha[i] = [One,Two,Inf]-norm of i-th column of (*this)
 	//
-	void MvNorm ( TYPE* normvec);
+	ReturnType MvNorm ( TYPE *normvec, NormType norm_type = TwoNorm );
 	//
 	// random vectors in i-th column of (*this)
 	//
@@ -115,11 +117,11 @@ public:
         //
         // initializes each element of (*this) with alpha
         //
-        void MvInit ( TYPE alpha );
+        void MvInit ( TYPE alpha = Teuchos::ScalarTraits<TYPE>::zero() );
 	//
 	// print (*this)
 	//
-	void MvPrint();
+	void MvPrint(ostream& os);
 private:
 };
 //-------------------------------------------------------------
@@ -159,7 +161,7 @@ PetraVec<TYPE>::~PetraVec()
 {
 }
 //
-//  member functions inherited from Anasazi::MultiVec
+//  member functions inherited from MultiVec
 //
 //
 //  Simulating a virtual copy constructor. If we could rely on the co-variance
@@ -167,7 +169,7 @@ PetraVec<TYPE>::~PetraVec()
 //  (the derived type) instead of a pointer to the pure virtual base class.
 //
 template<class TYPE>
-Anasazi::MultiVec<TYPE>* PetraVec<TYPE>::Clone ( const int NumVecs ) {
+MultiVec<TYPE>* PetraVec<TYPE>::Clone ( const int NumVecs ) {
 	PetraVec * ptr_apv = new PetraVec(Map(),NumVecs);
 	return ptr_apv; // safe upcast.
 }
@@ -177,25 +179,25 @@ Anasazi::MultiVec<TYPE>* PetraVec<TYPE>::Clone ( const int NumVecs ) {
 	//  copied.
 	//
 template<class TYPE>
-Anasazi::MultiVec<TYPE>* PetraVec<TYPE>::CloneCopy() {
+MultiVec<TYPE>* PetraVec<TYPE>::CloneCopy() {
 	PetraVec *ptr_apv = new PetraVec(*this);
 	return ptr_apv; // safe upcast
 }
 
 template<class TYPE>
-Anasazi::MultiVec<TYPE>* PetraVec<TYPE>::CloneCopy ( int index[], int numvecs ) {
+MultiVec<TYPE>* PetraVec<TYPE>::CloneCopy ( int index[], int numvecs ) {
 	PetraVec * ptr_apv = new PetraVec(Copy, *this, index, numvecs );
 	return ptr_apv; // safe upcast.
 }
 
 template<class TYPE>
-Anasazi::MultiVec<TYPE>* PetraVec<TYPE>::CloneView ( int index[], int numvecs ) {
+MultiVec<TYPE>* PetraVec<TYPE>::CloneView ( int index[], int numvecs ) {
 	PetraVec * ptr_apv = new PetraVec(View, *this, index, numvecs );
 	return ptr_apv; // safe upcast.
 }
 
 template<class TYPE>
-void PetraVec<TYPE>::SetBlock(Anasazi::MultiVec<TYPE>& A, int index[], int numvecs ) 
+void PetraVec<TYPE>::SetBlock(MultiVec<TYPE>& A, int index[], int numvecs ) 
 {	
 	PetraVec * temp = new PetraVec(View, *this, index, numvecs );
 	Epetra_MultiVector *A_vec = dynamic_cast<Epetra_MultiVector *>(&A); assert(A_vec!=NULL);
@@ -217,7 +219,7 @@ int PetraVec<TYPE>::GetVecLength () const {
 // *this <- alpha * A * B + beta * (*this)
 //
 template<class TYPE>
-void PetraVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, Anasazi::MultiVec<TYPE>& A, 
+void PetraVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, MultiVec<TYPE>& A, 
 						   Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta ) {
 	int info=0;
 	const int izero=0;
@@ -235,8 +237,8 @@ void PetraVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, Anasazi::MultiVec<TYPE>& A,
 // *this <- alpha * A + beta * B
 //
 template<class TYPE>
-void PetraVec<TYPE>::MvAddMv ( TYPE alpha , Anasazi::MultiVec<TYPE>& A, 
-						   TYPE beta, Anasazi::MultiVec<TYPE>& B) {
+void PetraVec<TYPE>::MvAddMv ( TYPE alpha , MultiVec<TYPE>& A, 
+						   TYPE beta, MultiVec<TYPE>& B) {
 	int info=0;
 	const TYPE zero = 0.0;
 
@@ -249,7 +251,7 @@ void PetraVec<TYPE>::MvAddMv ( TYPE alpha , Anasazi::MultiVec<TYPE>& A,
 // dense B <- alpha * A^T * (*this)
 //
 template<class TYPE>
-void PetraVec<TYPE>::MvTransMv ( TYPE alpha, Anasazi::MultiVec<TYPE>& A,
+void PetraVec<TYPE>::MvTransMv ( TYPE alpha, MultiVec<TYPE>& A,
 						   Teuchos::SerialDenseMatrix<int,TYPE>& B) {
 	int info=0;
 	const int izero=0;
@@ -265,6 +267,7 @@ void PetraVec<TYPE>::MvTransMv ( TYPE alpha, Anasazi::MultiVec<TYPE>& A,
 		Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
 
 		info = B_Pvec.Multiply( *trans1, *trans2, alpha, *A_vec, *this, zero ); 
+		if (info != 0 ) cout << info << endl;
 		assert(info==0);
 	}
 }
@@ -272,12 +275,27 @@ void PetraVec<TYPE>::MvTransMv ( TYPE alpha, Anasazi::MultiVec<TYPE>& A,
 // alpha[i] = norm of i-th column of (*this)
 //
 template<class TYPE>
-void PetraVec<TYPE>::MvNorm ( TYPE * normvec ) {
+ReturnType PetraVec<TYPE>::MvNorm ( TYPE * normvec, NormType norm_type ) {
 	int info=0;
 	if (normvec) {
-		info = Norm2(normvec);
-		assert(info==0);
+	  switch( norm_type ) {
+	  case ( OneNorm ) :
+	    info = Norm1(normvec);
+	    assert(info==0);
+	    return Ok;
+	  case ( TwoNorm ) :
+	    info = Norm2(normvec);
+	    assert(info==0);
+	    return Ok;
+	  case ( InfNorm ) :	
+	    info = NormInf(normvec);
+	    assert(info==0);
+	    return Ok;
+	  default:
+	    return Undefined;
+	  }
 	}
+	return Undefined;
 }
 //
 // random vectors in i-th column of (*this)
@@ -311,32 +329,33 @@ void PetraVec<TYPE>::MvInit( TYPE alpha )
 //  print multivectors
 //
 template<class TYPE>
-void PetraVec<TYPE>::MvPrint() {
+void PetraVec<TYPE>::MvPrint(ostream& os) {
 	cout << *this << endl;
 }
 
 ///////////////////////////////////////////////////////////////
 //--------template class PetraMat-----------------------
 template <class TYPE> 
-class PetraMat : public Anasazi::Matrix<TYPE> {
+class PetraMat : public Operator<TYPE> {
 public:
-	PetraMat(const Epetra_Operator& Matrix);
+	PetraMat( Epetra_Operator* Matrix );
 	~PetraMat();
-	Anasazi::ReturnType ApplyMatrix ( const Anasazi::MultiVec<TYPE>& x, Anasazi::MultiVec<TYPE>& y ) const;
-	const Epetra_Operator & GetMatrix () { return(Epetra_Mat); };
+	ReturnType Apply ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const;
+	ReturnType ApplyInverse ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const;
+	const Epetra_Operator* GetMat () { return(Epetra_Mat); };
 private:
-	const Epetra_Operator & Epetra_Mat;
+	Epetra_Operator* Epetra_Mat;
 };
 //-------------------------------------------------------------
 //
-// implementation of the Belos::PetraMat class.
+// implementation of the PetraOp class.
 //
 ////////////////////////////////////////////////////////////////////
 //
-// Anasazi::Matrix constructors
+// Operator constructors
 //
 template <class TYPE>
-PetraMat<TYPE>::PetraMat(const Epetra_Operator& Matrix) 
+PetraMat<TYPE>::PetraMat( Epetra_Operator* Matrix ) 
 	: Epetra_Mat(Matrix) 
 {
 }
@@ -346,46 +365,75 @@ PetraMat<TYPE>::~PetraMat()
 {
 }
 //
-// Anasazi::Matrix matrix multiply
+// Operator matrix multiply
 //
 template <class TYPE>
-Anasazi::ReturnType PetraMat<TYPE>::ApplyMatrix ( const Anasazi::MultiVec<TYPE>& x, 
-					  Anasazi::MultiVec<TYPE>& y ) const {
+ReturnType PetraMat<TYPE>::Apply ( const MultiVec<TYPE>& x, 
+				  MultiVec<TYPE>& y, ETrans trans ) const {
 	int info=0;
-	Anasazi::MultiVec<TYPE> & temp_x = const_cast<Anasazi::MultiVec<TYPE> &>(x);
+	MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
 	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
 	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
-
+	//
 	assert( vec_x!=NULL && vec_y!=NULL );
 	//
-	// Need to cast away constness because the member function Multiply
-	// is not declared const.
+	// Set the operator to apply the transpose if that is requested.
+	// (TO DO:  insert a throw if the application returns a nonzero )
 	//
-	info=const_cast<Epetra_Operator&>(Epetra_Mat).Apply( *vec_x, *vec_y );
-	assert(info==0);
-	return Anasazi::Ok;	
+	if (trans) { 
+	  info = Epetra_Mat->SetUseTranspose( true );
+	  if (info != 0) { return Undefined; }
+  	}
+	info = Epetra_Mat->Apply( *vec_x, *vec_y );
+	if (info != 0) { return Error; }
+	return Ok;	
+}
+
+template <class TYPE>
+ReturnType PetraMat<TYPE>::ApplyInverse ( const MultiVec<TYPE>& x, 
+				  MultiVec<TYPE>& y, ETrans trans ) const {
+	int info=0;
+	MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
+	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
+	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+	//
+	assert( vec_x!=NULL && vec_y!=NULL );
+	//
+	// Set the operator to apply the transpose if that is requested.
+	// (TO DO:  insert a throw if the application returns a nonzero )
+	//
+	if (trans) { 
+	  info = Epetra_Mat->SetUseTranspose( true );
+	  if (info != 0) { return Undefined; }
+  	}
+	info = Epetra_Mat->ApplyInverse( *vec_x, *vec_y );
+	if (info != 0) { return Error; }
+	return Ok;	
 }
  
 ///////////////////////////////////////////////////////////////
-//--------template class Belos::PetraPrec--------------------
+//--------template class PetraPrec--------------------
 
 template <class TYPE>
-class PetraPrec : public Anasazi::Precondition<TYPE> {
+class PetraPrec : public Operator<TYPE> {
 public:
-        PetraPrec(const Epetra_Operator& Prec);
+        PetraPrec( Epetra_Operator* Prec );
         ~PetraPrec();
-        void ApplyPrecondition ( const Anasazi::MultiVec<TYPE>& x, Anasazi::MultiVec<TYPE>& y ) const;
+        ReturnType Apply ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const;
+	ReturnType ApplyInverse ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const;
+	const Epetra_Operator* GetPrec () { return(Epetra_Prec); };
 private:
-   	const Epetra_Operator& Epetra_Prec;
+   	Epetra_Operator* Epetra_Prec;
 };
 //--------------------------------------------------------------
 //
-// implementation of the Belos::PetraPrec class.
+// implementation of the PetraPrec class.
 //
 // Constructor.
 //
 template <class TYPE>
-PetraPrec<TYPE>::PetraPrec(const Epetra_Operator& Prec) : Epetra_Prec(Prec) 
+PetraPrec<TYPE>::PetraPrec( Epetra_Operator* Prec ) 
+	: Epetra_Prec(Prec) 
 {
 }
 //
@@ -397,23 +445,50 @@ PetraPrec<TYPE>::~PetraPrec()
 }
 /////////////////////////////////////////////////////////////
 //
-// Anasazi::Precondition Operator application
+// Operator application
 //
 template <class TYPE>
-void PetraPrec<TYPE>::ApplyPrecondition ( const Anasazi::MultiVec<TYPE>& x,
-                                                    Anasazi::MultiVec<TYPE>& y) const {
+ReturnType PetraPrec<TYPE>::Apply ( const MultiVec<TYPE>& x,
+			      MultiVec<TYPE>& y, ETrans trans ) const {
 	int info=0;
-	Anasazi::MultiVec<TYPE> & temp_x = const_cast<Anasazi::MultiVec<TYPE> &>(x);
+	MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
      	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
      	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
 
      	assert( vec_x!=NULL && vec_y!=NULL );
 	//
-	// Need to cast away constness because the member function Multiply
-	// is not declared const.
+	// Transpose the operator if that is required.
+	// (TO DO:  insert a throw if the application returns a nonzero )
 	//
-	info=const_cast<Epetra_Operator&>(Epetra_Prec).ApplyInverse( *vec_x, *vec_y );
-	assert(info==0);
+	if (trans) {
+	  info = Epetra_Prec->SetUseTranspose( true );
+	  if (info != 0) { return Undefined; }
+	}	  
+	info = Epetra_Prec->ApplyInverse( *vec_x, *vec_y );
+	if (info != 0) { return Error; };
+	return Ok;
+}
+
+template <class TYPE>
+ReturnType PetraPrec<TYPE>::ApplyInverse ( const MultiVec<TYPE>& x,
+			      MultiVec<TYPE>& y, ETrans trans ) const {
+	int info=0;
+	MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
+     	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
+     	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+
+     	assert( vec_x!=NULL && vec_y!=NULL );
+	//
+	// Transpose the operator if that is required.
+	// (TO DO:  insert a throw if the application returns a nonzero )
+	//
+	if (trans) {
+	  info = Epetra_Prec->SetUseTranspose( true );
+	  if (info != 0) { return Undefined; }
+	}	  
+	info = Epetra_Prec->Apply( *vec_x, *vec_y );
+	if (info != 0) { return Error; };
+	return Ok;
 }
 
 } // end Belos namespace

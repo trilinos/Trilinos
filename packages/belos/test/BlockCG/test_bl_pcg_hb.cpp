@@ -41,6 +41,11 @@
 //
 // 
 #include "BelosConfigDefs.hpp"
+#include "BelosLinearProblemManager.hpp"
+#include "BelosOutputManager.hpp"
+#include "BelosStatusTestMaxIters.hpp"
+#include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestCombo.hpp"
 #include "BelosPetraInterface.hpp"
 #include "BelosBlockCG.hpp"
 #include "Trilinos_Util.h"
@@ -72,8 +77,7 @@ int main(int argc, char *argv[]) {
 #endif
 	
 	int MyPID = Comm.MyPID();
-	int NumProc = Comm.NumProc();
-	
+	int NumProc = Comm.NumProc();	
 	bool verbose = (MyPID==0);
 	//
     	if(argc < 2 && verbose) {
@@ -114,8 +118,8 @@ int main(int argc, char *argv[]) {
 	//
 	int numrhs = 15;  // total number of right-hand sides to solve for
     	int block = 10;  // blocksize used by solver
-    	int maxits = NumGlobalElements - 1; // maximum number of iterations to run
-    	double tol = 5.0e-9;  // relative residual tolerance
+    	int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
+    	double tol = 1.0e-6;  // relative residual tolerance
 	//
 	//*************************************************************
 	//
@@ -155,7 +159,7 @@ int main(int argc, char *argv[]) {
 	//
 	// call the ctor that calls the petra ctor for a matrix
 	//
-	Belos::PetraMat<double> Amat(A);
+	Belos::PetraMat<double> Amat( &A );
 	//
 	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 	//
@@ -200,13 +204,33 @@ int main(int argc, char *argv[]) {
 	//
 	// call the ctor for the preconditioning object
 	//
-	Belos::PetraPrec<double> EpetraOpPrec(prec);
-
+	Belos::PetraPrec<double> EpetraOpPrec( &prec );
 	//
-	//*****Construct random right-hand-sides *****
+	//*****Construct initial guess and random right-hand-sides *****
 	//
+	Belos::PetraVec<double> soln(Map, numrhs);
 	Belos::PetraVec<double> rhs(Map, numrhs);
 	rhs.MvRandom();
+	//
+	//*****Create Linear Problem for Belos Solver
+	//
+	Belos::LinearProblemManager<double> My_LP(&Amat, &soln, &rhs);
+	My_LP.SetLeftPrec( &EpetraOpPrec );
+	My_LP.SetBlockSize( block );
+	//
+	//
+	//*******************************************************************
+	// *************Start the block CG iteration*************************
+	//*******************************************************************
+	//
+        Belos::StatusTestMaxIters<double> test1( maxits );
+        Belos::StatusTestResNorm<double> test2( tol );
+        Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
+
+	Belos::OutputManager<double> My_OM( MyPID );
+	//My_OM.SetVerbosity( 1 );
+
+	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, My_OM);
 	//
 	// **********Print out information about problem*******************
 	//
@@ -219,22 +243,6 @@ int main(int argc, char *argv[]) {
 	   cout << "Relative residual tolerance: " << tol << endl;
        	   cout << endl;
 	}
-	//
-	//
-	//*******************************************************************
-	// *************Start the block CG iteration*************************
-	//*******************************************************************
-	//
-	Belos::BlockCG<double> MyBlockCG(Amat, EpetraOpPrec, rhs, numrhs, tol, 
-					maxits, block,verbose);
-	//
-	// Set initial guesses all to zero vectors.
-	//
-	Belos::PetraVec<double> iguess(Map, numrhs);
-	iguess.MvInit(0.0);
-	MyBlockCG.SetInitGuess( iguess );
-
-	MyBlockCG.SetDebugLevel(0);
 
 	if (verbose) {
 	   cout << endl << endl;
@@ -244,28 +252,35 @@ int main(int argc, char *argv[]) {
 	   cout << numrhs << " right-hand side(s) -- using a block size of " << block
 			<< endl << endl;
 	}
-	MyBlockCG.Solve(verbose);
-
-	if (verbose) {
-		cout << "Final Computed CG Residual Norms" << endl;
-	}
-	MyBlockCG.PrintResids(verbose);
-
-	if (verbose) {
-		cout << "Final True CG Residual Norms" << endl;
-	}
-	MyBlockCG.TrueResiduals(verbose);
-
-	Belos::PetraVec<double> solutions(Map, numrhs);
-	MyBlockCG.GetSolutions( solutions );
-
+	MyBlockCG.Solve();
+	My_Test.Print(cout);
 	
+        //
+        // Compute actual residuals.
+        //
+        double* actual_resids = new double[numrhs];
+        double* rhs_norm = new double[numrhs];
+        Belos::PetraVec<double> resid( Map, numrhs );
+        Amat.Apply( soln, resid );
+        resid.MvAddMv( -1.0, resid, 1.0, rhs );
+        resid.MvNorm( actual_resids );
+        rhs.MvNorm( rhs_norm );
+        cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+        for (i=0; i<numrhs; i++) {
+                cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
+        }
+
 // Release all objects  
 
+  if (ICT) { delete ICT; ICT = 0; }
   delete [] NumNz;
-  delete [] bindx, update, col_inds;
-  delete [] val, row_vals;
+  delete [] bindx;
+  delete [] update;
+  delete [] val; 
+  delete [] actual_resids;
+  delete [] rhs_norm;
 	
   return 0;
   //
 } // end test_bl_pcg_hb.cpp
+

@@ -26,8 +26,12 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _BELOSCONFIGDEFS_H_
-#define _BELOSCONFIGDEFS_H_
+#ifndef BELOS_CONFIGDEFS_HPP
+#define BELOS_CONFIGDEFS_HPP
+
+/*! \file BelosConfigDefs.hpp
+    \brief Belos header file which uses auto-configuration information to include necessary C++ headers.
+*/
 
 #ifndef __cplusplus
 #define __cplusplus
@@ -138,4 +142,4 @@ using namespace std;
 
 #endif /*HAVE_CONFIG_H*/
 
-#endif /*_BELOSCONFIGDEFS_H_*/
+#endif /* BELOS_CONFIGDEFS_HPP */
