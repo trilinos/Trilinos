@@ -168,7 +168,7 @@ static unsigned const idata3d [] = {   /* 3 dimension to nkey conversion */
  2,  5,  3,  4,  1,  6,  0,  7,
  6,  5,  7,  4,  1,  2,  0,  3};
 
-static unsigned const istate3d [] ={ /* 2 dimension to nkey state transitions */
+static unsigned const istate3d [] ={ /* 3 dimension to nkey state transitions */
  1,  6,  3,  4,  2,  5,  0,  0,
  0,  7,  8,  1,  9,  4,  5,  1,
 15, 22, 23, 20,  0,  2, 19,  2,

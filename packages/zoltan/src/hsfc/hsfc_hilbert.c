@@ -25,6 +25,12 @@ the precision of these routines. */
 /* Given a 1-d coordinate in [0,1], returns it as the Hilbert key) */
 double Zoltan_HSFC_InvHilbert1d (ZZ *zz, double *coord)
    {
+   char *yo = "Zoltan_HSFC_InvHilbert1d";
+
+   /* sanity check for input arguments */
+   if (coord[0] < 0.0)
+      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Spatial Coordinates out of range.");
+
    return *coord;
    }
 
@@ -42,7 +48,8 @@ double Zoltan_HSFC_InvHilbert2d (ZZ *zz, double *coord)
    char *yo = "Zoltan_HSFC_InvHilbert2d";
 
    /* sanity check for input arguments */
-   if ((coord[0] < 0.0) | (coord[0] > 1.0) | (coord[1] < 0.0) | (coord[1] > 1.0))
+   if ((coord[0] < 0.0) || (coord[0] > 1.0) || (coord[1] < 0.0) 
+    || (coord[1] > 1.0))
       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Spatial Coordinates out of range.");
 
    /* convert x,y coordinates to integers in range [0, IMAX] */
@@ -94,8 +101,8 @@ double Zoltan_HSFC_InvHilbert3d (ZZ *zz, double *coord)
    char *yo = "Zoltan_HSFC_InvHilbert3d";
 
    /* sanity check for input arguments */
-   if ((coord[0] < 0.0) | (coord[0] > 1.0) | (coord[1] < 0.0) | (coord[1] > 1.0)
-     | (coord[2] < 0.0) | (coord[2] > 1.0))
+   if ((coord[0] < 0.0)  || (coord[0] > 1.0) || (coord[1] < 0.0)
+     || (coord[1] > 1.0) || (coord[2] < 0.0) || (coord[2] > 1.0))
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Spatial Coordinates out of range.");
 
    /* convert x,y,z coordinates to integers in range [0,IMAX] */
@@ -133,6 +140,12 @@ SQA coverage requirement. */
 /* Given the Hilbert key, returns it as the coordinate in [0,1] */
 void Zoltan_HSFC_Hilbert1d (ZZ *zz, double *coord, double key)
    {
+   char *yo = "Zoltan_HSFC_Hilbert1d";
+
+   /* sanity check for input argument */
+   if ((key < 0.0) || (key > 1.0))
+      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Hilbert coordinate out of range.");
+
    *coord = key;
    }
 
@@ -150,7 +163,7 @@ void Zoltan_HSFC_Hilbert2d (ZZ *zz, double *coord, double key)
    char *yo = "Zoltan_HSFC_Hilbert2d";
 
    /* sanity check for input argument */
-   if ((key < 0.0) | (key > 1.0))
+   if ((key < 0.0) || (key > 1.0))
       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Hilbert coordinate out of range.");
 
    ikey[1] = (unsigned int) (modf (key * (double) IMAX, &t) * (double) IMAX);
@@ -204,7 +217,7 @@ void Zoltan_HSFC_Hilbert3d (ZZ *zz, double *coord, double key)
    char *yo = "Zoltan_HSFC_Hilbert3d";
 
    /* sanity check for input argument */
-   if ((key < 0.0) | (key > 1.0))
+   if ((key < 0.0) || (key > 1.0))
       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Hilbert coordinate out of range.");
 
    ikey[1] = (unsigned int) (modf (key * (double) IMAX, &t) * (double) IMAX);

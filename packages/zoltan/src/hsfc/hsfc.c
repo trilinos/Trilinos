@@ -100,10 +100,13 @@ int Zoltan_HSFC(
 
    /* begin program with trace, timing, and initializations */
    ZOLTAN_TRACE_ENTER (zz, yo);
-   start_time = Zoltan_Time(zz->Timer);
+   if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) {
+      MPI_Barrier(zz->Communicator);
+      start_time = Zoltan_Time(zz->Timer);
+      }
    *num_export = *num_import = -1;              /* in case of early error exit */
    MPI_Op_create(&Zoltan_HSFC_mpi_sum_max_min, 1, &mpi_op); /* register method */
-   
+
    if (sizeof (int) != 4)
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "HSFC tested only for 32 bit integers");
 
@@ -314,7 +317,7 @@ int Zoltan_HSFC(
             sum = 0.0;
             k++;
             }
-      if (done)
+      if (done)    /* this is the actual loop stopping criterion */
          break;    /* no bin with "cut" is refinable, time to quit */
 
       /* determine new grand partition by refining new partition boundary */
@@ -507,9 +510,13 @@ free:
     &parts, &tsum);
    if (zz->Obj_Weight_Dim > 1)
       ZOLTAN_FREE (&work_fraction);
-   end_time = Zoltan_Time(zz->Timer);
+      
+   if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) {
+      MPI_Barrier(zz->Communicator);
+      end_time = Zoltan_Time(zz->Timer);
+      }
 
-   if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME  &&  zz->Proc == 0)
+   if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME  &&  zz->Debug_Proc == zz->Proc)
       printf ("HSFC Processing Time is %.6f seconds\n", end_time - start_time);
 
    ZOLTAN_TRACE_EXIT (zz, yo);

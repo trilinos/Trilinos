@@ -37,7 +37,6 @@ int Zoltan_HSFC_Box_Assign (
          int *procs, int *proc_count, int *parts, int *part_count)
    {
    double     xintl[3], xinth[3];         /* low and high bounded query box */
-   double     start_time, end_time;       /* timing information */
    int       *part_array = NULL;
    int       *proc_array = NULL;
    HSFC_Data *d;                    /* HFSC's portion of Zoltan data structure */
@@ -46,6 +45,9 @@ int Zoltan_HSFC_Box_Assign (
    double     fsfc, starting;
    Partition *p;
    const double FUZZY = 1.0e-9; /* to build region about a query point or line */
+                                /* Erik suggested that this value be tied to */
+                                /* the actual precision available (dimension */
+                                /* specific - 2^18 in 3d, 2^27 in 2d. */
    int        err = ZOLTAN_OK;
    char      *yo = "Zoltan_HSFC_Box_Assign";
 
@@ -54,7 +56,6 @@ int Zoltan_HSFC_Box_Assign (
    if (d == NULL)
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL,
           "No Decomposition Data available; use KEEP_CUTS parameter.");
-   start_time = Zoltan_Time (zz->Timer);       /* optional timing information */
 
    /* allocate memory to store results */
    *part_count = *proc_count = 0;
@@ -199,16 +200,12 @@ fini:
 free:
    ZOLTAN_FREE (&part_array);
    ZOLTAN_TRACE_EXIT (zz, yo);
-
-   end_time = Zoltan_Time (zz->Timer);
-   if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME && zz->Proc == 0)
-      printf ("HSFC Box Assign time is %.6f seconds\n", end_time - start_time);
    return err;
    }
 
 
 
-/* finds the next partition to enter the query space -- 2 dimensional */
+/* returns the first Hilbert coordinate in [s,1] to enter the user's query box */
 static double next_query_2d (ZZ *zz, double *lquerybox, double *hquerybox,
  double s)
    {
@@ -336,7 +333,7 @@ static double next_query_2d (ZZ *zz, double *lquerybox, double *hquerybox,
 
 
 
-/* finds the next partition to enter the query space -- 3 dimensional */
+/* returns the first Hilbert coordinate in [s,1] to enter the user's query box */
 static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
  double s)
    {
