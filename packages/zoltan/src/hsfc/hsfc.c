@@ -29,6 +29,7 @@ extern "C" {
 
 
 #include "hsfc.h"
+#include <float.h>
 
 
 /****************************************************************************/
@@ -233,6 +234,8 @@ int Zoltan_HSFC(
       grand_partition[i].r     = (i+1) / (double)pcount;
       grand_partition[i].l     =  i    / (double)pcount;
       }
+   grand_partition[pcount-1].r += (2.0 * FLT_EPSILON) ;
+
    ZOLTAN_TRACE_DETAIL (zz, yo, "About to enter main loop\n");
 
 
@@ -330,7 +333,7 @@ int Zoltan_HSFC(
             grand_partition[k+1].l = grand_partition[k].r
              = partition[i] + j * delta[i];
       grand_partition[0].l        = 0.0;
-      grand_partition[pcount-1].r = 1.0;
+      grand_partition[pcount-1].r = 1.0 + (2.0 * FLT_EPSILON) ;
       } /* end of loop */
 
 
@@ -403,14 +406,14 @@ int Zoltan_HSFC(
    /* check if we didn't close out last sum, fix right boundary if needed */   
    if (i == pcount && k < zz->LB.Num_Global_Parts)
      {
-     d->final_partition[k].r = 1.0;
+     d->final_partition[k].r = 1.0 + (2.0 * FLT_EPSILON) ;
      k++;
      }
 
    /* if last partition(s) is empty, loop stops w/o setting final_partition(s) */
    for (i = k; i < zz->LB.Num_Global_Parts; i++)  {
-      d->final_partition[i].r = 1.0;
-      d->final_partition[i].l = 1.0;
+      d->final_partition[i].r = 1.0 + (2.0 * FLT_EPSILON);
+      d->final_partition[i].l = 1.0 + (2.0 * FLT_EPSILON);
       }
 
    out_of_tolerance = 0;
