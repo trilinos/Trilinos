@@ -54,7 +54,7 @@ TARGET		= zdrive
 LIB_TARGET	= zoltan
 LIB_NAME	= libzoltan.a
 
-SUPP_TARGS	= "smos sun tflop"
+SUPP_TARGS	= "smos sun solaris sunos tflop"
 
 # Paths to third party libraries (not really part of Zoltan)
 # 
@@ -146,16 +146,19 @@ LIB_SRC_OBJ	= $(LIB_SRC_C:.c=.o)
 #
 # lint defines
 #
-LINT		= alint
+#LINT		= alint # SunOs4
+LINT		= lint
 LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb \
 		  -Icomm -Ioct -Iparmetis \
 		  -I/Net/local/lang/SC3.0.1/include \
 		  -I/Net/local/lang/SC3.0.1/ansi_include \
+		  -I/Net/local/mpi/include \
 		  -I/Net/local/mpi/mpich/include \
+                  -I/Net/local/mpi/build/solaris/ch_p4/include \
 		  -I/Net/pecos/rf_crew/arch/sun/include
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 LINT_TARGET	= llib-l$(LIB_TARGET).ln
-SUBDIRS		= driver ch all lb par rcb comm oct
+SUBDIRS		= driver ch all lb par rcb comm oct parmetis
 VPATH		= $(SUBDIRS)
 
 #
@@ -310,7 +313,8 @@ help:
 	@echo 'type "gmake target-dr", where target is one of the following:'
 	@echo ' '
 	@echo '      smos       (for Intel Paragon)'
-	@echo '      sun        (for Solaris with MPI)'
+	@echo '      sun        (for Solaris with MPI; same as solaris)'
+	@echo '      solaris    (for Solaris with MPI; same as sun)'
 	@echo '      sunos      (for SunOS4 with MPI)'
 	@echo '      tflop      (for Intel/Sandia ASCI Red)'
 	@echo '      cplant     (for Computational Plant)'
@@ -374,6 +378,8 @@ tflop-dr:
 	"RANLIB=$(TFLOP_RANLIB)" "MAIN_OBJ=$(TFLOP_DR_OBJ)" \
 	"LNK_LIBS=$(TFLOP_DR_LIBS)"
 
+solaris: sun
+
 sun:
 	@if [ ! -d Obj_sun ]; \
 	then mkdir Obj_sun; \
@@ -387,6 +393,8 @@ sun:
 	"DEFS=$(SUN_DEFS)" "VPATH=$(SUB_VPATH)" \
 	"RANLIB=$(SUN_RANLIB)"
 #	@cscope -b $(MAIN) $(SUN_CSRC) $(SUN_INC)
+
+solaris-dr: sun-dr
 
 sun-dr:
 	@if [ ! -d Obj_sun ]; \
