@@ -191,9 +191,9 @@ type(ZOLTAN_FN_TYPES), parameter :: &
 
 #ifdef SUNSOFT
 ! bug in SunSoft compiler prevents using parameter
-integer(LB_INT) :: &
+integer(Zoltan_INT) :: &
 #else
-integer(LB_INT), parameter :: &
+integer(Zoltan_INT), parameter :: &
 #endif
   LB_OTHER_REF     = ZOLTAN_OTHER_REF, &
   LB_IN_ORDER      = ZOLTAN_IN_ORDER, &
@@ -203,9 +203,9 @@ integer(LB_INT), parameter :: &
 
 #ifdef SUNSOFT
 ! bug in SunSoft compiler prevents using parameter
-integer(LB_INT) :: &
+integer(Zoltan_INT) :: &
 #else
-integer(LB_INT), parameter :: &
+integer(Zoltan_INT), parameter :: &
 #endif
    LB_OK     = ZOLTAN_OK, &
    LB_WARN   = ZOLTAN_WARN, &
