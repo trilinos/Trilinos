@@ -49,6 +49,7 @@
 
 #include <string>
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Vector.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #else
