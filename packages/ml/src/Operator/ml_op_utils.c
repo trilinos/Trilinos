@@ -429,30 +429,40 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
 int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
                          int *pnode_part,
                          int *ndwts /*=NULL*/, int *egwts/*=NULL*/,
-                         int nedges /*= 0*/ )
+                         int nedges /*= 0*/, int metis_or_parmetis )
 {
 #ifdef HAVE_ML_METIS
   int locid, ii, numadjac, *bindx = NULL;
-  idxtype *xadj, *adjncy, *blks;
+  idxtype *xadj = NULL, *adjncy = NULL, *blks = NULL;
   int options[5]={0,3,1,1,0};
   int weightflag = ndwts ? 2 : 0;
   int nmbng = 0, edgecut = -1, n = nLocalNd, np = *nblk;
   double *val = NULL;
   int allocated = 0, row_length, j;
   /* FILE *fp; */
+#if ( defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) )
+   int *map = NULL, itemp1, itemp2, nprocs, myid;
+   idxtype ncon, *tpwts = NULL, *vtxdist = NULL;
+   float ubvec, itr;
+#endif
 
   if( egwts ) weightflag++;
 
-  if( *nblk == 1 || nLocalNd < 1 ){
+  if( *nblk == 1 || ((nLocalNd < 1) && (metis_or_parmetis == ML_USEMETIS))){
     for( ii = 0 ; ii < nLocalNd ; ii++ ) pnode_part[ii] = 0;
     return 0;
   }
+#if ! ( defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) )
+  if (metis_or_parmetis == ML_USEPARMETIS) {
+    for( ii = 0 ; ii < nLocalNd ; ii++ ) pnode_part[ii] = 0;
+    return 1;
+}
+#endif
 
   /* Set 'xadj' & 'adjncy' adjacency data.  This is the graph
      that Metis requires.  It corresponds to the matrix graph
      without self connections (diagonal entries). */
 
-  /*ndwts = (int *) ML_allocate(nLocalNd * sizeof(int) );*/
 
   xadj = (idxtype *) ML_allocate( (nLocalNd+1) * sizeof(idxtype) );
   if (xadj == NULL) pr_error("ML_Operator_BlockPartition: out of space\n");
@@ -463,44 +473,42 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
     ML_get_matrix_row(matrix, 1, &locid, &allocated, &bindx, &val,
                       &row_length, 0);
     ii += row_length - 1;
-    /*ndwts[locid] = row_length - 1;*/
   }
   numadjac = ii;
   adjncy = (idxtype *) ML_allocate( (numadjac+1) * sizeof(idxtype) );
   if (adjncy == NULL) pr_error("ML_Operator_BlockPartition: out of space\n");
 
-  ii = 0;
-  for( locid = 0 ; locid < nLocalNd ; locid++ )
-  {
-    xadj[locid] = ii;
-    ML_get_matrix_row(matrix, 1, &locid, &allocated, &bindx,
-                      &val, &row_length, 0);
-    for (j = 0; j < row_length; j++)
-    {
-       if ( bindx[j] != locid ) adjncy[ii++] = bindx[j];
+  if (metis_or_parmetis == ML_USEMETIS) {
+    ii = 0;
+    for( locid = 0 ; locid < nLocalNd ; locid++ )   {
+      xadj[locid] = ii;
+      ML_get_matrix_row(matrix,1,&locid,&allocated,&bindx,&val,&row_length,0);
+      for (j = 0; j < row_length; j++)     {
+	if (( bindx[j] != locid ) & (bindx[j] < nLocalNd))
+	  adjncy[ii++] = bindx[j];
+      }
     }
+    xadj[nLocalNd] = ii;
   }
-  xadj[nLocalNd] = ii;
-  ML_free(val);
-  ML_free(bindx);
-
-  /*
-  fp = fopen("matrix_graph","w");
-  fprintf(fp,"%d %d %d\n",nLocalNd,xadj[nLocalNd]/2,numadjac);
-  for( locid = 0 ; locid < nLocalNd ; locid++ )
-  {
-     for (j=xadj[locid]; j < xadj[locid+1]; j++)
-        fprintf(fp,"%d ",adjncy[j]+1);
-     fprintf(fp,"\n");
+#if ( defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) )
+  else {
+    ML_create_unique_id(nLocalNd, &map, matrix->getrow->pre_comm, matrix->comm);
+    ii = 0;
+    for( locid = 0 ; locid < nLocalNd ; locid++ )   {
+      xadj[locid] = ii;
+      ML_get_matrix_row(matrix,1,&locid,&allocated,&bindx,&val,&row_length,0);
+      for (j = 0; j < row_length; j++)     {
+	if ( bindx[j] != locid ) {
+	  adjncy[ii++] = map[bindx[j]];
+	}
+      }
+    }
+    xadj[nLocalNd] = ii;
+    if (map != NULL) ML_free(map);
   }
-  fclose(fp);
-
-  fp = fopen("np_check","w"); 
-  fprintf(fp,"%d\n",edgecut);
-  for( locid = 0 ; locid < nLocalNd ; locid++ )
-     fprintf(fp,"%d\n",pnode_part[locid]);
-  fclose(fp);
-  */
+#endif
+  if (val   != NULL) ML_free(val);
+  if (bindx != NULL) ML_free(bindx);
 
   /*
    n                number of vertices in graph
@@ -525,30 +533,70 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
 
   /* Get local partition. */
 
-  if (np < 8)
-     METIS_PartGraphRecursive( &n, xadj, adjncy, ndwts, egwts, &weightflag,
-                               &nmbng, &np, options, &edgecut, pnode_part );
-  else
-     METIS_PartGraphKway( &n, xadj, adjncy, ndwts, egwts, &weightflag, &nmbng,
-                          &np, options, &edgecut, pnode_part );
-  ML_free(xadj);
-  ML_free(adjncy);
+  if (metis_or_parmetis == ML_USEMETIS) {
+    if (np < 8)
+      METIS_PartGraphRecursive( &n, xadj, adjncy, ndwts, egwts, &weightflag,
+				&nmbng, &np, options, &edgecut, pnode_part );
+    else
+      METIS_PartGraphKway( &n, xadj, adjncy, ndwts, egwts, &weightflag, &nmbng,
+			   &np, options, &edgecut, pnode_part );
 
-  blks = (int *) ML_allocate((np+1)*sizeof(int));
-  if (blks == NULL) pr_error("ML_Operator_BlockPartition: out of space\n");
-  for (j = 0; j < *nblk; j++) blks[j] = -1;
-  for (j = 0; j < n; j++) blks[pnode_part[j]] = -2;
-  ii = 0;
-  for (j = 0; j < *nblk; j++) {
-    if ( blks[j] == -2) {
-       blks[j] = ii;
-       ii++;
+    blks = (int *) ML_allocate((np+1)*sizeof(int));
+    if (blks == NULL) pr_error("ML_Operator_BlockPartition: out of space\n");
+    for (j = 0; j < *nblk; j++) blks[j] = -1;
+    for (j = 0; j < n; j++) blks[pnode_part[j]] = -2;
+    ii = 0;
+    for (j = 0; j < *nblk; j++) {
+      if ( blks[j] == -2) {
+	blks[j] = ii;
+	ii++;
+      }
     }
+    for (j = 0; j < n; j++) pnode_part[j] = blks[pnode_part[j]];
+    *nblk = ii;
+    if (blks    != NULL) ML_free(blks);
   }
-  for (j = 0; j < n; j++) pnode_part[j] = blks[pnode_part[j]];
-  *nblk = ii;
-  
-  ML_free(blks);
+
+#if ( defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) )
+  else {
+    nprocs = matrix->comm->ML_nprocs;
+    myid   = matrix->comm->ML_mypid;
+    
+    ubvec = 1.05;
+    tpwts   = (idxtype *) ML_allocate(sizeof(idxtype)*ML_max(np,nprocs));
+    vtxdist = (idxtype *) ML_allocate(sizeof(idxtype)*(nprocs+1));
+    for (ii = 0; ii <= nprocs; ii++) vtxdist[ii] = 0;
+    vtxdist[myid] = nLocalNd;
+    ML_gsum_vec_int(&vtxdist,&tpwts,nprocs,matrix->comm);
+
+    itemp1 = 0;
+    for (ii = 0; ii < nprocs ; ii++) {
+      itemp2 = vtxdist[ii];
+      vtxdist[ii] = itemp1;
+      itemp1 += itemp2;
+    }
+    vtxdist[nprocs] = itemp1;
+    
+    ncon = 1;
+    itr = 1000.;
+    options[0] = 0;
+
+    for (ii = 0; ii < nLocalNd; ii++) pnode_part[ii] = matrix->comm->ML_mypid;
+
+   weightflag = 0;
+   ParMETIS_V3_AdaptiveRepart( vtxdist,xadj,adjncy, NULL,
+				NULL, NULL, &weightflag,
+				&nmbng, &ncon, &np, NULL, &ubvec, 
+				&itr, options, &edgecut, pnode_part,
+				&(matrix->comm->USR_comm));
+    *nblk = np;
+    if (vtxdist != NULL) ML_free(vtxdist);
+    if (tpwts   != NULL) ML_free(tpwts);
+  }
+  if (adjncy  != NULL) ML_free(adjncy);
+  if (xadj    != NULL) ML_free(xadj);
+
+#endif
 
 #else
   printf("ML_partitionBlocksNodes: Metis not linked\n");
