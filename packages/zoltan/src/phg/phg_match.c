@@ -146,7 +146,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
 {
     int   i, j, k, v1, v2, edge, best_vertex;
     int   nadj, dense_comm;
-    float maxip;
+    float maxip= 0.;
     int   *adj=NULL;
     int   *order=NULL;
     float *lips, *gips; /* local and global inner products */
@@ -328,7 +328,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
         /* now choose the vector with greatest inner product */
         /* do only on root proc, then broadcast to column */
         if (hgc->myProc_y==0){
-          maxip = 0;
+          maxip = 0.;
           best_vertex = -1;
           if (dense_comm){
 #ifdef DEBUG_EB
@@ -357,7 +357,11 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
 #ifdef DEBUG_EB
               if (gips[v2]>0) printf(" %d=%4.2f, ", v2, gips[v2]);
 #endif
-              if (gips[v2] > maxip && v2 != v1 && match[v2] == v2) {
+              /* Choose lowest numbered vertex if tied.
+               * This seems to work slightly better and is consistent
+               * with earlier implementations. */
+              if (((gips[v2] > maxip) || (gips[v2]==maxip && v2<best_vertex))
+                 && v2 != v1 && match[v2] == v2) {
                   maxip = gips[v2];
                   best_vertex = v2;
               }
@@ -370,24 +374,30 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
         } 
 
         /* broadcast the winner, best_vertex */
-        MPI_Bcast(&best_vertex, 1, MPI_INT, 0, hgc->col_comm);
+        MPI_Bcast(&best_vertex, 1, MPI_INT, 0, hgc->col_comm); 
 
         /* match if inner product > 0 */
         if (best_vertex > -1) {
             match[v1] = best_vertex;
             match[best_vertex] = v1;
-            lquality[0] += maxip;
-            lquality[1] += 1.0;
+            if (hgc->myProc_y==0){
+              /* match quality computation */
+              lquality[0] += maxip;
+              lquality[1] += 1.0;
+            }
         } 
+
         
     }
 
-    lquality[2] = hg->nVtx; /* to find global number of vertices */
-    MPI_Allreduce(lquality, gquality, 3, MPI_FLOAT, MPI_SUM, hgc->row_comm); 
+    if (hgc->myProc_y==0){
+      lquality[2] = hg->nVtx; /* to find global number of vertices */
+      MPI_Allreduce(lquality, gquality, 3, MPI_FLOAT, MPI_SUM, hgc->row_comm); 
        
-    uprintf (hgc, "LOCAL (GLOBAL) i.p. sum %.2f (%.2f), matched pairs %d (%d), "
-     "total vertices %d\n", lquality[0], gquality[0], (int)lquality[1],
-     (int)gquality[1], (int)gquality[2]);  
+      uprintf (hgc, "LOCAL (GLOBAL) i.p. sum %.2f (%.2f), matched pairs %d (%d), "
+       "total vertices %d\n", lquality[0], gquality[0], (int)lquality[1],
+       (int)gquality[1], (int)gquality[2]);  
+    }
 
     /*
     printf("DEBUG: Final Matching:\n");
