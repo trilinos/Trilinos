@@ -408,6 +408,35 @@ void MLsmoother_precondition(double ff[], int options[], int proc_config[],
   ML_Smoother_Apply(pre_smoother, invec_leng, ff, invec_leng,rhs, ML_ZERO);
   ML_free(rhs);
 }
+void new_norm(AZ_PRECOND *prec, double res[], double *result)
+{
+  ML          *ml;
+  int         NN;
+  extern ML_Operator *globbie;
+  extern double gsigma;
+  extern int  gnx;
+  double dtemp, dtemp2, *temp;
+  static double r0 = -1.;
+
+  ml    = (ML *) AZ_get_precond_data(prec);
+  NN = globbie->invec_leng;
+
+  dtemp = sqrt(ML_gdot(NN, res, res, ml->comm));
+  temp = (double *) ML_allocate(sizeof(double)*globbie->outvec_leng);
+  ML_Operator_Apply(globbie, globbie->invec_leng, res, globbie->outvec_leng, temp);
+  dtemp2 = sqrt(ML_gdot(globbie->outvec_leng, temp, temp, ml->comm));
+  /*  printf("this guy is %e  %d\n",dtemp2,gnx); */
+  dtemp2 = dtemp2*((double)(gnx*gnx))/gsigma;
+
+  *result = dtemp2 + dtemp;
+  if (r0 == -1.) {
+    r0 = *result;
+  }
+  *result = *result/r0;
+  /*  printf("do nothing %d   %e %e\n",NN,dtemp, dtemp2); */
+  ML_free(temp);
+
+}
 
 /*****************************************************************************/
 /*****************************************************************************/
