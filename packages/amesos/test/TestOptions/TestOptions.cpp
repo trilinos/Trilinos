@@ -4,12 +4,16 @@
 //
 //  TestOptions - Calls TestOneMatrix for each of several matrices
 //  TestOneMatrix - Test one matrix 
-//    Distributed vs nont distributed - commented out right now
-//    Transpose vs not transposed - commented out right now
-//  
+//    - Distributed vs not distributed -
+//    - Transpose vs not transposed -
+//      TestAllClasses  - Test one matrix and one setting of distributed and transpose
+//        - Calls TestOtherClasses (one for each Amesos class) and TestSuperludist 
+//        TestOtherClasses
+//        TestSuperludist
 //
 //
 //  Todo:
+//    Write TestKlu, TestSuperlu, TestScalapack, TestUmfpack, TestDscpack
 //    Enable tests of various parameter options
 //    Make it test all four codes (DSCPACK, UMFPACK, SuperLU_DIST, KLU )
 //    Valgrind it
@@ -336,9 +340,12 @@ int main( int argc, char *argv[] ) {
   int result = 0 ; 
   int numtests = 0 ;
 
+  bool symmetric ; 
+
   //  result += TestOneMatrix("Tri.triS", Comm, verbose, symmetric, 1e-1 , numtests ) ;
   //  result += TestOneMatrix("Tri2.triS", Comm, verbose, symmetric, 1e-5 , numtests ) ;
-  result += TestOneMatrix("../bcsstk01.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+  //  result += TestOneMatrix("../bcsstk01.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+  result += TestOneMatrix("../ImpcolB.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 
   //
   //  This is really slow when run on valgrind, so we don't want to run 

@@ -100,6 +100,8 @@ int PerformOneSolveAndTest(char* AmesosClass,
     //  Phase 1:  Compute b = A' A' A xexact
     //
     Problem.SetOperator( Amat );
+    
+    EPETRA_CHK_ERR( Abase->SetUseTranspose( transpose ) ); 
     EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
     EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
 
@@ -118,7 +120,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
 	val[0] = Value ; 
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
-	Amat->Multiply( false, xexact, cAx ) ; 
+	Amat->Multiply( transpose, xexact, cAx ) ; 
 	val[0] = - Value ; 
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
@@ -136,7 +138,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
 	val[0] =  Value ; 
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
-	Amat->Multiply( false, cAx, cAAx ) ; //  x2 = A' x1
+	Amat->Multiply( transpose, cAx, cAAx ) ; //  x2 = A' x1
 	val[0] = - Value ; 
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
@@ -146,7 +148,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
 	cAAx = cAx ;
       }
 
-    Amat->Multiply( false, cAAx, b ) ;  //  b = A x2 = A A' A'' xexact
+    Amat->Multiply( transpose, cAAx, b ) ;  //  b = A x2 = A A' A'' xexact
  
     //
     //  Phase 2:  Solve A' A' A x = b 
@@ -212,7 +214,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
 	val[0] =  Value ; 
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
-	Amat->Multiply( false, x, kAx ) ;
+	Amat->Multiply( transpose, x, kAx ) ;
 	val[0] =  -Value ; 
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
@@ -227,7 +229,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
 	val[0] =  Value ; 
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
-	Amat->Multiply( false, kAx, kAAx ) ;
+	Amat->Multiply( transpose, kAx, kAAx ) ;
 	val[0] =  -Value ; 
 	if ( Amat->MyGRID( 0 ) )
 	  Amat->SumIntoMyValues( 0, 1, val, ind ) ; 
@@ -238,7 +240,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
       }
 
 
-    Amat->Multiply( false, kAAx, bcheck ) ; //  temp = A" x2
+    Amat->Multiply( transpose, kAAx, bcheck ) ; //  temp = A" x2
 
 
     if ( verbose ) cout << " Levels =  " << Levels << endl ; 
@@ -398,14 +400,14 @@ int PerformOneSolveAndTest(char* AmesosClass,
     //  Compute the residual: B B' B" x2 - b
     //
 
-    B.Multiply( false, Bx2, Btemp ) ; //  temp = B x2
+    B.Multiply( transpose, Bx2, Btemp ) ; //  temp = B x2
 
     //  if (verbose) cout << " temp = " << temp << endl ; 
 
     val[0] = -val[0] ; 
     if ( B.MyGRID( 0 ) )
       B.SumIntoMyValues( 0, 1, val, ind ) ; 
-    B.Multiply( false, Btemp, Bx2 ) ; //  x2 = B' B" x2
+    B.Multiply( transpose, Btemp, Bx2 ) ; //  x2 = B' B" x2
 
 
 
@@ -414,7 +416,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
 
     if ( B.MyGRID( 0 ) )
       B.SumIntoMyValues( 0, 1, val, ind ) ; 
-    B.Multiply( false, Bx2, Btemp ) ; //  temp = B B' B'' x2
+    B.Multiply( transpose, Bx2, Btemp ) ; //  temp = B B' B'' x2
 
 
     //  if (verbose) cout << " temp = " << temp << endl ; 

@@ -1,3 +1,4 @@
+#include "Epetra_Comm.h"
 #include "Epetra_CrsMatrix.h"
 #include "TestAllClasses.h"
 #include "TestOtherClasses.h"
@@ -23,7 +24,6 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
     errors += TestSuperludist(Amat, 
 			      transpose, 
 			      verbose, 
-			      symmetric, 
 			      Levels, 
 			      Rcond, 
 			      maxrelerror, 
@@ -37,12 +37,19 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
 			     Amat, 
 			     transpose, 
 			     verbose, 
-			     symmetric, 
 			     Levels, 
 			     Rcond, 
 			     maxrelerror, 
 			     maxrelresidual, 
 			     NumTests ) ;
+
+  //
+  //  A quick sanity check - make you symmetric is the same on all processes
+  //
+  const int sym_int = symmetric?0:1 ; 
+  int sym_int_out = sym_int; 
+  Amat->Comm().Broadcast( &sym_int_out, 1, 0 ) ; 
+  assert( sym_int == sym_int_out ) ; 
 
   if ( symmetric ) { 
     if ( verbose) cout << " Testing DSCPACK " << endl ; 
@@ -92,7 +99,6 @@ int TestAllClasses(Epetra_CrsMatrix *& Amat,
 			     Amat, 
 			     transpose, 
 			     verbose, 
-			     symmetric, 
 			     Levels, 
 			     Rcond, 
 			     maxrelerror, 

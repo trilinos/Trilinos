@@ -63,7 +63,10 @@ int TestOtherClasses(char* AmesosClass,
 
     }
     if (verbose)  cout << " TestOtherClasses NumErrors = " << NumErrors << endl ; 
-  
+    if ( verbose && Errors > 0 ) {
+      cout << AmesosClass << " failed with transpose = " << 
+	(transpose?"true":"false") << endl ;  
+    }
     return NumErrors; 
   }
 }
