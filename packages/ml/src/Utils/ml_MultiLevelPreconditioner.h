@@ -572,6 +572,8 @@ private:
   int CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix * & FakeMatrix);
 #endif
 
+  int SetupCoordinates();
+
   void PrintMem(char *fmt, int size, int, int);
 
   void PrintMemoryUsage();

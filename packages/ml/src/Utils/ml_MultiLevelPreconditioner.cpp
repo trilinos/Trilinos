@@ -903,7 +903,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
     
     if (List_.get("repartition: enable",false))
     {
-
 #if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
       ML_Repartition_Activate(ml_);
 
@@ -1031,6 +1030,12 @@ ComputePreconditioner(const bool CheckPreconditioner)
   } //if( SolvingMaxwell_ ...
 
   // ====================================================================== //
+  // If present, fix the finest-level coordinates into the hierarchy        //
+  // ====================================================================== //
+  
+  ML_CHK_ERR(SetupCoordinates());
+
+  // ====================================================================== //
   // visualize aggregate shape and other statistics.                        //
   // ====================================================================== //
   
@@ -1133,9 +1138,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   if (SolvingMaxwell_ == false) {
 
+    bool CreateFakeProblem = false;
 #ifdef OLD_AUX
-    bool CreateFakeProblem = 
-      List_.get("aggregation: use auxiliary matrix", false);
+    CreateFakeProblem = List_.get("aggregation: use auxiliary matrix", false);
 
     // west claims attentions, the VBR junk is a small gift to her
     Epetra_FECrsMatrix* FakeCrsMatrix = 0;
@@ -1193,93 +1198,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
     }
 #endif
     
-    if (List_.get("aggregation: aux: enable", false))
+    if (!CreateFakeProblem && List_.get("aggregation: aux: enable", false))
     {
-      Time.ResetStartTime();
-
-      double* in_x_coord = List_.get("aggregation: aux: x-coordinates", (double *)0);
-      double* in_y_coord = List_.get("aggregation: aux: y-coordinates", (double *)0);
-      double* in_z_coord = List_.get("aggregation: aux: z-coordinates", (double *)0);
       double Threshold   = List_.get("aggregation: aux: threshold", 0.0);
-      int MaxAuxLevels   = List_.get("aggregation: aux: max levels", 2);
-      int NumDimensions  = 0;
-
-      ML_Operator* AAA = &(ml_->Amat[LevelID_[0]]);
-
-      int n = AAA->invec_leng, Nghost = 0;
-
-      if (AAA->getrow->pre_comm) 
-      {
-        if (AAA->getrow->pre_comm->total_rcv_length <= 0)
-          ML_CommInfoOP_Compute_TotalRcvLength(AAA->getrow->pre_comm);
-        Nghost = AAA->getrow->pre_comm->total_rcv_length;
-      }
-
-      vector<double> tmp(Nghost + n);
-      for (int i = 0 ; i < Nghost + n ; ++i)
-        tmp[i] = 0.0;
-
-      n /= NumPDEEqns_;
-      Nghost /= NumPDEEqns_;
-
-      if (in_x_coord) 
-      {
-        NumDimensions++;
-        double* x_coord;
-        ML_memory_alloc((void**)&x_coord, sizeof(double) * (Nghost + n),
-                           "x_coord");
-
-        for (int i = 0 ; i < n ; ++i)
-            tmp[i * NumPDEEqns_] = in_x_coord[i];
-
-        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
-                         AAA->comm, ML_OVERWRITE,NULL);
-
-        for (int i = 0 ; i < n + Nghost ; ++i)
-            x_coord[i] = tmp[i * NumPDEEqns_];
-
-        ml_->Amat[LevelID_[0]].grid_info->x = x_coord;
-      }
-
-      if (in_y_coord) 
-      {
-        NumDimensions++;
-        double* y_coord;
-        ML_memory_alloc((void**)&y_coord, sizeof(double) * NumPDEEqns_ * (Nghost + n),
-                        "y_coord");
-
-        for (int i = 0 ; i < n ; ++i)
-            tmp[i * NumPDEEqns_] = in_y_coord[i];
-
-        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
-                         AAA->comm, ML_OVERWRITE,NULL);
-
-        for (int i = 0 ; i < n + Nghost ; ++i)
-            y_coord[i] = tmp[i * NumPDEEqns_];
-
-        ml_->Amat[LevelID_[0]].grid_info->y = y_coord;
-      }
-
-      if (in_z_coord) 
-      {
-        NumDimensions++;
-        double* z_coord;
-        ML_memory_alloc((void**)&z_coord, sizeof(double) * NumPDEEqns_ * (Nghost + n),
-                        "z_coord");
-
-        for (int i = 0 ; i < n ; ++i)
-            tmp[i * NumPDEEqns_] = in_z_coord[i];
-
-        ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
-                         AAA->comm, ML_OVERWRITE,NULL);
-
-        for (int i = 0 ; i < n + Nghost ; ++i)
-            z_coord[i] = tmp[i * NumPDEEqns_];
-
-        ml_->Amat[LevelID_[0]].grid_info->z = z_coord;
-      }
-
-      ml_->Amat[LevelID_[0]].grid_info->Ndim = NumDimensions;
+      int MaxAuxLevels   = List_.get("aggregation: aux: max levels", 10);
       ml_->Amat[LevelID_[0]].aux_data->threshold = Threshold;
       ml_->Amat[LevelID_[0]].aux_data->enable = 1;
       ml_->Amat[LevelID_[0]].aux_data->max_level = MaxAuxLevels;
@@ -2129,6 +2051,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
          exit( EXIT_FAILURE );
        }
 
+       /* FIXME then DELETEME: check that user still works,
+        * then delete this part
        if (CoarsenScheme == "Zoltan" || CoarsenScheme == "user") {
          // This copies the coordinates if the aggregation scheme
          // of at least one level is Zoltan. Coordinates will be
@@ -2142,6 +2066,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
          ML_Aggregate_Set_Dimensions(agg_, NumDimensions);
 
        }
+       */
 
        if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" ||
            CoarsenScheme == "Zoltan" ) {

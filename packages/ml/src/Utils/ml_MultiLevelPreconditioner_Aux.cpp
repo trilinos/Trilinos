@@ -66,7 +66,7 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
 
   int NumDimensions = 0;
 
-  double* x_coord = List_.get("aggregation: x-coordinates", (double *)0);
+  double* x_coord = List_.get("x-coordinates", (double *)0);
   if (x_coord != 0) ++NumDimensions;
 
   // at least x-coordinates must be not null
@@ -74,21 +74,21 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
     cerr << ErrorMsg_ << "Option `aggregation: use auxiliary matrix' == true" << endl
          << ErrorMsg_ << "requires x-, y-, or z-coordinates." << endl
          << ErrorMsg_ << "You must specify them using options" << endl
-         << ErrorMsg_ << "`aggregation: x-coordinates' (and equivalently for" << endl
+         << ErrorMsg_ << "`x-coordinates' (and equivalently for" << endl
          << ErrorMsg_ << "y- and z-." << endl;
     ML_CHK_ERR(-2); // wrong parameters
   }
 
-  double* y_coord = List_.get("aggregation: y-coordinates", (double *)0);
+  double* y_coord = List_.get("y-coordinates", (double *)0);
   if (y_coord != 0) ++NumDimensions;
 
-  double* z_coord = List_.get("aggregation: z-coordinates", (double *)0);
+  double* z_coord = List_.get("z-coordinates", (double *)0);
   if (z_coord != 0) ++NumDimensions;
 
   // small check to avoid strange behavior
   if( z_coord != 0 && y_coord == 0 ) {
-    cerr << ErrorMsg_ << "Something wrong: `aggregation: y-coordinates'" << endl
-         << ErrorMsg_ << "is null, while `aggregation: z-coordinates' is null" << endl;
+    cerr << ErrorMsg_ << "Something wrong: `y-coordinates'" << endl
+         << ErrorMsg_ << "is null, while `z-coordinates' is null" << endl;
     ML_CHK_ERR(-3); // something went wrong
   }
 
@@ -302,7 +302,7 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
 
   int NumDimensions = 0;
 
-  double* x_coord = List_.get("aggregation: x-coordinates", (double *)0);
+  double* x_coord = List_.get("x-coordinates", (double *)0);
   if (x_coord != 0) ++NumDimensions;
 
   // at least x-coordinates must be not null
@@ -310,21 +310,21 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
     cerr << ErrorMsg_ << "Option `aggregation: use auxiliary matrix' == true" << endl
          << ErrorMsg_ << "requires x-, y-, or z-coordinates." << endl
          << ErrorMsg_ << "You must specify them using options" << endl
-         << ErrorMsg_ << "`aggregation: x-coordinates' (and equivalently for" << endl
+         << ErrorMsg_ << "`x-coordinates' (and equivalently for" << endl
          << ErrorMsg_ << "y- and z-)." << endl;
     ML_CHK_ERR(-2); // wrong parameters
   }
 
-  double* y_coord = List_.get("aggregation: y-coordinates", (double *)0);
+  double* y_coord = List_.get("y-coordinates", (double *)0);
   if (y_coord != 0) ++NumDimensions;
 
-  double* z_coord = List_.get("aggregation: z-coordinates", (double *)0);
+  double* z_coord = List_.get("z-coordinates", (double *)0);
   if (z_coord != 0) ++NumDimensions;
 
   // small check to avoid strange behavior
   if( z_coord != 0 && y_coord == 0 ) {
-    cerr << ErrorMsg_ << "Something wrong: `aggregation: y-coordinates'" << endl
-         << ErrorMsg_ << "is null, while `aggregation: z-coordinates' is not null" << endl;
+    cerr << ErrorMsg_ << "Something wrong: `y-coordinates'" << endl
+         << ErrorMsg_ << "is null, while `z-coordinates' is not null" << endl;
     ML_CHK_ERR(-3); // something went wrong
   }
 
@@ -476,4 +476,93 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
 }
 #endif
 
+int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
+{
+  double* in_x_coord = List_.get("x-coordinates", (double *)0);
+  double* in_y_coord = List_.get("y-coordinates", (double *)0);
+  double* in_z_coord = List_.get("z-coordinates", (double *)0);
+  int NumDimensions  = 0;
+
+  if (in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0)
+    return(0);
+
+  ML_Operator* AAA = &(ml_->Amat[LevelID_[0]]);
+
+  int n = AAA->invec_leng, Nghost = 0;
+
+  if (AAA->getrow->pre_comm) 
+  {
+    if (AAA->getrow->pre_comm->total_rcv_length <= 0)
+      ML_CommInfoOP_Compute_TotalRcvLength(AAA->getrow->pre_comm);
+    Nghost = AAA->getrow->pre_comm->total_rcv_length;
+  }
+
+  vector<double> tmp(Nghost + n);
+  for (int i = 0 ; i < Nghost + n ; ++i)
+    tmp[i] = 0.0;
+
+  n /= NumPDEEqns_;
+  Nghost /= NumPDEEqns_;
+
+  if (in_x_coord) 
+  {
+    NumDimensions++;
+    double* x_coord;
+    ML_memory_alloc((void**)&x_coord, sizeof(double) * (Nghost + n),
+                    "x_coord");
+
+    for (int i = 0 ; i < n ; ++i)
+      tmp[i * NumPDEEqns_] = in_x_coord[i];
+
+    ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
+                     AAA->comm, ML_OVERWRITE,NULL);
+
+    for (int i = 0 ; i < n + Nghost ; ++i)
+      x_coord[i] = tmp[i * NumPDEEqns_];
+
+    ml_->Amat[LevelID_[0]].grid_info->x = x_coord;
+  }
+
+  if (in_y_coord) 
+  {
+    NumDimensions++;
+    double* y_coord;
+    ML_memory_alloc((void**)&y_coord, sizeof(double) * (Nghost + n),
+                    "y_coord");
+
+    for (int i = 0 ; i < n ; ++i)
+      tmp[i * NumPDEEqns_] = in_y_coord[i];
+
+    ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
+                     AAA->comm, ML_OVERWRITE,NULL);
+
+    for (int i = 0 ; i < n + Nghost ; ++i)
+      y_coord[i] = tmp[i * NumPDEEqns_];
+
+    ml_->Amat[LevelID_[0]].grid_info->y = y_coord;
+  }
+
+  if (in_z_coord) 
+  {
+    NumDimensions++;
+    double* z_coord;
+    ML_memory_alloc((void**)&z_coord, sizeof(double) * (Nghost + n),
+                    "z_coord");
+
+    for (int i = 0 ; i < n ; ++i)
+      tmp[i * NumPDEEqns_] = in_z_coord[i];
+
+    ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns_ * n, 
+                     AAA->comm, ML_OVERWRITE,NULL);
+
+    for (int i = 0 ; i < n + Nghost ; ++i)
+      z_coord[i] = tmp[i * NumPDEEqns_];
+
+    ml_->Amat[LevelID_[0]].grid_info->z = z_coord;
+  }
+
+  ml_->Amat[LevelID_[0]].grid_info->Ndim = NumDimensions;
+
+  return(0);
+}
 #endif /*ifdef HAVE_ML_EPETRA && HAVE_ML_TEUCHOS */
