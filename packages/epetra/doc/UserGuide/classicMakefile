@@ -1,14 +1,16 @@
 TARGET=EpetraUserGuide
 
-$(TARGET).pdf: $(TARGET).tex Ex1.tex Ex1a.tex HungCode.tex ExMaps.tex
-	pdflatex $(TARGET)
+$(TARGET).dvi: $(TARGET).tex Ex1.tex Ex1a.tex HungCode.tex ExMaps.tex
+	latex $(TARGET)
 	bibtex $(TARGET)
-	pdflatex $(TARGET)
-	pdflatex $(TARGET)
+	latex $(TARGET)
+	latex $(TARGET)
 
 view: $(TARGET).pdf
 	acroread $(TARGET).pdf &
 
+ps: $(TARGET).dvi
+	dvips -o $(TARGET).ps $(TARGET)
 clean:
 	rm -f *.ps $(TARGET).pdf *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out \
            *.bbl *.blg *.lof *.lot *.tex~
