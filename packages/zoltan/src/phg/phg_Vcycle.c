@@ -66,15 +66,18 @@ static int allocVCycle(VCycle *v)
     int partalloc = 0;
     if (!v->hg)
         return ZOLTAN_OK;
-    if (!v->part) {
-        if (!(v->part = (int*) ZOLTAN_CALLOC (v->hg->nVtx, sizeof(int))))
+    if (v->hg->nVtx) {
+        if (!v->part) {
+            if (!(v->part = (int*) ZOLTAN_CALLOC (v->hg->nVtx, sizeof(int))))
+                return ZOLTAN_MEMERR;
+            partalloc = 1;
+        }
+        if (!v->LevelMap && 
+            !(v->LevelMap = (int*) ZOLTAN_CALLOC (v->hg->nVtx, sizeof(int)))) {
+            if (partalloc)
+                ZOLTAN_FREE ((void**) &v->part);
             return ZOLTAN_MEMERR;
-        partalloc = 1;
-    }
-    if (!v->LevelMap && !(v->LevelMap = (int*) ZOLTAN_CALLOC (v->hg->nVtx, sizeof(int)))) {
-        if (partalloc)
-            ZOLTAN_FREE ((void**) &v->part);
-        return ZOLTAN_MEMERR;
+        }
     }
     return ZOLTAN_OK;
 }

@@ -38,7 +38,7 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
     }
 
     part = (Partition) ZOLTAN_MALLOC (hg->nVtx * sizeof (int));
-    if (part == NULL) {
+    if (hg->nVtx && part == NULL) {
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory.");
         return ZOLTAN_MEMERR;
     }
@@ -126,18 +126,20 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
 static int split_hypergraph (int *pins[2], PHGraph *old, PHGraph *new, Partition part,
                              int partid, ZZ *zz)
 {
-    int *tmap;        /* temporary array mapping from old HGraph info to new */
+    int *tmap = NULL;  /* temporary array mapping from old HGraph info to new */
     int edge, i;                                            /* loop counters */
     char *yo = "split_hypergraph";
     PHGComm *hgc = old->comm;
     
     /* allocate memory for dynamic arrays in new HGraph and for tmap array */
-    new->vmap = (int*) ZOLTAN_MALLOC (old->nVtx * sizeof (int));
-    tmap      = (int*) ZOLTAN_MALLOC (old->nVtx * sizeof (int));
-    if (new->vmap == NULL || tmap == NULL)  {
-        Zoltan_Multifree (__FILE__, __LINE__, 2, &new->vmap, &tmap);
-        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory 1.");
-        return ZOLTAN_MEMERR;
+    if (old->nVtx) {
+        new->vmap = (int*) ZOLTAN_MALLOC (old->nVtx * sizeof (int));
+        tmap      = (int*) ZOLTAN_MALLOC (old->nVtx * sizeof (int));
+        if (new->vmap == NULL || tmap == NULL)  {
+            Zoltan_Multifree (__FILE__, __LINE__, 2, &new->vmap, &tmap);
+            ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory 1.");
+            return ZOLTAN_MEMERR;
+        }
     }
     
     /* save vertex and edge weights if they exist */

@@ -38,6 +38,7 @@ extern "C" {
 int Zoltan_PHG_Gather_To_All_Procs(
   ZZ *zz, 
   PHGraph *phg,           /* Input:   Local part of distributed hypergraph */
+  PHGComm *scomm,         /* Input:   Serial PHGComm for use by shg. */
   PHGraph **gathered_hg   /* Output:  combined hypergraph combined to proc */
 )
 {
@@ -70,7 +71,6 @@ int *recv_size = NULL;   /* nvtx, nedge, & nnz for each proc in col or row */
 
 PHGraph *shg;            /* Pointer to the serial hypergraph to be
                             returned by this function. */
-PHGComm scomm;           /* Serial PHGComm for use by shg. */
 
 int myProc_x = phg->comm->myProc_x;
 int nProc_x = phg->comm->nProc_x;
@@ -106,16 +106,7 @@ int first_vtx = phg->dist_x[myProc_x];
 
   /* KDDKDD -- Need allocation error check here. */
 
-  scomm.Communicator = MPI_COMM_SELF;
-  scomm.Proc = 0;
-  scomm.Num_Proc = 1;
-  scomm.nProc_x = 1;
-  scomm.nProc_y = 1;
-  scomm.myProc_x = 0;
-  scomm.myProc_y = 0;
-  scomm.row_comm = MPI_COMM_SELF;
-  scomm.col_comm = MPI_COMM_SELF;
-  shg->comm = &scomm;
+  shg->comm = scomm;
 
   shg->EdgeWeightDim = phg->EdgeWeightDim;
   shg->VtxWeightDim = phg->VtxWeightDim;
@@ -210,7 +201,7 @@ int first_vtx = phg->dist_x[myProc_x];
     send_buf[i] = phg->hindex[i+1] - phg->hindex[i];
 
   for (i = 0; i < nProc_y; i++) 
-    each[i] = recv_size[NIDX * i + EIDX] + 1;
+    each[i] = recv_size[NIDX * i + EIDX];
 
   disp[0] = 0;
   for (i = 1; i < nProc_y; i++)
@@ -289,7 +280,7 @@ int first_vtx = phg->dist_x[myProc_x];
     send_buf[i] = col_vindex[i+1] - col_vindex[i];
 
   for (i = 0; i < nProc_x; i++) 
-    each[i] = recv_size[NIDX * i + VIDX] + 1;
+    each[i] = recv_size[NIDX * i + VIDX];
 
   disp[0] = 0;
   for (i = 1; i < nProc_x; i++)
