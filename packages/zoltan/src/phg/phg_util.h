@@ -27,9 +27,11 @@ extern "C" {
 
 
 /* Hypergraph utilities */
-extern void Zoltan_PHG_HGraph_Init (PHGraph*);
+extern void Zoltan_PHG_PHGraph_Init (PHGraph*);
 extern int Zoltan_PHG_HGraph_Free  (PHGraph*);
 extern int Zoltan_PHG_Create_Mirror(ZZ*, PHGraph*);
+extern void Zoltan_PHG_Mirror(int, int *, int *, int, int *, int *);
+
 
 extern void Zoltan_PHG_Graph_Init  (PGraph*);
 extern int Zoltan_PHG_Graph_Free   (PGraph*);

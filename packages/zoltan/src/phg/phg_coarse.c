@@ -44,7 +44,7 @@ int Zoltan_PHG_Coarsening
 
   ZOLTAN_TRACE_ENTER (zz, yo);
   
-  Zoltan_PHG_HGraph_Init (c_hg);   /* init working copy of hypergraph info */
+  Zoltan_PHG_PHGraph_Init (c_hg);   /* inits working copy of hypergraph info */
   c_hg->info  = hg->info + 1;      /* for debugging */
   c_hg->ratio = hg->ratio;         /* for "global" recursive bisectioning */
   c_hg->redl  = hg->redl;          /* to stop coarsening near desired count */

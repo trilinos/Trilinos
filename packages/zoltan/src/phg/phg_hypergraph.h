@@ -25,7 +25,7 @@ typedef struct {
    int nVtx;    /* number of vertices, |V| */
    int nEdge;   /* Size of neigh array; 2|E| */
    int nDim;    /* Number of dimensions for a vertex's coordinate */
-   int VertexWeightDim;  /* number of weight dimensions for a vertex */
+   int VtxWeightDim;  /* number of weight dimensions for a vertex */
    int EdgeWeightDim;    /* number of weight dimensions for an edge */
    int redl;             /* Working Reduction limit. */
 
@@ -58,7 +58,7 @@ typedef struct {
   int nEdge;            /* number of hyperedges on this processor */
   int nNonZero;         /* number of nonzeros (pins) on this processor */
   
-  int VertexWeightDim;  /* number of weight dimensions for a vertex */
+  int VtxWeightDim;  /* number of weight dimensions for a vertex */
   int EdgeWeightDim;    /* number of weight dimensions for a hyperedge */
 
   int redl;             /* working reduction limit */
@@ -68,16 +68,16 @@ typedef struct {
   double *coor;     /* |V| long by CoordinateDim */
 
   /* arrays with vertex and edge weights */
-  float *vwgt;      /* weights of vertices, |V| long by VtxWeightDim */
-  float *ewgt;      /* weights of hypergraph edges, |E| long by EdgeWeightDim */
+  float *vwgt;    /* weights of vertices, nVtx long by VtxWeightDim */
+  float *ewgt;    /* weights of hypergraph edges, nEdge long by EdgeWeightDim */
 
   /* arrays to look up vertices given a hyperedge */
-  int *hindex;      /* length |E|+1 index into hvertex, last is |P| */
-  int *hvertex;     /* length |P| array containing associated vertices */
+  int *hindex;      /* length nEdge+1 index into hvertex, last is nNonZero */
+  int *hvertex;     /* length nNonZero array containing associated vertices */
 
   /* arrays to look up hyperedges given a vertex */
-  int *vindex;      /* length |V|+1 index into vedge, last is |P| */
-  int *vedge;       /* length |P| array containing associated hyperedges */
+  int *vindex;      /* length nVtx+1 index into vedge, last is nNonZero */
+  int *vedge;       /* length nNonZero array containing associated hyperedges */
   
   int *vmap;        /* used when recursively dividing for p > 2 */
   double ratio;     /* split when recursively dividing for p > 2 */

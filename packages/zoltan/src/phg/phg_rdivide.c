@@ -86,7 +86,7 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory.");
         return ZOLTAN_MEMERR;
     }
-    Zoltan_PHG_HGraph_Init (new);
+    Zoltan_PHG_PHGraph_Init (new);
     
     /* recursively divide in two parts and repartition hypergraph */
     err = split_hypergraph (pins, hg, new, part, 0, zz);
@@ -134,7 +134,7 @@ static int split_hypergraph (int *pins[2], PHGraph *old, PHGraph *new, Partition
     /* save vertex and edge weights if they exist */
     if (old->vwgt)
         new->vwgt = (float*) ZOLTAN_MALLOC (old->nVtx  * sizeof(float)
-                                            * old->VertexWeightDim);
+                                            * old->VtxWeightDim);
     if (old->ewgt)
         new->ewgt = (float*) ZOLTAN_MALLOC (old->nEdge * sizeof(float)
                                             * old->EdgeWeightDim);
@@ -183,7 +183,7 @@ static int split_hypergraph (int *pins[2], PHGraph *old, PHGraph *new, Partition
 
     new->hindex[new->nEdge] = new->nNonZero;
     new->info = old->info;
-    new->VertexWeightDim = old->VertexWeightDim;
+    new->VtxWeightDim = old->VtxWeightDim;
     new->EdgeWeightDim   = old->EdgeWeightDim;
     /* UVCUVC: BUGBUG TODO CHECK we need to compute dist_x, dist_y */
     

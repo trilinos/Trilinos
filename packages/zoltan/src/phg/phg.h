@@ -41,6 +41,8 @@ struct Zoltan_PHGraph {
   ZOLTAN_ID_PTR Local_IDs;  /* Local IDs for on-processor objects.   */
   int *Parts;               /* Initial partition #s for on-processor objects */
                             /* KDD In parallel version Part may be in HG */
+  ZOLTAN_COMM_OBJ *VtxPlan; /* Communication plan mapping GIDs to GNOs 
+                               within row communicators. */
   PHGraph PHG;              /* Hypergraph for initial objects.       */
 };
 typedef struct Zoltan_PHGraph ZPHG;
@@ -187,12 +189,14 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams*);
 /**************/
 /* Coarsening */
 /**************/
-int Zoltan_PHG_Coarsening   (ZZ*, PHGraph*, Matching, PHGraph*, int*);
+int Zoltan_PHG_Coarsening(ZZ*, PHGraph*, Matching, PHGraph*, int*);
 
 /*********************************/
 /* Coarse Partitioning functions */
 /*********************************/
-int Zoltan_PHG_CoarsePartition (ZZ*, PHGraph*, int, Partition, PHGPartParams*);
+extern int Zoltan_PHG_Gather_To_All_Procs(ZZ*, PHGraph*, PHGraph**);
+extern int Zoltan_PHG_CoarsePartition(ZZ*, PHGraph*, int, Partition, 
+                                      PHGPartParams*);
 ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(char*);
 
 /************************/

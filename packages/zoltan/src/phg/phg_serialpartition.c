@@ -52,23 +52,83 @@ ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn (char *str)
 
 /****************************************************************************/
 
-/* Zoltan_PHG_CoarsePartition computes a global partitioning of a hypergraph.
+
+int Zoltan_PHG_CoarsePartition(
+  ZZ *zz, 
+  PHGraph *phg,        /* Input:  coarse hypergraph -- distributed! */
+  int numPart,         /* Input:  number of partitions to generate. */
+  Partition part,      /* Output: array of partition assignments.   */
+  PHGPartParams *hgp   /* Input:  parameters to use.  */
+)
+{
+/* 
+ * Zoltan_PHG_CoarsePartition computes a partitioning of a hypergraph.
  * Typically, this routine is called at the bottom level in a
  * multilevel scheme (V-cycle).
+ * It gathers the distributed hypergraph to each processor and computes
+ * a decomposition of the serial hypergraph.  
+ * KDDKDD:  Future:  compute a different partition on each processor
+ * KDDKDD:  and select the best.
  */
+char *yo = "Zoltan_PHG_CoarsePartition";
+int ierr = ZOLTAN_OK;
+PHGraph *shg;                  /* Serial hypergraph gathered from phg */
+int *spart = NULL;             /* Partition vector for shg. */
+int i, si;
 
-int Zoltan_PHG_CoarsePartition(ZZ *zz, PHGraph *hg, int p, Partition part,
-PHGPartParams *hgp)
-{
-  /* RTHRTH --- Reduce coarsest hypergraph to one processor */
-  /* RTHRTH --- Even better, reduce identical hypergraph on all procs */
+return hgp->CoarsePartition(zz, phg, numPart, part, hgp);
   
-  /* RTHRTH -- May need to "seed" each proc differently to compute different solutions*/ 
-  return hgp->CoarsePartition(zz, hg, p, part, hgp);
-  /* RTHRTH -- Now add serial FM optimization to improve partition */
+#ifdef KDDKDD_NOT_READY_YET
+  /* 
+   * Gather parallel hypergraph phg to each processor, creating
+   * serial hypergraph shg.
+   */
+  ierr = Zoltan_PHG_Gather_To_All_Procs(zz, phg, &shg);
+  if (ierr < 0) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from gather.");
+    goto End;
+  }
+
+  /* 
+   * Allocate a partition array spart for the serial hypergraph shg
+   * and partition shg.
+   * KDDKDD Add logic here to compute different coarse partitions on
+   * KDDKDD different processors.
+   */
+  if (shg->nVtx) {
+    spart = (int *) ZOLTAN_MALLOC(shg->nVtx * sizeof(int));
+    if (!spart) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
   
-  /* RTHRTH -- After partitioning, send results back to all p procs to enable
-  ** starting the refinement in parallel. */
+    /* KDDKDD For now, want all processors to give same partition, so
+     * KDDKDD initialize the seed identically on all.
+     */
+    Zoltan_PHG_Srand(shg->nVtx);
+    ierr = hgp->CoarsePartition(zz, shg, numPart, spart, hgp);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                         "Error returned from CoarsePartition.");
+      goto End;
+    }
+
+    for (i = 0; i < phg->nVtx; i++) {
+      /* KDDKDD  Assume vertices in serial HG are ordered by GNO of phg */
+      si = VTX_LNO_TO_GNO(phg, i);
+      part[i] = spart[si];
+    }
+  }
+
+  Zoltan_PHG_HGraph_Free(shg);
+  ZOLTAN_FREE(&shg);
+
+End:
+
+  ZOLTAN_FREE(&spart);
+  return ierr;
+#endif /* KDDKDD_NOT_READY_YET */
 }
 
 /****************************************************************************/

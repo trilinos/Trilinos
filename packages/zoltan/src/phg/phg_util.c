@@ -25,29 +25,29 @@ extern "C" {
 
 
 
-void Zoltan_PHG_HGraph_Init(
-  PHGraph *hgraph
+void Zoltan_PHG_PHGraph_Init(
+  PHGraph *phg
 )
 {
-  hgraph->info  = 0;
-  hgraph->nVtx  = 0;
-  hgraph->nEdge = 0;
-  hgraph->nNonZero= 0;
-  hgraph->nDim  = 0;
-  hgraph->EdgeWeightDim   = 0;
-  hgraph->VertexWeightDim = 0;
-  hgraph->ratio = 0.5;
+  phg->info  = 0;
+  phg->nVtx  = 0;
+  phg->nEdge = 0;
+  phg->nNonZero= 0;
+  phg->nDim  = 0;
+  phg->EdgeWeightDim   = 0;
+  phg->VtxWeightDim = 0;
+  phg->ratio = 0.5;
 
-  hgraph->coor    = NULL;
-  hgraph->vwgt    = NULL;
-  hgraph->ewgt    = NULL;
-  hgraph->hindex  = NULL;
-  hgraph->hvertex = NULL;
-  hgraph->vindex  = NULL;
-  hgraph->vedge   = NULL;
-  hgraph->dist_x  = NULL;
-  hgraph->dist_y  = NULL;
-  hgraph->vmap    = NULL;
+  phg->coor    = NULL;
+  phg->vwgt    = NULL;
+  phg->ewgt    = NULL;
+  phg->hindex  = NULL;
+  phg->hvertex = NULL;
+  phg->vindex  = NULL;
+  phg->vedge   = NULL;
+  phg->dist_x  = NULL;
+  phg->dist_y  = NULL;
+  phg->vmap    = NULL;
 }
 
 
@@ -63,7 +63,7 @@ void Zoltan_PHG_Graph_Init(
   graph->nEdge = 0;
   graph->nDim  = 0;
   graph->EdgeWeightDim   = 0;
-  graph->VertexWeightDim = 0;
+  graph->VtxWeightDim = 0;
 
   graph->vtxdist = NULL;
   graph->coor    = NULL;
@@ -242,7 +242,6 @@ int Zoltan_PHG_Create_Mirror (
   PHGraph *hg
 )
 {
-  int i, j;                  /* loop counters */
   int inlength, outlength;   /* input/output array lengths */
   int *index, *data;         /* pointers to input information */
   int *outindex, *outdata;
@@ -260,7 +259,7 @@ int Zoltan_PHG_Create_Mirror (
     index     = hg->hindex;
     data      = hg->hvertex;
     outindex  = hg->vindex = (int*) ZOLTAN_MALLOC((hg->nVtx+1) * sizeof(int));
-    outdata   = hg->vedge  = (int*) ZOLTAN_MALLOC (hg->nNonZero  * sizeof(int));
+    outdata   = hg->vedge  = (int*) ZOLTAN_MALLOC (hg->nNonZero * sizeof(int));
 
     if (outindex == NULL || (hg->nNonZero > 0 && outdata == NULL)) {
       Zoltan_Multifree (__FILE__, __LINE__, 2, &hg->vindex, &hg->vedge);
@@ -278,7 +277,7 @@ int Zoltan_PHG_Create_Mirror (
     index     = hg->vindex;
     data      = hg->vedge;
     outindex  = hg->hindex  = (int*) ZOLTAN_MALLOC((hg->nEdge+1) * sizeof(int));
-    outdata   = hg->hvertex = (int*) ZOLTAN_MALLOC(hg->nNonZero    * sizeof(int));
+    outdata   = hg->hvertex = (int*) ZOLTAN_MALLOC(hg->nNonZero * sizeof(int));
 
     if (outindex == NULL || (hg->nNonZero > 0 && outdata == NULL)) {
       Zoltan_Multifree (__FILE__, __LINE__, 2, &hg->hindex, &hg->hvertex);
@@ -293,31 +292,57 @@ int Zoltan_PHG_Create_Mirror (
     return ZOLTAN_FATAL;  /* unable to proceed */
   }
 
-  /* count number of data objects in the outindex space */
-  for (i = 0; i < outlength+1; i++)
-    outindex[i] = 0;
-  for (i = 0; i < inlength; i++)
-    for (j = index[i];  j < index[i+1]; j++)
-      (outindex[data[j]+1])++;
-
-  /* compute partial sum */
-  for (i = 1; i < outlength; i++)
-    outindex [i] += outindex[i-1];
-
-  /* store data in out index location and increment index */
-  for (i = 0; i < inlength; i++)
-    for (j = index[i]; j < index[i+1]; j++)
-      outdata [(outindex[data[j]])++ ] = i;
-
-  /* out index now points past end of sublist. Shift array one position up */
-  for (i = outlength; i > 0; i--)
-    outindex[i] = outindex[i-1];
-  outindex[0] = 0;
+  Zoltan_PHG_Mirror(inlength, index, data, 
+                    outlength, outindex, outdata);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ZOLTAN_OK;
 }
 
+/*****************************************************************************/
+
+void Zoltan_PHG_Mirror(
+  int inlength,     /* Input:  either nVtx or nEdge */
+  int *inindex,     /* Input:  index array, either vindex or hindex; 
+                               length = inlength+1  */
+  int *indata,      /* Input:  non-zeros array, either vedge or hvertex;
+                               length = nNonZero */
+  int outlength,    /* Input:  either nEdge or nVtx */
+  int *outindex,    /* Output: index array, either hindex or vindex;
+                               length = outlength+1 */
+  int *outdata      /* Output: non-zeros array, either hvertex or vedge;
+                               length = nNonZero */
+)
+{
+/* Routine to invert arrays describing vertices and edges. 
+ * Usually called by Zoltan_PHG_Create_Mirror, with arguments 
+ * determined by Zoltan_PHG_Create_Mirror.
+ * Arrays must be allocated to correct size before calling
+ * the function.
+ */
+int i, j;
+
+  /* count number of data objects in the outindex space */
+  for (i = 0; i <= outlength; i++)
+    outindex[i] = 0;
+  for (i = 0; i < inlength; i++)
+    for (j = inindex[i];  j < inindex[i+1]; j++)
+      (outindex[indata[j]+1])++;
+
+  /* compute partial sum */
+  for (i = 1; i < outlength; i++)
+    outindex[i] += outindex[i-1];
+
+  /* store indata in outindex location and increment index */
+  for (i = 0; i < inlength; i++)
+    for (j = inindex[i]; j < inindex[i+1]; j++)
+      outdata [(outindex[indata[j]])++ ] = i;
+
+  /* out index now points past end of sublist. Shift array one position up */
+  for (i = outlength; i > 0; i--)
+    outindex[i] = outindex[i-1];
+  outindex[0] = 0;
+}
 
 
 /****************************************************************************/
@@ -375,7 +400,7 @@ int Zoltan_PHG_Check (
       }
   ZOLTAN_FREE ((void**) &check);
 
-  for (i = 0; i < hg->VertexWeightDim * hg->nVtx; i += hg->VertexWeightDim)
+  for (i = 0; i < hg->VtxWeightDim * hg->nVtx; i += hg->VtxWeightDim)
     if (hg->vwgt[i] < 0.0) {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Found negative vertex weight.");
       err = ZOLTAN_WARN;
@@ -457,13 +482,13 @@ int Zoltan_PHG_Graph_to_HGraph(
   ZOLTAN_PRINT_WARN(zz->Proc, yo, 
                "THIS ROUTINE IS NOT CORRECT FOR 2D DATA DISTRIBUTION KDDKDD");
 
-  Zoltan_PHG_HGraph_Init(hg);
+  Zoltan_PHG_PHGraph_Init(hg);
   hg->info  = g->info;
   hg->nVtx  = g->nVtx;
   hg->nEdge = g->nVtx;
   hg->nDim  = g->nDim;
   hg->nNonZero = g->nVtx + g->nEdge;
-  hg->VertexWeightDim = g->VertexWeightDim;
+  hg->VtxWeightDim = g->VtxWeightDim;
   hg->EdgeWeightDim   = g->EdgeWeightDim;
 
   /* Copy vtxdist array; it is the same for hypergraph as graph. */
@@ -490,7 +515,7 @@ int Zoltan_PHG_Graph_to_HGraph(
   /* Copy vertex weights from graph to hypergraph */
   if (g->vwgt) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Copying vertex weights");
-    cnt = hg->nVtx * hg->VertexWeightDim;
+    cnt = hg->nVtx * hg->VtxWeightDim;
     if (!(hg->vwgt = (float *) ZOLTAN_MALLOC(cnt * sizeof(float)))) {
       err = ZOLTAN_MEMERR;
       goto End;
@@ -581,7 +606,7 @@ void Zoltan_PHG_Print(
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  num_vwgt = hg->VertexWeightDim;
+  num_vwgt = hg->VtxWeightDim;
   num_ewgt = hg->EdgeWeightDim;
   if (hg->vwgt != NULL) {
     fprintf(fp, "Vertices: [weights])\n");

@@ -36,10 +36,10 @@ static int Zoltan_PHG_Fill_Hypergraph (ZZ*, ZPHG*);
 /*****************************************************************************/
 
 int Zoltan_PHG_Build_Hypergraph(
-    ZZ *zz,                            /* Zoltan data structure */
-    ZPHG **zoltan_hg,                   /* Hypergraph to be allocated and built.*/
-    PHGPartParams *hgp                 /* Parameters for HG partitioning.*/
-    )
+  ZZ *zz,                            /* Zoltan data structure */
+  ZPHG **zoltan_hg,                  /* Hypergraph to be allocated and built.*/
+  PHGPartParams *hgp                 /* Parameters for HG partitioning.*/
+)
 {
 /* allocates and builds hypergraph data structure using callback routines */
 ZPHG *zhg;                     /* Temporary pointer to Zoltan_PHGraph. */
@@ -56,10 +56,10 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   /* Initialize the Zoltan hypergraph data fields. */
   zhg->Global_IDs = NULL;
   zhg->Local_IDs = NULL;
-  zhg->Parts = NULL;
+  zhg->VtxPlan = NULL;
 
   phgraph = &(zhg->PHG);
-  Zoltan_PHG_HGraph_Init(phgraph);
+  Zoltan_PHG_PHGraph_Init(phgraph);
 
   /* just set the pointer of phgraph's comm to hgp's comm */
   phgraph->comm = &hgp->comm;
@@ -420,9 +420,6 @@ float frac_x, frac_y;
 
   Zoltan_Comm_Destroy(&plan);
 
-  ZOLTAN_FREE(&pin_requests);
-  ZOLTAN_FREE(&request_gno);
-
   /* 
    * Compute the distribution of vertices and edges to the 2D data
    * distribution's processor columns and rows.
@@ -454,7 +451,7 @@ float frac_x, frac_y;
    * 2D data distribution. 
    */
 
-  proclist = (int *) ZOLTAN_MALLOC(app.nPins * sizeof(int));
+  proclist = (int *) ZOLTAN_MALLOC(MAX(app.nPins,app.nVtx) * sizeof(int));
   sendbuf = (int *) ZOLTAN_MALLOC(app.nPins * 2 * sizeof(int));
 
   cnt = 0; 
@@ -475,15 +472,6 @@ float frac_x, frac_y;
     } 
   }
 
-  Zoltan_Multifree(__FILE__, __LINE__, 9,  &app.pins, 
-                                           &app.edge_sizes, 
-                                           &app.pin_procs, 
-                                           &app.pin_gno, 
-                                           &app.vwgt,
-                                           &app.ewgt,
-                                           &app.vtxdist,
-                                           &hash_nodes,
-                                           &hash_tab);
   /*
    * Send pins to their target processors.
    * They become non-zeros in the 2D data distribution.
@@ -503,9 +491,6 @@ float frac_x, frac_y;
                  (char *) nonzeros);
 
   Zoltan_Comm_Destroy(&plan);
-
-  ZOLTAN_FREE(&proclist);
-  ZOLTAN_FREE(&sendbuf);
 
   /* Unpack the non-zeros received. */
 
@@ -533,8 +518,6 @@ float frac_x, frac_y;
     tmp[idx]++;
   }
 
-  ZOLTAN_FREE(&tmp);
-  ZOLTAN_FREE(&nonzeros);
 
   phg->nVtx = nVtx;
   phg->nEdge = nEdge;
@@ -553,11 +536,44 @@ float frac_x, frac_y;
     goto End;
   }
 
+  if (zz->LB.Return_Lists != ZOLTAN_LB_NO_LISTS && phg->comm->nProc_y > 1) {
+
+    /*
+     *  Create plan mapping GIDs to their GNOs' processors
+     *  within the row communicator.  This plan will be used at the end
+     *  to create return lists.
+     */
+
+    for (i = 0; i < app.nVtx; i++)
+      proclist[i] = VTX_TO_PROC_X(phg, app.vtxdist[zz->Proc]+i);
+      
+    msg_tag++;
+    ierr = Zoltan_Comm_Create(&(zhg->VtxPlan), app.nVtx, proclist, 
+                              phg->comm->row_comm, msg_tag, &i);
+  }
+
+
 End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     Zoltan_PHG_HGraph_Free(phg);
   }
   
+  Zoltan_Multifree(__FILE__, __LINE__, 9,  &app.pins, 
+                                           &app.edge_sizes, 
+                                           &app.pin_procs, 
+                                           &app.pin_gno, 
+                                           &app.vwgt,
+                                           &app.ewgt,
+                                           &app.vtxdist,
+                                           &hash_nodes,
+                                           &hash_tab);
+  ZOLTAN_FREE(&tmp);
+  ZOLTAN_FREE(&nonzeros);
+  ZOLTAN_FREE(&proclist);
+  ZOLTAN_FREE(&sendbuf);
+  ZOLTAN_FREE(&pin_requests);
+  ZOLTAN_FREE(&request_gno);
+
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
