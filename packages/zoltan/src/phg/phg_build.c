@@ -654,6 +654,7 @@ float *tmpwgts = NULL;
   if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
     /* Don't need the plan long-term; destroy it now. */
     Zoltan_Comm_Destroy(&(zhg->VtxPlan));
+    if (zhg->Recv_GNOs == app.vtx_gno) app.vtx_gno = NULL;
     ZOLTAN_FREE(&(zhg->Recv_GNOs));
     zhg->nRecv_GNOs = 0;
   }
