@@ -114,46 +114,56 @@ CORE_H = \
 	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
 	$(srcdir)/Teuchos_CombineMode.hpp \
 	$(srcdir)/Teuchos_Comm.hpp \
-	$(srcdir)/Teuchos_CommandLine.hpp \
 	$(srcdir)/Teuchos_CompObject.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
-	$(srcdir)/Teuchos_ContainerComm.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
+	$(srcdir)/Teuchos_DenseMatrix.hpp \
+	$(srcdir)/Teuchos_Flops.hpp \
+	$(srcdir)/Teuchos_LAPACK.hpp \
+	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
+	$(srcdir)/Teuchos_Object.hpp \
+	$(srcdir)/Teuchos_OrdinalTraits.hpp \
+	$(srcdir)/Teuchos_PacketTraits.hpp \
+	$(srcdir)/Teuchos_ParameterArbitrary.hpp \
+	$(srcdir)/Teuchos_ParameterEntry.hpp \
+	$(srcdir)/Teuchos_ParameterList.hpp \
+	$(srcdir)/Teuchos_ReportError.hpp \
+	$(srcdir)/Teuchos_ScalarTraits.hpp \
+	$(srcdir)/Teuchos_Time.hpp 
+
+
+CORE = \
+	$(srcdir)/Teuchos_CompObject.cpp \
+	$(srcdir)/Teuchos_Flops.cpp \
+	$(srcdir)/Teuchos_Object.cpp \
+	$(srcdir)/Teuchos_Time.cpp
+
+
+EXTRA_EXPERIMENTAL_H = \
+	$(srcdir)/Teuchos_Array.hpp \
+	$(srcdir)/Teuchos_CommandLine.hpp \
 	$(srcdir)/Teuchos_DefaultRaiseHandler.hpp \
 	$(srcdir)/Teuchos_DefaultWriter.hpp \
-	$(srcdir)/Teuchos_DenseMatrix.hpp \
 	$(srcdir)/Teuchos_DLARAN.hpp \
 	$(srcdir)/Teuchos_Error.hpp \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.hpp \
 	$(srcdir)/Teuchos_FileInputSource.hpp \
 	$(srcdir)/Teuchos_FileInputStream.hpp \
-	$(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_HashSet.hpp \
 	$(srcdir)/Teuchos_Hashtable.hpp \
 	$(srcdir)/Teuchos_HashUtils.hpp \
-	$(srcdir)/Teuchos_LAPACK.hpp \
-	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
 	$(srcdir)/Teuchos_MPIComm.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
 	$(srcdir)/Teuchos_MPITraits.hpp \
-	$(srcdir)/Teuchos_Object.hpp \
-	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_Out.hpp \
-	$(srcdir)/Teuchos_PacketTraits.hpp \
-	$(srcdir)/Teuchos_ParameterArbitrary.hpp \
-	$(srcdir)/Teuchos_ParameterEntry.hpp \
-	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_RaiseHandlerBase.hpp \
 	$(srcdir)/Teuchos_RandomNumberGeneratorBase.hpp \
 	$(srcdir)/Teuchos_RefCountPtr.hpp \
 	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
-	$(srcdir)/Teuchos_ReportError.hpp \
-	$(srcdir)/Teuchos_ScalarTraits.hpp \
 	$(srcdir)/Teuchos_StringInputSource.hpp \
 	$(srcdir)/Teuchos_StringInputStream.hpp \
 	$(srcdir)/Teuchos_StrUtils.hpp \
 	$(srcdir)/Teuchos_SystemRand.hpp \
-	$(srcdir)/Teuchos_Time.hpp\
 	$(srcdir)/Teuchos_TimeMonitor.hpp\
 	$(srcdir)/Teuchos_ThrowException.hpp\
 	$(srcdir)/Teuchos_TreeBuildingXMLHandler.hpp\
@@ -165,9 +175,8 @@ CORE_H = \
 	$(srcdir)/Teuchos_XMLObjectImplem.hpp
 
 
-CORE = \
+EXTRA_EXPERIMENTAL = \
 	$(srcdir)/Teuchos_CommandLine.cpp \
-	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_DefaultRaiseHandler.cpp \
 	$(srcdir)/Teuchos_DefaultWriter.cpp \
 	$(srcdir)/Teuchos_DLARAN.cpp \
@@ -175,11 +184,9 @@ CORE = \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp \
 	$(srcdir)/Teuchos_FileInputSource.cpp \
 	$(srcdir)/Teuchos_FileInputStream.cpp \
-	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_HashUtils.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp \
 	$(srcdir)/Teuchos_MPISession.cpp \
-	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_Out.cpp \
 	$(srcdir)/Teuchos_RandomNumberGeneratorBase.cpp \
 	$(srcdir)/Teuchos_RefCountPtr.cpp \
@@ -187,14 +194,13 @@ CORE = \
 	$(srcdir)/Teuchos_StringInputSource.cpp \
 	$(srcdir)/Teuchos_StringInputStream.cpp \
 	$(srcdir)/Teuchos_SystemRand.cpp \
-	$(srcdir)/Teuchos_Time.cpp\
-	$(srcdir)/Teuchos_TimeMonitor.cpp\
-	$(srcdir)/Teuchos_ThrowException.cpp\
-	$(srcdir)/Teuchos_TreeBuildingXMLHandler.cpp\
-	$(srcdir)/Teuchos_Utils.cpp\
-	$(srcdir)/Teuchos_XMLInputSource.cpp\
-	$(srcdir)/Teuchos_XMLInputStream.cpp\
-	$(srcdir)/Teuchos_XMLObject.cpp\
+	$(srcdir)/Teuchos_TimeMonitor.cpp \
+	$(srcdir)/Teuchos_ThrowException.cpp \
+	$(srcdir)/Teuchos_TreeBuildingXMLHandler.cpp \
+	$(srcdir)/Teuchos_Utils.cpp \
+	$(srcdir)/Teuchos_XMLInputSource.cpp \
+	$(srcdir)/Teuchos_XMLInputStream.cpp \
+	$(srcdir)/Teuchos_XMLObject.cpp \
 	$(srcdir)/Teuchos_XMLObjectImplem.cpp
 
 
@@ -231,6 +237,15 @@ EXTRA_MPI =
 @HAVE_MPI_TRUE@	$(EXTRA_MPI)
 
 @HAVE_MPI_FALSE@MPI = 
+
+
+# -------------------------------------------------------------
+# Enable compilation of experimental code if feature is enabled
+# -------------------------------------------------------------
+@HAVE_TEUCHOS_EXPERIMENTAL_TRUE@EXPERIMENTAL_H = $(EXTRA_EXPERIMENTAL_H)
+@HAVE_TEUCHOS_EXPERIMENTAL_FALSE@EXPERIMENTAL_H = 
+@HAVE_TEUCHOS_EXPERIMENTAL_TRUE@EXPERIMENTAL = $(EXTRA_EXPERIMENTAL)
+@HAVE_TEUCHOS_EXPERIMENTAL_FALSE@EXPERIMENTAL = 
 
 USERBASE_H = 
 
@@ -272,7 +287,8 @@ TEUCHOS_H = \
 	$(USERBASE_H) \
 	$(DIST_H) \
 	$(COMP_H) \
-	$(MPI_H)
+	$(MPI_H) \
+	$(EXPERIMENTAL_H)
 
 
 #np# replace new_package with the name of the package being autotool'ed here
@@ -283,7 +299,8 @@ libteuchos_a_SOURCES = \
 	$(SERIAL) \
 	$(DIST) \
 	$(COMP) \
-	$(MPI)
+	$(MPI) \
+	$(EXPERIMENTAL)
 
 
 #np# replace new_package with the name of the package being autotool'ed here
@@ -350,32 +367,34 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
 libteuchos_a_DEPENDENCIES =
-am__objects_1 = Teuchos_CommandLine.$(OBJEXT) \
-	Teuchos_CompObject.$(OBJEXT) \
+am__objects_1 = Teuchos_CompObject.$(OBJEXT) Teuchos_Flops.$(OBJEXT) \
+	Teuchos_Object.$(OBJEXT) Teuchos_Time.$(OBJEXT)
+am__objects_2 =
+@HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
+@HAVE_MPI_FALSE@am__objects_3 =
+am__objects_4 = Teuchos_CommandLine.$(OBJEXT) \
 	Teuchos_DefaultRaiseHandler.$(OBJEXT) \
 	Teuchos_DefaultWriter.$(OBJEXT) Teuchos_DLARAN.$(OBJEXT) \
 	Teuchos_Error.$(OBJEXT) Teuchos_ExpatHandlerAdapter.$(OBJEXT) \
 	Teuchos_FileInputSource.$(OBJEXT) \
-	Teuchos_FileInputStream.$(OBJEXT) Teuchos_Flops.$(OBJEXT) \
-	Teuchos_HashUtils.$(OBJEXT) Teuchos_MPIComm.$(OBJEXT) \
-	Teuchos_MPISession.$(OBJEXT) Teuchos_Object.$(OBJEXT) \
+	Teuchos_FileInputStream.$(OBJEXT) Teuchos_HashUtils.$(OBJEXT) \
+	Teuchos_MPIComm.$(OBJEXT) Teuchos_MPISession.$(OBJEXT) \
 	Teuchos_Out.$(OBJEXT) \
 	Teuchos_RandomNumberGeneratorBase.$(OBJEXT) \
 	Teuchos_RefCountPtr.$(OBJEXT) Teuchos_StrUtils.$(OBJEXT) \
 	Teuchos_StringInputSource.$(OBJEXT) \
 	Teuchos_StringInputStream.$(OBJEXT) \
-	Teuchos_SystemRand.$(OBJEXT) Teuchos_Time.$(OBJEXT) \
-	Teuchos_TimeMonitor.$(OBJEXT) Teuchos_ThrowException.$(OBJEXT) \
+	Teuchos_SystemRand.$(OBJEXT) Teuchos_TimeMonitor.$(OBJEXT) \
+	Teuchos_ThrowException.$(OBJEXT) \
 	Teuchos_TreeBuildingXMLHandler.$(OBJEXT) \
 	Teuchos_Utils.$(OBJEXT) Teuchos_XMLInputSource.$(OBJEXT) \
 	Teuchos_XMLInputStream.$(OBJEXT) Teuchos_XMLObject.$(OBJEXT) \
 	Teuchos_XMLObjectImplem.$(OBJEXT)
-am__objects_2 =
-@HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
-@HAVE_MPI_FALSE@am__objects_3 =
+@HAVE_TEUCHOS_EXPERIMENTAL_TRUE@am__objects_5 = $(am__objects_4)
+@HAVE_TEUCHOS_EXPERIMENTAL_FALSE@am__objects_5 =
 am_libteuchos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_2) $(am__objects_2) $(am__objects_2) \
-	$(am__objects_2) $(am__objects_3)
+	$(am__objects_2) $(am__objects_3) $(am__objects_5)
 libteuchos_a_OBJECTS = $(am_libteuchos_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -487,8 +506,11 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-Teuchos_CommandLine.$(OBJEXT): $(srcdir)/Teuchos_CommandLine.cpp
 Teuchos_CompObject.$(OBJEXT): $(srcdir)/Teuchos_CompObject.cpp
+Teuchos_Flops.$(OBJEXT): $(srcdir)/Teuchos_Flops.cpp
+Teuchos_Object.$(OBJEXT): $(srcdir)/Teuchos_Object.cpp
+Teuchos_Time.$(OBJEXT): $(srcdir)/Teuchos_Time.cpp
+Teuchos_CommandLine.$(OBJEXT): $(srcdir)/Teuchos_CommandLine.cpp
 Teuchos_DefaultRaiseHandler.$(OBJEXT): \
 	$(srcdir)/Teuchos_DefaultRaiseHandler.cpp
 Teuchos_DefaultWriter.$(OBJEXT): $(srcdir)/Teuchos_DefaultWriter.cpp
@@ -498,11 +520,9 @@ Teuchos_ExpatHandlerAdapter.$(OBJEXT): \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp
 Teuchos_FileInputSource.$(OBJEXT): $(srcdir)/Teuchos_FileInputSource.cpp
 Teuchos_FileInputStream.$(OBJEXT): $(srcdir)/Teuchos_FileInputStream.cpp
-Teuchos_Flops.$(OBJEXT): $(srcdir)/Teuchos_Flops.cpp
 Teuchos_HashUtils.$(OBJEXT): $(srcdir)/Teuchos_HashUtils.cpp
 Teuchos_MPIComm.$(OBJEXT): $(srcdir)/Teuchos_MPIComm.cpp
 Teuchos_MPISession.$(OBJEXT): $(srcdir)/Teuchos_MPISession.cpp
-Teuchos_Object.$(OBJEXT): $(srcdir)/Teuchos_Object.cpp
 Teuchos_Out.$(OBJEXT): $(srcdir)/Teuchos_Out.cpp
 Teuchos_RandomNumberGeneratorBase.$(OBJEXT): \
 	$(srcdir)/Teuchos_RandomNumberGeneratorBase.cpp
@@ -513,7 +533,6 @@ Teuchos_StringInputSource.$(OBJEXT): \
 Teuchos_StringInputStream.$(OBJEXT): \
 	$(srcdir)/Teuchos_StringInputStream.cpp
 Teuchos_SystemRand.$(OBJEXT): $(srcdir)/Teuchos_SystemRand.cpp
-Teuchos_Time.$(OBJEXT): $(srcdir)/Teuchos_Time.cpp
 Teuchos_TimeMonitor.$(OBJEXT): $(srcdir)/Teuchos_TimeMonitor.cpp
 Teuchos_ThrowException.$(OBJEXT): $(srcdir)/Teuchos_ThrowException.cpp
 Teuchos_TreeBuildingXMLHandler.$(OBJEXT): \
@@ -580,18 +599,6 @@ distclean-depend:
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
 
-Teuchos_CommandLine.o: $(srcdir)/Teuchos_CommandLine.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Teuchos_CommandLine.cpp' object='Teuchos_CommandLine.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_CommandLine.Po' tmpdepfile='$(DEPDIR)/Teuchos_CommandLine.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_CommandLine.o `test -f '$(srcdir)/Teuchos_CommandLine.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_CommandLine.cpp
-
-Teuchos_CommandLine.obj: $(srcdir)/Teuchos_CommandLine.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Teuchos_CommandLine.cpp' object='Teuchos_CommandLine.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_CommandLine.Po' tmpdepfile='$(DEPDIR)/Teuchos_CommandLine.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_CommandLine.obj `cygpath -w $(srcdir)/Teuchos_CommandLine.cpp`
-
 Teuchos_CompObject.o: $(srcdir)/Teuchos_CompObject.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Teuchos_CompObject.cpp' object='Teuchos_CompObject.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_CompObject.Po' tmpdepfile='$(DEPDIR)/Teuchos_CompObject.TPo' @AMDEPBACKSLASH@
@@ -603,6 +610,54 @@ Teuchos_CompObject.obj: $(srcdir)/Teuchos_CompObject.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_CompObject.Po' tmpdepfile='$(DEPDIR)/Teuchos_CompObject.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_CompObject.obj `cygpath -w $(srcdir)/Teuchos_CompObject.cpp`
+
+Teuchos_Flops.o: $(srcdir)/Teuchos_Flops.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Flops.cpp' object='Teuchos_Flops.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Flops.Po' tmpdepfile='$(DEPDIR)/Teuchos_Flops.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Flops.o `test -f '$(srcdir)/Teuchos_Flops.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Flops.cpp
+
+Teuchos_Flops.obj: $(srcdir)/Teuchos_Flops.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Flops.cpp' object='Teuchos_Flops.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Flops.Po' tmpdepfile='$(DEPDIR)/Teuchos_Flops.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Flops.obj `cygpath -w $(srcdir)/Teuchos_Flops.cpp`
+
+Teuchos_Object.o: $(srcdir)/Teuchos_Object.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Object.cpp' object='Teuchos_Object.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Object.Po' tmpdepfile='$(DEPDIR)/Teuchos_Object.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Object.o `test -f '$(srcdir)/Teuchos_Object.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Object.cpp
+
+Teuchos_Object.obj: $(srcdir)/Teuchos_Object.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Object.cpp' object='Teuchos_Object.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Object.Po' tmpdepfile='$(DEPDIR)/Teuchos_Object.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Object.obj `cygpath -w $(srcdir)/Teuchos_Object.cpp`
+
+Teuchos_Time.o: $(srcdir)/Teuchos_Time.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Time.cpp' object='Teuchos_Time.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Time.Po' tmpdepfile='$(DEPDIR)/Teuchos_Time.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Time.o `test -f '$(srcdir)/Teuchos_Time.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Time.cpp
+
+Teuchos_Time.obj: $(srcdir)/Teuchos_Time.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Time.cpp' object='Teuchos_Time.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Time.Po' tmpdepfile='$(DEPDIR)/Teuchos_Time.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Time.obj `cygpath -w $(srcdir)/Teuchos_Time.cpp`
+
+Teuchos_CommandLine.o: $(srcdir)/Teuchos_CommandLine.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_CommandLine.cpp' object='Teuchos_CommandLine.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_CommandLine.Po' tmpdepfile='$(DEPDIR)/Teuchos_CommandLine.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_CommandLine.o `test -f '$(srcdir)/Teuchos_CommandLine.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_CommandLine.cpp
+
+Teuchos_CommandLine.obj: $(srcdir)/Teuchos_CommandLine.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_CommandLine.cpp' object='Teuchos_CommandLine.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_CommandLine.Po' tmpdepfile='$(DEPDIR)/Teuchos_CommandLine.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_CommandLine.obj `cygpath -w $(srcdir)/Teuchos_CommandLine.cpp`
 
 Teuchos_DefaultRaiseHandler.o: $(srcdir)/Teuchos_DefaultRaiseHandler.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Teuchos_DefaultRaiseHandler.cpp' object='Teuchos_DefaultRaiseHandler.o' libtool=no @AMDEPBACKSLASH@
@@ -688,18 +743,6 @@ Teuchos_FileInputStream.obj: $(srcdir)/Teuchos_FileInputStream.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_FileInputStream.obj `cygpath -w $(srcdir)/Teuchos_FileInputStream.cpp`
 
-Teuchos_Flops.o: $(srcdir)/Teuchos_Flops.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Flops.cpp' object='Teuchos_Flops.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Flops.Po' tmpdepfile='$(DEPDIR)/Teuchos_Flops.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Flops.o `test -f '$(srcdir)/Teuchos_Flops.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Flops.cpp
-
-Teuchos_Flops.obj: $(srcdir)/Teuchos_Flops.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Flops.cpp' object='Teuchos_Flops.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Flops.Po' tmpdepfile='$(DEPDIR)/Teuchos_Flops.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Flops.obj `cygpath -w $(srcdir)/Teuchos_Flops.cpp`
-
 Teuchos_HashUtils.o: $(srcdir)/Teuchos_HashUtils.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Teuchos_HashUtils.cpp' object='Teuchos_HashUtils.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_HashUtils.Po' tmpdepfile='$(DEPDIR)/Teuchos_HashUtils.TPo' @AMDEPBACKSLASH@
@@ -735,18 +778,6 @@ Teuchos_MPISession.obj: $(srcdir)/Teuchos_MPISession.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_MPISession.Po' tmpdepfile='$(DEPDIR)/Teuchos_MPISession.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_MPISession.obj `cygpath -w $(srcdir)/Teuchos_MPISession.cpp`
-
-Teuchos_Object.o: $(srcdir)/Teuchos_Object.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Object.cpp' object='Teuchos_Object.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Object.Po' tmpdepfile='$(DEPDIR)/Teuchos_Object.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Object.o `test -f '$(srcdir)/Teuchos_Object.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Object.cpp
-
-Teuchos_Object.obj: $(srcdir)/Teuchos_Object.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Object.cpp' object='Teuchos_Object.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Object.Po' tmpdepfile='$(DEPDIR)/Teuchos_Object.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Object.obj `cygpath -w $(srcdir)/Teuchos_Object.cpp`
 
 Teuchos_Out.o: $(srcdir)/Teuchos_Out.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Teuchos_Out.cpp' object='Teuchos_Out.o' libtool=no @AMDEPBACKSLASH@
@@ -831,18 +862,6 @@ Teuchos_SystemRand.obj: $(srcdir)/Teuchos_SystemRand.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_SystemRand.Po' tmpdepfile='$(DEPDIR)/Teuchos_SystemRand.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_SystemRand.obj `cygpath -w $(srcdir)/Teuchos_SystemRand.cpp`
-
-Teuchos_Time.o: $(srcdir)/Teuchos_Time.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Time.cpp' object='Teuchos_Time.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Time.Po' tmpdepfile='$(DEPDIR)/Teuchos_Time.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Time.o `test -f '$(srcdir)/Teuchos_Time.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Time.cpp
-
-Teuchos_Time.obj: $(srcdir)/Teuchos_Time.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Teuchos_Time.cpp' object='Teuchos_Time.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Time.Po' tmpdepfile='$(DEPDIR)/Teuchos_Time.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Time.obj `cygpath -w $(srcdir)/Teuchos_Time.cpp`
 
 Teuchos_TimeMonitor.o: $(srcdir)/Teuchos_TimeMonitor.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Teuchos_TimeMonitor.cpp' object='Teuchos_TimeMonitor.o' libtool=no @AMDEPBACKSLASH@

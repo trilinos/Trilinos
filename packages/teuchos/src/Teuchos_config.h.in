@@ -149,6 +149,9 @@
 /* Define if want to build teuchos-arprec */
 #undef HAVE_TEUCHOS_ARPREC
 
+/* Define if want to build teuchos-experimental */
+#undef HAVE_TEUCHOS_EXPERIMENTAL
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 

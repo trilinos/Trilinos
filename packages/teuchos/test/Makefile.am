@@ -7,4 +7,12 @@
 #np# in a subdirectory of this directory, use the Makefile.am located in
 #np# test1/ rather than this file.
 
+if HAVE_TEUCHOS_EXPERIMENTAL
+
 SUBDIRS = BLAS DenseMatrix LAPACK ParameterList Containers Time Random XML
+
+else
+
+SUBDIRS = BLAS DenseMatrix LAPACK ParameterList
+
+endif

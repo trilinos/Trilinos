@@ -229,6 +229,9 @@ AC_CXX_STD_SPRINTF
 # Checks if tests should be built
 # ------------------------------------------------------------------------
 
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, experimental, [enable Teuchos experimental code], TEUCHOS_EXPERIMENTAL, no)
+AM_CONDITIONAL(HAVE_TEUCHOS_EXPERIMENTAL, [test "X$ac_cv_use_teuchos_experimental" != "Xno"])
+
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
