@@ -59,13 +59,14 @@ static char *cvs_lbuserconsth_id = "$Id$";
 /*
  *  Macros to compare LB_GIDs.
  *  Macros must be provided to test whether two LB_GIDs are equal (EQ),
- *  less than (LT), less than or equal (LE), greater than (GT), and 
- *  greater than or equal (GE).
+ *  not equal (NE), less than (LT), less than or equal (LE), 
+ *  greater than (GT), and greater than or equal (GE).
  *  Comparison macros are not needed for LB_LIDs as LB_LIDs are not used
  *  within the load-balancing routines.
  */
 
 #define LB_EQ_GID(a,b) ((a) == (b))
+#define LB_NE_GID(a,b) ((a) != (b))
 #define LB_LT_GID(a,b) ((a) <  (b))
 #define LB_LE_GID(a,b) ((a) <= (b))
 #define LB_GT_GID(a,b) ((a) >  (b))
