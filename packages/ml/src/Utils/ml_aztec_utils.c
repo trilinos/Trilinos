@@ -360,6 +360,34 @@ void AZ_ML_set_userdiagonal(ML *ml, int mesh_level, AZ_MATRIX *matrix)
 	free(cols);
 	free(vals);
 }
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void MLsmoother_precondition(double ff[], int options[], int proc_config[],
+                     double params[], AZ_MATRIX *mat, AZ_PRECOND *prec)
+{
+/*  Wrapper routine so that ML smoothers can be used as Aztec preconditioners*/
+
+  ML_Smoother *pre_smoother;
+  double *rhs;
+  int i, invec_leng;
+
+#ifdef AZ_ver2_1_0_3
+  pre_smoother    = (ML_Smoother *) AZ_get_precond_data(prec);
+#else
+  pre_smoother    = (ML_Smoother *) prec->ml_ptr;
+#endif
+  invec_leng = pre_smoother->my_level->Amat->invec_leng;
+  rhs = (double *) ML_allocate(invec_leng*sizeof(double));
+
+  for (i = 0; i < invec_leng; i++) {
+    rhs[i] = ff[i];
+    ff[i] = 0.;
+  }
+
+  ML_Smoother_Apply(pre_smoother, invec_leng, ff, invec_leng,rhs, ML_ZERO);
+  ML_free(rhs);
+}
 
 /*****************************************************************************/
 /*****************************************************************************/

@@ -131,6 +131,9 @@ extern void AZ_ML_set_userdiagonal(ML *ml, int level, AZ_MATRIX *matrix);
 
 extern void ML_precondition(double ff[], int options[], int proc_config[],
                      double params[], AZ_MATRIX *mat, AZ_PRECOND *prec);
+extern void MLsmoother_precondition(double ff[], int options[],
+				    int proc_config[], double params[], 
+				    AZ_MATRIX *mat, AZ_PRECOND *prec);
 
 extern void AZ_ML_Clean(void *data);
 
