@@ -134,10 +134,14 @@
 
 #ifdef HAVE_MAP
 #include <map>
-#include <list> // ToDo: Test for this!
 #elif defined(HAVE_MAP_H)
 #include <map.h>
-#include <list.h> // ToDo: Test for this!
+#endif
+
+#ifdef HAVE_LIST
+#include <list>
+#elif defined(HAVE_LIST_H)
+#include <list.h>
 #endif
 
 #ifdef HAVE_STRING

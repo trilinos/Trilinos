@@ -100,8 +100,8 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-@HAVE_TEUCHOS_EXPERIMENTAL_TRUE@SUBDIRS = scripts BLAS DenseMatrix LAPACK ParameterList Containers Time RefCountPtr XML
-@HAVE_TEUCHOS_EXPERIMENTAL_FALSE@SUBDIRS = scripts BLAS DenseMatrix LAPACK ParameterList
+@HAVE_TEUCHOS_EXTENDED_TRUE@SUBDIRS = scripts BLAS Containers DenseMatrix LAPACK ParameterList RefCountPtr Time XML
+@HAVE_TEUCHOS_EXTENDED_FALSE@SUBDIRS = scripts BLAS DenseMatrix LAPACK ParameterList RefCountPtr Time
 subdir = test
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Teuchos_config.h
@@ -113,8 +113,8 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
-DIST_SUBDIRS = scripts BLAS DenseMatrix LAPACK ParameterList Containers \
-	Time RefCountPtr XML
+DIST_SUBDIRS = scripts BLAS Containers DenseMatrix LAPACK ParameterList \
+	RefCountPtr Time XML
 all: all-recursive
 
 .SUFFIXES:

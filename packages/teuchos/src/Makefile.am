@@ -19,41 +19,51 @@
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
 	$(srcdir)/Teuchos_any.hpp \
+	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp \
 	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
-	$(srcdir)/Teuchos_CombineMode.hpp \
 	$(srcdir)/Teuchos_Comm.hpp \
+	$(srcdir)/Teuchos_CommandLineProcessor.hpp \
 	$(srcdir)/Teuchos_CompObject.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
+	$(srcdir)/Teuchos_F77_wrappers.h \
 	$(srcdir)/Teuchos_LAPACK.hpp \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
 	$(srcdir)/Teuchos_map.hpp \
+	$(srcdir)/Teuchos_oblackholestream.hpp \
 	$(srcdir)/Teuchos_Object.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
+	$(srcdir)/Teuchos_RawMPITraits.hpp \
+	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
+	$(srcdir)/Teuchos_RefCountPtr.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
 	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
 	$(srcdir)/Teuchos_SerialDenseVector.hpp \
-	$(srcdir)/Teuchos_TestForException.hpp\
+	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \
+	$(srcdir)/Teuchos_TestForException.hpp \
 	$(srcdir)/Teuchos_Time.hpp \
+	$(srcdir)/Teuchos_TimeMonitor.hpp \
 	$(srcdir)/Teuchos_Utils.hpp
 
 CORE = \
+	$(srcdir)/Teuchos_CommandLineProcessor.cpp \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
 	$(srcdir)/Teuchos_ParameterList.cpp \
+	$(srcdir)/Teuchos_RefCountPtr.cpp \
 	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_Time.cpp \
+	$(srcdir)/Teuchos_TimeMonitor.cpp \
 	$(srcdir)/Teuchos_Utils.cpp
 
-EXTRA_EXPERIMENTAL_H = \
+EXTRA_EXTENDED_H = \
 	$(srcdir)/Teuchos_Array.hpp \
-	$(srcdir)/Teuchos_CommandLineProcessor.hpp \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.hpp \
 	$(srcdir)/Teuchos_FileInputSource.hpp \
 	$(srcdir)/Teuchos_FileInputStream.hpp \
@@ -64,32 +74,25 @@ EXTRA_EXPERIMENTAL_H = \
 	$(srcdir)/Teuchos_MPIContainerComm.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
 	$(srcdir)/Teuchos_MPITraits.hpp \
-	$(srcdir)/Teuchos_RefCountPtr.hpp \
-	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
-	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \
 	$(srcdir)/Teuchos_StringInputSource.hpp \
 	$(srcdir)/Teuchos_StringInputStream.hpp \
 	$(srcdir)/Teuchos_StrUtils.hpp \
-	$(srcdir)/Teuchos_TimeMonitor.hpp\
 	$(srcdir)/Teuchos_TreeBuildingXMLHandler.hpp\
 	$(srcdir)/Teuchos_XMLInputSource.hpp\
 	$(srcdir)/Teuchos_XMLInputStream.hpp\
 	$(srcdir)/Teuchos_XMLObject.hpp\
 	$(srcdir)/Teuchos_XMLObjectImplem.hpp
 
-EXTRA_EXPERIMENTAL = \
-	$(srcdir)/Teuchos_CommandLineProcessor.cpp \
+EXTRA_EXTENDED = \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp \
 	$(srcdir)/Teuchos_FileInputSource.cpp \
 	$(srcdir)/Teuchos_FileInputStream.cpp \
 	$(srcdir)/Teuchos_HashUtils.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp \
 	$(srcdir)/Teuchos_MPISession.cpp \
-	$(srcdir)/Teuchos_RefCountPtr.cpp \
 	$(srcdir)/Teuchos_StrUtils.cpp \
 	$(srcdir)/Teuchos_StringInputSource.cpp \
 	$(srcdir)/Teuchos_StringInputStream.cpp \
-	$(srcdir)/Teuchos_TimeMonitor.cpp \
 	$(srcdir)/Teuchos_TreeBuildingXMLHandler.cpp \
 	$(srcdir)/Teuchos_XMLInputSource.cpp \
 	$(srcdir)/Teuchos_XMLInputStream.cpp \
@@ -137,15 +140,15 @@ endif
 # -------------------------------------------------------------
 # Enable compilation of experimental code if feature is enabled
 # -------------------------------------------------------------
-if HAVE_TEUCHOS_EXPERIMENTAL
+if HAVE_TEUCHOS_EXTENDED
 
-EXPERIMENTAL_H = $(EXTRA_EXPERIMENTAL_H)
-EXPERIMENTAL = $(EXTRA_EXPERIMENTAL)
+EXTENDED_H = $(EXTRA_EXTENDED_H)
+EXTENDED = $(EXTRA_EXTENDED)
 
 else
 
-EXPERIMENTAL_H =
-EXPERIMENTAL =
+EXTENDED_H =
+EXTENDED =
 
 endif
 
@@ -193,7 +196,7 @@ TEUCHOS_H = \
 	$(DIST_H) \
 	$(COMP_H) \
 	$(MPI_H) \
-	$(EXPERIMENTAL_H)
+	$(EXTENDED_H)
 
 
 #np# replace new_package with the name of the package being autotool'ed here
@@ -205,7 +208,7 @@ libteuchos_a_SOURCES = \
 	$(DIST) \
 	$(COMP) \
 	$(MPI) \
-	$(EXPERIMENTAL)
+	$(EXTENDED)
 
 #np# replace new_package with the name of the package being autotool'ed here
 EXTRA_libteuchos_a_SOURCES = \

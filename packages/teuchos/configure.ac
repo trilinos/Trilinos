@@ -148,7 +148,7 @@ TAC_ARG_CHECK_MPI
 AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
 AC_CHECK_HEADERS([cmath math.h iomanip iomanip.h iostream iostream.h],,,)
 AC_CHECK_HEADERS([string string.h complex complex.h algorithm algorithm.h],,,)
-AC_CHECK_HEADERS([map map.h vector vector.h],,,)
+AC_CHECK_HEADERS([map map.h list list.h vector vector.h],,,)
 AC_CHECK_HEADERS([sstream strstream sstream.h strstream.h],,,)
 AC_CHECK_HEADERS([stdexcept stdexcept.h cstdarg stdarg.h],,,)
 AC_CHECK_HEADERS([typeinfo],,,)
@@ -187,6 +187,10 @@ fi
 
 if test "X$ac_cv_header_map" != "Xyes" && test "X$ac_cv_header_map_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find map or map.h.  Teuchos requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_list" != "Xyes" && test "X$ac_cv_header_list_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find list or list.h.  Teuchos requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
@@ -319,11 +323,11 @@ TAC_ARG_ENABLE_FEATURE_SUB( teuchos, complex, [enable Teuchos complex code], TEU
 AM_CONDITIONAL(HAVE_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno"])
 
 #
-#  --enable-teuchos-experimental
+#  --enable-teuchos-extended
 #
 
-TAC_ARG_ENABLE_FEATURE_SUB( teuchos, experimental, [enable Teuchos experimental code], TEUCHOS_EXPERIMENTAL, no)
-AM_CONDITIONAL(HAVE_TEUCHOS_EXPERIMENTAL, [test "X$ac_cv_use_teuchos_experimental" != "Xno"])
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, extended, [enable Teuchos extended code], TEUCHOS_EXTENDED, no)
+AM_CONDITIONAL(HAVE_TEUCHOS_EXTENDED, [test "X$ac_cv_use_teuchos_extended" != "Xno"])
 
 #
 #  --enable-teuchos-arprec --with-teuchos-arprecdir 
