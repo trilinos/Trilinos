@@ -810,7 +810,7 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
   Ke_data_org[AZ_N_rows] = Ke_data_org[AZ_N_internal] + 
     Ke_data_org[AZ_N_border];
 
-  /* Read in the mass matrix */
+  /* rst: Read in the mass matrix */
 
   AZ_input_msr_matrix("M_mat.az", global_edge_inds, &M_val, &M_bindx, 
                       Nlocal_edges, proc_config);
@@ -825,8 +825,10 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
 
   M_mat->matrix_type    = M_data_org[AZ_matrix_type];
   M_data_org[AZ_N_rows] = M_data_org[AZ_N_internal] + M_data_org[AZ_N_border];
-  /* Make an ML matrix. Unfortunately, we have to create a bogus */
-  /* hierarchy to make this work. */
+
+  /* rst: Make an ML matrix. Unfortunately, we have to create a bogus */
+  /* hierarchy to make this work. After these two lines,         */
+  /* &(ml_M->Amat[0]) is an ML matrix corresponding to M.        */
   ML_Create(&ml_M,1);
   AZ_ML_Set_Amat(ml_M, 0, Nlocal_edges, Nlocal_edges, M_mat, proc_config);
 
@@ -2256,6 +2258,9 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
     }
     fflush(stdout);
     options[AZ_scaling] = AZ_none;
+    /* rst: create the aztec block 2x2 matrix. Shove in Ke and M   */
+    /* into the data structure and associate the new matrix-vector */
+    /* product routine with this matrix.                           */
    blockmat = AZ_matrix_create((Ke_mat->data_org[AZ_N_internal] + 
 				 Ke_mat->data_org[AZ_N_border])*2);
    aztec_block_data.N = Ke_mat->data_org[AZ_N_internal] + 
@@ -2278,8 +2283,8 @@ blockmat->matvec(xxx, rhs, blockmat, proc_config);
    //   options[AZ_precond] = AZ_none; 
    options[AZ_conv]     = AZ_r0;
    /* rst: toggle these two to switch between regular and 2x2 block system */
-   //            AZ_iterate(xxx, rhs, options, params, status, proc_config, blockmat,  
-		          AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat,
+   //  AZ_iterate(xxx, rhs, options, params, status, proc_config, blockmat,  
+       AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat,
 	      Pmat, scaling); 
 
     options[AZ_pre_calc] = AZ_reuse;
@@ -2645,6 +2650,17 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
    blockmat = &(block_ml->Amat[mesh_level]);
    ML_make_block_matrix(blockmat, original);
 
+   /* rst: I'm not sure ... but something like the following */
+   /* should work for T if needed?                           */
+   /*
+   original = &(Tmat_array[mesh_level]);
+   blockmat = &(blk_Tmat_array[mesh_level]);
+   ML_make_block_matrix(blockmat, original);
+   original = &(Tmat_trans_array[mesh_level]);
+   blockmat = &(blk_Tmat_trans_array[mesh_level]);
+   ML_make_block_matrix(blockmat, original);
+   */
+
    while( ml_edges->SingleLevel[mesh_level].Rmat->to != NULL) {
      levels++;
      old_mesh_level = mesh_level;
@@ -2661,7 +2677,7 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
      ML_Operator_Set_1Levels(blockmat, &(block_ml->SingleLevel[mesh_level]), 
 			     &(block_ml->SingleLevel[old_mesh_level]));
 
-     /* Make 2x2 block diagonal P */
+     /* Make 2x2 block diagonal R */
 
      original = &(ml_edges->Rmat[old_mesh_level]);
      blockmat = &(block_ml->Rmat[old_mesh_level]);
@@ -2683,6 +2699,17 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
 
      /* RAP works too */
      /* ML_Gen_AmatrixRAP(block_ml, old_mesh_level, mesh_level); */
+
+     /* rst: I'm not sure ... but something like the following */
+     /* should work for T if needed?                           */
+     /*
+       original = &(Tmat_array[mesh_level]);
+       blockmat = &(blk_Tmat_array[mesh_level]);
+       ML_make_block_matrix(blockmat, original);
+       original = &(Tmat_trans_array[mesh_level]);
+       blockmat = &(blk_Tmat_trans_array[mesh_level]);
+       ML_make_block_matrix(blockmat, original);
+     */
 
    }
 
@@ -2754,7 +2781,7 @@ int blockdiag_getrow(void *data, int N_requested,
 /* NOTE: This routine needs to be modified to handle matrices of the */
 /* form:                                                             */
 /*                         ( orig1    orig2   )                      */
-/*      blockmat =         (-orig2    original)                      */
+/*      blockmat =         (-orig2    orig1   )                      */
 
 int  ML_make_block_matrix(ML_Operator *blockmat, ML_Operator *original) {
 
@@ -2771,10 +2798,18 @@ int  ML_make_block_matrix(ML_Operator *blockmat, ML_Operator *original) {
   if (original->matvec->ML_id == ML_INTERNAL) {
     ml_operator_wrapper->diag_matvec = original->matvec->internal;
     ml_operator_wrapper->diag_matvec_data = original;
+    /* rst: this might work?
+    ml_operator_wrapper->offdiag_matvec = M->matvec->internal;
+    ml_operator_wrapper->offdiag_matvec_data = M;
+    */
   }
   else {
     ml_operator_wrapper->diag_matvec = original->matvec->external;
     ml_operator_wrapper->diag_matvec_data = original->data;
+    /* rst: this might work?
+    ml_operator_wrapper->offdiag_matvec = M->matvec->external;
+    ml_operator_wrapper->offdiag_matvec_data = M->data;
+    */
   }
 
   ML_Operator_Set_ApplyFuncData(blockmat, scale_fact*original->invec_leng, 
@@ -2785,10 +2820,18 @@ int  ML_make_block_matrix(ML_Operator *blockmat, ML_Operator *original) {
   if (original->getrow->ML_id == ML_INTERNAL) {
     ml_operator_wrapper->diag_getrow = original->getrow->internal;
     ml_operator_wrapper->diag_getrow_data = original;
+    /* rst: this might work?
+    ml_operator_wrapper->offdiag_getrow = M->getrow->internal;
+    ml_operator_wrapper->offdiag_getrow_data = M;
+    */
   }
   else {
     ml_operator_wrapper->diag_getrow = original->getrow->external;
     ml_operator_wrapper->diag_getrow_data = original->data;
+    /* rst: this might work?
+    ml_operator_wrapper->offdiag_getrow = M->getrow->external;
+    ml_operator_wrapper->offdiag_getrow_data = M->data;
+    */
   }
   ML_Operator_Set_Getrow(blockmat, ML_INTERNAL, scale_fact*
 			 original->outvec_leng, blockdiag_getrow);
