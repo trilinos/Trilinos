@@ -33,7 +33,7 @@ extern "C" {
  *  specifying whether global or local IDs are to be manipulated are
  *  provided.  Use of these macros is recommended over use of these
  *  basic functions.
- *  See lb_id_const.h for definitions of these macros.  
+ *  See zoltan_id.h for definitions of these macros.  
  */
 /*****************************************************************************/
 /*****************************************************************************/
