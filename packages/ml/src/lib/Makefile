@@ -18,7 +18,8 @@ ML_OBJ = ml_aztec_utils.o  ml_ggraph.o        ml_memory.o \
          ml_agg_genP.o     ml_lapack.o        mli_solver.o \
          ml_krylov.o       ml_cg.o            ml_gmres.o \
          ml_bicgstabl.o    ml_pde.o           ml_agg_dd.o \
-         ml_agg_coupled.o  ml_agg_uncoupled.o ml_agg_MIS.o
+         ml_agg_coupled.o  ml_agg_uncoupled.o ml_agg_MIS.o \
+         ml_amg.o          ml_amg_genP.o      ml_amg_MIS.o
 
 
 #=======================================================================
