@@ -131,6 +131,8 @@ endif
 
 EXTENSIONS = $(NOX_EXTENSIONS) $(EPETRA_EXTENSIONS) $(LAPACK_EXTENSIONS)
 
+if BUILD_PYTHON
+
 # ------------------------------------------------------------------------
 # Where we want the NOX/Python installed.  We use 'exec' in the name so 
 # that it is installed by 'install-exec'
@@ -139,14 +141,21 @@ EXTENSIONS = $(NOX_EXTENSIONS) $(EPETRA_EXTENSIONS) $(LAPACK_EXTENSIONS)
 noxPythonexecdir = $(prefix)/python/NOX
 
 # ------------------------------------------------------------------------
-# Python files to be installed by 'make install-exec'
+# What to build
+# ------------------------------------------------------------------------
 
+noxPythonexec_LTLIBRARIES = $(EXTENSIONS)
+
+# ------------------------------------------------------------------------
+# Python files to be installed by 'make install-exec'
 # ------------------------------------------------------------------------
 
 noxPythonexec_PYTHON = $(WRAPPERS) __init__.py
 
+endif
+
 # ------------------------------------------------------------------------
-# Extra files to be installed by 'make install'
+# Extra files to be installed by 'make dist'
 # ------------------------------------------------------------------------
 
 EXTRA_DIST = $(INTERFACES) NOX_LAPACK_import.i NOX_LAPACK.swi
@@ -156,16 +165,6 @@ EXTRA_DIST = $(INTERFACES) NOX_LAPACK_import.i NOX_LAPACK.swi
 # ------------------------------------------------------------------------
 
 CLEANFILES = wrap_* $(WRAPPERS)
-
-# ------------------------------------------------------------------------
-# What to build
-# ------------------------------------------------------------------------
-
-if BUILD_PYTHON
-
-noxPythonexec_LTLIBRARIES = $(EXTENSIONS)
-
-endif
 
 # ------------------------------------------------------------------------
 # General definitions

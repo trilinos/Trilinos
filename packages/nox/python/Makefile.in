@@ -423,16 +423,20 @@ EXTENSIONS = $(NOX_EXTENSIONS) $(EPETRA_EXTENSIONS) $(LAPACK_EXTENSIONS)
 # Where we want the NOX/Python installed.  We use 'exec' in the name so 
 # that it is installed by 'install-exec'
 # ------------------------------------------------------------------------
-noxPythonexecdir = $(prefix)/python/NOX
+@BUILD_PYTHON_TRUE@noxPythonexecdir = $(prefix)/python/NOX
+
+# ------------------------------------------------------------------------
+# What to build
+# ------------------------------------------------------------------------
+@BUILD_PYTHON_TRUE@noxPythonexec_LTLIBRARIES = $(EXTENSIONS)
 
 # ------------------------------------------------------------------------
 # Python files to be installed by 'make install-exec'
+# ------------------------------------------------------------------------
+@BUILD_PYTHON_TRUE@noxPythonexec_PYTHON = $(WRAPPERS) __init__.py
 
 # ------------------------------------------------------------------------
-noxPythonexec_PYTHON = $(WRAPPERS) __init__.py
-
-# ------------------------------------------------------------------------
-# Extra files to be installed by 'make install'
+# Extra files to be installed by 'make dist'
 # ------------------------------------------------------------------------
 EXTRA_DIST = $(INTERFACES) NOX_LAPACK_import.i NOX_LAPACK.swi
 
@@ -440,11 +444,6 @@ EXTRA_DIST = $(INTERFACES) NOX_LAPACK_import.i NOX_LAPACK.swi
 # Files to be deleted by 'make clean'
 # ------------------------------------------------------------------------
 CLEANFILES = wrap_* $(WRAPPERS)
-
-# ------------------------------------------------------------------------
-# What to build
-# ------------------------------------------------------------------------
-@BUILD_PYTHON_TRUE@noxPythonexec_LTLIBRARIES = $(EXTENSIONS)
 SWIG_PYTHON_LIBS = 
 SWIG_NOX_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 	-I$(top_srcdir)/src \

@@ -110,6 +110,8 @@ endif
 
 EXTENSIONS = $(LOCA_EXTENSIONS) $(LAPACK_EXTENSIONS)
 
+if BUILD_PYTHON
+
 # ------------------------------------------------------------------------
 # Where we want the LOCA/Python installed.  We use 'exec' in the name so 
 # that it is installed by 'install-exec'
@@ -118,14 +120,21 @@ EXTENSIONS = $(LOCA_EXTENSIONS) $(LAPACK_EXTENSIONS)
 locaPythonexecdir = $(prefix)/python/LOCA
 
 # ------------------------------------------------------------------------
-# Python files to be installed by 'make install-exec'
+# What to build
+# ------------------------------------------------------------------------
 
+locaPythonexec_LTLIBRARIES = $(EXTENSIONS)
+
+# ------------------------------------------------------------------------
+# Python files to be installed by 'make install-exec'
 # ------------------------------------------------------------------------
 
 locaPythonexec_PYTHON = $(WRAPPERS) __init__.py
 
+endif
+
 # ------------------------------------------------------------------------
-# Extra files to be installed by 'make install'
+# Extra files to be installed by 'make dist'
 # ------------------------------------------------------------------------
 
 EXTRA_DIST = $(INTERFACES)
@@ -135,16 +144,6 @@ EXTRA_DIST = $(INTERFACES)
 # ------------------------------------------------------------------------
 
 CLEANFILES = wrap_* $(WRAPPERS)
-
-# ------------------------------------------------------------------------
-# What to build
-# ------------------------------------------------------------------------
-
-if BUILD_PYTHON
-
-locaPythonexec_LTLIBRARIES = $(EXTENSIONS)
-
-endif
 
 # ------------------------------------------------------------------------
 # General definitions
