@@ -179,7 +179,7 @@ int ML_Smoother_Set_Label( ML_Smoother *smoo, char *label)
 {
   int size;
 
-   if (smoo->label != NULL) { free(smoo->label); smoo->label == NULL; }
+   if (smoo->label != NULL) { free(smoo->label); smoo->label = NULL; }
    size = strlen(label) + 1;
    smoo->label = (char *) malloc(size*sizeof(char));
    if (smoo->label == NULL) 
@@ -736,7 +736,9 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
    ML_Comm        *comm;
    ML_CommInfoOP  *getrow_comm;
    ML_Operator    *Amat;
-   double         *x_ext, **blockdata, *Ax, **res, *vals, omega;
+   double         *x_ext, **blockdata, *Ax, *vals, omega;
+   double         *unprec_r = NULL, *Mr = NULL, *dtemp = NULL;
+   double         r_z_dot, p_ap_dot;
    ML_Smoother    *smooth_ptr;
    ML_Sm_BGS_Data *dataptr;
    char           N[2];
@@ -799,12 +801,12 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
    if ( maxBlocksize > 0 )
    {
       Ax      = (double *) malloc( maxBlocksize * sizeof(double) );
+      dtemp   = (double *) malloc( maxBlocksize * sizeof(double) );
    }
    if ( Nblocks > 0 )
    {
-      res     = (double **) malloc( Nblocks * sizeof(double*) );
-      for ( i = 0; i < Nblocks; i++ )
-         res[i] = (double *) malloc( maxBlocksize * sizeof(double) );
+     unprec_r = (double *) malloc(inlen*sizeof(double));
+
       do_update = (int *) malloc( Nblocks * sizeof(int) );
       if ( do_update == NULL ) 
       {
@@ -812,6 +814,11 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
          exit(1);
       }
    }
+   if (smooth_ptr->omega == ML_ONE_STEP_CG) {
+     Mr = (double *) malloc(inlen*sizeof(double));
+     if (Mr == NULL) pr_error("ML_Smoother_VBlockJacobi: Out of space\n");
+   }
+   else Mr = unprec_r;
 
    /* ----------------------------------------------------- */
    /* iterate                                               */
@@ -823,6 +830,13 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
       if (getrow_comm != NULL)
          ML_exchange_bdry(x_ext,getrow_comm, inlen,comm,ML_OVERWRITE);
 
+      /* compute the residual */
+
+      ML_Operator_Apply(Amat, inlen, x_ext, inlen, unprec_r);
+      for (i = 0; i < inlen; i++) unprec_r[i] = rhs[i] - unprec_r[i];
+
+      /* compute do_update */
+
       for (i = 0; i < Nblocks; i++) 
       {
          do_update[i] = 0;
@@ -830,7 +844,6 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
 
          for (k = 0; k < blocksize; k++) 
          {
-            Ax[k] = 0.0;
             row = aggr_group[aggr_offset[i]+k];
             ML_get_matrix_row(Amat,1,&row,&allocated_space,&cols,&vals,
                                                 &length,0);
@@ -838,9 +851,7 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
             {
                col = cols[j];
                if ( col == row ) do_update[i]++;
-               Ax[k] += (vals[j]*x_ext[col]);
             }
-            res[i][k] = rhs[row] - Ax[k];
          }
       }
  
@@ -849,19 +860,37 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
          blocksize = blocklengths[i];
          if ( do_update[i] == blocksize && blocksize != 0 )
          {
+	   for (k = 0; k < blocksize; k++) {
+	     dtemp[k] = unprec_r[aggr_group[aggr_offset[i]+k]];
+           }
             MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
-                              perms[i], res[i], &blocksize, &info, itmp);
+                              perms[i], dtemp, &blocksize, &info, itmp);
             if ( info != 0 ) 
             {
                printf("dgetrs returns with %d at block %d\n",info,i); 
                exit(1);
             }
-            for (k = 0; k < blocksize; k++)
-            {
-               x_ext[aggr_group[aggr_offset[i]+k]] += (omega * res[i][k]);
+            for (k = 0; k < blocksize; k++) {
+	      /*
+               x_ext[aggr_group[aggr_offset[i]+k]] += (omega * dtemp[k]);
+	      */
+               Mr[aggr_group[aggr_offset[i]+k]] = dtemp[k];
             }
          }
       }
+      if (smooth_ptr->omega == ML_ONE_STEP_CG) {
+         /* Compute damping parameter that corresonds to one step of CG. */
+         r_z_dot = 0.;
+         r_z_dot = ML_gdot(inlen, Mr, unprec_r, smooth_ptr->my_level->comm);
+         ML_Operator_Apply(Amat, inlen, Mr, inlen, unprec_r);
+         p_ap_dot = ML_gdot(inlen, Mr, unprec_r, smooth_ptr->my_level->comm);
+         if (p_ap_dot != 0.0) omega = r_z_dot/p_ap_dot;
+         else omega = 1.;
+      }
+
+
+      /* watch out for 'do_update' */
+      for (i = 0; i < inlen; i++)  x_ext[i] += (omega * Mr[i]);
    }
 	 
    /* ----------------------------------------------------- */
@@ -877,10 +906,11 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
    if ( maxBlocksize > 0 ) free( Ax );
    free( vals ); 
    free( cols ); 
-   for (i = 0; i < Nblocks; i++) free( res[i] );
-   if ( Nblocks > 0 ) free( res );
    free( aggr_offset );
    free( aggr_group );
+   if ( unprec_r != NULL) free(unprec_r);
+   if ((smooth_ptr->omega == ML_ONE_STEP_CG) && (Mr != NULL)) free(Mr);
+   if ( dtemp    != NULL) free(dtemp);
    if ( Nblocks > 0 ) free( do_update );
 	 
    return 0;
