@@ -17,6 +17,7 @@
 #include "ml_struct.h"
 #include "ml_agg_genP.h"
 #include "ml_aggregate.h"
+#include "ml_amg.h"
 #include "ml_bicgstabl.h"
 #include "ml_cg.h"
 #include "ml_comm.h"
