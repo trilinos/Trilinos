@@ -235,9 +235,10 @@ endif
 # ------------------------------------------------------------------------
 # Some C++ compilers create extra .o-files for templates. We need to
 # be sure to include these, and this is the hack to do it.
+# On alpha-dec machines, the extra .o's are needed for Epetra only.
 # ------------------------------------------------------------------------
 
-libepetra_a_LIBADD = $(XTRALDADD)
+libepetra_a_LIBADD = $(EPETRA_TEMPLATE_OBJS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)

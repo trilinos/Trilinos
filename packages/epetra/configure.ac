@@ -285,6 +285,7 @@ dnl else
 dnl AC_MSG_RESULT($XTRALDADD)
 dnl fi
 
+AC_SUBST(EPETRA_TEMPLATE_OBJS)
 AC_SUBST(XTRALDADD)
 # ------------------------------------------------------------------------
 # Checks for library functions

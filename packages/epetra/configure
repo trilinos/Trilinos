@@ -8170,6 +8170,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 
+
 # ------------------------------------------------------------------------
 # Checks for library functions
 # ------------------------------------------------------------------------
@@ -8855,6 +8856,7 @@ s,@HAVE_THREADS_FALSE@,$HAVE_THREADS_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
+s,@EPETRA_TEMPLATE_OBJS@,$EPETRA_TEMPLATE_OBJS,;t t
 s,@XTRALDADD@,$XTRALDADD,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t
 CEOF
