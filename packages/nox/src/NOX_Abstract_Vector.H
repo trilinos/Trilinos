@@ -33,35 +33,6 @@
 #ifndef NOX_ABSTRACT_VECTOR_H
 #define NOX_ABSTRACT_VECTOR_H
 
-/*! 
-
-  \mainpage %NOX: An Object-Oriented Nonlinear Solver Package
-
-  \section intro Introduction
-  
-  %NOX is short for "Nonlinear Object-Oriented Solutions". Its 
-  objective is to enable efficient solution of the equation:
-  \f[
-  F(x)=0.
-  \f]
-
-
-  \section started Getting Started
-
-
-  \section links Useful Links
-  <UL>
-  <LI><A HREF="../configure.html">Configuration and compilation instructions</A>
-  <LI><A HREF="http://csmr.ca.sandia.gov/bugzilla/">Bugzilla (Bug Tracking)</A> 
-      <UL>
-      <LI>Click on "Enter a new bug report"
-      <LI>Choose "%NOX"
-      <LI>Either login or create a new account
-      <LI>Submit your bug report
-      </UL>
-  </UL>
-*/
- 
 //! Nonlinear solvers package namespace
 namespace NOX {
 
