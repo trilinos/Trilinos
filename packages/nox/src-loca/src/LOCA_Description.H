@@ -32,9 +32,13 @@
 
 \section loca_intro Introduction
   
-%LOCA is generic continuation package based upon the <a href="../../../doc/html/index.html">NOX</a> nonlinear solver package.  The foundation for %NOX consists of the NOX::Abstract::Group and NOX::Abstract::Vector which provide abstract interfaces to the linear algebra, data structures, and nonlinear equations to be solved.  %LOCA extends these concepts via additional abstract groups that provide the interface needed for continuation and bifurcation tracking such as setting parameters and computing derivatives with respect to parameters.  Also, %LOCA provides several generic groups that implement the extended sets of nonlinear equations representing various forms of continuation and bifurcations.  Finally, %LOCA provides a stepper class that drives a %NOX nonlinear solver to compute points along a continuation curve, and several support classes that compute predictors, step sizes, etc.  Each of these are discussed in more detail below (see \ref loca_class_overview).
+%LOCA is generic continuation and bifurcation analysis package that is designed for large-scale applications. The algorithms are designed with minimal additional interface requirements over that needed for a Newton method to reach an equilibrium solution. %LOCA is built upon the <a href="../../doc/html/index.html">NOX</a> nonlinear solver package.  The algorithms in %NOX are generic and written to the NOX::Abstract::Group and NOX::Abstract::Vector, which provide abstract interfaces to the linear algebra, data structures, and nonlinear equations to be solved. %LOCA uses the %NOX interface and extends it via additional abstract groups that provide the interface needed for continuation and bifurcation tracking, such as setting parameters and computing derivatives with respect to parameters. 
 
-Unlike %NOX which can provide a range of nonlinear solvers using a single abstract interface to the nonlinear equations and linear algebra, %LOCA provides several different levels of functionality, each requiring additional information from the underlying problem.  Therefore, the interface to %LOCA is split among several abstract classes each encapsulating a different level of functionality.  To interface to %LOCA, the user need only provide implementations of those abstract classes for the functionality the user is interested in.  %LOCA provides two such interfaces:
+%LOCA provides several generic groups that take the %NOX group representing the equilibrium equations and implement the extended sets of nonlinear equations representing various forms of continuation and bifurcations (such as the additional equation for arc-length continuation). These extended groups also include generic algorithms for computing the Newton step for the extended system based on the Newton step for the equilibrium equations (e.g. Sherman-Morrison-Woodbury formula for arclength continuation). They are then sent to %NOX for nonlinear solution.  
+
+Finally, %LOCA provides a stepper class that repeatedly calls the %NOX nonlinear solver to compute points along a continuation curve. The design allows for continuation of bifurcations so two-parameter bifurcation sets can be generated. The stepper class relies on several support classes that compute predictors, step sizes, etc.  Each of these are discussed in more detail n the \ref loca_class_overview.
+
+Unlike %NOX which can provide a range of nonlinear solvers using a single abstract interface to the nonlinear equations and linear algebra, %LOCA provides several different levels of functionality, each requiring additional information from the underlying problem.  Therefore, the interface to %LOCA is split among several abstract classes each encapsulating a different level of functionality.  To interface to %LOCA, the user need only provide implementations of those abstract classes for the functionality the user is interested in.  %LOCA provides two complete interfaces:
 
  - LOCA::LAPACK::Group
  - LOCA::Epetra::Group
@@ -66,18 +70,18 @@ See \ref loca_parameters.
 
 The lowest level of functionality provided by %LOCA is that for continuation.  The LOCA::Continuation::AbstractGroup provides the interface required for single parameter continuation and is derived from the NOX::Abstract::Group.  The additional methods provided primarily consist of setting/retrieving parameter values and computing the derivative \f$\partial F/\partial p\f$ for a given parameter \f$p\f$.  For application codes that cannot provide this derivative directly, the LOCA::Continuation::FiniteDifferenceGroup provides a generic implementation using finite differencing.
 
-Various continuation algorithms have been implemented.  These include
+Multiple continuation algorithms have been implemented, including:
 
 - Natural Continuation (LOCA::Continuation::NaturalGroup)
 - Arc-length Continuation (LOCA::Continuation::ArcLengthGroup)
 
-each of which implements the extended set of nonlinear equations to be solved at each continuation step.  
+The continuation groups implement the extended set of nonlinear equations to be solved at each continuation step.  
 
 \section bifurcation Bifurcation Classes
 
 %LOCA can locate and track several codimension 1 bifurcations:
 
-- Turning point (LOCA::Bifurcation::TPBord::ExtendedGroup)
+- Turning point (a.k.a. fold) (LOCA::Bifurcation::TPBord::ExtendedGroup)
 - Pitchfork (LOCA::Bifurcation::PitchforkBord::ExtendedGroup)
 - Hopf (LOCA::Bifurcation::HopfBord::ExtendedGroup).
 
@@ -90,7 +94,7 @@ See the relevant class documentation for more details on the additional interfac
 
 \section stepping Parameter Stepping Classes
 
-The final component of %LOCA consits of several parameter stepping classes.  These consist of the LOCA::Stepper which drives a %NOX nonlinear solver at each parameter step, and several support classes that compute predictors (classes belonging to the LOCA::Predictor namespace) and encapsulate various step size control strategies (classes in the LOCA::StepSize namespace).
+The final component of %LOCA consists of several parameter stepping classes.  These consist of the LOCA::Stepper which drives a %NOX nonlinear solver at each parameter step, and several support classes that compute predictors (classes belonging to the LOCA::Predictor namespace) and encapsulate various step size control strategies (classes in the LOCA::StepSize namespace).
 
 */
 
@@ -104,60 +108,60 @@ As in %NOX, all parameters are passed to %LOCA through parameter lists defined b
 
 \section stepper_params Stepper Parameters
 
-The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  The "LOCA" sublist contains parameters and sublists for the Stepper and various %LOCA support classes, while the "NOX" sublist contains parameters and sublists specific to %NOX solvers.  The %NOX sublist is passed directly to an instance of the NOX::Solver::Manager class in the Stepper and therefore has the same structure as any %NOX solver parameter list hierarchy.  Please see the <a href="../../../doc/html/parameters.html">%NOX Parameter Reference</a> page for more details on the structure of this list.  
+The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  The "LOCA" sublist contains parameters and sublists for the Stepper and various %LOCA support classes, while the "NOX" sublist contains parameters and sublists specific to %NOX solvers.  The %NOX sublist is passed directly to an instance of the NOX::Solver::Manager class in the Stepper and therefore has the same structure as any %NOX solver parameter list hierarchy.  Please see the <a href="../../doc/html/parameters.html">%NOX Parameter Reference</a> page for more details on the structure of this list.  
 
 <ul> 
-<li> "NOX" sublist -- See <a href="../../../doc/html/parameters.html">%NOX Parameter Reference</a> for more details
+<li> "%NOX" sublist -- See <a href="../../doc/html/parameters.html">%NOX Parameter Reference</a> for more details
 <li> "LOCA: sublist
      <ul>
      <li> "Stepper" sublist -- used by LOCA::Stepper
           <ul>
-          <li> "Continuation Method"    ["Natural", "Arc Length"]
-	  <li> "Continuation Parameter" -- String name of continuation parameter
-	  <li> "Initial Value" -- Initial value of continuation parameter
-	  <li> "Max Value" -- Maximum value of continuation parameter
-	  <li> "Min Value" -- Minimum value of continuation parameter
-	  <li> "Max Steps" -- Maximum number of continuation steps
-	  <li> "Max Nonlinear Iterations" -- Maximum number of nonlinear iterations per continuation step
-	  <li> "Goal g"
-	  <li> "Max g"
-	  <li> "Initial Scale Factor"
-	  <li> "Min Scale Factor"
-	  <li> "Min Tangent Factor"
-	  <li> "Tangent Factor Exponent"
-	  <li> "Compute Eigenvalues" -- Whether to compute eigenvalues after each continuation step
+          <li> "Continuation Method" -- ["Natural", "Arc Length"] Continuation type
+	  <li> "Continuation Parameter" -- [string] Name of continuation parameter
+	  <li> "Initial Value" -- [double] Initial value of continuation parameter
+	  <li> "Max Value" -- [double] Maximum value of continuation parameter
+	  <li> "Min Value" -- [double] Minimum value of continuation parameter
+	  <li> "Max Steps" -- [int] Maximum number of continuation steps
+	  <li> "Max Nonlinear Iterations" -- [int] Maximum number of nonlinear iterations per continuation step
+	  <li> "Goal g" -- [double] Goal for parameter contribution to unit arclength
+	  <li> "Max g" -- [double] Max for parameter contribution to unit arclength, triggering rescaling
+	  <li> "Initial Scale Factor" -- [double] Initial factor for scaling solution term of arclength eq.
+	  <li> "Min Scale Factor" -- [double] Minimum factor for scaling solution term of arclength eq.
+	  <li> "Min Tangent Factor" -- [double] Minumum cosine between two consecutive tangent vectors, below which the continuation step is failed
+	  <li> "Tangent Factor Exponent" -- [double] Exponent on the cosine between two consecutive tangent vectors, which then modifies the step size
+	  <li> "Compute Eigenvalues" -- [bool] Flag for requesting eigenvalue calculation after each continuation step
 	  </ul>
      <li> "Predictor" sublist -- used by LOCA::Predictor::Manager
           <ul>
-	  <li> "Method" ["Constant", "Secant", "Tangent", "Random"]
-	  <li> "Epsilon" -- Size of perturbation for LOCA::Predictor::Random predictor
+	  <li> "Method" -- ["Constant", "Secant", "Tangent", "Random"] Predictor method
+	  <li> "Epsilon" -- [double] Size of perturbation for LOCA::Predictor::Random predictor
 	  <li> "First Step Predictor" sublist -- used by LOCA::Predictor::Secant -- Replicates "Predictor" sublist structure
 	  </ul>
      <li> "Step Size" sublist -- used by LOCA::StepSize::Manager
           <ul>
-	  <li> "Method" ["Contant", "Adaptive"]
-	  <li> "Initial Step Size" -- Initial parameter step size
-	  <li> "Min Step Size" -- Minimum parameter step size
-	  <li> "Max Step Size" -- Maximum parameter step size
-	  <li> "Aggressiveness" -- Agressiveness factor in adaptive step size adjustement
+	  <li> "Method" ["Constant", "Adaptive"]
+	  <li> "Initial Step Size" -- [double] Initial parameter step size
+	  <li> "Min Step Size" -- [double] Minimum parameter step size
+	  <li> "Max Step Size" -- [double] Maximum parameter step size
+	  <li> "Aggressiveness" -- [double] Aggressiveness factor in adaptive step size adjustment
 	  </ul>
      <li> "Utilities" sublist -- used by LOCA::Utils
           <ul>
-	  <li> "Output Information"
-	  <li> "Output Processor"
-	  <li> "MyPID"
-	  <li> "Output Precision"
+	  <li> "Output Information" -- [int] Sum of message types (see LOCA::Utils)
+	  <li> "Output Processor" -- [int] ID of printing processor
+	  <li> "MyPID" -- [int] Processor ID
+	  <li> "Output Precision" -- [int] Precision of output
 	  </ul>
      <li> "Anasazi" sublist -- used by LOCA::Epetra::Group to compute eigenvalues using the Anasazi package
           <ul>
-	  <li> "Block Size" -- block size
-	  <li> "Arnoldi Size" -- maximum length of the Arnoldi factorization
-	  <li> "NEV" -- number of requested eigenvalues
-	  <li> "Tol" -- tolerance for the converged eigenvalues
-	  <li> "Convergence Check" -- checks convergence every so many steps
-	  <li> "Restarts" -- number of restarts allowed
-	  <li> "Frequency" -- how often to recalculate eigenvalues
-	  <li> "Debug Level" -- Anasazi Debug level
+	  <li> "Block Size" -- [int] block size
+	  <li> "Arnoldi Size" -- [int] maximum length of the Arnoldi factorization
+	  <li> "NEV" -- [int] number of requested eigenvalues
+	  <li> "Tol" -- [double] tolerance for the converged eigenvalues
+	  <li> "Convergence Check" -- [int] checks convergence every so many steps
+	  <li> "Restarts" -- [int] number of restarts allowed
+	  <li> "Frequency" -- [int] how often to recalculate eigenvalues
+	  <li> "Debug Level" -- [int] Anasazi Debug level
 	  </ul>
      </ul>
 </ul>
@@ -183,7 +187,7 @@ Parameters can also be passed to the LOCA::Abstract::Group constructor.  Current
 
 \section loca_user_info_overview Overview
 
-Since %LOCA is based on %NOX, using %LOCA is quite similar to using %NOX and
+Since %LOCA is built upon %NOX, using %LOCA is quite similar to using %NOX and
 an understanding of how to use %NOX is a prerequisite for using %LOCA.  See
 \ref nox_user_information for a description of how to use %NOX.  Here we will
 discuss the additional steps required to use %LOCA.
@@ -197,7 +201,7 @@ enabled if they are enabled in %NOX (see \ref nox_configuration_options).
 Typing "make" and "make install" in the top-level %NOX directory then
 compile and install %LOCA as well as %NOX.
 
-\section loca_user_info_step_2 Step 2: Create contrete implementations of the LOCA AbstractGroup classes
+\section loca_user_info_step_2 Step 2: Create concrete implementations of the LOCA AbstractGroup classes
 
 See \ref loca_class_overview for a description of the %LOCA AbstractGroup class
 hierarchy used to supply interfaces for various parameter continuation and
@@ -222,32 +226,36 @@ abstract vector interface to implement to use %LOCA.
 
 <ul>
 <li>
-The LOCA::LAPACK implementation extendes the NOX::LAPACK implementation to
+The LOCA::LAPACK implementation extends the NOX::LAPACK implementation to
 %LOCA.  %LAPACK support and examples are automatically enabled if they are
 enabled in %NOX.  The LOCA::LAPACK implementation supports all levels of
 functionality provided by %LOCA and can be used in any continuation or
 bifurcation calculation.
 
 <li>
-The LOCA::Epetra implementation extendes the NOX::Epetra implementation to
+The LOCA::Epetra implementation extenders the NOX::Epetra implementation to
 %LOCA.  Epetra support and examples are automatically enabled if they are
 enabled in %NOX.  All levels of functionality provided by LOCA are supported
-except Hopf calculations and generalized eigenvalue calcuations, which require
+except Hopf calculations and generalized eigenvalue calculations, which require
 a separate mass matrix and complex-valued computations.
 
 <li>
-Currently, there is no %LOCA Petc support provided.
+Currently, there is no %LOCA::Petsc support provided, but this will be
+added as soon as there is demand.
 </ul>
 
 \section loca_user_info_step_3 Step 3: Call LOCA from your code
 
-A tutorial describing how to use %LOCA is coming shortly.
+A tutorial describing how to use %LOCA is coming shortly. The
+example problems in the examples-lapack and examples-epetra
+directories can serve as templates.
 
 \section loca_user_info_step_4 Step 4: Link your code to LOCA
 
 Linking with %LOCA is very similar to linking with %NOX.  You must additionally
-link against -lloca, -lloca-lapack (if using the LOCA::LAPACK), and
--lloca-epetra (if using LOCA::Epetra).
+link against -lloca and one of the concrete implementations, either -lloca-lapack 
+(if using the LOCA::LAPACK), -lloca-epetra (if using LOCA::Epetra), or a
+custom implementation.
 
 \section loca_user_info_problems If you have problems...
 
