@@ -884,7 +884,8 @@ char * ML_memory_check(char *fmt, ... )
 */
 
 
-   if (id == 0)  {
+
+   if (id == 0 && ML_Get_PrintLevel() > 0) {
     for (i =0; i < ML_NIntStats; i++) iavgvec[i] = iavgvec[i]/((double) nnodes);
     printf("Summary Heap data at %s\n",ml_memory_label);
     printf("                        avg           min             max\n");
