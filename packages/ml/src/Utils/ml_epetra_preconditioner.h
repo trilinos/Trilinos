@@ -586,12 +586,18 @@ private:
   //! Creates label for this object (printed out by AztecOO)
   int CreateLabel();
 
+  void CreateAuxiliaryMatrix(Epetra_FECrsMatrix * & FakeMatrix);
+
   void PrintMem(char *fmt, int size, int, int);
 
   void PrintMemoryUsage();
 
   int SetFiltering();
 
+  void VizMePleaze();
+  
+  void RandomAndZero(double *, double *, int);
+  
   //! Checks whether the previously computed preconditioner is still valuable for the newly available linear system.
   /*! Used only when \c "adaptive: enable" is false and \c "filtering: enable" is true.
    * \warning: still under development
