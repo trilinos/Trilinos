@@ -847,6 +847,9 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap & DomainMap, const E
 
   MakeColMap(DomainMap, RangeMap); // If user has not prescribed column map, create one from indices
   
+  // Store number of local columns
+  NumMyCols_ = ColMap().NumMyPoints();
+  NumMyBlockCols_ = ColMap().NumMyElements();
   // Transform indices to local index space
 
   if (IndicesAreGlobal()) {
@@ -876,11 +879,6 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap & DomainMap, const E
 	if (Indices_[i][NumIndices-1] >=NumMyBlockCols_) EPETRA_CHK_ERR(-1);
     }
   }
-
-      
-  // Store number of local columns
-  NumMyCols_ = ColMap().NumMyPoints();
-  NumMyBlockCols_ = ColMap().NumMyElements();
 
   SetIndicesAreLocal(true);
   SetIndicesAreGlobal(false);
