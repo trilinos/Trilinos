@@ -33,82 +33,112 @@
 #ifndef NOX_LINESEARCH_POLYNOMIAL_H
 #define NOX_LINESEARCH_POLYNOMIAL_H
 
-#include "NOX_LineSearch_Generic.H" // base class
+#include "NOX_LineSearch_Common.H" // base class
 
 namespace NOX {
 namespace LineSearch {
 
 //! Use quad/cubic polynomial fit from Dennis & Schnabel Sec. 6.3.2.
 /*!
-  This line search is adapted from "Numerical Methods for Unconstrained
-  Optimization and Nonlinear Equations," J. E. Dennis Jr. and Robert B.  
-  Schnabel, Sec. 6.3.2 and can be called via NOX::LineSearch::Manager.
+  
+  This line search is based on materials in the following books:
+
+  - Section 6.3.2 and Algorithm 6.3.1 of "Numerical Methods for
+    Unconstrained Optimization and Nonlinear Equations," J. E. Dennis
+    Jr. and Robert B.  Schnabel, Prentice Hall, 1983.
+
+  - Section 3.4 of "Numerical Optimization," Jorge Nocedal and Stephen
+    J. Wright, Springer, 1999.
+
+  The line search can be called via NOX::LineSearch::Manager.
  
-  Given the following information at %solver step \f$ n \f$: <br> <br>
-  1. Old solution group: \f$ x_{n-1} \f$ <br>
-  2. New solution group: \f$ x_n \f$ <br>
-  3. Direction vector: \f$ s = x_n - x_{n-1} \f$ <br>
+  We are given the following information at %solver step \f$ n \f$: 
+  -# Old solution group: \f$ x_{\rm old} \f$ 
+  -# Direction vector: \f$ s \f$ 
 
-  the linesearch (backtracking) attempts to minimize the function :
+  The line search attempts to minimize the function 
+  \f[ 
+  \phi(\lambda) \equiv \frac{1}{2}||F (x_{\rm old} + \lambda s)||_2^2 
+  \f]
+  where \f$ \lambda \f$ is the step length.  
 
-  \f[ f(x+\lambda s) = \frac{1}{2}||F||_2^2 \f]
-
-  where \f$ \lambda = [0, 1.0] \f$ is the step length.  \f$ \lambda
-  \f$ is computed based on polynomial fits to information on \f$ f \f$
-  and its derivative \f$ f' \f$ at the old solution and newly computed
-  values of \f$ f \f$.
+  We compute \f$ \lambda \f$ based on polynomial fits to information
+  on \f$ \phi \f$ and its derivative \f$ \phi' \f$ at the old solution and
+  newly computed values of \f$ \phi \f$.
 
   The polynomial linesearch starts by setting \f$ \lambda_0 \f$
-  to the value specified by "Default Step" (see below) and checking
-  acceptability criteria (see below).  If the step is unacceptable,
-  a new step is computed as the minimum to a quadratic fit resulting in:
+  to the value specified by "Default Step" (see below).
 
-  \f[ \lambda_1 = \frac{-f'(x_{n-1})}{2\left[f(x_{n-1}+\lambda_0 s)-f(x_{n-1})
-      -f'(x_{n-1})\right]} \f]
+  We generally check that the default step satisfies the acceptability
+  criteria (see below) before doing any interpolation.  However, that
+  behavior can be overridden by setting "Force Interpolation" to
+  true.
+  
+  The first interpolation step is always quadratic.  Depending on the
+  choice of "Interpolation Type" (see below), the following steps are
+  either quadratic or cubic.
+  
+  If we are using a \b quadratic \b model, the \f$k\f$-th step approximation is
+  calculated as
 
-  where \f$ f'(x_{n-1}) \equiv \left. J^TF\right|_{x_{n-1}} \f$.
+  \f[ 
+  \lambda_{k} = \frac{-\phi'(0) \lambda_{k-1}^2 }{2 \left[ \phi(\lambda_{k-1}) - \phi(0) 
+  -\phi'(0) \lambda_{k-1} \right]} 
+  \f]
 
-  If this step is still unacceptable, new steps are computed as minimizations
-  to cubic fits with the following result for \f$ k>1 \f$ :
+  where \f$ \phi'(0) = s^T \left(J_{\rm old}^T F_{\rm old} \right) \f$.
 
-  \f[ \lambda_k = \frac{-b+\sqrt{b^2-3af'(x_{n-1})}}{3a} \f]
+  If we are using a \b cubic \b model, the \f$k\f$-th step (\f$ k>1
+  \f$) approximation is calculated as
+
+  \f[ 
+  \lambda_k = \frac{-b+\sqrt{b^2-3a \phi'(0)}}{3a} 
+  \f]
 
   where
 
-  \f[ \left[ \begin{array}{c} a \\ \\ b \end{array} \right] = 
+  \f[
+      \left[ \begin{array}{c} a \\ \\ b \end{array} \right] = 
       \frac{1}{\lambda_{k-1} - \lambda_{k-2}} \left[ \begin{array}{cc}
       \lambda_{k-1}^{-2} & -\lambda_{k-2}^{-2} \\ & \\
       -\lambda_{k-2}\lambda_{k-1}^{-2} & \lambda_{k-1}\lambda_{k-2}^{-2}
       \end{array} \right]
-      \left[ \begin{array}{c} f(x_{n-1}+\lambda_{k-1} s) - f(x_{n-1}) -
-                              f'(x_{n-1})\lambda_{k-1} \\ \\
-                              f(x_{n-1}+\lambda_{k-2} s) - f(x_{n-1}) -
-                              f'(x_{n-1})\lambda_{k-2} \end{array} \right]
+      \left[ \begin{array}{c} \phi(\lambda_{k-1}) - \phi(0) -
+                              \phi'(0)\lambda_{k-1} \\ \\
+                              \phi(\lambda_{k-2}) - \phi(0) -
+                              \phi'(0)\lambda_{k-2} \end{array} \right]
   \f]
 
-  <B>Step Length Termination </B> <br>
+  <b>Step Length Termination</b>
+
   The line search iterates over the computation of \f$ \lambda \f$ until:
 
-  - The "Convergence Criteria" is met (the user has two choices): <br>
-  1. "Armijo-Goldstein" conditions: \f$ f(x_{n-1}+ \lambda s) \le f(x_{n-1}) +\alpha \lambda f'(x_{n-1}) \f$ <br>
-  2. "Ared/Pred" conditions: \f$ f(x_{n-1}+ \lambda s) \le  f(x_{n-1})(1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear solve tolerance in the inexact Newton method. <br><br>
+- The "Convergence Criteria" is met (the user has two choices): 
+  -# "Armijo-Goldstein" conditions: \f$ f(x_{n-1}+ \lambda s) \le
+     f(x_{n-1}) +\alpha \lambda \phi'(0) \f$ 
+  -# "Ared/Pred" conditions: \f$ f(x_{n-1}+ \lambda s) \le
+     f(x_{n-1})(1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear
+     solve tolerance in the inexact Newton method. 
+  -# "None" - If "Force Interpolation" is true, accept the result of
+     the first interpolation. Otherwise, accept the default step.
+- The maximum iterations are reached. This is considered a failure
+  and the recovery step is taken.
+- The minimum step length is reached. This is considered a line search
+  failure and the recovery step is taken.
 
-  - The maximum iterations are reached. This is considered a failure
-    and the recovery step is taken.
-
-  - The minimum step length is reached. This is considered a line search
-    failure and the recovery step is taken.
-
-  <B> Step bounds </B> <br> 
+  <B> Step bounds </B> 
+ 
   The following bounds are currently enforced on the step length calculation:
 
   - For \f$ k>0 \f$, \f$ \lambda_k \ge \gamma_{min} \lambda_{k-1} \f$
 
-  - For \f$ k>1 \f$, \f$ \lambda_k \le \gamma_{max} \lambda_{k-1} \f$
+  - For \f$ k>1 \f$, \f$ \lambda_k \le \gamma_{max} \lambda_{k-1} \f$ 
 
-  where \f$ \gamma_{min} \f$ and \f$ \gamma_{max} \f$ are bounds factors that limit the change in step size between the iterations of the step length calculation (\f$ k \f$). 
+  where \f$ \gamma_{min} \f$ and \f$ \gamma_{max} \f$ are bounds
+  factors that limit the change in step size between the iterations of
+  the step length calculation (\f$ k \f$).
 
-  <B> Input Parameters </B> <br>
+  <B> Input Parameters </B> 
   The following parameters can be specified for this line search:
  
   - "Default Step" - starting step length (defaults to 1.0)
@@ -120,31 +150,61 @@ namespace LineSearch {
 
   - "Max Iters" - maximum number of line search iterations (default to 100)
 
-  - "Convergence Criteria" - choice of algorithm used to determine if the line search algorithm has converged (defaults to "Armijo-Goldstein").  Choices are (See above for explanations): <br>
-  1. "Armijo-Goldstein" <br>
-  2. "Ared/Pred" <br><br>
+  - "Convergence Criteria" - choice of algorithm used to determine if
+    the line search algorithm has converged (defaults to
+    "Armijo-Goldstein").  Choices are (See above for explanations):
 
-  - "Alpha Factor" - Scaling factor, \f$ \alpha \f$ (defaults to 1.0e-4)
+    -# "Armijo-Goldstein" 
+    -# "Ared/Pred" 
+    -# "None"
 
-  - "Min Bounds Factor" - \f$ \gamma_{min} \f$, the factor that limits the minimum size of the new step based on the previous step (defaults to 0.1)
+  - "Alpha Factor" - Used in Armijo-Goldstein stopping criteria \f$
+    \alpha \f$ (defaults to 1.0e-4)
 
-  - "Max Bounds Factor" - \f$ \gamma_{max} \f$, the factor that limits the maximum size of the new step based on the previous step (defaults to 0.9)
+  - "Min Bounds Factor" - \f$ \gamma_{min} \f$, the factor that limits
+    the minimum size of the new step based on the previous step
+    (defaults to 0.1)
 
-  <B> Output Parameters </B> <br>
-A sublist for output parameters will be created called "Output" in the parameter list used to instantiate or reset the class.  Valid output parameters are:
+  - "Max Bounds Factor" - \f$ \gamma_{max} \f$, the factor that limits
+    the maximum size of the new step based on the previous step
+    (defaults to 0.9)
+
+  - "Force Interpolation" (boolean) - Set to true at least one
+    interpolation step should be used. The default is false which
+    means that the line search will stop if the default step length
+    satisfies the convergence criteria. (defaults to false)
+
+  - "Interpolation Type" - Type of interpolation that should be used. Choices are
+    
+     <ol>
+     <li> "Cubic" (Quadratic for the first iteration)
+     <li> "Quadratic"
+     </ol>
+
+  <B> Output Parameters </B> 
+
+A sublist for output parameters will be created called "Output" in the
+parameter list used to instantiate or reset the class.  Valid output
+parameters are:
 
   - "Total Number of Line Search Calls" - Total number of calls to the compute() method of this line search.
 
-  - "Total Number of Non-trivial Line Searches" - The total number of steps that could not directly take a full step and meet the required "Convergence Criteria" (i.e. The line search had to reduce the step length using inner iteration calculations over iterate \f$ k \f$). 
+  - "Total Number of Non-trivial Line Searches" - The total number of
+    steps that could not directly take a full step and meet the
+    required "Convergence Criteria" (i.e. The line search had to
+    reduce the step length using inner iteration calculations over
+    iterate \f$ k \f$).
 
-  - "Total Number of Failed Line Searches" - total number of line searches that failed and used a recovery step.
+  - "Total Number of Failed Line Searches" - total number of line
+    searches that failed and used a recovery step.
 
-  - "Total Number of Line Search Inner Iterations" - total number of inner iterations \f$ k \f$ performed by this object.
+  - "Total Number of Line Search Inner Iterations" - total number of
+    inner iterations \f$ k \f$ performed by this object.
 
   \author Russ Hooper, Org. 9233, Sandia National Labs
 */
 
-class Polynomial : public Generic {
+class Polynomial : public Common {
 
 public:
 
@@ -164,28 +224,65 @@ public:
 	       
 protected:
 
+  //! Check for convergence
+  /*!
+    In the case of "Armijo-Goldstein" criteria, we return true if
+    \f[
+    f_{\rm new} \leq f_{\rm old} + \alpha \; \lambda \; {\rm slope}.
+    \f]
+    Here \f$\lambda\f$ represents the step and the slope should be 
+    \f$d^T \nabla f(x_{\rm old})\f$ where \f$d\f$ is the search direction.
+    The slope can be computed via NOX::LineSearch::Common::computeSlope.
+
+    In the case of "Ared/Pred", we return true if
+    \f[
+    f_{\rm new} \leq f_{\rm old} + (1 - \alpha (1 - \eta))
+    \f]
+  */
+  bool isSufficientDecrease(double newf, double oldf, double step, double slope, double eta) const;
+
   //! sets the output parameters for the linesearch in an "Output" sublist of the "Line Search" sublist. 
   bool setOutputParameters();  
   
 protected:
 
   //! Algorithms used to determine convergence of the line search
-  enum convergenceCriteriaType {ArmijoGoldstein, AredPred};
+  enum ConvergenceCriteriaType {
+    //! Sufficient decrease condition
+    ArmijoGoldstein, 
+    //! Ared/Pred condition
+    AredPred,
+    //! Just accept the first step
+    None
+  };
+
+  //! Interpolation Type
+  enum InterpolationType {
+    //! Use quadratic interpolation throughout
+    Quadratic, 
+    //! Use quadratic interpolation in the first inner iteration and cubic interpolation otherwise
+    Cubic};
 
   //! Choice of convergence criteria
-  convergenceCriteriaType convCriteria;
+  ConvergenceCriteriaType convCriteria;
+
+  //! Choice of interpolation type
+  InterpolationType interpolationType;
+
+  //! True is we should do at least one interpolation step
+  bool doForceInterpolation;
 
    //! Minimum step length (i.e., when we give up)
-  double minstep;
+  double minStep;
  
  //! Default step
-  double defaultstep;
+  double defaultStep;
 
   //! Default step for linesearch failure
-  double recoverystep;
+  double recoveryStep;
 
   //! Maximum itersions
-  int maxiters;
+  int maxIters;
 
   //! Scaling factor for the Armijo-Goldstein condition
   double alpha;
