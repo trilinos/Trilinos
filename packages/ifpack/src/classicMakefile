@@ -21,11 +21,11 @@ CCFLAGS = $(CXXFLAGS)
 
 IFPACK_CC_new = Ifpack_IlukGraph.cpp Ifpack_CrsRiluk.cpp
 IFPACK_CC_old = \
-            ifp_BlockMat.cc          ifp_BlockVec.cc \
-            ifp_DenseMat.cc           \
-            ifp_SparseUtil.cc        ifp_biluk.cc \
-            ifp_brelax.cc            ifp_c_wrappers.cc \
-            ifp_spmm.cc              ifp_spsm.cc
+            ifp_BlockMat.cpp          ifp_BlockVec.cpp \
+            ifp_DenseMat.cpp           \
+            ifp_SparseUtil.cpp        ifp_biluk.cpp \
+            ifp_brelax.cpp            ifp_c_wrappers.cpp \
+            ifp_spmm.cpp              ifp_spsm.cpp
 
 IFPACK_C  = az_ifpack_prec_create.c   az_ifpack_precon.c  \
             az_ifpack_iterate.c       az_ifpack_prec_destroy.c \

@@ -1,6 +1,7 @@
 #ifndef _IFPACK_CRSRILUK_H_
 #define _IFPACK_CRSRILUK_H_
 
+#include "Ifpack_ConfigDefs.h"
 #include "Ifpack_ScalingType.h"
 #include "Ifpack_IlukGraph.h"
 #include "Epetra_CompObject.h"

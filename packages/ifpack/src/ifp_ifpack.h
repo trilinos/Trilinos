@@ -1,6 +1,8 @@
 #ifndef _IFP_IFPACK_H_
 #define _IFP_IFPACK_H_
 
+#include "Ifpack_ConfigDefs.h"
+
 #include <iostream>
 #include <stdlib.h>
 #include "ifp_arch.h"

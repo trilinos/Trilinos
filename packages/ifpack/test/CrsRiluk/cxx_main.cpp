@@ -1,20 +1,22 @@
+#include "Ifpack_ConfigDefs.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <assert.h>
 #include <string.h>
 #include <math.h>
+#include "Epetra_Comm.h"
+#include "Epetra_Map.h"
+#include "Epetra_Time.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Vector.h"
+#include "Epetra_Object.h"
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Epetra_Comm.h"
-#include "Epetra_Map.h"
-#include "Epetra_Time.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
 
 
 // prototype

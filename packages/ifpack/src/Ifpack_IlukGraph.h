@@ -1,5 +1,7 @@
 #ifndef _IFPACK_ILUK_GRAPH_H_
 #define _IFPACK_ILUK_GRAPH_H_
+
+#include "Ifpack_ConfigDefs.h"
 #include "Epetra_Object.h" 
 #include "Epetra_CrsGraph.h"
 //! Ifpack_IlukGraph: A class for constructing level filled graphs for use with ILU(k) class preconditioners.
