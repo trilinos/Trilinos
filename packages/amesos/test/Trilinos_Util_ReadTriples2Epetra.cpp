@@ -23,7 +23,6 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
   vector<int> non_zeros;   // Number of non-zeros in each row
   Trilinos_Util_CountTriples( data_file, symmetric, non_zeros, N_rows, nnz, comm ) ; 
 
-  cout << " N_rows = " << N_rows << " nnz = " << nnz << endl ; 
   vector<int> ptrs(N_rows+1) ; // Pointers into inds and vals for the start of each row
   vector<int> inds(nnz);     //  Column Indices
   vector<double> vals(nnz);  //  Matrix values
@@ -41,10 +40,6 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
     }
 
     vector<int> iptrs = ptrs ; //  Current pointers into inds and vals for each row
-
-    cout << " iptrs.size() = " << iptrs.size() << endl ; 
-    cout << " vals.size() = " << vals.size() << endl ; 
-    cout << " inds.size() = " << inds.size() << endl ; 
 
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int i, j; 

@@ -10,11 +10,17 @@
 #ifdef TEST_KUNDERT
 #include "KundertOO.h"
 #endif
+#ifdef TEST_SPOOLES
+#include "SpoolesOO.h"
+#endif
+#ifdef TEST_SUPERLUDIST
 #include "SuperludistOO.h"
+#endif
+#ifdef TEST_AZTEC
 #include "AztecOO.h"
+#endif
 #if 0 
 #include "UmfpackOO.h"
-#include "SpoolesOO.h"
 #include "SpoolesserialOO.h"
 #include "SuperluserialOO.h"
 #include "TimeMemory.h"
@@ -69,7 +75,6 @@ int TestSolver( Epetra_Comm &Comm, char *matrix_file,
   string FileName = matrix_file ;
   int FN_Size = FileName.size() ; 
   string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
-  cout << " last five bytes = " << LastFiveBytes << endl ; 
   if ( LastFiveBytes == ".triU" ) { 
     // Call routine to read in unsymmetric Triplet matrix
     Trilinos_Util_ReadTriples2Epetra( matrix_file, false, Comm, readMap, readA, readx, 

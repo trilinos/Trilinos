@@ -5,13 +5,21 @@
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Time.h"
+#ifdef TEST_KUNDERT
 #include "KundertOO.h"
+#endif
+#ifdef TEST_SUPERLUDIST
 #include "SuperludistOO.h"
+#endif
+#ifdef TEST_SPOOLES
+#include "SpoolesOO.h"
+#endif
+#ifdef TEST_AZTEC
 #include "AztecOO.h"
+#endif
 
 #if 0 
 #include "UmfpackOO.h"
-#include "SpoolesOO.h"
 #include "SpoolesserialOO.h"
 #include "SuperluserialOO.h"
 #include "TimeMemory.h"

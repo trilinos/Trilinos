@@ -23,7 +23,7 @@ SRC_CXX = Comm_assert_equal.cpp
 SRC_CXX = SuperludistOO.cpp Comm_assert_equal.cpp Trilinos_Util_CountTriples.cpp \
 	Trilinos_Util_ReadTriples2Epetra.cpp   
 SRC_CXX =  Comm_assert_equal.cpp Trilinos_Util_CountTriples.cpp \
-	Trilinos_Util_ReadTriples2Epetra.cpp   
+	Trilinos_Util_ReadTriples2Epetra.cpp SpoolesOO.cpp 
 
 #=======================================================================
 # test source files
@@ -44,9 +44,10 @@ TEST_INCLUDE = TestSolver.h \
 	SparseSolverResult.h \
 	Trilinos_Util_ReadTriples2Epetra.h \
 	Trilinos_Util_CountTriples.h  \
+	SpoolesOO.h \
 	$(DEBUG_INCLUDE) 
 
-TEST_INC = $(TRILINOS3PL_HOME)/SuperLU_DIST_1.0/SRC
+TEST_INC = $(TRILINOS3PL_HOME)/SuperLU_DIST_1.0/SRC and garbage
 SDT =  -DSPARSE_DIRECT_TIMINGS
 include ./Makefile.template
 

@@ -305,9 +305,9 @@ main(int argc, char **argv)
       cerr << "Our use of AZTEC does not support transpose yet" << endl ;
     exit_value = -1 ; 
   }
-  if ( NumMpiProcs != 1 && SparseSolver == Aztec ) { 
+  if ( NumMpiProcs != 1 && MatType != 1 && SparseSolver == Aztec ) { 
     if ( verbose ) 
-      cerr << "Our use of AZTEC does not support multiple processes" << endl ;
+      cerr << "AZTEC accepts only distributed matrices on multiple processes" << endl ;
     exit_value = -1 ; 
   }
   if ( numsolves != 1 &&  SparseSolver != SuperLU && SparseSolver != SuperLUdist ) {
