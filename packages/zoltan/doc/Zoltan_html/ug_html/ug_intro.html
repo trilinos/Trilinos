@@ -51,7 +51,7 @@ example, in adaptive finite element methods, the number of degrees of freedom
 within a processor can increase or decrease as the method requires greater
 or lower accuracy in a region of the problem domain. The changing processor
 work-loads make a static decomposition of the domain insufficient; a dynamic
-load-balancing strategy is needed to readjust work- loads as the computation
+load-balancing strategy is needed to readjust work-loads as the computation
 proceeds.
 <p>Several important differences exist between static and dynamic load-balancing
 strategies. Dynamic strategies are complicated by the fact that they must
@@ -267,7 +267,7 @@ for each object imported, the migration help tools call the registered
 <i>Unpack_Object</i>
 function (<i>user_unpack_one_elem_fn</i>) to unpack the data from the import
 buffer and insert it in the processor's data structure. Under this model,
-the application developer does not have to implement addition communication
+the application developer does not have to implement additional communication
 routines to perform data migration; the migration tools handle all
 communication required for data movement.
 <br>&nbsp;
