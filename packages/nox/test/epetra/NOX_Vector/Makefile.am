@@ -35,7 +35,8 @@ NOX_Vector_SOURCES = $(srcdir)/test.C
 
 NOX_Vector_DEPENDENCIES = \
                           $(top_builddir)/src/libnox.a \
-                          $(top_builddir)/src-epetra/libnoxepetra.a
+                          $(top_builddir)/src-epetra/libnoxepetra.a \
+                          $(top_builddir)/test/utils/libnoxtestutils.a
 
 NOX_Vector_CXXFLAGS = \
                       -I$(top_srcdir)/src \
@@ -46,5 +47,6 @@ NOX_Vector_CXXFLAGS = \
 #Unsure why this test need to link to the BLAS on an IBM.
 NOX_Vector_LDADD = \
                    -L$(top_builddir)/src-epetra -lnoxepetra \
+                   -L$(top_builddir)/test/utils -lnoxtestutils\
                    -L$(top_builddir)/src -lnox $(LIBS) \
 	           $(BLAS_LIBS) $(FLIBS)

@@ -31,6 +31,7 @@
 #include "NOX.H"  // Required headers
 #include "NOX_Epetra.H" // Epetra Interface headers
 #include "NOX_TestError.H" // Test Suite headers
+#include "NOX_TestCompare.H" // Test Suite headers
 
 // Trilinos headers
 #ifdef HAVE_MPI
@@ -40,11 +41,6 @@
 #endif
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Map.h"
-#include "Epetra_LinearProblem.h"
-#include "AztecOO.h"
 
 int main(int argc, char *argv[]) {
 
@@ -60,6 +56,8 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
  
+  int globalLength = 100; // This should suffice
+
   bool verbose = false;
 
   if (argc > 1)
@@ -68,7 +66,6 @@ int main(int argc, char *argv[]) {
 
   // Get the process ID and the total number of processors
   int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
 
   // Set up the printing utilities
   // Only print output if the "-v" flag is set on the command line
@@ -87,8 +84,7 @@ int main(int argc, char *argv[]) {
 		NOX::Utils::Warning +
 		NOX::Utils::TestDetails);
   else
-    printParams.setParameter("Output Information", NOX::Utils::Error +
-		NOX::Utils::TestDetails);
+    printParams.setParameter("Output Information", NOX::Utils::Error);
   
   NOX::Utils printing(printParams);
 
@@ -96,11 +92,16 @@ int main(int argc, char *argv[]) {
   if (printing.isPrintProcessAndType(NOX::Utils::TestDetails))
     cout << "Starting epetra/NOX_Vector/NOX_Vector.exe" << endl;
 
+  // Create a TestCompare class
+  NOX::TestCompare tester( cout, printing);
+  double tolerance = 1.e-12;
+  NOX::TestCompare::CompareType aComp = NOX::TestCompare::Absolute;
+
   // Identify processor information
 #ifdef HAVE_MPI
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
+  if (printing.isPrintProcess()) {
     cout << "Parallel Run" << endl;
-    cout << "Number of processors = " << NumProc << endl;
+    cout << "Number of processors = " << Comm.NumProc() << endl;
     cout << "Print Process = " << MyPID << endl;
   }
   Comm.Barrier();
@@ -108,18 +109,88 @@ int main(int argc, char *argv[]) {
     cout << "Process " << MyPID << " is alive!" << endl;
   Comm.Barrier();
 #else
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails))
+  if (printing.isPrintProcess())
     cout << "Serial Run" << endl;
 #endif
 
+  // Create a map describing data distribution
+  Epetra_Map * standardMap = new Epetra_Map(globalLength, 0, Comm);
+  
   // Return value
   int status = 0;
 
-  // *** Insert Testing Here!!! ***
+  // *** Start Testing Here!!! ***
+
+  // First create the Epetra_Vector needed to construct our NOX vector
+  Epetra_Vector * epetraVec = new Epetra_Vector(*standardMap, true);
+
+  NOX::Epetra::Vector * noxVec1 = new NOX::Epetra::Vector(*epetraVec, NOX::DeepCopy);
+  delete epetraVec; epetraVec = 0;
+
+  NOX::Epetra::Vector * noxVec2 = new NOX::Epetra::Vector(*noxVec1);
+  noxVec2->init(1.0);
+
+  // Test our norms
+  NOX::Abstract::Vector::NormType 
+    oneNorm = NOX::Abstract::Vector::OneNorm,
+    twoNorm = NOX::Abstract::Vector::TwoNorm,
+    infNorm = NOX::Abstract::Vector::MaxNorm;
+
+  double expectedOneNorm = (double) globalLength,
+         expectedTwoNorm = sqrt( (double) globalLength),
+         expectedInfNorm = 1.0;
+
+  status += tester.testValue( noxVec2->norm(oneNorm), expectedOneNorm,
+                              tolerance, "One-Norm Test", aComp);
+  status += tester.testValue( noxVec2->norm(twoNorm), expectedTwoNorm,
+                              tolerance, "Two-Norm Test", aComp);
+  status += tester.testValue( noxVec2->norm(infNorm), expectedInfNorm,
+                              tolerance, "Max-Norm Test", aComp);
+
+
+  // Test random, reciprocal and dot methods
+  noxVec1->random();
+  // Threshold values since we want to do a reciprocal
+  int myLength = standardMap->NumMyElements();
+  for( int i = 0; i < myLength; ++i )
+    if( fabs(noxVec1->getEpetraVector()[i]) < 1.e-8 ) noxVec1->getEpetraVector()[i] = 1.e-8;
+
+  noxVec2->reciprocal(*noxVec1);
+  double product = noxVec1->dot(*noxVec2);
+
+  status += tester.testValue( product, expectedOneNorm,
+                              tolerance, "Random, Reciprocal and Dot Test", aComp);
+
+
+  // Test abs and weighted-norm methods
+  /*  ----------------------------
+      NOT SUPPORTED AT THIS TIME
+      ----------------------------
+  noxVec2->abs(*noxVec2);
+  double wNorm = noxVec1->norm(*noxVec2);
+  status += tester.testValue( wNorm, noxVec1->norm(oneNorm),
+                              tolerance, "Abs and Weighted-Norm Test", aComp);
+  */
+
+  // Test operator= , abs, update and scale methods
+  (*noxVec2) = (*noxVec1);
+  noxVec2->abs(*noxVec2);
+  double sumAll = noxVec1->norm(oneNorm);
+  noxVec2->update( 1.0, *noxVec1, 1.0 );
+  noxVec2->scale(0.5);
+  double sumPositive = noxVec2->norm(oneNorm);
+  (*noxVec2) = (*noxVec1);
+  noxVec2->abs(*noxVec2);
+  noxVec2->update( 1.0, *noxVec1, -1.0 );
+  noxVec2->scale(0.5);
+  double sumNegative = noxVec2->norm(oneNorm);
+
+  status += tester.testValue( (sumPositive + sumNegative), sumAll,
+                              tolerance, "Abs, Operator= , Update and Scale Test", aComp);
 
 
 
-  if (printing.isPrintProcessAndType(NOX::Utils::TestDetails)) {
+  if (printing.isPrintProcess()) {
     if (status == 0)
       cout << "Test Successfull!" << endl;
     else 
