@@ -5360,9 +5360,14 @@ void ML_Smoother_Clean_OrderedSGS(void *data)
    free(data);
 }
 
+#ifdef	MB_MODIF
+
 /*****************************************************************************
  *
  * The MLS smoother. Implementation by Marian Brezina
+ * The following section defines the functions relevant to the 
+ * MLS-type smoother based on the Chebyshev polynomial of degree deg.
+ * In the standard multigrid  context, value deg=1 is most relevant.
  *
  *****************************************************************************/ 
 
@@ -5381,8 +5386,8 @@ int ML_MLS_SandwPres(void *sm, int inlen, double x[], int outlen, double y[])
     ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
     ML_Operator     *Amat = smooth_ptr->my_level->Amat;
     struct MLSthing *widget;
-    int              i, deg, dg, n = outlen;
-    double           *omV, om;      
+    int              i, deg, lv, dg, n = outlen;
+    double           cf, *omV, om;      
 
     widget = (struct MLSthing *) smooth_ptr->smoother->data;
 
@@ -5420,8 +5425,8 @@ int ML_MLS_SandwPost(void *sm, int inlen, double x[], int outlen, double y[])
     ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
     ML_Operator     *Amat = smooth_ptr->my_level->Amat;
     struct MLSthing *widget;
-    int              i, deg, dg, n = outlen;
-    double           *omV, om;      
+    int              i, deg, lv, dg, n = outlen;
+    double           cf, *omV, om;      
 
     widget = (struct MLSthing *) smooth_ptr->smoother->data;
 
@@ -5457,12 +5462,13 @@ int ML_MLS_SPrime_Apply(void *sm,int inlen,double x[],int outlen, double rhs[])
     ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
     ML_Operator     *Amat = smooth_ptr->my_level->Amat;
     struct MLSthing *widget;
-    int              i, n = outlen;
+    int              i, deg, lv, dg, n = outlen;
     double           cf, om2, over;
     double          *pAux, *y;      
 
     widget = (struct MLSthing *) smooth_ptr->smoother->data;
 
+    deg    = widget->mlsDeg;
     om2    = widget->mlsOm2;
     over   = widget->mlsOver;
     cf     = over * om2; 
@@ -5491,17 +5497,17 @@ int ML_MLS_SPrime_Apply(void *sm,int inlen,double x[],int outlen, double rhs[])
 
 int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
                           double rhs[])
-{
-  /****************************************************************************	
+{ /****************************************************************************	
    *
-   *   Apply MLS smoother with the preselected degree:   x <- MLS(x, rhs)
+   *   Apply MLS smoother with the preselected degree deg:   x <- MLS(x, rhs)
    *
    ****************************************************************************/
 
    ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
    ML_Operator     *Amat = smooth_ptr->my_level->Amat;
+   ML_1Level       *from = Amat->from; 
    struct MLSthing *widget;
-   int              deg, dg, n = outlen, i;
+   int              deg, lv, dg, n = outlen, i;
    double          *res0, *res, *y, cf, over, *mlsCf;
 
    widget = (struct MLSthing *) smooth_ptr->smoother->data;
@@ -5510,11 +5516,8 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    mlsCf  = widget->mlsCf;
    over   = widget->mlsOver;
 
-   printf("@@@ deg=%1d mlsCf=%e over=%e om2=%e\n", deg, mlsCf[0], over, widget->mlsOm2);
-   
 #define MB_FORNOW
 #ifdef 	MB_FORNOW
-   /* @@@ printf("@@@ ML_Smoother_MLS: allocating ....\n"); */
    res0  = (double *) ML_allocate(n*sizeof(double));
    res   = (double *) ML_allocate(n*sizeof(double));
    y     = (double *) ML_allocate(n*sizeof(double));
@@ -5526,7 +5529,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
    ML_Operator_Apply(Amat, n, x, n, res0);
 
-   for (i = 0; i < n; i++) res0[i] = rhs[i] - res0[i]; /* @@@ sign ? */
+   for (i = 0; i < n; i++) res0[i] = rhs[i] - res0[i]; 
 
    if (deg == 1) { 
 
@@ -5534,38 +5537,37 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
        for (i=0; i<n; i++) x[i] += cf * res0[i]; 
 #ifdef 	MB_FORNOW
-       /* @@@ clean up later in destructor, right now clean in here ....
-          @@@ printf("@@@ ML_Smoother_MLS: deallocating ....\n"); */
-       if (y)    ML_free(   y);
-       if (res)  ML_free( res);
-       if (res0) ML_free(res0);
+       // @@@ clean up later in destructor, right now clean in here ....
+       // @@@ must deallocate here if we decide to stick with local allocations
+       if (y)    { ML_free(   y);    y = NULL; } 
+       if (res)  { ML_free( res);  res = NULL; } 
+       if (res0) { ML_free(res0); res0 = NULL; }
 #endif
       /*
        * Apply the S_prime operator 
        */
        ML_MLS_SPrime_Apply(sm, n, x, n, rhs);
-       /*@@@ must deallocate here if we decide to stick with local allocations*/
        return 0;
 
    } else { 
 
-       for (i=0; i<n; i++) y[i]  = mlsCf[0] * res0[i];
-       for (dg=1; dg<deg; dg++) { 
+       for (i=0;   i < n; i++) y[i]  = mlsCf[0] * res0[i];
+       for (dg=1; dg < deg; dg++) { 
             ML_Operator_Apply(Amat, n, res0, n, res);
-	    for (i=0; i<n; i++) res0[i] = res[i];  
-	    for (i=0; i<n; i++) y[i] += mlsCf[dg-1] * res[i];
+	    for (i=0; i < n; i++) res0[i] = res[i];  
+	    for (i=0; i < n; i++) y[i] += mlsCf[dg-1] * res[i];
        }
 
    }
 
-   for (i=0; i<n; i++) x[i] += over * y[i];
+   for (i=0; i < n; i++) x[i] += over * y[i];
 
 #ifdef 	MB_FORNOW
-   /* @@@ clean up later in destructor, right now clean in here ....*/
-   printf("@@@ ML_Smoother_MLS: deallocating ....\n");
-   if (y)    ML_free(   y);
-   if (res)  ML_free( res);
-   if (res0) ML_free(res0);
+   // @@@ clean up later in destructor, right now clean in here ....
+   // @@@ must deallocate here if we decide to stick with local allocations
+   if (y)    { ML_free(   y);    y = NULL; } 
+   if (res)  { ML_free( res);  res = NULL; } 
+   if (res0) { ML_free(res0); res0 = NULL; }
 #endif
   /*
    * Apply the S_prime operator 
@@ -5577,17 +5579,24 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
 void ML_Smoother_Destroy_MLS(void *data)
 {
-  struct MLSthing *widget;
-
-   printf("@@@ destroying the MLS smoother structure ...\n"); 
+   struct MLSthing *widget;
 
    widget = (struct  MLSthing *) data;
+
    if (widget->y)    ML_free(widget->y   );
    if (widget->res)  ML_free(widget->res );
    if (widget->res0) ML_free(widget->res0);
 
    ML_free(widget);
 }
+/* ***************************************************************************
+ *
+ * end of the MLS-specific code.
+ *
+ * ***************************************************************************/ 
+
+#endif/*MB_MODIF*/
+
 
 /* ************************************************************************* */
 /* Sparse approximate inverse smoother                                       */
