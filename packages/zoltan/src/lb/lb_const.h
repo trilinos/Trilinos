@@ -211,7 +211,7 @@ typedef struct {
   int nnodes;           /* the number of subnodes */
   int ntypes;           /* the number of different types of subnodes */
   int *type;            /* type[i] is the `node type pointer' of subnode i */
-                        /* if (ntypes == 1)
+                        /* if (ntypes == 1)        */
                            /* specify only type[0] */
                         /* else */
                            /* specify type[0] ... type[nnodes-1] */
@@ -219,7 +219,7 @@ typedef struct {
   int top_id;          /* See `topology types' defined below */
 
   /************************************************/
-  /* specify if (nnodes == 1)
+  /* specify if (nnodes == 1)                     */
   /************************************************/
   int power;             /* if (nnodes == 1) specify power of the processor */
   int memory;            /* if (nnodes == 1) specify memory of the processor */
