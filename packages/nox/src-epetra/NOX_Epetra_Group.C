@@ -641,8 +641,10 @@ bool Group::applyJacobianInverse (Parameter::List &p, const Vector &input, Vecto
   
   // Set the output parameters
   NOX::Parameter::List& outputList = p.sublist("Output");
-  p.setParameter("Number of Linear Iterations", aztec.NumIters());
-  p.setParameter("True Unscaled Residual", aztec.TrueResidual());
+  int linearIters = outputList.getParameter("Number of Linear Iterations", 0);
+  outputList.setParameter("Number of Linear Iterations", 
+		 (linearIters + aztec.NumIters()));
+  outputList.setParameter("True Unscaled Residual", aztec.TrueResidual());
 
   return true;
 }
