@@ -1378,6 +1378,18 @@ if test X${BUILD_NOX_EPETRA_ML_SUPPORT} = Xyes; then
   TRILINOS_LIB_CHECK(teuchos,teuchos,src)
   AC_DEFINE(HAVE_NOX_ML_EPETRA,1,[define that ml is activated in nox])
   AC_DEFINE(HAVE_NOX_TEUCHOS,1,[define that Teuchos is activated in nox])
+
+  if test X${ADDON_epetra_EXAMPLES} = Xyes ||
+     test X${ADDON_epetra_TESTS} = Xyes; then
+
+    # Check to see if amesos is enabled since ml will require libamesos.a at
+    # link-time
+    TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, [Test for enabled amesos.], NOX_AMESOS)
+    if test "X$ac_cv_use_amesos" = "Xyes"; then
+      TRILINOS_LIB_CHECK(amesos,amesos,src)
+    fi
+  fi
+
 fi
 
 if test X${REQUIRE_TEUCHOS} = Xyes; then

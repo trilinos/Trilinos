@@ -65,6 +65,9 @@
 /* define if the compiler implements namespaces */
 #undef HAVE_NAMESPACES
 
+/* Define if want to build with amesos enabled */
+#undef HAVE_NOX_AMESOS
+
 /* define that Techos::any support is activated in nox */
 #undef HAVE_NOX_ANY
 
