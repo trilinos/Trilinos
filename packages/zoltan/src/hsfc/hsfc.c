@@ -637,7 +637,7 @@ int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
 
   return ZOLTAN_OK;
 }
-void Zoltan_HSFC_Print_Structure(ZZ *zz, int size)
+void Zoltan_HSFC_Print_Structure(ZZ *zz)
 {
 HSFC_Data *data;
 int nparts, i;
@@ -646,8 +646,6 @@ Partition *p;
   data = (HSFC_Data *)zz->LB.Data_Structure;
 
   nparts = zz->LB.Num_Global_Parts;
-
-  if ((size > 0) && (size < nparts)) nparts = size;
 
   if (data->final_partition){
     p = data->final_partition;
