@@ -26,65 +26,16 @@
 # ************************************************************************
 #@HEADER
 
-#
-#  Codes which cannot be compiled without MPI are not represented here.
-#
 EXEEXT = .exe
+# Nothing should be done for a serial build
+if  HAVE_MPI
 
-if HAVE_AMESOS_UMFPACK
-UMFPACK_TEST = TestUmfpackSerial
-else
-UMFPACK_TEST = 
+noinst_PROGRAMS = TestAmesos
+
+TestAmesos_SOURCES = $(srcdir)/TestAmesos.sh
+
+TestAmesos$(EXEEXT):
+	cp $(srcdir)/TestAmesos.sh TestAmesos$(EXEEXT) 
+
 endif
-
-if HAVE_AMESOS_KLU
-KLU_TEST = TestKluSerial
-else
-KLU_TEST = 
-endif
-
-if HAVE_AMESOS_SUPERLU
-SUPERLU_TEST = TestSuperluSerial
-else
-SUPERLU_TEST = 
-endif
-
-if HAVE_VALGRIND
-VALGRIND_TEST = TestMemoryLeaks
-else
-VALGRIND_TEST = 
-endif
-
-noinst_PROGRAMS = $(UMFPACK_TEST) $(KLU_TEST) $(SUPERLU_TEST) $(VALGRIND_TEST)
-
-
-if HAVE_AMESOS_UMFPACK
-TestUmfpackSerial_SOURCES = $(srcdir)/TestUmfpackSerial
-
-TestUmfpackSerial$(EXEEXT): $(srcdir)/TestUmfpackSerial
-	cp $(srcdir)/TestUmfpackSerial TestUmfpackSerial$(EXEEXT) 
-endif
-
-if HAVE_AMESOS_KLU
-TestKluSerial_SOURCES = $(srcdir)/TestKluSerial
-
-TestKluSerial$(EXEEXT): $(srcdir)/TestKluSerial
-	cp $(srcdir)/TestKluSerial TestKluSerial$(EXEEXT) 
-endif
-
-if HAVE_AMESOS_SUPERLU
-TestSuperluSerial_SOURCES = $(srcdir)/TestSuperluSerial
-
-TestSuperluSerial$(EXEEXT): $(srcdir)/TestSuperluSerial
-	cp $(srcdir)/TestSuperluSerial TestSuperluSerial$(EXEEXT) 
-endif
-
-
-if HAVE_VALGRIND
-TestMemoryLeaks_SOURCES = $(srcdir)/TestMemoryLeaks
-
-TestMemoryLeaks$(EXEEXT): $(srcdir)/TestMemoryLeaks
-	cp $(srcdir)/TestMemoryLeaks TestMemoryLeaks$(EXEEXT) 
-endif
-
 

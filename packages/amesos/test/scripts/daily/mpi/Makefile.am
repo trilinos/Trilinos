@@ -30,93 +30,12 @@ EXEEXT = .exe
 # Nothing should be done for a serial build
 if  HAVE_MPI
 
-if HAVE_AMESOS_DSCPACK
-DSCPACK_TEST = TestDscpack
-else
-DSCPACK_TEST = 
-endif
+noinst_PROGRAMS = TestAmesos
 
-if HAVE_AMESOS_UMFPACK
-UMFPACK_TEST = TestUmfpack
-else
-UMFPACK_TEST = 
-endif
+TestAmesos_SOURCES = $(srcdir)/TestAmesos.sh
 
-if HAVE_AMESOS_SCALAPACK
-SCALAPACK_TEST = TestScalapack
-else
-SCALAPACK_TEST = 
-endif
-
-if HAVE_AMESOS_SUPERLU
-SUPERLU_TEST = Test_Superlu
-else
-SUPERLU_TEST = 
-endif
-
-if HAVE_AMESOS_KLU
-KLU_TEST = TestKlu
-else
-KLU_TEST = 
-endif
-
-if HAVE_AMESOS_SUPERLUDIST
-SUPERLUDIST_TEST = TestSuperlud
-else
-SUPERLUDIST_TEST = 
-endif
-
-if HAVE_AMESOS_MUMPS
-MUMPS_TEST = TestMumps
-else
-MUMPS_TEST = 
-endif
-
-
-noinst_PROGRAMS = $(DSCPACK_TEST) $(UMFPACK_TEST) \
-	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) $(SCALAPACK_TEST)
-
-if HAVE_AMESOS_DSCPACK
-TestDscpack_SOURCES = $(srcdir)/TestDscpack
-
-TestDscpack$(EXEEXT): $(srcdir)/TestDscpack
-	cp $(srcdir)/TestDscpack TestDscpack$(EXEEXT) 
-endif
-
-if HAVE_AMESOS_UMFPACK
-TestUmfpack_SOURCES = $(srcdir)/TestUmfpack
-
-TestUmfpack$(EXEEXT): $(srcdir)/TestUmfpack
-	cp $(srcdir)/TestUmfpack TestUmfpack$(EXEEXT) 
-endif
-
-if HAVE_AMESOS_SCALAPACK
-TestScalapack_SOURCES = $(srcdir)/TestScalapack
-
-TestScalapack$(EXEEXT): $(srcdir)/TestScalapack
-	cp $(srcdir)/TestScalapack TestScalapack$(EXEEXT) 
-endif
-
-if HAVE_AMESOS_KLU
-TestKlu_SOURCES = $(srcdir)/TestKlu
-
-TestKlu$(EXEEXT): $(srcdir)/TestKlu
-	cp $(srcdir)/TestKlu TestKlu$(EXEEXT) 
-endif
-
-if HAVE_AMESOS_SUPERLUDIST
-TestSuperlud_SOURCES = $(srcdir)/TestSuperlud
-
-TestSuperlud$(EXEEXT): $(srcdir)/TestSuperlud
-	cp $(srcdir)/TestSuperlud TestSuperlud$(EXEEXT) 
-endif
-
-if HAVE_AMESOS_MUMPS
-TestMumps_SOURCES = $(srcdir)/TestMumps
-
-TestMumps$(EXEEXT): $(srcdir)/TestMumps
-	cp $(srcdir)/TestMumps TestMumps$(EXEEXT) 
-endif
+TestAmesos$(EXEEXT):
+	cp $(srcdir)/TestAmesos.sh TestAmesos$(EXEEXT) 
 
 endif
 
