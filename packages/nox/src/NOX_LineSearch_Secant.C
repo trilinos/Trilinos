@@ -68,7 +68,6 @@ bool Secant::compute(Abstract::Group& newgrp,
 
   double oldf = 0.5*oldgrp.getNormF()*oldgrp.getNormF();  
   double oldfprime = dir.dot(oldgrp.getF()); 
-  bool ok = true; // use to check return status in function calls
 
   step = 1.0; // Could use different, user specified initial step
   newgrp.computeX(oldgrp, dir, step);

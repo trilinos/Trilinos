@@ -155,7 +155,7 @@ Abstract::Vector& Vector::scale(const Abstract::Vector& a)
 
 Abstract::Vector& Vector::scale(const Vector& a)
 {  
-  int status = epetraVec->Multiply(1.0, *epetraVec, a.getEpetraVector(), 0.0);
+  epetraVec->Multiply(1.0, *epetraVec, a.getEpetraVector(), 0.0);
   return *this;
 }
 

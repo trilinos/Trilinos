@@ -60,11 +60,11 @@ using namespace NOX::Direction;
 NonlinearCG::NonlinearCG(Parameter::List& params) :
   oldSolnPtr(NULL),			// pointer to old Soln Grp
   tmpVecPtr(NULL),			// reference to xgrp
-  diffVecPtr(NULL),			// reference to xgrp
-  oldDescentDirPtr(NULL),		// reference to xgrp
   oldDirPtr(NULL),			// reference to xgrp
-  restartFrequency(params.getParameter("Restart Frequency", 10)),
-  iparams(params)			// copy p
+  oldDescentDirPtr(NULL),		// reference to xgrp
+  diffVecPtr(NULL),			// reference to xgrp
+  iparams(params),			// copy p
+  restartFrequency(params.getParameter("Restart Frequency", 10))
 {
   reset(iparams);
 }

@@ -133,7 +133,7 @@ Abstract::Vector& Vector::scale(const Abstract::Vector& a)
   
 Abstract::Vector& Vector::scale(const Vector& a)
 {
-  int ierr = VecPointwiseMult(*petscVec, a.getPetscVector(), *petscVec);
+  VecPointwiseMult(*petscVec, a.getPetscVector(), *petscVec);
   return *this;
 } 
   
