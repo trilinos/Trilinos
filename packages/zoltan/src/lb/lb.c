@@ -128,7 +128,7 @@ int flag;
   lb->Debug = 0;
   lb->Fortran = 0;
   lb->Params = NULL;
-  lb->Tolerance = 0.9;
+  lb->Imbalance_Tol = 0.1;
   lb->Data_Structure = NULL;
 
   lb->Get_Num_Edges = NULL;

@@ -98,18 +98,12 @@ for different LB objects to have different parameter settings.</TD>
 </TR>
 
 <TR>
-<TD VALIGN=TOP>double <I>Tolerance</I></TD>
+<TD VALIGN=TOP>double <I>Imbalance_Tol</I></TD>
 
-<TD>
-<CENTER><!--
-  BAH: Revisit this discussion.  Add pointer to LB_Set_Param section.
-       Perhaps change meaning of Tolerance.  Mention name of variable
-       in call to Set_Param.
---></CENTER>
-</TD>
-
-<TD>The tolerance to which to load balance; <I>Tolerance</I> = 0.9 implies
-a 10% imbalance is acceptable. Set via a call to <B>LB_Set_Param</B>.&nbsp;</TD>
+<TD>The degree of load balance which is considered acceptable.
+A value of 0.1 implies a 10% imbalance is acceptable, i.e. that the maximum
+load over the average should be less than 1.1.  Set via a call to
+<B><A HREF="dev_util_params.html#LB_Set_Param">LB_Set_Param</A></B>.</TD>
 </TR>
 
 <TR>

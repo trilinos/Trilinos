@@ -182,9 +182,9 @@ struct LB_Struct {
                                       the load balancing; this ptr is set
                                       based on the method used.              */
   LB_PARAM *Params;               /*  List of parameter names & new vals */
-  double Tolerance;               /*  Tolerance to which to load balance;
-                                      tolerance = 0.9 implies 10% imbalance
-                                      is acceptable.                         */
+  double Imbalance_Tol;           /*  Tolerance to which to load balance;
+                                      Imbalance_Tol = 0.1 implies 10% imbalance
+                                      is acceptable, i.e. max/avg = 1.1.     */
   void *Data_Structure;           /*  Data structure used by the load 
                                       balancer; cast by the method routines
                                       to the appropriate data type.          */

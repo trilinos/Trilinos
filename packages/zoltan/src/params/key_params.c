@@ -22,7 +22,7 @@ static char *cvs_keyparams_id = "$Id$";
 
 /* 
  * Handle parameter changes for variables stored in LB object.
- * Currently, only example is Tolerance.
+ * Currently, only example is Imbalance_Tol.
  */
 
 int LB_Set_Key_Param(
@@ -50,7 +50,7 @@ char *val)			/* value of variable */
 		"being set to 0.0\n", result.dval);
 	    result.dval = 0.0;
 	}
-	lb->Tolerance = result.dval;
+	lb->Imbalance_Tol = result.dval;
 	status = 3;		/* Don't add to Params field of LB */
     }
 

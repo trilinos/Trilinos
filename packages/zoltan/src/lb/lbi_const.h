@@ -829,6 +829,49 @@ extern int LB_Free_Data(LB_GID **import_global_ids, LB_LID **import_local_ids,
 
 /*****************************************************************************/
 /* 
+ * Routine to determine which processor a new point should be assigned to.
+ * Note that this only works of the current partition was produced via a
+ * geometric algorithm - currently only RCB.
+ * 
+ * Input:
+ *   lb          -- pointer to lb object
+ *   coords      -- vector of coordinates of new point
+ *
+ * Output:
+ *   proc        -- processor that point should be assigned to
+ *
+ *  Returned value:
+ *    int        --  Error code
+ */
+
+extern int LB_Point_Assign(struct LB_Struct *lb, double *coords, int *proc);
+
+/*****************************************************************************/
+/* 
+ * Routine to determine which processors a bounding box intersects.
+ * Note that this only works of the current partition was produced via a
+ * geometric algorithm - currently only RCB.
+ * 
+ * Input:
+ *   lb                -- pointer to lb object
+ *   xmin, ymin, zmin  -- lower left corner of bounding box
+ *   xmax, ymax, zmax  -- upper right corner of bounding box
+ *
+ * Output:
+ *   procs             -- list of processors that box intersects.  Note: application
+ *                            responsible for ensuring sufficient memory.
+ *   numprocs          -- number of processors box intersects
+ *
+ *  Returned value:
+ *    int        --  Error code
+ */
+
+extern int LB_Box_Assign(struct LB_Struct *lb, double xmin, double ymin,
+    double zmin, double xmax, double ymax, double zmax, int *procs,
+    int *numprocs);
+
+/*****************************************************************************/
+/* 
  * Routine to compute statistics about the current balance/partitioning.
  * 
  * Input:
