@@ -127,7 +127,7 @@ USER_OP_USER_MAT_SUBDIR = AztecOO_UserOpUserMat
 AZTECOO_SUBDIR = AztecOO
 
 #endif
-SUBDIRS = $(AZTECOO_SUBDIR) $(USER_OP_USER_MAT_SUBDIR) simple_epetra_aztecoo
+SUBDIRS = $(AZTECOO_SUBDIR) $(USER_OP_USER_MAT_SUBDIR) simple_epetra_aztecoo UG_Ex1
 subdir = example
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/AztecOO_config.h
