@@ -1112,13 +1112,13 @@ int ML_CommInfoOP_Compute_TotalRcvLength(ML_CommInfoOP *comm_info)
 {
   int i;
 
-  if (comm_info == NULL) return 1;
+  if (comm_info == NULL) return 0;
 
   comm_info->total_rcv_length = 0;
   for (i = 0; i < comm_info->N_neighbors; i++ ) {
    comm_info->total_rcv_length   += comm_info->neighbors[i].N_rcv;
   }
-  return 1;
+  return comm_info->total_rcv_length;
 } 
 
 /******************************************************************************/
@@ -1359,4 +1359,42 @@ int ML_CommInfoOP_TransComm(ML_CommInfoOP *pre_comm, ML_CommInfoOP **post_comm,
    if (Nghost2 > Nghost) Nghost = Nghost2;
 
    return Nghost;
+}
+
+int ML_reverse_exchange(double *x_over, ML_CommInfoOP 
+			*nonOverlapped_2_Overlapped,
+			int nn_over , ML_Comm *comm)
+  
+{
+  int i, j, *itemp;
+
+  /* flip send and rcv lists */
+
+  for (i = 0; i < nonOverlapped_2_Overlapped->N_neighbors; i++ ) {
+    j = nonOverlapped_2_Overlapped->neighbors[i].N_rcv;
+    itemp = nonOverlapped_2_Overlapped->neighbors[i].rcv_list;
+    nonOverlapped_2_Overlapped->neighbors[i].N_rcv = 
+      nonOverlapped_2_Overlapped->neighbors[i].N_send;
+    nonOverlapped_2_Overlapped->neighbors[i].rcv_list = 
+      nonOverlapped_2_Overlapped->neighbors[i].send_list;
+    nonOverlapped_2_Overlapped->neighbors[i].N_send = j;
+    nonOverlapped_2_Overlapped->neighbors[i].send_list = itemp;
+  }
+  ML_exchange_bdry(x_over,nonOverlapped_2_Overlapped,nn_over,comm,ML_ADD,NULL);
+
+  /* flip back */
+
+  for (i = 0; i < nonOverlapped_2_Overlapped->N_neighbors; i++ ) {
+    j = nonOverlapped_2_Overlapped->neighbors[i].N_rcv;
+    itemp = nonOverlapped_2_Overlapped->neighbors[i].rcv_list;
+    nonOverlapped_2_Overlapped->neighbors[i].N_rcv = 
+      nonOverlapped_2_Overlapped->neighbors[i].N_send;
+    nonOverlapped_2_Overlapped->neighbors[i].rcv_list = 
+      nonOverlapped_2_Overlapped->neighbors[i].send_list;
+    nonOverlapped_2_Overlapped->neighbors[i].N_send = j;
+    nonOverlapped_2_Overlapped->neighbors[i].send_list = itemp;
+  }
+
+  return 0;
+
 }

@@ -118,6 +118,8 @@ extern void ML_cheap_exchange_bdry(double dtemp[], ML_CommInfoOP *comm_info,
 extern void ML_exchange_bdry(double dtemp[], ML_CommInfoOP *comm_info,
                              int start_location, ML_Comm *comm,
                              int overwrite_or_add, ML_Comm_Envelope *envelope);
+extern int ML_reverse_exchange(double *, ML_CommInfoOP *, int, ML_Comm *comm);
+
 extern void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
                      int start_location, ML_Comm *comm, int overwrite_or_add); 
 
