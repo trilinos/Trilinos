@@ -886,7 +886,7 @@ int i, ierr;
       ZOLTAN_SET_LID(zz, &((*export_local_ids)[(*num_export)*zz->Num_LID]),
                      subroot->local_id);
       (*export_to_partition)[*num_export] = subroot->partition;
-      (*export_procs)[*num_export] = Zoltan_LB_Part_To_Proc(zz,subroot->partition);
+      (*export_procs)[*num_export] = Zoltan_LB_Part_To_Proc(zz,subroot->partition,subroot->global_id);
       *num_export += 1;
     }
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) return(ierr);
@@ -927,7 +927,7 @@ int current_part;
   if (*ierr != ZOLTAN_OK && *ierr != ZOLTAN_WARN) return(FALSE);
 
   if ((current_part != subroot->partition ||
-       Zoltan_LB_Part_To_Proc(zz,subroot->partition) != zz->Proc)
+       Zoltan_LB_Part_To_Proc(zz,subroot->partition,subroot->global_id) != zz->Proc)
        && subroot->assigned_to_me) return(TRUE);
 
   return(FALSE);

@@ -1110,7 +1110,8 @@ static int Zoltan_ParMetis_Jostle(
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory. ");
     }
     for (i=0; i<num_obj; i++){
-      newproc[i] = Zoltan_LB_Part_To_Proc(zz, part[i]);
+      newproc[i] = Zoltan_LB_Part_To_Proc(zz, part[i],
+                                          &(global_ids[i*num_gid_entries]));
       if (newproc[i]<0){
         ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, 
          "Zoltan_LB_Part_To_Proc returned invalid processor number.");

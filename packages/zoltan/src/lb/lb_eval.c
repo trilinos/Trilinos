@@ -391,7 +391,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
  
     for (i=0; i<nparts; i++){
       if ((zz->LB.PartDist == NULL) || 
-          (Zoltan_LB_Part_To_Proc(zz, i) == zz->Proc)){
+          (Zoltan_LB_Part_To_Proc(zz, i, NULL) == zz->Proc)){
         for (j=0; j<NUM_STATS; j++){
           if (all_arr[j*nparts+i] < stats[j])           /* min */
             stats[j] = all_arr[j*nparts+i];
@@ -421,7 +421,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         tmp_vwgt[i] = 0; /* max and sum */
       for (j=0; j<nparts; j++){
         if ((zz->LB.PartDist == NULL) ||
-            (Zoltan_LB_Part_To_Proc(zz, j) == zz->Proc)){
+            (Zoltan_LB_Part_To_Proc(zz, j, NULL) == zz->Proc)){
           for (i=0; i<zz->Obj_Weight_Dim; i++){
             if (vwgt_arr[j*zz->Obj_Weight_Dim+i] < tmp_vwgt[i]) 
               tmp_vwgt[i] = vwgt_arr[j*zz->Obj_Weight_Dim+i];
@@ -451,7 +451,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         tmp_cutwgt[i] = 0; /* max and sum */
       for (j=0; j<nparts; j++){
         if ((zz->LB.PartDist == NULL) ||
-            (Zoltan_LB_Part_To_Proc(zz, j) == zz->Proc)){
+            (Zoltan_LB_Part_To_Proc(zz, j, NULL) == zz->Proc)){
           for (i=0; i<zz->Edge_Weight_Dim; i++){
             if (cutwgt_arr[j*zz->Edge_Weight_Dim+i] < tmp_cutwgt[i]) 
               tmp_cutwgt[i] = cutwgt_arr[j*zz->Edge_Weight_Dim+i];

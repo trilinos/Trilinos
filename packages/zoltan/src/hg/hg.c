@@ -236,10 +236,12 @@ ZOLTAN_ID_PTR lids    = zoltan_hg->Local_IDs;
   if (zz->LB.Return_Lists) {
     /* Count number of objects with new partitions or new processors. */
     *num_exp = 0;
-    for (i = 0; i < nVtx; i++)
-      if (output_parts[i] != input_parts[i] ||
-          zz->Proc != Zoltan_LB_Part_To_Proc(zz, output_parts[i]))
+    for (i = 0; i < nVtx; i++) {
+      eproc = Zoltan_LB_Part_To_Proc(zz, output_parts[i], 
+                                     &gids[i*num_gid_entries]);
+      if (output_parts[i] != input_parts[i] || zz->Proc != eproc)
         (*num_exp)++;
+    }
 
     /* Allocate memory for return lists. */
     if (*num_exp > 0) {
@@ -261,7 +263,8 @@ ZOLTAN_ID_PTR lids    = zoltan_hg->Local_IDs;
        }
 
       for (j = 0, i = 0; i < nVtx; i++) {
-        eproc = Zoltan_LB_Part_To_Proc(zz, output_parts[i]);
+        eproc = Zoltan_LB_Part_To_Proc(zz, output_parts[i], 
+                                       &gids[i*num_gid_entries]);
         if (output_parts[i] != input_parts[i] || eproc != zz->Proc) {
           ZOLTAN_SET_GID(zz, &((*exp_gids)[j*num_gid_entries]),
                              &(gids[i*num_gid_entries]));

@@ -17,6 +17,7 @@ extern "C" {
 #endif
 
 #include "zz_const.h"
+#include "zz_util_const.h"
 
 /* Routines to handle mapping of partitions to processors. */
 /*****************************************************************************/
@@ -29,49 +30,55 @@ static int Zoltan_LB_Build_ProcDist(ZZ *);
 /*****************************************************************************/
 /*****************************************************************************/
 
-int Zoltan_LB_Part_To_Proc(ZZ *zz, int part)
+int Zoltan_LB_Part_To_Proc(ZZ *zz, int part, ZOLTAN_ID_PTR gid)
 {
 /* Routine that maps partitions to processors.
  * If a partition is entirely within a processor, that processor's rank is
  * returned.
- * If a partition is spread across several processors, find the range of
+ * If a partition is spread across several processors, find the range of its
  * processors.  If zz->Proc is one of them, return zz->Proc.  Otherwise,
- * return a random processor in the range of processors.
- * (This random feature should be replaced by something smarter to reduce
- * data movement. KDD)
+ * hash the input gid to a processor within the range of processors.
+ * NOTE:  The special case of returning zz->Proc when it is within range 
+ * reduces data movement, but can result in different processor assignments 
+ * for the same gid on different processors.
+ * If all processors must map a gid to the same processor, this special
+ * case must be removed.
  */
 char *yo = "Zoltan_LB_Part_To_Proc";
 int proc;
 int *pdist = zz->LB.PartDist;    /* Temporary variable */
-static int first_time = 1;
 int num_procs_for_part;
+int hash_value;
 
   if (zz->LB.PartDist == NULL) {
     /*  number of parts == number of procs, uniformly distributed. 
      *  return input part. */
     proc = part;
   }
-  else {
+  else if (part >= 0 && part < zz->LB.Num_Global_Parts) {
     /*  number of parts != number of procs or 
      *  non-uniform distribution of parts     */
-    if (part >= 0 && part < zz->LB.Num_Global_Parts) {
-      num_procs_for_part = pdist[part+1] - pdist[part];
-      if (zz->LB.Single_Proc_Per_Part || num_procs_for_part <= 1)
-        proc = pdist[part];
-      else if (zz->Proc >= pdist[part] && zz->Proc < pdist[part+1])
-        proc = zz->Proc;
-      else {
-        if (first_time) {
-          srand(zz->Proc);
-          first_time = 0;
-        }
-        proc = (rand() % num_procs_for_part) + pdist[part];
-      }
-    }
+    num_procs_for_part = pdist[part+1] - pdist[part];
+    if (zz->LB.Single_Proc_Per_Part || num_procs_for_part <= 1)
+      proc = pdist[part];
+    else if (zz->Proc >= pdist[part] && zz->Proc < pdist[part+1])
+      /* zz->Proc is in range of procs holding part; return zz->Proc
+       * to prevent data movement for exported items.  */
+      proc = zz->Proc;
     else {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid partition number.");
-      proc = -1;
+      /* Map the gid to a processor within range for the partition.
+       * Use Zoltan_Hash to attempt to evenly distribute the gids to
+       * processors holding the partition. */
+      if (gid != NULL) 
+        hash_value = Zoltan_Hash(gid, zz->Num_GID, num_procs_for_part);
+      else 
+        hash_value = 0;
+      proc = pdist[part] + hash_value;
     }
+  }
+  else {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid partition number.");
+    proc = -1;
   }
   return proc;
 }
@@ -92,11 +99,20 @@ int Zoltan_LB_Proc_To_Part(
  * of the lowest-numbered partition on a given processor.
  * If there are no partitions on a processor, nparts = 0 and fpart = -1.
  */
+char *yo = "Zoltan_LB_Proc_To_Part";
 int *partdist = zz->LB.PartDist;
 int *procdist;
 int ierr = ZOLTAN_OK;
 int tmp;
   
+  if (proc < 0 || proc >= zz->Num_Proc) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input proc is out of range.");
+    ierr = ZOLTAN_FATAL;
+    *nparts = 0;
+    *fpart = -1;
+    goto End;
+  }
+
   if (partdist == NULL) {
     *nparts = 1;
     *fpart = proc;

@@ -216,7 +216,7 @@ struct Zoltan_Migrate_Struct {
 
 extern int Zoltan_LB_Set_LB_Method(struct Zoltan_Struct *, char *);
 extern void Zoltan_LB_Free_Struct(struct Zoltan_LB_Struct *);
-extern int Zoltan_LB_Part_To_Proc(struct Zoltan_Struct *, int );
+extern int Zoltan_LB_Part_To_Proc(struct Zoltan_Struct *, int, ZOLTAN_ID_PTR);
 extern int Zoltan_LB_Proc_To_Part(struct Zoltan_Struct *, int, int *, int *);
 
 /* PARTITIONING FUNCTIONS */

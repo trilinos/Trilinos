@@ -376,7 +376,8 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
          ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "BSEARCH RETURNED ERROR") ;
 
       dots[i].part = p->index ;
-      if (dots[i].part != parts[i] || zz->Proc != Zoltan_LB_Part_To_Proc(zz, p->index))
+      tmp = Zoltan_LB_Part_To_Proc(zz, p->index, gids + i*zz->Num_GID);
+      if (dots[i].part != parts[i] || zz->Proc != tmp)
          ++(*num_export) ;
       }
 
@@ -416,7 +417,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
 
       /* Fill in export arrays */
       for (j = i = 0 ; i < ndots ; i++) {
-        tmp = Zoltan_LB_Part_To_Proc(zz, dots[i].part);
+        tmp = Zoltan_LB_Part_To_Proc(zz, dots[i].part, gids + i*zz->Num_GID);
         if (dots[i].part != parts[i] || zz->Proc != tmp)
           {
           *((*export_procs)   +j) = tmp;
