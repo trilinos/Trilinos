@@ -39,9 +39,14 @@
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 
+#include "BelosLinearProblemManager.hpp"
+#include "BelosStatusTest.hpp"
+#include "BelosOutputManager.hpp"
 #include "BelosPetraInterface.hpp"
 #include "BelosBlockGmres.hpp"
 #include "BelosBlockCG.hpp"
+
+#include "Teuchos_ParameterList.hpp"
 
 /*! \class Belos::EpetraOperator
     \brief This class provides and interface to the Epetra_Operator class, so Belos can be 
@@ -62,68 +67,66 @@ namespace Belos {
 template <class TYPE>
 class EpetraOperator : public virtual Epetra_Operator {
 public:
-	//@{ \name Constructor / Destructor
-
-	//! Constructor
-	EpetraOperator( PetraOp<TYPE>& mat, PetraPrec<TYPE>& precond,
-			    const string solver="BlockGMRES", const TYPE tol=1.0e-6, const int maxits=25, 
-			    const int block=1, const int debuglevel=0, bool verbose=false );
-
-	//! Destructor
-	~EpetraOperator();
-	//@}
-
-	//@{ \name Attribute methods
-
-	//! Set whether the operator or its inverse should be applied. [ This option is not implemented ]
-	int SetUseTranspose( bool UseTranspose ) { return(-1); };
-	//@}
-
-	//@{ \name Operator application methods
-
-	//! Apply the operator.
-	int Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
-
-	//! Apply the operator's inverse.
-	int ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
-	//@}
-
-	//@{ \name Norm methods
-
-	//! Compute the infinity norm of the operator. [ This option is not implemented ]
-	double NormInf() const { return(0.0); };
-	//@}
-
-	//@{ \name Attribute access functions
-
-	//! Return the label of the operator.
-	char* Label() const { return(Solver); };
-
-	//! Return whether the operator is using the transpose.
-	bool UseTranspose() const { return(false); };
-
-	//! Return whether the infinity norm is available for this operator.
-	bool HasNormInf() const { return(false); };
-
-	//! Return the communicator for this operator.
-	const Epetra_Comm& Comm() const { return(MyComm); };
-
-	//! Return the domain map for this operator.
-	const Epetra_Map& OperatorDomainMap() const { return(DomainMap); };
-
-	//! Return the range map for this operator.
-	const Epetra_Map& OperatorRangeMap() const { return(RangeMap); };	
-	//@}	   
+  //@{ \name Constructor / Destructor
+  
+  //! Constructor
+  EpetraOperator( LinearProblemManager<TYPE>& lp, StatusTest<TYPE>& stest, 
+		  OutputManager<TYPE>& om, Teuchos::ParameterList& plist );
+  
+  //! Destructor
+  ~EpetraOperator();
+  //@}
+  
+  //@{ \name Attribute methods
+  
+  //! Set whether the operator or its inverse should be applied. [ This option is not implemented ]
+  int SetUseTranspose( bool UseTranspose ) { return(-1); };
+  //@}
+  
+  //@{ \name Operator application methods
+  
+  //! Apply the operator.
+  int Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
+  
+  //! Apply the operator's inverse.
+  int ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
+  //@}
+  
+  //@{ \name Norm methods
+  
+  //! Compute the infinity norm of the operator. [ This option is not implemented ]
+  double NormInf() const { return(0.0); };
+  //@}
+  
+  //@{ \name Attribute access functions
+  
+  //! Return the label of the operator.
+  char* Label() const { return(Solver); };
+  
+  //! Return whether the operator is using the transpose.
+  bool UseTranspose() const { return(false); };
+  
+  //! Return whether the infinity norm is available for this operator.
+  bool HasNormInf() const { return(false); };
+  
+  //! Return the communicator for this operator.
+  const Epetra_Comm& Comm() const;
+  
+  //! Return the domain map for this operator.
+  const Epetra_Map& OperatorDomainMap() const;
+  
+  //! Return the range map for this operator.
+  const Epetra_Map& OperatorRangeMap() const;	
+  //@}	   
 private:
-	PetraOp<TYPE>& Mat;
-	PetraPrec<TYPE>& Prec;
-	const Epetra_Comm& MyComm;
-	const Epetra_Map& DomainMap;
-	const Epetra_Map& RangeMap;
-	const TYPE Tol;
-	const int Maxits, BlkSz, DbgLvl;
-	char* Solver;
-	bool Vb;
+
+  LinearProblemManager<TYPE>& lp_;
+  StatusTest<TYPE>& stest_;
+  OutputManager<TYPE>& om_;
+  Teuchos::ParameterList& plist_;
+
+  const int Maxits;
+  char* Solver;
 };
 //--------------------------------------------------------------
 //
@@ -132,21 +135,26 @@ private:
 // Constructor.
 //
 template <class TYPE>
-EpetraOperator<TYPE>::EpetraOperator( PetraOp<TYPE>& mat, PetraPrec<TYPE>& precond,
-			    	const string solver, const TYPE tol, const int maxits, const int block, 
-				const int debuglevel, bool verbose )
-	: Mat(mat), Prec(precond), Solver(0), Tol(tol),
-	  Maxits(maxits), BlkSz(block), DbgLvl(debuglevel), Vb(verbose),
-	  MyComm(mat.GetMatrix().Comm()), DomainMap(mat.GetMatrix().OperatorDomainMap()),
-	  RangeMap(mat.GetMatrix().OperatorRangeMap())
+EpetraOperator<TYPE>::EpetraOperator( LinearProblemManager<TYPE>& lp,
+				      StatusTest<TYPE>& stest,
+				      OutputManager<TYPE>& om,
+				      Teuchos::ParameterList& plist )
+  : lp_(lp), 
+    stest_(stest), 
+    om_(om), 
+    plist_(plist), 
+    Solver(0),
+    Maxits(plist.get("Max Iters", 25)) 
 {
-        // Copy string to character array.  
-        // Not using conversion routine copy() because it's not supported by RW on Janus. (HKT 11/13/2003) 
-        Solver = new char[solver.length()+1];
-        for (int i=0; i<solver.length()+1; i++) {
-            Solver[i] = solver[i];
-        } 
-	Solver[solver.length()] = 0;
+  string solver = plist_.get("Solver", "BlockGMRES");
+
+  // Copy string to character array.  
+  // Not using conversion routine copy() because it's not supported by RW on Janus. (HKT 11/13/2003) 
+  Solver = new char[solver.length()+1];
+  for (int i=0; i<solver.length()+1; i++) {
+    Solver[i] = solver[i];
+  } 
+  Solver[solver.length()] = 0;
 }
 
 template<class TYPE>
@@ -155,28 +163,44 @@ EpetraOperator<TYPE>::~EpetraOperator()
 }
 
 template<class TYPE>
+const Epetra_Comm& EpetraOperator<TYPE>::Comm() const 
+{ 
+  PetraMat<TYPE>* tempMat = dynamic_cast<PetraMat<TYPE>* >(lp_.GetOperator()); assert(tempMat != NULL);  
+  return ((tempMat->GetMat())->Comm());
+}
+  
+template<class TYPE>
+const Epetra_Map& EpetraOperator<TYPE>::OperatorDomainMap() const 
+{ 
+  PetraMat<TYPE>* tempMat = dynamic_cast<PetraMat<TYPE>* >(lp_.GetOperator()); assert(tempMat != NULL);  
+  return((tempMat->GetMat())->OperatorDomainMap());
+}
+
+template<class TYPE>
+const Epetra_Map& EpetraOperator<TYPE>::OperatorRangeMap() const 
+{ 
+  PetraMat<TYPE>* tempMat = dynamic_cast<PetraMat<TYPE>* >(lp_.GetOperator()); assert(tempMat != NULL);
+  return((tempMat->GetMat())->OperatorRangeMap());
+}
+
+template<class TYPE>
 int EpetraOperator<TYPE>::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
 {
 	TYPE zero = 0.0, one = 1.0;
 	PetraVec<TYPE> vec_X(X), vec_Y(Y);
-	int NumRHS = vec_X.GetNumberVecs();
+	lp_.SetLHS( &vec_Y );
+	lp_.SetRHS( &vec_X );
 	//
 	// Create solver and solve problem.  This is inefficient, an instance of the solver should
 	// exist already and just be reset with a new RHS.
 	//
 	if (strcmp(Solver,"BlockGMRES")==0) {
-		BlockGmres<TYPE> MyBlockGmres( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
-		MyBlockGmres.SetDebugLevel(DbgLvl);
-		MyBlockGmres.Solve(Vb);
-		MyBlockGmres.GetSolutions( vec_Y );
-		MyBlockGmres.TrueResiduals(Vb);
+		BlockGmres<TYPE> MyBlockGmres( lp_, stest_, om_, Maxits );
+		MyBlockGmres.Solve();
 	}
 	if (strcmp(Solver,"BlockCG")==0) {
-		BlockCG<TYPE> MyBlockCG( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
-		MyBlockCG.SetDebugLevel(DbgLvl);
-		MyBlockCG.Solve(Vb);
-		MyBlockCG.GetSolutions( vec_Y );
-		MyBlockCG.TrueResiduals(Vb);
+		BlockCG<TYPE> MyBlockCG( lp_, stest_, om_);
+		MyBlockCG.Solve();
 	}
 	// Copy solution into output vector Y.
      	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&vec_Y); assert(vec_y!=NULL);
@@ -194,24 +218,19 @@ int EpetraOperator<TYPE>::ApplyInverse( const Epetra_MultiVector &X, Epetra_Mult
 {
 	TYPE zero = 0.0, one = 1.0;
 	PetraVec<TYPE> vec_X(X), vec_Y(Y);
-	int NumRHS = vec_X.GetNumberVecs();
+	lp_.SetLHS( &vec_Y );
+	lp_.SetRHS( &vec_X );
 	//
 	// Create solver and solve problem.  This is inefficient, an instance of the solver should
 	// exist already and just be reset with a new RHS.
 	//
 	if (strcmp(Solver,"BlockGMRES")==0) {
-		BlockGmres<TYPE> MyBlockGmres( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
-		MyBlockGmres.SetDebugLevel(DbgLvl);
-		MyBlockGmres.Solve(Vb);
-		MyBlockGmres.GetSolutions( vec_Y );
-		MyBlockGmres.TrueResiduals(Vb);
+		BlockGmres<TYPE> MyBlockGmres( lp_, stest_, om_, Maxits );
+		MyBlockGmres.Solve();
 	}
 	if (strcmp(Solver,"BlockCG")==0) {
-		BlockCG<TYPE> MyBlockCG( Mat, Prec, vec_X, NumRHS, Tol, Maxits, BlkSz, Vb );
-		MyBlockCG.SetDebugLevel(DbgLvl);
-		MyBlockCG.Solve(Vb);
-		MyBlockCG.GetSolutions( vec_Y );
-		MyBlockCG.TrueResiduals(Vb);
+		BlockCG<TYPE> MyBlockCG( lp_, stest_, om_);
+		MyBlockCG.Solve();
 	}
 	// Copy solution into output vector Y.
      	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&vec_Y); assert(vec_y!=NULL);

@@ -133,6 +133,15 @@ class LinearProblemManager {
 
   //@}
   
+  //@{ \name Reset method
+  
+  //! Reset the linear problem manager.
+  /*! This is useful for solving the linear system with another right-hand side.  
+    The internal flags will be set as if the linear system manager was just initialized.
+   */
+  void Reset( MultiVec<TYPE>* newX = NULL, MultiVec<TYPE>* newB = NULL );
+  //@}
+
   //@{ \name Accessor methods
 
   //! Get a pointer to the operator A.
@@ -532,6 +541,19 @@ void LinearProblemManager<TYPE>::SolutionUpdated( MultiVec<TYPE>* SolnUpdate )
     }
   }
   solutionUpdated_ = true; 
+}
+
+template<class TYPE>
+void LinearProblemManager<TYPE>::Reset( MultiVec<TYPE>* newX, MultiVec<TYPE>* newB )
+{
+  solutionUpdated_ = false;
+  solutionFinal_ = true;
+  initresidsComputed_ = false;
+  rhs_index_ = 0;
+
+  if (R0_) delete R0_;
+  R0_ = X_->Clone( X_->GetNumberVecs() ); 
+  GetInitResVec();
 }
 
 template<class TYPE>

@@ -343,7 +343,7 @@ public:
 	~PetraMat();
 	ReturnType Apply ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const;
 	ReturnType ApplyInverse ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const;
-	const Epetra_Operator & GetMat () { return(Epetra_Mat); };
+	const Epetra_Operator* GetMat () { return(Epetra_Mat); };
 private:
 	Epetra_Operator* Epetra_Mat;
 };
@@ -422,7 +422,7 @@ public:
         ~PetraPrec();
         ReturnType Apply ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const;
 	ReturnType ApplyInverse ( const MultiVec<TYPE>& x, MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const;
-	const Epetra_Operator & GetPrec () { return(Epetra_Prec); };
+	const Epetra_Operator* GetPrec () { return(Epetra_Prec); };
 private:
    	Epetra_Operator* Epetra_Prec;
 };
