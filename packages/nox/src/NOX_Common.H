@@ -33,14 +33,51 @@
 #ifndef NOX_COMMON_H
 #define NOX_COMMON_H
 
+#if defined(SGI) || defined(SGI64) || defined(SGI32)
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+#include <iostream.h>
+#include <strstream.h>
+#include <string> // Need SGI's special string class
+#include <math.h>
+#include <iomanip.h>
+#include <string>
+using std::string;
+
+#elif defined(TFLOP)
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+#include <string>
+using std::string;
 #include <iostream>
 #include <iomanip>
+using std::istream;
+using std::ostream;
+using std::cerr;
+using std::cout;
+using std::endl;
+
+#else
+
+#include <cstdlib>
+#include <cstdio>
+#include <cassert>
+#include <iostream>
+#include <strstream>
+#include <cstring>
 #include <string>
 #include <cmath>
-#include <vector>
-#include <map>
-
+#include <iomanip>
 using namespace std;
 
+#endif
+
+#include <vector>
+#include <map>
+using std::map;
+using std::vector;
 
 #endif

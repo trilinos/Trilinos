@@ -64,7 +64,7 @@ bool Polynomial::operator()(Abstract::Group& newgrp, double& step,
 //   General computation of directional derivative used in curvature condition
 //   Note that for Newton direction, oldfprime = -2.0*oldf
   Abstract::Vector* tmpvecptr = oldgrp.getX().clone(CopyShape);
-  bool flag = oldgrp.applyJacobian(dir,*tmpvecptr);
+  oldgrp.applyJacobian(dir,*tmpvecptr);
   double oldfprime = tmpvecptr->dot(oldgrp.getRHS());
 
   double newf, prevf;

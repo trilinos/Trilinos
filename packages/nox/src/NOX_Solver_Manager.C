@@ -20,8 +20,8 @@ using namespace NOX;
 using namespace NOX::Solver;
 
 Manager::Manager(Abstract::Group& grp, Status::Test &t, const Parameter::List& p) :
-  ptr(NULL),
-  method("")
+  method(""),
+  ptr(NULL)
 {
   reset(grp, t, p);
 }

@@ -32,6 +32,22 @@
 
 #include "NOX_Solver_Newton.H"	// class definition
 
+/* Some compilers (in particular the SGI and ASCI Red - TFLOP) 
+ * fail to find the max and min function.  Therfore we redefine them 
+ * here. 
+ */ 
+#ifdef max
+#undef max
+#endif
+
+#define max(a,b) ((a)>(b)) ? (a) : (b);
+
+#ifdef min
+#undef min
+#endif
+
+#define min(a,b) ((a)<(b)) ? (a) : (b);
+
 using namespace NOX;
 using namespace NOX::Solver;
 

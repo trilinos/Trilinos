@@ -32,6 +32,19 @@
 
 #include "NOX_Parameter_List.H"	// class definition
 
+/* NOTE: ASCI Red (TFLOP) does not support the i-> funtion for iterators 
+ * in the STL.  Therefore when compiling for the TFLOP we must redefine the 
+ * iterator from i-> to (*i). This slows things down on other platforms 
+ * so we switch between the two when necessary.
+ */
+#if defined(TFLOP)
+#define ITER (*i). 
+
+#else
+#define ITER i->
+
+#endif
+
 using namespace NOX::Parameter;
 
 List::List() {}
@@ -60,8 +73,8 @@ void List::unused() const
   /* NOTE FROM TAMMY: Note that this does not check sublists. May want
      to add that functionality later. */
   for (PCConstIterator i = params.begin(); i != params.end(); ++i) {
-    if (!(i->second.isUsed())) {
-      cout << "WARNING: Parameter \"" << i->first << "\" " << i->second
+    if (!(ITER second.isUsed())) {
+      cout << "WARNING: Parameter \"" << ITER first << "\" " << ITER second
 	   << " is unused" << endl;
     }
   }
@@ -96,32 +109,32 @@ void List::setParameter(const string& name, const string& value)
 bool List::getParameter(const string& name, bool nominal) const
 {
   PCConstIterator i = params.find(name);
-  if ((i != params.end()) && (i->second.isBool()))
-    return i->second.getBoolValue();
+  if ((i != params.end()) && (ITER second.isBool()))
+    return ITER second.getBoolValue();
   return nominal;
 }
 
 int List::getParameter(const string& name, int nominal) const
 {
   PCConstIterator i = params.find(name);
-  if ((i != params.end()) && (i->second.isInt()))
-    return i->second.getIntValue();
+  if ((i != params.end()) && (ITER second.isInt()))
+    return ITER second.getIntValue();
   return nominal;
 }
 
 double List::getParameter(const string& name, double nominal) const
 {
   PCConstIterator i = params.find(name);
-  if ((i != params.end()) && (i->second.isDouble()))
-    return i->second.getDoubleValue();
+  if ((i != params.end()) && (ITER second.isDouble()))
+    return ITER second.getDoubleValue();
   return nominal;
 }
 
 const string& List::getParameter(const string& name, const char* nominal) const
 {
   PCConstIterator i = params.find(name);
-  if ((i != params.end()) && (i->second.isString()))
-    return i->second.getStringValue();
+  if ((i != params.end()) && (ITER second.isString()))
+    return ITER second.getStringValue();
 
   // Save nominal char* value as a string, and return the string value.
   tmpstrings.push_back(nominal);
@@ -131,8 +144,8 @@ const string& List::getParameter(const string& name, const char* nominal) const
 const string& List::getParameter(const string& name, const string& nominal) const
 {
   PCConstIterator i = params.find(name);
-  if ((i != params.end()) && (i->second.isString()))
-    return i->second.getStringValue();
+  if ((i != params.end()) && (ITER second.isString()))
+    return ITER second.getStringValue();
   return nominal;
 }
   
@@ -144,40 +157,40 @@ bool List::isParameter(const string& name) const
 bool List::isParameterEqual(const string& name, bool value) const
 {
   PCConstIterator i = params.find(name);
-  if ((i != params.end()) && (i->second.isBool()))
-    return (i->second.getBoolValue() == value);
+  if ((i != params.end()) && (ITER second.isBool()))
+    return (ITER second.getBoolValue() == value);
   return false;
 }
 
 bool List::isParameterEqual(const string& name, int value) const
 {
   PCConstIterator i = params.find(name);
-  if ((i != params.end()) && (i->second.isInt()))
-    return (i->second.getIntValue() == value);
+  if ((i != params.end()) && (ITER second.isInt()))
+    return (ITER second.getIntValue() == value);
   return false;
 }
 
 bool List::isParameterEqual(const string& name, double value) const
 {
   PCConstIterator i = params.find(name);
-  if ((i != params.end()) && (i->second.isDouble()))
-    return (i->second.getDoubleValue() == value);
+  if ((i != params.end()) && (ITER second.isDouble()))
+    return (ITER second.getDoubleValue() == value);
   return false;
 }
 
 bool List::isParameterEqual(const string& name, const char* value) const
 {
   PCConstIterator i = params.find(name);
-  if ((i != params.end()) && (i->second.isString()))
-    return (i->second.getStringValue() == value);
+  if ((i != params.end()) && (ITER second.isString()))
+    return (ITER second.getStringValue() == value);
   return false;
 }
 
 bool List::isParameterEqual(const string& name, const string& value) const
 {
   PCConstIterator i = params.find(name);
-  if ((i != params.end()) && (i->second.isString()))
-    return (i->second.getStringValue() == value);
+  if ((i != params.end()) && (ITER second.isString()))
+    return (ITER second.getStringValue() == value);
   return false;
 }
 
@@ -190,8 +203,8 @@ List& List::sublist(const string& name)
   // If it does exist and is a list, return the list value.
   // Otherwise, throw an error.
   if (i != params.end()) {
-    if (i->second.isList()) 
-      return (i->second.getListValue());
+    if (ITER second.isList()) 
+      return (ITER second.getListValue());
     else
       cerr << "ERROR: Parameter " << name << " is not a list." << endl;
       throw;
@@ -212,12 +225,14 @@ ostream& List::print(ostream& stream, int indent) const
     for (PCConstIterator i = params.begin(); i != params.end(); ++i) {
       for (int j = 0; j < indent; j ++)
 	stream << ' ';
-      if (i->second.isList()) {
-	stream << i->first << " -> " << endl;
-	i->second.getListValue().print(stream, indent + 2);
+      if (ITER second.isList()) {
+	stream << ITER first << " -> " << endl;
+	ITER second.getListValue().print(stream, indent + 2);
       }
       else
-	stream << i->first << " = " << i->second << endl;
+	stream << ITER first << " = " << ITER second << endl;
     }
   return stream;
 }
+
+#undef ITER
