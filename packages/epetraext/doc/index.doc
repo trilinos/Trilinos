@@ -65,6 +65,9 @@ EpetraExt contains a number of classes.  They can be categorized as follows:
 
 <li> Zoltan Tools: Primarily tools for generation of repartitioned Epetra objects using
      the Zoltan library..
+     
+<li> Matlab: Allows export of Epetra objects to Matlab and commands to be sent to Matlab
+     to operate on those objects wihtin the Matlab workspace.
 
 </ul>
      
