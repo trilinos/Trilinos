@@ -1330,3 +1330,68 @@ void ML_Comm_ErrorHandler(USR_COMM *comm, int *error_code)
 }
 
 #endif /* if defined(ML_MPI) && defined(ML_CATCH_MPI_ERRORS_IN_DEBUGGER) */
+
+
+/*************************************************************************/
+/*************************************************************************/
+/*************************************************************************/
+
+/**************************************************************************
+
+  Do a partial sum of the vals. In particular, on 8 processors we do
+  the following:
+
+     P0 : 0
+     P4 : val_0
+     P2 : val_0 + val_4
+     P6 : val_0 + val_4 + val_2
+     P1 : val_0 + val_4 + val_2 + val_6
+     P5 : val_0 + val_4 + val_2 + val_6 + val_1
+     P3 : val_0 + val_4 + val_2 + val_6 + val_1 + val_5
+     P7 : val_0 + val_4 + val_2 + val_6 + val_1 + val_5 + val_3
+
+  Note: the order of the processors corresponds to subcubes (starting
+  from the left-most bit.
+
+  Author:          Ray Tuminaro, SNL, 1422
+  =======
+
+  Return code:     void
+  ============
+
+  Parameter list:
+  ===============
+
+  val:            On input, val on this processor is to be partially summed
+                  with val's on other processors.
+
+  node:            Current processor number.
+
+  nprocs:          Number of processors in the current machine configuration.
+
+**************************************************************************/
+
+int ML_gpartialsum_int(int val, ML_Comm *comm)
+{
+
+  /* local variables */
+
+  int   *sums, *itmp, i;
+  int   node, nprocs;
+
+  /*********************** first executable statment *****************/
+
+  node   = comm->ML_mypid;
+  nprocs = comm->ML_nprocs;
+  sums = (int *) ML_allocate(sizeof(int)*nprocs);
+  itmp = (int *) ML_allocate(sizeof(int)*nprocs);
+  for (i = 0; i < nprocs; i++) sums[i] = 0;
+  sums[node] = val;
+  ML_gsum_vec_int(&sums, &itmp, nprocs, comm );
+  val = 0;
+  for (i = 0; i < node; i++) val+= sums[i];
+  ML_free(itmp);
+  ML_free(sums);
+  return val;
+
+} /* ML_gpartial_sum_int */
