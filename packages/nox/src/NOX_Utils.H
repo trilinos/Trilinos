@@ -193,7 +193,7 @@ public:				// functions
   Utils();
 
   //! Constructor
-  Utils(NOX::Parameter::List& p);
+  explicit Utils(NOX::Parameter::List& p);
 
   //! Destructor
   ~Utils();
