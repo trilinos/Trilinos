@@ -274,3 +274,8 @@ void LineSearchBased::printUpdate()
   }
 }
 
+
+double LineSearchBased::getStepSize() const
+{
+  return step;
+}

@@ -80,6 +80,9 @@ public:
   virtual int getNumIterations() const;
   virtual const Parameter::List& getParameterList() const;
 
+  //! Return the line search step size from the current iteration.
+  virtual double getStepSize() const;
+
 protected:
   
   //! Print out initialization information and calcuation the RHS.
