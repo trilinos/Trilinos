@@ -5609,6 +5609,9 @@ int ML_MLS_SPrime_Apply(void *sm,int inlen,double x[],int outlen, double rhs[])
     int              i, deg, lv, dg, n = outlen;
     double           cf, om2, over;
     double          *pAux, *y;      
+#ifdef RST_MODIF
+    double          *diagonal;
+#endif
 
     widget = (struct MLSthing *) smooth_ptr->smoother->data;
 
@@ -5628,7 +5631,12 @@ int ML_MLS_SPrime_Apply(void *sm,int inlen,double x[],int outlen, double rhs[])
     if (y    == NULL) pr_error("ML_MLS_SPrime_Apply: allocation failed\n");
 
     ML_Operator_Apply(Amat, n, x, n, pAux);
+#ifdef RST_MODIF
+    ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
+    for (i=0; i<n; i++) pAux[i] -= rhs[i]/diagonal[i];
+#else
     for (i=0; i<n; i++) pAux[i] -= rhs[i];
+#endif
     ML_MLS_SandwPost(sm, n, pAux, n, y);
     ML_MLS_SandwPres(sm, n, y, n, pAux);
     for (i=0; i<n; i++) x[i] = x[i] - cf * pAux[i]; 
@@ -5637,6 +5645,39 @@ int ML_MLS_SPrime_Apply(void *sm,int inlen,double x[],int outlen, double rhs[])
     ML_free(pAux);
 
     return 0; 
+}
+struct DinvA_widget {
+  int ML_id;
+  int (*internal)(void *, int, double *, int, double *);
+  int (*external)(void *, int, double *, int, double *);
+  void *data;
+  ML_Operator *Amat;
+};
+extern int DinvA(void *data,  int in, double p[], int out, double ap[]);
+int DinvA(void *data,  int in, double p[], int out, double ap[])
+{
+  void *olddata;
+  struct DinvA_widget *DinvA_widget;
+  ML_Operator *Amat;
+  double *diagonal;
+  int i;
+
+  DinvA_widget = (struct DinvA_widget *) data;
+  Amat = DinvA_widget->Amat;
+  olddata = Amat->data;
+
+  Amat->matvec->ML_id    = DinvA_widget->ML_id;
+  Amat->matvec->internal = DinvA_widget->internal;
+  Amat->matvec->external = DinvA_widget->external;
+  Amat->data             = DinvA_widget->data;
+  
+  ML_Operator_Apply(Amat, in, p, out, ap);
+  ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
+  for (i = 0; i < Amat->outvec_leng; i++) ap[i] = ap[i]/diagonal[i];
+
+  Amat->matvec->ML_id    = ML_EXTERNAL;
+  Amat->matvec->external = DinvA;
+  Amat->data             = olddata;
 }
 
 int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
@@ -5654,6 +5695,12 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    int              deg, lv, dg, n = outlen, i;
    double          *res0, *res, *y, cf, over, *mlsCf;
 
+#ifdef RST_MODIF
+   int             *cols, allocated_space;
+   double          *diagonal, *vals, *tdiag;
+   struct DinvA_widget DinvA_widget;
+   int j;
+#endif
    widget = (struct MLSthing *) smooth_ptr->smoother->data;
 
    deg    = widget->mlsDeg;
@@ -5674,6 +5721,60 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    ML_Operator_Apply(Amat, n, x, n, res0);
 
    for (i = 0; i < n; i++) res0[i] = rhs[i] - res0[i]; 
+#ifdef RST_MODIF
+
+   DinvA_widget.ML_id = Amat->matvec->ML_id;
+   DinvA_widget.internal = Amat->matvec->internal;
+   DinvA_widget.external = Amat->matvec->external;
+   DinvA_widget.data     = Amat->data;
+   DinvA_widget.Amat     = Amat;
+   Amat->matvec->ML_id    = ML_EXTERNAL;
+   Amat->matvec->external = DinvA;
+   Amat->data             = &DinvA_widget;
+
+   /* ----------------------------------------------------------------- */
+   /* extract diagonal using getrow function if not found               */
+   /* ----------------------------------------------------------------- */
+
+   if (Amat->diagonal == NULL) 
+   {
+      if (Amat->getrow->ML_id == ML_EMPTY) 
+         pr_error("Error(ML_Jacobi): Need diagonal\n");
+      else 
+      {
+         allocated_space = 30;
+         cols = (int    *) malloc(allocated_space*sizeof(int   ));
+         vals = (double *) malloc(allocated_space*sizeof(double));
+         tdiag = (double *) malloc(Amat->outvec_leng*sizeof(double));
+         for (i = 0; i < Amat->outvec_leng; i++) 
+         {
+            while(ML_Operator_Getrow(Amat,1,&i,allocated_space,
+                                     cols,vals,&n) == 0) 
+            {
+               allocated_space = 2*allocated_space + 1;
+               free(vals); free(cols); 
+               cols = (int    *) malloc(allocated_space*sizeof(int   ));
+               vals = (double *) malloc(allocated_space*sizeof(double));
+               if (vals == NULL)
+               {
+                  printf("Not enough space to get matrix row. Row length of\n");
+                  printf("%d was not sufficient\n",(allocated_space-1)/2);
+                  exit(1);
+               }
+            }
+            for (j = 0; j < n; j++) 
+               if (cols[j] == i) tdiag[i] = vals[j];
+         }
+         free(cols); free(vals);
+         ML_Operator_Set_Diag(Amat, Amat->matvec->Nrows, tdiag);
+         free(tdiag);
+      } 
+   }
+   ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
+   for (i = 0; i < Amat->outvec_leng; i++) res0[i] = res0[i]/diagonal[i];
+#endif
+
+
 
    if (deg == 1) { 
 
@@ -5691,6 +5792,12 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
        * Apply the S_prime operator 
        */
        ML_MLS_SPrime_Apply(sm, n, x, n, rhs);
+#ifdef RST_MODIF
+       Amat->matvec->ML_id    = DinvA_widget.ML_id;
+       Amat->matvec->internal = DinvA_widget.internal;
+       Amat->matvec->external = DinvA_widget.external;
+       Amat->data             = DinvA_widget.data;
+#endif
        return 0;
 
    } else { 
@@ -5717,7 +5824,12 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    * Apply the S_prime operator 
    */
    ML_MLS_SPrime_Apply(sm, n, x, n, rhs);
-   
+#ifdef RST_MODIF
+   Amat->matvec->ML_id    = DinvA_widget.ML_id;
+   Amat->matvec->internal = DinvA_widget.internal;
+   Amat->matvec->external = DinvA_widget.external;
+   Amat->data             = DinvA_widget.data;
+#endif
    return 0;
 }
 
