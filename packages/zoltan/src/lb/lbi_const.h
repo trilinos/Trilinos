@@ -499,15 +499,26 @@ typedef int LB_NEXT_BORDER_OBJ_FORT_FN(void *data,
  *  comm.c routines to allocate message buffers.
  *  Input:  
  *    void *data                --  pointer to user defined data structure
+ *    int num_gid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a global ID
+ *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
+ *                                  in a local ID
+ *    LB_ID_PTR global_id       --  the Global ID for the object
+ *    LB_ID_PTR local_id        --  the Local ID for the object
  *  Output:
  *    int *ierr                 --  error code
  *  Returned value:
- *    int                       --  the size of data of local objects.
+ *    int                       --  the size of data of the object
+ *                                  corresponding to global_id
  */
 
-typedef int LB_OBJ_SIZE_FN(void *data, int *ierr);
+typedef int LB_OBJ_SIZE_FN(void *data, int num_gid_entries,
+            int num_lid_entries, LB_ID_PTR global_id, 
+            LB_ID_PTR local_id, int *ierr);
 
-typedef int LB_OBJ_SIZE_FORT_FN(void *data, int *ierr);
+typedef int LB_OBJ_SIZE_FORT_FN(void *data, int num_gid_entries,
+            int num_lid_entries, LB_ID_PTR global_id, 
+            LB_ID_PTR local_id, int *ierr);
 
 /*****************************************************************************/
 /*

@@ -283,9 +283,10 @@ int LB_Help_Migrate(
 
 char *yo = "LB_Help_Migrate";
 char msg[256];
-int size;                /* size (in bytes) of the object data for export.  */
+int *sizes = NULL;       /* sizes (in bytes) of the object data for export. */
 int id_size;             /* size (in bytes) of LB_GID + padding for 
                             alignment                                       */
+int tag_size;            /* size (in bytes) of LB_GID + one int (for message size) */
 char *export_buf = NULL; /* buffer for packing export data.                 */
 char *import_buf = NULL; /* buffer for receiving imported data.             */
 char *tmp;               /* temporary pointer into buffers.                 */
@@ -295,7 +296,11 @@ int *proc_list = NULL;   /* list of processors to which this proc exports.  */
 LB_ID_PTR tmp_id = NULL; /* pointer to storage for a global ID in comm buf  */
 COMM_OBJ *comm_plan;     /* Object returned by communication routines       */
 int msgtag, msgtag2;     /* Tags for communication routines                 */
-int gid_off, lid_off;    /* Offsets into arrays of global and local IDs.    */
+int max_size;            /* Max size of any object                          */
+int total_send_size;     /* Total size of outcoming message (in #items)     */
+int total_recv_size;     /* Total size of incoming message (in #items)      */
+int size;                /* size (in bytes) of an object                    */
+int aligned_int;         /* size of an int padded for alignment             */
 int ierr = 0;
 
   LB_TRACE_ENTER(lb, yo);
@@ -350,16 +355,42 @@ int ierr = 0;
   LB_TRACE_DETAIL(lb, yo, "Done pre-migration processing");
 
   /*
-   * For each object, allow space for its global ID and its data.
+   * For each object, allow space for its global ID and its data plus 
+   * one int (for the object data size).
    * Zoltan will pack the global IDs; the application must pack the data
    * through the pack routine.  Zoltan needs the global IDs for unpacking,
    * as the order of the data received during communication is not 
    * necessarily the same order as import_global_ids[].
+   * Zoltan also needs to communicate the sizes of the objects because
+   * only the sender knows the size of each object.
    */
+  if (num_export > 0) {
+    sizes = (int *) LB_MALLOC(num_export * sizeof(int));
+    if (!sizes) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      LB_TRACE_EXIT(lb, yo);
+      return (LB_FATAL);
+    }
+  }
   id_size = num_gid_entries * sizeof(LB_ID_TYPE) 
           + LB_pad_for_alignment(num_gid_entries * sizeof(LB_ID_TYPE));
-  size = lb->Migrate.Get_Obj_Size(lb->Migrate.Get_Obj_Size_Data, &ierr)
-       + id_size;
+  /* Note that the padding for alignment is not strictly necessary 
+     when LB_ID_TYPE is int or unsigned int. */
+  aligned_int = sizeof(int) + LB_pad_for_alignment(sizeof(int));
+  tag_size = id_size + aligned_int;
+  total_send_size = 0;
+
+  for (i=0; i<num_export; i++){
+    size = lb->Migrate.Get_Obj_Size(lb->Migrate.Get_Obj_Size_Data, 
+                 num_gid_entries, num_lid_entries,
+                 &(export_global_ids[i*num_gid_entries]), 
+                 &(export_local_ids[i*num_lid_entries]), 
+                 &ierr);
+    sizes[i] = size + LB_pad_for_alignment(size);
+    total_send_size += sizes[i] + tag_size;
+    if (sizes[i] > max_size) max_size = sizes[i];
+  }
+
   if (ierr) {
     LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                     "Migrate.Get_Obj_Size function.");
@@ -369,9 +400,10 @@ int ierr = 0;
 
 
   if (num_export > 0) {
-    export_buf = (char *) LB_MALLOC(num_export*size);
+    export_buf = (char *) LB_MALLOC(total_send_size);
     if (!export_buf) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      LB_FREE(&sizes);
       LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }
@@ -380,6 +412,7 @@ int ierr = 0;
     if (!proc_list) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&export_buf);
+      LB_FREE(&sizes);
       LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }
@@ -392,28 +425,38 @@ int ierr = 0;
     tmp = export_buf;
     for (i = 0; i < num_export; i++) {
       proc_list[i] = export_procs[i];
-      gid_off = i * num_gid_entries;  /* offset in global ids array */
-      lid_off = i * num_lid_entries;  /* offset in local ids array */
 
       /* Pack the object's global ID */
       tmp_id = (LB_ID_PTR) tmp;
-      LB_SET_GID(lb, tmp_id, &(export_global_ids[gid_off]));
+      LB_SET_GID(lb, tmp_id, &(export_global_ids[i*num_gid_entries]));
+      tmp += id_size;
     
+      /* Pack the object's size */
+      *((int *)tmp) = sizes[i];
+      tmp += aligned_int;
+
+      if (lb->Debug_Level >= LB_DEBUG_ALL){
+        printf("[%1d] DEBUG in %s: Packing object with gid %u, "
+               "size = %d bytes\n", lb->Proc, yo, *tmp_id, sizes[i]); 
+      }
+
       /* Pack the object's data */
       lb->Migrate.Pack_Obj(lb->Migrate.Pack_Obj_Data, 
                            num_gid_entries, num_lid_entries,
-                           &(export_global_ids[gid_off]),
-                           &(export_local_ids[lid_off]), export_procs[i], size,
-                           tmp+id_size, &ierr);
+                           &(export_global_ids[i*num_gid_entries]),
+                           &(export_local_ids[i*num_lid_entries]), 
+                           export_procs[i], sizes[i], tmp, 
+                           &ierr);
       if (ierr) {
         LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                         "Migrate.Pack_Obj function.");
+        LB_FREE(&sizes);
         LB_FREE(&export_buf);
         LB_FREE(&proc_list);
         LB_TRACE_EXIT(lb, yo);
         return (LB_FATAL);
       }
-      tmp += size;
+      tmp += sizes[i];
     }
   }
 
@@ -431,6 +474,7 @@ int ierr = 0;
     sprintf(msg, "Error %s returned from LB_Comm_Create.", 
             (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
     LB_PRINT_ERROR(lb->Proc, yo, msg);
+    LB_FREE(&sizes);
     LB_FREE(&export_buf);
     LB_FREE(&proc_list);
     LB_TRACE_EXIT(lb, yo);
@@ -441,10 +485,27 @@ int ierr = 0;
     LB_PRINT_ERROR(lb->Proc, yo, msg);
   }
 
+  /* Modify sizes[] to contain message sizes, not object sizes */
+  for (i=0; i<num_export; i++)
+    sizes[i] += tag_size;
+  msgtag--;
+  ierr = LB_Comm_Resize(comm_plan, sizes, msgtag, &total_recv_size);
+  if (ierr != COMM_OK && ierr != COMM_WARN) {
+    sprintf(msg, "Error %s returned from LB_Comm_Create.", 
+            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    LB_FREE(&sizes);
+    LB_FREE(&export_buf);
+    LB_FREE(&proc_list);
+    LB_TRACE_EXIT(lb, yo);
+    return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+  }
+
   if (num_import > 0) {
-    import_buf = (char *) LB_MALLOC(num_import*size);
+    import_buf = (char *) LB_MALLOC(total_recv_size);
     if (!import_buf) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      LB_FREE(&sizes);
       LB_FREE(&export_buf);
       LB_FREE(&proc_list);
       LB_TRACE_EXIT(lb, yo);
@@ -457,12 +518,13 @@ int ierr = 0;
    *  Send the export data using the communication plan.
    */
 
-  msgtag2 = 32766;
-  ierr = LB_Comm_Do(comm_plan, msgtag2, export_buf, size, import_buf);
+  msgtag2 = 32765;
+  ierr = LB_Comm_Do(comm_plan, msgtag2, export_buf, 1, import_buf);
   if (ierr != COMM_OK && ierr != COMM_WARN) {
     sprintf(msg, "Error %s returned from LB_Comm_Do.", 
             (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
     LB_PRINT_ERROR(lb->Proc, yo, msg);
+    LB_FREE(&sizes);
     LB_FREE(&proc_list);
     LB_FREE(&export_buf);
     LB_FREE(&import_buf);
@@ -478,6 +540,7 @@ int ierr = 0;
   LB_Comm_Destroy(&comm_plan);
   LB_FREE(&proc_list);
   LB_FREE(&export_buf);
+  LB_FREE(&sizes);
 
   LB_TRACE_DETAIL(lb, yo, "Done communication");
 
@@ -510,11 +573,20 @@ int ierr = 0;
 
     /* Unpack the object's global ID */
     tmp_id = (LB_ID_PTR) tmp;
+    tmp += id_size;
+
+    /* Unpack the object's size */
+    size = *((int *)tmp);
+    tmp += aligned_int;
+
+    if (lb->Debug_Level >= LB_DEBUG_ALL){
+      printf("[%1d] DEBUG in %s: Unpacking object with gid %u, "
+             "size = %d bytes\n", lb->Proc, yo, *tmp_id, size); 
+    }
 
     /* Unpack the object's data */
     lb->Migrate.Unpack_Obj(lb->Migrate.Unpack_Obj_Data, num_gid_entries,
-                           tmp_id, size,
-                           tmp+id_size, &ierr);
+                           tmp_id, size, tmp, &ierr);
     if (ierr) {
       LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                       "Migrate.Unpack_Obj function.");
