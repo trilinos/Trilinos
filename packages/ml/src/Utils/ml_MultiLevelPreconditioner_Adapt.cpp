@@ -16,6 +16,7 @@
 #include "Epetra_Import.h"
 #include "Epetra_Time.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_VbrMatrix.h"
 #include "ml_epetra.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_viz_xyz.h"
@@ -62,26 +63,49 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
   // ========================================= //
   // look for "bad" modes by simple relaxation //
   // ========================================= //
-  
-  Epetra_MultiVector RHS(RowMatrixRowMap(),NumAdaptiveVectors);
-  Epetra_MultiVector LHS(RowMatrixRowMap(),NumAdaptiveVectors);
-  LHS.Random();
+
+  // need some work otherwise matvec() with Epetra_Vbr fails.
+  // Also, don't differentiate between range and domain here
+  // as ML will not work if range != domain
+  const Epetra_VbrMatrix* VbrA = NULL;
+  VbrA = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
+
+  Epetra_MultiVector* LHS = 0;
+  Epetra_MultiVector* RHS = 0;
+
+  if (VbrA != 0) {
+    LHS = new Epetra_MultiVector(VbrA->DomainMap(), NumAdaptiveVectors);
+    RHS = new Epetra_MultiVector(VbrA->DomainMap(), NumAdaptiveVectors);
+  } else {
+    LHS = new Epetra_MultiVector(RowMatrix_->OperatorDomainMap(), 
+                                 NumAdaptiveVectors);
+    RHS = new Epetra_MultiVector(RowMatrix_->OperatorDomainMap(), 
+                                 NumAdaptiveVectors);
+  }
+
+  LHS->Random();
   vector<double> Norm(NumAdaptiveVectors);
 
-  if (verbose_) 
-    cout << PrintMsg_ << "*** Relaxing up to " << MaxSweeps << " times," << endl
-         << PrintMsg_ << "to compute " << NumAdaptiveVectors 
-         << " additional vectors" << endl;
+  if (verbose_) {
+    cout << PrintMsg_ << "*** Adaptive Smoother Aggregation setup ***" << endl;
+    cout << PrintMsg_ << "    Maximum relaxation sweeps     = " << MaxSweeps << endl;
+    cout << PrintMsg_ << "    Additional vectors to compute = " << NumAdaptiveVectors << endl;
+  }
 
+  // note: should an error occur, ML_CHK_ERR will return,
+  // and LHS and RHS will *not* be delete'd (--> memory leak).
+  // Anyway, this means that something wrong happened in the code
+  // and should be fixed by the user.
+  
   for (int i = 0 ; i < MaxSweeps ; ++i) {
     // RHS = (I - ML^{-1} A) LHS
-    ML_CHK_ERR(RowMatrix_->Multiply(false,LHS,RHS));
+    ML_CHK_ERR(RowMatrix_->Multiply(false,*LHS,*RHS));
     // FIXME: can do something slightly better here
-    ML_CHK_ERR(ApplyInverse(RHS,RHS));
-    ML_CHK_ERR(LHS.Update(-1.0,RHS,1.0));
-    LHS.Norm2(&Norm[0]);
+    ML_CHK_ERR(ApplyInverse(*RHS,*RHS));
+    ML_CHK_ERR(LHS->Update(-1.0,*RHS,1.0));
+    LHS->Norm2(&Norm[0]);
     if (verbose_) {
-      cout << PrintMsg_ << "*** Iter " << i << ", ||x||_2 = ";
+      cout << PrintMsg_ << "\titer " << i << ", ||x||_2 = ";
       for (int j = 0 ; j < NumAdaptiveVectors ; ++j)
         cout << Norm[j] << " ";
       cout << endl;
@@ -91,8 +115,8 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
   // scaling vectors
   for (int i = 0 ; i < NumAdaptiveVectors ; ++i) {
     double NormInf;
-    LHS(i)->NormInf(&NormInf);
-    LHS(i)->Scale(1.0 / NormInf);
+    (*LHS)(i)->NormInf(&NormInf);
+    (*LHS)(i)->Scale(1.0 / NormInf);
   }
 
   // ========================================================= //
@@ -110,10 +134,10 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
 
   for (int i = 0 ; i < NumAdaptiveVectors ; ++i) {
     double Norm1;
-    LHS(i)->Norm1(&Norm1);
+    (*LHS)(i)->Norm1(&Norm1);
     if (Norm1 >= threshold) {
       for (int j = 0 ; j < NumMyRows() ; ++j) {
-        NewNullSpace[itmp + i * NumMyRows() + j] = LHS[i][j];
+        NewNullSpace[itmp + i * NumMyRows() + j] = (*LHS)[i][j];
       }
     }
   }
@@ -152,19 +176,30 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
     info.z = z_coord;
     info.Nlocal = NumMyRows() / NumPDEEqns_;
     info.Naggregates = 1;
+    ML_Operator_AmalgamateAndDropWeak(&(ml_->Amat[LevelID_[0]]),
+                                      NumPDEEqns_, 0.0);
     
     for (int ieqn = 0 ; ieqn < NumPDEEqns_ ; ++ieqn) {
       for (int i = 0 ; i < NumAdaptiveVectors ; ++i) {
         for (int j = 0 ; j < NumMyRows() ; j+=NumPDEEqns_) {
-          plot_me[j / NumPDEEqns_] = LHS[i][j + ieqn];
-          char FileName[80];
-          sprintf(FileName,"nullspace-mode%d-eq%d.xyz", i, ieqn);
-          ML_Aggregate_VisualizeXYZ(info,FileName,
-                                    ml_->comm,&plot_me[0]);
+          plot_me[j / NumPDEEqns_] = (*LHS)[i][j + ieqn];
         }
+        char FileName[80];
+        sprintf(FileName,"nullspace-mode%d-eq%d.xyz", i, ieqn);
+        if (verbose_)
+          cout << PrintMsg_ << "writing file " << FileName << "..." << endl;
+        ML_Aggregate_VisualizeXYZ(info,FileName,
+                                  ml_->comm,&plot_me[0]);
       }
     }
+
+    ML_Operator_UnAmalgamateAndDropWeak(&(ml_->Amat[LevelID_[0]]),
+                                        NumPDEEqns_, 0.0);
+
   }
+
+  delete LHS;
+  delete RHS;
 
   return(0);
 
