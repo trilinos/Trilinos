@@ -1,0 +1,89 @@
+// $Id$ 
+// $Source$ 
+
+//@HEADER
+// ************************************************************************
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//   
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//   
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+// (rppawlo@sandia.gov).
+// 
+// ************************************************************************
+//@HEADER
+
+#ifndef NOX_SHARED_OBJECT_TEMPLATE_H
+#define NOX_SHARED_OBJECT_TEMPLATE_H
+
+#include "NOX_Common.H"
+
+namespace NOX {
+
+  /*! \brief Holder for objects that are shared between NOX::Abstract::Groups.
+   * 
+   * Due to the size of certain operators (i.e. the Jacobian and 
+   * Preconditioning Matrices), we cannot afford to have
+   * multiple copies. Instead we implement a shared object class that
+   * that all groups use. 
+   */
+template <class Object, class Owner> 
+class SharedObject {
+
+public:
+
+  //! Constructor
+  SharedObject(Object& newObject) : object(&newObject), owner(0){};
+
+  //! Destructor
+  ~SharedObject(){};
+
+  //! Get a non-const reference to the underlying matrix (an epetra operator)
+  Object& getObject(const Owner* newOwner)
+  {
+    owner = newOwner;
+    return *object;
+  };
+
+  //! Return a const reference to the Jacobian
+  const Object& getObject() const { return *object;};
+
+  //! Return true if testOwner is the owner of the Jacobian
+  bool isOwner(const Owner* checkOwner) const {return (owner == checkOwner);};
+
+  //! Essentially, this function allows the underlying Epetra_Object to be changed.  We need this if the operator is destroyed and a new one is created during the NOX::Epetra::Interface::computeJacobian() call. 
+  bool setObject(Object& newObject)
+  {
+    object = &newObject;
+    return true;
+  };
+
+protected:
+
+  //! Pointer to Epetra Jacobian matrix 
+  Object* object;
+
+  //! Pointer to const group that owns Jacobian
+  const Owner* owner;
+};
+
+} // namespace NOX
+
+#endif

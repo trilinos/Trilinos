@@ -159,13 +159,15 @@ DIRECTION_H = \
 	$(srcdir)/NOX_Direction_Generic.H \
 	$(srcdir)/NOX_Direction_Manager.H \
 	$(srcdir)/NOX_Direction_Newton.H \
-	$(srcdir)/NOX_Direction_SteepestDescent.H 
+	$(srcdir)/NOX_Direction_SteepestDescent.H \
+        $(srcdir)/NOX_Direction_Utils_InexactNewton.H
 
 DIRECTION = \
 	$(srcdir)/NOX_Direction_Manager.C \
 	$(srcdir)/NOX_Direction_Generic.C \
 	$(srcdir)/NOX_Direction_Newton.C \
-	$(srcdir)/NOX_Direction_SteepestDescent.C 
+	$(srcdir)/NOX_Direction_SteepestDescent.C \
+        $(srcdir)/NOX_Direction_Utils_InexactNewton.C
 
 PARAMETER_H = \
 	$(srcdir)/NOX_Parameter_Entry.H \
@@ -213,6 +215,7 @@ STATUSTEST = \
 
 UTILS_H = \
 	$(srcdir)/NOX_Utils.H \
+        $(srcdir)/NOX_SharedObjectTemplate.H \
 	$(srcdir)/NOX_Random.H
 
 UTILS = \

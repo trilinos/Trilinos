@@ -252,14 +252,16 @@ DIRECTION_H = \
 	$(srcdir)/NOX_Direction_Generic.H \
 	$(srcdir)/NOX_Direction_Manager.H \
 	$(srcdir)/NOX_Direction_Newton.H \
-	$(srcdir)/NOX_Direction_SteepestDescent.H 
+	$(srcdir)/NOX_Direction_SteepestDescent.H \
+        $(srcdir)/NOX_Direction_Utils_InexactNewton.H
 
 
 DIRECTION = \
 	$(srcdir)/NOX_Direction_Manager.C \
 	$(srcdir)/NOX_Direction_Generic.C \
 	$(srcdir)/NOX_Direction_Newton.C \
-	$(srcdir)/NOX_Direction_SteepestDescent.C 
+	$(srcdir)/NOX_Direction_SteepestDescent.C \
+        $(srcdir)/NOX_Direction_Utils_InexactNewton.C
 
 
 PARAMETER_H = \
@@ -314,6 +316,7 @@ STATUSTEST = \
 
 UTILS_H = \
 	$(srcdir)/NOX_Utils.H \
+        $(srcdir)/NOX_SharedObjectTemplate.H \
 	$(srcdir)/NOX_Random.H
 
 
@@ -371,7 +374,8 @@ am__objects_2 = NOX_LineSearch_Utils_Slope.$(OBJEXT) \
 	NOX_LineSearch_Polynomial.$(OBJEXT)
 am__objects_3 = NOX_Direction_Manager.$(OBJEXT) \
 	NOX_Direction_Generic.$(OBJEXT) NOX_Direction_Newton.$(OBJEXT) \
-	NOX_Direction_SteepestDescent.$(OBJEXT)
+	NOX_Direction_SteepestDescent.$(OBJEXT) \
+	NOX_Direction_Utils_InexactNewton.$(OBJEXT)
 am__objects_4 = NOX_Parameter_Entry.$(OBJEXT) \
 	NOX_Parameter_List.$(OBJEXT)
 am__objects_5 = NOX_Solver_Manager.$(OBJEXT) \
@@ -418,6 +422,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Direction_QuasiNewton.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Direction_SteepestDescent.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Direction_Tensor.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NOX_Direction_Utils_InexactNewton.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_LineSearch_Backtrack.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_LineSearch_FullStep.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_LineSearch_Manager.Po \
@@ -540,6 +545,8 @@ NOX_Direction_Generic.$(OBJEXT): $(srcdir)/NOX_Direction_Generic.C
 NOX_Direction_Newton.$(OBJEXT): $(srcdir)/NOX_Direction_Newton.C
 NOX_Direction_SteepestDescent.$(OBJEXT): \
 	$(srcdir)/NOX_Direction_SteepestDescent.C
+NOX_Direction_Utils_InexactNewton.$(OBJEXT): \
+	$(srcdir)/NOX_Direction_Utils_InexactNewton.C
 NOX_Parameter_Entry.$(OBJEXT): $(srcdir)/NOX_Parameter_Entry.C
 NOX_Parameter_List.$(OBJEXT): $(srcdir)/NOX_Parameter_List.C
 NOX_Solver_Manager.$(OBJEXT): $(srcdir)/NOX_Solver_Manager.C
@@ -595,6 +602,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Direction_QuasiNewton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Direction_SteepestDescent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Direction_Tensor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Direction_Utils_InexactNewton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_LineSearch_Backtrack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_LineSearch_FullStep.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_LineSearch_Manager.Po@am__quote@
@@ -817,6 +825,18 @@ NOX_Direction_SteepestDescent.obj: $(srcdir)/NOX_Direction_SteepestDescent.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_SteepestDescent.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_SteepestDescent.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_SteepestDescent.obj `cygpath -w $(srcdir)/NOX_Direction_SteepestDescent.C`
+
+NOX_Direction_Utils_InexactNewton.o: $(srcdir)/NOX_Direction_Utils_InexactNewton.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Utils_InexactNewton.C' object='NOX_Direction_Utils_InexactNewton.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Utils_InexactNewton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Utils_InexactNewton.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Utils_InexactNewton.o `test -f '$(srcdir)/NOX_Direction_Utils_InexactNewton.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_Utils_InexactNewton.C
+
+NOX_Direction_Utils_InexactNewton.obj: $(srcdir)/NOX_Direction_Utils_InexactNewton.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_Utils_InexactNewton.C' object='NOX_Direction_Utils_InexactNewton.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_Utils_InexactNewton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_Utils_InexactNewton.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_Utils_InexactNewton.obj `cygpath -w $(srcdir)/NOX_Direction_Utils_InexactNewton.C`
 
 NOX_Parameter_Entry.o: $(srcdir)/NOX_Parameter_Entry.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Parameter_Entry.C' object='NOX_Parameter_Entry.o' libtool=no @AMDEPBACKSLASH@
