@@ -106,8 +106,8 @@ Decomposition method&nbsp; = rcb
 <caption ALIGN=BOTTOM><i><font size=-1>Example zdrive.inp file</font></i></caption>
 </table></center>
 
-<p>After running <i>zdrive</i>, ascii files named 
-"<i>file_name</i>.out.<i>p</i>.<i>n</i>", are created, where <i>file_name</i>
+<p>The <i>zdrive</i> programs creates ascii files named 
+"<i>file_name</i>.out.<i>p</i>.<i>n</i>", where <i>file_name</i>
 is the file name specified in <i>zdrive.inp</i>, <i>p</i> is the number
 of processors on which <i>zdrive</i> was run, and <i>n</i>=0,1,...,<i>p</i>-1 is
 the processor by which the file was created.  (For <i>zfdrive</i>, the
@@ -115,6 +115,13 @@ files are named "<i>file_name</i>.fout.<i>p</i>.<i>n</i>".)
 These files are in the same directory where the input graph
 file was located for that processor. Each file contains a list of global
 ids for the elements that are assigned to that processor after running Zoltan.
+The input decomposition can also be written in this format to files 
+"<i>file_name</i>.in.<i>p</i>.<i>n</i>";
+see "zdrive debug level" in <i><a href="zdrive.inp">zdrive.inp</a></i> for more details.
+<p>
+Decompositions for 2D problems can also be written to files that can be plotted 
+by <a href="http://www.gnuplot.org/">gnuplot</a>.  See "gnuplot output" in  <i><a href="zdrive.inp">zdrive.inp</a></i>
+for more information.
 <h3>
 <a NAME="adding algorithms"></a>Adding New Algorithms</h3>
 The driver has been set up in such a way that testing new algorithms that
