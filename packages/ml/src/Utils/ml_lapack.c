@@ -7897,3 +7897,2713 @@ tor
 
 } /* dorg2r_ */
 #endif
+
+
+
+/* Subroutine */ int dpotrs_(char *uplo, integer *n, integer *nrhs, 
+	doublereal *a, integer *lda, doublereal *b, integer *ldb, integer *
+	info)
+{
+/*  -- LAPACK routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       March 31, 1993   
+
+
+    Purpose   
+    =======   
+
+    DPOTRS solves a system of linear equations A*X = B with a symmetric   
+    positive definite matrix A using the Cholesky factorization   
+    A = U**T*U or A = L*L**T computed by DPOTRF.   
+
+    Arguments   
+    =========   
+
+    UPLO    (input) CHARACTER*1   
+            = 'U':  Upper triangle of A is stored;   
+            = 'L':  Lower triangle of A is stored.   
+
+    N       (input) INTEGER   
+            The order of the matrix A.  N >= 0.   
+
+    NRHS    (input) INTEGER   
+            The number of right hand sides, i.e., the number of columns   
+            of the matrix B.  NRHS >= 0.   
+
+    A       (input) DOUBLE PRECISION array, dimension (LDA,N)   
+            The triangular factor U or L from the Cholesky factorization 
+  
+            A = U**T*U or A = L*L**T, as computed by DPOTRF.   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A.  LDA >= max(1,N).   
+
+    B       (input/output) DOUBLE PRECISION array, dimension (LDB,NRHS)   
+            On entry, the right hand side matrix B.   
+            On exit, the solution matrix X.   
+
+    LDB     (input) INTEGER   
+            The leading dimension of the array B.  LDB >= max(1,N).   
+
+    INFO    (output) INTEGER   
+            = 0:  successful exit   
+            < 0:  if INFO = -i, the i-th argument had an illegal value   
+
+    ===================================================================== 
+  
+
+
+       Test the input parameters.   
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* Table of constant values */
+    static doublereal c_b9 = 1.;
+    
+    /* System generated locals */
+    integer a_dim1, a_offset, b_dim1, b_offset, i__1;
+    /* Local variables */
+    extern logical lsame_(char *, char *);
+    extern /* Subroutine */ int dtrsm_(char *, char *, char *, char *, 
+	    integer *, integer *, doublereal *, doublereal *, integer *, 
+	    doublereal *, integer *);
+    static logical upper;
+    extern /* Subroutine */ int xerbla_(char *, integer *);
+
+
+
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+#define B(I,J) b[(I)-1 + ((J)-1)* ( *ldb)]
+
+    *info = 0;
+    upper = lsame_(uplo, "U");
+    if (! upper && ! lsame_(uplo, "L")) {
+	*info = -1;
+    } else if (*n < 0) {
+	*info = -2;
+    } else if (*nrhs < 0) {
+	*info = -3;
+    } else if (*lda < max(1,*n)) {
+	*info = -5;
+    } else if (*ldb < max(1,*n)) {
+	*info = -7;
+    }
+    if (*info != 0) {
+	i__1 = -(*info);
+	xerbla_("DPOTRS", &i__1);
+	return 0;
+    }
+
+/*     Quick return if possible */
+
+    if (*n == 0 || *nrhs == 0) {
+	return 0;
+    }
+
+    if (upper) {
+
+/*        Solve A*X = B where A = U'*U.   
+
+          Solve U'*X = B, overwriting B with X. */
+
+	dtrsm_("Left", "Upper", "Transpose", "Non-unit", n, nrhs, &c_b9, &A(1,1), lda, &B(1,1), ldb);
+
+/*        Solve U*X = B, overwriting B with X. */
+
+	dtrsm_("Left", "Upper", "No transpose", "Non-unit", n, nrhs, &c_b9, &
+		A(1,1), lda, &B(1,1), ldb);
+    } else {
+
+/*        Solve A*X = B where A = L*L'.   
+
+          Solve L*X = B, overwriting B with X. */
+
+	dtrsm_("Left", "Lower", "No transpose", "Non-unit", n, nrhs, &c_b9, &
+		A(1,1), lda, &B(1,1), ldb);
+
+/*        Solve L'*X = B, overwriting B with X. */
+
+	dtrsm_("Left", "Lower", "Transpose", "Non-unit", n, nrhs, &c_b9, &A(1,1), lda, &B(1,1), ldb);
+    }
+
+    return 0;
+
+/*     End of DPOTRS */
+
+} /* dpotrs_ */
+
+
+/* Subroutine */ int dgelq2_(integer *m, integer *n, doublereal *a, integer *
+	lda, doublereal *tau, doublereal *work, integer *info)
+{
+/*  -- LAPACK routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       February 29, 1992   
+
+
+    Purpose   
+    =======   
+
+    DGELQ2 computes an LQ factorization of a real m by n matrix A:   
+    A = L * Q.   
+
+    Arguments   
+    =========   
+
+    M       (input) INTEGER   
+            The number of rows of the matrix A.  M >= 0.   
+
+    N       (input) INTEGER   
+            The number of columns of the matrix A.  N >= 0.   
+
+    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)   
+            On entry, the m by n matrix A.   
+            On exit, the elements on and below the diagonal of the array 
+  
+            contain the m by min(m,n) lower trapezoidal matrix L (L is   
+            lower triangular if m <= n); the elements above the diagonal, 
+  
+            with the array TAU, represent the orthogonal matrix Q as a   
+            product of elementary reflectors (see Further Details).   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A.  LDA >= max(1,M).   
+
+    TAU     (output) DOUBLE PRECISION array, dimension (min(M,N))   
+            The scalar factors of the elementary reflectors (see Further 
+  
+            Details).   
+
+    WORK    (workspace) DOUBLE PRECISION array, dimension (M)   
+
+    INFO    (output) INTEGER   
+            = 0: successful exit   
+            < 0: if INFO = -i, the i-th argument had an illegal value   
+
+    Further Details   
+    ===============   
+
+    The matrix Q is represented as a product of elementary reflectors   
+
+       Q = H(k) . . . H(2) H(1), where k = min(m,n).   
+
+    Each H(i) has the form   
+
+       H(i) = I - tau * v * v'   
+
+    where tau is a real scalar, and v is a real vector with   
+    v(1:i-1) = 0 and v(i) = 1; v(i+1:n) is stored on exit in A(i,i+1:n), 
+  
+    and tau in TAU(i).   
+
+    ===================================================================== 
+  
+
+
+       Test the input arguments   
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* System generated locals */
+    integer i__1, i__2, i__3;
+    /* Local variables */
+    static integer i, k;
+    extern /* Subroutine */ int dlarf_(char *, integer *, integer *, 
+	    doublereal *, integer *, doublereal *, doublereal *, integer *, 
+	    doublereal *), dlarfg_(integer *, doublereal *, 
+	    doublereal *, integer *, doublereal *), xerbla_(char *, integer *);
+    static doublereal aii;
+
+
+#define TAU(I) tau[(I)-1]
+#define WORK(I) work[(I)-1]
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+
+    *info = 0;
+    if (*m < 0) {
+	*info = -1;
+    } else if (*n < 0) {
+	*info = -2;
+    } else if (*lda < max(1,*m)) {
+	*info = -4;
+    }
+    if (*info != 0) {
+	i__1 = -(*info);
+	xerbla_("DGELQ2", &i__1);
+	return 0;
+    }
+
+    k = min(*m,*n);
+
+    i__1 = k;
+    for (i = 1; i <= k; ++i) {
+
+/*        Generate elementary reflector H(i) to annihilate A(i,i+1:n) 
+*/
+
+	i__2 = *n - i + 1;
+/* Computing MIN */
+	i__3 = i + 1;
+	dlarfg_(&i__2, &A(i,i), &A(i,min(i+1,*n)), lda,
+		 &TAU(i));
+	if (i < *m) {
+
+/*           Apply H(i) to A(i+1:m,i:n) from the right */
+
+	    aii = A(i,i);
+	    A(i,i) = 1.;
+	    i__2 = *m - i;
+	    i__3 = *n - i + 1;
+	    dlarf_("Right", &i__2, &i__3, &A(i,i), lda, &TAU(i), &
+		    A(i+1,i), lda, &WORK(1));
+	    A(i,i) = aii;
+	}
+/* L10: */
+    }
+    return 0;
+
+/*     End of DGELQ2 */
+
+} /* dgelq2_ */
+
+
+/* Subroutine */ int dgelqf_(integer *m, integer *n, doublereal *a, integer *
+	lda, doublereal *tau, doublereal *work, integer *lwork, integer *info)
+{
+/*  -- LAPACK routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       September 30, 1994   
+
+
+    Purpose   
+    =======   
+
+    DGELQF computes an LQ factorization of a real M-by-N matrix A:   
+    A = L * Q.   
+
+    Arguments   
+    =========   
+
+    M       (input) INTEGER   
+            The number of rows of the matrix A.  M >= 0.   
+
+    N       (input) INTEGER   
+            The number of columns of the matrix A.  N >= 0.   
+
+    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)   
+            On entry, the M-by-N matrix A.   
+            On exit, the elements on and below the diagonal of the array 
+  
+            contain the m-by-min(m,n) lower trapezoidal matrix L (L is   
+            lower triangular if m <= n); the elements above the diagonal, 
+  
+            with the array TAU, represent the orthogonal matrix Q as a   
+            product of elementary reflectors (see Further Details).   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A.  LDA >= max(1,M).   
+
+    TAU     (output) DOUBLE PRECISION array, dimension (min(M,N))   
+            The scalar factors of the elementary reflectors (see Further 
+  
+            Details).   
+
+    WORK    (workspace/output) DOUBLE PRECISION array, dimension (LWORK) 
+  
+            On exit, if INFO = 0, WORK(1) returns the optimal LWORK.   
+
+    LWORK   (input) INTEGER   
+            The dimension of the array WORK.  LWORK >= max(1,M).   
+            For optimum performance LWORK >= M*NB, where NB is the   
+            optimal blocksize.   
+
+    INFO    (output) INTEGER   
+            = 0:  successful exit   
+            < 0:  if INFO = -i, the i-th argument had an illegal value   
+
+    Further Details   
+    ===============   
+
+    The matrix Q is represented as a product of elementary reflectors   
+
+       Q = H(k) . . . H(2) H(1), where k = min(m,n).   
+
+    Each H(i) has the form   
+
+       H(i) = I - tau * v * v'   
+
+    where tau is a real scalar, and v is a real vector with   
+    v(1:i-1) = 0 and v(i) = 1; v(i+1:n) is stored on exit in A(i,i+1:n), 
+  
+    and tau in TAU(i).   
+
+    ===================================================================== 
+  
+
+
+       Test the input arguments   
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* Table of constant values */
+    static integer c__1 = 1;
+    static integer c_n1 = -1;
+    static integer c__3 = 3;
+    static integer c__2 = 2;
+    
+    /* System generated locals */
+    integer i__1, i__2, i__3, i__4;
+    /* Local variables */
+    static integer i, k, nbmin, iinfo;
+    extern /* Subroutine */ int dgelq2_(integer *, integer *, doublereal *, 
+	    integer *, doublereal *, doublereal *, integer *);
+    static integer ib, nb;
+    extern /* Subroutine */ int dlarfb_(char *, char *, char *, char *, 
+	    integer *, integer *, integer *, doublereal *, integer *, 
+	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
+	    integer *);
+    static integer nx;
+    extern /* Subroutine */ int dlarft_(char *, char *, integer *, integer *, 
+	    doublereal *, integer *, doublereal *, doublereal *, integer *), xerbla_(char *, integer *);
+    extern integer ilaenv_(integer *, char *, char *, integer *, integer *, 
+	    integer *, integer *, ftnlen, ftnlen);
+    static integer ldwork, iws;
+
+
+
+#define TAU(I) tau[(I)-1]
+#define WORK(I) work[(I)-1]
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+
+    *info = 0;
+    if (*m < 0) {
+	*info = -1;
+    } else if (*n < 0) {
+	*info = -2;
+    } else if (*lda < max(1,*m)) {
+	*info = -4;
+    } else if (*lwork < max(1,*m)) {
+	*info = -7;
+    }
+    if (*info != 0) {
+	i__1 = -(*info);
+	xerbla_("DGELQF", &i__1);
+	return 0;
+    }
+
+/*     Quick return if possible */
+
+    k = min(*m,*n);
+    if (k == 0) {
+	WORK(1) = 1.;
+	return 0;
+    }
+
+/*     Determine the block size. */
+
+    nb = ilaenv_(&c__1, "DGELQF", " ", m, n, &c_n1, &c_n1, 6L, 1L);
+    nbmin = 2;
+    nx = 0;
+    iws = *m;
+    if (nb > 1 && nb < k) {
+
+/*        Determine when to cross over from blocked to unblocked code.
+   
+
+   Computing MAX */
+	i__1 = 0, i__2 = ilaenv_(&c__3, "DGELQF", " ", m, n, &c_n1, &c_n1, 6L,
+		 1L);
+	nx = max(i__1,i__2);
+	if (nx < k) {
+
+/*           Determine if workspace is large enough for blocked co
+de. */
+
+	    ldwork = *m;
+	    iws = ldwork * nb;
+	    if (*lwork < iws) {
+
+/*              Not enough workspace to use optimal NB:  reduc
+e NB and   
+                determine the minimum value of NB. */
+
+		nb = *lwork / ldwork;
+/* Computing MAX */
+		i__1 = 2, i__2 = ilaenv_(&c__2, "DGELQF", " ", m, n, &c_n1, &
+			c_n1, 6L, 1L);
+		nbmin = max(i__1,i__2);
+	    }
+	}
+    }
+
+    if (nb >= nbmin && nb < k && nx < k) {
+
+/*        Use blocked code initially */
+
+	i__1 = k - nx;
+	i__2 = nb;
+	for (i = 1; nb < 0 ? i >= k-nx : i <= k-nx; i += nb) {
+/* Computing MIN */
+	    i__3 = k - i + 1;
+	    ib = min(i__3,nb);
+
+/*           Compute the LQ factorization of the current block   
+             A(i:i+ib-1,i:n) */
+
+	    i__3 = *n - i + 1;
+	    dgelq2_(&ib, &i__3, &A(i,i), lda, &TAU(i), &WORK(1), &
+		    iinfo);
+	    if (i + ib <= *m) {
+
+/*              Form the triangular factor of the block reflec
+tor   
+                H = H(i) H(i+1) . . . H(i+ib-1) */
+
+		i__3 = *n - i + 1;
+		dlarft_("Forward", "Rowwise", &i__3, &ib, &A(i,i), 
+			lda, &TAU(i), &WORK(1), &ldwork);
+
+/*              Apply H to A(i+ib:m,i:n) from the right */
+
+		i__3 = *m - i - ib + 1;
+		i__4 = *n - i + 1;
+		dlarfb_("Right", "No transpose", "Forward", "Rowwise", &i__3, 
+			&i__4, &ib, &A(i,i), lda, &WORK(1), &
+			ldwork, &A(i+ib,i), lda, &WORK(ib + 1), &
+			ldwork);
+	    }
+/* L10: */
+	}
+    } else {
+	i = 1;
+    }
+
+/*     Use unblocked code to factor the last or only block. */
+
+    if (i <= k) {
+	i__2 = *m - i + 1;
+	i__1 = *n - i + 1;
+	dgelq2_(&i__2, &i__1, &A(i,i), lda, &TAU(i), &WORK(1), &
+		iinfo);
+    }
+
+    WORK(1) = (doublereal) iws;
+    return 0;
+
+/*     End of DGELQF */
+
+} /* dgelqf_ */
+
+
+/* Subroutine */ int dgels_(char *trans, integer *m, integer *n, integer *
+	nrhs, doublereal *a, integer *lda, doublereal *b, integer *ldb, 
+	doublereal *work, integer *lwork, integer *info)
+{
+/*  -- LAPACK driver routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       September 30, 1994   
+
+
+    Purpose   
+    =======   
+
+    DGELS solves overdetermined or underdetermined real linear systems   
+    involving an M-by-N matrix A, or its transpose, using a QR or LQ   
+    factorization of A.  It is assumed that A has full rank.   
+
+    The following options are provided:   
+
+    1. If TRANS = 'N' and m >= n:  find the least squares solution of   
+       an overdetermined system, i.e., solve the least squares problem   
+                    minimize || B - A*X ||.   
+
+    2. If TRANS = 'N' and m < n:  find the minimum norm solution of   
+       an underdetermined system A * X = B.   
+
+    3. If TRANS = 'T' and m >= n:  find the minimum norm solution of   
+       an undetermined system A**T * X = B.   
+
+    4. If TRANS = 'T' and m < n:  find the least squares solution of   
+       an overdetermined system, i.e., solve the least squares problem   
+                    minimize || B - A**T * X ||.   
+
+    Several right hand side vectors b and solution vectors x can be   
+    handled in a single call; they are stored as the columns of the   
+    M-by-NRHS right hand side matrix B and the N-by-NRHS solution   
+    matrix X.   
+
+    Arguments   
+    =========   
+
+    TRANS   (input) CHARACTER   
+            = 'N': the linear system involves A;   
+            = 'T': the linear system involves A**T.   
+
+    M       (input) INTEGER   
+            The number of rows of the matrix A.  M >= 0.   
+
+    N       (input) INTEGER   
+            The number of columns of the matrix A.  N >= 0.   
+
+    NRHS    (input) INTEGER   
+            The number of right hand sides, i.e., the number of   
+            columns of the matrices B and X. NRHS >=0.   
+
+    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)   
+            On entry, the M-by-N matrix A.   
+            On exit,   
+              if M >= N, A is overwritten by details of its QR   
+                         factorization as returned by DGEQRF;   
+              if M <  N, A is overwritten by details of its LQ   
+                         factorization as returned by DGELQF.   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A.  LDA >= max(1,M).   
+
+    B       (input/output) DOUBLE PRECISION array, dimension (LDB,NRHS)   
+            On entry, the matrix B of right hand side vectors, stored   
+            columnwise; B is M-by-NRHS if TRANS = 'N', or N-by-NRHS   
+            if TRANS = 'T'.   
+            On exit, B is overwritten by the solution vectors, stored   
+            columnwise:   
+            if TRANS = 'N' and m >= n, rows 1 to n of B contain the least 
+  
+            squares solution vectors; the residual sum of squares for the 
+  
+            solution in each column is given by the sum of squares of   
+            elements N+1 to M in that column;   
+            if TRANS = 'N' and m < n, rows 1 to N of B contain the   
+            minimum norm solution vectors;   
+            if TRANS = 'T' and m >= n, rows 1 to M of B contain the   
+            minimum norm solution vectors;   
+            if TRANS = 'T' and m < n, rows 1 to M of B contain the   
+            least squares solution vectors; the residual sum of squares   
+            for the solution in each column is given by the sum of   
+            squares of elements M+1 to N in that column.   
+
+    LDB     (input) INTEGER   
+            The leading dimension of the array B. LDB >= MAX(1,M,N).   
+
+    WORK    (workspace/output) DOUBLE PRECISION array, dimension (LWORK) 
+  
+            On exit, if INFO = 0, WORK(1) returns the optimal LWORK.   
+
+    LWORK   (input) INTEGER   
+            The dimension of the array WORK.   
+            LWORK >= min(M,N) + MAX(1,M,N,NRHS).   
+            For optimal performance,   
+            LWORK >= min(M,N) + MAX(1,M,N,NRHS) * NB   
+            where NB is the optimum block size.   
+
+    INFO    (output) INTEGER   
+            = 0:  successful exit   
+            < 0:  if INFO = -i, the i-th argument had an illegal value   
+
+    ===================================================================== 
+  
+
+
+       Test the input arguments.   
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* Table of constant values */
+    static integer c__1 = 1;
+    static integer c_n1 = -1;
+    static doublereal c_b33 = 0.;
+    static integer c__0 = 0;
+    static doublereal c_b61 = 1.;
+    
+    /* System generated locals */
+    integer i__1, i__2, i__3;
+    /* Local variables */
+    static doublereal anrm, bnrm;
+    static integer brow;
+    static logical tpsd;
+    static integer i, j, iascl, ibscl;
+    extern logical lsame_(char *, char *);
+    extern /* Subroutine */ int dtrsm_(char *, char *, char *, char *, 
+	    integer *, integer *, doublereal *, doublereal *, integer *, 
+	    doublereal *, integer *);
+    static integer wsize;
+    static doublereal rwork[1];
+    extern /* Subroutine */ int dlabad_(doublereal *, doublereal *);
+    static integer nb;
+    extern doublereal dlamch_(char *), dlange_(char *, integer *, 
+	    integer *, doublereal *, integer *, doublereal *);
+    static integer mn;
+    extern /* Subroutine */ int dgelqf_(integer *, integer *, doublereal *, 
+	    integer *, doublereal *, doublereal *, integer *, integer *), 
+	    dlascl_(char *, integer *, integer *, doublereal *, doublereal *, 
+	    integer *, integer *, doublereal *, integer *, integer *),
+	     dgeqrf_(integer *, integer *, doublereal *, integer *, 
+	    doublereal *, doublereal *, integer *, integer *), dlaset_(char *,
+	     integer *, integer *, doublereal *, doublereal *, doublereal *, 
+	    integer *), xerbla_(char *, integer *);
+    extern integer ilaenv_(integer *, char *, char *, integer *, integer *, 
+	    integer *, integer *, ftnlen, ftnlen);
+    static integer scllen;
+    static doublereal bignum;
+    extern /* Subroutine */ int dormlq_(char *, char *, integer *, integer *, 
+	    integer *, doublereal *, integer *, doublereal *, doublereal *, 
+	    integer *, doublereal *, integer *, integer *), 
+	    dormqr_(char *, char *, integer *, integer *, integer *, 
+	    doublereal *, integer *, doublereal *, doublereal *, integer *, 
+	    doublereal *, integer *, integer *);
+    static doublereal smlnum;
+
+
+
+#define RWORK(I) rwork[(I)]
+#define WORK(I) work[(I)-1]
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+#define B(I,J) b[(I)-1 + ((J)-1)* ( *ldb)]
+
+    *info = 0;
+    mn = min(*m,*n);
+    if (! (lsame_(trans, "N") || lsame_(trans, "T"))) {
+	*info = -1;
+    } else if (*m < 0) {
+	*info = -2;
+    } else if (*n < 0) {
+	*info = -3;
+    } else if (*nrhs < 0) {
+	*info = -4;
+    } else if (*lda < max(1,*m)) {
+	*info = -6;
+    } else /* if(complicated condition) */ {
+/* Computing MAX */
+	i__1 = max(1,*m);
+	if (*ldb < max(i__1,*n)) {
+	    *info = -8;
+	} else /* if(complicated condition) */ {
+/* Computing MAX   
+   Computing MAX */
+	    i__3 = max(*m,*n);
+	    i__1 = 1, i__2 = mn + max(i__3,*nrhs);
+	    if (*lwork < max(i__1,i__2)) {
+		*info = -10;
+	    }
+	}
+    }
+
+/*     Figure out optimal block size */
+
+    if (*info == 0 || *info == -10) {
+
+	tpsd = TRUE_;
+	if (lsame_(trans, "N")) {
+	    tpsd = FALSE_;
+	}
+
+	if (*m >= *n) {
+	    nb = ilaenv_(&c__1, "DGEQRF", " ", m, n, &c_n1, &c_n1, 6L, 1L);
+	    if (tpsd) {
+/* Computing MAX */
+		i__1 = nb, i__2 = ilaenv_(&c__1, "DORMQR", "LN", m, nrhs, n, &
+			c_n1, 6L, 2L);
+		nb = max(i__1,i__2);
+	    } else {
+/* Computing MAX */
+		i__1 = nb, i__2 = ilaenv_(&c__1, "DORMQR", "LT", m, nrhs, n, &
+			c_n1, 6L, 2L);
+		nb = max(i__1,i__2);
+	    }
+	} else {
+	    nb = ilaenv_(&c__1, "DGELQF", " ", m, n, &c_n1, &c_n1, 6L, 1L);
+	    if (tpsd) {
+/* Computing MAX */
+		i__1 = nb, i__2 = ilaenv_(&c__1, "DORMLQ", "LT", n, nrhs, m, &
+			c_n1, 6L, 2L);
+		nb = max(i__1,i__2);
+	    } else {
+/* Computing MAX */
+		i__1 = nb, i__2 = ilaenv_(&c__1, "DORMLQ", "LN", n, nrhs, m, &
+			c_n1, 6L, 2L);
+		nb = max(i__1,i__2);
+	    }
+	}
+
+/* Computing MAX */
+	i__1 = max(*m,*n);
+	wsize = mn + max(i__1,*nrhs) * nb;
+	WORK(1) = (doublereal) wsize;
+
+    }
+
+    if (*info != 0) {
+	i__1 = -(*info);
+	xerbla_("DGELS ", &i__1);
+	return 0;
+    }
+
+/*     Quick return if possible   
+
+   Computing MIN */
+    i__1 = min(*m,*n);
+    if (min(i__1,*nrhs) == 0) {
+	i__1 = max(*m,*n);
+	dlaset_("Full", &i__1, nrhs, &c_b33, &c_b33, &B(1,1), ldb);
+	return 0;
+    }
+
+/*     Get machine parameters */
+
+    smlnum = dlamch_("S") / dlamch_("P");
+    bignum = 1. / smlnum;
+    dlabad_(&smlnum, &bignum);
+
+/*     Scale A, B if max element outside range [SMLNUM,BIGNUM] */
+
+    anrm = dlange_("M", m, n, &A(1,1), lda, rwork);
+    iascl = 0;
+    if (anrm > 0. && anrm < smlnum) {
+
+/*        Scale matrix norm up to SMLNUM */
+
+	dlascl_("G", &c__0, &c__0, &anrm, &smlnum, m, n, &A(1,1), lda, 
+		info);
+	iascl = 1;
+    } else if (anrm > bignum) {
+
+/*        Scale matrix norm down to BIGNUM */
+
+	dlascl_("G", &c__0, &c__0, &anrm, &bignum, m, n, &A(1,1), lda, 
+		info);
+	iascl = 2;
+    } else if (anrm == 0.) {
+
+/*        Matrix all zero. Return zero solution. */
+
+	i__1 = max(*m,*n);
+	dlaset_("F", &i__1, nrhs, &c_b33, &c_b33, &B(1,1), ldb);
+	goto L50;
+    }
+
+    brow = *m;
+    if (tpsd) {
+	brow = *n;
+    }
+    bnrm = dlange_("M", &brow, nrhs, &B(1,1), ldb, rwork);
+    ibscl = 0;
+    if (bnrm > 0. && bnrm < smlnum) {
+
+/*        Scale matrix norm up to SMLNUM */
+
+	dlascl_("G", &c__0, &c__0, &bnrm, &smlnum, &brow, nrhs, &B(1,1), 
+		ldb, info);
+	ibscl = 1;
+    } else if (bnrm > bignum) {
+
+/*        Scale matrix norm down to BIGNUM */
+
+	dlascl_("G", &c__0, &c__0, &bnrm, &bignum, &brow, nrhs, &B(1,1), 
+		ldb, info);
+	ibscl = 2;
+    }
+
+    if (*m >= *n) {
+
+/*        compute QR factorization of A */
+
+	i__1 = *lwork - mn;
+	dgeqrf_(m, n, &A(1,1), lda, &WORK(1), &WORK(mn + 1), &i__1, info)
+		;
+
+/*        workspace at least N, optimally N*NB */
+
+	if (! tpsd) {
+
+/*           Least-Squares Problem min || A * X - B ||   
+
+             B(1:M,1:NRHS) := Q' * B(1:M,1:NRHS) */
+
+	    i__1 = *lwork - mn;
+	    dormqr_("Left", "Transpose", m, nrhs, n, &A(1,1), lda, &WORK(
+		    1), &B(1,1), ldb, &WORK(mn + 1), &i__1, info)
+		    ;
+
+/*           workspace at least NRHS, optimally NRHS*NB   
+
+             B(1:N,1:NRHS) := inv(R) * B(1:N,1:NRHS) */
+
+	    dtrsm_("Left", "Upper", "No transpose", "Non-unit", n, nrhs, &
+		    c_b61, &A(1,1), lda, &B(1,1), ldb);
+
+	    scllen = *n;
+
+	} else {
+
+/*           Overdetermined system of equations A' * X = B   
+
+             B(1:N,1:NRHS) := inv(R') * B(1:N,1:NRHS) */
+
+	    dtrsm_("Left", "Upper", "Transpose", "Non-unit", n, nrhs, &c_b61, 
+		    &A(1,1), lda, &B(1,1), ldb);
+
+/*           B(N+1:M,1:NRHS) = ZERO */
+
+	    i__1 = *nrhs;
+	    for (j = 1; j <= *nrhs; ++j) {
+		i__2 = *m;
+		for (i = *n + 1; i <= *m; ++i) {
+		    B(i,j) = 0.;
+/* L10: */
+		}
+/* L20: */
+	    }
+
+/*           B(1:M,1:NRHS) := Q(1:N,:) * B(1:N,1:NRHS) */
+
+	    i__1 = *lwork - mn;
+	    dormqr_("Left", "No transpose", m, nrhs, n, &A(1,1), lda, &
+		    WORK(1), &B(1,1), ldb, &WORK(mn + 1), &i__1, info);
+
+/*           workspace at least NRHS, optimally NRHS*NB */
+
+	    scllen = *m;
+
+	}
+
+    } else {
+
+/*        Compute LQ factorization of A */
+
+	i__1 = *lwork - mn;
+	dgelqf_(m, n, &A(1,1), lda, &WORK(1), &WORK(mn + 1), &i__1, info)
+		;
+
+/*        workspace at least M, optimally M*NB. */
+
+	if (! tpsd) {
+
+/*           underdetermined system of equations A * X = B   
+
+             B(1:M,1:NRHS) := inv(L) * B(1:M,1:NRHS) */
+
+	    dtrsm_("Left", "Lower", "No transpose", "Non-unit", m, nrhs, &
+		    c_b61, &A(1,1), lda, &B(1,1), ldb);
+
+/*           B(M+1:N,1:NRHS) = 0 */
+
+	    i__1 = *nrhs;
+	    for (j = 1; j <= *nrhs; ++j) {
+		i__2 = *n;
+		for (i = *m + 1; i <= *n; ++i) {
+		    B(i,j) = 0.;
+/* L30: */
+		}
+/* L40: */
+	    }
+
+/*           B(1:N,1:NRHS) := Q(1:N,:)' * B(1:M,1:NRHS) */
+
+	    i__1 = *lwork - mn;
+	    dormlq_("Left", "Transpose", n, nrhs, m, &A(1,1), lda, &WORK(
+		    1), &B(1,1), ldb, &WORK(mn + 1), &i__1, info)
+		    ;
+
+/*           workspace at least NRHS, optimally NRHS*NB */
+
+	    scllen = *n;
+
+	} else {
+
+/*           overdetermined system min || A' * X - B ||   
+
+             B(1:N,1:NRHS) := Q * B(1:N,1:NRHS) */
+
+	    i__1 = *lwork - mn;
+	    dormlq_("Left", "No transpose", n, nrhs, m, &A(1,1), lda, &
+		    WORK(1), &B(1,1), ldb, &WORK(mn + 1), &i__1, info);
+
+/*           workspace at least NRHS, optimally NRHS*NB   
+
+             B(1:M,1:NRHS) := inv(L') * B(1:M,1:NRHS) */
+
+	    dtrsm_("Left", "Lower", "Transpose", "Non-unit", m, nrhs, &c_b61, 
+		    &A(1,1), lda, &B(1,1), ldb);
+
+	    scllen = *m;
+
+	}
+
+    }
+
+/*     Undo scaling */
+
+    if (iascl == 1) {
+	dlascl_("G", &c__0, &c__0, &anrm, &smlnum, &scllen, nrhs, &B(1,1)
+		, ldb, info);
+    } else if (iascl == 2) {
+	dlascl_("G", &c__0, &c__0, &anrm, &bignum, &scllen, nrhs, &B(1,1)
+		, ldb, info);
+    }
+    if (ibscl == 1) {
+	dlascl_("G", &c__0, &c__0, &smlnum, &bnrm, &scllen, nrhs, &B(1,1)
+		, ldb, info);
+    } else if (ibscl == 2) {
+	dlascl_("G", &c__0, &c__0, &bignum, &bnrm, &scllen, nrhs, &B(1,1)
+		, ldb, info);
+    }
+
+L50:
+    WORK(1) = (doublereal) wsize;
+
+    return 0;
+
+/*     End of DGELS */
+
+} /* dgels_ */
+
+
+
+/* Subroutine */ int dlascl_(char *type, integer *kl, integer *ku, doublereal 
+	*cfrom, doublereal *cto, integer *m, integer *n, doublereal *a, 
+	integer *lda, integer *info)
+{
+/*  -- LAPACK auxiliary routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       February 29, 1992   
+
+
+    Purpose   
+    =======   
+
+    DLASCL multiplies the M by N real matrix A by the real scalar   
+    CTO/CFROM.  This is done without over/underflow as long as the final 
+  
+    result CTO*A(I,J)/CFROM does not over/underflow. TYPE specifies that 
+  
+    A may be full, upper triangular, lower triangular, upper Hessenberg, 
+  
+    or banded.   
+
+    Arguments   
+    =========   
+
+    TYPE    (input) CHARACTER*1   
+            TYPE indices the storage type of the input matrix.   
+            = 'G':  A is a full matrix.   
+            = 'L':  A is a lower triangular matrix.   
+            = 'U':  A is an upper triangular matrix.   
+            = 'H':  A is an upper Hessenberg matrix.   
+            = 'B':  A is a symmetric band matrix with lower bandwidth KL 
+  
+                    and upper bandwidth KU and with the only the lower   
+                    half stored.   
+            = 'Q':  A is a symmetric band matrix with lower bandwidth KL 
+  
+                    and upper bandwidth KU and with the only the upper   
+                    half stored.   
+            = 'Z':  A is a band matrix with lower bandwidth KL and upper 
+  
+                    bandwidth KU.   
+
+    KL      (input) INTEGER   
+            The lower bandwidth of A.  Referenced only if TYPE = 'B',   
+            'Q' or 'Z'.   
+
+    KU      (input) INTEGER   
+            The upper bandwidth of A.  Referenced only if TYPE = 'B',   
+            'Q' or 'Z'.   
+
+    CFROM   (input) DOUBLE PRECISION   
+    CTO     (input) DOUBLE PRECISION   
+            The matrix A is multiplied by CTO/CFROM. A(I,J) is computed   
+            without over/underflow if the final result CTO*A(I,J)/CFROM   
+            can be represented without over/underflow.  CFROM must be   
+            nonzero.   
+
+    M       (input) INTEGER   
+            The number of rows of the matrix A.  M >= 0.   
+
+    N       (input) INTEGER   
+            The number of columns of the matrix A.  N >= 0.   
+
+    A       (input/output) DOUBLE PRECISION array, dimension (LDA,M)   
+            The matrix to be multiplied by CTO/CFROM.  See TYPE for the   
+            storage type.   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A.  LDA >= max(1,M).   
+
+    INFO    (output) INTEGER   
+            0  - successful exit   
+            <0 - if INFO = -i, the i-th argument had an illegal value.   
+
+    ===================================================================== 
+  
+
+
+       Test the input arguments   
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* System generated locals */
+    integer i__1;
+    /* Local variables */
+    static logical done;
+    static doublereal ctoc;
+    static integer i, j;
+    extern logical lsame_(char *, char *);
+    static integer itype, k1, k2, k3, k4;
+    static doublereal cfrom1;
+    extern doublereal dlamch_(char *);
+    static doublereal cfromc;
+    extern /* Subroutine */ int xerbla_(char *, integer *);
+    static doublereal bignum, smlnum, mul, cto1;
+
+
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+
+    *info = 0;
+
+    if (lsame_(type, "G")) {
+	itype = 0;
+    } else if (lsame_(type, "L")) {
+	itype = 1;
+    } else if (lsame_(type, "U")) {
+	itype = 2;
+    } else if (lsame_(type, "H")) {
+	itype = 3;
+    } else if (lsame_(type, "B")) {
+	itype = 4;
+    } else if (lsame_(type, "Q")) {
+	itype = 5;
+    } else if (lsame_(type, "Z")) {
+	itype = 6;
+    } else {
+	itype = -1;
+    }
+
+    if (itype == -1) {
+	*info = -1;
+    } else if (*cfrom == 0.) {
+	*info = -4;
+    } else if (*m < 0) {
+	*info = -6;
+    } else if (*n < 0 || itype == 4 && *n != *m || itype == 5 && *n != *m) {
+	*info = -7;
+    } else if (itype <= 3 && *lda < max(1,*m)) {
+	*info = -9;
+    } else if (itype >= 4) {
+/* Computing MAX */
+	i__1 = *m - 1;
+	if (*kl < 0 || *kl > max(i__1,0)) {
+	    *info = -2;
+	} else /* if(complicated condition) */ {
+/* Computing MAX */
+	    i__1 = *n - 1;
+	    if (*ku < 0 || *ku > max(i__1,0) || (itype == 4 || itype == 5) && 
+		    *kl != *ku) {
+		*info = -3;
+	    } else if (itype == 4 && *lda < *kl + 1 || itype == 5 && *lda < *
+		    ku + 1 || itype == 6 && *lda < (*kl << 1) + *ku + 1) {
+		*info = -9;
+	    }
+	}
+    }
+
+    if (*info != 0) {
+	i__1 = -(*info);
+	xerbla_("DLASCL", &i__1);
+	return 0;
+    }
+
+/*     Quick return if possible */
+
+    if (*n == 0 || *m == 0) {
+	return 0;
+    }
+
+/*     Get machine parameters */
+
+    smlnum = dlamch_("S");
+    bignum = 1. / smlnum;
+
+    cfromc = *cfrom;
+    ctoc = *cto;
+
+L10:
+    cfrom1 = cfromc * smlnum;
+    cto1 = ctoc / bignum;
+    if (abs(cfrom1) > abs(ctoc) && ctoc != 0.) {
+	mul = smlnum;
+	done = FALSE_;
+	cfromc = cfrom1;
+    } else if (abs(cto1) > abs(cfromc)) {
+	mul = bignum;
+	done = FALSE_;
+	ctoc = cto1;
+    } else {
+	mul = ctoc / cfromc;
+	done = TRUE_;
+    }
+
+    if (itype == 0) {
+
+/*        Full matrix */
+
+	i__1 = *n;
+	for (j = 1; j <= *n; ++j) {
+	    for (i = 1; i <= *m; ++i) {
+		A(i,j) *= mul;
+/* L20: */
+	    }
+/* L30: */
+	}
+
+    } else if (itype == 1) {
+
+/*        Lower triangular matrix */
+
+	i__1 = *n;
+	for (j = 1; j <= *n; ++j) {
+	    for (i = j; i <= *m; ++i) {
+		A(i,j) *= mul;
+/* L40: */
+	    }
+/* L50: */
+	}
+
+    } else if (itype == 2) {
+
+/*        Upper triangular matrix */
+
+	i__1 = *n;
+	for (j = 1; j <= *n; ++j) {
+	    for (i = 1; i <= min(j,*m); ++i) {
+		A(i,j) *= mul;
+/* L60: */
+	    }
+/* L70: */
+	}
+
+    } else if (itype == 3) {
+
+/*        Upper Hessenberg matrix */
+
+	i__1 = *n;
+	for (j = 1; j <= *n; ++j) {
+/* Computing MIN */
+	    for (i = 1; i <= min(j+1,*m); ++i) {
+		A(i,j) *= mul;
+/* L80: */
+	    }
+/* L90: */
+	}
+
+    } else if (itype == 4) {
+
+/*        Lower half of a symmetric band matrix */
+
+	k3 = *kl + 1;
+	k4 = *n + 1;
+	i__1 = *n;
+	for (j = 1; j <= *n; ++j) {
+/* Computing MIN */
+	    for (i = 1; i <= min(k3,k4-j); ++i) {
+		A(i,j) *= mul;
+/* L100: */
+	    }
+/* L110: */
+	}
+
+    } else if (itype == 5) {
+
+/*        Upper half of a symmetric band matrix */
+
+	k1 = *ku + 2;
+	k3 = *ku + 1;
+	i__1 = *n;
+	for (j = 1; j <= *n; ++j) {
+/* Computing MAX */
+	    for (i = max(k1-j,1); i <= k3; ++i) {
+		A(i,j) *= mul;
+/* L120: */
+	    }
+/* L130: */
+	}
+
+    } else if (itype == 6) {
+
+/*        Band matrix */
+
+	k1 = *kl + *ku + 2;
+	k2 = *kl + 1;
+	k3 = (*kl << 1) + *ku + 1;
+	k4 = *kl + *ku + 1 + *m;
+	i__1 = *n;
+	for (j = 1; j <= *n; ++j) {
+/* Computing MAX */
+/* Computing MIN */
+	    for (i = max(k1-j,k2); i <= min(k3,k4-j); ++i) {
+		A(i,j) *= mul;
+/* L140: */
+	    }
+/* L150: */
+	}
+
+    }
+
+    if (! done) {
+	goto L10;
+    }
+
+    return 0;
+
+/*     End of DLASCL */
+
+} /* dlascl_ */
+
+/* Subroutine */ int dlaset_(char *uplo, integer *m, integer *n, doublereal *
+	alpha, doublereal *beta, doublereal *a, integer *lda)
+{
+/*  -- LAPACK auxiliary routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       October 31, 1992   
+
+
+    Purpose   
+    =======   
+
+    DLASET initializes an m-by-n matrix A to BETA on the diagonal and   
+    ALPHA on the offdiagonals.   
+
+    Arguments   
+    =========   
+
+    UPLO    (input) CHARACTER*1   
+            Specifies the part of the matrix A to be set.   
+            = 'U':      Upper triangular part is set; the strictly lower 
+  
+                        triangular part of A is not changed.   
+            = 'L':      Lower triangular part is set; the strictly upper 
+  
+                        triangular part of A is not changed.   
+            Otherwise:  All of the matrix A is set.   
+
+    M       (input) INTEGER   
+            The number of rows of the matrix A.  M >= 0.   
+
+    N       (input) INTEGER   
+            The number of columns of the matrix A.  N >= 0.   
+
+    ALPHA   (input) DOUBLE PRECISION   
+            The constant to which the offdiagonal elements are to be set. 
+  
+
+    BETA    (input) DOUBLE PRECISION   
+            The constant to which the diagonal elements are to be set.   
+
+    A       (input/output) DOUBLE PRECISION array, dimension (LDA,N)   
+            On exit, the leading m-by-n submatrix of A is set as follows: 
+  
+
+            if UPLO = 'U', A(i,j) = ALPHA, 1<=i<=j-1, 1<=j<=n,   
+            if UPLO = 'L', A(i,j) = ALPHA, j+1<=i<=m, 1<=j<=n,   
+            otherwise,     A(i,j) = ALPHA, 1<=i<=m, 1<=j<=n, i.ne.j,   
+
+            and, for all UPLO, A(i,i) = BETA, 1<=i<=min(m,n).   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A.  LDA >= max(1,M).   
+
+   ===================================================================== 
+  
+
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* System generated locals */
+    /* Local variables */
+    static integer i, j;
+    extern logical lsame_(char *, char *);
+
+
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+
+    if (lsame_(uplo, "U")) {
+
+/*        Set the strictly upper triangular or trapezoidal part of the
+   
+          array to ALPHA. */
+
+	for (j = 2; j <= *n; ++j) {
+/* Computing MIN */
+	    for (i = 1; i <= min(j-1,*m); ++i) {
+		A(i,j) = *alpha;
+/* L10: */
+	    }
+/* L20: */
+	}
+
+    } else if (lsame_(uplo, "L")) {
+
+/*        Set the strictly lower triangular or trapezoidal part of the
+   
+          array to ALPHA. */
+
+	for (j = 1; j <= min(*m,*n); ++j) {
+	    for (i = j + 1; i <= *m; ++i) {
+		A(i,j) = *alpha;
+/* L30: */
+	    }
+/* L40: */
+	}
+
+    } else {
+
+/*        Set the leading m-by-n submatrix to ALPHA. */
+
+	for (j = 1; j <= *n; ++j) {
+	    for (i = 1; i <= *m; ++i) {
+		A(i,j) = *alpha;
+/* L50: */
+	    }
+/* L60: */
+	}
+    }
+
+/*     Set the first min(M,N) diagonal elements to BETA. */
+
+    for (i = 1; i <= min(*m,*n); ++i) {
+	A(i,i) = *beta;
+/* L70: */
+    }
+
+    return 0;
+
+/*     End of DLASET */
+
+} /* dlaset_ */
+
+
+/* Subroutine */ int dlassq_(integer *n, doublereal *x, integer *incx, 
+	doublereal *scale, doublereal *sumsq)
+{
+/*  -- LAPACK auxiliary routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       October 31, 1992   
+
+
+    Purpose   
+    =======   
+
+    DLASSQ  returns the values  scl  and  smsq  such that   
+
+       ( scl**2 )*smsq = x( 1 )**2 +...+ x( n )**2 + ( scale**2 )*sumsq, 
+  
+
+    where  x( i ) = X( 1 + ( i - 1 )*INCX ). The value of  sumsq  is   
+    assumed to be non-negative and  scl  returns the value   
+
+       scl = max( scale, abs( x( i ) ) ).   
+
+    scale and sumsq must be supplied in SCALE and SUMSQ and   
+    scl and smsq are overwritten on SCALE and SUMSQ respectively.   
+
+    The routine makes only one pass through the vector x.   
+
+    Arguments   
+    =========   
+
+    N       (input) INTEGER   
+            The number of elements to be used from the vector X.   
+
+    X       (input) DOUBLE PRECISION   
+            The vector for which a scaled sum of squares is computed.   
+               x( i )  = X( 1 + ( i - 1 )*INCX ), 1 <= i <= n.   
+
+    INCX    (input) INTEGER   
+            The increment between successive values of the vector X.   
+            INCX > 0.   
+
+    SCALE   (input/output) DOUBLE PRECISION   
+            On entry, the value  scale  in the equation above.   
+            On exit, SCALE is overwritten with  scl , the scaling factor 
+  
+            for the sum of squares.   
+
+    SUMSQ   (input/output) DOUBLE PRECISION   
+            On entry, the value  sumsq  in the equation above.   
+            On exit, SUMSQ is overwritten with  smsq , the basic sum of   
+            squares from which  scl  has been factored out.   
+
+   ===================================================================== 
+  
+
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* System generated locals */
+    doublereal d__1;
+    /* Local variables */
+    static doublereal absxi;
+    static integer ix;
+
+
+#define X(I) x[(I)-1]
+
+
+    if (*n > 0) {
+	for (ix = 1; *incx < 0 ? ix >= (*n-1)**incx+1 : ix <= (*n-1)**incx+1; ix += *incx) {
+	    if (X(ix) != 0.) {
+		absxi = (d__1 = X(ix), abs(d__1));
+		if (*scale < absxi) {
+/* Computing 2nd power */
+		    d__1 = *scale / absxi;
+		    *sumsq = *sumsq * (d__1 * d__1) + 1;
+		    *scale = absxi;
+		} else {
+/* Computing 2nd power */
+		    d__1 = absxi / *scale;
+		    *sumsq += d__1 * d__1;
+		}
+	    }
+/* L10: */
+	}
+    }
+    return 0;
+
+/*     End of DLASSQ */
+
+} /* dlassq_ */
+
+
+doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer 
+	*lda, doublereal *work)
+{
+/*  -- LAPACK auxiliary routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       October 31, 1992   
+
+
+    Purpose   
+    =======   
+
+    DLANGE  returns the value of the one norm,  or the Frobenius norm, or 
+  
+    the  infinity norm,  or the  element of  largest absolute value  of a 
+  
+    real matrix A.   
+
+    Description   
+    ===========   
+
+    DLANGE returns the value   
+
+       DLANGE = ( max(abs(A(i,j))), NORM = 'M' or 'm'   
+                (   
+                ( norm1(A),         NORM = '1', 'O' or 'o'   
+                (   
+                ( normI(A),         NORM = 'I' or 'i'   
+                (   
+                ( normF(A),         NORM = 'F', 'f', 'E' or 'e'   
+
+    where  norm1  denotes the  one norm of a matrix (maximum column sum), 
+  
+    normI  denotes the  infinity norm  of a matrix  (maximum row sum) and 
+  
+    normF  denotes the  Frobenius norm of a matrix (square root of sum of 
+  
+    squares).  Note that  max(abs(A(i,j)))  is not a  matrix norm.   
+
+    Arguments   
+    =========   
+
+    NORM    (input) CHARACTER*1   
+            Specifies the value to be returned in DLANGE as described   
+            above.   
+
+    M       (input) INTEGER   
+            The number of rows of the matrix A.  M >= 0.  When M = 0,   
+            DLANGE is set to zero.   
+
+    N       (input) INTEGER   
+            The number of columns of the matrix A.  N >= 0.  When N = 0, 
+  
+            DLANGE is set to zero.   
+
+    A       (input) DOUBLE PRECISION array, dimension (LDA,N)   
+            The m by n matrix A.   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A.  LDA >= max(M,1).   
+
+    WORK    (workspace) DOUBLE PRECISION array, dimension (LWORK),   
+            where LWORK >= M when NORM = 'I'; otherwise, WORK is not   
+            referenced.   
+
+   ===================================================================== 
+  
+
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* Table of constant values */
+    static integer c__1 = 1;
+    
+    /* System generated locals */
+    doublereal ret_val, d__1, d__2, d__3;
+    /* Builtin functions */
+    double sqrt(doublereal);
+    /* Local variables */
+    static integer i, j;
+    static doublereal scale;
+    extern logical lsame_(char *, char *);
+    static doublereal value;
+    extern /* Subroutine */ int dlassq_(integer *, doublereal *, integer *, 
+	    doublereal *, doublereal *);
+    static doublereal sum;
+
+
+
+#define WORK(I) work[(I)-1]
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+
+    if (min(*m,*n) == 0) {
+	value = 0.;
+    } else if (lsame_(norm, "M")) {
+
+/*        Find max(abs(A(i,j))). */
+
+	value = 0.;
+	for (j = 1; j <= *n; ++j) {
+	    for (i = 1; i <= *m; ++i) {
+/* Computing MAX */
+		d__2 = value, d__3 = (d__1 = A(i,j), abs(d__1));
+		value = max(d__2,d__3);
+/* L10: */
+	    }
+/* L20: */
+	}
+    } else if (lsame_(norm, "O") || *(unsigned char *)norm == '1') {
+
+/*        Find norm1(A). */
+
+	value = 0.;
+	for (j = 1; j <= *n; ++j) {
+	    sum = 0.;
+	    for (i = 1; i <= *m; ++i) {
+		sum += (d__1 = A(i,j), abs(d__1));
+/* L30: */
+	    }
+	    value = max(value,sum);
+/* L40: */
+	}
+    } else if (lsame_(norm, "I")) {
+
+/*        Find normI(A). */
+
+	for (i = 1; i <= *m; ++i) {
+	    WORK(i) = 0.;
+/* L50: */
+	}
+	for (j = 1; j <= *n; ++j) {
+	    for (i = 1; i <= *m; ++i) {
+		WORK(i) += (d__1 = A(i,j), abs(d__1));
+/* L60: */
+	    }
+/* L70: */
+	}
+	value = 0.;
+	for (i = 1; i <= *m; ++i) {
+/* Computing MAX */
+	    d__1 = value, d__2 = WORK(i);
+	    value = max(d__1,d__2);
+/* L80: */
+	}
+    } else if (lsame_(norm, "F") || lsame_(norm, "E")) {
+
+/*        Find normF(A). */
+
+	scale = 0.;
+	sum = 1.;
+	for (j = 1; j <= *n; ++j) {
+	    dlassq_(m, &A(1,j), &c__1, &scale, &sum);
+/* L90: */
+	}
+	value = scale * sqrt(sum);
+    }
+
+    ret_val = value;
+    return ret_val;
+
+/*     End of DLANGE */
+
+} /* dlange_ */
+
+/* Subroutine */ int dlabad_(doublereal *small, doublereal *large)
+{
+/*  -- LAPACK auxiliary routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       October 31, 1992   
+
+
+    Purpose   
+    =======   
+
+    DLABAD takes as input the values computed by SLAMCH for underflow and 
+  
+    overflow, and returns the square root of each of these values if the 
+  
+    log of LARGE is sufficiently large.  This subroutine is intended to   
+    identify machines with a large exponent range, such as the Crays, and 
+  
+    redefine the underflow and overflow limits to be the square roots of 
+  
+    the values computed by DLAMCH.  This subroutine is needed because   
+    DLAMCH does not compensate for poor arithmetic in the upper half of   
+    the exponent range, as is found on a Cray.   
+
+    Arguments   
+    =========   
+
+    SMALL   (input/output) DOUBLE PRECISION   
+            On entry, the underflow threshold as computed by DLAMCH.   
+            On exit, if LOG10(LARGE) is sufficiently large, the square   
+            root of SMALL, otherwise unchanged.   
+
+    LARGE   (input/output) DOUBLE PRECISION   
+            On entry, the overflow threshold as computed by DLAMCH.   
+            On exit, if LOG10(LARGE) is sufficiently large, the square   
+            root of LARGE, otherwise unchanged.   
+
+    ===================================================================== 
+  
+
+
+       If it looks like we're on a Cray, take the square root of   
+       SMALL and LARGE to avoid overflow and underflow problems. */
+    /* Builtin functions */
+    double d_lg10(doublereal *), sqrt(doublereal);
+
+
+    if (d_lg10(large) > 2e3) {
+	*small = sqrt(*small);
+	*large = sqrt(*large);
+    }
+
+    return 0;
+
+/*     End of DLABAD */
+
+} /* dlabad_ */
+
+
+/* Subroutine */ int dormqr_(char *side, char *trans, integer *m, integer *n, 
+	integer *k, doublereal *a, integer *lda, doublereal *tau, doublereal *
+	c, integer *ldc, doublereal *work, integer *lwork, integer *info)
+{
+/*  -- LAPACK routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       September 30, 1994   
+
+
+    Purpose   
+    =======   
+
+    DORMQR overwrites the general real M-by-N matrix C with   
+
+                    SIDE = 'L'     SIDE = 'R'   
+    TRANS = 'N':      Q * C          C * Q   
+    TRANS = 'T':      Q**T * C       C * Q**T   
+
+    where Q is a real orthogonal matrix defined as the product of k   
+    elementary reflectors   
+
+          Q = H(1) H(2) . . . H(k)   
+
+    as returned by DGEQRF. Q is of order M if SIDE = 'L' and of order N   
+    if SIDE = 'R'.   
+
+    Arguments   
+    =========   
+
+    SIDE    (input) CHARACTER*1   
+            = 'L': apply Q or Q**T from the Left;   
+            = 'R': apply Q or Q**T from the Right.   
+
+    TRANS   (input) CHARACTER*1   
+            = 'N':  No transpose, apply Q;   
+            = 'T':  Transpose, apply Q**T.   
+
+    M       (input) INTEGER   
+            The number of rows of the matrix C. M >= 0.   
+
+    N       (input) INTEGER   
+            The number of columns of the matrix C. N >= 0.   
+
+    K       (input) INTEGER   
+            The number of elementary reflectors whose product defines   
+            the matrix Q.   
+            If SIDE = 'L', M >= K >= 0;   
+            if SIDE = 'R', N >= K >= 0.   
+
+    A       (input) DOUBLE PRECISION array, dimension (LDA,K)   
+            The i-th column must contain the vector which defines the   
+            elementary reflector H(i), for i = 1,2,...,k, as returned by 
+  
+            DGEQRF in the first k columns of its array argument A.   
+            A is modified by the routine but restored on exit.   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A.   
+            If SIDE = 'L', LDA >= max(1,M);   
+            if SIDE = 'R', LDA >= max(1,N).   
+
+    TAU     (input) DOUBLE PRECISION array, dimension (K)   
+            TAU(i) must contain the scalar factor of the elementary   
+            reflector H(i), as returned by DGEQRF.   
+
+    C       (input/output) DOUBLE PRECISION array, dimension (LDC,N)   
+            On entry, the M-by-N matrix C.   
+            On exit, C is overwritten by Q*C or Q**T*C or C*Q**T or C*Q. 
+  
+
+    LDC     (input) INTEGER   
+            The leading dimension of the array C. LDC >= max(1,M).   
+
+    WORK    (workspace/output) DOUBLE PRECISION array, dimension (LWORK) 
+  
+            On exit, if INFO = 0, WORK(1) returns the optimal LWORK.   
+
+    LWORK   (input) INTEGER   
+            The dimension of the array WORK.   
+            If SIDE = 'L', LWORK >= max(1,N);   
+            if SIDE = 'R', LWORK >= max(1,M).   
+            For optimum performance LWORK >= N*NB if SIDE = 'L', and   
+            LWORK >= M*NB if SIDE = 'R', where NB is the optimal   
+            blocksize.   
+
+    INFO    (output) INTEGER   
+            = 0:  successful exit   
+            < 0:  if INFO = -i, the i-th argument had an illegal value   
+
+    ===================================================================== 
+  
+
+
+       Test the input arguments   
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* Table of constant values */
+    static integer c__1 = 1;
+    static integer c_n1 = -1;
+    static integer c__2 = 2;
+    static integer c__65 = 65;
+    
+    /* System generated locals */
+    address a__1[2];
+    integer i__1, i__2, i__3[2], i__4, i__5;
+    char ch__1[2];
+    /* Builtin functions   
+       Subroutine */ int s_cat(char *, char **, integer *, integer *, ftnlen);
+    /* Local variables */
+    static logical left;
+    static integer i;
+    static doublereal t[4160]	/* was [65][64] */;
+    extern logical lsame_(char *, char *);
+    static integer nbmin, iinfo, i1, i2, i3;
+    extern /* Subroutine */ int dorm2r_(char *, char *, integer *, integer *, 
+	    integer *, doublereal *, integer *, doublereal *, doublereal *, 
+	    integer *, doublereal *, integer *);
+    static integer ib, ic, jc, nb, mi, ni;
+    extern /* Subroutine */ int dlarfb_(char *, char *, char *, char *, 
+	    integer *, integer *, integer *, doublereal *, integer *, 
+	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
+	    integer *);
+    static integer nq, nw;
+    extern /* Subroutine */ int dlarft_(char *, char *, integer *, integer *, 
+	    doublereal *, integer *, doublereal *, doublereal *, integer *), xerbla_(char *, integer *);
+    extern integer ilaenv_(integer *, char *, char *, integer *, integer *, 
+	    integer *, integer *, ftnlen, ftnlen);
+    static logical notran;
+    static integer ldwork, iws;
+
+
+
+#define T(I) t[(I)]
+#define WAS(I) was[(I)]
+#define TAU(I) tau[(I)-1]
+#define WORK(I) work[(I)-1]
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+#define C(I,J) c[(I)-1 + ((J)-1)* ( *ldc)]
+
+    *info = 0;
+    left = lsame_(side, "L");
+    notran = lsame_(trans, "N");
+
+/*     NQ is the order of Q and NW is the minimum dimension of WORK */
+
+    if (left) {
+	nq = *m;
+	nw = *n;
+    } else {
+	nq = *n;
+	nw = *m;
+    }
+    if (! left && ! lsame_(side, "R")) {
+	*info = -1;
+    } else if (! notran && ! lsame_(trans, "T")) {
+	*info = -2;
+    } else if (*m < 0) {
+	*info = -3;
+    } else if (*n < 0) {
+	*info = -4;
+    } else if (*k < 0 || *k > nq) {
+	*info = -5;
+    } else if (*lda < max(1,nq)) {
+	*info = -7;
+    } else if (*ldc < max(1,*m)) {
+	*info = -10;
+    } else if (*lwork < max(1,nw)) {
+	*info = -12;
+    }
+    if (*info != 0) {
+	i__1 = -(*info);
+	xerbla_("DORMQR", &i__1);
+	return 0;
+    }
+
+/*     Quick return if possible */
+
+    if (*m == 0 || *n == 0 || *k == 0) {
+	WORK(1) = 1.;
+	return 0;
+    }
+
+/*     Determine the block size.  NB may be at most NBMAX, where NBMAX   
+       is used to define the local array T.   
+
+   Computing MIN   
+   Writing concatenation */
+    i__3[0] = 1, a__1[0] = side;
+    i__3[1] = 1, a__1[1] = trans;
+    s_cat(ch__1, a__1, i__3, &c__2, 2L);
+    i__1 = 64, i__2 = ilaenv_(&c__1, "DORMQR", ch__1, m, n, k, &c_n1, 6L, 2L);
+    nb = min(i__1,i__2);
+    nbmin = 2;
+    ldwork = nw;
+    if (nb > 1 && nb < *k) {
+	iws = nw * nb;
+	if (*lwork < iws) {
+	    nb = *lwork / ldwork;
+/* Computing MAX   
+   Writing concatenation */
+	    i__3[0] = 1, a__1[0] = side;
+	    i__3[1] = 1, a__1[1] = trans;
+	    s_cat(ch__1, a__1, i__3, &c__2, 2L);
+	    i__1 = 2, i__2 = ilaenv_(&c__2, "DORMQR", ch__1, m, n, k, &c_n1, 
+		    6L, 2L);
+	    nbmin = max(i__1,i__2);
+	}
+    } else {
+	iws = nw;
+    }
+
+    if (nb < nbmin || nb >= *k) {
+
+/*        Use unblocked code */
+
+	dorm2r_(side, trans, m, n, k, &A(1,1), lda, &TAU(1), &C(1,1)
+		, ldc, &WORK(1), &iinfo);
+    } else {
+
+/*        Use blocked code */
+
+	if (left && ! notran || ! left && notran) {
+	    i1 = 1;
+	    i2 = *k;
+	    i3 = nb;
+	} else {
+	    i1 = (*k - 1) / nb * nb + 1;
+	    i2 = 1;
+	    i3 = -nb;
+	}
+
+	if (left) {
+	    ni = *n;
+	    jc = 1;
+	} else {
+	    mi = *m;
+	    ic = 1;
+	}
+
+	i__1 = i2;
+	i__2 = i3;
+	for (i = i1; i3 < 0 ? i >= i2 : i <= i2; i += i3) {
+/* Computing MIN */
+	    i__4 = nb, i__5 = *k - i + 1;
+	    ib = min(i__4,i__5);
+
+/*           Form the triangular factor of the block reflector   
+             H = H(i) H(i+1) . . . H(i+ib-1) */
+
+	    i__4 = nq - i + 1;
+	    dlarft_("Forward", "Columnwise", &i__4, &ib, &A(i,i), 
+		    lda, &TAU(i), t, &c__65);
+	    if (left) {
+
+/*              H or H' is applied to C(i:m,1:n) */
+
+		mi = *m - i + 1;
+		ic = i;
+	    } else {
+
+/*              H or H' is applied to C(1:m,i:n) */
+
+		ni = *n - i + 1;
+		jc = i;
+	    }
+
+/*           Apply H or H' */
+
+	    dlarfb_(side, trans, "Forward", "Columnwise", &mi, &ni, &ib, &A(i,i), lda, t, &c__65, &C(ic,jc), ldc, 
+		    &WORK(1), &ldwork);
+/* L10: */
+	}
+    }
+    WORK(1) = (doublereal) iws;
+    return 0;
+
+/*     End of DORMQR */
+
+} /* dormqr_ */
+
+
+
+/* Subroutine */ int dormlq_(char *side, char *trans, integer *m, integer *n, 
+	integer *k, doublereal *a, integer *lda, doublereal *tau, doublereal *
+	c, integer *ldc, doublereal *work, integer *lwork, integer *info)
+{
+/*  -- LAPACK routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       September 30, 1994   
+
+
+    Purpose   
+    =======   
+
+    DORMLQ overwrites the general real M-by-N matrix C with   
+
+                    SIDE = 'L'     SIDE = 'R'   
+    TRANS = 'N':      Q * C          C * Q   
+    TRANS = 'T':      Q**T * C       C * Q**T   
+
+    where Q is a real orthogonal matrix defined as the product of k   
+    elementary reflectors   
+
+          Q = H(k) . . . H(2) H(1)   
+
+    as returned by DGELQF. Q is of order M if SIDE = 'L' and of order N   
+    if SIDE = 'R'.   
+
+    Arguments   
+    =========   
+
+    SIDE    (input) CHARACTER*1   
+            = 'L': apply Q or Q**T from the Left;   
+            = 'R': apply Q or Q**T from the Right.   
+
+    TRANS   (input) CHARACTER*1   
+            = 'N':  No transpose, apply Q;   
+            = 'T':  Transpose, apply Q**T.   
+
+    M       (input) INTEGER   
+            The number of rows of the matrix C. M >= 0.   
+
+    N       (input) INTEGER   
+            The number of columns of the matrix C. N >= 0.   
+
+    K       (input) INTEGER   
+            The number of elementary reflectors whose product defines   
+            the matrix Q.   
+            If SIDE = 'L', M >= K >= 0;   
+            if SIDE = 'R', N >= K >= 0.   
+
+    A       (input) DOUBLE PRECISION array, dimension   
+                                 (LDA,M) if SIDE = 'L',   
+                                 (LDA,N) if SIDE = 'R'   
+            The i-th row must contain the vector which defines the   
+            elementary reflector H(i), for i = 1,2,...,k, as returned by 
+  
+            DGELQF in the first k rows of its array argument A.   
+            A is modified by the routine but restored on exit.   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A. LDA >= max(1,K).   
+
+    TAU     (input) DOUBLE PRECISION array, dimension (K)   
+            TAU(i) must contain the scalar factor of the elementary   
+            reflector H(i), as returned by DGELQF.   
+
+    C       (input/output) DOUBLE PRECISION array, dimension (LDC,N)   
+            On entry, the M-by-N matrix C.   
+            On exit, C is overwritten by Q*C or Q**T*C or C*Q**T or C*Q. 
+  
+
+    LDC     (input) INTEGER   
+            The leading dimension of the array C. LDC >= max(1,M).   
+
+    WORK    (workspace/output) DOUBLE PRECISION array, dimension (LWORK) 
+  
+            On exit, if INFO = 0, WORK(1) returns the optimal LWORK.   
+
+    LWORK   (input) INTEGER   
+            The dimension of the array WORK.   
+            If SIDE = 'L', LWORK >= max(1,N);   
+            if SIDE = 'R', LWORK >= max(1,M).   
+            For optimum performance LWORK >= N*NB if SIDE = 'L', and   
+            LWORK >= M*NB if SIDE = 'R', where NB is the optimal   
+            blocksize.   
+
+    INFO    (output) INTEGER   
+            = 0:  successful exit   
+            < 0:  if INFO = -i, the i-th argument had an illegal value   
+
+    ===================================================================== 
+  
+
+
+       Test the input arguments   
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* Table of constant values */
+    static integer c__1 = 1;
+    static integer c_n1 = -1;
+    static integer c__2 = 2;
+    static integer c__65 = 65;
+    
+    /* System generated locals */
+    address a__1[2];
+    integer i__1, i__2, i__3[2], i__4, i__5;
+    char ch__1[2];
+    /* Builtin functions   
+       Subroutine */ int s_cat(char *, char **, integer *, integer *, ftnlen);
+    /* Local variables */
+    static logical left;
+    static integer i;
+    static doublereal t[4160]	/* was [65][64] */;
+    extern logical lsame_(char *, char *);
+    static integer nbmin, iinfo, i1, i2, i3;
+    extern /* Subroutine */ int dorml2_(char *, char *, integer *, integer *, 
+	    integer *, doublereal *, integer *, doublereal *, doublereal *, 
+	    integer *, doublereal *, integer *);
+    static integer ib, ic, jc, nb, mi, ni;
+    extern /* Subroutine */ int dlarfb_(char *, char *, char *, char *, 
+	    integer *, integer *, integer *, doublereal *, integer *, 
+	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
+	    integer *);
+    static integer nq, nw;
+    extern /* Subroutine */ int dlarft_(char *, char *, integer *, integer *, 
+	    doublereal *, integer *, doublereal *, doublereal *, integer *), xerbla_(char *, integer *);
+    extern integer ilaenv_(integer *, char *, char *, integer *, integer *, 
+	    integer *, integer *, ftnlen, ftnlen);
+    static logical notran;
+    static integer ldwork;
+    static char transt[1];
+    static integer iws;
+
+
+#undef T
+
+#define T(I) t[(I)]
+#define WAS(I) was[(I)]
+#define TAU(I) tau[(I)-1]
+#define WORK(I) work[(I)-1]
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+#define C(I,J) c[(I)-1 + ((J)-1)* ( *ldc)]
+
+    *info = 0;
+    left = lsame_(side, "L");
+    notran = lsame_(trans, "N");
+
+/*     NQ is the order of Q and NW is the minimum dimension of WORK */
+
+    if (left) {
+	nq = *m;
+	nw = *n;
+    } else {
+	nq = *n;
+	nw = *m;
+    }
+    if (! left && ! lsame_(side, "R")) {
+	*info = -1;
+    } else if (! notran && ! lsame_(trans, "T")) {
+	*info = -2;
+    } else if (*m < 0) {
+	*info = -3;
+    } else if (*n < 0) {
+	*info = -4;
+    } else if (*k < 0 || *k > nq) {
+	*info = -5;
+    } else if (*lda < max(1,*k)) {
+	*info = -7;
+    } else if (*ldc < max(1,*m)) {
+	*info = -10;
+    } else if (*lwork < max(1,nw)) {
+	*info = -12;
+    }
+    if (*info != 0) {
+	i__1 = -(*info);
+	xerbla_("DORMLQ", &i__1);
+	return 0;
+    }
+
+/*     Quick return if possible */
+
+    if (*m == 0 || *n == 0 || *k == 0) {
+	WORK(1) = 1.;
+	return 0;
+    }
+
+/*     Determine the block size.  NB may be at most NBMAX, where NBMAX   
+       is used to define the local array T.   
+
+   Computing MIN   
+   Writing concatenation */
+    i__3[0] = 1, a__1[0] = side;
+    i__3[1] = 1, a__1[1] = trans;
+    s_cat(ch__1, a__1, i__3, &c__2, 2L);
+    i__1 = 64, i__2 = ilaenv_(&c__1, "DORMLQ", ch__1, m, n, k, &c_n1, 6L, 2L);
+    nb = min(i__1,i__2);
+    nbmin = 2;
+    ldwork = nw;
+    if (nb > 1 && nb < *k) {
+	iws = nw * nb;
+	if (*lwork < iws) {
+	    nb = *lwork / ldwork;
+/* Computing MAX   
+   Writing concatenation */
+	    i__3[0] = 1, a__1[0] = side;
+	    i__3[1] = 1, a__1[1] = trans;
+	    s_cat(ch__1, a__1, i__3, &c__2, 2L);
+	    i__1 = 2, i__2 = ilaenv_(&c__2, "DORMLQ", ch__1, m, n, k, &c_n1, 
+		    6L, 2L);
+	    nbmin = max(i__1,i__2);
+	}
+    } else {
+	iws = nw;
+    }
+
+    if (nb < nbmin || nb >= *k) {
+
+/*        Use unblocked code */
+
+	dorml2_(side, trans, m, n, k, &A(1,1), lda, &TAU(1), &C(1,1)
+		, ldc, &WORK(1), &iinfo);
+    } else {
+
+/*        Use blocked code */
+
+	if (left && notran || ! left && ! notran) {
+	    i1 = 1;
+	    i2 = *k;
+	    i3 = nb;
+	} else {
+	    i1 = (*k - 1) / nb * nb + 1;
+	    i2 = 1;
+	    i3 = -nb;
+	}
+
+	if (left) {
+	    ni = *n;
+	    jc = 1;
+	} else {
+	    mi = *m;
+	    ic = 1;
+	}
+
+	if (notran) {
+	    *(unsigned char *)transt = 'T';
+	} else {
+	    *(unsigned char *)transt = 'N';
+	}
+
+	i__1 = i2;
+	i__2 = i3;
+	for (i = i1; i3 < 0 ? i >= i2 : i <= i2; i += i3) {
+/* Computing MIN */
+	    i__4 = nb, i__5 = *k - i + 1;
+	    ib = min(i__4,i__5);
+
+/*           Form the triangular factor of the block reflector   
+             H = H(i) H(i+1) . . . H(i+ib-1) */
+
+	    i__4 = nq - i + 1;
+	    dlarft_("Forward", "Rowwise", &i__4, &ib, &A(i,i), lda,
+		     &TAU(i), t, &c__65);
+	    if (left) {
+
+/*              H or H' is applied to C(i:m,1:n) */
+
+		mi = *m - i + 1;
+		ic = i;
+	    } else {
+
+/*              H or H' is applied to C(1:m,i:n) */
+
+		ni = *n - i + 1;
+		jc = i;
+	    }
+
+/*           Apply H or H' */
+
+	    dlarfb_(side, transt, "Forward", "Rowwise", &mi, &ni, &ib, &A(i,i), lda, t, &c__65, &C(ic,jc), ldc, &
+		    WORK(1), &ldwork);
+/* L10: */
+	}
+    }
+    WORK(1) = (doublereal) iws;
+    return 0;
+
+/*     End of DORMLQ */
+
+} /* dormlq_ */
+
+
+
+
+/* Subroutine */ int dorm2r_(char *side, char *trans, integer *m, integer *n, 
+	integer *k, doublereal *a, integer *lda, doublereal *tau, doublereal *
+	c, integer *ldc, doublereal *work, integer *info)
+{
+/*  -- LAPACK routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       February 29, 1992   
+
+
+    Purpose   
+    =======   
+
+    DORM2R overwrites the general real m by n matrix C with   
+
+          Q * C  if SIDE = 'L' and TRANS = 'N', or   
+
+          Q'* C  if SIDE = 'L' and TRANS = 'T', or   
+
+          C * Q  if SIDE = 'R' and TRANS = 'N', or   
+
+          C * Q' if SIDE = 'R' and TRANS = 'T',   
+
+    where Q is a real orthogonal matrix defined as the product of k   
+    elementary reflectors   
+
+          Q = H(1) H(2) . . . H(k)   
+
+    as returned by DGEQRF. Q is of order m if SIDE = 'L' and of order n   
+    if SIDE = 'R'.   
+
+    Arguments   
+    =========   
+
+    SIDE    (input) CHARACTER*1   
+            = 'L': apply Q or Q' from the Left   
+            = 'R': apply Q or Q' from the Right   
+
+    TRANS   (input) CHARACTER*1   
+            = 'N': apply Q  (No transpose)   
+            = 'T': apply Q' (Transpose)   
+
+    M       (input) INTEGER   
+            The number of rows of the matrix C. M >= 0.   
+
+    N       (input) INTEGER   
+            The number of columns of the matrix C. N >= 0.   
+
+    K       (input) INTEGER   
+            The number of elementary reflectors whose product defines   
+            the matrix Q.   
+            If SIDE = 'L', M >= K >= 0;   
+            if SIDE = 'R', N >= K >= 0.   
+
+    A       (input) DOUBLE PRECISION array, dimension (LDA,K)   
+            The i-th column must contain the vector which defines the   
+            elementary reflector H(i), for i = 1,2,...,k, as returned by 
+  
+            DGEQRF in the first k columns of its array argument A.   
+            A is modified by the routine but restored on exit.   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A.   
+            If SIDE = 'L', LDA >= max(1,M);   
+            if SIDE = 'R', LDA >= max(1,N).   
+
+    TAU     (input) DOUBLE PRECISION array, dimension (K)   
+            TAU(i) must contain the scalar factor of the elementary   
+            reflector H(i), as returned by DGEQRF.   
+
+    C       (input/output) DOUBLE PRECISION array, dimension (LDC,N)   
+            On entry, the m by n matrix C.   
+            On exit, C is overwritten by Q*C or Q'*C or C*Q' or C*Q.   
+
+    LDC     (input) INTEGER   
+            The leading dimension of the array C. LDC >= max(1,M).   
+
+    WORK    (workspace) DOUBLE PRECISION array, dimension   
+                                     (N) if SIDE = 'L',   
+                                     (M) if SIDE = 'R'   
+
+    INFO    (output) INTEGER   
+            = 0: successful exit   
+            < 0: if INFO = -i, the i-th argument had an illegal value   
+
+    ===================================================================== 
+  
+
+
+       Test the input arguments   
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* Table of constant values */
+    static integer c__1 = 1;
+    
+    /* System generated locals */
+    integer i__1;
+    /* Local variables */
+    static logical left;
+    static integer i;
+    extern /* Subroutine */ int dlarf_(char *, integer *, integer *, 
+	    doublereal *, integer *, doublereal *, doublereal *, integer *, 
+	    doublereal *);
+    extern logical lsame_(char *, char *);
+    static integer i1, i2, i3, ic, jc, mi, ni, nq;
+    extern /* Subroutine */ int xerbla_(char *, integer *);
+    static logical notran;
+    static doublereal aii;
+
+
+#undef WORK
+
+#define TAU(I) tau[(I)-1]
+#define WORK(I) work[(I)-1]
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+#define C(I,J) c[(I)-1 + ((J)-1)* ( *ldc)]
+
+    *info = 0;
+    left = lsame_(side, "L");
+    notran = lsame_(trans, "N");
+
+/*     NQ is the order of Q */
+
+    if (left) {
+	nq = *m;
+    } else {
+	nq = *n;
+    }
+    if (! left && ! lsame_(side, "R")) {
+	*info = -1;
+    } else if (! notran && ! lsame_(trans, "T")) {
+	*info = -2;
+    } else if (*m < 0) {
+	*info = -3;
+    } else if (*n < 0) {
+	*info = -4;
+    } else if (*k < 0 || *k > nq) {
+	*info = -5;
+    } else if (*lda < max(1,nq)) {
+	*info = -7;
+    } else if (*ldc < max(1,*m)) {
+	*info = -10;
+    }
+    if (*info != 0) {
+	i__1 = -(*info);
+	xerbla_("DORM2R", &i__1);
+	return 0;
+    }
+
+/*     Quick return if possible */
+
+    if (*m == 0 || *n == 0 || *k == 0) {
+	return 0;
+    }
+
+    if (left && ! notran || ! left && notran) {
+	i1 = 1;
+	i2 = *k;
+	i3 = 1;
+    } else {
+	i1 = *k;
+	i2 = 1;
+	i3 = -1;
+    }
+
+    if (left) {
+	ni = *n;
+	jc = 1;
+    } else {
+	mi = *m;
+	ic = 1;
+    }
+
+    i__1 = i2;
+    for (i = i1; i3 < 0 ? i >= i2 : i <= i2; i += i3) {
+	if (left) {
+
+/*           H(i) is applied to C(i:m,1:n) */
+
+	    mi = *m - i + 1;
+	    ic = i;
+	} else {
+
+/*           H(i) is applied to C(1:m,i:n) */
+
+	    ni = *n - i + 1;
+	    jc = i;
+	}
+
+/*        Apply H(i) */
+
+	aii = A(i,i);
+	A(i,i) = 1.;
+	dlarf_(side, &mi, &ni, &A(i,i), &c__1, &TAU(i), &C(ic,jc), ldc, &WORK(1));
+	A(i,i) = aii;
+/* L10: */
+    }
+    return 0;
+
+/*     End of DORM2R */
+
+} /* dorm2r_ */
+
+
+/* Subroutine */ int dorml2_(char *side, char *trans, integer *m, integer *n, 
+	integer *k, doublereal *a, integer *lda, doublereal *tau, doublereal *
+	c, integer *ldc, doublereal *work, integer *info)
+{
+/*  -- LAPACK routine (version 2.0) --   
+       Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
+       Courant Institute, Argonne National Lab, and Rice University   
+       February 29, 1992   
+
+
+    Purpose   
+    =======   
+
+    DORML2 overwrites the general real m by n matrix C with   
+
+          Q * C  if SIDE = 'L' and TRANS = 'N', or   
+
+          Q'* C  if SIDE = 'L' and TRANS = 'T', or   
+
+          C * Q  if SIDE = 'R' and TRANS = 'N', or   
+
+          C * Q' if SIDE = 'R' and TRANS = 'T',   
+
+    where Q is a real orthogonal matrix defined as the product of k   
+    elementary reflectors   
+
+          Q = H(k) . . . H(2) H(1)   
+
+    as returned by DGELQF. Q is of order m if SIDE = 'L' and of order n   
+    if SIDE = 'R'.   
+
+    Arguments   
+    =========   
+
+    SIDE    (input) CHARACTER*1   
+            = 'L': apply Q or Q' from the Left   
+            = 'R': apply Q or Q' from the Right   
+
+    TRANS   (input) CHARACTER*1   
+            = 'N': apply Q  (No transpose)   
+            = 'T': apply Q' (Transpose)   
+
+    M       (input) INTEGER   
+            The number of rows of the matrix C. M >= 0.   
+
+    N       (input) INTEGER   
+            The number of columns of the matrix C. N >= 0.   
+
+    K       (input) INTEGER   
+            The number of elementary reflectors whose product defines   
+            the matrix Q.   
+            If SIDE = 'L', M >= K >= 0;   
+            if SIDE = 'R', N >= K >= 0.   
+
+    A       (input) DOUBLE PRECISION array, dimension   
+                                 (LDA,M) if SIDE = 'L',   
+                                 (LDA,N) if SIDE = 'R'   
+            The i-th row must contain the vector which defines the   
+            elementary reflector H(i), for i = 1,2,...,k, as returned by 
+  
+            DGELQF in the first k rows of its array argument A.   
+            A is modified by the routine but restored on exit.   
+
+    LDA     (input) INTEGER   
+            The leading dimension of the array A. LDA >= max(1,K).   
+
+    TAU     (input) DOUBLE PRECISION array, dimension (K)   
+            TAU(i) must contain the scalar factor of the elementary   
+            reflector H(i), as returned by DGELQF.   
+
+    C       (input/output) DOUBLE PRECISION array, dimension (LDC,N)   
+            On entry, the m by n matrix C.   
+            On exit, C is overwritten by Q*C or Q'*C or C*Q' or C*Q.   
+
+    LDC     (input) INTEGER   
+            The leading dimension of the array C. LDC >= max(1,M).   
+
+    WORK    (workspace) DOUBLE PRECISION array, dimension   
+                                     (N) if SIDE = 'L',   
+                                     (M) if SIDE = 'R'   
+
+    INFO    (output) INTEGER   
+            = 0: successful exit   
+            < 0: if INFO = -i, the i-th argument had an illegal value   
+
+    ===================================================================== 
+  
+
+
+       Test the input arguments   
+
+    
+   Parameter adjustments   
+       Function Body */
+    /* System generated locals */
+    integer i__1;
+    /* Local variables */
+    static logical left;
+    static integer i;
+    extern /* Subroutine */ int dlarf_(char *, integer *, integer *, 
+	    doublereal *, integer *, doublereal *, doublereal *, integer *, 
+	    doublereal *);
+    extern logical lsame_(char *, char *);
+    static integer i1, i2, i3, ic, jc, mi, ni, nq;
+    extern /* Subroutine */ int xerbla_(char *, integer *);
+    static logical notran;
+    static doublereal aii;
+
+
+#define TAU(I) tau[(I)-1]
+#define WORK(I) work[(I)-1]
+
+#define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
+#define C(I,J) c[(I)-1 + ((J)-1)* ( *ldc)]
+
+    *info = 0;
+    left = lsame_(side, "L");
+    notran = lsame_(trans, "N");
+
+/*     NQ is the order of Q */
+
+    if (left) {
+	nq = *m;
+    } else {
+	nq = *n;
+    }
+    if (! left && ! lsame_(side, "R")) {
+	*info = -1;
+    } else if (! notran && ! lsame_(trans, "T")) {
+	*info = -2;
+    } else if (*m < 0) {
+	*info = -3;
+    } else if (*n < 0) {
+	*info = -4;
+    } else if (*k < 0 || *k > nq) {
+	*info = -5;
+    } else if (*lda < max(1,*k)) {
+	*info = -7;
+    } else if (*ldc < max(1,*m)) {
+	*info = -10;
+    }
+    if (*info != 0) {
+	i__1 = -(*info);
+	xerbla_("DORML2", &i__1);
+	return 0;
+    }
+
+/*     Quick return if possible */
+
+    if (*m == 0 || *n == 0 || *k == 0) {
+	return 0;
+    }
+
+    if (left && notran || ! left && ! notran) {
+	i1 = 1;
+	i2 = *k;
+	i3 = 1;
+    } else {
+	i1 = *k;
+	i2 = 1;
+	i3 = -1;
+    }
+
+    if (left) {
+	ni = *n;
+	jc = 1;
+    } else {
+	mi = *m;
+	ic = 1;
+    }
+
+    i__1 = i2;
+    for (i = i1; i3 < 0 ? i >= i2 : i <= i2; i += i3) {
+	if (left) {
+
+/*           H(i) is applied to C(i:m,1:n) */
+
+	    mi = *m - i + 1;
+	    ic = i;
+	} else {
+
+/*           H(i) is applied to C(1:m,i:n) */
+
+	    ni = *n - i + 1;
+	    jc = i;
+	}
+
+/*        Apply H(i) */
+
+	aii = A(i,i);
+	A(i,i) = 1.;
+	dlarf_(side, &mi, &ni, &A(i,i), lda, &TAU(i), &C(ic,jc), ldc, &WORK(1));
+	A(i,i) = aii;
+/* L10: */
+    }
+    return 0;
+
+/*     End of DORML2 */
+
+} /* dorml2_ */
+
