@@ -5,6 +5,6 @@
 
 mkdir $1
 cd $1
-ln -s ../src/Makefile Makefile
+ln -s ../etc/flat_Makefile Makefile
 #ln -s ../lib/DSuperLU/$1 Obj_superlu
 cd ..

@@ -4,5 +4,8 @@ cd Aztec/lib ; pwd; make -f Makefile.template clean; cd ../..
 cd DSuperLU/SRC; make clean; cd ../..
 cd ParMetis-2.0/METISLib; make clean; cd ../..
 cd ParaSails ; make clean; cd ..
-cd ../Obj; make clean; cd ..
+if test -d Obj 
+then
+  cd ../Obj; make clean; cd ..
+fi
 
