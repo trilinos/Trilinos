@@ -183,7 +183,7 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
     ierr = Distor_->Do(reinterpret_cast<char *> (ExportGIDs), 
 		sizeof( int ),
 		LenRemoteGIDs,
-		reinterpret_cast<char *> (RemoteGIDs));
+		reinterpret_cast<char *&> (RemoteGIDs));
     if (ierr) throw ReportError("Error in Epetra_Distributor.Do()", ierr);
 
     // Remote IDs come in as GIDs, convert to LIDs

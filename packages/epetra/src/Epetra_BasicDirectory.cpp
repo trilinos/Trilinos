@@ -209,7 +209,7 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
   EPETRA_CHK_ERR(Distor->Do(reinterpret_cast<char *> (export_elements), 
 		  packetSize * sizeof( int ),
                   len_import_elements,
-		  reinterpret_cast<char *> (import_elements) ));
+		  reinterpret_cast<char *&> (import_elements) ));
   
   //bool MYPID = (Map.Comm().MyPID()==0);
   int curr_LID;
@@ -358,7 +358,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 	EPETRA_CHK_ERR(Size_Distor->Do( reinterpret_cast<char*> (Size_exports),
                                         2 * sizeof( int ),
                                         len_Size_imports,
-                                        reinterpret_cast<char*> (Size_imports)));
+                                        reinterpret_cast<char*&> (Size_imports)));
 	
 	for( i = 0; i < NumEntries; i++ )
 	  {
@@ -463,7 +463,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
   EPETRA_CHK_ERR(Distor->Do(reinterpret_cast<char*> (exports),
                             PacketSize * sizeof( int ),
                             len_imports,
-                            reinterpret_cast<char*> (imports)));
+                            reinterpret_cast<char*&> (imports)));
 
   int * ptr = imports;
   for( i = 0; i < NumRecv; i++ ) {
