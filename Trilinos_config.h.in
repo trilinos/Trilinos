@@ -54,6 +54,9 @@
 /* Define if want to build tsfcoreutils */
 #undef HAVE_TSFCOREUTILS
 
+/* Define if want to build tsfextended */
+#undef HAVE_TSFEXTENDED
+
 /* Name of package */
 #undef PACKAGE
 

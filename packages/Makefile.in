@@ -124,6 +124,8 @@ AUTOMAKE_OPTIONS = foreign
 #SUBDIRS = aztecoo epetra ifpack komplex petra tpetra triutils tsf TSF epetraext
 @BUILD_TSFCORE_TRUE@TSFCORE_SUBDIR = TSFCore
 
+@BUILD_TSFEXTENDED_TRUE@TSFEXTENDED_SUBDIR = TSFExtended
+
 @BUILD_TSFCOREUTILS_TRUE@TSFCOREUTILS_SUBDIR = TSFCoreUtils
 
 @BUILD_EPETRAEXT_TRUE@EPETRAEXT_SUBDIR = epetraext
@@ -163,6 +165,7 @@ SUBDIRS = $(TEUCHOS_SUBDIR) $(EPETRA_SUBDIR) $(TPETRA_SUBDIR) $(TRIUTILS_SUBDIR)
 	  $(IFPACK_SUBDIR) \
 	  $(AZTECOO_SUBDIR) $(ML_SUBDIR) $(KOMPLEX_SUBDIR) \
 	  $(TSFCOREUTILS_SUBDIR) $(TSFCORE_SUBDIR) $(TSF_SUBDIR) \
+	$(TSFEXTENDED_SUBDIR) \
 	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR) $(BELOS_SUBDIR) \
 	  $(MEROS_SUBDIR) $(NEW_PACKAGE_SUBDIR) $(ANASAZI_SUBDIR) \
           $(NOX_SUBDIR)
@@ -179,8 +182,8 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
 DIST_SUBDIRS = teuchos epetra tpetra triutils ifpack aztecoo ml komplex \
-	TSFCoreUtils TSFCore TSF amesos epetraext belos meros \
-	new_package anasazi nox
+	TSFCoreUtils TSFCore TSF TSFExtended amesos epetraext belos \
+	meros new_package anasazi nox
 all: all-recursive
 
 .SUFFIXES:
