@@ -48,11 +48,6 @@ static struct malloc_debug_data {
   struct malloc_debug_data *next;	/* pointer to next element */
 } *top = NULL;
 
-static struct
-   {
-   int total ;
-   int maximum ;
-   } memory_usage ;
 
 /******************************************************************************/
 void Zoltan_Memory_Debug(int new_level) {
@@ -326,9 +321,6 @@ double *Zoltan_Malloc(int n, char *filename, int lineno)
       "file=%s, line=%d\n",
       proc, nmalloc, n, (long) pntr, filename, lineno);
   }
-  memory_usage.total += n ;
-  if (memory_usage.maximum < memory_usage.total)
-    memory_usage.maximum = memory_usage.total ;
 
   return pntr;
 
@@ -426,8 +418,6 @@ void Zoltan_Free (void **ptr, char *filename, int lineno)
         (long) *ptr, filename, lineno);
    }
    else {
-       memory_usage.total -= dbptr->size ;
-
        *prev = dbptr->next;
        bytes_used = -dbptr->size;
        free((char *) dbptr);
@@ -490,7 +480,7 @@ void      Zoltan_Memory_Stats()
     if (DEBUG_MEMORY == 1) {
         MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 	fprintf(stderr, "Proc %d: Calls to malloc = %d,  Calls to free = %d, "
-    "Max memory allocated %d\n", proc, nmalloc, nfree, memory_usage.maximum);
+    "Max memory allocated %d\n", proc, nmalloc, nfree, bytes_max);
         if (nmalloc > nfree)
           fprintf(stderr, "Proc %d: Possible memory error: "
                           "# malloc > # free.\n", proc);
@@ -531,9 +521,10 @@ int       Zoltan_Malloc_Num()
 
 int Zoltan_Memory_Usage (int type)
    {
-   if      (type == ZOLTAN_MEM_STAT_TOTAL)
-      return memory_usage.total ;
-   return memory_usage.maximum ;
+   if (type == ZOLTAN_MEM_STAT_TOTAL)
+      return bytes_used ;
+
+   return bytes_max ;
    }
 
 /*****************************************************************************/
