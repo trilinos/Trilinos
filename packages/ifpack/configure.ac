@@ -285,9 +285,6 @@ AC_SUBST(ac_aux_dir)
 # Output files
 # ------------------------------------------------------------------------
 ##
-#		test/Makefile
-#		test/CrsRiluk/Makefile
-#		test/IlukGraph/Makefile
 #		example/Makefile 
 #		example/ifpack_hb/Makefile
 
@@ -297,6 +294,13 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/CrsRiluk/Makefile
 		test/IlukGraph/Makefile
+		test/scripts/Makefile
+          test/scripts/daily/Makefile
+          test/scripts/daily/mpi/Makefile
+          test/scripts/daily/serial/Makefile
+          test/scripts/weekly/Makefile
+          test/scripts/weekly/mpi/Makefile
+          test/scripts/weekly/serial/Makefile
 		])
 
 AC_OUTPUT()

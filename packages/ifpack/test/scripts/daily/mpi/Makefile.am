@@ -5,12 +5,12 @@ EXEEXT = .exe
 # Nothing should be done for a serial build
 if  HAVE_MPI
 
-noinst_PROGRAMS = autotoolsTestAllMpi
+noinst_PROGRAMS = ifpackTestAllMpi
 
-autotoolsTestAllMpi_SOURCES = $(srcdir)/autotoolsTestAllMpi
+ifpackTestAllMpi_SOURCES = $(srcdir)/ifpackTestAllMpi
 
-autotoolsTestAllMpi$(EXEEXT): $(srcdir)/autotoolsTestAllMpi
-	cp $(srcdir)/autotoolsTestAllMpi autotoolsTestAllMpi$(EXEEXT) 
+ifpackTestAllMpi$(EXEEXT): $(srcdir)/ifpackTestAllMpi
+	cp $(srcdir)/ifpackTestAllMpi ifpackTestAllMpi$(EXEEXT) 
 
 endif
 

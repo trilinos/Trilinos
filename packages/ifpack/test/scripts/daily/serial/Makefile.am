@@ -6,11 +6,11 @@ EXEEXT = .exe
 if HAVE_MPI
 else
 
-noinst_PROGRAMS = autotoolsTestAll
+noinst_PROGRAMS = ifpackTestAll
 
-autotoolsTestAll_SOURCES = $(srcdir)/autotoolsTestAll
+ifpackTestAll_SOURCES = $(srcdir)/ifpackTestAll
 
-autotoolsTestAll$(EXEEXT): $(srcdir)/autotoolsTestAll
-	cp $(srcdir)/autotoolsTestAll autotoolsTestAll$(EXEEXT) 
+ifpackTestAll$(EXEEXT): $(srcdir)/ifpackTestAll
+	cp $(srcdir)/ifpackTestAll ifpackTestAll$(EXEEXT) 
 
 endif

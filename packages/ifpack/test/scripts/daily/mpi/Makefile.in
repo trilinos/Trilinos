@@ -77,8 +77,8 @@ MPI_F77_EXISTS = @MPI_F77_EXISTS@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
-TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 VERSION = @VERSION@
+XTRALDADD = @XTRALDADD@
 ac_aux_dir = @ac_aux_dir@
 am__include = @am__include@
 am__quote = @am__quote@
@@ -87,23 +87,23 @@ install_sh = @install_sh@
 EXEEXT = .exe
 
 # Nothing should be done for a serial build
-@HAVE_MPI_TRUE@noinst_PROGRAMS = autotoolsTestAllMpi
+@HAVE_MPI_TRUE@noinst_PROGRAMS = ifpackTestAllMpi
 
-@HAVE_MPI_TRUE@autotoolsTestAllMpi_SOURCES = $(srcdir)/autotoolsTestAllMpi
+@HAVE_MPI_TRUE@ifpackTestAllMpi_SOURCES = $(srcdir)/ifpackTestAllMpi
 subdir = test/scripts/daily/mpi
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
-CONFIG_HEADER = $(top_builddir)/src/Epetra_config.h
+CONFIG_HEADER = $(top_builddir)/src/Ifpack_config.h
 CONFIG_CLEAN_FILES =
-@HAVE_MPI_TRUE@noinst_PROGRAMS = autotoolsTestAllMpi$(EXEEXT)
+@HAVE_MPI_TRUE@noinst_PROGRAMS = ifpackTestAllMpi$(EXEEXT)
 @HAVE_MPI_FALSE@noinst_PROGRAMS =
 PROGRAMS = $(noinst_PROGRAMS)
 
-@HAVE_MPI_TRUE@am_autotoolsTestAllMpi_OBJECTS =
-@HAVE_MPI_FALSE@am_autotoolsTestAllMpi_OBJECTS =
-autotoolsTestAllMpi_OBJECTS = $(am_autotoolsTestAllMpi_OBJECTS)
-autotoolsTestAllMpi_LDADD = $(LDADD)
-autotoolsTestAllMpi_DEPENDENCIES =
-autotoolsTestAllMpi_LDFLAGS =
+@HAVE_MPI_TRUE@am_ifpackTestAllMpi_OBJECTS =
+@HAVE_MPI_FALSE@am_ifpackTestAllMpi_OBJECTS =
+ifpackTestAllMpi_OBJECTS = $(am_ifpackTestAllMpi_OBJECTS)
+ifpackTestAllMpi_LDADD = $(LDADD)
+ifpackTestAllMpi_DEPENDENCIES =
+ifpackTestAllMpi_LDFLAGS =
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
@@ -115,9 +115,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(autotoolsTestAllMpi_SOURCES)
+DIST_SOURCES = $(ifpackTestAllMpi_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(autotoolsTestAllMpi_SOURCES)
+SOURCES = $(ifpackTestAllMpi_SOURCES)
 
 all: all-am
 
@@ -132,9 +132,9 @@ Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.s
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-@HAVE_MPI_FALSE@autotoolsTestAllMpi$(EXEEXT): $(autotoolsTestAllMpi_OBJECTS) $(autotoolsTestAllMpi_DEPENDENCIES) 
-@HAVE_MPI_FALSE@	@rm -f autotoolsTestAllMpi$(EXEEXT)
-@HAVE_MPI_FALSE@	$(LINK) $(autotoolsTestAllMpi_LDFLAGS) $(autotoolsTestAllMpi_OBJECTS) $(autotoolsTestAllMpi_LDADD) $(LIBS)
+@HAVE_MPI_FALSE@ifpackTestAllMpi$(EXEEXT): $(ifpackTestAllMpi_OBJECTS) $(ifpackTestAllMpi_DEPENDENCIES) 
+@HAVE_MPI_FALSE@	@rm -f ifpackTestAllMpi$(EXEEXT)
+@HAVE_MPI_FALSE@	$(LINK) $(ifpackTestAllMpi_LDFLAGS) $(ifpackTestAllMpi_OBJECTS) $(ifpackTestAllMpi_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -243,8 +243,8 @@ uninstall-am: uninstall-info-am
 	uninstall-info-am
 
 
-@HAVE_MPI_TRUE@autotoolsTestAllMpi$(EXEEXT): $(srcdir)/autotoolsTestAllMpi
-@HAVE_MPI_TRUE@	cp $(srcdir)/autotoolsTestAllMpi autotoolsTestAllMpi$(EXEEXT) 
+@HAVE_MPI_TRUE@ifpackTestAllMpi$(EXEEXT): $(srcdir)/ifpackTestAllMpi
+@HAVE_MPI_TRUE@	cp $(srcdir)/ifpackTestAllMpi ifpackTestAllMpi$(EXEEXT) 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

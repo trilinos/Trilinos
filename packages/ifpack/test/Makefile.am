@@ -1,4 +1,4 @@
 #@HEADER
 #@HEADER
 
-SUBDIRS = CrsRiluk IlukGraph
+SUBDIRS = CrsRiluk IlukGraph scripts
