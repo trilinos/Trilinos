@@ -284,16 +284,27 @@ MPI-Related Options
 
 Enables MPI mode. Defines HAVE\_MPI in the (Package)\_Config.h file. Will test 
 for the ability to preprocess the MPI header file and may test ability to link 
-with MPI.
+with MPI.  This option is rarely necessary as many of the below options also 
+turn MPI on.  
 
-\item --with-mpi-cxx 
+\item --with-mpi-compilers
 
-If no argument is specified, uses "mpiCC". Otherwise, uses specified MPI C++
-compiler. Automatically enables MPI mode. 
+Sets the MPI c++ compiler = mpicxx (or mpiCC if mpicxx not available), 
+the MPI C compiler = mpicc and the MPI Fortran compiler = mpif77.  
+Automatically enables MPI mode.  To use compilers other than these, 
+specify mpi locations with the below options.  If none of these options 
+are necessary, don't forget to use --enable-mpi.  CXX, CC, and F77 may also 
+have to be set if autoconf does not choose the correct compilers by default.
 
 \item --with-mpi=MPIROOT 
 
 Specify the MPI root directory. Automatically enables MPI mode. 
+
+\item --with-mpi-libdir=DIR 
+
+Specify the MPI libraries location. Defaults to MPIROOT/lib if --with-mpi 
+is specified. If multiple directories must be specified, try 
+--with-ldflags="-L<dir1> -L<dir2>" instead. 
 
 \item --with-mpi-libs="LIBS" 
 
@@ -305,12 +316,6 @@ Specify the MPI libraries. Defaults to "-lmpi" if either --with-mpi or
 Specify the MPI include files location. Defaults to MPIROOT/include if 
 --with-mpi is specified. If multiple directories  must be specified, try 
 --with-cppflags="-I<dir1> -I<dir2>" instead.
-
-\item --with-mpi-libdir=DIR 
-
-Specify the MPI libraries location. Defaults to MPIROOT/lib if --with-mpi 
-is specified. If multiple directories must be specified, try 
---with-ldflags="-L<dir1> -L<dir2>" instead. 
 \end{itemize}
 
 Developer-Related Options
