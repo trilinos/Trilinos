@@ -65,11 +65,14 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
   Epetra_Time Time(Comm());
 
   string Pre(Prefix_);
+
+  // some options have both names, `filtering' and `ggb'.
+  sprintf(parameter,"%sggb: enable", Prefix_);
+  if( ! List_.get(parameter,false) ) return -1;
   
   sprintf(parameter,"%sfiltering: enable", Prefix_);
   if( ! List_.get(parameter,false) ) return -1;
-  
-    
+
   sprintf(parameter,"%sfiltering: use symmetric cycle", Prefix_);
   bool FltUseSym = List_.get(parameter,false);
   if( FltUseSym == true ) ML_ggb_Set_SymmetricCycle(1);
