@@ -237,7 +237,7 @@ namespace NOX {
     vector<NOX::Abstract::Vector*> vecs;
 
     //! Stores flags indicating whether we own each vector
-    vector<bool> ownsVecs;
+    vector<int> ownsVecs;
 
     //! Create %MultiVector holding \c numvecs vectors
     MultiVector(int numvecs);

@@ -54,7 +54,7 @@ NOX::MultiVector::MultiVector(const NOX::Abstract::Vector& v, int numVecs,
 
   for (int i=0; i<numVecs; i++) {
     vecs[i] = v.clone(type);
-    ownsVecs[i] = true;
+    ownsVecs[i] = 1;
   }
 }
 
@@ -71,7 +71,7 @@ NOX::MultiVector::MultiVector(const NOX::Abstract::Vector* const* vs,
 
   for (int i=0; i<numVecs; i++) {
     vecs[i] = vs[i]->clone(type);
-    ownsVecs[i] = true;
+    ownsVecs[i] = 1;
   }
 }
 
@@ -81,7 +81,7 @@ NOX::MultiVector::MultiVector(const NOX::MultiVector& source,
 {
   for (unsigned int i=0; i<source.vecs.size(); i++) {
     vecs[i] = source.vecs[i]->clone(type);
-    ownsVecs[i] = true;
+    ownsVecs[i] = 1;
   }
 }
 
@@ -167,7 +167,7 @@ NOX::MultiVector::augment(const NOX::MultiVector& source)
 
   for (unsigned int i=0; i<source.vecs.size(); i++) {
     vecs[sz+i] = source.vecs[i]->clone(NOX::DeepCopy);
-    ownsVecs[sz+i] = true;
+    ownsVecs[sz+i] = 1;
   }
 
   return *this;
@@ -310,7 +310,7 @@ NOX::MultiVector::clone(int numvecs) const
   NOX::MultiVector* tmp = new NOX::MultiVector(numvecs);
   for (int i=0; i<numvecs; i++) {
     tmp->vecs[i] = vecs[0]->clone(NOX::ShapeCopy);
-    tmp->ownsVecs[i] = true;
+    tmp->ownsVecs[i] = 1;
   }
   return tmp;
 }
@@ -324,7 +324,7 @@ NOX::MultiVector::subCopy(vector<int>& index) const
     ind = index[i];
     checkIndex(ind);
     tmp->vecs[i] = vecs[ind]->clone(NOX::DeepCopy);
-    tmp->ownsVecs[i] = true;
+    tmp->ownsVecs[i] = 1;
   }
   return tmp;
 }
@@ -338,7 +338,7 @@ NOX::MultiVector::subView(vector<int>& index) const
     ind = index[i];
     checkIndex(ind);
     tmp->vecs[i] = vecs[ind];
-    tmp->ownsVecs[i] = false;
+    tmp->ownsVecs[i] = 0;
   }
   return tmp;
 }
@@ -394,7 +394,7 @@ NOX::MultiVector::print() const
 void 
 NOX::MultiVector::checkIndex(int idx) const 
 {
-  if ( idx < 0 || idx >= vecs.size() ) {
+  if ( idx < 0 || idx >= static_cast<int>(vecs.size()) ) {
     cerr << "NOX::MultiVector:  Error!  Invalid index " << idx << endl;
     throw "NOX Error";
   }
@@ -403,7 +403,7 @@ NOX::MultiVector::checkIndex(int idx) const
 void
 NOX::MultiVector::checkSize(int sz) const
 {
-  if (vecs.size() != sz) {
+  if (static_cast<int>(vecs.size()) != sz) {
     cerr << "NOX::MultiVector:  Error!  Size of supplied multivector is"
 	 << " incompatible with this multivector" << endl;
     throw "NOX Error";
