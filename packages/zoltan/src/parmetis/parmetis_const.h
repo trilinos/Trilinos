@@ -35,20 +35,19 @@ struct LB_hash_node {
 
 /* Function prototypes */
 
-void LB_ParMETIS_Part(LB *lb, int *num_imp, LB_GID** imp_gids,
-                       LB_LID** imp_lids, int **imp_procs);
-int LB_hashf(LB_GID key, int n);
-int LB_hash_lookup (struct LB_hash_node **hashtab, int n, LB_GID key);
+int LB_ParMetis_Part(LB *, int *, LB_GID **, LB_LID **, int **);
+int LB_hashf(LB_GID, int);
+int LB_hash_lookup (struct LB_hash_node **, int, LB_GID);
 
 
-/* ParMETIS data types. Must be consistent with the definitions
-   in ParMetis/ParMETISlib.
+/* ParMETIS data types and definitions. */
+
+/* Undefine the following #define in order to use short as the idxtype.
+ * NB: Make sure these defs are consistent with those in your 
+ * ParMetis installation !
 */
-
-/* Undefine the following #define in order to use short int as the idxtype */
 #define IDXTYPE_INT
 
-/* Indexes are as long as integers for now */
 #ifdef IDXTYPE_INT
 typedef int idxtype;
 #define IDX_DATATYPE    MPI_INT
@@ -56,4 +55,18 @@ typedef int idxtype;
 typedef short idxtype;
 #define IDX_DATATYPE    MPI_SHORT
 #endif
+
+/* ParMetis 2.0 function prototypes */
+void ParMETIS_PartKway(idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *, MPI_Comm *);
+void ParMETIS_PartGeomKway(idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, int *, idxtype *, MPI_Comm *);
+void ParMETIS_PartGeom(idxtype *, int *, float *, idxtype *, MPI_Comm *);
+void ParMETIS_RefineKway(idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, idxtype *, MPI_Comm *);
+void ParMETIS_RepartLDiffusion(idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, idxtype *, MPI_Comm *);
+void ParMETIS_RepartGDiffusion(idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, idxtype *, MPI_Comm *);
+void ParMETIS_RepartRemap(idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, idxtype *, MPI_Comm *);
+void ParMETIS_RepartMLRemap(idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, idxtype *, MPI_Comm *);
+void ParMETIS_PartGraphGeomKway(idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, int *, idxtype *, MPI_Comm *);
+void ParMETIS_PartGraphGeomRefine(idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *, int *, int *, idxtype *, MPI_Comm *);
+void ParMETIS_PartGraphGeom(idxtype *, int *, float *, idxtype *, MPI_Comm *);
+void ParMETIS_NodeND(idxtype *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *, MPI_Comm *);
 
