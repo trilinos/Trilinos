@@ -197,9 +197,9 @@ float   **eweights 		/* edge weight list data */
 			fclose(fin);
 			return (1);
 	    	}
-	    	if ((weight <= 0) && Debug_Chaco_Input) {
+	    	if ((weight < 0) && Debug_Chaco_Input) {
 			printf("ERROR in graph file `%s':", inname);
-			printf(" zero or negative weight entered for vertex %d.\n", vertex);
+			printf(" negative weight entered for vertex %d.\n", vertex);
 			fclose(fin);
 			return (1);
 	    	}
@@ -225,9 +225,9 @@ float   **eweights 		/* edge weight list data */
     		fclose(fin);
     		return (1);
     	    }
-    	    if (neighbor <= 0) {
+    	    if (neighbor < 0) {
     		printf("ERROR in graph file `%s':", inname);
-    		printf(" zero or negative vertex in edge (%d,%d).\n",
+    		printf(" negative vertex in edge (%d,%d).\n",
     		       vertex, neighbor);
     		fclose(fin);
     		return (1);
