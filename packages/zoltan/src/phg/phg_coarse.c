@@ -75,12 +75,12 @@ int Zoltan_PHG_Coarsening
   int      *LevelMap)   /* information to reverse coarsenings later */
 {
   int i, j, k, old, vertex, new_vertex, maxgno, mingno, edge;
-  int err, nrec, rsize, size, gno, lno, tablesize;
+  int err, nrec, rsize, size, gno;
   int *used_edges=NULL, *c_vindex=NULL, *c_vedge=NULL;
   int *x_lno=NULL, *x_dest=NULL, *x_count=NULL, x_total;
   float *c_ewgt=NULL;
   char *sbuffer=NULL, *rbuffer=NULL, *position=NULL;
-  VInfo *v=NULL, **vlist;
+  VInfo **vlist;
   Hash_Node **htable=NULL, *hash_nodes;
   ZOLTAN_COMM_OBJ *plan=NULL;  
   char *yo = "Zoltan_PHG_Coarsening";

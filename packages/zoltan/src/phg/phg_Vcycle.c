@@ -215,11 +215,10 @@ int Zoltan_PHG_HPart_Lib (
       goto End;
   }
   if (hgp->output_level >= PHG_DEBUG_LIST)
-      printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d bal=%.2f cutl=%.2f, %.2f\n",
+      printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
              hg->info, hg->nVtx, hg->nEdge, hg->nNonZero, hg->redl, hgp->redm_str,
              hgp->coarsepartition_str, hgp->refinement_str, p,
              Zoltan_PHG_HPart_balance(zz, hg, p, part),
-             Zoltan_PHG_hcut_size_total(&hgp->comm, hg, part, p),
              Zoltan_PHG_hcut_size_links(&hgp->comm, hg, part, p));
   
   if (hgp->output_level >= PHG_DEBUG_PLOT)
@@ -241,12 +240,12 @@ double Zoltan_PHG_hcut_size_total (PHGComm *hgc, PHGraph *hg, Partition part, in
     int i, j, *netpart, *allparts;    
     double cut = 0.0, totalcut=0.0;
     char *yo = "Zoltan_PHG_hcut_size_total";
-    
+
     if (!(netpart = (int*) ZOLTAN_CALLOC (hg->nEdge, sizeof(int)))) {
         ZOLTAN_PRINT_ERROR(hgc->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
     }
-    
+
     if (!hgc->myProc_x)
         if (!(allparts = (int*) ZOLTAN_CALLOC (hgc->nProc_x*hg->nEdge, sizeof(int)))) {
             ZOLTAN_PRINT_ERROR(hgc->Proc, yo, "Insufficient memory.");
@@ -268,7 +267,7 @@ double Zoltan_PHG_hcut_size_total (PHGComm *hgc, PHGraph *hg, Partition part, in
     MPI_Gather(netpart, hg->nEdge, MPI_INT, allparts, hg->nEdge, MPI_INT, 0, hgc->row_comm);
     ZOLTAN_FREE ((void**) &netpart);
 
-    if (!hgc->myProc_x) {
+    if (!hgc->myProc_x) { 
         for (i = 0; i < hg->nEdge; ++i) {
             int p=-1;
             for (j = 0; j<hgc->nProc_x; ++j)
@@ -287,6 +286,7 @@ double Zoltan_PHG_hcut_size_total (PHGComm *hgc, PHGraph *hg, Partition part, in
         ZOLTAN_FREE ((void**) &allparts);
         MPI_Reduce(&cut, &totalcut, 1, MPI_DOUBLE, MPI_SUM, 0, hgc->col_comm);
     }
+
     MPI_Bcast(&totalcut, 1, MPI_DOUBLE, 0, hgc->Communicator);
     return totalcut;    
 }

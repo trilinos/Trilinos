@@ -33,6 +33,8 @@ typedef struct {
 
 #define Zoltan_heap_empty(H)         (((H)->n)==0)
 #define Zoltan_heap_not_empty(H)     (((H)->n)!=0)
+#define Zoltan_heap_has_elem(H,e)    (((H)->pos[e])!=-1)
+#define Zoltan_heap_value(H,e)       ((H)->value[e])    
 #define Zoltan_heap_max_value(H)     ((H)->value[(H)->ele[0]])
 #define Zoltan_heap_peek_max(H)      ((H)->ele[0])
 #define Zoltan_heap_count(H)         ((H)->n)

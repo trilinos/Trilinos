@@ -146,6 +146,11 @@ struct PHGPartParamsStruct {
                                          /* pointer to coarse partitioning fn */
   char refinement_str[MAX_PARAM_STRING_LEN]; /* Refinement string and */
   ZOLTAN_PHG_REFINEMENT_FN *Refinement;      /* pointer to refinement fn */
+
+  int fm_loop_limit;    /* Number of FM loops if the refinement is FM */
+  int fm_max_neg_move;  /* Maximum number of vertex moves with negative gain;
+                           an early stop condition. <0 means try all moves */
+    
   int check_graph;      /* Flag indicating whether the input hypergraph should 
                          * be checked for errors. */
   int output_level;     /* Flag indicating amount of output from HG algorithms.

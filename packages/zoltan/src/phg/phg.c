@@ -44,6 +44,8 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_NPROC_Y",                NULL, "INT",    0},
   {"PCHECK_GRAPH",               NULL, "INT",    0},
   {"PHG_OUTPUT_LEVEL",           NULL, "INT",    0},
+  {"PHG_FM_LOOP_LIMIT",          NULL, "INT",    0},
+  {"PHG_FM_MAX_NEG_MOVE",        NULL, "INT",    0},    
   {NULL,                         NULL,  NULL,    0} 
 };
 
@@ -168,14 +170,16 @@ static int Zoltan_PHG_Initialize_Params(
   int ierr;
   char *yo = "Zoltan_PHG_Initalize_Params";
   
-  Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL",  (void*) &hgp->output_level);
+  Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL",     (void*) &hgp->output_level);
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X",          (void*) &(hgp->comm.nProc_x));
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y",          (void*) &(hgp->comm.nProc_y));
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT",  (void*) &hgp->redl);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD", (void*) hgp->redm_str);
   Zoltan_Bind_Param(PHG_params, "PHG_EDGE_WEIGHT_SCALING",    (void*) &hgp->ews);
-  Zoltan_Bind_Param(PHG_params, "PCHECK_GRAPH",       (void*) &hgp->check_graph);   
-  Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT",   (void*) hgp->refinement_str);
+  Zoltan_Bind_Param(PHG_params, "PCHECK_GRAPH",         (void*) &hgp->check_graph);   
+  Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT",       (void*) hgp->refinement_str);
+  Zoltan_Bind_Param(PHG_params, "PHG_FM_LOOP_LIMIT",    (void*) &hgp->fm_loop_limit);
+  Zoltan_Bind_Param(PHG_params, "PHG_FM_MAX_NEG_MOVE",  (void*) &hgp->fm_max_neg_move);  
   Zoltan_Bind_Param(PHG_params, "PHG_COARSE_PARTITIONING", 
                                 (void*) hgp->coarsepartition_str);
 
@@ -191,6 +195,8 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->output_level = PHG_DEBUG_LIST;
   hgp->comm.nProc_x = -1;
   hgp->comm.nProc_y = -1;
+  hgp->fm_loop_limit = 2;
+  hgp->fm_max_neg_move = 250;  
 
   /* Get application values of parameters. */
   Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,
@@ -364,6 +370,8 @@ static int set_proc_distrib(
     char *yo = "set_proc_distrib";
     int tmp;
     int ierr = ZOLTAN_OK;
+    MPI_Group groupall;
+    int n, *ranks;
     
     if (comm->nProc_x == -1 && comm->nProc_y == -1) {
         /* Compute default */
@@ -401,6 +409,7 @@ static int set_proc_distrib(
   }
 /*  printf("(%d, %d) of [%d, %d] -> After Comm_split col_comm=%d  row_comm=%d\n", hgp->myProc_x, hgp->myProc_y, hgp->nProc_x, hgp->nProc_y, (int)hgp->col_comm, (int)hgp->row_comm);  */
   
+    
   printf("%d of %d KDDKDD nProc (%d,%d)  myProc (%d,%d)\n", 
          proc, nProc, comm->nProc_x, comm->nProc_y, comm->myProc_x, comm->myProc_y);
 End:

@@ -22,7 +22,6 @@ extern "C" {
 
 
 
-static ZOLTAN_PHG_MATCHING_FN matching_no;   /* template -- matching */
 static ZOLTAN_PHG_MATCHING_FN matching_ipm;  /* inner product matching */
 
 
@@ -104,13 +103,6 @@ End:
 }
 
 
-
-/*****************************************************************************/
-/* template for matching, hypergraph version */
-static int matching_no (ZZ *zz, PHGraph *hg, Matching match)
-{
-  return ZOLTAN_OK;
-}
 
 /*****************************************************************************/
 
