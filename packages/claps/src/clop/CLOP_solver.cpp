@@ -444,6 +444,10 @@ void CLOP_solver::construct_subdomains()
     dofpart1 = new int[dofpart2[npart]];
     for (i=0; i<ndof_overlap; i++) dofpart1[i] = i;
   }
+  int npart_sum;
+  Comm.SumAll(&npart, &npart_sum, 1);
+  if (print_flag > 9) fout << "Total number of subdomains = " << npart_sum
+			   << endl;
 }
 
 int CLOP_solver::initialize_subdomains()
@@ -1156,7 +1160,7 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
     mat_vec_prod(pSt_red, ApSt_red);
     rSt_red->Update(-1.0, *ApSt_red, 1.0);
     rSt_red->Dot(*rSt_red, &dprod);
-    if (MyPID == 0) {
+    if (print_flag > 0) {
       cout << "residual after initial orthog correction = " << sqrt(dprod) 
 	   << endl << "number of search directions used = "
 	   << n_orthog_used << endl;
