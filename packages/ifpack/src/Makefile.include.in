@@ -406,8 +406,7 @@ COMP_H = \
 	$(srcdir)/Ifpack_Utils.h                  \
 	$(srcdir)/Ifpack_Reordering.h             \
 	$(srcdir)/Ifpack_RCMReordering.h          \
-	$(srcdir)/Ifpack_METISReordering.h        \
-	$(srcdir)/Ifpack_Time.h
+	$(srcdir)/Ifpack_METISReordering.h  
 
 COMP = \
 	$(srcdir)/Ifpack_IlukGraph.cpp           \
