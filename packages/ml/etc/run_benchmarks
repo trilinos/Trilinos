@@ -12,6 +12,10 @@
 #      compilation with a -DBENCHMARK will get automatically made by
 #      run_benchmarks.
 #
+#      Note: the script automatically removes the executable and associated
+#      object file and remakes them.  Thus, you only need to do a make clean
+#      if some other ML src file uses the BENCHMARK macro.
+#
 #   3) If you are running in parallel and need something other than mpirun, 
 #      edit the 'PARALLEL_CMD' variable below.
 PARALLEL_CMD=`echo mpirun -machinefile ${HOME}/bin/machinefile -np `
@@ -33,9 +37,11 @@ PARALLEL_CMD=`echo mpirun -machinefile ${HOME}/bin/machinefile -np `
 #           parallel             Either TRUE or FALSE to indicate whether
 #                                parallel benchmarks should be run.
 #
+SCRIPT_DIRECTORY=${PWD}
 BENCH_DIRECTORY=${HOME}/mlbench
+#BENCH_DIRECTORY=${HOME}/tmp/mlbench
 EXECUTABLE_DIRECTORY=${PWD}/../Obj
-SCRATCH_DIRECTORY=/tmp/poop
+SCRATCH_DIRECTORY=/tmp/mlbench_results
 PARALLEL=FALSE
 #
 # To create new benchmark problems:
@@ -44,11 +50,28 @@ PARALLEL=FALSE
 #       cd into this directory. run_benchmarks automatically descends each 
 #       subdirectory (under mlbench) and runs the appropriate executable 
 #       within the subdirectory. 
+#
+#       Alternatively, create a new subdirectory under mlbench, cd into this
+#       directory, and create subdirectories.  Now proceed to step 2 for each
+#       of the subdirectories.  For example, I did the following for the
+#       maxwell benchmark:
+#
+#               cd ${BENCH_DIRECTORY}
+#               mkdir maxwell
+#               cd maxwell
+#               mkdir 2dcube; mkdir 3dcube; mkdir aslot
+#
+#               
+#
 #    2) Create a file called 'exe.name' containing the name of the executable
 #       that is to be run within this subdirectory (e.g. ml_example2d, 
 #       ml_read_maxwell, ml_readfile, etc.). If this executable does not
 #       exist in EXECUTABLE_DIRECTORY, run_benchmarks will create it by
 #       invoking make.
+#
+#   2a) (optional) Create a files called 'exe.makeflags' that contains any
+#       necessary defines (-Dxxxxxx) that make needs.
+#
 #    3) Put any data files that you need to run this example.
 #
 #    4) Create files 'ml_inputfile*' where '*' can not be empty. 
@@ -135,6 +158,12 @@ then
   PARALLEL=$4
 fi
 
+export SCRIPT_DIRECTORY
+export BENCH_DIRECTORY
+export EXECUTABLE_DIRECTORY
+export SCRATCH_DIRECTORY
+export PARALLEL
+
 #
 #  Check for the benchmark directory containing the 
 #  valid input/output data.
@@ -191,7 +220,8 @@ cd ${BENCH_DIRECTORY}
 for i in *
 do 
    if test `expr ${i}` != 'CVS' -a \
-           `expr ${i}` != '*'
+           `expr ${i}` != '*' -a \
+           `expr ${i}` != 'README'
    then
       cd ${i}
 #      echo -n $i "  "
@@ -201,69 +231,27 @@ do
       else
          mkdir ${SCRATCH_DIRECTORY}/${i}
       fi
-      /bin/rm -f ml_inputfile
-#     check that the executable file name is there
-      if test -f exe.name
-      then
-#         check if the executable exists
-#       
-          temp=`cat exe.name`
-          /bin/rm -f $temp
 
-          EXE=`echo ${EXECUTABLE_DIRECTORY}/$temp`
-          if test -f $EXE
-          then
-             touch $EXE
-          else
-             cd ${EXECUTABLE_DIRECTORY}
-             make APPLICATION_C=${temp}.c TESTING=-DBENCHMARK
-             cd ${BENCH_DIRECTORY}/$i
-          fi
-          ln -s $EXE $temp
-          EXE=$temp
-#
-#
-#     execute any file that starts with ml_inputfile ...
-#
-      for j in ml_inputfile*
+      for j in *
       do
-        ttt=`echo $j | sed "s/ml_inputfile//"`
-        /bin/rm -f ${SCRATCH_DIRECTORY}/${i}/output${ttt} ${SCRATCH_DIRECTORY}/${i}/difs${ttt}
-        /bin/rm -f ml_inputfile
-        cp $j ml_inputfile
-        Nprocs=`grep -i "^Number of processors" ml_inputfile | sed s"/.*=//"`
-#
-#       run only if parallel=TRUE or nprocs = 1 or []
-#
-        temp=`echo xx${Nprocs}xx | sed "s/ *//g"`
-        if test `expr ${temp}` = 'xxxx'
-        then
-            Nprocs=1
-        fi
-        if test `expr ${PARALLEL}` = 'TRUE' -o \
-           `expr ${Nprocs}` = '1' 
-        then
-        EXE_MOD=$EXE
-        if test `expr ${PARALLEL}` = 'TRUE' 
-        then
-           EXE_MOD=`echo ${PARALLEL_CMD} $Nprocs $EXE`
-        fi
-        ${EXE_MOD} | grep -v ime > ${SCRATCH_DIRECTORY}/${i}/output${ttt}
-        diff -w output${ttt} ${SCRATCH_DIRECTORY}/${i}/output${ttt} > \
-                                    ${SCRATCH_DIRECTORY}/${i}/difs${ttt}
-        wc ${SCRATCH_DIRECTORY}/${i}/difs${ttt} >> ${SCRATCH_DIRECTORY}/summary
-        tail -1 ${SCRATCH_DIRECTORY}/summary
-        cat ${SCRATCH_DIRECTORY}/${i}/difs${ttt} | grep "total iterations"
-        cat ${SCRATCH_DIRECTORY}/${i}/difs${ttt} | grep "total iterations" >> ${SCRATCH_DIRECTORY}/summary
-        cat ${SCRATCH_DIRECTORY}/${i}/difs${ttt} | grep "gid = "
-        cat ${SCRATCH_DIRECTORY}/${i}/difs${ttt} | grep "gid = " >> ${SCRATCH_DIRECTORY}/summary
-      fi
+         if test -d ${j} -a \
+            `expr ${j}`  != 'CVS'
+         then
+            cd ${j}
+            if test -d ${SCRATCH_DIRECTORY}/${i}/${j}
+            then
+               touch ${SCRATCH_DIRECTORY}/${i}/${j}
+            else
+               mkdir ${SCRATCH_DIRECTORY}/${i}/${j}
+            fi
+            echo "in subdir " ${j}
+            ${SCRIPT_DIRECTORY}/run_one ${i} ${j}
+            cd ..
+         fi
       done
-      /bin/rm -f ml_inputfile
-      /bin/rm -f $EXE
-      else 
-         echo "The file does not exist ${BENCH_DIRECTORY}/$i/exe.name?"
-      fi
+
+      ${SCRIPT_DIRECTORY}/run_one ${i}
       cd ..
+
    fi
 done
