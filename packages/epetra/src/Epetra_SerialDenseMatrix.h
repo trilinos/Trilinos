@@ -41,10 +41,11 @@ The Epetra_SerialDenseMatrix class is intended to provide very basic support for
 
 <b>Constructing Epetra_SerialDenseMatrix Objects</b>
 
-There are three Epetra_SerialDenseMatrix constructors.  The first constructs a zero-sized object which should be made
+There are four Epetra_SerialDenseMatrix constructors.  The first constructs a zero-sized object which should be made
 to appropriate length using the Shape() or Reshape() functions and then filled with the [] or () operators. 
-The second is a constructor that accepts user
-data as a 2D array, the third is a copy constructor. The second constructor has
+The second constructs an object sized to the dimensions specified, which should be filled with the [] or () operators.
+The third is a constructor that accepts user
+data as a 2D array, and the fourth is a copy constructor. The third constructor has
 two data access modes (specified by the Epetra_DataAccess argument):
 <ol>
   <li> Copy mode - Allocates memory and makes a copy of the user-provided data. In this case, the
@@ -94,6 +95,20 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
     Values should be defined by using the [] or () operators.
    */
   Epetra_SerialDenseMatrix(void);
+
+  //! Shaped constructor; defines a variable-sized object
+  /*!
+    \param In 
+           NumRows - Number of rows in object.
+    \param In 
+           NumCols - Number of columns in object.
+
+    Epetra_SerialDenseMatrix objects defined by the shaped constructor are already shaped to the
+		dimensions given as a parameters. All values are initialized to 0. Calling this constructor 
+		is equivalent to using the default constructor, and then calling the Shape function on it.
+    Values should be defined by using the [] or () operators.
+   */
+  Epetra_SerialDenseMatrix(int NumRows, int NumCols);
   
   //! Set object values from two-dimensional array.
   /*!

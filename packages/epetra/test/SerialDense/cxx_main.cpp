@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
 
   // Redefine verbose to only print on PE 0
   if (verbose && rank!=0) verbose = false;
-
+	
   int N = 20;
   int NRHS = 4;
   double * A = new double[N*N];
@@ -359,8 +359,19 @@ int main(int argc, char *argv[])
   
   delete [] C1;
 
-
-
+	// now test sized/shaped constructor
+	Epetra_SerialDenseMatrix shapedMatrix(10, 12);
+	assert(shapedMatrix.M() == 10);
+	assert(shapedMatrix.N() == 12);
+	for(i = 0; i < 10; i++)
+		for(j = 0; j < 12; j++)
+			assert(shapedMatrix(i, j) == 0.0);
+	Epetra_SerialDenseVector sizedVector(20);
+	assert(sizedVector.Length() == 20);
+	for(i = 0; i < 20; i++)
+		assert(sizedVector(i) == 0.0);
+	if (verbose)
+		cout << "Shaped/sized constructors check OK." << endl;
 
 #ifdef EPETRA_MPI
   MPI_Finalize() ;

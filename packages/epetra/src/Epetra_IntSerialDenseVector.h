@@ -40,8 +40,9 @@ functionality from Epetra_IntSerialDenseMatrix.
 
 There are three Epetra_IntSerialDenseVector constructors.  The first constructs a zero-length object which should be made
 to appropriate length using the Size() or Resize() functions and then filled with the [] or () operators. 
-The second is a constructor that accepts user
-data as a 1D array, the third is a copy constructor. The second constructor has
+The second constructs an object sized to the dimension specified, which should be filled with the [] or () operators.
+The third is a constructor that accepts user
+data as a 1D array, and the fourth is a copy constructor. The third constructor has
 two data access modes (specified by the Epetra_DataAccess argument):
 <ol>
   <li> Copy mode - Allocates memory and makes a copy of the user-provided data. In this case, the
@@ -76,6 +77,18 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
    */
   Epetra_IntSerialDenseVector(void);
   
+  //! Sized constructor; defines a variable-sized object
+  /*!
+    \param In 
+           Length - Length of vector.
+
+    Epetra_IntSerialDenseVector objects defined by the sized constructor are already sized to the
+		dimension given as a parameter. All values are initialized to 0. Calling this constructor 
+		is equivalent to using the default constructor, and then calling the Size function on it.
+    Values should be defined by using the [] or () operators.
+   */
+  Epetra_IntSerialDenseVector(int Length);
+
   //! Set object values from one-dimensional array.
   /*!
     \param In 

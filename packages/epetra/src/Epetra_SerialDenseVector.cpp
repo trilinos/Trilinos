@@ -31,6 +31,12 @@ Epetra_SerialDenseVector::Epetra_SerialDenseVector(void)
 }
 
 //=============================================================================
+Epetra_SerialDenseVector::Epetra_SerialDenseVector(int Length)
+  : Epetra_SerialDenseMatrix(Length, 1)
+{
+}
+
+//=============================================================================
 Epetra_SerialDenseVector::Epetra_SerialDenseVector(Epetra_DataAccess CV, double *Values, int Length)
   : Epetra_SerialDenseMatrix(CV, Values, Length, Length, 1)
 {}

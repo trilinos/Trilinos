@@ -38,6 +38,18 @@ Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(void)
 }
 
 //=============================================================================
+Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(int NumRows, int NumCols)
+  : Epetra_CompObject(),
+    M_(0),
+    N_(0),
+    LDA_(0),
+    A_Copied_(false),
+    A_(0)
+{
+	Shape(NumRows, NumCols);
+}
+
+//=============================================================================
 Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(Epetra_DataAccess CV, double *A, int LDA, 
 					     int NumRows, int NumCols)
   : Epetra_CompObject(),
