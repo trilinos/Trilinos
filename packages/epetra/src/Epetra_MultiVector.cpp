@@ -667,7 +667,6 @@ int Epetra_MultiVector::PackAndPrepare(const Epetra_SrcDistObject & Source,
   }
 
   double * DoubleExports = 0;
-  double * DoubleImports = 0;
 
   SizeOfPacket = NumVectors*MaxElementSize*sizeof(double);
 

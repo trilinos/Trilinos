@@ -958,7 +958,6 @@ int Epetra_VbrMatrix::OptimizeStorage() {
     All_Values_ = new double[NumMyNonzeros];
     All_Values_Orig_ = All_Values_ ;
     for (i=0; i<NumMyBlockRows_; i++) {
-      double* Values_ThisBlockRow = All_Values_ ; 
       int NumBlockEntries = NumBlockEntriesPerRow_[i];
       for (j=0; j < NumBlockEntries; j++) {
 	double* Values_ThisBlockEntry = All_Values_ ; 
@@ -1702,7 +1701,6 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       if ( ! TransA && *RowElementSizeList <= 4 ) { 
 
 	int RowDim = *RowElementSizeList ;
-	int RowDimSquared = RowDim * RowDim ; 
 
 	Epetra_SerialDenseMatrix* Asub = **Entries;
 	double *A = Asub->A_ ;
@@ -2815,7 +2813,6 @@ int Epetra_VbrMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
   const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
 
   double * DoubleExports = 0;
-  double * DoubleImports = 0;
   int GlobalMaxNumNonzeros = A.GlobalMaxNumNonzeros();
   int GlobalMaxNumBlockEntries = A.GlobalMaxNumBlockEntries();
   // Will have GlobalMaxNumEntries doubles, GlobalMaxNumEntries +2 ints, pack them interleaved
