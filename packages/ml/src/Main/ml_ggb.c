@@ -298,13 +298,7 @@ void  ML_ARPACK_driver(char which[],
 	for (kk = 0 ; kk < nloc2 ; kk++) 
 	  workd[ipntr[1]+kk-1] = workd[ipntr[0]+kk-1] - rhs1[kk];
 
-	/*	
-	  if (ml->comm->ML_mypid==0)
-	  printf("Time for eigenvalue computations is %g (sec) on processor %d\n",GetClock()-tm,ml->comm->ML_mypid);
-	*/
-	
-	
-   }
+    }
       
       
     else flag = 0;
@@ -566,13 +560,15 @@ void  ML_ARPACK_driver(char which[],
       eigen_struct->Nflag  = 1;
     }
     
-    if (ml->comm->ML_mypid==0) {
+
 #ifdef  HAVE_ML_PARPACK
-      printf("\n\t\t Parallel arpack iterations\n"); 
+      if (ml->comm->ML_mypid==0) {
+	printf("\n\t\t Parallel arpack iterations\n"); fflush(stdout);
+      }
 #else
       printf("\n\t\t Serial arpack iterations\n");
 #endif
-    }
+
 
     /*  Print additional convergence information */
     if (ml->comm->ML_mypid==0) {
