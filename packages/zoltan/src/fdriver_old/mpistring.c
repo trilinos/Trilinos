@@ -10,18 +10,15 @@
  *    $Revision$
  ****************************************************************************/
 
+/* Wrapper for MPI routines that take string arguments, to avoid the
+   difference between how Fortran compilers pass strings */
+#include <mpi.h>
+#include <malloc.h>
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-/* Wrapper for MPI routines that take string arguments, to avoid the
-   difference between how Fortran compilers pass strings */
-
-#include <mpi.h>
-#include <malloc.h>
 
 void my_get_processor_name_(int *int_name, int *namelen, int *ierr)
 {
