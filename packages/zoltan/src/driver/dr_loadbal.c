@@ -78,6 +78,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   int num_exported;              /* Number of nodes to be exported.          */
   int new_decomp;                /* Flag indicating whether the decomposition
                                     has changed                              */
+  int i;                         /* Loop index                               */
 
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -89,7 +90,9 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
     Gen_Error(0, "fatal:  NULL object returned from LB_Create_Object()\n");
     return 0;
   }
-LB_Set_Param(lb_obj, "debug_memory", "1");
+
+  /* Set some default parameters for the driver. */
+  LB_Set_Param(lb_obj, "debug_memory", "1");
 
   /* set the method */
   if (LB_Set_Method(lb_obj, prob->method) == LB_FATAL) {
@@ -97,10 +100,9 @@ LB_Set_Param(lb_obj, "debug_memory", "1");
     return 0;
   }
 
-  /* set the tolerance */
-  if (LB_Set_Tolerance(lb_obj, prob->tol) == LB_FATAL) {
-    Gen_Error(0, "fatal:  error returned from LB_Set_Tolerance()\n");
-    return 0;
+  /* set the user-specified parameters */
+  for (i = 0; i < prob->num_params; i++) {
+    LB_Set_Param(lb_obj, prob->params[i][0], prob->params[i][1]);
   }
 
   /*

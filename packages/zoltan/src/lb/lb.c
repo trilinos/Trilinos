@@ -314,25 +314,6 @@ int i;
     printf("LB:  Load balancing method = %d (%s)\n", lb->Method, method_name);
   }
 
-  /*
-   *  Set the parameters pointer if the application specifies parameters.
-   */
-/* BAH: Following now obsolete */
-/* Need to replace it with something. */
-/*
-  if (params != NULL) {
-    lb->Params = (double *) LB_Array_Alloc(__FILE__, __LINE__, 1,
-                                           LB_PARAMS_MAX_SIZE, sizeof(double));
-    if (!lb->Params) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
-      return (LB_MEMERR);
-    }
-    for (i = 0; i < LB_PARAMS_MAX_SIZE; i++) 
-      lb->Params[i] = params[i];
-  }
-*/
-
   return (LB_OK);
 }
 
@@ -417,35 +398,6 @@ char *yo = "LB_Set_Migration";
 
   return (LB_OK);
 }
-
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
-
-/* BAH: This is now obsolete */
-/*
-int LB_Initialize_Params_Array(double *params)
-{
- *  Function to initialize an array to pass parameters to the load-balancing
- *  methods.  This function is provided so that the load-balancer
- *  look for array entries not set by the application and use default values
- *  for those entries.
- *
- *  Input/Output:
- *    double *           --  Pointer to the array to be used to pass
- *                           parameters to the load-balancing methods.
- *                           Upon return, the values in this array are
- *                           initialized to an initial value determined
- *                           by the load-balancer.
-
-int i;
-
-  for (i = 0; i < LB_PARAMS_MAX_SIZE; i++)
-    params[i] = LB_PARAMS_INIT_VALUE;
-
-  return (LB_OK);
-}
-*/
 
 /****************************************************************************/
 /****************************************************************************/
