@@ -3433,6 +3433,7 @@ L800:
 
 
 #define TAU(I) tau[(I)-1]
+#undef WORK
 #define WORK(I) work[(I)-1]
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
@@ -3643,6 +3644,7 @@ tor
 
 
 #define TAU(I) tau[(I)-1]
+#undef WORK
 #define WORK(I) work[(I)-1]
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
@@ -7481,6 +7483,7 @@ return(pow);
 
 
 #define TAU(I) tau[(I)-1]
+#undef WORK
 #define WORK(I) work[(I)-1]
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
@@ -7717,6 +7720,7 @@ tor
 
 
 #define TAU(I) tau[(I)-1]
+#undef WORK
 #define WORK(I) work[(I)-1]
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
@@ -8023,6 +8027,7 @@ tor
 
 
 #define TAU(I) tau[(I)-1]
+#undef WORK
 #define WORK(I) work[(I)-1]
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
@@ -8174,6 +8179,7 @@ tor
 
 
 #define TAU(I) tau[(I)-1]
+#undef WORK
 #define WORK(I) work[(I)-1]
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
@@ -8439,6 +8445,7 @@ tor
 
 
 #define RWORK(I) rwork[(I)]
+#undef WORK
 #define WORK(I) work[(I)-1]
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
@@ -9370,6 +9377,7 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 
 
 
+#undef WORK
 #define WORK(I) work[(I)-1]
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
@@ -9636,7 +9644,9 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 #undef T
 #define T(I) t[(I)]
 #define WAS(I) was[(I)]
+#undef TAU
 #define TAU(I) tau[(I)-1]
+#undef WORK
 #define WORK(I) work[(I)-1]
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
@@ -9913,7 +9923,9 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 
 #define T(I) t[(I)]
 #define WAS(I) was[(I)]
+#undef TAU
 #define TAU(I) tau[(I)-1]
+#undef WORK
 #define WORK(I) work[(I)-1]
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
@@ -10180,7 +10192,9 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 
 #undef WORK
 
+#undef TAU
 #define TAU(I) tau[(I)-1]
+#undef WORK
 #define WORK(I) work[(I)-1]
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
@@ -10380,7 +10394,9 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
     static doublereal aii;
 
 
+#undef TAU
 #define TAU(I) tau[(I)-1]
+#undef WORK
 #define WORK(I) work[(I)-1]
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
@@ -11210,6 +11226,7 @@ doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, 
 
 
 #define IPIV(I) ipiv[(I)-1]
+#undef WORK
 #define WORK(I) work[(I)-1]
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
