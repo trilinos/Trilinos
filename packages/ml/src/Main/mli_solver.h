@@ -97,6 +97,22 @@ int  MLI_Solver_Set_MGMethod( MLI_Solver *, int );
 int  MLI_Solver_Set_CoarsenScheme( MLI_Solver *, int );
 int  MLI_Solver_Get_IJAFromFile(MLI_Solver *, char *matfile, char *rhsfile);
 int  MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *, char *rbmfile);
+int MLI_Irecv(void* buf, unsigned int count, int *src, int *mid,
+             MPI_Comm comm, MPI_Request *request );
+int MLI_SIrecv(void* buf, unsigned int count, int *src, int *mid,
+             MPI_Comm comm, MPI_Request *request );
+int MLI_Wait(void* buf, unsigned int count, int *src, int *mid,
+             MPI_Comm comm, MPI_Request *request );
+int MLI_SWait(void* buf, unsigned int count, int *src, int *mid,
+             MPI_Comm comm, MPI_Request *request );
+int MLI_Send(void* buf, unsigned int count, int dest, int mid, MPI_Comm comm );
+int MLI_SSend(void* buf, unsigned int count, int dest, int mid, MPI_Comm comm );
+int MLI_CSRExchBdry(double *vec, void *obj);
+int MLI_CSRMatVec(void *obj, int leng1, double p[], int leng2, double ap[]);
+int MLI_CSRGetRow(void *obj, int N_requested_rows, int requested_rows[],
+    int allocated_space, int columns[], double values[], int row_lengths[]);
+void MLI_Solver_Read_IJAFromFile(double **val, int **ia, int **ja, int *N,
+                                double **rhs, char *matfile, char *rhsfile);
 
 #ifdef __cplusplus
 }
