@@ -26,24 +26,24 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_OPTSPARSEMATRIX_H
-#define KOKKOS_OPTSPARSEMATRIX_H
+#ifndef KOKKOS_BASESPARSEOPS_H
+#define KOKKOS_BASESPARSEOPS_H
 
 #include "Kokkos_CompObject.hpp" 
 
-//! Kokkos::OptSparseMatrix: A class for constructing and using real-valued double-precision sparse compressed row matrices.
+//! Kokkos::BaseSparseOps: A class for constructing and using real-valued double-precision sparse compressed row matrices.
 
-/*! The Kokkos::OptSparseMatrix enables the piecewise construction and use of real-valued double-precision sparse matrices
+/*! The Kokkos::BaseSparseOps enables the piecewise construction and use of real-valued double-precision sparse matrices
   where matrix entries are intended for row access.
 
-  At this time, the primary function provided by Kokkos::OptSparseMatrix is matrix times vector and matrix 
+  At this time, the primary function provided by Kokkos::BaseSparseOps is matrix times vector and matrix 
   times multi-vector multiplication.  It is also possible to extract matrix rows from a constructed matrix.
 
-  <b>Constructing Kokkos::OptSparseMatrix objects</b>
+  <b>Constructing Kokkos::BaseSparseOps objects</b>
 
-  Constructing Kokkos::OptSparseMatrix objects is a multi-step process.  The basic steps are as follows:
+  Constructing Kokkos::BaseSparseOps objects is a multi-step process.  The basic steps are as follows:
   <ol>
-  <li> Create Kokkos::OptSparseMatrix instance, including storage,  via constructor.
+  <li> Create Kokkos::BaseSparseOps instance, including storage,  via constructor.
   <li> Enter values via one or more Put or SumInto functions.
   <li> Complete construction via FillComplete call.
   </ol>
@@ -53,7 +53,7 @@
 
   <b> Counting Floating Point Operations </b>
 
-  Each Kokkos::OptSparseMatrix object keeps track of the number
+  Each Kokkos::BaseSparseOps object keeps track of the number
   of \e serial floating point operations performed using the specified object as the \e this argument
   to the function.  The Flops() function returns this number as a double precision number.  Using this 
   information, in conjunction with the Kokkos::Time class, one can get accurate parallel performance
@@ -65,101 +65,47 @@
 namespace Kokkos {
 
   template<typename OrdinalType, typename ScalarType>
-  class OptSparseMatrix: public CompObject {
+  class BaseSparseOps: public CompObject {
   public:
 
     //@{ \name Constructors/Destructor.
-    //! OptSparseMatrix constuctor with variable number of indices per row.
-    OptSparseMatrix(void);
+    //! BaseSparseOps constuctor with variable number of indices per row.
+    BaseSparseOps(void);
   
     //! Copy constructor.
-    OptSparseMatrix(const OptSparseMatrix& Matrix);
+    BaseSparseOps(const BaseSparseOps& Matrix);
 	
-    //! OptSparseMatrix Destructor
-    virtual ~OptSparseMatrix();
+    //! BaseSparseOps Destructor
+    virtual ~BaseSparseOps();
     //@}
-  
-    //@{ \name Classical Harwell-Boeing Format Initialization Methods
-	
-    //! Initialize structure of matrix (Classical Harwell-Boeing Format)
-    /*!
-      This interface supports matrices that are stored in the classical Harwell-Boeing format.
-      \param numRows (In)  Row dimension.
-      \param numCols (In)  Column dimension.
-      \param isRowOriented - If true, the compressed index storage will be interpreted as row indices.  
-      If false, then indices will be interpreted as column indices.
-      \param pntr (In)  Array of offsets into indx.  indx[pntr[i]] contains the first index of the ith row
-      (if isRowOriented is true) or ith column (if isRowOriented is false).
-      \param indx (In)  Packed array of indices.  indx[pntr[i]] contains the first index of the ith row
-      (if isRowOriented is true) or ith column (if isRowOriented is false).
-      \return Integer error code, set to 0 if successful.
-    */
-    int initializeStructure(OrdinalType numRows, OrdinalType numCols, bool isRowOriented,
-			    OrdinalType * pntr, OrdinalType * indx);
-
-    //! Initialize structure of matrix (Classical Harwell-Boeing Format)
-    /*!
-      This interface supports matrices that are stored in the classical Harwell-Boeing format.
-      \param values (In)  Packed array of matrix values. values[pntr[i]] contains the first entry of the ith row
-      (if isRowOriented is true) or ith column (if isRowOriented is false).
-      \return Integer error code, set to 0 if successful.
-    */
-    int initializeValues(ScalarType * values);
-	
-    //@}
-
-    //@{ \name Generalized Harwell-Boeing Format Initialization Methods
- 
-    //! Initialize structure of matrix (Generalized Harwell-Boeing Format)
-    /*!
-      This interface supports matrices that are stored in a generalized Harwell-Boeing format.
-      \param numRows (In)  Row dimension.
-      \param numCols (In)  Column dimension.
-      \param isRowOriented (In) If true, the compressed index storage will be interpreted as row indices.
-      If false, then indices will be interpreted as column indices.
-      \param profile (In)  Array of index counts for indx.  pntr[i] equals the number of entries in the ith row
-      (if isRowOriented is true) or ith column (if isRowOriented is false).
-      \param indx (In)  An array of pointers to arrays of indices.  indx[i][0] contains the first index of the ith row
-      (if isRowOriented is true) or ith column (if isRowOriented is false).
-      \return Integer error code, set to 0 if successful.
-    */
-    int initializeStructure(OrdinalType numRows, OrdinalType numCols, bool isRowOriented,
-			    OrdinalType * profile, OrdinalType ** indx);
- 
-    //! Initialize structure of matrix (Generalized Harwell-Boeing Format)
-    /*!
-      This interface supports matrices that are stored in the classical Harwell-Boeing format.
-      \param values (In)  An array of pointers to arrays of matrix values. values[[i][0] contains the first entry of the ith row
-      (if isRowOriented is true) or ith column (if isRowOriented is false).
-      \return Integer error code, set to 0 if successful.
-    */
-    int initializeValues(ScalarType ** values);
- 
-    //@}
-
     //@{ \name Abstract Kokkos::CisMatrix Interface Initialization Methods
  
-    //! Initialize structure of matrix (using Kokkos::CisMatrix interface)
+    //! Initialize structure of matrix
     /*!
       This interface supports matrices that implement the Kokkos::CisMatrix matrix interface.
+      \param A (In)  An instance of a class that implements the Kokkos::CisMatrix.  All necessary information
+                     about the matrix can be obtained via this interface.
       \return Integer error code, set to 0 if successful.
     */
     int initializeStructure(CisMatrix<OrdinalType, ScalarType> const& A);
  
-    //! Initialize structure of matrix (Generalized Harwell-Boeing Format)
+    //! Initialize values of matrix
     /*!
-      This interface supports matrices that are stored in the classical Harwell-Boeing format.
-      \param values (In)  An array of pointers to arrays of matrix values. values[[i][0] contains the first entry of the ith row
-      (if isRowOriented is true) or ith column (if isRowOriented is false).
+      This interface supports matrices that implement the Kokkos::CisMatrix matrix interface.
+      \param A (In)  An instance of a class that implements the Kokkos::CisMatrix.  All necessary information
+                     about the matrix can be obtained via this interface.
+      \param checkStructure (In) If set to true, the structure of A will be checked against the structure of
+                                 the matrix passed in to the initializeStructure() methods.  This parameter is false
+				 by default.
       \return Integer error code, set to 0 if successful.
     */
-    int initializeValues(ScalarType ** values);
+    int initializeValues(CisMatrix<OrdinalType, ScalarType> const& A, bool checkStructure = false);
  
     //@}
 
     //@{ \name Computational methods.
 	
-    //! Returns the result of a Kokkos_OptSparseMatrix multiplied by a vector x in y.
+    //! Returns the result of a Kokkos_BaseSparseOps multiplied by a vector x in y.
     /*! 
       \param xLength (In) Length of vector x.
       \param x (In) A Vector to multiply by.
@@ -173,7 +119,7 @@ namespace Kokkos {
     int apply(OrdinalType xLength, ScalarType * x, OrdinalType yLength, ScalarType * y, 
 	      bool transA = false, bool conjA = false) const;
 
-    //! Returns the result of a Kokkos_OptSparseMatrix multiplied by multiple vectors in x, results in y.
+    //! Returns the result of a Kokkos_BaseSparseOps multiplied by multiple vectors in x, results in y.
     /*! 
       \param numVectors (In) Number of vectors.
       \param xLength (In) Length of vectors in x.
@@ -266,5 +212,88 @@ namespace Kokkos {
 
   };
 
+//==============================================================================
+template<typename OrdinalType, typename ScalarType>
+ BaseSparseOps<OrdinalType, ScalarType>::BaseSparseOps() 
+  : CompObject(),
+    allocated_(false),
+    numRows_(0),
+    numCols_(0),
+    numEntries_(0),
+    values_(0),
+    allValues_(0),
+    indices_(0),
+    allIndices_(0),
+    pntr_(0),
+    profile_(0)
+{
+}
+
+//==============================================================================
+template<typename OrdinalType, typename ScalarType>
+BaseSparseOps<OrdinalType, ScalarType>::BaseSparseOps(const BaseSparseOps<OrdinalType, ScalarType> &matrix) 
+  : CompObject(matrix),
+    allocated_(matrix.allocated_),
+    numRows_(matrix.numRows_),
+    numCols_(matrix.numCols_),
+    numEntries_(matrix.numEntries_),
+    values_(matrix.values_),
+    allValues_(matrix.allValues_),
+    indices_(matrix.indices_),
+    allIndices_(matrix.allIndices_),
+    pntr_(matrix.pntr_),
+    profile_(matrix.profile_)
+
+{
+}
+
+//==============================================================================
+template<typename OrdinalType, typename ScalarType>
+BaseSparseOps<OrdinalType, ScalarType>::~BaseSparseOps(){}
+
+//==============================================================================
+template<typename OrdinalType, typename ScalarType>
+void BaseSparseOps<OrdinalType, ScalarType>::initializeDefaults() { // Initialize all attributes that have trivial default values
+  return;
+}
+
+//==============================================================================
+template<typename OrdinalType, typename ScalarType>
+int BaseSparseOps<OrdinalType, ScalarType>::allocate() { // Initialize all attributes that have trivial default values
+  return;
+}
+
+//==============================================================================
+template<typename OrdinalType, typename ScalarType>
+int BaseSparseOps<OrdinalType, ScalarType>::apply(OrdinalType xLength, ScalarType * x, 
+						    OrdinalType yLength, ScalarType * y,
+						    bool transA, bool conjA) const {
+}
+
+//==============================================================================
+template<typename OrdinalType, typename ScalarType>
+int BaseSparseOps<OrdinalType, ScalarType>::apply(OrdinalType numVectors, 
+						    OrdinalType xLength, ScalarType ** x, 
+						    OrdinalType yLength, ScalarType ** y,
+						    bool transA, bool conjA) const {
+}
+
+//==============================================================================
+template<typename OrdinalType, typename ScalarType>
+int BaseSparseOps<OrdinalType, ScalarType>::applyInverse(OrdinalType xLength, ScalarType * x, 
+							   OrdinalType yLength, ScalarType * y,
+							   bool transA, bool conjA, bool upper, 
+							   bool unitDiagonal) const {
+}
+
+//==============================================================================
+template<typename OrdinalType, typename ScalarType>
+int BaseSparseOps<OrdinalType, ScalarType>::applyInverse(OrdinalType numVectors, 
+							   OrdinalType xLength, ScalarType ** x, 
+							   OrdinalType yLength, ScalarType ** y,
+							   bool transA, bool conjA, bool upper, 
+							   bool unitDiagonal) const {
+}
+
 } // namespace Kokkos
-#endif /* KOKKOS_OPTSPARSEMATRIX_H */
+#endif /* KOKKOS_BASESPARSEOPS_H */
