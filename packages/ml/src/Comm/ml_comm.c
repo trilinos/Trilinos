@@ -38,6 +38,7 @@ int ML_Comm_Create( ML_Comm ** com )
    com_ptr->USR_sendbytes  = ML_Comm_Send;
    com_ptr->USR_irecvbytes = ML_Comm_Irecv;
    com_ptr->USR_waitbytes  = ML_Comm_Wait;
+   com_ptr->USR_comm       = MPI_COMM_WORLD;
 #endif
 
    return 0;

@@ -25,10 +25,11 @@ include ../../etc/makefile.$(ARCH)
 DEFINES= -D$(ARCH) $(PACKAGES) 
 
 INCLUDES=-I../src $(SUPERLU_INC_PATH) $(AZTEC_INC_PATH) $(MPI_INC_PATH)\
+         $(PARASAILS_INC_PATH) \
          -I../Coarsen -I../Comm -I../FEGrid -I../Operator -I../Main \
          -I../Utils -I../Krylov -I../Smoother -I../Include -I..
 
-LIB_PATHS=$(AZTEC_LIB_PATH) $(SUPERLU_LIB_PATH) $(MPI_LIB_PATH) 
+LIB_PATHS=$(AZTEC_LIB_PATH) $(SUPERLU_LIB_PATH) $(PARASAILS_LIB_PATH) $(MPI_LIB_PATH) 
 
 CFLAGS=$(ARCH_FLAGS) $(DEFINES) $(INCLUDES) 
 

@@ -8,6 +8,7 @@
 /* -------------------------------------------------------------------- */
 
 #include "ml_include.h"
+extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
 /* ******************************************************************** */
 /* Fill in the pre-communication struction of an ML_Operator's getrow   */
