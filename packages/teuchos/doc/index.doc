@@ -135,6 +135,22 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 
   </ul>
 
+
+<li> <b> Debugging Support </b>
+
+  <ul>
+
+  <li> Pretty Printing Objects: The abstract base class
+  <tt>Teuchos::Describable</tt> defines an interface that
+	subclasses can override that allows the creation of formated
+	output of an object's state complete with indentation control.
+	This class has default definitions for all of its virtual member
+	functions and therefore can be inherited by existing C++ classes
+	without requiring any additional implementation support to get
+	started.
+
+  </ul>
+
 </ul>
 
 \subsection eclasses Teuchos "Extended" Classes

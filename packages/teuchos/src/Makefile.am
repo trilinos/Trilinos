@@ -54,6 +54,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_CompObject.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
+	$(srcdir)/Teuchos_Describable.hpp \
 	$(srcdir)/Teuchos_dyn_cast.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
@@ -83,6 +84,7 @@ CORE_H = \
 CORE = \
 	$(srcdir)/Teuchos_CommandLineProcessor.cpp \
 	$(srcdir)/Teuchos_CompObject.cpp \
+	$(srcdir)/Teuchos_Describable.cpp \
 	$(srcdir)/Teuchos_dyn_cast.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
@@ -322,4 +324,4 @@ MAINTAINERCLEANFILES = Makefile.in
 # ------------------------------------------------------------------------
 
 install-exec-hook:	
-	perl $(srcdir)/../.generate-makeoptions.pl $(top_builddir)/src/Makefile > $(exec_prefix)/include/trilinos_make_macros.mak
+	perl $(top_srcdir)/.generate-makeoptions.pl $(top_builddir)/src/Makefile > $(exec_prefix)/include/trilinos_make_macros.mak
