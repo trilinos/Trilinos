@@ -9123,6 +9123,9 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #         DEC/CPLANT and see if template-related errors occur)
 
 # -- DEC CXX --
+#The cxx_repository is currently necessary only for experimental code.
+#
+if test "X$ac_cv_use_teuchos_experimental" != "Xno"; then
 case $target in
   alpha*)
     if test $CXX = cxx; then
@@ -9130,6 +9133,7 @@ case $target in
     fi
   ;;
 esac
+fi
 
 echo "$as_me:$LINENO: checking for template-specific object files to be linked" >&5
 echo $ECHO_N "checking for template-specific object files to be linked... $ECHO_C" >&6
