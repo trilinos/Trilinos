@@ -17,6 +17,7 @@
 #include "lb_const.h"
 #include "reftree_const.h"
 #include "all_allo_const.h"
+#include "params_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -26,6 +27,36 @@
 
 void LB_Reftree_Free_Subtree(LB_REFTREE *subroot);
 int any_vert_equals(int vert_match, int *vertices, int start, int finish);
+int order_tri_bisect(LB *lb, int *vert1, int *order, int *vertices,
+                     int *in_vertex, int *out_vertex, LB_REFTREE *subroot);
+int order_other_ref(LB *lb, LB_REFTREE *parent, int num_child, int *num_vert,
+                    int *vert1, int *vertices, int *order, int *in_vertex,
+                    int *out_vertex);
+int order_other_ref_recur(int new_entry, int level, int *order, int *on_path,
+                          int num_child, int *has_out, int **share_vert,
+                          int *solved);
+int find_inout(int level, int num_child, int *num_vert, int *vert1,
+               int *vertices, int *in_vertex, int *out_vertex, int *order);
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int LB_Set_Reftree_Param(
+char *name,                     /* name of variable */
+char *val)                      /* value of variable */
+{
+    int status;
+    PARAM_UTYPE result;         /* value returned from Check_Param */
+    int index;                  /* index returned from Check_Param */
+    PARAM_VARS REFTREE_params[] = {
+        { "REFTREE_HASH_SIZE", NULL, "INT" },
+        { NULL, NULL, NULL } };
+
+    status = LB_Check_Param(name, val, REFTREE_params, &result, &index);
+
+    return(status);
+}
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -42,8 +73,10 @@ char *yo = "LB_Reftree_Init";
 struct LB_reftree_data_struct *reftree_data; /* data pointed to by lb */
 LB_REFTREE *root;          /* Root of the refinement tree */
 struct LB_reftree_hash_node **hashtab; /* hash table */
+int nproc;                 /* number of processors */
 LB_GID *local_gids;        /* coarse element Global IDs from user */
 LB_LID *local_lids;        /* coarse element Local IDs from user */
+LB_GID *all_gids;          /* coarse element Global IDs from all procs */
 int *assigned;             /* 1 if the element is assigned to this proc */
 int *num_vert;             /* number of vertices for each coarse element */
 int *vertices;             /* vertices for the coarse elements */
@@ -51,6 +84,9 @@ int *in_vertex;            /* "in" vertex for each coarse element */
 int *out_vertex;           /* "out" vertex for each coarse element */
 int in_order;              /* 1 if user is supplying order of the elements */
 int num_obj;               /* number of coarse objects known to this proc */
+int *num_obj_all;          /* num_obj from each processor */
+int *displs;               /* running sum of num_obj_all */
+int sum_num_obj;           /* full sum of num_obj_all */
 int total_num_obj;         /* number of objects in the whole coarse grid */
 int ierr;                  /* error flag from calls */
 int final_ierr;            /* error flag returned by this routine */
@@ -62,6 +98,9 @@ int found;                 /* flag for terminating first/next query loop */
 int hashsize;              /* size of the hash table */
 int i, j;                  /* loop counters */
 unsigned char *p;          /* for setting IDs to NULL */
+PARAM_VARS params[] = {    /* parameter values */
+  { "REFTREE_HASH_SIZE", NULL, "INT" },
+  { NULL, NULL, NULL } };
 
   final_ierr = LB_OK;
 
@@ -70,6 +109,8 @@ unsigned char *p;          /* for setting IDs to NULL */
   } else {
     wdim = lb->Obj_Weight_Dim;
   }
+
+  nproc = lb->Num_Proc;
 
   /*
    * Allocate the root of the refinement tree for this load balancing object.
@@ -122,7 +163,10 @@ unsigned char *p;          /* for setting IDs to NULL */
    * Allocate and initialize the hash table.
    */
 
-  hashsize = HASH_TABLE_SIZE;
+  params[0].ptr = (void *) &hashsize;
+  hashsize = DEFAULT_HASH_TABLE_SIZE;
+  LB_Assign_Param_Vals(lb->Params, params);
+
   hashtab = (struct LB_reftree_hash_node **)
             LB_MALLOC(sizeof(struct LB_reftree_hash_node *)*hashsize);
   if (hashtab == NULL) {
@@ -223,6 +267,27 @@ unsigned char *p;          /* for setting IDs to NULL */
         LB_Reftree_Free_Structure(lb);
         return(ierr);
       }
+
+      for (i=0; i<num_obj; i++) {
+        if (num_vert[i] == 0) {
+/* TEMP if the user always provides the order of the initial elements and
+        children, then vertices are not needed, so using num_vert==0 is
+        not a good test for an initial element being unknown to this
+        processor.  Currently we require vertices always be provided, but
+        this can be relaxed. */
+          fprintf(stderr, "[%d] Error in %s: num_vert is 0 for some object."
+                          "Vertices must be provided.\n", lb->Proc, yo);
+          LB_FREE(&local_gids);
+          LB_FREE(&local_lids);
+          LB_FREE(&assigned);
+          LB_FREE(&num_vert);
+          LB_FREE(&vertices);
+          LB_FREE(&in_vertex);
+          LB_FREE(&out_vertex);
+          LB_Reftree_Free_Structure(lb);
+          return(LB_FATAL);
+        }
+      }
     }
 
     else if (lb->Get_First_Coarse_Obj != NULL &&
@@ -254,6 +319,19 @@ unsigned char *p;          /* for setting IDs to NULL */
         LB_Reftree_Free_Structure(lb);
         return(ierr);
       }
+      if (num_vert[count] == 0) {
+        fprintf(stderr, "[%d] Error in %s: num_vert is 0 for some object."
+                        "Vertices must be provided.\n", lb->Proc, yo);
+        LB_FREE(&local_gids);
+        LB_FREE(&local_lids);
+        LB_FREE(&assigned);
+        LB_FREE(&num_vert);
+        LB_FREE(&vertices);
+        LB_FREE(&in_vertex);
+        LB_FREE(&out_vertex);
+        LB_Reftree_Free_Structure(lb);
+        return(LB_FATAL);
+      }
 
       while (found && count <= num_obj) {
         sum_vert += num_vert[count];
@@ -276,6 +354,19 @@ unsigned char *p;          /* for setting IDs to NULL */
           LB_FREE(&out_vertex);
           LB_Reftree_Free_Structure(lb);
           return(ierr);
+        }
+        if (found && num_vert[count] == 0) {
+          fprintf(stderr, "[%d] Error in %s: num_vert is 0 for some object."
+                          "Vertices must be provided.\n", lb->Proc, yo);
+          LB_FREE(&local_gids);
+          LB_FREE(&local_lids);
+          LB_FREE(&assigned);
+          LB_FREE(&num_vert);
+          LB_FREE(&vertices);
+          LB_FREE(&in_vertex);
+          LB_FREE(&out_vertex);
+          LB_Reftree_Free_Structure(lb);
+          return(LB_FATAL);
         }
       }
       if (count != num_obj) {
@@ -307,22 +398,134 @@ unsigned char *p;          /* for setting IDs to NULL */
   /*
    * Communicate to get coarse grid objects unknown to this processor.
    */
-/*
-TEMP For now, assume all coarse grid objects are known to all processors.
-*/
-
-  total_num_obj = num_obj;
-  /* TEMP in what follows, most local_gids etc will be replaced by whatever
-          I call them after doing this */
 
   /*
-   * Determine the order of the coarse grid elements.
+   * First determine how many coarse objects are on each processor
    */
 
-  order = (int *) LB_MALLOC(total_num_obj*sizeof(int));
-  if (order == NULL) {
-    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-            lb->Proc, yo);
+  num_obj_all = (int *)LB_MALLOC(nproc*sizeof(int));
+  displs = (int *)LB_MALLOC(nproc*sizeof(int));
+  if (num_obj_all == NULL || displs == NULL) {
+    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    LB_FREE(&local_gids);
+    LB_FREE(&local_lids);
+    LB_FREE(&assigned);
+    LB_FREE(&num_vert);
+    LB_FREE(&vertices);
+    LB_FREE(&in_vertex);
+    LB_FREE(&out_vertex);
+    LB_FREE(&num_obj_all);
+    LB_FREE(&displs);
+    LB_Reftree_Free_Structure(lb);
+    return(LB_MEMERR);
+  }
+
+  MPI_Allgather((void *)&num_obj,1,MPI_INT,(void *)num_obj_all,1,MPI_INT,
+                lb->Communicator);
+  displs[0] = 0;
+  for (i=1; i<nproc; i++) displs[i] = displs[i-1]+num_obj_all[i-1];
+  sum_num_obj = displs[nproc-1] + num_obj_all[nproc-1];
+
+  /*
+   * Then get the coarse objects from all processors
+   */
+
+  all_gids = (LB_GID *) LB_MALLOC(sum_num_obj*sizeof(LB_GID));
+  if (all_gids == NULL) {
+    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    LB_FREE(&local_gids);
+    LB_FREE(&local_lids);
+    LB_FREE(&assigned);
+    LB_FREE(&num_vert);
+    LB_FREE(&vertices);
+    LB_FREE(&in_vertex);
+    LB_FREE(&out_vertex);
+    LB_FREE(&num_obj_all);
+    LB_FREE(&displs);
+    LB_FREE(&all_gids);
+    LB_Reftree_Free_Structure(lb);
+    return(LB_MEMERR);
+  }
+
+/* TEMP sending this as bytes won't work if the parallel machine consists
+        of machines with different representations (e.g. different byte
+        ordering) of whatever LB_GID is, but what else can we do? */
+
+  for (i=0; i<nproc; i++) {
+    num_obj_all[i] = num_obj_all[i]*sizeof(LB_GID);
+    displs[i] = displs[i]*sizeof(LB_GID);
+  }
+
+  MPI_Allgatherv((void *)local_gids,num_obj*sizeof(LB_GID),MPI_BYTE,
+                 (void *)all_gids,num_obj_all,displs,MPI_BYTE,
+                 lb->Communicator);
+
+  LB_FREE(&displs);
+  LB_FREE(&num_obj_all);
+
+  /*
+   * Finally, build a list with each coarse grid element, beginning with
+   * the ones this processor knows.  Also set the default order of the
+   * elements as given by the user, with processor rank resolving duplicates
+   */
+
+  local_gids = (LB_GID *) LB_REALLOC(local_gids,sum_num_obj*sizeof(LB_GID));
+  order = (int *) LB_MALLOC(sum_num_obj*sizeof(int));
+  if (local_gids == NULL || order == NULL) {
+    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    LB_FREE(&local_gids);
+    LB_FREE(&local_lids);
+    LB_FREE(&assigned);
+    LB_FREE(&num_vert);
+    LB_FREE(&vertices);
+    LB_FREE(&in_vertex);
+    LB_FREE(&out_vertex);
+    LB_FREE(&all_gids);
+    LB_FREE(&order);
+    LB_Reftree_Free_Structure(lb);
+    return(LB_MEMERR);
+  }
+
+/* TEMP this is terribly inefficient.  Probably better to sort all_gids to
+        identify the duplicates.  Of course, it's not bad if the
+        initial grid is really coarse */
+
+  total_num_obj = num_obj;
+  count = 0;
+  for (i=0; i<sum_num_obj; i++) order[i] = -1;
+
+  for (i=0; i<sum_num_obj; i++) {
+    found = 0;
+    for (j=0; j<total_num_obj && !found; j++) {
+      if (LB_EQ_GID(all_gids[i],local_gids[j])) found = 1;
+    }
+    if (found) {
+      if (order[j-1] == -1) {
+        order[j-1] = count;
+        count += 1;
+      }
+    }
+    else {
+      LB_SET_GID(local_gids[total_num_obj],all_gids[i]);
+      order[total_num_obj] = count;
+      count += 1;
+      total_num_obj += 1;
+    }
+  }
+
+  if (count != total_num_obj) {
+    fprintf(stderr, "[%d] Warning in %s: Number of objects counted while "
+                    "setting default order = %d is not equal to the "
+                    "number counted while getting objects from other procs "
+                    "= %d\n",lb->Proc, yo, count, total_num_obj);
+    final_ierr = LB_WARN;
+  }
+
+  LB_FREE(&all_gids);
+
+  num_vert = (int *) LB_REALLOC(num_vert,total_num_obj*sizeof(int));
+  if (num_vert == NULL) {
+    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
     LB_FREE(&local_gids);
     LB_FREE(&local_lids);
     LB_FREE(&assigned);
@@ -334,22 +537,18 @@ TEMP For now, assume all coarse grid objects are known to all processors.
     return(LB_MEMERR);
   }
 
-  if (in_order) {
+  for (i=num_obj; i<total_num_obj; i++) num_vert[i] = 0;
 
   /*
-   * User supplied order; permutation matrix is the identity
+   * Determine the order of the coarse grid elements.
+   * If the user supplies the order, it was set above.
    */
 
-    for (i=0; i<total_num_obj; i++) order[i] = i;
-  }
-
-  else {
+  if (!in_order) {
 
   /*
    * TEMP For now, require that the user provide the order.
    */
-
-    for (i=0; i<total_num_obj; i++) order[i] = i;
 
     fprintf(stderr, "[%d] Warning in %s: Currently not supporting automatic "
                     "determination of the order of the coarse grid objects.  "
@@ -417,7 +616,10 @@ TEMP For now, assume all coarse grid objects are known to all processors.
     root->children[order[i]].weight = (float *) LB_MALLOC(wdim*sizeof(float));
     root->children[order[i]].summed_weight = (float *) LB_MALLOC(wdim*sizeof(float));
     root->children[order[i]].my_sum_weight = (float *) LB_MALLOC(wdim*sizeof(float));
-    root->children[order[i]].vertices = (int *) LB_MALLOC(num_vert[i]*sizeof(int));
+    if (num_vert[i] == 0)
+      root->children[order[i]].vertices = (int *) LB_MALLOC(sizeof(int));
+    else
+      root->children[order[i]].vertices = (int *) LB_MALLOC(num_vert[i]*sizeof(int));
     if (root->children[order[i]].weight        == NULL ||
         root->children[order[i]].summed_weight == NULL ||
         root->children[order[i]].my_sum_weight == NULL ||
@@ -444,6 +646,10 @@ TEMP For now, assume all coarse grid objects are known to all processors.
   /* if an initial element is a leaf, the weight gets set to 1 later */
        *(root->children[order[i]].weight) = 0.0;
     }
+    else if (num_vert[i] == 0) {
+  /* if the element is not known to this processor, the weight is 0 */
+       *(root->children[order[i]].weight) = 0.0;
+    }
     else {
       lb->Get_Child_Weight(lb->Get_Child_Weight_Data, local_gids[i],
                            local_lids[i], lb->Obj_Weight_Dim, 
@@ -466,15 +672,30 @@ TEMP For now, assume all coarse grid objects are known to all processors.
    * Copy from temporary arrays and set empty defaults
    */
 
-    root->children[order[i]].global_id      = local_gids[i];
-    root->children[order[i]].local_id       = local_lids[i];
-    root->children[order[i]].children       = (LB_REFTREE *) NULL;
-    root->children[order[i]].num_child      = 0;
-    root->children[order[i]].num_vertex     = num_vert[i];
-    root->children[order[i]].in_vertex      = in_vertex[i];
-    root->children[order[i]].out_vertex     = out_vertex[i];
-    root->children[order[i]].assigned_to_me = assigned[i];
-    root->children[order[i]].partition      = 0;
+    if (num_vert[i] == 0) {
+  /* elements not known to this processor have more empty entries */
+      LB_SET_GID(root->children[order[i]].global_id,local_gids[i]);
+      p = (unsigned char *)&(root->children[order[i]].local_id);
+      for (i=0; i<sizeof(LB_LID); i++,p++) *p = (unsigned char)NULL;
+      root->children[order[i]].children       = (LB_REFTREE *) NULL;
+      root->children[order[i]].num_child      = 0;
+      root->children[order[i]].num_vertex     = num_vert[i];
+      root->children[order[i]].in_vertex      = 0;
+      root->children[order[i]].out_vertex     = 0;
+      root->children[order[i]].assigned_to_me = 0;
+      root->children[order[i]].partition      = 0;
+    }
+    else {
+      LB_SET_GID(root->children[order[i]].global_id,local_gids[i]);
+      LB_SET_LID(root->children[order[i]].local_id,local_lids[i]);
+      root->children[order[i]].children       = (LB_REFTREE *) NULL;
+      root->children[order[i]].num_child      = 0;
+      root->children[order[i]].num_vertex     = num_vert[i];
+      root->children[order[i]].in_vertex      = in_vertex[i];
+      root->children[order[i]].out_vertex     = out_vertex[i];
+      root->children[order[i]].assigned_to_me = assigned[i];
+      root->children[order[i]].partition      = 0;
+    }
 
   /*
    * Add it to the hash table
@@ -527,6 +748,8 @@ int i;                     /* loop counter */
       return(ierr);
     }
   }
+/* TEMP if the tree did already exist, need to check initial grid in case
+        any coarse grid elements migrated, so num_vert should change */
   root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
 
   /*
@@ -542,15 +765,18 @@ int i;                     /* loop counter */
 
   /*
    * For each child of the root, build the subtree rooted at that child
-   * and, if the weights are not provided, set its weight if it is a leaf
+   * and, if the weights are not provided, set its weight if it is a leaf.
+   * Skip elements not known to this processor.
    */
 
   for (i=0; i<root->num_child; i++) {
-    ierr = LB_Reftree_Build_Recursive(lb,&(root->children[i]));
-    if (ierr==LB_FATAL || ierr==LB_MEMERR) {
-      fprintf(stderr, "[%d] Error in %s:  Error returned from LB_Reftree"
-                      "_Build_Recursive\n",lb->Proc, yo);
-      return(ierr);
+    if ( (root->children[i]).num_vertex != 0 ) {
+      ierr = LB_Reftree_Build_Recursive(lb,&(root->children[i]));
+      if (ierr==LB_FATAL || ierr==LB_MEMERR) {
+        fprintf(stderr, "[%d] Error in %s:  Error returned from LB_Reftree"
+                        "_Build_Recursive\n",lb->Proc, yo);
+        return(ierr);
+      }
     }
   }
 
@@ -581,15 +807,6 @@ int wdim;                  /* dimension for weights */
 int i, j;                  /* loop counters */
 int sum_vert;              /* running sum of the number of vertices */
 int *vert1;                /* array containing the first vertex for each child*/
-int bad_case;              /* flag for failing to identify order */
-int has_in[2];             /* flag for an element having the parent in vert */
-int has_out[2];            /* flag for an element having the parent out vert */
-int has_third[2];          /* flag for a triangle having the parent non in/out*/
-int not_parent[2];         /* index of a vertex the parent does not have */
-int parent_in;             /* index of the parent in vertex */
-int parent_out;            /* index of the parent out vertex */
-int parent_third;          /* index of the parent triangle non in/out vert */
-int parents_vert[6];       /* cross index between children and parent */
 struct LB_reftree_hash_node **hashtab; /* hash tree */
 int hashsize;              /* size of the hash table */
 
@@ -679,6 +896,22 @@ int hashsize;              /* size of the hash table */
     LB_Reftree_Free_Structure(lb);
     return(ierr);
   }
+  for (i=0; i<num_obj; i++) {
+    if (num_vert[i] == 0) {
+      fprintf(stderr, "[%d] Error in %s: num_vert is 0 for some object."
+                      "Vertices must be provided.\n", lb->Proc, yo);
+      LB_FREE(&local_gids);
+      LB_FREE(&local_lids);
+      LB_FREE(&assigned);
+      LB_FREE(&num_vert);
+      LB_FREE(&vertices);
+      LB_FREE(&in_vertex);
+      LB_FREE(&out_vertex);
+      LB_FREE(&vert1);
+      LB_Reftree_Free_Structure(lb);
+      return(LB_FATAL);
+    }
+  }
 
   /*
    * Set the start of the list of vertices for each child
@@ -712,35 +945,25 @@ int hashsize;              /* size of the hash table */
    */
 
   switch (ref_type) {
-  case LB_OTHER_REF:
-    if (TEMP_first_warning) {
-      fprintf(stderr, "[%d] Warning in %s:  Currently not supporting "
-                      "automatic ordering of elements for refinement type "
-                      "LB_OTHER_REF.  Using LB_IN_ORDER.\n",lb->Proc,yo);
-      TEMP_first_warning = 0;
-      final_ierr = LB_WARN;
-    }
-    ref_type = LB_IN_ORDER;
-    break;
   case LB_QUAD_QUAD:
     if (TEMP_first_warning) {
       fprintf(stderr, "[%d] Warning in %s:  Currently not supporting "
                       "automatic ordering of elements for refinement type "
-                      "LB_QUAD_QUAD.  Using LB_IN_ORDER.\n",lb->Proc,yo);
+                      "LB_QUAD_QUAD.  Using LB_OTHER_REF.\n",lb->Proc,yo);
       TEMP_first_warning = 0;
       final_ierr = LB_WARN;
     }
-    ref_type = LB_IN_ORDER;
+    ref_type = LB_OTHER_REF;
     break;
   case LB_HEX3D_OCT:
     if (TEMP_first_warning) {
       fprintf(stderr, "[%d] Warning in %s:  Currently not supporting "
                       "automatic ordering of elements for refinement type "
-                      "LB_HEX3D_OCT.  Using LB_IN_ORDER.\n",lb->Proc,yo);
+                      "LB_HEX3D_OCT.  Using LB_OTHER_REF.\n",lb->Proc,yo);
       TEMP_first_warning = 0;
       final_ierr = LB_WARN;
     }
-    ref_type = LB_IN_ORDER;
+    ref_type = LB_OTHER_REF;
     break;
   }
 
@@ -753,171 +976,17 @@ int hashsize;              /* size of the hash table */
 
   switch (ref_type) {
 
+  case LB_IN_ORDER:
   /*
    * If provided in order, order is the identity permutation and
    * in_vertex and out_vertex were provided by the user or not needed.
-   * TEMP not quite -- I said I would pick one if -1 is returned
+   * TEMP not quite -- I said I would pick in/out if -1 is returned
    */
-  case LB_IN_ORDER:
     for (i=0; i<num_obj; i++) order[i] = i;
     break;
-
-  /*
-   * For newest node bisection of triangles, determine which of the first
-   * and second child has the in_vertex and out_vertex, and find the
-   * common vertex to go between them.
-   */
   case LB_TRI_BISECT:
-    /* verify that 3 vertices were given for each triangle; if not, punt */
-    if (vert1[1] != 3 || vert1[2] != 6) {
-      fprintf(stderr, "[%d] Warning in %s:  Incorrect number of vertices "
-                      "given for bisected triangles.\n",lb->Proc,yo);
-      final_ierr = LB_WARN;
-      order[0] = 0;
-      order[1] = 1;
-      in_vertex[0] = vertices[vert1[0]];    /* TEMP I can at least try to */
-      out_vertex[0] = vertices[vert1[0]+1]; /* find a common vertex for   */
-      in_vertex[1] = vertices[vert1[1]];    /* out[0] and in[1]           */
-      out_vertex[1] = vertices[vert1[1]+1];
-      break;
-    }
-    /* determine the relationship between the parent's vertices and
-       the children's vertices */
-    for (i=0; i<6; i++) {
-      parents_vert[i] = -1;
-      for (j=0; j<3; j++) {
-        if (vertices[i] == subroot->vertices[j]) parents_vert[i] = j;
-      }
-    }
-    /* determine the location of the parents in and out vertices */
-    parent_in = -1; parent_out = -1; parent_third = -1;
-    for (i=0; i<3; i++) {
-      if (subroot->vertices[i] == subroot->in_vertex) {
-        parent_in = i;
-      }
-      else if (subroot->vertices[i] == subroot->out_vertex) {
-        parent_out = i;
-      }
-      else {
-        parent_third = i;
-      }
-    }
-    if (parent_in == -1 || parent_out == -1 || parent_third == -1) {
-      /* failed to locate one of them */
-      fprintf(stderr, "[%d] Warning in %s:  Could not locate in and out "
-                      "vertices in the parent.\n",lb->Proc,yo);
-      final_ierr = LB_WARN;
-      order[0] = 0;
-      order[1] = 1;
-      in_vertex[0] = vertices[vert1[0]];    /* TEMP I can at least try to */
-      out_vertex[0] = vertices[vert1[0]+1]; /* find a common vertex for   */
-      in_vertex[1] = vertices[vert1[1]];    /* out[0] and in[1]           */
-      out_vertex[1] = vertices[vert1[1]+1];
-      break;
-    }
-    /* find the vertex that the parent doesn't have */
-    if (parents_vert[0] == -1) not_parent[0] = 0;
-    if (parents_vert[1] == -1) not_parent[0] = 1;
-    if (parents_vert[2] == -1) not_parent[0] = 2;
-    if (parents_vert[3] == -1) not_parent[1] = 3;
-    if (parents_vert[4] == -1) not_parent[1] = 4;
-    if (parents_vert[5] == -1) not_parent[1] = 5;
-    /* see which children have which special vertices */
-    if (parents_vert[0] == parent_in || parents_vert[1] == parent_in ||
-        parents_vert[2] == parent_in) has_in[0] = 1;
-    else has_in[0] = 0;
-    if (parents_vert[0] == parent_out || parents_vert[1] == parent_out ||
-        parents_vert[2] == parent_out) has_out[0] = 1;
-    else has_out[0] = 0;
-    if (parents_vert[0] == parent_third || parents_vert[1] == parent_third ||
-        parents_vert[2] == parent_third) has_third[0] = 1;
-    else has_third[0] = 0;
-    if (parents_vert[3] == parent_in || parents_vert[4] == parent_in ||
-        parents_vert[5] == parent_in) has_in[1] = 1;
-    else has_in[1] = 0;
-    if (parents_vert[3] == parent_out || parents_vert[4] == parent_out ||
-        parents_vert[5] == parent_out) has_out[1] = 1;
-    else has_out[1] = 0;
-    if (parents_vert[3] == parent_third || parents_vert[4] == parent_third ||
-        parents_vert[5] == parent_third) has_third[1] = 1;
-    else has_third[1] = 0;
-    /* look for the case for this refinement */
-    bad_case = 0;
-    if (has_in[0]) {
-      if (has_out[1]) {
-        order[0] = 0; order[1] = 1;
-        in_vertex[0] = subroot->vertices[parent_in];
-        out_vertex[1] = subroot->vertices[parent_out];
-        if (has_third[0] && has_third[1]) {
-          out_vertex[0] = subroot->vertices[parent_third];
-          in_vertex[1] = subroot->vertices[parent_third];
-        }else{
-          out_vertex[0] = vertices[not_parent[0]];
-          in_vertex[1] = vertices[not_parent[1]];
-        }
-      }
-      else if (has_in[1]) {
-        if (has_out[0]) {
-          order[0] = 1; order[1] = 0;
-          in_vertex[1] = subroot->vertices[parent_in];
-          out_vertex[0] = subroot->vertices[parent_out];
-          if (has_third[0] && has_third[1]) {
-            out_vertex[1] = subroot->vertices[parent_third];
-            in_vertex[0] = subroot->vertices[parent_third];
-          }else{
-            out_vertex[1] = vertices[not_parent[1]];
-            in_vertex[0] = vertices[not_parent[0]];
-          }
-        }else{ /* impossible case, no one has the out vertex */
-          bad_case = 1;
-          order[0] = 0; order[1] = 1;
-          in_vertex[0] = subroot->vertices[parent_in];
-          out_vertex[0] = subroot->vertices[parent_third];
-          in_vertex[1] = subroot->vertices[parent_third];
-          out_vertex[1] = subroot->vertices[parent_in];
-        }
-      }else{ /* impossible case, second child has neither in nor out */
-        bad_case = 1;
-        order[0] = 0; order[1] = 1;
-        in_vertex[0] = subroot->vertices[parent_in];
-        out_vertex[0] = subroot->vertices[parent_third];
-        in_vertex[1] = vertices[3];
-        out_vertex[1] = vertices[4];
-      }
-    }
-    else if (has_out[0]) {
-      if (has_in[1]) {
-        order[0] = 1; order[1] = 0;
-        in_vertex[1] = subroot->vertices[parent_in];
-        out_vertex[0] = subroot->vertices[parent_out];
-        if (has_third[0] && has_third[1]) {
-          out_vertex[1] = subroot->vertices[parent_third];
-          in_vertex[0] = subroot->vertices[parent_third];
-        }else{
-          out_vertex[1] = vertices[not_parent[1]];
-          in_vertex[0] = vertices[not_parent[0]];
-        }
-      }else{ /* impossible case, no one has the in vertex */
-        bad_case = 1;
-        order[0] = 0; order[1] = 1;
-        in_vertex[0] = subroot->vertices[parent_out];
-        out_vertex[0] = subroot->vertices[parent_third];
-        in_vertex[1] = subroot->vertices[parent_third];
-        out_vertex[1] = subroot->vertices[parent_out];
-      }
-    }else{ /* impossible case, first child has neither in nor out */
-      bad_case = 1;
-      order[0] = 0; order[1] = 1;
-      in_vertex[0] = vertices[0];
-      out_vertex[0] = vertices[1];
-      in_vertex[1] = vertices[3];
-      out_vertex[1] = vertices[4];
-    }
-    if (bad_case) {
-      fprintf(stderr, "[%d] Warning in %s:  Vertices of children did not "
-                      "match the in and out vertices of parent.\n",lb->Proc,yo);
-      final_ierr = LB_WARN;
-    }
+    ierr = order_tri_bisect(lb,vert1,order,vertices,in_vertex,out_vertex,
+                            subroot);
     break;
   case LB_QUAD_QUAD:
     /* TEMP */
@@ -930,9 +999,8 @@ int hashsize;              /* size of the hash table */
     for (i=0; i<num_obj; i++) order[i] = i;
     break;
   case LB_OTHER_REF:
-    /* TEMP */
-    printf("Oops, still got into case for OTHER_REF\n");
-    for (i=0; i<num_obj; i++) order[i] = i;
+    ierr = order_other_ref(lb, subroot, num_obj, num_vert, vert1, vertices,
+                           order, in_vertex, out_vertex);
     break;
 
   /*
@@ -1043,8 +1111,8 @@ int hashsize;              /* size of the hash table */
    * Copy from temporary arrays and set empty defaults
    */
 
-    subroot->children[order[i]].global_id      = local_gids[i];
-    subroot->children[order[i]].local_id       = local_lids[i];
+    LB_SET_GID(subroot->children[order[i]].global_id,local_gids[i]);
+    LB_SET_LID(subroot->children[order[i]].local_id,local_lids[i]);
     subroot->children[order[i]].children       = (LB_REFTREE *) NULL;
     subroot->children[order[i]].num_child      = 0;
     subroot->children[order[i]].num_vertex     = num_vert[i];
@@ -1088,6 +1156,8 @@ int hashsize;              /* size of the hash table */
 
 }
 
+/*****************************************************************************/
+
 int any_vert_equals(int vert_match, int *vertices, int start, int finish)
 {
 /*
@@ -1099,6 +1169,448 @@ int i, result;
     if (vertices[i] == vert_match) result = 1;
   }
   return(result);
+}
+
+/*****************************************************************************/
+
+int order_tri_bisect(LB *lb, int *vert1, int *order, int *vertices,
+                     int *in_vertex, int *out_vertex, LB_REFTREE *subroot)
+{
+/*
+ * Function to determine the order of the children and in/out vertices
+ * when refinement is done by bisecting triangles.  Determine which of
+ * the first and second child has the in_vertex and out_vertex, and find the
+ * common vertex to go between them.
+ */
+char *yo = "order_tri_bisect";
+int i, j;                  /* loop indices */
+int parents_vert[6];       /* cross index between children and parent */
+int parent_in;             /* index of the parent in vertex */
+int parent_out;            /* index of the parent out vertex */
+int parent_third;          /* index of the parent triangle non in/out vert */
+int not_parent[2];         /* index of a vertex the parent does not have */
+int has_in[2];             /* flag for an element having the parent in vert */
+int has_out[2];            /* flag for an element having the parent out vert */
+int has_third[2];          /* flag for a triangle having the parent non in/out*/
+int bad_case;              /* flag for failing to identify order */
+
+  /* verify that 3 vertices were given for each triangle; if not, punt */
+  if (vert1[1] != 3 || vert1[2] != 6) {
+    fprintf(stderr, "[%d] Warning in %s:  Incorrect number of vertices "
+                    "given for bisected triangles.\n",lb->Proc,yo);
+    order[0] = 0;
+    order[1] = 1;
+    in_vertex[0] = vertices[vert1[0]];
+    out_vertex[0] = vertices[vert1[0]+1];
+    in_vertex[1] = vertices[vert1[1]];
+    out_vertex[1] = vertices[vert1[1]+1];
+    return(LB_WARN);
+  }
+
+  /* determine the relationship between the parent's vertices and
+     the children's vertices */
+  for (i=0; i<6; i++) {
+    parents_vert[i] = -1;
+    for (j=0; j<3; j++) {
+      if (vertices[i] == subroot->vertices[j]) parents_vert[i] = j;
+    }
+  }
+
+  /* determine the location of the parents in and out vertices */
+  parent_in = -1; parent_out = -1; parent_third = -1;
+  for (i=0; i<3; i++) {
+    if (subroot->vertices[i] == subroot->in_vertex) {
+      parent_in = i;
+    }
+    else if (subroot->vertices[i] == subroot->out_vertex) {
+      parent_out = i;
+    }
+    else {
+    parent_third = i;
+    }
+  }
+  if (parent_in == -1 || parent_out == -1 || parent_third == -1) {
+    /* failed to locate one of them */
+    fprintf(stderr, "[%d] Warning in %s:  Could not locate in and out "
+                    "vertices in the parent.\n",lb->Proc,yo);
+    order[0] = 0;
+    order[1] = 1;
+    in_vertex[0] = vertices[vert1[0]];
+    out_vertex[0] = vertices[vert1[0]+1];
+    in_vertex[1] = vertices[vert1[1]];
+    out_vertex[1] = vertices[vert1[1]+1];
+    return(LB_WARN);
+  }
+
+  /* find the vertex that the parent doesn't have */
+  if (parents_vert[0] == -1) not_parent[0] = 0;
+  if (parents_vert[1] == -1) not_parent[0] = 1;
+  if (parents_vert[2] == -1) not_parent[0] = 2;
+  if (parents_vert[3] == -1) not_parent[1] = 3;
+  if (parents_vert[4] == -1) not_parent[1] = 4;
+  if (parents_vert[5] == -1) not_parent[1] = 5;
+
+  /* see which children have which special vertices */
+  if (parents_vert[0] == parent_in || parents_vert[1] == parent_in ||
+      parents_vert[2] == parent_in) has_in[0] = 1;
+  else has_in[0] = 0;
+  if (parents_vert[0] == parent_out || parents_vert[1] == parent_out ||
+      parents_vert[2] == parent_out) has_out[0] = 1;
+  else has_out[0] = 0;
+  if (parents_vert[0] == parent_third || parents_vert[1] == parent_third ||
+      parents_vert[2] == parent_third) has_third[0] = 1;
+  else has_third[0] = 0;
+  if (parents_vert[3] == parent_in || parents_vert[4] == parent_in ||
+      parents_vert[5] == parent_in) has_in[1] = 1;
+  else has_in[1] = 0;
+  if (parents_vert[3] == parent_out || parents_vert[4] == parent_out ||
+      parents_vert[5] == parent_out) has_out[1] = 1;
+  else has_out[1] = 0;
+  if (parents_vert[3] == parent_third || parents_vert[4] == parent_third ||
+      parents_vert[5] == parent_third) has_third[1] = 1;
+  else has_third[1] = 0;
+
+  /* look for the case for this refinement */
+  bad_case = 0;
+  if (has_in[0]) {
+    if (has_out[1]) {
+      order[0] = 0; order[1] = 1;
+      in_vertex[0] = subroot->vertices[parent_in];
+      out_vertex[1] = subroot->vertices[parent_out];
+      if (has_third[0] && has_third[1]) {
+        out_vertex[0] = subroot->vertices[parent_third];
+        in_vertex[1] = subroot->vertices[parent_third];
+      }else{
+        out_vertex[0] = vertices[not_parent[0]];
+        in_vertex[1] = vertices[not_parent[1]];
+      }
+    }
+    else if (has_in[1]) {
+      if (has_out[0]) {
+        order[0] = 1; order[1] = 0;
+        in_vertex[1] = subroot->vertices[parent_in];
+        out_vertex[0] = subroot->vertices[parent_out];
+        if (has_third[0] && has_third[1]) {
+          out_vertex[1] = subroot->vertices[parent_third];
+          in_vertex[0] = subroot->vertices[parent_third];
+        }else{
+          out_vertex[1] = vertices[not_parent[1]];
+          in_vertex[0] = vertices[not_parent[0]];
+        }
+      }else{ /* impossible case, no one has the out vertex */
+        bad_case = 1;
+        order[0] = 0; order[1] = 1;
+        in_vertex[0] = subroot->vertices[parent_in];
+        out_vertex[0] = subroot->vertices[parent_third];
+        in_vertex[1] = subroot->vertices[parent_third];
+        out_vertex[1] = subroot->vertices[parent_in];
+      }
+    }else{ /* impossible case, second child has neither in nor out */
+      bad_case = 1;
+      order[0] = 0; order[1] = 1;
+      in_vertex[0] = subroot->vertices[parent_in];
+      out_vertex[0] = subroot->vertices[parent_third];
+      in_vertex[1] = vertices[3];
+      out_vertex[1] = vertices[4];
+    }
+  }
+  else if (has_out[0]) {
+    if (has_in[1]) {
+      order[0] = 1; order[1] = 0;
+      in_vertex[1] = subroot->vertices[parent_in];
+      out_vertex[0] = subroot->vertices[parent_out];
+      if (has_third[0] && has_third[1]) {
+        out_vertex[1] = subroot->vertices[parent_third];
+        in_vertex[0] = subroot->vertices[parent_third];
+      }else{
+        out_vertex[1] = vertices[not_parent[1]];
+        in_vertex[0] = vertices[not_parent[0]];
+      }
+    }else{ /* impossible case, no one has the in vertex */
+      bad_case = 1;
+      order[0] = 0; order[1] = 1;
+      in_vertex[0] = subroot->vertices[parent_out];
+      out_vertex[0] = subroot->vertices[parent_third];
+      in_vertex[1] = subroot->vertices[parent_third];
+      out_vertex[1] = subroot->vertices[parent_out];
+    }
+  }else{ /* impossible case, first child has neither in nor out */
+    bad_case = 1;
+    order[0] = 0; order[1] = 1;
+    in_vertex[0] = vertices[0];
+    out_vertex[0] = vertices[1];
+    in_vertex[1] = vertices[3];
+    out_vertex[1] = vertices[4];
+  }
+  if (bad_case) {
+    fprintf(stderr, "[%d] Warning in %s:  Vertices of children did not "
+                    "match the in and out vertices of parent.\n",lb->Proc,yo);
+    return(LB_WARN);
+  }
+  else {
+    return(LB_OK);
+  }
+}
+
+/*****************************************************************************/
+
+int order_other_ref(LB *lb, LB_REFTREE *parent, int num_child, int *num_vert,
+                    int *vert1, int *vertices, int *order, int *in_vertex,
+                    int *out_vertex)
+{
+/*
+ * Function to determine the order of the children for an undetermined
+ * refinement scheme.  This is expensive as it performs a tree search
+ * to solve this NP hard problem, but it should work for any refinement.
+ */
+
+char *yo = "order_other_ref";
+int i, j, vi, vj;   /* loop counters */
+int *has_in;        /* flag for children having in vertex */
+int *has_out;       /* flag for children having out vertex */
+int **share_vert;   /* flag for two elements sharing a vertex */
+int solved;         /* flag for having found the solution */
+int final_ierr;     /* error code returned */
+int *on_path;       /* flag for already placed element on path */
+
+/* TEMP currently looks for a path in which sequential elements share a
+        vertex.  May get a better partition by first searching for a path
+        in which they share an edge, and then doing this if that fails */
+
+  final_ierr = LB_OK;
+
+  /*
+   * Determine which elements contain the in and out vertices of the parent
+   */
+
+  has_in = (int *) LB_MALLOC(num_child*sizeof(int));
+  has_out = (int *) LB_MALLOC(num_child*sizeof(int));
+  if (has_in == NULL || has_out == NULL) {
+    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    LB_FREE(&has_in);
+    LB_FREE(&has_out);
+    return(LB_MEMERR);
+  }
+
+  for (i=0; i<num_child; i++) {
+    has_in[i] = 0;
+    has_out[i] = 0;
+    for (j=0; j<num_vert[i] && !has_in[i]; j++)
+      if (vertices[vert1[i]+j] == parent->in_vertex) has_in[i] = 1;
+    for (j=0; j<num_vert[i] && !has_out[i]; j++)
+      if (vertices[vert1[i]+j] == parent->out_vertex) has_out[i] = 1;
+  }
+
+  /*
+   * Determine which elements share vertices other than the in/out vertices
+   */
+
+  share_vert = (int **) LB_MALLOC(num_child*sizeof(int *));
+  if (share_vert == NULL) {
+    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    LB_FREE(&share_vert);
+    LB_FREE(&has_in);
+    LB_FREE(&has_out);
+    return(LB_MEMERR);
+  }
+  for (i=0; i<num_child; i++) {
+    share_vert[i] = (int *) LB_MALLOC(num_child*sizeof(int));
+    if (share_vert[i] == NULL) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+      for (j=0; j<=i; j++) LB_FREE(&(share_vert[j]));
+      LB_FREE(&share_vert);
+      LB_FREE(&has_in);
+      LB_FREE(&has_out);
+      return(LB_MEMERR);
+    }
+  }
+
+  for (i=0; i<num_child; i++) {
+    share_vert[i][i] = 1;
+    for (j=i+1; j<num_child; j++) {
+      share_vert[i][j] = 0;
+      share_vert[j][i] = 0;
+      for (vi=0; vi<num_vert[i] && !share_vert[i][j]; vi++) {
+        for (vj=0; vj<num_vert[j] && !share_vert[i][j]; vj++) {
+          if (vertices[vert1[i]+vi] == vertices[vert1[j]+vj]) {
+            if (vertices[vert1[i]+vi] != parent->in_vertex &&
+                vertices[vert1[i]+vi] != parent->out_vertex) {
+              share_vert[i][j] = 1;
+              share_vert[j][i] = 1;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /*
+   * Perform tree search to find solution
+   */
+
+  solved = 0;
+  on_path = (int *) LB_MALLOC(num_child*sizeof(int));
+  if (on_path == NULL) {
+    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    for (j=0; j<=i; j++) LB_FREE(&(share_vert[j]));
+    LB_FREE(&on_path);
+    LB_FREE(&share_vert);
+    LB_FREE(&has_in);
+    LB_FREE(&has_out);
+    return(LB_MEMERR);
+  }
+  for (i=0; i<num_child; i++) on_path[i]=0;
+
+  /*
+   * Try each element with the in vertex to start the path
+   */
+
+  for (i=0; i<num_child && !solved; i++) {
+    if (has_in[i]) {
+      order_other_ref_recur(i,0,order,on_path,num_child,
+                            has_out,share_vert,&solved);
+    }
+  }
+
+  /*
+   * This should have found a solution, but if not then use given order
+   */
+
+  if (!solved) {
+    fprintf(stderr, "[%d] Warning from %s: Couldn't find path through children."
+                    "  Using given order.\n", lb->Proc, yo);
+    for (i=0; i<num_child; i++) order[i] = i;
+    final_ierr = LB_WARN;
+  }
+
+  LB_FREE(&on_path);
+  LB_FREE(&share_vert);
+  LB_FREE(&has_in);
+  LB_FREE(&has_out);
+
+  /*
+   * Finally, determine the in and out vertices of each child
+   */
+
+  in_vertex[order[0]] = parent->in_vertex;
+  out_vertex[order[num_child-1]] = parent->out_vertex;
+  solved = find_inout(0, num_child, num_vert, vert1, vertices, in_vertex,
+                      out_vertex, order);
+  if (!solved) {
+    fprintf(stderr, "[%d] Warning from %s: Couldn't find good set of in/out"
+                    " vertices.  Using first and second.\n", lb->Proc, yo);
+    for (i=0; i<num_child; i++) {
+      in_vertex[i]  = vertices[vert1[i]];
+      out_vertex[i] = vertices[vert1[i]+1];
+    }
+    final_ierr = LB_WARN;
+  }
+
+  return(final_ierr);
+}
+
+/*****************************************************************************/
+
+int order_other_ref_recur(int new_entry, int level, int *order, int *on_path,
+                          int num_child, int *has_out, int **share_vert,
+                          int *solved)
+{
+/*
+ * Recursive routine to search the solution space tree
+ */
+int i;
+
+  if (level == num_child-1) {
+
+  /*
+   * End of a path, success if this element has the out vertex
+   */
+    if (has_out[new_entry]) {
+      order[level] = new_entry;
+      *solved = 1;
+    }
+    else {
+      *solved = 0;
+    }
+  }
+
+  else {
+
+  /*
+   * Add this element to the proposed path
+   */
+
+    order[level] = new_entry;
+    on_path[new_entry] = 1;
+
+  /*
+   * Try each element that is not already on the path and shares a vertex
+   * with the current new entry
+   */
+
+    for (i=0; i<num_child && !(*solved); i++) {
+      if (!on_path[i] && share_vert[new_entry][i]) {
+        order_other_ref_recur(i, level+1, order, on_path, num_child, has_out,
+                              share_vert, solved);
+      }
+    }
+
+    on_path[new_entry] = 0;
+  }
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int find_inout(int level, int num_child, int *num_vert, int *vert1,
+               int *vertices, int *in_vertex, int *out_vertex, int *order)
+{
+/*
+ * Function to find in and out vertices.
+ * On first call, the first in_vertex and last out_vertex should already be set.
+ * level should be 0 in the first call.
+ */
+int i, j;                       /* loop counters */
+int solved;                     /* found a solution */
+
+  if (level == num_child-1) {
+
+  /*
+   * Last element.  Success if the in vertex is not the last out
+   */
+
+    if (in_vertex[order[level]] == out_vertex[order[level]])
+      solved = 0;
+    else
+      solved = 1;
+
+  }
+  else {
+
+  /*
+   * Not last element.
+   * Try each vertex that is not the in vertex, and if the next element in
+   * the path shares that vertex, move on to the next element
+   */
+
+    solved = 0;
+    for (i=0; i<num_vert[order[level]] && !solved; i++) {
+      if (vertices[vert1[order[level]]+i] != in_vertex[order[level]]) {
+        for (j=0; j<num_vert[order[level+1]] && !solved; j++) {
+          if (vertices[vert1[order[level+1]]+j] == vertices[vert1[order[level]]+i]) {
+            out_vertex[order[level]]  = vertices[vert1[order[level]]+i];
+            in_vertex[order[level+1]] = vertices[vert1[order[level]]+i];
+            solved = find_inout(level+1, num_child, num_vert, vert1, vertices,
+                                in_vertex, out_vertex, order);
+          }
+        }
+      }
+    }
+
+  }
+
+  return(solved);
 }
 
 /*****************************************************************************/

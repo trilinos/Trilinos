@@ -1463,7 +1463,8 @@ call to an <B><A HREF="#LB_NUM_COARSE_OBJ_FN">LB_NUM_COARSE_OBJ_FN</A></B> query
 <TD>Upon return, an array of integers indicating whether or not each object
 is currently assigned to this processor.  A value of 1 indicates it is
 assigned to this processor; a value of 0 indicates it is assigned to some
-other processor.  For elements that have been refined, it is ignored.</TD>
+other processor.  For elements that have been refined, it is ignored
+unless weights are assigned to interior nodes of the tree.</TD>
 </TR>
 
 <TR>
@@ -1603,7 +1604,8 @@ be provided.
 <TD>Upon return, an integer indicating whether or not this object
 is currently assigned to this processor.  A value of 1 indicates it is
 assigned to this processor; a value of 0 indicates it is assigned to some
-other processor.  For elements that have been refined, it is ignored.</TD>
+other processor.  For elements that have been refined, it is ignored
+unless weights are assigned to interior nodes of the tree.</TD>
 </TR>
 
 <TR>
@@ -1752,7 +1754,8 @@ query function.
 <TD>Upon return, an integer indicating whether or not this object
 is currently assigned to this processor.  A value of 1 indicates it is
 assigned to this processor; a value of 0 indicates it is assigned to some
-other processor.  For elements that have been refined, it is ignored.</TD>
+other processor.  For elements that have been refined, it is ignored
+unless weights are assigned to interior nodes of the tree.</TD>
 </TR>
 
 <TR>
@@ -2005,7 +2008,8 @@ call to an <B><A HREF="#LB_NUM_CHILD_FN">LB_NUM_CHILD_FN</A></B> query function.
 <TD>Upon return, an array of integers indicating whether or not each child
 is currently assigned to this processor.  A value of 1 indicates it is
 assigned to this processor; a value of 0 indicates it is assigned to some
-other processor.  For children that have been further refined, it is ignored.</TD>
+other processor.  For children that have been further refined, it is ignored
+unless weights are assigned to interior nodes of the tree.</TD>
 </TR>
 
 <TR>
@@ -2033,6 +2037,12 @@ The values currently supported are:</TD>
 <TD></TD>
 <TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>LB_TRI_BISECT</I>
 Bisection of triangles.</TD>
+</TR>
+
+<TR>
+<TD></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>LB_OTHER_REF</I>
+All other forms of refinement.</TD>
 </TR>
 
 <TR>

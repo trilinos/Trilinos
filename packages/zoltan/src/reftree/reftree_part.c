@@ -17,6 +17,7 @@
 #include "lb_const.h"
 #include "reftree_const.h"
 #include "all_allo_const.h"
+#include "params_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -24,6 +25,8 @@
 
 /* Prototypes for functions internal to this file */
 
+int LB_Reftree_Sum_Weights_pairs(LB *lb);
+int LB_Reftree_Sum_Weights_bcast(LB *lb);
 void LB_Reftree_Sum_My_Weights(LB *lb, LB_REFTREE *subroot, int *count, int wdim);
 void LB_Reftree_Sum_All_Weights(LB *lb, LB_REFTREE *subroot, int wdim);
 void LB_Reftree_List_Other_Leaves(LB_REFTREE *subroot, LB_GID *list, int *count);
@@ -31,11 +34,12 @@ int LB_Reftree_Partition(LB *lb, int *num_export, LB_GID **export_global_ids,
                          LB_LID **export_local_ids, int **export_procs);
 void LB_Reftree_Part_Recursive(LB *lb, LB_REFTREE *subroot, int *part,
                                float *current_size, int *num_exp, float *cutoff,
-                               float partition_size);
+                               float partition_size, float eps);
 void LB_Reftree_Mark_and_Count(LB_REFTREE *subroot, int part, int *num_exp);
 int LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, int *num_export,
                             LB_GID **export_global_ids,
                             LB_LID **export_local_ids, int **export_procs);
+int is_power_of_2(int n);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -129,6 +133,43 @@ int LB_Reftree_Sum_Weights(LB *lb)
 
 {
 /*
+ * Wrapper function for summing the weights.  This just calls one of
+ * two functions for summing the weights, one of which uses broadcasts
+ * from each processor to all other processors, and the other of which
+ * uses O(log p) pairwise communication steps.
+ */
+
+ if (is_power_of_2(lb->Num_Proc))
+   return(LB_Reftree_Sum_Weights_pairs(lb));
+ else
+   return(LB_Reftree_Sum_Weights_bcast(lb));
+}
+
+int is_power_of_2(int n)
+{
+/*
+ * determine if n is a power of 2
+ */
+
+  int count, n2;
+  count = 0;
+  n2 = n;
+  if (n > 0) {
+    while(n2) {count++;n2=n2>>1;}
+    return(n==(1<<count-1));
+  } else {
+    return(0);
+  }
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int LB_Reftree_Sum_Weights_pairs(LB *lb)
+
+{
+/*
  * Function to sum the weights in the refinement tree.  On input the
  * refinement tree should be valid and have weight set.  On output the
  * values in summed_weight at each node is the sum of the weights in the
@@ -138,16 +179,249 @@ int LB_Reftree_Sum_Weights(LB *lb)
  * 0 if none of the subtree is assigned to this processor
  * -1 if some of the subtree is assigned to this processor
  *
- * TEMP This version uses all-to-all communciation.  Need to find a less
- *      communication intensive approach.
- * Note to myself: The log(p) pairwise approach didn't work because
- * intermediate processors didn't pass on partial sums for the nodes
- * they didn't have.  I believe this can be fixed by added a second
- * log(p) pairwise communication phase to build a list of all processors'
- * requests, so that intermediate processors know to keep the partial
- * sums that they don't need.
+ * This version uses O(log p) pairwise communication steps.
+ * TEMP Restricted to power-of-2 number of processors.
  */
-char *yo = "LB_Reftree_Sum_Weights";
+char *yo = "LB_Reftree_Sum_Weights_pairs";
+LB_REFTREE *root;         /* Root of the refinement tree */
+int wdim;                 /* Dimension of the weight array */
+int i,j,comm_loop,rproc;  /* loop counters */
+int count;                /* counter */
+LB_GID *leaf_list;        /* leaves for which some proc requests weight */
+int reqsize;              /* length of leaf_list */
+LB_GID *newlist;          /* building concatinated leaf_list of all procs */
+int newsize;              /* new length of leaf_list */
+int my_start;             /* position in leaf_list of this proc's list */
+int nproc;                /* number of processors */
+int log_nproc;            /* base 2 log of number of processors */
+int myproc;               /* this processor's processor number */
+int other_proc;           /* processor being communicated with */
+MPI_Status mess_status;   /* status of an MPI message */
+LB_REFTREE *node;         /* a node in the refinement tree */
+struct LB_reftree_hash_node **hashtab; /* hash table */
+int hashsize;             /* dimension of hash table */
+float *send_float;        /* sending message of floats */
+float *req_weights;       /* the requested weights */
+
+  /*
+   * set the root and hash table
+   */
+
+  root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
+  if (root == NULL) {
+    fprintf(stderr, "[%d] Error from %s: Refinement tree not defined.\n",
+            lb->Proc, yo);
+    return(LB_FATAL);
+  }
+  hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
+  hashsize = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table_size;
+
+  /*
+   * Determine the dimension of the weight array
+   */
+
+  if (lb->Obj_Weight_Dim == 0) {
+    wdim = 1;
+  } else {
+    wdim = lb->Obj_Weight_Dim;
+  }
+
+  /*
+   * In the first pass, sum the weights of the nodes that are assigned to
+   * this processor, and count the leaves that are not.
+   */
+
+  count = 0;
+  for (i=0; i<root->num_child; i++) {
+    LB_Reftree_Sum_My_Weights(lb,&(root->children[i]),&count,wdim);
+  }
+  root->assigned_to_me = -1;
+
+  /*
+   * Make a list of the leaves that are not assigned to this processor
+   */
+
+  if (count == 0)
+    leaf_list = (LB_GID *) LB_MALLOC(sizeof(LB_GID));
+  else
+    leaf_list = (LB_GID *) LB_MALLOC(count*sizeof(LB_GID));
+  if (leaf_list == NULL) {
+    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+            lb->Proc,yo);
+    return(LB_MEMERR);
+  }
+
+  count = 0;
+  LB_Reftree_List_Other_Leaves(root,leaf_list,&count);
+
+  /*
+   * Get the unknown leaf weights from other processors.
+   */
+
+  nproc = lb->Num_Proc;
+  myproc = lb->Proc;
+  log_nproc = -1;
+  i = nproc;
+  while(i) {log_nproc++; i=i>>1;};
+
+  /*
+   * Build a list of all processor's request list by concatinating them in
+   * the order of the processor ranks
+   */
+
+/* TEMP It may be better to use MPI_Allgatherv for this.  That would also
+        eliminate the power of 2 restriction */
+
+  reqsize = count;
+  my_start = 0;
+
+  for (comm_loop=0; comm_loop<log_nproc; comm_loop++) {
+
+  /*
+   * Exchange the leaf_list with the next processor
+   */
+
+    other_proc = myproc^(1<<comm_loop);
+
+  /*
+   * First exchange the size of the lists
+   */
+
+    MPI_Send((void *)&reqsize,1,MPI_INT,other_proc,100+comm_loop,
+             lb->Communicator);
+    MPI_Recv((void *)&newsize,1,MPI_INT,other_proc,100+comm_loop,
+             lb->Communicator, &mess_status);
+
+  /*
+   * Allocate space for the concatinated list, copy the current list to it,
+   * and free the current list
+   */
+
+    if (reqsize+newsize == 0)
+      newlist = (LB_GID *) LB_MALLOC(sizeof(LB_GID));
+    else
+      newlist = (LB_GID *) LB_MALLOC((reqsize+newsize)*sizeof(LB_GID));
+    if (newlist == NULL) {
+      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+              lb->Proc,yo);
+      LB_FREE(&leaf_list);
+      return(LB_MEMERR);
+    }
+    if (myproc < other_proc) {
+      for (i=0; i<reqsize; i++) LB_SET_GID(newlist[i],leaf_list[i]);
+    }
+    else {
+      for (i=0; i<reqsize; i++) LB_SET_GID(newlist[i+newsize],leaf_list[i]);
+      my_start += newsize;
+    }
+    LB_FREE(&leaf_list);
+    leaf_list = newlist;
+
+  /*
+   * Finally, exchange the lists
+   */
+/* TEMP sending this as bytes won't work if the parallel machine consists
+        of machines with different representations (e.g. different byte
+        ordering) of whatever LB_GID is, but what else can we do? */
+
+
+    if (myproc < other_proc) {
+      MPI_Send((void *)leaf_list,reqsize*sizeof(LB_GID),MPI_BYTE,other_proc,
+               200+comm_loop,lb->Communicator);
+      MPI_Recv((void *)&(leaf_list[reqsize]),newsize*sizeof(LB_GID),MPI_BYTE,
+               other_proc,200+comm_loop,lb->Communicator,&mess_status);
+    }
+    else {
+      MPI_Send((void *)&(leaf_list[newsize]),reqsize*sizeof(LB_GID),MPI_BYTE,
+               other_proc,200+comm_loop,lb->Communicator);
+      MPI_Recv((void *)leaf_list,newsize*sizeof(LB_GID),MPI_BYTE,
+               other_proc,200+comm_loop,lb->Communicator,&mess_status);
+    }
+
+    reqsize = reqsize + newsize;
+  }
+
+  /* 
+   * Create a list with the partial sums this processor has
+   */
+
+  send_float = (float *) LB_MALLOC(sizeof(float)*wdim*reqsize);
+  if (send_float == NULL) {
+    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+            lb->Proc,yo);
+    LB_FREE(&leaf_list);
+    return(LB_MEMERR);
+  }
+
+  for (i=0; i<reqsize; i++) {
+    node = LB_Reftree_hash_lookup(hashtab,leaf_list[i],hashsize);
+    if (node == NULL)
+       for (j=0; j<wdim; j++) send_float[i*wdim+j] = 0.0;
+    else
+       for (j=0; j<wdim; j++) send_float[i*wdim+j] = node->my_sum_weight[j];
+  }
+
+  /*
+   * Sum the weights over all the processors
+   */
+
+  req_weights = (float *) LB_MALLOC(sizeof(float)*wdim*reqsize);
+  if (req_weights == NULL) {
+    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+            lb->Proc,yo);
+    LB_FREE(&leaf_list);
+    LB_FREE(&send_float);
+    return(LB_MEMERR);
+  }
+
+/* TEMP perhaps it would be better to use MPI_Reduce_Scatter */
+  MPI_Allreduce((void *)send_float, (void *)req_weights, reqsize, MPI_FLOAT,
+                MPI_SUM, lb->Communicator);
+
+  LB_FREE(&send_float);
+
+  /*
+   * Set the weights this processor requested
+   */
+
+  for (i=0; i<count; i++) {
+    node = LB_Reftree_hash_lookup(hashtab,leaf_list[i+my_start],hashsize);
+    for (j=0; j<wdim; j++) node->summed_weight[j] = req_weights[(i+my_start)*wdim+j];
+  }
+
+  LB_FREE(&req_weights);
+  LB_FREE(&leaf_list);
+
+  /*
+   * All the leaves now have summed_weight set.
+   * Sum the weights throughout the tree.
+   */
+
+  LB_Reftree_Sum_All_Weights(lb,root,wdim);
+
+  return(LB_OK);
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int LB_Reftree_Sum_Weights_bcast(LB *lb)
+
+{
+/*
+ * Function to sum the weights in the refinement tree.  On input the
+ * refinement tree should be valid and have weight set.  On output the
+ * values in summed_weight at each node is the sum of the weights in the
+ * subtree with that node as root.
+ * This function also sets assigned_to_me for interior nodes to be
+ * 1 if the entire subtree is assigned to this processor
+ * 0 if none of the subtree is assigned to this processor
+ * -1 if some of the subtree is assigned to this processor
+ *
+ * This version uses all-to-all communciation.
+ */
+char *yo = "LB_Reftree_Sum_Weights_bcast";
 LB_REFTREE *root;         /* Root of the refinement tree */
 int wdim;                 /* Dimension of the weight array */
 int i,j,comm_loop,rproc;  /* loop counters */
@@ -159,8 +433,8 @@ MPI_Status mess_status;   /* status of an MPI message */
 int reqsize;              /* number of leaves for which weights are requested */
 LB_GID *recv_gid;         /* received message of LB_GIDs */
 LB_REFTREE *node;         /* a node in the refinement tree */
-struct LB_reftree_hash_node **hashtab; /* hash tree */
-int hashsize;             /* dimension of hash tree */
+struct LB_reftree_hash_node **hashtab; /* hash table */
+int hashsize;             /* dimension of hash table */
 float *send_float;        /* sending message of floats */
 float *recv_float;        /* received message of floats */
 
@@ -375,14 +649,16 @@ int all_assigned;  /* flag for all children assigned to this proc */
   else {
 
   /*
-   * If there are children, sum the weights of the children and set
-   * assigned to me.
-   * TEMP Not using the weights of interior nodes because I haven't
-   *      determined how to handle interior nodes that are assigned to
-   *      other processors.
+   * If there are children, sum the weights of the children with the
+   * node's weight and set assigned to me.
    */
 
-    for (i=0; i<wdim; i++) subroot->my_sum_weight[i] = 0.0;
+    if (subroot->assigned_to_me) {
+      for (i=0; i<wdim; i++) subroot->my_sum_weight[i] = subroot->weight[i];
+    }
+    else {
+      for (i=0; i<wdim; i++) subroot->my_sum_weight[i] = 0.0;
+    }
     none_assigned = 1;
     all_assigned = 1;
 
@@ -415,7 +691,7 @@ void LB_Reftree_Sum_All_Weights(LB *lb, LB_REFTREE *subroot, int wdim)
 {
 /*
  * Function to recursively sum the weights of all the nodes in the tree
- * assuming that summed_weight contains partial sums
+ * assuming that summed_weight contains partial sums in the leaves
  */
 int i, j;   /* loop counter */
 
@@ -426,13 +702,11 @@ int i, j;   /* loop counter */
   if (subroot->num_child != 0) {
 
   /*
-   * If there are children, sum the weights of the children.
-   * TEMP Not using the weights of interior nodes because I haven't
-   *      determined how to handle interior nodes that are assigned to
-   *      other processors.
+   * If there are children, sum the weights of the children with the
+   * weight of this node.
    */
 
-    for (i=0; i<wdim; i++) subroot->summed_weight[i] = 0.0;
+    for (i=0; i<wdim; i++) subroot->summed_weight[i] = subroot->weight[i];
 
     for (j=0; j<subroot->num_child; j++) {
       LB_Reftree_Sum_All_Weights(lb,&(subroot->children[j]),wdim);
@@ -496,19 +770,23 @@ float partition_size; /* amount of weight for each partition */
 float cutoff;         /* the value at which the current partition is full */
 int part;             /* partition under construction */
 float current_size;   /* amount of weight consumed so far */
-
-/* TEMP don't know what to do with multicomponent weights.  Just using
-        the first component */
-
-/* TEMP don't know how to allow a tolerance in the partition sizes */
+float eps;            /* allowed deviation from average partition size */
 
   root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
 
   /*
-   * determine the size of the partitions
+   * determine the size of the partitions and tolerance interval
    */
 
+/* TEMP equal sizes does not support heterogeneous computer.  Can at least
+        make the partition sizes proportional to the computational power
+        of the processors.  Probably should set up an array of cutoff
+        points up front, creating intervals whose sizes reflect the power
+        of the processors.
+        Don't know what to do about unequal communication */
+
   partition_size = root->summed_weight[0]/lb->Num_Proc;
+  eps = (lb->Imbalance_Tol - 1.0)*partition_size/2.0;
 
   /*
    * traverse the tree to define the partition and count the number of exports
@@ -519,7 +797,7 @@ float current_size;   /* amount of weight consumed so far */
   current_size = 0.0;
   cutoff = partition_size;
   LB_Reftree_Part_Recursive(lb,root,&part,&current_size,&num_exp,&cutoff,
-                            partition_size);
+                            partition_size,eps);
 
   /*
    * if no exports, we're done
@@ -572,22 +850,27 @@ float current_size;   /* amount of weight consumed so far */
 
 void LB_Reftree_Part_Recursive(LB *lb, LB_REFTREE *subroot, int *part,
                               float *current_size, int *num_exp, float *cutoff,
-                              float partition_size)
+                              float partition_size, float eps)
 
 {
 /*
  * function to recursively define the partition and count the number of exports
  */
-int i;        /* loop counter */
+int i;         /* loop counter */
+float newsize; /* size of partition if this subroot gets added to it */
 
-  if (*current_size + subroot->summed_weight[0] <= *cutoff) {
+/* TEMP don't know what to do with multicomponent weights.  Just using
+        the first component */
+  newsize = *current_size + subroot->summed_weight[0];
+
+  if (newsize <= *cutoff + eps) {
 
   /*
    * This subtree fits in the current partition
    */
 
     subroot->partition = *part;
-    *current_size += subroot->summed_weight[0];
+    *current_size = newsize;
 
   /*
    * If this is this processor's partition, there are no exports below this
@@ -604,6 +887,15 @@ int i;        /* loop counter */
         for (i=0; i<subroot->num_child; i++)
           LB_Reftree_Mark_and_Count(&(subroot->children[i]), *part, num_exp);
     }
+
+  /*
+   * See if it is close enough to filling the partition
+   */
+
+    if (*current_size >= *cutoff - eps) {
+      *part += 1;
+      *cutoff = (*part + 1)*partition_size;
+    }
   }
   else {
 
@@ -618,8 +910,8 @@ int i;        /* loop counter */
     if (subroot->num_child != 0) {
       subroot->partition = -1;
       for (i=0; i<subroot->num_child; i++)
-        LB_Reftree_Part_Recursive(lb, &(subroot->children[i]), part,
-                                 current_size, num_exp, cutoff, partition_size);
+        LB_Reftree_Part_Recursive(lb, &(subroot->children[i]),part,current_size,
+                                  num_exp, cutoff, partition_size, eps);
     }
     else {
 
@@ -627,12 +919,12 @@ int i;        /* loop counter */
    * If there are no children, move on to the next partition
    */
 
-      while (*current_size + subroot->summed_weight[0] > *cutoff) {
+      while (newsize > *cutoff+eps) {
         *part += 1;
         *cutoff = (*part + 1)*partition_size;
       }
       subroot->partition = *part;
-      *current_size += subroot->summed_weight[0];
+      *current_size = newsize;
       if (*part != lb->Proc && subroot->assigned_to_me) *num_exp += 1;
     }
   }

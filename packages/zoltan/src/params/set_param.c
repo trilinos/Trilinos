@@ -23,6 +23,7 @@
 #include "rcb_const.h"
 #include "octupdate_const.h"
 #include "parmetis_jostle_const.h"
+#include "reftree_const.h"
 #include "timer_const.h"
 #include "ha_const.h"
 
@@ -81,6 +82,9 @@ char *val1)			/* value to set this parameter to */
 
     if (status == 1)
         status = LB_Set_Octpart_Param(name, val);
+
+    if (status == 1)
+        status = LB_Set_Reftree_Param(name, val);
 
     if (status == 1)
         status = LB_Set_Timer_Param(name, val);

@@ -2,7 +2,7 @@
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
    <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
-   <TITLE>Zoltan User's Guide:  RCB</TITLE>
+   <TITLE>Zoltan User's Guide:  Refinement Tree Based Partition</TITLE>
 <!
   ------------------------
   | CVS File Information |
@@ -35,12 +35,25 @@ occurred during the grid refinement process.  The first level of the tree
 grid, one tree node per initial element.  The children of a node in the
 tree correspond to the elements that were created when the corresponding
 element was refined.  The children are ordered such that a traversal of
-the tree creates a space-filling curve through each initial element.  This order
-is determined by designating "in" and "out" vertices of each element, and
-using refinement-type case dependent code to set the order and in/out
-vertices of the children.  If the initial elements can be ordered with a
-contiguous path through them, then the traversal creates a space-filling
-curve through all the elements.
+the tree creates a space-filling curve within each initial element.
+If the initial elements can be ordered with a contiguous path through them,
+then the traversal creates a space-filling curve through all the elements.
+Each element has a designated "in" vertex and "out" vertex, with the out
+vertex of one element being the same as the in vertex of the next element
+in the path.
+
+<P>The user may allow Zoltan to determine the order of the coarse grid
+elements, or may specify the order, which might be faster.  If the user
+gives the order, the in/out vertices may also be supplied.  Similarly, the
+user may specify the order and in/out vertices of the child elements, or
+allow Zoltan to determine them.  If the user knows how to provide a good
+ordering for the children, this may be significantly faster than the default
+general algorithm.  However, accelerated forms of the ordering algorithm
+are provided for certain types of refinement schemes and should be used in
+those cases.
+See <B><A HREF="ug_query_lb.html#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</A></B>.
+If the user always specifies the order, then the in/out vertices are not
+used.
 
 <P>Weights are assigned to the nodes of the tree.  These weights need not be
 only on the leaves (the elements of the final grid), but can also be on
@@ -51,24 +64,17 @@ partitions.  A tree traversal is used to sum the weights, and a second traversal
 to cut the space-filling curve into equal sized pieces and assign elements to
 partitions.
 
-<P>The Refinement Tree Partitioning code is functional in limited cases, but
+<P>The Refinement Tree Partitioning code is
 still under development.  The following restrictions should be removed in
 the future.
-<LI>All processors must know all elements of the initial grid.
 <LI>The user must provide the order of the elements in the initial grid.
-<LI>The only refinement type supported for automatic ordering of the children
-is bisection of triangles.  For other refinement types, the user must supply
-the order of the children.  Quadrasection of quadralaterals, octasection
-of hexahedra, and a (more expensive) catch-all method for any type of
-element refinement will be added next.  Some other special cases may be
+<LI>The only refinement type for which accelerated ordering of the children
+is provided is bisection of triangles.  Some other special cases may be
 added in the future.
 <LI>The code does not automatically select the in/out vertices when requested.
-<LI>The hash table size is fixed, but should be a parameter.
-<LI>The weights on interior nodes of the tree are not included in the summed
-weights.
 <LI>For multicomponent weights, only the first component is used.
-<LI>The load balance tolerance is ignored.  Partition sizes are made as
-close to equal as possible, as if the tolerance is 1.0.
+<LI>Heterogeneous architectures are not supported, in the sense that the
+computational load is equally divided over the processors.
 <BR>&nbsp;
 <BR>&nbsp;
 <TABLE WIDTH="100%" NOSAVE >
@@ -88,9 +94,7 @@ close to equal as possible, as if the tolerance is 1.0.
 <TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>REFTREE_HASH_SIZE</I></TD>
 
 <TD> The size of the hash table to map from LB_GIDs to refinement tree
-nodes.  Larger values require more memory but may reduce search time.
-Currently, this is a fixed value, but it will be made into a parameter
-soon.</TD>
+nodes.  Larger values require more memory but may reduce search time.</TD>
 </TR>
 
 <TR>
@@ -102,7 +106,7 @@ soon.</TD>
 <TR>
 <TD></TD>
 
-<TD><I>REFTREE_HASH_SIZE</I> = 4096</TD>
+<TD><I>REFTREE_HASH_SIZE</I> = 16384</TD>
 </TR>
 
 <TR>

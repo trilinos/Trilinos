@@ -22,9 +22,8 @@
 /* Used for dimensioning space for a query function to return vertices */
 #define MAXVERT 8
 
-/* Dimension of the hash table */
-/* TEMP this should be a parameter that the user can reset */
-#define HASH_TABLE_SIZE 4096
+/* Default dimension of the hash table */
+#define DEFAULT_HASH_TABLE_SIZE 16384
 
 /* Data structures for refinement tree */
 
@@ -75,6 +74,7 @@ struct LB_reftree_data_struct {
 
 /* Prototypes */
 
+extern int LB_Set_Reftree_Param(char *name, char *val);
 extern int LB_Reftree_Init(LB *lb);
 extern int LB_Reftree_Build(LB *lb);
 extern void LB_Reftree_Free_Structure(LB *lb);
@@ -83,8 +83,11 @@ extern void LB_Reftree_Print(LB *lb,LB_REFTREE *subroot, int level);
 
 extern int LB_Reftree_Sum_Weights(LB *lb);
 
-extern unsigned int LB_Reftree_hashf(LB_GID key, int n);
 extern LB_REFTREE* LB_Reftree_hash_lookup(struct LB_reftree_hash_node **hashtab,
                                           LB_GID key, int n);
+extern void LB_Reftree_Hash_Insert(LB_REFTREE *reftree_node,
+                            struct LB_reftree_hash_node **hashtab, int size);
+extern void LB_Reftree_Clear_Hash_Table(struct LB_reftree_hash_node **hashtab,
+                                 int size);
 
 #endif /* __REFTREE_CONST_H */
