@@ -27,6 +27,8 @@
 
 #include "Epetra_Object.h"
 class Epetra_Distributor;
+class Epetra_Directory;
+class Epetra_BlockMap;
 
 //! Epetra_Comm:  The Epetra Communication Abstract Base Class.
 /*! The Epetra_Comm class is an interface that encapsulates the general
@@ -41,6 +43,9 @@ class Epetra_Distributor;
   manipulation of linear algebra objects.  Most Epetra_Comm interfaces are similar to MPI
   interfaces, except that the type of data is not required as an argument since C++ can bind
   to the appropriate interface based on argument typing.
+
+  Any implementation of the Epetra_Comm interface is also responsible for generating an
+  Epetra_Distributor and Epetra_Directory object.
 */
 
 class Epetra_Comm {
@@ -245,9 +250,11 @@ class Epetra_Comm {
   virtual int NumProc() const = 0;
   //@}
 
-  //@{ \name Gather/Scatter Constructors
+  //@{ \name Gather/Scatter and Directory Constructors
   //! Create a distributor object.
   virtual Epetra_Distributor * CreateDistributor() const = 0;
+  //! Create a directory object for the given Epetra_BlockMap.
+  virtual Epetra_Directory * CreateDirectory(const Epetra_BlockMap & Map) const = 0;
   //@}
 
   //@{ \name I/O methods

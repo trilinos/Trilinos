@@ -28,6 +28,9 @@
 #include "Epetra_Comm.h"
 #include "Epetra_MpiDistributor.h"
 class Epetra_Distributor;
+#include "Epetra_BasicDirectory.h"
+class Epetra_Directory;
+class Epetra_BlockMap;
 #include <mpi.h>
 
 //! Epetra_MpiComm:  The Epetra MPI Communication Class.
@@ -261,9 +264,11 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   int NumProc() const {return(size_);};
   //@}
 
-  //@{ \name Gather/Scatter Constructors
+  //@{ \name Gather/Scatter and Directory Constructors
   //! Create a distributor object.
   Epetra_Distributor * CreateDistributor() const;
+  //! Create a directory object for the given Epetra_BlockMap.
+  Epetra_Directory * CreateDirectory(const Epetra_BlockMap & Map) const;
   //@}
 
   //@{ \name MPI-specific Methods

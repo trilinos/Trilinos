@@ -242,9 +242,11 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   //! Returns total number of processes (always returns 1 for SerialComm). 
   int NumProc() const {return(1);};
   //@}
-  //@{ \name Gather/Scatter Constructors
+  //@{ \name Gather/Scatter and Directory Constructors
   //! Create a distributor object.
   Epetra_Distributor * CreateDistributor() const;
+  //! Create a directory object for the given Epetra_BlockMap.
+  Epetra_Directory * CreateDirectory(const Epetra_BlockMap & Map) const;
   //@}
 
 

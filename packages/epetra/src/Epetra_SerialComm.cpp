@@ -23,6 +23,7 @@
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
 #include "Epetra_SerialComm.h"
+#include "Epetra_BasicDirectory.h"
 
 //=============================================================================
 Epetra_SerialComm::Epetra_SerialComm()
@@ -97,6 +98,12 @@ Epetra_Distributor * Epetra_SerialComm::CreateDistributor() const {
 
   Epetra_Distributor * dist = dynamic_cast<Epetra_Distributor *>(new Epetra_SerialDistributor(*this));
   return(dist);
+}
+//=============================================================================
+Epetra_Directory * Epetra_SerialComm:: CreateDirectory(const Epetra_BlockMap & map) const {
+
+  Epetra_Directory * dir = dynamic_cast<Epetra_Directory *>(new Epetra_BasicDirectory(map));
+  return(dir);
 }
  //=============================================================================
 Epetra_SerialComm::~Epetra_SerialComm()  {}

@@ -22,26 +22,41 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_DIRECTORY_H_
-#define _EPETRA_DIRECTORY_H_
+#ifndef _EPETRA_BASICDIRECTORY_H_
+#define _EPETRA_BASICDIRECTORY_H_
+
+#include "Epetra_Object.h"
+#include "Epetra_Directory.h"
 
 class Epetra_BlockMap;  // Compiler needs forward reference
 class Epetra_Map;
 
-//! Epetra_Directory: This class is a pure virtual class whose interface allows Epetra_Map and Epetr_BlockMap objects to reference non-local elements.
+//! Epetra_BasicDirectory: This class allows Epetra_Map objects to reference non-local elements.
 
-/*! For Epetra_BlockMap objects, a Epetra_Directory object must be created by a call to
-    the Epetra_Comm CreateDirectory method.  The Directory is needed to allow referencing
-    of non-local elements.
+/*! For Epetra_BlockMap objects, a Epetra_Directory object must be created to allow referencing
+    of non-local elements.  The Epetra_BasicDirectory produces and contains a uniform linear
+    Epetra_BlockMap and a ProcList_ allowing blocks of non-local elements to be accessed
+    by dereferencing throught the Epetra_BasicDirectory.
+
+  This class currently has one constructor, taking a Epetra_BlockMap object.
 
 */
-class Epetra_Directory {
+
+class Epetra_BasicDirectory: public virtual Epetra_Directory {
     
   public:
 
   //@{ \name Constructors/Destructor.
-  //! Epetra_Directory destructor.
-  virtual ~Epetra_Directory(){};
+  //! Epetra_BasicDirectory constructor
+  Epetra_BasicDirectory(const Epetra_BlockMap & Map );
+  
+  //! Epetra_BasicDirectory copy constructor.
+  
+  Epetra_BasicDirectory(const Epetra_BasicDirectory& Directory);
+  
+  //! Epetra_BasicDirectory destructor.
+  
+  ~Epetra_BasicDirectory(void);
   //@}
   
   //@{ \name Query method.
@@ -67,12 +82,33 @@ class Epetra_Directory {
 	   
     \return Integer error code, set to 0 if successful.
   */
-  virtual int GetDirectoryEntries( const int NumEntries,
+  int GetDirectoryEntries( const int NumEntries,
 			   const int * GlobalEntries,
 			   int * Procs,
-			   int * LocalEntries, int * EntrySizes) const = 0;
-
+			   int * LocalEntries, int * EntrySizes) const;
   //@}
+
+  //@{ \name I/O Methods.
+  //! Print method
+  virtual void Print(ostream & os) const;
+  //@}
+
+ private: // These need to be accessible to derived map classes.
+  //! Generate: Sets up Directory tables.
+  int Generate();
+
+  //! Returns the Epetra_Map containing the directory
+  const Epetra_Map & DirectoryMap() const {return(*DirectoryMap_);};
+
+  const Epetra_BlockMap* Map_;
+  Epetra_Map* DirectoryMap_;
+
+  int * ProcList_;
+  int * LocalIndexList_;
+
+  int * AllMinGIDs_;
+  
+
 };
 
-#endif /* _EPETRA_DIRECTORY_H_ */
+#endif /* _EPETRA_BASICDIRECTORY_H_ */

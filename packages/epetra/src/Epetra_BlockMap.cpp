@@ -686,7 +686,7 @@ void Epetra_BlockMap::GlobalToLocalSetup() {
   if (NumGlobalElements_==0) return; // Nothing to do
 
   else if (LinearMap() || (!DistributedGlobal()) || NumMyElements_==0) {
-    if (Directory_ ==0) Directory_ = new Epetra_Directory(this); // Make directory
+    if (Directory_ ==0) Directory_ = Comm().CreateDirectory(*this); // Make directory
     return; // Nothing else to do
   }
   else {
@@ -703,7 +703,7 @@ void Epetra_BlockMap::GlobalToLocalSetup() {
       LID_[MyGlobalElements_[i]-MinMyGID_] = i; // Spread local indices
     }
     
-    if (Directory_ ==0) Directory_ = new Epetra_Directory(this); // Make directory
+    if (Directory_ ==0) Directory_ = Comm().CreateDirectory(*this); // Make directory
   }
 }
 

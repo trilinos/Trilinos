@@ -23,7 +23,7 @@
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
 
-#include "Epetra_Directory.h"
+#include "Epetra_BasicDirectory.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
@@ -31,9 +31,9 @@
 
 
 //==============================================================================
-// Epetra_Directory constructor for a Epetra_BlockMap object
-Epetra_Directory::Epetra_Directory(Epetra_BlockMap* Map)
-  : Map_(Map),
+// Epetra_BasicDirectory constructor for a Epetra_BlockMap object
+Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
+  : Map_(&Map),
     DirectoryMap_(0),
     ProcList_(0),
     LocalIndexList_(0),
@@ -44,21 +44,21 @@ Epetra_Directory::Epetra_Directory(Epetra_BlockMap* Map)
 
   // Uniprocessor and local map cases (Nothing to set up)
 
-  if (!(Map->DistributedGlobal())) return;
+  if (!(Map_->DistributedGlobal())) return;
 
   // Linear Map case
 
-  else if (Map->LinearMap()) {
+  else if (Map_->LinearMap()) {
 
     // Build a list of the Minimum global ids for all processors on each processor.
     // Since the map is linear, we know that all GIDs are contiguous on each processor
     // and can be found using the MinGIDs.
 
-    int NumProc = Map->Comm().NumProc();
+    int NumProc = Map_->Comm().NumProc();
     AllMinGIDs_ = new int[NumProc+1];
-    int MinMyGID = Map->MinMyGID();
-    Map->Comm().GatherAll(&MinMyGID, AllMinGIDs_, 1);
-    AllMinGIDs_[NumProc] = 1 + Map->MaxAllGID(); // Set max cap
+    int MinMyGID = Map_->MinMyGID();
+    Map_->Comm().GatherAll(&MinMyGID, AllMinGIDs_, 1);
+    AllMinGIDs_[NumProc] = 1 + Map_->MaxAllGID(); // Set max cap
   }
 
   // General case.  Need to build a directory via calls to communication functions
@@ -69,8 +69,8 @@ Epetra_Directory::Epetra_Directory(Epetra_BlockMap* Map)
   }
 }
 //==============================================================================
-// Epetra_Directory copy constructor
-Epetra_Directory::Epetra_Directory(const Epetra_Directory & Directory)
+// Epetra_BasicDirectory copy constructor
+Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BasicDirectory & Directory)
   : Map_(Directory.Map_),
     DirectoryMap_(0),
     ProcList_(0),
@@ -99,8 +99,8 @@ Epetra_Directory::Epetra_Directory(const Epetra_Directory & Directory)
 
 }
 //==============================================================================
-// Epetra_Directory destructor 
-Epetra_Directory::~Epetra_Directory()
+// Epetra_BasicDirectory destructor 
+Epetra_BasicDirectory::~Epetra_BasicDirectory()
 {
   if( DirectoryMap_ != 0 ) delete DirectoryMap_;
   if( ProcList_ != 0 ) delete [] ProcList_;
@@ -115,7 +115,7 @@ Epetra_Directory::~Epetra_Directory()
 
 //==============================================================================
 // Generate: Generates Directory Tables
-int Epetra_Directory::Generate()
+int Epetra_BasicDirectory::Generate()
 {
   int i;
 
@@ -150,8 +150,8 @@ int Epetra_Directory::Generate()
   
   // Get list of processors owning the directory entries for the Map GIDs
 
-  int NumProc = Map_->Comm_->NumProc();
-  int MyPID = Map_->Comm_->MyPID();
+  int NumProc = Map_->Comm().NumProc();
+  int MyPID = Map_->Comm().MyPID();
 
   int Map_NumMyElements = Map_->NumMyElements();
   int * send_procs = 0;
@@ -213,9 +213,9 @@ int Epetra_Directory::Generate()
 // GetDirectoryEntries: Get non-local GID references ( procID and localID )
 // 			Space should already be allocated for Procs and
 //     			LocalEntries.
-int Epetra_Directory::GetDirectoryEntries( const int NumEntries,
+int Epetra_BasicDirectory::GetDirectoryEntries( const int NumEntries,
 					  const int * GlobalEntries, int * Procs,
-					  int * LocalEntries, int * EntrySizes ) {
+					  int * LocalEntries, int * EntrySizes ) const {
 
 
 
@@ -339,7 +339,7 @@ int Epetra_Directory::GetDirectoryEntries( const int NumEntries,
 		  // found = true;
 		  break;
 		}
-	    //	if (!found) cout << "Internal error:  Epetra_Directory::GetDirectoryEntries: Global Index " << curr_LID
+	    //	if (!found) cout << "Internal error:  Epetra_BasicDirectory::GetDirectoryEntries: Global Index " << curr_LID
 	    //	     << " not on processor " << MyPID << endl; abort();
 	  }
 	
@@ -431,7 +431,7 @@ int Epetra_Directory::GetDirectoryEntries( const int NumEntries,
 	    // found = true;
 	    break;
 	  }
-      //	if (!found) cout << "Internal error:  Epetra_Directory::GetDirectoryEntries: Global Index " << curr_LID
+      //	if (!found) cout << "Internal error:  Epetra_BasicDirectory::GetDirectoryEntries: Global Index " << curr_LID
       //	     << " not on processor " << MyPID << endl; abort();
     }
   
@@ -446,13 +446,13 @@ int Epetra_Directory::GetDirectoryEntries( const int NumEntries,
 }
 
 //==============================================================================
-void Epetra_Directory::Print( ostream & os) const {
+void Epetra_BasicDirectory::Print( ostream & os) const {
   
   int MyPID;
   if( DirectoryMap_ != 0 )
   {
     MyPID = DirectoryMap_->Comm().MyPID();
-    os << MyPID << " Epetra_Directory Object: "
+    os << MyPID << " Epetra_BasicDirectory Object: "
       << DirectoryMap_->NumMyElements() << endl;
     for( int i = 0; i < DirectoryMap_->NumMyElements(); i++ )
       os << " " << i << " " << ProcList_[i] << " "
@@ -461,7 +461,7 @@ void Epetra_Directory::Print( ostream & os) const {
   }
   else
   {
-    cout << "Epetra_Directory not setup<<<<<<" << endl;
+    cout << "Epetra_BasicDirectory not setup<<<<<<" << endl;
   }
 
   return;

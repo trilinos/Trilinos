@@ -115,6 +115,12 @@ Epetra_Distributor * Epetra_MpiComm:: CreateDistributor() const {
   return(dist);
 }
 //=============================================================================
+Epetra_Directory * Epetra_MpiComm:: CreateDirectory(const Epetra_BlockMap & map) const {
+
+  Epetra_Directory * dir = dynamic_cast<Epetra_Directory *>(new Epetra_BasicDirectory(map));
+  return(dir);
+}
+//=============================================================================
 Epetra_MpiComm::~Epetra_MpiComm()  {}
 //=============================================================================
 void Epetra_MpiComm::Print(ostream & os) const
