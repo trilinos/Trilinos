@@ -2024,20 +2024,33 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   ML_back_to_csrlocal(permt_mat, *permt, max_per_processor);
   ML_Operator_Destroy(&permt_mat);
   ML_Operator_ChangeToChar(*permt);
-#ifdef ML_LOWMEMORY
-  temp = (struct ML_CSR_MSRdata *) (*permt)->data;
-  ML_free(temp->rowptr);
-  temp->rowptr = NULL;
-#endif
+
+  /* Check if this matrix is low storage character format */
+  /* is used. In this case only, it is possible to get    */
+  /* rid of rowptr as there is an option to not use it    */
+
+  if ( ((*permt)->getrow->func_ptr == cCSR_getrows) &&
+       ((*permt)->matvec->func_ptr == cCSR_matvec)) {
+    temp = (struct ML_CSR_MSRdata *) (*permt)->data;
+    ML_free(temp->rowptr);
+    temp->rowptr = NULL;
+  }
 
   perm_mat = ML_Operator_Create(comm);
   ML_Operator_Transpose_byrow(*permt, perm_mat);
   ML_Operator_ChangeToChar(perm_mat);
-#ifdef ML_LOWMEMORY
-  temp = (struct ML_CSR_MSRdata *) perm_mat->data;
-  ML_free(temp->rowptr);
-  temp->rowptr = NULL;
-#endif
+
+  /* Check if this matrix is low storage character format */
+  /* is used. In this case only, it is possible to get    */
+  /* rid of rowptr as there is an option to not use it    */
+
+  if ( ((perm_mat)->getrow->func_ptr == cCSR_getrows) &&
+       ((perm_mat)->matvec->func_ptr == cCSR_matvec)) {
+    temp = (struct ML_CSR_MSRdata *) (perm_mat)->data;
+    ML_free(temp->rowptr);
+    temp->rowptr = NULL;
+  }
+
   printf("%d: almost finished %d %d\n",mypid,perm_mat->outvec_leng,
 	 perm_mat->invec_leng);
 
@@ -2299,7 +2312,14 @@ int ML_Aggregate_ProjectCoordinates(ML_Operator *P_tentative,
    /* replacing all nonzeros entries by +1.                        */				    
    temp = ML_Operator_Create((P_tentative)->comm);
    ML_Operator_Transpose(P_tentative, temp);
-   temp->matvec->func_ptr = CSR_ones_matvec; 
+   if (temp->matvec->func_ptr == CSR_matvec)
+     temp->matvec->func_ptr = CSR_ones_matvec;
+   else if (temp->matvec->func_ptr == sCSR_matvec)
+     temp->matvec->func_ptr = sCSR_ones_matvec;
+   else {
+     printf("ML_Aggregate_ProjectCoordinates: Expected CSR_matvec for projection operator and found something else?\n");
+     exit(1);
+   }
 
    /* allocate space */
 
