@@ -17,6 +17,7 @@
 #include <math.h>
 #include "ml_aggregate.h"
 #include "ml_lapack.h"
+#include "ml_agg_genP.h"
 
 #ifdef ML_AGGR_READINFO
 #include "az_aztec.h"
@@ -99,7 +100,7 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    USR_REQ               *request;
    ML_Operator           *Asqrd = NULL, *tmatrix;
    struct ML_CSR_MSRdata *temp;
-   char                  *vtype, *state, *bdry;
+   char                  *vtype, *state, *bdry, *unamalg_bdry;
    int                   nvertices, *vlist, Asqrd_ntotal, Asqrd_Nneigh;
    int                   *Asqrd_neigh = NULL, max_element, Nghost;
    int                   **Asqrd_sndbuf = NULL, **Asqrd_rcvbuf = NULL;
@@ -111,8 +112,8 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int                   *temp_leng, *tem2_index, *tempaggr_index = NULL;
    int                   *send_leng = NULL, *recv_leng = NULL;
    int                   send_count = 0, recv_count = 0, total_nz = 0;
-   int                   total_aggs, phase_one_aggregated;
-   int kk, old_upper, nnzs, count2, newptr;
+   int                   total_aggs, phase_one_aggregated, count2;
+   /*   int kk, old_upper, nnzs, count2, newptr; */
 #ifdef DDEBUG
    int curagg,myagg,*good,*bad;
 #endif
@@ -125,7 +126,6 @@ static int level_count = 0;
 double *d2temp;
 int agg_offset, vertex_offset;
 extern int ML_gpartialsum_int(int val, ML_Comm *comm);
-FILE *fp;
 #endif
 
    /* ============================================================= */
@@ -152,6 +152,38 @@ FILE *fp;
    }
    diff_level = ml_ag->max_levels - ml_ag->cur_level - 1;
    if ( diff_level > 0 ) num_PDE_eqns = nullspace_dim; /* ## 12/20/99 */
+
+
+   /* ============================================================= */
+   /* Figure out where the Dirichlet points are on the fine grid of */ 
+   /* the unamalgmated system.                                      */ 
+   /* ============================================================= */
+
+   Nghost = Amatrix->getrow->pre_comm->total_rcv_length;
+   unamalg_bdry = (char *) ML_allocate(sizeof(char)*(Nrows+Nghost+1));
+   dtemp = (double *) ML_allocate(sizeof(double)*(Nrows+Nghost+1));
+   if (dtemp == NULL) pr_error("ml_agg_MIS: out of space.\n");
+
+   for (i = 0; i < Nrows+Nghost; i++) dtemp[i] = 0.;
+
+   for (i = 0; i < Nrows; i++) {
+      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+                        &rowi_N, 0);
+      count2 = 0;
+      for (j = 0; j < rowi_N; j++) if (rowi_val[j] != 0.) count2++;
+      if (count2 <= 1) dtemp[i] = 1.;
+   }
+   free(rowi_col); free(rowi_val);
+   rowi_col = NULL; rowi_val = NULL;
+   allocated = 0; 
+
+   ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm,Amatrix->outvec_leng,
+                    comm, ML_OVERWRITE);
+   for (i = 0; i < Nrows+Nghost; i++) {
+      if (dtemp[i] == 1.) unamalg_bdry[i] = 'T';
+      else unamalg_bdry[i] = 'F';
+   }
+   ML_free(dtemp);
 
    /* ============================================================= */
    /* set up the threshold for weight-based coarsening              */
@@ -1254,8 +1286,11 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
             index = rows_in_aggs[i][j];
             for (k = 0; k < nullspace_dim; k++)
             {
-               if (index % num_PDE_eqns == k) qr_tmp[k*length+j] = 1.0;
-               else                           qr_tmp[k*length+j] = 0.0;
+               if ( unamalg_bdry[index] == 'T') qr_tmp[k*length+j] = 0.;
+               else {
+                  if (index % num_PDE_eqns == k) qr_tmp[k*length+j] = 1.0;
+                  else                           qr_tmp[k*length+j] = 0.0;
+               }
             }
          }
       }
@@ -1266,14 +1301,15 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
             for (j = 0; j < length; j++)
             {
                index = rows_in_aggs[i][j];
-               if (index < Nrows)
-               {
-                  qr_tmp[k*length+j] = nullspace_vect[k*Nrows+index];
-               }
-               else
-               {
-                  qr_tmp[k*length+j] = 
+               if ( unamalg_bdry[index] == 'T') qr_tmp[k*length+j] = 0.;
+               else {
+                  if (index < Nrows) {
+                     qr_tmp[k*length+j] = nullspace_vect[k*Nrows+index];
+                  }
+                  else {
+                     qr_tmp[k*length+j] = 
                         dble_buf2[(index-Nrows)*nullspace_dim+k];
+                  }
                }
             }
          }
@@ -1311,12 +1347,18 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
       /* LAPACK function:                                           */
       /* ---------------------------------------------------------- */
 
-      if ( aggr_cnt_array[i] < nullspace_dim )
+      if ( aggr_cnt_array[i] < nullspace_dim ){
+         printf("Error in dorgqr on %d row (dims are %d, %d)\n",i,aggr_cnt_array[i],
+                 nullspace_dim);
          printf("ERROR : performing QR on a MxN matrix where M<N.\n");
+      }
       MLFORTRAN(dorgqr)(&(aggr_cnt_array[i]), &nullspace_dim, &nullspace_dim, 
               qr_tmp, &(aggr_cnt_array[i]), tmp_vect, work, &lwork, &info);
-      if (info != 0)
+      if (info != 0) {
+         printf("Error in dorgqr on %d row (dims are %d, %d)\n",i,aggr_cnt_array[i],
+                 nullspace_dim);
          pr_error("Error in CoarsenMIS: dorgqr returned a non-zero\n");
+      }
 
       if (work[0] > lwork) 
       {
@@ -1401,49 +1443,6 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    /* ------------------------------------------------------------- */
    /* check P (row sum = 1)                                         */
    /* ------------------------------------------------------------- */
-
-   /* Clean out any rows that correspond to a Dirichlet point. This */
-   /* includes rows that are part of blocks in which only some DOFs */
-   /* are Dirichlet points.                                         */
-
-   nnzs = new_ia[Nrows];
-
-   count = 0;
-   for (i = 0; i < Nrows; i++) {
-      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-                        &rowi_N, 0);
-      count2 = 0;
-      for (j = 0; j < rowi_N; j++) if (rowi_val[j] != 0.) count2++;
-      if (count2 <= 1) {
-         count++;
-
-         for (kk = new_ia[i]; kk < new_ia[i+1]; kk++) {
-             new_ja[kk] = -1; 
-             new_val[kk] = 0.;
-         }
-      }
-   }
-   free(rowi_col); free(rowi_val);
-   rowi_col = NULL; rowi_val = NULL;
-   allocated = 0; 
-
-   if (Nrows > 0) old_upper = new_ia[0];
-   for (i = 0; i < Nrows; i++) {
-      count2 = 0;
-      for (j = old_upper; j < new_ia[i+1]; j++) {
-         if ( new_ja[j] != -1) count2++;
-      }
-      old_upper = new_ia[i+1];
-      new_ia[i+1] = new_ia[i] + count2;
-   }
-
-   newptr = 0;
-   for (i = 0; i < nnzs; i++) {
-      if ( new_ja[i] != -1) {
-         new_ja[newptr] = new_ja[i];
-         new_val[newptr++] = new_val[i];
-      }
-   }
 
 #ifdef DDEBUG
    /* count up the number of connections/edges that leave aggregate */
@@ -1546,6 +1545,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
 
+   ML_free(unamalg_bdry);
    ML_memory_free((void**) &comm_val);
    ML_memory_free((void**) &neighbors);
    ML_memory_free((void**) &recv_leng);
@@ -1600,7 +1600,6 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    free(dtemp);
    free(d2temp);
 #endif
-
 
    return Ncoarse*nullspace_dim;
 }
