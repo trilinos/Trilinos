@@ -1,3 +1,7 @@
+/*
+#define ML_partition
+#define ReuseOps
+*/
 /*****************************************************************************/
 /* Copyright 1999, Sandia Corporation. The United States Government retains  */
 /* a nonexclusive license in this software as prescribed in AL 88-1 and AL   */
@@ -94,6 +98,8 @@ Output files:
 #include "ml_include.h"
 #include "ml_read_utils.h"
 #include <math.h>
+#include "ml_mat_formats.h"
+#include "ml_aztec_utils.h"
 
 extern int AZ_using_fortran;
 int    parasails_factorized = 0;
@@ -143,40 +149,42 @@ int main(int argc, char *argv[])
   /* data structure for matrix corresponding to the fine grid */
 
   double *Ke_val = NULL, *Kn_val, *Tmat_val = NULL, *rhs, solve_time,
-    setup_time, start_time, *yyy, *vvv, *zzz, *fido, *cvec, *nodalvec;
+    setup_time, start_time, *yyy, *vvv, *zzz;
   AZ_MATRIX *Ke_mat, *Kn_mat;
-  ML_Operator *Tmat, *Tmat_trans, *Kn_coarse, *Tcoarse, *Tcoarse_trans,
-    *Pn_coarse, *Rn_coarse, *Pe, *Amat;
-  /*, *Tmat_array[25],
-   *Tmat_trans_array[25]; */
+  ML_Operator *Tmat, *Tmat_trans, *Tmat_transbc=NULL, *Amat;
+
+  /* Operator for use in Hiptmair smoother only */
+  ML_Operator *Tmatbc = NULL;
+  double *Tmatbc_val;
+  int *Tmatbc_bindx;
+
+  /* Used in zeroing out rows of Tmat. */
+  int allocated_space = 0, *cols = NULL, length = 0;
+  double *vals = NULL;
+  struct ML_CSR_MSRdata *data;
+  int *row_ptr;
+  double *val_ptr;
+  int *BCindices, BCcount;
+
+
+
   ML_Operator **Tmat_array, **Tmat_trans_array;
-  ML_Operator *junkmat;
-  ML_Operator *Ttrans_byrow;
   AZ_PRECOND *Pmat = NULL;
   ML *ml_edges, *ml_nodes;
   FILE *fp;
-  int ch,i, j, Nrigid, *garbage, nblocks, *blocks;
+  int i, j, Nrigid, *garbage, nblocks, *blocks;
   struct AZ_SCALING *scaling;
   ML_Aggregate *ag;
-  double *mode, *rigid, alpha, *newval;
-  char filename[80],vecname[128];
+  double *mode, *rigid, alpha;
+  char filename[80];
   int    one = 1;
-  int allocated = 0, *newbindx, offset, current, *block_list = NULL,  k, block;
-  int Tmat_cols;
-  double *ones, *result;
-  int *row_ptr, lower, upper, nz_ptr, Ncols;
+  int lower, Ncols;
   struct ML_CSR_MSRdata *csr_data;
-  double *diag;
-  int pcount, kk, procs_cols[20], proc_count[20];
   int *bindx = NULL;
-  double *val = NULL;
-  int counter, row_length, itemp, row_start;
-  int *Tcoarse_bindx, *Tcoarse_rowptr, agg1, agg2;
-  double *Tcoarse_val, dtemp, dtemp2, *node2proc;
-  int Nexterns, *sorted_ext, *map;
+  int row_length;
+  double dtemp, dtemp2;
+  int Nexterns;
   int Nnz;
-  char str[80];
-  int Nghost;
   int mg_cycle_type;
   double omega;
 #ifndef debugSmoother
@@ -185,8 +193,10 @@ int main(int argc, char *argv[])
 
 #ifdef ML_partition
   FILE *fp2;
+  int *block_list=NULL;
   int count, *pcounts, *proc_id;
-  int Tmat_size, *proc_assignment, p1, p2, col1, col2;
+  int Tmat_size, *proc_assignment, p1, p2, col1, col2, row_start;
+  int itemp;
   int evenodd[2]; int Iwin[4];
   int tiebreaker;
 
@@ -359,6 +369,9 @@ int main(int argc, char *argv[])
     }
   }
 
+/*
+#define ZEROOUTDIRICHLET
+*/
 #ifdef ZEROOUTDIRICHLET
   if (proc_config[AZ_node] == 0) printf("Zeroing out Dirichlet columns\n");
   AZ_zeroDirichletcolumns(Ke_mat, rhs, proc_config);
@@ -418,7 +431,9 @@ int main(int argc, char *argv[])
   /*     ML_Create() now to get one. I could have just created a      */
   /*     a communicator and done the ML_Create() later.               */
   /*------------------------------------------------------------------*/
-	
+
+  /* This copy of Tmat does not contain boundary conditions. */
+
   if (proc_config[AZ_node] == 0)
   {
      printf("Reading T matrix\n"); fflush(stdout);
@@ -450,6 +465,7 @@ int main(int argc, char *argv[])
       lower++;
     }
   }
+
   csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct 
 							  ML_CSR_MSRdata));
   csr_data->columns = Tmat_bindx;
@@ -463,10 +479,9 @@ int main(int argc, char *argv[])
 		       Tmat_bindx, Tmat_val, csr_data->rowptr, Nlocal_nodes,
 		       global_node_inds, ml_edges->comm, Nlocal_edges, &Tmat);
   ML_free(csr_data);
-
   Tmat->data_destroy = ML_CSR_MSRdata_Destroy;
-  start_time = AZ_second();
 
+  start_time = AZ_second();
   options[AZ_scaling] = AZ_none;
 
   /********************************************************************/
@@ -480,44 +495,146 @@ int main(int argc, char *argv[])
   AZ_ML_Set_Amat(ml_nodes, N_levels-1, Nlocal_nodes, Nlocal_nodes, Kn_mat, 
 		 proc_config);
 
-/**** check symmetry of Ke ****/
-    Amat = &(ml_edges->Amat[N_levels-1]);
-    yyy = (double *) ML_allocate( Amat->invec_leng * sizeof(double) );
-    vvv = (double *) ML_allocate( Amat->invec_leng * sizeof(double) );
-    zzz = (double *) ML_allocate( Amat->invec_leng * sizeof(double) );
+/* Check symmetry of Ke. */
+  Amat = &(ml_edges->Amat[N_levels-1]);
+  yyy = (double *) ML_allocate( Amat->invec_leng * sizeof(double) );
+  vvv = (double *) ML_allocate( Amat->invec_leng * sizeof(double) );
+  zzz = (double *) ML_allocate( Amat->invec_leng * sizeof(double) );
 
-    AZ_random_vector(yyy, Ke_data_org, proc_config);
-    AZ_random_vector(vvv, Ke_data_org, proc_config);
+  AZ_random_vector(yyy, Ke_data_org, proc_config);
+  AZ_random_vector(vvv, Ke_data_org, proc_config);
 
-    ML_Operator_Apply(Amat, Amat->invec_leng, yyy,Amat->outvec_leng,zzz);
-    dtemp = sqrt(abs(ML_gdot(Amat->outvec_leng, vvv, zzz, ml_edges->comm)));
-    ML_Operator_Apply(Amat, Amat->invec_leng, vvv,Amat->outvec_leng,zzz);
-    dtemp2 =  sqrt(abs(ML_gdot(Amat->outvec_leng, yyy, zzz, ml_edges->comm)));
+  ML_Operator_Apply(Amat, Amat->invec_leng, yyy,Amat->outvec_leng,zzz);
+  dtemp = sqrt(abs(ML_gdot(Amat->outvec_leng, vvv, zzz, ml_edges->comm)));
+  ML_Operator_Apply(Amat, Amat->invec_leng, vvv,Amat->outvec_leng,zzz);
+  dtemp2 =  sqrt(abs(ML_gdot(Amat->outvec_leng, yyy, zzz, ml_edges->comm)));
 
-    if ( (abs(dtemp-dtemp2) > 1e-15) && proc_config[AZ_node]== 0)
-    {
-       fprintf(stderr,"\a\n*****************\n"
-                      "WARNING: Edge matrix may not be symmetric.\n");
-       fprintf(stderr,"\n              ||vvv^{t} * Ke_mat * yyy|| = %20.15e\n",
-               dtemp);
-       fprintf(stderr,"\n              ||yyy^{t} * Ke_mat * vvv|| = %20.15e\n",
-               dtemp2);
-       fprintf(stderr,"               (vvv and yyy are random)\n");
-       fprintf(stderr,"*****************\n\n");
-       fflush(stdout);
-    }      
-    else if (proc_config[AZ_node]== 0)
-       printf("\nEdge matrix passed symmetry check.\n\n");
-    ML_free(yyy); ML_free(zzz); ML_free(vvv);
-/**** end of Ke symmetry check ****/
+  if (abs(dtemp-dtemp2) > 1e-15)
+  {
+     if (proc_config[AZ_node]== 0)
+     {
+        printf("\a\n*****************\n"
+                       "WARNING: Edge matrix may not be symmetric.\n");
+        printf("\n              ||vvv^{t} * Ke_mat * yyy|| = %20.15e\n",
+                dtemp);
+        printf("\n              ||yyy^{t} * Ke_mat * vvv|| = %20.15e\n",
+                dtemp2);
+        printf("               (vvv and yyy are random)\n");
+        printf("*****************\n\n");
+        fflush(stdout);
+     }
+
+     /* If Amat is not symmetric (i.e., Dirichlet rows have been zeroed with
+        a one on diagonal, but corresponding columns have not been zeroed)
+        zero out the Dirichlet rows in Tmat. This is necessary to have a
+        potential matrix (T^{*}AT) that is equivalent to the potential matrix
+        when Amat is symmetric.  See the function
+        ML_Smoother_Gen_Hiptmair_Data to see how an equivalent potential
+        matrix is created. */
+
+     /* Read in a copy of Tmat that will contain boundary conditions. */
+   
+     if (proc_config[AZ_node] == 0)
+     {
+        printf("Reading T matrix\n"); fflush(stdout);
+     }
+     AZ_input_msr_matrix_nodiag("Tmat.az", global_edge_inds, &Tmatbc_val, 
+   			     &Tmatbc_bindx,  Nlocal_edges, proc_config);
+     if (proc_config[AZ_node] == 0)
+     {
+        printf("Done reading T matrix\n"); fflush(stdout);
+     }
+   
+     /* compress out any zeros which might occur due to empty rows  */
+   
+     lower = Tmatbc_bindx[0];
+     Nnz = Tmatbc_bindx[Nlocal_edges];
+     for (i = 0; i < Nlocal_edges; i++) {
+       row_length = 0;
+       for (j = lower; j < Tmatbc_bindx[i+1]; j++) {
+         if (Tmatbc_val[j] != 0.0) row_length++;
+       }
+       lower = Tmatbc_bindx[i+1];
+       Tmatbc_bindx[i+1] = Tmatbc_bindx[i] + row_length;
+     }
+     lower = Tmatbc_bindx[0];
+     for (i = Tmatbc_bindx[0]; i < Nnz; i++ ) {
+       if (Tmatbc_val[i] != 0.0) {
+         Tmatbc_val[lower] = Tmatbc_val[i];
+         Tmatbc_bindx[lower] = Tmatbc_bindx[i];
+         lower++;
+       }
+     }
+   
+     csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct 
+   							  ML_CSR_MSRdata));
+     csr_data->columns = Tmatbc_bindx;
+     csr_data->values  = Tmatbc_val;
+     ML_MSR2CSR(csr_data, Nlocal_edges, &Ncols);
+     Nexterns = Kn_data_org[AZ_N_external];
+   
+     AZ_Tmat_transform2ml(Nexterns, global_node_externs, reordered_node_externs,
+   		       Tmatbc_bindx, Tmatbc_val, csr_data->rowptr, Nlocal_nodes,
+   		       global_node_inds, ml_edges->comm, Nlocal_edges, &Tmatbc);
+     ML_free(csr_data);
+     Tmatbc->data_destroy = ML_CSR_MSRdata_Destroy;
+
+     if (proc_config[AZ_node]== 0) printf("Zeroing out rows of Tmat that "
+                                       "correspond to Dirichlet points.\n");
+     printf("\nProcessor %d owns %d rows of Ke.\n",proc_config[AZ_node],
+             Amat->outvec_leng);
+   
+     data = (struct ML_CSR_MSRdata *) (Tmatbc->data);
+     row_ptr = data->rowptr;
+     bindx = data->columns;
+     val_ptr = data->values;
+     BCindices = (int *) ML_allocate( Amat->outvec_leng * sizeof(int) );
+     BCcount = 0;
+
+     /* Step through edge matrix Amat to find Dirichlet rows. */
+     for (i=0; i < Amat->outvec_leng; i++)
+     {
+        ML_get_matrix_row(Amat, 1, &i , &allocated_space , &cols, &vals,
+                          &length, 0);
+        Nnz = 0;
+        for (j=0; j<length; j++)
+           /*if ( abs(vals[j]) != 0.0 ) Nnz++;*/
+           if ( abs(vals[j]) > 1e-12 ) Nnz++;
+        if (Nnz <=1)   /* Dirichlet row */
+        {
+           /* Zero out corresponding row in Tmat. */
+           /*printf("%d: %d is a Dirichlet row\n",proc_config[AZ_node],i+1);*/
+           for (j = row_ptr[i]; j < row_ptr[i+1]; j++)
+              val_ptr[j] = 0.0;
+           BCindices[BCcount] = i;
+           BCcount++;
+        }
+     }
+     ML_Set_BoundaryTypes(ml_edges,N_levels-1,ML_BDRY_DIRICHLET,
+                          BCcount,BCindices);
+     ML_free(cols);
+     ML_free(vals);
+     ML_free(BCindices);
+
+     ML_CommInfoOP_Clone(&(Tmatbc->getrow->pre_comm),
+                         ml_nodes->Amat[N_levels-1].getrow->pre_comm);
+     Tmat_transbc = ML_Operator_Create(ml_edges->comm);
+     ML_Operator_Transpose_byrow(Tmatbc, Tmat_transbc);
+  }
+  else
+  {
+     if (proc_config[AZ_node]== 0)
+     {
+        printf("\nEdge matrix passed symmetry check.\n\n");
+        fflush(stdout);
+     }
+  }
+  ML_free(yyy); ML_free(zzz); ML_free(vvv);
+  /* end of Ke symmetry check. */
 
   ML_CommInfoOP_Clone(&(Tmat->getrow->pre_comm),
                       ml_nodes->Amat[N_levels-1].getrow->pre_comm);
 
-  /*
-    sprintf(str,"P%d",proc_config[AZ_node]);
-    ML_CommInfoOP_Print(Tmat->getrow->pre_comm, str);
-    */
 
   /********************************************************************/
   /*                      Set up Tmat_trans                           */
@@ -825,29 +942,34 @@ int main(int argc, char *argv[])
   }
 #endif /* ifdef HierarchyCheck */
 
-  coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
-						      N_levels-1, ML_DECREASING, ag, Tmat, Tmat_trans,
-						      &Tmat_array, &Tmat_trans_array);
+  if (Tmat_transbc != NULL)
+     coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
+						         N_levels-1, ML_DECREASING, ag, Tmatbc,
+                                 Tmat_transbc,
+						         &Tmat_array, &Tmat_trans_array);
+  else
+     coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
+						         N_levels-1, ML_DECREASING, ag, Tmat,
+                                 Tmat_trans,
+						         &Tmat_array, &Tmat_trans_array);
 
 #ifdef ReuseOps
   {printf("Starting reuse\n"); fflush(stdout);}
-/*
-  ML_Operator_Clean(ml_edges->Amat);
-  ML_Operator_Init(ml_edges->Amat,ml_edges->comm);
+  ML_Operator_Clean(&(ml_edges->Amat[N_levels-1]));
+  ML_Operator_Init(&(ml_edges->Amat[N_levels-1]),ml_edges->comm);
   AZ_ML_Set_Amat(ml_edges, N_levels-1, Nlocal_edges, Nlocal_edges, Ke_mat, 
 		 proc_config);
-*/
-  ML_Gen_MGHierarchy_ReuseExistingOperators(ml_edges, Ke_mat, Nlocal_edges,
-                                            N_levels-1, coarsest_level,
-                                            ML_DECREASING,proc_config);
+
+  ML_Gen_MGHierarchy_ReuseExistingOperators(ml_edges);
   {printf("Ending reuse\n"); fflush(stdout);}
 #endif
 
 
-  coarsest_level = N_levels - coarsest_level;
-	
 
-  /* set up smoothers for all levels but the coarsest */
+  /****************************************************
+  * Set up smoothers for all levels but the coarsest. *
+  ****************************************************/
+  coarsest_level = N_levels - coarsest_level;
   for (level = N_levels-1; level > coarsest_level; level--)
   {
       num_PDE_eqns = ml_edges->Amat[level].num_PDEs;
@@ -865,11 +987,15 @@ int main(int argc, char *argv[])
 
       else if (ML_strcmp(context->smoother,"Hiptmair") == 0)
 	  {
-       omega = 1.0;
-       /* The damping parameter is actually calculated in the data setup
-          for Hiptmair. */
-	   ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
-				   omega,Tmat_array, Tmat_trans_array);
+          /* Setting omega to any other value will override the automatic
+             calculation in ML_Smoother_Gen_Hiptmair_Data. */
+          omega = (double) ML_DEFAULT;
+          if (level == N_levels-1)
+             ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
+                    omega,Tmat_array, Tmat_trans_array,Tmatbc,0);
+          else
+             ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
+                    omega,Tmat_array, Tmat_trans_array, Tmat,0);
 	  }
       /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
       /* In parallel, it is not a true Gauss-Seidel in that each processor */
@@ -938,6 +1064,9 @@ int main(int argc, char *argv[])
 	  exit(1);
 	  }
   }
+  /*******************************************
+  * Set up smoothers for the coarsest level. *
+  *******************************************/
   nsmooth   = context->coarse_its;
   /*  Sparse approximate inverse smoother that actually does both */
   /*  pre and post smoothing.                                     */
@@ -951,13 +1080,17 @@ int main(int argc, char *argv[])
   }
 
   else if (ML_strcmp(context->coarse_solve,"Hiptmair") == 0)
-    {
-       omega = 1.0;
-       /* The damping parameter is actually calculated in the data setup
-          for Hiptmair. */
-      ML_Gen_Smoother_Hiptmair(ml_edges , coarsest_level, ML_BOTH,
-			       nsmooth,omega,Tmat_array, Tmat_trans_array);
-    }
+  {
+    /* Setting omega to any other value will override the automatic
+       calculation in ML_Smoother_Gen_Hiptmair_Data. */
+    omega = (double) ML_DEFAULT;
+    if (coarsest_level == N_levels-1)
+       ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
+             omega,Tmat_array, Tmat_trans_array, Tmatbc,0);
+    else
+       ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
+             omega,Tmat_array, Tmat_trans_array, Tmat,0);
+  }
   else if (ML_strcmp(context->coarse_solve,"GaussSeidel") == 0) {
     ML_Gen_Smoother_GaussSeidel(ml_edges , coarsest_level, ML_BOTH, nsmooth,1.);
   }
@@ -996,7 +1129,21 @@ int main(int argc, char *argv[])
   }
 
 #ifdef ReuseOps
-  /* Regenerate Hiptmair smoother data on all levels as a test. */
+  /* Extract data from the smoother that we want to reuse. */ 
+  /*ML_Smoother_GetReuseData(ml_edges);*/
+
+  for (i = 0; i < N_levels; i++)
+  {
+     ML_Smoother_Clean(&(ml_edges->pre_smoother[i]));
+     ML_Smoother_Clean(&(ml_edges->post_smoother[i]));
+     ML_CSolve_Clean(&(ml_edges->csolve[i]));
+  }  
+  ML_Smoother_Reinit(ml_edges);
+
+  /***************************************************************
+  *  Regenerate Hiptmair smoother data on all levels as a test.  *
+  ***************************************************************/
+
   if (ML_strcmp(context->smoother,"Hiptmair") == 0)
   {
      if (proc_config[AZ_node] == 0)
@@ -1004,16 +1151,25 @@ int main(int argc, char *argv[])
         printf("Regenerating smoother data\n");
         fflush(stdout);
      }
+     nsmooth   = context->nsmooth;
      for (level = N_levels-1; level > coarsest_level; level--)
      {
          num_PDE_eqns = ml_edges->Amat[level].num_PDEs;
-         omega = 1.0;
-         if (proc_config[AZ_node] == 0)
-            printf("Damping parameter = %lf\n",omega);
-	     ML_Gen_Smoother_HiptmairReuse(ml_edges, level, ML_BOTH, nsmooth,
-				                       omega);
+         /* Setting omega to any other value will override the automatic
+            calculation in ML_Smoother_Gen_Hiptmair_Data. */
+        omega = (double) ML_DEFAULT;
+         if (level == N_levels-1)
+	        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
+				        omega,Tmat_array, Tmat_trans_array, Tmat,
+                        Tmat_trans, Tmatbc,0);
+         else
+	        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
+				        omega,Tmat_array, Tmat_trans_array, Tmat,
+                        Tmat_trans, NULL,0);
      }
   }
+  nsmooth   = context->coarse_its;
+  coarsest_level = N_levels - coarsest_level;
   if (ML_strcmp(context->coarse_solve,"Hiptmair") == 0)
   {
      if (proc_config[AZ_node] == 0)
@@ -1021,9 +1177,24 @@ int main(int argc, char *argv[])
         printf("Regenerating smoother data on coarsest level\n");
         fflush(stdout);
      }
-     omega = 1.0;
-     ML_Gen_Smoother_HiptmairReuse(ml_edges, coarsest_level,
-                                   ML_BOTH, nsmooth, omega);
+     /* Setting omega to any other value will override the automatic
+        calculation in ML_Smoother_Gen_Hiptmair_Data. */
+     omega = (double) ML_DEFAULT;
+     if (coarsest_level == N_levels-1)
+        ML_Gen_Smoother_Hiptmair(ml_edges , coarsest_level, ML_BOTH,
+              nsmooth,omega,Tmat_array, Tmat_trans_array, Tmat, 
+              Tmat_trans, Tmatbc,0);
+     else
+        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
+              omega,Tmat_array, Tmat_trans_array, Tmat, Tmat_trans, NULL,0);
+  }
+  else if (ML_strcmp(context->coarse_solve,"SuperLU") == 0)
+  {
+    ML_Gen_CoarseSolverSuperLU( ml_edges, coarsest_level);
+  }
+  else {
+    printf("unknown coarse grid solver %s\n",context->coarse_solve);
+    exit(1);
   }
   if (proc_config[AZ_node] == 0)
   {
@@ -1054,8 +1225,11 @@ int main(int argc, char *argv[])
   }
   options[AZ_scaling]  = AZ_none;
   options[AZ_precond]  = AZ_user_precond;
-  /*options[AZ_conv]     = AZ_noscaled;*/
+#ifdef AZ_SCALERES
   options[AZ_conv]     = AZ_r0;
+#else
+  options[AZ_conv]     = AZ_noscaled;
+#endif
   options[AZ_output]   = 1;
   options[AZ_max_iter] = 300;
   options[AZ_poly_ord] = 5;
@@ -1147,8 +1321,11 @@ int main(int argc, char *argv[])
   else
   {
     options[AZ_keep_info] = 1;
-    /*options[AZ_conv] = AZ_noscaled;*/
-    options[AZ_conv] = AZ_r0;
+#ifdef AZ_SCALERES
+  options[AZ_conv]     = AZ_r0;
+#else
+  options[AZ_conv]     = AZ_noscaled;
+#endif
     options[AZ_output] = 1;
 
     /*
@@ -1160,9 +1337,18 @@ int main(int argc, char *argv[])
       printf("huhhhh %e\n",Ke_mat->val[0]);
       */
 
-    /*options[AZ_conv] = AZ_noscaled;*/
-    options[AZ_conv] = AZ_r0;
+#ifdef AZ_SCALERES
+  options[AZ_conv]     = AZ_r0;
+#else
+  options[AZ_conv]     = AZ_noscaled;
+#endif
     /*options[AZ_conv] = AZ_expected_values;*/
+
+/*
+    Amat = &(ml_edges->Amat[N_levels-1]);
+    ML_Operator_Print(Amat,"Ke_mat");
+    exit(1);
+*/
 
 #ifdef CHECKOPERATORS
 /**** check various operators and vectors ****/
