@@ -95,6 +95,13 @@ int main(int argc, char *argv[]) {
   SingletonFilter.Analyze();
   Comm.Barrier();
   double reduceAnalyzeTime = ReductionTimer.ElapsedTime() - reduceInitTime;
+
+  if (SingletonFilter.SingletonsDetected())
+    cout << "Singletons found" << endl;
+  else {
+    cout << "Singletons not found" << endl;
+    exit(1);
+  }
   SingletonFilter.ConstructReducedProblem();
   Comm.Barrier();
   double reduceConstructTime = ReductionTimer.ElapsedTime() - reduceInitTime;
@@ -174,11 +181,11 @@ int main(int argc, char *argv[]) {
 		    << elapsed_time << endl
 		    << "MFLOPS for Factorization = " << MFLOPs << endl;
     //cout << *ILUK << endl;
-  }
   double Condest;
   ILUK->Condest(false, Condest);
 
   if (verbose) cout << "Condition number estimate for this preconditioner = " << Condest << endl;
+  }
   int Maxiter = 50;
   double Tolerance = 1.0E-11;
 
@@ -186,7 +193,7 @@ int main(int argc, char *argv[]) {
   Ap->SetFlopCounter(counter);
   xp->SetFlopCounter(*Ap);
   bp->SetFlopCounter(*Ap);
-  ILUK->SetFlopCounter(*Ap);
+  if (ILUK!=0) ILUK->SetFlopCounter(*Ap);
 
   elapsed_time = timer.ElapsedTime();
 
@@ -250,9 +257,9 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
 
   // Allocate vectors needed for iterations
   Epetra_Vector phat(x.Map()); phat.SetFlopCounter(x);
-  Epetra_Vector p(b.Map()); p.SetFlopCounter(x);
-  Epetra_Vector shat(b.Map()); shat.SetFlopCounter(x);
-  Epetra_Vector s(b.Map()); s.SetFlopCounter(x);
+  Epetra_Vector p(x.Map()); p.SetFlopCounter(x);
+  Epetra_Vector shat(x.Map()); shat.SetFlopCounter(x);
+  Epetra_Vector s(x.Map()); s.SetFlopCounter(x);
   Epetra_Vector r(b.Map()); r.SetFlopCounter(x);
   Epetra_Vector rtilde(x.Map()); rtilde.Random(); rtilde.SetFlopCounter(x);
   Epetra_Vector v(x.Map()); v.SetFlopCounter(x);
