@@ -243,6 +243,8 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries, double * Values, int
   Graph_->InsertIndices(Row, NumEntries, Indices); // Update graph
 
   EPETRA_CHK_ERR(ierr);
+  NormOne_ = -1.0; // Reset Norm so it will be recomputed.
+  NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   return(0);
 
 }
@@ -267,6 +269,8 @@ int Epetra_CrsMatrix::ReplaceGlobalValues(int Row, int NumEntries, double * Valu
   }
 
   EPETRA_CHK_ERR(ierr);
+  NormOne_ = -1.0; // Reset Norm so it will be recomputed.
+  NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   return(0);
 }
 
@@ -291,6 +295,8 @@ int Epetra_CrsMatrix::ReplaceMyValues(int Row, int NumEntries, double * Values, 
   }
 
   EPETRA_CHK_ERR(ierr);
+  NormOne_ = -1.0; // Reset Norm so it will be recomputed.
+  NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   return(0);
 }
 
@@ -312,6 +318,8 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(int Row, int NumEntries, double * Valu
   }
 
   EPETRA_CHK_ERR(ierr);
+  NormOne_ = -1.0; // Reset Norm so it will be recomputed.
+  NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   return(0);
 }
 
@@ -333,6 +341,8 @@ int Epetra_CrsMatrix::SumIntoMyValues(int Row, int NumEntries, double * Values, 
   }
 
   EPETRA_CHK_ERR(ierr);
+  NormOne_ = -1.0; // Reset Norm so it will be recomputed.
+  NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   return(0);
 }
 

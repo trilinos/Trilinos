@@ -595,6 +595,9 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     //! Returns the index base for row and column indices for this graph.
     int IndexBase() const {return(Graph_->IndexBase_);};
 
+
+    //! Returns true if the graph associated with this matrix was pre-constructed and therefore not changeable.
+    bool StaticGraph() {return(StaticGraph_);};
     //! Returns a pointer to the Epetra_CrsGraph object associated with this matrix.
     const Epetra_CrsGraph & Graph() const {return(*Graph_);};
 
@@ -760,7 +763,6 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 		       char * Imports, int & SizeOfPacket, 
 		       Epetra_Distributor & Distor, Epetra_CombineMode CombineMode);
   
-  bool StaticGraph() {return(StaticGraph_);};
   Epetra_CrsGraph * Graph_;
   bool Allocated_;
   bool StaticGraph_;
