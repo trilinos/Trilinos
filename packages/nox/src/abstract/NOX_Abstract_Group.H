@@ -17,8 +17,6 @@
 namespace NOX { 
 namespace Abstract { 
 
-//! 
-
 /*! \brief NOX pure abstract interface to a "group"; i.e., a solution
  *  vector and the corresponding RHS, Jacobian, gradient, and Newton
  *  vectors, as well as any shared objects.
@@ -58,7 +56,7 @@ public:
   //! Throws an error if RHS and Jacobian have not been computed.
   virtual const Vector& computeGrad() = 0;
 
-  //! Compute and return Newton direction, using specified parameters for nonlinear solve.
+  //! Compute and return Newton direction, using parameters for nonlinear solve.
   //! Throws an error if RHS and Jacobian have not been computed.
   virtual const Vector& computeNewton(Parameter::List& params) = 0;
 
