@@ -101,7 +101,7 @@ typedef struct ML_Aggregate_Comm_Struct
 
 /* ******************************************************************** */
 /* ******************************************************************** */
-/* functions to manipulate the matrix graph data structure              */
+/* functions to manipulate the aggregate data structure                 */
 /* -------------------------------------------------------------------- */
 
 #ifdef __cplusplus
