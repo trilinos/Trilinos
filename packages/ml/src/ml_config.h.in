@@ -179,6 +179,9 @@
 /* Support for 64-bit integers */
 #undef ML_BIG_INT
 
+/* mallinfo with ML */
+#undef ML_MALLINFO
+
 /* Name of package */
 #undef PACKAGE
 

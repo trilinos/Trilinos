@@ -418,6 +418,16 @@ TAC_ARG_WITH_LAPACKLIB
 # Checks for linker characteristics
 # ------------------------------------------------------------------------
 
+AC_MSG_CHECKING(for mallinfo() function)
+AC_TRY_LINK_FUNC(mallinfo,,mlmallinfook="yes",mlmallinfook="no")
+
+if test "X$mlmallinfook" != "Xyes"; then
+  AC_DEFINE(ML_MALLINFO,[],[mallinfo with ML])
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
+
 # Determine libraries needed for linking with Fortran
 AC_F77_LIBRARY_LDFLAGS
 
