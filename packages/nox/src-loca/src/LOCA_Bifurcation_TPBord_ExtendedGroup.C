@@ -1,0 +1,682 @@
+// $Id$
+// $Source$
+
+//@HEADER
+// ************************************************************************
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//   
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//   
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+// (rppawlo@sandia.gov).
+// 
+// ************************************************************************
+//@HEADER
+
+#include "LOCA_Bifurcation_TPBord_ExtendedGroup.H"
+#include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
+#include "LOCA_Parameter_Vector.H"
+#include "NOX_Parameter_List.H"
+
+LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
+			      LOCA::Bifurcation::TPBord::AbstractGroup& g,
+			      const NOX::Abstract::Vector& lenVec,
+			      int paramId)
+  : grpPtr(&g),
+    tpXVec(g.getX(), lenVec, 0.0),
+    tpFVec(lenVec, lenVec, 0.0),
+    tpNewtonVec(lenVec, lenVec, 0.0),
+    lengthVecPtr(lenVec.clone(NOX::DeepCopy)), 
+    bifParamId(paramId), 
+    derivResidualParamPtr(lenVec.clone(NOX::ShapeCopy)), 
+    derivNullResidualParamPtr(lenVec.clone(NOX::ShapeCopy)), 
+    ownsGroup(false),
+    isValidF(false),
+    isValidJacobian(false),
+    isValidNewton(false)
+{
+  init();
+}
+
+LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
+			  const LOCA::Bifurcation::TPBord::AbstractGroup& g,
+			  const NOX::Abstract::Vector& lenVec,
+			  int paramId)
+  : grpPtr(dynamic_cast<LOCA::Bifurcation::TPBord::AbstractGroup*>(g.clone())),
+    tpXVec(g.getX(), lenVec, 0.0),
+    tpFVec(lenVec, lenVec, 0.0),
+    tpNewtonVec(lenVec, lenVec, 0.0),
+    lengthVecPtr(lenVec.clone(NOX::DeepCopy)), 
+    bifParamId(paramId), 
+    derivResidualParamPtr(lenVec.clone(NOX::ShapeCopy)), 
+    derivNullResidualParamPtr(lenVec.clone(NOX::ShapeCopy)), 
+    ownsGroup(true),
+    isValidF(false),
+    isValidJacobian(false),
+    isValidNewton(false)
+{
+  init();
+}
+
+LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
+		      const LOCA::Bifurcation::TPBord::ExtendedGroup& source, 
+		      NOX::CopyType type)
+  : grpPtr(dynamic_cast<LOCA::Bifurcation::TPBord::AbstractGroup*>(source.grpPtr->clone())), 
+    tpXVec(source.tpXVec, type),
+    tpFVec(source.tpFVec, type),
+    tpNewtonVec(source.tpNewtonVec, type),
+    lengthVecPtr(source.lengthVecPtr->clone(type)), 
+    bifParamId(source.bifParamId),
+    derivResidualParamPtr(source.derivResidualParamPtr->clone(type)),
+    derivNullResidualParamPtr(source.derivNullResidualParamPtr->clone(type)),
+    ownsGroup(true),
+    isValidF(source.isValidF),
+    isValidJacobian(source.isValidJacobian),
+    isValidNewton(source.isValidNewton) {}
+
+
+LOCA::Bifurcation::TPBord::ExtendedGroup::~ExtendedGroup() 
+{
+  if (ownsGroup)
+    delete grpPtr;
+  delete lengthVecPtr;
+  delete derivResidualParamPtr;
+  delete derivNullResidualParamPtr;
+}
+
+NOX::Abstract::Group&
+LOCA::Bifurcation::TPBord::ExtendedGroup::operator=(const NOX::Abstract::Group& source)
+{
+  return *this = dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedGroup&>(source);
+}
+
+LOCA::Continuation::AbstractGroup&
+LOCA::Bifurcation::TPBord::ExtendedGroup::operator=(
+			const LOCA::Continuation::AbstractGroup& source)
+{
+  return *this = dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedGroup&>(source);
+}
+
+LOCA::Bifurcation::TPBord::ExtendedGroup&
+LOCA::Bifurcation::TPBord::ExtendedGroup::operator=(
+		      const LOCA::Bifurcation::TPBord::ExtendedGroup& source) 
+{
+
+  // Protect against A = A
+  if (this != &source) {
+
+    // Delete old values
+    delete lengthVecPtr;
+    delete derivResidualParamPtr;
+    delete derivNullResidualParamPtr;
+
+    NOX::CopyType type = NOX::DeepCopy;
+    
+    // Copy values
+    *grpPtr = *source.grpPtr;
+    tpXVec = source.tpXVec;
+    tpFVec = source.tpFVec;
+    tpNewtonVec = source.tpNewtonVec;
+    lengthVecPtr = source.lengthVecPtr->clone(type);
+    derivResidualParamPtr = source.derivResidualParamPtr->clone(type);
+    derivNullResidualParamPtr = source.derivNullResidualParamPtr->clone(type);
+    bifParamId = source.bifParamId;
+    isValidF = source.isValidF;
+    isValidJacobian = source.isValidJacobian;
+    isValidNewton = source.isValidNewton;
+  }
+
+  return *this;
+}
+
+NOX::Abstract::Group*
+LOCA::Bifurcation::TPBord::ExtendedGroup::clone(NOX::CopyType type) const 
+{
+  return new LOCA::Bifurcation::TPBord::ExtendedGroup(*this, type);
+}
+
+void
+LOCA::Bifurcation::TPBord::ExtendedGroup::setParams(const LOCA::ParameterVector& p) 
+{
+  isValidF = false;
+  isValidJacobian = false;
+  isValidNewton = false;
+
+  grpPtr->setParams(p);
+}
+
+const LOCA::ParameterVector&
+LOCA::Bifurcation::TPBord::ExtendedGroup::getParams() const 
+{
+  return grpPtr->getParams();
+}
+
+void
+LOCA::Bifurcation::TPBord::ExtendedGroup::setParam(int paramID, double val)
+{
+  grpPtr->setParam(paramID, val);
+}
+
+double
+LOCA::Bifurcation::TPBord::ExtendedGroup::getParam(int paramID) const
+{
+  return grpPtr->getParam(paramID);
+}
+
+void
+LOCA::Bifurcation::TPBord::ExtendedGroup::setParam(string paramID, double val)
+{
+  grpPtr->setParam(paramID, val);
+}
+
+double
+LOCA::Bifurcation::TPBord::ExtendedGroup::getParam(string paramID) const
+{
+  return grpPtr->getParam(paramID);
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Bifurcation::TPBord::ExtendedGroup::computeDfDp(int paramID, 
+					      NOX::Abstract::Vector& result)
+{
+  NOX::Abstract::Group::ReturnType res;
+
+  // Cast result to TP vector
+  LOCA::Bifurcation::TPBord::ExtendedVector& tp_result = 
+    dynamic_cast<LOCA::Bifurcation::TPBord::ExtendedVector&>(result);
+
+  // Compute f, J, J*n
+  res = computeF();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  // Compute df/dp
+  res = grpPtr->computeDfDp(paramID, tp_result.getXVec());
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  // Compute d(Jn)/dp
+  res = grpPtr->computeDJnDp(tpXVec.getNullVec(), paramID,
+			     tpFVec.getNullVec(), tp_result.getNullVec());
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  // Set parameter componenet
+  tp_result.getBifParam() = 0.0;
+
+  return res;
+}
+
+double
+LOCA::Bifurcation::TPBord::ExtendedGroup::getBifParam() const 
+{
+  LOCA::ParameterVector params(grpPtr->getParams());
+  return params[bifParamId];
+}
+
+void
+LOCA::Bifurcation::TPBord::ExtendedGroup::setBifParam(double param) 
+{
+  LOCA::ParameterVector params(grpPtr->getParams());
+
+  params[bifParamId] = param;
+  isValidF = false;
+  isValidJacobian = false;
+  isValidNewton = false;
+
+  grpPtr->setParams(params);
+}
+
+void
+LOCA::Bifurcation::TPBord::ExtendedGroup::setX(const NOX::Abstract::Vector& y) 
+{
+  setX( dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedVector&>(y) );
+}
+
+void
+LOCA::Bifurcation::TPBord::ExtendedGroup::setX(
+			      const LOCA::Bifurcation::TPBord::ExtendedVector& y) 
+{
+  grpPtr->setX( y.getXVec() );
+  tpXVec = y;
+
+  isValidF = false;
+  isValidJacobian = false;
+  isValidNewton = false;
+}
+
+void
+LOCA::Bifurcation::TPBord::ExtendedGroup::computeX(const NOX::Abstract::Group& g, 
+					   const NOX::Abstract::Vector& d,
+					   double step) 
+{
+  computeX( dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedGroup&>(g),
+	    dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedVector&>(d),
+	    step );
+}
+
+void
+LOCA::Bifurcation::TPBord::ExtendedGroup::computeX(
+				  const LOCA::Bifurcation::TPBord::ExtendedGroup& g, 
+				  const LOCA::Bifurcation::TPBord::ExtendedVector& d,
+				  double step) 
+{
+  isValidF = false;
+  isValidJacobian = false;
+  isValidNewton = false;
+
+  grpPtr->computeX(*(g.grpPtr), d.getXVec(), step);
+  tpXVec.update(1.0, g.getX(), step, d, 0.0);
+  setBifParam(tpXVec.getBifParam());
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Bifurcation::TPBord::ExtendedGroup::computeF() 
+{
+  if (isValidF)
+    return NOX::Abstract::Group::Ok;
+
+  NOX::Abstract::Group::ReturnType res;
+
+  res = grpPtr->computeF();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  
+  tpFVec.getXVec() = grpPtr->getF();
+  
+  res = grpPtr->computeJacobian();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  res = grpPtr->applyJacobian(tpXVec.getNullVec(), 
+			      tpFVec.getNullVec());
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  
+  tpFVec.getBifParam() = tpXVec.getNullVec().dot(*lengthVecPtr) - 1.0;
+  
+  isValidF = true;
+
+  return res;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Bifurcation::TPBord::ExtendedGroup::computeJacobian() 
+{
+  if (isValidJacobian)
+    return NOX::Abstract::Group::Ok;
+
+  NOX::Abstract::Group::ReturnType res = computeF();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  res = grpPtr->computeJacobian();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  
+  res = grpPtr->computeDfDp(bifParamId, *derivResidualParamPtr);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  res = grpPtr->computeDJnDp(tpXVec.getNullVec(), 
+			     bifParamId,
+			     tpFVec.getNullVec(), 
+			     *derivNullResidualParamPtr);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  isValidJacobian = true;
+
+  return res;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Bifurcation::TPBord::ExtendedGroup::computeGradient() 
+{
+  return NOX::Abstract::Group::NotDefined;
+}
+   
+NOX::Abstract::Group::ReturnType
+LOCA::Bifurcation::TPBord::ExtendedGroup::computeNewton(NOX::Parameter::List& params) 
+{
+  if (isValidNewton)
+    return NOX::Abstract::Group::Ok;
+
+  NOX::Abstract::Group::ReturnType res = computeF();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  
+  res = computeJacobian();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  res = applyJacobianInverse(params, tpFVec, tpNewtonVec);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  tpNewtonVec.scale(-1.0);
+  isValidNewton = true;
+
+  return res;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobian(
+				     const NOX::Abstract::Vector& input,
+				     NOX::Abstract::Vector& result) const 
+{
+  // Cast vectors to TPBordVectors
+  const LOCA::Bifurcation::TPBord::ExtendedVector& tp_input = 
+    dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedVector&>(input);
+  LOCA::Bifurcation::TPBord::ExtendedVector& tp_result = 
+    dynamic_cast<LOCA::Bifurcation::TPBord::ExtendedVector&>(result);
+
+  // Get constant references to input vector components
+  const NOX::Abstract::Vector& input_x = tp_input.getXVec();
+  const NOX::Abstract::Vector& input_null = tp_input.getNullVec();
+  double input_param = tp_input.getBifParam();
+
+  // Get non-constant references to result vector components
+  NOX::Abstract::Vector& result_x = tp_result.getXVec();
+  NOX::Abstract::Vector& result_null = tp_result.getNullVec();
+  double& result_param = tp_result.getBifParam();
+
+  // Temporary vector
+  NOX::Abstract::Vector *tmp = input_null.clone(NOX::ShapeCopy);
+
+  // Return value
+  NOX::Abstract::Group::ReturnType res;
+
+  // compute J*x
+  res = grpPtr->applyJacobian(input_x, result_x);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  // compute J*x + p*dR/dp
+  result_x.update(input_param, *derivResidualParamPtr, 1.0);
+
+  // compute J*y
+  res = grpPtr->applyJacobian(input_null, result_null);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  // compute J*y + p*dJy/dp
+  result_null.update(input_param, *derivNullResidualParamPtr, 1.0);
+
+  // compute (dJy/dx)*x
+  res = grpPtr->computeDJnDxa(tpXVec.getNullVec(), input_x, 
+			      tpFVec.getNullVec(), *tmp);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  
+  // compute (dJy/dx)*x + J*y + p*dJy/dp
+  result_null.update(1.0, *tmp, 1.0);
+
+  // compute phi^T*y
+  result_param = lengthVecPtr->dot(input_null);
+
+  delete tmp;
+
+  return res;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianTranspose(
+					   const NOX::Abstract::Vector& input,
+					   NOX::Abstract::Vector& result) const 
+{
+  return NOX::Abstract::Group::NotDefined;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianInverse(
+					NOX::Parameter::List& params,
+					const NOX::Abstract::Vector& input,
+					NOX::Abstract::Vector& result) const 
+{
+  const NOX::Abstract::Vector* inputs[1];
+  NOX::Abstract::Vector* results[1];
+
+  inputs[0] = &input;
+  results[0] = &result;
+
+  return applyJacobianInverseMulti(params, inputs, results, 1);
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianInverseMulti(
+			    NOX::Parameter::List& params,
+			    const NOX::Abstract::Vector* const* inputs,
+			    NOX::Abstract::Vector** results, int nVecs) const 
+{
+  // Number of input vectors
+  int m = nVecs; 
+
+  // Return type
+   NOX::Abstract::Group::ReturnType res;
+  
+  // Build arrays of solution, null vector and parameter components
+  const NOX::Abstract::Vector** inputs_x = 
+    new const NOX::Abstract::Vector*[m+1];
+  const NOX::Abstract::Vector** inputs_null =
+    new const NOX::Abstract::Vector*[m+1];
+  double* inputs_params = new double[m];
+
+  NOX::Abstract::Vector** tmp1 = new NOX::Abstract::Vector*[m+1];
+  NOX::Abstract::Vector** tmp2 = new NOX::Abstract::Vector*[m+1];
+  NOX::Abstract::Vector** tmp3 = new NOX::Abstract::Vector*[m+1];
+
+  const LOCA::Bifurcation::TPBord::ExtendedVector* constTPVecPtr;
+
+  for (int i=0; i<m; i++) {
+    constTPVecPtr = 
+      dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedVector*>(inputs[i]);
+    inputs_x[i] = &(constTPVecPtr->getXVec());
+    inputs_null[i] = &(constTPVecPtr->getNullVec());
+    inputs_params[i] = constTPVecPtr->getBifParam();
+
+    tmp1[i] = inputs_x[i]->clone(NOX::ShapeCopy);
+    tmp2[i] = inputs_x[i]->clone(NOX::ShapeCopy);
+    tmp3[i] = inputs_x[i]->clone(NOX::ShapeCopy);
+  }
+
+  // Set last components to deriv. w.r.t. parameter
+  inputs_x[m] = derivResidualParamPtr;
+  inputs_null[m] = derivNullResidualParamPtr;
+  tmp1[m] = inputs_x[m]->clone(NOX::ShapeCopy);
+  tmp2[m] = inputs_x[m]->clone(NOX::ShapeCopy);
+  tmp3[m] = inputs_x[m]->clone(NOX::ShapeCopy);
+
+  // Solve J*tmp1 = inputs_x
+  res = grpPtr->applySingularJacobianInverseMulti(params, inputs_x, 
+						  tpXVec.getNullVec(),
+						  tpFVec.getNullVec(),
+						  tmp1, m+1);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  // Compute tmp2 = (dJy/dx)*tmp1 - inputs_null
+  for (int i=0; i<m+1; i++) {
+    res = grpPtr->computeDJnDxa(tpXVec.getNullVec(), *tmp1[i],
+				tpFVec.getNullVec(), *tmp2[i]);
+
+    if (res != NOX::Abstract::Group::Ok)
+      return res;
+
+    tmp2[i]->update(-1.0, *inputs_null[i], 1.0);
+  } 
+
+  // Solve J*tmp3 = tmp2
+  res = grpPtr->applySingularJacobianInverseMulti(params, tmp2, 
+						  tpXVec.getNullVec(),
+						  tpFVec.getNullVec(),
+						  tmp3, m+1);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  
+  // Compute and set results
+  double denom = lengthVecPtr->dot(*tmp3[m]);
+  double w;
+  LOCA::Bifurcation::TPBord::ExtendedVector* tpVecPtr;
+  for (int i=0; i<m; i++) {
+    tpVecPtr = dynamic_cast<LOCA::Bifurcation::TPBord::ExtendedVector*>(results[i]);
+
+    w = (inputs_params[i] + lengthVecPtr->dot(*tmp3[i]))/denom;
+    (tpVecPtr->getXVec()).update(1.0, *tmp1[i], -w, *tmp1[m], 0.0);
+    (tpVecPtr->getNullVec()).update(-1.0, *tmp3[i], w, *tmp3[m], 0.0);
+    tpVecPtr->getBifParam() = w;
+
+    delete tmp1[i];
+    delete tmp2[i];
+    delete tmp3[i];
+  }
+
+  delete tmp1[m];
+  delete tmp2[m];
+  delete tmp3[m];
+
+  delete [] tmp1;
+  delete [] tmp2;
+  delete [] tmp3;
+  delete [] inputs_x;
+  delete [] inputs_null;
+  delete [] inputs_params;
+
+  return res;
+}
+
+bool
+LOCA::Bifurcation::TPBord::ExtendedGroup::isF() const 
+{
+  return isValidF;
+}
+
+bool
+LOCA::Bifurcation::TPBord::ExtendedGroup::isJacobian() const 
+{
+  return isValidJacobian;
+}
+
+bool
+LOCA::Bifurcation::TPBord::ExtendedGroup::isGradient() const 
+{
+  return false;
+}
+
+bool
+LOCA::Bifurcation::TPBord::ExtendedGroup::isNewton() const 
+{
+  return isValidNewton;
+}
+  
+const NOX::Abstract::Vector&
+LOCA::Bifurcation::TPBord::ExtendedGroup::getX() const 
+{
+  return tpXVec;
+}
+
+const NOX::Abstract::Vector&
+LOCA::Bifurcation::TPBord::ExtendedGroup::getF() const 
+{
+  return tpFVec;
+}
+
+double
+LOCA::Bifurcation::TPBord::ExtendedGroup::getNormF() const 
+{
+  return tpFVec.norm();
+}
+
+const NOX::Abstract::Vector&
+LOCA::Bifurcation::TPBord::ExtendedGroup::getGradient() const 
+{
+  cout << "ERROR: LOCA::Bifurcation::TPBord::ExtendedGroup::getGradient() "
+       << " - not implemented" << endl;
+  throw "LOCA Error";
+  return getNewton();
+}
+
+const NOX::Abstract::Vector&
+LOCA::Bifurcation::TPBord::ExtendedGroup::getNewton() const 
+{
+  return tpNewtonVec;
+}
+
+double
+LOCA::Bifurcation::TPBord::ExtendedGroup::getNormNewtonSolveResidual() const 
+{
+  LOCA::Bifurcation::TPBord::ExtendedVector residual = tpFVec;
+  
+  NOX::Abstract::Group::ReturnType res = applyJacobian(tpNewtonVec, residual);
+  if (res != NOX::Abstract::Group::Ok) {
+    cout << "ERROR: applyJacobian() in getNormNewtonSolveResidual "
+	 << " returned not ok" << endl;
+    throw "LOCA Error";
+    return 0.0;
+  }
+
+  residual.update(1.0, tpFVec, 1.0);
+  return residual.norm();
+}
+
+void
+LOCA::Bifurcation::TPBord::ExtendedGroup::printSolution(const double conParam) const 
+{
+  cout << "LOCA::Bifurcation::TPBord::ExtendedGroup::printSolution\n";
+
+  cout << "\tPrinting Solution Vector for conParam = " << conParam << endl;
+  grpPtr->printSolution(conParam);
+
+  cout << "\tPrinting Null Vector for bif param = " << getBifParam() << endl;
+  grpPtr->printSolution(tpXVec.getNullVec(), tpXVec.getBifParam());
+}
+
+const LOCA::Continuation::AbstractGroup&
+LOCA::Bifurcation::TPBord::ExtendedGroup::getUnderlyingGroup() const
+{
+  return grpPtr->getUnderlyingGroup();
+}
+
+LOCA::Continuation::AbstractGroup&
+LOCA::Bifurcation::TPBord::ExtendedGroup::getUnderlyingGroup()
+{
+  return grpPtr->getUnderlyingGroup();
+}
+
+void
+LOCA::Bifurcation::TPBord::ExtendedGroup::init()
+{
+
+  tpXVec.getBifParam() = getBifParam();
+
+  // Rescale length vector so that the normalization condition is met
+  double lVecDotNullVec;
+
+  lVecDotNullVec = tpXVec.getNullVec().dot(*lengthVecPtr);
+  if (lVecDotNullVec == 0.0) {
+    cout << "ERROR: LOCA::Bifurcation::TPBord::ExtendedGroup::init()\n"
+         << "     : length vector can not have Norm zero " << endl;
+
+    throw "LOCA Error";
+  }
+  cout << "\tIn LOCA::Bifurcation::TPBord::ExtendedGroup::init(), scaling lenVec by:" 
+       << (1.0 / lVecDotNullVec) << endl;
+  lengthVecPtr->scale(1.0 / lVecDotNullVec);
+}
