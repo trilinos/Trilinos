@@ -43,6 +43,11 @@ public:
   void setParameter(const string& name, double value);
   void setParameter(const string& name, const char* value);
   void setParameter(const string& name, const string& value);
+
+  //! Note that this only retains a reference to the list, not a copy.
+  //! Returns false is the "value" cannot be added. 
+  //! This happens when "value" contains "this".
+  bool setParameter(const string& name, const List& value);
   //@}
 
   /** @name Getting Parameters 
@@ -53,26 +58,37 @@ public:
    * ambiguous. Both char* and string map return string values.  Sets
    * the parameters as "used". */
   //@{
-  bool getParameter(const string& name, bool nominal);
-  int getParameter(const string& name, int nominal);
-  double getParameter(const string& name, double nominal);
-  const string& getParameter(const string& name, const char* nominal);
-  const string& getParameter(const string& name, const string& nominal);
+  bool getParameter(const string& name, bool nominal) const;
+  int getParameter(const string& name, int nominal) const;
+  double getParameter(const string& name, double nominal) const;
+  const string& getParameter(const string& name, const char* nominal) const;
+  const string& getParameter(const string& name, const string& nominal) const;
+  const List& getParameter(const string& name, const List& nominal) const;
   //@}
+
+  //! Printing 
+  ostream& print(ostream& stream, int indent = 0) const;
+
+private:
+
+  //! Check to see if "l" or any of its sublists is "this"
+  bool isRecursive(const List& l) const;
+
 
 private:
 
   //! Parameter list
   map<string, NLS_Parameter> params;
  
-  
   //! Used to create a string when the getParameter is called with a
   //! char* nominal value. A new string is created for each such
   //! argument. The whole group of strings is destroyed when this object
   //! is destroyed. This is really annoying, but I don't know a better 
   //! way.
-  vector<string> tmpstrings;
+  mutable vector<string> tmpstrings;
 };
+
+ostream& operator<<(ostream& stream, const NLS_ParameterList& p);
 
 #endif
 

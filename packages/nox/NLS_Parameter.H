@@ -15,6 +15,10 @@
 #include<vector>
 #include<map>
 
+//forward declaration
+class NLS_ParameterList;
+typedef NLS_ParameterList List;
+
 //! Manipulating single parameters
 class NLS_Parameter {
 
@@ -25,6 +29,7 @@ public:
   NLS_Parameter(int value);
   NLS_Parameter(double value);
   NLS_Parameter(const string& value);
+  NLS_Parameter(const List& p);
 
   ~NLS_Parameter();
 
@@ -32,16 +37,19 @@ public:
   void setValue(int value);
   void setValue(double value);
   void setValue(const string& value);
+  void setValue(const List& p);
 
   bool isBool() const;
   bool isInt() const;
   bool isDouble() const;
   bool isString() const;
+  bool isList() const;
 
-  bool getBoolValue();
-  int getIntValue();
-  double getDoubleValue();
-  string& getStringValue();
+  bool getBoolValue() const;
+  int getIntValue() const;
+  double getDoubleValue() const;
+  const string& getStringValue() const;
+  const List& getListValue() const;
 
   bool isUsed() const;
 
@@ -49,13 +57,15 @@ public:
 
 private:
 
-  enum NLS_ParameterType { NONE, BOOL, INT, DOUBLE, STRING };
+  enum NLS_ParameterType { NONE, BOOL, INT, DOUBLE, STRING, LIST };
   NLS_ParameterType type;
   bool bval;
   int ival;
   double dval;
   string sval;
-  bool isused;
+  const List* lval;		
+  mutable bool isused;
+
 };
 
 ostream& operator<<(ostream& stream, const NLS_Parameter& e);

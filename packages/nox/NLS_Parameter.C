@@ -16,52 +16,69 @@ NLS_Parameter::NLS_Parameter() :
   ival(0),
   dval(0),
   sval(""), 
+  lval(NULL),
   isused(false) 
 {
 }
 
 NLS_Parameter::NLS_Parameter(bool value) : 
-  type(NONE),
+  type(BOOL),
   bval(value),
   ival(0),
   dval(0),
   sval(""), 
+  lval(NULL),
   isused(false) 
 {
 }
 
 NLS_Parameter::NLS_Parameter(int value) : 
-  type(NONE),
+  type(INT),
   bval(false),
   ival(value),
   dval(0),
   sval(""), 
+  lval(NULL),
   isused(false) 
 {
 }
 
 NLS_Parameter::NLS_Parameter(double value) : 
-  type(NONE),
+  type(DOUBLE),
   bval(false),
   ival(0),
   dval(value),
   sval(""), 
+  lval(NULL),
   isused(false) 
 {
 }
 
 NLS_Parameter::NLS_Parameter(const string& value) : 
-  type(NONE),
+  type(STRING),
   bval(false),
   ival(0),
   dval(0),
   sval(value), 
+  lval(NULL),
+  isused(false) 
+{
+}
+
+NLS_Parameter::NLS_Parameter(const List& value) : 
+  type(LIST),
+  bval(false),
+  ival(0),
+  dval(0),
+  sval(""), 
+  lval(&value),
   isused(false) 
 {
 }
 
 NLS_Parameter::~NLS_Parameter() 
 {
+  // Do not delete list - the calling program is responsible for that.
 }
 
 void NLS_Parameter::setValue(bool value)
@@ -92,6 +109,13 @@ void NLS_Parameter::setValue(const string& value)
   isused = false;
 }
 
+void NLS_Parameter::setValue(const List& value)
+{
+  type = LIST;
+  lval = &value;
+  isused = false;
+}
+
 
 bool NLS_Parameter::isBool() const
 {
@@ -113,27 +137,40 @@ bool NLS_Parameter::isString() const
   return (type == STRING);
 }
 
-
-bool NLS_Parameter::getBoolValue()
+bool NLS_Parameter::isList() const
 {
+  return (type == LIST);
+}
+
+bool NLS_Parameter::getBoolValue() const
+{
+  isused = true;
   return bval;
 }
 
-int NLS_Parameter::getIntValue()
+int NLS_Parameter::getIntValue() const
 {
+  isused = true;
   return ival;
 }
 
-double NLS_Parameter::getDoubleValue()
+double NLS_Parameter::getDoubleValue() const
 {
+  isused = true;
   return dval;
 }
 
-string& NLS_Parameter::getStringValue()
+const string& NLS_Parameter::getStringValue() const
 {
+  isused = true;
   return sval;
 }
 
+const List& NLS_Parameter::getListValue() const
+{
+  isused = true;
+  return *lval;
+}
 
 bool NLS_Parameter::isUsed() const
 {
@@ -147,7 +184,7 @@ ostream& NLS_Parameter::leftshift(ostream& stream) const
   stream << "<"; 
   switch(type) {
   case BOOL: 
-    stream << "boolean" << sep << bval;
+    stream << "boolean" << sep << (bval ? "true" : "false");
     break;
   case INT:
     stream << "integer" << sep << ival;
@@ -157,6 +194,9 @@ ostream& NLS_Parameter::leftshift(ostream& stream) const
     break;
   case STRING:
     stream << "string" << sep << sval;
+    break;
+  case LIST:
+    stream << "sublist";
     break;
   default:
     stream << "NONE";
