@@ -11,15 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
 #include "dr_const.h"
 #include "dr_util_const.h"
 #include "dr_par_util_const.h"
 #include "dr_err_const.h"
 #include "dr_output_const.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

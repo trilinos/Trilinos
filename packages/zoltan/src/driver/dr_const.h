@@ -14,10 +14,9 @@
 #ifndef _DR_CONST_H
 #define _DR_CONST_H
 
-
+#include "zoltan.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "zoltan.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

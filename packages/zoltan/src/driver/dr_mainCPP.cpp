@@ -11,7 +11,8 @@
  *    $Revision$
  ****************************************************************************/
 
-#include <mpi.h>
+#include <mpi.h>   // must appear before stdio or iostream
+
 #include <iostream>
 
 #include "dr_const.h"

@@ -12,15 +12,16 @@
  ****************************************************************************/
 
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <string.h>
 
 #include "dr_const.h"
 #include "dr_elem_const.h"
 #include "dr_util_const.h"
 #include "dr_err_const.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

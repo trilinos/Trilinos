@@ -11,12 +11,11 @@
  *    $Revision$
  ****************************************************************************/
 
+#include <mpi.h>   // must appear before stdio or iostream
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <mpi.h>
 
 #ifdef ZOLTAN_NEMESIS
 #include "exodusII.h"
