@@ -193,7 +193,7 @@ class MpiData;
     //@{ \name MPI-specific methods, not inherited from Tpetra::Comm
     //! Access method to the MPI Communicator we're using.
     MPI_Comm getMpiComm() const {
-      return(data().MpiComm_);
+      return(data().getMpiComm());
     };
     
     //@}

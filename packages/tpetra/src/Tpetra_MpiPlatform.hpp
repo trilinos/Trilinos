@@ -82,12 +82,12 @@ class MpiData;
     //! getMyImageID
     /*! returns the rank of the calling image in the MPI communicator we are using. (Obtained by calling MPI_Comm_rank.)
      */
-    int getMyImageID() const {return(data().rank_);};
+    int getMyImageID() const {return(data().getMyImageID());};
 
     //! getNumImages - returns the MPI size
     /*! returns the size of the MPI communicator we are using. (Obtained by calling MPI_Comm_size.)
      */
-    int getNumImages() const {return(data().size_);};
+    int getNumImages() const {return(data().getNumImages());};
 
     //@}
 
