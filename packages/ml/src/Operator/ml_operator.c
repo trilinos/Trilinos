@@ -963,3 +963,122 @@ int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked,
    return 0;
 }
 
+/* ******************************************************************** */
+/* Treat the incoming matrix as a system matrix and extract the block   */
+/* diagonal ignoring the off-block-diagonal part.                       */
+/* ******************************************************************** */
+
+int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int blksize,
+                                         int **new_ja, double **new_aa) 
+{
+   int            i, j, row_leng, buf_leng, nrows, ext_col, diag_flag;
+   int            total_nnz, allocated, *col_ind=NULL, *mat_ja;
+   double         *col_val=NULL, *dbuf=NULL, *mat_aa;
+   ML_Comm        *comm;
+   ML_CommInfoOP  *comm_info;
+
+   /* ----------------------------------------------------------------- */
+   /* fetch information from incoming parameters                        */
+   /* ----------------------------------------------------------------- */
+
+   comm     = Amat->comm;
+   nrows    = Amat->invec_leng;
+   buf_leng = nrows + 1;
+   if (Amat->getrow->pre_comm != NULL) 
+      buf_leng += Amat->getrow->pre_comm->total_rcv_length;
+
+   /* ----------------------------------------------------------------- */
+   /* exchange index information                                        */
+   /* ----------------------------------------------------------------- */
+
+   dbuf = (double *) malloc(sizeof(double) * buf_leng);
+   if (dbuf == NULL) 
+      pr_error("ML_Operator_BlockFilter : out of space\n");
+                                        
+   for (i = 0; i < nrows; i++) dbuf[i] = (double) (i % blksize);
+
+   if (Amat->getrow->pre_comm != NULL)
+       ML_exchange_bdry(dbuf,Amat->getrow->pre_comm,nrows,comm,ML_OVERWRITE);
+
+   /* ----------------------------------------------------------------- */
+   /* allocate buffers for the getrow function                          */
+   /* ----------------------------------------------------------------- */
+
+   allocated = 100;
+   col_ind = (int    *) malloc(allocated*sizeof(int   ));
+   col_val = (double *) malloc(allocated*sizeof(double));
+   if ( col_val == NULL ) 
+   {
+      printf("ML_Operator_BlockFilter: out of space\n");
+      exit(1);
+   }
+
+   /* ----------------------------------------------------------------- */
+   /* find out how many non-zeros are in the returned matrix            */
+   /* ----------------------------------------------------------------- */
+
+   total_nnz = nrows + 1;
+   for (i = 0 ; i < nrows; i++) 
+   {
+      ML_get_matrix_row(Amat,1,&i,&allocated,&col_ind,&col_val,&row_leng,0);
+      diag_flag = 0;
+      for (j = 0; j < row_leng; j++) 
+      {
+         if ( col_ind[j] != i )
+         {
+            if ( col_ind[j] < nrows ) total_nnz++;
+            else
+            {
+               ext_col = (int) dbuf[col_ind[j]];
+               if ( (i % blksize) == (ext_col % blksize) ) total_nnz++;
+            }
+         }
+      }
+   }
+      
+   /* ----------------------------------------------------------------- */
+   /* allocate buffers for the new matrix                               */
+   /* ----------------------------------------------------------------- */
+
+   (*new_ja) = (int *)    malloc( total_nnz * sizeof(int) );
+   (*new_aa) = (double *) malloc( total_nnz * sizeof(double) );
+   mat_ja    = (*new_ja);
+   mat_aa    = (*new_aa);
+
+   /* ----------------------------------------------------------------- */
+   /* allocate buffers for the new matrix                               */
+   /* ----------------------------------------------------------------- */
+
+   total_nnz = nrows + 1;
+   mat_ja[0] = total_nnz;
+   for (i = 0 ; i < nrows; i++) 
+   {
+      ML_get_matrix_row(Amat,1,&i,&allocated,&col_ind,&col_val,&row_leng,0);
+      for (j = 0; j < row_leng; j++) 
+      {
+         if ( col_ind[j] == i ) 
+         {
+            mat_aa[i] = col_val[j];
+         } 
+         else if ( col_ind[j] < nrows ) 
+         {
+            mat_ja[total_nnz] = col_ind[j];
+            mat_aa[total_nnz++] = col_val[j];
+         }
+         else
+         {
+            ext_col = (int) dbuf[col_ind[j]];
+            if ( (i % blksize) == (ext_col % blksize) ) 
+            {
+               mat_ja[total_nnz] = col_ind[j];
+               mat_aa[total_nnz++] = col_val[j];
+            }
+         }
+      }
+   }
+   if ( dbuf    != NULL ) free(dbuf);
+   if ( col_ind != NULL ) free(col_ind);
+   if ( col_val != NULL ) free(col_val);
+   return 0;
+}
+

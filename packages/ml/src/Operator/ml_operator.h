@@ -159,6 +159,9 @@ extern int ML_amalg_drop_getrow(void *data, int N_requested_rows,
 		int requested_rows[], int allocated_space, int columns[], 
                 double values[], int row_lengths[]);
 
+extern int ML_Operator_GetDistributedDiagBlocks(ML_Operator *mat, int blksize,
+                                                int **new_ja, double **new_aa);
+
 #ifdef __cplusplus
 }
 #endif
