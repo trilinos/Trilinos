@@ -220,6 +220,10 @@ typedef long ftnlen;
 extern "C" {
 #endif
 
+/* Aztec-2.1 already defines these variables in header files */
+
+#ifndef HAVE_ML_AZTEC2_1
+  
   /* Double precision LAPACK linear solvers */
 void PREFIX DGETRF_F77(int* m, int* n, double* a, int* lda, int* ipiv, int* info); 
 void PREFIX DGETRS_F77(ml_fcd, int* n, int* nrhs, double* a,
@@ -423,6 +427,8 @@ void PREFIX SSTEV_F77(ml_fcd jobz, int * n, float * d,
 
 float  PREFIX SLAMCH_F77(ml_fcd);
 
+#endif
+
 #ifdef __cplusplus
 }
 #endif
@@ -571,6 +577,8 @@ float  PREFIX SLAMCH_F77(ml_fcd);
 extern "C" {
 #endif
 
+/* Aztec-2.1 already contains these definitions in the header files */
+#ifndef HAVE_ML_AZTEC2_1
 /* Double precision BLAS 1 */
 double PREFIX DASUM_F77(int* n, double x[], int* incx);
 void PREFIX DAXPY_F77(int* n, double* alpha, double x[], int* incx, double y[], int* incy);
@@ -633,6 +641,8 @@ void PREFIX STRSM_F77(ml_fcd, ml_fcd, ml_fcd, ml_fcd,
 		      lda, float *b, int *ldb);
 
 void PREFIX XERBLA_F77(ml_fcd, int *info);
+
+#endif
 
 #ifdef __cplusplus
 }
