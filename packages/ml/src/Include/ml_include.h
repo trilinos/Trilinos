@@ -43,6 +43,7 @@
 #include "ml_aztec_utils.h"
 #include "ml_memory.h"
 #include "ml_vampir.h"
+#include "ml_amesos.h"
 
 #endif
 
