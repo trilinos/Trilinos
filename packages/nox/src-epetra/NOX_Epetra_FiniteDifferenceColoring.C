@@ -83,6 +83,11 @@ FiniteDifferenceColoring::~FiniteDifferenceColoring()
   delete colorVect; colorVect = 0;
 }
 
+bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x)
+{
+  return( computeJacobian(x, *this));
+}
+
 bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 {
   // First check to make sure Jac is a 

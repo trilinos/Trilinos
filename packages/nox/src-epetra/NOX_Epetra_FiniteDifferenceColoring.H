@@ -98,6 +98,9 @@ class FiniteDifferenceColoring : public FiniteDifference {
   //! Compute Jacobian given the specified input vector, x. Returns true if computation was successful.
   virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
 
+  //! Compute Jacobian given the specified input vector, x. Returns true if computation was successful.
+  virtual bool computeJacobian(const Epetra_Vector& x);
+
 protected:
 
   //! Color Map created by external algorithm 
