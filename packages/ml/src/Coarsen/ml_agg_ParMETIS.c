@@ -201,7 +201,7 @@ int ML_Aggregate_Set_ReqLocalCoarseSize( ML *ml, ML_Aggregate *ag,
   int i;
   ML_Aggregate_Options *pointer = NULL;
   int Nlevels = ml->ML_num_levels;
-  double debug_starting_time;
+  double debug_starting_time = 0.;
   
   /* ------------------- execution begins --------------------------------- */
 
@@ -295,7 +295,7 @@ int ML_BuildReorderedOffset( int starting_offset[],
   int i, iaggre, aggre_owner;
   int mod;
   int local_aggre = 0;
-  double debug_starting_time;
+  double debug_starting_time = 0.;
   
   /* ------------------- execution begins --------------------------------- */
 
@@ -368,7 +368,7 @@ int ML_BuildReorderedDecomposition( int starting_decomposition[],
   int i, iaggre;
   int Nprocs;
   int * count = NULL,  * offset = NULL, * offset2 = NULL;
-  double debug_starting_time;
+  double debug_starting_time = 0.;
   
   /* ------------------- execution begins --------------------------------- */
   
@@ -493,7 +493,7 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   int * nodes_per_aggre = NULL, * nodes_per_aggre2 = NULL;
   int skip_check = 0;
   double t0;
-  double debug_starting_time;
+  double debug_starting_time = 0.;
   
   /* ------------------- execution begins --------------------------------- */
 
@@ -932,7 +932,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    char str[80], * str2;
    double * new_nullspace_vect = NULL;
    int * graph_decomposition = NULL;
-   double debug_starting_time;
+   double debug_starting_time = 0.;
    
    /* ------------------- execution begins --------------------------------- */
 
@@ -1955,7 +1955,7 @@ int ML_CountNodesPerAggre(int Nrows, int GraphDecomposition[],
   int i, iaggre;
   int * count = NULL;
   int mypid;
-  double debug_starting_time;
+  double debug_starting_time = 0.;
   
   /* ------------------- execution begins --------------------------------- */
 

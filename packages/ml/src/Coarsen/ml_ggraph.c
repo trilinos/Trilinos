@@ -1033,7 +1033,7 @@ int ML_GGraph_Get_NodeStates(ML_GGraph *ml_gg, int *size, char **states)
 /* ******************************************************************** */
 /* A subroutine to label vertices of a particular type                  */
 /* -------------------------------------------------------------------- */
-int ML_GGraph_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
+int ML_GGraph_LabelVertices(int vlist_cnt, int *vlist, int Vtype,
                            char *vertex_state, char *vertex_type,
                            int nvertices, int *rptr, int *cptr, 
                            int myrank, int **proclist, int send_cnt, 

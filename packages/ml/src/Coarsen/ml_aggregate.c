@@ -929,7 +929,7 @@ int ML_Aggregate_Set_NullSpace(ML_Aggregate *ag, int num_PDE_eqns,
 
       nbytes = leng * null_dim * sizeof(double);
 	
-      ML_memory_alloc((void **)&(ag->nullspace_vect), nbytes, "ns");
+      ML_memory_alloc((void **)&(ag->nullspace_vect), (unsigned int) nbytes, "ns");
 
       for (i=0; i < leng*null_dim; i++)
       {
@@ -982,7 +982,7 @@ int ML_Aggregate_Scale_NullSpace(ML_Aggregate *ag, double *scale_vect,
    if (null_vect == NULL) {
      nbytes = length * null_dim * sizeof(double);
 	
-     ML_memory_alloc((void **)&(ag->nullspace_vect), nbytes, "ns");
+     ML_memory_alloc((void **)&(ag->nullspace_vect), (unsigned int) nbytes, "ns");
      null_vect = ag->nullspace_vect;
 
      for (j = 0; j < length; j++) {
@@ -1324,13 +1324,13 @@ int ML_Aggregate_ExchangeBdry(double *vec_data, void *in_comm)
    comm = aggr_comm->comm;
 
    nbytes = N_recv_neighbors * sizeof(USR_REQ);
-   if (nbytes > 0) ML_memory_alloc( (void **) &request, nbytes, "AE1" );
+   if (nbytes > 0) ML_memory_alloc( (void **) &request, (unsigned int) nbytes, "AE1" );
    else            request = NULL;
    total_send_leng = 0;
    for ( i = 0; i < N_send_neighbors; i++ ) 
       total_send_leng += aggr_comm->send_leng[i];
    nbytes = total_send_leng * sizeof(double);
-   if (nbytes > 0) ML_memory_alloc( (void **) &send_buf, nbytes, "AE2" );
+   if (nbytes > 0) ML_memory_alloc( (void **) &send_buf, (unsigned int) nbytes, "AE2" );
    else            send_buf = NULL;
    for ( i = 0; i < total_send_leng; i++ )  
    {
@@ -1345,7 +1345,7 @@ int ML_Aggregate_ExchangeBdry(double *vec_data, void *in_comm)
       msgtype = 1999;
       length  = aggr_comm->recv_leng[i] * sizeof(double);
       fromproc = aggr_comm->recv_neighbors[i];
-      comm->USR_irecvbytes((void *) &(vec_data[offset]), length, &fromproc,
+      comm->USR_irecvbytes((void *) &(vec_data[offset]), (unsigned int) length, &fromproc,
                            &msgtype, comm->USR_comm, request+i);
       offset += aggr_comm->recv_leng[i];
    }
@@ -1358,7 +1358,7 @@ int ML_Aggregate_ExchangeBdry(double *vec_data, void *in_comm)
    {
       length = aggr_comm->send_leng[i] * sizeof(double);
       toproc = aggr_comm->send_neighbors[i];
-      comm->USR_sendbytes((void *) &(send_buf[offset]), length, toproc, 
+      comm->USR_sendbytes((void *) &(send_buf[offset]), (unsigned int) length, toproc, 
                            msgtype, comm->USR_comm);
       offset += aggr_comm->send_leng[i];
    }
@@ -1371,7 +1371,7 @@ int ML_Aggregate_ExchangeBdry(double *vec_data, void *in_comm)
       msgtype = 1999;
       length  = aggr_comm->recv_leng[i] * sizeof(double);
       fromproc = aggr_comm->recv_neighbors[i];
-      comm->USR_cheapwaitbytes((void *) &(vec_data[offset]), length, &fromproc,
+      comm->USR_cheapwaitbytes((void *) &(vec_data[offset]), (unsigned int) length, &fromproc,
                            &msgtype, comm->USR_comm, request+i);
       offset += aggr_comm->recv_leng[i];
    }
@@ -1401,7 +1401,7 @@ int ML_Aggregate_ExchangeData(char *recvbuf, char *sendbuf, int N_neighbors,
    }
 
    nbytes = N_neighbors * sizeof(USR_REQ);
-   if ( nbytes > 0 ) ML_memory_alloc( (void **) &Request, nbytes, "AGZ" );
+   if ( nbytes > 0 ) ML_memory_alloc( (void **) &Request, (unsigned int) nbytes, "AGZ" );
    else              Request = NULL;
    offset = 0;
    msgtype = msgid;
@@ -1409,7 +1409,7 @@ int ML_Aggregate_ExchangeData(char *recvbuf, char *sendbuf, int N_neighbors,
    {
       fromproc = neighbors[i];
       length = recv_leng[i] * typeleng;
-      comm->USR_irecvbytes(&recvbuf[offset*typeleng],length,&fromproc,
+      comm->USR_irecvbytes(&recvbuf[offset*typeleng], (unsigned int) length,&fromproc,
 #ifdef ML_CPP
                         &msgtype, comm->USR_comm, &Request[i] );
 #else
@@ -1422,7 +1422,7 @@ int ML_Aggregate_ExchangeData(char *recvbuf, char *sendbuf, int N_neighbors,
    for ( i = 0; i < N_neighbors; i++ ) 
    {
       length = send_leng[i] * typeleng;
-      comm->USR_sendbytes((void*) &sendbuf[offset*typeleng], length,
+      comm->USR_sendbytes((void*) &sendbuf[offset*typeleng], (unsigned int) length,
                           neighbors[i], msgtype, comm->USR_comm );
       offset += send_leng[i];
    }
@@ -1432,7 +1432,7 @@ int ML_Aggregate_ExchangeData(char *recvbuf, char *sendbuf, int N_neighbors,
       fromproc = neighbors[i];
       length = recv_leng[i] * typeleng;
       msgtype = msgid;
-      comm->USR_cheapwaitbytes(&recvbuf[offset*typeleng], length, &fromproc,
+      comm->USR_cheapwaitbytes(&recvbuf[offset*typeleng], (unsigned int) length, &fromproc,
 #ifdef ML_CPP
                           &msgtype, comm->USR_comm, &Request[i] );
 #else
@@ -1677,8 +1677,9 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
  double *dvec, *values = NULL;
  USR_REQ *request = NULL; 
  ML_Comm *comm;
+#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) || defined(HAVE_ML_ZOLTAN) || defined(HAVE_ML_JOSTLE)
  int *block_list; 
- ML_Partitioner which_repartitioner;
+#endif
 
  comm = mat->comm;
  mypid = comm->ML_mypid;
@@ -2132,7 +2133,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
 {
   ML_Operator *Amatrix, *Rmat, *Pmat, *perm, *permt, *newA, *newP, *newR;
   ML_Operator **permvec=NULL;
-  int status, offset1, offset2, i,j, flag = 0;
+  int status, offset1, offset2, j, flag = 0;
   double *new_null;
   int ml_gmin, ml_gmax, ml_gsum, Nprocs_ToUse;
   double *xcoord = NULL, *ycoord = NULL, *zcoord = NULL;

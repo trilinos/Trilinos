@@ -19,7 +19,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                     int smooth_flag, double smooth_factor)
 {
   int profile_its;
-  char filename[80];
   int coarsest_level, counter, Nghost, i, *Tcoarse_bindx = NULL;
   int *Tcoarse_rowptr, nz_ptr, row_length, j, *temp_bindx = NULL;
   double *Tcoarse_val = NULL, *temp_val = NULL;
@@ -31,7 +30,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   ML_Operator *Pe, *Tcoarse_trans, *Tfine;
   ML     *ml_nodes;
   char   str[80];
-  FILE   *fid;
   int max_nzs, min_nzs;
 /*
   char filename[80];
@@ -71,9 +69,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   ML_CommInfoOP *getrow_comm; 
   int  N_input_vector;
   int  bail_flag;
-  int  k;
-  int  mypid = ml_edges->comm->ML_mypid;
-  int  nprocs = ml_edges->comm->ML_nprocs;
   int  maxproc, minproc, maxrows, minrows, NumActiveProc, active_proc=0;
 
   ML_Operator **perm; /*necessary if repartitioning matrices */

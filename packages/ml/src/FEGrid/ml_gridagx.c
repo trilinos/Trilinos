@@ -370,7 +370,7 @@ int ML_GridAGX_Load_VertGlobalNum(ML_GridAGX *grid, int leng, int *gnum)
    }
    grid->Nvertices_expanded = leng;
    nbytes = leng * sizeof(int);
-   ML_memory_alloc((void**) &(grid->global_vertex), nbytes, "GD3");
+   ML_memory_alloc((void**) &(grid->global_vertex), (unsigned int) nbytes, "GD3");
    for ( i = 0; i < leng; i++ ) grid->global_vertex[i] = gnum[i];
    return 0;
 }
@@ -406,10 +406,10 @@ int ML_GridAGX_Load_AllVertCoordinates(ML_GridAGX *grid,int leng,
    }
    ndim = grid->Ndim;
    nbytes = leng * sizeof(double);
-   ML_memory_alloc( (void**) &(grid->x), nbytes, "GDX");
-   ML_memory_alloc( (void**) &(grid->y), nbytes, "GDY");
+   ML_memory_alloc( (void**) &(grid->x), (unsigned int) nbytes, "GDX");
+   ML_memory_alloc( (void**) &(grid->y), (unsigned int) nbytes, "GDY");
    if (ndim > 2)
-      ML_memory_alloc( (void**) &(grid->z), nbytes, "GDZ");
+      ML_memory_alloc( (void**) &(grid->z), (unsigned int) nbytes, "GDZ");
    for ( i = 0; i < leng; i++ )
    {
       grid->x[i] = coord[i*ndim];
