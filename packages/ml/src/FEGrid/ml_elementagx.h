@@ -15,7 +15,7 @@
 #define _MLELMNTAGX_
 
 #include <stdio.h>
-#include <stdlib.h>
+/* #include <stdlib.h> */
 
 #include "ml_memory.h"
 
