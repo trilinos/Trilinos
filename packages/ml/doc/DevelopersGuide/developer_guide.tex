@@ -1,0 +1,279 @@
+\documentclass{article}[12pt]
+\usepackage{fancyhdr, tabularx, verbatim, epsfig}
+
+\setlength{\oddsidemargin}{0.3\oddsidemargin}
+\setlength{\evensidemargin}{0.3\evensidemargin}
+\setlength{\topmargin}{0.0\topmargin}
+\setlength{\textheight}{1.16\textheight}
+\setlength{\textwidth}{1.39\textwidth}
+\newcommand{\Aztec}  {{\bf Aztec }}
+\newcommand{\ML}     {{\bf ML }}
+\newcommand{\be}     {\begin{enumerate}}
+\newcommand{\ee}     {\end{enumerate}}
+
+%
+% ***********************************************************************
+% * 02 July 1993: McCorkle                                              *
+% * Define a macro that will lightly print the word `DRAFT' diagonally  *
+% * across each page of the document. This macro was obtained from the  *
+% * NMSU math department                                                *
+% *                                                                     *
+% * Usage: \draft                                                       *
+% ***********************************************************************
+%
+\def\optionbox#1#2{\noindent$\hphantom{ii}${\parbox[t]{1.5in}{\it
+#1}}{\parbox[t]{4.8in}{#2}} \\[1.1em]}
+
+\def\choicebox#1#2{\noindent$\hphantom{th}$\parbox[t]{3.10in}{\sf
+#1}\parbox[t]{3.35in}{#2}\\[0.8em]}
+
+\def\structbox#1#2{\noindent$\hphantom{hix}${\parbox[t]{2.10in}{\it
+#1}}{\parbox[t]{3.9in}{#2}} \\[.02cm]}
+
+\def\protobox#1{\vspace{2em}{\flushleft{\bf Prototype}
+\hrulefill}\flushleft{\fbox{\parbox[t]{6in}{\vspace{1em}{\sf
+#1}\vspace{1em}}}}}
+
+
+\def\draft{%
+\special{!userdict begin /bop-hook{gsave
+200 30 translate 65 rotate
+/Times-Roman findfont 216 scalefont setfont
+0 0 moveto 0.9 setgray (DRAFT) show grestore}def end}
+}
+
+\begin{document}
+\bibliographystyle{siam}
+\setcounter{page}{3}
+
+\large
+
+%\draft                                   % Lightly print `DRAFT' on every
+                                         % page of the document
+
+%
+%
+%\hspace{2.22in}
+\begin{center}
+SAND2004--2195 \\
+%\hfill
+%\hspace{2.41in}
+Unlimited Release \\
+%\hfill
+%\begin{center}
+Printed May 2004
+\end{center}
+
+\vspace{0.2in}
+
+\begin{center}
+{\Large {\bf ML 3.0 Smoothed Aggregation Developers's Guide\footnote{ This work was supported by
+        the
+        Applied Mathematical Sciences program, U.S. Department of Energy,
+        Office of Energy Research, and was partially performed at 
+        Sandia National
+        Laboratories, operated for the U.S. Department of Energy under contract
+        No. DE-AC04-94AL85000.} }}
+%\footnote{ Sandia is a multiprogram laboratory operated by Sandia Corporation,
+%a Lockheed Martin Company, for the United States Department of Energy's
+%National Nuclear Security Administration under contract DE-AC04-94AL85000.}}}
+%\footnote{ This work was supported by
+%        the
+%        Applied Mathematical Sciences program, U.S. Department of Energy,
+%        Office of Energy Research, and was partially performed at 
+%        Sandia National
+%        Laboratories, operated for the U.S. Department of Energy under contract
+%        No. DE-AC04-94AL85000.} }}
+
+\vspace*{0.8in}
+Marzio  Sala \\
+Computational Math \& Algorithms \\
+Sandia National Laboratories\\
+P.O.~Box 5800 \\
+Albuquerque, NM 87185-1110\\[20pt]
+Jonathan J. Hu $\quad$ and $\quad$
+Ray S. Tuminaro \\
+Computational Math \& Algorithms \\
+Sandia National Laboratories\\
+P.O.~Box 0969 \\
+Livermore, CA 94551-0969\\
+
+
+\vspace*{1in}
+
+\end{center}
+
+\begin{abstract}
+
+This guide is intended for anyone who will be adding to or modifying the \ML
+source code.  This document contains suggested practices, naming conventions,
+and autoconf/automake hints.  We don't intend for this document to be a set
+of hard-and-fast rules, but rather {\em suggested} and {\em encouraged}
+practices.
+
+\ML\ is a multigrid preconditioning package intended to solve linear systems
+ of equations $A x = b$ where $A$ is a user supplied $n \times n$ sparse
+matrix, $b$ is a user supplied vector of length $n$ and $x$ is a vector of
+length $n$ to be computed. \ML\ should be used on large sparse linear
+systems arising from partial differential equation (PDE) discretizations.
+For an overview of ML, we refer to the ML users' guide.
+\end{abstract}
+
+%
+\clearpage
+\newpage
+
+\vfill
+\begin{center}
+(page intentionally left blank)
+\end{center}
+\clearpage
+\newpage
+
+
+\tableofcontents
+\newpage
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Notational Conventions}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+
+In this guide, we show typed commands in this font:
+\begin{verbatim}
+% a_really_long_command
+\end{verbatim}
+The character \verb!%! indicates any shell prompt\footnote{For
+  simplicity, commands are shown as they would be issued in a Linux or
+  Unix environment.  Note, however, that \ML\ has and can be built
+  successfully in a Windows environment.}.
+Function names are shown as {\sf ML\_Gen\_Solver}.  Names of packages or
+libraries as reported in small caps, as {\sc Epetra}. Mathematical
+entities are shown in italics.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Modifying how \ML is configured and built}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ML is built using the GNU tools autoconf and automake \cite{Autoconf,Automake}.
+
+\subsection{A small example of how to add a new configure option}
+
+Assume that the current working director is Trilinos/packages/ml.
+The file configure.ac contains all of the configure line option definitions
+(e.g., --enable-ml\_flops).   Suppose that we want to add the configure option
+``--enable-ml\_foo".
+We first add the following line to configure.ac:\\
+\begin{verbatim}
+TAC_ARG_ENABLE_OPTION(ml_foo, [This enables the foo option.], ML_FOO, no)
+\end{verbatim}
+
+\noindent
+We then run bootstrap.
+%Among other things, bootstrapping  will modify
+%src/ml\_config.h.in and create a new macro, HAVE\_ML\_FOO.
+When ml is configured, the file ``ml\_config.h" is created.
+If the option ``--enable-ml\_foo" was supplied on the command line, then
+HAVE\_ML\_FOO will be defined in ``ml\_config.h".
+
+We could use this macro directly in ml.
+Suppose, however, the macro ML\_FOO is already used
+heavily in ml, and we don't want to change the ml source.
+\ML has an include file, ``src/Include/ml\_common.h", that is included in
+every \ML source file.
+We add the following to ml\_common.h:\\
+
+\noindent
+\begin{verbatim}
+#ifdef HAVE_ML_FOO
+#define ML_FOO
+#endif
+\end{verbatim}
+
+\noindent
+and voila!   Adding --enable-ml\_foo on the configure line will now define the
+macro ML\_FOO inside the ml source.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Suggested Practices}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Naming Conventions}
+We suggest that any macros specific to \ML begin with ``ML\_" to avoid conflicts with other
+packages.
+
+\subsection{Managing Memory}
+\ML has macros that wrap the system calls to allocate and free memory.
+``ML\_allocate" should be used instead of ``malloc".
+``ML\_free" should be used instead of ``free".
+One word of warning -- because ML\_free is a macro, you should avoid casting
+within the call to ML\_free:
+\be
+\item Good: ML\_free(i);
+\item Bad: ML\_free( (void *) i);
+\ee
+
+\subsection{CVS log messages}
+\begin{enumerate}
+\item When checking in a fix that addresses a bug reported in bugzilla,
+include the bug number.
+Also include a short description of the fix.
+\item Remember that CVS log files are part of \ML's official documentation and
+therefore may (almost certainly, in fact) be seen by persons outside the
+development team.
+With that in mind, write a CVS log message as if it will be published for the
+world to see.
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%
+\section{Testing}
+%%%%%%%%%%%%%%%%%
+
+To be done.
+
+%%%%%%%%%%%%%%%%%%%%%%%
+\section{Mailing Lists}
+%%%%%%%%%%%%%%%%%%%%%%%
+
+Any substantive developer discussion should take place on the \ML developer's
+list, ``ml-developers@software.sandia.gov"
+If the discussion is off-line, it's entirely appropriate to email a summary of
+the discussion to the list.
+
+The list archives the discussion.
+This can be helpful to the developers.
+Moreover, this discussion can be used as documention during external
+reviews.
+
+%%%%%%%%%%%%%
+\section{FAQ}
+%%%%%%%%%%%%%
+
+\begin{enumerate}
+\item {\bf Question:} The {\bf ./configure} command
+fails with the following error:
+\begin{verbatim}
+checking for Fortran 77 libraries...
+checking for dummy main to link with Fortran 77 libraries... unknown
+configure: error: linking to Fortran libraries from C fails
+See `config.log' for more details.
+\end{verbatim}
+{\bf Answer:} The most likely problem is an incorrect configure line option.   Check
+that all of the library and include locations that you've specified are
+correct.
+\end{enumerate}
+
+%%%
+%%%
+%%%
+
+\clearpage
+\newpage
+
+\include{functions}
+
+\bibliography{developer_guide}
+
+\end{document}

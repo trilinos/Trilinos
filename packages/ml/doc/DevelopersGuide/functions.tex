@@ -1,0 +1,1330 @@
+%
+% Command to put backslashes in front of underscores
+%             :1,$s/\([^\\]\)\_/\1\\_/g
+%    actually this changes a couple of lines within math symbols
+%    like $P_t$.
+%
+\section{\ML\ Functions \label{subroutines}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_ML\_Set\_Amat}
+\protobox{int AZ\_ML\_Set\_Amat(ML *ml\_object, int k, int isize, int osize, AZ\_MATRIX *Amat,\\
+ \phantom{int AZ\_ML\_Set\_Amat(}int *proc\_config)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Create an \ML\  matrix view of an existing \Aztec matrix and store it within the `ml\_object'
+context.
+
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, the
+                      discretization matrix of level k is the same as given by Amat.}
+
+\optionbox{k}{On input, indicates level within ml\_object hierarchy (should be between
+                  0 and Nlevels${}^\dagger$-1).}
+
+\optionbox{isize}{On input, the number of local rows in the submatrix stored on this
+                  processor.}
+
+\optionbox{osize}{On input, the number of columns in the local submatrix stored on this
+                       processor not including any columns associated with ghost unknowns.}
+
+\optionbox{Amat}{On input, an \Aztec data structure representing a matrix.
+                       See the \Aztec User's Guide.}
+
+\optionbox{proc\_config}{On input, an \Aztec data structure representing processor information.
+                       See the \Aztec User's Guide.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{AZ\_set\_ML\_preconditioner}
+\protobox{void AZ\_set\_ML\_preconditioner(AZ\_PRECOND **Precond, AZ\_MATRIX *Amat, \\
+ \phantom{void AZ\_set\_ML\_preconditioner(}ML *ml\_object, int options[])}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Associate the multigrid V cycle method defined in ml\_object with an \Aztec preconditioner.
+Thus, when Precond and options are passed into the \Aztec iterative solver, it will
+invoke the V cycle multigrid algorithm described by ml\_object.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{Precond}{On input, an \Aztec data structure representing a preconditioner.
+                    On output, the multigrid V cycle method described by ml\_object will
+                    be associated with this preconditioner.  See the \Aztec User's Guide.}
+
+\optionbox{Amat}{On input, an \Aztec data structure representing a matrix.
+                 See the \Aztec User's Guide.}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create) representing a V cycle
+                      multigrid method.}
+
+\optionbox{options}{On input, an \Aztec data structure representing user chosen options.
+                    On output, set appropriately for multigrid V cycle preconditioner.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Create}
+\protobox{int ML\_Aggregate\_Create(ML\_Aggregate **agg\_object)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Create an aggregate context (or handle). This instance will be used in all
+subsequent function invocations that set aggregation options.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, a pointer to a noninitialized ML\_Aggregate object pointer.
+               On output, points to an initialized ML\_Aggregate object pointer.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Destroy}
+\protobox{int ML\_Aggregate\_Destroy(ML\_Aggregate **agg\_object)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Destroy the aggregate context, agg\_object, and delete all memory allocated by \ML\  in
+building and setting the aggregation options.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, aggregate object pointer (see ML\_Aggregate\_Create). On output,
+               all memory allocated by \ML\  and associated with this context is freed.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_CoarsenScheme\_Coupled}
+\protobox{int ML\_Aggregate\_Set\_CoarsenScheme\_Coupled(ML\_Aggregate *agg\_object)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the aggregate coarsening scheme to be used as `coupled' (see Section \ref{aggregation options}).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, aggregate object pointer (see ML\_Aggregate\_Create). On output,
+               the `coupled' aggregation will be used for automatic coarsening.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_CoarsenScheme\_MIS}
+\protobox{int ML\_Aggregate\_Set\_CoarsenScheme\_MIS(ML\_Aggregate *agg\_object)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the aggregate coarsening scheme to be used as `MIS' (see Section \ref{aggregation options}).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, aggregate object pointer (see ML\_Aggregate\_Create). On output,
+               the `MIS' aggregation will be used for automatic coarsening.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_CoarsenScheme\_Uncoupled}
+\protobox{int ML\_Aggregate\_Set\_CoarsenScheme\_Uncoupled(ML\_Aggregate *agg\_object)}
+
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the aggregate coarsening scheme to be used as `uncoupled' (see Section \ref{aggregation options}).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, aggregate object pointer (see ML\_Aggregate\_Create). On output,
+               the `uncoupled' aggregation will be used for automatic coarsening.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_CoarsenScheme\_METIS}
+\protobox{int ML\_Aggregate\_Set\_CoarsenScheme\_METIS(ML\_Aggregate *agg\_object)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the aggregate coarsening scheme to be used as `METIS (see Section \ref{aggregation options}).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, aggregate object pointer (see ML\_Aggregate\_Create). On output,
+               the `METIS' aggregation will be used for automatic coarsening.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_CoarsenScheme\_ParMETIS}
+\protobox{int ML\_Aggregate\_Set\_CoarsenScheme\_ParMETIS(ML\_Aggregate *agg\_object)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the aggregate coarsening scheme to be used as `ParMETIS (see Section \ref{aggregation options}).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, aggregate object pointer (see ML\_Aggregate\_Create). On output,
+               the `ParMETIS' aggregation will be used for automatic coarsening.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_DampingFactor}
+\protobox{int ML\_Aggregate\_Set\_DampingFactor( ML\_Aggregate *ag, double factor)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the damping factor used within smoothed aggregation. In particular,
+the interpolation operator will be generated by 
+$$
+P = (I - \frac{\omega}{\tilde{\rho}} A ) P_t
+$$
+where $A$ is the discretation matrix, $\omega$ is the damping factor (default 
+is $\frac{4}{3}$), $\rho$ is an estimate of the spectral radius of $A$, and 
+$P_t$ are the seed vectors (tentative prolongator).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, aggregate object pointer (see 
+                        ML\_Aggregate\_Create). On output,
+                        the damping factor is set to factor.}
+
+\optionbox{factor}{On input, damping factor that will be associated with
+                   this aggregation object.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_MaxCoarseSize}
+
+
+\protobox{int ML\_Aggregate\_Set\_MaxCoarseSize( ML\_Aggregate *agg\_object, int size  )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the maximum coarsest mesh to `size'. No further coarsening is performed if the total 
+number of matrix equations is less than this `size' (see Section \ref{multigrid options}).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, aggregate object pointer (see ML\_Aggregate\_Create). On output,
+               the coarsest mesh size will be set.}
+
+\optionbox{size}{On input, size indicating the maximum coarsest mesh size.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_MaxLevels}
+%
+%
+%\protobox{int ML\_Aggregate\_Set\_MaxLevels( ML\_Aggregate *agg\_object, int level ) }
+%
+%\vspace{2em}
+%{\flushleft{\bf Description} \hrulefill}
+%\vspace{1em}
+%
+%Set the total number of mesh levels to `level'. This means that the multigrid method will
+%not have more then `level' levels.
+%
+%\vspace{2em}
+%{\flushleft{\bf Parameters} \hrulefill}
+%\vspace{1em}
+%
+%\optionbox{agg\_object}{On input, aggregate object pointer (see ML\_Aggregate\_Create). On output,
+%               the maximum number of levels will be set.}
+%
+%\optionbox{level}{On input, size indicating the maximum number of multigrid levels.}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_NullSpace}
+\protobox{int ML\_Aggregate\_Set\_NullSpace(ML\_Aggregate *agg\_object, int num\_PDE\_eqns,
+                               int null\_dim,\\
+ \phantom{int ML\_Aggregate\_Set\_NullSpace(}double *null\_vect, int leng)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the seed vectors (rigid body mode vectors) to be used in smoothed aggregation.
+Also indicate the number of degrees of freedom (DOF) per node so that the
+aggregation algorithm can group them together.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, an ML\_Aggregate object pointer created by invoking ML\_Aggregate\_Create. On
+               output, the seed vectors and DOFs per node are set to null\_vect and
+               num\_PDE\_eqns respectively.}
+
+\optionbox{num\_PDE\_eqns}{On input, indicates number of equations that should be grouped in blocks
+                       when performing the aggregation. This guarantees that different DOFs
+                       at a grid point remain within the same aggregate.}
+
+\optionbox{null\_dim}{On input, number of seed vectors that will be used when creating the
+                       smoothed aggregation grid transfer operator.}
+
+\optionbox{null\_vect}{On input, the seed vectors are given in sequence. Each processor
+                       gives only the local components residing on the processor. If null,
+                       default seed vectors are used.}
+
+\optionbox{leng}{On input, the length of each seed vector.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_SpectralNormScheme\_Calc}
+\protobox{int ML\_Aggregate\_Set\_SpectralNormScheme\_Calc( ML\_Aggregate *ag )}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the method to be used for estimating the spectral radius of $A$
+(the discretization matrix) to be
+conjugate gradient. This spectral radius estimate is used when smoothing
+the initial prolongation operator  (see ML\_Aggregate\_Set\_DampingFactor).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, aggregate object pointer (see 
+                        ML\_Aggregate\_Create). On output,
+                        the spectral radius estimate will be determined by a 
+                        conjugate gradient routine.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_SpectralNormScheme\_Anorm}
+\protobox{int ML\_Aggregate\_Set\_SpectralNormScheme\_Anorm( ML\_Aggregate *ag)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the method to be used for estimating the spectral radius of $A$ 
+(the discretization matrix) to be
+the infinity norm. This spectral radius estimate is used when smoothing
+the initial prolongation operator  (see ML\_Aggregate\_Set\_DampingFactor).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, aggregate object pointer (see 
+                        ML\_Aggregate\_Create). On output,
+                        the spectral radius estimate will be taken as
+                        the infinity norm of the matrix.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_Threshold}
+\protobox{int ML\_Aggregate\_Set\_Threshold(ML\_Aggregate *agg\_object, double tolerance)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the drop tolerance used when creating the matrix graph for aggregation. Entries in the
+matrix $A$ are dropped when $ | A(i,j) | \le tol\_d * \sqrt{ | A(i,i) A(j,j) | } $. See
+Section \ref{aggregation options} for more details.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, an ML\_Aggregate object pointer created by invoking
+               ML\_Aggregate\_Create. On
+               output, drop tolerance for creating the matrix graph is set.}
+
+\optionbox{tolerance}{On input, value to be used for dropping matrix entries.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Create}
+\protobox{int ML\_Create(ML **ml\_object, int Nlevels)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Create an \ML\  solver context (or handle). This \ML\  instance will be used in all
+subsequent \ML\  function invocations. The \ML\  object has a notation of levels where
+different multigrid operators corresponding to different grid levels are stored.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+
+\optionbox{ml\_object}{On input, a pointer to a noninitialized \ML\  object pointer. On output,
+               points to an initialized \ML\  object pointer.}
+\optionbox{Nlevels}{Maximum number of multigrid levels within this \ML\  object.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Destroy}
+\protobox{int ML\_Destroy(ML **ml\_object)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Destroy the \ML\  solver context, ml\_object, and delete all memory allocated by \ML\  in
+building and setting options.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, all memory
+                   allocated by \ML\  and associated with this context is freed.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Gen\_Blocks\_Aggregates}
+\protobox{int ML\_Gen\_Blocks\_Aggregates(ML\_Aggregate *agg\_object, 
+          int k, int *nblocks, int **block\_list)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Use aggregates to partition submatrix residing on local processor into 
+blocks. These blocks can then be used within smoothers (see for example
+ML\_Gen\_Smoother\_VBlockJacobi or ML\_Gen\_Smoother\_VBlockSymGaussSeidel).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create).}
+
+\optionbox{k}{On input, indicates level within ml\_object hierarchy where 
+              the aggregate information is found that defines partitioning.}
+
+\optionbox{nblocks}{On output, indicates the number of partitions.}
+
+\optionbox{block\_list}{On output, equation i resides in the
+                        block\_list[i]th partition.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Gen\_Blocks\_Metis}
+\protobox{int ML\_Gen\_Blocks\_Metis(ML *ml\_object, int k, int *nblocks,
+          int **block\_list)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Use Metis to partition submatrix residing on local processor into 
+blocks. These blocks can then be used within smoothers (see for example
+ML\_Gen\_Smoother\_VBlockJacobi or ML\_Gen\_Smoother\_VBlockSymGaussSeidel).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create).}
+
+\optionbox{k}{On input, indicates level within ml\_object hierarchy where 
+              the discretization matrix is found that will be partitioned.}
+
+\optionbox{nblocks}{On input, indicates number of partitions desired on each
+                    processor. On output, indicates the number of partitions
+                    obtained.}
+
+\optionbox{block\_list}{On output, equation i resides in the
+                        block\_list[i]th partition.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Gen\_CoarseSolverSuperLU}
+\protobox{int ML\_Gen\_CoarseSolverSuperLU(ML *ml\_object, int k)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Use SuperLU for the multigrid coarse grid solver on level k within ml\_object and
+perform any initialization that is necessary.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, the coarse
+                      grid solver of level k is set to use SuperLU.}
+
+\optionbox{k}{On input, indicates level within ml\_object hierarchy (must be the
+                  coarsest level in the multigrid hierarchy).}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Gen\_MGHierarchy\_UsingAggregation}
+\protobox{int ML\_Gen\_MGHierarchy\_UsingAggregation(ML *ml\_object, int start, 
+          int inc\_or\_dec,\\
+ \phantom{int ML\_Gen\_MGHierarchy\_UsingAggregation(}ML\_Aggregate *agg\_object)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Generate a multigrid hierarchy via the method of smoothed aggregation.
+This hierarchy includes a series of grid transfer operators as well as
+coarse grid approximations to the fine grid discretization operator.
+On completion, return the total number of multigrid levels in the newly
+created hiearchy.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output,
+               coarse levels are filled with grid transfer operators and
+               coarse grid discretizations corresponding to a multigrid hierarchy.}
+\optionbox{start}{On input, indicates multigrid level within ml\_object where the fine grid
+                  discretization is stored.}
+\optionbox{inc\_or\_dec}{On input, ML\_INCREMENT or ML\_DECREMENT. Normally, set to 
+                ML\_INCREMENT
+                       meaning that the newly created multigrid operators should be stored in
+                       the multigrid levels: start, start+1, start+2, start+3, etc. If Set to
+                       ML\_DECREMENT, multigrid operators are stored in start, start-1, 
+                       start-2, etc.}
+\optionbox{agg\_object}{                   On input, an initialized aggregation object defining options to the
+                       generation of grid transfer operators. If set to NULL, default
+                       values are used for all aggregation options. See ML\_Aggregate\_Create.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Gen\_SmootherAmesos}
+\protobox{int ML\_Gen\_SmootherAmesos(ML *ml\_object, int k, int AmesosSolver,\\
+ \phantom{int ML\_Gen\_SmootherAmesos(} int MaxProcs)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Use Amesos interface to direct solvers for the multigrid coarse grid
+solver on level k within ml\_object and perform any initialization that
+is necessary.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, the coarse
+                      grid solver of level k is set to use Amesos.}
+
+\optionbox{k}{On input, indicates level within ml\_object hierarchy (must be the
+                  coarsest level in the multigrid hierarchy).}
+                
+                \optionbox{AmesosSolver}{On input, indicates the direct
+                  solver library to use in the coarse solution. It can
+                  be: ML\_AMESOS\_UMFPACK, ML\_AMESOS\_KLU,
+                  ML\_AMESOS\_SUPERLUDIST, ML\_AMESOS\_MUMPS,
+                  ML\_AMESOS\_SCALAPACK.}
+
+\optionbox{MaxProcs}{On input, indicates maximum number of processors to
+  use in the coarse solution (only for ML\_AMESOS\_SUPERLUDIST).}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Gen\_SmootherAztec}
+\protobox{void ML\_Gen\_SmootherAztec(ML *ml\_object, int k, int options[], double params[],\\
+ \phantom{void ML\_Gen\_SmootherAztec(}int proc\_config[], double status[], int N\_iterations,\\
+ \phantom{void ML\_Gen\_SmootherAztec(}int pre\_or\_post, 
+                                       void (*prec\_fun)(double *, int *, int *,\\
+ \phantom{void ML\_Gen\_SmootherAztec(}double *, AZ\_MATRIX  *,
+                              AZ\_PRECOND *))}
+
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the smoother (either pre or post as indicated by pre\_or\_post) at level k within
+the multigrid solver context to invoke \Aztec. The specific \Aztec scheme is given by the
+\Aztec arrays: options, params, proc\_config, and status and \Aztec preconditioning function:
+prec\_function.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, a smoother
+                      function is associated within ml\_object at level k.}
+
+\optionbox{k}{On input, indicates where the smoother function pointer will be
+                  stored within the multigrid hierarchy.}
+
+\optionbox{options, params\\ proc\_config, status}{On input, \Aztec arrays that determine the \Aztec scheme and are used
+                       for \Aztec to return information. See the \Aztec User's Guide.}
+
+\optionbox{N\_iterations}{On input, maximum \Aztec iterations
+                       within a single smoother invocation. When set to
+                       {\tt AZ\_ONLY\_PRECONDITIONER},
+                       only one iteration of the preconditioner is used without 
+                       an outer Krylov method.}
+\optionbox{pre\_or\_post}{On input, ML\_PRESMOOTHER or ML\_POSTSMOOTHER indicating whether
+                       the smoother should be performed before or after the coarse grid
+                       correction.}
+
+\optionbox{prec\_fun}{On input, \Aztec preconditioning function indicating what preconditioner
+                       will be used within \Aztec. Normally, this is set to AZ\_precondition.
+                       See the \Aztec User's Guide.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Gen\_Smoother\_BlockGaussSeidel}
+\protobox{int ML\_Gen\_Smoother\_BlockGaussSeidel(ML *ml\_object, int k, int pre\_or\_post,
+                                     int ntimes,\\
+ \phantom{int ML\_Gen\_Smoother\_BlockGaussSeidel(}double omega, int blocksize)
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the multigrid smoother for level k of ml\_object and perform any initialization
+that is necessary. When using block Gauss Seidel, the total number of equations must be
+a multiple of blocksize. Each consecutive group of blocksize unknowns is grouped into
+a block and a block Gauss Seidel algorithm is applied.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, the pre or
+               post smoother of level k is set to block Gauss Seidel.}
+
+\optionbox{k}{On input, indicates level within ml\_object hierarchy (should be between
+               0 and Nlevels${}^\dagger$-1). ML\_ALL\_LEVELS sets the smoothing on all levels in ml\_object.}
+
+\optionbox{pre\_or\_post}{On input, ML\_PRESMOOTHER or ML\_POSTSMOOTHER indicating whether the
+                        pre or post smoother is to be set.}
+
+\optionbox{ntimes}{On input, sets the number of block Gauss Seidel iterations that
+                   will be performed.}
+
+\optionbox{omega}{On input, sets the damping parameter to be used during this block
+                  Gauss Seidel smoothing.}
+
+\optionbox{blocksize}{On input, sets the size of the blocks to be used during block
+                      Gauss Seidel smoothing.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Gen\_Smoother\_GaussSeidel}
+\protobox{int ML\_Gen\_Smoother\_GaussSeidel(ML *ml\_object, int k, int pre\_or\_post, 
+          int ntimes,\\
+ \phantom{int ML\_Gen\_Smoother\_GaussSeidel(}double omega)
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the multigrid smoother for level k of ml\_object and perform any initialization
+that is necessary.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, the pre or
+               post smoother of level k is set to Gauss Seidel.}
+
+\optionbox{k}{On input, indicates level within ml\_object hierarchy (should be between
+               0 and Nlevels${}^\dagger$-1). ML\_ALL\_LEVELS sets the smoothing on all levels in ml\_object.}
+
+\optionbox{pre\_or\_post}{On input, ML\_PRESMOOTHER or ML\_POSTSMOOTHER indicating whether the
+                        pre or post smoother is to be set.}
+
+\optionbox{ntimes}{On input, sets the number of Gauss Seidel iterations that will be performed.}
+
+\optionbox{omega}{On input, sets the damping parameter to be used during this Gauss
+                  Seidel smoothing.}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Gen\_Smoother\_Jacobi}
+\protobox{int ML\_Gen\_Smoother\_Jacobi(ML *ml\_object, int k, int pre\_or\_post, int ntimes,\\
+ \phantom{int ML\_Gen\_Smoother\_Jacobi(}double omega)}
+
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the multigrid smoother for level k of ml\_object and perform any initialization
+that is necessary.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{   On input, \ML\  object pointer (see ML\_Create). On output, the pre or
+                  post smoother of level k is set to Jacobi.}
+
+\optionbox{k}{   On input, indicates level within ml\_object hierarchy (should be between
+                  0 and Nlevels${}^\dagger$-1). ML\_ALL\_LEVELS sets the smoothing on all levels in ml\_object.}
+
+\optionbox{pre\_or\_post}{On input, ML\_PRESMOOTHER or ML\_POSTSMOOTHER indicating whether the
+                        pre or post smoother is to be set.}
+
+\optionbox{ntimes}{    On input, sets the number of Jacobi iterations that will be performed.}
+
+\optionbox{omega}{     On input, sets the damping parameter to be used during this Jacobi
+                       smoothing. ML\_DEFAULT sets it to .5}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Gen\_Smoother\_SymGaussSeidel}
+\protobox{int ML\_Gen\_Smoother\_SymGaussSeidel(ML *ml\_object, int k, int pre\_or\_post,
+          int ntimes,\\
+ \phantom{int ML\_Gen\_Smoother\_SymGaussSeidel(}double omega)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the multigrid smoother for level k of ml\_object and perform any initialization
+that is necessary.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, the pre or
+               post smoother of level k is set to symmetric Gauss Seidel.}
+
+\optionbox{k}{On input, indicates level within ml\_object hierarchy (should be between
+               0 and Nlevels${}^\dagger$-1). ML\_ALL\_LEVELS sets the smoothing on all levels in ml\_object.}
+
+\optionbox{pre\_or\_post}{On input, ML\_PRESMOOTHER or ML\_POSTSMOOTHER indicating whether the
+                        pre or post smoother is to be set.}
+
+\optionbox{ntimes}{On input, sets the number of symmetric Gauss Seidel iterations that
+                   will be performed.}
+
+\optionbox{omega}{On input, sets the damping parameter to be used during this symmetric
+                  Gauss Seidel smoothing.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Gen\_Smoother\_VBlockJacobi}
+\protobox{int ML\_Gen\_Smoother\_VBlockJacobi(ML *ml\_object, int k, int pre\_or\_post,
+                 int ntimes,\\
+ \phantom{int ML\_Gen\_Smoother\_VBlockJacobi(}double omega, int nBlocks, int *blockIndices)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the multigrid smoother for level k of ml\_object and perform any initialization
+that is necessary. A block Jacobi smoothing algorithm will be used where the size of the
+blocks can vary and is given by nBlocks and blockIndices
+(see ML\_Gen\_Blocks\_Aggregates and ML\_Gen\_Blocks\_Metis).
+
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, the pre or
+               post smoother of level k is set to variable block Jacobi.}
+
+\optionbox{k}{On input, indicates level within ml\_object hierarchy (should be between
+               0 and Nlevels${}^\dagger$-1). ML\_ALL\_LEVELS sets the smoothing on all levels in ml\_object.}
+
+\optionbox{pre\_or\_post}{On input, ML\_PRESMOOTHER or ML\_POSTSMOOTHER indicating whether the
+                        pre or post smoother is to be set.}
+
+\optionbox{ntimes}{On input, sets the number of block Jacobi iterations that
+                   will be performed.}
+
+\optionbox{omega}{On input, sets the damping parameter to be used during this block
+                  Jacobi smoothing.}
+
+\optionbox{nBlocks}{On input, indicates the total number of block equations in matrix.}
+
+\optionbox{blockIndices}{On input, blockIndices[i] indicates block to which ith element belongs. }
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Gen\_Smoother\_VBlockSymGaussSeidel}
+\protobox{int ML\_Gen\_Smoother\_VBlockSymGaussSeidel(ML *ml\_object, int k, 
+           int pre\_or\_post,\\
+ \phantom{int ML\_Gen\_Smoother\_VBlockSymGaussSeidel(}int ntimes, double omega, 
+           int nBlocks,\\
+ \phantom{int ML\_Gen\_Smoother\_VBlockSymGaussSeidel(}int *blockIndices)
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the multigrid smoother for level k of ml\_object and perform any initialization
+that is necessary. A block Gauss Seidel smoothing algorithm will be used where the size of the
+blocks can vary and is given by nBlocks and blockIndices
+(see ML\_Gen\_Blocks\_Aggregates and ML\_Gen\_Blocks\_Metis).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, the pre or
+               post smoother of level k is set to variable block symmetric Gauss
+               Seidel.}
+
+\optionbox{k}{On input, indicates level within ml\_object hierarchy (should be between
+               0 and Nlevels${}^\dagger$-1). ML\_ALL\_LEVELS sets the smoothing on all levels in ml\_object.}
+
+\optionbox{pre\_or\_post}{On input, ML\_PRESMOOTHER or ML\_POSTSMOOTHER indicating whether the
+                        pre or post smoother is to be set.}
+
+\optionbox{ntimes}{On input, sets the number of block symmetric Gauss Seidel iterations that
+                   will be performed.}
+
+\optionbox{omega}{On input, sets the damping parameter to be used during this block
+                  symmetric Gauss Seidel smoothing.}
+
+\optionbox{nBlocks}{On input, indicates the total number of block equations in matrix.}
+
+\optionbox{blockIndices}{On input, blockIndices[i] indicates block to which ith element belongs. }
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Gen\_Solver}
+\protobox{int ML\_Gen\_Solver(ML *ml\_object, int scheme, int finest\_level, int coarsest\_level)}
+
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Initialize the \ML\  solver context, ml\_object, so that it is ready to be used in a solve.
+ML\_Gen\_Solver should be called after the multigrid cycle is fully specified but before
+ML\_Iterate or ML\_Solve\_MGV is invoked.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, all necessary
+                       initialization is completed.}
+
+\optionbox{scheme}{On input, must be set to {ML\_MGV} indicating a multigrid V cycle is used.}
+
+\optionbox{finest\_level}{On input, indicates the location within ml\_object where the
+                       finest level is stored. Normally, this is `0'.}
+
+\optionbox{coarsest\_level}{On input, indicates location within ml\_object where the
+                       coarsest grid is stored. When doing smoothed aggregation, this can
+                       be determined using the total number of multigrid levels returned by
+                       ML\_Gen\_MGHierarchy\_UsingAggregation.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Get\_Amatrix}
+\protobox{int ML\_Get\_Amatrix(ML *ml\_object, int k, ML\_Operator **matrix)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set *matrix to point to the discretization matrix associated at level 
+k within the multigrid solver context ml\_object. This pointer can then
+be passed into functions like: ML\_Operator\_Apply, ML\_Operator\_Get\_Diag, and
+ML\_Operator\_Getrow.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create).}
+
+\optionbox{k}{On input, indicates which level within the multigrid hierarchy should be 
+              accessed.}
+
+\optionbox{matrix}{On output, *matrix points to the discretization matrix at level k
+                   within the multigrid hierarchy. This pointer can then be passed into
+                   the functions
+                   ML\_Operator\_Apply, ML\_Operator\_Get\_Diag, and ML\_Operator\_Getrow.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Get\_MyGetrowData}
+\protobox{void * ML\_Get\_MyGetrowData(ML\_Operator *Amat)}
+
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Returns the user specific data pointer associated with the ML\_Operator
+given by Amat. This function is normally employed when users write
+their own matrix getrow function and they need to get back the 
+pointer that was given with ML\_Init\_Amatrix.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{Amat}{On input, points to matrix for which we seek the internal data pointer.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Get\_MyMatvecData}
+\protobox{void * ML\_Get\_MyMatvecData(ML\_Operator *Amat)}
+
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Returns the user specific data pointer associated with the ML\_Operator
+given by Amat. This function is normally employed when users write
+their own matrix-vector product function and they need to get back the 
+pointer that was given with ML\_Init\_Amatrix.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{Amat}{On input, points to matrix for which we seek the internal data pointer.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Get\_MySmootherData}
+\protobox{void * ML\_Get\_MySmootherData(ML\_Smoother *Smoother)}
+
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Returns the user specific data pointer associated with the ML\_Smoother
+object given by Smoother.
+This function is normally employed when users write
+their own smoother function and they need to get back the 
+pointer that was given with ML\_Set\_Smoother.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{Smoother}{On input, points to the smoother for which we seek the 
+internal data pointer.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Init\_Amatrix}
+\protobox{int ML\_Init\_Amatrix(ML *ml\_object, int k, int ilen, int olen, void *data)
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the size information for the discretization matrix associated at level k within
+ml\_object.  Additionally, associate a data pointer that can be used
+when writing matrix-vector product and matrix getrow functions.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, size information
+                       is associated with the discretization matrix at level k.}
+
+\optionbox{k}{On input, indicates where discretization size information will be
+                       stored within the multigrid hierarchy.}
+
+\optionbox{ilen}{On input, the number of local rows in the submatrix stored on this
+                       processor.}
+
+\optionbox{olen}{On input, the number of columns in the local submatrix stored on this
+                       processor not including any columns associated with ghost unknowns.}
+
+\optionbox{data}{On input, a data pointer that will be associated with the discretization
+                       matrix and could be used for matrix-vector product and matrix getrow
+                       functions.}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Iterate}
+\protobox{int ML\_Iterate(ML *ml\_object, double *sol, double *rhs)
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Iterate until convergence to solve the linear system using the multigrid V cycle
+defined within ml\_object.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create).}
+
+\optionbox{sol}{On input, a vector containing the initial guess for the linear
+                system contained in ml\_object. On output, the solution obtained by
+                performing repeated multigrid V cycles.}
+
+\optionbox{rhs}{On input, a vector contain the right hand side for the linear
+                system contained in ml\_object.}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Operator\_Apply}
+\protobox{int ML\_Operator\_Apply(ML\_Operator *A, int in\_length, double p[], int out\_length,\\
+\phantom{int ML\_Operator\_Apply(}double ap[])}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Invoke a matrix-vector product using the ML\_Operator {\tt A}. That is perform
+$ ap = A * p $. Any communication or ghost variables work needed for this
+operation is also performed.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{A}{On input, an ML\_Operator (see ML\_Get\_Amatrix).}
+
+\optionbox{in\_length}{On input, length of vector $p$ (not including ghost variable space).}
+
+\optionbox{p}{On input, vector which will be multiplied by $A$.}
+
+\optionbox{out\_length}{On input, length of vector $ap$.}
+
+\optionbox{ap}{On output, vector containing result of $A * p$.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Operator\_Get\_Diag}
+\protobox{int ML\_Operator\_Get\_Diag(ML\_Operator *A, int length, double **diag)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Get the diagonal of the ML\_Operator {\tt A} (which is assumed to be square).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{A}{On input, an ML\_Operator (see ML\_Get\_Amatrix).}
+
+\optionbox{length}{On input, number of diagonal elements wanted.}
+
+\optionbox{diag}{On output, sets a pointer to an array containing the diagonal elements.
+                 NOTE: this is not a copy but in fact a pointer into an ML data structure.
+                 Thus, this array should not be freed.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Operator\_Getrow}
+\protobox{int ML\_Operator\_Getrow(ML\_Operator *A, int N\_requested\_rows,
+                int requested\_rows[],\\
+\phantom{int ML\_Operator\_Getrow(}int allocated\_space, int columns[], double values[],\\
+\phantom{int ML\_Operator\_Getrow(}int row\_lengths[])}
+%\phantom{int ML\_Operator\_Apply(}double ap[])}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Get a row (or several rows) from the ML\_Operator {\tt A}. If there is not enough space
+in {\tt columns} and {\tt values} to hold the nonzero information, this routine returns
+a `0'. Otherwise, a `1' is returned.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{A}{On input, an ML\_Operator (see ML\_Get\_Amatrix).}
+
+\optionbox{N\_requested\_rows}{On input, number of matrix rows for which information is returned.}
+
+\optionbox{requested\_rows}{On input, specific rows for which information will be returned.}
+
+\optionbox{allocated\_space}{On input, length of {\tt columns} and {\tt values}.}
+
+\optionbox{columns}{On output, the column numbers of each nonzero within each row requested
+                    in {\tt requested\_rows} (where column numbers associated with 
+                    {\tt requested\_rows[i]} appear before column numbers associated 
+                    with {\tt requested\_rows[j]} with {\tt i} $<$ {\tt j}).}
+
+\optionbox{values}{On output, the nonzero values of each nonzero within each row requested
+                    in {\tt requested\_rows} (where nonzero values associated with 
+                    {\tt requested\_rows[i]} appear before nonzero values associated 
+                    with {\tt requested\_rows[j]} with {\tt i} $<$ {\tt j}).}
+
+\optionbox{row\_lengths}{On output, {\tt row\_lengths[i]} indicates the number of nonzeros
+                        in row {\tt i}.}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Set\_Amatrix\_Getrow}
+\protobox{int ML\_Set\_Amatrix\_Getrow(ML *ml\_object, int k,
+        int (*getrow)(ML\_Operator *, int , int* , int,\\
+ \phantom{int ML\_Set\_Amatrix\_Getrow(}int*, double* , int*),
+        int (*comm  )(double *vec, void *data),\\
+ \phantom{int ML\_Set\_Amatrix\_Getrow(}int comm\_vec\_leng)
+}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the matrix getrow function for the discretization matrix associated at level
+k within the multigrid solver context ml\_object.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, matrix getrow
+               function is associated with the discretization matrix at level k.}
+
+\optionbox{k}{On input, indicates where the matrix getrow function pointer will be
+               stored within the multigrid hierarchy.}
+
+\optionbox{getrow}{On input, a function pointer to the user-defined matrix getrow
+                   function. See Section \ref{single}.}
+
+\optionbox{comm}{On input, a function pointer to the user-defined communication
+                 function. See Section \ref{sec:multiple}.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Set\_Amatrix\_Matvec}
+\protobox{int ML\_Set\_Amatrix\_Matvec(ML *ml\_object, int k,
+                      int (*matvec)(ML\_Operator *, int, double *,\\
+ \phantom{int ML\_Set\_Amatrix\_Matvec(}int, double *))}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the matrix-vector product function for the discretization matrix associated at level 
+k within the multigrid solver context ml\_object.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, matrix-vector
+               product function is associated with the discretization matrix at level k.}
+
+\optionbox{k}{On input, indicates where the matrix-vector product function pointer
+                  is stored within the multigrid hierarchy.}
+
+\optionbox{matvec}{On input, a function pointer to the user-defined matrix-vector
+                   product function. See Section \ref{single}}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Set\_ResidualOutputFrequency}
+\protobox{int ML\_Set\_ResidualOutputFrequency(ML *ml\_object, int output\_freq)}
+
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the output frequency of residual information. ML\_Iterate prints the two norm of the
+residual every output\_freq iterations.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, residual
+               printing frequency is set.}
+
+\optionbox{output\_freq}{On input, value to use for printing frequency.}
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Set\_Smoother}
+\protobox{int ML\_Set\_Smoother(ML *ml\_object, int k , int pre\_or\_post, void *data,\\
+ \phantom{int ML\_Set\_Smoother(}int (*func)(ML\_Smoother *, int, double *, int, double *), char *label)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the smoother (either pre or post as indicated by pre\_or\_post) at level k within
+the multigrid solver context to invoke the user-defined function `func' and 
+pass in the data pointer `data' via ML\_Get\_MySmootherData.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, a smoother
+               function is associated within ml\_object at level k.}
+
+\optionbox{k}{On input, indicates where the smoother function pointer will be
+               stored within the multigrid hierarchy.}
+
+\optionbox{pre\_or\_post}{On input, ML\_PRESMOOTHER or ML\_POSTSMOOTHER indicating whether
+                       the smoother should be performed before or after the coarse grid
+                       correction.}
+
+\optionbox{data}{On input, a data pointer that will be passed into the user-defined
+                 function `func'.}
+
+\optionbox{func}{On input, smoothing function to be used at level k when performing
+                 a multigrid V cycle. The specific signature and details of this
+                 function are given in Section \ref{multigrid options}.}
+
+\optionbox{label}{On input, a character string to be associated with Smoother. This string
+                  is printed by some routines when identifying the method.}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Set\_Tolerance}
+\protobox{int ML\_Set\_Tolerance(ML *ml\_object, double tolerance)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the convergence criteria for ML\_Iterate. Convergence is declared when the 2-norm
+of the residual is reduced by `tolerance' over the initial residual. This means that
+if the initial residual is quite small (i.e. the initial guess corresponds quite
+closely with the true solution), ML\_Iterate might continue to iterate without
+recognizing that the solution can not be improved due to round-off error.
+Note: the residual is always computed after performing presmoothing on the finest level
+(as opposed to at the beginning or end of the iteration). Thus, the true residual should be a
+little bit better than the one used by ML.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create). On output, tolerance
+               is set for convergence of ML\_Iterate.}
+
+\optionbox{tolerance}{On input, value to use for convergence tolerance.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Solve\_MGV}
+\protobox{int ML\_Solve\_MGV(ML *ml\_object, double *din, double *dout)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Perform one multigrid V cycle iteration to the solve linear system defined within
+ml\_object.
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input, \ML\  object pointer (see ML\_Create).}
+
+\optionbox{din}{On input, the right hand side vector to be used when performing
+                       multigrid.}
+
+\optionbox{dout}{On output, an approximate solution obtained after one multigrid V cycle.}
+
+\renewcommand{\thefootnote}{$\dagger$}
+\footnotetext{Nlevels refers to the argument given with {\tt ML\_Create}.}
+
+%\section{Do not correspond to current code}
+%\begin{itemize}
+%\item No hybrid method
+%\item Not all parameters are given in the manual.
+%\item Dropping terms when doing the prolongator smoother. There is no set function and it
+%      is not discussed in the manual.
+%\item What exactly does ML\_Aggregate\_Set\_DampingFactor do?
+%\item There is no ML\_Aggregate\_UseInftyNorm.
+%\item There is no ML\_Aggregate\_Set\_MaxLambdaEstimate.
+%\end{itemize}
