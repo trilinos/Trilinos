@@ -49,7 +49,7 @@ extern "C" {
 *    Hilbert space as well as other database oriented functions.
 *
 *  This code is closest in spirit to Lawder, but with significant differences:
-*    octree state tables modified to match existing HSFC direction (2-d)
+*    octree state tables modified to match existing HSFC direction
 *     (Note, Lawder tables are incorrect!),
 *    no binary search, greatly simplifing the test for intersection,
 *    backtracking does not explicitly work backwards up the tree,
@@ -91,7 +91,7 @@ static unsigned const int istate2d[] = /* nkey to 2 dimension state transitions 
   2, 3, 3, 1};
 
 
-static int idata3d [] = {
+static unsigned const idata3d [] = {
  0,  4,  6,  2,  3,  7,  5,  1,
  0,  1,  3,  2,  6,  7,  5,  4,
  0,  4,  5,  1,  3,  7,  6,  2,
@@ -117,7 +117,7 @@ static int idata3d [] = {
  6,  4,  0,  2,  3,  1,  5,  7,
  6,  4,  5,  7,  3,  1,  0,  2};
 
-static int istate3d [] = {
+static unsigned const istate3d [] = {
     1,  2,  0,  3,  4,  0,  5,  6,
     0,  7,  1,  8,  5,  1,  4,  9,
    15,  0,  2, 22, 20,  2, 19, 23,
@@ -143,7 +143,7 @@ static int istate3d [] = {
     4, 23, 22,  6,  1, 22, 11,  3,
    21, 22, 23,  0,  9, 23, 14,  2};
 
-static int data3d [] = {
+static unsigned const data3d [] = {
  0,  7,  3,  4,  1,  6,  2,  5,
  0,  1,  3,  2,  7,  6,  4,  5,
  0,  3,  7,  4,  1,  2,  6,  5,
@@ -169,7 +169,7 @@ static int data3d [] = {
  2,  5,  3,  4,  1,  6,  0,  7,
  6,  5,  7,  4,  1,  2,  0,  3};
 
-static int state3d [] = {
+static unsigned const state3d [] = {
  1,  6,  3,  4,  2,  5,  0,  0,
  0,  7,  8,  1,  9,  4,  5,  1,
 15, 22, 23, 20,  0,  2, 19,  2,

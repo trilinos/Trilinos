@@ -220,8 +220,8 @@ static double next_query_2d (ZZ *zz, double *lquerybox, double *hquerybox,
    unsigned int intersect_hi, intersect_lo;
    double t;
    int level, quadrant, i;                    /* loop counters */
-   static const int *dk[] = {idata2d,  idata2d  +4, idata2d  +8, idata2d  +12};
-   static const int *st[] = {istate2d, istate2d +4, istate2d +8, istate2d +12};
+   static const unsigned *dk[] = {idata2d,  idata2d  +4, idata2d  +8, idata2d  +12};
+   static const unsigned *st[] = {istate2d, istate2d +4, istate2d +8, istate2d +12};
    static const MAXLEVEL = 28;  /* only 56 significant bits, 28 per dimension */
 
    /* convert floating normalized, intersected query box corners to integers */
@@ -345,14 +345,22 @@ static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
    unsigned int intersect_hi, intersect_lo;
    double t;
    int level, quadrant, i;
-   static const int *dk[] =
-      {idata3d,     idata3d +8,  idata3d +16, idata3d +24,
-       idata3d +32, idata3d +40, idata3d +48, idata3d +56,
-       idata3d +64, idata3d +72, idata3d +80, idata3d +88};
-   static const int *st[] =
-      {istate3d,     istate3d +8,  istate3d +16, istate3d +24,
-       istate3d +32, istate3d +40, istate3d +48, istate3d +56,
-       istate3d +64, istate3d +72, istate3d +80, istate3d +88};
+   static const unsigned int *dk[] =
+      {idata3d,      idata3d +8,   idata3d +16,  idata3d +24,
+       idata3d +32,  idata3d +40,  idata3d +48,  idata3d +56,
+       idata3d +64,  idata3d +72,  idata3d +80,  idata3d +88,
+       idata3d +96,  idata3d +104, idata3d +112, idata3d +120,
+       idata3d +128, idata3d +136, idata3d +144, idata3d +152,
+       idata3d +160, idata3d +168, idata3d +176, idata3d +184};
+
+   static const unsigned int *st[] =
+      {istate3d,      istate3d +8,   istate3d +16,  istate3d +24,
+       istate3d +32,  istate3d +40,  istate3d +48,  istate3d +56,
+       istate3d +64,  istate3d +72,  istate3d +80,  istate3d +88,
+       istate3d +96,  istate3d +104, istate3d +112, istate3d +120,
+       istate3d +128, istate3d +136, istate3d +144, istate3d +152,
+       istate3d +160, istate3d +168, istate3d +176, istate3d +184};
+
    static const MAXLEVEL = 18;  /* only 56 significant bits, 18 per dimension */
 
    /* convert floating query box corners to integers */
@@ -408,7 +416,7 @@ static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
          if  (prune && quadrant > startbits)   prune = 0;  /* pruning not required */
 
          /* intersection test - subquad intersecting with search/query region */
-         newnpt = *(dk[state] + quadrant);         /* get new 2 bit npt value */
+         newnpt = *(dk[state] + quadrant);         /* get new 3 bit npt value */
          if (!((newnpt ^ intersect_hi) & (newnpt ^ intersect_lo)))
             break;   /* successfully found quadrant at this level */
          }

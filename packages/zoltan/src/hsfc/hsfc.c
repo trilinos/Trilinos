@@ -160,9 +160,6 @@ for (i = 0; i < 21; i++)
 
 #endif
 
-if (zz->Proc == 0)  {printf ("starting hsfc\n"); fflush (NULL);}
-
-
   /* Check for needed query functions. */
   /* Check only for coordinates; Zoltan_Get_Obj_List will check for others. */
   if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL)
@@ -280,8 +277,6 @@ if (zz->Proc == 0)  {printf ("starting hsfc\n"); fflush (NULL);}
       dots[i].fsfc = d->fhsfc (zz, out);      /* Note, this is a function call */
       }
 
-if (zz->Proc == 0) {printf ("just after dots[i].fsfc\n"); fflush(NULL);}
-
    /* Initialize grand partition to equally spaced intervals on [0,1] */
    for (i = 0; i < pcount; i++) {
       grand_partition[i].index =  i;
@@ -290,8 +285,7 @@ if (zz->Proc == 0) {printf ("just after dots[i].fsfc\n"); fflush(NULL);}
       }
    ZOLTAN_TRACE_DETAIL (zz, yo, "About to enter main loop\n");
 
-if (zz->Proc == 0) {printf ("about to start main loop\n"); fflush (NULL);}
-
+   
    /* This loop is the real guts of the partitioning algorithm */
    for (loop = 0; loop < MAX_LOOPS; loop++) {
       /* initialize bins, DEFAULT_BIN_MAX is less than any possible max,... */
@@ -388,8 +382,6 @@ if (zz->Proc == 0) {printf ("about to start main loop\n"); fflush (NULL);}
       grand_partition[0].l        = 0.0;
       grand_partition[pcount-1].r = 1.0;
       } /* end of loop */
-
-if (zz->Proc == 0) {printf ("exiting main loop\n"); fflush(NULL);}
 
 
    ZOLTAN_TRACE_DETAIL (zz, yo, "Exited main loop");
@@ -541,20 +533,6 @@ if (zz->Proc == 0) {printf ("exiting main loop\n"); fflush(NULL);}
          printf ("PROC %d DOT %03u\n", p->index, gids[i]);
          }
 
-
-printf ("<%d> Number of loops = %d\n", zz->Proc, loop + 1);
-printf ("<%d> export count %d, ndots %d\n", zz->Proc, *num_export, ndots);
-for (i = 0; i < ndots; i++) {
-  printf ("<%d> GID: %u  LID: %u  Part: %d  Weight %.1f  HSFC  %.6f\n",
-   zz->Proc, gids[i*zz->Num_GID], lids[i*zz->Num_LID], dots[i].part,
-   dots[i].weight, dots[i].fsfc);
-  printf ("PROC %d DOT %03u\n", p->index, gids[i]);
-  fflush(NULL);
-  }
-
-
-
-
    /* done, do we keep data structure for box drop and point drop? */
    Zoltan_Bind_Param (HSFC_params, "KEEP_CUTS", (void*) &param);
    param = 0;
@@ -579,8 +557,6 @@ free:
 
    if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME  &&  zz->Proc == 0)
       printf ("HSFC Processing Time is %.6f seconds\n", end_time - start_time);
-
- {printf ("<%d> Exiting hsfc\n", zz->Proc); fflush(NULL);}
 
    ZOLTAN_TRACE_EXIT (zz, yo);
    return err;
