@@ -79,6 +79,7 @@ The following parameters are valid for this solver:
 - "Line Search" - Sublist of the line search parameters, passed to the
   NOX::Linesearch::Manager constructor. Defaults to an empty list.
 
+  \author Russ Hopper, Org. 9233, Sandia National Labs
 */
 
 class NonlinearCG : public Generic {
