@@ -15,16 +15,16 @@
 #ifndef __ZOLTAN_UTIL_CONST_H
 #define __ZOLTAN_UTIL_CONST_H
 
+#include "zoltan_types.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include "zoltan_types.h"
 
 extern unsigned int Zoltan_Hash(ZOLTAN_ID_PTR, int, unsigned int);
 extern int Zoltan_Clean_String(char *, char **);

@@ -14,13 +14,12 @@
 #ifndef ZOLTAN_SORT_H
 #define ZOLTAN_SORT_H
 
+#include "zz_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-#include "zz_const.h"
-
 
 /* Sorting */
 void Zoltan_quicksort_pointer_dec_float_int (int*, float*, int*, int, int);
@@ -28,8 +27,6 @@ void Zoltan_quicksort_pointer_dec_float     (int*, float*, int,  int);
 void Zoltan_quicksort_pointer_inc_int_int   (int*, int*,   int*, int, int);
 void Zoltan_quicksort_list_inc_int          (int*, int,    int);
 void Zoltan_quicksort_pointer_inc_int_mult  (int*, int,    int,  int*, int*);
-
-
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

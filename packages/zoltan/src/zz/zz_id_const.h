@@ -11,17 +11,16 @@
  *    $Revision$
  ****************************************************************************/
 
-
 #ifndef __ZOLTAN_ID_CONST_H
 #define __ZOLTAN_ID_CONST_H
+
+#include "zoltan_id.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-
-#include "zoltan_id.h"
 /*
  *  Macros that access the Zoltan ID manipulation functions.
  *  These macros assume a Zoltan_Struct is available, and access the
