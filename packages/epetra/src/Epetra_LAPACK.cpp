@@ -302,11 +302,11 @@ void Epetra_LAPACK::TREXC( char COMPQ, int N, double * T, int LDT, double * Q, i
 }
 //=============================================================================
 float Epetra_LAPACK::SLAMCH( char CMACH) const {
-  return(SLAMCH_F77( CHAR_MACRO(CMACH)));
+  return(SLAMCH_F77(&CMACH));
 }
 //=============================================================================
 double Epetra_LAPACK::DLAMCH( char CMACH) const {
-	return(DLAMCH_F77( CHAR_MACRO(CMACH)));
+	return(DLAMCH_F77(&CMACH));
 
 }
   
