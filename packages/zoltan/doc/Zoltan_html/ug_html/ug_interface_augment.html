@@ -44,7 +44,7 @@ only the&nbsp; <A HREF="ug_alg_rcb.html#RCB">RCB</A> algorithm.
 <TD> FUNCTION <B>LB_Point_Assign</B>(<I>lb, coords, proc</I>)&nbsp;
 <BR> INTEGER(LB_INT) :: LB_Point_Assign&nbsp;
 <BR> TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
-<BR> REAL(LB_DOUBLE), DIMENSION(:), INTENT(IN) :: coords&nbsp;
+<BR> REAL(LB_DOUBLE), DIMENSION(*), INTENT(IN) :: coords&nbsp;
 <BR> INTEGER(LB_INT), INTENT(OUT) :: proc&nbsp;</TD>
 </TR>
 </TABLE>
@@ -112,7 +112,7 @@ zmax, procs, numprocs</I>)&nbsp;
 <BR> INTEGER(LB_INT) :: LB_Box_Assign&nbsp;
 <BR> TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
 <BR> REAL(LB_DOUBLE), INTENT(IN) :: xmin, ymin, zmin, xmax, ymax, zmax&nbsp;
-<BR> INTEGER(LB_INT), DIMENSION(:), INTENT(OUT) ::procs&nbsp;
+<BR> INTEGER(LB_INT), DIMENSION(*), INTENT(OUT) ::procs&nbsp;
 <BR> INTEGER(LB_INT), INTENT(OUT) :: numprocs&nbsp;</TD>
 </TR>
 </TABLE>
