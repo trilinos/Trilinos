@@ -33,6 +33,7 @@ $(srcdir)/FEGrid/ml_gridagx.h \
 $(srcdir)/FEGrid/ml_pde.h       $(srcdir)/FEGrid/ml_bdrypts.h \
 $(srcdir)/Coarsen/ml_agg_reitzinger.h \
 $(srcdir)/Coarsen/ml_agg_METIS.h \
+$(srcdir)/Coarsen/ml_agg_ParMETIS.h \
 $(srcdir)/FEGrid/ml_gridfunc.h \
 $(srcdir)/FEGrid/ml_setup.h \
 $(srcdir)/FEGrid/ml_elementagx.h  $(srcdir)/FEGrid/ml_grid.h \
@@ -69,6 +70,7 @@ $(srcdir)/Coarsen/ml_agg_genP.c \
 $(srcdir)/Coarsen/ml_amg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_METIS.c \
+$(srcdir)/Coarsen/ml_agg_ParMETIS.c \
 $(srcdir)/Coarsen/ml_aggregate.c \
 $(srcdir)/Coarsen/ml_ggraph.c \
 $(srcdir)/Coarsen/ml_agg_reitzinger.c  \

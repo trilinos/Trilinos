@@ -123,6 +123,7 @@ $(srcdir)/FEGrid/ml_gridagx.h \
 $(srcdir)/FEGrid/ml_pde.h       $(srcdir)/FEGrid/ml_bdrypts.h \
 $(srcdir)/Coarsen/ml_agg_reitzinger.h \
 $(srcdir)/Coarsen/ml_agg_METIS.h \
+$(srcdir)/Coarsen/ml_agg_ParMETIS.h \
 $(srcdir)/FEGrid/ml_gridfunc.h \
 $(srcdir)/FEGrid/ml_setup.h \
 $(srcdir)/FEGrid/ml_elementagx.h  $(srcdir)/FEGrid/ml_grid.h \
@@ -160,6 +161,7 @@ $(srcdir)/Coarsen/ml_agg_genP.c \
 $(srcdir)/Coarsen/ml_amg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_METIS.c \
+$(srcdir)/Coarsen/ml_agg_ParMETIS.c \
 $(srcdir)/Coarsen/ml_aggregate.c \
 $(srcdir)/Coarsen/ml_ggraph.c \
 $(srcdir)/Coarsen/ml_agg_reitzinger.c  \
@@ -411,10 +413,10 @@ am__objects_1 = ml_agg_uncoupled.$(OBJEXT) ml_amg.$(OBJEXT) \
 	ml_agg_coupled.$(OBJEXT) ml_amg_genP.$(OBJEXT) \
 	ml_agg_dd.$(OBJEXT) ml_agg_genP.$(OBJEXT) ml_amg_MIS.$(OBJEXT) \
 	ml_agg_MIS.$(OBJEXT) ml_agg_METIS.$(OBJEXT) \
-	ml_aggregate.$(OBJEXT) ml_ggraph.$(OBJEXT) \
-	ml_agg_reitzinger.$(OBJEXT) ml_gridagx.$(OBJEXT) \
-	ml_pde.$(OBJEXT) ml_bdrypts.$(OBJEXT) ml_grid.$(OBJEXT) \
-	ml_gridfunc.$(OBJEXT) ml_setup.$(OBJEXT) \
+	ml_agg_ParMETIS.$(OBJEXT) ml_aggregate.$(OBJEXT) \
+	ml_ggraph.$(OBJEXT) ml_agg_reitzinger.$(OBJEXT) \
+	ml_gridagx.$(OBJEXT) ml_pde.$(OBJEXT) ml_bdrypts.$(OBJEXT) \
+	ml_grid.$(OBJEXT) ml_gridfunc.$(OBJEXT) ml_setup.$(OBJEXT) \
 	ml_elementagx.$(OBJEXT) ml_get_basis.$(OBJEXT) \
 	ml_mapper.$(OBJEXT) ml_struct.$(OBJEXT) driver.$(OBJEXT) \
 	mli_solver.$(OBJEXT) ml_seg_precond.$(OBJEXT) ml_ggb.$(OBJEXT) \
@@ -451,6 +453,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/driver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_METIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_MIS.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_agg_ParMETIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_coupled.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_dd.Po ./$(DEPDIR)/ml_agg_genP.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_info.Po \
@@ -577,6 +580,7 @@ ml_agg_genP.$(OBJEXT): $(srcdir)/Coarsen/ml_agg_genP.c
 ml_amg_MIS.$(OBJEXT): $(srcdir)/Coarsen/ml_amg_MIS.c
 ml_agg_MIS.$(OBJEXT): $(srcdir)/Coarsen/ml_agg_MIS.c
 ml_agg_METIS.$(OBJEXT): $(srcdir)/Coarsen/ml_agg_METIS.c
+ml_agg_ParMETIS.$(OBJEXT): $(srcdir)/Coarsen/ml_agg_ParMETIS.c
 ml_aggregate.$(OBJEXT): $(srcdir)/Coarsen/ml_aggregate.c
 ml_ggraph.$(OBJEXT): $(srcdir)/Coarsen/ml_ggraph.c
 ml_agg_reitzinger.$(OBJEXT): $(srcdir)/Coarsen/ml_agg_reitzinger.c
@@ -645,6 +649,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/driver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_METIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_MIS.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_ParMETIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_coupled.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_dd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_genP.Po@am__quote@
@@ -827,6 +832,18 @@ ml_agg_METIS.obj: $(srcdir)/Coarsen/ml_agg_METIS.c
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ml_agg_METIS.Po' tmpdepfile='$(DEPDIR)/ml_agg_METIS.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_METIS.obj `cygpath -w $(srcdir)/Coarsen/ml_agg_METIS.c`
+
+ml_agg_ParMETIS.o: $(srcdir)/Coarsen/ml_agg_ParMETIS.c
+@AMDEP_TRUE@	source='$(srcdir)/Coarsen/ml_agg_ParMETIS.c' object='ml_agg_ParMETIS.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_agg_ParMETIS.Po' tmpdepfile='$(DEPDIR)/ml_agg_ParMETIS.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_ParMETIS.o `test -f '$(srcdir)/Coarsen/ml_agg_ParMETIS.c' || echo '$(srcdir)/'`$(srcdir)/Coarsen/ml_agg_ParMETIS.c
+
+ml_agg_ParMETIS.obj: $(srcdir)/Coarsen/ml_agg_ParMETIS.c
+@AMDEP_TRUE@	source='$(srcdir)/Coarsen/ml_agg_ParMETIS.c' object='ml_agg_ParMETIS.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_agg_ParMETIS.Po' tmpdepfile='$(DEPDIR)/ml_agg_ParMETIS.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_ParMETIS.obj `cygpath -w $(srcdir)/Coarsen/ml_agg_ParMETIS.c`
 
 ml_aggregate.o: $(srcdir)/Coarsen/ml_aggregate.c
 @AMDEP_TRUE@	source='$(srcdir)/Coarsen/ml_aggregate.c' object='ml_aggregate.o' libtool=no @AMDEPBACKSLASH@
