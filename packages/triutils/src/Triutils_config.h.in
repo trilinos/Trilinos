@@ -1,4 +1,4 @@
-/* src/Triutils_config.h.in.  Generated automatically from configure.ac by autoheader.  */
+/* src/Triutils_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to dummy `main' function (if any) required to link to the Fortran 77
    libraries. */
@@ -17,26 +17,32 @@
 /* define if bool is a built-in type */
 #undef HAVE_BOOL
 
-/* Define if you have the <cmath> header file. */
+/* Define to 1 if you have the <cmath> header file. */
 #undef HAVE_CMATH
 
-/* Define if you have the <cstdio> header file. */
+/* Define to 1 if you have the <cstdio> header file. */
 #undef HAVE_CSTDIO
 
-/* Define if you have the <cstdlib> header file. */
+/* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
 /* Define if want to build with debug enabled */
 #undef HAVE_DEBUG
 
-/* Define if your system has a working `malloc' function. */
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if your system has a working `malloc' function. */
 #undef HAVE_MALLOC
 
-/* Define if you have the <malloc.h> header file. */
+/* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
-/* Define if you have the <math.h> header file. */
+/* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
 
 /* define if we want to use MPI */
 #undef HAVE_MPI
@@ -59,10 +65,13 @@
 /* Define if want to build with purify enabled */
 #undef HAVE_PURIFY
 
-/* Define if you have the <stdio.h> header file. */
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
 #undef HAVE_STDIO_H
 
-/* Define if you have the <stdlib.h> header file. */
+/* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
 /* define if std::sprintf is supported */
@@ -71,16 +80,43 @@
 /* define if the compiler supports Standard Template Library */
 #undef HAVE_STL
 
-/* Define if you have the <string> header file. */
+/* Define to 1 if you have the <string> header file. */
 #undef HAVE_STRING
 
-/* Define if you have the <string.h> header file. */
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
 
 /* Name of package */
 #undef PACKAGE
 
-/* Define if you have the ANSI C header files. */
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
 /* Version number of package */
