@@ -448,8 +448,8 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
       
       Q->Multiply(true,startNS,reordNS);
       
-      delete StartArrayOfPointers;
-      delete ReordArrayOfPointers;
+      delete [] StartArrayOfPointers;
+      delete [] ReordArrayOfPointers;
 
     } else {
       
