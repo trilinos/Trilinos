@@ -523,11 +523,10 @@ multi-vector with constant value \\
 \subsection{Epetra\_Import and Epetra\_Export classes}
 \label{sec:import_export}
 
-The Epetra\_Import and Epetra\_Export classes are meant for efficient
-importing of off-processors elements. Epetra\_Import and Epetra\_Export
-are used to construct a communication plan that can be called repeatedly
-by computational classes such the Epetra multi-vectors of the Epetra
-matrices.
+The Epetra\_Import and Epetra\_Export classes suites apply off-processor
+communication. Epetra\_Import and Epetra\_Export are used to construct a
+communication plan that can be called repeatedly by computational
+classes such the Epetra multi-vectors of the Epetra matrices.
 
 Currently, those classes have one constructor, taking two Epetra\_Map or
 Epetra\_BlockMap objects. The first map specifies the global IDs that

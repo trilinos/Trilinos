@@ -36,12 +36,11 @@ discretization, or the Hessemberg matrix in the GMRES method. Those
 matrices are of (relatively) small size, so that it is not convenient to
 distribute them across the processes.
 
-Other matrices, like for instance the linear system matrices for
-large-scale computing, must be distributed to obtain scalability.  For
-distributed sparse matrices, the basic Epetra class is
-Epetra\_RowMatrix, meant for double-precision matrices with row access.
-Epetra\_RowMatrix is a pure virtual class.  The classes that are derived
-from \verb!Epetra_RowMatrix! include:
+Other matrices, e.g.~the linear system matrices, must be distributed to
+obtain scalability.  For distributed sparse matrices, the basic Epetra
+class is Epetra\_RowMatrix, meant for double-precision matrices with row
+access.  Epetra\_RowMatrix is a pure virtual class.  The classes that
+are derived from \verb!Epetra_RowMatrix! include:
 \begin{itemize}
 \item \verb!Epetra_CrsMatrix! for point matrices;
 \item \verb!Epetra_VbrMatrix! for block matrices (that is, for
@@ -69,9 +68,9 @@ different types of matrices as follows:
 \subsection{Serial Dense Matrices}
 \label{sec:dense_mat}
 
-Epetra provides functionalities for sequential dense matrices with the
-class Epetra\_SerialDenseMatrix.  A possible way to create a serial
-dense matrix \verb!D! of dimension \verb!n!  by \verb!m! is
+Epetra supports sequential dense matrices with the class
+Epetra\_SerialDenseMatrix.  A possible way to create a serial dense
+matrix \verb!D! of dimension \verb!n!  by \verb!m! is
 \begin{verbatim}
 #include "Epetra_SerialDenseMatrix.h"
 Epetra_SerialDenseMatrix D(n,m);
@@ -225,7 +224,7 @@ Scales the Epetra\_RowMatrix on the right with a Epetra\_Vector x.  \\
 \hline
 \end{tabular}
 \caption{Mathematical methods of {\tt Epetra\_RowMatrix}}
-\label{tab:row_matrix}
+\label{tab:row_matrix_math}
 \end{center}
 \end{table}
 
@@ -292,7 +291,7 @@ distributed operations. \\
 \hline
 \end{tabular}
 \caption{Atribute access methods of {\tt Epetra\_RowMatrix}}
-\label{tab:distr_vec}
+\label{tab:row_matrix_atr}
 \end{center}
 \end{table}
 
