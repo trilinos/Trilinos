@@ -48,7 +48,15 @@ public:
   //! Compute and return RHS
   virtual const NLS_Vector& computeRHS() = 0;
 
-  //! Compute Jacobian
+  //! Returns true if this group is allowed to store a Jacobian matrix.
+  /*! Not every group is allowed to own a Jacobian because of its
+    size. Typically, only one group at a time will need to own a
+    Jacobian, and that will be in a Jacobian-enabled group. Obviously
+    a group cannot compute the Gradient or Newton direction unless it
+    is Jacobian-enabled. */
+  virtual bool isJacobianEnabled() const = 0;
+
+  //! Compute Jacobian (return true if successful)
   virtual void computeJacobian() = 0;
 
   //! Compute and return gradient 
@@ -102,12 +110,10 @@ public:
 
   //@{ \name Creating new NLS_Groups
 
-  //! Create a \b new NLS_Group of the same derived type as this one
-  virtual NLS_Group* newGroup() const = 0;
+  //! Create a \b new NLS_Group of the same derived type as this one, but \b without an enabled Jacobian.
+  virtual NLS_Group* newCopy(bool isJacobianEnabled = false) const = 0;
 
   //@}
-  
-
 };
 
 

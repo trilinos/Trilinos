@@ -45,18 +45,15 @@ public:
   //! Constructor for Jacobian-Diabled group.
   /*! Makes internal xVector a deep copy of x. A group constructed in
     this manner cannot compute its Jacobian. */
-  NLS_PetraGroup(Epetra_Vector& x, NLS_PetraGroupInterface& I);
+  NLS_PetraGroup(const NLS_PetraGroup& copyFrom);
 
   //! Deconstructor
   virtual ~NLS_PetraGroup();
 
   virtual NLS_Group& copy(const NLS_Group& copyFrom);
 
-  //! Copy everything except the Jacobian matrix.
+  //! Copy everything except the Jacobian matrix, if any.
   virtual NLS_Group& copy(const NLS_PetraGroup& copyFrom);
-
-  //! Invalid for this class - just returns NULL.
-  virtual NLS_Group* newGroup() const;
 
   /** @name "Compute" functions */
   //@{
@@ -121,6 +118,8 @@ public:
 
   //@}
 
+  virtual NLS_Group* newCopy(bool isJacobianEnabled = false) const;
+
 protected:
 
   //! Disallow Copy operator for now.
@@ -145,7 +144,7 @@ protected:
   Epetra_RowMatrix* Jac;
 
   //! Pointer to user's code for filling the RHS (function) and Jacobian
-  NLS_PetraGroupInterface* Interface;
+  NLS_PetraGroupInterface& Interface;
 
 /** @name IsValid flags 
  *  Tells if the vector is out of date with respect to the current 
