@@ -160,7 +160,6 @@ static int pmatching_col_ipm(
     char  *yo = "pmatching_col_ipm";
     PHGComm *hgc = hg->comm;  
     float lquality[3] = {0,0,0}; /* local  matchcount, matchweight */
-    float gquality[3] = {0,0,0}; /* global matchcount, matchweight */
 
     lips = gips = NULL;
     sendbuf = recvbuf = NULL;
@@ -429,13 +428,14 @@ static int pmatching_col_ipm(
         
     }
 
-    if (hgc->myProc_y==0){
+    if (hgp->output_level >= PHG_DEBUG_LIST && hgc->myProc_y==0){
+      float gquality[3] = {0,0,0}; /* global matchcount, matchweight */
       lquality[2] = hg->nVtx; /* to find global number of vertices */
       MPI_Allreduce(lquality, gquality, 3, MPI_FLOAT, MPI_SUM, hgc->row_comm); 
-       
-      uprintf (hgc, "LOCAL (GLOBAL) i.p. sum %.2f (%.2f), matched pairs %d (%d), "
-       "total vertices %d\n", lquality[0], gquality[0], (int)lquality[1],
-       (int)gquality[1], (int)gquality[2]);  
+      uprintf (hgc, 
+        "LOCAL (GLOBAL) i.p. sum %.2f (%.2f), matched pairs %d (%d), "
+        "total vertices %d\n", lquality[0], gquality[0], (int)lquality[1],
+        (int)gquality[1], (int)gquality[2]);  
     }
 
     /*
