@@ -37,10 +37,11 @@ LIBLAPACK = -lcomplib.sgimath
 ################## Amesos corrections ##########################
 
 #  Kundert's sparse solver does not compile on SGI64
+#  I can't get AxtecOO to compile on SGI64
 # AMESOS_LIBS =  $(LIBAZTECOO) $(LIBSUPERLUDIST) $(LIBY12M) $(LIBIFPACK)
-AMESOS_LIBS =  $(LIBAZTECOO) $(LIBSUPERLUDIST) $(LIBY12M) $(LIBIFPACK)
+AMESOS_LIBS =  $(LIBSUPERLUDIST) $(LIBY12M) $(LIBIFPACK)
 # AMESOS_TESTDEFS = -DTEST_AZTEC -DTEST_SUPERLUDIST 
-AMESOS_TESTDEFS = -DTEST_AZTEC -DTEST_SUPERLUDIST 
+AMESOS_TESTDEFS = -DTEST_SUPERLUDIST 
 
 
 
