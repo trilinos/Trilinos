@@ -553,7 +553,9 @@ extern "C" {
     puts("--with-ml_anasazi to estimate lambda max with Anasazi.");
 
     exit( EXIT_FAILURE );
-    
+
+    return( -1 );
+  
   }
   
 }
