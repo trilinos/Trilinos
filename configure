@@ -2510,7 +2510,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 subdirs="$subdirs packages/teuchos"
 
   BUILD_TEUCHOS=yes
-  if test "X$ac_cv_use_teuchos_explicit" == "Xno"; then
+  if test "X$ac_cv_use_teuchos_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-teuchos"
   fi
 else
@@ -2518,7 +2518,7 @@ else
 fi
 
 
-if test "X$BUILD_TEUCHOS" == "Xyes"; then
+if test "X$BUILD_TEUCHOS" != "Xno"; then
   BUILD_TEUCHOS_TRUE=
   BUILD_TEUCHOS_FALSE='#'
 else
@@ -2534,7 +2534,7 @@ if test "X$ac_cv_use_kokkos" != "Xno" ||
 subdirs="$subdirs packages/kokkos"
 
   BUILD_KOKKOS=yes
-  if test "X$ac_cv_use_kokkos_explicit" == "Xno"; then
+  if test "X$ac_cv_use_kokkos_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-kokkos"
   fi
 else
@@ -2542,7 +2542,7 @@ else
 fi
 
 
-if test "X$BUILD_KOKKOS" == "Xyes"; then
+if test "X$BUILD_KOKKOS" != "Xno"; then
   BUILD_KOKKOS_TRUE=
   BUILD_KOKKOS_FALSE='#'
 else
@@ -2569,7 +2569,7 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 subdirs="$subdirs packages/epetra"
 
   BUILD_EPETRA=yes
-  if test "X$ac_cv_use_epetra_explicit" == "Xno"; then
+  if test "X$ac_cv_use_epetra_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-epetra"
   fi
 else
@@ -2577,7 +2577,7 @@ else
 fi
 
 
-if test "X$BUILD_EPETRA" == "Xyes"; then
+if test "X$BUILD_EPETRA" != "Xno"; then
   BUILD_EPETRA_TRUE=
   BUILD_EPETRA_FALSE='#'
 else
@@ -2596,7 +2596,7 @@ if test "X$ac_cv_use_triutils" != "Xno" ||
 subdirs="$subdirs packages/triutils"
 
   BUILD_TRIUTILS=yes
-  if test "X$ac_cv_use_triutils_explicit" == "Xno"; then
+  if test "X$ac_cv_use_triutils_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-triutils"
   fi
 else
@@ -2619,7 +2619,7 @@ if test "X$ac_cv_use_ifpack" != "Xno"; then
 subdirs="$subdirs packages/ifpack"
 
   BUILD_IFPACK=yes
-  if test "X$ac_cv_use_ifpack_explicit" == "Xno"; then
+  if test "X$ac_cv_use_ifpack_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-ifpack"
   fi
 else
@@ -2643,7 +2643,7 @@ if test "X$ac_cv_use_aztecoo" != "Xno" ||
 subdirs="$subdirs packages/aztecoo"
 
   BUILD_AZTECOO=yes
-  if test "X$ac_cv_use_aztecoo_explicit" == "Xno"; then
+  if test "X$ac_cv_use_aztecoo_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-aztecoo"
   fi
 else
@@ -2666,7 +2666,7 @@ if test "X$ac_cv_use_claps" != "Xno"; then
 subdirs="$subdirs packages/claps"
 
   BUILD_CLAPS=yes
-  if test "X$ac_cv_use_claps_explicit" == "Xno"; then
+  if test "X$ac_cv_use_claps_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-claps"
   fi
 else
@@ -2689,7 +2689,7 @@ if test "X$ac_cv_use_komplex" != "Xno"; then
 subdirs="$subdirs packages/komplex"
 
   BUILD_KOMPLEX=yes
-  if test "X$ac_cv_use_komplex_explicit" == "Xno"; then
+  if test "X$ac_cv_use_komplex_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-komplex"
   fi
 else
@@ -2713,7 +2713,7 @@ if test "X$ac_cv_use_tsf" != "Xno" ||
 subdirs="$subdirs packages/TSF"
 
   BUILD_TSF=yes
-  if test "X$ac_cv_use_tsf_explicit" == "Xno"; then
+  if test "X$ac_cv_use_tsf_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-tsf"
   fi
 else
@@ -2737,7 +2737,7 @@ if test "X$ac_cv_use_tsfcore" != "Xno" ||
 subdirs="$subdirs packages/TSFCore"
 
   BUILD_TSFCORE=yes
-  if test "X$ac_cv_use_tsfcore_explicit" == "Xno"; then
+  if test "X$ac_cv_use_tsfcore_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-tsfcore"
   fi
 else
@@ -2760,7 +2760,7 @@ if test "X$ac_cv_use_tsfextended" != "Xno"; then
 subdirs="$subdirs packages/TSFExtended"
 
   BUILD_TSEXTENDEDF=yes
-  if test "X$ac_cv_use_tsfextended_explicit" == "Xno"; then
+  if test "X$ac_cv_use_tsfextended_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-tsfextended"
   fi
 else
@@ -2785,7 +2785,7 @@ if test "X$ac_cv_use_tsfcore" != "Xno" ||
 subdirs="$subdirs packages/TSFCoreUtils"
 
   BUILD_TSFCOREUTILS=yes
-  if test "X$ac_cv_use_tsfcoreutils_explicit" == "Xno"; then
+  if test "X$ac_cv_use_tsfcoreutils_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-tsfcoreutils"
   fi
 else
@@ -2808,7 +2808,7 @@ if test "X$ac_cv_use_amesos" != "Xno"; then
 subdirs="$subdirs packages/amesos"
 
   BUILD_AMESOS=yes
-  if test "X$ac_cv_use_amesos_explicit" == "Xno"; then
+  if test "X$ac_cv_use_amesos_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-amesos"
   fi
 else
@@ -2831,7 +2831,7 @@ if test "X$ac_cv_use_epetraext" != "Xno"; then
 subdirs="$subdirs packages/epetraext"
 
   BUILD_EPETRAEXT=yes
-  if test "X$ac_cv_use_epetraext_explicit" == "Xno"; then
+  if test "X$ac_cv_use_epetraext_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-epetraext"
   fi
 else
@@ -2854,7 +2854,7 @@ if test "X$ac_cv_use_belos" != "Xno"; then
 subdirs="$subdirs packages/belos"
 
   BUILD_BELOS=yes
-  if test "X$ac_cv_use_belos_explicit" == "Xno"; then
+  if test "X$ac_cv_use_belos_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-belos"
   fi
 else
@@ -2877,7 +2877,7 @@ if test "X$ac_cv_use_anasazi" != "Xno"; then
 subdirs="$subdirs packages/anasazi"
 
   BUILD_ANASAZI=yes
-  if test "X$ac_cv_use_anasazi_explicit" == "Xno"; then
+  if test "X$ac_cv_use_anasazi_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-anasazi"
   fi
 else
@@ -2900,7 +2900,7 @@ if test "X$ac_cv_use_meros" != "Xno"; then
 subdirs="$subdirs packages/meros"
 
   BUILD_MEROS=yes
-  if test "X$ac_cv_use_meros_explicit" == "Xno"; then
+  if test "X$ac_cv_use_meros_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-meros"
   fi
 else
@@ -2923,7 +2923,7 @@ if test "X$ac_cv_use_ml" != "Xno"; then
 subdirs="$subdirs packages/ml"
 
   BUILD_ML=yes
-  if test "X$ac_cv_use_ml_explicit" == "Xno"; then
+  if test "X$ac_cv_use_ml_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-ml"
   fi
 else
@@ -2947,7 +2947,7 @@ if test "X$ac_cv_use_nox" != "Xno" ||
 subdirs="$subdirs packages/nox"
 
   BUILD_NOX=yes
-  if test "X$ac_cv_use_nox_explicit" == "Xno"; then
+  if test "X$ac_cv_use_nox_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-nox"
   fi
 else
@@ -2971,7 +2971,7 @@ if test "X$ac_cv_use_new_package" != "Xno"; then
 subdirs="$subdirs packages/new_package"
 
   BUILD_NEW_PACKAGE=yes
-  if test "X$ac_cv_use_new_package_explicit" == "Xno"; then
+  if test "X$ac_cv_use_new_package_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-new_package"
   fi
 else
@@ -2994,7 +2994,7 @@ if test "X$ac_cv_use_tpetra" != "Xno"; then
 subdirs="$subdirs packages/tpetra"
 
   BUILD_TPETRA=yes
-  if test "X$ac_cv_use_tpetra_explicit" == "Xno"; then
+  if test "X$ac_cv_use_tpetra_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-tpetra"
   fi
 else
@@ -3017,7 +3017,7 @@ if test "X$ac_cv_use_didasko" != "Xno"; then
 subdirs="$subdirs packages/didasko"
 
   BUILD_DIDASKO=yes
-  if test "X$ac_cv_use_didasko_explicit" == "Xno"; then
+  if test "X$ac_cv_use_didasko_explicit" != "Xyes"; then
     ac_configure_args="$ac_configure_args --enable-didasko"
   fi
 else
