@@ -175,13 +175,13 @@ int main(int argc, char *argv[])
                                      colorMapIndex(Problem.getGraph());
   // Use this constructor to create the graph numerically as a means of timing
   // the old way of looping without colors :
-    NOX::Epetra::FiniteDifferenceColoring A(interface, soln, 
-                                            *colorMap, *columns);
+  //  NOX::Epetra::FiniteDifferenceColoring A(interface, soln, 
+  //                                          *colorMap, *columns);
   // Or use this as the standard way of using finite differencing with coloring
   // where the application is responsible for creating the matrix graph 
   // beforehand, ie as is done in Problem.
-  //  NOX::Epetra::FiniteDifferenceColoring A(interface, soln, 
-  //                    Problem.getGraph(), *colorMap, *columns);
+    NOX::Epetra::FiniteDifferenceColoring A(interface, soln, 
+                      Problem.getGraph(), *colorMap, *columns);
   // 5. Jacobi Preconditioner
   //NOX::Epetra::JacobiPreconditioner Prec(soln);
 
