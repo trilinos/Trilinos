@@ -42,12 +42,14 @@ LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra_Group.H \
 	$(srcdir)/LOCA_Epetra_Interface.H \
 	$(srcdir)/LOCA_Epetra_BorderedOp.H \
-	$(srcdir)/LOCA_Epetra_HouseholderJacOp.H
+	$(srcdir)/LOCA_Epetra_HouseholderJacOp.H \
+	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.H
 
 LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_Group.C \
 	$(srcdir)/LOCA_Epetra_BorderedOp.C \
-	$(srcdir)/LOCA_Epetra_HouseholderJacOp.C
+	$(srcdir)/LOCA_Epetra_HouseholderJacOp.C \
+	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
 
 LOCA_EPETRANEW_H = \
 	$(srcdir)/LOCA_EpetraNew_Group.H \
