@@ -43,7 +43,7 @@ LIBBELOSUTILS = $(LIB_$(TRILINOS_COMM))
 #=======================================================================
 
 LIBBELOSUTILS: $(BELOS_UTILS_OBJ)
-	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS) $(LIBBELOSUTILS) $(BELOS_UTILS_OBJ)
+	$(AR) $(ARFLAGS) $(LIB_WIN_FLAGS)$(LIBBELOSUTILS) $(BELOS_UTILS_OBJ)
 
 #=======================================================================
 # dependencies for 'f' files (none at this time)
