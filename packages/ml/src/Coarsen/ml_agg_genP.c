@@ -21,6 +21,7 @@ extern int mls_or_gs, mls_order;
 #include <math.h>
 #include <stdlib.h>
 #include "ml_struct.h"
+#include "ml_smoother.h"
 #include "ml_op_utils.h"
 #include "ml_agg_genP.h"
 #include "ml_memory.h"
@@ -39,6 +40,7 @@ extern int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
 extern int ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(ML_Operator * Amat,
 						     struct ML_Field_Of_Values * fov );
 extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
+                                               ML_Smoother* Smoother,
 					       int MaxIters, double Tolerance,
 					       int IsProblemSymmetric,
 					       int UseDiagonalScaling,
@@ -723,8 +725,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
        case 2: /* Use Anasazi */
 #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
-	 ML_Anasazi_Get_SpectralNorm_Anasazi( Amat, 10, 1e-5,
-					      ML_FALSE, ML_TRUE, &max_eigen);
+	 ML_Anasazi_Get_SpectralNorm_Anasazi(Amat, 0, 10, 1e-5,
+					     ML_FALSE, ML_TRUE, &max_eigen);
 #else
 	 fprintf(stderr,
 		 "--enable-epetra --enable-anasazi --enable-teuchos required\n"

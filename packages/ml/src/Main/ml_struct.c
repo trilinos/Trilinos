@@ -24,6 +24,7 @@
 #endif
 #ifdef HAVE_ML_ANASAZI
 extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
+                                               ML_Smoother* Smoother,
 					       int MaxIters, double Tolerance,
 					       int IsProblemSymmetric,
 					       int UseDiagonalScaling,
@@ -2084,7 +2085,7 @@ int ML_Gimmie_Eigenvalues(ML_Operator *Amat, int scale_by_diag,
 	  - ML_TRUE because you want diagonal scaling
 	  (the function is in ml_anasazi.cpp)
        */
-       ML_Anasazi_Get_SpectralNorm_Anasazi(Amat,10,1e-10,
+       ML_Anasazi_Get_SpectralNorm_Anasazi(Amat,0,10,1e-10,
 					   ML_FALSE, ML_TRUE,
 					   &(Amat->lambda_max) );
 #else

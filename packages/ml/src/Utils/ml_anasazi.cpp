@@ -1,5 +1,6 @@
 #include "ml_common.h"
 #include "ml_include.h"
+#include "ml_smoother.h"
 
 #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
 
@@ -68,7 +69,7 @@ using namespace Anasazi;
 
 enum MLMatOp { A_MATRIX, I_MINUS_A_MATRIX, A_PLUS_AT_MATRIX,
 	       A_MINUS_AT_MATRIX, ITERATION_MATRIX,
-               PREC_MATRIX };
+               PREC_MATRIX, SMOOTHED_MATRIX };
 
 
 // ================================================ ====== ==== ==== == =
@@ -105,13 +106,14 @@ public:
       - ITERATION_MATRIX (compute the eigenvalue of I-ML^{-1}A, 
         where ML is an already build ML preconditioner
       - PREC_MATRIX (compute the eigenvalues of ML^{-1}A).	
+      - SMOOTHED_MATRIX (compute the eigenvalues of S^{-1}A).	
     \param UseDiagScaling (In) : if \c true, the matrix is scaled by the
       diagonal
     \param ml (In) : pointer to an already built ML hierarchy.
    */
   MLMat(const Epetra_RowMatrix & Matrix, const MLMatOp MatOp, 
 	const bool UseDiagScaling,
-	ML * ml = 0);
+	ML* ml = 0, ML_Smoother* smoother = 0);
   ~MLMat();
 
   //! Applies the flavor of ML/Anasazi matrix to Anasazi::Vector x, stores the result in y.
@@ -131,28 +133,30 @@ public:
   }
   
 private:
-  const Epetra_RowMatrix & Mat_;
+  const Epetra_RowMatrix& Mat_;
   MLMatOp MatOp_;
   const bool UseDiagScaling_;
   double Scale_;
-  Epetra_MultiVector * tmp_;
-  Epetra_Vector * Diagonal_;
+  Epetra_MultiVector* tmp_;
+  Epetra_Vector* Diagonal_;
 
-  Epetra_Vector * Mask_;
+  Epetra_Vector* Mask_;
   int NumMyRows_;
-  ML * ml_;
+  ML* ml_;
+  ML_Smoother* smoother_;
 };
 
 template <class TYPE>
 MLMat<TYPE>::MLMat(const Epetra_RowMatrix & Matrix,
 		   const MLMatOp MatOp, const bool UseDiagScaling,
-		   ML * ml) 
+		   ML* ml, ML_Smoother* smoother) 
   : Mat_(Matrix),
     MatOp_(MatOp),
     UseDiagScaling_(UseDiagScaling),
     Scale_(1.0),
     tmp_(0),
-    ml_(ml)
+    ml_(ml),
+    smoother_(smoother)
 {
   NumMyRows_ = Matrix.RowMatrixRowMap().NumMyElements();
   
@@ -220,7 +224,7 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
 
   if( MatOp_ == PREC_MATRIX ) {
 
-    assert( ml_ != 0 );
+    assert (ml_ != 0);
     
     // Here I apply ML^{-1} A
     
@@ -242,8 +246,30 @@ ReturnType MLMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x,
 
     // 2- apply the multilevel hierarchy
     vec_y->PutScalar(0.0);
-    for( int i=0 ; i<NumVectors ; ++i ) ML_Solve_MGV(ml_,tmp_view[i], y_view[i]);
+    for (int i = 0 ; i < NumVectors ; ++i) 
+      ML_Solve_MGV(ml_,tmp_view[i], y_view[i]);
     
+    // 4- return and skip the crap below
+    return Ok;
+    
+  }
+  else if( MatOp_ == SMOOTHED_MATRIX ) {
+
+    assert (smoother_ != 0);
+    
+    // Here I apply S^{-1} A
+    const Epetra_RowMatrix& RowMatrix = dynamic_cast<const Epetra_RowMatrix&>(Mat_);
+
+    // 1- apply the linear system matrix to vec_x
+    info = RowMatrix.Multiply(false,*vec_x,*tmp_);
+    if (info) return Failed;
+
+    // 2- apply the smoother
+    vec_y->PutScalar(0.0);
+    for (int i = 0 ; i < NumVectors ; ++i) 
+      ML_Smoother_Apply(smoother_,NumMyRows_,y_view[i],
+                        NumMyRows_,tmp_view[i],ML_NONZERO);
+
     // 4- return and skip the crap below
     return Ok;
     
@@ -355,6 +381,7 @@ int Interface(const Epetra_RowMatrix * RowMatrix, Epetra_MultiVector & EigenVect
   else if( MatOpStr == "A+A^T" ) MatOp = A_PLUS_AT_MATRIX;
   else if( MatOpStr == "A-A^T" ) MatOp = A_MINUS_AT_MATRIX;
   else if( MatOpStr == "ML^{-1}A" ) MatOp = PREC_MATRIX;
+  else if( MatOpStr == "S^{-1}A" ) MatOp = SMOOTHED_MATRIX;
   else if( MatOpStr == "I-ML^{-1}A" ) {
     MatOp = ITERATION_MATRIX;
     UseDiagScaling = false; // doesn't work with iteration matrix
@@ -726,21 +753,23 @@ int ML_Anasazi_Get_FieldOfValuesBoxNonScaled_Interface(ML_Operator * Amat,
 
 // ================================================ ====== ==== ==== == =
 
-int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
+int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator* Amat,
+                                        ML_Smoother* smoother,
 					int MaxIters, double Tolerance,
-					int IsProblemSymmetric,
-					int UseDiagonalScaling,
-					double * LambdaMax )
+                                        int IsProblemSymmetric,
+                                        int UseDiagonalScaling,
+					double* LambdaMax )
 {
 
   Epetra_CrsMatrix * RowMatrix;
   int MaxNumNonzeros;
   double CPUTime;
   
+  // FIXME: replace with ML_Epetra::RowMatrix
   ML_Operator2EpetraCrsMatrix(Amat,RowMatrix,MaxNumNonzeros,
 			      true,CPUTime);
   
-  bool verbose( RowMatrix->Comm().MyPID() == 0 && (5 < ML_Get_PrintLevel() ) );
+  bool verbose =  RowMatrix->Comm().MyPID() == 0 && (5 < ML_Get_PrintLevel());
   
   int length = MaxIters;
   int restarts = 1;
@@ -766,7 +795,8 @@ int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
   bool flag = false;
   if( UseDiagonalScaling == ML_TRUE ) flag = true;
   
-  MLMat<double> MLMatrix(*RowMatrix,A_MATRIX,flag);
+  // smoother is generally 0 (NULL)
+  MLMat<double> MLMatrix(*RowMatrix,SMOOTHED_MATRIX,flag,0,smoother);
   
   Anasazi::Eigenproblem<double> MyProblem(&MLMatrix, &Vectors);
 
@@ -787,12 +817,12 @@ int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
   
   // Obtain results direc3tly
 
-  double * evalr = MyBlockArnoldi.getEvals();
-  double * evali = MyBlockArnoldi.getiEvals(); 
+  double* evalr = MyBlockArnoldi.getEvals();
+  double* evali = MyBlockArnoldi.getiEvals(); 
 
   *LambdaMax = sqrt(evalr[0]*evalr[0] + evali[0]*evali[0]);
   
-  if( verbose ) {
+  if (verbose) {
     double * residuals  = MyBlockArnoldi.getResiduals();
     cout << "ML_Anasazi : Ritz Residual = " << residuals[0] << endl;
     delete [] residuals;

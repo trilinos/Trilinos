@@ -44,6 +44,7 @@
 
 #include "ml_include.h"
 #include "ml_struct.h"
+#include "ml_smoother.h"
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_ANASAZI)
 
@@ -129,11 +130,12 @@ extern "C" {
 						       struct ML_Field_Of_Values * fov );
 
   //! Interface from C code to Anasazi to compute the maximum eigenvalue.
-  extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
+  extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator* Amat,
+                                                 ML_Smoother* smoother,
 						 int MaxIters, double Tolerance,
 						 int IsProblemSymmetric,
 						 int UseDiagonalScaling,
-						 double * LambdaMax );
+						 double* LambdaMax );
 }
 
 #endif /* #ifndef _ML_ANASAZI_H_ */
