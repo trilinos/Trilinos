@@ -10,12 +10,6 @@
 
 include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
 TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
-
-LIBEPETRA= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libepetra.a
-LIBAZTECOO= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libaztecoo.a
-LIBIFPACK= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libifpack.a
-LIBTRILINOS_UTIL= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libtriutils.a
-
 include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 
 # Epetra communication defines
@@ -28,9 +22,8 @@ FORMAT=VBR
 DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
          -DIFPACK -D$(FORMAT)
 
-INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/epetra/src \
-           -I$(TRILINOS_HOME)/packages/aztecoo/src \
-           -I$(TRILINOS_HOME)/packages/triutils/src
+INCLUDES = $(ARCH_INCLUDES) $(AZTECOO_INCLUDES) $(IFPACK_INCLUDES) \
+           $(EPETRA_INCLUDES) $(TRIUTILS_INCLUDES)
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(INCLUDES)
@@ -39,9 +32,9 @@ LDFLAGS=$(ARCH_LDFLAGS)
 
 
 
-LIB_PATHS= $(LIBAZTECOO) $(LIBEPETRA) $(LIBIFPACK) \
+LIB_PATHS= $(LIBAZTECOO) $(LIBIFPACK) $(LIBEPETRA) \
            $(LIBLAPACK) $(LIBBLAS) $(LIBY12M) \
-           $(LIBTRILINOS_UTIL)
+           $(LIBTRIUTILS)
 
 #=======================================================================
 # Epetra test source files
