@@ -143,8 +143,11 @@ TAC_ARG_CHECK_MPI
 # Checks for header files - used in Kokkos_ConfigDefs.h 
 # ------------------------------------------------------------------------
 
-AC_CHECK_HEADERS([ctime sys/time.h time.h sys/resource.h],,,)
-AC_CHECK_HEADERS([string string.h cassert assert.h iostream iostream.h],,,)
+AC_CHECK_HEADERS([ctime sys/time.h time.h], [break],)
+AC_CHECK_HEADERS([string string.h], [break],)
+AC_CHECK_HEADERS([cassert assert.h], [break],)
+AC_CHECK_HEADERS([iostream iostream.h], [break],)
+AC_CHECK_HEADER([sys/resource.h],,)
 
 if test "X$ac_cv_header_ctime" != "Xyes" && test "X$ac_cv_header_sys_time_h" != "Xyes" && test "X$ac_cv_header_time_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find ctime, sys/time.h, or time.h.  Kokkos requires at least one of these files.]])
