@@ -311,7 +311,7 @@ INPUT                  = ../src ../src-epetra ../src-petsc ../example
 # and *.h) to filter out the source-files in the directories. If left 
 # blank all files are included.
 
-FILE_PATTERNS          = NOX_*.H NOX_*.C
+FILE_PATTERNS          = *.H *.C
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories 
 # should be searched for input files as well. Possible values are YES and NO. 
