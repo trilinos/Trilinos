@@ -54,7 +54,7 @@ loca_book.pdf: loca_book.ps
 	ps2pdf loca_book.ps
 
 manual_html:
-	latex2html loca_book -up_url '../../../html/index.html' -up_title 'LOCA Documentation'; touch manual_html
+	latex2html loca_book -up_url '../../../../../doc/html/index.html' -up_title 'NOX/LOCA Documentation'; touch manual_html
 
 clean:
 	rm -rf *.ps *.pdf *.dvi *.aux *.toc *.log *.bbl *.blg loca_book
