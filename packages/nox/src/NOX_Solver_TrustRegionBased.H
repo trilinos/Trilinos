@@ -30,11 +30,11 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_SOLVER_TRUSTREGION_H
-#define NOX_SOLVER_TRUSTREGION_H
+#ifndef NOX_SOLVER_TRUSTREGIONBASED_H
+#define NOX_SOLVER_TRUSTREGIONBASED_H
 
 #include "NOX_Solver_Generic.H"	    // base class
-#include "NOX_Linesearch_Manager.H" // class data element
+#include "NOX_LineSearch_Manager.H" // class data element
 #include "NOX_Direction_Manager.H"  // class data element
 #include "NOX_Parameter_List.H"	    // class data element
 
@@ -117,15 +117,15 @@ The "improvement ratio" for a given step \f$ s \f$ is defined as
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
 
-class TrustRegion : public Generic {
+class TrustRegionBased : public Generic {
 
 public:
 
-  //! %TrustRegion-method constructor. 
-  TrustRegion(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
+  //! %TrustRegionBased-method constructor. 
+  TrustRegionBased(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
 
   //! Destructor
-  virtual ~TrustRegion();
+  virtual ~TrustRegionBased();
 
   virtual bool reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
   virtual Status::StatusType getStatus();
