@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  puts("please configure IFPACK with --eanble-aztecoo --enable-teuchos");
+  puts("please configure IFPACK with --enable-aztecoo --enable-teuchos");
   puts("--enable-amesos --enable-triutils to run this test");
 
 #ifdef HAVE_MPI

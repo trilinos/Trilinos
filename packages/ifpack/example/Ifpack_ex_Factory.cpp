@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_AZTECOO)  && defined(HAVE_IFPACK_TEUCHOS)
+#if defined(HAVE_IFPACK_AZTECOO)  && defined(HAVE_IFPACK_TEUCHOS) && defined(HAVE_IFPACK_TRIUTILS) 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -164,8 +164,8 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  puts("please configure IFPACK with --eanble-aztecoo --enable-teuchos");
-  puts("to run this test");
+  puts("please configure IFPACK with --enable-aztecoo --enable-teuchos");
+  puts("--enable-triutils to run this test");
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
