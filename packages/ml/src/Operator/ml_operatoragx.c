@@ -148,7 +148,7 @@ int ML_OperatorAGX_Print(ML_OperatorAGX *op)
 /* array                                                                */
 /* -------------------------------------------------------------------- */
 
-int ML_OperatorAGX_Restrict(void *vop, int inlen, double *din, int outlen,
+int ML_OperatorAGX_Restrict(ML_Operator *vop, int inlen, double *din, int outlen,
                             double *dout)
 {
    int     i, j, k, index, icnt, icnt2, cnum, leng; 
@@ -362,7 +362,7 @@ int ML_OperatorAGX_Restrict(void *vop, int inlen, double *din, int outlen,
 /*  another data array                                                  */
 /* -------------------------------------------------------------------- */
 
-int ML_OperatorAGX_Prolongate(void *vop, int inlen, double *din, 
+int ML_OperatorAGX_Prolongate(ML_Operator *vop, int inlen, double *din, 
                               int outlen, double *dout)
 {
    int    i, j, k, index, icnt, icnt2, rnum, leng; 
@@ -558,7 +558,7 @@ int ML_OperatorAGX_Prolongate(void *vop, int inlen, double *din,
 /* Ray's version of getrows (This is the one to use for now.)           */
 /* ---------------------------------------------------------------------*/
 
-int ML_OperatorAGX_Getrows(void *data, int N_requested_rows, 
+int ML_OperatorAGX_Getrows(ML_Operator *data, int N_requested_rows, 
                 int requested_rows[], int allocated_space, int columns[], 
                 double values[], int row_lengths[])
 {
@@ -734,7 +734,7 @@ int ML_OperatorAGX_Getrows(void *data, int N_requested_rows,
 /* Ray's version of getcols (This is the one to use for now.)           */
 /* ---------------------------------------------------------------------*/
 
-int ML_OperatorAGX_Getcols(void *data, int N_requested_rows, 
+int ML_OperatorAGX_Getcols(ML_Operator *data, int N_requested_rows, 
                     int requested_rows[], int allocated_space, 
                     int columns[], double values[], int row_lengths[])
 

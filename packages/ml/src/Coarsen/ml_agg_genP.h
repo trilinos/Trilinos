@@ -78,14 +78,14 @@ extern int  ML_AGG_Increment_Level(ML *, int current_level, void *);
 extern int  ML_AGG_Decrement_Level(ML *, int current_level, void *);
 extern int  ML_AGG_Increment_Two_Level(ML *, int current_level, void *);
 extern int  ML_AGG_Decrement_Two_Level(ML *, int current_level, void *);
-extern int  ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
+extern int  ML_AGG_JacobiSmoother_Getrows(ML_Operator *data, int N_requested_rows,
                int requested_rows[], int allocated_space, int columns[],
                double values[], int row_lengths[]);
 extern int  ML_AGG_Compute_Near_Bdry(ML_Operator *Amatrix, char *near_bdry);
 extern int  ML_AGG_Gen_DDProlongator(ML*,int ,int,void *data);
 extern int  ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data);
-extern int  ML_AGG_DD_Matvec(void *, int , double *, int, double *);
-extern int  ML_AGG_DD_Getrow(void *,int, int *, int, int *, double *, int *);
+extern int  ML_AGG_DD_Matvec(ML_Operator *, int , double *, int, double *);
+extern int  ML_AGG_DD_Getrow(ML_Operator *,int, int *, int, int *, double *, int *);
 extern int  ML_AGG_Extract_Diag( ML_Operator *, double *diag);
 extern void ML_AGG_Matrix_Context_Clean(void *data);
 extern int  ML_AGG_DD_Solve(void *data, int, double *, int, double *);
@@ -96,7 +96,7 @@ extern int  ML_Gen_MGHierarchy_ReuseExistingOperators(ML *ml );
 extern int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
 								  ML_Aggregate *ag);
 
-extern int ML_AGG_Amat_Getrows(void *data, int N_requested_rows, 
+extern int ML_AGG_Amat_Getrows(ML_Operator *data, int N_requested_rows, 
                int requested_rows[], int allocated_space, int columns[], 
                double values[], int row_lengths[]);
 extern int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,

@@ -9,7 +9,7 @@
 /* where Ke and M are ML Operators.                               */ 
 /*****************************************************************/
 
-int ML_Operator_blockmat_matvec(void *data, int inlen, double invec[],
+int ML_Operator_blockmat_matvec(ML_Operator *data, int inlen, double invec[],
 		      int outlen, double outvec[])
 {
   ML_Operator *mat;
@@ -117,7 +117,7 @@ int ML_Operator_blockmat_comm( double *x, void *data)
 /* Note: WE ASSUME THAT KE AND M HAVE 'IDENTICAL' GHOST NODES.   */
 /*****************************************************************/
 
-int ML_Operator_blockmat_getrow(void *data, int N_requested,
+int ML_Operator_blockmat_getrow(ML_Operator *data, int N_requested,
 			  int requested_rows[], int allocated,
 			  int columns[], double values[], int row_lengths[])
 {
@@ -278,28 +278,17 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
   ML_Operator_blockmat_data->vals = (double *) ML_allocate(100 * sizeof(double));
 
   /* setup matvec for diagonal part */
-  if (Ke->matvec->ML_id == ML_INTERNAL) {
-    ML_Operator_blockmat_data->Ke_matvec = Ke->matvec->internal;
-    ML_Operator_blockmat_data->Ke_matvec_data = Ke;
-  }
-  else {
-    ML_Operator_blockmat_data->Ke_matvec = Ke->matvec->external;
-    ML_Operator_blockmat_data->Ke_matvec_data = Ke->data;
-  } 
+
+  ML_Operator_blockmat_data->Ke_matvec = Ke->matvec->internal;
+  ML_Operator_blockmat_data->Ke_matvec_data = Ke;
 
   /* setup matvec for offdiagonal part */
 
   ML_Operator_blockmat_data->M_matvec = NULL;
   ML_Operator_blockmat_data->M_matvec_data = NULL;
   if (M != NULL) {
-    if (M->matvec->ML_id == ML_INTERNAL) {
-      ML_Operator_blockmat_data->M_matvec = M->matvec->internal;
-      ML_Operator_blockmat_data->M_matvec_data = M;
-    }
-    else {
-      ML_Operator_blockmat_data->M_matvec = M->matvec->external;
-      ML_Operator_blockmat_data->M_matvec_data = M->data;
-    }
+    ML_Operator_blockmat_data->M_matvec = M->matvec->internal;
+    ML_Operator_blockmat_data->M_matvec_data = M;
   } 
   ML_Operator_Set_ApplyFuncData(blockmat, scale_fact*Ke->invec_leng, 
 				scale_fact*Ke->outvec_leng, ML_INTERNAL,
@@ -308,28 +297,17 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
 				ML_Operator_blockmat_matvec,0);
 
   /* set getrow for diagonal block */
-  if (Ke->getrow->ML_id == ML_INTERNAL) {
-    ML_Operator_blockmat_data->Ke_getrow = Ke->getrow->internal;
-    ML_Operator_blockmat_data->Ke_getrow_data = Ke;
-  }
-  else {
-    ML_Operator_blockmat_data->Ke_getrow = Ke->getrow->external;
-    ML_Operator_blockmat_data->Ke_getrow_data = Ke->data;
-  }
+
+  ML_Operator_blockmat_data->Ke_getrow = Ke->getrow->internal;
+  ML_Operator_blockmat_data->Ke_getrow_data = Ke;
 
   ML_Operator_blockmat_data->M_getrow = NULL;
   ML_Operator_blockmat_data->M_getrow_data = NULL;
 
   /* set getrow for offdiagonal block */
   if (M != NULL) {
-    if (M->getrow->ML_id == ML_INTERNAL) {
-      ML_Operator_blockmat_data->M_getrow = M->getrow->internal;
-      ML_Operator_blockmat_data->M_getrow_data = M;
-    }
-    else {
-      ML_Operator_blockmat_data->M_getrow = M->getrow->external;
-      ML_Operator_blockmat_data->M_getrow_data = M->data;
-    }
+    ML_Operator_blockmat_data->M_getrow = M->getrow->internal;
+    ML_Operator_blockmat_data->M_getrow_data = M;
   }
 
   ML_Operator_Set_Getrow(blockmat, ML_INTERNAL, scale_fact*

@@ -75,7 +75,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    struct  ML_CSR_MSRdata *csr_data;
    ML_Aggregate_Comm *aggr_comm;
    ML_GetrowFunc     *getrow_obj;
-   int               (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
+   int               (*getrowfunc)(ML_Operator *,int,int*,int,int*,double*,int*);
    void              *getrowdata;
    /*MS*/
    ML_Aggregate_Viz_Stats * aggr_viz_and_stats;
@@ -164,14 +164,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* ------------------------------------------------------------- */
 
    getrow_obj = Amatrix->getrow;
-   if (getrow_obj->ML_id == ML_EXTERNAL) {
-     getrowfunc=getrow_obj->external;
-     getrowdata = Amatrix->data;
-   }
-   else {
-     getrowfunc=getrow_obj->internal;
-     getrowdata = Amatrix;
-   }
+   getrowfunc=getrow_obj->internal;
+   getrowdata = Amatrix;
    if ( getrowfunc == NULL ) 
      {
        printf("ML_Aggregate_CoarsenUncoupled ERROR : no getrow.\n");

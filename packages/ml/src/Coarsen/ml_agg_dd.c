@@ -38,7 +38,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    double  *col_val, *diagonal=NULL, dcompare1, dcompare2, *new_val=NULL;
    double  epsilon, *nullspace_vect=NULL, *qr_tmp=NULL;
    double  *tmp_vect=NULL, *work=NULL, *new_null=NULL;
-   int     (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
+   int     (*getrowfunc)(ML_Operator *,int,int*,int,int*,double*,int*);
    void    *getrowdata;
    struct ML_CSR_MSRdata *csr_data;
    ML_Aggregate_Comm     *aggr_comm;
@@ -78,14 +78,8 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    /* ============================================================= */
 
    getrow_obj = Amatrix->getrow;
-   if (getrow_obj->ML_id == ML_EXTERNAL) {
-     getrowfunc = getrow_obj->external;
-     getrowdata = Amatrix->data;
-   }
-   else {
-     getrowfunc = getrow_obj->internal;
-     getrowdata = (void *) Amatrix;
-   }
+   getrowfunc = getrow_obj->internal;
+   getrowdata = (void *) Amatrix;
    if ( getrowfunc == NULL )
    {
       printf("ML_Aggregate_DomainDecomp ERROR : null getrowfunc.\n");

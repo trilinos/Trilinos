@@ -70,12 +70,12 @@ extern int ML_OperatorAGX_Create(ML_OperatorAGX **);
 extern void ML_Operator2AGX_Destroy(void *);
 extern int ML_OperatorAGX_Destroy(ML_OperatorAGX **);
 extern int ML_OperatorAGX_Print(ML_OperatorAGX *);
-extern int ML_OperatorAGX_Restrict(void *,int,double *,int,double*);
-extern int ML_OperatorAGX_Prolongate(void *,int,double*,int,double*);
-extern int ML_OperatorAGX_Getrows(void *data, int N_requested_rows, 
+extern int ML_OperatorAGX_Restrict(ML_Operator *,int,double *,int,double*);
+extern int ML_OperatorAGX_Prolongate(ML_Operator *,int,double*,int,double*);
+extern int ML_OperatorAGX_Getrows(ML_Operator *data, int N_requested_rows, 
               int requested_rows[], int allocated_space, int columns[], 
               double values[], int row_lengths[]);
-extern int ML_OperatorAGX_Getcols(void *data, int N_requested_rows, 
+extern int ML_OperatorAGX_Getcols(ML_Operator *data, int N_requested_rows, 
               int requested_rows[], int allocated_space, int columns[], 
 	      double values[], int row_lengths[]);
 extern int ML_OperatorAGX_Gen_ComminfoOp(ML_OperatorAGX *vop, ML_Operator *Rmat,

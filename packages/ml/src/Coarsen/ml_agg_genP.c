@@ -950,7 +950,7 @@ int ML_AGG_Decrement_Two_Level(ML *ml,int current_level,void * data)
 /* getrow function for the aggregation tentative prolongator                 */
 /* ------------------------------------------------------------------------- */
 
-int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows, 
+int ML_AGG_JacobiSmoother_Getrows(ML_Operator *data, int N_requested_rows, 
    int requested_rows[], int allocated_space, int columns[], 
    double values[], int row_lengths[])
 {
@@ -1126,7 +1126,7 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
 /* getrow function for the aggregation tentative prolongator                 */
 /* ------------------------------------------------------------------------- */
 
-int ML_AGG_Amat_Getrows(void *data, int N_requested_rows, 
+int ML_AGG_Amat_Getrows(ML_Operator *data, int N_requested_rows, 
    int requested_rows[], int allocated_space, int columns[], 
    double values[], int row_lengths[])
 {
@@ -1183,7 +1183,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data)
    struct  ML_CSR_MSRdata *csr_data;
    ML_Aggregate_Comm *aggr_comm;
    ML_GetrowFunc *getrow_obj;
-   int           (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
+   int           (*getrowfunc)(ML_Operator *,int,int*,int,int*,double*,int*);
    void          *getrowdata;
    ML_Aggregate * ag = (ML_Aggregate *)data;
    
@@ -1202,14 +1202,8 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data)
    Amat     = &(ml->Amat[level]);
    Nfine    = Amat->outvec_leng;
    getrow_obj = Amat->getrow;
-   if (getrow_obj->ML_id == ML_EXTERNAL) {
-     getrowfunc = getrow_obj->external;
-     getrowdata = Amat->data;
-   }
-   else {
-     getrowfunc = getrow_obj->internal;
-     getrowdata = (void *) Amat;
-   }
+   getrowfunc = getrow_obj->internal;
+   getrowdata = (void *) Amat;
    max_nz_per_row = 100;
    col_ind = (int *)    ML_allocate( max_nz_per_row * sizeof(int) );
    col_val = (double *) ML_allocate( max_nz_per_row * sizeof(double) );
@@ -1537,12 +1531,12 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
 /* local matvec                                                              */
 /* ------------------------------------------------------------------------- */
 
-int ML_AGG_DD_Matvec(void *obj,int leng1,double p[],int leng2,double ap[])
+int ML_AGG_DD_Matvec(ML_Operator *obj,int leng1,double p[],int leng2,double ap[])
 {
    int         i, j, m, max_row_nnz=100, nRows, index, *col_ind;
    double      dtmp, *col_val;
    ML_Operator *Amat;
-   int         (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
+   int         (*getrowfunc)(ML_Operator *,int,int*,int,int*,double*,int*);
    void          *getrowdata;
    struct ML_AGG_Matrix_Context *context;
    ML_GetrowFunc                 *getrow_obj;
@@ -1558,14 +1552,8 @@ int ML_AGG_DD_Matvec(void *obj,int leng1,double p[],int leng2,double ap[])
       exit(-1);
    }
    getrow_obj = Amat->getrow;
-   if (getrow_obj->ML_id == ML_EXTERNAL) {
-     getrowfunc = getrow_obj->external;
-     getrowdata = Amat->data;
-   }
-   else {
-     getrowfunc = getrow_obj->internal;
-     getrowdata = (void *) Amat;
-   }
+   getrowfunc = getrow_obj->internal;
+   getrowdata = (void *) Amat;
    if ( getrowfunc == NULL )
    {
       printf("ML_AGG_DD_Matvec ERROR : null getrowfunc.\n");
@@ -1603,13 +1591,13 @@ int ML_AGG_DD_Matvec(void *obj,int leng1,double p[],int leng2,double ap[])
 /* local getrow                                                              */
 /* ------------------------------------------------------------------------- */
 
-int ML_AGG_DD_Getrow(void *obj,int inNrows, int *rowlist,int alloc_space, 
+int ML_AGG_DD_Getrow(ML_Operator *obj,int inNrows, int *rowlist,int alloc_space, 
                      int *col_ind, double *col_val, int *rowcnt)
 {
    int         i, count, status, nRows, *local_ind = NULL;
    double      *local_val = NULL;
    ML_Operator *Amat;
-   int         (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
+   int         (*getrowfunc)(ML_Operator *,int,int*,int,int*,double*,int*);
    void        *getrowdata;
    struct ML_AGG_Matrix_Context *context;
    ML_GetrowFunc                *getrow_obj;
@@ -1625,14 +1613,8 @@ int ML_AGG_DD_Getrow(void *obj,int inNrows, int *rowlist,int alloc_space,
    Amat    = (ML_Operator *) context->Amat;
    nRows   = Amat->outvec_leng;
    getrow_obj = Amat->getrow;
-   if (getrow_obj->ML_id == ML_EXTERNAL) {
-     getrowfunc = getrow_obj->external;
-     getrowdata = Amat->data;
-   }
-   else {
-     getrowfunc = getrow_obj->internal;
-     getrowdata = (void *) Amat;
-   }
+   getrowfunc = getrow_obj->internal;
+   getrowdata = (void *) Amat;
    if ( getrowfunc == NULL )
    {
       printf("ML_AGG_DD_Getrow ERROR : null getrowfunc.\n");
@@ -1675,20 +1657,14 @@ int ML_AGG_Extract_Diag(ML_Operator *Amat, double *diagonal)
 {
    int           i, j, m, max_row_nnz=100, nRows, *col_ind;
    double        *col_val;
-   int           (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
+   int           (*getrowfunc)(ML_Operator *,int,int*,int,int*,double*,int*);
    void        *getrowdata;
    ML_GetrowFunc *getrow_obj;
 
    nRows   = Amat->outvec_leng;
    getrow_obj = Amat->getrow;
-   if (getrow_obj->ML_id == ML_EXTERNAL) {
-     getrowfunc = getrow_obj->external;
-     getrowdata = Amat->data;
-   }
-   else {
-     getrowfunc = getrow_obj->internal;
-     getrowdata = (void *) Amat;
-   }
+   getrowfunc = getrow_obj->internal;
+   getrowdata = (void *) Amat;
 
    if ( getrowfunc == NULL )
    {
@@ -1752,20 +1728,14 @@ int ML_AGG_Extract_Matrix(ML_Operator *mat, int *ncols, int **cols,
    int           i, j, nnz, local_nrows, *col_ind, row_size, max_size;
    int           index, local_ncols, *local_cols;
    double        *col_val, **local_vals;
-   int           (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
+   int           (*getrowfunc)(ML_Operator *,int,int*,int,int*,double*,int*);
    void        *getrowdata;
    ML_GetrowFunc *getrow_obj;
 
    local_nrows = mat->outvec_leng;
    getrow_obj = mat->getrow;
-   if (getrow_obj->ML_id==ML_EXTERNAL) {
-     getrowfunc = getrow_obj->external;
-     getrowdata = mat->data;
-   }
-   else {
-     getrowfunc = getrow_obj->internal;
-     getrowdata = (void *) mat;
-   }
+   getrowfunc = getrow_obj->internal;
+   getrowdata = (void *) mat;
 
    /* ----------------------------------------------------------------- */
    /* compute number of nonzeros                                        */

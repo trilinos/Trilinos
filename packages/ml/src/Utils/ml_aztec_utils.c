@@ -174,7 +174,7 @@ int AZ_get_MSR_arrays(ML_Operator *Amat, int **bindx, double **val)
 /*                     Wrapper for Aztec matvec                            */
 /***************************************************************************/
 
-int az_matvec_wrapper(void *data,  int in, double p[], int out, double ap[])
+int az_matvec_wrapper(ML_Operator *data,  int in, double p[], int out, double ap[])
 {
    struct aztec_context *temp;
    int      i, n,n2, *data_org;
@@ -253,7 +253,7 @@ int az_wrap_ml_comm(double vector[], AZ_MATRIX *Amat)
 /*                     Wrapper for Aztec MSR getrow                        */
 /***************************************************************************/
 
-int az_msrgetrow_wrapper(void *data, int N_requested_rows, int requested_rows[],
+int az_msrgetrow_wrapper(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    struct aztec_context *context;
@@ -291,7 +291,7 @@ int az_wrap_ml_getrow(int columns[], double values[], int row_lengths[],
 /*                     Wrapper for Aztec VBR getrow                        */
 /***************************************************************************/
 
-int az_vbrgetrow_wrapper(void *data, int N_requested_rows, int requested_rows[],
+int az_vbrgetrow_wrapper(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    struct aztec_context *context;
@@ -314,7 +314,7 @@ int az_vbrgetrow_wrapper(void *data, int N_requested_rows, int requested_rows[],
 /*                     Wrapper for Aztec USER getrow                       */
 /***************************************************************************/
 
-int az_usergetrow_wrapper(void *data, int N_requested_rows, int requested_rows[],
+int az_usergetrow_wrapper(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    struct aztec_context *context;

@@ -119,11 +119,11 @@ extern void AZ_set_ML_preconditioner(AZ_PRECOND **Precond, AZ_MATRIX *Amat,
 extern int az_comm_wrapper(double vector[], void *data);
 extern int az_wrap_ml_comm(double vector[], AZ_MATRIX *Amat);
 
-extern int az_msrgetrow_wrapper(void *data, int N_requested_rows, 
+extern int az_msrgetrow_wrapper(ML_Operator *data, int N_requested_rows, 
    int requested_rows[], int allocated_space, int columns[], double values[], 
    int row_lengths[]);
 
-extern int az_vbrgetrow_wrapper(void *data, int N_requested_rows, 
+extern int az_vbrgetrow_wrapper(ML_Operator *data, int N_requested_rows, 
    int requested_rows[], int allocated_space, int columns[], double values[], 
    int row_lengths[]);
 extern int az_wrap_ml_getrow(int columns[], double values[], int row_lengths[],
@@ -131,11 +131,11 @@ extern int az_wrap_ml_getrow(int columns[], double values[], int row_lengths[],
 			     int requested_rows[], int allocated_space);
 
 
-extern int az_usergetrow_wrapper(void *data, int N_requested_rows, 
+extern int az_usergetrow_wrapper(ML_Operator *data, int N_requested_rows, 
    int requested_rows[], int allocated_space, int columns[], double values[], 
    int row_lengths[]);
 
-extern int az_matvec_wrapper(void *data, int, double p[], int, double ap[]);
+extern int az_matvec_wrapper(ML_Operator *data, int, double p[], int, double ap[]);
 
 extern void az_wrap_ml_matvec(double invec[], double outvec[], AZ_MATRIX *Amat,
 			      int proc_config[]);

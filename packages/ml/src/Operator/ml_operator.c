@@ -340,7 +340,7 @@ int ML_Operator_Set_BdryPts(ML_Operator *mat, ML_BdryPts *bc)
 
 int ML_Operator_Set_ApplyFuncData(ML_Operator *mat, int inlen, int outlen,
             int type, void *data, int nrows, 
-            int (*func)(void*,int,double*,int,double*), int flag)
+            int (*func)(ML_Operator*,int,double*,int,double*), int flag)
 {
    if ( mat->ML_id != ML_ID_OP ) {
       printf("ML_Operator_Set_ApplyFunc error : wrong object.\n");
@@ -355,8 +355,8 @@ int ML_Operator_Set_ApplyFuncData(ML_Operator *mat, int inlen, int outlen,
    mat->invec_leng = inlen;
    mat->outvec_leng = outlen;
    mat->data = data;
-   if ( type == ML_INTERNAL ) mat->matvec->internal = func;
-   else                       mat->matvec->external = func;
+   mat->matvec->internal = func;
+
    mat->matvec->ML_id = type;
    mat->matvec->Nrows = nrows;
    if ( flag != 0 ) mat->from_an_ml_operator = flag;
@@ -368,13 +368,10 @@ int ML_Operator_Set_ApplyFuncData(ML_Operator *mat, int inlen, int outlen,
 /************************************************************************/
 
 int ML_Operator_Set_ApplyFunc(ML_Operator *Op, int internal_or_external,
-                       int (*func)(void *, int, double *, int, double *))
+                       int (*func)(ML_Operator *, int, double *, int, double *))
 {
-   if (internal_or_external == ML_EXTERNAL)
-        Op->matvec->external = func;
-   else Op->matvec->internal = func;
-
-   Op->matvec->ML_id = internal_or_external;
+  Op->matvec->internal = func;
+  Op->matvec->ML_id = internal_or_external;
    return 0;
 }
 
@@ -401,14 +398,12 @@ int ML_Operator_Set_Diag(ML_Operator *Op, int size, double diagonal[])
 /* ******************************************************************** */
 
 int ML_Operator_Set_Getrow(ML_Operator *Op, int internal_or_external,
-        int size, int (*func)(void *,int,int*,int,int*,double*,int*))
+        int size, int (*func)(ML_Operator *,int,int*,int,int*,double*,int*))
 {
-   if (internal_or_external == ML_EXTERNAL)
-        Op->getrow->external = func;
-   else Op->getrow->internal = func;
-
-   Op->getrow->ML_id = internal_or_external;
-   Op->getrow->Nrows = size;
+  Op->getrow->internal = func;
+  
+  Op->getrow->ML_id = internal_or_external;
+  Op->getrow->Nrows = size;
 
    return 0;
 }
@@ -424,9 +419,10 @@ int ML_Operator_Getrow(ML_Operator *Amat, int N_requested_rows,
    if (Amat->getrow->ML_id == ML_EMPTY) 
       pr_error("ML_Operator_Getrow : Amat getrow not defined\n");
 
-   if (Amat->getrow->ML_id == ML_EXTERNAL)
+   if (Amat->getrow->ML_id == ML_EXTERNAL) {
       return(Amat->getrow->external(Amat->data,N_requested_rows,
 	requested_rows, allocated_space, columns, values, row_lengths));
+   }
    else 
       return(Amat->getrow->internal(Amat,N_requested_rows,requested_rows, 
                           allocated_space, columns, values, row_lengths));
@@ -497,8 +493,9 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, double din[], int olen,
    if (Op->matvec->ML_id == ML_EMPTY)
       pr_error("ML_Operator_Apply error : matvec not defined\n");
 
-   if (Op->matvec->ML_id == ML_EXTERNAL)
+   if (Op->matvec->ML_id == ML_EXTERNAL) {
         Op->matvec->external(Op->data, inlen, din, olen, dout);
+   }
    else Op->matvec->internal(Op,       inlen, din, olen, dout);
 
 #if defined(ML_TIMING) || defined(ML_FLOPS)
@@ -528,8 +525,9 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
       pr_error("ML_Operator_ApplyAndRestBdryPts : matvec not defined.\n");
 
    /* apply grid transfer */
-      if (Op->matvec->ML_id == ML_EXTERNAL)
+   if (Op->matvec->ML_id == ML_EXTERNAL) {
         Op->matvec->external((void*)Op->data, inlen, din, olen, dout);
+   }
    else Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
 
    /* apply boundary condition */
@@ -713,7 +711,7 @@ double ML_Operator_MaxNorm(ML_Operator *matrix, int divide_diag)
 /* properly set up the data structure (data).                           */
 /* ******************************************************************** */
 
-int ML_amalg_drop_getrow(void *data, int N_requested_rows, int requested_rows[],
+int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    struct amalg_drop *temp;
@@ -1599,9 +1597,7 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
 
    /* apply grid transfer */
    if (Op->matvec->ML_id == ML_EXTERNAL)
-{
         Op->matvec->external((void*)Op->data, inlen, din, olen, dout);
-}
    else {
      Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
 }
@@ -1644,8 +1640,8 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, Epetra_MultiVector &ep_din,
       pr_error("ML_Operator_Apply error : matvec not defined\n");
 
 
-   if (Op->matvec->ML_id == ML_EXTERNAL) {
-      if ( (void *)Op->matvec->external == (void *)Epetra_ML_matvec )
+   if (Op->matvec->ML_id == ML_INTERNAL) {
+      if ( (void *)Op->matvec->internal == (void *)Epetra_ML_matvec )
 /* WKC  Call the new blocked function!! */
          Epetra_ML_matvec_WKC ( Op->data, inlen, (double *)&ep_din, olen,
                                 (double *)&ep_dout );
@@ -1655,7 +1651,7 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, Epetra_MultiVector &ep_din,
             double *din = pp_din[KK];
             double *dout = pp_dout[KK];
 
-            Op->matvec->external(Op->data, inlen, din, olen, dout);
+            Op->matvec->internal(Op->data, inlen, din, olen, dout);
          }
    } else { 
       if ( (void *)Op->matvec->internal == (void *) MSR_matvec )

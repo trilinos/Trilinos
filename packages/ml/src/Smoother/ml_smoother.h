@@ -103,7 +103,7 @@ struct ML_Sm_ILUT_Data_Struct
 };
 struct DinvA_widget {
   int ML_id;
-  int (*internal)(void *, int, double *, int, double *);
+  int (*internal)(ML_Operator *, int, double *, int, double *);
   int (*external)(void *, int, double *, int, double *);
   void *data;
   ML_Operator *Amat;

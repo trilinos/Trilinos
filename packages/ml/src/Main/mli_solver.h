@@ -116,8 +116,8 @@ int MLI_SWait(void* buf, unsigned int count, int *src, int *mid,
 int MLI_Send(void* buf, unsigned int count, int dest, int mid, ML_MPI_Comm comm );
 int MLI_SSend(void* buf, unsigned int count, int dest, int mid, ML_MPI_Comm comm );
 int MLI_CSRExchBdry(double *vec, void *obj);
-int MLI_CSRMatVec(void *obj, int leng1, double p[], int leng2, double ap[]);
-int MLI_CSRGetRow(void *obj, int N_requested_rows, int requested_rows[],
+int MLI_CSRMatVec(ML_Operator *obj, int leng1, double p[], int leng2, double ap[]);
+int MLI_CSRGetRow(ML_Operator *obj, int N_requested_rows, int requested_rows[],
     int allocated_space, int columns[], double values[], int row_lengths[]);
 void MLI_Solver_Read_IJAFromFile(double **val, int **ia, int **ja, int *N,
                                 double **rhs, char *matfile, char *rhsfile);

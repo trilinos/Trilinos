@@ -15,16 +15,16 @@
 struct ML_Operator_blockmat_data {
   /* Ke functions for matvec & getrow */
 
-  int (*Ke_matvec)(void *, int, double *, int, double *);
-  int (*Ke_getrow)(void *,int,int*,int,int*,double*,int*);
+  int (*Ke_matvec)(ML_Operator *, int, double *, int, double *);
+  int (*Ke_getrow)(ML_Operator *,int,int*,int,int*,double*,int*);
   void *Ke_matvec_data, *Ke_getrow_data, *Ke_comm_data;
   double *Ke_diag;
 
   /* M functions for matvec, getrow. NOTE: it is assumed    */
   /* that M's communication is identical to Ke's.           */
 
-  int (*M_matvec)(void *, int, double *, int, double *);
-  int (*M_getrow)(void *,int,int*,int,int*,double*,int*);
+  int (*M_matvec)(ML_Operator *, int, double *, int, double *);
+  int (*M_getrow)(ML_Operator *,int,int*,int,int*,double*,int*);
   void *M_matvec_data, *M_getrow_data;
   double *M_diag;
   ML_Operator *M_mat;
@@ -42,9 +42,9 @@ extern "C" {
 #endif
 #endif
 
-extern int ML_Operator_blockmat_matvec(void *, int , double *, int, double *);
+extern int ML_Operator_blockmat_matvec(ML_Operator *, int , double *, int, double *);
 extern int ML_Operator_blockmat_comm( double *x, void *data);
-extern int ML_Operator_blockmat_getrow(void *, int, int *, int, int *, 
+extern int ML_Operator_blockmat_getrow(ML_Operator *, int, int *, int, int *, 
 				       double *, int *);
 extern int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, 
 				     ML_Operator *original1,

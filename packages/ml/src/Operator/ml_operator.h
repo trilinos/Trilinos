@@ -46,7 +46,7 @@ typedef struct ML_GetrowFunc_Struct ML_GetrowFunc;
 struct ML_Function_Struct {
    int ML_id;
    int Nrows;
-   int (*internal)(void *, int, double *, int, double *);
+   int (*internal)(ML_Operator *, int, double *, int, double *);
    int (*external)(void *, int, double *, int, double *);
 };
 
@@ -60,7 +60,7 @@ struct ML_GetrowFunc_Struct {
    int           Nrows;
    ML_CommInfoOP *pre_comm;
    ML_CommInfoOP *post_comm;
-   int           (*internal)(void *,int,int*,int,int*,double*,int*);
+   int           (*internal)(ML_Operator *,int,int*,int,int*,double*,int*);
    int           (*external)(void *,int,int*,int,int*,double*,int*);
    void          *data;
    int           use_loc_glob_map;
@@ -173,12 +173,12 @@ extern int ML_Operator_Set_Label(ML_Operator *, char *str);
 extern int ML_Operator_Set_1Levels(ML_Operator *, ML_1Level*, ML_1Level*);
 extern int ML_Operator_Set_BdryPts(ML_Operator *, ML_BdryPts *);
 extern int ML_Operator_Set_ApplyFuncData(ML_Operator *, int, int, int, void*,
-                      int,int (*func)(void*,int,double*,int,double*),int);
+                      int,int (*func)(ML_Operator *,int,double*,int,double*),int);
 extern int ML_Operator_Set_ApplyFunc(ML_Operator *, int, 
-                       int (*func)(void *, int, double *, int, double *));
+                       int (*func)(ML_Operator *, int, double *, int, double *));
 extern int ML_Operator_Set_Diag(ML_Operator *, int, double *);
 extern int ML_Operator_Set_Getrow(ML_Operator *, int, int, 
-                       int (*func)(void *,int,int*,int,int*,double*,int*));
+                       int (*func)(ML_Operator *,int,int*,int,int*,double*,int*));
 
 extern int ML_Operator_Getrow(ML_Operator *, int, int *, int, int *, 
                               double *, int*);
@@ -220,7 +220,7 @@ extern int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
 extern int ML_Operator_UnAmalgamateAndDropWeak(ML_Operator *Amat, 
 		int block_size, double drop_tolerance);
 
-extern int ML_amalg_drop_getrow(void *data, int N_requested_rows, 
+extern int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, 
 		int requested_rows[], int allocated_space, int columns[], 
                 double values[], int row_lengths[]);
 

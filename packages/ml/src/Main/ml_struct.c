@@ -599,7 +599,7 @@ int ML_Init_Amatrix(ML *ml, int level, int ilen, int olen, void *data)
 /* ------------------------------------------------------------------------- */
 
 int MLnew_Set_Amatrix_Matvec(ML *ml, int level,
-                      int (*matvec)(void *, int, double *, int, double *))
+                      int (*matvec)(ML_Operator *, int, double *, int, double *))
 {
    ML_Operator *matrix;
    matrix = &(ml->Amat[level]);
@@ -623,7 +623,7 @@ int ML_Set_Amatrix_Diag(ML *ml, int nl, int size, double diagonal[])
 /* ------------------------------------------------------------------------- */
 
 int MLnew_Set_Amatrix_Getrow(ML *ml, int nl,
-        int (*getrow)(void *, int , int* , int , int*, double* , int*),
+        int (*getrow)(ML_Operator *, int , int* , int , int*, double* , int*),
 	int (*comm  )(double *vec, void *data), int comm_vec_leng )
 {
    ML_Operator *Amat;
@@ -702,7 +702,7 @@ int ML_Init_Restrictor(ML *ml, int level, int level2, int ilen, int olen,
 /* ------------------------------------------------------------------------- */
 
 int MLnew_Set_Restrictor_Matvec( ML *ml , int from_level,
-	int (*func) (void *, int, double *, int, double *))
+	int (*func) (ML_Operator *, int, double *, int, double *))
 {
    ML_Operator *matrix;
    matrix = &(ml->Rmat[from_level]);
@@ -713,7 +713,7 @@ int MLnew_Set_Restrictor_Matvec( ML *ml , int from_level,
 /* ------------------------------------------------------------------------- */
 
 int MLnew_Set_Restrictor_Getrow(ML *ml, int nl,
-        int (*getrow)(void *, int , int* , int , int*, double* , int*),
+        int (*getrow)(ML_Operator *, int , int* , int , int*, double* , int*),
         int (*comm  )(double *vec, void *data), int comm_vec_leng )
 {
    ML_Operator *Rmat;
@@ -779,7 +779,7 @@ int ML_Init_Prolongator(ML *ml, int level, int level2, int ilen, int olen,
 /* ------------------------------------------------------------------------- */
 
 int MLnew_Set_Prolongator_Matvec( ML *ml , int to_level,
-	int (*func) (void *, int, double *, int, double *))
+	int (*func) (ML_Operator *, int, double *, int, double *))
 {
    ML_Operator *matrix;
    matrix = &(ml->Pmat[to_level]);
@@ -790,7 +790,7 @@ int MLnew_Set_Prolongator_Matvec( ML *ml , int to_level,
 /* ------------------------------------------------------------------------- */
 
 int MLnew_Set_Prolongator_Getrow(ML *ml, int nl,
-        int (*getrow)(void *, int , int* , int , int*, double* , int*),
+        int (*getrow)(ML_Operator *, int , int* , int , int*, double* , int*),
         int (*comm  )(double *vec, void *data), int comm_vec_leng )
 {
    ML_Operator *Pmat;
@@ -2039,7 +2039,6 @@ int ML_Gen_BlockScaledMatrix_with_Eigenvalues(ML_Operator *Amat,
 				ML_EMPTY,
 				widget,Amat->outvec_leng, NULL,0);
   ML_Operator_Set_ApplyFunc (*blockMat, ML_INTERNAL, 
-			     (int (*)(void*,int,double*,int,double*))
 			     ML_BlockScaledApply);
 
   widget->scaled_matrix = *blockMat;

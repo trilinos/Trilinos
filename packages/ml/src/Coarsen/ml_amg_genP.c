@@ -282,7 +282,7 @@ int ML_AMG_Decrement_Level(ML *ml, int current_level, ML_Operator *Amat,
 /* getrow function for identity matrix                                       */
 /* ------------------------------------------------------------------------- */
 
-int ML_AMG_Identity_Getrows(void *data, int N_requested_rows, 
+int ML_AMG_Identity_Getrows(ML_Operator *data, int N_requested_rows, 
            int requested_rows[], int allocated_space, int columns[], 
            double values[], int row_lengths[])
 {

@@ -179,7 +179,7 @@ void ML_Scale_CSR(ML_Operator *input_matrix, double scale_factors[],
 /*                  more space is needed, return 0.                  */
 /*********************************************************************/
 
-int MSR_getrows(void *data, int N_requested_rows, int requested_rows[],
+int MSR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    int    *bindx, j, row, start, finish;
@@ -219,7 +219,7 @@ int MSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    return(1);
 }
 
-int MSR_get_ones_rows(void *data, int N_requested_rows, int requested_rows[],
+int MSR_get_ones_rows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    int    *bindx, j, row, start, finish;
@@ -286,7 +286,7 @@ int CSR_getrows(void *data, int N_requested_rows, int requested_rows[],
    return(1);
 }
 
-int CSR_getrow(void *data, int N_requested_rows, int requested_rows[],
+int CSR_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    register int    *bindx, j;
@@ -320,7 +320,7 @@ int CSR_getrow(void *data, int N_requested_rows, int requested_rows[],
 }
 
 /* single precision version to save storage */
-int sCSR_getrows(void *data, int N_requested_rows, int requested_rows[],
+int sCSR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    register int    *bindx, j;
@@ -356,7 +356,7 @@ int sCSR_getrows(void *data, int N_requested_rows, int requested_rows[],
 
 /* really cheap matrix format for null space within   */
 /* edge element AMG (which contains only + or -1's).  */   
-int cCSR_getrows(void *data, int N_requested_rows, int requested_rows[],
+int cCSR_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    register int    *bindx, j;
@@ -424,7 +424,7 @@ int cCSR_getrows(void *data, int N_requested_rows, int requested_rows[],
 /* getrows() function for a vector (i.e. matrix with 1 column).      */
 /*********************************************************************/
 
-int VECTOR_getrows(void *mat_in, int N_requested_rows, int requested_rows[],
+int VECTOR_getrows(ML_Operator *mat_in, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    double *temp;
@@ -472,7 +472,7 @@ int VECTOR_getrows(void *mat_in, int N_requested_rows, int requested_rows[],
 /* allocated_space  On input, indicates the space available in       */
 /*********************************************************************/
 
-int VBR_cnst_blk_getrows(void *data, int N_requested_rows, int requested_rows[],
+int VBR_cnst_blk_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    struct ML_vbrdata *input_matrix;
@@ -524,7 +524,7 @@ int VBR_cnst_blk_getrows(void *data, int N_requested_rows, int requested_rows[],
 /* matvec in MSR format                                              */
 /*********************************************************************/
 
-int MSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+int MSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[])
 {
   int i, j, Nrows, *bindx;
    double            *p2, *val, sum;
@@ -601,7 +601,7 @@ int MSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 *                                                                    * 
 *********************************************************************/
 
-int CSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+int CSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[])
 {
 
    int i, jj, k, /* Nrows,*/ *bindx;
@@ -672,7 +672,7 @@ int CSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
   return(1);
 }
 
-int sCSR_trans_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+int sCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[])
 {
 
    int i, jj, k, /* Nrows,*/ *bindx;
@@ -746,7 +746,7 @@ int sCSR_trans_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[]
   return(1);
 }
 
-int cCSR_trans_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+int cCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[])
 {
 
    int i, jj, k, /* Nrows,*/ *bindx;
@@ -821,7 +821,7 @@ int cCSR_trans_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[]
   return(1);
 }
 
-int sCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+int sCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[])
 {
 
    int i, jj, k, /* Nrows,*/ *bindx;
@@ -896,7 +896,7 @@ int sCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 }
 
 /* really cheap matvec for null space within edge element AMG */
-int cCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+int cCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[])
 {
 
    int i, jj, k, /* Nrows,*/ *bindx;
@@ -973,7 +973,7 @@ int cCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 
 /******************************************************************************/
 
-int CSR_densematvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+int CSR_densematvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[])
 {
 
            int i, jj, k, k2; /* Nrows,*/
@@ -1060,7 +1060,7 @@ int CSR_densematvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 
 /******************************************************************************/
 
-int CSR_ones_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+int CSR_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[])
 {
 
    int i, jj, k, /* Nrows,*/ *bindx;
@@ -1223,7 +1223,7 @@ int ML_Matrix_DCSR_Set_Comm(ML_Matrix_DCSR *mat,ML_CommInfoOP *comminfo,
 /* get a single row                                                       */
 /* ---------------------------------------------------------------------- */
 
-int ML_Matrix_DCSR_Getrow(void *mat_in, int N_req_rows, int req_rows[],
+int ML_Matrix_DCSR_Getrow(ML_Operator *mat_in, int N_req_rows, int req_rows[],
         int allocated, int columns[], double values[], int row_lengths[])
 {
    int             *rowptr,  row, itemp;
@@ -1255,7 +1255,7 @@ int ML_Matrix_DCSR_Getrow(void *mat_in, int N_req_rows, int req_rows[],
 /* matvec in CSR format                                                   */
 /* ---------------------------------------------------------------------- */
 
-int ML_Matrix_DCSR_Matvec(void *mat_in,int ilen,double *x,int olen,double y[])
+int ML_Matrix_DCSR_Matvec(ML_Operator *mat_in,int ilen,double *x,int olen,double y[])
 {
    int             i, k, Nrows, *bindx, nbytes;
    double          *y2, *val, sum;
@@ -1354,7 +1354,7 @@ int ML_MSR2CSR(struct ML_CSR_MSRdata *csr_data, int Nrows, int *Ncolumns)
 /*********************************************************************/
 /* matvec in MSR format                                              */
 /*********************************************************************/
-int MSR_matvec_WKC(void *Amat_in, int ilen, double *ep_p, int olen, double *ep_ap)
+int MSR_matvec_WKC(ML_Operator *Amat_in, int ilen, double *ep_p, int olen, double *ep_ap)
 {
    int i, j, Nrows, *bindx;
    double            **big_p;

@@ -276,7 +276,7 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
    int Nneighbors, *neigh_list, *send_list, *rcv_list, Nsend, Nrcv;
    void *data = NULL;
    double *valbuf, *vals;
-   int (*getrow)(void* , int , int *, int , int *, double *, int *) = NULL;
+   int (*getrow)(ML_Operator* , int , int *, int , int *, double *, int *) = NULL;
    struct ML_CSR_MSRdata *temp;
    int Nghost = 0, Nghost2 = 0;
    int *remap, remap_leng;
@@ -291,15 +291,8 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
    Rmat  = &(ml_handle->Rmat[level]);
    isize = Pmat->outvec_leng;
    osize = Pmat->invec_leng;
-   if (Pmat->getrow->ML_id == ML_EXTERNAL) {
-       data   = Pmat->data;
-       getrow = Pmat->getrow->external;
-   }
-   else if (Pmat->getrow->ML_id == ML_INTERNAL) {
-       data   = (void *) Pmat;
-       getrow = Pmat->getrow->internal;
-   }
-   else perror("ML_Gen_Restrictor_TransP: Getrow not defined for P!\n");
+   data   = (void *) Pmat;
+   getrow = Pmat->getrow->internal;
 
    /* transpose Pmat's communication list. This means that PRE communication */
    /* is replaced by POST, ML_OVERWRITE is replaced by ML_ADD, and the send  */
@@ -637,7 +630,7 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
    int Nneighbors, *neigh_list, *send_list, *rcv_list, Nsend, Nrcv;
    void *data = NULL;
    double *valbuf, *vals;
-   int (*getrow)(void* , int , int *, int , int *, double *, int *) = NULL;
+   int (*getrow)(ML_Operator* , int , int *, int , int *, double *, int *) = NULL;
    struct ML_CSR_MSRdata *temp;
    int Nghost = 0, Nghost2 = 0;
    int *remap, remap_leng;
@@ -646,15 +639,8 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
    temp = (struct ML_CSR_MSRdata *) Amat->data;
    isize = Amat->outvec_leng;
    osize = Amat->invec_leng;
-   if (Amat->getrow->ML_id == ML_EXTERNAL) {
-       data   = Amat->data;
-       getrow = Amat->getrow->external;
-   }
-   else if (Amat->getrow->ML_id == ML_INTERNAL) {
-       data   = (void *) Amat;
-       getrow = Amat->getrow->internal;
-   }
-   else perror("ML_Operator_Transpose: Getrow not defined for P!\n");
+   data   = (void *) Amat;
+   getrow = Amat->getrow->internal;
 
    /* transpose Amat's communication list. This means that PRE communication */
    /* is replaced by POST, ML_OVERWRITE is replaced by ML_ADD, and the send  */
@@ -849,7 +835,7 @@ int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans)
 /* Getrow function for the identity matrix.                             */
 /*----------------------------------------------------------------------*/
 
-int eye_getrows(void *data, int N_requested_rows, int requested_rows[],
+int eye_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
                 int allocated_space, int columns[], double values[],
 				int row_lengths[])
 {
@@ -873,7 +859,7 @@ int eye_getrows(void *data, int N_requested_rows, int requested_rows[],
 /* Matvec function for the identity matrix.                             */
 /*----------------------------------------------------------------------*/
 
-int eye_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+int eye_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[])
 {
   int i;
 
@@ -1211,8 +1197,8 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
 
   if ( Pmat->getrow == NULL) return 1;
 
-  if ( (Pmat->getrow->external != sCSR_getrows) &&
-       (Pmat->getrow->external != cCSR_getrows)) return 1;
+  if ( (Pmat->getrow->internal != sCSR_getrows) &&
+       (Pmat->getrow->internal != cCSR_getrows)) return 1;
 
   if (PostCommAlreadySet == ML_FALSE) {
     if (Rmat->getrow->post_comm != NULL)
@@ -1221,7 +1207,7 @@ int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
 			    Pmat->invec_leng);
   }
 
-  if (Pmat->getrow->external == sCSR_getrows)
+  if (Pmat->getrow->internal == sCSR_getrows)
     ML_Operator_Set_ApplyFuncData(Rmat, Pmat->outvec_leng,
 				Pmat->invec_leng, ML_INTERNAL,
 				Pmat->data, -1, sCSR_trans_matvec, 0);

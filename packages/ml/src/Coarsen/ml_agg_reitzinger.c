@@ -48,7 +48,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   double droptol;
   int *num_msgs, *tmp_msgs, *Nsnd_info, *Nrcv_info, type, partner;
   int *tmp1, *tmp2, Nlocal, Nneighbors_rcv, Nneighbors_snd, new_length;
-  int (*tmp_fun)(void *, int, double *, int, double *);
+  int (*tmp_fun)(ML_Operator *, int, double *, int, double *);
 
   double *new_Tfine_Pn_vec;
   USR_REQ         *request;

@@ -2723,7 +2723,7 @@ int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 {
    int           i, j, k, m, jnode, length, count, nz_cnt, *mat_indx;
    int           Nrows, exp_Nrows, nbytes, maxnnz_per_row=500, *col_ind;
-   int           (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
+   int           (*getrowfunc)(ML_Operator *,int,int*,int,int*,double*,int*);
    void          *getrowdata;
    int           *bc_array;
    double        *diagonal, *dble_buf, *col_val, dcompare1, dcompare2;
@@ -2735,14 +2735,8 @@ int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ============================================================= */
 
    getrow_obj = Amatrix->getrow;
-   if (getrow_obj->ML_id == ML_EXTERNAL) {
-     getrowfunc = getrow_obj->external;
-     getrowdata = Amatrix->data;
-   }
-   else {
-     getrowfunc = getrow_obj->internal;
-     getrowdata = (void *) Amatrix;
-   }
+   getrowfunc = getrow_obj->internal;
+   getrowdata = (void *) Amatrix;
    if ( getrowfunc == NULL )
    {
       printf("ML_Graph_CreateFromMatrix ERROR : null getrowfunc.\n");

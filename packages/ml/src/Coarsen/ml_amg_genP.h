@@ -45,7 +45,7 @@ extern int ML_AMG_Gen_MGHierarchy(ML *, int fine_level,
 extern int ML_AMG_Gen_Prolongator(ML*,int ,int,void *data,ML_AMG*);
 extern int ML_AMG_Increment_Level(ML *,int level,ML_Operator *Amat,ML_AMG*);
 extern int ML_AMG_Decrement_Level(ML *,int level,ML_Operator *Amat,ML_AMG*);
-extern int ML_AMG_Identity_Getrows(void *data, int N_requested_rows, 
+extern int ML_AMG_Identity_Getrows(ML_Operator *data, int N_requested_rows, 
                int requested_rows[], int allocated_space, int columns[], 
                double values[], int row_lengths[]);
 
