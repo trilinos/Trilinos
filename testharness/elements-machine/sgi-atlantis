@@ -4,4 +4,4 @@ CXXFLAGS="-O2 -64 -LANG:std  -LANG:ansi-for-init-scope=ON
 -ptused -DMPI_NO_CPPBIND" 
 LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:std"
 --with-libs=/scratch1/jmwille/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a
---with-incdirs=-I/scratch1/jmwille/Trilinos3PL/DSCPACK1.0
+--with-incdirs=-I/scratch1/jmwille/Trilinos3PL/DSCPACK1.0/DSC_LIB
