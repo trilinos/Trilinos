@@ -36,11 +36,41 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
   vector<int> Indices(MaxNumEntries());
   
   // load root node for partition 0
-  vector<int> ThisLevel(1);
-  ThisLevel[0] = RootNode_;
   int CurrentPartition = 0;
   int TotalCount = 0;
 
+  // filter singletons and empty rows, put all of them in partition 0
+  for (int i = 0 ; i < NumMyRows() ; ++i) {
+    int NumEntries = 0;
+    int ierr = Graph_->ExtractMyRowCopy(i, MaxNumEntries(),
+                                        NumEntries, &Indices[0]);
+    IFPACK_CHK_ERR(ierr);
+    if (NumEntries <= 1) {
+      Partition_[i] = 0;
+      TotalCount++;
+    }
+  }
+
+  if (TotalCount)
+    CurrentPartition = 1;
+
+  vector<int> ThisLevel(1);
+  ThisLevel[0] = RootNode_;
+
+  // be sure that RootNode is not a singleton or empty row
+  if (Partition_[RootNode_] != -1) {
+    // look for another RN
+    for (int i = 0 ; i < NumMyRows() ; ++i)
+      if (Partition_[i] == -1) {
+        ThisLevel[0] = i;
+        break;
+      }
+  }
+  else {
+    Partition_[RootNode_] = CurrentPartition;
+  }
+
+  // now aggregate the non-empty and non-singleton rows
   while (ThisLevel.size()) {
 
     vector<int> NextLevel;
@@ -52,11 +82,15 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
                                           NumEntries, &Indices[0]);
       IFPACK_CHK_ERR(ierr);
 
+      if (NumEntries <= 1)
+        continue;
+
       for (int j = 0 ; j < NumEntries ; ++j) {
 
         int NextNode = Indices[j];
         if (Partition_[NextNode] == -1) {
           // this is a free node
+          NumLocalParts_ = CurrentPartition + 1;
           Partition_[NextNode] = CurrentPartition;
           ++Count[CurrentPartition];
           ++TotalCount;
@@ -85,6 +119,7 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
 
   } // while (ok)
 
+  cout << NumLocalParts_ << endl;
   return(0);
 }
 
