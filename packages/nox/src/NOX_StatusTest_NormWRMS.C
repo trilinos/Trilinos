@@ -145,8 +145,8 @@ StatusType NormWRMS::checkStatus(const Solver::Generic& problem)
   // u = Cp * u @ v (where @ represents an elementwise multiply)
   u->scale(*v);
 
-  // tmp = sqrt (factor * u * u / N)
-  value = u->norm() * sqrt( factor / static_cast<double>(u->length()));
+  // tmp = factor * sqrt (u * u / N)
+  value = u->norm() * factor / sqrt(static_cast<double>(u->length()));
 
   StatusType status1 = Unconverged;
   if (value < tolerance)
