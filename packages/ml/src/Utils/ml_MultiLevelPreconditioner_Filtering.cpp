@@ -66,12 +66,15 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 
   string Pre(Prefix_);
 
+  bool ok = false;
   // some options have both names, `filtering' and `ggb'.
   sprintf(parameter,"%sggb: enable", Prefix_);
-  if( ! List_.get(parameter,false) ) return -1;
+  ok = List_.get(parameter,false);
   
-  sprintf(parameter,"%sfiltering: enable", Prefix_);
-  if( ! List_.get(parameter,false) ) return -1;
+  if( ok == false ) {
+    sprintf(parameter,"%sfiltering: enable", Prefix_);
+    if( ! List_.get(parameter,false) ) return -1;
+  }
 
   sprintf(parameter,"%sfiltering: use symmetric cycle", Prefix_);
   bool FltUseSym = List_.get(parameter,false);
@@ -288,7 +291,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
       flt_MatrixData_ = new(struct ML_CSR_MSRdata);
 
       ML_GGB2CSR(flt_NullSpace_,NumRealEigenvectors+NumImagEigenvectors,
-		 NumMyRows(), flt_MatrixData_, 0);
+		 NumMyRows(), Comm().MyPID(), flt_MatrixData_, 0);
 	
       // now build the correction to be added to the ML cycle
 	
