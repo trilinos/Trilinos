@@ -3,6 +3,7 @@
 #define _MLREADER_
 
 #include <stdio.h>
+#include "ml_memory.h"
 
 struct reader_context {
    int id;
