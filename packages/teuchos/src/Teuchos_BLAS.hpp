@@ -46,17 +46,21 @@
 #ifndef _TEUCHOS_BLAS_HPP_
 #define _TEUCHOS_BLAS_HPP_
 
+/*! \file Teuchos_BLAS.hpp
+    \brief Templated interface class to BLAS routines.
+*/
+
 #include "Teuchos_BLAS_wrappers.hpp"
 #include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 
-namespace Teuchos
-{
-//! Teuchos::BLAS: The Templated BLAS Class.
-/*! The Teuchos::BLAS class provides functionality similar to the BLAS
+/*! \class Teuchos::BLAS
+    \brief The Templated BLAS Wrapper Class.
+
+    The Teuchos::BLAS class provides functionality similar to the BLAS
     (Basic Linear Algebra Subprograms).  The BLAS provide portable, high-
-    performance implementations of kernels such as dense vectoer multiplication,
+    performance implementations of kernels such as dense vector multiplication,
     dot products, dense matrix-vector multiplication and dense matrix-matrix
     multiplication.
 
@@ -67,7 +71,7 @@ namespace Teuchos
     C++ to Fortran translation.
 
     In addition to giving access the standard BLAS functionality.
-    Teuchos::BLAS also provide functionality for any <scalarType> class that
+    Teuchos::BLAS also provide functionality for any <ScalarType> class that
     defines the +, - * and / operators.
 
     Teuchos::BLAS is a single memory image interface only.  This is appropriate 
@@ -84,6 +88,8 @@ namespace Teuchos
     </ol>
 */
 
+namespace Teuchos
+{
   extern const char ESideChar[];
   extern const char ETranspChar[];
   extern const char EUploChar[];
@@ -95,41 +101,72 @@ namespace Teuchos
   public:
     //@{ \name Constructor/Destructor.
 
-    //! Teuchos::BLAS empty constructor.
+    //! Default constructor.
     inline BLAS(void) {};
 
-    //! Teuchos::BLAS copy constructor.
+    //! Copy constructor.
     inline BLAS(const BLAS& BLAS_source) {};
 
-    //! Teuchos::BLAS destructor.
+    //! Destructor.
     inline virtual ~BLAS(void) {};
     //@}
 
     //@{ \name Level 1 BLAS Routines.
+
+    //! Computes a Givens plane rotation.
     void ROTG(ScalarType* da, ScalarType* db, ScalarType* c, ScalarType* s);
+
+    //! Scale the vector \c x by the constant \c alpha.
     void SCAL(const OrdinalType n, const ScalarType alpha, ScalarType* x, const OrdinalType incx);
+
+    //! Copy the vector \c x to the vector \c y.
     void COPY(const OrdinalType n, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy);
+
+    //! Perform the operation: \c y \c <- \c y+alpha*x.
     void AXPY(const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy);
+
+    //! Sum the absolute values of the entries of \c x.
     ScalarType ASUM(const OrdinalType n, const ScalarType* x, const OrdinalType incx);
+
+    //! Form the dot product of the vectors \c x and \c y.
     ScalarType DOT(const OrdinalType n, const ScalarType* x, const OrdinalType incx, const ScalarType* y, const OrdinalType incy);
+
+    //! Compute the 2-norm of the vector \c x.
     ScalarType NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx);
+
+    //! Return the index of the element of \c x with the maximum magnitude.
     OrdinalType IAMAX(const OrdinalType n, const ScalarType* x, const OrdinalType incx);
+
     //@}
 
     //@{ \name Level 2 BLAS Routines.
+
+    //! Performs the matrix-vector operation:  \c y \c <- \c alpha*A*x+beta*y or \c y \c <- \c alpha*A'*x+beta*y where \c A is a general \c m by \c n matrix.
     void GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, 
 	      const OrdinalType lda, const ScalarType* x, const OrdinalType incx, const ScalarType beta, ScalarType* y, const OrdinalType incy);
+
+    //! Performs the matrix-vector operation:  \c x \c <- \c A*x or \c x \c <- \c A'*x where \c A is a unit/non-unit \c n by \c n upper/lower triangular matrix.
     void TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const ScalarType* A, 
 	      const OrdinalType lda, ScalarType* x, const OrdinalType incx);
+
+    //! Performs the rank 1 operation:  \c A \c <- \c alpha*x*y'+A.
     void GER(const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, 
 	     const ScalarType* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda);
     //@}
     
     //@{ \name Level 3 BLAS Routines. 
+
+    //! Performs the matrix-matrix operation: \c C \c <- \c alpha*op(A)*op(B)+beta*C where \c op(A) is either \c A or \c A', \c op(B) is either \c B or \c B', and C is an \c m by \c k matrix.
     void GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc);
+
+    //! Performs the matrix-matrix operation: \c C \c <- \c alpha*A*B+beta*C or \c C \c <- \c alpha*B*A+beta*C where \c A is an \c m by \c m or \c n by \c n symmetric matrix and \c B is a general matrix.
     void SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc);
+
+    //! Performs the matrix-matrix operation: \c C \c <- \c alpha*op(A)*B+beta*C or \c C \c <- \c alpha*B*op(A)+beta*C where \c op(A) is an unit/non-unit, upper/lower triangular matrix and \c B is a general matrix.
     void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n,
                 const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb);
+
+    //! Solves the matrix equations:  \c op(A)*X=alpha*B or \c X*op(A)=alpha*B where \c X and \c B are \c m by \c n matrices, \c A is a unit/non-unit, upper/lower triangular matrix and \c op(A) is \c A or \c A'.  The matrix \c X is overwritten on \c B.
     void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n,
                 const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb);
     //@}
