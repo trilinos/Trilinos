@@ -4,7 +4,6 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_PointPreconditioner.h"
-#include "Teuchos_ParameterList.hpp"
 class Epetra_MultiVector;
 class Epetra_Vector;
 class Epetra_Map;
