@@ -38,6 +38,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
 // #include "CrsMatrixTranspose.h"
+#include "Epetra_Time.h"
 
 int Superludist_NumProcRows( int NumProcs ) {
 #ifdef TFLOP
@@ -77,7 +78,7 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob ) :
     vecXdistributed_(0),
     nprow_(0),
     npcol_(0),
-    PrintStat_(true),
+    PrintNonzeros_(false),
     ColPerm_("MMD_AT_PLUS_A"),
     RowPerm_("NATURAL"),
     perm_c_(0),
@@ -86,7 +87,15 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob ) :
     ReplaceTinyPivot_(false),
     FactorizationOK_(false), 
     UseTranspose_(false),
-    PrintStatistics_(false)
+    PrintStatus_(false),
+    PrintTiming_(false),    
+    verbose_(1),
+    debug_(0),
+    NumTime_(0.0),
+    SolveTime_(0.0),
+    NumSymbolicFact_(0),
+    NumNumericFact_(0),
+    NumSolve_(0)
 {
 
   Problem_ = &prob ; 
@@ -99,8 +108,9 @@ Amesos_Superludist::~Amesos_Superludist(void) {
 
   // print out the value of used parameters.
   // This is defaulted to no.
-  
-  if( PrintStatistics_ ) PrintStatistics();
+
+  if( PrintTiming_ ) PrintTiming();
+  if( PrintStatus_ ) PrintStatus();
   
   if ( FactorizationDone_ ) {
     SUPERLU_FREE( SuperluA_.Store );
@@ -136,6 +146,8 @@ Amesos_Superludist::~Amesos_Superludist(void) {
 //
 int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
+  if( debug_ == 1 ) cout << "Entering `SetParameters()' ..." << endl;
+  
   if( (int) &ParameterList == 0 ) return 0;
 
   if (ParameterList.isSublist("Superludist") ) {
@@ -158,10 +170,10 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
   perm_c_ = 0;
   RowPerm_ = "LargeDiag";
   perm_r_ = 0;
-  IterRefine_ = "DOUBLE";
+  IterRefine_ = "NO";
   ReplaceTinyPivot_ = true;
   
-  PrintStat_ = true;
+  PrintNonzeros_ = false;
   
   // Ken, I modified so that parameters are not added to the list if not present.
   // Is it fine for you ????
@@ -180,9 +192,22 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
   */
 
   // print some statistics (on process 0). Do not include timing
-  if( ParameterList.isParameter("PrintStatistics") )
-    PrintStatistics_ = ParameterList.get("PrintStatistics", false);
+  if( ParameterList.isParameter("PrintStatus") )
+    PrintStatus_ = ParameterList.get("PrintStatus", false);
 
+  // print some statistics (on process 0). Do not include timing
+  if( ParameterList.isParameter("PrintTiming") )
+    PrintTiming_ = ParameterList.get("PrintTiming", false);
+
+  // debug level:
+  // 0 - no debug output
+  // 1 - some output
+  if( ParameterList.isParameter("DebugLevel") )
+    debug_ = ParameterList.get("DebugLevel", 0);
+
+  MaxProcesses_ = ParameterList.get("MaxProcs",MaxProcesses_);
+  if( MaxProcesses_ > Comm().NumProc() ) MaxProcesses_ = Comm().NumProc();
+  
   // parameters for Superludist only
   
   if (ParameterList.isSublist("Superludist") ) {
@@ -209,9 +234,11 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
     else if( FactOption == "DOFACT" ) FactOption_ = DOFACT;
     else if( FactOption == "SamePattern" ) FactOption_ = SamePattern;
     else if( FactOption == "FACTORED" ) FactOption_ = FACTORED;
-    
+
+    /* I moved this on the non-superlu level 
     MaxProcesses_ = SuperludistParams.get("MaxProcesses",MaxProcesses_);
     if( MaxProcesses_ > Comm().NumProc() ) MaxProcesses_ = Comm().NumProc();
+    */
 
     /* Ken, should we support these too ?? 
     if( SuperludistParams.isParameter("nprow") )
@@ -239,13 +266,13 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
     }
 
     if( SuperludistParams.isParameter("IterRefine") )
-      IterRefine_ = SuperludistParams.get("IterRefine","DOUBLE");
+      IterRefine_ = SuperludistParams.get("IterRefine","NO");
 
     if( SuperludistParams.isParameter("ReplaceTinyPivot") )
       ReplaceTinyPivot_ = SuperludistParams.get("ReplaceTinyPivot",true);
 
-    if( SuperludistParams.isParameter("PrintStat") )
-      PrintStat_ = SuperludistParams.get("PrintStat",false);
+    if( SuperludistParams.isParameter("PrintNonzeros") )
+      PrintNonzeros_ = SuperludistParams.get("PrintNonzeros",false);
 
   }
   
@@ -266,6 +293,8 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
 //
 int Amesos_Superludist::RedistributeA( ) {
 
+  if( debug_ == 1 ) cout << "Entering `RedistributeA()' ..." << endl;
+ 
   const Epetra_Map &OriginalMap = RowMatrixA_->RowMatrixRowMap() ; 
 
   //  Establish the grid (nprow vs. npcol) 
@@ -332,7 +361,7 @@ int Amesos_Superludist::RedistributeA( ) {
   if (ImportBackToOriginal_) delete ImportBackToOriginal_;
   ImportBackToOriginal_ = new Epetra_Import( OriginalMap,*UniformMap_);
   UniformMatrix_->Export( *RowMatrixA_, *ExportToDist_, Add ); 
-  
+
   if (AddZeroToDiag_ ) { 
     //
     //  Add 0.0 to each diagonal entry to avoid empty diagonal entries;
@@ -344,9 +373,9 @@ int Amesos_Superludist::RedistributeA( ) {
 	UniformMatrix_->InsertGlobalValues( i, 1, &zero, &i ) ;
     UniformMatrix_->SetTracebackMode(1);
   }
-  
+
   UniformMatrix_->FillComplete() ; 
-  
+
   //  I can't imagine that the following line is necessary:
   //  Commented out:  Feb 28th, 2004
   //  UniformMatrix_->Export( *RowMatrixA_, *ExportToDist_, Insert ); 
@@ -388,6 +417,8 @@ int Amesos_Superludist::RedistributeA( ) {
 //   
 int Amesos_Superludist::Factor( ) {
 
+  if( debug_ == 1 ) cout << "Entering `Factor()' ..." << endl;
+  
   //
   //  For now, if you change the shape of a matrix, you need to 
   //  create a new Amesos instance.
@@ -419,8 +450,6 @@ int Amesos_Superludist::Factor( ) {
 
     SuperluMat_ = RowMatrixA_ ;
   }
-
-
 
   //
   //  Extract Ai_, Ap_ and Aval_ from SuperluMat_
@@ -499,6 +528,7 @@ int Amesos_Superludist::Factor( ) {
       dSolveFinalize(&options_, &SOLVEstruct_ ) ; 
     }
   }
+
   //
   //  Only those processes in the grid participate from here on
   //
@@ -511,8 +541,8 @@ int Amesos_Superludist::Factor( ) {
 #else
     set_default_options_dist(&options_);
 #endif
-    options_.PrintStat = NO;
-    assert( options_.PrintStat != YES ) ; 
+    if( PrintNonzeros_ ) options_.PrintStat != YES;
+    else                 options_.PrintStat = NO;
 
     int numcols = RowMatrixA_->NumGlobalCols() ; 
     if( NumRows_ != numcols ) EPETRA_CHK_ERR(-3) ; 
@@ -533,8 +563,6 @@ int Amesos_Superludist::Factor( ) {
     // Here we follow the same order of the SuperLU_dist 2.0 manual (pag 55/56)
 
     
-//    assert( options_.PrintStat != YES ) ; 
-
     assert( options_.Fact == DOFACT );  
     options_.Fact = DOFACT ;       
 
@@ -564,8 +592,8 @@ int Amesos_Superludist::Factor( ) {
     else if( IterRefine_ == "DOUBLE" ) options_.IterRefine = DOUBLE;
     else if( IterRefine_ == "EXTRA" ) options_.IterRefine = EXTRA;
 
-    if( PrintStat_ ) options_.PrintStat = (yes_no_t)YES;
-    else             options_.PrintStat = NO;
+    if( PrintNonzeros_ ) options_.PrintStat = (yes_no_t)YES;
+    else                 options_.PrintStat = NO;
     
     SuperLUStat_t stat;
     PStatInit(&stat);    /* Initialize the statistics variables. */
@@ -579,7 +607,6 @@ int Amesos_Superludist::Factor( ) {
     int nrhs = 0 ;   //  Prevents forward and back solves
     int ldx = NumRows_;     //  Should be untouched
 
-    // assert( options_.PrintStat != YES ) ; 
     pdgssvx(&options_, &SuperluA_, &ScalePermstruct_, &xValues, ldx, nrhs, &grid_,
 	    &LUstruct_, &SOLVEstruct_, &berr, &stat, &info);
 
@@ -590,7 +617,7 @@ int Amesos_Superludist::Factor( ) {
 
     PStatFree(&stat);
   }
-  
+
   return 0;
 }
 
@@ -624,6 +651,8 @@ int Amesos_Superludist::Factor( ) {
 //
 int Amesos_Superludist::ReFactor( ) {
 
+  if( debug_ == 1 ) cout << "Entering `ReFactor()' ..." << endl;
+  
     //
     //  Update Ai_ and Aval_ (while double checking Ap_)
     //
@@ -704,14 +733,21 @@ bool Amesos_Superludist::MatrixShapeOK() const {
 
 int Amesos_Superludist::SymbolicFactorization() {
 
+  if( debug_ == 1 ) cout << "Entering `SymbolicFactorization()' ..." << endl;
+  
   FactorizationOK_ = false ; 
 
   return 0;
 }
 
 int Amesos_Superludist::NumericFactorization() {
+  
+  if( debug_ == 1 ) cout << "Entering `NumericFactorizationA()' ..." << endl;
 
-
+  NumNumericFact_++;
+  
+  Epetra_Time Time(Comm());
+  
   RowMatrixA_ = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   if( RowMatrixA_ == 0 ) EPETRA_CHK_ERR(-1); 
 
@@ -725,12 +761,21 @@ int Amesos_Superludist::NumericFactorization() {
     FactorizationOK_ = true;   
 
   }
+
+  NumTime_ += Time.ElapsedTime();
+  
   return 0;
 }
 
 
 int Amesos_Superludist::Solve() { 
 
+  if( debug_ == 1 ) cout << "Entering `Solve()' ..." << endl;
+
+  NumSolve_++;
+  
+  Epetra_Time Time(Comm());
+  
   //  NRformat_loc *Astore;
   //  Astore = (NRformat_loc *) SuperluA_.Store;
 
@@ -838,14 +883,16 @@ int Amesos_Superludist::Solve() {
     vecX->Import( *vecXptr, *ImportBackToOriginal_, Insert ) ;
   }
 
-  return(0) ; 
+  SolveTime_ += Time.ElapsedTime();
+  return; 
 }
 
-int Amesos_Superludist::PrintStatistics() 
+void Amesos_Superludist::PrintStatus() 
 {
   if( Comm().MyPID() ) return 0;
   
-  cout << "------------------ : ---------------------------------------------------------" << endl;
+  cout << "----------------------------------------------------------------------------" << endl;
+
   cout << "Amesos_Superludist : Redistribute = " << Redistribute_ << endl;
   cout << "Amesos_Superludist : # available processes = " << Comm().NumProc() << endl;
   cout << "Amesos_Superludist : # processes used in computation = " << nprow_*npcol_
@@ -857,7 +904,31 @@ int Amesos_Superludist::PrintStatistics()
   cout << "Amesos_Superludist : ReplaceTinyPivot = " << ReplaceTinyPivot_ << endl;
   cout << "Amesos_Superludist : AddZeroToDiag = " << AddZeroToDiag_ << endl;
   cout << "Amesos_Superludist : Redistribute = " << Redistribute_ << endl;
-  cout << "------------------ : ---------------------------------------------------------" << endl;
+  cout << "----------------------------------------------------------------------------" << endl;
+  return;
+}
 
-  return 0;
+
+// ================================================ ====== ==== ==== == =
+
+void Amesos_Superludist::PrintTiming()
+{
+  if( Comm().MyPID() ) return;
+  
+  cout << "----------------------------------------------------------------------------" << endl;
+  cout << "Amesos_Superludist : Number of symbolic factorizaions = "
+       << NumSymbolicFact_ << endl;
+  cout << "Amesos_Superludist : Number of numeric factorizaions = "
+       << NumNumericFact_ << endl;
+  cout << "Amesos_Superludist : Time for num fact = "
+       << NumTime_ << " (s), avg = " << NumTime_/NumNumericFact_
+       << " (s)" << endl;
+  cout << "Amesos_Superludist : Number of solve phases = "
+       << NumSolve_ << endl;
+  cout << "Amesos_Superludist : Time for solve = "
+       << SolveTime_ << " (s), avg = " << SolveTime_/NumSolve_
+       << " (s)" << endl;
+  cout << "----------------------------------------------------------------------------" << endl;
+   
+  return;
 }

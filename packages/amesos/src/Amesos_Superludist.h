@@ -221,9 +221,11 @@ revert to their default values.
    */
   int SetParameters( Teuchos::ParameterList &ParameterList ) ;
 
-
+  //! Print various timig.
+  void PrintTiming();
+  
   //! Print various information about the parameters used by Superludist.
-  int PrintStatistics();
+  void PrintStatus();
   
  private:  
 
@@ -301,7 +303,7 @@ revert to their default values.
   gridinfo_t grid_;                 // SuperLU's grid information
   superlu_options_t options_;
 
-  bool PrintStat_;
+  bool PrintNonzeros_;
   string ColPerm_;
   int * perm_c_;
   string RowPerm_;
@@ -316,8 +318,22 @@ revert to their default values.
 
   bool UseTranspose_;      // Set by SetUseTranpose() 
   const Epetra_LinearProblem * Problem_;
-  bool PrintStatistics_;            // print some information in the destruction phase
+  bool PrintStatus_;            // print some information in the destruction phase
                                     // (defaulted to false)
+  bool PrintTiming_;
+  
+  int verbose_;
+  int debug_;
+
+  
+  // timing variables
+  // some timing internal to MUMPS
+  double NumTime_;
+  double SolveTime_;
+
+  int NumSymbolicFact_;
+  int NumNumericFact_;
+  int NumSolve_;
   
 };  // End of  class Amesos_Superludist  
 #endif /* _AMESOS_SUPERLUDIST_H_ */

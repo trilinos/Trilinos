@@ -178,31 +178,6 @@ public:
     return 0;
   }
   
-  int AddToSymFactTime(double);
-  int AddToNumFactTime(double);
-  int AddToSolTime(double);
-  int AddToConvTime(double);
-  
-  inline double GetSymFactTime() const
-  {
-    return SymFactTime_;
-  }
-  
-  inline double GetNumFactTime() const
-  {
-    return NumFactTime_;
-  }
-
-  inline double GetSolTime() const 
-  {
-    return SolTime_;
-  }
-
-  inline double GetConvTime() const
-  {
-    return ConvTime_;
-  }
-
   //! Set the matrix property (unsymmetric, SPD, general symmetric).
   /*! Set the matrix property as follows:
      - 0 : general unsymmetric matrix;
@@ -282,11 +257,6 @@ private:
 
   const Epetra_LinearProblem & Problem_;
 
-  double SymFactTime_;                    // MS // keep trace of timing
-  double NumFactTime_;
-  double SolTime_;
-  double ConvTime_;
-  
   int MatrixProperty_;
 
   bool IsLocal_;            //  1 if Problem_->GetOperator() is stored entirely on process 0

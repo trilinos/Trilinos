@@ -186,7 +186,7 @@ public:
   */
     int Solve();
 
-  int Destroy();
+  void Destroy();
   
   //@}
 
@@ -321,8 +321,11 @@ public:
   //! Set CNTL[pos] to value. pos is expressed in FORTRAN style (starting from 1).
   int SetCNTL(int pos, double value);
 
+  //! Print timing information
+  void PrintTiming();
+  
   //! Print information about the factorization and solution phases.
-  int PrintInformation();
+  void PrintStatus();
 
   void SetUseMpiCommSelf() {
     UseMpiCommSelf_ = true;
@@ -410,7 +413,6 @@ protected:
 
   int NumMUMPSNonzeros_;                  // actual number of nonzeros in the matrix
   int NumMyMUMPSNonzeros_;                // actual number of nonzeros in the matrix
-  int ErrorMsgLevel_;                     // output level 
   
   bool UseTranspose_;
   bool AddDiagElement_;
@@ -418,7 +420,7 @@ protected:
   double AddToDiag_;
   
   bool PrintTiming_;
-  bool PrintStatistics_;
+  bool PrintStatus_;
   bool ComputeVectorNorms_;
   bool ComputeTrueResidual_;
   
@@ -437,7 +439,8 @@ protected:
   Epetra_SerialDenseMatrix * DenseSchurComplement_;
 
   int verbose_;
-
+  int debug_;
+  
   EpetraExt_Redistor * Redistor_;
   
   Epetra_RowMatrix * OldMatrix_;
@@ -445,6 +448,16 @@ protected:
   Epetra_MultiVector * TargetVector_;
 
   // some timing internal to MUMPS
+  double ConvTime_;
+  double SymTime_;
+  double NumTime_;
+  double SolveTime_;
+  double RedistorTime_;
+
+  int NumSymbolicFact_;
+  int NumNumericFact_;
+  int NumSolve_;
+  
   double TimeToShipMatrix_;
 
 #ifdef EPETRA_MPI

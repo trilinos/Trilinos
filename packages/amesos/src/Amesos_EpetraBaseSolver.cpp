@@ -62,10 +62,6 @@ Amesos_EpetraBaseSolver::Amesos_EpetraBaseSolver(const Epetra_LinearProblem & Pr
   BlockIndices_(0),
   NumPDEEqns_(1),
   Problem_(Problem),
-  SymFactTime_(0.0),
-  NumFactTime_(0.0),
-  SolTime_(0.0),
-  ConvTime_(0.0),
   MatrixProperty_(AMESOS_UNSYM)
 {
 }
@@ -234,40 +230,6 @@ int Amesos_EpetraBaseSolver::GetRow(int BlockRow, int & NumIndices,
   return 0;
   
 } 
-
-//=============================================================================
-
-int Amesos_EpetraBaseSolver::AddToNumFactTime(double t)
-{
-  NumFactTime_ += t;
-  return 0;
-}
-
-//=============================================================================
-
-int Amesos_EpetraBaseSolver::AddToSymFactTime(double t)
-{
-  SymFactTime_ += t;
-  return 0;
-}
-
-//=============================================================================
-
-int Amesos_EpetraBaseSolver::AddToSolTime(double t)
-{
-  SolTime_ += t;
-  return 0;
-  
-}
-
-//=============================================================================
-
-int Amesos_EpetraBaseSolver::AddToConvTime(double t)
-{
-  ConvTime_ += t;
-  return 0;
-  
-}
 
 //=============================================================================
 
