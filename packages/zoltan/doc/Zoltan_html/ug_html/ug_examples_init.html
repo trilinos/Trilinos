@@ -50,6 +50,23 @@ the Zoltan library.</I></CAPTION>
 </TABLE></CENTER>
 &nbsp;
 
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR NOSAVE>
+<TD NOSAVE><TT>! Initialize the LB library</TT>&nbsp;
+<BR><TT>type(LB_Struct), pointer :: lb</TT>&nbsp;
+<BR><TT>real(lb_float) version</TT>&nbsp;
+<BR><TT>integer(lb_int) ierr</TT>&nbsp;
+<BR><TT>...</TT>&nbsp;
+<BR><TT>ierr = <A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A>(version)
+! without argc and argv</TT>&nbsp;&nbsp;
+<BR><TT>lb => <A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A>(MPI_COMM_WORLD)</TT></TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>Fortran version of initialization
+example.</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
+
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
 <A HREF="ug_examples_lb.html">Next:&nbsp; Load-Balancing Example</A>&nbsp;

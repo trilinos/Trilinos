@@ -24,19 +24,19 @@
 
 <H3>
 Existing implementations</H3>
-The main Makefile has not yet been updated to include the Fortran option
-in the process of building the Zoltan library. So far, the Fortran interface
-has been built and tested only through <I>fdriver</I>, and only on NIST
-machines. This section will be written after the Makefile has been updated.
-The main issues to be discussed will be using <B>YES_FORTRAN=1</B> in the
-make command, and mention of<I> lb_user_const*.h</I> with a pointer to
-the section below. There will be some other parameters (selection of which
-Fortran compiler on Linux, and selection between LAM and MPICH), but these
-will probably affect only the NIST builds so I'm not sure they're worth
-mentioning.
+To include the Fortran interface in the Zoltan library, use the
+<B>YES_FORTRAN</B> parameter in the make statement, for example
+<BLOCKQUOTE>gmake YES_FORTRAN=1 tflop</BLOCKQUOTE>
+Before compiling the library, make sure that the application's
+<A HREF="ug_fortran_api.html#fortran ug api IDs"><I>lb_user_const.h</I> and
+<I>lb_user_const.f90</I></A> have been placed in <I>lb/</I> and <I>fort/</I>
+repectively.
+<P>
+Currently, only the NIST targets support the Fortran option.  The Sandia
+targets should be added soon.
 <H3>
 Porting to a new system</H3>
-There are some issues here that I probably should explain.
+There are some issues here that should be explained.
 
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;

@@ -65,6 +65,33 @@ examples are included <A HREF="#query example data types">below</A>.
 <CAPTION ALIGN=BOTTOM><I>Data types for the query-function examples.</I></CAPTION>
 </TABLE></CENTER>
 &nbsp;
+
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><A NAME="query example Fortran data types"></A><TT>!<I> Node data structure.</I>
+</TT>&nbsp;
+<BR><TT>! <I>A node consists of its 3D coordinates and</I></TT>&nbsp;
+<BR><TT>! <I>an ID number that is unique across all processors.</I></TT>&nbsp;
+<BR><TT>type Node_Type &nbsp;</TT>&nbsp;
+<BR><TT>&nbsp; real(lb_double) :: Coordinates(3)&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp; integer(lb_int) :: Global_ID_Num&nbsp;</TT>&nbsp;
+<BR><TT>end type Node_Type</TT>&nbsp;
+<BR><TT>&nbsp;</TT>&nbsp;
+
+<P><TT>!<I> Mesh data structure.</I>&nbsp;</TT>&nbsp;
+<BR><TT>! <I>Mesh consists of an array of nodes and</I></TT>&nbsp;
+<BR><TT>! <I>the number of nodes owned by the processor.</I></TT>&nbsp;
+<BR><TT>type Mesh_Type </TT>&nbsp;
+<BR><TT>&nbsp; type(Node_Type) :: Nodes(MAX_NODES)&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp; integer(lb_int) :: Number_Owned&nbsp;</TT>&nbsp;
+<BR><TT>end type Mesh_Type</TT>&nbsp;
+<BR><TT></TT>&nbsp;</TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>Data types for the Fortran query-function examples.</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
 <H3>
 <A NAME="lb_query_example"></A>Load-Balancing Query Function Examples</H3>
 In the following examples, <B><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
@@ -179,6 +206,93 @@ int *ierr)&nbsp;</TT>&nbsp;
 implementation).</I></CAPTION>
 </TABLE></CENTER>
 &nbsp;
+
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><A NAME="query Fortran example one"></A><TT>/* <I>included in file lb/lb_user_const.h</I>
+*/</TT>&nbsp;
+<BR><TT>/* <I>Both global and local identifiers are integers */</I></TT>&nbsp;
+<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_GID</A> int</TT>&nbsp;
+<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_LID</A> int</TT>&nbsp;
+<P>
+<HR WIDTH="100%"><TT>! included in file fort/lb_user_const.f90</TT>&nbsp;
+<BR><TT>! ID types are not used in Fortran in this example; dummy definitions</TT>&nbsp;
+<BR><TT>type LB_GID</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;integer(LB_INT) :: id</TT>&nbsp;
+<BR><TT>end type LB_GID</TT>&nbsp;
+<BR>&nbsp;
+<BR><TT>type LB_LID</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;integer(LB_INT) :: id</TT>&nbsp;
+<BR><TT>end type LB_LID</TT>&nbsp;
+
+<P>
+<HR WIDTH="100%"><TT>! <I>in application's program file</I>&nbsp;</TT>&nbsp;
+
+<P>
+<TT>module Global_Mesh_Data</TT>&nbsp;
+<BR><TT>! <I>Declare a global Mesh data structure.</I></TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;type(Mesh_Type) :: Mesh</TT>&nbsp;
+<BR><TT>end module</TT>&nbsp;
+
+<P><TT>program query_example_1&nbsp;</TT>&nbsp;
+<BR><TT>use zoltan</TT>&nbsp;
+<BR><TT>...&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>Register load-balancing query functions.</I>
+</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>Do not register a data pointer with the
+functions;</I></TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>the global Mesh data structure will be
+used.</I></TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,</TT>&nbsp;
+<TT>user_return_coords)&nbsp;&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,</TT>&nbsp;
+<TT>user_return_owned_nodes)&nbsp;&nbsp;</TT>&nbsp;
+<BR><TT>...&nbsp;</TT>&nbsp;
+<BR><TT>end program&nbsp;</TT>&nbsp;
+
+<P><TT>subroutine user_return_owned_nodes(data,
+global_ids, local_ids, wgt_dim, obj_wgts, ierr)&nbsp;</TT>&nbsp;
+<BR><TT>use zoltan&nbsp;</TT>&nbsp;
+<BR><TT>use Global_Mesh_Data&nbsp;</TT>&nbsp;
+<BR><TT>integer(lb_int) :: data(1) ! dummy declaration, do not use</TT>&nbsp;
+<BR><TT>integer(lb_int), intent(out) :: global_ids(*), local_ids(*)</TT>&nbsp;
+<BR><TT>integer(lb_int), intent(in) :: wgt_dim</TT>&nbsp;
+<BR><TT>real(lb_float), intent(out) :: obj_wgts(*)</TT>&nbsp;
+<BR><TT>integer(lb_int), intent(out) :: ierr</TT>&nbsp;
+<BR><TT>integer i&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>return global node numbers as global_ids.</I>
+&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>return index into Nodes array for local_ids.</I>
+&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; do i = 1, Mesh%Number_Owned&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids(i) = Mesh%Nodes(i)%Global_ID_Num&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids(i) = i&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; end do&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</TT>&nbsp;
+<BR><TT>end subroutine&nbsp;</TT>&nbsp;
+
+<P><TT>subroutine user_return_coords(data, global_id, local_id, geom_vec, ierr)&nbsp;</TT>&nbsp;
+<BR><TT>use zoltan&nbsp;</TT>&nbsp;
+<BR><TT>use Global_Mesh_Data&nbsp;</TT>&nbsp;
+<BR><TT>integer(lb_int) :: data(1) ! dummy declaration, do not use</TT>&nbsp;
+<BR><TT>integer(lb_int), intent(in) :: global_id, local_id</TT>&nbsp;
+<BR><TT>real(lb_double), intent(out) :: geom_vec(*)</TT>&nbsp;
+<BR><TT>integer(lb_int), intent(out) :: ierr</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>use local_id to index into the Nodes array.</I>
+&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec(1:3) = Mesh%Nodes(local_id)%Coordinates&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</TT>&nbsp;
+<BR><TT>end subroutine</TT></TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>Fortran example of load-balancing query functions (simplest
+implementation).</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
+
 <H4>
 <A NAME="lb_lid_query_example"></A>User-Defined Local Identifiers Example</H4>
 In this example, a node's local identifier is defined as a pointer to the
@@ -263,6 +377,95 @@ the requested node.</I> */</TT>&nbsp;
 
 <CAPTION ALIGN=BOTTOM><I>Example of load-balancing query functions using
 addresses as local identifiers.</I></CAPTION>
+</TABLE></CENTER>
+
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><A NAME="query Fortran example two"></A><TT>/* <I>included in file lb/lb_user_const.h</I>
+*/</TT>&nbsp;
+<BR><TT>/* <I>Both global and local identifiers are integers */</I></TT>&nbsp;
+<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_GID</A> int</TT>&nbsp;
+<BR><TT><FONT COLOR="#FF0000">typedef char LB_LID[4]
+/* compiler dependent size of Fortran type(LB_INT) */</FONT></TT>&nbsp;
+<P>
+<HR WIDTH="100%"><TT>! included in file fort/lb_user_const.f90</TT>&nbsp;
+<BR><TT>! LB_GID is a dummy definition</TT>&nbsp;
+<BR><TT><FONT COLOR="#FF0000">! LB_LID is a pointer to a node</FONT></TT>&nbsp;
+<BR><TT>type LB_GID</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;integer(LB_INT) :: id</TT>&nbsp;
+<BR><TT>end type LB_GID</TT>&nbsp;
+<BR>&nbsp;
+<FONT COLOR="#FF0000">
+<BR><TT>type LB_LID</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;type(Node_Type), pointer :: ptr</TT>&nbsp;
+<BR><TT>end type LB_LID</TT>&nbsp;
+</FONT>
+
+<P>
+<HR WIDTH="100%"><TT>! <I>in application's program file</I>&nbsp;</TT>&nbsp;
+
+<P>
+<TT>module Global_Mesh_Data</TT>&nbsp;
+<BR><TT>! <I>Declare a global Mesh data structure.</I></TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;type(Mesh_Type)<FONT COLOR="#FF0000">, target</FONT> :: Mesh</TT>&nbsp;
+<BR><TT>end module</TT>&nbsp;
+
+<P><TT>program query_example_2&nbsp;</TT>&nbsp;
+<BR><TT>use zoltan</TT>&nbsp;
+<BR><TT>...&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>Register load-balancing query functions.</I>
+</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>Do not register a data pointer with the
+functions;</I></TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>the global Mesh data structure will be
+used.</I></TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,</TT>&nbsp;
+<TT>user_return_coords)&nbsp;&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,</TT>&nbsp;
+<TT>user_return_owned_nodes)&nbsp;&nbsp;</TT>&nbsp;
+<BR><TT>...&nbsp;</TT>&nbsp;
+<BR><TT>end program&nbsp;</TT>&nbsp;
+
+<P><TT>subroutine user_return_owned_nodes(data,
+global_ids, local_ids, wgt_dim, obj_wgts, ierr)&nbsp;</TT>&nbsp;
+<BR><TT>use zoltan&nbsp;</TT>&nbsp;
+<BR><TT>use Global_Mesh_Data&nbsp;</TT>&nbsp;
+<BR><TT>integer(lb_int) :: data(1) ! dummy declaration, do not use</TT>&nbsp;
+<BR><TT>integer(lb_int), intent(out) :: global_ids(*), local_ids(*)</TT>&nbsp;
+<BR><TT>integer(lb_int), intent(in) :: wgt_dim</TT>&nbsp;
+<BR><TT>real(lb_float), intent(out) :: obj_wgts(*)</TT>&nbsp;
+<BR><TT>integer(lb_int), intent(out) :: ierr</TT>&nbsp;
+<BR><TT>integer i&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>return global node numbers as global_ids.</I>
+&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;<FONT COLOR="#FF0000"> ! <I>return pointer to an element of Mesh for local_ids.</FONT></I>
+&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; do i = 1, Mesh%Number_Owned&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids(i) = Mesh%Nodes(i)%Global_ID_Num&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<FONT COLOR="#FF0000"> local_ids(i)%ptr => Mesh%Nodes(i)&nbsp;</FONT></TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; end do&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</TT>&nbsp;
+<BR><TT>end subroutine&nbsp;</TT>&nbsp;
+
+<P><TT>subroutine user_return_coords(data, global_id, local_id, geom_vec, ierr)&nbsp;</TT>&nbsp;
+<BR><TT>use zoltan&nbsp;</TT>&nbsp;
+<BR><TT>use Global_Mesh_Data&nbsp;</TT>&nbsp;
+<BR><TT>integer(lb_int) :: data(1) ! dummy declaration, do not use</TT>&nbsp;
+<BR><TT>integer(lb_int), intent(in) :: global_id, local_id</TT>&nbsp;
+<BR><TT>real(lb_double), intent(out) :: geom_vec(*)</TT>&nbsp;
+<BR><TT>integer(lb_int), intent(out) :: ierr</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>use local_id to <FONT COLOR="#FF0000">access</FONT> the Nodes array.</I>
+&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec(1:3) = <FONT COLOR="#FF0000">local_id%ptr%Coordinates</FONT>&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</TT>&nbsp;
+<BR><TT>end subroutine</TT></TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>Fortran example of load-balancing query functions using
+pointers as local identifiers.</I></CAPTION>
 </TABLE></CENTER>
 
 <H4>
@@ -364,6 +567,111 @@ int *ierr)</TT>&nbsp;
 </TR>
 
 <CAPTION ALIGN=BOTTOM><I>Example of load-balancing query functions using
+the application-defined data pointer.</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
+
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><A NAME="query Fortran example three"></A><TT>/* <I>included in file lb/lb_user_const.h</I>
+*/</TT>&nbsp;
+<BR><TT>/* <I>Both global and local identifiers are integers */</I></TT>&nbsp;
+<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_GID</A> int</TT>&nbsp;
+<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_LID</A> int</TT>&nbsp;
+<P>
+<HR WIDTH="100%"><TT>! <I>included in file fort/lb_user_const.f90</I></TT>&nbsp;
+<BR><TT>! <I>ID types are not used in Fortran in this example; dummy definitions</I></TT>&nbsp;
+<BR><TT>type LB_GID</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;integer(LB_INT) :: id</TT>&nbsp;
+<BR><TT>end type LB_GID</TT>&nbsp;
+<BR>&nbsp;
+<BR><TT>type LB_LID</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;integer(LB_INT) :: id</TT>&nbsp;
+<BR><TT>end type LB_LID</TT>&nbsp;
+<BR>&nbsp;
+<FONT COLOR="#FF0000">
+<BR><TT>! <I>User defined data type as wrapper for Mesh</I></TT>&nbsp;
+<BR><TT> type LB_User_Data_1</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;type(Mesh_type), pointer :: ptr</TT>&nbsp;
+<BR><TT>end type LB_User_Data_1</TT>&nbsp;
+</FONT>
+
+<P>
+<HR WIDTH="100%"><TT>! <I>in application's program file</I>&nbsp;</TT>&nbsp;
+
+<P><TT>program query_example_3&nbsp;</TT>&nbsp;
+<BR><TT>use zoltan</TT>&nbsp;
+<FONT COLOR="#FF0000">
+<BR><TT>!<I> declare a local mesh data structure and a User_Data to point to it.</I></TT>&nbsp;
+<BR><TT>type(Mesh_Type), target :: mesh</TT>&nbsp;
+<BR><TT>type(LB_User_Data_1) data</TT>&nbsp;
+</FONT>
+<BR><TT>...&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>Register load-balancing query functions.</I>
+</TT>&nbsp;
+<FONT COLOR="#FF0000">
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>Use the User_Data variable to pass the mesh data
+</I></TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; data%ptr => mesh</TT>&nbsp;
+</FONT>
+<BR><TT>&nbsp;&nbsp;&nbsp; ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,</TT>&nbsp;
+<TT>user_return_coords<FONT COLOR="#FF0000">, data</FONT>)&nbsp;&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
+<A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,</TT>&nbsp;
+<TT>user_return_owned_nodes<FONT COLOR="#FF0000">, data</FONT>)&nbsp;&nbsp;</TT>&nbsp;
+<BR><TT>...&nbsp;</TT>&nbsp;
+<BR><TT>end program&nbsp;</TT>&nbsp;
+
+<P><TT>subroutine user_return_owned_nodes(data,
+global_ids, local_ids, wgt_dim, obj_wgts, ierr)&nbsp;</TT>&nbsp;
+<BR><TT>use zoltan&nbsp;</TT>&nbsp;
+<BR><TT><FONT COLOR="#FF0000">type(LB_User_Data_1) :: data</FONT></TT>&nbsp;
+<BR><TT>integer(lb_int), intent(out) :: global_ids(*), local_ids(*)</TT>&nbsp;
+<BR><TT>integer(lb_int), intent(in) :: wgt_dim</TT>&nbsp;
+<BR><TT>real(lb_float), intent(out) :: obj_wgts(*)</TT>&nbsp;
+<BR><TT>integer(lb_int), intent(out) :: ierr</TT>&nbsp;
+<BR><TT>integer i&nbsp;</TT>&nbsp;
+<FONT COLOR="#FF0000">
+<BR><TT>type(Mesh_Type), pointer :: Mesh</TT>&nbsp;
+<BR>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;! <I>extract the mesh from the User_Data argument</I></TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; Mesh => data%ptr</TT>&nbsp;
+<BR>&nbsp;
+</FONT>
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>return global node numbers as global_ids.</I>
+&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>return index into Nodes array for local_ids.</I>
+&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; do i = 1, Mesh%Number_Owned&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids(i) = Mesh%Nodes(i)%Global_ID_Num&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids(i) = i&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; end do&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</TT>&nbsp;
+<BR><TT>end subroutine&nbsp;</TT>&nbsp;
+
+<P><TT>subroutine user_return_coords(data, global_id, local_id, geom_vec, ierr)&nbsp;</TT>&nbsp;
+<BR><TT>use zoltan&nbsp;</TT>&nbsp;
+<BR><TT><FONT COLOR="#FF0000">type(LB_User_Data_1) :: data</FONT></TT>&nbsp;
+<BR><TT>integer(lb_int), intent(in) :: global_id, local_id</TT>&nbsp;
+<BR><TT>real(lb_double), intent(out) :: geom_vec(*)</TT>&nbsp;
+<BR><TT>integer(lb_int), intent(out) :: ierr</TT>&nbsp;
+<FONT COLOR="#FF0000">
+<BR><TT>type(Mesh_Type), pointer :: Mesh</TT>&nbsp;
+<BR>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;! <I>extract the mesh from the User_Data argument</I></TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; Mesh => data%ptr</TT>&nbsp;
+<BR>&nbsp;
+</FONT>
+<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>use local_id to index into the Nodes array.</I>
+&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec(1:3) = Mesh%Nodes(local_id)%Coordinates&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</TT>&nbsp;
+<BR><TT>end subroutine</TT></TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>Fortran example of load-balancing query functions using
 the application-defined data pointer.</I></CAPTION>
 </TABLE></CENTER>
 &nbsp;

@@ -42,7 +42,11 @@ query functions</A> for more details.To provide data type information to
 the load- balancing library, application developers must define their global
 and local ID data types in the file "lb/lb_user_const.h" in the Zoltan
 library source code distribution. In addition, they must define macros
-to copy global and local IDs and to compare global IDs. The data and macro
+to copy global and local IDs and to compare global IDs.
+When used from Fortran, the IDs and operators are also defined in a module
+in fort/lb_user_const.f90, as explained in the section on
+<A HREF="ug_fortran_api.html#fortran ug api IDs">Fortran global and local
+IDs</A>.  The data and macro
 definitions that must be included are described in the <A HREF="#Macro defs">table</A>
 below.&nbsp; The source code distribution contains an example in which
 global IDs are integers and local IDs are pointers to objects.
@@ -148,10 +152,21 @@ where the options that may be specified are listed below.
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; NO_PARMETIS=1</I></TD>
 
 <TD>Do not compile and link with <A HREF="ug_alg_parmetis.html">ParMETIS</A>
-in the Zoltan library.&nbsp; If this option is specified, no <A HREF="ug_alg_parmetis.html">ParMETIS</A>libraries
+in the Zoltan library.&nbsp; If this option is specified, no <A HREF="ug_alg_parmetis.html">ParMETIS</A> libraries
 are needed when the application is linking.&nbsp; Otherwise, a <A HREF="ug_alg_parmetis.html">ParMETIS</A>
 library path must be specified to <A HREF="#Building Applications">build
 the application</A>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; YES_FORTRAN=1</I></TD>
+
+<TD>Include Fortran support in the Zoltan library.&nbsp;  By default, the
+Zoltan library is built without the interface that allows use from Fortran
+applications.&nbsp; If this option is specified, then the
+<A HREF="ug_fortran.html">Fortran interface</A>
+is compiled and included in the library.&nbsp;  Use of this option requires that
+a Fortran 90 (or 95, or later) compiler is available.</TD>
 </TR>
 </TABLE>
 The resulting library is stored in Obj_tflop/libzoltan.a. Paths within
@@ -161,13 +176,18 @@ have to be changed for the user's computing environment.
 <A NAME="Building Applications"></A>Building Applications</H3>
 The library interface is described in the C include file "lbi_const.h";
 this file should be included in all application source files that call
-Zoltan library routines. The application should then be linked with the
+Zoltan library routines.  Similarly, Fortran applications must USE
+<A HREF="ug_fortran_api.html#fortran ug api zoltan module"> module
+zoltan</A>.  The application should then be linked with the
 Zoltan library by including -lzoltan in the linking command for the application.
 Communication within the library is performed through MPI, so appropriate
 MPI libraries must be linked with the application. If the <I>NO_PARMETIS=1
 </I>parameter was not specified when Zoltan was compiled, <A HREF="ug_alg_parmetis.html">ParMETIS</A>
 libraries -lparmetis and -lmetis must also be included in the application's
 linking command.
+<A HREF="ug_fortran_apps.html">Compiling Fortran applications</A> also
+requires specifying fort/ as a directory to be searched for module information
+files.
 <BR>&nbsp;
 
 <P>

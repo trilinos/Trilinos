@@ -52,6 +52,7 @@ should be declared as
 <P>To create the object, use a pointer assignment statement with the call
 to <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_CREATE_OBJECT</A></B>:
 <UL>LB => <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_CREATE_OBJECT</A></B>(COMMUNICATOR)</UL>
+Note that the assignment operator is "=>".
 If LB is used in more than one procedure, then put it in a COMMON block.
 It cannot be passed as an argument unless the procedure interfaces are
 made "explicit." (Let's not go there.)
@@ -60,6 +61,8 @@ made "explicit." (Let's not go there.)
 (and other procedures) must be pointers. They should be declared as, for
 example,
 <UL>INTEGER, POINTER :: IMPORT_GLOBAL_IDS(:)</UL>
+Note that the double colon after POINTER is required, and the dimension
+must be declared as "(:)" with a colon.
 Like LB, if they are used in more than one procedure, pass them through
 a COMMON block, not as an argument.
 

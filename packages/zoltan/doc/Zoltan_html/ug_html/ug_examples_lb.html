@@ -106,6 +106,69 @@ with the Zoltan library.</I></CAPTION>
 </TABLE></CENTER>
 &nbsp;
 
+<BR>&nbsp;
+<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<TR>
+<TD><TT>character(len=3) lb_method</TT>&nbsp;
+<BR><TT>logical new</TT>&nbsp;
+<BR><TT>integer(lb_int) num_imp, num_exp</TT>&nbsp;
+<BR><TT>integer(lb_int), pointer :: imp_procs(:), exp_procs(:)</TT>&nbsp;
+<BR><TT><A HREF="ug_fortran_api.html#fortran ug api IDs">type(LB_GID)</A>,
+pointer :: imp_global_ids(:), exp_global_ids(:)
+! app defined global IDs</TT>&nbsp;
+<BR><TT>integer(lb_int), pointer :: imp_local_ids(:), exp_local_ids(:)
+! integer local IDs</TT>&nbsp;
+<BR><TT>integer(lb_int) ierr</TT>&nbsp;
+
+<P><TT>! <I>Set load-balancing method.</I></TT>&nbsp;
+<BR><TT>lb_method = "RCB"</TT>&nbsp;
+<BR><TT>ierr = <A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A>(lb,
+lb_method)</TT>&nbsp;
+
+<P><TT>! <I>Register load-balancing query functions.</I></TT>&nbsp;
+<BR><TT>ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</A>,
+user_return_dimension) ! omit data = C NULL</TT>&nbsp;
+<BR><TT>ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,
+user_return_coords)</TT>&nbsp;
+<BR><TT>ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN_TYPE</A>,
+user_return_num_node)</TT>&nbsp;
+<BR><TT>ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,
+user_return_owned_nodes)</TT>&nbsp;
+
+<P><TT>! <I>Reset some load-balancing parameters.</I></TT>&nbsp;
+<BR><TT>ierr = <A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A>(lb, 
+"imbalance_tol", "0.1")</TT>
+<BR><TT>ierr = <A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A>(lb, 
+"RCB_Reuse", "TRUE")</TT>
+
+<P><TT>! <I>Perform computations</I></TT>&nbsp;
+<BR><TT>...</TT>&nbsp;
+<BR><TT>! <I>Perform load balancing</I></TT>&nbsp;
+<BR><TT>ierr = <A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,new,num_imp,imp_global_ids,imp_local_ids,imp_procs, &amp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_exp,exp_global_ids,exp_local_ids,exp_procs)&nbsp;</TT>&nbsp;
+<BR><TT>if (new) then</TT>&nbsp;
+<BR><TT>&nbsp; perform_data_migration(...)</TT>&nbsp;
+<BR><TT>endif</TT>&nbsp;
+
+<P><TT>! <I>Free memory allocated for load-balancing results by LB library</I>
+</TT>&nbsp;
+<BR><TT>ierr = <A HREF="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A>(imp_global_ids,
+imp_local_ids, imp_procs, &amp;&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; exp_global_ids, exp_local_ids,
+exp_procs)&nbsp;</TT>&nbsp;
+<BR><TT>...</TT>
+<BR><TT>call <A HREF="ug_interface_lb.html#LB_Destroy_Object">LB_Destroy_Object</A>(lb)
+
+<BR><TT>...</TT>
+
+</TD>
+</TR>
+
+<CAPTION ALIGN=BOTTOM><I>Fortran version of the load balancing
+example.</I></CAPTION>
+</TABLE></CENTER>
+&nbsp;
+
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
 <A HREF="ug_examples_mig.html">Next:&nbsp; Migration Examples</A>&nbsp;

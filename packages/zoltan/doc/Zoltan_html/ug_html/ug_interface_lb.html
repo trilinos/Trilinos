@@ -206,7 +206,7 @@ import_local_ids, import_procs, num_export, export_global_ids, export_local_ids,
 export_procs</I>)&nbsp;
 <BR>INTEGER(LB_INT) :: LB_Balance&nbsp;
 <BR>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: changes&nbsp;
+<BR>LOGICAL, INTENT(OUT) :: changes&nbsp;
 <BR>INTEGER(LB_INT), INTENT(OUT) :: num_import, num_export&nbsp;
 <BR>&lt;<I>type-gid</I>>, POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
 <BR>&lt;<I>type-lid</I>>, POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
@@ -237,8 +237,8 @@ to be used in this invocation of the load-balancing routine.</TD>
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; changes</I></TD>
 
-<TD>Set to 1 if the decomposition was changed by the load-balancing method;
-0 otherwise.</TD>
+<TD>Set to 1 or .TRUE. if the decomposition was changed by the load-balancing method;
+0 or .FALSE. otherwise.</TD>
 </TR>
 
 <TR>
@@ -335,8 +335,8 @@ int *<I>nboundary</I>, int *<I>nadj</I>, int *<I>ierr</I>);&nbsp;
 cut_wgt, nboundary, nadj, ierr</I>)&nbsp;
 <BR>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
 <BR>LOGICAL, INTENT(IN) :: print_stats&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: nobj, cut_wgt, nboundary, nadj, ierr&nbsp;
-<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(vwgt_dim) :: obj_wgt&nbsp;</TD>
+<BR>INTEGER(LB_INT), INTENT(OUT), OPTIONAL :: nobj, cut_wgt, nboundary, nadj, ierr&nbsp;
+<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(vwgt_dim), OPTIONAL :: obj_wgt&nbsp;</TD>
 </TR>
 </TABLE>
 
@@ -362,7 +362,7 @@ the results in the output parameters.
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; print_stats</I></TD>
 
-<TD>If <I>print_stats</I>>0, print a summary (maximum and sum) of the quality
+<TD>If <I>print_stats</I>>0 (.TRUE. in Fortran), print a summary (maximum and sum) of the quality
 metrics to <I>stdout.</I></TD>
 </TR>
 
@@ -443,7 +443,8 @@ An output parameter is returned only if the input value of that parameter
 was not NULL. (An exception is that the error code is always returned.)
 The rationale for this feature is that if one wishes just to print the
 evaluation results, one can simply set all (or some of) the output parameters
-to NULL in the function call.
+to NULL in the function call.  From Fortran, this is achieved by omitting
+one or more of the optional output parameters.
 
 <P>
 <HR WIDTH="100%">
