@@ -204,12 +204,11 @@ int ML_Destroy(ML **ml_ptr)
 
    ml = (*ml_ptr);
 
+   if (ml != NULL)
+   {
 #ifdef ML_TIMING
       if ( ml->output_level != 0 ) ML_Print_Timing(ml);
 #endif
-
-   if (ml != NULL)
-   {
       for (i = 0; i < ml->ML_num_levels; i++)
       {
          ML_Operator_Clean(&(ml->Amat[i]));
