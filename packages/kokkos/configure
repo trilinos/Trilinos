@@ -8717,7 +8717,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                              ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BaseSparseMultiply/Makefile test/BaseSparseSolve/Makefile test/DenseMultiVector/Makefile test/HbMatrix/Makefile example/Makefile example/MultiVec/Makefile example/SparseMatByMultiVec/Makefile example/SparseMatByMultiVec5/Makefile"
+                                                                                ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BaseSparseMultiply/Makefile test/BaseSparseSolve/Makefile test/DenseMultiVector/Makefile test/HbMatrix/Makefile example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9326,9 +9326,6 @@ do
   "test/DenseMultiVector/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/DenseMultiVector/Makefile" ;;
   "test/HbMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/HbMatrix/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
-  "example/MultiVec/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/MultiVec/Makefile" ;;
-  "example/SparseMatByMultiVec/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/SparseMatByMultiVec/Makefile" ;;
-  "example/SparseMatByMultiVec5/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/SparseMatByMultiVec5/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Kokkos_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Kokkos_config.h:src/Kokkos_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

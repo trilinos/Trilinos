@@ -271,10 +271,7 @@ AC_CONFIG_FILES([
 		test/BaseSparseSolve/Makefile
 		test/DenseMultiVector/Makefile
 		test/HbMatrix/Makefile
-		example/Makefile
-		example/MultiVec/Makefile
-		example/SparseMatByMultiVec/Makefile
-		example/SparseMatByMultiVec5/Makefile])
+		example/Makefile])
 
 AC_OUTPUT()
 

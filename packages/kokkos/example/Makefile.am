@@ -26,4 +26,7 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = MultiVec SparseMatByMultiVec SparseMatByMultiVec5
+#These examples are not portable enough for the autotools build
+#SUBDIRS = MultiVec SparseMatByMultiVec SparseMatByMultiVec5
+
+SUBDIRS =
