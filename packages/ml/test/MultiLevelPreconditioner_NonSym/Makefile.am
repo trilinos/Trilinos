@@ -28,40 +28,7 @@
 
 EXEEXT = .exe
 
-if ML_USING_AMESOS
-if ML_USING_ANASAZI
-if ML_USING_TEUCHOS 
-if ML_USING_TRIUTILS
-if ML_USING_IFPACK
-
 noinst_PROGRAMS = MultiLevelPreconditioner_NonSym 
-
-MultiLevelPreconditioner_NonSym_SOURCES = $(srcdir)/MultiLevelPreconditioner_NonSym.cpp
-
-MultiLevelPreconditioner_NonSym_DEPENDENCIES = \
-	$(top_builddir)/src/libml.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a 
-
-ml_common_include_locations = -I$(top_srcdir)/src/Include          \
-                   -I$(top_srcdir)/src/Coarsen                  \
-                   -I$(top_srcdir)/src/Comm                  \
-                   -I$(top_srcdir)/src/FEGrid                  \
-                   -I$(top_srcdir)/src/Include                  \
-                   -I$(top_srcdir)/src/Krylov                  \
-                   -I$(top_srcdir)/src/Main                  \
-                   -I$(top_srcdir)/src/Operator                  \
-                   -I$(top_srcdir)/src/Smoother                  \
-                   -I$(top_srcdir)/src/Utils                  \
-                   -I$(top_srcdir)/../aztecoo/src            \
-                   -I$(top_builddir)/../aztecoo/src \
-                   -I$(top_srcdir)/../epetra/src            \
-                   -I$(top_builddir)/../epetra/src \
-                   -I$(top_srcdir)/../teuchos/src            \
-                   -I$(top_builddir)/../teuchos/src \
-                   -I$(top_srcdir)/../triutils/src            \
-                   -I$(top_builddir)/../triutils/src
 
 if ML_USING_AMESOS
 # Amesos require Teuchos
@@ -92,6 +59,33 @@ ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
 else
 ifpack_lib =
 endif
+
+MultiLevelPreconditioner_NonSym_SOURCES = $(srcdir)/MultiLevelPreconditioner_NonSym.cpp
+
+MultiLevelPreconditioner_NonSym_DEPENDENCIES = \
+	$(top_builddir)/src/libml.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+    ${triutils_lib} \
+    ${teuchos_lib} 
+
+ml_common_include_locations = -I$(top_srcdir)/src/Include          \
+                   -I$(top_srcdir)/src/Coarsen                  \
+                   -I$(top_srcdir)/src/Comm                  \
+                   -I$(top_srcdir)/src/FEGrid                  \
+                   -I$(top_srcdir)/src/Include                  \
+                   -I$(top_srcdir)/src/Krylov                  \
+                   -I$(top_srcdir)/src/Main                  \
+                   -I$(top_srcdir)/src/Operator                  \
+                   -I$(top_srcdir)/src/Smoother                  \
+                   -I$(top_srcdir)/src/Utils                  \
+                   -I$(top_srcdir)/../aztecoo/src            \
+                   -I$(top_builddir)/../aztecoo/src \
+                   -I$(top_srcdir)/../epetra/src            \
+                   -I$(top_builddir)/../epetra/src \
+                   -I$(top_srcdir)/../teuchos/src            \
+                   -I$(top_builddir)/../teuchos/src \
+                   -I$(top_srcdir)/../triutils/src            \
+                   -I$(top_builddir)/../triutils/src
 #
 ml_libs = $(top_builddir)/src/libml.a        \
                 $(top_builddir)/../aztecoo/src/libaztecoo.a        \
@@ -112,9 +106,3 @@ MultiLevelPreconditioner_NonSym_CPPFLAGS = ${ml_common_include_locations}
 MultiLevelPreconditioner_NonSym_CXXFLAGS = ${ml_common_include_locations}
 MultiLevelPreconditioner_NonSym_LDADD = ${ml_libs}
 MultiLevelPreconditioner_NonSym_LINK = ${mllink}
-
-endif #if ML_USING_AMESOS
-endif #if ML_USING_ANASAZI
-endif #if ML_USING_TEUCHOS 
-endif #if ML_USING_TRIUTILS
-endif #if ML_USING_IFPACK
