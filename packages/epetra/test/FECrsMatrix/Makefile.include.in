@@ -243,9 +243,9 @@ FECrsMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp \
                   $(srcdir)/ExecuteTestProblems.cpp \
 		  $(srcdir)/ExecuteTestProblems.h 
 
-FECrsMatrix_test_DEPENDENCIES = $(EPETRA_LIBS)
+FECrsMatrix_test_DEPENDENCIES = $(top_builddir)/test/src/libepetra_test.a $(EPETRA_LIBS)
 FECrsMatrix_test_CXXFLAGS = $(EPETRA_INCLUDE)
-FECrsMatrix_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+FECrsMatrix_test_LDADD = $(top_builddir)/test/src/libepetra_test.a $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 all: all-am
 
 .SUFFIXES:
