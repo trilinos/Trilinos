@@ -59,23 +59,24 @@ MatrixFree::MatrixFree(Interface& i, const Epetra_Vector& x, double lambda_) :
   fo.PutScalar(0.0);
   fp.PutScalar(0.0);
 
-  // Create an EpetraMap if needed (First try and get it from the 
-  // solution vector currentX)
-  const Epetra_BlockMap* bmap = 0;
-  bmap = dynamic_cast<const Epetra_Map*>(&currentX.Map());
-  if (bmap != 0)
-    epetraMap = dynamic_cast<const Epetra_Map*>(bmap);
+  // Epetra_Operators require Epetra_Maps, so anyone using block maps
+  // (Epetra_BlockMap) won't be able to directly use the AztecOO solver.  
+  // We get around this by creating an Epetra_Map from the Epetra_BlockMap.
+  const Epetra_Map* testMap = 0;
+  testMap = dynamic_cast<const Epetra_Map*>(&currentX.Map());
+  if (testMap != 0) {
+    epetraMap = testMap;
+    ownsMap = false;
+  }
   else {
-    
-    int size = currentX.Map().NumGlobalElements();
-    int mySize = currentX.Map().NumMyElements();
+    int size = currentX.Map().NumGlobalPoints();
+    int mySize = currentX.Map().NumMyPoints();
     int indexBase = currentX.Map().IndexBase();
-    int* globalElementList = currentX.Map().MyGlobalElements();
     const Epetra_Comm& comm = currentX.Map().Comm();
-    epetraMap = new Epetra_Map(size, mySize, globalElementList, indexBase, comm);
+    epetraMap = new Epetra_Map(size, mySize, indexBase, comm);
     ownsMap = true;
   }
-
+  
 }
 
 MatrixFree::~MatrixFree()
