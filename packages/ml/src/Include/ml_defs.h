@@ -135,6 +135,9 @@
 
 /* Allow 64-bit integer support.  This is needed when the ML library is used
  * with MPSalsa.  MPSalsa requires 64-bit global element numbers. */
+#ifndef ML_BIG_INT
+#define ML_BIG_INT int
+#endif
 typedef ML_BIG_INT ml_big_int;
 
 #endif
