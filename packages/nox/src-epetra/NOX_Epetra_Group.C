@@ -432,13 +432,17 @@ void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
   }
 
   // Frequency of linear solve residual output
-  aztec.SetAztecOption(AZ_output, 
-		       p.getParameter("Output Frequency", AZ_last));
-
-  // Print a summary of the aztec options if "Details" is enabled
-  if (utils.isPrintType(Utils::LinearSolverDetails)) {
-    aztec.CheckInput();
+  if (utils.isPrintType(NOX::Utils::LinearSolverDetails)) {
+    aztec.SetAztecOption(AZ_output, 
+			 p.getParameter("Output Frequency", AZ_last));
   }
+  else
+    aztec.SetAztecOption(AZ_output, AZ_none);
+
+  // Print a summary of the aztec options
+  //if (utils.isPrintType(Utils::LinearSolverDetails)) {
+  //aztec.CheckInput();
+  //}
   return;
 }
 
