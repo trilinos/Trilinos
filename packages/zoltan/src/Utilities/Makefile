@@ -50,7 +50,7 @@ OBJ_DIR = Obj_$(ZOLTAN_ARCH)
 ALL_OBJ_DIRS := $(wildcard Obj_*)
 
 ifndef LIB_DIR
-LIB_DIR = $(OBJ_DIR)
+LIB_DIR = ../$(OBJ_DIR)
 endif
 
 ############################################################################
@@ -144,6 +144,9 @@ help:
 ###########################################################################
 
 $(MEM_LIB):
+	@if [ ! -d $(LIB_DIR) ]; 		\
+	then mkdir $(LIB_DIR); 			\
+	fi
 	@if [ ! -d $(OBJ_DIR) ]; 		\
 	then mkdir $(OBJ_DIR); 			\
 	fi
@@ -158,11 +161,12 @@ $(MEM_LIB):
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			
+	@if [ $(OBJ_DIR) != $(LIB_DIR) ];            \
+	then cp -f $(OBJ_DIR)/$(MEM_LIB) $(LIB_DIR); \
+	fi
+
 
 zdrive_mem mem:
-	@if [ ! -d $(OBJ_DIR) ]; 		\
-	then mkdir $(OBJ_DIR); 			\
-	fi
 	$(MAKE) $(MEM_LIB) 
 	@rm -f $(OBJ_DIR)/Makefile
 	@cp Makefile_sub $(OBJ_DIR)/Makefile
@@ -176,6 +180,9 @@ zdrive_mem mem:
 	"LNK_LIBS=$(MEM_DRIVER_LIBS)"
 
 $(COMM_LIB):
+	@if [ ! -d $(LIB_DIR) ]; 		\
+	then mkdir $(LIB_DIR); 			\
+	fi
 	@if [ ! -d $(OBJ_DIR) ]; 		\
 	then mkdir $(OBJ_DIR); 			\
 	fi
@@ -190,11 +197,11 @@ $(COMM_LIB):
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			
+	@if [ $(OBJ_DIR) != $(LIB_DIR) ];                \
+	then cp -f $(OBJ_DIR)/$(COMM_LIB) $(LIB_DIR);    \
+	fi
 
 zdrive_comm comm:
-	@if [ ! -d $(OBJ_DIR) ]; 		\
-	then mkdir $(OBJ_DIR); 			\
-	fi
 	$(MAKE) $(MEM_LIB)
 	$(MAKE) $(COMM_LIB)
 	@rm -f $(OBJ_DIR)/Makefile
@@ -245,7 +252,7 @@ clean:
 	 done;
 	-for a in $(ALL_OBJ_DIRS); do \
          echo $$a; \
-	 $(RM) -rf $$a; \
+	 $(RM) -rf $$a/*; \
 	 done;
 	 $(RM) $(LINT_TARGET)
 	 exit 0
