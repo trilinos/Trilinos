@@ -37,14 +37,14 @@ INOUT_H = \
 	$(srcdir)/EpetraExt_mmio.h \
      $(srcdir)/EpetraExt_RowMatrixOut.h \
      $(srcdir)/EpetraExt_MultiVectorOut.h \
-     $(srcdir)/EpetraExt_VectorOut.h
+     $(srcdir)/EpetraExt_VectorOut.h \
      $(srcdir)/EpetraExt_BlockMapOut.h
 
 INOUT = \
 	$(srcdir)/EpetraExt_mmio.cpp \
      $(srcdir)/EpetraExt_RowMatrixOut.cpp \
      $(srcdir)/EpetraExt_MultiVectorOut.cpp \
-     $(srcdir)/EpetraExt_VectorOut.cpp
+     $(srcdir)/EpetraExt_VectorOut.cpp \
      $(srcdir)/EpetraExt_BlockMapOut.cpp
 
 # ------------------------------------------------------------------------
