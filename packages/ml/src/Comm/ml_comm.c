@@ -12,10 +12,11 @@
 
 #include "ml_comm.h"
 
+ML_Comm *global_comm; /* should not be used to avoid side effect */
+
 /* ******************************************************************** */
 /* Create a communicator for ML                                         */
 /* -------------------------------------------------------------------- */
-ML_Comm *global_comm;
 
 int ML_Comm_Create( ML_Comm ** com ) 
 {
@@ -30,6 +31,7 @@ int ML_Comm_Create( ML_Comm ** com )
    com_ptr->USR_sendbytes  = ML_Comm_Send;
    com_ptr->USR_irecvbytes = ML_Comm_Irecv;
    com_ptr->USR_waitbytes  = ML_Comm_Wait;
+
 #ifdef ML_MPI
    MPI_Comm_size(MPI_COMM_WORLD, &(com_ptr->ML_nprocs));
    MPI_Comm_rank(MPI_COMM_WORLD, &(com_ptr->ML_mypid));
@@ -37,7 +39,6 @@ int ML_Comm_Create( ML_Comm ** com )
    com_ptr->USR_irecvbytes = ML_Comm_Irecv;
    com_ptr->USR_waitbytes  = ML_Comm_Wait;
 #endif
-
 
    return 0;
 }
@@ -50,7 +51,7 @@ int ML_Comm_Destroy( ML_Comm ** com )
 {
    if ( (*com)->ML_id != ML_ID_COMM )
    {
-      printf("Wrong Comm object to destroy. \n");
+      printf("ML_Comm_Destroy : Wrong Comm object to destroy. \n");
       return -1;
    }
    (*com)->ML_id = -1;
@@ -69,7 +70,7 @@ int ML_Comm_Check( ML_Comm *com_ptr )
 
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
-      printf("Wrong Comm object to check. \n");
+      printf("ML_Comm_Check : Wrong Comm object to check. \n");
       return -1;
    }
    if ( com_ptr->USR_irecvbytes == NULL ) ready_flag = 0;
@@ -90,62 +91,72 @@ int ML_Comm_Set_UsrComm( ML_Comm *com_ptr, USR_COMM com )
 {
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
-      printf("Wrong Comm object to set processor ID (%d).\n",com_ptr->ML_id);
+      printf("ML_Comm_Set_UsrComm : Wrong object (%d).\n",com_ptr->ML_id);
       exit(1);
    }
    com_ptr->USR_comm = com;
    return 0;
 }
 
+/* -------------------------------------------------------------------- */
+
 int ML_Comm_Set_Mypid( ML_Comm *com_ptr, int mypid )
 {
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
-      printf("Wrong Comm object to set processor ID. \n");
+      printf("ML_Comm_Set_Mypid : Wrong object (%d).\n",com_ptr->ML_id);
       exit(1);
    }
    com_ptr->ML_mypid = mypid;
    return 0;
 }
 
+/* -------------------------------------------------------------------- */
+
 int ML_Comm_Set_Nprocs( ML_Comm *com_ptr, int nprocs )
 {
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
-      printf("Wrong Comm object to set number of processors. \n");
+      printf("ML_Comm_Set_Nprocs : Wrong object (%d).\n",com_ptr->ML_id);
       exit(1);
    }
    com_ptr->ML_nprocs = nprocs;
    return 0;
 }
 
+/* -------------------------------------------------------------------- */
+
 int ML_Comm_Set_SendFcn( ML_Comm *com_ptr, int (*func)())
 {
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
-      printf("Wrong Comm object to set send function. \n");
+      printf("ML_Comm_Set_SendFcn : Wrong object (%d).\n",com_ptr->ML_id);
       exit(1);
    }
    com_ptr->USR_sendbytes = func;
    return 0;
 }
 
+/* -------------------------------------------------------------------- */
+
 int ML_Comm_Set_RecvFcn( ML_Comm *com_ptr, int (*func)())
 {
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
-      printf("Wrong Comm object to set receive function. \n");
+      printf("ML_Comm_Set_RecvFcn : Wrong object (%d).\n",com_ptr->ML_id);
       exit(1);
    }
    com_ptr->USR_irecvbytes = func;
    return 0;
 }
 
+/* -------------------------------------------------------------------- */
+
 int ML_Comm_Set_WaitFcn( ML_Comm *com_ptr, int (*func)())
 {
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
-      printf("Wrong Comm object to set receive function. \n");
+      printf("ML_Comm_Set_WaitFcn : Wrong object (%d).\n",com_ptr->ML_id);
       exit(1);
    }
    com_ptr->USR_waitbytes = func;
@@ -268,7 +279,7 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
    
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
-      printf("ML_Comm_GmaxInt : wrong Comm object. \n");
+      printf("ML_Comm_GsumInt : wrong Comm object. \n");
       exit(1);
    }
 
@@ -366,7 +377,7 @@ double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
    
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
-      printf("ML_Comm_GmaxDouble : wrong Comm object. \n");
+      printf("ML_Comm_GsumDouble : wrong Comm object. \n");
       exit(1);
    }
 
@@ -385,7 +396,7 @@ double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
    if (nprocs > (1 << hbit)) hbit++;
 
    /* ----------------------------------------------------------------- */
-   /* do a binary collapae (in processor number ascending order)        */
+   /* do a binary collapse (in processor number ascending order)        */
    /* ----------------------------------------------------------------- */
 
    mask = 0;
@@ -448,6 +459,104 @@ double ML_Comm_GsumDouble(ML_Comm *com_ptr, double ddata)
 }
 
 /************************************************************************/
+/* find the max of doubles  residing in each processor                  */
+/* -------------------------------------------------------------------- */
+
+double ML_Comm_GmaxDouble(ML_Comm *com_ptr, double ddata)
+{
+   int     mask, partner, hbit, msgtype, msgbase=247;
+   int     i, k, nprocs, mypid;
+   double  indata, outdata;
+   USR_REQ Request;
+
+   /* ----------------------------------------------------------------- */
+   /* check validity of the communication                               */
+   /* ----------------------------------------------------------------- */
+   
+   if ( com_ptr->ML_id != ML_ID_COMM )
+   {
+      printf("ML_Comm_GmaxDouble : wrong Comm object. \n");
+      exit(1);
+   }
+
+   /* ----------------------------------------------------------------- */
+   /* get processor information                                         */
+   /* ----------------------------------------------------------------- */
+
+   mypid  = com_ptr->ML_mypid;
+   nprocs = com_ptr->ML_nprocs;
+
+   /* ----------------------------------------------------------------- */
+   /* Find next higher power of 2.                                      */
+   /* ----------------------------------------------------------------- */
+
+   for (hbit = 0; (nprocs >> hbit) != 0; hbit++);
+   if (nprocs > (1 << hbit)) hbit++;
+
+   /* ----------------------------------------------------------------- */
+   /* do a binary collapse (in processor number ascending order)        */
+   /* ----------------------------------------------------------------- */
+
+   mask = 0;
+   outdata = ddata;
+   for ( i = 0; i < hbit; i++ )
+   {
+      msgtype = msgbase + i;
+      partner = mypid ^ (1 << i);
+      if ((mypid & mask) == 0)
+      {
+         if (((mypid & (1 << i)) == 0) && (partner < nprocs))
+         {
+            k = sizeof(double);
+            com_ptr->USR_irecvbytes((void*) &indata, k, &partner, &msgtype, 
+                                    com_ptr->USR_comm, (void *) &Request );
+            com_ptr->USR_waitbytes((void*) &indata, k, &partner, &msgtype, 
+                                   com_ptr->USR_comm, (void *) &Request );
+            outdata = (outdata > indata) ? outdata : indata;
+         } 
+         else if (partner < nprocs)
+         {
+            k = sizeof(double);
+            com_ptr->USR_sendbytes((void*) &outdata, k, partner, msgtype,
+                                   com_ptr->USR_comm );
+         }
+      }
+      mask    = mask | (1 << i);
+   }
+
+   /* ----------------------------------------------------------------- */
+   /* Finally, broadcast this information to every processor in a tree  */
+   /* manner.                                                           */
+   /* ----------------------------------------------------------------- */
+
+   msgbase = 539;
+   mask    = 32767;
+   k       = sizeof(double);
+   for ( i = 0; i < hbit; i++ )
+   {
+      msgtype = msgbase + i;
+      partner = mypid ^ (1 << i);
+      mask    = mask << 1;
+      if ((mypid & mask) == 0)
+      {
+         if (((mypid & (1 << i)) == 0) && (partner < nprocs))
+         {
+            com_ptr->USR_sendbytes((void*) &outdata, k, partner, msgtype,
+                                   com_ptr->USR_comm );
+         } 
+         else if (partner < nprocs)
+         {
+            com_ptr->USR_irecvbytes((void*) &outdata, k, &partner, &msgtype,
+                                    com_ptr->USR_comm, (void *) &Request );
+            com_ptr->USR_waitbytes((void*) &outdata, k, &partner, &msgtype,
+                                   com_ptr->USR_comm, (void *) &Request );
+         }
+      }
+   }
+   return outdata;
+}
+
+/************************************************************************/
 /* sum an integer vector across all processors                          */
 /*----------------------------------------------------------------------*/
 
@@ -461,8 +570,9 @@ int ML_Comm_GsumVecInt(ML_Comm *com_ptr, int *idata, int *itmp, int leng)
    /* check validity of the communication                               */
    /* ----------------------------------------------------------------- */
    
-   if ( com_ptr->ML_id != ML_ID_COMM ) {
-      printf("ML_Comm_GmaxInt : wrong Comm object. \n");
+   if ( com_ptr->ML_id != ML_ID_COMM ) 
+   {
+      printf("ML_Comm_GsumVecInt : wrong Comm object. \n");
       exit(1);
    }
 
@@ -562,7 +672,7 @@ int ML_Comm_GappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
    
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
-      printf("ML_Comm_GmaxInt : wrong Comm object. \n");
+      printf("ML_Comm_GappendInt : wrong Comm object. \n");
       exit(1);
    }
 
@@ -664,7 +774,7 @@ int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length,
    
    if ( com_ptr->ML_id != ML_ID_COMM )
    {
-      printf("ML_Comm_GmaxInt : wrong Comm object. \n");
+      printf("ML_Comm_GappendDouble : wrong Comm object. \n");
       exit(1);
    }
 
@@ -750,6 +860,7 @@ int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length,
 /**************************************************************************/
 /* communication subroutines                                              */
 /*------------------------------------------------------------------------*/
+
 int ML_Comm_Irecv(void* buf, unsigned int count, int *src,
                   int *mid, USR_COMM comm, USR_REQ *request )
 {
@@ -761,6 +872,8 @@ int ML_Comm_Irecv(void* buf, unsigned int count, int *src,
 #endif
    return err;
 }
+
+/*------------------------------------------------------------------------*/
 
 int ML_Comm_Wait (void* buf, unsigned int count, int *src,
                   int *mid, USR_COMM comm, USR_REQ *request )
@@ -775,6 +888,8 @@ int ML_Comm_Wait (void* buf, unsigned int count, int *src,
 #endif
    return return_cnt;
 }
+
+/*------------------------------------------------------------------------*/
 
 int ML_Comm_Send(void* buf, unsigned int count, int dest, int mid,
                  USR_COMM comm )

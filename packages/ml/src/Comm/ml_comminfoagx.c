@@ -81,7 +81,7 @@ int ML_CommInfoAGX_Setup_Send(ML_CommInfoAGX *com, int count, int count2)
 
    if ( com->ML_id != ML_ID_COMMINFOAGX )
    {
-      printf("ML_CommInfoAGX_SetupSend : wrong object. \n");
+      printf("ML_CommInfoAGX_Setup_Send : wrong object. \n");
       exit(1);
    }
    com->send_cur = 0;
@@ -122,7 +122,7 @@ int ML_CommInfoAGX_Load_SendList(ML_CommInfoAGX *com,int proc,int leng,
 
    if ( com->ML_id != ML_ID_COMMINFOAGX )
    {
-      printf("ML_CommInfoAGX_LoadSendList : wrong object. \n");
+      printf("ML_CommInfoAGX_Load_SendList : wrong object. \n");
       exit(1);
    }
    k = (com->send_cur)++;
@@ -142,7 +142,7 @@ int ML_CommInfoAGX_Get_SendList(ML_CommInfoAGX *com, int index, int *proc,
 {
    if ( com->ML_id != ML_ID_COMMINFOAGX )
    {
-      printf("ML_CommInfoAGX_GetSendList : wrong object. \n");
+      printf("ML_CommInfoAGX_Get_SendList : wrong object. \n");
       exit(1);
    }
    (*proc) = com->send_proc[index];
@@ -161,7 +161,7 @@ int ML_CommInfoAGX_Setup_Recv(ML_CommInfoAGX *com, int count, int count2)
 
    if ( com->ML_id != ML_ID_COMMINFOAGX )
    {
-      printf("ML_CommInfoAGX_GetSendList : wrong object. \n");
+      printf("ML_CommInfoAGX_Setup_Recv : wrong object. \n");
       exit(1);
    }
    com->recv_cur = 0;
@@ -204,7 +204,7 @@ int ML_CommInfoAGX_Load_RecvInfo( ML_CommInfoAGX *com, int proc, int leng )
 
    if ( com->ML_id != ML_ID_COMMINFOAGX )
    {
-      printf("ML_CommInfoAGX_LoadRecvInfo : wrong object. \n");
+      printf("ML_CommInfoAGX_Load_RecvInfo : wrong object. \n");
       exit(1);
    }
    k = (com->recv_cur)++;
@@ -225,7 +225,7 @@ int ML_CommInfoAGX_Load_RecvData(ML_CommInfoAGX *com, int proc, int *list,
 
    if ( com->ML_id != ML_ID_COMMINFOAGX )
    {
-      printf("ML_CommInfoAGX_LoadRecvData : wrong object. \n");
+      printf("ML_CommInfoAGX_Load_RecvData : wrong object. \n");
       exit(1);
    }
    while (k < com->recv_cnt && flag == 0)
@@ -252,7 +252,7 @@ int ML_CommInfoAGX_Get_RecvList(ML_CommInfoAGX *com, int index, int *proc,
 {
    if ( com->ML_id != ML_ID_COMMINFOAGX )
    {
-      printf("ML_CommInfoAGX_GetRecvList : wrong object. \n");
+      printf("ML_CommInfoAGX_Get_RecvList : wrong object. \n");
       exit(1);
    }
    (*proc) = com->recv_proc[index];

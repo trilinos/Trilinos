@@ -65,37 +65,35 @@ struct ML_CommInfoOP_Struct {
 extern "C" {
 #endif
 
-extern int ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
-        int (*user_comm)(double *, void *), void *user_data, ML_Comm *ml_comm,
-	int N_cols, int Nghost );
+extern int  ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
+                   int (*user_comm)(double *, void *), void *user_data, 
+                   ML_Comm *ml_comm, int N_cols, int Nghost );
+extern int  ML_CommInfoOP_Clone(ML_CommInfoOP **newone, ML_CommInfoOP *oldone);
 extern void ML_CommInfoOP_Destroy(ML_CommInfoOP *comm_info);
+
 extern int  ML_CommInfoOP_Get_Nneighbors(ML_CommInfoOP *c_info);
 extern int *ML_CommInfoOP_Get_neighbors( ML_CommInfoOP *c_info);
 extern int *ML_CommInfoOP_Get_sendlist(  ML_CommInfoOP *c_info, int neighbor);
 extern int  ML_CommInfoOP_Get_Nsendlist( ML_CommInfoOP *c_info, int neighbor);
 extern int  ML_CommInfoOP_Get_Nrcvlist(  ML_CommInfoOP *c_info, int neighbor);
 extern int *ML_CommInfoOP_Get_rcvlist(   ML_CommInfoOP *c_info, int neighbor);
-extern int ML_CommInfoOP_Set_neighbors(ML_CommInfoOP  **c_info,int N_neighbors,
-        int *neighbors, int add_or_not, int *remap, int remap_leng);
-extern int ML_CommInfoOP_Set_exch_info(ML_CommInfoOP *comm_info, int k,
-        int N_rcv, int *rcv_list, int N_send, int *send_list);
-extern int ML_CommInfoOP_Print(ML_CommInfoOP *c_info, char *label);
-extern int ML_CommInfoOP_Clone(ML_CommInfoOP **newone, ML_CommInfoOP *oldone);
+extern int  ML_CommInfoOP_Set_neighbors(ML_CommInfoOP  **c_info,int N_neighbors,
+                   int *neighbors, int add_or_not, int *remap, int remap_leng);
+extern int  ML_CommInfoOP_Set_exch_info(ML_CommInfoOP *comm_info, int k,
+                   int N_rcv, int *rcv_list, int N_send, int *send_list);
+
+extern int  ML_CommInfoOP_Print(ML_CommInfoOP *c_info, char *label);
 
 extern void ML_create_unique_col_id(int Ncols, int **map, ML_CommInfoOP *,
                                     int *max_per_proc, ML_Comm *comm);
-
 extern void ML_cheap_exchange_bdry(double dtemp[], ML_CommInfoOP *comm_info,
-                             int start_location, int total_send,
-                             ML_Comm *comm);
-
+                                   int start_location, int total_send,
+                                   ML_Comm *comm);
 extern void ML_exchange_bdry(double dtemp[], ML_CommInfoOP *comm_info,
                              int start_location, ML_Comm *comm, int );
 
-
-
 #ifdef __cplusplus
-  }
+}
 #endif
 
 #endif
