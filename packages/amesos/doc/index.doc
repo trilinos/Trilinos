@@ -499,8 +499,8 @@ The version of colamd which is distributed within Amesos is not compatible
 with the version distributed with SuperLU. This cause the code to crash. You
 might need to disable KLU to use SuperLU/SuperLU_DIST.
 
-DSCPACK does not support Epetra_RowMatrix's and Epetra_VbrMatrix. A fix is
-under development (especially for VBR matrices).
+DSCPACK does not support Epetra_RowMatrix's and Epetra_VbrMatrix. DSCPACK has memory leaks.  A fix is
+under development for both of these issues.
 
 Amesos has an incomplete interface to ScaLAPACK under development.
 
