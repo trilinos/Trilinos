@@ -716,9 +716,11 @@ static int pmatching_ipm(
 
 skip_phase1:
     /* Communication grouped candidates by processor, scramble them! */
+    /* Otherwise all candidates from proc column 0 will be matched first. */
     if (hgc->nProc_x > 1 || cFLAG)  {
-      /* EBEB Instead of Zoltan_Rand_Perm_Int, we should use 
-         Zoltan_PHG_Vertex_Visit_Order() but it must be modified a bit */
+      /* Future: Instead of Zoltan_Rand_Perm_Int, we could use 
+         Zoltan_PHG_Vertex_Visit_Order() to reorder the candidates
+         but that routine uses a local hg so won't work on the candidates. */
       Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
       Zoltan_Rand_Perm_Int (permute, nTotal, &(hgc->RNGState_col));
     }
