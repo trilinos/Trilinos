@@ -885,6 +885,14 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    ML_Operator   *Mat2comm, *Mat1Mat2, *tptr, *Mat1Mat2comm;
    ML_Comm       *comm;
 
+   if (Mat1->invec_leng != Mat2->outvec_leng)
+   {
+      printf("In ML_2matmult: matrix dimensions do not agree:\n"
+                       "\tMat1->invec_leng = %d, Mat2->outvec_leng = %d\n",
+                       Mat1->invec_leng, Mat2->outvec_leng);
+      exit(1);
+   }
+
    comm = Mat1->comm;
    N_input_vector = Mat2->invec_leng;
    getrow_comm    = Mat2->getrow->pre_comm;
