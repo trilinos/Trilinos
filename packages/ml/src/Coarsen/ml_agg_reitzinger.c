@@ -25,9 +25,13 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   int    *pid_fine_edge;
   ML_Operator *Kn_coarse, *Rn_coarse, *Tcoarse, *Pn_coarse;
   ML_Operator *Pe, *Tcoarse_trans, *Tfine;
+/*
   char filename[80];
-  /* FILE *fid1; */
   FILE *fid2;
+  FILE *fid1;
+  int max_matrix_size;
+  int nrows, ncols;
+*/
 #ifdef LEASTSQ_SERIAL
   ML_Operator *SPn_mat;
 #endif
@@ -44,7 +48,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   int i1, old_nzptr, i3, *index;
   int Npos_dirichlet = 0, Nneg_dirichlet = 0;
   int Nnondirichlet, Nnz_finegrid, Nnz_allgrids;
-  double d1;
   double droptol;
   int *num_msgs, *tmp_msgs, *Nsnd_info, *Nrcv_info, type, partner;
   int *tmp1, *tmp2, Nlocal, Nneighbors_rcv, Nneighbors_snd, new_length;
@@ -56,16 +59,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   double *pos_coarse_dirichlet, *neg_coarse_dirichlet, *edge_type;
 #endif
 
-  int *glob_fine_edge_nums, *glob_fine_node_nums;
-  int *glob_coarse_edge_nums, *glob_coarse_node_nums;
-  ML_Operator *Ke;
-
   ML_CommInfoOP *getrow_comm; 
   int  N_input_vector;
   int  bail_flag;
 
-  int max_matrix_size;
-  int nrows, ncols;
 
   int nzctr;
 
@@ -172,7 +169,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
     }
   }
   */
-
 
 
 
@@ -1090,131 +1086,17 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      (*Tmat_trans_array)[grid_level] = Tcoarse_trans;
      Pn_coarse = SPn_mat;
 #endif
-
-/****************** Check the construction of Pe ***********************/
-     vec = (double *) ML_allocate(sizeof(double)*(Pn_coarse->invec_leng+1+
-						  Pe->outvec_leng));
-     Pn_vec = (double *) ML_allocate(sizeof(double)*(Pn_coarse->outvec_leng+
-						     Tcoarse->outvec_leng+1));
-     Tfine_Pn_vec = (double *) ML_allocate(sizeof(double)*(Tfine->outvec_leng+1));
-     ML_random_vec(vec, Pn_coarse->invec_leng, ml_edges->comm);
-     d1 = sqrt(ML_gdot(Pn_coarse->invec_leng, vec, vec, ml_edges->comm));
-     for (i = 0; i < Pn_coarse->invec_leng; i++) 
-       vec[i] /= d1;
-
-     /*sprintf(filename,"randvec%d",grid_level-1);
-     fid = fopen(filename,"w");
-     for (i=0; i<Pn_coarse->invec_leng; i++)
-        fprintf(fid,"%d    %20.15e\n",i,vec[i]);
-     fclose(fid);*/
-
-     ML_Operator_Apply(Pn_coarse, Pn_coarse->invec_leng, vec,
-		       Pn_coarse->outvec_leng,Pn_vec);
-     ML_Operator_Apply(Tfine, Tfine->invec_leng, Pn_vec,
-		       Tfine->outvec_leng,Tfine_Pn_vec);
-     ML_Operator_Apply(Tcoarse, Tcoarse->invec_leng, vec,
-		       Tcoarse->outvec_leng,Pn_vec);
-     ML_Operator_Apply(Pe, Pe->invec_leng, Pn_vec,
-		       Pe->outvec_leng,vec);
-     ML_free(Pn_vec);
-
-     /* this is buggy -- don't use it right now
-     fid2 = fopen("ML_write_matrix_now","r");
-     if (fid2 != NULL) {
-       i = fscanf(fid2,"%d",&max_matrix_size);
-       // if empty file, print everything 
-       fclose(fid2);
-       if (i==EOF || i==0) {
-         sprintf(filename,"Kn_%d",grid_level);
-         ML_Operator_Print_UsingGlobalOrdering(Kn_coarse,filename);
-         sprintf(filename,"Pn_%d",grid_level);
-         ML_Operator_Print_UsingGlobalOrdering(Pn_coarse,filename);
-         sprintf(filename,"T_%d",grid_level);
-         ML_Operator_Print_UsingGlobalOrdering(Tcoarse,filename);
-         sprintf(filename,"Pe_%d",grid_level);
-         ML_Operator_Print_UsingGlobalOrdering(Pe,filename);
-       }
-       else {
-         ML_Operator_GetGlobalDimensions(Kn_coarse,&nrows,&ncols);
-         if (nrows < i && ncols < i) {
-           sprintf(filename,"Kn_%d",grid_level);
-           ML_Operator_Print_UsingGlobalOrdering(Kn_coarse,filename);
-         }
-         ML_Operator_GetGlobalDimensions(Tcoarse,&nrows,&ncols);
-         if (nrows < i && ncols < i) {
-           sprintf(filename,"T_%d",grid_level);
-           ML_Operator_Print_UsingGlobalOrdering(Tcoarse,filename);
-         }
-         ML_Operator_GetGlobalDimensions(Pn_coarse,&nrows,&ncols);
-         if (nrows < i && ncols < i) {
-           sprintf(filename,"Pn_%d",grid_level);
-           ML_Operator_Print_UsingGlobalOrdering(Pn_coarse,filename);
-         }
-         ML_Operator_GetGlobalDimensions(Pe,&nrows,&ncols);
-         if (nrows < i && ncols < i) {
-           sprintf(filename,"Pe_%d",grid_level);
-           ML_Operator_Print_UsingGlobalOrdering(Pe,filename);
-         }
-       }
-     }
-     */
-
-     for (i = 0; i < Pe->outvec_leng ; i++) 
-       vec[i] = vec[i] - Tfine_Pn_vec[i];
-
-     if (8 < ML_Get_PrintLevel())  {
-       d1 = sqrt(ML_gdot(Tfine->outvec_leng, Tfine_Pn_vec,Tfine_Pn_vec, Pe->comm));
-     if (ml_edges->comm->ML_mypid == 0 )
-       printf("\n\nML_agg_reitzinger:  ||Th Pn v|| = %15.10e\n\n",d1);
-     }
-     d1 = sqrt(ML_gdot(Pe->outvec_leng, vec,vec, Pe->comm));
-
-     if (8 < ML_Get_PrintLevel())  {
-       if (ml_edges->comm->ML_mypid == 0 )
-         printf("ML_agg_reitzinger: %e\n",d1);
-       if ( fabs(d1) > 1.0e-4)
-       {
-         if (ml_edges->comm->ML_mypid == 0 )
-           printf("ML_agg_reitzinger: Pe TH != Th Pn %e (level %d)\n",
-                  d1,grid_level);
-         if (14 < ML_Get_PrintLevel() )  {
-
-            Ke = ml_edges->Amat+grid_level+1;
-            ML_build_global_numbering(Ke, Ke->comm, &glob_fine_edge_nums);
-            Ke = ml_nodes->Amat+grid_level+1;
-            ML_build_global_numbering(Ke,Ke->comm, &glob_fine_node_nums);
-            Ke = ml_nodes->Amat+grid_level;
-            ML_build_global_numbering(Ke,Ke->comm, &glob_coarse_node_nums);
-            /* ml_edges->Amat+grid_level doesn't exist yet.. */
-            ML_build_global_numbering(Tcoarse,Tcoarse->comm,
-                                      &glob_coarse_edge_nums);
-
-            ML_Operator_Print_UsingGlobalOrdering(Pn_coarse,"Pn_debug",
-                              glob_fine_node_nums,glob_coarse_node_nums);
-            ML_Operator_Print_UsingGlobalOrdering(Tfine,"Tfine_debug",
-                              glob_fine_edge_nums,glob_fine_node_nums);
-            ML_Operator_Print_UsingGlobalOrdering(Tcoarse,"Tcoarse_debug",
-                              glob_coarse_edge_nums,glob_coarse_node_nums);
-            ML_Operator_Print_UsingGlobalOrdering(Pe,"Pe_debug",
-                              glob_fine_edge_nums,glob_coarse_edge_nums);
-
-            ML_free(glob_fine_edge_nums);
-            ML_free(glob_fine_node_nums);
-            ML_free(glob_coarse_node_nums);
-            ML_free(glob_coarse_edge_nums);
-         }
-         for (i = 0; i < Pe->outvec_leng; i++) {
-           /* change this tolerance if you actually want */
-           /* to see the individual components.          */
-           if (fabs(vec[i]) > 1.0) 
-             fprintf(stderr,"%d: ===> %d is %20.13e vs %20.13e\n",
-                Pe->comm->ML_mypid,i,vec[i] + Tfine_Pn_vec[i],Tfine_Pn_vec[i]);
-         }
-       }
-     }
-
-     ML_free(vec); ML_free(Tfine_Pn_vec);
-
+/*
+     printf("\n\n%%%%%%%%%%%%%%%%%%\n(%d) Tfine->outvec_leng = %d, invec_leng = %d\n",grid_level+1,Tfine->outvec_leng, Tfine->invec_leng);
+     printf("(%d) Pe->outvec_leng = %d, invec_leng = %d\n",grid_level+1,Pe->outvec_leng, Pe->invec_leng);
+     printf("(%d) Pn_coarse->outvec_leng = %d, invec_leng = %d\n",grid_level+1,Pn_coarse->outvec_leng, Pn_coarse->invec_leng);
+     printf("(%d) Kn_coarse->outvec_leng = %d, invec_leng = %d\n",grid_level+1,Kn_coarse->outvec_leng, Kn_coarse->invec_leng);
+     printf("%%%%%%%%%%%%%%%%%%\n");
+     fflush(stdout);
+*/
+     ML_Reitzinger_CheckCommutingProperty(ml_nodes, ml_edges, *Tmat_array,
+                                  *Tmat_trans_array,
+                                  grid_level+1, grid_level, ML_TRUE);
 #ifdef LEASTSQ_SERIAL
      ML_Operator_Destroy(&SPn_mat);
 #endif
@@ -1451,10 +1333,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                  &(ml_edges->SingleLevel[grid_level+1]));
      ML_Gen_Restrictor_TransP(ml_edges, grid_level+1, grid_level);
      ML_Gen_AmatrixRAP(ml_edges, grid_level+1, grid_level);
-     /*
-     if (grid_level == fine_level-1)
-       ML_Operator_Print(ml_edges->Amat+grid_level,"Amat_before");
-     */
+
 #if defined(ML_NEW_ENRICH)
      /* Weed out small values in A (MSR format). */
      droptol = 1e-9;
@@ -1477,6 +1356,16 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      }
      tmpmat->N_nonzeros = nz_ptr;
 #endif /*if defined(ML_ENRICH) && ... */
+
+#if !defined(ML_ENRICH)
+     if (smooth_flag == ML_YES)
+#endif
+/*
+     ML_Reitzinger_CheckCommutingProperty(ml_nodes, ml_edges, *Tmat_array,
+                                    *Tmat_trans_array,
+                                    grid_level+1, grid_level, ML_FALSE);
+*/
+
      Nnz_allgrids += ml_edges->Amat[grid_level].N_nonzeros;
      /*
      if (grid_level == fine_level-1)
@@ -2159,3 +2048,139 @@ double checkit(ML_Operator *A, double *v)
   return result;
 }
 #endif
+
+/******************************************************************************/
+/******************************************************************************/
+/*******************************************************************************
+  This function verifies that T_h*Pn = Pe*T_H, i.e.,
+  that the diagram below commutes.
+
+                         T_h
+                        ----->                  grid_level + 1
+                       ^      ^
+                   Pn  |      | Pe
+                       |      |
+                        ----->                  grid_level
+                         T_H
+
+  This is verified by applying Pe*T_H and T_h*Pn to a random vector and
+  comparing the results.
+
+  Remarks:  If writeflag == ML_TRUE, commuting doesn't hold, and print level
+            is greater than 14, then the operators are written to file.
+            We use Marzio Sala's global printing function, so that even in
+            parallel each matrix can be written out with an artificial global
+            numbering.
+*******************************************************************************/
+void ML_Reitzinger_CheckCommutingProperty(ML *ml_nodes, ML *ml_edges,
+                                  ML_Operator **Tmat_array,
+                                  ML_Operator **Tmat_trans_array,
+                                  int finelevel, int coarselevel,
+                                  int writeflag)
+{
+  int i;
+  int *glob_fine_edge_nums, *glob_fine_node_nums;
+  int *glob_coarse_edge_nums, *glob_coarse_node_nums;
+  double d1, *vec, *Pn_vec, *Tfine_Pn_vec;
+  ML_Operator *Pn_coarse, *Tfine, *Tcoarse, *Pe, *Ke, *Ttrans, *tmpmat;
+
+  /*********************** start of execution *******************************/
+
+  Tfine = Tmat_array[finelevel];
+  Tcoarse = Tmat_array[coarselevel];
+  Ttrans = Tmat_trans_array[coarselevel];
+  Pn_coarse = &(ml_nodes->Pmat[coarselevel]);
+  Pe = &(ml_edges->Pmat[coarselevel]);
+
+  vec = (double *) ML_allocate(sizeof(double)*(Pn_coarse->invec_leng+1+
+                       Pe->outvec_leng));
+  Pn_vec = (double *) ML_allocate(sizeof(double)*(Pn_coarse->outvec_leng+
+                          Tcoarse->outvec_leng+1));
+  Tfine_Pn_vec = (double *) ML_allocate(sizeof(double)*(Tfine->outvec_leng+1));
+  ML_random_vec(vec, Pn_coarse->invec_leng, ml_edges->comm);
+  d1 = sqrt(ML_gdot(Pn_coarse->invec_leng, vec, vec, ml_edges->comm));
+  for (i = 0; i < Pn_coarse->invec_leng; i++) 
+    vec[i] /= d1;
+
+  ML_Operator_Apply(Pn_coarse, Pn_coarse->invec_leng, vec,
+            Pn_coarse->outvec_leng,Pn_vec);
+  ML_Operator_Apply(Tfine, Tfine->invec_leng, Pn_vec,
+            Tfine->outvec_leng,Tfine_Pn_vec);
+  ML_Operator_Apply(Tcoarse, Tcoarse->invec_leng, vec,
+            Tcoarse->outvec_leng,Pn_vec);
+  ML_Operator_Apply(Pe, Pe->invec_leng, Pn_vec,
+            Pe->outvec_leng,vec);
+  ML_free(Pn_vec);
+
+  /*   Pe*Tcoarse*v - Tfine*Pn*v    */
+  for (i = 0; i < Pe->outvec_leng ; i++) 
+    vec[i] = vec[i] - Tfine_Pn_vec[i];
+
+  if (8 < ML_Get_PrintLevel())  {
+    /*
+    d1 = sqrt(ML_gdot(Tfine->outvec_leng, Tfine_Pn_vec,Tfine_Pn_vec, Pe->comm));
+    if (ml_edges->comm->ML_mypid == 0 )
+      printf("\n\nML_agg_reitzinger:  ||Th Pn v|| = %15.10e  (levels %d & %d)\n",d1, finelevel,coarselevel);
+    */
+    d1 = sqrt(ML_gdot(Pe->outvec_leng, vec,vec, Pe->comm));
+    if ( fabs(d1) > 1.0e-4 )
+    {
+      if (ml_edges->comm->ML_mypid == 0 ) {
+        printf("\n*** WARNING ****   In ML_agg_reitzinger: Pe TH != Th Pn       (levels %d & %d)\n", finelevel,coarselevel);
+        printf("\t\t||Th*Pn*v - Pe*TH*v|| = %15.10e      (levels %d & %d)\n\n",d1, finelevel,coarselevel);
+      }
+      if (14 < ML_Get_PrintLevel() && writeflag == ML_TRUE)
+      {
+         Ke = ml_edges->Amat+coarselevel+1;
+         ML_build_global_numbering(Ke, Ke->comm, &glob_fine_edge_nums);
+         Ke = ml_nodes->Amat+coarselevel+1;
+         ML_build_global_numbering(Ke,Ke->comm, &glob_fine_node_nums);
+         Ke = ml_nodes->Amat+coarselevel;
+         ML_build_global_numbering(Ke,Ke->comm, &glob_coarse_node_nums);
+         /* ml_edges->Amat+coarselevel doesn't necessarily exist yet.. */
+         /* This is an awful way to get the right global mapping for the
+            coarser level edge matrix.  */
+         tmpmat = ML_Operator_Create(Tcoarse->comm);
+         ML_rap(Tcoarse, ml_nodes->Amat+coarselevel,
+                Ttrans,tmpmat, ML_MSR_MATRIX);
+         ML_build_global_numbering(tmpmat,tmpmat->comm,
+                                   &glob_coarse_edge_nums);
+         ML_Operator_Destroy(&tmpmat);
+
+         ML_Operator_Print_UsingGlobalOrdering(Ke,"Kn_coarse_debug",
+                           glob_coarse_node_nums,glob_coarse_node_nums);
+         Ke = ml_nodes->Amat+coarselevel+1;
+         ML_Operator_Print_UsingGlobalOrdering(Ke,"Kn_fine_debug",
+                           glob_fine_node_nums,glob_fine_node_nums);
+         Ke = ml_edges->Amat+coarselevel+1;
+         ML_Operator_Print_UsingGlobalOrdering(Ke,"Ke_fine_debug",
+                           glob_fine_edge_nums,glob_fine_edge_nums);
+         ML_Operator_Print_UsingGlobalOrdering(Pn_coarse,"Pn_debug",
+                           glob_fine_node_nums,glob_coarse_node_nums);
+         ML_Operator_Print_UsingGlobalOrdering(Tfine,"Tfine_debug",
+                           glob_fine_edge_nums,glob_fine_node_nums);
+         ML_Operator_Print_UsingGlobalOrdering(Tcoarse,"Tcoarse_debug",
+                           glob_coarse_edge_nums,glob_coarse_node_nums);
+         ML_Operator_Print_UsingGlobalOrdering(Pe,"Pe_debug",
+                           glob_fine_edge_nums,glob_coarse_edge_nums);
+
+         ML_free(glob_fine_edge_nums);
+         ML_free(glob_fine_node_nums);
+         ML_free(glob_coarse_node_nums);
+         ML_free(glob_coarse_edge_nums);
+      }
+      for (i = 0; i < Pe->outvec_leng; i++) {
+        /* change this tolerance if you actually want */
+        /* to see the individual components.          */
+        if (fabs(vec[i]) > 1.0) 
+          fprintf(stderr,"%d: ===> %d is %20.13e vs %20.13e\n",
+             Pe->comm->ML_mypid,i,vec[i] + Tfine_Pn_vec[i],Tfine_Pn_vec[i]);
+      }
+    }
+    else if (ml_edges->comm->ML_mypid == 0 )
+      printf("ML_agg_reitzinger:  ||Th*Pn*v - Pe*TH*v|| = %15.10e  (levels %d & %d)\n\n",d1, finelevel,coarselevel);
+  }
+
+  ML_free(vec); ML_free(Tfine_Pn_vec);
+
+}

@@ -76,6 +76,12 @@ extern int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 			   ML_Operator *Tfine_mat, ML_Operator *Tcoarse_mat, 
 			   ML_Operator *Pe_mat, int);
 
+void ML_Reitzinger_CheckCommutingProperty(ML *ml_nodes, ML *ml_edges,
+                                  ML_Operator **Tmat_array,
+                                  ML_Operator **Tmat_trans_array,
+                                  int finelevel, int coarselevel,
+                                  int writeflag);
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 }
