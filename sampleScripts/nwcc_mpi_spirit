@@ -1,0 +1,17 @@
+.././configure \
+--enable-nox --enable-teuchos --enable-new_package \
+--enable-new-package --enable-teuchos-abc --enable-teuchos-experimental \
+--enable-teuchos-complex --enable-aztecoo --enable-ifpack \
+--with-blas="-L/apps/intel/mkl/lib/em64t -lmkl -lguide" \
+--with-lapack="-L/apps/intel/mkl/lib/em64t \
+-lmkl_lapack -L/apps/intel/mkl/lib/em64t -lmkl" --with-mpi-compilers \
+--with-mpi-libs=-lmpich --enable-loca \
+--enable-epetraext --enable-amesos \
+--enable-anasazi --enable-belos \
+--enable-claps --enable-claps-clop \
+--enable-didasko --enable-kokkos --enable-komplex \
+--disable-meros --enable-ml \
+--enable-tpetra --enable-tsfcore --enable-tsfcore-epetra \
+--disable-tsfextended \
+CFLAGS=-O3 CXXFLAGS=-O3 \
+FFLAGS=-O3 CPPFLAGS="-DCODE_MP -DHAVE_CONFIG_H"
