@@ -446,13 +446,6 @@ void LB_fix_tags(LB *lb,
   int num_gid_entries = lb->Num_GID;
   int num_lid_entries = lb->Num_LID;
 
-  if (nrectags == 0) {
-    *import_global_ids = NULL;
-    *import_local_ids = NULL;
-    *import_procs = NULL;
-  }
-  else {
-
     /* allocate memory */
 
     if (!LB_Special_Malloc(lb,(void **)import_global_ids,nrectags,
@@ -485,6 +478,5 @@ void LB_fix_tags(LB *lb,
                  import_regs[i].Local_ID);
       (*import_procs)[i]      = import_regs[i].Proc;
     }
-  }
 }
 

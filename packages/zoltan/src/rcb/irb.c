@@ -124,6 +124,8 @@ int LB_irb(
      LB_Assign_Param_Vals(lb->Params, IRB_params, lb->Debug_Level, lb->Proc,
                           lb->Debug_Proc);
 
+     /* Initializations in case of early exit. */
+     *num_import = -1;
      *num_export = -1;  /* We don't compute the export map. */
 
      return(irb_fn(lb, num_import, import_global_ids, import_local_ids,
@@ -500,16 +502,18 @@ static int irb_fn(
 
      /*  build return arguments */
 
-     *num_import = dotnum - dottop;
-     if (*num_import > 0) {
-        ierr = LB_RB_Return_Arguments(lb, gidpt, lidpt, dotpt, *num_import,
-                                      import_global_ids, import_local_ids,
-                                      import_procs, dottop);
-        if (ierr) {
-           LB_PRINT_ERROR(proc, yo,
-                          "Error returned from LB_RB_Return_Arguments.");
-           LB_TRACE_EXIT(lb, yo);
-           return ierr;
+     if (lb->Return_Lists) {
+        *num_import = dotnum - dottop;
+        if (*num_import > 0) {
+           ierr = LB_RB_Return_Arguments(lb, gidpt, lidpt, dotpt, *num_import,
+                                         import_global_ids, import_local_ids,
+                                         import_procs, dottop);
+           if (ierr) {
+              LB_PRINT_ERROR(proc, yo,
+                             "Error returned from LB_RB_Return_Arguments.");
+              LB_TRACE_EXIT(lb, yo);
+              return ierr;
+           }
         }
      }
 

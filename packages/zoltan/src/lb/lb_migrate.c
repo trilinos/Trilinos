@@ -337,6 +337,18 @@ int ierr = 0;
   }
 
   /*
+   *  Return if export and import lists are not provided (through faulty
+   *  value of RETURN_LISTS parameter).
+   */
+
+  if (num_export == -1 || num_import == -1) {
+    LB_PRINT_ERROR(lb->Proc, yo, "Both export and import lists must be "
+                                 "provided; change RETURN_LISTS parameter.");
+    LB_TRACE_EXIT(lb, yo);
+    return(LB_FATAL);
+  }
+
+  /*
    *  Check that all procs use the same id types.
    */
 

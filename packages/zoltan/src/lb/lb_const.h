@@ -111,20 +111,31 @@ typedef enum LB_Method {
 #define LB_DEBUG_ALL 10
 
 /*
+ * Values indicating which lists (import, export, both, or none) should
+ * be returned by LB_Balance.  LB_NO_LISTS must always be zero; other
+ * values should always be greater than zero.
+ */
+#define LB_NO_LISTS 0
+#define LB_IMPORT_LISTS 1
+#define LB_EXPORT_LISTS 2
+#define LB_ALL_LISTS 3
+
+/*
  ******************************************************
  * Define default values for key parameters.
  * These are used in both lb.c and key_params.c.
  ******************************************************
  */
-#define LB_IMBALANCE_TOL_DEF 1.1
-#define LB_DEBUG_LEVEL_DEF   LB_DEBUG_PARAMS
-#define LB_DEBUG_PROC_DEF    0
-#define LB_OBJ_WEIGHT_DEF    0
-#define LB_COMM_WEIGHT_DEF   0
-#define LB_AUTO_MIGRATE_DEF  FALSE
-#define LB_DETERMINISTIC_DEF TRUE
+#define LB_IMBALANCE_TOL_DEF  1.1
+#define LB_DEBUG_LEVEL_DEF    LB_DEBUG_PARAMS
+#define LB_DEBUG_PROC_DEF     0
+#define LB_OBJ_WEIGHT_DEF     0
+#define LB_COMM_WEIGHT_DEF    0
+#define LB_AUTO_MIGRATE_DEF   FALSE
+#define LB_DETERMINISTIC_DEF  TRUE
 #define LB_NUM_ID_ENTRIES_DEF 1
-#define LB_TIMER_DEF         LB_TIME_WALL
+#define LB_RETURN_LISTS_DEF   LB_ALL_LISTS
+#define LB_TIMER_DEF          LB_TIME_WALL
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -273,6 +284,8 @@ struct LB_Struct {
                                       info that is printed from only one 
                                       processor.                             */
   int Fortran;                    /*  1 if created from Fortran, 0 otherwise */
+  int Return_Lists;               /*  Flag indicating which lists (if any)
+                                      should be returned by LB_Balance.      */
   MachineType *Machine_Desc;      /*  Machine description for hetero. arch.  */
   LB_METHOD Method;               /*  Method to be used for load balancing.  */
   LB_FN *LB_Fn;                   /*  Pointer to the function that performs

@@ -106,6 +106,8 @@ int error = FALSE;            /* error flag                                  */
   /* Set oct_wgtflag based on the "key" parameter Obj_Weight_Dim */
   oct_wgtflag = (lb->Obj_Weight_Dim > 0);
 
+  /* Initialization in case of early exit */
+  *num_import = -1;
   *num_export = -1;  /* We don't compute any export data */
 
   /* Error checking for parameters */
@@ -244,9 +246,12 @@ static int lb_oct_init(
   LB_dfs_migrate(lb, &nsentags, &import_regs, &nrectags, 
 	         &c[2], &c[3], &counters[3], &counters[5]);
 
-  *num_import = nrectags;
-  LB_fix_tags(lb, import_global_ids, import_local_ids, import_procs, nrectags, 
-	      import_regs);
+  if (lb->Return_Lists) {
+    *num_import = nrectags;
+    if (nrectags > 0) 
+      LB_fix_tags(lb, import_global_ids, import_local_ids, import_procs, 
+                  nrectags, import_regs);
+  }
 
   time2 = MPI_Wtime();
   timers[2] = time2 - time1;               /* time took to setup migration */

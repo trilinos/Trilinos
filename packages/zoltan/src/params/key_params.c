@@ -29,6 +29,7 @@ static PARAM_VARS Key_params[] = {
 	{ "TIMER", NULL, "STRING" },
 	{ "NUM_GID_ENTRIES", NULL, "INT" },
 	{ "NUM_LID_ENTRIES", NULL, "INT" },
+	{ "RETURN_LISTS", NULL, "STRING" },
 	{ NULL, NULL, NULL } };
 /*****************************************************************************/
 /*****************************************************************************/
@@ -173,6 +174,32 @@ char *val)			/* value of variable */
         status = 3;
         break;
 
+      case 10:          /* Return_Lists */
+        if (strcmp(result.sval, "ALL") == 0) {
+          tmp = LB_ALL_LISTS;
+          status = 3;
+        }
+        else if (strcmp(result.sval, "IMPORT")==0) {
+          tmp = LB_IMPORT_LISTS;
+          status = 3;
+        }
+        else if (strcmp(result.sval, "EXPORT")==0) {
+          tmp = LB_EXPORT_LISTS;
+          status = 3;
+        }
+        else if (strcmp(result.sval, "NONE")==0) {
+          tmp = LB_NO_LISTS;
+          status = 3;
+        }
+        else{
+          tmp = LB_RETURN_LISTS_DEF;
+          sprintf(msg, "Unknown return_lists option %s.", result.sval);
+          LB_PRINT_WARN(lb->Proc, yo, msg);
+          status = 2; /* Illegal parameter */
+        }
+	lb->Return_Lists = tmp;
+        break;
+
       }  /* end switch (index) */
     }
 
@@ -210,4 +237,19 @@ void LB_Print_Key_Params(LB *lb)
          lb->Num_GID);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[9].name, 
          lb->Num_LID);
+  printf("ZOLTAN Parameter %s = ", Key_params[10].name);
+  switch (lb->Return_Lists) {
+  case LB_ALL_LISTS:
+    printf("ALL\n");
+    break;
+  case LB_IMPORT_LISTS:
+    printf("IMPORT\n");
+    break;
+  case LB_EXPORT_LISTS:
+    printf("EXPORT\n");
+    break;
+  case LB_NO_LISTS:
+    printf("NONE\n");
+    break;
+  }
 }

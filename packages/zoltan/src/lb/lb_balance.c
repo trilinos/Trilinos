@@ -100,6 +100,7 @@ int error;    /* Error code */
 double start_time, end_time;
 double lb_time[2] = {0.0,0.0};
 char msg[256];
+int comm[3],gcomm[3]; 
 
   LB_TRACE_ENTER(lb, yo);
 
@@ -110,13 +111,17 @@ char msg[256];
 
   /* 
    * Compute Max number of array entries per ID over all processors.
+   * Compute Max number of return arguments for LB_Balance.
+   * This is a sanity-maintaining step; we don't want different
+   * processors to have different values for these numbers.
    */
-  MPI_Allreduce(&(lb->Num_GID), num_gid_entries, 1, MPI_INT, MPI_MAX, 
-                lb->Communicator);
-  MPI_Allreduce(&(lb->Num_LID), num_lid_entries, 1, MPI_INT, MPI_MAX, 
-                lb->Communicator);
-  lb->Num_GID = *num_gid_entries;
-  lb->Num_LID = *num_lid_entries;
+  comm[0] = lb->Num_GID;
+  comm[1] = lb->Num_GID;
+  comm[2] = lb->Return_Lists;
+  MPI_Allreduce(comm, gcomm, 3, MPI_INT, MPI_MAX, lb->Communicator);
+  lb->Num_GID = *num_gid_entries = gcomm[0];
+  lb->Num_LID = *num_lid_entries = gcomm[1];
+  lb->Return_Lists = gcomm[2];
 
   /* assume no changes */
   *changes = 0;
@@ -224,10 +229,22 @@ char msg[256];
    */
 
   if (*num_import_objs >= 0){
-    if (*num_export_objs >= 0)
+    if (*num_export_objs >= 0) {
       /* Both maps already available; nothing to do. */;
-    else {
-      /* Compute export map */
+
+      if (lb->Return_Lists == LB_NO_LISTS) {
+        /* This condition should never happen!! */
+        /* Methods should not return arrays if no lists are requested. */
+        *num_import_objs = *num_export_objs = -1;
+        LB_Free_Data(import_global_ids, import_local_ids, import_procs,
+                     export_global_ids, export_local_ids, export_procs);
+        LB_PRINT_WARN(lb->Proc, yo, 
+                      "Method returned lists, but no lists requested.");
+      }
+    }
+    else if (lb->Return_Lists == LB_ALL_LISTS || 
+             lb->Return_Lists == LB_EXPORT_LISTS) {
+      /* Export lists are requested; compute export map */
       error = LB_Compute_Destinations(lb,
                                       *num_import_objs, *import_global_ids, 
                                       *import_local_ids, *import_procs,
@@ -240,31 +257,51 @@ char msg[256];
         LB_TRACE_EXIT(lb, yo);
         return error;
       }
-    }
-  }
-  else { /* if (*num_import_objs < 0) */
-    if (*num_export_objs >= 0) {
-      /* Compute export map */
-      error = LB_Compute_Destinations(lb, 
-                                      *num_export_objs, *export_global_ids, 
-                                      *export_local_ids, *export_procs,
-                                      num_import_objs, import_global_ids,
-                                      import_local_ids, import_procs);
-
-      if (error != LB_OK && error != LB_WARN) {
-        sprintf(msg, "Error building return arguments; "
-                     "%d returned by LB_Compute_Destinations\n", error);
-        LB_PRINT_ERROR(lb->Proc, yo, msg);
-        LB_TRACE_EXIT(lb, yo);
-        return error;
+      if (lb->Return_Lists == LB_EXPORT_LISTS) {
+        /* Method returned import lists, but only export lists were desired. */
+        /* Import lists not needed; free them. */
+        *num_import_objs = -1;
+        LB_Free_Data(import_global_ids, import_local_ids, import_procs,
+                     NULL, NULL, NULL);
       }
     }
-    else{
-      /* No map at all available */
-      LB_PRINT_ERROR(lb->Proc, yo, "Load-balancing function returned neither "
-             "import nor export data.");
-      LB_TRACE_EXIT(lb, yo);
-      return LB_WARN;
+  }
+  else { /* (*num_import_objs < 0) */
+    if (*num_export_objs >= 0) {
+      /* Only export lists have been returned. */
+      if (lb->Return_Lists == LB_ALL_LISTS || 
+          lb->Return_Lists == LB_IMPORT_LISTS) {
+        /* Compute import map */
+        error = LB_Compute_Destinations(lb, 
+                                        *num_export_objs, *export_global_ids, 
+                                        *export_local_ids, *export_procs,
+                                        num_import_objs, import_global_ids,
+                                        import_local_ids, import_procs);
+
+        if (error != LB_OK && error != LB_WARN) {
+          sprintf(msg, "Error building return arguments; "
+                       "%d returned by LB_Compute_Destinations\n", error);
+          LB_PRINT_ERROR(lb->Proc, yo, msg);
+          LB_TRACE_EXIT(lb, yo);
+          return error;
+        }
+        if (lb->Return_Lists == LB_IMPORT_LISTS) {
+          /* Method returned export lists, but only import lists are desired. */
+          /* Export lists not needed; free them. */
+          *num_export_objs = -1;
+          LB_Free_Data(NULL, NULL, NULL, 
+                       export_global_ids, export_local_ids, export_procs);
+        }
+      }
+    }
+    else {  /* *num_export_objs < 0 && *num_import_objs < 0) */
+      if (lb->Return_Lists) {
+        /* No map at all available */
+        LB_PRINT_ERROR(lb->Proc, yo, "Load-balancing function returned "
+               "neither import nor export data.");
+        LB_TRACE_EXIT(lb, yo);
+        return LB_WARN;
+      }
     }
   }
 

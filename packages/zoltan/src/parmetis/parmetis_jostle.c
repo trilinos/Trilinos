@@ -355,7 +355,7 @@ static int LB_ParMetis_Jostle(
   LB_TRACE_ENTER(lb, yo);
 
   /* Set default return values (in case of early exit) */
-  *num_exp = 0;
+  *num_exp = -1;
   *num_imp = -1; /* No import data */
 
   /* Initialize all local pointers to NULL. This is necessary
@@ -1212,37 +1212,39 @@ static int LB_ParMetis_Jostle(
   nsend = 0;
   for (i=0; i<num_obj; i++)
     if (part[i] != lb->Proc) nsend++;
-  (*num_exp) = nsend;
 
   /* Create export lists */
-  if (nsend>0){
-    if (!LB_Special_Malloc(lb,(void **)exp_gids,nsend,LB_SPECIAL_MALLOC_GID)) {
-      FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
-    }
-    if (!LB_Special_Malloc(lb,(void **)exp_lids,nsend,LB_SPECIAL_MALLOC_LID)) {
-      LB_Special_Free(lb,(void **)exp_gids,LB_SPECIAL_MALLOC_GID);
-      FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
-    }
-    if (!LB_Special_Malloc(lb,(void **)exp_procs,nsend,LB_SPECIAL_MALLOC_INT)) {
-      LB_Special_Free(lb,(void **)exp_lids,LB_SPECIAL_MALLOC_LID);
-      LB_Special_Free(lb,(void **)exp_gids,LB_SPECIAL_MALLOC_GID);
-      FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
-    }
-    j = 0;
-    for (i=0; i<num_obj; i++){
-      if (part[i] != lb->Proc){
-        LB_SET_GID(lb, &((*exp_gids)[j*num_gid_entries]),
-                       &(global_ids[i*num_gid_entries]));
-        LB_SET_LID(lb, &((*exp_lids)[j*num_lid_entries]),
-                       &(local_ids[i*num_lid_entries]));
-        (*exp_procs)[j] = part[i];
-        j++;
+  if (lb->Return_Lists){
+    (*num_exp) = nsend;
+    if (nsend > 0) {
+      if (!LB_Special_Malloc(lb,(void **)exp_gids,nsend,LB_SPECIAL_MALLOC_GID)) {
+        FREE_MY_MEMORY;
+        LB_TRACE_EXIT(lb, yo);
+        return LB_MEMERR;
+      }
+      if (!LB_Special_Malloc(lb,(void **)exp_lids,nsend,LB_SPECIAL_MALLOC_LID)) {
+        LB_Special_Free(lb,(void **)exp_gids,LB_SPECIAL_MALLOC_GID);
+        FREE_MY_MEMORY;
+        LB_TRACE_EXIT(lb, yo);
+        return LB_MEMERR;
+      }
+      if (!LB_Special_Malloc(lb,(void **)exp_procs,nsend,LB_SPECIAL_MALLOC_INT)) {
+        LB_Special_Free(lb,(void **)exp_lids,LB_SPECIAL_MALLOC_LID);
+        LB_Special_Free(lb,(void **)exp_gids,LB_SPECIAL_MALLOC_GID);
+        FREE_MY_MEMORY;
+        LB_TRACE_EXIT(lb, yo);
+        return LB_MEMERR;
+      }
+      j = 0;
+      for (i=0; i<num_obj; i++){
+        if (part[i] != lb->Proc){
+          LB_SET_GID(lb, &((*exp_gids)[j*num_gid_entries]),
+                         &(global_ids[i*num_gid_entries]));
+          LB_SET_LID(lb, &((*exp_lids)[j*num_lid_entries]),
+                         &(local_ids[i*num_lid_entries]));
+          (*exp_procs)[j] = part[i];
+          j++;
+        }
       }
     }
   }

@@ -87,6 +87,7 @@ LB *lb;
   lb->Debug_Level = LB_DEBUG_LEVEL_DEF;
   lb->Debug_Proc = LB_DEBUG_PROC_DEF;
   lb->Fortran = 0;
+  lb->Return_Lists = LB_RETURN_LISTS_DEF;
   lb->Timer = LB_TIMER_DEF;
   lb->Machine_Desc = NULL;
   lb->Params = NULL;
