@@ -124,19 +124,25 @@ StatusType Stepper::step()
       // Set initial guess for next step equal to last step's final solution 
       *curGroupPtr = dynamic_cast<const LOCA::Abstract::Group&>(solver.getSolutionGroup());
 
-      // RPP: This is where the predictor for 1st order should go! 
-
       prevStepSize = curStepSize;
       prevValue = curValue;
       curStepSize = computeStepSize(solverStatus);
+
+      // Cap the con parameter so we don't go past the final value
+    
+      if ( (prevValue+curStepSize-finalValue)*(prevValue-finalValue) < 0.0)
+        curStepSize = finalValue - prevValue;
+
       curValue += curStepSize;
+
+      // PREDICTOR
     }
 
-    // Cap the con parameter so we don't go past the final value
-    curValue = min(curValue, finalValue);
 
     conParams.setValue(conParamID, curValue);
     curGroupPtr->setParams(conParams);
+
+    // is this computeF needed?
     curGroupPtr->computeF();
     solver.reset(*curGroupPtr, *statusTestPtr, paramList.sublist("Solver"));
     
@@ -332,7 +338,6 @@ void Stepper::printEndInfo()
 }
 
 
-
 double Stepper::computeStepSize(StatusType solverStatus)
 {
   double tmpStepSize = curStepSize;
@@ -353,9 +358,11 @@ double Stepper::computeStepSize(StatusType solverStatus)
       // Number of nonlinear iterations to reach convergence for last 
       // nonlinear solve -- used to pick next step size
       double numNonlinearSteps = ((double) solver.getNumIterations());
-      
-      tmpStepSize = curStepSize * (1.0 + agrValue * (numNonlinearSteps/
-					   ((double) maxNonlinearSteps)));
+
+      double factor = ((double) maxNonlinearSteps - numNonlinearSteps)
+                      / ((double) maxNonlinearSteps - 1.0);
+
+      tmpStepSize = curStepSize * (1.0 + agrValue * factor * factor);
   
     }
     // if constant step size (agrValue = 0.0), the step size may still be 
@@ -365,16 +372,28 @@ double Stepper::computeStepSize(StatusType solverStatus)
       if (curStepSize != startStepSize) {  
 	double numNonlinearSteps = ((double) solver.getNumIterations());
 
-	tmpStepSize = prevStepSize * (1.0 + 0.5 * (numNonlinearSteps/
-					      ((double) maxNonlinearSteps)));
+        double factor = ((double) maxNonlinearSteps - numNonlinearSteps)
+                        / ((double) maxNonlinearSteps - 1.0);
+
+        tmpStepSize = curStepSize * (1.0 + 0.5 * factor * factor);
+
 	tmpStepSize = min(tmpStepSize, startStepSize);
       }
     }
   }  
   
-  // Clip the step size if outside the bounds
-  predStepSize = min(tmpStepSize, maxStepSize);
-  predStepSize = max(tmpStepSize, minStepSize);
+  // Clip the step size if above the bounds
+  if (fabs(tmpStepSize) > maxStepSize) {
+     predStepSize = maxStepSize;
+     if (tmpStepSize < 0.0) predStepSize *= -1.0;
+  }
+
+  // Abort run if step size below bounds
+  if (fabs(tmpStepSize) < minStepSize) {
+    stepperStatus = Failed;
+    predStepSize =  minStepSize;
+    if (tmpStepSize < 0.0) predStepSize *= -1.0;
+  }
   
   return predStepSize;
 }
