@@ -82,7 +82,7 @@ then
       temp= #nop
    else
       \rm -f etc/Makefile.${ARCH}_MPI
-      cat etc/makefile.${ARCH} | sed "s/^CC.*//" | sed "s/^FC.*//" > etc/makefile.${ARCH}_MPI
+      cat etc/makefile.${ARCH} | sed "s/^CC.*//" | sed "s/^FC.*//" | sed "s/^CXX.*//" > etc/makefile.${ARCH}_MPI
       echo  >> etc/makefile.${ARCH}_MPI
       temp=`${echo} "CC="${ins_mpicc}`
       echo ${temp} >> etc/makefile.${ARCH}_MPI
