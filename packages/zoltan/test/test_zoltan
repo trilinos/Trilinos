@@ -1,4 +1,16 @@
 #!/bin/csh 
+##############################################################################
+# Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
+# Copyright (c) 2000, Sandia National Laboratories.                          #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
 #
 # This C-shell script runs all the test examples 
 # and compares the results against pre-computed results.
@@ -24,6 +36,8 @@ set nem_pdisk = (1 2 2) # parallel disk info
 @ no_chaco = 0
 @ no_nemesis = 0
 @ no_parmetis = 0
+@ yes_fortran = 0
+set out_tag = out
 set logfile = test_zoltan.log
 set answers = answers
 set outdir = output
@@ -39,6 +53,11 @@ endif
 if ($?NO_PARMETIS) then
    set no_parmetis = $NO_PARMETIS
 endif
+if ($?YES_FORTRAN) then
+   set yes_fortran = $YES_FORTRAN
+   set no_nemesis = 1
+   set out_tag = fout
+endif
 
 # Parse command-line options. 
 # These options will override the environment variables.
@@ -53,6 +72,10 @@ while ( $#argv )
      @ no_parmetis = 1
   else if ( $1 == "-no_chaco" ) then
      @ no_chaco = 1
+  else if ( $1 == "-yes_fortran" ) then
+     @ yes_fortran = 1
+     @ no_nemesis = 1
+     set out_tag = fout
   else if ( $1 == "-logfile" ) then
   
     if ( $#argv < 2 ) then
@@ -101,7 +124,7 @@ if (! $?run ) then
     case smos:
     case tflop:
     case cplant:
-      set run = "yod -sz"
+      set run = "yod -proc 3 -sz"
       breaksw
     default:
       echo "Unknown arch-type. Please use -cmd to specify the run command."
@@ -116,15 +139,30 @@ endif
   
 
 # Check if we have zdrive
-if ( $?arch ) then
-  set zdrive = zdrive.$arch
+if ( $yes_fortran ) then
+# Using F90 
+  if ( $?arch ) then
+    set zdrive = zfdrive.$arch
+  else
+    set zdrive = zfdrive
+  endif
+  if (! -x $zdrive ) then
+    echo " No executable $zdrive in current directory;"
+    echo " Will try using ../Obj_"$arch"/zfdrive"
+    set zdrive = ../Obj_$arch/zfdrive
+  endif
 else
-  set zdrive = zdrive
-endif
-if (! -x $zdrive ) then
-  echo " No executable $zdrive in current directory;"
-  echo " Will try using ../Obj_"$arch"/zdrive"
-  set zdrive = ../Obj_$arch/zdrive
+# Using C
+  if ( $?arch ) then
+    set zdrive = zdrive.$arch
+  else
+    set zdrive = zdrive
+  endif
+  if (! -x $zdrive ) then
+    echo " No executable $zdrive in current directory;"
+    echo " Will try using ../Obj_"$arch"/zdrive"
+    set zdrive = ../Obj_$arch/zdrive
+  endif
 endif
 if (! -x $zdrive ) then
   echo "Error Cannot find executable $zdrive"
@@ -132,12 +170,24 @@ if (! -x $zdrive ) then
 endif
 
 # Methods to try
-if ( $no_parmetis ) then
-  set ch_methods = ( rcb rcb-oneproc irb irb-oneproc oct )
-  set nem_methods = ( rcb irb oct )
+if ( $yes_fortran ) then
+# Using F90
+  if ( $no_parmetis ) then
+    set ch_methods = ( rcb irb oct )
+    set nem_methods = ( )
+  else
+    set ch_methods = ( rcb irb oct partkway partgeom diffusion )
+    set nem_methods = ( )
+  endif
 else
-  set ch_methods = ( rcb rcb-oneproc irb irb-oneproc oct partkway partkway-cyclic partgeom diffusion )
-  set nem_methods = ( rcb irb oct partkway partgeom diffusion )
+# Using C
+  if ( $no_parmetis ) then
+    set ch_methods = ( rcb rcb-oneproc irb irb-oneproc oct )
+    set nem_methods = ( rcb irb oct )
+  else
+    set ch_methods = ( rcb rcb-oneproc irb irb-oneproc oct partkway partkway-oneproc partkway-cyclic partgeom diffusion )
+    set nem_methods = ( rcb irb oct partkway partgeom diffusion )
+  endif
 endif
 
 # Set up log file
@@ -195,7 +245,7 @@ if (! $no_chaco ) then
           # Save and compare output files 
           @ i = 0
           while ( $i < $np )
-            /bin/mv ${ch_name[1]}.out.$np.$i  ${outdir}/${ch_name[1]}.$mtd.$np.$i
+            /bin/mv ${ch_name[1]}.$out_tag.$np.$i  ${outdir}/${ch_name[1]}.$mtd.$np.$i
             diff -cw ${outdir}/${ch_name[1]}.$mtd.$np.$i ${answers}/${ch_name[1]}.$mtd.$np.$i >> ../$logfile
             if ( $status ) then 
               @ fail = 1
