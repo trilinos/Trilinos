@@ -1141,7 +1141,6 @@ if test X${ADDON_epetra} = Xyes; then
   TRILINOS_HEADER(ifpack,Ifpack_config.h,src)
   TRILINOS_HEADER(ifpack,Ifpack_ScalingType.h,src)
   TRILINOS_HEADER(ml,ml_config.h,src)
-  TRILINOS_HEADER(ml,ml_config.h.in,src)
 
   if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
     TRILINOS_HEADER(epetraext,EpetraExt_config.h,src)
@@ -1167,8 +1166,6 @@ if test X${ADDON_epetra} = Xyes; then
     TRILINOS_HEADER(ml,ml_krylov.h,src/Krylov)
     TRILINOS_HEADER(teuchos,Teuchos_config.h,src)
     TRILINOS_HEADER(teuchos,Teuchos_Flops.hpp,src)
-    TRILINOS_HEADER(triutils,Triutils_config.h,src)
-    TRILINOS_HEADER(triutils,Trilinos_Util.h,src)
     TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
   fi
 
@@ -1262,13 +1259,13 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes ||
     AC_DEFINE(HAVE_NOX_EPETRAEXT,1,[define that epetraext is activated in nox])
   fi
 
-  if test X${BUILD_NOX_EPETRA_ML_SUPPORT} = Xyes; then
-    TRILINOS_LIB_CHECK(ml,ml,src)
-    TRILINOS_LIB_CHECK(teuchos,teuchos,src)
-    AC_DEFINE(HAVE_NOX_ML_EPETRA,1,[define that ml is activated in nox])
-    AC_DEFINE(HAVE_NOX_TEUCHOS,1,[define that Teuchos is activated in nox])
-  fi
+fi
 
+if test X${BUILD_NOX_EPETRA_ML_SUPPORT} = Xyes; then
+  TRILINOS_LIB_CHECK(ml,ml,src)
+  TRILINOS_LIB_CHECK(teuchos,teuchos,src)
+  AC_DEFINE(HAVE_NOX_ML_EPETRA,1,[define that ml is activated in nox])
+  AC_DEFINE(HAVE_NOX_TEUCHOS,1,[define that Teuchos is activated in nox])
 fi
 
 if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
