@@ -1,0 +1,60 @@
+/*! \mainpage Trilinos/Pliris: Object-Oriented Interface to a Direct Matrix Solve (Dense matrices)
+
+
+\section intro Introduction
+Pliris is an object-oriented interface to a LU solver for dense matrices on parallel platforms. These matrices are 
+double precision real matrices distributed on a parallel machine.
+
+The matrix is torus-wrap mapped onto the processors(transparent to the user)
+and uses partial pivoting during the factorization of the matrix.  Each 
+processor contains a portion of the matrix and the right hand sides 
+determined by a distribution function to optimally load balance the
+computation and communication during the factorization of the matrix.  
+The general prescription is that no processor can have no more(or less)
+than one row or column of the matrix than any other processor.  Since
+the input matrix is not torus-wrapped permutation of the results is 
+performed to "unwrap the results" which is transparent to the user.
+
+\section startup Overview of Pliris.
+
+Pliris contains one class. 
+
+<ul> 
+
+<li> Pliris - Primary solver class. This provides the interface with the LU factorization and solver routines using Epetra objects.
+
+</ul>
+
+\section dense Matrix Distribution
+
+Some examples will be given to reveal the matrix distribution for a number of cases.  The variable names
+given are those referred to the the GetDistribution function of Pliris.  
+
+<img src="../matrix_21.gif">
+
+<img src="../matrix_12.gif">
+
+<img src="../matrix_22.gif">
+
+\section densep  Matrix Packing
+
+The standard procedure for using LU factorization to solve a matrix equation is to first factor the matrix,
+then perform the forward and backward solve.  It is well known that the forward solve can be accomplished during
+factorization by appending the right hand side to the matrix.  When this is done the forward solve does not have 
+be performed and the lower triangular matrix does not have to be used which saves communication costs during 
+parallel operation.  The packing of the matrix and right hand sides will now be described using the four processor
+example above when one right hand side is given.
+
+As stated previously the right hand side is appended to the matrix.  When there is one right hand side this is attached to 
+the first column of the processor mesh.  This is shown in the next figure.
+
+<img src="../matrix_22_eq.gif">
+
+The first set of interfaces use Epetra vectors.  The memory requirements using the 4 processor example are given below with 
+the packing of the data into the vectors. Only the first two processors are given explicitly.  Note the matrix is packed in column order.
+
+<img src="../matrix_mem.gif">
+
+After the solution process the answers are retrieved from the positions where the right hand sides were stored.
+
+*/
