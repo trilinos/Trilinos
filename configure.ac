@@ -77,6 +77,7 @@ AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno" ||
 
 TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, no)
 AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno" || 
+	test "X$ac_cv_use_aztecoo" != "Xno" || 
 	test "X$ac_cv_use_belos" != "Xno" || 
 	test "X$ac_cv_use_amesos" != "Xno")
 
@@ -126,6 +127,7 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 fi
 
 if test "X$ac_cv_use_triutils" != "Xno" ||
+	test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_amesos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/triutils])

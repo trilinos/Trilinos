@@ -236,8 +236,10 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
-TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, no)
-AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+# For now we will consider AztecOO to be dependent on Triutils,
+# even though it is really only the examples.
+#TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, no)
+#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
 # y12m is needed only when AZ_lu is enabled
 if test "X$ac_cv_use_aztecoo_azlu" != "Xno"; then

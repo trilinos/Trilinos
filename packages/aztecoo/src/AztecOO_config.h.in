@@ -126,9 +126,6 @@
 /* Define if want to build tests */
 #undef HAVE_TESTS
 
-/* Define if want to build triutils */
-#undef HAVE_TRIUTILS
-
 /* Define to 1 if you have the `uname' function. */
 #undef HAVE_UNAME
 

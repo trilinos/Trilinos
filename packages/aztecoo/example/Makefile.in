@@ -97,11 +97,11 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-#One example is dependent on Triutils.  Rather than making AztecOO dependent on
-# Triutils, the example is built only if Triutils is built.
-@BUILD_TRIUTILS_TRUE@USER_OP_USER_MAT_SUBDIR = AztecOO_UserOpUserMat
-@BUILD_TRIUTILS_TRUE@AZTECOO_SUBDIR = AztecOO
+#if BUILD_TRIUTILS
+USER_OP_USER_MAT_SUBDIR = AztecOO_UserOpUserMat
+AZTECOO_SUBDIR = AztecOO
 
+#endif
 SUBDIRS = $(AZTECOO_SUBDIR) $(USER_OP_USER_MAT_SUBDIR) simple_epetra_aztecoo
 subdir = example
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -114,7 +114,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
-DIST_SUBDIRS = AztecOO AztecOO_UserOpUserMat simple_epetra_aztecoo
+DIST_SUBDIRS = $(SUBDIRS)
 all: all-recursive
 
 .SUFFIXES:
@@ -246,7 +246,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d $(distdir)/$$subdir \
 	    || mkdir $(distdir)/$$subdir \
