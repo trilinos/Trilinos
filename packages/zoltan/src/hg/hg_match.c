@@ -57,7 +57,7 @@ int Zoltan_HG_Set_Matching_Fn(HGPartParams *hgp)
 
 /*****************************************************************************/
 
-/*
+
 static float sim (HGraph *hg, int a, int b)
 { int   i, j, edge, pins;
   float sim=0.0, weight;
@@ -83,7 +83,7 @@ static float sim (HGraph *hg, int a, int b)
   }
   return sim;
 }
-
+/*
 static void sim_check (HGraph *hg, Graph *g)
 { int i, j;
   for (i=0; i<g->nVtx; i++)
@@ -112,12 +112,7 @@ int Zoltan_HG_Matching (
 
   /* temporary code while graphs are replaced by hypergraphs */
   need_graph = 0 ;
-  if (hgp->matching == matching_rem
-   || hgp->matching == matching_rrm
-   || hgp->matching == matching_rhm
-   || hgp->matching == matching_grm
-   || hgp->matching == matching_lhm
-   || hgp->matching == matching_pgm
+  if (hgp->matching == matching_lhm
    || hgp->matching_opt == matching_aug2
    || hgp->matching_opt == matching_aug3)
   {
@@ -174,6 +169,7 @@ int Zoltan_HG_Matching (
           else
             matching_weight += (g.ewgt[j]);
       } }
+
       if (highest < FLT_MAX)
         upper_bound += highest;
       else
@@ -209,7 +205,7 @@ static int matching_mxm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
   }
   for (i=0; i<=hg->nEdge; i++)
     Hindex[i] = hg->hindex[i];
-  
+
   for (i=0; i<hg->nVtx && (*limit)>0; i++)
     for (j=hg->vindex[i]; match[i]==i && j<hg->vindex[i+1]; j++)
     { edge = hg->vedge[j];
@@ -227,7 +223,10 @@ static int matching_mxm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 }
 
 /*****************************************************************************/
-
+/* this version achieves theoretical performance.  Temporarily replaced by
+hypergraph version with weaker performance and imperfect probabilities for
+edge selection.  */
+#ifdef RTHRTH
 static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
 { int i, j, k=0, *v1, *v2, random ;
   char *yo = "matching_rem" ;
@@ -259,10 +258,49 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
   ZOLTAN_FREE ((void **) &v1) ;
   return ZOLTAN_OK ;
 }
+#endif
 
+static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching pack, int *limit)
+   {
+   int i, j, *edges=NULL, edge, random, vertex ;
+   char *yo = "matching_rem" ;
+
+   if (!(edges = (int *) ZOLTAN_MALLOC (hg->nEdge*sizeof(int))))
+      {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+      }
+   for (i = 0 ; i < hg->nEdge ; i++)
+      edges[i] = i ;
+
+   for (i = hg->nEdge ; i > 0 && (*limit)>0 ; i--)
+      {
+      random = Zoltan_HG_Rand() % i ;
+      edge = edges[random] ;
+      edges[random] = edges[i-1] ;
+
+      for (j = hg->hindex[edge] ; j < hg->hindex[edge+1]; j++)
+         if (pack[hg->hvertex[j]] == hg->hvertex[j])
+            {
+            vertex = hg->hvertex[j] ;
+            for (j++ ; j < hg->hindex[edge+1] && (*limit)>0 ; j++)
+                if (pack[hg->hvertex[j]] == hg->hvertex[j])
+                   {
+                   pack[vertex] = hg->hvertex[j] ;
+                   pack [hg->hvertex[j]] = vertex ;
+                   (*limit)--;
+                   break ;
+                   }
+            break ;
+            }
+      }
+   ZOLTAN_FREE ((void **) &edges) ;
+   return ZOLTAN_OK ;
+   }
 
 /*****************************************************************************/
-
+/* Replacing graph version below with hypergraph version */
+#ifdef RTHRTH
 static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
 { int   i, j, *vertices, vertex, number, free_neighbors, random;
   char *yo = "matching_rrm" ;
@@ -293,9 +331,56 @@ static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
   ZOLTAN_FREE ((void  **) &vertices);
   return ZOLTAN_OK;
 }
+#endif
+
+static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching pack, int *limit)
+   {
+   int i, j, edge, random, *vertices=NULL, vertex, count ;
+   char *yo = "matching_rrm" ;
+
+   if (!(vertices  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int))))
+      {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+      }
+   for (i = 0 ; i < hg->nVtx ;  i++)
+      vertices[i] = pack[i] = i ;
+
+   for (i = hg->nVtx ; i > 0 && (*limit)>0; i--)
+      {
+      random = Zoltan_HG_Rand() % i ;
+      vertex = vertices[random] ;
+      vertices[random] = vertices[i-1] ;
+      if (pack[vertex] != vertex)
+         continue ;          /* vertex already packed, move on */
+
+      count = hg->vindex[vertex+1] - hg->vindex[vertex] ;  /* count edges */
+      if (count == 0)
+         continue ;
+
+      edge = hg->vedge[hg->vindex[vertex] + (Zoltan_HG_Rand() % count)] ;  /* random edge */
+      for (j = hg->hindex[edge] ; j < hg->hindex[edge+1] ; j++)
+         if (pack[hg->hvertex[j]] == hg->hvertex[j])
+            {
+            vertex = hg->hvertex[j] ;
+            for (j++ ; j < hg->hindex[edge+1] && (*limit)>0; j++)
+               if (pack[hg->hvertex[j]] == hg->hvertex[j])
+                  {
+                  pack[vertex]         = hg->hvertex[j] ;
+                  pack[hg->hvertex[j]] = vertex ;
+                  (*limit)--;
+                  break ;
+                  }
+            break ;
+            }
+      }
+   ZOLTAN_FREE ((void **) &vertices) ;
+   return ZOLTAN_OK ;
+   }
 
 /*****************************************************************************/
-
+/* Replacing graph version below with hypergraph version */
+#ifdef RTHRTH
 static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
 { int   i, j, *vertices, vertex, number, best_neighbors, random;
   float best_ewgt;
@@ -338,9 +423,101 @@ static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
   ZOLTAN_FREE ((void **) &vertices);
   return ZOLTAN_OK;
 }
+#endif
+static int matching_rhm (ZZ *zz, HGraph *hg, Graph *g, Matching pack, int *limit)
+{
+   int   i, j, *vertices=NULL, *del_edges=NULL, vertex, edge,
+         number, best_edge, best_size, best_neighbors, random, size;
+   float best_ewgt;
+   char  *yo = "matching_rhm" ;
+
+   if (!(vertices  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int))) ||
+       !(del_edges = (int *) ZOLTAN_CALLOC (hg->nEdge,sizeof(int))) )
+      {
+      ZOLTAN_FREE ((void **) &vertices) ;
+      ZOLTAN_FREE ((void **) &del_edges) ;
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+      }
+   for (i = 0 ; i < hg->nVtx ; i++)
+      vertices[i] = i ;
+
+   for (i = hg->nVtx ; i > 0 && (*limit)>0 ; i--)
+      {
+      number = Zoltan_HG_Rand() % i ;
+      vertex = vertices[number] ;
+      vertices[number] = vertices[i-1] ;
+      if (pack[vertex] != vertex)
+         continue ;            /* vertex is already matched, move on */
+
+      best_neighbors = 0 ;
+      best_edge = best_size = -1 ;
+      best_ewgt = -1.0 ;
+      for (j = hg->vindex[vertex] ; j < hg->vindex[vertex+1] ; j++)
+         {
+         int size ;
+         edge = hg->vedge[j];
+         size = hg->hindex[edge+1] - hg->hindex[edge] ;
+         if (del_edges[edge]==0 && ((!(hg->ewgt) && size == best_size)
+          || (hg->ewgt && hg->ewgt[edge] == best_ewgt && size == best_size)))
+            {
+            best_neighbors++;
+            }
+         else if (del_edges[edge]==0 && ((!(hg->ewgt) && size < best_size)
+          || (hg->ewgt && (hg->ewgt[edge] >  best_ewgt
+                       || (hg->ewgt[edge] == best_ewgt && size < best_size)))))
+              {
+              best_neighbors = 1 ;
+              best_edge = edge ;
+              best_ewgt = hg->ewgt[edge] ;
+              best_size = hg->hindex[edge+1]-hg->hindex[edge];
+              }
+         }
+      if (best_neighbors == 0)
+         continue ;                       /* no suitable edge found */
+
+      if (best_neighbors > 1)
+         {
+         random = Zoltan_HG_Rand() % best_neighbors;
+         for (j = hg->vindex[vertex] ; j < hg->vindex[vertex+1] ; j++)
+            {
+            edge = hg->vedge[j] ;
+            size = hg->hindex[edge+1] - hg->hindex[edge] ;
+            if (del_edges[edge]==0 && ((!(hg->ewgt) && size == best_size)
+              || (hg->ewgt && hg->ewgt[edge] == best_ewgt && size == best_size))
+              && --best_neighbors==random)
+                 {
+                 best_edge = edge ;
+                 break ;
+                 }
+            }
+         }
+
+      for (j = hg->hindex[best_edge] ; j < hg->hindex[best_edge+1] ; j++)
+         if (pack[hg->hvertex[j]] == hg->hvertex[j])
+            {
+            vertex = hg->hvertex[j] ;
+            for (j++ ; j < hg->hindex[best_edge+1] && (*limit)>0 ; j++)
+               if (pack[hg->hvertex[j]] == hg->hvertex[j])
+                  {
+                  pack[vertex] = hg->hvertex[j] ;
+                  pack[hg->hvertex[j]] = vertex ;
+                  (*limit)--;
+                  break ;
+                  }
+            break ;
+            }
+      del_edges[best_edge] = 1 ;
+      }
+   ZOLTAN_FREE ((void **) &vertices) ;
+   ZOLTAN_FREE ((void **) &del_edges) ;
+   return ZOLTAN_OK ;
+}
+
 
 /*****************************************************************************/
-
+/* Replacing graph version below with hypergraph version */
+#ifdef RTHRTH
 static int matching_grm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
 { int   i, j, *order, *vertex, vertex1, vertex2;
   char *yo = "matching_grm" ;
@@ -376,6 +553,45 @@ static int matching_grm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
   ZOLTAN_FREE ((void **) &vertex);
   return ZOLTAN_OK;
 }
+#endif
+
+static int matching_grm (ZZ *zz, HGraph *hg, Graph *g, Matching pack, int *limit)
+{
+  int   i, j, *size=NULL, *sorted=NULL, vertex ;
+  char *yo = "matching_grm" ;
+
+/* Sort the hyperedges according to their weight and size */
+  if (!(size   = (int *) ZOLTAN_MALLOC (hg->nEdge*sizeof(int)))  ||
+      !(sorted = (int *) ZOLTAN_MALLOC (hg->nEdge*sizeof(int)))   )
+  { ZOLTAN_FREE ((void **) &size) ;
+    ZOLTAN_FREE ((void **) &sorted) ;
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
+  for (i=0; i<hg->nEdge; i++)
+    size[i] = -(hg->hindex[i+1]-hg->hindex[i]);
+  for (i=0; i<hg->nEdge; i++)
+    sorted[i] = i;
+  quicksort_pointer_dec_float_int(sorted,hg->ewgt,size,0,hg->nEdge-1);
+  ZOLTAN_FREE ((void **) &size);
+
+  /* Match hyperedges along decreasing weight */
+  for (i=0; i<hg->nEdge && (*limit)>0; i++)
+    for (j = hg->hindex[sorted[i]] ; j < hg->hindex[sorted[i]+1] ; j++)
+      if (pack[hg->hvertex[j]] == hg->hvertex[j])
+      { vertex = hg->hvertex[j] ;
+        for (j++ ; j<hg->hindex[sorted[i]+1] && (*limit)>0; j++)
+          if (pack[hg->hvertex[j]] == hg->hvertex[j])
+          { pack[vertex]         = hg->hvertex[j] ;
+            pack[hg->hvertex[j]] = vertex ;
+            (*limit)--;
+          break ;
+          }
+        break ;
+      }
+  ZOLTAN_FREE ((void **) &sorted);
+  return ZOLTAN_OK;
+  }
 
 /*****************************************************************************/
 
@@ -453,6 +669,8 @@ static int matching_lhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 }
 
 /*****************************************************************************/
+/* Replacing graph version below with hypergraph version */
+#ifdef RTHRTH
 
 static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
 { int	i, j, side=0, vertex, *Match[2], limits[2], neighbor, next_vertex;
@@ -472,27 +690,33 @@ static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
     Match[1][i] = i;
 
   for (i=0; i<g->nVtx && limits[side]>0; i++)
-    if (Match[0][i]==i && Match[1][i]==i)
-    { vertex = i;
-      while (vertex>0 && limits[side]>0)
-      { weight = 0.0;
-        next_vertex = -1;
-        for (j=g->nindex[vertex]; j<g->nindex[vertex+1]; j++)
-        { neighbor = g->neigh[j];
-          if (Match[0][neighbor]==neighbor && Match[1][neighbor]==neighbor && g->ewgt[j]>weight)
-            { weight = g->ewgt[j];
-              next_vertex = neighbor;
-        }   }
-        if (next_vertex >= 0)
-        { Match[side][vertex] = next_vertex;
-          Match[side][next_vertex] = vertex;
-          limits[side]--;
-          w[side] += weight;
-          side = 1-side;
+     if (Match[0][i]==i && Match[1][i]==i)
+        {
+        vertex = i;
+        while (vertex>0 && limits[side]>0)
+           {
+           weight = 0.0;
+           next_vertex = -1;
+           for (j=g->nindex[vertex]; j<g->nindex[vertex+1]; j++)
+              {
+              neighbor = g->neigh[j];
+              if (Match[0][neighbor]==neighbor && Match[1][neighbor]==neighbor && g->ewgt[j]>weight)
+                 {
+                 weight = g->ewgt[j];
+                 next_vertex = neighbor;
+                 }
+              }
+           if (next_vertex >= 0)
+              {
+              Match[side][vertex] = next_vertex;
+              Match[side][next_vertex] = vertex;
+              limits[side]--;
+              w[side] += weight;
+              side = 1-side;
+              }
+           vertex = next_vertex;
+           }
         }
-        vertex = next_vertex;
-      }
-    }
 
   if (w[0] < w[1])
   { for (i=0; i<g->nVtx; i++)
@@ -505,11 +729,79 @@ static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
   ZOLTAN_FREE ((void **) &Match[1]);
   return ZOLTAN_OK;
 }
+#endif
+
+static int matching_pgm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
+{ int	i, j, side=0, vertex, *Match[2], limits[2], neighbor, next_vertex;
+  float	w[2]={0.0,0.0}, weight;
+  float simweight ;
+  int k, edge ;
+  char *yo = "matching_pgm" ;
+
+  limits[0] = limits[1] = (*limit);
+  Match[0] = match;
+  if (!(Match[1] = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int))))
+  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
+  for (i=0; i<hg->nVtx; i++)
+    Match[1][i] = i;
+
+  for (i=0; i<hg->nVtx && limits[side]>0; i++)
+    if (Match[0][i]==i && Match[1][i]==i)
+      {
+      vertex = i;
+      while (vertex>0 && limits[side]>0)
+         {
+         weight = 0.0;
+         next_vertex = -1;
+         for (j=hg->vindex[vertex]; j<hg->vindex[vertex+1]; j++)
+            {
+            edge = hg->vedge[j] ;
+            for (k = hg->hindex[edge] ; k < hg->hindex[edge+1] ; k++)
+               {
+               neighbor = hg->hvertex[k] ;
+               if (neighbor == vertex)
+                  continue ;
+               simweight= sim(hg, vertex, neighbor) ;
+               if (Match[0][neighbor]==neighbor && Match[1][neighbor]==neighbor
+                && simweight>weight)
+                   {
+                   weight = simweight;
+                   next_vertex = neighbor;
+                   }
+               }
+            }
+         if (next_vertex >= 0)
+            {
+            Match[side][vertex] = next_vertex;
+            Match[side][next_vertex] = vertex;
+            limits[side]--;
+            w[side] += weight;
+            side = 1-side;
+            }
+         vertex = next_vertex;
+         }
+      }
+
+  if (w[0] < w[1])
+     {
+     for (i=0; i<hg->nVtx; i++)
+        match[i] = Match[1][i];
+     (*limit) = limits[1];
+     }
+  else
+     (*limit) = limits[0];
+
+  ZOLTAN_FREE ((void **) &Match[1]);
+  return ZOLTAN_OK;
+}
+
 
 /*****************************************************************************/
 
 static int matching_aug1 (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
-{ 
+{
   return matching_mxm (zz,hg,g,match,limit);
 }
 
