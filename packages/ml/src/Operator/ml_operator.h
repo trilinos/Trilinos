@@ -202,9 +202,11 @@ extern int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
 extern int ML_Operator_ApplyAndResetBdryPts(ML_Operator *, int, 
                      Epetra_MultiVector &, int olen, Epetra_MultiVector &);
 #endif
+extern int ML_Operator_MoveFromHierarchyAndClean(ML_Operator *newmat, 
+						 ML_Operator *hier);
 
-extern int ML_Operator_Move2HierarchyAndDestroy_fragile(ML_Operator *newmat, 
-							ML_Operator *hier);
+extern int ML_Operator_Move2HierarchyAndDestroy(ML_Operator **newmat, 
+						ML_Operator *hier);
 
 extern int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans );
 

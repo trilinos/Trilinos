@@ -1511,36 +1511,44 @@ int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs, int vecleng)
 }
 
 
-int ML_Operator_Move2HierarchyAndDestroy_fragile(ML_Operator *newmat, 
+int ML_Operator_MoveFromHierarchyAndClean(ML_Operator *newmat, 
 						 ML_Operator *hier)
 {
   ML_1Level *ptr1, *ptr2;
 
-  newmat->label = hier->label;
+  memcpy(newmat,hier, sizeof(struct ML_Operator_Struct));
   hier->label = NULL;
-  ptr1 = hier->from;
-  ptr2 = hier->to;
+  hier->to    = NULL;
+  hier->from  = NULL;
+  hier->bc    = NULL;
   ML_Operator_Clean(hier);
   ML_Operator_Init(hier,newmat->comm);
-  hier->label = newmat->label;
+  hier->from = newmat->from;
+  hier->to   = newmat->to;
+  hier->label= newmat->label;
+  hier->bc   = newmat->bc;
   newmat->label = NULL;
-  hier->data_destroy = newmat->data_destroy;
-  newmat->data_destroy = NULL;
-  ML_Operator_Set_1Levels(hier, ptr1, ptr2);
-  ML_Operator_Set_ApplyFuncData(hier, newmat->invec_leng,
-				newmat->getrow->Nrows, ML_EMPTY, 
-				(void*)newmat->data,
-				newmat->getrow->Nrows, NULL, 0);
-  ML_Operator_Set_Getrow(hier, ML_EXTERNAL, newmat->getrow->Nrows,
-			 CSR_getrows);
-  hier->max_nz_per_row = newmat->max_nz_per_row;
-  hier->N_nonzeros     = newmat->N_nonzeros;
-  ML_Operator_Set_ApplyFunc (hier, ML_INTERNAL, CSR_matvec);
-  hier->getrow->pre_comm = newmat->getrow->pre_comm;
-  newmat->getrow->pre_comm = NULL;
-  ML_Operator_Destroy(&newmat);
+  newmat->to    = NULL;
+  newmat->from  = NULL;
+  newmat->bc    = NULL;
+  return 0;
+}
 
-  return 0;	
+int ML_Operator_Move2HierarchyAndDestroy(ML_Operator **newmat, 
+						 ML_Operator *hier)
+{
+  ML_1Level *ptr1, *ptr2;
+
+  (*newmat)->label = hier->label;
+  (*newmat)->bc    = hier->bc;
+  hier->label   = NULL;
+  hier->bc      = NULL;
+  (*newmat)->from  = hier->from;
+  (*newmat)->to    = hier->to;
+  ML_Operator_Clean(hier);
+  memcpy(hier,*newmat, sizeof(struct ML_Operator_Struct));
+  ML_free( *newmat);
+  return 0;
 }
 
 int ML_Operator_GetFlops(ML_Operator *mat)
