@@ -89,8 +89,8 @@ int main(int argc, char *argv[])
   // The following methods of CrsMatrixGallery are used to get pointers
   // to internally stored Epetra_RowMatrix and Epetra_LinearProblem.
 
-  Epetra_RowMatrix * A = Gallery.GetMatrix();
-  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
+  Epetra_RowMatrix* A = Gallery.GetMatrix();
+  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
 
   // As we wish to use AztecOO, we need to construct a solver object for this problem
   AztecOO solver(*Problem);
@@ -120,9 +120,9 @@ int main(int argc, char *argv[])
   // `new' in GetCartesianCoordinates(). (Actually, z_coord is not allocated,
   // as the problem is 2D.)
 
-  double * x_coord = 0;
-  double * y_coord = 0;
-  double * z_coord = 0; // the problem is 2D, here z_coord will be 0
+  double* x_coord = 0;
+  double* y_coord = 0;
+  double* z_coord = 0; // the problem is 2D, here z_coord will be 0
   
   Gallery.GetCartesianCoordinates(x_coord, y_coord, z_coord);
 
@@ -193,8 +193,8 @@ int main(int argc, char *argv[])
   MLTestList.set("test: Jacobi", true);
   MLTestList.set("test: Gauss-Seidel", true);
   MLTestList.set("test: symmetric Gauss-Seidel", true);
-  MLTestList.set("test: Aztec", true);
-  MLTestList.set("test: Aztec solver", false);
+  MLTestList.set("test: Aztec", false);
+  MLTestList.set("test: Aztec as solver", false);
 
   MLTestList.set("test: sweeps", 5);
 

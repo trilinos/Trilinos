@@ -27,7 +27,7 @@
 //@HEADER
 #include "ml_include.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_ANASAZI)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -86,9 +86,11 @@ int main(int argc, char *argv[])
   ML_Epetra::SetDefaults("SA",MLList);
 
   // enable filtering (also known as GGB)
-  MLList.set("filtering: enable", false);
-  MLList.set("filtering: use symmetric cycle", false);
+  MLList.set("filtering: enable", true);
+  // number of modes to be filtered
   MLList.set("filtering: eigenvalues to compute", 10);
+  // number of local aggregates, the higher the better the preconditioner
+  // (tough it might be expensive to apply the filtering correction)
   MLList.set("filtering: local aggregates", 1);
 
   // require to tune eigen-solution (here with Anasazi)
@@ -128,7 +130,7 @@ int main(int argc, char *argv[])
   MPI_Finalize() ;
 #endif
 
-  return 0 ;
+  return(0);
   
 }
 
@@ -147,13 +149,13 @@ int main(int argc, char *argv[])
 #endif
 
   puts("Please configure ML with --enable-epetra --enable-teuchos");
-  puts("--enable-aztecoo --enable-triutils");
+  puts("--enable-aztecoo --enable-triutils --enable-anasazi");
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
   
-  return 0;
+  return(0);
 }
 
 #endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
