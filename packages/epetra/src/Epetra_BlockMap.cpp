@@ -681,7 +681,9 @@ void Epetra_BlockMap::GlobalToLocalSetup()
 //==============================================================================
 int Epetra_BlockMap::LID(int GID) const
 {
-  if ((GID < BlockMapData_->MinMyGID_) || (GID > BlockMapData_->MaxMyGID_)) {
+  if ((BlockMapData_->NumMyElements_==0) ||
+       (GID < BlockMapData_->MinMyGID_) || 
+      (GID > BlockMapData_->MaxMyGID_)) {
     return(-1); // Out of range
   }
 
@@ -704,8 +706,9 @@ int Epetra_BlockMap::LID(int GID) const
 //==============================================================================
 int Epetra_BlockMap::GID(int LID) const
 {
-  if ((LID < BlockMapData_->MinLID_) || (LID > BlockMapData_->MaxLID_) ||
-      (BlockMapData_->NumMyElements_ == 0)) {
+  if ((BlockMapData_->NumMyElements_==0) ||
+      (LID < BlockMapData_->MinLID_) || 
+      (LID > BlockMapData_->MaxLID_)) {
     return(BlockMapData_->IndexBase_ - 1); // Out of range
   }
 
