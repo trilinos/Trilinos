@@ -162,8 +162,6 @@ static int global_bfs (
   static int bfs_order();
   char *yo = "global_bfs" ;
 
-
-
   if (!(order  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
   { ZOLTAN_FREE ((void **) &order) ;
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -262,7 +260,7 @@ static int bfs_order (
 
   number = index ? (*index) : 0; /* Assign next vertex this number */
 
-  while (number < hg->nVtx && !(cutoff && (weight_sum > *cutoff))) {
+  while (number < hg->nVtx && !(cutoff && (weight_sum >= *cutoff))) {
     /* Is queue empty? */
     if (last == first){
       ZOLTAN_PRINT_WARN(0, yo, "Queue is empty; hypergraph must be disconnected");
@@ -295,25 +293,24 @@ static int bfs_order (
   }
 
   /* Order is the inverse permutation of rank. */
+  for (i=0; i<hg->nVtx; i++)
+      order[i] = -1;
   for (i=0; i<hg->nVtx; i++){
-    if (rank[i]>=0)
-      order[rank[i]] = i;
-    else
-      order[rank[i]] = -1;
+    if (rank[i]>=0) order[rank[i]] = i;
     /* Clean out queue */
     if (rank[i] == -2) rank[i] = -1; 
   }
 
-  /*
+/*
   printf("BFS order = ");
   for (i=0; i<hg->nVtx; i++) printf("%3d ", order[i]);
   printf("\n");
-  */
+*/
 
   /* Update return arguments. */
   if (cutoff) *cutoff = weight_sum;
   if (index)  *index = number;
-  if (start)  *start = Q[first];
+  if (start)  *start = (first<hg->nVtx ? Q[first] : -1);
 
 error:
   ZOLTAN_FREE ((void **) &Q);
@@ -373,7 +370,7 @@ static int global_bfsr (
 
   /* Do BFS until right size, then break off a partition. Repeat. */
   index = 0;
-  for (number=0; number<p; number++){
+  for (number=0; number<p-1; number++){
     cutoff = weight_sum/((float)(p-number));
     old_index = index;
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
@@ -383,11 +380,16 @@ static int global_bfsr (
       printf("GLOBAL_PART after bfs: number=%2d, start = %2d, index = %2d, cutoff = %f\n", number, start, index, cutoff);
     weight_sum -= cutoff;
     /* Assign partition number to newly ordered vertices */
-    for (i=old_index; i<index; i++)
+    for (i=old_index; i<index; i++){
       part[order[i]] = number;
-    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
-      printf("GLOBAL_PART i=%2d, part[%2d] = %2d\n",i,order[i],part[order[i]]);
+      if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+        printf("GLOBAL_PART i=%2d, part[%2d]= %2d\n",i,order[i],part[order[i]]);
+    }
   }
+  /* Put remaining unmarked vertices in the last partition. */
+  for (i=0; i<hg->nVtx; i++)
+    if (rank[i]<0) part[i] = p-1;
+
 error:
   /* Free data and return. */
   ZOLTAN_FREE ((void **) &rank) ;
