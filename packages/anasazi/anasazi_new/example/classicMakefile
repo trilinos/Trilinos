@@ -1,0 +1,39 @@
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
+TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
+include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
+
+DEFINES = -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
+	-DIFPACK
+
+INCLUDES = -I../utils -I../src $(ARCH_INCLUDES) $(IFPACK_INCLUDES) \
+	$(EPETRA_INCLUDES) $(TRIUTILS_INCLUDES) $(BELOS_INCLUDES) \
+	$(TEUCHOS_INCLUDES)
+
+CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
+FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(INCLUDES)
+CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
+CCFLAGS=$(CXXFLAGS)
+LDFLAGS=$(ARCH_LDFLAGS)
+
+LIB_PATHS= $(LIBIFPACK) $(LIBEPETRA) $(LIBTRIUTILS) $(LIBTEUCHOS) \
+	$(LIBLAPACK) $(LIBY12M) $(LIBBLAS) 
+
+all:  BlockArnoldiPetraEx BlockArnoldiPetraExHb BlockArnoldiPetraExGen
+
+BlockArnoldiPetraEx: BlockArnoldiPetraEx.$(OBJ_EXT)
+	$(CXX) -o $@ $^ -I. $(INCLUDES) $(LIB_PATHS) $(ARCH_LIBS)
+
+BlockArnoldiPetraEx.$(OBJ_EXT) : BlockArnoldiPetraEx.cpp 
+
+BlockArnoldiPetraExHb: BlockArnoldiPetraExHb.$(OBJ_EXT)
+	$(CXX) -o $@ $^ -I. $(INCLUDES) $(LIB_PATHS) $(ARCH_LIBS)
+
+BlockArnoldiPetraExHb.$(OBJ_EXT) : BlockArnoldiPetraExHb.cpp 
+
+BlockArnoldiPetraExGen: BlockArnoldiPetraExGen.$(OBJ_EXT)
+	$(CXX) -o $@ $^ -I. $(INCLUDES) $(LIB_PATHS) $(ARCH_LIBS)
+
+BlockArnoldiPetraExGen.$(OBJ_EXT) : BlockArnoldiPetraExGen.cpp 
+
+clean:
+	rm -f *.$(OBJ_EXT) *.stackdump core
