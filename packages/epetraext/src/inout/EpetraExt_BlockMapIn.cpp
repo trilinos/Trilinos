@@ -56,7 +56,7 @@ int MatrixMarketFileToBlockMap( const char *filename, const Epetra_Comm & comm, 
   bool inHeader = true;
 
   handle = fopen(filename,"w");
-  while () {
+  while (inHeader) {
     if(fgets(line, lineLength, handle)==0) return(-1);
     if(sscanf(line, "%s", token)==0) return(-1);
     if (!strcmp(token, "%NumProc:")) inHeader = false;
@@ -81,7 +81,7 @@ int MatrixMarketFileToBlockMap( const char *filename, const Epetra_Comm & comm, 
   if(fgets(line, lineLength, handle)==0) return(-1); // NumGlobalElements value
   if(sscanf(line, "%s %d", token, &NumGlobalElements)==0) return(-1);
 
-  ierr = 0;
+  int ierr = 0;
   if (comm.NumProc()==numProc) {
     if(fgets(line, lineLength, handle)==0) return(-1); // NumMyElements header line
     firstGid = 0;
@@ -134,6 +134,7 @@ int MatrixMarketFileToBlockMap( const char *filename, const Epetra_Comm & comm, 
     for (int i=0; i<NumMyElements; i++) {
       if(fgets(line, lineLength, handle)==0) return(-1);
       if(sscanf(line, "%d", &v1[i])==0) return(-1); // load v1
+      v2[i] = MinElementSize; // Fill with constant size
     }
   }
   if (fclose(handle)) return(-1);
@@ -141,9 +142,8 @@ int MatrixMarketFileToBlockMap( const char *filename, const Epetra_Comm & comm, 
 
   if (MinElementSize==1 && MaxElementSize==1)
     map = new Epetra_Map(-1, NumMyElements, v1.Values(), IndexBase, comm);
-  else {
-    if (MinElementSize==MaxElementSize) v2.PutValue(MinElementSize); // Fill v2 with constant size value
+  else
     map = new Epetra_BlockMap(-1, NumMyElements, v1.Values(), v2.Values(), IndexBase, comm);
-  }
   return(0);
 }
+} // namespace EpetraExt
