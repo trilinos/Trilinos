@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# /Trilinos/test/runtests
+# /Trilinos/commonTools/test/utilities/runtests
 
 ################################################################################
 # The Trilinos Project - runtests
@@ -12,8 +12,7 @@ use strict;
 
 # Variable Declarations ========================================================
 
-my $trilinosdir;        # absolute path to top-level Trilinos directory
-my $resultsdir;         # absolute path to results directory
+# command line arguments:
 
 my $trilinosdir;        # Trilinos directory        (required argument) 
 my $comm;               # comm                      (required argument) 
@@ -27,6 +26,7 @@ my $verbosity;          # verbosity level           (default: 1)
 my $logverbosity;       # log file verbosity level  (default: 0)
 
 my $startTime;          # start time string
+my $resultsDir;         # absolute path to results directory
 
 # Constants
 my $v0 = "0";           # quiet
@@ -62,7 +62,7 @@ cleanUp();
         my $quiet;
         my $help;
 
-        use Getopt:Long;
+        use Getopt::Long;
         GetOptions( "trilinosdir=s" => \$trilinosdir,
                     "comm=s" => \$comm,
                     "builddir=s" => \$builddir,
@@ -82,49 +82,92 @@ cleanUp();
             exit;
         }
         
+        # enforce and/or prepare arguments
+        
         if (!$trilinosdir) {
-            die "trilinosdir value required, see --help for more information"; 
+            die "trilinosdir value required, see --help for more information\n"; 
         } else {
             $trilinosdir =~ s/\/?$/\//;     # enforce trailing slash
+            if (!stat($trilinosdir)) {
+                die "cannot stat trilinosdir: $trilinosdir\n";
+            }
         }
         
         if (!$comm) {
-            die "comm value required, see --help for more information"; 
+            die "comm value required, see --help for more information\n";
+        } else {
+            if (!($comm eq "serial" || $comm eq "mpi")) {
+                die "comm valume must be \"serial\" or \"mpi\"\n";
+            }
         }
         
         if (!$builddir) {
-            die "builddir value required, see --help for more information"; 
+            die "builddir value required, see --help for more information\n"; 
+        } else {
+            $builddir =~ s/\/?$/\//;        # enforce trailing slash
+            $builddir = $trilinosdir.$builddir;
+            if (!stat($builddir)) {
+                die "cannot stat builddir: $builddir\n";
+            }
         }
         
         if (!$category) {
-            die "category value required, see --help for more information"; 
+            die "category value required, see --help for more information\n"; 
         }
         
-        if (!$mpistart) {
-            $mpistart = "";
-        }
-        
-        if (!$mpistart) {
-            $mpistart = "";
-        }
-        
-        if ($mpigo) {
-            $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = $mpigo;
+        if ($mpistart) { 
+            `which $mpistart`;
+            if ($?) {
+                die "cannot find mpistart command: $mpistart\n";
+            }
         } else {
-    		$ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "mpirun -np ";
-    	}
+            $mpistart = ""; 
+        }
+        
+        if ($mpistop) {
+            `which $mpistop`;
+            if ($?) {
+                die "cannot find mpistop command: $mpistop\n";
+            }
+        } else {
+            $mpistop = ""; 
+        }
+        
+        if (!$mpigo) { 
+            $mpigo = "mpirun -np "; 
+        }
+        if ($comm eq "mpi") {
+            if (system("which $mpigo")) {
+                die "cannot find mpigo command: $mpigo\n";
+            } else {
+                $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = $mpigo;
+            }
+        }
         
         if (!$outputdir) {
-            $outputdir = "."; 
+            $outputdir = "./"; 
         } else {
-            $outputdir =~ s/\///;
+            $outputdir =~ s/\/?$/\//;       # enforce trailing slash
+            if (!stat($outputdir)) {
+                die "cannot stat outputdir: $outputdir\n";
+            }
         }
         
-        if (!$verbosity) {
+        if ($verbosity) {
+            if      ($verbosity == 0) { $verbosity = $v0; }
+            elsif   ($verbosity == 1) { $verbosity = $v1; }
+            elsif   ($verbosity == 2) { $verbosity = $v2; }
+            elsif   ($verbosity == 3) { $verbosity = $v3; }
+        } else {
             $verbosity = $v1; 
         }
         
-        if (!$logverbosity) {
+        if ($logverbosity) {
+            if      ($logverbosity == 0) { $logverbosity = $v0; }
+            elsif   ($logverbosity == 1) { $logverbosity = $v1; }
+            elsif   ($logverbosity == 2) { $logverbosity = $v2; }
+            elsif   ($logverbosity == 3) { $logverbosity = $v3; }        
+        } else {
             $logverbosity = $v0; 
         }
         
@@ -145,25 +188,59 @@ cleanUp();
     #
 
     sub init {
-    
-        my $yr = "00";
-        my $mo = "00";
-        my $da = "00";
-        my $hr = "00";
-        my $mn = "00";
-        my $se = "00";
+           
+        # capture and format start time
+        (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
+        $yr = sprintf("%02d", $yr % 100);
+        $mo = sprintf("%02d", $mo+1);
+        $da = sprintf("%02d", $da);
+        $hr = sprintf("%02d", $hr);
+        $mn = sprintf("%02d", $mn);
+        $se = sprintf("%02d", $se);
+        $startTime = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
         
-        ($se, 
+        # create results directory
+        $resultsDir = $trilinosdir;
+        $resultsDir .= "commonTools/test/utilities/";
+        $resultsDir .= $outputdir;
+        $resultsDir .= "test_$startTime/";
+        mkdir($resultsDir);
         
-        use Cwd;
-        use File::Basename;
-        my $cwd = dirname(getcwd());
-        $trilinosdir = $cwd;
-        $trilinosdir =~ s/test\/$//;
-        
-        $resultsdir = $cwd.$outputdir;
+        # print list of variables for debugging
+        my $message = "";
+        $message .= "\n";
+        $message .= "init():\n";
+        $message .= "\$trilinosdir = $trilinosdir\n";
+        $message .= "\$comm = $comm\n";
+        $message .= "\$builddir = $builddir\n";
+        $message .= "\$category = $category\n";
+        $message .= "\$mpistart = $mpistart\n";
+        $message .= "\$mpistop = $mpistop\n";
+        $message .= "\$mpigo = $mpigo\n";
+        $message .= "\$outputdir = $outputdir\n";
+        $message .= "\$verbosity = $verbosity\n";
+        $message .= "\$logverbosity = $logverbosity\n";
+        $message .= "\$startTime = $startTime\n";
+        $message .= "\$resultsDir = $resultsDir\n";
+        printMessage($message, $v3);
         
     } # init()
+    
+    ############################################################################
+    # run()
+    #
+    # Run tests
+    #
+    #   - args:     NONE
+    #
+    #   - returns:  NONE
+    #
+
+    sub run {
+        
+        chdir $builddir or die "cannot chdir to $builddir, died";
+        
+    } # run()
     
     ############################################################################
     # cleanUp()
@@ -194,12 +271,12 @@ cleanUp();
         my $message = $_[0];
         my $level = $_[1];
         
-        if ($vebosity & $level) {
+        if ($verbosity & $level) {
             print $message;
         }
         
         if ($logverbosity & $level) {       
-            my $log = $resultsdir."log.txt";
+            my $log = $resultsDir."log.txt";
             open (LOG, ">>$log")
                 or die "can't open $log";            
             print LOG $message;
@@ -220,7 +297,8 @@ cleanUp();
     sub printHelp {
         print "Trilinos Test Harness\n";
         print "\n";
-        print "Usage:  perl runtest --comm=mpi --buildir=MPI --category=all\n";
+        print "Usage:  perl runtests --trilinosdir=/home/user --comm=mpi --buildir=MPI\n";
+        print "        --category=all\n";
         print "\n";
         print "Options:\n";
         print "\n";
@@ -253,8 +331,8 @@ cleanUp();
         print "                         Default: \"mpigo -np \"\n";
         print "\n";
         print "  --outputdir=OUTPUTDIR  Specify the directory in which to create the directory\n";
-        print "                         containing the test results.  This value must be a path\n";
-        print "                         relative to trilinosdir/test/.\n";
+        print "                         containing the test results.  This value must be a\n";
+        print "                         path relative to trilinosdir/test/.\n";
         print "                         Default: \".\"\n";
         print "\n";
         print "  --verbosity=LEVEL      0 = no non-fatal ouput (same as --quiet)\n";
@@ -272,7 +350,7 @@ cleanUp();
         print "  --help                 Print this help output and exit.\n";
         print "\n";
         print "Notes:\n";
-        print "  - For more information, see README-runtest in Trilinos/testharness\n";
+        print "  - For more information, see README-runtests in Trilinos/testharness\n";
         print "    or visit http://software.sandia.gov/trilinos/developer/\n";
         print "\n";
     } # printHelp()
