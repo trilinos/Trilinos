@@ -16,7 +16,7 @@
 static char *cvs_parmetis_part_id = "$Id$";
 #endif
 
-#define LB_DEBUG  /* turn on debug print statements? */
+/* #define LB_DEBUG */  /* turn on debug print statements? */
 
 #include <math.h>
 #include <strings.h>
@@ -81,9 +81,8 @@ int LB_ParMetis_Part(
         { NULL, NULL, NULL } };
   
 #ifdef LB_DEBUG
-  int i99, *p99, myproc;
-  MPI_Comm_rank(lb->Communicator, &myproc);
-  printf("[%1d] Debug: Entering ParMetis_Part()\n", myproc);
+  int i99, *p99;
+  printf("[%1d] Debug: Entering ParMetis_Part()\n", lb->Proc);
 #endif
 
   /* Set default return values (in case of early exit) */
@@ -129,9 +128,9 @@ int LB_ParMetis_Part(
   }
 
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: alg=%s, vwgt_dim=%d, ewgt_dim=%d\n", myproc, 
+    printf("[%1d] Debug: alg=%s, vwgt_dim=%d, ewgt_dim=%d\n", lb->Proc, 
       alg, vwgt_dim, ewgt_dim);
-    printf("[%1d] Debug: ParMetis options = %d, %d, %d, %d\n", myproc,
+    printf("[%1d] Debug: ParMetis options = %d, %d, %d, %d\n", lb->Proc,
       options[0], options[1], options[2], options[3]);
 #endif
 
@@ -156,7 +155,7 @@ int LB_ParMetis_Part(
   }
   
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: num_obj =%d\n", myproc, num_obj);
+    printf("[%1d] Debug: num_obj =%d\n", lb->Proc, num_obj);
 #endif
   
   global_ids = (LB_GID *) LB_MALLOC(num_obj * sizeof(LB_GID) );
@@ -176,22 +175,18 @@ int LB_ParMetis_Part(
   if (ierr){
     /* Return error code ? */
 #ifdef LB_DEBUG
-    printf("[%1d] Error: LB_Get_Obj_List failed!\n", myproc);
+    printf("[%1d] Error: LB_Get_Obj_List failed!\n", lb->Proc);
 #endif
   }
 
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: Global ids = ", myproc);
+    printf("[%1d] Debug: Global ids = ", lb->Proc);
     for (i99=0; i99<num_obj; i99++) printf("%d ", global_ids[i99]);
     printf("\n");
 #endif
   
   if (get_graph_data){
 
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: lb->Get_Edge_List_Data = %x\n", myproc,
-      lb->Get_Edge_List_Data);
-#endif
     sum_edges = 0;
     max_edges = 0;
     for (i=0; i< num_obj; i++){
@@ -203,7 +198,7 @@ int LB_ParMetis_Part(
       if (nedges>max_edges) max_edges = nedges;
     }
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: Sum_edges = %d\n", myproc, sum_edges);
+    printf("[%1d] Debug: Sum_edges = %d\n", lb->Proc, sum_edges);
 #endif
   
     /* Allocate space for ParMETIS data structs */
@@ -220,7 +215,7 @@ int LB_ParMetis_Part(
       return LB_MEMERR;
     }
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: Successfully allocated ParMetis space\n", myproc);
+    printf("[%1d] Debug: Successfully allocated ParMetis space\n", lb->Proc);
 #endif
   
     /* Construct ParMETIS graph */
@@ -233,9 +228,9 @@ int LB_ParMetis_Part(
     vtxdist[0] = 0;
   
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: vtxdist = ", myproc);
+    printf("[%1d] Debug: vtxdist = ", lb->Proc);
     for (i99=0; i99<=lb->Num_Proc; i99++)
-      printf("%3d", vtxdist[i99]);
+      printf("%d ", vtxdist[i99]);
     printf("\n");
 #endif
   
@@ -295,37 +290,38 @@ int LB_ParMetis_Part(
       }
   
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: i=%d, gid=%d, lid=%d, nedges=%d\n", myproc, i, 
+    printf("[%1d] Debug: i=%d, gid=%d, lid=%d, nedges=%d\n", lb->Proc, i, 
       global_ids[i], local_ids[i], nedges);
 #endif
   
       /* Separate inter-processor edges from the local ones */
       for (j=0; j<nedges; j++){
   
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: edge %d is to %d on proc %d\n", myproc,
-      j, nbors_global[j], nbors_proc[j]);
-#endif
-  
         if (nbors_proc[j] == lb->Proc){
           /* local edge */
           *adjptr++ = LB_hash_lookup(hashtab, nbors_global[j], num_obj);
         } else {
-          /* Inter-processor edge */
-          /* Add it to beginning of the list */
+          /* Inter-processor edge; add it to beginning of the list. */
+
+          /* Note: Here we allocate elements in the list one-by-one,
+           * which may be inefficient. Alternatively we could use
+           * the num_border_obj query function to obtain
+           * the number of cross-edges in advance, but this
+           * query function might not be available.
+           */
           new = (struct LB_vtx_list *) LB_MALLOC (sizeof(struct LB_vtx_list));
           new->next = proc_list[nbors_proc[j]];
           if (new->next == NULL){
             new->length = 1;
             nsend++;
 #ifdef LB_DEBUG
-          printf("[%1d] Debug: creating new list, nsend =%d\n", myproc, nsend);
+          printf("[%1d] Debug: creating new list, nsend =%d\n", lb->Proc, nsend);
 #endif
           } else {
             new->length = new->next->length + 1;
 #ifdef LB_DEBUG
           printf("[%1d] Debug: appending to old list, new length =%d\n", 
-          myproc, new->length);
+          lb->Proc, new->length);
 #endif
           }
           new->my_gid = global_ids[i];
@@ -333,22 +329,17 @@ int LB_ParMetis_Part(
           new->nbor_gid = nbors_global[j];
           new->adj = adjptr++;
           proc_list[nbors_proc[j]] = new;
-#ifdef LB_DEBUG
-          printf("[%1d] Debug: found edge to proc %d\n", myproc, nbors_proc[j]);
-          printf("[%1d] Debug: new edge = (%d,%d,%d)\n", 
-            myproc, new->my_gid, new->my_gno, new->nbor_gid);
-#endif
         }
       }
     }
-    /* Self test */
+    /* Sanity check */
     if (((int)adjptr - (int)adjncy)/sizeof(int) != xadj[num_obj]){
       printf("Warning: Internal error in LB_Parmetis_Part, incorrect pointer\n");
       printf("adjptr-adjncy =%d, #edges =%d\n", ((int)adjptr - (int)adjncy)/sizeof(int), xadj[num_obj]);
     }
   
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: nsend =%d\n", myproc, nsend);
+    printf("[%1d] Debug: nsend =%d\n", lb->Proc, nsend);
 #endif
   
     if (nsend>0){
@@ -377,7 +368,7 @@ int LB_ParMetis_Part(
       for (i=0; i<lb->Num_Proc; i++){
         if (proc_list[i] != NULL){
 #ifdef LB_DEBUG
-          printf("[%1d] Debug: Receive from proc %d\n", myproc, i);
+          printf("[%1d] Debug: Receive from proc %d\n", lb->Proc, i);
 #endif
           MPI_Irecv(&recvbuf[offset], proc_list[i]->length * size,
             MPI_BYTE, i, 1, lb->Communicator, &request[j]);
@@ -386,7 +377,7 @@ int LB_ParMetis_Part(
         }
       }
 #ifdef LB_DEBUG
-      printf("[%1d] Debug: Finished issuing the recvs\n", myproc);
+      printf("[%1d] Debug: Finished issuing the recvs\n", lb->Proc);
 #endif
       /* Barrier */
       MPI_Barrier(lb->Communicator);
@@ -397,7 +388,7 @@ int LB_ParMetis_Part(
           offset = 0;
           for (ptr = proc_list[i]; ptr != NULL; ptr = ptr->next){
 #ifdef LB_DEBUG
-            printf("[%1d] Debug: Sending (%d,%d) to proc %d\n", myproc, 
+            printf("[%1d] Debug: Sending (%d,%d) to proc %d\n", lb->Proc, 
               ptr->my_gid, ptr->my_gno, i);
 #endif
             memcpy(&sendbuf[offset], (char *) &(ptr->my_gid), sizeof(LB_GID)); 
@@ -410,17 +401,17 @@ int LB_ParMetis_Part(
         }
       }
 #ifdef LB_DEBUG
-      printf("[%1d] Debug: Finished issuing the sends\n", myproc);
+      printf("[%1d] Debug: Finished issuing the sends\n", lb->Proc);
 #endif
       /* Wait for all */
       MPI_Waitall(nsend, request, status);
 #ifdef LB_DEBUG
       printf("[%1d] Debug: received %d pairs of data from %d procs.\n", 
-        myproc, sum_edges, nsend);
-      printf("[%1d] Debug: received data: ", myproc);
+        lb->Proc, sum_edges, nsend);
+      printf("[%1d] Debug: received data: ", lb->Proc);
       p99 = (int *)recvbuf;
       for (i99=0; i99<sum_edges; i99++){
-        printf("%d %d ", p99[2*i99], p99[2*i99+1]);
+        printf("(%d %d) ", p99[2*i99], p99[2*i99+1]);
       }
       printf("\n");
 #endif
@@ -435,20 +426,16 @@ int LB_ParMetis_Part(
           hi = offset + (proc_list[i]->length)*size;
           for (ptr = proc_list[i]; ptr != NULL; ){
 #ifdef LB_DEBUG
-            printf("[%1d] Debug: Matching data from proc %d, offset=%d\n", 
-              myproc, i, offset);
+            printf("[%1d] Debug: Matching data from proc %d, offset=%d, hi=%d\n", 
+              lb->Proc, i, offset, hi);
 #endif
             /* Look for matching global_id in recvbuf */
             /* The sought gid should be in recvbuf between offset and hi */
             flag = 0;
             for (j=offset; j<hi; j += size){
-#ifdef LB_DEBUG
-              printf("[%1d] Debug: Comparing GIDs %d and %d\n", myproc, 
-              *((LB_GID *)&recvbuf[j]), ptr->nbor_gid);
-#endif
               if (LB_EQ_GID(*((LB_GID *)&recvbuf[j]), ptr->nbor_gid)){
 #ifdef LB_DEBUG
-                printf("[%1d] Debug: Match!\n", myproc);
+                printf("[%1d] Debug: Matched %d\n", lb->Proc, ptr->nbor_gid);
 #endif
                 /* Found match. Amend adjncy array. */
                 flag = 1;
@@ -485,7 +472,7 @@ int LB_ParMetis_Part(
     /* Get vertex weights if needed */
     if (vwgt_dim){
 #ifdef LB_DEBUG
-      printf("[%1d] Debug: Converting vertex weights...\n", myproc);
+      printf("[%1d] Debug: Converting vertex weights...\n", lb->Proc);
 #endif
       vwgt = (idxtype *)LB_MALLOC(vwgt_dim*num_obj * sizeof(idxtype));
       max_wgt = 0;
@@ -528,7 +515,7 @@ int LB_ParMetis_Part(
   
   /* Select the desired ParMetis function */
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: Calling ParMETIS partitioner ...\n", myproc);
+    printf("[%1d] Debug: Calling ParMETIS partitioner ...\n", lb->Proc);
 #endif
   if (strcasecmp(alg, "PartKway") == 0){
     ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
@@ -567,7 +554,7 @@ int LB_ParMetis_Part(
     return LB_FATAL;
   }
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: Returned from ParMETIS partitioner with edgecut= %d\n", myproc, edgecut);
+    printf("[%1d] Debug: Returned from ParMETIS partitioner with edgecut= %d\n", lb->Proc, edgecut);
 #endif
 
   /* Free weights; they are no longer needed */
@@ -585,9 +572,9 @@ int LB_ParMetis_Part(
   }
 
 #ifdef LB_DEBUG
-  printf("[%1d] Debug: nsend =%d\n", myproc, nsend);
+  printf("[%1d] Debug: nsend =%d\n", lb->Proc, nsend);
   if (nsend>0){
-    printf("[%1d] Debug: destproc = ", myproc);
+    printf("[%1d] Debug: destproc = ", lb->Proc);
     for (i99=0; i99<nsend; i99++)
       printf("%d ", destproc[i99]);
     printf("\n");
@@ -602,7 +589,7 @@ int LB_ParMetis_Part(
     size = sizeof(LB_GID) + sizeof(LB_LID) + sizeof(int);
     sendbuf = (char *)LB_MALLOC(nsend*size);
 #ifdef LB_DEBUG
-  printf("[%1d] Debug: copying data to sendbuf.\n", myproc);
+  printf("[%1d] Debug: copying data to sendbuf.\n", lb->Proc);
 #endif
     j = 0;
     for (i=0; i<num_obj; i++){
@@ -617,7 +604,7 @@ int LB_ParMetis_Part(
       }
     }
 #ifdef LB_DEBUG
-  printf("[%1d] Debug: copied data to sendbuf, j=%d\n", myproc, j);
+  printf("[%1d] Debug: copied data to sendbuf, j=%d\n", lb->Proc, j);
 #endif
   
     /* Create a communication plan */
@@ -628,7 +615,7 @@ int LB_ParMetis_Part(
   
     /* Do the communication */
 #ifdef LB_DEBUG
-  printf("[%1d] Debug: calling LB_comm_do.\n", myproc);
+  printf("[%1d] Debug: calling LB_comm_do.\n", lb->Proc);
 #endif
     LB_comm_do(plan, sendbuf, size, recvbuf);
   
@@ -644,7 +631,7 @@ int LB_ParMetis_Part(
 
 #ifdef LB_DEBUG
   printf("[%1d] Debug: copying data into output parameters. nrecv =%d\n", 
-    myproc, nrecv);
+    lb->Proc, nrecv);
 #endif
     j = 0;
     for (i=0; i<nrecv; i++){
@@ -656,9 +643,7 @@ int LB_ParMetis_Part(
         j += sizeof(int);
     }
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: imp_gids= %x, imp_lids=%x, imp_procs=%x\n",
-      myproc, imp_gids, imp_lids, imp_procs);
-    printf("[%1d] Debug: import data (gid,proc) is\n", myproc);
+    printf("[%1d] Debug: import data (gid,proc) is\n", lb->Proc);
     for (i99=0; i99<nrecv; i99++){
       printf(" (%2d,%2d) ", (*imp_gids)[i99], (*imp_procs)[i99]);
     }
@@ -685,7 +670,7 @@ int LB_ParMetis_Part(
     LB_Free((void **) &xyz);
   }
 #ifdef LB_DEBUG
-  printf("[%1d] Debug: exiting ParMetis_Part\n", myproc);
+  printf("[%1d] Debug: exiting ParMetis_Part\n", lb->Proc);
 #endif
   return LB_OK;
 #endif /* LB_NO_PARMETIS */
