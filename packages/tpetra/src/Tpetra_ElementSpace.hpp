@@ -419,31 +419,40 @@ OrdinalType* ElementSpace<OrdinalType>::getMyGlobalElements() const {
 //=======================================================================
 template<typename OrdinalType>
 bool ElementSpace<OrdinalType>::isSameAs (ElementSpace<OrdinalType> const& ElementSpace) const {
-  if (this == &ElementSpace) 
-    return(true);
-  if (getMinAllGID() != ElementSpace.getMinAllGID() || 
-      getMaxAllGID() != ElementSpace.getMaxAllGID() ||
-      getNumGlobalElements() != ElementSpace.getNumGlobalElements() || 
-      getIndexBase() != ElementSpace.getIndexBase() ||
-      isGlobal() != ElementSpace.isGlobal() || 
-      isContiguous() != ElementSpace.isContiguous()) 
+	// Quickest test: See if we share an inner data class
+	if(ElementSpaceData_.shares_resource(ElementSpace.ElementSpaceData_))
+		return(true);
+
+	// Next check other global properties that are easy global attributes
+  if(getMinAllGID() != ElementSpace.getMinAllGID() || 
+		 getMaxAllGID() != ElementSpace.getMaxAllGID() ||
+		 getNumGlobalElements() != ElementSpace.getNumGlobalElements() || 
+		 getIndexBase() != ElementSpace.getIndexBase() ||
+		 isGlobal() != ElementSpace.isGlobal() || 
+		 isContiguous() != ElementSpace.isContiguous()) 
     return(false);
 
   // If we get this far, we need to check local properties and then check across
   // all images to see if local properties are all true
 	
+	// check that maps have the same number of local elements
   int mySameSpace = 1;
   if(getNumMyElements() != ElementSpace.getNumMyElements()) 
     mySameSpace=0;
-	
-  if(!isContiguous() && mySameSpace == 1)
+
+	// then check that GIDs are the same, by checking that the maps match
+	// *possible optimization* is this only necessary in a non-contiguous elementspace?
+  if(mySameSpace == 1)
     if(ElementSpaceData_->lgMap_ != ElementSpace.ElementSpaceData_->lgMap_)
       mySameSpace=0;
 
   // Now get min of mySameSpace across all images
   int globalSameSpace = 0;
   comm().minAll(&mySameSpace, &globalSameSpace, 1);
-  return(globalSameSpace==1);
+
+	// if globalSameSpace is 1, that means none of the images set it to 0,
+	// so the ElementSpaces are identical on all images. If this is the case, then we should return true.
+  return(globalSameSpace == 1);
 }
 
 //=======================================================================

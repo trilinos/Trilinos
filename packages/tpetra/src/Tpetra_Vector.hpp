@@ -18,8 +18,8 @@ namespace Tpetra {
 		Global index values can be converted to local indices by using the 
 		VectorSpace::getLocalIndex method.
 
-		Note that for most of the mathematical methods that set this to the result of
-		an operation on vectors passed as parameters, the this vector can be used 
+		Note that for most of the mathematical methods that set \e this to the result of
+		an operation on vectors passed as parameters, the \e this vector can be used 
 		as one of the parameters (unless otherwise specified).
 		
     Vector error codes (positive for non-fatal, negative for fatal):
