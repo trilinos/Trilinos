@@ -745,7 +745,6 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
    ML_Smoother    *smooth_ptr;
    ML_Sm_BGS_Data *dataptr;
    char           N[2];
-   unsigned int   itmp;
 	 
    /* ----------------------------------------------------- */
    /* fetch parameters                                      */
@@ -855,7 +854,7 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
          if ( do_update[i] == blocksize && blocksize != 0 )
          {
             MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
-                              perms[i], res[i], &blocksize, &info, itmp);
+                              perms[i], res[i], &blocksize, &info);
             if ( info != 0 ) 
             {
                printf("dgetrs returns with %d at block %d\n",info,i); 
@@ -909,7 +908,6 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
    ML_Smoother    *smooth_ptr;
    ML_Sm_BGS_Data *dataptr;
    char           N[2];
-   unsigned int   itmp;
 	 
    /* ----------------------------------------------------- */
    /* fetch parameters                                      */
@@ -1003,7 +1001,7 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
          if ( do_update == blocksize && blocksize != 0 )
          {
             MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
-                              perms[i], res, &blocksize, &info, itmp);
+                              perms[i], res, &blocksize, &info);
             if ( info != 0 ) 
             {
                printf("dgetrs returns with %d at block %d(%d)\n",info,i,Nblocks); 
@@ -1043,7 +1041,7 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
          if ( do_update == blocksize )
          {
             MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
-                              perms[i], res, &blocksize, &info, itmp);
+                              perms[i], res, &blocksize, &info);
             if ( info != 0 ) 
             {
                printf("dgetrs returns with %d at block %d(%d)\n",info,i,blocksize); 
@@ -1097,7 +1095,6 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
    ML_Smoother    *smooth_ptr;
    ML_Sm_BGS_Data *dataptr;
    char           N[2];
-   unsigned int   itmp;
 	 
    /* ----------------------------------------------------- */
    /* fetch parameters                                      */
@@ -1197,7 +1194,7 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
                if ( do_update == blocksize && blocksize != 0 )
                {
                   MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
-                                    perms[i], res, &blocksize, &info, itmp);
+                                    perms[i], res, &blocksize, &info);
                   if ( info != 0 ) 
                   {
                      printf("dgetrs returns %d at blk %d(%d)\n",info,i,Nblocks); 
@@ -1246,7 +1243,7 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
                if ( do_update == blocksize )
                {
                   MLFORTRAN(dgetrs)(N,&blocksize,&one,blockdata[i],&blocksize,
-                                    perms[i], res, &blocksize, &info, itmp);
+                                    perms[i], res, &blocksize, &info);
                   if ( info != 0 ) 
                   {
                      printf("dgetrs returns %d at blk %d(%d)\n",info,i,Nblocks); 
