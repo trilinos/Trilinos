@@ -83,7 +83,7 @@ namespace Anasazi {
       original problem.  It may return without converging if it has taken the
       maximum number of iterations or numerical breakdown is observed.
     */
-    void solve();
+    ReturnType solve();
     //@}
     
     //@{ \name Solver status methods.
@@ -141,7 +141,7 @@ namespace Anasazi {
     void QRFactorization( MV&, Teuchos::SerialDenseMatrix<int,ScalarType>& );
     void ComputeSchurForm( const bool apply );
     void SortSchurForm( Teuchos::SerialDenseMatrix<int,ScalarType>& H, Teuchos::SerialDenseMatrix<int,ScalarType>& Q );
-    void BlockReduction();
+    int BlockReduction();
     void BlkOrth( MV& Vec_in, const int j );
     void BlkOrthSing( MV& Vec_in, const int j );
     void ComputeEvecs();
@@ -162,9 +162,10 @@ namespace Anasazi {
     Teuchos::RefCountPtr<std::vector<ScalarType> > _evals;
     const int _nev;  
     
+    int _maxBlocks;
     const int _restarts, _blockSize, _stepSize;
     const ScalarType _residual_tolerance;
-    int _numRestarts, _iter, _jstart, _jend, _nevblock, _totallength, _maxBlocks;
+    int _numRestarts, _iter, _jstart, _jend, _nevblock, _totallength;
     int _offset, _maxoffset;
     bool _isdecompcurrent, _isevecscurrent, _exit_flg, _dep_flg;
     ScalarType _schurerror, _dep_tol, _blk_tol, _sing_tol, _def_tol;
@@ -315,23 +316,8 @@ namespace Anasazi {
   //----------------------------------------------------------------------------------------
 
   template <class ScalarType, class MV, class OP>
-  void BlockKrylovSchur<ScalarType,MV,OP>::solve () 
+  ReturnType BlockKrylovSchur<ScalarType,MV,OP>::solve () 
   {
-    //
-    // Determine _nevblock : how many blocks it will take to contain the _nev eigenvalues/vectors
-    // NOTE: An additional block is kept if _nev is a perfect multiple of _blockSize because of the
-    // potential presence of complex eigenvalue pairs.  Additional blocks can be retained, up to
-    // _maxoffset if the block ends with one eigenvalue of a complex conjugate pair.
-    //
-    _nevblock = _nev/_blockSize + 1;
-
-    // TEST CODE:  This part has changed from saving another block to compare with ARPACK.
-    //_nevblock = _nev/_blockSize;  
-    //if (_nev%_blockSize) 
-    //_nevblock++;    
-
-    _maxoffset = (_maxBlocks-_nevblock)/2;
-    _totallength = _blockSize*_maxBlocks;
     //
     // Retrieve the initial vector and operator information from the Anasazi::Eigenproblem.
     //
@@ -340,16 +326,24 @@ namespace Anasazi {
     if ( ivec.get() == 0 ) {
       if (_om->isVerbosityAndPrint( Anasazi::Error )) 
 	_os << "ERROR : Initial vector is not specified, set initial vector in eigenproblem "<<endl;
-      //return Failed;
+      return Failed;
     }
+
+    int dim = MVT::GetVecLength( *ivec );
     
     if ( _maxBlocks<=0 ) {
       if (_om->isVerbosityAndPrint( Anasazi::Error )) 
 	_os << "ERROR : maxBlocks = "<< _maxBlocks <<" [ should be positive number ] " << endl;
-      //return Failed;
+      return Failed;
     } 
 
-    int dim = MVT::GetVecLength( *ivec );
+    if ( _maxBlocks*_blockSize < _nev ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
+	_os << "ERROR : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
+	    << " [ should be greater than "<< _nev << " ] " << endl;
+      return Failed;
+    } 
+
     if (_maxBlocks*_blockSize > dim ) {
       if (_om->isVerbosityAndPrint( Anasazi::Warning ))
 	_os << "WARNING : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
@@ -362,13 +356,35 @@ namespace Anasazi {
 	_os << "WARNING : maxBlocks reset to "<< _maxBlocks << endl;
     }
     
+    if ( (_maxBlocks*_blockSize == _nev) && (_nev != dim) ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error ))
+	_os << "ERROR : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
+	    << " [ should be greater than "<< _nev << " ] " << endl;
+      return Failed;
+    }
+    
     if ( _stepSize<=0 ) {
       if (_om->isVerbosityAndPrint( Anasazi::Error )) 
 	_os << "ERROR : stepSize = "<< _stepSize <<" [ should be positive number ] " << endl;
-      //return Failed;
+      return Failed;
     } 
 
-
+    //
+    // Determine _nevblock : how many blocks it will take to contain the _nev eigenvalues/vectors
+    // NOTE: An additional block is kept if _nev is a perfect multiple of _blockSize because of the
+    // potential presence of complex eigenvalue pairs.  Additional blocks can be retained, up to
+    // _maxoffset if the block ends with one eigenvalue of a complex conjugate pair.
+    //
+    _nevblock = _nev/_blockSize + 1;
+    //
+    // Use alternate settings if the number of eigenvalues requested is equal to the dimension
+    if ( _nev == dim ) {
+      _nevblock = _nev/_blockSize;  
+      if (_nev%_blockSize) 
+	_nevblock++;    
+    }
+    _maxoffset = (_maxBlocks-_nevblock)/2;
+    _totallength = _blockSize*_maxBlocks;
     //
     // Make room for theArnoldi vectors and F.
     //
@@ -410,6 +426,8 @@ namespace Anasazi {
     //
     if (_om->isVerbosity( FinalSummary ))
       currentStatus();
+
+    return Ok;
   }
   
   //----------------------------------------------------------------------------------------
@@ -419,6 +437,7 @@ namespace Anasazi {
   void BlockKrylovSchur<ScalarType,MV,OP>::iterate(const int steps) {
     int i,temp;
     int tempsteps = steps;
+    int blk_red_steps = 0;
     //
     // If this is the first steps of Block Krylov Schur, initialize the first block of _basisvecs
     //
@@ -469,16 +488,13 @@ namespace Anasazi {
       // If we don't need to restart, just get it over with and return.
       if (_jstart+tempsteps < _maxBlocks) {
 	_jend = _jstart+tempsteps;
-	BlockReduction();
-	//
-	// We need to leave before we move the pointer if the orthogonalization failed.
-	if (_exit_flg ) { break; } 
+	blk_red_steps = BlockReduction();
 	//
 	// Move the pointer and update the iteration count.
 	//
-	_iter += tempsteps;
-	tempsteps = 0;
-	_jstart = _jend;  
+	_iter += blk_red_steps;
+	tempsteps -= blk_red_steps;
+	_jstart += blk_red_steps;
 	ComputeSchurForm( false );		
 	_isdecompcurrent = false;
 	// Output current information if necessary
@@ -489,17 +505,14 @@ namespace Anasazi {
       // Finish off this factorization and restart.
       else {  
 	_jend = _maxBlocks;
-	BlockReduction();
-	//
-	// We need to leave before we move the pointer if the orthogonalization failed.
-	if (_exit_flg ) { break; } 
+	blk_red_steps = BlockReduction();
 	//
 	// Move the pointer and update the iteration count.
 	//
 	temp = _maxBlocks-_jstart;
-	_iter += temp;
-	tempsteps -= temp;
-	_jstart = _maxBlocks; 
+	_iter += blk_red_steps;
+	tempsteps -= blk_red_steps;
+	_jstart += blk_red_steps;
 	//
 	//  Compute the Schur factorization and prepare for a restart.  Don't
 	//  compute restart if at end of iterations.
@@ -527,7 +540,7 @@ namespace Anasazi {
   //----------------------------------------------------------------------------------------
 
   template <class ScalarType, class MV, class OP>
-  void BlockKrylovSchur<ScalarType,MV,OP>::BlockReduction () {
+  int BlockKrylovSchur<ScalarType,MV,OP>::BlockReduction () {
     int i,j;
     ReturnType ret;
     std::vector<int> index( _blockSize );
@@ -579,6 +592,11 @@ namespace Anasazi {
       //
       if (_exit_flg) { break; }
     }
+    //
+    // Return the number of steps in the block reduction that were accomplished.
+    //
+    return (j-_jstart);
+
   } // end BlockReduction()
   
   
@@ -595,7 +613,7 @@ namespace Anasazi {
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     const int max_num_orth = 2;
-    int i, k, row_offset, col_offset;
+    int i, row_offset, col_offset;
     std::vector<int> index( _blockSize );
     std::vector<ScalarType> norm1( _blockSize );
     std::vector<ScalarType> norm2( _blockSize );
@@ -724,7 +742,7 @@ namespace Anasazi {
     const int IntOne = 1;
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-    int i, k, num_prev;
+    int i, num_prev;
     std::vector<int> index( _blockSize );
     Teuchos::SerialDenseVector<int,ScalarType> dense_vec;
     std::vector<ScalarType> norm1(IntOne);
@@ -907,7 +925,7 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   void BlockKrylovSchur<ScalarType,MV,OP>::QRFactorization (MV& VecIn, 
 							    Teuchos::SerialDenseMatrix<int,ScalarType>& FourierR) {
-    int i,j,k;
+    int i,j;
     int nb = MVT::GetNumberVecs( VecIn ); assert (nb == _blockSize);
     const int IntOne=1;
     std::vector<int> index;

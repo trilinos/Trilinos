@@ -118,7 +118,7 @@ namespace Anasazi {
   template<class ScalarType, class MV, class OP>
   ReturnType BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *evals, std::vector<int> *perm) const 
   {
-    int i, j, tempord;
+    int i=0, j=0, tempord=0;
     ScalarType temp, temp2;
     Teuchos::LAPACK<int,ScalarType> lapack;
     //
@@ -233,7 +233,7 @@ namespace Anasazi {
 
   template<class ScalarType, class MV, class OP>
   ReturnType BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *r_evals, ScalarType *i_evals, std::vector<int> *perm) const {
-    int i, j, tempord;
+    int i=0, j=0, tempord=0;
     ScalarType temp, tempr, tempi;
     Teuchos::LAPACK<int,ScalarType> lapack;
     //

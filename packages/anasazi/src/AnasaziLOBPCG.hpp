@@ -83,7 +83,7 @@ namespace Anasazi {
       original problem.  It may return without converging if it has taken the
       maximum number of iterations or numerical breakdown is observed.
     */
-    void solve();
+    ReturnType solve();
     //@}
     
     //@{ \name Solver status methods.
@@ -226,7 +226,7 @@ namespace Anasazi {
   }
   
   template <class ScalarType, class MV, class OP>
-  void LOBPCG<ScalarType,MV,OP>::solve () 
+  ReturnType LOBPCG<ScalarType,MV,OP>::solve () 
   {
     int i, j;
     int info, nb;
@@ -871,6 +871,8 @@ namespace Anasazi {
     //
     if (_om->isVerbosity( FinalSummary ))
       currentStatus();    
+
+    return Ok;
   }
   
   template <class ScalarType, class MV, class OP>

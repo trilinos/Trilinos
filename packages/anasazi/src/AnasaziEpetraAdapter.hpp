@@ -165,7 +165,7 @@ namespace Anasazi {
       Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
     */
     void MvNorm ( std::vector<double>* normvec ) const {
-      if (normvec && (normvec->size() >= GetNumberVecs()) ) {
+      if ((normvec!=NULL) && ((int)normvec->size() >= GetNumberVecs()) ) {
 	int ret = Norm2(&(*normvec)[0]);
 	assert( ret == 0 );
       }
@@ -357,7 +357,7 @@ namespace Anasazi {
   {
     EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
     assert(A_vec!=NULL);
-    if (A_vec && b && ( b->size() >= A_vec->NumVectors() ) ) {
+    if ((A_vec!=NULL) && (b!=NULL) && ( (int)b->size() >= A_vec->NumVectors() ) ) {
       int ret = this->Dot( *A_vec, &(*b)[0] );
       assert( ret == 0 );
     }

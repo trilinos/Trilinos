@@ -83,6 +83,21 @@ class Eigensolver {
 
   //@}
 
+  //@{ \name Solver application methods.
+    
+  /*! \brief This method uses information given to the eigensolver
+    to compute approximate solutions to the specified eigenproblem.
+    
+    \return Status of the solver on completion:
+    <ul>
+    <li> Ok - Eigensolver computed requested number of eigenvalues
+    <li> Unconverged - Eigensolver reached maximum number of iterations/restarts before computing all requested eigenvalues
+    <li> Failed - Numerical failure in eigensolver or bad input parameters
+    </ul>    
+  */
+  virtual ReturnType solve() = 0;
+  //@}
+  
 };
 
 } // end Anasazi namespace

@@ -46,10 +46,9 @@ namespace Anasazi {
 	    Ok,           /*!< Computation completed sucessfully */	
 	    Undefined,    /*!< This operation is not defined */
 	    Unconverged,  /*!< This operation returned unconverged */ 
-	    Failed	  /*!< Any other numerical failure in the computation */
+	    Failed	  /*!< Numerical failure in the computation or input error */
 	  };
   
 }
-
 #endif
 // end of file AnasaziReturnType.hpp

@@ -75,7 +75,7 @@ namespace Anasazi {
     */
     virtual void SetA( const Teuchos::RefCountPtr<OP> &A ) = 0;
     
-    /*! \brief Set the operator \c B of the eigenvalue problem \f$Ax=\lambda Mx\f$.
+    /*! \brief Set the operator \c M of the eigenvalue problem \f$Ax=\lambda Mx\f$.
     */
     virtual void SetM( const Teuchos::RefCountPtr<OP> &M ) = 0;
     
@@ -105,7 +105,7 @@ namespace Anasazi {
     */
     virtual void SetSymmetric( const bool isSym ) = 0;
     
-    //! Inform the eigenproblem that is has all the information it needs to define the eigenproblem.
+    //! Inform the eigenproblem that it is has all the information it needs to define the eigenproblem.
     /*! \note The user MUST call this routine before they send the eigenproblem to any solver!
      */
     virtual ReturnType SetProblem() = 0;
