@@ -47,11 +47,19 @@ LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_Group.C \
 	$(srcdir)/LOCA_Epetra_BorderedOp.C
 
+LOCA_EPETRANEW_H = \
+	$(srcdir)/LOCA_EpetraNew_Group.H \
+	$(srcdir)/LOCA_EpetraNew_Interface_Required.H 
+
+LOCA_EPETRANEW = \
+	$(srcdir)/LOCA_EpetraNew_Group.C 
+
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
 
-liblocaepetra_a_SOURCES = $(LOCA_EPETRA) $(LOCA_EPETRA_H)
+liblocaepetra_a_SOURCES = $(LOCA_EPETRA) $(LOCA_EPETRA_H) \
+	                  $(LOCA_EPETRANEW) $(LOCA_EPETRANEW_H)
 
 liblocaepetra_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
                            -I$(top_srcdir)/src \
@@ -70,7 +78,7 @@ lib_LIBRARIES = liblocaepetra.a
 
 # List of all headers to install in $(includedir)
 
-include_HEADERS = $(LOCA_EPETRA_H)
+include_HEADERS = $(LOCA_EPETRA_H) $(LOCA_EPETRANEW_H)
 
 endif
 

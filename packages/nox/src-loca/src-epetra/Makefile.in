@@ -97,12 +97,15 @@ liblocaepetra_a_DEPENDENCIES =
 am__objects_1 = liblocaepetra_a-LOCA_Epetra_Group.$(OBJEXT) \
 	liblocaepetra_a-LOCA_Epetra_BorderedOp.$(OBJEXT)
 am__objects_2 =
-am_liblocaepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2)
+am__objects_3 = liblocaepetra_a-LOCA_EpetraNew_Group.$(OBJEXT)
+am_liblocaepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
+	$(am__objects_3) $(am__objects_2)
 liblocaepetra_a_OBJECTS = $(am_liblocaepetra_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_BorderedOp.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/liblocaepetra_a-LOCA_EpetraNew_Group.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_BorderedOp.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_Group.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -118,7 +121,9 @@ DIST_SOURCES = $(liblocaepetra_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/LOCA_Epetra.H \
 	$(srcdir)/LOCA_Epetra_Group.H \
 	$(srcdir)/LOCA_Epetra_Interface.H \
-	$(srcdir)/LOCA_Epetra_BorderedOp.H
+	$(srcdir)/LOCA_Epetra_BorderedOp.H \
+	$(srcdir)/LOCA_EpetraNew_Group.H \
+	$(srcdir)/LOCA_EpetraNew_Interface_Required.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -287,11 +292,20 @@ LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_Group.C \
 	$(srcdir)/LOCA_Epetra_BorderedOp.C
 
+LOCA_EPETRANEW_H = \
+	$(srcdir)/LOCA_EpetraNew_Group.H \
+	$(srcdir)/LOCA_EpetraNew_Interface_Required.H 
+
+LOCA_EPETRANEW = \
+	$(srcdir)/LOCA_EpetraNew_Group.C 
+
 
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
-liblocaepetra_a_SOURCES = $(LOCA_EPETRA) $(LOCA_EPETRA_H)
+liblocaepetra_a_SOURCES = $(LOCA_EPETRA) $(LOCA_EPETRA_H) \
+	                  $(LOCA_EPETRANEW) $(LOCA_EPETRANEW_H)
+
 liblocaepetra_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
                            -I$(top_srcdir)/src \
                            -I$(top_srcdir)/src-epetra \
@@ -306,7 +320,7 @@ liblocaepetra_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
 @BUILD_LIBLOCAEPETRA_TRUE@lib_LIBRARIES = liblocaepetra.a
 
 # List of all headers to install in $(includedir)
-@BUILD_LIBLOCAEPETRA_TRUE@include_HEADERS = $(LOCA_EPETRA_H)
+@BUILD_LIBLOCAEPETRA_TRUE@include_HEADERS = $(LOCA_EPETRA_H) $(LOCA_EPETRANEW_H)
 @USE_ALTERNATE_AR_FALSE@liblocaepetra_a_AR = $(AR) cru
 
 # ------------------------------------------------------------------------
@@ -401,6 +415,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocaepetra_a-LOCA_EpetraNew_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_BorderedOp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_Group.Po@am__quote@
 
@@ -451,6 +466,22 @@ liblocaepetra_a-LOCA_Epetra_BorderedOp.obj: $(srcdir)/LOCA_Epetra_BorderedOp.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_BorderedOp.Po' tmpdepfile='$(DEPDIR)/liblocaepetra_a-LOCA_Epetra_BorderedOp.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocaepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocaepetra_a-LOCA_Epetra_BorderedOp.obj `if test -f '$(srcdir)/LOCA_Epetra_BorderedOp.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_BorderedOp.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_BorderedOp.C'; fi`
+
+liblocaepetra_a-LOCA_EpetraNew_Group.o: $(srcdir)/LOCA_EpetraNew_Group.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocaepetra_a_CXXFLAGS) $(CXXFLAGS) -MT liblocaepetra_a-LOCA_EpetraNew_Group.o -MD -MP -MF "$(DEPDIR)/liblocaepetra_a-LOCA_EpetraNew_Group.Tpo" -c -o liblocaepetra_a-LOCA_EpetraNew_Group.o `test -f '$(srcdir)/LOCA_EpetraNew_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_EpetraNew_Group.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocaepetra_a-LOCA_EpetraNew_Group.Tpo" "$(DEPDIR)/liblocaepetra_a-LOCA_EpetraNew_Group.Po"; else rm -f "$(DEPDIR)/liblocaepetra_a-LOCA_EpetraNew_Group.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_EpetraNew_Group.C' object='liblocaepetra_a-LOCA_EpetraNew_Group.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocaepetra_a-LOCA_EpetraNew_Group.Po' tmpdepfile='$(DEPDIR)/liblocaepetra_a-LOCA_EpetraNew_Group.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocaepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocaepetra_a-LOCA_EpetraNew_Group.o `test -f '$(srcdir)/LOCA_EpetraNew_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_EpetraNew_Group.C
+
+liblocaepetra_a-LOCA_EpetraNew_Group.obj: $(srcdir)/LOCA_EpetraNew_Group.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocaepetra_a_CXXFLAGS) $(CXXFLAGS) -MT liblocaepetra_a-LOCA_EpetraNew_Group.obj -MD -MP -MF "$(DEPDIR)/liblocaepetra_a-LOCA_EpetraNew_Group.Tpo" -c -o liblocaepetra_a-LOCA_EpetraNew_Group.obj `if test -f '$(srcdir)/LOCA_EpetraNew_Group.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_EpetraNew_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_EpetraNew_Group.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/liblocaepetra_a-LOCA_EpetraNew_Group.Tpo" "$(DEPDIR)/liblocaepetra_a-LOCA_EpetraNew_Group.Po"; else rm -f "$(DEPDIR)/liblocaepetra_a-LOCA_EpetraNew_Group.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_EpetraNew_Group.C' object='liblocaepetra_a-LOCA_EpetraNew_Group.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/liblocaepetra_a-LOCA_EpetraNew_Group.Po' tmpdepfile='$(DEPDIR)/liblocaepetra_a-LOCA_EpetraNew_Group.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocaepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocaepetra_a-LOCA_EpetraNew_Group.obj `if test -f '$(srcdir)/LOCA_EpetraNew_Group.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_EpetraNew_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_EpetraNew_Group.C'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)

@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+
 //@HEADER
 // ************************************************************************
 // 
@@ -26,11 +29,56 @@
 // 
 // ************************************************************************
 //@HEADER
-//LOCA::Epetra Objects
-#include "NOX_Epetra.H"
-#include "LOCA_Epetra_Group.H"
-#include "LOCA_Epetra_Interface.H"
 
-//EpetraNew objects
-#include "LOCA_EpetraNew_Group.H"
-#include "LOCA_EpetraNew_Interface_Required.H"
+#ifndef LOCA_EPETRANEW_INTERFACE_REQUIRED_H
+#define LOCA_EPETRANEW_INTERFACE_REQUIRED_H
+
+#include "NOX_Common.H"
+#include "NOX_EpetraNew_Interface_Required.H"
+  
+// Forward declarations
+class Epetra_Vector;
+
+namespace LOCA {
+  class ParameterVector;
+}
+
+namespace LOCA {
+  namespace EpetraNew {
+    namespace Interface {
+
+      /*! \brief 
+       * Used by LOCA::EpetraNew::Group to provide a link to the
+       * external code for RHS and Jacobian fills if needed. 
+      */
+      /*!
+       * This interface is derived from the 
+       * NOX::EpetraNew::Interface::Required and additionally provides a 
+       * method for setting problem parameters.
+      */
+      class Required : public virtual NOX::EpetraNew::Interface::Required {
+
+      public:
+ 
+	//! Constructor
+	Required() {};
+
+	//! Destructor
+	virtual ~Required() {};
+
+	/*! 
+	 * \brief Set the parameters in the user's app prior to calling one 
+	 * of the compute functions.
+	 */
+	virtual void setParameters(const ParameterVector& p) = 0;
+
+	//! Call user's own print routine for vector-parameter pair
+	virtual void printSolution(const Epetra_Vector& x_, 
+				   double conParam) const {}
+
+      };
+    } // namespace Interface
+  } // namespace Epetra
+} // namespace LOCA
+
+#endif
