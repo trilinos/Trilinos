@@ -27,33 +27,42 @@
 // ************************************************************************
 //@HEADER
 
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
 /*! 
-  \mainpage %NOX: An Object-Oriented Nonlinear Solver Package
+  \mainpage %NOX & %LOCA: Object-Oriented Nonlinear Solver and Continuation Packages
 
-  \section intro Introduction
+  \section introduction Introduction
   
-  %NOX is short for "Nonlinear Object-Oriented Solutions". Its 
-  objective is to enable efficient solution of the equation:
-  \f[
-  F(x)=0.
-  \f]
-  Here \f$F:\Re^n \rightarrow \Re^n\f$.
+  %NOX is short for <em>Nonlinear Object-Oriented Solutions</em>, and its 
+  objective is to enable the efficient solution of the equation:
+  \f$
+  F(x)=0
+  \f$,
+  where \f$F:\Re^n \rightarrow \Re^n\f$.  
+  %NOX is designed to
+  work with any linear algebra package and to be easily customized.
+  %NOX is part of Sandia's <A
+  HREF="http://software.sandia.gov/trilinos/">Trilinos project</a>.
 
-  \section started Getting Started for Users
+  %LOCA, distributed as part of %NOX,
+  is short for <em>Library of Continuation Algorithms</em>, and its
+  objective is to compute families of solutions to
+  \f$
+  F(x,p)=0
+  \f$
+  and their bifurcations, where
+  \f$F:\Re^n\times\Re^m\rightarrow\Re^n\f$.  
 
-  See \ref userinfo.
+  \section user_information User Information
 
-  \section dev_started Getting Started for Developers
+  See \ref nox_user_information
 
-  See \ref devinfo.
+  \section developer_information Developer Information
 
-  \section classes Class Overview
-
-  See \ref overview.
-
-  \section params Parameter Specifications
-
-  See \ref parameters.
+  See \ref nox_developer_information
 
   \section license License
 
@@ -61,11 +70,21 @@
   of the <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser
   General Public License</a>.
 
-  \section download Downloads
+  \section downloads Downloads
+
+  You may download %NOX (which includes %LOCA) in one of two ways.
+
+  %NOX only:
 
   <ul>
   <li> 
   <a href="http://software.sandia.gov/nox/downloads/nox-1.0a-dev.tar.gz">Latest Development Version</a>, updated nightly
+  </ul>
+
+  Trilinos (includes %NOX as well as other packages such as Epetra, Ifpack, and more):
+
+  <ul>
+  <li> Download site ot be announced soon!
   </ul>
 
 
@@ -83,36 +102,74 @@
 
   \section email Mailing Lists
 
-<p>We recommend that users and developers subscribe to the following mailing lists as appropriate.
+  <p>We recommend that users and developers subscribe to the following mailing lists as appropriate.
+  <ul>
+  <li><a href="http://software.sandia.gov/mailman/listinfo/nox-announce">NOX-Announce Mailing List</a> - 
+  Low-volume, primarily for release announcements. (Highly Recommended)
+  <li><a href="http://software.sandia.gov/mailman/listinfo/nox-users">NOX-Users Mailing List</a> - 
+  Discussion forum for users of %NOX. (Recommended)
+  <li><a href="http://software.sandia.gov/mailman/listinfo/nox-developers">NOX-Developers Mailing List</a> - 
+  Discussion forum for %NOX developers. (Developers)
+  <li><a href="http://software.sandia.gov/mailman/listinfo/nox-checkins">NOX-Checkins Mailing List</a> - 
+  CVS Commit Messages (Active  Developers)
+  </ul>
+  
+  \section contributors NOX & LOCA Contributors
+  
+  The following people have contributed code to %NOX and/or %LOCA:
+  
+  <ul>
+  <li> Russ Hooper, Sandia National Labs, rhoope@sandia.gov
+  <li> <a href="http://csmr.ca.sandia.gov/~tgkolda/">Tammy Kolda</a>,  
+  Sandia National Labs, 
+  tgkolda@sandia.gov (%NOX Project Lead)
+  <li> Roger Pawlowski, Sandia National Labs, rppawlo@sandia.gov (%NOX Project Lead)
+  <li> Eric Phipps, Sandia National Labs, etphipp@sandia.gov
+  <li> Andy Salinger, Sandia National Labs, agsalin@sandia.gov (LOCA Project Lead)
+  <li> Brett Bader (Visiting researcher, Summer 2002)
+  </ul>
+  
+  \section questions For All Other Questions and Comments...
+  
+  Please contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski (rppawlo@sandia.gov).
+  
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page nox_user_information NOX User Information
+
+\section overview Overview
+
+To get started with %NOX, you'll want to follow these four steps.
 <ul>
-<li><a href="http://software.sandia.gov/mailman/listinfo/nox-announce">NOX-Announce Mailing List</a> - 
-Low-volume, primarily for release announcements. (Highly Recommended)
-<li><a href="http://software.sandia.gov/mailman/listinfo/nox-users">NOX-Users Mailing List</a> - 
-Discussion forum for users of %NOX. (Recommended)
-<li><a href="http://software.sandia.gov/mailman/listinfo/nox-developers">NOX-Developers Mailing List</a> - 
-Discussion forum for %NOX developers. (Developers)
-<li><a href="http://software.sandia.gov/mailman/listinfo/nox-checkins">NOX-Checkins Mailing List</a> - 
-CVS Commit Messages (Active  Developers)
+<li> \ref step1
+<li> \ref step2
+<li> \ref step3
+<li> \ref step4
 </ul>
 
-\section contributors NOX Contributors
+\section documentation  Generating Documentation
 
-The following people have contributed code to %NOX:
+The documentation is available online at 
+<a href="http://software.sandia.gov/nox/">http://software.sandia.gov/nox/</a>.
 
-<ul>
-<li> Russ Hooper, Sandia National Labs, rhoope@sandia.gov
-<li> <a href="http://csmr.ca.sandia.gov/~tgkolda/">Tammy Kolda</a>,  
-     Sandia National Labs, 
-     tgkolda@sandia.gov
-<li> Roger Pawlowski, Sandia National Labs, rppawlo@sandia.gov
-<li> Eric Phipps, Sandia National Labs, etphipp@sandia.gov
-<li> Andy Salinger, Sandia National Labs, agsalin@sandia.gov
-<li> Brett Bader (Visiting researcher, Summer 2002)
-</ul>
+To generate a local copy of the documentation, you'll need to have doxygen installed. 
+Then follow the instructions in \c nox/doc/README.
+If you've already successfully run configure, type 
+\verbatim
+make dox
+\endverbatim
+to generate the documentation. The main page is \c nox/doc/html/index.html.
 
-\section questions For All Other Questions and Comments...
+\section Quicklinks
 
-Please contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski (rppawlo@sandia.gov).
+- \ref nox_configuration_options
+- \ref parameters
+- \ref downloads
+- \ref bugs
 
 */
 
@@ -120,7 +177,351 @@ Please contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski (rppawlo@sand
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page confoptions NOX Configuration Options 
+/*!
+\page step1 Step 1: Download, Configure, Compile, and Install NOX
+
+\section step1_download Downloading and Unpacking NOX
+
+If you have not already done so, you'll need to download %NOX; see
+\ref downloads. You can download %NOX as a standalone package or as
+part of Trilinos. 
+
+\note If you download it as part of Trilinos, you should
+follow the Trilinos instructions for configuring, compiling and
+installing.
+
+To unpack %NOX, type
+
+\verbatim
+gunzip -c nox-\<version\>.tar.gz | tar -xzvf -
+\endverbatim
+
+This will create a directory named nox-\<version\> containing the source
+code for %NOX. Rename this direction to nox; i.e.,
+
+\verbatim
+mv nox-\<version\> nox
+\endverbatim
+
+\section step1_configure Configuring NOX
+
+Change directories to the nox directory:
+
+\verbatim
+cd nox
+\endverbatim
+
+Run the configure script, which will create a Makefile customized to
+your machine.
+
+\verbatim
+./configure
+\endverbatim
+
+There are many options that can be passed to the configure script, and
+they will be discussed as appropriate. For a full listing, see \ref
+nox_configuration_options.
+
+\note If you have previously run the configure script and compiled the
+code, be sure to type "make clean" before re-running the configure
+script.
+
+\section step1_compile Compiling NOX
+
+To compile %NOX, simply type:
+\verbatim
+make
+\endverbatim
+
+\section step1_install Installing NOX
+
+To install %NOX, type
+\verbatim
+make install
+\endverbatim
+
+By default, %NOX will be installed in /usr/local. If you prefer that
+it be installed in a different directory, that can be specified using
+the --prefix=PREFIX configuration option.
+
+\section step1_problems If you have problems...
+
+If you have problems configuring and compiling %NOX, please report
+them using
+<A HREF="http://software.sandia.gov/bugzilla/">Bugzilla</A>; see \ref bugs for more information.
+
+\section step1_moving_on Moving on...
+
+Go on to \ref step2.
+
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*!
+\page step2 Step 2: Create contrete implementations of the NOX::Abstract classes
+
+\section step2_abstract NOX abstract classes
+
+  %NOX's flexibility is based on the fact that it does not depend on
+  any particular linear algebra package. In order to interface to %NOX,
+  the user needs to supply methods that derive from the following
+  abstract classes:
+
+  - NOX::Abstract::Vector
+  - NOX::Abstract::Group
+
+  The \b Vector supports basic vector operations such as dot products
+  and so on. The \b Group supports the linear algebra functionality as
+  well as the interface to evaluate the function and,
+  optionally, the Jacobian. Complete details are provided in
+  the class decriptions.
+
+\section step2_writing Writing your own instantiation
+
+  In order to link you code to NOX, you make have to write your own
+  instantiation of the NOX::Abstract::Vector and NOX::Abstract::Group
+  classes. 
+
+  We recommend using the NOX::LAPACK framework as a guide.  In this
+  case, the underlying vectors of C++ STL vector<double> objects, and
+  the matrices are stored in our own NOX::LAPACK::Matrix class.  Both
+  the vectors and matrices are manipulated using LAPACK.  The
+  NOX::LAPACK::Vector is straightforward; see NOX_LAPACK_Vector.H and
+  NOX_LAPACK_Vector.C.  The NOX::LAPACK::Group uses the
+  NOX::LAPACK::Vector and NOX::LAPACK::Matrix objects. The interface
+  with the application is handled in a separate class
+  (NOX::LAPACK::Interface) that is passed to the NOX::LAPACK::Group
+  when it is constructed.
+
+  \note The NOX header files should be installed in /usr/local/include/nox.
+
+\section step2_instantiations Instantiations provided with NOX
+
+  %NOX includes three ready-made instantiations.
+
+  <ul>
+  <li>
+  The NOX::LAPACK instantiation is an interface to the BLAS/LAPACK library.
+  It is not intended for large-scale computations, but to serve as an
+  easy-to-understand example of how one might interface to %NOX.  
+  To compile the NOX::LAPACK library and examples, use the
+  --enable-nox-lapack and --enable-nox-lapack-examples options to
+  configure; see \ref nox_configuration_options.
+  
+  <li>
+  The NOX::Epetra instantiation is an interface to the Trilinos/Epetra
+  library developed by 
+  <a href="http://www.sandia.gov">Sandia National Labs</a>; 
+  for more information see the 
+  <a href="http://software.sandia.gov/Trilinos">Trilinos Home Page</a>. 
+  If you download %NOX with Trilinos (see \ref downloads),
+  then Epetra is included in the distribution.
+  To compile the NOX::Epetra library and examples, use the
+  --enable-nox-epetra and --enable-nox-epetra-examples options to
+  configure; see \ref nox_configuration_options.
+
+  <li>
+  The NOX::PETSc instantiation is an interface with the PETSc library. PETSc
+  was developed at 
+  <a href="http://www.anl.gov">Argonne National Labs</a>; 
+  for more information see the
+  <a href="http://www-fp.mcs.anl.gov/petsc">PETSc Home Page</a>
+  To compile the NOX::Petsc library and examples, use the
+  --enable-nox-petsc and --enable-nox-petsc-examples options to
+  configure; see \ref nox_configuration_options.
+  </ul>
+
+
+\section step2_problems If you have problems...
+
+If you have problems configuring and compiling %NOX, please report
+them using
+<A HREF="http://software.sandia.gov/bugzilla/">Bugzilla</A>; see \ref bugs for more information.
+
+\section step2_moving_on Moving on...
+
+Go on to \ref step3.
+
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*!
+\page step3 Step 3: Call NOX from your code
+
+A small example based on the NOX::LAPACK Vector and Group is included
+with %NOX; see Rosenbrock.C.
+
+There are four steps to calling the solver.
+
+\section step3_stepa Step A: Set up a Group object containing the intial guess.
+
+The first step is to somehow construct an object deriving from the
+Abstract::Group which contains the intial guess as its x-vector. See
+\ref step2 for more details.
+
+\code
+
+// Construct an object that derives from the abstract Group object. Here
+// we call it the ExampleGroup. It should contain the intial guess.
+ExampleGroup grp;
+
+\endcode
+
+\section step3_stepb Step B: Construct the status tests
+
+The NOX::StatusTest objects are used to test for convergence or
+failure. For example...
+
+- The NOX::StatusTest::MaxIters test is used to control the maximum
+  number of iterations that the nonlinear solver is allowed to take.
+
+- The NOX::StatusTest::NormF test checks the size of \f$\| F(x)
+  \|\f$. This check can be done based on relative or absolute norms,
+  scaled by \f$ \sqrt{n} \f$, and more. See the description for more
+  details.
+
+These and other status tests can be combined using the
+NOX::StatusTest::Combo object. It takes an arbitary number of status
+tests and either AND's or OR's them together. 
+
+Finally, the user can create their own status tests, so long as they
+derive from NOX::StatusTest::Generic.
+
+Here is some sample code.
+
+\code
+  // Set up the status tests
+  NOX::StatusTest::NormF statusTestA(grp, 1.0e-4);
+  NOX::StatusTest::MaxIters statusTestB(20);
+  NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
+\endcode
+
+\section step3_stepc Step C: Set the solver parameters
+
+Next, we set up a parameter list containing the information on what
+types of solvers and so forth should be used. 
+
+\code
+// Create the list of solver parameters
+NOX::Parameter::List solverParameters;
+
+// Set the solver (this is the default)
+solverParameters.setParameter("Nonlinear Solver", "Line Search Based");
+
+// Create the line search parameters sublist
+NOX::Parameter::List& lineSearchParameters = solverParameters.sublist("Line Search");
+
+// Set the line search method
+lineSearchParameters.setParameter("Method","More'-Thuente");
+\endcode
+
+For a full list of parameters; see \ref parameters.
+
+\section step3_stepd Step D: Construct the solver and solve
+
+The last step is to create the solver, passing in the group with the
+initial guess, the status tests, and the solver parameters.
+
+\code
+// Create the solver
+NOX::Solver::Manager solver(grp, statusTestsCombo, solverParameters);
+
+// Solve the nonlinesar system
+NOX::StatusTest::StatusType status = solver.solve();
+
+// Print the answer
+cout << "\n" << "-- Parameter List From Solver --" << "\n";
+solver.getParameterList().print(cout);
+
+// Get the answer
+grp = solver.getSolutionGroup();
+
+// Print the answer
+cout << "\n" << "-- Final Solution From Solver --" << "\n";
+grp.print();
+\endcode
+
+\section step3_problems If you have problems...
+
+If you have problems configuring and compiling %NOX, please report
+them using
+<A HREF="http://software.sandia.gov/bugzilla/">Bugzilla</A>; see \ref bugs for more information.
+
+\section step3_moving_on Moving on...
+
+Go on to \ref step4.
+
+**/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*!
+\page step4 Step 4: Link your code to NOX
+
+\section step4_basics The Basics
+
+To compile your code, your Makefile should look something like the
+following, assuming %NOX was installed in /usr/local.
+
+\verbatim
+nox_PREFIX = /usr/local
+LDFLAGS = -L$(NOX_PREFIX)/lib 
+LIBS = -lnox
+CXXFLAGS = -I$(NOX_PREFIX)/include/nox
+\endverbatim
+
+\section step4_epetra Compiling with Epetra
+
+We assume that Epetra, Aztec, and Ifpack are installed in the same place as %NOX.
+
+\verbatim
+nox_PREFIX = /usr/local
+LDFLAGS = -L$(NOX_PREFIX)/lib 
+LIBS = -lnox -lnox-epetra -laztecoo -lifpack -lepetra  -llapack -lblas 
+CXXFLAGS = -I$(NOX_PREFIX)/include/nox -I$(NOX_PREFIX)/include/epetra \
+           -I$(NOX_PREFIX)/include/ifpack -I$(NOX_PREFIX)/include/aztecoo
+\endverbatim
+
+\section step4_problems If you have problems...
+
+If you have problems configuring and compiling %NOX, please report
+them using
+<A HREF="http://software.sandia.gov/bugzilla/">Bugzilla</A>; see \ref bugs for more information.
+
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page nox_developer_information NOX Developer Information
+
+To become a %NOX developer, contact Tammy Kolda (tgkolda@sandia.gov) or
+Roger Pawlowski (rppawlo@sandia.gov).
+
+The following pages are relevant to developers.
+<ul> 
+<li>\ref cvsrepos
+<li>\ref coding
+<li>\ref prerelease
+</ul>
+
+
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page nox_configuration_options NOX Configuration Options 
 
 Here is a detailed list and explanation of the %NOX configuration options.
 
@@ -303,247 +704,6 @@ library and related examples do depend on MPI.
 
 */
 
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* ************************************************************************ */
-
-/*! \page userinfo NOX User Information
-
-\section section1 Basic Setup
-
-To get started, you first need to configure and compile %NOX.
-
-<ol>
-   <li> Run configure.
-      <ul>
-         <li> See \ref confoptions for explanations of the options
-	 <li> An example configure line might be
-\verbatim
-configure --enable-nox-lapack-examples
-\endverbatim
-      </ul>
-
-   <li> Type \c make to compile.
-</ol>
-
-\section section2  Generating Documentation
-
-The documentation is available online at 
-<a href="http://software.sandia.gov/nox/">http://software.sandia.gov/nox/</a>.
-
-To generate a local copy of the documentation, you'll need to have doxygen installed. 
-Then follow the instructions in \c nox/doc/README.
-If you've already successfully run configure, type 
-\verbatim
-make dox
-\endverbatim
-to generate the documentation. The main page is \c nox/doc/html/index.html.
-
-*/
-
-/*
-\section ss1 Building the NOX/Epetra Library
-
-To compile NOX's Epetra library \c libnoxepetra.a, use one
-of the following sets of configuration options.
-
---- These instructions are out-of-date. They will be updated soon. ---
-
-The following will automatically use the environmental variable 
-\c TRILINOS_HOME
-to find the necessary headers and libraries.
-\verbatim 
-configure --enable-epetra
-\endverbatim
-
-
-The following will automatically search the directory
-\c /home/jdoe/Trilinos to find the necessary headers and
-libraries. 
-\verbatim
-configure --with-trilinos=/home/jdoe/Trilinos
-\endverbatim
-
-More specifically, it will look in the following locations
-for \c Epetra_Vector.h:
-<ul>
-<li>directory optionally specified by \c --with-epetra-include
-<li>\c /home/jdoe/Trilinos/include
-<li>\c /home/jdoe/Trilinos/include/epetra/
-<li>\c /home/jdoe/Trilinos/packages/epetra/src
-</ul>
-
-Similarily, it will look in the following locations
-for \c AztecOO.h:
-<ul>
-<li>directory optionally specified by \c --with-aztecoo-include
-<li>\c /home/jdoe/Trilinos/include
-<li>\c /home/jdoe/Trilinos/include/aztecoo/
-<li>\c /home/jdoe/Trilinos/packages/aztecoo/src
-</ul>
-These include files are used in building \c libnoxepetra.a.
-
-Further, if we are also building the Epetra examples, we will look
-for epetra, aztecoo, and ifpack libraries. For example, we would
-search for \c libepetra.a in the following
-directories:
-<ul>
-<li>directory optionally specified by \c --with-epetra-libdir
-<li>\c /home/jdoe/Trilinos/lib
-<li>\c /home/jdoe/Trilinos/lib/epetra
-<li>\c /home/jdoe/Trilinos/lib/$TRILINOS_TARGET
-</ul>
-In the above, if \c TRILINOS_TARGET is not defined as an
-environmental variable, configure will define it.
-
-
-\section ss2 Building the NOX/Epetra Examples
-
-To compile the examples for NOX/Epetra, do the following:
-
-\verbatim
-configure --enable-epetra --enable-epetra-examples.
-\endverbatim
-
-\section section5 Using MPI with NOX/Epetra
-
-%NOX itself does not call any MPI commands, but some of the %NOX/Epetra
-examples do make use of MPI. So, we include some configuration options
-to support MPI.
-
-Most MPI
-packages come with a wrapper to the compiler that specifies the
-correct flags, include files, libraries, and so on to compile with
-MPI. This is often the easiest way to compile with MPI.
-<ul>
-<li>  Use the default MPI C++ compiler (\c mpiCC). 
-\verbatim
-configure --with-mpi-cxx 
-\endverbatim
-<li> Specify the exact name and location of the MPI C++ compiler. This is
-useful if you have multiple installations of MPI or if \c mpiCC
-is not in your default path.
-\verbatim
-configure --with-mpi-cxx=/home/jdoe/mpich-1.2.3/bin/mpiCC
-\endverbatim
-</ul>
-
-An alternative to using \c mpiCC is to specify the
-include directory, library directory, and libraries specifically,
-There are several flags that you can use to do this. These are
-generally incompatible with \c --with-mpi-cxx
-<ul>
-<li> This specifies the general location of the MPI installation. We
-then assume that the headers are located in
-\c /home/jdoe/lam/include, that the libraries are
-located in \c /home/jdoe/lam/lib, and that the
-library is specifed by \c -lmpi.
-\verbatim
-configure --with-mpi=/home/jdoe/lam
-\endverbatim
-
-<li> This is the same as above except that the library to be linked with
-is explicitly specified.
-\verbatim
-configure --with-mpi=/home/jdoe/mpich --with-mpi-libs="-lmpich"
-\endverbatim
-
-<li>
-Specify the exact locations of the MPI include files and the MPI
-libraries. Assumes that the
-library is specifed by \c -lmpi.
-\verbatim
-configure --with-mpi-include="/home/jdoe/lam/include" \
-          --with-mpi-libdir="/home/jdoe/lam/lib"
-\endverbatim
-
-<li>
-This is the same as above except that the library to be linked with
-is explicitly specified.
-\verbatim
-configure --with-mpi-include="/home/jdoe/mpich/include" \
-          --with-mpi-libdir="/home/jdoe/mpich/lib" \
-          --with-mpi-libs="-lmpich"
-\endverbatim
-
-<li> 
-Explicitly specify the MPI library without specifying the library directory.
-
-\verbatim
-configure --with-mpi-include="/home/jdoe/mpich/include" \
-          --with-mpi-libs="/home/jdoe/mpich/lib/libmpich.a"
-\endverbatim
-
-</ul>
-
-\section petsclub Building the %NOX/PETSc Library</h5>
-
-To compile the %NOX/PETSc library \c libnoxpetsc.a, use 
-the following configuration option.
-
-This will automatically use the environmental variables 
-\c PETSC_DIR and \c PETSC_ARCH 
-to find the necessary headers.
-\verbatim
-configure --enable-petsc
-\endverbatim
-
-For example, to build \c libnoxpetsc.a using a pre-built PETSc
-version 2.1.3 installed in the user's home directory on a linux machine:
-\verbatim
-setenv PETSC_DIR ${HOME}/petsc-2.1.3
-setenv PETSC_ARCH linux
-configure --enable-petsc
-\endverbatim
-
-\section petscexamples Building the %NOX/PETSc Examples</h5>
-
-To compile the examples for %NOX/PETSc, an additional environment variable,
-\c PETSC_BOPT, must be defined and set to the value of BOPT used to build the 
-user's PETSc installation.  For example, for a debug-enabled C++ PETSc build, 
-BOPT=g_c++ so that PETSC_BOPT=g_c++.  The configure script then allows
-the examples to be built using the following:
-
-\verbatim
-configure --enable-petsc --enable-petsc-examples.
-\endverbatim
-
-
-Depending on the user's PETSc build, dynamically linked libraries may be used.
-If an error occurs when trying to run the example executable, make sure the
-environment variable \c LD_LIBRARY_PATH points to the PETSc library directory.
-From the example above, setting the path would likely require:
-\verbatim
-setenv LD_LIBRARY_PATH ${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH}
-\endverbatim
-
-
-*/
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* ************************************************************************ */
-
-/*! \page devinfo NOX Developer's Information
-
-To become a %NOX developer, contact Tammy Kolda (tgkolda@sandia.gov) or
-Roger Pawlowski (rppawlo@sandia.gov).
-
-The following pages are relevant to developers.
-<ul> 
-<li>\ref cvsrepos
-<li>\ref coding
-<li>\ref prerelease
-</ul>
-
-
-*/
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* ************************************************************************ */
-
 /*! \page prerelease NOX Developer's Guide to Prerelease Code
 
 
@@ -607,14 +767,14 @@ Prerelease code must still be able to compile.
 
 /*! \page cvsrepos NOX Developer's Guide to the CVS Repository for NOX
 
-The CVS repository is located on <a
-href="http://software.sandia.gov/>software.sandia.gov</a>. See Paul
+The CVS repository is located on 
+<A HREF="http://software.sandia.gov/>software.sandia.gov</A>. See Paul
 Sery (pgsery@sandia.gov) or Tammy Kolda (tgkolda@sandia.gov) for an
 account.
 
 You should not do any development of software.sandia.gov. Instead,
 check out a copy to your local machine.  Be sure to correctly set your
-\c CVS_SSH environment variable to \c ssh.
+\c CVS_RSH environment variable to \c ssh.
 
 <ul>
 <li>
@@ -1153,7 +1313,7 @@ immediately before the word that is causing the link. For example,
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page overview NOX Class Overview
+/* \page nox_class_overview NOX Class Overview
 
   %NOX's flexibility is based on the fact that it does not depend on
   any particular linear algebra package. In order to interface to %NOX,
@@ -1386,4 +1546,186 @@ immediately before the word that is causing the link. For example,
 </ul>
 
 */
+
+
+
+/*
+\section ss1 Building the NOX/Epetra Library
+
+To compile NOX's Epetra library \c libnoxepetra.a, use one
+of the following sets of configuration options.
+
+--- These instructions are out-of-date. They will be updated soon. ---
+
+The following will automatically use the environmental variable 
+\c TRILINOS_HOME
+to find the necessary headers and libraries.
+\verbatim 
+configure --enable-epetra
+\endverbatim
+
+
+The following will automatically search the directory
+\c /home/jdoe/Trilinos to find the necessary headers and
+libraries. 
+\verbatim
+configure --with-trilinos=/home/jdoe/Trilinos
+\endverbatim
+
+More specifically, it will look in the following locations
+for \c Epetra_Vector.h:
+<ul>
+<li>directory optionally specified by \c --with-epetra-include
+<li>\c /home/jdoe/Trilinos/include
+<li>\c /home/jdoe/Trilinos/include/epetra/
+<li>\c /home/jdoe/Trilinos/packages/epetra/src
+</ul>
+
+Similarily, it will look in the following locations
+for \c AztecOO.h:
+<ul>
+<li>directory optionally specified by \c --with-aztecoo-include
+<li>\c /home/jdoe/Trilinos/include
+<li>\c /home/jdoe/Trilinos/include/aztecoo/
+<li>\c /home/jdoe/Trilinos/packages/aztecoo/src
+</ul>
+These include files are used in building \c libnoxepetra.a.
+
+Further, if we are also building the Epetra examples, we will look
+for epetra, aztecoo, and ifpack libraries. For example, we would
+search for \c libepetra.a in the following
+directories:
+<ul>
+<li>directory optionally specified by \c --with-epetra-libdir
+<li>\c /home/jdoe/Trilinos/lib
+<li>\c /home/jdoe/Trilinos/lib/epetra
+<li>\c /home/jdoe/Trilinos/lib/$TRILINOS_TARGET
+</ul>
+In the above, if \c TRILINOS_TARGET is not defined as an
+environmental variable, configure will define it.
+
+
+\section ss2 Building the NOX/Epetra Examples
+
+To compile the examples for NOX/Epetra, do the following:
+
+\verbatim
+configure --enable-epetra --enable-epetra-examples.
+\endverbatim
+
+\section section5 Using MPI with NOX/Epetra
+
+%NOX itself does not call any MPI commands, but some of the %NOX/Epetra
+examples do make use of MPI. So, we include some configuration options
+to support MPI.
+
+Most MPI
+packages come with a wrapper to the compiler that specifies the
+correct flags, include files, libraries, and so on to compile with
+MPI. This is often the easiest way to compile with MPI.
+<ul>
+<li>  Use the default MPI C++ compiler (\c mpiCC). 
+\verbatim
+configure --with-mpi-cxx 
+\endverbatim
+<li> Specify the exact name and location of the MPI C++ compiler. This is
+useful if you have multiple installations of MPI or if \c mpiCC
+is not in your default path.
+\verbatim
+configure --with-mpi-cxx=/home/jdoe/mpich-1.2.3/bin/mpiCC
+\endverbatim
+</ul>
+
+An alternative to using \c mpiCC is to specify the
+include directory, library directory, and libraries specifically,
+There are several flags that you can use to do this. These are
+generally incompatible with \c --with-mpi-cxx
+<ul>
+<li> This specifies the general location of the MPI installation. We
+then assume that the headers are located in
+\c /home/jdoe/lam/include, that the libraries are
+located in \c /home/jdoe/lam/lib, and that the
+library is specifed by \c -lmpi.
+\verbatim
+configure --with-mpi=/home/jdoe/lam
+\endverbatim
+
+<li> This is the same as above except that the library to be linked with
+is explicitly specified.
+\verbatim
+configure --with-mpi=/home/jdoe/mpich --with-mpi-libs="-lmpich"
+\endverbatim
+
+<li>
+Specify the exact locations of the MPI include files and the MPI
+libraries. Assumes that the
+library is specifed by \c -lmpi.
+\verbatim
+configure --with-mpi-include="/home/jdoe/lam/include" \
+          --with-mpi-libdir="/home/jdoe/lam/lib"
+\endverbatim
+
+<li>
+This is the same as above except that the library to be linked with
+is explicitly specified.
+\verbatim
+configure --with-mpi-include="/home/jdoe/mpich/include" \
+          --with-mpi-libdir="/home/jdoe/mpich/lib" \
+          --with-mpi-libs="-lmpich"
+\endverbatim
+
+<li> 
+Explicitly specify the MPI library without specifying the library directory.
+
+\verbatim
+configure --with-mpi-include="/home/jdoe/mpich/include" \
+          --with-mpi-libs="/home/jdoe/mpich/lib/libmpich.a"
+\endverbatim
+
+</ul>
+
+\section petsclub Building the %NOX/PETSc Library</h5>
+
+To compile the %NOX/PETSc library \c libnoxpetsc.a, use 
+the following configuration option.
+
+This will automatically use the environmental variables 
+\c PETSC_DIR and \c PETSC_ARCH 
+to find the necessary headers.
+\verbatim
+configure --enable-petsc
+\endverbatim
+
+For example, to build \c libnoxpetsc.a using a pre-built PETSc
+version 2.1.3 installed in the user's home directory on a linux machine:
+\verbatim
+setenv PETSC_DIR ${HOME}/petsc-2.1.3
+setenv PETSC_ARCH linux
+configure --enable-petsc
+\endverbatim
+
+\section petscexamples Building the %NOX/PETSc Examples</h5>
+
+To compile the examples for %NOX/PETSc, an additional environment variable,
+\c PETSC_BOPT, must be defined and set to the value of BOPT used to build the 
+user's PETSc installation.  For example, for a debug-enabled C++ PETSc build, 
+BOPT=g_c++ so that PETSC_BOPT=g_c++.  The configure script then allows
+the examples to be built using the following:
+
+\verbatim
+configure --enable-petsc --enable-petsc-examples.
+\endverbatim
+
+
+Depending on the user's PETSc build, dynamically linked libraries may be used.
+If an error occurs when trying to run the example executable, make sure the
+environment variable \c LD_LIBRARY_PATH points to the PETSc library directory.
+From the example above, setting the path would likely require:
+\verbatim
+setenv LD_LIBRARY_PATH ${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH}
+\endverbatim
+
+
+*/
+
 
