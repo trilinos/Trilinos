@@ -200,11 +200,11 @@ HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
 		  hg_group.c hg_heap.c hg_local.c hg_sort.c hg_scale.c \
 		  hg_match.c hg_pack.c \
 		  hg_part.c hg_plot.c hg_util.c 
-HG_INC 		= hg.h hypergraph.h
+HG_INC 		= hg.h hypergraph.h hg_util.h
 GDEFINES       += -DZOLTAN_HG
 else
-HG_CSRC		=
-HG_INC		=
+HG_CSRC		= hg_util.c
+HG_INC		= hg_util.h
 endif
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
@@ -236,7 +236,7 @@ DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
                   dr_elem_util.c dr_maps.c dr_eval.c dr_gnuplot.c  
  
 ifdef ZOLTAN_HG
-DR_CSRC        += dr_hypergraph_io.c zoltan_hg_readfile.c
+DR_CSRC        += dr_hg_io.c dr_hg_readfile.c
 endif
 
 DR_INC		= dr_const.h dr_input_const.h dr_util_const.h \
