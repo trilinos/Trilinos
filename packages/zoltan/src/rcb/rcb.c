@@ -173,6 +173,7 @@ static int rcb(
   int     readnumber;               /* # of proc partner(s) to read from */
   int     markactive;               /* which side of cut is active = 0/1 */
   int     dim;                      /* which of 3 axes median cut is on */
+  int     ierr;                     /* error flag. */
   double *coord = NULL;             /* temp array for median_find */
   double *wgts = NULL;              /* temp array for median_find */
   double  valuehalf;                /* median cut position */
@@ -237,7 +238,12 @@ static int rcb(
    */
 
   LB_start_time = MPI_Wtime();
-  LB_RCB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag);
+  ierr = LB_RCB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag);
+  if (ierr == LB_FATAL || ierr == LB_MEMERR) {
+    fprintf(stderr, "[%d] Error in %s:  Error returned from "
+                    "LB_RCB_Build_Structure\n", proc, yo);
+    return(ierr);
+  }
 
   rcb = (RCB_STRUCT *) (lb->Data_Structure);
 
