@@ -14,9 +14,6 @@
 /* Define if F77 and FC dummy `main' functions are identical. */
 #undef FC_DUMMY_MAIN_EQ_F77
 
-/* Define if want to build with ifpack enabled */
-#undef HAVE_
-
 /* Define if want to build anasazi-examples */
 #undef HAVE_ANASAZI_EXAMPLES
 
@@ -46,6 +43,9 @@
 
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
+
+/* Define if want to build with ifpack enabled */
+#undef HAVE_IFPACK
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H

@@ -886,7 +886,7 @@ Optional Features:
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
   --enable-belos          Build examples which use belos
-  --enable-ifpack         IFPACK
+  --enable-ifpack         Build examples which use Ifpack
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -6837,7 +6837,7 @@ if test "X$ac_cv_use_ifpack" != "Xno"; then
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ 1
+#define HAVE_IFPACK 1
 _ACEOF
 
 else
