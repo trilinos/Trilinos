@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
     
     MultiVector ER, EI, V;
     if (GetNumProcs() == 1)
-      Eig(A, ER, EI, V);
+      Eig(A, ER, EI);
 
     for (int i = 0 ; i < ER.GetMyLength() ; ++i)
       for (int j = 0 ; j < ER.GetNumVectors() ; ++j)
