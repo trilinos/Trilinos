@@ -55,6 +55,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->matvec->internal = NULL;
    mat->matvec->external = NULL;
    mat->lambda_max       = -666.666;
+   mat->lambda_max_img   = 0.0;
    mat->lambda_min       = -666.666;
    mat->halfclone        = ML_FALSE;
    ML_memory_alloc((void**)&(mat->getrow),sizeof(ML_GetrowFunc),"OF2");

@@ -104,7 +104,7 @@ struct ML_Operator_Struct {
    double        build_time, apply_time;
    char          *label; 
    int           num_PDEs, num_rigid;
-   double        lambda_max, lambda_min;
+   double        lambda_max, lambda_min, lambda_max_img;
    int           N_total_cols_est;
    int           halfclone;
    ML_Operator_Subspace *subspace;
