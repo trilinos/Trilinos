@@ -1953,6 +1953,9 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    ML_Operator_Set_Getrow((*Pmatrix), Nrows, CSR_getrow);
    ML_Operator_Set_ApplyFunc((*Pmatrix), CSR_matvec);
    (*Pmatrix)->max_nz_per_row = 1; /* why this? mgee */
+   /* this must be set so that the hierarchy generation does not abort early
+      in adaptive SA */
+   (*Pmatrix)->num_PDEs = nullspace_dim;
 
    /* ------------------------------------------------------------- */
    /* clean up                                                      */
