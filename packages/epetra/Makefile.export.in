@@ -35,7 +35,10 @@
 # and any packages that depend on Epetra will not need to make changes in their
 # Makefiles.
 
-EPETRA_INCLUDE=-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+EPETRA_SOURCE_DIRECTORY = @abs_srcdir@
+EPETRA_BUILD_DIRECTORY = @EPETRA_BUILD_DIRECTORY@
 
-EPETRA_LIBS=$(top_builddir)/../epetra/src/libepetra.a
+EPETRA_INCLUDE=-I$(EPETRA_SOURCE_DIRECTORY)/src -I$(EPETRA_BUILD_DIRECTORY)/src
+
+EPETRA_LIBS=$(EPETRA_BUILD_DIRECTORY)/src/libepetra.a
 

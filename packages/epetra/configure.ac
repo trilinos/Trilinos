@@ -117,6 +117,19 @@ AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
+# Get the absolute path to the build directory.
+#
+# We need this to be able to figure out paths to the libraries for the
+# other Trilinos packages.
+# ------------------------------------------------------------------------
+                                                                                
+AC_MSG_CHECKING([finding build directory])
+if test "X" = "X"; then
+  EPETRA_BUILD_DIRECTORY=`pwd`
+  AC_MSG_RESULT($EPETRA_BUILD_DIRECTORY)
+fi
+
+# ------------------------------------------------------------------------
 # Checks for --enable-debug, --enable-optimize, --enable-profile, --enable-purify
 # Changes flags and compiler names accordingly
 # ------------------------------------------------------------------------
@@ -333,6 +346,7 @@ AC_SUBST(TRILINOS_TEMPLATE_OBJS)
 # ------------------------------------------------------------------------
 
 AC_SUBST(ac_aux_dir)
+AC_SUBST(EPETRA_BUILD_DIRECTORY)
 
 # ------------------------------------------------------------------------
 # Output files

@@ -37,6 +37,12 @@
 CORE = \
 	$(srcdir)/Epetra_test_functions.cpp \
 	$(srcdir)/Epetra_matrix_data.cpp
+
+#Although these headers do not have to be installed, they do need to be
+#included in the distribution tarball.
+EXTRA_DIST = \
+	$(srcdir)/Epetra_test_functions.h \
+	$(srcdir)/Epetra_matrix_data.h
 	
 DEFAULT_INCLUDES = \
 	-I$(top_srcdir)/test/src \
