@@ -2827,10 +2827,14 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits)
     A->getrow->post_comm->time = 0.0;
   }
 
+#ifdef ML_MPI
   MPI_Barrier(MPI_COMM_WORLD);
+#endif
   for (j=0; j<numits; j++)
     ML_Operator_Apply(A,A->invec_leng,xvec,A->outvec_leng,bvec);
+#ifdef ML_MPI
   MPI_Barrier(MPI_COMM_WORLD);
+#endif
   ML_Operator_ReportStatistics(A,appendlabel);
 
   A->apply_time = apply_time;

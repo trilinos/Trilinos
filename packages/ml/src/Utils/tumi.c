@@ -194,7 +194,9 @@ char str [80];
 
   /************************* start of execution *****************************/
 
+#ifdef ML_MPI
   MPI_Barrier(MPI_COMM_WORLD);
+#endif
   ML_Set_PrintLevel(5);
   Nlocal_edges = *Nedges;
 
