@@ -55,7 +55,7 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
 { 
   NOX::Parameter::List& p = params.sublist("Polynomial");
   
-  string choice = p.getParameter("Convergence Criteria", "Armijo-Goldstein");
+  string choice = p.getParameter("Sufficient Decrease Condition", "Armijo-Goldstein");
   if (choice == "Ared/Pred") 
     convCriteria = AredPred;
   else if (choice == "None")

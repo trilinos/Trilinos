@@ -122,7 +122,7 @@ namespace LineSearch {
 
   The line search iterates over the computation of \f$ \lambda \f$ until:
 
-- The "Convergence Criteria" is met (the user has two choices): 
+- The "Sufficient Decrease Condition" is met (the user has two choices): 
   -# "Armijo-Goldstein" conditions: \f$ \phi (x_{n-1}+ \lambda s) \le
      \phi (x_{n-1}) +\alpha \lambda \phi'(0) \f$ 
   -# "Ared/Pred" conditions: \f$ \| \phi (x_{\rm old}+ \lambda s) \| \le
@@ -161,7 +161,7 @@ namespace LineSearch {
 
   - "Max Iters" - maximum number of line search iterations (default to 100)
 
-  - "Convergence Criteria" - choice of algorithm used to determine if
+  - "Sufficient Decrease Condition" - choice of algorithm used to determine if
     the line search algorithm has converged (defaults to
     "Armijo-Goldstein").  Choices are (See above for explanations):
 
@@ -202,7 +202,7 @@ parameters are:
 
   - "Total Number of Non-trivial Line Searches" - The total number of
     steps that could not directly take a full step and meet the
-    required "Convergence Criteria" (i.e. The line search had to
+    required "Sufficient Decrease Condition" (i.e. The line search had to
     reduce the step length using inner iteration calculations over
     iterate \f$ k \f$).
 
