@@ -803,21 +803,21 @@
 \newcommand{\Example}[1]{%
   \par\vspace{1ex}%
   {\bf Example:}%
-  {\hspace{0.5 in}} {#1} {\par\vspace{1ex}}}
+  {\hspace{0.2 in}} {#1} {\par\vspace{1ex}}}
 
 % DisplayCommand
 \newcommand{\DisplayCommand}[1]{%
   \par\vspace{1ex}%
   {\bf Command:}%
-  {\hspace{0.5 in}} {\tt #1} {\par\vspace{1ex}}}
+  {\hspace{0.2 in}} {\tt #1} {\par\vspace{1ex}}}
 
 % InlineCommand
 \newcommand{\InlineCommand}[1]{
-  {\hspace{0.1 in}} {\tt #1} {\hspace{0.1 in}}}
+  {\hspace{0.01 in}} {\tt #1} {\hspace{0.01 in}}}
 
 % InlineCommand
 \newcommand{\InlineDirectory}[1]{
-  {\hspace{0.1 in}} {\tt #1} {\hspace{0.1 in}}}
+  {\hspace{0.01 in}} {\tt #1} {\hspace{0.01 in}}}
 
 % Verbatim-quote environment
 \newenvironment{vquote}{\begin{quote}\begin{alltt}}

@@ -313,7 +313,7 @@ invocation line.  It is recommended that users always configure from the
 Trilinos level and use \InlineCommand{--disable-<package>} as necessary, 
 rather than trying to configure from a lower level.  To see which packages 
 build by default and which ones don't, simply cd to the Trilinos home 
-directory and type \DisplayCommand{./configure --help}.
+directory and type \DisplayCommand{./configure --help}
 
 NOTE: Ifpack is divided into old and new portions.  Future ifpack developments 
 will replace all of old ifpack, but at this time some users will need to append
@@ -478,7 +478,7 @@ not chosen by default.
 Specify the MPI root directory. Automatically enables MPI mode.  If this 
 option is set, \InlineCommand{--with-mpi-incdir} and 
 \InlineCommand{--with-mpi-libdir} should not be used.  
-\InlineCommand{--with-mpi} is meant to be a shortcut for setting 
+\InlineCommand{--with-mpi} is meant to be a shortcut for setting \newline
 \InlineCommand{--with-mpi-libdir=MPIROOT/lib} 
 and \InlineCommand{--with-mpi-incdir=MPIROOT/include}.  Use these two options instead if 
 these default locations are not correct.
@@ -487,7 +487,8 @@ these default locations are not correct.
 
 Specify the MPI libraries location. Defaults to MPIROOT/lib if 
 \InlineCommand{--with-mpi} is specified. If multiple directories must be 
-specified, try \InlineCommand{--with-ldflags="-L<dir1> -L<dir2>"} instead. 
+specified, try \newline
+\InlineCommand{--with-ldflags="-L<dir1> -L<dir2>"} instead. 
 
 \item \InlineCommand{--with-mpi-libs="LIBS"} 
 
@@ -499,6 +500,7 @@ Specify the MPI libraries. Defaults to \InlineCommand{"-lmpi"}
 
 Specify the MPI include files location. Defaults to \InlineDirectory{MPIROOT/include} if 
 \InlineCommand{--with-mpi} is specified. If multiple directories  must be specified, try 
+\newline
 \InlineCommand{--with-cppflags="-I<dir1> -I<dir2>"} instead.
 \end{itemize}
 
@@ -615,8 +617,8 @@ The bootstrap should complete without any errors, but the following warnings
 commonly occur:
 
 \begin{verbatim}
-configure.ac:9: warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
-configure.ac:184: warning: do not use m4_regexp: use regexp or m4_bregexp
+warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
+warning: do not use m4_regexp: use regexp or m4_bregexp
 \end{verbatim}
 
 \item Test the new code
@@ -626,7 +628,7 @@ the new code, as well as the rest of the tests for the package to insure that
 both the new code works and existing code has not been broken.  When changes 
 could possibly affect other packages, tests for affected packages should also 
 be run.  The simple way to run all of the required tests is to use the 
-checkin test harness.  This script can be found in 
+checkin test harness.  This script can be found in \newline
 \InlineDirectory{Trilinos/testharness/checkin-test-harness}.  Directions 
 explaining how to run the tests associated with the checkin test harness can 
 be found in the comments at the top of the script itself.
@@ -758,12 +760,11 @@ the configure process for all packages.
 Trilinos provides a variety of regression
 testing capabilities.  Within a number of Trilinos packages, we employ
 ``white box'' testing where detailed information about the software is
-used and probed.  In addition, Trilinos performs ``black box'' testing
+used and probed.  In the future, Trilinos will perform ``black box'' testing
 of packages via the Trilinos Solver Framework (TSF) virtual class
 interfaces.  Any package that implements the TSF interfaces (see
-Section~\ref{subsect:InteropTSF} below) can be tested via this black box
-test environment.  ({\bf NOTE: Black box testing via TSF is not in
-place at this time})
+Section~\ref{subsect:InteropTSF} below) will be tested via this black box
+test environment.
 
 \subsection{Test Harness}
 \label{subsect:TestHarness}
@@ -817,7 +818,9 @@ listing of CVS commands, see the Gnu CVS Home Page~\cite{CVS}.
 \subsection{Bonsai}
 A lot of useful information related to CVS history is accessible via a
 web-based interface package called Bonsai~\cite{Bonsai}.  This tool can be 
-found on the web at ``http://software.sandia.gov/bonsai''.  Bonsai gives a 
+found on the web at 
+\newline
+\InlineDirectory{http://software.sandia.gov/bonsai}.  Bonsai gives a 
 developer the ability to view the changes made to the files in the 
 repository.  The tool can be especially useful when trying to figure out which 
 changes may have introduced bugs into a piece of code.  Developers can search 
@@ -829,7 +832,8 @@ bugs.  The differences between any two versions of a file may also be viewed.
 \subsection{Bugzilla}
 \label{subsect:Bugzilla}
 Feature and issue reports are tracked using Bugzilla~\cite{Bugzilla}.  
-Bugzilla can be found on the web at ``http://software.sandia.gov/bugzilla''.  
+Bugzilla can be found on the web at 
+\InlineDirectory{http://software.sandia.gov/bugzilla}.  
 A Bugzilla account is necessary for submitting bugs.  Those interested can 
 sign up at the website.  All bugs related to any package of Trilnos that uses 
 Bugzilla should be submitted to Bugzilla.  This even applies to cases in which 
@@ -851,7 +855,9 @@ used interchangably in the discussion of Bugzilla in this guide.
 
 Email lists are maintained for Trilinos as a whole and for each package 
 through Mailman~\cite{Mailman}.  This tool can be found on the web at 
-``http://software.sandia.gov/mailman/listinfo''.  Those interested in signing 
+\newline
+\InlineDirectory{http://software.sandia.gov/mailman/listinfo}.  
+Those interested in signing 
 up for one or more lists may do so at the website.  Non-Sandians are able to 
 sign up for the ``Users'' and ``Announce'' lists.  Sandians should keep this 
 in mind when posting to these lists.
@@ -995,7 +1001,7 @@ a gradual manner.  Listed below are four levels of requirement compliance.
 It is common for new packages to address these steps one at a time, and not 
 necessarily in the listed order.
 
-\subsection{Package is Added to the Trilinos Repository}
+\subsection{Add Package to Trilinos Repository}
 
 Except for rare instances, placing a package in the Trilinos CVS
 repository is a minimum requirement for any package to become part of 
@@ -1017,7 +1023,7 @@ A package can remain in a predistribution state indefinitely.
 When release branches are created, any packages not ready or approved for 
 distribution can easily be omitted from the distribution.
 
-\subsection{Package has a Process in Place to Port to all Supported Platforms}
+\subsection{Port Package to All Supported Platforms}
 Although use of Trilinos Autotools is the easiest and most robust way
 to ensure portability across all supported platforms, a package is not
 required to use them.  At the same time, a package must provide some
@@ -1026,7 +1032,7 @@ Typically, if not using autotools, this support would be in the form
 of platform-specific makefiles that the installer could invoke for a
 given platform.
 
-\subsection{Package Responds to all Relevant Configure Options}
+\subsection{Respond to All Relevant Configure Options}
 
 The Trilinos top-level configure script accept numerous configuration
 options as described in Section~\ref{Subsection:ConfiguringTrilinos}.
@@ -1038,7 +1044,7 @@ Note that this does not mean the package must use Trilinos Autotools,
 but must simply be sensitive to certain defined parameters that are
 generated when the Trilinos autotools scripts are invoked.
 
-\subsection{Package Responds to Fault Reports in a Timely Manner}
+\subsection{Respond to Issue Reports in a Timely Manner}
 
 The Trilinos Team does not have any specific requirements concerning how 
 bugs should be submitted and processed.  However, packages should have a 
@@ -1347,8 +1353,8 @@ in the \DisplayCommand{Trilinos/packages/np} directory.
 The bootstrap commands should complete without any errors, however, at this
 time it is not uncommon to have warnings similar to the following:
 \begin{verbatim}
-configure.ac:63: warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
-configure.ac:341: warning: do not use m4_regexp: use regexp or m4_bregexp
+warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
+warning: do not use m4_regexp: use regexp or m4_bregexp
 \end{verbatim}
 These warnings will be fixed in the future.
 
