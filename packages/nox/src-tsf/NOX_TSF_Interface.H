@@ -52,7 +52,11 @@ namespace NOX {
   namespace TSF {
 
     /*! \brief Virtual interface for NOX::BLAS::Group to provide a
-      link to the external code for RHS and Jacobian fills. */
+     *  link to the external code for RHS and Jacobian fills.
+     *
+     * This class is not needed, as TSFExtended::NonlinearOperator
+     * provides all these capabilities. - KL 13 July 2004. 
+     */
     class Interface {
 
     public:

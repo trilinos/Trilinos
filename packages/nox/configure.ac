@@ -1571,6 +1571,8 @@ AC_MSG_RESULT($WITH_PRERELEASE)
 
 AC_SUBST(ac_aux_dir)
 
+AC_SUBST(MPI_LIBS)
+
 # ------------------------------------------------------------------------
 # Output files
 # ------------------------------------------------------------------------
@@ -1583,6 +1585,7 @@ AC_CONFIG_FILES([
                 src-lapack/Makefile
 		example-lapack/Makefile
 		src-tsf/Makefile
+		example-tsf/Makefile
 		src-epetra/Makefile 
 		example-epetra/Makefile 
 		example-epetra/DS6.5.1/Makefile

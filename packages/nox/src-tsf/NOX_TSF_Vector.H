@@ -40,14 +40,21 @@
 #include "TSFVector.hpp" // definitions for TSFExtended Vectors
 #include "TSFVectorSpace.hpp"
 
-namespace NOX {
+namespace NOX 
+{
 
   //! NOX BLAS/TSF support
-  namespace TSF {
+  namespace TSF 
+  {
 
   
-    //! Implementation of NOX::Abstract::Vector for TSFExtended::Vector<double> (using TSFExtended interface to TSFCore)
-    class Vector : public NOX::Abstract::Vector {
+    /** Implementation of the NOX::Abstract::Vector interface for 
+     * TSFExtended::Vector<double> (using TSFExtended handle to TSFCore).
+     *
+     * @author Jill Reese and Kevin Long
+     */
+    class Vector : public NOX::Abstract::Vector 
+    {
 
     public:	
 
@@ -57,32 +64,46 @@ namespace NOX {
       //! Copy constructor
       Vector(const TSFExtended::Vector<double>& source, NOX::CopyType type = DeepCopy);
 
-      //! Destruct Vector.
-      ~Vector();
+      /* There's no need to write an explicit dtor for this class, because
+       * the TSFExtended vector cleans up its own memory. I've commented out 
+       * this method for now, but it should probably just be deleted. 
+       * - KL 12 July 2004 */ 
+      ////! Destruct Vector.
+      //~Vector();
 
+      /** Access to a writable reference to the underlying TSF vector*/
+      TSFExtended::Vector<double>& NOX::TSF::Vector::getTSFVector();
+
+      /** Access to a read-only reference to the underlying TSF vector*/
+      const TSFExtended::Vector<double>& NOX::TSF::Vector::getTSFVector() const;
       //@{ \name Initialization methods.
 
+      /** Initialize all elements to a constant */
       NOX::Abstract::Vector& init(double value);
 
-      TSFExtended::Vector<double>& NOX::TSF::Vector::getTSFVector();
-      const TSFExtended::Vector<double>& NOX::TSF::Vector::getTSFVector() const;
-
-      // derived
+      /** Assignment operator */
       NOX::Abstract::Vector& operator=(const NOX::TSF::Vector& y);
+      /** Assignment operator */
       NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
 
+      /* Element access should not be implemented in this class; it should
+       * be done through the LoadableVector and AccessibleVector 
+       * interfaces of TSFExtended.
+       * -KL 12 July 2004  */
       // Store value in the i-th element of a vector 
-      void setElement(int i, const double& value);
+      //void setElement(int i, const double& value);
 
       // Return the i-th element (const version).
-      const double& getElement(int i) const;
+      //const double& getElement(int i) const;
   
-      // derived
+      /** Element-wise absolute value */
       NOX::Abstract::Vector& abs(const NOX::TSF::Vector& y);
+      /** Element-wise absolute value */
       NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y);
   
-      // derived
+      /** Element-wise reciprocal */
       NOX::Abstract::Vector& reciprocal(const NOX::TSF::Vector& y);
+      /** Element-wise reciprocal */
       NOX::Abstract::Vector& reciprocal(const NOX::Abstract::Vector& y);
   
       //@}
@@ -102,11 +123,11 @@ namespace NOX {
   
       // derived
       NOX::Abstract::Vector& update(double alpha, const NOX::TSF::Vector& a, 
-			       double beta, const NOX::TSF::Vector& b,
-			       double gamma = 0.0);
+                                    double beta, const NOX::TSF::Vector& b,
+                                    double gamma = 0.0);
       NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a, 
-			       double beta, const NOX::Abstract::Vector& b,
-			       double gamma = 0.0);
+                                    double beta, const NOX::Abstract::Vector& b,
+                                    double gamma = 0.0);
   
       //@}
   
@@ -143,9 +164,9 @@ namespace NOX {
 
       //! Prints out the vector to the specified stream. 
       /*! 
-	For example, a vector would appear as
-	\f[ \left[ \; 0.1 \; 2.34 \; 5 \; \right] \f] 
-	It will be all on one line, with a single space between each entry, bracketed on either side.
+        For example, a vector would appear as
+        \f[ \left[ \; 0.1 \; 2.34 \; 5 \; \right] \f] 
+        It will be all on one line, with a single space between each entry, bracketed on either side.
       */
       ostream& leftshift(ostream& stream) const;
 
@@ -153,7 +174,7 @@ namespace NOX {
       void print() const;
 
     private:
-      //! The vector owned by this object
+      /** The TSF vector owned by this object. */
       TSFExtended::Vector<double> x;
     };
 

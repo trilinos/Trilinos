@@ -39,7 +39,7 @@
 #include "NOX_TSF_Vector.H"	    // class data element
 #include "TSFVectorType.hpp"
 #include "TSFVectorSpace.hpp"
-#include "NOX_TSF_SharedOperator.H" // shared jacobian operator 
+#include "TSFLinearSolver.hpp"
 #include "TSFNonlinearOperator.hpp" // nonlinear operator
 
 // Forward declares
@@ -63,14 +63,17 @@ namespace NOX {
        * Construct a group given an initial condition and the nonlinear operator that 
        * describes the problem to be solved.
        */
-      Group(TSFExtended::Vector<double>& initcond, TSFExtended::NonlinearOperator<double>& nonlinop);
+      Group(const TSFExtended::Vector<double>& initcond, 
+            const TSFExtended::NonlinearOperator<double>& nonlinOp,
+            const TSFExtended::LinearSolver<double>& solver);
 
       /*! \brief Constructor.
        *
        * Construct a group given an initial condition, the nonlinear operator that 
        * describes the problem to be solved, and the jacobian object to be shared among all groups.
        */
-      Group(TSFExtended::Vector<double>& initcond, TSFExtended::NonlinearOperator<double>& nonlinop, NOX::TSF::SharedOperator J);
+      Group(const TSFExtended::NonlinearOperator<double>& nonlinOp,
+            const TSFExtended::LinearSolver<double>& solver);
 
 
       /*! \brief Copy constructor
@@ -94,9 +97,13 @@ namespace NOX {
       //! See above
       void setX(const NOX::TSF::Vector& y);
 
-      void computeX(const NOX::Abstract::Group& grp, const NOX::Abstract::Vector& d, double step);
+      void computeX(const NOX::Abstract::Group& grp, 
+                    const NOX::Abstract::Vector& d, 
+                    double step);
       //! See above.
-      void computeX(const NOX::TSF::Group& grp, const NOX::TSF::Vector& d, double step);
+      void computeX(const NOX::TSF::Group& grp, 
+                    const NOX::TSF::Vector& d, 
+                    double step);
 
       NOX::Abstract::Group::ReturnType computeF();
 
@@ -115,27 +122,33 @@ namespace NOX {
 
       //@{
   
-      NOX::Abstract::Group::ReturnType applyJacobian(const NOX::TSF::Vector& input, 
-      						     NOX::TSF::Vector& result) const;
+      NOX::Abstract::Group::ReturnType 
+      applyJacobian(const NOX::TSF::Vector& input, 
+                    NOX::TSF::Vector& result) const;
 
       //! See above
-      NOX::Abstract::Group::ReturnType applyJacobian(const NOX::Abstract::Vector& input, 
-      					     NOX::Abstract::Vector& result) const;
+      NOX::Abstract::Group::ReturnType 
+      applyJacobian(const NOX::Abstract::Vector& input, 
+                    NOX::Abstract::Vector& result) const;
 
-      NOX::Abstract::Group::ReturnType applyJacobianTranspose(const NOX::TSF::Vector& input, 
-      						      NOX::TSF::Vector& result) const;
+      NOX::Abstract::Group::ReturnType 
+      applyJacobianTranspose(const NOX::TSF::Vector& input, 
+                             NOX::TSF::Vector& result) const;
 
       //! See above
-      NOX::Abstract::Group::ReturnType applyJacobianTranspose(const NOX::Abstract::Vector& input, 
-      						      NOX::Abstract::Vector& result) const;
+      NOX::Abstract::Group::ReturnType 
+      applyJacobianTranspose(const NOX::Abstract::Vector& input, 
+                             NOX::Abstract::Vector& result) const;
 
-      NOX::Abstract::Group::ReturnType applyJacobianInverse(NOX::Parameter::List& params, 
-      						    const NOX::TSF::Vector& input, 
-                                		    NOX::TSF::Vector& result) const;
+      NOX::Abstract::Group::ReturnType 
+      applyJacobianInverse(NOX::Parameter::List& params, 
+                           const NOX::TSF::Vector& input, 
+                           NOX::TSF::Vector& result) const;
 
-      NOX::Abstract::Group::ReturnType applyJacobianInverse(NOX::Parameter::List& params, 
-      						    const NOX::Abstract::Vector& input, 
-      						    NOX::Abstract::Vector& result) const;
+      NOX::Abstract::Group::ReturnType 
+      applyJacobianInverse(NOX::Parameter::List& params, 
+                           const NOX::Abstract::Vector& input, 
+                           NOX::Abstract::Vector& result) const;
   
       //@}
 
@@ -196,15 +209,15 @@ namespace NOX {
       NOX::TSF::Vector gradientVector;
       //@}
 
-      //! Pointer to the shared Jacobian operator object
-      //NOX::TSF::SharedOperator* sharedJacobianPtr;
- 
-      //! Jacobian Matrix
-      NOX::TSF::SharedOperator sharedJacobian;
+      //! Linear solver that will be used to solve J*step = resid
+      TSFExtended::LinearSolver<double> solver;
+
+      //! Linear solver that will be used to solve J*step = resid
+      TSFExtended::LinearOperator<double> jacobian;
 
 
       //! Problem interface: reference to nonlinear operator passed to group
-      TSFExtended::NonlinearOperator<double>& nonLinearOp;
+      TSFExtended::NonlinearOperator<double> nonlinearOp;
 
       /** @name IsValid flags 
        *  

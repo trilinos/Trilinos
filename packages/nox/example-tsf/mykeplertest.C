@@ -33,6 +33,7 @@
 #include "TSFVectorSpace.hpp"
 #include "TSFEpetraVectorType.hpp"
 #include "TSFNonlinearOperator.hpp"
+#include "TSFBICGSTABSolver.hpp"
 #include "Teuchos_Time.hpp"
 #include <cmath>
 #include "NOX.H"
@@ -52,31 +53,32 @@ namespace TSFExtended
   public:
     /** */
     Kepler(const double& e, const double& m, const VectorType<double>& type)
-      : NonlinearOperatorBase<double>(type.createSpace(1, 1, &(tuple(0)[0])), 
-                                      type.createSpace(1, 1, &(tuple(0)[0]))),
+      : NonlinearOperatorBase<double>(),
         e_(e), m_(m), type_(type)
-    {;}
+    {
+      VectorSpace<double> space = type.createSpace(1, 1, &(tuple(0)[0]));
+      setDomainAndRange(space, space);
+    }
 
     /** */
     void setM(double m) {m_ = m;}
 
+    
     /** */
-    void apply(const Vector<double>& in, Vector<double>& out) const 
-    {
-      const double& xIn = in.getElement(0);
-      double xOut = xIn + e_*::sin(xIn) - m_;
-      out.setElement(0, xOut);
-    }
-    /** */
-    RefCountPtr<TSFCore::LinearOp<double> > jacobian(const Vector<double>& in) const 
+    LinearOperator<double> computeJacobianAndFunction(Vector<double>& f) const 
     {
       /* create a new operator */
       LinearOperator<double> J = type_.createMatrix(domain(), range());
       /* get a "view" of a loadable matrix underneath the operator */
       RefCountPtr<LoadableMatrix<double> > matview = J.matrix();
 
+      
+      const double& xIn = currentEvalPt().getElement(0);
+
+      /* compute the residual */
+      f = range()->createMember();
+      f.setElement(0,  xIn + e_ * ::sin(xIn) - m_);
       /* compute the derivative of the residual */
-      const double& xIn = in.getElement(0);
       double jVal = 1 + e_*::cos(xIn);
 
       /* insert the derivative into the (0,0) element of the matrix */
@@ -85,8 +87,17 @@ namespace TSFExtended
       matview->setRowValues(0, colIndices.size(), &(colIndices[0]),
                             &(colValues[0]));
       matview->freezeValues();
-    
+
+
       return J.ptr();
+    }
+
+    /** */
+    Vector<double> getInitialGuess() const 
+    {
+      Vector<double> rtn = domain()->createMember();
+      rtn.setElement(0, m_);
+      return rtn;
     }
 
     /* */
@@ -119,17 +130,28 @@ int main(int argc, void *argv[])
       /* eccentricity */
       double e = 0.1;
 
-      Kepler* kepler = new Kepler(e, 0.0, type);
+      Kepler* kepler = new Kepler(e, pi/4.0, type);
       NonlinearOperator<double> F  = kepler;
       
       
       Vector<double> x0 = F.domain().createMember();
-      x0.setElement(0, 0.0);
+      x0.setElement(0, 0.1);
+
+      ParameterList linSolverParams;
+
+      linSolverParams.set(LinearSolverBase<double>::verbosityParam(), 2);
+      linSolverParams.set(IterativeSolver<double>::maxitersParam(), 100);
+      linSolverParams.set(IterativeSolver<double>::tolParam(), 1.0e-14);
+
+      LinearSolver<double> linSolver 
+        = new BICGSTABSolver<double>(linSolverParams);
+
+      cerr << "solver = " << linSolver << endl;
       
-      NOX::TSF::Group grp(x0,F);
+      NOX::TSF::Group grp(x0, F, linSolver);
 
       // Set up the status tests
-      NOX::StatusTest::NormF statusTestA(grp, 1.0e-4);
+      NOX::StatusTest::NormF statusTestA(grp, 1.0e-10);
       NOX::StatusTest::MaxIters statusTestB(20);
       NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 

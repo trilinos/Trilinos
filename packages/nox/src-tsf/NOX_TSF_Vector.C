@@ -43,7 +43,7 @@ NOX::TSF::Vector::Vector(const NOX::TSF::Vector& source,
  {
     
   case NOX::DeepCopy:
-    x.acceptCopyOf(source.x);
+    x = source.x.copy();
     break;
 
   case NOX::ShapeCopy:
@@ -63,7 +63,7 @@ NOX::TSF::Vector::Vector(const TSFExtended::Vector<double>& source,
  {
     
   case NOX::DeepCopy:
-    x.acceptCopyOf(source);
+    x = source.copy();
     break;
 
   case NOX::ShapeCopy:
@@ -74,11 +74,6 @@ NOX::TSF::Vector::Vector(const TSFExtended::Vector<double>& source,
     cerr << "NOX:TSF::Vector - invalid CopyType for copy constructor." << endl;
     throw "NOX TSF Error";
   }
-}
-
-
-NOX::TSF::Vector::~Vector()
-{
 }
 
 
@@ -104,19 +99,19 @@ NOX::Abstract::Vector& NOX::TSF::Vector::operator=(
 {
   // in TSFExtended operator= results in a shallow copy while 
   // acceptCopyOf(source.x) provides the deep copy we want
-  x.acceptCopyOf(source.x);
+  x = source.getTSFVector().copy();
   return *this;
 }
 
-void NOX::TSF::Vector::setElement(int i, const double& value)
-{
-  return x.setElement(i,value);
-}
+// void NOX::TSF::Vector::setElement(int i, const double& value)
+// {
+//   return x.setElement(i,value);
+// }
 
-const double& NOX::TSF::Vector::getElement(int i) const
-{
-  return x.getElement(i);
-}   
+// const double& NOX::TSF::Vector::getElement(int i) const
+// {
+//   return x.getElement(i);
+// }   
 
 //const double& NOX::TSF::Vector::operator() (int i) const
 //{

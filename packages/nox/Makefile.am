@@ -62,7 +62,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 ## #######################################################################
 SUBDIRS = doc src src-lapack src-epetra src-tsf src-petsc src-belos \
           example-lapack example-epetra example-petsc example-belos \
-          src-loca \
+          example-tsf src-loca \
           test
 
 ## #######################################################################

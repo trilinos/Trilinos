@@ -39,16 +39,13 @@
 
 NOX_TSF_H = \
 	$(srcdir)/NOX_TSF.H \
-        $(srcdir)/NOX_TSF_Interface.H \
-        $(srcdir)/NOX_TSF_SharedOperator.H \
 	$(srcdir)/NOX_TSF_Vector.H \
 	$(srcdir)/NOX_TSF_Group.H 
 
 NOX_TSF = \
-        $(srcdir)/NOX_TSF_SharedOperator.C \
 	$(srcdir)/NOX_TSF_Vector.C \
-	$(srcdir)/NOX_TSF_Group.C \
-	$(srcdir)/mykeplertest.C
+	$(srcdir)/NOX_TSF_Group.C 
+
 # ------------------------------------------------------------------------
 # Noxblas library specifications
 # ------------------------------------------------------------------------
@@ -58,6 +55,7 @@ libnoxtsf_a_SOURCES = $(NOX_TSF) $(NOX_TSF_H)
 libnoxtsf_a_CXXFLAGS = \
 	-I$(top_srcdir)/src-loca/src \
 	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/../TSFExtended/src/LinearSolvers \
 	-I$(top_srcdir)/../TSFExtended/src/Operators \
 	-I$(top_srcdir)/../TSFExtended/src/Utils \
 	-I$(top_srcdir)/../TSFExtended/src/Vectors \
@@ -67,13 +65,14 @@ libnoxtsf_a_CXXFLAGS = \
 	-I$(top_srcdir)/../TSFCoreUtils/src/RTOpPack \
 	-I$(top_srcdir)/../TSFCoreUtils/src/MoochoUtilities \
 	-I$(top_srcdir)/../teuchos/src \
-	-I$(top_srcdir)/../../LINUX-MPI/packages/teuchos/src \
-	-I$(top_srcdir)/../../LINUX-MPI/packages/TSFExtended/src \
-	-I$(top_srcdir)/../../LINUX-MPI/packages/TSFCoreUtils/src \
-	-I$(top_srcdir)/../../LINUX-MPI/packages/TSFCore/src \
+	-I$(top_builddir)/../teuchos/src \
+	-I$(top_builddir)/../TSFExtended/src \
+	-I$(top_builddir)/../TSFCoreUtils/src \
+	-I$(top_builddir)/../TSFCore/src \
 	-I$(top_srcdir)/../TSFCore \
 	-I$(top_srcdir)/../TSFCore/src \
 	-I$(top_srcdir)/../TSFCore/src/adapters/epetra \
+	-I$(top_srcdir)/../TSFCore/src/adapters/mpi-base \
 	-I$(top_srcdir)/../TSFCore/src/interfaces/Core \
 	$(TRILINOS_CXXFLAGS) 
 

@@ -49,6 +49,9 @@ class Group;			// forward declaration
    * Preconditioning Matrices), we cannot afford to have
    * multiple copies. Instead we implement a shared operator class that
    * that all groups use. 
+   *
+   * This class is not needed, since TSFExtended::LinearOperator already
+   * shares memory. KL 13 July 2004. 
    */
 
 class SharedOperator {

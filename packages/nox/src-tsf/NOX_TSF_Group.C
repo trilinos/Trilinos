@@ -34,37 +34,62 @@
 #include "NOX_TSF_Group.H"	// class definition
 
 
-NOX::TSF::Group::Group(TSFExtended::Vector<double>& initcond, TSFExtended::NonlinearOperator<double>& nonlinop) :
+NOX::TSF::Group::Group(const TSFExtended::Vector<double>& initcond, 
+                       const TSFExtended::NonlinearOperator<double>& nonlinOp,
+                       const TSFExtended::LinearSolver<double>& linsolver) 
+  :
   xVector(initcond,DeepCopy),
   fVector(xVector,ShapeCopy),
   newtonVector(xVector,ShapeCopy),
   gradientVector(xVector,ShapeCopy),
-  sharedJacobian(nonlinop.jacobian(initcond)),
-  nonLinearOp(nonlinop)
+  solver(linsolver),
+  jacobian(),
+  nonlinearOp(nonlinOp),
+  isValidF(false),
+  isValidJacobian(false),
+  isValidGradient(false),
+  isValidNewton(false),
+  normF(0.0)
 {  
-  normF = 0.0;
+  nonlinearOp.setEvalPt(xVector.getTSFVector());
   resetIsValid();
 }
 
-NOX::TSF::Group::Group(TSFExtended::Vector<double>& initcond, TSFExtended::NonlinearOperator<double>& nonlinop, NOX::TSF::SharedOperator J) :
-  xVector(initcond,DeepCopy),
+NOX::TSF::Group::Group(const TSFExtended::NonlinearOperator<double>& nonlinOp,
+                       const TSFExtended::LinearSolver<double>& linsolver) 
+  :
+  xVector(nonlinOp.getInitialGuess(),DeepCopy),
   fVector(xVector,ShapeCopy),
   newtonVector(xVector,ShapeCopy),
   gradientVector(xVector,ShapeCopy),
-  sharedJacobian(J), // pass J to SharedJacobian
-  nonLinearOp(nonlinop)
-{
-  normF = 0.0;
+  solver(linsolver),
+  jacobian(),
+  nonlinearOp(nonlinOp),
+  isValidF(false),
+  isValidJacobian(false),
+  isValidGradient(false),
+  isValidNewton(false),
+  normF(0.0)
+{  
+  nonlinearOp.setEvalPt(xVector.getTSFVector());
   resetIsValid();
 }
+
+
 
 NOX::TSF::Group::Group(const NOX::TSF::Group& source, NOX::CopyType type) :
   xVector(source.xVector, type), 
   fVector(source.fVector, type),  
   newtonVector(source.newtonVector, type),
   gradientVector(source.gradientVector, type),
-  sharedJacobian(source.sharedJacobian),
-  nonLinearOp(source.nonLinearOp)
+  solver(source.solver),
+  jacobian(source.jacobian),
+  nonlinearOp(source.nonlinearOp),
+  isValidF(false),
+  isValidJacobian(false),
+  isValidGradient(false),
+  isValidNewton(false),
+  normF(0.0)
 {
   switch (type) 
   {
@@ -119,9 +144,9 @@ NOX::Abstract::Group& NOX::TSF::Group::operator=(const NOX::TSF::Group& source)
 
     // Deep Copy of the xVector
     xVector = source.xVector;
-    nonLinearOp = source.nonLinearOp;
-    sharedJacobian = source.sharedJacobian;
-    
+    nonlinearOp = source.nonlinearOp;
+    solver = source.solver;
+    jacobian = source.jacobian;
 
     // Update the isValidVectors
     isValidF = source.isValidF;
@@ -143,7 +168,7 @@ NOX::Abstract::Group& NOX::TSF::Group::operator=(const NOX::TSF::Group& source)
       newtonVector = source.newtonVector;
     
     if (isValidJacobian)
-      sharedJacobian.getLinearOperator(this);
+      jacobian = source.jacobian;
   }
   return *this;
 }
@@ -156,12 +181,13 @@ void NOX::TSF::Group::setX(const NOX::Abstract::Vector& y)
 void NOX::TSF::Group::setX(const NOX::TSF::Vector& y) 
 {
   resetIsValid();
+  nonlinearOp.setEvalPt(y.getTSFVector());
   xVector = y;
 }
 
 void NOX::TSF::Group::computeX(const NOX::Abstract::Group& grp, 
-		     const NOX::Abstract::Vector& d, 
-		     double step) 
+                               const NOX::Abstract::Vector& d, 
+                               double step) 
 {
   // Cast to appropriate type, then call the "native" computeX
   const Group& tsfgrp = dynamic_cast<const NOX::TSF::Group&> (grp);
@@ -178,14 +204,16 @@ void NOX::TSF::Group::computeX(const Group& grp, const Vector& d, double step)
 NOX::Abstract::Group::ReturnType NOX::TSF::Group::computeF() 
 {
   if (isValidF)
-    return NOX::Abstract::Group::Ok;
- 
-  nonLinearOp.apply(xVector.getTSFVector(), fVector.getTSFVector());
-  isValidF = true;
-  // must set isValidF
-
-  if (isValidF) 
-    normF = fVector.norm();
+    {
+      return NOX::Abstract::Group::Ok;
+    }
+  else
+    {
+      nonlinearOp.setEvalPt(xVector.getTSFVector());
+      fVector = nonlinearOp.getFunctionValue();
+      isValidF = true;
+      normF = fVector.norm();
+    }
 
   return (isValidF) ? (NOX::Abstract::Group::Ok) : (NOX::Abstract::Group::Failed);
 }
@@ -194,62 +222,83 @@ NOX::Abstract::Group::ReturnType NOX::TSF::Group::computeJacobian()
 {
   // Skip if the Jacobian is already valid
   if (isValidJacobian)
-    return NOX::Abstract::Group::Ok;
- 
-  sharedJacobian = nonLinearOp.jacobian(xVector.getTSFVector());
-  //must set isValidJacobian
-  isValidJacobian = true;
+    {
+      return NOX::Abstract::Group::Ok;
+    }
+  else
+    {
+      nonlinearOp.setEvalPt(xVector.getTSFVector());
+      jacobian = nonlinearOp.getJacobian();
+      isValidJacobian = true;
+    }
   return (isValidJacobian) ? (NOX::Abstract::Group::Ok) : (NOX::Abstract::Group::Failed);
 }
 
 NOX::Abstract::Group::ReturnType NOX::TSF::Group::computeGradient() 
 {
   if (isValidGradient)
-    return NOX::Abstract::Group::Ok;
+    {
+      return NOX::Abstract::Group::Ok;
+    }
+  else
+    {
+      if (!isF()) 
+        {
+          cerr << "ERROR: NOX::TSF::Group::computeGrad() - F is out of date wrt X!" << endl;
+          return NOX::Abstract::Group::BadDependency;
+        }
+
+      if (!isJacobian()) 
+        {
+          cerr << "ERROR: NOX::TSF::Group::computeGrad() - Jacobian is out of date wrt X!" << endl;
+          return NOX::Abstract::Group::BadDependency;
+        }
   
-  if (!isF()) {
-    cerr << "ERROR: NOX::TSF::Group::computeGrad() - F is out of date wrt X!" << endl;
-    return NOX::Abstract::Group::BadDependency;
-  }
+      // Compute Gradient = J' * F
 
-  if (!isJacobian()) {
-    cerr << "ERROR: NOX::TSF::Group::computeGrad() - Jacobian is out of date wrt X!" << endl;
-    return NOX::Abstract::Group::BadDependency;
-  }
-  
-  // Compute Gradient = J' * F
+      NOX::Abstract::Group::ReturnType status 
+        = applyJacobianTranspose(fVector,gradientVector);
+      isValidGradient = (status == NOX::Abstract::Group::Ok);
 
-  NOX::Abstract::Group::ReturnType status = applyJacobianTranspose(fVector,gradientVector);
-  isValidGradient = (status == NOX::Abstract::Group::Ok);
-
-  // Return result
-  return status;
+      // Return result
+      return status;
+    }
 }
 
-NOX::Abstract::Group::ReturnType NOX::TSF::Group::computeNewton(NOX::Parameter::List& p) 
+NOX::Abstract::Group::ReturnType 
+NOX::TSF::Group::computeNewton(NOX::Parameter::List& p) 
 {
   if (isNewton())
-    return NOX::Abstract::Group::Ok;
+    {
+      return NOX::Abstract::Group::Ok;
+    }
+  else
+    {
+      if (!isF()) 
+        {
+          cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid F" 
+               << endl;
+          throw "NOX Error";
+        }
 
-  if (!isF()) {
-    cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid F" << endl;
-    throw "NOX Error";
-  }
+      if (!isJacobian()) 
+        {
+          cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid Jacobian" << endl;
+          throw "NOX Error";
+        }
 
-  if (!isJacobian()) {
-    cerr << "ERROR: NOX::Example::Group::computeNewton() - invalid Jacobian" << endl;
-    throw "NOX Error";
-  }
+      NOX::Abstract::Group::ReturnType status 
+        = applyJacobianInverse(p, fVector, newtonVector);
+      isValidNewton = (status == NOX::Abstract::Group::Ok);
 
-  NOX::Abstract::Group::ReturnType status = applyJacobianInverse(p, fVector, newtonVector);
-  isValidNewton = (status == NOX::Abstract::Group::Ok);
-
-  // Scale soln by -1
-  newtonVector.scale(-1.0);
-
-  // Return solution
-  return status;
+      // Scale soln by -1
+      newtonVector.scale(-1.0);
+      
+      // Return solution
+      return status;
+    }
 }
+
 
 NOX::Abstract::Group::ReturnType 
 NOX::TSF::Group::applyJacobian(const Abstract::Vector& input, 
@@ -261,16 +310,20 @@ NOX::TSF::Group::applyJacobian(const Abstract::Vector& input,
 }
 
 NOX::Abstract::Group::ReturnType 
-NOX::TSF::Group::applyJacobian(const NOX::TSF::Vector& input, NOX::TSF::Vector& result) const
+NOX::TSF::Group::applyJacobian(const NOX::TSF::Vector& input, 
+                               NOX::TSF::Vector& result) const
 {
   // Check validity of the Jacobian
   if (!isJacobian()) 
-    return NOX::Abstract::Group::BadDependency;
-
-  // Compute result = J * input
-  TSFExtended::LinearOperator<double> Jacobian = sharedJacobian.getLinearOperator();
-  Jacobian.apply(input.getTSFVector(),result.getTSFVector());
-  return NOX::Abstract::Group::Ok;
+    {
+      return NOX::Abstract::Group::BadDependency;
+    }
+  else
+    {
+      // Compute result = J * input
+      jacobian.apply(input.getTSFVector(),result.getTSFVector());
+      return NOX::Abstract::Group::Ok;
+    }
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -287,13 +340,16 @@ NOX::TSF::Group::applyJacobianTranspose(const NOX::TSF::Vector& input, NOX::TSF:
 {
   // Check validity of the Jacobian
   if (!isJacobian()) 
-    return NOX::Abstract::Group::BadDependency;
-
-  // Compute result = J^T * input
-  // ***************** CHANGE THIS FUNCTION ******************
-
-
-  return NOX::Abstract::Group::Ok;
+    {
+      return NOX::Abstract::Group::BadDependency;
+    }
+  else
+    {
+      // Compute result = J^T * input
+      jacobian.applyTranspose(input.getTSFVector(), result.getTSFVector());
+      
+      return NOX::Abstract::Group::Ok;
+    }
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -316,15 +372,21 @@ NOX::TSF::Group::applyJacobianInverse(NOX::Parameter::List& p,
   {
     cerr << "ERROR: NOX::TSF::Group::applyJacobianInverse() - invalid Jacobian" << endl;
     throw "NOX Error";
+
   }
-  // ************** CHANGE THIS FUNCTION *********************
  
-  int info;
-
-
-
-    if (info != 0)
+  TSFExtended::SolverState<double> status 
+    = solver.solve(jacobian, input.getTSFVector(),
+                   result.getTSFVector());
+  
+  if (status.finalState() != TSFExtended::SolveConverged)
+    {
       return NOX::Abstract::Group::Failed;
+    }
+  else
+    {
+      return NOX::Abstract::Group::Ok;
+    }
 
 }
 

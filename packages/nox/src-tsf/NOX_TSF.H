@@ -34,6 +34,5 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_TSF_Vector.H"
 #include "NOX_TSF_Group.H"
-#include "NOX_TSF_Interface.H"
 
 
