@@ -36,12 +36,12 @@ int Zoltan_LB_Part_To_Proc(ZZ *zz, int part, ZOLTAN_ID_PTR gid)
  * If a partition is entirely within a processor, that processor's rank is
  * returned.
  * If a partition is spread across several processors, find the range of its
- * processors.  If zz->Proc is one of them, return zz->Proc.  
+ * processors.  
  * If a gid is not given (gid == NULL) return the lowest-numbered processor
  * in the range.  (RCB and RIB depend upon this feature.)
- * If a gid is given, 
+ * If a gid is given and zz->Proc is in the range, return zz->Proc.  
+ * If a gid is given and zz->Proc is not in the range, 
  * hash the input gid to a processor within the range of processors.
- * If no input gid is given, the processor number is hashed instead.
  * NOTE:  The special case of returning zz->Proc when it is within range 
  * reduces data movement, but can result in different processor assignments 
  * for the same gid on different processors.
