@@ -618,27 +618,6 @@ extern int LB_Set_Method(struct LB_Struct *lb, char *string);
 
 /*****************************************************************************/
 /*
- *  Function to set a flag indicating whether the application wants the
- *  load-balancer to help with data migration.   If migration help is
- *  wanted, routines to pack and unpack object data must be provided by
- *  the application (see LB_OBJ_SIZE_FN, LB_PACK_OBJ_FN, LB_UNPACK_OBJ_FN).
- *
- *  Input:
- *    struct LB_Struct *lb       --  The load balancing object to which this 
- *                                   flag applies.
- *    int auto_migrate_flag      --  TRUE or FALSE to indicate whether the 
- *                                   application wants migration help.
- *                                   Default is FALSE.
- *  Output:
- *    struct LB_Struct *lb       --  Appropriate fields set to designated type.
- *  Returned value:
- *    int                        --  Error code
- */
-
-extern int LB_Set_Migration(struct LB_Struct *lb, int auto_migrate_flag);
-
-/*****************************************************************************/
-/*
  *  Function to change a parameter value within the bowels of Zoltan.
  *  Default values will be used for all parameters not explicitly altered
  *  by a call to this routine.
