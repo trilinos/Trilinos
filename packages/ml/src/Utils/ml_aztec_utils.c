@@ -60,6 +60,7 @@ int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
    context = (struct aztec_context *) ML_allocate(sizeof(struct aztec_context));
    context->Amat         = Amat;
    context->proc_config  = proc_config;
+   context->comm         = ml_handle->comm;
 
    ML_Init_Amatrix(ml_handle, level,isize, osize, (void *) context);
 
@@ -528,6 +529,7 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
    context->options        = options_copy;
    context->params         = params_copy;
    context->proc_config    = proc_config;
+   context->comm           = ml_handle->comm;
    context->status         = status;
    context->prec_or_solver = N_iterations;
    matrix_name++;
@@ -634,11 +636,16 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
       tptr = AZ_get_comm(proc_config);
       AZ_set_comm(sub_proc_config, *tptr);
    #endif
+      context->proc_config    = sub_proc_config;
+      context->offset         = offset;
    
       AZ_set_MATFREE(AZ_Amat, csr2_mat, wrapper_DCSR_matvec);
       AZ_set_MATFREE_getrow(AZ_Amat, csr2_mat, wrapper_DCSR_getrow, NULL,
-                     nrows, sub_proc_config);
+                     0, sub_proc_config);
       context->Amat  = AZ_Amat;
+      AZ_Amat->must_free_data_org = 0;   /* data_org will be freed later by  */
+                                         /* ML (via AZ_ML_SmootherClean) and */
+                                         /* so Aztec does not need to free it*/
    }
    else {
    
@@ -787,7 +794,7 @@ int az_wrap_solvers(void *data, int in, double x[], int out,
    struct aztec_context *context;
    int    *data_org, i, n, n2, one = 1;
    double *p2, alpha = 1.; 
-   double temp;
+   double temp, *global_rhs, *global_x, *orig_x;
 
    context = (struct aztec_context *) data;
    data_org = context->Amat->data_org;
@@ -795,9 +802,27 @@ int az_wrap_solvers(void *data, int in, double x[], int out,
    n        = data_org[AZ_N_internal] + data_org[AZ_N_border];
    n2       = n + data_org[AZ_N_external];
    p2       = (double *) AZ_allocate( (n2+1)*sizeof(double));
+
    if (p2 == NULL) {
       printf("az_wrap_solvers: Out of space\n"); exit(1);
    }
+
+   /* we have replicated entire linear system on each processor */
+   /* must gather rhs and initial guess                         */
+   if ( n != in ) {
+      ML_memory_alloc((void**) &global_rhs, n*sizeof(double),"LU1" );
+      ML_memory_alloc((void**) &global_x,   n*sizeof(double),"LU2" );
+      for ( i = 0; i <  n; i++ ) global_rhs[i] = 0.;
+      for ( i = 0; i <  n; i++ ) global_x[i]   = 0.;
+      for ( i = 0; i < in; i++ ) global_rhs[i] = rhs[i];
+      for ( i = 0; i < in; i++ ) global_x[i]   = x[i];
+      i = in; ML_Comm_GappendDouble(context->comm, global_rhs, &i, n);
+      i = in; ML_Comm_GappendDouble(context->comm, global_x, &i, n);
+      orig_x = x;
+      x = global_x;
+      rhs = global_rhs;
+   }
+
 
    for (i = 0; i < n; i++) p2[i] = x[i];
    if (context->prec_or_solver == AZ_ONLY_PRECONDITIONER) {
@@ -820,6 +845,15 @@ int az_wrap_solvers(void *data, int in, double x[], int out,
       for (i = 0; i < n; i++) x[i] = p2[i];
    }
    AZ_free(p2);
+
+   /* we have replicated entire linear system on each processor */
+   /* must gather solution                                      */
+   if ( n != in ) {
+      x = orig_x;
+      for ( i = 0; i < in; i++ ) x[i] = global_x[i+context->offset];
+      ML_memory_free((void**) &global_rhs);
+      ML_memory_free((void**) &global_x );
+   }
    return(1);
 }
 
@@ -833,13 +867,39 @@ void AZ_ML_SmootherClean(void *data)
  *
  */
    struct aztec_context *context;
+   ML_Matrix_DCSR *csr2_mat;
 
    context = (struct aztec_context *) data;
    context->options[AZ_keep_info] = 0;
+
+   /* we are using an Aztec smoother with an ML preconditoner */
+   /* We must clean up the ml stuff.                          */
+   if ( (context->options[AZ_precond] == AZ_user_precond) && 
+        (context->Prec->prec_function == ML_precondition) &&
+        (context->Prec->precond_data  != NULL) ) {
+	ML_Solve_SmootherDestroy( context->Prec->precond_data );
+   }
+
+
+
+
    AZ_iterate_finish(context->options, context->Amat, context->Prec);
    AZ_free(context->options); 
    AZ_free(context->params);
    AZ_free(context->Amat->data_org); 
+
+   /* we have created a global matrix and must clean up storage */
+   /* associated with this.                                     */
+   /* we also have created a proc_config that must be cleaned.  */
+
+   if (context->Amat->matvec == wrapper_DCSR_matvec) {
+      csr2_mat = (ML_Matrix_DCSR *) context->Amat->matvec_data;
+      ML_memory_free( (void **) &(csr2_mat->mat_ja));
+      ML_memory_free( (void **) &(csr2_mat->mat_a) );
+      ML_memory_free( (void **) &(csr2_mat->mat_ia) );
+      free(csr2_mat);
+      free(context->proc_config);
+   }
    AZ_matrix_destroy(&(context->Amat) );
    AZ_precond_destroy(&(context->Prec));
 #ifdef AZ_ver2_1_0_5

@@ -30,6 +30,8 @@ struct aztec_context {
    double *status; 
    void   *getrowstuff;
    int    prec_or_solver;
+   ML_Comm *comm;
+   int     offset;
 #ifdef AZ_ver2_1_0_3
    struct AZ_SCALING *scaling;
 #endif
