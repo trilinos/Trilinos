@@ -486,6 +486,7 @@ int Epetra_CrsMatrix::MergeRedundantEntries() {
       int * const Indices = Indices_[i];
 
       int offset = 0;
+      int loc = 0;
 
       while( offset < NumEntries-1 )
       {
@@ -496,6 +497,10 @@ int Epetra_CrsMatrix::MergeRedundantEntries() {
           Values[offset] += Values[offset+shift];
           ++shift;
         }
+        //slide value down
+        Indices[loc] = Indices[offset];
+        Values[loc] = Values[offset];
+        ++loc;
         offset += shift;
       }
     }
