@@ -223,6 +223,13 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
       AZ_gdot_vec(count + 1, dots, tmp, proc_config);
 
       conv_info->b_norm = sqrt(dots[count--]);
+      if (conv_info->b_norm == 0.0) {
+	if ((proc_config[AZ_node]==0) && (options[AZ_output] != AZ_none)) {
+	    printf("AZ_compute_global_scalars: ||rhs|| = 0. Can not use AZ_rhs as a convergence option.\n");
+            printf("Changing convergence criteria to use norm of residual in convergence tests.\n");
+         }
+	 conv_ifo->b_norm = 1;
+      }
       *r_norm = sqrt(dots[count]); 
     }
 
@@ -253,6 +260,32 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
             printf("Warning:No previous definition for A_norm found. Was ");
             printf("AZ_iterate used\n\tpreviously and was the scaling object ");
             printf("passed in the same as for\n\tthis invokation of ");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             printf("AZ_iterate()?\n");
          }
        }
