@@ -78,9 +78,13 @@ public:
   // regitrations and trigger the problem setup
   void registerComplete();
 
-  // Have each problem receive auxillary data from every other  problem 
+  // Have each problem receive auxillary data from every other problem 
   // on which it depends
-  bool syncProblems();
+  bool syncAllProblems();
+
+  // Set the solver group solution using the current solution contained 
+  // in the problem
+  bool setGroupX(int id);
 
   // Set all groups with the current solution contained in each problem
   bool setAllGroupX();
@@ -90,6 +94,12 @@ public:
 
   // Compute Jacobian in solution groups for all registered problems
   bool computeAllJacobian();
+
+  // Compute sum of norms of each problem residual
+  double getNormSum();
+
+  // Copy final solution from NOX solver into the problem's solution vector
+  void updateWithFinalSolution(int id);
 
   // Copy final solution from NOX solvers into each problem's solution vector
   void updateAllWithFinalSolution();

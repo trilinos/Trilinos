@@ -338,7 +338,7 @@ void Problem_Manager::registerComplete()
 
 }
 
-bool Problem_Manager::syncProblems()
+bool Problem_Manager::syncAllProblems()
 {
   if(Problems.empty()) {
     cout << "ERROR: No problems registered with Problem_Manager !!"
@@ -352,6 +352,25 @@ bool Problem_Manager::syncProblems()
   // Loop over each problem being managed and invoke its transfer requests
   for( ; problemIter != problemLast; problemIter++)
     (*problemIter).second->doTransfer();
+}
+
+bool Problem_Manager::setGroupX(int probId)
+{
+  GenericEpetraProblem *problem = Problems.find(probId)->second;
+  if( !problem ) {
+    cout << "ERROR: Could not get requested Problem to use with group.setX "
+         << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  NOX::EpetraNew::Group *grp = Groups.find(probId)->second;
+  if( !grp ) {
+    cout << "ERROR: Could not get appropriate group for use in setX !!"
+         << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  grp->setX(problem->getSolution());
 }
 
 bool Problem_Manager::setAllGroupX()
@@ -369,13 +388,8 @@ bool Problem_Manager::setAllGroupX()
   // solution vector (used by NOX) with the problem's (used by application)
   for( ; problemIter != problemLast; problemIter++) {
     int probId = problemIter->first;
-    NOX::EpetraNew::Group *grp = Groups.find(probId)->second;
-    if( !grp ) {
-      cout << "ERROR: No problems registered with Problem_Manager !!"
-           << endl;
-      throw "Problem_Manager ERROR";
-    }
-    grp->setX((*problemIter).second->getSolution());
+
+    setGroupX(probId);
   }
 }
 
@@ -433,6 +447,33 @@ bool Problem_Manager::computeAllJacobian()
   }
 }
 
+void Problem_Manager::updateWithFinalSolution(int probId)
+{
+  // Copy final solution from NOX solver into the problem's solution vector
+
+  GenericEpetraProblem *problem = Problems.find(probId)->second;
+  if( !problem ) {
+    cout << "ERROR: Could not get requested Problem to update with final "
+         << "solution" << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  NOX::Solver::Manager* solver = Solvers.find(probId)->second;
+  if( !solver ) {
+    cout << "ERROR: Could not get appropriate Solver for use in update !!"
+         << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  const NOX::EpetraNew::Group& finalGroup =
+    dynamic_cast<const NOX::EpetraNew::Group&>(solver->getSolutionGroup());
+  const Epetra_Vector& finalSolution =
+    (dynamic_cast<const NOX::Epetra::Vector&>
+      (finalGroup.getX())).getEpetraVector();
+  
+  problem->getSolution() = finalSolution;
+}
+
 void Problem_Manager::updateAllWithFinalSolution()
 {
   // Copy final solution from NOX solvers into each problem's solution vector
@@ -443,20 +484,7 @@ void Problem_Manager::updateAllWithFinalSolution()
   for( ; problemIter != problemLast; problemIter++) {
     int probId = problemIter->first;
 
-    NOX::Solver::Manager* solver = Solvers.find(probId)->second;
-    if( !solver ) {
-      cout << "ERROR: Could not get appropriate Solver for use in update !!"
-           << endl;
-      throw "Problem_Manager ERROR";
-    }
-
-    const NOX::EpetraNew::Group& finalGroup =
-      dynamic_cast<const NOX::EpetraNew::Group&>(solver->getSolutionGroup());
-    const Epetra_Vector& finalSolution =
-      (dynamic_cast<const NOX::Epetra::Vector&>
-        (finalGroup.getX())).getEpetraVector();
-  
-    problemIter->second->getSolution() = finalSolution;
+    updateWithFinalSolution(probId);
   }
 }
 
@@ -628,28 +656,12 @@ void Problem_Manager::copyProblemJacobiansToComposite()
       compositeRow = indices[problemRow];
       for (int j = 0; j<numCols; j++)
         columnIndices[j] = indices[columnIndices[j]];
-      //printf("MatrixA, row --> %d\tnumValues --> %d\n",row,numValues);
-      //for (int j=0; j<numValues; j++)
-      //  cout << "\t[" << indices[j] << "]  " << values[j];
-      //cout << endl;
       int ierr = compositeMatrix.ReplaceGlobalValues(compositeRow, 
                        numValues, values, columnIndices);
-      //printf("\nAfter insertion, ierr --> %d\n\n",ierr);
     }
     delete [] values; values = 0;
     delete [] columnIndices; columnIndices = 0;
 
-//    for (i=0; i<matrixB.NumMyRows(); i++)
-//    { 
-//      row = matrixB.Map().GID(i);
-//      graphB.ExtractGlobalRowCopy(row, maxAllBGID, numCols, indices);
-//      matrixB.ExtractGlobalRowCopy(row, maxAllBGID, numValues, values);
-//      for (int j=0; j<numCols; j++)
-//        indices[j] += maxAllAGID + 1;
-//      row += maxAllAGID + 1;
-//      Matrix->ReplaceGlobalValues(row, numValues, values, indices);
-//    }
-  
     // Sync up processors to be safe
     Comm->Barrier();
 
@@ -657,6 +669,34 @@ void Problem_Manager::copyProblemJacobiansToComposite()
     problemMatrix.Print(cout);
 #endif
   }
+}
+
+double Problem_Manager::getNormSum()
+{
+  // Get each problem's residual norm and sum into a total
+  double normSum(0.0);
+
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+
+  for( ; problemIter != problemLast; problemIter++) {
+    int probId = problemIter->first;
+
+    NOX::EpetraNew::Group *grp = Groups.find(probId)->second;
+    if( !grp ) {
+      cout << "ERROR: Could not get appropriate group for use in NormSum !!"
+           << endl;
+      throw "Problem_Manager ERROR";
+    }
+
+    double problemNorm = grp->getNormF();
+    cout << "2-Norm of Problem " << probId << " --> " << problemNorm
+         << endl;
+    normSum += problemNorm * problemNorm;
+  }
+  normSum = sqrt(normSum);
+
+  return normSum;
 }
 
 bool Problem_Manager::solve()
@@ -668,42 +708,29 @@ bool Problem_Manager::solve()
     throw "Problem_Manager ERROR";
   }
 
-  assert( !Groups.empty() );
-  assert( !Interfaces.empty() );
-  assert( !Solvers.empty() );
+  if( Groups.empty() || Interfaces.empty() || Solvers.empty() )
+  {
+    cout << "ERROR: Groups, Interfaces and/or Solvers are emptry !!"
+         << endl;
+    throw "Problem_Manager ERROR";
+  }
 
   map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
   // These iterators would be needed in general, but we later specialize
   // for the case of a 2-problem system.
-  map<int, NOX::EpetraNew::Group*>::iterator     groupIter = Groups.begin();
-  map<int, Problem_Interface*>::iterator  interfaceIter = Interfaces.begin();
-  map<int, NOX::Solver::Manager*>::iterator  solverIter = Solvers.begin();
-
-  // This is set up for more than 2 problems, but for now, we deal explicitly
-  // with just 2.
-
-  GenericEpetraProblem &problemA = *Problems.find(1)->second,
-                       &problemB = *Problems.find(2)->second;
-
-  NOX::EpetraNew::Group &grpA = *Groups.find(1)->second,
-                        &grpB = *Groups.find(2)->second;
-
-  NOX::Solver::Manager &solverA = *Solvers.find(1)->second,
-                       &solverB = *Solvers.find(2)->second;
+//  map<int, NOX::EpetraNew::Group*>::iterator     groupIter = Groups.begin();
+//  map<int, Problem_Interface*>::iterator  interfaceIter = Interfaces.begin();
+//  map<int, NOX::Solver::Manager*>::iterator  solverIter = Solvers.begin();
 
   // Sync the two problems and get initial convergence state
-  syncProblems();
-//  problemA.setAuxillarySolution(problemB.getSolution());
-//  problemB.setAuxillarySolution(problemA.getSolution());
-  grpA.setX(problemA.getSolution());
-  grpB.setX(problemB.getSolution());
-  grpA.computeF();
-  grpB.computeF();
-  cout << "Initial 2-Norms of F (A, B) --> " << grpA.getNormF() << " ,  "
-       << grpB.getNormF() << endl;
-  double normSum = grpA.getNormF() + grpB.getNormF();
+  syncAllProblems();
+  setAllGroupX();
+  computeAllF();
+
+  double normSum = getNormSum();
+  cout << "Initial 2-Norm of composite Problem --> " << normSum;
 
   // Now do the decoupled solve
   int iter = 0;
@@ -715,72 +742,48 @@ bool Problem_Manager::solve()
   {
     iter++;
 
-    solverA.reset(grpA, *statusTest, *nlParams);
-    status = solverA.solve();
-    if( status != NOX::StatusTest::Converged )
-    { 
-      if (MyPID==0)
-        cout << "\nRegistered Problem A failed to converge !!"  << endl;
-      //exit(0);
+    problemIter = Problems.begin();
+
+    // Solve each problem in the order it was registered
+    for( ; problemIter != problemLast; problemIter++) {
+
+      GenericEpetraProblem& problem = *(*problemIter).second;
+      int probId = problem.getId();
+
+      NOX::EpetraNew::Group &problemGroup = *Groups.find(probId)->second;
+      NOX::Solver::Manager &problemSolver = *Solvers.find(probId)->second;
+    
+      // Sync all dependent data with this problem 
+      problem.doTransfer();
+      // Sync the problem solution with its solver group
+      setGroupX(probId);
+      // Reset the solver for this problem and solve
+      problemSolver.reset(problemGroup, *statusTest, *nlParams);
+      status = problemSolver.solve();
+      if( status != NOX::StatusTest::Converged )
+      { 
+        if (MyPID==0)
+          cout << "\nRegistered Problem ## failed to converge !!"  << endl;
+        //exit(0);
+      }
+
+      updateWithFinalSolution(probId);
     }
 
-    // Extract and use final solution
-    const NOX::EpetraNew::Group& finalGroupA =
-      dynamic_cast<const NOX::EpetraNew::Group&>(solverA.getSolutionGroup());
-    const Epetra_Vector& finalSolutionA =
-      (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupA.getX())).getEpetraVector();
+    // Determine final residuals for use in testing convergence
+    syncAllProblems();
+    setAllGroupX();
+    computeAllF();
 
-    problemA.setSolution(finalSolutionA);
-    problemB.doTransfer();
-//    problemB.setAuxillarySolution(finalSolutionA);
-    solverB.reset(grpB, *statusTest, *nlParams);
-    status = solverB.solve();
-    if( status != NOX::StatusTest::Converged )
-    { 
-      if (MyPID==0)
-        cout << "\nRegistered Problem B failed to converge !!"  << endl;
-      //exit(0);
-    }
-
-    // Extract and use final solution
-    const NOX::EpetraNew::Group& finalGroupB =
-      dynamic_cast<const NOX::EpetraNew::Group&>(solverB.getSolutionGroup());
-    const Epetra_Vector& finalSolutionB =
-      (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupB.getX())).getEpetraVector();
-  
-    problemB.setSolution(finalSolutionB);
-    problemA.doTransfer();
-//    problemA.setAuxillarySolution(finalSolutionB);
-    grpA.setX(finalSolutionA);
-    grpA.computeF();
-    problemB.doTransfer();
-//    problemB.setAuxillarySolution(finalSolutionA);
-    grpB.setX(finalSolutionB);
-    grpB.computeF();
-
-    cout << "Decoupled iteration #" << iter << " : 2-Norms of F (A, B) --> " 
-         << grpA.getNormF() << " ,  " << grpB.getNormF() << endl;
-    normSum = grpA.getNormF() + grpB.getNormF();
+    normSum = getNormSum();
+    cout << "iter #" << iter << ", 2-Norm of composite Problem --> " 
+         << normSum << endl;
 
     nlIter++;
   }
   
   cout << "\nDecoupled solution required --> " << iter << " iterations.\n" 
        << endl;
-
-  // Extract and use final solutions
-  const NOX::EpetraNew::Group& finalGroupA =
-    dynamic_cast<const NOX::EpetraNew::Group&>(solverA.getSolutionGroup());
-  const NOX::EpetraNew::Group& finalGroupB =
-    dynamic_cast<const NOX::EpetraNew::Group&>(solverB.getSolutionGroup());
-  const Epetra_Vector& finalSolutionA =
-    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupA.getX())).getEpetraVector();
-  const Epetra_Vector& finalSolutionB =
-    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupB.getX())).getEpetraVector();
-  
-  // Put final solutions back into problems
-  problemA.setSolution(finalSolutionA);
-  problemB.setSolution(finalSolutionB);
 
   return true;
 }
@@ -794,21 +797,15 @@ bool Problem_Manager::solveMF()
     throw "Problem_Manager ERROR";
   }
 
-  // This is set up for more than 2 problems, but for now, we deal explicitly
-  // with just 2.
-
   // Sync the two problems and get initial convergence state
-  syncProblems();
+  syncAllProblems();
 
   setAllGroupX();
 
   computeAllF();
 
-  // Need to generalize --> RHooper
-  NOX::EpetraNew::Group   &grpA = *Groups.find(1)->second,
-                          &grpB = *Groups.find(2)->second;
-  cout << "Initial 2-Norms of F (A, B) --> " << grpA.getNormF() << " ,  "
-       << grpB.getNormF() << endl;
+  double normSum = getNormSum();
+  cout << "Initial 2-Norm of composite Problem --> " << normSum;
 
   // Fill initial composite solution with values from each problem
   copyProblemsToComposite(*compositeSoln, SOLUTION);
@@ -927,7 +924,7 @@ bool Problem_Manager::evaluate(
 
   copyCompositeToProblems(*solnVector, SOLUTION);
 
-  syncProblems();
+  syncAllProblems();
 
   setAllGroupX();
 
@@ -958,40 +955,54 @@ bool Problem_Manager::evaluate(
 void Problem_Manager::generateGraph()
 { 
 
-  // Here again, a general capability has been specialized to 2 problems
-  
-  Epetra_CrsGraph &graphA = (*Problems.find(1)->second).getGraph(),
-                  &graphB = (*Problems.find(2)->second).getGraph();
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
-  int maxAllAGID = graphA.Map().MaxAllGID();
-  int* indices = new int[maxAllAGID];
-  int i, row, numCols;
-  for (i=0; i<graphA.NumMyRows(); i++)
-  {
-    row = graphA.Map().GID(i);
-    graphA.ExtractGlobalRowCopy(row, maxAllAGID, numCols, indices);
-    AA->InsertGlobalIndices(row, numCols, indices);
-  }
-  delete [] indices; indices = 0;
+  // Loop over each problem being managed and ascertain its graph as well
+  // as its graph from its dependencies
+  for( ; problemIter != problemLast; problemIter++) {
 
-  int maxAllBGID = graphB.Map().MaxAllGID();
-  indices = new int[maxAllBGID];
-  for (i=0; i<graphB.NumMyRows(); i++)
-  {
-    row = graphB.Map().GID(i);
-    graphB.ExtractGlobalRowCopy(row, maxAllBGID, numCols, indices);
-    for (int j=0; j<numCols; j++)
-      indices[j] += maxAllAGID + 1;
-    row += maxAllAGID + 1;
-    AA->InsertGlobalIndices(row, numCols, indices);
+    GenericEpetraProblem& problem = *(*problemIter).second;
+    int probId = problem.getId();
+
+    Epetra_CrsGraph &problemGraph = problem.getGraph();
+
+    // Use max potential number of nonzero columns to dimension index array
+    int problemNumNodes = problemGraph.Map().MaxAllGID();
+
+    // Get the indices map for copying data from this problem into 
+    // the composite problem
+    Epetra_IntVector& indices = 
+            *ProblemToCompositeIndices.find(probId)->second;
+
+    int problemRow, compositeRow, numCols;
+
+    // First fill composite graph for each problem's self-dependence.  This
+    // corresponds to diagonal blocks.
+    int* columnIndices = new int[problemNumNodes];
+
+    for (int i = 0; i<problemGraph.NumMyRows(); i++)
+    { 
+      problemRow = problemGraph.Map().GID(i);
+      problemGraph.ExtractGlobalRowCopy(problemRow, problemNumNodes, 
+                           numCols, columnIndices);
+
+      // Convert row/column indices to composite problem
+      compositeRow = indices[problemRow];
+      for (int j = 0; j<numCols; j++)
+        columnIndices[j] = indices[columnIndices[j]];
+      int ierr = AA->InsertGlobalIndices(compositeRow, numCols, columnIndices);
+    }
+    delete [] columnIndices; columnIndices = 0;
   }
-  delete [] indices; indices = 0;
 
   AA->TransformToLocal();
   AA->SortIndices();
   AA->RemoveRedundantIndices();
 
-  //AA->Print(cout);
+#ifdef DEBUG
+  AA->Print(cout);
+#endif
 
   return;
 }
