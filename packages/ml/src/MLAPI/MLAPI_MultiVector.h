@@ -100,7 +100,8 @@ public:
     VectorSpace_ = VectorSpace;
     if (GetMyTotalLength()) {
       SetRCPValues(Teuchos::rcp(new DoubleVector(GetMyTotalLength())));
-      *this = 0.0;
+      if (SetToZero)
+        *this = 0.0;
     }
   }
 
@@ -139,7 +140,8 @@ public:
   }
 
   //! Sets the space of this vector.
-  void Reshape(const Space& S, const int NumVectors = 1)
+  void Reshape(const Space& S, const int NumVectors = 1,
+               const bool SetToZero = true)
   {
     NumVectors_ = NumVectors;
     VectorSpace_ = S;
@@ -147,6 +149,8 @@ public:
       SetRCPValues(Teuchos::rcp(new DoubleVector(GetMyTotalLength())));
     else
       SetRCPValues(Teuchos::null);
+
+    if (SetToZero) *this = 0.0;
   }
 
   // @}
@@ -207,10 +211,10 @@ public:
   inline const double& operator()(const int i, const int v) const 
   {
 #ifdef MLAPI_CHECK
-    if (i < 0) || (i >= GetMyLength())
+    if ((i < 0) || (i >= GetMyLength()))
       ML_THROW("Requested component " + GetString(i) +
                ", while MyLength() = " + GetString(GetMyLength()), -1);
-    if (v < 0) || (v >= GetNumVectors())
+    if ((v < 0) || (v >= GetNumVectors()))
       ML_THROW("Requested vector " + GetString(v) +
                ", while NumVectors() = " + GetString(GetNumVectors()), -1);
 #endif
@@ -221,10 +225,10 @@ public:
   inline double& operator()(const int i, const int v) 
   {
 #ifdef MLAPI_CHECK
-    if (i < 0) || (i >= GetMyLength())
+    if (i < 0 || i >= GetMyLength())
       ML_THROW("Requested component " + GetString(i) +
                ", while MyLength() = " + GetString(GetMyLength()), -1);
-    if (v < 0) || (v >= GetNumVectors())
+    if (v < 0 || v >= GetNumVectors())
       ML_THROW("Requested vector " + GetString(v) +
                ", while NumVectors() = " + GetString(GetNumVectors()), -1);
 #endif
@@ -486,7 +490,7 @@ public:
   void Sort(const int v = 0, const bool IsIncreasing = false)
   {
 #ifdef MLAPI_CHECK
-    if (v < 0) || (v >= GetNumVectors())
+    if (v < 0 || v >= GetNumVectors())
       ML_THROW("Requested vector " + GetString(v) +
                ", while NumVectors() = " + GetString(GetNumVectors()), -1);
 #endif

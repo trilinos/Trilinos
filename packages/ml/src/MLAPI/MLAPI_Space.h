@@ -210,7 +210,7 @@ public:
   {
 #ifdef MLAPI_CHECK
     if ((i < 0) || (i >= NumMyElements_))
-      ML_THROW("not valid index, " + toString(i), -1);
+      ML_THROW("not valid index, " + GetString(i), -1);
 #endif
     if (IsLinear())
       return(i + GetOffset());

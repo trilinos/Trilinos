@@ -42,7 +42,7 @@ public:
   virtual int NumMyRowEntries(int MyRow, int & NumEntries) const
   {
 #ifdef MLAPI_CHECK
-    if (MyRow < 0 || MyRow >= NumRows())
+    if (MyRow < 0 || MyRow >= NumMyRows())
       ML_THROW("Requested not valid row (" + GetString(MyRow) +").", -1);
 #endif
     NumEntries = ptr_[MyRow].size();
