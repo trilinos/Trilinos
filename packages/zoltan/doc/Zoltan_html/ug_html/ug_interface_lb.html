@@ -326,7 +326,7 @@ IDs of processors that will own the exported objects in the new decomposition
 
 <td><a NAME="LB_Eval"></a>int <b>LB_Eval</b>(struct <b>LB_struct *</b><i>lb</i>,
 int <i>print_stats</i>, int *<i>nobj</i>, float *o<i>bj_wgt</i>, int *<i>ncuts,</i>
-float *<i>cut_wgt</i>, int *<i>nboundary</i>, int *<i>nadj</i>,);&nbsp;</td>
+float *<i>cut_wgt</i>, int *<i>nboundary</i>, int *<i>nadj</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
@@ -366,8 +366,8 @@ in the output parameters.
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; print_stats</i></td>
 
-<td>If <i>print_stats</i>>0 (.TRUE. in Fortran), print a summary (maximum
-and sum) of the quality metrics to <i>stdout.</i></td>
+<td>If <i>print_stats</i>>0 (.TRUE. in Fortran), print a summary (max,
+min,&nbsp; and sum) of the quality metrics to <i>stdout.</i></td>
 </tr>
 
 <tr>
@@ -379,8 +379,8 @@ and sum) of the quality metrics to <i>stdout.</i></td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; obj_wgt</i></td>
 
-<td>Upon return, an array containing the sum of object weights on this
-processor.</td>
+<td>Upon return, an array (of dimension OBJ_WEIGHT_DIM) containing the
+sum of object weights on this processor.</td>
 </tr>
 
 <tr>
@@ -393,7 +393,8 @@ this processor.</td>
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>cut_wgt</i></td>
 
-<td>Upon return, an array of cut weights for this processor.&nbsp;</td>
+<td>Upon return, an array (of dimension&nbsp; COMM_WEIGHT_DIM) of cut weights
+for this processor.&nbsp;</td>
 </tr>
 
 <tr>
@@ -444,10 +445,9 @@ the communication graph.</td>
 </tr>
 </table>
 An output parameter is returned only if the input value of that parameter
-was not NULL. (An exception is that the error code is always returned.)
-The rationale for this feature is that if one wishes just to print the
-evaluation results, one can simply set all (or some of) the output parameters
-to NULL in the function call. From Fortran, this is achieved by omitting
+was not NULL. The rationale for this feature is that if one wishes just
+to print the evaluation results, one can simply set all (or some of) the
+output parameters to NULL in the function call. From Fortran, one may omit
 one or more of the optional output parameters.
 <p>
 <hr WIDTH="100%">
