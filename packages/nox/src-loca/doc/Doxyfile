@@ -304,14 +304,14 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT                  = ../src ../src-epetra
+INPUT                  = ../src ../src-epetra ../../src ../../src-epetra
 
 # If the value of the INPUT tag contains directories, you can use the 
-# FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
+# FILE_PATTERNS tag to specify one or more wildcard pattern (like *.pp 
 # and *.h) to filter out the source-files in the directories. If left 
 # blank all files are included.
 
-FILE_PATTERNS          = LOCA_*.H
+FILE_PATTERNS          = LOCA_*.H NOX_*.H
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories 
 # should be searched for input files as well. Possible values are YES and NO. 
@@ -323,7 +323,7 @@ RECURSIVE              = YES
 # excluded from the INPUT source files. This way you can easily exclude a 
 # subdirectory from a directory tree whose root is specified with the INPUT tag.
 
-EXCLUDE                = 
+EXCLUDE                = TEST_*.H
 
 # If the value of the INPUT tag contains directories, you can use the 
 # EXCLUDE_PATTERNS tag to specify one or more wildcard patterns to exclude 
@@ -373,7 +373,7 @@ FILTER_SOURCE_FILES    = NO
 # of all compounds will be generated. Enable this if the project 
 # contains a lot of classes, structs, unions or interfaces.
 
-ALPHABETICAL_INDEX     = NO
+ALPHABETICAL_INDEX     = YES
 
 # If the alphabetical index is enabled (see ALPHABETICAL_INDEX) then 
 # the COLS_IN_ALPHA_INDEX tag can be used to specify the number of columns 
@@ -707,7 +707,7 @@ PERL_PATH              =
 # toolkit from AT&T and Lucent Bell Labs. The other options in this section 
 # have no effect if this option is set to NO (the default)
 
-HAVE_DOT               = NO
+HAVE_DOT               = YES
 
 # If the CLASS_GRAPH and HAVE_DOT tags are set to YES then doxygen 
 # will generate a graph for each documented class showing the direct and 

@@ -1,0 +1,521 @@
+%###################################################################
+% Bifurcation Algorithms: Theory Manual
+%###################################################################
+\chapter{LOCA Bifurcation Algorithms} 
+\label{ch:algorithms}
+
+In this chapter, we present the algorithms that are implemented in the LOCA library. 
+These can be divided into three types: parameter continuation algorithms to track steady state solutions as a function of a single parameter, bifurcation tracking algorithms to calculate a parameter value (referred to as the bifurcation parameter) at which a bifurcation occurs as a function of a second (continuation) parameter, and a linearized stability analysis routine to ascertain the stability of the steady state solution
+(using the ARPACK library \cite{lehoucq98b,maschhoff96}).
+
+For references on computing bifurcations, we recommend Cliffe, Spence, and Tavener (2000) \cite{tavener01} and Govaerts (2000) \cite{govaerts00} and references therein. To see examples of the LOCA algorithms being used with large-scale analysis codes, see the publications section of the LOCA web page: www.cs.sandia.gov/LOCA.
+
+It is assumed that the application code uses a fully coupled Newton method to solve for steady states to a set of nonlinear equations. We have $n$ residual equations $\bfR$ which form the basis of the model. The steady state problem is written as
+\begin{equation}
+\label{eq:resid}
+\bfR (\bfx,\lambda) = \bfzero,
+\end{equation}
+which, given an initial guess for $\bfx$, is solved iteratively with Newton's method,
+\begin{equation}
+\label{eq:newton}
+\bfJ \Delta\bfx = -\bfR, \mbox{\hspace{0.6in}}\bfx^{new}=\bfx + \Delta\bfx
+\end{equation}
+where the Jacobian matrix $ \bfJ = \pdone{\bfR}{\bfx}$. The iteration on $\bfx$ converges when $\|\Delta\bfx\|$ and/or $\|\bfR\|$ decrease below some tolerances.
+For scalability to large applications, the linear solve of the matrix equation \ref{eq:newton} must be solved iteratively.
+
+%###################################################################
+\section{Parameter Continuation Methods}
+\label{sec:pc}
+Steady state solution branches are tracked using continuation algorithms. Zero order, first order, and pseudo arc length continuation \cite{keller77} algorithms have all been implemented in the LOCA library.
+
+\subsection{Zero Order and First Order Continuation}
+\label{sec:01c}
+This section covers zero order and first order continuation in a chosen parameter $\lambda$. Both of these algorithms consist of seeking a sequence of steady state solutions to a specified problem,
+\begin{equation}
+\label{eq:ri}
+\bfR \left( \bfx_i, \lambda_i \right) = \bfzero
+\end{equation}
+where $\lambda_i$ is a parameter value in the specified range of continuation and $\bfx_i$ is the converged solution vector at the steady state corresponding to $\lambda=\lambda_i$. These are the simplest continuation algorithms, as they do not require augmentation or bordering of the problem matrix.
+
+In zero order continuation, the steady state solution $\bfx_i$ obtained at each step is used as the initial guess for Newton iteration at the following step:
+\begin{equation}
+\label{eq:zc}
+\bfx^P_{i+1} = \bfx_i
+\end{equation}
+
+In first order continuation, the tangent vector, or sensitivity of the solution to the continuation parameter, is predicted by doing an additional linear solve of the system
+\begin{equation}
+\label{eq:tsolve}
+\bfJ \pdone{\bfx}{\lambda} = -\pdone{\bfR}{\lambda}
+\end{equation}
+where $\bfJ$ is the Jacobian matrix previously computed with $\lambda=\lambda_i$ and $\pdone{\bfR}{\lambda}$ is a forward-difference approximation obtained by perturbing $\lambda$ a small amount $\delta$ and reassembling the residual:
+\begin{equation}
+\label{eq:fda}
+\pdone{\bfR}{\lambda} = \left[ \bfR \left( \lambda_i + \delta \right) - \bfR \left( \lambda_i \right) \right] / \delta
+\end{equation}
+The first order prediction of $\bfx_{i+1}$ at the next continuation step $\lambda_{i+1} = \lambda_i + \Delta \lambda_i$ is then
+\begin{equation}
+\label{eq:fop}
+\bfx^P_{i+1} = \bfx_i + \pdone{\bfx}{\lambda} \Delta \lambda_i
+\end{equation}
+Thus, first order continuation entails one additional linear solve per continuation step, but this should reduce the number of Newton iterations required to attain convergence on each subsequent step.
+
+Step size control refers to the methods used to determine the change in the parameter value $\lambda_i$ for each continuation step. The relevant LOCA input quantities are (see Section \ref{sec:csi} for implementation details):
+
+\begin{description}
+\item[$\lambda_b$] Beginning parameter value on entering LOCA.
+
+\item[$\lambda_e$] Ending parameter value used to determine completion of continuation; may be larger or smaller than $\lambda_b$.
+
+\item[$\Delta \lambda_0$] Initial step size $\lambda_1 - \lambda_0$.
+
+\item[$\Delta \lambda_{min}$] Smallest allowable absolute step size $|\Delta \lambda|$.
+
+\item[$\Delta \lambda_{max}$] Largest allowable absolute step size $|\Delta \lambda|$.
+
+\item[$a$] Adjustable `aggressiveness' parameter for increasing the step size, set to zero for constant step size.
+
+\item[$N_{max}$] Maximum Newton iterations per continuation step.
+
+\item[$N_c$] Maximum number of continuation step attempts (including failures).
+\end{description}
+
+If the first step fails to converge after $N_{max}$ iterations, the entire continuation run is terminated. Otherwise, the parameter $\lambda$ is advanced by the specified initial step size $\Delta \lambda_0$ and the second step is attempted. After the second step and each subsequent step, the step size $\Delta \lambda$ is adjusted as described below.
+
+If the solution attempt failed to converge, the previous step size is halved. If the step size falls below $\Delta \lambda_{min}$ or if $N_c$ is exceeded, continuation is terminated. Otherwise, the parameter value (and initial solution guess if doing first order) are updated for the new step size and the step is attempted again.
+
+If the solution attempt did converge, the next step size $\Delta \lambda_i = \lambda_{i+1} - \lambda_i$ is computed as
+\begin{equation}
+\label{eq:simplestep}
+\Delta \lambda_i = \Delta \lambda_{i-1} \left[ 1 + a \left( {{N_{i}}\over {N_max}} \right)^2 \right]
+\end{equation}
+where $a$ is the input step control parameter and $N_i$ is the number of Newton iterations required for convergence on the last step. This value is reset to $\Delta \lambda_{max}$ if it exceeds that value. Also, if the new step size would take the parameter past its final value $\lambda_e$, $\Delta \lambda_i$ is reset to $\lambda_e - \lambda_i$, as this will be the last step.
+
+When a constant step size is specified (i.e. $a=0.0$) and the step size is reduced after one or more failed step attempts, once convergence is again attained the step size is permitted to increase by using $a=0.5$ in Equation \ref{eq:simplestep} until the initial (constant) step size is again reached.
+
+This procedure allows the parameter step size to be controlled adaptively based on the nonlinear solver convergence rate and is used for all LOCA algorithms, but is slightly modified for arc length continuation as discussed in the Section \ref{sec:arcsc}.
+
+\subsection{Pseudo Arc Length Continuation}
+\label{sec:arc}
+
+When it is desired to perform continuation of a problem at parameter values in the vicinity of a stability limit (i.e. near a turning point), difficulties arise as the Jacobian matrix approaches singularity. Using simple parameter continuation methods would result in more failed step attempts and smaller step sizes as the turning point is approached. The pseudo arc length continuation algorithm \cite{keller77} is designed to alleviate the singularity by augmenting the linear system with an alternate arc length parameter $s$ and an arc length equation. The augmented system is then described by
+\begin{gather}
+\label{eq:alcaug}
+\bfR \left( \bfx(s), \lambda(s) \right) = 0 \\
+n \left( \bfx(s), \lambda(s), s \right) = 0
+\end{gather}
+where $\bfR$ is the Newton residual and $n$ is an arc length equation.
+Here, both $\bfx$ and $\lambda$ are parameterized as functions of $s$, which can be defined by
+\begin{equation}
+\label{eq:sdef}
+||d\bfx||^2 + (d\lambda)^2 = (ds)^2
+\end{equation}
+An arc length equation can then be obtained from Equation \ref{eq:sdef} by differentiating with respect to $s$:
+\begin{equation}
+\label{eq:dale}
+\left\|\pdone{\bfx}{s} \right\|^2 + \left( \pdone{\lambda}{s} \right)^2 = 1
+\end{equation}
+However, it is more convenient to use a linearized form of Equation \ref{eq:dale}, as in \cite{jnsthesis}
+%ANDY: provide this citation for JNS thesis
+\begin{equation}
+\label{lale}
+n \left( \bfx(s), \lambda(s), s \right) = \left( \bfx_i - \bfx_{i-1} \right) \cdot \pdone{\bfx_i}{s} + \left( \lambda_i - \lambda_{i-1} \right) \pdone{\lambda_i}{s} - \Delta s = 0
+\end{equation}
+This algorithm seeks steady state solutions at pre-determined intervals of arc length $\Delta s$ rather than of the parameter $\Delta \lambda$. In Equation \ref{eq:alcaug}, the arc length equation establishes the relationship between $\Delta \lambda$ and $\Delta s$, and the residual equations establish the steady state solution at the corresponding value of $\lambda$.
+
+The augmented system can be expressed in matrix form as
+\begin{equation}
+\label{eq:augmat}
+\left[ \begin{array}{cc}
+\bfJ & \pdone{\bfR}{\lambda} \\
+\left( \pdone{\bfx}{s} \right)^T & \pdone{\lambda}{s}
+\end{array} \right]
+\left[ \begin{array}{c}
+\Delta \bfx \\
+\Delta \lambda
+\end{array} \right]
+= -
+\left[ \begin{array}{c}
+\bfR \\
+n
+\end{array} \right]
+\end{equation}
+where $\bfJ$, $\bfR$, and $\Delta \bfx$ are computed during each Newton iteration using a guessed value of $\lambda$. To solve the augmented system (Equation \ref{eq:augmat}), it is necessary to update both $\lambda$ and the solution update $\bfx$ at each iteration. While it is possible to simply construct the full $(N+1)\times (N+1)$ system and solve it once, the resulting matrix would be more dense than the original Jacobian. LOCA's bordering algorithm (see also \cite{jnsthesis}) exploits the typically sparse nature of $\bfJ$ by performing one resolve per iteration:
+\begin{gather}
+\label{eq:alcbord}
+\bfJ \bfa = -\bfR \\
+\bfJ \bfb = -\pdone{\bfR}{\lambda}
+\end{gather}
+where $\bfa$ and $\bfb$ are temporary vectors. The new updates are then found by:
+\begin{gather}
+\label{eq:alcupds}
+\Delta \lambda = - \left( n + \pdone{\bfx}{s} \cdot \bfa \right) / \left( \pdone{\lambda}{s} + \pdone{\bfx}{s} \cdot \bfb \right) \\
+\Delta \bfx = \bfa + \Delta \lambda \bfb
+\end{gather}
+Like all other LOCA bordering algorithms, this algorithm is called from the application code's nonlinear solver during each Newton iteration after the solution update is solved for but before the solution is updated (see step 2 of Section \ref{sec:implementation}). The convergence status of the bordering algorithm updates (true or false) is returned, and becomes an additional criterion for convergence of the nonlinear solver.
+
+\subsection{Arc Length Scaling and Step Size Control}
+\label{sec:arcsc}
+
+As discussed by Shadid \cite{jnsthesis}, it is numerically advantageous for the relative magnitudes of the parameter and solution updates to be of similar order. In particular, the advantage of using arc length parameterization can be lost if the solution contribution to the arc length equation becomes very small. In this algorithm, a single scaling factor $\Theta$ is used for the solution contribution in order to provide some control over the relative contributions of $\lambda$ and $\bfx$. The modified arc length equation is then
+\begin{equation}
+\label{eq:alescaled}
+\left( \pdone{\lambda}{s} \right)^2 + \Theta^2 \left\| \pdone{\bfx}{s} \right\|^2 = 1
+\end{equation}
+or equivalently
+\begin{equation}
+\label{eq:alcscaled}
+\left( \pdone{\lambda}{s} \right)^2 \left[ 1 + \Theta^2 \left\| \pdone{\bfx}{\lambda} \right\|^2 \right] = 1
+\end{equation}
+Equation \ref{eq:alcscaled} can be rearranged to find $\pdone{\lambda}{s}$:
+\begin{equation}
+\label{eq:dpds}
+\pdone{\lambda}{s} = \pm \left[ 1 + \Theta^2 \left\| \pdone{\bfx}{\lambda} \right\|^2 \right]^{-1/2}
+\end{equation}
+The sign of $\pdone{p}{s}$ is chosen to be the same as that of the quantity
+\begin{equation}
+\label{eq:dpdssign}
+\Theta^2 \left( \pdone{\bfx}{\lambda} \right)_i \cdot \left( \bfx_i - \bfx_{i-1} \right) + \left( \lambda_i - \lambda_{i-1} \right)
+\end{equation}
+such that $s$ increases as the parameter $p$ proceeds in the direction from $\lambda_{i-1}$ to $\lambda_i$ \cite{jnsthesis}. This also enables detection of when a turning point is passed, as $\pdone{\lambda}{s}$ will change sign there.
+
+The relevant inputs for arc length scaling are (see Section \ref{sec:cai} for implementation of these quantities):
+
+\begin{description}
+\item[$\lambda'^2_g$] Used to set the initial value of scale factor $\Theta$ and to periodically rescale the solution (default = 0.5).
+
+\item[$\lambda'_{max}$] Value of $\pdone{\lambda}{s}$ at which rescaling is invoked (default = 0.0).
+
+\item[$y$] Used to adjust parameter step size when solution vector changes rapidly (default = 0.0).
+
+\item[$\tau_m$] Used only when very small steps must be taken near a turning point (default = 0.0).
+\end{description}
+
+After the first step is completed, the initial value of $\Theta$ is found such that $\pdone{\lambda}{s} = g$, where $g$ is the square root of $\lambda'^2_g$:
+\begin{equation}
+\label{eq:ginit}
+{{\Theta}\over {\Theta_{old}}} = {{\left( \pdone{\lambda}{s} \right)}\over {g}} \sqrt{{1 - g^2}\over {1 - \left( \pdone{\lambda}{s} \right)^2}}
+\end{equation}
+and $\Theta_{old}$ is set to one initially. After each subsequent arc length step, the value of $\pdone{\lambda}{s}$ is recalculated, and if it exceeds $\lambda'_{max}$, Equation \ref{eq:ginit} is used to calculate the new $\Theta$ value which will restore $\pdone{\lambda}{s}$ to its target value $g$. However, if the new $\Theta$ value exceeds $10^8$, it is reset to $10^8$ and the new value of $\pdone{\lambda}{s}$ (which will then differ from $g$) is computed. Rescaling of the solution will change the values and step sizes of the arc length parameter $s$, but will not effect the solution.
+
+After completing the first step, an initial arc length step size is computed as
+\begin{equation}
+\label{eq:sinit}
+\Delta s_0 = \Delta \lambda_0 / \left( \pdone{\lambda}{s} \right)_0
+\end{equation}
+Thereafter, step size control for arc length continuation is achieved by the same methods as for parameter continuation (see Section \ref{sec:tp}), except that the arc length step $\Delta s$ is used in Equation \ref{eq:simplestep} rather than $\Delta p$. However, the limits $\Delta \lambda_{min}$ and $\Delta \lambda_{max}$ still apply to $\Delta \lambda$, which is estimated as $\pdone{\lambda}{s} \Delta s$. If this estimate exceeds $\Delta \lambda_{max}$, then $\Delta s$ is adjusted proportionately. For the final step, $\Delta s$ is estimated such that $\lambda$ will reach its end value $\lambda_e$, although it may not reach this value exactly.
+
+As in first order continuation, the tangent vector $\pdone{\bfx}{\lambda}$ is computed by one linear solve after each successful step, and the initial solution guess at the next step is computed from it. The tangent vector also provides a means of detecting how fast the solution vector changes as the parameter is advanced. An indicator of this rate of change is the tangent factor:
+\begin{equation}
+\label{eq:taud}
+\tau = {{\left( \pdone{\bfx}{\lambda} \right)_i \cdot \left( \pdone{\bfx}{\lambda} \right)_{i-1}}\over {\left\| \pdone{\bfx}{\lambda} \right\|_i \left\| \pdone{\bfx}{\lambda} \right\|_{i-1}}}
+\end{equation}
+$\tau$ is the cosine of the angle between two successive tangent vectors, which varies from $1$ when $\bfx$ varies linearly with $\lambda$ toward zero as $\bfx$ changes more rapidly with $\lambda$, such as when approaching a turning point. An additional means of step control enables the step size to be reduced based on $\tau$:
+\begin{equation}
+\label{eq:tfact}
+\Delta s = \Delta s \tau^y
+\end{equation}
+Here, the value of $\Delta s$ computed by Equation \ref{eq:simplestep} is further adjusted by a factor of $\tau$ raised to the power $y$, such that the degree of step control can be adjusted by changing $y$. (This step control helps generate visually appealing continuation plots. When plotting arclength continuation results, a solution curve is approximated by piecewise linear segments, and basing the step size on $\tau$ controls the discontinuity in the slope between those segments, avoiding jagged curves.)
+
+For some problems with complex turning points, difficulties may arise if a converged step takes the solution from a region of minor solution sensitivity to one of large solution sensitivity (to the continuation parameter). This may occur when the parameter value for the step is much closer to the turning point than the previous value, and would be indicated by a small value of $\tau$. Consequently, the next step attempt could be considerably larger than would be required to reach the turning point, and numerous failed steps could occur. For even greater step size control, the tangent factor step limit $\tau_m$ can be invoked by setting its input value between zero and one. After each converged step, the tangent vector and $\tau^y$ are immediately calculated. If $\tau^y$ is less than the specified $\tau_m$, the step is treated as a failure and repeated at smaller step sizes until $\tau^y$ increases to at least $\tau_m$. This degree of control should rarely be necessary.
+
+%###################################################################
+\section{Bifurcation Tracking Algorithms}
+\label{sec:bt}
+In this section we describe the methods implemented in the LOCA library for locating three common instabilities exhibited in nonlinear systems: turning (fold) point, pitchfork, and Hopf bifurcations. Each of the algorithms solves simultaneously for the steady state solution vector $\bfx$ of length $n$, the parameter at which the bifurcation occurs, $\lambda$, and the null vector $\bfw = \bfy + \bfz i$, which is the eigenvector associated with the eigenvalue that has zero real part. The bifurcations are tracked as a function of a second parameter via simple zero order continuation.
+
+\subsection{The Turning (Fold) Point Tracking Algorithm}
+\label{sec:tp}
+
+The turning point tracking algorithm uses Newton's method to converge to a turning point (fold point) and simple zero order continuation to track it as a function of a second parameter. At a turning point bifurcation (or fold), there is a single eigenvalue $\gamma=0$ with associated real-valued null vector $\bfy$. 
+We use the following formulation of to characterize the turning point \cite{moore80}: 
+\begin{gather}
+\label{eq:tp}
+\bfR=\bfzero \\
+\bfJ \bfy = \bfzero \\
+\phi \cdot \bfy = 1 \label{eq:tpnorm}
+\end{gather}
+Here $\phi$ is a constant vector.  The first vector equation (which is $n$ scalar equations) specifies that the solution be on the steady state solution branch, the second vector equation specifies that a real-valued eigenvector $\bfy$ exists that corresponds to a zero eigenvalue, and the last scalar equation pins the length of the null vector at length $1$ (and removes the trivial solution if $\bfy=0$). The vector $\phi$ is chosen to be the same as the initial guess for $\bfy$ so that the final equation mimics a $L^2$ norm yet is linear. This set of $2n+1$ equations specifies the values of $\bfx$, $\bfy$, and $\lambda$.
+
+A full Newton method for this system has the form
+\begin{equation}
+\label{eq:tpn}
+\left[\begin{array}{ccc}
+\bfJ & \bfzero & \pdone{\bfR}{\lambda} \\
+\pdone{\bfJ \bfy}{\bfx} & \bfJ & \pdone{\bfJ \bfy}{\lambda} \\
+\bfzero^T & \phi & 0 
+\end{array}\right]
+\left[\begin{array}{c}
+\Delta\bfx \\
+\Delta\bfy \\
+\Delta\lambda
+\end{array}\right]
+= -
+\left[\begin{array}{c}
+\bfR \\
+\bfJ \bfy \\
+\phi \cdot \bfy - 1
+\end{array}\right]
+\end{equation}
+
+It would be desirable to formulate this system and send it to an efficient linear solver, but this is not practical with many large-scale engineering simulation codes. One hurdle would be the formulation of the matrix $\pdone{\bfJ \bfy}{\bfx} \bfy$, which requires derivatives not normally calculated in an engineering code and does not lend itself well to efficient numerical differentiation. The second issue is the work involved in determining the sparse matrix storage for iterative linear solvers and partitioning and load balancing for applications sent to parallel computers. The last row and column are not in general sparse and would require frequent global communications. The sparsity of the matrix $\bfJ$ coming from many PDE solution methods (e.g. finite element, finite difference, finite volume) limits communications in the linear solver to only local communications between a processor and a handful (order ten) of its neighbors.
+
+To reduce the effort in implementing the bifurcation algorithms with application codes, bordering algorithms are used to solve the system of equations in (\ref{eq:tp}). The linear equations in the Newton iteration for the turning point algorithm (\ref{eq:tp}) can be equivalently formulated with four linear solves of the matrix $\bfJ$ and some simple algebra:
+\begin{gather}
+\bfJ \bfa = -\bfR \label{eq:tpa}\\
+\bfJ \bfb = -\pdone{\bfR}{\lambda} \label{eq:tpb}\\
+\bfJ \bfc = -\pdone{\bfJ \bfy}{\bfx} \bfa \label{eq:tpc}\\
+\bfJ \bfd = -\pdone{\bfJ \bfy}{\bfx} \bfb -  \pdone{\bfJ \bfy}{\lambda} \label{eq:tpd}\\
+\nonumber \\
+\Delta\lambda = {{1 - \phi \cdot \bfc}\over {\phi \cdot \bfd}} \\
+\Delta\bfx = \bfa + \Delta\lambda \bfb \\
+\Delta\bfy = \bfc + \Delta\lambda \bfd - \bfy
+\end{gather}
+The variables $\bfa$, $\bfb$, $\bfc$ and $\bfd$ are temporary vectors of length $n$. Each of the $4$ linear solves of $\bfJ$ are performed by the application code, in the same way that this matrix is solved for in Newton iteration (\ref{eq:newton}). Work can be saved in the second, third, and fourth solves, by reusing a factorization for a direct solver and the preconditioner for an preconditioned iterative solver. The algorithm requires initial guesses for $\bfx$ and $\lambda$, which usually come from a steady solution near the turning point as located by an arclength continuation run. LOCA supports the use of an initial null vector from a previous turning point tracking run of the problem if one is provided; otherwise, the initial guess for the null vector and the fixed value of the vector $\phi$ are both chosen to be
+scaled versions of the $\bfb$ vector from Equation (\ref{eq:tpb}),
+\begin{equation}
+\bfy^{init} = \phi = {\bfb \over {\|\bfb\|}}
+\end{equation}
+where $\|\bfb\| = \sqrt{\bfb \cdot \bfb}$ This scaling assures that Equation (\ref{eq:tpnorm}) is initially satisfied.
+
+The derivatives on the right hand side of Equations (\ref{eq:tpb} -- \ref{eq:tpd}) are all calculated with first order finite differences and directional derivatives. The following formulas are used:
+\begin{gather}
+\label{eq:tpdiff}
+\pdone{\bfR}{\lambda} \approx { {\bfR(\bfx,\lambda + \varepsilon_1) - \bfR(\bfx,\lambda)} \over {\varepsilon_1}} \\
+\pdone{\bfJ \bfy}{\bfx} \bfa \approx { {\bfJ(\bfx + \varepsilon_2 \bfa,\lambda) \bfy - \bfJ(\bfx,\lambda) \bfy} \over {\varepsilon_2}} \\
+\begin{split}
+\pdone{\bfJ \bfy}{\bfx} \bfb & + \pdone{\bfJ \bfy}{\lambda} \approx  \\
+{1 \over \varepsilon_3}\bfJ(\bfx + \varepsilon_3 \bfb,\lambda) \bfy
++ {1 \over \varepsilon_1}\bfJ(\bfx,\lambda + &\varepsilon_1) \bfy
+- \left( {1 \over \varepsilon_3} + {1 \over \varepsilon_1}\right)\
+\bfJ(\bfx,\lambda) \bfy 
+\end{split}
+\end{gather}
+The robustness and accuracy of the algorithm is dependent on the choice of the perturbations $\varepsilon$. The following choices have been found to work well on sample applications for $\delta=10^{-6}$:
+\begin{gather}
+\label{eq:tppert}
+\varepsilon_1 = \delta (|\lambda| + \delta) \\
+\varepsilon_2 = \delta ({\|\bfx\| \over \|\bfa\|} + \delta) \\
+\varepsilon_3 = \delta ({\|\bfx\| \over \|\bfb\|} + \delta)
+\end{gather}
+However, some problems have been observed to require an even smaller value, such as $\delta=10^{-9}$. For this reason, the value to be used is an input to LOCA and must be provided as discussed in Chapter \ref{ch:structures}.
+
+After convergence to a turning point, a slight modification of simple zero order continuation is used to converge to the next turning point at the next value of a second parameter. The initial guesses for $\lambda$ and $\bfy$ are the converged values at the previous turning point, and the constant vector is set to $\phi=\bfy$. We found more robust convergence when the solution vector $\bfx$ was perturbed off the singularity by a small random perturbation of relative magnitude $10^{-5}$.
+
+
+\subsection{The Pitchfork Tracking Algorithm}
+\label{sec:pf}
+
+An algorithm for tracking Pitchfork bifurcations has been developed that requires little modifications to the application code and model. Pitchfork bifurcations occur when a symmetric solution loses stability to a pair of asymmetric solutions. In this algorithm, we require that the user defines the symmetry by supplying a constant vector, $\psi$, that is antisymmetric with respect to the symmetry being broken. We specify the Pitchfork by the following set of coupled equations:
+\begin{gather}
+\label{eq:pf}
+\bfR + \sigma \psi =\bfzero \\
+\bfJ \bfy = \bfzero\\
+\langle \bfx , \psi \rangle = 0 \label{eq:pfsym} \\
+\phi \cdot \bfy = 1 \label{eq:pfnorm}
+\end{gather}
+The variable not defined in the turning point algorithm above is the scalar variable $\sigma$ that is a slack variable representing the asymmetry in the problem. This additional unknown is associated with the additional equation \ref{eq:pfsym}, which enforces that the solution vector is orthogonal to the antisymmetric vector. The notation in this equation represents an inner product. For a symmetric model, $\sigma$ will go to zero at the solution. This system can be shown to be a non-singular formulation of the Pitchfork bifurcation.
+
+We find this to be a convenient alternative to formulating the pitchfork tracking algorithm on half the domain with symmetric boundary conditions for the solution and antisymmetric bounday conditions for the bifurcation problem \cite{tavener01}. For one, the applying of symmetry boundary conditions for some
+symmetries (e.g. rotational symmetry) can break the sparsity pattern of a Jacobian matrix, and therefore the parallel communication maps. Secondly, it can be inconvenient
+to transfer solutions from half the domain onto the the whole domain when dealing with large databases for meshes and solutions. With our formulation, the same mesh and
+boundary conditions are used to locate the pitchfork bifurcation as to follow one of the pitchfork (non-symmetric) branches. However, the gains in efficiency of only solving half the domain make the traditional approach appealing.
+
+There are a few assumptions that were made to ease the implementation of the Pitchfork tracking algorithm, yet can make it trickier to use. First, we require that any odd symmetry in the variables is about zero so that the inner product of the solution vector with the antisymmetric vector is zero. For instance, the cold and hot temperatures in a thermal flow problem should be set at $-0.5$ and $0.5$ instead of $0$ and $1$. Secondly, our current implementation uses a dot product of the vectors to calculate the inner product $\langle \bfx , \psi \rangle$; however, this strictly should be an integral over the computational domain. For instance, if the discretization (i.e. finite element mesh) is not symmetric with respect to the symmetry in the PDEs, then the dot product of the solution vector and antisymmetric coefficient vectors would not be zero. We allow the users of the LOCA library to supply the integrated inner product, yet in our applications we have replaced it with the vector dot product. If the mesh is not symmetric with respect to the symmetry in the PDEs that is being broken at the Pitchfork bifurcation, the discretized system will exhibit an imperfect bifurcation. The algorithm presented here will converge to a point that is a reasonable approximation of the Pitchfork bifurcation. However, at this point $\sigma \neq 0$ and therefore we will not have $\bfR=0$.
+
+To start the algorithm, we expect the user to supply the vector $\psi$. The null vector $\bfy$ has the antisymmetry that we are requiring of $\psi$. We calculate $\psi$ and the initial guess for $\bfy$ by first detecting the Pitchfork bifurcation with an eigensolver. The eigenvector associated with the eigenvalue that is passing through zero at the Pitchfork is used for $\psi$ and the initial guess for $\bfy$. For problems that have multiple pitchfork bifurcations in the same region of parameter space, which is often the case when the system can go unstable to different modes, the pitchfork algorithm can be started multiple times with different $\psi$ vectors to track each pitchfork separately. We choose $\sigma=0$ as an initial guess and we rarely see it increase past $10^{-10}$ throughout the iterations.
+
+We have tried a few different vectors for the constant vector $\phi$, which is used to get an approximate norm of the null vector $\bfy$.
+
+As with the turning point algorithm, we use a fully coupled Newton method to converge to the Pitchfork bifurcation and a bordering algorithm to simplify the solution of the Newton iteration. The Newton iteration for this system is
+\begin{equation}
+\label{eq:pfn}
+\left[\begin{array}{cccc}
+\bfJ & \bfzero & \psi & \pdone{\bfR}{\lambda} \\
+\pdone{\bfJ \bfy}{\bfx} & \bfJ & \bfzero & \pdone{\bfJ \bfy}{\lambda} \\
+\pdone{\langle \bfx , \psi \rangle}{x} & \bfzero & \bfx^T & 0 \\
+\bfzero & \phi & 0 & 0
+\end{array}\right]
+\left[\begin{array}{c}
+\Delta\bfx \\
+\Delta\bfy \\
+\Delta\sigma \\
+\Delta\lambda
+\end{array}\right]
+= -
+\left[\begin{array}{c}
+\bfR \\
+\bfJ \bfy \\
+\langle \bfx , \psi \rangle \\
+\phi \cdot \bfy - 1
+\end{array}\right]
+\end{equation}
+
+This system can be solved using a mathematically (but not numerically) equivalent bordering algorithm:
+\begin{gather}
+\bfJ \bfa = -\bfR \label{eq:pfa}\\
+\bfJ \bfb = -\pdone{\bfR}{\lambda} \label{eq:pfb}\\
+\bfJ \bfc = -\psi \label{eq:pfc}\\
+\bfJ \bfd = -\pdone{\bfJ \bfy}{\bfx} \bfa \label{eq:pfd}\\
+\bfJ \bfe = -\pdone{\bfJ \bfy}{\bfx} \bfb -  \pdone{\bfJ \bfy}{\lambda} \label{eq:pfe}\\
+\bfJ \bff = -\pdone{\bfJ \bfy}{\bfx} \bfc \label{eq:pff} \\
+\nonumber \\
+\Delta\sigma = -\sigma +  {{(\langle \bfx , \psi \rangle + \langle \bfb , \psi \rangle})
+\phi \cdot \bfe + \langle \bfb , \psi \rangle (1 - \phi \cdot \bfd)
+\over{\langle \bfb , \psi \rangle \phi \cdot \bfb - \langle \bfc , \psi \rangle \phi \cdot \bfe}} \\
+\Delta\lambda = {{1 - \phi \cdot \bfd - \phi \cdot \bff (\Delta\sigma + \sigma)}
+\over {\phi \cdot \bfe}} \\
+\Delta\bfx = \bfa + \Delta\lambda \bfb + (\Delta\sigma + \sigma) \bfc \\
+\Delta\bfy = \bfd + \Delta\lambda \bfe + (\Delta\sigma + \sigma) \bff - \bfy 
+\end{gather}
+
+This algorithm has $6$ temporary vectors $(\bfa, \bfb, \bfc, \bfd, \bfe, \mbox{and} \bff)$, each of which is the result of a linear solve with the same matrix $\bfJ$. The vector $\bfc$ does not vary throughout the Newton iteration so this solve is only performed on the first Newton iteration of each solve to a pitchfork bifurcation.
+The right hand sides of these $6$ linear systems are mostly the same as for the turning point algorithm, and so we reuse the same routines (and therefore the same differencing schemes and perturbations) that were presented above (equations \ref{eq:tpdiff} and \ref{eq:tppert}).
+
+\subsection{The Hopf Point Tracking Algorithm}
+\label{sec:hopf}
+The algorithm for tracking Hopf bifurcations is characterized by a complex pair of eigenvalues that have a zero real part.  The purely imaginary eigenvalues can be written $\gamma = \pm\omega i$ with complex eigenvectors $\bfw = \bfy + \bfz i$. By separating the real and complex parts, the following set of equations can be used to describe a Hopf bifurcation in real arithmetic \cite{jepson81,griewank83},
+\begin{gather}
+\label{eq:hp}
+\bfR=\bfzero \\
+\bfJ \bfy = - \omega \bfB \bfz \\
+\bfJ \bfz =  \omega \bfB \bfy \\
+\phi \cdot \bfy = 1 \label{eq:hpnorm} \\
+\phi \cdot \bfz = 0 \label{eq:hpnorm2}
+\end{gather}
+where $\bfB$ is the matrix of coefficients of time dependent terms.  This system of $3N+2$ equations and unknowns solves for the the solution vector [$\bfx$, $\bfy$, $\bfz$, $\omega$, and $\lambda$]. The first vector equation specifies that we are on the solution branch, the next two equations specify that we are at place where there is a purely imaginary eigenvalue, and the last two scalar equations set the phase and amplitude of the eigenvectors (which are otherwise free).  The Hopf bifurcation tracking algorithm is the complex valued equivalent to the real valued turning point tracking algorithm. Setting $\omega$ to zero yields two redundant turning point tracking algorithms.  Also note that the same Hopf bifurcation can admit a second solution to this system of equations at ($\bfx$, $\bfy$, -$bfz$, $-\omega$, $\lambda$).
+
+One Newton iteration for the fully coupled solution of this system is the linear system,
+\begin{equation}
+\label{eq:hpn}
+\begin{split}
+\left[\begin{array}{ccccc}
+\bfJ & \bfzero & \bfzero & 0 & \pdone{\bfR}{\lambda} \\
+\pdone{\bfJ \bfy}{\bfx} + \omega \pdone{\bfB \bfz}{\bfx} & \bfJ & \omega \bfB & \bfB \bfz & \pdone{\bfJ \bfy}{\lambda} + \omega \pdone{\bfB \bfz}{\lambda}\\
+\pdone{\bfJ \bfz}{\bfx} - \omega \pdone{\bfB \bfy}{\bfx} & -\omega \bfB & \bfJ & - \bfB \bfy & \pdone{\bfJ \bfz}{\lambda} - \omega \pdone{\bfB \bfy}{\lambda}\\
+\bfzero & \phi & \bfzero & 0 & 0 \\
+\bfzero & \bfzero & \phi & 0 & 0 
+\end{array}\right]
+\left[\begin{array}{c}
+\Delta\bfx \\
+\Delta\bfy \\
+\Delta\bfz \\
+\Delta\omega \\
+\Delta\lambda
+\end{array}\right]
+= -
+\left[\begin{array}{c}
+\bfR \\
+\bfJ \bfy + \omega \bfB \bfz\\
+\bfJ \bfz - \omega \bfB \bfy\\
+\phi \cdot \bfy - 1 \\
+\phi \cdot \bfz
+\end{array}\right]
+\end{split}
+\end{equation}
+In this derivation we have allowed for $\pdone{\bfB}{\bfx} \neq 0$ and $\pdone{\bfB}{\lambda} \neq 0$. While in many situations these terms can be neglected, the matrix $\bfB$ can depend on the solution vector through dependence of the inertial coefficients (e.g. density and heat capacity) on the local state vector. The matrix $\bfB$ will depend on the parameter very strongly when $\lambda$ is a geometric parameter that moves the mesh locations. 
+
+Again we solve this linear system by a bordering algorithm that breaks it into simpler linear solves. It is not possible to solve this system by solves of just the matrix $\bfJ$, but also requires solves of the complex matrix $\bfJ + \omega \bfB i$. The bordering algorithm for the Newton iteration of the Hopf tracking algorithm, written in terms of real-valued variables, is,
+\begin{gather}
+\bfJ \bfa = -\bfR \\
+\bfJ \bfb = -\pdone{\bfR}{\lambda}\\
+\left[\begin{array}{cc} \bfJ & \omega \bfB \\ -\omega \bfB & \bfJ \end{array}\right]
+\left[\begin{array}{c} \bfc \\ \bfd \end{array}\right] =
+\left[\begin{array}{c} \bfB \bfz \\ -\bfB \bfy \end{array}\right] 
+\\
+\left[\begin{array}{cc} \bfJ & \omega \bfB \\ -\omega \bfB & \bfJ \end{array}\right]
+\left[\begin{array}{c} \bfe \\ \bff \end{array}\right] =
+\left[\begin{array}{c} -(\pdone{\bfJ \bfy}{\bfx} + \omega \pdone{\bfB \bfz}{\bfx}) \bfa \\ -(\pdone{\bfJ \bfz}{\bfx} - \omega \pdone{\bfB \bfy}{\bfx}) \bfa \end{array}\right]
+\\
+\left[\begin{array}{cc} \bfJ & \omega \bfB \\ -\omega \bfB & \bfJ \end{array}\right]
+\left[\begin{array}{c} \bfg \\ \bfh \end{array}\right] =
+\left[\begin{array}{c} -(\pdone{\bfJ \bfy}{\bfx} + \omega \pdone{\bfB \bfz}{\bfx}) \bfb - (\pdone{\bfJ \bfy}{\lambda} + \omega \pdone{\bfB \bfz}{\lambda}) \\ -(\pdone{\bfJ \bfz}{\bfx} - \omega \pdone{\bfB \bfy}{\bfx}) \bfb - (\pdone{\bfJ \bfz}{\lambda}
+- \omega \pdone{\bfB \bfy}{\lambda}) \end{array}\right] \\
+\nonumber \\
+\Delta\lambda = {{(\phi \cdot \bfc) (\phi \cdot \bff) - (\phi \cdot \bfe) (\phi \cdot \bfd) + (\phi \cdot \bfd)}
+\over {(\phi \cdot \bfd) (\phi \cdot \bfg) - (\phi \cdot \bfc) (\phi \cdot \bfh)}} \\
+\Delta\omega = {{(\phi \cdot \bfh) \Delta\lambda + (\phi \cdot \bff)}
+\over {\phi \cdot \bfd}}\\
+\Delta\bfx = \bfa + \Delta\lambda \bfb \\
+\Delta\bfy = \bfe + \Delta\lambda \bfg - \Delta\omega \bfc - \bfy \\
+\Delta\bfz = \bff + \Delta\lambda \bfh - \Delta\omega \bfd - \bfz
+\end{gather}
+This algorithm has $8$ temporary vectors $\bfa$ through $\bfh$, which are solved with two solves of the $\bfJ$ matrix and three solves of the $2n \times 2n$ matrix
+$\left[\begin{array}{cc} \bfJ & \omega \bfB \\ -\omega \bfB & \bfJ \end{array}\right]$.
+This algorithm differs from the turning point and pitchfork tracking algorithms which only require solution of the steady state Jacobian $\bfJ$, a routine which codes using Newton's method already have. Since the location of the nonzeros in the sparse matrix $\bfB$ are a subset of those for the matrix $\bfJ$, a parallel iterative solver for the $2n \times 2n$ matrix can use the same local communication maps as used for solces of $\bfJ$. An algorithm for solving complex matrix equations with a real-valued sparse iterative solver has recently been published 
+\cite{day00}
+and implemented in the Komplex extension to the Aztec library of preonditioned iterative Krylov solvers. This algorithm also requires the formulation of the $\bfB$ matrix, a routine which a code performing linear stability analysis of equation \ref{eq:eig} will already have.
+ 
+To initialize the routine, we assume that an initial Hopf bifurcation has been detected with an eigensolver, by having the real part of a complex pair of eigenvalues pass through zero with successive steps in the parameter. This gives good starting values for all the unknowns in the Hopf tracking algorithm. 
+
+\subsection{The Phase Transition Tracking Algorithm}
+\label{sec:pt}
+
+A phase transition occurs when two different phases (i.e. liquid and vapor) can coexist under the exact same thermodynamic conditions and have the same free energy.
+The phase transition tracking algorithm uses Newton's method to converge to a parameter value and two solution vectors which have equal free energies. Simple zero order continuation tracks the phase transition as a function of a second parameter. Use of this algorithm in the Tramonto code usually has a partial pressure as the first `bifurcation' parameter, and temperature as the second continuation parameter. We characterize the phase transition by the following set of  $2n+1$ equations:
+\begin{gather}
+\label{eq:pt}
+\bfR(\bfx_1,\lambda)=\bfzero \\
+\bfR(\bfx_2,\lambda)=\bfzero \\
+G = \Omega(\bfx_1,\lambda) - \Omega(\bfx_2,\lambda) = 0 \label{eq:ptenergy}
+\end{gather}
+Here $\bfx_1$ and $\bfx_2$ are two solution vectors and $\Omega$ is the expression for the free energy.
+
+A full Newton method for this system has the form
+\begin{equation}
+\label{eq:ptn}
+\left[\begin{array}{ccc}
+\bfJ_1 & \bfzero & \pdone{\bfR_1}{\lambda} \\
+\bfzero & \bfJ_2 & \pdone{\bfR_2}{\lambda} \\
+\pdone{\Omega_1}{\bfx_1} & -\pdone{\Omega_2}{\bfx_2} &  \pdone{G}{\lambda}
+\end{array}\right]
+\left[\begin{array}{c}
+\Delta\bfx_1 \\
+\Delta\bfx_2 \\
+\Delta\lambda
+\end{array}\right]
+= -
+\left[\begin{array}{c}
+\bfR_1 \\
+\bfR_2 \\
+G
+\end{array}\right]
+\end{equation}
+Here the subscript $i$ on the variable $\bfR$, $\bfJ$, and $\Omega$ represent evaluation with solution vector $\bfx_i$.
+
+As in the bifurcation tracking algorithms above, a bordering algorithm is used to solve the system of equations in (\ref{eq:pt}). The linear equations in the Newton iteration for the turning point algorithm (\ref{eq:pt}) can be equivalently formulated with two linear solves of the matrix $\bfJ_1$, two of the matrix $\bfJ_2$, some simple algebra:
+\begin{gather}
+\bfJ_1 \bfa = -\bfR_1 \\
+\bfJ_1 \bfb = -\pdone{\bfR_1}{\lambda} \\
+\bfJ_2 \bfc = -\bfR_2 \\
+\bfJ_2 \bfd = -\pdone{\bfR_2}{\lambda} \\
+\nonumber \\
+\Delta\lambda = - {{G + (\pdone{\Omega_1}{\bfx_1} \bfa - \pdone{\Omega_2}{\bfx_2} \bfc)} \over {\pdone{G}{\lambda} + (\pdone{\Omega_1}{\bfx_1} \bfb - \pdone{\Omega_2}{\bfx_2} \bfd)}} \label{eq:ptdl} \\
+\Delta\bfx_1 = \bfa + \Delta\lambda \bfb \\
+\Delta\bfx_2 = \bfc + \Delta\lambda \bfd
+\end{gather}
+The variables $\bfa$, $\bfb$, $\bfc$ and $\bfd$ are temporary vectors of length $n$. The quantities in equation \ref{eq:ptdl} with the $\pdone{\Omega}{\bfx}$ terms can be quickly approximated with directional derivatives, such as,
+\begin{equation}
+\pdone{\Omega_1}{\bfx_1} \bfa - \pdone{\Omega_2}{\bfx_2} \bfc \approx 
+{{G(\bfx_1 + \varepsilon \bfa, \bfx_2 + \varepsilon \bfc) - 
+G(\bfx_1, \bfx_2)} \over {\varepsilon}}
+\end{equation}
+where the perturbation is chosen as
+\begin{equation}
+\varepsilon = \delta \sqrt{ {{\bfx_1 \cdot \bfx_1}\over{\bfa \cdot \bfa + \delta}}
++ {{\bfx_2 \cdot \bfx_2}\over{\bfc \cdot \bfc + \delta}}}
+\end{equation}
+with $\delta=10^{-6}$.
+
+The algorithm requires initial guesses for $\bfx_1$, $\bfx_2$ and $\lambda$, which usually come from picking two solutions from near a phase transition from an arclength continuation run. As with the bifurcation tracking algorithms, the strength of the phase transition algorithm is not locating the first occurrence, but the automatic tracking of the phase transition with respect to a second parameter.
+
+
+\section{Linearized Stability Analysis}
+The stability of the steady solutions to small perturbations can be ascertained through linearized stability analysis. Linearization of the transient equations around the steady state lead to a generalized eigenvalue problem of the form
+\begin{equation}
+\label{eq:eig}
+\bfJ \bfw = \gamma \bfB \bfw,
+\end{equation}
+where $\bfB$ is the matrix of coefficients of time dependent terms, $\gamma$ is an eigenvalue of the system (generally complex), and $\bfw$ is the associated eigenvector, which can be written in terms of real values vectors $\bfw = \bfy + \bfz i$. The linear theory shows that a perturbation in the solution vector in the direction of $\bfw$ will evolve in time ($t$) with amplitude $e^{\gamma t}$. It is clear from this that a solution will be linearly stable if all eigenvalues satisfy $\mbox{Real}(\gamma) < 0$, and therefore decay in time. If any eigenvalue has positive real part, then perturbations with any component in the direction of the associated eigenvector will grow exponentially, and the steady state solution is deemed unstable. A system loses stability, and experiences a bifurcation, when a stable steady state solution branch, as parameterized by a system parameter $\lambda$, passes through a point where $\mbox{Real}(\gamma)=0$. 
+
+We have developed a robust linearized stability analysis capability for large scale problems that accurately approximates leading eigenvalues of the system in equation \ref{eq:eig}. This method is based on the Cayley transformation to make the eigenvalues of interest have largest magnitude, and then uses the implicitly restarted Arnoldi method of the ARPACK and P\_ARPACK libraries \cite{lehoucq98b, maschhoff96}. Details of the methods are found in \cite{lehoucq01} and benchmarking and application of the methods to incompressible flows are found in \cite{Burroughs01}, \cite{lehoucq98}, \cite{salinger99a}.

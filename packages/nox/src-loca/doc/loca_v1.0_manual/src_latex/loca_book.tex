@@ -1,0 +1,215 @@
+%#################################################
+% LOCA: Library of Continuation Alogorithms 
+% Version 1.0 Theory Manual and User's Guide
+% Authors: A.G. Salinger, R.P. Pawlowski, L.A. Romero,
+%          R.B. Lehoucq, E.A. Burroughs,
+%          E.D. Wilkes, and N.M. Bou-Rabee
+%##########################################
+% LOCA 1.0: Library of Continuation Algorithms
+% Copyright (C) 2001 Sandia Corporation
+
+\documentclass[12pt]{report}
+
+% Packages
+%#########
+\usepackage{epsfig}
+\usepackage{array}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{afterpage}
+%\usepackage{subfigure}
+%\usepackage{subeqn}
+%\usepackage{supertabular}
+%\usepackage{ubthesis}
+
+%Paragraph Formats
+%#################
+\setlength{\parindent}{0.0in}
+%\setlength{\textwidth}{6.0in}
+\setlength{\textheight}{8.1in}
+\setlength{\topmargin}{0.6in}
+\setlength{\headsep}{0.4in}
+\setlength{\parskip}{2.0ex} 
+%\renewcommand{\baselinestretch}{1.76} 
+%\renewcommand{\topfraction}{0.9}
+
+%############# Document Specific Commands Go Here ############ 
+\newtheorem{theorem}{Theorem}
+\newtheorem{example}{Example}
+\newtheorem{demonstration}{Demonstration}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+\newtheorem{definition}{Definition}
+%############# Set New Commands Here ############ 
+\newcommand{\pdtwo}[2]{\frac{\partial ^2#1}{\partial #2^2}}
+\newcommand{\bfJ}{ {\bf J}}
+\newcommand{\bfB}{ {\bf B}}
+\newcommand{\bfR}{ {\bf R}}
+\newcommand{\bfzero}{ {\bf 0}}
+\newcommand{\bfu}{ {\bf u}}
+\newcommand{\pdone}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\odone}[2]{\frac{d #1}{d #2}}
+\newcommand{\bfee}{ {\bf e}}
+\newcommand{\hatt}{\hat{t}}
+\newcommand{\dotbfx}{\dot{\bfx}}
+\newcommand{\bfcf}{ {\bf F}}
+\newcommand{\bfa}{ {\bf a}}
+\newcommand{\bfb}{ {\bf b}}
+\newcommand{\bfc}{ {\bf c}}
+\newcommand{\bfd}{ {\bf d}}
+\newcommand{\bfe}{ {\bf e}}
+\newcommand{\bff}{ {\bf f}}
+\newcommand{\bfg}{ {\bf g}}
+\newcommand{\bfh}{ {\bf h}}
+\newcommand{\bfl}{ {\bf l}}
+\newcommand{\bfx}{ {\bf x}}
+\newcommand{\bfy}{ {\bf y}}
+\newcommand{\bfz}{ {\bf z}}
+\newcommand{\bfr}{ {\bf r}}
+\newcommand{\bfv}{ {\bf v}}
+\newcommand{\bfw}{ {\bf w}}
+\newcommand{\bfphi}{ {\bf \phi}}
+\newcommand{\hatsig}{\hat{\sigma}}
+\newcommand{\threevec}[3]
+{ \left( \begin{array}{c} #1 \\ #2 \\#3 \end{array} \right) }
+\newcommand{\twovec}[2]{ \left( \begin{array}{c} #1 \\ #2 \end{array} \right) }
+\newcommand{\hatk}{\hat{k}}
+\newcommand{\hatp}{\hat{p}}
+\newcommand{\hatu}{\hat{u}}
+\newcommand{\hatv}{\hat{v}}
+\newcommand{\hatw}{\hat{w}}
+\newcommand{\hatx}{\hat{x}}
+\newcommand{\haty}{\hat{y}}
+\newcommand{\hatz}{\hat{z}}
+\newcommand{\hatct}{\hat{T}}
+\newcommand{\ace}{\'{e}}
+\newcommand{\trans}{^{\mathsf{T}}}
+%################################################
+
+\begin{document}
+\begin{center}
+SAND2002-0396\\
+Unlimited Release\\
+Printed March 2002
+
+\vskip 28pt
+{\bf {\huge LOCA 1.0}\vspace{3pt} \\
+{\LARGE Library Of Continuation Algorithms:\vspace{3pt}\\
+{Theory and Implementation Manual}}}
+\vskip 28pt
+
+Andrew~G.~Salinger, Nawaf~M.~Bou-Rabee, Roger~P.~Pawlowski, and Edward~D.~Wilkes\\
+Parallel Computational Sciences Department 
+
+Elizabeth~A.~Burroughs, Richard~B.~Lehoucq, and Louis~A.~Romero \\
+Computational Mathematics and Algorithms Department
+
+Sandia National Laboratories \\
+P.O. Box 5800\\
+Albuquerque, NM 87185-1111
+
+\vskip 48pt
+{\Large\bf Abstract }\\
+\vskip 12pt
+
+LOCA, the Library of Continuation Algorithms, is a software library for performing stability analysis of large-scale applications. LOCA enables
+ the tracking of solution branches as a function of a system parameter, the direct tracking of bifurcation points, and, when linked with the ARPACK library, a linear stability analysis capability. It is designed to be easy to implement around codes
+that already use Newton's method to converge to steady-state solutions. 
+The algorithms are chosen to work for large problems, such as those that arise from
+ discretizations of partial differential equations, and to run on distributed memory parallel machines. This manual presents LOCA's continuation and bifurcation analysis
+algorithms, and instructions on how to implement LOCA with an application code. The 
+LOCA code is being made publicly available at \texttt{www.cs.sandia.gov/loca}.
+
+%no number on cover page
+\setcounter{page}{3}
+
+\end{center}
+\clearpage
+
+%\maketitle
+\sloppy
+\pagestyle{headings}
+
+% Make table of contents
+\tableofcontents
+\clearpage
+
+%\pagenumbering{arabic}
+%Chapter 1 - Introduction
+\setcounter{equation}{0}
+\renewcommand{\theequation}{\thechapter.\arabic{equation}}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+\setcounter{section}{0}
+\renewcommand{\thesection}{\thechapter.\arabic{section}}
+\setcounter{table}{0}
+\renewcommand{\thetable}{\thechapter.\arabic{table}}
+\input{loca_chap1.tex}
+
+%Chapter 2 - Algorithms
+\setcounter{equation}{0}
+\renewcommand{\theequation}{\thechapter.\arabic{equation}}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+\setcounter{section}{0}
+\renewcommand{\thesection}{\thechapter.\arabic{section}}
+\setcounter{table}{0}
+\renewcommand{\thetable}{\thechapter.\arabic{table}}
+\input{loca_chap2.tex}
+
+%Chapter 3 - Implementation Overview
+\setcounter{equation}{0}
+\renewcommand{\theequation}{\thechapter.\arabic{equation}}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+\setcounter{section}{0}
+\renewcommand{\thesection}{\thechapter.\arabic{section}}
+\setcounter{table}{0}
+\renewcommand{\thetable}{\thechapter.\arabic{table}}
+\input{loca_chap3.tex}
+
+%Chapter 4 - Wrapper routines
+\setcounter{equation}{0}
+\renewcommand{\theequation}{\thechapter.\arabic{equation}}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+\setcounter{section}{0}
+\renewcommand{\thesection}{\thechapter.\arabic{section}}
+\setcounter{table}{0}
+\renewcommand{\thetable}{\thechapter.\arabic{table}}
+\input{loca_chap4.tex}
+
+%Chapter 5 - Problem specification info
+\setcounter{equation}{0}
+\renewcommand{\theequation}{\thechapter.\arabic{equation}}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+\setcounter{section}{0}
+\renewcommand{\thesection}{\thechapter.\arabic{section}}
+\setcounter{table}{0}
+\renewcommand{\thetable}{\thechapter.\arabic{table}}
+\input{loca_chap5.tex}
+
+%Chapter 6 - Strategy
+\setcounter{equation}{0}
+\renewcommand{\theequation}{\thechapter.\arabic{equation}}
+\setcounter{figure}{0}
+\renewcommand{\thefigure}{\thechapter.\arabic{figure}}
+\setcounter{section}{0}
+\renewcommand{\thesection}{\thechapter.\arabic{section}}
+\setcounter{table}{0}
+\renewcommand{\thetable}{\thechapter.\arabic{table}}
+\input{loca_chap6.tex}
+
+% Ack
+\input{loca_ack.tex}
+
+%\bibliographystyle{apalike}
+\setlength{\textheight}{8.3in}
+
+\bibliographystyle{unsrt}
+\bibliography{loca}
+\addtocontents{toc}{{\bf Bibliography}}
+
+\end{document}
+%########################################################### 

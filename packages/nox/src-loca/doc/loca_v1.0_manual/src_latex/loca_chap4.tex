@@ -1,0 +1,615 @@
+%###################################################################
+% Code Interface: Wrapper Routines
+%###################################################################
+\chapter{LOCA's Wrapper Routines}
+\label{ch:wrappers}
+
+The wrapper routines provide the interface between LOCA and the user's code. All wrapper routines are contained in the file \texttt{loca\_interface.c}.  This file (and only this file) must be extensively modified for every new code that uses the library. It consists of \texttt{do\_loca}, the top level routine called by the application code, a \texttt{passdown} structure for user supplied arguments and $\sim$15 wrapper routines, which must be filled for your specific code. Some wrapper routines are specific to certain tracking algorithms.  Therefore, the user need only complete the wrapper routines that are required for the particular tracking algorithms they wish to utilize.  In this chapter we describe the requirements of each wrapper routine, including the input, output, and return value, as well as a list of which continuation methods require that wrapper. For instance, implementing LOCA without enabling the Hopf tracking capability saves the need to fill several of the wrapper routines.
+
+The wrapper routines make extensive use of the \texttt{passdown} structure. This structure is used to make information available to wrapper routines without passing that information through LOCA. The \texttt{passdown} structure is not used explicitly by the LOCA library but is made available for the user to pass parameters to the wrapper routines. The structure provides a means to pass objects to the wrapper routines without forcing the user to declare the objects globally.  The \texttt{passdown} structure and an example of its use are described in section \ref{sec:implementation}.
+
+
+%###################################################################
+\section{nonlinear\_solver\_conwrap}
+\texttt{int nonlinear\_solver\_conwrap(double *x, void *con\_ptr, int step\_num)}; \\
+
+{\bf Description:} Put a call to your Newton method nonlinear solver here, using \texttt{double *x} as the initial solution vector. The argument \texttt{void *con\_ptr} needs to be added to your nonlinear solver argument list (see item 2 of the recipe in section \ref{sec:implementation}). You can also use the nonlinear solver in the example version of \texttt{loca\_interface.c}, which does a simple Newton, instead of your own. \\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{x}] Current guess of the solution vector.
+\item[\texttt{con\_ptr}] Pointer to the \texttt{con} structure, cast to a pointer to void. This pointer equals \texttt{NULL} for zero order and first order continuation, and not otherwise. When not equal to \texttt{NULL}, the bordering algorithms are invoked.
+\item[\texttt{step\_num}] Continuation step number, which may be used by some nonlinear solvers.
+\end{description}
+
+{\bf On Output:}
+\begin{description}
+\item[\texttt{x}] is the updated solution vector for the finished nonlinear iteration.
+\end{description}
+
+{\bf Return Value:} \texttt{[int]}
+The number of Newton iterations taken for convergence needs to be returned, with any negative number signaling a failed Newton step. The number of Newton iterations is used to decide the size of the next continuation step (see Eq. \ref{eq:simplestep}).
+
+\begin{description}
+\item[This wrapper required for:] 
+\textsc{zero\_order\_continuation, \\ first\_order\_continuation, arc\_length\_continuation, \\ turning\_point\_continuation, pitchfork\_continuation, \\
+hopf\_continuation, phase\_transition\_continuation \\
+}
+\item[This wrapper not needed for:]
+\textsc{rsqp\_optimization}
+\end{description}
+%###################################################################
+\section{linear\_solver\_conwrap}
+\texttt{int linear\_solver\_conwrap(double *x, int jac\_flag, double *tmp)}; \\
+
+{\bf Description:} Put the call to your linear solver here. This is always proceeded by a matrix fill call. \\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{x}] is the current guess of the update vector to the linear system.
+\item[\texttt{jac\_flag}] is the flag indicating the status of the Jacobian so that preconditioners can be used: \\
+\texttt{NEW\_JACOBIAN}:   recalculate preconditioner.\\
+\texttt{OLD\_JACOBIAN}:   reuse preconditioner.\\
+\texttt{SAME\_BUT\_UNSCALED\_JACOBIAN}: Must rescale the matrix and can reuse preconditioner. This happens when the matrix has been recalculated at the same conditions as before.\\
+\texttt{CHECK\_JACOBIAN}:   Jacobian may be scaled or unscaled depending on whether it was reassembled or previously saved and recopied; rescale only if necessary.
+\item[\texttt{tmp}] is the work space array with the same length as x. This only comes in allocated for the \texttt{SAME\_BUT\_UNSCALED\_JACOBIAN} option; otherwise it is set to \texttt{NULL} and should not be accessed.
+\end{description}
+
+{\bf On Output:}
+\begin{description}
+\item[\texttt{x}] is the solution vector for the linear solve.
+\end{description}
+
+{\bf Return Value:} \texttt{[int]} flag that indicates the success of the linear solve. Any negative number signals a failed Newton step.
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{ first\_order\_continuation, \\ arc\_length\_continuation,
+turning\_point\_continuation, \\ pitchfork\_continuation, 
+hopf\_continuation, \\ phase\_transition\_continuation,
+rsqp\_optimization, \\ eigenvalue\_calculations}
+\item[This wrapper not needed for:]
+\textsc{zero\_order\_continuation}
+\end{description}
+
+%###################################################################
+\section{komplex\_linear\_solver\_conwrap}
+\texttt{int komplex\_linear\_solver\_conwrap(double *c, double *d,
+                  int jac\_flag, double *omega, double *tmp)}; \\
+
+{\bf Description:}  Put the call to your complex linear solver here. complex solves an NxN linear system of complex vectors by separating the real and imaginary components and performing a coupled 2Nx2N linear solve using all real values.  The complex linear solve is composed of: \\
+\begin{equation}
+\left[\begin{array}{cc} \bfJ & \omega \bfB \\ -\omega \bfB & \bfJ \end{array}\right]
+\left[\begin{array}{c} \bfa \\ \bfb \end{array}\right] =
+\left[\begin{array}{c} \bfc \\ \bfd \end{array}\right] 
+\\
+\label{eqn:komplex}
+\end{equation} 
+See section \ref{sec:hopf} for a more detailed explanation.\\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{c}] is the right hand side vector (real part) in equation \ref{eqn:komplex}.
+\item[\texttt{d}] is the right hand side vector (complex part) in equation \ref{eqn:komplex}.
+\item[\texttt{jac\_flag}] is the flag indicating the status of the Jacobian so that preconditioners can be used: \\
+\texttt{NEW\_JACOBIAN}:   recalculate preconditioner. \\
+\texttt{OLD\_JACOBIAN}:   reuse preconditioner. \\
+\texttt{OLD\_JACOBIAN\_DESTROY}:   reuse preconditioner, then destroy the preconditioner.
+\item[\texttt{omega}] is the imaginary value of the eigenvalue that is tracked with the Hopf bifurcation tracking algorithm. 
+\item[\texttt{tmp}] is an allocated temporary storage vector with the same size as $\bfx$.
+\end{description}
+
+{\bf On Output:}
+\begin{description}
+\item[\texttt{c}] is the real part of update vector to the komplex linear solve.
+\item[\texttt{d}] is the complex part of update vector to the komplex linear solve.
+\end{description}
+
+{\bf Return Value:} \texttt{[int]} flag that indicates the success of the linear solve. Any negative number signals a failed Newton step.
+
+\begin{description}
+\item[This wrapper required for:] 
+\textsc{hopf\_continuation}
+\item[This wrapper not needed for:]
+\textsc{zero\_order\_continuation, \\ first\_order\_continuation, arc\_length\_continuation, \\ 
+turning\_point\_continuation, pitchfork\_continuation, \\ 
+phase\_transition\_continuation rsqp\_optimization}
+\end{description}
+
+%###################################################################
+\section{matrix\_residual\_fill\_conwrap}
+\texttt{void matrix\_residual\_fill\_conwrap(double *x, double *rhs, int matflag)}; \\
+
+{\bf Description:}  Put the call to your matrix/residual fill routine here.\\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{x}] is the solution vector used to evaluate the matrix/residual fills.
+\item[\texttt{rhs}] is storage space for the residual vector, and comes in allocated even when the residual vector are not requested.
+\item[\texttt{matflag}] is a flag indicating the type of fill requested:\\
+\texttt{RHS\_ONLY}: residual fill only.\\
+\texttt{MATRIX\_ONLY}: matrix fill only.\\
+\texttt{RHS\_MATRIX}: fill both the residual and matrix.\\
+\texttt{RHS\_MATRIX\_SAVE}: fill the residual, and optionally fill and save
+the unperturbed and unscaled Jacobian matrix.\\
+\texttt{RECOVER\_MATRIX}: matrix fill only, optionally recover from a saved copy rather than reassembling.\\
+\end{description}
+
+{\bf On Output:}
+\begin{description}
+\item[\texttt{rhs}] contains the residual vector, when requested by \texttt{matflag}.
+\item[\texttt{passdown.matrix}] The Jacobian matrix $\bfJ$ should be calculated when requested by \texttt{matflag}. The user can choose how to store this matrix so that it is available in the \texttt{linear\_solver\_conwrap} and \texttt{matvec\_mult\_conwrap} routines. This would typically be done via the \texttt{passdown} structure.
+\end{description}
+
+{\bf Return Value:} \texttt{[void]}
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{ first\_order\_continuation, \\ arc\_length\_continuation,
+turning\_point\_continuation, \\ pitchfork\_continuation, 
+hopf\_continuation, \\ phase\_transition\_continuation,
+rsqp\_optimization, \\ eigenvalue\_calculations}
+\item[This wrapper not needed for:]
+\textsc{zero\_order\_continuation}
+\end{description}
+
+%###################################################################
+\section{mass\_matrix\_fill\_conwrap}
+\texttt{void mass\_matrix\_fill\_conwrap(double *x, double *rhs)}; \\
+
+{\bf Description:}  Put the call to your mass matrix fill routine here.\\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{x}] is the solution vector used to perform the mass matrix fill.
+\item[\texttt{rhs}] is the residual vector, allocated but not used.
+\end{description}
+
+{\bf On Output:}
+\begin{description}
+\item[\texttt{passdown.mass\_matrix}] The Mass matrix (the coefficient of time dependent terms, $\bfB$) should be calculated. The user can choose how to store this matrix so that it is available in the \texttt{komplex\_linear\_solver\_conwrap} and \texttt{mass\_matvec\_mult\_conwrap} routines. This would typically be done via the \texttt{passdown} structure.
+\end{description}
+
+{\bf Return Value:} \texttt{[void]}
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{hopf\_continuation, \\ eigenvalue\_calculations}
+\item[This wrapper not needed for:]
+\textsc{zero\_order\_continuation,\\
+first\_order\_continuation, arc\_length\_continuation, \\ 
+turning\_point\_continuation, pitchfork\_continuation, \\ 
+phase\_transition\_continuation, rsqp\_optimization}
+\end{description}
+
+%###################################################################
+\section{matvec\_mult\_conwrap}
+\texttt{void matvec\_mult\_conwrap(double *x, double *y)}; \\
+
+{\bf Description:}  Put the call to your matrix-vector multiply routine, using the Jacobian matrix $\bfJ$\, here. \\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{x}] is the vector of length number of unknowns.
+\end{description}
+
+{\bf On Output:}
+\begin{description}
+\item[\texttt{y}] contains the vector \bfJ \bfx .
+\end{description}
+
+{\bf Return Value:} \texttt{[void]}
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{
+turning\_point\_continuation, \\
+pitchfork\_continuation, hopf\_continuation,  \\
+rsqp\_optimization, eigenvalue\_calculations}
+\item[This wrapper not needed for:]
+\textsc{zero\_order\_continuation,\\
+first\_order\_continuation, arc\_length\_continuation, \\
+phase\_transition\_continuation}
+\end{description}
+
+%###################################################################
+\section{mass\_matvec\_mult\_conwrap}
+\texttt{void mass\_matvec\_mult\_conwrap(double *x, double *y)}; \\
+
+{\bf Description:}  Put the call to your matrix-vector multiply routine, using the mass matrix $\bfB$, here.\\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{x}] is the vector of length number of unknowns.
+\end{description}
+
+{\bf On Output:}
+\begin{description}
+\item[\texttt{y}] contains the vector \bfB \bfx .
+\end{description}
+
+{\bf Return Value:} \texttt{[void]}
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{hopf\_continuation \\ eigenvalue\_calculations}
+\item[This wrapper not needed for:]
+\textsc{zero\_order\_continuation,\\
+first\_order\_continuation, arc\_length\_continuation, \\ 
+turning\_point\_continuation, pitchfork\_continuation, \\ 
+\_transition\_continuation, rsqp\_optimization}
+\end{description}
+
+%###################################################################
+\section{assign\_parameter\_conwrap} \label{sec:apwrap}
+\texttt{void assign\_parameter\_conwrap(double param)}; \\
+
+{\bf Description:}  Put the call to a routine here to assign the continuation parameter value \texttt{param} in the users code. For instance, if you want to continue in value of a global parameter \texttt{alpha}, then this routine consists of the single line: \\
+\hspace{0.7in} \texttt{alpha = param;} \\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{param}] is the new value of the continuation parameter.
+\end{description}
+
+{\bf On Output:} \\
+
+{\bf Return Value:} \texttt{[void]}
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{zero\_order\_continuation,\\
+first\_order\_continuation, arc\_length\_continuation, \\
+turning\_point\_continuation, pitchfork\_continuation, \\
+hopf\_continuation, phase\_transition\_continuation}
+\item[This wrapper not needed for:]
+\textsc{rsqp\_optimization}
+\end{description}
+
+%###################################################################
+\section{assign\_bif\_parameter\_conwrap}
+\texttt{void assign\_bif\_parameter\_conwrap(double bif\_param)}; \\
+
+{\bf Description:}  Put the call here to a routine that assigns the bifurcation parameter value \texttt{bif\_param} in the application code. This is the parameter that is part of the solution in the tracking routines. \\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{bif\_param}] is the new value of the continuation parameter.
+\end{description}
+
+{\bf On Output:} \\
+
+{\bf Return Value:} \texttt{[void]}
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{turning\_point\_continuation, \\
+pitchfork\_continuation, hopf\_continuation, \\
+phase\_transition\_continuation}
+\item[This wrapper not needed for:]
+\textsc{zero\_order\_continuation,\\
+first\_order\_continuation, arc\_length\_continuation, \\
+rsqp\_optimization}
+\end{description}
+
+%###################################################################
+\section{calc\_scale\_vec\_conwrap}
+\texttt{void calc\_scale\_vec\_conwrap(double *x, double *scale\_vec, int numUnks)}; \\
+
+{\bf Description:}  Put the call to a routine to calculate a scaling vector here.\\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{x}] is the solution vector of length number of unknowns.
+\item[\texttt{scale\_vec}] is a dummy vector of length number of unknowns.
+\item[\texttt{numUnks}]  is the number of unknowns on this proc (the length of x and scale\_vec).
+\end{description}
+
+{\bf On Output:}
+\begin{description}
+\item[\texttt{scale\_vec}]  Vector of length number of unknowns used to scale variables so that one type of unknown (e.g. pressure) doesn't dominate over others. Used to balance the variables and the arc-length variable in arc-length continuation, and for scaling the null vector in turning point tracking. Using reciprocal of the average value of that variable type is a good choice. Vector of all ones should suffice for most problems.
+\end{description}
+
+{\bf Return Value:} \texttt{[void]}
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{arc\_length\_continuation, \\
+turning\_point\_continuation, pitchfork\_continuation \\
+}
+\item[This wrapper not needed for:]
+\textsc{zero\_order\_continuation, first\_order\_continuation, \\
+hopf\_continuation, phase\_transition\_continuation, \\
+rsqp\_optimization}
+\end{description}
+
+%###################################################################
+%\section{get\_scale\_vec\_conwrap}
+
+%###################################################################
+
+\section{gsum\_double\_conwrap}
+\texttt{double gsum\_double\_conwrap(double sum)}; \\
+
+{\bf Description:}   Put the call to a routine to calculate a global sum.  Just return sum for single processor jobs. This is used by the global dot product routines.\\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{sum}]  is the value of double on this processor to be summed on all procs.
+\end{description}
+
+{\bf On Output:} \\
+
+{\bf Return Value:} \texttt{[double]} The global sum is returned on all processors.
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{arc\_length\_continuation, \\
+turning\_point\_continuation, pitchfork\_continuation, \\
+hopf\_continuation, phase\_transition\_continuation, \\
+rsqp\_optimization}
+\item[This wrapper not needed for:]
+\textsc{zero\_order\_continuation,\\
+first\_order\_continuation}
+\end{description}
+
+%###################################################################
+\section{perturb\_solution\_conwrap}
+\texttt{void perturb\_solution\_conwrap(double *x, double *x\_old,
+                      double *scale\_vec, int numOwnedUnks)}; \\
+
+{\bf Description:}   Put a routine to perturb the solution vector a little bit here. This is to move a converged solution at a singularity off of the singularity before doing continuation. We have used a random vector with elements of order $10^{-5}$ times the solution vector as the perturbation. This isn't pretty but has helped convergence on some turning point tracking problems. Leaving this routine empty works fine.\\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{x}] is the current solution vector.
+\item[\texttt{x\_old}] is the current solution vector, and should not be modified in this routine.
+\item[\texttt{scale\_vec}] is the work space for a vector to scale x.
+\item[\texttt{numOwnedUnks}] is the length of owned nodes part of x, x\_old, scale\_vec
+\end{description}
+
+{\bf On Output:}
+\begin{description}
+\item[\texttt{x}]   Solution vector perturbed a bit.
+\end{description}
+
+{\bf Return Value:} \texttt{[void]} 
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{turning\_point\_continuation, pitchfork\_continuation}
+\item[This wrapper not needed for:]
+\textsc{zero\_order\_continuation,\\
+first\_order\_continuation, arc\_length\_continuation, \\
+hopf\_continuation, phase\_transition\_continuation, \\
+rsqp\_optimization}
+\end{description}
+
+%###################################################################
+\section{solution\_output\_conwrap}
+\texttt{void solution\_output\_conwrap(int num\_soln\_flag, double *x, double param, 
+ double *x2, double param2, double *x3, double param3, int step\_num, int num\_its,
+                             struct con\_struct *con)};
+
+{\bf Description:} Put the call to your solution output (both file and screen) routines here. This routine gets called with a flag value for how many vector-parameter 
+pairs are being sent. The solution vector and continuation parameter value are always passed. The real null vector and bifurcation parameter are also passed if bifurcation tracking is being performed. For Hopf tracking, the imaginary part of the null vector and the frequency $\omega$ are passed as well. The call to the eigensolver should be put inside this routine. \\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{num\_soln\_flag}] Number of solution vector - parameter pairs to print out. This is $1$ for parameter continuation, $2$ for turning point, pitchfork, and phase transition tracking, and $3$ for Hopf tracking.
+\item[\texttt{x}]  is the solution vector to be printed.
+\item[\texttt{param}] is the continuation parameter value.
+\item[\texttt{x2}]  is the real part of the null vector for turning point, pitchfork, and Hopf tracking, and the second solution vector for phase transition tracking (set to NULL when \texttt{num\_soln\_flag} = $1$).
+\item[\texttt{param2}] is the bifurcation parameter value (set = $0$ when \texttt{num\_soln\_flag} = $1$).
+\item[\texttt{x3}]  is the imaginary part of the null vector for Hopf tracking (set to NULL when \texttt{num\_soln\_flag} $< 3$).
+\item[\texttt{param3}] is the frequency $\omega$ for Hopf tracking (set = $0$ when \texttt{num\_soln\_flag} $< 3$).
+\item[\texttt{step\_num}] is the index to output to (step\_num is 0 based).
+\item[\texttt{num\_its}]  is the number of Newton iterations taken to converge this step.
+\item[\texttt{con\_struct}]  is the \texttt{con} structure used in the problem, for passing information to the eigensolver.
+\end{description}
+
+{\bf On Output:} \\
+
+{\bf Return Value:} \texttt{[void]} 
+
+\begin{description}
+\item[This wrapper required for:] 
+\textsc{zero\_order\_continuation, \\ first\_order\_continuation, arc\_length\_continuation, \\ turning\_point\_continuation, pitchfork\_continuation, \\
+hopf\_continuation, phase\_transition\_continuation \\
+rsqp\_optimization}
+\item[This wrapper not needed for:]
+\textsc{}
+\end{description}
+%###################################################################
+\section{eigenvector\_output\_conwrap}
+\texttt{void eigenvector\_output\_conwrap(int j, int num\_soln\_flag, double *xr, double evr, double *xi, double evi, int step\_num)};
+
+{\bf Description:} Put in code to print out an eigenvalue and eigenvector here. This routine gets called only from \texttt{loca\_eigenvalue.c}. When the eigenvalue is a complex conjugate pair, this routine is called once with the real and imaginary parts of
+the eigenvector and eigenvalue.\\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{j}] is the eigenvector index, which may be needed for writing multiple eigenvector modes.
+\item[\texttt{num\_soln\_flag}] is $1$ when a real eigenvalue/eigenvector is to be printed, and $2$ when a complex pair is to be printed.
+\item[\texttt{xr}]  is the real part of the eigenvector.
+\item[\texttt{evr}] is the real part of the eigenvalue.
+\item[\texttt{xi}]  is the imaginary part of the eigenvector (set to NULL when \texttt{num\_soln\_flag} = $1$).
+\item[\texttt{evi}] is the imaginary part of the eigenvalue.
+\item[\texttt{step\_num}] is the index to output to (step\_num is 0 based).
+\end{description}
+
+{\bf On Output:}
+
+{\bf Return Value:} \texttt{[void]} 
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{eigenvalue\_calculations}
+\end{description}
+
+%###################################################################
+\section{free\_energy\_diff\_conwrap}
+\texttt{double free\_energy\_diff\_conwrap(double *x, double *x2)}; \\
+
+{\bf Description:}   Call to return the free energy difference between two solutions. This is the function $G$ in Eq. \ref{eq:pt}. This can be generalized to any constraint on the problem that must be satisfied for two different solutions. \\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{x}] first solution vector, $\bfx_1$ in Section \ref{sec:pt}.
+\item[\texttt{x2}] second solution vector, $\bfx_2$ in Section \ref{sec:pt}.
+\end{description}
+
+{\bf On Output:}
+
+{\bf Return Value:} \texttt{[double]}  The difference in the free energy between the two solutions.
+\begin{description}
+\item[This wrapper required for:]
+\textsc{phase\_transition\_continuation}
+\item[This wrapper not needed for:]
+\textsc{zero\_order\_continuation,\\
+first\_order\_continuation, arc\_length\_continuation, \\
+turning\_point\_continuation, pitchfork\_continuation, \\
+hopf\_continuation, rsqp\_optimization}
+\end{description}
+
+%###################################################################
+\section{create\_shifted\_matrix\_conwrap}
+
+\texttt{void create\_shifted\_matrix\_conwrap()}
+
+{\bf Description:}  Call to allocate a new matrix (the same size and sparsity 
+as the $\bfJ$ matrix) for use by the Cayley-enabled ARPACK Eigensolver. The
+matrix is never seen by LOCA, but is accessed by other conwrap routines, so 
+should be part of the passdown structure.
+
+{\bf On Input:}
+
+{\bf On Output:}
+
+{\bf Return Value:} \texttt{[void]} 
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{eigenvalue\_calculations}
+\end{description}
+%###################################################################
+
+\section{shifted\_matrix\_fill\_conwrap}
+
+\texttt{void shifted\_matrix\_fill\_conwrap(double sigma)}
+
+{\bf Description:} Routine to fill the shifted matrix for the eigensolver,
+which is just $(\bfJ - \sigma \bfB)$. This call is proceeded by calls to
+the Jacobian and Mass matrices, so it can be assumed that these are up to date.
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{sigma}] Value of the $\sigma$ parameter of the Cayley transformation. This routine is called once with $\sigma=0$ as part of a projection step, and sometimes $\sigma$ is changed after a restarting of Arnoldi's method in the eigensolver, so make sure to use the \texttt{sigma} variable that is passed in and not just the input value of $\sigma$.
+\end{description}
+
+{\bf On Output:}
+
+{\bf Return Value:} \texttt{[void]} 
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{eigenvalue\_calculations}
+\end{description}
+
+%###################################################################
+\section{shifted\_linear\_solver\_conwrap}
+
+\texttt{void shifted\_linear\_solver\_conwrap(double *x, double *y,
+                                         int jac\_flag, double tol)}
+                                         
+{\bf Description:} Put a call to the linear solver here, using the shifted matrix (as filled in the previous wrapper routine). This will be very similar to the \texttt{linear\_solver\_conwrap}, but using a different matrix. Also, the argument list is currently different. For iterative solvers, scaling should be turned off for this solve. 
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{x}] Right hand side vector.
+\item[\texttt{jac\_flag}] is the flag indicating the status of the Jacobian so that preconditioners can be reused: \\
+\texttt{NEW\_JACOBIAN}:  The Jacobian is a new one, so recalculate preconditioner (or recalculate LU factorization for a direct solver). \\
+\texttt{OLD\_JACOBIAN}:  The Jacobian is the same as the previous call, so reuse preconditioner (or just back solve a previous LU factorization when using a direct solver). 
+\item[\texttt{tol}] Acceptance tolerance for an iterative linear solver, computed dynamically to adjust to the problem scaling.
+\end{description}
+
+{\bf On Output:}
+\begin{description}
+\item[\texttt{y}] Solution vector of the linear solve: $(\bfJ - \sigma \bfB) \bfy = \bfx$.
+\end{description}
+
+{\bf Return Value:} \texttt{[void]} 
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{eigenvalue\_calculations}
+\end{description}
+
+%###################################################################
+\section{destroy\_shifted\_matrix\_conwrap}
+
+\texttt{void destroy\_shifted\_matrix\_conwrap()}
+
+{\bf Description:}  Call to free memory for the shifted matrix, as allocated
+by the \texttt{create\_shifted\_matrix\_conwrap} routine above.\\
+
+{\bf On Input:}
+
+{\bf On Output:}
+
+{\bf Return Value:} \texttt{[void]} 
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{eigenvalue\_calculations}
+\end{description}
+
+%###################################################################
+\section{gmax\_int\_conwrap}
+
+\texttt{int gmax\_int\_conwrap(int max)}
+
+{\bf Description:} Put a global max operation here for parallel runs. Just
+return \texttt{max} for serial runs.\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{max}] Integer value on this processor.
+\end{description}
+
+{\bf On Output:}
+
+{\bf Return Value:} \texttt{[int]} Maximum of all the \texttt{max} values over all processors.
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{eigenvalue\_calculations}
+\end{description}
+
+%###################################################################
+\section{random\_vector\_conwrap}
+
+\texttt{void random\_vector\_conwrap(double *x, int numOwnedUnks)}
+
+{\bf Description:}  Put a call to a random vector generating routine
+here. This is used as an initial guess for the iterative eigensolver.\\
+
+{\bf On Input:}
+\begin{description}
+\item[\texttt{numOwnedUnks}] Length of the vector \texttt{x} that needs to be filled with random real values.
+\end{description}
+
+{\bf On Output:}
+\begin{description}
+\item[\texttt{x}] Double precision vector filled with random components.
+\end{description}
+
+{\bf Return Value:} \texttt{[void]} 
+
+\begin{description}
+\item[This wrapper required for:]
+\textsc{eigenvalue\_calculations}
+\end{description}
+
+%###################################################################
+

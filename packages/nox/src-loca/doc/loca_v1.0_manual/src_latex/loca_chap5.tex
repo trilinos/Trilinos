@@ -1,0 +1,122 @@
+\chapter{LOCA Inputs}
+\label{ch:structures}
+
+All the problem specific information that must be supplied to LOCA from the application code gets set in the \texttt{con} structure. This is a structure made up of several structures (referred to hereafter as sub-structures), each dealing with a separate part of the problem. The elements of the sub-structures that must be loaded in the \texttt{do\_loca} interface routine can be seen in the file \texttt{loca\_const.h}, and a sample working version of the \texttt{do\_loca} routine can be seen in \texttt{loca\_interface.c}.
+
+Table \ref{tab:con} shows the names of the sub-structures, a description of what type of information this structure holds, and for what problem types this structure is accessed.
+As can be seen in this table, the \texttt{con.general\_info} and \texttt{con.stepping\_info} structures must always be set, at most one of the next five structures must be set, and the \texttt{con.eigen\_info} structure needs only be set when eigenvalues calculations are required.
+\begin{table}[tb]   \begin{center}     \begin{tabular}{|l|c|c|} 
+\hline \textbf{Structure Name}& \textbf{Requested Info} & \textbf{When Needed} \\ \hline
+\texttt{con.}& Solution method, problem size, & \bf{Always} \\ \texttt{general\_info}& solution vector, parameter, etc. & \\ \hline
+\texttt{con.}& Initial step size, number of& \bf{Always} \\ \texttt{stepping\_info}& steps, step size control, etc.& \\ \hline
+\texttt{con.}& Arclength equation scaling& \bf{Arclngth} \\ \texttt{arclength\_info}& control, step size control & \bf{Cont. Only}\\ \hline
+\texttt{con.}& Initial guess of & \bf{Turning} \\ \texttt{turning\_point\_info}& Bifurcation parameter & \bf{Point Only} \\ \hline
+\texttt{con.}& Antisymmetric $\psi$ vector and& \bf{Pitchfork} \\ \texttt{pitchfork\_info}& bifurcation parameter guess & \bf{Only} \\ \hline
+\texttt{con.}& Guesses for frequency, eigen-& \bf{Hopf} \\ \texttt{hopf\_info}& vectors and bifurcation param & \bf{Only} \\ \hline
+\texttt{con.phase\_}&  Guesses for second solution& \bf{Phase Trans} \\ \texttt{transition\_info}& vector, bifurcation parameter & \bf{Only} \\ \hline
+\texttt{con.}& Cayley parmeters, Arnoldi& \bf{Eigenvalues} \\ \texttt{eigen\_info}& space size, tolerances, etc. & \bf{Requested} \\ \hline
+\end{tabular} \caption{Table describing the $8$ `sub-'structures to the \texttt{con} 
+structure. This is the problem-specific information that the user must supply to LOCA.} 
+\label{tab:con} \end{center} \end{table}
+
+
+\section{The \texttt{con.general\_info} structure}
+
+The following structure elements must be supplied for all problems. 
+
+\begin{description}
+\item[\texttt{int con.general\_info.method}] Flag which sets the continuation strategy that LOCA should perform. The choices are: \textsc{zero\_order\_continuation, \\ first\_order\_continuation, arc\_length\_continuation, \\ turning\_point\_continuation, pitchfork\_continuation, \\
+hopf\_continuation, phase\_transition\_continuation, \\ loca\_lsa\_only.} Each of these strings is assigned an integer in \texttt{loca\_const.h} which can be used in place of the name.
+\item[\texttt{double con.general\_info.param}] Initial value of continuation parameter. This parameter gets assigned to a parameter in the application code in the \texttt{assign\_parameter\_conwrap} wrapper routine (see Section \ref{sec:apwrap}. This is the parameter that gets stepped in all algorithms except the pseudo arclength continuation, where it is solved for. This parameter is $\lambda$ in Section \ref{sec:pc}, but not the parameter $\lambda$ in Section \ref{sec:bt} (which is the \texttt{bif\_param} in the following sections. 
+\item[\texttt{double *con.general\_info.x}] Pointer to current solution vector, allocated and filled.
+\item[\texttt{double con.general\_info.perturb}] Parameter used to apply perturbations to several quantities.
+\item[\texttt{int con.general\_info.numUnks}] Number of owned plus ghost (external) unknowns on current processor. This is used for allocating new vectors of the same length as the solution and residual vectors, and when vectors are copied.
+\item[\texttt{int con.general\_info.numOwnedUnks}] Number of owned unknowns on current processor. This is the length of the vector that is acted upon, e.g. by dot product routines.
+\item[\texttt{int con.general\_info.printproc}] Logical flag indicating if this processor executes print statements. This flag is usually set to TRUE for serial runs and for the first processor on parallel runs. It is usually set false for all other processors in parallel runs, but can be set to TRUE for debugging.
+\item[\texttt{int con.general\_info.nv\_restart}] Logical flag indicating if the turning point algorithm is to be restarted using a previously saved null vector.
+\item[\texttt{int con.general\_info.nv\_save}] Logical flag indicating that the final null vector from a turning point tracking run is to be written to a separate file for later restart.
+\end{description}
+
+\section{The \texttt{con.stepping\_info} structure}
+\label{sec:csi}
+
+The following structure elements must be supplied for all problems. These parameters control the continuation steps. This is used even for bifurcation tracking routines, by controlling the zero order continuation of the bifurcation point.
+
+\begin{description}
+\item[\texttt{double con.stepping\_info.first\_step}] Initial parameter step size, which is variable $\lambda_b$ in Section \ref{sec:01c}. This is only approximate for pseudo arclength continuation.
+\item[\texttt{int con.stepping\_info.base\_step}] Starting number of continuation steps for code-specific output, should be $0$ or $1$.
+\item[\texttt{int con.stepping\_info.max\_steps}] This is the maximum number of continuation steps allowed for the run, variable $N_c$ in Section \ref{sec:01c}. Failed steps count as steps.
+\item[\texttt{int con.stepping\_info.last\_step}] Logical flag which is TRUE when the final continuation step is in progress.
+\item[\texttt{int con.stepping\_info.max\_param}] Ending parameter value for the run. This can be a max or min, and is variable $\lambda_e$ in Section \ref{sec:01c}.
+\item[\texttt{double con.stepping\_info.max\_delta\_p}] Largest allowable parameter step size (entered as an absolute value). This is the variable $\Delta \lambda_{max}$ in Section \ref{sec:01c}. Step size is reset to this value if it is exceeded.
+\item[\texttt{double con.stepping\_info.min\_delta\_p}] Not currently implemented. Smallest allowable parameter step size (entered as an absolute value). This is variable $\Delta \lambda_{min}$ in Section \ref{sec:01c}. If step size decreases below this value due to failed steps, continuation run is aborted.
+\item[\texttt{double con.stepping\_info.step\_ctrl}] This is an adjustable parameter used to control the rate of step size increase. This is the variable $a$ in Eq. \ref{eq:simplestep} in Section \ref{sec:01c}. When set to zero, step size will remain constant unless there is a convergence failure.
+\item[\texttt{int con.stepping\_info.max\_newton\_its}] The maximum number of Newton iterations allowed by the nonlinear solver. This is used to adjust the continuation step size, since it is variable $N_{max}$ in Eq. \ref{eq:simplestep}..
+\end{description}
+
+\section{The \texttt{con.arclength\_info} structure}
+\label{sec:cai}
+
+The following structure elements must be supplied for arc length continuation problems, when \texttt{con.general\_info.method $=$}{\textsc{arc\_length\_continuation}. This structure is not accessed for any other method.
+
+\begin{description}
+\item[\texttt{double con.arclength\_info.dp\_ds2\_goal}] Desired fraction of parameter contribution to arc length equation; used to set and reset solution scale factor for arc length continuation. This is variable $\lambda'^2_g$ in Section \ref{sec:arcsc}.
+\item[\texttt{double con.arclength\_info.dp\_ds\_max}] Used in arc length continuation for periodic solution rescaling. The solution scale factor is recalculated when the parameter sensitivity to arc length exceeds this value. This is variable $\lambda'_{max}$ Section \ref{sec:arcsc}.
+\item[\texttt{double con.arclength\_info.tang\_exp}] Adjustable parameter used to decrease step size in arc length continuation near turning points. A value of zero has no effect, and large values (e.g. 5.0) greatly decrease the step size in regions of high curvature. This is the exponent $y$ in Eq. \ref{eq:tfact} in Section \ref{sec:arcsc}).
+\item[\texttt{double con.arclength\_info.tang\_step\_limit}] Used in arc length continuation to provide greater step size control near complex turning points. If the cosine of the tangent to the solution branch at two consecutive steps ($\tau$ in Eq. \ref{eq:taud}) drops below this value, the step is failed. See discussion below Eq. \ref{eq:tfact} in Section \ref{sec:arcsc}).
+\end{description}
+
+\section{The \texttt{con.turning\_point\_info} structure}
+
+The following structure elements must be supplied for turning point continuation problems, when \texttt{con.general\_info.method $=$}{\textsc{turning\_point\_continuation}. This structure is not accessed for any other method.
+
+\begin{description}
+\item[\texttt{double con.turning\_point\_info.bif\_param}] Initial guess for the bifurcation parameter, which is $\lambda$ in Eq. \ref{eq:tpn}. This is the parameter that is solved for as part of the solution procedure for the bifurcation. This parameter must be assigned in \texttt{assign\_bif\_parameter\_conwrap}.
+\item[\texttt{double *con.turning\_point\_info.nv}] Pointer to a restarted null vector, used only for restarting a turning point tracking run when a previous null vector is provided and con.general\_info.nv\_restart has been set to TRUE.  This pointer must be set to the location of the previous null vector within do\_loca, and is then used to initialize the null vector array in the turning point bordering algorithm.
+\end{description}
+
+\section{The \texttt{con.pitchfork\_info} structure}
+
+The following structure elements must be supplied for pitchfork continuation problems, when \texttt{con.general\_info.method $=$}{\textsc{pitchfork\_continuation}. This structure is not accessed for any other method.
+
+\begin{description}
+\item[\texttt{double con.pitchfork\_info.bif\_param}] Initial guess for the bifurcation parameter, which is $\lambda$ in Eq. \ref{eq:pfn}. This is the parameter that is solved for as part of the solution procedure for the bifurcation. This parameter must be assigned in \texttt{assign\_bif\_parameter\_conwrap}.
+\item[\texttt{double *con.pitchfork\_info.psi}] The $\psi$ vector that is antisymmetric with respect to the symmetry being broken by the pitchfork bifurcation (see Eq. \ref{eq:pf}). This is also used as the initial guess for the null vector $\bfy$. This is usually computed first by the eigensolver.
+\end{description}
+
+\section{The \texttt{con.hopf\_info} structure}
+
+The following structure elements must be supplied for Hopf continuation problems, when \texttt{con.general\_info.method $=$}{\textsc{hopf\_continuation}. This structure is not accessed for any other method.
+
+\begin{description}
+\item[\texttt{double con.hopf\_info.bif\_param}] Initial guess for the bifurcation parameter, which is $\lambda$ in Eq. \ref{eq:hpn}. This is the parameter that is solved for as part of the solution procedure for the bifurcation. This parameter must be assigned in \texttt{assign\_bif\_parameter\_conwrap}.
+\item[\texttt{double con.hopf\_info.omega}] Initial guess for the frequency $\omega$ of the Hopf bifurcation (see Eq. \ref{eq:hp}). This is the imaginary part of the eigenvalue whose real part is zero. This is usually computed first by the eigensolver.
+\item[\texttt{double *con.hopf\_info.y\_vec}] This is the initial guess for the real part of the eigenvector at the Hopf point, $\bfy$ in Eq. \ref{eq:hp}. This is usually computed first by the eigensolver.
+\item[\texttt{double *con.hopf\_info.z\_vec}] This is the initial guess for the imaginary part of the eigenvector at the Hopf point, $\bfz$ in Eq. \ref{eq:hp}. This is usually computed first by the eigensolver along with $\bfy$.
+\item[\texttt{int con.hopf\_info.mass\_flag}] Flag specifying whether or not to compute (a) the mass matrix derivative with respect to the bifurcation parameter $(\pdone{\bfB}{\lambda})$ and\/or (b) the mass matrix derivative with respect to the solution vector $(\pdone{\bfB}{\bfx})$, during Hopf bifurcation tracking. These derivatives are often zero and need not be calculated, but for some formulations and parameters (e.g. geometry parameters) these can not be ignored. The possible values are: $1$ calculate both (a) and (b); $2$ calculate (b) only; $3$ calculate (a) only; $4$ calculate neither (a) nor (b); $5$ calculate (a) and (b) once, and if the norms are non-negligible then include these terms in the Newton iteration.
+
+\end{description}
+
+\section{The \texttt{con.phase\_transition\_info} structure}
+
+The following structure elements must be supplied for phase transition continuation problems, when \texttt{con.general\_info.method $=$}{\textsc{phase\_transition\_continuation}. This structure is not accessed for any other method.
+
+\begin{description}
+\item[\texttt{double con.phase\_transition\_info.bif\_param}] Initial guess for the bifurcation parameter, which is $\lambda$ in Eq. \ref{eq:ptn}. This is the parameter that is solved for as part of the solution procedure for the phase transition. This parameter must be assigned in \texttt{assign\_bif\_parameter\_conwrap}.
+\item[\texttt{double *con.phase\_transition\_info.x2}] This is the initial guess for the second solution vector at the phase transition point, $\bfx_2$ in Section \ref{sec:pt}. The first, $\bfx_1$, is supplied in \texttt{con.general\_info.x}.
+\end{description}
+
+\section{The \texttt{con.eigen\_info} structure}
+
+The following structure elements must be supplied when eigenvalue calculations are requested. These parameters are passed to the Cayley-enabled version of P\_ARPACK that has been linked with LOCA.  This can be turned on for any method choice in \texttt{con.general\_info.method}.
+
+\begin{description}
+\item[\texttt{int con.eigen\_info.Num\_Eigenvalues}] This is the number of eigenvalues that the eigensolver should try to converge, \texttt{nev} in ARPACK.
+\item[\texttt{int con.eigen\_info.Num\_Eigenvectors}] This is the desired number of eigenvalues (modes) to be output at each continuation step.
+\item[\texttt{int con.eigen\_info.sort}] Logical flag indicating that the converged eigenvalues, and their associated eigenvectors, are to be sorted in descending order of real eigenvalue part.
+\item[\texttt{double con.eigen\_info.Shift\_Point[3]}] This length $3$ array contains the Cayley parameters $\sigma$ and $\mu$, and the experimental parameter $\delta$ which in general should be set to $1.0$.
+\item[\texttt{int con.eigen\_info.Arnoldi}] This is the requested size of the Arnoldi space, known as \texttt{ncv} in ARPACK.
+\item[\texttt{double con.eigen\_info.Residual\_Tol[2]}] This array of length $2$ contains the convergence tolerance for the eigensolver, \texttt{tol} in ARPACK, and the convergence tolerance for the iterative linear solver, $\eta$.
+\item[\texttt{int con.eigen\_info.Max\_Iter}] This is the maximum number of outer iterations of the restarted Arnoldi method ($1$ means no restarts). This is \texttt{iparam[MAX\_ITRS]} in ARPACK.
+\item[\texttt{int Every\_n\_Steps}] This is the desired number of continuation steps between eigensolver calls.
+\end{description}

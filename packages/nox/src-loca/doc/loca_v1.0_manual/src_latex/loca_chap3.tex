@@ -1,0 +1,182 @@
+\chapter{LOCA Software and Implementation}
+\label{ch:implementation}
+
+The LOCA library is ``C" code that performs parameter continuation and bifurcation tracking for an application code. LOCA is designed for use around codes that use Newton's method to locate steady-state solutions. The algorithms in LOCA (presented in the previous Chapter) are designed to be as non-invasive as possible, and make use of the application code's own routines. The algorithms in LOCA are programmed to wrapper routines which must be filled in by the user. For the most part, these routines will be already available in a code performing Newton's methods: residual fills, Jacobian matrix fills, and linear solves of the Jacobian matrix. (More involved development is usually needed to enable the Hopf bifurcation tracking routine, where a Mass matrix and complex matrix solve capabilities are required.)
+
+In this chapter, we will first detail the directory structure of the LOCA code, 
+and give details on how to compile the library, the test\_driver, and how to
+run the test suite. The second section gives the recipe for implementing LOCA in a new application code. Items {\bf 3} and {\bf 4} of this recipe 
+include numerous sub-tasks, with details in the following two Chapters of this manual.
+
+\section{LOCA Directory Structure}
+
+The LOCA software has the directory structure shown in Figure~\ref{fig:dir}, and
+consists of $6$ directories under the \texttt{Loca} top directory.
+\begin{figure}
+\epsfig{figure=figures/dir.eps,width=1.0\linewidth,angle=0}
+\caption{Directory structure of the LOCA code:, with directories \texttt{build}, \texttt{doc}, \texttt{external}, \texttt{lib}, \texttt{src} and \texttt{tests}. The \texttt{src/loca} directory holds the source code for the LOCA library, while the \texttt{src/test\_driver} contains the interface file \texttt{loca\_interface.c} (here filled out to work with a test code) which must be extensively modified to link LOCA to a new application code.}
+\label{fig:dir}
+\end{figure}
+The most important of these is the \texttt{src} directory of source code with \texttt{loca} and \texttt{test\_driver} subdirectories. In \texttt{src/loca}
+is the source code for the LOCA library, which are the files that are independent
+of the application code. These files can be compiled once per platform to create a \texttt{libloca.a} library. The Fortran files are only needed when the user wants to enable the linear stability analysis (eigenvalue) capability, and require linking to the ARPACK library. In \texttt{src/test\_driver} is the file \texttt{loca\_interface.c}, which is the file that must be extensively modified to interface LOCA with a new application. Here it
+is filled in to interface the test\_driver problem with LOCA. The test\_driver is
+the remaining files in this directory, and solves for the stability of a beam conveying fluid (the garden hose problem). 
+
+The \texttt{build} directory is for compiling. The makefiles are set up to require three environment variables to be set:
+\begin{description}
+\item[1.] setenv LOCA\_HOME {\sl path-to-top-LOCA-directory}
+\item[2.] setenv LOCA\_ARCH {\sl architecture-name}
+\item[3.] setenv LOCA\_COMM {\sl communication-type}
+\end{description}
+LOCA\_ARCH is used to organize the compilation of LOCA for different platforms, (e.g. SGI64, LINUX, SOLARIS) and LOCA\_COMM is usually set to
+SERIAL or MPI to distinguish the communication type compiled for. When compiling, 
+the makefile automatically looks for compiling information from a file named
+makefile.LOCA\_ARCH.LOCA\_COMM, and the
+object code and the library are placed in subdirectories (withing the \texttt{src} and \texttt{lib} directories) with the name LOCA\_ARCH.LOCA\_COMM. 
+
+Within the machine
+dependent makefiles, the paths to compilers, lapack, blas, and arpack libraries must be set. A define flag, \texttt{EIGENVALUE\_DEFINES}, should be set equal to \texttt{EIGEN\_SERIAL} or \texttt{EIGEN\_PARALLEL} if the linear stability
+analysis capability is desired. These flags control the compilation of the
+three files with names \texttt{src/loca\_eigen*}. After setting the three environment variables, the code can be compiled from within the \texttt{build} directory
+by typing one of the following:
+\begin{description}
+\item[1.] gmake loca (compiles just src/loca to form libloca.a)
+\item[2.] gmake test\_driver (compiles just src/test\_driver)
+\item[3.] gmake (compiles both loca and test\_driver)
+\end{description}
+The makefile also recognizes \texttt{clean} and \texttt{clobber} targets.
+
+\texttt{external} is the directory to put the ARPACK library. It is expected that
+the compile arpack libraries will reside in this directory, and the paths to the
+arpack libraries in the makefiles will point to here. \texttt{doc} is the documentation directory, which includes latex code for this manual. \texttt{lib} is the directory where compiled \texttt{libloca.a} libraries are placed, within subdirectories that
+are created from the name of the environment variables: LOCA\_ARCH.LOCA\_COMM. 
+
+The \texttt{tests} directory contains an automatic test script for running the test\_driver code and checking against reference output files. The test script 
+currently runs ten different input files (named \texttt{prob\*}) and the reference
+output files are also in this director, and contain the string \texttt{dat} in the name. The test script is executed by running:
+\begin{equation*}
+\mbox{\texttt{perl loca\_test}}
+\end{equation*}
+For more information on the physical problem being solved by the test\_driver
+application, please see the paper entitled ``A Multi-parameter, Numerical Stability Analysis of a Standing Cantelever Conveying Fluid" by Bou-Rabee, Romero, and Salinger, which can be accessed from the LOCA web page: \texttt{www.cs.sandia.gov/LOCA}.
+
+Almost all of the code development needed to implement LOCA around a new application code occurs in the file \texttt{loca\_interface.c}. All the other LOCA files should in theory remain unmodified. The other files include the header file \texttt{loca\_const.h}, which contains definitions of flags (e.g. \texttt{\#define ARC\_LENGTH\_CONTINUATION { }2}) used in the library, and definitions of the \texttt{con} structure of structures which holds all the problem specific information. The file \texttt{loca\_lib.c} contains the parameter continuation loop, including step control logic and predictor calculations. The file \texttt{loca\_bord.c} contains the bordering algorithms that get called within each Newton iteration. The file \texttt{loca\_util.c} contains utility routines needed by the rest of the codes, such as vector copies and dot products.
+
+
+\section{Implementation Recipe} \label{sec:implementation}
+\begin{description}
+\item[0.] Modularize your code. LOCA needs to be able to call the nonlinear solver (Newton) iteration loop. If your nonlinear solver includes code before the Newton loop begins, such as reading in a mesh or creating an initial guess for a solution vector, these need to be separated into another routine. LOCA also needs to call a residual (right hand side) fill routine and a Jacobian matrix fill routine. Make sure your code still works after these changes.
+
+\item[1.] Put in a call to \texttt{do\_loca()}. This will cede control to the LOCA library. This call needs to come {\emph after} all initialization is done, including generating an initial guess for the solution vector. This is the same place where the Newton iteration loop is called for steady state calculations and a time stepper is called for transient problems. You can choose the arguments you want to send to do\_loca(), which are usually the same as you send to the nonlinear solver. 
+A piece of code might look like this:
+\texttt{ \begin{tabbing} 
+tab\=indt\= \kill %SETS TAB POSITIONS
+\> if (method==STEADY) \\
+\> \> newton\_solver(arglist); \\
+\> else if (method==TRANSIENT) \\
+\> \> time\_integration(arglist); \\
+\> else if (method==CONTINUATION) \\
+\> \> do\_loca(arglist);
+\end{tabbing} }
+
+In the file \texttt{loca\_interface.c}, the first routine is \texttt{do\_loca()}. Fill in the argument list as you have chosen it. Also, any header files that are included at the top of the nonlinear solver function should also be included at the top of \texttt{loca\_interface.c}. Add a prototype for the call to \texttt{do\_loca()}.
+
+\item[2.] A hook is needed in the middle of your Newton iteration to invoke the bordering algorithms. (This is not needed if all you want to use is \textsc{zero\_order\_continuation} and \textsc{first\_order\_continuation}.) First, add an argument to your nonlinear solver routine called \texttt{void *con\_ptr}, and pass it a value of \texttt{NULL} wherever you usually call your nonlinear solver. Define an integer variable called \texttt{continuation\_converged} in your nonlinear solver. This will be a flag indicating whether or not the part of the Newton iteration performed in the bordering algorithms is converged.
+
+In the Newton loop, after the linear system has been solved for the update vector, but before the update is added to the current value of the solution vector, put in the following code:
+\texttt{
+\begin{tabbing} 
+tab\=indt\= \kill %SETS TAB POSITIONS
+\> if (con\_ptr==NULL) \\
+\> \> contination\_converged=TRUE; \\
+\> else \{ \\
+\> \> continuation\_converged=FALSE; \\
+\> \> continuation\_converged = \\
+\>\> \hspace{0.2in} continuation\_hook(x, delta\_x, con\_ptr, rtol, atol); \\
+\> \} 
+\end{tabbing} 
+}
+Here \texttt{double *x} is the current solution vector, \texttt{double *delta\_x} is the Newton update to the solution vector, \texttt{double rtol} and \texttt{double atol} are tolerance to determine convergence of the update (with \texttt{reltol=$10^{-2}$} and \texttt{abstol=$10^{-6}$} as typical values).
+
+Note that the vector \texttt{delta\_x} gets modified in the bordering algorithms. The next lines after this hook are usually the update loop (\texttt{x[i] = x[i] + delta\_x[i]}).
+
+Add the condition that \texttt{continuation\_converged==TRUE} to the convergence criteria for the Newton iteration.
+
+Finally, make sure your nonlinear solver returns the number of Newton iterations taken before convergence, whether in the argument list or as a return value.
+
+\item[3.] The next part of the implementation, and the most time consuming, is the filling in of all the needed wrapper routines in the file \texttt{loca\_interface.c}. Wrapper routines (which include \texttt{linear\_solver\_conwrap}, \texttt{assign\_parameter\_conwrap}, and \texttt{solution\_output\_conwrap}) provide LOCA access to routines in the application code. A complete list of the wrapper routines is given in Chapter 4, each with a description of the required functionality, argument lists, return values, and a list of which continuation strategies use it. (For example, wrapper routines dealing with the mass matrix are only required for Hopf tracking and eigenvalue calculations.)
+
+The algorithms in LOCA access the solution vector and residual vector, and assumes that these quantities are continuous in memory on each processor. They can therefore be identified by a pointer to the beginning of the array and a length. (Future version of LOCA will relax these assumptions and allow the user to supply routines for all vector operations.) LOCA is however blind to the matrix and all other attributes of the problem, such as the mesh. Because of this, the wrapper routines have minimal argument lists. For instance, when LOCA needs the application code to multiply the Jacobian matrix times a vector \texttt{x} to render a vector \texttt{y}, the call is simply
+\texttt{ \begin{tabbing} 
+tab\=indt\= \kill %SETS TAB POSITIONS
+\> matvec\_mult\_conwrap(x,y);
+\end{tabbing} }
+The function \texttt{void matvec\_mult\_conwrap(double *x, double *y);} needs to know about the matrix, but doesn't receive information about it through the argument lists. This is accomplished by making all information that is needed in the wrapper routines -- but which is not passed through LOCA -- {\emph global to the file \texttt{loca\_interface.c}}.
+
+Since the steady-state nonlinear solver of the application code must have information about the matrix (address, sparsity, etc.), this same information will be available in the routine \texttt{do\_loca} at the top of the file \texttt{loca\_interface.c}. This is because step {\bf 1} above gave \texttt{do\_loca} the same argument list and include files as the nonlinear solver. To access the matrix information in the wrapper routines below in the same file, this information needs to be made global to the file. If the information is already in a header file included at the top of the file, then it is already global to the file. If it is passed in through the argument list to \texttt{do\_loca}, then it needs to be made global to the file by the \texttt{passdown} structure. The \texttt{passdown} structure is not used explicitly by the LOCA library but is made available for the user to pass parameters to the wrapper routines.  
+
+For example, if the variable \texttt{double *J} is passed to \texttt{do\_loca}, and is needed by the matrix-vector multiply wrapper routine (\texttt{matrix\_residual\_fill\_conwrap}), the structure element \texttt{passdown.J} of the same variable type can be defined. Then the following line of code in the routine \texttt{do\_loca} can be added:
+\texttt{ \begin{tabbing}
+tab\=indt\= \kill %SETS TAB POSITIONS
+\> passdown.J = J;
+\end{tabbing} }
+This variable can now be accessed anywhere in the file as \texttt{passdown.J}.
+
+Following this example further, let's assume a users code uses the following prototype to fill a matrix:
+\texttt{ \begin{tabbing}
+tab\=indt\= \kill %SETS TAB POSITIONS
+\> \texttt{fill\_residual(*x, *rhs, *J, *options)}
+\end{tabbing} }
+Where \texttt{x} is the solution vector used to evaluate the residual and matrix fill, \texttt{*rhs} is the residual vector, \texttt{*J} is the matrix storage structure, and \texttt{*options} contains a list of options needed by the users code during the matrix fill.  The user would add the required objects to the \texttt{passdown} structure in the file \texttt{loca\_interface.c}:
+\texttt{ \begin{tabbing}
+tab\=indt\= \kill %SETS TAB POSITIONS
+\> struct passdown\_struct \{ \\
+\>\>MATRIX  *J; \\
+\>\>int     *options; \\
+\>\} passdown; \\
+\end{tabbing} }
+Then the \texttt{void matrix\_residual\_fill\_conwrap} would use the \texttt{passdown} structure information in the call to the users fill function: 
+\vspace{0.2in}
+\texttt{ \begin{tabbing}
+tab\=indt\=indt\=indt\= \kill %SETS TAB POSITIONS
+\>void matrix\_residual\_fill\_conwrap(double *x, double *rhs,\\
+\hspace{3.9in} int matflag) \{ \\
+\>\>switch (matflag) \{ \\
+\>\>\>case RHS\_ONLY: \\    
+\>\>\>\>passdown.options->fill\_flag $=$ RESIDUAL; \\
+\>\>\>\>break; \\
+\>\>\>case MATRIX\_ONLY: \\ 
+\>\>\>\>passdown.options->fill\_flag $=$ MATRIX; \\
+\>\>\>\>break; \\
+\>\>\>case RHS\_MATRIX: \\  
+\>\>\>\>passdown.options->fill\_flag $=$ MATRIXRESIDUAL; \\
+\>\>\>\>break; \\
+\>\>\} \\
+\>\>matrix\_fill(x, rhs, {\bf passdown.J}, \\
+\>\>\>\>{\bf passdown.options}); \\
+\>\} \\
+\end{tabbing} }
+
+\item[4.] Set the elements of the \texttt{con} structures in the routine \texttt{do\_loca}. The \texttt{con} structure contains $8$ structures which the user must load with parameters and flags that control the continuation runs. For instance, the \texttt{con.general\_info} structure contains storage space for the solution vector, the parameter, and the problem size. These structures are defined in the file \texttt{loca\_const.h}. A description of each of the elements of these structure is given in Chapter \ref{ch:structures}. 
+
+Most of the values in these structures need to be set through an input file and not by hardwiring them in source code. Therefore, each application code needs to read in the relevant parameters to control the continuation algorithms, pass that information to the \texttt{do\_loca} routine, and then assign them to the appropriate \texttt{con} structures. This task includes determining which quantities needed by LOCA are already provided in the existing application code and which new ones need to be added. For those which already exist (such as a solution vector), it is only necessary to pass the input values in to LOCA and assign them to the relevant LOCA structures. For inputs which must be added (such as a step control variable), the following procedure is recommended to provide LOCA with its required inputs. 
+
+\end{description} 
+
+\begin{description}
+
+\item[a] Create and define a C structure to hold all LOCA inputs to be added to the code. Ensure that there is an input to indicate that LOCA will be used.
+
+\item[b] Provide a subroutine to allocate this structure and call it prior to parsing the code's input file.
+
+\item[c] Add the necessary lines to the input file and add routines to read them in to the code's input parser. Some of these values should be assigned defaults if not included in the input file, following the examples of existing inputs.
+
+\item[d] If the application code runs in parallel, use its established procedure to communicate these inputs to each processor.
+
+\item[e] Include this structure in the argument list for \texttt{do\_loca} and assign each value to the relevant LOCA structure entries.
+
+\end{description}
+
+The template \texttt{loca\_interface.c} file for running the example problems shows
+an example of how this is done. Also included with the example problems is an input file reader that can be adapted for use with a new application code. 

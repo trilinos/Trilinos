@@ -1,0 +1,409 @@
+\chapter{Introduction}
+
+\section{LOCA Overview}
+
+This document is the theory and implementation manual for version 1.0 of LOCA, the Library Of Continuation Algorithms. When implemented with an application code, LOCA enables the tracking of solution branches as a function of a system parameter and the direct tracking of bifurcation points. LOCA is designed to drive application codes that use Newton's method to locate steady-state solutions to nonlinear problems. The algorithms are chosen to work for large problems, such as those that arise from discretizations of partial differential equations, and to run on distributed memory parallel machines.
+
+The approach in LOCA for locating and tracking bifurcations begins with augmenting the residual equations defining a steady state with additional equations that describe the bifurcation. A Newton method is then formulated for this augmented system; however, instead of loading up the Jacobian matrix for the entire augmented system (a task that involved second derivatives and dense matrix rows), bordering algorithms are used to decompose the linear solve into several solves with smaller matrices. Almost all of the algorithms just require multiple solves of the Jacobian matrix for the steady state problem to calculate the Newton updates for the augmented system. This greatly simplifies the implementation, since this is the same linear system that an application code using Newton's method will already have invested in. Only the Hopf tracking algorithm requires the solution of a larger matrix, which is the complex matrix involving the Jacobian matrix and an imaginary multiple of the mass matrix.
+
+The following algorithms are available in this version of LOCA:
+\begin{description} 
+\item[1.] \textsc{zero\_order\_continuation }
+\item[2.] \textsc{first\_order\_continuation }
+\item[3.] \textsc{arc\_length\_continuation }
+\item[4.] \textsc{turning\_point\_continuation } (fold points)
+\item[5.] \textsc{pitchfork\_continuation }
+\item[6.] \textsc{hopf\_continuation }
+\item[7.] \textsc{phase\_transition\_continuation }
+\end{description}
+The LOCA library relies heavily on a robust linear stability analysis capability. This is needed for detecting the first instance of Hopf and Pitchfork bifurcations and generating initial guesses for the null vectors for these routines. We have used the P\_ARPACK package \cite{lehoucq98b}\cite{maschhoff96} to indentify a few select eigenvalues and eigenmodes. With this release of LOCA, we are including routines that drive P\_ARPACK to perform the Cayley transformation, which we have found to work well for large scale problems \cite{lehoucq01}\cite{Burroughs01}.
+
+(In addition, the LOCA interface has been linked to an rSQP optimization code. The
+\textsc{rsqp\_optimization} option will be discussed in the implementation section, but details on how to use this feature are outside the scope of this document.)
+
+The rest of the document is organized as follows. Some background information on bifurcations follows in Section \ref{sec:background}. Chapter \ref{ch:algorithms}
+is the theory manual, and presents the algorithms that are implemented in LOCA.
+Chapter \ref{ch:implementation} shows the directory structure of the Loca code and contains instructions on how to implement LOCA around a new application code, including a recipe to follow. Chapter \ref{ch:wrappers} gives details on each of the wrapper routines that give LOCA access to routines in the application code. Chapter \ref{ch:structures} goes through each of the elements of the two structures that control the continuation algorithms. Chapter \ref{ch:strategies} explains the typical strategies employed to track bifurcations. This document does not contain demonstrations of the LOCA library being used with application codes.
+
+Publications and presentations that demonstrate the use of the LOCA library for analysis of applications can be obtained from the LOCA web page:
+\begin{itemize}
+\item \textbf{www.cs.sandia.gov/LOCA}
+\end{itemize}
+This web page contains links to the download site for the source code and
+this manual. 
+
+The LOCA code is being licensed under the GNU Lesser General Public License,  
+a copy of which is available with the code and can also be found at www.gnu.org.
+We welcome users to submit suggestions, bug reports, bug fixes, extensions, and results and publications generated using LOCA.
+
+\section{A Survey of Bifurcation Theory}
+\label{sec:background}
+This section is meant to give the user a brief introduction to bifurcation theory.  For more information we refer users to the following references \cite{tavener01,guckenheimer83,seydel88,iooss81,golubitsky85}. The Seydel book in particular has an excellent list of references.
+
+\subsection{Complex Behavior in Nonlinear System}
+The existence of multiple steady state solutions, or of 
+unstable steady solutions, can lead to 
+interesting behavior in nonlinear systems.  
+This interesting behavior can lead to undesirable effects
+such as a system operating in one way on certain occasions, and
+in another way on other occasions.  On the other hand, this
+interesting behavior can also be desirable, as  when  one is 
+interested in making switches or  oscillators.
+
+LOCA, and bifurcation theory in general, is aimed at 
+helping scientists and engineers efficiently map out 
+different regions of parameter space that have 
+qualitatively different behavior.  Although one could in principle
+map out these regions using only  transient calculations,
+ this would be  inefficient and  unreliable\footnote{We should mention that transient calculations
+could yield information not obtained in a bifurcation
+analysis.  Ideally one would use a transient analysis  in
+conjunction with 
+a  bifurcation analysis.}.   For
+example, suppose we wanted to know for what values of parameters
+ a system has two stable steady state solutions.  For
+ a given value of the parameters we could determine that there are 
+multiple  stable steady states by solving many different initial value
+problems.  If some converge towards one solution, and others
+converge towards another, then we have multiple stable 
+ steady states.
+However, each transient calculation will be time consuming, 
+and it is not clear  how many trials we need to do in order to 
+be convinced that only one stable  steady solution exists.   Furthermore,
+once we have convinced ourselves how many stable steady states
+ there are for one set of parameters,  this information does
+not greatly reduce the search when we change the parameters 
+slightly.
+
+Using tools like LOCA and P\_ARPACK, one only solves for steady state
+solutions, but takes into account the  transient behavior by 
+looking at the eigenvalues of the linearized system. 
+The bifurcation approach has two advantages over the transient
+approach.  
+\begin{itemize}
+\item We can solve steady equations, which is much more 
+efficient computationally then integrating until a steady state is reached.  
+\item  We can append equations to our steady state solution that
+allow us to find the  value of a  parameter where the 
+system changes its behavior.  When we have more than one
+ parameter in our system, we can then map out parameter
+space very efficiently. 
+\end{itemize}
+
+\subsection{Generic Behavior} 
+Suppose that we have a dynamical system of the form
+\begin{equation}
+ \bfB \dotbfx = \bfR(\bfx,\lambda) 
+\end{equation} 
+where \bfx\ is a vector (possibly of infinite dimension)
+that determines the state of our system, and $\lambda$ is a 
+parameter.  Steady state solutions can be found by solving
+\begin{equation}
+ \bfR(\bfx,\lambda)=0
+\end{equation}  
+The stability of a steady 
+state solution \bfx$_0$ is determined by 
+finding the eigenvalues of the system
+\begin{equation}
+ \sigma \bfB \bfw = \bfJ(\bfx_0) \bfw
+\end{equation}
+where \bfJ(\bfx$_0$) is the Jacobian of the function \bfR\
+evaluated at the steady solution \bfx$_0$.  If all of the
+eigenvalues of this system have real parts less than 
+zero, the steady state solution is stable.  If any of the
+eigenvalues have a real part bigger than zero, the 
+system is unstable.  
+
+It is possible to find many 
+different ways for a solution to lose its stability.
+For example, we can mathematically construct
+  systems that have 10 modes all go
+ unstable at the same value of the parameter.  It can be 
+exceedingly difficult to analyze such problems, but fortunately
+problems of this sort are unlikely to occur in practice. 
+ One of the
+ basic ideas in bifurcation
+theory is that of generic behavior.  We only concern
+ ourselves with behavior that is likely to occur in a system.  Behavior is 
+said to be non-generic if when we perturb our equations, the
+behavior no longer exists.  For example, it is generic for
+two curves in the plane to intersect with non zero slope.
+If we slightly change the equations of the two curves, they will
+still intersect at some other point with non-zero slope.  
+However, it is not generic for two curves in three dimensional 
+space to intersect.  Although it is not difficult to find examples
+of curves that intersect.  If we apply almost any
+arbitrarily small perturbation to the equations, they
+ will not intersect.
+
+We now apply this notion of a generic property to nonlinear
+stability problems.
+Suppose we have a steady state solution \bfx$_0$($\lambda$) that
+depends on a parameter $\lambda$.  Suppose that we analyze the
+stability of this solution, and find that at 
+some value $\lambda_0$ this solution goes unstable.  This
+implies that there is a critical eigenvalue that has a 
+zero real part.
+Elementary bifurcation theory shows that there are only two 
+generic ways that  a solution can lose its stability.   
+
+\begin{itemize}
+\item  If the  critical eigenvalue  is zero, the system 
+has a turning point.
+\item If the critical eigenvalue is imaginary, the system
+undergoes a Hopf bifurcation.
+\end{itemize}
+
+A turning point is a point in parameter space where   two
+solution branches merge and then disappear.  For example
+the equation $x^2 + \lambda=0$ has two solutions if $\lambda<0$, but
+no solutions if $\lambda>0$.  The point $x=0$, $\lambda=0$ is 
+a turning point (Figure \ref{fig:turningpoint}a).
+\begin{figure}[tb]
+ \begin{minipage}{0.5\linewidth}
+  \centering\epsfig{figure=figures/tecgraphone.eps,width=0.8\linewidth,angle=0} \\
+  (a) 
+ \end{minipage} \hfill
+ \begin{minipage}{0.5\linewidth}
+  \centering\epsfig{figure=figures/tecgraphtwo.eps,width=0.8\linewidth,angle=0} \\
+  (b)
+ \end{minipage} \\
+  \caption{Bifurcation diagrams of a turning point: (a) one turning point, (b) multiple turning points (leading to hysteresis).}
+ \label{fig:turningpoint}
+\end{figure} Some physical examples of turning points include:
+\begin{itemize}
+\item  The buckling of a shallow arch under symmetrical loading.
+\item  The breaking away of a drop from a tube when the volume
+is too large.
+\item  The bursting of a balloon when a critical volume is reached.
+\item Ignition of an explosion.
+\end{itemize}
+
+Elementary bifurcation theory shows that the stability of 
+one mode changes as we go around a turning point.  This implies
+that if one of the solutions is stable, then the  other solution 
+will be unstable.  Frequently we encounter more than one
+turning point in a system.  In this case we can get an \textsf{S} shaped 
+solution branch (Figure \ref{fig:turningpoint}b).   For sufficiently large or small values of the
+parameters we will have only one solution, but for intermediate
+values we will have three steady solutions.  The upper and
+lower branches will be stable, the middle branch unstable.  
+This \textsf{S} shaped solution curve can lead to nonlinear
+hysteresis, where as we increase our parameter value
+the solution suddenly jumps from the lower to the upper
+solution. If we then slightly decrease the value of the
+parameter the solution does not jump back to the lower solution,
+but will only do this if we greatly reduce the value of 
+the parameter.  
+
+The other generic form of loss of stability is the
+ Hopf bifurcation.   After  a Hopf bifurcation  the system 
+no longer settles down to a steady state, but will begin to
+oscillate periodically.  Examples of Hopf bifurcations include
+the onset of :
+
+\begin{itemize}
+\item  Vertex shedding behind bluff bodies.
+\item  Flutter in airplane wings.
+\item   Oscillations in electrical circuits 
+\item  Shimmying of wheels.
+\end{itemize}
+
+Note that when  we have located either one of these 
+bifurcations, we are at very interesting points in
+parameter space.  
+The turning point and Hopf bifurcation are generically the 
+only bifurcations we expect to see in a one parameter system.
+For this reason they are called co-dimension one bifurcations.
+If we have more than one parameter in our system we can get 
+more degenerate bifurcations.  These more degenerate bifurcations
+tell us even more about our system than a co-dimension 
+one bifurcation.  For example suppose our system has two
+ parameters 
+$\lambda$ and $\mu$. Suppose that for some value of $\mu$ 
+our solution curves as a function of $\lambda $ look like those
+in Figure \ref{fig:pitchfork}a.
+\begin{figure}[tb]
+ \begin{minipage}{0.5\linewidth}  
+  \centering\epsfig{figure=figures/tecgraphfour.eps,width=0.8\linewidth,angle=0} \\
+  (a)
+ \end{minipage} \hfill
+ \begin{minipage}{0.5\linewidth}
+  \centering\epsfig{figure=figures/tecgraphthree.eps,width=0.8\linewidth,angle=0} \\
+  (b)
+ \end{minipage}
+ \caption{Bifurcation diagrams of a symmetry breaking bifurcation: (a) broken pitchfork bifurcation (b) pitchfork bifurcation.}
+ \label{fig:pitchfork}
+\end{figure}  If we know about the  turning point
+$T$, we know that our solution has at least two 
+solutions for some values of the parameters.  However, knowing 
+about the turning point does not tell us that the 
+upper disconnected branch exists.  Suppose that as we change the
+parameter $\mu$ we find that for some value of 
+$\mu$  our solution curves look like those in Figure \ref{fig:pitchfork}b.  The
+particular value of $\lambda$, $\mu$ and $\bfx$ where we
+have these solution branches intersecting is an example of a 
+co-dimension two bifurcation. (This particular co-dimension 
+two bifurcation is called a pitchfork bifurcation.) If we know about the
+existence of a co-dimension two bifurcation we know that
+when we unfold it, we will get behavior like we see in 
+Figure \ref{fig:pitchfork}a (and other behavior as well).  This example
+illustrates the point that
+there is more information in a co-dimension two bifurcation.
+
+\subsection{Symmetry Breaking}
+When analyzing the stability of steady state solutions it is 
+very common to find non-generic behavior.  For example,
+if we take a beam and load it symmetrically we find that
+ the simple solution where it is straight up and down is stable 
+if the loading is not large.  When the loading gets to be
+large enough the beam will buckle by bending either to 
+the left or right.  Note that this is not a turning point, or a 
+Hopf bifurcation.  It is not a Hopf bifurcation because the
+beam does not begin oscillating, It is not a turning point because
+we have two solution branches intersecting each other, rather than
+a single solution branch turning around on itself.  
+
+At first sight this appears to cast some doubt on the usefulness of the concept of generic behavior.  However, we can note that
+if the beam was not built perfectly symmetrical 
+we would find that the pitchfork bifurcation gets split up 
+into two branches that do not intersect.  We only get the
+non-generic behavior in the symmetrical case.   
+
+The best way out of this dilemma is to note that
+scientists and engineers  often analyze symmetrical situations.
+We then ask  what type of generic behavior we expect to 
+encounter under the assumption that our system has some symmetry.
+It should be emphasized that these additional types of 
+bifurcations are co-dimension one bifurcations
+ in the presence of symmetry, but they would be
+ co-dimension two (or
+ higher) bifurcations if no symmetry were present.  For this
+reason we see that the scientist or engineer is actually 
+being wise in choosing to analyze a system with symmetry.
+This allows them to get more information out of a one 
+parameter system.
+
+Certain sorts of symmetry can ensure the existence of multiple
+eigenvalues in our system.  This can lead to very interesting and
+complex behavior at bifurcation points.  In LOCA we limit
+ourselves to  the simplest sort of bifurcations that can occur
+when a system has symmetry.   These bifurcations assume that
+the critical mode has a simple eigenvalue.
+
+As in the previous section we assume that we are analyzing the
+stability of a steady solution $\bfx_0(\lambda)$.  However, we
+now assume that the governing equations (and our
+solution $\bfx_0(\lambda)$)  are invariant under
+some group of symmetry transformations.  We now suppose that
+at some value of $\lambda$, our system goes unstable.  
+We assume that the critical mode is a simple eigenvalue (this
+is not generically requited in all systems with symmetry).
+In this case if the critical eigenvalue has a
+ nonzero imaginary part
+we will once again get a Hopf bifurcation.  This bifurcation will
+have some interesting spatio-temporal symmetry.  But, it is
+still a Hopf bifurcation.  On the other hand, if the critical
+eigenvalue is zero, there are two possibilities.
+In order to understand these possibilities we need to realize that
+when we analyze a system with symmetry, then the eigenvector 
+associated with a simple real  eigenvalue must either be symmetric
+or anti-symmetric with respect to any of the symmetries of the
+group.   If the eigenvector is symmetric
+ with respect to all of the transformations in the group, it is 
+said to be a fully symmetric eigenvector.  If it is anti-symmetric
+with respect to some transformations, it 
+is said to be a symmetry breaking eigenvector.
+
+When a symmetric system loses its stability at a simple real
+eigenvalue, there are two possibilities
+
+
+\begin{itemize}
+\item  If the critical eigenvector is fully symmetric, then the
+system encounters a turning point.  The symmetry of the 
+solution does not change as we go around the turning point. 
+\item  If the critical eigenvector is symmetry breaking, then 
+we encounter a pitchfork bifurcation.  In this case the 
+symmetrical solution $\bfx_0(\lambda)$ continues to exist on 
+both sides of the critical value of $\lambda$.  There is a
+second solution branch that intersects this symmetrical 
+branch.  This second branch only exists locally on one side of the 
+bifurcation point, and the solutions on this branch are not
+symmetric with respect to all elements of the group.  
+Furthermore the elements on the upper and lower branches are
+transformed into each other by the elements of the
+group.
+
+\end{itemize}
+
+\subsection{Tranversality Conditions}
+
+We used the example of two curves intersecting with non-zero
+slope in two 
+dimensional space as an example of generic behavior.  
+If we were a bit sloppy we could merely say that it is generic
+for two curves to intersect in two dimensional space, without 
+mentioning the non-zero slope condition.  The condition that
+they have non-zero slope is known as a transversality 
+condition, and is included to guarantee that we do not have a 
+degenerate situation, and that we can prove that for any 
+small enough perturbation of our equations, we can find a new
+point of intersection.
+
+In bifurcation theory the conditions stating that we are not at
+a degenerate point in parameter space are also known as 
+transversality conditions.  For example, suppose we 
+have a system that has a turning point at $\bfx=\bfx_0$, 
+$\lambda = \lambda_0$.   If this system is not degenerate, if 
+we perturb it slightly,  the perturbed system should 
+also have a turning point nearby  the original turning point.
+If this is not the case, then we are at a degenerate point
+in parameter space, and we have a situation similar to 
+two two dimensional curves intersecting with zero slope.
+There are 3 transversality conditions which guarantee that we
+are not at a degenerate point.
+Let $\bfr$ and $\bfl$ be the right and left eigenvectors of the
+Jacobian matrix.   The transversality conditions can be stated as 
+follows:
+
+\begin{itemize}
+\item  The zero eigenvalue is a simple eigenvalue.
+\item  The quantity $\bfl\trans \pdone{F(\bfx_0,\lambda_0)}{\lambda}$
+must not vanish.
+\item The quantity $\bfl\trans \bfR_{\bfx \bfx}(\bfx_0,\lambda_0) 
+\bfr \bfr $ must not vanish.
+\end{itemize}
+
+For a one dimensional problem these conditions can be 
+stated as $\pdone{F}{\lambda} \neq 0 $, and $\pdtwo{F}{x} \neq0$.
+For higher dimensional problems the  term $\bfl\trans \bfR_{\bfx \bfx}
+\bfr \bfr $ is the projection of the quadratic terms onto the
+center manifold.  
+
+ For a Hopf bifurcation, the transversality conditions 
+guarantee that if we have located a Hopf bifurcation, and then
+we perturb our system, we can locate a nearby Hopf bifurcation.
+The transversality conditions are
+
+\begin{itemize}
+\item   The Jacobian matrix does not have a zero eigenvalue, 
+and there is one and only one complex conjugate pair of 
+eigenvalues that has a zero real part.
+\item  The complex conjugate pair of eigenvalues are simple 
+eigenvalues.
+\item  Let $\sigma(\lambda)$ be the critical eigenvalue.
+The real part of the critical eigenvalue must pass through 
+zero with non zero slope.  That is 
+$ Re \odone{\sigma(\lambda_0)}{\lambda} \neq 0 $. 
+\end{itemize}
+
+The transversality conditions for a pitchfork bifurcation
+(in the presence of symmetry) are :
+
+\begin{itemize}
+\item The critical eigenvalue is simple.
+\item The critical eigenvalue passes through zero with 
+nonzero slope, $\odone{\sigma(\lambda_0}{\lambda} \neq 0 $.
+\end{itemize}
+
