@@ -30,7 +30,19 @@ Trilinos website: http://software.sandia.gov/trilinos
 
 Amesos
 
-- No release notes submitted. 
+- Improved handling of Epetra_RowMatrix operators 
+- Memory leaks have been reduced 
+- Simplified configuration using
+    --with-libs=-L/home/kstanley/Trilinos3PL/lib
+    --with-incdirs=-I/home/kstanley/Trilinos3PL/include
+- Known bugs: 
+  - Amesos_Dscpack has memory leaks, prints to standard out and may crash if 
+    SymbolicFacgtorization() is called multiple times on the same Amesos 
+    object. 
+  - Amesos packages do not accept non-contiguous maps (e.g. one with indices 
+    {1,2,5,8,9, ... } ) 
+  - Superludist fails on some matrices 
+  - Error handling on singular and near singular matrices is inconsistent 
 
 --------------------------------------------------------------------------------
 
@@ -59,7 +71,11 @@ AztecOO
 
 Didasko (New)
 
-- No release notes submitted.
+- Didasko now contains the tutorial PDF file and examples. All the tutorial 
+  material is located in the Trilinos/packages/didasko subdirectory. 
+- The doxygen documentation has been improved. 
+- All examples are configured with autotools. Users can enable the compilations 
+  of the examples by adding --enable-didasko to their configure line. 
 
 -------------------------------------------------------------------------------- 
 Epetra
@@ -160,7 +176,17 @@ New_Package (version 1.1)
 
 NOX
 
-- No release notes submitted. 
+- A new Tensor based solver that is independent of the underlying linear 
+  solver is now implemented (in the prerelease section). Previously the 
+  Tensor method was hardwired to use an iterative solver. 
+- Inexact Trust Region Techniques are fully supported (also in the prerelease 
+  section). 
+- Improved support for Epetra objects - The NOX::EpetraNew::Group should be 
+  used in place of the NOX::Epetra::Group. In the future we will be phasing 
+  out the NOX::Epetra::Group and replace it with NOX::EpetraNew::Group. 
+- A multi-physics technique for code coupling has been demonstrated in the 
+  test/epetra/Multiphysics directory. This will be expanded to a generic 
+  capability in the next year. 
 
 --------------------------------------------------------------------------------
 
@@ -172,7 +198,14 @@ Pliris (New)
 
 PyTrilinos (New)
 
-- No release notes submitted. 
+- Requires SWIG version 1.3.23 or higher (http://www.swig.org). 
+- Requires python Numeric (http://www.pfdubois.com/numpy). 
+- Configure with --enable-pytrilinos. 
+- Currently provides access to Epetra, EpetraExt and NOX. From python, use 
+  "from PyTrilinos import name", where "name" is the desired module. 
+- Online documentation provides list of which classes have been wrapped. 
+- Wrapped classes support almost all of the class methods. See documentation 
+  of wrapped packages for details. 
 
 --------------------------------------------------------------------------------
 
