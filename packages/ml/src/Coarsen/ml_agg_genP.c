@@ -181,7 +181,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 {
    int         Ncoarse, Nfine, gNfine, gNcoarse;
    double      max_eigen;
-   ML_Operator *Amat, *Pmatrix, *AGGsmoother;
+   ML_Operator *Amat, *Pmatrix, *AGGsmoother = NULL;
    struct      ML_AGG_Matrix_Context widget;
    ML_Krylov   *kdata;
 
