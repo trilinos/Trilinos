@@ -7,20 +7,20 @@ noinst_PROGRAMS = hello_test
 
 hello_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-#Specify locations of include files within Trilinos, but outside New_Package
-# REQUIRED CHANGE - Add packages that new_package is dependent on
-# OPTIONAL CHANGE - Remove epetra if new_package does not need it
-#  
+#np# Specify locations of include files within Trilinos, but outside np
+#np# Add packages that np is dependent on; remove epetra if np does not need it
+
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 
-# REQUIRED CHANGE - Change the name of the library
+#np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
+#np# optional.
 hello_test_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libnew_package.a 
 
 hello_test_CXXFLAGS = -I$(top_srcdir)/src
 
-# REQUIRED CHANGE - Change the name of the library
+#np# List libraries that np is dependent on.
 hello_test_LDADD = $(top_builddir)/src/libnew_package.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(BLAS_LIBS) $(FLIBS)

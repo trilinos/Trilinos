@@ -1,7 +1,7 @@
 # @HEADER
 # @HEADER
 
-
+#np# Note the following paragraph.
 # ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
 # second is the list of headers to be installed, i.e., any header that
@@ -10,12 +10,13 @@
 # ------------------------------------------------------------------------
 
 #
-# There is, at present, no distinction between most of the categories, 
-# other than those which start with EXTRA_.  All categories which do not
-# start with EXTRA_ are included in all builds.  Categories which start
-# with EXTRA_ are included in some builds (typically controlled by 
-# --with-xyz or --without-xyz)
+#np# There is, at present, no distinction between most of the categories, 
+#np# other than those which start with EXTRA_.  All categories which do not
+#np# start with EXTRA_ are included in all builds.  Categories which start
+#np# with EXTRA_ are included in some builds (typically controlled by 
+#np# --with-xyz or --without-xyz)
 #
+#np# Make sure to list all source files in one of the following categories.
 CORE_H = \
 	$(srcdir)/Newp_Hello.h 
 
@@ -37,11 +38,11 @@ SERIAL_H =
 SERIAL = 
 
 #
-#  Files which are included in select builds are typically have
-#  names that start with EXTRA
+#np#  Files which are included in select builds are typically have
+#np#  names that start with EXTRA
 #
-#  EXTRA_MPI is control by --with-mpi and --without-mpi which is
-#  set up by TAC_ARC_CONFIG_MPI 
+#np#  EXTRA_MPI is control by --with-mpi and --without-mpi which is
+#np#  set up by TAC_ARC_CONFIG_MPI 
 #
 EXTRA_MPI_H =
 
@@ -59,7 +60,8 @@ MPI_H =
 MPI =
 
 endif
-
+#np# This section should come out, or be modified to reflect options in the 
+#np# package being autotool'ed
 EXTRA_NEWP_SWAHILI_H = \
 	$(srcdir)/Newp_Jambo.h 
 
@@ -82,7 +84,6 @@ endif
 
 
 
-
 USERBASE_H = 
 
 
@@ -99,18 +100,23 @@ COMP_H =
 COMP = 
 
 
-#Specify locations of include files within Trilinos, but outside New_Package
-# #np# - Add packages that new_package is dependent on
-#        Remove epetra if new_package does not need it
+#np# List locations of include files within Trilinos but outside of this 
+#np# package
+#np# - Add packages that this package is dependent on
+#np#   Remove epetra if this package does not need it
 #  
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+
+#np# The following section can be duplicated for building multiple libraries -
+#np# make sure to list the correct categories with each library.
+#np# replace new_package with the name of the package being autotool'ed here
 # ------------------------------------------------------------------------
 # New_Package library specifications
 # ------------------------------------------------------------------------
-
+#np# replace new_package with the name of the package being autotool'ed here
 NEW_PACKAGE_LIB = libnew_package.a
 
-
+#np# replace new_package with the name of the package being autotool'ed here
 NEW_PACKAGE_H = \
 	$(CORE_H) \
 	$(UTIL_H) \
@@ -123,6 +129,7 @@ NEW_PACKAGE_H = \
 	$(MPI_H) \
 	$(NEWP_SWAHILI_H)
 
+#np# replace new_package with the name of the package being autotool'ed here
 libnew_package_a_SOURCES = \
 	$(CORE) \
 	$(UTIL) \
@@ -133,6 +140,7 @@ libnew_package_a_SOURCES = \
 	$(MPI) \
 	$(NEWP_SWAHILI)
 
+#np# replace new_package with the name of the package being autotool'ed here
 EXTRA_libnew_package_a_SOURCES = \
 	$(EXTRA_MPI) \
 	$(EXTRA_MPI_H) \
@@ -151,9 +159,11 @@ EXTRA_libnew_package_a_SOURCES = \
 
 if USE_ALTERNATE_AR
 
+#np# replace new_package with the name of the package being autotool'ed here
 libnew_package_a_AR = $(ALTERNATE_AR)
 else
 
+#np# replace new_package with the name of the package being autotool'ed here
 libnew_package_a_AR = $(AR) cru
 
 endif
@@ -163,30 +173,36 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
+#np# replace new_package with the name of the package being autotool'ed here
 libnew_package_a_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
 
+#np# replace new_package with the name of the package being autotool'ed here
 lib_LIBRARIES = $(NEW_PACKAGE_LIB)
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(pkgincludedir)
 # ------------------------------------------------------------------------
 
+#np# replace new_package with the name of the package being autotool'ed here
 pkginclude_HEADERS = $(NEW_PACKAGE_H) 
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(pkgexecincludedir)
 # ------------------------------------------------------------------------
 
+#np# replace new_package with the name of the package being autotool'ed here
 # SPECIAL NOTE: New_Package_config.h is a machine-dependent file, so we need
 # to install it in the machine-dependent directory. However, that is
 # not a default installation directory, so we had to create it
 # special.
 
+#np# replace new_package with the name of the package being autotool'ed here
 pkgexecincludedir = $(exec_prefix)/include/new_package
+#np# replace new_package with the name of the package being autotool'ed here
 nodist_pkgexecinclude_HEADERS = New_Package_config.h
 
 # ------------------------------------------------------------------------

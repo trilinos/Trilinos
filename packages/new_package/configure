@@ -1279,14 +1279,10 @@ echo "----------------------------------------"
 # config.sub, config.guess) and M4 files.
 
 #
-#   I wimped out here.  I still think that ../../config can work
-#   for any package with a frim dependency on Trilinos.
-#   But, using ../../config puts some ../../config files into a list
-#   of files that it looked like it might delete under certain circumstances,
-#   or perhaps put into some tar ball.  Anyway, it scared me off.
-#   In order to get rid of the local config directory, you have to
-#   reference the config directory in Makefile.am and in bootstrap
-#   (which should use aclocal -I ../../config)
+# #np# This a a subdirectory of Trilinos/packages/new_package that contains
+# #np# a number of useful m4 files.  Any package that uses these m4 files
+# #np# will have to add them to the repository.  The m4 files perform various
+# #np# common checks and set common variable values to minimize redundant work.
 #
 ac_aux_dir=
 for ac_dir in config $srcdir/config; do
@@ -2900,7 +2896,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:2903:" \
+echo "$as_me:2899:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5417,7 +5413,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5420: \"$ac_link\") >&5
+(eval echo $as_me:5416: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5496,7 +5492,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5499: \"$ac_link\") >&5
+(eval echo $as_me:5495: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6351,7 +6347,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6354: \"$ac_link\") >&5
+(eval echo $as_me:6350: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6430,7 +6426,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6433: \"$ac_link\") >&5
+(eval echo $as_me:6429: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
