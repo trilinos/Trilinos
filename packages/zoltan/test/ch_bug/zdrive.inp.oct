@@ -1,4 +1,4 @@
-Decomposition Method	= rib
+Decomposition Method	= octpart
 Zoltan Parameters	= obj_weight_dim=1
 Zoltan Parameters	= comm_weight_dim=1
 File Type		= Chaco
