@@ -61,7 +61,7 @@ int Zoltan_PHG_Coarsening
   }     
   for (i = 0; i < hg->nVtx; i++)
      cmatch[i] = match[i];         /* working copy of match array */
-    
+
   /* Assume all rows in a column have the entire (column's) matching info */
   /* Calculate the number of coarse vertices. */
   c_hg->nVtx = 0;                 /* counts number of new (coarsened) vertices */
@@ -93,53 +93,60 @@ int Zoltan_PHG_Coarsening
   }
 
   /* size and allocate the send buffer, and weight array */
+  /* fix for size/count = 0 */
   size += (2*count);          /* add gno's and edge counts to message size */
-  if (!(buffer = (char*) ZOLTAN_MALLOC (size * sizeof(int)))  
-   || !(c_hg->vwgt = (float*) ZOLTAN_CALLOC (c_hg->nVtx, sizeof(float))))  {
-     Zoltan_Multifree (__FILE__, __LINE__, 2, c_hg->vwgt, buffer);
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     ZOLTAN_TRACE_EXIT (zz, yo);
-     return ZOLTAN_MEMERR;
-  }
+  if (size > 0)
+    if (!(buffer = (char*) ZOLTAN_MALLOC (size * sizeof(int)))  
+     || !(c_hg->vwgt = (float*) ZOLTAN_CALLOC (c_hg->nVtx, sizeof(float))))  {
+       Zoltan_Multifree (__FILE__, __LINE__, 2, c_hg->vwgt, buffer);
+       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+       ZOLTAN_TRACE_EXIT (zz, yo);
+       return ZOLTAN_MEMERR;
+    }
               
   MPI_Allgather (&size, 1, MPI_INT, each_size, 1, MPI_INT, hgc->row_comm);  
 
   size = 0;
   for (i = 0; i < hgc->nProc_x; i++)
     size += each_size[i];
-  if (!(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))   {
-    ZOLTAN_TRACE_EXIT (zz, yo);
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
-    return ZOLTAN_MEMERR;
-  }  
+    
+  /* fix for size = 0 */
+  if (size > 0)
+    {  
+    if (!(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))   {
+      ZOLTAN_TRACE_EXIT (zz, yo);
+      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+     }  
 
-  displs[0] = 0;
-  for (i = 1; i < hgc->nProc_x; i++)
-     displs[i] = displs[i-1] + each_size[i-1];
+    displs[0] = 0;
+    for (i = 1; i < hgc->nProc_x; i++)
+       displs[i] = displs[i-1] + each_size[i-1];
         
-  /* Message is list of <gno, gno's edge count, list of edge gno's> */
-  ip = (int*) buffer;
-  for (i = 0; i < count; i++)  {
-     *ip++ = VTX_LNO_TO_GNO (hg, list[i]);       /* destination vertex gno */        
-     *ip++ = hg->vindex[list[i]+1] - hg->vindex[list[i]];   /* count */                                                             /* weights??? */
-     for (j = hg->vindex[list[i]]; j < hg->vindex[list[i]+1]; j++)
-       *ip++ = EDGE_LNO_TO_GNO (hg, hg->vedge[j]);        /* edges */                           /* edges */
-  }
-          
-  MPI_Allgatherv (buffer, count, MPI_INT, rbuffer, each_size, displs, MPI_INT,
-   hgc->row_comm);            
+    /* Message is list of <gno, gno's edge count, list of edge gno's> */
+    ip = (int*) buffer;
+    for (i = 0; i < count; i++)  {
+       *ip++ = VTX_LNO_TO_GNO (hg, list[i]);       /* destination vertex gno */        
+       *ip++ = hg->vindex[list[i]+1] - hg->vindex[list[i]];   /* count */                                                             /* weights??? */
+       for (j = hg->vindex[list[i]]; j < hg->vindex[list[i]+1]; j++)
+         *ip++ = EDGE_LNO_TO_GNO (hg, hg->vedge[j]);        /* edges */                           /* edges */
+    }
+        
+    MPI_Allgatherv (buffer, count, MPI_INT, rbuffer, each_size, displs, MPI_INT,
+     hgc->row_comm);            
 
-  /* index all received data for rapid lookup */
-  ip = (int*) rbuffer;
-  for (i = 0; i < size; i++)  {
-    vertex = ip[i];
-    if (VTX_TO_PROC_X (hg, vertex) == me)
-      cmatch[VTX_GNO_TO_LNO(hg,vertex)] = i;
-    i++;
-    i += ip[i];  /* count of hyperedges */
+    /* index all received data for rapid lookup */
+   ip = (int*) rbuffer;
+   for (i = 0; i < size; i++)  {
+      vertex = ip[i];
+      if (VTX_TO_PROC_X (hg, vertex) == me)
+       cmatch[VTX_GNO_TO_LNO(hg,vertex)] = i;
+     i++;
+      i += ip[i];  /* count of hyperedges */
+    }
   }
-      
-  if (!(used_edges = (int*)   ZOLTAN_CALLOC (c_hg->nEdge,     sizeof(int)))
+     
+  if (!(used_edges = (int*)   ZOLTAN_CALLOC (hg->nEdge,       sizeof(int)))
    || !(c_ewgt     = (float*) ZOLTAN_MALLOC (hg->nEdge      * sizeof(float)))
    || !(c_vindex   = (int*)   ZOLTAN_MALLOC ((hg->nVtx+1)   * sizeof(int)))
    || !(c_vedge    = (int*)   ZOLTAN_MALLOC (hg->nNonZero   * sizeof(int)))) {
@@ -161,36 +168,36 @@ int Zoltan_PHG_Coarsening
        LevelMap[i] = c_hg->nVtx;
       
 /*      c_hg->vwgt[c_hg->nVtx] += vlist[k]->weight;     */
-       c_hg->vindex[c_hg->nVtx] = c_hg->nNonZero;
+       c_vindex[c_hg->nVtx] = c_hg->nNonZero;
        ip =  ((int*) rbuffer) + cmatch[i];      /* point to receieved data */ 
        ip++;                    /* skip over vtx gno */
        count = *ip++;           /* extract edge count, advance to first edge */
        while (count--)  {
           edge = EDGE_GNO_TO_LNO (hg, *ip++);
           used_edges [edge]             = i+1;
-          c_hg->vedge[c_hg->nNonZero++] = edge;
+          c_vedge[c_hg->nNonZero++] = edge;
        }
        
-       c_hg->vwgt[c_hg->nVtx] += hg->vwgt ? hg->vwgt[vertex] : 1.0;
+/*       c_hg->vwgt[c_hg->nVtx] += hg->vwgt ? hg->vwgt[vertex] : 1.0; */
        for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)  {
          if (used_edges [hg->vedge[j]] <= i)  {
            used_edges [hg->vedge[j]]     = i+1;          
-           c_hg->vedge[c_hg->nNonZero++] = hg->vedge[j];
+           c_vedge[c_hg->nNonZero++] = hg->vedge[j];
          }      
        }        
        c_hg->nVtx++;          
     }
-    else if (match[i] >= 0 && cmatch[i] < 0)   /* match/pack/group local vtx's */
-      c_hg->vindex[c_hg->nVtx] = c_hg->nNonZero;
+    else if (match[i] >= 0 && cmatch[i] < 0)  {   /* match/pack/group local vtx's */
+      c_vindex[c_hg->nVtx] = c_hg->nNonZero;
       vertex = i;
       while (cmatch[vertex] < 0)  {    
         LevelMap[vertex] = c_hg->nVtx;    
-        c_hg->vwgt[c_hg->nVtx] += hg->vwgt ? hg->vwgt[vertex] : 1.0;  
+/*        c_hg->vwgt[c_hg->nVtx] += hg->vwgt ? hg->vwgt[vertex] : 1.0;  */
 
         for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++)  {
           if (used_edges [hg->vedge[j]] <= i)  {
             used_edges [hg->vedge[j]]     = i+1;          
-            c_hg->vedge[c_hg->nNonZero++] = hg->vedge[j];
+            c_vedge[c_hg->nNonZero++] = hg->vedge[j];
           }              
         }                       
         cmatch[vertex] = -cmatch[vertex] - 1;
@@ -198,7 +205,9 @@ int Zoltan_PHG_Coarsening
       }
       c_hg->nVtx++;
     }
-    
+  }
+  c_vindex[c_hg->nVtx] = c_hg->nNonZero;
+      
   ZOLTAN_FREE ((void**) &used_edges);
   
   /* Update the dist_x array after coarsening: allocate and fill */
@@ -215,22 +224,22 @@ int Zoltan_PHG_Coarsening
   size = 0;
   for (i = 0; i < hgc->nProc_x; i++)
      size += each_size[i];
-  c_hg->dist_x[hgc->nProc_x+1] = size;
+  c_hg->dist_x[hgc->nProc_x] = size;
 
   /* Done if there are no remaining vertices */
   if (c_hg->nVtx == 0)  {
-    c_hg->ewgt = NULL;
     if (!(c_hg->vindex = (int*) ZOLTAN_CALLOC (1, sizeof(int))))  {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT (zz, yo);
       return ZOLTAN_MEMERR;
-    }
-    c_hg->vedge = NULL;
+    };
   }
   else  {
-    c_hg->ewgt   = c_ewgt;
+/*    c_hg->ewgt   = c_ewgt;  */
+
     c_hg->vindex = c_vindex;
     c_hg->vedge  = c_vedge;
+    c_hg->nEdge  = hg->nEdge;
   }
   
   Zoltan_Multifree (__FILE__, __LINE__, 6, &buffer, &rbuffer, &list, &cmatch,
