@@ -49,6 +49,7 @@
 #define ML_ID_MATRIXDCSR    124
 #define ML_ID_AGGRE         125
 #define ML_ID_KRYLOVDATA    126
+#define ML_ID_AMG           127
 
 #define ML_COMPUTE_RES_NORM 129
 #define ML_NO_RES_NORM      179
