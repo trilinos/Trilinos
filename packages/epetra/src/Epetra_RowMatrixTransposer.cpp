@@ -40,7 +40,17 @@ Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(Epetra_RowMatrix * OrigMa
     TransposeExporter_(0),
     TransposeRowMap_(0),
     TransposeCreated_(false),
-    MakeDataContiguous_(false)
+    MakeDataContiguous_(false),
+    NumMyRows_(0),
+    NumMyCols_(0),
+    MaxNumEntries_(0),
+    Indices_(NULL),
+    Values_(NULL),
+    TransNumNz_(NULL),
+    TransIndices_(NULL),
+    TransValues_(NULL),
+    TransMyGlobalEquations_(NULL),
+    OrigMatrixIsCrsMatrix_(false)
 {
 }
 //=============================================================================
@@ -50,7 +60,17 @@ Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(const Epetra_RowMatrixTra
    TransposeExporter_(0),
    TransposeRowMap_(0),
    TransposeCreated_(Source.TransposeCreated_),
-   MakeDataContiguous_(Source.MakeDataContiguous_) 
+   MakeDataContiguous_(Source.MakeDataContiguous_),
+   NumMyRows_(0),
+   NumMyCols_(0),
+   MaxNumEntries_(0),
+   Indices_(NULL),
+   Values_(NULL),
+   TransNumNz_(NULL),
+   TransIndices_(NULL),
+   TransValues_(NULL),
+   TransMyGlobalEquations_(NULL),
+   OrigMatrixIsCrsMatrix_(false)
 {
   TransposeMatrix_ = new Epetra_CrsMatrix(*Source.TransposeMatrix_);
   if (MakeDataContiguous_) TransposeMatrix_->MakeDataContiguous();

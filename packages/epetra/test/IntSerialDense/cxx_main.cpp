@@ -58,8 +58,8 @@ bool seperateData(Epetra_IntSerialDenseMatrix& a, Epetra_IntSerialDenseMatrix& b
 int* getRandArray(int length);
 int randomInt();
 void printArray(int* array, int length);
-void printMat(char* name, Epetra_IntSerialDenseMatrix& matrix);
-void printHeading(char* heading);
+void printMat(const char* name, Epetra_IntSerialDenseMatrix& matrix);
+void printHeading(const char* heading);
 
 int main(int argc, char *argv[]) {
 //============================
@@ -1528,7 +1528,7 @@ void printArray(int* array, int length) {
 }
 //=========================================================================
 // prints IntSerialDenseMatrix/Vector with formatting
-void printMat(char* name, Epetra_IntSerialDenseMatrix& matrix) {
+void printMat(const char* name, Epetra_IntSerialDenseMatrix& matrix) {
 	//cout << "--------------------" << endl;
 	cout << "*** " << name << " ***" << endl;
 	cout << matrix;
@@ -1537,7 +1537,7 @@ void printMat(char* name, Epetra_IntSerialDenseMatrix& matrix) {
 
 //=========================================================================
 // prints section heading with spacers/formatting
-void printHeading(char* heading) {
+void printHeading(const char* heading) {
 	cout << "\n==================================================================\n";
 	cout << heading << endl;
 	cout << "==================================================================\n";

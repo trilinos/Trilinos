@@ -168,7 +168,6 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
     // Construct list of exports that calling processor needs to send as a result
     // of everyone asking for what it needs to receive.
     
-    bool Deterministic = true;
     ierr = Distor_->CreateFromSends( NumExportIDs_, ExportPIDs_, true, NumRemoteIDs_);
     if (ierr!=0) throw ReportError("Error in Epetra_Distributor.CreateFromSends()", ierr);
     

@@ -100,6 +100,13 @@ class Epetra_Time: public Epetra_Object {
   */
   virtual ~Epetra_Time(void);
 
+  Epetra_Time& operator=(const Epetra_Time& src)
+    {
+      StartTime_ = src.StartTime_;
+      Comm_ = src.Comm_;
+      return( *this );
+    }
+
  private:
 
   double StartTime_;

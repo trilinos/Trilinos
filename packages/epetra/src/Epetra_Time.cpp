@@ -32,13 +32,15 @@
 
 //=============================================================================
 Epetra_Time::Epetra_Time(const Epetra_Comm& Comm) 
-  : Comm_(&Comm)
+  : StartTime_(0.0),
+    Comm_(&Comm)
 {
   StartTime_ = WallTime();
 }
 //=============================================================================
 Epetra_Time::Epetra_Time(const Epetra_Time& Time) 
-  : Comm_(Time.Comm_)
+  : StartTime_(Time.StartTime_),
+    Comm_(Time.Comm_)
 {
 }
 //=============================================================================

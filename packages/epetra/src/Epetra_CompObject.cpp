@@ -36,8 +36,9 @@
 
 // Constructor
 
-Epetra_CompObject::Epetra_CompObject() {
-  FlopCounter_ = 0;
+Epetra_CompObject::Epetra_CompObject()
+  : FlopCounter_(0)
+{
 }
 
 //==========================================================================

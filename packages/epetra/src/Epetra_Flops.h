@@ -67,6 +67,12 @@ class Epetra_Flops {
   */
   virtual ~Epetra_Flops(void);
 
+  Epetra_Flops& operator=(const Epetra_Flops& src)
+    {
+      Flops_ = src.Flops_;
+      return(*this);
+    }
+
   friend class Epetra_CompObject;
 
  protected:

@@ -215,7 +215,6 @@ int Epetra_SerialDenseSVD::Factor() {
 
 //=============================================================================
 int Epetra_SerialDenseSVD::Solve(void) {
-  int ierr = 0;
 
   //FOR NOW, ONLY ALLOW SOLVES IF INVERTED!!!!
   //NO REFINEMENT!!!

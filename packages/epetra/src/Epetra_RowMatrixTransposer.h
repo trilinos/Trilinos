@@ -31,6 +31,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 #ifndef EPETRA_CRSMATRIXTRANSPOSER_H
 #define EPETRA_CRSMATRIXTRANSPOSER_H
+#include <Epetra_Object.h>
 class Epetra_RowMatrix;
 class Epetra_CrsMatrix;
 class Epetra_Map;
@@ -124,7 +125,14 @@ class Epetra_RowMatrixTransposer {
   //@}
   
  private: 
-	void DeleteData();
+  void DeleteData();
+  Epetra_RowMatrixTransposer& operator=(const Epetra_RowMatrixTransposer& src)
+    {
+      //not currently supported
+      abort();
+      return(*this);
+    }
+
 	Epetra_RowMatrix * OrigMatrix_;
 	Epetra_CrsMatrix * TransposeMatrix_;
 	Epetra_Export * TransposeExporter_;

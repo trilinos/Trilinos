@@ -54,9 +54,9 @@ bool Residual( int N, int NRHS, double * A, int LDA, bool Transpose,
 
 int matrixCpyCtr(bool verbose, bool debug);
 int matrixAssignment(bool verbose, bool debug);
-void printHeading(char* heading);
+void printHeading(const char* heading);
 double* getRandArray(int length);
-void printMat(char* name, Epetra_SerialDenseMatrix& matrix);
+void printMat(const char* name, Epetra_SerialDenseMatrix& matrix);
 void printArray(double* array, int length);
 bool identicalSignatures(Epetra_SerialDenseMatrix& a, Epetra_SerialDenseMatrix& b, bool testLDA = true);
 bool seperateData(Epetra_SerialDenseMatrix& a, Epetra_SerialDenseMatrix& b);
@@ -827,7 +827,7 @@ int matrixCpyCtr(bool verbose, bool debug) {
 
 //=========================================================================
 // prints section heading with spacers/formatting
-void printHeading(char* heading) {
+void printHeading(const char* heading) {
 	cout << "\n==================================================================\n";
 	cout << heading << endl;
 	cout << "==================================================================\n";
@@ -835,7 +835,7 @@ void printHeading(char* heading) {
 
 //=========================================================================
 // prints SerialDenseMatrix/Vector with formatting
-void printMat(char* name, Epetra_SerialDenseMatrix& matrix) {
+void printMat(const char* name, Epetra_SerialDenseMatrix& matrix) {
 	//cout << "--------------------" << endl;
 	cout << "*** " << name << " ***" << endl;
 	cout << matrix;

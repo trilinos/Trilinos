@@ -259,6 +259,12 @@ for each class is given in the appropriate class documentation.
  friend class Epetra_BlockMap;
 
  private:
+ Epetra_Export& operator=(const Epetra_Export& src)
+   {
+     //not currently supported
+     abort();
+     return(*this);
+   }
 
   const Epetra_BlockMap & TargetMap_;
   const Epetra_BlockMap & SourceMap_;

@@ -137,6 +137,10 @@ class Epetra_Object {
   
 
  private:
+  Epetra_Object& operator=(const Epetra_Object& src) {
+    SetLabel(src.Label());
+    return *this;
+  }
 
   char * Label_;
 

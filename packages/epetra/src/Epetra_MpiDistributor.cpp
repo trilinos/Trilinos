@@ -42,8 +42,18 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiComm & Comm):
   procs_from_(0),
   indices_from_(0),
   size_indices_from_(0),
+  sizes_(0),
+  sizes_to_(0),
+  starts_to_(0),
+  starts_to_ptr_(0),
+  indices_to_ptr_(0),
+  sizes_from_(0),
+  starts_from_(0),
+  starts_from_ptr_(0),
+  indices_from_ptr_(0),
   nrecvs_(0),
   nsends_(0),
+  nexports_(0),
   self_msg_(0),
   max_send_length_(0),
   total_recv_length_(0),
@@ -55,16 +65,7 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiComm & Comm):
   no_delete_(false),
   send_array_(0),
   send_array_size_(0),
-  comm_plan_reverse_(0),
-  sizes_(0),
-  sizes_to_(0),
-  sizes_from_(0),
-  starts_to_(0),
-  starts_from_(0),
-  starts_to_ptr_(0),
-  starts_from_ptr_(0),
-  indices_to_ptr_(0),
-  indices_from_ptr_(0)
+  comm_plan_reverse_(0)
 {
 }
 
@@ -79,8 +80,18 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiDistributor & Distr
   procs_from_(0),
   indices_from_(0),
   size_indices_from_(Distributor.size_indices_from_),
+  sizes_(0),
+  sizes_to_(0),
+  starts_to_(0),
+  starts_to_ptr_(0),
+  indices_to_ptr_(0),
+  sizes_from_(0),
+  starts_from_(0),
+  starts_from_ptr_(0),
+  indices_from_ptr_(0),
   nrecvs_(Distributor.nrecvs_),
   nsends_(Distributor.nsends_),
+  nexports_(Distributor.nexports_),
   self_msg_(Distributor.self_msg_),
   max_send_length_(Distributor.max_send_length_),
   total_recv_length_(Distributor.total_recv_length_),
@@ -92,16 +103,7 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiDistributor & Distr
   no_delete_(Distributor.no_delete_),
   send_array_(0),
   send_array_size_(0),
-  comm_plan_reverse_(0),
-  sizes_(0),
-  sizes_to_(0),
-  sizes_from_(0),
-  starts_to_(0),
-  starts_from_(0),
-  starts_to_ptr_(0),
-  starts_from_ptr_(0),
-  indices_to_ptr_(0),
-  indices_from_ptr_(0)
+  comm_plan_reverse_(0)
 {
   int i;
   if (nsends_>0) {
@@ -139,7 +141,8 @@ Epetra_MpiDistributor::Epetra_MpiDistributor(const Epetra_MpiDistributor & Distr
 
 //==============================================================================
 // Epetra_MpiDistributor destructor
-Epetra_MpiDistributor::~Epetra_MpiDistributor() {
+Epetra_MpiDistributor::~Epetra_MpiDistributor()
+{
   if( !no_delete_ )
   {
     if( lengths_to_ != 0 ) delete [] lengths_to_;
@@ -335,8 +338,6 @@ int Epetra_MpiDistributor::CreateFromRecvs( const int & NumRemoteIDs,
 				   int *& ExportGIDs,
 				   int *& ExportPIDs )
 {
-  int i;
-
   int my_proc;
   MPI_Comm_rank( comm_, &my_proc );
 
@@ -920,6 +921,9 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
                                     char *& import_objs )
 {
   int ierr = Resize_(sizes);
+  if (ierr != 0) {
+    return(ierr);
+  }
 
   MPI_Barrier( comm_ );
 
@@ -960,7 +964,7 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
     ++proc_index;                    
   if( proc_index == nblocks ) proc_index = 0;
    
-  int self_num, self_index;
+  int self_num;
   int p;
 
   if( !indices_to_ ) //data already blocked by processor

@@ -117,8 +117,6 @@ int Epetra_DistObject::Import(const Epetra_SrcDistObject& A,
   int* RemoteLIDs = Importer.RemoteLIDs();
   int* PermuteToLIDs = Importer.PermuteToLIDs();
   int* PermuteFromLIDs = Importer.PermuteFromLIDs();
-  int Nsend = Importer.NumSend();
-  int Nrecv = Importer.NumRecv();
 
   EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs,
 			    PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs, 
@@ -145,8 +143,6 @@ int Epetra_DistObject::Export(const Epetra_SrcDistObject& A,
   int* RemoteLIDs = Exporter.RemoteLIDs();
   int* PermuteToLIDs = Exporter.PermuteToLIDs();
   int* PermuteFromLIDs = Exporter.PermuteFromLIDs();
-  int Nsend = Exporter.NumSend();
-  int Nrecv = Exporter.NumRecv();
 
   EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs,
 			    PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs,
@@ -173,8 +169,6 @@ int Epetra_DistObject::Import(const Epetra_SrcDistObject& A,
   int* RemoteLIDs = Exporter.ExportLIDs();
   int* PermuteToLIDs = Exporter.PermuteFromLIDs();
   int* PermuteFromLIDs = Exporter.PermuteToLIDs();
-  int Nsend = Exporter.NumRecv();
-  int Nrecv = Exporter.NumSend();
 
   EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs, 
 			    PermuteToLIDs, PermuteFromLIDs, RemoteLIDs, ExportLIDs,
@@ -201,8 +195,6 @@ int Epetra_DistObject::Export(const Epetra_SrcDistObject& A,
   int* RemoteLIDs = Importer.ExportLIDs();
   int* PermuteToLIDs = Importer.PermuteFromLIDs();
   int* PermuteFromLIDs = Importer.PermuteToLIDs();
-  int Nsend = Importer.NumRecv();
-  int Nrecv =Importer.NumSend();
 
   EPETRA_CHK_ERR(DoTransfer(A, CombineMode, NumSameIDs, NumPermuteIDs, NumRemoteIDs, NumExportIDs,  
 			    PermuteToLIDs, PermuteFromLIDs,  RemoteLIDs, ExportLIDs,

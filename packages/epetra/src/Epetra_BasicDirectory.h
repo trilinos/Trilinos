@@ -99,7 +99,15 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
   virtual void Print(ostream & os) const;
   //@}
 
- private: // These need to be accessible to derived map classes.
+ private:
+  Epetra_BasicDirectory& operator=(const Epetra_BasicDirectory& src)
+    {
+      //not currently supported
+      abort();
+      return( *this );
+    }
+
+ // These need to be accessible to derived map classes.
   //! Generate: Sets up Directory tables.
   int Generate(const Epetra_BlockMap& Map);
 

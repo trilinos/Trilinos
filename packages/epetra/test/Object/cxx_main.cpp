@@ -74,12 +74,12 @@ int main(int argc, char *argv[]) {
 
   // Test Epetra_Object label and the method to get the label attribute
   char* ObjLabel = obj.Label();
-  char* ObjLabel1 = "Epetra::Object";
+  const char* ObjLabel1 = "Epetra::Object";
   if (verbose) cout << endl << endl << "This should say " << ObjLabel1 << ": " << ObjLabel << endl << endl << endl;
   EPETRA_TEST_ERR(strcmp(ObjLabel1,ObjLabel),ierr);
 
   // Test Epetra_Object SetLabel attribute set method
-  char* NewObjLabel = "New name for Epetra_Object";
+  const char* NewObjLabel = "New name for Epetra_Object";
   obj.SetLabel(NewObjLabel);
   char* NewObjLabel1 = obj.Label(); 
   if (verbose) cout << endl << "This should say " << NewObjLabel << ": " << NewObjLabel1 << endl << endl << endl;

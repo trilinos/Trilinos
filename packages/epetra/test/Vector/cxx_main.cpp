@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
 
       // Test Epetra_Vector label
       char* VecLabel = A.Label();
-      char* VecLabel1 = "Epetra::Vector";
+      const char* VecLabel1 = "Epetra::Vector";
       if (verbose) cout << endl << endl <<"This should say " << VecLabel1 << ": " << VecLabel << endl << endl << endl;
       EPETRA_TEST_ERR(strcmp(VecLabel1,VecLabel),ierr);
       if (verbose) cout << "Testing Assignment operator" << endl;

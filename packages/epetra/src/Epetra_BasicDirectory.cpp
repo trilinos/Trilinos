@@ -72,6 +72,7 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
     assert(flag==0);
   }
 }
+
 //==============================================================================
 // Epetra_BasicDirectory copy constructor
 Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BasicDirectory & Directory)
@@ -107,6 +108,7 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BasicDirectory & Direc
     }
 
 }
+
 //==============================================================================
 // Epetra_BasicDirectory destructor 
 Epetra_BasicDirectory::~Epetra_BasicDirectory()
@@ -397,7 +399,6 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 
   // General case (need to set up an actual directory structure)
   
-  int * ElementSizeList = 0;
   int PacketSize = 2; // We will send at least the GID and PID.  Might also send LID and Size info
   bool DoSizes = false;
   if (EntrySizes!=0) {
@@ -406,7 +407,6 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 	for (i=0; i<NumEntries; i++) EntrySizes[i] = ElementSize;
     }
     else {
-      ElementSizeList = Map.ElementSizeList(); // We know this exists
       DoSizes = true;
       PacketSize++; // Sending Size info
     }

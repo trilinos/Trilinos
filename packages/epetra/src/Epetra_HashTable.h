@@ -43,6 +43,13 @@ class Epetra_HashTable : public Epetra_Object
 
      Node( const int key = 0, const int value = 0, Node * ptr = 0 )
      : Key(key), Value(value), Ptr(ptr) {}
+
+    private:
+     Node(const Node& src)
+       : Key(src.Key), Value(src.Value), Ptr(src.Ptr) {}
+
+    Node& operator=(const Node& src)
+    { Key = src.Key; Value = src.Value; Ptr = src.Ptr; return(*this); }
   };
 
   Node ** Container_;
@@ -54,7 +61,8 @@ class Epetra_HashTable : public Epetra_Object
  public:
 
   Epetra_HashTable( const int size, const unsigned int seed = (2654435761U) )
-  : Size_(size),
+  : Container_(NULL),
+    Size_(size),
     Seed_(seed)
   {
     if (size<=0)
@@ -65,7 +73,8 @@ class Epetra_HashTable : public Epetra_Object
   }
 
   Epetra_HashTable( const Epetra_HashTable & obj )
-  : Size_(obj.Size_),
+  : Container_(NULL),
+    Size_(obj.Size_),
     Seed_(obj.Seed_)
   {
     Container_ = new Node * [Size_];
@@ -104,6 +113,14 @@ class Epetra_HashTable : public Epetra_Object
     if( n ) return n->Value;
     else    return -1;
   }
+
+ private:
+  Epetra_HashTable& operator=(const Epetra_HashTable& src)
+    {
+      //not currently supported
+      abort();
+      return(*this);
+    }
 
 };
 

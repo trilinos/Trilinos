@@ -37,6 +37,7 @@ Epetra_Object::Epetra_Object(int TracebackModeIn)
   SetLabel("Epetra::Object");
   TracebackMode = (TracebackModeIn != -1) ? TracebackModeIn : TracebackMode;
 }
+
 //=============================================================================
 Epetra_Object::Epetra_Object(const char * const Label, 
 			     int TracebackModeIn) 
@@ -51,6 +52,7 @@ Epetra_Object::Epetra_Object(const Epetra_Object& Object)
 {
   SetLabel(Object.Label_);
 }
+
 // Set TracebackMode value to default
 int Epetra_Object::TracebackMode(-1);
 
@@ -64,6 +66,7 @@ int Epetra_Object::GetTracebackMode() {
   if (temp==-1) temp = DefaultTracebackMode;
   return(temp);
 }
+
 //=============================================================================
 void Epetra_Object::Print(ostream & os) const {
   // os << Label_; // No need to print label, since ostream does it already
