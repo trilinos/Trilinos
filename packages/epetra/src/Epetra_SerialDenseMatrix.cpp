@@ -81,7 +81,7 @@ int Epetra_SerialDenseMatrix::Reshape(int NumRows, int NumCols) {
   int N_tmp = EPETRA_MIN(N_, NumCols);
   if (A_ != 0) CopyMat(A_, LDA_, M_tmp, N_tmp, A_tmp, NumRows); // Copy principal submatrix of A to new A
   
-  DeleteArrays(); // Get rid of anything that might be already allocated
+  DeleteArrays(); // Get rid of anything that might be already allocated  
   M_ = NumRows;
   N_ = NumCols;
   LDA_ = M_;
