@@ -81,6 +81,9 @@ public:
   //! Return a const pointer to the Jacobian
   const Epetra_RowMatrix& getPrec() const;
 
+  //! This is a hack that is needed to get MPSalsa running.  I will remove this when the Epetra_Vbr is fixed to get a view with Aztec2Petra.
+  bool setJacobian(Epetra_RowMatrix& j);
+
 protected:
 
   //! Pointer to Epetra Jacobian matrix 

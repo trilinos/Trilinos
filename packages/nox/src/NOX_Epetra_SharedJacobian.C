@@ -79,4 +79,7 @@ const Epetra_RowMatrix& SharedJacobian::getPrec() const
   return *prec;
 }
 
-
+bool SharedJacobian::setJacobian(Epetra_RowMatrix& j)
+{
+  jacobian = & j;
+}
