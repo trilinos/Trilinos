@@ -483,18 +483,16 @@ int adj_elem;
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int migrate_elem_size(void *data, int *ierr)
+int migrate_elem_size(void *data, int num_gid_entries, int num_lid_entries,
+    LB_ID_PTR elem_gid, LB_ID_PTR elem_lid, int *ierr)
 /*
  * Function to return size of element information for a single element.
  */
 {
-int max_adj_len = 0;         /* Max. adj_len. over all local elements.      */
-static int gmax_adj_len = 0; /* Max. adj_len. over all elements.            */
-int max_nnodes = 0;          /* Max. num of nodes/elem over all local elems.*/
-static int gmax_nnodes = 0;  /* Max. num of nodes/elem over all elems.      */
-int i, size;
+int size;
+int num_nodes;
 MESH_INFO_PTR mesh;
-ELEM_INFO *elements;
+ELEM_INFO *current_elem;
 
   *ierr = LB_OK;
 
@@ -502,28 +500,10 @@ ELEM_INFO *elements;
     *ierr = LB_FATAL;
     return 0;
   }
+
   mesh = (MESH_INFO_PTR) data;
-  elements = mesh->elements;
-
-  /* 
-   * Compute global max of adj_len and nnodes.  Communication package requires
-   * all elements' data to have the same size.
-   */
-
-  if (gmax_adj_len == 0) {
-    for (i = 0; i < mesh->num_elems; i++) {
-      if (elements[i].adj_len > max_adj_len) max_adj_len = elements[i].adj_len;
-    }
-    MPI_Allreduce(&max_adj_len, &gmax_adj_len, 1, MPI_INT, MPI_MAX,
-                  MPI_COMM_WORLD);
-  }
-
-  if (gmax_nnodes == 0) {
-    for (i = 0; i < mesh->num_el_blks; i++) {
-      if (mesh->eb_nnodes[i] > max_nnodes) max_nnodes = mesh->eb_nnodes[i];
-    }
-    MPI_Allreduce(&max_nnodes, &gmax_nnodes, 1, MPI_INT,MPI_MAX,MPI_COMM_WORLD);
-  }
+  current_elem = &(mesh->elements[elem_lid[0]]);
+  num_nodes = mesh->eb_nnodes[current_elem->elem_blk];
 
   /*
    * Compute size of one element's data.
@@ -536,21 +516,21 @@ ELEM_INFO *elements;
 
   /* Add space for connect table. */
   if (mesh->num_dims > 0)
-    size += gmax_nnodes * sizeof(int);
+    size += num_nodes * sizeof(int);
 
   /* Add space for adjacency info (elements[].adj and elements[].adj_proc). */
-  size += gmax_adj_len * 2 * sizeof(int);
+  size += current_elem->adj_len * 2 * sizeof(int);
 
   /* Assume if one element has edge wgts, all elements have edge wgts. */
   if (Use_Edge_Wgts) {
     /* Add space to correct alignment so casts work in (un)packing. */
     size += pad_for_alignment(size);
-    size += gmax_adj_len * sizeof(float);
+    size += current_elem->adj_len * sizeof(float);
   }
 
   /* Add space for coordinate info */
   size += pad_for_alignment(size);
-  size += gmax_nnodes * mesh->num_dims * sizeof(float);
+  size += num_nodes * mesh->num_dims * sizeof(float);
   
   return (size);
 }
