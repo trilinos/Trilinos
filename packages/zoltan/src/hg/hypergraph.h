@@ -54,6 +54,8 @@ typedef struct
 #else
 #include "zz_const.h"
 #include "params_const.h"
+#include "hg_hypergraph.h"
+#include "hg_util.h"
 #endif
 
 #define MIN(A,B)                (((A) < (B)) ? (A) : (B))
