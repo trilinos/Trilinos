@@ -403,4 +403,91 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
                                  Nghost+osize, CSR_getrows);
   return(1);
 }
+/*  SYMB_GRID::partitionBlocksNodes ****************************************
+ *
+ *   - do local partition
+ *
+ *   INPUT:
+ *    - nblk: number of blocks
+ *    - pnode_part[nLocalNd]: local nodes to block map (out)
+ *
+ */
+#include "metis.h"
+int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
+                         int *pnode_part,
+                         int *ndwts /*=NULL*/, int *egwts/*=NULL*/,
+                         int nedges /*= 0*/ )
+{
+#ifdef METIS
+  int locid, ii, numadjac, *bindx = NULL, *itemp;
+  idxtype *xadj, *adjncy, *blks;
+  int options[5]={0,3,1,1,0};
+  int weightflag = ndwts ? 2 : 0;
+  int nmbng = 0, edgecut = -1, n = nLocalNd, np = *nblk;
+  double *val = NULL;
+  int allocated = 0, row_length, j;
 
+  if( egwts ) weightflag++;
+
+  if( *nblk == 1 || nLocalNd < 1 ){
+    for( ii = 0 ; ii < nLocalNd ; ii++ ) pnode_part[ii] = 0;
+    return 0;
+  }
+
+  // set 'xadj' & 'adjncy' adjacentcy data
+
+  xadj = (idxtype *) ML_allocate( (nLocalNd+1) * sizeof(idxtype) );
+
+  ii = 0;
+  for( locid = 0 ; locid < nLocalNd ; locid++ ) {
+    ML_get_matrix_row(matrix, 1, &locid, &allocated, &bindx, &val,
+                      &row_length, 0);
+
+    for (j = 0; j < row_length; j++) {
+       if ( bindx[j] < nLocalNd) ii++;
+    }
+  }
+  numadjac = ii;
+  adjncy = (idxtype *) ML_allocate( numadjac * sizeof(idxtype) );
+
+  ii = 0;
+  for( locid = 0 ; locid < nLocalNd ; locid++ ) {
+    xadj[locid] = ii;
+    ML_get_matrix_row(matrix, 1, &locid, &allocated, &bindx,
+                      &val, &row_length, 0);
+
+    for (j = 0; j < row_length; j++) {
+       if ( bindx[j] < nLocalNd) adjncy[ii++] = bindx[j];
+    }
+  }
+  xadj[nLocalNd] = ii;
+
+  /* get local partition */
+
+  METIS_PartGraphKway( &n, xadj, adjncy, ndwts, egwts, &weightflag, &nmbng,
+                       &np, options, &edgecut, pnode_part );
+  ML_free(xadj);
+  ML_free(adjncy);
+
+  blks = (int *) ML_allocate((np+1)*sizeof(int));
+  if (blks == NULL) pr_error("ML_Operator_BlockPartition: out of space\n");
+  for (j = 0; j < *nblk; j++) blks[j] = -1;
+  for (j = 0; j < n; j++) blks[pnode_part[j]] = -2;
+  ii = 0;
+  for (j = 0; j < *nblk; j++) {
+    if ( blks[j] == -2) {
+       blks[j] = ii;
+       ii++;
+    }
+  }
+  for (j = 0; j < n; j++) pnode_part[j] = blks[pnode_part[j]];
+  *nblk = ii;
+  
+  ML_free(blks);
+
+#else
+  printf("ML_partitionBlocksNodes: Metis not linked\n");
+#endif
+
+  return 0;
+}
