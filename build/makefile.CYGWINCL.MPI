@@ -3,13 +3,8 @@
 include $(TRILINOS_HOME)/build/makefile.defaults
 ###
 ### This makefile is for use on win2000 systems using the compaq visual
-### fortran compiler (f77 version 6.6) and intel C++ compiler (icl version 6.0).
+### fortran compiler (f77 version 6.6) and Visual C++ compiler (cl version 6.0).
 ### Other than adding timing routines, I had to modify no trilinos code.
-### I did need to use a flag for the icl compiler that is not available
-### for either MSV C++ 6.0 compiler (cl) or earlier versions of the icl
-### compiler. Without this flag, about a dozen trilinos files would have
-### to be modified to allow mulitiple "for (int i=0,..)" within the same
-### scope.
 ###
 ### I assume that the cygwin utlities are installed so that a bash shell and 
 ### gnu unix utitilies are available.
@@ -36,7 +31,9 @@ LIB_EXT = lib
 ### 3. I had to edit Epetra_Time.[cpp,h], Petra_Time.[cc,h] and
 ###    create a md_timer_win2000.c (needed for aztecoo). And so
 ###    I needed to use the following DEFINE to tell the preprocessor
-###    to compile the appropriate code.
+###    to compile the appropriate code. 
+###    NOTE that I use "ICL" here because this makefile is derived
+###    from makefile.CYGWINICL.SERIAL_DEBUG.
 WINCOMP = ICL
 ###
 ### 4. The windows archiver "lib" is somewhat delicate. The /out:
@@ -106,33 +103,33 @@ RANLIB=
 	$(FC) $(FFLAGS) -c $<
 
 #
-# Issue a "icl /?" or "f77 /?" for help with the compiler
-# flags. Note that icl and f77 accept flags pre-appended with
+# Issue a "cl /?" or "f77 /?" for help with the compiler
+# flags. Note that cl and f77 accept flags pre-appended with
 # a "-" or a "/".
 #
-ARCH_CXXFLAGS= -ZI -GR -Zc:forScope -nologo
-ARCH_CFLAGS= -ZI -Za -nologo
-ARCH_FFLAGS= -debug -nologo
+ARCH_CXXFLAGS= -Ox -GR -GX -nologo
+ARCH_CFLAGS= -Ox -Za -nologo
+ARCH_FFLAGS= -Ox -nologo
 
 # Define compiler commands
 
-CC=icl
+CC=cl
 FC=f77
-CXX=icl
+CXX=cl
 
 LINKER=$(CXX)
 
-MPI_INCLUDES =
+#MPI_INCLUDES = -I "C:\cygwin\usr\local\MPICH\SDK\include"
+MPI_INCLUDES = -I "C:\cygwin\usr\MPICH\SDK\include"
 ARCH_INCLUDES = $(MPI_INCLUDES)
 
-LIBMPI =
-ARCH_LIBS0 = "C:\Program Files\Intel\Compiler60\IA32\Lib\libm.lib"
-ARCH_LIBS1 = "C:\Program Files\Intel\Compiler60\IA32\Lib\libirc.lib"
-ARCH_LIBS2 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dfor.lib"
-ARCH_LIBS3 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dfconsol.lib"
-ARCH_LIBS4 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dformd.lib"
-ARCH_LIBS5 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dfport.lib"
-ARCH_LIBS = $(ARCH_LIBS1) $(ARCH_LIBS2) $(ARCH_LIBS3) $(ARCH_LIBS4) $(ARCH_LIBS5) $(ARCH_LIBS0)
+#LIBMPI = -L "C:\cygwin\usr\local\MPICH\SDK\lib\mpich.lib"
+LIBMPI = -L "C:\cygwin\usr\MPICH\SDK\lib\mpich.lib"
+ARCH_LIBS0 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dfconsol.lib"
+ARCH_LIBS1 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dfor.lib"
+ARCH_LIBS2 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dformd.lib"
+ARCH_LIBS3 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dfport.lib"
+ARCH_LIBS = $(ARCH_LIBS0) $(ARCH_LIBS1) $(ARCH_LIBS2) $(ARCH_LIBS3)
 
 # Only hard links are avialable on cygwin. The default on
 # unix/linux systems is to use soft links.
@@ -154,10 +151,8 @@ LN=ln -v
 
 # LIBBLAS = mkl_c.lib mkl_p3.lib
 # LIBLAPACK = mkl_lapack.lib
-#LIBBLAS = cxml.lib
-#LIBLAPACK = cxml.lib
 LIBBLAS = "C:\Program Files\Microsoft Visual Studio\DF98\CXML\LIB\cxml.lib"
-LIBLAPACK =
+LIBLAPACK = 
 LIBSPBLAS = "$(TRILINOS_HOME_WIN)\external\spblas\lib\$(TRILINOS_TARGET)\libspblas.lib"
 LIBSUPERLU   = "d:\software\SuperLU\superlu_win2000.lib"
 LIBY12M   = "$(TRILINOS_HOME_WIN)\external\y12m\lib\$(TRILINOS_TARGET)\y12m.lib"
