@@ -8,8 +8,8 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <malloc.h>
 #include <ctype.h>
 
 #include "dr_mmio.h"

@@ -21,7 +21,6 @@ extern "C" {
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <values.h>
 
 #include <mpi.h>
 
