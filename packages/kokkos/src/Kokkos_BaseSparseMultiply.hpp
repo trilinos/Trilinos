@@ -258,6 +258,8 @@ namespace Kokkos {
     : SparseOperation<OrdinalType, ScalarType>(source),
       matrixForStructure_(source.matrixForStructure_),
       matrixForValues_(source.matrixForValues_),
+      leftPermutation_(source.leftPermutation_),
+      rightPermutation_(source.rightPermutation_),
       willKeepStructure_(source.willKeepStructure_),
       willKeepValues_(source.willKeepValues_),
       isRowOriented_(source.isRowOriented_),
@@ -404,7 +406,7 @@ namespace Kokkos {
 
     if (haveStructure_) return(-1); // Can only call this one time!
     matrixForStructure_ = const_cast<CisMatrix<OrdinalType, ScalarType> *> (&A);
-    OrdinalType i, j;
+    OrdinalType i;
     willKeepStructure_ = willKeepStructure;
     isRowOriented_ = A.getIsRowOriented();
     numRows_ = A.getNumRows();

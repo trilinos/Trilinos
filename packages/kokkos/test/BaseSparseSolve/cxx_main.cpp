@@ -85,16 +85,13 @@ int compareVecs(const DVector & v1, const DVector & v2, bool verbose);
 int main(int argc, char* argv[]) 
 {
 
-  int i, j;
   bool verbose = 0;
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
   int numberFailedTests = 0;
-  int returnCode = 0;
   string testName = "";
 
   DHbMatrix * A;
-  DVector * xexact;
   DMultiVector * xm;
   DMultiVector * bm;
   DMultiVector * xexactm;
