@@ -30,12 +30,12 @@
 
 <h2>
 Memory Management in Zoltan Algorithms</h2>
-Zoltan uses a <a href="dev_util_mem.html">memory management
+Zoltan uses a <a href="../ug_html/ug_util_mem.html">memory management
 package</a> to simplify debugging of memory problems. 
 It is strongly recommended that algorithm
 developers use the routines in this package, such as 
-<a href="dev_util_mem.html#Zoltan_Malloc"><b>ZOLTAN_MALLOC</b> </a>and
-<b><a href="dev_util_mem.html#Zoltan_Free">ZOLTAN_FREE</a></b>, instead
+<a href="../ug_html/ug_util_mem.html#Zoltan_Malloc"><b>ZOLTAN_MALLOC</b> </a>and
+<b><a href="../ug_html/ug_util_mem.html#Zoltan_Free">ZOLTAN_FREE</a></b>, instead
 of the standard C routines for most memory management.
 <p>
 Macros that simplify the <a href="dev_lb_types.html#ID alloc">allocation of global and local identifiers (IDs)</a>
@@ -142,8 +142,8 @@ or <b>ZOLTAN_SPECIAL_MALLOC_LID</b> for processor numbers, <a href="dev_lb_types
 <td>
 <tt>
 ierr = <b>Zoltan_Special_Malloc</b>(<i>zz</i>, (void **)<i>import_gid</i>,
-<i>num_import</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>ZOLTAN_SPECIAL_MALLOC_GID</b>);
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <i>num_import</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>ZOLTAN_SPECIAL_MALLOC_GID</b>);
 </tt>
 </td>
 </tr>

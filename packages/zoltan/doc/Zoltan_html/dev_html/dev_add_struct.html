@@ -50,18 +50,18 @@ first;
 <br>&nbsp;* the other fields can be reused.
 <br>&nbsp;*/
 <br>if (zz->LB.Data_Structure == NULL) {
-<br>&nbsp;&nbsp; rcb = (RCB_STRUCT *) <a href="dev_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a>(sizeof(RCB_STRUCT));
+<br>&nbsp;&nbsp; rcb = (RCB_STRUCT *) <a href="../ug_html/ug_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a>(sizeof(RCB_STRUCT));
 <br>&nbsp;&nbsp; zz->LB.Data_Structure = (void *) rcb;
 <br>&nbsp;&nbsp; rcb->Tree_Ptr = (struct rcb_tree *)&nbsp;
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<a href="dev_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a>(zz->Num_Proc*sizeof(struct
+<a href="../ug_html/ug_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a>(zz->Num_Proc*sizeof(struct
 rcb_tree));
-<br>&nbsp;&nbsp; rcb->Box = (struct rcb_box *) <a href="dev_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a>(sizeof(struct
+<br>&nbsp;&nbsp; rcb->Box = (struct rcb_box *) <a href="../ug_html/ug_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a>(sizeof(struct
 rcb_box));
 <br>}
 <br>else {
 <br>&nbsp;&nbsp; rcb = (RCB_STRUCT *) zz->LB.Data_Structure;
-<br>&nbsp;&nbsp; <a href="dev_util_mem.html#Zoltan_Free">ZOLTAN_FREE</a>(&amp;(rcb->Dots));
+<br>&nbsp;&nbsp; <a href="../ug_html/ug_util_mem.html#Zoltan_Free">ZOLTAN_FREE</a>(&amp;(rcb->Dots));
 <br>}
 </tt>
 </td>
@@ -81,7 +81,7 @@ below shows how the <i>Dots</i> data structure needed by RCB is built.&nbsp;
 The call to <i>zz->Get_Num_Obj</i> invokes an <b><a href="../ug_html/ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b>
 query function to determine the number of objects on the processor.&nbsp;
 Space for the <i>Dots</i> data structure is allocated through calls to
-<b><a href="dev_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a></b>, <a href="dev_lb_types.html#ID alloc"><b>ZOLTAN_MALLOC_GID_ARRAY</b></a>,
+<b><a href="../ug_html/ug_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a></b>, <a href="dev_lb_types.html#ID alloc"><b>ZOLTAN_MALLOC_GID_ARRAY</b></a>,
 and <a href="dev_lb_types.html#ID alloc"><b>ZOLTAN_MALLOC_LID_ARRAY</b></a>.&nbsp; The <i>Dots</i> information is obtained
 through a call to the Zoltan service function <b><a href="dev_services_objlist.html">Zoltan_Get_Obj_List</a></b>; this
 function calls either an <b><a href="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
@@ -113,7 +113,7 @@ yo,
 <br>*global_ids = <a href="dev_lb_types.html#ID alloc">ZOLTAN_MALLOC_GID_ARRAY</a>(zz, (*max_obj));
 <br>*local_ids&nbsp; = <a href="dev_lb_types.html#ID alloc">ZOLTAN_MALLOC_LID_ARRAY</a>(zz, (*max_obj));
 <br>*dots = (struct Dot_Struct *)
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="dev_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a>((*max_obj)*sizeof(struct
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="../ug_html/ug_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a>((*max_obj)*sizeof(struct
 Dot_Struct));
 <p>if (!(*global_ids) || (zz->Num_LID &amp;&amp; !(*local_ids)) ||
 !(*dots)) {
@@ -126,7 +126,7 @@ yo, "Insufficient memory.");
 <p>&nbsp;&nbsp;&nbsp; /*
 <br>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Allocate space for object weights.
 <br>&nbsp;&nbsp;&nbsp;&nbsp; */
-<p>&nbsp;&nbsp;&nbsp; objs_wgt = (float *) <a href="dev_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a>((*num_obj)*sizeof(float));
+<p>&nbsp;&nbsp;&nbsp; objs_wgt = (float *) <a href="../ug_html/ug_util_mem.html#Zoltan_Malloc">ZOLTAN_MALLOC</a>((*num_obj)*sizeof(float));
 <br>&nbsp;&nbsp;&nbsp; if (!objs_wgt) {
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="dev_intro_coding.html#ZOLTAN_PRINT">ZOLTAN_PRINT_ERROR</a>(zz->Proc,
 yo, "Insufficient memory.");
@@ -145,7 +145,7 @@ yo, "Insufficient memory.");
 yo,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 "Error returned from Zoltan_Get_Obj_List.");
-<br>&nbsp;&nbsp;&nbsp; <a href="dev_util_mem.html#Zoltan_Free">ZOLTAN_FREE</a>(&amp;objs_wgt);
+<br>&nbsp;&nbsp;&nbsp; <a href="../ug_html/ug_util_mem.html#Zoltan_Free">ZOLTAN_FREE</a>(&amp;objs_wgt);
 <br>&nbsp;&nbsp;&nbsp; return(ierr);
 <br>&nbsp; }
 <p>&nbsp; ierr = initialize_dot(zz, *global_ids, *local_ids, *dots,
@@ -156,10 +156,10 @@ yo,
 yo,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 "Error returned from initialize_dot.");
-<br>&nbsp;&nbsp;&nbsp; <a href="dev_util_mem.html#Zoltan_Free">ZOLTAN_FREE</a>(&amp;objs_wgt);
+<br>&nbsp;&nbsp;&nbsp; <a href="../ug_html/ug_util_mem.html#Zoltan_Free">ZOLTAN_FREE</a>(&amp;objs_wgt);
 <br>&nbsp;&nbsp;&nbsp; return(ierr);
 <br>&nbsp; }
-<p>&nbsp; <a href="dev_util_mem.html#Zoltan_Free">ZOLTAN_FREE</a>(&amp;objs_wgt);
+<p>&nbsp; <a href="../ug_html/ug_util_mem.html#Zoltan_Free">ZOLTAN_FREE</a>(&amp;objs_wgt);
 <br>}
 </tt>
 </td>

@@ -61,7 +61,7 @@ and receive objects from several (or no) processors in the other set.  The
 process of determining which outgoing objects are sent to which processors
 is determined in the subroutine <B>Zoltan_Create_Proc_List</B>.  Once this new
 distribution of objects is determined, the
-<B><A HREF="dev_util_comm.html">unstructured communication package</A></B> in
+<B><A HREF="../ug_html/ug_util_comm.html">unstructured communication package</A></B> in
 Zoltan is used to determine which processors are going to receive which
 objects and actually move the objects.
 
@@ -115,7 +115,7 @@ of the algorithm.  When <a href="../ug_html/ug_alg_rcb.html">RCB_REUSE</a> is tr
 <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign"><b>Zoltan_LB_Point_Assign</b></a>
 to determine their processor assignment in the previous RCB decomposition.
 The information for the objects is then sent to the new processor assignments
-using the <a href="dev_util_comm.html">unstructured communication utilities</a>
+using the <a href="../ug_html/ug_util_comm.html">unstructured communication utilities</a>
 to generate an initial condition matching the output of the previous RCB
 decomposition.
 The normal RCB algorithm is then applied to this new initial condition.
