@@ -94,7 +94,6 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
   double       r_z_dot, r_z_dot_old, p_ap_dot, rec_residual;
   double       scaled_r_norm, epsilon, brkdown_tol = DBL_EPSILON;
   int          *data_org, str_leng, first_time = AZ_TRUE;
-  double       *val;
   char         label[64],suffix[32], prefix[64];
   
 double **saveme, *ptap;
@@ -125,7 +124,6 @@ double *block;
   /* pull needed values out of parameter arrays */
 
   data_org = Amat->data_org;
-  val =  Amat->val;
   
   N            = data_org[AZ_N_internal] + data_org[AZ_N_border];
 

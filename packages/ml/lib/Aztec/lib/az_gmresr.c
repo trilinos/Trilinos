@@ -105,7 +105,7 @@ void AZ_pgmresr(double b[], double x[],double weight[], int options[],
   double       actual_residual = -1.0, minus_alpha, alpha;
   double       *dummy = (double *) 0;
   double       *UUblock, *CCblock;
-  int          kk, mm, ii;
+  int          mm, ii;
   char         label[64],suffix[32], prefix[64];
   int          *data_org, str_leng, first_time = AZ_TRUE;
   double       doubleone = 1.0, minusone = -1.0, init_time = 0.0;

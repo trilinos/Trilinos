@@ -94,7 +94,9 @@ void AZ_domain_decomp(double x[], AZ_MATRIX *Amat, int options[],
   int mem_orig, mem_overlapped, mem_factor;
   int name, i, bandwidth;
   int *ordering = NULL;
+/*
   double start_t;
+*/
   int estimated_requirements;
   char str[80];
 int *garbage;
@@ -222,7 +224,9 @@ int *garbage;
 
         mem_orig = AZ_gsum_int(A_overlapped->bindx[N_unpadded],proc_config);
 
+/*
         start_t = AZ_second();
+*/
         AZ_pad_matrix(context, proc_config, N_unpadded, &N, 
                       &(context->map), &(context->padded_data_org), &N_nz, 
                       estimated_requirements);
@@ -236,14 +240,18 @@ int *garbage;
         mem_overlapped = AZ_gsum_int(A_overlapped->bindx[N],proc_config);
   
         if (options[AZ_reorder]) {
+/*
            start_t = AZ_second();
+*/
            AZ_find_MSR_ordering(A_overlapped->bindx,&ordering,N,
                                 &(context->inv_ordering),name,context);
 /*
            if (proc_config[AZ_node] == 0) 
               printf("took %e seconds to find ordering\n", AZ_second()-start_t);
 */
+/*
            start_t = AZ_second();
+*/
            AZ_mat_reorder(N,A_overlapped->bindx,A_overlapped->val,&ordering,
                           context->inv_ordering);
 /*
@@ -255,7 +263,9 @@ int *garbage;
 
         /* Do a factorization if needed.  */
 
+/*
         start_t = AZ_second();
+*/
         AZ_factor_subdomain(context, N, N_nz, &nz_used);
 
 /*
