@@ -16,10 +16,8 @@
 static integer c__9 = 9;
 static integer c__1 = 1;
 
-/* Subroutine */ int ml_c_pdmout__(comm, lout, m, n, a, lda, idigit)
-integer *comm, *lout, *m, *n;
-doublereal *a;
-integer *lda, *idigit;
+int ml_c_pdmout__(int *comm, int *lout, int *m, int *n, double *a, 
+		  int *lda, int *idigit)
 {
     /* System generated locals */
     integer a_dim1, a_offset;
