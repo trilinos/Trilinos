@@ -72,7 +72,7 @@ SUB_VPATH	= ../../include ../shared \
 		  ../Memory ../Communication ../DDirectory 
 SUBINCPATH	= -I../../include -I../shared \
 		  -I../Memory -I../Communication -I../DDirectory 
-SUBDIRS		= Memory Communication DDirectory
+SUBDIRS		= Memory Communication DDirectory shared
 
 ############################################################################
 # MEMORY MANAGEMENT PACKAGE
@@ -141,7 +141,7 @@ CCOMP		= $(CC) $(INC_PATH) $(CFLAGS)
 # lint defines
 #
 LINT		= lint 
-LINT_INC_PATH	= -Ishared -IMemory -ICommunication  -IDDirectory $(INC_PATH)
+LINT_INC_PATH	= -Ishared -IMemory -ICommunication -IDDirectory $(INC_PATH)
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 VPATH		= $(SUBDIRS) 
 
@@ -398,7 +398,7 @@ lint_comm: $(MEM_CSRC) $(COMM_CSRC) $(COMM_DRIVER_CSRC)
 
 lint_dd: $(MEM_CSRC) $(COMM_CSRC) $(DD_CSRC) $(DD_DRIVER_CSRC) 
 	@echo "running lint..."
-	$(LINT) -I/Net/local/homes/rheaphy/Zoltan/lb $(LINT_FLAGS)  $?
+	$(LINT) -I../include $(LINT_FLAGS)  $?
 
 #
 ############################################################################
