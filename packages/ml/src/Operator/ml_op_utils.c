@@ -4,6 +4,7 @@
 /* ******************************************************************** */
 
 #include "ml_struct.h"
+#include "ml_op_utils.h"
 
 /* ******************************************************************** */
 /* Blow away any inter-mixing between boundary and interior points in   */
@@ -273,10 +274,15 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
    int Nghost = 0, Nghost2 = 0;
    int *remap, remap_leng;
    ML_CommInfoOP *c_info, **c2_info;
+   char procname[128];
+
+   sprintf(procname,"p%d",ml_handle->comm->ML_mypid);
 
    /* pull out things from ml_handle */
 
+
    Pmat  = &(ml_handle->Pmat[level2]);
+   temp = (struct ML_CSR_MSRdata *) Pmat->data;
    Rmat  = &(ml_handle->Rmat[level]);
    isize = Pmat->outvec_leng;
    osize = Pmat->invec_leng;
@@ -348,7 +354,7 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
    N_nzs = 0;
    for (i = 0; i < isize; i++) {
       flag = getrow(data, 1, &i, Nghost+osize+1, colbuf, valbuf, &length);
-      if (flag == 0) perror("ML_Transpose_Prolongator: sizes don't work\n");
+      if (flag == 0) pr_error("ML_Transpose_Prolongator: sizes don't work\n");
       N_nzs += length;
       for (j = 0; j < length; j++)
          row_ptr[  colbuf[j] ]++;
@@ -517,6 +523,8 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
 
    /* pull out things from ml_handle */
 
+
+   temp = (struct ML_CSR_MSRdata *) Amat->data;
    isize = Amat->outvec_leng;
    osize = Amat->invec_leng;
    if (Amat->getrow->ML_id == ML_EXTERNAL) {
@@ -642,4 +650,124 @@ int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans )
    ML_Operator_Set_Getrow(Amat_trans, ML_EXTERNAL,
                                  Nghost+osize, CSR_getrows);
   return(1);
+}
+
+/************************************************************************/
+/* Take a matrix that is effectively partitioned by columns and         */
+/* transform it into one that is partitioned by rows. The original      */
+/* matrix was most likely created by transposing a matrix partitioned   */
+/* by row.                                                              */
+/*----------------------------------------------------------------------*/
+
+int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans)
+{ 
+ 
+  ML_Operator *eye1, *eye2;
+ 
+  eye1 = ML_Operator_Create(A->comm);
+  eye2 = ML_Operator_Create(A->comm);
+ 
+  ML_Operator_Set_ApplyFuncData(eye1, A->invec_leng, A->invec_leng,
+            ML_EXTERNAL,NULL, A->invec_leng, eye_matvec, 0);
+  ML_Operator_Set_Getrow(eye1, ML_EXTERNAL, A->invec_leng, eye_getrows);
+ 
+  ML_Operator_Set_ApplyFuncData(eye2, A->invec_leng, A->invec_leng,
+            ML_EXTERNAL,NULL, A->invec_leng, eye_matvec, 0);
+  ML_Operator_Set_Getrow(eye2, ML_EXTERNAL, A->invec_leng, eye_getrows);
+  ML_2matmult(A, eye1, Atrans);
+ 
+  return 1;
+}  
+
+
+#ifdef new2row
+int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans)
+{
+  int         max_per_proc;
+  ML_Operator *Acomm, *tptr;
+ 
+  if (A->getrow->use_loc_glob_map == ML_YES)
+     pr_error("ML_Operator_ColPartition2RowPartition: Matrix already has local"
+              "column indices mapped to global indices\n");
+  if (A->getrow->pre_comm != NULL)
+     pr_error("ML_Operator_ColPartition2RowPartiion: Matrix has a"
+              "pre-communication structure?\n");
+ 
+  ML_create_unique_col_id(A->invec_leng, &(A->getrow->loc_glob_map),
+                           NULL, &max_per_proc, A->comm);
+ 
+  A->getrow->use_loc_glob_map = ML_YES;
+ 
+  if (A->getrow->post_comm != NULL)
+      ML_exchange_rows( A, &Acomm, A->getrow->post_comm);
+  else Acomm = A;
+ 
+  ML_back_to_csrlocal(Acomm, Atrans, max_per_proc);
+ 
+  ML_free(A->getrow->loc_glob_map); A->getrow->loc_glob_map = NULL;
+  A->getrow->use_loc_glob_map = ML_NO;
+ 
+  if (A->getrow->post_comm != NULL) {
+      tptr = Acomm;
+      while ( (tptr!= NULL) && (tptr->sub_matrix != A))
+         tptr = tptr->sub_matrix;
+      if (tptr != NULL) tptr->sub_matrix = NULL;
+      ML_RECUR_CSR_MSRdata_Destroy(Acomm);
+      ML_Operator_Destroy(Acomm);
+   }
+ 
+  return 1;
+} 
+#endif
+
+
+/************************************************************************/
+/* Getrow function for the identity matrix.                             */
+/*----------------------------------------------------------------------*/
+
+int eye_getrows(void *data, int N_requested_rows, int requested_rows[],
+                int allocated_space, int columns[], double values[],
+				int row_lengths[])
+{
+   double *temp;
+   int    i;
+
+   temp = (double *) data;
+
+   if (allocated_space < N_requested_rows) return(0);
+
+   for (i = 0; i < N_requested_rows; i++) {
+      row_lengths[i] = 1;
+      columns[i]     = requested_rows[i];
+      values[i]      = 1.;
+   }
+   return(1);
+}
+
+/************************************************************************/
+/* Matvec function for the identity matrix.                             */
+/*----------------------------------------------------------------------*/
+
+int eye_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+{
+  int i;
+
+  for (i = 0; i < olen; i++) ap[i] = p[i];
+
+  return(1);
+}
+
+/************************************************************************/
+/* Take the transpose of an ML_Operator and realign resulting matrix    */
+/* so that it is partitioned by rows.                                   */
+/*----------------------------------------------------------------------*/
+
+int ML_Operator_Transpose_byrow(ML_Operator *A, ML_Operator *Atrans)
+{
+  ML_Operator *temp;
+
+  temp = ML_Operator_Create(A->comm);
+  ML_Operator_Transpose(A, temp);
+  ML_Operator_ColPartition2RowPartition(temp, Atrans);
+  return 1;
 }
