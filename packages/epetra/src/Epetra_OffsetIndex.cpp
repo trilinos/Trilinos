@@ -203,6 +203,11 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
                                                  const int * RemoteLIDs,
                                                  Epetra_Distributor & Distor )
 {
+  int numProcs = SourceGraph.RowMap().Comm().NumProc();
+  if (numProcs < 2) {
+    return;
+  }
+
   const int GlobalMaxNumIndices = SourceGraph.GlobalMaxNumIndices();
 
   int NumIndices;

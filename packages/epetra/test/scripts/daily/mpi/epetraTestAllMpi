@@ -76,7 +76,7 @@ else
     rm -f $file
 endif
 echo $file
-echo "Date: " `eval date` >>& $file
+echo "Date: " `eval date` > $file
 echo `uname -a` >>& $file
 ## Different directory structures will require different setups.
 ## This file assumes a structure like that of epetra - exe's live in 

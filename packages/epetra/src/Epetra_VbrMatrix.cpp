@@ -1298,6 +1298,9 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
 
     // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
     if (Importer()!=0) {
+      if (ImportVector_!=0) {
+	if (ImportVector_->NumVectors()!=1) { delete ImportVector_; ImportVector_= 0;}
+      }
       if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ColMap(),1); // Create import vector if needed
       EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer(), Insert));
       xp = (double*)ImportVector_->Values();
@@ -1308,6 +1311,9 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
 
     // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
     if (Exporter()!=0) {
+      if (ExportVector_!=0) {
+	if (ExportVector_->NumVectors()!=1) { delete ExportVector_; ExportVector_= 0;}
+      }
       if (ExportVector_==0) ExportVector_ = new Epetra_MultiVector(RowMap(),1); // Create Export vector if needed
       yp = (double*)ExportVector_->Values();
     }
@@ -1346,13 +1352,19 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
     // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors
     
     if (Exporter()!=0) {
+      if (ExportVector_!=0) {
+	if (ExportVector_->NumVectors()!=1) { delete ExportVector_; ExportVector_= 0;}
+      }
       if (ExportVector_==0) ExportVector_ = new Epetra_MultiVector(RowMap(),1); // Create Export vector if needed
       EPETRA_CHK_ERR(ExportVector_->Import(x, *Exporter(), Insert));
       xp = (double*)ExportVector_->Values();
     }
-    
+
     // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
     if (Importer()!=0) {
+      if (ImportVector_!=0) {
+	if (ImportVector_->NumVectors()!=1) { delete ImportVector_; ImportVector_= 0;}
+      }
       if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ColMap(),1); // Create import vector if needed
       yp = (double*)ImportVector_->Values();
       ColElementSizeList = ColMap().ElementSizeList(); // The Import map will always have an existing ElementSizeList
@@ -1421,7 +1433,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
     if (Importer()!=0) {
       if (ImportVector_!=0) {
-	if (ImportVector_->NumVectors()<NumVectors) { delete ImportVector_; ImportVector_= 0;}
+	if (ImportVector_->NumVectors()!=NumVectors) { delete ImportVector_; ImportVector_= 0;}
       }
       // Create import vector if needed
       if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ColMap(),NumVectors);
@@ -1431,11 +1443,11 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       ColElementSizeList = ColMap().ElementSizeList();
       ColFirstPointInElementList = ColMap().FirstPointInElementList();
     }
-    
+
     // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
     if (Exporter()!=0) {
       if (ExportVector_!=0) {
-	if (ExportVector_->NumVectors()<NumVectors) { delete ExportVector_; ExportVector_= 0;}
+	if (ExportVector_->NumVectors()!=NumVectors) { delete ExportVector_; ExportVector_= 0;}
       }
       // Create Export vector if needed
       if (ExportVector_==0) ExportVector_ = new Epetra_MultiVector(RowMap(),NumVectors);
@@ -1472,7 +1484,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     
     if (Exporter()!=0) {
       if (ExportVector_!=0) {
-	if (ExportVector_->NumVectors()<NumVectors) { delete ExportVector_; ExportVector_= 0;}
+	if (ExportVector_->NumVectors()!=NumVectors) { delete ExportVector_; ExportVector_= 0;}
       }
       // Create Export vector if needed
       if (ExportVector_==0) ExportVector_ = new Epetra_MultiVector(RowMap(),NumVectors);
@@ -1486,7 +1498,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
     if (Importer()!=0) {
       if (ImportVector_!=0) {
-	if (ImportVector_->NumVectors()<NumVectors) { delete ImportVector_; ImportVector_= 0;}
+	if (ImportVector_->NumVectors()!=NumVectors) { delete ImportVector_; ImportVector_= 0;}
       }
       // Create import vector if needed
       if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ColMap(),NumVectors);
