@@ -515,8 +515,8 @@ public:
    * - run the parallel code on a terminal (example, \c mpirun \c -np \c 4 \c
    *   ml_example.exe )
    * - the code will stop in the first call to ComputePreconditioner(). This may
-   *   occur in the construction phase. Few information about the ID number of
-   *   each process will be showed.
+   *   occur in the construction phase. Some information about the ID number of
+   *   each process will be shown.
    * - in another terminal, attach to the desired process.
    * - insert one character to let the code continue, and debug as required.
    */
@@ -758,6 +758,7 @@ private:
   ML_Operator ** Tmat_array, ** Tmat_trans_array;
   //! ML structures for Maxwell
   ML * ml_edges_, * ml_nodes_;
+  ML_Aggregate *agg_edge_;
 
   void ** nodal_args_, ** edge_args_;
 
