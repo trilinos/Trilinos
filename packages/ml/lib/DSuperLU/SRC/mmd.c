@@ -188,6 +188,9 @@ L800:
     num += qsize[mdnode];
     llist[mdnode] = ehead;
     ehead = mdnode;
+    if (num > *neqns) {
+	goto L1000;
+    }
     if (*delta >= 0) {
 	goto L500;
     }
