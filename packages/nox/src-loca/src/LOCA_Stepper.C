@@ -33,9 +33,9 @@
 #include "LOCA_Stepper.H"    // class definition
 
 // LOCA Includes
-#include "LOCA_Utils.H"		     // for static function doPrint
-#include "LOCA_Abstract_Group.H"     // class data element
-#include "LOCA_Abstract_Vector.H"    // class data element
+#include "LOCA_Utils.H"		      // for static function doPrint
+#include "LOCA_Abstract_Group.H"      // class data element
+#include "LOCA_Abstract_Vector.H"     // class data element
 
 using namespace LOCA;
 using namespace NOX::StatusTest;
@@ -57,13 +57,15 @@ using namespace NOX::StatusTest;
 
 Stepper::Stepper(LOCA::Abstract::Group& initialGuess, 
 		 NOX::StatusTest::Generic& t,
-		 const NOX::Parameter::List& p) :
+		 const NOX::Parameter::List& p,
+		 LOCA::Abstract::DataOutput& dataOut) :
   curGroupPtr(&initialGuess),
-  prevGroupPtr(initialGuess.clone()),
+  prevGroupPtr(dynamic_cast<LOCA::Abstract::Group*>(initialGuess.clone())),
   statusTestPtr(&t),
   paramList(p),
   conParams(initialGuess.getParams()),
-  solver(initialGuess, t, paramList.sublist("Solver"))
+  solver(initialGuess, t, paramList.sublist("Solver")),
+  dataOutput(dataOut)
 {
   // Initialize the utilities
   Utils::setUtils(paramList.sublist("Utilities"));
@@ -83,7 +85,7 @@ bool Stepper::reset(LOCA::Abstract::Group& initialGuess,
   curGroupPtr = &initialGuess;
   delete prevGroupPtr;
   prevGroupPtr = 0;
-  prevGroupPtr = initialGuess.clone();
+  prevGroupPtr = dynamic_cast<LOCA::Abstract::Group*>(initialGuess.clone());
   statusTestPtr = &t;
   paramList = p;
   conParams = initialGuess.getParams();
@@ -152,6 +154,10 @@ StatusType Stepper::step()
   }
   else  {
     stepNumber += 1;
+  }
+
+  if (solverStatus != Failed) {
+    dataOutput.saveGroupData(dynamic_cast<const LOCA::Abstract::Group&>(solver.getSolutionGroup()));
   }
   
   numTotalSteps += 1;
@@ -245,6 +251,7 @@ bool Stepper::init()
   if (Utils::doPrint(Utils::Parameters))
     paramList.print(cout);
 
+  return true;
 }
 
 int Stepper::getNumContinuationSteps() const
