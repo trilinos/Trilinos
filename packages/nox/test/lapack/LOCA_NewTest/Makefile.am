@@ -48,10 +48,10 @@ LOCA_NewTest_CXXFLAGS = \
 
 #Unsure why this test need to link to the BLAS on an IBM.
 LOCA_NewTest_LDADD = \
-		   -L$(top_builddir)/src -lnox $(BLAS_LIBS) \
-                   -L$(top_builddir)/src-lapack -lnoxlapack \
-                   -L$(top_builddir)/src-loca/src -lloca $(BLAS_LIBS) \
                    -L$(top_builddir)/src-loca/src-lapack -llocalapack \
+                   -L$(top_builddir)/src-loca/src -lloca $(BLAS_LIBS) \
+                   -L$(top_builddir)/src-lapack -lnoxlapack \
+		   -L$(top_builddir)/src -lnox $(BLAS_LIBS) \
 	           $(LIBS) $(FLIBS)
 
 

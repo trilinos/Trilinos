@@ -45,6 +45,6 @@ NOX_Vector_CXXFLAGS = \
 
 #Unsure why this test need to link to the BLAS on an IBM.
 NOX_Vector_LDADD = \
-                   -L$(top_builddir)/src -lnox $(BLAS_LIBS) \
                    -L$(top_builddir)/src-epetra -lnoxepetra \
+                   -L$(top_builddir)/src -lnox $(BLAS_LIBS) \
 	           $(LIBS) $(FLIBS)

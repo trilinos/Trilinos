@@ -41,8 +41,9 @@ NOX_Group_CXXFLAGS = -I$(top_srcdir)/src \
                      -I$(top_srcdir)/test/utils
 
 #Unsure why this test need to link to the BLAS on an IBM.
-NOX_Group_LDADD = -L$(top_builddir)/src -lnox $(BLAS_LIBS) \
+NOX_Group_LDADD = \
                   -L$(top_builddir)/src-lapack -lnoxlapack \
+                  -L$(top_builddir)/src -lnox $(BLAS_LIBS) \
 	          $(LIBS) $(FLIBS)
 
 

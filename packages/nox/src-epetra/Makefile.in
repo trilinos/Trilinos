@@ -165,8 +165,7 @@ EPETRANEW_H = \
 	$(srcdir)/NOX_EpetraNew_FiniteDifference.H \
 	$(srcdir)/NOX_EpetraNew_FiniteDifferenceColoring.H \
 	$(srcdir)/NOX_EpetraNew_MatrixFree.H \
-	$(srcdir)/NOX_EpetraNew_Scaling.H \
-	$(srcdir)/NOX_EpetraNew_Operator.H
+	$(srcdir)/NOX_EpetraNew_Scaling.H
 
 
 EPETRANEW = \
