@@ -19,7 +19,7 @@ static char *cvs_lbc_id = "$Id$";
 #include "lb_const.h"
 #include "lb.h"
 #include "lb_util_const.h"
-#include "comm.h"
+#include "comm_const.h"
 #include "all_allo_const.h"
 #include "par.h"
 
@@ -70,7 +70,7 @@ int mpi_flag;
 /****************************************************************************/
 /****************************************************************************/
 
-LB *LB_Create_Object()
+LB *LB_Create_Object(MPI_Comm communicator)
 {
 /*
  *  Function to create a load balancing object.  May want more than one
@@ -91,6 +91,32 @@ LB *lb;
   lb = (LB *) LB_SMALLOC(sizeof(LB));
 
   /*
+   *  Set MPI values for of lb:
+   */
+
+  if (communicator == NULL) {
+    /*
+     *  If no communicator is passed into the function, use MPI_COMM_WORLD
+     *  as the default communicator.
+     */
+
+    MPI_Comm_dup(MPI_COMM_WORLD, &(lb->Communicator));
+    lb->Proc = LB_Proc;
+    lb->Num_Proc = LB_Num_Proc;
+  }
+  else {
+    /*
+     *  Set values based upon the communicator passed in.
+     *  KDD_DLB  --  The communicator is not yet used in the algorithms!
+     *  KDD_DLB  --  It will have to be incorporated appropriately.
+     *  KDD_DLB  --  But I wanted to get the interface ready!
+     */
+    MPI_Comm_dup(communicator, &(lb->Communicator));
+    MPI_Comm_rank(communicator, &(lb->Proc));
+    MPI_Comm_size(communicator, &(lb->Num_Proc));
+  }
+
+  /*
    *  Set defaults for fields of lb:
    */
 
@@ -104,18 +130,21 @@ LB *lb;
   lb->Get_Num_Edges = NULL;
   lb->Get_Edge_List = NULL;
   lb->Get_Num_Geom = NULL;
-  lb->Get_Obj_Geom = NULL;
-  lb->Get_Num_Local_Obj = NULL;
-  lb->Get_All_Local_Objs = NULL;
-  lb->Get_Next_Local_Obj = NULL;
+  lb->Get_Geom = NULL;
+  lb->Get_Num_Obj = NULL;
+  lb->Get_Obj_List = NULL;
+  lb->Get_First_Obj = NULL;
+  lb->Get_Next_Obj = NULL;
   lb->Get_Num_Border_Obj = NULL;
-  lb->Get_All_Border_Objs = NULL;
+  lb->Get_Border_Obj_List = NULL;
+  lb->Get_First_Border_Obj = NULL;
   lb->Get_Next_Border_Obj = NULL;
 
   lb->Migrate.Help_Migrate = FALSE;
-  lb->Migrate.Pack_Obj_Data = NULL;
-  lb->Migrate.Unpack_Obj_Data = NULL;
-  lb->Migrate.Get_Obj_Data_Size = NULL;
+  lb->Migrate.Pre_Process = NULL;
+  lb->Migrate.Pack_Obj = NULL;
+  lb->Migrate.Unpack_Obj = NULL;
+  lb->Migrate.Get_Obj_Size = NULL;
   
   return(lb);
 }
@@ -140,8 +169,8 @@ void LB_Set_Fn(LB *lb, LB_FN_TYPE fn_type, void *fn())
 char *yo = "LB_Set_Fn";
 
   switch (fn_type) {
-  case LB_OBJECT_WEIGHT_FN_TYPE:
-    lb->Get_Obj_Weight = (LB_OBJECT_WEIGHT_FN *) fn; 
+  case LB_OBJ_WEIGHT_FN_TYPE:
+    lb->Get_Obj_Weight = (LB_OBJ_WEIGHT_FN *) fn; 
     break;
   case LB_NUM_EDGES_FN_TYPE:
     lb->Get_Num_Edges = (LB_NUM_EDGES_FN *) fn;
@@ -153,22 +182,28 @@ char *yo = "LB_Set_Fn";
     lb->Get_Num_Geom = (LB_NUM_GEOM_FN *) fn;
     break;
   case LB_GEOM_FN_TYPE:
-    lb->Get_Obj_Geom = (LB_GEOM_FN *) fn;
+    lb->Get_Geom = (LB_GEOM_FN *) fn;
     break;
   case LB_NUM_OBJ_FN_TYPE:
-    lb->Get_Num_Local_Obj = (LB_NUM_OBJ_FN *) fn;
+    lb->Get_Num_Obj = (LB_NUM_OBJ_FN *) fn;
     break;
-  case LB_GET_LOCAL_OBJECTS_FN_TYPE:
-    lb->Get_All_Local_Objs = (LB_GET_LOCAL_OBJECTS_FN *) fn;
+  case LB_OBJ_LIST_FN_TYPE:
+    lb->Get_Obj_List = (LB_OBJ_LIST_FN *) fn;
+    break;
+  case LB_FIRST_OBJ_FN_TYPE:
+    lb->Get_First_Obj = (LB_FIRST_OBJ_FN *) fn;
     break;
   case LB_NEXT_OBJ_FN_TYPE:
-    lb->Get_Next_Local_Obj = (LB_NEXT_OBJ_FN *) fn;
+    lb->Get_Next_Obj = (LB_NEXT_OBJ_FN *) fn;
     break;
   case LB_NUM_BORDER_OBJ_FN_TYPE:
     lb->Get_Num_Border_Obj = (LB_NUM_BORDER_OBJ_FN *) fn;
     break;
-  case LB_BORDER_OBJ_FN_TYPE:
-    lb->Get_All_Border_Objs = (LB_BORDER_OBJ_FN *) fn;
+  case LB_BORDER_OBJ_LIST_FN_TYPE:
+    lb->Get_Border_Obj_List = (LB_BORDER_OBJ_LIST_FN *) fn;
+    break;
+  case LB_FIRST_BORDER_OBJ_FN_TYPE:
+    lb->Get_First_Border_Obj = (LB_FIRST_BORDER_OBJ_FN *) fn;
     break;
   case LB_NEXT_BORDER_OBJ_FN_TYPE:
     lb->Get_Next_Border_Obj = (LB_NEXT_BORDER_OBJ_FN *) fn;
@@ -176,14 +211,14 @@ char *yo = "LB_Set_Fn";
   case LB_PRE_MIGRATE_FN_TYPE:
     lb->Migrate.Pre_Process = (LB_PRE_MIGRATE_FN *) fn;
     break;
-  case LB_OBJECT_SIZE_FN_TYPE:
-    lb->Migrate.Get_Obj_Data_Size = (LB_OBJECT_SIZE_FN *) fn;
+  case LB_OBJ_SIZE_FN_TYPE:
+    lb->Migrate.Get_Obj_Size = (LB_OBJ_SIZE_FN *) fn;
     break;
-  case LB_PACK_OBJECT_FN_TYPE:
-    lb->Migrate.Pack_Obj_Data = (LB_PACK_OBJECT_FN *) fn;
+  case LB_PACK_OBJ_FN_TYPE:
+    lb->Migrate.Pack_Obj = (LB_PACK_OBJ_FN *) fn;
     break;
-  case LB_UNPACK_OBJECT_FN_TYPE:
-    lb->Migrate.Unpack_Obj_Data = (LB_UNPACK_OBJECT_FN *) fn;
+  case LB_UNPACK_OBJ_FN_TYPE:
+    lb->Migrate.Unpack_Obj = (LB_UNPACK_OBJ_FN *) fn;
     break;
   default:
     fprintf(stderr, "Error from %s:  LB_FN_TYPE %d is invalid.\n", yo, fn_type);
@@ -314,7 +349,7 @@ void LB_Set_Migration(struct LB_Struct *lb, int help)
  *  Function to set a flag indicating whether the application wants the
  *  load-balancer to help with data migration.   If migration help is
  *  wanted, routines to pack and unpack object data must be provided by
- *  the application (see LB_PACK_OBJECT_FN, LB_UNPACK_OBJECT_FN).
+ *  the application (see LB_PACK_OBJ_FN, LB_UNPACK_OBJ_FN).
  *
  *  Input:
  *    struct LB_Struct * --  The load balancing object to which this tolerance
@@ -669,12 +704,12 @@ void LB_Help_Migrate(
  *  Routine to help perform migration.  If migration pre-processing routine
  *  (LB_PRE_MIGRATE_FN) is specified, this routine first calls that function.
  *  It then calls a function to obtain the size of the migrating objects
- *  (LB_OBJECT_SIZE_FN).  The routine next calls an application-specified
- *  object packing routine (LB_PACK_OBJECT_FN) for each object
+ *  (LB_OBJ_SIZE_FN).  The routine next calls an application-specified
+ *  object packing routine (LB_PACK_OBJ_FN) for each object
  *  to be exported.  It develops the needed communication map to move the
  *  objects to other processors.  It performs the communication according
  *  to the map, and then calls an application-specified object unpacking
- *  routine (LB_UNPACK_OBJECT_FN) for each object imported.
+ *  routine (LB_UNPACK_OBJ_FN) for each object imported.
  */
 
 char *yo = "LB_Help_Migrate";
@@ -693,23 +728,23 @@ COMM_OBJ *comm_plan;     /* Communication object returned
     printf("DLBLIB %d %s Entering HELP_MIGRATE %d %d\n",
             LB_Proc, yo, num_import, num_export);
 
-  if (lb->Migrate.Get_Obj_Data_Size == NULL) {
+  if (lb->Migrate.Get_Obj_Size == NULL) {
     fprintf(stderr, "DLBLIB %d %s Error:  Must register an "
-           "LB_OBJECT_SIZE_FN_TYPE function to use the migration-help tools.\n",
+           "LB_OBJ_SIZE_FN_TYPE function to use the migration-help tools.\n",
            LB_Proc, yo);
     exit(-1);
   }
 
-  if (lb->Migrate.Pack_Obj_Data == NULL) {
+  if (lb->Migrate.Pack_Obj == NULL) {
     fprintf(stderr, "DLBLIB %d %s Error:  Must register an "
-           "LB_PACK_OBJECT_FN_TYPE function to use the migration-help tools.\n",
+           "LB_PACK_OBJ_FN_TYPE function to use the migration-help tools.\n",
            LB_Proc, yo);
     exit(-1);
   }
 
-  if (lb->Migrate.Unpack_Obj_Data == NULL) {
+  if (lb->Migrate.Unpack_Obj == NULL) {
     fprintf(stderr, "DLBLIB %d %s Error:  Must register an "
-         "LB_UNPACK_OBJECT_FN_TYPE function to use the migration-help tools.\n",
+         "LB_UNPACK_OBJ_FN_TYPE function to use the migration-help tools.\n",
          LB_Proc, yo);
     exit(-1);
   }
@@ -723,7 +758,7 @@ COMM_OBJ *comm_plan;     /* Communication object returned
       printf("DLBLIB %d %s Done Pre-Process\n", LB_Proc, yo);
   }
 
-  size = lb->Migrate.Get_Obj_Data_Size();
+  size = lb->Migrate.Get_Obj_Size();
 
   if (num_export > 0) {
     export_buf = (char *) LB_array_alloc(__FILE__, __LINE__, 1, num_export,
@@ -739,7 +774,7 @@ COMM_OBJ *comm_plan;     /* Communication object returned
     tmp = export_buf;
     for (i = 0; i < num_export; i++) {
       proc_list[i] = export_procs[i];
-      lb->Migrate.Pack_Obj_Data(export_global_ids[i], export_local_ids[i],
+      lb->Migrate.Pack_Obj(export_global_ids[i], export_local_ids[i],
                                 export_procs[i], size, tmp);
       tmp += size;
     }
@@ -783,7 +818,7 @@ COMM_OBJ *comm_plan;     /* Communication object returned
   for (i = 0; i < num_import; i++) {
     if (import_global_ids != NULL) 
       global_id = import_global_ids[i];
-    lb->Migrate.Unpack_Obj_Data(global_id, size, tmp);
+    lb->Migrate.Unpack_Obj(global_id, size, tmp);
     tmp += size;
   }
 

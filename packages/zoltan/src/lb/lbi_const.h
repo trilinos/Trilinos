@@ -20,6 +20,7 @@
 static char *cvs_lbiconsth_id = "$Id$";
 #endif
 
+#include <mpi.h>
 
 /*
  *  Data types and functions describing the interface between the
@@ -32,21 +33,23 @@ static char *cvs_lbiconsth_id = "$Id$";
  */
 
 enum LB_Fn_Type {
-  LB_OBJECT_WEIGHT_FN_TYPE = 0,
+  LB_OBJ_WEIGHT_FN_TYPE = 0,
   LB_NUM_EDGES_FN_TYPE,
   LB_EDGE_LIST_FN_TYPE,
   LB_NUM_GEOM_FN_TYPE,
   LB_GEOM_FN_TYPE,
   LB_NUM_OBJ_FN_TYPE,
-  LB_GET_LOCAL_OBJECTS_FN_TYPE,
+  LB_OBJ_LIST_FN_TYPE,
+  LB_FIRST_OBJ_FN_TYPE,
   LB_NEXT_OBJ_FN_TYPE,
   LB_NUM_BORDER_OBJ_FN_TYPE,
-  LB_BORDER_OBJ_FN_TYPE,
+  LB_BORDER_OBJ_LIST_FN_TYPE,
+  LB_FIRST_BORDER_OBJ_FN_TYPE,
   LB_NEXT_BORDER_OBJ_FN_TYPE,
   LB_PRE_MIGRATE_FN_TYPE,
-  LB_OBJECT_SIZE_FN_TYPE,
-  LB_PACK_OBJECT_FN_TYPE,
-  LB_UNPACK_OBJECT_FN_TYPE,
+  LB_OBJ_SIZE_FN_TYPE,
+  LB_PACK_OBJ_FN_TYPE,
+  LB_UNPACK_OBJ_FN_TYPE,
   LB_MAX_FN_TYPES               /*  This entry should always be last.        */
 };
 
@@ -83,7 +86,7 @@ struct LB_Struct;
  *    double                    --  the weight for the object.
  */
 
-typedef double LB_OBJECT_WEIGHT_FN(LB_ID global_id, LB_ID local_id);
+typedef double LB_OBJ_WEIGHT_FN(LB_ID global_id, LB_ID local_id);
 
 /*****************************************************************************/
 /*
@@ -165,25 +168,44 @@ typedef int LB_NUM_OBJ_FN();
  *                                  processor.
  */
 
-typedef void LB_GET_LOCAL_OBJECTS_FN(LB_ID *global_ids, LB_ID *local_ids);
+typedef void LB_OBJ_LIST_FN(LB_ID *global_ids, LB_ID *local_ids);
+
+/*****************************************************************************/
+/*
+ *  Iterator function for local objects; return the first local object on
+ *  the processor.  This function should be used with LB_NEXT_OBJ_FN.
+ *  Output:
+ *    LB_ID *first_global_id    --  Global ID of the first object; NULL if no
+ *                                  objects.
+ *    LB_ID *first_local_id     --  Local ID of the first object; NULL if no
+ *                                  objects.
+ *  Returned value:
+ *    int                       --  1 if a valid object is returned; 0 if
+ *                                  no more objects exist on the processor.
+ */
+
+typedef int LB_FIRST_OBJ_FN(LB_ID *first_global_id, LB_ID *first_local_id);
 
 /*****************************************************************************/
 /*
  *  Iterator function for local objects; return the next local object.
+ *  This function should be used with LB_FIRST_OBJ_FN.
  *  Input:  
- *    LB_ID global_id           --  Global ID of the previous object; NULL if
- *                                  requesting first object.
- *    LB_ID local_id            --  Local ID of the previous object; NULL if 
- *                                  requesting first object.
+ *    LB_ID global_id           --  Global ID of the previous object.
+ *    LB_ID local_id            --  Local ID of the previous object.
  *  Output:
  *    LB_ID *next_global_id     --  Global ID of the next object; NULL if no
  *                                  more objects.
  *    LB_ID *next_local_id      --  Local ID of the next object; NULL if no
  *                                  more objects.
+ *  Returned value:
+ *    int                       --  1 if a valid object is returned; 0 if
+ *                                  no more objects exist (i.e., global_id is
+ *                                  the last object).
  */
 
-typedef void LB_NEXT_OBJ_FN(LB_ID global_id, LB_ID local_id,
-                            LB_ID *next_global_id, LB_ID *next_local_id);
+typedef int LB_NEXT_OBJ_FN(LB_ID global_id, LB_ID local_id,
+                           LB_ID *next_global_id, LB_ID *next_local_id);
 
 /*****************************************************************************/
 /*
@@ -212,29 +234,51 @@ typedef int LB_NUM_BORDER_OBJ_FN(int nbor_proc);
  *                                  processor.
  */
 
-typedef void LB_BORDER_OBJ_FN(int nbor_proc, LB_ID *global_ids,
-                              LB_ID *local_ids);
+typedef void LB_BORDER_OBJ_LIST_FN(int nbor_proc, LB_ID *global_ids,
+                                   LB_ID *local_ids);
+
+/*****************************************************************************/
+/*
+ *  Iterator function for border objects; return the first local object 
+ *  along the subdomain boundary with a given processor.
+ *  Input:  
+ *    int nbor_proc             --  processor ID of the neighboring processor.
+ *  Output:
+ *    LB_ID *first_global_id    --  Global ID of the next object; NULL if no
+ *                                  objects.
+ *    LB_ID *first_local_id     --  Local ID of the next object; NULL if no 
+ *                                  objects.
+ *  Returned value:
+ *    int                       --  1 if a valid object is returned; 0 if
+ *                                  no more objects exist (i.e., global_id is
+ *                                  the last object).
+ */
+
+typedef int LB_FIRST_BORDER_OBJ_FN(int nbor_proc, LB_ID *first_global_id,
+                                   LB_ID *first_local_id);
 
 /*****************************************************************************/
 /*
  *  Iterator function for border objects; return the next local object 
  *  along the subdomain boundary with a given processor.
  *  Input:  
- *    LB_ID global_id           --  Global ID of the previous object; NULL if
- *                                  requesting first object.
- *    LB_ID local_id            --  Local ID of the previous object; NULL if
- *                                  requesting first object.
+ *    LB_ID global_id           --  Global ID of the previous object.
+ *    LB_ID local_id            --  Local ID of the previous object.
  *    int nbor_proc             --  processor ID of the neighboring processor.
  *  Output:
  *    LB_ID *next_global_id     --  Global ID of the next object; NULL if no
  *                                  more objects.
  *    LB_ID *next_local_id      --  Local ID of the next object; NULL if no 
  *                                  more objects.
+ *  Returned value:
+ *    int                       --  1 if a valid object is returned; 0 if
+ *                                  no more objects exist (i.e., global_id is
+ *                                  the last object).
  */
 
-typedef void LB_NEXT_BORDER_OBJ_FN(LB_ID global_id, LB_ID local_id, 
-                                   int nbor_proc,
-                                   LB_ID *next_global_id, LB_ID *next_local_id);
+typedef int LB_NEXT_BORDER_OBJ_FN(LB_ID global_id, LB_ID local_id, 
+                                  int nbor_proc,
+                                  LB_ID *next_global_id, LB_ID *next_local_id);
 
 /*****************************************************************************/
 /*
@@ -248,7 +292,7 @@ typedef void LB_NEXT_BORDER_OBJ_FN(LB_ID global_id, LB_ID local_id,
  *    int                       --  the size of data of local objects.
  */
 
-typedef int LB_OBJECT_SIZE_FN();
+typedef int LB_OBJ_SIZE_FN();
 
 /*****************************************************************************/
 /*
@@ -295,7 +339,7 @@ typedef void LB_PRE_MIGRATE_FN(int num_import, LB_ID *import_global_ids,
  *                                  data.
  */
 
-typedef void LB_PACK_OBJECT_FN(LB_ID global_id, LB_ID local_id, int dest_proc,
+typedef void LB_PACK_OBJ_FN(LB_ID global_id, LB_ID local_id, int dest_proc,
                                int size, char *buf);
 
 /*****************************************************************************/
@@ -315,7 +359,7 @@ typedef void LB_PACK_OBJECT_FN(LB_ID global_id, LB_ID local_id, int dest_proc,
  *                                  buffer.
  */
 
-typedef void LB_UNPACK_OBJECT_FN(LB_ID global_id, int size, char *buf);
+typedef void LB_UNPACK_OBJ_FN(LB_ID global_id, int size, char *buf);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -338,11 +382,17 @@ extern void LB_Initialize(int argc, char **argv);
  *  Function to create a load balancing object.  May want more than one
  *  object if using different decompositions with different techniques.
  *  This function allocates and initializes the object.
+ *  Input:
+ *    MPI_Comm communicator      --  MPI Communicator to be used for this
+ *                                   load-balancing object.
+ *    KDD_DLB  --  The communicator is not yet used in the algorithms!
+ *    KDD_DLB  --  It will have to be incorporated appropriately.
+ *    KDD_DLB  --  But I wanted to get it into the interface now!
  *  Returned value:
- *    struct LB_Struct * --  Pointer to a LB object.
+ *    struct LB_Struct *         --  Pointer to a LB object.
  */
 
-extern struct LB_Struct *LB_Create_Object();
+extern struct LB_Struct *LB_Create_Object(MPI_Comm communicator);
 
 /*****************************************************************************/
 /*
@@ -396,8 +446,7 @@ extern void LB_Set_Tolerance(struct LB_Struct *lb, double tolerance);
  *  Function to set a flag indicating whether the application wants the
  *  load-balancer to help with data migration.   If migration help is
  *  wanted, routines to pack and unpack object data must be provided by
- *  the application (see LB_OBJECT_SIZE_FN, LB_PACK_OBJECT_FN, 
- *  LB_UNPACK_OBJECT_FN).
+ *  the application (see LB_OBJ_SIZE_FN, LB_PACK_OBJ_FN, LB_UNPACK_OBJ_FN).
  *
  *  Input:
  *    struct LB_Struct *lb       --  The load balancing object to which this 
@@ -522,12 +571,12 @@ extern void LB_Compute_Destinations(struct LB_Struct *lb,
  *  Routine to help perform migration.  If migration pre-processing routine
  *  (LB_PRE_MIGRATE_FN) is specified, this routine first calls that function.
  *  It then calls a function to obtain the size of the migrating objects
- *  (LB_OBJECT_SIZE_FN).  The routine next calls an application-specified
- *  object packing routine (LB_PACK_OBJECT_FN) for each object
+ *  (LB_OBJ_SIZE_FN).  The routine next calls an application-specified
+ *  object packing routine (LB_PACK_OBJ_FN) for each object
  *  to be exported.  It develops the needed communication map to move the
  *  objects to other processors.  It performs the communication according
  *  to the map, and then calls an application-specified object unpacking 
- *  routine (LB_UNPACK_OBJECT_FN) for each object imported.
+ *  routine (LB_UNPACK_OBJ_FN) for each object imported.
  *
  *  Input:
  *    struct LB_Struct *lb       --  Load balancing object for current balance.

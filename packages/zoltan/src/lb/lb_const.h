@@ -107,15 +107,14 @@ struct LB_Migrate_Struct {
   LB_PRE_MIGRATE_FN *Pre_Process;      /* Function that performs application
                                           specific pre-processing.  Optional
                                           for help-migration.                */
-  LB_OBJECT_SIZE_FN *Get_Obj_Data_Size;/* Function that returns the size of
+  LB_OBJ_SIZE_FN *Get_Obj_Size;        /* Function that returns the size of
                                           contiguous memory needed to store
                                           the data for a single object for
                                           migration.                         */
-  LB_PACK_OBJECT_FN *Pack_Obj_Data;    /* Routine that packs object data for
+  LB_PACK_OBJ_FN *Pack_Obj;            /* Routine that packs object data for
                                           a given object into contiguous 
                                           memory for migration.              */
-  LB_UNPACK_OBJECT_FN *Unpack_Obj_Data;
-                                       /* Routine that unpacks object data for
+  LB_UNPACK_OBJ_FN *Unpack_Obj;        /* Routine that unpacks object data for
                                           a given object from contiguous 
                                           memory after migration.            */
 };
@@ -134,6 +133,18 @@ typedef struct LB_Migrate_Struct LB_MIGRATE;
  */
 
 struct LB_Struct {
+  MPI_Comm Communicator;          /*  The MPI Communicator.                  */
+  int Proc;                       /*  The processor's ID within the MPI
+                                      Communicator.                          */
+  int Num_Proc;                   /*  The number of processors in the MPI
+                                      Communicator.                          */
+  /*
+   *  KDD_DLB  --  The Communicator and Proc/Num_Proc are not yet used 
+   *  KDD_DLB  --  in the algorithms!
+   *  KDD_DLB  --  It will have to be incorporated appropriately.
+   *  KDD_DLB  --  But I wanted to get the interface ready!
+   */
+
   LB_METHOD Method;               /*  Method to be used for load balancing.  */
   LB_FN *LB_Fn;                   /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
@@ -146,7 +157,7 @@ struct LB_Struct {
   void *Data_Structure;           /*  Data structure used by the load 
                                       balancer; cast by the method routines
                                       to the appropriate data type.          */
-  LB_OBJECT_WEIGHT_FN *Get_Obj_Weight;         /* Fn ptr to get an object's
+  LB_OBJ_WEIGHT_FN *Get_Obj_Weight;            /* Fn ptr to get an object's
                                                   weight.                    */
   LB_NUM_EDGES_FN *Get_Num_Edges;              /* Fn ptr to get an object's
                                                   number of edges.           */
@@ -154,20 +165,25 @@ struct LB_Struct {
                                                   edge list.                 */
   LB_NUM_GEOM_FN *Get_Num_Geom;                /* Fn ptr to get an object's
                                                   number of geometry values. */
-  LB_GEOM_FN *Get_Obj_Geom;                    /* Fn ptr to get an object's
+  LB_GEOM_FN *Get_Geom;                        /* Fn ptr to get an object's
                                                   geometry values.           */
-  LB_NUM_OBJ_FN *Get_Num_Local_Obj;            /* Fn ptr to get a proc's  
+  LB_NUM_OBJ_FN *Get_Num_Obj;                  /* Fn ptr to get a proc's  
                                                   number of local objects.   */
-  LB_GET_LOCAL_OBJECTS_FN *Get_All_Local_Objs; /* Fn ptr to get all local
+  LB_OBJ_LIST_FN *Get_Obj_List;                /* Fn ptr to get all local
                                                   objects on a proc.         */
-  LB_NEXT_OBJ_FN *Get_Next_Local_Obj;          /* Fn ptr to get the next   
+  LB_FIRST_OBJ_FN *Get_First_Obj;              /* Fn ptr to get the first   
+                                                  local obj on a proc.       */
+  LB_NEXT_OBJ_FN *Get_Next_Obj;                /* Fn ptr to get the next   
                                                   local obj on a proc.       */
   LB_NUM_BORDER_OBJ_FN *Get_Num_Border_Obj;    /* Fn ptr to get a proc's 
                                                   number of border objs wrt
                                                   a given processor.         */
-  LB_BORDER_OBJ_FN *Get_All_Border_Objs;       /* Fn ptr to get all objects
+  LB_BORDER_OBJ_LIST_FN *Get_Border_Obj_List;  /* Fn ptr to get all objects
                                                   sharing a border with a
                                                   given processor.           */
+  LB_FIRST_BORDER_OBJ_FN *Get_First_Border_Obj;/* Fn ptr to get the first 
+                                                  object sharing a border 
+                                                  with a given processor.    */
   LB_NEXT_BORDER_OBJ_FN *Get_Next_Border_Obj;  /* Fn ptr to get the next 
                                                   object sharing a border 
                                                   with a given processor.    */

@@ -20,7 +20,7 @@ static char *cvs_migoctc_id = "$Id$";
 #include "lb_const.h"
 #include "octant_const.h"
 #include "migoct.h"
-#include "comm.h"
+#include "comm_const.h"
 #include "all_allo_const.h"
 
 /* void fix_tags(LB_TAG **export_tags, int *nsentags, LB_TAG **import_tags,

@@ -245,12 +245,12 @@ void oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
    * If there are no objects on this processor, do not create a root octant.
    * The partitioner will probably assign objects to this processor
    */
-  if(lb->Get_Num_Local_Obj == NULL) {
+  if(lb->Get_Num_Obj == NULL) {
     fprintf(stderr, "%s\n\t%s\n", "Error in octree load balance:",
 	    "Must register Get_Num_Local_Objects function");
     abort();
   }
-  *c3 = num_objs = lb->Get_Num_Local_Obj();
+  *c3 = num_objs = lb->Get_Num_Obj();
   Region_list = NULL;
   ptr1 = NULL;
   if(num_objs > 0) {
@@ -422,12 +422,13 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   int max_num_objs;
   LB_ID *obj_global_ids, *obj_local_ids;
   int i;
+  int found;
   pRegion tmp, ptr;
   COORD global_min, global_max;
   double x;
   double PADDING = 0.0000001;
 
-  *num_objs = lb->Get_Num_Local_Obj();
+  *num_objs = lb->Get_Num_Obj();
 
   /* ATTN: an arbitrary choice, is this necessary? */
   max_num_objs = 2 * (*num_objs); 
@@ -436,14 +437,22 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
                                             1, 2 * *num_objs, sizeof(LB_ID));
   obj_local_ids = (LB_ID *) (obj_global_ids + *num_objs);
 
-  if(lb->Get_All_Local_Objs == NULL) {
-    fprintf(stderr, "%s:\n\t%s\n", "Error in octree load balance", 
-	    "user must declare function Get_All_Local_Objs.");
+  if(lb->Get_Obj_List == NULL &&
+    (lb->Get_First_Obj == NULL || lb->Get_Next_Obj == NULL)) {
+    fprintf(stderr, "Error in octree load balance:  user must declare " 
+            "function Get_Obj_List or Get_First_Obj/Get_Next_Obj.");
     abort();
   }
 
-  lb->Get_All_Local_Objs(obj_global_ids, obj_local_ids);
-  if((*num_objs) > 0) {
+  if (lb->Get_Obj_List != NULL) {
+    lb->Get_Obj_List(obj_global_ids, obj_local_ids);
+    found = TRUE;
+  }
+  else {
+    found = lb->Get_First_Obj(&(obj_global_ids[0]), &(obj_local_ids[0]));
+  }
+
+  if(*num_objs > 0 && found) {
     initialize_region(lb, &tmp, obj_global_ids[0], obj_local_ids[0]);
     *c0 = (float)tmp->Weight;
     vector_set(min, tmp->Coord);
@@ -451,6 +460,15 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   }
   *ptr1 = tmp;
   for (i = 1; i < (*num_objs); i++) {
+    if (lb->Get_Obj_List == NULL)
+      found = lb->Get_Next_Obj(obj_global_ids[i-1], obj_local_ids[i-1],
+                               &(obj_global_ids[i]), &(obj_local_ids[i]));
+    if (!found) {
+      fprintf(stderr, "Error in octree load balance:  number of objects "
+             "declared by LB_NUM_OBJ_FN %d != number obtained by "
+             "GET_NEXT_OBJ %d\n", *num_objs, i);
+      exit(-1);
+    }
     initialize_region(lb, &(ptr), obj_global_ids[i], obj_local_ids[i]);
     *c0 += (float)tmp->Weight;
     /* the following is really a hack, since it has no real basis 
@@ -516,7 +534,7 @@ static void initialize_region(LB *lb, pRegion *ret, LB_ID global_id,
   reg->Tag.Proc = LB_Proc;
   /* reg->Proc = 0; */
   reg->Coord[0] = reg->Coord[1] = reg->Coord[2] = 0.0;
-  lb->Get_Obj_Geom(global_id, local_id, reg->Coord);
+  lb->Get_Geom(global_id, local_id, reg->Coord);
 
 #if 0
   LB_print_sync_start(TRUE);

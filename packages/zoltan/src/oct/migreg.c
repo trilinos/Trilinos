@@ -18,7 +18,7 @@ static char *cvs_migregc_id = "$Id$";
 
 #include "migreg.h"
 #include "hilbert_const.h"
-#include "comm.h"
+#include "comm_const.h"
 #include "dfs_const.h"
 
 /*
