@@ -242,12 +242,13 @@ bool FiniteElementProblem::evaluate(FillType f,
     if ((flag == F_ONLY)    || (flag == ALL)) 
       (*rhs)[NumMyElements-1]= (*soln)[OverlapNumMyElements-1] - 0.0;
     if ((flag == MATRIX_ONLY) || (flag == ALL)) {
-      column=NumGlobalElements-1;
+      row=NumGlobalElements-1;
+      column=row;
       jac=1.0;
-      A->ReplaceGlobalValues(NumMyElements-1, 1, &jac, &column);
+      A->ReplaceGlobalValues(row, 1, &jac, &column);
       column--;
       jac=0.0;
-      A->ReplaceGlobalValues(NumMyElements-1, 1, &jac, &column);
+      A->ReplaceGlobalValues(row, 1, &jac, &column);
     }
   }
 
