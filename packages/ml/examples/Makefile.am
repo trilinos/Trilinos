@@ -1,28 +1,49 @@
 #@HEADER
 #@HEADER
 
+#ML_STANDALONE_MODE is set to true if ml is being built by itself, false
+#otherwise.   It controls which linker is used.  In the case that ml is built
+#with aztecoo and epetra support enabled, then a c++ linker must be used for
+#ML's c++ interfaces to those two packages.
+
 EXEEXT = .exe
 
-#EXAMPLE = ml_read_maxwell
-
 # List the names of all exe's in this directory here
-#noinst_PROGRAMS = ml_read_maxwell
-noinst_PROGRAMS = mlguide
+if ML_STANDALONE_MODE
+noinst_PROGRAMS = mlguide mlguide_par
+else
+noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
+                  ml_example1dGS ml_example2d ml_example3d ml_simple_max
+endif
 
 # One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
 # of the  following primaries that the pattern is 
 # "(Exe_name)_(PRIMARY_NAME) = ").
 # List all source files needed to compile the exe.
-ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.cpp
 mlguide_SOURCES = $(srcdir)/mlguide.c
+mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
+if !ML_STANDALONE_MODE
+ml_aztec_simple_SOURCES = $(srcdir)/ml_aztec_simple.c
+ml_example1d_SOURCES = $(srcdir)/ml_example1d.c
+ml_example1dGS_SOURCES = $(srcdir)/ml_example1dGS.c
+ml_example2d_SOURCES = $(srcdir)/ml_example2d.c
+ml_example3d_SOURCES = $(srcdir)/ml_example3d.c
+ml_simple_max_SOURCES = $(srcdir)/ml_simple_max.c
+endif
 
 # One DEPENDENCIES primary is needed for each exe listed above.  List any
 # libraries that the exe depends on.  (This primary is not absolutely
 # essential.)
-ml_read_maxwell_DEPENDENCIES = $(top_builddir)/../aztecoo/src/libaztecoo.a \
+
+ml_integrated_dependencies = $(top_builddir)/../aztecoo/src/libaztecoo.a \
                        $(top_builddir)/../epetra/src/libepetra.a
-mlguide_DEPENDENCIES = 
-                       
+
+if ML_STANDALONE_MODE
+mlguide_DEPENDENCIES =
+else
+mlguide_DEPENDENCIES = ${ml_integrated_dependencies}
+endif
+
 
 ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/src/Coarsen                  \
@@ -35,23 +56,64 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/src/Smoother                  \
                    -I$(top_srcdir)/src/Utils                  \
                    -I$(top_srcdir)/../aztecoo/src            \
-                   -I$(top_builddir)/../aztecoo/src       
+                   -I$(top_builddir)/../aztecoo/src
 
-# One CXXFLAGS primary can be defined for each exe listed above.  Include 
-# any -I's necessary for building the exe.
-ml_read_maxwell_CXXFLAGS = ${ml_common_include_locations}
-mlguide_CFLAGS = ${ml_common_include_locations}
-
-# One LDADD primary can be defined for each exe listed above.  Include any
-# LDFLAGS  necessary for building the exe.
-ml_read_maxwell_LDADD = $(top_builddir)/../aztecoo/src/libaztecoo.a        \
-                $(top_builddir)/src/libml.a        \
+if ML_STANDALONE_MODE
+#I'm defining the linker in this way, rather than
+#       ml_invididual_example_LINK = ${CC}
+#because the above definition will not use the compiler and loader flags
+#specified in AM_CFLAGS, CFLAGS, AM_LDFLAGS, and LDFLAGS.
+mllink = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+ml_libs = $(top_builddir)/src/libml.a        \
+                $(LAPACK_LIBS)                            \
+                $(BLAS_LIBS)                            \
+                $(LIBS) $(FLIBS)
+else
+mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+ml_libs = $(top_builddir)/src/libml.a        \
+                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
                 $(top_builddir)/../epetra/src/libepetra.a         \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \
                 $(LIBS) $(FLIBS)
-#
-mlguide_LDADD = $(top_builddir)/src/libml.a        \
-                $(LAPACK_LIBS)                            \
-                $(BLAS_LIBS)                            \
-                $(LIBS) $(FLIBS)
+endif
+
+# One CXXFLAGS primary can be defined for each exe listed above.  Include 
+# any -I's necessary for building the exe.
+
+# One LDADD primary can be defined for each exe listed above.  Include any
+# LDFLAGS  necessary for building the exe.
+
+mlguide_CFLAGS = ${ml_common_include_locations}
+mlguide_LDADD = ${ml_libs}
+mlguide_LINK = ${mllink}
+
+mlguide_par_CFLAGS = ${ml_common_include_locations}
+mlguide_par_LDADD = ${ml_libs}
+mlguide_par_LINK = ${mllink}
+
+if !ML_STANDALONE_MODE
+ml_aztec_simple_CFLAGS = ${ml_common_include_locations}
+ml_aztec_simple_LDADD = ${ml_libs}
+ml_aztec_simple_LINK = ${mllink}
+
+ml_example1d_CFLAGS = ${ml_common_include_locations}
+ml_example1d_LDADD = ${ml_libs}
+ml_example1d_LINK = ${mllink}
+
+ml_example1dGS_CFLAGS = ${ml_common_include_locations}
+ml_example1dGS_LDADD = ${ml_libs}
+ml_example1dGS_LINK = ${mllink}
+
+ml_example2d_CFLAGS = ${ml_common_include_locations}
+ml_example2d_LDADD = ${ml_libs}
+ml_example2d_LINK = ${mllink}
+
+ml_example3d_CFLAGS = ${ml_common_include_locations}
+ml_example3d_LDADD = ${ml_libs}
+ml_example3d_LINK = ${mllink}
+
+ml_simple_max_CFLAGS = ${ml_common_include_locations}
+ml_simple_max_LDADD = ${ml_libs}
+ml_simple_max_LINK = ${mllink}
+endif
