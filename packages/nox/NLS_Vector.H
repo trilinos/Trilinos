@@ -19,9 +19,6 @@ class NLS_Vector {
 
 private:
 
-  //! Disallow operator=. Must use "copy" instead.
-  NLS_Vector& operator=(const NLS_Vector& y) {};
-
 public:
 
   //! NLS_Vector constructor
@@ -43,7 +40,10 @@ public:
   virtual NLS_Vector& abs(const NLS_Vector& y) = 0;
 
   //! Copies scaled version of y into "this"
-  virtual NLS_Vector& copy(const NLS_Vector& y, double scale = 1.0);
+  virtual NLS_Vector& copy(const NLS_Vector& y, double scale = 1.0) = 0;
+
+  //! Operator= (should define or compiler will do it for us!)
+  virtual NLS_Vector& operator=(const NLS_Vector& y) = 0;
 
   //@}
 
@@ -86,19 +86,6 @@ public:
   //! Dot product with y
   virtual double dot(const NLS_Vector& y) const = 0;
   
-  //@}
-
-  //@{ \name Statistics
-
-  //! Compute minimum value of each vector in vector.
-  virtual double min() const = 0;
-
-  //! Compute maximum value of vector.
-  virtual double max() const = 0;
-
-  //! Compute mean (average) value of each vector in vector.
-  virtual double mean() const = 0;
-
   //@}
 
 };
