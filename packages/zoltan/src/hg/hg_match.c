@@ -35,7 +35,7 @@ static ZOLTAN_HG_MATCHING_FN matching_aug2; /* post matching optimizer */
 static ZOLTAN_HG_MATCHING_FN matching_ipm;  /* inner product matching */
 
 static double sim (HGraph*, int, int);
-void draw_matrix(HGraph*);
+void print_debug(HGraph*);
 
 /* static void check_upper_bound_of_matching_weight (Graph*, ZZ*, Matching); */
 /* static int graph_connected_components (int, int*, int*, int);             */
@@ -784,63 +784,23 @@ char  *yo = "matching_pgm";
 
 static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
 {
-    int   i, j, k, v1, v2, edge, ip, maxip, maxindex;
+    int   i, j, k, v1, v2, edge, weight, ip, maxip, maxindex, maxweight;
     int   *checked, *vector;
     char  *yo = "matching_ipm";
+    static const float heavy_ratio = 0.2;
 
-    if (!(checked = (int*) ZOLTAN_MALLOC (hg->nVtx  * sizeof(int))) 
-     || !(vector  = (int*) ZOLTAN_MALLOC (hg->nEdge * sizeof(int)))) {
-        Zoltan_Multifree (__FILE__, __LINE__, 2, &checked, &vector);
+    if (!(checked = (int*) ZOLTAN_MALLOC(hg->nVtx  * sizeof(int))) 
+     || !(vector  = (int*) ZOLTAN_MALLOC(hg->nEdge * sizeof(int)))) {
+        Zoltan_Multifree(__FILE__, __LINE__, 2, &checked, &vector);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
     }
     
-    //j = 0;
-    //
-    //printf("Debugging info:\nvedges:\n----------\n");
-    //for(i = 0; i < hg->vindex[hg->nVtx]; ++i) {
-    //    printf("%2d ", hg->vedge[i]);
-    //    if(hg->vindex[j+1] == i + 1) {
-    //        j++;
-    //        printf("\n");
-    //    }
-    //}
-    //printf("\nvindex:\t");
-    //for(i = 0; i < hg->nVtx + 1; ++i)
-    //    printf("%2d ", hg->vindex[i]);
-    //printf("\n\nhvertex\n-------\n");
-    //j = 0;
-    //for(i = 0; i < hg->hindex[hg->nEdge]; ++i) {
-    //    printf("%2d ", hg->hvertex[i]);
-    //    if(hg->hindex[j+1] == i + 1) {
-    //        j++;
-    //        printf("\n");
-    //    }
-    //}
-    //printf("\nhindex:\t");
-    //for(i = 0; i < hg->nEdge + 1; ++i)
-    //    printf("%2d ", hg->hindex[i]);
-    //
-    //printf("\n");
-    //draw_matrix(hg);
-    //printf("\n");
+    //print_debug(hg);
         
-    /*
-     * Next optimization: Vertex switching
-     * When we check a vertex, we move it to the end of the data structure,
-     * rather than marking a checked array.  We then avoid the overhead of
-     * misses when we check the checked array.
-     *
-     * To do this, introduce another array, indices into the vindex array.
-     * Initially each element is its index, but is swapped with the last
-     * element whenever its vertex is checked.  We thereby avoid actual
-     * modification of the HGraph structure.  A similar procedure is used
-     * in the randomized algorithms above.
-     */
-     
-    for(i = 0; i < hg->nVtx; i++)
+    for (i = 0; i < hg->nVtx; i++)
         checked[i] = -1;
-    for(i = 0; i < hg->nEdge; i++)
+    for (i = 0; i < hg->nEdge; i++)
         vector[i] = -1;
     
     /* for every vertex */
@@ -850,35 +810,40 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
         
         maxip = 0;
         maxindex = -1;
-        for(i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++)
+        maxweight = INT_MAX;
+        for (i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++)
             vector[hg->vedge[i]] = v1;
             
         /* for every hyperedge containing the vertex */
-        for(i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
+        for (i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
             edge = hg->vedge[i];
                 
             /* for every other vertex in the hyperedge */
-            for(j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
+            for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
                 v2 = hg->hvertex[j];
                 
-                /* ignore matched and previously checked vertices */
-                if(match[v2] != v2 || checked[v2] == v1 || v1 == v2)
+                weight = hg->vindex[v2+1] - hg->vindex[v2];
+                if (match[v2] != v2 
+                  || checked[v2] == v1 
+                  || v1 == v2 
+                  || weight < maxip 
+                  || weight > hg->hindex[hg->nEdge] * heavy_ratio)
                     continue;
-            
+
                 /* compute inner product of vertex v1 with vertex v2 */
                 ip = 0;
-                for(k = hg->vindex[v2]; k < hg->vindex[v2+1]; k++) {
-                    if(vector[hg->vedge[k]] == v1)
+                for (k = hg->vindex[v2]; k < hg->vindex[v2+1]; k++) {
+                    if (vector[hg->vedge[k]] == v1)
                         ip++;
                 }
                 checked[v2] = v1;
                 
                 /* keep track of best match seen */
-                if(maxip < ip) {
+                if (maxip < ip || (maxip == ip && maxweight > weight)) {
                     maxip = ip;
                     maxindex = v2;
+                    maxweight = weight;
                 }
-                //printf("IP of %d with %d is %d\n", v1, v2, ip);
             }
         }
 
@@ -886,7 +851,7 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
         //        v1, maxindex, maxip);
 
         /* match v1 with v2 having greatest inner product */
-        if(maxindex != -1) {
+        if (maxindex != -1) {
             match[v1] = maxindex;
             match[maxindex] = v1;
             (*limit)--;
@@ -901,7 +866,7 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
     //    printf("%2d ",match[i]);
     //printf("\n");
 
-    Zoltan_Multifree (__FILE__, __LINE__, 2, &checked, &vector);
+    Zoltan_Multifree(__FILE__, __LINE__, 2, &checked, &vector);
     return ZOLTAN_OK;
 }
 
@@ -1128,10 +1093,37 @@ static int graph_connected_components (int n, int *ep, int *edge, int Out)
  * draws the sparse matrix representation of a hypergraph, with vertices as
  * rows and columns as edges.
  */
-void draw_matrix(HGraph* hg)
+void print_debug(HGraph* hg)
 {
     int position, i, j;
+ 
+    j = 0;
     
+    printf("Debugging info:\nvedges:\n----------\n");
+    for(i = 0; i < hg->vindex[hg->nVtx]; ++i) {
+        printf("%2d ", hg->vedge[i]);
+        if(hg->vindex[j+1] == i + 1) {
+            j++;
+            printf("\n");
+        }
+    }
+    printf("\nvindex:\t");
+    for(i = 0; i < hg->nVtx + 1; ++i)
+        printf("%2d ", hg->vindex[i]);
+    printf("\n\nhvertex\n-------\n");
+    j = 0;
+    for(i = 0; i < hg->hindex[hg->nEdge]; ++i) {
+        printf("%2d ", hg->hvertex[i]);
+        if(hg->hindex[j+1] == i + 1) {
+            j++;
+            printf("\n");
+        }
+    }
+    printf("\nhindex:\t");
+    for(i = 0; i < hg->nEdge + 1; ++i)
+        printf("%2d ", hg->hindex[i]);   
+
+    printf("\n");
     for(i = 0; i < hg->nVtx; ++i) {
         j = position = 0;
         while(j < hg->nEdge) {
@@ -1145,6 +1137,7 @@ void draw_matrix(HGraph* hg)
         }
         printf("\n");
     }
+    printf("\n");
 }
 
 #ifdef __cplusplus
