@@ -235,10 +235,8 @@ REFTREE_INC     = reftree_const.h
 DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
 		  dr_util.c dr_exoII_io.c dr_elem.c dr_loadbal.c \
 		  dr_migrate.c dr_output.c dr_chaco_io.c dr_random_io.c \
-                  dr_elem_util.c dr_maps.c dr_eval.c dr_gnuplot.c  
- 
-DR_CSRC        += dr_hg_io.c 
-DR_CSRC        += dr_hg_readfile.c
+                  dr_elem_util.c dr_maps.c dr_eval.c dr_gnuplot.c \
+		  dr_hg_io.c dr_hg_readfile.c
 
 DR_INC		= dr_const.h dr_input_const.h dr_util_const.h \
 		  dr_err_const.h dr_par_util_const.h dr_elem_const.h \
