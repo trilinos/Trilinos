@@ -43,7 +43,7 @@ public:
   
   Trilinos_Util_Map();
 
-  ~Trilinos_Util_Map()
+  virtual ~Trilinos_Util_Map()
   {  }
 
   //@}
@@ -275,9 +275,9 @@ class Trilinos_Util_FileOptions : public Trilinos_Util_Map
   virtual int ReadFile(const char FileName[]);
 
 private:
-  bool FileHasBeenRead_;
   string FileName_;
   string CommentChars_;
   string SeparationChars_;
+  bool FileHasBeenRead_;
 };
 #endif

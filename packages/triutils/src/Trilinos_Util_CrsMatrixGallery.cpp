@@ -53,7 +53,7 @@ const double UNDEF = -99999.87;
 // ================================================ ====== ==== ==== == =
 Trilinos_Util_CrsMatrixGallery::Trilinos_Util_CrsMatrixGallery(const string name, 
 							       const Epetra_Comm & comm ) :
-  name_(name), comm_(&comm)
+  comm_(&comm), name_(name)
 {
   ZeroOutData();
   // verbosity level
@@ -68,7 +68,7 @@ Trilinos_Util_CrsMatrixGallery::Trilinos_Util_CrsMatrixGallery(const string name
 // ================================================ ====== ==== ==== == =
 Trilinos_Util_CrsMatrixGallery::Trilinos_Util_CrsMatrixGallery(const string name, 
 							       const Epetra_Map & map ) :
-  name_(name), comm_(&(map.Comm()))
+  comm_(&(map.Comm())), name_(name)
 {
   ZeroOutData();
   // verbosity level
@@ -948,8 +948,6 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixTriDiag(void)
     cout << OutputMsg << "Creating matrix `tridiag'...n";
   }
   
-  int ierr;
-
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,3);
 
   double *Values = new double[2];
@@ -1019,8 +1017,6 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixLaplace1dNeumann(void)
   if( verbose_ == true ) {
     cout << OutputMsg << "Creating matrix `laplace_1d_n'...\n";
   }
-
-  int ierr;
 
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,3);
 
@@ -1102,7 +1098,6 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixCrossStencil2d(void)
     
   double Values[4], diag;
   int Indices[4];
-  int NumEntries;
 
   //    e
   //  b a c
@@ -1180,8 +1175,7 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixLaplace2dNeumann(void)
     
   double Values[4], diag;
   int Indices[4];
-  int NumEntries;
-
+  
   //    e
   //  b a c
   //    d
@@ -1260,7 +1254,6 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixLaplace2d_9pt(void)
   double Values[8], diag;
   for( int i=0 ; i<8 ; ++i ) Values[i] = -1.0;
   int Indices[8];
-  int NumEntries;
 
   diag = 8.0;
   
@@ -1474,8 +1467,7 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixUniFlow2d(void)
     int ix, iy;
     ix = (MyGlobalElements_[i])%nx_;
     iy = (MyGlobalElements_[i] - ix)/nx_;
-    double x = hx*(ix+1);
-    double y = hy*(iy+1);
+
     double ConvX = a_ * cos(c_);
     double ConvY = a_ * sin(c_);
 
@@ -1580,7 +1572,6 @@ int Trilinos_Util_CrsMatrixGallery::CreateMatrixCrossStencil3d(void)
     
   double Values[6], diag;
   int Indices[6];
-  int NumEntries;
 
   //    e 
   //  b a c
@@ -2537,7 +2528,7 @@ int Trilinos_Util_CrsMatrixGallery::GetCartesianCoordinates(double * & x,
   
     delta_x = length/(nx_-1);
     delta_y = length/(ny_-1);
-    delta_y = length/(nz_-1);
+    delta_z = length/(nz_-1);
 
     x =  new double[NumMyElements_];
     y =  new double[NumMyElements_];
@@ -2554,7 +2545,7 @@ int Trilinos_Util_CrsMatrixGallery::GetCartesianCoordinates(double * & x,
       
       x[i] = delta_x * ix;
       y[i] = delta_y * iy;
-      z[i] = delta_y * iz;
+      z[i] = delta_z * iz;
 
     }
     
@@ -2669,31 +2660,30 @@ int Trilinos_Util_CrsMatrixGallery::WriteMatrix( const string & FileName, const 
 
 }
 
-#ifdef LATER_ON
 
 // ================================================ ====== ==== ==== == =
-Epetra_Vector * Trilinos_Util_CrsMatrixGallery::GetVbrRHS(void)
+Epetra_Vector * Trilinos_Util_VbrMatrixGallery::GetVbrRHS(void)
 {
   if( VbrRhs_ == NULL ) assert(CreateVbrRHS()==0);
   return VbrRhs_;
 }
 
 // ================================================ ====== ==== ==== == =
-Epetra_Vector * Trilinos_Util_CrsMatrixGallery::GetVbrExactSolution(void)
+Epetra_Vector * Trilinos_Util_VbrMatrixGallery::GetVbrExactSolution(void)
 {
   if( VbrExactSolution_ == NULL ) assert(CreateVbrExactSolution()==0);
   return VbrExactSolution_;
 }
 
 // ================================================ ====== ==== ==== == =
-Epetra_Vector * Trilinos_Util_CrsMatrixGallery::GetVbrStartingSolution(void)
+Epetra_Vector * Trilinos_Util_VbrMatrixGallery::GetVbrStartingSolution(void)
 {
   if( VbrStartingSolution_ == NULL ) assert(CreateVbrStartingSolution()==0);
   return VbrStartingSolution_;
 }
 
 // ================================================ ====== ==== ==== == =  
-Epetra_VbrMatrix * Trilinos_Util_CrsMatrixGallery::GetVbrMatrix(const int NumPDEEqns) 
+Epetra_VbrMatrix * Trilinos_Util_VbrMatrixGallery::GetVbrMatrix(const int NumPDEEqns) 
 {
 
   if( NumPDEEqns != NumPDEEqns_ ) {
@@ -2710,7 +2700,7 @@ Epetra_VbrMatrix * Trilinos_Util_CrsMatrixGallery::GetVbrMatrix(const int NumPDE
 }
 
 // ================================================ ====== ==== ==== == =
-Epetra_VbrMatrix * Trilinos_Util_CrsMatrixGallery::GetVbrMatrix(void)
+Epetra_VbrMatrix * Trilinos_Util_VbrMatrixGallery::GetVbrMatrix(void)
 {
     
   if( VbrMatrix_ == NULL ) assert(CreateVbrMatrix()==0);
@@ -2720,7 +2710,7 @@ Epetra_VbrMatrix * Trilinos_Util_CrsMatrixGallery::GetVbrMatrix(void)
 }
 
 // ================================================ ====== ==== ==== == =
-Epetra_VbrMatrix & Trilinos_Util_CrsMatrixGallery::GetVbrMatrixRef(void)
+Epetra_VbrMatrix & Trilinos_Util_VbrMatrixGallery::GetVbrMatrixRef(void)
 {
     
   if( VbrMatrix_ == NULL ) assert(CreateVbrMatrix()==0);
@@ -2730,7 +2720,7 @@ Epetra_VbrMatrix & Trilinos_Util_CrsMatrixGallery::GetVbrMatrixRef(void)
 }
 
 // ================================================ ====== ==== ==== == =
-Epetra_LinearProblem * Trilinos_Util_CrsMatrixGallery::GetVbrLinearProblem(void) 
+Epetra_LinearProblem * Trilinos_Util_VbrMatrixGallery::GetVbrLinearProblem(void) 
 {
   // pointers, not really needed
   Epetra_VbrMatrix * A;
@@ -2750,7 +2740,7 @@ Epetra_LinearProblem * Trilinos_Util_CrsMatrixGallery::GetVbrLinearProblem(void)
 }
 
 // ================================================ ====== ==== ==== == =
-int Trilinos_Util_CrsMatrixGallery::CreateVbrExactSolution(void) 
+int Trilinos_Util_VbrMatrixGallery::CreateVbrExactSolution(void) 
 {
 
   if( verbose_ == true ) {
@@ -2774,7 +2764,7 @@ int Trilinos_Util_CrsMatrixGallery::CreateVbrExactSolution(void)
 }
 
 // ================================================ ====== ==== ==== == =
-int Trilinos_Util_CrsMatrixGallery::CreateVbrStartingSolution(void) 
+int Trilinos_Util_VbrMatrixGallery::CreateVbrStartingSolution(void) 
 {
 
   if( verbose_ == true ) {
@@ -2802,7 +2792,7 @@ int Trilinos_Util_CrsMatrixGallery::CreateVbrStartingSolution(void)
 }
 
 // ================================================ ====== ==== ==== == =
-int Trilinos_Util_CrsMatrixGallery::CreateVbrRHS(void) 
+int Trilinos_Util_VbrMatrixGallery::CreateVbrRHS(void) 
 {
 
   if( verbose_ == true ) {
@@ -2831,7 +2821,7 @@ int Trilinos_Util_CrsMatrixGallery::CreateVbrRHS(void)
 }
 
 // ================================================ ====== ==== ==== == =
-int Trilinos_Util_CrsMatrixGallery::CreateVbrMatrix(void) 
+int Trilinos_Util_VbrMatrixGallery::CreateVbrMatrix(void) 
 {
 
   if( verbose_ == true ) {
@@ -2935,7 +2925,7 @@ int Trilinos_Util_CrsMatrixGallery::CreateVbrMatrix(void)
 }
 
 // ================================================ ====== ==== ==== == =
-int Trilinos_Util_CrsMatrixGallery::ComputeResidualVbr(double & residual)
+int Trilinos_Util_VbrMatrixGallery::ComputeResidualVbr(double & residual)
 {
 
   // create solution and rhs if needed (matrix_ and ExactSolution are
@@ -2952,7 +2942,7 @@ int Trilinos_Util_CrsMatrixGallery::ComputeResidualVbr(double & residual)
   return 0;
 }
 // ================================================ ====== ==== ==== == =
-int Trilinos_Util_CrsMatrixGallery::ComputeDiffBetweenStartingAndExactSolutionsVbr(double & residual)
+int Trilinos_Util_VbrMatrixGallery::ComputeDiffBetweenStartingAndExactSolutionsVbr(double & residual)
 {
 
   // create solution and rhs if needed (matrix_ and ExactSolution are
@@ -2968,7 +2958,7 @@ int Trilinos_Util_CrsMatrixGallery::ComputeDiffBetweenStartingAndExactSolutionsV
   return 0;
 }
 
-void Trilinos_Util_CrsMatrixGallery::PrintVbrMatrixAndVectors(ostream & os)
+void Trilinos_Util_VbrMatrixGallery::PrintVbrMatrixAndVectors(ostream & os)
 {
 
   if( comm_->MyPID() == 0 ) {
@@ -2987,13 +2977,13 @@ void Trilinos_Util_CrsMatrixGallery::PrintVbrMatrixAndVectors(ostream & os)
 
 }
 
-void Trilinos_Util_CrsMatrixGallery::PrintVbrMatrixAndVectors() 
+void Trilinos_Util_VbrMatrixGallery::PrintVbrMatrixAndVectors() 
 {
   PrintVbrMatrixAndVectors(cout);
 }
 
 // ================================================ ====== ==== ==== == =
-const Epetra_BlockMap * Trilinos_Util_CrsMatrixGallery::GetBlockMap(void)
+const Epetra_BlockMap * Trilinos_Util_VbrMatrixGallery::GetBlockMap(void)
 {
   if( BlockMap_ == NULL ) assert(CreateBlockMap()==0);
     
@@ -3001,7 +2991,7 @@ const Epetra_BlockMap * Trilinos_Util_CrsMatrixGallery::GetBlockMap(void)
 }
 
 // ================================================ ====== ==== ==== == =
-const Epetra_BlockMap & Trilinos_Util_CrsMatrixGallery::GetBlockMapRef(void)
+const Epetra_BlockMap & Trilinos_Util_VbrMatrixGallery::GetBlockMapRef(void)
 {
   if( BlockMap_ == NULL ) assert(CreateBlockMap()==0);
     
@@ -3010,7 +3000,7 @@ const Epetra_BlockMap & Trilinos_Util_CrsMatrixGallery::GetBlockMapRef(void)
 
 
 // ================================================ ====== ==== ==== == =
-int Trilinos_Util_CrsMatrixGallery::CreateBlockMap(void) 
+int Trilinos_Util_VbrMatrixGallery::CreateBlockMap(void) 
 {
         
   if( verbose_ == true ) {
@@ -3042,4 +3032,3 @@ int Trilinos_Util_CrsMatrixGallery::CreateBlockMap(void)
   
 }
 
-#endif

@@ -86,7 +86,7 @@ Trilinos_Util_CommandLineParser::Trilinos_Util_CommandLineParser(int argc, char 
     Set(param3,value);
   }
 
-  sprintf(str,"%d%",N_args);
+  sprintf(str,"%d",N_args);
   Set("_N_UNNAMED_ARGS_",str);
 
   // now only arguments with a dash (possibly followed by one
@@ -371,14 +371,14 @@ int Trilinos_Util_FileOptions::ReadFile()
     
     File.getline(line,255);
     string StrLine = line;
-    for( int k=0 ; k<CommentChars_.length() ; ++k ) {
+    for( int k=0 ; k<(int)CommentChars_.length() ; ++k ) {
       int CommentPos = StrLine.find(CommentChars_.at(k));
       if( CommentPos != -1 ) {
 	StrLine = StrLine.substr(0,CommentPos);
       }
     }
     int Length = StrLine.length();
-    for( int k=0 ; k<SeparationChars_.length() ; ++k ) {    
+    for( int k=0 ; k< (int) SeparationChars_.length() ; ++k ) {    
       int SepPos = StrLine.find(SeparationChars_.at(k));
       if( SepPos > 0 ) {
 	Option = StrLine.substr(0,SepPos);

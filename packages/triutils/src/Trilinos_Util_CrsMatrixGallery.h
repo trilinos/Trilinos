@@ -332,7 +332,7 @@ return 0 ;
   
   //@}
 
-private:
+protected:
 
   //@{ \name Creation methods.
   
@@ -432,9 +432,6 @@ private:
   // read an HB matrix. This function requires other Trilinos util files
   int ReadMatrix();
 
-  // Creates a block map, based on map, wich NumPDEEqns equations on each node.
-  int CreateBlockMap(void);
-
   // returns the neighbors of a given node. The node is supposed to be on
   // a 2D Cartesian grid 
   void  GetNeighboursCartesian2d( const int i, const int nx, const int ny,
@@ -497,15 +494,36 @@ private:
   
 };
 
-#ifdef LATER_ON
+// ========================= //
+// extension to VBR matrices //
+// ==========================//
 
-class Trilinos_Util_VbrMatrixGallery
+class Trilinos_Util_VbrMatrixGallery : public Trilinos_Util_CrsMatrixGallery
 {
 
 public:
 
-  Trilinos_Util_VbrMatrixGallery(Trilinos_Util_CrsMatrixGallery & Gallery) :
-    Gallery_(Gallery) {} ;
+  Trilinos_Util_VbrMatrixGallery(const string name, const Epetra_Map & map) :
+    Trilinos_Util_CrsMatrixGallery(name,map),
+    VbrMatrix_(0),
+    VbrExactSolution_(0),
+    VbrStartingSolution_(0),
+    VbrRhs_(0),
+    BlockMap_(0),
+    MaxBlkSize_(1),
+    VbrLinearProblem_(0)
+   {} ;
+
+  Trilinos_Util_VbrMatrixGallery(const string name, const Epetra_Comm & Comm) :
+    Trilinos_Util_CrsMatrixGallery(name,Comm),
+    VbrMatrix_(0),
+    VbrExactSolution_(0),
+    VbrStartingSolution_(0),
+    VbrRhs_(0),
+    BlockMap_(0),
+    MaxBlkSize_(1),
+    VbrLinearProblem_(0)
+ {} ;
 
 ~Trilinos_Util_VbrMatrixGallery() 
 {
@@ -571,8 +589,10 @@ public:
 
   void PrintVbrMatrixAndVectors();
 
-private:
+protected:
 
+  // Creates a block map, based on map, wich NumPDEEqns equations on each node.
+  int CreateBlockMap(void);
   
   //! Creates the exact solution for a Epetra_VbrMatrix.
   int CreateVbrExactSolution(void);
@@ -583,9 +603,6 @@ private:
   //!  Create the RHS corresponding to the desired exact solution for the Vbr problem.
   int CreateVbrRHS();
 
-  // linear problem  
-  Epetra_LinearProblem * VbrLinearProblem_;
-
   // matrix and vectors (vbr)
   Epetra_VbrMatrix * VbrMatrix_;
   Epetra_Vector * VbrExactSolution_;
@@ -594,10 +611,10 @@ private:
   Epetra_BlockMap * BlockMap_;
   int MaxBlkSize_;
 
-Trilinos_Util_CrsMatrixGallery * Gallery_;
+  // linear problem  
+  Epetra_LinearProblem * VbrLinearProblem_;
 
 };
-#endif
 
 
 #endif
