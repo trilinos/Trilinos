@@ -39,7 +39,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     Graph_(0),
     Allocated_(false),
     StaticGraph_(false),
-    NumMyRows_(RowMap.NumMyEquations()),
+    NumMyRows_(RowMap.NumMyPoints()),
     CV_(CV)
 {
   Graph_ = new Epetra_CrsGraph(CV, RowMap, NumEntriesPerRow);
@@ -55,7 +55,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     Graph_(0),
     Allocated_(false),
     StaticGraph_(false),
-    NumMyRows_(RowMap.NumMyEquations()),
+    NumMyRows_(RowMap.NumMyPoints()),
     CV_(CV)
 {
   Graph_ = new Epetra_CrsGraph(CV, RowMap, NumEntriesPerRow);

@@ -125,7 +125,7 @@ void Epetra_VbrMatrix::InitializeDefaults() { // Initialize all attributes that 
   NumAllocatedBlockEntriesPerRow_ = 0;
   Indices_ = 0;
   ElementSizeList_ = 0;
-  FirstElementEntryList_ = 0;
+  FirstPointInElementList_ = 0;
   
   // State variables needed for constructing matrix entry-by-entry
 
@@ -167,7 +167,7 @@ int Epetra_VbrMatrix::Allocate() {
 
   ElementSizeList_ = RowMap().ElementSizeList();
 
-  FirstElementEntryList_ = RowMap().FirstElementEntryList();
+  FirstPointInElementList_ = RowMap().FirstPointInElementList();
   
 
   // Allocate Values array
@@ -924,7 +924,7 @@ int Epetra_VbrMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
       int BlockCol = Indices[j];
       if (BlockRow==BlockCol) {
 	CopyMatDiag(Values_[i][j], LDAs_[i][j], RowDim, ColDims_[i][j], 
-		    diagptr+FirstElementEntryList_[i]);
+		    diagptr+FirstPointInElementList_[i]);
 	break;
       }
     }
@@ -1011,7 +1011,7 @@ int Epetra_VbrMatrix::CopyMatDiag(double * A, int LDA, int NumRows, int NumCols,
 int Epetra_VbrMatrix::NumMyRowEntries(int MyRow, int & NumEntries) const {
 
   int BlockRow, BlockOffset;
-  int ierr = RowMap().FindLocalBlockID(MyRow, BlockRow, BlockOffset);  if (ierr!=0) return(ierr);
+  int ierr = RowMap().FindLocalElementID(MyRow, BlockRow, BlockOffset);  if (ierr!=0) return(ierr);
 
   int NumBlockEntries = NumMyBlockEntries(BlockRow);
   NumEntries = 0;
@@ -1025,7 +1025,7 @@ int Epetra_VbrMatrix::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, 
 
   int ierr = 0;
   int BlockRow, BlockOffset;
-  ierr = RowMap().FindLocalBlockID(MyRow, BlockRow, BlockOffset);  if (ierr!=0) return(ierr);
+  ierr = RowMap().FindLocalElementID(MyRow, BlockRow, BlockOffset);  if (ierr!=0) return(ierr);
 
   int RowDim, NumBlockEntries;
   int * BlockIndices, * ColDims, * LDAs;
@@ -1033,8 +1033,8 @@ int Epetra_VbrMatrix::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, 
   ierr = ExtractMyBlockRowView(BlockRow, RowDim, NumBlockEntries, BlockIndices, ColDims, LDAs, ValBlocks);
   if (ierr!=0) return(ierr);
 
-  int * ColFirstElementEntryList = FirstElementEntryList_;
-  if (Importer()!=0) ColFirstElementEntryList = ImportMap().FirstElementEntryList();
+  int * ColFirstPointInElementList = FirstPointInElementList_;
+  if (Importer()!=0) ColFirstPointInElementList = ImportMap().FirstPointInElementList();
   NumEntries = 0;
   for (int i=0; i<NumBlockEntries; i++) {
     int ColDim = ColDims[i];
@@ -1042,7 +1042,7 @@ int Epetra_VbrMatrix::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, 
     if (NumEntries>Length) return(-3); // Not enough space
     double * A = ValBlocks[i] + BlockOffset; // Point to first element in row
     int LDA = LDAs[i];
-    int Index = ColFirstElementEntryList[BlockIndices[i]];
+    int Index = ColFirstPointInElementList[BlockIndices[i]];
     for (int j=0; j < ColDim; j++) {
       *Values++ = *A;
       A += LDA;
@@ -1062,7 +1062,7 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
   
   int i, j;
   int * NumBlockEntriesPerRow = NumBlockEntriesPerRow_;
-  int * FirstElementEntry = FirstElementEntryList_;
+  int * FirstPointInElement = FirstPointInElementList_;
   int * ElementSize = ElementSizeList_;
   int ** LDAs = LDAs_;
   int ** Indices = Indices_;
@@ -1072,7 +1072,7 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
   double *yp = (double*)y.Values();
 
   int * ColElementSizeList = ElementSizeList_;
-  int * ColFirstElementEntryList = FirstElementEntryList_;
+  int * ColFirstPointInElementList = FirstPointInElementList_;
 
 
 
@@ -1084,7 +1084,7 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
       ImportVector_->Import(x, *Importer(), Insert);
       xp = (double*)ImportVector_->Values();
       ColElementSizeList = ImportMap().ElementSizeList(); // The Import map will always have an existing ElementSizeList
-      ColFirstElementEntryList = ImportMap().FirstElementEntryList(); // Import map will always have an existing ...
+      ColFirstPointInElementList = ImportMap().FirstPointInElementList(); // Import map will always have an existing ...
     }
     
 
@@ -1103,14 +1103,14 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
       int *    BlockRowIndices = *Indices++;
       double ** BlockRowValues  = *Values++;
       int *    BlockRowLDAs = *LDAs++;
-      double * cury = yp + *FirstElementEntry++;
+      double * cury = yp + *FirstPointInElement++;
       int      RowDim = *ElementSize++;
       for (j=0; j < NumEntries; j++) {
 	//sum += BlockRowValues[j] * xp[BlockRowIndices[j]];
 	double * A = BlockRowValues[j];
 	int LDA = BlockRowLDAs[j];
 	int Index = BlockRowIndices[j];
-	double * curx = xp + ColFirstElementEntryList[Index];
+	double * curx = xp + ColFirstPointInElementList[Index];
 	int ColDim = ColElementSizeList[Index];
 	GEMV('N', RowDim, ColDim, 1.0, A, LDA, curx, 1.0, cury);
 	
@@ -1135,7 +1135,7 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
       if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(ImportMap(),1); // Create import vector if needed
       yp = (double*)ImportVector_->Values();
       ColElementSizeList = ImportMap().ElementSizeList(); // The Import map will always have an existing ElementSizeList
-      ColFirstElementEntryList = ImportMap().FirstElementEntryList(); // Import map will always have an existing ...
+      ColFirstPointInElementList = ImportMap().FirstPointInElementList(); // Import map will always have an existing ...
     }
     
     // Do actual computation
@@ -1147,14 +1147,14 @@ int Epetra_VbrMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
       int *    BlockRowIndices = *Indices++;
       double ** BlockRowValues  = *Values++;
       int *    BlockRowLDAs = *LDAs++;
-      double * curx = xp + *FirstElementEntry++;
+      double * curx = xp + *FirstPointInElement++;
       int      RowDim = *ElementSize++;
       for (j=0; j < NumEntries; j++) {
 	//yp[BlockRowIndices[j]] += BlockRowValues[j] * xp[i];
 	double * A = BlockRowValues[j];
 	int LDA = BlockRowLDAs[j];
 	int Index = BlockRowIndices[j];
-	double * cury = yp + ColFirstElementEntryList[Index];
+	double * cury = yp + ColFirstPointInElementList[Index];
 	int ColDim = ColElementSizeList[Index];
 	GEMV('T', RowDim, ColDim, 1.0, A, LDA, curx, 1.0, cury);
 	
@@ -1182,9 +1182,9 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
   double *** Values = Values_;
   
   int * RowElementSizeList = ElementSizeList_;
-  int * RowFirstElementEntryList = FirstElementEntryList_;
+  int * RowFirstPointInElementList = FirstPointInElementList_;
   int * ColElementSizeList = ElementSizeList_;
-  int * ColFirstElementEntryList = FirstElementEntryList_;
+  int * ColFirstPointInElementList = FirstPointInElementList_;
 
    
   int NumVectors = X.NumVectors();
@@ -1205,7 +1205,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       ImportVector_->Import(X, *Importer(), Insert);
       Xp = (double**)ImportVector_->Pointers();
       ColElementSizeList = ImportMap().ElementSizeList();
-      ColFirstElementEntryList = ImportMap().FirstElementEntryList();
+      ColFirstPointInElementList = ImportMap().FirstPointInElementList();
     }
     
     // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
@@ -1219,7 +1219,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       ExportVector_->PutScalar(0.0); // Zero y values
       Yp = (double**)ExportVector_->Pointers();
       RowElementSizeList = ImportMap().ElementSizeList();
-      RowFirstElementEntryList = ImportMap().FirstElementEntryList();
+      RowFirstPointInElementList = ImportMap().FirstPointInElementList();
     }
     else
       Y.PutScalar(0.0); // Zero y values
@@ -1230,10 +1230,10 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       int *    BlockRowIndices = *Indices++;
       double ** BlockRowValues  = *Values++;
       int *    BlockRowLDAs = *LDAs++;
-      int  yoff = *RowFirstElementEntryList++;
+      int  yoff = *RowFirstPointInElementList++;
       int RowDim = *RowElementSizeList++;
       BlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, yoff, 
-		       ColFirstElementEntryList, ColElementSizeList, 
+		       ColFirstPointInElementList, ColElementSizeList, 
 		       1.0, BlockRowValues, BlockRowLDAs, Xp, 1.0, Yp, NumVectors);
     }
     if (Exporter()!=0) Y.Export(*ExportVector_, *Exporter(), Add); // Fill Y with Values from export vector
@@ -1253,7 +1253,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       ExportVector_->Import(X, *Exporter(), Insert);
       Xp = (double**)ExportVector_->Pointers();
       ColElementSizeList = ExportMap().ElementSizeList();
-      ColFirstElementEntryList = ExportMap().FirstElementEntryList();
+      ColFirstPointInElementList = ExportMap().FirstPointInElementList();
     }
   
     // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
@@ -1267,7 +1267,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       ImportVector_->PutScalar(0.0); // Zero y values
       Yp = (double**)ImportVector_->Pointers();
       RowElementSizeList = ImportMap().ElementSizeList();
-      RowFirstElementEntryList = ImportMap().FirstElementEntryList();
+      RowFirstPointInElementList = ImportMap().FirstPointInElementList();
     }
     else
       Y.PutScalar(0.0); // Zero y values
@@ -1279,10 +1279,10 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       int *    BlockRowIndices = *Indices++;
       double ** BlockRowValues  = *Values++;
       int *    BlockRowLDAs = *LDAs++;
-      int  xoff = *ColFirstElementEntryList++;
+      int  xoff = *ColFirstPointInElementList++;
       int RowDim = *ColElementSizeList++;
       BlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, xoff, 
-		       RowFirstElementEntryList, RowElementSizeList, 
+		       RowFirstPointInElementList, RowElementSizeList, 
 		       1.0, BlockRowValues, BlockRowLDAs, Xp, 1.0, Yp, NumVectors);
     }
 
@@ -1295,7 +1295,7 @@ int Epetra_VbrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 //=============================================================================
 void Epetra_VbrMatrix::BlockRowMultiply(bool TransA, int RowDim, int NumEntries, 
 		      int * BlockIndices, int RowOff,
-		      int * FirstElementEntryList, int * ElementSizeList,
+		      int * FirstPointInElementList, int * ElementSizeList,
 		      double Alpha, double ** As, int * LDAs, 
 		      double ** X, double Beta, double ** Y, int NumVectors) const {
   int j, k;
@@ -1305,7 +1305,7 @@ void Epetra_VbrMatrix::BlockRowMultiply(bool TransA, int RowDim, int NumEntries,
       double * A = As[j];
       int LDA = LDAs[j];
       int BlockIndex = BlockIndices[j];
-      int xoff = FirstElementEntryList[BlockIndex];
+      int xoff = FirstPointInElementList[BlockIndex];
       int ColDim = ElementSizeList[BlockIndex];
       for (k=0; k<NumVectors; k++) {
 	double * curx = X[k] + xoff;
@@ -1319,7 +1319,7 @@ void Epetra_VbrMatrix::BlockRowMultiply(bool TransA, int RowDim, int NumEntries,
       double * A = As[j];
       int LDA = LDAs[j];
       int BlockIndex = BlockIndices[j];
-      int yoff = FirstElementEntryList[BlockIndex];
+      int yoff = FirstPointInElementList[BlockIndex];
       int ColDim = ElementSizeList[BlockIndex];
       for (k=0; k<NumVectors; k++) {
 	double * curx = X[k] + RowOff;
@@ -1345,19 +1345,19 @@ int Epetra_VbrMatrix::Solve(bool Upper, bool TransA, bool UnitDiagonal, const Ep
 
   int i, j, j0, k;
   int * NumBlockEntriesPerRow = NumBlockEntriesPerRow_;
-  int * FirstElementEntry = FirstElementEntryList_;
+  int * FirstPointInElement = FirstPointInElementList_;
   int * ElementSize = ElementSizeList_;
   int ** LDAs = LDAs_;
   int ** Indices = Indices_;
   double *** Values = Values_;
 
   int * ColElementSizeList = ElementSizeList_;
-  int * ColFirstElementEntryList = FirstElementEntryList_;
+  int * ColFirstPointInElementList = FirstPointInElementList_;
 
   // If upper, point to last row
   if (Upper) {
     NumBlockEntriesPerRow += NumMyBlockRows_-1;
-    FirstElementEntry += NumMyBlockRows_-1;
+    FirstPointInElement += NumMyBlockRows_-1;
     ElementSize += NumMyBlockRows_-1;
     LDAs += NumMyBlockRows_-1;
     Indices += NumMyBlockRows_-1;
@@ -1378,10 +1378,10 @@ int Epetra_VbrMatrix::Solve(bool Upper, bool TransA, bool UnitDiagonal, const Ep
 	int *    BlockRowIndices = *Indices--;
 	double ** BlockRowValues  = *Values--;
 	int *    BlockRowLDAs = *LDAs--;
-	int  yoff = *FirstElementEntry--;
+	int  yoff = *FirstPointInElement--;
 	int RowDim = *ElementSize--;
 	BlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, yoff, 
-			 ColFirstElementEntryList, ColElementSizeList, 
+			 ColFirstPointInElementList, ColElementSizeList, 
 			 1.0, BlockRowValues, BlockRowLDAs, Yp, -1.0, Yp, NumVectors);
       }
     }
@@ -1391,10 +1391,10 @@ int Epetra_VbrMatrix::Solve(bool Upper, bool TransA, bool UnitDiagonal, const Ep
 	int *    BlockRowIndices = *Indices++;
 	double ** BlockRowValues  = *Values++;
 	int *    BlockRowLDAs = *LDAs++;
-	int  yoff = *FirstElementEntry++;
+	int  yoff = *FirstPointInElement++;
 	int RowDim = *ElementSize++;
 	BlockRowMultiply(TransA, RowDim, NumEntries, BlockRowIndices, yoff, 
-			 ColFirstElementEntryList, ColElementSizeList, 
+			 ColFirstPointInElementList, ColElementSizeList, 
 			 1.0, BlockRowValues, BlockRowLDAs, Yp, -1.0, Yp, NumVectors);
       }
     }
@@ -1438,12 +1438,12 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
   double *** Values = Values_;
   
   int * RowElementSizeList = ElementSizeList_;
-  int * RowFirstElementEntryList = FirstElementEntryList_;
+  int * RowFirstPointInElementList = FirstPointInElementList_;
   int * ColElementSizeList = ElementSizeList_;
-  int * ColFirstElementEntryList = FirstElementEntryList_;
+  int * ColFirstPointInElementList = FirstPointInElementList_;
   if (Importer()!=0) {
     ColElementSizeList = ImportMap().ElementSizeList();
-    ColFirstElementEntryList = ImportMap().FirstElementEntryList();
+    ColFirstPointInElementList = ImportMap().FirstPointInElementList();
   }
 
   x.PutScalar(0.0); // Zero out result vector
@@ -1464,7 +1464,7 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
     int *    BlockRowIndices = *Indices++;
     double ** BlockRowValues  = *Values++;
     int *    BlockRowLDAs = *LDAs++;
-    int xoff = *RowFirstElementEntryList++;
+    int xoff = *RowFirstPointInElementList++;
     int RowDim = *RowElementSizeList++;
     if (DoRows) {
       for (int ii=0; ii < NumEntries; ii++) {
@@ -1485,7 +1485,7 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
 	double * A = BlockRowValues[ii];
 	int LDA = BlockRowLDAs[ii];
 	int BlockIndex = BlockRowIndices[ii];
-	int off = ColFirstElementEntryList[BlockIndex];
+	int off = ColFirstPointInElementList[BlockIndex];
 	int ColDim = ColElementSizeList[BlockIndex];
 	double * curx = xp+off;
 	for (int j=0; j<ColDim; j++) {
@@ -1551,12 +1551,12 @@ int Epetra_VbrMatrix::Scale(bool DoRows, const Epetra_Vector& x) {
   double *** Values = Values_;
   
   int * RowElementSizeList = ElementSizeList_;
-  int * RowFirstElementEntryList = FirstElementEntryList_;
+  int * RowFirstPointInElementList = FirstPointInElementList_;
   int * ColElementSizeList = ElementSizeList_;
-  int * ColFirstElementEntryList = FirstElementEntryList_;
+  int * ColFirstPointInElementList = FirstPointInElementList_;
   if (Importer()!=0) {
     ColElementSizeList = ImportMap().ElementSizeList();
-    ColFirstElementEntryList = ImportMap().FirstElementEntryList();
+    ColFirstPointInElementList = ImportMap().FirstPointInElementList();
   }
 
   double * xp = (double*)x.Values();
@@ -1576,7 +1576,7 @@ int Epetra_VbrMatrix::Scale(bool DoRows, const Epetra_Vector& x) {
     int *    BlockRowIndices = *Indices++;
     double ** BlockRowValues  = *Values++;
     int *    BlockRowLDAs = *LDAs++;
-    int xoff = *RowFirstElementEntryList++;
+    int xoff = *RowFirstPointInElementList++;
     int RowDim = *RowElementSizeList++;
     if (DoRows) {
       for (int ii=0; ii < NumEntries; ii++) {
@@ -1597,7 +1597,7 @@ int Epetra_VbrMatrix::Scale(bool DoRows, const Epetra_Vector& x) {
 	double * A = BlockRowValues[ii];
 	int LDA = BlockRowLDAs[ii];
 	int BlockIndex = BlockRowIndices[ii];
-	int off = ColFirstElementEntryList[BlockIndex];
+	int off = ColFirstPointInElementList[BlockIndex];
 	int ColDim = ColElementSizeList[BlockIndex];
 	double * curx = xp+off;
 	for (int j=0; j<ColDim; j++) {
@@ -1670,9 +1670,9 @@ void Epetra_VbrMatrix::BlockRowNormInf(int RowDim, int NumEntries,
 double Epetra_VbrMatrix::NormOne() const {
 
   if (NormOne_>-1.0) return(NormOne_);
-  int * ColFirstElementEntryList = FirstElementEntryList_;
+  int * ColFirstPointInElementList = FirstPointInElementList_;
   if (Importer()!=0) {
-    ColFirstElementEntryList = ImportMap().FirstElementEntryList();
+    ColFirstPointInElementList = ImportMap().FirstPointInElementList();
   }
 
   Epetra_Vector * x = new Epetra_Vector(RowMap()); // Need temp vector for column sums
@@ -1701,7 +1701,7 @@ double Epetra_VbrMatrix::NormOne() const {
     int *    BlockRowIndices = *Indices++;
     double ** BlockRowValues  = *Values++;
     BlockRowNormOne(RowDim, NumEntries, BlockRowIndices, BlockRowColDims, 
-		    BlockRowLDAs, BlockRowValues,  ColFirstElementEntryList, xp);
+		    BlockRowLDAs, BlockRowValues,  ColFirstPointInElementList, xp);
   }
   if (Importer()!=0) x->Export(*x_tmp, *Importer(), Add); // Fill x with Values from temp vector
   x->MaxValue(&NormOne_); // Find max
@@ -1713,14 +1713,14 @@ double Epetra_VbrMatrix::NormOne() const {
 //=============================================================================
 void Epetra_VbrMatrix::BlockRowNormOne(int RowDim, int NumEntries, int * BlockRowIndices,
 					   int * ColDims, int * LDAs, double ** As, 
-					   int * ColFirstElementEntryList, double * x) const {
+					   int * ColFirstPointInElementList, double * x) const {
   int i, j, k;
 
   for (i=0; i < NumEntries; i++) {
     double * A = As[i];
     int LDA = LDAs[i];
     int ColDim = ColDims[i];
-    double * curx = x + ColFirstElementEntryList[BlockRowIndices[i]];
+    double * curx = x + ColFirstPointInElementList[BlockRowIndices[i]];
     for (j=0; j<ColDim; j++) {
       for (k=0; k<RowDim; k++) curx[j] += fabs(A[k]);
       A += LDA;

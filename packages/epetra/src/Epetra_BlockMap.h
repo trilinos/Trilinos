@@ -37,17 +37,21 @@ class Epetra_Directory;
   this distribution for matrices and vectors that have block elements.  The definition of an 
   element can vary depending on the situation.  For
   vectors (and multi-vectors), an element is a span of one or more contiguous entries.
-  For matrices, it is a span of one or more matrix rows.
+  For matrices, it is a span of one or more matrix rows.  More generally, an element in the BlockMap class is an ordered list of points.  (NOTE: Points do not have global ID's.)  Two additional definitions useful in understanding the BlockMap class follow:
+  <ul>
+  <li> BlockMap - A distributed ordered list of elements.
+  <li> First Point - First ordered point in an element
+  </ul>
 
   This class has a variety of constructors that can be separated into two categories:
   <ol>
-  <li> Fixed block size constructors:
-       All map elements have an identical block size.
-       This corresponds to a block partitioning of matrices and vectors where the block
-       size is the same for all blocks. A common example is multiple degrees of freedom
+  <li> Fixed element size constructors:
+       All map elements have an identical size.
+       This corresponds to a block partitioning of matrices and vectors where the element
+       size is the same for all elements. A common example is multiple degrees of freedom
        per mesh node in finite element computations where the number of degrees of
        freedom is the same for all nodes.
-  <li> Variable block size constructor:
+  <li> Variable element size constructor:
        Map element sizes may vary and are individually defined via a list of element sizes.
        This is the most general case and corresponds to a variable block partitioning of the
        matrices and vectors. A common example is 
@@ -96,11 +100,11 @@ class Epetra_Directory;
 
   In addition to the information above that is passed in to or created by the Epetra_BlockMap constructor,
   the following attributes are computed and available via query to the user using the same scheme
-  as above, e.g., use NumGlobalEquations() to get the value of NumGlobalEquations.
+  as above, e.g., use NumGlobalPoints() to get the value of NumGlobalPoints.
 
   <ul>
-  <li> NumGlobalEquations - The total number of equations across all processors.
-  <li> NumMyEquations - The number of equations on the calling processor.
+  <li> NumGlobalPoints - The total number of points across all processors.
+  <li> NumMyPoints - The number of points on the calling processor.
   <li> MinAllGID - The minimum global index value across all processors.
   <li> MaxAllGID - The maximum global index value across all processors.
   <li> MinMyGID - The minimum global index value on the calling processor.
@@ -126,7 +130,7 @@ class Epetra_Directory;
 
   \warning A Epetra_Comm object is required for all Epetra_BlockMap constructors.
 
-  \bf {Error Handling}
+  \bf {error handling}
 
   Most methods in Epetra_BlockMap return an integer error code.  If the error code is 0, then no error occurred.
   If > 0 then a warning error occurred.  If < 0 then a fatal error occurred.
@@ -170,18 +174,18 @@ class Epetra_BlockMap: public Epetra_Object {
     
   public:
   //@{ \name Constructors/destructors.
-  //! Epetra_BlockMap constructor for a Epetra-defined uniform linear distribution of constant block size elements.
+  //! Epetra_BlockMap constructor for a Epetra-defined uniform linear distribution of constant size elements.
   /*! Creates a map that distributes NumGlobalElements elements evenly across all processors in the
       Epetra_Comm communicator. If NumGlobalElements does not divide exactly into the number of processors,
       the first processors in the communicator get one extra element until the remainder is gone.
 
-      The elements are defined to have a constant fixed block size specified by ElementSize.
+      The elements are defined to have a constant fixed size specified by ElementSize.
 
     \param In
             NumGlobalElements - Number of elements to distribute.
     
     \param In
-            ElementSize - Number of equations or vector entries per element.
+            ElementSize - Number of points or vector entries per element.
 
     \param In
             IndexBase - Minimum index value used for arrays that use this map.  Typically 0 for
@@ -196,11 +200,11 @@ class Epetra_BlockMap: public Epetra_Object {
   */ 
   Epetra_BlockMap(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 
-  //! Epetra_BlockMap constructor for a user-defined linear distribution of constant block size elements.
+  //! Epetra_BlockMap constructor for a user-defined linear distribution of constant size elements.
   /*! Creates a map that puts NumMyElements on the calling processor. NumGlobalElements will be the
       computed sum of NumMyElements across all processors in the Epetra_Comm communicator.
 
-      The elements are defined to have a constant fixed block size specified by ElementSize.
+      The elements are defined to have a constant fixed size specified by ElementSize.
 
     \param In
             NumGlobalElements - Number of elements to distribute.
@@ -208,7 +212,7 @@ class Epetra_BlockMap: public Epetra_Object {
             NumMyElements - Number of elements owned by the calling processor.
     
     \param In
-            ElementSize - Number of equations or vector entries per element.
+            ElementSize - Number of points or vector entries per element.
 
     \param In
             IndexBase - Minimum index value used for arrays that use this map.  Typically 0 for
@@ -228,12 +232,12 @@ class Epetra_BlockMap: public Epetra_Object {
 
 
 
-  //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of constant block size elements.
+  //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of constant size elements.
   /*! Creates a map that puts NumMyElements on the calling processor. The indices of the elements
       are determined from the list MyGlobalElements.  NumGlobalElements will be the
       computed sum of NumMyElements across all processors in the Epetra_Comm communicator.
 
-      The elements are defined to have a constant fixed block size specified by ElementSize.
+      The elements are defined to have a constant fixed size specified by ElementSize.
 
     \param In
             NumGlobalElements - Number of elements to distribute.
@@ -248,7 +252,7 @@ class Epetra_BlockMap: public Epetra_Object {
 	    distinct integer values is acceptable.
 
     \param In
-            ElementSize - Number of equations or vector entries per element.
+            ElementSize - Number of points or vector entries per element.
 
     \param In
             IndexBase - Minimum index value used for arrays that use this map.  Typically 0 for
@@ -266,11 +270,11 @@ class Epetra_BlockMap: public Epetra_Object {
 
 
 
-  //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of variable block size elements.
+  //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of variable size elements.
   /*! Creates a map that puts NumMyElements on the calling processor. NumGlobalElements will be the
       computed sum of NumMyElements across all processors in the Epetra_Comm communicator.
 
-      The elements are defined to have a variable block size defined by ElementSizeList.
+      The elements are defined to have a variable size defined by ElementSizeList.
 
     \param In
             NumGlobalElements - Number of elements to distribute.
@@ -335,8 +339,8 @@ class Epetra_BlockMap: public Epetra_Object {
   //! Returns global ID of local ID, return IndexBase-1 if not found on this processor.
   int  GID(int LID) const; 
   
-  //! Returns the LID of the block that contains the given local EquationID, and the Offset of the equation in that block.
-  int FindLocalBlockID(int EquationID, int & BlockID, int & BlockOffset)  const;
+  //! Returns the LID of the element that contains the given local PointID, and the Offset of the point in that element.
+  int FindLocalElementID(int PointID, int & ElementID, int & ElementOffset)  const;
 
   //! Returns true if the GID passed in belongs to the calling processor in this map, otherwise returns false.
   bool  MyGID(int GID) const {return(LID(GID)!=-1);};
@@ -373,7 +377,7 @@ class Epetra_BlockMap: public Epetra_Object {
   //! Puts list of global elements on this processor into the user-provided array.
   int MyGlobalElements(int * MyGlobalElementList) const;
   
-  //! Returns the size of elements in the map; only valid if map has constant block size.
+  //! Returns the size of elements in the map; only valid if map has constant element size.
   int  ElementSize() const {return(ElementSize_);};
     
   //! Size of element for specified LID.
@@ -382,11 +386,11 @@ class Epetra_BlockMap: public Epetra_Object {
   //! Index base for this map.
   int  IndexBase() const {return(IndexBase_);};
   
-  //! Number of global equations for this map; equals the sum of all element sizes across all processors.
-  int  NumGlobalEquations() const {return(NumGlobalEquations_);};
+  //! Number of global points for this map; equals the sum of all element sizes across all processors.
+  int  NumGlobalPoints() const {return(NumGlobalPoints_);};
   
-  //! Number of global equations for this map; equals the sum of all element sizes on the calling processor.
-  int  NumMyEquations() const {return(NumMyEquations_);};
+  //! Number of global points for this map; equals the sum of all element sizes on the calling processor.
+  int  NumMyPoints() const {return(NumMyPoints_);};
   
   //! Minimum element size on the calling processor.
   int  MinMyElementSize() const {return(MinMyElementSize_);};
@@ -420,26 +424,26 @@ class Epetra_BlockMap: public Epetra_Object {
   //! Pointer to internal array containing list of global IDs assigned to the calling processor.
   int * MyGlobalElements() const;
 
-  //! Pointer to internal array containing a mapping between the local elements and the local equation number that is first.
-  /*! This array is a scan sum of the ElementSizeList such that the ith entry in FirstElementEntryList is the sum of the first
+  //! Pointer to internal array containing a mapping between the local elements and the first local point number in each element.
+  /*! This array is a scan sum of the ElementSizeList such that the ith entry in FirstPointInElementList is the sum of the first
       i-1 entries of ElementSizeList().
   */
-  int * FirstElementEntryList() const;
+  int * FirstPointInElementList() const;
 
   //! List of the element sizes corresponding to the array MyGlobalElements().
   int * ElementSizeList() const;
 
-  //! For each local equation, indicates the local element ID that the equation belongs to.
-  int * EquationToBlockList() const;
+  //! For each local point, indicates the local element ID that the point belongs to.
+  int * PointToElementList() const;
 
   //! Same as ElementSizeList() except it fills the user array that is passed in.
   int ElementSizeList(int * ElementSizeList)const;
   
-  //! Same as FirstElementEntryList() except it fills the user array that is passed in.
-  int FirstElementEntryList(int * FirstElementEntryList)const;
+  //! Same as FirstPointInElementList() except it fills the user array that is passed in.
+  int FirstPointInElementList(int * FirstPointInElementList)const;
 
-  //! Same as EquationToBlockList() except it fills the user array that is passed in.
-  int EquationToBlockList(int * EquationToBlockList) const;
+  //! Same as PointToElementList() except it fills the user array that is passed in.
+  int PointToElementList(int * PointToElementList) const;
 
   //@}
 
@@ -463,16 +467,16 @@ class Epetra_BlockMap: public Epetra_Object {
   int NumGlobalElements_;
   int NumMyElements_;
   int* MyGlobalElements_;
-  int* FirstElementEntryList_;
+  int* FirstPointInElementList_;
   int ElementSize_;
   int* ElementSizeList_;
-  int* EquationToBlockList_;
+  int* PointToElementList_;
   int IndexBase_;
   const Epetra_Comm * Comm_;
   Epetra_Directory * Directory_;
   
-  int NumGlobalEquations_;
-  int NumMyEquations_;
+  int NumGlobalPoints_;
+  int NumMyPoints_;
   int MinAllGID_;
   int MaxAllGID_;
   int MinMyGID_;

@@ -1022,7 +1022,7 @@ int GlobalMaxNumBlockEntries() const {return(Graph_->GlobalMaxNumIndices());};
 
   void BlockRowMultiply(bool TransA, int RowDim, int NumEntries, 
 			int * BlockIndices, int RowOff,
-			int * FirstElementEntryList, int * ElementSizeList,
+			int * FirstPointInElementList, int * ElementSizeList,
 			double Alpha, double ** As, int * LDAs, 
 			double ** X, double Beta, double ** Y, int NumVectors) const;
   int InverseSums(bool DoRows, Epetra_Vector& x) const;
@@ -1032,7 +1032,7 @@ int GlobalMaxNumBlockEntries() const {return(Graph_->GlobalMaxNumIndices());};
 		       double * Y) const;
   void BlockRowNormOne(int RowDim, int NumEntries, int * BlockRowIndices,
 		       int * ColDims, int * LDAs, double ** As, 
-		       int * ColFirstElementEntryList, double * x) const;
+		       int * ColFirstPointInElementList, double * x) const;
   void SetStaticGraph(bool Flag) {StaticGraph_ = Flag;};
 
   int CheckSizes(const Epetra_DistObject& A){return(0);};
@@ -1071,7 +1071,7 @@ int GlobalMaxNumBlockEntries() const {return(Graph_->GlobalMaxNumIndices());};
   int * NumAllocatedBlockEntriesPerRow_;
   int ** Indices_;
   int * ElementSizeList_;
-  int * FirstElementEntryList_;
+  int * FirstPointInElementList_;
 
   double ***Values_;
   int ** ColDims_;

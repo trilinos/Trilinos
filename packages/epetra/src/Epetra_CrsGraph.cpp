@@ -141,9 +141,9 @@ void Epetra_CrsGraph::InitializeDefaults() { // Initialize all attributes that h
   NumMyBlockRows_ = RowMap().NumMyElements();
   NumMyBlockCols_ = NumMyBlockRows_;
 
-  NumGlobalRows_ = RowMap().NumGlobalEquations();
+  NumGlobalRows_ = RowMap().NumGlobalPoints();
   NumGlobalCols_ = NumGlobalRows_;
-  NumMyRows_ = RowMap().NumMyEquations();
+  NumMyRows_ = RowMap().NumMyPoints();
   NumMyCols_ = NumMyRows_;
 
   GlobalMaxRowDim_ = RowMap().MaxElementSize();
@@ -568,8 +568,8 @@ int Epetra_CrsGraph::ComputeGlobalConstants() {
     GlobalMaxNumNonzeros_ = tempvec[3];
   }
   
-  NumGlobalRows_ = RangeMap_->NumGlobalEquations();
-  NumGlobalCols_ = DomainMap_->NumGlobalEquations();
+  NumGlobalRows_ = RangeMap_->NumGlobalPoints();
+  NumGlobalCols_ = DomainMap_->NumGlobalPoints();
 
   GlobalConstantsComputed_ = true;
 
@@ -684,7 +684,7 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap & DomainMap, const E
     // If not owned, add to ImportMap for later use
 
     NumMyBlockCols_ = DomainMap_->NumMyElements(); // Redefine NumMyBlockCols_ to number of local domain map elements
-    NumMyCols_ = DomainMap_->NumMyEquations(); // Redefine NumMyCols_ to number of local domain map equations
+    NumMyCols_ = DomainMap_->NumMyPoints(); // Redefine NumMyCols_ to number of local domain map points
     
     int IncBlockCols = EPETRA_MAX(EPETRA_MIN(NumMyBlockCols_/4,100),10);
     int MaxBlockCols = 0;
@@ -785,7 +785,7 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap & DomainMap, const E
       if (DoSizes && NewNumMyBlockCols>0) delete [] SizeList;
       
       // Recompute number of local columns
-      NumMyCols_ = ImportMap_->NumMyEquations();
+      NumMyCols_ = ImportMap_->NumMyPoints();
     }
 
     // Now see if we need to define an export map.  This is only needed if RowMap and RangeMap are different

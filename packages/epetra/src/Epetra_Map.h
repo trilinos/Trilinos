@@ -36,7 +36,7 @@
   determined by the constructor.  Once a Epetra_Map is constructed any of the following attributes can 
   be obtained
   by calling a query function that has the name as the attribute, e.g. to get the
-  value of NumGlobalEquations, you can call a function NumGlobalElements().  For attributes that
+  value of NumGlobalPoints, you can call a function NumGlobalElements().  For attributes that
   are lists, the query functions return the list values in a user allocated array.
 
   <ul>
@@ -64,11 +64,11 @@
 
   In addition to the information above that is passed in to or created by the Epetra_Map constructor,
   the following attributes are computed and available via query to the user using the same scheme
-  as above, e.g., use NumGlobalEquations() to get the value of NumGlobalEquations.
+  as above, e.g., use NumGlobalPoints() to get the value of NumGlobalPoints.
 
   <ul>
-  <li> NumGlobalEquations - The total number of equations across all processors.
-  <li> NumMyEquations - The number of equations on the calling processor.
+  <li> NumGlobalPoints - The total number of points across all processors.
+  <li> NumMyPoints - The number of points on the calling processor.
   <li> MinAllGID - The minimum global index value across all processors.
   <li> MaxAllGID - The maximum global index value across all processors.
   <li> MinMyGID - The minimum global index value on the calling processor.

@@ -36,7 +36,7 @@
   Once a Epetra_Map is constructed any of the following attributes can 
   be obtained
   by calling a query function that has the name as the attribute, e.g. to get the
-  value of NumGlobalEquations, you can call a function NumGlobalElements().
+  value of NumGlobalPoints, you can call a function NumGlobalElements().
   For attributes that
   are lists, the query functions return the list values in a user allocated array.  
 

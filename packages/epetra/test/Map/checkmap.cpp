@@ -68,11 +68,11 @@ int checkmap(Epetra_Map & Map, int NumGlobalElements, int NumMyElements,
 
   if (Map.NumGlobalElements()!=NumGlobalElements) return(-19);
   
-  if (Map.NumGlobalEquations()!=NumGlobalElements) return(-20);
+  if (Map.NumGlobalPoints()!=NumGlobalElements) return(-20);
   
   if (Map.NumMyElements()!=NumMyElements) return(-21);  
 
-  if (Map.NumMyEquations()!=NumMyElements) return(-22);
+  if (Map.NumMyPoints()!=NumMyElements) return(-22);
 
   return(0);
 }

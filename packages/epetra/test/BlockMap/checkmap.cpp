@@ -1,7 +1,7 @@
 #include "checkmap.h"
 int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements, 
 	     int *MyGlobalElements, int ElementSize, int * ElementSizeList,
-	     int NumGlobalEquations, int NumMyEquations,
+	     int NumGlobalPoints, int NumMyPoints,
 	     int IndexBase, Epetra_Comm& Comm,
 	     bool DistributedGlobal)
 {
@@ -106,11 +106,11 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
 
   if (Map.NumGlobalElements()!=NumGlobalElements) return(-19);
   
-  if (Map.NumGlobalEquations()!=NumGlobalEquations) return(-20);
+  if (Map.NumGlobalPoints()!=NumGlobalPoints) return(-20);
   
   if (Map.NumMyElements()!=NumMyElements) return(-21);  
 
-  if (Map.NumMyEquations()!=NumMyEquations) return(-22);
+  if (Map.NumMyPoints()!=NumMyPoints) return(-22);
 
   int MaxMyGID2 = Map.GID(Map.LID(MaxMyGID));
   if (MaxMyGID2 != MaxMyGID) return (-23);

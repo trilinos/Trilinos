@@ -66,16 +66,16 @@ int main(int argc, char *argv[])
   // Redefine verbose to only print on PE 0
   if (verbose && rank!=0) verbose = false;
 
-  int NumMyEquations = 10000;
-  int NumGlobalEquations = NumMyEquations*NumProc+minfn(NumProc,3);
-  if (MyPID < 3) NumMyEquations++;
+  int NumMyPoints = 10000;
+  int NumGlobalPoints = NumMyPoints*NumProc+minfn(NumProc,3);
+  if (MyPID < 3) NumMyPoints++;
   int IndexBase = 0;
-  bool DistributedGlobal = (NumGlobalEquations>NumMyEquations);
+  bool DistributedGlobal = (NumGlobalPoints>NumMyPoints);
 
   // Construct a Source Map that puts approximately the same Number of equations on each processor in 
   // uniform global ordering
 
-  Petra_Map& SourceMap = *new Petra_Map(NumGlobalEquations, NumMyEquations, 0, Comm);
+  Petra_Map& SourceMap = *new Petra_Map(NumGlobalPoints, NumMyPoints, 0, Comm);
   
   // Get update list and number of local equations from newly created Map
   int NumMyElements = SourceMap.NumMyElements();
@@ -92,17 +92,17 @@ int main(int argc, char *argv[])
 
   int *TargetMyGlobalElements = new int[NumMyElements];
 
-  for (i=0; i< NumMyEquations/2; i++) TargetMyGlobalElements[i] = i; // Half will be the same...
-  for (i=NumMyEquations/2; i<NumMyEquations; i++) {
-    int index = abs((int)(((double) (NumGlobalEquations-1) ) * RandVec[i]));
-    TargetMyGlobalElements[i] = minfn(NumGlobalEquations-1,maxfn(0,index));
+  for (i=0; i< NumMyPoints/2; i++) TargetMyGlobalElements[i] = i; // Half will be the same...
+  for (i=NumMyPoints/2; i<NumMyPoints; i++) {
+    int index = abs((int)(((double) (NumGlobalPoints-1) ) * RandVec[i]));
+    TargetMyGlobalElements[i] = minfn(NumGlobalPoints-1,maxfn(0,index));
   }
 
   int NumSameIDs = 0;
   int NumPermutedIDs = 0;
   int NumRemoteIDs = 0;
   bool StillContiguous = true;
-  for (i=0; i < NumMyEquations; i++) {
+  for (i=0; i < NumMyPoints; i++) {
     if (SourceMyGlobalElements[i]==TargetMyGlobalElements[i] && StillContiguous)
       NumSameIDs++;
     else if (SourceMap.MyGID(TargetMyGlobalElements[i])) {
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
       NumRemoteIDs++;
     }
   }
-  assert(NumMyEquations==NumSameIDs+NumPermutedIDs+NumRemoteIDs);
+  assert(NumMyPoints==NumSameIDs+NumPermutedIDs+NumRemoteIDs);
 
   Petra_Map & TargetMap = *new Petra_Map(-1, NumMyElements, TargetMyGlobalElements, 0, Comm);
 
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
   // Construct a Standard Map that puts approximately the same number of equations on each processor in 
   // uniform global ordering
 
-  Petra_Map& StandardMap = *new Petra_Map(NumGlobalEquations, NumMyEquations, 0, Comm);
+  Petra_Map& StandardMap = *new Petra_Map(NumGlobalPoints, NumMyPoints, 0, Comm);
   
   // Get update list and number of local equations from newly created Map
   NumMyElements = StandardMap.NumMyElements();
@@ -219,16 +219,16 @@ int main(int argc, char *argv[])
   int *Indices = new int[2];
   int NumEntries;
   
-  for (i=0; i<NumMyEquations; i++)
+  for (i=0; i<NumMyPoints; i++)
     {
     if (StandardMyGlobalElements[i]==0)
       {
 	Indices[0] = 1;
 	NumEntries = 1;
       }
-    else if (StandardMyGlobalElements[i] == NumGlobalEquations-1)
+    else if (StandardMyGlobalElements[i] == NumGlobalPoints-1)
       {
-	Indices[0] = NumGlobalEquations-2;
+	Indices[0] = NumGlobalPoints-2;
 	NumEntries = 1;
       }
     else
@@ -267,16 +267,16 @@ int main(int argc, char *argv[])
   Values[0] = -1.0; Values[1] = -1.0;
   double two = 2.0;
   
-  for (i=0; i<NumMyEquations; i++)
+  for (i=0; i<NumMyPoints; i++)
     {
     if (StandardMyGlobalElements[i]==0)
       {
 	Indices[0] = 1;
 	NumEntries = 1;
       }
-    else if (StandardMyGlobalElements[i] == NumGlobalEquations-1)
+    else if (StandardMyGlobalElements[i] == NumGlobalPoints-1)
       {
-	Indices[0] = NumGlobalEquations-2;
+	Indices[0] = NumGlobalPoints-2;
 	NumEntries = 1;
       }
     else
@@ -339,7 +339,7 @@ int main(int argc, char *argv[])
       }
       if (i<OverlapNumMyElements-1) {
 	assert(OverlapMatrix.InsertGlobalValues(node_center, 1, &pos_one, &node_center)==0);
-	if (node_right<NumGlobalEquations) 
+	if (node_right<NumGlobalPoints) 
 	  assert(OverlapMatrix.InsertGlobalValues(node_center, 1, &neg_one, &node_right)==0);
       }
     }

@@ -39,7 +39,7 @@ Epetra_Vector::Epetra_Vector(const Epetra_Vector& Source)
 }
 //=============================================================================
 Epetra_Vector::Epetra_Vector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, double *V)
-  : Epetra_MultiVector(CV, Map, V, Map.NumMyEquations(), 1) // Vector is just special case of MultiVector
+  : Epetra_MultiVector(CV, Map, V, Map.NumMyPoints(), 1) // Vector is just special case of MultiVector
 {
 }
 //=============================================================================

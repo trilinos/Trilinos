@@ -1,0 +1,5 @@
+s/NumGlobalEquations/NumGlobalPoints/g
+s/NumMyEquations/NumMyPoints/g
+s/EquationToBlockList/PointToElementList/g
+s/FindLocalBlockID/FindLocalElementID/g
+s/FirstElementEntry/FirstPointInElement/g

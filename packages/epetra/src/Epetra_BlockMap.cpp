@@ -29,16 +29,16 @@
 
 
 //==============================================================================
-// Epetra_BlockMap constructor for a Epetra-defined uniform linear distribution of constant block size elements.
+// Epetra_BlockMap constructor for a Epetra-defined uniform linear distribution of constant size elements.
 Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm)
   : Epetra_Object("Epetra::BlockMap"),
     LID_(0),
     NumGlobalElements_(NumGlobalElements),
     MyGlobalElements_(0),
-    FirstElementEntryList_(0),
+    FirstPointInElementList_(0),
     ElementSize_(ElementSize),
     ElementSizeList_(0),
-    EquationToBlockList_(0),
+    PointToElementList_(0),
     IndexBase_(IndexBase),
     Comm_(&Comm),
     Directory_(0),
@@ -49,9 +49,9 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int ElementSize, int Ind
     ConstantElementSize_(true),
     LinearMap_(true)
 {
-  // Each processor gets roughly numGlobalEquations/p equations
+  // Each processor gets roughly numGlobalPoints/p points
   // This routine automatically defines a linear partitioning of a
-  // map with numGlobalEquations across the processors
+  // map with numGlobalPoints across the processors
   // specified in the given Epetra_Comm
 
     if (NumGlobalElements_ < 0) 
@@ -68,8 +68,8 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int ElementSize, int Ind
   if (MyPID<remainder) NumMyElements_++;
   else start_index -= (MyPID-remainder);
 
-  NumGlobalEquations_ = NumGlobalElements_ * ElementSize_;
-  NumMyEquations_ = NumMyElements_ * ElementSize_;
+  NumGlobalPoints_ = NumGlobalElements_ * ElementSize_;
+  NumMyPoints_ = NumMyElements_ * ElementSize_;
 
   MinMyElementSize_ = ElementSize_;
   MaxMyElementSize_ = ElementSize_;
@@ -88,7 +88,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int ElementSize, int Ind
 
 }
 //==============================================================================
-// Epetra_BlockMap constructor for a user-defined linear distribution of constant block size elements.
+// Epetra_BlockMap constructor for a user-defined linear distribution of constant size elements.
 Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, 
 			       int ElementSize, int IndexBase, const Epetra_Comm& Comm)
   : Epetra_Object("Epetra::BlockMap"),
@@ -96,10 +96,10 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
     NumGlobalElements_(NumGlobalElements),
     NumMyElements_(NumMyElements),
     MyGlobalElements_(0),
-    FirstElementEntryList_(0),
+    FirstPointInElementList_(0),
     ElementSize_(ElementSize),
     ElementSizeList_(0),
-    EquationToBlockList_(0),
+    PointToElementList_(0),
     IndexBase_(IndexBase),
     Comm_(&Comm),
     Directory_(0),
@@ -110,7 +110,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
     ConstantElementSize_(true),
     LinearMap_(true)
 {
-  // Each processor gets NumMyElements equations
+  // Each processor gets NumMyElements points
   
   if (NumGlobalElements_ < -1) 
     throw ReportError("NumGlobalElements = " + toString(NumGlobalElements_) + ".  Should be >= -1.", -1);
@@ -137,8 +137,8 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
 			  ".  Should equal " + toString(NumGlobalElements_) + 
 			  ", or be set to -1 to compute automatically", -4);
 
-      NumGlobalEquations_ = NumGlobalElements_ * ElementSize_;
-      NumMyEquations_ = NumMyElements_ * ElementSize_;
+      NumGlobalPoints_ = NumGlobalElements_ * ElementSize_;
+      NumMyPoints_ = NumMyElements_ * ElementSize_;
       
       MinAllGID_ = IndexBase_;
       MaxAllGID_ = MinAllGID_ + NumGlobalElements_ - 1;
@@ -159,15 +159,15 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
 			  ".  Should equal " + toString(NumGlobalElements_) + 
 			  ", or be set to -1 to compute automatically", -4);
 
-      NumGlobalEquations_ = NumGlobalElements_ * ElementSize_;
-      NumMyEquations_ = NumMyElements_ * ElementSize_;
+      NumGlobalPoints_ = NumGlobalElements_ * ElementSize_;
+      NumMyPoints_ = NumMyElements_ * ElementSize_;
 
       MinAllGID_ = IndexBase_;
       MaxAllGID_ = MinAllGID_ + NumGlobalElements_ - 1;
       MinLID_ = 0;
       MaxLID_ = MinLID_ + NumMyElements_ - 1;
 
-      // Use the ScanSum function to compute a prefix sum of the number of equations
+      // Use the ScanSum function to compute a prefix sum of the number of points
       Comm_->ScanSum(&NumMyElements_, &MaxMyGID_, 1);
 
       int start_index = MaxMyGID_ - NumMyElements_;
@@ -180,7 +180,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
 
 }
 //==============================================================================
-// Epetra_BlockMap constructor for a user-defined arbitrary distribution of constant block size elements.
+// Epetra_BlockMap constructor for a user-defined arbitrary distribution of constant size elements.
 Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int * MyGlobalElements, 
 			       int ElementSize, int IndexBase, const Epetra_Comm& Comm)
   : Epetra_Object("Epetra::BlockMap"),
@@ -188,10 +188,10 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
     NumGlobalElements_(NumGlobalElements),
     NumMyElements_(NumMyElements),
     MyGlobalElements_(MyGlobalElements),
-    FirstElementEntryList_(0),
+    FirstPointInElementList_(0),
     ElementSize_(ElementSize),
     ElementSizeList_(0),
-    EquationToBlockList_(0),
+    PointToElementList_(0),
     IndexBase_(IndexBase),
     Comm_(&Comm),
     Directory_(0),
@@ -203,7 +203,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
     LinearMap_(false)
 {
   int i;
-  // Each processor gets NumMyElements equations
+  // Each processor gets NumMyElements points
 
   if (NumGlobalElements_ < -1) 
     throw ReportError("NumGlobalElements = " + toString(NumGlobalElements_) + ".  Should be >= -1.", -1);
@@ -248,8 +248,8 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
 	throw ReportError("Invalid NumGlobalElements.  NumGlobalElements = " + toString(NumGlobalElements) + 
 			  ".  Should equal " + toString(NumGlobalElements_) + 
 			  ", or be set to -1 to compute automatically", -4);
-      NumGlobalEquations_ = NumGlobalElements_ * ElementSize_;
-      NumMyEquations_ = NumMyElements_ * ElementSize_;
+      NumGlobalPoints_ = NumGlobalElements_ * ElementSize_;
+      NumMyPoints_ = NumMyElements_ * ElementSize_;
       
       MinAllGID_ = MinMyGID_;
       MaxAllGID_ = MaxMyGID_;
@@ -267,8 +267,8 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
 			  ".  Should equal " + toString(NumGlobalElements_) + 
 			  ", or be set to -1 to compute automatically", -4);
       
-      NumGlobalEquations_ = NumGlobalElements_ * ElementSize_;
-      NumMyEquations_ = NumMyElements_ * ElementSize_;
+      NumGlobalPoints_ = NumGlobalElements_ * ElementSize_;
+      NumMyPoints_ = NumMyElements_ * ElementSize_;
       
       MinLID_ = 0;
       MaxLID_ = EPETRA_MAX(MinLID_ + NumMyElements_ - 1,MinLID_);
@@ -293,17 +293,17 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
 }
 
 //==============================================================================
-// Epetra_BlockMap constructor for a user-defined arbitrary distribution of variable block size elements.
+// Epetra_BlockMap constructor for a user-defined arbitrary distribution of variable size elements.
 Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int * MyGlobalElements, 
 			       int *ElementSizeList, int IndexBase, const Epetra_Comm& Comm)
   : Epetra_Object("Epetra::BlockMap"),
     LID_(0),
     NumGlobalElements_(NumGlobalElements),
     NumMyElements_(NumMyElements),
-    FirstElementEntryList_(0),
+    FirstPointInElementList_(0),
     ElementSize_(0),
     ElementSizeList_(0),
-    EquationToBlockList_(0),
+    PointToElementList_(0),
     IndexBase_(IndexBase),
     Comm_(&Comm),
     Directory_(0),
@@ -311,7 +311,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
     LinearMap_(false)
 {
   int i;
-  // Each processor gets NumMyElements equations
+  // Each processor gets NumMyElements points
 
   if (NumGlobalElements_ < -1) 
     throw ReportError("NumGlobalElements = " + toString(NumGlobalElements_) + ".  Should be >= -1.", -1);
@@ -333,12 +333,12 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
   int MyPID = Comm.MyPID();
   
   if (NumMyElements>0) {
-    // Compute min/max GID and element size, number of equations on this processor
+    // Compute min/max GID and element size, number of points on this processor
     MinMyGID_ = MyGlobalElements[0];
     MaxMyGID_ = MyGlobalElements[0];
     MinMyElementSize_ = ElementSizeList[0];
     MaxMyElementSize_ = ElementSizeList[0];
-    NumMyEquations_ = 0;
+    NumMyPoints_ = 0;
     for (i = 0; i < NumMyElements; i++)
       {
 	MyGlobalElements_[i] = MyGlobalElements[i];
@@ -347,7 +347,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
 	MaxMyGID_ = EPETRA_MAX(MaxMyGID_,MyGlobalElements[i]);
 	MinMyElementSize_ = EPETRA_MIN(MinMyElementSize_,ElementSizeList[i]);
 	MaxMyElementSize_ = EPETRA_MAX(MaxMyElementSize_,ElementSizeList[i]);
-	NumMyEquations_ += ElementSizeList[i];
+	NumMyPoints_ += ElementSizeList[i];
       }
   }
   else {
@@ -355,7 +355,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
     MaxMyGID_ = IndexBase_;
     MinMyElementSize_ = 1;
     MaxMyElementSize_ = 1;
-    NumMyEquations_ = 0;
+    NumMyPoints_ = 0;
   }
 
   DistributedGlobal_ = IsDistributedGlobal(NumGlobalElements, NumMyElements);  
@@ -370,7 +370,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
 	throw ReportError("Invalid NumGlobalElements.  NumGlobalElements = " + toString(NumGlobalElements) + 
 			  ".  Should equal " + toString(NumGlobalElements_) + 
 			  ", or be set to -1 to compute automatically", -4);
-      NumGlobalEquations_ = NumMyEquations_;
+      NumGlobalPoints_ = NumMyPoints_;
       
       MinAllGID_ = MinMyGID_;
       MaxAllGID_ = MaxMyGID_;
@@ -381,14 +381,14 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
     }
   else if (NumProc > 1)
     {
-      // Sum up all local element and equation counts to get global counts
+      // Sum up all local element and point counts to get global counts
       int *tmp_send = new int[4];
       int *tmp_recv = new int[4];
       tmp_send[0] = NumMyElements_;
-      tmp_send[1] = NumMyEquations_;
+      tmp_send[1] = NumMyPoints_;
       Comm_->SumAll(tmp_send, tmp_recv, 2);
       NumGlobalElements_ =  tmp_recv[0];
-      NumGlobalEquations_ = tmp_recv[1];
+      NumGlobalPoints_ = tmp_recv[1];
 
       // Check to see if user's value for NumGlobalElements is either -1 
       // (in which case we use our computed value) or matches ours.
@@ -432,15 +432,15 @@ Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap& map)
     NumGlobalElements_(map.NumGlobalElements_),
     NumMyElements_(map.NumMyElements_),
     MyGlobalElements_(0),
-    FirstElementEntryList_(0),
+    FirstPointInElementList_(0),
     ElementSize_(map.ElementSize_),
     ElementSizeList_(0),
-    EquationToBlockList_(0),
+    PointToElementList_(0),
     IndexBase_(map.IndexBase_),
     Comm_(map.Comm_),
     Directory_(0),
-    NumGlobalEquations_(map.NumGlobalEquations_),
-    NumMyEquations_(map.NumMyEquations_),
+    NumGlobalPoints_(map.NumGlobalPoints_),
+    NumMyPoints_(map.NumMyPoints_),
     MinAllGID_(map.MinAllGID_),
     MaxAllGID_(map.MaxAllGID_),
     MinMyGID_(map.MinMyGID_),
@@ -464,12 +464,12 @@ Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap& map)
       for(i=0; i<NumMyElements_; i++)
 	MyGlobalElements_[i] = map.MyGlobalElements_[i];
     }
-  if (map.FirstElementEntryList_!=0)
+  if (map.FirstPointInElementList_!=0)
     {
-      FirstElementEntryList_ = new int[NumMyElements_+1];
+      FirstPointInElementList_ = new int[NumMyElements_+1];
       
       for(i=0; i<NumMyElements_+1; i++)
-	FirstElementEntryList_[i] = map.FirstElementEntryList_[i];
+	FirstPointInElementList_[i] = map.FirstPointInElementList_[i];
     }
   if (map.ElementSizeList_!=0)
     {
@@ -488,14 +488,14 @@ Epetra_BlockMap::~Epetra_BlockMap(void)  {
   if (MyGlobalElements_ != 0 && NumMyElements_>0) delete [] MyGlobalElements_;
   MyGlobalElements_ = 0;
   
-  if (FirstElementEntryList_ != 0 && NumMyElements_>0) delete [] FirstElementEntryList_;
-  FirstElementEntryList_ = 0;
+  if (FirstPointInElementList_ != 0 && NumMyElements_>0) delete [] FirstPointInElementList_;
+  FirstPointInElementList_ = 0;
   
   if (ElementSizeList_ != 0 && NumMyElements_>0) delete [] ElementSizeList_;
   ElementSizeList_ = 0;
 
-  if (EquationToBlockList_ != 0 && NumMyEquations_>0) delete [] EquationToBlockList_;
-  EquationToBlockList_ = 0;
+  if (PointToElementList_ != 0 && NumMyPoints_>0) delete [] PointToElementList_;
+  PointToElementList_ = 0;
 
   if (Directory_ !=0) delete Directory_;
   Directory_ = 0;
@@ -574,7 +574,7 @@ int * Epetra_BlockMap::MyGlobalElements() const {
   
 }
 //==============================================================================
-int Epetra_BlockMap::FirstElementEntryList(int * FirstElementEntryList) const
+int Epetra_BlockMap::FirstPointInElementList(int * FirstPointInElementList) const
 {
   // If the first element entry list is not create, then do so.  
 
@@ -582,39 +582,39 @@ int Epetra_BlockMap::FirstElementEntryList(int * FirstElementEntryList) const
 
   int i;
 
-  if (FirstElementEntryList_==0) {
-    FirstElementEntryList[0] = 0; // First element of first entry is always zero
+  if (FirstPointInElementList_==0) {
+    FirstPointInElementList[0] = 0; // First element of first entry is always zero
     
     if (ConstantElementSize_)
       for (i = 0; i<NumMyElements_; i++)
-	FirstElementEntryList[i+1] = FirstElementEntryList[i] + ElementSize_;
+	FirstPointInElementList[i+1] = FirstPointInElementList[i] + ElementSize_;
     else
       for (i = 0; i<NumMyElements_; i++)
-	FirstElementEntryList[i+1] = FirstElementEntryList[i] + ElementSizeList_[i];
+	FirstPointInElementList[i+1] = FirstPointInElementList[i] + ElementSizeList_[i];
   }
   else 
     for (i = 0; i<=NumMyElements_; i++)
-      FirstElementEntryList[i] = FirstElementEntryList_[i];
+      FirstPointInElementList[i] = FirstPointInElementList_[i];
   return(0);
 }
 
 //==============================================================================
-int * Epetra_BlockMap::FirstElementEntryList() const {
+int * Epetra_BlockMap::FirstPointInElementList() const {
 
   // If ElementSizeList not built, do so
-  if (FirstElementEntryList_==0 && NumMyElements_>0) {
+  if (FirstPointInElementList_==0 && NumMyElements_>0) {
     int * tmp = new int[NumMyElements_+1];
-    FirstElementEntryList(tmp);
-    (int * &) FirstElementEntryList_ = tmp;
+    FirstPointInElementList(tmp);
+    (int * &) FirstPointInElementList_ = tmp;
  }
-  return(FirstElementEntryList_);
+  return(FirstPointInElementList_);
   
 }
 //==============================================================================
 int Epetra_BlockMap::ElementSizeList(int * ElementSizeList) const
 {
   // If the element size list is not create, then do so.  This can only happen when
-  // a constant element size has been specified.  Thus we can easily construct the block size
+  // a constant element size has been specified.  Thus we can easily construct the element size
   // list in this case.
 
   int i;
@@ -640,34 +640,34 @@ int * Epetra_BlockMap::ElementSizeList() const {
   
 }
 //==============================================================================
-int Epetra_BlockMap::EquationToBlockList(int * EquationToBlockList) const
+int Epetra_BlockMap::PointToElementList(int * PointToElementList) const
 {
-  // Build an array such that the local block ID is stored for each equation
+  // Build an array such that the local element ID is stored for each point
 
   int i;
-  if (EquationToBlockList_==0) {
-    int * ptr = EquationToBlockList;
+  if (PointToElementList_==0) {
+    int * ptr = PointToElementList;
     for (i = 0; i<NumMyElements_; i++) {
       int Size = ElementSize(i);
       for (int j=0; j<Size; j++) *ptr++ = i;
     }
   }
   else
-    for (i = 0; i<NumMyEquations_; i++)
-      EquationToBlockList[i] = EquationToBlockList_[i];
+    for (i = 0; i<NumMyPoints_; i++)
+      PointToElementList[i] = PointToElementList_[i];
   
   return(0);
 }
 //==============================================================================
-int * Epetra_BlockMap::EquationToBlockList() const {
+int * Epetra_BlockMap::PointToElementList() const {
 
-  // If EquationToBlockList not built, do so
-  if (EquationToBlockList_==0 && NumMyEquations_>0) {
-    int * tmp = new int[NumMyEquations_];
-    EquationToBlockList(tmp);
-    (int * &) EquationToBlockList_ = tmp;
+  // If PointToElementList not built, do so
+  if (PointToElementList_==0 && NumMyPoints_>0) {
+    int * tmp = new int[NumMyPoints_];
+    PointToElementList(tmp);
+    (int * &) PointToElementList_ = tmp;
  }
-  return(EquationToBlockList_);
+  return(PointToElementList_);
   
 }
 //==============================================================================
@@ -724,31 +724,31 @@ int Epetra_BlockMap::GID(int LID) const {
   else return(MyGlobalElements_[LID]); // Find it in MyGlobalElements array
 }
 //==============================================================================
-int Epetra_BlockMap::FindLocalBlockID(int EquationID, int & BlockID, int & BlockOffset) const {
+int Epetra_BlockMap::FindLocalElementID(int PointID, int & ElementID, int & ElementOffset) const {
 
-  if (EquationID>=NumMyEquations_) return(-1); // Equation is out of range
+  if (PointID>=NumMyPoints_) return(-1); // Point is out of range
 
   if (ConstantElementSize()) {
-    BlockID = EquationID/MaxElementSize_;
-    BlockOffset = EquationID%MaxElementSize_;
+    ElementID = PointID/MaxElementSize_;
+    ElementOffset = PointID%MaxElementSize_;
     return(0);
   }
   else {
-    if (EquationToBlockList_==0) {
+    if (PointToElementList_==0) {
       int * tmp;
-      if (EquationToBlockList_==0) tmp = new int[NumMyEquations_];
-      EPETRA_CHK_ERR(EquationToBlockList(tmp));
-      (int * &) EquationToBlockList_ = tmp;  // Allows assignment in a const method
+      if (PointToElementList_==0) tmp = new int[NumMyPoints_];
+      EPETRA_CHK_ERR(PointToElementList(tmp));
+      (int * &) PointToElementList_ = tmp;  // Allows assignment in a const method
     }
-    if (FirstElementEntryList_==0) {
+    if (FirstPointInElementList_==0) {
       int * tmp;
-      if (FirstElementEntryList_==0) tmp = new int[NumMyElements_];
-      EPETRA_CHK_ERR(FirstElementEntryList(tmp));
-      (int * &) FirstElementEntryList_ = tmp;  // Allows assignment in a const method
+      if (FirstPointInElementList_==0) tmp = new int[NumMyElements_];
+      EPETRA_CHK_ERR(FirstPointInElementList(tmp));
+      (int * &) FirstPointInElementList_ = tmp;  // Allows assignment in a const method
     }
 
-    BlockID = EquationToBlockList_[EquationID];
-    BlockOffset = EquationID - FirstElementEntryList_[BlockID];
+    ElementID = PointToElementList_[PointID];
+    ElementOffset = PointID - FirstPointInElementList_[ElementID];
     return(0);
   }
 }
@@ -777,10 +777,10 @@ bool Epetra_BlockMap::IsDistributedGlobal(int NumGlobalElements, int NumMyElemen
 void Epetra_BlockMap::Print(ostream & os) const
 {
   int * MyGlobalElements1 = MyGlobalElements();
-  int * FirstElementEntryList1 = 0;
+  int * FirstPointInElementList1 = 0;
   int * ElementSizeList1 = 0;
   if (!ConstantElementSize()) {
-    FirstElementEntryList1 = FirstElementEntryList();
+    FirstPointInElementList1 = FirstPointInElementList();
     ElementSizeList1 = ElementSizeList();
   }
   int MyPID = Comm().MyPID();
@@ -790,7 +790,7 @@ void Epetra_BlockMap::Print(ostream & os) const
     if (MyPID==iproc) {
       if (MyPID==0) {
 	os <<  "\nNumber of Global Elements  = "; os << NumGlobalElements(); os << endl;
-	os <<    "Number of Global Equations = "; os << NumGlobalEquations(); os << endl;
+	os <<    "Number of Global Points = "; os << NumGlobalPoints(); os << endl;
 	os <<    "Maximum of all GIDs        = "; os << MaxAllGID(); os << endl;
 	os <<    "Minimum of all GIDs        = "; os << MinAllGID(); os << endl;
 	os <<    "Index Base                 = "; os << IndexBase(); os << endl;
@@ -800,7 +800,7 @@ void Epetra_BlockMap::Print(ostream & os) const
       os << endl;
 
 	os <<    "Number of Local Elements   = "; os << NumMyElements(); os << endl;
-	os <<    "Number of Local Equations  = "; os << NumMyEquations(); os << endl;
+	os <<    "Number of Local Points  = "; os << NumMyPoints(); os << endl;
 	os <<    "Maximum of my GIDs         = "; os << MaxMyGID(); os << endl;
 	os <<    "Minimum of my GIDs         = "; os << MinMyGID(); os << endl;
       os << endl;
@@ -813,7 +813,7 @@ void Epetra_BlockMap::Print(ostream & os) const
       os <<  "      Global Index "; os << " ";
       if (!ConstantElementSize()) {
 	os.width(14);
-	os <<" FirstElementEntry "; os << " ";
+	os <<" FirstPointInElement "; os << " ";
 	os.width(14);
 	os <<"   ElementSize "; os << " ";
       }
@@ -828,7 +828,7 @@ void Epetra_BlockMap::Print(ostream & os) const
 	os <<  MyGlobalElements1[i]; os << "    ";
 	if (!ConstantElementSize()) {	  
 	  os.width(14);
-	  os << FirstElementEntryList1[i]; os << "    ";
+	  os << FirstPointInElementList1[i]; os << "    ";
 	  os.width(14);
 	  os << ElementSizeList1[i]; os << "    ";
 	}

@@ -43,12 +43,12 @@ Epetra_MultiVector::Epetra_MultiVector(const Epetra_BlockMap& Map, int NumVector
     IndexBase_(Map.IndexBase()),
     Values_(0),
     Pointers_(0),
-    MyLength_(Map.NumMyEquations()),
-    GlobalLength_(Map.NumGlobalEquations()),
+    MyLength_(Map.NumMyPoints()),
+    GlobalLength_(Map.NumGlobalPoints()),
     NumVectors_(NumVectors),
     UserAllocated_(false),
     ConstantStride_(true),
-    Stride_(Map.NumMyEquations()),
+    Stride_(Map.NumMyPoints()),
     Allocated_(false),
     Seed_(1)
 {
@@ -96,12 +96,12 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockM
     IndexBase_(Map.IndexBase()),
     Values_(0),
     Pointers_(0),
-    MyLength_(Map.NumMyEquations()),
-    GlobalLength_(Map.NumGlobalEquations()),
+    MyLength_(Map.NumMyPoints()),
+    GlobalLength_(Map.NumGlobalPoints()),
     NumVectors_(NumVectors),
     UserAllocated_(false),
     ConstantStride_(true),
-    Stride_(Map.NumMyEquations()),
+    Stride_(Map.NumMyPoints()),
     Allocated_(false),
     Seed_(1)
 {
@@ -127,12 +127,12 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockM
     IndexBase_(Map.IndexBase()),
     Values_(0),
     Pointers_(0),
-    MyLength_(Map.NumMyEquations()),
-    GlobalLength_(Map.NumGlobalEquations()),
+    MyLength_(Map.NumMyPoints()),
+    GlobalLength_(Map.NumGlobalPoints()),
     NumVectors_(NumVectors),
     UserAllocated_(false),
     ConstantStride_(true),
-    Stride_(Map.NumMyEquations()),
+    Stride_(Map.NumMyPoints()),
     Allocated_(false),
     Seed_(1)
 {
@@ -231,7 +231,7 @@ int Epetra_MultiVector::AllocateForCopy(void)
   if (NumVectors_<=0) 
     throw ReportError("Number of Vectors = " + toString(NumVectors_) + ", but must be greater than zero", -1);
 
-  Stride_ = Map_->NumMyEquations();
+  Stride_ = Map_->NumMyPoints();
   Values_ = new double[Stride_ * NumVectors_];
   Pointers_ = new double *[NumVectors_];
 
@@ -304,7 +304,7 @@ int Epetra_MultiVector::DoView(void)
   Values_ = Pointers_[0];
 
   if (NumVectors_==1) {
-    Stride_ = Map_->NumMyEquations();
+    Stride_ = Map_->NumMyPoints();
     ConstantStride_ = true;
     return(0);
   }
@@ -427,15 +427,15 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_DistObject& Source, int NumS
   double **To = Pointers_;
   int NumVectors = NumVectors_;
 
-  int * ToFirstElementEntryList = 0;
-  int * FromFirstElementEntryList = 0;
+  int * ToFirstPointInElementList = 0;
+  int * FromFirstPointInElementList = 0;
   int * FromElementSizeList = 0;
   int MaxElementSize = Map().MaxElementSize();
   bool ConstantElementSize = Map().ConstantElementSize();
 
   if (!ConstantElementSize) {
-    ToFirstElementEntryList =   Map().FirstElementEntryList();
-    FromFirstElementEntryList = A.Map().FirstElementEntryList();
+    ToFirstPointInElementList =   Map().FirstPointInElementList();
+    FromFirstPointInElementList = A.Map().FirstPointInElementList();
     FromElementSizeList = A.Map().ElementSizeList();
   }
   int i, j, jj, jjj, k;
@@ -456,7 +456,7 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_DistObject& Source, int NumS
   }
   else {
     // Case3 = true;
-    NumSameEntries = FromFirstElementEntryList[NumSameIDs];
+    NumSameEntries = FromFirstPointInElementList[NumSameIDs];
   }
 
   // Short circuit for the case where the source and target vector is the same.
@@ -488,7 +488,7 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_DistObject& Source, int NumS
 	}
       }
     }
-    // constant block size case
+    // constant element size case
     else if (Case2) {
       
       for (j=0; j<NumPermuteIDs; j++) {
@@ -500,12 +500,12 @@ int Epetra_MultiVector::CopyAndPermute(const Epetra_DistObject& Source, int NumS
       }
     }
     
-    // variable block size case
+    // variable element size case
     else {
       
       for (j=0; j<NumPermuteIDs; j++) {
-	jj = ToFirstElementEntryList[PermuteToLIDs[j]];
-	jjj = FromFirstElementEntryList[PermuteFromLIDs[j]];
+	jj = ToFirstPointInElementList[PermuteToLIDs[j]];
+	jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
 	int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
 	for (i=0; i<NumVectors; i++)
 	  for (k=0; k<ElementSize; k++)
@@ -533,11 +533,11 @@ int Epetra_MultiVector::PackAndPrepare(const Epetra_DistObject & Source, int Num
   int MaxElementSize = Map().MaxElementSize();
   bool ConstantElementSize = Map().ConstantElementSize();
 
-  int * FromFirstElementEntryList = 0;
+  int * FromFirstPointInElementList = 0;
   int * FromElementSizeList = 0;
 
   if (!ConstantElementSize) {
-    FromFirstElementEntryList = A.Map().FirstElementEntryList();
+    FromFirstPointInElementList = A.Map().FirstPointInElementList();
     FromElementSizeList = A.Map().ElementSizeList();
   }
 
@@ -580,7 +580,7 @@ int Epetra_MultiVector::PackAndPrepare(const Epetra_DistObject & Source, int Num
       }
     }
 
-    // constant block size case
+    // constant element size case
     else if (ConstantElementSize) {
       
       for (j=0; j<NumExportIDs; j++) {
@@ -591,13 +591,13 @@ int Epetra_MultiVector::PackAndPrepare(const Epetra_DistObject & Source, int Num
       }
     }
     
-    // variable block size case
+    // variable element size case
     else {
       
       int SizeOfPacket = NumVectors*MaxElementSize;
       for (j=0; j<NumExportIDs; j++) {
 	ptr = (double *) Exports + j*SizeOfPacket;
-	jj = FromFirstElementEntryList[ExportLIDs[j]];
+	jj = FromFirstPointInElementList[ExportLIDs[j]];
 	int ElementSize = FromElementSizeList[ExportLIDs[j]];
 	for (i=0; i<NumVectors; i++)
 	  for (k=0; k<ElementSize; k++)
@@ -625,11 +625,11 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_DistObject & Source,
   int MaxElementSize = Map().MaxElementSize();
   bool ConstantElementSize = Map().ConstantElementSize();
 
-  int * ToFirstElementEntryList = 0;
+  int * ToFirstPointInElementList = 0;
   int * ToElementSizeList = 0;
 
   if (!ConstantElementSize) {
-    ToFirstElementEntryList = Map().FirstElementEntryList();
+    ToFirstPointInElementList = Map().FirstPointInElementList();
     ToElementSizeList = Map().ElementSizeList();
   }
   
@@ -680,7 +680,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_DistObject & Source,
     }
   }
 
-  // constant block size case
+  // constant element size case
 
   else if (ConstantElementSize) {
    
@@ -712,7 +712,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_DistObject & Source,
     }
   }
     
-  // variable block size case
+  // variable element size case
 
   else {
       
@@ -721,7 +721,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_DistObject & Source,
     if (CombineMode==Add) {
       for (j=0; j<NumImportIDs; j++) {
 	ptr = (double *) Imports + j*SizeOfPacket;
-	jj = ToFirstElementEntryList[ImportLIDs[j]];
+	jj = ToFirstPointInElementList[ImportLIDs[j]];
 	int ElementSize = ToElementSizeList[ImportLIDs[j]];
 	for (i=0; i<NumVectors; i++)
 	  for (k=0; k<ElementSize; k++)
@@ -731,7 +731,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_DistObject & Source,
     else  if(CombineMode==Insert){
       for (j=0; j<NumImportIDs; j++) {
 	ptr = (double *) Imports + j*SizeOfPacket;
-	jj = ToFirstElementEntryList[ImportLIDs[j]];
+	jj = ToFirstPointInElementList[ImportLIDs[j]];
 	int ElementSize = ToElementSizeList[ImportLIDs[j]];
 	for (i=0; i<NumVectors; i++)
 	  for (k=0; k<ElementSize; k++)
@@ -743,7 +743,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_DistObject & Source,
     else { // if (CombineMode==Average)
       for (j=0; j<NumImportIDs; j++) {
 	ptr = (double *) Imports + j*SizeOfPacket;
-	jj = ToFirstElementEntryList[ImportLIDs[j]];
+	jj = ToFirstPointInElementList[ImportLIDs[j]];
 	int ElementSize = ToElementSizeList[ImportLIDs[j]];
 	for (i=0; i<NumVectors; i++)
 	  for (k=0; k<ElementSize; k++)
