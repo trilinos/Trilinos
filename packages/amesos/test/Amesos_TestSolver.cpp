@@ -18,6 +18,9 @@
 #ifdef HAVE_AMESOS_SLUD
 #include "SuperludistOO.h"
 #endif
+#ifdef HAVE_AMESOS_SLUD2
+#include "Superludist2_OO.h"
+#endif
 #ifdef TEST_AZTEC
 #include "AztecOO.h"
 #endif
@@ -198,9 +201,18 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 
     for ( int i = 0; i < 1+special ; i++ ) { 
       SuperludistOO superludist( Problem ) ; 
-      superludist.SetTrans( transpose ); 
+      superludist.SetTrans( transpose );  
       EPETRA_CHK_ERR( superludist.Solve( true ) ); 
-    }
+   }
+#endif
+#ifdef HAVE_AMESOS_SLUD2
+  } else if ( SparseSolver == SuperLUdist2 ) {
+
+    for ( int i = 0; i < 1+special ; i++ ) { 
+      Superludist2_OO superludist2( Problem ) ; 
+      superludist2.SetTrans( transpose );  
+      EPETRA_CHK_ERR( superludist2.Solve( true ) ); 
+   }
 #endif
 #ifdef TEST_SPOOLES
   } else if ( SparseSolver == SPOOLES ) { 

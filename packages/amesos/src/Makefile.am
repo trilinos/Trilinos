@@ -19,6 +19,16 @@ SLUDIST_H =
 SLUDIST =
 endif
 
+if HAVE_AMESOS_SLUD2
+SLUDIST2_H = \
+        $(srcdir)/Superludist2_OO.h
+SLUDIST2 = \
+        $(srcdir)/Superludist2_OO.cpp
+else
+SLUDIST2_H =
+SLUDIST2 =
+endif
+
 if BUILD_SLUSERIAL
 SLUSERIAL_H = \
        $(srcdir)/Epetra_SLU.h
@@ -86,12 +96,14 @@ AMESOS_LIB = libamesos.a
 
 AMESOS_H = \
         $(SLUDIST_H) \
+        $(SLUDIST2_H) \
         $(SLUSERIAL_H) \
         $(KUNDERT_H) \
 	$(COMP_H)
 
 libamesos_a_SOURCES = \
         $(SLUDIST) \
+        $(SLUDIST2) \
         $(SLUSERIAL) \
         $(KUNDERT) \
 	$(COMP)

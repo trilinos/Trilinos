@@ -1,3 +1,6 @@
+#ifndef AMESOS_CONFIGDEFS
+#define AMESOS_CONFIGDEFS
+
 #include "Amesos_config.h"
 #include "Epetra_ConfigDefs.h"
 #ifdef HAVE_VECTOR
@@ -5,3 +8,6 @@
 #else
   Amesos requires STL vector class
 #endif
+
+#endif 
+

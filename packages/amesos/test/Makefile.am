@@ -22,6 +22,7 @@ AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
 
 AmesosShellScript$(EXEEXT): $(srcdir)/AmesosShellScript
 	cp  $(srcdir)/AmesosShellScript  AmesosShellScript$(EXEEXT)
+	cp  $(srcdir)/AmesosDistScript  AmesosDistScript$(EXEEXT)
 	cp  $(srcdir)/AmesosShortScript  AmesosShortScript$(EXEEXT)
 	cp  $(srcdir)/AmesosJanusScript  AmesosJanusScript$(EXEEXT)
 	cp  $(srcdir)/SpoolesJanusScript  SpoolesJanusScript$(EXEEXT)

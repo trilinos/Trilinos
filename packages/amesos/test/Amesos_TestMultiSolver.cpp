@@ -14,6 +14,9 @@
 #ifdef HAVE_AMESOS_SLUD
 #include "SuperludistOO.h"
 #endif
+#ifdef HAVE_AMESOS_SLUD2
+#include "Superludist2_OO.h"
+#endif
 #ifdef TEST_SPOOLES
 #include "SpoolesOO.h"
 #endif
@@ -163,6 +166,12 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     SuperludistOO superludist( Problem ) ; 
     superludist.SetTrans( transpose ) ; 
     EPETRA_CHK_ERR( superludist.Solve( true ) ) ;
+#endif 
+#ifdef HAVE_AMESOS_SLUD2
+  } else if ( SparseSolver == SuperLUdist2 ) { 
+    Superludist2_OO superludist2( Problem ) ; 
+    superludist2.SetTrans( transpose ) ; 
+    EPETRA_CHK_ERR( superludist2.Solve( true ) ) ;
 #endif 
 #ifdef TEST_SPOOLES
   } else if ( SparseSolver == SPOOLES ) { 

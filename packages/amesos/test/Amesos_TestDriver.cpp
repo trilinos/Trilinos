@@ -3,7 +3,8 @@
 //
 //  usage: 
 //     Amesos_TestDriver.exe Solver InputMatrix MatrixType Special Numsolves Transpose MaxError MaxResid 
-//     Where solver is:  SuperLU, SuperLUdist, UMFPACK, KUNDERT, SPOOLES, SPOOLESERIAL or AZTEC 
+//     Where solver is:  SuperLU, SuperLUdist, SuperLUdist2, 
+//       UMFPACK, KUNDERT, SPOOLES, SPOOLESERIAL or AZTEC 
 //     special is, at present, only used in SuperLU, where 0 means dgssv
 //     and 1 means dgssvx 
 //  examples:
@@ -92,6 +93,7 @@ main(int argc, char **argv)
   Epetra_SerialComm Comm;
 #endif
 
+  Epetra_Object::SetTracebackMode( 2 );   // Turns EPETRA_CHK_ERR() on 
   int MyPID = Comm.MyPID();
   int NumMpiProcs = Comm.NumProc(); 
 
@@ -124,7 +126,7 @@ main(int argc, char **argv)
       cerr << " argc = " << argc << " Sprogam= " << Sprogram << 
 	" SPOOLES? " << (int) (Sprogram=="SPOOLES") << endl ; 
       cerr << "Usage: " << argv[0] <<" SolverName InputMatrix special numsolves transpose maxerror maxresid" << endl ; 
-      cerr << "    Solvername = UMFPACK, SuperLUdist, AZTEC. SPOOLES, SPOOLESSERIAL, KUNDER or SuperLU " << endl;
+      cerr << "    Solvername = UMFPACK, SuperLUdist, SuperLUdist2, AZTEC. SPOOLES, SPOOLESSERIAL, KUNDER or SuperLU " << endl;
       cerr << "    InputMatrix must be a file in Harwell Boeing format"<< endl;
       cerr << "    special is, at presetn, only used in SuperLU " << endl ; 
       cerr << "      special == 0 means use DGSSV, special == 1 means use DGSSVX " << endl ; 
@@ -218,6 +220,8 @@ main(int argc, char **argv)
     SparseSolver = KUNDERT ; 
   else if  ( Sprogram == "SuperLUdist" ) 
     SparseSolver = SuperLUdist ; 
+  else if  ( Sprogram == "SuperLUdist2" ) 
+    SparseSolver = SuperLUdist2 ; 
   else if  ( Sprogram == "SPOOLES" ) 
     SparseSolver = SPOOLES ; 
   else if  ( Sprogram == "SPOOLESSERIAL" ) 

@@ -251,6 +251,9 @@ AC_CHECK_FILE(${tac_with_trilinos3pldir})
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, slud, [Enable Amesos interface support for SuperLU Dist], 
 		AMESOS_SLUD, no)
 
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, slud2, [Enable Amesos interface support for SuperLU Dist 2.0 (requires amesos-slud)], 
+		AMESOS_SLUD2, no)
+
 
 #
 #  Test to see if everything is where it ought to be:
@@ -296,9 +299,15 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
       AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-sludlib, (ex. --with-amesos-sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
     LIBS="${SAVE_LIBS}"
   AM_CONDITIONAL(HAVE_AMESOS_SLUD, true ) 
+  if test "X$ac_cv_use_amesos_slud2" != "Xno"; then
+     AM_CONDITIONAL(HAVE_AMESOS_SLUD2, true ) 
+  else 
+     AM_CONDITIONAL(HAVE_AMESOS_SLUD2, false )  
+  fi
 else
   AM_CONDITIONAL(HAVE_AMESOS_SLUD, false )  
 fi
+
 
 AC_SUBST(AMESOS_LIBS,${tac_with_amesos_sludlib}) 
 
