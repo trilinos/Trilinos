@@ -35,9 +35,6 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
-/* Define if want to build ml_examples */
-#undef HAVE_EXAMPLES
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -95,6 +92,9 @@
 /* Define if want to build with epetra enabled */
 #undef HAVE_ML_EPETRA
 
+/* Define if want to build ml-examples */
+#undef HAVE_ML_EXAMPLES
+
 /* Define if want to build with ml_external_mpi_functions enabled */
 #undef HAVE_ML_EXTERNAL_MPI_FUNCTIONS
 
@@ -124,6 +124,9 @@
 
 /* Define if want to build with ml_superlu_dist enabled */
 #undef HAVE_ML_SUPERLU_DIST
+
+/* Define if want to build ml-tests */
+#undef HAVE_ML_TESTS
 
 /* Define if want to build with teuchos enabled */
 #undef HAVE_ML_TEUCHOS
