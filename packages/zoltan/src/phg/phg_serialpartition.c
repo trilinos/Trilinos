@@ -23,10 +23,11 @@ extern "C" {
  * AND add entry to CoarsePartitionFns array 
  * AND increment NUM_COARSEPARTITION_FN.
  */
-#define NUM_COARSEPARTITION_FNS 11
+#define NUM_COARSEPARTITION_FNS 12
 
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_ran;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_lin;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rip;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr0;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr1;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr2;
@@ -45,6 +46,7 @@ static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] =
                                        &coarse_part_gr4,
                                        &coarse_part_ran,
                                        &coarse_part_lin,
+                                       &coarse_part_rip,
                                        &coarse_part_bfs,
                                        &coarse_part_bfsh,
                                        &coarse_part_rbfs,
@@ -79,6 +81,7 @@ char *str, *str2;
   if      (!strcasecmp(str, "auto"))  return NULL;
   else if (!strcasecmp(str, "ran"))   return coarse_part_ran;
   else if (!strcasecmp(str, "lin"))   return coarse_part_lin;
+  else if (!strcasecmp(str, "rip"))   return coarse_part_rip;
   else if (!strcasecmp(str, "bfs"))   return coarse_part_bfs;
   else if (!strcasecmp(str, "rbfs"))  return coarse_part_rbfs;
   else if (!strcasecmp(str, "bfsh"))  return coarse_part_bfsh;
@@ -413,6 +416,64 @@ static int coarse_part_ran (
 
 
 
+/**************************************************************************
+ * Random inner product partitioning. 
+ * Pick a random positive vector, compute inner products, sort the vertices
+ * by the inner product values. Do sequence partitioning.
+ * This is a fast method but better than pure random.
+ */
+static int coarse_part_rip (
+  ZZ *zz,
+  HGraph *hg,
+  int p,
+  Partition part,
+  PHGPartParams *hgp
+)
+{
+    int i, j, k, err=0, *order=NULL, *ran=NULL;
+    float *iprod = NULL;
+    char *yo = "coarse_part_rip";
+
+    order  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int));
+    ran    = (int *) ZOLTAN_MALLOC (hg->nEdge*sizeof(int));
+    iprod  = (float *) ZOLTAN_MALLOC (hg->nVtx*sizeof(float));
+    if (!(order && ran && iprod)) {
+        ZOLTAN_FREE ((void**) &order);
+        ZOLTAN_FREE ((void**) &ran);
+        ZOLTAN_FREE ((void**) &iprod);
+        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+    }
+    for (i=0; i<hg->nVtx; i++)
+        order[i] = i;
+
+    /* Generate random numbers (pos. or neg.) for edges */
+    for (j=0; j<hg->nEdge; j++){
+      ran[j] = Zoltan_HG_Rand(); /* conversion from unsigned to signed
+                                    will cause some negative numbers. */
+    }
+
+    /* Compute inner products with random vector. */
+    for (i=0; i<hg->nVtx; i++){
+      iprod[i] = 0.0;
+      for (k=hg->vindex[i]; k<hg->vindex[i+1]; k++) {
+        j = hg->vedge[k];
+        iprod[i] += ran[j]*(hg->ewgt ? hg->ewgt[j] : 1.0);
+      }
+    }
+
+    /* Sort inner product values. */
+    Zoltan_quicksort_pointer_dec_float(order, iprod, 0, hg->nVtx-1);
+
+    /* Call sequence partitioning. */
+    err = seq_part (zz, hg, order, p, part, hgp);
+
+    ZOLTAN_FREE ((void**) &order);
+    ZOLTAN_FREE ((void**) &ran);
+    ZOLTAN_FREE ((void**) &iprod);
+    return err;
+}
+
 /****************************************************************************/
 /* Compute BFS order on a hypergraph.  order[0] is the first vertex, order[1]
  * the next, etc. Optionally, compute a partitioning based on the bfs order.
@@ -461,7 +522,7 @@ static int bfs_order (
   if (!(rank  = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     err =  ZOLTAN_MEMERR;
-    goto error;
+    goto End;
   }
   for (i=0; i < hg->nVtx; i++)
     rank[i] = -1;  /* -1 means this vtx has not yet been numbered */
@@ -478,7 +539,7 @@ static int bfs_order (
   if ((hg->nEdge > 0 && mark_edge == NULL) || (num_edges > 0 && edges == NULL)){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     err =  ZOLTAN_MEMERR;
-    goto error;
+    goto End;
   }
 
   if (p) {
@@ -511,7 +572,7 @@ static int bfs_order (
         ZOLTAN_PRINT_ERROR(-1, yo,
          "All vertices seem to be visited, but that cant be!");
         err = ZOLTAN_FATAL;
-        goto error;
+        goto End;
       }
       order[last++] = next_vtx;
     }
@@ -525,7 +586,7 @@ static int bfs_order (
       sprintf(msg, "bfsnumber=%d, rank[vtx] = %d", bfsnumber, rank[vtx]);
       ZOLTAN_PRINT_ERROR(-1, yo, msg);
       err = ZOLTAN_FATAL;
-      goto error;
+      goto End;
     }
     if (p) {
       old_sum = part_sum;
@@ -600,7 +661,7 @@ static int bfs_order (
             if (last >= hg->nVtx) {
               ZOLTAN_PRINT_ERROR(-1, yo, "Queue is full");
               err = ZOLTAN_FATAL;
-              goto error;
+              goto End;
             }
             else {
               order[last++] = nbor;
@@ -619,7 +680,7 @@ static int bfs_order (
          ZOLTAN_PRINT_WARN(-1, yo, "Arrays order and rank are inconsistent.");
   }
 
-error:
+End:
   ZOLTAN_FREE ((void**) &rank);
   ZOLTAN_FREE ((void**) &mark_edge);
   ZOLTAN_FREE ((void**) &edges);
@@ -656,19 +717,19 @@ static int coarse_part_bfs (
   for (i=0; i<2; i++) {
     err = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-      goto error;
+      goto End;
     start = order[hg->nVtx -1];
   }
 
   /* Compute BFS order */
   err = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-    goto error;
+    goto End;
 
   /* Call sequence partitioning with BFS order array. */
   err = seq_part (zz, hg, order, p, part, hgp);
 
-error:
+End:
   ZOLTAN_FREE ((void**) &order);
   return (err);
 }
@@ -700,19 +761,19 @@ static int coarse_part_bfsh (
   for (i=0; i<2; i++) {
     err = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-      goto error;
+      goto End;
     start = order[hg->nVtx -1];
   }
 
   /* Compute BFS order */
   err = bfs_order(zz, hg, order, start, 1, 0, NULL, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-    goto error;
+    goto End;
 
   /* Call sequence partitioning with BFS order array. */
   err = seq_part( zz, hg, order, p, part, hgp);
 
-error:
+End:
   ZOLTAN_FREE ((void**) &order);
   return (err);
 }
@@ -738,7 +799,7 @@ static int coarse_part_rbfs (
   if (!(order  = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     err = ZOLTAN_MEMERR;
-    goto error;
+    goto End;
   }
 
   /* Find pseudo-peripheral start vertex */
@@ -746,16 +807,16 @@ static int coarse_part_rbfs (
   for (i=0; i<2; i++){
     err = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-      goto error;
+      goto End;
     start = order[hg->nVtx -1];
   }
 
   /* Call BFS and partition with restart. */
   err = bfs_order(zz, hg, order, start, 0, p, part, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-    goto error;
+    goto End;
 
-error:
+End:
   /* Free data and return. */
   ZOLTAN_FREE ((void**) &order);
   return err;
@@ -782,7 +843,7 @@ static int coarse_part_rbfsh (
   if (!(order  = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     err = ZOLTAN_MEMERR;
-    goto error;
+    goto End;
   }
 
   /* Find pseudo-peripheral start vertex */
@@ -790,16 +851,16 @@ static int coarse_part_rbfsh (
   for (i=0; i<2; i++) {
     err = bfs_order(zz, hg, order, start, 0, 0, NULL, hgp);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-      goto error;
+      goto End;
     start = order[hg->nVtx -1];
   }
 
   /* Call BFS and partition with restart. */
   err = bfs_order(zz, hg, order, start, 1, p, part, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-    goto error;
+    goto End;
 
-error:
+End:
   /* Free data and return. */
   ZOLTAN_FREE ((void**) &order);
   return err;
@@ -896,7 +957,7 @@ static int greedy_order (
       !(gain  = (double*) ZOLTAN_CALLOC (hg->nVtx, sizeof (double))) ) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     err =  ZOLTAN_MEMERR;
-    goto error;
+    goto End;
   }
   for (i=0; i<hg->nVtx; i++)
     rank[i] = -1;       /* -1 means this vtx has not yet been numbered */
@@ -905,7 +966,7 @@ static int greedy_order (
     if (!(edge_sum = (double*) ZOLTAN_CALLOC (hg->nVtx, sizeof (double)))){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       err = ZOLTAN_MEMERR;
-      goto error;
+      goto End;
     }
     /* Sum up edge weights incident to each vertex. */
     for (edge=0; edge<hg->nEdge; edge++) {
@@ -920,7 +981,7 @@ static int greedy_order (
     if ((hg->nEdge > 0 && cut[0] == NULL) || visited == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       err = ZOLTAN_MEMERR;
-      goto error;
+      goto End;
     }
     cut[1] = &(cut[0][hg->nEdge]);
     /* Initialize cut values. */
@@ -942,7 +1003,7 @@ static int greedy_order (
     if (!(vtx_count = (int*) ZOLTAN_CALLOC (hg->nEdge, sizeof (int)))){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       err = ZOLTAN_MEMERR;
-      goto error;
+      goto End;
     }
   }
 
@@ -976,7 +1037,7 @@ static int greedy_order (
       /* This should never happen. */
       ZOLTAN_PRINT_ERROR(-1, yo, "Internal error: No vertices in heap.");
       err = ZOLTAN_FATAL;
-      goto error;
+      goto End;
     }
     if (rank[vtx] < 0){
       order[bfsnumber] = vtx;
@@ -988,7 +1049,7 @@ static int greedy_order (
       sprintf(msg, "bfsnumber=%d, rank[vtx] = %d", bfsnumber, rank[vtx]);
       ZOLTAN_PRINT_ERROR(-1, yo, msg);
       err = ZOLTAN_FATAL;
-      goto error;
+      goto End;
     }
     if (p) {
       old_sum = part_sum;
@@ -1091,7 +1152,7 @@ static int greedy_order (
          ZOLTAN_PRINT_WARN(-1, yo, "Arrays order and rank are inconsistent.");
   }
 
-error:
+End:
   ZOLTAN_FREE ((void**) &rank);
   ZOLTAN_FREE ((void**) &gain);
   if (edge_sum)  ZOLTAN_FREE ((void**) &edge_sum);
@@ -1130,7 +1191,7 @@ static int coarse_part_greedy (
   if (!(order  = (int*) ZOLTAN_MALLOC (sizeof(int) * hg->nVtx))) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     err = ZOLTAN_MEMERR;
-    goto error;
+    goto End;
   }
 
   /* Find pseudo-peripheral start vertex */
@@ -1138,16 +1199,16 @@ static int coarse_part_greedy (
   for (i=0; i<2; i++) {
     err = bfs_order (zz, hg, order, start, 0, 0, NULL, hgp);
     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-      goto error;
+      goto End;
     start = order[hg->nVtx -1];
   }
 
   /* Call greedy_order. */
   err = greedy_order(zz, hg, order, start, pri_mode, p, part, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-    goto error;
+    goto End;
 
-error:
+End:
   /* Free data and return. */
   ZOLTAN_FREE ((void**) &order);
   return err;
