@@ -24,7 +24,7 @@ CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES) $(VBRMATRIX_$(FORMAT))
 LDFLAGS=$(ARCH_LDFLAGS)
 
 
-LIB_PATHS= $(LIBAZTECOO) $(LIBIFPACK) $(LIBY12M) $(LIBMACHDEP) \
+LIB_PATHS= $(LIBAZTECOO) $(LIBIFPACK) $(LIBEPETRA) $(LIBY12M) \
            $(LIBLAPACK) $(LIBBLAS)
 
 #=======================================================================
