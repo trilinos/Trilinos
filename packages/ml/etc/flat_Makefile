@@ -12,7 +12,7 @@ DEFINES= -D$(ARCH) $(PACKAGES)
 INCLUDES=-I. $(INC_PATH) 
 LIB_PATHS=$(LIBRARIES) 
 
-CFLAGS=$(ARCH_FLAGS) $(DEFINES) $(INCLUDES) 
+CFLAGS=$(ARCH_FLAGS) $(DEFINES) $(INCLUDES) $(TESTING)
 #VPATH=../examples:../src
 #=======================================================================
 # ML source files

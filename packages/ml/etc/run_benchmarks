@@ -14,23 +14,23 @@
 # Note: This script is often used with the executable ml_readfile
 #        which contains comments on setting up problems. 
 #
-#echo "Usage: run_benchmarks [bench_directory executable scratch_directory]
+#echo "Usage: run_benchmarks [bench_directory executable_directory scratch_directory parallel={TRUE,FALSE}]
 
 BENCH_DIRECTORY=/home/tuminaro/ml_bench
 EXECUTABLE_DIRECTORY=/home/tuminaro/codes/Aztec/ml/Obj
 SCRATCH_DIRECTORY=/tmp/poop
 PARALLEL=TRUE
 
-#echo "Usage: run_benchmarks [bench_directory executable scratch_directory]
+#echo "Usage: run_benchmarks [bench_directory executable_directory scratch_directory paralel={TRUE,FALSE}]
 
-echo $* $#
+#echo $* $#
 #
 # Take command line arguments and replace defaults
 #
 #if test `expr ${*}` -ge `expr 3`
 if test $# -ge 5
 then
-  echo "Usage: run_benchmarks [bench_directory executable scratch_directory]"
+  echo "Usage: run_benchmarks [bench_directory executable_directory scratch_directory parallel={TRUE,FALSE}]"
   exit
 fi
 if test $# -eq 0
@@ -41,7 +41,7 @@ then
   echo "      SCRATCH DIRECTORY    = " $SCRATCH_DIRECTORY
   echo 
   echo "If defaults not wanted, overwrite using ..."
-  echo "    Usage: run_benchmarks [bench_directory executable scratch_directory]"
+  echo "    Usage: run_benchmarks [bench_directory executable_directory scratch_directory parallel={TRUE,FALSE} ]"
   echo
 fi
 if test $# -ge 1
@@ -78,8 +78,6 @@ fi
 #  Check for the executable directory
 #
 temp=`echo ${EXECUTABLE} | sed "s/ .*//"`
-echo $temp
-
 if test -d ${EXECUTABLE_DIRECTORY}
 then
   touch ${EXECUTABLE_DIRECTORY}
@@ -118,7 +116,8 @@ tail -3 ${SCRATCH_DIRECTORY}/summary
 cd ${BENCH_DIRECTORY}
 for i in *
 do 
-   if test `expr ${i}` != 'CVS'
+   if test `expr ${i}` != 'CVS' -a \
+           `expr ${i}` != '*'
    then
       cd ${i}
 #      echo -n $i "  "
@@ -141,7 +140,7 @@ do
              touch $EXE
           else
              cd ${EXECUTABLE_DIRECTORY}
-             make APPLICATION_C=${temp}.c
+             make APPLICATION_C=${temp}.c TESTING=-DBENCHMARK
              cd ${BENCH_DIRECTORY}/$i
           fi
 #
@@ -168,6 +167,10 @@ do
                                     ${SCRATCH_DIRECTORY}/${i}/difs${ttt}
         wc ${SCRATCH_DIRECTORY}/${i}/difs${ttt} >> ${SCRATCH_DIRECTORY}/summary
         tail -1 ${SCRATCH_DIRECTORY}/summary
+        cat ${SCRATCH_DIRECTORY}/${i}/difs${ttt} | grep "total iterations"
+        cat ${SCRATCH_DIRECTORY}/${i}/difs${ttt} | grep "total iterations" >> ${SCRATCH_DIRECTORY}/summary
+        cat ${SCRATCH_DIRECTORY}/${i}/difs${ttt} | grep "gid = "
+        cat ${SCRATCH_DIRECTORY}/${i}/difs${ttt} | grep "gid = " >> ${SCRATCH_DIRECTORY}/summary
       fi
       done
       /bin/rm -f ml_inputfile

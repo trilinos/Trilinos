@@ -603,6 +603,19 @@ int main(int argc, char *argv[])
    if (proc_config[AZ_node] == 0) 
       printf("Solve time = %e, MG Setup time = %e\n", solve_time, setup_time);
 
+   if (proc_config[AZ_node] == 0) {
+     printf("Printing out a few entries of the solution ...\n");
+     for (j = 0; j < Amat->data_org[AZ_N_internal] +
+	    Amat->data_org[AZ_N_border]; j++) {
+       if ((update[j] == 7) || (update[j] == 23) || (update[j] == 47) ||
+	   (update[j] == 101) || (update[j] == 171))
+       {
+	 printf("solution(gid = %d) = %10.4e\n",
+		update[j],xxx[update_index[j]]);
+       }
+     }
+   }
+
    ML_Aggregate_Destroy(&ag);
    ML_Destroy(&ml);
    AZ_free((void *) Amat->data_org);
