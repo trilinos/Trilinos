@@ -323,7 +323,7 @@ with MPSalsa.  Examples: --with-ml-64bit-integer="long long" for LINUX, TFLOP, I
 AC_DEFINE_UNQUOTED(ML_BIG_INT, $ML_BIG_INT_SUPPORT,
    [Support for 64-bit integers])
 
-if test "X${ML_BIG_INT_SUPPORT}" = "Xyes" && test "X${ML_BIG_INT}" = "X"; then
+if test "X${ML_BIG_INT_SUPPORT}" = "Xyes" && test "X${ML_BIG_INT}" = "X" || test "X${ML_BIG_INT_SUPPORT}" = "X" && test "X${ML_BIG_INT}" = "X"; then
   echo "ERROR: An argument to --with-ml-64bit-integer must be specified!"
   echo "  For example:"
   echo "    --with-ml-64bit-integer=\"long long\" for LINUX, TFLOP, IRIXN32"
