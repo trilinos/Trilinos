@@ -80,9 +80,36 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
    
+  string FileName = matrix_file ;
+  int FN_Size = FileName.size() ; 
+  string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
+  string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
+  if ( LastFiveBytes == ".triU" ) { 
+    // Call routine to read in unsymmetric Triplet matrix
+    EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, false, Comm, readMap, readA, readx, 
+						      readb, readxexact) );
+  } else {
+    if ( LastFiveBytes == ".triS" ) { 
+      // Call routine to read in symmetric Triplet matrix
+      EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, true, Comm, readMap, readA, readx, 
+							readb, readxexact) );
+    } else {
+      if (  LastFourBytes == ".mtx" ) { 
+	EPETRA_CHK_ERR( Trilinos_Util_ReadMatrixMarket2Epetra( matrix_file, Comm, readMap, 
+							       readA, readx, readb, readxexact) );
+      } else {
+	// Call routine to read in HB problem
+	Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, readA, readx, 
+						     readb, readxexact) ;
+      }
+    }
+  }
+
+#if 0
   // Call routine to read in HB problem
   Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, readA, readx, 
 			       readb, readxexact);
+#endif
 
 
   Epetra_CrsMatrix transposeA(Copy, *readMap, 0);
