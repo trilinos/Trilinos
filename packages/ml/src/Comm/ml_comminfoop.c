@@ -250,6 +250,26 @@ int ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
 }
 
 /* ******************************************************************** */
+/* constructor                                                          */
+/* -------------------------------------------------------------------- */
+
+ML_CommInfoOP *ML_CommInfoOP_Create()
+{
+   ML_CommInfoOP *comm_info;
+
+   comm_info = (ML_CommInfoOP *) malloc(sizeof(ML_CommInfoOP));
+   comm_info->remap = NULL;
+   comm_info->neighbors = NULL;
+   comm_info->N_neighbors = 0;
+   comm_info->add_rcvd = 0;
+   comm_info->total_rcv_length = 0;
+   comm_info->minimum_vec_size = 0;
+   comm_info->remap_length = 0;
+   comm_info->remap_max = 0;
+   return (comm_info);
+}
+
+/* ******************************************************************** */
 /* destructor                                                           */
 /* -------------------------------------------------------------------- */
 
