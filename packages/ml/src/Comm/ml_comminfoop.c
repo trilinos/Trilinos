@@ -1094,3 +1094,16 @@ void ML_exchange_bdry(double x[], ML_CommInfoOP *comm_info, int start_location,
   }
 } /* ML_exchange_bdry */
 
+int ML_CommInfoOP_Compute_TotalRcvLength(ML_CommInfoOP *comm_info)
+{
+  int i;
+
+  if (comm_info == NULL) return 1;
+
+  comm_info->total_rcv_length = 0;
+  for (i = 0; i < comm_info->N_neighbors; i++ ) {
+   comm_info->total_rcv_length   += comm_info->neighbors[i].N_rcv;
+  }
+  return 1;
+}
+

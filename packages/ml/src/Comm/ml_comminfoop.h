@@ -86,6 +86,8 @@ extern int  ML_CommInfoOP_Set_neighbors(ML_CommInfoOP  **c_info,int N_neighbors,
 extern int  ML_CommInfoOP_Set_exch_info(ML_CommInfoOP *comm_info, int k,
                    int N_rcv, int *rcv_list, int N_send, int *send_list);
 
+extern int ML_CommInfoOP_Compute_TotalRcvLength(ML_CommInfoOP *comm_info);
+
 extern int  ML_CommInfoOP_Print(ML_CommInfoOP *c_info, char *label);
 
 extern void ML_create_unique_col_id(int Ncols, int **map, ML_CommInfoOP *,
