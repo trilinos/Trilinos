@@ -389,7 +389,7 @@ class PetraStdOp : public virtual Operator<TYPE> {
 public:
 	PetraStdOp(const Epetra_Operator& );
 	~PetraStdOp();
-	ReturnType ApplyOp ( const MultiVec<TYPE>& x, 
+	ReturnType Apply ( const MultiVec<TYPE>& x, 
 					MultiVec<TYPE>& y ) const;
 private:
 	const Epetra_Operator & Epetra_Op;
@@ -416,7 +416,7 @@ PetraStdOp<TYPE>::~PetraStdOp()
 // AnasaziOperator applications
 //
 template <class TYPE>
-ReturnType PetraStdOp<TYPE>::ApplyOp ( const MultiVec<TYPE>& x, 
+ReturnType PetraStdOp<TYPE>::Apply ( const MultiVec<TYPE>& x, 
 						  MultiVec<TYPE>& y ) const 
 {
 	int info=0;
@@ -444,7 +444,7 @@ class PetraGenOp : public virtual Operator<TYPE> {
 public:
 	PetraGenOp(const Epetra_Operator&, const Epetra_Operator& );
 	~PetraGenOp();
-	ReturnType ApplyOp ( const MultiVec<TYPE>& x, 
+	ReturnType Apply ( const MultiVec<TYPE>& x, 
 					MultiVec<TYPE>& y ) const;
 private:
 	const Epetra_Operator & Epetra_AOp;
@@ -473,7 +473,7 @@ PetraGenOp<TYPE>::~PetraGenOp()
 // AnasaziOperator applications
 //
 template <class TYPE>
-ReturnType PetraGenOp<TYPE>::ApplyOp ( const MultiVec<TYPE>& x, 
+ReturnType PetraGenOp<TYPE>::Apply ( const MultiVec<TYPE>& x, 
 						  MultiVec<TYPE>& y ) const 
 {
 	int info=0;

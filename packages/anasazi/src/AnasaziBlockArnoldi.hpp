@@ -178,6 +178,7 @@ namespace Anasazi {
     _basisvecs(0), 
     _evecr(0), 
     _eveci(0), 
+    _hessmatrix(),
     _nev(nev), 
     _length(length), 
     _block(block), 
@@ -206,8 +207,12 @@ namespace Anasazi {
     _exit_flg(false),
     _dep_flg(false),
     _schurerror(1.0), 
-    _scalefactor(1.0)
-  {     
+    _scalefactor(1.0),
+    _dep_tol(1.0), 
+    _blk_tol(1.0),
+    _sing_tol(1.0),
+    _def_tol(1.0)
+    {     
     //
     // Determine _nevblock : how many blocks it will take to contain the _nev eigenvalues/vectors
     // NOTE: An additional block is kept if _nev is a perfect multiple of _block because of the
@@ -1457,6 +1462,7 @@ namespace Anasazi {
       // Clean up.
       delete evecstemp; 
       delete [] indexi; 
+      delete [] evecnrm;
     }
     
     _isevecscurrent = true;
@@ -1548,7 +1554,7 @@ namespace Anasazi {
 	  if (_order[j] > _order[i]) { offset2[_nevtemp]++; }
 	}
 	_order2[_nevtemp] = _order[i];
-	i = i++;
+	i++;
       }
       _nevtemp++;
     }

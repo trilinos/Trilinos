@@ -32,6 +32,7 @@
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziReturnType.hpp"
 #include "AnasaziConfigDefs.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 /*!	\class Anasazi::Operator
 
@@ -50,19 +51,38 @@ template <class TYPE>
 class Operator {
 public:
 	//@{ \name Constructor/Destructor.
-	//! %Anasazi::Operator constructor.
-	Operator() {}
+	//! Default constructor.
+	Operator() {};
 
-	//! %Anasazi::Operator destructor.
-	virtual ~Operator(void) {}
+	//! Destructor.
+	virtual ~Operator(void) {};
 	//@}
 
 	//@{ \name Matrix/Operator application method.
 
-	/*! \brief This routine takes the %Anasazi::MultiVec \c x and applies the matrix/operator
-	to it resulting in the %Anasazi::MultiVec \c y, which is returned.
+	/*! \brief This routine takes the %Anasazi::MultiVec \c x and
+	applies the operator to it resulting in the %Anasazi::MultiVec \c y,
+	which is returned.  If this routine is not overridden, then the %Anasazi::MultiVec
+	\c x will be passed directly to \c y.  Thus the operator is the identity if this
+	method is defined by the user.
 	*/
-	virtual ReturnType ApplyOp (const MultiVec<TYPE>& x, MultiVec<TYPE>& y ) const = 0;
+	virtual ReturnType Apply (const MultiVec<TYPE>& x, MultiVec<TYPE>& y ) const 
+	{
+            if (x.GetNumberVecs() == y.GetNumberVecs()) {	
+                //
+                // First cast away the const on x.
+                //
+                MultiVec<TYPE>& temp_x = const_cast<MultiVec<TYPE>& >(x);
+                //
+                // Now create the indexing for copying x into y.
+                //
+		TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+		TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
+		y.MvAddMv( one, temp_x, zero, temp_x );
+		return Ok;
+	    }
+	    else { return Failed; }
+        };
 	//@}
 };
 

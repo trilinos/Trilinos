@@ -77,7 +77,7 @@ class Eigenproblem {
 	Eigenproblem( Operator<TYPE>* Op, MultiVec<TYPE>* Ivec );
 
 	//! Copy Constructor.
-	Eigenproblem( const Eigenproblem<TYPE>* Problem );	
+	Eigenproblem( const Eigenproblem<TYPE>& Problem );	
 
 	//! Destructor.
 	virtual ~Eigenproblem(void);
@@ -258,7 +258,7 @@ Eigenproblem<TYPE>::Eigenproblem( Operator<TYPE>* Op, MultiVec<TYPE>* Ivec ) :
 //=============================================================================
 
 template<class TYPE>
-Eigenproblem<TYPE>::Eigenproblem( const Eigenproblem<TYPE>* Problem ) :
+Eigenproblem<TYPE>::Eigenproblem( const Eigenproblem<TYPE>& Problem ) :
 	_Op(Problem._Op), _Amat(Problem._Amat), _Bmat(Problem._Bmat),
 	_InitVec(Problem._InitVec), _REvals(Problem._REvals),
 	_IEvals(Problem._IEvals), _REvecs(Problem._REvecs),
@@ -282,7 +282,7 @@ ReturnType Eigenproblem<TYPE>::ApplyOp (const MultiVec<TYPE>& X,
 							MultiVec<TYPE>& Y )
 { 
 	if (_Op) {
-		return(_Op->ApplyOp( X, Y )); 
+		return(_Op->Apply( X, Y )); 
 	} else if (_Amat) {
 		return(_Amat->ApplyMatrix( X, Y ));
 	} else {
