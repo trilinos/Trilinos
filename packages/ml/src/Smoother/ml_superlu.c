@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -51,7 +51,7 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
    /* fetch the sparse matrix and other parameters                  */
    /* ------------------------------------------------------------- */
 
-   if ( ilen != olen ) 
+   if ( ilen != olen )
    {
       printf("SuperLU_Solve error : lengths not matched.\n");
       exit(1);
@@ -68,7 +68,7 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
    /* if factorization has not been done, allocate space for it     */
    /* ------------------------------------------------------------- */
 
-   if ( flag == -999 ) 
+   if ( flag == -999 )
    {
       A = (SuperMatrix *) solver->Mat1;
       if ( A != NULL )
@@ -113,7 +113,7 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
       ML_memory_alloc((void**) &perm_r, 2 * n * sizeof(int), "LU3" );
       solver->int_params1 = perm_r;
       solver->int_params2 = perm_c;
-      permc_spec = 2;
+      permc_spec = 0;
       get_perm_c(permc_spec, A, perm_c);
       ML_memory_alloc((void**) &L, sizeof(SuperMatrix), "LU4" );
       ML_memory_alloc((void**) &U, sizeof(SuperMatrix), "LU5" );
@@ -438,7 +438,7 @@ int SuperLU_SolveLocal(void *vsolver, double *x, double *rhs)
    A       = (SuperMatrix *) solver->Mat1;
    n       = (int) solver->dble_params1[0];
    flag    = solver->reuse_flag;
-   if ( flag != 0 ) 
+   if ( flag != 0 )
    {
       for ( i = 0; i < n; i++ ) x[i] = rhs[i];
    }
@@ -447,7 +447,7 @@ int SuperLU_SolveLocal(void *vsolver, double *x, double *rhs)
    /* if factorization has not been done, allocate space for it     */
    /* ------------------------------------------------------------- */
 
-   if ( flag == 0 ) 
+   if ( flag == 0 )
    {
       ML_memory_alloc((void**) &perm_c, n * sizeof(int), "LU6" );
       ML_memory_alloc((void**) &perm_r, n * sizeof(int), "LU7" );
@@ -459,8 +459,8 @@ int SuperLU_SolveLocal(void *vsolver, double *x, double *rhs)
       ML_memory_alloc((void**) &U, sizeof(SuperMatrix), "LU9" );
       solver->Mat2 = (void *) L;
       solver->Mat3 = (void *) U;
-   } 
-   else 
+   }
+   else
    {
       perm_r = (int *) solver->int_params1;
       perm_c = (int *) solver->int_params2;
