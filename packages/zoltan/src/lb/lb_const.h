@@ -172,8 +172,6 @@ struct LB_Struct {
   LB_FN *LB_Fn;                   /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
                                       based on the method used.              */
-  /*double *Params;*/                 /*  Array of parameters passed to the 
-                                      load balancing function.               */
   LB_PARAM *Params;               /*  List of parameter names & new vals */
   double Tolerance;               /*  Tolerance to which to load balance;
                                       tolerance = 0.9 implies 10% imbalance
