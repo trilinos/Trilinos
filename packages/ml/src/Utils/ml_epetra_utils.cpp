@@ -137,7 +137,7 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
   return 1;
 }
 
-else
+#else
 
   /*noop for certain compilers*/
   int ML_EPETRA_EMPTY;
