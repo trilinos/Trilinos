@@ -22,7 +22,6 @@ CORE_H = \
 	$(srcdir)/AnasaziConfigDefs.hpp \
 	$(srcdir)/AnasaziEigenproblem.hpp \
 	$(srcdir)/AnasaziEigensolver.hpp \
-	$(srcdir)/AnasaziMatrix.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
 	$(srcdir)/AnasaziOperator.hpp \
 	$(srcdir)/AnasaziOutputManager.hpp \

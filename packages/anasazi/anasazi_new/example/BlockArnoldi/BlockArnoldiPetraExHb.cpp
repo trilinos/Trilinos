@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 
         // call the ctor that calls the petra ctor for a matrix
 
-        Anasazi::PetraMat Amat(A);
+        Anasazi::PetraOp Amat(A);
         Anasazi::Eigenproblem<double> MyProblem(&Amat, &ivec);
 
 	// Inform the eigenproblem that the matrix A is symmetric

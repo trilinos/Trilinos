@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
 	ivec.MvRandom();
 
 	// Call the ctor that calls the petra ctor for a matrix
-	Anasazi::PetraMat Amat(A);	
+	Anasazi::PetraOp Amat(A);	
 	Anasazi::Eigenproblem<double> MyProblem(&Amat, &ivec);
 
 	// Inform the eigenproblem that the matrix A is symmetric
@@ -291,11 +291,11 @@ int main(int argc, char *argv[]) {
 	cout<<"------------------------------------------------------"<<endl;
 	Breal.putScalar(0.0); Bimag.putScalar(0.0);
 	for (i=0; i<nev; i++) { Breal(i,i) = evalr[i]; Bimag(i,i) = evali[i]; }
-	Amat.ApplyMatrix( evecr, tempAevec );
+	Amat.Apply( evecr, tempAevec );
 	tempAevec.MvTimesMatAddMv( -1.0, evecr, Breal, 1.0 );
 	tempAevec.MvTimesMatAddMv( 1.0, eveci, Bimag, 1.0 );
 	tempAevec.MvNorm( normA );
-	Amat.ApplyMatrix( eveci, tempAevec );
+	Amat.Apply( eveci, tempAevec );
 	tempAevec.MvTimesMatAddMv( -1.0, evecr, Bimag, 1.0 );
 	tempAevec.MvTimesMatAddMv( -1.0, eveci, Breal, 1.0 );
 	tempAevec.MvNorm( tempnrm );

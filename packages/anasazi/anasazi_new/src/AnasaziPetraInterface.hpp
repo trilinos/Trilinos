@@ -326,39 +326,45 @@ void PetraVec::MvPrint()
 }
 
 ///////////////////////////////////////////////////////////////
-//--------template class AnasaziPetraMat-----------------------
-class PetraMat : public virtual Matrix<double> {
+//--------template class AnasaziPetraOp---------------------
+
+class PetraOp : public virtual Operator<double> {
 public:
-	PetraMat(const Epetra_Operator& );
-	~PetraMat();
-	ReturnType ApplyMatrix ( const MultiVec<double>& x, 
-					MultiVec<double>& y ) const;
+	PetraOp(const Epetra_Operator& );
+	~PetraOp();
+	ReturnType Apply ( const MultiVec<double>& x, 
+					MultiVec<double>& y, ETrans trans=NOTRANS ) const;
+	ReturnType ApplyInverse ( const MultiVec<double>& x, 
+					MultiVec<double>& y, ETrans trans=NOTRANS ) const;
 private:
-	const Epetra_Operator & Epetra_Mat;
+	const Epetra_Operator & Epetra_Op;
 };
 //-------------------------------------------------------------
 //
-// implementation of the AnasaziPetraMat class.
+// implementation of the AnasaziPetraOp class.
 //
 ////////////////////////////////////////////////////////////////////
 //
-// Anasazi::Matrix constructors
+// AnasaziOperator constructors
 //
-PetraMat::PetraMat(const Epetra_Operator& Matrix) 
-	: Epetra_Mat(Matrix) 
+
+PetraOp::PetraOp(const Epetra_Operator& Op) 
+	: Epetra_Op(Op)
 {
 }
 
-PetraMat::~PetraMat() 
+PetraOp::~PetraOp() 
 {
 }
-
 //
-// Anasazi::Matrix matrix multiply
+// AnasaziOperator applications
 //
-ReturnType PetraMat::ApplyMatrix ( const MultiVec<double>& x, 
-						  MultiVec<double>& y ) const 
+ReturnType PetraOp::Apply ( const MultiVec<double>& x, 
+						  MultiVec<double>& y, ETrans trans ) const 
 {
+	//
+	// This standard operator computes y = A*x
+	//
 	int info=0;
 	MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
 	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
@@ -366,10 +372,13 @@ ReturnType PetraMat::ApplyMatrix ( const MultiVec<double>& x,
 
 	assert( vec_x!=NULL && vec_y!=NULL );
 	//
-	// Need to cast away constness because the member function Apply
-	// is not declared const.
+	// Need to cast away constness because the member function Apply is not declared const.  
+	// Change the transpose setting for the operator if necessary and change it back when done.
 	//
-	info=const_cast<Epetra_Operator&>(Epetra_Mat).Apply( *vec_x, *vec_y );
+        if (trans == TRANS) { const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( true ); }
+	info = const_cast<Epetra_Operator&>(Epetra_Op).Apply( *vec_x, *vec_y );
+        if (trans == TRANS) { const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( false ); }
+
 	if (info==0) { 
 		return Ok; 
 	} else { 
@@ -377,41 +386,12 @@ ReturnType PetraMat::ApplyMatrix ( const MultiVec<double>& x,
 	}	
 }
 
-///////////////////////////////////////////////////////////////
-//--------template class AnasaziPetraStdOp---------------------
-
-class PetraStdOp : public virtual Operator<double> {
-public:
-	PetraStdOp(const Epetra_Operator& );
-	~PetraStdOp();
-	ReturnType Apply ( const MultiVec<double>& x, 
-					MultiVec<double>& y ) const;
-private:
-	const Epetra_Operator & Epetra_Op;
-};
-//-------------------------------------------------------------
-//
-// implementation of the AnasaziPetraStdOp class.
-//
-////////////////////////////////////////////////////////////////////
-//
-// AnasaziOperator constructors
-//
-
-PetraStdOp::PetraStdOp(const Epetra_Operator& Op) 
-	: Epetra_Op(Op)
+ReturnType PetraOp::ApplyInverse ( const MultiVec<double>& x, 
+						  MultiVec<double>& y, ETrans trans ) const 
 {
-}
-
-PetraStdOp::~PetraStdOp() 
-{
-}
-//
-// AnasaziOperator applications
-//
-ReturnType PetraStdOp::Apply ( const MultiVec<double>& x, 
-						  MultiVec<double>& y ) const 
-{
+	//
+	// This standard operator computes y = A^{-1}*x
+	//
 	int info=0;
 	MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
 	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
@@ -419,10 +399,13 @@ ReturnType PetraStdOp::Apply ( const MultiVec<double>& x,
 
 	assert( vec_x!=NULL && vec_y!=NULL );
 	//
-	// Need to cast away constness because the member function Apply
-	// is not declared const.
+	// Need to cast away constness because the member function Apply is not declared const.  
+	// Change the transpose setting for the operator if necessary and change it back when done.
 	//
-	info=const_cast<Epetra_Operator&>(Epetra_Op).Apply( *vec_x, *vec_y );
+        if (trans == TRANS) { const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( true ); }
+	info = const_cast<Epetra_Operator&>(Epetra_Op).ApplyInverse( *vec_x, *vec_y );
+        if (trans == TRANS) { const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( false ); }
+
 	if (info==0) { 
 		return Ok; 
 	} else { 
@@ -438,7 +421,9 @@ public:
 	PetraGenOp(const Epetra_Operator&, const Epetra_Operator& );
 	~PetraGenOp();
 	ReturnType Apply ( const MultiVec<double>& x, 
-			   MultiVec<double>& y ) const;
+			   MultiVec<double>& y, ETrans trans=NOTRANS ) const;
+	ReturnType ApplyInverse ( const MultiVec<double>& x, 
+			   MultiVec<double>& y, ETrans trans=NOTRANS ) const;
 private:
 	const Epetra_Operator & Epetra_AOp;
 	const Epetra_Operator & Epetra_BOp;
@@ -465,10 +450,12 @@ PetraGenOp::~PetraGenOp()
 //
 // AnasaziOperator applications
 //
-
 ReturnType PetraGenOp::Apply ( const MultiVec<double>& x, 
-			       MultiVec<double>& y ) const 
+			       MultiVec<double>& y, ETrans trans ) const 
 {
+	//
+	// This generalized operator computes y = A*B*x of y = (A*B)^T*x
+	//
 	int info=0;
 	MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
 	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
@@ -477,12 +464,67 @@ ReturnType PetraGenOp::Apply ( const MultiVec<double>& x,
 
 	assert( vec_x!=NULL && vec_y!=NULL );
 	//
-	// Need to cast away constness because the member function Apply
-	// is not declared const.
+	// Need to cast away constness because the member function Apply is not declared const.  
+	// Change the transpose setting for the operator if necessary and change it back when done.
 	//
-	info=const_cast<Epetra_Operator&>(Epetra_BOp).Apply( *vec_x, temp_y );
-	assert(info==0);
-	info=const_cast<Epetra_Operator&>(Epetra_AOp).Apply( temp_y, *vec_y );
+	if (trans == TRANS) {
+		// Apply A^T
+		const_cast<Epetra_Operator&>(Epetra_AOp).SetUseTranspose( true );
+		info=const_cast<Epetra_Operator&>(Epetra_AOp).Apply( temp_y, *vec_y );
+		const_cast<Epetra_Operator&>(Epetra_AOp).SetUseTranspose( false );		
+		assert(info==0);
+		// Apply B^T
+		const_cast<Epetra_Operator&>(Epetra_BOp).SetUseTranspose( true );
+		info=const_cast<Epetra_Operator&>(Epetra_BOp).Apply( temp_y, *vec_y );
+		const_cast<Epetra_Operator&>(Epetra_BOp).SetUseTranspose( false );		
+	} else {
+		// Apply B
+		info=const_cast<Epetra_Operator&>(Epetra_BOp).Apply( *vec_x, temp_y );
+		assert(info==0);
+		// Apply A
+		info=const_cast<Epetra_Operator&>(Epetra_AOp).Apply( temp_y, *vec_y );
+	}
+	if (info==0) { 
+		return Ok; 
+	} else { 
+		return Failed; 
+	}	
+}
+
+ReturnType PetraGenOp::ApplyInverse ( const MultiVec<double>& x, 
+			       MultiVec<double>& y, ETrans trans ) const 
+{
+	//
+	// This generalized operator computes y = (A*B)^{-1}*x of y = (A*B)^{-T}*x
+	//
+	int info=0;
+	MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
+	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
+	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+	Epetra_MultiVector temp_y(*vec_y); 
+
+	assert( vec_x!=NULL && vec_y!=NULL );
+	//
+	// Need to cast away constness because the member function Apply is not declared const.  
+	// Change the transpose setting for the operator if necessary and change it back when done.
+	//
+	if (trans == TRANS) {
+		// Apply A^{-T}
+		const_cast<Epetra_Operator&>(Epetra_AOp).SetUseTranspose( true );
+		info=const_cast<Epetra_Operator&>(Epetra_AOp).ApplyInverse( temp_y, *vec_y );
+		const_cast<Epetra_Operator&>(Epetra_AOp).SetUseTranspose( false );		
+		assert(info==0);
+		// Apply B^{-T}
+		const_cast<Epetra_Operator&>(Epetra_BOp).SetUseTranspose( true );
+		info=const_cast<Epetra_Operator&>(Epetra_BOp).ApplyInverse( temp_y, *vec_y );
+		const_cast<Epetra_Operator&>(Epetra_BOp).SetUseTranspose( false );		
+	} else {
+		// Apply A^{-1}
+		info=const_cast<Epetra_Operator&>(Epetra_AOp).ApplyInverse( *vec_x, temp_y );
+		assert(info==0);
+		// Apply B^{-1}
+		info=const_cast<Epetra_Operator&>(Epetra_BOp).ApplyInverse( temp_y, *vec_y );
+	}
 	if (info==0) { 
 		return Ok; 
 	} else { 

@@ -264,8 +264,8 @@ int main(int argc, char *argv[]) {
     
 	// call the ctor that calls the petra ctor for a matrix
 
-	Anasazi::PetraMat Amat(A);
-	Anasazi::PetraMat Bmat(B);
+	Anasazi::PetraOp Amat(A);
+	Anasazi::PetraOp Bmat(B);
 	Anasazi::PetraGenOp Aop(BelosOp, B);	
 	Anasazi::Eigenproblem<double> MyProblem(&Amat, &Bmat, &Aop, &ivec);
 
