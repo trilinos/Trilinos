@@ -1,19 +1,11 @@
 #! /usr/bin/env python
 
-##
-## Don't forget to
-## setenv PYTHONPATH /home/dpdiach/python/numarrayInstall/numarray-0.9/
-##
+
 """ Need a doc string """
 
 import sys
 import os
 
-try:
-   from numarray import *
-except:
-   print ("\nERROR: Need to set PYTHONPATH to include numarray")
-   print ("ERROR: Use setenv PYTHONPATH /home/dpdiach/python/numarrayInstall/numarray-0.9/")
 
 nargin = len(sys.argv);
 
@@ -31,10 +23,14 @@ if showUsage == 1:
    b = 'parameter-file '
    c = 'NOX-output-file '
    d = 'expected-NOX-output-file(optional)'
-   print "\nUsage: \n\n./NOXtest.py "+a+b+c+d+"\n"
+   os.system('echo ')
+   os.system('echo Usage:')
+   os.system('echo     ' +sys.argv[0]+' '+a+b+c+d)
    
-NOXexecutable = sys.argv[1]
-pythonInputFile = sys.argv[2]
+if nargin > 1:
+   NOXexecutable = sys.argv[1]
+if nargin > 2:
+   pythonInputFile = sys.argv[2]
 
 os.system("rm -f hostdata;hostname > hostdata;")
 hostdata = open("hostdata",'r')
@@ -42,7 +38,8 @@ hostname = hostdata.read().rstrip()
 hostdata.close()
 os.system("rm -f hostdata")
 
-NOXoutput = sys.argv[3]
+if nargin > 3:
+   NOXoutput = sys.argv[3]
 if NOXoutput.find(hostname) == -1:
    NOXoutput += '_'+hostname
 
@@ -63,12 +60,12 @@ if nargin == 5:
       try:
          NOXexpectedOutputFile = open(NOXexpectedOutput+'_'+hostname,'r')
       except:
-         print "ERROR: Cannot Open "+NOXexpectedOutput
+         os.system("echo ERROR: Cannot open file "+NOXexpectedOutput)
 
       
    NOXexpectedOutputLines = NOXexpectedOutputFile.readlines()
    if NOXexpectedOutputLines[0].rfind('#NOX TEST TAG') == -1:
-      print 'ERROR: #NOX TEST TAG 1# not found in first line of '+ NOXexpectedOutput
+      os.system('echo ERROR: #NOX TEST TAG 1# not found in first line of '+ NOXexpectedOutput)
    expectedTestNumberList = []
    for line in NOXexpectedOutputLines:
       if line.rfind('#NOX TEST TAG') > -1:     
@@ -86,7 +83,11 @@ if nargin == 5:
    tmpNOXexpectedOutputFile.close()
 
 # read parameter input file, and place the lines in paramInputLines
-input = open(pythonInputFile,'r')
+try:
+   input = open(pythonInputFile,'r')
+except IOError:
+   os.system('echo ERROR: Cannot open file '+pythonInputFile)
+   
 paramInputLines = input.readlines()
 input.close
 
@@ -129,14 +130,16 @@ for phrase in paramInputLines:
       
 if nargin == 5:
    if numCombinations != len(expectedTestNumberList):
-      print '\nERROR: The number of tagged runs in "'+NOXexpectedOutput+'" does not match the number  \nERROR: of combinations of parameters in "'+pythonInputFile+'".'
-      print 'ERROR: \t\tNumber of tagged runs in "'+NOXexpectedOutput+'" is ',len(expectedTestNumberList)
-      print 'ERROR: \t\tNumber of combinations in "'+pythonInputFile+'" is ',numCombinations,'\n'
+      os.system('echoERROR: The number of tagged runs in "'+NOXexpectedOutput+'" does not match the number')
+      os.system('echo ERROR: of combinations of parameters in "'+pythonInputFile+'".')
+      os.system('echo ERROR: \t\tNumber of tagged runs in "'+NOXexpectedOutput+'" is ',len(expectedTestNumberList))
+      os.system('echo ERROR: \t\tNumber of combinations in "'+pythonInputFile+'" is ',numCombinations)
+      os.system('echo ""')
    
 if numCombinations > 1:
-   print "Starting suite of tests for "+os.getcwd()+NOXexecutable.replace('.','')
+   os.system('echo Starting suite of tests for '+os.getcwd()+NOXexecutable.replace('.',''))
 else:
-   print "Starting test for "+os.getcwd()+NOXexecutable.replace('.','')
+   os.system('echo Starting test for '+os.getcwd()+NOXexecutable.replace('.',''))
    VARlist = [1]
    VARindexList = [0]
    
@@ -150,8 +153,8 @@ for i in range(lenVARlist):
    for j in range(1,VARlist[i]+1):
       indx = VARindexList[i] + j 
       if paramInputLines[indx][0:2] == '@@':
-         print 'ERROR: Too few sublist parameters placed in '+ pythonInputFile
-         print 'ERROR: See line: '+paramInputLines[VARindexList[i]]+' VAR '+str(VARlist[i])
+         os.system('echo ERROR: Too few sublist parameters placed in '+ pythonInputFile)
+         os.system('echo ERROR: See line: '+paramInputLines[VARindexList[i]]+' VAR '+str(VARlist[i]))
       
 
 ##
@@ -161,7 +164,10 @@ for i in range(lenVARlist):
 ## temporary files to be diffed against the expected output. the output is
 ## also accumulated in NOXoutput for saving. 
 ##      
-x = zeros(lenVARlist)
+x = []
+for q in range(lenVARlist):
+   x.append(0)
+
 testNumber = 1
 testNumberList = []
 statusList = []
@@ -252,20 +258,19 @@ if nargin == 5:
    # remove the temporary expected nox output files
    for i in expectedTestNumberList:
       os.system('rm -f '+ 'tmpExpectedOutput'+str(i))
-  
+
+statusTestSuccessful = 1
 # remove the temporary nox output files
 for i in testNumberList:
+   if statusList[int(i)-1] != 0:
+      statusTestSuccessful = 0
+      os.system('echo Status test '+i+' failed.')
+      os.system("sync")
+      os.system('cat tmp'+NOXoutput+str(i))
    os.system('rm -f '+ 'tmp'+NOXoutput+str(i))
   
-statusTestSuccessful = 1
-indx = 1
-for i in statusList:
-   if i != 0:
-      print 'Status test '+str(indx)+' failed.'
-      statusTestSuccessful = 0
-      indx = indx+1
 if statusTestSuccessful == 1:
-   print "Status tests were successful!"
+   os.system("echo Status tests were successful!")
 
 
 if nargin == 5:
@@ -274,16 +279,14 @@ if nargin == 5:
    indx = 1
    for i in diffList:
       if i != 0:
-         print 'Diff test '+str(indx)+' failed, params:',entireParamList[indx-1]
+         os.system('echo Diff test '+str(indx)+' failed, params: "'+str(entireParamList[indx-1])+'"')
          diffTestSuccessful = 0
-         print 'See '+hostname+':'+os.getcwd()+'/diffOutput_'+hostname+' for diff results.'
+         os.system('echo See '+hostname+':'+os.getcwd()+'/diffOutput_'+hostname+' for diff results.')
       indx += 1
    if diffTestSuccessful == 1:
-      print "Diff tests were successful!"
+      os.system("echo Diff tests were successful!")
 
 
-if statusTestSuccessful != 1:
-   os.system("cat "+NOXoutput)
 
 
 
