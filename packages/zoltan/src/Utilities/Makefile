@@ -18,6 +18,7 @@
 #    Memory management utility (libzoltan_mem.a)
 #    Unstructured communication utility (libzoltan_comm.a)
 #    Distributed directory utility (libzoltan_dd.a)
+#    Timer utility (libzoltan_timer.a)
 #
 # To compile a utility, type
 #    gmake ZOLTAN_ARCH=<targetmachine> <Utility name>
@@ -29,12 +30,15 @@
 #        libzoltan_comm.a  
 #        libzoltan_mem.a
 #        libzoltan_dd.a
+#        libzoltan_timer.a
 #    or a driver name
 #        zdrive_comm (or comm, for short)
 #        zdrive_mem  (or mem, for short)
 #        zdrive_dd   (or dd, for short)
+#        zdrive_timer (or timer, for short)
 #        zCPPdrive_comm  (C++ comm driver)
 #        zCPPdrive_dd   (C++ dd driver)
+#        zCPPdrive_timer   (C++ timer driver)
 #
 
 ##############################################################################
@@ -73,10 +77,10 @@ endif
 #   Paths to submodules
 #
 SUB_VPATH	= ../../include ../shared \
-		  ../Memory ../Communication ../DDirectory 
+		  ../Memory ../Communication ../DDirectory ../Timer
 SUBINCPATH	= -I../../include -I../shared \
-		  -I../Memory -I../Communication -I../DDirectory 
-SUBDIRS		= Memory Communication DDirectory shared
+		  -I../Memory -I../Communication -I../DDirectory -I../Timer
+SUBDIRS		= Memory Communication DDirectory Timer shared
 
 ############################################################################
 # MEMORY MANAGEMENT PACKAGE
@@ -138,6 +142,24 @@ DD_DRIVER_LIBS 	= -L. -l$(DD_TARGET) -l$(COMM_TARGET) -l$(MEM_TARGET) \
                   $(MPI_LIBPATH) $(MPI_LIB)
 DD_DRIVER_DEP  	= $(DD_LIB) $(COMM_LIB) $(MEM_LIB) $(ID_OBJ)
 
+############################################################################
+# TIMER PACKAGE
+
+ZT_CSRC		= zoltan_timer.c timer.c
+ZT_INC		= zoltan_timer.h
+ZT_LIB		= libzoltan_timer.a
+ZT_TARGET	= zoltan_timer
+
+ZT_DRIVER	= zdrive_timer
+ZT_DRIVER_CSRC	= timer_main.c
+
+ZT_DRIVER_CPP	= zCPPdrive_timer
+ZT_DRIVER_CPP_CSRC = timer_main_2.cpp
+
+ZT_DRIVER_LIBS 	= -L. -l$(ZT_TARGET) -l$(MEM_TARGET) \
+                  $(MPI_LIBPATH) $(MPI_LIB)
+ZT_DRIVER_DEP  	= $(ZT_LIB) $(MEM_LIB) 
+
 ##############################################################################
 #  Architecture-independent definitions
 ##############################################################################
@@ -159,7 +181,8 @@ endif
 # lint defines
 #
 LINT		= lint 
-LINT_INC_PATH	= -I../include -Ishared -IMemory -ICommunication -IDDirectory $(INC_PATH)
+LINT_INC_PATH	= -I../include -Ishared -IMemory -ICommunication \
+		  -IDDirectory -ITimer $(INC_PATH)
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 VPATH		= $(SUBDIRS) 
 
@@ -174,6 +197,7 @@ help:
 	@echo  '   Memory management utility ('$(MEM_LIB)')'
 	@echo  '   Unstructured communication utility ('$(COMM_LIB)')'
 	@echo  '   Distributed directory utility ('$(DD_LIB)')'
+	@echo  '   Timer utility ('$(ZT_LIB)')'
 	@echo  ' '
 	@echo  'To compile a utility, type'
 	@echo  '   gmake ZOLTAN_ARCH=<targetmachine> <Utility name>'
@@ -185,12 +209,15 @@ help:
 	@echo  '        '$(COMM_LIB)
 	@echo  '        '$(MEM_LIB)
 	@echo  '        '$(DD_LIB)
+	@echo  '        '$(ZT_LIB)
 	@echo  'or a driver name'
 	@echo  '        '$(COMM_DRIVER)' (or comm, for short)'
 	@echo  '        '$(MEM_DRIVER)' (or mem, for short)'
 	@echo  '        '$(DD_DRIVER)' (or dd, for short)'
+	@echo  '        '$(ZT_DRIVER)' (or timer, for short)'
 	@echo  '        '$(COMM_DRIVER_CPP)' (C++ comm driver, please define C++ compiler in Config file)'
 	@echo  '        '$(DD_DRIVER_CPP)' (C++ dd driver, please define C++ compiler in Config file)'
+	@echo  '        '$(ZT_DRIVER_CPP)' (C++ timer driver, please define C++ compiler in Config file)'
 	@echo  ' '
 	@echo  'The file Config/Config.<targetmachine> '
 	@echo  'should exist.  See Config/Config.generic for '
@@ -360,16 +387,74 @@ zCPPdrive_dd:
 	"LNK_LIBS=$(DD_DRIVER_LIBS)"		\
 	"DEP_LIBS=$(DD_DRIVER_DEP)"
 
+$(ZT_LIB):
+	@if [ ! -d $(LIB_DIR) ]; 		\
+	then mkdir $(LIB_DIR); 			\
+	fi
+	@if [ ! -d $(OBJ_DIR) ]; 		\
+	then mkdir $(OBJ_DIR); 			\
+	fi
+	@rm -f $(OBJ_DIR)/Makefile
+	@cp Makefile_sub $(OBJ_DIR)/Makefile
+	@cd $(OBJ_DIR); 			\
+	$(MAKE) $(ZT_LIB) 			\
+	"LIB_NAME=$(ZT_LIB)"			\
+	"CC=$(CCOMP)"				\
+	"VPATH=$(SUB_VPATH)"			\
+	"OBJ_FILES=$(ZT_CSRC:.c=.o) $(UTIL_CSRC:.c=.o)"		\
+	"DEFS=$(GDEFINES) $(DEFS)" 		\
+	"AR=$(AR)" 				\
+	"RANLIB=$(RANLIB)" 			\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
+        "BUILD_DIR=./"
+	@if [ $(OBJ_DIR) != $(LIB_DIR) ];            \
+	then cp -f $(OBJ_DIR)/$(ZT_LIB) $(LIB_DIR); \
+	fi
+
+zdrive_timer timer:
+	$(MAKE) $(MEM_LIB)
+	$(MAKE) $(ZT_LIB) 
+	@rm -f $(OBJ_DIR)/Makefile
+	@cp Makefile_sub $(OBJ_DIR)/Makefile
+	@cd $(OBJ_DIR); 			\
+	$(MAKE) zdrive_timer 			\
+	"DRIVER_NAME=zdrive_timer"		\
+	"CC=$(CCOMP)"				\
+	"VPATH=$(SUB_VPATH)"			\
+	"OBJ_FILES=$(ZT_DRIVER_CSRC:.c=.o)" 	\
+	"DEFS=$(GDEFINES) $(DEFS)" 		\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
+	"LNK_LIBS=$(ZT_DRIVER_LIBS)"		\
+	"DEP_LIBS=$(ZT_DRIVER_DEP)"
+
+zCPPdrive_timer:
+	$(MAKE) $(MEM_LIB)
+	$(MAKE) $(COMM_LIB)
+	$(MAKE) $(ZT_LIB) 
+	@rm -f $(OBJ_DIR)/Makefile
+	@cp Makefile_sub $(OBJ_DIR)/Makefile
+	@cd $(OBJ_DIR); 			\
+	$(MAKE) zCPPdrive_timer 			\
+	"DRIVER_NAME=zCPPdrive_timer"		\
+	"CC=$(CPPCOMP)"				\
+	"VPATH=$(SUB_VPATH)"			\
+	"OBJ_FILES=$(ZT_DRIVER_CPP_CSRC:.cpp=.o)" 	\
+	"DEFS=$(GDEFINES) $(DEFS)" 		\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
+	"LNK_LIBS=$(ZT_DRIVER_LIBS)"		\
+	"DEP_LIBS=$(ZT_DRIVER_DEP)"
+
 $(ZOLTAN):
 	$(MAKE) $(MEM_LIB)
 	$(MAKE) $(COMM_LIB)
 	$(MAKE) $(DD_LIB) 
+	$(MAKE) $(ZT_LIB) 
 	@rm -f $(OBJ_DIR)/Makefile
 	@cp Makefile_sub $(OBJ_DIR)/Makefile
 	@cd $(OBJ_DIR); 			\
 	$(MAKE) $(ZOLTAN_LIB) 			\
 	"LIB_NAME=$(ZOLTAN_LIB)"		\
-	"OBJ_FILES=$(DD_CSRC:.c=.o) $(UTIL_CSRC:.c=.o) $(MEM_CSRC:.c=.o) $(COMM_CSRC:.c=.o)" \
+	"OBJ_FILES=$(DD_CSRC:.c=.o) $(UTIL_CSRC:.c=.o) $(MEM_CSRC:.c=.o) $(COMM_CSRC:.c=.o) $(ZT_CSRC:.c=.o)" \
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
@@ -422,6 +507,10 @@ zscript:
 	@for iii in $(DD_CSRC)  ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../DDirectory/$$iii >> zoltan_script; \
 	 done;
+	@echo "echo 'Zoltan:  Compiling Utilities/Timer'" >> zoltan_script
+	@for iii in $(ZT_CSRC)  ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../Timer/$$iii >> zoltan_script; \
+	 done;
 	@echo "echo 'Zoltan:  Compiling Utilities/shared'" >> zoltan_script
 	@for iii in $(UTIL_CSRC)  ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../shared/$$iii >> zoltan_script; \
@@ -429,8 +518,11 @@ zscript:
 	@echo "echo Zoltan:  Linking $(DD_LIB)" >> zoltan_script
 	@echo '$$AR' $(DD_LIB) $(DD_CSRC:.c=.o) $(UTIL_CSRC:.c=.o) >> zoltan_script
 	@echo '$$RANLIB' $(DD_LIB) >> zoltan_script
+	@echo "echo Zoltan:  Linking $(ZT_LIB)" >> zoltan_script
+	@echo '$$AR' $(ZT_LIB) $(ZT_CSRC:.c=.o) >> zoltan_script
+	@echo '$$RANLIB' $(ZT_LIB) >> zoltan_script
 	@echo "echo Zoltan:  Linking $(ZOLTAN_LIB)" >> zoltan_script
-	@echo '$$AR' $(ZOLTAN_LIB) $(MEM_CSRC:.c=.o) $(COMM_CSRC:.c=.o) $(DD_CSRC:.c=.o) $(UTIL_CSRC:.c=.o) >> zoltan_script
+	@echo '$$AR' $(ZOLTAN_LIB) $(MEM_CSRC:.c=.o) $(COMM_CSRC:.c=.o) $(DD_CSRC:.c=.o) $(ZT_CSRC:.c=.o) $(UTIL_CSRC:.c=.o) >> zoltan_script
 	@echo '$$RANLIB' $(ZOLTAN_LIB) >> zoltan_script
 	@echo "cd .." >> zoltan_script
 	@chmod +x zoltan_script
@@ -456,6 +548,9 @@ lint_dd: $(MEM_CSRC) $(COMM_CSRC) $(DD_CSRC) $(UTIL_CSRC) $(DD_DRIVER_CSRC)
 	@echo "running lint..."
 	$(LINT) -I../include $(LINT_FLAGS)  $?
 
+lint_timer: $(MEM_CSRC) $(ZT_CSRC) $(UTIL_CSRC) $(ZT_DRIVER_CSRC) 
+	@echo "running lint..."
+	$(LINT) -I../include $(LINT_FLAGS)  $?
 #
 ############################################################################
 #         OTHER TARGETS

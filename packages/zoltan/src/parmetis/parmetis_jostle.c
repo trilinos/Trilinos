@@ -24,7 +24,6 @@ extern "C" {
 #include "all_allo_const.h"
 #include "parmetis_jostle.h"
 #include "params_const.h"
-#include "timer_const.h"
 #include "order_const.h"
 
 /**********  parameters structure for parmetis methods **********/

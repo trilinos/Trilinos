@@ -12,11 +12,12 @@
 ##############################################################################
 
 
-TIMER DIRECTORY -- Routines to provide access to timing utility.
-----------------------------------------------------------------
+TIMER UTILITY -- Routines to implement Zoltan_Time and Zoltan_Timer objects.
+----------------------------------------------------------------------------
 
-Files compiled into Zoltan:
+Files compiled into libzoltan_timer.a and libzoltan.a:
 
-timer_const.h          -- Prototypes and definitions.
-
-timer.c                -- Routines setting parameters for Zoltan_Time.
+timer.c                -- Routines implementing Zoltan_Time.
+timer.h                -- Prototypes and constants.
+zoltan_timer.c         -- Implementation of timer object.
+zoltan_timer.h         -- Interface to timer object.

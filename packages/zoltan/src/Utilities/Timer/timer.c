@@ -24,62 +24,15 @@ extern "C" {
 #include <mpi.h>
 
 #include "timer.h"
-#include "params_const.h"
 #include "zoltan_util.h"
 #ifdef __PUMAGON__
 #include <nx.h>
 #endif
 
-/*
+/****************************************
  * Machine independent timing utilities.
  * ANSI C and MPI are required.
- */
-
-/* Interpret and set timer parameters */
-
-int Zoltan_Set_Timer_Param(
-char *name,                     /* input:  name of variable */
-char *val,                      /* input:  value of variable */
-int *timer)                     /* output: timer type */
-{
-    PARAM_UTYPE result;         /* value returned from Check_Param */
-    int index;                  /* index returned from Check_Param */
-    int status;
-    PARAM_VARS Timer_params[] = {
-        { "TIMER", NULL, "STRING", 0 },
-        { NULL, NULL, NULL, 0 }
-    };
-    char *yo = "Zoltan_Set_Timer_Param";
-
-    (*timer) = ZOLTAN_TIME_WALL;  /* default timer value */
-
-    status = Zoltan_Check_Param(name, val, Timer_params, &result, &index);
-
-    if (status == 0 && index == 0) {
-        if (!strcmp(result.sval, "WALL"))
-          (*timer) = ZOLTAN_TIME_WALL;
-        else if (strcmp(result.sval, "CPU")==0) {
-          (*timer) = ZOLTAN_TIME_CPU;
-        }
-        else if (strcmp(result.sval, "USER")==0){
-#ifndef NO_TIMES
-          (*timer) = ZOLTAN_TIME_USER;
-#else
-          ZOLTAN_PRINT_WARN(-1, yo, "User time not available;"
-                          " CPU clock time will be used instead.");
-          (*timer) = ZOLTAN_TIME_CPU;
-#endif
-        }
-        else{
-          char msg[256];
-          sprintf(msg, "Unknown timer option %s.", result.sval);
-          ZOLTAN_PRINT_WARN(-1, yo, msg);
-          status = 2; /* Illegal parameter */
-        }
-    }
-
-    return(status);
-}
+ ****************************************/
 
 
 /* Timer routine that returns either CPU or wall-clock time.

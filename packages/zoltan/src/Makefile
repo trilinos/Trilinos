@@ -159,19 +159,20 @@ SUB_VPATH	= ../include ../Utilities/shared \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
                   ../order ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory \
-                  ../Utilities/DDirectory 
+                  ../Utilities/DDirectory ../Utilities/Timer
 SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../zz -I../all -I../lb -I../par -I../rcb  -I../oct  \
 		  -I../order -I../bsfc -I../hsfc -I../phg -I../hg \
-		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch -I../parmetis -I../timer \
+		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch \
+		  -I../parmetis -I../timer \
                   -I../ha -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
-                  -I../Utilities/DDirectory 
+                  -I../Utilities/DDirectory -I../Utilities/Timer
 SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb oct phg hg\
                   bsfc hsfc parmetis params \
 		  timer ha  reftree include
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
-		  Utilities/Memory Utilities/DDirectory
+		  Utilities/Memory Utilities/DDirectory Utilities/Timer
 
 ZZ_CSRC		= zz_coord.c zz_obj_list.c zz_struct.c \
 		  zz_init.c zz_set_fn.c zz_util.c zz_gen_files.c \
@@ -249,7 +250,7 @@ PARMETIS_CSRC	= parmetis_jostle.c build_graph.c verify_graph.c \
                   scatter_graph.c
 PARMETIS_INC	= parmetis_jostle_const.h
 
-TIMER_CSRC	= timer.c
+TIMER_CSRC	= timer_params.c
 TIMER_INC	= timer_const.h
 
 HA_CSRC         = divide_machine.c get_processor_name.c \
@@ -342,9 +343,11 @@ endif
 LINT		= lint
 LINT_INC_PATH	= -Iinclude -Idriver$(ZOLTAN_OLD) -Ich -Izz -Iall -Ilb \
 		  -Iorder -Ipar -Ircb -Iparams \
-		  -Ioct -Ibsfc -Ihsfc -Iparmetis -Itimer -Iha -Ireftree -Iphg -Ihg \
+		  -Ioct -Ibsfc -Ihsfc -Iparmetis -Itimer -Iha -Ireftree \
+		  -Iphg -Ihg \
 		  -IUtilities/shared -IUtilities/Memory \
 		  -IUtilities/Communication -IUtilities/DDirectory \
+		  -IUtilities/Timer \
 		  -I$(ZOLTAN_INC_PATH)
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 VPATH		= $(SUBDIRS) $(UTIL_SUBDIRS) $(THIRD_PARTY_VPATH)

@@ -25,7 +25,6 @@ extern "C" {
 #include "zz_const.h"
 #include "rib.h"
 #include "params_const.h"
-#include "timer_const.h"
 #include "ha_const.h"
 #include "par_median_const.h"
 

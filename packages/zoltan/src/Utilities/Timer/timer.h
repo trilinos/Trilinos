@@ -15,7 +15,7 @@
 #ifndef __TIMER_H
 #define __TIMER_H
 
-#include "timer_const.h"
+#include "zoltan_timer.h"
 #include <time.h> /* ANSI C; defines clock_t and clock() */
 
 #ifndef CLOCKS_PER_SEC /* Should have been defined in time.h */

@@ -1,6 +1,7 @@
 Decomposition Method    = phg
 Zoltan Parameters	= phg_proc_split=1
 Zoltan Parameters	= PHG_OUTPUT_LEVEL=1
+Zoltan Parameters	= phg_reduction_limit=4
 # Zoltan Parameters      = phg_nproc_x=1
 #Zoltan Parameters      = debug_memory=2
 Zoltan Parameters       = num_global_partitions=4

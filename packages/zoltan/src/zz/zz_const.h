@@ -29,7 +29,7 @@
 #include "zz_id_const.h"
 #include "zoltan_util.h"
 #include "par_const.h"
-#include "timer_const.h"
+#include "zoltan_timer.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
