@@ -67,6 +67,8 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <deque>
+#include <algorithm>
 
 using namespace std;
 
