@@ -48,8 +48,14 @@ class Vector : public virtual NOX::Abstract::Vector {
 
  public:			
 
-  //! Construct a NOX::Epetra::Vector using the SAME memory location used in the source Epetra_Vector.  WARNING: This is a "View" of the Epetra_Vector!
-  Vector(Epetra_Vector& source);
+  //! Construct by copying map and/or elements of an Epetra_Vector.
+  /*! Option for creating a "View": Construct a NOX::Epetra::Vector 
+    using the SAME memory location used in the source Epetra_Vector.
+    WARNING: A View can be dangerous since multiple objects can access
+    the same memory locations.  
+   */
+  Vector(Epetra_Vector& source, NOX::CopyType type = NOX::DeepCopy,
+	 bool createView = false);
 
   //! Construct by copying map and/or elements of an Epetra_Vector.
   Vector(const Epetra_Vector& source, NOX::CopyType type = NOX::DeepCopy);

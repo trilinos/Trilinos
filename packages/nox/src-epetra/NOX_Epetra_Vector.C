@@ -33,10 +33,29 @@
 #include "NOX_Epetra_Vector.H"
 #include "Epetra_Vector.h"
 
-NOX::Epetra::Vector::Vector(Epetra_Vector& source) :
-  ownsEpetraVector(false)
+NOX::Epetra::Vector::Vector(Epetra_Vector& source, NOX::CopyType type,
+			    bool createView)
 {
-  epetraVec = &source; 
+  if (createView) {
+    ownsEpetraVector = false;
+    epetraVec = &source;
+  }
+  else {
+    ownsEpetraVector = true;
+
+    switch (type) {
+      
+    case DeepCopy:		// default behavior
+      
+      epetraVec = new Epetra_Vector(source); 
+      break;
+      
+    case ShapeCopy:
+      
+      epetraVec = new Epetra_Vector(source.Map()); 
+      break;  
+    }
+  }
 }
 
 NOX::Epetra::Vector::Vector(const Epetra_Vector& source, NOX::CopyType type) :
