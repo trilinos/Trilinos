@@ -38,6 +38,7 @@
 #include "NOX_Parameter_DirectionConstructor.H"
 
 #ifdef WITH_PRERELEASE
+#include "NOX_Direction_Picard.H"
 #include "NOX_Direction_NonlinearCG.H"
 #include "NOX_Direction_Tensor.H"
 #include "NOX_Direction_ModifiedNewton.H"
@@ -86,7 +87,9 @@ bool NOX::Direction::Manager::reset(NOX::Parameter::List& params)
   else if (method == "Steepest Descent")
     ptr = new SteepestDescent(utils, params);
 #ifdef WITH_PRERELEASE
-  else if (method == "NonlinearCG")
+  else if (method == "Residual-Based: Picard")
+    ptr = new Picard(utils, params);
+  else if (method == "Residual-Based: NonlinearCG")
     ptr = new NonlinearCG(utils, params);
   else if (method == "Tensor")
     ptr = new Tensor(utils, params);
