@@ -28,7 +28,7 @@
 
 #include "Teuchos_ExpatHandlerAdapter.hpp"
 
-#ifdef HAVE_EXPAT
+#ifdef HAVE_TEUCHOS_EXPAT
 
 #include "Teuchos_TreeBuildingXMLHandler.hpp"
 

@@ -35,7 +35,7 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 
-#ifdef HAVE_LIBXML2
+#ifdef HAVE_TEUCHOS_LIBXML2
 #include "Teuchos_TreeBuildingXMLHandler.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 

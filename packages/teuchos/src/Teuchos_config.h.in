@@ -56,9 +56,6 @@
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 
-/* define if we want to use EXPAT */
-#undef HAVE_EXPAT
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -79,9 +76,6 @@
 
 /* Define if want to build libcheck */
 #undef HAVE_LIBCHECK
-
-/* define if we want to use LIBXML2 */
-#undef HAVE_LIBXML2
 
 /* Define to 1 if you have the <list> header file. */
 #undef HAVE_LIST
@@ -194,11 +188,17 @@
 /* Define if want to build teuchos-examples */
 #undef HAVE_TEUCHOS_EXAMPLES
 
+/* Define if want to build teuchos-expat */
+#undef HAVE_TEUCHOS_EXPAT
+
 /* Define if want to build teuchos-extended */
 #undef HAVE_TEUCHOS_EXTENDED
 
 /* Define if want to build teuchos-gmp */
 #undef HAVE_TEUCHOS_GNU_MP
+
+/* Define if want to build teuchos-libxml2 */
+#undef HAVE_TEUCHOS_LIBXML2
 
 /* Define if want to build teuchos-tests */
 #undef HAVE_TEUCHOS_TESTS

@@ -372,20 +372,38 @@ if test "X$ac_cv_use_teuchos_arprec" != "Xno"; then
 
 #  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
 #  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
-
-     AC_MSG_CHECKING(for mp/mpreal.h)
+#
+#  Check for ARPREC headers.
+#
+     AC_MSG_CHECKING(for ARPREC headers (mp/mpreal.h) ) 
      AC_TRY_CPP([#include "mp/mpreal.h"],
 	[AC_MSG_RESULT(yes)],  
 	[
 	 AC_MSG_RESULT(no)
 	 echo "-----"
-     	 echo "Cannot find ARPREC library."
-     	 echo "Use --with-ldflags to specify ARPREC library directory."
+     	 echo "Cannot find ARPREC headers."
      	 echo "Use --with-incdirs to specify ARPREC include directory."
-     	 echo "Use --with-libs to specify ARPREC library (-lmp)."
      	 echo "-----"
-     	 AC_MSG_ERROR(ARPREC test cannot link)
+     	 AC_MSG_ERROR(ARPREC headers cannot be found)
      	])
+#
+#  Check for ARPREC library.
+#
+     AC_MSG_CHECKING(for ARPREC library (libmp.a) )
+     AC_LANG_SAVE
+     AC_LANG_CPLUSPLUS
+     AC_LINK_IFELSE([ AC_LANG_PROGRAM([[#include "mp/mpreal.h"]], 
+	[[mp::mp_init(200);]]) ],
+	[AC_MSG_RESULT(yes)],
+	[AC_MSG_RESULT(no)
+		 echo "-----"
+	     	 echo "Cannot find ARPREC library."
+     		 echo "Use --with-ldflags to specify ARPREC library directory."
+	     	 echo "Use --with-libs to specify ARPREC library (-lmp)."
+	     	 echo "-----"
+	     	 AC_MSG_ERROR(ARPREC test cannot link)])
+     AC_LANG_RESTORE
+
 fi
 
 #
@@ -399,20 +417,134 @@ if test "X$ac_cv_use_teuchos_gmp" != "Xno"; then
 
 #  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
 #  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
-
-     AC_MSG_CHECKING(for gmpxx.h)
+#
+#  Check for GNU MP headers.
+#
+     AC_MSG_CHECKING(for GNU MP headers (gmpxx.h) ) 
      AC_TRY_CPP([#include "gmpxx.h"],
 	[AC_MSG_RESULT(yes)],  
 	[
 	 AC_MSG_RESULT(no)
 	 echo "-----"
-     	 echo "Cannot find GNU MP library."
-     	 echo "Use --with-ldflags to specify GNU MP library directory."
+     	 echo "Cannot find GNU MP headers."
      	 echo "Use --with-incdirs to specify GNU MP include directory."
-     	 echo "Use --with-libs to specify GNU MP library (-lgmp -lgmpxx)."
      	 echo "-----"
-     	 AC_MSG_ERROR(GNU MP test cannot link)
+     	 AC_MSG_ERROR(GNU MP headers cannot be found)
      	])
+#
+#  Check for GNU MP library.
+#
+     AC_MSG_CHECKING(for GNU MP library (libgmp.a / libgmpxx.a) )
+     AC_LANG_SAVE
+     AC_LANG_CPLUSPLUS
+     AC_LINK_IFELSE([ AC_LANG_PROGRAM([[#include "gmpxx.h" 
+					#include "gmp.h"]], 
+					[[mpf_class one = 1.0; sqrt(one);]]) ],
+	[AC_MSG_RESULT(yes)],
+	[AC_MSG_RESULT(no)
+		 echo "-----"
+	     	 echo "Cannot find GNU MP library."
+     		 echo "Use --with-ldflags to specify GNU MP library directory."
+	     	 echo "Use --with-libs to specify GNU MP library (-lgmp -lgmpxx)."
+	     	 echo "-----"
+	     	 AC_MSG_ERROR(GNU MP test cannot link)])
+     AC_LANG_RESTORE
+
+fi
+
+#
+#  --enable-teuchos-expat 
+# 
+ 
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, expat, [Enable Teuchos interface support for the Expat XML Library], 
+		TEUCHOS_EXPAT, no)  
+
+if test "X$ac_cv_use_teuchos_expat" != "Xno"; then
+
+#  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
+#  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
+#
+#  Check for Expat headers.
+#
+     AC_MSG_CHECKING(for Expat headers (expat.h) ) 
+     AC_TRY_CPP([#include "expat.h"],
+	[AC_MSG_RESULT(yes)],  
+	[
+	 AC_MSG_RESULT(no)
+	 echo "-----"
+     	 echo "Cannot find Expat headers."
+     	 echo "Use --with-incdirs to specify Expat include directory."
+     	 echo "-----"
+     	 AC_MSG_ERROR(Expat headers cannot be found)
+     	])
+#
+#  Check for Expat library.
+#
+     AC_MSG_CHECKING(for Expat library (libexpat.a) )
+     AC_LANG_SAVE
+     AC_LANG_CPLUSPLUS
+     AC_LINK_IFELSE([ AC_LANG_PROGRAM([[#include "expat.h"]], [[XML_Parser parser = XML_ParserCreate(NULL);]]) ],
+	[AC_MSG_RESULT(yes)],
+	[AC_MSG_RESULT(no)
+		 echo "-----"
+	     	 echo "Cannot find Expat library."
+     		 echo "Use --with-ldflags to specify Expat library directory."
+	     	 echo "Use --with-libs to specify Expat library (-lexpat)."
+	     	 echo "-----"
+	     	 AC_MSG_ERROR(Expat test cannot link)])
+     AC_LANG_RESTORE
+
+fi
+
+#
+#  --enable-teuchos-libxml2 
+# 
+ 
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, libxml2, [Enable Teuchos interface support for the LibXML2 Library], 
+		TEUCHOS_LIBXML2, no)  
+
+if test "X$ac_cv_use_teuchos_libxml2" != "Xno"; then
+
+#  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
+#  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
+#
+#  Check for LibXML2 headers.
+#
+     AC_MSG_CHECKING(for LibXML2 headers (libxml/parser.h) ) 
+     AC_TRY_CPP([#include "libxml/parser.h"],
+	[AC_MSG_RESULT(yes)],  
+	[
+	 AC_MSG_RESULT(no)
+	 echo "-----"
+     	 echo "Cannot find LibXML2 headers."
+     	 echo "Use --with-incdirs to specify LibXML2 include directory."
+     	 echo "-----"
+     	 AC_MSG_ERROR(LibXML2 headers cannot be found)
+     	])
+#
+#  Check for LibXML2 library.
+#
+     AC_MSG_CHECKING(for LibXML2 library (libxml2.a) )
+     AC_LANG_SAVE
+     AC_LANG_CPLUSPLUS
+     AC_LINK_IFELSE([ AC_LANG_PROGRAM([[#include "libxml/parser.h"]], 
+	[[xmlDocPtr doc = NULL; doc = xmlNewDoc(BAD_CAST "1.0"); xmlFreeDoc(doc);]]) ],
+	[AC_MSG_RESULT(yes)],
+	[AC_MSG_RESULT(no)
+		 echo "-----"
+	     	 echo "Cannot find LibXML2 library."
+     		 echo "Use --with-ldflags to specify LibXML2 library directory."
+	     	 echo "Use --with-libs to specify LibXML2 library (-lxml2)."
+	     	 echo "-----"
+	     	 AC_MSG_ERROR(LibXML2 test cannot link)])
+     AC_LANG_RESTORE
+
+fi
+
+if test "X${HAVE_TEUCHOS_LIBXML2}" = "Xyes"; then
+  if test "X${HAVE_TEUCHOS_EXPAT}" = "Xyes"; then
+    AC_MSG_ERROR([[You have specified both Expat and LibXML2. Please enable only one XML parser!]])
+  fi  
 fi
 
 # ------------------------------------------------------------------------
@@ -495,24 +627,6 @@ AC_SUBST(TRILINOS_TEMPLATE_OBJS)
 # ------------------------------------------------------------------------
 # Checks for system services
 # ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Check to see if expat enabled and if any special configuration done
-# ------------------------------------------------------------------------
-
-TAC_ARG_CONFIG_EXPAT
-
-# ------------------------------------------------------------------------
-# Check to see if libxml2 enabled and if any special configuration done
-# ------------------------------------------------------------------------
-
-TAC_ARG_CONFIG_LIBXML2
-
-if test "X${HAVE_PKG_LIBXML2}" = "Xyes"; then
-  if test "X${HAVE_PKG_EXPAT}" = "Xyes"; then
-    AC_MSG_ERROR([[You have specified both expat and libxml2. Please enable only one XML parser]])
-  fi  
-fi
 
 # ------------------------------------------------------------------------
 # Get the absolute path to the build directory.  

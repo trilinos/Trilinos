@@ -40,7 +40,6 @@
 ##########################################################################
 
 TEUCHOS_EXPORT_LIBS = -L$(TEUCHOS_BUILD_DIRECTORY)/src  -lteuchos \
-                      $(TEUCHOS_XML_LIBDIR) $(TEUCHOS_XML_LIBS) \
                       $(TEUCHOS_MPI_LIBDIR) $(TEUCHOS_MPI_LIBS)
 
 
@@ -122,22 +121,4 @@ TEUCHOS_BLAS_LIBS = @BLAS_LIBS@
 
 # LAPACK libraries
 TEUCHOS_LAPACK_LIBS = @LAPACK_LIBS@
-
-
-
-############################################################################
-#
-# Export XML libraries and paths
-#
-############################################################################
-
-# XML libraries
-TEUCHOS_XML_LIBS = @XML_LIBS@
-
-# XML library directory
-TEUCHOS_XML_LIBDIR = @XML_LIBDIR@
-
-# XML includes
-TEUCHOS_XML_INC = @XML_INC@
-
 

@@ -90,8 +90,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
-	$(top_srcdir)/config/tac_arg_config_expat.m4 \
-	$(top_srcdir)/config/tac_arg_config_libxml2.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
@@ -227,7 +225,8 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_any.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_dyn_cast.hpp $(srcdir)/Teuchos_Flops.hpp \
-	$(srcdir)/Teuchos_F77_wrappers.h $(srcdir)/Teuchos_LAPACK.hpp \
+	$(srcdir)/Teuchos_F77_wrappers.h \
+	$(srcdir)/Teuchos_getConst.hpp $(srcdir)/Teuchos_LAPACK.hpp \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
 	$(srcdir)/Teuchos_map.hpp \
 	$(srcdir)/Teuchos_oblackholestream.hpp \
@@ -307,10 +306,6 @@ EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
-HAVE_EXPAT_FALSE = @HAVE_EXPAT_FALSE@
-HAVE_EXPAT_TRUE = @HAVE_EXPAT_TRUE@
-HAVE_LIBXML2_FALSE = @HAVE_LIBXML2_FALSE@
-HAVE_LIBXML2_TRUE = @HAVE_LIBXML2_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_TEUCHOS_COMPLEX_FALSE = @HAVE_TEUCHOS_COMPLEX_FALSE@
@@ -357,9 +352,6 @@ USE_ALTERNATE_AR = @USE_ALTERNATE_AR@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
 VERSION = @VERSION@
-XML_INC = @XML_INC@
-XML_LIBDIR = @XML_LIBDIR@
-XML_LIBS = @XML_LIBS@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -429,6 +421,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_dyn_cast.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
+	$(srcdir)/Teuchos_getConst.hpp \
 	$(srcdir)/Teuchos_LAPACK.hpp \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
 	$(srcdir)/Teuchos_map.hpp \
@@ -561,7 +554,7 @@ COMP =
 #np#   Remove epetra if this package does not need it
 #  
 #AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
-AM_CPPFLAGS = $(XML_INC)
+AM_CPPFLAGS = 
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.
 #np# replace teuchos with the name of the package being autotool'ed here

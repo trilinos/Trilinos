@@ -219,7 +219,7 @@ COMP =
 #np#   Remove epetra if this package does not need it
 #  
 #AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
-AM_CPPFLAGS = $(XML_INC)
+AM_CPPFLAGS = 
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.
 #np# replace teuchos with the name of the package being autotool'ed here

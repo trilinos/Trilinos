@@ -30,12 +30,12 @@
 #include "Teuchos_TreeBuildingXMLHandler.hpp"
 
 
-#ifdef HAVE_EXPAT
+#ifdef HAVE_TEUCHOS_EXPAT
 #include "Teuchos_ExpatHandlerAdapter.hpp"
 #define EXPAT_BUFSIZE 8192
 #endif
 
-#ifdef HAVE_LIBXML2
+#ifdef HAVE_TEUCHOS_LIBXML2
 #include <libxml/parser.h>
 #endif
 
@@ -43,7 +43,7 @@ using namespace Teuchos;
 
 XMLObject XMLInputSource::getObject() const
 {
-#ifdef HAVE_EXPAT
+#ifdef HAVE_TEUCHOS_EXPAT
 
 	RefCountPtr<TreeBuildingXMLHandler> handler = rcp(new TreeBuildingXMLHandler());
 

@@ -67,7 +67,7 @@ int main(int argc, void** argv)
       string str = problem.toString();
       cerr << str << endl;
 
-#ifdef HAVE_EXPAT
+#ifdef HAVE_TEUCHOS_EXPAT
 
       /* parse XML in a string */
       StringInputSource src(str);

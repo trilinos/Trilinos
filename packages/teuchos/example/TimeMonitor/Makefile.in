@@ -81,8 +81,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
-	$(top_srcdir)/config/tac_arg_config_expat.m4 \
-	$(top_srcdir)/config/tac_arg_config_libxml2.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
@@ -150,10 +148,6 @@ EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
-HAVE_EXPAT_FALSE = @HAVE_EXPAT_FALSE@
-HAVE_EXPAT_TRUE = @HAVE_EXPAT_TRUE@
-HAVE_LIBXML2_FALSE = @HAVE_LIBXML2_FALSE@
-HAVE_LIBXML2_TRUE = @HAVE_LIBXML2_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_TEUCHOS_COMPLEX_FALSE = @HAVE_TEUCHOS_COMPLEX_FALSE@
@@ -200,9 +194,6 @@ USE_ALTERNATE_AR = @USE_ALTERNATE_AR@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
 VERSION = @VERSION@
-XML_INC = @XML_INC@
-XML_LIBDIR = @XML_LIBDIR@
-XML_LIBS = @XML_LIBS@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@

@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR USE_ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_TEUCHOS_COMPLEX_TRUE HAVE_TEUCHOS_COMPLEX_FALSE HAVE_TEUCHOS_EXTENDED_TRUE HAVE_TEUCHOS_EXTENDED_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS XML_LIBDIR XML_LIBS XML_INC HAVE_EXPAT_TRUE HAVE_EXPAT_FALSE HAVE_LIBXML2_TRUE HAVE_LIBXML2_FALSE ac_aux_dir TEUCHOS_BUILD_DIRECTORY MPI_LIBS MPI_LIBDIR MPI_INC MPI_DIR LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR USE_ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_TEUCHOS_COMPLEX_TRUE HAVE_TEUCHOS_COMPLEX_FALSE HAVE_TEUCHOS_EXTENDED_TRUE HAVE_TEUCHOS_EXTENDED_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir TEUCHOS_BUILD_DIRECTORY MPI_LIBS MPI_LIBDIR MPI_INC MPI_DIR LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -899,8 +899,11 @@ Optional Features:
                           PRECision Library (default is no)
   --enable-teuchos-gmp    Enable Teuchos interface support for the GNU MP
                           Library (default is no)
-  --enable-expat          Enable expat XML parser
-  --enable-libxml2        Enable libxml2 XML parser
+  --enable-teuchos-expat  Enable Teuchos interface support for the Expat XML
+                          Library (default is no)
+  --enable-teuchos-libxml2
+                          Enable Teuchos interface support for the LibXML2
+                          Library (default is no)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -940,10 +943,6 @@ Optional Packages:
                           format
   --with-blas=<lib>       use BLAS library <lib>
   --with-lapack=<lib>     use LAPACK library <lib>
-  --with-expat-include    specify include directory for EXPAT
-  --with-expat-libdir     specify location of EXPAT libraries
-  --with-libxml2-include  specify include directory for LIBXML2
-  --with-libxml2-libdir   specify location of LIBXML2 libraries
 
 Some influential environment variables:
   CC          C compiler command
@@ -3819,7 +3818,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3822:" \
+echo "$as_me:3821:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8727,9 +8726,11 @@ if test "X$ac_cv_use_teuchos_arprec" != "Xno"; then
 
 #  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
 #  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
-
-     echo "$as_me:$LINENO: checking for mp/mpreal.h" >&5
-echo $ECHO_N "checking for mp/mpreal.h... $ECHO_C" >&6
+#
+#  Check for ARPREC headers.
+#
+     echo "$as_me:$LINENO: checking for ARPREC headers (mp/mpreal.h) " >&5
+echo $ECHO_N "checking for ARPREC headers (mp/mpreal.h) ... $ECHO_C" >&6
      cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -8766,17 +8767,91 @@ sed 's/^/| /' conftest.$ac_ext >&5
 	 echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 	 echo "-----"
-     	 echo "Cannot find ARPREC library."
-     	 echo "Use --with-ldflags to specify ARPREC library directory."
+     	 echo "Cannot find ARPREC headers."
      	 echo "Use --with-incdirs to specify ARPREC include directory."
-     	 echo "Use --with-libs to specify ARPREC library (-lmp)."
      	 echo "-----"
-     	 { { echo "$as_me:$LINENO: error: ARPREC test cannot link" >&5
-echo "$as_me: error: ARPREC test cannot link" >&2;}
+     	 { { echo "$as_me:$LINENO: error: ARPREC headers cannot be found" >&5
+echo "$as_me: error: ARPREC headers cannot be found" >&2;}
    { (exit 1); exit 1; }; }
 
 fi
 rm -f conftest.err conftest.$ac_ext
+#
+#  Check for ARPREC library.
+#
+     echo "$as_me:$LINENO: checking for ARPREC library (libmp.a) " >&5
+echo $ECHO_N "checking for ARPREC library (libmp.a) ... $ECHO_C" >&6
+
+
+     ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+     cat >conftest.$ac_ext <<_ACEOF
+ /* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include "mp/mpreal.h"
+int
+main ()
+{
+mp::mp_init(200);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+		 echo "-----"
+	     	 echo "Cannot find ARPREC library."
+     		 echo "Use --with-ldflags to specify ARPREC library directory."
+	     	 echo "Use --with-libs to specify ARPREC library (-lmp)."
+	     	 echo "-----"
+	     	 { { echo "$as_me:$LINENO: error: ARPREC test cannot link" >&5
+echo "$as_me: error: ARPREC test cannot link" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+     ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
 fi
 
 #
@@ -8813,9 +8888,11 @@ if test "X$ac_cv_use_teuchos_gmp" != "Xno"; then
 
 #  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
 #  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
-
-     echo "$as_me:$LINENO: checking for gmpxx.h" >&5
-echo $ECHO_N "checking for gmpxx.h... $ECHO_C" >&6
+#
+#  Check for GNU MP headers.
+#
+     echo "$as_me:$LINENO: checking for GNU MP headers (gmpxx.h) " >&5
+echo $ECHO_N "checking for GNU MP headers (gmpxx.h) ... $ECHO_C" >&6
      cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -8852,17 +8929,424 @@ sed 's/^/| /' conftest.$ac_ext >&5
 	 echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 	 echo "-----"
-     	 echo "Cannot find GNU MP library."
-     	 echo "Use --with-ldflags to specify GNU MP library directory."
+     	 echo "Cannot find GNU MP headers."
      	 echo "Use --with-incdirs to specify GNU MP include directory."
-     	 echo "Use --with-libs to specify GNU MP library (-lgmp -lgmpxx)."
      	 echo "-----"
-     	 { { echo "$as_me:$LINENO: error: GNU MP test cannot link" >&5
-echo "$as_me: error: GNU MP test cannot link" >&2;}
+     	 { { echo "$as_me:$LINENO: error: GNU MP headers cannot be found" >&5
+echo "$as_me: error: GNU MP headers cannot be found" >&2;}
    { (exit 1); exit 1; }; }
 
 fi
 rm -f conftest.err conftest.$ac_ext
+#
+#  Check for GNU MP library.
+#
+     echo "$as_me:$LINENO: checking for GNU MP library (libgmp.a / libgmpxx.a) " >&5
+echo $ECHO_N "checking for GNU MP library (libgmp.a / libgmpxx.a) ... $ECHO_C" >&6
+
+
+     ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+     cat >conftest.$ac_ext <<_ACEOF
+ /* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include "gmpxx.h"
+					#include "gmp.h"
+int
+main ()
+{
+mpf_class one = 1.0; sqrt(one);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+		 echo "-----"
+	     	 echo "Cannot find GNU MP library."
+     		 echo "Use --with-ldflags to specify GNU MP library directory."
+	     	 echo "Use --with-libs to specify GNU MP library (-lgmp -lgmpxx)."
+	     	 echo "-----"
+	     	 { { echo "$as_me:$LINENO: error: GNU MP test cannot link" >&5
+echo "$as_me: error: GNU MP test cannot link" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+     ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+fi
+
+#
+#  --enable-teuchos-expat
+#
+
+
+# Check whether --enable-teuchos-expat or --disable-teuchos-expat was given.
+if test "${enable_teuchos_expat+set}" = set; then
+  enableval="$enable_teuchos_expat"
+  ac_cv_use_teuchos_expat=$enableval
+else
+  ac_cv_use_teuchos_expat=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use teuchos-expat" >&5
+echo $ECHO_N "checking whether to use teuchos-expat... $ECHO_C" >&6
+
+if test "X$ac_cv_use_teuchos_expat" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TEUCHOS_EXPAT
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+if test "X$ac_cv_use_teuchos_expat" != "Xno"; then
+
+#  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
+#  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
+#
+#  Check for Expat headers.
+#
+     echo "$as_me:$LINENO: checking for Expat headers (expat.h) " >&5
+echo $ECHO_N "checking for Expat headers (expat.h) ... $ECHO_C" >&6
+     cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include "expat.h"
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	 echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+	 echo "-----"
+     	 echo "Cannot find Expat headers."
+     	 echo "Use --with-incdirs to specify Expat include directory."
+     	 echo "-----"
+     	 { { echo "$as_me:$LINENO: error: Expat headers cannot be found" >&5
+echo "$as_me: error: Expat headers cannot be found" >&2;}
+   { (exit 1); exit 1; }; }
+
+fi
+rm -f conftest.err conftest.$ac_ext
+#
+#  Check for Expat library.
+#
+     echo "$as_me:$LINENO: checking for Expat library (libexpat.a) " >&5
+echo $ECHO_N "checking for Expat library (libexpat.a) ... $ECHO_C" >&6
+
+
+     ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+     cat >conftest.$ac_ext <<_ACEOF
+ /* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include "expat.h"
+int
+main ()
+{
+XML_Parser parser = XML_ParserCreate(NULL);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+		 echo "-----"
+	     	 echo "Cannot find Expat library."
+     		 echo "Use --with-ldflags to specify Expat library directory."
+	     	 echo "Use --with-libs to specify Expat library (-lexpat)."
+	     	 echo "-----"
+	     	 { { echo "$as_me:$LINENO: error: Expat test cannot link" >&5
+echo "$as_me: error: Expat test cannot link" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+     ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+fi
+
+#
+#  --enable-teuchos-libxml2
+#
+
+
+# Check whether --enable-teuchos-libxml2 or --disable-teuchos-libxml2 was given.
+if test "${enable_teuchos_libxml2+set}" = set; then
+  enableval="$enable_teuchos_libxml2"
+  ac_cv_use_teuchos_libxml2=$enableval
+else
+  ac_cv_use_teuchos_libxml2=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use teuchos-libxml2" >&5
+echo $ECHO_N "checking whether to use teuchos-libxml2... $ECHO_C" >&6
+
+if test "X$ac_cv_use_teuchos_libxml2" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TEUCHOS_LIBXML2
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+if test "X$ac_cv_use_teuchos_libxml2" != "Xno"; then
+
+#  TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_is_not_specified )
+#  if test "X${tac_with_teuchos_trilinos3pldir}" != "Xtrilinos3pldir_is_not_specified"; then
+#
+#  Check for LibXML2 headers.
+#
+     echo "$as_me:$LINENO: checking for LibXML2 headers (libxml/parser.h) " >&5
+echo $ECHO_N "checking for LibXML2 headers (libxml/parser.h) ... $ECHO_C" >&6
+     cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include "libxml/parser.h"
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+	 echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+	 echo "-----"
+     	 echo "Cannot find LibXML2 headers."
+     	 echo "Use --with-incdirs to specify LibXML2 include directory."
+     	 echo "-----"
+     	 { { echo "$as_me:$LINENO: error: LibXML2 headers cannot be found" >&5
+echo "$as_me: error: LibXML2 headers cannot be found" >&2;}
+   { (exit 1); exit 1; }; }
+
+fi
+rm -f conftest.err conftest.$ac_ext
+#
+#  Check for LibXML2 library.
+#
+     echo "$as_me:$LINENO: checking for LibXML2 library (libxml2.a) " >&5
+echo $ECHO_N "checking for LibXML2 library (libxml2.a) ... $ECHO_C" >&6
+
+
+     ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+     cat >conftest.$ac_ext <<_ACEOF
+ /* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include "libxml/parser.h"
+int
+main ()
+{
+xmlDocPtr doc = NULL; doc = xmlNewDoc(BAD_CAST "1.0"); xmlFreeDoc(doc);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+		 echo "-----"
+	     	 echo "Cannot find LibXML2 library."
+     		 echo "Use --with-ldflags to specify LibXML2 library directory."
+	     	 echo "Use --with-libs to specify LibXML2 library (-lxml2)."
+	     	 echo "-----"
+	     	 { { echo "$as_me:$LINENO: error: LibXML2 test cannot link" >&5
+echo "$as_me: error: LibXML2 test cannot link" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+     ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+fi
+
+if test "X${HAVE_TEUCHOS_LIBXML2}" = "Xyes"; then
+  if test "X${HAVE_TEUCHOS_EXPAT}" = "Xyes"; then
+    { { echo "$as_me:$LINENO: error: You have specified both Expat and LibXML2. Please enable only one XML parser!" >&5
+echo "$as_me: error: You have specified both Expat and LibXML2. Please enable only one XML parser!" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
 fi
 
 # ------------------------------------------------------------------------
@@ -9167,7 +9651,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9170: \"$ac_link\") >&5
+(eval echo $as_me:9654: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9245,7 +9729,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9248: \"$ac_link\") >&5
+(eval echo $as_me:9732: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11778,7 +12262,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11781: \"$ac_link\") >&5
+(eval echo $as_me:12265: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11856,7 +12340,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11859: \"$ac_link\") >&5
+(eval echo $as_me:12343: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12070,168 +12554,6 @@ fi
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-# Check to see if expat enabled and if any special configuration done
-# ------------------------------------------------------------------------
-
-
-# Check whether --enable-expat or --disable-expat was given.
-if test "${enable_expat+set}" = set; then
-  enableval="$enable_expat"
-
-HAVE_PKG_EXPAT=yes
-XML_LIBS=-lexpat
-
-else
-  HAVE_PKG_EXPAT=no
-
-fi;
-
-
-# Check whether --with-expat-include or --without-expat-include was given.
-if test "${with_expat_include+set}" = set; then
-  withval="$with_expat_include"
-
-HAVE_PKG_EXPAT=yes
-XML_INC=${withval}
-echo "$as_me:$LINENO: checking user-defined EXPAT includes" >&5
-echo $ECHO_N "checking user-defined EXPAT includes... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${XML_INC}" >&5
-echo "${ECHO_T}${XML_INC}" >&6
-
-
-fi;
-
-
-# Check whether --with-expat-libdir or --without-expat-libdir was given.
-if test "${with_expat_libdir+set}" = set; then
-  withval="$with_expat_libdir"
-
-HAVE_PKG_EXPAT=yes
-XML_LIBDIR=${withval}
-echo "$as_me:$LINENO: checking user-defined EXPAT libraries" >&5
-echo $ECHO_N "checking user-defined EXPAT libraries... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${XML_LIBS}" >&5
-echo "${ECHO_T}${XML_LIBS}" >&6
-
-
-fi;
-
-echo "$as_me:$LINENO: checking whether we are using EXPAT" >&5
-echo $ECHO_N "checking whether we are using EXPAT... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${HAVE_PKG_EXPAT}" >&5
-echo "${ECHO_T}${HAVE_PKG_EXPAT}" >&6
-
-if test "X${HAVE_PKG_EXPAT}" = "Xyes"; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_EXPAT
-_ACEOF
-
-fi
-
-
-
-
-
-
-
-
-
-if test "X${HAVE_PKG_EXPAT}" = "Xyes"; then
-  HAVE_EXPAT_TRUE=
-  HAVE_EXPAT_FALSE='#'
-else
-  HAVE_EXPAT_TRUE='#'
-  HAVE_EXPAT_FALSE=
-fi
-
-
-
-# ------------------------------------------------------------------------
-# Check to see if libxml2 enabled and if any special configuration done
-# ------------------------------------------------------------------------
-
-
-# Check whether --enable-libxml2 or --disable-libxml2 was given.
-if test "${enable_libxml2+set}" = set; then
-  enableval="$enable_libxml2"
-
-HAVE_PKG_LIBXML2=yes
-XML_LIBS=-lxml2
-
-else
-  HAVE_PKG_LIBXML2=no
-
-fi;
-
-
-# Check whether --with-libxml2-include or --without-libxml2-include was given.
-if test "${with_libxml2_include+set}" = set; then
-  withval="$with_libxml2_include"
-
-XML_INC=${withval}
-echo "$as_me:$LINENO: checking user-defined LIBXML2 includes" >&5
-echo $ECHO_N "checking user-defined LIBXML2 includes... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${XML_INC}" >&5
-echo "${ECHO_T}${XML_INC}" >&6
-
-
-fi;
-
-
-# Check whether --with-libxml2-libdir or --without-libxml2-libdir was given.
-if test "${with_libxml2_libdir+set}" = set; then
-  withval="$with_libxml2_libdir"
-
-XML_LIBDIR=${withval}
-echo "$as_me:$LINENO: checking user-defined LIBXML2 libraries" >&5
-echo $ECHO_N "checking user-defined LIBXML2 libraries... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${XML_LIBDIRS}" >&5
-echo "${ECHO_T}${XML_LIBDIRS}" >&6
-
-
-fi;
-
-echo "$as_me:$LINENO: checking whether we are using LIBXML2" >&5
-echo $ECHO_N "checking whether we are using LIBXML2... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${HAVE_PKG_LIBXML2}" >&5
-echo "${ECHO_T}${HAVE_PKG_LIBXML2}" >&6
-
-if test "X${HAVE_PKG_LIBXML2}" = "Xyes"; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_LIBXML2
-_ACEOF
-
-fi
-
-
-
-
-
-
-
-
-
-if test "X${HAVE_PKG_LIBXML2}" = "Xyes"; then
-  HAVE_LIBXML2_TRUE=
-  HAVE_LIBXML2_FALSE='#'
-else
-  HAVE_LIBXML2_TRUE='#'
-  HAVE_LIBXML2_FALSE=
-fi
-
-
-
-if test "X${HAVE_PKG_LIBXML2}" = "Xyes"; then
-  if test "X${HAVE_PKG_EXPAT}" = "Xyes"; then
-    { { echo "$as_me:$LINENO: error: You have specified both expat and libxml2. Please enable only one XML parser" >&5
-echo "$as_me: error: You have specified both expat and libxml2. Please enable only one XML parser" >&2;}
-   { (exit 1); exit 1; }; }
-  fi
-fi
-
-# ------------------------------------------------------------------------
 # Get the absolute path to the build directory.
 #
 # We need this as a reference point from which
@@ -12438,20 +12760,6 @@ if test -z "${HAVE_TEUCHOS_EXTENDED_TRUE}" && test -z "${HAVE_TEUCHOS_EXTENDED_F
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_TEUCHOS_EXTENDED\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_TEUCHOS_EXTENDED\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_EXPAT_TRUE}" && test -z "${HAVE_EXPAT_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_EXPAT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_EXPAT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_LIBXML2_TRUE}" && test -z "${HAVE_LIBXML2_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_LIBXML2\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_LIBXML2\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -13100,13 +13408,6 @@ s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
 s,@TRILINOS_TEMPLATE_OBJS@,$TRILINOS_TEMPLATE_OBJS,;t t
-s,@XML_LIBDIR@,$XML_LIBDIR,;t t
-s,@XML_LIBS@,$XML_LIBS,;t t
-s,@XML_INC@,$XML_INC,;t t
-s,@HAVE_EXPAT_TRUE@,$HAVE_EXPAT_TRUE,;t t
-s,@HAVE_EXPAT_FALSE@,$HAVE_EXPAT_FALSE,;t t
-s,@HAVE_LIBXML2_TRUE@,$HAVE_LIBXML2_TRUE,;t t
-s,@HAVE_LIBXML2_FALSE@,$HAVE_LIBXML2_FALSE,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t
 s,@TEUCHOS_BUILD_DIRECTORY@,$TEUCHOS_BUILD_DIRECTORY,;t t
 s,@MPI_LIBS@,$MPI_LIBS,;t t
