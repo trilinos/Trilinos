@@ -57,8 +57,7 @@
 // 
 // for a list of available options. For example, the user amy type:
 //
-// $ ./Ifpack_ex_MatrixMarket --matrix=e05r0500.mtx --prec=RILUK \
-//   --fill=2
+// $ ./Ifpack_ex_MatrixMarket --matrix=e05r0500.mtx --prec=RILUK --fill=2
 //
 // to solve using RILUK preconditioner, and a level-of-fill of 2.
 

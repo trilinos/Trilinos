@@ -110,7 +110,6 @@ int main(int argc, char *argv[])
   Epetra_CrsMatrix A(Copy,Map,0);
   for (int i = 0 ; i < NumPoints ; ++i) {
     
-    int NumEntries;
     if ((i != 0) && (i != NumPoints - 1)) {
       Indices[0] = i - 1;
       Values[0] = -1.0;
