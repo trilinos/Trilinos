@@ -252,18 +252,12 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    nvblockflag = 0;
    if ( nvblocks == 0 )
    {
-#ifdef	MB_MODIF
+     /* MB_MODIF */
       nvblocks = Nrows/ml_ag->num_PDE_eqns;
-#else
-      nvblocks = Nrows;
-#endif
       nbytes   = nvblocks * sizeof(int);
       ML_memory_alloc((void**) &vblock_info,nbytes,"AVE");
-#ifdef	MB_MODIF
+      /* MB_MODIF */
       for ( i = 0; i < nvblocks; i++ ) vblock_info[i] = ml_ag->num_PDE_eqns;
-#else
-      for ( i = 0; i < nvblocks; i++ ) vblock_info[i] = 1;
-#endif
       nvblockflag = 1;
    }    
    nbytes = (nz_cnt + 1) * sizeof( int ); /* probably excessive */

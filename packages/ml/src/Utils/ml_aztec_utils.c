@@ -440,11 +440,9 @@ void ML_precondition(double ff[], int options[], int proc_config[],
   /* then apply a two level preconditioning */
 
   ffout = (double*) ML_allocate(lenf * sizeof(double));
+  if (ml->ML_scheme == ML_MGFULLV)    ML_Solve_MGFull( ml, ff, ffout );
 #ifdef        MB_MODIF
-   if (ml->ML_scheme == ML_MGFULLV)    ML_Solve_MGFull( ml, ff, ffout );
    else if (ml->ML_scheme == ML_SAAMG) ML_Solve_AMGV( ml, ff, ffout);
-#else
-  if (ml->ML_scheme == ML_MGFULLV) ML_Solve_MGFull( ml, ff, ffout );
 #endif
   else ML_Solve_MGV( ml, ff, ffout );
   for (i = 0; i < lenf; i++) ff[i] = ffout[i];
@@ -523,7 +521,7 @@ int AZ_block_MSR(int **param_bindx, double **param_val,
    bindx = *param_bindx;
    val   = *param_val;
 
-   allocated  = (int     ) (((double)(bindx[N_update]+5))*1.2);
+   allocated  = (int     ) (((double)(bindx[N_update]+5))*3.2);
    block_list = (int    *) AZ_allocate( N_update*sizeof(int));
 
    newbindx   = (int    *) AZ_allocate( allocated*sizeof(int));
