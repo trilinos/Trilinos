@@ -178,39 +178,18 @@ class SuperludistOO {
   //!  Setting the transpose flag to true causes Solve() to compute A^t x = b 
   void SetTrans( bool trans ) { Transpose_ = trans ;} ; 
 
-#if 0
-  // SuperludistOO User Matrix Set
-  /* Associates an already defined Epetra_RowMatrix as the matrix
-      that will be used by SuperludistOO as the linear operator when
-      solving the linear system.  Only Epetra_CrsMatrix objects can be
-      passed in through this method.  SetUserMatrix accepts an 
-      Epetra_RowMatrix to be consistent with SetProblem() which
-      takes an Epetra_LinearProblem and then calls SetUserMatrix 
-      with an Epetra_RowMatrix.
-   */
-  int SetUserMatrix(Epetra_RowMatrix * UserMatrix);
-
-  // SuperludistOO LHS Set
-  /* Associates an already defined Epetra_MultiVector as the location
-      where the solution will be returned and, optionally, the initial
-      guess.
-   */
-  int SetLHS(Epetra_MultiVector * X);
-
-  // SuperludistOO RHS Set
-  /* Associates an already defined Epetra_MultiVector (or
-      Epetra_Vector) as the right-hand-side of the linear system.  */
-
-  int SetRHS(Epetra_MultiVector * B);
-#endif
 
   //! SuperludistOO Options Set
   /*! Adds these options to the set of options used to control SuperLUdist
+
+      Not supported in release 0.1 - interface may be revised in the near future
    */
   int SetOptions( map< string, int > Options ) ; 
 
   //! SuperludistOO Parameters Set
   /*! Adds these parameters to the set of parameters used to control SuperLUdist
+
+      Not supported in release 0.1 - interface may be revised in the near future
    */
   int SetParameters( map< string, double > Parameters ) ; 
   //@}
@@ -220,12 +199,21 @@ class SuperludistOO {
   bool GetTrans( ) const { return Transpose_ ;} ;
 
   //! Prints a summary of solver parameters, performs simple sanity checks.
+  /*!
+    Not supported in release 0.1;
+   */
   int CheckInput() const ;
 
   //! Get a copy of the Parameters
+  /*!
+    Not supported in release 0.1 - interface may be revised in the near future
+   */
   map< string, double > GetParameters( ) const { return(Parameters_); } ; 
 
   //! Get a copy of the Options
+  /*!
+    Not supported in release 0.1 - interface may be revised in the near future
+   */
   map< string, int > GetOptions( ) const { return(Options_); } ; 
 
   //@}
@@ -284,8 +272,10 @@ class SuperludistOO {
   //@}
  protected:
 
+  //
+  //  These are not used in release 0.1
+  //
   const Epetra_LinearProblem * Problem_;
-
   Epetra_LinearProblemRedistor *redistor;
   Epetra_LinearProblem *redistProblem;
   //
