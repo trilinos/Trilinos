@@ -48,6 +48,8 @@ class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_M
 
  public:
 
+  enum ColoringAlgorithm{ ALGO_GREEDY, ALGO_LUBI };
+
   ///
   /** Destructor
    */
@@ -56,8 +58,10 @@ class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_M
   ///
   /** Constructor
    */
-  CrsGraph_MapColoring( bool verbose = false )
-  : verbose_(verbose)
+  CrsGraph_MapColoring( ColoringAlgorithm algo = ALGO_GREEDY,
+                        bool verbose = false )
+  : algo_(algo),
+    verbose_(verbose)
   {}
 
   ///
@@ -68,6 +72,8 @@ class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_M
  private:
 
   bool verbose_;
+
+  ColoringAlgorithm algo_;
 
 };
 

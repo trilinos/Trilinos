@@ -131,17 +131,17 @@ operator()( OriginalTypeRef orig  )
     for( int j = 0; j < NumAdj1Indices; ++j )
     {
       assert( base->ExtractMyRowView( Adj1Indices[j], NumIndices, Indices ) == 0 );
-#ifdef EPETRAEXT_COLORING_EXPERIMENTAL
+#if 1
       for( int k = 0; k < NumIndices; ++k )
         if( Indices[k] < nCols ) Cols.insert( Indices[k] );
-#else
+#else //old way was very slow
       int NumLocalIndices = 0;
       for( int k = 0; k < NumIndices; ++k )
         if( Indices[k] < nCols ) NumLocalIndices++; 
       assert( Adj2.InsertMyIndices( i, NumLocalIndices, Indices ) >= 0 );
 #endif
     }
-#ifdef EPETRAEXT_COLORING_EXPERIMENTAL
+#if 1
     int nCols2 = Cols.size();
     vector<int> ColVec( nCols2 );
     set<int>::iterator iterIS = Cols.begin();
@@ -158,48 +158,62 @@ operator()( OriginalTypeRef orig  )
   cout << "EpetraExt::MapColoring [GEN DIST-2 GRAPH] Time: " << wTime2-wTime1 << endl;
 #endif
 
-  vector<int> rowOrder( nCols );
-  //Simple reordering
-  {
-    multimap<int,int> adjMap;
-    for( int i = 0; i < nCols; ++i )
-#ifdef MUST_CONST_STL_MAP_KEY
-      adjMap.insert( pair<const int,int>( Adj2.NumMyIndices(i), i ) );
-#else
-      adjMap.insert( pair<int,int>( Adj2.NumMyIndices(i), i ) );
-#endif
-    multimap<int,int>::iterator iter = adjMap.begin();
-    multimap<int,int>::iterator end = adjMap.end();
-    for( int i = 1; iter != end; ++iter, ++i )
-      rowOrder[ nCols - i ] = (*iter).second;
-  }
-
-#ifdef EPETRAEXT_TIMING
-  wTime1 = timer.WallTime();
-  cout << "EpetraExt::MapColoring [REORDERING] Time: " << wTime1-wTime2 << endl;
-#endif
-
   Epetra_MapColoring * ColorMap = new Epetra_MapColoring( ColMap );
 
-  //Application of Greedy Algorithm to generate Color Map
-  int Size = Delta * Delta + 1;
-  set<int> allowedColors;
-  for( int col = 0; col < nCols; ++col )
+  if( algo_ == ALGO_GREEDY )
   {
-    for( int i = 0; i < Size; ++i ) allowedColors.insert( i+1 ); 
-
-    Adj2.ExtractMyRowView( rowOrder[col], NumIndices, Indices );
-
-    for( int i = 0; i < NumIndices; ++i )
-      if( (*ColorMap)[ Indices[i] ] > 0 ) allowedColors.erase( (*ColorMap)[ Indices[i] ] );
-
-    (*ColorMap)[ rowOrder[col] ] = *(allowedColors.begin());
-  }
+    vector<int> rowOrder( nCols );
+    //Simple reordering
+    {
+      multimap<int,int> adjMap;
+      typedef multimap<int,int>::value_type adjMapValueType;
+      for( int i = 0; i < nCols; ++i )
+        adjMap.insert( adjMapValueType( Adj2.NumMyIndices(i), i ) );
+#ifdef MUST_CONST_STL_MAP_KEY
+//        adjMap.insert( pair<const int,int>( Adj2.NumMyIndices(i), i ) );
+#else
+//        adjMap.insert( pair<int,int>( Adj2.NumMyIndices(i), i ) );
+#endif
+      multimap<int,int>::iterator iter = adjMap.begin();
+      multimap<int,int>::iterator end = adjMap.end();
+      for( int i = 1; iter != end; ++iter, ++i )
+        rowOrder[ nCols - i ] = (*iter).second;
+    }
 
 #ifdef EPETRAEXT_TIMING
-  wTime2 = timer.WallTime();
-  cout << "EpetraExt::MapColoring [GREEDY COLORING] Time: " << wTime2-wTime1 << endl;
+    wTime1 = timer.WallTime();
+    cout << "EpetraExt::MapColoring [REORDERING] Time: " << wTime1-wTime2 << endl;
 #endif
+
+    //Application of Greedy Algorithm to generate Color Map
+    int Size = Delta * Delta + 1;
+    set<int> allowedColors;
+    for( int col = 0; col < nCols; ++col )
+    {
+      for( int i = 0; i < Size; ++i ) allowedColors.insert( i+1 ); 
+
+      Adj2.ExtractMyRowView( rowOrder[col], NumIndices, Indices );
+
+      for( int i = 0; i < NumIndices; ++i )
+        if( (*ColorMap)[ Indices[i] ] > 0 ) allowedColors.erase( (*ColorMap)[ Indices[i] ] );
+
+      (*ColorMap)[ rowOrder[col] ] = *(allowedColors.begin());
+    }
+
+#ifdef EPETRAEXT_TIMING
+    wTime2 = timer.WallTime();
+    cout << "EpetraExt::MapColoring [GREEDY COLORING] Time: " << wTime2-wTime1 << endl;
+#endif
+  }
+  else if( algo_ == ALGO_LUBI )
+  {
+    //Assign Random Keys To Rows
+
+    //do until empty set
+      //generate maximal independent set as color
+  }
+  else
+    abort(); //UNKNOWN ALGORITHM
 
   if( verbose_ ) cout << "ColorMap!\n" << *ColorMap;
 
