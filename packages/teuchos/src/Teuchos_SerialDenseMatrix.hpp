@@ -138,6 +138,9 @@ namespace Teuchos {
     */
     int shape(int numRows, int numCols);
 
+    //! Same as <tt>shape()</tt> except leaves uninitialized.
+    int shapeUninitialized(int numRows, int numCols);
+
     //! Reshaping method for changing the size of a SerialDenseMatrix, keeping the entries.
     /*!
 	\param numRows - The number of rows in this matrix.
@@ -150,6 +153,7 @@ namespace Teuchos {
 	\return Integer error code, set 0 if successful.
     */
     int reshape(int numRows, int numCols);
+
 
   //@}
 
@@ -384,6 +388,18 @@ namespace Teuchos {
     stride_ = numRows_;
     values_ = new ScalarType[stride_*numCols_];
     putScalar();
+    valuesCopied_ = true;
+    return(0);
+  }
+
+  template<typename OrdinalType, typename ScalarType>
+  int SerialDenseMatrix<OrdinalType, ScalarType>::shapeUninitialized(int numRows, int numCols)
+  {
+    deleteArrays(); // Get rid of anything that might be already allocated
+    numRows_ = numRows;
+    numCols_ = numCols;
+    stride_ = numRows_;
+    values_ = new ScalarType[stride_*numCols_];
     valuesCopied_ = true;
     return(0);
   }
