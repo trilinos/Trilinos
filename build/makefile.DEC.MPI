@@ -1,0 +1,32 @@
+# Default environment variable definitions are defined in makefile.defaults
+ 
+include $(TRILINOS_HOME)/build/makefile.defaults
+
+# Define architecture specific flags for C++, C and Fortran
+
+ARCH_CXXFLAGS= -O3 -D__USE_STD_IOSTREAM -Hf
+ARCH_CFLAGS= -O3
+ARCH_FFLAGS= -O3
+
+# Define compiler commands
+CC=cc
+FC=f77
+CXX=cxx
+
+#Define include directories (remember to use -Idirectory_name)
+
+ARCH_INCLUDES = -lmpi
+
+COMPAQ_FOR=-lUfor -lfor -lFutil -lm -lgrp_io
+FORTLIBS = $(COMPAQ_FOR)
+
+TEMPLATE_OBJS = ./cxx_repository/*.o
+
+ARCH_LIBS = -L/usr/lib -lots ${FORTLIBS}
+
+LN=ln -s
+
+################## External Libraries ##########################
+
+LIBBLAS = /usr/lib/libcxml.a
+LIBLAPACK = /usr/lib/libcxml.a
