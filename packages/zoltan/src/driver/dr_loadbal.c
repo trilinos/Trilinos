@@ -88,6 +88,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
     return 0;
   }
 
+  LB_Set_Param(lb, "CHECK_GRAPH", "1");
 
   /* Set the user-specified parameters */
   for (i = 0; i < prob->num_params; i++) {
