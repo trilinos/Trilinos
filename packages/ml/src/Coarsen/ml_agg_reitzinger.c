@@ -1510,7 +1510,7 @@ int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
    widget.Amat   = &(ml->Amat[level]);
    AGGsmoother = ML_Operator_Create(ml->comm);
    ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
-				 widget.Amat->outvec_leng, ML_EXTERNAL,&widget,
+				 widget.Amat->outvec_leng, ML_INTERNAL,&widget,
 				 widget.Amat->matvec->Nrows, NULL, 0);
    ML_Operator_Set_Getrow(AGGsmoother, ML_INTERNAL,
                           widget.Amat->getrow->Nrows, 

@@ -801,7 +801,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      widget.aggr_info = ag->aggr_info[level];
      AGGsmoother = ML_Operator_Create(ml->comm);
      ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
-                        widget.Amat->outvec_leng, ML_EXTERNAL,&widget,
+                        widget.Amat->outvec_leng, ML_INTERNAL,&widget,
                         widget.Amat->matvec->Nrows, NULL, 0);
      ML_Operator_Set_Getrow(AGGsmoother, ML_INTERNAL,
                           widget.Amat->getrow->Nrows, 
@@ -1133,8 +1133,10 @@ int ML_AGG_Amat_Getrows(void *data, int N_requested_rows,
    struct ML_AGG_Matrix_Context *widget;
    ML_GetrowFunc  *getrow_obj;
    int            info;
+   ML_Operator    *mat_in;
 
-   widget = (struct ML_AGG_Matrix_Context *) data;
+   mat_in = (ML_Operator *) data;
+   widget = (struct ML_AGG_Matrix_Context *) ML_Get_MyGetrowData(mat_in);
    getrow_obj = widget->Amat->getrow;
    if (N_requested_rows > 1) 
    {
@@ -1969,9 +1971,9 @@ tentP = ML_Operator_Create(ml->comm);
    widget.aggr_info = ag->aggr_info[level];
    AGGsmoother = ML_Operator_Create(ml->comm);
    ML_Operator_Set_ApplyFuncData(AGGsmoother, widget.Amat->invec_leng,
-                        widget.Amat->outvec_leng, ML_EXTERNAL,&widget,
+                        widget.Amat->outvec_leng, ML_INTERNAL,&widget,
                         widget.Amat->matvec->Nrows, NULL, 0);
-   ML_Operator_Set_Getrow(AGGsmoother, ML_EXTERNAL,
+   ML_Operator_Set_Getrow(AGGsmoother, ML_INTERNAL,
                           widget.Amat->getrow->Nrows, 
                           ML_AGG_Amat_Getrows);
    ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),

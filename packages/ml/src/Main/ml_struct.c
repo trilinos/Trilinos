@@ -671,6 +671,7 @@ int MLnew_Set_Amatrix_Getrow(ML *ml, int nl,
 
    Amat = &(ml->Amat[nl]);
 
+   ML_Operator_Set_Getrow(Amat, ML_INTERNAL, Amat->outvec_leng, getrow);
    if (comm != NULL) {
       Nghost = comm_vec_leng - Amat->invec_leng;
       if (Nghost < 0) {
@@ -690,8 +691,8 @@ int MLnew_Set_Amatrix_Getrow(ML *ml, int nl,
                                NULL, ML_OVERWRITE, NULL, 0);
 
    }
+   return 0;
 
-   return(ML_Operator_Set_Getrow(Amat, ML_INTERNAL, Amat->outvec_leng, getrow));
 }
 
 /* ------------------------------------------------------------------------- */

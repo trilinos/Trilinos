@@ -508,7 +508,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 				   Amatrix->outvec_leng,
 				   ML_EMPTY,csr_data,
 				   Amatrix->outvec_leng,NULL,0);
-     ML_Operator_Set_Getrow(Cmatrix, ML_EXTERNAL, 
+     ML_Operator_Set_Getrow(Cmatrix, ML_INTERNAL, 
 			    Cmatrix->outvec_leng, 
 			    MSR_get_ones_rows);
      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Cmatrix,mat_indx,
@@ -519,7 +519,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      csr_data->columns = amal_mat_indx;
      ML_Operator_Set_ApplyFuncData(Cmatrix,nvblocks, nvblocks, ML_EMPTY,
 				   csr_data, nvblocks, NULL,0);
-     ML_Operator_Set_Getrow(Cmatrix, ML_EXTERNAL, nvblocks, MSR_get_ones_rows);
+     ML_Operator_Set_Getrow(Cmatrix, ML_INTERNAL, nvblocks, MSR_get_ones_rows);
 
      ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Cmatrix,amal_mat_indx,
 				       bdry_array, &aggr_count, &aggr_index, true_bdry);
