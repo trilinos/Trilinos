@@ -384,20 +384,33 @@ int NextMain( int argc, char *argv[] ) {
 
   bool verbose = false; 
   bool small = false ; 
+  bool quiet = false ; 
   if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 'v') ) 
     verbose = true ; 
   if ( argc >= 3 && (argv[2][0] == '-') &&  (argv[2][1] == 'v') ) 
+    verbose = true ; 
+  if ( argc >= 4 && (argv[3][0] == '-') &&  (argv[3][1] == 'v') ) 
     verbose = true ; 
 
   if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 's') ) 
     small = true ; 
   if ( argc >= 3 && (argv[2][0] == '-') &&  (argv[2][1] == 's') ) 
     small = true ; 
+  if ( argc >= 4 && (argv[3][0] == '-') &&  (argv[3][1] == 's') ) 
+    small = true ; 
+
+  if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 'q') ) 
+    quiet = true ; 
+  if ( argc >= 3 && (argv[2][0] == '-') &&  (argv[2][1] == 'q') ) 
+    quiet = true ; 
+  if ( argc >= 4 && (argv[3][0] == '-') &&  (argv[3][1] == 'q') ) 
+    quiet = true ; 
 
   if ( argc >= 2 && (argv[1][0] == '-') &&  (argv[1][1] == 'h') ) {
-    cerr << "Usage TestOptions [-s] [-v] " << endl ; 
+    cerr << "Usage TestOptions [-s] [-v] [-q] " << endl ; 
     cerr << "-v:  verbose  " << endl ; 
     cerr << "-s:  small  " << endl ; 
+    cerr << "-q:  quiet  " << endl ; 
     exit(-1);
   }
 
@@ -447,21 +460,23 @@ int NextMain( int argc, char *argv[] ) {
 
   bool symmetric ; 
 
-  //  result += TestOneMatrix("Tri.triS", Comm, verbose, symmetric, 1e-1 , numtests ) ;
-  //  result += TestOneMatrix("Tri2.triS", Comm, verbose, symmetric, 1e-5 , numtests ) ;
-  //  result += TestOneMatrix("../Test_Basic/bcsstk01.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
   //  result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/ImpcolB.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 #if 0
       // Khead.triS fails on DSCPACK 
       result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/Khead.triS", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 #endif
 
-      if ( ! small ) {
+      //
+      //  small is set by TestValgrind - keep testing to a minimum because execution time is so slow
+      //  quiet is set by TestQuietAmesos - dscpack is not quiet at the moment, hence we can't test symmetric matrices
+      //  in TestQuietAmesos
+      //
+      if ( ! small && ! quiet ) {
 	result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+	result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/662_bus_out.rsa", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+	result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/SuperLU.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
       }
-      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/662_bus_out.rsa", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 
-      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/SuperLU.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
       result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/SuperLU.triU", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 
   if ( verbose) cout << result << " Tests failed " ; 
