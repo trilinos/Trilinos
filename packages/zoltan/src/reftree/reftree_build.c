@@ -107,27 +107,46 @@ ZOLTAN_REFTREE *root;          /* Root of the refinement tree */
 struct Zoltan_Reftree_hash_node **hashtab = NULL; /* hash table */
 int nproc;                 /* number of processors */
 ZOLTAN_ID_PTR local_gids = NULL; /* coarse element Global IDs from user */
+ZOLTAN_ID_PTR full_gid = NULL; /* local_gids for the full coarse grid */
 ZOLTAN_ID_PTR local_lids = NULL; /* coarse element Local IDs from user */
+ZOLTAN_ID_PTR full_lid = NULL; /* local_lids for the full coarse grid */
 ZOLTAN_ID_PTR lid, prev_lid;   /* temporary coarse element Local ID; used to pass
                               NULL to query functions when NUM_LID_ENTRIES=0 */
-ZOLTAN_ID_PTR all_gids = NULL; /* coarse element Global IDs from all procs */
 int *assigned = NULL;      /* 1 if the element is assigned to this proc */
+int *full_assigned = NULL; /* assigned for the full coarse grid */
+int *full_known = NULL;    /* 1 if the element is known to this proc */
 int *num_vert = NULL;      /* number of vertices for each coarse element */
+int *full_num_vert = NULL; /* num_vert for the full coarse grid */
 int *reorder_nvert = NULL; /* num_vert reordered by permutation "order" */
 int root_vert[1];          /* fake number of vertices for the root */
 ZOLTAN_ID_PTR vertices = NULL; /* vertices for the coarse elements */
+ZOLTAN_ID_PTR full_vertices = NULL; /* vertices for the full coarse grid */
 ZOLTAN_ID_PTR in_vertex = NULL; /* "in" vertex for each coarse element */
+ZOLTAN_ID_PTR full_in_vertex = NULL; /* in_vertex for the full coarse grid */
 ZOLTAN_ID_PTR out_vertex = NULL; /* "out" vertex for each coarse element */
+ZOLTAN_ID_PTR full_out_vertex = NULL; /* out_vertex for the full coarse grid */
+ZOLTAN_ID_PTR send_id = NULL; /* to send message to other procs */
+ZOLTAN_ID_PTR recv_id = NULL; /* to receive message from othr procs */
+int *send_int = NULL;      /* to send message to other procs */
+int *recv_size_all = NULL; /* size of message from each processor */
+int recv_size;             /* total size of a received message */
 int in_order;              /* 1 if user is supplying order of the elements */
+int in_order_temp;         /* holds in_order from other proc while checking */
+int *in_order_all = NULL;  /* in_order from each processor */
 int num_obj;               /* number of coarse objects known to this proc */
 int *num_obj_all = NULL;   /* num_obj from each processor */
-int *displs = NULL;        /* running sum of num_obj_all */
-int sum_num_obj;           /* full sum of num_obj_all */
+int num_assigned_obj;      /* number of coarse objects assigned to this proc */
+int *num_ass_all = NULL;   /* num_assigned_obj from each processor */
 int total_num_obj;         /* number of objects in the whole coarse grid */
+int *displs = NULL;        /* displacements for start of each proc in message */
+int sum_assigned_vert;     /* sum of # of verts in objs assigned to this proc */
+int *sum_ass_vert_all = NULL; /* sum_assigned_vert from each processor */
+int total_sum_vert;        /* sum of sum_ass_vert_all */
 int ierr;                  /* error flag from calls */
 int final_ierr;            /* error flag returned by this routine */
 int wdim;                  /* dimension of object weights */
 int count;                 /* counter for number of objects */
+int vcount;                /* counter for number of vertices */
 int sum_vert;              /* summation of number of vertices of objects */
 int *order = NULL;         /* permutation array for ordering coarse elements */
 int found;                 /* flag for terminating first/next query loop */
@@ -172,6 +191,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
   root->num_child      = 0;
   root->num_vertex     = 0;
   root->assigned_to_me = 0;
+  root->known_to_me    = 1;
   root->partition      = 0;
 
   for (i=0; i<wdim; i++) {
@@ -280,6 +300,10 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
                               local_gids, local_lids, 
                               assigned, num_vert, vertices,
                               &in_order, in_vertex, out_vertex, &ierr);
+      sum_vert = 0;
+      for (i=0; i<num_obj; i++) {
+        sum_vert += num_vert[i];
+      }
       if (ierr) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                       "Error returned from user function Get_Coarse_Obj_List.");
@@ -318,6 +342,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
                                        &in_vertex[count*ngid_ent],
                                        &out_vertex[count*ngid_ent],
                                        &ierr);
+      sum_vert += num_vert[count];
       if (ierr) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                      "Error returned from user function Get_First_Coarse_Obj.");
@@ -334,7 +359,6 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
       }
 
       while (found && count <= num_obj) {
-        sum_vert += num_vert[count];
         count += 1;
         prev_lid = (nlid_ent ? &(local_lids[(count-1)*nlid_ent]) 
                                     : NULL);
@@ -351,6 +375,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
                                       &in_vertex[count*ngid_ent],
                                       &out_vertex[count*ngid_ent],
                                       &ierr);
+        sum_vert += num_vert[count];
         if (ierr) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                       "Error returned from user function Get_Next_Coarse_Obj.");
@@ -397,13 +422,12 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
    * Communicate to get coarse grid objects unknown to this processor.
    */
 
-  /*
-   * First determine how many coarse objects are on each processor
-   */
+/* make sure all processors agree about in_order; also if num_obj is 0 then
+   set in_order from a processor where it is not 0 */
 
+  in_order_all = (int *)ZOLTAN_MALLOC(nproc*sizeof(int));
   num_obj_all = (int *)ZOLTAN_MALLOC(nproc*sizeof(int));
-  displs = (int *)ZOLTAN_MALLOC(nproc*sizeof(int));
-  if (num_obj_all == NULL || displs == NULL) {
+  if (in_order_all == NULL || num_obj_all == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ZOLTAN_FREE(&local_gids);
     ZOLTAN_FREE(&local_lids);
@@ -412,155 +436,393 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
     ZOLTAN_FREE(&vertices);
     ZOLTAN_FREE(&in_vertex);
     ZOLTAN_FREE(&out_vertex);
+    ZOLTAN_FREE(&in_order_all);
     ZOLTAN_FREE(&num_obj_all);
-    ZOLTAN_FREE(&displs);
     Zoltan_Reftree_Free_Structure(zz);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_MEMERR);
   }
 
-  MPI_Allgather((void *)&num_obj,1,MPI_INT,(void *)num_obj_all,1,MPI_INT,
-                zz->Communicator);
-  displs[0] = 0;
-  for (i=1; i<nproc; i++) displs[i] = displs[i-1]+num_obj_all[i-1];
-  sum_num_obj = displs[nproc-1] + num_obj_all[nproc-1];
+  MPI_Allgather((void *)&in_order,1,MPI_INT,(void *)in_order_all,1,
+                MPI_INT,zz->Communicator);
+  MPI_Allgather((void *)&num_obj,1,MPI_INT,(void *)num_obj_all,1,
+                MPI_INT,zz->Communicator);
 
-  /*
-   * Then get the coarse objects from all processors
-   */
-
-  all_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, sum_num_obj);
-  if (all_gids == NULL) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    ZOLTAN_FREE(&local_gids);
-    ZOLTAN_FREE(&local_lids);
-    ZOLTAN_FREE(&assigned);
-    ZOLTAN_FREE(&num_vert);
-    ZOLTAN_FREE(&vertices);
-    ZOLTAN_FREE(&in_vertex);
-    ZOLTAN_FREE(&out_vertex);
-    ZOLTAN_FREE(&num_obj_all);
-    ZOLTAN_FREE(&displs);
-    ZOLTAN_FREE(&all_gids);
-    Zoltan_Reftree_Free_Structure(zz);
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return(ZOLTAN_MEMERR);
-  }
-
-  /* KDDKDD Changed MPI_BYTE to ZOLTAN_ID_MPI_TYPE  */
-
-  /* Account for number of array entries in an ID. */
+  in_order_temp = -1;
   for (i=0; i<nproc; i++) {
-    num_obj_all[i] = num_obj_all[i]*ngid_ent;
-    displs[i] = displs[i]*ngid_ent;
+    if (num_obj_all[i] != 0) {
+      if (in_order_temp == -1) {
+        in_order_temp = in_order_all[i];
+      }
+      else {
+        if (in_order_all[i] != in_order_temp) {
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                   "All processors must return the same value for in_order.");
+          ZOLTAN_FREE(&local_gids);
+          ZOLTAN_FREE(&local_lids);
+          ZOLTAN_FREE(&assigned);
+          ZOLTAN_FREE(&num_vert);
+          ZOLTAN_FREE(&vertices);
+          ZOLTAN_FREE(&in_vertex);
+          ZOLTAN_FREE(&out_vertex);
+          Zoltan_Reftree_Free_Structure(zz);
+          ZOLTAN_TRACE_EXIT(zz, yo);
+          return(ZOLTAN_FATAL);
+        }
+      }
+    }
+  }
+  if (num_obj == 0) in_order = in_order_temp;
+
+  ZOLTAN_FREE(&in_order_all);
+  ZOLTAN_FREE(&num_obj_all);
+
+/* determine the number of vertices among the assigned elements of each proc */
+/* determine how many coarse objects are assigned to each processor */
+
+  num_assigned_obj = 0;
+  for (i=0; i<num_obj; i++) {
+    if (assigned[i]) num_assigned_obj++;
   }
 
-  MPI_Allgatherv((void *)local_gids,num_obj*ngid_ent,ZOLTAN_ID_MPI_TYPE,
-                 (void *)all_gids,num_obj_all,displs,ZOLTAN_ID_MPI_TYPE,
+  num_ass_all = (int *)ZOLTAN_MALLOC(nproc*sizeof(int));
+  displs = (int *)ZOLTAN_MALLOC(nproc*sizeof(int));
+  if (num_ass_all == NULL || displs == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ZOLTAN_FREE(&local_gids);
+    ZOLTAN_FREE(&local_lids);
+    ZOLTAN_FREE(&assigned);
+    ZOLTAN_FREE(&num_vert);
+    ZOLTAN_FREE(&vertices);
+    ZOLTAN_FREE(&in_vertex);
+    ZOLTAN_FREE(&out_vertex);
+    ZOLTAN_FREE(&num_ass_all);
+    ZOLTAN_FREE(&displs);
+    Zoltan_Reftree_Free_Structure(zz);
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_MEMERR);
+  }
+
+  MPI_Allgather((void *)&num_assigned_obj,1,MPI_INT,(void *)num_ass_all,1,
+                MPI_INT,zz->Communicator);
+
+/* determine the number of vertices among the assigned elements of each proc */
+
+  sum_assigned_vert = 0;
+  for (i=0; i<num_obj; i++) {
+    if (assigned[i]) {
+      sum_assigned_vert += num_vert[i];
+    }
+  }
+
+  sum_ass_vert_all = (int *)ZOLTAN_MALLOC(nproc*sizeof(int));
+  recv_size_all = (int *)ZOLTAN_MALLOC(nproc*sizeof(int));
+  if (sum_ass_vert_all == NULL || recv_size_all == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ZOLTAN_FREE(&local_gids);
+    ZOLTAN_FREE(&local_lids);
+    ZOLTAN_FREE(&assigned);
+    ZOLTAN_FREE(&num_vert);
+    ZOLTAN_FREE(&vertices);
+    ZOLTAN_FREE(&in_vertex);
+    ZOLTAN_FREE(&out_vertex);
+    ZOLTAN_FREE(&num_ass_all);
+    ZOLTAN_FREE(&displs);
+    ZOLTAN_FREE(&sum_ass_vert_all);
+    ZOLTAN_FREE(&recv_size_all);
+    Zoltan_Reftree_Free_Structure(zz);
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_MEMERR);
+  }
+
+  MPI_Allgather((void *)&sum_assigned_vert,1,MPI_INT,(void *)sum_ass_vert_all,
+                 1,MPI_INT,zz->Communicator);
+
+/* determine the displacements in a message containing 3+num_vert GIDs for
+   each assigned object, the total number of objects, and the size of such
+   a message */
+
+  displs[0] = 0;
+  for (i=1; i<nproc; i++) {
+    recv_size_all[i-1] = (3*num_ass_all[i-1]+sum_ass_vert_all[i-1])*ngid_ent;
+    displs[i] = displs[i-1] + recv_size_all[i-1];
+  }
+  recv_size_all[nproc-1] = 
+              (3*num_ass_all[nproc-1]+sum_ass_vert_all[nproc-1])*ngid_ent;
+  recv_size = displs[nproc-1] + recv_size_all[nproc-1];
+
+/* Make an array of GID with the global ID, vertices, in_vertex and
+   out_vertex of each object assigned to this processor, and an integer
+   array with the number of vertices.  */
+
+  send_id = ZOLTAN_MALLOC_GID_ARRAY(zz, 3*num_assigned_obj+sum_vert);
+  send_int = (int *) ZOLTAN_MALLOC(sizeof(int)*num_assigned_obj);
+
+  if (num_assigned_obj != 0 && (send_id == NULL || send_int == NULL)) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ZOLTAN_FREE(&local_gids);
+    ZOLTAN_FREE(&local_lids);
+    ZOLTAN_FREE(&assigned);
+    ZOLTAN_FREE(&num_vert);
+    ZOLTAN_FREE(&vertices);
+    ZOLTAN_FREE(&in_vertex);
+    ZOLTAN_FREE(&out_vertex);
+    ZOLTAN_FREE(&num_ass_all);
+    ZOLTAN_FREE(&displs);
+    ZOLTAN_FREE(&sum_ass_vert_all);
+    ZOLTAN_FREE(&send_id);
+    ZOLTAN_FREE(&send_int);
+    Zoltan_Reftree_Free_Structure(zz);
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_MEMERR);
+  }
+
+  count = 0;
+  sum_vert = 0;
+  for (i=0; i<num_obj; i++) {
+    if (assigned[i]) {
+      ZOLTAN_SET_GID(zz, &(send_id[count*ngid_ent]), 
+                         &(local_gids[i*ngid_ent]));
+      ZOLTAN_SET_GID(zz, &(send_id[(count+1)*ngid_ent]), 
+                         &(in_vertex[i*ngid_ent]));
+      ZOLTAN_SET_GID(zz, &(send_id[(count+2)*ngid_ent]), 
+                         &(out_vertex[i*ngid_ent]));
+      for (j=0; j<num_vert[i]; j++) {
+        ZOLTAN_SET_GID(zz, &(send_id[(count+3+j)*ngid_ent]),
+                         &(vertices[(sum_vert+j)*ngid_ent]));
+      }
+      count += 3 + num_vert[i];
+    }
+    sum_vert += num_vert[i];
+  }
+
+  count = 0;
+  for (i=0; i<num_obj; i++) {
+    if (assigned[i]) {
+      send_int[count] = num_vert[i];
+      count = count + 1;
+    }
+  }
+
+  ZOLTAN_FREE(&num_vert);
+  ZOLTAN_FREE(&vertices);
+  ZOLTAN_FREE(&in_vertex);
+  ZOLTAN_FREE(&out_vertex);
+
+/* exchange the assigned coarse objects with all processors */
+
+  recv_id = ZOLTAN_MALLOC_GID_ARRAY(zz, recv_size);
+  if (recv_id == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ZOLTAN_FREE(&local_gids);
+    ZOLTAN_FREE(&local_lids);
+    ZOLTAN_FREE(&assigned);
+    ZOLTAN_FREE(&num_ass_all);
+    ZOLTAN_FREE(&displs);
+    ZOLTAN_FREE(&sum_ass_vert_all);
+    ZOLTAN_FREE(&send_id);
+    ZOLTAN_FREE(&send_int);
+    ZOLTAN_FREE(&recv_id);
+    Zoltan_Reftree_Free_Structure(zz);
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_MEMERR);
+  }
+
+  MPI_Allgatherv((void *)send_id,(3*num_assigned_obj+sum_vert)*ngid_ent,
+                 ZOLTAN_ID_MPI_TYPE,(void *)recv_id,recv_size_all,displs,
+                 ZOLTAN_ID_MPI_TYPE,zz->Communicator);
+
+  ZOLTAN_FREE(&send_id);
+
+/* set the displacements for sending the integer message, compute the
+   number of objects and vertices in the whole coarse grid, and exchange the
+   number of vertices of each object */
+
+  displs[0] = 0;
+  total_num_obj = num_ass_all[0];
+  total_sum_vert = sum_ass_vert_all[0];
+  recv_size_all[0] = num_ass_all[0]*ngid_ent;
+  for (i=1; i<nproc; i++) {
+    displs[i] = displs[i-1]+num_ass_all[i-1];
+    total_num_obj += num_ass_all[i];
+    total_sum_vert += sum_ass_vert_all[i];
+    recv_size_all[i] = num_ass_all[i]*ngid_ent;
+  }
+
+  ZOLTAN_FREE(&num_ass_all);
+  ZOLTAN_FREE(&sum_ass_vert_all);
+
+  full_num_vert = (int *) ZOLTAN_MALLOC(sizeof(int)*total_num_obj);
+  if (full_num_vert == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ZOLTAN_FREE(&local_gids);
+    ZOLTAN_FREE(&local_lids);
+    ZOLTAN_FREE(&assigned);
+    ZOLTAN_FREE(&displs);
+    ZOLTAN_FREE(&send_int);
+    ZOLTAN_FREE(&recv_id);
+    ZOLTAN_FREE(&full_num_vert);
+    Zoltan_Reftree_Free_Structure(zz);
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_MEMERR);
+  }
+
+  MPI_Allgatherv((void *)send_int,num_assigned_obj,MPI_INT,
+                 (void *)full_num_vert,recv_size_all,displs, MPI_INT,
                  zz->Communicator);
 
   ZOLTAN_FREE(&displs);
-  ZOLTAN_FREE(&num_obj_all);
+  ZOLTAN_FREE(&send_int);
 
-  /*
-   * Finally, build a list with each coarse grid element, beginning with
-   * the ones this processor knows.  Also set the default order of the
-   * elements as given by the user, with processor rank resolving duplicates
-   */
+/* copy the messages into the coarse grid data structure */
 
-  local_gids = ZOLTAN_REALLOC_GID_ARRAY(zz, local_gids, sum_num_obj);
-  order = (int *) ZOLTAN_MALLOC(sum_num_obj*sizeof(int));
-  if (local_gids == NULL || order == NULL) {
+  full_gid = ZOLTAN_MALLOC_GID_ARRAY(zz, total_num_obj);
+  full_in_vertex = ZOLTAN_MALLOC_GID_ARRAY(zz, total_num_obj);
+  full_out_vertex = ZOLTAN_MALLOC_GID_ARRAY(zz, total_num_obj);
+  full_vertices = ZOLTAN_MALLOC_GID_ARRAY(zz, total_sum_vert);
+  if (full_gid == NULL || full_in_vertex == NULL || full_out_vertex == NULL ||
+      full_vertices == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ZOLTAN_FREE(&local_gids);
     ZOLTAN_FREE(&local_lids);
     ZOLTAN_FREE(&assigned);
-    ZOLTAN_FREE(&num_vert);
-    ZOLTAN_FREE(&vertices);
-    ZOLTAN_FREE(&in_vertex);
-    ZOLTAN_FREE(&out_vertex);
-    ZOLTAN_FREE(&all_gids);
-    ZOLTAN_FREE(&order);
+    ZOLTAN_FREE(&recv_id);
+    ZOLTAN_FREE(&full_num_vert);
+    ZOLTAN_FREE(&full_gid);
+    ZOLTAN_FREE(&full_in_vertex);
+    ZOLTAN_FREE(&full_out_vertex);
+    ZOLTAN_FREE(&full_vertices);
     Zoltan_Reftree_Free_Structure(zz);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_MEMERR);
   }
 
-/* TEMP this is terribly inefficient.  Probably better to sort all_gids to
-        identify the duplicates.  Of course, it's not bad if the
-        initial grid is really coarse */
-
-  total_num_obj = num_obj;
   count = 0;
-  for (i=0; i<sum_num_obj; i++) order[i] = -1;
+  vcount = 0;
+  for (i=0; i<total_num_obj; i++) {
+    ZOLTAN_SET_GID(zz, &(full_gid[i*ngid_ent]), &(recv_id[count*ngid_ent]));
+    ZOLTAN_SET_GID(zz, &(full_in_vertex[i*ngid_ent]),
+                       &(recv_id[(count+1)*ngid_ent]));
+    ZOLTAN_SET_GID(zz, &(full_out_vertex[i*ngid_ent]),
+                       &(recv_id[(count+2)*ngid_ent]));
+    for (j=0; j<full_num_vert[i]; j++) {
+      ZOLTAN_SET_GID(zz, &(full_vertices[(vcount+j)*ngid_ent]),
+                         &(recv_id[(count+3+j)*ngid_ent]));
+    }
+    count += 3 + full_num_vert[i];
+    vcount += full_num_vert[i];
+  }
 
-  for (i=0; i<sum_num_obj; i++) {
+  ZOLTAN_FREE(&recv_id);
+
+/* go through all the coarse grid elements to see if it is known to this
+   processor, and if so set assigned and local id */
+
+  full_lid = ZOLTAN_MALLOC_GID_ARRAY(zz, total_num_obj);
+  full_assigned = ZOLTAN_MALLOC_GID_ARRAY(zz, total_num_obj);
+  full_known = ZOLTAN_MALLOC_GID_ARRAY(zz, total_num_obj);
+  if (full_lid == NULL || full_assigned == NULL || full_known == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ZOLTAN_FREE(&local_gids);
+    ZOLTAN_FREE(&local_lids);
+    ZOLTAN_FREE(&assigned);
+    ZOLTAN_FREE(&full_num_vert);
+    ZOLTAN_FREE(&full_gid);
+    ZOLTAN_FREE(&full_in_vertex);
+    ZOLTAN_FREE(&full_out_vertex);
+    ZOLTAN_FREE(&full_vertices);
+    ZOLTAN_FREE(&full_lid);
+    ZOLTAN_FREE(&full_assigned);
+    ZOLTAN_FREE(&full_known);
+    Zoltan_Reftree_Free_Structure(zz);
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_MEMERR);
+  }
+
+  for (i=0; i<total_num_obj; i++) {
+
+/* TEMP seach for matching GID.  Should be more efficient with a hash table */
+
     found = 0;
-    for (j=0; j<total_num_obj && !found; j++) {
-      if (ZOLTAN_EQ_GID(zz, &(all_gids[i*ngid_ent]),
-                    &(local_gids[j*ngid_ent]))) 
+    for (j=0; j<num_obj && !found; j++) {
+      if (ZOLTAN_EQ_GID(zz, &(full_gid[i*ngid_ent]),
+                        &(local_gids[j*ngid_ent]))) 
         found = 1;
     }
+    j--;
+
     if (found) {
-      if (order[j-1] == -1) {
-        order[j-1] = count;
-        count += 1;
-      }
+      ZOLTAN_SET_LID(zz, &(full_lid[i*nlid_ent]), &(local_lids[j*nlid_ent]));
+      full_known[i] = 1;
+      full_assigned[i] = assigned[j];
     }
     else {
-      ZOLTAN_SET_GID(zz, &(local_gids[total_num_obj*ngid_ent]), 
-                     &(all_gids[i*ngid_ent]));
-      order[total_num_obj] = count;
-      count += 1;
-      total_num_obj += 1;
-    }
+      ZOLTAN_INIT_LID(zz, &(full_lid[i*nlid_ent]));
+      full_known[i] = 0;
+      full_assigned[i] = 0;
+   }
   }
 
-  if (count != total_num_obj) {
-    sprintf(msg, "Number of objects counted while "
-                 "setting default order = %d is not equal to the "
-                 "number counted while getting objects from other procs "
-                 "= %d.", count, total_num_obj);
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
-    final_ierr = ZOLTAN_WARN;
-  }
-
-  ZOLTAN_FREE(&all_gids);
-
-  num_vert = (int *) ZOLTAN_REALLOC(num_vert,total_num_obj*sizeof(int));
-  if (num_vert == NULL) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    ZOLTAN_FREE(&local_gids);
-    ZOLTAN_FREE(&local_lids);
-    ZOLTAN_FREE(&assigned);
-    ZOLTAN_FREE(&num_vert);
-    ZOLTAN_FREE(&vertices);
-    ZOLTAN_FREE(&in_vertex);
-    ZOLTAN_FREE(&out_vertex);
-    ZOLTAN_FREE(&order);
-    Zoltan_Reftree_Free_Structure(zz);
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return(ZOLTAN_MEMERR);
-  }
-
-  for (i=num_obj; i<total_num_obj; i++) num_vert[i] = -1;
+  ZOLTAN_FREE(&local_gids);
+  ZOLTAN_FREE(&local_lids);
+  ZOLTAN_FREE(&assigned);
 
   /*
    * Determine the order of the coarse grid elements.
-   * If the user supplies the order, it was set above.
    */
 
-  if (!in_order && num_obj != 0) {
+  order = (int *) ZOLTAN_MALLOC(total_num_obj*sizeof(int));
+  if (order == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ZOLTAN_FREE(&full_num_vert);
+    ZOLTAN_FREE(&full_gid);
+    ZOLTAN_FREE(&full_in_vertex);
+    ZOLTAN_FREE(&full_out_vertex);
+    ZOLTAN_FREE(&full_vertices);
+    ZOLTAN_FREE(&full_lid);
+    ZOLTAN_FREE(&full_assigned);
+    ZOLTAN_FREE(&full_known);
+    ZOLTAN_FREE(&order);
+    Zoltan_Reftree_Free_Structure(zz);
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_MEMERR);
+  }
 
-  /*
-   * TEMP For now, require that the user provide the order.
-   */
+/* If the user provided the order, then use it */
 
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Currently not supporting automatic "
-                    "determination of the order of the coarse grid objects.  "
-                    "Using the order in which they were provided.");
-    final_ierr = ZOLTAN_WARN;
+  if (in_order && total_num_obj != 0) {
 
+    for (i=0; i<total_num_obj; i++) {
+      order[i] = i;
+    }
+
+  }
+  else {
+
+/* If the user did not provide the order, then find one */
+
+    if (!in_order && total_num_obj != 0) {
+
+      ierr = Zoltan_Reftree_Coarse_Grid_Path(total_num_obj, full_num_vert,
+                                             full_vertices, full_in_vertex,
+                                             full_out_vertex, order, zz);
+      if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                           "Error returned by Zoltan_Reftree_Coarse_Grid_Path");
+        ZOLTAN_FREE(&full_num_vert);
+        ZOLTAN_FREE(&full_gid);
+        ZOLTAN_FREE(&full_in_vertex);
+        ZOLTAN_FREE(&full_out_vertex);
+        ZOLTAN_FREE(&full_vertices);
+        ZOLTAN_FREE(&full_lid);
+        ZOLTAN_FREE(&full_assigned);
+        ZOLTAN_FREE(&full_known);
+        ZOLTAN_FREE(&order);
+        Zoltan_Reftree_Free_Structure(zz);
+        ZOLTAN_TRACE_EXIT(zz, yo);
+        return(ierr);
+      }
+    }
   }
 
   /*
@@ -574,22 +836,20 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
   reorder_nvert = (int *) ZOLTAN_MALLOC(total_num_obj*sizeof(int));
   if (reorder_nvert == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    ZOLTAN_FREE(&local_gids);
-    ZOLTAN_FREE(&local_lids);
-    ZOLTAN_FREE(&assigned);
-    ZOLTAN_FREE(&num_vert);
-    ZOLTAN_FREE(&vertices);
-    ZOLTAN_FREE(&in_vertex);
-    ZOLTAN_FREE(&out_vertex);
+    ZOLTAN_FREE(&full_num_vert);
+    ZOLTAN_FREE(&full_gid);
+    ZOLTAN_FREE(&full_in_vertex);
+    ZOLTAN_FREE(&full_out_vertex);
+    ZOLTAN_FREE(&full_vertices);
+    ZOLTAN_FREE(&full_lid);
+    ZOLTAN_FREE(&full_assigned);
+    ZOLTAN_FREE(&full_known);
     ZOLTAN_FREE(&order);
     Zoltan_Reftree_Free_Structure(zz);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_MEMERR);
   }
-/* use MAXVERT for coarse grid objects to avoid complicated reallocation
-   during Reinit_Coarse */
   for (i=0; i<total_num_obj; i++) {
-/*    reorder_nvert[order[i]] = num_vert[i]; */
     reorder_nvert[i] = MAXVERT;
   }
 
@@ -598,13 +858,14 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
   ZOLTAN_FREE(&reorder_nvert);
   if (ierr == ZOLTAN_MEMERR) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned by alloc_reftree_nodes.");
-    ZOLTAN_FREE(&local_gids);
-    ZOLTAN_FREE(&local_lids);
-    ZOLTAN_FREE(&assigned);
-    ZOLTAN_FREE(&num_vert);
-    ZOLTAN_FREE(&vertices);
-    ZOLTAN_FREE(&in_vertex);
-    ZOLTAN_FREE(&out_vertex);
+    ZOLTAN_FREE(&full_num_vert);
+    ZOLTAN_FREE(&full_gid);
+    ZOLTAN_FREE(&full_in_vertex);
+    ZOLTAN_FREE(&full_out_vertex);
+    ZOLTAN_FREE(&full_vertices);
+    ZOLTAN_FREE(&full_lid);
+    ZOLTAN_FREE(&full_assigned);
+    ZOLTAN_FREE(&full_known);
     ZOLTAN_FREE(&order);
     Zoltan_Reftree_Free_Structure(zz);
     ZOLTAN_TRACE_EXIT(zz, yo);
@@ -619,13 +880,14 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
 
   if (zz->Obj_Weight_Dim != 0 && zz->Get_Child_Weight == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Must register ZOLTAN_CHILD_WEIGHT_FN.");
-    ZOLTAN_FREE(&local_gids);
-    ZOLTAN_FREE(&local_lids);
-    ZOLTAN_FREE(&assigned);
-    ZOLTAN_FREE(&num_vert);
-    ZOLTAN_FREE(&vertices);
-    ZOLTAN_FREE(&in_vertex);
-    ZOLTAN_FREE(&out_vertex);
+    ZOLTAN_FREE(&full_num_vert);
+    ZOLTAN_FREE(&full_gid);
+    ZOLTAN_FREE(&full_in_vertex);
+    ZOLTAN_FREE(&full_out_vertex);
+    ZOLTAN_FREE(&full_vertices);
+    ZOLTAN_FREE(&full_lid);
+    ZOLTAN_FREE(&full_assigned);
+    ZOLTAN_FREE(&full_known);
     ZOLTAN_FREE(&order);
     Zoltan_Reftree_Free_Structure(zz);
     ZOLTAN_TRACE_EXIT(zz, yo);
@@ -647,15 +909,15 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
   /* if an initial element is a leaf, the weight gets set to 1 later */
        *(root->children[order[i]].weight) = 0.0;
     }
-    else if (num_vert[i] == -1) {
+    else if (!full_known[i]) {
   /* if the element is not known to this processor, the weight is 0 */
        *(root->children[order[i]].weight) = 0.0;
     }
     else {
-      lid = (nlid_ent ? &(local_lids[i*nlid_ent]) : NULL);
+      lid = (nlid_ent ? &(full_lid[i*nlid_ent]) : NULL);
       zz->Get_Child_Weight(zz->Get_Child_Weight_Data,
                            ngid_ent, nlid_ent,
-                           &(local_gids[i*ngid_ent]),
+                           &(full_gid[i*ngid_ent]),
                            lid, zz->Obj_Weight_Dim, 
                            root->children[order[i]].weight, &ierr);
     }
@@ -668,43 +930,29 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
    * Copy the vertices
    */
 
-    for (j=0; j<num_vert[i]; j++) 
+    for (j=0; j<full_num_vert[i]; j++) 
       ZOLTAN_SET_GID(zz,&(root->children[order[i]].vertices[j*ngid_ent]),
-                        &(vertices[(sum_vert+j)*ngid_ent]));
-    if (num_vert[i] > 0) sum_vert += num_vert[i];
+                        &(full_vertices[(sum_vert+j)*ngid_ent]));
+    if (full_num_vert[i] > 0) sum_vert += full_num_vert[i];
 
   /*
    * Copy from temporary arrays and set empty defaults
    */
 
-    if (num_vert[i] == -1) {
-  /* elements not known to this processor have more empty entries */
-      ZOLTAN_SET_GID(zz, root->children[order[i]].global_id,
-                 &(local_gids[i*ngid_ent]));
-      ZOLTAN_INIT_LID(zz, root->children[order[i]].local_id);
-      root->children[order[i]].children       = (ZOLTAN_REFTREE *) NULL;
-      root->children[order[i]].num_child      = 0;
-      root->children[order[i]].num_vertex     = num_vert[i];
-      ZOLTAN_INIT_GID(zz, root->children[order[i]].in_vertex);
-      ZOLTAN_INIT_GID(zz, root->children[order[i]].out_vertex);
-      root->children[order[i]].assigned_to_me = 0;
-      root->children[order[i]].partition      = 0;
-    }
-    else {
-      ZOLTAN_SET_GID(zz, root->children[order[i]].global_id,
-                 &(local_gids[i*ngid_ent]));
-      ZOLTAN_SET_LID(zz, root->children[order[i]].local_id,
-                 &(local_lids[i*nlid_ent]));
-      root->children[order[i]].children       = (ZOLTAN_REFTREE *) NULL;
-      root->children[order[i]].num_child      = 0;
-      root->children[order[i]].num_vertex     = num_vert[i];
-      ZOLTAN_SET_GID(zz, root->children[order[i]].in_vertex,
-                         &(in_vertex[i*ngid_ent]));
-      ZOLTAN_SET_GID(zz, root->children[order[i]].out_vertex,
-                         &(out_vertex[i*ngid_ent]));
-      root->children[order[i]].assigned_to_me = assigned[i];
-      root->children[order[i]].partition      = 0;
-    }
+    ZOLTAN_SET_GID(zz, root->children[order[i]].global_id,
+                  &(full_gid[i*ngid_ent]));
+    ZOLTAN_SET_LID(zz, root->children[order[i]].local_id,
+                  &(full_lid[i*nlid_ent]));
+    root->children[order[i]].children       = (ZOLTAN_REFTREE *) NULL;
+    root->children[order[i]].num_child      = 0;
+    root->children[order[i]].num_vertex     = full_num_vert[i];
+    ZOLTAN_SET_GID(zz, root->children[order[i]].in_vertex,
+                       &(full_in_vertex[i*ngid_ent]));
+    ZOLTAN_SET_GID(zz, root->children[order[i]].out_vertex,
+                       &(full_out_vertex[i*ngid_ent]));
+    root->children[order[i]].assigned_to_me = full_assigned[i];
+    root->children[order[i]].known_to_me    = full_known[i];
+    root->children[order[i]].partition      = 0;
 
   /*
    * Add it to the hash table
@@ -718,13 +966,14 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
    * clean up and return error code
    */
 
-  ZOLTAN_FREE(&local_gids);
-  ZOLTAN_FREE(&local_lids);
-  ZOLTAN_FREE(&assigned);
-  ZOLTAN_FREE(&num_vert);
-  ZOLTAN_FREE(&vertices);
-  ZOLTAN_FREE(&in_vertex);
-  ZOLTAN_FREE(&out_vertex);
+  ZOLTAN_FREE(&full_num_vert);
+  ZOLTAN_FREE(&full_gid);
+  ZOLTAN_FREE(&full_in_vertex);
+  ZOLTAN_FREE(&full_out_vertex);
+  ZOLTAN_FREE(&full_vertices);
+  ZOLTAN_FREE(&full_lid);
+  ZOLTAN_FREE(&full_assigned);
+  ZOLTAN_FREE(&full_known);
   ZOLTAN_FREE(&order);
   ZOLTAN_TRACE_EXIT(zz, yo);
   return(final_ierr);
@@ -785,7 +1034,7 @@ int i;                     /* loop counter */
    */
 
   for (i=0; i<root->num_child; i++) {
-    if ( (root->children[i]).num_vertex != -1 ) {
+    if ( (root->children[i]).known_to_me) {
       ierr = Zoltan_Reftree_Build_Recursive(zz,&(root->children[i]));
       if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
@@ -1175,6 +1424,7 @@ int existing;              /* existing child that agrees with GET_CHILD data */
       ZOLTAN_SET_GID(zz, subroot->children[sorder[i]].out_vertex,
                          &(sout_vertex[i*ngid_ent]));
       subroot->children[sorder[i]].assigned_to_me = sassigned[i];
+      subroot->children[sorder[i]].known_to_me    = 1;
       subroot->children[sorder[i]].partition      = 0;
 
   /*
@@ -1988,13 +2238,15 @@ static void free_reftree_nodes(ZOLTAN_REFTREE **node)
  *  allocated by that call are freed.
  */
 
-  ZOLTAN_FREE(&((*node)->global_id));
-  ZOLTAN_FREE(&((*node)->local_id));
-  ZOLTAN_FREE(&((*node)->weight));
-  ZOLTAN_FREE(&((*node)->vertices));
-  ZOLTAN_FREE(&((*node)->in_vertex));
-  ZOLTAN_FREE(&((*node)->out_vertex));
-  ZOLTAN_FREE(node);
+  if (*node != NULL) {
+    ZOLTAN_FREE(&((*node)->global_id));
+    ZOLTAN_FREE(&((*node)->local_id));
+    ZOLTAN_FREE(&((*node)->weight));
+    ZOLTAN_FREE(&((*node)->vertices));
+    ZOLTAN_FREE(&((*node)->in_vertex));
+    ZOLTAN_FREE(&((*node)->out_vertex));
+    ZOLTAN_FREE(node);
+  }
 
 }
 
@@ -2116,6 +2368,7 @@ ZOLTAN_ID_PTR local_lids; /* coarse element Local IDs from user */
 ZOLTAN_ID_PTR lid;        /* temporary coarse element Local ID; used to pass
                          NULL to query functions when NUM_LID_ENTRIES=0 */
 int *assigned;        /* 1 if the element is assigned to this proc */
+int *known;           /* 1 if the element is known to this proc */
 int *num_vert;        /* number of vertices for each coarse element */
 ZOLTAN_ID_PTR vertices; /* vertices for the coarse elements */
 ZOLTAN_ID_PTR in_vertex;       /* "in" vertex for each coarse element */
@@ -2133,7 +2386,6 @@ int num_obj;          /* number of coarse objects known to this proc */
 int ierr;             /* error flag */
 ZOLTAN_REFTREE *tree_node;/* pointer to an initial grid element in the tree */
 int final_ierr;       /* error code returned */
-int sum_vert;         /* running total of number of vertices */
 int found;            /* flag for another coarse grid element */
 ZOLTAN_ID_PTR zero_gid; /* a global ID containing 0, for comparison */
 int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
@@ -2154,12 +2406,13 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
    */
 
   for (i=0; i<root->num_child; i++) {
-    ((root->children)[i]).num_vertex = -1;
+    ((root->children)[i]).known_to_me = 0;
   }
 
   /*
-   * Get the coarse grid objects and update the vertices, whether the element
-   * is assigned to this processor, weight and, if not already set, in/out vert
+   * Get the coarse grid objects and update the local ids, whether the element
+   * is assigned to this processor, whether the element is known to this
+   * processor and weight.
    */
 
   if (zz->Get_Coarse_Obj_List != NULL) {
@@ -2180,19 +2433,21 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
       local_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, num_obj);
       local_lids = ZOLTAN_MALLOC_LID_ARRAY(zz, num_obj);
       assigned   = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+      known      = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
       num_vert   = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
       vertices   = ZOLTAN_MALLOC_GID_ARRAY(zz, MAXVERT*num_obj);
       in_vertex  = ZOLTAN_MALLOC_GID_ARRAY(zz, num_obj);
       out_vertex = ZOLTAN_MALLOC_GID_ARRAY(zz, num_obj);
 
       if (local_gids == NULL || (nlid_ent > 0 && local_lids == NULL) ||
-          assigned   == NULL ||
+          assigned   == NULL || known == NULL ||
           num_vert   == NULL || vertices   == NULL || in_vertex == NULL ||
           out_vertex == NULL) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         ZOLTAN_FREE(&local_gids);
         ZOLTAN_FREE(&local_lids);
         ZOLTAN_FREE(&assigned);
+        ZOLTAN_FREE(&known);
         ZOLTAN_FREE(&num_vert);
         ZOLTAN_FREE(&vertices);
         ZOLTAN_FREE(&in_vertex);
@@ -2212,6 +2467,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
         ZOLTAN_FREE(&local_gids);
         ZOLTAN_FREE(&local_lids);
         ZOLTAN_FREE(&assigned);
+        ZOLTAN_FREE(&known);
         ZOLTAN_FREE(&num_vert);
         ZOLTAN_FREE(&vertices);
         ZOLTAN_FREE(&in_vertex);
@@ -2220,7 +2476,6 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
         return(ierr);
       }
 
-      sum_vert = 0;
       for (i=0; i<num_obj; i++) {
 
         tree_node = Zoltan_Reftree_hash_lookup(zz, hashtab,
@@ -2232,22 +2487,10 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
           final_ierr = ZOLTAN_WARN;
         }
         else {
-/* can just reassign num_vertex instead of doing a complicated reallocation
-   because coarse grid objects are allocated with MAXVERT */
-          tree_node->num_vertex = num_vert[i];
-          for (j=0; j<num_vert[i]; j++)
-            ZOLTAN_SET_GID(zz,&(tree_node->vertices[j*ngid_ent]),
-                              &vertices[(sum_vert+j)*ngid_ent]);
-          if (num_vert[i] > 0) sum_vert += num_vert[i];
-
           tree_node->assigned_to_me = assigned[i];
-/* TEMP if not provided in_order, then in/out are not returned and must be
-        determined */
-          if (ZOLTAN_EQ_GID(zz,tree_node->in_vertex,zero_gid))
-            ZOLTAN_SET_GID(zz,tree_node->in_vertex,&in_vertex[i*ngid_ent]);
-          if (ZOLTAN_EQ_GID(zz,tree_node->out_vertex,zero_gid))
-            ZOLTAN_SET_GID(zz,tree_node->out_vertex,&out_vertex[i*ngid_ent]);
-          if (zz->Obj_Weight_Dim == 0)    /* KAREN */
+          tree_node->known_to_me = 1;
+          ZOLTAN_SET_LID(zz, tree_node->local_id, &(local_lids[i*nlid_ent]));
+          if (zz->Obj_Weight_Dim == 0)
             tree_node->weight[0] = 0.0;
           else {
             lid = (nlid_ent ? &(local_lids[i*nlid_ent]) : NULL);
@@ -2263,6 +2506,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
       ZOLTAN_FREE(&local_gids);
       ZOLTAN_FREE(&local_lids);
       ZOLTAN_FREE(&assigned);
+      ZOLTAN_FREE(&known);
       ZOLTAN_FREE(&num_vert);
       ZOLTAN_FREE(&vertices);
       ZOLTAN_FREE(&in_vertex);
@@ -2314,21 +2558,10 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
         final_ierr = ZOLTAN_WARN;
       }
       else {
-/* can just reassign num_vertex instead of doing a complicated reallocation
-   because coarse grid objects are allocated with MAXVERT */
-        tree_node->num_vertex = snum_vert;
-        for (j=0; j<snum_vert; j++)
-          ZOLTAN_SET_GID(zz,&(tree_node->vertices[j*ngid_ent]),
-                            &vertices[j*ngid_ent]);
-  
         tree_node->assigned_to_me = sassigned;
-/* TEMP if not provided in_order, then in/out are not returned and must be
-        determined */
-        if (ZOLTAN_EQ_GID(zz,tree_node->in_vertex,zero_gid))
-          ZOLTAN_SET_GID(zz,tree_node->in_vertex,sin_vertex);
-        if (ZOLTAN_EQ_GID(zz,tree_node->out_vertex,zero_gid))
-          ZOLTAN_SET_GID(zz,tree_node->out_vertex,sout_vertex);
-        if (zz->Obj_Weight_Dim == 0)    /* KAREN */
+        tree_node->known_to_me = 1;
+          ZOLTAN_SET_LID(zz, tree_node->local_id, &(local_lids[i*nlid_ent]));
+        if (zz->Obj_Weight_Dim == 0)
           tree_node->weight[0] = 0.0;
         else
           zz->Get_Child_Weight(zz->Get_Child_Weight_Data, 
@@ -2350,7 +2583,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
     ZOLTAN_FREE(&slocal_lids);
     ZOLTAN_FREE(&plocal_gids);
     ZOLTAN_FREE(&plocal_lids);
-    ZOLTAN_FREE(&vertices);  /* KAREN */
+    ZOLTAN_FREE(&vertices);
   }
   ZOLTAN_TRACE_EXIT(zz, yo);
   return(final_ierr);
@@ -2378,16 +2611,20 @@ void Zoltan_Reftree_Print(ZZ *zz, ZOLTAN_REFTREE *subroot, int level)
   printf("[%d]   first summed weight %f\n",me,subroot->summed_weight[0]);
   printf("[%d]   first my_sum weight %f\n",me,subroot->my_sum_weight[0]);
   printf("[%d]   number of vertices %d\n",me,subroot->num_vertex);
-  printf("[%d]   vertices\n",me);
+  printf("[%d]   vertices",me);
   for (i=0; i<subroot->num_vertex; i++) {
     printf("[%d]       ",me);
     ZOLTAN_PRINT_GID(zz,&subroot->vertices[i*zz->Num_GID]);
   }
+  printf("\n");
   printf("[%d]   in vertex ",me);
   ZOLTAN_PRINT_GID(zz,subroot->in_vertex);
+  printf("\n");
   printf("[%d]   out vertex ",me);
   ZOLTAN_PRINT_GID(zz,subroot->out_vertex);
+  printf("\n");
   printf("[%d]   assigned_to_me %d\n",me,subroot->assigned_to_me);
+  printf("[%d]   known_to_me %d\n",me,subroot->known_to_me);
   printf("[%d]   partition %d\n",me,subroot->partition);
   printf("[%d]   number of children %d \n",me,subroot->num_child);
   printf("[%d]   children follow.\n",me);
@@ -2420,9 +2657,11 @@ int i;
 
   order[*isub] = subroot->global_id[0];
   for (i=0; i<subroot->num_child; i++) {
-    order[*isub+i+1] = (subroot->children[i]).global_id[0];
+    order[*isub+3*i+1] = (subroot->children[i]).global_id[0];
+    order[*isub+3*i+2] = (subroot->children[i]).in_vertex[0];
+    order[*isub+3*i+3] = (subroot->children[i]).out_vertex[0];
   }
-  *isub = *isub + subroot->num_child + 1;
+  *isub = *isub + 3*subroot->num_child + 1;
 
   /*
    * traverse the children
@@ -2439,7 +2678,8 @@ void Zoltan_Reftree_Get_Child_Order(ZZ *zz, int *order, int *ierr)
  * Return the order of the children in the refinement tree.
  * Upon return, order contains GIDs assumed to be an integer.  It contains
  * sets of entries consisting of the GID of an element followed by the
- * GIDs of the children in the order determined by the reftree code.
+ * GIDs of the children in the order determined by the reftree code,
+ * and each child is followed by the GIDs of the in and out vertices.
  * order should be allocated to the correct size by the caller.
  * This is a hack, will be removed in the future, and should not be publicized.
  */

@@ -50,6 +50,9 @@ struct Zoltan_Reftree_Struct {
                             this processor, 0 if not.  for nonleaves, 1 if
                             the entire subtree is assigned to this proc,
                             0 if none of the subtree, -1 if part */
+   int known_to_me;      /* for coarse grid objects, 1 if it is known to this
+                            processor (i.e., returned by get_coarse_obj) and
+                            0 if not */
    int partition;        /* partition to which this node is assigned;
                             meaningful only during the partition algorithm */
 };
@@ -62,6 +65,12 @@ struct Zoltan_Reftree_hash_node {
   ZOLTAN_ID_PTR gid;            /* Global id */
   ZOLTAN_REFTREE *reftree_node; /* pointer to a node of the refinement tree */
   struct Zoltan_Reftree_hash_node *next;
+};
+
+struct Zoltan_Reftree_inthash_node {
+  ZOLTAN_ID_PTR gid;            /* Global id */
+  int lid;                      /* integer corresponding to the gid */
+  struct Zoltan_Reftree_inthash_node *next;
 };
 
 /* data structure pointed to by zz->Data_Structure */
@@ -78,15 +87,26 @@ extern int Zoltan_Reftree_Init(ZZ *zz);
 extern int Zoltan_Reftree_Build(ZZ *zz);
 extern void Zoltan_Reftree_Print(ZZ *zz,ZOLTAN_REFTREE *subroot, int level);
 
+extern int Zoltan_Reftree_Coarse_Grid_Path(int nobj, int *num_vert,
+                               ZOLTAN_ID_PTR vertices, ZOLTAN_ID_PTR in_vertex,
+                               ZOLTAN_ID_PTR out_vertex, int *order, ZZ *zz);
+
 extern ZOLTAN_REFTREE* Zoltan_Reftree_hash_lookup(ZZ *zz, 
-                                          struct Zoltan_Reftree_hash_node **hashtab,
-                                          ZOLTAN_ID_PTR key, int n);
+                                      struct Zoltan_Reftree_hash_node **hashtab,
+                                      ZOLTAN_ID_PTR key, int n);
+extern int Zoltan_Reftree_inthash_lookup(ZZ *zz, 
+                                   struct Zoltan_Reftree_inthash_node **hashtab,
+                                   ZOLTAN_ID_PTR key, int n);
 extern void Zoltan_Reftree_Hash_Insert(ZZ *zz, ZOLTAN_REFTREE *reftree_node,
-                            struct Zoltan_Reftree_hash_node **hashtab, int size);
+                          struct Zoltan_Reftree_hash_node **hashtab, int size);
+extern void Zoltan_Reftree_IntHash_Insert(ZZ *zz, ZOLTAN_ID_PTR gid, int lid,
+                        struct Zoltan_Reftree_inthash_node **hashtab, int size);
 extern void Zoltan_Reftree_Hash_Remove(ZZ *zz, ZOLTAN_REFTREE *reftree_node,
-                            struct Zoltan_Reftree_hash_node **hashtab, int size);
-extern void Zoltan_Reftree_Clear_Hash_Table(struct Zoltan_Reftree_hash_node **hashtab,
-                                 int size);
+                          struct Zoltan_Reftree_hash_node **hashtab, int size);
+extern void Zoltan_Reftree_Clear_Hash_Table(
+                          struct Zoltan_Reftree_hash_node **hashtab, int size);
+extern void Zoltan_Reftree_Clear_IntHash_Table(
+                       struct Zoltan_Reftree_inthash_node **hashtab, int size);
 
 
 #ifdef __cplusplus

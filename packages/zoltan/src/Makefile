@@ -212,7 +212,8 @@ HA_CSRC         = divide_machine.c get_processor_name.c \
                   build_machine_desc.c
 HA_INC          = ha_const.h
 
-REFTREE_CSRC    = reftree_build.c reftree_part.c reftree_hash.c
+REFTREE_CSRC    = reftree_build.c reftree_part.c reftree_hash.c \
+                  reftree_coarse_path.c
 REFTREE_INC     = reftree_const.h
 
 # source code and defines for zdrive

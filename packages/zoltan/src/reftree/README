@@ -21,3 +21,4 @@ reftree_const.h   -- prototypes and definitions.
 reftree_part.c    -- reftree partitioning algorithms.
 reftree_build.c   -- functions to build reftree data structures.
 reftree_hash.c    -- functions to manipulate hash tables.
+reftree_coarse_path.c -- functions to find a path through the coarse grid

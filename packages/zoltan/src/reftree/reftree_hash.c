@@ -48,6 +48,24 @@ ZOLTAN_REFTREE* Zoltan_Reftree_hash_lookup (ZZ *zz,
   return (ZOLTAN_REFTREE *)NULL;
 }
 
+/* second version for int instead of refinement tree node */
+
+int Zoltan_Reftree_inthash_lookup (ZZ *zz, 
+                                   struct Zoltan_Reftree_inthash_node **hashtab,
+                                   ZOLTAN_ID_PTR key, int n)
+{
+  int i;
+  struct Zoltan_Reftree_inthash_node *ptr;
+
+  i = Zoltan_Hash(key, zz->Num_GID, (unsigned int)n);
+  for (ptr=hashtab[i]; ptr != NULL; ptr = ptr->next){
+    if (ZOLTAN_EQ_GID(zz, ptr->gid, key))
+      return (ptr->lid);
+  }
+  /* Key not in hash table */
+  return -1;
+}
+
 /* Zoltan_Reftree_Hash_Insert adds an entry to the hash table
  *
  * Input:
@@ -72,6 +90,26 @@ struct Zoltan_Reftree_hash_node *new_entry;
   new_entry->gid = ZOLTAN_MALLOC_GID(zz);
   ZOLTAN_SET_GID(zz, new_entry->gid,reftree_node->global_id);
   new_entry->reftree_node = reftree_node;
+  new_entry->next = hashtab[i];
+  hashtab[i] = new_entry;
+}
+
+/* second version for int instead of refinement tree node */
+
+void Zoltan_Reftree_IntHash_Insert(ZZ *zz, ZOLTAN_ID_PTR gid, int lid,
+                                   struct Zoltan_Reftree_inthash_node **hashtab,
+                                   int size)
+{
+int i;
+struct Zoltan_Reftree_inthash_node *new_entry;
+
+  i = Zoltan_Hash(gid, zz->Num_GID, (unsigned int)size);
+
+  new_entry = (struct Zoltan_Reftree_inthash_node *)
+              ZOLTAN_MALLOC(sizeof(struct Zoltan_Reftree_inthash_node));
+  new_entry->gid = ZOLTAN_MALLOC_GID(zz);
+  ZOLTAN_SET_GID(zz, new_entry->gid,gid);
+  new_entry->lid = lid;
   new_entry->next = hashtab[i];
   hashtab[i] = new_entry;
 }
@@ -139,6 +177,27 @@ void Zoltan_Reftree_Clear_Hash_Table(struct Zoltan_Reftree_hash_node **hashtab,
       ptr = next;
     }
     hashtab[i] = (struct Zoltan_Reftree_hash_node *)NULL;
+  }
+
+}
+
+/* second version for int instead of refinement tree node */
+
+void Zoltan_Reftree_Clear_IntHash_Table(
+                         struct Zoltan_Reftree_inthash_node **hashtab, int size)
+{
+  int i;
+  struct Zoltan_Reftree_inthash_node *ptr, *next;
+
+  for (i=0; i<size; i++) {
+    ptr = hashtab[i];
+    while (ptr != NULL) {
+      next = ptr->next;
+      ZOLTAN_FREE(&(ptr->gid));
+      ZOLTAN_FREE(&ptr);
+      ptr = next;
+    }
+    hashtab[i] = (struct Zoltan_Reftree_inthash_node *)NULL;
   }
 
 }

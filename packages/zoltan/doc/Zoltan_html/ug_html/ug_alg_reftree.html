@@ -36,7 +36,12 @@ query functions.
 <P>Each node of the refinement tree corresponds to an element that
 occurred during the grid refinement process.  The first level of the tree
 (the children of the root of the tree) corresponds to the initial coarse
-grid, one tree node per initial element.  The children of a node in the
+grid, one tree node per initial element.  It is assumed that the initial
+coarse grid does not change through the execution of the program, except
+that the local IDs, assignment of elements to processors, and weights
+can change.  If any other aspect of the coarse grid changes, then the
+Zoltan structure should be destroyed and recreated.
+The children of a node in the
 tree correspond to the elements that were created when the corresponding
 element was refined.  The children are ordered such that a traversal of
 the tree creates a space-filling curve within each initial element.
@@ -44,10 +49,12 @@ If the initial elements can be ordered with a contiguous path through them,
 then the traversal creates a space-filling curve through all the elements.
 Each element has a designated "in" vertex and "out" vertex, with the out
 vertex of one element being the same as the in vertex of the next element
-in the path.
+in the path, in other words the path goes through a vertex to move from
+one element to the next (and does not go out the same vertex it came in).
 
 <P>The user may allow Zoltan to determine the order of the coarse grid
-elements, or may specify the order, which might be faster.  In the latter case,
+elements, or may specify the order, which might be faster or produce a
+better path.  If the user provides the order, then
 the in/out vertices must also be supplied.  Similarly, the
 user may specify the order and in/out vertices of the child elements, or
 allow Zoltan to determine them.  If the user knows how to provide a good
@@ -63,8 +70,9 @@ are not used and do not have to be provided.
 only on the leaves (the elements of the final grid), but can also be on
 interior nodes (for example, to represent work on coarse grids of a multigrid
 algorithm).  The default weights are 1.0 at the leaves and 0.0 at the
-interior nodes, which equidistributes the number elements over the
-partitions.  An initial tree traversal is used to sum the weights, and a second traversal
+interior nodes, which produces a partition based on the number of elements
+in each partition.
+An initial tree traversal is used to sum the weights, and a second traversal
 to cut the space-filling curve into appropriately-sized pieces and assign
 elements to partitions.  The number of partitions is not necessarily equal
 to the number of processors.
@@ -72,7 +80,6 @@ to the number of processors.
 <P>The Refinement Tree Partitioning code is
 still under development.  The following restrictions should be removed in
 the future.
-<LI>The user must provide the order of the elements in the initial grid.
 <LI>The only refinement types for which accelerated ordering of the children
 is provided are bisection of triangles and quadrasection of quadrilaterals.
 Some other special cases may be added in the future.
