@@ -1,4 +1,5 @@
 Decomposition Method 	= octpart
+Zoltan Parameters	= remap=0
 Zoltan Parameters	= oct_method=0
 Zoltan Parameters       = debug_level=10
 File Type		= Chaco

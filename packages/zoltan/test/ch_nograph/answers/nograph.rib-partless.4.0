@@ -1,4 +1,5 @@
 Decomposition Method 	= rib
+Zoltan Parameters	= remap=0
 Zoltan Parameters	= num_global_partitions=2
 Zoltan Parameters       = debug_level=10
 File Type		= Chaco

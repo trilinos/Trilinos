@@ -1,4 +1,5 @@
 Decomposition Method 	= parmetis
+Zoltan Parameters	= remap=0
 Zoltan Parameters	= parmetis_method=partkway
 Zoltan Parameters       = debug_level=10
 File Type		= Chaco

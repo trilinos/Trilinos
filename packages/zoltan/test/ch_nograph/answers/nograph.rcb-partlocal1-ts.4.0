@@ -1,4 +1,5 @@
 Decomposition Method 	= rcb
+Zoltan Parameters	= remap=0
 Zoltan Parameters	= tflops_special = 1
 Zoltan Parameters	= 
 Zoltan Parameters       = debug_level=10
