@@ -22,8 +22,8 @@ extern "C" {
 #include <limits.h>
 #include <float.h>
 #include "parmetis_jostle.h"
-#ifndef FLT_MAX
-#define FLT_MAX (1e38)
+#ifndef FLT_MAX /* just in case it's not defined */
+#define FLT_MAX (1e38) /* some large number */
 #endif
 
 /*****************************************************************************/
@@ -57,6 +57,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
  * Input:
  *   zz          - pointer to Zoltan structure
  *   print_stats - if > 0, compute and print max, min and sum of the metrics
+ *                 if == 0, stay silent but compute output arguments
  *
  * Output:
  *   nobj      - number of objects (for each proc)
@@ -163,7 +164,11 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     if (maxpart+1 > nparts){
       ierr = ZOLTAN_WARN;
       sprintf(msg, "Actual number of partitions (%1d) is greater than requested # partitions (%1d)", maxpart+1, nparts);
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+      if (zz->Proc==0){
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+        printf("%s No load-balance statistics available.\n", yo);
+      }
+      goto End;
     }
 
     /* Allocate space. */

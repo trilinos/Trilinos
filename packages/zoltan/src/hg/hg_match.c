@@ -798,7 +798,7 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
         return ZOLTAN_MEMERR;
     }
     
-    //print_debug(hg);
+    /*print_debug(hg);*/
 
     for (i = 0; i < hg->nVtx; i++)
         ips[i] = 0;
@@ -816,9 +816,11 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
             /* for every other vertex in the hyperedge */
             for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
                 v2 = hg->hvertex[j];
-                //if(match[v2] != v2) {
-                    // row swapping goes here
-                //}
+                /*
+                  if(match[v2] != v2) {
+                       row swapping goes here
+                  }
+                */
                 if (!ips[v2]++)
                     adj[n++] = v2;
             }
@@ -841,17 +843,21 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
             (*limit)--;
         } 
         
-        //printf("Done with %d, best match is %d with product %d\n",
-        //        v1, maxindex, maxip);
+        /*
+          printf("Done with %d, best match is %d with product %d\n",
+                  v1, maxindex, maxip);
+         */
     }
 
-    //printf("Final Matching:\n");
-    //for(i = 0; i < hg->nVtx; i++)
-    //    printf("%2d ",i);
-    //printf("\n");
-    //for(i = 0; i < hg->nVtx; i++)
-    //    printf("%2d ",match[i]);
-    //printf("\n");
+    /*
+      printf("Final Matching:\n");
+      for(i = 0; i < hg->nVtx; i++)
+          printf("%2d ",i);
+      printf("\n");
+      for(i = 0; i < hg->nVtx; i++)
+          printf("%2d ",match[i]);
+      printf("\n");
+    */
 
     Zoltan_Multifree(__FILE__, __LINE__, 2, &ips, &adj);
     return ZOLTAN_OK;

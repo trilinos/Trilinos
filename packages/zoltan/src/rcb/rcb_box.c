@@ -43,7 +43,7 @@ double *zmax            /* upper z extent of box */
 /* Return the bounding box for a processor's subdomain.
  */
 
-static char       *yo = "Zoltan_RB_Box_Assign";
+static char       *yo = "Zoltan_RCB_Box";
 RCB_STRUCT        *rcb;    /* Pointer to data structures for RCB. */
 struct rcb_tree   *treept; /* tree of RCB cuts */
 struct rcb_box     box;     /* box data structure */

@@ -39,6 +39,7 @@ ZHG *zhg;                     /* Temporary pointer to Zoltan_HGraph. */
 HGraph *hgraph;               /* Temporary pointer to HG field */
 int ierr = ZOLTAN_OK;
 char *yo = "Zoltan_HG_Build_Hypergraph";
+int get_geom_data=0; /* Current hg methods don't use geometry. */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -115,7 +116,9 @@ char *yo = "Zoltan_HG_Build_Hypergraph";
     Zoltan_HG_Graph_Free(&graph);
   }
 
-  if (zz->Get_Num_Geom != NULL && 
+  /* Work-around for Trilinos/EpetraExt, which registers dummy query 
+     functions even when they don't exist. */
+  if (get_geom_data && (zz->Get_Num_Geom != NULL) && 
       (zz->Get_Geom != NULL || zz->Get_Geom_Multi != NULL)) {
      /* Geometric callbacks are registered;       */
      /* get coordinates for hypergraph objects.   */

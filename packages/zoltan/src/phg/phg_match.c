@@ -124,7 +124,7 @@ static int matching_loc(ZZ *zz, HGraph *hg, Matching match)
             int v = visit[i];
             if (match[v] == v) {
                 if ( hg->vindex[v] == hg->vindex[v+1] )
-                    degzero++; // isolated vertex detection
+                    degzero++;  /* isolated vertex detection */
                 else {
                     int maxuv=-1, maxu=-1, adjsz=0, k;
 
@@ -148,7 +148,7 @@ static int matching_loc(ZZ *zz, HGraph *hg, Matching match)
                         eweight[u] = 0;
                     }
                     if (maxu!=-1) {
-                        //match the maximally connected one with the current vertex
+                        /* match the maximally connected one with the current vertex */
                         match[v] = maxu;
                         match[maxu] = v;
                         ++matchcnt;
@@ -158,9 +158,9 @@ static int matching_loc(ZZ *zz, HGraph *hg, Matching match)
         }
 
 
-        // match isolated vertices
+        /*  match isolated vertices */
         if (degzero) {
-            int v = -1; // mark the first isolated vertex with -1
+            int v = -1; /*  mark the first isolated vertex with -1 */
             for (i = 0; i< hg->nVtx; ++i)
                 if (hg->vindex[i]==hg->vindex[i+1]) { /* degree zero */
                     if (v == -1)

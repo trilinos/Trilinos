@@ -112,12 +112,14 @@ int gather_row(int nProc_x, int nProc_y, int myProc_x, int myProc_y,
         return ZOLTAN_MEMERR;
     }
     
-    //for (i = 0; i < myProc_x; ++i)
-    //    procs[i] = myProc_y + i;
-    //for (i = myProc_x; i < nProc_x - 1; ++i)
-    //    procs[i] = myProc_y + i + 1;
+    /*
+      for (i = 0; i < myProc_x; ++i)
+          procs[i] = myProc_y + i;
+      for (i = myProc_x; i < nProc_x - 1; ++i)
+          procs[i] = myProc_y + i + 1;
+    */
 
-    // do self communication
+    /* do self communication */
     for (i = 0; i < nProc_x; ++i)
       procs[i] = myProc_y + i;  
     
@@ -151,12 +153,14 @@ int gather_col(int nProc_x, int nProc_y, int myProc_x, int myProc_y,
     
     /* create list of processors to send to (everyone in our row but us)     */
     /* this assumes a linear left->right numbering of processors in our grid */
-    //for (i = 0; i < myProc_y; ++i)
-    //    procs[i] = nProc_x * i + myProc_x;
-    //for (i = myProc_y; i < nProc_y - 1; ++i)
-    //    procs[i] = nProc_x * (i + 1) + myProc_x;
+    /*
+      for (i = 0; i < myProc_y; ++i)
+          procs[i] = nProc_x * i + myProc_x;
+      for (i = myProc_y; i < nProc_y - 1; ++i)
+          procs[i] = nProc_x * (i + 1) + myProc_x;
+    */
  
-    // do self communication
+    /* do self communication */
     for (i = 0; i < nProc_y; ++i)
         procs[i] = nProc_x * i + myProc_x;
     

@@ -32,11 +32,21 @@
 </h2>
 Release notes are available for the following releases of Zoltan:
 <blockquote>
-<a href="#Release1.53">Zoltan Release v1.53</a>
+<a href="#Release1.54">Zoltan Release v1.54</a>
+<br><a href="#Release1.53">Zoltan Release v1.53</a>
 <br><a href="#Release1.52">Zoltan Release v1.52</a>
 <br><a href="#Release1.5">Zoltan Release v1.5</a>
 <br><a href="#Release1.3">Zoltan Release v1.3</a>
 </blockquote>
+
+<hr>
+<h2><a NAME="Release1.54"></a>Zoltan Release Notes v1.54</h2>
+Some versions of MPICH have a bug in MPI_Reduce_scatter; they can report
+errors with MPI_TYPE_INDEXED.
+In Zoltan v1.54's unstructured communication package, calls 
+to MPI_Reduce_scatter have been replaced with separate calls to 
+MPI_Reduce and MPI_Scatter.  
+<p>
 
 <hr>
 <h2><a NAME="Release1.53"></a>Zoltan Release Notes v1.53</h2>

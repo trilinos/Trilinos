@@ -77,8 +77,18 @@ MPI_Comm  comm)			/* communicator */
     for (i = 0; i < nsends + self_msg; i++)
 	msg_count[procs_to[i]] = 1;
 
+/*  
+ *  KDDKDD:  Replaced MPI_Reduce_scatter with MPI_Reduce and MPI_Scatter
+ *  KDDKDD:  to avoid reported problems with MPICH 1.5.2.1.
+ *  KDDKDD:  Some sort of MPI_TYPE_INDEXED error.
+ *  KDDKDD:  Bug fix suggested by Clark Dohrmann and Rob Hoekstra.
+ *  KDDKDD:  July 20, 2004
+
     MPI_Reduce_scatter((void *) msg_count, (void *) &nrecvs, counts, MPI_INT,
 	MPI_SUM, comm);
+ */
+    MPI_Reduce(msg_count, counts, nprocs, MPI_INT, MPI_SUM, 0, comm);
+    MPI_Scatter(counts, 1, MPI_INT, &nrecvs, 1, MPI_INT, 0, comm);
 
     ZOLTAN_FREE((void **) &counts);
     ZOLTAN_FREE((void **) &msg_count);
