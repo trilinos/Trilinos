@@ -727,14 +727,14 @@ void Epetra_BlockMap::GlobalToLocalSetup() {
 //==============================================================================
 int Epetra_BlockMap::LID(int GID) const {
 
-  if (GID<MinMyGID_ || GID > MaxMyGID_) return(-1); // Out of range
+  if (GID<MinMyGID_ || GID > MaxMyGID_ || NumMyElements_==0) return(-1); // Out of range
   else if (LinearMap()) return(GID-MinMyGID_); // Can compute with an offset
   else return(LID_[GID-MinMyGID_]); // Find it in LID array
 }
 //==============================================================================
 int Epetra_BlockMap::GID(int LID) const {
 
-  if (LID<MinLID_ || LID>MaxLID_) return(IndexBase_-1); // Out of range
+  if (LID<MinLID_ || LID>MaxLID_ || NumMyElements_==0) return(IndexBase_-1); // Out of range
   else if (LinearMap()) return(LID+MinMyGID_); // Can compute with an offset
   else return(MyGlobalElements_[LID]); // Find it in MyGlobalElements array
 }

@@ -19,7 +19,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Export.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_ReducedLinearProblem.h"
+#include "Epetra_CrsSingletonFilter.h"
 
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_CrsMatrix.h"
@@ -44,7 +44,8 @@ int main(int argc, char *argv[]) {
 
   int MyPID = Comm.MyPID();
 
-  bool verbose = false; 
+  bool verbose = false;
+  bool verbose1 = true;
   if (MyPID==0) verbose = true;
 
   if(argc < 2 && verbose) {
@@ -88,7 +89,7 @@ int main(int argc, char *argv[]) {
   Epetra_LinearProblem FullProblem(A, x, b); 
   
   Epetra_Time ReductionTimer(Comm);
-  Epetra_ReducedLinearProblem SingletonFilter(&FullProblem);
+  Epetra_CrsSingletonFilter SingletonFilter(&FullProblem);
   Comm.Barrier();
   double reduceInitTime = ReductionTimer.ElapsedTime();
   SingletonFilter.Analyze();
@@ -106,6 +107,8 @@ int main(int argc, char *argv[]) {
 	 << "    Reduction Analyze time (sec)         = " << reduceAnalyzeTime << endl
 	 << "    Construct Reduced Problem time (sec) = " << reduceConstructTime << endl
 	 << "    Reduction Total time (sec)           = " << totalReduceTime << endl<< endl;
+
+  SingletonFilter.Statistics();
 
   Epetra_LinearProblem * ReducedProblem = SingletonFilter.ReducedProblem();
 
@@ -158,7 +161,11 @@ int main(int argc, char *argv[]) {
     ILUK->SetRelativeThreshold(Rthresh);
     //assert(ILUK->InitValues()==0);
     int initerr = ILUK->InitValues(*Ap);
-    if (initerr!=0) cout << Comm << "InitValues error = " << initerr;
+    if (initerr!=0) {
+      cout << endl << Comm << endl << "  InitValues error = " << initerr;
+      if (initerr==1) cout << "  Zero diagonal found, warning error only";
+      cout << endl << endl;
+    }
     assert(ILUK->Factor()==0);
     elapsed_time = timer.ElapsedTime() - elapsed_time;
     total_flops = ILUK->Flops();
@@ -210,14 +217,15 @@ int main(int argc, char *argv[]) {
   if (verbose) 
     cout << "2-norm of difference between computed and exact solution  = " << residual << endl;
     
-  if (verbose && residual>1.0e-5) {
-    cout << "Difference between computed and exact solution appears large..." << endl
-      << "Computing norm of A times this difference.  If this norm is small, then matrix is singular"
-      << endl;
+  if (verbose1 && residual>1.0e-5) {
+    if (verbose)
+      cout << "Difference between computed and exact solution appears large..." << endl
+	   << "Computing norm of A times this difference.  If this norm is small, then matrix is singular"
+	   << endl;
     assert(A->Multiply(false, resid, *b)==0);
     assert(b->Norm2(&residual)==0);
-  if (verbose) 
-    cout << "2-norm of A times difference between computed and exact solution  = " << residual << endl;
+    if (verbose) 
+      cout << "2-norm of A times difference between computed and exact solution  = " << residual << endl;
     
   }
   

@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_REDUCEDLINEARPROBLEM_H_
-#define _EPETRA_REDUCEDLINEARPROBLEM_H_
+#ifndef _EPETRA_CRSSINGLETONFILTER_H_
+#define _EPETRA_CRSSINGLETONFILTER_H_
 
 #include "Epetra_Object.h"
 #include "Epetra_CrsMatrix.h"
@@ -31,23 +31,23 @@ class Epetra_LinearProblem;
 class Epetra_Map;
 class Epetra_MultiVector;
 
-//! Epetra_ReducedLinearProblem: A class for explicitly eliminating matrix rows and columns.
+//! Epetra_CrsSingletonFilter: A class for explicitly eliminating matrix rows and columns.
 
-/*! The Epetra_ReducedLinearProblem class takes an existing Epetra_LinearProblem object, analyzes
+/*! The Epetra_CrsSingletonFilter class takes an existing Epetra_LinearProblem object, analyzes
     it structure and explicitly eliminates rows and columns from the matrix based on density
     of nonzero entries.
 */    
 
-class Epetra_ReducedLinearProblem {
+class Epetra_CrsSingletonFilter {
       
  public:
 
   //@{ \name Constructors/Destructor.
-  //! Epetra_ReducedLinearProblem default constructor.
-  Epetra_ReducedLinearProblem(Epetra_LinearProblem * Problem);
+  //! Epetra_CrsSingletonFilter default constructor.
+  Epetra_CrsSingletonFilter(Epetra_LinearProblem * Problem);
 
-  //! Epetra_ReducedLinearProblem Destructor
-  virtual ~Epetra_ReducedLinearProblem();
+  //! Epetra_CrsSingletonFilter Destructor
+  virtual ~Epetra_CrsSingletonFilter();
   //@}
   //@{ \name Analyze methods.
   //! Analyze the input matrix, removing row/column pairs that have singletons.
@@ -84,6 +84,9 @@ class Epetra_ReducedLinearProblem {
 	   turn off this test.
   */
   int Analyze(int AbsoluteThreshold, double RelativeThreshold);
+
+  //! Print statistics about the reduction analysis.
+  int Statistics();
   //@}
 
   //@{ \name Reduce methods.
@@ -184,6 +187,6 @@ class Epetra_ReducedLinearProblem {
     
  private:
  //! Copy constructor (defined as private so it is unavailable to user).
-  Epetra_ReducedLinearProblem(const Epetra_ReducedLinearProblem & Problem){};
+  Epetra_CrsSingletonFilter(const Epetra_CrsSingletonFilter & Problem){};
 };
-#endif /* _EPETRA_REDUCEDLINEARPROBLEM_H_ */
+#endif /* _EPETRA_CRSSINGLETONFILTER_H_ */

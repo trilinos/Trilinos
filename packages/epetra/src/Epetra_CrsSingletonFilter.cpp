@@ -29,16 +29,16 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Comm.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_ReducedLinearProblem.h"
+#include "Epetra_CrsSingletonFilter.h"
 
 //==============================================================================
-Epetra_ReducedLinearProblem::Epetra_ReducedLinearProblem(Epetra_LinearProblem * Problem) {
+Epetra_CrsSingletonFilter::Epetra_CrsSingletonFilter(Epetra_LinearProblem * Problem) {
   InitializeDefaults();
   int ierr = Setup(Problem);
-  if (ierr!=0) throw Problem->GetRHS()->ReportError("Error in ReducedLinearProblem Setup routine",ierr);
+  if (ierr!=0) throw Problem->GetRHS()->ReportError("Error in CrsSingletonFilter Setup routine",ierr);
 }
 //==============================================================================
-Epetra_ReducedLinearProblem::~Epetra_ReducedLinearProblem(){
+Epetra_CrsSingletonFilter::~Epetra_CrsSingletonFilter(){
 
 
   if (ReducedProblem_!=0) delete ReducedProblem_;
@@ -58,7 +58,7 @@ Epetra_ReducedLinearProblem::~Epetra_ReducedLinearProblem(){
 
 }
 //==============================================================================
-void Epetra_ReducedLinearProblem::InitializeDefaults() { 
+void Epetra_CrsSingletonFilter::InitializeDefaults() { 
 
 // Initialize all attributes that have trivial default values
 
@@ -88,7 +88,7 @@ void Epetra_ReducedLinearProblem::InitializeDefaults() {
   return;
 }
 //==============================================================================
-int  Epetra_ReducedLinearProblem::Setup(Epetra_LinearProblem * Problem) {
+int  Epetra_CrsSingletonFilter::Setup(Epetra_LinearProblem * Problem) {
 
   if (Problem==0) return(-1); // Null problem pointer
 
@@ -101,7 +101,7 @@ int  Epetra_ReducedLinearProblem::Setup(Epetra_LinearProblem * Problem) {
 }
 
 //==============================================================================
-int Epetra_ReducedLinearProblem::Analyze() {
+int Epetra_CrsSingletonFilter::Analyze() {
 
   if (AnalysisDone_) EPETRA_CHK_ERR(-1); // Analysis already done once.  Cannot do it again
 
@@ -293,6 +293,12 @@ int Epetra_ReducedLinearProblem::Analyze() {
   assert(NumReducedRowstmp==NumReducedRows); //Sanity check
   assert(NumReducedColstmp==NumReducedCols); //Sanity check
 
+  for (int i=0; i<NumEliminatedRows; i++) {
+    int curGID = RowEliminateMap()->GID(i); 
+    if (!ColEliminateMap()->MyGID(curGID)) EPETRA_CHK_ERR(-4); // Cannot handle case of nonsymmetric elimination (yet)
+  }
+  
+
   // Construct Reduced matrix maps
   ReducedMatrixRowMap_ = new Epetra_Map(-1, NumReducedRows, RowReducedList, IndexBase,
 					FullMatrixImportMap().Comm());
@@ -314,7 +320,42 @@ int Epetra_ReducedLinearProblem::Analyze() {
   return(0);
 }
 //==============================================================================
-int Epetra_ReducedLinearProblem::ConstructReducedProblem() {
+int Epetra_CrsSingletonFilter::Statistics() {
+
+  if (!HaveReducedProblem_) {
+    cout << "ConstructReducedProblem method must be called first." << endl;
+    return(0);
+  }
+
+  double fn = FullMatrix()->NumGlobalRows();
+  double fnnz = FullMatrix()->NumGlobalNonzeros();
+  double rn = ReducedMatrix()->NumGlobalRows();
+  double rnnz = ReducedMatrix()->NumGlobalNonzeros();
+  if (fn==0.0 || fnnz==0.0) {
+    cout << "Full problem has zero size." << endl;
+    return(0);
+  }
+
+  cout << "Full System characteristics:" << endl << endl
+       << "  Dimension                             = " << FullMatrix()->NumGlobalRows() << endl
+       << "  Number of nonzeros                    = " << FullMatrix()->NumGlobalNonzeros() << endl
+       << "  Maximum Number of Row Entries         = " << FullMatrix()->GlobalMaxNumEntries() << endl << endl
+       << "Reduced System characteristics:" << endl << endl
+       << "  Dimension                             = " << ReducedMatrix()->NumGlobalRows() << endl
+       << "  Number of nonzeros                    = " << ReducedMatrix()->NumGlobalNonzeros() << endl
+       << "  Maximum Number of Row Entries         = " << ReducedMatrix()->GlobalMaxNumEntries() << endl << endl
+       << "Singleton information: " << endl
+       << "  Number of rows with single entries    = " << NumRowSingletons_ << endl
+       << "  Number of columns with single entries = " << NumColSingletons_ << endl << endl
+       << "Ratios: " << endl
+       << "  Percent reduction in dimension        = " << (fn-rn)/fn*100.0 << endl
+       << "  Percent reduction in nonzero count    = " << (fnnz-rnnz)/fnnz*100.0 << endl << endl;
+
+  return(0);
+
+}
+//==============================================================================
+int Epetra_CrsSingletonFilter::ConstructReducedProblem() {
 
   // Create pointer to Full RHS, LHS
   Epetra_MultiVector * FullRHS = FullProblem()->GetRHS();
@@ -436,11 +477,11 @@ int Epetra_ReducedLinearProblem::ConstructReducedProblem() {
     return(0);
 }
 //==============================================================================
-int Epetra_ReducedLinearProblem::Analyze(int AbsoluteThreshold, double RelativeThreshold) {
+int Epetra_CrsSingletonFilter::Analyze(int AbsoluteThreshold, double RelativeThreshold) {
   return(0);
 }
 //==============================================================================
-int Epetra_ReducedLinearProblem::ComputeFullSolution() {
+int Epetra_CrsSingletonFilter::ComputeFullSolution() {
 
   Epetra_MultiVector * FullLHS = FullProblem()->GetLHS(); 
   Epetra_MultiVector * FullRHS = FullProblem()->GetRHS(); 

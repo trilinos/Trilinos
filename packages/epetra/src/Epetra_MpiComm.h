@@ -281,7 +281,7 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   //@{ \name Print object to an output stream
   //! Print method that implements Epetra_Object virtual Print method
   inline void Print(ostream & os) const {
-  os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors"; 
+  os << "  Processor "<< MyPID()<<" of " << NumProc() << " total processors"; 
   return;}
   //! Print method that implements Epetra_Comm virtual PrintInfo method
   void PrintInfo(ostream & os) const {Epetra_MpiComm::Print(os);return;};
