@@ -27,7 +27,7 @@
 <h2>
 <a NAME="Timing"></a>Timing Routines</h2>
 To assist in performance measurements and profiling, several timing routines
-are included in the Zoltan library. The main timer function, <b>LB_Time,</b>
+are included in the Zoltan library. The main timer function, <a href="#LB_Time"><b>LB_Time</b></a>,
 provides access to at least two portable timers: one CPU clock and one
 wall clock.
 <p>The routines included in the utility are listed below.
@@ -45,20 +45,21 @@ On most systems, this timer calls MPI_Wtime.</li>
 <i>LB_TIME_CPU&nbsp;</i> : cpu time.<br>
 On most systems, this timer
 calls the ANSI C function clock(). Note that this timer may roll over at
-just 36 minutes. LB_Time attempts to keep track of the number of roll-overs
-but this feature will work only if LB_Time is called at least once during
+just 36 minutes. <a href="#LB_Time"><b>LB_Time</b></a> attempts to keep track of the number of roll-overs
+but this feature will work only if <a href="#LB_Time"><b>LB_Time</b></a> is called at least once during
 every period between roll-overs.</li>
 </ul>
 
-Within Zoltan, it is recommended to select which timer to use by setting
-<a href="../ug_html/ug_alg.html#General_Parameters">the
-<i>TIMER</i>
-general parameter</a> via <b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.
-The default value of <i>TIMER</i> is <i>wall</i>.&nbsp; Zoltan stores an
-integer representation of the selected timing method&nbsp; in <i>lb->Timer
-. </i>This value should be passed on to <b>LB_Time</b>, as in<i> </i><b>LB_Time</b>(<i>lb->Timer</i>).
+Within Zoltan, it is recommended to select which timer to use by setting the
+<a href="../ug_html/ug_alg.html#TIMER">TIMER</a> 
+general parameter via <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>.
+The default value of <a href="../ug_html/ug_alg.html#TIMER">TIMER</a> is <i>wall</i>.&nbsp; Zoltan stores an
+integer representation of the selected timing method in <i>lb->Timer</i>.  
+This value should be passed to <a href="#LB_Time"><b>LB_Time</b></a>, 
+as in <a href="#LB_Time"><b>LB_Time</b></a>(<i>lb->Timer</i>).
 <br>&nbsp;
 <p>
+<hr>
 <hr><a NAME="LB_Time"></a>double <b>LB_Time</b>(int <i>timer</i>);&nbsp;
 <hr>
 <p><b>LB_Time</b> returns the time in seconds, measured from some fixed
@@ -68,7 +69,7 @@ time. The timer is selected through <b><a href="../ug_html/ug_interface_lb.html#
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -76,7 +77,7 @@ time. The timer is selected through <b><a href="../ug_html/ug_interface_lb.html#
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp; <i>timer</i></td>
 
-<td>The timer type (e.g. wall or cpu) represented as an integer. See <a href="#Timing">top
+<td>The timer type (e.g., wall or cpu) represented as an integer. See <a href="#Timing">top
 of page</a> for a list of valid values.</td>
 </tr>
 
@@ -95,6 +96,7 @@ indicates an error.</td>
 </table>
 
 <p>
+<hr>
 <hr><a NAME="LB_Time_Resolution"></a>double <b>LB_Time_Resolution</b>(int
 <i>timer</i>)
 ;&nbsp;
@@ -103,7 +105,7 @@ indicates an error.</td>
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -111,7 +113,7 @@ indicates an error.</td>
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp; <i>timer</i></td>
 
-<td>The timer type (e.g. wall or cpu) represented as an integer. See <a href="#Timing">top
+<td>The timer type (e.g., wall or cpu) represented as an integer. See <a href="#Timing">top
 of page</a> for a list of valid values.</td>
 </tr>
 
@@ -134,6 +136,7 @@ of page</a> for a list of valid values.</td>
 <hr><a NAME="Example"></a>
 <br><b>Example:</b>
 <br>Here is a simple example for how to use the timer routines:
+<tt>
 <ul>double t0, t1, t2;
 <br>LB_Set_Param(lb, "TIMER", "wall");
 <br>t0 = LB_Time(lb->Timer);
@@ -145,6 +148,7 @@ of page</a> for a list of valid values.</td>
 <br>LB_Print_Stats(lb, t1-t0, "Time for part 1:");
 <br>LB_Print_Stats(lb, t2-t1, "Time for part 2:");
 <br>LB_Print_Stats(lb, t2-t0, "Total time :");</ul>
+</tt>
 
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_services_debug.html">Next:&nbsp;

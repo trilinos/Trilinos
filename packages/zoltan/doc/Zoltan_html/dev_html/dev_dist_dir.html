@@ -33,7 +33,7 @@ to all algorithms are in separate directories. Each load-balancing method
 (or family of methods) should be stored in its own directory. 
 In addition, a courtesy copy of the 
 <a href="../ug_html/ug_alg_parmetis.html">ParMETIS</a>
-graph-partitioning package is included in the directory ParMETIS.
+graph-partitioning package is included in the top-level directory <i>ParMETIS</i>.
 <p>
 In the following
 <a href="#directory table">table</a>,
@@ -63,7 +63,7 @@ Structures</a>.</td>
 <tr>
 <td VALIGN=TOP><i>all</i></td>
 
-<td><a href="dev_util_mem.html">Memory allocation functions</a>.&nbsp;</td>
+<td><a href="dev_add_memory.html">Special memory allocation functions</a> for memory returned by Zoltan to an application.&nbsp;</td>
 </tr>
 
 <tr>
@@ -75,34 +75,35 @@ Structures</a>.</td>
 <tr>
 <td VALIGN=TOP><i>param</i></td>
 
-<td>Routines for changing parameter values at runtime.</td>
+<td><a href="dev_services_params.html">Routines for changing parameter values</a> at runtime.</td>
 </tr>
 
 <tr>
 <td><i>parmetis</i></td>
 
 <td>Routines to access the <a href="../ug_html/ug_alg_parmetis.html">ParMETIS</a>
-partitioning library from UMN.</td>
+and <a href="../ug_html/ug_alg_jostle.html">Jostle</a>
+partitioning libraries.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>rcb</i></td>
 
-<td>Steve Plimpton's implementation of <a href="dev_rcb.html">Recursive
-Coordinate Bisection (RCB)</a>.</td>
+<td><a href="../ug_html/ug_alg_rcb.html">Recursive Coordinate Bisection (RCB)</a> and 
+<a href="../ug_html/ug_alg_rib.html">Recursive Inertial Bisection (RIB)</a> algorithms.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>oct</i></td>
 
-<td>RPI's octree partitioning and space-filling curve algorithms. See Octree
-Partitioning and Space Filling Curves.</td>
+<td>Rensselaer Polytechnic Institute's <a href="../ug_html/ug_alg_oct.html">octree partitioning</a> algorithms. 
+</td>
 </tr>
 
 <tr>
 <td><i>reftree</i></td>
 
-<td>The <a href="../ug_html/ug_alg_reftree.html">Refinement Tree Partitioning</a>
+<td>William Mitchell's <a href="../ug_html/ug_alg_reftree.html">Refinement Tree Partitioning</a>
 algorithm and refinement tree data structure.</td>
 </tr>
 
@@ -128,7 +129,7 @@ input files and build graphs for the driver program <i><a href="dev_driver.html"
 <tr>
 <td VALIGN=TOP><i>fort</i></td>
 
-<td>William Mitchell's Fortran interface for Zoltan.</td>
+<td><a href="../ug_html/ug_fortran.html">Fortran (F90) interface</a> for Zoltan.</td>
 </tr>
 
 <tr NOSAVE>
@@ -147,7 +148,7 @@ utilities</a></td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE><i>Utilities/Config</i></td>
 
-<td VALIGN=TOP NOSAVE><a href="dev_dist_compile.html">Platform-specific
+<td VALIGN=TOP NOSAVE><a href="../ug_html/ug_usage.html#Building the Library">Platform-specific
 makefile definitions</a> for compiler, library and include-file paths.</td>
 </tr>
 
@@ -160,7 +161,7 @@ makefile definitions</a> for compiler, library and include-file paths.</td>
 <tr>
 <td VALIGN=TOP><i>fdriver</i></td>
 
-<td>Fortran version of the test driver program.</td>
+<td>Fortran90 version of the <a href="dev_driver.html">test driver</a> program.</td>
 </tr>
 
 <tr NOSAVE>
@@ -179,6 +180,11 @@ makefile definitions</a> for compiler, library and include-file paths.</td>
 <td><i>docs/Zoltan_html/dev_html</i></td>
 
 <td><a href="dev.html">Developer's guide</a> in HTML format.</td>
+</tr>
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>docs/Zoltan_pdf</i></td>
+
+<td>PDF versions of the Zoltan User's Guide and Developer's Guide.</td>
 </tr>
 
 <caption ALIGN=BOTTOM><i>The directory structure of the Zoltan distribution.</i></caption>

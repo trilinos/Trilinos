@@ -34,34 +34,38 @@ the new load-balancing algorithm to the next. It also prevents the use
 of global data structures for the algorithm so that multiple instances
 of the algorithm may be used (i.e., the same algorithm can be used for
 multiple <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b> structures).&nbsp;
-An example showing the construction of data structures for the Recursive
-Coordinate Bisection (RCB) algorithm is included in the <a href="#RCB_example">figure</a>
-below.
+An example showing the construction of data structures for the 
+<a href="../ug_html/ug_alg_rcb.html">Recursive
+Coordinate Bisection (RCB)</a> algorithm is included 
+in the <a href="#RCB_example">figure</a> below.
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <tr>
 <td><a NAME="RCB_example"></a>
-<br><tt>/* Allocate RCB data structure for this load balancing structure.</tt>
-<br><tt>&nbsp;* If the previous data structure still exists, free the Dots
-first;</tt>
-<br><tt>&nbsp;* the other fields can be reused.</tt>
-<br><tt>&nbsp;*/</tt>
-<br><tt>if (lb->Data_Structure == NULL) {</tt>
-<br><tt>&nbsp;&nbsp; rcb = (RCB_STRUCT *) <a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a>(sizeof(RCB_STRUCT));</tt>
-<br><tt>&nbsp;&nbsp; lb->Data_Structure = (void *) rcb;</tt>
-<br><tt>&nbsp;&nbsp; rcb->Tree_Ptr = (struct rcb_tree *)&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<tt>
+<br>/* Allocate RCB data structure for this load balancing structure.
+<br>&nbsp;* If the previous data structure still exists, free the Dots
+first;
+<br>&nbsp;* the other fields can be reused.
+<br>&nbsp;*/
+<br>if (lb->Data_Structure == NULL) {
+<br>&nbsp;&nbsp; rcb = (RCB_STRUCT *) <a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a>(sizeof(RCB_STRUCT));
+<br>&nbsp;&nbsp; lb->Data_Structure = (void *) rcb;
+<br>&nbsp;&nbsp; rcb->Tree_Ptr = (struct rcb_tree *)&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a>(lb->Num_Proc*sizeof(struct
-rcb_tree));</tt>
-<br><tt>&nbsp;&nbsp; rcb->Box = (struct rcb_box *) <a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a>(sizeof(struct
-rcb_box));</tt>
-<br><tt>}</tt>
-<br><tt>else {</tt>
-<br><tt>&nbsp;&nbsp; rcb = (RCB_STRUCT *) lb->Data_Structure;</tt>
-<br><tt>&nbsp;&nbsp; <a href="dev_util_mem.html#LB_Free">LB_FREE</a>(&amp;(rcb->Dots));</tt>
-<br><tt>}</tt></td>
+rcb_tree));
+<br>&nbsp;&nbsp; rcb->Box = (struct rcb_box *) <a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a>(sizeof(struct
+rcb_box));
+<br>}
+<br>else {
+<br>&nbsp;&nbsp; rcb = (RCB_STRUCT *) lb->Data_Structure;
+<br>&nbsp;&nbsp; <a href="dev_util_mem.html#LB_Free">LB_FREE</a>(&amp;(rcb->Dots));
+<br>}
+</tt>
+</td>
 </tr>
 
-<caption ALIGN=BOTTOM><i>Example demonstrating aloocation of data structures
+<caption ALIGN=BOTTOM><i>Example demonstrating allocation of data structures
 for the RCB algorithm.&nbsp; (Taken from rcb/rcb_util.c.)</i></caption>
 </table></center>
 
@@ -89,70 +93,74 @@ query function.
 <br>&nbsp;
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <tr>
-<td><a NAME="query_example"></a>&nbsp;<tt>&nbsp;</tt>
-<br><tt>/*</tt>
-<br><tt>&nbsp;* Allocate space for objects.&nbsp; Allow extra space</tt>
-<br><tt>&nbsp;* for objects that are imported to the processor.</tt>
-<br><tt>&nbsp;*/</tt><tt></tt>
-<p><tt>*num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &amp;ierr);</tt>
-<br><tt>if (ierr) {</tt>
-<br><tt>&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
-yo,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-"Error returned from user function Get_Num_Obj.");</tt>
-<br><tt>&nbsp; return(ierr);</tt>
-<br><tt>}</tt><tt></tt>
-<p><tt>*max_obj = (int)(1.5 * *num_obj) + 1;</tt>
-<br><tt>*global_ids = <a href="dev_lb_types.html#ID alloc">LB_MALLOC_GID_ARRAY</a>(lb, (*max_obj));</tt>
-<br><tt>*local_ids&nbsp; = <a href="dev_lb_types.html#ID alloc">LB_MALLOC_LID_ARRAY</a>(lb, (*max_obj));</tt>
-<br><tt>*dots = (struct Dot_Struct *)<a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a>((*max_obj)*sizeof(struct
-Dot_Struct));</tt><tt></tt>
-<p><tt>if (!(*global_ids) || (lb->Num_LID &amp;&amp; !(*local_ids)) ||
-!(*dots)) {</tt>
-<br><tt>&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
-yo, "Insufficient memory.");</tt>
-<br><tt>&nbsp; return(<a href="../ug_html/ug_interface.html#Error Codes">LB_MEMERR</a>);</tt>
-<br><tt>}</tt><tt></tt>
-<p><tt>if (*num_obj > 0) {</tt><tt></tt>
-<p><tt>&nbsp; if (wgtflag) {</tt><tt></tt>
-<p><tt>&nbsp;&nbsp;&nbsp; /*</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Allocate space for object weights.</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; */</tt><tt></tt>
-<p><tt>&nbsp;&nbsp;&nbsp; objs_wgt = (float *) <a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a>((*num_obj)*sizeof(float));</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; if (!objs_wgt) {</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
-yo, "Insufficient memory.");</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return(<a href="../ug_html/ug_interface.html#Error Codes">LB_MEMERR</a>);</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; }</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; *num_obj; i++) objs_wgt[i]
-= 0.;</tt>
-<br><tt>&nbsp; }</tt><tt></tt>
-<p><tt>&nbsp; /*</tt>
-<br><tt>&nbsp;&nbsp; *&nbsp; Get list of objects' IDs and weights.</tt>
-<br><tt>&nbsp;&nbsp; */</tt><tt></tt>
-<p><tt>&nbsp; <a href="dev_services_objlist.html">LB_Get_Obj_List</a>(lb, *global_ids, *local_ids, wgtflag, objs_wgt,
-&amp;ierr);</tt>
-<br><tt>&nbsp; if (ierr) {</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
-yo,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-"Error returned from user function LB_Get_Obj_List.");</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="dev_util_mem.html#LB_Free">LB_FREE</a>(&amp;objs_wgt);</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; return(ierr);</tt>
-<br><tt>&nbsp; }</tt><tt></tt>
-<p><tt>&nbsp; ierr = initialize_dot(lb, *global_ids, *local_ids, *dots,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-*num_obj, wgtflag, objs_wgt);</tt>
-<br><tt>&nbsp; if (ierr == LB_FATAL || ierr == LB_MEMERR) {</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
-yo,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-"Error returned from user function initialize_dot.");</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="dev_util_mem.html#LB_Free">LB_FREE</a>(&amp;objs_wgt);</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; return(ierr);</tt>
-<br><tt>&nbsp; }</tt><tt></tt>
-<p><tt>&nbsp; <a href="dev_util_mem.html#LB_Free">LB_FREE</a>(&amp;objs_wgt);</tt>
-<br><tt>}</tt></td>
+<td><a NAME="query_example"></a>&nbsp;&nbsp;
+<tt>
+<br>/*
+<br>&nbsp;* Allocate space for objects.&nbsp; Allow extra space
+<br>&nbsp;* for objects that are imported to the processor.
+<br>&nbsp;*/
+<p>*num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &amp;ierr);
+<br>if (ierr) {
+<br>&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
+yo,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+"Error returned from Get_Num_Obj.");
+<br>&nbsp; return(ierr);
+<br>}
+<p>*max_obj = (int)(1.5 * *num_obj) + 1;
+<br>*global_ids = <a href="dev_lb_types.html#ID alloc">LB_MALLOC_GID_ARRAY</a>(lb, (*max_obj));
+<br>*local_ids&nbsp; = <a href="dev_lb_types.html#ID alloc">LB_MALLOC_LID_ARRAY</a>(lb, (*max_obj));
+<br>*dots = (struct Dot_Struct *)
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a>((*max_obj)*sizeof(struct
+Dot_Struct));
+<p>if (!(*global_ids) || (lb->Num_LID &amp;&amp; !(*local_ids)) ||
+!(*dots)) {
+<br>&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
+yo, "Insufficient memory.");
+<br>&nbsp; return(<a href="../ug_html/ug_interface.html#Error Codes">LB_MEMERR</a>);
+<br>}
+<p>if (*num_obj > 0) {
+<p>&nbsp; if (wgtflag) {
+<p>&nbsp;&nbsp;&nbsp; /*
+<br>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Allocate space for object weights.
+<br>&nbsp;&nbsp;&nbsp;&nbsp; */
+<p>&nbsp;&nbsp;&nbsp; objs_wgt = (float *) <a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a>((*num_obj)*sizeof(float));
+<br>&nbsp;&nbsp;&nbsp; if (!objs_wgt) {
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
+yo, "Insufficient memory.");
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return(<a href="../ug_html/ug_interface.html#Error Codes">LB_MEMERR</a>);
+<br>&nbsp;&nbsp;&nbsp; }
+<br>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; *num_obj; i++) objs_wgt[i]
+= 0.;
+<br>&nbsp; }
+<p>&nbsp; /*
+<br>&nbsp;&nbsp; *&nbsp; Get list of objects' IDs and weights.
+<br>&nbsp;&nbsp; */
+<p>&nbsp; <a href="dev_services_objlist.html">LB_Get_Obj_List</a>(lb, *global_ids, *local_ids, wgtflag, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; objs_wgt, &amp;ierr);
+<br>&nbsp; if (ierr) {
+<br>&nbsp;&nbsp;&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
+yo,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+"Error returned from LB_Get_Obj_List.");
+<br>&nbsp;&nbsp;&nbsp; <a href="dev_util_mem.html#LB_Free">LB_FREE</a>(&amp;objs_wgt);
+<br>&nbsp;&nbsp;&nbsp; return(ierr);
+<br>&nbsp; }
+<p>&nbsp; ierr = initialize_dot(lb, *global_ids, *local_ids, *dots,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*num_obj, wgtflag, objs_wgt);
+<br>&nbsp; if (ierr == LB_FATAL || ierr == LB_MEMERR) {
+<br>&nbsp;&nbsp;&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
+yo,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+"Error returned from initialize_dot.");
+<br>&nbsp;&nbsp;&nbsp; <a href="dev_util_mem.html#LB_Free">LB_FREE</a>(&amp;objs_wgt);
+<br>&nbsp;&nbsp;&nbsp; return(ierr);
+<br>&nbsp; }
+<p>&nbsp; <a href="dev_util_mem.html#LB_Free">LB_FREE</a>(&amp;objs_wgt);
+<br>}
+</tt>
+</td>
 </tr>
 
 <caption ALIGN=BOTTOM><i>Example demonstrating how data structures are
@@ -160,6 +168,13 @@ built for the RCB algorithm.&nbsp; (Taken from rcb/shared.c.)</i></caption>
 </table></center>
 
 <p>
+The data structures pointed to by <i>lb->Data_Structure</i> must also be freed.
+A function that frees these structures and resets <i>lb->Data_Structure</i>
+to NULL should be written.  The function should be called when the load-balancing
+algorithm exits, either normally or due to an error condition.
+A call to this function should also be included in
+<b>LB_Free_Structure</b> in <i>all/free_structure.c</i>.  The function
+<b>LB_RCB_Free_Structure</b> in <i>rcb/rcb_util.c</i> may be used as an example.
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_add_memory.html">Next:&nbsp;
 Memory Management</a>&nbsp; |&nbsp; <a href="dev_add_lb.html">Previous:&nbsp;

@@ -46,7 +46,8 @@ provides a uniform method of calling
 the registered query functions supplied by the application.  Its use simplifies
 new algorithm development and code maintenance in Zoltan.
 An example of its use can be found in <i>rcb/shared.c</i>.
-
+<p>
+<hr>
 <hr><a NAME="LB_Get_Obj_List"></a>void<b> LB_Get_Obj_List</b>(
 struct <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b> *<i>lb</i>, 
 <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b> <i>global_ids</i>,
@@ -55,7 +56,7 @@ int <i>wdim</i>,
 float *<i>objwgts</i>, 
 int *<i>ierr</i>);
 <hr>
-<p><b>LB_Get_Obj_List</b> returns arrays of global and local IDs (and object
+<b>LB_Get_Obj_List</b> returns arrays of global and local IDs (and object
 weights, if 
 <b><a href="../ug_html/ug_alg.html#General_Parameters">OBJ_WEIGHT_DIM</a></b> 
 is not zero) for all objects on a processor.
@@ -69,7 +70,7 @@ query function pair directly.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE>
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%" NOSAVE><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%" NOSAVE><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -107,7 +108,7 @@ are not requested.
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>objwgts</i></td>
 <td>
-An array of object weights. Weight <i>i</i> is stored in
+Upon return, an array of object weights. Weights for object <i>i</i> are stored in
 <i>objwgts</i>[(<i>i</i>-1)*<i>wdim</i>:<i>i</i>*<i>wdim</i>-1].  
 If <i>wdim</i> is zero, the
 return value of objwgts is undefined and may be NULL.

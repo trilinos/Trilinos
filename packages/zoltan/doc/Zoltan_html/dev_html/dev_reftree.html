@@ -30,7 +30,7 @@ Appendix: Refinement Tree</h2>
 <h3>
 Overview of structure (algorithm)</h3>
 The refinement tree based partitioning algorithm was developed and implemented
-by William Mitchell of the National Institute of Standards and Technology.
+by <a href="http://math.nist.gov/~mitchell">William Mitchell</a> of the National Institute of Standards and Technology.
 It is similar to the Octree method except that it uses a tree representation
 of the refinement history instead of a geometry based octree.  The method
 generates a space filling curve which is cut into equal sized pieces to
@@ -64,7 +64,7 @@ is determined such that a tree traversal produces a space filling curve.
 The user indicates what type of refinement was used to produce the children
 (bisection of triangles, quadrasection of quadrilaterals, etc.).  For each
 supported type of refinement, a template based ordering is imposed.  The
-template also maintains an ``in'' and ``out'' vertex for each element
+template also maintains an "in" and "out" vertex for each element
 which are used by the template to determine the beginning and end of the space
 filling curve through the children.  If the
 refinement is not among the types supported by templates, an exhaustive
@@ -88,24 +88,24 @@ constructs the export list.
 <h3>
 Data structures</h3>
 The implementation of the refinement tree algorithm uses three data
-structures which are contained in reftree_const.h.  LB_reftree_data_struct
-is the structure pointed to by lb->Data_Structure.  It contains a pointer
+structures which are contained in <i>reftree/reftree_const.h</i>.  <i>LB_reftree_data_struct</i>
+is the structure pointed to by <i>lb->Data_Structure</i>.  It contains a pointer
 to the refinement tree root and a pointer to the hash table.
-LB_reftree_hash_node is an entry in the hash table.  It consists of a GID,
-a pointer to a refinement tree node, and a ``next'' pointer from which
+<i>LB_reftree_hash_node</i> is an entry in the hash table.  It consists of a global ID,
+a pointer to a refinement tree node, and a "next" pointer from which
 linked lists at each table entry are constructed to handle collisions.
 LB_Reftree_Struct is
 a node of the refinement tree.  It contains the global ID, local ID,
 pointers to the children, weight and summed weights, vertices of the
-element, ``in'' and ``out'' vertex, a flag to indicate if this element is
+element, "in" and "out" vertex, a flag to indicate if this element is
 assigned to this processor, and the new partition number.
 <h3>
 Parameters</h3>
-There is one parameter, REFTREE_HASH_SIZE, which determines the size of
-the hash table and is set by LB_Set_Reftree_Param.
+There is one parameter, <a href="../ug_html/ug_alg_reftree.html">REFTREE_HASH_SIZE</a>, which determines the size of
+the hash table and is set by <b>LB_Set_Reftree_Param</b>.
 <h3>
 Main routine</h3>
-The main routine is <b>LB_Reftree_Part</b> in file reftree_part.c.
+The main routine is <b>LB_Reftree_Part</b> in file <i>reftree/reftree_part.c</i>.
 <p>
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_parmetis.html">Previous:&nbsp;

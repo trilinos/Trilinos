@@ -47,7 +47,7 @@ types of data as long as the number of objects in the transfers remains
 the same. The actual size of objects isn't specified until the call to
 <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>
 which performs the data transfer.
-<p>The vanilla plan which is produced by
+<p>The plan which is produced by
 <b><a href="#LB_Comm_Create">LB_Comm_Create</a></b>
 assumes that all the objects are of the same size. If this is not true,
 then a call to <b><a href="#LB_Comm_Resize">LB_Comm_Resize</a></b> can
@@ -62,14 +62,14 @@ as a packed buffer in which the objects are stored consecutively. This
 probably requires the application to pull the data out of native data structures
 and place in into the buffer. The destination of each object is specified
 by the <i>proclist</i> argument to <b><a href="#LB_Comm_Create">LB_Comm_Create</a></b>.
-Some flexibility is supported by allowing for the proclist to contain negative
+Some flexibility is supported by allowing <i>proclist</i> to contain negative
 values, indicating that the corresponding objects are not to be sent. The
 communication operations allow for any object to be sent to any destination
 processor. However, if the objects are grouped in such a way that all those
-being sent to a particular processor are consecutive then the time and
+being sent to a particular processor are consecutive, the time and
 memory of an additional copy is avoided.
 <p>All the functions in the unstructured communication library return integer
-error codes similar to those used by Zoltan. The prototype definitions
+error codes similar to those used by <a href="../Zoltan.html">Zoltan</a>. The prototype definitions
 and error codes are all defined in <i>Utilities/Communication/comm_const.h</i>.
 The error codes have the following meanings.
 <center><table BORDER WIDTH="90%" >
@@ -97,16 +97,17 @@ be able to continue to run.</td>
 
 <td>An error occurred while allocating memory. When this error occurs,
 the library frees any allocated memory and returns control to the application.
-If the application then wants to try to use another, less memory-intensive,
-algorithm, it can do so.</td>
+</td>
 </tr>
 </table></center>
 
+<p>
+<hr>
 <table>
 <tr VALIGN=TOP>
-<td><b>Source code location:</b></td>
+<td WIDTH="50%"><b>Source code location:</b></td>
 
-<td><i>Utilities/Communication</i></td>
+<td WIDTH="50%"><i>Utilities/Communication</i></td>
 </tr>
 
 <tr VALIGN=TOP>
@@ -134,16 +135,16 @@ a communication plan for sending objects to destination processors.
 <br><b><a href="#LB_Comm_Do">LB_Comm_Do</a>:&nbsp; </b>uses a communication
 plan to send data objects to destination processors.&nbsp;
 <br><b><a href="#LB_Comm_Do_Reverse">LB_Comm_Do_Reverse</a>:&nbsp;</b>
-performs the reverse (opposite) communication of <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>
+performs the reverse (opposite) communication of <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>.
 <br><b><a href="#LB_Comm_Resize">LB_Comm_Resize</a>:&nbsp; </b>augments
 the plan to allow objects to be of variable sizes.&nbsp;
 <br><b><a href="#LB_Comm_Destroy">LB_Comm_Destroy</a>:</b>&nbsp; free memory
 associated with a communication plan.&nbsp;</blockquote>
 <b>Low Level Routines:</b>
 <blockquote><b><a href="#LB_Comm_Exchange_Sizes">LB_Comm_Exchange_Sizes</a>:
-</b>updates the sizes of the messages each processor will be receiving.
+</b>updates the sizes of the messages each processor will receive.
 <br><b><a href="#LB_Comm_Invert_Map">LB_Comm_Invert_Map</a>:&nbsp; </b>given
-a set of messages each processor want to send, determines the set of messages
+a set of messages each processor wants to send, determines the set of messages
 each processor needs to receive.
 <br><b><a href="#LB_Comm_Sort_Ints">LB_Comm_Sort_Ints</a>:&nbsp; </b>sorts
 an array of integer values.&nbsp;</blockquote>
@@ -157,9 +158,12 @@ in its migration tools and in some of the load-balancing algorithms. For
 example, in <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>,
 <b><a href="#LB_Comm_Create">LB_Comm_Create</a></b>
 is used to develop a communication map for sending objects to be exported
-to their new destination processors. The data for the objects is packed
+to their new destination processors. The sizes of the exported objects are
+obtained and the communication map is augmented with a call to 
+<a href="#LB_Comm_Resize"><b>LB_Comm_Resize</b></a>.
+The data for the objects is packed
 into a communication buffer and sent to the other processors through a
-call to <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b> After the received
+call to <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>. After the received
 objects are unpacked, the communication plan is no longer needed, and it
 is deallocated by a call to
 <b><a href="#LB_Comm_Destroy">LB_Comm_Destroy</a></b>.
@@ -183,19 +187,15 @@ It allocates and builds a communication plan that describes to which processors
 data will be sent and from which processors data will be received. It also
 computes the amount of data to be sent to and received from each processor.
 It returns the number of objects to be received by the processor and a
-pointer to the communication plan it created. In <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>,
-for example, the number of objects to be exported by a processor and a
-list of the destination processors for the objects are passed to <b>LB_Comm_Create</b>;
-the resulting plan describes the communication patterns needed to export
-the objects and to import objects to establish a new decomposition. This
+pointer to the communication plan it created.  The communication
 plan is then used by calls to <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>
 to perform the actual communication.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>
@@ -249,20 +249,17 @@ each of the objects to be sent.</td>
 </table>
 
 <p>
+<hr>
 <hr><a NAME="LB_Comm_Do"></a>int<b> LB_Comm_Do</b>(struct Comm_Obj *<i>plan</i>,
 int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>, char *<i>recvbuf</i>);&nbsp;
 <hr>The <b>LB_Comm_Do</b> function performs the communication described
 in a communication plan built by <b><a href="#LB_Comm_Create">LB_Comm_Create</a></b>.
 Using the plan, it takes a buffer of object data to be sent and the size
 (in bytes) of each object's data in that buffer and sends the data to other
-processors. In <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>,
-for example, the send buffer is filled by <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
-through calls to the <i>lb->Pack_Obj</i> function for all objects to be
-exported. The <b>LB_Comm_Do</b> function also receives object data from
-other processors and stores it in a receive buffer. In <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>,
-the data for objects to be imported is received in <i>recvbuf</i> and can
-then be unpacked through calls to the <i>lb->Unpack_Obj</i> function for
-each imported object. The receive buffer must be allocated by the code
+processors. 
+<b>LB_Comm_Do</b> also receives object data from
+other processors and stores it in a receive buffer. 
+The receive buffer must be allocated by the code
 calling <b>LB_Comm_Do</b> using the number of received objects returned
 by <b><a href="#LB_Comm_Create">LB_Comm_Create</a></b> or <b><a href="#LB_Comm_Resize">LB_Comm_Resize</a></b>.
 If the objects have variable sizes, then <b><a href="#LB_Comm_Resize">LB_Comm_Resize</a></b>
@@ -270,9 +267,9 @@ must be called before <b>LB_Comm_Do</b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>
@@ -322,6 +319,7 @@ more details.)</td>
 </table>
 
 <p>
+<hr>
 <hr><a NAME="LB_Comm_Do_Reverse"></a>int <b>LB_Comm_Do_Reverse</b>(struct
 Comm_Obj *<i>plan</i>, int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>,
 int *<i>sizes</i>, char *<i>recvbuf</i>);&nbsp;
@@ -336,9 +334,9 @@ processors when the objects were initially transferred via
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>
@@ -397,6 +395,7 @@ of the values being received, not sent.</td>
 </table>
 
 <p>
+<hr>
 <hr><a NAME="LB_Comm_Resize"></a>int <b>LB_Comm_Resize</b>( struct Comm_Obj
 *<i>plan</i>, int *<i>sizes</i>, int <i>tag</i> , int *<i>total_recv_size</i>);&nbsp;
 <hr>If the objects being communicated are of variable sizes, then the plan
@@ -408,9 +407,9 @@ sizes associated with different data transfers.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>
@@ -422,11 +421,11 @@ sizes associated with different data transfers.
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; sizes</i></td>
 
-<td>An input array of length equal to the <i>nvals</i> argument in the
+<td>An input array of length equal to the <i>nsend</i> argument in the
 call to <b><a href="#LB_Comm_Create">LB_Comm_Create</a></b> which generated
 the <i>plan</i>. Each entry in the array is the size of the corresponding
-object which I want to send. If <i>sizes</i> is <i>NULL </i>(on all processors)
-then the objects are considered to be the same size. Note that the true
+object to be sent. If <i>sizes</i> is <i>NULL </i>(on all processors),
+the objects are considered to be the same size. Note that the true
 size of a message will be scaled by the <i>nbytes</i> argument to <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>.&nbsp;</td>
 </tr>
 
@@ -458,6 +457,7 @@ size (in bytes), you need to scale by the <i>nbytes</i> argument to <b><a href="
 </table>
 
 <p>
+<hr>
 <hr><a NAME="LB_Comm_Destroy"></a>int <b>LB_Comm_Destroy</b>(struct Comm_Obj
 **<i>plan</i>);&nbsp;
 <hr>The <b>LB_Comm_Destroy</b> function frees all memory associated with
@@ -465,9 +465,9 @@ a communication plan created by <b><a href="#LB_Comm_Create">LB_Comm_Create</a><
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>
@@ -491,6 +491,7 @@ Upon return, <i>plan</i> is set to NULL.&nbsp;</td>
 </table>
 
 <p>
+<hr>
 <hr><a NAME="LB_Comm_Exchange_Sizes"></a>int <b>LB_Comm_Exchange_Sizes</b>(
 int *<i>sizes_to</i>, int *<i>procs_to</i>, int <i>nsends</i>, int <i>self_msg</i>,
 int *<i>sizes_from</i>, int *<i>procs_from</i>, int <i>nrecvs</i>, int
@@ -504,15 +505,15 @@ recomputed and exchanged via this routine.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; sizes_to</i></td>
 
-<td>Input array with the size of each message that I want to send. Note
+<td>Input array with the size of each message to be sent. Note
 that the actual number of bytes in the message is the product of this value
 and the <i>nbytes</i> argument to <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>.</td>
 </tr>
@@ -520,28 +521,28 @@ and the <i>nbytes</i> argument to <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>.</
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; procs_to</i></td>
 
-<td>Input array with the destination processof for each of the messages
-I want to send.</td>
+<td>Input array with the destination processor for each of the messages
+to be sent.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; nsends</i></td>
 
-<td>Input argument with the number of messages I want to send. (Length
+<td>Input argument with the number of messages to be sent. (Length
 of the <i>procs_to</i> array.)</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; self_msg</i></td>
 
-<td>Input argument indicating whether I have data for myself (=1) or not
+<td>Input argument indicating whether a processor has data for itself (=1) or not
 (=0) within the <i>procs_to</i> and <i>lengths_to</i> arrays.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; sizes_from</i></td>
 
-<td>Returned array with the size of each message that I will receive. Note
+<td>Returned array with the size of each message that will be received. Note
 that the actual number of bytes in the message is the product of this value
 and the <i>nbytes</i> argument to <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>.</td>
 </tr>
@@ -549,27 +550,27 @@ and the <i>nbytes</i> argument to <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>.</
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; procs_from</i></td>
 
-<td>Returned array of processors I'll receive data from.</td>
+<td>Returned array of processors from which data will be received.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; nrecvs</i></td>
 
-<td>Returned value with number of messages I'll receive. (length of <i>procs_from</i>
+<td>Returned value with number of messages to be received. (length of <i>procs_from</i>
 array.)</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; total_recv_size</i></td>
 
-<td>The total size of all the messages I'll receive. As above, the actual
+<td>The total size of all the messages to be received. As above, the actual
 number of bytes will be scaled by the <i>nbytes</i> argument to <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; my_proc</i></td>
 
-<td>My processor ID in the <i>comm</i> communicator.&nbsp;</td>
+<td>The processor's ID in the <i>comm</i> communicator.&nbsp;</td>
 </tr>
 
 <tr>
@@ -598,34 +599,35 @@ number of bytes will be scaled by the <i>nbytes</i> argument to <b><a href="#LB_
 </table>
 
 <p>
+<hr>
 <hr><a NAME="LB_Comm_Invert_Map"></a>int <b>LB_Comm_Invert_Map</b>( int
 *<i>lengths_to</i>, int *<i> procs_to</i>, int <i>nsends</i>, int <i>self_msg</i>,
 int **<i> lengths_from</i>, int **<i> procs_from</i>, int *<i> nrecvs</i>,
 int <i>my_proc</i>, int <i>nprocs</i>, int <i>out_of_mem</i>, int <i>tag</i>,
 MPI_Comm <i>comm</i> );&nbsp;
 <hr>The <b>LB_Comm_Invert_Map</b> function is a low level communication
-routine. It is useful when a processor knows who it needs to send data
-to, but not who it needs to receive from. Each processor provides to this
+routine. It is useful when a processor knows to whom it needs to send data, 
+but not from whom it needs to receive data. Each processor provides to this
 routine a set of lengths and destinations for the messages it wants to
 send. The routine then returns the set of lengths and origins for the messages
-a processor will needs to receive. Note that by inverting the interpretation
+a processor will receive. Note that by inverting the interpretation
 of
 <i>to</i> and <i>from</i> in these arguments, the routine can be used
-to do the opposite: knowing who from and how much data to receive it can
-compute who to and how much data to send.
+to do the opposite: knowing how much data to receive and from which processors, it can
+compute how much data to send and to which processors.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lengths_to</i></td>
 
-<td>Input array with the number of values in each of the messages I want
-to send. Note that the actual size of each value is not specified until
+<td>Input array with the number of values in each of the messages to be sent.  
+Note that the actual size of each value is not specified until
 the <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b> routine is invoked.</td>
 </tr>
 
@@ -633,47 +635,47 @@ the <b><a href="#LB_Comm_Do">LB_Comm_Do</a></b> routine is invoked.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; procs_to</i></td>
 
 <td>Input array with the destination processor for each of the messages
-I want to send.</td>
+to be sent.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; nsends</i></td>
 
-<td>Input argument with the number of messages I want to send. (Length
+<td>Input argument with the number of messages to be sent. (Length
 of the <i>lengths_to</i> and <i>procs_to</i> arrays.)</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; self_msg</i></td>
 
-<td>Input argument indicating whether I have data for myself (=1) or not
+<td>Input argument indicating whether a processor has data for itself (=1) or not
 (=0) within the <i>procs_to</i> and <i>lengths_to</i> arrays.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lengths_from</i></td>
 
-<td>Returned array with lengths of messages I'll receive.</td>
+<td>Returned array with lengths of messages to be received.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; procs_from</i></td>
 
-<td>Returned array of processors I'll receive data from.</td>
+<td>Returned array of processors from which data will be received.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; nrecvs</i></td>
 
-<td>Returned value with number of messages I'll receive. (lengths of
+<td>Returned value with number of messages to be received (lengths of
 <i>lengths_from</i>
-and <i>procs_from</i> arrays.)</td>
+and <i>procs_from</i> arrays).</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; my_proc</i></td>
 
-<td>My processor ID in the <i>comm</i> communicator.&nbsp;</td>
+<td>The processor's ID in the <i>comm</i> communicator.&nbsp;</td>
 </tr>
 
 <tr>
@@ -718,6 +720,7 @@ if any of them is out of memory.</td>
 </table>
 
 <p>
+<hr>
 <hr><a NAME="LB_Comm_Sort_Ints"></a>int <b>LB_Comm_Sort_Ints</b>( int *<i>vals_sort</i>,
 int *<i>vals_other</i>, int <i>nvals</i>);&nbsp;
 <hr>As its name suggests, the <b>LB_Comm_Sort_Ints</b> function sorts a
@@ -728,9 +731,9 @@ associated with the sort operation.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>

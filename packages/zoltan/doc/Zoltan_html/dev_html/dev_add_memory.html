@@ -42,7 +42,9 @@ error checking for the allocations and, thus, their use is highly recommended.
 <p>When a dynamic structure needs to be returned to the application,
 special memory allocation routines are needed.&nbsp; For example, the import
 and export lists of data to migrate are returned to an application from
-<b><a href="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</a></b>.
+<b><a href="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</a></b>
+and 
+<b><a href="../ug_html/ug_interface_mig.html#LB_Compute_Destinations">LB_Compute_Destinations</a></b>.
 There are two special routines for managing memory for such situations,
 called <b><a href="#LB_Special_Malloc">LB_Special_Malloc</a></b> and <b><a href="#LB_Special_Free">LB_Special_Free</a></b>.
 Algorithms must use these functions to maintain compatibility with both
@@ -50,7 +52,8 @@ C and Fortran90 applications; these special routines manage memory in a
 way that is compatible with both languages.
 <p>Some load-balancing algorithms may contain persistent data structures,
 that is, data structures that are preserved between calls to the load-balancing
-routine. The <i>lb</i> structure contains a field<i> lb->Data_Structure</i>
+routine. The <i>lb</i> structure contains a field 
+<a href="dev_add_struct.html"><i>lb->Data_Structure</i></a>
 for this purpose, allowing multiple load-balancing structures to preserve
 their own decomposition data. The developer should write a function that
 frees this data structure.&nbsp; Use <b>LB_RCB_Free_Structure </b>as an
@@ -60,8 +63,12 @@ example.
 <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
 *<i>lb</i>, void **<i>array</i>, int <i>size</i>, <b>LB_SPECIAL_MALLOC_TYPE</b><i>type</i>);&nbsp;
 <hr>
-<p>The <b>LB_Special_Malloc</b> routine allocates memory for result arrays
-like <i>import_global_ids</i>, <i>import_local_ids</i>, <i>import_procs</i>,
+<p>The <b>LB_Special_Malloc</b> routine allocates memory for the result arrays
+of 
+<b><a href="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</a></b>
+and 
+<b><a href="../ug_html/ug_interface_mig.html#LB_Compute_Destinations">LB_Compute_Destinations</a></b>:
+<i>import_global_ids</i>, <i>import_local_ids</i>, <i>import_procs</i>,
 <i>export_global_ids</i>,
 <i>export_local_ids</i>
 and <i>export_procs</i>. Since these arrays are returned to the application,
@@ -71,7 +78,7 @@ must be deallocated by <b><a href="#LB_Special_Free">LB_Special_Free</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -85,8 +92,10 @@ must be deallocated by <b><a href="#LB_Special_Free">LB_Special_Free</a></b>.
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; array</i></td>
 
-<td>Usually of type int** or <b><a href="dev_lb_types.html">LB_ID_PTR</a></b>*.
-Returned as a pointer to the allocated space.</td>
+<td>
+Upon return, a pointer to the allocated space.
+Usually of type int** or <b><a href="dev_lb_types.html">LB_ID_PTR</a></b>*.
+</td>
 </tr>
 
 <tr>
@@ -100,7 +109,8 @@ Returned as a pointer to the allocated space.</td>
 
 <td>The type of array to allocate. Must be one of <b>LB_SPECIAL_MALLOC_INT</b>,
 <b>LB_SPECIAL_MALLOC_GID</b>
-or <b>LB_SPECIAL_MALLOC_LID</b>.</td>
+or <b>LB_SPECIAL_MALLOC_LID</b> for processor numbers, <a href="dev_lb_types.html">global IDs</a> and <a href="dev_lb_types.html">local IDs</a>, respectively.
+</td>
 </tr>
 
 <tr>
@@ -124,15 +134,21 @@ or <b>LB_SPECIAL_MALLOC_LID</b>.</td>
 <tr>
 <td VALIGN=TOP></td>
 
-<td>ierr = <b>LB_Special_Malloc</b>(<i>lb</i>, (void **)<i>import_gid</i>,
+<td>
+<tt>
+ierr = <b>LB_Special_Malloc</b>(<i>lb</i>, (void **)<i>import_gid</i>,
 <i>num_import</i>,
-<b>LB_SPECIAL_MALLOC_GID</b>);</td>
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>LB_SPECIAL_MALLOC_GID</b>);
+</tt>
+</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP></td>
 
-<td>Allocates an array with <i>num_import</i> <a href="dev_lb_types.html">global IDs</a>.</td>
+<td>Allocates an array with <i>num_import</i> <a href="dev_lb_types.html">global IDs</a>
+and returns a pointer to the allocated space in <i>import_gid</i>.
+</td>
 </tr>
 </table>
 
@@ -141,10 +157,11 @@ or <b>LB_SPECIAL_MALLOC_LID</b>.</td>
 *<i>lb</i>, void **<i>array</i>,<b> LB_SPECIAL_MALLOC_TYPE</b> <i>type</i>);&nbsp;
 <hr>
 <p><b>LB_Special_Free</b> frees memory allocated by <b><a href="#LB_Special_Malloc">LB_Special_Malloc</a></b>.
+The array pointer is set to NULL upon return.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -158,7 +175,7 @@ or <b>LB_SPECIAL_MALLOC_LID</b>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; array</i></td>
 
-<td>The array to be freed.</td>
+<td>The array to be freed. Upon return, the pointer is set to NULL.</td>
 </tr>
 
 <tr>
@@ -166,7 +183,7 @@ or <b>LB_SPECIAL_MALLOC_LID</b>.</td>
 
 <td>The type of the array. Must be one of <b>LB_SPECIAL_MALLOC_INT</b>,
 <b>LB_SPECIAL_MALLOC_GID</b>
-or <b>LB_SPECIAL_MALLOC_LID</b>.</td>
+or <b>LB_SPECIAL_MALLOC_LID</b> for processor numbers, <a href="dev_lb_types.html">global IDs</a> and <a href="dev_lb_types.html">local IDs</a>, respectively.</td>
 </tr>
 
 <tr>
@@ -190,15 +207,19 @@ or <b>LB_SPECIAL_MALLOC_LID</b>.</td>
 <tr>
 <td VALIGN=TOP></td>
 
-<td>ierr = <b>LB_Special_Free</b>(<i>lb</i>, (void **)<i>import_gid</i>,
-<b>LB_SPECIAL_MALLOC_GID</b>);</td>
+<td>
+<tt>
+ierr = <b>LB_Special_Free</b>(<i>lb</i>, (void **)<i>import_gid</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>LB_SPECIAL_MALLOC_GID</b>);
+</tt>
+</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP></td>
 
 <td>Frees the <b><a href="dev_lb_types.html">global IDs</a></b>
-array <i>import_gid</i>.</td>
+array <i>import_gid</i> and sets it to NULL.</td>
 </tr>
 </table>
 

@@ -28,22 +28,33 @@
 <h2>
 <a NAME="new_interface"></a>Load-Balancing Interface Routines</h2>
 Any new method that you wish to add to the Zoltan library must have an
-interface that conforms to the protype <b><a href="dev_add_lb.html">LB_FN</a></b>.
+interface that conforms to the prototype <b><a href="dev_add_lb.html">LB_FN</a></b>.
 Note that the load balancing
 function may return either import lists, export lists, or both. All
-processes must return the same type of list. If&nbsp; import (export) lists
+processes must return the same type of list. If import (export) lists
 are not computed, then the variable <i>num_import</i> (<i>num_export</i>)
 must be set to a negative number (typically -1) upon return.
-<p>A new algorithm must be added to the load-balancing interface for use
+Full support of the <a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>
+parameter is not required.  
+If <a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
+is not set to NONE,
+the new algorithm may return either import or export lists; the Zoltan 
+interface will then build the lists requested by
+<a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>.
+
+<p>
+A new algorithm must be added to the load-balancing interface for use
 in
 <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>.
 An entry for the new algorithm must be added to the enumerated type <b>LB_Method</b>
 in <i>lb/lb_const.h</i>. An external <b><a href="dev_add_lb.html">LB_FN</a></b>
 prototype for the load-balancing function must also be added to <i>lb/lb_const.h</i>;
-see the prototype for function <i>lb_rcb</i> as an example. A character
+see the prototype for function <i>LB_rcb</i> as an example. A character
 string describing the new algorithm should be chosen to be used as application
 input to <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>.
-A test for this string is added to <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>,
+In 
+<b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>,
+a test for this string should be added
 and the <i>Method</i> and <i>LB_Fn</i> fields of the <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
 passed to <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>
 should be set to the new enumerated type value and new load-balancing function

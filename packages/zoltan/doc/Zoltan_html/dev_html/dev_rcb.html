@@ -36,7 +36,7 @@ is due to Steve Plimpton of Sandia National Laboratories and was modified
 by Matt St. John and Courtenay Vaughan.  In this implementation of RCB, the
 parallel computer is first divided into two pieces and then the computational
 domain is divided into two pieces such that the proportion of work in each
-half is the same as the proportion of computational power.  The division
+piece is the same as the proportion of computational power.  The division
 of the parallel machine is done by a subroutine which is part of the support
 for heterogenous architectures that is being built into the Zoltan library.
 This process is repeated recursively on each subdomain and its associated
@@ -58,17 +58,17 @@ number of objects that the rest of the processors have in its set, then
 that processor will not receive any objects.  Thus each processor may send
 and receive objects from several (or no) processors in the other set.  The
 process of determining which outgoing objects are sent to which processors
-is determined in the subroutine <B>create_proc_list</B>.  Once this new
+is determined in the subroutine <B>LB_Create_Proc_List</B>.  Once this new
 distribution of objects is determined, the
 <B><A HREF="dev_util_comm.html">unstructured communication package</A></B> in
 Zoltan is used to determine which processors are going to receive which
 objects and actually move the objects.
 
-<P>For applications which wish to add more objects to the decomposition
-at a later time, information to do this can be retained during the
-decomposition phase.  This information is kept if the parameter KEEP_CUTS
-is set during the decomposition (see the RCB section in the
-<B><A HREF="../ug_html/ug_alg_rcb.html#RCB">Zoltan User's Guide</A></B>).
+<P>For applications that wish to add more objects to the decomposition
+at a later time (e.g., through <a href="../ug_html/ug_interface_augment.html#LB_Box_Assign"><b>LB_Box_Assign</b></a> or <a href="../ug_html/ug_interface_augment.html#LB_Point_Assign"><b>LB_Point_Assign</b></a>), information to do this can be retained during the
+decomposition phase.  This information is kept if the parameter <a href="../ug_html/ug_alg_rcb.html">KEEP_CUTS</a>
+is set during the decomposition (see the <a href="../ug_html/ug_alg_rcb.html">RCB section</a> in the
+<B><A HREF="../ug_html/ug.html">Zoltan User's Guide</A></B>).
 This information about the decomposition can be thought of as a tree with
 the nodes which have children representing the cut information and the nodes
 with no children representing processors.  An object is dropped through the
@@ -104,6 +104,20 @@ on is determined and that information is used to determine which cut to test
 the object against next.  This process is repeated recursively until a
 terminal node is encountered which contains the processor number that the
 object belongs to.
+<p>
+When the parameter <a href="../ug_html/ug_alg_rcb.html">RCB_REUSE</a> is 
+specified, the RCB algorithm attempts to use information from a previous
+RCB decomposition to generate an "initial guess" at the new decomposition.
+For problems that change little between invocations of RCB, using <a href="../ug_html/ug_alg_rcb.html">RCB_REUSE</a>
+can reduce the amount of data movement in RCB, improving the performance
+of the algorithm.  When <a href="../ug_html/ug_alg_rcb.html">RCB_REUSE</a> is true,the coordinates of all objects obtained through query functions are passed through
+<a href="../ug_html/ug_interface_augment.html#LB_Point_Assign"><b>LB_Point_Assign</b></a>
+to determine their processor assignment in the previous RCB decomposition.
+The information for the objects is then sent to the new processor assignments
+using the <a href="dev_util_comm.html">unstructured communication utilities</a>
+to generate an initial condition matching the output of the previous RCB
+decomposition.
+The normal RCB algorithm is then applied to this new initial condition.
 
 <BR>&nbsp;
 
@@ -111,15 +125,15 @@ object belongs to.
 Data Structure Definitions</H3>
 
 <P>There are three major data structures in RCB and they are defined in
-rcb_const.h.  The points which are being load balanced are represented as a
-structure rcb_dot which contains the location of the point, its weight, and
-a tag to identify the point.  The nodes on the decomposition tree are
-represented by the structure rcb_tree which contains the position of the cut,
+<i>rcb/rcb_const.h</i> and <i>rcb/shared_const.h</i>.  The points which are being load balanced are represented as a
+structure <i>Dot_Struct</i> which contains the location of the point, its weight, and
+its originating processor number.  The nodes on the decomposition tree are
+represented by the structure <i>rcb_tree</i> which contains the position of the cut,
 the dimension that the cut is perpendicular to, and the node's parent and two
-children (if they exist) in the tree.  The structure RCB_Struct is the RCB data
+children (if they exist) in the tree.  The structure <i>RCB_Struct</i> is the RCB data
 structure which holds pointers to all of the other data structures needed for
-RCB.  It contains an array of rcb_dot to represent the points being load
-balanced and an array of rcb_tree (whose length is the number of processors)
+RCB.  It contains an array of <i>Dot_Struct</i> to represent the points being load
+balanced, global and local IDs for the points, and an array of <i>rcb_tree</i> (whose length is the number of processors)
 which contains the decomposition tree.
 
 <BR>&nbsp;
@@ -128,16 +142,16 @@ which contains the decomposition tree.
 Parameters</H3>
 
 <P>The parameters used by RCB and their default values are described in the
-RCB section of the <B><A HREF="../ug_html/ug_alg_rcb.html#RCB">Zoltan User's
-Guide</A></B>.  These can be set by use of the LB_Set_RCB_Param subroutine
-in the file rcb.c.
+<a href="../ug_html/ug_alg_rcb.html">RCB section</a> of the <B><A HREF="../ug_html/ug.html">Zoltan User's
+Guide</A></B>.  These can be set by use of the <b>LB_Set_RCB_Param</b> subroutine
+in the file <i>rcb/rcb.c</i>.
  
 <BR>&nbsp;
 
 <H3>
 Main Routine</H3>
 
-<P>The main routine for RCB is LB_rcb in the file rcb.c.
+<P>The main routine for RCB is <b>LB_rcb</b> in the file <i>rcb/rcb.c</i>.
 
 <BR>&nbsp;
 <BR>&nbsp;

@@ -26,7 +26,6 @@
 
 <H2>
 <A NAME="RIB"></A>Appendix: Recursive Inertial Bisection (RIB)</H2>
-&nbsp;
 
 <H3>
 Outline of Algorithm</H3>
@@ -36,7 +35,7 @@ due to Bruce Hendrickson and Robert Leland of Sandia National Laboratories for
 use in <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a> 
 and was modified by Courtenay Vaughan.  RIB is an algorithm
 similar to RCB (see the <B><A HREF="dev_rcb.html">appendix on RCB</A></B> for
-a discription of RCB) in that it uses the coordinates of the objects to be
+a description of RCB) in that it uses the coordinates of the objects to be
 balanced to do the load balancing.  Similarly to RCB, the domain is
 recursively divided into two pieces until the number of subdomains needed is
 reached.  In each stage of the division, the direction of the principle axis
@@ -47,13 +46,15 @@ repeated until the desired number of subdomains is reached.
 
 <P>The communication of objects being divided is handled by the same routine
 as is used by <B><A HREF="dev_rcb.html">RCB</A></B>.  For applications which
-wish to add more objects to the decomposition at a later time, information to
+wish to add more objects to the decomposition at a later time
+(e.g., through <a href="../ug_html/ug_interface_augment.html#LB_Box_Assign"><b>LB_Box_Assign</b></a> or
+<a href="../ug_html/ug_interface_augment.html#LB_Point_Assign"><b>LB_Point_Assign</b></a>), 
+information to
 do this can be retained during the decomposition phase.  This information is
-kept if the parameter RIB_KEEP_CUTS is set during the decomposition (see the
-RIB section in the <B><A HREF="../ug_html/ug_alg_rib.html">Zoltan User's
-Guide</A></B>).  The process is similar to that used for RCB, but the
-information being kept is different.  For each RIB cut, the center of mass
-of the subdomain which is being cut, the direction vector, and a distance from
+kept if the parameter <a href="../ug_html/ug_alg_rib.html">KEEP_CUTS</a> is set during the decomposition.
+The process is similar to that used for RCB, but the
+information kept is different.  For each RIB cut, the center of mass
+of the subdomain which is cut, the direction vector, and a distance from
 the center of mass to the cutting plane have to be saved.
 
 <BR>&nbsp;
@@ -62,16 +63,16 @@ the center of mass to the cutting plane have to be saved.
 Data Structure Definitions</H3>
 
 <P>There are three major data structures in RIB and they are defined in
-rib_const.h.  The points which are being load balanced are represented as a
-structure rib_dot which contains the location of the point, its weight, and
-a tag to identify the point.  The nodes on the decomposition tree are
-represented by the structure rib_tree which contains the position of the cut,
+<i>rcb/rib_const.h</i> and <i>rcb/shared_const.h</i>.  The points which are being load balanced are represented as a
+structure <i>Dot_Struct</i> which contains the location of the point, its weight, and
+the originating processor's number.  The nodes on the decomposition tree are
+represented by the structure <i>rib_tree</i> which contains the position of the cut,
 the center of mass of the subdomain which is being cut, the direction vector
 of the principle axis of the subdomain, and the node's parent and two
 children (if they exist) in the tree.  The structure RIB_Struct is the RIB data
 structure which holds pointers to all of the other data structures needed for
-RIB.  It contains an array of rib_dot to represent the points being load
-balanced, array of rib_tree (whose length is the number of processors) which
+RIB.  It contains an array of <i>Dot_Struct</i> to represent the points being load
+balanced, global and local IDs of the points, an array of <i>rib_tree</i> (whose length is the number of processors) which
 contains the decomposition tree, and the dimension of the problem.
 
 <BR>&nbsp;
@@ -80,16 +81,16 @@ contains the decomposition tree, and the dimension of the problem.
 Parameters</H3>
 
 <P>The parameters used by RIB and their default values are described in the
-RIB section of the <B><A HREF="../ug_html/ug_alg_rib.html">Zoltan User's
-Guide</A></B>.  These can be set by use of the LB_Set_RIB_Param subroutine
-in the file rcb.c.
+<a href="../ug_html/ug_alg_rib.html">RIB</a> section of the <B><A HREF="../ug_html/ug.html">Zoltan User's
+Guide</A></B>.  These can be set by use of the <b>LB_Set_RIB_Param</b> subroutine
+in the file <i>rcb/rib.c</i>.
  
 <BR>&nbsp;
 
 <H3>
 Main Routine</H3>
 
-<P>The main routine for RIB is LB_rib in the file rib.c.
+<P>The main routine for RIB is <b>LB_rib</b> in the file <i>rcb/rib.c</i>.
 
 <BR>&nbsp;
 <BR>&nbsp;

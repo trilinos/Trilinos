@@ -57,7 +57,7 @@ parameters are described below.  Reasonable
 are set in Zoltan and are listed below.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
-<tr>
+<tr VALIGN=TOP>
 <td VALIGN=TOP><b>Parameters:</b></td>
 
 <td></td>
@@ -78,7 +78,7 @@ local identifier (ID). Values greater than or equal to zero are accepted.&nbsp;<
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE><a NAME="Return_Lists"></a>&nbsp;&nbsp;&nbsp; <i>RETURN_LISTS</i></td>
+<td NOSAVE><a NAME="RETURN_LISTS"></a>&nbsp;&nbsp;&nbsp; <i>RETURN_LISTS</i></td>
 
 <td>The lists returned by calls to 
 <a href="ug_interface_lb.html#LB_Balance"><b>LB_Balance</b></a>.
@@ -88,7 +88,7 @@ to be exported from a processor), "ALL" (to return both import and export
 information) and "NONE" (to return neither import nor export information).
 </td>
 </tr>
-<tr>
+<tr VALIGN=TOP>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp;<i> <a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i></td>
 
 <td>An integer indicating how much debugging information is printed by
@@ -109,8 +109,8 @@ all processors should use the same value of <i><a href="#Debug Levels in Zoltan"
 is 5.</td>
 </tr>
 
-<tr>
-<td>&nbsp;&nbsp;&nbsp; <i>TIMER</i></td>
+<tr VALIGN=TOP>
+<td>&nbsp;&nbsp;&nbsp; <a name="TIMER"></a><i>TIMER</i></td>
 
 <td>The timer with which you wish to measure time. Valid choices include
 <i>wall
@@ -118,7 +118,7 @@ is 5.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE>&nbsp;&nbsp;&nbsp; <i>IMBALANCE_TOL</i></td>
+<td NOSAVE>&nbsp;&nbsp;&nbsp; <a name="IMBALANCE_TOL"></a><i>IMBALANCE_TOL</i></td>
 
 <td>The amount of load imbalance the partitioning algorithm should deem
 acceptable. The load on each processor is computed as the sum of the weights
@@ -147,7 +147,7 @@ weights.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE>&nbsp;&nbsp;&nbsp; <i>DETERMINISTIC</i></td>
+<td NOSAVE>&nbsp;&nbsp;&nbsp; <a name="DETERMINISTIC"></a><i>DETERMINISTIC</i></td>
 
 <td NOSAVE>If this value is set to TRUE (non-zero), Zoltan's computation
 of a new decomposition is deterministic; i.e., executing the same algorithm
@@ -159,7 +159,7 @@ even under identical operating conditions.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE><i>&nbsp;&nbsp;&nbsp; AUTO_MIGRATE</i></td>
+<td NOSAVE><i>&nbsp;&nbsp;&nbsp; <a name="AUTO_MIGRATE"></a>AUTO_MIGRATE</i></td>
 
 <td>If this value is set to TRUE (non-zero), Zoltan will automatically
 perform the data migration during calls to <b><a href="ug_interface_lb.html#LB_Balance">LB_Balance</a></b>.
@@ -182,49 +182,57 @@ computers is available.</td>
 computers is available.</td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="DEBUG_MEMORY"></a><i>&nbsp;&nbsp;&nbsp; DEBUG_MEMORY</i></td>
+
+<td> Integer indicating the amount of low-level debugging information about 
+memory-allocation should be kept by Zoltan's <a href="../dev_html/dev_util_mem.html">Memory Management utilities</a>.  Valid values are 0, 1, 2, and 3.
+</td>
+</tr>
+<tr VALIGN=TOP>
 <td VALIGN=TOP><a name="Default_Parameter_Values"></a><b>Default Values:</b></td>
 
 <td></td>
 </tr>
-<tr>
+<tr VALIGN=TOP>
 <td></td>
 
 <td><i>NUM_GID_ENTRIES</i> = 1</td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP>
 <td></td>
 
 <td><i>NUM_LID_ENTRIES</i> = 1</td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP>
 <td></td>
 
 <td><i>RETURN_LISTS</i> = ALL</td>
 </tr>
 
 
-<tr>
+<tr VALIGN=TOP>
 <td></td>
 
 <td><i>DEBUG_LEVEL</i> = 1</td>
 </tr>
 
-<tr>
+
+<tr VALIGN=TOP>
 <td></td>
 
 <td><i>DEBUG_PROCESSOR</i> = 0</td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP>
 <td></td>
 
 <td><i>TIMER</i> = wall</td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP>
 <td></td>
 
 <td><i>IMBALANCE_TOL</i> = 1.1</td>
@@ -236,40 +244,45 @@ computers is available.</td>
 <td NOSAVE><i>OBJ_WEIGHT_DIM = 0</i></td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP>
 <td></td>
 
 <td><i>COMM_WEIGHT_DIM = 0</i></td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP>
 <td></td>
 
 <td><i>DETERMINISTIC </i>= TRUE</td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP>
 <td></td>
 
 <td><i>AUTO_MIGRATE</i> = FALSE</td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP>
 <td></td>
 
 <td><i>KEEP_CUTS</i> = 0</td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP>
 <td></td>
 
 <td><i>USE_MACHINE_DESC</i> = 0</td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP>
 <td></td>
 
 <td><i>MACHINE_DESC_FILE</i> = /etc/local/Zoltan_Machine_Desc</td>
+</tr>
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>DEBUG_MEMORY</i> = 1</td>
 </tr>
 </table>
 
@@ -292,7 +305,7 @@ so that the lists from all processors are not jumbled together in the output.&nb
 This synchronization requires all processors to use the same value of <i>DEBUG_LEVEL</i>.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
-<tr>
+<tr VALIGN=TOP>
 <td VALIGN=TOP><b><i>DEBUG_LEVEL&nbsp;</i></b></td>
 
 <td><b>Output Produced</b></td>
@@ -359,13 +372,13 @@ parameter).</td>
 &sup1;</td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP>
 <td>&nbsp;&nbsp;&nbsp; 9</td>
 
 <td></td>
 </tr>
 
-<tr>
+<tr VALIGN=TOP>
 <td>&nbsp;&nbsp; 10</td>
 
 <td>Maximum debug output; may include algorithm-specific output. &sup1;</td>

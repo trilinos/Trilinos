@@ -77,7 +77,8 @@ by
 <td>The number of array entries used to represent a 
 <a href="dev_lb_types.html">global ID</a>.
 Set via a call to
-<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.
+<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+for <a href="../ug_html/ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.
 </td>
 </tr>
 
@@ -87,7 +88,8 @@ Set via a call to
 <td>The number of array entries used to represent a 
 <a href="dev_lb_types.html">local ID</a>.
 Set via a call to
-<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.
+<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+for <a href="../ug_html/ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.
 </td>
 </tr>
 
@@ -132,10 +134,10 @@ for different LB structures to have different parameter settings.</td>
 <tr>
 <td VALIGN=TOP>double <i>Imbalance_Tol</i></td>
 
-<td>The degree of load balance which is considered acceptable. A value
-of 1.1 implies a 10% imbalance is acceptable, i.e. that the maximum load
-over the average should be no more than 1.1. Set via a call to
-<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
+<td>The degree of load balance which is considered acceptable.
+Set via a call to
+<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+for <a href="../ug_html/ug_alg.html#IMBALANCE_TOL">IMBALANCE_TOL</a>.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -143,29 +145,49 @@ over the average should be no more than 1.1. Set via a call to
 
 <td>Flag indicating whether algorithms used should be forced to be deterministic;
 used to obtain completely reproducible results.&nbsp; Set via a call to
-<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
+<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+for <a href="../ug_html/ug_alg.html#DETERMINISTIC">DETERMINISTIC</a>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>int <i>Obj_Weight_Dim</i></td>
 
-<td>Number of weights per object to be used in load balancing, usually
-0 (no weights) or 1.&nbsp; Set via a call to
-<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
+<td>Number of weights per object to be used in load balancing.
+&nbsp; Set via a call to
+<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+for <a href="../ug_html/ug_alg.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>int <i>Comm_Weight_Dim</i></td>
 
 <td>For graph algorithms, number of weights per edge to be used in load
-balancing, usually 0 (no weights) or 1.&nbsp; Set via a call to
-<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
+balancing.  Set via a call to
+<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+for <a href="../ug_html/ug_alg.html#COMM_WEIGHT_DIM">COMM_WEIGHT_DIM</a>.</td>
+</tr>
+<tr>
+<td VALIGN=TOP>int <i>Return_Lists</i></td>
+
+<td>A flag indicating whether the application wants import and/or export
+lists returned by <a href="../ug_html/ug_interface_lb.html#LB_Balance"><b>LB_Balance</b></a>.
+Set via a call to
+<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+for <a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>.</td>
 </tr>
 
 <tr>
+<td VALIGN=TOP>int <i>Timer</i></td>
+
+<td>  Timer type that is currently active.
+Set via a call to
+<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+for <a href="../ug_html/ug_alg.html#TIMER">TIMER</a>.</td>
+</tr>
+<tr>
 <td VALIGN=TOP>void *<i> Data_Structure</i></td>
 
-<td>The data structure used by the selected load-balancing algorithm; this
+<td>The <a href="dev_add_struct.html">data structure</a> used by the selected load-balancing algorithm; this
 pointer is cast by the algorithm to the appropriate data type.</td>
 </tr>
 
@@ -358,7 +380,7 @@ or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Firs
 <td VALIGN=TOP>void <i>*Get_First_Border_Obj_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_First_Border_Obj</i>.Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
+pointed to by <i>Get_First_Border_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
 or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_First_Border_Obj_Fn</a></b>.</td>
 </tr>
 
@@ -535,7 +557,8 @@ in in the following <a href="#Migrate_Fields">table</a>.
 auto-migration for the application. If true, the load-balancing library
 calls <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
 to move objects to their new processors; if false, data migration is left
-to the user. Set in <b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.</td>
+to the user. Set in <b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+for <a href="../ug_html/ug_alg.html#AUTO_MIGRATE">AUTO_MIGRATE</a>.</td>
 </tr>
 
 <tr>
@@ -552,7 +575,7 @@ or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Pre_
 <td VALIGN=TOP>void <i>*Pre_Migrate_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Pre_Migrate</i>.Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
+pointed to by <i>Pre_Migrate</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
 or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Pre_Migrate_Fn</a></b>.</td>
 </tr>
 

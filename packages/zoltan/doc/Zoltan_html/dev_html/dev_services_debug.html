@@ -28,7 +28,7 @@
 <h2>
 <a NAME="Debugging"></a>Debugging Services</h2>
 Execution of code for debugging can be controlled by algorithm specific
-parameters or by the Zoltan key parameter <i><a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL.</a></i>.&nbsp;
+parameters or by the Zoltan key parameter <a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>.
 The value of the <i>Debug_Level</i> field of the <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
 structure can be tested to determine whether the user desires debugging
 information.&nbsp; Several constants (<b>LB_DEBUG_*</b>) are defined in
@@ -42,30 +42,31 @@ of a function.
 <blockquote><a href="#LB_TRACE_ENTER">LB_TRACE_ENTER</a>
 <br><a href="#LB_TRACE_EXIT">LB_TRACE_EXIT</a>
 <br><a href="#LB_TRACE_DETAIL">LB_TRACE_DETAIL</a></blockquote>
-These macros produce output depending upon the value of the <i><a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>
+These macros produce output depending upon the value of the <a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>
 parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>.&nbsp;&nbsp;
 The macros are defined in <i>lb/lb_const.h.</i>
 <p><a href="#Debug Example">Examples</a> of the use of these macros can
 be found <a href="#Debug Example">below</a> and in <i>lb/lb_balance.c</i> 
 and <i>rcb/rcb.c.</i>
 <p>
+<hr>
 <hr><a NAME="LB_TRACE_ENTER"></a><b>LB_TRACE_ENTER</b>(struct <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
 *<i>lb</i>, char *<i>function_name</i>);
 <br>
 <hr>
-<br><b>LB_TRACE_ENTER</b> prints to <i>stdout</i> a message stating that
+<b>LB_TRACE_ENTER</b> prints to <i>stdout</i> a message stating that
 a given processor is entering a function.&nbsp; The call to the macro should
 be included at the beginning of major functions for which debugging information
 is desired.&nbsp; Output includes the processor number and the function
 name passed as an argument to the macro.&nbsp; The amount of output produced
-is controlled by the value of the <i><a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>
+is controlled by the value of the <a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>
 parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>
@@ -96,23 +97,24 @@ load-balancing routines.</td>
 
 <p>
 <hr>
-<br><a NAME="LB_TRACE_EXIT"></a><b>LB_TRACE_EXIT</b>(struct <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
+<hr>
+<a NAME="LB_TRACE_EXIT"></a><b>LB_TRACE_EXIT</b>(struct <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
 *<i>lb</i>, char *<i>function_name</i>);
 <br>
 <hr>
-<br><b>LB_TRACE_EXIT</b> prints to <i>stdout</i> a message stating that
+<b>LB_TRACE_EXIT</b> prints to <i>stdout</i> a message stating that
 a given processor is exiting a function.&nbsp; The call to the macro should
 be included at the end of major functions (and before return statements)
 for which debugging information is desired.&nbsp; Output includes the processor
 number and the function name passed as an argument to the macro.&nbsp;
-The amount of output produced is controlled by the value of the <i><a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>
+The amount of output produced is controlled by the value of the <a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>
 parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>
@@ -142,25 +144,26 @@ load-balancing routines.</td>
 </table>
 
 <p>
+<hr>
 <hr WIDTH="100%"><a NAME="LB_TRACE_DETAIL"></a><b>LB_TRACE_DETAIL</b>(struct
 <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
 *<i>lb</i>, char *<i>function_name</i>, char *<i>message</i>);
 <br>
 <hr>
-<br><b>LB_TRACE_DETAIL</b> prints to <i>stdout</i> a message specified
+<b>LB_TRACE_DETAIL</b> prints to <i>stdout</i> a message specified
 by the developer.&nbsp;&nbsp; It can be used to indicate how far execution
 has progressed through a routine.&nbsp; It can also be used to print values
 of variables.&nbsp; See the example below.&nbsp; Output includes the processor
 number, the function name passed as an argument to the macro, and a user-defined
 message passed to the macro.&nbsp; The amount of output produced is controlled
-by the value of the <i><a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a></i>
+by the value of the <a href="../ug_html/ug_alg.html#Debug Levels in Zoltan">DEBUG_LEVEL</a>
 parameter set in Zoltan by a call to <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>
@@ -201,6 +204,7 @@ load-balancing routines.</td>
 <hr><a NAME="Debug Example"></a>
 <br><b>Example:</b>
 <br>An example using the debugging macros in shown below.
+<tt>
 <ul>#include "lb/lb_const.h"
 <br>void example(struct <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
 *lb)
@@ -219,6 +223,7 @@ load-balancing routines.</td>
 <br>&nbsp; printf("Total = %d\n", a+b);
 <br><a href="#LB_TRACE_EXIT">LB_TRACE_EXIT</a>(lb, yo);</ul>
 }</ul>
+</tt>
 
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_add.html">Next:&nbsp;

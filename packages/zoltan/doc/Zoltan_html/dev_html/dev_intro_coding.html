@@ -39,12 +39,12 @@
 
 <H3>
 <A NAME="include"></A>Include files</H3>
-Include files should be used for function prototypes, global variable definitions,
+Include files should be used for function prototypes, static global variable definitions,
 and data structure definitions. The convention used is that external function
-prototypes, external global variable definitions, and data structure definitions
+prototypes and data structure definitions
 required by more than one source file are stored in include files named
 <I>*_const.h</I> (e.g., <I>lb/lb_const.h</I>). Include files with static
-function prototypes, global variable declarations, or static data structure
+function prototypes, static global variable declarations, or static data structure
 definitions (i.e., files that are included in only one source file) are
 named <I>*.h</I> (e.g.,<I> lb/lb.h</I>).
 
@@ -72,7 +72,7 @@ Structures</A> for ideas on avoiding the use of global variables.
 <H3>
 <A NAME="functions"></A>Function Names</H3>
 In order to avoid name conflicts with applications and other libraries,
-all functions should be prepended with <B>LB_</B><I>.</I>&nbsp; As a general
+all non-static functions should be prepended with <B>LB_</B><I>.</I>&nbsp; As a general
 rule, each new word in a function name should be capitalized (for example,
 <b>LB_Help_Migrate</b>). 
 Internal Zoltan functions do not have to follow these rules.
@@ -95,13 +95,20 @@ It is strongly suggested that all memory allocation in the library is handled
 using the functions supplied in <I>Utilities/Memory</I>. Use of these functions
 will make debugging and maintenance of the library much easier as the library
 gets larger. See <A HREF="dev_util_mem.html">Memory Management Utilities</A> for
-information on the memory management utilities.<p>
+more information on these utilities.<p>
 
 For memory that is returned by Zoltan to an application, however, special
 memory allocation functions must be used to maintain compatibility with
 both C and Fortran90 applications.  See <a href="dev_add_memory.html">
 Memory Management in Zoltan Load-Balancing Algorithms</a> for more 
-information.
+information. <p>
+
+One of the few data types specified for use in the Zoltan interface is the
+<a href="../ug_html/ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>
+type used for global and local object identifiers (IDs).  Macros simplifying
+and providing error checking for 
+<a href="dev_lb_types.html">ID allocation and manipulation</a>
+are provided.
 
 <BR>&nbsp;
 <H3>
@@ -111,11 +118,11 @@ a message should be printed to
 <i>stderr</i> (using one of the <a href="#LB_PRINT">printing macros</a> below),
 all memory allocated in the current function should be freed, and
 an <a href="../ug_html/ug_interface.html#Error Codes">error code</a> should be returned. 
-The Zoltan library should never exit.
-Control should always be returned to the application with an error code.
+The Zoltan library should never "exit";
+control should always be returned to the application with an error code.
 The <a href="../ug_html/ug_interface.html#Error Codes">error codes</a> are defined in <i>lb/lbi_const.h</i>.
 <p>
-Currently, this philosophy is not being strictly followed in all portions
+Currently, this philosophy is not strictly followed in all portions
 of Zoltan.
 Efforts are underway to bring existing code up-to-date, and to follow this
 rule in all future development.
@@ -128,7 +135,7 @@ Macros for printing error and warning messages in Zoltan.  The macros are
 defined in <i>lb/lb_const.h</i>.
 <TABLE WIDTH="100%" NOSAVE>
 <TR>
-<TD VALIGN=TOP WIDTH="20%"><b>Parameters:</b></TD>
+<TD VALIGN=TOP WIDTH="20%"><b>Arguments:</b></TD>
 <TD ALIGN=LEFT></TD>
 </TR>
 <TR>

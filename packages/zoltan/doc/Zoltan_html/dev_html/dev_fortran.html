@@ -40,13 +40,15 @@ interface function</A>
 If you have questions or need assistance, contact <A HREF="mailto:william.mitchell@nist.gov">william.mitchell@nist.gov</A>.
 
 <P>If changes are made to functions that are called by <I><A HREF="dev_driver.html#Zdrive">zdrive</A></I>,
-then the changes should also be made to <I>fdriver</I>. Changes to the
-Fortran interface can be tested by building and running <I>fdriver</I>,
-if the changes are in functions called by <I>fdriver</I>. <I>fdriver</I>
-works the same way as <I><A HREF="dev_driver.html#Zdrive">zdrive</A></I>
+then the changes should also be made to 
+<a href="dev_driver.html"><I>zfdrive</I></a>. Changes to the
+Fortran interface can be tested by building and running <a href="dev_driver.html"><I>zfdrive</I></a>,
+if the changes are in functions called by <a href="dev_driver.html"><I>zfdrive</I></a>. 
+The <a href="dev_driver.html"><I>zfdrive</I></a> program
+works the same way as <I><A HREF="dev_driver.html">zdrive</A></I>
 except that it is restricted to the 
 <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a> 
-examples.
+examples and simpler input files.
 
 <P>Any changes in the interface should also be reflected in the Fortran
 API definitions in the <A HREF="../ug_html/ug.html">Zoltan User's Guide</A>.
@@ -88,7 +90,7 @@ and <I>fort/cwrap.c</I> to remove all references to that function.
 <H3>
 <A NAME="fortran dev add"></A>Adding a new Zoltan interface function</H3>
 Adding a new function involves changes to the two files <I>fort/fwrap.fpp</I>
-and <I>fort/cwrap.fpp</I>. Perhaps the easiest way to add a new function
+and <I>fort/cwrap.c</I>. Perhaps the easiest way to add a new function
 to these files is to pick some existing function, search for all occurrences
 of it, and use that code as a guide for the implementation of the interface
 for the new function. <B><A HREF="../ug_html/ug_interface_augment.html#LB_Point_Assign">LB_Point_Assign</A></B>
@@ -121,8 +123,8 @@ a digit to the end of the module procedure name. If n arguments can have
 more than one type, then n digits are appended. See <B><A HREF="../ug_html/ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A></B>
 for example. Generally the module procedure just calls the C-side wrapper
 function,<B> </B>but in some cases it may need to coerce data to a different
-type (e.g. <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>),
-or may actually do real work (e.g. <B><A HREF="../ug_html/ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A></B>).</LI>
+type (e.g., <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>),
+or may actually do real work (e.g., <B><A HREF="../ug_html/ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A></B>).</LI>
 
 <BR>&nbsp;</UL>
 Here are the items in <I>cwrap.c</I>:

@@ -44,14 +44,15 @@ packages available are listed below.
 <a NAME="Building Utilities"></a>Building Utilities</h2>
 The utilities provided with Zoltan have their own Makefiles and can
 be built separately from Zoltan.&nbsp; If the user 
-<a href="dev_dist_compile.html">builds the Zoltan library</a>, 
+<a href="../ug_html/ug_usage.html#Building the Library">builds the Zoltan library</a>, 
 the utility libraries will be 
-built automatically and copied to the appropriate Zoltan/Obj_<<i>platform</i>>
-directory, where <<i>platform</i>> is specified through the 
-<a href="dev_dist_compile.html"><i>ZOLTAN_ARCH</i> environment variable</a>.&nbsp; 
-Zoltan and the utilities share the Config/Config.<<i>platform</i>>
+built automatically and copied to the appropriate <i>Zoltan/Obj_&lt;platform&gt;</i>
+directory, where &lt;<i>platform</i>&gt; is specified through the 
+<a href="../ug_html/ug_usage.html#Building the Library">ZOLTAN_ARCH environment variable</a>.&nbsp; 
+Zoltan and the utilities share the 
+<a href="../ug_html/ug_usage.html#Building the Library"><i>Utilities/Config/Config.&lt;platform&gt;</i></a>
 files specifying compilation paths for 
-<a href="dev_dist_compile.html#Architectures table">various architectures</a>.&nbsp;
+various architectures.&nbsp;
 If, however, a user wishes to use these
 utilities without using Zoltan, he must build the libraries 
 separately.&nbsp;
@@ -59,19 +60,19 @@ separately.&nbsp;
 
 The structure and use of Makefiles for the utilities are similar
 to <a href="dev_dist_compile.html">Zoltan's makefiles</a>; 
-A top-level makefile includes rules for building each utility's 
+a top-level makefile includes rules for building each utility's 
 library.&nbsp; Object files and the utility libraries are stored in
-a subdirectory Obj_<<i>platform</i>>, where <<i>platform</i>> is 
+a subdirectory <i>Obj_&lt;platform&gt;</i>, where &lt;<i>platform</i>&gt; is 
 a target architecture  supported with a 
-<a href="dev_dist_compile.html#Architectures table">Config/Config.<<i>platform</i>></a>
+<i><a href="../ug_html/ug_usage.html#Building the Library">Utilities/Config/Config.&lt;platform&gt;</i></a>
 file.&nbsp; The command for compiling a particular utility follows:
 <blockquote>
-gmake ZOLTAN_ARCH=<<i>platform</i>> <<i>library_name</i>>
+gmake ZOLTAN_ARCH=&lt;<i>platform</i>&gt; &lt;<i>library_name</i>&gt;
 </blockquote>
-where <<i>library_name</i>> is the name of the utility library, and
-<<i>platform</i>> is the target architecture (corresponding to 
-<a href="dev_dist_compile.html#Architectures table">Config/Config.<<i>platform</i>></a>).&nbsp;
-The <<i>library_name</i>> for each utility is included in the following documentation
+where &lt;<i>library_name</i>&gt; is the name of the utility library, and
+&lt;<i>platform</i>&gt; is the target architecture (corresponding to 
+<i>Utilities/Config/Config.&lt;platform&gt;</i>).&nbsp;
+The &lt;<i>library_name</i>&gt; for each utility is included in the following documentation
 for the utilities.&nbsp;
 <p>
 
@@ -81,7 +82,7 @@ The utilities are designed so that they can easily be used separately
 from Zoltan in applications.&nbsp;  
 To enable type-checking of arguments, the 
 function-prototypes file for a utility should be included
-in all application source code files that access the utility.&nbsp; 
+in all application source code files that directly access the utility.&nbsp; 
 The application must also link with the
 appropriate utility library (and any other libraries on which
 the utility depends).&nbsp; Library and function-prototype file names

@@ -67,7 +67,7 @@ The graph construction algorithm has parallel complexity
 <i>m<sub>j</sub></i> is the number of edges on processor j, and
 <i>p</i> is the number of processors.
 <p>One other feature of the interface code should be mentioned.&nbsp; While
-Zoltan allows objects to have real (float) weights, both ParMETIS and Jostle
+Zoltan allows objects and edges to have real (float) weights, both ParMETIS and Jostle
 currently require integer weights. Therefore, Zoltan first checks if the
 object weights are integers. If not, the weights are automatically scaled
 and rounded to integers. The scaling is performed such that the weights
@@ -76,7 +76,7 @@ of) the weights is less than a large constant MAX_WGT_SUM &lt; INT_MAX.
 The scaled weights are rounded up to the nearest integer to ensure that
 nonzero weights never become zero.
 Note that for multidimensional weights, each weight component is scaled independently.
-(The source code is written such that this is is simple to change.)
+(The source code is written such that this scaling is simple to change.)
 <p>Currently Zoltan constructs and discards the entire graph structure
 every time a graph-based method (ParMETIS or Jostle) is called. Incremental
 update of the graph structure may be supported in the future.
@@ -128,7 +128,7 @@ Parameters</h3>
 Zoltan supports the most common parameters in ParMETIS and Jostle. These
 parameters are parsed in the package-specific wrapper routine (<b>LB_ParMetis</b>
 or <b>LB_Jostle</b>) and later passed on to the desired library via <b>LB_ParMetis_Jostle</b>.
-<p>In addition, Zoltan has one graph parameter of its own: <b>CHECK_GRAPH</b>.
+<p>In addition, Zoltan has one graph parameter of its own: <a href="../ug_html/ug_alg_parmetis.html">CHECK_GRAPH</a>.
 This parameter is set in <b>LB_ParMetis_Jostle</b> and specifies the amount
 of verification that is performed on the constructed graph. For example, it
 is required that the graph is symmetric and that the weights are non-negative.

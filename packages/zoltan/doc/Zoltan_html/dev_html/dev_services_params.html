@@ -37,8 +37,8 @@ we wanted to allow different load-balancing structures to have different
 parameter settings associated with them. This second consideration precluded
 the use of C's static global variables (except in a few special places).
 The parameter routines described below allow developers to provide runtime
-access to any appropriate variables. In some cases (e.g. <b><a href="dev_util_mem.html#Debug_Memory">DEBUG_MEMORY</a></b>)
-it is appropriate to allow developers to tinker with parameters which will
+access to any appropriate variables. In some cases,
+it is appropriate to allow developers to tinker with parameters that will
 never be documented for users.
 <p>Our solution to parameter setting is to have a single interface routine
 <b><a href="#LB_Set_Param">LB_Set_Param</a></b>.
@@ -48,7 +48,7 @@ there are no errors, the parameter name and new value are placed in a linked
 list of new parameters which is maintained by the load-balancing structure.
 When a partitioning method is invoked on a load-balancing structure, it
 scans through this linked list using the <b><a href="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>
-function, resetting parameter values which are appropriate to the method.
+function, resetting parameter values that are appropriate to the method.
 <p>In addition to the method-specific parameters, Zoltan also has a set
 of so-called&nbsp;<a NAME="key_params"></a><b>key parameters</b>. These
 are normally stored in the load balance structure and may be accessed by
@@ -60,7 +60,7 @@ these routines have been written to be as independent of Zoltan as possible.
 Only a few minor changes would be required to use these routines as a separate
 library.
 <blockquote><b><a href="#LB_Set_Param">LB_Set_Param</a></b>:&nbsp; User
-interface function which calls a set of method-specific routines.
+interface function that calls a set of method-specific routines.
 <br><b><a href="#LB_Check_Param">LB_Check_Param</a></b>:&nbsp; Routine
 to check if parameter name and value are OK.
 <br><b><a href="#LB_Bind_Param">LB_Bind_Param</a></b>: Routine to associate
@@ -72,6 +72,8 @@ accordingly.
 list.</blockquote>
 See also:&nbsp; <a href="dev_add_params.html">Adding new parameters in
 Zoltan</a>.
+<p>
+<hr>
 <hr><a NAME="LB_Set_Param"></a>int <b>LB_Set_Param</b>(struct <b><a href="dev_lb_structs.html">LB_Struct</a></b>
 *<i>lb</i>, char *<i>param_name</i>, char *<i>new_val</i>);
 <br>
@@ -79,7 +81,7 @@ Zoltan</a>.
 <p>The <b>LB_Set_Param</b> function is the <a href="../ug_html/ug_interface_lb.html#LB_Set_Param">user
 interface for parameter setting</a>. Its principle purpose is to call a
 sequence of more domain-specific routines for setting domain-specific parameters
-(e.g., <b>LB_Set_RCB_Param</b>). If you are adding parameters to Zoltan,
+(e.g., <b>LB_Set_RCB_Param</b>). If you are adding algorithms to Zoltan,
 you must write one of these domain-specific parameter routines and modify
 <b>LB_Set_Param</b>
 to call it. <b>LB_Set_RCB_Param</b> can serve as a template for this task.
@@ -100,9 +102,9 @@ adds the parameter and the value (both strings) to a linked list of such
 pairs that is pointed to by the <i>Params</i> field of the <i>lb</i> structure.
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>
@@ -115,7 +117,7 @@ pairs that is pointed to by the <i>Params</i> field of the <i>lb</i> structure.
 <td VALIGN=TOP>&nbsp;&nbsp; <i>param_name</i></td>
 
 <td>A string containing the name of the parameter being modified. It is
-automatically converted to all capitals.</td>
+automatically converted to all upper-case letters.</td>
 </tr>
 
 <tr>
@@ -137,6 +139,7 @@ automatically converted to all capitals.</td>
 </tr>
 </table>
 
+<hr>
 <hr><a NAME="LB_Check_Param"></a>int <b>LB_Check_Param</b>( char *<i>param_name</i>,
 char *<i>new_val</i>, <b>PARAM_VARS</b> *<i>params</i>, <b>PARAM_UTYPE
 </b>*<i>result</i>,
@@ -149,9 +152,9 @@ and if a match is found it extracts the new value from the <i>new_val</i>
 string. See <b>LB_Set_RCB_Param</b> for an example of how to use this routine.
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>
@@ -172,11 +175,11 @@ string. See <b>LB_Set_RCB_Param</b> for an example of how to use this routine.
 <td>The data structure (defined in <i>params/params_const.h</i>) describing
 the domain-specific parameters to be matched against. The data structure
 is an array of items, each of which consists of three fields. The first
-field is a string which is a capitalized name of a parameter. The second
-field is an address which is unused in
+field is a string that is a capitalized name of a parameter. The second
+field is an address that is unused in
 <b>LB_Check_Param</b>, but is used
 in <b><a href="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>. The
-third field is another capitalized string which indicates the type of the
+third field is another capitalized string that indicates the type of the
 parameter from the first field. Currently supported types are "INT", "INTEGER",
 "DOUBLE", "LONG", "STRING" and "CHAR". It is easy to add additional types
 by simple modifications to <b>LB_Check_Param</b> and <b><a href="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>.
@@ -200,8 +203,8 @@ data structure. If the value decodes properly, it is returned in <i>result</i>.&
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp; <i>matched_index</i></td>
 
-<td>If <i>param_name</i> matches, then <i>matched_index</i> returns then
-index into the <i>params</i> array which corresponds to the matched parameter
+<td>If <i>param_name</i> matches, then <i>matched_index</i> returns the
+index into the <i>params</i> array that corresponds to the matched parameter
 name. The <i>matched_index</i> and <i>result</i> values allow the developer
 to check that values being assigned to parameters are valid.&nbsp;</td>
 </tr>
@@ -223,6 +226,7 @@ doesn't decode properly.&nbsp;</td>
 </tr>
 </table>
 
+<hr>
 <hr WIDTH="100%"><a NAME="LB_Bind_Param"></a>int <b>LB_Bind_Param </b>(<b>PARAM_VARS</b>
 *<i>params,</i> char *<i>name,</i> void *<i>var</i>);
 <br>
@@ -235,9 +239,9 @@ be called before <b><a href="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>
 where the actual assignment of values takes place.
 <table WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>
@@ -245,11 +249,11 @@ where the actual assignment of values takes place.
 
 <td>The data structure describing the domain-specific parameters to be
 matched against. The data structure is an array of items, each of which
-consists of three fields. The first field is a string which is a capitalized
-name of a parameter. The second field is an address which is unused in
+consists of three fields. The first field is a string that is a capitalized
+name of a parameter. The second field is an address that is unused in
 <b><a href="#LB_Check_Param">LB_Check_Param</a></b>,
 but is used in <b><a href="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>.
-The third field is another capitalized string which indicates the type
+The third field is another capitalized string that indicates the type
 of the parameter from the first field. Currently supported types are "INT",
 "INTEGER", "DOUBLE", "LONG", "STRING" and "CHAR". It is easy to add additional
 types by simple modifications to <b><a href="#LB_Check_Param">LB_Check_Param</a></b>
@@ -288,6 +292,7 @@ calls to <b><a href="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a>.</b></td>
 </table>
 
 <p>
+<hr>
 <hr><a NAME="LB_Assign_Param_Vals"></a>int&nbsp; <b>LB_Assign_Param_Vals</b>(<b>LB_PARAM</b>
 *<i>change_list</i>, <b>PARAM_VARS</b> *<i>params,
 </i>int<i> debug_level,</i>
@@ -301,9 +306,9 @@ and then
 as appropriate. See <b>LB_rcb</b> for a template.
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>
@@ -377,16 +382,17 @@ of Zoltan, these&nbsp; parameters may be removed or simply set these input
 values to zero in the function call.
 <p>
 <hr WIDTH="100%">
-<br><a NAME="LB_Free_Params"></a>void <b>LB_Free_Params </b>(<b>LB_PARAM</b>
+<hr>
+<a NAME="LB_Free_Params"></a>void <b>LB_Free_Params </b>(<b>LB_PARAM</b>
 **<i>param_list</i> );
 <hr WIDTH="100%">
 <br>This routine frees the parameters in the list pointed to by <i>param_list</i>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
-<td></td>
+<td WIDTH="80%"></td>
 </tr>
 
 <tr>

@@ -27,16 +27,14 @@
 <a NAME="migration_help"></a>Migration Tools</h2>
 The migration tools in the Zoltan library perform communication necessary
 for data migration in the application. The routine <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
-calls application-registered packing routines to gather data to be sent
+calls application-registered <a href="../ug_html/ug_query_mig.html#LB_PACK_OBJ_FN">packing</a> routines to gather data to be sent
 to other processors. It sends the data using the <a href="dev_util_comm.html">unstructured
-communication package</a>. It then calls application-registered unpacking
+communication package</a>. It then calls application-registered <a href="../ug_html/ug_query_mig.html#LB_UNPACK_OBJ_FN">unpacking</a>
 routines for each imported object to add received data to the processor's
 data structures. See the <a href="../ug_html/ug.html">Zoltan User's Guide</a>
 for more details on the use of and interface to the migration tools.
 <p>In future releases, the migration tools will be updated to use
-MPI&nbsp;data types to support heterogeneous computing architectures. In
-addition, changes to the unstructured communication package may necessitate
-changes in the migration tools.
+MPI&nbsp;data types to support heterogeneous computing architectures. 
 <br>&nbsp;
 <p>
 <hr WIDTH="100%">
