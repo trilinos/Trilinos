@@ -25,15 +25,7 @@
 #include "sfc_const.h"
 #include "sfc.h"
 
-int single_wgt_find_imbalance(float* work_percent_array, float cumulative_work,
-			      float total_work, int which_proc, LB* lb);
-void sfc_clear_hashtable(SFC_HASH_OBJ_PTR * sfc_hash_ptr, int hashtable_length);
-void single_wgt_calc_partition(int wgt_dim, float work_allocated,
-			       float* total_weight_array, int* bin_proc_array, 
-			       LB* lb, float* binned_weight_array, 
-			       float* work_percent_array, float* actual_work_allocated,
-			       int number_of_bins, int* number_of_cuts, int current_proc,
-			       int level_flag);
+
  /* global_actual_work_allocated is used to make sure that each processor 
     knows how much extra work every processor has allocated
     (extra work[proc] = global_actual_work_allocated[proc] - work_percent_array[proc]*total_work */
@@ -46,9 +38,8 @@ int sfc_create_bins(LB* lb, int num_local_objects,
 		    int* num_vert_in_cut, int* number_of_cuts, int bins_per_proc, 
 		    int hashtable_divider, COMM_OBJ **plan, int* num_vert_sent)
 {
-  int i, j, ierr, number_of_bins;
-  float* weight_vector;
-  float* global_weight_vector;
+  char    yo[] = "sfc_create_bins";
+  int i, j, number_of_bins, ierr = 0;
   int array_location = 0;
   int comm_tag = 4190; 
   int * proclist;
@@ -62,15 +53,13 @@ int sfc_create_bins(LB* lb, int num_local_objects,
   SFC_BIN_WEIGHT_PTR send_buffer, rcv_buffer;
   float *extra_float_array;
   float my_work_percent;
-  float * bin_proc_array, *scanned_work_prev_allocated; /*scanned_work_prev_allocated is the amount of work allocated to higher ranked procs */
+  int *bin_proc_array;
+  float *scanned_work_prev_allocated; /*scanned_work_prev_allocated is the amount of work allocated to higher ranked procs */
   float *actual_work_allocated;
   int* global_bin_proc_array;
-  MPI_Status status;
-  MPI_Request request;
   int amount_of_bits;
   SFC_VERTEX_PTR send_vert_buffer;
   float* send_wgt_buffer;
-  int bin_level = 0;
   int current_proc;
   float* extra_float_array2 = NULL;
   int local_balanced_flag;
@@ -108,6 +97,10 @@ int sfc_create_bins(LB* lb, int num_local_objects,
       array_location = LB_Hash(&(sfc_vert_ptr[i].my_bin), 1, hashtable_length);
       ierr = put_in_hashtable(sfc_hash_ptr, array_location, &(sfc_vert_ptr[i]),
 			      wgt_dim, &(objs_wgt[i*wgt_dim]));
+      if(ierr != LB_OK) {
+	LB_PRINT_ERROR(lb->Proc, yo, "Zoltan error in put_in_hashtable function.");
+	return(ierr);
+      }
     }
     else {
       for(j=0;j<wgt_dim;j++)
@@ -258,7 +251,7 @@ int sfc_create_bins(LB* lb, int num_local_objects,
 			      total_weight_array, bin_proc_array, lb, 
 			      binned_weight_array, work_percent_array,
 			      actual_work_allocated, 2*bins_per_proc, 
-			      &number_of_cuts, current_proc, SFC_COARSE_LEVEL_FLAG);
+			      number_of_cuts, current_proc, SFC_COARSE_LEVEL_FLAG);
   }
   else {
     /* multi_wgt_dim_calc_partition(); */  
@@ -271,7 +264,7 @@ int sfc_create_bins(LB* lb, int num_local_objects,
 			      total_weight_array, bin_proc_array, lb, 
 			      binned_weight_array, work_percent_array,
 			      actual_work_allocated, 2*bins_per_proc, 
-			      &number_of_cuts, current_proc, SFC_COARSE_LEVEL_FLAG);
+			      number_of_cuts, current_proc, SFC_COARSE_LEVEL_FLAG);
   }
 
   ierr = MPI_Allreduce(actual_work_allocated, global_actual_work_allocated, 
@@ -370,7 +363,7 @@ void single_wgt_calc_partition(int wgt_dim, float work_prev_allocated,
 			       int number_of_bins, int* number_of_cuts, int current_loc,
 			       int level_flag)
 {
-  int i, j;
+  int i;
   int number_of_cuts2 = 0;
   *number_of_cuts = 0;
   
@@ -474,14 +467,13 @@ int get_array_location(int number_of_bins, int number_of_bits, int prev_used_bit
 		       SFC_VERTEX_PTR sfc_vert_ptr, int sfc_keylength, 
 		       int size_of_unsigned, unsigned imax)
 {
-  int i, counter = 0;
-  double location = 0, numerator, denominator;
+  int counter = 0;
   unsigned ilocation, ilocation2;
 
   
   
   if(prev_used_bits == 0)
-    ilocation = (sfc_vert_ptr->sfc_key[0]) >> size_of_unsigned*8 - number_of_bits;
+    ilocation = (sfc_vert_ptr->sfc_key[0]) >> (size_of_unsigned*8 - number_of_bits);
   else {
     /* in case prev_used_bits is larger than an unsigned integer */
     while((counter+1)*size_of_unsigned*8 < prev_used_bits)
@@ -497,26 +489,11 @@ int get_array_location(int number_of_bins, int number_of_bits, int prev_used_bit
 		    (2*size_of_unsigned*8 - prev_used_bits - number_of_bits));
     
   }
-   
-
-  
   
   if(ilocation >= number_of_bins) {
     ilocation = number_of_bins - 1;
     printf("possible bad address in get_array_location\n");
   }
-
-
-
-/*  numerator = sfc_vert_ptr->sfc_key[0];
-  denominator = imax;
-  location = numerator/denominator;
-  ilocation2 = location*number_of_bins;
-  if(ilocation2 >= number_of_bins)
-    ilocation2 = number_of_bins - 1;
-
-
-  printf("array location is %d mine is %d\n",ilocation, ilocation2); */
 
   return(ilocation);
 }
@@ -525,7 +502,7 @@ int single_wgt_find_imbalance(float* work_percent_array, float cumulative_work,
 			      float total_work, int which_proc, LB* lb)
 /* which_proc is not required to be equal to lb->Proc */
 {
-  int balanced_flag, ierr;
+  int balanced_flag;
   float my_extra_work;
   float my_ideal_work;
 

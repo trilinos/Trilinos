@@ -9,10 +9,8 @@
 #include "sfc_const.h"
 #include "sfc.h"
 
-static void sfc_get_normed_coords(SFC_VERTEX_PTR sfc_vert_ptr, double min_bounding_box[], 
-				  double max_bounding_box[], double normed_coords[], int num_dims);
 
-static void sfc_get_normed_coords(SFC_VERTEX_PTR sfc_vert_ptr, double min_bounding_box[], 
+void sfc_get_normed_coords(SFC_VERTEX_PTR sfc_vert_ptr, double min_bounding_box[], 
 				  double max_bounding_box[], double normed_coords[], int num_dims)
 {
   int i;
@@ -43,20 +41,21 @@ void sfc_create_info(
 
 )
 {
-  int i,j, ierr;
+  int i;
+  unsigned unsigned_sfc_keylength = sfc_keylength;
   double normed_coords[3];
   if(num_dims == 2) {
     for(i=0;i<num_local_objects;i++) {
       sfc_get_normed_coords((sfc_vert_ptr+i), min_bounding_box,
 			    max_bounding_box, normed_coords, 2);
-      LB_fhsfc2d(normed_coords, &sfc_keylength, sfc_vert_ptr[i].sfc_key);
+      LB_fhsfc2d(normed_coords, &unsigned_sfc_keylength, sfc_vert_ptr[i].sfc_key);
     }
   }
   else {  /* if num_dims ==3 */
     for(i=0;i<num_local_objects;i++) {
       sfc_get_normed_coords((sfc_vert_ptr+i), min_bounding_box,
 			    max_bounding_box, normed_coords, 3);
-      LB_fhsfc3d(normed_coords, &sfc_keylength, sfc_vert_ptr[i].sfc_key);      
+      LB_fhsfc3d(normed_coords, &unsigned_sfc_keylength, sfc_vert_ptr[i].sfc_key);      
     }
   }
   

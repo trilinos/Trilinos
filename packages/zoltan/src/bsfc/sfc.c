@@ -18,6 +18,7 @@
 #include "params_const.h"
 #include "timer_const.h"
 #include "comm_const.h"
+#include "lb_util_const.h"
 #include <values.h>
 #include <limits.h>
 #include "hilbert_const.h"
@@ -29,6 +30,15 @@
 #define BINS_PER_PROC 10 
 #define HASHTABLE_DIVIDER 20
 #define MAX_CUTS_PER_BIN 10 /* maximum amount of cuts in a coarse level bin */
+
+int sfc_create_bins(LB* lb, int num_local_objects, 
+		    int wgt_dim, SFC_VERTEX_PTR sfc_vert_ptr, float objs_wgt[], int* amount_of_bits_used,
+		    int sfc_keylength, int size_of_unsigned, unsigned imax, 
+		    float* global_actual_work_allocated, float *work_percent_array, 
+		    float* total_weight_array, int* balanced_flag,
+		    SFC_VERTEX_PTR *vert_in_cut_ptr, float** wgts_in_cut_ptr, 
+		    int* num_vert_in_cut, int* number_of_cuts, int bins_per_proc, 
+		    int hashtable_divider, COMM_OBJ **plan, int* num_vert_sent);
 
 static PARAM_VARS SFC_params[] = {
   { "SFC_BINS_PER_PROC", NULL, "INT" },
@@ -84,8 +94,6 @@ int LB_sfc(
 {
   char    yo[] = "LB_sfc";
   int wgt_dim = lb->Obj_Weight_Dim;              /* dimension of weights of each object */
-  int check_geom;           /* Check input & output for consistency? */
-  int stats;                /* Print timing & count summary? */
   int num_dims;
   int ierr, i, j;
   double bounding_box[6];
@@ -215,7 +223,7 @@ int LB_sfc(
   }  
     
   
-  sfc_vert_ptr = (struct SFC_VERTEX *) LB_MALLOC(num_local_objects * sizeof(SFC_VERTEX));
+  sfc_vert_ptr = (SFC_VERTEX_PTR) LB_MALLOC(num_local_objects * sizeof(SFC_VERTEX));
   if(num_local_objects != 0 && sfc_vert_ptr == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(LB_MEMERR);
