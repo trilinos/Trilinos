@@ -1999,6 +1999,30 @@ void ML_find_local_indices(int N_update, int bindx[], int update[],
 
 } /* ML_find_local_indices */
 
+/*******************************************************************************
+ * Zero out rows of T matrix (discrete gradient) that correspond to Dirichlet
+ rows of the edge matrix.
+*******************************************************************************/
+int ML_Tmat_applyDirichletBC(ML_Operator **Tmat, int *dirichlet_rows,
+                             int num_dirichlet_rows)
+{
+   int *rows, *cols, i, j, bcrow;
+   double *vals;
+   struct ML_CSR_MSRdata *data;
+ 
+   data = (struct ML_CSR_MSRdata *) ((*Tmat)->data);
+   rows = data->rowptr;
+   cols = data->columns;
+   vals = data->values;
+ 
+   for (i=0;i<num_dirichlet_rows;i++)
+   {
+      bcrow = dirichlet_rows[i];
+      for (j = rows[bcrow]; j< rows[bcrow+1]; j++)
+         vals[j] = 0.0;
+   }
+   return 0;
+} /*ML_Tmat_applyDirichletBC*/
 
 void AZ_Tmat_transform2ml(int Nexterns, int global_node_externs[], int *reordered_node_externs,
 			    int Tmat_bindx[], double Tmat_val[], int rowptr[], int Nlocal_nodes,
