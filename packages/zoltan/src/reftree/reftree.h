@@ -40,12 +40,12 @@ struct Zoltan_Reftree_Struct {
    float *my_sum_weight; /* sum of weights of nodes assigned to this proc */
    int num_vertex;       /* the number of vertices in the corresponding
                             element */
-   int *vertices;        /* the vertices of the corresponding element;
+   ZOLTAN_ID_PTR vertices; /* the vertices of the corresponding element;
                             local to this processor */
-   int in_vertex;        /* starting vertex for determining the path through
-                            the children */
-   int out_vertex;       /* ending vertex for determining the path through
-                            the children */
+   ZOLTAN_ID_PTR in_vertex; /* starting vertex for determining the path
+                            through the children */
+   ZOLTAN_ID_PTR out_vertex; /* ending vertex for determining the path
+                            through the children */
    int assigned_to_me;   /* for a leaf, 1 if this element is assigned to
                             this processor, 0 if not.  for nonleaves, 1 if
                             the entire subtree is assigned to this proc,

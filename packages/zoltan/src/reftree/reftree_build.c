@@ -24,20 +24,23 @@ extern "C" {
 /* Prototypes for functions internal to this file */
 
 static void Zoltan_Reftree_Free_Subtree(ZZ *zz, ZOLTAN_REFTREE *subroot);
-static int order_tri_bisect(ZZ *zz, int *vert1, int *order, int *vertices,
-                     int *in_vertex, int *out_vertex, ZOLTAN_REFTREE *subroot);
-static int order_quad_quad(ZZ *zz, int *vert1, int *order, int *vertices,
-                     int *in_vertex, int *out_vertex, ZOLTAN_REFTREE *subroot);
+static int order_tri_bisect(ZZ *zz, int *vert1, int *order,
+                            ZOLTAN_ID_PTR vertices, ZOLTAN_ID_PTR in_vertex,
+                            ZOLTAN_ID_PTR out_vertex, ZOLTAN_REFTREE *subroot);
+static int order_quad_quad(ZZ *zz, int *vert1, int *order,
+                           ZOLTAN_ID_PTR vertices, ZOLTAN_ID_PTR in_vertex,
+                           ZOLTAN_ID_PTR out_vertex, ZOLTAN_REFTREE *subroot);
 static int order_other_ref(ZZ *zz, ZOLTAN_REFTREE *parent, int num_child, 
-                    int *num_vert,
-                    int *vert1, int *vertices, int *order, int *in_vertex,
-                    int *out_vertex);
+                           int *num_vert, int *vert1, ZOLTAN_ID_PTR vertices,
+                           int *order, ZOLTAN_ID_PTR in_vertex,
+                           ZOLTAN_ID_PTR out_vertex);
 static void order_other_ref_recur(int new_entry, int level, int *order, 
                           int *on_path,
                           int num_child, int *has_out, int **share_vert,
                           int max_share, int *solved);
-static int find_inout(int level, int num_child, int *num_vert, int *vert1,
-               int *vertices, int *in_vertex, int *out_vertex, int *order);
+static int find_inout(ZZ *zz,int level,int num_child,int *num_vert,int *vert1,
+                      ZOLTAN_ID_PTR vertices, ZOLTAN_ID_PTR in_vertex,
+                      ZOLTAN_ID_PTR out_vertex, int *order);
 static int Zoltan_Reftree_Reinit_Coarse(ZZ *zz);
 static int Zoltan_Reftree_Build_Recursive(ZZ *zz,ZOLTAN_REFTREE *subroot);
 static int alloc_reftree_nodes(ZZ *zz, ZOLTAN_REFTREE **node, int num_node,
@@ -48,9 +51,9 @@ static ZOLTAN_ID_PTR slocal_gids;  /* coarse element Global IDs from user */
 static ZOLTAN_ID_PTR slocal_lids;  /* coarse element Local IDs from user */
 static int *sassigned;         /* 1 if the element is assigned to this proc */
 static int *snum_vert;         /* number of vertices for each coarse element */
-static int *svertices;         /* vertices for the coarse elements */
-static int *sin_vertex;        /* "in" vertex for each coarse element */
-static int *sout_vertex;       /* "out" vertex for each coarse element */
+static ZOLTAN_ID_PTR svertices; /* vertices for the coarse elements */
+static ZOLTAN_ID_PTR sin_vertex; /* "in" vertex for each coarse element */
+static ZOLTAN_ID_PTR sout_vertex; /* "out" vertex for each coarse element */
 static int *svert1;        /* array containing the first vertex for each child*/
 static int *sorder;            /* order of the children */
 static int ssize;
@@ -106,9 +109,9 @@ int *assigned = NULL;      /* 1 if the element is assigned to this proc */
 int *num_vert = NULL;      /* number of vertices for each coarse element */
 int *reorder_nvert = NULL; /* num_vert reordered by permutation "order" */
 int root_vert[1];          /* fake number of vertices for the root */
-int *vertices = NULL;      /* vertices for the coarse elements */
-int *in_vertex = NULL;     /* "in" vertex for each coarse element */
-int *out_vertex = NULL;    /* "out" vertex for each coarse element */
+ZOLTAN_ID_PTR vertices = NULL; /* vertices for the coarse elements */
+ZOLTAN_ID_PTR in_vertex = NULL; /* "in" vertex for each coarse element */
+ZOLTAN_ID_PTR out_vertex = NULL; /* "out" vertex for each coarse element */
 int in_order;              /* 1 if user is supplying order of the elements */
 int num_obj;               /* number of coarse objects known to this proc */
 int *num_obj_all = NULL;   /* num_obj from each processor */
@@ -124,8 +127,8 @@ int *order = NULL;         /* permutation array for ordering coarse elements */
 int found;                 /* flag for terminating first/next query loop */
 int hashsize;              /* size of the hash table */
 int i, j;                  /* loop counters */
-int num_gid_entries = zz->Num_GID;  /* number of array entries in a global ID */
-int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
+int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
+int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -161,8 +164,6 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
   root->children       = (ZOLTAN_REFTREE *) NULL;
   root->num_child      = 0;
   root->num_vertex     = 0;
-  root->in_vertex      = (int) NULL;
-  root->out_vertex     = (int) NULL;
   root->assigned_to_me = 0;
   root->partition      = 0;
 
@@ -239,12 +240,12 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
     local_lids = ZOLTAN_MALLOC_LID_ARRAY(zz, num_obj);
     assigned   = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
     num_vert   = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
-    vertices   = (int *) ZOLTAN_MALLOC(MAXVERT*num_obj*sizeof(int));
-    in_vertex  = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
-    out_vertex = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+    vertices   = ZOLTAN_MALLOC_GID_ARRAY(zz,MAXVERT*num_obj);
+    in_vertex  = ZOLTAN_MALLOC_GID_ARRAY(zz,num_obj);
+    out_vertex = ZOLTAN_MALLOC_GID_ARRAY(zz,num_obj);
     num_obj -= 1;
 
-    if (local_gids == NULL || (num_lid_entries > 0 && local_lids == NULL) || 
+    if (local_gids == NULL || (nlid_ent > 0 && local_lids == NULL) || 
         assigned   == NULL ||
         num_vert   == NULL || vertices   == NULL || in_vertex == NULL ||
         out_vertex == NULL) {
@@ -268,7 +269,7 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
    */
 
       zz->Get_Coarse_Obj_List(zz->Get_Coarse_Obj_List_Data, 
-                              num_gid_entries, num_lid_entries,
+                              ngid_ent, nlid_ent,
                               local_gids, local_lids, 
                               assigned, num_vert, vertices,
                               &in_order, in_vertex, out_vertex, &ierr);
@@ -298,15 +299,17 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
 
       sum_vert = 0;
       count = 0;
-      lid = (num_lid_entries ? &(local_lids[count*num_lid_entries]) : NULL);
+      lid = (nlid_ent ? &(local_lids[count*nlid_ent]) : NULL);
       found = zz->Get_First_Coarse_Obj(zz->Get_First_Coarse_Obj_Data,
-                                       num_gid_entries, num_lid_entries,
-                                       &(local_gids[count*num_gid_entries]), 
+                                       ngid_ent, nlid_ent,
+                                       &local_gids[count*ngid_ent], 
                                        lid,
                                        &assigned[count],
-                                       &num_vert[count], &vertices[sum_vert],
+                                       &num_vert[count],
+                                       &vertices[sum_vert*ngid_ent],
                                        &in_order,
-                                       &in_vertex[count], &out_vertex[count],
+                                       &in_vertex[count*ngid_ent],
+                                       &out_vertex[count*ngid_ent],
                                        &ierr);
       if (ierr) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
@@ -326,18 +329,20 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
       while (found && count <= num_obj) {
         sum_vert += num_vert[count];
         count += 1;
-        prev_lid = (num_lid_entries ? &(local_lids[(count-1)*num_lid_entries]) 
+        prev_lid = (nlid_ent ? &(local_lids[(count-1)*nlid_ent]) 
                                     : NULL);
-        lid = (num_lid_entries ? &(local_lids[count*num_lid_entries]) : NULL);
+        lid = (nlid_ent ? &(local_lids[count*nlid_ent]) : NULL);
         found = zz->Get_Next_Coarse_Obj(zz->Get_Next_Coarse_Obj_Data,
-                                      num_gid_entries, num_lid_entries,
-                                      &(local_gids[(count-1)*num_gid_entries]), 
+                                      ngid_ent, nlid_ent,
+                                      &local_gids[(count-1)*ngid_ent], 
                                       prev_lid,
-                                      &(local_gids[count*num_gid_entries]), 
+                                      &local_gids[count*ngid_ent], 
                                       lid,
                                       &assigned[count],
-                                      &num_vert[count], &vertices[sum_vert],
-                                      &in_vertex[count], &out_vertex[count],
+                                      &num_vert[count],
+                                      &vertices[sum_vert*ngid_ent],
+                                      &in_vertex[count*ngid_ent],
+                                      &out_vertex[count*ngid_ent],
                                       &ierr);
         if (ierr) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
@@ -439,11 +444,11 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
 
   /* Account for number of array entries in an ID. */
   for (i=0; i<nproc; i++) {
-    num_obj_all[i] = num_obj_all[i]*num_gid_entries;
-    displs[i] = displs[i]*num_gid_entries;
+    num_obj_all[i] = num_obj_all[i]*ngid_ent;
+    displs[i] = displs[i]*ngid_ent;
   }
 
-  MPI_Allgatherv((void *)local_gids,num_obj*num_gid_entries,ZOLTAN_ID_MPI_TYPE,
+  MPI_Allgatherv((void *)local_gids,num_obj*ngid_ent,ZOLTAN_ID_MPI_TYPE,
                  (void *)all_gids,num_obj_all,displs,ZOLTAN_ID_MPI_TYPE,
                  zz->Communicator);
 
@@ -485,8 +490,8 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
   for (i=0; i<sum_num_obj; i++) {
     found = 0;
     for (j=0; j<total_num_obj && !found; j++) {
-      if (ZOLTAN_EQ_GID(zz, &(all_gids[i*num_gid_entries]),
-                    &(local_gids[j*num_gid_entries]))) 
+      if (ZOLTAN_EQ_GID(zz, &(all_gids[i*ngid_ent]),
+                    &(local_gids[j*ngid_ent]))) 
         found = 1;
     }
     if (found) {
@@ -496,8 +501,8 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
       }
     }
     else {
-      ZOLTAN_SET_GID(zz, &(local_gids[total_num_obj*num_gid_entries]), 
-                     &(all_gids[i*num_gid_entries]));
+      ZOLTAN_SET_GID(zz, &(local_gids[total_num_obj*ngid_ent]), 
+                     &(all_gids[i*ngid_ent]));
       order[total_num_obj] = count;
       count += 1;
       total_num_obj += 1;
@@ -639,10 +644,10 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
        *(root->children[order[i]].weight) = 0.0;
     }
     else {
-      lid = (num_lid_entries ? &(local_lids[i*num_lid_entries]) : NULL);
+      lid = (nlid_ent ? &(local_lids[i*nlid_ent]) : NULL);
       zz->Get_Child_Weight(zz->Get_Child_Weight_Data,
-                           num_gid_entries, num_lid_entries,
-                           &(local_gids[i*num_gid_entries]),
+                           ngid_ent, nlid_ent,
+                           &(local_gids[i*ngid_ent]),
                            lid, zz->Obj_Weight_Dim, 
                            root->children[order[i]].weight, &ierr);
     }
@@ -656,7 +661,8 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
    */
 
     for (j=0; j<num_vert[i]; j++) 
-      root->children[order[i]].vertices[j] = vertices[sum_vert+j];
+      ZOLTAN_SET_GID(zz,&(root->children[order[i]].vertices[j*ngid_ent]),
+                        &(vertices[(sum_vert+j)*ngid_ent]));
     if (num_vert[i] > 0) sum_vert += num_vert[i];
 
   /*
@@ -666,26 +672,28 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
     if (num_vert[i] == -1) {
   /* elements not known to this processor have more empty entries */
       ZOLTAN_SET_GID(zz, root->children[order[i]].global_id,
-                 &(local_gids[i*num_gid_entries]));
+                 &(local_gids[i*ngid_ent]));
       ZOLTAN_INIT_LID(zz, root->children[order[i]].local_id);
       root->children[order[i]].children       = (ZOLTAN_REFTREE *) NULL;
       root->children[order[i]].num_child      = 0;
       root->children[order[i]].num_vertex     = num_vert[i];
-      root->children[order[i]].in_vertex      = 0;
-      root->children[order[i]].out_vertex     = 0;
+      ZOLTAN_INIT_GID(zz, root->children[order[i]].in_vertex);
+      ZOLTAN_INIT_GID(zz, root->children[order[i]].out_vertex);
       root->children[order[i]].assigned_to_me = 0;
       root->children[order[i]].partition      = 0;
     }
     else {
       ZOLTAN_SET_GID(zz, root->children[order[i]].global_id,
-                 &(local_gids[i*num_gid_entries]));
+                 &(local_gids[i*ngid_ent]));
       ZOLTAN_SET_LID(zz, root->children[order[i]].local_id,
-                 &(local_lids[i*num_lid_entries]));
+                 &(local_lids[i*nlid_ent]));
       root->children[order[i]].children       = (ZOLTAN_REFTREE *) NULL;
       root->children[order[i]].num_child      = 0;
       root->children[order[i]].num_vertex     = num_vert[i];
-      root->children[order[i]].in_vertex      = in_vertex[i];
-      root->children[order[i]].out_vertex     = out_vertex[i];
+      ZOLTAN_SET_GID(zz, root->children[order[i]].in_vertex,
+                         &(in_vertex[i*ngid_ent]));
+      ZOLTAN_SET_GID(zz, root->children[order[i]].out_vertex,
+                         &(out_vertex[i*ngid_ent]));
       root->children[order[i]].assigned_to_me = assigned[i];
       root->children[order[i]].partition      = 0;
     }
@@ -799,8 +807,8 @@ int i, j;                  /* loop counters */
 int sum_vert;              /* running sum of the number of vertices */
 struct Zoltan_Reftree_hash_node **hashtab; /* hash tree */
 int hashsize;              /* size of the hash table */
-int num_gid_entries = zz->Num_GID;  /* number of array entries in a global ID */
-int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
+int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
+int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
 int children_agree;        /* flag, true if all children of a node in the
                               refinement tree agree with data from GET_CHILD */
 int existing;              /* existing child that agrees with GET_CHILD data */
@@ -826,7 +834,7 @@ int existing;              /* existing child that agrees with GET_CHILD data */
    */
 
   num_obj = zz->Get_Num_Child(zz->Get_Num_Child_Data, 
-                              num_gid_entries, num_lid_entries,
+                              ngid_ent, nlid_ent,
                               subroot->global_id, subroot->local_id, &ierr);
   if (ierr) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
@@ -868,13 +876,13 @@ int existing;              /* existing child that agrees with GET_CHILD data */
     slocal_lids = ZOLTAN_MALLOC_LID_ARRAY(zz, num_obj);
     sassigned   = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
     snum_vert   = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
-    svertices   = (int *) ZOLTAN_MALLOC(MAXVERT*num_obj*sizeof(int));
-    sin_vertex  = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
-    sout_vertex = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+    svertices   = ZOLTAN_MALLOC_GID_ARRAY(zz,MAXVERT*num_obj);
+    sin_vertex  = ZOLTAN_MALLOC_GID_ARRAY(zz,num_obj);
+    sout_vertex = ZOLTAN_MALLOC_GID_ARRAY(zz,num_obj);
     svert1      = (int *) ZOLTAN_MALLOC((num_obj+1)*sizeof(int));
     sorder      = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
     ssize = num_obj;
-    if (slocal_gids == NULL || (num_lid_entries > 0 && slocal_lids == NULL) || 
+    if (slocal_gids == NULL || (nlid_ent > 0 && slocal_lids == NULL) || 
         sassigned   == NULL ||
         snum_vert   == NULL || svertices   == NULL || sin_vertex == NULL ||
         sout_vertex == NULL || svert1      == NULL) {
@@ -894,7 +902,7 @@ int existing;              /* existing child that agrees with GET_CHILD data */
     }
   }
   zz->Get_Child_List(zz->Get_Child_List_Data, 
-                     num_gid_entries, num_lid_entries,
+                     ngid_ent, nlid_ent,
                      subroot->global_id, subroot->local_id, 
                      slocal_gids, slocal_lids, sassigned,
                      snum_vert, svertices, &ref_type, sin_vertex, sout_vertex,
@@ -923,37 +931,38 @@ int existing;              /* existing child that agrees with GET_CHILD data */
    * with an existing child in GID, LID and vertices
    */
 
-  children_agree = 1;
+  children_agree = TRUE;
   if (subroot->num_child == 0) {
-    children_agree = 0;
+    children_agree = FALSE;
   } else {
     if (subroot->num_child != num_obj) {
-      children_agree = 0;
+      children_agree = FALSE;
     } else {
       for (i=0; i<num_obj && children_agree; i++) {
         existing = -1;
         for (j=0; j<subroot->num_child && existing==-1; j++) {
           if (ZOLTAN_EQ_GID(zz, subroot->children[j].global_id,
-                        &(slocal_gids[i*num_gid_entries]))) {
+                        &(slocal_gids[i*ngid_ent]))) {
             existing = j;
           }
         }
         if (existing == -1) {
-          children_agree = 0;
+          children_agree = FALSE;
         } else {
-          for (j=0; j<num_lid_entries; j++) {
+          for (j=0; j<nlid_ent; j++) {
             if (subroot->children[existing].local_id[j] !=
-                slocal_lids[i*num_lid_entries+j]) {
-              children_agree = 0;
+                slocal_lids[i*nlid_ent+j]) {
+              children_agree = FALSE;
             }
           }
           if (subroot->children[existing].num_vertex != snum_vert[i]) {
-            children_agree = 0;
+            children_agree = FALSE;
           } else {
             if (snum_vert[i] != 0) {
               for (j=0; j<snum_vert[i] && children_agree; j++) {
-                if (subroot->children[existing].vertices[j] != svertices[svert1[i]+j]) {
-                  children_agree = 0;
+                if (!ZOLTAN_EQ_GID(zz,&subroot->children[existing].vertices[j*ngid_ent],
+                                      &(svertices[(svert1[i]+j)*ngid_ent]))) {
+                  children_agree = FALSE;
                 }
               }
             }
@@ -982,9 +991,9 @@ int existing;              /* existing child that agrees with GET_CHILD data */
          *(subroot->children[i].weight) = 0.0;
       }
       else {
-        lid = (num_lid_entries ? subroot->children[i].local_id : NULL);
+        lid = (nlid_ent ? subroot->children[i].local_id : NULL);
         zz->Get_Child_Weight(zz->Get_Child_Weight_Data,
-                             num_gid_entries, num_lid_entries,
+                             ngid_ent, nlid_ent,
                              subroot->children[i].global_id,
                              lid, 
                              zz->Obj_Weight_Dim,
@@ -1114,10 +1123,10 @@ int existing;              /* existing child that agrees with GET_CHILD data */
          *(subroot->children[sorder[i]].weight) = 0.0;
       }
       else {
-        lid = (num_lid_entries ? &(slocal_lids[i*num_lid_entries]) : NULL);
+        lid = (nlid_ent ? &(slocal_lids[i*nlid_ent]) : NULL);
         zz->Get_Child_Weight(zz->Get_Child_Weight_Data,
-                             num_gid_entries, num_lid_entries,
-                             &(slocal_gids[i*num_gid_entries]),
+                             ngid_ent, nlid_ent,
+                             &(slocal_gids[i*ngid_ent]),
                              lid, 
                              zz->Obj_Weight_Dim,
                              subroot->children[sorder[i]].weight, &ierr);
@@ -1132,7 +1141,8 @@ int existing;              /* existing child that agrees with GET_CHILD data */
    */
 
       for (j=0; j<snum_vert[i]; j++)
-        subroot->children[sorder[i]].vertices[j] = svertices[sum_vert+j];
+        ZOLTAN_SET_GID(zz,&(subroot->children[sorder[i]].vertices[j*ngid_ent]),
+                          &(svertices[(sum_vert+j)*ngid_ent]));
       if (snum_vert[i] > 0) sum_vert += snum_vert[i];
 
   /*
@@ -1140,14 +1150,16 @@ int existing;              /* existing child that agrees with GET_CHILD data */
    */
 
       ZOLTAN_SET_GID(zz, subroot->children[sorder[i]].global_id,
-                 &(slocal_gids[i*num_gid_entries]));
+                 &(slocal_gids[i*ngid_ent]));
       ZOLTAN_SET_LID(zz, subroot->children[sorder[i]].local_id,
-                 &(slocal_lids[i*num_lid_entries]));
+                 &(slocal_lids[i*nlid_ent]));
       subroot->children[sorder[i]].children       = (ZOLTAN_REFTREE *) NULL;
       subroot->children[sorder[i]].num_child      = 0;
       subroot->children[sorder[i]].num_vertex     = snum_vert[i];
-      subroot->children[sorder[i]].in_vertex      = sin_vertex[i];
-      subroot->children[sorder[i]].out_vertex     = sout_vertex[i];
+      ZOLTAN_SET_GID(zz, subroot->children[sorder[i]].in_vertex,
+                         &(sin_vertex[i*ngid_ent]));
+      ZOLTAN_SET_GID(zz, subroot->children[sorder[i]].out_vertex,
+                         &(sout_vertex[i*ngid_ent]));
       subroot->children[sorder[i]].assigned_to_me = sassigned[i];
       subroot->children[sorder[i]].partition      = 0;
 
@@ -1175,8 +1187,9 @@ int existing;              /* existing child that agrees with GET_CHILD data */
 
 /*****************************************************************************/
 
-static int order_tri_bisect(ZZ *zz, int *vert1, int *order, int *vertices,
-                     int *in_vertex, int *out_vertex, ZOLTAN_REFTREE *subroot)
+static int order_tri_bisect(ZZ *zz, int *vert1, int *order, 
+                            ZOLTAN_ID_PTR vertices, ZOLTAN_ID_PTR in_vertex,
+                            ZOLTAN_ID_PTR out_vertex, ZOLTAN_REFTREE *subroot)
 {
 /*
  * Function to determine the order of the children and in/out vertices
@@ -1195,6 +1208,7 @@ int has_in[2];             /* flag for an element having the parent in vert */
 int has_out[2];            /* flag for an element having the parent out vert */
 int has_third[2];          /* flag for a triangle having the parent non in/out*/
 int bad_case;              /* flag for failing to identify order */
+int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
 
   /* verify that 3 vertices were given for each triangle; if not, punt */
   if (vert1[1] != 3 || vert1[2] != 6) {
@@ -1202,10 +1216,10 @@ int bad_case;              /* flag for failing to identify order */
                                 "given for bisected triangles.");
     order[0] = 0;
     order[1] = 1;
-    in_vertex[0] = vertices[vert1[0]];
-    out_vertex[0] = vertices[vert1[0]+1];
-    in_vertex[1] = vertices[vert1[1]];
-    out_vertex[1] = vertices[vert1[1]+1];
+    ZOLTAN_SET_GID(zz,&in_vertex[0],&vertices[vert1[0]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[0],&vertices[(vert1[0]+1)*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&in_vertex[ngid_ent],&vertices[vert1[1]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ngid_ent],&vertices[(vert1[1]+1)*ngid_ent]);
     return(ZOLTAN_WARN);
   }
 
@@ -1214,17 +1228,20 @@ int bad_case;              /* flag for failing to identify order */
   for (i=0; i<6; i++) {
     parents_vert[i] = -1;
     for (j=0; j<3; j++) {
-      if (vertices[i] == subroot->vertices[j]) parents_vert[i] = j;
+      if (ZOLTAN_EQ_GID(zz,&vertices[i*ngid_ent],
+                           &subroot->vertices[j*ngid_ent]))
+        parents_vert[i] = j;
     }
   }
 
   /* determine the location of the parents in and out vertices */
   parent_in = -1; parent_out = -1; parent_third = -1;
   for (i=0; i<3; i++) {
-    if (subroot->vertices[i] == subroot->in_vertex) {
+    if (ZOLTAN_EQ_GID(zz,&subroot->vertices[i*ngid_ent],subroot->in_vertex)) {
       parent_in = i;
     }
-    else if (subroot->vertices[i] == subroot->out_vertex) {
+    else if (ZOLTAN_EQ_GID(zz,&subroot->vertices[i*ngid_ent],
+                              subroot->out_vertex)) {
       parent_out = i;
     }
     else {
@@ -1237,10 +1254,10 @@ int bad_case;              /* flag for failing to identify order */
                                 "vertices in the parent.");
     order[0] = 0;
     order[1] = 1;
-    in_vertex[0] = vertices[vert1[0]];
-    out_vertex[0] = vertices[vert1[0]+1];
-    in_vertex[1] = vertices[vert1[1]];
-    out_vertex[1] = vertices[vert1[1]+1];
+    ZOLTAN_SET_GID(zz,&in_vertex[0],&vertices[vert1[0]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[0],&vertices[(vert1[0]+1)*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&in_vertex[ngid_ent],&vertices[vert1[1]*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ngid_ent],&vertices[(vert1[1]+1)*ngid_ent]);
     return(ZOLTAN_WARN);
   }
 
@@ -1277,72 +1294,95 @@ int bad_case;              /* flag for failing to identify order */
   if (has_in[0]) {
     if (has_out[1]) {
       order[0] = 0; order[1] = 1;
-      in_vertex[0] = subroot->vertices[parent_in];
-      out_vertex[1] = subroot->vertices[parent_out];
+      ZOLTAN_SET_GID(zz,&in_vertex[0],&(subroot->vertices[parent_in*ngid_ent]));
+      ZOLTAN_SET_GID(zz,&out_vertex[ngid_ent],
+                        &(subroot->vertices[parent_out*ngid_ent]));
       if (has_third[0] && has_third[1]) {
-        out_vertex[0] = subroot->vertices[parent_third];
-        in_vertex[1] = subroot->vertices[parent_third];
+        ZOLTAN_SET_GID(zz,&out_vertex[0],
+                          &(subroot->vertices[parent_third*ngid_ent]));
+        ZOLTAN_SET_GID(zz,&in_vertex[ngid_ent],
+                          &(subroot->vertices[parent_third*ngid_ent]));
       }else{
-        out_vertex[0] = vertices[not_parent[0]];
-        in_vertex[1] = vertices[not_parent[1]];
+        ZOLTAN_SET_GID(zz,&out_vertex[0],&vertices[not_parent[0]*ngid_ent]);
+        ZOLTAN_SET_GID(zz,&in_vertex[ngid_ent],
+                          &vertices[not_parent[1]*ngid_ent]);
       }
     }
     else if (has_in[1]) {
       if (has_out[0]) {
         order[0] = 1; order[1] = 0;
-        in_vertex[1] = subroot->vertices[parent_in];
-        out_vertex[0] = subroot->vertices[parent_out];
+        ZOLTAN_SET_GID(zz,&in_vertex[ngid_ent],
+                          &(subroot->vertices[parent_in*ngid_ent]));
+        ZOLTAN_SET_GID(zz,&out_vertex[0],
+                          &(subroot->vertices[parent_out*ngid_ent]));
         if (has_third[0] && has_third[1]) {
-          out_vertex[1] = subroot->vertices[parent_third];
-          in_vertex[0] = subroot->vertices[parent_third];
+          ZOLTAN_SET_GID(zz,&out_vertex[ngid_ent],
+                            &(subroot->vertices[parent_third*ngid_ent]));
+          ZOLTAN_SET_GID(zz,&in_vertex[0],
+                            &(subroot->vertices[parent_third*ngid_ent]));
         }else{
-          out_vertex[1] = vertices[not_parent[1]];
-          in_vertex[0] = vertices[not_parent[0]];
+          ZOLTAN_SET_GID(zz,&out_vertex[ngid_ent],
+                            &vertices[not_parent[1]*ngid_ent]);
+          ZOLTAN_SET_GID(zz,&in_vertex[0],
+                            &vertices[not_parent[0]*ngid_ent]);
         }
       }else{ /* impossible case, no one has the out vertex */
         bad_case = 1;
         order[0] = 0; order[1] = 1;
-        in_vertex[0] = subroot->vertices[parent_in];
-        out_vertex[0] = subroot->vertices[parent_third];
-        in_vertex[1] = subroot->vertices[parent_third];
-        out_vertex[1] = subroot->vertices[parent_in];
+        ZOLTAN_SET_GID(zz,&in_vertex[0],
+                          &(subroot->vertices[parent_in*ngid_ent]));
+        ZOLTAN_SET_GID(zz,&out_vertex[0],
+                          &(subroot->vertices[parent_third*ngid_ent]));
+        ZOLTAN_SET_GID(zz,&in_vertex[ngid_ent],
+                          &(subroot->vertices[parent_third*ngid_ent]));
+        ZOLTAN_SET_GID(zz,&out_vertex[ngid_ent],
+                          &(subroot->vertices[parent_in*ngid_ent]));
       }
     }else{ /* impossible case, second child has neither in nor out */
       bad_case = 1;
       order[0] = 0; order[1] = 1;
-      in_vertex[0] = subroot->vertices[parent_in];
-      out_vertex[0] = subroot->vertices[parent_third];
-      in_vertex[1] = vertices[3];
-      out_vertex[1] = vertices[4];
+      ZOLTAN_SET_GID(zz,&in_vertex[0],&(subroot->vertices[parent_in*ngid_ent]));
+      ZOLTAN_SET_GID(zz,&out_vertex[0],
+                        &(subroot->vertices[parent_third*ngid_ent]));
+      ZOLTAN_SET_GID(zz,&in_vertex[ngid_ent],&vertices[3*ngid_ent]);
+      ZOLTAN_SET_GID(zz,&out_vertex[ngid_ent],&vertices[4*ngid_ent]);
     }
   }
   else if (has_out[0]) {
     if (has_in[1]) {
       order[0] = 1; order[1] = 0;
-      in_vertex[1] = subroot->vertices[parent_in];
-      out_vertex[0] = subroot->vertices[parent_out];
+      ZOLTAN_SET_GID(zz,&in_vertex[ngid_ent],
+                        &(subroot->vertices[parent_in*ngid_ent]));
+      ZOLTAN_SET_GID(zz,&out_vertex[0],
+                        &(subroot->vertices[parent_out*ngid_ent]));
       if (has_third[0] && has_third[1]) {
-        out_vertex[1] = subroot->vertices[parent_third];
-        in_vertex[0] = subroot->vertices[parent_third];
+        ZOLTAN_SET_GID(zz,&out_vertex[ngid_ent],
+                          &(subroot->vertices[parent_third*ngid_ent]));
+        ZOLTAN_SET_GID(zz,&in_vertex[0],
+                          &(subroot->vertices[parent_third*ngid_ent]));
       }else{
-        out_vertex[1] = vertices[not_parent[1]];
-        in_vertex[0] = vertices[not_parent[0]];
+        ZOLTAN_SET_GID(zz,&out_vertex[ngid_ent],
+                          &vertices[not_parent[1]*ngid_ent]);
+        ZOLTAN_SET_GID(zz,&in_vertex[0],&vertices[not_parent[0]*ngid_ent]);
       }
     }else{ /* impossible case, no one has the in vertex */
       bad_case = 1;
       order[0] = 0; order[1] = 1;
-      in_vertex[0] = subroot->vertices[parent_out];
-      out_vertex[0] = subroot->vertices[parent_third];
-      in_vertex[1] = subroot->vertices[parent_third];
-      out_vertex[1] = subroot->vertices[parent_out];
+      ZOLTAN_SET_GID(zz,&in_vertex[0],&(subroot->vertices[parent_out*ngid_ent]));
+      ZOLTAN_SET_GID(zz,&out_vertex[0],
+                        &(subroot->vertices[parent_third*ngid_ent]));
+      ZOLTAN_SET_GID(zz,&in_vertex[ngid_ent],
+                        &(subroot->vertices[parent_third*ngid_ent]));
+      ZOLTAN_SET_GID(zz,&out_vertex[ngid_ent],
+                        &(subroot->vertices[parent_out*ngid_ent]));
     }
   }else{ /* impossible case, first child has neither in nor out */
     bad_case = 1;
     order[0] = 0; order[1] = 1;
-    in_vertex[0] = vertices[0];
-    out_vertex[0] = vertices[1];
-    in_vertex[1] = vertices[3];
-    out_vertex[1] = vertices[4];
+    ZOLTAN_SET_GID(zz,&in_vertex[0],&vertices[0*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[0],&vertices[1*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&in_vertex[ngid_ent],&vertices[3*ngid_ent]);
+    ZOLTAN_SET_GID(zz,&out_vertex[ngid_ent],&vertices[4*ngid_ent]);
   }
   if (bad_case) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Vertices of children did not "
@@ -1356,16 +1396,21 @@ int bad_case;              /* flag for failing to identify order */
 
 /*****************************************************************************/
 
-static int order_quad_quad(ZZ *zz, int *vert1, int *order, int *vertices,
-                     int *in_vertex, int *out_vertex, ZOLTAN_REFTREE *subroot)
+static int order_quad_quad(ZZ *zz, int *vert1, int *order,
+                           ZOLTAN_ID_PTR vertices, ZOLTAN_ID_PTR in_vertex,
+                           ZOLTAN_ID_PTR out_vertex, ZOLTAN_REFTREE *subroot)
 {
 /*
  * Function to determine the order of the children and in/out vertices
  * when refinement is done by quadrasecting quadrilaterals.
  */
 
-int i,j,k,found,shared[3],ord[4];
+int i,j,k,found,ord[4];
+ZOLTAN_ID_PTR shared;
 char *yo = "order_quad_quad";
+int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
+
+  shared = ZOLTAN_MALLOC_GID_ARRAY(zz,3);
 
   /* verify that 4 vertices were given for each quadrilateral; if not, punt */
   if (vert1[1] != 4 || vert1[2] != 8 || vert1[3] != 12) {
@@ -1373,8 +1418,9 @@ char *yo = "order_quad_quad";
                                 "given for quadrasected quadrilaterals.");
     for (i=0; i<4; i++) {
       order[i] = i;
-      in_vertex[i] = vertices[vert1[i]];
-      out_vertex[i] = vertices[vert1[i]+3];
+      ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+      ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                        &vertices[(vert1[i]+3)*ngid_ent]);
     }
     return(ZOLTAN_WARN);
   }
@@ -1384,7 +1430,7 @@ char *yo = "order_quad_quad";
   found = 0;
   for (i=0; i<4 && !found; i++) {
     for (j=0; j<4 && !found; j++) {
-      if (vertices[4*i+j] == subroot->in_vertex) {
+      if (ZOLTAN_EQ_GID(zz,&vertices[(4*i+j)*ngid_ent],subroot->in_vertex)) {
          ord[0] = i;
          found = 1;
       }
@@ -1394,8 +1440,9 @@ char *yo = "order_quad_quad";
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Couldn't find in_vertex in children");
     for (i=0; i<4; i++) {
       order[i] = i;
-      in_vertex[i] = vertices[vert1[i]];
-      out_vertex[i] = vertices[vert1[i]+3];
+      ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+      ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                        &vertices[(vert1[i]+3)*ngid_ent]);
     }
     return(ZOLTAN_WARN);
   }
@@ -1405,7 +1452,7 @@ char *yo = "order_quad_quad";
   found = 0;
   for (i=0; i<4 && !found; i++) {
     for (j=0; j<4 && !found; j++) {
-      if (vertices[4*i+j] == subroot->out_vertex) {
+      if (ZOLTAN_EQ_GID(zz,&vertices[(4*i+j)*ngid_ent],subroot->out_vertex)) {
          ord[3] = i;
          found = 1;
       }
@@ -1415,8 +1462,9 @@ char *yo = "order_quad_quad";
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Couldn't find out_vertex in children");
     for (i=0; i<4; i++) {
       order[i] = i;
-      in_vertex[i] = vertices[vert1[i]];
-      out_vertex[i] = vertices[vert1[i]+3];
+      ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+      ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                        &vertices[(vert1[i]+3)*ngid_ent]);
     }
     return(ZOLTAN_WARN);
   }
@@ -1430,8 +1478,10 @@ char *yo = "order_quad_quad";
       found = 0;
       for (j=0; j<4 && found!=2; j++) {
         for (i=0; i<4 && found!=2; i++) {
-          if (vertices[4*k+j] == vertices[4*ord[0]+i]) {
-            shared[found] = vertices[4*k+j];
+          if (ZOLTAN_EQ_GID(zz,&vertices[(4*k+j)*ngid_ent],
+                               &vertices[(4*ord[0]+i)*ngid_ent])) {
+            ZOLTAN_SET_GID(zz,&shared[found*ngid_ent],
+                              &vertices[(4*k+j)*ngid_ent]);
             found = found + 1;
           }
         }
@@ -1445,8 +1495,9 @@ char *yo = "order_quad_quad";
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Couldn't find second child of quadrasection");
     for (i=0; i<4; i++) {
       order[i] = i;
-      in_vertex[i] = vertices[vert1[i]];
-      out_vertex[i] = vertices[vert1[i]+3];
+      ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+      ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                        &vertices[(vert1[i]+3)*ngid_ent]);
     }
     return(ZOLTAN_WARN);
   }
@@ -1461,12 +1512,12 @@ char *yo = "order_quad_quad";
 
   found = 0;
   for (j=0; j<4 && !found; j++) {
-    if (shared[0] == vertices[4*ord[3]+j]) {
+    if (ZOLTAN_EQ_GID(zz,&shared[0],&vertices[(4*ord[3]+j)*ngid_ent])) {
       found = 1;
     }
-    if (shared[1] == vertices[4*ord[3]+j]) {
-      shared[1] = shared[0];
-      shared[0] = vertices[4*ord[3]+j];
+    if (ZOLTAN_EQ_GID(zz,&shared[ngid_ent],&vertices[(4*ord[3]+j)*ngid_ent])) {
+      ZOLTAN_SET_GID(zz,&shared[ngid_ent],&shared[0]);
+      ZOLTAN_SET_GID(zz,&shared[0],&vertices[(4*ord[3]+j)*ngid_ent]);
       found = 1;
     }
   }
@@ -1474,8 +1525,9 @@ char *yo = "order_quad_quad";
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Couldn't find central node of quadrasection");
     for (i=0; i<4; i++) {
       order[i] = i;
-      in_vertex[i] = vertices[vert1[i]];
-      out_vertex[i] = vertices[vert1[i]+3];
+      ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+      ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                        &vertices[(vert1[i]+3)*ngid_ent]);
     }
     return(ZOLTAN_WARN);
   }
@@ -1484,10 +1536,12 @@ char *yo = "order_quad_quad";
 
   found = 0;
   for (j=0; j<4 && !found; j++) {
-    if (vertices[4*ord[2]+j] != shared[0]) {
+    if (!ZOLTAN_EQ_GID(zz,&vertices[(4*ord[2]+j)*ngid_ent],&shared[0])) {
       for (i=0; i<4 && !found; i++) {
-        if (vertices[4*ord[2]+j] == vertices[4*ord[3]+i]) {
-          shared[2] = vertices[4*ord[2]+j];
+        if (ZOLTAN_EQ_GID(zz,&vertices[(4*ord[2]+j)*ngid_ent],
+                             &vertices[(4*ord[3]+i)*ngid_ent])) {
+          ZOLTAN_SET_GID(zz,&shared[2*ngid_ent],
+                            &vertices[(4*ord[2]+j)*ngid_ent]);
           found = 1;
         }
       }
@@ -1497,8 +1551,9 @@ char *yo = "order_quad_quad";
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Couldn't find shared vertex of 3rd and 4th child");
     for (i=0; i<4; i++) {
       order[i] = i;
-      in_vertex[i] = vertices[vert1[i]];
-      out_vertex[i] = vertices[vert1[i]+3];
+      ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+      ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                        &vertices[(vert1[i]+3)*ngid_ent]);
     }
     return(ZOLTAN_WARN);
   }
@@ -1511,24 +1566,25 @@ char *yo = "order_quad_quad";
 
   /* set the in/out vertices */
 
-   in_vertex[ord[0]] = subroot->in_vertex;
-  out_vertex[ord[0]] = shared[1];
-   in_vertex[ord[1]] = shared[1];
-  out_vertex[ord[1]] = shared[0];
-   in_vertex[ord[2]] = shared[0];
-  out_vertex[ord[2]] = shared[2];
-   in_vertex[ord[3]] = shared[2];
-  out_vertex[ord[3]] = subroot->out_vertex;
+  ZOLTAN_SET_GID(zz, &in_vertex[ord[0]*ngid_ent], subroot->in_vertex);
+  ZOLTAN_SET_GID(zz,&out_vertex[ord[0]*ngid_ent],&shared[1*ngid_ent]);
+  ZOLTAN_SET_GID(zz, &in_vertex[ord[1]*ngid_ent],&shared[1*ngid_ent]);
+  ZOLTAN_SET_GID(zz,&out_vertex[ord[1]*ngid_ent],&shared[0*ngid_ent]);
+  ZOLTAN_SET_GID(zz, &in_vertex[ord[2]*ngid_ent],&shared[0*ngid_ent]);
+  ZOLTAN_SET_GID(zz,&out_vertex[ord[2]*ngid_ent],&shared[2*ngid_ent]);
+  ZOLTAN_SET_GID(zz, &in_vertex[ord[3]*ngid_ent],&shared[2*ngid_ent]);
+  ZOLTAN_SET_GID(zz,&out_vertex[ord[3]*ngid_ent], subroot->out_vertex);
 
+  ZOLTAN_FREE(&shared);
   return(ZOLTAN_OK);
 }
 
 /*****************************************************************************/
 
 static int order_other_ref(ZZ *zz, ZOLTAN_REFTREE *parent, int num_child, 
-                    int *num_vert,
-                    int *vert1, int *vertices, int *order, int *in_vertex,
-                    int *out_vertex)
+                           int *num_vert, int *vert1, ZOLTAN_ID_PTR vertices,
+                           int *order, ZOLTAN_ID_PTR in_vertex,
+                           ZOLTAN_ID_PTR out_vertex)
 {
 /*
  * Function to determine the order of the children for an undetermined
@@ -1545,6 +1601,7 @@ int max_share;      /* maximum number of vertices shared by two elements */
 int solved;         /* flag for having found the solution */
 int final_ierr;     /* error code returned */
 int *on_path;       /* flag for already placed element on path */
+int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
 
   final_ierr = ZOLTAN_OK;
 
@@ -1562,12 +1619,14 @@ int *on_path;       /* flag for already placed element on path */
   }
 
   for (i=0; i<num_child; i++) {
-    has_in[i] = 0;
-    has_out[i] = 0;
+    has_in[i] = FALSE;
+    has_out[i] = FALSE;
     for (j=0; j<num_vert[i] && !has_in[i]; j++)
-      if (vertices[vert1[i]+j] == parent->in_vertex) has_in[i] = 1;
+      if (ZOLTAN_EQ_GID(zz,&vertices[(vert1[i]+j)*ngid_ent],
+                           parent->in_vertex)) has_in[i] = TRUE;
     for (j=0; j<num_vert[i] && !has_out[i]; j++)
-      if (vertices[vert1[i]+j] == parent->out_vertex) has_out[i] = 1;
+      if (ZOLTAN_EQ_GID(zz,&vertices[(vert1[i]+j)*ngid_ent],
+                           parent->out_vertex)) has_out[i] = TRUE;
   }
 
   /*
@@ -1602,9 +1661,12 @@ int *on_path;       /* flag for already placed element on path */
       share_vert[j][i] = 0;
       for (vi=0; vi<num_vert[i]; vi++) {
         for (vj=0; vj<num_vert[j]; vj++) {
-          if (vertices[vert1[i]+vi] == vertices[vert1[j]+vj]) {
-            if (vertices[vert1[i]+vi] != parent->in_vertex &&
-                vertices[vert1[i]+vi] != parent->out_vertex) {
+          if (ZOLTAN_EQ_GID(zz,&vertices[(vert1[i]+vi)*ngid_ent],
+                               &vertices[(vert1[j]+vj)*ngid_ent])) {
+            if (!ZOLTAN_EQ_GID(zz,&vertices[(vert1[i]+vi)*ngid_ent],
+                                  parent->in_vertex) &&
+                !ZOLTAN_EQ_GID(zz,&vertices[(vert1[i]+vi)*ngid_ent],
+                                  parent->out_vertex)) {
               share_vert[i][j] = share_vert[i][j] + 1;
               share_vert[j][i] = share_vert[i][j];
             }
@@ -1664,16 +1726,18 @@ int *on_path;       /* flag for already placed element on path */
    * Finally, determine the in and out vertices of each child
    */
 
-  in_vertex[order[0]] = parent->in_vertex;
-  out_vertex[order[num_child-1]] = parent->out_vertex;
-  solved = find_inout(0, num_child, num_vert, vert1, vertices, in_vertex,
+  ZOLTAN_SET_GID(zz,&in_vertex[order[0]*ngid_ent],parent->in_vertex);
+  ZOLTAN_SET_GID(zz,&out_vertex[order[num_child-1]*ngid_ent],
+                    parent->out_vertex);
+  solved = find_inout(zz, 0, num_child, num_vert, vert1, vertices, in_vertex,
                       out_vertex, order);
   if (!solved) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Couldn't find good set of in/out"
                     " vertices.  Using first and second.\n");
     for (i=0; i<num_child; i++) {
-      in_vertex[i]  = vertices[vert1[i]];
-      out_vertex[i] = vertices[vert1[i]+1];
+      ZOLTAN_SET_GID(zz,&in_vertex[i*ngid_ent],&vertices[vert1[i]*ngid_ent]);
+      ZOLTAN_SET_GID(zz,&out_vertex[i*ngid_ent],
+                        &vertices[(vert1[i]+1)*ngid_ent]);
     }
     final_ierr = ZOLTAN_WARN;
   }
@@ -1752,8 +1816,9 @@ int i, nshare;
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int find_inout(int level, int num_child, int *num_vert, int *vert1,
-               int *vertices, int *in_vertex, int *out_vertex, int *order)
+static int find_inout(ZZ *zz,int level,int num_child,int *num_vert,int *vert1,
+                      ZOLTAN_ID_PTR vertices, ZOLTAN_ID_PTR in_vertex,
+                      ZOLTAN_ID_PTR out_vertex, int *order)
 {
 /*
  * Function to find in and out vertices.
@@ -1762,6 +1827,7 @@ static int find_inout(int level, int num_child, int *num_vert, int *vert1,
  */
 int i, j;                       /* loop counters */
 int solved;                     /* found a solution */
+int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
 
   if (level == num_child-1) {
 
@@ -1769,7 +1835,8 @@ int solved;                     /* found a solution */
    * Last element.  Success if the in vertex is not the last out
    */
 
-    if (in_vertex[order[level]] == out_vertex[order[level]])
+    if (ZOLTAN_EQ_GID(zz,&in_vertex[order[level]*ngid_ent],
+                         &out_vertex[order[level]*ngid_ent]))
       solved = 0;
     else
       solved = 1;
@@ -1785,12 +1852,16 @@ int solved;                     /* found a solution */
 
     solved = 0;
     for (i=0; i<num_vert[order[level]] && !solved; i++) {
-      if (vertices[vert1[order[level]]+i] != in_vertex[order[level]]) {
+      if (!ZOLTAN_EQ_GID(zz,&vertices[(vert1[order[level]]+i)*ngid_ent],
+                            &in_vertex[order[level]*ngid_ent])) {
         for (j=0; j<num_vert[order[level+1]] && !solved; j++) {
-          if (vertices[vert1[order[level+1]]+j] == vertices[vert1[order[level]]+i]) {
-            out_vertex[order[level]]  = vertices[vert1[order[level]]+i];
-            in_vertex[order[level+1]] = vertices[vert1[order[level]]+i];
-            solved = find_inout(level+1, num_child, num_vert, vert1, vertices,
+          if (ZOLTAN_EQ_GID(zz,&vertices[(vert1[order[level+1]]+j)*ngid_ent],
+                               &vertices[(vert1[order[level]]+i)*ngid_ent])) {
+            ZOLTAN_SET_GID(zz,&out_vertex[order[level]*ngid_ent],
+                              &vertices[(vert1[order[level]]+i)*ngid_ent]);
+            ZOLTAN_SET_GID(zz,&in_vertex[order[level+1]*ngid_ent],
+                              &vertices[(vert1[order[level]]+i)*ngid_ent]);
+            solved = find_inout(zz,level+1,num_child,num_vert,vert1,vertices,
                                 in_vertex, out_vertex, order);
           }
         }
@@ -1822,8 +1893,10 @@ static int alloc_reftree_nodes(ZZ *zz, ZOLTAN_REFTREE **node, int num_node,
 
 ZOLTAN_ID_PTR gids;     /* pointer to memory for GIDs */
 ZOLTAN_ID_PTR lids;     /* pointer to memory for LIDs */
+ZOLTAN_ID_PTR verts; /* pointer to memory for vertices */
+ZOLTAN_ID_PTR ins;   /* pointer to memory for in_vertices */
+ZOLTAN_ID_PTR outs;  /* pointer to memory for out_vertices */
 float *float_mem;   /* pointer to memory for floats */
-int *int_mem;       /* pointer to memory for ints */
 int sum_vert;       /* sum of num_vert */
 int wdim;           /* dimension of object weights */
 int i;              /* loop counter */
@@ -1847,18 +1920,22 @@ char *yo = "alloc_reftree_nodes";
 
 /* allocate memory to be used within the structures */
 
-  gids = ZOLTAN_MALLOC_GID_ARRAY(zz, num_node);
-  lids = ZOLTAN_MALLOC_LID_ARRAY(zz, num_node);
+  gids  = ZOLTAN_MALLOC_GID_ARRAY(zz, num_node);
+  lids  = ZOLTAN_MALLOC_LID_ARRAY(zz, num_node);
+  verts = ZOLTAN_MALLOC_GID_ARRAY(zz, sum_vert);
+  ins   = ZOLTAN_MALLOC_GID_ARRAY(zz, num_node);
+  outs  = ZOLTAN_MALLOC_GID_ARRAY(zz, num_node);
   float_mem = (float *) ZOLTAN_MALLOC(3*wdim*num_node*sizeof(float));
-  int_mem   = (int   *) ZOLTAN_MALLOC(sum_vert*sizeof(int));
 
-  if (node == NULL || gids == NULL || lids == NULL || float_mem == NULL ||
-      int_mem == NULL) {
+  if (*node == NULL || gids == NULL || lids == NULL || verts == NULL ||
+      ins == NULL || outs == NULL || float_mem == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ZOLTAN_FREE(&gids);
     ZOLTAN_FREE(&lids);
+    ZOLTAN_FREE(&verts);
+    ZOLTAN_FREE(&ins);
+    ZOLTAN_FREE(&outs);
     ZOLTAN_FREE(&float_mem);
-    ZOLTAN_FREE(&int_mem);
     ZOLTAN_FREE(&node);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_MEMERR);
@@ -1875,8 +1952,12 @@ char *yo = "alloc_reftree_nodes";
     (*node)[i].summed_weight = float_mem+wdim;
     (*node)[i].my_sum_weight = float_mem+2*wdim;
     float_mem += 3*wdim;
-    (*node)[i].vertices = int_mem;
-    int_mem += num_vert[i];
+    (*node)[i].vertices = verts;
+    verts += zz->Num_GID*num_vert[i];
+    (*node)[i].in_vertex = ins;
+    ins += zz->Num_GID;
+    (*node)[i].out_vertex = outs;
+    outs += zz->Num_GID;
   }
 
   return(ZOLTAN_OK);
@@ -1897,6 +1978,8 @@ void free_reftree_nodes(ZOLTAN_REFTREE **node)
   ZOLTAN_FREE(&((*node)->local_id));
   ZOLTAN_FREE(&((*node)->weight));
   ZOLTAN_FREE(&((*node)->vertices));
+  ZOLTAN_FREE(&((*node)->in_vertex));
+  ZOLTAN_FREE(&((*node)->out_vertex));
   ZOLTAN_FREE(node);
 
 }
@@ -2020,7 +2103,7 @@ ZOLTAN_ID_PTR lid;        /* temporary coarse element Local ID; used to pass
                          NULL to query functions when NUM_LID_ENTRIES=0 */
 int *assigned;        /* 1 if the element is assigned to this proc */
 int *num_vert;        /* number of vertices for each coarse element */
-int *vertices;        /* vertices for the coarse elements */
+ZOLTAN_ID_PTR vertices; /* vertices for the coarse elements */
 int *in_vertex;       /* "in" vertex for each coarse element */
 int *out_vertex;      /* "out" vertex for each coarse element */
 ZOLTAN_ID_PTR slocal_gids;/* coarse element Global IDs from user */
@@ -2029,8 +2112,8 @@ ZOLTAN_ID_PTR plocal_gids;/* previous coarse element Global IDs from user */
 ZOLTAN_ID_PTR plocal_lids;/* previous coarse element Local IDs from user */
 int sassigned;        /* 1 if the element is assigned to this proc */
 int snum_vert;        /* number of vertices for a coarse element */
-int sin_vertex;       /* "in" vertex for a coarse element */
-int sout_vertex;      /* "out" vertex for a coarse element */
+ZOLTAN_ID_PTR sin_vertex = ZOLTAN_MALLOC_GID(zz); /* "in" vertex for a coarse element */
+ZOLTAN_ID_PTR sout_vertex = ZOLTAN_MALLOC_GID(zz); /* "out" vertex for a coarse element */
 int in_order;         /* 1 if user is supplying order of the elements */
 int num_obj;          /* number of coarse objects known to this proc */
 int ierr;             /* error flag */
@@ -2038,13 +2121,17 @@ ZOLTAN_REFTREE *tree_node;/* pointer to an initial grid element in the tree */
 int final_ierr;       /* error code returned */
 int sum_vert;         /* running total of number of vertices */
 int found;            /* flag for another coarse grid element */
-int num_gid_entries = zz->Num_GID;  /* number of array entries in a global ID */
-int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
+ZOLTAN_ID_PTR zero_gid; /* a global ID containing 0, for comparison */
+int ngid_ent = zz->Num_GID;  /* number of array entries in a global ID */
+int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
 
   root = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->reftree_root;
   hashtab  = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table;
   hashsize = ((struct Zoltan_Reftree_data_struct *)zz->LB.Data_Structure)->hash_table_size;
   final_ierr = ZOLTAN_OK;
+
+  zero_gid = ZOLTAN_MALLOC_GID(zz);
+  ZOLTAN_INIT_GID(zz,zero_gid);
 
   /*
    * Mark all coarse elements as unknown
@@ -2077,11 +2164,11 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
       local_lids = ZOLTAN_MALLOC_LID_ARRAY(zz, num_obj);
       assigned   = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
       num_vert   = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
-      vertices   = (int *) ZOLTAN_MALLOC(MAXVERT*num_obj*sizeof(int));
-      in_vertex  = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
-      out_vertex = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+      vertices   = ZOLTAN_MALLOC_GID_ARRAY(zz, MAXVERT*num_obj);
+      in_vertex  = ZOLTAN_MALLOC_GID_ARRAY(zz, num_obj);
+      out_vertex = ZOLTAN_MALLOC_GID_ARRAY(zz, num_obj);
 
-      if (local_gids == NULL || (num_lid_entries > 0 && local_lids == NULL) ||
+      if (local_gids == NULL || (nlid_ent > 0 && local_lids == NULL) ||
           assigned   == NULL ||
           num_vert   == NULL || vertices   == NULL || in_vertex == NULL ||
           out_vertex == NULL) {
@@ -2097,7 +2184,7 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
       }
 
       zz->Get_Coarse_Obj_List(zz->Get_Coarse_Obj_List_Data, 
-                              num_gid_entries, num_lid_entries,
+                              ngid_ent, nlid_ent,
                               local_gids, local_lids, 
                               assigned, num_vert, vertices,
                               &in_order, in_vertex, out_vertex, &ierr);
@@ -2118,7 +2205,7 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
       for (i=0; i<num_obj; i++) {
 
         tree_node = Zoltan_Reftree_hash_lookup(zz, hashtab,
-                                           &(local_gids[i*num_gid_entries]),
+                                           &(local_gids[i*ngid_ent]),
                                            hashsize);
         if (tree_node == NULL) {
           ZOLTAN_PRINT_WARN(zz->Proc, yo, "coarse grid element not"
@@ -2130,21 +2217,24 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
    because coarse grid objects are allocated with MAXVERT */
           tree_node->num_vertex = num_vert[i];
           for (j=0; j<num_vert[i]; j++)
-            tree_node->vertices[j] = vertices[sum_vert+j];
+            ZOLTAN_SET_GID(zz,&(tree_node->vertices[j*ngid_ent]),
+                              &vertices[(sum_vert+j)*ngid_ent]);
           if (num_vert[i] > 0) sum_vert += num_vert[i];
 
           tree_node->assigned_to_me = assigned[i];
 /* TEMP if not provided in_order, then in/out are not returned and must be
         determined */
-          if (tree_node->in_vertex == 0) tree_node->in_vertex = in_vertex[i];
-          if (tree_node->out_vertex == 0) tree_node->out_vertex = out_vertex[i];
+          if (ZOLTAN_EQ_GID(zz,tree_node->in_vertex,zero_gid))
+            ZOLTAN_SET_GID(zz,tree_node->in_vertex,&in_vertex[i*ngid_ent]);
+          if (ZOLTAN_EQ_GID(zz,tree_node->out_vertex,zero_gid))
+            ZOLTAN_SET_GID(zz,tree_node->out_vertex,&out_vertex[i*ngid_ent]);
           if (zz->Obj_Weight_Dim == 0)    /* KAREN */
             tree_node->weight[0] = 0.0;
           else {
-            lid = (num_lid_entries ? &(local_lids[i*num_lid_entries]) : NULL);
+            lid = (nlid_ent ? &(local_lids[i*nlid_ent]) : NULL);
             zz->Get_Child_Weight(zz->Get_Child_Weight_Data, 
-                               num_gid_entries, num_lid_entries,
-                               &(local_gids[i*num_gid_entries]),
+                               ngid_ent, nlid_ent,
+                               &(local_gids[i*ngid_ent]),
                                lid,
                                zz->Obj_Weight_Dim,
                                tree_node->weight, &ierr);
@@ -2171,9 +2261,9 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
     slocal_lids = ZOLTAN_MALLOC_LID(zz);
     plocal_gids = ZOLTAN_MALLOC_GID(zz);
     plocal_lids = ZOLTAN_MALLOC_LID(zz);
-    vertices = (int *) ZOLTAN_MALLOC(MAXVERT*sizeof(int));
-    if (slocal_gids == NULL || (num_lid_entries > 0 && slocal_lids == NULL) || 
-        plocal_gids == NULL || (num_lid_entries > 0 && plocal_lids == NULL) || 
+    vertices = ZOLTAN_MALLOC_GID_ARRAY(zz,MAXVERT);
+    if (slocal_gids == NULL || (nlid_ent > 0 && slocal_lids == NULL) || 
+        plocal_gids == NULL || (nlid_ent > 0 && plocal_lids == NULL) || 
         vertices == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_FREE(&slocal_gids);
@@ -2183,10 +2273,10 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
     }
 
     found = zz->Get_First_Coarse_Obj(zz->Get_First_Coarse_Obj_Data,
-                                     num_gid_entries, num_lid_entries,
+                                     ngid_ent, nlid_ent,
                                      slocal_gids, slocal_lids, &sassigned,
                                      &snum_vert, vertices, &in_order,
-                                     &sin_vertex, &sout_vertex, &ierr);
+                                     sin_vertex, sout_vertex, &ierr);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                      "Error returned from user function Get_First_Coarse_Obj.");
@@ -2207,18 +2297,21 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
    because coarse grid objects are allocated with MAXVERT */
         tree_node->num_vertex = snum_vert;
         for (j=0; j<snum_vert; j++)
-          tree_node->vertices[j] = vertices[j];
+          ZOLTAN_SET_GID(zz,&(tree_node->vertices[j*ngid_ent]),
+                            &vertices[j*ngid_ent]);
   
         tree_node->assigned_to_me = sassigned;
 /* TEMP if not provided in_order, then in/out are not returned and must be
         determined */
-        if (tree_node->in_vertex == 0) tree_node->in_vertex = sin_vertex;
-        if (tree_node->out_vertex == 0) tree_node->out_vertex = sout_vertex;
+        if (ZOLTAN_EQ_GID(zz,tree_node->in_vertex,zero_gid))
+          ZOLTAN_SET_GID(zz,tree_node->in_vertex,sin_vertex);
+        if (ZOLTAN_EQ_GID(zz,tree_node->out_vertex,zero_gid))
+          ZOLTAN_SET_GID(zz,tree_node->out_vertex,sout_vertex);
         if (zz->Obj_Weight_Dim == 0)    /* KAREN */
           tree_node->weight[0] = 0.0;
         else
           zz->Get_Child_Weight(zz->Get_Child_Weight_Data, 
-                             num_gid_entries, num_lid_entries,
+                             ngid_ent, nlid_ent,
                              slocal_gids, slocal_lids, zz->Obj_Weight_Dim,
                              tree_node->weight, &ierr);
       }
@@ -2226,11 +2319,11 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
       ZOLTAN_SET_GID(zz, plocal_gids, slocal_gids);
       ZOLTAN_SET_LID(zz, plocal_lids, slocal_lids);
       found = zz->Get_Next_Coarse_Obj(zz->Get_Next_Coarse_Obj_Data,
-                                      num_gid_entries, num_lid_entries,
+                                      ngid_ent, nlid_ent,
                                       plocal_gids, plocal_lids,
                                       slocal_gids, slocal_lids, &sassigned,
                                       &snum_vert, vertices,
-                                      &sin_vertex, &sout_vertex, &ierr);
+                                      sin_vertex, sout_vertex, &ierr);
     }
     ZOLTAN_FREE(&slocal_gids);
     ZOLTAN_FREE(&slocal_lids);
@@ -2263,10 +2356,15 @@ void Zoltan_Reftree_Print(ZZ *zz, ZOLTAN_REFTREE *subroot, int level)
   printf("[%d]   first summed weight %f\n",me,subroot->summed_weight[0]);
   printf("[%d]   first my_sum weight %f\n",me,subroot->my_sum_weight[0]);
   printf("[%d]   number of vertices %d\n",me,subroot->num_vertex);
-  printf("[%d]   vertices ",me);
-  for (i=0; i<subroot->num_vertex; i++) printf("%d ",subroot->vertices[i]);
-  printf("\n");
-  printf("[%d]   in and out vertices %d %d\n",me,subroot->in_vertex,subroot->out_vertex);
+  printf("[%d]   vertices\n",me);
+  for (i=0; i<subroot->num_vertex; i++) {
+    printf("[%d]       ",me);
+    ZOLTAN_PRINT_GID(zz,&subroot->vertices[i*zz->Num_GID]);
+  }
+  printf("[%d]   in vertex ",me);
+  ZOLTAN_PRINT_GID(zz,subroot->in_vertex);
+  printf("[%d]   out vertex ",me);
+  ZOLTAN_PRINT_GID(zz,subroot->out_vertex);
   printf("[%d]   assigned_to_me %d\n",me,subroot->assigned_to_me);
   printf("[%d]   partition %d\n",me,subroot->partition);
   printf("[%d]   number of children %d \n",me,subroot->num_child);
