@@ -2,7 +2,7 @@
 # @HEADER
 
 
-# ------------------------------------------------------------------------
+# -----------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
 # second is the list of headers to be installed, i.e., any header that
 # might someday be needed by some other code outside Amesos. The first is
@@ -166,6 +166,11 @@ COMP_H = \
 COMP = \
 	$(srcdir)/CrsMatrixTranspose.cpp
 
+FACTORY_H = \
+	$(srcdir)/Amesos_Factory.h
+FACTORY = \
+	$(srcdir)/Amesos_Factory.cpp
+
 #
 #  I turned off the addition of external/slu to the include path 
 #  so that I could get SLU dist to work.  Ken Feb 11, 2003
@@ -186,7 +191,8 @@ else
 KUNDERT_CPPFLAGS = 
 endif
 
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src  -I$(top_srcdir)/../amd/src \
+		-I$(top_builddir)/../epetra/src \
 	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
 
 # ------------------------------------------------------------------------
@@ -202,6 +208,7 @@ AMESOS_H = \
 	$(UMFPACK_H) \
 	$(KLU_H) \
 	$(MUMPS_H) \
+	$(FACTORY_H) \
 	$(SUPERLUDIST_H) \
 	$(SLUDIST_H) \
 	$(SLUDIST2_H) \
@@ -215,6 +222,7 @@ libamesos_a_SOURCES = \
 	$(KLU) \
 	$(UMFPACK) \
 	$(MUMPS) \
+	$(FACTORY) \
 	$(SUPERLUDIST) \
 	$(SLUDIST) \
 	$(SLUDIST2) \

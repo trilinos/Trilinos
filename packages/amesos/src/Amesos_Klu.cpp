@@ -22,11 +22,6 @@
    * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
 #include "Amesos_Klu.h"
-#if 0
-extern "C" {
-#include "klu_dump.h"
-}
-#endif
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
@@ -34,16 +29,40 @@ extern "C" {
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
 #include "CrsMatrixTranspose.h"
+extern "C" {
+  // #include "amd.h"
+#include "klu_btf.h"
+#if 0
+#include "klu_dump.h"
+#endif
+}
+
+class Amesos_Klu_Pimpl {
+public:
+   klu_symbolic *Symbolic_ ;
+   klu_numeric *Numeric_ ;
+
+  Amesos_Klu_Pimpl::Amesos_Klu_Pimpl():
+    Symbolic_(0),
+    Numeric_(0)
+  {}
+  
+  Amesos_Klu_Pimpl::~Amesos_Klu_Pimpl(void){
+    if ( Symbolic_ ) klu_btf_free_symbolic (&Symbolic_) ;
+    if ( Numeric_ ) klu_btf_free_numeric (&Numeric_) ;
+  }
+
+} ;
+
 
   //=============================================================================
   Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob, 
 				 const AMESOS::Parameter::List &ParameterList ) :  
+    PrivateKluData_( new Amesos_Klu_Pimpl() ),
     SerialCrsMatrixA_(0), 
     SerialMap_(0), 
     SerialMatrix_(0), 
     TransposeMatrix_(0),
-    Symbolic_(0),
-    Numeric_(0),
     Matrix_(0) {
 
 
@@ -57,8 +76,7 @@ Amesos_Klu::~Amesos_Klu(void) {
   if ( SerialMap_ ) delete SerialMap_ ; 
   if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
   if ( TransposeMatrix_ ) delete TransposeMatrix_ ; 
-  if ( Symbolic_ ) klu_btf_free_symbolic (&Symbolic_) ;
-  if ( Numeric_ ) klu_btf_free_numeric (&Numeric_) ;
+  delete PrivateKluData_; 
 }
 
 int Amesos_Klu::ConvertToSerial() { 
@@ -160,8 +178,8 @@ int Amesos_Klu::ConvertToKluCRS(){
 int Amesos_Klu::PerformSymbolicFactorization() {
 
   if ( iam == 0 ) { 
-    Symbolic_ = klu_btf_analyze (NumGlobalElements_, &Ap[0], &Ai[0] ) ;
-    if ( Symbolic_ == 0 ) EPETRA_CHK_ERR( 1 ) ; 
+    PrivateKluData_->Symbolic_ = klu_btf_analyze (NumGlobalElements_, &Ap[0], &Ai[0] ) ;
+    if ( PrivateKluData_->Symbolic_ == 0 ) EPETRA_CHK_ERR( 1 ) ; 
   }
   return 0;
 }
@@ -172,8 +190,8 @@ int Amesos_Klu::PerformNumericFactorization( ) {
 
     const double tol = 0.001; //  At some point we need to expose this to the user 
 
-    Numeric_ = klu_btf_factor (&Ap[0], &Ai[0], &Aval[0], tol, Symbolic_) ;
-    if ( Numeric_ == 0 ) EPETRA_CHK_ERR( 2 ) ; 
+    PrivateKluData_->Numeric_ = klu_btf_factor (&Ap[0], &Ai[0], &Aval[0], tol, PrivateKluData_->Symbolic_) ;
+    if ( PrivateKluData_->Numeric_ == 0 ) EPETRA_CHK_ERR( 2 ) ; 
     
   }
   
@@ -279,7 +297,7 @@ int Amesos_Klu::Solve() {
 
       int status = 0 ; 
       vector<double> workspace( NumGlobalElements_ ) ; 
-      klu_btf_solve( Symbolic_, Numeric_,  
+      klu_btf_solve( PrivateKluData_->Symbolic_, PrivateKluData_->Numeric_,
 		     &SerialXvalues[j*SerialXlda], &workspace[0] );
     }
   }

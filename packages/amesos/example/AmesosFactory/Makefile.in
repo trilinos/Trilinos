@@ -100,7 +100,7 @@ noinst_PROGRAMS = $(EXAMPLE)
 #Specify locations of include files within Trilinos, but outside amesos
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 
-example_SOURCES = $(srcdir)/CallAmesosDscpack.cpp \
+example_SOURCES = $(srcdir)/CallAmesosFactory.cpp \
 	$(srcdir)/CreateTridi.cpp $(srcdir)/CreateTridi.h
 
 
@@ -120,14 +120,14 @@ example_LDADD = $(top_builddir)/src/libamesos.a \
         $(LAPACK_LIBS) \
 	$(BLAS_LIBS) $(FLIBS) 
 
-subdir = example/AmesosDscpack
+subdir = example/AmesosFactory
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
 CONFIG_CLEAN_FILES =
 noinst_PROGRAMS = example$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
-am_example_OBJECTS = example-CallAmesosDscpack.$(OBJEXT) \
+am_example_OBJECTS = example-CallAmesosFactory.$(OBJEXT) \
 	example-CreateTridi.$(OBJEXT)
 example_OBJECTS = $(am_example_OBJECTS)
 example_LDFLAGS =
@@ -139,7 +139,7 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/example-CallAmesosDscpack.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/example-CallAmesosFactory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-CreateTridi.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -162,13 +162,13 @@ all: all-am
 .SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/AmesosDscpack/Makefile
+	  $(AUTOMAKE) --foreign  example/AmesosFactory/Makefile
 Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-example-CallAmesosDscpack.$(OBJEXT): $(srcdir)/CallAmesosDscpack.cpp
+example-CallAmesosFactory.$(OBJEXT): $(srcdir)/CallAmesosFactory.cpp
 example-CreateTridi.$(OBJEXT): $(srcdir)/CreateTridi.cpp
 example$(EXEEXT): $(example_OBJECTS) $(example_DEPENDENCIES) 
 	@rm -f example$(EXEEXT)
@@ -180,7 +180,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-CallAmesosDscpack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-CallAmesosFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-CreateTridi.Po@am__quote@
 
 distclean-depend:
@@ -198,17 +198,17 @@ distclean-depend:
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
 
-example-CallAmesosDscpack.o: $(srcdir)/CallAmesosDscpack.cpp
-@AMDEP_TRUE@	source='$(srcdir)/CallAmesosDscpack.cpp' object='example-CallAmesosDscpack.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/example-CallAmesosDscpack.Po' tmpdepfile='$(DEPDIR)/example-CallAmesosDscpack.TPo' @AMDEPBACKSLASH@
+example-CallAmesosFactory.o: $(srcdir)/CallAmesosFactory.cpp
+@AMDEP_TRUE@	source='$(srcdir)/CallAmesosFactory.cpp' object='example-CallAmesosFactory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-CallAmesosFactory.Po' tmpdepfile='$(DEPDIR)/example-CallAmesosFactory.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-CallAmesosDscpack.o `test -f '$(srcdir)/CallAmesosDscpack.cpp' || echo '$(srcdir)/'`$(srcdir)/CallAmesosDscpack.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-CallAmesosFactory.o `test -f '$(srcdir)/CallAmesosFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/CallAmesosFactory.cpp
 
-example-CallAmesosDscpack.obj: $(srcdir)/CallAmesosDscpack.cpp
-@AMDEP_TRUE@	source='$(srcdir)/CallAmesosDscpack.cpp' object='example-CallAmesosDscpack.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/example-CallAmesosDscpack.Po' tmpdepfile='$(DEPDIR)/example-CallAmesosDscpack.TPo' @AMDEPBACKSLASH@
+example-CallAmesosFactory.obj: $(srcdir)/CallAmesosFactory.cpp
+@AMDEP_TRUE@	source='$(srcdir)/CallAmesosFactory.cpp' object='example-CallAmesosFactory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-CallAmesosFactory.Po' tmpdepfile='$(DEPDIR)/example-CallAmesosFactory.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-CallAmesosDscpack.obj `cygpath -w $(srcdir)/CallAmesosDscpack.cpp`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-CallAmesosFactory.obj `cygpath -w $(srcdir)/CallAmesosFactory.cpp`
 
 example-CreateTridi.o: $(srcdir)/CreateTridi.cpp
 @AMDEP_TRUE@	source='$(srcdir)/CreateTridi.cpp' object='example-CreateTridi.o' libtool=no @AMDEPBACKSLASH@

@@ -33,6 +33,9 @@ At present, either USE_LOCAL or USE_STL_SORT is required
    * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
 #include "Amesos_Umfpack.h"
+extern "C" {
+#include "umfpack.h"
+}
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
@@ -91,11 +94,15 @@ int Amesos_Umfpack::ConvertToSerial() {
   int NumMyElements_ = 0 ;
   if (iam==0) NumMyElements_ = NumGlobalElements_;
 
+  cout << "iam = " << iam << "Amesos_Umfpack.cpp::97  OriginalMap.NumMyElements()" << 
+    OriginalMap.NumMyElements() << endl ;
+
 
   IsLocal_ = ( OriginalMap.NumMyElements() == 
 	       OriginalMap.NumGlobalElements() )?1:0;
   Comm().Broadcast( &IsLocal_, 1, 0 ) ; 
 
+  cout << "iam = " << iam << "Amesos_Umfpack.cpp::97  IsLocal = " << IsLocal_ << endl ; 
   //
   //  Convert Original Matrix to Serial (if it is not already) 
   //
@@ -132,6 +139,7 @@ int Amesos_Umfpack::ConvertToUmfpackCRS(){
   Aval.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
 
   if ( iam==0 ) {
+  cout << endl ; 
     int NumEntriesThisRow;
     double *RowValues;
     int *ColIndices;
@@ -143,11 +151,14 @@ int Amesos_Umfpack::ConvertToUmfpackCRS(){
       for ( int j = 0; j < NumEntriesThisRow; j++ ) { 
 	Ai[Ai_index] = ColIndices[j] ; 
 	Aval[Ai_index] = RowValues[j] ; 
+	cout << "Inside UMFPACK " << MyRow  << " " << Ai[Ai_index] << " " <<
+	  Aval[Ai_index] << " based on Ai_index = " << Ai_index <<  endl ; 
 	Ai_index++;
       }
     }
     Ap[MyRow] = Ai_index ; 
   }
+  cout << endl ; 
 
   
   return 0;
@@ -235,6 +246,8 @@ int Amesos_Umfpack::Solve() {
     assert( ! NumericFactorizationOK_ );  // Can't redo Symbolic Phase and not the Numeric
   }
 
+  
+
   if ( ! NumericFactorizationOK_ ) PerformNumericFactorization( );
 
   Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
@@ -315,6 +328,8 @@ int Amesos_Umfpack::Solve() {
 				     &SerialBvalues[j*SerialBlda], 
 				     Numeric, Control, Info) ;
 
+
+      //      assert( nrhs == 1 ) ; 
 #if 0
       for ( int k=0; k < nrhs ; k++ ) {
 	for ( int i =0; i < NumGlobalElements_ ; i++ ) {

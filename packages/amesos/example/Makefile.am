@@ -1,5 +1,6 @@
 #@HEADER
 #@HEADER
 
-SUBDIRS = AmesosDscpack
+SUBDIRS = AmesosDscpack AmesosFactory
+
 

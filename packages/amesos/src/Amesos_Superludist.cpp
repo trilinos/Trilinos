@@ -81,6 +81,7 @@ Amesos_Superludist::~Amesos_Superludist(void) {
     superlu_gridexit(&grid_);
   }
   if (UniformMap_ ) delete UniformMap_ ; 
+
 }
 
 

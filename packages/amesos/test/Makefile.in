@@ -112,13 +112,14 @@ noinst_PROGRAMS = amesos_test AmesosShellScript AmesosDscpack AmesosDscpackShort
 	AmesosUmfpack AmesosUmfpackShort AmesosUmfpackSerial AmesosMumps \
 	AmesosKlu AmesosKluShort AmesosKluSerial \
 	AmesosSuperludist AmesosSuperludistShort AmesosSuperludistSerial \
-	A_Superludist  B_Superludist  C_Superludist 
+	A_Superludist  B_Superludist  C_Superludist Timings DscpackTiming 
 
 
 AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
 A_Superludist_SOURCES = $(srcdir)/A_Superludist
 B_Superludist_SOURCES = $(srcdir)/B_Superludist
 C_Superludist_SOURCES = $(srcdir)/C_Superludist
+Timings_SOURCES = $(srcdir)/Timings
 AmesosDscpack_SOURCES = $(srcdir)/AmesosDscpack
 AmesosDscpackShort_SOURCES = $(srcdir)/AmesosDscpackShort
 AmesosMumps_SOURCES = $(srcdir)/AmesosMumps
@@ -153,13 +154,15 @@ amesos_test_SOURCES = $(srcdir)/Amesos_TestDriver.cpp  $(srcdir)/Amesos_TestSolv
 
 
 #Specify locations of include files within Trilinos, but outside amesos
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src  -I$(top_srcdir)/../amd/src \
+	-I$(top_builddir)/../epetra/src \
 	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src 
 
 
 amesos_test_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libamesos.a \
+	$(top_builddir)/../amd/src/libamd.a \
 	$(top_builddir)/../triutils/src/libtriutils.a 
 
 
@@ -169,6 +172,7 @@ amesos_test_LDADD = $(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(AMESOS_LIBS) $(LAPACK_LIBS) \
+	$(top_builddir)/../amd/src/libamd.a \
 	$(BLAS_LIBS) $(FLIBS) 
 
 
@@ -196,7 +200,8 @@ noinst_PROGRAMS = amesos_test$(EXEEXT) AmesosShellScript$(EXEEXT) \
 	AmesosKluSerial$(EXEEXT) AmesosSuperludist$(EXEEXT) \
 	AmesosSuperludistShort$(EXEEXT) \
 	AmesosSuperludistSerial$(EXEEXT) A_Superludist$(EXEEXT) \
-	B_Superludist$(EXEEXT) C_Superludist$(EXEEXT)
+	B_Superludist$(EXEEXT) C_Superludist$(EXEEXT) Timings$(EXEEXT) \
+	DscpackTiming$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 am_A_Superludist_OBJECTS =
@@ -309,6 +314,11 @@ C_Superludist_OBJECTS = $(am_C_Superludist_OBJECTS)
 C_Superludist_LDADD = $(LDADD)
 C_Superludist_DEPENDENCIES =
 C_Superludist_LDFLAGS =
+DscpackTiming_SOURCES = DscpackTiming.c
+DscpackTiming_OBJECTS = DscpackTiming.$(OBJEXT)
+DscpackTiming_LDADD = $(LDADD)
+DscpackTiming_DEPENDENCIES =
+DscpackTiming_LDFLAGS =
 am_SpoolesJanusScript_OBJECTS =
 SpoolesJanusScript_OBJECTS = $(am_SpoolesJanusScript_OBJECTS)
 SpoolesJanusScript_LDADD = $(LDADD)
@@ -319,6 +329,11 @@ SpoolesScript_OBJECTS = $(am_SpoolesScript_OBJECTS)
 SpoolesScript_LDADD = $(LDADD)
 SpoolesScript_DEPENDENCIES =
 SpoolesScript_LDFLAGS =
+am_Timings_OBJECTS =
+Timings_OBJECTS = $(am_Timings_OBJECTS)
+Timings_LDADD = $(LDADD)
+Timings_DEPENDENCIES =
+Timings_LDFLAGS =
 am__objects_1 = amesos_test-SparseDirectTimingVars.$(OBJEXT) \
 	amesos_test-SparseSolverResult.$(OBJEXT) \
 	amesos_test-Comm_assert_equal.$(OBJEXT) \
@@ -340,7 +355,8 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/amesos_test-Amesos_TestDriver.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/DscpackTiming.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestDriver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Amesos_TestSolver.Po \
@@ -351,17 +367,17 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Trilinos_Util_CountTriples.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amesos_test-Trilinos_Util_ReadTriples2Epetra.Po
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+CFLAGS = @CFLAGS@
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
-CFLAGS = @CFLAGS@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(A_Superludist_SOURCES) $(AmesosDistScript_SOURCES) \
 	$(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) \
 	$(AmesosJanusScript_SOURCES) $(AmesosKlu_SOURCES) \
@@ -373,7 +389,8 @@ DIST_SOURCES = $(A_Superludist_SOURCES) $(AmesosDistScript_SOURCES) \
 	$(AmesosSuperludistShort_SOURCES) $(AmesosUmfpack_SOURCES) \
 	$(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) \
 	$(B_Superludist_SOURCES) $(C_Superludist_SOURCES) \
-	$(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) \
+	DscpackTiming.c $(SpoolesJanusScript_SOURCES) \
+	$(SpoolesScript_SOURCES) $(Timings_SOURCES) \
 	$(amesos_test_SOURCES)
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
@@ -382,12 +399,12 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = README Makefile.am Makefile.in
 DIST_SUBDIRS = $(SUBDIRS)
-SOURCES = $(A_Superludist_SOURCES) $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) $(AmesosJanusScript_SOURCES) $(AmesosKlu_SOURCES) $(AmesosKluSerial_SOURCES) $(AmesosKluShort_SOURCES) $(AmesosMumps_SOURCES) $(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) $(AmesosSuperludist_SOURCES) $(AmesosSuperludistSerial_SOURCES) $(AmesosSuperludistShort_SOURCES) $(AmesosUmfpack_SOURCES) $(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) $(B_Superludist_SOURCES) $(C_Superludist_SOURCES) $(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) $(amesos_test_SOURCES)
+SOURCES = $(A_Superludist_SOURCES) $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) $(AmesosJanusScript_SOURCES) $(AmesosKlu_SOURCES) $(AmesosKluSerial_SOURCES) $(AmesosKluShort_SOURCES) $(AmesosMumps_SOURCES) $(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) $(AmesosSuperludist_SOURCES) $(AmesosSuperludistSerial_SOURCES) $(AmesosSuperludistShort_SOURCES) $(AmesosUmfpack_SOURCES) $(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) $(B_Superludist_SOURCES) $(C_Superludist_SOURCES) DscpackTiming.c $(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) $(Timings_SOURCES) $(amesos_test_SOURCES)
 
 all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .c .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --foreign  test/Makefile
@@ -425,6 +442,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DscpackTiming.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestDriver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestMrhsSolver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amesos_test-Amesos_TestMultiSolver.Po@am__quote@
@@ -439,6 +457,19 @@ distclean-compile:
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
+
+.c.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c `test -f '$<' || echo '$(srcdir)/'`$<
+
+.c.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(COMPILE) -c `cygpath -w $<`
+CCDEPMODE = @CCDEPMODE@
 
 .cpp.o:
 @AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
@@ -817,6 +848,12 @@ B_Superludist$(EXEEXT): $(srcdir)/B_Superludist
 
 C_Superludist$(EXEEXT): $(srcdir)/C_Superludist
 	cp  $(srcdir)/C_Superludist  C_Superludist$(EXEEXT)
+
+Timings$(EXEEXT): $(srcdir)/Timings
+	cp  $(srcdir)/Timings  Timings$(EXEEXT)
+
+DscpackTiming$(EXEEXT): $(srcdir)/DscpackTiming
+	cp  $(srcdir)/DscpackTiming  DscpackTiming$(EXEEXT)
 
 AmesosDscpack$(EXEEXT): $(srcdir)/AmesosDscpack
 	cp  $(srcdir)/AmesosDscpack  AmesosDscpack$(EXEEXT)

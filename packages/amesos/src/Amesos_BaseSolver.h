@@ -26,6 +26,7 @@
 #define _AMESOS_BASESOLVER_H_
 
 #include "Amesos_Parameter_List.h"
+#include "Epetra_LinearProblem.h"
 class Epetra_LinearProblem;
 class Epetra_MultiVector;
 class Epetra_Map;

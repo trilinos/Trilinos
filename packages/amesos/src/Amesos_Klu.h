@@ -35,10 +35,6 @@
 #endif
 #include "Epetra_CrsGraph.h"
 
-extern "C" {
-  // #include "amd.h"
-#include "klu_btf.h"
-}
 
 //! Amesos_Klu:  An object-oriented wrapper for Klu.
 /*!  Amesos_Klu will solve a linear systems of equations: <TT>A X = B</TT>
@@ -79,6 +75,13 @@ available, which does not do any partial pivoting at all.
   solver.
     
 */
+
+// Amesos_Klu_Pimpl contains a pointer to two sructures defined in 
+// klu.h:  klu_symbolic and klu_numeric.  This prevents Amesos_Klu.h 
+// from having to include klu.h.
+//
+class Amesos_Klu_Pimpl ; 
+
 class Amesos_Klu: public Amesos_BaseSolver { 
 
 public: 
@@ -265,9 +268,7 @@ public:
 
     int *Lp, *Li, *Up, *Ui, *P ;	
     double *Lx, *Ux ;
-    klu_symbolic *Symbolic_ ;
-    klu_numeric *Numeric_ ;
-
+    Amesos_Klu_Pimpl *PrivateKluData_; 
     
 
   //

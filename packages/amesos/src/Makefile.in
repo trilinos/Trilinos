@@ -17,7 +17,7 @@
 # @HEADER
 # @HEADER
 
-# ------------------------------------------------------------------------
+# -----------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
 # second is the list of headers to be installed, i.e., any header that
 # might someday be needed by some other code outside Amesos. The first is
@@ -244,6 +244,13 @@ COMP = \
 	$(srcdir)/CrsMatrixTranspose.cpp
 
 
+FACTORY_H = \
+	$(srcdir)/Amesos_Factory.h
+
+FACTORY = \
+	$(srcdir)/Amesos_Factory.cpp
+
+
 
 #
 #  I turned off the addition of external/slu to the include path 
@@ -261,7 +268,8 @@ COMP = \
 @HAVE_AMESOS_KUNDERT_TRUE@KUNDERT_CPPFLAGS = -I$(top_srcdir)/src/ksparse
 @HAVE_AMESOS_KUNDERT_FALSE@KUNDERT_CPPFLAGS = 
 
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src  -I$(top_srcdir)/../amd/src \
+		-I$(top_builddir)/../epetra/src \
 	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
 
 
@@ -277,6 +285,7 @@ AMESOS_H = \
 	$(UMFPACK_H) \
 	$(KLU_H) \
 	$(MUMPS_H) \
+	$(FACTORY_H) \
 	$(SUPERLUDIST_H) \
 	$(SLUDIST_H) \
 	$(SLUDIST2_H) \
@@ -291,6 +300,7 @@ libamesos_a_SOURCES = \
 	$(KLU) \
 	$(UMFPACK) \
 	$(MUMPS) \
+	$(FACTORY) \
 	$(SUPERLUDIST) \
 	$(SLUDIST) \
 	$(SLUDIST2) \
@@ -387,28 +397,30 @@ libamesos_a_DEPENDENCIES =
 @HAVE_AMESOS_UMFPACK_FALSE@am__objects_4 =
 @HAVE_AMESOS_MUMPS_TRUE@am__objects_5 = Amesos_Mumps.$(OBJEXT)
 @HAVE_AMESOS_MUMPS_FALSE@am__objects_5 =
-@HAVE_AMESOS_SUPERLUDIST_TRUE@am__objects_6 = \
+am__objects_6 = Amesos_Factory.$(OBJEXT)
+@HAVE_AMESOS_SUPERLUDIST_TRUE@am__objects_7 = \
 @HAVE_AMESOS_SUPERLUDIST_TRUE@	Amesos_Superludist.$(OBJEXT)
-@HAVE_AMESOS_SUPERLUDIST_FALSE@am__objects_6 =
-@HAVE_AMESOS_SLUD_TRUE@am__objects_7 = SuperludistOO.$(OBJEXT)
-@HAVE_AMESOS_SLUD_FALSE@am__objects_7 =
-@HAVE_AMESOS_SLUD2_TRUE@am__objects_8 = Superludist2_OO.$(OBJEXT)
-@HAVE_AMESOS_SLUD2_FALSE@am__objects_8 =
-@HAVE_AMESOS_SLUS_TRUE@am__objects_9 = Epetra_SLU.$(OBJEXT)
-@HAVE_AMESOS_SLUS_FALSE@am__objects_9 =
-@HAVE_AMESOS_KUNDERT_TRUE@am__objects_10 = \
+@HAVE_AMESOS_SUPERLUDIST_FALSE@am__objects_7 =
+@HAVE_AMESOS_SLUD_TRUE@am__objects_8 = SuperludistOO.$(OBJEXT)
+@HAVE_AMESOS_SLUD_FALSE@am__objects_8 =
+@HAVE_AMESOS_SLUD2_TRUE@am__objects_9 = Superludist2_OO.$(OBJEXT)
+@HAVE_AMESOS_SLUD2_FALSE@am__objects_9 =
+@HAVE_AMESOS_SLUS_TRUE@am__objects_10 = Epetra_SLU.$(OBJEXT)
+@HAVE_AMESOS_SLUS_FALSE@am__objects_10 =
+@HAVE_AMESOS_KUNDERT_TRUE@am__objects_11 = \
 @HAVE_AMESOS_KUNDERT_TRUE@	Epetra_CrsKundertSparse.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	alloc.$(OBJEXT) smplinkrows.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spbuild.$(OBJEXT) spoutput.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spsolve.$(OBJEXT) driver.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spalloc.$(OBJEXT) spfactor.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spsmp.$(OBJEXT) sputils.$(OBJEXT)
-@HAVE_AMESOS_KUNDERT_FALSE@am__objects_10 =
-am__objects_11 = CrsMatrixTranspose.$(OBJEXT)
+@HAVE_AMESOS_KUNDERT_FALSE@am__objects_11 =
+am__objects_12 = CrsMatrixTranspose.$(OBJEXT)
 am_libamesos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
-	$(am__objects_9) $(am__objects_10) $(am__objects_11)
+	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
+	$(am__objects_12)
 libamesos_a_OBJECTS = $(am_libamesos_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -419,6 +431,7 @@ LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Amesos_Dscpack.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Amesos_Factory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Klu.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Mumps.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Parameter_Entry.Po \
@@ -550,6 +563,7 @@ klu_kernel.$(OBJEXT): $(srcdir)/klu_kernel.c
 klu_noprune_kernel.$(OBJEXT): $(srcdir)/klu_noprune_kernel.c
 Amesos_Umfpack.$(OBJEXT): $(srcdir)/Amesos_Umfpack.cpp
 Amesos_Mumps.$(OBJEXT): $(srcdir)/Amesos_Mumps.cpp
+Amesos_Factory.$(OBJEXT): $(srcdir)/Amesos_Factory.cpp
 Amesos_Superludist.$(OBJEXT): $(srcdir)/Amesos_Superludist.cpp
 SuperludistOO.$(OBJEXT): $(srcdir)/SuperludistOO.cpp
 Superludist2_OO.$(OBJEXT): $(srcdir)/Superludist2_OO.cpp
@@ -578,6 +592,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Dscpack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Factory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Klu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Mumps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Parameter_Entry.Po@am__quote@
@@ -988,6 +1003,18 @@ Amesos_Mumps.obj: $(srcdir)/Amesos_Mumps.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Amesos_Mumps.Po' tmpdepfile='$(DEPDIR)/Amesos_Mumps.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Mumps.obj `cygpath -w $(srcdir)/Amesos_Mumps.cpp`
+
+Amesos_Factory.o: $(srcdir)/Amesos_Factory.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_Factory.cpp' object='Amesos_Factory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Amesos_Factory.Po' tmpdepfile='$(DEPDIR)/Amesos_Factory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Factory.o `test -f '$(srcdir)/Amesos_Factory.cpp' || echo '$(srcdir)/'`$(srcdir)/Amesos_Factory.cpp
+
+Amesos_Factory.obj: $(srcdir)/Amesos_Factory.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Amesos_Factory.cpp' object='Amesos_Factory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Amesos_Factory.Po' tmpdepfile='$(DEPDIR)/Amesos_Factory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Factory.obj `cygpath -w $(srcdir)/Amesos_Factory.cpp`
 
 Amesos_Superludist.o: $(srcdir)/Amesos_Superludist.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Amesos_Superludist.cpp' object='Amesos_Superludist.o' libtool=no @AMDEPBACKSLASH@

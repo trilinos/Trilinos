@@ -8,7 +8,7 @@ noinst_PROGRAMS = $(EXAMPLE)
 #Specify locations of include files within Trilinos, but outside amesos
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 
-example_SOURCES = $(srcdir)/CallAmesosDscpack.cpp \
+example_SOURCES = $(srcdir)/CallAmesosFactory.cpp \
 	$(srcdir)/CreateTridi.cpp $(srcdir)/CreateTridi.h
 
 example_DEPENDENCIES = \

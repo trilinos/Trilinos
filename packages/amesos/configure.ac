@@ -267,7 +267,7 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, umfpack, [Enable Amesos interface support fo
 		AMESOS_UMFPACK, no)
 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, klu, [Enable Amesos interface support for KLU], 
-		AMESOS_KLU, no)
+		AMESOS_KLU, yes)
 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, mumps, [Enable Amesos interface support for MUMPS], 
 		AMESOS_MUMPS, no)
@@ -586,11 +586,12 @@ fi
 #  --enable-amesos-klu
 #
 if test "X$ac_cv_use_amesos_klu" != "Xno"; then
-  if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
+  if test "X$ac_cv_use_amd" != "Xno"; then
     AM_CONDITIONAL(HAVE_AMESOS_KLU, true ) 
     AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
+#   amesos_libs="${amesos_libs} $(top_builddir)/../amd/src/libamd.a"
   else 
-    AC_MSG_ERROR([Cannot enable klu without enabling umfpack.])
+    AC_MSG_ERROR([Cannot enable klu without enabling amd.])
   fi 
 else
   AM_CONDITIONAL(HAVE_AMESOS_KLU, false ) 
@@ -875,6 +876,7 @@ AC_CONFIG_FILES([
 		test/Makefile
 		example/Makefile
 		example/AmesosDscpack/Makefile
+		example/AmesosFactory/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/mpi/Makefile

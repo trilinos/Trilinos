@@ -35,9 +35,14 @@
 #endif
 #include "Epetra_CrsGraph.h"
 
+#if 0
+
+   This clearly does not belong here 
+
 extern "C" {
 #include "umfpack.h"
 }
+#endif
 
 //! Amesos_Umfpack:  An object-oriented wrapper for Umfpack.
 /*!  Amesos_Umfpack will solve a linear systems of equations: <TT>A X = B</TT>
