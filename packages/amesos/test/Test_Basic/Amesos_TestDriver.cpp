@@ -367,8 +367,8 @@ int main(int argc, char **argv)
 	char *hostname = uname_buf.nodename ; 
 	char *releasenum = uname_buf.release;
 #else
-	char *hostname = "";
-	char *releasenum = "";
+	char *hostname = (char *)  "";
+	char *releasenum = (char *) "";
 #endif
 	
 

@@ -191,7 +191,7 @@ int sub_main( bool verbose, Epetra_Comm &Comm ) {
   if (Factory.Query("Amesos_Dscpack")) {
     
     Teuchos::ParameterList AmesosList;
-    TestAmesos(verbose, "Amesos_Dscpack", AmesosList, false, SymA, SymLHS, SymRHS,
+    TestAmesos(verbose, (char *) "Amesos_Dscpack", AmesosList, false, SymA, SymLHS, SymRHS,
 	       TotalErrorResidual, TotalErrorExactSol );
   } else
     if (verbose && Comm.MyPID() == 0) {

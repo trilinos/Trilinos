@@ -473,12 +473,12 @@ int NextMain( int argc, char *argv[] ) {
       //  in TestQuietAmesos
       //
       if ( ! small && ! quiet ) {
-	result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-	result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/662_bus_out.rsa", Comm, verbose, symmetric, 1e-6 , numtests ) ;
-	result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/SuperLU.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+	result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/bcsstk04.mtx", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+	result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/662_bus_out.rsa", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+	result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/SuperLU.rua", Comm, verbose, symmetric, 1e-6 , numtests ) ;
       }
 
-      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/SuperLU.triU", Comm, verbose, symmetric, 1e-6 , numtests ) ;
+      result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/SuperLU.triU", Comm, verbose, symmetric, 1e-6 , numtests ) ;
 
   if ( verbose) cout << result << " Tests failed " ; 
 
