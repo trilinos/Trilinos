@@ -36,7 +36,7 @@ extern "C" {
 #define SKIPEQ   " = "                /* eat up white space and req'd = sign */
 #define BIGSKIP  "%*[={()},\t ]"    /* eat up list starts, stops, white space */
 #define NEXTARG  "%*[,\t ]%[^=\t ]"  /* argument w/o comma, whitespace */
-#define LASTARG  SKIPEQ "%[^,\t\n ]" /* last arg w/o comma, whitespace */
+#define LASTARG  SKIPEQ "%[^,=\t\n ]" /* last arg w/o comma, whitespace */
 #define NEXTLIST BIGSKIP "%[^,)}=\t\n ]"
   
 
