@@ -14,14 +14,13 @@ example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
 
-example_CXXFLAGS = -DEPETRA_$(TRILINOS_COMM) \
-	-I$(TRILINOS_HOME)/packages/epetra/src \
+example_CXXFLAGS = @TRILINOS_CXXFLAGS@ \
 	-I$(top_srcdir)/src
 
 example_LDADD = \
 	-L$(top_builddir)/src \
 	-lnox -lnoxepetra \
-	-L$(TRILINOS_HOME)/lib/$(TRILINOS_TARGET) \
+	@TRILINOS_LDADD@ \
 	-lepetra -laztecoo -lifpack \
 	-L/usr/lib -L/usr/lib/local \
 	-llapack -lspblas -lblas -ly12m -lg2c -lm
