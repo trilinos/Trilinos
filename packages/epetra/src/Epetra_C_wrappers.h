@@ -152,52 +152,52 @@ extern "C" {
 
 #ifdef SKIP4NOW
   /*****************************************************/
-  /**              petra_dvbr_matrix             **/
-  /***************************************************/
+  /**              epetra_vbr_matrix                  **/
+  /*****************************************************/
 
-  EPETRA_OBJECT_PTR MANGLE(epetra_dvbr_matrix_create)(EPETRA_MAP rowmap);
+  EPETRA_OBJECT_PTR MANGLE(epetra_vbr_matrix_create)(EPETRA_OBJECT_REF rowmap);
 
-  int MANGLE(epetra_dvbr_matrix_allocate)(EPETRA_MATRIX A, int* numNzBlks, int* blkColInds);
+  int MANGLE(epetra_vbr_matrix_allocate)(EPETRA_OBJECT_REF A, int* numNzBlks, int* blkColInds);
 
-  int MANGLE(epetra_dvbr_matrix_putblockrow)(EPETRA_MATRIX A, EPETRA_INT
+  int MANGLE(epetra_vbr_matrix_putblockrow)(EPETRA_OBJECT_REF A, EPETRA_INT
 					     blk_row, EPETRA_INT num_nz_blocks,
 					     double* vals, int* blk_col_inds);
 
-  int MANGLE(epetra_dvbr_matrix_fillcomplete)(EPETRA_MATRIX A);
+  int MANGLE(epetra_vbr_matrix_fillcomplete)(EPETRA_OBJECT_REF A);
 
-  int  MANGLE(epetra_dvbr_matrix_matvec)(EPETRA_MATRIX A, EPETRA_VECTOR x, EPETRA_VECTOR y);
+  int  MANGLE(epetra_vbr_matrix_matvec)(EPETRA_OBJECT_REF A, EPETRA_VECTOR x, EPETRA_VECTOR y);
 
-  int MANGLE(epetra_dvbr_matrix_matmultivec)(EPETRA_MATRIX A,
+  int MANGLE(epetra_vbr_matrix_matmultivec)(EPETRA_OBJECT_REF A,
 					     EPETRA_MULTIVECTOR x,
 					     EPETRA_MULTIVECTOR y);
 
-  void MANGLE(epetra_dvbr_matrix_destroy)(EPETRA_MATRIX A);
+  void MANGLE(epetra_vbr_matrix_destroy)(EPETRA_OBJECT_REF A);
 
   /*****************************************************/
-  /**                  petra_dcrs_matrix         **/
-  /***************************************************/
+  /**                  epetra_crs_matrix              **/
+  /*****************************************************/
 
-  EPETRA_OBJECT_PTR MANGLE(epetra_dcrs_matrix_create)(EPETRA_MAP rowmap);
+  EPETRA_OBJECT_PTR MANGLE(epetra_crs_matrix_create)(EPETRA_OBJECT_REF rowmap);
 
-  int  MANGLE(epetra_dcrs_matrix_allocate)(EPETRA_MATRIX A, int* rowLengths);
+  int  MANGLE(epetra_crs_matrix_allocate)(EPETRA_OBJECT_REF A, int* rowLengths);
 
-  int MANGLE(epetra_dcrs_matrix_putrow)(EPETRA_MATRIX A, EPETRA_INT row, 
+  int MANGLE(epetra_crs_matrix_putrow)(EPETRA_OBJECT_REF A, EPETRA_INT row, 
 					EPETRA_INT num_nz,
 					double* vals, int* col_inds);
 
-  int MANGLE(epetra_dcrs_matrix_sumintodiagonal)(EPETRA_MATRIX A, 
+  int MANGLE(epetra_crs_matrix_sumintodiagonal)(EPETRA_OBJECT_REF A, 
 						 double* diagonal);
 
-  int MANGLE(epetra_dcrs_matrix_fillcomplete)(EPETRA_MATRIX A);
+  int MANGLE(epetra_crs_matrix_fillcomplete)(EPETRA_OBJECT_REF A);
 
-  int MANGLE(epetra_dcrs_matrix_matvec)(EPETRA_MATRIX A, EPETRA_VECTOR x, 
+  int MANGLE(epetra_crs_matrix_matvec)(EPETRA_OBJECT_REF A, EPETRA_VECTOR x, 
 					EPETRA_VECTOR y);
 
-  int MANGLE(epetra_dcrs_matrix_matmultivec)(EPETRA_MATRIX A,
+  int MANGLE(epetra_crs_matrix_matmultivec)(EPETRA_OBJECT_REF A,
 					     EPETRA_MULTIVECTOR x,
 					     EPETRA_MULTIVECTOR y);
 
-  void MANGLE(epetra_dcrs_matrix_destroy)(EPETRA_MATRIX A);
+  void MANGLE(epetra_crs_matrix_destroy)(EPETRA_OBJECT_REF A);
 
   /*****************************************************/
   /**               petra_multivector            **/
@@ -207,16 +207,16 @@ extern "C" {
   EPETRA_OBJECT_PTR MANGLE(epetra_multivector_create)();
 
   /* create empty shell WITH float storage, fill later with put functions */
-  EPETRA_OBJECT_PTR MANGLE(epetra_multivector_create1)(EPETRA_MAP map, EPETRA_INT numvectors);
+  EPETRA_OBJECT_PTR MANGLE(epetra_multivector_create1)(EPETRA_OBJECT_REF map, EPETRA_INT numvectors);
 
   /* Build multivector from a Fortran-style 2D array
      NOTE: User storage is not copied, user must keep A intact!! */
-  EPETRA_OBJECT_PTR MANGLE(epetra_multivector_create2)(EPETRA_MAP map,
+  EPETRA_OBJECT_PTR MANGLE(epetra_multivector_create2)(EPETRA_OBJECT_REF map,
 								double *A, EPETRA_INT lda, EPETRA_INT numvectors);
 
   /* Build multivector from a double **
      NOTE: User storage is not copied, user must keep A intact!! */
-  EPETRA_OBJECT_PTR MANGLE(epetra_multivector_create3)(EPETRA_MAP map,
+  EPETRA_OBJECT_PTR MANGLE(epetra_multivector_create3)(EPETRA_OBJECT_REF map,
 								double **in_multivector, EPETRA_INT numvectors);
 
   /* Copy constructor */
@@ -239,7 +239,7 @@ extern "C" {
   /* Allocates space for a multivector created by the default
    * constructor */
   int MANGLE(epetra_multivector_allocate)(EPETRA_MULTIVECTOR multivector, 
-					  EPETRA_MAP map, EPETRA_INT numvectors);
+					  EPETRA_OBJECT_REF map, EPETRA_INT numvectors);
 
   int MANGLE(epetra_multivector_putscalar)(EPETRA_MULTIVECTOR multivector, EPETRA_DOUBLE scalar);
 
