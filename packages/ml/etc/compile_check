@@ -59,9 +59,9 @@ else
    then
       echo ${LAPACK_LIB} | sed s"/:::.*//" >> .compile_input
       echo ${LAPACK_LIB} | sed s"/.*::://" >> .compile_input
-   else
-    echo >> .compile_input
-    echo ${LAPACK_LIB} >> .compile_input
+#   else
+#    echo >> .compile_input
+#    echo ${LAPACK_LIB} >> .compile_input
    fi
 fi
 echo yes >> .compile_input
@@ -77,14 +77,20 @@ else
    then
       echo ${BLAS_LIB} | sed s"/:::.*//" >> .compile_input
       echo ${BLAS_LIB} | sed s"/.*::://" >> .compile_input
-   else
-    echo >> .compile_input
-    echo ${BLAS_LIB} >> .compile_input
+#   else
+#    echo >> .compile_input
+#    echo ${BLAS_LIB} >> .compile_input
    fi
 fi
 echo no >> .compile_input
 echo no >> .compile_input
-echo no >> .compile_input
+echo yes >> .compile_input
+echo x >> .compile_input
+echo ${LAPACK_LIB} | sed "s,/liblapack.a,," >> .compile_input
+echo x >> .compile_input
+echo lapack >> .compile_input
+echo blas >> .compile_input
+echo x >> .compile_input
 echo no >> .compile_input
 echo yes >> .compile_input
 echo  >> .compile_input
@@ -122,14 +128,19 @@ else
    then
       echo ${BLAS_LIB} | sed s"/:::.*//" >> .compile_input
       echo ${BLAS_LIB} | sed s"/.*::://" >> .compile_input
-   else
-    echo >> .compile_input
-    echo ${BLAS_LIB} >> .compile_input
+#   else
+#    echo >> .compile_input
+#    echo ${BLAS_LIB} >> .compile_input
    fi
 fi
 echo no >> .compile_input
 echo no >> .compile_input
-echo no >> .compile_input
+echo  yes >> .compile_input
+echo x >> .compile_input
+echo ${BLAS_LIB} | sed "s,/libblas.a,," >> .compile_input
+echo x >> .compile_input
+echo blas >> .compile_input
+echo x >> .compile_input
 echo yes >> .compile_input
 echo  >> .compile_input
 echo no >> .compile_input
@@ -160,25 +171,25 @@ echo no >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
 echo yes >> .compile_input
-TEMP=`echo $MPI_INC_PATH x | sed "s/ /x/g"`
-if test `expr ${TEMP}` != 'x'
-then
-echo yes >> .compile_input
-echo $MPI_INC_PATH | sed "s/-I//" >> .compile_input
-echo x >> .compile_input
-else
-echo no >> .compile_input
-fi
-TEMP=`echo $MPI_LIB_PATH x | sed "s/ /x/g"`
-if test `expr ${TEMP}` != 'x'
-then
-echo yes >> .compile_input
-echo $MPI_LIB_PATH | sed "s/-L//" >> .compile_input
-else
-echo no >> .compile_input
-fi
+#TEMP=`echo $MPI_INC_PATH x | sed "s/ /x/g"`
+#if test `expr ${TEMP}` != 'x'
+#then
+#echo yes >> .compile_input
+#echo $MPI_INC_PATH | sed "s/-I//" >> .compile_input
+#echo x >> .compile_input
+#else
+#echo no >> .compile_input
+#fi
+#TEMP=`echo $MPI_LIB_PATH x | sed "s/ /x/g"`
+#if test `expr ${TEMP}` != 'x'
+#then
+#echo yes >> .compile_input
+#echo $MPI_LIB_PATH | sed "s/-L//" >> .compile_input
+#else
+#echo no >> .compile_input
+#fi
 echo >> .compile_input
-echo no >> .compile_input
+#echo no >> .compile_input
 echo no >> .compile_input
 echo yes >> .compile_input
 echo  >> .compile_input
