@@ -45,7 +45,7 @@ double *scaling_vect = NULL;
 
 int main(int argc, char *argv[])
 {
-	int num_PDE_eqns=3, N_levels=4, nsmooth=1;
+	int num_PDE_eqns=3, N_levels=2, nsmooth=1;
 
 	int    leng, level, N_grid_pts, coarsest_level;
 
@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
   AZ_PRECOND *Pmat = NULL;
   ML *ml;
   FILE *fp;
-  int ch,i, j, Nrigid, *garbage, nblocks, *blocks;
+  int ch,i, j, Nrigid, *garbage = NULL, nblocks, *blocks;
   struct AZ_SCALING *scaling;
   ML_Aggregate *ag;
 double *mode, *rigid;
@@ -328,7 +328,7 @@ double max_diag, min_diag, max_sum, sum;
    
         for (j = 0; j < N_update; j++) rigid[i*N_update+j] = mode[j];
         free(mode);
-        free(garbage);
+        free(garbage); garbage = NULL;
     }
 
     if (Nrigid != 0) {
@@ -469,33 +469,29 @@ double max_diag, min_diag, max_sum, sum;
    if (fp == NULL) {
       AZ_random_vector(rhs, data_org, proc_config);
       if (proc_config[AZ_node] == 0) printf("taking random vector for rhs\n");
-      AZ_reorder_vec(rhs, data_org, update_index, NULL);
+      for (i = 0; i < N_update; i++) {
+        rhs[i] = (double) update[i]; rhs[i] = 7.;
+      }
    }
    else {
-      ch = getc(fp);
-      if (ch == 'S') {
-         while ( (ch = getc(fp)) != '\n') ;
-      }
-      else ungetc(ch,fp);
-      for (i = 0; i < data_org[AZ_N_internal]+data_org[AZ_N_border]; i++) 
-         fscanf(fp,"%lf",&(rhs[i]));
-      fclose(fp);
+      if (proc_config[AZ_node]== 0) printf("reading rhs guess from file\n");
+      AZ_input_msr_matrix("AZ_capture_rhs.dat", update, &rhs, &garbage,
+			  N_update, proc_config);
+      free(garbage);
    }
+   AZ_reorder_vec(rhs, data_org, update_index, NULL);
 
    /* Set x */
 
    fp = fopen("AZ_capture_init_guess.dat","r");
    if (fp != NULL) {
-      ch = getc(fp);
-      if (ch == 'S') {
-         while ( (ch = getc(fp)) != '\n') ;
-      }
-      else ungetc(ch,fp);
-      for (i = 0; i < data_org[AZ_N_internal]+data_org[AZ_N_border]; i++)
-         fscanf(fp,"%lf",&(xxx[i]));
       fclose(fp);
-      options[AZ_conv] = AZ_expected_values;
+      if (proc_config[AZ_node]== 0) printf("reading initial guess from file\n");
+      AZ_input_msr_matrix("AZ_capture_init_guess.dat", update, &xxx, &garbage,
+			  N_update, proc_config);
+      free(garbage);
    }
+   AZ_reorder_vec(xxx, data_org, update_index, NULL);
 
    /* if Dirichlet BC ... put the answer in */
 
