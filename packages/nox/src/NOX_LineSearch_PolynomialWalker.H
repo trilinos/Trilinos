@@ -42,6 +42,13 @@
 #include "NOX_LineSearch_Utils_Slope.H"     // class data member
 
 namespace NOX {
+  namespace Parameter {
+    class UserNorm;
+    class MeritFunction;
+  }
+}
+
+namespace NOX {
 namespace LineSearch {
 
 //! Use quad/cubic polynomial fit from Dennis & Schnabel Sec. 6.3.2 with modifications for Homer Walker's Ared/Pred inexact Newton methods.
@@ -178,13 +185,12 @@ namespace LineSearch {
     -# "None"
 
   - "Merit Function" - choice of the merit function to use in the 
-    interpolation of a new step length.  Choices are (See above 
-    for explanations):
+    interpolation of a new step length.  This line search has a  
+    predefined merit function ("Norm-F Squared") or the user can supply 
+    their own merit function object to the parameter list:
     
-    -# "Norm-F"
     -# "Norm-F Squared"
-
-  - "Use Scaled Norms" - Boolean value.  Determines if the norms used in the sufficient decrease condition and the step length interpolation should be scaled by the number of unknowns in the problem.  If set to true, the Two-Norm is scaled by the global number of unknowns, \f$ N \f$: \f[ \|F\|_2 = \sqrt{\frac{1}{N}\sum_{i=1}^{N}f_i^2} \f].  If set to false, the standard Two-Norm is used: \f[ \|F\|_2 = \sqrt{\sum_{i=1}^{N}f_i^2} \f] 
+    -# NOX::Parameter::MeritFunction derived object - an object derived from the NOX::Parameter::MeritFunction class that allows the user to define their own merit function.  
 
   - "Alpha Factor" - Used in Armijo-Goldstein stopping criteria \f$
     \alpha \f$ (defaults to 1.0e-4)
@@ -291,8 +297,8 @@ protected:
 
 protected:
 
-  //! Algorithms used to determine convergence of the line search
-  enum ConvergenceCriteriaType {
+  //! Algorithms used to determine termination of the line search
+  enum SufficientDecreaseType {
     //! Sufficient decrease condition
     ArmijoGoldstein, 
     //! Ared/Pred condition
@@ -309,16 +315,8 @@ protected:
     Cubic
   };
 
-  //! Merit Function Type
-  enum MeritFunctionType {
-    //! The merit function is computed by: \f[ f = \|F\| \f]
-    NormF,
-    //! The merit function is computed by: \f[ f = \frac{1}{2}\|F\|^2 \f]
-    NormFSquared
-  };
-
-  //! Choice of convergence criteria
-  ConvergenceCriteriaType convCriteria;
+  //! Choice for sufficient decrease condition
+  SufficientDecreaseType suffDecrCond;
 
   //! Choice of interpolation type
   InterpolationType interpolationType;
@@ -368,22 +366,14 @@ protected:
   //! Common slope calculations for line searches.
   NOX::LineSearch::Utils::Slope slopeObj;
 
-  //! Boolean that determines if the norms used in the merit function and the sufficient decrease test are scaled.  
-  bool useScaledNorms;
+  double normFOld;
+  double meritFuncOld;
+  double slopeOld;
+  double normFNew;
+  double meritFuncNew;
 
-  //! Type of merit function to use for the interpolation of the step length.
-  MeritFunctionType meritFunctionType;
-
-  double oldf_1;
-  double oldf_2;
-  double oldf_interp;
-  double slope_1;
-  double slope_2;
-  double slope_interp;
-  double newf_1;
-  double newf_2;
-  double newf_interp;
-  double factor;
+  NOX::Parameter::UserNorm* userNormPtr;
+  NOX::Parameter::MeritFunction* meritFuncPtr;
 
 };
 } // namespace LineSearch

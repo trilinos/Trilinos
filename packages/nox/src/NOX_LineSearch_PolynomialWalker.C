@@ -40,6 +40,8 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Parameter_List.H"
+#include "NOX_Parameter_UserNorm.H"
+#include "NOX_Parameter_MeritFunction.H"
 
 NOX::LineSearch::PolynomialWalker::PolynomialWalker(const NOX::Utils& u, Parameter::List& params) :
   paramsPtr(0),
@@ -55,15 +57,18 @@ NOX::LineSearch::PolynomialWalker::~PolynomialWalker()
 
 bool NOX::LineSearch::PolynomialWalker::reset(Parameter::List& params)
 { 
+  paramsPtr = &params;
+
   NOX::Parameter::List& p = params.sublist("PolynomialWalker");
   
-  string choice = p.getParameter("Sufficient Decrease Condition", "Armijo-Goldstein");
+  string choice = p.getParameter("Sufficient Decrease Condition", 
+				 "Armijo-Goldstein");
   if (choice == "Ared/Pred") 
-    convCriteria = AredPred;
+    suffDecrCond = AredPred;
   else if (choice == "None")
-    convCriteria = None;
+    suffDecrCond = None;
   else 
-    convCriteria = ArmijoGoldstein;
+    suffDecrCond = ArmijoGoldstein;   // default
 
   choice = p.getParameter("Interpolation Type", "Cubic");
   if (choice == "Quadratic")
@@ -84,19 +89,28 @@ bool NOX::LineSearch::PolynomialWalker::reset(Parameter::List& params)
   minBoundFactor = p.getParameter("Min Bounds Factor", 0.1);
   maxBoundFactor = p.getParameter("Max Bounds Factor", 0.5);
   doForceInterpolation = p.getParameter("Force Interpolation", false);
-  paramsPtr = &params;
 
-  useScaledNorms = p.getParameter("Use Scaled Norms", false);
+  // Determine if a User Defined Norm is present
+  userNormPtr = 0;
+  if (p.isParameterArbitrary("User Defined Norm")){
+    userNormPtr = const_cast<NOX::Parameter::UserNorm*>(dynamic_cast<const NOX::Parameter::UserNorm*>(&(p.getArbitraryParameter("User Defined Norm"))));
+  }
 
-  choice = p.getParameter("Merit Function", "Norm-F Squared");
-  if (choice == "Norm-F")
-    meritFunctionType = NormF;
-  else if (choice == "Norm-F Squared") 
-    meritFunctionType = NormFSquared;
-  else 
-  {
-    cerr << "NOX::LineSearch::PolynomialWalker::reset - Invalid \"Merit Function\"" << endl;
-    throw "NOX Error";
+  // Determine the merit function to use
+  meritFuncPtr = 0;
+  if (p.isParameterArbitrary("Merit Function")) {
+    meritFuncPtr = const_cast<NOX::Parameter::MeritFunction*>(dynamic_cast<const NOX::Parameter::MeritFunction*>(&(p.getArbitraryParameter("Merit Function"))));
+  }
+  else {
+    choice = p.getParameter("Merit Function", "Norm-F Squared");
+    if (choice == "Norm-F Squared") {
+      // Do nothing, this is the default
+    }
+    else {
+      cerr << "NOX::LineSearch::PolynomialWalker::reset - Invalid "
+	   << "\"Merit Function\"" << endl;
+      throw "NOX Error";
+    }
   }
 
   allowIncrease = p.isParameter("Allowed Relative Increase");
@@ -116,9 +130,10 @@ bool NOX::LineSearch::PolynomialWalker::reset(Parameter::List& params)
   return true;
 }
 
-bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp, double& step, 
-			 const Abstract::Vector& dir,
-			 const Solver::Generic& s) 
+bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp, 
+						double& step, 
+			                        const Abstract::Vector& dir,
+						const Solver::Generic& s) 
 {
 
   if (print.isPrintProcessAndType(NOX::Utils::InnerIteration)) 
@@ -126,43 +141,64 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp, double&
     cout << "\n" << NOX::Utils::fill(72) << "\n" << "-- PolynomialWalker Line Search -- \n";
   }
 
+  // Print out Details of line search
+  if (print.isPrintProcessAndType(NOX::Utils::Details)) {
+
+    if (userNormPtr != 0)
+      cout << "       Norms = Using a user defined norm" << endl;
+    else 
+      cout << "       Norms = L-2" << endl;
+  
+    if (meritFuncPtr != 0) 
+      cout << "       Merit Function = User Defined" << endl;
+    else 
+      cout << "       Merit Function = 0.5 * || F || * || F ||" << endl;
+  }
+
   // Set counter to 1
   int nIters = 1;
   counter.incrementNumLineSearches();
 
-  // Compute the scale factor for norms
-  if (useScaledNorms) 
-    factor = 1.0/(sqrt((double) (dir.length())));
-  else
-    factor = 1.0;
 
-  // Get Old f(0)
+  // Get Old group
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
-  oldf_1 = oldGrp.getNormF() * factor;
-  oldf_2 = 0.5 * oldGrp.getNormF() * oldGrp.getNormF() * factor * factor;
-  oldf_interp = 0.0;
-  if (meritFunctionType == NormF)
-    oldf_interp = oldf_1;
-  else 
-    oldf_interp = oldf_2;
 
-  // Get the slope f'(0)
-  slope_2 = slopeObj.computeSlope(dir, oldGrp) * factor * factor;
-  slope_1 = slope_2 / oldf_1;
-  slope_interp = 0.0;
-  if (meritFunctionType == NormF)
-    slope_interp = slope_1;
-  else 
-    slope_interp = slope_2;
+  // Compute ||F(0)|| for Ared/Pred condition
+  if (suffDecrCond == AredPred) {
+    if (userNormPtr != 0)
+      normFOld = userNormPtr->norm(oldGrp.getF());
+    else
+      normFOld = oldGrp.getNormF();
+  }
 
-  // Get New f(step)
+  // Compute merit function f(0)
+  if (meritFuncPtr != 0) {
+    meritFuncOld = meritFuncPtr->computef(oldGrp);
+  }
+  else {
+    meritFuncOld = 0.5 * oldGrp.getNormF() * oldGrp.getNormF();
+  }
+
+  // Compute the slope f'(0)
+  if (meritFuncPtr != 0) {
+    slopeOld = meritFuncPtr->computeSlope(dir, oldGrp);
+  }
+  else {
+    slopeOld = slopeObj.computeSlope(dir, oldGrp);
+  }
+  
+  // Compute New f(step) and if doing Ared/Pred also do ||F(step)||
   step = defaultStep;
   computeNewF(newGrp, oldGrp, dir, step);
+
+  //cout << "Old f = " << normFOld << endl;
+  //cout << "Slope Old f = " << slope_1 << endl;
+  //cout << "New f = " << normFNew << endl;
 
   // Get the linear solve tolerance if doing ared/pred for conv criteria
   double eta_original = 0.0;
   double eta = 0.0;
-  if (convCriteria == AredPred) 
+  if (suffDecrCond == AredPred) 
   {
     const NOX::Parameter::List& p = s.getParameterList();
     eta_original = p.sublist("Direction").sublist("Newton")
@@ -173,7 +209,7 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp, double&
   bool isConverged = false;
   bool isFailed = false;
 
-  if (slope_interp >= 0.0)
+  if (slopeOld >= 0.0)
     isFailed = true;
   else if (doForceInterpolation)
     isConverged = false;
@@ -203,10 +239,10 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp, double&
       break;
     }
 	
-    if (convCriteria == AredPred)
-      print.printStep(nIters, step, oldf_1, newf_1, "", false);
+    if (suffDecrCond == AredPred)
+      print.printStep(nIters, step, normFOld, normFNew, "", false);
     else
-      print.printStep(nIters, step, oldf_2, newf_2);
+      print.printStep(nIters, step, meritFuncOld, meritFuncNew);
     
     counter.incrementNumIterations();
     nIters ++;
@@ -216,7 +252,7 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp, double&
       
       /* Quadratic Interpolation */
       
-      tempStep = - (slope_interp * step * step) / (2.0 * (newf_interp - oldf_interp - step * slope_interp)) ;
+      tempStep = - (slopeOld * step * step) / (2.0 * (meritFuncNew - meritFuncOld - step * slopeOld)) ;
       isFirstPass = false;
 
     }
@@ -226,8 +262,8 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp, double&
     
       /*   Cubic Interpolation */
       
-      double term1 = newf_interp - oldf_interp - step * slope_interp ;
-      double term2 = prevf - oldf_interp - previousStep * slope_interp ;
+      double term1 = meritFuncNew - meritFuncOld - step * slopeOld ;
+      double term2 = prevf - meritFuncOld - previousStep * slopeOld ;
       
       double a = 1.0 / (step - previousStep) * 
 	(term1 / (step * step) - term2 / (previousStep * previousStep)) ;
@@ -236,7 +272,7 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp, double&
 	(-1.0 * term1 * previousStep / (step * step) +
 	 term2 * step / (previousStep * previousStep)) ;
       
-      double disc = b * b - 3.0 * a * slope_interp ;
+      double disc = b * b - 3.0 * a * slopeOld ;
       
       if (disc < 0) 
       {
@@ -259,7 +295,7 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp, double&
       if (b < 0)
         tempStep = (-b + sqrt(disc))/ (3.0 * a);
       else
-        tempStep = -slope_interp/(b + sqrt(disc));
+        tempStep = -slopeOld/(b + sqrt(disc));
       
       /* Also removed at the request of Homer Walker
       if (tempStep > 0.5 * step) 
@@ -269,7 +305,7 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp, double&
     }
     
     previousStep = step ;
-    prevf = newf_interp ; 
+    prevf = meritFuncNew ; 
 
     if (tempStep < minBoundFactor * step) 
       step *= minBoundFactor;
@@ -311,10 +347,10 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp, double&
     message = "(USING RECOVERY STEP!)";
   }
 
-  if (convCriteria == AredPred)
-    print.printStep(nIters, step, oldf_1, newf_1, message, false);
+  if (suffDecrCond == AredPred)
+    print.printStep(nIters, step, normFOld, normFNew, message, false);
   else
-    print.printStep(nIters, step, oldf_2, newf_2, message);
+    print.printStep(nIters, step, meritFuncOld, meritFuncNew, message);
   paramsPtr->setParameter("Adjusted Tolerance", eta);
   counter.setValues(*paramsPtr);
   return (!isFailed);
@@ -324,17 +360,17 @@ bool NOX::LineSearch::PolynomialWalker::isSufficientDecrease(double step,
 							     double eta) const
 {
   double rhs = 0.0;
-  if (convCriteria == ArmijoGoldstein) 
+  if (suffDecrCond == ArmijoGoldstein) 
   {
-    rhs = oldf_interp + alpha * step * slope_interp;
-    return (newf_interp <= rhs);
+    rhs = meritFuncOld + alpha * step * slopeOld;
+    return (meritFuncNew <= rhs);
   }
-  else if (convCriteria == AredPred) 
+  else if (suffDecrCond == AredPred) 
   {
-    rhs = oldf_1 * (1.0 - alpha * (1.0 - eta));
-    return (newf_1 <= rhs);
+    rhs = normFOld * (1.0 - alpha * (1.0 - eta));
+    return (normFNew <= rhs);
   }
-  else if (convCriteria == None)
+  else if (suffDecrCond == None)
   {
     return true;
   }
@@ -345,7 +381,7 @@ bool NOX::LineSearch::PolynomialWalker::isSufficientDecrease(double step,
 }
 
 bool NOX::LineSearch::PolynomialWalker::computeNewF(
-                                          NOX::Abstract::Group& newGrp, 
+					  NOX::Abstract::Group& newGrp, 
 					  const NOX::Abstract::Group& oldGrp, 
 					  const NOX::Abstract::Vector& dir, 
 					  double step)
@@ -356,13 +392,21 @@ bool NOX::LineSearch::PolynomialWalker::computeNewF(
   if (status != NOX::Abstract::Group::Ok)
     return false;
 
-  newf_1 = newGrp.getNormF() * factor;
-  newf_2 = 0.5 * newGrp.getNormF() * newGrp.getNormF() * factor * factor;  
-  newf_interp = 0.0;
-  if (meritFunctionType == NormF)
-    newf_interp = newf_1;
-  else 
-    newf_interp = newf_2;
+  // Compute ||F(0)|| ONLY for Ared/Pred condition
+  if (suffDecrCond == AredPred) {
+    if (userNormPtr != 0)
+      normFNew = userNormPtr->norm(newGrp.getF());
+    else
+      normFNew = newGrp.getNormF();
+  }
+
+  // Compute merit function f(0)
+  if (meritFuncPtr != 0) {
+    meritFuncNew = meritFuncPtr->computef(newGrp);
+  }
+  else {
+    meritFuncNew = 0.5 * newGrp.getNormF() * newGrp.getNormF();
+  }
 
   return true;
 }
@@ -370,10 +414,10 @@ bool NOX::LineSearch::PolynomialWalker::computeNewF(
 bool NOX::LineSearch::PolynomialWalker::isIncreaseAllowed(int nOuterIters) const
 {
   double increase = 0.0;
-  if (convCriteria == AredPred)  
-    increase = sqrt(newf_1 / oldf_1);
+  if (suffDecrCond == AredPred)  
+    increase = sqrt(normFNew / normFOld);
   else
-    increase = sqrt(newf_interp / oldf_interp);
+    increase = sqrt(meritFuncNew / meritFuncOld);
 
   return ( (increase <= relIncrease) && (nOuterIters <= numAllowed) );
 }
