@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   int NumProc = Comm.NumProc();
 
   int verbose_int = verbose ? 1 : 0;
-  MPI_Bcast(&verbose_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  Comm.Broadcast(&verbose_int, 1, 0);
   verbose = verbose_int==1 ? true : false;
 
   if (verbose) cout << Comm << endl << flush;
