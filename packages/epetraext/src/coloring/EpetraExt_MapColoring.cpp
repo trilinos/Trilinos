@@ -623,7 +623,7 @@ operator()( OriginalTypeRef orig  )
   }
 
   if( verbosity_ > 0 ) cout << MyPID << " ColorMap Color Count: " << ColorMap->NumColors() << endl;
-  if( verbosity_ > -1 ) cout << "ColorMap!\n" << *ColorMap;
+  if( verbosity_ > 1 ) cout << "ColorMap!\n" << *ColorMap;
 
   newObj_ = ColorMap;
 
