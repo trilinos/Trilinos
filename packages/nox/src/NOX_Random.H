@@ -41,7 +41,11 @@ namespace NOX {
   /*!
     The %Random class computes pseudo-random (double precision) numbers 
     uniformly distributed between -1.0 and 1.0 using a multiplicative
-    congruential generator with modulus 2^31-1.
+    congruential generator with modulus 2^31-1 (a Lehmer generator).  
+    For a numerical and mathematical treatment of the algorithm, see
+    "Random number generators:  good ones are hard to find" by Stephen
+    K. Park and Keith W. Miller, Communications of the ACM, Vol. 31 No. 10
+    (1988).
   */
   class Random {
   public:
