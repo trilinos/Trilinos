@@ -548,11 +548,6 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
     if (ML_DecomposeGraph_with_Zoltan(matrix, *nblks, pnode_part, NULL,
 				      x_coord, y_coord, z_coord, -1) < 0)
       for (ii = 0; ii < n; ii++) pnode_part[ii] = myid;
-
-    for (ii = 0; ii < n; ii++) 
-      printf("(%e,%e) on %d\n",x_coord[ii],y_coord[ii],pnode_part[ii]);
-    fflush(stdout);
-    sleep(1);
 #endif
     break;
   case ML_USEMETIS:
