@@ -96,7 +96,7 @@ LOCA::ExtendedVector::init(double gamma)
 }
 
 NOX::Abstract::Vector& 
-LOCA::ExtendedVector::random(bool useSeed, double seed) {
+LOCA::ExtendedVector::random(bool useSeed, int seed) {
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->random(useSeed, seed);
   if (useSeed)

@@ -33,6 +33,8 @@
 #ifndef NOX_RANDOM_H
 #define NOX_RANDOM_H
 
+#include "NOX_Common.H"  // for string
+
 namespace NOX {
 
   /*!
@@ -49,18 +51,35 @@ namespace NOX {
   */
   class Random {
   public:
+
     //! Initialize random number generator with a random seed.
     /*! The random seed is computed using the POSIX rand() function. */
     Random();
 
     //! Initialize random number generator with the given seed
-    Random(double s);
+    /*! The seed should be an integer between 1 and 2147483646 = 2^32-2
+        (inclusive).  If the supplied seed is invalid, an error message
+	is printed and the seed is replaced by 1.
+    */
+    Random(int s);
 
     //! Set the seed to s
-    void setSeed(double s);
+    /*! The seed should be an integer between 1 and 2147483646 = 2^32-2
+        (inclusive).  If the supplied seed is invalid, an error message
+	is printed and the seed is replaced by 1.
+    */
+    void setSeed(int s);
       
     //! Compute a random number
     double operator() ();
+
+  protected:
+
+    //! Checks that the supplied seed value is valid and returns a valid seed.
+    /*! The %string argument supplies the calling function name for an error
+        message in the case that the supplied seed is invalid.
+    */
+    double checkSeed(const string& func, int s);
 
   protected:
       

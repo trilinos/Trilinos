@@ -106,10 +106,10 @@ NOX::Abstract::Vector& NOX::Epetra::Vector::init(double value)
   return *this;
 }
 
-NOX::Abstract::Vector& NOX::Epetra::Vector::random(bool useSeed, double seed)
+NOX::Abstract::Vector& NOX::Epetra::Vector::random(bool useSeed, int seed)
 {
   if (useSeed)
-    epetraVec->SetSeed(seed);
+    epetraVec->SetSeed(static_cast<double>(seed));
   epetraVec->Random();
   return *this;
 }

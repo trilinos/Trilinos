@@ -96,7 +96,7 @@ namespace LOCA {
     virtual NOX::Abstract::Vector& init(double gamma);
 
     //! Initialize every element of this vector with random values
-    virtual NOX::Abstract::Vector& random(bool useSeed = false, double seed = 0.0);
+    virtual NOX::Abstract::Vector& random(bool useSeed = false, int seed = 1);
 
     //! NOX::Abstract::Vector abs function.  Compues absolute value of each stored vector and scalar
     virtual NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y);

@@ -78,7 +78,7 @@ namespace NOX {
       NOX::Abstract::Vector& init(double value);
 
       //! Initialize every element of this vector with random values
-      virtual NOX::Abstract::Vector& random(bool useSeed = false, double seed = 0.0);
+      virtual NOX::Abstract::Vector& random(bool useSeed = false, int seed =  1);
 
       //! Replace this vector with STL double vector y
       NOX::Abstract::Vector& operator=(const vector<double>& y);

@@ -31,21 +31,24 @@
 //@HEADER
 
 #include "NOX_Random.H"
-#include "NOX_Common.H"
 
 NOX::Random::Random() 
 {
-  seed = rand();
+  seed = static_cast<double>(rand());
+
+  // rand() can return 0 or 2147483647, so adjust seed if that happens
+  if ((seed == 0.0) || (seed == 2147483647.0))
+    seed = 1.0;
 }
 
-NOX::Random::Random(double s) :
-  seed(s)
+NOX::Random::Random(int s)
 {
+  seed = checkSeed("Random", s);
 }
 
-void NOX::Random::setSeed(double s)
+void NOX::Random::setSeed(int  s)
 {
-  seed = s;
+  seed = checkSeed("setSeed", s);
 }
 
 double NOX::Random::operator() ()
@@ -55,4 +58,16 @@ double NOX::Random::operator() ()
 
   seed = fmod(a*seed, bigInt);
   return 2.0*(seed/bigInt)-1.0;
+}
+
+double NOX::Random::checkSeed(const string& func, int s)
+{
+  if ((s < 1) || (s > 2147483646)) {
+    cerr << "Error in NOX::Random::" << s << "():  " << "supplied seed " 
+	 << s << " is not an integer between 1 and 2147483646." << endl
+	 << "Using a seed of 1 instead." << endl;
+    return 1.0;
+  }
+  else
+    return static_cast<double>(s);
 }

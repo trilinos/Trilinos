@@ -73,7 +73,7 @@ class Vector : public virtual NOX::Abstract::Vector {
   virtual NOX::Abstract::Vector& init(double value);
 
   // derived
-  virtual NOX::Abstract::Vector& random(bool useSeed = false, double seed = 0.0);
+  virtual NOX::Abstract::Vector& random(bool useSeed = false, int seed = 1);
 
   //! Copies source vector into "this".
   virtual NOX::Abstract::Vector& operator=(const Epetra_Vector& y);

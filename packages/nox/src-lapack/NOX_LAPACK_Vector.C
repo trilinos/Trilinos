@@ -83,7 +83,7 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::init(double value)
   return *this;
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::random(bool useSeed, double seed) 
+NOX::Abstract::Vector& NOX::LAPACK::Vector::random(bool useSeed, int seed) 
 {
   if (useSeed)
     urand.setSeed(seed);
