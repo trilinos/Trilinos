@@ -188,7 +188,9 @@ int Epetra2MLMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
 {
   int isize, osize;
 
-  osize = A->NumMyRows();
+  // FIXME ?? 
+  //osize = A->NumMyRows();
+  osize = A->OperatorRangeMap().NumMyElements();
   isize = A->OperatorDomainMap().NumMyElements();
   //  isize = A->NumMyCols();
   int N_ghost = A->RowMatrixColMap().NumMyElements() - isize;
@@ -226,7 +228,7 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
 
   ML_Init_Amatrix(ml_handle, level,isize, osize, (void *) A);
   ML_Set_Amatrix_Getrow(ml_handle, level, Epetra_ML_getrow,
-            Epetra_ML_comm_wrapper, isize+N_ghost);
+                        Epetra_ML_comm_wrapper, isize+N_ghost);
 
   ML_Set_Amatrix_Matvec(ml_handle,  level, Epetra_ML_matvec);
 
@@ -398,6 +400,18 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
       int GlobalRow = MyGlobalElements[i*NumPDEEqns] + j;
       int GlobalCol = PointCol*NumPDEEqns + j;
       Q->InsertGlobalValues(GlobalRow, 1, &one, &GlobalCol );
+      // It appears that this is the safest way to code
+      // the Q operator. If we skip the diagonal values, then
+      // the ML-epetra conversion generally crashes with
+      // Zoltan aggregation. Appearantly, ParMETIS without
+      // Zoltan does not require the diagonal element...
+      // This is just slightly more expensive....
+      GlobalRow = MyGlobalElements[i*NumPDEEqns] + j;
+      GlobalCol = GlobalRow;
+      double zero = 0.0;
+      // NOTE: this function may return a warning
+      // (if the element has already been inserted)
+      Q->InsertGlobalValues(GlobalRow, 1, &zero, &GlobalCol );
     }
   }
   
@@ -464,14 +478,14 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
 
   Q->Multiply(true,xxx,yyy);
 
+  ML_Q2 = ML_Operator_Create( ml_communicator );  
+  
+  Epetra2MLMatrix(Q, ML_Q2);
+
   for( int i=0 ; i<ReorderedNumElements ; ++i ) {
     ReorderedBdry[i] = yyy[i*NumPDEEqns];
   }
   
-  ML_Q2 = ML_Operator_Create( ml_communicator );  
-  
-  Epetra2MLMatrix( Q, ML_Q2);
-
   if( Start != NULL ) delete [] Start;
   if( Reord != NULL ) delete [] Reord;
 
