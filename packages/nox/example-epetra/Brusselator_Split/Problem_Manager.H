@@ -36,6 +36,10 @@ public:
   // Register Convergence Test(s)
   void registerStatusTest(NOX::StatusTest::Combo& comboTest);
 
+  // Signal completion of problem, parameter, and convergence test
+  // regitrations and trigger the problem setup
+  void registerComplete();
+
   // Solve problems
   bool solve();
 
@@ -45,9 +49,9 @@ public:
 private:
 
   vector<GenericEpetraProblem*> Problems;  // Problem container
-  vector<NOX::Epetra::Group> Groups;       // Groups container
-  vector<Problem_Interface> Interfaces;    // Interfaces container
-  vector<NOX::Solver::Manager> Solvers;    // Solvers container
+  vector<NOX::Epetra::Group*> Groups;       // Groups container
+  vector<Problem_Interface*> Interfaces;    // Interfaces container
+  vector<NOX::Solver::Manager*> Solvers;    // Solvers container
 
   NOX::Parameter::List* nlParams;          // NLSolver parameter list
   NOX::StatusTest::Combo* statusTest;      // Convergence criterion (ia)

@@ -93,8 +93,6 @@ void Equation_A::initializeSolution()
   
   *oldSolution = soln;
 
-  cout << "HERE !!!!" << endl;
-
   // Fill Equation_B solution from file (obtained from Brusselator)
   char file_name[] = "EqB_soln.dat";
   int idum;
@@ -131,11 +129,6 @@ bool Equation_A::evaluate(FillType f,
     cout << "ERROR: Equation_A::fillMatrix() - FillType flag is broken" << endl;
     throw;
   }
-
-  cout << "\n\tCurrent solution :" << endl;
-  for( int i=0; i<soln->MyLength(); i++)
-    printf("i, x, u, uold, aux :\t%d  %f  %f  %f  %f\n",i,(*xptr)[i],(*soln)[i],
-                 (*oldSolution)[i], (*auxSolution)[i]);
 
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
@@ -202,11 +195,6 @@ bool Equation_A::evaluate(FillType f,
       // Calculate the basis function at the gauss point
       basis.getBasis(gp, xx, uu, uuold, aaux);
 
-  cout << "\n\tFill data for element --> " << ne << endl;
-  printf("xx, uu, duu, uuold, duuold, aaux :\t%f  %f  %f  %f  %f  %f\n",
-          basis.xx, basis.uu, basis.duu, basis.uuold, basis.duuold,
-          basis.aaux);
-	            
       // Loop over Nodes in Element
       for (i=0; i< 2; i++) {
 	row=OverlapMap->GID(ne+i);

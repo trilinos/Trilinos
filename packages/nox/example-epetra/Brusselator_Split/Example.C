@@ -189,6 +189,19 @@ int main(int argc, char *argv[])
   problemManager.addProblem(ProblemA);
   problemManager.addProblem(ProblemB);
 
+  // Create the convergence tests
+  NOX::StatusTest::NormF absresid(1.0e-8);
+  NOX::StatusTest::NormUpdate update(1.0e-5);
+  NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
+  converged.addStatusTest(absresid);
+  converged.addStatusTest(update);
+  NOX::StatusTest::MaxIters maxiters(100);
+  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
+  combo.addStatusTest(converged);
+
+  problemManager.registerStatusTest(combo);
+  problemManager.registerComplete();
+
   // Dummy call to solve to see how things are working to this point.....
   problemManager.solve();
   exit(1);
