@@ -20,6 +20,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
+#include "Epetra_SerialDenseMatrix.h"
 #ifdef ML_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -89,17 +90,35 @@ int Epetra_ML_getrow(void *data, int N_requested_rows, int requested_rows[],
   int nz_ptr = 0;
   int NumEntries;
   int MaxPerRow;
-
+  int NumPDEEqns=1;
+  int * BlockIndices;
+  Epetra_SerialDenseMatrix ** Entries;
+  
   Epetra_CrsMatrix * Acrs = dynamic_cast<Epetra_CrsMatrix *>(Abase);
   int MatrixIsCrsMatrix = (Acrs!=0); // If this pointer is non-zero,
                                   // the cast to Epetra_CrsMatrix worked
+
+  Epetra_VbrMatrix * Avbr = dynamic_cast<Epetra_VbrMatrix *>(Abase);
+  int MatrixIsVbrMatrix = (Avbr!=0); // If this pointer is non-zero,
+                                  // the cast to Epetra_VbrMatrix worked
+
   int *Indices;
   double *Values;
-  if (!MatrixIsCrsMatrix) {
+  if (MatrixIsCrsMatrix) {
+    // do nothing for Crs
+  } else  if( MatrixIsVbrMatrix ) {
+    // for Vbr we need to know the number of PDE for each row
+    if( Avbr->NumMyRows() % Avbr->NumMyBlockRows() != 0 ){
+      cerr << "Error : NumPDEEqns does not seem to be constant\n";
+      exit( EXIT_FAILURE );
+    }
+    NumPDEEqns = (Avbr->NumMyRows())/(Avbr->NumMyBlockRows());
+  } else {
+    // general RowMatrix case
     MaxPerRow = Abase->MaxNumEntries();
     Values = new double [MaxPerRow]; 
     Indices = new int [MaxPerRow]; 
-  }
+  }  
 
   for (int i = 0; i < N_requested_rows; i++)
   {
@@ -107,18 +126,45 @@ int Epetra_ML_getrow(void *data, int N_requested_rows, int requested_rows[],
     int LocalRow = requested_rows[i];
     if (MatrixIsCrsMatrix)
       ierr = Acrs->ExtractMyRowView(LocalRow, NumEntries, Values, Indices);
-    else
+    else if (MatrixIsVbrMatrix) {
+      // for vbr, we recover the local number of the BlockRow
+      // (dividing by NumPDEEqns). In this way, we can get a view
+      // of the local row (no memory allocation occurs).
+      int PDEEqn = LocalRow % NumPDEEqns;
+      int LocalBlockRow = LocalRow/NumPDEEqns;
+      
+      int RowDim;
+      int NumBlockEntries;    
+      ierr = Avbr->ExtractMyBlockRowView(LocalBlockRow,RowDim,
+					 NumBlockEntries, BlockIndices, Entries);
+      // I do here some stuff because Vbr matrices must
+      // be treated differently.
+      if (ierr) return(0); 
+      NumEntries = NumBlockEntries*NumPDEEqns;
+      if (nz_ptr + NumEntries > allocated_space) return(0);
+      
+      for( int j=0 ; j<NumBlockEntries ; ++j ) {
+	for( int k=0 ; k<NumPDEEqns ; ++k ) {
+	  columns[nz_ptr] = BlockIndices[j]*NumPDEEqns+k;
+	  values[nz_ptr++] = (*Entries[j])(PDEEqn,k);
+	}
+      }
+      return(1);
+    }
+    else 
       ierr = Abase->ExtractMyRowCopy(LocalRow, MaxPerRow, NumEntries,
                                       Values, Indices);
     if (ierr) return(0); //JJH I think this is the correct thing to return if
                          //    A->ExtractMyRowCopy returns something nonzero ..
     row_lengths[i] = NumEntries;
     if (nz_ptr + NumEntries > allocated_space) return(0);
+
     for (int j=0; j<NumEntries; j++) {
       columns[nz_ptr] = Indices[j];
       values[nz_ptr++] = Values[j];
     }
   }
+  
 
   return(1);
 }
@@ -376,14 +422,11 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
   }
 
   assert(Q->FillComplete(ReorderedMap,StartingMap)==0);
-
+  
   ML_Q2 = ML_Operator_Create( ml_communicator );
 
   double * Start = new double[StartingNumElements*NumPDEEqns];
   double * Reord = new double[ReorderedNumElements*NumPDEEqns];
-
-  // xxx will hold the starting decomposition, while
-  // yyy the reordered one. 
 
   Epetra_Vector xxx(View,StartingMap,Start);
   Epetra_Vector yyy(View,ReorderedMap,Reord);
@@ -419,7 +462,7 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
 
   delete [] Start;
   delete [] Reord;
-  
+
 #endif
 }
 
