@@ -1051,6 +1051,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::init(bool perturbSoln,
     perturb->random();
     perturb->scale(hopfXVec.getXVec());
     hopfXVec.getXVec().update(perturbSize, *perturb, 1.0);
+    grpPtr->setX(hopfXVec.getXVec());
     delete perturb;
   }
 }

@@ -1044,6 +1044,7 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::init(bool perturbSoln,
     perturb->random();
     perturb->scale(tpXVec.getXVec());
     tpXVec.getXVec().update(perturbSize, *perturb, 1.0);
+    grpPtr->setX(tpXVec.getXVec());
     delete perturb;
   }
 }
