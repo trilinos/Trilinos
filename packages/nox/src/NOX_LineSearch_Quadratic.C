@@ -125,6 +125,9 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
     if ((step < minStep) || (niters > maxIters))
     {
       step = recoveryStep;
+      newgrp.computeX(oldgrp, dir, step);
+      newgrp.computeF();    
+      newf = 0.5*newgrp.getNormF()*newgrp.getNormF();
       cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
       cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2.*oldf));
       cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2.*newf));
