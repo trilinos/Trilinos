@@ -14,6 +14,9 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
+#include "AztecOO_StatusTestMaxIters.h"
+#include "AztecOO_StatusTestResNorm.h"
+#include "AztecOO_StatusTestCombo.h"
 
 #define perror(str) { fprintf(stderr,"%s\n",str);   exit(-1); }
 #define perror1(str,ierr) { fprintf(stderr,"%s %d\n",str,ierr);   exit(-1); }
@@ -150,9 +153,9 @@ int main(int argc, char *argv[])
   //problem->SetPDL(easy);
 
   //solver.SetAztecOption(AZ_precond, AZ_none);
-  //solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
+  solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
   solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_precond, AZ_ls);
+  //solver.SetAztecOption(AZ_precond, AZ_ls);
   //solver.SetAztecOption(AZ_scaling, 8);
   //solver.SetAztecOption(AZ_subdomain_solve, AZ_ilu); 
   //solver.SetAztecOption(AZ_output, 0);
@@ -175,7 +178,21 @@ int main(int argc, char *argv[])
   //solver.SetAztecOption(AZ_reorder, 2);
 
   int Niters = 320;
-  solver.SetAztecOption(AZ_kspace, 160);
+  solver.SetAztecOption(AZ_kspace, 40);
+  AztecOO_StatusTestMaxIters maxItersTest1(100);
+
+  AztecOO_StatusTestResNorm restest1(A, x, bb, 1.0E-12);
+  restest1.DefineResForm(AztecOO_StatusTestResNorm::Explicit, AztecOO_StatusTestResNorm::OneNorm);
+  restest1.DefineScaleForm(AztecOO_StatusTestResNorm::NormOfRHS, AztecOO_StatusTestResNorm::OneNorm);
+
+  AztecOO_StatusTestResNorm restest2(A, x, bb, 1.0E-14);
+  restest2.DefineResForm(AztecOO_StatusTestResNorm::Explicit, AztecOO_StatusTestResNorm::InfNorm);
+  restest2.DefineScaleForm(AztecOO_StatusTestResNorm::NormOfRHS, AztecOO_StatusTestResNorm::InfNorm);
+
+  AztecOO_StatusTestCombo comboTest1(AztecOO_StatusTestCombo::OR, maxItersTest1, restest1);
+  AztecOO_StatusTestCombo comboTest2(AztecOO_StatusTestCombo::AND, comboTest1, restest2);
+  //solver.SetStatusTest(&comboTest2);
+  solver.SetStatusTest(&comboTest2);
    
   double norminf = A.NormInf();
   double normone = A.NormOne();
