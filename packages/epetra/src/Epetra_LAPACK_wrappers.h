@@ -177,9 +177,15 @@
 #define Epetra_fcd char *
 #define PREFIX
 
-#if defined(RS6000)
-#define dgetrf_      dgetrf
+#if defined(TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE)
+#define dgetrf_     dgetrf
 #define dgetrs_     dgetrs
+#define dgetri_     dgetri
+#define dgerfs_     dgerfs
+#define dgecon_     dgecon
+#define dgesvx_     dgesvx
+#define dgesv_      dgesv
+#define dgeequ_     dgeequ
 #define dpotrf_     dpotrf
 #define dpotrs_     dpotrs
 #define dpotri_     dpotri
@@ -188,16 +194,7 @@
 #define dpoequ_     dpoequ
 #define dporfs_     dporfs
 #define dposvx_     dposvx
-#define sgetrf_     sgetrf
-#define sgetrs_     sgetrs
-#define spotrf_     spotrf
-#define spotrs_     spotrs
-#define spotri_     spotri
-#define spocon_     spocon
-#define sposv_      sposv
-#define spoequ_     spoequ
-#define sporfs_     sporfs
-#define sposvx_     sposvx
+#define dlamch_     dlamch
 #define dgels_      dgels
 #define dgeev_      dgeev
 #define dgehrd_     dgehrd
@@ -206,6 +203,23 @@
 #define dormhr_     dormhr
 #define dtrevc_     dtrevc
 #define dtrexc_     dtrexc
+
+#define sgetrf_     sgetrf
+#define sgetrs_     sgetrs
+#define sgetri_     sgetri
+#define sgerfs_     sgerfs
+#define sgecon_     sgecon
+#define sgesvx_     sgesvx
+#define sgesv_      sgesv
+#define sgeequ_     sgeequ
+#define spotrf_     spotrf
+#define spotrs_     spotrs
+#define spotri_     spotri
+#define spocon_     spocon
+#define sposv_      sposv
+#define spoequ_     spoequ
+#define sporfs_     sporfs
+#define sposvx_     sposvx
 #define sgels_      sgels
 #define sgeev_      sgeev
 #define sgehrd_     sgehrd
@@ -215,7 +229,7 @@
 #define strevc_     strevc
 #define strexc_     strexc
 #define slamch_     slamch
-#define dlamch_     dlamch
+
 
 #endif
 

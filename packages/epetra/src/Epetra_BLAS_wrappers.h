@@ -124,7 +124,23 @@
 #define PREFIX
 #define Epetra_fcd char * 
 
-#if defined(__rs6000)
+#if defined(TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE)
+
+#define sasum_ sasum
+#define saxpy_ saxpy
+#define scopy_ scopy
+#define sdot_ sdot
+#define snrm2_ snrm2
+#define sscal_ sscal
+#define isamax_ isamax
+#define sgemv_ sgemv
+#define sger_ sger
+#define strmv_ strmv
+#define sgemm_ sgemm
+#define ssymm_ ssymm
+#define strmm_ strmm
+#define strsm_ strsm
+
 #define dasum_ dasum
 #define daxpy_ daxpy
 #define dcopy_ dcopy

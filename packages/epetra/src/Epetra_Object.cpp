@@ -27,7 +27,7 @@
 
 
 //=============================================================================
-Epetra_Object::Epetra_Object(int DefaultTracebackMode = ConstDefaultTracebackMode) 
+Epetra_Object::Epetra_Object(int DefaultTracebackMode) 
   : Label_(0)
 {
   SetLabel("Epetra::Object");
@@ -35,7 +35,7 @@ Epetra_Object::Epetra_Object(int DefaultTracebackMode = ConstDefaultTracebackMod
 }
 //=============================================================================
 Epetra_Object::Epetra_Object(const char * const Label, 
-			     int DefaultTracebackMode = ConstDefaultTracebackMode) 
+			     int DefaultTracebackMode) 
   : Label_(0)
 {
   SetLabel(Label);
