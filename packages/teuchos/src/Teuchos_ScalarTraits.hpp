@@ -9,7 +9,6 @@
 #ifndef _TEUCHOS_SCALARTRAITS_HPP_
 #define _TEUCHOS_SCALARTRAITS_HPP_
 
-#include <cmath>
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 #ifndef NO_COMPLEX

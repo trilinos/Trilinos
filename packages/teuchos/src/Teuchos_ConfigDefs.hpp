@@ -97,18 +97,36 @@
 #include <assert.h>   
 #endif
 
+#ifdef HAVE_COMPLEX
+#include <complex>
+#elif defined(HAVE_COMPLEX_H)
+#include <complex.h>
+#endif
+
 #ifdef HAVE_VECTOR
 #include <vector>
+#elif defined(HAVE_VECTOR_H)
+#include <vector.h>
 #endif
 
 #ifdef HAVE_ALGORITHM
 #include <algorithm>
+#elif defined(HAVE_ALGORITHM_H)
+#include <algorithm.h>
+#endif
+
+#ifdef HAVE_MAP
+#include <map>
+#elif defined(HAVE_MAP_H)
+#include <map.h>
 #endif
 
 #ifdef HAVE_STRING
 #include <string>
-#else 
+#elif defined(HAVE_STRING_H) 
 #include <string.h>
+#elif defined(HAVE_STRINGS_H)
+#include <strings.h>
 #endif
 
 #ifndef TFLOP

@@ -3,10 +3,7 @@
 
 // Currently, support for Arbitrary and sublist (ParameterList) parameters has been disabled. I have been experiencing difficulty using pointer Entries as the data in the <key, data> pair in the STL map class.
 
-#include <complex>
-#include <iostream>
-#include <map>
-#include <string>
+#include "Teuchos_ConfigDefs.hpp"
 // #include "Teuchos_ParameterArbitrary.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_ScalarTraits.hpp"

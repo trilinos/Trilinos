@@ -70,7 +70,7 @@ AC_CONFIG_SRCDIR(/src/Teuchos_LAPACK.hpp)
 #
 AC_CONFIG_AUX_DIR(config)
 #  #np# - Change file names in next line 
-# Configure should create src/New_Package_config.h from src/New_Package_config.h.in
+# Configure should create src/Teuchos_config.h from src/Teuchos_config.h.in
 
 AM_CONFIG_HEADER(src/Teuchos_config.h:src/Teuchos_config.h.in)
 
@@ -147,36 +147,53 @@ TAC_ARG_CHECK_MPI
 
 AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
 AC_CHECK_HEADERS([cmath math.h iomanip iomanip.h iostream iostream.h],,,)
-AC_CHECK_HEADERS([string string.h],,,)
+AC_CHECK_HEADERS([string string.h complex complex.h algorithm algorithm.h],,,)
+AC_CHECK_HEADERS([map map.h vector vector.h],,,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  New_Package requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Teuchos requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_cstdio" != "Xyes" && test "X$ac_cv_header_stdio_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  New_Package requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  Teuchos requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cassert or assert.h.  New_Package requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find string or string.h.  New_Package requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find cassert or assert.h.  Teuchos requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  New_Package requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  Teuchos requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find string or string.h.  Teuchos requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_complex" != "Xyes" && test "X$ac_cv_header_complex_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find complex or complex.h.  Teuchos requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_algorithm" != "Xyes" && test "X$ac_cv_header_algorithm_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find algorithm or algorithm.h.  Teuchos requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_map" != "Xyes" && test "X$ac_cv_header_map_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find map or map.h.  Teuchos requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find vector or vector.h.  Teuchos requires at least one or the other.]])
 fi
 
 if test "X${host}" != "Xtflop"; then
   if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find cmath or math.h.  New_Package requires at least one or the other.]])
+    AC_MSG_ERROR([[Cannot find cmath or math.h.  Teuchos requires at least one or the other.]])
   fi
 else
   # TFLOP
   if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  New_Package requires at least one or the other.]])
+    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  Teuchos requires at least one or the other.]])
   fi
 fi  
 
@@ -223,7 +240,7 @@ TAC_ARG_WITH_INCDIRS
 # a cpp #define command and one or more source or header files  - ie 
 # conditional compilation which requires a change to the makefile.
 # If configure is called with "--enable-newp_swahili", it will place 
-# a #define HAVE_NEWP_SWAHILI in New_Package_config.h and add source 
+# a #define HAVE_NEWP_SWAHILI in Teuchos_config.h and add source 
 # and header files as specified in Makefile.am 
 #
 # To add an option to your package, you will need to modify this file
@@ -233,7 +250,7 @@ TAC_ARG_WITH_INCDIRS
 # TAC_ARG_ENABLE_OPTION performs several tasks, including:
 #   1)  Setting a help string
 #   2)  Printing a message to standard out
-#   3)  Defining HAVE_NEWP_SWAHILI (For use in New_Package_config.h)
+#   3)  Defining HAVE_NEWP_SWAHILI (For use in Teuchos_config.h)
 #
 # AM_CONDITIONAL makes HAVE_NEWP_SWAHILI available for use in Makefile.am
 # ------------------------------------------------------------------------

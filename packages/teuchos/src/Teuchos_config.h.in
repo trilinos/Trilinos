@@ -11,6 +11,12 @@
 /* As F77_FUNC, but for C identifiers containing underscores. */
 #undef F77_FUNC_
 
+/* Define to 1 if you have the <algorithm> header file. */
+#undef HAVE_ALGORITHM
+
+/* Define to 1 if you have the <algorithm.h> header file. */
+#undef HAVE_ALGORITHM_H
+
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
 
@@ -25,6 +31,12 @@
 
 /* Define to 1 if you have the <cmath> header file. */
 #undef HAVE_CMATH
+
+/* Define to 1 if you have the <complex> header file. */
+#undef HAVE_COMPLEX
+
+/* Define to 1 if you have the <complex.h> header file. */
+#undef HAVE_COMPLEX_H
 
 /* Define to 1 if you have the <cstdio> header file. */
 #undef HAVE_CSTDIO
@@ -49,6 +61,12 @@
 
 /* Define if you have LAPACK library. */
 #undef HAVE_LAPACK
+
+/* Define to 1 if you have the <map> header file. */
+#undef HAVE_MAP
+
+/* Define to 1 if you have the <map.h> header file. */
+#undef HAVE_MAP_H
 
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
@@ -106,6 +124,12 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <vector> header file. */
+#undef HAVE_VECTOR
+
+/* Define to 1 if you have the <vector.h> header file. */
+#undef HAVE_VECTOR_H
 
 /* Name of package */
 #undef PACKAGE

@@ -5,8 +5,6 @@
 #define _TEUCHOS_BLAS_WRAPPERS_HPP_
 
 #include "Teuchos_ConfigDefs.hpp"
-#include <stdio.h>
-#include <string.h>
 
 /*! \file Teuchos_BLAS_wrappers.h  
     \brief The Templated Petra BLAS Class.

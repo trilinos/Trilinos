@@ -6,8 +6,6 @@
 #ifndef _TEUCHOS_LAPACK_WRAPPERS_HPP_
 #define _TEUCHOS_LAPACK_WRAPPERS_HPP_
 
-#include <stdio.h>
-#include <string.h>
 #include "Teuchos_ConfigDefs.hpp"
 
 /*! \file Tpetra_LAPACK_wrappers.h
