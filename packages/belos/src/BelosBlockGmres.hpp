@@ -62,9 +62,11 @@ private:
 	const int _maxits, _blocksize, _numrhs;
 	const TYPE _residual_tolerance;
 	TYPE *_residerrors, *_trueresids;
+	TYPE *_update_ary;
 	int _rhs_iter, _restartiter, _iter;
 	bool _startblock;
 	int _debuglevel, _restart;
+	int _ldupdate, _rowsupdate, _colsupdate;
 	TYPE _dep_tol, _blk_tol, _sing_tol, _blkerror;
 };
 //
@@ -82,7 +84,9 @@ BlockGmres<TYPE>::BlockGmres(AnasaziMatrix<TYPE> & mat, AnasaziPrecondition<TYPE
 							_hessmatrix(0),
 							_maxits(maxits), _blocksize(blksz), _numrhs(numrhs), _restart(1),
 							_residual_tolerance(tol), _residerrors(0), _trueresids(0),
-							_rhs_iter(0), _restartiter(0), _iter(0), 
+							_update_ary(0),
+							_rhs_iter(0), _restartiter(0), _iter(0),
+							_ldupdate(0), _rowsupdate(0), _colsupdate(0),
 							_startblock(false), _debuglevel(0), _dep_tol(0.75),
 							_blk_tol(5.0e-7), _sing_tol(5.0e-14), _blkerror(1.0){
 	//	cout << "ctor:BlockGmres " << this << endl;
@@ -99,6 +103,7 @@ BlockGmres<TYPE>::BlockGmres(AnasaziMatrix<TYPE> & mat, AnasaziPrecondition<TYPE
 		assert(_hessmatrix);
 		//_residerrors = new TYPE[ _blocksize > _numrhs ? _blocksize : _numrhs ]; assert(_residerrors);
 		_residerrors = new TYPE[_numrhs + _blocksize]; assert(_residerrors);
+		_update_ary = new TYPE[(_maxits+1)*_blocksize*_blocksize]; assert(_update_ary);
 	}
 	else {
 		 cout << "BlockGmres:ctor " << _maxits << _blocksize << _basisvecs <<  endl;
@@ -114,6 +119,7 @@ BlockGmres<TYPE>::~BlockGmres() {
 	if (_solutions) delete _solutions;
 	if (_residerrors) delete [] _residerrors;
 	if (_trueresids) delete [] _trueresids;
+	if (_update_ary) delete [] _update_ary;
 }
 
 template <class TYPE>
@@ -498,6 +504,12 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 				init_norm = norm_G10;
 			}
 			//
+			_rowsupdate = 0; _colsupdate = 0; _ldupdate = 0;
+			int tsz = (_maxits+1)*_blocksize*_blocksize;
+			for (i=0; i<tsz; i++){
+				_update_ary[i] = zero;
+			}
+			//
 			// The block error used here is an average residual error over
 		    // the current block. This is set to one to start with since all 
 		    // initial residuals have norm one
@@ -511,6 +523,7 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 				//
 				AnasaziDenseMatrix<TYPE> rhs((_iter+2)*_blocksize,_blocksize);
 				//
+				//dep_flg = true;
 				exit_flg = false;
 				exit_flg = BlockReduction(dep_flg, vb);
 				//
@@ -522,21 +535,46 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 							<< "  Iteration# " << _iter << endl;
 					   cout << "  Reason: Failed to compute new block of "
 						    << "orthonormal basis vectors" << endl;
-					   cout << " Still need to implement process to recover "
-						    << "and return the solutions from previous step" 
-							<< endl;
-					   cout << "Currently, only the initial guesses are returned"
-						    << endl << endl;
-					   brkflg = true;
+					   cout << " Solution from previous step will "
+						    << "be returned upon exiting this loop"
+							<< endl << endl;
+					   brkflg = true; // set flag so we can also break out of
+					                  // the restart loop
+					}
+					// Compute and return the solution from previous step
+					// If _iter = 0, this is just the initial guess which
+					// is already computed
+					//
+					if (_iter > 0) {
+					   TYPE * coeffs = new TYPE[_rowsupdate*_colsupdate]; 
+					   assert(coeffs);
+					   for (j=0; j<_colsupdate; j++){
+						   for (i=0; i<_rowsupdate; i++){
+							   coeffs[i+j*_rowsupdate] = _update_ary[i+j*_rowsupdate];
+						   }
+					   }
+					   AnasaziDenseMatrix<TYPE> update_mat(_rowsupdate, _colsupdate);
+					   update_mat.setvalues(coeffs, _ldupdate);
+                       AnasaziDenseMatrix<TYPE> update_view(update_mat,izero,izero,_iter*_blocksize,_blocksize);
+					   for (i=0; i<_iter*_blocksize; i++) {
+						   index[i] = i;
+					   }
+					   AnasaziMultiVec<TYPE> *Vjpl = _basisvecs->CloneView(index,_iter*_blocksize);
+					   cur_block_sol->MvTimesMatAddMv(one, *Vjpl, update_view, one);
+					   delete Vjpl;
+					   delete [] coeffs;
 					}
 					break;
-				}
+				} // end if (exit_flg)
 				//
 				// Set up least squares problems
 				//
 				TYPE *ptr_rhs = rhs.getarray();
 				TYPE *ptr_G10 = G10.getarray();
 				int ldrhs = rhs.getld();
+				_ldupdate = ldrhs;
+				_rowsupdate = rhs.getrows();
+				_colsupdate = rhs.getcols();
 				int ldG10 = G10.getld();
 				for (j=0; j<_blocksize; j++) {
 					for (i=0; i<j+1; i++) {
@@ -572,6 +610,16 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 				assert(info==0);
 				delete [] work;
 				//
+				// Update coefficients for solution update in case of a 
+				// breakdown in the block Arnoldi process, the solution
+				// from the previous step can be returned.
+				//
+				for (j=0; j<_colsupdate; j++){
+					for (i=0; i<_rowsupdate; i++){
+						_update_ary[i+j*_rowsupdate] = ptr_rhs[i+j*_rowsupdate];
+					}
+				}
+				//
 				// Compute the residuals and the block error
 				//
 				_blkerror = zero;
@@ -582,7 +630,7 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 					}
 					_residerrors[_rhs_iter*_blocksize+j] = sqrt(_residerrors[_rhs_iter*_blocksize+j]);
 					//
-					if (norm_G10) _residerrors[_rhs_iter*_blocksize+j] /= init_norm; //norm_G10;
+					if (norm_G10) _residerrors[_rhs_iter*_blocksize+j] /= init_norm; 
 					//
 					_blkerror += _residerrors[_rhs_iter*_blocksize+j];
 				}
