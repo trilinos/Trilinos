@@ -49,12 +49,10 @@ namespace Abstract {
 
 /*! 
   \brief %NOX's pure abstract vector interface for vectors that are
-  used by the nonlinear solver. We require only limited functionality for
-  the vectors.
+  used by the nonlinear solver. 
 
-  The documentation throughout assumes that \f$x\f$ denotes "this"
-  vector, \f$x_i\f$ is the i-th component (or entry) of \f$x\f$, and
-  \f$n\f$ is the length of \f$x\f$.
+  The user should implement their own concrete implementation of this
+  class or use one of the implementations provided by us.
 
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
@@ -83,45 +81,49 @@ public:
 
   //! Initialize every element of this vector with \c gamma.
   /*! 
+    Here x represents this vector, and we update it as
     \f[ x_i = \gamma \quad \mbox{for } i=1,\dots,n \f] 
-    \return Reference to x
+    \return Reference to this object
   */
   virtual NOX::Abstract::Vector& init(double gamma) = 0;
 
   //! Initialize each element of this vector with a random value
-  /*
+  /*!
     If \c useSeed is true, uses the value of \c seed to seed the
-    random number generator before filling the entries of x. So, if
-    two calls are made where \c useSeed is true and \c seed is the
-    same, then the vectors returned should be the same.
+    random number generator before filling the entries of this
+    vector. So, if two calls are made where \c useSeed is true and \c
+    seed is the same, then the vectors returned should be the same.
 
-    Default implementation throw an error. Only used by a subset of methods.
+    Default implementation throw an error. Only referenced by LOCA methods.
 
-    \return Reference to x
+    \return Reference to this object
    */
   virtual NOX::Abstract::Vector& random(bool useSeed = false, double seed = 0.0);
 
   //! Put element-wise absolute values of source vector \c y into this vector.
   /*! 
+    Here x represents this vector, and we update it as
     \f[ x_i = | y_i | \quad \mbox{for } i=1,\dots,n \f] 
 
-    \return Reference to x
+    \return Reference to this object
   */
   virtual NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y) = 0;
 
   //! Copy source vector \c y into this vector.
   /*! 
+    Here x represents this vector, and we update it as
     \f[ x_i = y_i \quad \mbox{for } i=1,\dots,n \f] 
 
-    \return Reference to x
+    \return Reference to this object
   */
   virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y) = 0;
 
   //! Put element-wise reciprocal of source vector \c y into this vector.
   /*! 
+    Here x represents this vector, and we update it as
     \f[ x_i =  \frac{1}{y_i} \quad \mbox{for } i=1,\dots,n  \f] 
 
-    \return Reference to x
+    \return Reference to this object
   */
   virtual NOX::Abstract::Vector& reciprocal(const NOX::Abstract::Vector& y) = 0;
 
@@ -131,33 +133,37 @@ public:
 
   //! Scale each element of this vector by \c gamma.
   /*! 
+    Here x represents this vector, and we update it as
     \f[ x_i = \gamma x_i \quad \mbox{for } i=1,\dots,n \f] 
 
-    \return Reference to x
+    \return Reference to this object
   */
   virtual NOX::Abstract::Vector& scale(double gamma) = 0;
 
   //! Scale this vector <em>element-by-element</em> by the vector a.
   /*! 
+    Here x represents this vector, and we update it as
     \f[ x_i = x_i \cdot a_i \quad \mbox{for } i=1,\dots,n \f] 
 
-    \return Reference to x
+    \return Reference to this object
   */
   virtual NOX::Abstract::Vector& scale(const NOX::Abstract::Vector& a) = 0;
 
-  //! Compute x = (alpha * a) + (x * this) where x is this vector.
+  //! Compute x = (alpha * a) + (gamma * x) where x is this vector.
   /*! 
+    Here x represents this vector, and we update it as
     \f[ x_i = \alpha \; a_i + \gamma \; x_i \quad \mbox{for } i=1,\dots,n \f] 
 
-    \return Reference to x
+    \return Reference to this object
   */
   virtual NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a, double gamma = 0.0) = 0;
 
-  //! Compute x = (alpha * a) + (beta * b) + (x * this) where x is this vector.
+  //! Compute x = (alpha * a) + (beta * b) + (gamma * x) where x is this vector.
   /*! 
+    Here x represents this vector, and we update it as
     \f[ x_i = \alpha \; a_i + \beta \; b_i + \gamma \; x_i \quad \mbox{for } i=1,\dots,n \f] 
 
-    \return Reference to x
+    \return Reference to this object
   */
   virtual NOX::Abstract::Vector& update(double alpha, const NOX::Abstract::Vector& a, 
 			 double beta, const NOX::Abstract::Vector& b,
@@ -173,7 +179,8 @@ public:
 
     If type is NOX::DeepCopy, then we need to create an exact replica
     of "this". Otherwise, if type is NOX::ShapeCopy, we need only
-    replicate the shape of "this". 
+    replicate the shape of "this". Note that there is <em>no assumption</em>
+    that a vector created by ShapeCopy is initialized to zeros.
 
     \return Pointer to newly created vector or NULL if clone is not supported. 
   */
@@ -184,11 +191,13 @@ public:
   //@{ \name Norms.
 
   //! Norm.
-  /*! Defined as follows for each NOX::Abstract::Vector::NormType:
+  /*! 
+    Here x represents this vector, and we compute its norm as follows:
+    for each NOX::Abstract::Vector::NormType:
     <ul>
-    <li>\c TWO : 2-norm \f[ \|x\| = \sqrt{\sum_{i=1}^{n} x_i^2} \f] 
-    <li>\c ONE : 1-norm \f[ \|x\| = \sum_{i=1}^{n} |x_i| \f]
-    <li>\c INF : infinity- or max-norm \f[ \|x\| = \max_{i} |x_i| \f]
+    <li>  NOX::Abstract::Vector::TwoNorm  \f[ \|x\| = \sqrt{\sum_{i=1}^{n} x_i^2} \f] 
+    <li>  NOX::Abstract::Vector::OneNorm  \f[ \|x\| = \sum_{i=1}^{n} |x_i| \f]
+    <li>  NOX::Abstract::Vector::MaxNorm  \f[ \|x\| = \max_{i} |x_i| \f]
     </uL>
 
     \return \f$\|x\|\f$
@@ -196,7 +205,8 @@ public:
   virtual double norm(NOX::Abstract::Vector::NormType type = NOX::Abstract::Vector::TwoNorm) const = 0;
 
   //! Weighted 2-Norm.
-  /*! Defined as 
+  /*! 
+    Here x represents this vector, and we compute its weighted norm as follows:
     \f[ \|x\|_w = \sqrt{\sum_{i=1}^{n} w_i \; x_i^2} \f] 
     \return \f$ \|x\|_w \f$
   */
@@ -208,9 +218,9 @@ public:
 
   //! Dot product with \c y.
   /*! 
-    Defined as
-    \f[ <x,y> = \sum_{i=1}^n x_i y_i \f] 
-    \return \f$<x,y>\f$
+    Here x represents this vector, and we compute its dot product with y as follows:
+    \f[ \langle x,y \rangle = \sum_{i=1}^n x_i y_i \f] 
+    \return \f$\langle x,y \rangle\f$
    */
   virtual double dot(const NOX::Abstract::Vector& y) const = 0;
   
@@ -218,9 +228,9 @@ public:
 
   //! Return the length of vector.
   /*! 
-    \return n
+    \return The length of this vector
     \note Even if the vector is distributed across processors, this
-    should return the \e global length of the vector.
+    should return the <em> global length </em> of the vector.
    */
   virtual int length() const = 0;
 
