@@ -58,7 +58,7 @@ extern int OPTIMAL_LOCAL_COARSE_SIZE;
 #endif
 #endif
 
-#if defined(HAVE_ML_ZOLTAN)
+#if defined(HAVE_ML_ZOLTAN) && defined(HAVE_ML_MPI)
 #include "zoltan.h"
 
 /*
@@ -406,8 +406,8 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
 				  int current_level)
 {
 
-#ifdef HAVE_ML_ZOLTAN
   int i, Nrows;
+#if defined(HAVE_ML_ZOLTAN) && defined(HAVE_ML_MPI)
   ML_Comm * comm = Amatrix->comm;
   int mypid = Amatrix->comm->ML_mypid;
   double t0;
@@ -535,10 +535,17 @@ End:
   /* returns the *global* number of partitions */
   return(N_parts);
 #else
-  puts("you must configure ml with Zoltan support, using");
-  puts("parameter --with-ml_zoltan in your configuration line");
-  exit(EXIT_FAILURE);
-  return 0;
+
+  puts("*ML*ERR* You must configure ml with Zoltan support, using");
+  puts("*ML*ERR* parameter --with-ml_zoltan in your configuration line.");
+  puts("*ML*ERR* You also need --enable-mpi to use Zoltan");
+  puts("*ML*ERR* Now inserting all local nodes in the same aggregate...");
+
+  Nrows = Amatrix->getrow->Nrows;
+  for (i = 0 ; i < Nrows ; ++i)
+    graph_decomposition[i] = 0;
+
+  return(1);
 #endif
   
 } /* ML_DecomposeGraph_with_Zoltan */
