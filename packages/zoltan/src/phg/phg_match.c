@@ -141,7 +141,6 @@ static int matching_local(ZZ *zz, HGraph *hg, Matching match)
 }
 
 
-
     
 /* local inner product matching among vertices in each proc column */
 /* code adapted from serial matching_ipm method */
@@ -180,14 +179,15 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
                 /* 
                 if(match[v2] != v2) {
                      row swapping goes here
-                } */
-                if (!ips[v2]++)
+                } 
+                */
+                if (!ips[v2]++) /* TODO: use edge weight */
                     adj[n++] = v2;
             }
         }
 
         /* sum up local inner products along proc column */
-        /* for now, sum up ip value for all vertices; this is slow! */
+        /* for now, sum up i.p. value for all vertices; this is slow! */
         /* to do: 1) ignore vertices already matched 
                   2) use "superrows" with only nonzero values */
         MPI_Allreduce(ips, gips, hg->nVtx, MPI_INT, MPI_SUM, hgc->col_comm);              

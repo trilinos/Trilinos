@@ -110,6 +110,7 @@ int Zoltan_PHG(
     nVtx = zoltan_hg->PHG.nVtx;
     zoltan_hg->PHG.redl = hgp.redl;     /* redl needs to be dynamic */
     /* RTHRTH -- redl may need to be scaled by number of procs */
+    /* EBEB -- at least make sure redl > #procs */
  
     /* allocate output partition memory */
     output_parts = (Partition) ZOLTAN_MALLOC (nVtx * sizeof(int));
@@ -238,13 +239,13 @@ static int Zoltan_PHG_Initialize_Params(
   /* Set default values */
   strncpy(hgp->redm_str,            "no",  MAX_PARAM_STRING_LEN);
   strncpy(hgp->coarsepartition_str, "gr0", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->refinement_str,      "no",  MAX_PARAM_STRING_LEN);
-
+  strncpy(hgp->refinement_str,      "fm2", MAX_PARAM_STRING_LEN);
+  
   hgp->locmatching = NULL;
   hgp->ews = 1;
   hgp->check_graph = 1;
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
-  hgp->redl = zz->LB.Num_Global_Parts;
+  hgp->redl = MAX(zz->LB.Num_Global_Parts, 100);
   hgp->output_level = PHG_DEBUG_LIST;
   hgp->comm.nProc_x = -1;
   hgp->comm.nProc_y = -1;
