@@ -10,6 +10,39 @@ class Epetra_MultiVector;
 #define Trilinos_Util_min(x,y) (( x < y ) ? x : y)     /* min function */
 
 #ifdef HAVE_CONFIG_H
+/*
+ * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
+ * be undef'd here to avoid warnings when this file is included from another package.
+ * Fix from KL
+ */
+#ifdef PACKAGE
+#undef PACKAGE
+#endif
+
+#ifdef PACKAGE_NAME
+#undef PACKAGE_NAME
+#endif
+
+#ifdef PACKAGE_BUGREPORT
+#undef PACKAGE_BUGREPORT
+#endif
+
+#ifdef PACKAGE_STRING
+#undef PACKAGE_STRING
+#endif
+
+#ifdef PACKAGE_TARNAME
+#undef PACKAGE_TARNAME
+#endif
+
+#ifdef PACKAGE_VERSION
+#undef PACKAGE_VERSION
+#endif
+
+#ifdef VERSION
+#undef VERSION
+#endif
+
 #include "Triutils_config.h"
 
 #ifdef HAVE_DEBUG
