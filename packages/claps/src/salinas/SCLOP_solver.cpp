@@ -377,11 +377,12 @@ void SCLOP_solver::construct_K_base()
   Comm->MinAll(&min_diag, &min_diag_all, 1);
   Comm->MaxAll(&max_diag, &max_diag_all, 1);
   if (MyPID == 0) {
-    cout << "min diagonal entry in AStandard = " << min_diag_all << endl;
-    cout << "max diagonal entry in AStandard = " << max_diag_all << endl;
-    if (min_diag_all != 0) 
-      cout << "ratio of max to min diagonal = "  
-	   << max_diag_all/min_diag_all << endl;
+    //    cout << "min diagonal entry in AStandard = " << min_diag_all << endl;
+    //    cout << "max diagonal entry in AStandard = " << max_diag_all << endl;
+    if (min_diag_all != 0) { 
+      //      cout << "ratio of max to min diagonal = "  
+      //	   << max_diag_all/min_diag_all << endl;
+    }
   }
   int print_flag = 1;
   if (print_flag == 0) {

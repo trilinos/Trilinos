@@ -98,7 +98,6 @@ int CLOP_constraint::factor()
     for (col=ncol_global-1; col>=0; col--) {
       icol = find_column(col);
       get_old_info(col, iproc, con_num);
-      assert ((iproc >= 0) && (iproc <= 3));
       if (MyPID == iproc) n = get_ncol(col, 1);
       Comm.Broadcast(&n, 1, iproc);
       if (n > dimsfac) resize_c_and_s(n);
@@ -261,13 +260,16 @@ void CLOP_constraint::update3(int col, int icol, int n, int con_num)
 void CLOP_constraint::update4(int con_num, double a[])
 {
   int i, row, icol, row2;
-  row = con_row[con_num];
   icol = con_col[con_num];
+  if (con_flag[icol] == true) {
+    a[0] = 0;
+    return;
+  }
+  row = con_row[con_num];
   for (i=0; i<nnzcol[icol]; i++) {
     row2 = colrows[icol][i];
     if (row2 == row) {
-      if (con_flag[icol] == false) a[0] = 1.0/colvals[icol][i];
-      if (con_flag[icol] == true ) a[0] = 0.0;
+      a[0] = 1.0/colvals[icol][i];
       break;
     }
   }
@@ -301,9 +303,11 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
   // form transpose of transformed constraint matrix
   //
   myzero(ivec, nrow);
-  for (i=0; i<ncon_me; i++) 
-    if (row_flag[con_row[i]] == true) 
-      ivec[con_row[i]] = 1;
+  for (i=0; i<ncon_me; i++) {
+    if (con_flag[con_col[i]] == false) {
+      if (row_flag[con_row[i]] == true) ivec[con_row[i]] = 1;
+    }
+  }
   for (i=0; i<ncol; i++) {
     for (j=0; j<nnzcol[i]; j++) {
       row = colrows[i][j];
@@ -316,10 +320,12 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
   double *val1 = new double[val2[nrow]];
   myzero(ivec, nrow);
   for (i=0; i<ncon_me; i++) {
-    if (row_flag[con_row[i]] == true) {
-      val1[ val2[con_row[i]]] = 1;
-      cval1[val2[con_row[i]]] = con_col[i];
-      ivec[con_row[i]] = 1;
+    if (con_flag[con_col[i]] == false) {
+      if (row_flag[con_row[i]] == true) {
+	val1[ val2[con_row[i]]] = 1;
+	cval1[val2[con_row[i]]] = con_col[i];
+	ivec[con_row[i]] = 1;
+      }
     }
   }
   double con_tol(1e-10);
@@ -392,9 +398,11 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
       nc1++;
     }
   }
-  if (nc1 < ncon_me) {
-    *fout << "Warning: " << ncon_me - nc1 << " redundant constraint(s) "
-	  << "owned by processor " << MyPID << endl;
+  int nc1_sum;
+  Comm.SumAll(&nc1, &nc1_sum, 1);
+  if ((print_flag >= 0) && (ncol_global > nc1_sum)) {
+    *fout << "Warning: there are " << ncol_global - nc1_sum 
+	  << " redundant constraints " << endl;
   }
   //
   // determine non-constrained (type 1) dofs in sub_gdofs array
@@ -485,7 +493,7 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
       nc1++;
     }
   }
-  delete [] Iarray; delete [] Darray; delete [] con_flag;
+  delete [] Iarray; delete [] Darray;
   Epetra_Map RowMapu(-1, ndof_u, dof_u, 0, Comm);
   delete [] dof_u; delete [] gcol_all; delete [] row_flag; 
   Tran->FillComplete(RowMapu, A->RowMap());
@@ -508,9 +516,11 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
   }
   x2_dof = new int[nc2]; nc2 = 0;
   for (i=0; i<ncon_me; i++) {
-    if (nnz_con[con_col[i]] > max_nnz_con) {
-      x2_dof[nc2] = con_row[i];
-      nc2++;
+    if (con_flag[con_col[i]] == false) {
+      if (nnz_con[con_col[i]] > max_nnz_con) {
+	x2_dof[nc2] = con_row[i];
+	nc2++;
+      }
     }
   }
   nx2 = nc2;
@@ -543,7 +553,7 @@ void CLOP_constraint::Tran(Epetra_CrsMatrix* & Tran, Epetra_Map* & RowMapMyCon,
     delete [] colvals[i];
   }
   delete [] colrows; delete [] colvals; delete [] mycols; delete [] nnzcol;
-  delete [] con_row; delete [] con_col; delete [] nnz_con;
+  delete [] con_row; delete [] con_col; delete [] nnz_con; delete [] con_flag;
 }
 
 void CLOP_constraint::determine_nnz_con(int nnz_con[])
