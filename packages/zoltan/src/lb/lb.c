@@ -95,17 +95,16 @@ int flag;
   }
 
   /*
-   *  Set MPI values for of lb:
+   *  Set MPI values for lb:
    */
 
-  MPI_Comm_compare(communicator, MPI_COMM_NULL, &flag);
-  if (flag == MPI_IDENT) {
+  if (communicator == MPI_COMM_NULL) {
     /*
      *  The processor is not in the communicator for the load-balancing
-     *  object.  Set lb->Communicator to NULL and give dummy values to
-     *  lb->Proc and lb->Num_Proc.
+     *  object.  Set lb->Communicator to MPI_COMM_NULL and give dummy 
+     *  values to lb->Proc and lb->Num_Proc.
      */
-    lb->Communicator = NULL;
+    lb->Communicator = MPI_COMM_NULL;
     lb->Proc = -1;
     lb->Num_Proc = 0;
   }
@@ -288,6 +287,18 @@ int i;
   else if (strcasecmp(method_name, "OCTPART") == 0) {
     lb->Method = OCTPART;
     lb->LB_Fn = lb_oct_init;
+  }
+  else if (strcasecmp(method_name, "PARMETIS_PART") == 0) {
+    lb->Method = PARMETIS_PART;
+    lb->LB_Fn = LB_ParMetis_Part;
+  }
+  else if (strcasecmp(method_name, "PARMETIS_REPART") == 0) {
+    lb->Method = PARMETIS_REPART;
+    lb->LB_Fn = LB_ParMetis_Part;
+  }
+  else if (strcasecmp(method_name, "PARMETIS_REFINE") == 0) {
+    lb->Method = PARMETIS_REFINE;
+    lb->LB_Fn = LB_ParMetis_Part;
   }
   else if (strcasecmp(method_name, "NONE") == 0) {
     lb->Method = NONE;
