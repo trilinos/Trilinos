@@ -229,3 +229,4 @@ LOCA::Eigensolver::AnasaziStrategy::computeEigenvalues(
 
   return NOX::Abstract::Group::Ok;
 }
+
