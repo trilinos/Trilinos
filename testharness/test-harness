@@ -124,8 +124,8 @@ my $testCompileError=0; # If an error occurs during the compilation of one of
                         # should be attached
 open (ERRORS, ">>errors.txt") or die "$! error trying to open file";
 open (WARNINGS, ">>warnings.txt") or die "$! error trying to open file";
-# Summary file serves as the body of the email, rather than an attachment
-open (SUMMARY, ">>summary.txt") or die "$! error trying to open file";
+# EmailBody file serves as the body of the email, 
+open (BODY, ">>EmailBody.txt") or die "$! error trying to open file";
 
 #
 # Update Trilinos from CVS repository
@@ -296,7 +296,7 @@ if ($mpi) {
 # Close filehandles and delete temp files
 #
 
-close SUMMARY;
+close BODY;
 close ERRORS;
 close WARNINGS;
 
@@ -330,8 +330,8 @@ sub sendemail {
   my $testfile2=join("",'log',$ARCH,'.txt');
   my $scriptowner="";
   if ( -f $testfile2) {
-    system "mv $homedir/$testfile2 summary.txt";
-    open (OWNER, "summary.txt") or die "$! error trying to open file";
+    system "mv $homedir/$testfile2 EmailBody.txt";
+    open (OWNER, "EmailBody.txt") or die "$! error trying to open file";
     $scriptowner=<OWNER>;
     close OWNER;
   }
@@ -447,10 +447,10 @@ sub sendemail {
 		 Disposition=>'attachment'
 		 );
   }
-    print SUMM "************************************************\nThe following is the output from the test script listed above (or failed compile attempt).\nPlease note that the -v option was not selected for this log.\nNOTE:Depending on your Mail User Agent (MUA), the test summary will either appear below, or it will be attached as a file called \"summary.txt\".\nSee any attachments listed above for more details.\n*************************************************\n";
-    if (-f "summary.txt") {
+    print SUMM "************************************************\nThe following is the output from the test script listed above (or failed compile attempt).\nPlease note that the -v option was not selected for this log.\nNOTE:Depending on your Mail User Agent (MUA), the test summary will either appear below, or it will be attached as a file called \"EmailBody.txt\".\nSee any attachments listed above for more details.\n*************************************************\n";
+    if (-f "EmailBody.txt") {
       $msg->attach(Type =>'TEXT',
-		   Path=>'summary.txt',
+		   Path=>'EmailBody.txt',
 		   Disposition=>'inline'
 		  );
     }
@@ -486,10 +486,10 @@ system "rm -f logErrors.txt logMpiErrors.txt";
     print SUMM "\nWarning: Unknown test frequency, results below:\n";
   }
 
-    print SUMM "*****************************************************\nThe following is the output from the test script listed above.\nPlease note that the -v option was not selected for this log.\nWhile no errors occurred during this test, this log can still be examined to see which tests were run.\nNOTE:Depending on your Mail User Agent (MUA), the test summary will either appear below, or it will be attached as a file called 'summary.txt'\n******************************************************";
+    print SUMM "*****************************************************\nThe following is the output from the test script listed above.\nPlease note that the -v option was not selected for this log.\nWhile no errors occurred during this test, this log can still be examined to see which tests were run.\nNOTE:Depending on your Mail User Agent (MUA), the test summary will either appear below, or it will be attached as a file called 'EmailBody.txt'\n******************************************************";
 
   $msg->attach(Type =>'TEXT',
-	       Path=>'summary.txt',
+	       Path=>'EmailBody.txt',
 		 Disposition=>'inline'
 	      );
 $msg->send;
@@ -505,6 +505,6 @@ $updateerror=0;
 $trilinosCompileError=0;
 $testCompileError=0;
 
-system "rm -f errors.txt warnings.txt updatelog.txt summary.txt trilinosCompileLog.txt testCompileLog.txt summ.txt";
+system "rm -f errors.txt warnings.txt updatelog.txt EmailBody.txt trilinosCompileLog.txt testCompileLog.txt summ.txt";
 
 }
