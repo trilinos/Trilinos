@@ -3,6 +3,7 @@
 #define TEUCHOS_PARAMETER_LIST_H
 
 #include "Teuchos_ParameterEntry.hpp" // class data element 
+#include "Teuchos_TestForException.hpp"
 #include "Teuchos_map.hpp"
 
 namespace Teuchos {
@@ -11,7 +12,6 @@ namespace Teuchos {
 class ParameterList {
 
   //! Parameter container typedef
-//  typedef map<string, ParameterEntry> Map;
   typedef Teuchos::map<string, ParameterEntry> Map;
 
   //! Parameter container const iterator typedef
@@ -59,6 +59,11 @@ public:
   //@{
   template<typename T>
   void setParameter(const string& name, T value);
+
+  // Handles the case when a user sets the parameter with a character
+  // string in parenthesis.
+  void setParameter(const string& name, const char value[])
+	{ return setParameter(name, std::string(value) ); }
   //@}
 
   /** @name Getting Parameters 
@@ -74,14 +79,35 @@ public:
   template<typename T>
   T& getParameter(const string& name, T def_value);
 
+  std::string& getParameter(const string& name, const char def_value[])
+  	{ return getParameter(name, std::string(def_value)); }
+
   template<typename T>
   const T& getParameter(const string& name, T def_value) const;
+
+  const std::string& getParameter(const string& name, const char def_value[]) const
+	{ return getParameter(name, std::string(def_value)); }
+
+  // The parameter should already be set, so these methods return it or throw
+  // an exception if the parameter doesn't exist.
+  template<typename T>
+  T& getParameter(const string& name);
+
+  template<typename T>
+  const T& getParameter(const string& name) const;
   //@}
 
   //! Return true if a parameter with this name exists.
   bool isParameter(const string& name) const;
 
   bool isParameterSublist(const string& name) const;
+
+  // Needs to be called like PL.template isParameterType<int>( "Iters" )
+  template<typename T>
+  bool isParameterType(const string& name) const;
+
+  template<typename T>
+  bool isParameterType(const string& name, T* ptr) const;
 
   //! Printing 
   ostream& print(ostream& os, int indent = 0) const;
@@ -127,7 +153,6 @@ T& ParameterList::getParameter(const string& name, T def_value)
     params_[name].setValue(def_value, true);
     i = params_.find(name);
   }
-
   // Return the value of the parameter
   return getValue<T>(entry(i));
 }
@@ -138,13 +163,82 @@ const T& ParameterList::getParameter(const string& name, T def_value) const
   ConstIterator i = params_.find(name);
 
   // This parameter was not found, add it to the list
-  if (i == params_.end()) {
-    params_[name].setValue(def_value, true);
-    i = params_.find(name);
+  if (i != params_.end() && isParameterType(name, &def_value)) {
+	return getValue<T>(entry(i));
   }
 
-  // Return the value of the parameter
-  return getValue<T>(entry(i));
+  // Return the value of the default parameter if not found.
+  return def_value;
+}
+
+template<typename T>
+T& ParameterList::getParameter(const string& name) 
+{
+  ConstIterator i = params_.find(name);
+
+  // This parameter was not found, throw and exception
+  TEST_FOR_EXCEPTION( i == params_.end(), std::runtime_error,
+	"getParameter ( " << name << " ) failed -- parameter does not exist! " );
+
+  // Return the default value for this type
+  return T();
+}
+
+template<typename T>
+const T& ParameterList::getParameter(const string& name) const
+{
+  ConstIterator i = params_.find(name);
+
+  // This parameter was not found, throw and exception
+  TEST_FOR_EXCEPTION( i == params_.end(), std::runtime_error,
+	"getParameter ( " << name << " ) failed -- parameter does not exist! " );
+
+  // Return the default value for this type
+  return T();
+}
+
+template<typename T>
+bool ParameterList::isParameterType(const string& name, T* ptr) const
+{
+  ConstIterator i = params_.find(name);
+  
+  // If parameter doesn't exist, return false.
+  if (i == params_.end()) 
+    return false;
+  // Try to cast the parameter to the type we think it should be.
+  try {
+    getValue<T>(entry(i));
+  }
+  catch( exception& e ) {
+    return false;
+  }
+  // If no exception was thrown, we should be OK.
+  return true;
+}
+
+template<typename T>
+bool ParameterList::isParameterType(const string& name) const
+{
+  ConstIterator i = params_.find(name);
+  
+  // If parameter doesn't exist, return false.
+  if (i == params_.end()) 
+    return false;
+  // Try to cast the parameter to the type we think it should be.
+  try {
+    getValue<T>(entry(i));
+  }
+  catch( exception& e ) {
+    return false;
+  }
+  // If no exception was thrown, we should be OK.
+  return true;
+}
+ 
+template<typename T>
+bool isParameterType( ParameterList& l, const string& name )
+{
+  return l.isParameterType( name, (T*)NULL );
 }
 
 inline ostream& operator<<(ostream& os, const ParameterList& l)
