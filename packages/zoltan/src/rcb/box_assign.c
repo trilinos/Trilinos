@@ -22,7 +22,7 @@ static void Box_Assign3(struct rib_tree *,struct rcb_box *, int *, int *, int);
 static void Box_Assign2(struct rib_tree *,struct rcb_box *, int *, int *, int);
 static void Box_Assign1(struct rib_tree *,struct rcb_box *, int *, int *, int);
 
-int Zoltan_LB_Box_Assign(
+int Zoltan_RB_Box_Assign(
 ZZ             *zz,             /* The Zoltan structure */
 double          xmin,           /* lower x extent of box */
 double          ymin,           /* lower y extent of box */
@@ -117,7 +117,7 @@ int            *numprocs)       /* number of processors in proc list */
      }
      else {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                       "Box_Assign valid only when method is RCB or RIB.");
+              "Valid only when load-balancing method is RCB and RIB.");
         *procs = -1;
         *numprocs = 0;
         return(ZOLTAN_FATAL);

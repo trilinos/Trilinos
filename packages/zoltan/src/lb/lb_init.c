@@ -37,4 +37,6 @@ void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb)
   lb->Imbalance_Tol = ZOLTAN_LB_IMBALANCE_TOL_DEF;
   lb->Data_Structure = NULL;
   lb->Free_Structure = Zoltan_RCB_Free_Structure;
+  lb->Point_Assign = Zoltan_RB_Point_Assign;
+  lb->Box_Assign = Zoltan_RB_Box_Assign;
 }

@@ -193,6 +193,27 @@ int run_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
   if (Proc == 0)
     printf("DRIVER:  Zoltan_Balance time = %g\n", maxtime);
 
+  if (Proc == 0) {
+    double x[] = {0.0L, 0.0L, 0.0L} ;
+    int proc ;
+    int status ;
+    status = LB_Point_Assign (lb, x, &proc) ;
+    if (status != LB_OK) printf ("Point_Assign returned an error\n") ;
+  }
+
+  if (Proc == 0) {
+    double xlo, ylo, zlo ;
+    double xhi, yhi, zhi ;
+    int procs[1000] ;
+    int count ;
+    int status ;
+
+    xlo = ylo = zlo = 0.0L ;
+    xhi = yhi = zhi = 1.0L ;
+    status = LB_Box_Assign (lb, xlo, ylo, zlo, xhi, yhi, zhi, procs, &count) ;
+    if (status != LB_OK) printf ("Box_Assign returned an error\n") ;
+  }
+
   /*
    * Call another routine to perform the migration
    */
@@ -212,6 +233,7 @@ int run_zoltan(struct LB_Struct *lb, int Proc, PROB_INFO_PTR prob,
     i = LB_Eval(lb, 1, NULL, NULL, NULL, NULL, NULL, NULL);
     if (i) printf("Warning: LB_Eval returned error code %d\n", i);
   }
+
 
   /* Clean up */
   (void) LB_Free_Data(&import_gids, &import_lids, &import_procs,

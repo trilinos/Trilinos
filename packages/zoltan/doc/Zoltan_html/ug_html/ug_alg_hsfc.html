@@ -30,38 +30,35 @@
 <a NAME="HSFC"></a>Hilbert Space Filling Curve (HSFC)</h2>
 This partitioning algorithm is based on the 2D & 3D Inverse Hilbert
 Space-Filling Curve code developed by H. Carter Edwards and on the BSFC
-partitioning implementation by Andrew C. Bauer, Department of Engineering, Buffalo, as his summer project 2001.
+partitioning implementation by Andrew C. Bauer, Department of Engineering, State University
+of New York at Buffalo, as his summer project at SNL in 2001.
 <p>
-The smallest coordinate-aligned bounding box is created enclosing the
-computational domain.  The computational domain is then mapped to the unit
-square (2D) or unit cube (3D).  Carter's algorithm calculates the Inverse
-Hilbert coordinate (scaled to the unit interval) for each computational object,
-"dot".  Each dot has a weight (default is unity if unassigned).  The HSFC
-partitioning algorithm divides [0,1] into N intervals containing approximately
-equal weights where N is the number of processors.  (The code is designed to
-allow user-specified unequal weights per interval for future use.)
+The Inverse Hilbert Space-Filling Curve routines by H. Carter Edwards map a point in
+2 to 3 dimensions into the interval, [0,infinity).  This implementation further
+scales the Inverse Hilbert coordinate to a double precision floating point
+number in the unit interval, [0,1].  This algorithm is designed to work for 1 to 3
+dimensional problems.  (The 1-dimensional inverse Hilbert curve is defined here
+as the identity function, f(x)=x for all x) ;
 <p>
-The main loop is executed nominally log(total number of dots) times.  For each
-loop, [0,1] is divided into K(N-1)+1 intervals, called the grand partition.  K
-is a small positive integer (currently 8).  The first loop begins with an
-equally spaced grand partition.  The weight of each dot is locally summed into
-the appropriate interval of the grand partition using a binary search on its
-Inverse Hilbert coordinate.  The global weight contained in each interval of
-the grand partition is computed and distributed to each processor.  A new N
-piece partition is created by summing the weights of contiguous intervals of
-the grand partition until the weight contained in the new interval is
-as large as possible without exceeding the target weight.  The resulting
-partition is then refined into a new grand partition.  The refinement takes
-each interval (from the previous grand partition) that would have caused
-overfilling and divides this interval into K-1 new pieces.
+The algorithm seeks to divide [0,1] into P intervals each containing
+the same weight of objects associated to these intervals by their inverse Hilbert
+coordinates. N bins are created (where N > P) to partition [0,1].  The weights in
+each bin are summed across all processors.
+A greedy algorithm sums the bins (from left to right) placing a cut when the desired weight
+for current partition interval is achieved.
+This process is repeated as needed to improve partitioning tolerance by
+a technique that maintains the same total number of bins but refines the bins previously
+containing a cut.
 <p>
-After the final loop, a slightly different greedy algorithm is used to create
-the final partition from the last grand partition.  This algorithm similarly
-sums the weights assigned to contiguous intervals of the grand algorithm.
-However, it determines if the tolerance is best met by underfilling or
-overfilling each interval of the final partition.  The target weights for the
-remaining intervals are adjusted to compensate for the actual weight assigned
-upto and including this current interval.
+This code returns an error if the final imbalance exceeds the user specified tolerance.
+<p>
+This code implements both the point assign and box assign functionality.  The point
+assign determines an appropriate partition interval (associated with a specific processor)
+for a new point.   The box assign determines the list of processors
+whose associated 1 to 3 dimensional spaces intersect the given box.  In order to
+use either of these routines, the user parameter to KEEP_CUTS (below) must be turned on.
+NOTE: At this time neither point assign nor box assign can be used to add points beyond
+the original bounding box. An error is returned when this is attempted.
 <p>
 The Zoltan implementation of HSFC has one parameter that can be modified
 by the <b><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>

@@ -59,23 +59,25 @@ the SFC
 
 #include <stdlib.h>
 #include <limits.h>
+#include <math.h>
+#include <stdio.h>
 #include "hsfc_hilbert_const.h"
 
-static void Zoltan_HSFC_hsfc2d(unsigned coord[], unsigned *nkey, unsigned key[]); 
-static void Zoltan_HSFC_hsfc3d(unsigned coord[], unsigned *nkey, unsigned key[]);
+static void Zoltan_HSFC_hsfc2d(unsigned int coord[], int nkey, unsigned int key[]);
+static void Zoltan_HSFC_hsfc3d(unsigned int coord[], int nkey, unsigned int key[]);
 
 /*--------------------------------------------------------------------*/
 /* 2D Hilbert Space-filling curve */
 
 static void Zoltan_HSFC_hsfc2d(
   unsigned   coord[] , /* IN: Normalized integer coordinates */
-  unsigned * nkey ,    /* IN: Word length of key */
+  int        nkey ,    /* IN: Word length of key */
   unsigned   key[] )   /* OUT: space-filling curve key */
 {
   static int init = 0 ;
   static unsigned char gray_inv[ 2 * 2 ] ;
 
-  const unsigned NKey  = ( 2 < *nkey ) ? 2 : (*nkey) ;
+  const unsigned NKey  = ( 2 < nkey ) ? 2 : nkey ;
   const unsigned NBits = ( MaxBits * NKey ) / 2 ;
 
   unsigned i ;
@@ -143,14 +145,14 @@ static void Zoltan_HSFC_hsfc2d(
 /* 3D Hilbert Space-filling curve */
 
 static void Zoltan_HSFC_hsfc3d(
-  unsigned   coord[] , /* IN: Normalized integer coordinates */
-  unsigned * nkey ,    /* IN: Word length of 'key' */
-  unsigned   key[] )   /* OUT: space-filling curve key */
+  unsigned int coord[] , /* IN: Normalized integer coordinates */
+  int          nkey ,    /* IN: Word length of 'key' */
+  unsigned int key[] )   /* OUT: space-filling curve key */
 {
   static int init = 0 ;
   static unsigned char gray_inv[ 2*2*2 ] ;
 
-  const unsigned NKey  = ( 3 < *nkey ) ? 3 : (*nkey) ;
+  const unsigned NKey  = ( 3 < nkey ) ? 3 : nkey ;
   const unsigned NBits = ( MaxBits * NKey ) / 3 ;
 
   unsigned i ;
@@ -179,7 +181,8 @@ static void Zoltan_HSFC_hsfc3d(
   axis[1] = 1 << 1 ;
   axis[2] = 2 << 1 ;
 
-  for ( i = 1 ; i <= NBits ; i++ ) {
+/*  for ( i = 1 ; i <= NBits ; i++ ) {  original code, has error */
+for ( i = 1 ; i < NBits ; i++ ) {       /* new version, RTH 3/18/02 */
     const unsigned s = MaxBits - i ;
     const unsigned c = gray_inv[
       (((( coord[ axis[0] >> 1 ] >> s ) ^ axis[0] ) & 01 ) << 0 ) |
@@ -259,9 +262,9 @@ static void Zoltan_HSFC_hsfc3d(
 /*--------------------------------------------------------------------*/
 
 void Zoltan_HSFC_fhsfc2d(
-  double     coord[] , /* IN: Normalized floating point coordinates */
-  unsigned * nkey ,    /* IN: Word length of key */
-  unsigned   key[] )   /* OUT: space-filling curve key */
+  double       coord[] , /* IN: Normalized floating point coordinates */
+  int          nkey ,    /* IN: Word length of key */
+  unsigned int key[] )   /* OUT: space-filling curve key */
 {
   const unsigned imax = IScale ;
   const double c0 = ( coord[0] <= 0 ) ? 0 : imax * coord[0] ;
@@ -274,7 +277,7 @@ void Zoltan_HSFC_fhsfc2d(
 
 void Zoltan_HSFC_fhsfc3d(
   double     coord[] , /* IN: Normalized floating point coordinates */
-  unsigned * nkey ,    /* IN: Word length of key */
+  int        nkey ,    /* IN: Word length of key */
   unsigned   key[] )   /* OUT: space-filling curve key */
 {
   const unsigned imax = IScale ;
@@ -287,3 +290,28 @@ void Zoltan_HSFC_fhsfc3d(
   c[2] = (unsigned) (( imax < c2 ) ? imax : c2 );
   Zoltan_HSFC_hsfc3d( c , nkey , key );
 }
+
+
+
+/* The following routines were added by rheaphy for use in hsfc.c */
+
+double Zoltan_HSFC_IHilbert1d (double *coord)
+   {
+   return coord[0] ;
+   }
+
+
+double Zoltan_HSFC_IHilbert2d (double *coord)
+   {
+   unsigned int key[4];        /* dimensioned higher than expected because of code bug */
+   Zoltan_HSFC_fhsfc2d (coord, 2, key);
+   return ldexp((double) key[0], -32) + ldexp((double) key[1], -64) ;
+   }
+
+
+double Zoltan_HSFC_IHilbert3d (double *coord)
+   {
+   unsigned int key[4] ;       /* dimensioned higher than expected because of code bug */
+   Zoltan_HSFC_fhsfc3d (coord, 2, key) ;
+   return ldexp((double) key[0], -32) + ldexp((double) key[1], -64) ;
+   }

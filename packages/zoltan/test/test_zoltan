@@ -229,7 +229,12 @@ endif
 
 # Set up log file
 if ( -e $logfile ) /bin/mv $logfile ${logfile}.old
-echo "Tests run on `date`" > $logfile
+echo "Test date  = `date`" > $logfile
+echo "Arch       = ${arch}" >> $logfile
+echo "Fortran    = $yes_fortran" >> $logfile
+echo "Run cmd    = $run" >> $logfile
+echo "Run dir    = $cwd" >> $logfile
+echo "Executable = $zdrive" >> $logfile
 echo " " >> $logfile
 
 

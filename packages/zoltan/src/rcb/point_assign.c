@@ -17,7 +17,7 @@
 #include "rib.h"
 
 
-int Zoltan_LB_Point_Assign(
+int Zoltan_RB_Point_Assign(
 ZZ       *zz,                   /* The Zoltan structure */
 double   *coords,               /* vector of point coordinates */
 int      *proc)                 /* processor that point lands in */
@@ -105,8 +105,8 @@ int      *proc)                 /* processor that point lands in */
         return(ZOLTAN_OK);
      }
      else {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Valid only when method "
-                                     "is RCB or RIB.");
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+          "Valid only when load-balancing method is RCB or RIB.");
         *proc = -1;
         return(ZOLTAN_FATAL);
      }

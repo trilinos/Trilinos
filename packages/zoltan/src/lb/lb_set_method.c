@@ -1,7 +1,7 @@
 /*****************************************************************************
  * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
  * Copyright (c) 2000, Sandia National Laboratories.                         *
- * For more info, see the README file in the top-level Zoltan directory.     *  
+ * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
 /*****************************************************************************
  * CVS File Information :
@@ -20,7 +20,7 @@
 /*****************************************************************************/
 /*
  *  This file contains routines to set the load-balancing method.
- *  These functions are all callable by the application.  
+ *  This function is callable by the application.
  */
 /*****************************************************************************/
 /*****************************************************************************/
@@ -70,46 +70,64 @@ int Zoltan_LB_Set_Method(ZZ *zz, char *method_name)
     zz->LB.Method = RCB;
     zz->LB.LB_Fn = Zoltan_RCB;
     zz->LB.Free_Structure = Zoltan_RCB_Free_Structure;
+    zz->LB.Point_Assign = Zoltan_RB_Point_Assign;
+    zz->LB.Box_Assign = Zoltan_RB_Box_Assign;
   }
   else if (strcmp(method_upper, "OCTPART") == 0) {
     zz->LB.Method = OCTPART;
     zz->LB.LB_Fn = Zoltan_Octpart;
     zz->LB.Free_Structure = Zoltan_Oct_Free_Structure;
+    zz->LB.Point_Assign = NULL;
+    zz->LB.Box_Assign = NULL;
   }
   else if (strcmp(method_upper, "PARMETIS") == 0) {
     zz->LB.Method = PARMETIS;
     zz->LB.LB_Fn = Zoltan_ParMetis;
     zz->LB.Free_Structure = NULL;
+    zz->LB.Point_Assign = NULL;
+    zz->LB.Box_Assign = NULL;
   }
   else if (strcmp(method_upper, "JOSTLE") == 0) {
     zz->LB.Method = JOSTLE;
     zz->LB.LB_Fn = Zoltan_Jostle;
     zz->LB.Free_Structure = NULL;
+    zz->LB.Point_Assign = NULL;
+    zz->LB.Box_Assign = NULL;
   }
   else if (strcmp(method_upper, "REFTREE") == 0) {
     zz->LB.Method = REFTREE;
     zz->LB.LB_Fn = Zoltan_Reftree_Part;
     zz->LB.Free_Structure = Zoltan_Reftree_Free_Structure;
+    zz->LB.Point_Assign = NULL;
+    zz->LB.Box_Assign = NULL;
   }
   else if (strcmp(method_upper, "RIB") == 0) {
     zz->LB.Method = RIB;
     zz->LB.LB_Fn = Zoltan_RIB;
     zz->LB.Free_Structure = Zoltan_RIB_Free_Structure;
+    zz->LB.Point_Assign = Zoltan_RB_Point_Assign;
+    zz->LB.Box_Assign = Zoltan_RB_Box_Assign;
   }
   else if (strcmp(method_upper, "BSFC") == 0) {
     zz->LB.Method = BSFC;
     zz->LB.LB_Fn = Zoltan_BSFC;
     zz->LB.Free_Structure = NULL;
+    zz->LB.Point_Assign = NULL;
+    zz->LB.Box_Assign = NULL;
   }
   else if (strcmp(method_upper, "HSFC") == 0) {
     zz->LB.Method = HSFC;
     zz->LB.LB_Fn = Zoltan_HSFC;
     zz->LB.Free_Structure = Zoltan_HSFC_Free_Structure;
+    zz->LB.Point_Assign = Zoltan_HSFC_Point_Assign;
+    zz->LB.Box_Assign = Zoltan_HSFC_Box_Assign;
   }
   else if (strcmp(method_upper, "NONE") == 0) {
     zz->LB.Method = NONE;
     zz->LB.LB_Fn = NULL;
     zz->LB.Free_Structure = NULL;
+    zz->LB.Point_Assign = NULL;
+    zz->LB.Box_Assign = NULL;
   }
 
   /*

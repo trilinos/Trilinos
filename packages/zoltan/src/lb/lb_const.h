@@ -17,7 +17,7 @@
 #include "zoltan.h"
 
 /*
- * Type definitions for load-balancing functions that depend on 
+ * Type definitions for functions that depend on 
  * load-balancing method.
  */
 
@@ -28,6 +28,12 @@ typedef int ZOLTAN_LB_FN(struct Zoltan_Struct *, int *,
                          int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **);
 
 typedef void ZOLTAN_LB_FREE_DATA_FN(struct Zoltan_Struct *);
+
+typedef int ZOLTAN_LB_POINT_ASSIGN_FN(struct Zoltan_Struct *, double *, int *);
+
+typedef int ZOLTAN_LB_BOX_ASSIGN_FN(struct Zoltan_Struct *, 
+                                    double, double, double,
+                                    double, double, double, int*, int*);
 
 /*
  *  Define the possible load balancing methods allowed.
@@ -68,7 +74,7 @@ typedef enum Zoltan_LB_Method {
 
 
 struct Zoltan_LB_Struct {
-  int Return_Lists;            /*  Flag indicating which lists (if any)
+  int Return_Lists;               /*  Flag indicating which lists (if any)
                                       should be returned by Zoltan_LB_Balance.*/
   ZOLTAN_LB_METHOD Method;        /*  Method to be used for load balancing.  */
   ZOLTAN_LB_FN *LB_Fn;            /*  Pointer to the function that performs
@@ -83,6 +89,14 @@ struct Zoltan_LB_Struct {
   ZOLTAN_LB_FREE_DATA_FN *Free_Structure;
                                   /*  Pointer to function that frees the
                                       Data_Structure memory.                 */
+  ZOLTAN_LB_POINT_ASSIGN_FN *Point_Assign;  
+                                  /*  Pointer to the function that performs
+                                      Point_Assign; this ptr is set based on 
+                                      the method used.                       */
+  ZOLTAN_LB_BOX_ASSIGN_FN *Box_Assign;      
+                                  /*  Pointer to the function that performs
+                                      Box_Assign; this ptr is set based on 
+                                      the method used.                       */
 };
 
 struct Zoltan_Migrate_Struct {
@@ -120,8 +134,8 @@ struct Zoltan_Migrate_Struct {
 };
 
 /*****************************************************************************/
-/*****************************************************************************/
 /* PROTOTYPES */
+
 /* PARTITIONING FUNCTIONS */
 extern ZOLTAN_LB_FN Zoltan_RCB;
 extern ZOLTAN_LB_FN Zoltan_Octpart;
@@ -132,10 +146,19 @@ extern ZOLTAN_LB_FN Zoltan_RIB;
 extern ZOLTAN_LB_FN Zoltan_BSFC;
 extern ZOLTAN_LB_FN Zoltan_HSFC;
 
-ZOLTAN_LB_FREE_DATA_FN Zoltan_RCB_Free_Structure;
-ZOLTAN_LB_FREE_DATA_FN Zoltan_RIB_Free_Structure;
-ZOLTAN_LB_FREE_DATA_FN Zoltan_Oct_Free_Structure;
-ZOLTAN_LB_FREE_DATA_FN Zoltan_Reftree_Free_Structure;
-ZOLTAN_LB_FREE_DATA_FN Zoltan_HSFC_Free_Structure;
+/* FREE DATA_STRUCTURE FUNCTIONS */
+extern ZOLTAN_LB_FREE_DATA_FN Zoltan_RCB_Free_Structure;
+extern ZOLTAN_LB_FREE_DATA_FN Zoltan_RIB_Free_Structure;
+extern ZOLTAN_LB_FREE_DATA_FN Zoltan_Oct_Free_Structure;
+extern ZOLTAN_LB_FREE_DATA_FN Zoltan_Reftree_Free_Structure;
+extern ZOLTAN_LB_FREE_DATA_FN Zoltan_HSFC_Free_Structure;
+
+/* POINT_ASSIGN FUNCTIONS */
+extern ZOLTAN_LB_POINT_ASSIGN_FN Zoltan_RB_Point_Assign;
+extern ZOLTAN_LB_POINT_ASSIGN_FN Zoltan_HSFC_Point_Assign;
+
+/* BOX_ASSIGN FUNCTIONS */
+extern ZOLTAN_LB_BOX_ASSIGN_FN Zoltan_RB_Box_Assign;
+extern ZOLTAN_LB_BOX_ASSIGN_FN Zoltan_HSFC_Box_Assign;
 
 #endif

@@ -49,7 +49,7 @@ MPI_Comm  comm)			/* communicator */
     int      *procs_from;	/* procs I recv lengths from */
     int      *msg_count;	/* binary flag for procs I send to (nprocs) */
     int      *counts;		/* argument to Reduce_scatter */
-    int       nrecvs;		/* number of messages I'll receive */
+    int       nrecvs=0;		/* number of messages I'll receive */
     int       i;		/* loop counter */
     MPI_Status status;		/* return MPI argument */
 

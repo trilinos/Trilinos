@@ -1,7 +1,6 @@
 /*****************************************************************************
  * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
  * Copyright (c) 2000, Sandia National Laboratories.                         *
- * This software is distributed under the GNU Lesser General Public License. *
  * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
 /*****************************************************************************
@@ -12,11 +11,27 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifndef ZOLTAN_HSFC_CONST_H
-#define ZOLTAN_HSFC_CONST_H
+#include "zz_const.h"
 
-/* function prototypes */
 
-int  Zoltan_HSFC_Set_Param (char *name, char *val) ;
+int Zoltan_LB_Box_Assign (
+ ZZ *zz,
+ double xlo,
+ double ylo,
+ double zlo,
+ double xhi,
+ double yhi,
+ double zhi,
+ int *procs,
+ int *count)
+  {
+  char *yo = "Zoltan_LB_Box_Assign";
+  if (zz->LB.Box_Assign == NULL) {
+    /* function not supported by current decomposition method */
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                   "Box_Assign not supported by chosen partitioning method.");
+     return ZOLTAN_FATAL ;  
+  }
 
-#endif
+  return zz->LB.Box_Assign (zz, xlo, ylo, zlo, xhi, yhi, zhi, procs, count) ;
+  }

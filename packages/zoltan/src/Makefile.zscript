@@ -1,9 +1,23 @@
+##############################################################################
+# Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
+# Copyright (c) 2000, Sandia National Laboratories.                          #
+# This software is distributed under the GNU Lesser General Public License.  #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
 include ./Utilities/Config/Config.$(ZOLTAN_ARCH)
 
 TARGET = zdrive
 LIB_NAME = libzoltan.a
 LIB_TARGET = zoltan
-SUBDIRS	= driver ch all lb par rcb oct parmetis params timer ha reftree 
+SUBDIRS	= driver ch zz all lb par rcb oct parmetis params timer ha reftree bsfc hsfc 
 UTIL_SUBDIRS = Memory Communication DDirectory
 ZOLTAN_OBJ_DIR = Obj_$(ZOLTAN_ARCH)
 

@@ -107,7 +107,7 @@ endif
 # If NEMESIS_LIBPATH is defined, link Nemesis, Exodus and Netcdf into zdrive.
 ifdef NEMESIS_LIBPATH
   GDEFINES += -DLB_NEMESIS
-  THIRD_PARTY_LIBS += -lnemIc -lexoIIc -lnetcdf
+  THIRD_PARTY_LIBS += -lnemIc -lexoIIv2c -lnetcdf
   THIRD_PARTY_LIBPATH += $(NEMESIS_LIBPATH)
   THIRD_PARTY_INCPATH += $(NEMESIS_INCPATH)
 endif
@@ -152,7 +152,8 @@ ALL_CSRC	= all_allo.c
 ALL_INC		= all_const.h all_allo_const.h
 
 LB_CSRC		= lb_balance.c lb_eval.c lb_init.c lb_migrate.c \
-		  lb_set_fn.c lb_set_method.c  
+		  lb_set_fn.c lb_set_method.c  \
+		  lb_point_assign.c lb_box_assign.c
 LB_INC		= lb_const.h lb_set_fn_const.h lb_init_const.h
 
 RCB_CSRC	= rcb.c rcb_util.c box_assign.c point_assign.c \
@@ -172,8 +173,8 @@ SFC_CSRC	= hilbert.c sfc.c sfc_create_info.c sfc_create_bins.c \
 		  sfc_refine_partition_level.c sfc_refine_overloaded_bins.c
 SFC_INC		= hilbert_const.h sfc.h sfc_const.h
 
-HSFC_CSRC	= hsfc_hilbert.c hsfc.c
-HSFC_INC	= hsfc_hilbert.h hsfc_const.h hsfc.h
+HSFC_CSRC 	= hsfc_hilbert.c hsfc.c hsfc_box_assign.c hsfc_point_assign.c
+HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
 		  key_params.c free_params.c bind_param.c

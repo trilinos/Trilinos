@@ -37,8 +37,8 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
     int      *procs_to=NULL;	/* processors I'll send to */
     int      *indices_to=NULL;	/* local_id values I'll be sending */
     int      *starts_to=NULL;	/* where in list my sends begin */
-    int      *lengths_from;	/* lengths of messages I'll receive */
-    int      *procs_from;	/* processors I'll receive from */
+    int      *lengths_from=NULL;	/* lengths of messages I'll receive */
+    int      *procs_from=NULL;	/* processors I'll receive from */
     int      *starts_from=NULL;	/* pointers for where to put recv data */
     int       my_proc;		/* my processor tag in communicator */
     int       nprocs;		/* number of  processors in communicator */
@@ -48,7 +48,7 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
     int       nactive;		/* number of values to remap */
     int       self_msg;		/* do I have data for myself? */
     int       nsends;		/* # procs I'll send to (including self) */
-    int       nrecvs;		/* # procs I'll recv from (including self) */
+    int       nrecvs=0;		/* # procs I'll recv from (including self) */
     int       proc;		/* processor I communicate with */
     int       prev_proc;	/* processor on previous loop pass */
     int       index;		/* index into list of objects */
@@ -195,6 +195,7 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
 	    out_of_mem = TRUE;
 	    goto Mem_Err;
 	}
+
 	j = 0;
 	max_send_size = 0;
 	for (i = 0; i < nprocs; i++) {
