@@ -401,13 +401,13 @@ void AZ_set_ML_preconditioner(AZ_PRECOND **Precond, AZ_MATRIX *Amat,
 
       if (i != ml_handle->ML_coarsest_level) {
          i = ml_handle->ML_coarsest_level;
-         if (ml_handle->csolve[i].ML_id != ML_EMPTY) 
+	 if ( ML_CSolve_Check( &(ml_handle->csolve[i]) ) == 1 ) 
             sprintf(coarsest, "%s", ml_handle->csolve[i].label);
          else {
             if (ml_handle->pre_smoother[i].ML_id != ML_EMPTY) 
             sprintf(coarsest, "%s", ml_handle->pre_smoother[i].label);
             if (ml_handle->post_smoother[i].ML_id != ML_EMPTY) 
-            sprintf(coarsest, "%s/%s", finest,ml_handle->post_smoother[i].label);
+            sprintf(coarsest, "%s/%s", coarsest,ml_handle->post_smoother[i].label);
          }
       }
       sprintf(str,"%d level MG ( %s, %s)", ml_handle->ML_num_actual_levels, finest, coarsest);
@@ -1222,7 +1222,6 @@ void wrapper_DCSR_matvec(double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
    localCSR_matvec(temp_ptr, csr2_mat->mat_n, b, csr2_mat->mat_n, c);
    free(temp_ptr);
 }
-
 /*****************************************************************************/
 extern int AZ_using_fortran;
 
@@ -1302,7 +1301,6 @@ void AZ_transform_norowreordering(int proc_config[], int *external[],
   int        *extern_proc;
   int        *tcnptr = NULL;
 
-  AZ__MPI_comm_space_ok();
 #ifdef AZ_MPI
   if ( proc_config[AZ_Comm_Set] != AZ_Done_by_User) {
       printf("Error: Communicator not set. Use AZ_set_comm()\n");
@@ -1469,7 +1467,6 @@ file specified by the input argument datafile instead from a file called
 
   /**************************** execution begins ******************************/
 
-  AZ__MPI_comm_space_ok();
   type            = AZ_sys_msg_type;
   AZ_sys_msg_type = (AZ_sys_msg_type+1-AZ_MSG_TYPE) % AZ_NUM_MSGS + AZ_MSG_TYPE;
   type2           = AZ_sys_msg_type;
@@ -2031,9 +2028,11 @@ void AZ_Tmat_transform2ml(int Nexterns, int global_node_externs[], int *reordere
 
 }
 
+
 #else
 
 /* to satisfy the requirement of certain compilers */
 int ML_empty;
 
 #endif
+
