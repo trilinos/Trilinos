@@ -1,4 +1,7 @@
 #include "ml_agg_reitzinger.h"
+#ifdef GREG
+#define NEW_T_PE
+#endif
 
 extern int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
 			       double smoothP_damping_factor,
@@ -1511,9 +1514,15 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
      ML_rap(&(ml_edges->Rmat[old_mesh_level]), lastM, 
             &(ml_edges->Pmat[mesh_level]), newM, ML_CSR_MATRIX);
      lastM = newM;
-     
+ 
      /* comment these two out if you want to do rap */
      ML_Operator_Gen_blockmat(blockmat, original, newM);
+#ifdef GREG
+     blockmat->lambda_max = 3.286003165408382;
+     blockmat->lambda_max_img = 3.148601063739487e-02;
+     blockmat->lambda_max = 5.5*2.49357;
+     blockmat->lambda_max_img = 5.5*.0142284;
+#endif
      blockmat->sub_matrix1 = newM;
      blockmat->getrow->pre_comm = ML_CommInfoOP_Create(); 
               /* ugh. The superlu interface seems to not work */
