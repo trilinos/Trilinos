@@ -1,7 +1,5 @@
-ML -- History of visible changes
-================================
-
-               ML: A Multilevel Preconditioner Package
+/*
+                ML: A Multilevel Preconditioner Package
                  Copyright (2002) Sandia Corporation
 
 Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -22,11 +20,73 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 USA
 Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+*/
+	
 
+ML -- History of visible changes
+================================
 
-
-Please submit ML bugs with at software.sandia.gov/buzgilla, or
+Please submit ML bugs at software.sandia.gov/buzgilla, or
 report bugs to jhu@sandia.gov.
+
+==============================================================================
+
+Overview of main ML changes from ml-2.0 to ml-3.0
+-------------------------------------------------
+	
+The ML version conatins in Trilinos 4.0 has been enhanced with respect
+to the one included in the Trilinos 3.1 distribution as follows:
+
+- ML presents an improved interface to C++. Two new classes have been
+introduced to use ML as a preconditioner for Epetra_LinearProblem (both
+in the ML_Epetra namespace): MultiLevelOperator and
+MultiLevelPreconditioner. ML can be used as a black-box solver to define
+multilevel (possibly domain decomposition based) preconditioners for
+Epetra_RowMatrix. The user provides only the linear system matrix, and
+all the parameters defining the preconditioners, specified in a Teuchos
+parameters list.
+
+- ML uses Teuchos if class ML_Epetra::MultiLevelPreconditioner, and in
+some other internal classes.
+
+- ML now supports the Trilinos package Amesos as primary direct
+sequential and parallel direct solvers. Through Amesos, KLU, UMFPACK
+4.1, SuperLU_DIST 2.0, MUMPS 4.3.1, and ScaLAPACK can be used. The user can
+specify the maximum number of processes to be used in the coarse
+solution.
+
+- ML interface to SuperLU and SuperLU_DIST is now deprecated in favor of
+the Amesos one.
+
+- ML now implements and interfaces to the Trilinos package
+Anasazi. Anasazi can be used to estimate the maximum eigenvalue for both
+symmetric and non-symmetric problems.
+
+- Two new aggregation schemes, based on graph partitioning algorithms,
+have been added. To that aim, third-party libraries METIS and ParMETIS
+can be used. ML must be configured with options --with-ml_metis and
+--with-ml_parmetis_3x to use graph partitioning algorithms to create the
+aggregates. (ParMETIS requires Epetra support).
+
+- A basic interface to the Trilinos package IFPACK is now included.
+
+- ML can use a simple power method to estimate lambda max for
+non-symmetric problems.
+
+- The set of examples has been extended. Now about 30 examples are avaiable.
+
+- Improved the MLS preconditioner for block systems.
+
+- In the configuration phase, ML automatically recognizes which Trilinos
+package has been enabled, and compiles all functions sing this package (if any).
+
+- A new user's guide is available in the doc subdirectory.
+
+- (Limited) doxygen documentation is available. Type doxygen in the doc
+subdirectory. Almost all C++ code, and part of the C code, has been
+modified with doxugen-compatible comments.
+
+==============================================================================
 	
 ------------------------------------------------------------------------------
 	
