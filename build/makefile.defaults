@@ -137,6 +137,11 @@ LIBSUPERLU   = $(TRILINOS_HOME)/external/DSuperLU/lib/$(TRILINOS_TARGET)/superlu
 
 ################### Package-specific defaults ##########################
 
+# RAB: 2002/1/29: Have to get this in someway
+ifdef EPETRA_ANSI_CPP
+EPETRA_DEFAULT_DEFINES += -DEPETRA_ANSI_CPP
+endif
+
 # These values seldom change and are not really target-related
 
 ## AztecOO
@@ -147,7 +152,6 @@ LIBSUPERLU   = $(TRILINOS_HOME)/external/DSuperLU/lib/$(TRILINOS_TARGET)/superlu
 # AZ_COL_REORDER - Use experimental column reordering with AztecOO.
 
 AZTECOO_DEFAULT_DEFINES = -DSPARSEBLAS -DIFPACK
-
 
 
 ##################### Derived Variables ###########################
