@@ -44,6 +44,7 @@
 #include "timer_const.h"
 #include "create_proc_list.h"
 #include "comm_const.h"
+#include "ha_const.h"
 
 #define MYHUGE 1.0e30
 #define TINY   1.0e-6
@@ -198,9 +199,12 @@ static int rcb(
   int     dotmax = 0;               /* max # of dots arrays can hold */
   int     dottop;                   /* dots >= this index are new */
   int     dotnew;                   /* # of new dots after send/recv */
-  int     proclower, procupper;     /* lower/upper proc in partition */
+  int     proclower;                /* lower proc in partition */
   int     procmid;                  /* 1st proc in upper half of part */
-  int     markactive;               /* which side of cut is active = 0/1 */
+  int     set;                      /* which part processor is in = 0/1 */
+  int     old_set;                  /* part processor was in last cut = 0/1 */
+  int     root;                     /* processor that stores last cut */
+  int     num_procs;                /* number of procs in current part */
   int     dim;                      /* which of 3 axes median cut is on */
   int     ierr;                     /* error flag. */
   double *coord = NULL;             /* temp array for median_find */
@@ -374,23 +378,25 @@ static int rcb(
 
   /* recursively halve until just one proc in partition */
   
-  proclower = 0;
-  procupper = nprocs - 1;
+  num_procs = nprocs;
+  root = 0;
+  old_set = 1;
+  treept[proc].parent = 0;
+  treept[proc].left_leaf = 0;
 
-  while (proclower != procupper) {
+  while (num_procs > 1) {
 
     if (stats) time1 = LB_Time();
+
+    ierr = LB_divide_machine(lb, proc, local_comm, &set, &proclower,
+                             &procmid, &num_procs, &fractionlo);
+    if (ierr != LB_OK && ierr != LB_WARN) {
+       LB_FREE(&dotmark);
+       LB_FREE(&coord);
+       LB_FREE(&wgts);
+       return (ierr);
+    }
     
-    /* procmid = 1st proc in upper half of partition */
-    /* if odd # of procs, lower partition gets extra one */
-
-    procmid = proclower + (procupper - proclower) / 2 + 1;
-
-    /* fractionlo = desired fraction of weight in lower half of partition */
-
-    fractionlo = ((double) (procmid - proclower)) / 
-      (procupper + 1 - proclower);
-
     /* dim = dimension (xyz = 012) to bisect on */
 
     dim = 0;
@@ -411,15 +417,15 @@ static int rcb(
       LB_FREE(&dotmark);
       LB_FREE(&coord);
       LB_FREE(&wgts);
-      dotmark = (int *) LB_Malloc(dotmax*sizeof(int), __FILE__, __LINE__);
+      dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
       if (dotmark == NULL)
         return LB_MEMERR;
-      coord = (double *) LB_Malloc(dotmax*sizeof(double), __FILE__, __LINE__);
+      coord = (double *) LB_MALLOC(dotmax*sizeof(double));
       if (coord == NULL) {
         LB_FREE(&dotmark);
         return LB_MEMERR;
       }
-      wgts = (double *) LB_Malloc(dotmax*sizeof(double), __FILE__, __LINE__);
+      wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
       if (wgts == NULL) {
         LB_FREE(&dotmark);
         LB_FREE(&coord);
@@ -446,6 +452,9 @@ static int rcb(
     if (!LB_find_median(coord, wgts, dotmark, dotnum, proc, fractionlo,
                         local_comm, &valuehalf, first_guess, &(counters[0]))) {
       fprintf(stderr, "[%d] %s: Error returned from find_median\n", proc, yo);
+      LB_FREE(&dotmark);
+      LB_FREE(&coord);
+      LB_FREE(&wgts);
       return LB_FATAL;
     }
 
@@ -456,11 +465,18 @@ static int rcb(
     if (proc == procmid) {
       treept[proc].dim = dim;
       treept[proc].cut = valuehalf;
+      treept[proc].parent = old_set ? -(root+1) : root+1;
+      /* The following two will get overwritten when the information is
+         assembled if this is not a terminal cut */
+      treept[proc].left_leaf = -proclower;
+      treept[proc].right_leaf = -procmid;
     }
+    old_set = set;
+    root = procmid;
     
     /* use cut to shrink RCB domain bounding box */
 
-    if (proc < procmid)
+    if (!set)
       rcbbox->hi[dim] = valuehalf;
     else
       rcbbox->lo[dim] = valuehalf;
@@ -468,26 +484,23 @@ static int rcb(
     /* outgoing = number of dots to ship to partner */
     /* dottop = number of dots that have never migrated */
 
-    markactive = (proc < procmid);
     for (i = 0, keep = 0, outgoing = 0; i < dotnum; i++)
-      if (dotmark[i] == markactive)
+      if (dotmark[i] != set)
 	outgoing++;
       else if (i < dottop)
 	keep++;
     dottop = keep;
 
     if (outgoing)
-       if ((proc_list = (int *) LB_Malloc(outgoing*sizeof(int), __FILE__,
-             __LINE__)) == NULL) {
+       if ((proc_list = (int *) LB_MALLOC(outgoing*sizeof(int))) == NULL) {
           LB_FREE(&dotmark);
           LB_FREE(&coord);
           LB_FREE(&wgts);
           return LB_MEMERR;
        }
 
-    ierr = LB_Create_Proc_List(proc, procmid, proclower, procupper, dotnum,
-          outgoing, proc_list, local_comm);
-    if (ierr != LB_OK) {
+    ierr = LB_Create_Proc_List(set, dotnum, outgoing, proc_list, local_comm);
+    if (ierr != LB_OK && ierr != LB_WARN) {
        LB_FREE(&proc_list);
        LB_FREE(&dotmark);
        LB_FREE(&coord);
@@ -499,7 +512,7 @@ static int rcb(
     message_tag = 1;
     ierr = LB_Comm_Create(&cobj, outgoing, proc_list, local_comm, message_tag,
                              &incoming);
-    if (ierr != LB_OK) {
+    if (ierr != LB_OK && ierr != LB_WARN) {
        LB_FREE(&proc_list);
        LB_FREE(&dotmark);
        LB_FREE(&coord);
@@ -539,8 +552,7 @@ static int rcb(
     /* malloc comm send buffer */
 
     if (outgoing > 0) {
-      dotbuf = (struct rcb_dot *) LB_Malloc(outgoing*sizeof(struct rcb_dot),
-	  __FILE__, __LINE__);
+      dotbuf = (struct rcb_dot *) LB_MALLOC(outgoing*sizeof(struct rcb_dot));
       if (dotbuf == NULL) {
         LB_FREE(&dotmark);
         LB_FREE(&coord);
@@ -556,7 +568,7 @@ static int rcb(
     
     keep = outgoing = 0;
     for (i = 0; i < dotnum; i++) {
-      if (dotmark[i] == markactive)
+      if (dotmark[i] != set)
 	memcpy((char *) &dotbuf[outgoing++], (char *) &dotpt[i], 
                sizeof(struct rcb_dot));
       else
@@ -566,7 +578,7 @@ static int rcb(
 
     ierr = LB_Comm_Do(cobj, message_tag, (char *) dotbuf, 
                       sizeof(struct rcb_dot), (char *) (&dotpt[keep]));
-    if (ierr != LB_OK) {
+    if (ierr != LB_OK && ierr != LB_WARN) {
        LB_FREE(&dotmark);
        LB_FREE(&coord);
        LB_FREE(&wgts);
@@ -579,18 +591,9 @@ static int rcb(
     
     dotnum = dotnew;
 
-    /* cut partition in half, create new communicators of 1/2 size */
+    /* create new communicators */
 
-    if (proc < procmid) {
-      procupper = procmid - 1;
-      i = 0;
-    }
-    else {
-      proclower = procmid;
-      i = 1;
-    }
-
-    MPI_Comm_split(local_comm,i,proc,&tmp_comm);
+    MPI_Comm_split(local_comm,set,proc,&tmp_comm);
     MPI_Comm_free(&local_comm);
     local_comm = tmp_comm;
 
@@ -663,10 +666,16 @@ static int rcb(
       (*import_procs)[i]      = dotpt[ii].Tag.Proc;
     }
   }
+
   if (gen_tree) {
     MPI_Allgather(&treept[proc], sizeof(struct rcb_tree), MPI_BYTE,
        treept, sizeof(struct rcb_tree), MPI_BYTE, lb->Communicator);
     treept[0].dim = 0;
+    for (i = 1; i < nprocs; i++)
+       if (treept[i].parent > 0)
+          treept[treept[i].parent - 1].left_leaf = i;
+       else if (treept[i].parent < 0)
+          treept[-treept[i].parent - 1].right_leaf = i;
   }
   else {
     treept[0].dim = -1;

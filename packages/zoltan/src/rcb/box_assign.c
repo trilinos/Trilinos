@@ -23,8 +23,7 @@
 #include "lb_const.h"
 #include "rcb_const.h"
 
-static void Box_Assign(struct rcb_tree *, struct rcb_box *, int *, int *,
-   int, int);
+static void Box_Assign(struct rcb_tree *, struct rcb_box *, int *, int *, int);
 
 int LB_Box_Assign(
 LB             *lb,             /* The load-balancing structure */
@@ -72,7 +71,7 @@ int            *numprocs)       /* number of processors in proc list */
    box.hi[1] = ymax;
    box.hi[2] = zmax;
 
-   Box_Assign(treept, &box, procs, numprocs, 0, lb->Num_Proc - 1);
+   Box_Assign(treept, &box, procs, numprocs, treept[0].right_leaf);
 
    return(LB_OK);
 }
@@ -81,19 +80,17 @@ static void Box_Assign(
 struct rcb_tree *treept,        /* RCB tree */
 struct rcb_box  *boxpt,         /* extended box */
 int             *procs,         /* processors that box is in */
-int             *numprocs,       /* current number of processors on list */
-int              proclower,     /* lower bound of partition */
-int              procupper)     /* upper bound of partition */
+int             *numprocs,      /* current number of processors on list */
+int              procmid)       /* 1st processor in upper half */
 {
-  int       procmid;            /* 1st processor in upper half */
   int       dim;
   double    cut;
 
 /* end recursion when partition size is a single proc */
 /* add processor to list of processors */
 
-  if (proclower == procupper) {
-    procs[*numprocs] = proclower;
+  if (procmid <= 0) {
+    procs[*numprocs] = -procmid;
     (*numprocs)++;
     return;
   }
@@ -105,12 +102,11 @@ int              procupper)     /* upper bound of partition */
 /* dim = dimension 0,1,2 of cut for this partition */
 /* cut = position of cut for this partition */
 
-  procmid = proclower + (procupper - proclower) / 2 + 1;
   dim = treept[procmid].dim;
   cut = treept[procmid].cut;
 
   if (boxpt->lo[dim] <= cut)
-    Box_Assign(treept, boxpt, procs, numprocs, proclower, procmid-1);
+    Box_Assign(treept, boxpt, procs, numprocs, treept[procmid].left_leaf);
   if (boxpt->hi[dim] >= cut)
-    Box_Assign(treept, boxpt, procs, numprocs, procmid, procupper);
+    Box_Assign(treept, boxpt, procs, numprocs, treept[procmid].right_leaf);
 }

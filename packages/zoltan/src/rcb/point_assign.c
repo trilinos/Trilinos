@@ -25,8 +25,6 @@ LB       *lb,                   /* The load-balancing structure */
 double   *coords,               /* vector of point coordinates */
 int      *proc)			/* processor that point lands in */
 {
-   int       proclower;         /* lower bound of partition */
-   int       procupper;         /* upper bound of partition */
    int       procmid;           /* 1st processor in upper half */
    RCB_STRUCT *rcb;             /* Pointer to data structures for RCB.  */
    struct rcb_tree *treept;     /* tree of RCB cuts */
@@ -52,18 +50,15 @@ int      *proc)			/* processor that point lands in */
      return(LB_FATAL);
    }
 
-   proclower = 0;
-   procupper = lb->Num_Proc - 1;
+   procmid = treept[0].right_leaf;
 
-   while (proclower < procupper) {
-      procmid = proclower + (procupper - proclower) / 2 + 1;
+   while (procmid > 0)
       if (coords[treept[procmid].dim] <= treept[procmid].cut)
-         procupper = procmid-1;
+         procmid = treept[procmid].left_leaf;
       else
-         proclower = procmid;
-   }
+         procmid = treept[procmid].right_leaf;
 
-   *proc = proclower;
+   *proc = -procmid;
 
    return(LB_OK);
 }

@@ -38,6 +38,9 @@ struct rcb_dot {	        /* dot = point in 3-space */
 struct rcb_tree {	     /* tree of RCB cuts */
   double    cut;        	/* position of cut */
   int       dim;	        /* dimension (012) of cut */
+  int       parent;             /* parent of this node in cut tree */
+  int       left_leaf;          /* left child of this node in cut tree */
+  int       right_leaf;         /* right child of this node in cut tree */
 };
 
 struct rcb_median {          /* RCB cut info */
