@@ -122,7 +122,12 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 #endif
 
 #if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR) || (ML_AGGR_MARKINAGGR)
+#ifndef MAXWELL
 extern int *update_index, *update, *extern_index, *external;
+#else
+extern int *reordered_glob_nodes, *global_node_inds,
+           *reordered_node_externs, *global_node_externs;
+#endif /*ifdef MAXWELL */
 FILE *fp;
 char fname[80];
 static int level_count = 0;
@@ -434,7 +439,6 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
          exit(1);
    }
 
-
    /* take MIS points and make phase1 style aggregates (i.e. just take */
    /* the neighbors of each MIS point as an aggregate).                */
 
@@ -719,7 +723,11 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    for (i = 0; i < exp_Nrows; i++) {
      if (bdry[i] == 'T') aggr_index[i] = -1;
      else if (aggr_index[i] == -1)
+	 {
+	   printf("for node %d, bndry[.] = %c\n",i,bdry[i]);
        printf("ML_agg_MIS: I'm not sure who takes care of this guy\n");
+	   printf("probably need to use the other aggregate file...\n");
+     }
    }
 
    free(bdry);
@@ -960,7 +968,11 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    agg_offset = ML_gpartialsum_int(aggr_count, comm);
    vertex_offset = ML_gpartialsum_int(nvertices, comm);
    for (i = 0; i < nvertices ; i++) {
+#ifndef MAXWELL
       if (level_count == 0) { j = update_index[i]; k = update[i];}
+#else
+      if (level_count == 0) { j = reordered_glob_nodes[i]; k = global_node_inds[i];}
+#endif /* ifndef MAXWELL */
       else                  { j = i              ; k = i+vertex_offset;}
       if (aggr_index[j] >= 0)
          fprintf(fp,"%d %d\n",k, aggr_index[j]+agg_offset);
@@ -968,10 +980,18 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
 
    dtemp = (double *) ML_allocate(sizeof(double)*(exp_Nrows+1));
    for (i = 0; i < nvertices; i++) dtemp[i] = (double) (i + vertex_offset);
-   ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm, nvertices, comm, ML_OVERWRITE);
-   for (i = 0; i < exp_Nrows-nvertices; i++) {
-      if (level_count == 0) { j = extern_index[i]; k = external[i];}
-      else                  { j = i+nvertices    ; k = (int) dtemp[i+nvertices];}
+   ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm, nvertices, comm,
+                    ML_OVERWRITE);
+   for (i = 0; i < exp_Nrows-nvertices; i++)
+   {
+#ifndef MAXWELL
+      if (level_count == 0) { j = extern_index[i]; k = external[i];} 
+#else
+      if (level_count == 0) { j = reordered_node_externs[i]; k =
+	  global_node_externs[i];}
+#endif /* ifndef MAXWELL */
+
+      else                 { j = i+nvertices    ; k = (int) dtemp[i+nvertices];}
       if (aggr_index[j] >= 0)
          fprintf(fp,"%d %d\n", k, aggr_index[j]+agg_offset);
    }
@@ -1705,7 +1725,11 @@ aggr_cnt_array[i],i);
    ML_Operator_Apply(*Pmatrix, (*Pmatrix)->invec_leng, dtemp, 
                      (*Pmatrix)->outvec_leng, d2temp);
    for (i = 0; i < nvertices; i++) {
-      if (level_count == 1) { j = update_index[i]; k = update[i];}
+#ifndef MAXWELL
+      if (level_count == 1) { j = update_index[i]; k = update[i];} 
+#else
+      if (level_count == 1) { j = reordered_glob_nodes[i]; k = global_node_inds[i];}
+#endif /* ifndef MAXWELL */
       else                  { j = i              ; k = i+vertex_offset;}
       fprintf(fp,"PP%d(%d) = %e\n",level_count,k, d2temp[j]);
    }
