@@ -1,0 +1,10 @@
+.././configure \
+--enable-epetra \
+--with-blas="-L/usr/local/app/intel/mkl/mkl-5.2/mkl/lib/32/ -lmkl -lguide" \
+--with-lapack="-L/usr/local/app/intel/mkl/mkl-5.2/mkl/lib/32/ \
+-lmkl_lapack -lmkl" \
+--with-mpi-compilers \
+--with-mpi-libs=-lmpich \
+--disable-default-packages \
+CFLAGS=-O3 CXXFLAGS=-O3 \
+FFLAGS=-O3 CPPFLAGS="-DCODE_MP -DHAVE_CONFIG_H"
