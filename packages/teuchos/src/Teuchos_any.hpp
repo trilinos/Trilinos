@@ -92,6 +92,11 @@ public:
 			return content ? content->type() : typeid(void);
 		}
 
+	void print(std::ostream& os) const
+		{
+			if (content) content->print(os);
+		}
+
 	/** @name Private??? types */
 	//@{
 
@@ -105,6 +110,8 @@ public:
 		virtual const std::type_info & type() const = 0;
 		///
 		virtual placeholder * clone() const = 0;
+                ///
+                virtual void print(std::ostream & os) const = 0;
 	};
 	
 	///
@@ -122,6 +129,9 @@ public:
 		///
 		virtual placeholder * clone() const
 			{ return new holder(held); }
+                ///
+                virtual void print(std::ostream & os) const
+                        { os << held; }
 		///
 		ValueType held;
 	};
@@ -141,7 +151,7 @@ public:
 		{ return content; }
 	const placeholder* access_content() const
 		{ return content; }
-	
+
 };
 
 ///
@@ -177,6 +187,13 @@ template<typename ValueType>
 const ValueType& any_cast(const any &operand)
 {
 	return const_cast<any&>(operand);
+}
+
+
+inline std::ostream & operator<<(std::ostream & os, const any &rhs)
+{
+       	rhs.print(os);
+	return os;
 }
 
 } // namespace Teuchos
