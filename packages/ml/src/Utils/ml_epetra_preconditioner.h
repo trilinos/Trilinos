@@ -188,7 +188,7 @@ public:
     objects for aggregation and hierarchy. Allocated data can be freed used DestroyPreconditioner(). */
   int ComputePreconditioner();
 
-  int ComputeAdaptivePreconditioner();
+  int ComputeFilteringPreconditioner();
 
   //! Queries whether multilevel hierarchy has been computed or not.
   int IsPreconditionerComputed()  const
@@ -426,7 +426,7 @@ private:
 
   void PrintMemoryUsage();
 
-  int SetAdaptive();
+  int SetFiltering();
 
   //@}
 
@@ -526,16 +526,16 @@ private:
   
   int memory_[ML_MEM_SIZE];
 
-  // adaptive stuff
+  // filtering stuff
 
-  Epetra_MultiVector * adp_R_;
-  mutable Epetra_SerialDenseMatrix adp_A_;
-  mutable Epetra_SerialDenseVector adp_rhs_, adp_lhs_;
-  mutable Epetra_SerialDenseSolver adp_solver_;
-  double * adp_NullSpace_;
-  struct ML_CSR_MSRdata * adp_MatrixData_;
-  ML * adp_ml_;
-  ML_Aggregate * adp_agg_;
+  Epetra_MultiVector * flt_R_;
+  mutable Epetra_SerialDenseMatrix flt_A_;
+  mutable Epetra_SerialDenseVector flt_rhs_, flt_lhs_;
+  mutable Epetra_SerialDenseSolver flt_solver_;
+  double * flt_NullSpace_;
+  struct ML_CSR_MSRdata * flt_MatrixData_;
+  ML * flt_ml_;
+  ML_Aggregate * flt_agg_;
   
 }; // class MultiLevelPreconditioner
  

@@ -395,14 +395,14 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
   if( NullSpaceToFree_ != 0 ) { delete [] NullSpaceToFree_;  NullSpaceToFree_ = 0; }
   if( RowMatrixAllocated_ ) { delete RowMatrixAllocated_; RowMatrixAllocated_ = 0; }
 
-  // adaptive stuff
+  // filtering stuff
 
-  if( adp_R_ ) { delete adp_R_; adp_R_ = 0; }
-  if( adp_NullSpace_ ) { delete [] adp_NullSpace_; adp_NullSpace_ = 0; }
+  if( flt_R_ ) { delete flt_R_; flt_R_ = 0; }
+  if( flt_NullSpace_ ) { delete [] flt_NullSpace_; flt_NullSpace_ = 0; }
   
-  if( adp_MatrixData_ ) { delete adp_MatrixData_; adp_MatrixData_ = 0; }
-  if( adp_ml_ ) { ML_Destroy(&adp_ml_); adp_ml_ = 0; }
-  if( adp_agg_ ) { ML_Aggregate_Destroy(&adp_agg_); adp_agg_ = 0; }
+  if( flt_MatrixData_ ) { delete flt_MatrixData_; flt_MatrixData_ = 0; }
+  if( flt_ml_ ) { ML_Destroy(&flt_ml_); flt_ml_ = 0; }
+  if( flt_agg_ ) { ML_Aggregate_Destroy(&flt_agg_); flt_agg_ = 0; }
   
   IsComputePreconditionerOK_ = false;
 
@@ -761,19 +761,19 @@ void MultiLevelPreconditioner::Initialize()
 
   for( int i=0 ; i<ML_MEM_SIZE ; ++i ) memory_[i] = 0;
 
-  // Adaptive vectors
-  adp_R_ = 0;
-  adp_NullSpace_ = 0;
-  adp_MatrixData_ = 0;
-  adp_ml_ = 0;
-  adp_agg_ = 0;
+  // filtering vectors
+  flt_R_ = 0;
+  flt_NullSpace_ = 0;
+  flt_MatrixData_ = 0;
+  flt_ml_ = 0;
+  flt_agg_ = 0;
 
 }
 
 
 // ================================================ ====== ==== ==== == =
 
-int MultiLevelPreconditioner::ComputeAdaptivePreconditioner()
+int MultiLevelPreconditioner::ComputeFilteringPreconditioner()
 {
 
   char parameter[80];
@@ -782,8 +782,8 @@ int MultiLevelPreconditioner::ComputeAdaptivePreconditioner()
     Destroy_ML_Preconditioner();
   }
 
-  // 1.- disable adaptive/GGB in ComputePreconditioner()
-  sprintf(parameter,"%sadaptive: enable", Prefix_);
+  // 1.- disable filtering/GGB in ComputePreconditioner()
+  sprintf(parameter,"%sfiltering: enable", Prefix_);
   List_.set(parameter, false);
 
   ComputePreconditioner();
@@ -791,14 +791,14 @@ int MultiLevelPreconditioner::ComputeAdaptivePreconditioner()
   // 2.- now enable, and call the function to compute the "bad-modes"
   //     (that is, the bad boys. Go Detroit !!!! Beat LA !!!)
 
-  sprintf(parameter,"%sadaptive: enable", Prefix_);
+  sprintf(parameter,"%sfiltering: enable", Prefix_);
   List_.set(parameter, true);
   
-  sprintf(parameter,"%sadaptive: type", Prefix_);
+  sprintf(parameter,"%sfiltering: type", Prefix_);
   List_.set(parameter, "let ML be my master");
 
   if( NullSpaceToFree_ ) delete [] NullSpaceToFree_; NullSpaceToFree_ = 0;
-  int NullSpaceDim = SetAdaptive();
+  int NullSpaceDim = SetFiltering();
   assert( NullSpaceDim > 0 );
   
   sprintf(parameter,"%snull space: type", Prefix_);
@@ -815,7 +815,7 @@ int MultiLevelPreconditioner::ComputeAdaptivePreconditioner()
   Destroy_ML_Preconditioner();
 
   // 4.- recompute preconditioner with new options
-  sprintf(parameter,"%sadaptive: enable", Prefix_);
+  sprintf(parameter,"%sfiltering: enable", Prefix_);
   List_.set(parameter, false);
 
   ComputePreconditioner();
@@ -1173,7 +1173,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   }
 
   /* ********************************************************************** */
-  /* Use of adaptive functions, here called `adaptive: enable'.             */
+  /* Use of filtering functions, here called `filtering: enable'            */
   /* If this option is true, the code detects the non-converging modes of   */
   /* I - ML^{-1}A (where ML is the preconditioner we have just built), and  */
   /* creates a new V cycle to be added to the preconditioner. This part is  */
@@ -1181,7 +1181,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   /* ml_ggb.c, in the Main subdirectory).                                   */
   /* ********************************************************************** */
 
-  SetAdaptive();
+  SetFiltering();
   
   /* ********************************************************************** */
   /* Other minor settings                                                   */
@@ -1369,15 +1369,15 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
   }
 
   /* ********************************************************************** */
-  /* adaptive stuff if required                                             */
+  /* filtering stuff if required                                            */
   /* ********************************************************************** */
 
-  if( adp_R_ ) {
+  if( flt_R_ ) {
     
     // apply matvec
     if( Y.NumVectors() != 1 ) {
       if( verbose_ ) 
-	cerr << ErrorMsg_ << "My dear user, adaptive currently works only with one vector," << endl
+	cerr << ErrorMsg_ << "My dear user, filtering currently works only with one vector," << endl
 	     << ErrorMsg_ << "I am very sorry for this, now I give up..." << endl;
       exit( EXIT_FAILURE );
     }
@@ -1392,25 +1392,25 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
     xtmp2.PutScalar(0.0);
     RowMatrix_->Multiply(false,xtmp,xtmp2);
     */
-    int size = adp_A_.N();
+    int size = flt_A_.N();
 
     for( int i=0 ; i<size ; ++i ) {
       double val = 0.0;
-      (*adp_R_)(i)->Dot(*(xtmp(0)),&val);
-      adp_rhs_(i) = val;
+      (*flt_R_)(i)->Dot(*(xtmp(0)),&val);
+      flt_rhs_(i) = val;
     }
     
-    adp_lhs_.Multiply('N','N',1.0, adp_A_, adp_rhs_, 0.0);
+    flt_lhs_.Multiply('N','N',1.0, flt_A_, flt_rhs_, 0.0);
     /*
-      adp_solver_.SetVectors(adp_lhs_, adp_rhs_);
-      adp_solver_.SolveToRefinedSolution(true);
-      adp_solver_.Solve();
+      flt_solver_.SetVectors(flt_lhs_, flt_rhs_);
+      flt_solver_.SolveToRefinedSolution(true);
+      flt_solver_.Solve();
     */
     
     xtmp.PutScalar(0.0);
     for( int i=0 ; i<size ; ++i ) {
-      double val = adp_lhs_(i);
-      xtmp(0)->Update(val,*(*adp_R_)(i),1.0); 
+      double val = flt_lhs_(i);
+      xtmp(0)->Update(val,*(*flt_R_)(i),1.0); 
     }
     
     Y.Update(1.0,xtmp,1.0);
