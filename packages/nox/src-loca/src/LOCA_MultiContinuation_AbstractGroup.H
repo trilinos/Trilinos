@@ -84,9 +84,9 @@ namespace LOCA {
        * computed.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeDfDp(const vector<int>& paramIDs, 
-		  NOX::Abstract::MultiVector& dfdp, 
-		  bool isValidF) = 0;
+      computeDfDpMulti(const vector<int>& paramIDs, 
+		       NOX::Abstract::MultiVector& dfdp, 
+		       bool isValidF) = 0;
 
       //@}
 

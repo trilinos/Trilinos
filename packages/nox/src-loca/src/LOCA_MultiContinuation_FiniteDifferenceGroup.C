@@ -63,7 +63,7 @@ LOCA::MultiContinuation::FiniteDifferenceGroup::operator=(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::FiniteDifferenceGroup::computeDfDp(
+LOCA::MultiContinuation::FiniteDifferenceGroup::computeDfDpMulti(
 					  const vector<int>& paramIDs, 
 					  NOX::Abstract::MultiVector& dfdp, 
 					  bool isValidF)

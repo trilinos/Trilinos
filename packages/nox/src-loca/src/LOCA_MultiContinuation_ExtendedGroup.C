@@ -287,8 +287,8 @@ LOCA::MultiContinuation::ExtendedGroup::computeJacobian()
   NOX::Abstract::Group::ReturnType status;
 
   // Compute underlying df/dp (may invalidate underlying data)
-  status = grpPtr->computeDfDp(conParamIDs, fMultiVec.getXMultiVec(), 
-			       isValidF);
+  status = grpPtr->computeDfDpMulti(conParamIDs, fMultiVec.getXMultiVec(), 
+				    isValidF);
   finalStatus = 
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);

@@ -143,7 +143,7 @@ LOCA::Predictor::Tangent::compute(
   // Compute derivative of residual w.r.t. parameter
   NOX::Abstract::MultiVector *fdfdp = 
     xMultiVec.getXMultiVec().clone(NOX::DeepCopy);
-  finalStatus = underlyingGroup.computeDfDp(conParamIDs, *fdfdp, false);
+  finalStatus = underlyingGroup.computeDfDpMulti(conParamIDs, *fdfdp, false);
   LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
 
   vector<int> index_dfdp(conParamIDs.size());
