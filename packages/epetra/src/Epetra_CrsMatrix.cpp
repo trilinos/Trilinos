@@ -259,7 +259,7 @@ int Epetra_CrsMatrix::Allocate() {
   int i, j;
 
   // Allocate Values array
-  Values_ = new double*[NumMyRows_];
+  Values_ = NumMyRows_ > 0 ? new double*[NumMyRows_] : NULL;
 
   // Allocate and initialize entries if we are copying data
   if (CV_==Copy) {
@@ -267,7 +267,7 @@ int Epetra_CrsMatrix::Allocate() {
       int NumMyNonzeros = Graph().NumMyEntries();
       if (NumMyNonzeros>0) All_Values_ = new double[NumMyNonzeros];
     }
-  double * All_Values = All_Values_;
+    double * All_Values = All_Values_;
     for (i=0; i<NumMyRows_; i++) {
       int NumAllocatedEntries = Graph().NumAllocatedMyIndices(i);
 			
@@ -889,7 +889,7 @@ int Epetra_CrsMatrix::OptimizeStorage() {
   else {
     //if already contiguous, we'll simply set All_Values_ to be
     //a copy of Values_[0].
-    All_Values_ = Values_[0];
+    All_Values_ = NumMyRows_ > 0 ? Values_[0] : NULL;
   }
   
   // Delete unneeded storage

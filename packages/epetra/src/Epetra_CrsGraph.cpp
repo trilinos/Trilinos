@@ -1068,12 +1068,14 @@ int Epetra_CrsGraph::OptimizeStorage() {
     }
   } // End of !Contiguous section
   else {
-    //if contiguous, set All_Indices_ from CrsGraphData_->Indices_[0].
-    int errorcode = CrsGraphData_->All_Indices_.Size(CrsGraphData_->NumMyNonzeros_);
-    int* all_indices_values = CrsGraphData_->All_Indices_.Values();
-    int* indices_values = CrsGraphData_->Indices_[0];
-    for(int ii=0; ii<CrsGraphData_->NumMyNonzeros_; ++ii) {
-      all_indices_values[ii] = indices_values[ii];
+    if (numMyBlockRows > 0) {
+      //if contiguous, set All_Indices_ from CrsGraphData_->Indices_[0].
+      int errorcode = CrsGraphData_->All_Indices_.Size(CrsGraphData_->NumMyNonzeros_);
+      int* all_indices_values = CrsGraphData_->All_Indices_.Values();
+      int* indices_values = CrsGraphData_->Indices_[0];
+      for(int ii=0; ii<CrsGraphData_->NumMyNonzeros_; ++ii) {
+        all_indices_values[ii] = indices_values[ii];
+      }
     }
   }
 
