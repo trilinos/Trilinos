@@ -74,7 +74,10 @@ namespace Anasazi {
     static void MvAddMv( TYPE alpha, const MV& A, TYPE beta, const MV& B, MV& mv )
     { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); }     
     ///
-    static void MvTransMv( const MV& mv, TYPE alpha, const MV& A, Teuchos::SerialDenseMatrix<int,TYPE>& B )
+    static void MvTransMv( TYPE alpha, const MV& A, const MV& mv, Teuchos::SerialDenseMatrix<int,TYPE>& B )
+    { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); }     
+    ///
+    static void MvDot ( const MV& mv, const MV& A, TYPE b[] ) 
     { UndefinedMultiVecTraits<TYPE, MV>::notDefined(); }     
     ///
     static void MvNorm( const MV& mv, TYPE *normvec )

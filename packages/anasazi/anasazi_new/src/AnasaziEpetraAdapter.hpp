@@ -515,12 +515,18 @@ namespace Anasazi {
       assert( mv.Update( alpha, A, beta, B, 0.0 ) == 0 );
     }
     ///
-    static void MvTransMv( const Epetra_MultiVector& mv, double alpha, const Epetra_MultiVector& A, Teuchos::SerialDenseMatrix<int,double>& B )
+    static void MvTransMv( double alpha, const Epetra_MultiVector& A, const Epetra_MultiVector& mv, Teuchos::SerialDenseMatrix<int,double>& B )
     { 
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
       Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
       
       assert( B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 ) == 0 );
+    }
+    ///
+    static void MvDot( const Epetra_MultiVector& mv, const Epetra_MultiVector& A, double b[] )
+    {
+      if (b) 
+	assert( mv.Dot( A, b ) == 0 );
     }
     ///
     static void MvNorm( const Epetra_MultiVector& mv, double *normvec )

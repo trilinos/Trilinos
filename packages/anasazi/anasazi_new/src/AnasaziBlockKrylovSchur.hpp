@@ -1557,7 +1557,7 @@ namespace Anasazi {
     Teuchos::RefCountPtr<MV> Z = MVT::CloneView( *_basisvecs, index, n );
     Teuchos::RefCountPtr<MV> basistemp = MVT::Clone( *_basisvecs, n );
     OPT::Apply( *_Op, *Z, *basistemp );
-    MVT::MvTransMv( *basistemp, one, *Z, SchurProj );
+    MVT::MvTransMv( one, *Z, *basistemp, SchurProj );
     SchurProj.scale( -one );
     SchurProj += Hj;
     cout<< "Error in Schur Projection ( || (VQ)^T*A*(VQ) - S || ) at restart " << _restartiter << " is "<< SchurProj.normFrobenius()<<" (should be small)"<<endl;

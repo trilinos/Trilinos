@@ -198,19 +198,22 @@ public:
     static void MvTimesMatAddMv( TYPE alpha, const MultiVec<TYPE>& A, 
 				 const Teuchos::SerialDenseMatrix<int,TYPE>& B, 
 				 TYPE beta, MultiVec<TYPE>& mv )
-    { mv.MvTimesMatAddMv(alpha,const_cast<MultiVec<TYPE>&>(A),const_cast<Teuchos::SerialDenseMatrix<int,TYPE>&>(B),beta); }
+    { mv.MvTimesMatAddMv(alpha, A, B, beta); }
     ///
     static void MvAddMv( TYPE alpha, const MultiVec<TYPE>& A, TYPE beta, const MultiVec<TYPE>& B, MultiVec<TYPE>& mv )
-    { mv.MvAddMv(alpha,const_cast<MultiVec<TYPE>&>(A),beta,const_cast<MultiVec<TYPE>&>(B)); }
+    { mv.MvAddMv(alpha, A, beta, B); }
     ///
-    static void MvTransMv( const MultiVec<TYPE>& mv, TYPE alpha, const MultiVec<TYPE>& A, Teuchos::SerialDenseMatrix<int,TYPE>& B )
-    { const_cast<MultiVec<TYPE>&>(mv).MvTransMv(alpha,const_cast<MultiVec<TYPE>&>(A),B); }
+    static void MvTransMv( TYPE alpha, const MultiVec<TYPE>& A, const MultiVec<TYPE>& mv, Teuchos::SerialDenseMatrix<int,TYPE>& B )
+    { mv.MvTransMv(alpha, A, B); }
+    ///
+    static void MvDot( const MultiVec<TYPE>& mv, const MultiVec<TYPE>& A, TYPE b[] )
+    { mv.MvDot( A, b ); }
     ///
     static void MvNorm( const MultiVec<TYPE>& mv, TYPE *normvec )
-    { const_cast<MultiVec<TYPE>&>(mv).MvNorm(normvec); }
+    { mv.MvNorm(normvec); }
     ///
     static void SetBlock( const MultiVec<TYPE>& A, int index[], int numvecs, MultiVec<TYPE>& mv )
-    { mv.SetBlock(const_cast<MultiVec<TYPE>&>(A),index,numvecs); }
+    { mv.SetBlock(A, index, numvecs); }
     ///
     static void MvRandom( MultiVec<TYPE>& mv )
     { mv.MvRandom(); }
@@ -219,7 +222,7 @@ public:
     { mv.MvInit(alpha); }
     ///
     static void MvPrint( const MultiVec<TYPE>& mv, ostream& os )
-    { const_cast<MultiVec<TYPE>&>(mv).MvPrint(os); }
+    { mv.MvPrint(os); }
     
   };
 

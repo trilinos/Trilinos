@@ -344,12 +344,12 @@ namespace Anasazi {
       if ( ret != Ok ) { return ret; }
       
       // Now perform inner product.  Result is stored in Z.
-      MVT::MvTransMv( *BY, Teuchos::ScalarTraits<TYPE>::one(), X, Z );
+      MVT::MvTransMv( Teuchos::ScalarTraits<TYPE>::one(), X, *BY, Z );
       
       return Ok;				
     } else {
       // Perform the inner product, assume B=I.
-      MVT::MvTransMv( Y, Teuchos::ScalarTraits<TYPE>::one(), X, Z );
+      MVT::MvTransMv( Teuchos::ScalarTraits<TYPE>::one(), X, Y, Z );
       return Ok;				
     }
   }

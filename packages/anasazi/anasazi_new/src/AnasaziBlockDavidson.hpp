@@ -347,7 +347,7 @@ namespace Anasazi {
 	  index[i] = knownEV + i;
 	Xtotal = MVT::CloneView( *_X, &index[0], localSize + _blockSize );
 	Teuchos::SerialDenseMatrix<int,STYPE> subKK( View, _KK, 0, localSize+_blockSize, _blockSize, 0, localSize );
-	MVT::MvTransMv( *Xtotal, *_KX, KKsub );
+	MVT::MvTransMv( one, *Xtotal, *_KX, KKsub );
 	//
 	// Perform spectral decomposition
 	//
