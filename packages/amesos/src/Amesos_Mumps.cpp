@@ -251,7 +251,7 @@ void Amesos_Mumps::RedistributeMatrix(const int NumProcs)
 {
 
   if( debug_ == 1 ) cout << "Entering `RedistributeMatrix()' ..." << endl;
-  
+
   Epetra_Time T(Comm());
 
   Epetra_IntSerialDenseVector * OldRow = Row;
@@ -266,6 +266,7 @@ void Amesos_Mumps::RedistributeMatrix(const int NumProcs)
   if( Comm().MyPID() < NumProcs ) NumMUMPSNonzeros_ = local;
   else                            NumMUMPSNonzeros_ = 0;
 
+  
   Row = new Epetra_IntSerialDenseVector(NumMUMPSNonzeros_+1);
   Col = new Epetra_IntSerialDenseVector(NumMUMPSNonzeros_+1);
   Val = new Epetra_SerialDenseVector(NumMUMPSNonzeros_+1);
@@ -278,7 +279,7 @@ void Amesos_Mumps::RedistributeMatrix(const int NumProcs)
   Epetra_IntVector GOldRow(View,OldNnz,OldRow->Values());
   Epetra_IntVector GOldCol(View,OldNnz,OldCol->Values());
   Epetra_Vector GOldVal(View,OldNnz,OldVal->Values());
-
+  
   Epetra_IntVector GRow(View,NewNnz,Row->Values());
   Epetra_IntVector GCol(View,NewNnz,Col->Values());
   Epetra_Vector GVal(View,NewNnz,Val->Values());
@@ -306,11 +307,11 @@ void Amesos_Mumps::RedistributeMatrixValues(const int NumProcs)
 
   // I suppose that NumMyMUMPSNonzeros_ has been computed
   // before calling this method.
-  
+
   Comm().SumAll(&NumMyMUMPSNonzeros_,&NumMUMPSNonzeros_,1);    
 
   Epetra_SerialDenseVector * OldVal = Val;
-
+  
   int local = NumMUMPSNonzeros_ / NumProcs;
   if( Comm().MyPID() == 0 ) local += NumMUMPSNonzeros_%NumProcs;
   
@@ -639,6 +640,7 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
 
 void Amesos_Mumps::CheckParameters() 
 {
+
   // check parameters and fix values of MaxProcs_ and MaxProcsInputMatrix_
 
   int NumGlobalNonzeros=0, NumRows=0;
@@ -680,7 +682,7 @@ void Amesos_Mumps::CheckParameters()
     MaxProcsInputMatrix_ = OptNumProcs2;
     break;
   case -3:
-    MaxProcsInputMatrix_ = Comm().NumProc();
+    MaxProcsInputMatrix_ = MaxProcs_;
     break;  
   }
   
@@ -688,15 +690,15 @@ void Amesos_Mumps::CheckParameters()
   if( MaxProcs_ < -3 || MaxProcs_ > Comm().NumProc() ) MaxProcs_ = Comm().NumProc();
 
   // check available processes; -1 means use all available processes
-  if( MaxProcsInputMatrix_ < -3 ||  MaxProcsInputMatrix_ > Comm().NumProc() )
-    MaxProcsInputMatrix_ = Comm().NumProc();
+  if( MaxProcsInputMatrix_ < -3 ||  MaxProcsInputMatrix_ > MaxProcs_ )
+    MaxProcsInputMatrix_ = MaxProcs_;
 
   // cannot distribute input matrix to this number,
   // use all the processes instead
   if( MaxProcsInputMatrix_ > MaxProcs_ ) {
     MaxProcsInputMatrix_ = MaxProcs_;
   }
-
+  
   if( Comm().NumProc() == 1 || MaxProcsInputMatrix_ == 1 ) KeepMatrixDistributed_ = false;
 
   return;
@@ -862,6 +864,8 @@ int Amesos_Mumps::SymbolicFactorization()
   NumSymbolicFact_++;  
   
   if( debug_ == 1 ) cout << "Entering `SymbolicFactorization()'" << endl;
+  
+  CheckParameters();
   
   // first, gather matrix property using base class
   // Amesos_EpetraBaseSolver
