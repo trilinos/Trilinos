@@ -74,7 +74,7 @@ void LOCA::ErrorCheck::printWarning(string callingFunction,
 void LOCA::ErrorCheck::checkReturnType(NOX::Abstract::Group::ReturnType status,
 				       ActionType action,
 				       string callingFunction,
-				       string message = "") const
+				       string message) const
 {
   if (status != NOX::Abstract::Group::Ok) {
     
