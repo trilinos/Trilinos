@@ -33,6 +33,8 @@ extern double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 			     int res_norm_or_not, ML *ml);
 extern int ML_MaxAllocatableSize();
 extern int ML_MaxMemorySize();
+extern int ML_ggb_Set_SymmetricCycle(int flag);
+extern int ML_ggb_Set_CoarseSolver(int flag);
 
 }
 
@@ -223,6 +225,8 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialDenseVector.h"
+#include "Epetra_SerialDenseSolver.h"
 #include "Epetra_Import.h"
 #include "Epetra_Time.h"
 #include "Epetra_Operator.h"
@@ -247,6 +251,8 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 #ifdef HAVE_ML_TRIUTILS
 #include "Trilinos_Util_CommandLineParser.h"
 #endif
+
+#include "ml_ggb.h"
 
 using namespace Teuchos;
 using namespace ML_Epetra;
@@ -303,6 +309,8 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
     // FIXME: do something
   }
 
+  if( ggb_R_ ) delete ggb_R_;
+  
   // FIXME: how to deal with Tmat_array and Tmat_trans_array ???
   // are they useful ???
   
@@ -405,7 +413,7 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
 
   if( verbose_ && NumApplications_ ) PrintLine();
     
-  // FIXME  if( NullSpaceToFree_ != 0 ) delete [] NullSpaceToFree_;
+  if( NullSpaceToFree_ != 0 ) delete [] NullSpaceToFree_;
 
   if( RowMatrixAllocated_ ) delete RowMatrixAllocated_;
   
@@ -765,6 +773,10 @@ void MultiLevelPreconditioner::Initialize()
   AnalyzeMemory_ = false;
 
   for( int i=0 ; i<ML_MEM_SIZE ; ++i ) memory_[i] = 0;
+
+  // GGB vectors
+  ggb_R_ = 0;
+  
 }
 
 // ================================================ ====== ==== ==== == =
@@ -1116,23 +1128,15 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   }
 
   /* ********************************************************************** */
-  /* Use of GGB functions, here called `detect non-converging modes'        */
+  /* Use of GGB functions, here called `enable ggb'.                        */
   /* If this option is true, the code detects the non-converging modes of   */
   /* I - ML^{-1}A (where ML is the preconditioner we have just built), and  */
   /* creates a new V cycle to be added to the preconditioner. This part is  */
-  /* equivalent to the GGB files of Heim Waisman (files ml_struct.c and     */
+  /* equivalent to the GGB files of Haim Waisman (files ml_struct.c and     */
   /* ml_ggb.c, in the Main subdirectory).                                   */
   /* ********************************************************************** */
 
-  sprintf(parameter,"%sdetect non-converging modes", Prefix_);
-  bool DetectModes = List_.get(parameter,false);
-
-  if( DetectModes == true ) {
-
-
-
-    
-  }
+  SetGGB();
   
   /* ********************************************************************** */
   /* Other minor settings                                                   */
@@ -1271,6 +1275,7 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
 
   Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled
                               // in solver or if X = Y
+
   Y.PutScalar(0.0); // Always start with Y = 0
 
   // ML_iterate doesn't handle multivectors, so extract and iterate one at
@@ -1284,8 +1289,6 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
   
   if( SolvingMaxwell_ == false ) ml_ptr = ml_;
   else                           ml_ptr = ml_edges_;
-
-  //note: solver_ is the ML handle
 
   for (int i=0; i < X.NumVectors(); i++) {
     switch(ml_ptr->ML_scheme) {
@@ -1319,6 +1322,59 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
       ML_Solve_MGV(ml_ptr, xvectors[i], yvectors[i]); 
     }
   }
+
+  /* ********************************************************************** */
+  /* GGB stuff if required                                                  */
+  /* ********************************************************************** */
+
+  if( ggb_R_ ) {
+    
+    // apply matvec
+    if( Y.NumVectors() != 1 ) {
+      if( verbose_ ) 
+	cerr << ErrorMsg_ << "My dear user, GGB currently works only with one vector," << endl
+	     << ErrorMsg_ << "I am very sorry for this, now I give up..." << endl;
+      exit( EXIT_FAILURE );
+    }
+
+    xtmp.PutScalar(0.0);
+    RowMatrix_->Multiply(false,Y,xtmp);
+    
+    xtmp.Update(1.0,X,-1.0);
+
+    //    Epetra_MultiVector xtmp2(xtmp);
+    /*
+    xtmp2.PutScalar(0.0);
+    RowMatrix_->Multiply(false,xtmp,xtmp2);
+    */
+    int size = ggb_A_.N();
+
+    for( int i=0 ; i<size ; ++i ) {
+      double val = 0.0;
+      (*ggb_R_)(i)->Dot(*(xtmp(0)),&val);
+      ggb_rhs_(i) = val;
+    }
+    
+    ggb_lhs_.Multiply('N','N',1.0, ggb_A_, ggb_rhs_, 0.0);
+    /*
+      ggb_solver_.SetVectors(ggb_lhs_, ggb_rhs_);
+      ggb_solver_.SolveToRefinedSolution(true);
+      ggb_solver_.Solve();
+    */
+    
+    xtmp.PutScalar(0.0);
+    for( int i=0 ; i<size ; ++i ) {
+      double val = ggb_lhs_(i);
+      xtmp(0)->Update(val,*(*ggb_R_)(i),1.0); 
+    }
+    
+    Y.Update(1.0,xtmp,1.0);
+    
+  }
+  
+  /* ********************************************************************** */
+  /* track timing                                                           */
+  /* ********************************************************************** */
 
   MultiLevelPreconditioner * This = const_cast<MultiLevelPreconditioner *>(this);
 
@@ -1831,7 +1887,7 @@ void MultiLevelPreconditioner::SetNullSpace()
   double * NullSpacePtr = NULL;
 
   sprintf(parameter,"%snull space: type", Prefix_);
-  string option = List_.get(parameter, "use default vectors");
+  string option = List_.get(parameter, "default vectors");
 
   // Null space can be obtained in 3 ways:
   // 1. default vectors, one constant vector for each physical unknown
@@ -2970,6 +3026,188 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
     exit( EXIT_FAILURE );
   }
     
+}
+
+// ============================================================================
+
+void ML_Epetra::MultiLevelPreconditioner::SetGGB() 
+{
+
+  char parameter[80];
+  Epetra_Time Time(Comm());
+  
+  sprintf(parameter,"%senable ggb", Prefix_);
+  if( List_.get(parameter,false) ) {
+    
+    sprintf(parameter,"%sggb: use symmetric cycle", Prefix_);
+    bool GGBUseSym = List_.get(parameter,false);
+    if( GGBUseSym == true ) ML_ggb_Set_SymmetricCycle(1);
+    else                    ML_ggb_Set_SymmetricCycle(0);
+
+    int restarts = List_.get("eigen-analysis: restart", 50);
+    int NumEigenvalues = List_.get("ggb: size", 5);
+    int BlockSize = List_.get("eigen-analysis: block-size", NumEigenvalues*2);
+    double tol = List_.get("eigen-analysis: tolerance", 1e-5);
+
+    string Eigensolver = List_.get("ggb: eigensolver", "Anasazi");
+
+    if( verbose_ ) {
+      cout << endl;
+      cout << PrintMsg_ << "\tBuilding Generalized Global Basis Functions..." << endl;
+      cout << PrintMsg_ << "\t- scheme = " << Eigensolver << endl;
+      cout << PrintMsg_ << "\t- number of eigenvectors to compute = " << NumEigenvalues << endl;
+      cout << PrintMsg_ << "\t- tolerance = " << tol << endl;
+      cout << PrintMsg_ << "\t- block size = " << BlockSize << endl;
+      if( GGBUseSym ) cout << PrintMsg_ << "\t- using symmetric preconditioner" << endl;
+      else            cout << PrintMsg_ << "\t- using a non-symmetric preconditioner" << endl;
+      
+    }    
+    
+    if( Eigensolver =="ARPACK" ) {
+
+      // check, only 1 proc is supported
+      if( Comm().NumProc() != 1 ) {
+	if( Comm().MyPID() == 0 )
+	  cerr << ErrorMsg_ << "ARPACK can be used only for serial run" << endl;
+	exit( EXIT_FAILURE );
+      }
+
+      ML_ggb_Set_CoarseSolver(2); // set Amesos KLU as solver
+
+      // FIXME: this memory will be lost !!!!! LEAK - LEAK - LEAKI N G G GG GGG
+      struct ML_CSR_MSRdata        *mydata;     // Pointer to the GGB method 
+      
+      mydata        = new(struct ML_CSR_MSRdata);
+      
+      // stick values in Haim's format
+      struct ML_Eigenvalue_Struct ml_eig_struct;
+      ml_eig_struct.Max_Iter = restarts;
+      ml_eig_struct.Num_Eigenvalues = NumEigenvalues;
+      ml_eig_struct.Arnoldi = BlockSize;
+      ml_eig_struct.Residual_Tol = tol;
+
+      ML_ARPACK_GGB(&ml_eig_struct, ml_, mydata, 0, 0);
+
+      // now build the correction to be added to the ML cycle
+      
+      ML_build_ggb(ml_, mydata);
+      
+    } else if( Eigensolver == "Anasazi" ) {
+      
+      // 1.- set parameters for Anasazi
+      Teuchos::ParameterList AnasaziList;
+      AnasaziList.set("eigen-analysis: matrix operation", "I-ML^{-1}A");
+      AnasaziList.set("eigen-analysis: use diagonal scaling", false);
+      AnasaziList.set("eigen-analysis: symmetric problem", false);
+      AnasaziList.set("eigen-analysis: length", BlockSize);
+      AnasaziList.set("eigen-analysis: tolerance", tol);
+      AnasaziList.set("eigen-analysis: action", "LM");
+      AnasaziList.set("eigen-analysis: restart", restarts);
+      AnasaziList.set("eigen-analysis: output", 0);
+
+      // data to hold real and imag for eigenvalues and eigenvectors
+      double * RealEigenvalues = new double[NumEigenvalues];
+      double * ImagEigenvalues = new double[NumEigenvalues];
+
+      double * RealEigenvectors = new double[NumEigenvalues*NumMyRows()];
+      double * ImagEigenvectors = new double[NumEigenvalues*NumMyRows()];
+
+      if( RealEigenvectors == 0 || ImagEigenvectors == 0 ) {
+	cerr << ErrorMsg_ << "Not enough space to allocate "
+	     << NumEigenvalues*NumMyRows()*8 << " bytes for GGB/Anasazi" << endl;
+	exit( EXIT_FAILURE );
+      }
+      
+      // this is the starting value -- random
+      Epetra_MultiVector EigenVectors(OperatorDomainMap(),NumEigenvalues);
+      EigenVectors.Random();
+
+      int NumRealEigenvectors, NumImagEigenvectors;
+
+      // 2.- call Anasazi and store the results in eigenvectors      
+      ML_Anasazi::Interface(RowMatrix_,EigenVectors,RealEigenvalues,
+			    ImagEigenvalues, AnasaziList, RealEigenvectors,
+			    ImagEigenvectors,
+			    &NumRealEigenvectors, &NumImagEigenvectors, ml_);
+
+      // 3.- some output, to print out how many vectors we are actually using
+      if( verbose_ ) {
+	cout << PrintMsg_ << "\t- Computed eigenvalues of I - ML^{-1}A:" << endl;
+	for( int i=0 ; i<NumEigenvalues ; ++i ) {
+	  cout << PrintMsg_ << "\t  z = " << std::setw(10) << RealEigenvalues[i]
+	     << " + i(" << std::setw(10) << ImagEigenvalues[i] << " ),  |z| = "
+	       << sqrt(pow(RealEigenvalues[i],2.0) + pow(ImagEigenvalues[i],2)) << endl;
+	}
+	cout << PrintMsg_ << "\t- Using " << NumRealEigenvectors << " real and "
+	     << NumImagEigenvectors << " imaginary eigenvector(s)" << endl;
+      }
+
+      int size = NumRealEigenvectors+NumImagEigenvectors;
+      
+      assert( size<2*NumEigenvalues+1 );
+
+      // 4.- build the restriction operator as a collection of vectors
+      ggb_R_ = new Epetra_MultiVector(Map(),size);
+      assert( ggb_R_ != 0 );
+      
+      for( int i=0 ; i<NumRealEigenvectors ; ++i ) {
+	for( int j=0 ; j<NumMyRows() ; ++j ) 
+	  (*ggb_R_)[i][j] = RealEigenvectors[j+i*NumMyRows()];
+      }
+      
+      for( int i=0 ; i<NumImagEigenvectors ; ++i ) {
+	for( int j=0 ; j<NumMyRows() ; ++j ) 
+	  (*ggb_R_)[NumRealEigenvectors+i][j] = ImagEigenvectors[j+i*NumMyRows()];
+      }
+
+      //FIXME      Epetra_MultiVector AQ(Map(),size);
+      //FIXME AQ.PutScalar(0.0);
+      
+      //FIXME      RowMatrix_->Multiply(false,*ggb_R_, AQ);
+
+      // 5.- epetra linear problem for dense matrices
+      ggb_rhs_.Reshape(size,1);
+      ggb_lhs_.Reshape(size,1);
+      ggb_A_.Reshape(size,size);
+      ggb_solver_.SetVectors(ggb_lhs_, ggb_rhs_);
+      ggb_solver_.SetMatrix(ggb_A_);
+      
+      // 6.- build the "coarse" matrix as a serial matrix, replicated
+      //     over all processes. LAPACK will be used for its solution
+      for( int i=0 ; i<size ; ++i ) {
+	for( int j=0 ; j<size ; ++j ) {
+	  double value;
+	  (*ggb_R_)(i)->Dot(*((*ggb_R_)(j)), &value); // FIXME : it was AQ(j)
+	  ggb_A_(i,j) = value;
+	}
+      }
+
+      // compute the inverse, overwrite the old values of A
+      ggb_solver_.Invert();
+      
+      // 7.- free some junk
+      delete [] RealEigenvalues;
+      delete [] ImagEigenvalues;
+      delete [] RealEigenvectors;
+      delete [] ImagEigenvectors;
+	
+    } else {
+
+      if(  Comm().MyPID() == 0 )
+	cerr << ErrorMsg_ << "Value of option `ggb:eigensolver' not correct" << endl
+	     << ErrorMsg_ << "(" << Eigensolver << "). It should be:" << endl
+	     << ErrorMsg_ << "<ARPACK> / <Anasazi>" << endl;
+
+      exit( EXIT_FAILURE );
+    }
+
+  }
+
+  if( verbose_ ) 
+    cout << PrintMsg_ << "\t- Time = " << Time.ElapsedTime() << " (s)" << endl;
+    
+  return;
+  
 }
 
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/

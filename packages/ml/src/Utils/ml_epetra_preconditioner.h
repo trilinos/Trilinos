@@ -10,6 +10,9 @@ class Epetra_BlockMap;
 class Epetra_MultiVector;
 class Epetra_Comm;
 class Epetra_CrsMatrix;
+#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialDenseVector.h"
+#include "Epetra_SerialDenseSolver.h"
 
 #define ML_MEM_SIZE      20
 #define ML_MEM_INITIAL    0
@@ -364,7 +367,7 @@ public:
     return RowMatrix_->RowMatrixColMap();
   }
   //@}
-    
+
 private:
 
   //! Copy constructor, should not be used
@@ -420,7 +423,9 @@ private:
   void PrintMem(char *fmt, int size, int, int);
 
   void PrintMemoryUsage();
-  
+
+  void SetGGB();
+
   //@}
 
   //@{ \name Internal data
@@ -519,6 +524,13 @@ private:
   
   int memory_[ML_MEM_SIZE];
 
+  // GGB stuff
+
+  Epetra_MultiVector * ggb_R_;
+  mutable Epetra_SerialDenseMatrix ggb_A_;
+  mutable Epetra_SerialDenseVector ggb_rhs_, ggb_lhs_;
+  mutable Epetra_SerialDenseSolver ggb_solver_;
+  
 }; // class MultiLevelPreconditioner
  
 } // namespace ML_Epetra
