@@ -301,6 +301,8 @@ int ML_AMG_Identity_Getrows(void *data, int N_requested_rows,
    columns[0] = requested_rows[0];
    values[0]  = 1.0;
    row_lengths[0] = 1;
+
+   ML_avoid_unused_param(data);
    return(1);
 }
 

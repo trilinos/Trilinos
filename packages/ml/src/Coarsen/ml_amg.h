@@ -184,7 +184,23 @@ extern int  ML_AMG_LabelVertices(int nvertices, int *vlist, char,
                   int *columns, int mypid, int **proclist, int Nneigh,
                   int **sndbuf, int *neigh, int *sndleng, int Nneigh2,
                   int **rcvbuf, int *neigh2, int *rcvleng, int **recvlist, 
-                  int msgid, ML_Comm *comm, int *CF_array);
+                  ML_Comm *comm, int *CF_array);
+
+
+int ML_AMG_GetCommInfo(ML_CommInfoOP *mat_comm, int Nrows, int *A_Nneigh, 
+           int **A_neigh, int ***A_sendlist, int ***A_recvlist, 
+           int ***A_sndbuf, int ***A_rcvbuf, int **A_sndleng, 
+           int **A_rcvleng, int *Nghost);
+
+int ML_AMG_UpdateVertexStates(int N_remaining_vertices, char vertex_state[], 
+           int recv_cnt, int recv_proc[], int recv_leng[], int **recv_buf, 
+           int **recv_list, int proc_flag[], int *NremainingRcvProcs, 
+           int send_cnt, int send_proc[], int send_leng[], int **send_buf, 
+           int *send_flag, USR_REQ *Request, ML_Comm *comm, int msgtype);
+
+
+int ML_AMG_CompatibleRelaxation(int *CF_array,
+           ML_Operator *Amat, int *Ncoarse, int limit);
 
 #ifdef __cplusplus
 }

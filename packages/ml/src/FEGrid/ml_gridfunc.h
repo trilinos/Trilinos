@@ -75,9 +75,9 @@ extern int ML_GridFunc_Set_GetElmntNullSpace(ML_GridFunc*,int (*func)(void*,int,
 
 
 
-int ML_compute_basis_coefficients3D(void *grid, int index, double *coord,
+int ML_compute_basis_coefficients3D(void *grid, double *coord,
 				    int ncoord, double *coefs, int *coef_ptr);
-int ML_compute_basis_coefficients2D(void *grid, int index, double *coord,
+int ML_compute_basis_coefficients2D(void *grid, double *coord,
 				    int ncoord, double *coefs, int *coef_ptr);
 
 #ifdef __cplusplus

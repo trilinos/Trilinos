@@ -4,10 +4,6 @@
 #define ML_NEW_T_PE
 #endif
 
-extern int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
-			       double smoothP_damping_factor,
-			       ML_Operator *SPn_mat);
-
 int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes, 
                     int fine_level, int incr_or_decrease,
                     ML_Aggregate *ag, ML_Operator *Tmat,
@@ -1210,7 +1206,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
 /******************************************************************************/
 
-int ML_MGHierarchy_ReitzingerDestroy(int finest_level, int coarsest_level,
+int ML_MGHierarchy_ReitzingerDestroy(int finest_level,
                      ML_Operator ***Tmat_array, ML_Operator ***Tmat_trans_array)
 {
     int level;
@@ -1294,40 +1290,14 @@ int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
 
    return 0;
 }
- 
-struct linked_list {
-  struct linked_list *next;
-  int duplicate_row;
-};
-
-extern int ml_comp_Pe_entries(int coef_cols[], double coef_values[], 
-			      int coef_count, int leftagg, 
-			      struct linked_list **Trecorder,
-			      struct ML_CSR_MSRdata *Tfine,
-			      int *Trowcount, int *Tnzcount,
-			      struct ML_CSR_MSRdata *Tcoarse,
-			      int *Pnzcount, int Pe_columns[], 
-			      double Pe_values[]);
-
-extern int ml_record_entry(struct linked_list **Trecorder,int lower,int upper, 
-			int therow);
-extern int ml_dup_entry(int node1, int node2, struct linked_list **Trecorder,
-	int Tcols[], int Trowptr[], int *lower, int *upper, 
-	int *duplicate_row);
-
-extern int ml_clean_Trecorder(struct linked_list ***Trecorder ,int N);
-
-extern int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat, 
-			   ML_Operator *Tfine_mat, ML_Operator *Tcoarse_mat, 
-			   ML_Operator *Pe_mat, int);
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-int ml_clean_Trecorder(struct linked_list ***Trecorder ,int N)
+int ml_clean_Trecorder(struct ml_linked_list ***Trecorder ,int N)
 {
-  struct linked_list *current, *tmp;
+  struct ml_linked_list *current, *tmp;
   int i;
 
   for (i = 0; i < N; i++) {
@@ -1347,8 +1317,7 @@ int ml_clean_Trecorder(struct linked_list ***Trecorder ,int N)
 /*****************************************************************************/
 /*****************************************************************************/
 
-int ml_record_entry(struct linked_list **Trecorder, int lower, int upper, 
-		 int therow)
+int ml_record_entry(struct ml_linked_list **Trecorder, int lower, int therow)
 {
   /* Record the edge (lower, upper) in the linked list table pointed to */
   /* by Trecorder. The matrix row index associated with this edge is    */
@@ -1357,10 +1326,10 @@ int ml_record_entry(struct linked_list **Trecorder, int lower, int upper,
   /* This routine is used in conjunction with 'ml_dup_entry' to see if     */
   /* edges have already been added to the table.                        */
 
-  struct linked_list *prev_head;
+  struct ml_linked_list *prev_head;
 
   prev_head = Trecorder[lower];
-  Trecorder[lower] = (struct linked_list *) ML_allocate(sizeof(struct linked_list));
+  Trecorder[lower] = (struct ml_linked_list *) ML_allocate(sizeof(struct ml_linked_list));
   Trecorder[lower]->next = prev_head;
   Trecorder[lower]->duplicate_row  = therow;
   return 1;
@@ -1370,7 +1339,7 @@ int ml_record_entry(struct linked_list **Trecorder, int lower, int upper,
 /*****************************************************************************/
 /*****************************************************************************/
 
-int ml_dup_entry(int node1, int node2, struct linked_list **Trecorder,
+int ml_dup_entry(int node1, int node2, struct ml_linked_list **Trecorder,
 	int Tcols[], int Trowptr[], int *lower, int *upper, int *duplicate_row)
 {
   /* This routine is used to check if a pair (node1,node2) is already  */
@@ -1380,7 +1349,7 @@ int ml_dup_entry(int node1, int node2, struct linked_list **Trecorder,
   /*                      Set to indicate matrix row associated with   */
   /*                      pair if (node1,node2) is in the table.       */
 
-  struct linked_list *current;
+  struct ml_linked_list *current;
   int tmp, therow, flag = 0;
   *lower = node1;
   *upper = node2;
@@ -1428,7 +1397,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
   /* in more detail in an upcoming paper for copper mtn (3/02).       */
 
   int i, j, max_nz_per_row = 1;
-  struct linked_list **Trecorder;
+  struct ml_linked_list **Trecorder;
   struct ML_CSR_MSRdata *Pn, *SPn, *Tfine, *Tcoarse, *Pe;
   double thesign;
   int left,leftagg, right, rightagg;
@@ -1473,8 +1442,8 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
   /* coarse edges that have already been created (i.e. there already  */
   /* exists a row in Tcoarse).                                        */
 
-  Trecorder = (struct linked_list **) ML_allocate((Pn_mat->outvec_leng+1)*
-					     sizeof(struct linked_list *));
+  Trecorder = (struct ml_linked_list **) ML_allocate((Pn_mat->outvec_leng+1)*
+					     sizeof(struct ml_linked_list *));
   for (i = 0; i < Pn_mat->outvec_leng; i++) Trecorder[i] = NULL;
   Tcoarse->rowptr[0] = 0;
 
@@ -1526,7 +1495,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
          coef_vals[coef_count++] = thesign*SPn_values[j];
       }
       ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, -1, Trecorder,
-             Tfine, &Trowcount, &Tnzcount, Tcoarse, 
+             &Trowcount, &Tnzcount, Tcoarse, 
              &Pnzcount,Pe->columns,Pe->values);
     }
 
@@ -1580,7 +1549,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
       }
 
       ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, leftagg, 
-			   Trecorder, Tfine, &Trowcount, &Tnzcount, Tcoarse,
+			   Trecorder, &Trowcount, &Tnzcount, Tcoarse,
 			   &Pnzcount,Pe->columns,Pe->values);
 	coef_count = 0;
       }
@@ -1607,7 +1576,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 	  }
 	}
 	ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, leftagg,
-			   Trecorder,Tfine, &Trowcount, &Tnzcount, Tcoarse, 
+			   Trecorder, &Trowcount, &Tnzcount, Tcoarse, 
 			   &Pnzcount,Pe->columns,Pe->values);
 	coef_count = 0;
 
@@ -1626,13 +1595,13 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 	  }
 	}
 	ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, rightagg,
-			   Trecorder,Tfine, &Trowcount, &Tnzcount, Tcoarse, 
+			   Trecorder, &Trowcount, &Tnzcount, Tcoarse, 
 			   &Pnzcount,Pe->columns,Pe->values);
 	coef_count = 1;
 	coef_cols[0] = leftagg;
 	coef_vals[0] = beta_m+alpha0-1.;
 	ml_comp_Pe_entries(coef_cols, coef_vals, coef_count, rightagg,
-			   Trecorder,Tfine, &Trowcount, &Tnzcount, Tcoarse,
+			   Trecorder, &Trowcount, &Tnzcount, Tcoarse,
 			   &Pnzcount,Pe->columns,Pe->values);
       }
     }
@@ -1678,8 +1647,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
 }
 
 int ml_comp_Pe_entries(int coef_cols[], double coef_values[], int coef_count,
-		       int leftagg, struct linked_list **Trecorder,
-		       struct ML_CSR_MSRdata *Tfine,
+		       int leftagg, struct ml_linked_list **Trecorder,
 		       int *Trowcount, int *Tnzcount,
 		       struct ML_CSR_MSRdata *Tcoarse, 
 		       int *Pnzcount, int Pe_columns[], double Pe_values[]) {
@@ -1707,7 +1675,7 @@ int ml_comp_Pe_entries(int coef_cols[], double coef_values[], int coef_count,
       /* record the edge in Trecorder so that we can find */
       /* it later given two node entries.                */
 
-      ml_record_entry(Trecorder, lower, upper, *Trowcount);
+      ml_record_entry(Trecorder, lower, *Trowcount);
       edge = *Trowcount;
       Tcoarse_columns[*Tnzcount     ] = coef_cols[j];
       Tcoarse_values[(*Tnzcount)++ ] = 1;
@@ -1738,9 +1706,8 @@ int ml_comp_Pe_entries(int coef_cols[], double coef_values[], int coef_count,
 /* hierarchy stored in 'ml_edges'.                                          */
 /****************************************************************************/
 
-int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array, 
-				    ML_Operator **Tmat_trans_array,
-				    ML **new_ml , ML_Operator *originalM)
+int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML **new_ml , 
+				    ML_Operator *originalM)
 {
 
    int mesh_level, old_mesh_level, levels;

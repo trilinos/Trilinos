@@ -80,6 +80,11 @@ extern int  ML_Gen_MGHierarchy_ReuseExistingOperators(ML *ml );
 extern int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
 								  ML_Aggregate *ag);
 
+extern int ML_AGG_Amat_Getrows(void *data, int N_requested_rows, 
+               int requested_rows[], int allocated_space, int columns[], 
+               double values[], int row_lengths[]);
+
+
 #ifdef __cplusplus
 }
 #endif

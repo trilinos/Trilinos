@@ -11,12 +11,8 @@
 /* ******************************************************************** */
 
 #include <stdio.h>
-
+#include <stdlib.h>
 #include "ml_ggraph.h"
-
-extern int ML_GGraph_LabelVertices(int, int *, char, char *, char *, int,
-                     int *, int *, int, int **, int, int **, int *, int *,
-                     int, int **, int *, int *, int **, int, ML_Comm *);
 
 /* ******************************************************************** */
 /* Constructor                                                          */
@@ -56,28 +52,28 @@ int ML_GGraph_Destroy( ML_GGraph **gg )
       printf("ML_GGraph_Destroy : wrong object. \n");
       exit(1);
    }
-   if ( (*gg)->row_ptr   != NULL ) free( (*gg)->row_ptr );
-   if ( (*gg)->col_ptr   != NULL ) free( (*gg)->col_ptr );
-   if ( (*gg)->send_proc != NULL ) free( (*gg)->send_proc );
-   if ( (*gg)->recv_proc != NULL ) free( (*gg)->recv_proc );
-   if ( (*gg)->send_leng != NULL ) free( (*gg)->send_leng );
-   if ( (*gg)->recv_leng != NULL ) free( (*gg)->recv_leng );
+   if ( (*gg)->row_ptr   != NULL ) ML_free( (*gg)->row_ptr );
+   if ( (*gg)->col_ptr   != NULL ) ML_free( (*gg)->col_ptr );
+   if ( (*gg)->send_proc != NULL ) ML_free( (*gg)->send_proc );
+   if ( (*gg)->recv_proc != NULL ) ML_free( (*gg)->recv_proc );
+   if ( (*gg)->send_leng != NULL ) ML_free( (*gg)->send_leng );
+   if ( (*gg)->recv_leng != NULL ) ML_free( (*gg)->recv_leng );
    if ( (*gg)->send_list != NULL )
    {
       for ( i = 0; i < (*gg)->send_cnt; i++ )
-         if ( (*gg)->send_list[i] != NULL ) free((*gg)->send_list[i]);
-      free((*gg)->send_list);
+         if ( (*gg)->send_list[i] != NULL ) ML_free((*gg)->send_list[i]);
+      ML_free((*gg)->send_list);
       (*gg)->send_list = NULL;
    }
    if ( (*gg)->recv_list != NULL )
    {
       for ( i = 0; i < (*gg)->recv_cnt; i++ )
-         if ( (*gg)->recv_list[i] != NULL ) free((*gg)->recv_list[i]);
-      free((*gg)->recv_list);
+         if ( (*gg)->recv_list[i] != NULL ) ML_free((*gg)->recv_list[i]);
+      ML_free((*gg)->recv_list);
       (*gg)->recv_list = NULL;
    }
-   if ( (*gg)->bdry_type    != NULL ) free( (*gg)->bdry_type );
-   if ( (*gg)->vertex_state != NULL ) free( (*gg)->vertex_state );
+   if ( (*gg)->bdry_type    != NULL ) ML_free( (*gg)->bdry_type );
+   if ( (*gg)->vertex_state != NULL ) ML_free( (*gg)->vertex_state );
    ML_memory_free( (void **) gg );
    return 0;
 }
@@ -228,7 +224,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       if ( vlength > vlengmax ) 
       {
          vlengmax = vlength;
-         free( vlist );
+         ML_free( vlist );
          vlist = (int *) ML_allocate( vlengmax * sizeof(int) );
       }
       grid_fcns->USR_grid_get_element_vlist( grid, i, vlist );
@@ -242,7 +238,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
          }
       }
    }
-   free( vlist );
+   ML_free( vlist );
    total_nodes = 0;
    for ( i = 0; i < nvertices; i++ ) total_nodes += adjacency_cnt[i];
 
@@ -285,7 +281,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
          }
       }
    }
-   free( vlist );
+   ML_free( vlist );
    
    /* ------------------------------------------------------------- */
    /* sort the array and take out repeated indices                  */
@@ -330,7 +326,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
       node_ia[i+1] = index; 
    }
 
-   free( adjacency_cnt );
+   ML_free( adjacency_cnt );
 
    /* ------------------------------------------------------------- */
    /* initialize the ML_GGraph data structure                       */
@@ -657,7 +653,7 @@ int ML_GGraph_Gen_NodeGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
 /* graph coarsening                                                     */
 /* -------------------------------------------------------------------- */
 
-int ML_GGraph_Coarsen(ML_GGraph *ml_gg,void *grid,void (*gf),ML_Comm *comm) 
+int ML_GGraph_Coarsen(ML_GGraph *ml_gg, ML_Comm *comm) 
 {
    int   i, j, m, myrank, nvertices, vertex_cnt, index, *short_list;
    int   short_cnt, *templist, **proclist, *rptr, *cptr, ext_nvertices;
@@ -841,7 +837,7 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg,void *grid,void (*gf),ML_Comm *comm)
       }
       comm->USR_sendbytes((void*) send_carray, nbytes, send_proc[i], 
                           msgtype, comm->USR_comm );
-      free( send_carray );
+      ML_free( send_carray );
    }
    offset = 0;
    for ( i = 0; i < recv_cnt; i++ )
@@ -991,7 +987,7 @@ int ML_GGraph_Coarsen(ML_GGraph *ml_gg,void *grid,void (*gf),ML_Comm *comm)
    }
    if ( nvertices > 0 )
    {
-      for (i = 0; i < nvertices; i++) free( proclist[i] );
+      for (i = 0; i < nvertices; i++) ML_free( proclist[i] );
       ML_memory_free( (void **) &proclist );
    }
    ML_memory_free( (void **) &vertex_type );
@@ -1426,7 +1422,7 @@ int ML_GGraph_CheckMIS( ML_GGraph *ml_gg, ML_Comm *comm )
       }
       comm->USR_sendbytes((void*) send_carray, nbytes, send_proc[i], 
                           msgtype, comm->USR_comm );
-      free( send_carray );
+      ML_free( send_carray );
    }
    offset = 0;
    for ( i = 0; i < recv_cnt; i++ )
@@ -1655,10 +1651,10 @@ int ML_GGraph_Gen_ElementGraph(ML_GGraph *ml_gg,void *grid,void (*gf),
          printf("row %5d : column = %5d \n", i, egraph_ja[j]);
       }
    }
-   free( vlist );
-   free( vlist2 );
-   for ( i = 0; i < nvertices; i++ ) free( v2elem_map[i] );
-   free(v2elem_map);
+   ML_free( vlist );
+   ML_free( vlist2 );
+   for ( i = 0; i < nvertices; i++ ) ML_free( v2elem_map[i] );
+   ML_free(v2elem_map);
    return 0;
 }
 

@@ -15,6 +15,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 #include "ml_aggregate.h"
 #include "ml_lapack.h"
 #include "ml_agg_genP.h"
@@ -174,7 +175,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
       for (j = 0; j < rowi_N; j++) if (rowi_val[j] != 0.) count2++;
       if (count2 <= 1) dtemp[i] = 1.;
    }
-   free(rowi_col); free(rowi_val);
+   ML_free(rowi_col); ML_free(rowi_val);
    rowi_col = NULL; rowi_val = NULL;
    allocated = 0; 
 
@@ -296,7 +297,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
          proclist[index][0] = Asqrd_neigh[i];
       }
    }
-   free(templist);
+   ML_free(templist);
 
    /* Need to set up communication for the matrix A (as opposed to Asqrd) */
 
@@ -375,18 +376,18 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
    /* free memory used for doing the MIS stuff */
 
-   for ( i = 0; i < Asqrd_ntotal; i++ ) free(proclist[i]);
-   free(proclist);
-   free(vlist); free(state); free(vtype);
+   for ( i = 0; i < Asqrd_ntotal; i++ ) ML_free(proclist[i]);
+   ML_free(proclist);
+   ML_free(vlist); ML_free(state); ML_free(vtype);
    for (i = 0; i < Asqrd_Nneigh; i++) {
-      free(Asqrd_recvlist[i]);
-      free(Asqrd_sendlist[i]);
-      free(Asqrd_rcvbuf[i]);
-      free(Asqrd_sndbuf[i]);
+      ML_free(Asqrd_recvlist[i]);
+      ML_free(Asqrd_sendlist[i]);
+      ML_free(Asqrd_rcvbuf[i]);
+      ML_free(Asqrd_sndbuf[i]);
    }
-   free(Asqrd_sndleng); free(Asqrd_rcvleng);  free(Asqrd_sndbuf);
-   free(Asqrd_rcvbuf);  free(Asqrd_recvlist); free(Asqrd_sendlist);
-   free(Asqrd_neigh);
+   ML_free(Asqrd_sndleng); ML_free(Asqrd_rcvleng);  ML_free(Asqrd_sndbuf);
+   ML_free(Asqrd_rcvbuf);  ML_free(Asqrd_recvlist); ML_free(Asqrd_sendlist);
+   ML_free(Asqrd_neigh);
    ML_Operator_Destroy(&Asqrd);
 
 
@@ -399,7 +400,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    tempaggr_index = (int *) ML_allocate(sizeof(int)* (exp_Nrows+1)*num_PDE_eqns);
    for (i = 0;         i < nvertices ; i++) tempaggr_index[i] = aggr_index[i];
    for (i = nvertices; i < exp_Nrows ; i++) tempaggr_index[i] = -1;
-   free(aggr_index);
+   ML_free(aggr_index);
    aggr_index = tempaggr_index;
 
    N_neighbors = getrow_obj->pre_comm->N_neighbors;
@@ -522,13 +523,13 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 			     recv_list, nvertices, comm, aggr_index, 1963, tem2_index, 
 			     neighbors, temp_index,1);
 
-   free(temp_leng);
-   free(tem2_index);
-   free(temp_index);
-   free(rowi_col); rowi_col = NULL;
-   free(rowi_val); rowi_val = NULL;
+   ML_free(temp_leng);
+   ML_free(tem2_index);
+   ML_free(temp_index);
+   ML_free(rowi_col); rowi_col = NULL;
+   ML_free(rowi_val); rowi_val = NULL;
    allocated = 0;
-   free(recv_list);
+   ML_free(recv_list);
 
 #ifdef ML_AGGR_MARKINAGGR
 
@@ -556,7 +557,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
      }
    }
 
-   free(bdry);
+   ML_free(bdry);
 
    for (i = exp_Nrows - 1; i >= 0; i-- ) {
       for (j = num_PDE_eqns-1; j >= 0; j--) {
@@ -721,7 +722,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
          for (j = 0; j < recv_leng[i]; j++) recv_list[offset+j] += offset;
          offset += recv_leng[i];
       }
-      if ( N_neighbors > 0 ) free( request );
+      if ( N_neighbors > 0 ) ML_free( request );
 
       ML_memory_free((void**) &recv_list);
 
@@ -786,7 +787,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
          comm->USR_waitbytes((void *) &(recv_leng[i]), length, &procnum,
                               &msgtype, comm->USR_comm, request+i);
       }
-      if ( N_neighbors > 0 ) free( request );
+      if ( N_neighbors > 0 ) ML_free( request );
 
       total_recv_leng = 0;
       for (i = 0; i < N_neighbors; i++) total_recv_leng += recv_leng[i];
@@ -851,7 +852,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    }
    fclose(fp);
    level_count++;
-   free(dtemp);
+   ML_free(dtemp);
 #else
 #ifdef INPUT_AGGREGATES
    agg_offset = ML_gpartialsum_int(aggr_count, comm);
@@ -1521,10 +1522,10 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    }
    fclose(fp);
    printf("total number of connections counted is %d\n",myagg);
-   free(bad);
-   free(good);
-   free(rowi_col); rowi_col = NULL;
-   free(rowi_val); rowi_val = NULL;
+   ML_free(bad);
+   ML_free(good);
+   ML_free(rowi_col); rowi_col = NULL;
+   ML_free(rowi_val); rowi_val = NULL;
    allocated = 0;
 #endif
    /* ------------------------------------------------------------- */
@@ -1572,11 +1573,11 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    ML_memory_free((void**) &recv_leng);
    ML_memory_free((void**) &send_leng);
    ML_memory_free((void**) &send_list);
-   free(aggr_index);
+   ML_free(aggr_index);
    ML_memory_free((void**) &aggr_stat);
    ML_memory_free((void**) &sendlist_proc);
-   free(aggr_cnt_array);
-   for (i = 0; i < aggr_count; i++) free(rows_in_aggs[i]);
+   ML_free(aggr_cnt_array);
+   for (i = 0; i < aggr_count; i++) ML_free(rows_in_aggs[i]);
    ML_memory_free((void**)&rows_in_aggs);
    ML_memory_free((void**)&qr_tmp);
    ML_memory_free((void**)&tmp_vect);
@@ -1598,8 +1599,8 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    {
       supernode = aggr_curr;
       aggr_curr = aggr_curr->next;
-      if ( supernode->length > 0 ) free( supernode->list );
-      free( supernode );
+      if ( supernode->length > 0 ) ML_free( supernode->list );
+      ML_free( supernode );
    }
 #if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES)
    /* Print Pmatrix*v (where v is constructed using global indices) */
@@ -1628,8 +1629,8 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
       fprintf(fp,"PP%d(%d) (loc=%d) = %e\n",level_count,k,j, d2temp[j]);
    }
    fclose(fp);
-   free(dtemp);
-   free(d2temp);
+   ML_free(dtemp);
+   ML_free(d2temp);
 
    /*
    csr_data = (struct ML_CSR_MSRdata *) (*Pmatrix)->data;
@@ -1676,6 +1677,7 @@ int ML_Aggregate_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
    int *tvec, *neworder;
 #endif
 
+   ML_avoid_unused_param((void *) &msgtype);
    N_remaining_vertices = vlist_cnt;
    NremainingRcvProcs   = recv_cnt;
    send_flag            = 0;
@@ -1778,15 +1780,15 @@ printf("%d: N_remaining_vertices is %d |%d\n",comm->ML_mypid,
    pref_index = 0;     /* pointer to a stack of vertex numbers */
 
 #ifdef RANDMISROOTS
-   tvec2 = (double *) malloc( (vlist_cnt+1)*sizeof(double));
-   tvec  = (int *) malloc( (vlist_cnt+1)*sizeof(int));
+   tvec2 = (double *) ML_allocate( (vlist_cnt+1)*sizeof(double));
+   tvec  = (int *) ML_allocate( (vlist_cnt+1)*sizeof(int));
    ML_random_vec(tvec2, vlist_cnt, comm);
    for (i = 0; i < vlist_cnt; i++) tvec[i] = (int) (100000.*tvec2[i]);
-   free(tvec2);
-   neworder  = (int *) malloc( (vlist_cnt+1)*sizeof(int));
+   ML_free(tvec2);
+   neworder  = (int *) ML_allocate( (vlist_cnt+1)*sizeof(int));
    for (i = 0; i < vlist_cnt; i++) neworder[i] = i;
    ML_az_sort(tvec, vlist_cnt, neworder, NULL);
-   free(tvec);
+   ML_free(tvec);
 #endif
 
 
@@ -1943,7 +1945,7 @@ printf("%d: out of loop %d | %d\n",comm->ML_mypid,N_remaining_vertices,
                }
 
                /* delete all vertices adjacent to this vertex and */
-               /* indicate that also in the communication buffer  */
+	       /* INDICATE that also in the communication buffer  */
 
                for ( j = rptr[index]; j < rptr[index+1]; j++ )
                {
@@ -2102,9 +2104,9 @@ printf("the new NremainingRcvProcs is %d\n",NremainingRcvProcs); fflush(stdout);
       ML_memory_free( (void **) &Request );
    }
    if ( nvertices > 0 ) ML_memory_free( (void **) &pref_list );
-   free(in_preflist);
+   ML_free(in_preflist);
 #ifdef RANDMISROOTS
-   free(neworder);
+   ML_free(neworder);
 #endif
    return nselected;
 }

@@ -276,6 +276,53 @@ int ML_Aggregate_Print_Complexity(ML_Aggregate *);
 
 void ML_CSR_MSR_ML_memorydata_Destroy(void *data);
 
+
+/* ************************************************************************* */
+/* internal function defined later on in this file                           */
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx, 
+           int num_PDEs, ML_Comm *comm, int **new_mat_indx, 
+           int *N_neighbors, int **neighbors, int **recv_leng,
+           int **send_leng, int **send_list, int **recv_list, int *bc_array);
+int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *, ML_Comm *comm,
+           int *amal_mat_indx, int *aggr_count, int **aggr_index2, 
+           int N_neighbors, int *neighbors, int *recv_leng, int *send_leng,
+           int *send_list,int *,int **, int *bc_array); 
+int  ML_Aggregate_ExchangeStatus(char *recvbuf, char *sendbuf, 
+           int N_neighbors, int *neighbors, int *recv_leng, 
+           int *send_leng, int *recv_list, int Nrows, int msgid, 
+           int datatype, ML_Comm *comm);
+int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj, 
+           int num_PDEs, ML_Comm *comm, 
+           int *new_N_neighbors, int **new_neighbors, int **new_recv_leng, 
+           int **new_send_leng, int **new_send_list, int **new_recv_list);
+int ML_Aggregate_ComposeRecvFromSend(int nprocs, int mypid, int new_N_send,
+           int *new_send_leng, int *new_send_neighbors, int *N_rcv, 
+           int **recv_leng, int **recv_neighbors, ML_Comm *comm);
+int ML_Aggregate_Form_Aggregates(char phaseID, int phaseAFlag, int Nrows, 
+           int *mat_indx, int *aggr_index, int *aggr_stat, 
+           int *node_type, int *node_type2, int *order_array, 
+           int *aggr_count_in, int *aggr_cnt_leng_in,
+           int **aggr_cnt_array_in, int max_row_nnz, int min_agg_size, 
+           int max_neigh_selected, int N_neighbors, int *neighbors, 
+           int *send_leng, int *send_list, int *recv_leng, int *recv_list, 
+           int *sendlist_proc, ML_Comm *comm, double printflag);
+int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme, 
+           int *mat_indx, int *aggr_index, int *aggr_stat, 
+           int *aggr_count_in, int **aggr_cnt_array_in, 
+           int N_neighbors, int *neighbors, int *send_leng, int *send_list, 
+           int *recv_leng, int *recv_list, ML_Comm *comm, double printflag);
+int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
+           int **mat_indx_out, ML_Comm *comm, double epsilon, int *nrows,
+           int **bc_array);
+
+int  ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *, ML_Comm *,
+                ML_Operator *, int *mat_indx, int *bdry_array, 
+                int *aggr_count_in, int **aggr_index_in);
+
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -23,7 +23,7 @@
 extern ML_GridFunc *gridfcns_basis;
 
 
-int ML_compute_basis_coefficients3D(void *grid, int index, double *coord,
+int ML_compute_basis_coefficients3D(void *grid, double *coord,
                                    int ncoord, double *coefs, int *coef_ptr)
 {
    int    *vlist, the_pt, ncnt, i, j, ind, not_all_zero;
@@ -133,7 +133,7 @@ int ML_compute_basis_coefficients3D(void *grid, int index, double *coord,
 
 /* ******************************************************************** */
 
-int ML_compute_basis_coefficients2D(void *grid, int index, double *coord,
+int ML_compute_basis_coefficients2D(void *grid, double *coord,
                                    int ncoord, double *coefs, int *coef_ptr)
 {
    int    *vlist, the_pt, ncnt, i, j, ind, not_all_zero;

@@ -24,49 +24,10 @@
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 #include "ml_aggregate.h"
 #include "ml_lapack.h"
 #include "ml_utils.h"
-
-/* ************************************************************************* */
-/* internal function defined later on in this file                           */
-/* ------------------------------------------------------------------------- */
-
-int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx, 
-           int num_PDEs, ML_Comm *comm, int **new_mat_indx, 
-           int *N_neighbors, int **neighbors, int **recv_leng,
-           int **send_leng, int **send_list, int **recv_list, int *bc_array);
-int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *, ML_Comm *comm,
-           int *amal_mat_indx, int *aggr_count, int **aggr_index2, 
-           int N_neighbors, int *neighbors, int *recv_leng, int *send_leng,
-           int *send_list,int *,int **, int *bc_array); 
-int  ML_Aggregate_ExchangeStatus(char *recvbuf, char *sendbuf, 
-           int N_neighbors, int *neighbors, int *recv_leng, 
-           int *send_leng, int *recv_list, int Nrows, int msgid, 
-           int datatype, ML_Comm *comm);
-int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj, 
-           int Nrows, int num_PDEs, ML_Comm *comm, 
-           int *new_N_neighbors, int **new_neighbors, int **new_recv_leng, 
-           int **new_send_leng, int **new_send_list, int **new_recv_list);
-int ML_Aggregate_ComposeRecvFromSend(int nprocs, int mypid, int new_N_send,
-           int *new_send_leng, int *new_send_neighbors, int *N_rcv, 
-           int **recv_leng, int **recv_neighbors, ML_Comm *comm);
-int ML_Aggregate_Form_Aggregates(char phaseID, int phaseAFlag, int Nrows, 
-           int exp_Nrows, int *mat_indx, int *aggr_index, int *aggr_stat, 
-           int *node_type, int *node_type2, int *order_array, 
-           int *aggr_count_in, int *aggr_cnt_leng_in,
-           int **aggr_cnt_array_in, int max_row_nnz, int min_agg_size, 
-           int max_neigh_selected, int N_neighbors, int *neighbors, 
-           int *send_leng, int *send_list, int *recv_leng, int *recv_list, 
-           int *sendlist_proc, ML_Comm *comm, double printflag);
-int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme, 
-           int *mat_indx, int *aggr_index, int *aggr_stat, 
-           int *aggr_count_in, int **aggr_cnt_array_in, int max_row_nnz, 
-           int N_neighbors, int *neighbors, int *send_leng, int *send_list, 
-           int *recv_leng, int *recv_list, ML_Comm *comm, double printflag);
-int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
-           int **mat_indx_out, ML_Comm *comm, double epsilon, int *nrows,
-           int **bc_array);
 
 /* ************************************************************************* */
 /* local defines                                                             */
@@ -177,7 +138,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
    /* This is needed to send null spaces around between processors) */
    /* ============================================================= */
 
-   ML_Aggregate_ComposeExpandedCommInfo(getrow_obj, Nrows, num_PDE_eqns, 
+   ML_Aggregate_ComposeExpandedCommInfo(getrow_obj, num_PDE_eqns, 
            comm, &N_neighbors, &neighbors, &recv_leng, &send_leng, 
             &send_list, &recv_list);
 
@@ -447,8 +408,8 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
       new_send_neighbors = NULL;
       new_send_list = NULL;
    } 
-   if ( int_buf  != NULL ) free (int_buf);
-   if ( int_buf2 != NULL ) free (int_buf2);
+   if ( int_buf  != NULL ) ML_free (int_buf);
+   if ( int_buf2 != NULL ) ML_free (int_buf2);
    ML_Aggregate_ComposeRecvFromSend(nprocs, mypid, new_N_send, new_send_leng, 
           new_send_neighbors, &new_N_recv, &new_recv_leng, &new_recv_neighbors, 
           comm);
@@ -850,7 +811,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
    ML_memory_free((void**) &recv_list);
    ML_memory_free((void**) &aggr_index);
    ML_memory_free((void**) &aggr_cnt_array);
-   for (i = 0; i < aggr_count; i++) free(rows_in_aggs[i]);
+   for (i = 0; i < aggr_count; i++) ML_free(rows_in_aggs[i]);
    ML_memory_free((void**)&rows_in_aggs);
    ML_memory_free((void**)&qr_tmp);
    ML_memory_free((void**)&tmp_vect);
@@ -997,7 +958,7 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
          new_node = node_head;
          inode = new_node->node_id;
          node_head = new_node->next;
-         free(new_node);
+         ML_free(new_node);
          for ( j = mat_indx[inode]; j < mat_indx[inode+1]; j++ ) 
          {
             jnode = mat_indx[j];
@@ -1119,7 +1080,7 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    min_agg_size = 2;
    max_neigh_selected = 0;
    phaseAFlag = 1;
-   ML_Aggregate_Form_Aggregates('1', phaseAFlag, Nrows, exp_Nrows, mat_indx, 
+   ML_Aggregate_Form_Aggregates('1', phaseAFlag, Nrows, mat_indx, 
         aggr_index, aggr_stat, node_type, NULL, order_array, &aggr_count, 
         &aggr_cnt_leng, &aggr_cnt_array, max_length, min_agg_size, 
         max_neigh_selected, N_neighbors, neighbors, send_leng, send_list, 
@@ -1146,7 +1107,7 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    if ( min_agg_size <= 1 ) min_agg_size = 2;
    min_agg_size = 3;
 
-   ML_Aggregate_Form_Aggregates('2',phaseAFlag,Nrows,exp_Nrows,mat_indx, 
+   ML_Aggregate_Form_Aggregates('2',phaseAFlag,Nrows, mat_indx, 
         aggr_index, aggr_stat, node_type, NULL, order_array, &aggr_count, 
         &aggr_cnt_leng, &aggr_cnt_array, max_length, min_agg_size, 
         max_neigh_selected, N_neighbors, neighbors, send_leng, send_list, 
@@ -1173,7 +1134,7 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    min_agg_size = 1;
    max_neigh_selected = 10000;
    phaseAFlag = 0;
-   ML_Aggregate_Form_Aggregates('4',phaseAFlag,Nrows,exp_Nrows,mat_indx, 
+   ML_Aggregate_Form_Aggregates('4',phaseAFlag,Nrows,mat_indx, 
         aggr_index, aggr_stat, node_type, NULL, order_array, &aggr_count, 
         &aggr_cnt_leng, &aggr_cnt_array, max_length, min_agg_size, 
         max_neigh_selected, N_neighbors, neighbors, send_leng, send_list, 
@@ -1536,7 +1497,7 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
       for ( j = amal_mat_indx[i]; j < amal_mat_indx[i+1]; j++)
          col_entered[ amal_mat_indx[j]] = 'F';
    }
-   if ( dbuf != NULL ) free( dbuf );
+   if ( dbuf != NULL ) ML_free( dbuf );
 
    /* ------------------------------------------------------------- */
    /* shuffle pointers                                              */
@@ -1554,12 +1515,12 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
 
-   free(col_entered);
-   free(Aneighbors);
-   free(Asend_leng);
-   free(Arecv_leng);
-   free(Asend_list);
-   free(Arecv_list);
+   ML_free(col_entered);
+   ML_free(Aneighbors);
+   ML_free(Asend_leng);
+   ML_free(Arecv_leng);
+   ML_free(Asend_list);
+   ML_free(Arecv_list);
 
    return 0;
 }
@@ -1621,7 +1582,7 @@ int ML_Aggregate_ExchangeStatus(char *recvbuf,char *sendbuf,int N_neighbors,
                              &msgtype, comm->USR_comm, (void *) &Request[i] );
       offset += recv_leng[i];
    }
-   if ( Request != NULL ) free( Request );
+   if ( Request != NULL ) ML_free( Request );
 
    /* ----------------------------------------------------------------- */
    /* if a receive list is given, then permute the incoming data        */
@@ -1640,7 +1601,7 @@ int ML_Aggregate_ExchangeStatus(char *recvbuf,char *sendbuf,int N_neighbors,
                               char_array[recv_list[i]-Nrows] = carray[i];
                            for ( i = 0; i < total_recv_leng; i++ )
                               carray[i] = char_array[i];
-                           free(char_array);
+                           ML_free(char_array);
                            break;
          case ML_INT     : nbytes = total_recv_leng * sizeof(int);
                            int_array = (int *) ML_allocate(nbytes);
@@ -1649,7 +1610,7 @@ int ML_Aggregate_ExchangeStatus(char *recvbuf,char *sendbuf,int N_neighbors,
                               int_array[recv_list[i]-Nrows] = iarray[i];
                            for ( i = 0; i < total_recv_leng; i++ )
                               iarray[i] = int_array[i];
-                           free(int_array);
+                           ML_free(int_array);
                            break;
          case ML_DOUBLE  : nbytes = total_recv_leng * sizeof(double);
                            dble_array = (double *) ML_allocate(nbytes);
@@ -1658,7 +1619,7 @@ int ML_Aggregate_ExchangeStatus(char *recvbuf,char *sendbuf,int N_neighbors,
                               dble_array[recv_list[i]-Nrows] = darray[i];
                            for ( i = 0; i < total_recv_leng; i++ )
                               darray[i] = dble_array[i];
-                           free(dble_array);
+                           ML_free(dble_array);
                            break;
       }
    }
@@ -1670,7 +1631,7 @@ int ML_Aggregate_ExchangeStatus(char *recvbuf,char *sendbuf,int N_neighbors,
 /* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj, 
-           int Nrows, int num_PDEs, ML_Comm *comm, 
+           int num_PDEs, ML_Comm *comm, 
            int *out_N_neighbors, int **out_neighbors, 
            int **out_recv_leng, int **out_send_leng, int **out_send_list,
            int **out_recv_list)
@@ -1910,9 +1871,9 @@ int ML_Aggregate_ComposeRecvFromSend(int nprocs, int mypid, int new_N_send,
       for (i = 0; i < nprocs; i++) int_buf[i] = 0;
       for (i = 0; i < new_N_send; i++) int_buf[new_send_neighbors[i]] = 1;
       ML_Comm_GsumVecInt(comm, int_buf, int_buf2, nprocs);
-      free( int_buf2 );
+      ML_free( int_buf2 );
       new_N_rcv = int_buf[mypid];
-      free( int_buf );
+      ML_free( int_buf );
 
       /* -------------------------------------------------------------- */
       /* get receive processor and the receive length                   */
@@ -1947,7 +1908,7 @@ int ML_Aggregate_ComposeRecvFromSend(int nprocs, int mypid, int new_N_send,
          new_recv_neighbors[i] = fromproc;
       }
       ML_az_sort( new_recv_neighbors, new_N_rcv, new_recv_leng, NULL);
-      if ( new_N_rcv > 0 ) free( Request );
+      if ( new_N_rcv > 0 ) ML_free( Request );
 
       (*recv_leng) = new_recv_leng;
       (*recv_neighbors) = new_recv_neighbors;
@@ -1967,7 +1928,7 @@ int ML_Aggregate_ComposeRecvFromSend(int nprocs, int mypid, int new_N_send,
 /* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_Form_Aggregates(char phaseID, int phaseAFlag, int Nrows, 
-        int exp_Nrows, int *mat_indx, int *aggr_index, int *aggr_stat, 
+        int *mat_indx, int *aggr_index, int *aggr_stat, 
         int *node_type, int *node_type2, int *order_array, int *aggr_count_in, 
         int *aggr_cnt_leng_in,
         int **aggr_cnt_array_in, int max_row_nnz, int min_agg_size, 
@@ -2401,8 +2362,8 @@ total_nwaiting = 0;
          }
 */
       }
-      if ( com_buf  != NULL ) free( com_buf ); 
-      if ( com_buf2 != NULL ) free( com_buf2 ); 
+      if ( com_buf  != NULL ) ML_free( com_buf ); 
+      if ( com_buf2 != NULL ) ML_free( com_buf2 ); 
    }
 
    /* ---------------------------------------------------------------- */
@@ -2488,8 +2449,8 @@ printf("\n");
          }
       }
    }
-   free( supernode->list );
-   free( supernode );
+   ML_free( supernode->list );
+   ML_free( supernode );
 
    /* ---------------------------------------------------------------- */
    /* send my aggr_stat information to other processors                */
@@ -2510,7 +2471,7 @@ printf("\n");
    ML_Aggregate_ExchangeStatus((char*)&aggr_stat[Nrows],(char*) com_buf,
       N_neighbors, neighbors,recv_leng,send_leng,recv_list,Nrows,msgtype,
       ML_INT, comm);
-   if ( com_buf != NULL ) free( com_buf );
+   if ( com_buf != NULL ) ML_free( com_buf );
 
    /* ---------------------------------------------------------------- */
    /* output information about aggregation progress                    */
@@ -2551,7 +2512,7 @@ printf("\n");
 
 int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme, 
         int *mat_indx, int *aggr_index, int *aggr_stat, int *aggr_count_in, 
-        int **aggr_cnt_array_in, int max_row_nnz, int N_neighbors, 
+        int **aggr_cnt_array_in, int N_neighbors, 
         int *neighbors, int *send_leng, int *send_list, int *recv_leng, 
         int *recv_list, ML_Comm *comm, double printflag )
 {
@@ -2650,8 +2611,8 @@ int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme,
                select_flag = 1;
             }
             length = mat_indx[inode+1] - mat_indx[inode];
-            if ( length > 0 ) free( int_array );
-            if ( length > 0 ) free( int_array2 );
+            if ( length > 0 ) ML_free( int_array );
+            if ( length > 0 ) ML_free( int_array2 );
          }
 
          /* ----------------------------------------------------------- */
@@ -2692,7 +2653,7 @@ int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme,
    ML_Aggregate_ExchangeStatus((char*)&aggr_stat[Nrows],(char*) com_buf,
         N_neighbors,neighbors,recv_leng,send_leng,recv_list,Nrows,msgtype,
         ML_INT,comm);
-   if ( com_buf != NULL ) free( com_buf );
+   if ( com_buf != NULL ) ML_free( com_buf );
 
    /* ----------------------------------------------------------------- */
    /* output information about aggregation progress                     */
@@ -2782,8 +2743,8 @@ int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       while (getrowfunc(Amatrix->data,1,&i,maxnnz_per_row,col_ind,
                         col_val, &m) == 0 )
       {
-         free( col_ind );
-         free( col_val );
+         ML_free( col_ind );
+         ML_free( col_val );
          maxnnz_per_row = maxnnz_per_row * 2 + 1;
          col_ind = (int *)    ML_allocate(maxnnz_per_row * sizeof(int));
          col_val = (double *) ML_allocate(maxnnz_per_row * sizeof(double));
@@ -2810,7 +2771,7 @@ int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    if ( epsilon == 0.0 && diagonal != NULL )
    {
-      free( diagonal );
+      ML_free( diagonal );
       diagonal = NULL;
    }
    if ( epsilon != 0.0 && exp_Nrows > 0 )
@@ -2821,7 +2782,7 @@ int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       else              diagonal = NULL;
       for ( i = 0; i < Nrows; i++ ) diagonal[i] = dble_buf[i];
       for ( i = Nrows; i < exp_Nrows; i++ ) diagonal[i] = 0.0;
-      if ( dble_buf != NULL ) free(dble_buf);
+      if ( dble_buf != NULL ) ML_free(dble_buf);
       getrow_comm = getrow_obj->pre_comm;
       if ( getrow_comm != NULL )
          ML_exchange_bdry(diagonal,getrow_comm,Nrows,comm,ML_OVERWRITE,NULL);
@@ -2888,9 +2849,9 @@ int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
       mat_indx[i+1] = nz_cnt;
       ML_sort(mat_indx[i+1]-mat_indx[i], mat_indx+mat_indx[i]);
    }
-   if ( col_ind  != NULL ) free(col_ind);
-   if ( col_val  != NULL ) free(col_val);
-   if ( diagonal != NULL ) free(diagonal);
+   if ( col_ind  != NULL ) ML_free(col_ind);
+   if ( col_val  != NULL ) ML_free(col_val);
+   if ( diagonal != NULL ) ML_free(diagonal);
 
    (*mat_indx_out)  = mat_indx;
    (*exp_Nrows_out) = exp_Nrows;

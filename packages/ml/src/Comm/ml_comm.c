@@ -10,6 +10,7 @@
 /* Date          : Sept, 1998                                           */
 /* ******************************************************************** */
 
+#include <stdlib.h>
 #include "ml_comm.h"
 #include "ml_utils.h"
 
@@ -905,9 +906,22 @@ int ML_Comm_Irecv(void* buf, unsigned int count, int *src,
 {
    int err = 0;
 #ifdef ML_MPI
-   if (*mid == -1) *mid = MPI_ANY_TAG;
+   if (*mid == -1) {
+     *mid = MPI_ANY_TAG;
+     /* bogus code to avoid warnings */
+     if (*src == -59)  ML_avoid_unused_param((void *) &comm);
+   }
    if (*src == -1) *src = MPI_ANY_SOURCE;
    err = MPI_Irecv(buf,count,MPI_BYTE,*src,*mid,MPI_COMM_WORLD,request);
+#else
+   /* bogus code to avoid warnings */
+   if (*mid == -59) {
+     ML_avoid_unused_param(buf);
+     ML_avoid_unused_param((void *) &count);
+     ML_avoid_unused_param((void *) src);
+     ML_avoid_unused_param((void *) &comm);
+     ML_avoid_unused_param((void *) request);
+   }
 #endif
    return err;
 }
@@ -924,6 +938,21 @@ int ML_Comm_Wait (void* buf, unsigned int count, int *src,
    MPI_Get_count(&status, MPI_BYTE, &return_cnt);
    *src = status.MPI_SOURCE;
    *mid = status.MPI_TAG;
+   /* bogus code to avoid warnings */
+   if (*mid == -59) {
+     ML_avoid_unused_param(buf);
+     ML_avoid_unused_param((void *) &count);
+     ML_avoid_unused_param((void *) &comm);
+   }
+#else
+   /* bogus code to avoid warnings */
+   if (*mid == -59) {
+     ML_avoid_unused_param(buf);
+     ML_avoid_unused_param((void *) &count);
+     ML_avoid_unused_param((void *) src);
+     ML_avoid_unused_param((void *) &comm);
+     ML_avoid_unused_param((void *) request);
+   }
 #endif
    return return_cnt;
 }
@@ -936,7 +965,20 @@ int ML_Comm_Send(void* buf, unsigned int count, int dest, int mid,
    int err = 0;
 #ifdef ML_MPI
    err = MPI_Send(buf, count, MPI_BYTE, dest, mid, MPI_COMM_WORLD);
+   /* bogus code to avoid warnings */
+   if (mid == -59) {
+     ML_avoid_unused_param((void *) &comm);
+   }
+#else
+   /* bogus code to avoid warnings */
+   if (mid == -59) {
+     ML_avoid_unused_param(buf);
+     ML_avoid_unused_param((void *) &count);
+     ML_avoid_unused_param((void *) &dest);
+     ML_avoid_unused_param((void *) &comm);
+   }
 #endif
+
    return err;
 }
 

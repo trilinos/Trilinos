@@ -14,6 +14,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include "ml_operator.h"
 #include "ml_mat_formats.h"
@@ -22,24 +23,6 @@
 #include "ml_smoother.h"
 #include "ml_lapack.h"
 #include "ml_utils.h"
-
-/* ************************************************************************* */
-/* function to be declared later on in this file                             */
-/* ------------------------------------------------------------------------- */
-
-int ML_AMG_GetCommInfo(ML_CommInfoOP *mat_comm, int Nrows, int *A_Nneigh, 
-           int **A_neigh, int ***A_sendlist, int ***A_recvlist, 
-           int ***A_sndbuf, int ***A_rcvbuf, int **A_sndleng, 
-           int **A_rcvleng, int *Nghost);
-
-int ML_AMG_UpdateVertexStates(int N_remaining_vertices, char vertex_state[], 
-           int recv_cnt, int recv_proc[], int recv_leng[], int **recv_buf, 
-           int **recv_list, int proc_flag[], int *NremainingRcvProcs, 
-           int send_cnt, int send_proc[], int send_leng[], int **send_buf, 
-           int *send_flag, USR_REQ *Request, ML_Comm *comm, int msgtype);
-
-int ML_AMG_CompatibleRelaxation(ML_AMG *ml_amg, int *CF_array,
-           ML_Operator *Amat, int *Ncoarse, int limit);
 
 /* ************************************************************************* */
 /* construct the prolongator using Mark Adam's MIS algorithm                 */
@@ -102,7 +85,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
          ML_exchange_bdry(darray,mat_comm,Nrows,comm,ML_OVERWRITE,NULL);
       sys_info = (int *) ML_allocate(sizeof(double) * count);
       for (i = 0; i < count; i++) sys_info[i] = (int) darray[i];
-      free(darray);
+      ML_free(darray);
    } else sys_info = NULL;
 
    /* ============================================================= */
@@ -193,7 +176,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
          proclist[index][0] = A_neigh[i];
       }
    }
-   if ( templist != NULL ) free(templist);
+   if ( templist != NULL ) ML_free(templist);
 
    /* ============================================================= */
    /* record the Dirichlet boundary and processor boundaries        */
@@ -298,8 +281,8 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       }
       rowptr[i+1] = total_nnz;
    }
-   free( rowi_col );
-   free( rowi_val );
+   ML_free( rowi_col );
+   ML_free( rowi_val );
    dtemp = A_nnz;
    dtemp = ML_gsum_double(dtemp, comm);
    if ( ml_amg->operator_complexity == 0.0 )
@@ -329,7 +312,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       if (darray[i] == 1.) bdry[i] = 'T';
       else bdry[i] = 'F';
    }
-   free(darray);
+   ML_free(darray);
 
    /* ============================================================= */
    /* get ready for coarsening (allocate temporary arrays)          */
@@ -367,7 +350,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    k = ML_AMG_LabelVertices(Nrows, vlist, 'x', state, vtype, 
                       Nrows, rowptr, column, mypid, proclist, 
                       A_Nneigh,A_sndbuf,A_neigh, A_sndleng, A_Nneigh,
-                      A_rcvbuf, A_neigh, A_rcvleng, A_recvlist, 1532, 
+                      A_rcvbuf, A_neigh, A_rcvleng, A_recvlist, 
                       comm, CF_array);
 
    Ncoarse = 0;
@@ -446,8 +429,8 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
       offset += offlengths[i];
    }
    for ( i = 1; i < offnrows; i++ ) offlengths[i] += offlengths[i-1];
-   if ( offmap  != NULL ) free( offmap );
-   if ( offmap2 != NULL ) free( offmap2 );
+   if ( offmap  != NULL ) ML_free( offmap );
+   if ( offmap2 != NULL ) ML_free( offmap2 );
 
    /* ============================================================= */
    /* communicate of offprocessor C/F information                   */
@@ -469,7 +452,7 @@ int ML_AMG_CoarsenMIS( ML_AMG *ml_amg, ML_Operator *Amatrix,
    ML_Aggregate_ExchangeData((char*) &(CF_array[Nrows]), (char*) int_buf,
       A_Nneigh, A_neigh, A_rcvleng, A_sndleng, msgtype, ML_INT, comm);
 
-   if ( int_buf != NULL ) free(int_buf);
+   if ( int_buf != NULL ) ML_free(int_buf);
 /*
 for ( i = 0; i < Nrows; i++ )
    if ( CF_array[i] >= 0 ) printf("%d : C point = %d\n",mypid,i);
@@ -640,7 +623,7 @@ for ( i = 0; i < Nrows; i++ )
    ML_Aggregate_ExchangeData((char*) &(CF_array[Nrows]), (char*) int_buf,
       A_Nneigh, A_neigh, A_rcvleng, A_sndleng, msgtype, ML_INT, comm);
 
-   if ( int_buf != NULL ) free(int_buf);
+   if ( int_buf != NULL ) ML_free(int_buf);
 
    /* ============================================================= */
    /* Pass 2 : handle all interior nodes                            */
@@ -784,8 +767,8 @@ for ( i = 0; i < Nrows; i++ )
    } 
 /* #endif */
 
-   free( short_list );
-   free( short_size );
+   ML_free( short_list );
+   ML_free( short_size );
 
 #ifdef obsolete
    /* This is obsolete because I want to give preference to vertices */
@@ -912,7 +895,7 @@ for ( i = 0; i < Nrows; i++ )
    /* ------------------------------------------------------------- */
 
 /* Haven't proved it to be useful yet, but may continue to try
-   ML_AMG_CompatibleRelaxation(ml_amg,CF_array,Amatrix,&Ncoarse,Ncoarse/10+1);
+   ML_AMG_CompatibleRelaxation(CF_array,Amatrix,&Ncoarse,Ncoarse/10+1);
 */
 
    m = ML_Comm_GsumInt( comm, Ncoarse );
@@ -955,7 +938,7 @@ for ( i = 0; i < Nrows; i++ )
       msgtype = 35736;
       ML_Aggregate_ExchangeData((char*) &(CF_array[Nrows]), (char*) int_buf,
          A_Nneigh, A_neigh, A_rcvleng, A_sndleng, msgtype, ML_INT, comm);
-      if ( int_buf != NULL ) free(int_buf);
+      if ( int_buf != NULL ) ML_free(int_buf);
       m = ML_Comm_GsumInt( comm, Ncoarse );
       if ( mypid == 0 && printflag < ML_Get_PrintLevel())
       {
@@ -988,34 +971,34 @@ for ( i = 0; i < Nrows; i++ )
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
 
-   if ( sort_array != NULL ) free( sort_array );
+   if ( sort_array != NULL ) ML_free( sort_array );
 
    /* ============================================================= */
    /* free memory used for doing the MIS stuff                      */
    /* ============================================================= */
 
    for ( i = 0; i < A_ntotal; i++ ) 
-      if ( proclist[i] != NULL ) free(proclist[i]);
-   if ( proclist    != NULL ) free(proclist);
-   if ( vlist       != NULL ) free(vlist); 
-   if ( state       != NULL ) free(state); 
-   if ( vtype       != NULL ) free(vtype);
-   if ( bdry        != NULL ) free( bdry );
-   if ( border_flag != NULL ) free(border_flag);
+      if ( proclist[i] != NULL ) ML_free(proclist[i]);
+   if ( proclist    != NULL ) ML_free(proclist);
+   if ( vlist       != NULL ) ML_free(vlist); 
+   if ( state       != NULL ) ML_free(state); 
+   if ( vtype       != NULL ) ML_free(vtype);
+   if ( bdry        != NULL ) ML_free( bdry );
+   if ( border_flag != NULL ) ML_free(border_flag);
    for (i = 0; i < A_Nneigh; i++) 
    {
-      free(A_recvlist[i]);
-      free(A_sendlist[i]);
-      free(A_rcvbuf[i]);
-      free(A_sndbuf[i]);
+      ML_free(A_recvlist[i]);
+      ML_free(A_sendlist[i]);
+      ML_free(A_rcvbuf[i]);
+      ML_free(A_sndbuf[i]);
    }
-   if ( A_sndleng  != NULL ) free(A_sndleng); 
-   if ( A_rcvleng  != NULL ) free(A_rcvleng);  
-   if ( A_sndbuf   != NULL ) free(A_sndbuf);
-   if ( A_rcvbuf   != NULL ) free(A_rcvbuf);  
-   if ( A_recvlist != NULL ) free(A_recvlist); 
-   if ( A_sendlist != NULL ) free(A_sendlist);
-   if ( A_neigh    != NULL ) free(A_neigh);
+   if ( A_sndleng  != NULL ) ML_free(A_sndleng); 
+   if ( A_rcvleng  != NULL ) ML_free(A_rcvleng);  
+   if ( A_sndbuf   != NULL ) ML_free(A_sndbuf);
+   if ( A_rcvbuf   != NULL ) ML_free(A_rcvbuf);  
+   if ( A_recvlist != NULL ) ML_free(A_recvlist); 
+   if ( A_sendlist != NULL ) ML_free(A_sendlist);
+   if ( A_neigh    != NULL ) ML_free(A_neigh);
 
    /* ============================================================= */
    /* recover unamalgamated matrix and fetch communication info     */
@@ -1032,7 +1015,7 @@ for ( i = 0; i < Nrows; i++ )
       for ( i = 0; i < exp_Nrows; i+= num_PDE_eqns )
          for ( j = 0; j < num_PDE_eqns; j++ )
             int_array[i+j] = CF_array[i/num_PDE_eqns]; 
-      if ( CF_array != NULL ) free( CF_array );
+      if ( CF_array != NULL ) ML_free( CF_array );
       CF_array = int_array;
    }
    */
@@ -1113,7 +1096,7 @@ for ( i = 0; i < Nrows; i++ )
    ML_Aggregate_ExchangeData((char*) &(CF_array[Nrows]), (char*) int_buf,
       N_neighbors, neighbors, recv_leng, send_leng, msgtype, ML_INT, comm);
 
-   if ( int_buf != NULL ) free(int_buf);
+   if ( int_buf != NULL ) ML_free(int_buf);
    Ncoarse = exp_Ncoarse = 0;;
    for (i = 0; i < Nrows; i++) if (CF_array[i] >= 0) CF_array[i] = Ncoarse++;
    exp_Ncoarse = Ncoarse;
@@ -1320,8 +1303,8 @@ for ( i = 0; i < Nrows; i++ )
          for ( j = 0; j < numCi; j++ ) 
             new_val[count+j] = - ( new_val[count+j] / diag );
          count += numCi;
-         free( dsumCij );
-         free( Ci_array );
+         ML_free( dsumCij );
+         ML_free( Ci_array );
 
          /* ----- reset the sort_array ----- */
 
@@ -1342,8 +1325,8 @@ for ( i = 0; i < Nrows; i++ )
             nnz_per_row = new_ia[i+1] - new_ia[i];
       }
    }
-   free( rowi_col );
-   free( rowi_val );
+   ML_free( rowi_col );
+   ML_free( rowi_val );
 /*
 if ( mypid == 1 )
    for (i = 0; i < Nrows; i++) 
@@ -1391,8 +1374,8 @@ MPI_Barrier(MPI_COMM_WORLD);
       }
    }
    for ( i = 0; i < count; i++ ) new_send_list[i] = send_list[i];
-   if ( send_list != NULL ) free( send_list );
-   if ( send_leng != NULL ) free( send_leng );
+   if ( send_list != NULL ) ML_free( send_list );
+   if ( send_leng != NULL ) ML_free( send_leng );
    
    offset = count = new_Nrecv = 0;
    for ( i = 0; i < N_neighbors; i++ )
@@ -1424,9 +1407,9 @@ MPI_Barrier(MPI_COMM_WORLD);
          new_recv_neigh[new_Nrecv++] = neighbors[i];
       }
    }
-   if ( neighbors != NULL ) free( neighbors );
-   if ( recv_leng != NULL ) free( recv_leng );
-   if ( recv_list != NULL ) free( recv_list );
+   if ( neighbors != NULL ) ML_free( neighbors );
+   if ( recv_leng != NULL ) ML_free( recv_leng );
+   if ( recv_list != NULL ) ML_free( recv_list );
 
    /* ------------------------------------------------------------- */
    /* set up the csr_data data structure                            */
@@ -1467,14 +1450,14 @@ for ( i = 0; i < Nrows; i++ )
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
 
-   if ( offibuffer != NULL ) free( offibuffer );
-   if ( offlengths != NULL ) free( offlengths );
-   if ( offdbuffer != NULL ) free( offdbuffer );
-   if ( rowptr     != NULL ) free( rowptr );
-   if ( column     != NULL ) free( column );
-   if ( values     != NULL ) free( values );
-   if ( CF_array   != NULL ) free( CF_array );
-   if ( sys_info   != NULL ) free( sys_info );
+   if ( offibuffer != NULL ) ML_free( offibuffer );
+   if ( offlengths != NULL ) ML_free( offlengths );
+   if ( offdbuffer != NULL ) ML_free( offdbuffer );
+   if ( rowptr     != NULL ) ML_free( rowptr );
+   if ( column     != NULL ) ML_free( column );
+   if ( values     != NULL ) ML_free( values );
+   if ( CF_array   != NULL ) ML_free( CF_array );
+   if ( sys_info   != NULL ) ML_free( sys_info );
    if ( new_Nsend > 0 )
    {
       ML_memory_free((void**) &new_send_leng);
@@ -1501,7 +1484,7 @@ int ML_AMG_LabelVertices(int vlist_cnt2, int *vlist2, char Vtype,
                           int myrank, int **proclist, int send_cnt, 
                           int **send_buf, int *send_proc, int *send_leng,
                           int recv_cnt, int **recv_buf, int *recv_proc, 
-                          int *recv_leng, int **recv_list, int msgtype, 
+                          int *recv_leng, int **recv_list, 
                           ML_Comm *comm, int amg_index[])
 {
    int     i, j, k, m, N_remaining_vertices, index, select_flag, fproc, col;
@@ -1599,7 +1582,7 @@ int ML_AMG_LabelVertices(int vlist_cnt2, int *vlist2, char Vtype,
          pref_rank[i] = rptr[index+1] - rptr[index];
       }
       ML_az_sort(pref_rank, vlist_cnt, vlist, NULL);
-      free( pref_rank );
+      ML_free( pref_rank );
 
       for ( i = 0; i < vlist_cnt/2; i++ )
       {
@@ -1867,12 +1850,12 @@ int ML_AMG_LabelVertices(int vlist_cnt2, int *vlist2, char Vtype,
 
    if ( recv_cnt > 0 )
    {
-      free( proc_flag );
-      free( Request );
+      ML_free( proc_flag );
+      ML_free( Request );
    }
-   if ( vlist_cnt  > 0 ) free( pref_list );
-   if ( vlist_cnt2 > 0 ) free( vlist );
-   if ( vlist_cnt  > 0 ) free( in_preflist );
+   if ( vlist_cnt  > 0 ) ML_free( pref_list );
+   if ( vlist_cnt2 > 0 ) ML_free( vlist );
+   if ( vlist_cnt  > 0 ) ML_free( in_preflist );
    /* return nselected; */
    return loop_cnt;
 }
@@ -2007,7 +1990,7 @@ int ML_AMG_GetCommInfo(ML_CommInfoOP *mat_comm, int Nrows, int *A_Nneigh,
 /* using symmetric Gauss Seidel                                              */
 /* ------------------------------------------------------------------------- */
 
-int ML_AMG_CompatibleRelaxation(ML_AMG *ml_amg, int *CF_array,
+int ML_AMG_CompatibleRelaxation(int *CF_array,
                                 ML_Operator *Amat, int *Ncoarse, int limit)
 {
    int           i, j, iter, Nrows, length, allocated, *cols, col;
@@ -2097,7 +2080,7 @@ int ML_AMG_CompatibleRelaxation(ML_AMG *ml_amg, int *CF_array,
          }
       }
    }
-   free(vals); free(cols);
+   ML_free(vals); ML_free(cols);
 
    /* ------------------------------------------------------------- */
    /* sort the solution                                             */
@@ -2116,10 +2099,10 @@ int ML_AMG_CompatibleRelaxation(ML_AMG *ml_amg, int *CF_array,
          if ( count >= limit ) break;
       }
    }
-   free(indices);
-   free(initsol);
-   free(sol);
-   free(rhs);
+   ML_free(indices);
+   ML_free(initsol);
+   ML_free(sol);
+   ML_free(rhs);
    return 0;
 }
 

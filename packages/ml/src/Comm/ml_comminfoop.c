@@ -7,10 +7,11 @@
 /* functions for creating communicators for the ML_Operator class       */
 /* -------------------------------------------------------------------- */
 
+#include <stdlib.h>
 #include "ml_comminfoop.h"
 #include "ml_utils.h"
 #include "ml_memory.h"
-extern int ML_gpartialsum_int(int val, ML_Comm *comm);
+#include "ml_xyt.h"
 
 /* ******************************************************************** */
 /* Fill in the pre-communication struction of an ML_Operator's getrow   */
@@ -1133,7 +1134,11 @@ void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
   /**************************** execution begins ******************************/
 
   N_neighbors              = comm_info->N_neighbors;
-  if (N_neighbors == 0) return;
+  if (N_neighbors == 0) { 
+    /* bogus code to avoid warning */
+    ML_avoid_unused_param((void *) &start_location);
+    return;
+  }
 
   /* Set up send messages: Gather send unknowns from "x" vector */
 
@@ -1282,6 +1287,3 @@ int ML_Comm_Envelope_Increment_Tag(ML_Comm_Envelope* envelope)
    envelope->tag++;
    return 0;
 }
-/*
-extern int ML_Comm_Envelope_Print(ML_Comm_Envelope*);
-*/

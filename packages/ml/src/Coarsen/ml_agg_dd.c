@@ -11,6 +11,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include "ml_aggregate.h"
 #include "ml_lapack.h"
@@ -483,7 +484,7 @@ int ML_Aggregate_CoarsenDomainDecomp( ML_Aggregate *ml_ag,
    ML_memory_free((void**) &mat_indx);
    ML_memory_free((void**) &aggr_index);
    ML_memory_free((void**) &aggr_cnt_array);
-   for (i = 0; i < aggr_count; i++) free(rows_in_aggs[i]);
+   for (i = 0; i < aggr_count; i++) ML_free(rows_in_aggs[i]);
    ML_memory_free((void**)&rows_in_aggs);
    ML_memory_free((void**)&qr_tmp);
    ML_memory_free((void**)&tmp_vect);

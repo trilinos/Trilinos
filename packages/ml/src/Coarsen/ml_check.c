@@ -3,6 +3,7 @@
 /* person and disclaimer.                                               */        
 /* ******************************************************************** */
 
+#include <stdlib.h>
 #include "ml_struct.h"
 #include "ml_check.h"
 #include "ml_rap.h"
@@ -48,8 +49,10 @@ void ML_interp_check(ML *ml, int coarse_level, int fine_level)
    nfine_eqn   = ml->SingleLevel[coarse_level].Pmat->outvec_leng;
    ncoarse_eqn = ml->SingleLevel[coarse_level].Pmat->invec_leng;
                                                                     
-   c_data  = (double *) calloc(ncoarse_eqn,sizeof(double));    
-   f_data  = (double *) calloc(nfine_eqn  ,sizeof(double));    
+   c_data  = (double *) ML_allocate(ncoarse_eqn*sizeof(double));    
+   f_data  = (double *) ML_allocate(nfine_eqn*sizeof(double));    
+   for (ii = 0; ii < ncoarse_eqn; ii++) c_data[ii] = 0.;
+   for (ii = 0; ii < nfine_eqn; ii++) f_data[ii] = 0.;
 
    /* ASSUMING that for each grid point on this processor there are a   */
    /* set of equations and that all points at a grid point are numbered */
@@ -78,8 +81,8 @@ void ML_interp_check(ML *ml, int coarse_level, int fine_level)
             dlargest = d2;   
       }                                                     
    }                                                       
-   free(f_data);
-   free(c_data);
+   ML_free(f_data);
+   ML_free(c_data);
 }
 
 /* For systems derived from time-dependent Maxwell's equations, check the

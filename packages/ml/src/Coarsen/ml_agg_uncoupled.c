@@ -25,14 +25,6 @@
 
 
 /* ************************************************************************* */
-/* internal function defined later on in this file                           */
-/* ------------------------------------------------------------------------- */
-
-extern int  ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *, ML_Comm *,
-                ML_Operator *, int *mat_indx, int *bdry_array, 
-                int *aggr_count_in, int **aggr_index_in);
-
-/* ************************************************************************* */
 /* local defines                                                             */
 /* ------------------------------------------------------------------------- */
 
