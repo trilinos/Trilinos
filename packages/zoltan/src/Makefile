@@ -348,12 +348,36 @@ NISTSUN_CSRC		= $(LIB_SRC_C)
 NISTSUN_INC		= $(INC)
 NISTSUN_OBJ		= $(NISTSUN_CSRC:.c=.o)
 
+# For LAM
+#NISTSUN_INC_PATH	= -I$(LAMHOME)/include \
+#		  	$(SUBINCPATH)
+
+#NISTSUN_MPI_LIBS	= -L$(LAMHOME)/lib \
+#		  	-lmpi -largs -ltrillium -ltstdio -lt -lsocket \
+#		  	-L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.8.1 -lgcc
+
+# end For LAM
+
+# For MPICH, ITL compilation
 #NISTSUN_INC_PATH	= -I/itl/apps/mpich-1.1.1/SunOS-sun4u-5.7/include \
 #			-I/itl/apps/mpich-1.1.1/SunOS-sun4u-5.7/lib/solaris/ch_p4 \
 #		  	$(SUBINCPATH)
 
-NISTSUN_INC_PATH	= -I/itl/apps/lam-6.3-b2/SunOS-sun4u-5.7/include \
+#NISTSUN_MPI_LIBS	= -L/itl/apps/mpich-1.1.1/SunOS-sun4u-5.7/lib/solaris/ch_p4 \
+#		  	-lpmpich -lmpich -lsocket -lnsl -laio \
+#		  	-L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.8.1 -lgcc
+
+# end For MPICH, ITL compilation
+
+# For MPICH, my compilation
+NISTSUN_INC_PATH	= -I$(MPIR_HOME)/include \
 		  	$(SUBINCPATH)
+
+NISTSUN_MPI_LIBS	= -L$(MPIR_HOME)/build/solaris/ch_p4/lib \
+		  	-lpmpich -lmpich -lsocket -lnsl -laio \
+		  	-L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.8.1 -lgcc
+
+# end For MPICH, my compilation
 
 NISTSUN_CCOMP		= $(NISTSUN_CC) $(NISTSUN_INC_PATH) $(NISTSUN_DBG_FLAGS)
 
@@ -363,14 +387,6 @@ NISTSUN_DEFS		= $(GDEFINES)
 
 # driver stuff
 NISTSUN_ARCHD		=
-
-#NISTSUN_MPI_LIBS	= -L/itl/apps/mpich-1.1.1/SunOS-sun4u-5.7/lib/solaris/ch_p4 \
-#		  	-lpmpich -lmpich -lsocket -lnsl -laio \
-#		  	-L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.8.1 -lgcc
-
-NISTSUN_MPI_LIBS	= -L/itl/apps/lam-6.3-b2/SunOS-sun4u-5.7/lib \
-		  	-lmpi -largs -ltrillium -ltstdio -lt -lsocket \
-		  	-L/itl/links/gnu/lib/gcc-lib/sparc-sun-solaris2.7/2.8.1 -lgcc
 
 NISTSUN_DR_CSRC		= $(DR_CSRC) $(CH_CSRC)
 NISTSUN_DR_OBJ		= $(NISTSUN_DR_CSRC:.c=.o)
@@ -396,14 +412,44 @@ NISTLINUX_CSRC		= $(LIB_SRC_C)
 NISTLINUX_INC		= $(INC)
 NISTLINUX_OBJ		= $(NISTLINUX_CSRC:.c=.o)
 
+# For LAM
 NISTLINUX_INC_PATH	= -I$(LAMHOME)/include \
 		  	$(SUBINCPATH)
 
+NISTLINUX_MPI_LIBS	= -L$(LAMHOME)/lib \
+		  	-lmpi -largs -ltrillium -ltstdio -lt \
+		  	-L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 -lgcc
+
+# end For LAM
+
+# For MPICH, ITL compilation
 #NISTLINUX_INC_PATH	= -I/itl/apps/mpich-1.1.1/Linux-i686-2.2.5/include \
 #			-I/itl/apps/mpich-1.1.1/Linux-i686-2.2.5/lib/LINUX/ch_p4 \
 #		  	$(SUBINCPATH)
 
+#NISTLINUX_MPI_LIBS	= -L/itl/apps/mpich-1.1.1/Linux-i686-2.2.5/lib/LINUX/ch_p4 \
+#		  	-lpmpich -lmpich \
+#		  	-L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 -lgcc
+
+# end For MPICH, ITL compilation
+
+# For MPICH, my compilation
+#NISTLINUX_INC_PATH	= -I$(MPIR_HOME)/include \
+#		  	$(SUBINCPATH)
+
+#NISTLINUX_MPI_LIBS	= -L$(MPIR_HOME)/build/LINUX/ch_p4/lib \
+#		  	-lpmpich -lmpich \
+#		  	-L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 -lg2c
+
+# end For MPICH, my compilation
+
 NISTLINUX_CCOMP		= $(NISTLINUX_CC) $(NISTLINUX_INC_PATH) $(NISTLINUX_DBG_FLAGS)
+ifdef PGI_COMPILER
+NISTLINUX_CCOMP        += -DPGI
+endif
+ifdef FUJITSU_COMPILER
+NISTLINUX_CCOMP        += -DFUJITSU
+endif
 
 NISTLINUX_PAR_LPATH   	= -L$(PARMETISLIB_PATH)
 
@@ -411,14 +457,6 @@ NISTLINUX_DEFS		= $(GDEFINES)
 
 # driver stuff
 NISTLINUX_ARCHD		=
-
-NISTLINUX_MPI_LIBS	= -L$(LAMHOME)/lib \
-		  	-lmpi -largs -ltrillium -ltstdio -lt \
-		  	-L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 -lgcc
-
-#NISTLINUX_MPI_LIBS	= -L/itl/apps/mpich-1.1.1/Linux-i686-2.2.5/lib/LINUX/ch_p4 \
-#		  	-lpmpich -lmpich \
-#		  	-L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 -lgcc
 
 NISTLINUX_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
 NISTLINUX_DR_OBJ	= $(NISTLINUX_DR_CSRC:.c=.o)
@@ -641,6 +679,7 @@ nistsun-dr:
 	fi
 
 nistlinux:
+	@echo "ccomp is: $(NISTLINUX_CCOMP)"
 	@if [ ! -d Obj_nistlinux ]; \
 	then mkdir Obj_nistlinux; \
 	fi
