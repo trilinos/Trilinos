@@ -28,25 +28,30 @@
 # ************************************************************************
 # @HEADER
 
+# Example script exSimple.py is intended to mimic the verySimple C++ epetra example
+
 # Imports
 import setpath
-from   Numeric    import *
 from   PyTrilinos import Epetra
 
-print Epetra.Version()
+def main():
+    print Epetra.Version()
+    comm  = Epetra.SerialComm()
+    nElem = 1000
+    map   = Epetra.Map(nElem, 0, comm)
+    x     = Epetra.Vector(map)
+    b     = Epetra.Vector(map)
+    b.Random()
+    x.Update(2.0, b, 0.0)   # x = 2*b
+    (status,xNorm) = x.Norm2()
+    (status,bNorm) = b.Norm2()
+    print "2 norm of x =", xNorm
+    print "2 norm of b =", bNorm
 
-comm  = Epetra.SerialComm()
-nElem = 10
-map   = Epetra.Map(nElem, 0, comm)
-x     = Epetra.Vector(map)
-b     = Epetra.Vector(map)
-b.Random()
-x.Update(2.0, b, 0.0)   # x = 2*b
-
-print "b =", b
-print "x =", x
-
-# xNorm = x.Norm2()
-# bNorm = b.Norm2()
-# print "2 norm of x =", xNorm
-# print "2 norm of b =", bNorm
+# This is a standard Python construct.  Put the code to be executed in a
+# function [typically main()] and then use the following logic to call the
+# function if the script has been called as an executable from the UNIX command
+# line.  This also allows, for example, this file to be imported by a python
+# degugger and main() called from there.
+if __name__ == "__main__":
+    main()

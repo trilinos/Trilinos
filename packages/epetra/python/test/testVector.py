@@ -80,12 +80,12 @@ class EpetraVector1DTestCase(unittest.TestCase):
         for i in range(ni):
             self.assertEqual(epetraVector[i], float(i))
 
-#     def testNorm1(self):
-#         "Test Epetra.Vector Norm1 method"
-#         epetraVector  = Epetra.Vector([-1,2,-3,4])
-#         (status,norm) = epetraVector.Norm1()
-#         self.assertEqual(status,0)
-#         self.assertEqual(norm, array([10.0]))
+    def testNorm1(self):
+        "Test Epetra.Vector 1D Norm1 method"
+        epetraVector  = Epetra.Vector([-1,2,-3,4])
+        (status,norm) = epetraVector.Norm1()
+        self.assertEqual(status, 0 )
+        self.assertEqual(norm, 10.0)
 
 ##########################################################################
 
