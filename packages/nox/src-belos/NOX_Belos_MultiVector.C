@@ -119,7 +119,7 @@ NOX::Belos::MultiVector::MvTimesMatAddMv(double alpha,
   NOX::Belos::MultiVector& nox_belos_A = 
     dynamic_cast<NOX::Belos::MultiVector&>(A);
 
-  vecPtr->update(alpha, *(nox_belos_A.vecPtr), B, beta);
+  vecPtr->update(Teuchos::NO_TRANS, alpha, *(nox_belos_A.vecPtr), B, beta);
 }
 
 void
@@ -149,7 +149,7 @@ NOX::Belos::MultiVector::MvTransMv(double alpha,
   NOX::Belos::MultiVector& nox_belos_A = 
     dynamic_cast<NOX::Belos::MultiVector&>(A);
 
-  vecPtr->dot(alpha, *(nox_belos_A.vecPtr), B);
+  vecPtr->multiply(alpha, *(nox_belos_A.vecPtr), B);
 }
 
 ::Belos::ReturnType 

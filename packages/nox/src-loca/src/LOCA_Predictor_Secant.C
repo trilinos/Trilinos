@@ -34,6 +34,7 @@
 #include "LOCA_Predictor_Manager.H"
 #include "LOCA_Continuation_ExtendedGroup.H"
 #include "LOCA_Utils.H"
+#include "LOCA_MultiContinuation_ExtendedGroup.H"
 
 LOCA::Predictor::Secant::Secant(NOX::Parameter::List& params) :
   firstStepPredictorPtr(NULL)
@@ -95,4 +96,37 @@ LOCA::Predictor::Secant::compute(bool baseOnSecant, double stepSize,
   }
 
   return res;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::Predictor::Secant::compute(
+	      bool baseOnSecant, const vector<double>& stepSize,
+	      LOCA::MultiContinuation::ExtendedGroup& grp,
+	      LOCA::MultiContinuation::ExtendedMultiVector& prevXMultiVec,
+	      LOCA::MultiContinuation::ExtendedMultiVector& xMultiVec,
+	      LOCA::MultiContinuation::ExtendedMultiVector& result)
+{
+
+  // Compute x - xold
+  result[0].update(1.0, xMultiVec[0], -1.0, prevXMultiVec[0], 0.0);
+
+  for (int i=0; i<result.numVectors(); i++) {
+
+    result[i] = result[0];
+
+    // Rescale so parameter component = 1
+    result[i].scale(1.0/fabs(result.getScalar(i,i)));
+
+    // Set off-diagonal elements to 0
+    for (int j=0; j<result.numVectors(); j++)
+      if (i != j)
+	result.getScalar(i,j) = 0.0;
+
+  }
+
+  // Set orientation based on parameter change
+  setPredictorOrientation(baseOnSecant, stepSize, grp, prevXMultiVec, 
+			  xMultiVec, result);
+
+  return NOX::Abstract::Group::Ok;
 }

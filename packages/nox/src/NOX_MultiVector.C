@@ -226,43 +226,75 @@ NOX::MultiVector::update(double alpha, const NOX::MultiVector& a,
 }
 
 NOX::Abstract::MultiVector& 
-NOX::MultiVector::update(double alpha, const NOX::Abstract::MultiVector& a, 
+NOX::MultiVector::update(Teuchos::ETransp transb, double alpha, 
+			 const NOX::Abstract::MultiVector& a, 
 			 const NOX::Abstract::MultiVector::DenseMatrix& b, 
 			 double gamma)
 {
-  return update(alpha, dynamic_cast<const NOX::MultiVector&>(a), b, gamma);
+  return update(transb, alpha, dynamic_cast<const NOX::MultiVector&>(a), b, 
+		gamma);
 }
 
 NOX::Abstract::MultiVector& 
-NOX::MultiVector::update(double alpha, const NOX::MultiVector& a, 
+NOX::MultiVector::update(Teuchos::ETransp transb, double alpha, 
+			 const NOX::MultiVector& a, 
 			 const NOX::Abstract::MultiVector::DenseMatrix& b, 
 			 double gamma)
 {
-  a.checkSize(b.numRows());
-  checkSize(b.numCols());
+  if (transb == Teuchos::NO_TRANS) {
+    a.checkSize(b.numRows());
+    checkSize(b.numCols());
+  }
+  else {
+    a.checkSize(b.numCols());
+    checkSize(b.numRows());
+  }
   
   int sz_a = a.vecs.size();
   int p = sz_a / 2;
   int q = sz_a - 2*p;
 
-  for (unsigned int i=0; i<vecs.size(); i++) {
+  if (transb == Teuchos::NO_TRANS) {
+    for (unsigned int i=0; i<vecs.size(); i++) {
 
-    if (p == 0)
-      vecs[i]->update(alpha*b(0,i), *(a.vecs[0]), gamma);
-    else {
-      vecs[i]->update(alpha*b(0,i), *(a.vecs[0]), 
-		      alpha*b(1,i), *(a.vecs[1]), gamma);
-
-      for (int j=1; j<p; j++) 
-	vecs[i]->update(alpha*b(2*j,i), *(a.vecs[2*j]), 
-			alpha*b(2*j+1,i), *(a.vecs[2*j+1]), 1.0);
-
-      if (q > 0)
-	vecs[i]->update(alpha*b(sz_a-1,i), *(a.vecs[sz_a-1]), 1.0);
+      if (p == 0)
+	vecs[i]->update(alpha*b(0,i), *(a.vecs[0]), gamma);
+      else {
+	vecs[i]->update(alpha*b(0,i), *(a.vecs[0]), 
+			alpha*b(1,i), *(a.vecs[1]), gamma);
+	
+	for (int j=1; j<p; j++) 
+	  vecs[i]->update(alpha*b(2*j,i), *(a.vecs[2*j]), 
+			  alpha*b(2*j+1,i), *(a.vecs[2*j+1]), 1.0);
+	
+	if (q > 0)
+	  vecs[i]->update(alpha*b(sz_a-1,i), *(a.vecs[sz_a-1]), 1.0);
+      }
+      
     }
 
   }
+  else {
+    
+    for (unsigned int i=0; i<vecs.size(); i++) {
 
+      if (p == 0)
+	vecs[i]->update(alpha*b(i,0), *(a.vecs[0]), gamma);
+      else {
+	vecs[i]->update(alpha*b(i,0), *(a.vecs[0]), 
+			alpha*b(i,1), *(a.vecs[1]), gamma);
+	
+	for (int j=1; j<p; j++) 
+	  vecs[i]->update(alpha*b(i,2*j), *(a.vecs[2*j]), 
+			  alpha*b(i,2*j+1), *(a.vecs[2*j+1]), 1.0);
+	
+	if (q > 0)
+	  vecs[i]->update(alpha*b(i,sz_a-1), *(a.vecs[sz_a-1]), 1.0);
+      }
+      
+    }
+
+  }
   return *this;
 }
 
@@ -323,15 +355,15 @@ NOX::MultiVector::norm(vector<double>& result,
 }
 
 void 
-NOX::MultiVector::dot(double alpha, const NOX::Abstract::MultiVector& y,
-		      NOX::Abstract::MultiVector::DenseMatrix& b) const
+NOX::MultiVector::multiply(double alpha, const NOX::Abstract::MultiVector& y,
+			   NOX::Abstract::MultiVector::DenseMatrix& b) const
 {
-  dot(alpha, dynamic_cast<const NOX::MultiVector&>(y), b);
+  multiply(alpha, dynamic_cast<const NOX::MultiVector&>(y), b);
 }
 
 void 
-NOX::MultiVector::dot(double alpha, const NOX::MultiVector& y,
-		      NOX::Abstract::MultiVector::DenseMatrix& b) const
+NOX::MultiVector::multiply(double alpha, const NOX::MultiVector& y,
+			   NOX::Abstract::MultiVector::DenseMatrix& b) const
 {
   for (unsigned int i=0; i<y.vecs.size(); i++) {
     for (unsigned int j=0; j<vecs.size(); j++) {

@@ -34,6 +34,7 @@
 #include "LOCA_Continuation_ExtendedGroup.H"
 #include "LOCA_Utils.H"
 #include "LOCA_ErrorCheck.H"
+#include "LOCA_MultiContinuation_ExtendedGroup.H"
 
 LOCA::Predictor::Tangent::Tangent(NOX::Parameter::List& params) :
   dfdpVecPtr(NULL)
@@ -112,6 +113,74 @@ LOCA::Predictor::Tangent::compute(bool baseOnSecant, double stepSize,
   
   // Set predictor in continuation group
   curGroup.setPredictorDirection(result);
+
+  return finalStatus;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::Predictor::Tangent::compute(
+	      bool baseOnSecant, const vector<double>& stepSize,
+	      LOCA::MultiContinuation::ExtendedGroup& grp,
+	      LOCA::MultiContinuation::ExtendedMultiVector& prevXMultiVec,
+	      LOCA::MultiContinuation::ExtendedMultiVector& xMultiVec,
+	      LOCA::MultiContinuation::ExtendedMultiVector& result)
+{
+  string callingFunction = "LOCA::Predictor::Tangent::compute()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
+  // Get underlying group
+  LOCA::MultiContinuation::AbstractGroup& underlyingGroup = 
+    dynamic_cast<LOCA::MultiContinuation::AbstractGroup&>(grp.getUnderlyingGroup());
+
+  // Get references to x, parameter components of predictor
+  NOX::Abstract::MultiVector& tanX = result.getXMultiVec();
+  NOX::Abstract::MultiVector::DenseMatrix& tanP = result.getScalars();
+
+  // Get continuation parameter IDs
+  const vector<int>& conParamIDs = grp.getContinuationParameterIDs();
+
+  // Compute derivative of residual w.r.t. parameter
+  NOX::Abstract::MultiVector *fdfdp = 
+    xMultiVec.getXMultiVec().clone(NOX::DeepCopy);
+  finalStatus = underlyingGroup.computeDfDp(conParamIDs, *fdfdp, false);
+  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+
+  vector<int> index_dfdp(conParamIDs.size());
+  for (unsigned int i=0; i<conParamIDs.size(); i++)
+    index_dfdp[i] = i;
+  NOX::Abstract::MultiVector *dfdp = fdfdp->subView(index_dfdp);
+
+  // Scale dfdp by -1.0
+  for (unsigned int i=0; i<conParamIDs.size(); i++)
+    (*dfdp)[i].scale(-1.0);
+
+  // Compute Jacobian
+  status = underlyingGroup.computeJacobian();
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+  
+  // Solve J*tanX = -df/dp
+  NOX::Parameter::List& linearSolverParams = 
+    LOCA::Utils::getSublist("Linear Solver");
+  status = underlyingGroup.applyJacobianInverseMultiVector(linearSolverParams, 
+							   *dfdp, 
+							   tanX);
+  finalStatus = 
+    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+
+  // Set parameter component equal to identity
+  tanP.putScalar(0.0);
+  for (unsigned int i=0; i<conParamIDs.size(); i++)
+    tanP(i,i) = 1.0;
+
+  // Set orientation based on parameter change
+  setPredictorOrientation(baseOnSecant, stepSize, grp, prevXMultiVec, 
+			  xMultiVec, result);
+
+  delete fdfdp;
+  delete dfdp;
 
   return finalStatus;
 }

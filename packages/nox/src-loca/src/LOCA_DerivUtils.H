@@ -90,6 +90,13 @@ public:
   computeDfDp(LOCA::Continuation::AbstractGroup& grp, int param_id,
 	      NOX::Abstract::Vector& result) const;
 
+  //! Compute derivative of f with respect to parameter, identified by param_id
+  virtual NOX::Abstract::Group::ReturnType 
+  computeDfDp(LOCA::Continuation::AbstractGroup& grp, 
+	      const vector<int>& param_ids,
+	      NOX::Abstract::MultiVector& result,
+	      bool isValidF) const;
+
   //! Compute derivative of Jn with respect to particular parameter param_id
   virtual NOX::Abstract::Group::ReturnType 
   computeDJnDp(LOCA::Continuation::AbstractGroup& grp,

@@ -145,6 +145,15 @@ class Vector : public virtual NOX::Abstract::Vector {
   virtual NOX::Abstract::MultiVector* 
   createMultiVector(const NOX::Abstract::Vector* const* vecs,
 		    int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
+
+  /*! 
+   * \brief Create a MultiVector with \c numVecs columns.  
+   *
+   * The implementation here creates a NOX::Epetra::MultiVector with
+   * either Shape or Deep copies of the supplied vector.
+   */
+  virtual NOX::Abstract::MultiVector* 
+  createMultiVector(int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 #endif
 
   //@}

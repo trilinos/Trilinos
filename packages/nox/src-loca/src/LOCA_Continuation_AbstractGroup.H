@@ -36,9 +36,6 @@
 #include "NOX_Abstract_Group.H"    // base class
 
 namespace NOX {
-  namespace Abstract {
-    class MultiVector;
-  }
   namespace Parameter {
     class List;
   }

@@ -55,6 +55,15 @@ LOCA_EXTENDED = \
 	$(srcdir)/LOCA_Extended_MultiVector.C \
 	$(srcdir)/LOCA_Extended_AbstractGroup.C
 
+LOCA_BORDERED_SYSTEM_H = \
+	$(srcdir)/LOCA_BorderedSystem_Generic.H \
+	$(srcdir)/LOCA_BorderedSystem_Manager.H \
+	$(srcdir)/LOCA_BorderedSystem_Bordering.H
+
+LOCA_BORDERED_SYSTEM = \
+	$(srcdir)/LOCA_BorderedSystem_Manager.C \
+	$(srcdir)/LOCA_BorderedSystem_Bordering.C
+
 LOCA_CONTINUATION_H = \
 	$(srcdir)/LOCA_Continuation_ExtendedVector.H \
 	$(srcdir)/LOCA_Continuation_AbstractGroup.H \
@@ -76,6 +85,21 @@ LOCA_CONTINUATION = \
 	$(srcdir)/LOCA_Continuation_NaturalGroup.C \
 	$(srcdir)/LOCA_Continuation_ArcLengthGroup.C \
 	$(srcdir)/LOCA_Continuation_HouseholderGroup.C
+
+LOCA_MULTICONTINUATION_H = \
+	$(srcdir)/LOCA_MultiContinuation_ExtendedVector.H \
+	$(srcdir)/LOCA_MultiContinuation_ExtendedMultiVector.H \
+	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.H
+
+LOCA_MULTICONTINUATION = \
+	$(srcdir)/LOCA_MultiContinuation_ExtendedVector.C \
+	$(srcdir)/LOCA_MultiContinuation_ExtendedMultiVector.C \
+	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C
 
 LOCA_SINGULARSOLVE_H = \
 	$(srcdir)/LOCA_SingularJacobianSolve_Generic.H \
@@ -214,7 +238,9 @@ LOCA_STATUSTEST = \
 LOCA_H = \
         $(srcdir)/LOCA.H \
 	$(LOCA_EXTENDED_H) \
+	$(LOCA_BORDERED_SYSTEM_H) \
 	$(LOCA_CONTINUATION_H) \
+	$(LOCA_MULTICONTINUATION_H) \
 	$(LOCA_SINGULARSOLVE_H) \
 	$(LOCA_BIFURCATION_H) \
 	$(LOCA_HOMOTOPY_H) \
@@ -229,7 +255,9 @@ LOCA_H = \
 
 LOCA = \
 	$(LOCA_EXTENDED) \
+	$(LOCA_BORDERED_SYSTEM) \
 	$(LOCA_CONTINUATION) \
+	$(LOCA_MULTICONTINUATION) \
 	$(LOCA_SINGULARSOLVE) \
 	$(LOCA_BIFURCATION) \
 	$(LOCA_HOMOTOPY) \

@@ -37,6 +37,7 @@
 #include "LOCA_Predictor_Secant.H"
 #include "LOCA_Predictor_Random.H"
 #include "LOCA_Utils.H"
+#include "LOCA_MultiContinuation_ExtendedGroup.H"
 
 LOCA::Predictor::Manager::Manager(NOX::Parameter::List& params) :
   method(),
@@ -98,6 +99,28 @@ LOCA::Predictor::Manager::compute(bool baseOnSecant, double stepSize,
 
   return predictorPtr->compute(baseOnSecant, stepSize, prevGroup, curGroup, 
 			       result);
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::Predictor::Manager::compute(bool baseOnSecant, 
+	      const vector<double>& stepSize,
+	      LOCA::MultiContinuation::ExtendedGroup& grp,
+	      LOCA::MultiContinuation::ExtendedMultiVector& prevXMultiVec,
+	      LOCA::MultiContinuation::ExtendedMultiVector& xMultiVec,
+	      LOCA::MultiContinuation::ExtendedMultiVector& result)
+{
+  if (predictorPtr == NULL) {
+    if (LOCA::Utils::doPrint(LOCA::Utils::Error)) {
+      cout << "LOCA::Predictor::Manager::compute - Null pointer error" << endl;
+    }
+    return NOX::Abstract::Group::Failed;
+  }
+
+  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails))
+    cout << "\n\tCalling Predictor with method: " << method << endl;
+
+  return predictorPtr->compute(baseOnSecant, stepSize, grp, prevXMultiVec,
+			       xMultiVec, result);
 }
 
 const string&

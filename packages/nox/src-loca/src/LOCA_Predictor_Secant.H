@@ -76,12 +76,20 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType 
       reset(NOX::Parameter::List& params);
   
-      //! Computes the secant predictor by calling curGroup.computeSecant().
+      //! Computes the secant predictor
       virtual NOX::Abstract::Group::ReturnType 
       compute(bool baseOnSecant, double stepSize,
 	      LOCA::Continuation::ExtendedGroup& prevGroup,
 	      LOCA::Continuation::ExtendedGroup& curGroup,
 	      LOCA::Continuation::ExtendedVector& result);
+
+      //! Computes the secant predictor
+      virtual NOX::Abstract::Group::ReturnType 
+      compute(bool baseOnSecant, const vector<double>& stepSize,
+	      LOCA::MultiContinuation::ExtendedGroup& grp,
+	      LOCA::MultiContinuation::ExtendedMultiVector& prevXMultiVec,
+	      LOCA::MultiContinuation::ExtendedMultiVector& xMultiVec,
+	      LOCA::MultiContinuation::ExtendedMultiVector& result);
 
     protected:
       

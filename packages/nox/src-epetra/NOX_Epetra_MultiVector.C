@@ -317,17 +317,20 @@ NOX::Epetra::MultiVector::update(double alpha,
 
 NOX::Abstract::MultiVector& 
 NOX::Epetra::MultiVector::update(
+			     Teuchos::ETransp transb, 
 			     double alpha, 
 			     const NOX::Abstract::MultiVector& a, 
 			     const NOX::Abstract::MultiVector::DenseMatrix& b,
 			     double gamma)
 {
-  return update(alpha, dynamic_cast<const NOX::Epetra::MultiVector&>(a), 
+  return update(transb, alpha, 
+		dynamic_cast<const NOX::Epetra::MultiVector&>(a), 
 		b, gamma);
 }
 
 NOX::Abstract::MultiVector& 
 NOX::Epetra::MultiVector::update(
+			     Teuchos::ETransp transb, 
 			     double alpha, 
 			     const NOX::Epetra::MultiVector& a, 
 			     const NOX::Abstract::MultiVector::DenseMatrix& b,
@@ -342,9 +345,14 @@ NOX::Epetra::MultiVector::update(
   Epetra_LocalMap localMap(b.numRows(), izero, epetraMultiVec->Map().Comm());
   Epetra_MultiVector B(View, localMap, nc_b.values(), b.stride(), b.numCols());
 
+  char epetra_trans_b;
+  if (transb == Teuchos::NO_TRANS)
+    epetra_trans_b = 'N';
+  else
+    epetra_trans_b = 'T';
   
-  epetraMultiVec->Multiply('N', 'N', alpha, a.getEpetraMultiVector(), B, 
-			   gamma);
+  epetraMultiVec->Multiply('N', epetra_trans_b, alpha, 
+			   a.getEpetraMultiVector(), B, gamma);
   return *this;
 }
 
@@ -404,17 +412,19 @@ NOX::Epetra::MultiVector::norm(vector<double>& result,
 }
 
 void 
-NOX::Epetra::MultiVector::dot(double alpha, 
-			      const NOX::Abstract::MultiVector& y,
-			      NOX::Abstract::MultiVector::DenseMatrix& b) const
+NOX::Epetra::MultiVector::multiply(
+			     double alpha, 
+			     const NOX::Abstract::MultiVector& y,
+			     NOX::Abstract::MultiVector::DenseMatrix& b) const
 {
-  dot(alpha, dynamic_cast<const NOX::Epetra::MultiVector&>(y), b);
+  multiply(alpha, dynamic_cast<const NOX::Epetra::MultiVector&>(y), b);
 }
 
 void
-NOX::Epetra::MultiVector::dot(double alpha, 
-			      const NOX::Epetra::MultiVector& y,
-			      NOX::Abstract::MultiVector::DenseMatrix& b) const
+NOX::Epetra::MultiVector::multiply(
+			     double alpha, 
+			     const NOX::Epetra::MultiVector& y,
+			     NOX::Abstract::MultiVector::DenseMatrix& b) const
 {
     // Create a replicated-local Epetra_MultiVector using b (view)
   const int izero = 0;

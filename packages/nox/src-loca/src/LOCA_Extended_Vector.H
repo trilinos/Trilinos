@@ -35,6 +35,7 @@
 
 #include "NOX_Common.H"  // for <iostream>, <vector>, and <string>
 #include "NOX_Abstract_Vector.H"  // Base class
+#include "NOX_Abstract_MultiVector.H" // for DenseMatrix
 
 // forward declarations
 namespace LOCA {
@@ -106,13 +107,19 @@ namespace LOCA {
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       /*! 
-       * \brief Create a MultiVector with \c numVecs columns out of an array 
+       * \brief Create a MultiVector with \c numVecs+1 columns out of an array 
        * of Vectors.  The vector stored under \c this will be the first 
-       * column with the remaining \c numVecs - 1 columns given by \c vecs.
+       * column with the remaining \c numVecs columns given by \c vecs.
        */
       virtual NOX::Abstract::MultiVector* 
       createMultiVector(const NOX::Abstract::Vector* const* vecs,
 			int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
+
+      /*! 
+       * \brief Create a MultiVector with \c numVecs columns.
+       */
+      virtual NOX::Abstract::MultiVector* 
+      createMultiVector(int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 
       /*! 
        * \brief NOX::Abstract::Vector init function. Initializes each 
@@ -217,6 +224,10 @@ namespace LOCA {
       virtual void 
       setScalar(int i, double s);
 
+      //! Sets the scalar array
+      virtual void
+      setScalarArray(double *sv);
+
       //! Returns const reference to the ith vector
       virtual const NOX::Abstract::Vector& 
       getVector(int i) const;
@@ -233,10 +244,29 @@ namespace LOCA {
       virtual double& 
       getScalar(int i);
 
+      //! Returns array of scalars
+      virtual const NOX::Abstract::MultiVector::DenseMatrix&
+      getScalars() const;
+
+      //! Returns array of scalars
+      virtual NOX::Abstract::MultiVector::DenseMatrix&
+      getScalars();
+
     protected:
 
       //! %Vector constructor.
       Vector(int nvecs, int nscalars);
+
+      //! generate an extended multi-vector
+      /*!
+       * Extended vectors derived from this class should implement this
+       * method and return a multivector of the appropriate type so that
+       * the createMultiVectors method returns a multivector of the 
+       * appropriate type.
+       */
+      virtual LOCA::Extended::MultiVector*
+      generateMultiVector(int nColumns, int nVectorRows, 
+			  int nScalarRows) const;
 
     protected:
 
@@ -246,8 +276,11 @@ namespace LOCA {
       //! Array indicating if each vector is a view
       vector< bool > isView;
 
-      //! Array of doubles
-      vector< double > scalars;
+      //! Number of scalars
+      int numScalars;
+
+      //! Scalars
+      NOX::Abstract::MultiVector::DenseMatrix* scalarsPtr;
 
     }; // class Vector
   } // namspace Extended

@@ -152,7 +152,7 @@ namespace LOCA {
 
       //@{
   
-     //! Applies Jacobian for extended system
+      //! Applies Jacobian for extended system
       virtual NOX::Abstract::Group::ReturnType 
       applyJacobian(const NOX::Abstract::Vector& input, 
 		    NOX::Abstract::Vector& result) const;

@@ -32,6 +32,7 @@
 
 #include "LOCA_Predictor_Constant.H"
 #include "LOCA_Continuation_ExtendedGroup.H"
+#include "LOCA_MultiContinuation_ExtendedGroup.H"
 
 LOCA::Predictor::Constant::Constant(NOX::Parameter::List& params) 
 {
@@ -49,7 +50,8 @@ LOCA::Predictor::Constant::reset(NOX::Parameter::List& params)
 
 NOX::Abstract::Group::ReturnType 
 LOCA::Predictor::Constant::compute(
-				bool baseOnSecant, double stepSize,
+				bool baseOnSecant, 
+				double stepSize,
 				LOCA::Continuation::ExtendedGroup& prevGroup,
 				LOCA::Continuation::ExtendedGroup& curGroup,
 				LOCA::Continuation::ExtendedVector& result) 
@@ -61,5 +63,24 @@ LOCA::Predictor::Constant::compute(
   setPredictorOrientation(baseOnSecant, stepSize, prevGroup, curGroup, result);
 
   curGroup.setPredictorDirection(result);
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::Predictor::Constant::compute(
+	      bool baseOnSecant, const vector<double>& stepSize,
+	      LOCA::MultiContinuation::ExtendedGroup& grp,
+	      LOCA::MultiContinuation::ExtendedMultiVector& prevXMultiVec,
+	      LOCA::MultiContinuation::ExtendedMultiVector& xMultiVec,
+	      LOCA::MultiContinuation::ExtendedMultiVector& result)
+{
+  result.init(0.0);
+  for (int i=0; i<result.numVectors(); i++)
+    result.getScalar(i,i) = 1.0;
+
+  // Set orientation based on parameter change
+  setPredictorOrientation(baseOnSecant, stepSize, grp, prevXMultiVec, 
+			  xMultiVec, result);
+
   return NOX::Abstract::Group::Ok;
 }

@@ -258,6 +258,37 @@ NOX::Epetra::Vector::createMultiVector(
   return mv;
 }
 
+NOX::Abstract::MultiVector* 
+NOX::Epetra::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
+{
+  if (numVecs <= 0) {
+    cerr << "NOX::Epetra::Vector::createMultiVector:  Error!  Multivector" 
+	 << " must have postive number of columns!" << endl;
+    throw "NOX Error";
+  }
+
+  const Epetra_BlockMap& map = epetraVec->Map();
+  Epetra_MultiVector *epetra_mv;
+  
+  if (type == NOX::ShapeCopy)
+    epetra_mv = new Epetra_MultiVector(map, numVecs, true);
+  else {
+    epetra_mv = new Epetra_MultiVector(map, numVecs, false);
+    Epetra_Vector* v;
+    for (int i=0; i<numVecs; i++) {
+      v = (*epetra_mv)(i);
+      *v = *epetraVec;
+    }
+  }
+
+  NOX::Epetra::MultiVector* mv = 
+    new NOX::Epetra::MultiVector(*epetra_mv, type, true);
+
+  delete epetra_mv;
+
+  return mv;
+}
+
 #endif
 
 double NOX::Epetra::Vector::norm(NOX::Abstract::Vector::NormType type) const

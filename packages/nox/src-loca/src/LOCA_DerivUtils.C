@@ -106,6 +106,57 @@ LOCA::DerivUtils::computeDfDp(LOCA::Continuation::AbstractGroup& grp,
   return finalStatus;
 }
 
+NOX::Abstract::Group::ReturnType
+LOCA::DerivUtils::computeDfDp(LOCA::Continuation::AbstractGroup& grp,
+			      const vector<int>& param_ids,
+			      NOX::Abstract::MultiVector& result,
+			      bool isValidF) const
+{
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDfDp()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
+  // Views of f, df/dp
+  NOX::Abstract::Vector *f = &result[0];
+  NOX::Abstract::Vector *dfdp = NULL;
+
+  // Compute base residual F
+  if (!isValidF) {
+    finalStatus = grp.computeF();
+    LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+    *f = grp.getF();
+  }
+  else
+    finalStatus = NOX::Abstract::Group::Ok;
+  
+  double param;
+  double eps;
+
+  // Loop over each parameter
+  for (unsigned int i=0; i<param_ids.size(); i++) {
+
+    // Perturb single parameter in this group, and return perturbation, eps
+    eps = perturbParam(grp, param, param_ids[i]);
+
+    // Compute perturbed residual
+    status = grp.computeF(); 
+    finalStatus = 
+      LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
+						   callingFunction);
+
+    // Difference perturbed and base vector 
+    dfdp = &result[i+1];
+    dfdp->update(1.0, grp.getF(), -1.0, *f, 0.0);
+    dfdp->scale(1.0/eps);
+
+    // Restore original parameter value
+    grp.setParam(param_ids[i], param);
+
+  }
+
+  return finalStatus;
+}
+
 NOX::Abstract::Group::ReturnType 
 LOCA::DerivUtils::computeDJnDp(LOCA::Continuation::AbstractGroup& grp,
 			       const NOX::Abstract::Vector& nullVector, 

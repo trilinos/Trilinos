@@ -1,5 +1,5 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
@@ -30,62 +30,44 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Abstract_Vector.H"
+#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
 
-// Included multivector declarations if requested
-#ifdef HAVE_NOX_MULTIVECS
-#include "NOX_MultiVector.H"
-#endif
-
-NOX::Abstract::Vector& NOX::Abstract::Vector::random(bool useSeed, int seed) 
+LOCA::MultiContinuation::FiniteDifferenceGroup::FiniteDifferenceGroup(
+					           const LOCA::DerivUtils& d)
+  : derivPtr(d.clone(NOX::DeepCopy))
 {
-  cerr << "NOX::Abstract::Vector::random() function not implemented" << endl;
-  throw "NOX Error";
+}
+
+LOCA::MultiContinuation::FiniteDifferenceGroup::FiniteDifferenceGroup(
+                const LOCA::MultiContinuation::FiniteDifferenceGroup& source, 
+		NOX::CopyType type)
+  : derivPtr(source.derivPtr->clone(type))
+{
+}
+
+LOCA::MultiContinuation::FiniteDifferenceGroup::~FiniteDifferenceGroup() 
+{
+  delete derivPtr;
+}
+
+LOCA::MultiContinuation::FiniteDifferenceGroup&
+LOCA::MultiContinuation::FiniteDifferenceGroup::operator=(
+		const LOCA::MultiContinuation::FiniteDifferenceGroup& source)
+{
+  if (this != &source) {
+    delete derivPtr;
+  
+    derivPtr = source.derivPtr->clone();
+  }
   return *this;
 }
 
-void NOX::Abstract::Vector::print() const
+NOX::Abstract::Group::ReturnType
+LOCA::MultiContinuation::FiniteDifferenceGroup::computeDfDp(
+					  const vector<int>& paramIDs, 
+					  NOX::Abstract::MultiVector& dfdp, 
+					  bool isValidF)
 {
-  return;
+  return derivPtr->computeDfDp(*this, paramIDs, dfdp, isValidF);
 }
 
-#ifdef HAVE_NOX_MULTIVECS
-
-NOX::Abstract::MultiVector* 
-NOX::Abstract::Vector::createMultiVector(
-				    const NOX::Abstract::Vector* const* vecs,
-				    int numVecs, NOX::CopyType type) const
-{
-  if (numVecs < 0) {
-    cerr << "NOX::Abstract::Vector::createMultiVector:  Error!  Multivector" 
-	 << " must have postive number of columns!" << endl;
-    throw "NOX Error";
-  }
-
-  const NOX::Abstract::Vector** tmp = 
-    new const NOX::Abstract::Vector*[numVecs+1];
-
-  tmp[0] = this;
-  for (int i=0; i<numVecs; i++)
-    tmp[i+1] = vecs[i];
-
-  NOX::MultiVector* mv = new NOX::MultiVector(tmp, numVecs+1, type);
-
-  delete [] tmp;
-
-  return mv;
-}
-
-NOX::Abstract::MultiVector* 
-NOX::Abstract::Vector::createMultiVector(int numVecs, NOX::CopyType type) const
-{
-  if (numVecs <= 0) {
-    cerr << "NOX::Abstract::Vector::createMultiVector:  Error!  Multivector" 
-	 << " must have postive number of columns!" << endl;
-    throw "NOX Error";
-  }
-
-  return new NOX::MultiVector(*this, numVecs, type);
-}
-
-#endif

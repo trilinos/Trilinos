@@ -318,9 +318,9 @@ LOCA::Stepper::start() {
     dynamic_cast<LOCA::Continuation::ExtendedVector*>(curPredictorPtr->clone());
 
   // Create new solver using new continuation groups and combo status test
-  delete solverPtr;
-  solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
-				       LOCA::Utils::getSublist("NOX"));
+//   delete solverPtr;
+//   solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
+// 				       LOCA::Utils::getSublist("NOX"));
 
   return LOCA::Abstract::Iterator::NotFinished;
 }
@@ -446,8 +446,12 @@ LOCA::Stepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
   curGroupPtr->computeX(*prevGroupPtr, *curPredictorPtr, stepSize);
 
   // Reset solver to compute new solution
-  solverPtr->reset(*curGroupPtr, *statusTestPtr, 
-		   LOCA::Utils::getSublist("NOX"));
+//   solverPtr->reset(*curGroupPtr, *statusTestPtr, 
+// 		   LOCA::Utils::getSublist("NOX"));
+
+  delete solverPtr;
+  solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
+				       LOCA::Utils::getSublist("NOX"));
 
   return stepStatus;
 }

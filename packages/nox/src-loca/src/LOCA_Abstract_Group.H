@@ -37,6 +37,7 @@
 #include "LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H"  // base class
 #include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"       // base class
 #include "LOCA_Homotopy_AbstractGroup.H"                      // base class
+#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"     // base class
 
 namespace LOCA { 
 
@@ -60,7 +61,8 @@ namespace LOCA {
       public LOCA::Continuation::AnasaziGroup,
       public LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup,
       public LOCA::Bifurcation::TPBord::SingularSolveGroup,
-      public virtual LOCA::Homotopy::AbstractGroup
+      public virtual LOCA::Homotopy::AbstractGroup,
+      public LOCA::MultiContinuation::FiniteDifferenceGroup
     {
 
     public:
@@ -269,6 +271,33 @@ namespace LOCA {
        */
       virtual NOX::Abstract::Group::ReturnType 
       augmentJacobianForHomotopy(double conParamValue);
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::MultiContinuation::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Assignment operator
+      virtual LOCA::MultiContinuation::AbstractGroup& 
+      operator=(const LOCA::MultiContinuation::AbstractGroup& source);
+
+      //! Set parameters indexed by (integer) paramIDs
+      virtual void 
+      setParams(const vector<int>& paramIDs, 
+		const NOX::Abstract::MultiVector::DenseMatrix& vals);
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::MultiContinuation::FiniteDifferenceGroup virtual methods.
+       */
+      //@{
+
+      //! Assignment operator
+      virtual LOCA::MultiContinuation::FiniteDifferenceGroup& 
+      operator=(const LOCA::MultiContinuation::FiniteDifferenceGroup& source);
 
       //@}
       

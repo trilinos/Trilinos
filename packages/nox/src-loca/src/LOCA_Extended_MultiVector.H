@@ -55,7 +55,7 @@ namespace LOCA {
     /*
      * The implementations of the NOX::Abstract::MultiVector methods are 
      * defined in terms of the implementations of each stored abstract 
-     * multi-vector and scalar.
+     * multi-vector and scalar.  
      */
 
     class MultiVector : public NOX::Abstract::MultiVector {
@@ -70,16 +70,21 @@ namespace LOCA {
 		  NOX::CopyType type = NOX::DeepCopy);
 
       /*!
-       * \brief Copy constructor that creates s sub copy or view of the 
+       * \brief Copy constructor that creates a new multivector with
+       * \em nColumns columns.
+       */
+      MultiVector(const MultiVector& source, int nColumns);
+
+      /*!
+       * \brief Copy constructor that creates a sub copy or view of the 
        * given multivector
        */
-      MultiVector(const MultiVector& source, 
-		  vector<int>& index, bool view = false);
+      MultiVector(const MultiVector& source, vector<int>& index, bool view);
 
       //! Vector destructor.
       virtual ~MultiVector();
 
-      //@{ \name Initialization methods.
+      //@{ \name Implementation of NOX::Abstract::MultiVector methods.
 
       //! Initialize every element of this multi-vector with \c gamma.
       virtual NOX::Abstract::MultiVector& 
@@ -112,10 +117,6 @@ namespace LOCA {
       virtual NOX::Abstract::MultiVector&
       augment(const MultiVector& source);
 
-      //@}
-
-      //@{ \name Accessor methods
-
       /*!
        * \brief Return a reference to the i-th column of the multivector as
        * an abstract vector.  
@@ -128,10 +129,7 @@ namespace LOCA {
        */
       virtual const NOX::Abstract::Vector& operator [] (int i) const;
 
-      //@}
-
-      //@{ \name Update methods.
-
+      
       /*! 
        * \brief Compute x = (alpha * a) + (gamma * x) where \c a is a 
        * multi-vector and \c x = \c *this.
@@ -158,23 +156,22 @@ namespace LOCA {
 
       /*! 
        * \brief Compute x = (alpha * a * b) + (gamma * x) where 
-       * \c a is a multivector, \c b is a dense matrix, and \c x = \c *this.
+       * \c a is a multivector, \c b is a dense matrix, \c x = \c *this,
+       * and op(b) = b if transb = Teuchos::NO_TRANS and op(b) is b transpose
+       * if transb = Teuchos::TRANS.
        */
       virtual NOX::Abstract::MultiVector& 
-      update(double alpha, const NOX::Abstract::MultiVector& a, 
+      update(Teuchos::ETransp transb, double alpha, 
+	     const NOX::Abstract::MultiVector& a, 
 	     const NOX::Abstract::MultiVector::DenseMatrix& b, 
 	     double gamma = 0.0);
       virtual NOX::Abstract::MultiVector& 
-      update(double alpha, const MultiVector& a, 
+      update(Teuchos::ETransp transb, double alpha, const MultiVector& a, 
 	     const NOX::Abstract::MultiVector::DenseMatrix& b, 
 	     double gamma = 0.0);
 
-      //@}
-
-      //@{ \name Creating new MultiVectors.
-
       /*! 
-       * \brief Create a new %Vector of the same underlying type by
+       * \brief Create a new %MultiVector of the same underlying type by
        * cloning "this", and return a pointer to the new vector.  
        *
        * If type is NOX::DeepCopy, then we need to create an exact replica
@@ -207,30 +204,19 @@ namespace LOCA {
       virtual NOX::Abstract::MultiVector* 
       subView(vector<int>& index) const;
 
-      //@}
-
-      //@{ \name Norms.
-
       //! Norm.
       virtual void
       norm(vector<double>& result,
 	   NOX::Abstract::Vector::NormType type = 
 	   NOX::Abstract::Vector::TwoNorm) const;
 
-      //@}
-
-      //@{ \name Dot products.
-
       /*! 
-       * \brief Computes the dot product between each column of \c *this 
-       * and \c y, scaled by \c alpha.
+       * \brief Computes the matrix-matrix product \f$\alpha * y^T * (*this)\f$
        */
-      virtual void dot(double alpha, const NOX::Abstract::MultiVector& y,
-		       NOX::Abstract::MultiVector::DenseMatrix& b) const;
-      virtual void dot(double alpha, const MultiVector& y,
-		       NOX::Abstract::MultiVector::DenseMatrix& b) const;
-  
-      //@}
+      virtual void multiply(double alpha, const NOX::Abstract::MultiVector& y,
+			    NOX::Abstract::MultiVector::DenseMatrix& b) const;
+      virtual void multiply(double alpha, const MultiVector& y,
+			    NOX::Abstract::MultiVector::DenseMatrix& b) const;
 
       //! Return the length of multi-vector.
       virtual int length() const;
@@ -241,11 +227,9 @@ namespace LOCA {
       //! Print the vector.  This is meant for debugging purposes only 
       virtual void print() const;
 
-      //! Sets the ith multi-vector
-      virtual void setMultiVector(int i, const NOX::Abstract::MultiVector& v);
+      //@}
 
-      //! Sets the scalar for row i, column j
-      virtual void setScalar(int i, int j, double s);
+      //@{ \name Additional public accessor methods
 
       //! Returns const reference to the ith multi-vector
       virtual const NOX::Abstract::MultiVector& getMultiVector(int i) const;
@@ -253,44 +237,71 @@ namespace LOCA {
       //! Returns reference to the ith multi-vector
       virtual NOX::Abstract::MultiVector& getMultiVector(int i);
 
+      //! Returns const reference to scalar matrix
+      virtual const NOX::Abstract::MultiVector::DenseMatrix& 
+      getScalars() const;
+
+      //! Returns reference to scalar matrix
+      virtual NOX::Abstract::MultiVector::DenseMatrix& getScalars();
+
       //! Returns const reference to the scalar for row i, column j
       virtual const double& getScalar(int i, int j) const;
 
       //! Returns reference to the scalar for row i, column j
       virtual double& getScalar(int i, int j);
 
+      /*!
+       * \brief Return a reference to the i-th column of the multivector as
+       * an abstract vector.  
+       */
+      virtual LOCA::Extended::Vector& getVector(int i);
+    
+      /*!
+       * \brief Return a const reference to the i-th column of the 
+       * multivector as an abstract vector.  
+       */
+      virtual const LOCA::Extended::Vector& getVector(int i) const;
+
+      //@}
+
     protected:
 
+      //! Constructor that creates an empty multivector to be filled in later.
+      MultiVector(int nColumns, int nVectorRows, int nScalarRows);
+
+      //@{ \name Additional interface derived classes must implement
+
+      //! Generate a derived extended vector
       /*!
-       * \brief  Constructor that creates an empty extended multivector
-       * holding nVecs multivectors, each multivector stores nColumns,
-       * and there are nScalarRows rows of scalars.  Set view to true
-       * when creating a multivector view.
+       * Extended multi-vectors derived from this class should implement
+       * this method and return a vector of the appropriate type.
+       * This allows the operator[] methods to work correctly for 
+       * derived classes.
        */
-      MultiVector(int nColumns, int nVecs, int nScalarRows, bool view = false);
+      LOCA::Extended::Vector* 
+      generateVector(int nVecs, int nScalarRows) const;
+
+      //@}
+
+      //@{ \name Other protected helper functions
 
       //! Sets the pointer to the ith multivector
       void setMultiVectorPtr(int i, NOX::Abstract::MultiVector* v);
 
       //! Checks multi-vec argument dimensions are consistent
-      void checkDimensions(const LOCA::Extended::MultiVector& a) const;
-
-      //! Checks multi-vec argument dimensions are consistent
-      void checkDimensions(const LOCA::Extended::MultiVector& a,
-			   vector<int>& index) const;
-
-      //! Checks multi-vec argument dimensions are consistent
-      void checkDimensions(const LOCA::Extended::MultiVector& a,
-		     const NOX::Abstract::MultiVector::DenseMatrix& b) const;
-
-      //! Checks multi-vec argument dimensions are consistent for augment
-      void checkAugmentDimensions(const LOCA::Extended::MultiVector& a) const;
+      void checkDimensions(const string& callingFunction, 
+			   const LOCA::Extended::MultiVector& a) const;
 
       //! Checks validity of column index
-      void checkIndex(int i) const;
+      void checkIndex(const string& callingFunction, int i) const;
 
       //! Checks validity of column and row index for scalars
-      void checkIndex(int i, int j) const;
+      void checkIndex(const string& callingFunction, int i, int j) const;
+
+      //! Checks is index array is contiguous
+      bool isContiguous(const vector<int>& index) const;
+
+      //@}
 
     protected:
 
@@ -309,19 +320,13 @@ namespace LOCA {
       //! Array of multi-vector pointers, one for each block ROW
       vector< NOX::Abstract::MultiVector* > multiVectorPtrs;
 
-      //! Array of scalars, one for each COLUMN
-      /*!
-       * We store the scalar vectors column wise instead of row wise
-       * because for all but the matrix multiplication method, it is
-       * more efficient.  This is also the only way to get sub-vector
-       * views efficiently.
-       */
-      vector< NOX::Abstract::MultiVector::DenseMatrix* > scalarVectorPtrs;
+      //! Dense matrix of scalars
+      NOX::Abstract::MultiVector::DenseMatrix* scalarsPtr;
 
       //! Pointers to each column as a LOCA::Extended::Vector
       mutable vector< LOCA::Extended::Vector* > extendedVectorPtrs;
 
-      //! Flag indicating whether this multivec was created as a view
+      //! Flag indicating whether this vector is a view
       bool isView;
 
     }; // class MultiVector

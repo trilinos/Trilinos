@@ -145,14 +145,18 @@ namespace NOX {
 
     /*! 
      * \brief Compute x = (alpha * a * b) + (gamma * x) where 
-     * \c a is a multivector, \c b is a dense matrix, and \c x = \c *this.
+     * \c a is a multivector, \c b is a dense matrix, \c x = \c *this,
+       * and op(b) = b if transb = Teuchos::NO_TRANS and op(b) is b transpose
+       * if transb = Teuchos::TRANS.
      */
     virtual NOX::Abstract::MultiVector& 
-    update(double alpha, const NOX::Abstract::MultiVector& a, 
+    update(Teuchos::ETransp transb, double alpha, 
+	   const NOX::Abstract::MultiVector& a, 
 	   const NOX::Abstract::MultiVector::DenseMatrix& b, 
 	   double gamma = 0.0);
     virtual NOX::Abstract::MultiVector& 
-    update(double alpha, const NOX::MultiVector& a, 
+    update(Teuchos::ETransp transb, double alpha, 
+	   const NOX::MultiVector& a, 
 	   const NOX::Abstract::MultiVector::DenseMatrix& b, 
 	   double gamma = 0.0);
 
@@ -206,16 +210,15 @@ namespace NOX {
 
     //@}
 
-    //@{ \name Dot products.
+    //@{ \name Matrix products.
 
     /*! 
-     * \brief Computes the dot product between each column of \c *this 
-     * and \c y, scaled by \c alpha.
+     * \brief Computes the matrix-matrix product \f$\alpha * y^T * (*this)\f$
      */
-    virtual void dot(double alpha, const NOX::Abstract::MultiVector& y,
-		     NOX::Abstract::MultiVector::DenseMatrix& b) const;
-    virtual void dot(double alpha, const NOX::MultiVector& y,
-		     NOX::Abstract::MultiVector::DenseMatrix& b) const;
+    virtual void multiply(double alpha, const NOX::Abstract::MultiVector& y,
+			  NOX::Abstract::MultiVector::DenseMatrix& b) const;
+    virtual void multiply(double alpha, const NOX::MultiVector& y,
+			  NOX::Abstract::MultiVector::DenseMatrix& b) const;
   
     //@}
 

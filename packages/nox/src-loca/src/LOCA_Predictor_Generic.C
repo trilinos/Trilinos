@@ -33,6 +33,7 @@
 #include "LOCA_Predictor_Generic.H"
 #include "LOCA_Continuation_ExtendedVector.H"
 #include "LOCA_Continuation_ExtendedGroup.H"
+#include "LOCA_MultiContinuation_ExtendedGroup.H"
 
 LOCA::Predictor::Generic::Generic()
   : secantVecPtr(NULL) {}
@@ -82,4 +83,33 @@ LOCA::Predictor::Generic::setPredictorOrientation(
 
   if (curGroup.computeScaledDotProduct(*secantVecPtr, result)*ds < 0.0)
     result.scale(-1.0);
+}
+
+void
+LOCA::Predictor::Generic::setPredictorOrientation(
+	      bool baseOnSecant, const vector<double>& stepSize,
+	      LOCA::MultiContinuation::ExtendedGroup& grp,
+	      LOCA::MultiContinuation::ExtendedMultiVector& prevXMultiVec,
+	      LOCA::MultiContinuation::ExtendedMultiVector& xMultiVec,
+	      LOCA::MultiContinuation::ExtendedMultiVector& result)
+{
+  // If orientation is not based on a secant vector (i.e., first or last
+  // steps in a continuation run) make parameter component of predictor
+  // positive
+  if (!baseOnSecant) {
+    for (int i=0; i<result.numVectors(); i++) 
+      if (result.getScalar(i,i) < 0.0)
+	result[i].scale(-1.0);
+    return;
+  }
+
+  LOCA::MultiContinuation::ExtendedVector* secantVecPtr = 
+    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(xMultiVec[0].clone(NOX::DeepCopy));
+  secantVecPtr->update(-1.0, prevXMultiVec[0], 1.0);
+
+  for (int i=0; i<result.numVectors(); i++)
+    if (secantVecPtr->dot(result[i])*stepSize[i] < 0.0)
+      result[i].scale(-1.0);
+
+  delete secantVecPtr;
 }

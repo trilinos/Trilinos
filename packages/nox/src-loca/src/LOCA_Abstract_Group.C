@@ -36,14 +36,16 @@
 
 LOCA::Abstract::Group::Group(const LOCA::DerivUtils& d)
   : LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(d),
-    LOCA::Bifurcation::TPBord::SingularSolveGroup()
+    LOCA::Bifurcation::TPBord::SingularSolveGroup(),
+    LOCA::MultiContinuation::FiniteDifferenceGroup(d)
 {
 }
 
 LOCA::Abstract::Group::Group(NOX::Parameter::List& params, 
 			     const LOCA::DerivUtils& d)
   : LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(d),
-    LOCA::Bifurcation::TPBord::SingularSolveGroup(params)
+    LOCA::Bifurcation::TPBord::SingularSolveGroup(params),
+    LOCA::MultiContinuation::FiniteDifferenceGroup(d)
 {
 }
 
@@ -51,7 +53,8 @@ LOCA::Abstract::Group::Group(const LOCA::Abstract::Group& source,
 			     NOX::CopyType type)
   : LOCA::Continuation::AnasaziGroup(source, type),
     LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(source, type),
-    LOCA::Bifurcation::TPBord::SingularSolveGroup(source, type)
+    LOCA::Bifurcation::TPBord::SingularSolveGroup(source, type),
+    LOCA::MultiContinuation::FiniteDifferenceGroup(source, type)
 {
 }
 
@@ -199,4 +202,26 @@ LOCA::Abstract::Group::applyBorderedJacobianInverse(bool trans,
 		       "LOCA::Abstract::Group::applyBorderedJacobianInverse",
 		       "Not defined for group");
   return NOX::Abstract::Group::NotDefined;
+}
+
+LOCA::MultiContinuation::AbstractGroup&
+LOCA::Abstract::Group::operator=(
+			 const LOCA::MultiContinuation::AbstractGroup& source)
+{
+  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
+}
+
+void
+LOCA::Abstract::Group::setParams(const vector<int>& paramIDs, 
+		const NOX::Abstract::MultiVector::DenseMatrix& vals)
+{
+  for (unsigned int i=0; i<paramIDs.size(); i++)
+    setParam(paramIDs[i], vals(i,0));
+}
+
+LOCA::MultiContinuation::FiniteDifferenceGroup&
+LOCA::Abstract::Group::operator=(
+		 const LOCA::MultiContinuation::FiniteDifferenceGroup& source)
+{
+  return operator=(dynamic_cast<const LOCA::Abstract::Group&>(source));
 }

@@ -210,7 +210,7 @@ public:
 #ifdef HAVE_NOX_MULTIVECS
 
   /*! 
-   * \brief Create a MultiVector with \c numVecs+` columns out of an array of 
+   * \brief Create a MultiVector with \c numVecs+1 columns out of an array of 
    * Vectors.  The vector stored under \c this will be the first column with
    * the remaining \c numVecs columns given by \c vecs.
    *
@@ -220,6 +220,15 @@ public:
   virtual NOX::Abstract::MultiVector* 
   createMultiVector(const NOX::Abstract::Vector* const* vecs,
 		    int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
+
+  /*! 
+   * \brief Create a MultiVector with \c numVecs columns.  
+   *
+   * The default implementation creates a generic NOX::MultiVector with
+   * either Shape or Deep copies of the supplied vector.
+   */
+  virtual NOX::Abstract::MultiVector* 
+  createMultiVector(int numVecs, NOX::CopyType type = NOX::DeepCopy) const;
 #endif
 
   //@}

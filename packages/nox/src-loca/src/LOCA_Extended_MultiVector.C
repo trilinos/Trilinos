@@ -32,25 +32,7 @@
 
 #include "LOCA_Extended_MultiVector.H"
 #include "LOCA_Extended_Vector.H"
-
-LOCA::Extended::MultiVector::MultiVector(int nColumns, int nVecs, 
-					 int nScalarRows, bool view) :
-  numColumns(nColumns),
-  numMultiVecRows(nVecs),
-  numScalarRows(nScalarRows),
-  multiVectorPtrs(nVecs),
-  scalarVectorPtrs(nColumns),
-  extendedVectorPtrs(nColumns),
-  isView(view)
-{
-  for (int i=0; i<numColumns; i++) {
-    if (!isView) {
-      scalarVectorPtrs[i] = 
-	new NOX::Abstract::MultiVector::DenseMatrix(numScalarRows,1);
-    }
-    extendedVectorPtrs[i] = NULL;
-  }
-}
+#include "LOCA_ErrorCheck.H"
 
 LOCA::Extended::MultiVector::MultiVector(
 				   const LOCA::Extended::MultiVector& source,
@@ -59,7 +41,7 @@ LOCA::Extended::MultiVector::MultiVector(
   numMultiVecRows(source.numMultiVecRows),
   numScalarRows(source.numScalarRows),
   multiVectorPtrs(numMultiVecRows),
-  scalarVectorPtrs(numColumns),
+  scalarsPtr(NULL),
   extendedVectorPtrs(numColumns),
   isView(false)
 {
@@ -68,11 +50,34 @@ LOCA::Extended::MultiVector::MultiVector(
     multiVectorPtrs[i] = source.multiVectorPtrs[i]->clone(type);
 
   // Copy scalars
+  scalarsPtr = new NOX::Abstract::MultiVector::DenseMatrix(*source.scalarsPtr);
+
   for (int i=0; i<numColumns; i++) {
-    scalarVectorPtrs[i] = 
-      new NOX::Abstract::MultiVector::DenseMatrix(*(source.scalarVectorPtrs[i]));
     extendedVectorPtrs[i] = NULL;
   }
+}
+
+LOCA::Extended::MultiVector::MultiVector(
+				   const LOCA::Extended::MultiVector& source,
+				   int nColumns) :
+  numColumns(nColumns),
+  numMultiVecRows(source.numMultiVecRows),
+  numScalarRows(source.numScalarRows),
+  multiVectorPtrs(numMultiVecRows),
+  scalarsPtr(NULL),
+  extendedVectorPtrs(numColumns),
+  isView(false)
+{
+  // Clone multivec blocks
+  for (int i=0; i<numMultiVecRows; i++) 
+    multiVectorPtrs[i] = source.multiVectorPtrs[i]->clone(numColumns);
+
+  for (int i=0; i<numColumns; i++) {
+    extendedVectorPtrs[i] = NULL;
+  }
+
+  scalarsPtr = new NOX::Abstract::MultiVector::DenseMatrix(numColumns,
+							   numScalarRows);
 }
 
 LOCA::Extended::MultiVector::MultiVector(
@@ -82,32 +87,68 @@ LOCA::Extended::MultiVector::MultiVector(
   numMultiVecRows(source.numMultiVecRows),
   numScalarRows(source.numScalarRows),
   multiVectorPtrs(numMultiVecRows),
-  scalarVectorPtrs(numColumns),
+  scalarsPtr(NULL),
   extendedVectorPtrs(numColumns),
   isView(view)
 {
-  // Verify dimensions are consistent
-  checkDimensions(source, index);
+  // Check indices are valid
+  for (unsigned int j=0; j<index.size(); j++) 
+    checkIndex("LOCA::Extended::MultiVector()", index[j]);
 
   for (int i=0; i<numColumns; i++) {
     extendedVectorPtrs[i] = NULL;
   }
+
+  // Check if indices are contiguous
+  bool isCont = isContiguous(index);
   
   if (view) {
    
+    // Copy multivectors
     for (int i=0; i<numMultiVecRows; i++) 
       multiVectorPtrs[i] = source.multiVectorPtrs[i]->subView(index);
 
-    for (int i=0; i<numColumns; i++)
-      scalarVectorPtrs[i] = source.scalarVectorPtrs[index[i]];
+    // Copy Scalars
+    if (isCont) {
+      double *vals = source.scalarsPtr->values();
+      scalarsPtr = 
+	new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
+						    vals+index[0],
+						    numScalarRows,
+						    numScalarRows,
+						    numColumns);
+    }
+    else {
+      LOCA::ErrorCheck::throwError(
+		   "LOCA::Extended::MultiVector()",
+		   "Sub-view with non-contiguous indices is not supported");
+    }
+
   }
   else {
     
+    // Copy multivectors
     for (int i=0; i<numMultiVecRows; i++) 
       multiVectorPtrs[i] = source.multiVectorPtrs[i]->subCopy(index);
 
-    for (int i=0; i<numColumns; i++)
-      *(scalarVectorPtrs[i]) = *(source.scalarVectorPtrs[index[i]]);
+    // Copy scalars
+    if (isCont) {
+      double *vals = source.scalarsPtr->values();
+      scalarsPtr = 
+	new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::Copy,
+						    vals+index[0],
+						    numScalarRows,
+						    numScalarRows,
+						    numColumns);
+    }
+    else {
+      scalarsPtr = 
+	new NOX::Abstract::MultiVector::DenseMatrix(numScalarRows,
+						    numColumns);
+      for (int j=0; j<numColumns; j++)
+	for (int i=0; i<numScalarRows; i++)
+	  (*scalarsPtr)(i,j) = (*source.scalarsPtr)(i,index[j]);
+    }
   }
 }
 
@@ -115,9 +156,8 @@ LOCA::Extended::MultiVector::~MultiVector()
 {
   for (int i=0; i<numMultiVecRows; i++)
     delete multiVectorPtrs[i];
+  delete scalarsPtr;
   for (int i=0; i<numColumns; i++) {
-    if (!isView) 
-      delete scalarVectorPtrs[i];
     if (extendedVectorPtrs[i] != NULL) 
       delete extendedVectorPtrs[i];
   }
@@ -131,8 +171,7 @@ LOCA::Extended::MultiVector::init(double gamma)
     multiVectorPtrs[i]->init(gamma);
 
   // Initialize scalars
-  for (int i=0; i<numColumns; i++)
-    scalarVectorPtrs[i]->putScalar(gamma);
+  scalarsPtr->putScalar(gamma);
 
   return *this;
 }
@@ -145,9 +184,8 @@ LOCA::Extended::MultiVector::random(bool useSeed, int seed)
   for (int i=1; i<numMultiVecRows; i++)
     multiVectorPtrs[i]->random();
 
-  // Fill scalar vectors with random values
-  for (int i=0; i<numColumns; i++)
-    scalarVectorPtrs[i]->random();
+  // Fill scalars with random values
+  scalarsPtr->random();
 
   return *this;
 }
@@ -166,15 +204,14 @@ LOCA::Extended::MultiVector::operator=(
   if (this != &source) {
 
     // Verify dimensions are consistent
-    checkDimensions(source);
+    checkDimensions("LOCA::Extended::MultiVector::operator=()", source);
 
     // Copy multivecs
     for (int i=0; i<numMultiVecRows; i++)
       *(multiVectorPtrs[i]) = *(source.multiVectorPtrs[i]);
 
-    // Copy scalar vectors
-    for (int i=0; i<numColumns; i++)
-      *(scalarVectorPtrs[i]) = *(source.scalarVectorPtrs[i]);
+    // Copy scalars
+    *scalarsPtr = *source.scalarsPtr;
   }
 
   return *this;
@@ -194,7 +231,14 @@ LOCA::Extended::MultiVector::setBlock(
 				   vector<int>& index)
 {
   // Verify dimensions are consistent
-  checkDimensions(source, index);
+  if (source.numMultiVecRows != numMultiVecRows || 
+      source.numScalarRows != numScalarRows) 
+    LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::setBlock()",
+	"Size of supplied multivector is incompatible with this multivector");
+  if (source.numColumns != index.size()) {
+    LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::setBlock()",
+	"Size of supplied index vector is incompatible with this multivector");
+  }
 
   // Set block in each multivec
   for (int i=0; i<numMultiVecRows; i++)
@@ -202,7 +246,9 @@ LOCA::Extended::MultiVector::setBlock(
 
   // Set scalar vectors
   for (unsigned int j=0; j<index.size(); j++) {
-    *(scalarVectorPtrs[index[j]]) = *(source.scalarVectorPtrs[j]);
+    checkIndex("LOCA::Extended::MultiVector::augment()", index[j]);
+    for (int i=0; i<numScalarRows; i++)
+      (*scalarsPtr)(i,index[j]) = (*source.scalarsPtr)(i,j);
   }
 
   return *this;
@@ -217,18 +263,27 @@ LOCA::Extended::MultiVector::augment(const NOX::Abstract::MultiVector& source)
 NOX::Abstract::MultiVector&
 LOCA::Extended::MultiVector::augment(const LOCA::Extended::MultiVector& source)
 {
+  if (isView) {
+    LOCA::ErrorCheck::throwError(
+		   "LOCA::Extended::MultiVector::augment()",
+		   "Augmenting a multivector view is not supported");
+  }
+
   // Verify dimensions are consistent
-  checkAugmentDimensions(source);
+  if (source.numMultiVecRows != numMultiVecRows ||
+      source.numScalarRows != numScalarRows) 
+    LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::augment()",
+	"Size of supplied multivector is incompatible with this multivector");
 
   // Augment each multivec
   for (int i=0; i<numMultiVecRows; i++)
     multiVectorPtrs[i]->augment(*(source.multiVectorPtrs[i]));
 
   // Augment columns to scalar vectors
-  scalarVectorPtrs.resize(numColumns + source.numColumns);
-  for (int i=0; i<source.numColumns; i++)
-    scalarVectorPtrs[numColumns + i] = 
-      new NOX::Abstract::MultiVector::DenseMatrix(*(source.scalarVectorPtrs[i]));
+  scalarsPtr->reshape(numScalarRows, numColumns + source.numColumns);
+  for (int j=0; j<source.numColumns; j++)
+    for (int i=0; i<numScalarRows; i++)
+      (*scalarsPtr)(i,numColumns + j) = (*source.scalarsPtr)(i,j);
 
   // Expand extended column vector ptrs
   extendedVectorPtrs.resize(numColumns + source.numColumns);
@@ -244,39 +299,13 @@ LOCA::Extended::MultiVector::augment(const LOCA::Extended::MultiVector& source)
 NOX::Abstract::Vector&
 LOCA::Extended::MultiVector::operator [] (int i)
 {
-  // Verify index is valid
-  checkIndex(i);
-
-  // Create extended vector view if necessary
-  if (extendedVectorPtrs[i] == NULL) {
-    extendedVectorPtrs[i] = 
-      new LOCA::Extended::Vector(numMultiVecRows, numScalarRows);
-    for (int k=0; k<numMultiVecRows; k++) 
-      extendedVectorPtrs[i]->setVectorView(k, multiVectorPtrs[k]->operator[](i));
-    for (int k=0; k<numScalarRows; k++)
-      extendedVectorPtrs[i]->setScalar(k,scalarVectorPtrs[i]->operator()(k,1));
-  }
-
-  return *(extendedVectorPtrs[i]);
+  return getVector(i);
 }
 
 const NOX::Abstract::Vector&
 LOCA::Extended::MultiVector::operator [] (int i) const
 {
-  // Verify index is valid
-  checkIndex(i);
-
-  // Create extended vector view if necessary
-  if (extendedVectorPtrs[i] == NULL) {
-    extendedVectorPtrs[i] = 
-      new LOCA::Extended::Vector(numMultiVecRows, numScalarRows);
-    for (int k=0; k<numMultiVecRows; k++) 
-      extendedVectorPtrs[i]->setVectorView(k, multiVectorPtrs[k]->operator[](i));
-    for (int k=0; k<numScalarRows; k++)
-      extendedVectorPtrs[i]->setScalar(k,scalarVectorPtrs[i]->operator()(k,1));
-  }
-
-  return *(extendedVectorPtrs[i]);
+  return getVector(i);
 }
 
 NOX::Abstract::MultiVector& 
@@ -294,19 +323,17 @@ LOCA::Extended::MultiVector::update(double alpha,
 				    double gamma)
 {
   // Verify dimensions are consistent
-  checkDimensions(a);
+  checkDimensions("LOCA::Extended::MultiVector::update()", a);
 
   // update each multivec
   for (int i=0; i<numMultiVecRows; i++)
     multiVectorPtrs[i]->update(alpha, *(a.multiVectorPtrs[i]), gamma);
 
-  // update each scalar vector
-  for (int j=0; j<numColumns; j++) {
+  // update scalars
+  for (int j=0; j<numColumns; j++)
     for (int i=0; i<numScalarRows; i++)
-      scalarVectorPtrs[j]->operator()(i,1) = 
-	gamma *   scalarVectorPtrs[j]->operator()(i,1) + 
-	alpha * a.scalarVectorPtrs[j]->operator()(i,1);
-  }
+      (*scalarsPtr)(i,j) = 
+	gamma * (*scalarsPtr)(i,j) + alpha * (*a.scalarsPtr)(i,j);
 
   return *this;
 }
@@ -331,8 +358,8 @@ LOCA::Extended::MultiVector::update(double alpha,
 				    double gamma)
 {
   // Verify dimensions are consistent
-  checkDimensions(a);
-  checkDimensions(b);
+  checkDimensions("LOCA::Extended::MultiVector::update()", a);
+  checkDimensions("LOCA::Extended::MultiVector::update()", b);
 
   // update each multivec
   for (int i=0; i<numMultiVecRows; i++)
@@ -340,54 +367,62 @@ LOCA::Extended::MultiVector::update(double alpha,
 			       beta, *(b.multiVectorPtrs[i]),
 			       gamma);
 
-  // update each scalar vector
-  for (int j=0; j<numColumns; j++) {
+  // update scalars
+  for (int j=0; j<numColumns; j++)
     for (int i=0; i<numScalarRows; i++)
-      scalarVectorPtrs[j]->operator()(i,1) = 
-	gamma *   scalarVectorPtrs[j]->operator()(i,1) + 
-	alpha * a.scalarVectorPtrs[j]->operator()(i,1) +
-	beta  * b.scalarVectorPtrs[j]->operator()(i,1);
-  }
+      (*scalarsPtr)(i,j) = 
+	gamma * (*scalarsPtr)(i,j) + alpha * (*a.scalarsPtr)(i,j) + 
+	beta * (*b.scalarsPtr)(i,j);
 
   return *this;
 }
 
 NOX::Abstract::MultiVector& 
 LOCA::Extended::MultiVector::update(
+			     Teuchos::ETransp transb, 
 			     double alpha, 
 			     const NOX::Abstract::MultiVector& a, 
 			     const NOX::Abstract::MultiVector::DenseMatrix& b, 
 			     double gamma)
 {
-  return update(alpha, dynamic_cast<const LOCA::Extended::MultiVector&>(a), 
+  return update(transb, alpha, 
+		dynamic_cast<const LOCA::Extended::MultiVector&>(a), 
 		b, gamma);
 }
 
 NOX::Abstract::MultiVector& 
 LOCA::Extended::MultiVector::update(
+			    Teuchos::ETransp transb, 
 			    double alpha, 
 			    const LOCA::Extended::MultiVector& a, 
 			    const NOX::Abstract::MultiVector::DenseMatrix& b, 
 			    double gamma)
 {
   // Verify dimensions are consistent
-  checkDimensions(a, b);
+  if (a.numMultiVecRows != numMultiVecRows || 
+      a.numScalarRows != numScalarRows) 
+    LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::update()",
+      "Size of supplied multivector is incompatible with this multivector");
+
+  if (transb == Teuchos::NO_TRANS) {
+    if (a.numColumns != b.numRows() || numColumns != b.numCols()) 
+      LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::update()",
+	    "Size of supplied matrix is incompatible with this multivector");
+  }
+  else
+    if (a.numColumns != b.numCols() || numColumns != b.numRows()) 
+      LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::update()",
+	    "Size of supplied matrix is incompatible with this multivector");
+
 
   // update each multivec
   for (int i=0; i<numMultiVecRows; i++)
-    multiVectorPtrs[i]->update(alpha, *(a.multiVectorPtrs[i]), b, gamma);
+    multiVectorPtrs[i]->update(transb, alpha, *(a.multiVectorPtrs[i]), b, 
+			       gamma);
 
-  // update scalar vectors
-  double tmp;
-  for (int j=0; j<numColumns; j++) {
-    for (int i=0; i<numScalarRows; i++) {
-      tmp = 0.0;
-      for (int k=0; k<a.numColumns; k++)
-	tmp += a.scalarVectorPtrs[k]->operator()(i,1) * b(k,j);
-      scalarVectorPtrs[j]->operator()(i,1) = 
-	gamma * scalarVectorPtrs[j]->operator()(i,1) + alpha * tmp;
-    }
-  }
+  // update scalars
+  scalarsPtr->multiply(Teuchos::NO_TRANS, transb, alpha, *(a.scalarsPtr), 
+		       b, gamma);
 
   return *this;
 }
@@ -401,21 +436,13 @@ LOCA::Extended::MultiVector::clone(NOX::CopyType type) const
 NOX::Abstract::MultiVector* 
 LOCA::Extended::MultiVector::clone(int numvecs) const
 {
-  // Create empty extended multi-vec of appropriate size
-  LOCA::Extended::MultiVector* tmp = 
-    new LOCA::Extended::MultiVector(numvecs, numMultiVecRows, numScalarRows); 
-  
-  // Clone multivec blocks
-  for (int i=0; i<numMultiVecRows; i++) 
-    tmp->multiVectorPtrs[i] = multiVectorPtrs[i]->clone(numvecs);
-  
-  return tmp;
+  return new LOCA::Extended::MultiVector(*this, numvecs);
 }
 
 NOX::Abstract::MultiVector* 
 LOCA::Extended::MultiVector::subCopy(vector<int>& index) const
 {
-  return new LOCA::Extended::MultiVector(*this, index);
+  return new LOCA::Extended::MultiVector(*this, index, false);
 }
 
 NOX::Abstract::MultiVector* 
@@ -439,7 +466,6 @@ LOCA::Extended::MultiVector::norm(vector<double>& result,
 
   // Intermediate vector to hold norms of a multivector
   vector<double> vecNorm(result);
-  double tmp;
 
   switch (type) {
 
@@ -455,10 +481,10 @@ LOCA::Extended::MultiVector::norm(vector<double>& result,
     }
 
     // compute max norm of each scalar vector column
-    for (int i=0; i<numColumns; i++) {
-      tmp = scalarVectorPtrs[i]->normInf();
-      if (result[i] < tmp)
-	result[i] = tmp;
+    for (int j=0; j<numColumns; j++) {
+      for (int i=0; i<numScalarRows; i++)
+	if (result[j] < (*scalarsPtr)(i,j))
+	  result[j] = (*scalarsPtr)(i,j);
     }
     break;
 
@@ -473,8 +499,9 @@ LOCA::Extended::MultiVector::norm(vector<double>& result,
     }
 
     // compute one-norm of each scalar vector column
-    for (int i=0; i<numColumns; i++) {
-      result[i] += scalarVectorPtrs[i]->normOne();
+    for (int j=0; j<numColumns; j++) {
+      for (int i=0; i<numScalarRows; i++)
+	result[j] += fabs((*scalarsPtr)(i,j));
     }
     break;
 
@@ -490,47 +517,51 @@ LOCA::Extended::MultiVector::norm(vector<double>& result,
     }
 
     // compute two-norm of each scalar vector column
-    for (int i=0; i<numColumns; i++) {
-      tmp = scalarVectorPtrs[i]->normFrobenius();
-      result[i] += tmp*tmp;
-      result[i] = sqrt(result[i]);
+    for (int j=0; j<numColumns; j++) {
+      for (int i=0; i<numScalarRows; i++)
+	result[j] += (*scalarsPtr)(i,j) * (*scalarsPtr)(i,j);
+      result[j] = sqrt(result[j]);
     }
     break;
   }
 }
 
 void 
-LOCA::Extended::MultiVector::dot(
+LOCA::Extended::MultiVector::multiply(
 			    double alpha, 
 			    const NOX::Abstract::MultiVector& y,
 			    NOX::Abstract::MultiVector::DenseMatrix& b) const
 {
-  dot(alpha, dynamic_cast<const LOCA::Extended::MultiVector&>(y), b);
+  multiply(alpha, dynamic_cast<const LOCA::Extended::MultiVector&>(y), b);
 }
 
 void 
-LOCA::Extended::MultiVector::dot(
+LOCA::Extended::MultiVector::multiply(
 			    double alpha, 
 			    const LOCA::Extended::MultiVector& y,
 			    NOX::Abstract::MultiVector::DenseMatrix& b) const
 {
+  // Verify dimensions are consistent
+  if (y.numMultiVecRows != numMultiVecRows || y.numColumns != b.numRows() ||
+      y.numScalarRows != numScalarRows || numColumns != b.numCols()) 
+    LOCA::ErrorCheck::throwError("LOCA::Extended::MultiVector::multiply()",
+      "Size of supplied multivector/matrix is incompatible with this multivector");
+
   // Zero out b
   b.putScalar(0.0);
 
-  // Create temporary matrix to hold dot product for each multivec
+  // Create temporary matrix to hold product for each multivec
   NOX::Abstract::MultiVector::DenseMatrix tmp(b);
 
-  // Compute and sum dot products for each multivec
+  // Compute and sum products for each multivec
   for (int i=0; i<numMultiVecRows; i++) {
-    multiVectorPtrs[i]->dot(alpha, *(y.multiVectorPtrs[i]), tmp);
+    multiVectorPtrs[i]->multiply(alpha, *(y.multiVectorPtrs[i]), tmp);
     b += tmp;
   }
 
-  // Compute and add in dot product for scalars
-  for (int i=0; i<b.numRows(); i++)
-    for (int j=0; j<b.numCols(); j++)
-      for (int k=0; k<numScalarRows; k++)
-	b(i,j) += scalarVectorPtrs[i]->operator()(k,1) * y.scalarVectorPtrs[j]->operator()(k,1);
+  // Compute and add in product for scalars
+  b.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, alpha, *y.scalarsPtr,
+	     *scalarsPtr, 1.0);
 
 }
 
@@ -563,45 +594,13 @@ LOCA::Extended::MultiVector::print() const
     multiVectorPtrs[i]->print();
 
   // Print scalars
-  for (int i=0; i<numScalarRows; i++) {
-    for (int j = 0; j<numColumns; j++)
-      cout << scalarVectorPtrs[j]->operator()(i,1) << " ";
-    cout << endl;
-  }
-}
-
-void
-LOCA::Extended::MultiVector::setMultiVector(
-					 int i, 
-					 const NOX::Abstract::MultiVector& v)
-{
-  checkIndex(i);
-
-  multiVectorPtrs[i] = v.clone(NOX::DeepCopy);
-}
-
-void
-LOCA::Extended::MultiVector::setMultiVectorPtr(
-					 int i, 
-					 NOX::Abstract::MultiVector* v)
-{
-  checkIndex(i);
-
-  multiVectorPtrs[i] = v;
-}
-
-void
-LOCA::Extended::MultiVector::setScalar(int i, int j, double s) 
-{
-  checkIndex(i,j);
-
-  scalarVectorPtrs[j]->operator()(i,1) = s;
+  scalarsPtr->print(cout);
 }
 
 const NOX::Abstract::MultiVector&
 LOCA::Extended::MultiVector::getMultiVector(int i) const
 {
-  checkIndex(i);
+  checkIndex("LOCA::Extended::MultiVector::getMultiVector()", i);
 
   return *(multiVectorPtrs[i]);
 }
@@ -609,111 +608,142 @@ LOCA::Extended::MultiVector::getMultiVector(int i) const
 NOX::Abstract::MultiVector&
 LOCA::Extended::MultiVector::getMultiVector(int i)
 {
-  checkIndex(i);
+  checkIndex("LOCA::Extended::MultiVector::getMultiVector()", i);
 
   return *(multiVectorPtrs[i]);
+}
+
+const NOX::Abstract::MultiVector::DenseMatrix&
+LOCA::Extended::MultiVector::getScalars() const 
+{
+  return *scalarsPtr;
+}
+
+NOX::Abstract::MultiVector::DenseMatrix&
+LOCA::Extended::MultiVector::getScalars()
+{
+  return *scalarsPtr;
 }
 
 const double&
 LOCA::Extended::MultiVector::getScalar(int i, int j) const
 {
-  checkIndex(i, j);
+  checkIndex("LOCA::Extended::MultiVector::getScalar()", i, j);
 
-  return scalarVectorPtrs[j]->operator()(i,1);
+  return (*scalarsPtr)(i,j);
 }
 
 double&
 LOCA::Extended::MultiVector::getScalar(int i, int j)
 {
-  checkIndex(i, j);
+  checkIndex("LOCA::Extended::MultiVector::getScalar()", i, j);
 
-  return scalarVectorPtrs[j]->operator()(i,1);
+  return (*scalarsPtr)(i,j);
+}
+
+LOCA::Extended::Vector&
+LOCA::Extended::MultiVector::getVector(int i) 
+{
+  // Verify index is valid
+  checkIndex("LOCA::Extended::MultiVector::vector()", i);
+
+  // Create extended vector view if necessary
+  if (extendedVectorPtrs[i] == NULL) {
+    extendedVectorPtrs[i] = generateVector(numMultiVecRows, numScalarRows);
+    for (int k=0; k<numMultiVecRows; k++) 
+      extendedVectorPtrs[i]->setVectorView(k, (*multiVectorPtrs[k])[i]);
+    extendedVectorPtrs[i]->setScalarArray((*scalarsPtr)[i]);
+  }
+
+  return *(extendedVectorPtrs[i]);
+}
+
+const LOCA::Extended::Vector&
+LOCA::Extended::MultiVector::getVector(int i) const
+{
+  // Verify index is valid
+  checkIndex("LOCA::Extended::MultiVector::vector()", i);
+
+  // Create extended vector view if necessary
+  if (extendedVectorPtrs[i] == NULL) {
+    extendedVectorPtrs[i] = generateVector(numMultiVecRows, numScalarRows);
+    for (int k=0; k<numMultiVecRows; k++) 
+      extendedVectorPtrs[i]->setVectorView(k, (*multiVectorPtrs[k])[i]);
+    extendedVectorPtrs[i]->setScalarArray((*scalarsPtr)[i]);
+  }
+
+  return *(extendedVectorPtrs[i]);
+}
+
+LOCA::Extended::MultiVector::MultiVector(int nColumns, int nVectorRows,
+					 int nScalarRows) :
+  numColumns(nColumns),
+  numMultiVecRows(nVectorRows),
+  numScalarRows(nScalarRows),
+  multiVectorPtrs(numMultiVecRows),
+  scalarsPtr(NULL),
+  extendedVectorPtrs(numColumns),
+  isView(false)
+{
+  for (int i=0; i<numColumns; i++) {
+    extendedVectorPtrs[i] = NULL;
+  }
+
+  scalarsPtr = new NOX::Abstract::MultiVector::DenseMatrix(numColumns,
+							   numScalarRows);
+}
+
+LOCA::Extended::Vector* 
+LOCA::Extended::MultiVector::generateVector(int nVecs, int nScalarRows) const
+{
+  return new LOCA::Extended::Vector(nVecs, nScalarRows);
+}
+
+void
+LOCA::Extended::MultiVector::setMultiVectorPtr(
+					 int i, 
+					 NOX::Abstract::MultiVector* v)
+{
+  checkIndex("LOCA::Extended::MultiVector::setMultiVectorPtr()", i);
+
+  multiVectorPtrs[i] = v;
 }
 
 void
 LOCA::Extended::MultiVector::checkDimensions(
+				  const string& callingFunction,
 				  const LOCA::Extended::MultiVector& a) const
 {
   if (a.numMultiVecRows != numMultiVecRows || a.numColumns != numColumns ||
-      a.numScalarRows != numScalarRows) {
-    cerr << "LOCA::Extended::MultiVector:  Error!  Size of supplied "
-	 << " multivector is incompatible with this multivector" << endl;
-    throw "NOX Error";
-  }
+      a.numScalarRows != numScalarRows)
+    LOCA::ErrorCheck::throwError(callingFunction,
+      "Size of supplied multivector is incompatible with this multivector");
 }
 
-void
-LOCA::Extended::MultiVector::checkDimensions(
-					const LOCA::Extended::MultiVector& a,
-					vector<int>& index) const
+void 
+LOCA::Extended::MultiVector::checkIndex(const string& callingFunction,
+					int i) const 
 {
-  if (a.numMultiVecRows != numMultiVecRows || 
-      a.numScalarRows != numScalarRows) {
-    cerr << "LOCA::Extended::MultiVector:  Error!  Size of supplied "
-	 << " multivector is incompatible with this multivector" << endl;
-    throw "NOX Error";
-  }
-  if (a.numColumns != index.size()) {
-    cerr << "LOCA::Extended::MultiVector:  Error!  Size of supplied "
-	 << " multivector is incompatible supplied index vector" << endl;
-    throw "NOX Error";
-  }
+  if ( i < 0 || i >= numColumns ) 
+    LOCA::ErrorCheck::throwError(callingFunction, "Invalid column index");
+}
+
+void 
+LOCA::Extended::MultiVector::checkIndex(const string& callingFunction,
+					int i, int j) const 
+{
+  if ( i < 0 || i >= numColumns ) 
+    LOCA::ErrorCheck::throwError(callingFunction, "Invalid column index");
+  if ( j < 0 || j >= numScalarRows ) 
+    LOCA::ErrorCheck::throwError(callingFunction, "Invalid row index");
+}
+
+bool
+LOCA::Extended::MultiVector::isContiguous(const vector<int>& index) const 
+{
   for (unsigned int i=0; i<index.size(); i++) {
-    if (index[i] <= 0 || index[i] >= numColumns) {
-      cerr << "LOCA::Extended::MultiVector:  Error!  Supplied index" 
-	   << " vector is invalid" << endl;
-      throw "NOX Error";
-    }
+    if (index[i] != index[0] + i)
+      return false;
   }
-}
-
-void
-LOCA::Extended::MultiVector::checkDimensions(
-		       const LOCA::Extended::MultiVector& a,
-		       const NOX::Abstract::MultiVector::DenseMatrix& b) const
-{
-  if (a.numMultiVecRows != numMultiVecRows || a.numColumns != b.numRows() ||
-      a.numScalarRows != numScalarRows || numColumns != b.numCols()) {
-    cerr << "LOCA::Extended::MultiVector:  Error!  Size of supplied "
-	 << " multivector/matrix is incompatible with this multivector" 
-	 << endl;
-    throw "NOX Error";
-  }
-}
-
-void
-LOCA::Extended::MultiVector::checkAugmentDimensions(
-				  const LOCA::Extended::MultiVector& a) const
-{
-  if (a.numMultiVecRows != numMultiVecRows ||
-      a.numScalarRows != numScalarRows) {
-    cerr << "LOCA::Extended::MultiVector:  Error!  Size of supplied "
-	 << " multivector is incompatible with this multivector" << endl;
-    throw "NOX Error";
-  }
-}
-
-void 
-LOCA::Extended::MultiVector::checkIndex(int i) const 
-{
-  if ( i < 0 || i >= numColumns ) {
-    cerr << "LOCA::Extended::MultiVector:  Error!  Invalid column index " 
-	 << i << endl;
-    throw "NOX Error";
-  }
-}
-
-void 
-LOCA::Extended::MultiVector::checkIndex(int i, int j) const 
-{
-  if ( i < 0 || i >= numColumns ) {
-    cerr << "LOCA::Extended::MultiVector:  Error!  Invalid column index " 
-	 << i << endl;
-    throw "NOX Error";
-  }
-  if ( j < 0 || j >= numScalarRows ) {
-    cerr << "LOCA::Extended::MultiVector:  Error!  Invalid scalar row  index " 
-	 << j << endl;
-    throw "NOX Error";
-  }
+  return true;
 }

@@ -76,6 +76,14 @@ namespace LOCA {
 	      LOCA::Continuation::ExtendedGroup& curGroup,
 	      LOCA::Continuation::ExtendedVector& result);
 
+      //! Computes predictor based on predictor method parameter
+      virtual NOX::Abstract::Group::ReturnType 
+      compute(bool baseOnSecant, const vector<double>& stepSize,
+	      LOCA::MultiContinuation::ExtendedGroup& grp,
+	      LOCA::MultiContinuation::ExtendedMultiVector& prevXMultiVec,
+	      LOCA::MultiContinuation::ExtendedMultiVector& xMultiVec,
+	      LOCA::MultiContinuation::ExtendedMultiVector& result);
+
       //! Returns current predictor method
       const string& getMethod() const;
 
