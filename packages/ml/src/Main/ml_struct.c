@@ -10,6 +10,7 @@
 /* ************************************************************************* */
 
 #include <math.h>
+#include <assert.h>
 #include "ml_lapack.h"
 #include "ml_struct.h"
 #include "ml_agg_genP.h"
@@ -3423,6 +3424,180 @@ int ML_Solve_AMGV( ML *ml , double *din, double *dout)
 
    ML_Cycle_AMGV(&(ml->SingleLevel[ml->ML_finest_level]), dout, din, 
                 ML_ZERO, ml->comm);
+
+   return 0;
+}
+
+/******************************************************************************
+   Solve by first projecting out certain user-defined modes and then calling
+   the standard algebraic V-cycle.  We implicitly assume that we are using 
+   CG as the outer solve, so the projection step is also done after the
+   multigrid call to make the entire preconditioner symmetric.
+
+   Note!  We assume that there are no more than 3 modes to project out.
+
+   Here is the algorithm, where V' = transpose(V).
+   
+        1) Solve V'*A*V * x1 = V' * f.
+        2) Calculate a residual r1 = f - A*V*x1.
+
+        3) Solve A * x2 = r1 via a multigrid cycle.
+
+        4) Calculate a residual r2 = f - A * (V*x1 + x2).
+        5) Solve V'*A*V * x3 = V'*r2.
+        6) Assemble the final solution, x = V*x1 + x2 + V*x3.
+******************************************************************************/
+int ML_Solve_ProjectedAMGV( ML *ml , double *din, double *dout)
+{
+   ML_Operator *Amat;
+   double **V;
+   int dimV, lengV, *pivots;
+   double **Av, *VAV;
+   int i,j;
+   double rhs[3], x1[3], x3[3];
+   double *res1,*res2;
+   double *vec1, *vec2;
+   int info;
+   /* lapack parameters */
+   char trans[2];
+   int nrhs=1;
+   unsigned int itmp=0;
+
+   Amat = &(ml->Amat[ml->ML_finest_level]);
+   V = Amat->subspace->basis_vectors;
+   dimV = Amat->subspace->dimension;
+   lengV = Amat->subspace->vecleng;
+   VAV   = Amat->subspace->VAV;
+   pivots = Amat->subspace->pivots;
+
+   assert(Amat->invec_leng == lengV);
+
+   /* set up V'*A*V if necessary */
+   if (Amat->subspace->VAVdone == 0)
+   {
+      Av = (double **) ML_allocate( dimV * sizeof(double *) );
+      for (i=0; i<dimV; i++)
+        Av[i] = (double *) ML_allocate( lengV * sizeof(double) );
+
+      for (i=0; i<dimV; i++)
+         ML_Operator_Apply(Amat, Amat->invec_leng,V[i],Amat->outvec_leng,Av[i]);
+      for (i=0; i<dimV; i++)
+        for (j=0; j<dimV; j++)
+          VAV[i*dimV+j] = ML_gdot(lengV, Av[i], V[j], ml->comm);
+
+      /* clean up */
+      for (i=0; i<dimV; i++)
+        ML_free(Av[i]);
+      ML_free(Av);
+
+      /* factor VAV */
+      /* see man page for description of arguments */
+      MLFORTRAN(dgetrf)(&dimV,&dimV,VAV,&dimV,pivots,&info);
+      if (info < 0) {
+        printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrf has ");
+        printf("illegal value\n");
+        abort();
+      }
+      else if (info > 0) {
+        printf("ML_Solve_ProjectedAMGV: ");
+        printf("U factor is singular in %d'th position\n",i);
+        abort();
+      }
+
+      Amat->subspace->VAVdone == 1;
+
+   } /* if Amat->subspace->VAVdone == 0 */
+
+   /* calculate f = V^T * b */
+   for (i=0; i<dimV; i++)
+     rhs[i] = ML_gdot(lengV, V[i], din, ml->comm);
+
+   /**************************************
+   **** 1) Solve V'*A*V * x1 = V' * f.
+   **************************************/
+
+   /* see man page for description of arguments */
+   strcpy(trans,"N");
+   MLFORTRAN(dgetrs)(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info,itmp);
+   if (info < 0) {
+     printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrs has ");
+     printf("illegal value\n");
+     abort();
+   }
+   for (i=0; i<dimV; i++) x1[i] = rhs[i];
+
+   /*********************************************
+   **** 2) Calculate a residual r1 = f - A*V*x1.
+   *********************************************/
+
+   res1 = (double *) ML_allocate(Amat->outvec_leng * sizeof(double) );
+   res2 = (double *) ML_allocate(Amat->outvec_leng * sizeof(double) );
+   vec1 = (double *) ML_allocate((Amat->outvec_leng + Amat->invec_leng) *
+                                 sizeof(double) );
+   vec2 = (double *) ML_allocate((Amat->outvec_leng + Amat->invec_leng) *
+                                 sizeof(double) );
+   /* vec1 = V*x1 */
+   for (i=0; i<lengV; i++) {
+     vec1[i] = 0.0;
+     for (j=0; j<dimV; j++)
+        vec1[i] += x1[j] * V[j][i]; 
+   }
+   ML_Operator_Apply(Amat, Amat->invec_leng, vec1, Amat->outvec_leng, res1);
+   for (i=0; i<Amat->outvec_leng; i++)
+     res1[i] = din[i] - res1[i];
+
+   /************************************************
+   **** 3) Solve A * x2 = r1 via a multigrid cycle.
+   ************************************************/
+        
+   ML_Solve_AMGV(ml, res1, dout);
+
+   /******************************************************
+   **** 4) Calculate a residual r2 = f - A * (V*x1 + x2).
+   **** Here, dout = x2.
+   ******************************************************/
+
+   /* vec2 = V*x1 + x2 */
+   for (i=0; i<lengV; i++)
+     vec2[i] = vec1[i] + dout[i];
+   ML_Operator_Apply(Amat, Amat->invec_leng, vec2, Amat->outvec_leng, res2);
+   for (i=0; i<lengV; i++)
+     res2[i] = din[i] - res2[i];
+
+
+   /**************************************
+   **** 5) Solve V'*A*V * x3 = V'*r2.
+   **************************************/
+
+   /* calculate V' * r2 */
+   for (i=0; i<dimV; i++)
+     rhs[i] = ML_gdot(lengV, V[i], din, ml->comm);
+
+   /* see man page for description of arguments */
+   MLFORTRAN(dgetrs)(trans,&dimV,&nrhs,VAV,&dimV,pivots,rhs,&dimV,&info,itmp);
+   if (info < 0) {
+     printf("ML_Solve_ProjectedAMGV: %dth argument to dgetrs has ");
+     printf("illegal value\n");
+     abort();
+   }
+   for (i=0; i<dimV; i++) x3[i] = rhs[i];
+
+   /**********************************************************
+   **** 6) Assemble the final solution, x = V*x1 + x2 + V*x3.
+   **********************************************************/
+
+   for (i=0; i<lengV; i++) {
+     vec1[i] = 0.0;
+     for (j=0; j<dimV; j++)
+        vec1[i] = vec1[i] + x3[j] * V[j][i]; 
+   }
+   for (i=0; i<Amat->outvec_leng; i++)
+     dout[i] += vec2[i] + vec1[i];
+
+   ML_free(res1);
+   ML_free(res2);
+   ML_free(vec1);
+   ML_free(vec2);
 
    return 0;
 }
