@@ -1934,7 +1934,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes,
    iii = 0;
    degree = 1;
 
-#ifdef NEWMLS
+
    /*
    if (ml->comm->ML_mypid == 0) {
      printf("Enter -k to do a kth degree MLS or k (where k > 0)\n");
@@ -1950,7 +1950,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes,
      degree = iii;
    }
    else degree = -iii;
-#endif
+
 
 	
    for (i = start_level; i <= end_level; i++) {
