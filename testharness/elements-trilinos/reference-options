@@ -49,6 +49,8 @@
 --enable-new_swahili
 --enable-nox
 --enable-nox-lapack
+--enable-nox-lapack-examples
+--enable-nox-epetra
 --enable-nox-epetra-examples
 --disable-nox-petsc
 --disable-nox-petsc-examples
