@@ -34,6 +34,7 @@ using namespace std;
 using namespace Teuchos;
 
 void print_break() { cout << "---------------------------------------------------" << endl; }
+double Plus ( double a, double b ) { return a+b; }
 
 int main(int argc, char *argv[])
 {
@@ -48,14 +49,19 @@ int main(int argc, char *argv[])
   CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
   if( parse_return != CommandLineProcessor::PARSE_SUCCESSFULL ) return parse_return;
 
+  //-----------------------------------------------------------
   // Create Main Parameter List / Sublist Structure
+  //-----------------------------------------------------------
+
   ParameterList PL_Main;
   ParameterList& PL_Direction = PL_Main.sublist("Direction");
   ParameterList& PL_Newton = PL_Direction.sublist("Newton");
   ParameterList& PL_LinSol = PL_Newton.sublist("Linear Solver");
   ParameterList& PL_LineSearch = PL_Main.sublist("Line Search");
 
+  //-----------------------------------------------------------
   // Check Parameter List Structure
+  //-----------------------------------------------------------
   if (verbose) {
 	print_break();
 	cout << "Empty Parameter List Structure" << endl;
@@ -91,13 +97,17 @@ int main(int argc, char *argv[])
 	FailedTests++;		
   }
 
+  //-----------------------------------------------------------
   // Fill in Direction Sublist
+  //-----------------------------------------------------------
   PL_Direction.getParameter("Method", "Newton");
   PL_LinSol.setParameter("Tol",1e-5);
   double tol = PL_LinSol.getParameter("Tolerance",1e-10);
   bool RBNS = PL_Newton.getParameter("Rescue Bad Newton Solve", true );
 
+  //-----------------------------------------------------------
   // Print out Direction Sublist
+  //-----------------------------------------------------------
   if (verbose) {
 	print_break();
 	cout << "Direction Parameter List" << endl;
@@ -133,7 +143,10 @@ int main(int argc, char *argv[])
 	FailedTests++;		
   }
 
-  // Line Search Sublist (if there are no failures, this will be constructed and added)
+  //-----------------------------------------------------------
+  // Line Search Sublist 
+  // (if there are no failures, this will be constructed and added)
+  //-----------------------------------------------------------
   if (!FailedTests) {
     ParameterList PL_My_LineSearch;
     string ls_method = PL_My_LineSearch.getParameter("Method", "Polynomial");
@@ -154,10 +167,11 @@ int main(int argc, char *argv[])
 
     PL_Main.setParameter("Nonlinear Solver", "Line Search Based"); 
 
+    //-----------------------------------------------------------
     // Set the Line Search Parameter List equal to the one just constructed
+    //-----------------------------------------------------------
     PL_LineSearch = PL_My_LineSearch;
     ParameterList& PL_My_Polynomial = PL_LineSearch.sublist("Polynomial");
-    ParameterList Copied_PL_Main( PL_Main );
     if (verbose) cout<< "Is 'operator=' functional ... ";
     if ( PL_My_Polynomial.isParameter("Recovery Step Type") ) {
 	if (verbose) cout<< "yes" << endl;
@@ -165,6 +179,7 @@ int main(int argc, char *argv[])
 	if (verbose) cout<< "no" << endl;
 	FailedTests++;
     }  
+    ParameterList Copied_PL_Main( PL_Main );
     if (verbose) cout<< "Is the copy constructor functional ... ";
     if ( Copied_PL_Main.isParameter("Nonlinear Solver") ) {
 	if (verbose) cout<< "yes" << endl;
@@ -172,8 +187,10 @@ int main(int argc, char *argv[])
 	if (verbose) cout<< "no" << endl;
 	FailedTests++;
     }  
-    
+
+    //-----------------------------------------------------------
     // Retrieve some information from the parameter list using templated "get" method.
+    //-----------------------------------------------------------
     int max_iters;
     string nonlin_solver;
     bool tempMeth = true;
@@ -185,11 +202,13 @@ int main(int argc, char *argv[])
     if (verbose) {
 	cout<< "Is the templated 'getParameter' method functional ... "<<endl;
 	cout<< "  Can we retrieve information using the CORRECT variable type ... ";
-	if (tempMeth && max_iters==3) { cout << "yes" << endl; }
-	else { cout << "no" << endl; FailedTests++; }
     }
+    if (tempMeth && max_iters==3) { if (verbose) cout << "yes" << endl; }
+    else { if (verbose) cout << "no" << endl; FailedTests++; }
 
+    //-----------------------------------------------------------
     // Retrieve some information from the parameter list that we know is a bad "get".
+    //-----------------------------------------------------------
     float mbf;
     tempMeth = false;
     FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
@@ -202,11 +221,13 @@ int main(int argc, char *argv[])
     }
     if (verbose) {
 	cout<< "  Can we retrieve information using the WRONG variable type ... ";
-	if (tempMeth) { cout << "no" << endl; }
-	else { cout << "yes" << endl; }
     }
+    if (tempMeth) { if (verbose) cout << "no" << endl; }
+    else { if (verbose) cout << "yes" << endl; }
 
+    //-----------------------------------------------------------
     // Check templated isParameterType functionality
+    //-----------------------------------------------------------
     bool PT1, PT2, PT3, PT4, PT5;
     PT1 = PL_Polynomial.template isParameterType<int>("Default Step");
     PT2 = PL_Polynomial.template isParameterType<long int>("Default Step");
@@ -214,29 +235,73 @@ int main(int argc, char *argv[])
     if (verbose) {
 	cout<< "Is the templated 'isParameterType' method functional ... "<<endl;
 	cout<< "  Is the 'Default Step' of type 'int' ... ";
-	if (PT1) { cout<< "yes" << endl; }
-	else { cout<< "no" << endl; FailedTests++; }
-	cout<< "  Is the 'Default Step' of type 'long int' ... ";
-	if (PT2) { cout<< "yes" << endl; FailedTests++; }
-	else { cout<< "no (as expected)" << endl; }
-	cout<< "  Is the 'Interpolation Type' of type 'string' ... ";
-	if (PT3) { cout<< "yes" << endl; }
-	else { cout<< "no" << endl; FailedTests++; }
     }
+    if (PT1) { if (verbose) cout<< "yes" << endl; }
+    else { if (verbose) cout<< "no" << endl; FailedTests++; }
+    if (verbose) {
+	cout<< "  Is the 'Default Step' of type 'long int' ... ";
+    }
+    if (PT2) { if (verbose) cout<< "yes" << endl; FailedTests++; }
+    else { if (verbose) cout<< "no (as expected)" << endl; }
+    if (verbose) {
+    	cout<< "  Is the 'Interpolation Type' of type 'string' ... ";
+    }
+    if (PT3) { if (verbose) cout<< "yes" << endl; }
+    else { if (verbose) cout<< "no" << endl; FailedTests++; }
+
     PT4 = isParameterType<double>(PL_Polynomial, "Max Bounds Factor");
     PT5 = isParameterType<float>(PL_Polynomial, "Max Bounds Factor");    
     if (verbose) {
 	cout<< "Is the helper function 'isParameterType' functional ... "<<endl;
 	cout<< "  Is the 'Max Bounds Factor' of type 'double' ... ";
-	if (PT4) { cout<< "yes" <<endl; }
-	else { cout<< "no" << endl; FailedTests++; }
+    }
+    if (PT4) { if (verbose) cout<< "yes" <<endl; }
+    else { if (verbose) cout<< "no" << endl; FailedTests++; }
+    if (verbose) {
 	cout<< "  Is the 'Max Bounds Factor' of type 'float' ... ";
-	if (PT5) { cout<< "yes" <<endl; FailedTests++; }
-	else { cout<< "no (as expected)" << endl; }
-    }	
-  }
+    }
+    if (PT5) { if (verbose) cout<< "yes" <<endl; FailedTests++; }
+    else { if (verbose) cout<< "no (as expected)" << endl; }
 
-    // Print out main list
+    //-----------------------------------------------------------
+    // Can we pass a pointer to a vector to the parameter list.
+    //-----------------------------------------------------------
+    double * tempvec1 = new double[10];
+    for (int i=0; i<10; i++) { tempvec1[i] = i; }
+    PL_Main.setParameter( "Address of Norm Vector", tempvec1 );
+    double* tempvec2 = PL_Main.template getParameter<double*>( "Address of Norm Vector" );
+    tempvec1[4] = 2.0; tempvec1[6] = 1.0;
+    if (verbose) {
+	cout<< "Can we pass a pointer to a vector to a parameter list ... ";
+    }
+    if ((tempvec2[4]-tempvec1[4])!=0.0 || (tempvec2[6]-tempvec1[6])!=0.0) {
+  	if (verbose) { cout<<"no"<<endl; }
+	FailedTests++;
+    } else {
+	if (verbose) { cout<<"yes"<<endl; }
+    }	    
+
+    //-----------------------------------------------------------
+    // Can we pass a pointer to a function to the parameter list.
+    // Use a simple function, pass it in and get it back out ...
+    //-----------------------------------------------------------
+    double (*pt2Function) (double, double);
+    PL_Main.setParameter( "Address to Simple Function", &Plus );
+    pt2Function = PL_Main.template getParameter<double(*)(double,double)>( "Address to Simple Function" ); 
+    if (verbose) {
+	cout<< "Can we pass a pointer to a function to a parameter list ... ";
+    }
+    if ( pt2Function( 1.0, 2.0 ) != 3.0 ) {
+	if (verbose) cout<<"no"<<endl;
+        FailedTests++;
+    } else {
+	if (verbose) cout<<"yes"<<endl;
+    }    
+  }	
+
+  //-----------------------------------------------------------
+  // Print out main list
+  //-----------------------------------------------------------
   if (verbose) {
 	print_break();
 	cout << "The Final Parameter List" << endl;
@@ -247,8 +312,10 @@ int main(int argc, char *argv[])
 	print_break();
   }
 
+  //-----------------------------------------------------------
   // Return -1 if there are any failed tests, 
   // else 0 will be returned indicating a clean finish!  
+  //-----------------------------------------------------------
   if ( FailedTests > 0 ) { return(-1); }
 
   return 0;
