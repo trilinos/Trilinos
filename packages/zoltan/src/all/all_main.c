@@ -119,7 +119,7 @@ int num_edges;
   *edge_list = (ID *) Array_Alloc(1, num_edges, sizeof(ID));
   for (i = 0; i < num_edges; i++)
     BL_ID_Util.New_ID(&((*edge_list)[i]), edge_list_ints[i]);
-  LB_Free((void **) (&edge_list_ints));
+  LB_FREE(&edge_list_ints);
 
   /*
    *  Read the Chaco geometry file.
