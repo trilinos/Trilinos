@@ -984,9 +984,11 @@ void ML_gsum_scalar_int(int vals[], int vals2[], ML_Comm *comm)
 {
 #ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
   int i;
+#ifdef ML_MPI
   MPI_Allreduce((void *) vals,(void *) vals2, 1, MPI_INT, MPI_SUM,
                 MPI_COMM_WORLD);
   *vals = *vals2;
+#endif
   return;
 #else
 
@@ -1157,12 +1159,14 @@ void ML_gsum_scalar_int(int vals[], int vals2[], ML_Comm *comm)
 void ML_gsum_vec_int(int **tvals, int **tvals2, int length, ML_Comm *comm)
 {
 #ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+#ifdef ML_MPI
   int *tmpptr;
   MPI_Allreduce((void *) *tvals,(void *) *tvals2, length, MPI_INT, MPI_SUM,
                 MPI_COMM_WORLD);
   tmpptr = *tvals;
   *tvals = *tvals2;
   *tvals2 = tmpptr;
+#endif
   return;
 #else
 
@@ -1304,6 +1308,7 @@ void ML_gsum_vec_int(int **tvals, int **tvals2, int length, ML_Comm *comm)
 void ML_gsum_vec_double(double **tvals, double **tvals2, int length, ML_Comm *comm)
 {
 #ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+#ifdef ML_MPI
   double *tmpptr;
 
   MPI_Allreduce((void *) *tvals,(void *) *tvals2, length, MPI_INT, MPI_SUM,
@@ -1311,7 +1316,9 @@ void ML_gsum_vec_double(double **tvals, double **tvals2, int length, ML_Comm *co
   tmpptr = *tvals;
   *tvals = *tvals2;
   *tvals2 = tmpptr;
+#endif
   return;
+
 #else
   /* local variables */
 
@@ -1922,10 +1929,14 @@ double ML_gdot(int N, double r[], double z[], ML_Comm *comm)
 double ML_gsum_double(double val, ML_Comm *comm)
 {
 #ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+#ifdef ML_MPI
   double val2;          /* arriving value to add */
   MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_DOUBLE, MPI_SUM,
                 MPI_COMM_WORLD);
   return val2;
+#else
+  return val;
+#endif
 #else
 
   /* local variables */
@@ -2077,10 +2088,14 @@ double ML_gsum_double(double val, ML_Comm *comm)
 double ML_gmax_double(double val, ML_Comm *comm)
 {
 #ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+#ifdef ML_MPI
   double val2;          /* arriving value to add */
   MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_DOUBLE, MPI_MAX,
                 MPI_COMM_WORLD);
   return val2;
+#else
+  return val;
+#endif
 #else
 
   /* local variables */
@@ -2237,10 +2252,14 @@ double ML_gmax_double(double val, ML_Comm *comm)
 int ML_gmax_int(int val, ML_Comm *comm)
 {
 #ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
+#ifdef ML_MPI
   int   val2;                     /* arriving value to add */
   MPI_Allreduce((void *) &val,(void *) &val2, 1, MPI_INT, MPI_MAX,
                 MPI_COMM_WORLD);
   return val2;
+#else
+  return val;
+#endif
 #else
 
   /* local variables */
