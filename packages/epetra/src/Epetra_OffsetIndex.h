@@ -36,6 +36,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 class Epetra_Import;
 class Epetra_Export;
 class Epetra_CrsGraph;
+class Epetra_Distributor;
 
 //! Epetra_OffsetIndex: This class builds index for efficient mapping of data from one Epetra_CrsGraph based object to another.
 
@@ -45,7 +46,7 @@ class Epetra_CrsGraph;
 
 class Epetra_OffsetIndex: public Epetra_Object {
     
-  public:
+ public:
 
   //! Constructs a Epetra_OffsetIndex object from the graphs and an importer.
   Epetra_OffsetIndex( const Epetra_CrsGraph & SourceGraph,
@@ -66,14 +67,39 @@ class Epetra_OffsetIndex: public Epetra_Object {
   //@{ \name Print object to an output stream
   virtual void Print(ostream & os) const;
   //@}
- 
-  int NumSame;
-  int ** SameOffsets;
-  int NumPermute;
-  int ** PermuteOffsets;
-  int NumRemote;
-  int ** RemoteOffsets;
 
+  //! Accessor
+  int ** SameOffsets() const { return SameOffsets_; }
+ 
+  //! Accessor
+  int ** PermuteOffsets() const { return PermuteOffsets_; }
+ 
+  //! Accessor
+  int ** RemoteOffsets() const { return RemoteOffsets_; }
+ 
+ private:
+
+  void GenerateLocalOffsets_( const Epetra_CrsGraph & SourceGraph,
+                              const Epetra_CrsGraph & TargetGraph,
+                              const int * PermuteLIDs );
+
+  void GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceGraph,
+                               const Epetra_CrsGraph & TargetGraph,
+                               const int * ExportLIDs,
+                               const int * RemoteLIDs,
+                               Epetra_Distributor & Distor );
+
+ public:
+
+  int NumSame_;
+  int ** SameOffsets_;
+  int NumPermute_;
+  int ** PermuteOffsets_;
+  int NumExport_;
+  int NumRemote_;
+  int ** RemoteOffsets_;
+
+  bool DataOwned_;
 };
 
 #endif /* EPETRA_OFFSETINDEX_H */

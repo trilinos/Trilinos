@@ -33,6 +33,7 @@
 #include "Epetra_IntVector.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
+#include "Epetra_OffsetIndex.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include "mpi.h"
@@ -414,6 +415,12 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "Matrix Export Check OK" << endl << endl;
+
+  //Do Again with use of Epetra_OffsetIndex object for speed
+  Epetra_OffsetIndex OffsetIndex( OverlapMatrix.Graph(), GatheredMatrix.Graph(), Exporter );
+  EPETRA_TEST_ERR(!(GatheredMatrix.Export(OverlapMatrix, Exporter, Add)==0),ierr);
+
+  if (verbose) cout << "Optimized Matrix Export Check OK" << endl << endl;
 
   bool passed;
   Epetra_IntVector v1(StandardMap); v1.PutValue(2);

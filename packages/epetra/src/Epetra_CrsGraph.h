@@ -575,6 +575,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	friend class Epetra_VbrMatrix;
 	friend class Epetra_FECrsMatrix;
 	friend class Epetra_FEVbrMatrix;
+	friend class Epetra_OffsetIndex;
 
  protected:
 	int* NumIndicesPerRow() const {return(CrsGraphData_->NumIndicesPerRow_.Values());};

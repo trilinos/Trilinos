@@ -284,7 +284,7 @@ DIST = \
 	$(srcdir)/Epetra_LocalMap.cpp \
 	$(srcdir)/Epetra_Map.cpp \
 	$(srcdir)/Epetra_MapColoring.cpp \
-        $(srcdir)/Epetra_OffsetIndex.h
+        $(srcdir)/Epetra_OffsetIndex.cpp
 
 
 COMP_H = \
@@ -433,7 +433,8 @@ am__objects_5 = Epetra_BasicDirectory.$(OBJEXT) \
 	Epetra_BlockMap.$(OBJEXT) Epetra_BlockMapData.$(OBJEXT) \
 	Epetra_DistObject.$(OBJEXT) Epetra_Export.$(OBJEXT) \
 	Epetra_Import.$(OBJEXT) Epetra_LocalMap.$(OBJEXT) \
-	Epetra_Map.$(OBJEXT) Epetra_MapColoring.$(OBJEXT)
+	Epetra_Map.$(OBJEXT) Epetra_MapColoring.$(OBJEXT) \
+	Epetra_OffsetIndex.$(OBJEXT)
 am__objects_6 = Epetra_CompObject.$(OBJEXT) Epetra_CrsGraph.$(OBJEXT) \
 	Epetra_CrsGraphData.$(OBJEXT) Epetra_CrsMatrix.$(OBJEXT) \
 	Epetra_LinearProblem.$(OBJEXT) Epetra_MultiVector.$(OBJEXT) \
@@ -493,6 +494,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_MpiSmpCommData.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_MultiVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_Object.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Epetra_OffsetIndex.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_RowMatrixTransposer.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_SerialComm.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_SerialCommData.Po \
@@ -621,6 +623,7 @@ Epetra_Import.$(OBJEXT): $(srcdir)/Epetra_Import.cpp
 Epetra_LocalMap.$(OBJEXT): $(srcdir)/Epetra_LocalMap.cpp
 Epetra_Map.$(OBJEXT): $(srcdir)/Epetra_Map.cpp
 Epetra_MapColoring.$(OBJEXT): $(srcdir)/Epetra_MapColoring.cpp
+Epetra_OffsetIndex.$(OBJEXT): $(srcdir)/Epetra_OffsetIndex.cpp
 Epetra_CompObject.$(OBJEXT): $(srcdir)/Epetra_CompObject.cpp
 Epetra_CrsGraph.$(OBJEXT): $(srcdir)/Epetra_CrsGraph.cpp
 Epetra_CrsGraphData.$(OBJEXT): $(srcdir)/Epetra_CrsGraphData.cpp
@@ -683,6 +686,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_MpiSmpCommData.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_MultiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_Object.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_OffsetIndex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_RowMatrixTransposer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_SerialComm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_SerialCommData.Po@am__quote@
@@ -1048,6 +1052,18 @@ Epetra_MapColoring.obj: $(srcdir)/Epetra_MapColoring.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_MapColoring.Po' tmpdepfile='$(DEPDIR)/Epetra_MapColoring.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_MapColoring.obj `cygpath -w $(srcdir)/Epetra_MapColoring.cpp`
+
+Epetra_OffsetIndex.o: $(srcdir)/Epetra_OffsetIndex.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_OffsetIndex.cpp' object='Epetra_OffsetIndex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_OffsetIndex.Po' tmpdepfile='$(DEPDIR)/Epetra_OffsetIndex.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OffsetIndex.o `test -f '$(srcdir)/Epetra_OffsetIndex.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_OffsetIndex.cpp
+
+Epetra_OffsetIndex.obj: $(srcdir)/Epetra_OffsetIndex.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_OffsetIndex.cpp' object='Epetra_OffsetIndex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_OffsetIndex.Po' tmpdepfile='$(DEPDIR)/Epetra_OffsetIndex.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_OffsetIndex.obj `cygpath -w $(srcdir)/Epetra_OffsetIndex.cpp`
 
 Epetra_CompObject.o: $(srcdir)/Epetra_CompObject.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Epetra_CompObject.cpp' object='Epetra_CompObject.o' libtool=no @AMDEPBACKSLASH@

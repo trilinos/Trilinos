@@ -190,7 +190,7 @@ DIST = \
 	$(srcdir)/Epetra_LocalMap.cpp \
 	$(srcdir)/Epetra_Map.cpp \
 	$(srcdir)/Epetra_MapColoring.cpp \
-        $(srcdir)/Epetra_OffsetIndex.h
+        $(srcdir)/Epetra_OffsetIndex.cpp
 
 
 COMP_H = \
