@@ -149,15 +149,18 @@ int main(int argc, char *argv[]) {
 	int restarts = 300;
 	int step = restarts*length*block;
 
+	typedef Anasazi::MultiVec<double> MV;
+	typedef Anasazi::Operator<double> OP;
+
 	// Create an Anasazi::EpetraVec for an initial vector to start the solver. 
 	// Note:  This needs to have the same number of columns as the blocksize.
-	Anasazi::EpetraVec ivec(ColMap, block);
-	ivec.MvRandom();
+	Teuchos::RefCountPtr<Anasazi::EpetraVec> ivec = Teuchos::rcp( new Anasazi::EpetraVec(ColMap, block) );
+	ivec->MvRandom();
 
 	// Call the constructor for the (A^T*A) operator
-	Anasazi::EpetraSymOp Amat(A);	
-	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double> > MyProblem =
-	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double>(&Amat, &ivec) );
+	Teuchos::RefCountPtr<Anasazi::EpetraSymOp>  Amat = Teuchos::rcp( new Anasazi::EpetraSymOp(A) );	
+	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
+	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(Amat, ivec) );
 
 	// Inform the eigenproblem that the matrix A is symmetric
 	MyProblem->SetSymmetric(true);
@@ -167,11 +170,11 @@ int main(int argc, char *argv[]) {
 	MyProblem->SetBlockSize( block );
 
 	// Inform the eigenproblem that you are finishing passing it information
-	assert( MyProblem->SetProblem()==0 );
+	assert( MyProblem->SetProblem() == 0 );
 
 	// Create a sorting manager to handle the sorting of eigenvalues in the solver
-	Teuchos::RefCountPtr<Anasazi::BasicSort<double> > MySort = 
-	  Teuchos::rcp( new Anasazi::BasicSort<double>(which) );
+	Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 
+	  Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
 
 	// Create an output manager to handle the I/O from the solver
 	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
@@ -179,8 +182,8 @@ int main(int argc, char *argv[]) {
 	//MyOM->SetVerbosity( 2 );	
 
 	// Initialize the Block Arnoldi solver
-	Anasazi::BlockKrylovSchur<double> MySolver(MyProblem, MySort, MyOM, tol, length, 
-						step, restarts);	
+	Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, tol, 
+							   length, step, restarts);	
 	
 	// Iterate a few steps (if you wish)
 	//MySolver.iterate(5);
@@ -192,7 +195,7 @@ int main(int argc, char *argv[]) {
 	double* evals = MyProblem->GetEvals();
 
 	// Retrieve eigenvectors
-	Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem->GetEvecs());
+	//	Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(&(MyProblem->GetEvecs()));
 
 	// Output results to screen
 	MySolver.currentStatus();
@@ -213,7 +216,7 @@ int main(int argc, char *argv[]) {
 	std::vector<int> index(nev);
 	for (i=0; i<nev; i++) { index[i] = i; }
 	Anasazi::EpetraVec Av(RowMap,nev), u(RowMap,nev);
-	Anasazi::EpetraVec* evecs = dynamic_cast<Anasazi::EpetraVec* >(evecr->CloneView( &index[0], nev ));
+	Anasazi::EpetraVec* evecs = dynamic_cast<Anasazi::EpetraVec* >(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
 	Teuchos::SerialDenseMatrix<int,double> S(nev,nev);
         A.Apply( *evecs, Av );
 	Av.MvNorm( &tempnrm[0] );

@@ -256,17 +256,21 @@ int main(int argc, char *argv[]) {
 	int step = 5;
 	int restarts = 5;
 
+	typedef Anasazi::MultiVec<double> MV;
+	typedef Anasazi::Operator<double> OP;
+
 	// Create a AnasaziEpetraVec for an initial vector to start the solver.
 	// Note:  This needs to have the same number of columns as the blocksize.
-	Anasazi::EpetraVec ivec(Map, block);
-	ivec.MvRandom();
+	Teuchos::RefCountPtr<Anasazi::EpetraVec> ivec = Teuchos::rcp( new Anasazi::EpetraVec(Map, block) );
+	ivec->MvRandom();
     
 	// Call the ctor that calls the petra ctor for a matrix
-	Anasazi::EpetraOp Amat(A);
-	Anasazi::EpetraOp Bmat(B);
-	Anasazi::EpetraGenOp Aop(BelosOp, B);	
-	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double> > MyProblem = 
-	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double>(&Aop, &Bmat, &ivec) );
+	Teuchos::RefCountPtr<Anasazi::EpetraOp> Amat = Teuchos::rcp( new Anasazi::EpetraOp(A) );
+	Teuchos::RefCountPtr<Anasazi::EpetraOp> Bmat = Teuchos::rcp( new Anasazi::EpetraOp(B) );
+	Teuchos::RefCountPtr<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(BelosOp, B) );	
+
+	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
+	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, Bmat, ivec) );
 
 	// Inform the eigenproblem that the matrix pencil (A,B) is symmetric
 	MyProblem->SetSymmetric(true);
@@ -276,11 +280,11 @@ int main(int argc, char *argv[]) {
 	MyProblem->SetBlockSize( block );
 
         // Inform the eigenproblem that you are finishing passing it information
-        assert( MyProblem->SetProblem()==0 );
+        assert( MyProblem->SetProblem() == 0 );
 
         // Create a sorting manager to handle the sorting of eigenvalues in the solver
-	Teuchos::RefCountPtr<Anasazi::BasicSort<double> > MySort = 
-	  Teuchos::rcp( new Anasazi::BasicSort<double>(which) );
+	Teuchos::RefCountPtr<Anasazi::BasicSort<double,MV,OP> > MySort = 
+	  Teuchos::rcp( new Anasazi::BasicSort<double,MV,OP>(which) );
 	
         // Create an output manager to handle the I/O from the solver
         Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
@@ -288,15 +292,15 @@ int main(int argc, char *argv[]) {
         //MyOM->SetVerbosity( 2 );
 
 	// Initialize the Block Arnoldi solver
-	Anasazi::BlockKrylovSchur<double> MySolver(MyProblem, MySort, MyOM, tol, length, 
-						step, restarts);
+	Anasazi::BlockKrylovSchur<double,MV,OP> MySolver(MyProblem, MySort, MyOM, tol, 
+							 length, step, restarts);
 	
 	// iterate a few steps (if you wish)
 	//MySolver.iterate(5);
-
+	
 	// solve the problem to the specified tolerances or length
 	MySolver.solve();
-
+	
 	// output results to screen
 	MySolver.currentStatus();
 
@@ -307,7 +311,7 @@ int main(int argc, char *argv[]) {
 	// The size of the eigenvector storage is nev.
 	// The real part of the eigenvectors is stored in the first nev vectors.
 	// The imaginary part of the eigenvectors is stored in the second nev vectors.
-	Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem->GetEvecs());
+	Anasazi::EpetraVec* evecr = dynamic_cast<Anasazi::EpetraVec*>(MyProblem->GetEvecs()->CloneCopy());
 
 	Teuchos::SerialDenseMatrix<int,double> dmatr(nev,nev);
 	Anasazi::EpetraVec tempvec(Map, evecr->GetNumberVecs());	

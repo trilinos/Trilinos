@@ -36,7 +36,7 @@
 
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziOperator.hpp"
-#include "AnasaziReturnTypes.hpp"
+#include "AnasaziReturnType.hpp"
 #include "AnasaziConfigDefs.hpp"
 
 namespace Anasazi {
@@ -57,7 +57,7 @@ namespace Anasazi {
     static ReturnType Apply ( const Operator<TYPE>& Op, 
 			      const MultiVec<TYPE>& x, 
 			      MultiVec<TYPE>& y )
-    { return UndefinedScalarTraits<TYPE, MV, OP>::notDefined(); };
+    { return UndefinedOperatorTraits<TYPE, MV, OP>::notDefined(); };
     
   };
   

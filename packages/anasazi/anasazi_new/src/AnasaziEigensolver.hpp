@@ -35,7 +35,6 @@
 */
 
 #include "AnasaziEigenproblem.hpp"
-#include "AnasaziMultiVec.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
 /*! \class Anasazi::Eigensolver
@@ -48,7 +47,7 @@
 
 namespace Anasazi {
 
-template<class TYPE>
+template<class TYPE, class MV, class OP>
 class Eigensolver {
     
   public:
@@ -86,12 +85,12 @@ class Eigensolver {
       by the calling routine.
     </ol>
   */
-  virtual Teuchos::RefCountPtr<const MultiVec<TYPE> > GetNativeResiduals( TYPE* normvec ) const = 0;
+  virtual Teuchos::RefCountPtr<const MV> GetNativeResiduals( TYPE* normvec ) const = 0;
 
   /*! \brief Get a constant reference to the current linear problem, 
     	which may include a current solution.
   */
-  virtual Eigenproblem<TYPE>& GetEigenproblem() const = 0;
+  virtual Eigenproblem<TYPE,MV,OP>& GetEigenproblem() const = 0;
 
   //@}
 

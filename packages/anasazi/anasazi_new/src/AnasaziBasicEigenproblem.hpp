@@ -30,6 +30,10 @@
 #define ANASAZI_BASIC_EIGENPROBLEM_H
 
 #include "AnasaziEigenproblem.hpp"
+#include "AnasaziMultiVecTraits.hpp"
+#include "AnasaziOperatorTraits.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
 
 /*! \class Anasazi::BasicEigenproblem
   \brief This provides a basic implementation for defining standard or 
@@ -38,8 +42,8 @@
 
 namespace Anasazi {
   
-  template<class TYPE>
-  class BasicEigenproblem : public virtual Eigenproblem<TYPE> {
+  template<class TYPE, class MV, class OP>
+  class BasicEigenproblem : public virtual Eigenproblem<TYPE, MV, OP> {
     
   public:
     
@@ -49,13 +53,13 @@ namespace Anasazi {
     BasicEigenproblem();
     
     //! Standard Eigenvalue Problem Constructor.
-    BasicEigenproblem( Operator<TYPE>* Op, MultiVec<TYPE>* InitVec );
+    BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<MV>& InitVec );
     
     //! Generalized Eigenvalue Problem Constructor.
-    BasicEigenproblem( Operator<TYPE>* Op, Operator<TYPE>* B, MultiVec<TYPE>* InitVec );
+    BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<OP>& B, const Teuchos::RefCountPtr<MV>& InitVec );
     
     //! Copy Constructor.
-    BasicEigenproblem( const BasicEigenproblem<TYPE>& Problem );	
+    BasicEigenproblem( const BasicEigenproblem<TYPE, MV, OP>& Problem );	
     
     //! Destructor.
     virtual ~BasicEigenproblem();
@@ -66,19 +70,19 @@ namespace Anasazi {
     /*! \brief Set the operator for which eigenvalues will be computed.  This may be different
       from the matrix \c A if a spectral transformation is employed, for example.  
     */
-    void SetOperator( Operator<TYPE>* Op ) { _Op = Op; };
+    void SetOperator( const Teuchos::RefCountPtr<OP>& Op ) { _Op = Op; };
     
     /*! \brief Set the operator A of the eigenvalue problem AX = BX\lambda.
     */
-    void SetA( Operator<TYPE>* A ) { _AOp = A; };
+    void SetA( const Teuchos::RefCountPtr<OP>& A ) { _AOp = A; };
     
     /*! \brief Set the operator B of the eigenvalue problem AX = BX\lambda.
      */
-    void SetB( Operator<TYPE>* B ) { _BOp = B; }
+    void SetB( const Teuchos::RefCountPtr<OP>& B ) { _BOp = B; }
     
     /*! \brief Set the preconditioner for this eigenvalue problem AX = BX\lambda.
      */
-    void SetPrec( Operator<TYPE>* Prec ) { _Prec = Prec; }
+    void SetPrec( const Teuchos::RefCountPtr<OP>& Prec ) { _Prec = Prec; }
     
     /*! \brief Set the initial guess.  
 
@@ -89,14 +93,14 @@ namespace Anasazi {
     
     NOTE:  This multivector should have the same number of columns as the blocksize
     */
-    void SetInitVec( MultiVec<TYPE>* InitVec ) { _InitVec = InitVec; };
+    void SetInitVec( const Teuchos::RefCountPtr<MV>& InitVec ) { _InitVec = InitVec; };
     
     /*! \brief Set auxilliary vectors.
 
     NOTE:  This multivector can have any number of columns, an most likely will contain vectors that
     will be used by the eigensolver to orthogonalize against.
     */
-    void SetAuxVec( MultiVec<TYPE>* AuxVec ) { _AuxVec = AuxVec; };
+    void SetAuxVec( const Teuchos::RefCountPtr<MV>& AuxVec ) { _AuxVec = AuxVec; };
 
     //! Inform the eigenproblem of the number of eigenvalues (NEV) that are required.
     void SetNEV( const int nev ){ _nev = nev; };
@@ -120,22 +124,22 @@ namespace Anasazi {
     //@{ \name Accessor Methods.
     
     //! Get a pointer to the Operator.
-    Operator<TYPE>* GetOperator() const { return( _Op ); };
+    Teuchos::RefCountPtr<OP> GetOperator() const { return( _Op ); };
     
     //! Get a pointer to the stiffness matrix.
-    Operator<TYPE>* GetA() const { return( _AOp ); };
+    Teuchos::RefCountPtr<OP> GetA() const { return( _AOp ); };
     
     //! Get a pointer to the mass matrix.
-    Operator<TYPE>* GetB() const { return( _BOp ); };
+    Teuchos::RefCountPtr<OP> GetB() const { return( _BOp ); };
     
     //! Get a pointer to the preconditioner.
-    Operator<TYPE>* GetPrec() const { return( _Prec ); };
+    Teuchos::RefCountPtr<OP> GetPrec() const { return( _Prec ); };
     
     //! Get a pointer to the initial vector
-    MultiVec<TYPE>* GetInitVec() const { return( _InitVec ); };
+    Teuchos::RefCountPtr<MV> GetInitVec() const { return( _InitVec ); };
     
     //! Get a pointer to the initial vector
-    MultiVec<TYPE>* GetAuxVec() const { return( _AuxVec ); };
+    Teuchos::RefCountPtr<MV> GetAuxVec() const { return( _AuxVec ); };
     
     /*! \brief Get a pointer to the eigenvalues of the operator.
     
@@ -149,7 +153,7 @@ namespace Anasazi {
     NOTE:  If the operator is nonsymmetric, this multivector has 2*NEV columns where the 
     real part of eigenvector \c j is column \c j and the imaginary part is column \c j+NEV .
     */
-    MultiVec<TYPE>* GetEvecs() { return( _Evecs ); };
+    Teuchos::RefCountPtr<MV> GetEvecs() { return( _Evecs ); };
     
     //! Get the number of eigenvalues (NEV) that are required by this eigenproblem.
     int GetNEV() const { return( _nev ); }
@@ -165,8 +169,8 @@ namespace Anasazi {
     //@{ \name Inner Product Methods.
     /*! \brief Computes inner product as needed by the eigensolver, for orthogonalization purposes.
      */
-    ReturnType InnerProd( const MultiVec<TYPE>& X, const MultiVec<TYPE>& Y,
-			  Teuchos::SerialDenseMatrix<int,TYPE>& Z );
+    ReturnType InnerProd( const MV& X, const MV& Y,
+			  Teuchos::SerialDenseMatrix<int,TYPE>& Z ) const;
     //@}
 
     //@{ \name Norm Methods.
@@ -175,34 +179,31 @@ namespace Anasazi {
     NOTE:  This can be different than the MvNorm method for the multivector class, which is 
     assumed to be the euclidean norm of each column.
     */
-    ReturnType MvNorm( MultiVec<TYPE>& X, TYPE* normvec );
+    ReturnType MvNorm( const MV& X, TYPE* normvec ) const;
     
     //@}	
     
   protected:
     
-    Operator<TYPE> *_AOp, *_BOp; 
-    Operator<TYPE> *_Op, *_Prec;
-    MultiVec<TYPE> *_InitVec, *_AuxVec;
+    Teuchos::RefCountPtr<OP> _AOp, _BOp; 
+    Teuchos::RefCountPtr<OP> _Op, _Prec;
+    Teuchos::RefCountPtr<MV> _InitVec, _AuxVec;
+    Teuchos::RefCountPtr<MV> _Evecs;
     TYPE *_Evals;
-    MultiVec<TYPE> *_Evecs;
     int _nev, _blocksize;
     bool _isSym;
+
+    typedef MultiVecTraits<TYPE,MV> MVT;
+    typedef OperatorTraits<TYPE,MV,OP> OPT;
   };		
   
   //=============================================================================
   //	Implementations (Constructors / Destructors)
   //=============================================================================
   
-  template<class TYPE>
-  BasicEigenproblem<TYPE>::BasicEigenproblem(void) : 
-    _AOp(0), 
-    _BOp(0), 
-    _Op(0), 
-    _Prec(0), 
-    _InitVec(0), 
+  template <class TYPE, class MV, class OP>
+  BasicEigenproblem<TYPE, MV, OP>::BasicEigenproblem(void) : 
     _Evals(0), 
-    _Evecs(0), 
     _nev(1), 
     _blocksize(1), 
     _isSym(false)
@@ -211,15 +212,11 @@ namespace Anasazi {
   
   //=============================================================================
     
-  template<class TYPE>
-  BasicEigenproblem<TYPE>::BasicEigenproblem( Operator<TYPE>* Op, MultiVec<TYPE>* InitVec ) :    
-    _AOp(0), 
-    _BOp(0), 
+  template <class TYPE, class MV, class OP>
+  BasicEigenproblem<TYPE, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<MV>& InitVec ) :    
     _Op(Op), 
-    _Prec(0), 
     _InitVec(InitVec), 
     _Evals(0),
-    _Evecs(0), 
     _nev(1), 
     _blocksize(1), 
     _isSym(false)
@@ -228,16 +225,13 @@ namespace Anasazi {
   
   //=============================================================================
   
-  template<class TYPE>
-  BasicEigenproblem<TYPE>::BasicEigenproblem( Operator<TYPE>* Op, Operator<TYPE>* B,
-					      MultiVec<TYPE>* InitVec ) :
-    _AOp(0), 
+  template <class TYPE, class MV, class OP>
+  BasicEigenproblem<TYPE, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<OP>& B,
+						      const Teuchos::RefCountPtr<MV>& InitVec ) :
     _BOp(B), 
     _Op(Op), 
-    _Prec(0), 
     _InitVec(InitVec), 
     _Evals(0),
-    _Evecs(0), 
     _nev(1), 
     _blocksize(1), 
     _isSym(false)
@@ -246,8 +240,8 @@ namespace Anasazi {
 
   //=============================================================================
     
-  template<class TYPE>
-  BasicEigenproblem<TYPE>::BasicEigenproblem( const BasicEigenproblem<TYPE>& Problem ) :
+  template <class TYPE, class MV, class OP>
+  BasicEigenproblem<TYPE, MV, OP>::BasicEigenproblem( const BasicEigenproblem<TYPE,MV,OP>& Problem ) :
     _AOp(Problem._AOp), 
     _BOp(Problem._BOp), 
     _Op(Problem._Op), 
@@ -263,10 +257,9 @@ namespace Anasazi {
   
   //=============================================================================
   
-  template<class TYPE>
-  BasicEigenproblem<TYPE>::~BasicEigenproblem(void)
+  template <class TYPE, class MV, class OP>
+  BasicEigenproblem<TYPE, MV, OP>::~BasicEigenproblem(void)
   {
-    if (_Evecs) delete _Evecs;
     if (_Evals) delete [] _Evals;
   }
   
@@ -274,17 +267,17 @@ namespace Anasazi {
   //	SetProblem (sanity check method)
   //=============================================================================
 
-  template<class TYPE>
-  ReturnType BasicEigenproblem<TYPE>::SetProblem() 
+  template <class TYPE, class MV, class OP>
+  ReturnType BasicEigenproblem<TYPE, MV, OP>::SetProblem() 
   {
     //----------------------------------------------------------------
     // Sanity Checks
     //----------------------------------------------------------------
     // If there is no operator, then we can't proceed.
-    if (!_AOp && !_Op) { return Failed; }
+    if ( !_AOp.get() && !_Op.get() ) { return Failed; }
 
     // If there is no initial vector, then we don't have anything to clone workspace from.
-    if (!_InitVec) { return Failed; }
+    if ( !_InitVec.get() ) { return Failed; }
     else { 
       // If there is an initial multivector, but it doesn't have the same columns as the blocksize, we don't need to continue.
       if (_InitVec->GetNumberVecs() != _blocksize ) return Failed; }
@@ -296,12 +289,12 @@ namespace Anasazi {
     if (_blocksize  == 0) { return Failed; }
 
     // If there is an A, but no operator, we can set them equal.
-    if (_AOp && !_Op) { _Op = _AOp; }
+    if (_AOp.get() && !_Op.get()) { _Op = _AOp; }
 
     // If this eigenproblem is being reused, then we may need to increase the space
     // for the eigenvalues / eigenvectors
-    if (_Evecs) {
-      int old_nev = _Evecs->GetNumberVecs();
+    if (_Evecs.get()) {
+      int old_nev = MVT::GetNumberVecs( *_Evecs );
       //
       // If the size of the old eigenproblem is larger than the new one, then
       // make sure all the storage required for the eigenproblem exists (check symmetry)
@@ -316,8 +309,7 @@ namespace Anasazi {
       //
       // We need more space:  Delete old storage and reallocate.
       //
-      if (_Evecs) delete _Evecs;
-      if (_Evals) delete [] _Evals;
+       if (_Evals) delete [] _Evals;
     }	
 	
     //----------------------------------------------------------------
@@ -325,10 +317,10 @@ namespace Anasazi {
     // ( we need twice the storage if the problem is non-symmetric )
     //----------------------------------------------------------------
     if ( _isSym ) {      
-      _Evecs = _InitVec->Clone( _nev );
+      _Evecs = MVT::Clone( *_InitVec, _nev );
       _Evals = new TYPE[ _nev ];
     } else {
-      _Evecs = _InitVec->Clone( 2*_nev );
+      _Evecs = MVT::Clone( *_InitVec, 2*_nev );
       _Evals = new TYPE[ 2*_nev ];
     }
     return Ok;
@@ -339,33 +331,25 @@ namespace Anasazi {
   //	Implementations (Inner Product Methods)
   //=============================================================================
 
-  template<class TYPE>
-  ReturnType BasicEigenproblem<TYPE>::InnerProd( const MultiVec<TYPE>& X, 
-					    const MultiVec<TYPE>& Y,
-					    Teuchos::SerialDenseMatrix<int,TYPE>& Z )
+  template <class TYPE, class MV, class OP>
+  ReturnType BasicEigenproblem<TYPE, MV, OP>::InnerProd( const MV& X, 
+						 const MV& Y,
+						 Teuchos::SerialDenseMatrix<int,TYPE>& Z ) const
   {
-    if ( _BOp ) {
-      //
-      // First cast away the const on MultiVecs.
-      //
-      MultiVec<TYPE>& tempX = const_cast<MultiVec<TYPE>& >(X);
-      MultiVec<TYPE>& tempY = const_cast<MultiVec<TYPE>& >(Y);
-      MultiVec<TYPE>* BY = tempY.CloneCopy();
+    if ( _BOp.get() ) {
+      Teuchos::RefCountPtr<MV> BY = MVT::CloneCopy( Y );
       
       // Apply B and check that it returned Ok.
-      ReturnType ret = _BOp->Apply( Y, *BY );
+      ReturnType ret = OPT::Apply( *_BOp, Y, *BY );
       if ( ret != Ok ) { return ret; }
       
       // Now perform inner product.  Result is stored in Z.
-      BY->MvTransMv( Teuchos::ScalarTraits<TYPE>::one(), tempX, Z );
+      MVT::MvTransMv( *BY, Teuchos::ScalarTraits<TYPE>::one(), X, Z );
       
-      delete BY;
       return Ok;				
     } else {
       // Perform the inner product, assume B=I.
-      MultiVec<TYPE>& tempY = const_cast<MultiVec<TYPE>& >(Y);
-      MultiVec<TYPE>& tempX = const_cast<MultiVec<TYPE>& >(X);
-      tempY.MvTransMv ( Teuchos::ScalarTraits<TYPE>::one(), tempX, Z );
+      MVT::MvTransMv( Y, Teuchos::ScalarTraits<TYPE>::one(), X, Z );
       return Ok;				
     }
   }
@@ -374,23 +358,24 @@ namespace Anasazi {
   //	Implementations (Norm Methods)
   //=============================================================================
   
-  template<class TYPE>
-  ReturnType BasicEigenproblem<TYPE>::MvNorm( MultiVec<TYPE>& X, TYPE* normvec )
+  template <class TYPE, class MV, class OP>
+  ReturnType BasicEigenproblem<TYPE, MV, OP>::MvNorm( const MV& X, TYPE* normvec ) const
   {
     int IntOne = 1;
-    int numvecs = X.GetNumberVecs();
+    int numvecs = MVT::GetNumberVecs( X );
     Teuchos::SerialDenseVector<int,TYPE> DenseOne(IntOne);
-    MultiVec<TYPE>* Xj = 0;
+    Teuchos::RefCountPtr<const MV> Xj;
     int *index = new int[IntOne];	
+    ReturnType ret;
     
     for (int i=0; i<numvecs; i++) {
       index[0] = i;
-      Xj = X.CloneView( index, IntOne );
-      InnerProd( *Xj, *Xj, DenseOne );
+      Xj = MVT::CloneView( X, index, IntOne );
+      ret = InnerProd( *Xj, *Xj, DenseOne );
+      if ( ret != Ok ) { return ret; }
       normvec[i] = sqrt(DenseOne(0));
     }
     
-    delete Xj;
     delete [] index;
     
     return Ok;

@@ -41,8 +41,8 @@
 
 namespace Anasazi {
 
-  template<class TYPE>
-  class BasicSort : public SortManager<TYPE> {
+  template<class TYPE, class MV, class OP>
+  class BasicSort : public SortManager<TYPE,MV,OP> {
     
   public:
     
@@ -76,7 +76,7 @@ namespace Anasazi {
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(Eigensolver<TYPE>* solver, int n, TYPE *evals, int *perm = 0) const;
+    ReturnType sort(Eigensolver<TYPE,MV,OP>* solver, int n, TYPE *evals, int *perm = 0) const;
     
     //! Sort the vectors of eigenpairs with respect to the chosen sorting type, optionally returning the permutation vector.
     /**
@@ -92,7 +92,7 @@ namespace Anasazi {
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(Eigensolver<TYPE>* solver, int n, TYPE *r_evals, TYPE *i_evals, int *perm = 0) const;
+    ReturnType sort(Eigensolver<TYPE,MV,OP>* solver, int n, TYPE *r_evals, TYPE *i_evals, int *perm = 0) const;
     
   protected: 
     
@@ -100,8 +100,8 @@ namespace Anasazi {
 
   };
 
-  template<class TYPE>
-  ReturnType BasicSort<TYPE>::sort(Eigensolver<TYPE>* solver, int n, TYPE *evals, int *perm) const 
+  template<class TYPE, class MV, class OP>
+  ReturnType BasicSort<TYPE,MV,OP>::sort(Eigensolver<TYPE,MV,OP>* solver, int n, TYPE *evals, int *perm) const 
   {
     int i, j, tempord;
     TYPE temp, temp2;
@@ -216,8 +216,8 @@ namespace Anasazi {
   }
   
 
-  template<class TYPE>
-  ReturnType BasicSort<TYPE>::sort(Eigensolver<TYPE>* solver, int n, TYPE *r_evals, TYPE *i_evals, int *perm) const {
+  template<class TYPE, class MV, class OP>
+  ReturnType BasicSort<TYPE,MV,OP>::sort(Eigensolver<TYPE,MV,OP>* solver, int n, TYPE *r_evals, TYPE *i_evals, int *perm) const {
     int i, j, tempord;
     TYPE temp, tempr, tempi;
     Teuchos::LAPACK<int,TYPE> lapack;

@@ -29,8 +29,6 @@
 #ifndef ANASAZI_EIGENPROBLEM_H
 #define ANASAZI_EIGENPROBLEM_H
 
-#include "AnasaziMultiVec.hpp"
-#include "AnasaziOperator.hpp"
 #include "AnasaziReturnType.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
@@ -44,7 +42,7 @@
 
 namespace Anasazi {
   
-  template<class TYPE>
+  template<class TYPE, class MV, class OP>
   class Eigenproblem {
     
   public:
@@ -64,32 +62,32 @@ namespace Anasazi {
 
     NOTE:  This may be different from \c A if a spectral transformation is employed, for example.      
     */
-    virtual void SetOperator( Operator<TYPE>* Op ) = 0;
+    virtual void SetOperator( const Teuchos::RefCountPtr<OP> &Op ) = 0;
     
     /*! \brief Set the operator A of the eigenvalue problem AX = BX\lambda.
     */
-    virtual void SetA( Operator<TYPE>* A ) = 0;
+    virtual void SetA( const Teuchos::RefCountPtr<OP> &A ) = 0;
     
     /*! \brief Set the operator B of the eigenvalue problem AX = BX\lambda.
     */
-    virtual void SetB( Operator<TYPE>* B ) = 0;
+    virtual void SetB( const Teuchos::RefCountPtr<OP> &B ) = 0;
     
     /*! \brief Set the preconditioner for this eigenvalue problem AX = BX\lambda.
      */
-    virtual void SetPrec( Operator<TYPE>* Prec ) = 0;
+    virtual void SetPrec( const Teuchos::RefCountPtr<OP> &Prec ) = 0;
     
     /*! \brief Set the initial guess.  
 
     NOTE:  This multivector should have the same number of columns as the blocksize.
     */
-    virtual void SetInitVec( MultiVec<TYPE>* InitVec ) = 0; 
+    virtual void SetInitVec( const Teuchos::RefCountPtr<MV> &InitVec ) = 0; 
     
     /*! \brief Set auxilliary vectors.
 
     NOTE:  This multivector can have any number of columns, an most likely will contain vectors that
     will be used by the eigensolver to orthogonalize against.
     */
-    virtual void SetAuxVec( MultiVec<TYPE>* AuxVec ) = 0;
+    virtual void SetAuxVec( const Teuchos::RefCountPtr<MV> &AuxVec ) = 0;
 
     //! The number of eigenvalues (NEV) that are requested.
     virtual void SetNEV( const int nev ) = 0;
@@ -113,22 +111,22 @@ namespace Anasazi {
     //@{ \name Accessor Methods.
     
     //! Get a pointer to the Operator.
-    virtual Operator<TYPE>* GetOperator() const = 0;
+    virtual Teuchos::RefCountPtr<OP> GetOperator() const = 0;
     
     //! Get a pointer to the operator A of the eigenproblem AX = \lambda BX.
-    virtual Operator<TYPE>* GetA() const = 0;
+    virtual Teuchos::RefCountPtr<OP> GetA() const = 0;
     
     //! Get a pointer to the operator B of the eigenproblem AX = \lambda BX.
-    virtual Operator<TYPE>* GetB() const = 0;
+    virtual Teuchos::RefCountPtr<OP> GetB() const = 0;
     
     //! Get a pointer to the preconditioner.
-    virtual Operator<TYPE>* GetPrec() const = 0;
+    virtual Teuchos::RefCountPtr<OP> GetPrec() const = 0;
     
     //! Get a pointer to the initial vector
-    virtual MultiVec<TYPE>* GetInitVec() const = 0;
+    virtual Teuchos::RefCountPtr<MV> GetInitVec() const = 0;
     
     //! Get a pointer to the auxilliary vector
-    virtual MultiVec<TYPE>* GetAuxVec() const = 0;
+    virtual Teuchos::RefCountPtr<MV> GetAuxVec() const = 0;
     
     /*! \brief Get a pointer to the eigenvalues of the operator.
     
@@ -142,7 +140,7 @@ namespace Anasazi {
     NOTE:  If the operator is nonsymmetric, this multivector has 2*NEV columns where the 
     real part of eigenvector \c j is column \c j and the imaginary part is column \c j+NEV .
     */
-    virtual MultiVec<TYPE>* GetEvecs() = 0;
+    virtual Teuchos::RefCountPtr<MV> GetEvecs() = 0;
     
     //! Get the number of eigenvalues (NEV) that are required by this eigenproblem.
     virtual int GetNEV() const = 0;
@@ -158,8 +156,8 @@ namespace Anasazi {
     //@{ \name Inner Product Methods.
     /*! \brief Computes inner product as needed by the eigensolver, for orthogonalization purposes.
      */
-    virtual ReturnType InnerProd( const MultiVec<TYPE>& X, const MultiVec<TYPE>& Y,
-				  Teuchos::SerialDenseMatrix<int,TYPE>& Z ) = 0;
+    virtual ReturnType InnerProd( const MV& X, const MV& Y,
+				  Teuchos::SerialDenseMatrix<int,TYPE>& Z ) const = 0;
     //@}
 
     //@{ \name Norm Methods.
@@ -168,7 +166,7 @@ namespace Anasazi {
     NOTE:  This can be different than the MvNorm method for the multivector class, which is 
     assumed to be the euclidean norm of each column.
      */
-    virtual ReturnType MvNorm( MultiVec<TYPE>& X, TYPE* normvec ) = 0;
+    virtual ReturnType MvNorm( const MV& X, TYPE* normvec ) const = 0;
     
     //@}	
   };

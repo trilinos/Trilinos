@@ -231,16 +231,21 @@ int main(int argc, char *argv[]) {
 	int restarts = 300;
 	//int step = 1;
 	int step = restarts*length*block;
+	
+	typedef Anasazi::MultiVec<double> MV;
+	typedef Anasazi::Operator<double> OP;
 
 	// Create an Anasazi::EpetraVec for an initial vector to start the solver.
 	// Note:  This needs to have the same number of columns as the blocksize.
-	Anasazi::EpetraVec ivec(Map, block);
-	ivec.MvRandom();
+	Teuchos::RefCountPtr<Anasazi::EpetraVec> ivec = Teuchos::rcp( new Anasazi::EpetraVec(Map, block) );
+	ivec->MvRandom();
 
 	// Create an Anasazi::EpetraOp for the operator A.
-	Anasazi::EpetraOp Amat(A);	
-	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double> > MyProblem =
-	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double>(&Amat, &ivec) );
+	Teuchos::RefCountPtr<Anasazi::EpetraOp> Amat = Teuchos::rcp( new Anasazi::EpetraOp(A) );	
+
+	// Create the eigenproblem.
+	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
+	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(Amat, ivec) );
 	
 	// Inform the eigenproblem that the operator A is symmetric
 	MyProblem->SetSymmetric(rho==0.0); 
@@ -250,11 +255,11 @@ int main(int argc, char *argv[]) {
 	MyProblem->SetBlockSize( block );
 	
 	// Inform the eigenproblem that you are finishing passing it information
-	assert( MyProblem->SetProblem()==0 );
+	assert( MyProblem->SetProblem() == 0 );
 	
 	// Create a sorting manager to handle the sorting of eigenvalues in the solver
-	Teuchos::RefCountPtr<Anasazi::BasicSort<double> > MySort = 
-	  Teuchos::rcp( new Anasazi::BasicSort<double>(which) );
+	Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 
+	  Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
 
 	// Create an output manager to handle the I/O from the solver
 	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
@@ -262,9 +267,9 @@ int main(int argc, char *argv[]) {
 	//MyOM->SetVerbosity( 2 );	
 
 	// Initialize the Block Arnoldi solver
-	Anasazi::BlockKrylovSchur<double> MySolver(MyProblem, MySort, MyOM, tol, 
-							     length, step, restarts);	
-
+	Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, tol, 
+							   length, step, restarts);	
+	
 	// Iterate a few steps (if you wish)
 	//MySolver.iterate(5);
 
@@ -315,12 +320,12 @@ int main(int argc, char *argv[]) {
 	  if (!MyProblem->IsSymmetric())
 	    Bimag(i,i) = evals[nev+i]; 
 	}
-	Amat.Apply( *evecr, tempAevec );
+	Amat->Apply( *evecr, tempAevec );
 	tempAevec.MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0 );
 	if (!MyProblem->IsSymmetric()) {
 	  tempAevec.MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0 );
 	  tempAevec.MvNorm( &normA[0] );
-	  Amat.Apply( *eveci, tempAevec );
+	  Amat->Apply( *eveci, tempAevec );
 	  tempAevec.MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0 );
 	  tempAevec.MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0 );
 	}
