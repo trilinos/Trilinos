@@ -437,20 +437,16 @@ ML_Aggregate_Set_Threshold(ag, 0.0);
        ML_Gen_Smoother_VBlockSymGaussSeidel( ml , level, ML_POSTSMOOTHER, 
  					     nsmooth, 1.0, 
                                              nblocks, blocks);
+*/
        ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth,1.);
-*/
-/*
        ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth,1.);
-*/
-
-       ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 
-          parasails_sym, parasails_thresh, parasails_nlevels, parasails_filter,0,0);
-
-
 /*
-ML_Gen_Smoother_OrderedSymGaussSeidel(ml , level, ML_PRESMOOTHER,nsmooth,1.);
-ML_Gen_Smoother_OrderedSymGaussSeidel(ml , level, ML_POSTSMOOTHER,nsmooth,1.);
+      ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth,
+                                parasails_sym, parasails_thresh,
+                                parasails_nlevels, parasails_filter,
+                                parasails_loadbal, parasails_factorized);
 */
+
 /*
        ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, 1, 0.67 );
        ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, 2, 0.67 );
@@ -458,34 +454,9 @@ ML_Gen_Smoother_OrderedSymGaussSeidel(ml , level, ML_POSTSMOOTHER,nsmooth,1.);
     }
 
     if (coarse_iterations == 0) ML_Gen_CoarseSolverSuperLU(ml,coarsest_level);
-                            /* { Only works for 1level mg. DD with a GS solver
-                                precond=AZ_precond_create(*Amat_f, AZ_precondition,NULL);
-                                scaling = AZ_scaling_create();
-                                options[AZ_precond] = AZ_sym_GS;
-                                options[AZ_poly_ord] = 7;
-                                options[AZ_solver] = AZ_fixed_pt;
-                                options[AZ_max_iter] = 1;
-                                options[AZ_output] = AZ_none;
-                                handle = AZ_set_solver_parameters(params,options,*Amat_f,precond,scaling);
-                                options[AZ_overlap] = 6;
-                                options[AZ_type_overlap] = AZ_symmetric;
-                                options[AZ_precond] = AZ_dom_decomp;
-                                options[AZ_subdomain_solve] = handle;
-                                ML_Gen_SmootherAztec(ml, coarsest_level, options, params, proc_config, status,
-                                                     AZ_ONLY_PRECONDITIONER, ML_PRESMOOTHER, NULL);
-                                options[AZ_solver] = AZ_cg;
-                                options[AZ_max_iter] = 200;
-                                options[AZ_output] = 1;
-                               } */
+    else ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
+                                    coarse_iterations,1.);
 
-    else {/* ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
-                                    coarse_iterations,1.); */
-
-       ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 
-                                 0, 0.0, 0, 0.0,0,0);  /* 0 means nonsymmetric */
-
-
-}
     ML_Gen_Solver( ml, ML_MGV, N_levels-1, coarsest_level);
     ML_Aggregate_Destroy(&ag);
 
