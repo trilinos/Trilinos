@@ -33,9 +33,11 @@ ML_Operator *ML_Operator_Create(ML_Comm *comm)
 
 int ML_Operator_Destroy( ML_Operator *mat)
 {
-   ML_Operator_Clean(mat);
-   ML_free(mat);
-
+   if (mat != NULL)
+   {
+      ML_Operator_Clean(mat);
+      ML_free(mat);
+   }
    return 0;
 }
 
