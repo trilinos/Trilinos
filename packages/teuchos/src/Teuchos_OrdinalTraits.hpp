@@ -72,7 +72,7 @@ namespace Teuchos {
 		static inline T one()                      {throw(unsupportedType());};
 
 		//! Returns name of this ordinal type.
-		static inline const char* name()           {throw(unsupportedType());};
+		static inline std::string name()           {throw(unsupportedType());};
 	};
 	
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -83,7 +83,7 @@ namespace Teuchos {
 		static inline bool haveMachineParameters() {return(false);}; // Allows testing to see if ordinal traits machine parameters defined 
 		static inline int zero()                   {return(0);};
 		static inline int one()                    {return(1);};
-		static inline const char* name()           {return("int");};
+		static inline std::string name()           {return("int");};
 	};
 
 	template<>
@@ -92,7 +92,7 @@ namespace Teuchos {
 		static inline bool haveMachineParameters() {return(false);}; // Allows testing to see if ordinal traits machine parameters defined 
 		static inline long int zero()                   {return((long int)0);};
 		static inline long int one()                    {return((long int)1);};
-		static inline const char* name()           {return("long int");};
+		static inline std::string name()           {return("long int");};
 	};
 
 #endif
