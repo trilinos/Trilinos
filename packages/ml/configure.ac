@@ -390,10 +390,11 @@ AM_CONDITIONAL(ML_USING_TRIUTILS, test "X$ac_cv_use_triutils" = "Xyes")
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(aztecoo, [Enable AztecOO support. AztecOO, a Trilinos package, can be used in adaptive preconditioning.  Requires --enable-epetra --enable-teuchos. See notes for --enable-ml_metis.], ML_AZTECOO)
 AM_CONDITIONAL(ML_USING_AZTECOO, test "X$ac_cv_use_aztecoo" = "Xyes")
 
-#if we're not using aztecoo, then build certain ML examples
-#without dependencies on libepetra.a  or libaztecoo.a
+#if we're not using epetra, then build certain ML examples
+#without dependencies on libepetra.a (and use C linker for C files,
+# otherwise use C++ linker for C examples as well)
 #(See ml/examples/Makefile.am.)
-AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_aztecoo" != "Xyes")
+AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_epetra" != "Xyes")
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
