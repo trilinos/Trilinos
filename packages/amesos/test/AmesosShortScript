@@ -76,9 +76,9 @@ mpirun -np 1 amesos_test.exe SuperLUdist SuperLU.rua 0 1 1 0 1.6e-14 1.6e-14 >>S
 #
 #  Test one process, three processes and three processes transposes, tiny distributed matrix, on SuperLUdist
 #
-mpirun -np 1 amesos_test.exe SuperLUdist   fidapm05.rua 0 1 1 0 10000000000 1 >>SST.stdout
-mpirun -np 3 amesos_test.exe SuperLUdist   fidapm05.rua 1 1 1 0 10000000000 1  >>SST.stdout
-mpirun -np 3 amesos_test.exe SuperLUdist   fidapm05.rua 1 1 1 1 10000000000 1  >>SST.stdout
+mpirun -np 1 amesos_test.exe SuperLUdist   fidapm05.rua 0 1 1 0 100000000000 1 >>SST.stdout
+mpirun -np 3 amesos_test.exe SuperLUdist   fidapm05.rua 1 1 1 0 100000000000 1  >>SST.stdout
+mpirun -np 3 amesos_test.exe SuperLUdist   fidapm05.rua 1 1 1 1 100000000000 1  >>SST.stdout
 #
 #  Test some more small matrices
 #
