@@ -22,9 +22,13 @@ ifndef DCC
 DCC=$(CC)
 endif
 
+LINT.c=$(LINT) $(LINTFLAGS) $(CFLAGS)
+
 DEPS=-M
 
+ifndef LINT
 include $(OBJ_FILES:.o=.d)
+endif
 
 %.o:	%.c
 	@echo "Compiling $<..."
@@ -37,3 +41,11 @@ $(LIB_NAME):	$(OBJ_FILES) $(OBJ_FILES:.o=.d)
 		@echo "creating library..."
 		@$(AR) $(LIB_NAME) $(OBJ_FILES)
 		@$(RANLIB) $(LIB_NAME)
+
+$(LINT_TARGET):	$(SRC_FILES)
+		@echo "Generating lint file for library..."
+		$(LINT.c) $^ -y -o $(TARGET)
+
+$(LINT):	$(SRC_MAIN) $(LINT_TARGET)
+		@echo "running lint..."
+		$(LINT.c) $< $(LINT_TARGET)

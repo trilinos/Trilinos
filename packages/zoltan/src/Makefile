@@ -17,9 +17,12 @@
 
 GDEFINES	= -DDEBUG
 
+TARGET		= dlb
 LIB_NAME	= libdlb.a
+LINT_TARGET	= llib-ldlb.ln
+SRC_MAIN	= all_main.c
 
-SUPP_TARGS	="sgi10k smos sun tflop"
+SUPP_TARGS	="sgi10k smos sun sun_lint tflop"
 
 #
 # Makefile for load-balancing library.
@@ -33,6 +36,9 @@ SUB_VPATH=../all ../lb ../par ../rcb ../comm ../oct
 SUBINCPATH=-I../all -I../lb -I../par -I../rcb -I../comm -I../oct
 #SUBDIRS= all lb par rcb oct Obj_sgi10k Obj_smos Obj_sun Obj_tflop 
 SUBDIRS= all lb par rcb oct
+
+# for lint, set VPATH here
+VPATH=$(SUBDIRS)
 
 #source code from SCCS projects
 
@@ -130,12 +136,16 @@ SUN_OBJ		= $(SUN_CSRC:.c=.o)
 
 SUN_INC_PATH	= -I/Net/local/lang/SC2.0.1/include \
 		  -I/Net/local/lang/SC2.0.1/ansi_include \
-		  -I/Net/hondo/puma1/pumatmp1/tools/mpi/include \
+		  -I/Net/pecos/puma/pumatmp1/tools/mpi/include \
 		  $(SUBINCPATH)
 
 SUN_CCOMP	= $(SUN_CC) $(SUN_INC_PATH) $(SUN_OPT_FLAGS)
 
 SUN_DEFS	= $(GDEFINES) -DSUNOS
+
+# additional defines for lint
+SUN_LINT	= alint
+SUN_LINT_FLAGS	=
 
 #
 # sgi10k defines
@@ -200,6 +210,20 @@ sun:
 	"RANLIB=$(SUN_RANLIB)"
 #	@cscope -b $(MAIN) $(SUN_CSRC) $(SUN_INC)
 
+sun_lint:
+	@if [ ! -d Obj_sun ]; \
+	then mkdir Obj_sun; \
+	fi
+	@rm -f Obj_sun/Makefile
+	@cp Makefile_sub Obj_sun/Makefile
+	@cd Obj_sun; \
+	$(MAKE) $(SUN_LINT) "LINT=$(SUN_LINT)" \
+	"SRC_FILES=$(SUN_CSRC)" "TARGET=$(TARGET)" \
+	"LINT_TARGET=$(LINT_TARGET)" "LINTFLAGS=$(SUN_LINT_FLAGS)" \
+	"CFLAGS=$(SUN_INC_PATH) $(SUN_DEFS)" \
+	"SRC_MAIN=$(SRC_MAIN)" "VPATH=$(SUB_VPATH)"
+
+
 sgi10k:
 	@if [ ! -d Obj_sgi10k ]; \
 	then mkdir Obj_sgi10k; \
@@ -238,3 +262,6 @@ clean:
 	-for a in $(SUBDIRS); do cd $$a; \
 	 $(RM) *.o *.d *.d@ dlb dlb.pure; \
 	 cd ..; done; exit 0
+
+foo:
+	@echo "$(VPATH)"
