@@ -1,6 +1,5 @@
 // Tpetra ElementSpace tester
-// Modified: 21-Jan-2003
-// Paul says: I'll get around to making this a more thorough tester real soon now.
+// Modified: 06-Feb-2003
 
 #define ORDINALTYPE int
 
@@ -45,7 +44,7 @@ void esTester(bool verbose, bool debug) {
   Tpetra::SerialPlatform<ORDINALTYPE, ORDINALTYPE> platform;
 	
 	if(verbose) cout << "Creating es1(contiguous, tpetra-defined)...";
-	Tpetra::ElementSpace<ORDINALTYPE> es1(10, 2, platform);
+	Tpetra::ElementSpace<ORDINALTYPE> es1(eSize, 2, platform);
 	if(verbose) cout << "Successful." << endl;
 	if(debug) cout << es1 << endl;
 	
