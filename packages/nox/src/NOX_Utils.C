@@ -54,7 +54,7 @@ ostream& operator<<(ostream& os, const NOX::Utils::Fill& f)
   return os;
 }
 
-NOX::Utils::Sci NOX::Utils::sci(double dval, int prec = -1)
+NOX::Utils::Sci NOX::Utils::sci(double dval, int prec)
 {
   return NOX::Utils::Sci(dval, prec);
 }
