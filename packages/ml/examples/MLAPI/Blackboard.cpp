@@ -88,6 +88,7 @@ int main(int argc, char *argv[])
     // NOTE: The last parameter has be to `false' because the Operator 
     // should not delete the A_Mat object.
 
+    ML_THROW("aa", -1);
     Operator A(MySpace, MySpace, &A_Mat, false);
 
     // Here we define 3 vectors. The last, z, is empty.

@@ -51,13 +51,14 @@
 
 #include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"
+#include "MLAPI_Error.h"
 #include "MLAPI_Space.h"
 #include "MLAPI_MultiVector.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_MultiLevelSA.h"
-#include "MLAPI_EpetraPreconditioner.h"
 #include "MLAPI_MATLABStream.h"
 #include "MLAPI_Workspace.h"
+#include "MLAPI_EpetraBaseOperator.h"
 
 using namespace Teuchos;
 using namespace Trilinos_Util;
@@ -101,7 +102,7 @@ int main(int argc, char *argv[])
   MLList.set("max levels",3);
   MLList.set("increasing or decreasing","increasing");
   MLList.set("aggregation: type", "Uncoupled");
-  MLList.set("aggregation: damping factor", 1.333);
+  MLList.set("aggregation: damping factor", 0.0); // FIXME: should be 4/3
   MLList.set("coarse: max size",32);
   MLList.set("smoother: pre or post", "both");
   MLList.set("coarse: type","Amesos-KLU");
@@ -159,7 +160,7 @@ int main(int argc, char *argv[])
 
   MultiLevelSA* Cycle = new MultiLevelSA(AA,MLList);
   Epetra_Operator* MLAPIPrec = 
-    new EpetraPreconditioner(A->RowMatrixRowMap(),*Cycle);
+    new EpetraBaseOperator(A->RowMatrixRowMap(),*Cycle);
   MLAPIConstructionTime = Time.ElapsedTime();
   Time.ResetStartTime();
 

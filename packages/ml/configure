@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB ML_BUILD_DIRECTORY USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP LIBOBJS ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_EPETRA_TRUE ML_USING_EPETRA_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_ANASAZI_TRUE ML_USING_ANASAZI_FALSE ML_USING_TRIUTILS_TRUE ML_USING_TRIUTILS_FALSE ML_USING_AZTECOO_TRUE ML_USING_AZTECOO_FALSE ML_USING_EPETRAEXT_TRUE ML_USING_EPETRAEXT_FALSE ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB ML_BUILD_DIRECTORY USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP LIBOBJS ML_CFUNC_TRUE ML_CFUNC_FALSE ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_EPETRA_TRUE ML_USING_EPETRA_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_ANASAZI_TRUE ML_USING_ANASAZI_FALSE ML_USING_TRIUTILS_TRUE ML_USING_TRIUTILS_FALSE ML_USING_AZTECOO_TRUE ML_USING_AZTECOO_FALSE ML_USING_EPETRAEXT_TRUE ML_USING_EPETRAEXT_FALSE ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -7163,6 +7163,68 @@ _ACEOF
 fi
 
 
+echo "$as_me:$LINENO: checking whether $CC recognizes __func__" >&5
+echo $ECHO_N "checking whether $CC recognizes __func__... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+int main() { char *s = __func__; }
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_CFUNC
+_ACEOF
+ ac_cv_c_var_func=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_c_var_func=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+
+
+if test "X$ac_cv_c_var_func" != "Xno"; then
+  ML_CFUNC_TRUE=
+  ML_CFUNC_FALSE='#'
+else
+  ML_CFUNC_TRUE='#'
+  ML_CFUNC_FALSE=
+fi
+
+
 # ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
@@ -8295,7 +8357,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8298: \"$ac_link\") >&5
+(eval echo $as_me:8360: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8373,7 +8435,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8376: \"$ac_link\") >&5
+(eval echo $as_me:8438: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11326,7 +11388,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11329: \"$ac_link\") >&5
+(eval echo $as_me:11391: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11404,7 +11466,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11407: \"$ac_link\") >&5
+(eval echo $as_me:11469: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11794,6 +11856,13 @@ if test -z "${USE_ALTERNATE_AR_TRUE}" && test -z "${USE_ALTERNATE_AR_FALSE}"; th
   { { echo "$as_me:$LINENO: error: conditional \"USE_ALTERNATE_AR\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"USE_ALTERNATE_AR\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ML_CFUNC_TRUE}" && test -z "${ML_CFUNC_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ML_CFUNC\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ML_CFUNC\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -12522,6 +12591,8 @@ s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
 s,@CXXCPP@,$CXXCPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
+s,@ML_CFUNC_TRUE@,$ML_CFUNC_TRUE,;t t
+s,@ML_CFUNC_FALSE@,$ML_CFUNC_FALSE,;t t
 s,@ML_BENCHMARKING_TRUE@,$ML_BENCHMARKING_TRUE,;t t
 s,@ML_BENCHMARKING_FALSE@,$ML_BENCHMARKING_FALSE,;t t
 s,@ML_USING_EPETRA_TRUE@,$ML_USING_EPETRA_TRUE,;t t
