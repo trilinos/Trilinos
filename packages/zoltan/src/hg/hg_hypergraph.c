@@ -120,7 +120,7 @@ int Zoltan_HG_Info (
    hg->nPins);
 
   /* print weights */
-  if (hg->vwgt) {
+  if (hg->nVtx && hg->vwgt) {
     wgt_tot = 0.0;
     wgt_min = FLT_MAX;
     wgt_max = FLT_MIN;
@@ -132,14 +132,17 @@ int Zoltan_HG_Info (
     printf("Vertex weights   :    %9.2f %9.2f %9.2f %12.2f\n", wgt_min,
      wgt_tot/hg->nVtx, wgt_max, wgt_tot);
 
-    mean = wgt_tot / hg->nVtx;
-    var = 0.0;
-    for (i = 0; i < hg->nVtx; i++) {
-      temp = hg->vwgt[i] - mean;
-      var += (temp*temp);
+    if (hg->nVtx > 1) {
+      mean = wgt_tot / hg->nVtx;
+      var = 0.0;
+      for (i = 0; i < hg->nVtx; i++) {
+        temp = hg->vwgt[i] - mean;
+        var += (temp*temp);
+      }
+      var = sqrt(var/(hg->nVtx-1));
+      printf ("Vertex Stats: stdev %.2f,   Coef of Var %.2f\n", var, var/mean);
     }
-    var = sqrt(var/(hg->nVtx-1));
-    printf ("Vertex Stats: stdev %.2f,   Coef of Var %.2f\n", var, var/mean);
+
     count=0;
     temp=0.0;
     for (i = 0; i < hg->nVtx; i++)
@@ -151,7 +154,7 @@ int Zoltan_HG_Info (
      "rel weight x100 %.1f\n",
      count, (float)10000*count/(float)hg->nVtx, 100.0*temp/wgt_tot);
   }
-  if (hg->ewgt) {
+  if (hg->nEdge && hg->ewgt) {
     wgt_tot = 0.0;
     wgt_min = FLT_MAX;
     wgt_max = FLT_MIN;
@@ -163,18 +166,20 @@ int Zoltan_HG_Info (
     printf("HEdge weights    :    %9.2f %9.2f %9.2f %12.2f\n", wgt_min,
      wgt_tot/hg->nEdge, wgt_max, wgt_tot);
 
-    var = 0.0;
-    mean = wgt_tot / hg->nEdge;
-    for (i = 0; i < hg->nEdge; i++) {
-      temp = hg->ewgt[i] - mean;
-      var += (temp*temp);
+    if (hg->nEdge > 1) {
+      var = 0.0;
+      mean = wgt_tot / hg->nEdge;
+      for (i = 0; i < hg->nEdge; i++) {
+        temp = hg->ewgt[i] - mean;
+        var += (temp*temp);
+      }
+      var = sqrt(var/(hg->nEdge-1));
+      printf ("HEdge Stats: STDV %.2f,   Coef of Var %.2f\n", var, var/mean);
     }
-    var = sqrt(var/(hg->nEdge-1));
-    printf ("HEdge Stats: STDV %.2f,   Coef of Var %.2f\n", var, var/mean);
   }
 
   /* print sizes */
-  if (hg->hindex) {
+  if (hg->nPins && hg->hindex) {
     size_min = INT_MAX;
     size_max = INT_MIN;
     for (i = 0; i < hg->nEdge; i++) {
@@ -185,16 +190,18 @@ int Zoltan_HG_Info (
     printf("Edge sizes       :    %6d    %9.2f %6d    %9d\n", size_min,
      (float)hg->nPins / hg->nEdge, size_max, hg->nPins);
 
-    var = 0.0;
-    mean = (float)hg->nPins / hg->nEdge;
-    for (i = 0; i < hg->nEdge; i++) {
-      temp = (float)(hg->hindex[i+1]-hg->hindex[i]) - mean;
-      var += (temp*temp);
+    if (hg->nEdge > 1) {
+      var = 0.0;
+      mean = (float)hg->nPins / hg->nEdge;
+      for (i = 0; i < hg->nEdge; i++) {
+        temp = (float)(hg->hindex[i+1]-hg->hindex[i]) - mean;
+        var += (temp*temp);
+      }
+      var = sqrt(var/(hg->nEdge-1));
+      printf ("Edge Stats: stdev %.2f,   Coef of Var %.2f\n", var, var/mean);
     }
-    var = sqrt(var/(hg->nEdge-1));
-    printf ("Edge Stats: stdev %.2f,   Coef of Var %.2f\n", var, var/mean);
   }
-  if (hg->vindex) {
+  if (hg->nPins && hg->vindex) {
     size_min = INT_MAX;
     size_max = INT_MIN;
     for (i = 0; i < hg->nVtx; i++) {
@@ -205,14 +212,16 @@ int Zoltan_HG_Info (
     printf("Vertex sizes     :    %6d    %9.2f %6d    %9d\n", size_min,
      (float)hg->nPins / hg->nVtx, size_max, hg->nPins);
 
-    var = 0.0;
-    mean = (float)hg->nPins / hg->nVtx;
-    for (i = 0; i < hg->nVtx; i++) {
-      temp = (float)(hg->vindex[i+1]-hg->vindex[i]) - mean;
-      var += (temp*temp);
+    if (hg->nVtx > 1) {
+      var = 0.0;
+      mean = (float)hg->nPins / hg->nVtx;
+      for (i = 0; i < hg->nVtx; i++) {
+        temp = (float)(hg->vindex[i+1]-hg->vindex[i]) - mean;
+        var += (temp*temp);
+      }
+      var = sqrt(var/(hg->nVtx-1));
+      printf ("Vertex Stats: stdev %.2f,  Coef of Var %.2f\n", var, var/mean);
     }
-    var = sqrt(var/(hg->nVtx-1));
-    printf ("Vertex Stats: stdev %.2f,  Coef of Var %.2f\n", var, var/mean);
   }
 
   printf("-----------------------------------------------------------------\n");
