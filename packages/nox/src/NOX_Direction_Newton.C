@@ -199,16 +199,16 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       double normf = 0.0;
       double normoldf = 0.0;
 
-      if (paramsPtr->sublist("Newton").isParameter("User Defined Norm")) {
+      if (paramsPtr->sublist("Newton").isParameter("Forcing Term User Defined Norm")) {
 
 	const NOX::Parameter::Arbitrary& arbitrary = paramsPtr->
-	  sublist("Newton").getArbitraryParameter("User Defined Norm");
+	  sublist("Newton").getArbitraryParameter("Forcing Term User Defined Norm");
 	const NOX::Parameter::UserNorm* userNorm = 0;
 	userNorm = dynamic_cast<const NOX::Parameter::UserNorm*>(&arbitrary);
 	
 	if (userNorm != 0) {
 	  if (utils.isPrintProcessAndType(Utils::Details)) {
-	    cout << indent << "User defined norm:" << userNorm->getType()
+	    cout << indent << "Forcing Term Norm: " << userNorm->getType()
 		 << endl;
 	  }
 	  normpredf = userNorm->computeNorm(*predRhs);
@@ -218,7 +218,7 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
 	else {
 	  if (utils.isPrintProcessAndType(Utils::Warning)) {
 	    cout << "WARNING: NOX::Direction::Newton::resetForcingTerm() - "
-		 << "\"User Defined Norm\" is not of type "
+		 << "\"Forcing Term User Defined Norm\" is not of type "
 		 << "NOX::Parameter::UserNorm!\n" 
 		 << "Defaulting to L-2 Norms!" << endl; 
 	  }
@@ -229,7 +229,7 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
       }
       else {
 	if (utils.isPrintProcessAndType(Utils::Details)) {
-	  cout << indent << "Using L-2 norm for forcing term calc."
+	  cout << indent << "Forcing Term Norm: Using L-2 Norm."
 	       << endl;
 	}
 	normpredf = predRhs->norm();
@@ -267,8 +267,44 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
     }
     else {
 
-      const double normf = soln.getNormF();
-      const double normoldf = oldsoln.getNormF();
+      double normf = 0.0;
+      double normoldf = 0.0;
+
+      if (paramsPtr->sublist("Newton").isParameter("Forcing Term User Defined Norm")) {
+
+	const NOX::Parameter::Arbitrary& arbitrary = paramsPtr->
+	  sublist("Newton").getArbitraryParameter("Forcing Term User Defined Norm");
+	const NOX::Parameter::UserNorm* userNorm = 0;
+	userNorm = dynamic_cast<const NOX::Parameter::UserNorm*>(&arbitrary);
+	
+	if (userNorm != 0) {
+	  if (utils.isPrintProcessAndType(Utils::Details)) {
+	    cout << indent << "Forcing Term Norm: " << userNorm->getType()
+		 << endl;
+	  }
+	  normf = userNorm->computeNorm(soln.getF());
+	  normoldf = userNorm->computeNorm(oldsoln.getF());
+	}
+	else {
+	  if (utils.isPrintProcessAndType(Utils::Warning)) {
+	    cout << "WARNING: NOX::Direction::Newton::resetForcingTerm() - "
+		 << "\"Forcing Term User Defined Norm\" is not of type "
+		 << "NOX::Parameter::UserNorm!\n" 
+		 << "Defaulting to L-2 Norms!" << endl; 
+	  }
+	  normf = soln.getNormF();
+	  normoldf = oldsoln.getNormF();
+	}
+      }
+      else {
+	if (utils.isPrintProcessAndType(Utils::Details)) {
+	  cout << indent << "Forcing Term Norm: Using L-2 Norm."
+	       << endl;
+	}
+	normf = soln.getNormF();
+	normoldf = oldsoln.getNormF();
+      }  
+
       const double alpha = paramsPtr->sublist("Newton").getParameter("Forcing Term Alpha", 1.5);
       const double gamma = paramsPtr->sublist("Newton").getParameter("Forcing Term Gamma", 0.9);
       const double residual_ratio = normf / normoldf;
