@@ -69,7 +69,8 @@ namespace NOX {
       Vector(int n, double *v);
     
       //! Copy constructor
-      Vector(const NOX::LAPACK::Vector& source, CopyType type = DeepCopy);
+      Vector(const NOX::LAPACK::Vector& source, 
+	     NOX::CopyType type = NOX::DeepCopy);
       
       //! Destruct Vector.
       ~Vector();
