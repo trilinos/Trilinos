@@ -40,468 +40,479 @@
 using namespace NOX;
 using namespace NOX::Linesearch;
 
-MoreThuente::MoreThuente(const Parameter::List& params) 
+MoreThuente::MoreThuente(const Parameter::List& params) :
+  tmpvecptr(NULL)
 {
   reset(params);
 }
 
 MoreThuente::~MoreThuente()
 {
-
+  delete tmpvecptr;
 }
 
 void MoreThuente::reset(const Parameter::List& params)
 { 
-  minstep = params.getParameter("Minimum Step", 1.0e-12);
+  ftol = params.getParameter("Sufficient Decrease", 1.0e-10);
+  gtol = params.getParameter("Curvature Condition", 0.9999);
+  xtol = params.getParameter("Interval Width", 1.0e-15);
+  stpmin = params.getParameter("Minimum Step", 1.0e-15);
+  stpmax = params.getParameter("Maximum Step", 1.0e+15);
+  maxfev = params.getParameter("Maximum Fevals", 10);
   defaultstep = params.getParameter("Default Step", 1.0);
   recoverystep = params.getParameter("Recovery Step", defaultstep);
+
+  // Check the input parameters for errors.
+
+  if ((ftol < 0.0) || (gtol < 0.0) || 
+      (xtol < 0.0) || (stpmin < 0.0) || (stpmax < stpmin) || 
+      (maxfev <= 0) || (defaultstep <= 0)) {
+    cout << "More'-Thuente Line Search: Error in Input Parameter!" << endl;
+    throw;
+  }
 }
+
 
 bool MoreThuente::operator()(Abstract::Group& newgrp, double& step, 
 			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
 {
+  int info = cvsrch(newgrp, step, oldgrp, dir);
+  return (info == 1);
+}
 
-/*  First pass -->  copy alogrithm from Xyce/Xyce/src/NonlinearSolverPKG/src
-                                           /N_NLS...........
-    10-29-2001   RH
-*/
-   double xtrapf = 4.0 ;
-   double stepmin=1.e-4; 
-   double stepmax=1.e6 ;
-   double ftol = 0.0001 ;
-   double gtol = 0.500 ;
-   double rtol = 1.e-10 ;
-   int maxfev = 30 ;
+double MoreThuente::dgcompute(const Abstract::Vector& dir, const Abstract::Group& grp)
+{
+  if (grp.isGrad()) {
+    return dir.dot(grp.getGrad());
+  }
+  
+  if (tmpvecptr == NULL) {
+    tmpvecptr = grp.getX().clone(CopyShape);
+  }
 
-   bool isfailed = false;
-   step = defaultstep;
+  // tmpvec = J'*dir
+  bool flag = grp.applyJacobian(dir,*tmpvecptr);
+  
+  if (!flag) {
+    cout << "ERROR: Unable to apply Jacobian!" << endl;
+    throw;
+  }
 
-   int info ;
-   double factor ;
-   double dginit, dgtest ;
-   double stx, sty ;
-   double finit, fx, fy ;
-   double fm, fxm, fym ;
-   double dgm, dgxm, dgym ;
-   double dg, dgx, dgy ;
-   double width, width1 ;
-   double value ;
-   double gnorm, ftest1 ;
-   int bracket ;
-   int stage ; /*  1 - use auxillary function
-                   0 - use objective function  */
-   int i, nfev ;
+  if (!grp.isRHS()) {
+    cout << "ERROR: Invalid RHS" << endl;
+    throw;
+  }
 
-   const Abstract::Vector & initialGradient = oldgrp.getGrad();
-   dginit = dir.dot(initialGradient);
+  return tmpvecptr->dot(grp.getRHS());
+}
 
-/* Check sign of dginit:  to do, RH  */
-
-/* ...........  Initialization  ..........*/
-
-   bracket = 0 ;
-   stage = 1 ;
-   finit = 0.5*oldgrp.getNormRHS()*oldgrp.getNormRHS();
-                              /* initial value of objective function */
-   dgtest = ftol*dginit ;  /* sufficient decrease condition  */
-   width = stepmax - stepmin ;  /* width of search interval  */
-   width1 = 2.0*width ;
-
-   stx = 0.0 ;
-   fx = finit ;
-   dgx = dginit ;
-   sty = 0.0 ;
-   fy = finit ;
-   dgy = dginit ;
-
-//   printf("\n\nInitialization: finit, dginit, dgtest: %e, %e, %e\n\n",
-//                               finit, dginit, dgtest);
-//   getchar();
-
-   nfev = 0 ; /* initialize # function evaluations  */
-    
+int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp, 
+			const Abstract::Group& oldgrp, const Abstract::Vector& dir)
+{
   if (Utils::doPrint(1)) {
    cout << "\n" << Utils::fill(72) << "\n" << " -- More'-Thuente Line Search -- \n";
   }
+   // Set default step
+  stp = defaultstep;
 
-/*  Begin loop up to max # function evaluations  */
+  int info = 0;			// return code
+  int infoc = 1;		// return code for subroutine cstep
 
-   for(i=0; i<maxfev; i++)
-   {
-      if(bracket)
-      {
-        stepmin = mymin(stx, sty);
-        stepmax = mymax(stx, sty);
+  // Compute the initial gradient in the search direction and check
+  // that s is a descent direction.
+
+  double dginit = dgcompute(dir, oldgrp);
+
+  if (dginit >= 0.0) {
+    if (Utils::doPrint(1)) {
+      cout << " -- Linesearch Failed! -- (dginit = " << dginit << ")" << endl;
+    }
+    stp = defaultstep;
+    newgrp.computeX(oldgrp, dir, stp);
+    return 7;
+  }
+
+  // Initialize local variables.
+
+  bool brackt = false;		// has the soln been bracketed?
+  bool stage1 = true;		// are we in stage 1?
+  int nfev = 0;			// number of function evaluations
+  double finit = oldgrp.getNormRHS(); // initial function value
+  double dgtest = ftol * dginit; // rhs for curvature condition
+  double width = stpmax - stpmin; // interval width
+  double width1 = 2*width;	// ???
+
+  // The variables stx, fx, dgx contain the values of the step,
+  // function, and directional derivative at the best step.  The
+  // variables sty, fy, dgy contain the value of the step, function,
+  // and derivative at the other endpoint of the interval of
+  // uncertainty.  The variables stp, f, dg contain the values of the
+  // step, function, and derivative at the current step.
+
+  double stx = 0.0;
+  double fx = finit;
+  double dgx = dginit;
+  double sty = 0.0;
+  double fy = finit;
+  double dgy = dginit;
+
+  // Start of iteration.
+
+  double stmin, stmax;
+  double fm, fxm, fym, dgm, dgxm, dgym;
+
+  while (1) {
+
+    // Set the minimum and maximum steps to correspond to the present
+    // interval of uncertainty.
+
+    if (brackt) {
+      stmin = min(stx, sty);
+      stmax = max(stx, sty);
+    }
+    else {
+      stmin = stx;
+      stmax = stp + 4 * (stp - stx);
+    }
+    
+    // Force the step to be within the bounds stpmax and stpmin.
+    stp = max(stp, stpmin);
+    stp = min(stp, stpmax);
+
+    // If an unusual termination is to occur then let stp be the
+    // lowest point obtained so far.
+
+    if ((brackt && ((stp <= stmin) || (stp >= stmax))) ||
+	(nfev >= maxfev - 1) || (infoc == 0) ||
+	(brackt && (stmax - stmin <= xtol * stmax))) {
+      stp = stx;
+    }
+
+    // Evaluate the function and gradient at stp
+    // and compute the directional derivative.
+
+    newgrp.computeX(oldgrp, dir, stp);
+    newgrp.computeRHS();
+    double f = newgrp.getNormRHS();
+    newgrp.computeJacobian();
+    nfev ++;
+
+    if (Utils::doPrint(1)) {
+      cout << Utils::fill(5,' ') << "step = " << Utils::sci(stp);
+      cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(finit);
+      cout << Utils::fill(1,' ') << "newf = " << Utils::sci(f);
+      cout << endl;
+    }
+
+    double dg = dgcompute(dir, newgrp);
+
+    double ftest1 = finit + stp * dgtest;
+
+    // Test for convergence.
+
+    if ((brackt && ((stp <= stmin) || (stp >= stmax))) || (infoc == 0))	
+      info = 6;			// Rounding errors
+
+    if ((stp == stpmax) && (f <= ftest1) && (dg <= dgtest))
+      info = 5;			// stp=stpmax
+
+    if ((stp == stpmin) && ((f > ftest1) || (dg >= dgtest))) 
+      info = 4;			// stp=stpmin
+
+    if (nfev >= maxfev) 
+      info = 3;			// max'd out on fevals
+
+    if (brackt && (stmax-stmin <= xtol*stmax)) 
+      info = 2;			// bracketed soln
+
+
+    //cout << "f=" << f << " ftest1=" << ftest1 << " fabs(dg)=" << fabs(dg) 
+    //	 << " gtol*(-dginit)=" << gtol*(-dginit) << endl;
+
+    if ((f <= ftest1) && (fabs(dg) <= gtol*(-dginit))) 
+      info = 1;			// Success!!!!
+
+    // Check for termination.
+    if (info != 0) {
+      if (Utils::doPrint(1)) {
+	if (info != 1)
+	  cout << " -- Linesearch Failed! -- (info = " << info << ")" << endl;
+	else
+	  cout << " -- Step Accepted! --" << endl;
+	cout << Utils::fill(72) << "\n" << endl;
       }
-      else
-      {
-         stepmin = stx ;
-         stepmax = step + xtrapf*(step-stx) ;
-      }
+      return info;
+    }
 
-/* Constrain step to lie within bounds  */
-      step = mymax(step, stepmin);
-      step = mymin(step, stepmax);
+    // In the first stage we seek a step for which the modified
+    // function has a nonpositive value and nonnegative derivative.
 
-/* Return best step so far if termination occurs  */
-      if( (bracket&&(step <= stepmin || step >= stepmax)) ||
-          (bracket&&(stepmax-stepmin <= rtol*stepmax))   ||
-          (nfev >= maxfev-1) ) step = stx ;
+    if (stage1 && (f <= ftest1) && (dg >= min(ftol, gtol) * dginit)) 
+      stage1 = false;
 
- 
-/*  Find new Residual and objective function value  */
+    // A modified function is used to predict the step only if we have
+    // not obtained a step for which the modified function has a
+    // nonpositive function value and nonnegative derivative, and if a
+    // lower function value has been obtained but the decrease is not
+    // sufficient.
 
-      newgrp.computeX(oldgrp, dir, step);
-      newgrp.computeRHS();
-      value = 0.5*newgrp.getNormRHS()*newgrp.getNormRHS();
+    if (stage1 && (f <= fx) && (f > ftest1)) {
 
-      nfev++ ;
- 
-/*  Find gradient at new location  */
+      // Define the modified function and derivative values.
 
-//      newgrp.computeRHS();
-      newgrp.computeJacobian();
-      newgrp.computeGrad();
-      const Abstract::Vector & gradient = newgrp.getGrad();
-/*
-      factor = -1.0/value ;
-      dscal_(&n, &factor, gradient, &iOne) ;
-*/
+      fm = f - stp * dgtest;
+      fxm = fx - stx * dgtest;
+      fym = fy - sty * dgtest;
+      dgm = dg - dgtest;
+      dgxm = dgx - dgtest;
+      dgym = dgy - dgtest;
 
-//      gnorm = mydot(n, gradient, gradient) ;
+      // Call cstep to update the interval of uncertainty 
+      // and to compute the new step.
 
-      dg = dir.dot(gradient);
-      ftest1 = finit + step*dgtest ;
+      infoc = cstep(stx,fxm,dgxm,sty,fym,dgym,stp,fm,dgm, 
+		    brackt,stmin,stmax);
 
-//      printf("[i]\tstep\t\tdphi\t\tphi\t\tstepmin\t\tstepmax\n");
-//      printf("[%d]\t%e\t%e\t%e\t%e\t%e",
-//            i,step,dg,value,stepmin,stepmax);
-//      getchar();
- 
-/*  Implement convergence checks, to do RH  */
+      // Reset the function and gradient values for f.
 
-      if((value <= ftest1) && (fabs(dg) <= gtol*-dginit))
-      {
-         if (Utils::doPrint(1)) {
-            cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-            cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(finit);
-            cout << Utils::fill(1,' ') << "newf = " << Utils::sci(value);
-            cout << " (STEP ACCEPTED!)" << endl;
-            cout << Utils::fill(72) << "\n" << endl;
-         }
-         break;  /*  CONVERGENCE !!!  */
-      }
+      fx = fxm + stx*dgtest;
+      fy = fym + sty*dgtest;
+      dgx = dgxm + dgtest;
+      dgy = dgym + dgtest;
 
-     if (Utils::doPrint(1)) {
-       cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-       cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(finit);
-       cout << Utils::fill(1,' ') << "newf = " << Utils::sci(value);
-       cout << endl;
-     }
+    }
 
+    else {
 
-/* Determine which objective function to use  */
-      if( stage&&(value <= ftest1)&&(dg >= dginit*gtol)) stage=0;
+      // Call cstep to update the interval of uncertainty 
+      // and to compute the new step.
 
-     if(stage)
-     {
-//        printf("\nUsing auxillary function\n\n");
-        fm = value - finit - step*dgtest ; /* Use auxillary function  */
-        fxm = fx - finit - stx*dgtest ;    /* and derivatives  */
-        fym = fy - finit - sty*dgtest ;
-        dgm = dg - dgtest ;
-        dgxm = dgx - dgtest ;
-        dgym = dgy - dgtest ;
+      infoc = cstep(stx,fx,dgx,sty,fy,dgy,stp,f,dg,
+		    brackt,stmin,stmax);
 
-/*  Update interval and compute new step length using auxillary function */
-        info = MTStep(&stx, &fxm, &dgxm, &sty, &fym, &dgym, &step, &fm, &dgm,
-                      &stepmin, &stepmax, &bracket);
+    }
 
-        fx = fxm + finit + stx*dgtest ;
-        fy = fym + finit + sty*dgtest ;
-        dgx = dgxm + dgtest ;
-        dgy = dgym + dgtest ;
-     }
-     else
-     {
-//        printf("\nUsing original function\n\n");
-/*  Update interval and compute new step length using original function */
-        info = MTStep(&stx, &fx, &dgx, &sty, &fy, &dgy, &step, &value, &dg,
-                      &stepmin, &stepmax, &bracket);
-     }
+    // Force a sufficient decrease in the size of the
+    // interval of uncertainty.
 
-//      printf("\nInfo : %d\tStep : %f\n\n",info,step);
+    if (brackt) {
+      if (fabs(sty - stx) >= 0.66 * width1) 
+	stp = stx + 0.5 * (sty - stx);
+      width1 = width;
+      width = fabs(sty-stx);
+    }
 
-
-/*  Put in checks based on returned info, to do RH  */
-
-      if(bracket)
-      {
-         if(fabs(sty-stx) >= 0.66*width1) step = stx + 0.5*(sty-stx) ;
-         width1 = width ;
-         width = fabs(sty-stx) ;
-      }
-   }
-
-   return(!isfailed);
+  } // while-loop
 }
-/* --------------  End of lineSearchMT -----------------*/
 
 
-
-int MoreThuente::MTStep(double *stx, double *fx, double *dx, 
-           double *sty, double *fy,
-           double *dy, double *stp, double *fp, double *dp, double *stepmin,
-           double *stepmax, int *bracket)
+int MoreThuente::cstep(double& stx, double& fx, double& dx,
+		       double& sty, double& fy, double& dy,
+		       double& stp, double& fp, double& dp,
+		       bool& brackt, double stmin, double stmax)
 {
-/*  First pass -->  copy alogrithm from Xyce/Xyce/src/NonlinearSolverPKG/src
-                                           /N_NLS...........
-    10-29-2001   RH
-*/
+  int info = 0;
 
-   double gamma1, p, q, r, s, sgnd, stpc, stpf, stpq, theta ;
-   int bound, info ;
+  // Check the input parameters for errors.
 
-/*  Check input parameters for errors, to do RH  */
+  if ((brackt && ((stp <= min(stx, sty)) || (stp >= max(stx, sty)))) || 
+      (dx * (stp - stx) >= 0.0) || (stmax < stmin))
+    return info;
 
-/*  Check if derivatives have opposite sign  */
-   sgnd = *dp * (*dx/fabs(*dx)) ;
+  // Determine if the derivatives have opposite sign.
 
-/*  For all of the following cases, the quadratic and cubic fits need to be
-    checked to make sure they are correct, to do RH  */
+  double sgnd = dp * (dx / fabs(dx));
 
-/*
-   printf("\n\nInside MTStep,  bracket %d\n\nstx, fx, dx :\t%e\t%e\t%e\n",
-             *bracket,*stx,*fx,*dx);
-   printf("stp, fp, dp :\t%e\t%e\t%e\n",*stp,*fp,*dp);
-   printf("sty, fy, dy :\t%e\t%e\t%e\n",*sty,*fy,*dy);
-   printf("stepmin, stepmax:\t%e\t%e\t%e\n",*stepmin,*stepmax);
-   getchar();
-*/
-/*  Case 1:  */
-   if(*fp > *fx)
-   {
-      info = 1 ;
-      bound = 1 ;
-      theta = 3.0*(*fx-*fp)/(*stp-*stx) + *dx + *dp ;
-      s = mymax(fabs(theta),fabs(*dx)) ;
-      s = mymax(s,fabs(*dp)) ;
-      gamma1 = s * sqrt(pow(theta/s,2.0) - (*dx/s)*(*dp/s)) ;
+  // First case. A higher function value.  The minimum is
+  // bracketed. If the cubic step is closer to stx than the quadratic
+  // step, the cubic step is taken, else the average of the cubic and
+  // quadratic steps is taken.
 
-      if(*stp < *stx) gamma1 = -gamma1 ;
+  bool bound;
+  double theta;
+  double s;
+  double gamma;
+  double p,q,r;
+  double stpc, stpq, stpf;
 
-      p = (gamma1 - *dx) + theta ;
-      q = ((gamma1 - *dx) + gamma1) + *dp ;
-      r = p / q ;
-      stpc = *stx + r*(*stp-*stx) ;
-      stpq = *stx + ((*dx/((*fx-*fp)/(*stp-*stx) + *dx)) * 0.5) * (*stp-*stx);
+  if (fp > fx) {
+    info = 1;
+    bound = 1;
+    theta = 3 * (fx - fp) / (stp - stx) + dx + dp;
+    s = absmax(theta, dx, dp);
+    gamma = s * sqrt(((theta / s) * (theta / s)) - (dx / s) * (dp / s));
+    if (stp < stx) 
+      gamma = -gamma;
 
-      if(fabs(stpc-*stx) < fabs(stpq-*stx)) stpf = stpc ;
-      else stpf = stpc + 0.5*(stpq-stpc) ;
+    p = (gamma - dx) + theta;
+    q = ((gamma - dx) + gamma) + dp;
+    r = p / q;
+    stpc = stx + r * (stp - stx);
+    stpq = stx + ((dx / ((fx - fp) / (stp - stx) + dx)) / 2) * (stp - stx);
+    if (fabs(stpc - stx) < fabs(stpq - stx)) 
+      stpf = stpc;
+    else 
+      stpf = stpc + (stpq - stpc) / 2;
 
-      *bracket = 1 ;
-     
-/*
-//      printf("Case 1:\nCubic :\t%e\nQuad :\t%e\n\n",stpc,stpq);
-//      getchar();
-*/
-   }
+    brackt = true;
+  }
 
-/*  Case 2:  */
-   else if(sgnd < 0.0)
-   {
-      info = 2 ;
-      bound = 0 ;
-      theta = 3.0*(*fx-*fp)/(*stp-*stx) + *dx + *dp ;
-      s = mymax(fabs(theta),fabs(*dx)) ;
-      s = mymax(s,fabs(*dp)) ;
-      gamma1 = s * sqrt(pow(theta/s,2.0) - (*dx/s)*(*dp/s)) ;
+  // Second case. A lower function value and derivatives of opposite
+  // sign. The minimum is bracketed. If the cubic step is closer to
+  // stx than the quadratic (secant) step, the cubic step is taken,
+  // else the quadratic step is taken.
 
-      if(*stp > *stx) gamma1 = -gamma1 ;
+  else if (sgnd < 0.0) {
+    info = 2;
+    bound = false;
+    theta = 3 * (fx - fp) / (stp - stx) + dx + dp;
+    s = absmax(theta,dx,dp);
+    gamma = s * sqrt(((theta/s) * (theta/s)) - (dx / s) * (dp / s));
+    if (stp > stx) 
+      gamma = -gamma;
+    p = (gamma - dp) + theta;
+    q = ((gamma - dp) + gamma) + dx;
+    r = p / q;
+    stpc = stp + r * (stx - stp);
+    stpq = stp + (dp / (dp - dx)) * (stx - stp);
+    if (fabs(stpc - stp) > fabs(stpq - stp))
+      stpf = stpc;
+    else
+      stpf = stpq;
+    brackt = true;
+  }
 
-      p = (gamma1 - *dp) + theta ;
-      q = ((gamma1 - *dp) + gamma1) + *dx ;
-      r = p / q ;
-      stpc = *stp + r*(*stx-*stp) ;
-      stpq = *stp + (*dp/(*dp-*dx)) * (*stx-*stp);
+  // Third case. A lower function value, derivatives of the same sign,
+  // and the magnitude of the derivative decreases.  The cubic step is
+  // only used if the cubic tends to infinity in the direction of the
+  // step or if the minimum of the cubic is beyond stp. Otherwise the
+  // cubic step is defined to be either stmin or stmax. The
+  // quadratic (secant) step is also computed and if the minimum is
+  // bracketed then the the step closest to stx is taken, else the
+  // step farthest away is taken.
 
-      if(fabs(stpc-*stp) > fabs(stpq-*stp)) stpf = stpc ;
-      else stpf = stpq ;
+  else if (fabs(dp) < fabs(dx)) {
+    info = 3;
+    bound = true;
+    theta = 3 * (fx - fp) / (stp - stx) + dx + dp;
+    s = absmax(theta, dx, dp);
 
-      *bracket = 1 ;
-     
-/*
-//      printf("Case 2:\nCubic :\t%e\nQuad :\t%e\n\n",stpc,stpq);
-//      getchar();
-*/
-   }
+    // The case gamma = 0 only arises if the cubic does not tend
+    // to infinity in the direction of the step.
 
-/*  Case 3:  */
-   else if(fabs(*dp) < fabs(*dx))
-   {
-      info = 3 ;
-      bound = 1 ;
-      theta = 3.0*(*fx-*fp)/(*stp-*stx) + *dx + *dp ;
-      s = mymax(fabs(theta),fabs(*dx)) ;
-      s = mymax(s,fabs(*dp)) ;
-/*  Comments....  */
-      gamma1 = s * sqrt(mymax(0.0,pow(theta/s,2.0) - (*dx/s)*(*dp/s))) ;
-
-      if(*stp > *stx) gamma1 = -gamma1 ;
-
-      p = (gamma1 - *dp) + theta ;
-      q = (gamma1 + (*dx-*dp)) + gamma1 ;
-      r = p / q ;
-
-      if(r < 0.0 && gamma1 != 0.0) stpc = *stp + r*(*stx-*stp) ;
-      else if(*stp > *stx)         stpc = *stepmax ;
-      else                         stpc = *stepmin ;
-
-      stpq = *stp + (*dp/(*dp-*dx)) * (*stx-*stp);
-
-     
-/*
-      printf("Case 3:\nCubic :\t%e\nQuad :\t%e\n\n",stpc,stpq);
-*/
-
-      if(*bracket)
-      {
-/*
-         printf("fabs(stpc-*stp): %e ,\tfabs(stpq-*stp): %e\n", 
-                         fabs(stpc-*stp),fabs(stpq-*stp));
-*/
-         if(fabs(stpc-*stp) < fabs(stpq-*stp)) stpf = stpc ;
-         else stpf = stpq ;
-      }
+    gamma = s * sqrt(max(0,(theta / s) * (theta / s) - (dx / s) * (dp / s)));
+    if (stp > stx) 
+      gamma = -gamma;
+      
+    p = (gamma - dp) + theta;
+    q = (gamma + (dx - dp)) + gamma;
+    r = p / q;
+    if ((r < 0.0) && (gamma != 0.0))
+      stpc = stp + r * (stx - stp);
+    else if (stp > stx)
+      stpc = stmax;
+    else
+      stpc = stmin;
+      
+    stpq = stp + (dp/ (dp - dx)) * (stx - stp);
+    if (brackt) {
+      if (fabs(stp - stpc) < fabs(stp - stpq)) 
+	stpf = stpc;
       else
-      {
-/*
-         printf("fabs(stpc-*stp): %e ,\tfabs(stpq-*stp): %e\n", 
-                         fabs(stpc-*stp),fabs(stpq-*stp));
-*/
-         if(fabs(stpc-*stp) > fabs(stpq-*stp)) stpf = stpc ;
-         else stpf = stpq ;
-      }
-/*
-      printf("stpf :\t%e\n\n",stpf);
-      getchar();
-*/
-   }
-
-/*  Case 4:  */
-   else 
-   {
-      info = 4 ;
-      bound = 0 ;
-
-/*
-      printf("Case 4:  bracket %d\n\n\n",*bracket);
-*/
-      if(*bracket)
-      {
-         theta = 3.0*(*fp-*fy)/(*sty-*stp) + *dy + *dp ;
-         s = mymax(fabs(theta),fabs(*dy)) ;
-         s = mymax(s,fabs(*dp)) ;
-         gamma1 = s * sqrt(pow(theta/s,2.0) - (*dy/s)*(*dp/s)) ;
-
-         if(*stp > *sty) gamma1 = -gamma1 ;
-
-         p = (gamma1 - *dp) + theta ;
-         q = ((gamma1 - *dp) + gamma1) + *dy ;
-         r = p / q ;
-         stpc = *stp + r*(*sty-*stp) ;
-         stpf = stpc ;
-     
-/*
-         printf("Case 4:  bracket %d\nCubic :\t%e\n\n",*bracket,stpc);
-         getchar();
-*/
-      }
-
-      else if(*stp > *stx)
-      {
-         stpf = *stepmax ;
-      }
+	stpf = stpq;
+    }
+    else {
+      if (fabs(stp - stpc) > fabs(stp - stpq)) 
+	stpf = stpc;
       else
-      {
-         stpf = *stepmin ;
-      }
-   }
+	stpf = stpq;
+    }
+  }
 
-/*  Update interval using ad hoc error trapping  */
-   if(*fp==*fp)
-   {
-      if(*fp > *fx)
-      {
-         *sty = *stp ;
-         *fy = *fp ;
-         *dy = *dp ;
-      }
-      else
-      {
-         if(sgnd < 0.0)
-         {
-            *sty = *stx ;
-            *fy = *fx ;
-            *dy = *dx ;
-         }
-         *stx = *stp ;
-         *fx = *fp ;
-         *dx = *dp ;
-      }
-   }
-   else
-   {  /* *fp is NaN  */
-      *sty = *stp ;
-      *fy = *fp ;
-      *dy = *dp ;
-   }
+  // Fourth case. A lower function value, derivatives of the same
+  // sign, and the magnitude of the derivative does not decrease. If
+  // the minimum is not bracketed, the step is either stmin or
+  // stmax, else the cubic step is taken.
 
-/*  Compute new step and safeguard it  */
-   if(*fp==*fp)
-      *stp = 0.02231964 ;
-   else
-      stpf *= 1.0e-3;  /*  *fp is NaN  */
+  else {
+    info = 4;
+    bound = false;
+    if (brackt) {
+      theta = 3 * (fp - fy) / (sty - stp) + dy + dp;
+      s = absmax(theta, dy, dp);
+      gamma = s * sqrt(((theta/s)*(theta/s)) - (dy / s) * (dp / s));
+      if (stp > sty) 
+	gamma = -gamma;
+      p = (gamma - dp) + theta;
+      q = ((gamma - dp) + gamma) + dy;
+      r = p / q;
+      stpc = stp + r * (sty - stp);
+      stpf = stpc;
+    }
+    else if (stp > stx)
+      stpf = stmax;
+    else
+      stpf = stmin;
+  }
 
-   stpf = mymin(*stepmax,stpf) ;
-   stpf = mymax(*stepmin,stpf) ;
-   *stp = stpf ;
+  // Update the interval of uncertainty. This update does not depend
+  // on the new step or the case analysis above.
 
-   if(*bracket && bound)
-   {
-      if(*sty > *stx) *stp = mymin(*stx+0.66*(*sty-*stx),*stp) ;
-      else            *stp = mymax(*stx+0.66*(*sty-*stx),*stp) ;
-   }
-         
-/*
-   printf("Final vals: stp, stx, sty\t%e, %e, %e\n",*stp,*stx,*sty);
-   getchar();
-*/
-   return(info) ;
+  if (fp > fx) {
+    sty = stp;
+    fy = fp;
+    dy = dp;
+  }
+  else {
+    if (sgnd < 0.0) {
+      sty = stx;
+      fy = fx;
+      dy = dx;
+    }
+    stx = stp;
+    fx = fp;
+    dx = dp;
+  }
+
+  // Compute the new step and safeguard it.
+
+  stpf = min(stmax, stpf);
+  stpf = max(stmin, stpf);
+  stp = stpf;
+  if (brackt && bound) {
+    if (sty > stx) 
+      stp = min(stx + 0.66 * (sty - stx), stp);
+    else 
+      stp = max(stx + 0.66 * (sty - stx), stp);
+  }
+
+  return info;
+
 }
-/* --------------  End of MTStep -----------------*/
 
-
-
-
-
-
-double MoreThuente::mymin(double x, double y)
+double MoreThuente::min(double a, double b)
 {
-   if(x < y) return x ;
-   return y ;
+  return (a < b ? a : b);
 }
-/* --------------  End of mymin -----------------*/
 
-
-
-
-double MoreThuente::mymax(double x, double y)
+double MoreThuente::max(double a, double b)
 {
-   if(x < y) return y ;
-   return x ;
+  return (a > b ? a : b);
 }
-/* --------------  End of mymax -----------------*/
+
+
+double MoreThuente::absmax(double a, double b, double c)
+{
+  a = fabs(a);
+  b = fabs(b);
+  c = fabs(c);
+
+  if (a > b)
+    return (a > c) ? a : c;
+  else
+    return (b > c) ? b : c;
+}
+
 
 
 

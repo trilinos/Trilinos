@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 //  searchParams.setParameter("Method", "Full Step");
 //  searchParams.setParameter("Method", "Interval Halving");
 //  searchParams.setParameter("Method", "Polynomial");
-  searchParams.setParameter("Method", "More Thunte");
+  searchParams.setParameter("Method", "More'-Thuente");
   searchParams.setParameter("Default Step", 1.0);
 
   // Create the interface between the test problem and the nonlinear solver
