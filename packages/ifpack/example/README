@@ -1,0 +1,35 @@
+Examples of IFPACK
+==================
+
+The user might want to look through the examples in the following
+order:
+
+- Ifpack_ex_Factory.cpp     shows how to use Ifpack factory to create
+                            a variety of IFPACK preconditioners.
+			    This is the simplest way to use IFPACK.
+			    The example details all the phases of
+			    IFPACK. Difficulty = beginners.
+
+- Ifpack_ex_Amesos.cpp      shows how to use exact LU solvers on
+                            each subdomain, using Amesos. This example
+			    is very similar to the previous one.
+			    Difficulty = beginners.
+
+- Ifpack_ex_Ict.cpp         shows how to define incomplete Cholesky 
+                            factorizations and tune parameters. Although
+			    an ICT factorization can be constructed using
+			    the Factory (as done in file
+			    Ifpack_ex_Factory.cpp), this example tells
+			    the real story: how to define an 
+			    Ifpack_AdditiveSchwar which uses ICT on
+			    each subdomain.
+			    Difficulty: intermediate.
+
+- Ifpack_ex_BlockPrec.cpp   shows how to define block preconditioner
+                            in the more general case, using
+			    Ipfack_AdditiveSchwarz.
+			    Difficulty: advanced.
+
+The examples require triutils (--enable-triutils) to generate the linear
+system matrix, and AztecOO (--enable-aztecoo) to solve the corresponding
+linear system. Ifpack_ex_Amesos.cpp requires Amesos (--enable-amesos).

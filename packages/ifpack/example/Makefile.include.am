@@ -1,0 +1,166 @@
+#@HEADER
+# ************************************************************************
+# 
+#                 IFPACK
+#                 Copyright (2004) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# 
+# ************************************************************************
+#@HEADER
+
+EXEEXT = .exe
+EXAMPLE = Ifpack_ex_Factory Ifpack_ex_Amesos \
+          Ifpack_ex_Ict Ifpack_ex_BlockPrec \
+          Ifpack_ex_Reordering
+
+noinst_PROGRAMS = $(EXAMPLE)
+
+if HAVE_IFPACK_AMESOS
+AMESOS_INCDIR = -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src
+AMESOS_LIBS = $(top_builddir)/../amesos/src/libamesos.a
+else
+AMESOS_INCDIR = 
+AMESOS_LIBS = 
+endif
+
+if HAVE_IFPACK_AZTECOO
+AZTECOO_INCDIR = -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src
+AZTECOO_LIBS = $(top_builddir)/../aztecoo/src/libaztecoo.a
+else
+AZTECOO_INCDIR = 
+AZTECOO_LIBS = 
+endif
+
+if HAVE_IFPACK_TEUCHOS
+TEUCHOS_INCDIR = -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
+TEUCHOS_LIBS = $(top_builddir)/../teuchos/src/libteuchos.a
+else
+TEUCHOS_INCDIR = 
+TEUCHOS_LIBS = 
+endif
+
+if HAVE_IFPACK_TRIUTILS
+TRIUTILS_INCDIR = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
+TRIUTILS_LIBS = $(top_builddir)/../triutils/src/libtriutils.a
+else
+TRIUTILS_INCDIR = 
+TRIUTILS_LIBS = 
+endif
+
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+              -I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
+	      ${TRIUTILS_INCDIR} \
+	      ${TEUCHOS_INCDIR} \
+	      ${AZTECOO_INCDIR}
+
+Ifpack_ex_Factory_SOURCES = $(srcdir)/Ifpack_ex_Factory.cpp
+
+Ifpack_ex_Factory_DEPENDENCIES = \
+	$(top_builddir)/../ifpack/src/libifpack.a \
+	${AZTECOO_LIBS} \
+	${TEUCHOS_LIBS} \
+	${TRIUTILS_LIBS} \
+	${AMESOS_LIBS}
+
+Ifpack_ex_Factory_LDADD = $(top_builddir)/src/libifpack.a \
+	$(AZTECOO_LIBS) \
+	$(TRIUTILS_LIBS) \
+	$(AMESOS_LIBS) \
+	$(TEUCHOS_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(LAPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+
+
+Ifpack_ex_Amesos_SOURCES = $(srcdir)/Ifpack_ex_Amesos.cpp
+
+Ifpack_ex_Amesos_DEPENDENCIES = \
+	$(top_builddir)/../ifpack/src/libifpack.a \
+	${AZTECOO_LIBS} \
+	${TEUCHOS_LIBS} \
+	${TRIUTILS_LIBS} \
+	${AMESOS_LIBS}
+
+Ifpack_ex_Amesos_LDADD = $(top_builddir)/src/libifpack.a \
+	$(AZTECOO_LIBS) \
+	$(TRIUTILS_LIBS) \
+	$(AMESOS_LIBS) \
+	$(TEUCHOS_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(LAPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+
+
+Ifpack_ex_Ict_SOURCES = $(srcdir)/Ifpack_ex_Ict.cpp
+
+Ifpack_ex_Ict_DEPENDENCIES = \
+	$(top_builddir)/../ifpack/src/libifpack.a \
+	${AZTECOO_LIBS} \
+	${TEUCHOS_LIBS} \
+	${TRIUTILS_LIBS} \
+	${AMESOS_LIBS}
+
+Ifpack_ex_Ict_LDADD = $(top_builddir)/src/libifpack.a \
+	$(AZTECOO_LIBS) \
+	$(TRIUTILS_LIBS) \
+	$(AMESOS_LIBS) \
+	$(TEUCHOS_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(LAPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+
+
+Ifpack_ex_BlockPrec_SOURCES = $(srcdir)/Ifpack_ex_BlockPrec.cpp
+
+Ifpack_ex_BlockPrec_DEPENDENCIES = \
+	$(top_builddir)/../ifpack/src/libifpack.a \
+	${AZTECOO_LIBS} \
+	${TEUCHOS_LIBS} \
+	${TRIUTILS_LIBS} \
+	${AMESOS_LIBS}
+
+Ifpack_ex_BlockPrec_LDADD = $(top_builddir)/src/libifpack.a \
+	$(AZTECOO_LIBS) \
+	$(TRIUTILS_LIBS) \
+	$(AMESOS_LIBS) \
+	$(TEUCHOS_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(LAPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
+
+
+Ifpack_ex_Reordering_SOURCES = $(srcdir)/Ifpack_ex_Reordering.cpp
+
+Ifpack_ex_Reordering_DEPENDENCIES = \
+	$(top_builddir)/../ifpack/src/libifpack.a \
+	${AZTECOO_LIBS} \
+	${TEUCHOS_LIBS} \
+	${TRIUTILS_LIBS} \
+	${AMESOS_LIBS}
+
+Ifpack_ex_Reordering_LDADD = $(top_builddir)/src/libifpack.a \
+	$(AZTECOO_LIBS) \
+	$(TRIUTILS_LIBS) \
+	$(AMESOS_LIBS) \
+	$(TEUCHOS_LIBS) \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(LAPACK_LIBS) \
+	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
