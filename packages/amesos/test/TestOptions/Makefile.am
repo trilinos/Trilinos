@@ -17,8 +17,6 @@ TestOptions_SOURCES = $(srcdir)/TestOptions.cpp  \
 	$(srcdir)/TestAllClasses.h \
 	$(srcdir)/PerformOneSolveAndTest.cpp \
 	$(srcdir)/PerformOneSolveAndTest.h \
-	$(srcdir)/TripleSolve.cpp \
-	$(srcdir)/TripleSolve.h \
 	$(srcdir)/TestOtherClasses.cpp \
 	$(srcdir)/TestOtherClasses.h
 
