@@ -1,4 +1,4 @@
-interface LB_Set_Child_Weight_Fn
+interface Zoltan_Set_Child_Weight_Fn
    module procedure f90LB_Set_Child_Weight_Fn0s
    module procedure f90LB_Set_Child_Weight_Fn1s
    module procedure f90LB_Set_Child_Weight_Fn2s

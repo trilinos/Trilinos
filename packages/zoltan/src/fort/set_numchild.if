@@ -1,4 +1,4 @@
-interface LB_Set_Num_Child_Fn
+interface Zoltan_Set_Num_Child_Fn
    module procedure f90LB_Set_Num_Child_Fn0f
    module procedure f90LB_Set_Num_Child_Fn1f
    module procedure f90LB_Set_Num_Child_Fn2f

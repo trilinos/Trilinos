@@ -47,81 +47,83 @@ public :: &
 
 public :: &
    LB_Struct, &
-   LB_FN_TYPEF, &
-   LB_FN_TYPES
+   ZOLTAN_FN_TYPEF, &
+   ZOLTAN_FN_TYPES
 
 public :: &
-   LB_NUM_EDGES_FN_TYPE, &
-   LB_EDGE_LIST_FN_TYPE, &
-   LB_NUM_GEOM_FN_TYPE, &
-   LB_GEOM_FN_TYPE, &
-   LB_NUM_OBJ_FN_TYPE, &
-   LB_OBJ_LIST_FN_TYPE, &
-   LB_FIRST_OBJ_FN_TYPE, &
-   LB_NEXT_OBJ_FN_TYPE, &
-   LB_NUM_BORDER_OBJ_FN_TYPE, &
-   LB_BORDER_OBJ_LIST_FN_TYPE, &
-   LB_FIRST_BORDER_OBJ_FN_TYPE, &
-   LB_NEXT_BORDER_OBJ_FN_TYPE, &
-   LB_PRE_MIGRATE_FN_TYPE, &
-   LB_MID_MIGRATE_FN_TYPE, &
-   LB_POST_MIGRATE_FN_TYPE, &
-   LB_OBJ_SIZE_FN_TYPE, &
-   LB_PACK_OBJ_FN_TYPE, &
-   LB_UNPACK_OBJ_FN_TYPE, &
-   LB_NUM_COARSE_OBJ_FN_TYPE, &
-   LB_COARSE_OBJ_LIST_FN_TYPE, &
-   LB_FIRST_COARSE_OBJ_FN_TYPE, &
-   LB_NEXT_COARSE_OBJ_FN_TYPE, &
-   LB_NUM_CHILD_FN_TYPE, &
-   LB_CHILD_LIST_FN_TYPE, &
-   LB_CHILD_WEIGHT_FN_TYPE
+   ZOLTAN_NUM_EDGES_FN_TYPE, &
+   ZOLTAN_EDGE_LIST_FN_TYPE, &
+   ZOLTAN_NUM_GEOM_FN_TYPE, &
+   ZOLTAN_GEOM_FN_TYPE, &
+   ZOLTAN_NUM_OBJ_FN_TYPE, &
+   ZOLTAN_OBJ_LIST_FN_TYPE, &
+   ZOLTAN_FIRST_OBJ_FN_TYPE, &
+   ZOLTAN_NEXT_OBJ_FN_TYPE, &
+   ZOLTAN_NUM_BORDER_OBJ_FN_TYPE, &
+   ZOLTAN_BORDER_OBJ_LIST_FN_TYPE, &
+   ZOLTAN_FIRST_BORDER_OBJ_FN_TYPE, &
+   ZOLTAN_NEXT_BORDER_OBJ_FN_TYPE, &
+   ZOLTAN_PRE_MIGRATE_FN_TYPE, &
+   ZOLTAN_MID_MIGRATE_FN_TYPE, &
+   ZOLTAN_POST_MIGRATE_FN_TYPE, &
+   ZOLTAN_OBJ_SIZE_FN_TYPE, &
+   ZOLTAN_PACK_OBJ_FN_TYPE, &
+   ZOLTAN_UNPACK_OBJ_FN_TYPE, &
+   ZOLTAN_NUM_COARSE_OBJ_FN_TYPE, &
+   ZOLTAN_COARSE_OBJ_LIST_FN_TYPE, &
+   ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE, &
+   ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE, &
+   ZOLTAN_NUM_CHILD_FN_TYPE, &
+   ZOLTAN_CHILD_LIST_FN_TYPE, &
+   ZOLTAN_CHILD_WEIGHT_FN_TYPE
 
 public :: &
-   LB_OTHER_REF, &
-   LB_IN_ORDER, &
-   LB_TRI_BISECT, &
-   LB_QUAD_QUAD, &
-   LB_HEX3D_OCT
+   ZOLTAN_OTHER_REF, &
+   ZOLTAN_IN_ORDER, &
+   ZOLTAN_TRI_BISECT, &
+   ZOLTAN_QUAD_QUAD, &
+   ZOLTAN_HEX3D_OCT
 
 public :: &
-   LB_OK, &
-   LB_WARN, &
-   LB_FATAL, &
-   LB_MEMERR
+   ZOLTAN_OK, &
+   ZOLTAN_WARN, &
+   ZOLTAN_FATAL, &
+   ZOLTAN_MEMERR
 
 public :: &
-   LB_Initialize, &
-   LB_Create, &
-   LB_Destroy, &
-   LB_Memory_Stats, &
-   LB_Set_Fn, &
-   LB_Set_Method, &
-   LB_Set_Param, &
-   LB_Balance, &
-   LB_Eval, &
-   LB_Free_Data, &
-   LB_Point_Assign, &
-   LB_Box_Assign, &
-   LB_Compute_Destinations, &
-   LB_Help_Migrate
+   Zoltan_Initialize, &
+   Zoltan_Create, &
+   Zoltan_Destroy, &
+   Zoltan_Memory_Stats, &
+   Zoltan_Set_Fn, &
+   Zoltan_LB_Set_Method, &
+   Zoltan_Set_Param, &
+   Zoltan_LB_Balance, &
+   Zoltan_LB_Eval, &
+   Zoltan_LB_Free_Data, &
+   Zoltan_LB_Point_Assign, &
+   Zoltan_LB_Box_Assign, &
+   Zoltan_Compute_Destinations, &
+   Zoltan_Help_Migrate
 
 ! Registration functions with strict type checking.
 public :: &
-   LB_Set_Num_Obj_Fn, LB_Set_Obj_List_Fn, &
-   LB_Set_First_Obj_Fn, LB_Set_Next_Obj_Fn, &
-   LB_Set_Num_Border_Obj_Fn, LB_Set_Border_Obj_List_Fn, &
-   LB_Set_First_Border_Obj_Fn, LB_Set_Next_Border_Obj_Fn, &
-   LB_Set_Num_Geom_Fn, LB_Set_Geom_Fn, &
-   LB_Set_Num_Edges_Fn, LB_Set_Edge_List_Fn, &
-   LB_Set_Num_Coarse_Obj_Fn, LB_Set_Coarse_Obj_List_Fn, &
-   LB_Set_First_Coarse_Obj_Fn, LB_Set_Next_Coarse_Obj_Fn, &
-   LB_Set_Num_Child_Fn, LB_Set_Child_List_Fn, LB_Set_Child_Weight_Fn, &
-   LB_Set_Pre_Migrate_Fn, LB_Set_Mid_Migrate_Fn, LB_Set_Post_Migrate_Fn, &
-   LB_Set_Obj_Size_Fn, LB_Set_Pack_Obj_Fn, LB_Set_Unpack_Obj_Fn 
+   Zoltan_Set_Num_Obj_Fn, Zoltan_Set_Obj_List_Fn, &
+   Zoltan_Set_First_Obj_Fn, Zoltan_Set_Next_Obj_Fn, &
+   Zoltan_Set_Num_Border_Obj_Fn, Zoltan_Set_Border_Obj_List_Fn, &
+   Zoltan_Set_First_Border_Obj_Fn, Zoltan_Set_Next_Border_Obj_Fn, &
+   Zoltan_Set_Num_Geom_Fn, Zoltan_Set_Geom_Fn, &
+   Zoltan_Set_Num_Edges_Fn, Zoltan_Set_Edge_List_Fn, &
+   Zoltan_Set_Num_Coarse_Obj_Fn, Zoltan_Set_Coarse_Obj_List_Fn, &
+   Zoltan_Set_First_Coarse_Obj_Fn, Zoltan_Set_Next_Coarse_Obj_Fn, &
+   Zoltan_Set_Num_Child_Fn, Zoltan_Set_Child_List_Fn, &
+   Zoltan_Set_Child_Weight_Fn, &
+   Zoltan_Set_Pre_Migrate_Fn, Zoltan_Set_Mid_Migrate_Fn, &
+   Zoltan_Set_Post_Migrate_Fn, &
+   Zoltan_Set_Obj_Size_Fn, Zoltan_Set_Pack_Obj_Fn, Zoltan_Set_Unpack_Obj_Fn 
 
 public :: &
-   LB_Get_Child_Order ! TEMP child_order
+   Zoltan_Get_Child_Order ! TEMP child_order
 
 !--------------------------------------------------------------------------
 ! user defined types corresponding to the C structs
@@ -142,67 +144,57 @@ end type LB_Struct
 ! Enumerated type used to indicate which function is to be set by LB_Set_Fn.
 ! These values must agree with those used in the LB_Set_Fn wrapper in cwrap.c
 
-type LB_FN_TYPEF
+type ZOLTAN_FN_TYPEF
    private
    integer(LB_INT) :: choice
-end type LB_FN_TYPEF
+end type ZOLTAN_FN_TYPEF
 
-type LB_FN_TYPES
+type ZOLTAN_FN_TYPES
    private
    integer(LB_INT) :: choice
-end type LB_FN_TYPES
+end type ZOLTAN_FN_TYPES
 
 #ifdef SUNSOFT
 ! bug in SunSoft compiler prevents using parameter
-type(LB_FN_TYPEF) :: &
+type(ZOLTAN_FN_TYPEF) :: &
 #else
-type(LB_FN_TYPEF), parameter :: &
+type(ZOLTAN_FN_TYPEF), parameter :: &
 #endif
-   LB_NUM_EDGES_FN_TYPE        = LB_FN_TYPEF(0_LB_INT), &
-   LB_NUM_GEOM_FN_TYPE         = LB_FN_TYPEF(2_LB_INT), &
-   LB_NUM_OBJ_FN_TYPE          = LB_FN_TYPEF(4_LB_INT), &
-   LB_FIRST_OBJ_FN_TYPE        = LB_FN_TYPEF(6_LB_INT), &
-   LB_NEXT_OBJ_FN_TYPE         = LB_FN_TYPEF(7_LB_INT), &
-   LB_NUM_BORDER_OBJ_FN_TYPE   = LB_FN_TYPEF(8_LB_INT), &
-   LB_FIRST_BORDER_OBJ_FN_TYPE = LB_FN_TYPEF(10_LB_INT), &
-   LB_NEXT_BORDER_OBJ_FN_TYPE  = LB_FN_TYPEF(11_LB_INT), &
-   LB_OBJ_SIZE_FN_TYPE         = LB_FN_TYPEF(15_LB_INT), &
-   LB_NUM_COARSE_OBJ_FN_TYPE   = LB_FN_TYPEF(18_LB_INT), &
-   LB_FIRST_COARSE_OBJ_FN_TYPE = LB_FN_TYPEF(20_LB_INT), &
-   LB_NEXT_COARSE_OBJ_FN_TYPE  = LB_FN_TYPEF(21_LB_INT), &
-   LB_NUM_CHILD_FN_TYPE        = LB_FN_TYPEF(22_LB_INT)
+   ZOLTAN_NUM_EDGES_FN_TYPE        = ZOLTAN_FN_TYPEF(0_LB_INT), &
+   ZOLTAN_NUM_GEOM_FN_TYPE         = ZOLTAN_FN_TYPEF(2_LB_INT), &
+   ZOLTAN_NUM_OBJ_FN_TYPE          = ZOLTAN_FN_TYPEF(4_LB_INT), &
+   ZOLTAN_FIRST_OBJ_FN_TYPE        = ZOLTAN_FN_TYPEF(6_LB_INT), &
+   ZOLTAN_NEXT_OBJ_FN_TYPE         = ZOLTAN_FN_TYPEF(7_LB_INT), &
+   ZOLTAN_NUM_BORDER_OBJ_FN_TYPE   = ZOLTAN_FN_TYPEF(8_LB_INT), &
+   ZOLTAN_FIRST_BORDER_OBJ_FN_TYPE = ZOLTAN_FN_TYPEF(10_LB_INT), &
+   ZOLTAN_NEXT_BORDER_OBJ_FN_TYPE  = ZOLTAN_FN_TYPEF(11_LB_INT), &
+   ZOLTAN_OBJ_SIZE_FN_TYPE         = ZOLTAN_FN_TYPEF(15_LB_INT), &
+   ZOLTAN_NUM_COARSE_OBJ_FN_TYPE   = ZOLTAN_FN_TYPEF(18_LB_INT), &
+   ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE = ZOLTAN_FN_TYPEF(20_LB_INT), &
+   ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE  = ZOLTAN_FN_TYPEF(21_LB_INT), &
+   ZOLTAN_NUM_CHILD_FN_TYPE        = ZOLTAN_FN_TYPEF(22_LB_INT)
 
 #ifdef SUNSOFT
 ! bug in SunSoft compiler prevents using parameter
-type(LB_FN_TYPES) :: &
+type(ZOLTAN_FN_TYPES) :: &
 #else
-type(LB_FN_TYPES), parameter :: &
+type(ZOLTAN_FN_TYPES), parameter :: &
 #endif
-   LB_EDGE_LIST_FN_TYPE        = LB_FN_TYPES(1_LB_INT), &
-   LB_GEOM_FN_TYPE             = LB_FN_TYPES(3_LB_INT), &
-   LB_OBJ_LIST_FN_TYPE         = LB_FN_TYPES(5_LB_INT), &
-   LB_BORDER_OBJ_LIST_FN_TYPE  = LB_FN_TYPES(9_LB_INT), &
-   LB_PRE_MIGRATE_FN_TYPE      = LB_FN_TYPES(12_LB_INT), &
-   LB_MID_MIGRATE_FN_TYPE      = LB_FN_TYPES(13_LB_INT), &
-   LB_POST_MIGRATE_FN_TYPE     = LB_FN_TYPES(14_LB_INT), &
-   LB_PACK_OBJ_FN_TYPE         = LB_FN_TYPES(16_LB_INT), &
-   LB_UNPACK_OBJ_FN_TYPE       = LB_FN_TYPES(17_LB_INT), &
-   LB_COARSE_OBJ_LIST_FN_TYPE  = LB_FN_TYPES(19_LB_INT), &
-   LB_CHILD_LIST_FN_TYPE       = LB_FN_TYPES(23_LB_INT), &
-   LB_CHILD_WEIGHT_FN_TYPE     = LB_FN_TYPES(24_LB_INT)
+   ZOLTAN_EDGE_LIST_FN_TYPE        = ZOLTAN_FN_TYPES(1_LB_INT), &
+   ZOLTAN_GEOM_FN_TYPE             = ZOLTAN_FN_TYPES(3_LB_INT), &
+   ZOLTAN_OBJ_LIST_FN_TYPE         = ZOLTAN_FN_TYPES(5_LB_INT), &
+   ZOLTAN_BORDER_OBJ_LIST_FN_TYPE  = ZOLTAN_FN_TYPES(9_LB_INT), &
+   ZOLTAN_PRE_MIGRATE_FN_TYPE      = ZOLTAN_FN_TYPES(12_LB_INT), &
+   ZOLTAN_MID_MIGRATE_FN_TYPE      = ZOLTAN_FN_TYPES(13_LB_INT), &
+   ZOLTAN_POST_MIGRATE_FN_TYPE     = ZOLTAN_FN_TYPES(14_LB_INT), &
+   ZOLTAN_PACK_OBJ_FN_TYPE         = ZOLTAN_FN_TYPES(16_LB_INT), &
+   ZOLTAN_UNPACK_OBJ_FN_TYPE       = ZOLTAN_FN_TYPES(17_LB_INT), &
+   ZOLTAN_COARSE_OBJ_LIST_FN_TYPE  = ZOLTAN_FN_TYPES(19_LB_INT), &
+   ZOLTAN_CHILD_LIST_FN_TYPE       = ZOLTAN_FN_TYPES(23_LB_INT), &
+   ZOLTAN_CHILD_WEIGHT_FN_TYPE     = ZOLTAN_FN_TYPES(24_LB_INT)
 
 ! Type of refinement used when building a refinement tree
-! These values must agree with the values in lb/lbi_const.h
-
-integer(LB_INT), parameter :: &
-  LB_OTHER_REF     = 0_LB_INT, &
-  LB_IN_ORDER      = 1_LB_INT, &
-  LB_TRI_BISECT    = 2_LB_INT, &
-  LB_QUAD_QUAD     = 3_LB_INT, &
-  LB_HEX3D_OCT     = 4_LB_INT
-
-! Error codes for LB library
-! These values must agree with the values in lb/lbi_const.h
+! These values must agree with the values in zoltan.h
 
 #ifdef SUNSOFT
 ! bug in SunSoft compiler prevents using parameter
@@ -210,10 +202,25 @@ integer(LB_INT) :: &
 #else
 integer(LB_INT), parameter :: &
 #endif
-   LB_OK     =  0_LB_INT, &
-   LB_WARN   =  1_LB_INT, &
-   LB_FATAL  = -1_LB_INT, &
-   LB_MEMERR = -2_LB_INT
+  ZOLTAN_OTHER_REF     = 0_LB_INT, &
+  ZOLTAN_IN_ORDER      = 1_LB_INT, &
+  ZOLTAN_TRI_BISECT    = 2_LB_INT, &
+  ZOLTAN_QUAD_QUAD     = 3_LB_INT, &
+  ZOLTAN_HEX3D_OCT     = 4_LB_INT
+
+! Error codes for LB library
+! These values must agree with the values in zoltan.h
+
+#ifdef SUNSOFT
+! bug in SunSoft compiler prevents using parameter
+integer(LB_INT) :: &
+#else
+integer(LB_INT), parameter :: &
+#endif
+   ZOLTAN_OK     =  0_LB_INT, &
+   ZOLTAN_WARN   =  1_LB_INT, &
+   ZOLTAN_FATAL  = -1_LB_INT, &
+   ZOLTAN_MEMERR = -2_LB_INT
 
 !--------------------------------------------------------------------------
 ! defined constants for internal use
@@ -815,24 +822,24 @@ end interface
 !--------------------------------------------------------------------------
 ! generic names for the Fortran wrapper procedures
 
-interface LB_Initialize
+interface Zoltan_Initialize
    module procedure f90LB_Initialize
    module procedure f90LB_Initialize1
 end interface
 
-interface LB_Create
+interface Zoltan_Create
    module procedure f90LB_Create
 end interface
 
-interface LB_Destroy
+interface Zoltan_Destroy
    module procedure f90LB_Destroy
 end interface
 
-interface LB_Memory_Stats
+interface Zoltan_Memory_Stats
    module procedure f90LB_Memory_Stats
 end interface
 
-interface LB_Set_Fn
+interface Zoltan_Set_Fn
    module procedure f90LB_Set_Fn0f
    module procedure f90LB_Set_Fn1f
    module procedure f90LB_Set_Fn2f
@@ -851,44 +858,44 @@ interface LB_Set_Fn
    module procedure f90LB_Set_Fn7s
 end interface
 
-interface LB_Set_Method
+interface Zoltan_LB_Set_Method
    module procedure f90LB_Set_Method
 end interface
 
-interface LB_Set_Param
+interface Zoltan_Set_Param
    module procedure f90LB_Set_Param
 end interface
 
-interface LB_Balance
+interface Zoltan_LB_Balance
    module procedure f90LB_Balance
 end interface
 
-interface LB_Eval
+interface Zoltan_LB_Eval
    module procedure f90LB_Eval
 end interface
 
-interface LB_Free_Data
+interface Zoltan_LB_Free_Data
    module procedure f90LB_Free_Data
 end interface
 
-interface LB_Point_Assign
+interface Zoltan_LB_Point_Assign
    module procedure f90LB_Point_Assign
 end interface
 
-interface LB_Box_Assign
+interface Zoltan_LB_Box_Assign
    module procedure f90LB_Box_Assign
 end interface
 
-interface LB_Compute_Destinations
+interface Zoltan_Compute_Destinations
    module procedure f90LB_Compute_Destinations
 end interface
 
-interface LB_Help_Migrate
+interface Zoltan_Help_Migrate
    module procedure f90LB_Help_Migrate
 end interface
 
 ! TEMP child_order
-interface LB_Get_Child_Order
+interface Zoltan_Get_Child_Order
    module procedure f90LB_Get_Child_Order
 end interface
 
@@ -917,6 +924,37 @@ end interface
 #include "set_numchild.if"
 #include "set_childlist.if"
 #include "set_childweight.if"
+
+!-------------------------------------------------------------------------
+! Include LB_* interface for backward compatibility.
+
+#include "lbif.fpp"
+#include "set_numgeom.if.lbif"
+#include "set_geom.if.lbif"
+#include "set_numedges.if.lbif"
+#include "set_edgelist.if.lbif"
+#include "set_numobj.if.lbif"
+#include "set_objlist.if.lbif"
+#include "set_firstobj.if.lbif"
+#include "set_nextobj.if.lbif"
+#include "set_numborderobj.if.lbif"
+#include "set_borderobjlist.if.lbif"
+#include "set_firstborderobj.if.lbif"
+#include "set_nextborderobj.if.lbif"
+#include "set_premigrate.if.lbif"
+#include "set_midmigrate.if.lbif"
+#include "set_postmigrate.if.lbif"
+#include "set_objsize.if.lbif"
+#include "set_packobj.if.lbif"
+#include "set_unpackobj.if.lbif"
+#include "set_numcoarseobj.if.lbif"
+#include "set_coarseobjlist.if.lbif"
+#include "set_firstcoarseobj.if.lbif"
+#include "set_nextcoarseobj.if.lbif"
+#include "set_numchild.if.lbif"
+#include "set_childlist.if.lbif"
+#include "set_childweight.if.lbif"
+
 
 contains
 
@@ -1029,7 +1067,7 @@ end subroutine f90LB_Memory_Stats
 function f90LB_Set_Fn0f(lb,fn_type,fn_ptr)
 integer(LB_INT) :: f90LB_Set_Fn0f
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPEF) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(LB_INT), external :: fn_ptr
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
 integer(LB_INT) :: nbytes, i
@@ -1047,7 +1085,7 @@ end function f90LB_Set_Fn0f
 function f90LB_Set_Fn0s(lb,fn_type,fn_ptr)
 integer(LB_INT) :: f90LB_Set_Fn0s
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPES) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
 integer(LB_INT) :: nbytes, i
@@ -1065,7 +1103,7 @@ end function f90LB_Set_Fn0s
 function f90LB_Set_Fn1f(lb,fn_type,fn_ptr,data)
 integer(LB_INT) :: f90LB_Set_Fn1f
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPEF) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(LB_INT), external :: fn_ptr
 integer(LB_INT) INTENT_IN data(*)
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1084,7 +1122,7 @@ end function f90LB_Set_Fn1f
 function f90LB_Set_Fn1s(lb,fn_type,fn_ptr,data)
 integer(LB_INT) :: f90LB_Set_Fn1s
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPES) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
 integer(LB_INT) INTENT_IN data(*)
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1103,7 +1141,7 @@ end function f90LB_Set_Fn1s
 function f90LB_Set_Fn2f(lb,fn_type,fn_ptr,data)
 integer(LB_INT) :: f90LB_Set_Fn2f
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPEF) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(LB_INT), external :: fn_ptr
 real(LB_FLOAT) INTENT_IN data(*)
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1122,7 +1160,7 @@ end function f90LB_Set_Fn2f
 function f90LB_Set_Fn2s(lb,fn_type,fn_ptr,data)
 integer(LB_INT) :: f90LB_Set_Fn2s
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPES) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
 real(LB_FLOAT) INTENT_IN data(*)
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1141,7 +1179,7 @@ end function f90LB_Set_Fn2s
 function f90LB_Set_Fn3f(lb,fn_type,fn_ptr,data)
 integer(LB_INT) :: f90LB_Set_Fn3f
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPEF) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(LB_INT), external :: fn_ptr
 real(LB_DOUBLE) INTENT_IN data(*)
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1160,7 +1198,7 @@ end function f90LB_Set_Fn3f
 function f90LB_Set_Fn3s(lb,fn_type,fn_ptr,data)
 integer(LB_INT) :: f90LB_Set_Fn3s
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPES) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
 real(LB_DOUBLE) INTENT_IN data(*)
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1179,7 +1217,7 @@ end function f90LB_Set_Fn3s
 function f90LB_Set_Fn4f(lb,fn_type,fn_ptr,data)
 integer(LB_INT) :: f90LB_Set_Fn4f
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPEF) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(LB_INT), external :: fn_ptr
 type(LB_User_Data_1) INTENT_IN data
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1198,7 +1236,7 @@ end function f90LB_Set_Fn4f
 function f90LB_Set_Fn4s(lb,fn_type,fn_ptr,data)
 integer(LB_INT) :: f90LB_Set_Fn4s
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPES) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
 type(LB_User_Data_1) INTENT_IN data
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1217,7 +1255,7 @@ end function f90LB_Set_Fn4s
 function f90LB_Set_Fn5f(lb,fn_type,fn_ptr,data)
 integer(LB_INT) :: f90LB_Set_Fn5f
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPEF) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(LB_INT), external :: fn_ptr
 type(LB_User_Data_2) INTENT_IN data
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1236,7 +1274,7 @@ end function f90LB_Set_Fn5f
 function f90LB_Set_Fn5s(lb,fn_type,fn_ptr,data)
 integer(LB_INT) :: f90LB_Set_Fn5s
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPES) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
 type(LB_User_Data_2) INTENT_IN data
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1255,7 +1293,7 @@ end function f90LB_Set_Fn5s
 function f90LB_Set_Fn6f(lb,fn_type,fn_ptr,data)
 integer(LB_INT) :: f90LB_Set_Fn6f
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPEF) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(LB_INT), external :: fn_ptr
 type(LB_User_Data_3) INTENT_IN data
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1274,7 +1312,7 @@ end function f90LB_Set_Fn6f
 function f90LB_Set_Fn6s(lb,fn_type,fn_ptr,data)
 integer(LB_INT) :: f90LB_Set_Fn6s
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPES) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
 type(LB_User_Data_3) INTENT_IN data
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1293,7 +1331,7 @@ end function f90LB_Set_Fn6s
 function f90LB_Set_Fn7f(lb,fn_type,fn_ptr,data)
 integer(LB_INT) :: f90LB_Set_Fn7f
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPEF) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPEF) INTENT_IN fn_type
 integer(LB_INT), external :: fn_ptr
 type(LB_User_Data_4) INTENT_IN data
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1312,7 +1350,7 @@ end function f90LB_Set_Fn7f
 function f90LB_Set_Fn7s(lb,fn_type,fn_ptr,data)
 integer(LB_INT) :: f90LB_Set_Fn7s
 type(LB_Struct) INTENT_IN lb
-type(LB_FN_TYPES) INTENT_IN fn_type
+type(ZOLTAN_FN_TYPES) INTENT_IN fn_type
 external fn_ptr
 type(LB_User_Data_4) INTENT_IN data
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1481,24 +1519,24 @@ integer(LB_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
 integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
 integer :: stat
 stat = 0
-f90LB_Free_Data = LB_OK
+f90LB_Free_Data = ZOLTAN_OK
 if (associated(import_global_ids)) deallocate(import_global_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data = LB_WARN
+if (stat /= 0) f90LB_Free_Data = ZOLTAN_WARN
 nullify(import_global_ids)
 if (associated(import_local_ids)) deallocate(import_local_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data = LB_WARN
+if (stat /= 0) f90LB_Free_Data = ZOLTAN_WARN
 nullify(import_local_ids)
 if (associated(import_procs)) deallocate(import_procs,stat=stat)
-if (stat /= 0) f90LB_Free_Data = LB_WARN
+if (stat /= 0) f90LB_Free_Data = ZOLTAN_WARN
 nullify(import_procs)
 if (associated(export_global_ids)) deallocate(export_global_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data = LB_WARN
+if (stat /= 0) f90LB_Free_Data = ZOLTAN_WARN
 nullify(export_global_ids)
 if (associated(export_local_ids)) deallocate(export_local_ids,stat=stat)
-if (stat /= 0) f90LB_Free_Data = LB_WARN
+if (stat /= 0) f90LB_Free_Data = ZOLTAN_WARN
 nullify(export_local_ids)
 if (associated(export_procs)) deallocate(export_procs,stat=stat)
-if (stat /= 0) f90LB_Free_Data = LB_WARN
+if (stat /= 0) f90LB_Free_Data = ZOLTAN_WARN
 nullify(export_procs)
 end function f90LB_Free_Data
 
@@ -1548,7 +1586,7 @@ integer(LB_INT) :: nbytes, i
 if (.not.associated(import_global_ids) .or. .not.associated(import_local_ids) &
     .or. .not.associated(import_procs)) then
    write(stderr,*) "Error from LB_Compute_Destinations: import pointers are not associated"
-   f90LB_Compute_Destinations = LB_WARN
+   f90LB_Compute_Destinations = ZOLTAN_WARN
    return
 endif
 nbytes = LB_PTR_LENGTH
@@ -1581,7 +1619,7 @@ if ((num_import.gt.0).and.(.not.associated(import_global_ids) .or. &
                            .not.associated(import_local_ids)  .or. &
                            .not.associated(import_procs))) then
    write(stderr,*) "Error from LB_Help_Migrate: import pointers are not associated"
-   f90LB_Help_Migrate = LB_WARN
+   f90LB_Help_Migrate = ZOLTAN_WARN
    return
 endif
 if ((num_export.gt.0).and.(.not.associated(export_procs) .or. &
@@ -1589,7 +1627,7 @@ if ((num_export.gt.0).and.(.not.associated(export_procs) .or. &
                            .not.associated(export_local_ids))) then
    write(stderr,*) "Error from LB_Help_Migrate: export pointers are not associated"
 
-   f90LB_Help_Migrate = LB_WARN
+   f90LB_Help_Migrate = ZOLTAN_WARN
    return
 endif
 

@@ -1,4 +1,4 @@
-interface LB_Set_Num_Geom_Fn
+interface Zoltan_Set_Num_Geom_Fn
    module procedure f90LB_Set_Num_Geom_Fn0f
    module procedure f90LB_Set_Num_Geom_Fn1f
    module procedure f90LB_Set_Num_Geom_Fn2f

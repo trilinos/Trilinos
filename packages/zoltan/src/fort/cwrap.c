@@ -562,11 +562,11 @@ int LB_fw_Initialize(float *ver)
    char **myArgv;
    int result;
    myArgc = 1;
-   myArgv = (char **) LB_MALLOC((myArgc+1)*sizeof(char *));
+   myArgv = (char **) ZOLTAN_MALLOC((myArgc+1)*sizeof(char *));
    myArgv[0] = "unknown";
    myArgv[1] = NULL;
    result = Zoltan_Initialize(myArgc,myArgv,ver);
-   LB_FREE(&myArgv);
+   ZOLTAN_FREE(&myArgv);
    return result;
 }
 
@@ -574,9 +574,9 @@ int LB_fw_Initialize1(int *argc, int *argv, int *starts, float *ver)
 {
    int i, j, result;
    char **myArgv;
-   myArgv = (char **) LB_MALLOC(((*argc)+1)*sizeof(char *));
+   myArgv = (char **) ZOLTAN_MALLOC(((*argc)+1)*sizeof(char *));
    for (i=0; i<(*argc); i++) {
-      myArgv[i] = (char *) LB_MALLOC((starts[i+1]-starts[i]+1)*sizeof(char));
+      myArgv[i] = (char *) ZOLTAN_MALLOC((starts[i+1]-starts[i]+1)*sizeof(char));
       for (j=0; j<starts[i+1]-starts[i]; j++) {
          myArgv[i][j] = (char) argv[starts[i]+j-1];
       }
@@ -585,8 +585,8 @@ int LB_fw_Initialize1(int *argc, int *argv, int *starts, float *ver)
    myArgv[*argc] = NULL;
    result = Zoltan_Initialize(*argc,myArgv,ver);
    for (i=0; i<(*argc); i++) 
-     LB_FREE(&(myArgv[i]));
-   LB_FREE(&myArgv);
+     ZOLTAN_FREE(&(myArgv[i]));
+   ZOLTAN_FREE(&myArgv);
    return result;
 }
 
@@ -615,7 +615,7 @@ void LB_fw_Destroy(int *addr_lb, int *nbytes)
 
 void LB_fw_Memory_Stats()
 {
-   LB_Memory_Stats();
+   Zoltan_Memory_Stats();
 }
 
 int LB_fw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
@@ -843,14 +843,14 @@ int LB_fw_Set_Method(int *addr_lb, int *nbytes, int *int_str, int *len)
    char *str;
    unsigned char *p;
    int i, result;
-   str = (char *)LB_MALLOC(*len+1);
+   str = (char *)ZOLTAN_MALLOC(*len+1);
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    LB_Current_lb = lb;
    for (i=0; i<(*len); i++) str[i] = (char)int_str[i];
    str[*len] = '\0';
    result = Zoltan_LB_Set_Method(lb, str);
-   LB_FREE(&str);
+   ZOLTAN_FREE(&str);
    return result;
 }
 
@@ -861,8 +861,8 @@ int LB_fw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,
    char *param_name, *new_value;
    unsigned char *p;
    int i, result;
-   param_name = (char *)LB_MALLOC(*param_name_len+1);
-   new_value = (char *)LB_MALLOC(*new_value_len+1);
+   param_name = (char *)ZOLTAN_MALLOC(*param_name_len+1);
+   new_value = (char *)ZOLTAN_MALLOC(*new_value_len+1);
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    LB_Current_lb = lb;
@@ -871,8 +871,8 @@ int LB_fw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,
    for (i=0; i<(*new_value_len); i++) new_value[i] = (char)int_new_value[i];
    new_value[*new_value_len] = '\0';
    result = Zoltan_Set_Param(lb, param_name, new_value);
-   LB_FREE(&param_name);
-   LB_FREE(&new_value);
+   ZOLTAN_FREE(&param_name);
+   ZOLTAN_FREE(&new_value);
    return result;
 }
 

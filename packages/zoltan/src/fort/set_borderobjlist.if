@@ -1,4 +1,4 @@
-interface LB_Set_Border_Obj_List_Fn
+interface Zoltan_Set_Border_Obj_List_Fn
    module procedure f90LB_Set_Border_Obj_List_Fn0s
    module procedure f90LB_Set_Border_Obj_List_Fn1s
    module procedure f90LB_Set_Border_Obj_List_Fn2s

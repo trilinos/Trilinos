@@ -25,9 +25,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn0f = LB_fw_Set_Fn0f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr))
+f90LB_Set_Next_Coarse_Obj_Fn0f = LB_fw_Set_Fn0f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr))
 #else
-f90LB_Set_Next_Coarse_Obj_Fn0f = LB_fw_Set_Fn0f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr)
+f90LB_Set_Next_Coarse_Obj_Fn0f = LB_fw_Set_Fn0f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr)
 #endif
 end function f90LB_Set_Next_Coarse_Obj_Fn0f
 
@@ -59,9 +59,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn1f = LB_fw_Set_Fn1f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+f90LB_Set_Next_Coarse_Obj_Fn1f = LB_fw_Set_Fn1f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Next_Coarse_Obj_Fn1f = LB_fw_Set_Fn1f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
+f90LB_Set_Next_Coarse_Obj_Fn1f = LB_fw_Set_Fn1f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
 end function f90LB_Set_Next_Coarse_Obj_Fn1f
 
@@ -93,9 +93,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn2f = LB_fw_Set_Fn2f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+f90LB_Set_Next_Coarse_Obj_Fn2f = LB_fw_Set_Fn2f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Next_Coarse_Obj_Fn2f = LB_fw_Set_Fn2f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
+f90LB_Set_Next_Coarse_Obj_Fn2f = LB_fw_Set_Fn2f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
 end function f90LB_Set_Next_Coarse_Obj_Fn2f
 
@@ -127,9 +127,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn3f = LB_fw_Set_Fn3f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+f90LB_Set_Next_Coarse_Obj_Fn3f = LB_fw_Set_Fn3f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Next_Coarse_Obj_Fn3f = LB_fw_Set_Fn3f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
+f90LB_Set_Next_Coarse_Obj_Fn3f = LB_fw_Set_Fn3f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
 end function f90LB_Set_Next_Coarse_Obj_Fn3f
 
@@ -162,9 +162,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn4f = LB_fw_Set_Fn4f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+f90LB_Set_Next_Coarse_Obj_Fn4f = LB_fw_Set_Fn4f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Next_Coarse_Obj_Fn4f = LB_fw_Set_Fn4f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
+f90LB_Set_Next_Coarse_Obj_Fn4f = LB_fw_Set_Fn4f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
 end function f90LB_Set_Next_Coarse_Obj_Fn4f
 
@@ -197,9 +197,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn5f = LB_fw_Set_Fn5f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+f90LB_Set_Next_Coarse_Obj_Fn5f = LB_fw_Set_Fn5f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Next_Coarse_Obj_Fn5f = LB_fw_Set_Fn5f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
+f90LB_Set_Next_Coarse_Obj_Fn5f = LB_fw_Set_Fn5f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
 end function f90LB_Set_Next_Coarse_Obj_Fn5f
 
@@ -232,9 +232,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn6f = LB_fw_Set_Fn6f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+f90LB_Set_Next_Coarse_Obj_Fn6f = LB_fw_Set_Fn6f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Next_Coarse_Obj_Fn6f = LB_fw_Set_Fn6f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
+f90LB_Set_Next_Coarse_Obj_Fn6f = LB_fw_Set_Fn6f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
 end function f90LB_Set_Next_Coarse_Obj_Fn6f
 
@@ -267,9 +267,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn7f = LB_fw_Set_Fn7f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+f90LB_Set_Next_Coarse_Obj_Fn7f = LB_fw_Set_Fn7f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Next_Coarse_Obj_Fn7f = LB_fw_Set_Fn7f(lb_addr,nbytes,LB_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
+f90LB_Set_Next_Coarse_Obj_Fn7f = LB_fw_Set_Fn7f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
 end function f90LB_Set_Next_Coarse_Obj_Fn7f
 

@@ -1,4 +1,4 @@
-interface LB_Set_Obj_Size_Fn
+interface Zoltan_Set_Obj_Size_Fn
    module procedure f90LB_Set_Obj_Size_Fn0f
    module procedure f90LB_Set_Obj_Size_Fn1f
    module procedure f90LB_Set_Obj_Size_Fn2f

@@ -20,9 +20,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Unpack_Obj_Fn0s = LB_fw_Set_Fn0s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr))
+f90LB_Set_Unpack_Obj_Fn0s = LB_fw_Set_Fn0s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr))
 #else
-f90LB_Set_Unpack_Obj_Fn0s = LB_fw_Set_Fn0s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,fn_ptr)
+f90LB_Set_Unpack_Obj_Fn0s = LB_fw_Set_Fn0s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,fn_ptr)
 #endif
 end function f90LB_Set_Unpack_Obj_Fn0s
 
@@ -49,9 +49,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Unpack_Obj_Fn1s = LB_fw_Set_Fn1s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+f90LB_Set_Unpack_Obj_Fn1s = LB_fw_Set_Fn1s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Unpack_Obj_Fn1s = LB_fw_Set_Fn1s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,fn_ptr,data)
+f90LB_Set_Unpack_Obj_Fn1s = LB_fw_Set_Fn1s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
 end function f90LB_Set_Unpack_Obj_Fn1s
 
@@ -78,9 +78,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Unpack_Obj_Fn2s = LB_fw_Set_Fn2s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+f90LB_Set_Unpack_Obj_Fn2s = LB_fw_Set_Fn2s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Unpack_Obj_Fn2s = LB_fw_Set_Fn2s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,fn_ptr,data)
+f90LB_Set_Unpack_Obj_Fn2s = LB_fw_Set_Fn2s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
 end function f90LB_Set_Unpack_Obj_Fn2s
 
@@ -107,9 +107,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Unpack_Obj_Fn3s = LB_fw_Set_Fn3s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+f90LB_Set_Unpack_Obj_Fn3s = LB_fw_Set_Fn3s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Unpack_Obj_Fn3s = LB_fw_Set_Fn3s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,fn_ptr,data)
+f90LB_Set_Unpack_Obj_Fn3s = LB_fw_Set_Fn3s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
 end function f90LB_Set_Unpack_Obj_Fn3s
 
@@ -137,9 +137,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Unpack_Obj_Fn4s = LB_fw_Set_Fn4s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+f90LB_Set_Unpack_Obj_Fn4s = LB_fw_Set_Fn4s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Unpack_Obj_Fn4s = LB_fw_Set_Fn4s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,fn_ptr,data)
+f90LB_Set_Unpack_Obj_Fn4s = LB_fw_Set_Fn4s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
 end function f90LB_Set_Unpack_Obj_Fn4s
 
@@ -167,9 +167,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Unpack_Obj_Fn5s = LB_fw_Set_Fn5s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+f90LB_Set_Unpack_Obj_Fn5s = LB_fw_Set_Fn5s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Unpack_Obj_Fn5s = LB_fw_Set_Fn5s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,fn_ptr,data)
+f90LB_Set_Unpack_Obj_Fn5s = LB_fw_Set_Fn5s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
 end function f90LB_Set_Unpack_Obj_Fn5s
 
@@ -197,9 +197,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Unpack_Obj_Fn6s = LB_fw_Set_Fn6s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+f90LB_Set_Unpack_Obj_Fn6s = LB_fw_Set_Fn6s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Unpack_Obj_Fn6s = LB_fw_Set_Fn6s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,fn_ptr,data)
+f90LB_Set_Unpack_Obj_Fn6s = LB_fw_Set_Fn6s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
 end function f90LB_Set_Unpack_Obj_Fn6s
 
@@ -227,9 +227,9 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Unpack_Obj_Fn7s = LB_fw_Set_Fn7s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+f90LB_Set_Unpack_Obj_Fn7s = LB_fw_Set_Fn7s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Unpack_Obj_Fn7s = LB_fw_Set_Fn7s(lb_addr,nbytes,LB_UNPACK_OBJ_FN_TYPE%choice,fn_ptr,data)
+f90LB_Set_Unpack_Obj_Fn7s = LB_fw_Set_Fn7s(lb_addr,nbytes,ZOLTAN_UNPACK_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
 end function f90LB_Set_Unpack_Obj_Fn7s
 

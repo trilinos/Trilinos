@@ -1,4 +1,4 @@
-interface LB_Set_Post_Migrate_Fn
+interface Zoltan_Set_Post_Migrate_Fn
    module procedure f90LB_Set_Post_Migrate_Fn0s
    module procedure f90LB_Set_Post_Migrate_Fn1s
    module procedure f90LB_Set_Post_Migrate_Fn2s
