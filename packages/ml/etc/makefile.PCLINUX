@@ -1,6 +1,7 @@
 OPT_FLAGS=-O3
 ARCH_FLAGS=$(OPT_FLAGS)
 CC=gcc
+CXX=g++
 FC=g77
 RANLIB=ranlib
 #LINKER=$(CC)
