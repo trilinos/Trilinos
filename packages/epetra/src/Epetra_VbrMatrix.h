@@ -825,6 +825,11 @@ int GlobalMaxNumBlockEntries() const {return(Graph_->GlobalMaxNumIndices());};
     //! Returns the Epetra_Export object that contains the export operations for distributed operations.
     const Epetra_Export * Exporter() const {return(Graph_->Exporter());};
 
+    //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
+    const Epetra_BlockMap & DomainMap() const {return((Epetra_BlockMap &)Graph_->DomainMap());}
+
+    //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
+    const Epetra_BlockMap & RangeMap() const  {return((Epetra_BlockMap &)Graph_->RangeMap());}
 
     //! Returns the RowMap object as an Epetra_BlockMap (the Epetra_Map base class) needed for implementing Epetra_RowMatrix.
     const Epetra_BlockMap & BlockRowMap() const {return((Epetra_BlockMap &)Graph_->RowMap());};
