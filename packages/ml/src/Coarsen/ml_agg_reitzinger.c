@@ -19,6 +19,19 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
  if (incr_or_decrease != ML_DECREASING) pr_error("Hiptmair: Only ML_DESCREASING is supported\n");
 
+ printf("ag is %u\n",ag);
+ printf("................................................................\n");
+ printf("................................................................\n");
+ printf("................................................................\n");
+ printf("................................................................\n");
+ printf("................................................................\n");
+ printf("overwriting aggregate info in UsingReitzinger\n");
+ printf("\a\a\a\a\a\a\a\n");
+ ML_Aggregate_Create(&ag);
+ ML_Aggregate_Set_CoarsenScheme_MIS(ag);
+ ML_Aggregate_Set_DampingFactor(ag,0.0);
+ ML_Aggregate_Set_Threshold( ag, 0.0);
+
   /********************************************************************/
   /* Set up the operators corresponding to regular unsmoothed         */
   /* aggregation on the nodal matrix.                                 */
@@ -142,16 +155,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   /* matrix triple product will yield a matrix with +/- 1 and +/- 2's.*/
   /* If we remove all the 1's and divide the 2's by 2. we arrive at Pe*/
   /*------------------------------------------------------------------*/
-
-/*
-  Pn_coarse = &(ml_nodes->Pmat[coarsest_level]);
-  csr_data = (struct ML_CSR_MSRdata *) Pn_coarse->data;
-  for (i = 0; i < csr_data->rowptr[Pn_coarse->outvec_leng]; i++)
-  {
-    if (csr_data->values[i] < 0) csr_data->values[i] = -1.;
-    else if (csr_data->values[i] > 0) csr_data->values[i] = 1.;
-  }
-*/
 
 /* We want all +1 entries to avoid changing the sign of entries in Pe. */
   Pn_coarse = &(ml_nodes->Pmat[coarsest_level]);
@@ -370,26 +373,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 		 else if (Pe->comm->ML_mypid == 1 && i >= 120)
 		    fido[i-120] = 1;
       }
-	  /*
-	  if (i==84)
-	  {
-	     printf("e_120\n");
-         for (j=0; j<Pe->invec_leng; j++)
-		    printf("%d: e_84(%d) = %e\n", Pe->comm->ML_mypid,j,fido[j]);
-      }
-	  if (i==119)
-      {
-	     printf("e_119\n");
-         for (j=0; j<Pe->invec_leng; j++)
-		    printf("%d: e_119(%d) = %e\n", Pe->comm->ML_mypid,j,fido[j]);
-	  }
-	  if (i==120)
-	  {
-	     printf("e_120\n");
-         for (j=0; j<Pe->invec_leng; j++)
-		    printf("%d: e_120(%d) = %e\n", Pe->comm->ML_mypid,j,fido[j]);
-      }
-	  */
 
       ML_Operator_Apply(Pe, Pe->invec_leng, fido,
                         Pe->outvec_leng,yyy);
