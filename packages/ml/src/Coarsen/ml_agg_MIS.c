@@ -225,7 +225,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    Asqrd    = ML_Operator_Create(comm);
    tmatrix  = ML_Operator_halfClone(Amatrix);
 
-   ML_2matmult(tmatrix, Amatrix, Asqrd);
+   ML_2matmult(tmatrix, Amatrix, Asqrd, ML_CSR_MATRIX );
    ML_Operator_halfClone_Destroy(tmatrix);
 
    mat_comm        = Asqrd->getrow->pre_comm;

@@ -13,7 +13,6 @@
 #include "ml_struct.h"
 #include "ml_rap.h"
 #include "ml_memory.h"
-
 /* ******************************************************************** */
 /* Given R, A, and P, generate a Galerkin operator at a given level     */
 /* i.e. Result = Rmat * Amat * Pmat, where                              */
@@ -136,7 +135,13 @@ fflush(stdout);
      ML_back_to_local(RAPcomm, Result, max_per_proc);
    else if (matrix_type == ML_CSR_MATRIX)
      ML_back_to_csrlocal(RAPcomm, Result, max_per_proc);
-   else pr_error("ML_RAP: unknown matrix type\n");
+   else if (matrix_type == ML_EpetraCRS_MATRIX)
+#ifdef ML_WITH_EPETRA
+     ML_back_to_epetraCrs(RAPcomm, Result, Rmat, Pmat);
+#else
+     pr_error("ML_RAP: ML_EpetraCRS_MATRIX requires epetra to be compiled in.\n");
+#endif
+   else pr_error("ML_RAP: Unknown matrix type\n");
 
    ML_RECUR_CSR_MSRdata_Destroy(RAPcomm);
    ML_Operator_Destroy(&RAPcomm);

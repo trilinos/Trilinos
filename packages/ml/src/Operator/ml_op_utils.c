@@ -728,7 +728,7 @@ int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans)
   ML_Operator_Set_ApplyFuncData(eye2, A->invec_leng, A->invec_leng,
             ML_EXTERNAL,NULL, A->invec_leng, eye_matvec, 0);
   ML_Operator_Set_Getrow(eye2, ML_EXTERNAL, A->invec_leng, eye_getrows);
-  ML_2matmult(A, eye1, Atrans);
+  ML_2matmult(A, eye1, Atrans, ML_CSR_MATRIX);
 
   ML_Operator_Destroy(&eye1);
   ML_Operator_Destroy(&eye2);

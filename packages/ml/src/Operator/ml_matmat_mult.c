@@ -948,7 +948,7 @@ void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 /* -------------------------------------------------------------------- */
 
 void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
-                 ML_Operator *Result)
+                 ML_Operator *Result, int matrix_type)
 {
    int N_input_vector, max_per_proc;
    ML_CommInfoOP *getrow_comm;
@@ -999,7 +999,21 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    }
    else Mat1Mat2comm = Mat1Mat2;
 
-   ML_back_to_csrlocal(Mat1Mat2comm, Result, max_per_proc);
+   if (matrix_type == ML_CSR_MATRIX)
+     ML_back_to_csrlocal(Mat1Mat2, Result, max_per_proc);
+   else if (matrix_type == ML_MSR_MATRIX) {
+     if (Mat1Mat2->invec_leng != Mat1Mat2->outvec_leng) 
+       pr_error("ML_2matmult: MSR format only valid for square matrices.\n");
+     ML_back_to_local(Mat1Mat2, Result, max_per_proc);
+   }
+   else if (matrix_type == ML_EpetraCRS_MATRIX)
+#ifdef ML_WITH_EPETRA
+     ML_back_to_epetraCrs(Mat1Mat2, Result, Mat1, Mat2);
+#else
+     pr_error("ML_2matmult: ML_EpetraCRS_MATRIX requires epetra to be compiled in.\n");
+#endif
+   else pr_error("ML_2matmult: Unknown matrix type\n");
+
 
    ML_RECUR_CSR_MSRdata_Destroy(Mat1Mat2comm);
    ML_Operator_Destroy(&Mat1Mat2comm);
@@ -1830,7 +1844,7 @@ void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 /* -------------------------------------------------------------------- */
 
 void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
-                 ML_Operator *Result)
+                 ML_Operator *Result, int matrix_type)
 {
    int N_input_vector, max_per_proc;
    ML_CommInfoOP *getrow_comm;
@@ -1863,7 +1877,21 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
       ML_Operator_Destroy(&Mat2comm);
    }
 
-   ML_back_to_csrlocal(Mat1Mat2, Result, max_per_proc);
+   if (matrix_type == ML_CSR_MATRIX)
+     ML_back_to_csrlocal(Mat1Mat2, Result, max_per_proc);
+   else if (matrix_type = ML_MSR_MATRIX) {
+     if (Mat1Mat2->invec_leng != Mat1Mat2->outvec_leng) 
+       pr_error("ML_2matmult: MSR format only valid for square matrices.\n");
+     ML_back_to_local(Mat1Mat2, Result, max_per_proc);
+   }
+   else if (matrix_type == ML_EpetraCRS_MATRIX)
+#ifdef ML_WITH_EPETRA
+     ML_back_to_epetraCrs(Mat1Mat2, Result, Mat1, Mat2);
+#else
+     pr_error("ML_2matmult: ML_EpetraCRS_MATRIX requires epetra to be compiled in.\n");
+#endif
+
+   else pr_error("ML_2matmult: Unknown matrix type\n");
 
    ML_RECUR_CSR_MSRdata_Destroy(Mat1Mat2);
    ML_Operator_Destroy(&Mat1Mat2);

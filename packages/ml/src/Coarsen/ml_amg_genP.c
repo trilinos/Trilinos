@@ -227,7 +227,7 @@ int ML_AMG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    ML_Operator_Set_Getrow(AMGIdentity, ML_EXTERNAL, Amat->getrow->Nrows, 
                           ML_AMG_Identity_Getrows);
    ML_CommInfoOP_Clone(&(AMGIdentity->getrow->pre_comm),Amat->getrow->pre_comm);
-   ML_2matmult(AMGIdentity, Pmatrix, &(ml->Pmat[clevel]) );
+   ML_2matmult(AMGIdentity, Pmatrix, &(ml->Pmat[clevel]), ML_CSR_MATRIX );
    ML_Operator_Destroy(&AMGIdentity);
    ML_Operator_Destroy(&Pmatrix);
    ML_Operator_Set_1Levels(&(ml->Pmat[clevel]),

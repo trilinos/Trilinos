@@ -115,6 +115,7 @@
 #define ML_ALL_LEVELS     -1237
 #define ML_MSR_MATRIX      -201
 #define ML_CSR_MATRIX      -203
+#define ML_EpetraCRS_MATRIX  -205
 
 /* JJH -- these are message tags */
 #define ML_TAG_BASE        27000

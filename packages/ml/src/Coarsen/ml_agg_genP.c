@@ -643,7 +643,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
      printf("\n\n---------------------------------\n\n");
 */
 
-     ML_2matmult(AGGsmoother, Pmatrix, &(ml->Pmat[clevel]) );
+     ML_2matmult(AGGsmoother, Pmatrix, &(ml->Pmat[clevel]), ML_CSR_MATRIX );
 
 #ifdef SYMMETRIZE
      if (t3 != NULL) ML_Operator_Destroy(&t3);
@@ -1212,7 +1212,7 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
               level);
 
       APMat = &(ml->Pmat[clevel]);
-      ML_2matmult(Amat, tentP, APMat);
+      ML_2matmult(Amat, tentP, APMat, ML_CSR_MATRIX );
       ML_AGG_Extract_Matrix(APMat, &ap_ncols, &ap_cols, &ap_aa);
  
       i = 1;
@@ -1740,7 +1740,7 @@ tentP = ML_Operator_Create(ml->comm);
    ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
                           widget.Amat->getrow->pre_comm);
 
-   ML_2matmult(AGGsmoother, tentP, &(ml->Pmat[clevel]) );
+   ML_2matmult(AGGsmoother, tentP, &(ml->Pmat[clevel]), ML_CSR_MATRIX );
 
    ML_Operator_Destroy(&tentP);
    ML_Operator_Destroy(&AGGsmoother);

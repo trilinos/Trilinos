@@ -1319,7 +1319,7 @@ int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
    ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
 		       widget.Amat->getrow->pre_comm);
 
-   ML_2matmult(AGGsmoother, Pmatrix, SPn_mat);
+   ML_2matmult(AGGsmoother, Pmatrix, SPn_mat, ML_CSR_MATRIX );
    ML_Operator_Destroy(&AGGsmoother);
 
    return 0;

@@ -35,4 +35,17 @@ extern "C" int Epetra_ML_comm_wrapper(double vec[], void *data);
 extern "C" int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
                                 Epetra_RowMatrix * Amat);
 
+extern "C" int Epetra2MLMatrix(Epetra_RowMatrix * A, ML_Operator *Result);
+
+extern "C" Epetra_CrsMatrix *Epetra_MatrixMult(Epetra_RowMatrix *B, Epetra_RowMatrix *Bt);
+
+/* This Proto-type is in ml_rap.h. This prevents ml_rap.c and ml_matmat_mult.c     */
+/* from including ml_epetra_utils.h which would require the C++ compiler for these */
+/* files.             
+extern int  ML_back_to_epetraCrs(ML_Operator *Mat1Mat2,  ML_Operator *Result, 
+				 ML_Operator *Mat1,  ML_Operator *Mat2); 
+*/
+
+
+
 #endif /* _ML_EPETRA_UTILS_H_ */

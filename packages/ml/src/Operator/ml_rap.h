@@ -38,6 +38,12 @@ extern void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
 extern void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
         int max_per_proccomm);
 
+extern int  ML_back_to_epetraCrs(ML_Operator *Mat1Mat2,  ML_Operator *Result, 
+				 ML_Operator *Mat1,  ML_Operator *Mat2); 
+                                  /* code is in ml_epetra_utils.h. Put the  */
+                                 /* proto-type here to avoid c++ compiler on ml_rap.c */
+
+
 extern void ML_exchange_rows(ML_Operator *orig, ML_Operator **appended, 
                              ML_CommInfoOP *comm_info);
 
@@ -54,7 +60,7 @@ extern void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc);
 extern void ML_matmat_mult(ML_Operator *Amat, ML_Operator *Bmat, 
                            ML_Operator **Cmat);
 extern void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
-			ML_Operator *Result);
+			ML_Operator *Result, int matrix_type);
 
 extern void ML_getrow_matvec(ML_Operator *matrix, double *vec, 
                              int Nvec, double *ovec, int *Novec);

@@ -3560,7 +3560,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
          Dirichlet b.c. applied to both rows and columns of Ke.  The
          only differences will be the b.c.  rows themselves, which
          will be zero. */
-      ML_2matmult(Mmat,Tmat_bc,tmpmat2);
+      ML_2matmult(Mmat,Tmat_bc,tmpmat2, ML_CSR_MATRIX);
       matdata = (struct ML_CSR_MSRdata *) (tmpmat2->data);
       row_ptr = matdata->rowptr;
       val_ptr = matdata->values;
@@ -3572,7 +3572,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
          for (k = row_ptr[j]; k < row_ptr[j+1]; k++)
             val_ptr[k] = 0.0;
       }
-      ML_2matmult(Tmat_trans,tmpmat2,tmpmat);
+      ML_2matmult(Tmat_trans,tmpmat2,tmpmat, ML_CSR_MATRIX);
       ML_Operator_Destroy(&tmpmat2);
    }
    else
@@ -3773,7 +3773,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
          Dirichlet b.c. applied to both rows and columns of Ke.  The
          only differences will be the b.c.  rows themselves, which
          will be zero. */
-      ML_2matmult(Amat,Tmat_bc,tmpmat2);
+      ML_2matmult(Amat,Tmat_bc,tmpmat2, ML_CSR_MATRIX);
       matdata = (struct ML_CSR_MSRdata *) (tmpmat2->data);
       row_ptr = matdata->rowptr;
       val_ptr = matdata->values;
@@ -3785,7 +3785,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
          for (k = row_ptr[j]; k < row_ptr[j+1]; k++)
             val_ptr[k] = 0.0;
       }
-      ML_2matmult(Tmat_trans,tmpmat2,tmpmat);
+      ML_2matmult(Tmat_trans,tmpmat2,tmpmat, ML_CSR_MATRIX);
       ML_Operator_Destroy(&tmpmat2);
    }
    else
@@ -3903,7 +3903,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
 			 Tmat_trans->invec_leng, Amat->outvec_leng);
       exit(1);
    }
-   ML_2matmult(Tmat_trans,Amat,dataptr->ATmat_trans);
+   ML_2matmult(Tmat_trans,Amat,dataptr->ATmat_trans, ML_CSR_MATRIX);
 
 
 #ifdef debugSmoother
@@ -3917,7 +3917,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
 #endif
    /*
    tmpmat = ML_Operator_Create(Amat->comm);
-   ML_2matmult(Amat,Tmat,tmpmat);
+   ML_2matmult(Amat,Tmat,tmpmat, ML_CSR_MATRIX);
 
    ML_Operator_Transpose_byrow(tmpmat, dataptr->ATmat_trans);
 
@@ -3956,7 +3956,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
 			 dataptr->ATmat_trans->invec_leng, Tmat->outvec_leng);
       exit(1);
    }
-   ML_2matmult(dataptr->ATmat_trans, Tmat, tmpmat);
+   ML_2matmult(dataptr->ATmat_trans, Tmat, tmpmat, ML_CSR_MATRIX);
 
    /* and pick off the diagonal entries. */
    dataptr->TtAT_diag = (double *)

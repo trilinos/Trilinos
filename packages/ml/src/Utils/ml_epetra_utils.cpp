@@ -133,6 +133,33 @@ int Epetra_ML_comm_wrapper(double vec[], void *data)
 }
 /******************************************************************************/
 
+int Epetra2MLMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
+{
+  int isize, osize;
+
+  osize = A->NumMyRows();
+  isize = A->OperatorDomainMap().NumMyElements();
+  //  isize = A->NumMyCols();
+  int N_ghost = A->RowMatrixColMap().NumMyElements() - isize;
+
+  if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
+
+  ML_Operator_Set_ApplyFuncData(newMatrix, isize, osize,
+                              ML_EMPTY, (void*) A, osize,
+                              NULL, 0);
+
+  ML_CommInfoOP_Generate( &(newMatrix->getrow->pre_comm), 
+                        Epetra_ML_comm_wrapper, (void *) A, 
+                        newMatrix->comm, isize, N_ghost);
+
+  ML_Operator_Set_Getrow(newMatrix, ML_EXTERNAL, newMatrix->outvec_leng,
+                       Epetra_ML_getrow);
+
+  ML_Operator_Set_ApplyFunc (newMatrix, ML_EXTERNAL, Epetra_ML_matvec);
+
+  return 0;
+}
+
 int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
                          Epetra_RowMatrix * A)
 {
@@ -152,6 +179,72 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
 
   return 1;
 }
+int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result, 
+			 ML_Operator *Mat1, ML_Operator *Mat2)
+{
+
+  Epetra_RowMatrix *Mat1_epet = (Epetra_RowMatrix *) Mat1->data;
+  Epetra_RowMatrix *Mat2_epet = (Epetra_RowMatrix *) Mat2->data;
+
+  Epetra_CrsMatrix *Result_epet = new Epetra_CrsMatrix(Copy, 
+				            Mat1_epet->RowMatrixRowMap(),
+					    Mat2_epet->RowMatrixColMap(), 0);
+  int allocated = 0, row_length;
+  int *bindx = NULL;
+  double *val = NULL;
+
+  for (int i = 0; i < Mat1Mat2->getrow->Nrows; i++) {
+    ML_get_matrix_row(Mat1Mat2, 1, &i, &allocated, &bindx, &val,
+		      &row_length, 0);
+    int ierr = Result_epet->InsertGlobalValues(i, row_length, val,
+					       bindx);
+  }
+  int ierr=Result_epet->TransformToLocal(&(Mat1_epet->OperatorRangeMap()),
+				    &(Mat2_epet->OperatorDomainMap()));
+
+  if (bindx != NULL) ML_free(bindx);
+  if (val != NULL) ML_free(val);
+  if (ierr!=0) {
+    cerr <<"Error in Epetra_VbrMatrix TransformToLocal" << ierr << endl;
+    EPETRA_CHK_ERR(ierr);
+  }
+
+  Epetra2MLMatrix((Epetra_RowMatrix *) Result_epet, Result);
+
+  return 1;
+}
+
+
+Epetra_CrsMatrix *Epetra_MatrixMult(Epetra_RowMatrix *B_crs, Epetra_RowMatrix *Bt_crs)
+{
+  ML_Comm *comm, *temp;
+  Epetra_RowMatrix *result;
+
+  temp = global_comm;
+  ML_Comm_Create(&comm);
+  ML_Operator *B_ml, *Bt_ml, *BBt_ml;
+  B_ml  = ML_Operator_Create(comm);
+  Bt_ml = ML_Operator_Create(comm);
+  BBt_ml  = ML_Operator_Create(comm);
+  Epetra2MLMatrix(B_crs, B_ml);
+  Epetra2MLMatrix(Bt_crs, Bt_ml);
+  ML_Operator_Print(B_ml,"B");
+  ML_Operator_Print(Bt_ml,"Bt");
+  ML_2matmult(B_ml, Bt_ml, BBt_ml, ML_EpetraCRS_MATRIX);
+
+  ML_Comm_Destroy(&comm);
+  global_comm = temp;
+
+  /* Need to blow about BBt_ml but keep epetra stuff */
+
+  result = (Epetra_RowMatrix *) BBt_ml->data;
+  ML_Operator_Destroy(&B_ml);
+  ML_Operator_Destroy(&Bt_ml);
+  ML_Operator_Destroy(&BBt_ml);
+
+  return dynamic_cast<Epetra_CrsMatrix*>(result);
+   
+}
 
 #else
 
@@ -159,3 +252,4 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
   int ML_EPETRA_EMPTY;
 
 #endif /*ifdef ML_WITH_EPETRA*/
+
