@@ -89,4 +89,4 @@
     ------ Check for proper SWIG version
     ------ Put in hooks for enabling and disabling modules
     [Done] Have Makefile create setup.txt with python dictionary
-    ------ Change setup.py to use FLIBS configure variable
+    [Done] Change setup.py to use FLIBS configure variable

@@ -117,9 +117,10 @@ wrappers:
 	cd src && make
 
 setup.txt:
-	@echo "{"                         >  $@
-	@echo "  'srcdir' : '$(srcdir)'"  >> $@
-	@echo "}"                         >> $@
+	@echo "{"                          >  $@
+	@echo "  'srcdir' : '$(srcdir)',"  >> $@
+	@echo "  'FLIBS'  : '$(FLIBS)'"    >> $@
+	@echo "}"                          >> $@
 
 $(tempdir):
 	mkdir -p $@
