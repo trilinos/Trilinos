@@ -131,10 +131,10 @@ class Vector : public Abstract::Vector {
   int length() const;
   
   //! Return the i-th element
-  double& Vector::operator() (int i);
+  double& operator() (int i);
 
   //! Return the i-th element (const version)
-  const double& Vector::operator() (int i) const;
+  const double& operator() (int i) const;
 
   //! Prints out the vector to the specified stream. 
   /*! For example, a vector would appear as
@@ -146,10 +146,10 @@ class Vector : public Abstract::Vector {
 private:
 
   //! Return the i-th element
-  double& Vector::operator[] (int i);
+  double& operator[] (int i);
 
   //! Return the i-th element
-  const double& Vector::operator[] (int i) const;
+  const double& operator[] (int i) const;
 
   //! Pointer to vector owned by this object
   vector<double> x;
