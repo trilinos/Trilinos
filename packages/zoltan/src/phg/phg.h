@@ -151,6 +151,7 @@ struct PHGPartParamsStruct {
 
   int num_coarse_iter;  /* Number of coarse partitions to try on each proc. */
   int visit_order;      /* Vertex visit order. */
+  int use_timers;       /* Flag indicating whether to time the PHG code. */
 };
 
 typedef struct PHGPartParamsStruct PHGPartParams;

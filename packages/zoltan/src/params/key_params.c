@@ -185,6 +185,7 @@ int  idx 			/* index of vector param, -1 if scalar */
       case 7: 		/* Timer */
 	status = Zoltan_Set_Timer_Param(name, val, &tmp);
         zz->Timer = tmp;
+        Zoltan_Timer_ChangeFlag(zz->ZTime, zz->Timer);
 
 	if (status==0) status = 3;	/* Don't add to Params field of ZZ */
         break;

@@ -20,7 +20,7 @@ DEFS 			=
 RANLIB			= ranlib
 AR			= ar r
 
-CC			= mpicc -bind_at_load
+CC			= mpicc -bind_at_load -Wall
 CPPC			= mpic++ -bind_at_load
 INCLUDE_PATH		= 
 DBG_FLAGS		= -g

@@ -212,6 +212,7 @@ struct Zoltan_Struct {
   int Edge_Weight_Dim;            /*  Dimension of the edge weights, 
                                       usually 0 (no weights) or 1            */
   int Timer;                      /*  Timer type that is currently active */
+  struct Zoltan_Timer *ZTime;     /*  Timer structure for persistent timing. */
   /***************************************************************************/
   ZOLTAN_PARTITION_MULTI_FN *Get_Partition_Multi;
                                        /* Fn ptr to get objects'

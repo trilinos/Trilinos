@@ -25,13 +25,12 @@ extern "C" {
 /* Communication and Distribution variables */
 /********************************************/
 struct PHGCommStruct {
-    /* the following three (Communicator, Proc and nProc) are copies from ZZ
-       just for convenience */
-  MPI_Comm Communicator;          /*  The MPI Communicator.                  */
-  int myProc;                     /*  The processor's ID within the MPI
-                                      Communicator.                          */
-  int nProc;                   /*  The number of processors in the MPI
-                                      Communicator.                          */
+  MPI_Comm Communicator;  /* MPI Communicator for all procs partitioning
+                             this HG.  May not equal zz->Communicator when
+                             splitting HG among procs. */
+  int myProc;     /* my processor's rank within Communicator. */
+  int nProc;      /* number of proc in Communicator.
+                     nProc = nProc_x * nProc_y */
   int nProc_x;    /* number of processors in x-direction of 2D data distrib.  */
   int nProc_y;    /* number of processors in y-direction of 2D data distrib.  */
                   /* nProc_x * nProc_y should equal number of processors!     */

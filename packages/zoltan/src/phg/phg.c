@@ -50,6 +50,7 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_FM_LOOP_LIMIT",               NULL,  "INT",    0},
   {"PHG_FM_MAX_NEG_MOVE",             NULL,  "INT",    0},    
   {"PHG_COARSE_ITERATIONS",           NULL,  "INT",    0},    
+  {"PHG_USE_TIMERS",                  NULL,  "INT",    0},    
   {NULL,                              NULL,  NULL,     0}     
 };
 
@@ -83,26 +84,45 @@ int **exp_procs,           /* list of processors to export to */
 int **exp_to_part )         /* list of partitions to which exported objs
                                 are assigned. */
 {
-    ZPHG *zoltan_hg = NULL;
-    int nVtx;                        /* Temporary variable for base graph. */
-    PHGPartParams hgp;               /* Hypergraph parameters. */
-    Partition parts = NULL;          /* Partition assignments in 
-                                        2D distribution. */
-    int err = ZOLTAN_OK;
-    char *yo = "Zoltan_PHG";
+  ZPHG *zoltan_hg = NULL;
+  int nVtx;                        /* Temporary variable for base graph. */
+  PHGPartParams hgp;               /* Hypergraph parameters. */
+  Partition parts = NULL;          /* Partition assignments in 
+                                      2D distribution. */
+  int err = ZOLTAN_OK;
+  char *yo = "Zoltan_PHG";
+  static int timer_all = -1;       /* Note:  this timer includes other
+                                      timers and their synchronization time,
+                                      so it will be a little high. */
+  static int timer_build=-1;       /* timers to be used in this function;
+                                      declared static so that, over multiple
+                                      runs, can accumulate times.  */
+  static int timer_retlist=-1;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
+  /* Initialization of return arguments. */
+  *num_imp   = *num_exp   = -1;
+  *imp_gids  = *exp_gids  = NULL;
+  *imp_lids  = *exp_lids  = NULL;
+  *imp_procs = *exp_procs = NULL;
+  
+  /* Initialize HG parameters. */
+  err = Zoltan_PHG_Initialize_Params (zz, part_sizes, &hgp);
+  if (err != ZOLTAN_OK)
+    goto End;
+
+  if (hgp.use_timers) {
+    if (timer_all < 0) 
+      timer_all = Zoltan_Timer_Init(zz->ZTime, 1, "Zoltan_PHG");
+    ZOLTAN_TIMER_START(zz->ZTime, timer_all, zz->Communicator);
+  }
     
-    ZOLTAN_TRACE_ENTER(zz, yo);
-    
-    /* Initialization of return arguments. */
-    *num_imp   = *num_exp   = -1;
-    *imp_gids  = *exp_gids  = NULL;
-    *imp_lids  = *exp_lids  = NULL;
-    *imp_procs = *exp_procs = NULL;
-    
-    /* Initialize HG parameters. */
-    err = Zoltan_PHG_Initialize_Params (zz, part_sizes, &hgp);
-    if (err != ZOLTAN_OK)
-        goto End;
+  if (hgp.use_timers > 1) {
+    if (timer_build < 0) 
+      timer_build = Zoltan_Timer_Init(zz->ZTime, 1, "Build");
+    ZOLTAN_TIMER_START(zz->ZTime, timer_build, zz->Communicator);
+  }
     
   /* build initial Zoltan hypergraph from callback functions. */
   err = Zoltan_PHG_Build_Hypergraph (zz, &zoltan_hg, &parts, &hgp);
@@ -110,6 +130,9 @@ int **exp_to_part )         /* list of partitions to which exported objs
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph.");
     goto End;
   }
+
+  if (hgp.use_timers > 1)
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
    
   zz->LB.Data_Structure = zoltan_hg;
   nVtx = zoltan_hg->PHG.nVtx;
@@ -121,9 +144,9 @@ int **exp_to_part )         /* list of partitions to which exported objs
   uprintf(zoltan_hg->PHG.comm, "Zoltan_PHG kway=%d #parts=%d\n", hgp.kway, zz->LB.Num_Global_Parts);
 */
 
-  /* UVC: if it is bisection anyways; no need to create vmap etc; rdrive is going to call
-     Zoltan_PHG_Partition anyways... */
-  if (hgp.kway || zz->LB.Num_Global_Parts == 2) {  /* call main V cycle routine */
+  /* UVC: if it is bisection anyways; no need to create vmap etc; 
+     rdivide is going to call Zoltan_PHG_Partition anyways... */
+  if (hgp.kway || zz->LB.Num_Global_Parts == 2) {/* call main V cycle routine */
     err = Zoltan_PHG_Partition(zz, &zoltan_hg->PHG, zz->LB.Num_Global_Parts,
      hgp.part_sizes, parts, &hgp, 0);
     if (err != ZOLTAN_OK) {
@@ -167,10 +190,19 @@ int **exp_to_part )         /* list of partitions to which exported objs
     ZOLTAN_FREE (&zoltan_hg->PHG.vmap);
   }  
   
+  if (hgp.use_timers > 1) {
+    if (timer_retlist < 0) 
+      timer_retlist = Zoltan_Timer_Init(zz->ZTime, 1, "Return Lists");
+    ZOLTAN_TIMER_START(zz->ZTime, timer_retlist, zz->Communicator);
+  }
+    
   /* Build Zoltan's return arguments. */
   Zoltan_PHG_Return_Lists(zz, zoltan_hg, parts, num_exp, exp_gids,
    exp_lids, exp_procs, exp_to_part);
     
+  if (hgp.use_timers > 1) 
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_retlist, zz->Communicator);
+
 End:
   if (err == ZOLTAN_MEMERR)
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.")
@@ -179,6 +211,13 @@ End:
     
   ZOLTAN_FREE(&parts);
   Zoltan_PHG_Free_Structure(zz);
+
+  if (hgp.use_timers)
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_all, zz->Communicator);
+
+  if (hgp.use_timers && zz->Proc == 0)
+    Zoltan_Timer_PrintAll(zz->ZTime, zz->Proc, stdout);
+
   ZOLTAN_TRACE_EXIT(zz, yo);
   return err;
 }
@@ -213,25 +252,29 @@ static int Zoltan_PHG_Initialize_Params(
   int err, nProc_x, nProc_y;
   
   
-  Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL",         &hgp->output_level);
-  Zoltan_Bind_Param(PHG_params, "PCHECK_GRAPH",              &hgp->check_graph);   
-  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X",                        &nProc_x);
-  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y",                        &nProc_y);
-  Zoltan_Bind_Param(PHG_params, "PHG_PROC_SPLIT",             &hgp->proc_split);  
-  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT",              &hgp->redl);
-  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD",          hgp->redm_str);
-  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LOCAL_IMPROVEMENT", hgp->redmo_str);  
-  Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_VISIT_ORDER",    &hgp->visit_order);
-  Zoltan_Bind_Param(PHG_params, "PHG_EDGE_SCALING",         &hgp->edge_scaling);
-  Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_SCALING",        &hgp->vtx_scaling);
-  Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT",          hgp->refinement_str);
-  Zoltan_Bind_Param(PHG_params, "PHG_DIRECT_KWAY",                  &hgp->kway);
-  Zoltan_Bind_Param(PHG_params, "PHG_FM_LOOP_LIMIT",       &hgp->fm_loop_limit);
-  Zoltan_Bind_Param(PHG_params, "PHG_FM_MAX_NEG_MOVE",   &hgp->fm_max_neg_move);  
-  Zoltan_Bind_Param(PHG_params, "PHG_COARSE_PARTITIONING", hgp->coarsepartition_str);
+  Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL", &hgp->output_level);
+  Zoltan_Bind_Param(PHG_params, "PCHECK_GRAPH", &hgp->check_graph);   
+  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X", &nProc_x);
+  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y", &nProc_y);
+  Zoltan_Bind_Param(PHG_params, "PHG_PROC_SPLIT", &hgp->proc_split);  
+  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT", &hgp->redl);
+  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD", hgp->redm_str);
+  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LOCAL_IMPROVEMENT", 
+                                 hgp->redmo_str);  
+  Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_VISIT_ORDER", &hgp->visit_order);
+  Zoltan_Bind_Param(PHG_params, "PHG_EDGE_SCALING", &hgp->edge_scaling);
+  Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_SCALING", &hgp->vtx_scaling);
+  Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT", hgp->refinement_str);
+  Zoltan_Bind_Param(PHG_params, "PHG_DIRECT_KWAY", &hgp->kway);
+  Zoltan_Bind_Param(PHG_params, "PHG_FM_LOOP_LIMIT", &hgp->fm_loop_limit);
+  Zoltan_Bind_Param(PHG_params, "PHG_FM_MAX_NEG_MOVE", &hgp->fm_max_neg_move);  
+  Zoltan_Bind_Param(PHG_params, "PHG_COARSE_PARTITIONING", 
+                                 hgp->coarsepartition_str);
 
   Zoltan_Bind_Param(PHG_params, "PHG_COARSE_ITERATIONS",
-                    (void*) &hgp->num_coarse_iter);  
+                                 (void*) &hgp->num_coarse_iter);  
+  Zoltan_Bind_Param(PHG_params, "PHG_USE_TIMERS",
+                                 (void*) &hgp->use_timers);  
 
   /* Set default values */
   strncpy(hgp->redm_str,            "ipm",   MAX_PARAM_STRING_LEN);
@@ -239,6 +282,7 @@ static int Zoltan_PHG_Initialize_Params(
   strncpy(hgp->coarsepartition_str, "gr0",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);
 
+  hgp->use_timers = 0;
   hgp->proc_split = 0;
   hgp->LocalCoarsePartition = 0;
   hgp->locmatching = NULL;
@@ -262,9 +306,11 @@ static int Zoltan_PHG_Initialize_Params(
 
   /* Get application values of parameters. */
   Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,
-   zz->Debug_Proc);
+                           zz->Debug_Proc);
 
-  err = Zoltan_PHG_Set_2D_Proc_Distrib (zz, zz->Communicator, zz->Proc, zz->Num_Proc, nProc_x, nProc_y, &hgp->globalcomm);
+  err = Zoltan_PHG_Set_2D_Proc_Distrib(zz, zz->Communicator, zz->Proc, 
+                                       zz->Num_Proc, nProc_x, nProc_y, 
+                                       &hgp->globalcomm);
   if (err != ZOLTAN_OK) 
       goto End;
 

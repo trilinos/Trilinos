@@ -29,21 +29,30 @@ extern "C" {
 #define ZOLTAN_TIME_CPU  2
 #define ZOLTAN_TIME_USER 3
 
+/* Macros to add line/file info */
+
+#define ZOLTAN_TIMER_START(a, b, c) \
+  Zoltan_Timer_Start(a, b, c, __FILE__, __LINE__)
+#define ZOLTAN_TIMER_STOP(a, b, c) \
+  Zoltan_Timer_Stop(a, b, c, __FILE__, __LINE__)
+
 /* Function prototypes */
 
 struct Zoltan_Timer;
 
 struct Zoltan_Timer *Zoltan_Timer_Create(int);
-int Zoltan_Timer_Init(struct Zoltan_Timer *, int, int, char *);
-int Zoltan_Timer_Reset(struct Zoltan_Timer *, int, int, int, char*);
-int Zoltan_Timer_Start(struct Zoltan_Timer *, int, int, MPI_Comm);
-int Zoltan_Timer_Stop(struct Zoltan_Timer *, int, int, MPI_Comm);
-int Zoltan_Timer_Print(struct Zoltan_Timer *, int, int);
-int Zoltan_Timer_PrintAll(struct Zoltan_Timer *, int);
+int Zoltan_Timer_Init(struct Zoltan_Timer *, int, char *);
+int Zoltan_Timer_Reset(struct Zoltan_Timer *, int, int, char*);
+int Zoltan_Timer_ChangeFlag(struct Zoltan_Timer *, int);
+int Zoltan_Timer_Start(struct Zoltan_Timer *, int, MPI_Comm, char *, int);
+int Zoltan_Timer_Stop(struct Zoltan_Timer *, int, MPI_Comm, char *, int);
+int Zoltan_Timer_Print(struct Zoltan_Timer *, int, int, FILE *);
+int Zoltan_Timer_PrintAll(struct Zoltan_Timer *, int, FILE *);
 void Zoltan_Timer_Destroy(struct Zoltan_Timer **);
 
 extern double Zoltan_Time(int);
 extern double Zoltan_Time_Resolution(int);
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

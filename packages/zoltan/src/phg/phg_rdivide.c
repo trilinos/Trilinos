@@ -43,14 +43,23 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   PHGComm *hgc = hg->comm;
   float tgpartsize[2]={0.0,0.0};    /* Target partition sizes; dimension is 2 
                                      because we are doing bisection */
+  static int timer_rdivide=-1;      /* Timer; declared static to accumulate
+                                       times over multiple runs. 
+                                       Tricky to get right because of the
+                                       recursion.  */
 
+  if (hgp->use_timers > 1) {
+    if (timer_rdivide < 0) 
+      timer_rdivide = Zoltan_Timer_Init(zz->ZTime, 1, "Rdivide");
+    ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, hg->comm->Communicator);
+  }
   hg->redl = hgp->redl;
   
   /* only one part remaining, record results and exit */
   if (lo == hi) {
     for (i = 0; i < hg->nVtx; ++i)
       final[hg->vmap[i]] = lo;
-    return ZOLTAN_OK;
+    goto End;
   }
 
   if (hg->nVtx && !(part = (Partition) ZOLTAN_MALLOC (hg->nVtx * sizeof (int))))
@@ -65,9 +74,15 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   tgpartsize[0] = hg->ratio;
   tgpartsize[1] = 1. - tgpartsize[0];
 
+  if (hgp->use_timers > 1)  /* Don't include partitioning time in rdivide */
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hg->comm->Communicator);
+
   ierr = Zoltan_PHG_Partition (zz, hg, 2, tgpartsize, part, hgp, level);
   if (ierr != ZOLTAN_OK)
       goto End;
+
+  if (hgp->use_timers > 1)  /* Restart rdivide timer */
+    ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, hg->comm->Communicator);
 
   uprintf(hgc, "Rdivide(%d, %d): %.1lf\n", lo, hi, Zoltan_PHG_hcut_size_links(hgc, hg, part, 2));
     
@@ -76,7 +91,7 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
     for (i = 0; i < hg->nVtx; ++i)
       final[hg->vmap[i]] = ((part[i] == 0) ? lo : hi);
     ZOLTAN_FREE (&part);
-    return ZOLTAN_OK;
+    goto End;
   }
 
   if (hg->nEdge && (!(pins[0] = (int*) ZOLTAN_CALLOC (2 * hg->nEdge, sizeof(int)))
@@ -128,7 +143,8 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   if (hgp->proc_split && hgc->nProc>1 && left && right) {
       PHGComm  leftcomm, rightcomm;
       HGraph  newleft, newright;
-      int     *leftvmap=NULL, *rightvmap=NULL, *leftdest=NULL, *rightdest=NULL, procmid;
+      int *leftvmap=NULL, *rightvmap=NULL, 
+          *leftdest=NULL, *rightdest=NULL, procmid;
       ZOLTAN_COMM_OBJ *plan=NULL;    
 
       /* redistribute left and right parts */
@@ -160,13 +176,33 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
       if ((nsend && (!proclist || !sendbuf || !part)) ||
           (hg->nVtx && !recvbuf))
           MEMORY_ERROR;
-      if (hgc->myProc<=procmid) {/* I'm on the left part so I should partition newleft */
-          ierr = rdivide_and_prepsend (lo, mid, part, zz, &newleft, hgp, level+1,
-                                       proclist, sendbuf, leftdest, leftvmap, &nsend);
+      if (hgc->myProc<=procmid) {
+          /* I'm on the left part so I should partition newleft */
+          if (hgp->use_timers > 1)  /* Stop timer before recursion */
+              ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, 
+                                hg->comm->Communicator);
+
+          ierr = rdivide_and_prepsend (lo, mid, part, zz, &newleft, hgp, 
+                                       level+1, proclist, sendbuf, 
+                                       leftdest, leftvmap, &nsend);
+
+          if (hgp->use_timers > 1)  /* Restart timer after recursion */
+              ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, 
+                                 hg->comm->Communicator);
+
           Zoltan_HG_HGraph_Free (&newright); /* free dist_x and dist_y allocated in Redistribute*/
-      } else { /* I'm on the right part so I should partition newright */
-          ierr |= rdivide_and_prepsend (mid+1, hi, part, zz, &newright, hgp, level+1,
-                                        proclist, sendbuf, rightdest, rightvmap, &nsend);
+      } else { 
+          /* I'm on the right part so I should partition newright */
+          if (hgp->use_timers > 1)  /* Stop timer before recursion */
+              ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, 
+                                hg->comm->Communicator);
+          ierr |= rdivide_and_prepsend (mid+1, hi, part, zz, &newright, hgp, 
+                                        level+1, proclist, sendbuf, 
+                                        rightdest, rightvmap, &nsend);
+          if (hgp->use_timers > 1)  /* Restart timer after recursion */
+              ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, 
+                                 hg->comm->Communicator);
+
           Zoltan_HG_HGraph_Free (&newleft); /* free dist_x and dist_y allocated in Redistribute*/
       }
 
@@ -208,20 +244,35 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
       if (left) {
           if (hgp->output_level >= PHG_DEBUG_LIST)     
               uprintf(hgc, "Left: H(%d, %d, %d)\n", left->nVtx, left->nEdge, left->nPins);
+          if (hgp->use_timers > 1)  /* Stop timer before recursion */
+              ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, 
+                                hg->comm->Communicator);
           ierr = Zoltan_PHG_rdivide (lo, mid, final, zz, left, hgp, level+1);
+          if (hgp->use_timers > 1)  /* Restart timer after recursion */
+              ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, 
+                                hg->comm->Communicator);
           Zoltan_HG_HGraph_Free (left);
       }
       if (right) {
           if (hgp->output_level >= PHG_DEBUG_LIST)     
               uprintf(hgc, "Right: H(%d, %d, %d)\n", right->nVtx, right->nEdge, right->nPins);
-          ierr |= Zoltan_PHG_rdivide (mid+1, hi, final, zz, right, hgp, level+1);
+          if (hgp->use_timers > 1)  /* Stop timer before recursion */
+              ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, 
+                                hg->comm->Communicator);
+          ierr |= Zoltan_PHG_rdivide(mid+1, hi, final, zz, right, hgp, level+1);
+          if (hgp->use_timers > 1)  /* Restart timer after recursion */
+              ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, 
+                                hg->comm->Communicator);
           Zoltan_HG_HGraph_Free (right);
       }
   }
   
- End:
-  Zoltan_Multifree (__FILE__, __LINE__, 8, &pins[0], &lpins[0], &part, &left, &right,
-                    &proclist, &sendbuf, &recvbuf);
+
+End:
+  if (hgp->use_timers > 1)  /* Stop timer before recursion */
+    ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hg->comm->Communicator);
+  Zoltan_Multifree (__FILE__, __LINE__, 8, &pins[0], &lpins[0], &part, 
+                    &left, &right, &proclist, &sendbuf, &recvbuf);
 
   return ierr;
 }

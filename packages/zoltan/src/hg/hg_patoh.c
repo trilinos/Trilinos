@@ -38,7 +38,6 @@ int Zoltan_HG_PaToH(
 )
 {
 char *yo = "Zoltan_HG_PaToH";
-int ierr = ZOLTAN_OK;
 
 #ifndef ZOLTAN_PATOH
   ZOLTAN_PRINT_ERROR(zz->Proc, yo, "PaToH method selected but Zoltan is not"
@@ -48,6 +47,7 @@ int ierr = ZOLTAN_OK;
 
 #else
 
+  int ierr = ZOLTAN_OK;
   PaToH_Parameters pargs;
   int *ivwgts = NULL, *iewgts = NULL;   /* PaToH expects integer weights. */
   int *partweight = NULL;               /* Diagnostics from PaToH */

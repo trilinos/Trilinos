@@ -27,6 +27,7 @@
 #define ZOLTAN_TIMER_CPP_H_
 
 #include "zoltan_timer.h"
+#include <stdio.h>
 #include <string>
 
 class Zoltan_Timer_Object {
@@ -42,31 +43,33 @@ public:
     Zoltan_Timer_Destroy(&ZTStruct);
   }
 
-  int Init(const int proc, const int use_barrier, const std::string & name) {
-    return Zoltan_Timer_Init(this->ZTStruct, proc, use_barrier,
+  int Init(const int use_barrier, const std::string & name) {
+    return Zoltan_Timer_Init(this->ZTStruct, use_barrier,
                              const_cast<char*>(name.c_str()));
   }
 
-  int Reset(const int ts_idx, const int proc, const int use_barrier, 
+  int Reset(const int ts_idx, const int use_barrier, 
             const std::string & name) {
-    return Zoltan_Timer_Reset(this->ZTStruct, ts_idx, proc, use_barrier,
+    return Zoltan_Timer_Reset(this->ZTStruct, ts_idx, use_barrier,
                               const_cast<char*>(name.c_str()));
   }
 
-  int Start(const int ts_idx, const int proc, const MPI_Comm comm) {
-    return Zoltan_Timer_Start(this->ZTStruct, ts_idx, proc, comm);
+  int Start(const int ts_idx, const MPI_Comm comm) {
+    return Zoltan_Timer_Start(this->ZTStruct, ts_idx, comm);
   }
 
-  int Stop(const int ts_idx, const int proc, const MPI_Comm comm) {
-    return Zoltan_Timer_Stop(this->ZTStruct, ts_idx, proc, comm);
+  int Stop(const int ts_idx, const MPI_Comm comm) {
+    return Zoltan_Timer_Stop(this->ZTStruct, ts_idx, comm);
   }
 
-  int Print(const int ts_idx, const int proc) {
-    return Zoltan_Timer_Print(this->ZTStruct, ts_idx, proc);
+  int Print(const int ts_idx, const int proc, FILE *os) {
+    // KDD  Can we use ostream instead of FILE*?  How convert it for C call??
+    return Zoltan_Timer_Print(this->ZTStruct, ts_idx, proc, os);
   }
 
-  int PrintAll(const int proc) {
-    return Zoltan_Timer_PrintAll(this->ZTStruct, proc);
+  int PrintAll(const int proc, FILE *os) {
+    // KDD  Can we use ostream instead of FILE*?  How convert it for C call??
+    return Zoltan_Timer_PrintAll(this->ZTStruct, proc, os);
   }
 
 private:

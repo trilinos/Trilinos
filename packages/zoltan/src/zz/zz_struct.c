@@ -196,6 +196,8 @@ ZZ *zz;
   Zoltan_LB_Init(&(zz->LB), zz->Num_Proc);
   Zoltan_Migrate_Init(&(zz->Migrate));
 
+  zz->ZTime = Zoltan_Timer_Create(ZOLTAN_TIMER_DEF);
+
   return(zz);
 }
 
@@ -221,6 +223,8 @@ void Zoltan_Destroy(ZZ **zz)
     MPI_Comm_free(&((*zz)->Communicator));
 
     Zoltan_LB_Free_Struct(&((*zz)->LB));
+
+    Zoltan_Timer_Destroy(&((*zz)->ZTime));
 
     ZOLTAN_FREE(zz);
   }

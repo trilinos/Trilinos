@@ -13,6 +13,7 @@
  ****************************************************************************/
 
 #include <iostream>
+#include <stdio.h>
 #include "zoltan_timer_cpp.h"
 using namespace std;
 
@@ -42,39 +43,39 @@ static int t1=-1, t2=-1, t3=-1;
   for (i = 0; i < MAINLOOP; i++) {
 
     if (firsttime)
-      t1 = zt->Init(me, USE_BARRIER, "Loop 1");
+      t1 = zt->Init(USE_BARRIER, "Loop 1");
 
-    zt->Start(t1, me, MPI_COMM_WORLD);
+    zt->Start(t1, MPI_COMM_WORLD);
     for (j = 0; j < LOOP1; j++) {
       double a;
       a = sqrt((double) (j * LOOP1));
     }
-    zt->Stop(t1, me, MPI_COMM_WORLD);
+    zt->Stop(t1, MPI_COMM_WORLD);
 
     if (firsttime)
-      t2 = zt->Init(me, USE_BARRIER, "Loop 2");
+      t2 = zt->Init(USE_BARRIER, "Loop 2");
 
-    zt->Start(t2, me, MPI_COMM_WORLD);
+    zt->Start(t2, MPI_COMM_WORLD);
     for (j = 0; j < LOOP2; j++) {
       double a;
       a = sqrt((double) (j * LOOP2));
     }
-    zt->Stop(t2, me, MPI_COMM_WORLD);
+    zt->Stop(t2, MPI_COMM_WORLD);
 
     if (firsttime)
-      t3 = zt->Init(me, USE_BARRIER, "Loop 3");
+      t3 = zt->Init(USE_BARRIER, "Loop 3");
 
-    zt->Start(t3, me, MPI_COMM_WORLD);
+    zt->Start(t3, MPI_COMM_WORLD);
     for (j = 0; j < LOOP3; j++) {
       double a;
       a = sqrt((double) (j * LOOP3));
     }
-    zt->Stop(t3, me, MPI_COMM_WORLD);
+    zt->Stop(t3, MPI_COMM_WORLD);
 
     firsttime=0;
   }
 
-  zt->PrintAll(me);
+  zt->PrintAll(me, stdout);
 
 }
 
@@ -100,37 +101,37 @@ static int cnt = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
   sprintf(str, "STLoop 1 %d", cnt);
-  t1 = zt->Init(me, USE_BARRIER, str);
+  t1 = zt->Init(USE_BARRIER, str);
   sprintf(str, "STLoop 2 %d", cnt);
-  t2 = zt->Init(me, USE_BARRIER, str);
+  t2 = zt->Init(USE_BARRIER, str);
   sprintf(str, "STLoop 3 %d", cnt);
-  t3 = zt->Init(me, USE_BARRIER, str);
+  t3 = zt->Init(USE_BARRIER, str);
   cnt++;
 
   for (i = 0; i < MAINLOOP; i++) {
-    zt->Start(t1, me, MPI_COMM_WORLD);
+    zt->Start(t1, MPI_COMM_WORLD);
     for (j = 0; j < LOOP1; j++) {
       double a;
       a = sqrt((double) (j * LOOP1));
     }
-    zt->Stop(t1, me, MPI_COMM_WORLD);
+    zt->Stop(t1, MPI_COMM_WORLD);
 
-    zt->Start(t2, me, MPI_COMM_WORLD);
+    zt->Start(t2, MPI_COMM_WORLD);
     for (j = 0; j < LOOP2; j++) {
       double a;
       a = sqrt((double) (j * LOOP2));
     }
-    zt->Stop(t2, me, MPI_COMM_WORLD);
+    zt->Stop(t2, MPI_COMM_WORLD);
 
-    zt->Start(t3, me, MPI_COMM_WORLD);
+    zt->Start(t3, MPI_COMM_WORLD);
     for (j = 0; j < LOOP3; j++) {
       double a;
       a = sqrt((double) (j * LOOP3));
     }
-    zt->Stop(t3, me, MPI_COMM_WORLD);
+    zt->Stop(t3, MPI_COMM_WORLD);
   }
 
-  zt->PrintAll(me);
+  zt->PrintAll(me, stdout);
 }
 
 /****************************************************************************/
@@ -152,9 +153,9 @@ const int MAINLOOP=20;
   }
 
   cout << "\n\nFINAL RESULTS -- FIRST TEST:\n";
-  zt1.PrintAll(me);
+  zt1.PrintAll(me, stdout);
   cout << "\n\nFINAL RESULTS -- SECOND TEST:\n";
-  zt2.PrintAll(me);
+  zt2.PrintAll(me, stdout);
   cout << "\n\nTHE END\n";
 
   MPI_Finalize();
