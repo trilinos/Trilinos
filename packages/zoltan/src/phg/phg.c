@@ -44,6 +44,7 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_NPROC_Y",                NULL, "INT",    0},
   {"PCHECK_GRAPH",               NULL, "INT",    0},
   {"PHG_OUTPUT_LEVEL",           NULL, "INT",    0},
+  {"PHG_DIRECT_KWAY",            NULL, "INT",    0},
   {"PHG_FM_LOOP_LIMIT",          NULL, "INT",    0},
   {"PHG_FM_MAX_NEG_MOVE",        NULL, "INT",    0},    
   {NULL,                         NULL,  NULL,    0} 
@@ -220,6 +221,8 @@ static int Zoltan_PHG_Initialize_Params(
                     (void*) &hgp->check_graph);   
   Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT",
                     (void*) hgp->refinement_str);
+  Zoltan_Bind_Param(PHG_params, "PHG_DIRECT_KWAY",
+                    (void*) &hgp->kway);
   Zoltan_Bind_Param(PHG_params, "PHG_FM_LOOP_LIMIT",
                     (void*) &hgp->fm_loop_limit);
   Zoltan_Bind_Param(PHG_params, "PHG_FM_MAX_NEG_MOVE",
@@ -239,6 +242,7 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->output_level = PHG_DEBUG_LIST;
   hgp->comm.nProc_x = -1;
   hgp->comm.nProc_y = -1;
+  hgp->kway = 0;
   hgp->fm_loop_limit = 99;
   hgp->fm_max_neg_move = 250;  
 
