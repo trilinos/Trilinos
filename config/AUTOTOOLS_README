@@ -95,8 +95,9 @@ III.  However, keep in mind that some issues involving the more 'enjoyable topic
 worthwhile.
 
 	For a machine that requires additional configure line options, a good 
-place to start is Trilinos(-3.0.1)/config.  There are configure invocation 
-scripts here for various platforms.  These scripts are named using the 
+place to start is Trilinos(-4.0)/sampleScripts.  There are configure invocation 
+scripts here for various platforms.  (In version 3.1 and prior, the scripts can 
+be found in the config subdirectory).  These scripts are named using the 
 following naming convention:
 arch_comm_machine
 For example "sgi64_mpi_atlantis".  Note that these scripts are examples only.  

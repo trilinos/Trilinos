@@ -1,5 +1,0 @@
-.././configure CXXFLAGS="-O2 -DMPI_NO_CPPBIND" \
-CFLAGS=-O2 FFLAGS=-O2 --enable-nox-epetra \
---enable-loca --enable-nox-epetra-examples \
---enable-nox-lapack-examples \
---enable-komplex

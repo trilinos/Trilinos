@@ -1,4 +1,0 @@
-.././configure --enable-mpi --with-cxxflags="-DMPI_NO_CPPBIND" \
-CXXFLAGS="-O2 -DMPICH_SKIP_MPICXX" CFLAGS=-O2 FFLAGS=-O2 \
---enable-nox-epetra \
---enable-loca --with-mpi-libs=-lmpi

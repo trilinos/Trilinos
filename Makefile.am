@@ -45,22 +45,23 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 EXTRA_DIST = \
 	testharness/subdir-list testharness/checkin-test-harness \
-	config/aix_mpi_xlC config/aix_mpi_xlC2 \
-	config/compaqCluster_mpi_stratus \
-	config/compaqCluster_serial_stratus config/cplant_mpi_ross \
-	config/cplant_serial_ross \
-	config/cygwin_mpi config/cygwin_serial_gcc \
-	config/cygwin_serial_icl config/cygwingcc_amesos \
-	config/irix_mpi_sierra config/janus_mpi config/janus_mpi_stlport \
-	config/linux_mpi_codecov \
-	config/linux_mpi_herouxsmp config/linux_mpi_instCluster \
-	config/linux_serial_codecov \
-	config/macosx_mpi_paul config/macosx_serial_paul \
-	config/macosx_serial_samt5980 \
-	config/scyld_mpi_beowulf config/sgi64_mpi_atlantis \
-	config/sgi64_serial_atlantis \
-	config/solaris_mpi_conejo config/solaris_serial_paul \
-	config/AutotoolsVersionInfo
+	sampleScripts/aix_mpi_xlC sampleScripts/aix_mpi_xlC2 \
+	sampleScripts/compaqCluster_mpi_stratus \
+	sampleScripts/compaqCluster_serial_stratus sampleScripts/cplant_mpi_ross \
+	sampleScripts/cplant_serial_ross \
+	sampleScripts/cygwin_mpi sampleScripts/cygwin_serial_gcc \
+	sampleScripts/cygwin_serial_icl sampleScripts/cygwingcc_amesos \
+	sampleScripts/irix_mpi_sierra sampleScripts/janus_mpi 
+	sampleScripts/janus_mpi_stlport \
+	sampleScripts/linux_mpi_codecov \
+	sampleScripts/linux_mpi_herouxsmp sampleScripts/linux_mpi_instCluster \
+	sampleScripts/linux_serial_codecov \
+	sampleScripts/macosx_mpi_paul sampleScripts/macosx_serial_paul \
+	sampleScripts/macosx_serial_samt5980 \
+	sampleScripts/scyld_mpi_beowulf sampleScripts/sgi64_mpi_atlantis \
+	sampleScripts/sgi64_serial_atlantis \
+	sampleScripts/solaris_mpi_conejo sampleScripts/solaris_serial_paul \
+	sampleScripts/README config/AutotoolsVersionInfo
 
 ## #######################################################################
 ## Tools in the auxillary directory 
