@@ -1,4 +1,6 @@
 Recommended way to use autoheader:
 
-cd nox
+cd appspack
 find . -type f -not -name \*~ -not -path \*CVS\* -not -name .cvsignore -not -name autoheader -exec maintenance/autoheader {} maintenance/header.txt \;
+
+find src-cache -type f -not -name \*~ -not -path \*CVS\* -not -name .cvsignore -not -name autoheader -exec maintenance/autoheader {} maintenance/header.txt \;
