@@ -107,219 +107,157 @@ am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execin
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 libclu_a_DEPENDENCIES =
-am__libclu_a_SOURCES_DIST = $(srcdir)/clean_code.c $(srcdir)/malloc.c \
-	$(srcdir)/my_srand48.c $(srcdir)/time.c $(srcdir)/distribute.c \
-	$(srcdir)/exchange_pivots.c $(srcdir)/factor.c \
+am__libclu_a_SOURCES_DIST = $(srcdir)/clean_code.c $(srcdir)/time.c \
+	$(srcdir)/distribute.c $(srcdir)/exchange_pivots.c \
 	$(srcdir)/factor_new.c $(srcdir)/forwardall.c \
-	$(srcdir)/forward.c $(srcdir)/init.c $(srcdir)/mat.c \
-	$(srcdir)/mat_hard.c $(srcdir)/pcomm.c $(srcdir)/permute.c \
+	$(srcdir)/forward.c $(srcdir)/pcomm.c $(srcdir)/permute.c \
 	$(srcdir)/permute_mat.c $(srcdir)/permute_rhs.c \
-	$(srcdir)/solve.c $(srcdir)/steve.c $(srcdir)/x_factor.c \
-	$(srcdir)/xlu_solve.c $(srcdir)/xlu_solve_new.c \
-	$(srcdir)/x_solve.c $(srcdir)/Pliris.cpp
+	$(srcdir)/solve.c $(srcdir)/x_factor.c \
+	$(srcdir)/xlu_solve_new.c $(srcdir)/x_solve.c
 am__objects_1 =
-am__objects_2 = libclu_a-clean_code.$(OBJEXT) \
-	libclu_a-malloc.$(OBJEXT) libclu_a-my_srand48.$(OBJEXT) \
-	libclu_a-time.$(OBJEXT)
+am__objects_2 = libclu_a-clean_code.$(OBJEXT) libclu_a-time.$(OBJEXT)
 am__objects_3 = libclu_a-distribute.$(OBJEXT) \
-	libclu_a-exchange_pivots.$(OBJEXT) libclu_a-factor.$(OBJEXT) \
+	libclu_a-exchange_pivots.$(OBJEXT) \
 	libclu_a-factor_new.$(OBJEXT) libclu_a-forwardall.$(OBJEXT) \
-	libclu_a-forward.$(OBJEXT) libclu_a-init.$(OBJEXT) \
-	libclu_a-mat.$(OBJEXT) libclu_a-mat_hard.$(OBJEXT) \
-	libclu_a-pcomm.$(OBJEXT) libclu_a-permute.$(OBJEXT) \
-	libclu_a-permute_mat.$(OBJEXT) libclu_a-permute_rhs.$(OBJEXT) \
-	libclu_a-solve.$(OBJEXT) libclu_a-steve.$(OBJEXT) \
-	libclu_a-x_factor.$(OBJEXT) libclu_a-xlu_solve.$(OBJEXT) \
-	libclu_a-xlu_solve_new.$(OBJEXT) libclu_a-x_solve.$(OBJEXT)
-am__objects_4 = Pliris.$(OBJEXT)
-@HAVE_EPETRA_TRUE@am__objects_5 = $(am__objects_4)
-@HAVE_MPI_TRUE@am__objects_6 = $(am__objects_2) $(am__objects_3) \
-@HAVE_MPI_TRUE@	$(am__objects_5)
+	libclu_a-forward.$(OBJEXT) libclu_a-pcomm.$(OBJEXT) \
+	libclu_a-permute.$(OBJEXT) libclu_a-permute_mat.$(OBJEXT) \
+	libclu_a-permute_rhs.$(OBJEXT) libclu_a-solve.$(OBJEXT) \
+	libclu_a-x_factor.$(OBJEXT) libclu_a-xlu_solve_new.$(OBJEXT) \
+	libclu_a-x_solve.$(OBJEXT)
+@HAVE_MPI_TRUE@am__objects_4 = $(am__objects_2) $(am__objects_3)
 am_libclu_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
-	$(am__objects_1) $(am__objects_6)
+	$(am__objects_1) $(am__objects_4)
 libclu_a_OBJECTS = $(am_libclu_a_OBJECTS)
 libdlu_a_DEPENDENCIES =
-am__libdlu_a_SOURCES_DIST = $(srcdir)/clean_code.c $(srcdir)/malloc.c \
-	$(srcdir)/my_srand48.c $(srcdir)/time.c $(srcdir)/distribute.c \
-	$(srcdir)/exchange_pivots.c $(srcdir)/factor.c \
+am__libdlu_a_SOURCES_DIST = $(srcdir)/clean_code.c $(srcdir)/time.c \
+	$(srcdir)/distribute.c $(srcdir)/exchange_pivots.c \
 	$(srcdir)/factor_new.c $(srcdir)/forwardall.c \
-	$(srcdir)/forward.c $(srcdir)/init.c $(srcdir)/mat.c \
-	$(srcdir)/mat_hard.c $(srcdir)/pcomm.c $(srcdir)/permute.c \
+	$(srcdir)/forward.c $(srcdir)/pcomm.c $(srcdir)/permute.c \
 	$(srcdir)/permute_mat.c $(srcdir)/permute_rhs.c \
-	$(srcdir)/solve.c $(srcdir)/steve.c $(srcdir)/x_factor.c \
-	$(srcdir)/xlu_solve.c $(srcdir)/xlu_solve_new.c \
-	$(srcdir)/x_solve.c $(srcdir)/Pliris.cpp
-am__objects_7 = libdlu_a-clean_code.$(OBJEXT) \
-	libdlu_a-malloc.$(OBJEXT) libdlu_a-my_srand48.$(OBJEXT) \
-	libdlu_a-time.$(OBJEXT)
-am__objects_8 = libdlu_a-distribute.$(OBJEXT) \
-	libdlu_a-exchange_pivots.$(OBJEXT) libdlu_a-factor.$(OBJEXT) \
+	$(srcdir)/solve.c $(srcdir)/x_factor.c \
+	$(srcdir)/xlu_solve_new.c $(srcdir)/x_solve.c \
+	$(srcdir)/Pliris.cpp
+am__objects_5 = libdlu_a-clean_code.$(OBJEXT) libdlu_a-time.$(OBJEXT)
+am__objects_6 = libdlu_a-distribute.$(OBJEXT) \
+	libdlu_a-exchange_pivots.$(OBJEXT) \
 	libdlu_a-factor_new.$(OBJEXT) libdlu_a-forwardall.$(OBJEXT) \
-	libdlu_a-forward.$(OBJEXT) libdlu_a-init.$(OBJEXT) \
-	libdlu_a-mat.$(OBJEXT) libdlu_a-mat_hard.$(OBJEXT) \
-	libdlu_a-pcomm.$(OBJEXT) libdlu_a-permute.$(OBJEXT) \
-	libdlu_a-permute_mat.$(OBJEXT) libdlu_a-permute_rhs.$(OBJEXT) \
-	libdlu_a-solve.$(OBJEXT) libdlu_a-steve.$(OBJEXT) \
-	libdlu_a-x_factor.$(OBJEXT) libdlu_a-xlu_solve.$(OBJEXT) \
-	libdlu_a-xlu_solve_new.$(OBJEXT) libdlu_a-x_solve.$(OBJEXT)
-@HAVE_MPI_TRUE@am__objects_9 = $(am__objects_7) $(am__objects_8) \
-@HAVE_MPI_TRUE@	$(am__objects_5)
+	libdlu_a-forward.$(OBJEXT) libdlu_a-pcomm.$(OBJEXT) \
+	libdlu_a-permute.$(OBJEXT) libdlu_a-permute_mat.$(OBJEXT) \
+	libdlu_a-permute_rhs.$(OBJEXT) libdlu_a-solve.$(OBJEXT) \
+	libdlu_a-x_factor.$(OBJEXT) libdlu_a-xlu_solve_new.$(OBJEXT) \
+	libdlu_a-x_solve.$(OBJEXT)
+@HAVE_MPI_TRUE@am__objects_7 = $(am__objects_5) $(am__objects_6)
+am__objects_8 = libdlu_a-Pliris.$(OBJEXT)
+@HAVE_EPETRA_TRUE@am__objects_9 = $(am__objects_8)
+@HAVE_MPI_TRUE@am__objects_10 = $(am__objects_9)
 am_libdlu_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
-	$(am__objects_1) $(am__objects_9)
+	$(am__objects_1) $(am__objects_7) $(am__objects_10)
 libdlu_a_OBJECTS = $(am_libdlu_a_OBJECTS)
 libslu_a_DEPENDENCIES =
-am__libslu_a_SOURCES_DIST = $(srcdir)/clean_code.c $(srcdir)/malloc.c \
-	$(srcdir)/my_srand48.c $(srcdir)/time.c $(srcdir)/distribute.c \
-	$(srcdir)/exchange_pivots.c $(srcdir)/factor.c \
+am__libslu_a_SOURCES_DIST = $(srcdir)/clean_code.c $(srcdir)/time.c \
+	$(srcdir)/distribute.c $(srcdir)/exchange_pivots.c \
 	$(srcdir)/factor_new.c $(srcdir)/forwardall.c \
-	$(srcdir)/forward.c $(srcdir)/init.c $(srcdir)/mat.c \
-	$(srcdir)/mat_hard.c $(srcdir)/pcomm.c $(srcdir)/permute.c \
+	$(srcdir)/forward.c $(srcdir)/pcomm.c $(srcdir)/permute.c \
 	$(srcdir)/permute_mat.c $(srcdir)/permute_rhs.c \
-	$(srcdir)/solve.c $(srcdir)/steve.c $(srcdir)/x_factor.c \
-	$(srcdir)/xlu_solve.c $(srcdir)/xlu_solve_new.c \
-	$(srcdir)/x_solve.c $(srcdir)/Pliris.cpp
-am__objects_10 = libslu_a-clean_code.$(OBJEXT) \
-	libslu_a-malloc.$(OBJEXT) libslu_a-my_srand48.$(OBJEXT) \
-	libslu_a-time.$(OBJEXT)
-am__objects_11 = libslu_a-distribute.$(OBJEXT) \
-	libslu_a-exchange_pivots.$(OBJEXT) libslu_a-factor.$(OBJEXT) \
+	$(srcdir)/solve.c $(srcdir)/x_factor.c \
+	$(srcdir)/xlu_solve_new.c $(srcdir)/x_solve.c
+am__objects_11 = libslu_a-clean_code.$(OBJEXT) libslu_a-time.$(OBJEXT)
+am__objects_12 = libslu_a-distribute.$(OBJEXT) \
+	libslu_a-exchange_pivots.$(OBJEXT) \
 	libslu_a-factor_new.$(OBJEXT) libslu_a-forwardall.$(OBJEXT) \
-	libslu_a-forward.$(OBJEXT) libslu_a-init.$(OBJEXT) \
-	libslu_a-mat.$(OBJEXT) libslu_a-mat_hard.$(OBJEXT) \
-	libslu_a-pcomm.$(OBJEXT) libslu_a-permute.$(OBJEXT) \
-	libslu_a-permute_mat.$(OBJEXT) libslu_a-permute_rhs.$(OBJEXT) \
-	libslu_a-solve.$(OBJEXT) libslu_a-steve.$(OBJEXT) \
-	libslu_a-x_factor.$(OBJEXT) libslu_a-xlu_solve.$(OBJEXT) \
-	libslu_a-xlu_solve_new.$(OBJEXT) libslu_a-x_solve.$(OBJEXT)
-@HAVE_MPI_TRUE@am__objects_12 = $(am__objects_10) $(am__objects_11) \
-@HAVE_MPI_TRUE@	$(am__objects_5)
+	libslu_a-forward.$(OBJEXT) libslu_a-pcomm.$(OBJEXT) \
+	libslu_a-permute.$(OBJEXT) libslu_a-permute_mat.$(OBJEXT) \
+	libslu_a-permute_rhs.$(OBJEXT) libslu_a-solve.$(OBJEXT) \
+	libslu_a-x_factor.$(OBJEXT) libslu_a-xlu_solve_new.$(OBJEXT) \
+	libslu_a-x_solve.$(OBJEXT)
+@HAVE_MPI_TRUE@am__objects_13 = $(am__objects_11) $(am__objects_12)
 am_libslu_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
-	$(am__objects_1) $(am__objects_12)
+	$(am__objects_1) $(am__objects_13)
 libslu_a_OBJECTS = $(am_libslu_a_OBJECTS)
 libzlu_a_DEPENDENCIES =
-am__libzlu_a_SOURCES_DIST = $(srcdir)/clean_code.c $(srcdir)/malloc.c \
-	$(srcdir)/my_srand48.c $(srcdir)/time.c $(srcdir)/distribute.c \
-	$(srcdir)/exchange_pivots.c $(srcdir)/factor.c \
+am__libzlu_a_SOURCES_DIST = $(srcdir)/clean_code.c $(srcdir)/time.c \
+	$(srcdir)/distribute.c $(srcdir)/exchange_pivots.c \
 	$(srcdir)/factor_new.c $(srcdir)/forwardall.c \
-	$(srcdir)/forward.c $(srcdir)/init.c $(srcdir)/mat.c \
-	$(srcdir)/mat_hard.c $(srcdir)/pcomm.c $(srcdir)/permute.c \
+	$(srcdir)/forward.c $(srcdir)/pcomm.c $(srcdir)/permute.c \
 	$(srcdir)/permute_mat.c $(srcdir)/permute_rhs.c \
-	$(srcdir)/solve.c $(srcdir)/steve.c $(srcdir)/x_factor.c \
-	$(srcdir)/xlu_solve.c $(srcdir)/xlu_solve_new.c \
-	$(srcdir)/x_solve.c $(srcdir)/Pliris.cpp
-am__objects_13 = libzlu_a-clean_code.$(OBJEXT) \
-	libzlu_a-malloc.$(OBJEXT) libzlu_a-my_srand48.$(OBJEXT) \
-	libzlu_a-time.$(OBJEXT)
-am__objects_14 = libzlu_a-distribute.$(OBJEXT) \
-	libzlu_a-exchange_pivots.$(OBJEXT) libzlu_a-factor.$(OBJEXT) \
+	$(srcdir)/solve.c $(srcdir)/x_factor.c \
+	$(srcdir)/xlu_solve_new.c $(srcdir)/x_solve.c
+am__objects_14 = libzlu_a-clean_code.$(OBJEXT) libzlu_a-time.$(OBJEXT)
+am__objects_15 = libzlu_a-distribute.$(OBJEXT) \
+	libzlu_a-exchange_pivots.$(OBJEXT) \
 	libzlu_a-factor_new.$(OBJEXT) libzlu_a-forwardall.$(OBJEXT) \
-	libzlu_a-forward.$(OBJEXT) libzlu_a-init.$(OBJEXT) \
-	libzlu_a-mat.$(OBJEXT) libzlu_a-mat_hard.$(OBJEXT) \
-	libzlu_a-pcomm.$(OBJEXT) libzlu_a-permute.$(OBJEXT) \
-	libzlu_a-permute_mat.$(OBJEXT) libzlu_a-permute_rhs.$(OBJEXT) \
-	libzlu_a-solve.$(OBJEXT) libzlu_a-steve.$(OBJEXT) \
-	libzlu_a-x_factor.$(OBJEXT) libzlu_a-xlu_solve.$(OBJEXT) \
-	libzlu_a-xlu_solve_new.$(OBJEXT) libzlu_a-x_solve.$(OBJEXT)
-@HAVE_MPI_TRUE@am__objects_15 = $(am__objects_13) $(am__objects_14) \
-@HAVE_MPI_TRUE@	$(am__objects_5)
+	libzlu_a-forward.$(OBJEXT) libzlu_a-pcomm.$(OBJEXT) \
+	libzlu_a-permute.$(OBJEXT) libzlu_a-permute_mat.$(OBJEXT) \
+	libzlu_a-permute_rhs.$(OBJEXT) libzlu_a-solve.$(OBJEXT) \
+	libzlu_a-x_factor.$(OBJEXT) libzlu_a-xlu_solve_new.$(OBJEXT) \
+	libzlu_a-x_solve.$(OBJEXT)
+@HAVE_MPI_TRUE@am__objects_16 = $(am__objects_14) $(am__objects_15)
 am_libzlu_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
-	$(am__objects_1) $(am__objects_15)
+	$(am__objects_1) $(am__objects_16)
 libzlu_a_OBJECTS = $(am_libzlu_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Pliris.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libclu_a-clean_code.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/libclu_a-clean_code.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libclu_a-distribute.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libclu_a-exchange_pivots.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libclu_a-factor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libclu_a-factor_new.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libclu_a-forward.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libclu_a-forwardall.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libclu_a-init.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libclu_a-malloc.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libclu_a-mat.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libclu_a-mat_hard.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libclu_a-my_srand48.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libclu_a-pcomm.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libclu_a-permute.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libclu_a-permute_mat.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libclu_a-permute_rhs.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libclu_a-solve.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libclu_a-steve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libclu_a-time.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libclu_a-x_factor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libclu_a-x_solve.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libclu_a-xlu_solve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libclu_a-xlu_solve_new.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-Pliris.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-clean_code.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-distribute.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-exchange_pivots.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-factor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-factor_new.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-forward.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-forwardall.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-init.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-malloc.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-mat.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-mat_hard.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-my_srand48.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-pcomm.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-permute.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-permute_mat.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-permute_rhs.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-solve.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-steve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-time.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-x_factor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-x_solve.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-xlu_solve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libdlu_a-xlu_solve_new.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-clean_code.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-distribute.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-exchange_pivots.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libslu_a-factor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-factor_new.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-forward.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-forwardall.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libslu_a-init.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libslu_a-malloc.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libslu_a-mat.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libslu_a-mat_hard.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libslu_a-my_srand48.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-pcomm.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-permute.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-permute_mat.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-permute_rhs.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-solve.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libslu_a-steve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-time.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-x_factor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-x_solve.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libslu_a-xlu_solve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libslu_a-xlu_solve_new.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-clean_code.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-distribute.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-exchange_pivots.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-factor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-factor_new.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-forward.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-forwardall.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-init.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-malloc.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-mat.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-mat_hard.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-my_srand48.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-pcomm.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-permute.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-permute_mat.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-permute_rhs.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-solve.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-steve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-time.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-x_factor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-x_solve.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-xlu_solve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libzlu_a-xlu_solve_new.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -336,18 +274,11 @@ SOURCES = $(libclu_a_SOURCES) $(libdlu_a_SOURCES) \
 DIST_SOURCES = $(am__libclu_a_SOURCES_DIST) \
 	$(am__libdlu_a_SOURCES_DIST) $(EXTRA_libdlu_a_SOURCES) \
 	$(am__libslu_a_SOURCES_DIST) $(am__libzlu_a_SOURCES_DIST)
-am__include_HEADERS_DIST = $(srcdir)/BLAS_prototypes.h \
-	$(srcdir)/clean_code.h $(srcdir)/defines.h \
-	$(srcdir)/extern_vars.h $(srcdir)/macros.h $(srcdir)/mytime.h \
-	$(srcdir)/sblassp.h $(srcdir)/zblassp.h $(srcdir)/block.h \
-	$(srcdir)/cblassp.h $(srcdir)/dblassp.h $(srcdir)/dim.h \
-	$(srcdir)/distribute.h $(srcdir)/exchange_pivots.h \
-	$(srcdir)/factor.h $(srcdir)/forwardall.h $(srcdir)/forward.h \
-	$(srcdir)/init.h $(srcdir)/pcomm.h $(srcdir)/perm1.h \
-	$(srcdir)/permute.h $(srcdir)/permute_mat.h \
-	$(srcdir)/permute_rhs.h $(srcdir)/solve.h $(srcdir)/vars.h \
-	$(srcdir)/x_factor.h $(srcdir)/xlu_solve.h $(srcdir)/x_solve.h \
-	$(srcdir)/Pliris.h
+am__include_HEADERS_DIST = $(srcdir)/defines.h \
+	$(srcdir)/exchange_pivots.h $(srcdir)/factor.h \
+	$(srcdir)/forwardall.h $(srcdir)/forward.h $(srcdir)/pcomm.h \
+	$(srcdir)/permute_mat.h $(srcdir)/permute_rhs.h \
+	$(srcdir)/solve.h $(srcdir)/xlu_solve.h $(srcdir)/Pliris.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -474,64 +405,64 @@ target_vendor = @target_vendor@
 #
 #np# Make sure to list all source files in one of the following categories.
 EXTRA_CORE_H = \
-	$(srcdir)/block.h \
-	$(srcdir)/cblassp.h \
-        $(srcdir)/dblassp.h \
-        $(srcdir)/dim.h \
-        $(srcdir)/distribute.h \
         $(srcdir)/exchange_pivots.h \
         $(srcdir)/factor.h \
         $(srcdir)/forwardall.h \
         $(srcdir)/forward.h \
-        $(srcdir)/init.h \
         $(srcdir)/pcomm.h \
-        $(srcdir)/perm1.h \
-        $(srcdir)/permute.h \
         $(srcdir)/permute_mat.h \
         $(srcdir)/permute_rhs.h \
         $(srcdir)/solve.h \
-        $(srcdir)/vars.h \
-        $(srcdir)/x_factor.h \
-        $(srcdir)/xlu_solve.h \
-        $(srcdir)/x_solve.h
+        $(srcdir)/xlu_solve.h
 
+#        $(srcdir)/block.h \
+#        $(srcdir)/cblassp.h \
+#        $(srcdir)/dblassp.h \
+#        $(srcdir)/dim.h \
+#        $(srcdir)/distribute.h \
+#        $(srcdir)/init.h \
+#        $(srcdir)/perm1.h \
+#        $(srcdir)/permute.h \
+#        $(srcdir)/vars.h \
+#        $(srcdir)/x_factor.h \
+#        $(srcdir)/x_solve.h
 EXTRA_CORE = \
 	$(srcdir)/distribute.c \
         $(srcdir)/exchange_pivots.c \
-        $(srcdir)/factor.c \
         $(srcdir)/factor_new.c \
         $(srcdir)/forwardall.c \
         $(srcdir)/forward.c \
-        $(srcdir)/init.c \
-        $(srcdir)/mat.c \
-        $(srcdir)/mat_hard.c \
         $(srcdir)/pcomm.c \
         $(srcdir)/permute.c \
         $(srcdir)/permute_mat.c \
         $(srcdir)/permute_rhs.c \
         $(srcdir)/solve.c \
-        $(srcdir)/steve.c \
         $(srcdir)/x_factor.c \
-        $(srcdir)/xlu_solve.c \
         $(srcdir)/xlu_solve_new.c \
         $(srcdir)/x_solve.c
 
+#       $(srcdir)/factor.c \
+#        $(srcdir)/mat.c \
+#        $(srcdir)/init.c \
+#        $(srcdir)/mat_hard.c \
+#        $(srcdir)/steve.c \
+#        $(srcdir)/xlu_solve.c
 EXTRA_UTIL_H = \
-	$(srcdir)/BLAS_prototypes.h \
-        $(srcdir)/clean_code.h \
-        $(srcdir)/defines.h \
-        $(srcdir)/extern_vars.h \
-        $(srcdir)/macros.h \
-        $(srcdir)/mytime.h \
-        $(srcdir)/sblassp.h \
-        $(srcdir)/zblassp.h
+        $(srcdir)/defines.h
 
+#        $(srcdir)/BLAS_prototypes.h \
+#        $(srcdir)/clean_code.h \
+#        $(srcdir)/extern_vars.h \
+#        $(srcdir)/macros.h \
+#        $(srcdir)/mytime.h \
+#        $(srcdir)/sblassp.h \
+#        $(srcdir)/zblassp.h
 EXTRA_UTIL = \
 	$(srcdir)/clean_code.c \
-	$(srcdir)/malloc.c \
-        $(srcdir)/my_srand48.c \
         $(srcdir)/time.c
 
+#        $(srcdir)/malloc.c \
+#        $(srcdir)/my_srand48.c
 EXTRA_EPETRA_COMPAT = \
 	$(srcdir)/Pliris.cpp
 
@@ -559,13 +490,19 @@ EXTRA_MPI =
 @HAVE_MPI_FALSE@MPI_H = 
 @HAVE_MPI_TRUE@MPI_H = \
 @HAVE_MPI_TRUE@	$(EXTRA_UTIL_H) \
-@HAVE_MPI_TRUE@	$(EXTRA_CORE_H) \
-@HAVE_MPI_TRUE@	$(EPETRA_COMPAT_H)
+@HAVE_MPI_TRUE@	$(EXTRA_CORE_H)
 
 @HAVE_MPI_FALSE@MPI = 
 @HAVE_MPI_TRUE@MPI = \
 @HAVE_MPI_TRUE@	$(EXTRA_UTIL) \
-@HAVE_MPI_TRUE@        $(EXTRA_CORE) \
+@HAVE_MPI_TRUE@        $(EXTRA_CORE)
+
+@HAVE_MPI_FALSE@MPI_EPETRA_H = 
+@HAVE_MPI_TRUE@MPI_EPETRA_H = \
+@HAVE_MPI_TRUE@        $(EPETRA_COMPAT_H)
+
+@HAVE_MPI_FALSE@MPI_EPETRA = 
+@HAVE_MPI_TRUE@MPI_EPETRA = \
 @HAVE_MPI_TRUE@        $(EPETRA_COMPAT)
 
 LANG_WRAPS_H = 
@@ -593,7 +530,8 @@ PLIRIS_H = \
 	$(SERIAL_H) \
 	$(DIST_H) \
 	$(COMP_H) \
-	$(MPI_H)
+	$(MPI_H) \
+        $(MPI_EPETRA_H)
 
 libdlu_a_SOURCES = \
 	$(CORE) \
@@ -601,7 +539,8 @@ libdlu_a_SOURCES = \
 	$(SERIAL) \
 	$(DIST) \
 	$(COMP) \
-	$(MPI)
+	$(MPI) \
+        $(MPI_EPETRA)
 
 libslu_a_SOURCES = \
         $(CORE) \
@@ -641,15 +580,19 @@ EXTRA_libdlu_a_SOURCES = \
 
 #libdlu_a_AM_CFLAGS =-DDREAL
 libdlu_a_CFLAGS = -DDREAL
+libdlu_a_CXXFLAGS = -DDREAL
 
 #libslu_a_AM_CFLAGS =-DSREAL
 libslu_a_CFLAGS = -DSREAL
+libslu_a_CXXFLAGS = -DSREAL
 
 #libclu_a_AM_CFLAGS =-DSCPLX
 libclu_a_CFLAGS = -DSCPLX
+libclu_a_CXXFLAGS = -DSCPLX
 
 #libzlu_a_AM_CFLAGS =-DZCPLX
 libzlu_a_CFLAGS = -DZCPLX
+libzlu_a_CXXFLAGS = -DZCPLX
 
 #np# replace new_package with the name of the package being autotool'ed here
 @USE_ALTERNATE_AR_FALSE@libdlu_a_AR = $(AR) cru
@@ -820,98 +763,66 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Pliris.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-clean_code.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-distribute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-exchange_pivots.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-factor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-factor_new.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-forward.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-forwardall.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-init.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-malloc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-mat.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-mat_hard.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-my_srand48.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-pcomm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-permute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-permute_mat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-permute_rhs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-solve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-steve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-x_factor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-x_solve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-xlu_solve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libclu_a-xlu_solve_new.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-Pliris.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-clean_code.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-distribute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-exchange_pivots.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-factor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-factor_new.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-forward.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-forwardall.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-init.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-malloc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-mat.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-mat_hard.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-my_srand48.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-pcomm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-permute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-permute_mat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-permute_rhs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-solve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-steve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-x_factor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-x_solve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-xlu_solve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libdlu_a-xlu_solve_new.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-clean_code.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-distribute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-exchange_pivots.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-factor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-factor_new.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-forward.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-forwardall.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-init.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-malloc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-mat.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-mat_hard.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-my_srand48.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-pcomm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-permute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-permute_mat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-permute_rhs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-solve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-steve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-x_factor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-x_solve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-xlu_solve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libslu_a-xlu_solve_new.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-clean_code.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-distribute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-exchange_pivots.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-factor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-factor_new.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-forward.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-forwardall.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-init.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-malloc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-mat.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-mat_hard.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-my_srand48.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-pcomm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-permute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-permute_mat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-permute_rhs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-solve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-steve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-x_factor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-x_solve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-xlu_solve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzlu_a-xlu_solve_new.Po@am__quote@
 
 .c.o:
@@ -945,38 +856,6 @@ libclu_a-clean_code.obj: $(srcdir)/clean_code.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-clean_code.Po' tmpdepfile='$(DEPDIR)/libclu_a-clean_code.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-clean_code.obj `if test -f '$(srcdir)/clean_code.c'; then $(CYGPATH_W) '$(srcdir)/clean_code.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clean_code.c'; fi`
-
-libclu_a-malloc.o: $(srcdir)/malloc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-malloc.o -MD -MP -MF "$(DEPDIR)/libclu_a-malloc.Tpo" -c -o libclu_a-malloc.o `test -f '$(srcdir)/malloc.c' || echo '$(srcdir)/'`$(srcdir)/malloc.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-malloc.Tpo" "$(DEPDIR)/libclu_a-malloc.Po"; else rm -f "$(DEPDIR)/libclu_a-malloc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/malloc.c' object='libclu_a-malloc.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-malloc.Po' tmpdepfile='$(DEPDIR)/libclu_a-malloc.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-malloc.o `test -f '$(srcdir)/malloc.c' || echo '$(srcdir)/'`$(srcdir)/malloc.c
-
-libclu_a-malloc.obj: $(srcdir)/malloc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-malloc.obj -MD -MP -MF "$(DEPDIR)/libclu_a-malloc.Tpo" -c -o libclu_a-malloc.obj `if test -f '$(srcdir)/malloc.c'; then $(CYGPATH_W) '$(srcdir)/malloc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/malloc.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-malloc.Tpo" "$(DEPDIR)/libclu_a-malloc.Po"; else rm -f "$(DEPDIR)/libclu_a-malloc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/malloc.c' object='libclu_a-malloc.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-malloc.Po' tmpdepfile='$(DEPDIR)/libclu_a-malloc.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-malloc.obj `if test -f '$(srcdir)/malloc.c'; then $(CYGPATH_W) '$(srcdir)/malloc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/malloc.c'; fi`
-
-libclu_a-my_srand48.o: $(srcdir)/my_srand48.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-my_srand48.o -MD -MP -MF "$(DEPDIR)/libclu_a-my_srand48.Tpo" -c -o libclu_a-my_srand48.o `test -f '$(srcdir)/my_srand48.c' || echo '$(srcdir)/'`$(srcdir)/my_srand48.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-my_srand48.Tpo" "$(DEPDIR)/libclu_a-my_srand48.Po"; else rm -f "$(DEPDIR)/libclu_a-my_srand48.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/my_srand48.c' object='libclu_a-my_srand48.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-my_srand48.Po' tmpdepfile='$(DEPDIR)/libclu_a-my_srand48.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-my_srand48.o `test -f '$(srcdir)/my_srand48.c' || echo '$(srcdir)/'`$(srcdir)/my_srand48.c
-
-libclu_a-my_srand48.obj: $(srcdir)/my_srand48.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-my_srand48.obj -MD -MP -MF "$(DEPDIR)/libclu_a-my_srand48.Tpo" -c -o libclu_a-my_srand48.obj `if test -f '$(srcdir)/my_srand48.c'; then $(CYGPATH_W) '$(srcdir)/my_srand48.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/my_srand48.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-my_srand48.Tpo" "$(DEPDIR)/libclu_a-my_srand48.Po"; else rm -f "$(DEPDIR)/libclu_a-my_srand48.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/my_srand48.c' object='libclu_a-my_srand48.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-my_srand48.Po' tmpdepfile='$(DEPDIR)/libclu_a-my_srand48.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-my_srand48.obj `if test -f '$(srcdir)/my_srand48.c'; then $(CYGPATH_W) '$(srcdir)/my_srand48.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/my_srand48.c'; fi`
 
 libclu_a-time.o: $(srcdir)/time.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-time.o -MD -MP -MF "$(DEPDIR)/libclu_a-time.Tpo" -c -o libclu_a-time.o `test -f '$(srcdir)/time.c' || echo '$(srcdir)/'`$(srcdir)/time.c; \
@@ -1026,22 +905,6 @@ libclu_a-exchange_pivots.obj: $(srcdir)/exchange_pivots.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-exchange_pivots.obj `if test -f '$(srcdir)/exchange_pivots.c'; then $(CYGPATH_W) '$(srcdir)/exchange_pivots.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/exchange_pivots.c'; fi`
 
-libclu_a-factor.o: $(srcdir)/factor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-factor.o -MD -MP -MF "$(DEPDIR)/libclu_a-factor.Tpo" -c -o libclu_a-factor.o `test -f '$(srcdir)/factor.c' || echo '$(srcdir)/'`$(srcdir)/factor.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-factor.Tpo" "$(DEPDIR)/libclu_a-factor.Po"; else rm -f "$(DEPDIR)/libclu_a-factor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/factor.c' object='libclu_a-factor.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-factor.Po' tmpdepfile='$(DEPDIR)/libclu_a-factor.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-factor.o `test -f '$(srcdir)/factor.c' || echo '$(srcdir)/'`$(srcdir)/factor.c
-
-libclu_a-factor.obj: $(srcdir)/factor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-factor.obj -MD -MP -MF "$(DEPDIR)/libclu_a-factor.Tpo" -c -o libclu_a-factor.obj `if test -f '$(srcdir)/factor.c'; then $(CYGPATH_W) '$(srcdir)/factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/factor.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-factor.Tpo" "$(DEPDIR)/libclu_a-factor.Po"; else rm -f "$(DEPDIR)/libclu_a-factor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/factor.c' object='libclu_a-factor.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-factor.Po' tmpdepfile='$(DEPDIR)/libclu_a-factor.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-factor.obj `if test -f '$(srcdir)/factor.c'; then $(CYGPATH_W) '$(srcdir)/factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/factor.c'; fi`
-
 libclu_a-factor_new.o: $(srcdir)/factor_new.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-factor_new.o -MD -MP -MF "$(DEPDIR)/libclu_a-factor_new.Tpo" -c -o libclu_a-factor_new.o `test -f '$(srcdir)/factor_new.c' || echo '$(srcdir)/'`$(srcdir)/factor_new.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-factor_new.Tpo" "$(DEPDIR)/libclu_a-factor_new.Po"; else rm -f "$(DEPDIR)/libclu_a-factor_new.Tpo"; exit 1; fi
@@ -1089,54 +952,6 @@ libclu_a-forward.obj: $(srcdir)/forward.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-forward.Po' tmpdepfile='$(DEPDIR)/libclu_a-forward.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-forward.obj `if test -f '$(srcdir)/forward.c'; then $(CYGPATH_W) '$(srcdir)/forward.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/forward.c'; fi`
-
-libclu_a-init.o: $(srcdir)/init.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-init.o -MD -MP -MF "$(DEPDIR)/libclu_a-init.Tpo" -c -o libclu_a-init.o `test -f '$(srcdir)/init.c' || echo '$(srcdir)/'`$(srcdir)/init.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-init.Tpo" "$(DEPDIR)/libclu_a-init.Po"; else rm -f "$(DEPDIR)/libclu_a-init.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/init.c' object='libclu_a-init.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-init.Po' tmpdepfile='$(DEPDIR)/libclu_a-init.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-init.o `test -f '$(srcdir)/init.c' || echo '$(srcdir)/'`$(srcdir)/init.c
-
-libclu_a-init.obj: $(srcdir)/init.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-init.obj -MD -MP -MF "$(DEPDIR)/libclu_a-init.Tpo" -c -o libclu_a-init.obj `if test -f '$(srcdir)/init.c'; then $(CYGPATH_W) '$(srcdir)/init.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/init.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-init.Tpo" "$(DEPDIR)/libclu_a-init.Po"; else rm -f "$(DEPDIR)/libclu_a-init.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/init.c' object='libclu_a-init.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-init.Po' tmpdepfile='$(DEPDIR)/libclu_a-init.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-init.obj `if test -f '$(srcdir)/init.c'; then $(CYGPATH_W) '$(srcdir)/init.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/init.c'; fi`
-
-libclu_a-mat.o: $(srcdir)/mat.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-mat.o -MD -MP -MF "$(DEPDIR)/libclu_a-mat.Tpo" -c -o libclu_a-mat.o `test -f '$(srcdir)/mat.c' || echo '$(srcdir)/'`$(srcdir)/mat.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-mat.Tpo" "$(DEPDIR)/libclu_a-mat.Po"; else rm -f "$(DEPDIR)/libclu_a-mat.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat.c' object='libclu_a-mat.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-mat.Po' tmpdepfile='$(DEPDIR)/libclu_a-mat.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-mat.o `test -f '$(srcdir)/mat.c' || echo '$(srcdir)/'`$(srcdir)/mat.c
-
-libclu_a-mat.obj: $(srcdir)/mat.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-mat.obj -MD -MP -MF "$(DEPDIR)/libclu_a-mat.Tpo" -c -o libclu_a-mat.obj `if test -f '$(srcdir)/mat.c'; then $(CYGPATH_W) '$(srcdir)/mat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-mat.Tpo" "$(DEPDIR)/libclu_a-mat.Po"; else rm -f "$(DEPDIR)/libclu_a-mat.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat.c' object='libclu_a-mat.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-mat.Po' tmpdepfile='$(DEPDIR)/libclu_a-mat.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-mat.obj `if test -f '$(srcdir)/mat.c'; then $(CYGPATH_W) '$(srcdir)/mat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat.c'; fi`
-
-libclu_a-mat_hard.o: $(srcdir)/mat_hard.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-mat_hard.o -MD -MP -MF "$(DEPDIR)/libclu_a-mat_hard.Tpo" -c -o libclu_a-mat_hard.o `test -f '$(srcdir)/mat_hard.c' || echo '$(srcdir)/'`$(srcdir)/mat_hard.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-mat_hard.Tpo" "$(DEPDIR)/libclu_a-mat_hard.Po"; else rm -f "$(DEPDIR)/libclu_a-mat_hard.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat_hard.c' object='libclu_a-mat_hard.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-mat_hard.Po' tmpdepfile='$(DEPDIR)/libclu_a-mat_hard.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-mat_hard.o `test -f '$(srcdir)/mat_hard.c' || echo '$(srcdir)/'`$(srcdir)/mat_hard.c
-
-libclu_a-mat_hard.obj: $(srcdir)/mat_hard.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-mat_hard.obj -MD -MP -MF "$(DEPDIR)/libclu_a-mat_hard.Tpo" -c -o libclu_a-mat_hard.obj `if test -f '$(srcdir)/mat_hard.c'; then $(CYGPATH_W) '$(srcdir)/mat_hard.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat_hard.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-mat_hard.Tpo" "$(DEPDIR)/libclu_a-mat_hard.Po"; else rm -f "$(DEPDIR)/libclu_a-mat_hard.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat_hard.c' object='libclu_a-mat_hard.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-mat_hard.Po' tmpdepfile='$(DEPDIR)/libclu_a-mat_hard.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-mat_hard.obj `if test -f '$(srcdir)/mat_hard.c'; then $(CYGPATH_W) '$(srcdir)/mat_hard.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat_hard.c'; fi`
 
 libclu_a-pcomm.o: $(srcdir)/pcomm.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-pcomm.o -MD -MP -MF "$(DEPDIR)/libclu_a-pcomm.Tpo" -c -o libclu_a-pcomm.o `test -f '$(srcdir)/pcomm.c' || echo '$(srcdir)/'`$(srcdir)/pcomm.c; \
@@ -1218,22 +1033,6 @@ libclu_a-solve.obj: $(srcdir)/solve.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-solve.obj `if test -f '$(srcdir)/solve.c'; then $(CYGPATH_W) '$(srcdir)/solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/solve.c'; fi`
 
-libclu_a-steve.o: $(srcdir)/steve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-steve.o -MD -MP -MF "$(DEPDIR)/libclu_a-steve.Tpo" -c -o libclu_a-steve.o `test -f '$(srcdir)/steve.c' || echo '$(srcdir)/'`$(srcdir)/steve.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-steve.Tpo" "$(DEPDIR)/libclu_a-steve.Po"; else rm -f "$(DEPDIR)/libclu_a-steve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/steve.c' object='libclu_a-steve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-steve.Po' tmpdepfile='$(DEPDIR)/libclu_a-steve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-steve.o `test -f '$(srcdir)/steve.c' || echo '$(srcdir)/'`$(srcdir)/steve.c
-
-libclu_a-steve.obj: $(srcdir)/steve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-steve.obj -MD -MP -MF "$(DEPDIR)/libclu_a-steve.Tpo" -c -o libclu_a-steve.obj `if test -f '$(srcdir)/steve.c'; then $(CYGPATH_W) '$(srcdir)/steve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/steve.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-steve.Tpo" "$(DEPDIR)/libclu_a-steve.Po"; else rm -f "$(DEPDIR)/libclu_a-steve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/steve.c' object='libclu_a-steve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-steve.Po' tmpdepfile='$(DEPDIR)/libclu_a-steve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-steve.obj `if test -f '$(srcdir)/steve.c'; then $(CYGPATH_W) '$(srcdir)/steve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/steve.c'; fi`
-
 libclu_a-x_factor.o: $(srcdir)/x_factor.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-x_factor.o -MD -MP -MF "$(DEPDIR)/libclu_a-x_factor.Tpo" -c -o libclu_a-x_factor.o `test -f '$(srcdir)/x_factor.c' || echo '$(srcdir)/'`$(srcdir)/x_factor.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-x_factor.Tpo" "$(DEPDIR)/libclu_a-x_factor.Po"; else rm -f "$(DEPDIR)/libclu_a-x_factor.Tpo"; exit 1; fi
@@ -1249,22 +1048,6 @@ libclu_a-x_factor.obj: $(srcdir)/x_factor.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-x_factor.Po' tmpdepfile='$(DEPDIR)/libclu_a-x_factor.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-x_factor.obj `if test -f '$(srcdir)/x_factor.c'; then $(CYGPATH_W) '$(srcdir)/x_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/x_factor.c'; fi`
-
-libclu_a-xlu_solve.o: $(srcdir)/xlu_solve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-xlu_solve.o -MD -MP -MF "$(DEPDIR)/libclu_a-xlu_solve.Tpo" -c -o libclu_a-xlu_solve.o `test -f '$(srcdir)/xlu_solve.c' || echo '$(srcdir)/'`$(srcdir)/xlu_solve.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-xlu_solve.Tpo" "$(DEPDIR)/libclu_a-xlu_solve.Po"; else rm -f "$(DEPDIR)/libclu_a-xlu_solve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/xlu_solve.c' object='libclu_a-xlu_solve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-xlu_solve.Po' tmpdepfile='$(DEPDIR)/libclu_a-xlu_solve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-xlu_solve.o `test -f '$(srcdir)/xlu_solve.c' || echo '$(srcdir)/'`$(srcdir)/xlu_solve.c
-
-libclu_a-xlu_solve.obj: $(srcdir)/xlu_solve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-xlu_solve.obj -MD -MP -MF "$(DEPDIR)/libclu_a-xlu_solve.Tpo" -c -o libclu_a-xlu_solve.obj `if test -f '$(srcdir)/xlu_solve.c'; then $(CYGPATH_W) '$(srcdir)/xlu_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/xlu_solve.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libclu_a-xlu_solve.Tpo" "$(DEPDIR)/libclu_a-xlu_solve.Po"; else rm -f "$(DEPDIR)/libclu_a-xlu_solve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/xlu_solve.c' object='libclu_a-xlu_solve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libclu_a-xlu_solve.Po' tmpdepfile='$(DEPDIR)/libclu_a-xlu_solve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -c -o libclu_a-xlu_solve.obj `if test -f '$(srcdir)/xlu_solve.c'; then $(CYGPATH_W) '$(srcdir)/xlu_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/xlu_solve.c'; fi`
 
 libclu_a-xlu_solve_new.o: $(srcdir)/xlu_solve_new.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libclu_a_CFLAGS) $(CFLAGS) -MT libclu_a-xlu_solve_new.o -MD -MP -MF "$(DEPDIR)/libclu_a-xlu_solve_new.Tpo" -c -o libclu_a-xlu_solve_new.o `test -f '$(srcdir)/xlu_solve_new.c' || echo '$(srcdir)/'`$(srcdir)/xlu_solve_new.c; \
@@ -1314,38 +1097,6 @@ libdlu_a-clean_code.obj: $(srcdir)/clean_code.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-clean_code.obj `if test -f '$(srcdir)/clean_code.c'; then $(CYGPATH_W) '$(srcdir)/clean_code.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clean_code.c'; fi`
 
-libdlu_a-malloc.o: $(srcdir)/malloc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-malloc.o -MD -MP -MF "$(DEPDIR)/libdlu_a-malloc.Tpo" -c -o libdlu_a-malloc.o `test -f '$(srcdir)/malloc.c' || echo '$(srcdir)/'`$(srcdir)/malloc.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-malloc.Tpo" "$(DEPDIR)/libdlu_a-malloc.Po"; else rm -f "$(DEPDIR)/libdlu_a-malloc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/malloc.c' object='libdlu_a-malloc.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-malloc.Po' tmpdepfile='$(DEPDIR)/libdlu_a-malloc.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-malloc.o `test -f '$(srcdir)/malloc.c' || echo '$(srcdir)/'`$(srcdir)/malloc.c
-
-libdlu_a-malloc.obj: $(srcdir)/malloc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-malloc.obj -MD -MP -MF "$(DEPDIR)/libdlu_a-malloc.Tpo" -c -o libdlu_a-malloc.obj `if test -f '$(srcdir)/malloc.c'; then $(CYGPATH_W) '$(srcdir)/malloc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/malloc.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-malloc.Tpo" "$(DEPDIR)/libdlu_a-malloc.Po"; else rm -f "$(DEPDIR)/libdlu_a-malloc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/malloc.c' object='libdlu_a-malloc.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-malloc.Po' tmpdepfile='$(DEPDIR)/libdlu_a-malloc.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-malloc.obj `if test -f '$(srcdir)/malloc.c'; then $(CYGPATH_W) '$(srcdir)/malloc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/malloc.c'; fi`
-
-libdlu_a-my_srand48.o: $(srcdir)/my_srand48.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-my_srand48.o -MD -MP -MF "$(DEPDIR)/libdlu_a-my_srand48.Tpo" -c -o libdlu_a-my_srand48.o `test -f '$(srcdir)/my_srand48.c' || echo '$(srcdir)/'`$(srcdir)/my_srand48.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-my_srand48.Tpo" "$(DEPDIR)/libdlu_a-my_srand48.Po"; else rm -f "$(DEPDIR)/libdlu_a-my_srand48.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/my_srand48.c' object='libdlu_a-my_srand48.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-my_srand48.Po' tmpdepfile='$(DEPDIR)/libdlu_a-my_srand48.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-my_srand48.o `test -f '$(srcdir)/my_srand48.c' || echo '$(srcdir)/'`$(srcdir)/my_srand48.c
-
-libdlu_a-my_srand48.obj: $(srcdir)/my_srand48.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-my_srand48.obj -MD -MP -MF "$(DEPDIR)/libdlu_a-my_srand48.Tpo" -c -o libdlu_a-my_srand48.obj `if test -f '$(srcdir)/my_srand48.c'; then $(CYGPATH_W) '$(srcdir)/my_srand48.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/my_srand48.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-my_srand48.Tpo" "$(DEPDIR)/libdlu_a-my_srand48.Po"; else rm -f "$(DEPDIR)/libdlu_a-my_srand48.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/my_srand48.c' object='libdlu_a-my_srand48.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-my_srand48.Po' tmpdepfile='$(DEPDIR)/libdlu_a-my_srand48.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-my_srand48.obj `if test -f '$(srcdir)/my_srand48.c'; then $(CYGPATH_W) '$(srcdir)/my_srand48.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/my_srand48.c'; fi`
-
 libdlu_a-time.o: $(srcdir)/time.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-time.o -MD -MP -MF "$(DEPDIR)/libdlu_a-time.Tpo" -c -o libdlu_a-time.o `test -f '$(srcdir)/time.c' || echo '$(srcdir)/'`$(srcdir)/time.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-time.Tpo" "$(DEPDIR)/libdlu_a-time.Po"; else rm -f "$(DEPDIR)/libdlu_a-time.Tpo"; exit 1; fi
@@ -1394,22 +1145,6 @@ libdlu_a-exchange_pivots.obj: $(srcdir)/exchange_pivots.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-exchange_pivots.obj `if test -f '$(srcdir)/exchange_pivots.c'; then $(CYGPATH_W) '$(srcdir)/exchange_pivots.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/exchange_pivots.c'; fi`
 
-libdlu_a-factor.o: $(srcdir)/factor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-factor.o -MD -MP -MF "$(DEPDIR)/libdlu_a-factor.Tpo" -c -o libdlu_a-factor.o `test -f '$(srcdir)/factor.c' || echo '$(srcdir)/'`$(srcdir)/factor.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-factor.Tpo" "$(DEPDIR)/libdlu_a-factor.Po"; else rm -f "$(DEPDIR)/libdlu_a-factor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/factor.c' object='libdlu_a-factor.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-factor.Po' tmpdepfile='$(DEPDIR)/libdlu_a-factor.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-factor.o `test -f '$(srcdir)/factor.c' || echo '$(srcdir)/'`$(srcdir)/factor.c
-
-libdlu_a-factor.obj: $(srcdir)/factor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-factor.obj -MD -MP -MF "$(DEPDIR)/libdlu_a-factor.Tpo" -c -o libdlu_a-factor.obj `if test -f '$(srcdir)/factor.c'; then $(CYGPATH_W) '$(srcdir)/factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/factor.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-factor.Tpo" "$(DEPDIR)/libdlu_a-factor.Po"; else rm -f "$(DEPDIR)/libdlu_a-factor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/factor.c' object='libdlu_a-factor.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-factor.Po' tmpdepfile='$(DEPDIR)/libdlu_a-factor.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-factor.obj `if test -f '$(srcdir)/factor.c'; then $(CYGPATH_W) '$(srcdir)/factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/factor.c'; fi`
-
 libdlu_a-factor_new.o: $(srcdir)/factor_new.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-factor_new.o -MD -MP -MF "$(DEPDIR)/libdlu_a-factor_new.Tpo" -c -o libdlu_a-factor_new.o `test -f '$(srcdir)/factor_new.c' || echo '$(srcdir)/'`$(srcdir)/factor_new.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-factor_new.Tpo" "$(DEPDIR)/libdlu_a-factor_new.Po"; else rm -f "$(DEPDIR)/libdlu_a-factor_new.Tpo"; exit 1; fi
@@ -1457,54 +1192,6 @@ libdlu_a-forward.obj: $(srcdir)/forward.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-forward.Po' tmpdepfile='$(DEPDIR)/libdlu_a-forward.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-forward.obj `if test -f '$(srcdir)/forward.c'; then $(CYGPATH_W) '$(srcdir)/forward.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/forward.c'; fi`
-
-libdlu_a-init.o: $(srcdir)/init.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-init.o -MD -MP -MF "$(DEPDIR)/libdlu_a-init.Tpo" -c -o libdlu_a-init.o `test -f '$(srcdir)/init.c' || echo '$(srcdir)/'`$(srcdir)/init.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-init.Tpo" "$(DEPDIR)/libdlu_a-init.Po"; else rm -f "$(DEPDIR)/libdlu_a-init.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/init.c' object='libdlu_a-init.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-init.Po' tmpdepfile='$(DEPDIR)/libdlu_a-init.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-init.o `test -f '$(srcdir)/init.c' || echo '$(srcdir)/'`$(srcdir)/init.c
-
-libdlu_a-init.obj: $(srcdir)/init.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-init.obj -MD -MP -MF "$(DEPDIR)/libdlu_a-init.Tpo" -c -o libdlu_a-init.obj `if test -f '$(srcdir)/init.c'; then $(CYGPATH_W) '$(srcdir)/init.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/init.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-init.Tpo" "$(DEPDIR)/libdlu_a-init.Po"; else rm -f "$(DEPDIR)/libdlu_a-init.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/init.c' object='libdlu_a-init.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-init.Po' tmpdepfile='$(DEPDIR)/libdlu_a-init.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-init.obj `if test -f '$(srcdir)/init.c'; then $(CYGPATH_W) '$(srcdir)/init.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/init.c'; fi`
-
-libdlu_a-mat.o: $(srcdir)/mat.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-mat.o -MD -MP -MF "$(DEPDIR)/libdlu_a-mat.Tpo" -c -o libdlu_a-mat.o `test -f '$(srcdir)/mat.c' || echo '$(srcdir)/'`$(srcdir)/mat.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-mat.Tpo" "$(DEPDIR)/libdlu_a-mat.Po"; else rm -f "$(DEPDIR)/libdlu_a-mat.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat.c' object='libdlu_a-mat.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-mat.Po' tmpdepfile='$(DEPDIR)/libdlu_a-mat.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-mat.o `test -f '$(srcdir)/mat.c' || echo '$(srcdir)/'`$(srcdir)/mat.c
-
-libdlu_a-mat.obj: $(srcdir)/mat.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-mat.obj -MD -MP -MF "$(DEPDIR)/libdlu_a-mat.Tpo" -c -o libdlu_a-mat.obj `if test -f '$(srcdir)/mat.c'; then $(CYGPATH_W) '$(srcdir)/mat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-mat.Tpo" "$(DEPDIR)/libdlu_a-mat.Po"; else rm -f "$(DEPDIR)/libdlu_a-mat.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat.c' object='libdlu_a-mat.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-mat.Po' tmpdepfile='$(DEPDIR)/libdlu_a-mat.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-mat.obj `if test -f '$(srcdir)/mat.c'; then $(CYGPATH_W) '$(srcdir)/mat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat.c'; fi`
-
-libdlu_a-mat_hard.o: $(srcdir)/mat_hard.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-mat_hard.o -MD -MP -MF "$(DEPDIR)/libdlu_a-mat_hard.Tpo" -c -o libdlu_a-mat_hard.o `test -f '$(srcdir)/mat_hard.c' || echo '$(srcdir)/'`$(srcdir)/mat_hard.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-mat_hard.Tpo" "$(DEPDIR)/libdlu_a-mat_hard.Po"; else rm -f "$(DEPDIR)/libdlu_a-mat_hard.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat_hard.c' object='libdlu_a-mat_hard.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-mat_hard.Po' tmpdepfile='$(DEPDIR)/libdlu_a-mat_hard.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-mat_hard.o `test -f '$(srcdir)/mat_hard.c' || echo '$(srcdir)/'`$(srcdir)/mat_hard.c
-
-libdlu_a-mat_hard.obj: $(srcdir)/mat_hard.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-mat_hard.obj -MD -MP -MF "$(DEPDIR)/libdlu_a-mat_hard.Tpo" -c -o libdlu_a-mat_hard.obj `if test -f '$(srcdir)/mat_hard.c'; then $(CYGPATH_W) '$(srcdir)/mat_hard.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat_hard.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-mat_hard.Tpo" "$(DEPDIR)/libdlu_a-mat_hard.Po"; else rm -f "$(DEPDIR)/libdlu_a-mat_hard.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat_hard.c' object='libdlu_a-mat_hard.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-mat_hard.Po' tmpdepfile='$(DEPDIR)/libdlu_a-mat_hard.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-mat_hard.obj `if test -f '$(srcdir)/mat_hard.c'; then $(CYGPATH_W) '$(srcdir)/mat_hard.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat_hard.c'; fi`
 
 libdlu_a-pcomm.o: $(srcdir)/pcomm.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-pcomm.o -MD -MP -MF "$(DEPDIR)/libdlu_a-pcomm.Tpo" -c -o libdlu_a-pcomm.o `test -f '$(srcdir)/pcomm.c' || echo '$(srcdir)/'`$(srcdir)/pcomm.c; \
@@ -1586,22 +1273,6 @@ libdlu_a-solve.obj: $(srcdir)/solve.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-solve.obj `if test -f '$(srcdir)/solve.c'; then $(CYGPATH_W) '$(srcdir)/solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/solve.c'; fi`
 
-libdlu_a-steve.o: $(srcdir)/steve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-steve.o -MD -MP -MF "$(DEPDIR)/libdlu_a-steve.Tpo" -c -o libdlu_a-steve.o `test -f '$(srcdir)/steve.c' || echo '$(srcdir)/'`$(srcdir)/steve.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-steve.Tpo" "$(DEPDIR)/libdlu_a-steve.Po"; else rm -f "$(DEPDIR)/libdlu_a-steve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/steve.c' object='libdlu_a-steve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-steve.Po' tmpdepfile='$(DEPDIR)/libdlu_a-steve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-steve.o `test -f '$(srcdir)/steve.c' || echo '$(srcdir)/'`$(srcdir)/steve.c
-
-libdlu_a-steve.obj: $(srcdir)/steve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-steve.obj -MD -MP -MF "$(DEPDIR)/libdlu_a-steve.Tpo" -c -o libdlu_a-steve.obj `if test -f '$(srcdir)/steve.c'; then $(CYGPATH_W) '$(srcdir)/steve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/steve.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-steve.Tpo" "$(DEPDIR)/libdlu_a-steve.Po"; else rm -f "$(DEPDIR)/libdlu_a-steve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/steve.c' object='libdlu_a-steve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-steve.Po' tmpdepfile='$(DEPDIR)/libdlu_a-steve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-steve.obj `if test -f '$(srcdir)/steve.c'; then $(CYGPATH_W) '$(srcdir)/steve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/steve.c'; fi`
-
 libdlu_a-x_factor.o: $(srcdir)/x_factor.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-x_factor.o -MD -MP -MF "$(DEPDIR)/libdlu_a-x_factor.Tpo" -c -o libdlu_a-x_factor.o `test -f '$(srcdir)/x_factor.c' || echo '$(srcdir)/'`$(srcdir)/x_factor.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-x_factor.Tpo" "$(DEPDIR)/libdlu_a-x_factor.Po"; else rm -f "$(DEPDIR)/libdlu_a-x_factor.Tpo"; exit 1; fi
@@ -1617,22 +1288,6 @@ libdlu_a-x_factor.obj: $(srcdir)/x_factor.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-x_factor.Po' tmpdepfile='$(DEPDIR)/libdlu_a-x_factor.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-x_factor.obj `if test -f '$(srcdir)/x_factor.c'; then $(CYGPATH_W) '$(srcdir)/x_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/x_factor.c'; fi`
-
-libdlu_a-xlu_solve.o: $(srcdir)/xlu_solve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-xlu_solve.o -MD -MP -MF "$(DEPDIR)/libdlu_a-xlu_solve.Tpo" -c -o libdlu_a-xlu_solve.o `test -f '$(srcdir)/xlu_solve.c' || echo '$(srcdir)/'`$(srcdir)/xlu_solve.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-xlu_solve.Tpo" "$(DEPDIR)/libdlu_a-xlu_solve.Po"; else rm -f "$(DEPDIR)/libdlu_a-xlu_solve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/xlu_solve.c' object='libdlu_a-xlu_solve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-xlu_solve.Po' tmpdepfile='$(DEPDIR)/libdlu_a-xlu_solve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-xlu_solve.o `test -f '$(srcdir)/xlu_solve.c' || echo '$(srcdir)/'`$(srcdir)/xlu_solve.c
-
-libdlu_a-xlu_solve.obj: $(srcdir)/xlu_solve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-xlu_solve.obj -MD -MP -MF "$(DEPDIR)/libdlu_a-xlu_solve.Tpo" -c -o libdlu_a-xlu_solve.obj `if test -f '$(srcdir)/xlu_solve.c'; then $(CYGPATH_W) '$(srcdir)/xlu_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/xlu_solve.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-xlu_solve.Tpo" "$(DEPDIR)/libdlu_a-xlu_solve.Po"; else rm -f "$(DEPDIR)/libdlu_a-xlu_solve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/xlu_solve.c' object='libdlu_a-xlu_solve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libdlu_a-xlu_solve.Po' tmpdepfile='$(DEPDIR)/libdlu_a-xlu_solve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -c -o libdlu_a-xlu_solve.obj `if test -f '$(srcdir)/xlu_solve.c'; then $(CYGPATH_W) '$(srcdir)/xlu_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/xlu_solve.c'; fi`
 
 libdlu_a-xlu_solve_new.o: $(srcdir)/xlu_solve_new.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CFLAGS) $(CFLAGS) -MT libdlu_a-xlu_solve_new.o -MD -MP -MF "$(DEPDIR)/libdlu_a-xlu_solve_new.Tpo" -c -o libdlu_a-xlu_solve_new.o `test -f '$(srcdir)/xlu_solve_new.c' || echo '$(srcdir)/'`$(srcdir)/xlu_solve_new.c; \
@@ -1682,38 +1337,6 @@ libslu_a-clean_code.obj: $(srcdir)/clean_code.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-clean_code.obj `if test -f '$(srcdir)/clean_code.c'; then $(CYGPATH_W) '$(srcdir)/clean_code.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clean_code.c'; fi`
 
-libslu_a-malloc.o: $(srcdir)/malloc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-malloc.o -MD -MP -MF "$(DEPDIR)/libslu_a-malloc.Tpo" -c -o libslu_a-malloc.o `test -f '$(srcdir)/malloc.c' || echo '$(srcdir)/'`$(srcdir)/malloc.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-malloc.Tpo" "$(DEPDIR)/libslu_a-malloc.Po"; else rm -f "$(DEPDIR)/libslu_a-malloc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/malloc.c' object='libslu_a-malloc.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-malloc.Po' tmpdepfile='$(DEPDIR)/libslu_a-malloc.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-malloc.o `test -f '$(srcdir)/malloc.c' || echo '$(srcdir)/'`$(srcdir)/malloc.c
-
-libslu_a-malloc.obj: $(srcdir)/malloc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-malloc.obj -MD -MP -MF "$(DEPDIR)/libslu_a-malloc.Tpo" -c -o libslu_a-malloc.obj `if test -f '$(srcdir)/malloc.c'; then $(CYGPATH_W) '$(srcdir)/malloc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/malloc.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-malloc.Tpo" "$(DEPDIR)/libslu_a-malloc.Po"; else rm -f "$(DEPDIR)/libslu_a-malloc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/malloc.c' object='libslu_a-malloc.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-malloc.Po' tmpdepfile='$(DEPDIR)/libslu_a-malloc.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-malloc.obj `if test -f '$(srcdir)/malloc.c'; then $(CYGPATH_W) '$(srcdir)/malloc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/malloc.c'; fi`
-
-libslu_a-my_srand48.o: $(srcdir)/my_srand48.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-my_srand48.o -MD -MP -MF "$(DEPDIR)/libslu_a-my_srand48.Tpo" -c -o libslu_a-my_srand48.o `test -f '$(srcdir)/my_srand48.c' || echo '$(srcdir)/'`$(srcdir)/my_srand48.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-my_srand48.Tpo" "$(DEPDIR)/libslu_a-my_srand48.Po"; else rm -f "$(DEPDIR)/libslu_a-my_srand48.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/my_srand48.c' object='libslu_a-my_srand48.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-my_srand48.Po' tmpdepfile='$(DEPDIR)/libslu_a-my_srand48.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-my_srand48.o `test -f '$(srcdir)/my_srand48.c' || echo '$(srcdir)/'`$(srcdir)/my_srand48.c
-
-libslu_a-my_srand48.obj: $(srcdir)/my_srand48.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-my_srand48.obj -MD -MP -MF "$(DEPDIR)/libslu_a-my_srand48.Tpo" -c -o libslu_a-my_srand48.obj `if test -f '$(srcdir)/my_srand48.c'; then $(CYGPATH_W) '$(srcdir)/my_srand48.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/my_srand48.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-my_srand48.Tpo" "$(DEPDIR)/libslu_a-my_srand48.Po"; else rm -f "$(DEPDIR)/libslu_a-my_srand48.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/my_srand48.c' object='libslu_a-my_srand48.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-my_srand48.Po' tmpdepfile='$(DEPDIR)/libslu_a-my_srand48.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-my_srand48.obj `if test -f '$(srcdir)/my_srand48.c'; then $(CYGPATH_W) '$(srcdir)/my_srand48.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/my_srand48.c'; fi`
-
 libslu_a-time.o: $(srcdir)/time.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-time.o -MD -MP -MF "$(DEPDIR)/libslu_a-time.Tpo" -c -o libslu_a-time.o `test -f '$(srcdir)/time.c' || echo '$(srcdir)/'`$(srcdir)/time.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-time.Tpo" "$(DEPDIR)/libslu_a-time.Po"; else rm -f "$(DEPDIR)/libslu_a-time.Tpo"; exit 1; fi
@@ -1762,22 +1385,6 @@ libslu_a-exchange_pivots.obj: $(srcdir)/exchange_pivots.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-exchange_pivots.obj `if test -f '$(srcdir)/exchange_pivots.c'; then $(CYGPATH_W) '$(srcdir)/exchange_pivots.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/exchange_pivots.c'; fi`
 
-libslu_a-factor.o: $(srcdir)/factor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-factor.o -MD -MP -MF "$(DEPDIR)/libslu_a-factor.Tpo" -c -o libslu_a-factor.o `test -f '$(srcdir)/factor.c' || echo '$(srcdir)/'`$(srcdir)/factor.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-factor.Tpo" "$(DEPDIR)/libslu_a-factor.Po"; else rm -f "$(DEPDIR)/libslu_a-factor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/factor.c' object='libslu_a-factor.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-factor.Po' tmpdepfile='$(DEPDIR)/libslu_a-factor.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-factor.o `test -f '$(srcdir)/factor.c' || echo '$(srcdir)/'`$(srcdir)/factor.c
-
-libslu_a-factor.obj: $(srcdir)/factor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-factor.obj -MD -MP -MF "$(DEPDIR)/libslu_a-factor.Tpo" -c -o libslu_a-factor.obj `if test -f '$(srcdir)/factor.c'; then $(CYGPATH_W) '$(srcdir)/factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/factor.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-factor.Tpo" "$(DEPDIR)/libslu_a-factor.Po"; else rm -f "$(DEPDIR)/libslu_a-factor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/factor.c' object='libslu_a-factor.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-factor.Po' tmpdepfile='$(DEPDIR)/libslu_a-factor.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-factor.obj `if test -f '$(srcdir)/factor.c'; then $(CYGPATH_W) '$(srcdir)/factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/factor.c'; fi`
-
 libslu_a-factor_new.o: $(srcdir)/factor_new.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-factor_new.o -MD -MP -MF "$(DEPDIR)/libslu_a-factor_new.Tpo" -c -o libslu_a-factor_new.o `test -f '$(srcdir)/factor_new.c' || echo '$(srcdir)/'`$(srcdir)/factor_new.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-factor_new.Tpo" "$(DEPDIR)/libslu_a-factor_new.Po"; else rm -f "$(DEPDIR)/libslu_a-factor_new.Tpo"; exit 1; fi
@@ -1825,54 +1432,6 @@ libslu_a-forward.obj: $(srcdir)/forward.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-forward.Po' tmpdepfile='$(DEPDIR)/libslu_a-forward.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-forward.obj `if test -f '$(srcdir)/forward.c'; then $(CYGPATH_W) '$(srcdir)/forward.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/forward.c'; fi`
-
-libslu_a-init.o: $(srcdir)/init.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-init.o -MD -MP -MF "$(DEPDIR)/libslu_a-init.Tpo" -c -o libslu_a-init.o `test -f '$(srcdir)/init.c' || echo '$(srcdir)/'`$(srcdir)/init.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-init.Tpo" "$(DEPDIR)/libslu_a-init.Po"; else rm -f "$(DEPDIR)/libslu_a-init.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/init.c' object='libslu_a-init.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-init.Po' tmpdepfile='$(DEPDIR)/libslu_a-init.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-init.o `test -f '$(srcdir)/init.c' || echo '$(srcdir)/'`$(srcdir)/init.c
-
-libslu_a-init.obj: $(srcdir)/init.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-init.obj -MD -MP -MF "$(DEPDIR)/libslu_a-init.Tpo" -c -o libslu_a-init.obj `if test -f '$(srcdir)/init.c'; then $(CYGPATH_W) '$(srcdir)/init.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/init.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-init.Tpo" "$(DEPDIR)/libslu_a-init.Po"; else rm -f "$(DEPDIR)/libslu_a-init.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/init.c' object='libslu_a-init.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-init.Po' tmpdepfile='$(DEPDIR)/libslu_a-init.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-init.obj `if test -f '$(srcdir)/init.c'; then $(CYGPATH_W) '$(srcdir)/init.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/init.c'; fi`
-
-libslu_a-mat.o: $(srcdir)/mat.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-mat.o -MD -MP -MF "$(DEPDIR)/libslu_a-mat.Tpo" -c -o libslu_a-mat.o `test -f '$(srcdir)/mat.c' || echo '$(srcdir)/'`$(srcdir)/mat.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-mat.Tpo" "$(DEPDIR)/libslu_a-mat.Po"; else rm -f "$(DEPDIR)/libslu_a-mat.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat.c' object='libslu_a-mat.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-mat.Po' tmpdepfile='$(DEPDIR)/libslu_a-mat.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-mat.o `test -f '$(srcdir)/mat.c' || echo '$(srcdir)/'`$(srcdir)/mat.c
-
-libslu_a-mat.obj: $(srcdir)/mat.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-mat.obj -MD -MP -MF "$(DEPDIR)/libslu_a-mat.Tpo" -c -o libslu_a-mat.obj `if test -f '$(srcdir)/mat.c'; then $(CYGPATH_W) '$(srcdir)/mat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-mat.Tpo" "$(DEPDIR)/libslu_a-mat.Po"; else rm -f "$(DEPDIR)/libslu_a-mat.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat.c' object='libslu_a-mat.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-mat.Po' tmpdepfile='$(DEPDIR)/libslu_a-mat.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-mat.obj `if test -f '$(srcdir)/mat.c'; then $(CYGPATH_W) '$(srcdir)/mat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat.c'; fi`
-
-libslu_a-mat_hard.o: $(srcdir)/mat_hard.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-mat_hard.o -MD -MP -MF "$(DEPDIR)/libslu_a-mat_hard.Tpo" -c -o libslu_a-mat_hard.o `test -f '$(srcdir)/mat_hard.c' || echo '$(srcdir)/'`$(srcdir)/mat_hard.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-mat_hard.Tpo" "$(DEPDIR)/libslu_a-mat_hard.Po"; else rm -f "$(DEPDIR)/libslu_a-mat_hard.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat_hard.c' object='libslu_a-mat_hard.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-mat_hard.Po' tmpdepfile='$(DEPDIR)/libslu_a-mat_hard.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-mat_hard.o `test -f '$(srcdir)/mat_hard.c' || echo '$(srcdir)/'`$(srcdir)/mat_hard.c
-
-libslu_a-mat_hard.obj: $(srcdir)/mat_hard.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-mat_hard.obj -MD -MP -MF "$(DEPDIR)/libslu_a-mat_hard.Tpo" -c -o libslu_a-mat_hard.obj `if test -f '$(srcdir)/mat_hard.c'; then $(CYGPATH_W) '$(srcdir)/mat_hard.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat_hard.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-mat_hard.Tpo" "$(DEPDIR)/libslu_a-mat_hard.Po"; else rm -f "$(DEPDIR)/libslu_a-mat_hard.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat_hard.c' object='libslu_a-mat_hard.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-mat_hard.Po' tmpdepfile='$(DEPDIR)/libslu_a-mat_hard.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-mat_hard.obj `if test -f '$(srcdir)/mat_hard.c'; then $(CYGPATH_W) '$(srcdir)/mat_hard.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat_hard.c'; fi`
 
 libslu_a-pcomm.o: $(srcdir)/pcomm.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-pcomm.o -MD -MP -MF "$(DEPDIR)/libslu_a-pcomm.Tpo" -c -o libslu_a-pcomm.o `test -f '$(srcdir)/pcomm.c' || echo '$(srcdir)/'`$(srcdir)/pcomm.c; \
@@ -1954,22 +1513,6 @@ libslu_a-solve.obj: $(srcdir)/solve.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-solve.obj `if test -f '$(srcdir)/solve.c'; then $(CYGPATH_W) '$(srcdir)/solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/solve.c'; fi`
 
-libslu_a-steve.o: $(srcdir)/steve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-steve.o -MD -MP -MF "$(DEPDIR)/libslu_a-steve.Tpo" -c -o libslu_a-steve.o `test -f '$(srcdir)/steve.c' || echo '$(srcdir)/'`$(srcdir)/steve.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-steve.Tpo" "$(DEPDIR)/libslu_a-steve.Po"; else rm -f "$(DEPDIR)/libslu_a-steve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/steve.c' object='libslu_a-steve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-steve.Po' tmpdepfile='$(DEPDIR)/libslu_a-steve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-steve.o `test -f '$(srcdir)/steve.c' || echo '$(srcdir)/'`$(srcdir)/steve.c
-
-libslu_a-steve.obj: $(srcdir)/steve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-steve.obj -MD -MP -MF "$(DEPDIR)/libslu_a-steve.Tpo" -c -o libslu_a-steve.obj `if test -f '$(srcdir)/steve.c'; then $(CYGPATH_W) '$(srcdir)/steve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/steve.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-steve.Tpo" "$(DEPDIR)/libslu_a-steve.Po"; else rm -f "$(DEPDIR)/libslu_a-steve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/steve.c' object='libslu_a-steve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-steve.Po' tmpdepfile='$(DEPDIR)/libslu_a-steve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-steve.obj `if test -f '$(srcdir)/steve.c'; then $(CYGPATH_W) '$(srcdir)/steve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/steve.c'; fi`
-
 libslu_a-x_factor.o: $(srcdir)/x_factor.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-x_factor.o -MD -MP -MF "$(DEPDIR)/libslu_a-x_factor.Tpo" -c -o libslu_a-x_factor.o `test -f '$(srcdir)/x_factor.c' || echo '$(srcdir)/'`$(srcdir)/x_factor.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-x_factor.Tpo" "$(DEPDIR)/libslu_a-x_factor.Po"; else rm -f "$(DEPDIR)/libslu_a-x_factor.Tpo"; exit 1; fi
@@ -1985,22 +1528,6 @@ libslu_a-x_factor.obj: $(srcdir)/x_factor.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-x_factor.Po' tmpdepfile='$(DEPDIR)/libslu_a-x_factor.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-x_factor.obj `if test -f '$(srcdir)/x_factor.c'; then $(CYGPATH_W) '$(srcdir)/x_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/x_factor.c'; fi`
-
-libslu_a-xlu_solve.o: $(srcdir)/xlu_solve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-xlu_solve.o -MD -MP -MF "$(DEPDIR)/libslu_a-xlu_solve.Tpo" -c -o libslu_a-xlu_solve.o `test -f '$(srcdir)/xlu_solve.c' || echo '$(srcdir)/'`$(srcdir)/xlu_solve.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-xlu_solve.Tpo" "$(DEPDIR)/libslu_a-xlu_solve.Po"; else rm -f "$(DEPDIR)/libslu_a-xlu_solve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/xlu_solve.c' object='libslu_a-xlu_solve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-xlu_solve.Po' tmpdepfile='$(DEPDIR)/libslu_a-xlu_solve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-xlu_solve.o `test -f '$(srcdir)/xlu_solve.c' || echo '$(srcdir)/'`$(srcdir)/xlu_solve.c
-
-libslu_a-xlu_solve.obj: $(srcdir)/xlu_solve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-xlu_solve.obj -MD -MP -MF "$(DEPDIR)/libslu_a-xlu_solve.Tpo" -c -o libslu_a-xlu_solve.obj `if test -f '$(srcdir)/xlu_solve.c'; then $(CYGPATH_W) '$(srcdir)/xlu_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/xlu_solve.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libslu_a-xlu_solve.Tpo" "$(DEPDIR)/libslu_a-xlu_solve.Po"; else rm -f "$(DEPDIR)/libslu_a-xlu_solve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/xlu_solve.c' object='libslu_a-xlu_solve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libslu_a-xlu_solve.Po' tmpdepfile='$(DEPDIR)/libslu_a-xlu_solve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -c -o libslu_a-xlu_solve.obj `if test -f '$(srcdir)/xlu_solve.c'; then $(CYGPATH_W) '$(srcdir)/xlu_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/xlu_solve.c'; fi`
 
 libslu_a-xlu_solve_new.o: $(srcdir)/xlu_solve_new.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libslu_a_CFLAGS) $(CFLAGS) -MT libslu_a-xlu_solve_new.o -MD -MP -MF "$(DEPDIR)/libslu_a-xlu_solve_new.Tpo" -c -o libslu_a-xlu_solve_new.o `test -f '$(srcdir)/xlu_solve_new.c' || echo '$(srcdir)/'`$(srcdir)/xlu_solve_new.c; \
@@ -2050,38 +1577,6 @@ libzlu_a-clean_code.obj: $(srcdir)/clean_code.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-clean_code.obj `if test -f '$(srcdir)/clean_code.c'; then $(CYGPATH_W) '$(srcdir)/clean_code.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/clean_code.c'; fi`
 
-libzlu_a-malloc.o: $(srcdir)/malloc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-malloc.o -MD -MP -MF "$(DEPDIR)/libzlu_a-malloc.Tpo" -c -o libzlu_a-malloc.o `test -f '$(srcdir)/malloc.c' || echo '$(srcdir)/'`$(srcdir)/malloc.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-malloc.Tpo" "$(DEPDIR)/libzlu_a-malloc.Po"; else rm -f "$(DEPDIR)/libzlu_a-malloc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/malloc.c' object='libzlu_a-malloc.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-malloc.Po' tmpdepfile='$(DEPDIR)/libzlu_a-malloc.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-malloc.o `test -f '$(srcdir)/malloc.c' || echo '$(srcdir)/'`$(srcdir)/malloc.c
-
-libzlu_a-malloc.obj: $(srcdir)/malloc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-malloc.obj -MD -MP -MF "$(DEPDIR)/libzlu_a-malloc.Tpo" -c -o libzlu_a-malloc.obj `if test -f '$(srcdir)/malloc.c'; then $(CYGPATH_W) '$(srcdir)/malloc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/malloc.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-malloc.Tpo" "$(DEPDIR)/libzlu_a-malloc.Po"; else rm -f "$(DEPDIR)/libzlu_a-malloc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/malloc.c' object='libzlu_a-malloc.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-malloc.Po' tmpdepfile='$(DEPDIR)/libzlu_a-malloc.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-malloc.obj `if test -f '$(srcdir)/malloc.c'; then $(CYGPATH_W) '$(srcdir)/malloc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/malloc.c'; fi`
-
-libzlu_a-my_srand48.o: $(srcdir)/my_srand48.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-my_srand48.o -MD -MP -MF "$(DEPDIR)/libzlu_a-my_srand48.Tpo" -c -o libzlu_a-my_srand48.o `test -f '$(srcdir)/my_srand48.c' || echo '$(srcdir)/'`$(srcdir)/my_srand48.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-my_srand48.Tpo" "$(DEPDIR)/libzlu_a-my_srand48.Po"; else rm -f "$(DEPDIR)/libzlu_a-my_srand48.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/my_srand48.c' object='libzlu_a-my_srand48.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-my_srand48.Po' tmpdepfile='$(DEPDIR)/libzlu_a-my_srand48.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-my_srand48.o `test -f '$(srcdir)/my_srand48.c' || echo '$(srcdir)/'`$(srcdir)/my_srand48.c
-
-libzlu_a-my_srand48.obj: $(srcdir)/my_srand48.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-my_srand48.obj -MD -MP -MF "$(DEPDIR)/libzlu_a-my_srand48.Tpo" -c -o libzlu_a-my_srand48.obj `if test -f '$(srcdir)/my_srand48.c'; then $(CYGPATH_W) '$(srcdir)/my_srand48.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/my_srand48.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-my_srand48.Tpo" "$(DEPDIR)/libzlu_a-my_srand48.Po"; else rm -f "$(DEPDIR)/libzlu_a-my_srand48.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/my_srand48.c' object='libzlu_a-my_srand48.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-my_srand48.Po' tmpdepfile='$(DEPDIR)/libzlu_a-my_srand48.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-my_srand48.obj `if test -f '$(srcdir)/my_srand48.c'; then $(CYGPATH_W) '$(srcdir)/my_srand48.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/my_srand48.c'; fi`
-
 libzlu_a-time.o: $(srcdir)/time.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-time.o -MD -MP -MF "$(DEPDIR)/libzlu_a-time.Tpo" -c -o libzlu_a-time.o `test -f '$(srcdir)/time.c' || echo '$(srcdir)/'`$(srcdir)/time.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-time.Tpo" "$(DEPDIR)/libzlu_a-time.Po"; else rm -f "$(DEPDIR)/libzlu_a-time.Tpo"; exit 1; fi
@@ -2130,22 +1625,6 @@ libzlu_a-exchange_pivots.obj: $(srcdir)/exchange_pivots.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-exchange_pivots.obj `if test -f '$(srcdir)/exchange_pivots.c'; then $(CYGPATH_W) '$(srcdir)/exchange_pivots.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/exchange_pivots.c'; fi`
 
-libzlu_a-factor.o: $(srcdir)/factor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-factor.o -MD -MP -MF "$(DEPDIR)/libzlu_a-factor.Tpo" -c -o libzlu_a-factor.o `test -f '$(srcdir)/factor.c' || echo '$(srcdir)/'`$(srcdir)/factor.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-factor.Tpo" "$(DEPDIR)/libzlu_a-factor.Po"; else rm -f "$(DEPDIR)/libzlu_a-factor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/factor.c' object='libzlu_a-factor.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-factor.Po' tmpdepfile='$(DEPDIR)/libzlu_a-factor.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-factor.o `test -f '$(srcdir)/factor.c' || echo '$(srcdir)/'`$(srcdir)/factor.c
-
-libzlu_a-factor.obj: $(srcdir)/factor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-factor.obj -MD -MP -MF "$(DEPDIR)/libzlu_a-factor.Tpo" -c -o libzlu_a-factor.obj `if test -f '$(srcdir)/factor.c'; then $(CYGPATH_W) '$(srcdir)/factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/factor.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-factor.Tpo" "$(DEPDIR)/libzlu_a-factor.Po"; else rm -f "$(DEPDIR)/libzlu_a-factor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/factor.c' object='libzlu_a-factor.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-factor.Po' tmpdepfile='$(DEPDIR)/libzlu_a-factor.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-factor.obj `if test -f '$(srcdir)/factor.c'; then $(CYGPATH_W) '$(srcdir)/factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/factor.c'; fi`
-
 libzlu_a-factor_new.o: $(srcdir)/factor_new.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-factor_new.o -MD -MP -MF "$(DEPDIR)/libzlu_a-factor_new.Tpo" -c -o libzlu_a-factor_new.o `test -f '$(srcdir)/factor_new.c' || echo '$(srcdir)/'`$(srcdir)/factor_new.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-factor_new.Tpo" "$(DEPDIR)/libzlu_a-factor_new.Po"; else rm -f "$(DEPDIR)/libzlu_a-factor_new.Tpo"; exit 1; fi
@@ -2193,54 +1672,6 @@ libzlu_a-forward.obj: $(srcdir)/forward.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-forward.Po' tmpdepfile='$(DEPDIR)/libzlu_a-forward.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-forward.obj `if test -f '$(srcdir)/forward.c'; then $(CYGPATH_W) '$(srcdir)/forward.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/forward.c'; fi`
-
-libzlu_a-init.o: $(srcdir)/init.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-init.o -MD -MP -MF "$(DEPDIR)/libzlu_a-init.Tpo" -c -o libzlu_a-init.o `test -f '$(srcdir)/init.c' || echo '$(srcdir)/'`$(srcdir)/init.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-init.Tpo" "$(DEPDIR)/libzlu_a-init.Po"; else rm -f "$(DEPDIR)/libzlu_a-init.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/init.c' object='libzlu_a-init.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-init.Po' tmpdepfile='$(DEPDIR)/libzlu_a-init.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-init.o `test -f '$(srcdir)/init.c' || echo '$(srcdir)/'`$(srcdir)/init.c
-
-libzlu_a-init.obj: $(srcdir)/init.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-init.obj -MD -MP -MF "$(DEPDIR)/libzlu_a-init.Tpo" -c -o libzlu_a-init.obj `if test -f '$(srcdir)/init.c'; then $(CYGPATH_W) '$(srcdir)/init.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/init.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-init.Tpo" "$(DEPDIR)/libzlu_a-init.Po"; else rm -f "$(DEPDIR)/libzlu_a-init.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/init.c' object='libzlu_a-init.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-init.Po' tmpdepfile='$(DEPDIR)/libzlu_a-init.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-init.obj `if test -f '$(srcdir)/init.c'; then $(CYGPATH_W) '$(srcdir)/init.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/init.c'; fi`
-
-libzlu_a-mat.o: $(srcdir)/mat.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-mat.o -MD -MP -MF "$(DEPDIR)/libzlu_a-mat.Tpo" -c -o libzlu_a-mat.o `test -f '$(srcdir)/mat.c' || echo '$(srcdir)/'`$(srcdir)/mat.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-mat.Tpo" "$(DEPDIR)/libzlu_a-mat.Po"; else rm -f "$(DEPDIR)/libzlu_a-mat.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat.c' object='libzlu_a-mat.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-mat.Po' tmpdepfile='$(DEPDIR)/libzlu_a-mat.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-mat.o `test -f '$(srcdir)/mat.c' || echo '$(srcdir)/'`$(srcdir)/mat.c
-
-libzlu_a-mat.obj: $(srcdir)/mat.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-mat.obj -MD -MP -MF "$(DEPDIR)/libzlu_a-mat.Tpo" -c -o libzlu_a-mat.obj `if test -f '$(srcdir)/mat.c'; then $(CYGPATH_W) '$(srcdir)/mat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-mat.Tpo" "$(DEPDIR)/libzlu_a-mat.Po"; else rm -f "$(DEPDIR)/libzlu_a-mat.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat.c' object='libzlu_a-mat.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-mat.Po' tmpdepfile='$(DEPDIR)/libzlu_a-mat.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-mat.obj `if test -f '$(srcdir)/mat.c'; then $(CYGPATH_W) '$(srcdir)/mat.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat.c'; fi`
-
-libzlu_a-mat_hard.o: $(srcdir)/mat_hard.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-mat_hard.o -MD -MP -MF "$(DEPDIR)/libzlu_a-mat_hard.Tpo" -c -o libzlu_a-mat_hard.o `test -f '$(srcdir)/mat_hard.c' || echo '$(srcdir)/'`$(srcdir)/mat_hard.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-mat_hard.Tpo" "$(DEPDIR)/libzlu_a-mat_hard.Po"; else rm -f "$(DEPDIR)/libzlu_a-mat_hard.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat_hard.c' object='libzlu_a-mat_hard.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-mat_hard.Po' tmpdepfile='$(DEPDIR)/libzlu_a-mat_hard.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-mat_hard.o `test -f '$(srcdir)/mat_hard.c' || echo '$(srcdir)/'`$(srcdir)/mat_hard.c
-
-libzlu_a-mat_hard.obj: $(srcdir)/mat_hard.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-mat_hard.obj -MD -MP -MF "$(DEPDIR)/libzlu_a-mat_hard.Tpo" -c -o libzlu_a-mat_hard.obj `if test -f '$(srcdir)/mat_hard.c'; then $(CYGPATH_W) '$(srcdir)/mat_hard.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat_hard.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-mat_hard.Tpo" "$(DEPDIR)/libzlu_a-mat_hard.Po"; else rm -f "$(DEPDIR)/libzlu_a-mat_hard.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mat_hard.c' object='libzlu_a-mat_hard.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-mat_hard.Po' tmpdepfile='$(DEPDIR)/libzlu_a-mat_hard.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-mat_hard.obj `if test -f '$(srcdir)/mat_hard.c'; then $(CYGPATH_W) '$(srcdir)/mat_hard.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mat_hard.c'; fi`
 
 libzlu_a-pcomm.o: $(srcdir)/pcomm.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-pcomm.o -MD -MP -MF "$(DEPDIR)/libzlu_a-pcomm.Tpo" -c -o libzlu_a-pcomm.o `test -f '$(srcdir)/pcomm.c' || echo '$(srcdir)/'`$(srcdir)/pcomm.c; \
@@ -2322,22 +1753,6 @@ libzlu_a-solve.obj: $(srcdir)/solve.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-solve.obj `if test -f '$(srcdir)/solve.c'; then $(CYGPATH_W) '$(srcdir)/solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/solve.c'; fi`
 
-libzlu_a-steve.o: $(srcdir)/steve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-steve.o -MD -MP -MF "$(DEPDIR)/libzlu_a-steve.Tpo" -c -o libzlu_a-steve.o `test -f '$(srcdir)/steve.c' || echo '$(srcdir)/'`$(srcdir)/steve.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-steve.Tpo" "$(DEPDIR)/libzlu_a-steve.Po"; else rm -f "$(DEPDIR)/libzlu_a-steve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/steve.c' object='libzlu_a-steve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-steve.Po' tmpdepfile='$(DEPDIR)/libzlu_a-steve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-steve.o `test -f '$(srcdir)/steve.c' || echo '$(srcdir)/'`$(srcdir)/steve.c
-
-libzlu_a-steve.obj: $(srcdir)/steve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-steve.obj -MD -MP -MF "$(DEPDIR)/libzlu_a-steve.Tpo" -c -o libzlu_a-steve.obj `if test -f '$(srcdir)/steve.c'; then $(CYGPATH_W) '$(srcdir)/steve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/steve.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-steve.Tpo" "$(DEPDIR)/libzlu_a-steve.Po"; else rm -f "$(DEPDIR)/libzlu_a-steve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/steve.c' object='libzlu_a-steve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-steve.Po' tmpdepfile='$(DEPDIR)/libzlu_a-steve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-steve.obj `if test -f '$(srcdir)/steve.c'; then $(CYGPATH_W) '$(srcdir)/steve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/steve.c'; fi`
-
 libzlu_a-x_factor.o: $(srcdir)/x_factor.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-x_factor.o -MD -MP -MF "$(DEPDIR)/libzlu_a-x_factor.Tpo" -c -o libzlu_a-x_factor.o `test -f '$(srcdir)/x_factor.c' || echo '$(srcdir)/'`$(srcdir)/x_factor.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-x_factor.Tpo" "$(DEPDIR)/libzlu_a-x_factor.Po"; else rm -f "$(DEPDIR)/libzlu_a-x_factor.Tpo"; exit 1; fi
@@ -2353,22 +1768,6 @@ libzlu_a-x_factor.obj: $(srcdir)/x_factor.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-x_factor.Po' tmpdepfile='$(DEPDIR)/libzlu_a-x_factor.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-x_factor.obj `if test -f '$(srcdir)/x_factor.c'; then $(CYGPATH_W) '$(srcdir)/x_factor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/x_factor.c'; fi`
-
-libzlu_a-xlu_solve.o: $(srcdir)/xlu_solve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-xlu_solve.o -MD -MP -MF "$(DEPDIR)/libzlu_a-xlu_solve.Tpo" -c -o libzlu_a-xlu_solve.o `test -f '$(srcdir)/xlu_solve.c' || echo '$(srcdir)/'`$(srcdir)/xlu_solve.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-xlu_solve.Tpo" "$(DEPDIR)/libzlu_a-xlu_solve.Po"; else rm -f "$(DEPDIR)/libzlu_a-xlu_solve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/xlu_solve.c' object='libzlu_a-xlu_solve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-xlu_solve.Po' tmpdepfile='$(DEPDIR)/libzlu_a-xlu_solve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-xlu_solve.o `test -f '$(srcdir)/xlu_solve.c' || echo '$(srcdir)/'`$(srcdir)/xlu_solve.c
-
-libzlu_a-xlu_solve.obj: $(srcdir)/xlu_solve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-xlu_solve.obj -MD -MP -MF "$(DEPDIR)/libzlu_a-xlu_solve.Tpo" -c -o libzlu_a-xlu_solve.obj `if test -f '$(srcdir)/xlu_solve.c'; then $(CYGPATH_W) '$(srcdir)/xlu_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/xlu_solve.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libzlu_a-xlu_solve.Tpo" "$(DEPDIR)/libzlu_a-xlu_solve.Po"; else rm -f "$(DEPDIR)/libzlu_a-xlu_solve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/xlu_solve.c' object='libzlu_a-xlu_solve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/libzlu_a-xlu_solve.Po' tmpdepfile='$(DEPDIR)/libzlu_a-xlu_solve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -c -o libzlu_a-xlu_solve.obj `if test -f '$(srcdir)/xlu_solve.c'; then $(CYGPATH_W) '$(srcdir)/xlu_solve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/xlu_solve.c'; fi`
 
 libzlu_a-xlu_solve_new.o: $(srcdir)/xlu_solve_new.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzlu_a_CFLAGS) $(CFLAGS) -MT libzlu_a-xlu_solve_new.o -MD -MP -MF "$(DEPDIR)/libzlu_a-xlu_solve_new.Tpo" -c -o libzlu_a-xlu_solve_new.o `test -f '$(srcdir)/xlu_solve_new.c' || echo '$(srcdir)/'`$(srcdir)/xlu_solve_new.c; \
@@ -2418,21 +1817,21 @@ libzlu_a-x_solve.obj: $(srcdir)/x_solve.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-Pliris.o: $(srcdir)/Pliris.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Pliris.o -MD -MP -MF "$(DEPDIR)/Pliris.Tpo" -c -o Pliris.o `test -f '$(srcdir)/Pliris.cpp' || echo '$(srcdir)/'`$(srcdir)/Pliris.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Pliris.Tpo" "$(DEPDIR)/Pliris.Po"; else rm -f "$(DEPDIR)/Pliris.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Pliris.cpp' object='Pliris.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Pliris.Po' tmpdepfile='$(DEPDIR)/Pliris.TPo' @AMDEPBACKSLASH@
+libdlu_a-Pliris.o: $(srcdir)/Pliris.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CXXFLAGS) $(CXXFLAGS) -MT libdlu_a-Pliris.o -MD -MP -MF "$(DEPDIR)/libdlu_a-Pliris.Tpo" -c -o libdlu_a-Pliris.o `test -f '$(srcdir)/Pliris.cpp' || echo '$(srcdir)/'`$(srcdir)/Pliris.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-Pliris.Tpo" "$(DEPDIR)/libdlu_a-Pliris.Po"; else rm -f "$(DEPDIR)/libdlu_a-Pliris.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Pliris.cpp' object='libdlu_a-Pliris.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libdlu_a-Pliris.Po' tmpdepfile='$(DEPDIR)/libdlu_a-Pliris.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Pliris.o `test -f '$(srcdir)/Pliris.cpp' || echo '$(srcdir)/'`$(srcdir)/Pliris.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CXXFLAGS) $(CXXFLAGS) -c -o libdlu_a-Pliris.o `test -f '$(srcdir)/Pliris.cpp' || echo '$(srcdir)/'`$(srcdir)/Pliris.cpp
 
-Pliris.obj: $(srcdir)/Pliris.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Pliris.obj -MD -MP -MF "$(DEPDIR)/Pliris.Tpo" -c -o Pliris.obj `if test -f '$(srcdir)/Pliris.cpp'; then $(CYGPATH_W) '$(srcdir)/Pliris.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Pliris.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Pliris.Tpo" "$(DEPDIR)/Pliris.Po"; else rm -f "$(DEPDIR)/Pliris.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Pliris.cpp' object='Pliris.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Pliris.Po' tmpdepfile='$(DEPDIR)/Pliris.TPo' @AMDEPBACKSLASH@
+libdlu_a-Pliris.obj: $(srcdir)/Pliris.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CXXFLAGS) $(CXXFLAGS) -MT libdlu_a-Pliris.obj -MD -MP -MF "$(DEPDIR)/libdlu_a-Pliris.Tpo" -c -o libdlu_a-Pliris.obj `if test -f '$(srcdir)/Pliris.cpp'; then $(CYGPATH_W) '$(srcdir)/Pliris.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Pliris.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libdlu_a-Pliris.Tpo" "$(DEPDIR)/libdlu_a-Pliris.Po"; else rm -f "$(DEPDIR)/libdlu_a-Pliris.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Pliris.cpp' object='libdlu_a-Pliris.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libdlu_a-Pliris.Po' tmpdepfile='$(DEPDIR)/libdlu_a-Pliris.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Pliris.obj `if test -f '$(srcdir)/Pliris.cpp'; then $(CYGPATH_W) '$(srcdir)/Pliris.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Pliris.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libdlu_a_CXXFLAGS) $(CXXFLAGS) -c -o libdlu_a-Pliris.obj `if test -f '$(srcdir)/Pliris.cpp'; then $(CYGPATH_W) '$(srcdir)/Pliris.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Pliris.cpp'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)

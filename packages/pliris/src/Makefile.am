@@ -43,63 +43,63 @@
 #
 #np# Make sure to list all source files in one of the following categories.
 EXTRA_CORE_H = \
-	$(srcdir)/block.h \
-	$(srcdir)/cblassp.h \
-        $(srcdir)/dblassp.h \
-        $(srcdir)/dim.h \
-        $(srcdir)/distribute.h \
         $(srcdir)/exchange_pivots.h \
         $(srcdir)/factor.h \
         $(srcdir)/forwardall.h \
         $(srcdir)/forward.h \
-        $(srcdir)/init.h \
         $(srcdir)/pcomm.h \
-        $(srcdir)/perm1.h \
-        $(srcdir)/permute.h \
         $(srcdir)/permute_mat.h \
         $(srcdir)/permute_rhs.h \
         $(srcdir)/solve.h \
-        $(srcdir)/vars.h \
-        $(srcdir)/x_factor.h \
-        $(srcdir)/xlu_solve.h \
-        $(srcdir)/x_solve.h
+        $(srcdir)/xlu_solve.h
+#        $(srcdir)/block.h \
+#        $(srcdir)/cblassp.h \
+#        $(srcdir)/dblassp.h \
+#        $(srcdir)/dim.h \
+#        $(srcdir)/distribute.h \
+#        $(srcdir)/init.h \
+#        $(srcdir)/perm1.h \
+#        $(srcdir)/permute.h \
+#        $(srcdir)/vars.h \
+#        $(srcdir)/x_factor.h \
+#        $(srcdir)/x_solve.h
 
 EXTRA_CORE = \
 	$(srcdir)/distribute.c \
         $(srcdir)/exchange_pivots.c \
-        $(srcdir)/factor.c \
         $(srcdir)/factor_new.c \
         $(srcdir)/forwardall.c \
         $(srcdir)/forward.c \
-        $(srcdir)/init.c \
-        $(srcdir)/mat.c \
-        $(srcdir)/mat_hard.c \
         $(srcdir)/pcomm.c \
         $(srcdir)/permute.c \
         $(srcdir)/permute_mat.c \
         $(srcdir)/permute_rhs.c \
         $(srcdir)/solve.c \
-        $(srcdir)/steve.c \
         $(srcdir)/x_factor.c \
-        $(srcdir)/xlu_solve.c \
         $(srcdir)/xlu_solve_new.c \
         $(srcdir)/x_solve.c
+#       $(srcdir)/factor.c \
+#        $(srcdir)/mat.c \
+#        $(srcdir)/init.c \
+#        $(srcdir)/mat_hard.c \
+#        $(srcdir)/steve.c \
+#        $(srcdir)/xlu_solve.c
 
 EXTRA_UTIL_H = \
-	$(srcdir)/BLAS_prototypes.h \
-        $(srcdir)/clean_code.h \
-        $(srcdir)/defines.h \
-        $(srcdir)/extern_vars.h \
-        $(srcdir)/macros.h \
-        $(srcdir)/mytime.h \
-        $(srcdir)/sblassp.h \
-        $(srcdir)/zblassp.h
+        $(srcdir)/defines.h
+#        $(srcdir)/BLAS_prototypes.h \
+#        $(srcdir)/clean_code.h \
+#        $(srcdir)/extern_vars.h \
+#        $(srcdir)/macros.h \
+#        $(srcdir)/mytime.h \
+#        $(srcdir)/sblassp.h \
+#        $(srcdir)/zblassp.h
 
 EXTRA_UTIL =  \
 	$(srcdir)/clean_code.c \
-	$(srcdir)/malloc.c \
-        $(srcdir)/my_srand48.c \
         $(srcdir)/time.c
+#        $(srcdir)/malloc.c \
+#        $(srcdir)/my_srand48.c
 
 EXTRA_EPETRA_COMPAT = \
 	$(srcdir)/Pliris.cpp
@@ -135,17 +135,23 @@ EXTRA_MPI =
 if HAVE_MPI 
 MPI_H = \
 	$(EXTRA_UTIL_H) \
-	$(EXTRA_CORE_H) \
-	$(EPETRA_COMPAT_H)
+	$(EXTRA_CORE_H)
 MPI = \
 	$(EXTRA_UTIL) \
-        $(EXTRA_CORE) \
+        $(EXTRA_CORE)
+
+MPI_EPETRA_H = \
+        $(EPETRA_COMPAT_H)
+MPI_EPETRA = \
         $(EPETRA_COMPAT)
 
 else
 
 MPI_H =
 MPI =
+
+MPI_EPETRA_H =
+MPI_EPETRA =
 
 endif
 
@@ -182,7 +188,8 @@ PLIRIS_H = \
 	$(SERIAL_H) \
 	$(DIST_H) \
 	$(COMP_H) \
-	$(MPI_H)
+	$(MPI_H) \
+        $(MPI_EPETRA_H)
 
 libdlu_a_SOURCES = \
 	$(CORE) \
@@ -190,7 +197,8 @@ libdlu_a_SOURCES = \
 	$(SERIAL) \
 	$(DIST) \
 	$(COMP) \
-	$(MPI)
+	$(MPI) \
+        $(MPI_EPETRA)
 
 libslu_a_SOURCES = \
         $(CORE) \
@@ -228,15 +236,19 @@ EXTRA_libdlu_a_SOURCES = \
 
 #libdlu_a_AM_CFLAGS =-DDREAL
 libdlu_a_CFLAGS =-DDREAL
+libdlu_a_CXXFLAGS =-DDREAL
 
 #libslu_a_AM_CFLAGS =-DSREAL
 libslu_a_CFLAGS =-DSREAL
+libslu_a_CXXFLAGS =-DSREAL
 
 #libclu_a_AM_CFLAGS =-DSCPLX
 libclu_a_CFLAGS =-DSCPLX
+libclu_a_CXXFLAGS =-DSCPLX
 
 #libzlu_a_AM_CFLAGS =-DZCPLX
 libzlu_a_CFLAGS =-DZCPLX
+libzlu_a_CXXFLAGS =-DZCPLX
 
 #We need the following to support separate build directories
 #AM_CPPFLAGS=-I$(builddir)/src
