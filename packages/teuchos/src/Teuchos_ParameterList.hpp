@@ -1,11 +1,13 @@
 // Kris
 // 07.08.03 -- Move into Teuchos package/namespace
 
+#include <complex>
 #include <iostream>
 #include <map>
 #include <string>
-#include "Teuchos_ParameterArbitrary.hpp"
+// #include "Teuchos_ParameterArbitrary.hpp"
 #include "Teuchos_ParameterEntry.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 namespace Teuchos {
 
@@ -33,13 +35,15 @@ private:
 
   void PrintTabs(int);
 
-  std::map<std::string, Entry<char> >                    CharMap;
-  std::map<std::string, Entry<double> >                DoubleMap;
-  std::map<std::string, Entry<float> >                  FloatMap;
-  std::map<std::string, Entry<int> >                      IntMap;
-  std::map<std::string, Entry<std::string> >           StringMap;
-  std::map<std::string, Entry<Arbitrary*> >         ArbitraryMap;
-  std::map<std::string, Entry<ParameterList*> > ParameterListMap;
+  std::map<std::string, Entry<char> >                      CharMap;
+  std::map<std::string, Entry<complex<double> > > ComplexDoubleMap;
+  std::map<std::string, Entry<complex<float> > >   ComplexFloatMap;
+  std::map<std::string, Entry<double> >                  DoubleMap;
+  std::map<std::string, Entry<float> >                    FloatMap;
+  std::map<std::string, Entry<int> >                        IntMap;
+  std::map<std::string, Entry<std::string> >             StringMap;
+  // std::map<std::string, Entry<Arbitrary*> >         ArbitraryMap;
+  // std::map<std::string, Entry<ParameterList*> > ParameterListMap;
   
 }; // class ParameterList
 
@@ -60,6 +64,20 @@ ParameterList::ParameterList(std::string name, char newData)
 {
   Entry<char> newEntry(newData);
   CharMap[name] = newEntry;
+}
+
+template<>
+ParameterList::ParameterList(std::string name, complex<double> newData)
+{
+  Entry<complex<double> > newEntry(newData);
+  ComplexDoubleMap[name] = newEntry;
+}
+
+template<>
+ParameterList::ParameterList(std::string name, complex<float> newData)
+{
+  Entry<complex<float> > newEntry(newData);
+  ComplexFloatMap[name] = newEntry;
 }
 
 template<>
@@ -90,35 +108,31 @@ ParameterList::ParameterList(std::string name, std::string newData)
   StringMap[name] = newEntry;
 }
 
-template<>
-ParameterList::ParameterList(std::string name, Arbitrary* newData)
-{
-  Entry<Arbitrary*> newEntry(newData);
-  ArbitraryMap[name] = newEntry;
-}
+// template<>
+// ParameterList::ParameterList(std::string name, Arbitrary* newData)
+// {
+//   Entry<Arbitrary*> newEntry(newData);
+//   ArbitraryMap[name] = newEntry;
+// }
 
-template<>
-ParameterList::ParameterList(std::string name, ParameterList* newData)
-{
-  Entry<ParameterList*> newEntry(newData);
-  ParameterListMap[name] = newEntry;
-}
-
-template<typename SPType>
-void ParameterList::SetParameter<SPType>(std::string name, SPType newData)
-{
-  std::cout << "Unsupported Parameter Type! Unable to add Parameter " << name << std::endl;
-}
+// template<>
+// ParameterList::ParameterList(std::string name, ParameterList* newData)
+// {
+//   Entry<ParameterList*> newEntry(newData);
+//   ParameterListMap[name] = newEntry;
+// }
 
 ParameterList::ParameterList(const ParameterList &Source)
 {
   CharMap = Source.CharMap;
+  ComplexDoubleMap = Source.ComplexDoubleMap;
+  ComplexFloatMap = Source.ComplexFloatMap;
   DoubleMap = Source.DoubleMap;
   FloatMap = Source.FloatMap;
   IntMap = Source.IntMap;
   StringMap = Source.StringMap;
-  ArbitraryMap = Source.ArbitraryMap;
-  ParameterListMap = Source.ParameterListMap;
+//   ArbitraryMap = Source.ArbitraryMap;
+//   ParameterListMap = Source.ParameterListMap;
 
   std::cout << "copy constructor!!" << std::endl;
 }
@@ -129,14 +143,22 @@ ParameterList & ParameterList::operator= (const ParameterList &Source)
   if(this != &Source)
     {
       CharMap = Source.CharMap;
+      ComplexDoubleMap = Source.ComplexDoubleMap;
+      ComplexFloatMap = Source.ComplexFloatMap;
       DoubleMap = Source.DoubleMap;
       FloatMap = Source.FloatMap;
       IntMap = Source.IntMap;
       StringMap = Source.StringMap;
-      ArbitraryMap = Source.ArbitraryMap;
-      ParameterListMap = Source.ParameterListMap;
+//       ArbitraryMap = Source.ArbitraryMap;
+//       ParameterListMap = Source.ParameterListMap;
     }
   return *this;
+}
+
+template<typename SPType>
+void ParameterList::SetParameter(std::string name, SPType newData)
+{
+  std::cout << "Unsupported Parameter Type! Unable to add Parameter " << name << std::endl;
 }
 
 // Need a specialized SetParameter function for each supported type
@@ -145,6 +167,20 @@ void ParameterList::SetParameter<char>(std::string name, char newData)
 {
   Entry<char> newEntry(newData);
   CharMap[name] = newEntry;
+}
+
+template<>
+void ParameterList::SetParameter<complex<double> >(std::string name, complex<double> newData)
+{
+  Entry<complex<double> > newEntry(newData);
+  ComplexDoubleMap[name] = newEntry;
+}
+
+template<>
+void ParameterList::SetParameter<complex<float> >(std::string name, complex<float> newData)
+{
+  Entry<complex<float> > newEntry(newData);
+  ComplexFloatMap[name] = newEntry;
 }
 
 template<>
@@ -175,22 +211,22 @@ void ParameterList::SetParameter<std::string>(std::string name, std::string newD
   StringMap[name] = newEntry;
 }
 
-template<>
-void ParameterList::SetParameter<Arbitrary*>(std::string name, Arbitrary* newData)
-{
-  Entry<Arbitrary*> newEntry(newData);
-  ArbitraryMap[name] = newEntry;
-}
+// template<>
+// void ParameterList::SetParameter<Arbitrary*>(std::string name, Arbitrary* newData)
+// {
+//   Entry<Arbitrary*> newEntry(newData);
+//   ArbitraryMap[name] = newEntry;
+// }
 
-template<>
-void ParameterList::SetParameter<ParameterList*>(std::string name, ParameterList* newData)
-{
-  Entry<ParameterList*> newEntry(newData);
-  ParameterListMap[name] = newEntry;
-}
+// template<>
+// void ParameterList::SetParameter<ParameterList*>(std::string name, ParameterList* newData)
+// {
+//   Entry<ParameterList*> newEntry(newData);
+//   ParameterListMap[name] = newEntry;
+// }
 
 template<typename GPType>
-GPType ParameterList::GetParameter<GPType>(std::string name, GPType nominal)
+GPType ParameterList::GetParameter(std::string name, GPType nominal)
 {
   std::cout << "Unsupported Parameter Type! Unable to retrieve Parameter " << name << std::endl;
   return nominal;
@@ -210,6 +246,40 @@ char ParameterList::GetParameter(std::string name, char nominal)
     {
       Entry<char> newEntry(nominal, 1);
       CharMap[name] = newEntry;
+    }
+  return result;
+}
+
+template<>
+complex<double> ParameterList::GetParameter(std::string name, complex<double> nominal)
+{
+  complex<double> result = nominal;
+  std::map<std::string, Entry<complex<double> > >::iterator findIter = ComplexDoubleMap.find(name);
+  if(findIter != ComplexDoubleMap.end())
+    {
+      result = (*findIter).second.GetData();
+    }
+  else
+    {
+      Entry<complex<double> > newEntry(nominal, 1);
+      ComplexDoubleMap[name] = newEntry;
+    }
+  return result;
+}
+
+template<>
+complex<float> ParameterList::GetParameter(std::string name, complex<float> nominal)
+{
+  complex<float> result = nominal;
+  std::map<std::string, Entry<complex<float> > >::iterator findIter = ComplexFloatMap.find(name);
+  if(findIter != ComplexFloatMap.end())
+    {
+      result = (*findIter).second.GetData();
+    }
+  else
+    {
+      Entry<complex<float> > newEntry(nominal, 1);
+      ComplexFloatMap[name] = newEntry;
     }
   return result;
 }
@@ -251,6 +321,7 @@ float ParameterList::GetParameter(std::string name, float nominal)
 template<>
 int ParameterList::GetParameter(std::string name, int nominal)
 {
+  cout << "GetParameter!!" << endl;
   int result = nominal;
   std::map<std::string, Entry<int> >::iterator findIter = IntMap.find(name);
   if(findIter != IntMap.end())
@@ -282,35 +353,35 @@ std::string ParameterList::GetParameter(std::string name, std::string nominal)
   return result;
 }
 
-template<>
-Arbitrary* ParameterList::GetParameter(std::string name, Arbitrary* nominal)
-{
-  Arbitrary* result = nominal;
-  std::map<std::string, Entry<Arbitrary*> >::iterator findIter = ArbitraryMap.find(name);
-  if(findIter != ArbitraryMap.end())
-    {
-      result = (*findIter).second.GetData();
-    }
-  else
-    {
-      Entry<Arbitrary*> newEntry(nominal, 1);
-      ArbitraryMap[name] = newEntry;
-    }
-  return result;
-}
+// template<>
+// Arbitrary* ParameterList::GetParameter(std::string name, Arbitrary* nominal)
+// {
+//   Arbitrary* result = nominal;
+//   std::map<std::string, Entry<Arbitrary*> >::iterator findIter = ArbitraryMap.find(name);
+//   if(findIter != ArbitraryMap.end())
+//     {
+//       result = (*findIter).second.GetData();
+//     }
+//   else
+//     {
+//       Entry<Arbitrary*> newEntry(nominal, 1);
+//       ArbitraryMap[name] = newEntry;
+//     }
+//   return result;
+// }
 
-template<>
-ParameterList* ParameterList::GetParameter(std::string name, ParameterList* nominal)
-{
-  ParameterList* result = nominal;
-  std::map<std::string, Entry<ParameterList*> >::iterator findIter = ParameterListMap.find(name);
-  if(findIter != ParameterListMap.end())
-    {
-      result = (*findIter).second.GetData();
-    }
-  // How should GetParameter() behave if we are trying to get a list parameter?
-  return result;
-}
+// template<>
+// ParameterList* ParameterList::GetParameter(std::string name, ParameterList* nominal)
+// {
+//   ParameterList* result = nominal;
+//   std::map<std::string, Entry<ParameterList*> >::iterator findIter = ParameterListMap.find(name);
+//   if(findIter != ParameterListMap.end())
+//     {
+//       result = (*findIter).second.GetData();
+//     }
+//   // How should GetParameter() behave if we are trying to get a list parameter?
+//   return result;
+// }
 
 void ParameterList::Print(int indent)
 {
@@ -322,6 +393,26 @@ void ParameterList::Print(int indent)
 	  PrintTabs(indent);
 	  std::cout << "[(char) " << (*charIter).first << " = '" << (*charIter).second.GetData() << "']" << std::endl;
 	  charIter++;
+	}
+    }
+  if(!ComplexDoubleMap.empty())
+    {
+      std::map<std::string, Entry<complex<double> > >::iterator complexdoubleIter = ComplexDoubleMap.begin();
+      while(complexdoubleIter != ComplexDoubleMap.end())
+	{
+	  PrintTabs(indent);
+	  std::cout << "[(complex<double>) " << (*complexdoubleIter).first << " = " << (*complexdoubleIter).second.GetData() << "]" << std::endl;
+	  complexdoubleIter++;
+	}
+    }
+  if(!ComplexFloatMap.empty())
+    {
+      std::map<std::string, Entry<complex<float> > >::iterator complexfloatIter = ComplexFloatMap.begin();
+      while(complexfloatIter != ComplexFloatMap.end())
+	{
+	  PrintTabs(indent);
+	  std::cout << "[(complex<float>) " << (*complexfloatIter).first << " = " << (*complexfloatIter).second.GetData() << "]" << std::endl;
+	  complexfloatIter++;
 	}
     }
   if(!DoubleMap.empty())
@@ -374,17 +465,17 @@ void ParameterList::Print(int indent)
 // 	  ArbitraryIter++;
 // 	}
 //     }
-  if(!ParameterListMap.empty())
-    {
-      std::map<std::string, Entry<ParameterList*> >::iterator ParameterListIter = ParameterListMap.begin();
-      while(ParameterListIter != ParameterListMap.end())
-	{
-	  PrintTabs(indent);
-	  std::cout << "[(ParameterList) " << (*ParameterListIter).first << ":]" << std::endl;
-	  (*(*ParameterListIter).second.GetData()).Print(indent + 1);
-	  ParameterListIter++;
-	}
-    }
+//   if(!ParameterListMap.empty())
+//     {
+//       std::map<std::string, Entry<ParameterList*> >::iterator ParameterListIter = ParameterListMap.begin();
+//       while(ParameterListIter != ParameterListMap.end())
+// 	{
+// 	  PrintTabs(indent);
+// 	  std::cout << "[(ParameterList) " << (*ParameterListIter).first << ":]" << std::endl;
+// 	  (*(*ParameterListIter).second.GetData()).Print(indent + 1);
+// 	  ParameterListIter++;
+// 	}
+//     }
 }
 
 void ParameterList::PrintTabs(int n)
