@@ -71,6 +71,12 @@ class BlockVector: public Epetra_Vector {
   //! Block Access
   Epetra_Vector & Block( int i = 0 ) { return *(Blocks_[i]); }
   const Epetra_Vector & Block( int i = 0 ) const { return *(Blocks_[i]); }
+
+  //! Extract a single block from a Block Vector: block row is global, not a stencil value
+  int ExtractBlockValues( Epetra_Vector & BaseVec, int BlockRow) const;
+
+  //! Load a single block into a Block Vector: block row is global, not a stencil value
+  int LoadBlockValues( Epetra_Vector & BaseVec, int BlockRow);
 	
  protected:
 
@@ -82,6 +88,8 @@ class BlockVector: public Epetra_Vector {
   std::vector<Epetra_Vector*> Blocks_;
 
   int NumBlocks_;
+
+  int Offset_;
 
 };
 

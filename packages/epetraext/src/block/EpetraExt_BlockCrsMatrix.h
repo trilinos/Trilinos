@@ -80,7 +80,7 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
   virtual ~BlockCrsMatrix();
   //@}
   
-  //! Block Access
+  //! Block Access: Not currently robust for distributed BaseGraphs
   Epetra_CrsMatrix & Block( int Column ) { return *(Blocks_[0][Column]); }
   Epetra_CrsMatrix & Block( int Row, int Column ) { return *(Blocks_[Row][Column]); }
 
@@ -90,6 +90,10 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
   //! RowIndex
   int RowIndex( int i = 0 ) { return RowIndices_[i]; }
 	
+  //! Routine for loading a base matrices values into the large Block Matrix
+  //! For now, the row and column arguments are indices into RowStencil 
+  void LoadBlock(const Epetra_CrsMatrix & BaseMatrix, const int Row, const int Col);
+
  protected:
 
   void AllocateBlocks_();
@@ -102,6 +106,8 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
   std::vector< std::vector<Epetra_CrsMatrix*> > Blocks_;
 
   std::vector<int> RowIndices_; 
+
+  int Offset_;
 
 };
 

@@ -42,17 +42,9 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
         const Epetra_Comm & GlobalComm ) 
 {
 
-  cout << "RS " << RowStencil.size() << endl;
-  cout << "RS0 " << RowStencil[0].size() << endl;
-  cout << "RI " << RowIndices.size() << endl;
-
   const Epetra_BlockMap & BaseMap = BaseGraph.RowMap();
-  int MaxGID = BaseMap.MaxAllGID();
   int BaseIndex = BaseMap.IndexBase();
-
-  //Setup block offset
-  int Offset = 1;
-  while( Offset < MaxGID ) Offset *= 10;
+  int Offset = BlockUtility::CalculateOffset(BaseMap);
 
   //Get Base Global IDs
   int NumBlockRows = RowIndices.size();
@@ -105,10 +97,19 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
 
   GlobalGraph->TransformToLocal();
 
-
-  cout << "FINISHED WITH BLOCKuTILITY " << endl;
-  
   return GlobalGraph;
 }
+
+//==============================================================================
+int BlockUtility::CalculateOffset(const Epetra_BlockMap & BaseMap)
+{
+  int MaxGID = BaseMap.MaxAllGID();
+
+  int Offset = 1;
+  while( Offset < MaxGID ) Offset *= 10;
+
+  return Offset;
+}
+
 
 } //namespace EpetraExt

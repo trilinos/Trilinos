@@ -27,7 +27,9 @@
 //@HEADER
 
 #include "EpetraExt_BlockVector.h"
+#include "EpetraExt_BlockUtility.h"
 #include "Epetra_Map.h"
+#include "Epetra_Comm.h"
 
 namespace EpetraExt {
 
@@ -39,7 +41,8 @@ BlockVector::BlockVector(
       int NumBlocks )
   : Epetra_Vector( GlobalMap ),
     BaseMap_( BaseMap ),
-    NumBlocks_( NumBlocks )
+    NumBlocks_( NumBlocks ),
+    Offset_( BlockUtility::CalculateOffset( BaseMap ) )
 {
   AllocateBlocks_();
 }
@@ -49,7 +52,8 @@ BlockVector::BlockVector(
 BlockVector::BlockVector(const BlockVector& Source)
   : Epetra_Vector( dynamic_cast<const Epetra_Vector &>(Source) ),
     BaseMap_( Source.BaseMap_ ),
-    NumBlocks_( Source.NumBlocks_ )
+    NumBlocks_( Source.NumBlocks_ ),
+    Offset_( Source.Offset_ )
 {
   AllocateBlocks_();
 }
@@ -63,6 +67,12 @@ BlockVector::~BlockVector()
 //=========================================================================
 void BlockVector::AllocateBlocks_(void)
 {
+  if (BaseMap_.Comm().NumProc() > 1 && NumBlocks_ > 1) {
+     if (BaseMap_.Comm().MyPID()==0) 
+     cout << "Warning in BlockVector::AllocateBlocks_: This routine does not work\n" 
+	  << "\tfor multi-proc base vectors becasue of re-ordering of externals" <<endl;
+  }
+  
   double * Ptrs;
   ExtractView( &Ptrs );
 
@@ -81,5 +91,58 @@ void BlockVector::DeleteBlocks_(void)
     Blocks_[i] = 0;
   }
 }
+
+//=========================================================================
+int BlockVector::ExtractBlockValues(Epetra_Vector & BaseVector, int GlobalBlockRow) const
+{
+
+   if (! BaseMap_.SameAs(BaseVector.Map())) {
+     cout << "Error in  BlockVector::GetBlock: Map compare failed" << endl;
+     return -1;
+   }
+   int IndexOffset = GlobalBlockRow * Offset_;
+   int localIndex=0;
+
+   // For each entry in the base vector, translate its global ID
+   // by the IndexOffset and extract the value from this blockVector
+   for (int i=0; i<BaseMap_.NumMyElements(); i++) {
+      localIndex = this->Map().LID((IndexOffset + BaseMap_.GID(i)));
+      if (localIndex==-1) { 
+	     cout << "Error in  BlockVector::GetBlock: " << i << " " 
+		  << IndexOffset << " " << BaseMap_.GID(i) << endl;
+	     return -1;
+      }
+      BaseVector.ReplaceMyValues(1, &Values_[localIndex], &i); 
+   }
+
+   return 0;
+}
+
+//=========================================================================
+int BlockVector::LoadBlockValues(Epetra_Vector & BaseVector, int GlobalBlockRow) 
+{
+   if (! BaseMap_.SameAs(BaseVector.Map())) {
+     cout << "Error in  BlockVector::GetBlock: Map compare failed" << endl;
+     return -1;
+   }
+   int IndexOffset = GlobalBlockRow * Offset_;
+   int localIndex=0;
+
+   // For each entry in the base vector, translate its global ID
+   // by the IndexOffset and load into this blockVector
+   for (int i=0; i<BaseMap_.NumMyElements(); i++) {
+      localIndex = this->Map().LID((IndexOffset + BaseMap_.GID(i)));
+      if (localIndex==-1) { 
+	     cout << "Error in  BlockVector::GetBlock: " << i << " " 
+		  << IndexOffset << " " << BaseMap_.GID(i) << endl;
+	     return -1;
+      }
+      double val = BaseVector[i];
+      this->ReplaceMyValues(1, &val, &localIndex); 
+   }
+
+   return 0;
+}
+
 
 } //namespace EpetraExt
