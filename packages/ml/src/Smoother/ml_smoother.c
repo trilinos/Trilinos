@@ -554,6 +554,9 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
       printf("      SGS (for ) : iter = %2d, rnorm = %e\n", iter, res_norm);
 #endif
 
+      if (getrow_comm != NULL)
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+
       for (i = Nrows-1; i >= 0; i--) 
       {
          dtemp = 0.0;
