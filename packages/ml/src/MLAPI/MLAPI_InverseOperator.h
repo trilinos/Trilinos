@@ -286,6 +286,12 @@ public:
   {
     ResetTimer();
 
+    if (GetDomainSpace() != x.GetVectorSpace())
+      ML_THROW("DomainSpace and x.GetVectorSpace() differ", -1);
+
+    if (GetRangeSpace() != y.GetVectorSpace())
+      ML_THROW("RangeSpace and y.GetVectorSpace() differ", -1);
+
     int x_nv = x.GetNumVectors();
     int y_nv = y.GetNumVectors();
     double FL = RCPData_->ComputeFlops();
