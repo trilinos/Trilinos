@@ -500,7 +500,7 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
    if (Amat->getrow->ML_id == ML_EMPTY) 
       pr_error("Error(ML_GaussSeidel): Need getrow() for GS smoother\n");
 
-   allocated_space = Amat->max_nz_per_row+1;
+   allocated_space = Amat->max_nz_per_row+2;
    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
    vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_GaussSeidel(): Not enough space\n");
@@ -562,7 +562,7 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
       for (i = 0; i < inlen; i++) x[i] = x2[i];
       ML_free(x2);
    }
-   if (allocated_space != Amat->max_nz_per_row+1) 
+   if (allocated_space != Amat->max_nz_per_row+2) 
       Amat->max_nz_per_row = allocated_space;
 
 #ifdef ML_DEBUG_SMOOTHER
@@ -627,7 +627,7 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
    }
    else
    {
-      allocated_space = (Amat->max_nz_per_row+1) * Nrows + 1;
+      allocated_space = (Amat->max_nz_per_row+2) * Nrows + 1;
       rptr = (int    *) ML_allocate(allocated_space*sizeof(int   ));
       cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
       vals = (double *) ML_allocate(allocated_space*sizeof(double));
@@ -651,7 +651,7 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
       smooth_ptr->smoother->data = ilut_data;
    }
 #else
-   allocated_space = Amat->max_nz_per_row + 1;
+   allocated_space = Amat->max_nz_per_row + 2;
    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
    vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_SymGaussSeidel: Not enough space\n");
@@ -799,7 +799,7 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
       ML_free(x2);
    }
 #ifndef ML_FAST
-   if (allocated_space != Amat->max_nz_per_row+1) {
+   if (allocated_space != Amat->max_nz_per_row+2) {
       Amat->max_nz_per_row = allocated_space;
    }
    free(vals); free(cols);
@@ -1659,7 +1659,7 @@ int ML_Smoother_SGSSequential(void *sm,int inlen,double x[],int outlen,
    if (Amat->getrow->ML_id == ML_EMPTY)
       pr_error("Error(ML_SGSSequential): Need getrow() for SGS smoother\n");
 
-   allocated_space = Amat->max_nz_per_row+1;
+   allocated_space = Amat->max_nz_per_row+2;
    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
    vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_SymGaussSeidel: Not enough space\n");
@@ -1743,7 +1743,7 @@ int ML_Smoother_SGSSequential(void *sm,int inlen,double x[],int outlen,
       for (i = 0; i < inlen; i++) x[i] = x2[i];
       ML_free(x2);
    }
-   if (allocated_space != Amat->max_nz_per_row+1)
+   if (allocated_space != Amat->max_nz_per_row+2)
       Amat->max_nz_per_row = allocated_space;
 
    free(vals); free(cols);
@@ -1790,7 +1790,7 @@ int ML_Smoother_BlockGS(void *sm,int inlen,double x[],int outlen,
    if (Amat->getrow->ML_id == ML_EMPTY) 
       pr_error("Error(ML_blockGaussSeidel): Need getrow() for smoother\n");
 
-   allocated_space = Amat->max_nz_per_row+1;
+   allocated_space = Amat->max_nz_per_row+2;
    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
    vals = (double *) ML_allocate(allocated_space*sizeof(double));
    /* this is very space inefficient, but since lapack doesn't do sparsity,
@@ -1872,7 +1872,7 @@ int ML_Smoother_BlockGS(void *sm,int inlen,double x[],int outlen,
       for (i = 0; i < inlen; i++) x[i] = x2[i];
       ML_free(x2);
    }
-   if (allocated_space != Amat->max_nz_per_row+1) {
+   if (allocated_space != Amat->max_nz_per_row+2) {
       Amat->max_nz_per_row = allocated_space;
    }
 	 
@@ -3936,7 +3936,7 @@ int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
 
    Nblocks = Nrows / blocksize;
    dataptr->Nblocks = Nblocks;
-   allocated_space = Amat->max_nz_per_row+1;
+   allocated_space = Amat->max_nz_per_row+2;
    dataptr->blocksize = blocksize;
 
    dataptr->blockfacts = (double **)ML_allocate(Nblocks*sizeof(double *));
@@ -3996,7 +3996,7 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
 
    Nrows   = Amat->getrow->Nrows;
    dataptr = (*data);
-   allocated_space = Amat->max_nz_per_row+1;
+   allocated_space = Amat->max_nz_per_row+2;
 
    /* ----------------------------------------------------------- */
    /* error checking                                              */
@@ -4272,7 +4272,7 @@ int ML_Smoother_GetRowLengths(ML_CommInfoOP *comm_info, ML_Comm *comm,
    /* write out all messages                                      */
    /* ----------------------------------------------------------- */
 
-   allocated_space = Amat->max_nz_per_row + 1;
+   allocated_space = Amat->max_nz_per_row + 2;
    cols = (int *) ML_allocate(allocated_space * sizeof(int));
    vals = (double *) ML_allocate(allocated_space * sizeof(double));
    for (i = 0; i < N_neighbors; i++) 
@@ -4380,7 +4380,7 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
    /* write out all messages                                      */
    /* ----------------------------------------------------------- */
 
-   allocated_space = Amat->max_nz_per_row + 1;
+   allocated_space = Amat->max_nz_per_row + 2;
    cols = (int *) ML_allocate(allocated_space * sizeof(int));
    vals = (double *) ML_allocate(allocated_space * sizeof(double));
    for (i = 0; i < N_neighbors; i++) 
@@ -4460,7 +4460,7 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
    /* write out all messages                                      */
    /* ----------------------------------------------------------- */
 
-   allocated_space = Amat->max_nz_per_row + 1;
+   allocated_space = Amat->max_nz_per_row + 2;
    cols = (int *) ML_allocate(allocated_space * sizeof(int));
    vals = (double *) ML_allocate(allocated_space * sizeof(double));
    for (i = 0; i < N_neighbors; i++) 
@@ -5825,7 +5825,7 @@ int ML_Smoother_BackGS(void *sm,int inlen,double x[],int outlen,double rhs[])
    else AZ_get_MSR_arrays(Amat, &bindx, &val);
 #endif
 
-   allocated_space = Amat->max_nz_per_row+1;
+   allocated_space = Amat->max_nz_per_row+2;
    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
    vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_SGS(): Not enough space\n");
@@ -5889,7 +5889,7 @@ int ML_Smoother_BackGS(void *sm,int inlen,double x[],int outlen,double rhs[])
       for (i = 0; i < inlen; i++) x[i] = x2[i];
       ML_free(x2);
    }
-   if (allocated_space != Amat->max_nz_per_row+1) 
+   if (allocated_space != Amat->max_nz_per_row+2) 
       Amat->max_nz_per_row = allocated_space;
 
    free(vals); free(cols);
@@ -5940,7 +5940,7 @@ int ML_Smoother_OrderedSGS(void *sm,int inlen,double x[],int outlen,
    else AZ_get_MSR_arrays(Amat, &bindx, &val);
 #endif
 
-   allocated_space = Amat->max_nz_per_row+1;
+   allocated_space = Amat->max_nz_per_row+2;
    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
    vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_SGS(): Not enough space\n");
@@ -6048,7 +6048,7 @@ int ML_Smoother_OrderedSGS(void *sm,int inlen,double x[],int outlen,
       for (i = 0; i < inlen; i++) x[i] = x2[i];
       ML_free(x2);
    }
-   if (allocated_space != Amat->max_nz_per_row+1) 
+   if (allocated_space != Amat->max_nz_per_row+2) 
       Amat->max_nz_per_row = allocated_space;
 
    free(vals); free(cols);

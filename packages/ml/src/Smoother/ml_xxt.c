@@ -577,7 +577,7 @@ int ML_submv(ML_Operator *Amat, double p[], double ap[])
    ML_CommInfoOP *getrow_comm;
 
    Nrows = Amat->matvec->Nrows;
-   allocated_space = Amat->max_nz_per_row+1;
+   allocated_space = Amat->max_nz_per_row+2;
    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
    vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_submatvec(): Not enough space\n");
@@ -623,7 +623,7 @@ int ML_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
    ML_CommInfoOP *getrow_comm;
 
    Nrows = Amat->matvec->Nrows;
-   allocated_space = Amat->max_nz_per_row+1;
+   allocated_space = Amat->max_nz_per_row+2;
    cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
    vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_submatvec(): Not enough space\n");

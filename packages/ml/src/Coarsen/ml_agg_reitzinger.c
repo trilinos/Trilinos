@@ -1147,7 +1147,7 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
   /* solution is known analytically. This algorithm will be described */
   /* in more detail in an upcoming paper for copper mtn (3/02).       */
 
-  int i, j, max_nz_per_row;
+  int i, j, max_nz_per_row = 1;
   struct linked_list **Trecorder;
   struct ML_CSR_MSRdata *Pn, *SPn, *Tfine, *Tcoarse, *Pe;
   double thesign;
