@@ -16,10 +16,10 @@
 
 #include "GenericEpetraProblem.H"
 
-GenericEpetraProblem::GenericEpetraProblem(int numGlobalNodes, 
-                                           Epetra_Comm& comm) :
-  NumGlobalNodes(numGlobalNodes),
+GenericEpetraProblem::GenericEpetraProblem(Epetra_Comm& comm, 
+                                           int numGlobalNodes) :
   Comm(&comm),
+  NumGlobalNodes(numGlobalNodes),
   StandardMap(0),
   OverlapMap(0),
   xptr(0),

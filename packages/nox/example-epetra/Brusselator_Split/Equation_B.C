@@ -10,8 +10,8 @@
 #include "Equation_B.H"
 
 // Constructor - creates the Epetra objects (maps and vectors) 
-Equation_B::Equation_B(int numGlobalNodes, Epetra_Comm& comm) :
-  GenericEpetraProblem(numGlobalNodes, comm),
+Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes) :
+  GenericEpetraProblem(comm, numGlobalNodes),
   xmin(0.0),
   xmax(1.0),
   dt(1.0e-1)

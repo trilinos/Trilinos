@@ -21,7 +21,7 @@ class Equation_B : public GenericEpetraProblem {
 public:
 
   // Constructor
-  Equation_B(int NumGlobalUnknowns, Epetra_Comm& Comm);
+  Equation_B(Epetra_Comm& Comm, int NumGlobalUnknowns);
   
   // Destructor
   ~Equation_B();

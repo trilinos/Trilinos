@@ -17,24 +17,12 @@
 #include "Problem_Manager.H"
 #include "GenericEpetraProblem.H"
 
-Problem_Manager::Problem_Manager() :
+Problem_Manager::Problem_Manager(Epetra_Comm& comm, 
+                                 int numGlobalElements = 0) :
+  GenericEpetraProblem(comm, numGlobalElements),
   nlParams(0),
   statusTest(0)
 {
-}
-
-Problem_Manager::Problem_Manager(NOX::Parameter::List& List) :
-  statusTest(0)
-{
-  nlParams = &List;
-}
-
-Problem_Manager::Problem_Manager(NOX::Parameter::List& List, 
-                                 GenericEpetraProblem& problem) :
-  statusTest(0)
-{
-  nlParams = &List;
-  addProblem(problem);
 }
 
 Problem_Manager::~Problem_Manager()
@@ -201,8 +189,129 @@ bool Problem_Manager::solve()
   return true;
 }
 
-bool Problem_Manager::reset()
+bool Problem_Manager::solveMF()
 {
-  // Iterate over the problem and invoke their reset methods
+  if(Problems.empty())
+  {
+    cout << "ERROR: No problems registered with Problem_Manager !!"
+         << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  // This is set up for more than 2 problems, but for now, we deal explicitly
+  // with just 2.
+
+  GenericEpetraProblem &problemA = *Problems[0],
+                       &problemB = *Problems[1];
+
+  NOX::Epetra::Group   &grpA = *Groups[0],
+                       &grpB = *Groups[1];
+
+  NOX::Solver::Manager &solverA = *Solvers[0],
+                       &solverB = *Solvers[1];
+
+  // Sync the two problems and get initial convergence state
+  problemA.setAuxillarySolution(problemB.getSolution());
+  problemB.setAuxillarySolution(problemA.getSolution());
+  grpA.setX(problemA.getSolution());
+  grpB.setX(problemB.getSolution());
+  grpA.computeF();
+  grpB.computeF();
+  cout << "Initial 2-Norms of F (A, B) --> " << grpA.getNormF() << " ,  "
+       << grpB.getNormF() << endl;
+
+  // Construct a composite Epetra_Map
+  NumMyNodes = problemA.NumMyNodes + problemB.NumMyNodes;
+  int myGlobalNodes[NumMyNodes];
+  for (int i=0; i<problemA.NumMyNodes; i++)
+    myGlobalNodes[i] = problemA.StandardMap->GID(i);
+  int maxAllAGID = problemA.StandardMap->MaxAllGID();
+  for (int i=0; i<problemB.NumMyNodes; i++)
+    myGlobalNodes[i+problemA.NumMyNodes] = maxAllAGID + 1 +
+                                           problemB.StandardMap->GID(i);
+  Epetra_Map compositeMap(-1, NumMyNodes, myGlobalNodes, 0, *Comm);
+
+  Epetra_Vector compositeSoln(compositeMap);
+
+  // Fill initial composite solution with values from each problem
+  int solnAlength = problemA.getSolution().MyLength();
+  for (int i=0; i<solnAlength; i++)
+    compositeSoln[i] = problemA.getSolution()[i];
+  for (int i=0; i<problemB.getSolution().MyLength(); i++)
+    compositeSoln[i+solnAlength] = problemB.getSolution()[i];
+
+  Problem_Interface interface(*this);
+
+  NOX::Epetra::MatrixFree A(interface, compositeSoln);
+
+  NOX::Parameter::List& lsParams = 
+    nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver");
+  lsParams.setParameter("Preconditioning", "None");
+  NOX::Epetra::Group grp(nlParams->sublist("Printing"), lsParams,
+    interface, compositeSoln, A);
+  grp.computeF();
+
+  NOX::Solver::Manager solver(grp, *statusTest, *nlParams);
+  NOX::StatusTest::StatusType status = solver.solve();
+
+  if (status != NOX::StatusTest::Converged)
+    if (MyPID==0)
+      cout << "Nonlinear solver failed to converge!" << endl;
+
+  // Extract and use final solutions
+  const NOX::Epetra::Group& finalGroup =
+    dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+  const Epetra_Vector& finalSolution =
+    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
+  
+  for (int i=0; i<solnAlength; i++)
+    problemA.getSolution()[i] = finalSolution[i];
+  for (int i=0; i<problemB.getSolution().MyLength(); i++)
+    problemB.getSolution()[i] = finalSolution[i+solnAlength];
+
+  return true;
+}
+
+
+// These methods are needed to allow inheritance from GenericEpetraProblem base
+
+bool Problem_Manager::evaluate(FillType f, const Epetra_Vector *solnVector,
+              Epetra_Vector *rhsVector, Epetra_RowMatrix *matrix,
+              NOX::Epetra::Interface::FillType fill)
+{
+
+  GenericEpetraProblem &problemA = *Problems[0],
+                       &problemB = *Problems[1];
+
+  NOX::Epetra::Group   &grpA = *Groups[0],
+                       &grpB = *Groups[1];
+
+  Epetra_Vector solnA(*problemA.StandardMap);
+  Epetra_Vector solnB(*problemB.StandardMap);
+
+  for (int i=0; i<solnA.MyLength(); i++)
+    solnA[i] = (*solnVector)[i];
+  for (int i=0; i<solnB.MyLength(); i++)
+    solnB[i] = (*solnVector)[i+problemA.StandardMap->MaxAllGID()+1];
+
+  // Pass solutions and compute residuals
+  problemA.setAuxillarySolution(solnB);
+  problemB.setAuxillarySolution(solnA);
+  grpA.setX(solnA);
+  grpB.setX(solnB);
+  grpA.computeF();
+  grpB.computeF();
+
+  for (int i=0; i<solnA.MyLength(); i++)
+    (*rhsVector)[i] = dynamic_cast<const NOX::Epetra::Vector&>(grpA.getF()).
+                      getEpetraVector()[i];
+  for (int i=0; i<solnB.MyLength(); i++)
+    (*rhsVector)[i+problemA.StandardMap->MaxAllGID()+1] = 
+                      dynamic_cast<const NOX::Epetra::Vector&>(grpB.getF()).
+                      getEpetraVector()[i];
+
+  // More is still needed to fill each problem's jacobian which will
+  // provide block contributions for a preconditioner.
+
   return true;
 }

@@ -180,11 +180,11 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Polynomial Order", 6); 
 
   // Create each part of the Brusselator problem class.  
-  Equation_A ProblemA(NumGlobalNodes, Comm);
-  Equation_B ProblemB(NumGlobalNodes, Comm);
+  Equation_A ProblemA(Comm, NumGlobalNodes);
+  Equation_B ProblemB(Comm, NumGlobalNodes);
 
-  // Now start trying to hook up the Problem_Manager.......
-  Problem_Manager problemManager(nlParams);
+  // Now start create the Problem Manager
+  Problem_Manager problemManager(Comm);
 
   // An interesting note: the order of solving each problem is based on the
   // order of adding.  For this decoupled problem, problem B is linear
@@ -207,6 +207,9 @@ int main(int argc, char *argv[])
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
   combo.addStatusTest(converged);
 
+  // Note that each problem could contain its own nlParams list as well as
+  // its own convergence test(s). 
+  problemManager.registerParameters(nlParams);
   problemManager.registerStatusTest(combo);
   problemManager.registerComplete(); // Trigger setup of groups, solvers, etc.
 
@@ -239,7 +242,10 @@ int main(int argc, char *argv[])
   
     cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
   
-    problemManager.solve(); // Need a status test check here ....
+    // Solve decoupled
+    //problemManager.solve(); // Need a status test check here ....
+    // .... OR solve using matrix-free (currently with no preconditioning)
+    problemManager.solveMF(); // Need a status test check here ....
   
     // Write solution
     (void) sprintf(file_name, "output.%03d_%05d",MyPID,timeStep);

@@ -29,7 +29,7 @@ class GenericEpetraProblem {
 public:
 
   // Constructor
-  GenericEpetraProblem(int NumGlobalElements, Epetra_Comm& Comm);
+  GenericEpetraProblem(Epetra_Comm& Comm, int NumGlobalElements = 0);
 
   // Destructor
   virtual ~GenericEpetraProblem();
@@ -93,7 +93,7 @@ protected:
 
 protected:
 
-  Epetra_Map *StandardMap;
+  //Epetra_Map *StandardMap;
   Epetra_Map *OverlapMap;
   Epetra_Import *Importer;
   Epetra_Vector *xptr;
@@ -106,6 +106,7 @@ protected:
 
 public: // for now
 
+  Epetra_Map *StandardMap;
   int MyPID;              // Process number
   int NumProc;            // Total number of processes
 
