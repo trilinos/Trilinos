@@ -53,7 +53,7 @@ lib_LIBRARIES = $(Y12M_LIB)
 # not a default installation directory, so we had to create it
 # special.
 
-pkgexecincludedir = $(exec_prefix)/include
+pkgexecincludedir = $(exec_prefix)/include/y12m
 nodist_pkgexecinclude_HEADERS = y12m_config.h
 
 # ------------------------------------------------------------------------
