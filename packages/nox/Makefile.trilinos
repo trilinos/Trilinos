@@ -36,8 +36,8 @@ LIB_PATHS=
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) 
-CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
-CCFLAGS = $(CXXFLAGS)
+CXXFLAGS= $(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
+CCFLAGS = $(CXXFLAGS) 
 #=======================================================================
 # NLSPACK source files
 #=======================================================================
@@ -46,7 +46,8 @@ NLSPACK_CC = NLS_Parameter.C NLS_ParameterList.C \
              NLS_PetraVector.C NLS_PetraGroup.C \
              NLS_MethodManager.C NLS_Newton.C \
              NLS_Utilities.C NLS_PetraSharedJacobian.C \
-	     NLS_ForcingTerm.C
+	     NLS_AdaptiveTolerance.C \
+	     NLS_LineSearchManager.C NLS_FullStep.C NLS_IntervalHalving.C
 
 NLSPACK_C  = 
 
