@@ -492,7 +492,10 @@ int ML_Epetra::Set(Teuchos::ParameterList & List,
     List.set("R and P smoothing: type", CLP.Get("-ml_RP_smoothing","classic"));
   if( CLP.Has("-ml_RP_damping") )
     List.set("R and P smoothing: damping", CLP.Get("-ml_RP_damping","fov-10"));
+  if( CLP.Has("-ml_fov_not_scaled") )
+    List.set("field-of-values: use diagonal scaling", false);
 
+  
   // aggregation
   if( CLP.Has("-ml_aggr_scheme") )
     List.set("aggregation: type", CLP.Get("-ml_aggr_scheme","Uncoupled"));
@@ -1999,16 +2002,16 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
 	    
       // initialize seed
       unsigned int s = (int)(Time.ElapsedTime()*10000);
-      srandom(s);
+      srand(s);
       
       // put random values
-      field_of_values->R_coeff[0] =  (double)random()/RAND_MAX;
-      field_of_values->R_coeff[1] =  (double)random()/RAND_MAX;
-      field_of_values->R_coeff[2] =  (double)random()/RAND_MAX;
+      field_of_values->R_coeff[0] =  (double)rand()/RAND_MAX;
+      field_of_values->R_coeff[1] =  (double)rand()/RAND_MAX;
+      field_of_values->R_coeff[2] =  (double)rand()/RAND_MAX;
       
-      field_of_values->P_coeff[0] =  (double)random()/RAND_MAX;
-      field_of_values->P_coeff[1] =  (double)random()/RAND_MAX;
-      field_of_values->P_coeff[2] =  (double)random()/RAND_MAX;
+      field_of_values->P_coeff[0] =  (double)rand()/RAND_MAX;
+      field_of_values->P_coeff[1] =  (double)rand()/RAND_MAX;
+      field_of_values->P_coeff[2] =  (double)rand()/RAND_MAX;
 
       if( verbose_ ) {
 	cout << PrintMsg_ << "Random coefficients for R and P:" << endl
