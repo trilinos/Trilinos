@@ -18,6 +18,7 @@
 #include "parmetis_jostle.h"
 #include "params_const.h"
 #include "timer_const.h"
+#include "order_const.h"
 
 /**********  parameters structure for parmetis methods **********/
 static PARAM_VARS Parmetis_params[] = {
@@ -53,7 +54,20 @@ static PARAM_VARS Graph_params[] = {
 
 static int Zoltan_ParMetis_Jostle(ZZ *zz, int *num_imp, ZOLTAN_ID_PTR *imp_gids,
   ZOLTAN_ID_PTR *imp_lids, int **imp_procs, int *num_exp, ZOLTAN_ID_PTR *exp_gids,
-  ZOLTAN_ID_PTR *exp_lids, int **exp_procs, char *alg, int  *options, float *itr);
+  ZOLTAN_ID_PTR *exp_lids, int **exp_procs, char *alg, int  *options, 
+  float *itr, ZOS *order_info);
+static int Zoltan_ParMetis_Shared(
+  ZZ *zz,
+  int *num_imp,
+  ZOLTAN_ID_PTR *imp_gids,
+  ZOLTAN_ID_PTR *imp_lids,
+  int **imp_procs,
+  int *num_exp,
+  ZOLTAN_ID_PTR *exp_gids,
+  ZOLTAN_ID_PTR *exp_lids,
+  int **exp_procs,
+  ZOS *order_info
+);
 static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim, 
                  int mode, int max_wgt_sum, int debug_level, MPI_Comm comm);
 #if PARMETIS_MAJOR_VERSION >= 3
@@ -80,6 +94,25 @@ int Zoltan_ParMetis(
   int **exp_procs       /* list of processors to export to */
 )
 {
+  return Zoltan_ParMetis_Shared(zz, num_imp, imp_gids, imp_lids,
+         imp_procs, num_exp, exp_gids, exp_lids, exp_procs, NULL);
+}
+
+/* Zoltan_ParMetis_Shared is also called by Zoltan_ParMetis_Order */
+
+static int Zoltan_ParMetis_Shared(
+  ZZ *zz,               /* Zoltan structure */
+  int *num_imp,         /* number of objects to be imported */
+  ZOLTAN_ID_PTR *imp_gids,  /* global ids of objects to be imported */
+  ZOLTAN_ID_PTR *imp_lids,  /* local  ids of objects to be imported */
+  int **imp_procs,      /* list of processors to import from */
+  int *num_exp,         /* number of objects to be exported */
+  ZOLTAN_ID_PTR *exp_gids,  /* global ids of objects to be exported */
+  ZOLTAN_ID_PTR *exp_lids,  /* local  ids of objects to be exported */
+  int **exp_procs,      /* list of processors to export to */
+  ZOS *order_info	/* ordering info */
+)
+{
 #ifndef ZOLTAN_PARMETIS
   char *yo="Zoltan_ParMetis";
   ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
@@ -92,7 +125,7 @@ int Zoltan_ParMetis(
   char alg[MAX_PARAM_STRING_LEN+1];
   int output_level, seed, coarse_alg, fold, use_obj_size;
   float itr = 0.0;
-  double pmv3_itr;
+  double pmv3_itr = 0.0;
 
   /* Set parameters */
 #if PARMETIS_MAJOR_VERSION >= 3
@@ -162,7 +195,7 @@ int Zoltan_ParMetis(
   /* Call the real ParMetis interface */
   return Zoltan_ParMetis_Jostle( zz, num_imp, imp_gids, imp_lids,
             imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
-            alg, options, &itr);
+            alg, options, &itr, order_info);
 
 #endif /* ZOLTAN_PARMETIS */
 }
@@ -175,9 +208,29 @@ static int pmv3method( char *alg)
            || (!strcmp(alg, "PARTGEOMKWAY"))
            || (!strcmp(alg, "ADAPTIVEREPART")) 
            || (!strcmp(alg, "REFINEKWAY"))
+           || (!strcmp(alg, "NODEND"))
           );
 }
 #endif
+
+/***************************************************************************
+ *  The ParMetis ordering routine piggy-backs on the ParMetis 
+ *  partitioning routines. 
+ **************************************************************************/
+
+int Zoltan_ParMetis_Order(
+  ZZ *zz,               /* Zoltan structure */
+  ZOLTAN_ID_PTR gids,   /* Ordered list of global ids (local to this proc) */
+                        /* The application must allocate enough space */
+  ZOLTAN_ID_PTR lids,   /* Ordered list of local ids (local to this proc) */
+                        /* The application must allocate enough space */
+  ZOS *order_info       /* Method-specific ordering info */
+)
+{
+  /* Call ParMetis_Shared */
+  return Zoltan_ParMetis_Shared(zz, NULL, &gids, &lids, NULL,
+         NULL, NULL, NULL, NULL, order_info);
+}
 
 /**********************************************************/
 /* Interface routine for Jostle. This is just a simple    */
@@ -308,7 +361,7 @@ int Zoltan_Jostle(
   /* Call the real Jostle/ParMetis interface */
   return Zoltan_ParMetis_Jostle( zz, num_imp, imp_gids, imp_lids,
             imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
-            alg, &output_level, NULL);
+            alg, &output_level, NULL, NULL);
 
 #endif /* ZOLTAN_JOSTLE */
 }
@@ -334,7 +387,8 @@ static int Zoltan_ParMetis_Jostle(
   int **exp_procs,      /* list of processors to export to */
   char *alg,            /* algorithm to use */
   int  *options,        /* option array */
-  float *itr     	/* ParMetis 3.0 parameter for adaptive repart. */
+  float *itr,    	/* ParMetis 3.0 parameter for adaptive repart. */
+  ZOS *order_info	/* Zoltan ordering struct, only for ordering */
 )
 {
   static char *yo = "Zoltan_ParMetis_Jostle";
@@ -344,7 +398,8 @@ static int Zoltan_ParMetis_Jostle(
   int nsend, wgtflag, numflag; 
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *part2, *vsize;
-  int tmp_num_obj, ncon;
+  idxtype *sep_sizes;
+  int tmp_num_obj, ncon, compute_order;
   float *float_vwgt, *ewgts, *xyz, *imb_tols, *tpwgt; 
   double geom_vec[6];
   ZOLTAN_ID_PTR local_ids;
@@ -354,6 +409,8 @@ static int Zoltan_ParMetis_Jostle(
                                point to global IDs in this array. */
   ZOLTAN_ID_PTR lid;            /* Temporary pointer to a local id; used to pass
                                NULL to query fns when NUM_LID_ENTRIES == 0. */
+  ZOLTAN_ID_PTR perm_gids;	/* Permuted global ids */ 
+  ZOLTAN_ID_PTR perm_lids;	/* Permuted local ids */ 
   ZOLTAN_COMM_OBJ *comm_plan;
   double times[5];
   char msg[256];
@@ -378,10 +435,18 @@ static int Zoltan_ParMetis_Jostle(
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
    */
-  vtxdist = xadj = adjncy = vwgt = adjwgt = part = vsize = NULL;
+  vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
+  vsize = sep_sizes = NULL;
   local_ids = NULL;
   global_ids = NULL;
   float_vwgt = ewgts = xyz = imb_tols = tpwgt = NULL;
+
+  /* Start timer */
+  get_times = (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME);
+  if (get_times){
+    MPI_Barrier(zz->Communicator);
+    times[0] = Zoltan_Time(zz->Timer);
+  }
 
   /* Check weight dimensions */
   if (zz->Obj_Weight_Dim<0){
@@ -417,13 +482,6 @@ static int Zoltan_ParMetis_Jostle(
       options[0], options[1], options[2], options[3]);
   }
 
-  /* Start timer */
-  get_times = (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME);
-  if (get_times){
-    MPI_Barrier(zz->Communicator);
-    times[0] = Zoltan_Time(zz->Timer);
-  }
-
   /* Get parameter options shared by ParMetis and Jostle */
   check_graph = 1;          /* default */
   scatter = 1;              /* default */
@@ -432,6 +490,22 @@ static int Zoltan_ParMetis_Jostle(
   Zoltan_Assign_Param_Vals(zz->Params, Graph_params, zz->Debug_Level, zz->Proc,
                        zz->Debug_Proc);
 
+  /* Are we doing ordering or partitioning? */
+  /* Note: If ORDER_METHOD=PARMETIS, then PARMETIS_METHOD=NODEND */
+  if (strcmp(alg, "NODEND") == 0)
+    compute_order = 1;
+  else 
+    compute_order = 0;
+
+  /* Allocate space for separator sizes */
+  if (compute_order){
+    sep_sizes = (int *) ZOLTAN_MALLOC(2*(zz->Num_Proc)*sizeof(int));
+    if (!sep_sizes){
+      /* Not enough memory */
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+    }
+  }
+  
   /* Most ParMetis methods use only graph data */
   get_graph_data = 1;
   get_geom_data = 0;
@@ -763,6 +837,12 @@ static int Zoltan_ParMetis_Jostle(
       options, &edgecut, part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
+  else if (strcmp(alg, "NODEND") == 0){
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
+    ParMETIS_V3_NodeND (vtxdist, xadj, adjncy, 
+      &numflag, options, part, sep_sizes, &comm);
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+  }
 #endif  /* PARMETIS_MAJOR_VERSION >= 3 */
   /* Check for ParMetis 2.0 routines */
   else if (strcmp(alg, "PARTKWAY") == 0){
@@ -811,6 +891,12 @@ static int Zoltan_ParMetis_Jostle(
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
     ParMETIS_RefineKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+  }
+  else if (strcmp(alg, "NODEND") == 0){
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
+    ParMETIS_NodeND (vtxdist, xadj, adjncy, 
+      &numflag, options, part, sep_sizes, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else {
@@ -865,37 +951,60 @@ static int Zoltan_ParMetis_Jostle(
     part = part2;   
   }
  
-  /* Determine number of objects to export */
-  nsend = 0;
-  for (i=0; i<num_obj; i++)
-    if (part[i] != zz->Proc) nsend++;
+  if (compute_order){
+    /* Ordering */
+    /* Import lists are never used, so reuse this parameter for ordering. */
+    perm_gids = *imp_gids;
+    perm_lids = *imp_lids;
 
-  /* Create export lists */
-  if (zz->LB.Return_Lists){
-    (*num_exp) = nsend;
-    if (nsend > 0) {
-      if (!Zoltan_Special_Malloc(zz,(void **)exp_gids,nsend,ZOLTAN_SPECIAL_MALLOC_GID)) {
-        ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
-      }
-      if (!Zoltan_Special_Malloc(zz,(void **)exp_lids,nsend,ZOLTAN_SPECIAL_MALLOC_LID)) {
-        Zoltan_Special_Free(zz,(void **)exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
-        ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
-      }
-      if (!Zoltan_Special_Malloc(zz,(void **)exp_procs,nsend,ZOLTAN_SPECIAL_MALLOC_INT)) {
-        Zoltan_Special_Free(zz,(void **)exp_lids,ZOLTAN_SPECIAL_MALLOC_LID);
-        Zoltan_Special_Free(zz,(void **)exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
-        ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
-      }
-      j = 0;
-      for (i=0; i<num_obj; i++){
-        if (part[i] != zz->Proc){
-          ZOLTAN_SET_GID(zz, &((*exp_gids)[j*num_gid_entries]),
-                         &(global_ids[i*num_gid_entries]));
-          if (num_lid_entries)
-            ZOLTAN_SET_LID(zz, &((*exp_lids)[j*num_lid_entries]),
-                           &(local_ids[i*num_lid_entries]));
-          (*exp_procs)[j] = part[i];
-          j++;
+    /* Create permuted lists */
+    /* The order vector is stored in the array _part_ */
+    for (i=0; i<num_obj; i++){
+      ZOLTAN_SET_GID(zz, &(perm_gids[i*num_gid_entries]),
+                         &(global_ids[part[i]*num_gid_entries]));
+      if (num_lid_entries)
+        ZOLTAN_SET_LID(zz, &(perm_lids[i*num_lid_entries]),
+                           &(local_ids[part[i]*num_lid_entries]));
+    }
+
+    /* Fill in the Zoltan Order Struct */
+    /* EB: For now, discard separator info */ 
+    ZOLTAN_FREE(&sep_sizes); 
+  }
+  else{
+    /* Partitioning */
+    /* Determine number of objects to export */
+    nsend = 0;
+    for (i=0; i<num_obj; i++)
+      if (part[i] != zz->Proc) nsend++;
+  
+    /* Create export lists */
+    if (zz->LB.Return_Lists){
+      (*num_exp) = nsend;
+      if (nsend > 0) {
+        if (!Zoltan_Special_Malloc(zz,(void **)exp_gids,nsend,ZOLTAN_SPECIAL_MALLOC_GID)) {
+          ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
+        }
+        if (!Zoltan_Special_Malloc(zz,(void **)exp_lids,nsend,ZOLTAN_SPECIAL_MALLOC_LID)) {
+          Zoltan_Special_Free(zz,(void **)exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
+          ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
+        }
+        if (!Zoltan_Special_Malloc(zz,(void **)exp_procs,nsend,ZOLTAN_SPECIAL_MALLOC_INT)) {
+          Zoltan_Special_Free(zz,(void **)exp_lids,ZOLTAN_SPECIAL_MALLOC_LID);
+          Zoltan_Special_Free(zz,(void **)exp_gids,ZOLTAN_SPECIAL_MALLOC_GID);
+          ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
+        }
+        j = 0;
+        for (i=0; i<num_obj; i++){
+          if (part[i] != zz->Proc){
+            ZOLTAN_SET_GID(zz, &((*exp_gids)[j*num_gid_entries]),
+                           &(global_ids[i*num_gid_entries]));
+            if (num_lid_entries)
+              ZOLTAN_SET_LID(zz, &((*exp_lids)[j*num_lid_entries]),
+                             &(local_ids[i*num_lid_entries]));
+            (*exp_procs)[j] = part[i];
+            j++;
+          }
         }
       }
     }
@@ -913,6 +1022,7 @@ free:
   if (imb_tols)  ZOLTAN_FREE(&imb_tols);
   if (vsize)     ZOLTAN_FREE(&vsize); 
   if (tpwgt)     ZOLTAN_FREE(&tpwgt);
+  if (sep_sizes) ZOLTAN_FREE(&sep_sizes);
 
   /* Always free these arrays */
   ZOLTAN_FREE(&local_ids);
@@ -1100,6 +1210,7 @@ char *val)                      /* value of variable */
         "REPARTLDIFFUSION", "REPARTGDIFFUSION",
         "REPARTREMAP", "REPARTMLREMAP",
         "REFINEKWAY", "ADAPTIVEREPART",
+        "NODEND", /* for nested dissection ordering */
          NULL };
 
     status = Zoltan_Check_Param(name, val, Parmetis_params, &result, &index);
