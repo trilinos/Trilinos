@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
   CommandLineProcessor  clp(false); // Don't throw exceptions
   clp.setOption( "v", "q", &verbose, "Set if output is printed or not." );
   CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
-  if( parse_return != CommandLineProcessor::PARSE_SUCCESSFULL ) return parse_return;
+  if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
   //-----------------------------------------------------------
   // Create Main Parameter List / Sublist Structure
