@@ -1207,7 +1207,6 @@ int  wrapper_DCSR_getrow(int columns[], double values[], int row_lengths[],
 void wrapper_DCSR_matvec(double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
 {
    ML_Matrix_DCSR *csr2_mat;
-   int             n;
    struct ML_CSR_MSRdata *temp_ptr;
 
    if (proc_config[AZ_N_procs] > 1) {
