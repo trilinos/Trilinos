@@ -5,5 +5,3 @@ File Type		= Chaco
 File Name		= grid20x19
 Parallel Disk Info	= number=0
 Test local partitions   = 2
-Global element ids assigned to processor 0
-GID	Part	Perm	IPerm

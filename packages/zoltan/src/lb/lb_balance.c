@@ -544,12 +544,10 @@ int max_global_parts = 0;   /* Max value of Num_Global_Parts_Param on all
                                procs. */
 int sum_local_parts = 0;    /* Sum of Num_Local_Parts over all procs.
                                Procs on which NUM_LOCAL_PARTITIONS was not
-                               set assume one part on them.  Thus,
+                               set assume zero parts on them.  Thus,
                                sum_local_parts may be < max_global_parts. */
 int remaining_procs;        /* Num of procs not setting NUM_LOCAL_PARTITIONS */
-int specified_local_parts;  /* Total (over all procs) num of parts specified 
-                               by NUM_LOCAL_PARTITIONS parameters. */
-int avail_local_parts;      /* max_global_parts - specified_local_parts */
+int avail_local_parts;      /* max_global_parts - sum_local_parts */
 int num_proc = zz->Num_Proc;
 int *pdist;
 int local_parts = 0;
@@ -564,10 +562,9 @@ MPI_User_function Zoltan_PartDist_MPIOp;
   /* Check whether global parts or local parts parameters were used. */
   inflag[0] = (zz->LB.Num_Global_Parts_Param != -1); 
   inflag[1] = (zz->LB.Num_Local_Parts_Param != -1); 
-  inflag[2] = ((zz->LB.Num_Global_Parts_Param == -1) 
-                    ? zz->Num_Proc : zz->LB.Num_Global_Parts_Param);
+  inflag[2] =  zz->LB.Num_Global_Parts_Param;
   inflag[3] = ((zz->LB.Num_Local_Parts_Param == -1) 
-                    ? 1 : zz->LB.Num_Local_Parts_Param);
+                    ? 0 : zz->LB.Num_Local_Parts_Param);
 
   MPI_Allreduce(inflag, outflag, 4, MPI_INT, op, zz->Communicator);
 
@@ -585,7 +582,8 @@ MPI_User_function Zoltan_PartDist_MPIOp;
     /* Number of parts == number of procs; do not need PartDist */
     /* Free it so that an old PartDist isn't accidentally used. */
     ZOLTAN_FREE(&(zz->LB.PartDist));
-    zz->LB.Num_Global_Parts = max_global_parts;
+    zz->LB.Num_Global_Parts = num_proc;
+    zz->LB.Single_Proc_Per_Part = 1;
   }
 
   else {
@@ -645,6 +643,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
       if (max_global_parts > num_proc) {
         /* NUM_LOCAL_PARTITIONS is not set; NUM_GLOBAL_PARTITIONS > num_proc. */
         /* Even distribution of partitions to processors. */
+        zz->LB.Single_Proc_Per_Part = 1;
         frac = max_global_parts / num_proc;
         mod  = max_global_parts % num_proc;
 
@@ -658,6 +657,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
       else { /* num_proc < max_global_parts */
         /* NUM_LOCAL_PARTITIONS is not set; NUM_GLOBAL_PARTITIONS < num_proc. */
         /* Even distribution of processors to partitions. */
+        zz->LB.Single_Proc_Per_Part = 0;  /* Parts are spread across procs */
         pdist[0] = 0;
         frac = num_proc / max_global_parts;
         mod  = num_proc % max_global_parts;
@@ -670,11 +670,12 @@ MPI_User_function Zoltan_PartDist_MPIOp;
 
       /* NUM_LOCAL_PARTITIONS is set on at least some processors. */
       /* Distribute partitions to processors to match NUM_LOCAL_PARTITIONS
-         where specified; distribute remaining partitions (at least one per
-         processor) to processors that didn't specify NUM_LOCAL_PARTITIONS */
+         where specified; distribute remaining partitions 
+         to processors that didn't specify NUM_LOCAL_PARTITIONS */
+
+      zz->LB.Single_Proc_Per_Part = 1;
 
       /* Gather the parameter values from all processors. */
-
       local_parts_params = (int *) ZOLTAN_MALLOC((num_proc+1)* sizeof(int));
       MPI_Allgather(&(zz->LB.Num_Local_Parts_Param), 1, MPI_INT, 
                     local_parts_params, 1, MPI_INT, zz->Communicator);
@@ -684,8 +685,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
        * specified contributed one partition to sum_local_parts.  */
 
       remaining_procs = num_proc - local_parts_set;
-      specified_local_parts = sum_local_parts - remaining_procs;
-      avail_local_parts = max_global_parts - specified_local_parts;
+      avail_local_parts = max_global_parts - sum_local_parts;
       if (remaining_procs > 0) {
         frac = avail_local_parts / remaining_procs;
         mod  = avail_local_parts % remaining_procs;

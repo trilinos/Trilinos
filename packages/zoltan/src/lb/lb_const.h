@@ -94,6 +94,10 @@ struct Zoltan_LB_Struct {
                                       If parameter NUM_LOCAL_PARTITIONS or 
                                       NUM_GLOBAL_PARTITIONS is not set,
                                       Num_Local_Parts_Param == -1.           */
+  int Single_Proc_Per_Part;       /*  Flag indicating whether a partition can
+                                      be spread across multiple processors.
+                                      Happens only when NUM_GLOBAL_PARTITIONS
+                                      is set to be < zz->Num_Proc.           */
   int Return_Lists;               /*  Flag indicating which lists (if any)
                                       should be returned by Zoltan_LB_Balance.*/
   int *PartDist;                  /*  Array describing distribution of 

@@ -1,5 +1,4 @@
 Decomposition Method 	= hsfc
-Zoltan Parameters	= num_global_partitions=9
 Zoltan Parameters       = debug_level=10
 File Type		= Chaco
 File Name		= nograph
@@ -7,9 +6,3 @@ Parallel Disk Info	= number=0
 test local partitions	= 2
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-1	0	-1	-1
-6	0	-1	-1
-7	1	-1	-1
-11	0	-1	-1
-12	1	-1	-1
-13	1	-1	-1

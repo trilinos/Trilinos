@@ -47,10 +47,11 @@ int num_procs_for_part;
     proc = part;
   }
   else {
-    /*  number of parts != number of procs */
+    /*  number of parts != number of procs or 
+     *  non-uniform distribution of parts     */
     if (part >= 0 && part < zz->LB.Num_Global_Parts) {
       num_procs_for_part = pdist[part+1] - pdist[part];
-      if (num_procs_for_part <= 1)
+      if (zz->LB.Single_Proc_Per_Part || num_procs_for_part <= 1)
         proc = pdist[part];
       else if (zz->Proc >= pdist[part] && zz->Proc < pdist[part+1])
         proc = zz->Proc;
