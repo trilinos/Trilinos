@@ -297,6 +297,7 @@ void AZ_factor_subdomain(struct context *context, int N, int N_nz,
                         (context->aztec_choices->params)[AZ_athresh]);
            break;
 	case AZ_lu:
+#ifdef HAVE_AZLU
            if (N == 0) return;
            aflag = (double *) AZ_allocate(8*sizeof(double));
            rnr   = (int *) AZ_allocate(N_nz*sizeof(int));
@@ -362,6 +363,10 @@ void AZ_factor_subdomain(struct context *context, int N, int N_nz,
            }
            AZ_free(rnr);
            AZ_free(aflag);
+#else
+	   fprintf(stderr,"AZ_lu unavailable: configure with --enable-y12m to make available\n");
+	   exit(1);
+#endif
            break;
         default:
            if (context->aztec_choices->options[AZ_subdomain_solve]
@@ -472,6 +477,7 @@ void AZ_hold_space(struct context *context, int N)
       /*   ind (N+3 ints), jnz (N ints), iu (N+1 ints), ja(max_row ints),     */
       /*   + 4 ints for manage memory header                                  */
       break;
+#ifdef HAVE_AZLU
    case AZ_lu:
         context->space_holder = (int *) AZ_allocate((2*N+9)* sizeof(double) + 
                                            (11*(N+1)+22)*sizeof(int) );
@@ -483,6 +489,10 @@ void AZ_hold_space(struct context *context, int N)
       /*   routine. Instead the subdomain field N_int_arrays is set.         */
 
         if (context->space_holder == NULL) AZ_perror("Out of space in lu.\n");
+#else
+	fprintf(stderr,"AZ_lu unavailable: configure with --enable-y12m to make available\n");
+	exit(1);
+#endif
       break;
    case AZ_bilu:
 /* Begin Aztec 2.1 mheroux mod */
@@ -665,6 +675,7 @@ int  t1, t2, t3, i, t4, t5 = 0;
       AZ_upper_icc(bindx2,val2,N,x);
       break;
    case AZ_lu:
+#ifdef HAVE_AZLU
       if (N == 0) return;
       else if (N== 1) {
          x[0] *= val2[0];
@@ -674,6 +685,10 @@ int  t1, t2, t3, i, t4, t5 = 0;
 	              context->ha, context->iflag, 
                       &ifail, &(context->N_nz_factors),
 		      &N, &N);
+#else
+    fprintf(stderr,"AZ_lu unavailable: configure with --enable-y12m to make available\n");
+    exit(1);
+#endif
       break;
    default: 
       if (context->aztec_choices->options[AZ_subdomain_solve]

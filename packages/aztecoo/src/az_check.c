@@ -477,6 +477,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
   case AZ_fixed_pt:
     break;
   case AZ_lu:
+#ifdef HAVE_AZLU
     if (az_nprocs != 1) {
       if (az_proc == 0) {
         (void) fprintf(stderr, "%sERROR: LU not implemented in parallel."
@@ -485,19 +486,10 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
       }
       return 0;
     }
-
-/*
-    if ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
-        (data_org[AZ_matrix_type] != AZ_VBR_MATRIX)) {
-      if (az_proc == 0) {
-        (void) fprintf(stderr, "ERROR: LU factorization can only be "
-                       "used with MSR or VBR matrices.\n"
-                       "       data_org[AZ_matrix_type] = %d\n\n",
-                       data_org[AZ_matrix_type]);
-      }
-      return 0;
-    }
-*/
+#else
+    fprintf(stderr,"AZ_lu unavailable: configure with --enable-y12m to make available\n");
+    exit(1);
+#endif
     break;
 
   default:

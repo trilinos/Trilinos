@@ -669,6 +669,7 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
     break;
 
   case AZ_lu:
+#ifdef HAVE_AZLU
 
     data_org = Amat->data_org;
     N        = data_org[AZ_N_internal] + data_org[AZ_N_border];
@@ -763,6 +764,10 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
     status[AZ_r]        = (double ) 0.0;
     status[AZ_rec_r]    = (double ) 0.0;
     status[AZ_scaled_r] = (double ) 0.0;
+#else
+    fprintf(stderr,"AZ_lu unavailable: configure with --enable-y12m to make available\n");
+    exit(1);
+#endif
     break;
 
   default:

@@ -26,6 +26,8 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
+#ifdef HAVE_AZLU
+
 #include <stdlib.h>
 #include <stdio.h>
 #include "az_aztec.h"
@@ -265,3 +267,5 @@ void AZ_msr2lu(int oldN, AZ_MATRIX *A_overlapped, int *rnr)
   }
 
 } /* AZ_msr2lu */
+
+#endif /* HAVE_AZLU */
