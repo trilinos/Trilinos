@@ -274,21 +274,27 @@ ML_CommInfoOP *ML_CommInfoOP_Create()
 /* destructor                                                           */
 /* -------------------------------------------------------------------- */
 
-void ML_CommInfoOP_Destroy(ML_CommInfoOP *comm_info)
+void ML_CommInfoOP_Destroy(ML_CommInfoOP **comm_info)
 {
    int i;
+   ML_CommInfoOP *c_info;
 
-   if (comm_info != NULL) 
+   c_info = *comm_info;
+   if (c_info != NULL) 
    {
-      if (comm_info->remap != NULL) free(comm_info->remap);
-      for (i = 0; i < comm_info->N_neighbors; i++) {
-         if (comm_info->neighbors[i].rcv_list != NULL)
-            free(comm_info->neighbors[i].rcv_list);
-         if (comm_info->neighbors[i].send_list != NULL)
-            free(comm_info->neighbors[i].send_list);
+      if (c_info->remap != NULL) free(c_info->remap);
+      for (i = 0; i < c_info->N_neighbors; i++)
+	  {
+         if (c_info->neighbors[i].rcv_list != NULL)
+            free(c_info->neighbors[i].rcv_list);
+         if (c_info->neighbors[i].send_list != NULL)
+            free(c_info->neighbors[i].send_list);
       }
-      if (comm_info->neighbors != NULL) free(comm_info->neighbors);
-      free(comm_info);
+      if (c_info->neighbors != NULL)
+         free(c_info->neighbors);
+      free(c_info);
+      c_info = NULL;
+      *comm_info = NULL;
    }
 }
 
@@ -499,8 +505,8 @@ int ML_CommInfoOP_Set_neighbors(ML_CommInfoOP **c_info, int N_neighbors,
 
   if (*c_info != NULL) 
   {
-     printf("ML_CommInfoOP_Set_neighbors: c_info not NULL! Does \
-              communication structure already exist?\n");
+     printf("ML_CommInfoOP_Set_neighbors: c_info not NULL! Does "
+            "communication structure already exist?\n");
      exit(1);
   }
 
@@ -977,11 +983,12 @@ void ML_cheap_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
   start_location   On input, starting location in 'x' where received information
                    will be placed. 
 
+  envelope         On input, contains MPI message tag.
 
 *******************************************************************************/
 
 void ML_exchange_bdry(double x[], ML_CommInfoOP *comm_info, int start_location, 
-	ML_Comm *comm, int overwrite_or_add)
+	ML_Comm *comm, int overwrite_or_add, ML_Comm_Envelope *envelope)
 {
   double          *send_buf, **rcv_buf, *tempv;
   int              type, N_neighbors, *temp, i, j, k, rtype;
@@ -1001,7 +1008,11 @@ void ML_exchange_bdry(double x[], ML_CommInfoOP *comm_info, int start_location,
      rcv_buf = (double  **)  malloc(N_neighbors*sizeof(double *));
   } else { request = NULL; rcv_buf = NULL;}
 
+  /*
   type = 1991;
+  */
+  if ( ML_Comm_Envelope_Get_Tag(envelope,&type) )
+     type = 1991;
 
   /* post receives for all messages */
 
@@ -1196,3 +1207,79 @@ void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
 	 exit(1);
   }
 } /* ML_transposed_exchange_bdry */
+
+/*******************************************************************************
+ Create data structure for message tags.
+*******************************************************************************/
+int ML_Comm_Envelope_Create(ML_Comm_Envelope** envelope)
+{
+   *envelope = (ML_Comm_Envelope*) malloc( sizeof(ML_Comm_Envelope) );
+   ML_Comm_Envelope_Init(*envelope);
+   return 0;
+}
+
+/*******************************************************************************
+ Initialize data structure for message tags.
+*******************************************************************************/
+int ML_Comm_Envelope_Init(ML_Comm_Envelope* envelope)
+{
+   envelope->tag = 0;
+   return 0;
+}
+
+/*******************************************************************************
+ Destroy data structure for message tags.
+*******************************************************************************/
+int ML_Comm_Envelope_Destroy(ML_Comm_Envelope* envelope)
+{
+   if (envelope != NULL)
+      free(envelope);
+   return 0;
+}
+
+/*******************************************************************************
+ Reset data structure for message tag but don't free it.
+*******************************************************************************/
+int ML_Comm_Envelope_Clean(ML_Comm_Envelope* envelope)
+{
+   if (envelope != NULL)
+      envelope->tag = 0;
+   return 0;
+}
+
+/*******************************************************************************
+ Fetch message tag.
+*******************************************************************************/
+int ML_Comm_Envelope_Get_Tag(ML_Comm_Envelope* envelope, int* tag)
+{
+   if (envelope != NULL)
+   {
+      *tag = envelope->tag; 
+      return 0;
+   }
+   else
+      return 1;
+}
+
+/*******************************************************************************
+ Set message tag.  Start with a base value of ML_TAG_BASE.  Each level will
+ have a range of values, starting at ML_TAG_BASE +  sm->mylevel*100.
+ This range is further broken into subranges for pre- and post-smoothing.
+*******************************************************************************/
+int ML_Comm_Envelope_Set_Tag(ML_Comm_Envelope* envelope,
+                             int level, int pre_or_post) 
+{
+   envelope->tag = ML_TAG_BASE +  level*200 + pre_or_post;
+   return 0;
+}
+
+/*******************************************************************************
+ Increment message tag.
+*******************************************************************************/
+int ML_Comm_Envelope_Increment_Tag(ML_Comm_Envelope* envelope)
+{
+   envelope->tag++;
+}
+/*
+extern int ML_Comm_Envelope_Print(ML_Comm_Envelope*);
+*/
