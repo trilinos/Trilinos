@@ -270,13 +270,8 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
 
      /* deallocate storage and clean up */
      info = flag;
-     if ( A != NULL ) {
-        ML_memory_free((void*)&(((NCformat *) A->Store)->rowind));
-        ML_memory_free((void*)&(((NCformat *) A->Store)->colptr));
-        ML_memory_free((void*)&(((NCformat *) A->Store)->nzval));
-        SUPERLU_FREE( A->Store );
+     if ( A != NULL )
         ML_memory_free((void**) &A);
-     }
      solver->Mat1 = NULL;
      mygroup = (int ) solver->ML_subgroup;
      lugrid_tiles    = solver->gridtiles;
@@ -372,9 +367,9 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
      solver->PERMspl = (void *) ScalePermstruct;
      solver->LUspl = (void *) LUstruct;
      solver->gridtiles = lugrid_tiles;
-/* rst?
-     mygrid = ( gridinfo_t *) malloc( sizeof( gridinfo_t) );
-*/
+     /* rst: mygrid is a pointer to a structure, not a structure.
+      *  mygrid = ( gridinfo_t *) malloc( sizeof( gridinfo_t) );
+      */
    } else {
 
      /* Indicate that the factored form of A is supplied. */
@@ -417,12 +412,17 @@ printf("memory usage: fragments %d free: total %d, largest %d, total_used %d\n",
 */
 
    if ( flag == 0 ) {
-/* rst?
-      ML_memory_free((void*)&(((NCformat *) A->Store)->rowind));
-      ML_memory_free((void*)&(((NCformat *) A->Store)->colptr));
-      ML_memory_free((void*)&(((NCformat *) A->Store)->nzval));
-*/
+     if ( A != NULL ) {
+        ML_memory_free((void*)&(((NCformat *) A->Store)->rowind));
+        ML_memory_free((void*)&(((NCformat *) A->Store)->colptr));
+        ML_memory_free((void*)&(((NCformat *) A->Store)->nzval));
+        SUPERLU_FREE( A->Store );
+        /* to satisfy pdgssvx_ABglobal argument check, postpone
+         * ML_memory_free((void**) &A);
+         */
+     }
    }
+
    solver->reuse_flag = 1;
    PStatFree(&stat);
    if( info != 0 ){
@@ -524,25 +524,52 @@ int SuperLU_SolveLocal(void *vsolver, double *x, double *rhs)
  */
 void ML_set_tile( int p, int* n, int* i, int* j, int* k)
 {
-  int q,r,s;
+  int l,q,r,s;
   double quotient, cuberoot; 
-  if( p > 1) {
-     quotient = (double) p / 2;
-     cuberoot = (double) 1 / 3;
-    *n = floor(pow(quotient,cuberoot));
-  }else
-    *n = 1;
-  /* 
-   * p = q*n + i,  
-   * q = (i+j+k)*n -(2*i+j) = i*(n-2) + (j+k)*n -j
-   */
-  q = floor(p/ *n);
-  *i = p - q * *n;
-  r = q - *i * (*n-2);
-  /* 
-   * r = (j+k)*n - j = s*n -j = k*n + j*(n-1)
-   */
-  s = ceil(r/ *n);
-  *j = s * *n - r;
-  *k = s - *j;
+  if( p < 12) {
+    *n = 2;
+    *i = p;
+    *j = 0;
+    *k = 0;
+  }else if( p < 54) {
+    /* p = l + 4s + 12 q */
+    l = p % 4;
+    r = (p-l)/4;
+    s = r % 3;
+    q = (r-s)/3;
+    if( l == 0 ){
+      *n = 2;
+      *i = 0;
+      *j = 0;
+      *k = s + 3*q;
+    }else if( l == 1 ){
+      *n = 3;
+      *i = s + 3*q -2;
+      *j = 0;
+      *k = 1; 
+    }else if( l == 2 ){
+      *n = 3;
+      *i = s + 3*q -1;
+      *j = 1;
+      *k = 0; 
+    }else{ 
+      *n = 3;
+      *i = s + 3*q -3;
+      *j = 1;
+      *k = 1; 
+    }
+  }else{
+    quotient = (double) p / 2;
+    cuberoot = (double) 1 / 3;
+    *n = (int) floor(pow(quotient,cuberoot));
+    *i = p % (*n);
+    q = (p - *i )/ *n;
+    r = (q + 2 * *i ) % (*n);
+    if( r > 0 )
+      *j = *n - r;
+    else
+      *j = 0;
+    *k = ( (q + 2 * *i + *j ) / (*n) ) - *i - *j;
+  }
 } /* end of ML_set_tile */
+
