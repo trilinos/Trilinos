@@ -122,9 +122,11 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Dscpack.cpp \
 	$(srcdir)/AMD/Source/amd_postorder.c \
 	$(srcdir)/AMD/Source/amd_post_tree.c \
 	$(srcdir)/AMD/Source/amd_preprocess.c \
-	$(srcdir)/AMD/Source/amd_valid.c $(srcdir)/btf/btf_order.c \
-	$(srcdir)/btf/maxtrans.c $(srcdir)/btf/strongcomp.c \
-	$(srcdir)/colamd/colamd.c $(srcdir)/klu_btf/klu_btf_analyze.c \
+	$(srcdir)/AMD/Source/amd_valid.c \
+	$(srcdir)/AMD/Source/amd_internal.h $(srcdir)/btf/btf_order.c \
+	$(srcdir)/btf/btf_internal.h $(srcdir)/btf/maxtrans.c \
+	$(srcdir)/btf/strongcomp.c $(srcdir)/colamd/colamd.c \
+	$(srcdir)/klu_btf/klu_btf_analyze.c \
 	$(srcdir)/klu_btf/klu_btf_analyze_given.c \
 	$(srcdir)/klu_btf/klu_btf_defaults.c \
 	$(srcdir)/klu_btf/klu_btf_factor.c \
@@ -144,8 +146,18 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Dscpack.cpp \
 	$(srcdir)/ksparse/spbuild.c $(srcdir)/ksparse/spoutput.c \
 	$(srcdir)/ksparse/spsolve.c $(srcdir)/ksparse/driver.c \
 	$(srcdir)/ksparse/spalloc.c $(srcdir)/ksparse/spfactor.c \
-	$(srcdir)/ksparse/spsmp.c $(srcdir)/ksparse/sputils.c \
-	$(srcdir)/CrsMatrixTranspose.cpp
+	$(srcdir)/ksparse/spsmp.c $(srcdir)/ksparse/spmatrix.h \
+	$(srcdir)/ksparse/sperror.h $(srcdir)/ksparse/spconfig.h \
+	$(srcdir)/ksparse/iferrmsg.h $(srcdir)/ksparse/strext.h \
+	$(srcdir)/ksparse/spice.h $(srcdir)/ksparse/util.h \
+	$(srcdir)/ksparse/misc.h $(srcdir)/ksparse/suffix.h \
+	$(srcdir)/ksparse/port.h $(srcdir)/ksparse/hw.h \
+	$(srcdir)/ksparse/config.h $(srcdir)/ksparse/capabil.h \
+	$(srcdir)/ksparse/os_linux.h $(srcdir)/ksparse/os_unix.h \
+	$(srcdir)/ksparse/hw_ieee.h $(srcdir)/ksparse/smpdefs.h \
+	$(srcdir)/ksparse/spdefs.h $(srcdir)/ksparse/sppars.h \
+	$(srcdir)/ksparse/spmat.h $(srcdir)/ksparse/complex.h \
+	$(srcdir)/ksparse/sputils.c $(srcdir)/CrsMatrixTranspose.cpp
 am__objects_1 =
 @HAVE_AMESOS_DSCPACK_TRUE@am__objects_2 = Amesos_Dscpack.$(OBJEXT)
 @HAVE_AMESOS_KLU_TRUE@am__objects_3 = Amesos_Klu.$(OBJEXT) \
@@ -250,9 +262,10 @@ am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
 	$(srcdir)/klu_btf/klu_dump.h $(srcdir)/klu_kernel/klu_kernel.h \
 	$(srcdir)/klu_btf/klu_btf_internal.h \
 	$(srcdir)/klu_kernel/klu.h $(srcdir)/klu_kernel/tictoc.h \
-	$(srcdir)/Amesos_Klu.h $(srcdir)/Amesos_Mumps.h \
-	$(srcdir)/Amesos.h $(srcdir)/Amesos_Superlu.h \
-	$(srcdir)/Amesos_Superludist.h \
+	$(srcdir)/btf/btf.h $(srcdir)/AMD/Include/amd.h \
+	$(srcdir)/colamd/colamd.h $(srcdir)/Amesos_Klu.h \
+	$(srcdir)/Amesos_Mumps.h $(srcdir)/Amesos.h \
+	$(srcdir)/Amesos_Superlu.h $(srcdir)/Amesos_Superludist.h \
 	$(srcdir)/Epetra_CrsKundertSparse.h $(srcdir)/Amesos_Lapack.h \
 	Amesos_BaseSolver.h Amesos_ComponentBaseSolver.h \
 	Amesos_ConfigDefs.h $(srcdir)/CrsMatrixTranspose.h \
@@ -493,12 +506,14 @@ target_vendor = @target_vendor@
 #
 @HAVE_AMESOS_KLU_TRUE@KLU_H = \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf.h \
-@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf.h \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_dump.h \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_kernel/klu_kernel.h\
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_btf/klu_btf_internal.h \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_kernel/klu.h \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/klu_kernel/tictoc.h \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/btf.h \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Include/amd.h \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/colamd/colamd.h \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/Amesos_Klu.h
 
 @HAVE_AMESOS_KLU_FALSE@KLU = 
@@ -516,7 +531,9 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_post_tree.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_preprocess.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_valid.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/AMD/Source/amd_internal.h \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/btf_order.c \
+@HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/btf_internal.h \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/maxtrans.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/btf/strongcomp.c \
 @HAVE_AMESOS_KLU_TRUE@	$(srcdir)/colamd/colamd.c \
@@ -559,6 +576,28 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spalloc.c \
 @HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spfactor.c \
 @HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spsmp.c \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spmatrix.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/sperror.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spconfig.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/iferrmsg.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/strext.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spice.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/util.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/misc.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/suffix.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/port.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/hw.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/config.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/capabil.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/os_linux.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/os_unix.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/hw_ieee.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/smpdefs.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spdefs.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/sppars.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spmat.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/smpdefs.h \
+@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/complex.h \
 @HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/sputils.c
 
 
@@ -1734,7 +1773,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/klu_btf $(distdir)/klu_kernel
+	$(mkdir_p) $(distdir)/AMD/Include $(distdir)/btf $(distdir)/colamd $(distdir)/klu_btf $(distdir)/klu_kernel
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

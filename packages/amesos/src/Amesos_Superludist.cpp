@@ -915,6 +915,7 @@ int Amesos_Superludist::Solve() {
 	//	if ( options_.SolveInitialized ) {
 	//	  dSolveFinalize(&options_, &SOLVEstruct_ ) ; 
 	//	}
+
 	EPETRA_CHK_ERR( info ) ;
       }
     } 

@@ -357,6 +357,7 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
 
 int NextMain( int argc, char *argv[] ) {
 
+
   AmesosClasses.push_back( "Amesos_Klu" );
 #ifdef HAVE_AMESOS_SCALAPACK
   AmesosClasses.push_back( "Amesos_Scalapack" ) ;
@@ -455,7 +456,7 @@ int NextMain( int argc, char *argv[] ) {
 
 
   if ( result == 0 && numtests > 0 ) {
-    if (Comm.MyPID() == 0)
+    if (verbose && Comm.MyPID() == 0)
       cout << endl << "TEST PASSED" << endl << endl;
   }
   else {

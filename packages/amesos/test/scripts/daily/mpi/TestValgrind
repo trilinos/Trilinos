@@ -70,7 +70,8 @@ echo "xyzxyz"
 echo  $file 
 echo "Date: " `eval date` >>& $file
 echo `uname -a` >>& $file
-cd TestOptions
+foreach f ( TestOptions Test_SuperLU_DIST ) 
+   cd $f
 ## Different directory structures will require different setups.
 ## This file assumes a structure like that of epetra - exe's live in 
 ## a direct subdirectory of 'epetra/test' 
@@ -84,17 +85,20 @@ cd TestOptions
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
 
-set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
+   set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
 
-   rm valg.out.pid*
-   rm TestFailed
-   echo `pwd`
-   $mpigo 4 valgrind --logfile=valg.out --leak-check=yes --suppressions=../Test_Basic/Suppressions ./TestOptions.exe -s
-   grep ERROR valg.out.pid* | grep -v "SUMMARY: 0 " && touch TestFailed
-   grep lost valg.out.pid* | grep -v " 0 bytes" && touch TestFailed
-   if( -f TestFailed ) then
-   # A test failed.
-	set AnError = True
+    foreach g(*.exe)
+      echo "" >>& ../$file
+      echo "############" $g "##############" >>& ../$file
+      rm valg.out.pid*
+      rm TestFailed
+      echo `pwd`
+      $mpigo 4 valgrind --logfile=valg.out --leak-check=yes --suppressions=../Test_Basic/Suppressions $g -s
+      grep ERROR valg.out.pid* | grep -v "SUMMARY: 0 " && touch TestFailed
+      grep lost valg.out.pid* | grep -v " 0 bytes" && touch TestFailed
+      if( -f TestFailed ) then
+      # A test failed.
+   	set AnError = True
 	echo "  ***xyzzyx***** Test failed ********" >>& ../$file
 #
 #        This does not seem useful.  Just noisy.  So it is comment3ed out.  
@@ -106,27 +110,29 @@ set mpigo = `printenv TRILINOS_TEST_HARNESS_MPIGO_COMMAND`
            echo "" >> ../$file
            cat $i >> ../$file
         end
-   else
-    # Tests passed
+      else
+      # Tests passed
 	echo "******** Test passed ********" >>& ../$file
-    endif
-
+      endif
+   end
+   cd ..
+end
 #
 #  I am not convinced that these do anything.  Perhaps they should be ../$file2 and ../$file3
 #
 ## At this point, it is assumed that the current directory is
 ## 'package_name/test'
 if ( "$2" == "True" ) then
-    rm -f $file3
-    if( "$AnError" != "True" ) then
-	rm -f $file2
-    endif
+   rm -f $file3
+   if( "$AnError" != "True" ) then
+      rm -f $file2
+   endif
 endif
 
 
 if ( "$AnError" == "True" ) then
-    exit 1
+   exit 1
 else
-    exit 0
+   exit 0
 endif
 

@@ -15,7 +15,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
-void TestAmesos(char ProblemType[],
+void TestAmesos(bool verbose, 
+		char ProblemType[],
 		Teuchos::ParameterList & AmesosList,
 		bool UseTranspose,
 		Epetra_RowMatrix* A,
@@ -86,7 +87,7 @@ void TestAmesos(char ProblemType[],
 
   string msg = ProblemType;
 
-  if( A->Comm().MyPID() == 0 ) {
+  if( verbose && A->Comm().MyPID() == 0 ) {
     cout << msg << "......Using " << A->Comm().NumProc() << " processes, UseTranspose = " << UseTranspose << endl;
     for (int j = 0 ; j < rhs->NumVectors() ; ++j)
       cout << msg << "...... eq " << j 
@@ -117,14 +118,9 @@ using namespace Trilinos_Util;
 
 #include <vector>
 
-int main(int argc, char *argv[]) {
-
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
+int sub_main( bool verbose, Epetra_Comm &Comm ) { 
+  //  Allow destruction of the Amesos class(es) before the
+  //  call to MPI_Finalize()
 
   CrsMatrixGallery Gallery("recirc_2d", Comm);
   Gallery.Set("problem_size", 16);
@@ -156,19 +152,19 @@ int main(int argc, char *argv[]) {
       {
 	// solve with matrix
 	Teuchos::ParameterList AmesosList;
-	TestAmesos((char*)Solver.c_str(), AmesosList, false, &A, LHS, RHS,
+	TestAmesos(verbose, (char*)Solver.c_str(), AmesosList, false, &A, LHS, RHS,
 		 TotalErrorResidual, TotalErrorExactSol );
       }
       {
-	// solve with matrix
+	// solve transpose with matrix
 	if (Solver != "Amesos_Superludist") {// still not implementes
 	  Teuchos::ParameterList AmesosList;
-	  TestAmesos((char*)Solver.c_str(), AmesosList, true, &A, LHS, RHS,
+	  TestAmesos(verbose, (char*)Solver.c_str(), AmesosList, true, &A, LHS, RHS,
 		     TotalErrorResidual, TotalErrorExactSol );
 	}
       }
     } else
-      if (Comm.MyPID() == 0) {
+      if (verbose && Comm.MyPID() == 0) {
 	cerr << endl;
 	cerr << "WARNING: SOLVER `" << Solver << "' NOT TESTED" << endl;
 	cerr << endl;
@@ -177,7 +173,7 @@ int main(int argc, char *argv[]) {
    
   // print out total error
   
-  if( Comm.MyPID() == 0 ) {
+  if( verbose && Comm.MyPID() == 0 ) {
     cout << endl;
     cout << "......Total error for residual = " << TotalErrorResidual << endl;
     cout << "......Total error for exact solution  = " << TotalErrorExactSol << endl;
@@ -193,10 +189,27 @@ int main(int argc, char *argv[]) {
   }
   AMESOS_CHK_ERR( ! TestPassed ) ; 
 
+  return 0 ; 
+}
+int main(int argc, char *argv[]) {
+
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
+#endif
+
+  bool verbose = false ; 
+  if ( argc > 1 && argv[1][0] == '-' &&  argv[1][1] == 'v' ) verbose = true ; 
+
+  int retval = sub_main( verbose, Comm ) ; 
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
+  return retval ; 
 
 }
 

@@ -166,6 +166,16 @@
 
 
 {
+   <Unitialized Conditional Jump in Superludist>
+   Memcheck:Cond
+   fun:genmmd_dist_
+   fun:get_perm_c_dist
+   fun:pdgssvx
+   fun:_ZN18Amesos_Superludist6FactorEv
+}
+
+
+{
    <memory leak in SuperLU>
    Memcheck:Leak
    fun:malloc

@@ -42,7 +42,39 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) $(TestDscpack_SOURCES) $(TestExamples_SOURCES) $(TestKlu_SOURCES) $(TestMumps_SOURCES) $(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
+#
+#  This is a bit confusing because some of these tests were written by Ken Stanley,
+#  while others were written by Marzio Sala.  
+#
+#  TestAmesos runs cxx_main.cpp tests in the following directories:
+#     Test_Epetra_RowMatrix 
+#     Test_Epetra_CrsMatrix 
+#     Test_Epetra_VbrMatrix 
+#     Test_Detailed 
+#     Test_LAPACK 
+#     Test_KLU 
+#     Test_UMFPACK 
+#     Test_SuperLU 
+#     Test_SuperLU_DIST 
+#     Test_MUMPS 
+#     Test_DSCPACK 
+#  TestBasic runs TestBasic.csh in Test_Basic
+#  TestExamples runs executables in the example directories 
+#  TestKlu.exe runs Test_Basic/AmesosKlu  
+#  TestDscpack.exe runs Test_Basic/AmesosDscpack  
+#  TestSuperlud.exe runs Test_Basic/AmesosSuperludist  
+#  TestSuperlu.exe runs Test_Basic/AmesosSuperlud
+#  TestUmfpack.exe runs Test_Basic/AmesosUmfpack  
+#  TestMumps.exe runs Test_Basic/AmesosMumps  
+#  TestKluSerial.exe runs Test_Basic/AmesosKluSerial
+#  TestSuperluSerial.exe runs Test_Basic/AmesosSuperluSerial
+#  TestUmpfpackSerial.exe runs Test_Basic/AmesosUmpfpackSerial
+#
+#  TestValgrind.exe runs TestOptions/TestOptions.exe (under valgrind) 
+#
+#
+
+SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) $(TestDscpack_SOURCES) $(TestExamples_SOURCES) $(TestKlu_SOURCES) $(TestMumps_SOURCES) $(TestQuietAmesos_SOURCES) $(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,10 +97,10 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = TestAmesos$(EXEEXT) TestBasic$(EXEEXT) \
-	TestExamples$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2) \
-	$(am__EXEEXT_3) $(am__EXEEXT_4) $(am__EXEEXT_5) \
-	$(am__EXEEXT_6)
+noinst_PROGRAMS = TestAmesos$(EXEEXT) TestQuietAmesos$(EXEEXT) \
+	TestBasic$(EXEEXT) TestExamples$(EXEEXT) $(am__EXEEXT_1) \
+	$(am__EXEEXT_2) $(am__EXEEXT_3) $(am__EXEEXT_4) \
+	$(am__EXEEXT_5) $(am__EXEEXT_6)
 subdir = test/scripts/daily/mpi
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -130,6 +162,10 @@ am__TestMumps_SOURCES_DIST = $(srcdir)/TestMumps
 am_TestMumps_OBJECTS =
 TestMumps_OBJECTS = $(am_TestMumps_OBJECTS)
 TestMumps_LDADD = $(LDADD)
+am__TestQuietAmesos_SOURCES_DIST = $(srcdir)/TestQuietAmesos.sh
+am_TestQuietAmesos_OBJECTS =
+TestQuietAmesos_OBJECTS = $(am_TestQuietAmesos_OBJECTS)
+TestQuietAmesos_LDADD = $(LDADD)
 am__TestSuperlud_SOURCES_DIST = $(srcdir)/TestSuperlud
 am_TestSuperlud_OBJECTS =
 TestSuperlud_OBJECTS = $(am_TestSuperlud_OBJECTS)
@@ -150,12 +186,14 @@ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) \
 	$(TestDscpack_SOURCES) $(TestExamples_SOURCES) \
 	$(TestKlu_SOURCES) $(TestMumps_SOURCES) \
-	$(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES) \
-	$(TestValgrind_SOURCES)
+	$(TestQuietAmesos_SOURCES) $(TestSuperlud_SOURCES) \
+	$(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
 DIST_SOURCES = $(am__TestAmesos_SOURCES_DIST) \
 	$(am__TestBasic_SOURCES_DIST) $(am__TestDscpack_SOURCES_DIST) \
 	$(am__TestExamples_SOURCES_DIST) $(am__TestKlu_SOURCES_DIST) \
-	$(am__TestMumps_SOURCES_DIST) $(am__TestSuperlud_SOURCES_DIST) \
+	$(am__TestMumps_SOURCES_DIST) \
+	$(am__TestQuietAmesos_SOURCES_DIST) \
+	$(am__TestSuperlud_SOURCES_DIST) \
 	$(am__TestUmfpack_SOURCES_DIST) \
 	$(am__TestValgrind_SOURCES_DIST)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -305,6 +343,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 # Nothing should be done for a serial build
 @HAVE_MPI_TRUE@TestAmesos_SOURCES = $(srcdir)/TestAmesos.sh
+@HAVE_MPI_TRUE@TestQuietAmesos_SOURCES = $(srcdir)/TestQuietAmesos.sh
 @HAVE_MPI_TRUE@TestBasic_SOURCES = $(srcdir)/TestBasic.sh
 @HAVE_MPI_TRUE@TestExamples_SOURCES = $(srcdir)/TestExamples.sh
 @HAVE_AMESOS_DSCPACK_FALSE@DSCPACK_TEST = 
@@ -393,6 +432,9 @@ clean-noinstPROGRAMS:
 @HAVE_AMESOS_MUMPS_FALSE@TestMumps$(EXEEXT): $(TestMumps_OBJECTS) $(TestMumps_DEPENDENCIES) 
 @HAVE_AMESOS_MUMPS_FALSE@	@rm -f TestMumps$(EXEEXT)
 @HAVE_AMESOS_MUMPS_FALSE@	$(LINK) $(TestMumps_LDFLAGS) $(TestMumps_OBJECTS) $(TestMumps_LDADD) $(LIBS)
+@HAVE_MPI_FALSE@TestQuietAmesos$(EXEEXT): $(TestQuietAmesos_OBJECTS) $(TestQuietAmesos_DEPENDENCIES) 
+@HAVE_MPI_FALSE@	@rm -f TestQuietAmesos$(EXEEXT)
+@HAVE_MPI_FALSE@	$(LINK) $(TestQuietAmesos_LDFLAGS) $(TestQuietAmesos_OBJECTS) $(TestQuietAmesos_LDADD) $(LIBS)
 @HAVE_AMESOS_SUPERLUDIST_FALSE@TestSuperlud$(EXEEXT): $(TestSuperlud_OBJECTS) $(TestSuperlud_DEPENDENCIES) 
 @HAVE_AMESOS_SUPERLUDIST_FALSE@	@rm -f TestSuperlud$(EXEEXT)
 @HAVE_AMESOS_SUPERLUDIST_FALSE@	$(LINK) $(TestSuperlud_LDFLAGS) $(TestSuperlud_OBJECTS) $(TestSuperlud_LDADD) $(LIBS)
@@ -527,8 +569,10 @@ uninstall-am: uninstall-info-am
 	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
 	uninstall uninstall-am uninstall-info-am
 
-@HAVE_MPI_TRUE@TestAmesos$(EXEEXT):
+@HAVE_MPI_TRUE@TestAmesos$(EXEEXT): ${TestAmesos_SOURCES}
 @HAVE_MPI_TRUE@	cp $(srcdir)/TestAmesos.sh TestAmesos$(EXEEXT) 
+@HAVE_MPI_TRUE@TestQuietAmesos$(EXEEXT): ${TestQuietAmesos_SOURCES}
+@HAVE_MPI_TRUE@	cp $(srcdir)/TestQuietAmesos.sh TestQuietAmesos$(EXEEXT) 
 @HAVE_MPI_TRUE@TestBasic$(EXEEXT):
 @HAVE_MPI_TRUE@	cp $(srcdir)/TestBasic.sh TestBasic$(EXEEXT) 
 @HAVE_MPI_TRUE@TestExamples$(EXEEXT):

@@ -25,11 +25,9 @@
 # 
 # ************************************************************************
 #
-#  TestAmesos.sh now tests only those directories whose tests have not been made
-#  quiet.  I.e. those tests that result in spurious prints.  
-#
-#  Tests that have been made quiet are now tested by TestQuietAmesos.sh 
-#
+#  TestQuietAmesos improves upon TestAmesos by requiring that the tests 
+#  (and by implication, the underlying Amesos class functions) be quiet - 
+#  perform no prints.  
 #
 ## NOTE: Those wishing to cusomize this script to run test exe's
 ## that have already been autotool'ed should read lines beginning with '##'
@@ -78,8 +76,8 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
     #of the longer log file (file2).
 #    set file3 = tempfile
 #    rm -f $file3
-#    set file4 = tempfile2
-#    rm -f $file4
+    set file4 = tempfile2
+    rm -f $file4
 else
     cd ../../../
     set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
@@ -109,7 +107,8 @@ echo `uname -a` >>& $file
 #       independently of the return status of the executable.
 #
 # FIXME: Test_MultipleSolves is not passed on all machines!
-foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix Test_Detailed Test_UMFPACK Test_LAPACK Test_KLU Test_SuperLU Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions )
+# foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix Test_Detailed Test_UMFPACK Test_LAPACK Test_KLU Test_SuperLU Test_SuperLU_DIST Test_MUMPS Test_DSCPACK TestOptions )
+foreach f ( Test_Epetra_RowMatrix Test_SuperLU_DIST TestOptions )
   cd $f
   set exefiles = (*.exe)
   if ( "${exefiles}X" != 'X' ) then
@@ -118,13 +117,20 @@ foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix Te
       echo "############" $g "##############" >>& ../$file
       if( "$2" == "True" ) then
         /bin/rm -f Amesos_FAILED
-        $mpigo 1 ./$g >>& ../$file
+        /bin/rm -f ../$file4
+        $mpigo 1 ./$g >>& ../$file4
+#        /bin/rm -f ../$file4 ; touch ../$file4
         # ================== #
         # run with 1 process #		    
         # ================== #
-        if( $status != 0 || -f Amesos_FAILED ) then
+        if( $status != 0 || -f Amesos_FAILED || ! -z ../$file4 ) then
           # A test failed.
           set AnError = True
+	  if ( ! -z ../$file4 ) then 
+             echo "  ******** Test w/ 4 proc yielded these messages: ********" >>& ../$file
+	     cat ../$file4 >> ../$file 
+             echo "  ******** End of messages ********" >>& ../$file
+          endif
           echo "  ******** Test w/ 1 proc failed ********" >>& ../$file
           echo "Errors for script " $g " are listed above." >>& ../$file2
           echo "################### " $g " ##################" >>& ../$file2
@@ -137,10 +143,15 @@ foreach f ( Test_Epetra_RowMatrix Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix Te
         # run with 4 processes #		    
         # ==================== #
         /bin/rm -f Amesos_FAILED
-        $mpigo 4 ./$g >>& ../$file
-        if( $status != 0 || -f Amesos_FAILED ) then
+        $mpigo 4 ./$g >>& ../$file4
+        if( $status != 0 || -f Amesos_FAILED  || ! -z ../$file4  ) then
           # A test failed.
           set AnError = True
+	  if ( ! -z ../$file4 ) then 
+             echo "  ******** Test w/ 4 proc yielded these messages: ********" >>& ../$file
+	     cat ../$file4 >> ../$file 
+             echo "  ******** End of messages ********" >>& ../$file
+          endif
           echo "  ******** Test w/ 4 proc failed ********" >>& ../$file
           echo "Errors for script " $g " are listed above." >>& ../$file2
           echo "################### " $g " ##################" >>& ../$file2

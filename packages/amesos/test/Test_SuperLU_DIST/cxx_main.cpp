@@ -19,7 +19,8 @@
 using namespace Trilinos_Util;
 
 //=============================================================================
-bool CheckError(const Epetra_RowMatrix& A,
+bool CheckError(bool verbose, 
+		const Epetra_RowMatrix& A,
 		const Epetra_MultiVector& x,
 		const Epetra_MultiVector& b,
 		const Epetra_MultiVector& x_exact)
@@ -36,7 +37,7 @@ bool CheckError(const Epetra_RowMatrix& A,
   for (int i = 0 ; i < NumVectors ; ++i) {
     TotalNorm += Norm[i];
   }
-  if (A.Comm().MyPID() == 0)
+  if (verbose && A.Comm().MyPID() == 0)
     cout << "||Ax - b||  = " << TotalNorm << endl;
   if (TotalNorm < 1e-5 )
     TestPassed = true;
@@ -48,7 +49,7 @@ bool CheckError(const Epetra_RowMatrix& A,
   for (int i = 0 ; i < NumVectors ; ++i) {
     TotalNorm += Norm[i];
   }
-  if (A.Comm().MyPID() == 0)
+  if (verbose && A.Comm().MyPID() == 0)
     cout << "||Ax - b||  = " << TotalNorm << endl;
   if (TotalNorm < 1e-5 )
     TestPassed = true;
@@ -58,7 +59,7 @@ bool CheckError(const Epetra_RowMatrix& A,
   return(TestPassed);
 }
 
-int sub_main( Epetra_Comm &Comm ) { 
+int sub_main( bool verbose, Epetra_Comm &Comm ) { 
   //  Allow destruction of the Amesos class(es) before the
   //  call to MPI_Finalize()
 
@@ -167,22 +168,19 @@ int sub_main( Epetra_Comm &Comm ) {
   bool TestPassed = true;
 
   TestPassed = TestPassed &&
-    CheckError(A,x,b,x_exact);
+    CheckError(verbose, A,x,b,x_exact);
 
   if (TestPassed) {
-    if (Comm.MyPID() == 0)
+    if (verbose && Comm.MyPID() == 0)
       cout << endl << "TEST PASSED" << endl << endl;
   }
   else {
-    if (Comm.MyPID() == 0)
+    if (verbose && Comm.MyPID() == 0)
       cout << endl << "TEST FAILED" << endl << endl;
   }
 
   AMESOS_CHK_ERR( ! TestPassed ) ; 
 
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
   return(EXIT_SUCCESS);
 }
 
@@ -196,11 +194,16 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
-  int retvalue = sub_main(Comm) ; 
+  bool verbose = false ; 
+  if ( argc > 1 && argv[1][0] == '-' &&  argv[1][1] == 'v' ) verbose = true ; 
+
+
+  int retvalue = sub_main(verbose, Comm) ; 
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
+
   return( retvalue ) ;   
 }
 

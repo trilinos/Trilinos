@@ -64,8 +64,12 @@ if  HAVE_MPI
 
 
 TestAmesos_SOURCES = $(srcdir)/TestAmesos.sh
-TestAmesos$(EXEEXT):
+TestAmesos$(EXEEXT): ${TestAmesos_SOURCES}
 	cp $(srcdir)/TestAmesos.sh TestAmesos$(EXEEXT) 
+
+TestQuietAmesos_SOURCES = $(srcdir)/TestQuietAmesos.sh
+TestQuietAmesos$(EXEEXT): ${TestQuietAmesos_SOURCES}
+	cp $(srcdir)/TestQuietAmesos.sh TestQuietAmesos$(EXEEXT) 
 
 TestBasic_SOURCES = $(srcdir)/TestBasic.sh
 TestBasic$(EXEEXT):
@@ -175,6 +179,6 @@ TestMumps$(EXEEXT): $(srcdir)/TestMumps
 	cp $(srcdir)/TestMumps TestMumps$(EXEEXT) 
 endif
 
-noinst_PROGRAMS = TestAmesos TestBasic TestExamples $(DSCPACK_TEST) $(UMFPACK_TEST) \
+noinst_PROGRAMS = TestAmesos TestQuietAmesos TestBasic TestExamples $(DSCPACK_TEST) $(UMFPACK_TEST) \
 	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) $(VALGRIND_TEST)
 
