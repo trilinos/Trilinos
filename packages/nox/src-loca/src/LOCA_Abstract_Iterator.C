@@ -114,6 +114,8 @@ LOCA::Abstract::Iterator::iterate()
   LOCA::Abstract::Iterator::StepStatus stepStatus = 
     LOCA::Abstract::Iterator::Successful;
 
+  iteratorStatus = stop(stepStatus);
+
   while (iteratorStatus == LOCA::Abstract::Iterator::NotFinished) {
 
     stepStatus = preprocess(stepStatus);

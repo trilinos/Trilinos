@@ -102,7 +102,7 @@ LOCA::StepSize::Adaptive::compute(LOCA::Continuation::Group& curGroup,
 
       // adapive step size control
       double factor = (maxNonlinearSteps - numNonlinearSteps) 
-               	      / (maxNonlinearSteps - 1.0);
+               	      / maxNonlinearSteps;
 
       stepSize *= (1.0 + agrValue * factor * factor);
     } 

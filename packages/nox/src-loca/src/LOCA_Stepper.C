@@ -366,19 +366,33 @@ LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
     double value = curGroupPtr->getContinuationParameter();
 
     // See if we went past bounds for parameter
-    if ( value >= maxValue*(1.0 - 1.0e-15) || 
-	 value <= minValue*(1.0 + 1.0e-15) )
-    return LOCA::Abstract::Iterator::Finished;
-
-    // Check to see if we hit final parameter value
-    if (isLastStep)
+    if ( value >= maxValue*(1.0 - 1.0e-15)) {
+      cout << "\n\tContinuation run stopping: parameter reached bound of "
+           << maxValue << endl;
       return LOCA::Abstract::Iterator::Finished;
+    }
+    if ( value <= minValue*(1.0 + 1.0e-15) ) {
+      cout << "\n\tContinuation run stopping: parameter reached bound of "
+           << minValue << endl;
+      return LOCA::Abstract::Iterator::Finished;
+    }
 
+    // Check to see if arclength step was aimed to reach bound (should be near)
+    if (isLastStep) {
+      cout << "\n\tContinuation run stopping: parameter stepped to bound" << endl;
+      return LOCA::Abstract::Iterator::Finished;
+    }
   }
+  else if (isLastStep)  // Failed step did not reach bounds as predicted
+    isLastStep = false;
 
   // Check to see if max number of steps has been reached
-  if (LOCA::Abstract::Iterator::numTotalSteps >= LOCA::Abstract::Iterator::maxSteps) 
-    return LOCA::Abstract::Iterator::Failed;
+  if (LOCA::Abstract::Iterator::numTotalSteps
+        >= LOCA::Abstract::Iterator::maxSteps) {
+    cout << "\n\tContinuation run stopping: reached maximum number of steps "
+         << LOCA::Abstract::Iterator::maxSteps << endl;
+    return LOCA::Abstract::Iterator::Finished;
+  }
 
   return LOCA::Abstract::Iterator::NotFinished;
 }
