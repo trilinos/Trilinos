@@ -386,6 +386,15 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* Ma
 // D) only small problems
 // ============================================================================
 #include "ml_lapack.h"
+#ifdef CHAR_MACRO
+#undef CHAR_MACRO
+#endif
+#if defined (INTEL_CXML)
+#define CHAR_MACRO(char_var) &char_var, 1
+#else
+#define CHAR_MACRO(char_var) &char_var
+#endif
+
 int ML_Epetra::MultiLevelPreconditioner::
 AnalyzeMatrixEigenvaluesDense(char* MatVec,
 			      bool IsSymmetric)

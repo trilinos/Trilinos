@@ -430,10 +430,12 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   sprintf(ErrorMsg_,"*ML*ERR* : ");
   PrintMsg_ = "";
   
+#ifdef HAVE_ML_AZTECOO
   AZ_defaults(SmootherOptions_,SmootherParams_);
   SmootherOptions_[AZ_precond] = AZ_dom_decomp;
   SmootherOptions_[AZ_subdomain_solve] = AZ_ilut;
   SmootherOptions_[AZ_overlap] = 0;
+#endif
 
   // Maxwell stuff is off by default
   SolvingMaxwell_ = false;
@@ -587,11 +589,13 @@ ComputePreconditioner(const bool CheckPreconditioner)
     OutputList_.set("number of construction phases", ++NumCompute);
   }
   
+#ifdef HAVE_ML_AZTECOO
 #ifdef HAVE_MPI
   const Epetra_MpiComm * MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm());
   AZ_set_proc_config(ProcConfig_,MpiComm->Comm());
 #else
   AZ_set_proc_config(ProcConfig_,AZ_NOT_MPI);
+#endif
 #endif
 
   // user's defined output message
@@ -602,7 +606,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   int OutputLevel = List_.get(Prefix_ + "output", 10);  
   ML_Set_PrintLevel(OutputLevel);
 
-  verbose_ = (5 < ML_Get_PrintLevel() && ProcConfig_[AZ_node] == 0);
+  verbose_ = (5 < ML_Get_PrintLevel() && Comm().MyPID() == 0);
 
   if( verbose_ ) 
     ML_print_line("-",78);
@@ -2439,4 +2443,4 @@ int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatri
   return 0;
 }
 
-#endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
+#endif /*ifdef HAVE_ML_EPETRA && HAVE_ML_TEUCHOS */

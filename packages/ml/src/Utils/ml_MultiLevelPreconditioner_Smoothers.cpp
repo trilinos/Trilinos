@@ -201,6 +201,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       
     } else if( Smoother == "Aztec" ) {
       
+#ifdef HAVE_ML_AZTECOO
       // ======= //
       // AztecOO //
       // ======= //
@@ -264,6 +265,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 			   ProcConfig_, SmootherStatus_,
 			   aztec_its, pre_or_post, NULL);
       
+#else
+      cerr << "Please configure ML with --enable-aztecoo to use" << endl;
+      cerr << "AztecOO smoothers" << endl;
+      exit(EXIT_FAILURE);
+#endif
     } else if( Smoother == "IFPACK" ) {
 
       // ====== //
@@ -421,7 +427,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // error: no smoother found with this name //
       // ======================================= //
 
-      if( ProcConfig_[AZ_node] == 0 )
+      if (Comm().MyPID() == 0)
 	cerr << ErrorMsg_ << "Smoother not recognized!" << endl
 	     << ErrorMsg_ << "(file " << __FILE__ << ",line " << __LINE__ << ")" << endl
 	     << ErrorMsg_ << "Now is: " << Smoother << ". It should be: " << endl

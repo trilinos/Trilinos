@@ -148,6 +148,7 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, const string Prefix,
   
   List.set(Prefix+"smoother: type","Aztec");
 
+#ifdef HAVE_ML_AZTECOO
   AZ_defaults(options,params);
   options[AZ_precond] = AZ_dom_decomp;
   options[AZ_scaling] = AZ_none;
@@ -158,6 +159,7 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, const string Prefix,
   List.set(Prefix+"smoother: Aztec params",params);
     
   List.set(Prefix+"smoother: Aztec as solver",false);
+#endif
 
   // --- coarse solver --- ///
   
@@ -208,6 +210,7 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, const string Prefix,
   
   List.set(Prefix+"smoother: type","Aztec");
 
+#ifdef HAVE_ML_AZTECOO
   AZ_defaults(options,params);
   options[AZ_precond] = AZ_dom_decomp;
   options[AZ_scaling] = AZ_none;
@@ -218,6 +221,7 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, const string Prefix,
   List.set(Prefix+"smoother: Aztec params",params);
     
   List.set(Prefix+"smoother: Aztec as solver",false);
+#endif
 
   // --- coarse solver --- ///
   
@@ -298,6 +302,7 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, const string Prefix,
   
   List.set(Prefix+"smoother: type","Aztec");
   
+#ifdef HAVE_ML_AZTECOO
   AZ_defaults(options,params);
   options[AZ_precond] = AZ_dom_decomp;
   options[AZ_subdomain_solve] = AZ_ilut;
@@ -308,6 +313,7 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, const string Prefix,
   List.set(Prefix+"smoother: Aztec params (level 0)",params);
     
   List.set(Prefix+"smoother: Aztec as solver (level 0)",false);
+#endif
   
   // --- coarse --- ///
   
@@ -363,6 +369,7 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefi
   
   List.set(Prefix+"smoother: type","Aztec");
 
+#ifdef HAVE_ML_AZTECOO
   AZ_defaults(options,params);
   options[AZ_precond] = AZ_dom_decomp;
   options[AZ_subdomain_solve] = AZ_lu;
@@ -373,6 +380,7 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, const string Prefi
   List.set(Prefix+"smoother: Aztec params (level 0)",params);
     
   List.set(Prefix+"smoother: Aztec as solver (level 0)",false);
+#endif
   
   // --- coarse --- ///
   

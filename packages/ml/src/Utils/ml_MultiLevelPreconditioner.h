@@ -30,7 +30,23 @@
 
 #include "ml_include.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) 
+// define the following to allow compilation without AztecOO
+// *this disables some smoothers)
+#ifndef HAVE_ML_AZTECOO
+#ifndef AZ_PROC_SIZE
+#define AZ_PROC_SIZE 1
+#endif
+#ifndef AZ_OPTIONS_SIZE
+#define AZ_OPTIONS_SIZE 1
+#endif
+#ifndef AZ_PARAMS_SIZE
+#define AZ_PARAMS_SIZE 1
+#endif
+#ifndef AZ_STATUS_SIZE
+#define AZ_STATUS_SIZE 1
+#endif
+#endif
 
 class Epetra_Map;
 class Epetra_BlockMap;
@@ -799,6 +815,6 @@ private:
  
 } // namespace ML_Epetra
 
-#endif /* defined ML_EPETRA and ML_TEUCHOS */
+#endif /* defined HAVE_ML_EPETRA and HAVE_ML_TEUCHOS */
 
 #endif /* define ML_MULTILEVELPRECONDITIONER_H */
