@@ -66,14 +66,17 @@ namespace LineSearch {
   -# Old solution group: \f$ x_{\rm old} \f$ 
   -# Direction vector: \f$ s \f$ 
 
-  The line search attempts to minimize the merit function \f$ \phi \$ along a line in the direction \f$ s \f$ by controlling the step length \f$ \lambda \f$. The merit function can be defined in one of two choices:<br><br> 
+  The line search attempts to minimize the merit function \f$ \phi \f$ along a line in the direction \f$ s \f$ by controlling the step length \f$ \lambda \f$. The merit function can be defined in one of two choices:<br><br>
   - "Norm-F Squared"  
+
   \f[ 
-  \phi(\lambda) \equiv \frac{1}{2}||F (x_{\rm old} + \lambda s)||^2 
+    \phi(\lambda) \equiv \frac{1}{2}||F (x_{\rm old} + \lambda s)||^2 
   \f]
+
   - "Norm-F"
+
   \f[ 
-  \phi(\lambda) \equiv ||F (x_{\rm old} + \lambda s)|| 
+    \phi(\lambda) \equiv ||F (x_{\rm old} + \lambda s)|| 
   \f]
 
   We compute \f$ \lambda \f$ based on polynomial fits to information
@@ -93,7 +96,7 @@ namespace LineSearch {
   either quadratic or cubic.
   
   If we are using a \b quadratic \b model, the \f$k\f$-th step approximation is
-  calculated as
+  calculated as:
 
   \f[ 
   \lambda_{k} = \frac{-\phi'(0) \lambda_{k-1}^2 }{2 \left[ \phi(\lambda_{k-1}) - \phi(0) 
