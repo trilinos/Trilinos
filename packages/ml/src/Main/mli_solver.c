@@ -1186,19 +1186,25 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
     /* -------------------------------------------------------- */ 
 
     MLI_CSRExchBdry(diag_scale, obj);
-    for ( i = 0; i < nrows+externLeng; i++ )
+    if ( solver->ag_method == 2 )
     {
-       if ( diag_scale[i] != 0.0 ) 
-           diag_scale[i] = 1.0 / sqrt(diag_scale[i]);
-       diag_scale[i] = 1.0;
+       for ( i = 0; i < nrows+externLeng; i++ )
+       {
+          if ( diag_scale[i] != 0.0 ) 
+             diag_scale[i] = 1.0 / sqrt(diag_scale[i]);
+       }
+       for ( i = 0; i < nrows; i++ )
+       {
+          for ( j = mat_ia[i]; j < mat_ia[i+1]; j++ )
+             mat_a[j] = mat_a[j] * diag_scale[i] * diag_scale[mat_ja[j]];
+       }
+       solver->diag_scale = diag_scale;
     }
-    for ( i = 0; i < nrows; i++ )
+    else
     {
-       for ( j = mat_ia[i]; j < mat_ia[i+1]; j++ )
-          mat_a[j] = mat_a[j] * diag_scale[i] * diag_scale[mat_ja[j]];
+       free( diag_scale );
+       solver->diag_scale = NULL;
     }
-    solver->diag_scale = diag_scale;
-    
     return 0;
 }
 
