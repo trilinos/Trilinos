@@ -139,6 +139,7 @@ if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
    (*ml_ptr)->symmetrize_matrix  = ML_FALSE;
    (*ml_ptr)->Amat_Normalization = Amat_Normalization ;
    (*ml_ptr)->timing             = NULL;
+   (*ml_ptr)->xCDeadNodDof       = NULL;
 
 #ifdef ML_TIMING
    ML_memory_alloc((void**) &timing, sizeof(struct ML_Timing),"MT");
@@ -241,6 +242,8 @@ int ML_Destroy(ML **ml_ptr)
       if (ml->timing != NULL) ML_memory_free( (void**) &(ml->timing) );
       ML_Comm_Destroy( &(ml->comm) );
       ML_memory_free( (void**) &(ml) );
+      ML_qr_fix_Destroy( &(ml->xCDeadNodDof) );
+
       (*ml_ptr) = NULL;
 #ifdef ML_DEBUG
       ML_memory_inquire();

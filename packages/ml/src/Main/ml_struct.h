@@ -47,6 +47,7 @@ typedef struct ML_Struct ML;
 #include "ml_aggregate.h"
 #include "ml_mls.h"
 #include <string.h>
+#include "ml_qr_fix.h"
 
 #ifdef WKC
 /* WKC -- added header(s) for the new datastructures */
@@ -99,7 +100,8 @@ struct ML_Struct {
    int            *int_options;  /**< optional integer parameters     */
    double         *dble_options; /**< optional double parameters      */
    void           *void_options; /**< optional other parameters       */
-   int            (*func)(void);     /**< optional function               */
+   int            (*func)(void); /**< optional function               */
+   ML_qr_fix      *xCDeadNodDof;  /**< for fixing QR                   */
 
 };
 struct ML_Timing {
