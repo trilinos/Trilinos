@@ -57,7 +57,6 @@ INPUT                 += ../../../../Trilinos/packages/ml/src/Operator
 INPUT                 += ../../../../Trilinos/packages/ml/src/Utils 
 INPUT                 += ../../../../Trilinos/packages/ml/src/Coarsen 
 INPUT                 += ../../../../Trilinos/packages/ml/src/Main
-INPUT                 += ../../../../Trilinos/packages/ml/src/MLAPI
 
 FILE_PATTERNS          = ../../../../Trilinos/packages/ml/examples/BasicExamples/ml_MultiLevelPreconditioner*.cpp 
 FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/Utils/ml_epetra_utils.h 
@@ -69,16 +68,15 @@ FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/Utils/ml_ifpack_wr
 FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/Operator/ml_operator.h 
 FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/Main/ml_struct.h 
 FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/Utils/Coarsen/ml_aggregate.h
-FILE_PATTERNS         += ../../../../Trilinos/packages/ml/src/MLAPI/MLAPI*.h
 
-EXAMPLE_PATH           = ../examples/BasicExamples 
-EXAMPLE_PATH          += ../examples/Advanced 
-EXAMPLE_PATH          += ../examples/TwoLevelDD 
-EXAMPLE_PATH          += ../examples/Visualization 
-EXAMPLE_PATH          += ../examples/Maxwell 
-EXAMPLE_PATH          += ../examples/MLAPI 
-EXAMPLE_PATH          += ../examples/MatrixReading 
-EXAMPLE_PATH          += ../examples/StandAlone
+EXAMPLE_PATH           = ../../../../Trilinos/packages/ml/examples/BasicExamples 
+EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/Advanced 
+EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/TwoLevelDD 
+EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/Visualization 
+EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/Maxwell 
+EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/MatrixReading 
+EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/StandAlone
+EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/
 
 IMAGE_PATH             = ../../../../Trilinos/packages/ml/doc
 

@@ -57,6 +57,7 @@ A user-friendly, MATLAB-like interface to ML, called MLAPI, is under development
 ML has been used within a number of applications at Sandia and a few applications
 outside of Sandia. ML is released for external distribution and can be obtained as
 part of the Trilinos development environment. 
+
 -->
 
 <!--
@@ -130,6 +131,7 @@ The ML developers are:
 - Marzio G. Sala
 - Michael W. Gee
 -->
+
 \section ml_doc Where to find documentation
 
 ML is a large package. The following documents are suggested to ML users:
@@ -144,6 +146,7 @@ ML is a large package. The following documents are suggested to ML users:
   covers the ML/Epetra interface, and does NOT cover the C source files.
 - A developers' guide is available in the ml/doc subdirectory (Sandia
   report number SAND2004-4821).
+- Consult also the \ref ml_changelog and \ref ml_readme files.
 
 Probably, the best way to understand ML is to use it. Several examples are
 provided in the Trilinos/packages/ml/examples subdirectories. Users are suggested
@@ -302,10 +305,10 @@ corrupted, and that no memory leak occurs. Note that this option may be
 computationally expensive, and it is not recommended for performance evaluations.
 
 
+\section ml_changes (Incomplete) History of visible changes
 
-\section ml_changes Overview of main ML changes from ml-2.0 to ml-3.0
-
-Consult the \ref changelog file.
+Consult the \ref ml_changelog file. The \ref ml_readme file gives some other
+information about ML.
 
 \section ml_copyright Copyright
 
@@ -697,7 +700,12 @@ Trilinos 4.0 tutorial.
 */
 
 /*!
-\page changelog ChangeLog
-\include ChangeLog
+\page ml_changelog ChangeLog
+\include ChangeLog-ML
+*/
+
+/*!
+\page ml_readme README
+\include README-ML
 */
 
