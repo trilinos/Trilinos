@@ -72,6 +72,7 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LAPACK_LIBS = @LAPACK_LIBS@
 MAINT = @MAINT@
 MPI_CC_EXISTS = @MPI_CC_EXISTS@
+MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
 MPI_F77_EXISTS = @MPI_F77_EXISTS@
 OBJEXT = @OBJEXT@
@@ -588,6 +589,7 @@ uninstall-info: uninstall-info-recursive
 
 AmesosShellScript$(EXEEXT): $(srcdir)/AmesosShellScript
 	cp  $(srcdir)/AmesosShellScript  AmesosShellScript$(EXEEXT)
+	cp  $(srcdir)/AmesosDistScript  AmesosDistScript$(EXEEXT)
 	cp  $(srcdir)/AmesosShortScript  AmesosShortScript$(EXEEXT)
 	cp  $(srcdir)/AmesosJanusScript  AmesosJanusScript$(EXEEXT)
 	cp  $(srcdir)/SpoolesJanusScript  SpoolesJanusScript$(EXEEXT)
