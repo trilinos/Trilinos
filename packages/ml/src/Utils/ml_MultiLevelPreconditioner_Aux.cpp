@@ -443,14 +443,14 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
           d2 = 1.0;
         }
 
-        for (int k = 0 ; k < RowValues[j]->N() ; ++k) {
-          for (int h = 0 ; h < RowValues[j]->M() ; ++h) {
+        for (int k = 0 ; k < RowValues[j]->M() ; ++k) {
+          for (int h = 0 ; h < RowValues[j]->N() ; ++h) {
             if (k == h)
-              (*RowValues[j])(k,h) = d2;
+              (*RowValues[j])(k,h) = - 1.0 / d2;
           }
         }
 
-        total -= d2;
+        total += 1.0 /d2;
 
       } 
     }

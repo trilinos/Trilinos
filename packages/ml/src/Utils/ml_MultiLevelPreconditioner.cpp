@@ -947,25 +947,50 @@ ComputePreconditioner(const bool CheckPreconditioner)
     bool CreateFakeProblem = 
       List_.get(Prefix_ + "aggregation: use auxiliary matrix", false);
 
-    // west claims attentions, VBR is a small present for him
+    // west claims attentions, the VBR junk is a small gift for him
     Epetra_FECrsMatrix* FakeCrsMatrix = 0;
-    Epetra_VbrMatrix*   MatrixCopy = 0;
     Epetra_Time AuxTime(Comm());
     double ElapsedAuxTime = 0.0;
 
-    // may want to switch this off and pray hardly for a better world
-    // (or at least a world without old, crazy compilers)
-    bool FixForCPLANT = true;
+    bool MyCodeIsCrap = true;
     Epetra_VbrMatrix* dummy;
+    int NumMyRowElements = 0;
+    vector<vector<Epetra_SerialDenseMatrix> > oldValues;
 
     Time.ResetStartTime();
 
+    // difficile a credersi, ma una porcheria di questo tipo
+    // ha le sue foxxuxe ragioni
     if (CreateFakeProblem == true) {
-      dummy = const_cast<Epetra_VbrMatrix*>(dynamic_cast<const Epetra_VbrMatrix*>(RowMatrix_));
 
-      if (dummy && FixForCPLANT) {
-        MatrixCopy = new Epetra_VbrMatrix(*dummy);
-        MatrixCopy->FillComplete();
+      dummy = const_cast<Epetra_VbrMatrix*>
+        (dynamic_cast<const Epetra_VbrMatrix*>(RowMatrix_));
+
+      if (dummy && MyCodeIsCrap) {
+
+        NumMyRowElements = dummy->RowMap().NumMyElements();
+        oldValues.resize(NumMyRowElements);
+
+        for (int LocalRow = 0; LocalRow < NumMyRowElements ; ++LocalRow) {
+
+          int RowDim, NumBlockEntries;
+          int* BlockIndices;
+          Epetra_SerialDenseMatrix** MatrixValues;
+
+          dummy->ExtractMyBlockRowView(LocalRow,RowDim, NumBlockEntries,
+                                       BlockIndices,MatrixValues);
+          oldValues[LocalRow].resize(NumBlockEntries);
+
+          for (int i = 0 ; i < NumBlockEntries ; ++i) {
+            Epetra_SerialDenseMatrix& Mat = *(MatrixValues[i]);
+            int rows = Mat.M();
+            int cols = Mat.N();
+            oldValues[LocalRow][i].Shape(rows,cols);
+            for (int j = 0 ; j < rows ; ++j)
+              for (int k = 0 ; k < cols ; ++k)
+                oldValues[LocalRow][i](j,k) = Mat(j,k);
+          }
+        }
 
         // change the original matrix, RowMatrix_
         ML_CHK_ERR(CreateAuxiliaryMatrixVbr(dummy));
@@ -983,25 +1008,26 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
       AuxTime.ResetStartTime();
     
-      if (MatrixCopy) {
+      if (dummy && MyCodeIsCrap) {
 
-        // crap - crap - crap
-        int NumMyRowElements = dummy->RowMap().NumMyElements();
         for (int LocalRow = 0; LocalRow < NumMyRowElements ; ++LocalRow) {
 
           int RowDim, NumBlockEntries;
           int* BlockIndices;
-          Epetra_SerialDenseMatrix** dummyValues;
           Epetra_SerialDenseMatrix** MatrixValues;
 
-          dummy->ExtractMyBlockRowView(LocalRow,RowDim,NumBlockEntries,
-                                       BlockIndices,dummyValues);
-          MatrixCopy->ExtractMyBlockRowView(LocalRow,RowDim,NumBlockEntries,
-                                            BlockIndices,MatrixValues);
-          for (int i = 0 ; i < NumBlockEntries ; ++i)
-            *(dummyValues[i]) = *(MatrixValues[i]);
+          dummy->ExtractMyBlockRowView(LocalRow,RowDim, NumBlockEntries,
+                                       BlockIndices,MatrixValues);
+
+          for (int i = 0 ; i < NumBlockEntries ; ++i) {
+            Epetra_SerialDenseMatrix& Mat = *(MatrixValues[i]);
+            int rows = Mat.M();
+            int cols = Mat.N();
+            for (int j = 0 ; j < rows ; ++j)
+              for (int k = 0 ; k < cols ; ++k)
+                Mat(j,k) = oldValues[LocalRow][i](j,k);
+          }
         }
-        delete MatrixCopy;
       }
       else if (FakeCrsMatrix) {
         ml_->Amat[LevelID_[0]].data = (void *)RowMatrix_;
@@ -1043,8 +1069,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
     NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges_,&ml_nodes_,
                             LevelID_[0], Direction,agg_,agg_edge_,
                             TMatrixML_,TMatrixTransposeML_, 
-						    &Tmat_array,&Tmat_trans_array, 
-						    ML_YES, 1.5); 
+                            &Tmat_array,&Tmat_trans_array, 
+                            ML_YES, 1.5); 
   }
 
   {
