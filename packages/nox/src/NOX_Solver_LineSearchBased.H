@@ -77,7 +77,7 @@ public:
   virtual const Abstract::Group& getSolutionGroup() const;
   virtual const Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
-  virtual const Parameter::List& getOutputParameters() const;
+  virtual const Parameter::List& getParameterList() const;
 
 protected:
   
@@ -90,33 +90,30 @@ protected:
 protected:
   
   //! Current solution.
-  Abstract::Group* solnptr;		
+  Abstract::Group* solnPtr;		
 
   //! Previous solution pointer. 
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Abstract::Group* oldsolnptr;	
+  Abstract::Group* oldSolnPtr;	
   //! Previous solution reference.
-  Abstract::Group& oldsoln;	
+  Abstract::Group& oldSoln;	
 
   //! Current search direction.pointer.
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Abstract::Vector* dirptr;
+  Abstract::Vector* dirPtr;
   //! Current search direction.reference.
   Abstract::Vector& dir;
 
   //! Stopping test.
-  StatusTest::Generic* testptr;		
+  StatusTest::Generic* testPtr;		
 
   //! Input parameters.
-  Parameter::List iparams;	
-
-  //! Output paramters.
-  mutable Parameter::List oparams; 
+  Parameter::List params;	
 
   //! Linesearch. 
-  NOX::LineSearch::Manager linesearch; 
+  LineSearch::Manager lineSearch; 
 
   //! %Search %Direction. 
   Direction::Manager direction; 
@@ -125,7 +122,7 @@ protected:
   double step;			
 
   //! Number of nonlinear iterations.
-  int niter;                    
+  int nIter;                    
 
   //! %Status of nonlinear solver.
   StatusTest::StatusType status;
