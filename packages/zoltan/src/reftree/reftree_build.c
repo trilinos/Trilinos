@@ -69,8 +69,8 @@ static int ssize;
 /*****************************************************************************/
 /*  Parameters structure for reftree methods */
 static PARAM_VARS REFTREE_params[] = {
-        { "REFTREE_HASH_SIZE", NULL, "INT" },
-        { NULL, NULL, NULL } };
+        { "REFTREE_HASH_SIZE", NULL, "INT", 0 },
+        { NULL, NULL, NULL, 0 } };
 
 /*****************************************************************************/
 /*****************************************************************************/
