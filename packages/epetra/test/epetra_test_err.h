@@ -31,7 +31,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 informative error reporting that will not abort a test program after a single
 error the way that an assert command does. */
 
-/* The macro takes two arguments.  The first is the error code to be examined.  The second is an int that can be viewed either as an error count, or as a bool that simply indicates if any errors have occurred as of the time that the macro was run (zero -> no prior errors, non-zero -> prior errors). */
+/* The macro takes two arguments.  The first is the error code to be examined.  The second is an int that can be viewed either as an error count, or as a bool that simply indicates if any errors have occurred as of the time that the macro was run (zero -> no prior errors, non-zero -> prior errors).  If the error code is > 0, it is interpreted as a warning, and the code is printed, but an error is not tallied.  If it is < 0, it is interpreted as an error.*/
 
 #ifndef EPETRA_TEST_ERR_H
 #define EPETRA_TEST_ERR_H
@@ -42,7 +42,9 @@ using namespace std;
   if (epetra_testing_err != 0) {\
     cerr << "Non zero error code " << epetra_testing_err << \
        ", file: " << __FILE__ << ", line: " << __LINE__ << endl;\
- b+=1;\
+    if (epetra_testing_err < 0) {\
+      b+=1;\
+    }\
   }\
   }\
 }
