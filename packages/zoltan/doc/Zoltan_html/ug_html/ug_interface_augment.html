@@ -36,38 +36,57 @@ only the
 <a href="ug_alg_rib.html">RIB</a>, and 
 <A HREF="ug_alg_hsfc.html">HSFC</A>
 algorithms.
-<BLOCKQUOTE><B><A HREF="#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</A></B>
-<BR><B><A HREF="#Zoltan_LB_Box_Assign">Zoltan_LB_Box_Assign</A></B></BLOCKQUOTE>
+<BLOCKQUOTE>
+<B><A HREF="#Zoltan_LB_Point_PP_Assign">Zoltan_LB_Point_PP_Assign</A></B>
+<BR><B><A HREF="#Zoltan_LB_Box_PP_Assign">Zoltan_LB_Box_PP_Assign</A></B>
+</BLOCKQUOTE>
+
+For <a href="ug_backward.html">backward compatibility</a> 
+with previous versions of Zoltan, the following
+functions are also maintained.  
+These functions are applicable only when the
+number of partitions to be generated is equal to the number of processors on
+which the partitions are computed.  That is, these functions assume "partitions"
+and "processors" are synonymous.
+<blockquote>
+<B><A HREF="#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</A></B>
+<BR><B><A HREF="#Zoltan_LB_Box_Assign">Zoltan_LB_Box_Assign</A></B>
+</blockquote>
+
 
 <!------------------------------------------------------------------------->
 <HR WIDTH="100%">
-<A NAME="Zoltan_LB_Point_Assign"></A>
+<A NAME="Zoltan_LB_Point_PP_Assign"></A>
 <HR WIDTH="100%">
 <TABLE WIDTH="100%" NOSAVE >
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
 <TD WIDTH="85%">
-int <B>Zoltan_LB_Point_Assign</B> (
+int <B>Zoltan_LB_Point_PP_Assign</B> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <B>Zoltan_Struct</B>
 * <I>zz</I>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;double * <I>coords</I>, 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int * <I>proc</I>);&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int * <I>proc</I>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int * <I>part</I>
+);&nbsp;
 </TD>
 </TR>
 
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD> FUNCTION <B>Zoltan_LB_Point_Assign</B>(<I>zz, coords, proc</I>)&nbsp;
-<BR> INTEGER(Zoltan_INT) :: Zoltan_LB_Point_Assign&nbsp;
+<TD> FUNCTION <B>Zoltan_LB_Point_PP_Assign</B>(<I>zz, coords, proc, part</I>)
+<BR> INTEGER(Zoltan_INT) :: Zoltan_LB_Point_PP_Assign&nbsp;
 <BR> TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
 <BR> REAL(Zoltan_DOUBLE), DIMENSION(*), INTENT(IN) :: coords&nbsp;
-<BR> INTEGER(Zoltan_INT), INTENT(OUT) :: proc&nbsp;</TD>
+<BR> INTEGER(Zoltan_INT), INTENT(OUT) :: proc&nbsp;
+<BR> INTEGER(Zoltan_INT), INTENT(OUT) :: part&nbsp;</TD>
 </TR>
 </TABLE>
 
-<HR WIDTH="100%"><B>Zoltan_LB_Point_Assign</B> is used to determine to which processor
+<HR WIDTH="100%"><B>Zoltan_LB_Point_PP_Assign</B> is used to determine to 
+which processor and partition
 a new point should be assigned. It is applicable only to geometrically
 generated decompositions 
 (<A HREF="ug_alg_rcb.html">RCB</A>, 
@@ -75,8 +94,9 @@ generated decompositions
 <A HREF="ug_alg_hsfc.html">HSFC</A>).
 If the parameter <B>KEEP_CUTS</B>
 is set to TRUE, then the sequence of cuts that define the 
-decomposition is saved. Given a new geometric point, the processor which
-owns it can be determined.
+decomposition is saved. Given a new geometric point, the processor and 
+partition which
+own it can be determined.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
 <TR>
@@ -103,6 +123,11 @@ owns it can be determined.
 </TR>
 
 <TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; part</I></TD>
+
+<TD>Upon return, the ID of the partition to which the point should belong.</TD>
+</TR>
+<TR>
 <TD><B>Returned Value:</B></TD>
 
 <TD></TD>
@@ -114,18 +139,17 @@ owns it can be determined.
 <TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
 </TR>
 </TABLE>
-&nbsp;
 
 <!------------------------------------------------------------------------->
 <HR WIDTH="100%">
-<A NAME="Zoltan_LB_Box_Assign"></A>
+<A NAME="Zoltan_LB_Box_PP_Assign"></A>
 <HR WIDTH="100%">
 <TABLE WIDTH="100%" NOSAVE >
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
 <TD WIDTH="85%">
-int <B>Zoltan_LB_Box_Assign</B> (
+int <B>Zoltan_LB_Box_PP_Assign</B> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <B>Zoltan_Struct</B> *<I> zz</I>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;double <I>xmin</I>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;double <I>ymin</I>, 
@@ -134,36 +158,44 @@ int <B>Zoltan_LB_Box_Assign</B> (
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;double <I>ymax</I>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;double <I>zmax</I>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<I>procs</I>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<I>numprocs</I>);
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<I>numprocs</I>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<I>parts</I>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<I>numparts</I>);
 </TD>
 </TR>
 
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD> FUNCTION <B>Zoltan_LB_Box_Assign</B>(<I>zz, xmin, ymin, zmin, xmax, ymax,
-zmax, procs, numprocs</I>)&nbsp;
-<BR> INTEGER(Zoltan_INT) :: Zoltan_LB_Box_Assign&nbsp;
+<TD> FUNCTION <B>Zoltan_LB_Box_PP_Assign</B>(<I>zz, 
+xmin, ymin, zmin, xmax, ymax,
+zmax, procs, numprocs, parts, numparts</I>)&nbsp;
+<BR> INTEGER(Zoltan_INT) :: Zoltan_LB_Box_PP_Assign&nbsp;
 <BR> TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
 <BR> REAL(Zoltan_DOUBLE), INTENT(IN) :: xmin, ymin, zmin, xmax, ymax, zmax&nbsp;
 <BR> INTEGER(Zoltan_INT), DIMENSION(*), INTENT(OUT) ::procs&nbsp;
-<BR> INTEGER(Zoltan_INT), INTENT(OUT) :: numprocs&nbsp;</TD>
+<BR> INTEGER(Zoltan_INT), INTENT(OUT) :: numprocs&nbsp;
+<BR> INTEGER(Zoltan_INT), DIMENSION(*), INTENT(OUT) ::parts&nbsp;
+<BR> INTEGER(Zoltan_INT), INTENT(OUT) :: numparts&nbsp;
+</TD>
 </TR>
 </TABLE>
 
 <HR WIDTH="100%">In many settings, it is useful to know which processors
-might need to know about an extended geometric object. <B>Zoltan_LB_Box_Assign</B>
+and partitions
+might need to know about an extended geometric object. <B>Zoltan_LB_Box_PP_Assign</B>
 addresses this problem. Given a geometric decomposition of space (currently
 only 
 <A HREF="ug_alg_rcb.html">RCB</A>,
 <a href="ug_alg_rib.html">RIB</a>, and
 <a href="ug_alg_hsfc.html">HSFC</a> are
 supported), and given an axis-aligned box around the geometric
-object, <B>Zoltan_LB_Box_Assign</B> determines which processors own geometry that
+object, <B>Zoltan_LB_Box_PP_Assign</B> determines which processors and
+partitions own geometry that
 intersects the box. To use this routine, the parameter <B>KEEP_CUTS</B>
 must be set to TRUE when the decomposition is generated. This parameter
 will cause the sequence of geometric cuts to be saved, which
-is necessary for <B>Zoltan_LB_Box_Assign</B> to do its job.
+is necessary for <B>Zoltan_LB_Box_PP_Assign</B> to do its job.
 <BR>&nbsp;
 
 <P>&nbsp;
@@ -206,8 +238,163 @@ to ensure that there is sufficient space for the return list.</i>&nbsp;</TD>
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp; numprocs</I></TD>
 
-<TD>Upon return, this value contains the number of processors which intersect
+<TD>Upon return, this value contains the number of processors that intersect
 the box (i.e. the number of entries placed in the <I>procs</I> list).&nbsp;</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp; parts</I></TD>
+
+<TD>The list of partitions intersecting the box are returned starting at
+this address. Note that <i>it is the responsibility of the calling routine
+to ensure that there is sufficient space for the return list.</i>&nbsp;</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp; numparts</I></TD>
+
+<TD>Upon return, this value contains the number of partitions that intersect
+the box (i.e. the number of entries placed in the <I>parts</I> list).&nbsp;</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
+</TR>
+</TABLE>
+
+<!------------------------------------------------------------------------->
+<HR WIDTH="100%">
+<A NAME="Zoltan_LB_Point_Assign"></A>
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD WIDTH="85%">
+int <B>Zoltan_LB_Point_Assign</B> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <B>Zoltan_Struct</B>
+* <I>zz</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;double * <I>coords</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int * <I>proc</I>);&nbsp;
+</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> FUNCTION <B>Zoltan_LB_Point_Assign</B>(<I>zz, coords, proc</I>)&nbsp;
+<BR> INTEGER(Zoltan_INT) :: Zoltan_LB_Point_Assign&nbsp;
+<BR> TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
+<BR> REAL(Zoltan_DOUBLE), DIMENSION(*), INTENT(IN) :: coords&nbsp;
+<BR> INTEGER(Zoltan_INT), INTENT(OUT) :: proc&nbsp;</TD>
+</TR>
+</TABLE>
+
+<HR WIDTH="100%"><B>Zoltan_LB_Point_Assign</B> is 
+is a wrapper around
+<a href="#Zoltan_LB_Point_PP_Assign"><b>Zoltan_LB_Point_PP_Assign</b></a> 
+that excludes
+the partition assignment results.  <b>Zoltan_LB_Point_Assign</b> assumes the
+number of partitions is equal to the number of processors; thus, the
+partition assignment is equivalent to the processor assignment.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Arguments:</B></TD>
+<td WIDTH="80%"></td>
+</TR>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>All arguments are analogous to those in
+<a href="#Zoltan_LB_Point_PP_Assign"><b>Zoltan_LB_Point_PP_Assign</b></a>.
+Partition-assignment argument <i>part</i>
+is not included, as processor and partitions
+numbers are considered to be the same in <b>Zoltan_LB_Point_Assign</b>.
+</td>
+</tr>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
+</TR>
+</TABLE>
+
+<!------------------------------------------------------------------------->
+<HR WIDTH="100%">
+<A NAME="Zoltan_LB_Box_Assign"></A>
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD WIDTH="85%">
+int <B>Zoltan_LB_Box_Assign</B> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct <B>Zoltan_Struct</B> *<I> zz</I>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;double <I>xmin</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;double <I>ymin</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;double <I>zmin</I>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;double <I>xmax</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;double <I>ymax</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;double <I>zmax</I>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<I>procs</I>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<I>numprocs</I>);
+</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> FUNCTION <B>Zoltan_LB_Box_Assign</B>(<I>zz, xmin, ymin, zmin, xmax, ymax,
+zmax, procs, numprocs</I>)&nbsp;
+<BR> INTEGER(Zoltan_INT) :: Zoltan_LB_Box_Assign&nbsp;
+<BR> TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
+<BR> REAL(Zoltan_DOUBLE), INTENT(IN) :: xmin, ymin, zmin, xmax, ymax, zmax&nbsp;
+<BR> INTEGER(Zoltan_INT), DIMENSION(*), INTENT(OUT) ::procs&nbsp;
+<BR> INTEGER(Zoltan_INT), INTENT(OUT) :: numprocs&nbsp;</TD>
+</TR>
+</TABLE>
+
+<HR WIDTH="100%">
+<b>Zoltan_LB_Box_Assign</b> is a wrapper around
+<a href="#Zoltan_LB_Box_PP_Assign"><b>Zoltan_LB_Box_PP_Assign</b></a> 
+that excludes
+the partition assignment results.  <b>Zoltan_LB_Box_Assign</b> assumes the
+number of partitions is equal to the number of processors; thus, the
+partition assignment is equivalent to the processor assignment.
+
+<P>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Arguments:</B></TD>
+<td WIDTH="80%"></td>
+</TR>
+
+<TR>
+<TD></TD>
+
+<td>All arguments are analogous to those in
+<a href="#Zoltan_LB_Box_PP_Assign"><b>Zoltan_LB_Box_PP_Assign</b></a>.
+Partition-assignment arguments <i>parts</i> and <i>numparts</i>
+are not included, as processor and partitions
+numbers are considered to be the same in <b>Zoltan_LB_Box_Assign</b>.
+</td>
 </TR>
 
 <TR>
