@@ -111,7 +111,7 @@ noinst_PROGRAMS = amesos_test AmesosShellScript AmesosDscpack AmesosDscpackShort
 	AmesosJanusScript SpoolesJanusScript SpoolesScript AmesosSuperLUserial \
 	AmesosUmfpack AmesosUmfpackShort AmesosUmfpackSerial AmesosMumps \
 	AmesosKlu AmesosKluShort AmesosKluSerial \
-	AmesosSuperludist AmesosSuperludistShort AmesosSuperludistSerial \
+	AmesosSuperludist AmesosSuperludistShort \
 	A_Superludist  B_Superludist  C_Superludist Timings DscpackTiming 
 
 
@@ -131,7 +131,6 @@ AmesosKluShort_SOURCES = $(srcdir)/AmesosKluShort
 AmesosKluSerial_SOURCES = $(srcdir)/AmesosKluSerial
 AmesosSuperludist_SOURCES = $(srcdir)/AmesosSuperludist
 AmesosSuperludistShort_SOURCES = $(srcdir)/AmesosSuperludistShort
-AmesosSuperludistSerial_SOURCES = $(srcdir)/AmesosSuperludistSerial
 AmesosShortSuperLU_SOURCES = $(srcdir)/AmesosShortSuperLU
 AmesosShortKundert_SOURCES = $(srcdir)/AmesosShortKundert
 AmesosDistScript_SOURCES = $(srcdir)/AmesosDistScript
@@ -197,8 +196,7 @@ noinst_PROGRAMS = amesos_test$(EXEEXT) AmesosShellScript$(EXEEXT) \
 	AmesosUmfpackSerial$(EXEEXT) AmesosMumps$(EXEEXT) \
 	AmesosKlu$(EXEEXT) AmesosKluShort$(EXEEXT) \
 	AmesosKluSerial$(EXEEXT) AmesosSuperludist$(EXEEXT) \
-	AmesosSuperludistShort$(EXEEXT) \
-	AmesosSuperludistSerial$(EXEEXT) A_Superludist$(EXEEXT) \
+	AmesosSuperludistShort$(EXEEXT) A_Superludist$(EXEEXT) \
 	B_Superludist$(EXEEXT) C_Superludist$(EXEEXT) Timings$(EXEEXT) \
 	DscpackTiming$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
@@ -278,11 +276,6 @@ AmesosSuperludist_OBJECTS = $(am_AmesosSuperludist_OBJECTS)
 AmesosSuperludist_LDADD = $(LDADD)
 AmesosSuperludist_DEPENDENCIES =
 AmesosSuperludist_LDFLAGS =
-am_AmesosSuperludistSerial_OBJECTS =
-AmesosSuperludistSerial_OBJECTS = $(am_AmesosSuperludistSerial_OBJECTS)
-AmesosSuperludistSerial_LDADD = $(LDADD)
-AmesosSuperludistSerial_DEPENDENCIES =
-AmesosSuperludistSerial_LDFLAGS =
 am_AmesosSuperludistShort_OBJECTS =
 AmesosSuperludistShort_OBJECTS = $(am_AmesosSuperludistShort_OBJECTS)
 AmesosSuperludistShort_LDADD = $(LDADD)
@@ -384,13 +377,12 @@ DIST_SOURCES = $(A_Superludist_SOURCES) $(AmesosDistScript_SOURCES) \
 	$(AmesosMumps_SOURCES) $(AmesosShellScript_SOURCES) \
 	$(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) \
 	$(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) \
-	$(AmesosSuperludist_SOURCES) $(AmesosSuperludistSerial_SOURCES) \
-	$(AmesosSuperludistShort_SOURCES) $(AmesosUmfpack_SOURCES) \
-	$(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) \
-	$(B_Superludist_SOURCES) $(C_Superludist_SOURCES) \
-	DscpackTiming.c $(SpoolesJanusScript_SOURCES) \
-	$(SpoolesScript_SOURCES) $(Timings_SOURCES) \
-	$(amesos_test_SOURCES)
+	$(AmesosSuperludist_SOURCES) $(AmesosSuperludistShort_SOURCES) \
+	$(AmesosUmfpack_SOURCES) $(AmesosUmfpackSerial_SOURCES) \
+	$(AmesosUmfpackShort_SOURCES) $(B_Superludist_SOURCES) \
+	$(C_Superludist_SOURCES) DscpackTiming.c \
+	$(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) \
+	$(Timings_SOURCES) $(amesos_test_SOURCES)
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-info-recursive all-recursive install-data-recursive \
@@ -398,7 +390,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = README Makefile.am Makefile.in
 DIST_SUBDIRS = $(SUBDIRS)
-SOURCES = $(A_Superludist_SOURCES) $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) $(AmesosJanusScript_SOURCES) $(AmesosKlu_SOURCES) $(AmesosKluSerial_SOURCES) $(AmesosKluShort_SOURCES) $(AmesosMumps_SOURCES) $(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) $(AmesosSuperludist_SOURCES) $(AmesosSuperludistSerial_SOURCES) $(AmesosSuperludistShort_SOURCES) $(AmesosUmfpack_SOURCES) $(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) $(B_Superludist_SOURCES) $(C_Superludist_SOURCES) DscpackTiming.c $(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) $(Timings_SOURCES) $(amesos_test_SOURCES)
+SOURCES = $(A_Superludist_SOURCES) $(AmesosDistScript_SOURCES) $(AmesosDscpack_SOURCES) $(AmesosDscpackShort_SOURCES) $(AmesosJanusScript_SOURCES) $(AmesosKlu_SOURCES) $(AmesosKluSerial_SOURCES) $(AmesosKluShort_SOURCES) $(AmesosMumps_SOURCES) $(AmesosShellScript_SOURCES) $(AmesosShortKundert_SOURCES) $(AmesosShortScript_SOURCES) $(AmesosShortSuperLU_SOURCES) $(AmesosSuperLUserial_SOURCES) $(AmesosSuperludist_SOURCES) $(AmesosSuperludistShort_SOURCES) $(AmesosUmfpack_SOURCES) $(AmesosUmfpackSerial_SOURCES) $(AmesosUmfpackShort_SOURCES) $(B_Superludist_SOURCES) $(C_Superludist_SOURCES) DscpackTiming.c $(SpoolesJanusScript_SOURCES) $(SpoolesScript_SOURCES) $(Timings_SOURCES) $(amesos_test_SOURCES)
 
 all: all-recursive
 
@@ -886,9 +878,6 @@ AmesosSuperludist$(EXEEXT): $(srcdir)/AmesosSuperludist
 
 AmesosSuperludistShort$(EXEEXT): $(srcdir)/AmesosSuperludistShort
 	cp  $(srcdir)/AmesosSuperludistShort  AmesosSuperludistShort$(EXEEXT)
-
-AmesosSuperludistSerial$(EXEEXT): $(srcdir)/AmesosSuperludistSerial
-	cp  $(srcdir)/AmesosSuperludistSerial  AmesosSuperludistSerial$(EXEEXT)
 
 AmesosShortSuperLU$(EXEEXT): $(srcdir)/AmesosShortSuperLU
 	cp  $(srcdir)/AmesosShortSuperLU  AmesosShortSuperLU$(EXEEXT)
