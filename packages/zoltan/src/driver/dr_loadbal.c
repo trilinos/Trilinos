@@ -79,8 +79,8 @@ ZOLTAN_PARTITION_MULTI_FN get_partition_multi;
 ZOLTAN_PARTITION_FN get_partition;
 
 ZOLTAN_HG_EDGE_LIST_FN get_hg_edge_list;
+ZOLTAN_HG_EDGE_INFO_FN get_hg_edge_info;
 ZOLTAN_NUM_HG_EDGES_FN get_num_hg_edges;
-ZOLTAN_NUM_HG_PINS_FN get_num_hg_pins;
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -375,8 +375,8 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       return 0;
     }
 
-    if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_HG_PINS_FN_TYPE, 
-                      (void (*)()) get_num_hg_pins,
+    if (Zoltan_Set_Fn(zz, ZOLTAN_HG_EDGE_INFO_FN_TYPE, 
+                      (void (*)()) get_hg_edge_info,
                       (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
       return 0;
@@ -1347,55 +1347,27 @@ int get_num_hg_edges(
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int get_num_hg_pins(
-  void *data, 
-  int *ierr)
-{
-  MESH_INFO_PTR mesh;
 
-  START_CALLBACK_TIMER;
-
-  if (data == NULL) {
-    *ierr = ZOLTAN_FATAL;
-    return -1;
-  }
-
-  mesh = (MESH_INFO_PTR) data;
-
-  *ierr = ZOLTAN_OK;
-
-  STOP_CALLBACK_TIMER;
-
-  return mesh->hindex[mesh->nhedges];
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-int get_hg_edge_list(
+int get_hg_edge_info(
   void *data, 
   int num_gid_entries,
-  int ewgt_dim,
+  int num_lid_entries,
   int nedges,
-  int max_size,
+  int ewgt_dim,
+  ZOLTAN_ID_PTR edge_gids,
+  ZOLTAN_ID_PTR edge_lids,
   int *edge_sizes,
-  ZOLTAN_ID_PTR edge_verts,
-  int *edge_procs,
   float *edge_weights
 )
 {
   MESH_INFO_PTR mesh;
-  int i, j, k;
-  int ecnt, pcnt;
-  int tmp;
+  int i, j;
   int gid = num_gid_entries-1;
+  int lid = num_lid_entries-1;
   int *hindex;
-  int Proc;
   int ierr = ZOLTAN_OK;
 
   START_CALLBACK_TIMER;
-
-  MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
 
   if (data == NULL) {
     ierr = ZOLTAN_FATAL;
@@ -1409,31 +1381,76 @@ int get_hg_edge_list(
     goto End;
   }
 
-  pcnt = ecnt = 0;
   for (i = 0; i < mesh->nhedges; i++) {
-    tmp = hindex[i+1] - hindex[i];
-    edge_sizes[ecnt] = tmp;
-    for (j = hindex[i]; j < hindex[i+1]; j++) {
-      edge_procs[pcnt] = mesh->hvertex_proc[j];  
-      for (k = 0; k < gid; k++) edge_verts[k+pcnt*num_gid_entries] = 0;
-      edge_verts[gid+pcnt*num_gid_entries] = mesh->hvertex[j];
-      pcnt++;
-    }
+    edge_gids[i*num_gid_entries+gid] = mesh->hgid[i];
+    if (num_lid_entries) edge_lids[i*num_lid_entries+lid] = i;
+    edge_sizes[i] = hindex[i+1] - hindex[i];
     for (j = 0; j < ewgt_dim; j++) {
       if (mesh->hewgt_dim >= j)
-        edge_weights[j + ecnt*ewgt_dim] = mesh->hewgts[j + i*mesh->hewgt_dim];
+        edge_weights[j + i*ewgt_dim] = mesh->hewgts[j + i*mesh->hewgt_dim];
       else
-        edge_weights[j + ecnt*ewgt_dim] = 1.0;
+        edge_weights[j + i*ewgt_dim] = 1.0;
     }
-    ecnt++;
   }
 
 End:
 
   STOP_CALLBACK_TIMER;
-
   return ierr;
 }
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+int get_hg_edge_list(
+  void *data, 
+  int num_gid_entries,
+  int num_lid_entries,
+  int nedges,
+  ZOLTAN_ID_PTR edge_gids,
+  ZOLTAN_ID_PTR edge_lids,
+  int *edge_sizes,
+  ZOLTAN_ID_PTR edge_verts,
+  int *edge_procs
+)
+{
+  MESH_INFO_PTR mesh;
+  int i, j, k, local_id;
+  int pcnt;
+  int gid = num_gid_entries-1;
+  int lid = num_lid_entries-1;
+  int *hindex;
+  int ierr = ZOLTAN_OK;
+
+  START_CALLBACK_TIMER;
+
+  if (data == NULL) {
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  mesh = (MESH_INFO_PTR) data;
+  hindex = mesh->hindex;
+
+  pcnt = 0;
+  for (i = 0; i < nedges; i++) {
+    local_id = (num_lid_entries ? edge_lids[i*num_lid_entries+lid]
+                                : in_list(edge_gids[i*num_gid_entries+gid],
+                                          mesh->nhedges, mesh->hgid));
+    for (j = hindex[local_id]; j < hindex[local_id+1]; j++) {
+      edge_procs[pcnt] = mesh->hvertex_proc[j];  
+      for (k = 0; k < gid; k++) edge_verts[k+pcnt*num_gid_entries] = 0;
+      edge_verts[gid+pcnt*num_gid_entries] = mesh->hvertex[j];
+      pcnt++;
+    }
+  }
+
+End:
+
+  STOP_CALLBACK_TIMER;
+  return ierr;
+}
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/

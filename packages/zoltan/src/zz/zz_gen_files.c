@@ -327,9 +327,10 @@ static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex,
 {
   int i, ierr, cnt, j, nEdge, npins, numwgts, minproc;
   int loc_hedges, loc_pins;
-  int *hindex , *edge_procs;
-  ZOLTAN_ID_PTR edge_verts;
-  float *edge_wgts;
+  int *hindex = NULL, *edge_procs = NULL;
+  ZOLTAN_ID_PTR edge_verts = NULL;
+  ZOLTAN_ID_PTR edge_gids = NULL, edge_lids = NULL;
+  float *edge_wgts = NULL;
   static char *yo = "Zoltan_HG_Get_Hedges";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -342,30 +343,43 @@ static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex,
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Get_Num_HG_Edges");
     goto End;
   }
-  npins = zz->Get_Num_HG_Pins(zz->Get_Num_HG_Pins_Data, &ierr);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo,"Error returned from Get_Max_HG_Edge_Size");    goto End;
-  }
   if (nEdge > 0) {
-    numwgts = nEdge * zz->Edge_Weight_Dim;
-    (*p_edge_verts) = ZOLTAN_MALLOC_GID_ARRAY(zz, npins);
-    edge_verts = *p_edge_verts;
+    edge_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, nEdge);
+    edge_lids = ZOLTAN_MALLOC_LID_ARRAY(zz, nEdge);
     (*p_hindex) = (int *) ZOLTAN_MALLOC((nEdge+1) * sizeof(int));
     hindex = *p_hindex;
-    (*p_edge_procs) = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
-    edge_procs = *p_edge_procs;
+    numwgts = nEdge * zz->Edge_Weight_Dim;
     if (numwgts){
        (*p_edge_wgts) = (float *) ZOLTAN_MALLOC(numwgts * sizeof(float));
        edge_wgts = *p_edge_wgts;
     }
-    if (!edge_verts || !hindex || !edge_procs || (numwgts && !edge_wgts)) {
+    if (!edge_gids || (zz->Num_LID && !edge_lids) || 
+        !hindex || (numwgts && !edge_wgts)) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient Memory");
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
-    ierr = zz->Get_HG_Edge_List(zz->Get_HG_Edge_List_Data, zz->Num_GID,
-                                zz->Edge_Weight_Dim, nEdge, npins,
-                                hindex, edge_verts, edge_procs, edge_wgts);
+    ierr = zz->Get_HG_Edge_Info(zz->Get_HG_Edge_Info_Data, 
+                                zz->Num_GID, zz->Num_LID, nEdge,
+                                zz->Edge_Weight_Dim,
+                                edge_gids, edge_lids, 
+                                hindex, edge_wgts);
+    npins = 0;
+    for (i = 0; i < nEdge; i++) npins += hindex[i];
+
+    (*p_edge_verts) = ZOLTAN_MALLOC_GID_ARRAY(zz, npins);
+    edge_verts = *p_edge_verts;
+    (*p_edge_procs) = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
+    edge_procs = *p_edge_procs;
+    if (npins && (!edge_verts || !edge_procs)) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient Memory");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+    ierr = zz->Get_HG_Edge_List(zz->Get_HG_Edge_List_Data, 
+                                zz->Num_GID, zz->Num_LID, 
+                                nEdge, edge_gids, edge_lids,
+                                hindex, edge_verts, edge_procs);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,"Error returned from Get_HG_Edge_List");
       goto End;

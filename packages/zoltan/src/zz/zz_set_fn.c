@@ -205,9 +205,9 @@ int ierr;
     ierr = Zoltan_Set_Num_HG_Edges_Fn(zz, 
                   (ZOLTAN_NUM_HG_EDGES_FN *) fn, data);
     break;
-  case ZOLTAN_NUM_HG_PINS_FN_TYPE:
-    ierr = Zoltan_Set_Num_HG_Pins_Fn(zz, 
-                  (ZOLTAN_NUM_HG_PINS_FN *) fn, data);
+  case ZOLTAN_HG_EDGE_INFO_FN_TYPE:
+    ierr = Zoltan_Set_HG_Edge_Info_Fn(zz, 
+                  (ZOLTAN_HG_EDGE_INFO_FN *) fn, data);
     break;
   case ZOLTAN_HG_EDGE_LIST_FN_TYPE:
     ierr = Zoltan_Set_HG_Edge_List_Fn(zz, 
@@ -667,14 +667,14 @@ int Zoltan_Set_Num_HG_Edges_Fn(
 
 /*****************************************************************************/
 
-int Zoltan_Set_Num_HG_Pins_Fn(
+int Zoltan_Set_HG_Edge_Info_Fn(
   ZZ *zz, 
-  ZOLTAN_NUM_HG_PINS_FN *fn, 
+  ZOLTAN_HG_EDGE_INFO_FN *fn, 
   void *data
 )
 {
-  zz->Get_Num_HG_Pins = fn;
-  zz->Get_Num_HG_Pins_Data = data;
+  zz->Get_HG_Edge_Info = fn;
+  zz->Get_HG_Edge_Info_Data = data;
   return ZOLTAN_OK;
 }
 

@@ -236,6 +236,9 @@ extern void Zoltan_PHG_HGraph_Print(ZZ*, ZPHG*, HGraph*, Partition, FILE*);
 extern void Zoltan_PHG_Plot(int, int, int, int*, int*, int*, char*);
 extern void Zoltan_PHG_Plot_2D_Distrib(ZZ*, HGraph*);
 
+extern int Zoltan_PHG_Hypergraph_Callbacks(ZZ *, int *, ZOLTAN_ID_PTR *,
+  ZOLTAN_ID_PTR *, int **, float **, int *, ZOLTAN_ID_PTR *, int **);
+
 
 
 

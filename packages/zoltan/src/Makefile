@@ -216,7 +216,8 @@ HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 
 ifdef ZOLTAN_HG
 
-PHG_CSRC 	= phg.c phg_build.c phg_coarse.c phg_distrib.c phg_gather.c \
+PHG_CSRC 	= phg.c phg_build.c phg_build_calls.c \
+		  phg_coarse.c phg_distrib.c phg_gather.c \
 		  phg_match.c phg_plot.c \
 		  phg_refinement.c phg_serialpartition.c \
 		  phg_Vcycle.c phg_rdivide.c phg_util.c \

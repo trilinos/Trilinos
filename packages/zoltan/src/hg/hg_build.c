@@ -17,6 +17,7 @@ extern "C" {
 #endif
 
 #include "hg.h"
+#include "phg.h"
 #include "parmetis_jostle.h"
 #include "zz_util_const.h"
 
@@ -58,9 +59,11 @@ int get_geom_data=0; /* Current hg methods don't use geometry. */
 
   hgraph = &(zhg->HG);
   Zoltan_HG_HGraph_Init(hgraph);
+  hgraph->VtxWeightDim = zz->Obj_Weight_Dim;
+  hgraph->EdgeWeightDim = zz->Edge_Weight_Dim;
 
   /* Use callback functions to build the hypergraph. */
-  if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_Num_HG_Pins){
+  if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_HG_Edge_Info){
     /* Hypergraph callback functions exist; call them and build the HG directly */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Using Hypergraph Callbacks.");
 
@@ -71,7 +74,6 @@ int get_geom_data=0; /* Current hg methods don't use geometry. */
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
       goto End;
     }
-    hgraph->VtxWeightDim = zz->Obj_Weight_Dim;
 
     ierr = Zoltan_HG_Fill_Hypergraph(zz, zhg);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -168,17 +170,16 @@ static int Zoltan_HG_Fill_Hypergraph(
 /* Also builds Zoltan_HGraph vtxdist array.                        */
 
 char *yo = "Zoltan_HG_Fill_Hypergraph";
-ZOLTAN_ID_PTR edge_verts = NULL;  /* Object GIDs belonging to hyperedges    */
+ZOLTAN_ID_PTR edge_verts = NULL;  /* Object (vtx) GIDs belonging to hyperedges*/
 int *edge_sizes = NULL;           /* # of GIDs in each hyperedge            */
 int *edge_procs = NULL;           /* Processor owning each GID of hyperedge */
-float *edge_wgts = NULL;          /* Hyperedge weights                      */
+ZOLTAN_ID_PTR edge_gids = NULL, edge_lids = NULL;  /* Edge GID and LID */
 
 struct Hash_Node *hash_nodes = NULL;  /* Hash table variables for mapping   */
 struct Hash_Node **hash_tab = NULL;   /* GIDs to global numbering system.   */
 
 int i, j;
-int npins, cnt;
-int numwgts = 0;
+int cnt;
 int ierr = ZOLTAN_OK;
 
 ZOLTAN_ID_PTR global_ids = zhg->Global_IDs;  
@@ -188,47 +189,11 @@ int num_gid_entries = zz->Num_GID;
 static PHGComm scomm;
 static int first_time = 1;
 
+  ierr = Zoltan_PHG_Hypergraph_Callbacks(zz, &(hg->nEdge), 
+                                         &edge_gids, &edge_lids, &edge_sizes,
+                                         &(hg->ewgt), &(hg->nPins), 
+                                         &edge_verts, &edge_procs);
 
-  /* Get hyperedge information from application through query functions. */
-
-  hg->nEdge = zz->Get_Num_HG_Edges(zz->Get_Num_HG_Edges_Data, &ierr);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Get_Num_HG_Edges");
-    goto End;
-  }
-  
-  /* KDD:  question:  How do we compute size to malloc array for HG Edges? 
-   * KDD:  We can't have a size function unless we assume the application
-   * KDD:  can "name" the hyperedges.
-   * KDD:  For now, assume application can return number of pins.
-   */
-
-  hg->nPins = npins = zz->Get_Num_HG_Pins(zz->Get_Num_HG_Pins_Data, &ierr);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo,"Error returned from Get_Max_HG_Edge_Size");
-    goto End;
-  }
-
-  if (hg->nEdge > 0) {
-    numwgts = hg->nEdge * zz->Edge_Weight_Dim;
-    edge_verts = ZOLTAN_MALLOC_GID_ARRAY(zz, npins);
-    edge_sizes = (int *) ZOLTAN_MALLOC(hg->nEdge * sizeof(int));
-    edge_procs = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
-    if (numwgts) edge_wgts = (float *) ZOLTAN_MALLOC(numwgts * sizeof(float));
-    if (!edge_verts || !edge_sizes || !edge_procs || (numwgts && !edge_wgts)) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient Memory");
-      ierr = ZOLTAN_MEMERR;
-      goto End;
-    }
-    ierr = zz->Get_HG_Edge_List(zz->Get_HG_Edge_List_Data, num_gid_entries,
-                                zz->Edge_Weight_Dim, hg->nEdge, npins,
-                                edge_sizes, edge_verts, edge_procs, edge_wgts);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo,"Error returned from Get_HG_Edge_List");
-      goto End;
-    }
-  }
-  
   /* Build hg->hindex */
   /* KDD -- should we remove HEdges with size 1 from edge lists here? */
   hg->hindex = (int *) ZOLTAN_MALLOC((hg->nEdge + 1) * sizeof(int));
@@ -245,7 +210,7 @@ static int first_time = 1;
   hg->hindex[hg->nEdge] = cnt;
 
   /* Sanity check */
-  if (cnt != npins) {
+  if (cnt != hg->nPins) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                        "Input error:  Number of pins != sum of edge sizes");
     goto End;
@@ -284,7 +249,7 @@ static int first_time = 1;
 
   hg->comm = &scomm;
   
-  if (npins > 0) {
+  if (hg->nPins > 0) {
     /* 
      * Correlate GIDs in edge_verts with local indexing in zhg to build the
      * input HG.
@@ -320,14 +285,14 @@ static int first_time = 1;
       hash_tab[j] = &hash_nodes[i];
     }
 
-    hg->hvertex = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
+    hg->hvertex = (int *) ZOLTAN_MALLOC(hg->nPins * sizeof(int));
     if (!hg->hvertex) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient Memory");
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
 
-    for (i = 0; i < npins; i++) {
+    for (i = 0; i < hg->nPins; i++) {
       hg->hvertex[i] = hash_lookup(zz, zhg, &(edge_verts[i*num_gid_entries]),
                                    nVtx, hash_tab);
       if (hg->hvertex[i] == -1) {
@@ -337,19 +302,14 @@ static int first_time = 1;
       }
     }
 
-    if (zz->Edge_Weight_Dim) {
-      hg->EdgeWeightDim = zz->Edge_Weight_Dim;
-      hg->ewgt = (float *) ZOLTAN_MALLOC(numwgts * sizeof(float));
-      memcpy(hg->ewgt, edge_wgts, numwgts * sizeof(float));
-    }
-
     Zoltan_Multifree(__FILE__, __LINE__, 2, &hash_nodes,
                                             &hash_tab);
   }
-  Zoltan_Multifree(__FILE__, __LINE__, 4, &edge_verts, 
+  Zoltan_Multifree(__FILE__, __LINE__, 5, &edge_gids, 
+                                          &edge_lids, 
+                                          &edge_verts, 
                                           &edge_sizes, 
-                                          &edge_procs, 
-                                          &edge_wgts);
+                                          &edge_procs);
 
   ierr = Zoltan_HG_Create_Mirror(zz, hg);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -361,10 +321,11 @@ End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     Zoltan_HG_HGraph_Free(hg);
   
-    Zoltan_Multifree(__FILE__, __LINE__, 6, &edge_verts, 
+    Zoltan_Multifree(__FILE__, __LINE__, 7, &edge_gids,
+                                            &edge_lids,
+                                            &edge_verts, 
                                             &edge_sizes, 
                                             &edge_procs, 
-                                            &edge_wgts,
                                             &hash_nodes,
                                             &hash_tab);
   }

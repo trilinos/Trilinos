@@ -72,7 +72,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   phgraph->comm = &hgp->globalcomm;
 
   /* Use callback functions to build the hypergraph. */
-  if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_Num_HG_Pins){
+  if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_HG_Edge_Info){
     /* 
      * Hypergraph callback functions exist; 
      * call them and build the HG directly.
@@ -199,6 +199,8 @@ struct application_input {     /* Data provided by application callbacks. */
   int nPins;                        /* # pins (nonzeros) on proc. */
   int GnVtx;                        /* Total nVtx across all procs. */
   int GnEdge;                       /* Total nEdge across all procs. */
+  ZOLTAN_ID_PTR edge_gids;          /* GIDs of edges. */
+  ZOLTAN_ID_PTR edge_lids;          /* LIDs of edges. */
   int *edge_sizes;                  /* # of GIDs in each hyperedge. */
   ZOLTAN_ID_PTR pins;               /* Object GIDs (vertices) belonging to 
                                        hyperedges.  */
@@ -272,6 +274,8 @@ float *tmpwgts = NULL;
   /* Obtain vertex information from the application */
   /**************************************************/
 
+  app.edge_gids = NULL;
+  app.edge_lids = NULL;
   app.edge_sizes = NULL;
   app.pins = NULL;
   app.pin_procs = NULL;
@@ -355,57 +359,26 @@ float *tmpwgts = NULL;
   /* Get hyperedge information from application through query functions. */
   /***********************************************************************/
 
-  app.nEdge = zz->Get_Num_HG_Edges(zz->Get_Num_HG_Edges_Data, &ierr);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Get_Num_HG_Edges");
-    goto End;
-  }
-  
-  /* KDD:  question:  How do we compute size to malloc array for HG Edges? 
-   * KDD:  We can't have a size function unless we assume the application
-   * KDD:  can "name" the hyperedges.
-   * KDD:  For now, assume application can return number of pins.
-   */
-
-  app.nPins = zz->Get_Num_HG_Pins(zz->Get_Num_HG_Pins_Data, &ierr);
+  ierr = Zoltan_PHG_Hypergraph_Callbacks(zz, &app.nEdge, 
+                                         &app.edge_gids, &app.edge_lids,
+                                         &app.edge_sizes, &app.ewgt,
+                                         &app.nPins, &app.pins, 
+                                         &app.pin_procs);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                       "Error returned from Get_Max_HG_Edge_Size");
+                       "Error returned from Zoltan_PHG_Hypergraph_Callbacks");
     goto End;
   }
 
-  if (app.nEdge > 0) {
-    nwgt = app.nEdge * zz->Edge_Weight_Dim;
-    app.pins = ZOLTAN_MALLOC_GID_ARRAY(zz, app.nPins);
-    app.edge_sizes = (int *) ZOLTAN_MALLOC(app.nEdge * sizeof(int));
-    app.pin_procs = (int *) ZOLTAN_MALLOC(app.nPins * sizeof(int));
-    app.pin_gno = (int *) ZOLTAN_MALLOC(app.nPins * sizeof(int));
-    app.edge_gno = (int *) ZOLTAN_MALLOC(app.nEdge * sizeof(int));
-    if (nwgt) 
-      app.ewgt = (float *) ZOLTAN_MALLOC(nwgt * sizeof(float));
-    if (!app.pins || !app.edge_sizes || !app.pin_procs || !app.pin_gno  ||
-        !app.edge_gno || (nwgt && !app.ewgt)) MEMORY_ERROR;
-
-    ierr = zz->Get_HG_Edge_List(zz->Get_HG_Edge_List_Data, num_gid_entries,
-                                zz->Edge_Weight_Dim, app.nEdge, app.nPins,
-                                app.edge_sizes, app.pins, 
-                                app.pin_procs, app.ewgt);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo,"Error returned from Get_HG_Edge_List");
-      goto End;
-    }
-  }
-  
-  /* 
-   * KDDKDD -- Assuming hyperedges are given to Zoltan by one processor only.
-   * KDDKDD -- Eventually, will loosen that constraint and remove duplicates.
-   * KDDKDD -- Or the code might work (although with extra communication)
-   * KDDKDD -- with the duplicates.
-   * KDDKDD -- Might be easier once we have edge GIDs.
-   */
+  /***********************************************************************/
   /* Impose a global hyperedge numbering */
   /* Construct app.edgedist[i] = the number of edges on all procs < i. */
   /* Scan to compute partial sums of the number of edges */
+  /***********************************************************************/
+
+  app.edge_gno = (int *) ZOLTAN_MALLOC(app.nEdge * sizeof(int));
+  app.pin_gno = (int *) ZOLTAN_MALLOC(app.nPins * sizeof(int));
+  if ((app.nEdge && !app.edge_gno) || (app.nPins && !app.pin_gno)) MEMORY_ERROR;
 
   MPI_Scan (&app.nEdge, app.edgedist, 1, MPI_INT, MPI_SUM, zz->Communicator);
 
@@ -422,6 +395,7 @@ float *tmpwgts = NULL;
   for (i = 0; i < app.nEdge; i++)
     app.edge_gno[i] = app.edgedist[zz->Proc] + i;
    
+  /***********************************************************************/
   /* 
    * Obtain the global num in range 0 .. (total_num_vtx-1) 
    * for each vertex pin.
@@ -430,6 +404,7 @@ float *tmpwgts = NULL;
    * Fill requests (using hash table) for GIDs local to this processor.
    * Upon completion, app.pin_gno will contain the global nums.
    */
+  /***********************************************************************/
 
   ierr = Zoltan_Comm_Create(&plan, app.nPins, app.pin_procs, zz->Communicator,
                             msg_tag, &nRequests);
@@ -766,7 +741,9 @@ End:
     Zoltan_HG_HGraph_Free(phg);
   }
   
-  Zoltan_Multifree(__FILE__, __LINE__, 10,  &app.pins, 
+  Zoltan_Multifree(__FILE__, __LINE__, 12,  &app.edge_gids,
+                                            &app.edge_lids,
+                                            &app.pins, 
                                             &app.edge_sizes, 
                                             &app.pin_procs, 
                                             &app.pin_gno, 

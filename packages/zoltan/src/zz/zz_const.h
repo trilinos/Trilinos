@@ -398,7 +398,7 @@ struct Zoltan_Struct {
                                           Get_Child_Weight()         */
   /***************************************************************************/
   ZOLTAN_NUM_HG_EDGES_FN *Get_Num_HG_Edges;    
-                                       /* Fn ptr to get an object's
+                                       /* Fn ptr to get a processor's
                                           number of hypergraph edges.*/
   ZOLTAN_NUM_HG_EDGES_FORT_FN *Get_Num_HG_Edges_Fort;
                                        /* Fortran version      */
@@ -406,20 +406,18 @@ struct Zoltan_Struct {
                                           to be passed to
                                           Get_Num_HG_Edges()         */
   /***************************************************************************/
+  ZOLTAN_HG_EDGE_INFO_FN *Get_HG_Edge_Info;    
+                                       /* Fn ptr to get hyperedge info.      */
+  ZOLTAN_HG_EDGE_INFO_FORT_FN *Get_HG_Edge_Info_Fort;/* Fortran version      */
+  void *Get_HG_Edge_Info_Data;         /* Ptr to user defined data
+                                          to be passed to Get_HG_Edge_Info() */
+  /***************************************************************************/
   ZOLTAN_HG_EDGE_LIST_FN *Get_HG_Edge_List;    
-                                       /* Fn ptr to get an object's
-                                          hyper-edge list.           */
+                                       /* Fn ptr to get a processor's
+                                          hyperedge vertex lists.           */
   ZOLTAN_HG_EDGE_LIST_FORT_FN *Get_HG_Edge_List_Fort;/* Fortran version      */
   void *Get_HG_Edge_List_Data;         /* Ptr to user defined data
                                           to be passed to Get_HG_Edge_List() */
-  /***************************************************************************/
-  ZOLTAN_NUM_HG_PINS_FN *Get_Num_HG_Pins;      
-                                       /* Fn ptr to get the total
-                                          # pins in local hypergraph */
-  ZOLTAN_NUM_HG_PINS_FORT_FN *Get_Num_HG_Pins_Fort; 
-                                       /* Fortran version             */
-  void *Get_Num_HG_Pins_Data;          /* Ptr to user defined data
-                                           to be passed to Get_Num_HG_Pins() */
   /***************************************************************************/
   ZOLTAN_OBJ_SIZE_FN *Get_Obj_Size;    /* Function that returns the size of
                                           contiguous memory needed to store

@@ -248,9 +248,9 @@ int Zoltan_Copy_To(ZZ *to, ZZ *from)
   COPY_FIELD(Get_HG_Edge_List_Fort)
   COPY_FIELD(Get_HG_Edge_List_Data)
 
-  COPY_FIELD(Get_Num_HG_Pins)
-  COPY_FIELD(Get_Num_HG_Pins_Fort)
-  COPY_FIELD(Get_Num_HG_Pins_Data)
+  COPY_FIELD(Get_HG_Edge_Info)
+  COPY_FIELD(Get_HG_Edge_Info_Fort)
+  COPY_FIELD(Get_HG_Edge_Info_Data)
 
   COPY_FIELD(Get_Obj_Size)
   COPY_FIELD(Get_Obj_Size_Fort)

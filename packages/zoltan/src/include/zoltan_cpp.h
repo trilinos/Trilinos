@@ -405,10 +405,10 @@ public:
   }
 
   ///--------------------------
-  int Set_Num_HG_Pins_Fn     ( ZOLTAN_NUM_HG_PINS_FN * fn_ptr,
+  int Set_HG_Edge_Info_Fn    ( ZOLTAN_HG_EDGE_INFO_FN * fn_ptr,
                                void * data = 0 )
   {
-    return Zoltan_Set_Num_HG_Pins_Fn( ZZ_Ptr, fn_ptr, data );
+    return Zoltan_Set_HG_Edge_Info_Fn( ZZ_Ptr, fn_ptr, data );
   }
 
   ///--------------------------
