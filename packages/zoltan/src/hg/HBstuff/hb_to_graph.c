@@ -5,7 +5,7 @@
 
 main (int argc, char *argv[])
     {
-    int nRow, nCol, nz, count, nEdge, nPin;
+    int nRow, nCol, nz, nEdge, nPin;
     int *rowindex = NULL, *colstart = NULL;
     double *val = NULL;
     int i, ii;
@@ -64,7 +64,6 @@ main (int argc, char *argv[])
     temp  = calloc (nCol, sizeof (int));
     for (row = 0; row < nRow; row++)
        {
-       count = 0;
        for (i = 0; i < nCol; i++)
           temp[i] = 0;
 
@@ -73,14 +72,15 @@ main (int argc, char *argv[])
 
        for (i = colstart[row]; i < colstart[row+1]; i++)
           temp[rowindex[i]] = 1;
+          
+       for (i = rowstart[row]; i < rowstart[row+1]; i++)
+          for (ii = colstart[row]; ii < colstart[row+1]; ii++)
+             if (colindex[i] <= rowindex[ii])
+                ++nPin;
 
        for (i = 0; i < nRow; i++)
           if (temp[i] != 0)
-             {
              fprintf (g, "%d ", i+1);
-             nPin++;
-             count++;
-             }
        fprintf (g, "\n");
        }
     rewind (g);
