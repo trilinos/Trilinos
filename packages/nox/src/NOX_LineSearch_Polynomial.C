@@ -134,6 +134,9 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
   if (!isConverged)
     totalNumNonTrivialLineSearches += 1;
 
+  double prevf = 0;
+  double previousStep = 0;
+  double tempStep;
   bool isFirstPass = true;
   while ((!isConverged) && (!isFailed)) {
 
@@ -146,10 +149,6 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     
     totalNumIterations += 1;
     nIters ++;
-
-    double prevf = 0;
-    double previousStep = 0;
-    double tempStep;
     
     if ((isFirstPass) || (interpolationType == Quadratic)) {
       
