@@ -229,11 +229,18 @@ int get_first_element(void *data, LB_GID *global_id, LB_LID *local_id,
 {
   ELEM_INFO *elem;
 
+ *ierr = LB_OK; 
+
   if (data == NULL) {
     *ierr = LB_FATAL;
     return 0;
   }
   
+  if (Mesh.num_elems == 0) {
+    /* No elements on this processor */
+    return 0;
+  }
+
   elem = (ELEM_INFO *) data;
 
   *local_id = 0;
@@ -244,8 +251,6 @@ int get_first_element(void *data, LB_GID *global_id, LB_LID *local_id,
 
   if (wdim>1)
     *ierr = LB_WARN; /* we didn't expect multidimensional weights */
-  else
-    *ierr = LB_OK; 
 
   return 1;
 }
