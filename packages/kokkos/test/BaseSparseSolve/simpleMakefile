@@ -1,6 +1,7 @@
 SRCDIR=../../src
 #CXXFLAGS=-I$(SRCDIR) -I../BaseSparseMultiply -O0 -g
 #FFLAGS=-O0 -g
+FC=g77
 CXXFLAGS=-I$(SRCDIR) -I../BaseSparseMultiply -O5 -funroll-all-loops -malign-double
 FFLAGS=-O5 -funroll-all-loops -malign-double
 TARGET=BaseSparseSolve.exe
@@ -10,7 +11,7 @@ OBJ_EXT=o
 OBJ=cxx_main.o scsrmm2a5.o Kokkos_dcrsmv.o
 
 $(TARGET): $(OBJ)
-	$(CXX) -o $(TARGET) $(OBJ) -lblas_fast -lg2c -lm
+	$(CXX) -o $(TARGET) $(OBJ) -lblas -lg2c -lm
 
 cxx_main.o: cxx_main.cpp ../BaseSparseMultiply/GenerateHbProblem.hpp $(SRCDIR)/*.hpp
 Kokkos_dcrsmv.o: $(SRCDIR)/Kokkos_dcrsmv.f

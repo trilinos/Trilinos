@@ -106,7 +106,7 @@ namespace KokkosTest {
    private:
 
     //! Copy constructor (Not implemented).
-    GenerateHbProblem(const GenerateHbProblem& source){};
+    GenerateHbProblem(const GenerateHbProblem<OrdinalType, ScalarType>& source){};
 
    void GenerateProblem(bool generateClassicHbMatrix, bool isRowOriented, bool hasImplicitUnitDiagonal,
 			   OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
