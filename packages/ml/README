@@ -1,3 +1,11 @@
+-1) If you want to build ML without any other package, do the following:
+
+   a) cd to the ml root directory
+   b) Type "./configure --without-ml_aztec --without-ml_epetra"
+   c) Type "make".  This should build the library, libml.a, and a small
+      example, ml/examples/mlguide.exe.
+   c) Note that not all examples have been autotooled yet.
+
 0)  ML can be built with automake and autoconfig.   For ML-specific flags, at
     the ml directory level, type "./configure --help".  Here are ML specific
     configure options.
