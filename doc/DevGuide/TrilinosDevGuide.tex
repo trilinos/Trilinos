@@ -199,7 +199,7 @@ of current Trilinos packages and their interoperability status
 is provided, along with a list of supported computer platforms.
 
 For a higher-level view of the Trilinos project, please see An Overview
-of the Trilinos Project~\cite{Trilinos-Overview}. The current set of
+of the Trilinos Project~\cite{Trilinos-Overview}.  The current set of
 packages in Trilinos is shown in Figure~\ref{Figure:TrilinosPackages}.
 
 \begin{figure}
@@ -831,6 +831,7 @@ repository in Trilinos/config.  These macros minimize the amount of redudant
  effort in using Autotools, and make it easier to apply a general change to 
 the configure process for all packages.
 \subsection{Regression Testing}
+\label{subsect:RegressionTesting}
 Trilinos provides a variety of regression
 testing capabilities.  Within a number of Trilinos packages, we employ
 ``white box'' testing where detailed information about the software is
@@ -1325,6 +1326,11 @@ Second, developers can execute a check-in version of the test harness before
 committing changes.  Developers can easily contribute to the coverage of the 
 test harness.  For more information about the test harness see 
 Section~\ref{subsect:TestHarness}.
+
+Developers are encouraged to utilize a test coverage tool when writing  
+regression tests for the test harness.  For more information about a free test 
+coverage tool called COVTOOL, which has been used to analyze the test coverage 
+for multiple Trilinos packages, see Section~\ref{subsect:RegressionTesting}.
 \end{enumerate}
 
 
