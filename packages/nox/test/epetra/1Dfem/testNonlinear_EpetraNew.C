@@ -26,7 +26,7 @@
 // 
 // ************************************************************************
 //@HEADER
-                                                                                
+                                                                    
 // 1D Finite Element Test Problem
 /* Solves the nonlinear equation:
  *
@@ -56,13 +56,13 @@
 #include "AztecOO.h"
 
 // User's application specific files 
-#include "Interface.H" 
+#include "Interface_EpetraNew.H" 
 
 using namespace std;
 
 int main(int argc, char *argv[])
 {
-
+ 
   // Initialize MPI
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -134,6 +134,7 @@ int main(int argc, char *argv[])
 			     NOX::Utils::Parameters + 
 			     NOX::Utils::Details + 
 			     NOX::Utils::Warning +
+                             NOX::Utils::Debug +
 			     NOX::Utils::Error);
   else
     printParams.setParameter("Output Information", NOX::Utils::Error);
@@ -152,31 +153,61 @@ int main(int argc, char *argv[])
   NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
   lsParams.setParameter("Aztec Solver", "GMRES");  
   lsParams.setParameter("Max Iterations", 800);  
-  lsParams.setParameter("Tolerance", 1e-4);
-  lsParams.setParameter("Output Frequency", 50);   
-  //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");
-
-  // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
-  // 1. User supplied (Epetra_RowMatrix)
-  //Epetra_RowMatrix& A = interface.getJacobian();
-  // 2. Matrix-Free (Epetra_Operator)
-  NOX::Epetra::MatrixFree A(interface, soln);
-  // 3. Finite Difference (Epetra_RowMatrix)
-  //NOX::Epetra::FiniteDifference A(interface, soln);
-  //  A.setDifferenceMethod(NOX::Epetra::FiniteDifference::Backward);
-  // 4. Jacobi Preconditioner
-  //NOX::Epetra::JacobiPreconditioner Prec(soln);
-
-  // Create the Group
-  NOX::Epetra::Group grp(printParams, lsParams, interface, soln, A); 
-  //NOX::Epetra::Group grp(lsParams, interface, soln, A, Prec); 
-  grp.computeF();
+  lsParams.setParameter("Tolerance", 1e-4);  
+  //lsParams.setParameter("Preconditioner", "None");
+  lsParams.setParameter("Preconditioner", "AztecOO");
+  //lsParams.setParameter("Jacobian Operator", "Finite Difference");
+  //lsParams.setParameter("Jacobian Operator", "Matrix-Free");
+  //lsParams.setParameter("Preconditioner Operator", "Finite Difference");
 
   // Use an Epetra Scaling object if desired
   //Epetra_Vector scaleVec(soln);
   //NOX::Epetra::Scaling scaling;
   //scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
   //grp.setLinearSolveScaling(scaling);
+
+  // Create all possible Epetra_Operators.
+  // 1. User supplied (Epetra_RowMatrix)
+  Epetra_RowMatrix& Analytic = interface.getJacobian();
+  // 2. Matrix-Free (Epetra_Operator)
+  NOX::EpetraNew::MatrixFree MF(interface, soln);
+  // 3. Finite Difference (Epetra_RowMatrix)
+  NOX::EpetraNew::FiniteDifference FD(interface, soln);
+
+  // Four constructors to create the Linear System
+  NOX::EpetraNew::Interface::Required& iReq = interface;
+
+  // **** Ctor #1 - No Jac and No Prec
+  //NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams, 
+  //				      iReq, soln);
+
+  // **** Ctor #2 - Jac but no Prec
+  //NOX::EpetraNew::Interface::Jacobian& iJac = FD;
+  //NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams,
+  //				     iReq, iJac, FD, soln);
+
+  // **** Ctor #3 - Prec but no Jac
+  //NOX::EpetraNew::Interface::Preconditioner& iPrec = FD;
+  //NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams,
+  //				      iReq, iPrec, FD, soln);
+
+  // **** Ctor #4 - Prec and Jac
+  NOX::EpetraNew::Interface::Jacobian& iJac = MF;
+  NOX::EpetraNew::Interface::Preconditioner& iPrec = FD;
+  NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams,
+					     iJac, MF, iPrec, FD, soln);
+
+  // Create the Group
+  NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
+  NOX::EpetraNew::Group grp(printParams, iReq, initialGuess, linSys);  
+
+  // uncomment the following for loca supergroups
+  MF.setGroupForComputeF(grp);
+  FD.setGroupForComputeF(grp);
+
+  // Test group accessor
+  //const NOX::EpetraNew::LinearSystem& lins = grp.getLinearSystem();
+  //lins.createPreconditioner(soln, lsParams, false);
 
   // Create the convergence tests
   NOX::StatusTest::NormF absresid(1.0e-8);
@@ -188,7 +219,7 @@ int main(int argc, char *argv[])
   converged.addStatusTest(relresid);
   converged.addStatusTest(wrms);
   converged.addStatusTest(update);
-  NOX::StatusTest::MaxIters maxiters(800);
+  NOX::StatusTest::MaxIters maxiters(20);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
   NOX::StatusTest::FiniteValue fv;
   combo.addStatusTest(fv);
@@ -210,9 +241,11 @@ int main(int argc, char *argv[])
 	cout << "Nonlinear solver failed to converge!" << endl;
   }
 
+  /*
   // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+  const NOX::EpetraNew::Group& finalGroup = dynamic_cast<const NOX::EpetraNew::Group&>(solver.getSolutionGroup());
   const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
+  */
 
   // End Nonlinear Solver **************************************
 
