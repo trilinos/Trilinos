@@ -393,8 +393,8 @@ main(int argc, char **argv)
 		   << setw(15) << argv[2] << setw(6)
 		   << MatType << " " 
 		   << special << " " 
-		   << NumMpiProcs <<  setw(6) 
-		   << numsolves << setw(3) << transpose << setprecision(12) ;
+		   << NumMpiProcs <<  setw(6)  << " " 
+		   << numsolves << setw(3) << " " << transpose << setprecision(12) ;
       if ( maxresid == -2 && maxerror == -2 ) summary_file << "Failure OK" ; 
       flush( summary_file ) ; 
     }
@@ -406,8 +406,8 @@ main(int argc, char **argv)
 	     << setw(15) << argv[2] << setw(6)
 	     << MatType << " " 
 	     << special << " " 
-	     << NumMpiProcs <<  setw(6) 
-	     << numsolves << setw(3) << transpose << setprecision(12) ;
+	     << NumMpiProcs <<  setw(6) << " " 
+	     << numsolves << setw(3) << " " << transpose << setprecision(12) ;
 	if ( maxresid == -2 && maxerror == -2 ) cerr << "Failure OK" ; 
 	flush( cerr ) ; 
       }

@@ -35,11 +35,9 @@
 #endif
 #include "Epetra_CrsGraph.h"
 
-#if 0
 extern "C" {
-}
-#endif
 #include "dmumps_c.h"
+}
 
 //! Amesos_Mumps:  An object-oriented wrapper for Mumps.
 /*!  Amesos_Mumps will solve a linear systems of equations: <TT>A X = B</TT>

@@ -187,8 +187,10 @@ int Amesos_Mumps::PerformSymbolicFactorization() {
   EPETRA_CHK_ERR( CastCrsMatrixA == 0 ) ; 
   const Epetra_Comm &Comm = RowMatrixA->Comm();
   const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm);
-  MPI_Comm MPIC = comm1.Comm() ;
-  MDS.comm_fortran = (F_INT) MPI_Comm_c2f( MPIC ) ; 
+//  MPI_Comm MPIC = comm1.Comm() ;
+//  MDS.comm_fortran = (F_INT) MPI_Comm_c2f( MPIC ) ;   // Compiled on cygwin but not on Atlantis
+
+//  MDS.comm_fortran = (F_INT) MPIR_FromPointer( MPIC ) ;  // Other recommendation from the MUMPS manual - did not compile on Atlantis either
   MDS.job = -1  ;     //  Initialization
   MDS.par = 1 ;       //  Host IS involved in computations
   MDS.sym = 0 ;       //  Matrix is not symmetric
@@ -346,23 +348,26 @@ int Amesos_Mumps::Solve() {
 
   int SerialBlda, SerialXlda ; 
   if ( UseTranspose() ) 
-    MDS.ICNTL(9) == 0 ; 
+    MDS.ICNTL(9) = 0 ; 
   else
-    MDS.ICNTL(9) == 1 ; 
+    MDS.ICNTL(9) = 1 ; 
 
   assert( SerialB->ExtractView( &SerialBvalues, &SerialBlda ) == 0 ) ; 
   assert( SerialX->ExtractView( &SerialXvalues, &SerialXlda ) == 0 ) ; 
-  assert( SerialBlda == NumGlobalElements_ ) ; 
-  assert( SerialXlda == NumGlobalElements_ ) ; 
-  MDS.job = 2  ;     // Request numeric factorization
+  assert( iam != 0 ||  SerialBlda == NumGlobalElements_ ) ; 
+  assert(  iam != 0 || SerialXlda == NumGlobalElements_ ) ; 
+  MDS.job = 3  ;     // Request solve
   
   for ( int j =0 ; j < nrhs; j++ ) { 
-    for ( int i=0; i< NumGlobalElements_ ; i++ ) 
-      SerialXvalues[j*SerialXlda+i] = SerialBvalues[j*SerialXlda+i];
-    MDS.rhs =  &SerialXvalues[j*SerialXlda];
+	if ( iam == 0 ) { 
+      for ( int i=0; i< NumGlobalElements_ ; i++ ) 
+        SerialXvalues[j*SerialXlda+i] = SerialBvalues[j*SerialXlda+i];
+      MDS.rhs =  &SerialXvalues[j*SerialXlda];
+}
     dmumps_c( &MDS ) ;  // Perform solve
     
-#if 0
+//  #define PRINTALL
+#ifdef PRINTALL
       for ( int k=0; k < nrhs ; k++ ) {
 	for ( int i =0; i < NumGlobalElements_ ; i++ ) {
 	  cout << "h" << j <<"X( " << i+1 << "," << k+1 << ") = " << SerialXvalues[i+SerialXlda*k] << ";" << endl ; 
@@ -376,27 +381,15 @@ int Amesos_Mumps::Solve() {
 #endif
   }
 
-#if 0
+#ifdef PRINTALL
   Comm().Barrier();
   if  (iam == 0 ) { 
     cout << " SerialXlda = " << SerialXlda << endl ; 
     cout << " SerialBlda = " << SerialBlda << endl ; 
     //  Print for matlab 
     //
-    for (int i = 0; i < NumGlobalElements_ ; i++ ) { 
-      for ( int j = Ap[i]; j < Ap[i+1] ; j++ ) { 
-	cout << "A(" << i +1  << "," << Ai[j]+1 << " ) = " << Aval[j] << "; % iam = " << iam <<endl ; 
-      } 
-    }
-    for ( int j=0; j < nrhs ; j++ ) {
-      for ( int i =0; i < NumGlobalElements_ ; i++ ) {
-	cout << "X( " << i+1 << "," << j+1 << ") = " << SerialXvalues[i+SerialXlda*j] << ";" << endl ; 
-      }
-    }
-    for ( int j=0; j < nrhs ; j++ ) {
-      for ( int i =0; i < NumGlobalElements_ ; i++ ) {
-	cout << "B( " << i+1 << "," << j+1 << ") = " << SerialBvalues[i+SerialBlda*j] << ";" << endl ; 
-      }
+    for (int i = 0; i < numentries_ ; i++ ) { 
+	cout << "A(" << Row[i] << "," << Col[i] << " ) = " << Val[i] << "; % iam = " << iam <<endl ; 
     }
   }
 #endif
@@ -413,7 +406,7 @@ int Amesos_Mumps::Solve() {
     delete SerialXextract ;
   }
   
-#if 0
+#ifdef PRINTALL
   cout << " Here is SerialB " << endl ; 
   SerialB->Print(cout ) ; 
   cout << " There was SerialB " << endl ; 

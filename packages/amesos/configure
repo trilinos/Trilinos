@@ -951,7 +951,7 @@ Optional Packages:
   --with-amesos-mumpsdir  Set MUMPS directory (default is
                           ${tac_with_trilinos3pldir}/MUMPS_4.2_beta/, )
   --with-amesos-mumpslib  Set MUMPS library (default is
-                          ${tac_with_amesos_mumpsdir}UMFPACK/Lib/libumfpack.a, )
+                          ${tac_with_amesos_mumpsdir}/libdmumps.a, )
   --with-amesos-scalapacklib
                           Set ScaLAPACK library (default is
                           ${tac_with_trilinos3pldir}/ScaLAPACK/libscalpack.a, )
@@ -7821,7 +7821,7 @@ if test "${with_amesos_mumpslib+set}" = set; then
   withval="$with_amesos_mumpslib"
   tac_with_amesos_mumpslib=$withval
 else
-  tac_with_amesos_mumpslib=${tac_with_amesos_mumpsdir}UMFPACK/Lib/libumfpack.a
+  tac_with_amesos_mumpslib=${tac_with_amesos_mumpsdir}/libdmumps.a
 fi;
 
     as_ac_File=`echo "ac_cv_file_${tac_with_amesos_mumpslib}" | $as_tr_sh`

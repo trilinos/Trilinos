@@ -524,9 +524,9 @@ if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 #
 #  The following hack allows me to compile locally even though I cannot compile mumps
 #  on my laptop without an f90 compiler.  
-#
+# 
 if test "X$target" == "Xsgi"; then
-    TAC_ARG_WITH_SUB( amesos, mumpslib, [Set MUMPS library],  ${tac_with_amesos_mumpsdir}UMFPACK/Lib/libumfpack.a )
+    TAC_ARG_WITH_SUB( amesos, mumpslib, [Set MUMPS library],  ${tac_with_amesos_mumpsdir}/libdmumps.a )
     AC_CHECK_FILE(${tac_with_amesos_mumpslib})
 
     TAC_ARG_WITH_SUB( amesos, scalapacklib, [Set ScaLAPACK library],  ${tac_with_trilinos3pldir}/ScaLAPACK/libscalpack.a )
