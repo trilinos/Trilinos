@@ -52,9 +52,7 @@
 #endif
 #include "Epetra_Object.h"
 
-bool verbose = false ; 
-
-
+static bool verbose = false; 
 
 Amesos_BaseSolver* Amesos::Create(const char* ClassType, 
 				  const Epetra_LinearProblem& LinearProblem ) 

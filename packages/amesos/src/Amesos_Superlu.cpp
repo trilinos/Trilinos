@@ -56,13 +56,14 @@ struct SLUData
 
   //=============================================================================
   Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
-    SerialCrsMatrixA_(0), 
-    SerialMap_(0), 
-    SerialMatrix_(0), 
     FactorizationDone_(false),
     FactorizationOK_(false),
     UseTranspose_(false),
-    iam_(-1) {
+    iam_(-1),
+    SerialMap_(0), 
+    SerialCrsMatrixA_(0), 
+    SerialMatrix_(0)
+  {
 
   using namespace SLU;
 
@@ -120,16 +121,13 @@ int Amesos_Superlu::ConvertToSerial() {
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
 
-  Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
-  EPETRA_CHK_ERR( CastCrsMatrixA == 0 ) ; 
-
   iam_ = Comm().MyPID() ;
 
-  const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ; 
+  const Epetra_Map &OriginalMap = RowMatrixA->RowMatrixRowMap() ; 
 
-  NumGlobalElements_ = CastCrsMatrixA->NumGlobalRows();
-  numentries_ = CastCrsMatrixA->NumGlobalNonzeros();
-  assert( NumGlobalElements_ == CastCrsMatrixA->NumGlobalCols() );
+  NumGlobalElements_ = RowMatrixA->NumGlobalRows();
+  numentries_ = RowMatrixA->NumGlobalNonzeros();
+  assert( NumGlobalElements_ == RowMatrixA->NumGlobalCols() );
 
   //
   //  Create a serial matrix 
@@ -149,7 +147,7 @@ int Amesos_Superlu::ConvertToSerial() {
   if (SerialMap_) { delete SerialMap_ ; SerialMap_ = 0 ; } 
   if ( SerialCrsMatrixA_ ) { delete SerialCrsMatrixA_ ; SerialCrsMatrixA_ = 0 ; } 
   if ( false && IsLocal_==1 ) {  //FIXME - remove the false here
-     SerialMatrix_ = CastCrsMatrixA ;
+//     SerialMatrix_ = CastCrsMatrixA ;
   } else {
     assert( SerialMap_ == 0 ) ; 
     SerialMap_ = new Epetra_Map( NumGlobalElements_, NumMyElements_, 0, Comm() );
@@ -353,8 +351,9 @@ int Amesos_Superlu::SetParameters( Teuchos::ParameterList &ParameterList ) {
 }
 
 
-bool Amesos_Superlu::MatrixShapeOK() const { 
-  bool OK ;
+bool Amesos_Superlu::MatrixShapeOK() const 
+{ 
+  bool OK = true;
 
   if ( GetProblem()->GetOperator()->OperatorRangeMap().NumGlobalPoints() != 
        GetProblem()->GetOperator()->OperatorDomainMap().NumGlobalPoints() ) OK = false;
@@ -509,7 +508,6 @@ int Amesos_Superlu::Solve() {
   double *SerialBvalues ;
 
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
   Epetra_MultiVector *SerialXextract = 0;
   Epetra_MultiVector *SerialBextract = 0;
     
@@ -523,7 +521,7 @@ int Amesos_Superlu::Solve() {
     SerialX = vecX ; 
   } else { 
     assert( IsLocal_ == 0 ) ;
-    const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap();
+    const Epetra_Map &OriginalMap = RowMatrixA->RowMatrixRowMap();
     Epetra_MultiVector *SerialXextract = new Epetra_MultiVector( *SerialMap_, nrhs ) ; 
     Epetra_MultiVector *SerialBextract = new Epetra_MultiVector( *SerialMap_, nrhs ) ; 
 
@@ -595,7 +593,7 @@ int Amesos_Superlu::Solve() {
     berr_ = new double[ nrhs ] ; 
 #else
     assert( berr_.size() == ferr_.size());
-    if ( true || nrhs > ferr_.size() ) {
+    if ( true || nrhs > (int)ferr_.size() ) {
       ferr_.resize( nrhs ) ; 
       berr_.resize( nrhs ) ; 
     }
@@ -642,7 +640,7 @@ int Amesos_Superlu::Solve() {
   // 
 
   if ( IsLocal_ == 0 ) { 
-    const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ; 
+    const Epetra_Map &OriginalMap = RowMatrixA->RowMatrixRowMap() ; 
     Epetra_Import ImportFromSerial( OriginalMap, *SerialMap_ );
     vecX->Import( *SerialX, ImportFromSerial, Insert ) ;
     delete SerialBextract ;

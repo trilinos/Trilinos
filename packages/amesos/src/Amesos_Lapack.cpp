@@ -38,6 +38,7 @@
 Amesos_Lapack::Amesos_Lapack(const Epetra_LinearProblem &Problem) :
   SerialMatrix_(0),
   SerialMap_(0),
+  RowImporter_(0),
   UseTranspose_(false),
   Problem_(&Problem),
   PrintTiming_(false),
@@ -47,7 +48,6 @@ Amesos_Lapack::Amesos_Lapack(const Epetra_LinearProblem &Problem) :
   verbose_(1),
   Threshold_(0.0),
   AddToDiag_(0.0),
-  RowImporter_(0),
   IsSymbolicFactorizationOK_(false),
   IsNumericFactorizationOK_(false),
   ConTime_(0.0),
@@ -140,8 +140,9 @@ int Amesos_Lapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
   
   if (ParameterList.isSublist("Lapack") ) {
     Teuchos::ParameterList& LAPACKParams = ParameterList.sublist("Lapack") ;
+    bool Equilibrate = LAPACKParams.get("Equilibrate", true);
+    DenseSolver_.FactorWithEquilibration(Equilibrate);
   }
-    DenseSolver_.FactorWithEquilibration(true);
 
   return 0;
 }
@@ -334,7 +335,6 @@ int Amesos_Lapack::SerialToDense()
   vector<int> Indices;
   Indices.resize(Length);
 
-  int count = 0;
   for (int j = 0 ; j < Matrix()->NumMyRows() ; ++j) {
 
     int NumEntries;
@@ -398,7 +398,6 @@ int Amesos_Lapack::DistributedToDense()
   vector<int> Indices;
   Indices.resize(Length);
 
-  int count = 0;
   for (int j = 0 ; j < SerialMatrix().NumMyRows() ; ++j) {
 
     int NumEntries;
