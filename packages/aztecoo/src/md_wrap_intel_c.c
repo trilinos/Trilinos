@@ -27,7 +27,7 @@ static char *cvs_wrapint_id =
 
 #include <stdio.h>
 #include <signal.h>
-
+#include "az_aztec_defs.h"
 #ifdef AZTEC_MPI
 #include <mpi.h>
 #else

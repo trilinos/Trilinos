@@ -27,7 +27,7 @@
 #include <math.h>
 #include <float.h>
 #include "az_aztec.h"
-
+#include "az_blas_wrappers.h"
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
@@ -167,7 +167,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
      }
   }
 
-  if (v1 != NULL) dots[count++] = ddot_(&N, v1, &one, v2, &one);
+  if (v1 != NULL) dots[count++] = DDOT_F77(&N, v1, &one, v2, &one);
 
   /* initialize */
 
@@ -175,7 +175,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
 
   case AZ_noscaled:
     if ((*r_avail) || conv_info->not_initialized) {
-      dots[count] = ddot_(&N, tr, &one, tr, &one);
+      dots[count] = DDOT_F77(&N, tr, &one, tr, &one);
       AZ_gdot_vec(count + 1, dots, tmp, proc_config);
       *r_norm = sqrt(dots[count]);
     }
@@ -189,7 +189,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
 
   case AZ_r0:
     if ((*r_avail) || conv_info->not_initialized) {
-      dots[count] = ddot_(&N, tr, &one, tr, &one);
+      dots[count] = DDOT_F77(&N, tr, &one, tr, &one);
       AZ_gdot_vec(count + 1, dots, tmp, proc_config);
       *r_norm = sqrt(dots[count]);
     }
@@ -207,7 +207,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
 
   case AZ_rhs:
     if (conv_info->not_initialized) {
-      dots[count++] = ddot_(&N, tr, &one, tr, &one);
+      dots[count++] = DDOT_F77(&N, tr, &one, tr, &one);
 
       if  ( (options[AZ_ignore_scaling]) && (tr != r) ) {
           for (i = 0; i < N; i++) tr[i] = b[i];
@@ -215,7 +215,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
                      conv_info->scaling);
       }
       else tr = b;
-      dots[count  ] = ddot_(&N, tr, &one, tr, &one);
+      dots[count  ] = DDOT_F77(&N, tr, &one, tr, &one);
       AZ_gdot_vec(count + 1, dots, tmp, proc_config);
 
       conv_info->b_norm = sqrt(dots[count--]);
@@ -230,7 +230,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
     }
 
     else if (*r_avail) {
-      dots[count] = ddot_(&N, tr, &one, tr, &one);
+      dots[count] = DDOT_F77(&N, tr, &one, tr, &one);
 
       AZ_gdot_vec(count + 1, dots, tmp, proc_config);
       *r_norm = sqrt(dots[count]);
@@ -245,7 +245,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
 
   case AZ_Anorm:
     if (conv_info->not_initialized) {
-      dots[count] = ddot_(&N, tr, &one, tr, &one);
+      dots[count] = DDOT_F77(&N, tr, &one, tr, &one);
 
       AZ_gdot_vec(count+1, dots, tmp, proc_config);
       *r_norm = sqrt(dots[count]);
@@ -275,7 +275,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
     }
 
     else if (*r_avail) {
-      dots[count] = ddot_(&N, tr, &one, tr, &one);
+      dots[count] = DDOT_F77(&N, tr, &one, tr, &one);
 
       AZ_gdot_vec(count + 1, dots, tmp, proc_config);
       *r_norm = sqrt(dots[count]);
@@ -371,7 +371,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
 
     for (i = 0; i < N; i++) temp[i] = tr[i] / w[i];
 
-    dots[count] = ddot_(&N, temp, &one, temp, &one);
+    dots[count] = DDOT_F77(&N, temp, &one, temp, &one);
 
     AZ_gdot_vec(count + 1, dots, tmp, proc_config);
 

@@ -27,7 +27,8 @@
 #include <math.h>
 #include <float.h>
 #include "az_aztec.h"
-
+#include "az_blas_wrappers.h"
+#include "az_lapack_wrappers.h"
 /*---------------- External Definitions -------------------------------------*/
 
 #ifdef eigen
@@ -332,7 +333,7 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
 
            Dmat->matvec(current_rhs, v, Dmat, proc_config);
 
-           dcopy_(&N, v, &ione, current_rhs, &ione);
+           DCOPY_F77(&N, v, &ione, current_rhs, &ione);
 
            if (options[AZ_poly_ord] > 1) {
               sprintf(tag,"y_prec %s",precond->context->tag);
@@ -636,7 +637,7 @@ void AZ_calc_blk_diag_inv(double *val, int *indx, int *bindx, int *rpntr,
 
           /* invert the dense matrix */
 
-          dgetrf_(&m1, &m1, &d_inv[d_indx[iblk_count]], &m1, ipiv, &info);
+          DGETRF_F77(&m1, &m1, &d_inv[d_indx[iblk_count]], &m1, ipiv, &info);
 
           if (info < 0) {
             (void) fprintf(stderr, "%sERROR: argument %d is illegal.\n", yo,
@@ -651,7 +652,7 @@ void AZ_calc_blk_diag_inv(double *val, int *indx, int *bindx, int *rpntr,
             exit(-1);
           }
 
-          dgetri_(&m1, &d_inv[d_indx[iblk_count]], &m1, ipiv, work, &m1, &info);
+          DGETRI_F77(&m1, &d_inv[d_indx[iblk_count]], &m1, ipiv, work, &m1, &info);
 
           if (info < 0) {
             (void) fprintf(stderr, "%sERROR: argument %d is illegal.\n", yo,
@@ -811,7 +812,7 @@ void AZ_calc_blk_diag_LU(double *val, int *indx, int *bindx, int *rpntr,
 
           /* invert the dense matrix */
 
-          dgetrf_(&m1, &m1, &d_inv[d_indx[iblk_count]], &m1, &(ipvt[rpntr[iblk_row]]), &info);
+          DGETRF_F77(&m1, &m1, &d_inv[d_indx[iblk_count]], &m1, &(ipvt[rpntr[iblk_row]]), &info);
 
           if (info < 0) {
             (void) fprintf(stderr, "%sERROR: argument %d is illegal.\n", yo,
@@ -989,7 +990,7 @@ void AZ_sym_gauss_seidel_sl(double val[],int bindx[],double x[],int data_org[],
   sprintf(tag,"b/sGS %s",context->tag);
   b = AZ_manage_memory(N*sizeof(double), AZ_ALLOC, AZ_SYS, tag, &i);
 
-  dcopy_(&N, x, &ione, b, &ione);
+  DCOPY_F77(&N, x, &ione, b, &ione);
   ptr_val = val;
 
   for (i = 0; i < N; i++) {

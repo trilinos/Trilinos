@@ -21,7 +21,7 @@
  * Government.                                                                 *
  ******************************************************************************/
 
-
+#include "az_aztec_defs.h"
 #ifdef AZTEC_MPI
 #include <mpi.h>
 #else

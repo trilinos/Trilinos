@@ -1,3 +1,4 @@
+#include "AztecOO.h"
 
 #ifdef EPETRA_MPI
 #define AZ_MPI
@@ -16,7 +17,6 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MsrMatrix.h"
 #include "Epetra_LinearProblem.h"
-#include "AztecOO.h"
 
 int main(int argc, char *argv[])
 {

@@ -27,6 +27,7 @@
 #include <math.h>
 #include <float.h>
 #include "az_aztec.h"
+#include "az_blas_wrappers.h"
 
 void AZ_pcg_f(double b[], double x[], double weight[], int options[], 
               double params[], int proc_config[],double status[], 
@@ -160,11 +161,11 @@ double *block;
         printf("Not space to apply vectors in CG\n");
         exit(1);
      }
-     dgemv_(T,&N,&(kvec_sizes[AZ_Nkept]),&doubleone,block,&N, r, &one, &dzero, dots, &one, 1);
+     DGEMV_F77(T,&N,&(kvec_sizes[AZ_Nkept]),&doubleone,block,&N, r, &one, &dzero, dots, &one);
      AZ_gdot_vec(kvec_sizes[AZ_Nkept], dots, &(dots[kvec_sizes[AZ_Nkept]]), proc_config);
      for (i = 0; i < kvec_sizes[AZ_Nkept]; i++) dots[i] = dots[i]/ptap[i];
-     dgemv_(T2, &N, &(kvec_sizes[AZ_Nkept]), &doubleone, block, &N, dots, &one, &doubleone, 
-            x,  &one, 1);
+     DGEMV_F77(T2, &N, &(kvec_sizes[AZ_Nkept]), &doubleone, block, &N, dots, &one, &doubleone, 
+            x,  &one);
 
       AZ_free(dots);
       AZ_compute_residual(b, x, r, proc_config, Amat);
@@ -181,7 +182,7 @@ double *block;
   /*  z = M r */
   /*  p = 0   */
 
-  dcopy_(&N, r, &one, z, &one);
+  DCOPY_F77(&N, r, &one, z, &one);
   status[AZ_first_precond] = AZ_second();
   if (precond_flag)
     precond->prec_function(z,options,proc_config,params,Amat,precond);
@@ -223,7 +224,7 @@ double *block;
     if ((options[AZ_orth_kvecs]) && (kvec_sizes != NULL)) { 
        for (i = 0; i < current_kept; i++) {
           alpha = -AZ_gdot(N, ap, saveme[i], proc_config)/ptap[i];
-          daxpy_(&N, &alpha,  saveme[i],  &one, p, &one);
+          DAXPY_F77(&N, &alpha,  saveme[i],  &one, p, &one);
        }
        if (current_kept > 0) Amat->matvec(p, ap, Amat, proc_config);
     }
@@ -256,10 +257,10 @@ double *block;
     /* r = r - alpha*Ap */
     /* z = M^-1 r       */
 
-    daxpy_(&N, &alpha,  p,  &one, x, &one);
+    DAXPY_F77(&N, &alpha,  p,  &one, x, &one);
 
     if (iter <= options[AZ_keep_kvecs]) {
-       dcopy_(&N, p, &one, saveme[iter-1], &one);
+       DCOPY_F77(&N, p, &one, saveme[iter-1], &one);
        ptap[iter-1] = p_ap_dot ;
        kvec_sizes[AZ_Nkept]++;
        current_kept = kvec_sizes[AZ_Nkept];
@@ -267,12 +268,12 @@ double *block;
 /*
     else {
        i = (iter-1)%options[AZ_keep_kvecs];
-       dcopy_(&N, p, &one, saveme[i], &one);
+       DCOPY_F77(&N, p, &one, saveme[i], &one);
        ptap[i] = p_ap_dot ;
     }
 */
-    daxpy_(&N, &nalpha, ap, &one, r, &one);
-    dcopy_(&N, r, &one, z, &one);
+    DAXPY_F77(&N, &nalpha, ap, &one, r, &one);
+    DCOPY_F77(&N, r, &one, z, &one);
 
     if (precond_flag) precond->prec_function(z,options,proc_config,params,Amat,precond);
 

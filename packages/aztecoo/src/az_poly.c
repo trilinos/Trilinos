@@ -26,6 +26,7 @@
 #include <math.h>
 #include <stdio.h>
 #include "az_aztec.h"
+#include "az_blas_wrappers.h"
 
 /******************************************************************************/
 /******************************************************************************/
@@ -140,8 +141,8 @@ void AZ_polynomial_expansion( double z[], int options[], int proc_config[],
 
   switch (param_flag) {
   case 0:                       /* Neumann series */
-    dscal_(&N, &inv_omega, z, &one);
-    dcopy_(&N, z, &one, w, &one);
+    DSCAL_F77(&N, &inv_omega, z, &one);
+    DCOPY_F77(&N, z, &one, w, &one);
 
     for (p = power; p > 0; p--){
     precond->Pmat->matvec(z, poly_temp, precond->Pmat, proc_config);
@@ -156,8 +157,8 @@ void AZ_polynomial_expansion( double z[], int options[], int proc_config[],
 
     /* initialization */
 
-    dcopy_(&N, z, &one, w, &one);
-    dscal_(&N, c+power, z, &one);
+    DCOPY_F77(&N, z, &one, w, &one);
+    DSCAL_F77(&N, c+power, z, &one);
 
     for (p = power - 1; p >= 0; p--) {
     precond->Pmat->matvec(z, poly_temp, precond->Pmat, proc_config);

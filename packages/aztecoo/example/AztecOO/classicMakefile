@@ -5,7 +5,7 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 FORMAT=MSR
 
 DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
-         -DIFPACK -DSPARSEBLAS -D$(FORMAT)
+         -DIFPACK -D$(FORMAT)
 
 INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/epetra/src \
            -I$(TRILINOS_HOME)/packages/aztecoo/src \

@@ -25,6 +25,96 @@
 #ifndef __AZTECDEFSH__
 
 #define __AZTECDEFSH__
+
+#ifdef HAVE_CONFIG_H
+#include "AztecOO_config.h"
+/*This file doesn't exist in old make and configure system*/
+
+#ifdef HAVE_OLDIFPACK
+
+#ifndef IFPACK
+#define IFPACK
+#endif
+
+#endif
+
+#ifdef HAVE_MPI
+
+#ifndef AZTEC_MPI
+#define AZTEC_MPI
+#endif
+
+#ifndef AZ_MPI
+#define AZ_MPI
+#endif
+
+#ifndef EPETRA_MPI
+#define EPETRA_MPI
+#endif
+
+#ifndef ML_MPI
+#define ML_MPI
+#endif
+
+#endif /*HAVE_MPI*/
+
+/*
+#ifdef HAVE_CSTDLIB
+#include <cstdlib>
+#else
+#include <stdlib.h>
+#endif
+
+#ifdef HAVE_CSTDIO
+#include <cstdio>
+#else
+#include <stdio.h>
+#endif
+
+#ifdef HAVE_CASSERT
+#include <cassert>
+#else
+#include <assert.h>
+#endif
+
+#ifdef HAVE_STRING
+#include <string>
+#else
+#include <string.h>
+#endif
+
+#ifdef HAVE_CMATH
+#include <cmath>
+#else
+#include <math.h>
+#endif
+
+#ifdef HAVE_CFLOAT
+#include <cfloat>
+#else
+#include <float.h>
+#endif
+
+#ifdef HAVE_CTIME
+#include <ctime>
+#else
+#include <sys/time.h>
+#endif
+
+#include <malloc.h>
+
+#else HAVE_CONFIG_H
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+#include <string.h>
+#include <math.h>
+#include <float.h>
+#include <sys/time.h>
+#include <malloc.h> */
+#endif /*HAVE_CONFIG_H*/
+
+
 #ifndef __AZTECH__
 #ifdef AZTEC_MPI
 #include <mpi.h>

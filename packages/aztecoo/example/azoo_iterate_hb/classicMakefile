@@ -15,10 +15,11 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 FORMAT=MSR
 
 DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
-         -DIFPACK -DSPARSEBLAS -D$(FORMAT)
+         -DIFPACK -D$(FORMAT)
 
 INCLUDES = $(ARCH_INCLUDES) $(EPETRA_INCLUDES) \
-           $(AZTECOO_INCLUDES) $(TRIUTILS_INCLUDES) $(SPBLAS_INCLUDES)
+           $(AZTECOO_INCLUDES) $(TRIUTILS_INCLUDES)
+#           $(AZTECOO_INCLUDES) $(TRIUTILS_INCLUDES) $(SPBLAS_INCLUDES)
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(INCLUDES)
@@ -28,7 +29,7 @@ LDFLAGS=$(ARCH_LDFLAGS)
 
 
 LIB_PATHS= $(LIBAZTECOO) $(LIBEPETRA) $(LIBIFPACK) \
-           $(LIBLAPACK) $(LIBBLAS) $(LIBY12M) $(LIBSPBLAS) \
+           $(LIBLAPACK) $(LIBBLAS) $(LIBY12M) \
            $(LIBTRILINOS_UTIL)
 
 #=======================================================================
@@ -47,8 +48,8 @@ TEST_C = \
           scscmv.c \
           scscres.c \
           smsrres.c \
-          svbrres.c \
           write_vec.c
+#          svbrres.c \
 
 TEST_F = blassm.f \
           formats.f \

@@ -13,11 +13,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_wrapnc_id =
-  "$Id$";
-#endif
-
 
 /*******************************************************************************
  * Copyright 1995, Sandia Corporation.  The United States Government retains a *
@@ -26,7 +21,7 @@ static char *cvs_wrapnc_id =
  * Government.                                                                 *
  ******************************************************************************/
 
-
+#include "az_aztec_defs.h"
 #ifdef AZTEC_MPI
 #include <mpi.h>
 #else

@@ -28,6 +28,7 @@
 #include <math.h>
 #include <float.h>
 #include "az_aztec.h"
+#include "az_blas_wrappers.h"
 
 /*
  * File containing utility functions for solvers.  Note: Some of the fem high
@@ -184,7 +185,7 @@ double AZ_gdot(int N, double r[], double z[], int proc_config[])
 
   add_N = N;
 
-  return AZ_gsum_double(ddot_(&add_N, r, &one, z, &one), proc_config);
+  return AZ_gsum_double(DDOT_F77(&add_N, r, &one, z, &one), proc_config);
 
 } /* dot */
 
@@ -506,7 +507,7 @@ void AZ_time_kernals(int gN, double gnzeros, double val[], int indx[],
   start_t = AZ_second();
   for (i = 1; i <= ntimes; i++) {
     Djunk = (double) i;
-    daxpy_(&N, &Djunk, x, &one, y, &one);
+    DAXPY_F77(&N, &Djunk, x, &one, y, &one);
   }
   daxpy_comp_t = AZ_gmax_double(AZ_second() - start_t, proc_config);
 

@@ -29,6 +29,8 @@
 #define __cplusplus
 #endif
 
+#include "az_aztec.h"
+
 #ifdef AZTEC_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -38,8 +40,6 @@
 #include "Epetra_Vector.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_CrsMatrix.h"
-
-#include "az_aztec.h"
 
 
 /*! \file 

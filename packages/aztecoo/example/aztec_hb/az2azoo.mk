@@ -27,7 +27,7 @@ PETRA_COMM                 = $(PETRA_COMM_$(TRILINOS_COMM))
 FORMAT=VBR
 
 DEFINES= -D$(TRILINOS_ARCH) $(PETRA_ARCH_DEFINES) -D$(PETRA_COMM) \
-         -DIFPACK -DSPARSEBLAS -D$(FORMAT)
+         -DIFPACK -D$(FORMAT)
 
 INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/src/petra $(BLAS_INCLUDES) \
            -I$(TRILINOS_HOME)/src/aztec \
@@ -41,7 +41,7 @@ LDFLAGS=$(ARCH_LDFLAGS)
 
 
 LIB_PATHS= $(LIBPETRA) $(LIBAZTEC) $(LIBIFPACK) $(LIBMACHDEP) \
-           $(LIBLAPACK) $(LIBBLAS) $(LIBY12M) $(LIBSPBLAS) \
+           $(LIBLAPACK) $(LIBBLAS) $(LIBY12M) \
            $(LIBTRILINOS_UTIL)
 
 #=======================================================================

@@ -1,3 +1,8 @@
+#include "Epetra_Map.h"
+#include "Epetra_BlockMap.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_MsrMatrix.h"
 
 #ifdef EPETRA_MPI
 #define AZ_MPI
@@ -10,11 +15,6 @@
 #define __cplusplus
 #endif
 #include "Epetra_SerialComm.h"
-#include "Epetra_Map.h"
-#include "Epetra_BlockMap.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_MsrMatrix.h"
 #include "Epetra_Time.h"
 int power_method(bool TransA, Epetra_MsrMatrix& A,
            Epetra_Vector& q,

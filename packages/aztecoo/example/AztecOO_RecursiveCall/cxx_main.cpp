@@ -1,3 +1,4 @@
+#include "AztecOO.h"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -16,7 +17,6 @@
 #include "Epetra_LinearProblem.h"
 #include "Poisson2dOperator.h"
 #include "AztecOO_Operator.h"
-#include "AztecOO.h"
 
 int main(int argc, char *argv[])
 {

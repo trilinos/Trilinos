@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <math.h>
 #include "az_aztec.h"
+#include "az_blas_wrappers.h"
+#include "az_lapack_wrappers.h"
 
 /**************************************************************/
 /**************************************************************/
@@ -98,14 +100,10 @@ void AZ_fact_bilu(int Nrows, AZ_MATRIX *matrix, int diag_block[],
                k = bindx[tk];
                if ( (ipattern[k] != -1) && (k > j) ) {
                   sk = cpntr[k+1] - cpntr[k];
-                  dgemm_(N, N, &si, &sk, &sj, &alpha, 
+                  DGEMM_F77(N, N, &si, &sk, &sj, &alpha, 
                          &(val[indx[tj]]), &si, &(val[indx[tk]]), &sj, &beta, 
-                         &(val[ipattern[k]]), &si 
-#ifdef SPARSEBLAS
-);
-#else
-/* strlen(N), strlen(N) */        ,1, 1);
-#endif
+                         &(val[ipattern[k]]), &si);
+
                }
             }
 
@@ -120,9 +118,9 @@ void AZ_fact_bilu(int Nrows, AZ_MATRIX *matrix, int diag_block[],
                  Sub_block[pp++] = temp[ pj*si + pi];
               }
            }
-           dgetrs_(T, &sj , &si, &(val[indx[diag_block[j]]]),
+           DGETRS_F77(T, &sj , &si, &(val[indx[diag_block[j]]]),
                    &sj, &(pivot[cpntr[j]]), Sub_block,
-                   &sj, &info, 1 /* strlen(T) */);
+                   &sj, &info);
 
             /* transpose back */
 
@@ -137,7 +135,7 @@ void AZ_fact_bilu(int Nrows, AZ_MATRIX *matrix, int diag_block[],
          }
       }
 
-      dgetrf_(&si, &si, &(val[indx[diag_block[i]]]), &si, &(pivot[cpntr[i]]), 
+      DGETRF_F77(&si, &si, &(val[indx[diag_block[i]]]), &si, &(pivot[cpntr[i]]), 
               &info);
       if (info > 0) {
           printf("Incomplete factorization yields singular subblock\n");
@@ -150,9 +148,9 @@ void AZ_fact_bilu(int Nrows, AZ_MATRIX *matrix, int diag_block[],
          if (k > i) {
             sk = cpntr[k+1] - cpntr[k];
 
-            dgetrs_(N, &si , &sk, &(val[indx[diag_block[i]]]),
+            DGETRS_F77(N, &si , &sk, &(val[indx[diag_block[i]]]),
                     &si, &(pivot[cpntr[i]]), &(val[indx[tk]]),
-                    &si, &info, 1 /* strlen(N) */);
+                    &si, &info);
          }
       }
 
@@ -210,9 +208,8 @@ void AZ_lower_triang_vbr_solve(int Nrows, int cpntr[], int bpntr[],
          j = bindx[tj];
          sj = cpntr[j+1] - cpntr[j];
          if (j < i) {
-            dgemv_(N, &si, &sj, &minus_one, &(val[indx[tj]]), &si, 
-                   &(b[cpntr[j]]), &ione, &one, &(b[i1]), &ione, 
-                   1 /* strlen(N) */);
+            DGEMV_F77(N, &si, &sj, &minus_one, &(val[indx[tj]]), &si, 
+                   &(b[cpntr[j]]), &ione, &one, &(b[i1]), &ione);
          }
       }
    }
@@ -258,17 +255,16 @@ void AZ_upper_triang_vbr_solve(int Nrows, int cpntr[], int bpntr[], int indx[],
       si = cpntr[i+1]  - cpntr[i];
       i1 = cpntr[i];
 
-      dgetrs_(N, &si , &ione, &(val[indx[diag_block[i]]]),
+      DGETRS_F77(N, &si , &ione, &(val[indx[diag_block[i]]]),
               &si, &(pivot[cpntr[i]]), &(b[i1]),
-              &si, &info, 1 /* strlen(N) */);
+              &si, &info);
 
       for (tj = bpntr[i]; tj < bpntr[i+1]; tj++ ) {
          j  = bindx[tj];
          sj = cpntr[j+1] - cpntr[j];
          if (j > i) {
-            dgemv_(N, &si, &sj, &minus_one, &(val[indx[tj]]), &si, 
-                   &(b[cpntr[j]]), &ione, &one, &(b[i1]), &ione, 
-                   1 /* strlen(N) */);
+            DGEMV_F77(N, &si, &sj, &minus_one, &(val[indx[tj]]), &si, 
+                   &(b[cpntr[j]]), &ione, &one, &(b[i1]), &ione);
          }
       }
    }

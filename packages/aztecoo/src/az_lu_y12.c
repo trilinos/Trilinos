@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "az_aztec.h"
+#include "az_y12m_wrappers.h"
 
 /******************************************************************************/
 /******************************************************************************/
@@ -94,10 +95,10 @@ void AZ_fact_lu(double b[], AZ_MATRIX *A_overlapped, double *aflag,
 
   *ifail = 0;
 
-  y12mbf_(n, z, val, snr, nn, rnr, nn1, ha, iha, aflag, iflag, ifail);
+  Y12MBF_F77(n, z, val, snr, nn, rnr, nn1, ha, iha, aflag, iflag, ifail);
 
   if (*ifail == 0) 
-     y12mcf_(n, z, val, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, 
+     Y12MCF_F77(n, z, val, snr, nn, rnr, nn1, pivot, b, ha, iha, aflag, iflag, 
              ifail);
 
 
@@ -199,7 +200,7 @@ void AZ_backsolve(double val[], double pivot[], double b[], int snr[], int ha[],
 
 {
 
-  y12mdf_(n, val, nn, b, pivot, snr, ha, iha, iflag, ifail);
+  Y12MDF_F77(n, val, nn, b, pivot, snr, ha, iha, iflag, ifail);
 
 } /* backsolve */
 

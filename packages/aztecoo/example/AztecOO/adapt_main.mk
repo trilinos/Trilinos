@@ -26,7 +26,7 @@ EPETRA_COMM                 = $(EPETRA_COMM_$(TRILINOS_COMM))
 FORMAT=MSR
 
 DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
-         -DIFPACK -DSPARSEBLAS -D$(FORMAT)
+         -DIFPACK -D$(FORMAT)
 
 INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/epetra/src \
            -I$(TRILINOS_HOME)/packages/aztecoo/src \
@@ -40,7 +40,7 @@ LDFLAGS=$(ARCH_LDFLAGS)
 
 
 LIB_PATHS= $(LIBAZTECOO) $(LIBEPETRA) $(LIBIFPACK) \
-           $(LIBLAPACK) $(LIBBLAS) $(LIBY12M) $(LIBSPBLAS) \
+           $(LIBLAPACK) $(LIBBLAS) $(LIBY12M) \
            $(LIBTRILINOS_UTIL)
 
 #=======================================================================

@@ -225,7 +225,7 @@ void distrib_vbr_matrix(int *proc_config,
 	      }
 	  }
       }
-#ifdef DEBUG
+/* #ifdef DEBUG
       printf("Processor %d of %d done with extracting local operators.\n",
 	     proc_config[AZ_node],proc_config[AZ_N_procs]) ;
       if (have_xexact)
@@ -237,7 +237,7 @@ void distrib_vbr_matrix(int *proc_config,
 		       rpntr1, (*rpntr), bpntr1, bpntr1+1,
 		       (*xexact), b1));
 	}
-#endif
+#endif */
       /* Release memory for global matrix, rhs and solution */
       
       free ((void *) (*val));
@@ -261,7 +261,7 @@ void distrib_vbr_matrix(int *proc_config,
       if (have_xexact) *xexact = xexact1;
 
     }
-#ifdef DEBUG  
+/* #ifdef DEBUG  
       if (have_xexact && proc_config[AZ_N_procs]  == 1)
 	{
 	  printf(
@@ -274,7 +274,7 @@ void distrib_vbr_matrix(int *proc_config,
 
   printf("Processor %d of %d leaving distrib_matrix.\n",
 	 proc_config[AZ_node],proc_config[AZ_N_procs]) ;
-#endif
+#endif */
   
   /* end distrib_vbr_matrix */
 }

@@ -30,6 +30,7 @@
 /* Begin Aztec 2.1 mheroux mod */
 #ifdef IFPACK
 #include "az_ifpack.h"
+#include "az_blas_wrappers.h"
 #endif
 /* End Aztec 2.1 mheroux mod */
 
@@ -631,7 +632,7 @@ int  t1, t2, t3, i, t4, t5 = 0;
    case AZ_bilu_ifp:
 #ifdef IFPACK
      y = (double *) malloc (N * sizeof(double));
-     dcopy_(&N, x, &ione, y, &ione);
+     DCOPY_F77(&N, x, &ione, y, &ione);
      precon = context->precon;
      ifp_apply(precon, N, 1, y, N, x, N);
      free((void *) y);

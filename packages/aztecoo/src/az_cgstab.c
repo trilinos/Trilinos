@@ -27,6 +27,7 @@
 #include <math.h>
 #include <float.h>
 #include "az_aztec.h"
+#include "az_blas_wrappers.h"
 
 void AZ_pbicgstab(double b[], double x[], double weight[], int options[], 
 	double params[],int proc_config[], double status[], AZ_MATRIX *Amat, 
@@ -147,7 +148,7 @@ void AZ_pbicgstab(double b[], double x[], double weight[], int options[],
   /* set rtilda */
 
   if (options[AZ_aux_vec] == AZ_resid)
-    dcopy_(&N, r, &one, rtilda, &one);
+    DCOPY_F77(&N, r, &one, rtilda, &one);
   else
     AZ_random_vector(rtilda, data_org, proc_config);
 
@@ -199,7 +200,7 @@ void AZ_pbicgstab(double b[], double x[], double weight[], int options[],
 
     dtemp = beta * omega;
     for (i = 0; i < N; i++) p[i] = r[i] + beta * p[i] - dtemp * v[i];
-    dcopy_(&N, p, &one, phat, &one);
+    DCOPY_F77(&N, p, &one, phat, &one);
 
     if (iter==1) init_time = AZ_second();
     if (precond_flag)
@@ -236,7 +237,7 @@ void AZ_pbicgstab(double b[], double x[], double weight[], int options[],
     /* r = A shat (r is a tmp here for t ) */
 
     for (i = 0; i < N; i++) s[i] = r[i] - alpha * v[i];
-    dcopy_(&N, s, &one, shat, &one);
+    DCOPY_F77(&N, s, &one, shat, &one);
 
     if (precond_flag)    
       precond->prec_function(shat,options,proc_config,params,Amat,precond);
@@ -246,8 +247,8 @@ void AZ_pbicgstab(double b[], double x[], double weight[], int options[],
 
     /* omega = (t,s)/(t,t) with r = t */
 
-    dot_vec[0] = ddot_(&N, r, &one, s, &one);
-    dot_vec[1] = ddot_(&N, r, &one, r, &one);
+    dot_vec[0] = DDOT_F77(&N, r, &one, s, &one);
+    dot_vec[1] = DDOT_F77(&N, r, &one, r, &one);
     AZ_gdot_vec(2, dot_vec, tmp, proc_config);
 
     if (fabs(dot_vec[1]) < DBL_MIN) {
@@ -259,8 +260,8 @@ void AZ_pbicgstab(double b[], double x[], double weight[], int options[],
     /* x = x + alpha*phat + omega*shat */
     /* r = s - omega*r */
 
-    daxpy_(&N, &alpha, phat, &one, x, &one);
-    daxpy_(&N, &omega, shat, &one, x, &one);
+    DAXPY_F77(&N, &alpha, phat, &one, x, &one);
+    DAXPY_F77(&N, &omega, shat, &one, x, &one);
 
     for (i = 0; i < N; i++) r[i] = s[i] - omega * r[i];
 
@@ -285,7 +286,7 @@ void AZ_pbicgstab(double b[], double x[], double weight[], int options[],
     converged = scaled_r_norm < epsilon;
     if (options[AZ_check_update_size] & converged) {
       dtemp = alpha/omega;
-      daxpy_(&N, &dtemp, phat, &one, shat, &one);
+      DAXPY_F77(&N, &dtemp, phat, &one, shat, &one);
       converged = AZ_compare_update_vs_soln(N, -1.,omega, shat, x,
                                          params[AZ_update_reduction],
                                          options[AZ_output], proc_config, &first_time);

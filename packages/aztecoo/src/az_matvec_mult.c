@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <float.h>
 #include "az_aztec.h"
+#include "az_blas_wrappers.h"
 
 extern void dvbr_sparax_basic(int m, double *val, int *bindx, int *rpntr,
                        int *cpntr, int *bpntr, double *b, double *c,
@@ -237,8 +238,8 @@ void dvbr_sparax_basic(int m, double *val, int *bindx, int *rpntr,
           if (m1 < 10)
             AZ_dgemv2(m1, n1, val_pntr, x, c_pntr);
           else
-            dgemv_(N, &m1, &n1, &one, val_pntr, &m1, x, &ione, &one, c_pntr,
-                   &ione, 1);
+            DGEMV_F77(N, &m1, &n1, &one, val_pntr, &m1, x, &ione, &one, c_pntr,
+                   &ione);
 #endif
 
         }
@@ -250,8 +251,8 @@ void dvbr_sparax_basic(int m, double *val, int *bindx, int *rpntr,
         if (m1 < 10)
           AZ_dgemv2(m1, n1, val_pntr, x, c_pntr);
         else
-          dgemv_(N, &m1, &n1, &one, val_pntr, &m1, x, &ione, &one, c_pntr,
-                 &ione, 1);
+          DGEMV_F77(N, &m1, &n1, &one, val_pntr, &m1, x, &ione, &one, c_pntr,
+                 &ione);
       }
 
       val_pntr += iblk_size;

@@ -37,7 +37,8 @@
 
 #define __AZTECH__
 
-
+#include "az_aztec_defs.h"
+#include "az_f77func.h"
 /* Some older codes use AZ_MPI to set MPI mode for AztecOO/Aztec.
  * Check to see if AZ_MPI is defined, and define AZTEC_MPI if
  * it is not already defined.
@@ -522,165 +523,53 @@ extern void AZ_fortransolve(double x[], double b[], int options[],
  * subroutine call. In this section we take these into account.
  */
 
-#if   defined(caps)
-#ifdef T3E
-#include <fortran.h>
-#endif
-#ifdef T3E
-#   define dgemv_(t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12) \
-       DGEMV(_cptofcd(t1,1), t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) 
-#   define dgemm_(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15) \
-       DGEMM(_cptofcd(t1,1),_cptofcd(t2,1),t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13)
-#   define dgetrs_(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10) \
-           DGETRS(_cptofcd(t1,1),t2,t3,t4,t5,t6,t7,t8,t9)
-#   define dtrsm_(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15) \
-           DTRSM(_cptofcd(t1,1),_cptofcd(t2,1),_cptofcd(t3,1),_cptofcd(t4,1), \
-                 t5,t6,t7,t8,t9,t10,t11)
-#   define dpotrf_(t1,t2,t3,t4,t5,t6) \
-           DPOTRF(_cptofcd(t1,1),t2,t3,t4,t5)
-#   define dtrmm_(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15) \
-	   DTRMM(_cptofcd(t1,1),_cptofcd(t2,1),_cptofcd(t3,1),_cptofcd(t4,1), \
-                 t5,t6,t7,t8,t9,t10,t11)
-#else
-#   define dgemv_                     DGEMV
-#   define dgemm_                     DGEMM
-#   define dgetrs_                    DGETRS
-#   define dtrsm_                     DTRSM
-#   define dpotrf_                    DPOTRF
-#   define dtrmm_                     DTRMM
-#endif
-#   define dgetrf_                    DGETRF
-#   define dgetri_                    DGETRI
-#   define dgeco_                     DGECO
-#   define dgedi_                     DGEDI
-#   define y12mbf_                    Y12MBF
-#   define y12mcf_                    Y12MCF
-#   define y12mdf_                    Y12MDF
-#   define idamax_                    IDAMAX
-#   define dasum_                     DASUM
-#   define daxpy_                     DAXPY
-#   define dlaswp_                    DLASWP
-#   define ddot_                      DDOT
-#   define dcopy_                     DCOPY
-#   define dscal_                     DSCAL
-#   define dlaic1_                    DLAIC1
-#   define fnroot_                    FNROOT
-#   define mc64ad_                    MC64AD
-#   define rcm_                       RCM
-#   define az_broadcast_              AZ_BROADCAST
-#   define az_check_input_            AZ_CHECK_INPUT
-#   define az_check_msr_              AZ_CHECK_MSR
-#   define az_check_vbr_              AZ_CHECK_VBR
-#   define az_defaults_               AZ_DEFAULTS
-#   define az_exchange_bdry_          AZ_EXCHANGE_BDRY
-#   define az_find_index_             AZ_FIND_INDEX
-#   define az_find_local_indices_     AZ_FIND_LOCAL_INDICES
-#   define az_find_procs_for_externs_ AZ_FIND_PROCS_FOR_EXTERNS
-#   define az_free_memory_            AZ_FREE_MEMORY
-#   define az_gavg_double_            AZ_GAVG_DOUBLE
-#   define az_gdot_                   AZ_GDOT
-#   define az_gmax_double_            AZ_GMAX_DOUBLE
-#   define az_gmax_int_               AZ_GMAX_INT
-#   define az_gmax_matrix_norm_       AZ_GMAX_MATRIX_NORM
-#   define az_gmax_vec_               AZ_GMAX_VEC
-#   define az_gmin_double_            AZ_GMIN_DOUBLE
-#   define az_gmin_int_               AZ_GMIN_INT
-#   define az_gsum_double_            AZ_GSUM_DOUBLE
-#   define az_gsum_int_               AZ_GSUM_INT
-#   define az_gsum_vec_               AZ_GSUM_VEC
-#   define az_gvector_norm_           AZ_GVECTOR_NORM
-#   define az_init_quick_find_        AZ_INIT_QUICK_FIND
-#   define az_invorder_vec_           AZ_INVORDER_VEC
-#   define az_matvec_mult_            AZ_MATVEC_MULT
-#   define az_VBR_matvec_mult_        AZ_VBR_MATVEC_MULT
-#   define az_MSR_matvec_mult_        AZ_MSR_MATVEC_MULT
-#   define az_msr2vbr_                AZ_MSR2VBR
-#   define az_order_ele_              AZ_ORDER_ELE
-#   define az_pr_error_               AZ_PR_ERROR
-#   define az_print_out_              AZ_PRINT_OUT
-#   define az_processor_info_         AZ_PROCESSOR_INFO
-#   define az_quick_find_             AZ_QUICK_FIND
-#   define az_read_msr_matrix_        AZ_READ_MSR_MATRIX
-#   define az_read_update_            AZ_READ_UPDATE
-#   define az_reorder_matrix_         AZ_REORDER_MATRIX
-#   define az_reorder_vec_            AZ_REORDER_VEC
-#   define az_get_comm_               AZ_GET_COMM
-#   define az_set_comm_               AZ_SET_COMM
-#   define az_set_message_info_       AZ_SET_MESSAGE_INFO
-#   define az_set_proc_config_        AZ_SET_PROC_CONFIG
-#   define az_sort_                   AZ_SORT
-#   define az_solve_                  AZ_SOLVE
-#   define az_transform_              AZ_TRANSFORM
-#elif defined(matched)
-#   define dgemm_                     dgemm
-#   define dgemv_                     dgemv
-#   define dgetrf_                    dgetrf
-#   define dgetri_                    dgetri
-#   define dgetrs_                    dgetrs
-#   define dgeco_                     dgeco
-#   define dgedi_                     dgedi
-#   define y12mbf_                    y12mbf
-#   define y12mcf_                    y12mcf
-#   define y12mdf_                    y12mdf
-#   define idamax_                    idamax
-#   define dasum_                     dasum
-#   define daxpy_                     daxpy
-#   define dtrmm_                     dtrmm
-#   define dlaswp_                    dlaswp
-#   define ddot_                      ddot
-#   define dcopy_                     dcopy
-#   define dscal_                     dscal
-#   define dtrsm_                     dtrsm
-#   define dpotrf_                    dpotrf
-#   define dlaic1_                    dlaic1
-#   define fnroot_                    fnroot
-#   define mc64ad_                    mc64ad
-#   define rcm_                       rcm
-#   define az_broadcast_              az_broadcast
-#   define az_check_input_            az_check_input
-#   define az_check_msr_              az_check_msr
-#   define az_check_vbr_              az_check_vbr
-#   define az_defaults_               az_defaults
-#   define az_exchange_bdry_          az_exchange_bdry
-#   define az_find_index_             az_find_index
-#   define az_find_local_indices_     az_find_local_indices
-#   define az_find_procs_for_externs_ az_find_procs_for_externs
-#   define az_free_memory_            az_free_memory
-#   define az_gavg_double_            az_gavg_double
-#   define az_gdot_                   az_gdot
-#   define az_gmax_double_            az_gmax_double
-#   define az_gmax_int_               az_gmax_int
-#   define az_gmax_matrix_norm_       az_gmax_matrix_norm
-#   define az_gmax_vec_               az_gmax_vec
-#   define az_gmin_double_            az_gmin_double
-#   define az_gmin_int_               az_gmin_int
-#   define az_gsum_double_            az_gsum_double
-#   define az_gsum_int_               az_gsum_int
-#   define az_gsum_vec_               az_gsum_vec
-#   define az_gvector_norm_           az_gvector_norm
-#   define az_init_quick_find_        az_init_quick_find
-#   define az_invorder_vec_           az_invorder_vec
-#   define az_matvec_mult_            az_matvec_mult
-#   define az_VBR_matvec_mult_        az_VBR_matvec_mult
-#   define az_MSR_matvec_mult_        az_MSR_matvec_mult
-#   define az_msr2vbr_                az_msr2vbr
-#   define az_order_ele_              az_order_ele
-#   define az_pr_error_               az_pr_error
-#   define az_print_out_              az_print_out
-#   define az_processor_info_         az_processor_info
-#   define az_quick_find_             az_quick_find
-#   define az_read_msr_matrix_        az_read_msr_matrix
-#   define az_read_update_            az_read_update
-#   define az_reorder_matrix_         az_reorder_matrix
-#   define az_reorder_vec_            az_reorder_vec
-#   define az_get_comm_               az_get_comm
-#   define az_set_comm_               az_set_comm
-#   define az_set_message_info_       az_set_message_info
-#   define az_set_proc_config_        az_set_proc_config
-#   define az_sort_                   az_sort
-#   define az_solve_                  az_solve
-#   define az_transform_              az_transform
-#endif
+#   define FNROOT_F77                    F77_FUNC(fnroot,FNROOT)
+#   define MC64AD_F77                    F77_FUNC(mc64ad,MC64AD)
+#   define RCM_F77                       F77_FUNC(rcm,RCM)
+#   define AZ_BROADCAST_F77              F77_FUNC_(az_broadcast,AZ_BROADCAST)
+#   define AZ_CHECK_INPUT_F77            F77_FUNC_(az_check_input,AZ_CHECK_INPUT)
+#   define AZ_CHECK_MSR_F77              F77_FUNC_(az_check_msr,AZ_CHECK_MSR)
+#   define AZ_CHECK_VBR_F77              F77_FUNC_(az_check_vbr,AZ_CHECK_VBR)
+#   define AZ_DEFAULTS_F77               F77_FUNC_(az_defaults,AZ_DEFAULTS)
+#   define AZ_EXCHANGE_BDRY_F77          F77_FUNC_(az_exchange_bdry,AZ_EXCHANGE_BDRY)
+#   define AZ_FIND_INDEX_F77             F77_FUNC_(az_find_index,AZ_FIND_INDEX)
+#   define AZ_FIND_LOCAL_INDICES_F77     F77_FUNC_(az_find_local_indices,AZ_FIND_LOCAL_INDICES)
+#   define AZ_FIND_PROCS_FOR_EXTERNS_F77 F77_FUNC_(az_find_procs_for_externs,AZ_FIND_PROCS_FOR_EXTERNS)
+#   define AZ_FREE_MEMORY_F77            F77_FUNC_(az_free_memory,AZ_FREE_MEMORY)
+#   define AZ_GAVG_DOUBLE_F77            F77_FUNC_(az_gavg_double,AZ_GAVG_DOUBLE)
+#   define AZ_GDOT_F77                   F77_FUNC_(az_gdot,AZ_GDOT)
+#   define AZ_GMAX_DOUBLE_F77            F77_FUNC_(az_gmax_double,AZ_GMAX_DOUBLE)
+#   define AZ_GMAX_INT_F77               F77_FUNC_(az_gmax_int,AZ_GMAX_INT)
+#   define AZ_GMAX_MATRIX_NORM_F77       F77_FUNC_(az_gmax_matrix_norm,AZ_GMAX_MATRIX_NORM)
+#   define AZ_GMAX_VEC_F77               F77_FUNC_(az_gmax_vec,AZ_GMAX_VEC)
+#   define AZ_GMIN_DOUBLE_F77            F77_FUNC_(az_gmin_double,AZ_GMIN_DOUBLE)
+#   define AZ_GMIN_INT_F77               F77_FUNC_(az_gmin_int,AZ_GMIN_INT)
+#   define AZ_GSUM_DOUBLE_F77            F77_FUNC_(az_gsum_double,AZ_GSUM_DOUBLE)
+#   define AZ_GSUM_INT_F77               F77_FUNC_(az_gsum_int,AZ_GSUM_INT)
+#   define AZ_GSUM_VEC_F77               F77_FUNC_(az_gsum_vec,AZ_GSUM_VEC)
+#   define AZ_GVECTOR_NORM_F77           F77_FUNC_(az_gvector_norm,AZ_GVECTOR_NORM)
+#   define AZ_INIT_QUICK_FIND_F77        F77_FUNC_(az_init_quick_find,AZ_INIT_QUICK_FIND)
+#   define AZ_INVORDER_VEC_F77           F77_FUNC_(az_invorder_vec,AZ_INVORDER_VEC)
+#   define AZ_MATVEC_MULT_F77            F77_FUNC_(az_matvec_mult,AZ_MATVEC_MULT)
+#   define AZ_VBR_MATVEC_MULT_F77        F77_FUNC_(az_VBR_matvec_mult,AZ_VBR_MATVEC_MULT)
+#   define AZ_MSR_MATVEC_MULT_F77        F77_FUNC_(az_MSR_matvec_mult,AZ_MSR_MATVEC_MULT)
+#   define AZ_MSR2VBR_F77                F77_FUNC_(az_msr2vbr,AZ_MSR2VBR)
+#   define AZ_ORDER_ELE_F77              F77_FUNC_(az_order_ele,AZ_ORDER_ELE)
+#   define AZ_PR_ERROR_F77               F77_FUNC_(az_pr_error,AZ_PR_ERROR)
+#   define AZ_PRINT_OUT_F77              F77_FUNC_(az_print_out,AZ_PRINT_OUT)
+#   define AZ_PROCESSOR_INFO_F77         F77_FUNC_(az_processor_info,AZ_PROCESSOR_INFO)
+#   define AZ_QUICK_FIND_F77             F77_FUNC_(az_quick_find,AZ_QUICK_FIND)
+#   define AZ_READ_MSR_MATRIX_F77        F77_FUNC_(az_read_msr_matrix,AZ_READ_MSR_MATRIX)
+#   define AZ_READ_UPDATE_F77            F77_FUNC_(az_read_update,AZ_READ_UPDATE)
+#   define AZ_REORDER_MATRIX_F77         F77_FUNC_(az_reorder_matrix,AZ_REORDER_MATRIX)
+#   define AZ_REORDER_VEC_F77            F77_FUNC_(az_reorder_vec,AZ_REORDER_VEC)
+#   define AZ_GET_COMM_F77               F77_FUNC_(az_get_comm,AZ_GET_COMM)
+#   define AZ_SET_COMM_F77               F77_FUNC_(az_set_comm,AZ_SET_COMM)
+#   define AZ_SET_MESSAGE_INFO_F77       F77_FUNC_(az_set_message_info,AZ_SET_MESSAGE_INFO)
+#   define AZ_SET_PROC_CONFIG_F77        F77_FUNC_(az_set_proc_config,AZ_SET_PROC_CONFIG)
+#   define AZ_SORT_F77                   F77_FUNC_(az_sort,AZ_SORT)
+#   define AZ_SOLVE_F77                  F77_FUNC_(az_solve,AZ_SOLVE)
+#   define AZ_TRANSFORM_F77              F77_FUNC_(az_transform,AZ_TRANSFORM)
 
 #ifndef FSUB_TYPE
 #define  FSUB_TYPE void
@@ -690,85 +579,6 @@ extern void AZ_fortransolve(double x[], double b[], int options[],
 #include <stdio.h>
 extern "C" {
 #endif
-
-/* BLAS, LAPACK stuff */
-
-extern double dasum_(int *, double *, int *);
-
-extern FSUB_TYPE  daxpy_(int *n1, double *a1, double *x, int *skipx1, double *y,
-                         int *skipy1);
-
-extern FSUB_TYPE  dcopy_(int *n1, double *src, int *src1, double *dst,
-                         int *dst1);
-
-extern double     ddot_(int *n1, double *v1, int *dum11, double *v2,
-                        int *dum21);
-
-extern FSUB_TYPE  dgeco_(double *, int *, int *, int *, double *, double *);
-
-extern FSUB_TYPE  dgedi_(double *, int *, int * , int *, double *, double *,
-                         int *);
-
-extern FSUB_TYPE  dlaswp_(int *, double *, int *, int *, int *, int *, int *);
-
-#ifdef T3E
-extern FSUB_TYPE  DGEMM(_fcd, _fcd, int *, int *, int *, double *, double *, 
-                        int *, double *, int *, double *, double *, int *);
-
-extern void       DGEMV(_fcd, int *, int *, double *, double *, int *, double *,
-                        int *, double *, double *, int *);
-
-extern FSUB_TYPE  DGETRS(_fcd, int *, int *, double *, int *, int *,
-                          double *, int *, int *);
-
-extern FSUB_TYPE  DTRMM(_fcd, _fcd, _fcd, _fcd, int *, int *,
-			 double *, double *, int *, double *, int *);
-
-extern FSUB_TYPE  DTRSM(_fcd, _fcd, _fcd, _fcd, int *, int *,
-                         double *, double *, int *, double *, int *);
-
-extern FSUB_TYPE  DPOTRF(_fcd, int *, double *,int *, int *);
-
-#else
-extern FSUB_TYPE  dgemm_(char *, char *, int *, int *, int *, double *, 
-         double *, int *, double *, int *, double *, double *, int *
-#ifdef SPARSEBLAS
-);
-#else
-, unsigned int, unsigned int);
-#endif
-
-extern void   dgemv_(char *, int *, int *, double *, double *, int *, double *,
-                     int *, double *, double *, int *, unsigned int);
-
-extern FSUB_TYPE  dgetrs_(char *, int *, int *, double *, int *, int *,
-                          double *, int *, int *, unsigned int);
-
-extern FSUB_TYPE  dtrmm_(char *, char *, char *, char *, int *, int *,
-			 double *, double *, int *, double *, int *, 
-			 unsigned int, unsigned int, unsigned int,
-			 unsigned int);
-
-extern FSUB_TYPE  dtrsm_(char *, char *, char *, char *, int *, int *,
-                        double *, double *, int *, double *, int *,
-                        unsigned int, unsigned int, unsigned int, unsigned int);
-
-extern FSUB_TYPE  dpotrf_(char *, int *, double *,int *, int *, unsigned int);
-
-#endif
-
-extern FSUB_TYPE  dgetrf_(int *, int *, double *, int *, int *, int *);
-
-extern FSUB_TYPE  dgetri_(int *, double *, int *, int *, double *, int *,
-                          int *);
-
-extern FSUB_TYPE  dlaic1_(int * , int *, double *, double *, double *, double *,
-			  double *, double *, double *);
-
-extern FSUB_TYPE  dscal_(int *n1, double *a1, double *r, int *stride1);
-
-extern int    idamax_(int *, double *, int *);
-
 
 /* Aztec function prototypes that can be called by the user */
 
@@ -1593,25 +1403,13 @@ extern unsigned int md_mpi_write(void *, unsigned int ,int , int , int *,int *);
 /*                    Auxilliary fortran rroutines needed by Aztec           */
 /*****************************************************************************/
 
-extern void fnroot_(int *,int *,int *,int *, int *, int *, int *);
+extern void FNROOT_F77(int *,int *,int *,int *, int *, int *, int *);
 
-extern void mc64ad_(int *, int *, int *, int *, int *, double*,
+extern void MC64AD_F77(int *, int *, int *, int *, int *, double*,
                     int *, int *, int *, int *, int *, double*,
                     int *, int *);
 
-extern void rcm_(int *, int *,int *, int *,int *, int *, int *);
-
-extern void   y12mbf_(int *n, int *z, double val[], int snr[], int *nn,
-                      int rnr[], int *nn1, int ha[], int *iha, double aflag[],
-                      int iflag[], int *ifail);
-
-extern void   y12mcf_(int *n, int *z, double val[], int snr[], int *nn,
-                      int rnr[], int *nn1, double pivot[], double b[], int ha[],
-                      int *iha, double aflag[], int iflag[], int *ifail);
-
-extern void   y12mdf_(int *n, double val[], int *nn, double b[], double pivot[],
-                      int snr[], int ha[], int *iha, int iflag[], int *ifail);
-
+extern void RCM_F77(int *, int *,int *, int *,int *, int *, int *);
 
 /*****************************************************************************/
 /*                    Auxilliary routines available to users                 */
@@ -1700,8 +1498,6 @@ extern void   AZ_sym_rescale_vbr(double x[], int data_org[], int options[]);
 
 /* When calling this fortran routine from C we need to include an extra     */
 /* parameter on the end indicating the string length of the first parameter */
-#include "az_aztec_defs.h"
-
 
 #ifdef AZ_PA_RISC
 extern void   dgemvnsqr_(int *, double *, double *, double *);

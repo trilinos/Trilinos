@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <string.h>
 #include <math.h>
+#include "az_aztec.h"
 #ifdef EPETRA_MPI
 #define AZTEC_MPI
 #define AZ_MPI
@@ -11,7 +12,6 @@
 #ifdef AZTEC_MPI
 #include "mpi.h"
 #endif
-#include "az_aztec.h"
 #include "prototypes.h"
 
 #define perror(str) { fprintf(stderr,"%s\n",str);   exit(-1); }

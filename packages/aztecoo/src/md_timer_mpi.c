@@ -13,11 +13,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_timerint_id =
-  "$Id$";
-#endif
-
 
 /*******************************************************************************
  * Copyright 1995, Sandia Corporation.  The United States Government retains a *
@@ -25,6 +20,7 @@ static char *cvs_timerint_id =
  * Export of this program may require a license from the United States         *
  * Government.                                                                 *
  ******************************************************************************/
+#include "az_aztec_defs.h"
 #ifdef AZTEC_MPI
 #include <mpi.h>
 #endif

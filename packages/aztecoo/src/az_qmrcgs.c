@@ -27,6 +27,7 @@
 #include <math.h>
 #include <float.h>
 #include "az_aztec.h"
+#include "az_blas_wrappers.h"
 
 void AZ_pqmrs(double b[], double x[], double weight[], int options[], 
 	double params[], int proc_config[], double status[], AZ_MATRIX *Amat, 
@@ -160,7 +161,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
 
   /* set rtilda */
 
-  if (options[AZ_aux_vec] == AZ_resid) dcopy_(&N, r_cgs, &one, rtilda, &one);
+  if (options[AZ_aux_vec] == AZ_resid) DCOPY_F77(&N, r_cgs, &one, rtilda, &one);
   else AZ_random_vector(rtilda, data_org, proc_config);
 
   /*
@@ -213,7 +214,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
     /* v     = A ubar + beta ( A qbar + beta pnm1 ) */
     /*       = Aubar  + beta ( Aqbar +  beta v)     */
 
-    dcopy_(&N, r_cgs, &one, ubar, &one);
+    DCOPY_F77(&N, r_cgs, &one, ubar, &one);
 
     if (iter==1) init_time = AZ_second();
 
@@ -226,7 +227,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
 
     Amat->matvec(ubar, Aubar, Amat, proc_config);
 
-    daxpy_(&N, &beta, v, &one, Aqbar, &one);
+    DAXPY_F77(&N, &beta, v, &one, Aqbar, &one);
     for (i = 0; i < N; i++) v[i] = Aubar[i] + beta * Aqbar[i];
 
     sigma = AZ_gdot(N, rtilda, v, proc_config);
@@ -256,7 +257,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
     /* r_cgs = r_cgs - alpha (A ubar + A qbar) */
     /*       = r_cgs - alpha (Aubar + Aqbar)   */
 
-    dcopy_(&N, v, &one, qbar, &one);
+    DCOPY_F77(&N, v, &one, qbar, &one);
 
     if (precond_flag)
     precond->prec_function(qbar,options,proc_config,params,Amat,precond);
@@ -291,7 +292,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
 
     dtemp = nu_mm1 *nu_mm1 * eta_mm1 / alpha;
     for (i = 0; i < N; i++) d[i] = ubar[i] + dtemp * d[i];
-    daxpy_(&N, &eta_m, d, &one, x, &one); /* x = x - eta_m d  */
+    DAXPY_F77(&N, &eta_m, d, &one, x, &one); /* x = x - eta_m d  */
 
     if (r_avail) {
       for (i = 0; i < N; i++) Ad[i] = Aubar[i] + dtemp * Ad[i];
@@ -320,7 +321,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
 
     dtemp = nu_mm1 * nu_mm1 * eta_mm1 / alpha;
     for (i = 0; i < N; i++) d[i] = qbar[i] + dtemp * d[i];
-    daxpy_(&N, &eta_m, d, &one, x, &one); /* x = x - eta_m d  */
+    DAXPY_F77(&N, &eta_m, d, &one, x, &one); /* x = x - eta_m d  */
 
     if (r_avail) {
       for (i = 0; i < N; i++) Ad[i] = Aqbar[i] + dtemp * Ad[i];
@@ -387,7 +388,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
 
     converged = scaled_r_norm < epsilon;
     if (options[AZ_check_update_size] & converged) {
-      daxpy_(&N, &doubleone , d, &one, ubar, &one); 
+      DAXPY_F77(&N, &doubleone , d, &one, ubar, &one); 
       converged = AZ_compare_update_vs_soln(N, -1.,eta_m, ubar, x,
                                            params[AZ_update_reduction],
                                            options[AZ_output], proc_config, &first_time);

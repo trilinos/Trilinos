@@ -1,20 +1,47 @@
+#include "AztecOO.h"
+
+/* The next two ifdefs should be removed when when the revision of
+ az_aztec_defs.h is complete. */
+#ifdef HAVE_CONFIG_H
+
+#ifdef HAVE_CSTDLIB
+#include <cstdlib>
+#else
+#include <stdlib.h>
+#endif
+
+#ifdef HAVE_CSTDIO
+#include <cstdio>
+#else
+#include <stdio.h>
+#endif
+
+#else
 #include <cstdio>
 #include <cstdlib>
+#endif
+
+#ifdef EPETRA_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
-#include "AztecOO.h"
 
 int main(int argc, char *argv[])
 {
-
+#ifdef EPETRA_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
   cout << Comm <<endl;
-
+#else
+  Epetra_SerialComm Comm;
+#endif
   int NumMyElements = 1000;
 
   // Construct a Map that puts same number of equations on each processor
@@ -54,8 +81,9 @@ int main(int argc, char *argv[])
 
   cout << "Solver performed " << solver.NumIters() << " iterations." << endl
        << "Norm of true residual = " << solver.TrueResidual() << endl;
-
+#ifdef EPETRA_MPI
   MPI_Finalize() ;
+#endif
   return 0;
 }
 

@@ -1,3 +1,4 @@
+#include "AztecOO.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -19,7 +20,6 @@
 #include "Epetra_Vector.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_LinearProblem.h"
-#include "AztecOO.h"
 
 #define perror(str) { fprintf(stderr,"%s\n",str);   exit(-1); }
 #define perror1(str,ierr) { fprintf(stderr,"%s %d\n",str,ierr);   exit(-1); }

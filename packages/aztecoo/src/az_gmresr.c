@@ -31,6 +31,7 @@ static char rcsid[] = "$Id$";
 #include <math.h>
 #include <float.h>
 #include "az_aztec.h"
+#include "az_blas_wrappers.h"
 
 void AZ_pgmresr(double b[], double x[],double weight[], int options[],
 	double params[], int proc_config[], double status[], AZ_MATRIX *Amat, 
@@ -196,7 +197,7 @@ char *T2 = "N";
 
       /* v_i+1 = A M^-1 v_i */
 
-      dcopy_(&N, res , &one, UU[i], &one);
+      DCOPY_F77(&N, res , &one, UU[i], &one);
 
       if (iter == 1) init_time = AZ_second();
 
@@ -211,23 +212,23 @@ char *T2 = "N";
          for (ii = 0 ; ii < 2 ; ii++ ) {
             dble_tmp = 0.0; mm = i;
             if (N == 0) for (k = 0 ; k < i ; k++) dots[k] = 0.0;
-            dgemv_(T, &N, &mm, &doubleone, CCblock, &NN, CC[i], 
-                   &one, &dble_tmp, dots, &one, 1 /* strlen(T) */);
+            DGEMV_F77(T, &N, &mm, &doubleone, CCblock, &NN, CC[i], 
+                   &one, &dble_tmp, dots, &one);
 
             AZ_gdot_vec(i, dots, tmp, proc_config);
 
-            dgemv_(T2, &N, &mm, &minusone, CCblock, &NN, dots, 
-                   &one, &doubleone, CC[i], &one, 1 /* strlen(T2) */);
-            dgemv_(T2, &N, &mm, &minusone, UUblock, &NN, dots,
-                   &one, &doubleone, UU[i], &one, 1 /* strlen(T2) */);
+            DGEMV_F77(T2, &N, &mm, &minusone, CCblock, &NN, dots, 
+                   &one, &doubleone, CC[i], &one);
+            DGEMV_F77(T2, &N, &mm, &minusone, UUblock, &NN, dots,
+                   &one, &doubleone, UU[i], &one);
          }
       }
       else {                    /* modified */
         for (k = 0; k < i; k++) {
           alpha = AZ_gdot(N, CC[k], CC[i], proc_config);
           minus_alpha = -alpha;
-          daxpy_(&N, &minus_alpha, CC[k], &one, CC[i], &one);
-          daxpy_(&N, &minus_alpha, UU[k], &one, UU[i], &one);
+          DAXPY_F77(&N, &minus_alpha, CC[k], &one, CC[i], &one);
+          DAXPY_F77(&N, &minus_alpha, UU[k], &one, UU[i], &one);
         }
       }
 
@@ -239,13 +240,13 @@ char *T2 = "N";
       else
         dble_tmp = 0.0;
 
-      dscal_(&N, &dble_tmp, CC[i], &one);
-      dscal_(&N, &dble_tmp, UU[i], &one);
+      DSCAL_F77(&N, &dble_tmp, CC[i], &one);
+      DSCAL_F77(&N, &dble_tmp, UU[i], &one);
 
       dble_tmp = AZ_gdot(N, CC[i], res, proc_config);
-      daxpy_(&N, &dble_tmp, UU[i], &one, x, &one);
+      DAXPY_F77(&N, &dble_tmp, UU[i], &one, x, &one);
       dble_tmp = -dble_tmp;
-      daxpy_(&N, &dble_tmp, CC[i], &one, res, &one);
+      DAXPY_F77(&N, &dble_tmp, CC[i], &one, res, &one);
 
 
       /* determine residual norm & test convergence */

@@ -27,6 +27,7 @@
 #include <math.h>
 #include <float.h>
 #include "az_aztec.h"
+#include "az_blas_wrappers.h"
 
 void AZ_pcgs(double b [], double x[], double weight[], int options[], 
 	double params[], int proc_config[], double status[], AZ_MATRIX *Amat, 
@@ -146,7 +147,7 @@ void AZ_pcgs(double b [], double x[], double weight[], int options[],
 
   /* set rtilda */
 
-  if (options[AZ_aux_vec] == AZ_resid) dcopy_(&N, r, &one, rtilda, &one);
+  if (options[AZ_aux_vec] == AZ_resid) DCOPY_F77(&N, r, &one, rtilda, &one);
   else AZ_random_vector(rtilda, data_org, proc_config);
 
   /*
@@ -196,10 +197,10 @@ void AZ_pcgs(double b [], double x[], double weight[], int options[],
     /* v = A w                   */
 
     for (i = 0; i < N; i++) u[i] = r[i] + beta * q[i];
-    daxpy_(&N, &beta, p, &one, q, &one);
+    DAXPY_F77(&N, &beta, p, &one, q, &one);
 
     for (i = 0; i < N; i++) p[i] = u[i] + beta * q[i];
-    dcopy_(&N, p, &one, w, &one);
+    DCOPY_F77(&N, p, &one, w, &one);
 
     if (iter==1) init_time = AZ_second();
 
@@ -244,9 +245,9 @@ void AZ_pcgs(double b [], double x[], double weight[], int options[],
 
     if (precond_flag) precond->prec_function(w,options,proc_config,params,Amat,precond);
 
-    daxpy_(&N, &alpha, w, &one, x, &one);
+    DAXPY_F77(&N, &alpha, w, &one, x, &one);
     Amat->matvec(w, v, Amat, proc_config);
-    daxpy_(&N, &nalpha, v, &one, r, &one);
+    DAXPY_F77(&N, &nalpha, v, &one, r, &one);
 
 
     /*

@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <math.h>
 #include "az_aztec.h"
-#include "spblas.h"
 
 double svbrres (int m, int n, int m_blk,
 		double *val, int *indx, int *bindx, int *rpntr,

@@ -28,6 +28,7 @@
 #include <float.h>
 
 #include "az_aztec.h"
+#include "az_blas_wrappers.h"
 
 /******************************************************************************/
 /******************************************************************************/
@@ -224,13 +225,13 @@ double AZ_gvector_norm(int n, int p, double *x, int proc_config[])
 
   case -1:                      /* infinity norm */
 
-    index = idamax_(n_ptr, x, &one) - 1;
+    index = IDAMAX_F77(n_ptr, x, &one) - 1;
     if (index < 0) return -1.0;
     norm  = AZ_gmax_double(fabs(x[index]), proc_config);
     break;
 
   case 1:                       /* sum norm */
-    sum  = dasum_(n_ptr, x, &one);
+    sum  = DASUM_F77(n_ptr, x, &one);
     norm = AZ_gsum_double(sum, proc_config);
     break;
 

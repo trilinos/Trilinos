@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <string.h>
 #include <math.h>
+#include "AztecOO.h"
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -23,7 +24,6 @@
 #include "Epetra_VbrMatrix.h"
 #include "Ifpack_IlukGraph.h"
 #include "Ifpack_CrsRiluk.h"
-#include "AztecOO.h"
 
 void BiCGSTAB(Epetra_VbrMatrix &A, bool transA, Epetra_Vector &x, Epetra_Vector &b, 
 	      Ifpack_CrsRiluk *M, 
