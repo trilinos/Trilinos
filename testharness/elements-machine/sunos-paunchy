@@ -1,7 +1,7 @@
---with-libs="/local/proj/trilinos/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a
-/local/homes/jmwille/Trilinos3PL/SuperLU/libsuperlu.a
-/local/homes/jmwille/Trilinos3PL/UMFPACKv4.1/UMFPACK/Lib/libumfpack.a
-/local/homes/jmwille/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a"
+--with-libs="-L/local/proj/trilinos/Trilinos3PL/DSCPACK1.0/DSC_LIB -ldsc
+-L/local/homes/jmwille/Trilinos3PL/SuperLU -lsuperlu
+-L/local/homes/jmwille/Trilinos3PL/UMFPACKv4.1/UMFPACK/Lib -lumfpack
+-L/local/homes/jmwille/Trilinos3PL/UMFPACKv4.1/AMD/Lib -lamd"
 --with-incdirs="-I/local/proj/trilinos/Trilinos3PL/DSCPACK1.0/DSC_LIB
 -I/local/homes/jmwille/Trilinos3PL/SuperLU/SRC
 -I/local/homes/jmwille/Trilinos3PL/UMFPACKv4.1/UMFPACK/Include
