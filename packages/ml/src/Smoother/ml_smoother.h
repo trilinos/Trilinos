@@ -153,6 +153,7 @@ extern  int ML_Smoother_GaussSeidel(void *, int, double *, int, double *);
 extern  int ML_Smoother_SGSSequential(void *, int,double *, int, double *);
 extern  int ML_Smoother_SGS(void *, int, double *, int, double *);
 extern  int ML_Smoother_BlockGS(void *, int, double *, int, double *);
+extern  int ML_Smoother_MLS_Apply(void *, int, double *, int, double *);
 extern  int ML_Smoother_ParaSails(void *, int, double *, int, double *);
 extern  int ML_Smoother_ParaSailsSym(void *, int, double *, int, double *);
 extern  int ML_Smoother_ParaSailsTrans(void *, int, double *, int, double *);
@@ -185,6 +186,7 @@ extern  int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data**,ML_Operator*,int,int*);
 extern  int ML_Smoother_Create_Schwarz_Data(ML_Sm_Schwarz_Data **data);
 extern void ML_Smoother_Destroy_Schwarz_Data(void *data);
 extern void ML_Smoother_Clean_ParaSails(void *data);
+extern void ML_Smoother_Destroy_MLS(void *data);
 
 extern  int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *, ML_Operator *, 
                     ML_Comm *, int, int *,int*,double *,int *, int *,int);
