@@ -3604,7 +3604,7 @@ void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
   default:
     fprintf( stderr,
 	     "*ML*ERR* In `MLAZ_Direct_Solve_Amesos', choice has an\n"
-	     "*ML*ERR* improper value (%)\n",
+	     "*ML*ERR* improper value (%d)\n",
 	     choice );
     exit( EXIT_FAILURE);
   }
