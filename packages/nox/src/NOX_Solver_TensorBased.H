@@ -343,16 +343,16 @@ protected:
   //! Current tensor term vector (pointer).
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* acVecPtr;
+  NOX::Abstract::Vector* aVecPtr;
   //! Current tensor term vector (reference).
-  NOX::Abstract::Vector& acVec;
+  NOX::Abstract::Vector& aVec;
 
   //! Vector to previous point (pointer).
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  NOX::Abstract::Vector* scVecPtr;
+  NOX::Abstract::Vector* sVecPtr;
   //! Vector to previous point (reference).
-  NOX::Abstract::Vector& scVec;
+  NOX::Abstract::Vector& sVec;
 
   //! Working vector (pointer).
   /*! We have both a pointer and a reference because we need to create
@@ -362,7 +362,11 @@ protected:
   NOX::Abstract::Vector& tmpVec;
 
   //! Residual vector (pointer).
+  /*! We have both a pointer and a reference because we need to create
+    a DERIVED object and then want to have a reference to it. */
   NOX::Abstract::Vector* residualVecPtr;
+  //! Working vector (reference).
+  NOX::Abstract::Vector& residualVec;
 
   //! Stopping test.
   NOX::StatusTest::Generic* testPtr;		
@@ -376,8 +380,8 @@ protected:
   //! Direction parameters.
   NOX::Parameter::List& dirParams;	
 
-  //! Linear Solver for the local model parameters.
-  NOX::Parameter::List& localParams;	
+  //! Parameters for the Linear Solver of the local model.
+  NOX::Parameter::List& linearParams;	
 
   //! Printing Utils
   NOX::Utils utils;
@@ -464,11 +468,11 @@ protected:
   //! Scaling factor for the Armijo-Goldstein condition
   double alpha;
 
-  //! Value of sc'*inv(J)*F
-  double sctjf;
+  //! Value of s'*inv(J)*F
+  double sTinvJF;
 
-  //! Value of sc'*inv(J)*a
-  double sctja;
+  //! Value of s'*inv(J)*a
+  double sTinvJa;
 
   //! Common line search printing utilities.
   NOX::LineSearch::Utils::Printing print;
