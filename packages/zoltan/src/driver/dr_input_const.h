@@ -15,6 +15,10 @@
 #ifndef _DR_INPUT_CONST_H_
 #define _DR_INPUT_CONST_H_
 
+#ifndef _DR_CONST_H
+#include "dr_const.h"
+#endif
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -27,6 +31,12 @@ extern "C" {
 #define CHACO_FILE        2
 #define HYPERGRAPH_FILE   3
 #define MATRIXMARKET_FILE 4
+
+/* define matrix_obj options */
+#define ROWS            0
+#define COLUMNS         1
+#define NONZEROS        2
+
 
 #define MAX_INPUT_STR_LN 4096   /* maximum string length for read_string()  */
 
@@ -60,6 +70,8 @@ struct Parallel_IO
                                   dimension of the problem (1, 2, or 3D) */
   int     init_vwgt_dim;       /* For NO_FILE (random) input, the 
                                   no. of weights per object.           */
+  int     matrix_obj;          /* What are the objects to be balanced
+                                  for a sparse matrix? (ROWS, COLUMNS) */
 
   /* The root location of the parallel disks */
   char    pdsk_root[FILENAME_MAX+1];

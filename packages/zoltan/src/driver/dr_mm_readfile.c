@@ -22,6 +22,7 @@ extern "C" {
 
 #include "dr_hg_readfile.h"
 #include "dr_util_const.h"
+#include "dr_input_const.h" /* just for the matrix_obj define's */
 #include "dr_mmio.h"
 
 
@@ -51,11 +52,10 @@ int MM_readfile (
  int **index,   int **vertex,
  int *vwgt_dim, float **vwgt,
  int *ewgt_dim, float **ewgt,
- int *base)
+ int *base, int matrix_obj)
 {
 int err = ZOLTAN_OK;
 int prev_edge;
-int rowhedges=1; /* default is row hyperedge model */
 char *yo = "MM_readfile";
 int ret_code;
 MM_typecode matcode;
@@ -126,8 +126,8 @@ struct ijv *mat;
         fscanf(f, "%d %d %lg\n", &mat[k].i, &mat[k].j, &mat[k].val);
         (mat[k].i)--;  /* adjust from 1-based to 0-based */
         (mat[k].j)--;
-        if (!rowhedges){
-          /* swap (i,j) to transpose matrix and make rows hyperedges. */
+        if (matrix_obj==ROWS){
+          /* swap (i,j) to transpose matrix and switch vertices/hyperedges */
           tmp = mat[k].i;
           mat[k].i = mat[k].j;
           mat[k].j = tmp;
@@ -163,13 +163,18 @@ struct ijv *mat;
     *ewgt_dim = 0;
 
     /* Rows or columns are hedges? */
-    if (rowhedges){
+    if (matrix_obj==COLUMNS){
       *nVtx = N;
       *nEdge = M;
     }
-    else{
+    else if (matrix_obj==ROWS){
       *nVtx = M;
       *nEdge = N;
+    }
+    else {
+       fprintf(stderr, "%s Invalid option for matrix objects.", yo);
+       err = ZOLTAN_FATAL;
+       goto End;
     }
     *nPins = nz;
 

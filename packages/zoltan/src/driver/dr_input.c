@@ -52,8 +52,9 @@ int read_cmd_file (
   FILE *file_cmd;
   char  line[MAX_INPUT_STR_LN + 1], *pline, *pmax;
   char  original_line[MAX_INPUT_STR_LN + 1];  /* preserved upper/lower cases */
-  char  string[100], value[100], dummy[100];
-  int   i, n, nv;
+  char  string[MAX_INPUT_STR_LN], value[MAX_INPUT_STR_LN]; 
+  char  dummy[MAX_INPUT_STR_LN];
+  int   i, n, nv, nread, keepreading;
 
   
   /* Open the file */
@@ -127,34 +128,66 @@ int read_cmd_file (
           pio_info->file_type       = MATRIXMARKET_FILE;
         pio_info->init_dist_type  = INITIAL_LINEAR;
         pio_info->init_dist_procs = -1;
+        pio_info->matrix_obj = COLUMNS; 
         pline = line;
+        keepreading = 1; /* dummy value to enter loop */
 
-        while (pline+n < pmax)  {
-          i = sscanf(pline += n, SKIPW "initial" NEXTARG LASTARG "%n", string,
+        while ((pline+n < pmax) && keepreading)  {
+          /* Check for options starting with "initial" */
+          keepreading = 0; /* only keep reading if we found new options */
+          pline += n; /* update pline based on previous token */
+          n = 0;      /* no. of chars read. set to zero in case sscanf fails */
+          nread = sscanf(pline, SKIPW "initial" NEXTARG LASTARG "%n", string,
            value, &n);
-          if (i != 2)
-            break;
-
-          if (!strcmp(string, "distribution")) {
-            if      (!strcmp(value, "linear"))  i = INITIAL_LINEAR;
-            else if (!strcmp(value, "block"))   i = INITIAL_LINEAR;
-            else if (!strcmp(value, "cyclic"))  i = INITIAL_CYCLIC;
-            else if (!strcmp(value, "owner"))   i = INITIAL_OWNER;
-            else  {
-              Gen_Error(0, "fatal: bad initial distribution argument");
+          keepreading += nread;
+          if (nread == 2){
+            if (!strcmp(string, "distribution")) {
+              if      (!strcmp(value, "linear"))  i = INITIAL_LINEAR;
+              else if (!strcmp(value, "block"))   i = INITIAL_LINEAR;
+              else if (!strcmp(value, "cyclic"))  i = INITIAL_CYCLIC;
+              else if (!strcmp(value, "owner"))   i = INITIAL_OWNER;
+              else  {
+                Gen_Error(0, "fatal: bad initial distribution argument");
+                return 0;
+              }
+              pio_info->init_dist_type = i;
+            }
+            else if (!strcmp(string, "procs"))  {
+              if (sscanf(value, " %d%n", &pio_info->init_dist_procs, &nv) != 1) {
+                Gen_Error(0, "fatal: initial procs value must be integal");
+                return 0;
+              }
+            }
+            else {
+              Gen_Error(0, "fatal: unrecognizable file type arguments");
               return 0;
             }
-            pio_info->init_dist_type = i;
           }
-          else if (!strcmp(string, "procs"))  {
-            if (sscanf(value, " %d%n", &pio_info->init_dist_procs, &nv) != 1) {
-              Gen_Error(0, "fatal: initial procs value must be integal");
-              return 0;
+ 
+          /* Check for options without "initial" */
+          pline += n; /* update pline based on previous token */
+          n = 0;      /* set to zero in case sscanf fails */
+          i = 0;
+          if (pline < pmax){
+            nread = sscanf(pline, NEXTARG LASTARG "%n", string,
+             value, &n);
+            keepreading += nread;
+            if (nread == 2){
+              if (!strcmp(string, "objects")) {
+                if      (!strcmp(value, "rows"))     i = ROWS;
+                else if (!strcmp(value, "columns"))  i = COLUMNS;
+                else if (!strcmp(value, "nonzeros")) i = NONZEROS;
+                else  {
+                  Gen_Error(0, "fatal: bad objects type argument");
+                  return 0;
+                }
+                pio_info->matrix_obj = i;
+              }
+              else {
+                Gen_Error(0, "fatal: unrecognizable file type arguments");
+                return 0;
+              }
             }
-          }
-          else {
-            Gen_Error(0, "fatal: unrecognizable file type arguments");
-            return 0;
           }
         }
       }

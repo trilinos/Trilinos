@@ -146,7 +146,8 @@ int read_hypergraph_file(
     else if (pio_info->file_type == MATRIXMARKET_FILE) {
       if (MM_readfile(Proc, fp, &nvtxs, &nhedges, &npins,
                       &hindex, &hvertex, &vwgt_dim, &vwgts, 
-                      &hewgt_dim, &hewgts, &base) != 0){
+                      &hewgt_dim, &hewgts, &base, pio_info->matrix_obj) 
+                      != 0){
         Gen_Error(0, "fatal: Error returned from MM_readfile");
         return 0;
       }
