@@ -105,16 +105,16 @@ int main(int argc, char *argv[]) {
     Epetra_Map tempMapOnPE0(-1, readMap->NumMyElements(), 0, Comm);
     Epetra_IntVector elementSizesOnPE0(View,tempMapOnPE0, readMap->ElementSizeList());
 
-    if (MyPID==0) cout << "Element sizes on PE 0" << endl;
-    cout << elementSizesOnPE0 << endl;
+    //if (MyPID==0) cout << "Element sizes on PE 0" << endl;
+    //cout << elementSizesOnPE0 << endl;
 
     Epetra_Map tempMap(readMap->NumGlobalElements(), 0, Comm);
     Epetra_IntVector elementSizes(tempMap);
     Epetra_Export tempExporter(tempMapOnPE0, tempMap);
     elementSizes.Export(elementSizesOnPE0, tempExporter, Insert);
   
-    if (MyPID==0) cout << "Element sizes after redistribution" << endl;
-    cout << elementSizes << endl;
+    //if (MyPID==0) cout << "Element sizes after redistribution" << endl;
+    //cout << elementSizes << endl;
 
     map = new Epetra_BlockMap(-1, tempMap.NumMyElements(), tempMap.MyGlobalElements(), &(elementSizes[0]), 0, Comm);
 
@@ -175,17 +175,17 @@ int main(int argc, char *argv[]) {
   Epetra_Time timer(Comm);
 
   int LevelFill = 0;
-  if (argc > 2)  LevelFill = atoi(argv[2]);
+  if (argc > 3)  LevelFill = atoi(argv[3]);
   if (verbose) cout << "Using Level Fill = " << LevelFill << endl;
   int Overlap = 0;
-  if (argc > 3) Overlap = atoi(argv[3]);
+  if (argc > 4) Overlap = atoi(argv[4]);
   if (verbose) cout << "Using Level Overlap = " << Overlap << endl;
   double Athresh = 0.0;
-  if (argc > 4) Athresh = atof(argv[4]);
+  if (argc > 5) Athresh = atof(argv[5]);
   if (verbose) cout << "Using Absolute Threshold Value of = " << Athresh << endl;
 
   double Rthresh = 1.0;
-  if (argc > 5) Rthresh = atof(argv[5]);
+  if (argc > 6) Rthresh = atof(argv[6]);
   if (verbose) cout << "Using Relative Threshold Value of = " << Rthresh << endl;
 
   Ifpack_IlukGraph * IlukGraph = 0;
