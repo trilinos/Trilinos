@@ -8,7 +8,6 @@ EPETRA_TEMPLATE_OBJS="./cxx_repository/*.o" \
 --with-mpi-cc="/usr/local/cplant/ross/current/bin/cc" \
 --with-mpi-f77="/usr/local/cplant/ross/current/bin/f77" \
 --with-mpi-libdir="-L/usr/local/cplant/ross/current/lib" \
---with-mpi-libs="-lmpi" --enable-mpi \
---with-mpi-include=-I/usr/local/cplant/ross/current/include \
---with-mpi-incdir=-I/usr/local/cplant/ross/current/include
+--enable-mpi \
+--with-mpi-include=-I/usr/local/cplant/ross/current/include
 
