@@ -278,7 +278,7 @@ fi
 AM_CONDITIONAL(NEED_PARAMETER_LIST, false ) 
 
 if test "$target" = "alpha*-dec-osf*" ; then
-   CXXCXXFLAGS = "-ptr ../src/cxx_repository ${CXXFLAGS}"
+   CXXFLAGS = "-ptr ../src/cxx_repository ${CXXFLAGS}"
 fi
 
 

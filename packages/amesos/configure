@@ -6786,6 +6786,10 @@ else
 fi
 
 
+if test "$target" = "alpha*-dec-osf*" ; then
+   CXXFLAGS = "-ptr ../src/cxx_repository ${CXXFLAGS}"
+fi
+
 
 
 #
@@ -7232,8 +7236,8 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&5
-echo "$as_me: error: Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find dscmain.h in ${tac_with_amesos_dscpackincdirstratus1:~/Trilinos> } , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&5
+echo "$as_me: error: Cannot find dscmain.h in ${tac_with_amesos_dscpackincdirstratus1:~/Trilinos> } , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -9286,7 +9290,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9289: \"$ac_link\") >&5
+(eval echo $as_me:9293: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9366,7 +9370,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9369: \"$ac_link\") >&5
+(eval echo $as_me:9373: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
