@@ -696,7 +696,12 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
 
   Epetra_Time Time(EpetraComm);
 
-  if (Amat->getrow->pre_comm == NULL) 
+  if (Amat->getrow->post_comm != NULL)  {
+    if (Amat->comm->ML_mypid == 0)
+      pr_error("Error: Please transpose matrix with ML_Operator_Transpose_byrow()\n       before calling ML_Operator2EpetraCrsMatrix().\n");
+  }
+
+  if (Amat->getrow->pre_comm == NULL)
     Nghost = 0;
   else {
     if (Amat->getrow->pre_comm->total_rcv_length <= 0)
