@@ -65,18 +65,18 @@ int Zoltan_PHG_Coarsening
   /* Assume all rows in a column have the entire (column's) matching info */
   /* Calculate the number of coarse vertices. */
   c_hg->nVtx = 0;                 /* counts number of new (coarsened) vertices */
-  me = hgc->myProc_x;             /* convenience variable */
+  me = hgc->myProc_x;             /* short name, convenience variable */
   size = 0;                       /* size (in ints) to communicate */
   count = 0;                      /* number of messages to communicate */
   for (i = 0; i < hg->nVtx; i++)  {    /* loop over every local vertice */
     if (match[i] < 0)  {               /* external processor match */
-      int gx=-match[i]-1, proc;
+      int proc, gx = -match[i]-1;
       
-      /* rule to determine "ownership" of coarsened vertices across procs */
+      /* rule to determine "ownership" of coarsened vertices between procs */
       proc = ((gx + VTX_LNO_TO_GNO (hg,i)) & 1) ? MIN(gx, me) : MAX(gx, me);
       if (proc != me)   {             /* another processor owns this vertex */
-        size += hg->vindex[i+1] - hg->vindex[i];   
-        list[count++] = i;
+        size += hg->vindex[i+1] - hg->vindex[i];  /* send buffer sizing */ 
+        list[count++] = i;                        /* list of vtx's to send */
         }
       else 
         c_hg->nVtx++;         /* myProc owns the matching across processors */ 
@@ -93,18 +93,19 @@ int Zoltan_PHG_Coarsening
   }
 
   /* size and allocate the send buffer, and weight array */
-  size += (2*count);  /* include gno's and counts in message */
+  size += (2*count);          /* add gno's and edge counts to message size */
   if (!(buffer = (char*) ZOLTAN_MALLOC (size * sizeof(int)))  
    || !(c_hg->vwgt = (float*) ZOLTAN_CALLOC (c_hg->nVtx, sizeof(float))))  {
-    Zoltan_Multifree (__FILE__, __LINE__, 2, c_hg->vwgt, buffer);
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    ZOLTAN_TRACE_EXIT (zz, yo);
-    return ZOLTAN_MEMERR;
+     Zoltan_Multifree (__FILE__, __LINE__, 2, c_hg->vwgt, buffer);
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+     ZOLTAN_TRACE_EXIT (zz, yo);
+     return ZOLTAN_MEMERR;
   }
               
   MPI_Allgather (&size, 1, MPI_INT, each_size, 1, MPI_INT, hgc->row_comm);  
 
-  for (size = 0, i = 0; i < hgc->nProc_x; i++)
+  size = 0;
+  for (i = 0; i < hgc->nProc_x; i++)
     size += each_size[i];
   if (!(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))   {
     ZOLTAN_TRACE_EXIT (zz, yo);
@@ -128,7 +129,7 @@ int Zoltan_PHG_Coarsening
   MPI_Allgatherv (buffer, count, MPI_INT, rbuffer, each_size, displs, MPI_INT,
    hgc->row_comm);            
 
-  /* index all received data */
+  /* index all received data for rapid lookup */
   ip = (int*) rbuffer;
   for (i = 0; i < size; i++)  {
     vertex = ip[i];
@@ -154,19 +155,19 @@ int Zoltan_PHG_Coarsening
   c_hg->nNonZero = 0;   /* count of coarsened pins */
   c_hg->nVtx     = 0;   /* count of coarsened vertices */
   for (i = 0; i < hg->nVtx; i++)  {
-    if (match[i] < 0 && cmatch[i] < 0)        /* match to external vertex */                  
-       LevelMap [i] = match[i];         /* negative value => external vtx */         
+    if (match[i] < 0 && cmatch[i] < 0)      /* match to external vertex */                  
+       LevelMap [i] = match[i];             /* negative value => external vtx */         
     else if (match[i] < 0) {                /* match from external vertex */
        LevelMap[i] = c_hg->nVtx;
       
 /*      c_hg->vwgt[c_hg->nVtx] += vlist[k]->weight;     */
        c_hg->vindex[c_hg->nVtx] = c_hg->nNonZero;
-       
-       ip = ((int*) rbuffer) + i;
-       count = *++ip;
-       for (j = 0; j < count; j++)  {
+       ip =  ((int*) rbuffer) + cmatch[i];      /* point to receieved data */ 
+       ip++;                    /* skip over vtx gno */
+       count = *ip++;           /* extract edge count, advance to first edge */
+       while (count--)  {
           edge = EDGE_GNO_TO_LNO (hg, *ip++);
-          used_edges [edge]     = i+1;
+          used_edges [edge]             = i+1;
           c_hg->vedge[c_hg->nNonZero++] = edge;
        }
        
@@ -179,7 +180,7 @@ int Zoltan_PHG_Coarsening
        }        
        c_hg->nVtx++;          
     }
-    else if (match[i] >= 0 && cmatch[i] < 0)   /* match, pack, group my vtx's */
+    else if (match[i] >= 0 && cmatch[i] < 0)   /* match/pack/group local vtx's */
       c_hg->vindex[c_hg->nVtx] = c_hg->nNonZero;
       vertex = i;
       while (cmatch[vertex] < 0)  {    
@@ -232,8 +233,8 @@ int Zoltan_PHG_Coarsening
     c_hg->vedge  = c_vedge;
   }
   
-  Zoltan_Multifree (__FILE__, __LINE__, 10, c_hg->vwgt, buffer, rbuffer,
-   &c_ewgt, &c_vindex, &c_vedge, list, cmatch, displs, each_size);  
+  Zoltan_Multifree (__FILE__, __LINE__, 6, &buffer, &rbuffer, &list, &cmatch,
+   &displs, &each_size);  
 
   ZOLTAN_TRACE_EXIT (zz, yo);
   return Zoltan_PHG_Create_Mirror(zz, c_hg);
