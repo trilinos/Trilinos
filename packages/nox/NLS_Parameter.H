@@ -57,6 +57,7 @@ public:
   void setValue(bool value);
   void setValue(int value);
   void setValue(double value);
+  void setValue(const char* value);
   void setValue(const string& value);
   void setValue(const NLS_ParameterList& p);
   //@}

@@ -102,6 +102,13 @@ void NLS_Parameter::setValue(double value)
   isused = false;
 }
 
+void NLS_Parameter::setValue(const char* value)
+{
+  type = STRING;
+  sval = value;
+  isused = false;
+}
+
 void NLS_Parameter::setValue(const string& value)
 {
   type = STRING;
@@ -193,7 +200,7 @@ ostream& NLS_Parameter::leftshift(ostream& stream) const
     stream << "double" << sep << dval;
     break;
   case STRING:
-    stream << "string" << sep << sval;
+    stream << "string" << sep << "\"" << sval << "\"";
     break;
   case LIST:
     stream << "sublist";
