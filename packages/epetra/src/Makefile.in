@@ -239,7 +239,8 @@ COMP_H = \
 	$(srcdir)/Epetra_Vector.h \
 	$(srcdir)/Epetra_CrsSingletonFilter.h \
 	$(srcdir)/Epetra_FECrsMatrix.h \
-	$(srcdir)/Epetra_FEVector.h
+	$(srcdir)/Epetra_FEVector.h \
+	$(srcdir)/Epetra_IntVector.h
 
 
 COMP = \
@@ -252,7 +253,8 @@ COMP = \
 	$(srcdir)/Epetra_Vector.cpp \
 	$(srcdir)/Epetra_CrsSingletonFilter.cpp \
 	$(srcdir)/Epetra_FECrsMatrix.cpp \
-	$(srcdir)/Epetra_FEVector.cpp
+	$(srcdir)/Epetra_FEVector.cpp \
+	$(srcdir)/Epetra_IntVector.cpp
 
 
 
@@ -381,6 +383,7 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_CrsSingletonFilter.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_FECrsMatrix.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_FEVector.$(OBJEXT) \
+@HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_IntVector.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_MpiComm.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_TRUE@	Epetra_MpiSmpComm.$(OBJEXT)
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@am_libepetra_a_OBJECTS = \
@@ -415,7 +418,8 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_Vector.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_CrsSingletonFilter.$(OBJEXT) \
 @HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_FECrsMatrix.$(OBJEXT) \
-@HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_FEVector.$(OBJEXT)
+@HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_FEVector.$(OBJEXT) \
+@HAVE_MPI_FALSE@@HAVE_THREADS_FALSE@	Epetra_IntVector.$(OBJEXT)
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@am_libepetra_a_OBJECTS = \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_BLAS.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_LAPACK.$(OBJEXT) \
@@ -449,6 +453,7 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_CrsSingletonFilter.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_FECrsMatrix.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_FEVector.$(OBJEXT) \
+@HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_IntVector.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_MpiComm.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_MpiDistributor.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_TRUE@	Epetra_MpiComm.$(OBJEXT) \
@@ -486,6 +491,7 @@ libepetra_a_DEPENDENCIES =
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_CrsSingletonFilter.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_FECrsMatrix.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_FEVector.$(OBJEXT) \
+@HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_IntVector.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_MpiComm.$(OBJEXT) \
 @HAVE_MPI_TRUE@@HAVE_THREADS_FALSE@	Epetra_MpiDistributor.$(OBJEXT)
 libepetra_a_OBJECTS = $(am_libepetra_a_OBJECTS)
@@ -509,6 +515,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_FEVector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_Flops.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_Import.Po \
+@AMDEP_TRUE@	$(DEPDIR)/Epetra_IntVector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_LAPACK.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_LinearProblem.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_LocalMap.Po \
@@ -650,6 +657,7 @@ Epetra_CrsSingletonFilter.$(OBJEXT): \
 	$(srcdir)/Epetra_CrsSingletonFilter.cpp
 Epetra_FECrsMatrix.$(OBJEXT): $(srcdir)/Epetra_FECrsMatrix.cpp
 Epetra_FEVector.$(OBJEXT): $(srcdir)/Epetra_FEVector.cpp
+Epetra_IntVector.$(OBJEXT): $(srcdir)/Epetra_IntVector.cpp
 Epetra_MpiComm.$(OBJEXT): $(srcdir)/Epetra_MpiComm.cpp
 Epetra_MpiSmpComm.$(OBJEXT): $(srcdir)/Epetra_MpiSmpComm.cpp
 Epetra_MpiDistributor.$(OBJEXT): $(srcdir)/Epetra_MpiDistributor.cpp
@@ -677,6 +685,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_FEVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_Flops.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_Import.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_IntVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_LAPACK.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_LinearProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_LocalMap.Po@am__quote@
@@ -1085,6 +1094,18 @@ Epetra_FEVector.obj: $(srcdir)/Epetra_FEVector.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_FEVector.Po' tmpdepfile='$(DEPDIR)/Epetra_FEVector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_FEVector.obj `cygpath -w $(srcdir)/Epetra_FEVector.cpp`
+
+Epetra_IntVector.o: $(srcdir)/Epetra_IntVector.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_IntVector.cpp' object='Epetra_IntVector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_IntVector.Po' tmpdepfile='$(DEPDIR)/Epetra_IntVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_IntVector.o `test -f $(srcdir)/Epetra_IntVector.cpp || echo '$(srcdir)/'`$(srcdir)/Epetra_IntVector.cpp
+
+Epetra_IntVector.obj: $(srcdir)/Epetra_IntVector.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Epetra_IntVector.cpp' object='Epetra_IntVector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Epetra_IntVector.Po' tmpdepfile='$(DEPDIR)/Epetra_IntVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_IntVector.obj `cygpath -w $(srcdir)/Epetra_IntVector.cpp`
 
 Epetra_MpiComm.o: $(srcdir)/Epetra_MpiComm.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Epetra_MpiComm.cpp' object='Epetra_MpiComm.o' libtool=no @AMDEPBACKSLASH@
