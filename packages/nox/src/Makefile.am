@@ -41,21 +41,21 @@ ABSTRACT_H = \
 	$(srcdir)/NOX_Abstract_Group.H
 
 LINESEARCH_H = \
-	$(srcdir)/NOX_Linesearch_Generic.H \
-	$(srcdir)/NOX_Linesearch_FullStep.H \
-	$(srcdir)/NOX_Linesearch_Backtrack.H \
-	$(srcdir)/NOX_Linesearch_Manager.H \
-	$(srcdir)/NOX_Linesearch_MoreThuente.H \
-	$(srcdir)/NOX_Linesearch_Polynomial.H \
-	$(srcdir)/NOX_Linesearch_Secant.H 
+	$(srcdir)/NOX_LineSearch_Generic.H \
+	$(srcdir)/NOX_LineSearch_FullStep.H \
+	$(srcdir)/NOX_LineSearch_Backtrack.H \
+	$(srcdir)/NOX_LineSearch_Manager.H \
+	$(srcdir)/NOX_LineSearch_MoreThuente.H \
+	$(srcdir)/NOX_LineSearch_Polynomial.H \
+	$(srcdir)/NOX_LineSearch_Secant.H 
 
 LINESEARCH = \
-	$(srcdir)/NOX_Linesearch_FullStep.C \
-	$(srcdir)/NOX_Linesearch_Backtrack.C \
-	$(srcdir)/NOX_Linesearch_Manager.C \
-	$(srcdir)/NOX_Linesearch_MoreThuente.C \
-	$(srcdir)/NOX_Linesearch_Polynomial.C \
-	$(srcdir)/NOX_Linesearch_Secant.C 
+	$(srcdir)/NOX_LineSearch_FullStep.C \
+	$(srcdir)/NOX_LineSearch_Backtrack.C \
+	$(srcdir)/NOX_LineSearch_Manager.C \
+	$(srcdir)/NOX_LineSearch_MoreThuente.C \
+	$(srcdir)/NOX_LineSearch_Polynomial.C \
+	$(srcdir)/NOX_LineSearch_Secant.C 
 
 DIRECTION_H = \
 	$(srcdir)/NOX_Direction_Generic.H \
@@ -79,8 +79,8 @@ PARAMETER = \
 SOLVER_H = \
 	$(srcdir)/NOX_Solver_Generic.H \
 	$(srcdir)/NOX_Solver_Manager.H \
-	$(srcdir)/NOX_Solver_LineSearch.H \
-	$(srcdir)/NOX_Solver_TrustRegion.H \
+	$(srcdir)/NOX_Solver_LineSearchBased.H \
+	$(srcdir)/NOX_Solver_TrustRegionBased.H \
 	$(srcdir)/NOX_Solver_NonlinearCG.H \
         $(srcdir)/LOCA_Stepper.H \
         $(srcdir)/LOCA_Solver_Generic.H \
@@ -88,8 +88,8 @@ SOLVER_H = \
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
-	$(srcdir)/NOX_Solver_LineSearch.C \
-	$(srcdir)/NOX_Solver_TrustRegion.C \
+	$(srcdir)/NOX_Solver_LineSearchBased.C \
+	$(srcdir)/NOX_Solver_TrustRegionBased.C \
 	$(srcdir)/NOX_Solver_NonlinearCG.C \
         $(srcdir)/LOCA_Stepper.C \
         $(srcdir)/LOCA_Solver_ZeroOrder.C
