@@ -37,8 +37,7 @@ namespace Kokkos {
 /*! The Kokkos::CisMatrix specifies the interface that any sparse matrix interfacing to the Kokkos 
   Operators classes must implement.
 
-  At this time, the primary function provided by Kokkos::CisMatrix is matrix times vector and matrix 
-  times multi-vector multiplication and solves with single or multiple right-hand-sides.
+  At this time, the primary function provided by Kokkos::CisMatrix is access to matrix indices and values.
 
 */    
 
@@ -58,7 +57,7 @@ namespace Kokkos {
     /*! Extract the number of entries and a pointer to the indices in the ith row/column of the matrix.  Note that
         the indices are not copied by this method.  Memory allocation is handled by the matrix object itself.
 
-	\param i (In) The row (if isRowOriented() is true) or column that should be returned.
+	\param i (In) The row (if getIsRowOriented() is true) or column that should be returned.
 	\param numEntries (Out) The number of entries in the ith row/column.
 	\param indices (Out) A pointer to the list of indices in the ith row/column.
 
@@ -70,7 +69,7 @@ namespace Kokkos {
     /*! Extract the values in the ith row/column of the matrix.  Note that
         the values are not copied by this method.  Memory allocation is handled by the matrix object itself.
 
-	\param i (In) The row (if isRowOriented() is true) or column that should be returned.
+	\param i (In) The row (if getIsRowOriented() is true) or column that should be returned.
 	\param numEntries (Out) The number of entries in the ith row/column.
 	\param indices (Out) A pointer to the list of indices in the ith row/column.
 
@@ -84,16 +83,16 @@ namespace Kokkos {
     //@{ \name Matrix Attribute access methods.
 	
     //! Returns true if the compressed index matrix should be interpreted as a row matrix.
-    virtual bool isRowOriented() const = 0;
+    virtual bool getIsRowOriented() const = 0;
 	
     //! Number of rows
-    virtual OrdinalType numRows() const = 0;
+    virtual OrdinalType getNumRows() const = 0;
 	
     //! Number of columns
-    virtual OrdinalType numCols() const = 0;
+    virtual OrdinalType getNumCols() const = 0;
 	
     //! Number of matrix entries
-    virtual OrdinalType numEntries() const = 0;
+    virtual OrdinalType getNumEntries() const = 0;
 	
     //@}
   };

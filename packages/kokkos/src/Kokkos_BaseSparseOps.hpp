@@ -74,7 +74,7 @@ namespace Kokkos {
     BaseSparseOps(void);
   
     //! Copy constructor.
-    BaseSparseOps(const BaseSparseOps& Matrix);
+    BaseSparseOps(const BaseSparseOps& operator);
 	
     //! BaseSparseOps Destructor
     virtual ~BaseSparseOps();
@@ -94,7 +94,7 @@ namespace Kokkos {
       reduce the overall memory requirements.
       \return Integer error code, set to 0 if successful.
     */
-    virtual int initializeStructure(CisMatrix<OrdinalType, ScalarType> const& A, bool willKeepStructure = false);
+    virtual int initializeStructure(const CisMatrix<OrdinalType, ScalarType>& A, bool willKeepStructure = false);
  
     //! Initialize values of matrix
     /*!
@@ -111,7 +111,7 @@ namespace Kokkos {
       the matrix passed in to the initializeStructure() methods.  This parameter is false by default.
       \return Integer error code, set to 0 if successful.
     */
-    virtual int initializeValues(CisMatrix<OrdinalType, ScalarType> const& A, bool willKeepValues = false,
+    virtual int initializeValues(const CisMatrix<OrdinalType, ScalarType>& A, bool willKeepValues = false,
 				 bool checkStructure = false);
  
     //@}
@@ -120,75 +120,30 @@ namespace Kokkos {
 	
     //! Returns the result of a Kokkos_BaseSparseOps multiplied by a vector x in y.
     /*! 
-      \param xLength (In) Length of vector x.
-      \param x (In) A Vector to multiply by.
-      \param yLength (In) Length of vector y.
-      \param y (Out) A Vector containing result.
+      \param x (In) A Kokkos::Vector to multiply by.
+      \param y (Out) A Kokkos::Vector containing results.
       \param transA (In) If true, multiply by the transpose of matrix, otherwise just use matrix.
       \param conjA (In) If true, multiply by the conjugate of matrix values, otherwise just use matrix values.
 		
       \return Integer error code, set to 0 if successful.
     */
-    virtual int apply(OrdinalType xLength, ScalarType * x, OrdinalType yLength, ScalarType * y, 
+    virtual int apply(const Vector<OrdinalType, ScalarType>& x, Vector<OrdinalType, ScalarType>& y, 
 		      bool transA = false, bool conjA = false) const;
 
     //! Returns the result of a Kokkos_BaseSparseOps multiplied by multiple vectors in x, results in y.
     /*! 
-      \param numVectors (In) Number of vectors.
-      \param xLength (In) Length of vectors in x.
-      \param x (In) An array of pointers to vectors to multiply by.
-      \param yLength (In) Length of vector y.
-      \param y (Out) A array of pointers to vectors containing results.
+      \param x (In) A Kokkos::MultiVector to multiply by.
+      \param y (Out) A Kokkos::MultiVector containing results.
       \param transA (In) If true, multiply by the transpose of matrix, otherwise just use matrix.
       \param conjA (In) If true, multiply by the conjugate of matrix values, otherwise just use matrix values.
 		
       \return Integer error code, set to 0 if successful.
     */
-    virtual int apply(OrdinalType numVectors, OrdinalType xLength, ScalarType ** x, OrdinalType yLength, ScalarType ** y, 
+    virtual int apply(const MultiVector<OrdinalType, ScalarType>& x, MultiVector<OrdinalType, ScalarType>& y, 
 		      bool transA = false, bool conjA = false) const;
-
-
- 
-    //! Returns the result of a triangular solve of vector x in y.
-    /*!
-      \param xLength (In) Length of vector x.
-      \param x (In) A Vector to multiply by.
-      \param yLength (In) Length of vector y.
-      \param y (Out) A Vector containing result.
-      \param transA (In) If true, multiply by the transpose of matrix, otherwise just use matrix.
-      \param conjA (In) If true, multiply by the conjugate of matrix values, otherwise just use matrix values.
-      \param upper (In) If true, solve Uy = x, otherwise solve Ly = x.
-      \param unitDiagonal (In) If true, assume diagonal is unit (whether it's stored or not).
- 
-      \return Integer error code, set to 0 if successful.
-
-      \warning Any implementation of this method must work for the case when x and y are the same vector!
-    */
-    virtual int applyInverse(OrdinalType xLength, ScalarType * x, OrdinalType yLength, ScalarType * y,
-			     bool transA = false, bool conjA = false, bool upper = true, bool unitDiagonal = true) const;
- 
-    //! Returns the result of a triangular solve of multiple vectors in x, results in y.
-    /*!
-      \param numVectors (In) Number of vectors.
-      \param xLength (In) Length of vectors in x.
-      \param x (In) An array of pointers to vectors to multiply by.
-      \param yLength (In) Length of vector y.
-      \param y (Out) A array of pointers to vectors containing results.
-      \param transA (In) If true, multiply by the transpose of matrix, otherwise just use matrix.
-      \param conjA (In) If true, multiply by the conjugate of matrix values, otherwise just use matrix values.
-      \param upper (In) If true, solve Uy = x, otherwise solve Ly = x.
-      \param unitDiagonal (In) If true, assume diagonal is unit (whether it's stored or not).
- 
-      \return Integer error code, set to 0 if successful.
-
-      \warning Any implementation of this method must work for the case when x and y are the same vector!
-    */
-    virtual int applyInverse(OrdinalType numVectors, OrdinalType xLength, ScalarType ** x, OrdinalType yLength, ScalarType ** y,
-			     bool transA = false, bool conjA = false, bool upper = true, bool unitDiagonal = true) const;
- 
     //@}
 	
-    //@{ \name Matrix Attribute access methods.
+    //@{ \name Operator attribute access methods.
 
     //! Returns true if this implementation of Kokkos::BaseSparseOps can benefit from the user keeping the passed in structure.
     /*! Some implementations of optimized kernels do not rely on the user's data except for the initial 
@@ -197,7 +152,7 @@ namespace Kokkos {
 	data anyway, we want to allow for this possibility.  This method is related to the willKeepStructure parameter 
 	passed in to the initializeStructure() method.
     */
-    virtual bool canUseStructure() const {return(true);};
+    virtual bool getCanUseStructure() const {return(true);} const;
 
     //! Returns true if this implementation of Kokkos::BaseSparseOps can benefit from the user keeping the passed in values.
     /*! Some implementations of optimized kernels do not rely on the user's data except for the initial 
@@ -206,16 +161,9 @@ namespace Kokkos {
 	data anyway, we want to allow for this possibility.  This method is related to the willKeepValues parameter 
 	passed in to the initializeValues() method.
     */
-    virtual bool canUseValues() const {return(true);};
-	
-    //! Number of rows
-    virtual OrdinalType numRows() const {return(numRows_);};
-	
-    //! Number of columns
-    virtual OrdinalType numCols() const {return(numCols_);};
-	
-    //! Number of matrix entries
-    virtual OrdinalType numEntries() const {return(numEntries_);};
+    virtual bool getCanUseValues() const {return(true);} const;
+
+    virtual CisMatrix<Ordinaltype, ScalarType> * getMatrix() const;
 	
     //@}
   
@@ -267,21 +215,21 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  BaseSparseOps<OrdinalType, ScalarType>::BaseSparseOps(const BaseSparseOps<OrdinalType, ScalarType> &matrix) 
-    : CompObject(matrix),
-      allocated_(matrix.allocated_),
-      willKeepStructure_(matrix.willKeepStructure_),
-      willKeepValues_(matrix.willKeepValues_),
-      isRowOriented_(matrix.isRowOriented_),
-      numRows_(matrix.numRows_),
-      numCols_(matrix.numCols_),
-      numEntries_(matrix.numEntries_),
-      values_(matrix.values_),
-      allValues_(matrix.allValues_),
-      indices_(matrix.indices_),
-      allIndices_(matrix.allIndices_),
-      pntr_(matrix.pntr_),
-      profile_(matrix.profile_) {
+  BaseSparseOps<OrdinalType, ScalarType>::BaseSparseOps(const BaseSparseOps<OrdinalType, ScalarType> &operator) 
+    : CompObject(operator),
+      allocated_(operator.allocated_),
+      willKeepStructure_(operator.willKeepStructure_),
+      willKeepValues_(operator.willKeepValues_),
+      isRowOriented_(operator.isRowOriented_),
+      numRows_(operator.numRows_),
+      numCols_(operator.numCols_),
+      numEntries_(operator.numEntries_),
+      values_(operator.values_),
+      allValues_(operator.allValues_),
+      indices_(operator.indices_),
+      allIndices_(operator.allIndices_),
+      pntr_(operator.pntr_),
+      profile_(operator.profile_) {
 
     if (!willKeepStructure_) copyStructure();
     if (!willKeepValues_) copyValues()
@@ -383,7 +331,7 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  int BaseSparseOps<OrdinalType, ScalarType>::initializeStructure(CisMatrix<OrdinalType, ScalarType> const& A,
+  int BaseSparseOps<OrdinalType, ScalarType>::initializeStructure(const CisMatrix<OrdinalType, ScalarType>& A,
 								  bool willKeepStructure) {
 
     OrdinalType i;
@@ -405,11 +353,13 @@ namespace Kokkos {
     A.getIndices(0, numRCEntries, indicesRC);
     profiles[0] = numRCEntries;
     indices_[0] = indicesRC;
-    for (i=1; i<numRC; i++) {
+    i = 1;
+    while (contiguousStructure && i<numRC) {
       A.getIndices(i, numRCEntries, indicesRC);
       profiles[i] = numRCEntries;
       indices_[i] = indicesRC;
       if (indices_[i-1]+profiles_[i]!=indices_[i]) contiguousStructure = false; // Not contiguous
+      i++;
     }
 
     if (contiguousStructure) {
@@ -436,44 +386,24 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  int BaseSparseOps<OrdinalType, ScalarType>::initializeValues(CisMatrix<OrdinalType, ScalarType> const& A, 
+  int BaseSparseOps<OrdinalType, ScalarType>::initializeValues(const CisMatrix<OrdinalType, ScalarType>& A, 
 							       bool willKeepValues, bool checkStructure) {
     return(0);
   }
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  int BaseSparseOps<OrdinalType, ScalarType>::apply(OrdinalType xLength, ScalarType * x, 
-						    OrdinalType yLength, ScalarType * y,
+  int BaseSparseOps<OrdinalType, ScalarType>::apply(const Vector<OrdinalType, ScalarType>& x, 
+						    Vector<OrdinalType, ScalarType> & y,
 						    bool transA, bool conjA) const {
     return(0);
   }
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  int BaseSparseOps<OrdinalType, ScalarType>::apply(OrdinalType numVectors, 
-						    OrdinalType xLength, ScalarType ** x, 
-						    OrdinalType yLength, ScalarType ** y,
+  int BaseSparseOps<OrdinalType, ScalarType>::apply(const MultiVector<OrdinalType, ScalarType>& x, 
+						    MultiVector<OrdinalType, ScalarType> & y,
 						    bool transA, bool conjA) const {
-    return(0);
-  }
-
-  //==============================================================================
-  template<typename OrdinalType, typename ScalarType>
-  int BaseSparseOps<OrdinalType, ScalarType>::applyInverse(OrdinalType xLength, ScalarType * x, 
-							   OrdinalType yLength, ScalarType * y,
-							   bool transA, bool conjA, bool upper, 
-							   bool unitDiagonal) const {
-    return(0);
-  }
-
-  //==============================================================================
-  template<typename OrdinalType, typename ScalarType>
-  int BaseSparseOps<OrdinalType, ScalarType>::applyInverse(OrdinalType numVectors, 
-							   OrdinalType xLength, ScalarType ** x, 
-							   OrdinalType yLength, ScalarType ** y,
-							   bool transA, bool conjA, bool upper, 
-							   bool unitDiagonal) const {
     return(0);
   }
 
