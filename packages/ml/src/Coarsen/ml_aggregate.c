@@ -84,6 +84,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->vblock_info                = NULL;
    (*ag)->operator_complexity        = 0.0;
    (*ag)->keep_P_tentative           = ML_NO;
+   (*ag)->smooth_existing_P_tentative = ML_NO;
    (*ag)->P_tentative                = NULL;
 
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
@@ -366,6 +367,36 @@ int ML_Aggregate_Reset_Threshold( ML_Aggregate *ag )
    ag->threshold = 0.0;
    return 0;
 }
+
+/* ************************************************************************* */
+/* Set flag controlling whether to use existing tentative prolongator.       */ 
+/* ************************************************************************* */
+
+int ML_Aggregate_Set_Flag_SmoothExistingTentativeP( ML_Aggregate *ag, int flag)
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_DampingFactor : wrong object. \n");
+      exit(-1);
+   }
+   ag->smooth_existing_P_tentative = flag;
+   return 0;
+}
+
+/* ************************************************************************* */
+/* Retrieve flag controlling whether to use existing tentative prolongator.  */ 
+/* ************************************************************************* */
+
+int ML_Aggregate_Get_Flag_SmoothExistingTentativeP( ML_Aggregate *ag)
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+   {
+      printf("ML_Aggregate_Set_DampingFactor : wrong object. \n");
+      exit(-1);
+   }
+   return ag->smooth_existing_P_tentative;
+}
+
 
 /* ************************************************************************* */
 /* set damping factor for the smoothed prolongator                           */
