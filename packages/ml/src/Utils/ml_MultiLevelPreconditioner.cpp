@@ -1368,11 +1368,11 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
     default:
       ML_Solve_MGV(ml_ptr, xvectors[i], yvectors[i]); 
     }
-
+    
     if( flt_ml_ ) {
       ML_Cycle_MG(&(flt_ml_->SingleLevel[flt_ml_->ML_finest_level]),
 		  yvectors[i], xvectors[i],
-		  ML_ZERO, flt_ml_->comm, ML_NO_RES_NORM, flt_ml_);
+		  ML_NONZERO, flt_ml_->comm, ML_NO_RES_NORM, flt_ml_);
     }
   }
 
