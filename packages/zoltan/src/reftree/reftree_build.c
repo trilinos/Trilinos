@@ -25,7 +25,7 @@ int order_tri_bisect(LB *lb, int *vert1, int *order, int *vertices,
 int order_other_ref(LB *lb, LB_REFTREE *parent, int num_child, int *num_vert,
                     int *vert1, int *vertices, int *order, int *in_vertex,
                     int *out_vertex);
-int order_other_ref_recur(int new_entry, int level, int *order, int *on_path,
+void order_other_ref_recur(int new_entry, int level, int *order, int *on_path,
                           int num_child, int *has_out, int **share_vert,
                           int *solved);
 int find_inout(int level, int num_child, int *num_vert, int *vert1,
@@ -923,6 +923,8 @@ int hashsize;              /* size of the hash table */
     }
     ref_type = LB_OTHER_REF;
     break;
+  default:
+    break;
   }
 
   /* end TEMP */
@@ -1467,7 +1469,7 @@ int *on_path;       /* flag for already placed element on path */
 
 /*****************************************************************************/
 
-int order_other_ref_recur(int new_entry, int level, int *order, int *on_path,
+void order_other_ref_recur(int new_entry, int level, int *order, int *on_path,
                           int num_child, int *has_out, int **share_vert,
                           int *solved)
 {

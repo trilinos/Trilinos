@@ -356,7 +356,6 @@ int LB_Set_Method(LB *lb, char *method_name)
 
   char *yo = "LB_Set_Method";
   char *method_upper;
-  int i;
 
   /*
    *  Compare method_name string with standard strings for methods.

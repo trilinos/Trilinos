@@ -174,8 +174,6 @@ char *name 			/* parameter name */
  * If it is not in the list, do nothing.
  */
     LB_PARAM *ptr, *oldptr;	/* loops through parameter list */
-    LB_PARAM *param;		/* parameter entry in list */
-
 
     oldptr = NULL;
     ptr = lb->Params;

@@ -30,7 +30,7 @@ void LB_Reftree_Part_Recursive(LB *lb, LB_REFTREE *subroot, int *part,
                                float *current_size, int *num_exp, float *cutoff,
                                float partition_size, float eps);
 void LB_Reftree_Mark_and_Count(LB_REFTREE *subroot, int part, int *num_exp);
-int LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, int *num_export,
+void LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, int *num_export,
                             LB_GID **export_global_ids,
                             LB_LID **export_local_ids, int **export_procs);
 int is_power_of_2(int n);
@@ -157,7 +157,7 @@ int is_power_of_2(int n)
   n2 = n;
   if (n > 0) {
     while(n2) {count++;n2=n2>>1;}
-    return(n==(1<<count-1));
+    return(n==(1<<(count-1)));
   } else {
     return(0);
   }
@@ -420,7 +420,7 @@ int LB_Reftree_Sum_Weights_pairs(LB *lb)
 char *yo = "LB_Reftree_Sum_Weights_pairs";
 LB_REFTREE *root;         /* Root of the refinement tree */
 int wdim;                 /* Dimension of the weight array */
-int i,j,comm_loop,rproc;  /* loop counters */
+int i,j,comm_loop;        /* loop counters */
 int count;                /* counter */
 LB_GID *leaf_list;        /* leaves for which some proc requests weight */
 int reqsize;              /* length of leaf_list */
@@ -957,7 +957,7 @@ void LB_Reftree_List_Other_Leaves(LB_REFTREE *subroot, LB_GID *list, int *count)
 /*
  * Function to make a list of the leaves not assigned to this processor
  */
-int i, j;   /* loop counter */
+int j;   /* loop counter */
 
   if (subroot->num_child == 0) {
 
@@ -1187,7 +1187,7 @@ int i;
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, int *num_export,
+void LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, int *num_export,
                             LB_GID **export_global_ids,
                             LB_LID **export_local_ids, int **export_procs)
 {

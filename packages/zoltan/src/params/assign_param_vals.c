@@ -144,7 +144,7 @@ param_ptr = params;
                 
         }
         else if (!strcmp(param_ptr->type, "DOUBLE")) {
-            printf("ZOLTAN Parameter %s = %lf\n", 
+            printf("ZOLTAN Parameter %s = %f\n", 
                     param_ptr->name, *((double *) param_ptr->ptr));
         }
         else if (!strcmp(param_ptr->type, "LONG")) {

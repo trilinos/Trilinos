@@ -49,7 +49,7 @@ int LB_inertial3d(struct irb_dot *, int, int, double *, double *,double *);
 static void IRB_check(LB *, struct irb_dot *, int, int);
 static void IRB_stats(LB *, double, struct irb_dot *,int, double *, int *, int);
 
-static int irb(LB *, int *, LB_GID **, LB_LID **, int **, double,
+static int irb_fn(LB *, int *, LB_GID **, LB_LID **, int **, double,
                int, int, int, int);
 
 /*  IRB_CHECK = 0  No consistency check on input or results */
@@ -135,13 +135,13 @@ int LB_irb(
 
      *num_export = -1;  /* We don't compute the export map. */
 
-     return(irb(lb, num_import, import_global_ids, import_local_ids,
+     return(irb_fn(lb, num_import, import_global_ids, import_local_ids,
                 import_procs, overalloc, wgtflag, check, stats, gen_tree));
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int irb(
+static int irb_fn(
      LB *lb,                     /* The load-balancing structure with info for
                                     the IRB balancer. */
      int *num_import,            /* Number of non-local objects assigned to
@@ -165,7 +165,7 @@ static int irb(
      int gen_tree                /* (0) do not (1) do generate full treept */
 )
 {
-     char    yo[] = "irb";
+     char    yo[] = "irb_fn";
      int     proc,nprocs;        /* my proc id, total # of procs */
      struct irb_dot *dotbuf;     /* local dot arrays */
      struct irb_dot *dotpt;      /* local dot arrays */
@@ -193,7 +193,6 @@ static int irb(
      double  evec[3];            /* Eigenvector defining direction */
      int     first_guess = 0;    /* flag if first guess for median search */
      int     allocflag;          /* have to re-allocate space */
-     int     length;             /* message length */
      double  time1,time2;        /* timers */
      double  time3,time4;        /* timers */
      double  timestart,timestop; /* timers */
@@ -224,8 +223,6 @@ static int irb(
      /* MPI data types and user functions */
 
      MPI_Comm local_comm, tmp_comm;
-     MPI_Request request, request2;
-     MPI_Status status;
 
      LB_TRACE_ENTER(lb, yo);
      if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
@@ -657,19 +654,19 @@ static int irb(
      }
 
      if (lb->Debug_Level >= LB_DEBUG_ALL) {
-        int i;
+        int kk;
         LB_Print_Sync_Start(lb, TRUE);
         printf("ZOLTAN IRB Proc %d Num_Obj=%d Num_Keep=%d Num_Non_Local=%d\n",
                lb->Proc, pdotnum, pdottop, *num_import);
         printf("  Assigned objects:\n");
-        for (i = 0; i < pdotnum; i++) {
+        for (kk = 0; kk < pdotnum; kk++) {
            printf("    Obj:  %10d      Orig: %4d\n",
-                  irb->Dots[i].Tag.Global_ID, irb->Dots[i].Tag.Proc);
+                  irb->Dots[kk].Tag.Global_ID, irb->Dots[kk].Tag.Proc);
         }
         printf("  Non_locals:\n");
-        for (i = 0; i < *num_import; i++) {
-           printf("    Obj:  %10d      Orig: %4d\n", (*import_global_ids)[i],
-                  (*import_procs)[i]);
+        for (kk = 0; kk < *num_import; kk++) {
+           printf("    Obj:  %10d      Orig: %4d\n", (*import_global_ids)[kk],
+                  (*import_procs)[kk]);
         }
         LB_Print_Sync_End(lb, TRUE);
      }
@@ -698,7 +695,7 @@ static void IRB_check(LB *lb, struct irb_dot *dotpt, int dotnum, int dotorig)
      MPI_Allreduce(&dotnum,&total2,1,MPI_INT,MPI_SUM,lb->Communicator);
      if (total1 != total2) {
         if (proc == 0)
-           fprintf(stderr, "IRB ERROR: Points before IRB = %d, ",
+           fprintf(stderr, "IRB ERROR: Points before IRB = %d, "
                            "Points after IRB = %d\n", total1,total2);
      }
 

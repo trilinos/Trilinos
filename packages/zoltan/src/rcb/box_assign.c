@@ -45,7 +45,7 @@ int            *numprocs)       /* number of processors in proc list */
      struct rcb_box    box;     /* box data structure */
 
      if (lb->Data_Structure == NULL) {
-        fprintf(stderr, "ERROR: No LB_Data_Structure available for ",
+        fprintf(stderr, "ERROR: No LB_Data_Structure available for "
                         "Box_Assign\n");
         *procs = -1;
         *numprocs = 0;
@@ -116,7 +116,7 @@ int            *numprocs)       /* number of processors in proc list */
         }
      }
      else {
-        fprintf(stderr, "ERROR: Box_Assign only valid when method is RCB ",
+        fprintf(stderr, "ERROR: Box_Assign valid only when method is RCB "
                         "or IRB\n");
         *procs = -1;
         *numprocs = 0;

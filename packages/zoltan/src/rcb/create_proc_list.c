@@ -93,16 +93,17 @@ int LB_Create_Proc_List(
                  s += a - rem[i];
            if (s == sum_send)
               k = 1;
-           else if (s < sum_send)
-                   if (sp > sum_send)
-                      k = 1;
-                   else
-                      a++;
-                else {
-                   a--;
-                   if (sp < sum_send && sp > 0)
-                      k = 1;
-                }
+           else if (s < sum_send) {
+              if (sp > sum_send)
+                 k = 1;
+              else
+                 a++;
+           }
+           else {
+              a--;
+              if (sp < sum_send && sp > 0)
+                 k = 1;
+           }
            sp = s;
         }
      } else

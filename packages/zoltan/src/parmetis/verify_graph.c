@@ -251,14 +251,13 @@ barrier1:
         }
       }
       if (!flag){
-        fprintf(stderr, "Zoltan error: Graph is not symmetric in %s. ",
+        fprintf(stderr, "Zoltan error: Graph is not symmetric in %s. "
                 "Edge (%d,%d) exists, but not (%d,%d)\n", 
                 yo, ptr1[0], ptr1[1], ptr1[1], ptr1[0]);
         ierr = LB_FATAL;
       }
     }
 
-barrier2:
     /* Free memory */
     LB_FREE(&sendbuf);
     LB_FREE(&recvbuf);

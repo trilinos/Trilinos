@@ -254,12 +254,12 @@ void LB_visit(OCT_Global_Info *OCT_info,pOctant octant) {
  *
  * marks all the octants within the subtree to be in the current partition
  */
-void LB_tag_subtree(OCT_Global_Info *OCT_info,pOctant octant, int partition) {
+void LB_tag_subtree(OCT_Global_Info *OCT_info,pOctant octant, int part) {
   pOctant children[8];                                 /* children of octant */
   int i;                                               /* index counter */
 
   /* modify NPID so octant know where to migrate to */
-  POC_modify_newpid(octant, partition);
+  POC_modify_newpid(octant, part);
 
   if (POC_isTerminal(octant))
     return;
@@ -270,7 +270,7 @@ void LB_tag_subtree(OCT_Global_Info *OCT_info,pOctant octant, int partition) {
   for (i=0; i<8; i++)                        /* Simple - just visit in order */
     /* if (children[i] && POC_local(OCT_info, children[i])) */
     if(children[i] && POC_local(OCT_info, octant,i))
-      LB_tag_subtree(OCT_info,children[i],partition);
+      LB_tag_subtree(OCT_info,children[i],part);
 }
 
 /*****************************************************************************/

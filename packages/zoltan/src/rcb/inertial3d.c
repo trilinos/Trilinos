@@ -31,7 +31,6 @@
 
 static void evals3(double[3][3], double *, double *, double *);
 static double determinant(double[3][3]);
-static void kramer3(double[3][3], double *, double *);
 static void eigenvec3(double[3][3], double, double *, double *);
 
 int LB_inertial3d(
@@ -229,29 +228,6 @@ static double determinant(
            A[0][0]*A[1][2]*A[2][1] - A[0][2]*A[1][1]*A[2][0];
 
      return det;
-}
-
-
-static void kramer3(A, b, x)    /* Use Kramer's rule to solve 3x3 */
-     double A[3][3];
-     double b[3];
-     double x[3];               /* Solve Ax=b */
-{
-     double    det;             /* determinant of system */
-
-     det = 1.0 / determinant(A);
-
-     x[0] = (b[0] * (A[1][1] * A[2][2] - A[1][2] * A[2][1]) -
-             b[1] * (A[0][1] * A[2][2] - A[0][2] * A[2][1]) +
-             b[2] * (A[0][1] * A[1][2] - A[0][2] * A[1][1])) * det;
-
-     x[1] = -(b[0] * (A[1][0] * A[2][2] - A[1][2] * A[2][0]) -
-              b[1] * (A[0][0] * A[2][2] - A[0][2] * A[2][0]) +
-              b[2] * (A[0][0] * A[1][2] - A[0][2] * A[1][0])) * det;
-
-     x[2] = (b[0] * (A[1][0] * A[2][1] - A[1][1] * A[2][0]) -
-             b[1] * (A[0][0] * A[2][1] - A[0][1] * A[2][0]) +
-             b[2] * (A[0][0] * A[1][1] - A[0][1] * A[1][0])) * det;
 }
 
 

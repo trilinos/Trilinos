@@ -56,8 +56,8 @@ static void RCB_check(LB *, struct rcb_dot *, int, int, struct rcb_box *);
 static void RCB_stats(LB *, double, struct rcb_dot *,int, double *, 
  		      int *, struct rcb_box *, int, int);
 
-static int rcb(LB *, int *, LB_GID **, LB_LID **, int **, double,
-               int, int, int, int, int);
+static int rcb_fn(LB *, int *, LB_GID **, LB_LID **, int **, double,
+                 int, int, int, int, int);
 
 /*  RCB_CHECK = 0  No consistency check on input or results */
 /*  RCB_CHECK = 1  Check input weights and final results for consistency */
@@ -152,14 +152,14 @@ int LB_rcb(
 
     *num_export = -1;  /* We don't compute the export map. */
 
-    return(rcb(lb, num_import, import_global_ids, import_local_ids,
+    return(rcb_fn(lb, num_import, import_global_ids, import_local_ids,
 		 import_procs, overalloc, reuse, wgtflag,
                  check, stats, gen_tree));
 }
 
 /*---------------------------------------------------------------------------*/
 
-static int rcb(
+static int rcb_fn(
   LB *lb,                     /* The load-balancing structure with info for
                                  the RCB balancer.                           */
   int *num_import,            /* Number of non-local objects assigned to this
@@ -185,7 +185,7 @@ static int rcb(
   int gen_tree                /* (0) do not (1) do generate full treept */
 )
 {
-  char    yo[] = "rcb";
+  char    yo[] = "rcb_fn";
   int     proc,nprocs;              /* my proc id, total # of procs */
   struct rcb_dot *dotbuf, *dotpt;   /* local dot arrays */
   struct rcb_box boxtmp;            /* tmp rcb box */
@@ -212,7 +212,6 @@ static int rcb(
   double  fractionlo;               /* desired wt in lower half */
   int     first_guess;              /* flag if first guess for median search */
   int     allocflag;                /* have to re-allocate space */
-  int     length;                   /* message length */
   double  time1,time2,time3,time4;  /* timers */
   double  timestart,timestop;       /* timers */
   double  timers[4];                /* diagnostic timers 
@@ -244,8 +243,6 @@ static int rcb(
   /* MPI data types and user functions */
 
   MPI_Comm local_comm, tmp_comm;
-  MPI_Request request, request2;
-  MPI_Status status;
   MPI_Op box_op;
   MPI_Datatype box_type;
   MPI_User_function LB_rcb_box_merge;
@@ -717,19 +714,19 @@ static int rcb(
   }
 
   if (lb->Debug_Level >= LB_DEBUG_ALL) {
-    int i;
+    int kk;
     LB_Print_Sync_Start(lb, TRUE);
     printf("ZOLTAN RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 
            lb->Proc, pdotnum, pdottop, *num_import);
     printf("  Assigned objects:\n");
-    for (i = 0; i < pdotnum; i++) {
-      printf("    Obj:  %10d      Orig: %4d\n", rcb->Dots[i].Tag.Global_ID,
-             rcb->Dots[i].Tag.Proc);
+    for (kk = 0; kk < pdotnum; kk++) {
+      printf("    Obj:  %10d      Orig: %4d\n", rcb->Dots[kk].Tag.Global_ID,
+             rcb->Dots[kk].Tag.Proc);
     }
     printf("  Non_locals:\n");
-    for (i = 0; i < *num_import; i++) {
+    for (kk = 0; kk < *num_import; kk++) {
       printf("    Obj:  %10d      Orig: %4d\n",
-             (*import_global_ids)[i], (*import_procs)[i]);
+             (*import_global_ids)[kk], (*import_procs)[kk]);
     }
     LB_Print_Sync_End(lb, TRUE);
   }

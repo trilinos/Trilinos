@@ -33,7 +33,7 @@ int      *proc)                 /* processor that point lands in */
      struct irb_tree   *itree;  /* tree of IRB cuts */
 
      if (lb->Data_Structure == NULL) {
-        fprintf(stderr, "ERROR: No LB_Data_Structure available for ",
+        fprintf(stderr, "ERROR: No LB_Data_Structure available for "
                         "Point_Assign\n");
         *proc = -1;
         return(LB_FATAL);
@@ -105,7 +105,7 @@ int      *proc)                 /* processor that point lands in */
         return(LB_OK);
      }
      else {
-        fprintf(stderr, "ERROR: Point_Assign only valid when method is RCB ",
+        fprintf(stderr, "ERROR: Point_Assign only valid when method is RCB "
                         "or IRB\n");
         *proc = -1;
         return(LB_FATAL);

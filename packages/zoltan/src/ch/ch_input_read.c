@@ -80,7 +80,7 @@ double    read_val(
 	    while (!done) {
 		--break_pnt;
 		if (line[break_pnt] != '\0') {
-		    if (isspace(line[break_pnt])) {
+		    if (isspace((int)(line[break_pnt]))) {
 			if (!white_seen) {
 			    save_pnt = break_pnt + 1;
 		            white_seen = TRUE;
@@ -99,7 +99,7 @@ double    read_val(
 	offset = 0;
     }
 
-    while (isspace(line[offset]) && offset < LINE_LENGTH) offset++;
+    while (isspace((int)(line[offset])) && offset < LINE_LENGTH) offset++;
     if (line[offset] == '%' || line[offset] == '#') {
 	*end_flag = 1;
 	if (break_pnt < LINE_LENGTH) {
@@ -173,7 +173,7 @@ int      *end_flag 		/* 0 => OK, 1 => EOL, -1 => EOF */
 	    while (!done) {
 		--break_pnt;
 		if (line[break_pnt] != '\0') {
-		    if (isspace(line[break_pnt])) {
+		    if (isspace((int)(line[break_pnt]))) {
 			if (!white_seen) {
 			    save_pnt = break_pnt + 1;
 		            white_seen = TRUE;
@@ -192,7 +192,7 @@ int      *end_flag 		/* 0 => OK, 1 => EOL, -1 => EOF */
 	offset = 0;
     }
 
-    while (isspace(line[offset]) && offset < LINE_LENGTH) offset++;
+    while (isspace((int)(line[offset])) && offset < LINE_LENGTH) offset++;
     if (line[offset] == '%' || line[offset] == '#') {
 	*end_flag = 1;
 	if (break_pnt < LINE_LENGTH) {

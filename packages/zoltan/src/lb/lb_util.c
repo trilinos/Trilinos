@@ -12,6 +12,7 @@
  *    $Revision$
  ****************************************************************************/
 
+#include <ctype.h>
 #include "lb_const.h"
 #include "lb_util_const.h"
 #include "all_allo_const.h"
@@ -152,9 +153,9 @@ char **pstring2) 		/* cleaned string to return */
     length1 = strlen(string1);
     start = 0;
     end = length1;
-    while (start < length1 && isspace(string1[start]))
+    while (start < length1 && isspace((int)(string1[start])))
 	start++;
-    while (end > start && isspace(string1[end]))
+    while (end > start && isspace((int)(string1[end])))
 	end--;
 
     string2 = (char *) LB_MALLOC((end - start + 1) * sizeof(char));

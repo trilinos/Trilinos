@@ -46,10 +46,14 @@ static PARAM_VARS Graph_params[] = {
 
 /***************  prototypes for internal functions ********************/
 
+#if (defined(LB_JOSTLE) || defined(LB_PARMETIS))
+
 static int LB_ParMetis_Jostle(LB *lb, int *num_imp, LB_GID **imp_gids,
   LB_LID **imp_lids, int **imp_procs, int *num_exp, LB_GID **exp_gids,
   LB_LID **exp_lids, int **exp_procs, char *alg, int  *options);
 static int hash_lookup (struct LB_hash_node **hashtab, LB_GID key, int n);
+
+#endif  /* (defined(LB_JOSTLE) || defined(LB_PARMETIS)) */
 
 /**********************************************************/
 /* Interface routine for ParMetis. This is just a simple  */
@@ -224,7 +228,7 @@ int LB_Jostle(
   }
 
   /* Set imbalance tolerance */
-  sprintf(str, "imbalance = %3d ", 100*(lb->Imbalance_Tol - 1));
+  sprintf(str, "imbalance = %3d ", (int)(100*(lb->Imbalance_Tol - 1)));
   jostle_env(str);
 
   /* Multidimensional vertex weights */
@@ -296,15 +300,15 @@ static int LB_ParMetis_Jostle(
   struct LB_edge_info  *proc_list, *ptr;
   struct LB_hash_node **hashtab, *hash_nodes;
   LB_LID *local_ids;
-  LB_GID *global_ids, *nbors_global, *ptr_gid;
+  LB_GID *global_ids, *nbors_global;
   char *sendbuf, *recvbuf;
   struct Comm_Obj *comm_plan;
   double times[5];
   int num_proc = lb->Num_Proc;     /* Temporary variables whose addresses are */
-  int proc = lb->Proc;             /* passed to Jostle and ParMETIS.  Don't   */
+                                   /* passed to Jostle and ParMETIS.  Don't   */
   MPI_Comm comm = lb->Communicator;/* want to risk letting external packages  */
                                    /* change our lb struct.                   */
-  int i99, *p99;                   /* Variables used for debugging.           */
+  int i99;                         /* Variables used for debugging.           */
 
   LB_TRACE_ENTER(lb, yo);
 
@@ -905,7 +909,8 @@ static int LB_ParMetis_Jostle(
       printf("[%1d] Debug: Calling ParMETIS partitioner ...\n", lb->Proc);
       printf("[%1d] Debug: vtxdist, xadj, adjncy, part = 0x%x, 0x%x, 0x%x, "
              "0x%x\n", 
-             lb->Proc, vtxdist, xadj, adjncy, part);
+             lb->Proc, (unsigned int) vtxdist, (unsigned int) xadj, 
+             (unsigned int) adjncy, (unsigned int) part);
     }
 
   if (strcmp(alg, "JOSTLE") == 0){
@@ -1101,7 +1106,7 @@ int LB_Set_Jostle_Param(
 char *name,                     /* name of variable */
 char *val)                      /* value of variable */
 {
-    int status, i;
+    int status;
     PARAM_UTYPE result;         /* value returned from Check_Param */
     int index;                  /* index returned from Check_Param */
 
@@ -1121,6 +1126,8 @@ char *val)                      /* value of variable */
 
     return(status);
 }
+
+#if (defined(LB_JOSTLE) || defined(LB_PARMETIS))
 
 /*******************************************************************
  * hash_lookup uses LB_Hash to lookup a key 
@@ -1149,3 +1156,6 @@ static int hash_lookup (struct LB_hash_node **hashtab, LB_GID key, int n)
   /* Key not in hash table */
   return -1;
 }
+
+#endif /* (defined(LB_JOSTLE) || defined(LB_PARMETIS)) */
+

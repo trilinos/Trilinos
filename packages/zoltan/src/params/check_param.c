@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #ifdef __STDC__
 #include <string.h>
 #else
@@ -65,7 +66,7 @@ int *matched_index)		/* where in struct the match occurs */
 	    else {
 		/* Check that there's a digit here */
 		for (i = strlen(val); i >= 0; i--)
-		    if (isdigit(val[i]))
+		    if (isdigit((int)(val[i])))
 			break;
 		if (i < 0)
 		    status = 2;
@@ -78,7 +79,7 @@ int *matched_index)		/* where in struct the match occurs */
 	else if (!strcmp(params->type, "DOUBLE")) {
 	    /* Check that there's a digit here */
 	    for (i = strlen(val); i >= 0; i--)
-		if (isdigit(val[i]))
+		if (isdigit((int)(val[i])))
 		    break;
 	    if (i < 0)
 		status = 2;
@@ -96,7 +97,7 @@ int *matched_index)		/* where in struct the match occurs */
 	    else {
 		/* Check that there's a digit here */
 		for (i = strlen(val); i >= 0; i--)
-		    if (isdigit(val[i]))
+		    if (isdigit((int)(val[i])))
 			break;
 		if (i < 0)
 		    status = 2;

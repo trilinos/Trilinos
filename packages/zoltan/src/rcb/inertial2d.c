@@ -45,7 +45,6 @@ int LB_inertial2d(
      double xdif, ydif;         /* deviation from center of mass */
      double eval, res;          /* eigenvalue and error in eval calculation */
      double wgt_sum;            /* sum of all the vertex weights */
-     double time;               /* timing parameters */
      int    i;                  /* loop counter */
 
      /* Compute center of mass and total mass. */
