@@ -29,6 +29,10 @@
 #ifndef ANASAZI_SORT_MANAGER_HPP
 #define ANASAZI_SORT_MANAGER_HPP
 
+/*!     \file AnasaziSortManager.hpp
+        \brief Class which manages the sorting of approximate eigenvalues computed by Anasazi solvers.
+*/
+
 /*!    \class Anasazi::SortManager
        \brief Anasazi's templated pure virtual class for managing the sorting of 
        approximate eigenvalues computed by the eigensolver.

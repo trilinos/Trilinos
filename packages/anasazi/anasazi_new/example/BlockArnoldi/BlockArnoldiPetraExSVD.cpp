@@ -42,6 +42,7 @@
 //
 #include "AnasaziPetraInterface.hpp"
 #include "AnasaziBlockArnoldi.hpp"
+#include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "Epetra_CrsMatrix.h"
@@ -155,7 +156,7 @@ int main(int argc, char *argv[]) {
 
 	// Call the constructor for the (A^T*A) operator
 	Anasazi::PetraSymOp Amat(A);	
-	Anasazi::Eigenproblem<double> MyProblem(&Amat, &ivec);
+	Anasazi::BasicEigenproblem<double> MyProblem(&Amat, &ivec);
 
 	// Inform the eigenproblem that the matrix A is symmetric
 	MyProblem.SetSymmetric(true);
@@ -195,10 +196,10 @@ int main(int argc, char *argv[]) {
 #endif
 
 	// Obtain results directly
-	double* evalr = MyProblem.GetREvals();
+	double* evalr = MyProblem.GetEvals();
 
 	// Retrieve eigenvectors
-	Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetREvecs());
+	Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetEvecs());
 
 	// Output results to screen
 	MyBlockArnoldi.currentStatus();

@@ -86,11 +86,8 @@ namespace Anasazi {
     
     //@{ \name Solution return methods.
     
-    //! This method returns the real part of the computed Ritz values.
-    const TYPE * GetRealRitzVals() { return(_ritzvals_r); };
-    
-    //! This method returns the imaginary part of the computed Ritz values.
-    const TYPE * GetImagRitzVals() { return(_ritzvals_i); };
+    //! This method returns the computed Ritz values.
+    const TYPE * GetRitzValues() { return(_ritzvalues); };
     
     //! This method returns the Ritz residuals for the computed eigenpairs.
     const TYPE * GetRitzResiduals() { return(_ritzresiduals); };
@@ -152,7 +149,7 @@ namespace Anasazi {
     Teuchos::SerialDenseMatrix<int,TYPE> _hessmatrix;
     const int _length, _restarts, _step;
     const TYPE _residual_tolerance;
-    TYPE *_ritzresiduals, *_ritzvals_r, *_ritzvals_i;
+    TYPE *_ritzresiduals, *_ritzvalues, *_ritzvaluesi;
     int *_order;
     int _restartiter, _iter, _jstart, _jend, _nevblock;
     int _offset, _maxoffset;
@@ -160,9 +157,11 @@ namespace Anasazi {
     TYPE _schurerror, _dep_tol, _blk_tol, _sing_tol, _def_tol;
 
     // Information obtained from the eigenproblem
-    MultiVec<TYPE> *_evecr, *_eveci; 
+    Operator<TYPE> *_Op;
+    Operator<TYPE> *_B;
+    MultiVec<TYPE> *_evecs;
     const int _nev, _block;  
-    TYPE *_evalr, *_evali;  
+    TYPE *_evals;
   };
   //
   // Implementation
@@ -188,6 +187,8 @@ namespace Anasazi {
     _step(step),
     _residual_tolerance(tol),
     _ritzresiduals(0), 
+    _ritzvalues(0), 
+    _ritzvaluesi(0),
     _order(0),
     _restartiter(0), 
     _iter(0), 
@@ -205,12 +206,12 @@ namespace Anasazi {
     _blk_tol(1.0),
     _sing_tol(1.0),
     _def_tol(1.0),
-    _evecr(problem.GetREvecs()), 
-    _eveci(problem.GetIEvecs()), 
+    _Op(problem.GetOperator()),
+    _B(problem.GetB()),
+    _evecs(problem.GetEvecs()), 
     _nev(problem.GetNEV()), 
     _block(problem.GetBlockSize()), 
-    _evalr(problem.GetREvals()), 
-    _evali(problem.GetIEvals())
+    _evals(problem.GetEvals()) 
     {     
     //
     // Determine _nevblock : how many blocks it will take to contain the _nev eigenvalues/vectors
@@ -218,11 +219,11 @@ namespace Anasazi {
     // potential presence of complex eigenvalue pairs.  Additional blocks can be retained, up to
     // _maxoffset if the block ends with one eigenvalue of a complex conjugate pair.
     //
-    _nevblock = _nev/_block + 1;
+    //_nevblock = _nev/_block + 1;
     // TEST CODE:  This part has changed from saving another block to compare with ARPACK.
-    //_nevblock = _nev/_block;  
-    //if (_nev%_block) 
-    //_nevblock++;    
+    _nevblock = _nev/_block;  
+    if (_nev%_block) 
+    _nevblock++;    
     _maxoffset = (_length-_nevblock)/2;
     //
     // Retrieve the initial vector from the Anasazi::Eigenproblem.
@@ -243,13 +244,13 @@ namespace Anasazi {
     // Create the vectors for eigenvalues and their residual errors and
     // initialize them.
     //
-    _ritzvals_r = new TYPE[ _block*_length ]; assert(_ritzvals_r!=NULL);  
-    _ritzvals_i = new TYPE[ _block*_length ]; assert(_ritzvals_i!=NULL);  
+    _ritzvalues = new TYPE[ 2* (_block*_length) ]; assert(_ritzvalues!=NULL);  
+    _ritzvaluesi = _ritzvalues + _block*_length;
     _ritzresiduals = new TYPE[ _block*_length ]; assert(_ritzresiduals!=NULL);
     _order = new int[ _block*_length ]; assert(_order!=NULL);
     const TYPE one = 1.0, zero = 0.0;
     for (int i=0; i< _block*_length; i++) {
-      _ritzvals_r[i] = zero; _ritzvals_i[i] = zero;
+      _ritzvalues[i] = zero; _ritzvaluesi[i] = zero;
       _ritzresiduals[i] = one;
     }			
     //
@@ -276,8 +277,7 @@ namespace Anasazi {
   {
     if (_basisvecs) delete _basisvecs;
     if (_ritzresiduals) delete [] _ritzresiduals;
-    if (_ritzvals_r) delete [] _ritzvals_r;
-    if (_ritzvals_i) delete [] _ritzvals_i;
+    if (_ritzvalues) delete [] _ritzvalues;
     if (_order) delete [] _order;
   }
   
@@ -326,7 +326,7 @@ namespace Anasazi {
 	} else {
 	  for (i=0; i<_nevtemp; i++) {
 	    cout.width(10);
-	    cout<<_evalr[i]<<"\t"<<_ritzresiduals[i]<<endl;
+	    cout<<_evals[i]<<"\t"<<_ritzresiduals[i]<<endl;
 	  }
 	}
 	cout<<"------------------------------------------------------"<<endl;
@@ -338,7 +338,7 @@ namespace Anasazi {
 	} else {
 	  for (i=0; i<_nevtemp; i++) {
 	    cout.width(10);
-	    cout<<_evalr[i]<<"\t"<<_evali[i]<<"\t\t"<<_ritzresiduals[i]<<endl;
+	    cout<<_evals[i]<<"\t"<<_evals[_nev+i]<<"\t\t"<<_ritzresiduals[i]<<endl;
 	  }
 	}
 	cout<<"------------------------------------------------------"<<endl;
@@ -487,7 +487,7 @@ namespace Anasazi {
       //
       //  Compute F_vec = OP * U_vec
       //
-      ret =_problem.ApplyOp( *U_vec, *F_vec ); 
+      ret =_Op->Apply( *U_vec, *F_vec ); 
       //
       // Use previous dependency information to decide which orthogonalization
       // method to use for the new block.  The global variable _dep_flg tells us
@@ -594,7 +594,7 @@ namespace Anasazi {
       // Compute trans(V_prev)*B*F_vec and store in the j'th diagonal
       // block of the Hessenberg matrix
       //
-      ret = _problem.BInProd( one, *V_prev, *F_vec, dense_mat );
+      ret = _problem.InnerProd( *V_prev, *F_vec, dense_mat );
       //
       // Update the orthogonalization coefficients for the j-th block
       // column of the Hessenberg matrix.
@@ -735,7 +735,7 @@ namespace Anasazi {
       //
       // Compute trans(Q_vec)*B*q_vec
       //
-      ret = _problem.BInProd( one, *Q_vec, *q_vec, dense_vec );
+      ret = _problem.InnerProd( *Q_vec, *q_vec, dense_vec );
       //
       // Sum results [0:num_prev-1] into column (num_prev-_block)
       // of the Hessenberg matrix
@@ -756,7 +756,7 @@ namespace Anasazi {
 	//
 	// Compute trans(Q_vec)*q_vec
 	//
-	ret = _problem.BInProd( one, *Q_vec, *q_vec, dense_vec );
+	ret = _problem.InnerProd( *Q_vec, *q_vec, dense_vec );
 	//
 	// Sum results [0:num_prev-1] into column (num_prev-_block)
 	// of the Hessenberg matrix
@@ -793,7 +793,7 @@ namespace Anasazi {
 	// orthogonalization with a correction step if needed.
 	//
 	for (int num_orth=0; num_orth<2; num_orth++){
-	  ret = _problem.BInProd( one, *Q_vec, *tptr, dense_vec );
+	  ret = _problem.InnerProd( *Q_vec, *tptr, dense_vec );
 	  // Note that we don't change the entries of the
 	  // Hessenberg matrix when we orthogonalize a
 	  // random vector
@@ -907,7 +907,7 @@ namespace Anasazi {
 	//
 	Qj = VecIn.CloneView(index, j);
 	Teuchos::SerialDenseVector<int,TYPE> rj(j);
-	_problem.BMvNorm( *qj, norm1 );
+	_problem.MvNorm( *qj, norm1 );
 	//
 	// Do one step of classical Gram-Schmidt orthogonalization
 	// with a second correction step if needed
@@ -916,7 +916,7 @@ namespace Anasazi {
 	// j of VecIn against columns 0:j-1 of VecIn. In other words,
 	// result = trans(Qj)*B*qj.
 	//
-	ret = _problem.BInProd( one, *Qj, *qj, rj );
+	ret = _problem.InnerProd( *Qj, *qj, rj );
 	//
 	// Sum results[0:j-1] into column j of R.
 	//
@@ -928,13 +928,13 @@ namespace Anasazi {
 	//
 	qj->MvTimesMatAddMv(-one, *Qj, rj, one);
 	//
-	_problem.BMvNorm( *qj, norm2 );			
+	_problem.MvNorm( *qj, norm2 );			
 	//
 	if (norm2[0] < norm1[0] * _dep_tol){
 	  //
 	  // Repeat process with newly computed qj
 	  //
-	  ret = _problem.BInProd( one, *Qj, *qj, rj );
+	  ret = _problem.InnerProd( *Qj, *qj, rj );
 	  //    				
 	  // Sum results[0:j-1] into column j of R.
 	  //
@@ -946,7 +946,7 @@ namespace Anasazi {
 	  //
 	  qj->MvTimesMatAddMv(-one, *Qj, rj, one);
 	  //
-	  _problem.BMvNorm( *qj, norm2 );
+	  _problem.MvNorm( *qj, norm2 );
 	}
 	//
 	// Check for dependencies
@@ -986,13 +986,13 @@ namespace Anasazi {
 	    Teuchos::SerialDenseVector<int,TYPE> tj(j);
 	    //
 	    tptr->MvRandom();
-	    _problem.BMvNorm( *tptr, norm1 );
+	    _problem.MvNorm( *tptr, norm1 );
 	    //
 	    for (int num_orth=0; num_orth<2; num_orth++){
-	      ret = _problem.BInProd( one, *Qj, *tptr, tj );
+	      ret = _problem.InnerProd( *Qj, *tptr, tj );
 	      tptr->MvTimesMatAddMv(-one, *Qj, tj, one);
 	    }
-	    _problem.BMvNorm( *tptr, norm2 );
+	    _problem.MvNorm( *tptr, norm2 );
 	    //
 	    if (norm2[0] > norm1[0] * _sing_tol){
 	      // Copy vector into current column of _basisvecs
@@ -1012,7 +1012,7 @@ namespace Anasazi {
       // VecIn (qj), then normalize qj to make it into a unit vector
       //
       TYPE normq[IntOne];
-      _problem.BMvNorm( *qj, normq );
+      _problem.MvNorm( *qj, normq );
       //
       TYPE rjj = one / normq[0];
       qj->MvAddMv ( rjj, *qj, zero, *qj );
@@ -1044,6 +1044,10 @@ namespace Anasazi {
     MultiVec<TYPE>* basistemp=0;
     Teuchos::SerialDenseMatrix<int,TYPE> Q(n,n);
     int * index = new int [ n ]; assert(index!=NULL);
+    //
+    // Initialize the eigenvectors to zero.
+    //
+    _evecs->MvInit( 0.0 );
     //
     //  Set the index array.
     //
@@ -1090,7 +1094,7 @@ namespace Anasazi {
     //  Schur form to compute the eigenvectors of the non-symmetric operator.
     //
     if (_problem.IsSymmetric()) {
-      _evecr->SetBlock( *basistemp, index, curr_nev );
+      _evecs->SetBlock( *basistemp, index, curr_nev );
     } else {  
       //
       //  Now compute the eigenvectors of the Schur form
@@ -1119,24 +1123,20 @@ namespace Anasazi {
       //
       // Sort the eigenvectors.
       //
-      // Initialize imaginary part of eigenvector to zero, so we won't have to deal
-      // with tracking it when complex eigenvalues are present.
-      _eveci->MvInit(zero);
-      
       int conjprs=0;
       int * indexi = new int [ curr_nev+1 ];
       MultiVec<TYPE> *evecstempr, *evecr1;
       TYPE t_evecnrm;
       i = 0;
       while ( i < curr_nev ) {	
-	if (_ritzvals_i[i] != zero) {
+	if (_ritzvaluesi[i] != zero) {
 	  t_evecnrm = one/lapack.LAPY2(evecnrm[i],evecnrm[i+1]);
 	  // Copy the real part of the eigenvector.  Scale by square-root of 2 to normalize the vector.
 	  evecstempr = evecstemp->CloneView( index+i, 1 );
-	  evecr1 = _evecr->CloneView( index+i, 1 );
+	  evecr1 = _evecs->CloneView( index+i, 1 );
 	  evecr1->MvAddMv( t_evecnrm, *evecstempr, zero, *evecstempr );
 	  delete evecr1; evecr1=0;
-	  evecr1 = _evecr->CloneView( index+i+1, 1 );
+	  evecr1 = _evecs->CloneView( index+i+1, 1 );
 	  evecr1->MvAddMv( t_evecnrm, *evecstempr, zero, *evecstempr );
 	  // Note where imaginary part of eigenvector is.
 	  indexi[conjprs] = i+1;
@@ -1149,7 +1149,7 @@ namespace Anasazi {
 	  // We don't have to do anything for the imaginary
 	  // part since we initialized the vectors to zero.
 	  evecstempr = evecstemp->CloneView( index+i, 1 );
-	  evecr1 = _evecr->CloneView( index+i, 1 );
+	  evecr1 = _evecs->CloneView( index+i, 1 );
 	  evecr1->MvAddMv( one/evecnrm[i], *evecstempr, zero, *evecstempr );
 	  // Increment counter.
 	  i++;			
@@ -1162,25 +1162,29 @@ namespace Anasazi {
       // part.
       if (conjprs) {	
 	MultiVec<TYPE>  *evecstempi=0, *eveci1=0;
+	int* indexi_pnev = new int[ conjprs ];
 	//
 	// There is storage for an extra eigenvector.  
 	// So, when the last eigenvalues is the first of a conjugate pair, that eigenvector will be computed.
 	//
 	for (i=0; i<conjprs; i++) {
+	  indexi_pnev[i] = indexi[i] + _nev;
 	  t_evecnrm = one/lapack.LAPY2(evecnrm[indexi[i]],evecnrm[indexi[i]-1]);
 	  evecstempi = evecstemp->CloneView( indexi+i, 1 ); 
-	  eveci1 = _eveci->CloneView( indexi+i, 1 );
-	  eveci1->MvAddMv( t_evecnrm*Teuchos::ScalarTraits<TYPE>::magnitude(_ritzvals_i[indexi[i]])/_ritzvals_i[indexi[i]],
+	  eveci1 = _evecs->CloneView( indexi_pnev+i, 1 );
+	  eveci1->MvAddMv( t_evecnrm*Teuchos::ScalarTraits<TYPE>::magnitude(_ritzvaluesi[indexi[i]])/_ritzvaluesi[indexi[i]],
 			   *evecstempi, zero, *evecstempi );
 	  delete eveci1; eveci1=0;
 	  // Change index and set non-conjugate part of imag eigenvector.
 	  indexi[i]--;
-	  eveci1 = _eveci->CloneView( indexi+i, 1 );
-	  eveci1->MvAddMv( t_evecnrm*Teuchos::ScalarTraits<TYPE>::magnitude(_ritzvals_i[indexi[i]])/_ritzvals_i[indexi[i]],
+	  indexi_pnev[i]--;
+	  eveci1 = _evecs->CloneView( indexi_pnev+i, 1 );
+	  eveci1->MvAddMv( t_evecnrm*Teuchos::ScalarTraits<TYPE>::magnitude(_ritzvaluesi[indexi[i]])/_ritzvaluesi[indexi[i]],
 			   *evecstempi, zero, *evecstempi );
 	  delete eveci1; eveci1=0;
 	  delete evecstempi; evecstempi=0;
 	}	      
+	delete [] indexi_pnev;
       }
       
       // Clean up.
@@ -1227,7 +1231,7 @@ namespace Anasazi {
 	for (i=0; i<_maxoffset; i++) {
 	  numimag = 0;
 	  for (j=0; j<(_nevblock+i)*_block; j++) { 
-	    if (_ritzvals_i[j]!=zero) { numimag++; }; 
+	    if (_ritzvaluesi[j]!=zero) { numimag++; }; 
 	  }
 	  if (!(numimag % 2)) { _offset = i; break; }
 	}
@@ -1355,8 +1359,8 @@ namespace Anasazi {
     int *bwork = new int[ n ];
     char jobvs = 'V';
     char sort = 'N';
-    lapack.GEES( jobvs, sort, select, n, ptr_h, ldh, &sdim,_ritzvals_r,
-		 _ritzvals_i, ptr_q, ldq, work, lwork, bwork, &info );
+    lapack.GEES( jobvs, sort, select, n, ptr_h, ldh, &sdim,_ritzvalues,
+		 _ritzvaluesi, ptr_q, ldq, work, lwork, bwork, &info );
     assert(info==0);
     //
     //---------------------------------------------------
@@ -1417,7 +1421,7 @@ namespace Anasazi {
       TYPE* qt_ptr = Q_temp.values();
       i = 0;
       while( i < n ) {
-	if ( _ritzvals_i[i] != zero ) {
+	if ( _ritzvaluesi[i] != zero ) {
 	  temp = lapack.LAPY2( blas.NRM2( n, qt_ptr+i*n, 1 ), blas.NRM2( n, qt_ptr+(i+1)*n, 1 ) );
 	  blas.SCAL( n, one/temp, qt_ptr+i*n, 1 );
 	  blas.SCAL( n, one/temp, qt_ptr+(i+1)*n, 1 );	      
@@ -1437,7 +1441,7 @@ namespace Anasazi {
       TYPE* s_ptr = S.values();
       i = 0;
       while( i < n ) {
-	if ( _ritzvals_i[i] != zero ) {
+	if ( _ritzvaluesi[i] != zero ) {
 	  _ritzresiduals[i] = lapack.LAPY2( blas.NRM2(_block, s_ptr + i*_block, 1),
 					    blas.NRM2(_block, s_ptr + (i+1)*_block, 1) );
 	  _ritzresiduals[i+1] = _ritzresiduals[i];
@@ -1454,9 +1458,9 @@ namespace Anasazi {
     //---------------------------------------------------
     //
     if (_problem.IsSymmetric())
-      _sm.sort( this, n, _ritzvals_r, _order );
+      _sm.sort( this, n, _ritzvalues, _order );
     else
-      _sm.sort( this, n, _ritzvals_r, _ritzvals_i, _order );
+      _sm.sort( this, n, _ritzvalues, _ritzvaluesi, _order );
     //
     // Re-sort _ritzresiduals based on _order
     //
@@ -1468,9 +1472,9 @@ namespace Anasazi {
     // Copy the nev eigenvalues into the proper vectors
     // NOTE:  If we don't have nev Ritz values, then only n are copied
     //
-    ( n > _nev ? blas.COPY( _nev, _ritzvals_r, 1, _evalr, 1 ) : blas.COPY( n, _ritzvals_r, 1, _evalr, 1 ) );
+    ( n > _nev ? blas.COPY( _nev, _ritzvalues, 1, _evals, 1 ) : blas.COPY( n, _ritzvalues, 1, _evals, 1 ) );
     if (!_problem.IsSymmetric() )
-      ( n > _nev ? blas.COPY( _nev, _ritzvals_i, 1, _evali, 1 ) : blas.COPY( n, _ritzvals_i, 1, _evali, 1 ) );
+      ( n > _nev ? blas.COPY( _nev, _ritzvaluesi, 1, _evals+_nev, 1 ) : blas.COPY( n, _ritzvaluesi, 1, _evals+_nev, 1 ) );
     //
     //---------------------------------------------------
     // Reorder real Schur factorization, remember to add one to the indices for the
@@ -1489,7 +1493,7 @@ namespace Anasazi {
     int *_order2 = new int[ n ]; assert(_order2!=NULL);
     i = 0; 
     while (i < n) {
-      if (_ritzvals_i[i] != zero) {
+      if (_ritzvaluesi[i] != zero) {
 	offset2[_nevtemp] = 0;
 	for (j=i; j<n; j++) {
 	  if (_order[j] > _order[i]) { offset2[_nevtemp]++; }
@@ -1575,7 +1579,7 @@ namespace Anasazi {
     Teuchos::SerialDenseMatrix<int,TYPE> SchurProj( n, n );
     MultiVec<TYPE>* Z = _basisvecs->CloneView( index, n );
     MultiVec<TYPE>* basistemp = _basisvecs->Clone( n );
-    _problem.ApplyOp( *Z, *basistemp );
+    _Op->Apply( *Z, *basistemp );
     basistemp->MvTransMv( one, *Z, SchurProj );
     SchurProj.scale( -one );
     SchurProj += Hj;
@@ -1615,7 +1619,7 @@ namespace Anasazi {
     const TYPE one=1.0;
     const TYPE zero=0.0;
     Teuchos::SerialDenseMatrix<int,TYPE> VTV(m,m);
-    ret = _problem.BInProd( one, *Vj, *Vj, VTV );
+    ret = _problem.InnerProd( *Vj, *Vj, VTV );
     if (ret != Ok) { }
     TYPE* ptr=VTV.values();
     TYPE column_sum;
@@ -1635,7 +1639,7 @@ namespace Anasazi {
     
     Teuchos::SerialDenseMatrix<int,TYPE> E(m,_block);
     
-    ret = _problem.BInProd( one, *Vj, *F_vec, E );
+    ret = _problem.InnerProd( *Vj, *F_vec, E );
     if (ret != Ok) { }
     TYPE* ptr_Ej=E.values();
     
@@ -1651,7 +1655,7 @@ namespace Anasazi {
     cout << " " << endl;
                  
     MultiVec<TYPE>* AVj = _basisvecs->Clone(m); assert(AVj!=NULL);
-    ret = _problem.ApplyOp(*Vj,*AVj);
+    ret = _Op->Apply(*Vj,*AVj);
     Teuchos::SerialDenseMatrix<int,TYPE> Hj(Teuchos::View, _hessmatrix, m, m);
     AVj->MvTimesMatAddMv(-one, *Vj, Hj, one);
     for ( i=0; i<_block; i++ ) {  

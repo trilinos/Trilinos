@@ -37,6 +37,7 @@
 #include "AnasaziPetraInterface.hpp"
 #include "BelosPetraInterface.hpp"
 #include "AnasaziBlockArnoldi.hpp"
+#include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "Ifpack_CrsIct.h"
@@ -267,7 +268,7 @@ int main(int argc, char *argv[]) {
 	Anasazi::PetraOp Amat(A);
 	Anasazi::PetraOp Bmat(B);
 	Anasazi::PetraGenOp Aop(BelosOp, B);	
-	Anasazi::Eigenproblem<double> MyProblem(&Amat, &Bmat, &ivec, &Aop);
+	Anasazi::BasicEigenproblem<double> MyProblem(&Aop, &Bmat, &ivec);
 
 	// Inform the eigenproblem that the matrix pencil (A,B) is symmetric
 	MyProblem.SetSymmetric(true);
@@ -309,18 +310,22 @@ int main(int argc, char *argv[]) {
 	MyBlockArnoldi.currentStatus();
 
 	// obtain eigenvectors directly
-	double* evalr = MyProblem.GetREvals(); 
+	double* evalr = MyProblem.GetEvals(); 
 
 	// retrieve real and imaginary parts of the eigenvectors
-	// The size of the eigenvector storage is nev + block, but the eigenvectors are stored in the first nev vectors.
+	// The size of the eigenvector storage is nev.
+	// The real part of the eigenvectors is stored in the first nev vectors.
+	// The imaginary part of the eigenvectors is stored in the second nev vectors.
 	int* index = new int[ nev ];
 	for (i=0; i<nev; i++) { index[i] = i; }
-	Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetREvecs()->CloneView( index, nev ));
+	Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetEvecs());
 
 	Teuchos::SerialDenseMatrix<int,double> dmatr(nev,nev);
-	MyProblem.AInProd( one, *evecr, *evecr, dmatr );
-	double compeval;
+	Anasazi::PetraVec tempvec(Map, evecr->GetNumberVecs());	
+	A.Apply( *evecr, tempvec );
+	tempvec.MvTransMv( 1.0, *evecr, dmatr );
 
+	double compeval = 0.0;
 	cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
 	cout<<"Real Part \t Rayleigh Error"<<endl;
 	for (i=0; i<nev; i++) {
@@ -336,7 +341,6 @@ int main(int argc, char *argv[]) {
 
 	// Release all objects
 	if (ICT) delete ICT;
-	if (evecr) delete evecr;
 
 	delete [] MyGlobalElements;
 	delete [] NumNz;

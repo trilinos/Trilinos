@@ -33,6 +33,7 @@
 
 #include "AnasaziPetraInterface.hpp"
 #include "AnasaziBlockArnoldi.hpp"
+#include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "Epetra_CrsMatrix.h"
@@ -224,9 +225,9 @@ int main(int argc, char *argv[]) {
 	//  Variables used for the Block Arnoldi Method
 	//
 	int block = 1;
-	int length = 20;
+	int length = 10;
 	int nev = 4;
-	double tol = 1.0e-8;
+	double tol = Teuchos::ScalarTraits<double>::eps();
 	string which="SM";
 	int restarts = 300;
 	//int step = 1;
@@ -240,7 +241,7 @@ int main(int argc, char *argv[]) {
 
 	// Call the ctor that calls the petra ctor for a matrix
 	Anasazi::PetraOp Amat(A);	
-	Anasazi::Eigenproblem<double> MyProblem(&Amat, &ivec);
+	Anasazi::BasicEigenproblem<double> MyProblem(&Amat, &ivec);
 
 	// Inform the eigenproblem that the matrix A is symmetric
 	MyProblem.SetSymmetric(rho==0.0); 
@@ -279,20 +280,28 @@ int main(int argc, char *argv[]) {
 	double MFLOPs = total_flops/elapsed_time/1000000.0;
 #endif
 
-	// Obtain results directly
-	double* evalr = MyProblem.GetREvals();
-	double* evali = MyProblem.GetIEvals();
-	Anasazi::PetraVec *evecr=0, *eveci=0;
+	// Retrieve eigenvalues
+	double* evals = MyProblem.GetEvals();
 
 	// Retrieve eigenvectors
-	// The size of the eigenvector storage is nev + block, but the eigenvectors are stored in the first nev vectors.
+	// The size of the eigenvector storage is 2 x nev.  
+	// The real part of the eigenvectors is stored in the first nev vectors.
+	// The imaginary part of the eigenvectors is stored in the second nev vectors.
+	Anasazi::PetraVec *evecr = 0, *eveci = 0;
 	int* index = new int[ nev ];
-	for (i=0; i<nev; i++)
+	
+	// Get real part.
+	for( i=0; i<nev; i++ )
 	  index[i] = i;
-	evecr = dynamic_cast<Anasazi::PetraVec*>((MyProblem.GetREvecs()->CloneView( index, nev )));
-	if (!MyProblem.IsSymmetric())
-	  eveci = dynamic_cast<Anasazi::PetraVec*>((MyProblem.GetIEvecs()->CloneView( index, nev )));
+	evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetEvecs()->CloneView( index, nev ));
 
+	// Get imaginary part, if needed.
+	if (!MyProblem.IsSymmetric()) {
+	  for( i=0; i<nev; i++ )
+	    index[i] = nev + i;
+	  eveci = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetEvecs()->CloneView( index, nev ));
+	}	  
+	
 	// Output results to screen
 	MyBlockArnoldi.currentStatus();
 	
@@ -310,9 +319,9 @@ int main(int argc, char *argv[]) {
 	  Bimag.putScalar(0.0);
 	for (i=0; i<nev; i++) { 
 	  normA[i] = 0.0;
-	  Breal(i,i) = evalr[i]; 
+	  Breal(i,i) = evals[i]; 
 	  if (!MyProblem.IsSymmetric())
-	    Bimag(i,i) = evali[i]; 
+	    Bimag(i,i) = evals[nev+i]; 
 	}
 	Amat.Apply( *evecr, tempAevec );
 	tempAevec.MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0 );
@@ -328,11 +337,11 @@ int main(int argc, char *argv[]) {
 	while (i < nev) {
 	  normA[i] = lapack.LAPY2( normA[i], tempnrm[i] );
 	  if (MyProblem.IsSymmetric()) {
-	    normA[i] /= Teuchos::ScalarTraits<double>::magnitude(evalr[i]);
+	    normA[i] /= Teuchos::ScalarTraits<double>::magnitude(evals[i]);
 	    i++;
 	  } else {
-	    normA[i] /= lapack.LAPY2( evalr[i], evali[i] );
-	    if (evali[i] != zero) {
+	    normA[i] /= lapack.LAPY2( evals[i], evals[nev+i] );
+	    if (evals[nev + i] != zero) {
 	      normA[i+1] = normA[i];
 	      i = i+2;
 	    } else {
@@ -341,17 +350,17 @@ int main(int argc, char *argv[]) {
 	  }
 	}
 	if (MyProblem.IsSymmetric()) {
-	  cout<<"Real Part"<<"\t"<<"Residual"<<endl;
+	  cout<<"Real Part"<<"\t"<<"Direct Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	  for (i=0; i<nev; i++) {
-	    cout<< evalr[i] << "\t\t"<< normA[i] << endl;
+	    cout<< evals[i] << "\t\t"<< normA[i] << endl;
 	  }  
 	  cout<<"------------------------------------------------------"<<endl;
 	} else {
-	  cout<<"Real Part"<<"\t"<<"Imag Part"<<"\t"<<"Residual"<<endl;
+	  cout<<"Real Part"<<"\t"<<"Imag Part"<<"\t"<<"Direct Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	  for (i=0; i<nev; i++) {
-	    cout<< evalr[i] << "\t\t" << evali[i] << "\t\t"<< normA[i] << endl;
+	    cout<< evals[i] << "\t\t" << evals[nev + i] << "\t\t"<< normA[i] << endl;
 	  }  
 	  cout<<"------------------------------------------------------"<<endl;
 	}	
@@ -362,8 +371,7 @@ int main(int argc, char *argv[]) {
 
 
 	// Release all objects
-        if (eveci) delete eveci;
-	if (evecr) delete evecr;
+	if (index) delete [] index;
 
 	delete [] NumNz;
 	delete [] Values;

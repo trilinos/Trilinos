@@ -34,6 +34,7 @@
 
 #include "AnasaziPetraInterface.hpp"
 #include "AnasaziBlockArnoldi.hpp"
+#include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "Epetra_CrsMatrix.h"
@@ -153,7 +154,7 @@ int main(int argc, char *argv[]) {
         // call the ctor that calls the petra ctor for a matrix
 
         Anasazi::PetraOp Amat(A);
-        Anasazi::Eigenproblem<double> MyProblem(&Amat, &ivec);
+        Anasazi::BasicEigenproblem<double> MyProblem(&Amat, &ivec);
 
 	// Inform the eigenproblem that the matrix A is symmetric
 	//MyProblem.SetSymmetric(true);
@@ -193,13 +194,17 @@ int main(int argc, char *argv[]) {
 #endif
 
         // obtain results directly
-        double* evalr = MyProblem.GetREvals();
-        double* evali = MyProblem.GetIEvals();
+        double* evals = MyProblem.GetEvals();
 
 	// retrieve eigenvectors
 	// The size of the eigenvector storage is nev + block, but the eigenvectors are stored in the first nev vectors.
-        Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetREvecs());
-        Anasazi::PetraVec* eveci = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetIEvecs());
+	int* index = new int[ nev ];
+	for (i=0; i<nev; i++) 
+	  index[i] = i;
+        Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetEvecs()->CloneView( index, nev ));
+	for (i=0; i<nev; i++)
+	  index[i] = nev + i;
+        Anasazi::PetraVec* eveci = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetEvecs()->CloneView( index, nev ));
 
         // output results to screen
         MyBlockArnoldi.currentStatus();
@@ -217,16 +222,14 @@ int main(int argc, char *argv[]) {
 	Breal.putScalar(0.0); 
 	if (!MyProblem.IsSymmetric())
 	  Bimag.putScalar(0.0);
-	int* index = new int[ nev ];
 	for (i=0; i<nev; i++) { 
-	  index[i] = i;
 	  normA[i] = 0.0;
-	  Breal(i,i) = evalr[i]; 
+	  Breal(i,i) = evals[i]; 
 	  if (!MyProblem.IsSymmetric())
-	    Bimag(i,i) = evali[i]; 
+	    Bimag(i,i) = evals[nev + i]; 
 	}
-	Amat.Apply( *(evecr->CloneView( index, nev )), tempAevec );
-	tempAevec.MvTimesMatAddMv( -1.0, *(evecr->CloneView( index, nev )) , Breal, 1.0 );
+	Amat.Apply( *evecr, tempAevec );
+	tempAevec.MvTimesMatAddMv( -1.0, *evecr , Breal, 1.0 );
 	if (!MyProblem.IsSymmetric()) {
 	  tempAevec.MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0 );
 	  tempAevec.MvNorm( normA );
@@ -239,11 +242,11 @@ int main(int argc, char *argv[]) {
 	while (i < nev) {
 	  normA[i] = lapack.LAPY2( normA[i], tempnrm[i] );
 	  if (MyProblem.IsSymmetric()) {
-	    normA[i] /= Teuchos::ScalarTraits<double>::magnitude(evalr[i]);
+	    normA[i] /= Teuchos::ScalarTraits<double>::magnitude(evals[i]);
 	    i++;
 	  } else {
-	    normA[i] /= lapack.LAPY2( evalr[i], evali[i] );
-	    if (evali[i] != zero) {
+	    normA[i] /= lapack.LAPY2( evals[i], evals[nev + i] );
+	    if (evals[nev + i] != zero) {
 	      normA[i+1] = normA[i];
 	      i = i+2;
 	    } else {
@@ -255,14 +258,14 @@ int main(int argc, char *argv[]) {
 	  cout<<"Real Part"<<"\t"<<"Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	  for (i=0; i<nev; i++) {
-	    cout<< evalr[i] << "\t\t"<< normA[i] << endl;
+	    cout<< evals[i] << "\t\t"<< normA[i] << endl;
 	  }  
 	  cout<<"------------------------------------------------------"<<endl;
 	} else {
 	  cout<<"Real Part"<<"\t"<<"Imag Part"<<"\t"<<"Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	  for (i=0; i<nev; i++) {
-	    cout<< evalr[i] << "\t\t" << evali[i] << "\t\t"<< normA[i] << endl;
+	    cout<< evals[i] << "\t\t" << evals[nev + i] << "\t\t"<< normA[i] << endl;
 	  }  
 	  cout<<"------------------------------------------------------"<<endl;
 	}	
