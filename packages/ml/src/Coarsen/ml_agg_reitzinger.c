@@ -400,6 +400,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      if (smooth_flag == ML_YES)
      {
         if (Tmat->comm->ML_mypid == 0)
+        if (Tfine->comm->ML_mypid==0 && 2 < ML_Get_PrintLevel())
            printf("Smoothing edge prolongator...\n");
         ML_Aggregate_Set_Flag_SmoothExistingTentativeP(ag, ML_YES);
         /* default: smooth_factor = 4.0/3.0 */
