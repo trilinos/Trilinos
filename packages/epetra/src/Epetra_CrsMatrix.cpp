@@ -398,12 +398,12 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
       delete[] Values;
   }
 
+  NormOne_ = -1.0; // Reset Norm so it will be recomputed.
+  NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+
   if(!StaticGraph()) {
     EPETRA_CHK_ERR(Graph_->InsertIndices(Row, NumEntries, Indices));
   }
-
-  NormOne_ = -1.0; // Reset Norm so it will be recomputed.
-  NormInf_ = -1.0; // Reset Norm so it will be recomputed.
 
   EPETRA_CHK_ERR(ierr);
   return(0);
@@ -1837,7 +1837,7 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 	    Row = GRID(i);
 	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, MaxNumEntries, NumEntries, Values, Indices)); // Set pointers
             ierr = ReplaceOffsetValues(Row, NumEntries, Values, Indexor->SameOffsets()[i]);
-            if( ierr ) EPETRA_CHK_ERR(ierr);
+            if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
         else {
@@ -1845,7 +1845,7 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 	    Row = GRID(i);
 	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, MaxNumEntries, NumEntries, Values, Indices)); // Set pointers
             ierr = ReplaceGlobalValues(Row, NumEntries, Values, Indices);
-            if( ierr ) EPETRA_CHK_ERR(ierr);
+            if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
       }
@@ -1855,7 +1855,7 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 	    Row = GRID(i);
 	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, MaxNumEntries, NumEntries, Values, Indices)); // Set pointers
             ierr = InsertOffsetValues(Row, NumEntries, Values, Indexor->SameOffsets()[i]);
-            if( ierr ) EPETRA_CHK_ERR(ierr);
+            if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
         else {
@@ -1863,7 +1863,7 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 	    Row = GRID(i);
 	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(Row, MaxNumEntries, NumEntries, Values, Indices)); // Set pointers
             ierr = InsertGlobalValues(Row, NumEntries, Values, Indices);
-            if( ierr ) EPETRA_CHK_ERR(ierr);
+            if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
       } 
@@ -1875,7 +1875,7 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 	    Row = GRID(i);
 	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, Values, Indices)); // Set pointers
             ierr = ReplaceOffsetValues(Row, NumEntries, Values, Indexor->SameOffsets()[i]);
-            if( ierr ) EPETRA_CHK_ERR(ierr);
+            if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
         else {
@@ -1883,7 +1883,7 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 	    Row = GRID(i);
 	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, Values, Indices)); // Set pointers
             ierr = ReplaceGlobalValues(Row, NumEntries, Values, Indices);
-            if( ierr ) EPETRA_CHK_ERR(ierr);
+            if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
       }
@@ -1893,7 +1893,7 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 	    Row = GRID(i);
 	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, Values, Indices)); // Set pointers
             ierr = InsertOffsetValues(Row, NumEntries, Values, Indexor->SameOffsets()[i]);
-            if( ierr ) EPETRA_CHK_ERR(ierr);
+            if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
         else {
@@ -1901,7 +1901,7 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 	    Row = GRID(i);
 	    EPETRA_CHK_ERR(A.ExtractGlobalRowView(Row, NumEntries, Values, Indices)); // Set pointers
             ierr = InsertGlobalValues(Row, NumEntries, Values, Indices);
-            if( ierr ) EPETRA_CHK_ERR(ierr);
+            if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
       } 
@@ -1919,7 +1919,7 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 	    ToRow = GRID(PermuteToLIDs[i]);
 	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, MaxNumEntries, NumEntries, Values, Indices)); // Set pointers
 	    ierr = ReplaceOffsetValues(ToRow, NumEntries, Values, Indexor->PermuteOffsets()[i]);
-	    if (ierr<0) EPETRA_CHK_ERR(ierr);
+            if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
         else {
@@ -1928,7 +1928,7 @@ int Epetra_CrsMatrix::CopyAndPermuteCrsMatrix(const Epetra_CrsMatrix & A,
 	    ToRow = GRID(PermuteToLIDs[i]);
 	    EPETRA_CHK_ERR(A.ExtractGlobalRowCopy(FromRow, MaxNumEntries, NumEntries, Values, Indices)); // Set pointers
 	    ierr = ReplaceGlobalValues(ToRow, NumEntries, Values, Indices);
-	    if (ierr<0) EPETRA_CHK_ERR(ierr);
+            if( ierr<0 ) EPETRA_CHK_ERR(ierr);
           }
         }
       }
