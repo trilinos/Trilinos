@@ -35,6 +35,7 @@ static PARAM_VARS PHG_params[] = {
   /* Add parameters here. */
   {"PHG_REDUCTION_LIMIT",             NULL,  "INT",    0},
   {"PHG_EDGE_WEIGHT_SCALING",         NULL,  "INT",    0},
+  {"PHG_VERTEX_VISIT_ORDER",          NULL,  "INT",    0},
   {"PHG_REDUCTION_METHOD",            NULL,  "STRING", 0},
   {"PHG_REDUCTION_LOCAL_IMPROVEMENT", NULL,  "STRING", 0},
   {"PHG_COARSE_PARTITIONING",         NULL,  "STRING", 0},
@@ -221,6 +222,7 @@ static int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD",          hgp->redm_str);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LOCAL_IMPROVEMENT", hgp->redmo_str);  
   Zoltan_Bind_Param(PHG_params, "PHG_EDGE_WEIGHT_SCALING",           &hgp->ews);
+  Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_VISIT_ORDER",           &hgp->visit_order);
   Zoltan_Bind_Param(PHG_params, "PCHECK_GRAPH",              &hgp->check_graph);   
   Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT",          hgp->refinement_str);
   Zoltan_Bind_Param(PHG_params, "PHG_DIRECT_KWAY",                  &hgp->kway);
@@ -240,6 +242,7 @@ static int Zoltan_PHG_Initialize_Params(
   hgp->LocalCoarsePartition = 0;
   hgp->locmatching = NULL;
   hgp->ews = 0;
+  hgp->visit_order = 1;  /* Random */
   hgp->check_graph = 1;
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
   hgp->redl = MAX(2*zz->LB.Num_Global_Parts, 100);

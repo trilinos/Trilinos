@@ -110,11 +110,11 @@ char  *yo = "Zoltan_PHG_Matching";
       MPI_Bcast(match, hg->nVtx, MPI_INT, root_rank, hgc->col_comm);
 
   } else if (hgp->matching) /* run global or column/row matching algorithms */
-     err = hgp->matching (zz, hg, match);
+     err = hgp->matching (zz, hg, match, hgp);
 
 End: 
 
-  /* Restore the old edge weights */
+  /* Restore the old edge weights if scaling was used. */
   if (hgp->ews)
       hg->ewgt = old_ewgt;
 
@@ -124,7 +124,7 @@ End:
 }
 
 
-static int matching_local(ZZ *zz, HGraph *hg, Matching match)
+static int matching_local(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *hgp)
 {
     uprintf(hg->comm, "Something wrong! This function should not be called!\n");
     /* UVC: NOTE:
@@ -132,8 +132,8 @@ static int matching_local(ZZ *zz, HGraph *hg, Matching match)
        have access to parameter structure. So there is no way to figure
        out which "local" matching needs to be called. Hence we do it
        in Zoltan_PHG_Matching */
-    /* EBEB TODO: We should add the parameter struct as an input argument
-       to all the matching routines. */
+    /* EBEB: Added the parameter struct as an input argument, so now we 
+       could change the structure.  */
     return ZOLTAN_OK;
 }
 
@@ -142,7 +142,7 @@ static int matching_local(ZZ *zz, HGraph *hg, Matching match)
 /* local inner product matching among vertices in each proc column */
 /* code adapted from serial matching_ipm method */
 #define MAX_NNZ 50  /* Max number of nonzeros to store for each inner product */
-static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
+static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *hgp)
 {
     int   i, j, k, v1, v2, edge, best_vertex;
     int   nadj, dense_comm;
@@ -171,9 +171,9 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
     
     for (i = 0; i < hg->nVtx; i++){
         lips[i] = gips[i] = .0;
-        order[i] = i;
     }
 
+    /* Do dense communication for small problems. */
     dense_comm = (hg->nVtx < 2*MAX_NNZ);
     /* dense_comm = 1;  EBEB */
 
@@ -194,11 +194,9 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
       }
     }
 
+    /* Compute vertex visit order. */
+    Zoltan_PHG_Vertex_Visit_Order(zz, hg, hgp, order);
 
-    /* random node visit order */
-    /* other options may be added later */
-    Zoltan_Rand_Perm_Int (order, hg->nVtx);
-        
     /* for every vertex */
     for (k = 0; k < hg->nVtx; k++) {
         v1 = order[k];
@@ -437,7 +435,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
 #define PIN_FACTOR  2 /* oversizes a Malloc() to avoid future Realloc()s */
 #define THRESHOLD 0.0 /* ignore inner products (i.p.) less than threshold */
        
-static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
+static int matching_ipm (ZZ *zz, HGraph *hg, Matching match, PHGPartParams *hgp)
 {
   int i, j, k, lno, loop, vertex, *order=NULL;
   int *c_order=NULL, pincnt, count, size, *ip, bestv, edgecount, pins;
@@ -482,11 +480,9 @@ int bobcount=0;
    
   /* order[] is used to implement alternative vertex visiting algorithms:
    * natural (lno), random, weight order, vertex size, etc. */
-  for (i = 0; i < hg->nVtx; i++)
-     order[i] = i;     /* select (visit) vertices in lno order */
 
-  /* randomly select matching candidates from available vertices */
-  Zoltan_Rand_Perm_Int (order, hg->nVtx);
+  /* Compute vertex visit order. Random is default. */
+  Zoltan_PHG_Vertex_Visit_Order(zz, hg, hgp, order);
   
   if (hgc->nProc_x > 0 && (
       !(select     = (int*) ZOLTAN_MALLOC (ncandidates  * sizeof(int)))

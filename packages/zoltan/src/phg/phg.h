@@ -90,7 +90,7 @@ typedef struct Zoltan_PHGraph ZPHG;
 /* Function types for options to hypergraph partitioning */
 struct PHGPartParamsStruct;  /* Forward declaration */
 
-typedef int ZOLTAN_PHG_MATCHING_FN(ZZ*, HGraph*, Matching);
+typedef int ZOLTAN_PHG_MATCHING_FN(ZZ*, HGraph*, Matching, struct PHGPartParamsStruct*);
 typedef int ZOLTAN_PHG_COARSEPARTITION_FN(ZZ*, HGraph*, int, float *, Partition,
                                           struct PHGPartParamsStruct*);
 typedef int ZOLTAN_PHG_REFINEMENT_FN(ZZ*, HGraph*, int, Partition,
@@ -137,6 +137,7 @@ struct PHGPartParamsStruct {
   PHGComm comm;   /* UVCUVC: although this is not a paramater; we'll keep it here
                      for now; later we can move it out */
   int num_coarse_iter;  /* Number of coarse partitions to try on each proc. */
+  int visit_order;      /* Vertex visit order. */
 };
 
 typedef struct PHGPartParamsStruct PHGPartParams;
@@ -159,6 +160,7 @@ typedef struct PHGPartParamsStruct PHGPartParams;
 int Zoltan_PHG_Matching (ZZ*, HGraph*, Matching, PHGPartParams*);
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams*);
 int Zoltan_PHG_Scale_Weights (ZZ*, HGraph*, float*, PHGPartParams*);
+int Zoltan_PHG_Vertex_Visit_Order (ZZ*, HGraph*, PHGPartParams*, int*);
 
 /**************/
 /* Coarsening */
