@@ -37,13 +37,13 @@ This partitioning algorithm is based on the 2D & 3D Inverse Hilbert
 Space-Filling Curve code developed by H. Carter Edwards and on the BSFC
 partitioning implementation by Andrew C. Bauer, Department of Engineering,
 State University of New York at Buffalo, as his summer project at SNL in 2001.
-Please refer to the corresponding section in the Zotan User's guide,
+Please refer to the corresponding section in the Zoltan User's guide,
 <a href="../ug_html/ug_alg_hsfc.html"><b>Hilbert Space Filling Curve (HSFC),</b></a>
 for information about how to use this module and its parameters.
 <p>
 First, the weights and inverse Hilbert coordinates for each object
 are determined. If the objects do not have weights, unit weights are assigned.
-If the objects have multiple weights, only the weight is used.  The smallest
+If the objects have multiple weights, only the first weight is used.  The smallest
 axis-aligned box is found that contains
 all objects using their two or three dimensional coordinates.
 This bounding box is slightly expanded to insure that all objects are strictly
@@ -64,7 +64,7 @@ The unit interval is divided into N bins. (N=k(P-1)+1, where k is a
 small positive constant.)  Each bin has an left and right endpoint
 specifying the half-open interval [l,r) associated with the bin. The bins form a
 non-overlapping cover of [0,1] with the right endpoint of the last bin forced to include 1.
-The bins are equal size on the first loop.  (Hence each interval or part of the
+The bins are of equal size on the first loop.  (Hence each interval or part of the
 partition is a collection of bins.)
 <p> For each loop, an MPI_Allreduce call is made to
 globally sum the weights in each bin.  This call also determines the maximum and
