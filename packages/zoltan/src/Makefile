@@ -212,6 +212,7 @@ ZDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
 		  -lzoltan_comm -lzoltan_mem \
 	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) \
 		  $(MPI_LIBPATH) $(MPI_LIB) -lm
+ZDRIVE_DEPS	= libzoltan_comm.a libzoltan_mem.a
 
 CCOMP		= $(CC) $(ZOLTAN_INC_PATH) $(CFLAGS) $(F90CFLAGS) 
 F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
@@ -221,19 +222,15 @@ F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 ############################################################################
 #
 # lint defines
+# MPI Paths must be explicitly stated; see Utilities/Config/Config.gcc
+# for an example.
 #
 LINT		= lint
-LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams\
-		  -Ioct -Iparmetis -Itimer -Iha -Ireftree\
+LINT_INC_PATH	= -Idriver -Ich -Iall -Ilb -Ipar -Ircb -Iparams \
+		  -Ioct -Iparmetis -Itimer -Iha -Ireftree \
+		  -IUtilities/Memory -IUtilities/Communication \
 		  -I$(ZOLTAN_INC_PATH)
-#		  -I/Net/local/lang/SC3.0.1/include \
-#		  -I/Net/local/lang/SC3.0.1/ansi_include \
-#		  -I/Net/local/mpi/include \
-#		  -I/Net/local/mpi/mpich/include \
-#                  -I/Net/local/mpi/build/solaris/ch_p4/include \
-#		  -I/Net/proj/zoltan/arch/sun/include
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
-LINT_TARGET	= llib-l$(LIB_TARGET).ln
 VPATH		= $(SUBDIRS) $(UTIL_SUBDIRS) $(THIRD_PARTY_VPATH)
 
 ###########################################################################
@@ -312,6 +309,7 @@ zdrive:
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
 	"MAIN_OBJ=$(ZDRIVE_OBJ)" 		\
 	"LNK_LIBS=$(ZDRIVE_LIBS)" 		\
+	"DEP_LIBS=$(ZDRIVE_DEPS)"		\
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
 
 zfdrive: 
@@ -324,6 +322,7 @@ zfdrive:
 	"F90_MODULE_PREFIX=$(F90_MODULE_PREFIX)"\
 	"FARG=$(FARG)" 				\
         "LNK_LIBS=$(ZDRIVE_LIBS)"		\
+	"DEP_LIBS=$(ZDRIVE_DEPS)"		\
 	"ZOLTAN_ARCH=$(ZOLTAN_ARCH)"		\
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
 
@@ -414,13 +413,12 @@ zscript:
 ############################################################################
 #
 
-$(LINT_TARGET): $(ZOLTAN_CSRC)
-	@echo "Generating lint file for library..."
-	$(LINT) $(LINT_FLAGS)  $? -o $(LIB_TARGET)
+# For lint, MPI Paths must be explicitly stated; see 
+# Utilities/Config/Config.gcc for an example.
 
-lint: $(ZDRIVE_CSRC) $(LINT_TARGET)
+lint: $(ZDRIVE_CSRC) $(ZOLTAN_CSRC)
 	@echo "running lint..."
-	$(LINT) $(LINT_FLAGS) "VPATH=$(LINT_VPATH) $?
+	$(LINT) $(LINT_FLAGS) $?
 
 printout:
 	cat $(MAIN) $(ZOLTAN_CSRC) > source.c
@@ -442,5 +440,4 @@ clean:
 	 $(RM) -rf $$a/*; \
 	 done;
 	 cd Utilities; $(MAKE) clean; cd ..
-	 $(RM) $(LINT_TARGET)
 	 exit 0
