@@ -68,6 +68,11 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	src/common/config-h.in src/common/stamp-h.in \
 	$(AUX_DIST) 
 
+#The following line helps the test harness recover from build errors.
+                                                                                
+all-local:
+	@echo "Trilinos package teuchos built successfully"
+
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
