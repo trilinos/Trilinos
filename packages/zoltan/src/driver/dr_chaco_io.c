@@ -21,6 +21,7 @@ extern "C" {
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <values.h>
 
 #include <mpi.h>
 
@@ -302,8 +303,8 @@ int chaco_fill_elements(
 )
 {
   /* Local declarations. */
-  int i, j, k, elem_id, local_id;
-  int num_vtx; 
+  int i, j, k, elem_id, *local_ids = NULL;
+  int num_vtx, min_vtx, max_vtx; 
   int *vtx_list = NULL;
   char *yo = "chaco_fill_elements";
 /***************************** BEGIN EXECUTION ******************************/
@@ -314,10 +315,22 @@ int chaco_fill_elements(
   vtx_list = (int *) malloc(num_vtx * sizeof(int));
   ch_dist_vtx_list(vtx_list, &num_vtx, Proc, assignments);
 
+  if (num_vtx > 0) {
+    min_vtx = (MAXINT);
+    max_vtx = -1;
+    for (i = 0; i < num_vtx; i++) {
+      if (vtx_list[i] > max_vtx) max_vtx = vtx_list[i];
+      if (vtx_list[i] < min_vtx) min_vtx = vtx_list[i];
+    }
+    local_ids = (int *) malloc((max_vtx - min_vtx + 1) * sizeof(int));
+  }
+
   for (i = 0; i < num_vtx; i++) {
     mesh->elements[i].globalID = vtx_list[i]+base;  /* GlobalIDs are 1-based
                                                        in Chaco; may be 0-based
                                                        or 1-based in HG files */
+    local_ids[vtx_list[i]-min_vtx] = i;
+
     if (vwgts != NULL){
       for (j=0; j<vwgt_dim; j++) {
         mesh->elements[i].cpu_wgt[j] = vwgts[i*vwgt_dim+j];
@@ -342,7 +355,9 @@ int chaco_fill_elements(
         }
       }
     }
+  }
 
+  for (i = 0; i < num_vtx; i++) {
     /* now start with the adjacencies */
     if (start != NULL)
       mesh->elements[i].nadj = start[i+1] - start[i];
@@ -377,10 +392,8 @@ int chaco_fill_elements(
          * if the adjacent element is on this processor
          * then find the local id for that element
          */
-        if (k == Proc) {
-          local_id = in_list((elem_id-base), num_vtx, vtx_list);
-          mesh->elements[i].adj[j] = local_id;
-        }
+        if (k == Proc) 
+          mesh->elements[i].adj[j] = local_ids[elem_id-base-min_vtx];
         else /* use the global id */
           mesh->elements[i].adj[j] = elem_id;
 
@@ -393,6 +406,7 @@ int chaco_fill_elements(
   } /* End: "for (i = 0; i < mesh->num_elems; i++)" */
 
   safe_free((void **) &vtx_list);
+  safe_free((void **) &local_ids);
 
   if (!build_elem_comm_maps(Proc, mesh)) {
     Gen_Error(0, "Fatal: error building initial elem comm maps");
