@@ -449,6 +449,9 @@ was not NULL. The rationale for this feature is that if one wishes just
 to print the evaluation results, one can simply set all (or some of) the
 output parameters to NULL in the function call. From Fortran, one may omit
 one or more of the optional output parameters.
+<p>Note that the sum of <i>ncuts</i> over all processors is actually twice
+the number of edges cut in the graph (because each edge is counted twice).
+The same principle holds for <i>cut_wgt.</i>
 <p>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
