@@ -56,14 +56,17 @@ bool Cholesky(TYPE*, int);
 template<typename TYPE>
 void PrintArrayAsVector(TYPE*, int);
 
-template<>
-void PrintArrayAsVector(mp_real*, int);
-
 template<typename TYPE>
 void PrintArrayAsMatrix(TYPE*, int, int);
 
+#ifdef HAVE_TEUCHOS_ARPREC
+template<>
+void PrintArrayAsVector(mp_real*, int);
+
 template<>
 void PrintArrayAsMatrix(mp_real*, int, int);
+#endif
+
 
 int main(int argc, char *argv[]) {
 
@@ -160,18 +163,6 @@ void PrintArrayAsVector(TYPE* x, int n) {
   cout << " ]" << endl;
 }
 
-template<>
-void PrintArrayAsVector(mp_real* x, int n) {
-  cout << "[ ";
-  for(int i = 0; i < n; i++) {
-    if(i != 0) {
-      cout << "  ";
-    }
-    cout << x[i];
-  }
-  cout << "]" << endl;
-}
-
 template<typename TYPE>
 void PrintArrayAsMatrix(TYPE* a, int m, int n) {
   cout << "[";
@@ -187,6 +178,19 @@ void PrintArrayAsMatrix(TYPE* a, int m, int n) {
     if(i != (m - 1)) {
       cout << endl;
     }
+  }
+  cout << "]" << endl;
+}
+
+#ifdef HAVE_TEUCHOS_ARPREC
+template<>
+void PrintArrayAsVector(mp_real* x, int n) {
+  cout << "[ ";
+  for(int i = 0; i < n; i++) {
+    if(i != 0) {
+      cout << "  ";
+    }
+    cout << x[i];
   }
   cout << "]" << endl;
 }
@@ -212,3 +216,5 @@ void PrintArrayAsMatrix(mp_real* a, int m, int n) {
   }
   cout << "]" << endl; 
 }
+#endif
+
