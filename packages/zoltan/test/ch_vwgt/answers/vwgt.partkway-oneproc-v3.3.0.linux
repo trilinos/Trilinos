@@ -1,0 +1,12 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters	= obj_weight_dim=1
+Zoltan Parameters	= parmetis_method=partkway
+Zoltan Parameters	= scatter_graph=2
+File Type		= Chaco, initial procs = 1
+File Name		= vwgt
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+1	0	-1	-1
+6	0	-1	-1
+11	0	-1	-1
