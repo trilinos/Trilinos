@@ -334,9 +334,9 @@ int max_nz_row, big_ind = -1, ii;
      /* In parallel, it is not a true Gauss-Seidel in that each processor */
      /* does a Gauss-Seidel on its local submatrix independent of the     */
      /* other processors.                                                 */
-     /*
+
       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
-      */
+
      
 
       /* This is a true Gauss Seidel in parallel. This seems to work for  */
@@ -368,9 +368,11 @@ int max_nz_row, big_ind = -1, ii;
       */
    
       /* Jacobi Smoothing                                                 */
+     /*
      
       ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth, ML_ONE_STEP_CG);
       ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth,ML_ONE_STEP_CG);
+     */
      
 
 
