@@ -70,9 +70,8 @@ int i, ierr = 0;
       return(LB_MEMERR);
     }
     lb->Data_Structure = (void *) rcb;
-    rcb->Tree_Ptr = (struct rcb_tree *) LB_Array_Alloc(__FILE__, __LINE__,
-                                                     1, lb->Num_Proc, 
-                                                     sizeof(struct rcb_tree));
+    rcb->Tree_Ptr = (struct rcb_tree *) LB_Malloc(
+	lb->Num_Proc* sizeof(struct rcb_tree), __FILE__, __LINE__);
     rcb->Box = (struct rcb_box *) LB_MALLOC(sizeof(struct rcb_box));
     if (rcb->Tree_Ptr == NULL || rcb->Box == NULL) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
@@ -103,9 +102,8 @@ int i, ierr = 0;
     return(LB_FATAL);
   }
   *max_obj = 1.5 * *num_obj + 1;
-  rcb->Dots = (struct rcb_dot *) LB_Array_Alloc(__FILE__, __LINE__, 1,
-                                                *max_obj,
-                                                sizeof(struct rcb_dot));
+  rcb->Dots = (struct rcb_dot *) LB_Malloc((*max_obj)*sizeof(struct rcb_dot),
+      __FILE__, __LINE__);
   if (rcb->Dots == NULL) {
     fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
             lb->Proc, yo);
@@ -152,12 +150,12 @@ int i, ierr = 0;
      *  dot for each object.
      */
 
-    objs_global = (LB_GID *) LB_Array_Alloc(__FILE__, __LINE__, 1, *num_obj,
-                                           sizeof(LB_GID));
-    objs_local  = (LB_LID *) LB_Array_Alloc(__FILE__, __LINE__, 1, *num_obj,
-                                           sizeof(LB_LID));
-    objs_wgt    = (float  *) LB_Array_Alloc(__FILE__, __LINE__, 1, *num_obj,
-                                           sizeof(float));
+    objs_global = (LB_GID *) LB_Malloc((*num_obj)*sizeof(LB_GID),
+        __FILE__, __LINE__);
+    objs_local  = (LB_LID *) LB_Malloc((*num_obj)*sizeof(LB_LID),
+        __FILE__, __LINE__);
+    objs_wgt    = (float  *) LB_Malloc((*num_obj)*sizeof(float),
+        __FILE__, __LINE__);
     if (objs_global == NULL || objs_local == NULL || objs_wgt == NULL) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);

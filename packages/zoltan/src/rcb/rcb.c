@@ -271,18 +271,15 @@ static int rcb(
 
   allocflag = 0;
   if (dotmax > 0) {
-    dotmark = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned) dotmax,
-                                     sizeof(int));
+    dotmark = (int *) LB_Malloc(dotmax*sizeof(int), __FILE__, __LINE__);
     if (dotmark == NULL)
       RCB_error(lb, dotmax*sizeof(int));
-    coord = (double *) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned) dotmax,
-                                      sizeof(double));
+    coord = (double *) LB_Malloc(dotmax*sizeof(double), __FILE__, __LINE__);
     if (coord == NULL) {
       LB_Free((void **) &dotmark);
       RCB_error(lb, dotmax*sizeof(int));
     }
-    wgts = (double *) LB_Array_Alloc(__FILE__, __LINE__, 1, (unsigned) dotmax,
-                                     sizeof(double));
+    wgts = (double *) LB_Malloc(dotmax*sizeof(double), __FILE__, __LINE__);
     if (wgts == NULL) {
       LB_Free((void **) &dotmark);
       LB_Free((void **) &coord);
@@ -400,18 +397,15 @@ static int rcb(
       LB_Free((void **) &dotmark);
       LB_Free((void **) &coord);
       LB_Free((void **) &wgts);
-      dotmark = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1,
-                                       (unsigned) dotmax, sizeof(int));
+      dotmark = (int *) LB_Malloc(dotmax*sizeof(int), __FILE__, __LINE__);
       if (dotmark == NULL)
         RCB_error(lb, dotmax*sizeof(int));
-      coord = (double *) LB_Array_Alloc(__FILE__, __LINE__, 1,
-                                        (unsigned) dotmax, sizeof(double));
+      coord = (double *) LB_Malloc(dotmax*sizeof(double), __FILE__, __LINE__);
       if (coord == NULL) {
         LB_Free((void **) &dotmark);
         RCB_error(lb, dotmax*sizeof(int));
       }
-      wgts = (double *) LB_Array_Alloc(__FILE__, __LINE__, 1,
-                                       (unsigned) dotmax, sizeof(double));
+      wgts = (double *) LB_Malloc(dotmax*sizeof(double), __FILE__, __LINE__);
       if (wgts == NULL) {
         LB_Free((void **) &dotmark);
         LB_Free((void **) &coord);
@@ -505,9 +499,8 @@ static int rcb(
     /* malloc comm send buffer */
 
     if (outgoing > 0) {
-      dotbuf = (struct rcb_dot *) LB_Array_Alloc(__FILE__, __LINE__, 1,
-                                                 (unsigned) outgoing,
-                                                 sizeof(struct rcb_dot));
+      dotbuf = (struct rcb_dot *) LB_Malloc(outgoing*sizeof(struct rcb_dot),
+	  __FILE__, __LINE__);
       if (dotbuf == NULL) {
         RCB_error(lb, outgoing*sizeof(struct rcb_dot));
       }
@@ -627,18 +620,18 @@ static int rcb(
 
   *num_import = dotnum - dottop;
   if (*num_import > 0) {
-    *import_global_ids = (LB_GID *) LB_Array_Alloc(__FILE__, __LINE__, 1,
-                                                  *num_import, sizeof(LB_GID));
+    *import_global_ids = (LB_GID *) LB_Malloc((*num_import)*sizeof(LB_GID),
+        __FILE__, __LINE__);
     if (!(*import_global_ids))
       RCB_error(lb, *num_import*sizeof(LB_GID));
-    *import_local_ids  = (LB_LID *) LB_Array_Alloc(__FILE__, __LINE__, 1,
-                                                  *num_import, sizeof(LB_LID));
+    *import_local_ids  = (LB_LID *) LB_Malloc((*num_import)*sizeof(LB_LID),
+        __FILE__, __LINE__);
     if (!(*import_local_ids)) {
       LB_Free((void **) import_global_ids);
       RCB_error(lb, *num_import*sizeof(LB_LID));
     }
-    *import_procs      = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1,
-                                                  *num_import, sizeof(int));
+    *import_procs      = (int *) LB_Malloc((*num_import)*sizeof(int),
+        __FILE__, __LINE__);
     if (!(*import_procs)) {
       LB_Free((void **) import_global_ids);
       LB_Free((void **) import_local_ids);

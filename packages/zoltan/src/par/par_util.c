@@ -104,8 +104,7 @@ int LB_find_median(
 
   if (dotnum > 0) {
     /* allocate memory */
-    dotlist = (int *) LB_Array_Alloc (__FILE__, __LINE__, 1, dotnum,
-                                      sizeof(int));
+    dotlist = (int *) LB_Malloc(dotnum*sizeof(int), __FILE__, __LINE__);
     if (!dotlist) {
       fprintf(stderr, "[%d] %s: Error, Insufficient memory\n",
               proc, yo);
@@ -120,8 +119,7 @@ int LB_find_median(
      */
     if (!wgts) {
       wtflag = 1;
-      wgts = (double *) LB_Array_Alloc (__FILE__, __LINE__, 1, dotnum,
-                                        sizeof(double));
+      wgts = (double *) LB_Malloc(dotnum*sizeof(double), __FILE__, __LINE__);
       if (!wgts) {
         fprintf(stderr, "[%d] %s: Error, Insufficient memory\n",
                 proc, yo);

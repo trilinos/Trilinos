@@ -609,15 +609,14 @@ int i;
    */
 
   if (num_import > 0) {
-    proc_list = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1,
-                                       num_import, sizeof(int));
+    proc_list = (int *) LB_Malloc(num_import*sizeof(int), __FILE__, __LINE__);
     if (!proc_list) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
       return (LB_MEMERR);
     }
-    import_objs = (LB_TAG *) LB_Array_Alloc(__FILE__, __LINE__, 1,
-                                            num_import, sizeof(LB_TAG));
+    import_objs = (LB_TAG *) LB_Malloc(num_import*sizeof(LB_TAG),
+	__FILE__, __LINE__);
     if (!import_objs) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
@@ -648,8 +647,8 @@ int i;
    */
 
   if (*num_export > 0) {
-    export_objs         = (LB_TAG *) LB_Array_Alloc(__FILE__, __LINE__, 1, 
-                                                   *num_export, sizeof(LB_TAG));
+    export_objs = (LB_TAG *) LB_Malloc((*num_export)*sizeof(LB_TAG),
+	__FILE__, __LINE__);
     if (!export_objs) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
@@ -657,8 +656,8 @@ int i;
       LB_Free((void **) &import_objs);
       return (LB_MEMERR);
     }
-    *export_global_ids  = (LB_GID *) LB_Array_Alloc(__FILE__, __LINE__, 1,
-                                                   *num_export, sizeof(LB_GID));
+    *export_global_ids  = (LB_GID *) LB_Malloc((*num_export)*sizeof(LB_GID),
+	__FILE__, __LINE__);
     if (!(*export_global_ids)) { 
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
@@ -667,8 +666,8 @@ int i;
       LB_Free((void **) &export_objs);
       return (LB_MEMERR);
     }
-    *export_local_ids   = (LB_LID *) LB_Array_Alloc(__FILE__, __LINE__, 1,
-                                                   *num_export, sizeof(LB_LID));
+    *export_local_ids   = (LB_LID *) LB_Malloc((*num_export)*sizeof(LB_LID),
+        __FILE__, __LINE__);
     if (!(*export_local_ids)) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
@@ -678,8 +677,8 @@ int i;
       LB_Free((void **) export_local_ids);
       return (LB_MEMERR);
     }
-    *export_procs       = (int *)    LB_Array_Alloc(__FILE__, __LINE__, 1,
-                                                   *num_export, sizeof(int));
+    *export_procs = (int *) LB_Malloc((*num_export)*sizeof(int),
+	__FILE__, __LINE__);
     if (!(*export_procs)) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
@@ -839,16 +838,14 @@ int ierr = 0;
 
 
   if (num_export > 0) {
-    export_buf = (char *) LB_Array_Alloc(__FILE__, __LINE__, 1, num_export,
-                                         size);
+    export_buf = (char *) LB_Malloc(num_export*size, __FILE__, __LINE__);
     if (!export_buf) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
       return (LB_FATAL);
     }
 
-    proc_list = (int *) LB_Array_Alloc(__FILE__, __LINE__, 1, num_export,
-                                       sizeof(int));
+    proc_list = (int *) LB_Malloc(num_export*sizeof(int), __FILE__, __LINE__);
     if (!proc_list) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
@@ -889,8 +886,7 @@ int ierr = 0;
   }
 
   if (num_import > 0) {
-    import_buf = (char *) LB_Array_Alloc(__FILE__, __LINE__, 1, num_import,
-                                         size);
+    import_buf = (char *) LB_Malloc(num_import*size, __FILE__, __LINE__);
     if (!import_buf) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
