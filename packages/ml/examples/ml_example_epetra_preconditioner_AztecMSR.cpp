@@ -28,7 +28,6 @@
 
 #ifdef HAVE_MPI
 #include "mpi.h"
-#else
 #endif
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -269,5 +268,17 @@ AZ_MATRIX *BuildMatrix(struct partition_data *Partition)
   
   return(Kn_mat);
 } 
+
+#else
+
+#include <stdlib.h>
+#include <stdio.h>
+
+int main(int argc, char *argv[])
+{
+  puts("Please configure ML with --enable-epetra --enable-teuchos\nto run this example");
+
+  return 0;
+}
 
 #endif
