@@ -1,0 +1,53 @@
+NOTE: new_package is under construction!!
+
+Useful Terminology:
+	new package - A package to be added to the Trilinos Autotools
+			configure/build process.
+	new_package - The directory structure that this README file resides in.
+			new_package serves as a guide for adding new packages
+			to the Trilinos Autotools configure/build process.
+
+	autotool'ed
+
+The Trilinos/packages/new_package package was created as a tool for developers
+wishing to utilize the Autotools configure/build process for a new or existing
+package.  Before beginning this process, approval must be obtained from the
+Trilinos Project Leader.
+
+There are five general steps that need to be followed to add a new package to
+the Trilinos Autotools configure/build process.  Note that these steps do not
+have to be completed in the exact order listed below, nor does a step 
+necessarily have to be completed in its entirety before moving onto the next
+step.  (For example, a portion of a library can be autotool'ed and tested
+before work begins on the rest of the library.)  The five steps are listed
+below.
+
+1. Write the non-generated files necessary for Autoconf and Automake.
+
+Examples of all of the new, non-generated Autoconf and Automake files
+required to add a packages to the Trilinos Autotools configure/build process 
+are located within the new_package directory structure.  Most of these files
+will need to be customized for each new package.  See the individual example 
+files for more details.  (Details for all files not yet available.)  
+
+2. Generate necessary Autoconf and Automake files.
+
+After customizing ...
+
+3. Connect the new package to the Trilinos Autotools configure/build process.
+   (Establish build default=no)
+
+This step involves...
+
+4. Test and wait
+
+
+
+5. Change build default to 'yes'
+
+This step requires the separate approval of the Trilinos Project Leader!
+
+Not all Trilinos packages should be configured and built by default.  Consult
+with the Trilinos Project Leader for more information.
+
+If approval to build by default is granted, ...
