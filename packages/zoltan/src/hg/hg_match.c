@@ -788,10 +788,11 @@ char  *yo = "matching_pgm";
 static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
 {
     int   i, j, n, v1, v2, edge, maxip, maxindex;
-    int   *ips, *adj;
+    int   *adj;
+    float *ips; 
     char  *yo = "matching_ipm";
 
-    if (!(ips = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int))) 
+    if (!(ips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float))) 
      || !(adj = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))) {
         Zoltan_Multifree(__FILE__, __LINE__, 2, &ips, &adj);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -801,14 +802,14 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
     /*print_debug(hg);*/
 
     for (i = 0; i < hg->nVtx; i++)
-        ips[i] = 0;
+        ips[i] = .0;
         
     /* for every vertex */
     for (v1 = 0; v1 < hg->nVtx  &&  *limit > 0; v1++) {
         if (match[v1] != v1)
             continue;
         
-        n = 0;
+        n = 0; /* number of neighbors */
         /* for every hyperedge containing the vertex */
         for (i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
             edge = hg->vedge[i];
@@ -821,8 +822,9 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
                        row swapping goes here
                   }
                 */
-                if (!ips[v2]++)
+                if (ips[v2]==0.0)
                     adj[n++] = v2;
+                ips[v2] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
             }
         }
 
