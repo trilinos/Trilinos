@@ -5766,7 +5766,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
        for (dg=1; dg < deg; dg++) { 
             ML_Operator_Apply(Amat, n, pAux, n, res);
 	    for (i=0; i < n; i++) pAux[i] = res[i];  
-	    for (i=0; i < n; i++) y[i] += mlsCf[dg-1] * res[i];
+	    for (i=0; i < n; i++) y[i] += mlsCf[dg] * res[i];
        }
 
    }
