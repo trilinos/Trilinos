@@ -110,6 +110,9 @@
 /* Define if want to build with ml_parmetis3x enabled */
 #undef HAVE_ML_PARMETIS_3x
 
+/* Define if want to build with ml_parpack enabled */
+#undef HAVE_ML_PARPACK
+
 /* Define if want to build with ml_superlu enabled */
 #undef HAVE_ML_SUPERLU
 
