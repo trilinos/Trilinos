@@ -35,8 +35,7 @@ AztecOO_SetParameters_SOURCES = $(srcdir)/cxx_main.cpp
 AztecOO_SetParameters_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a
 
 AztecOO_SetParameters_CXXFLAGS = -I$(top_srcdir)/src \
-	-I$(top_srcdir)/../epetra/src -I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../epetra/src -I$(top_builddir)/../teuchos/src
+	$(AZTECOO_INCLUDES) $(TEUCHOS_INCLUDES)
 
 #Unsure why this test need to link to the BLAS on an IBM.
 AztecOO_SetParameters_LDADD = $(AZTECOO_LIBS) \

@@ -31,11 +31,6 @@
 #ifndef _AZTECOO_H_
 #define _AZTECOO_H_
 
-//forward declaration for Teuchos::ParameterList
-namespace Teuchos {
-  class ParameterList;
-}
-
 class Epetra_Comm;
 class Epetra_BlockMap;
 class Epetra_MultiVector;
@@ -45,6 +40,13 @@ class Epetra_RowMatrix;
 #include "Epetra_Vector.h"
 #include "AztecOO_StatusTest.h"
 #include "az_aztec.h"
+
+#ifdef HAVE_AZTECOO_TEUCHOS
+//forward declaration for Teuchos::ParameterList
+namespace Teuchos {
+  class ParameterList;
+}
+#endif
 
 
 //! AztecOO:  An object-oriented wrapper for Aztec.
@@ -295,6 +297,7 @@ class AztecOO {
 
   //@{ \name Standard AztecOO option and parameter setting methods.
 
+#ifdef HAVE_AZTECOO_TEUCHOS
   //! Method to set options/parameters using a ParameterList object.
   /*! This method extracts any mixture of options and parameters from a
     ParameterList object and uses them to set values in AztecOO's internal
@@ -306,6 +309,7 @@ class AztecOO {
     method will be replaced by default values.
   */
   int SetParameters(Teuchos::ParameterList& parameterlist);
+#endif
 
   //! AztecOO function to restore default options/parameter settings.
   /*! This function is called automatically within AztecOO's constructor,

@@ -28,7 +28,11 @@
 
 // AztecOO_SetParameters Test routine
 #include <AztecOO.h>
+
+#ifdef HAVE_AZTECOO_TEUCHOS
 #include <Teuchos_ParameterList.hpp>
+#endif
+
 #include "Epetra_SerialComm.h"
 #ifdef EPETRA_MPI
 #include <mpi.h>
@@ -60,6 +64,7 @@ int main(int argc, char* argv[]) {
 #endif
 
   AztecOO azoo;
+#ifdef HAVE_AZTECOO_TEUCHOS
   Teuchos::ParameterList paramlist;
   paramlist.set("AZ_solver", AZ_cg);
   int err = azoo.SetParameters(paramlist);
@@ -77,6 +82,7 @@ int main(int argc, char* argv[]) {
     }
     return(-1);
   }
+#endif
 
 #ifdef EPETRA_MPI
   MPI_Finalize();

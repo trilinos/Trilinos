@@ -47,6 +47,10 @@
 #	$(srcdir)/az_comm_ncube.c 
 #	$(srcdir)/az_comm_intel.c 
 
+if HAVE_AZTECOO_TEUCHOS
+TEUCHOS_INCLUDES = -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
+endif
+
 CORE_H = \
 	$(srcdir)/az_aztec_defs.h \
 	$(srcdir)/az_aztecf.h \
@@ -64,8 +68,7 @@ CORE = \
 ### Making this optional is one step toward removing the current
 ### dependency on Epetra when only Aztec is needed
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
-	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
+	-I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src $(TEUCHOS_INCLUDES)
 
 WITH_CPP_H = \
 	$(srcdir)/AztecOO.h \

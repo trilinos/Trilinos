@@ -281,6 +281,8 @@ EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
+HAVE_AZTECOO_TEUCHOS_FALSE = @HAVE_AZTECOO_TEUCHOS_FALSE@
+HAVE_AZTECOO_TEUCHOS_TRUE = @HAVE_AZTECOO_TEUCHOS_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
@@ -362,6 +364,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@HAVE_AZTECOO_TEUCHOS_TRUE@TEUCHOS_INCLUDES = -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
 CORE_H = \
 	$(srcdir)/az_aztec_defs.h \
 	$(srcdir)/az_aztecf.h \
@@ -380,8 +383,7 @@ CORE = \
 ### Making this optional is one step toward removing the current
 ### dependency on Epetra when only Aztec is needed
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
-	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
+	-I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src $(TEUCHOS_INCLUDES)
 
 WITH_CPP_H = \
 	$(srcdir)/AztecOO.h \

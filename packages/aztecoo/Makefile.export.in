@@ -1,7 +1,12 @@
 
 # Macro to be used for executables that need to link aztecoo
 
+@HAVE_AZTECOO_TEUCHOS_TRUE@TEUCHOS_INCLUDES = -I$(top_builddir)/../teuchos/src -I$(top_srcdir)/../teuchos/src
+@HAVE_AZTECOO_TEUCHOS_TRUE@TEUCHOS_LIB = $(top_builddir)/../teuchos/src/libteuchos.a
+
+AZTECOO_INCLUDES = -I$(top_builddir)/src -I$(top_srcdir)/src \
+	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+
 AZTECOO_LIBS = $(top_builddir)/src/libaztecoo.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
+	$(top_builddir)/../epetra/src/libepetra.a $(TEUCHOS_LIB)
