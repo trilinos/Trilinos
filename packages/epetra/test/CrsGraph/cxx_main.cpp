@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
     EPETRA_TEST_ERR(!(AA.InsertGlobalIndices(0, 0, &One)==0),ierr);
   }
   else 
-		EPETRA_TEST_ERR(!(AA.InsertGlobalIndices(0, 1, &One)==-1),ierr);
+		EPETRA_TEST_ERR(!(AA.InsertGlobalIndices(0, 1, &One)==-2),ierr);
   EPETRA_TEST_ERR(!(AA.FillComplete()==0),ierr);
   EPETRA_TEST_ERR(AA.StorageOptimized(),ierr);
   EPETRA_TEST_ERR(!(AA.UpperTriangular()),ierr);

@@ -683,7 +683,9 @@ int main(int argc, char *argv[])
   }
 
   // Works
-  EPETRA_TEST_ERR(!(A2.InvColSums(xDomain)==1),ierr); // This matrix has a single row, the first column has a zero, so a warning is issued.
+  int expectedcode = 1;
+  if (Comm.NumProc()>0) expectedcode = 0;
+  EPETRA_TEST_ERR(!(A2.InvColSums(xDomain)==expectedcode),ierr); // This matrix has a single row, the first column has a zero, so a warning is issued.
   if (verbose1) cout << xDomain << endl;
   EPETRA_TEST_ERR(A2.RightScale(xDomain),ierr);
   float A2oneNormFloat2 = A2.NormOne();
