@@ -23,7 +23,6 @@ static char *cvs_all_main = "$Id$";
 #include "id_util_const.h"
 #include "ch_input_const.h"
 #include "ch_input.h"
-#include "par.h"
 #include "gr_util_const.h"
 
 /*****************************************************************************/
