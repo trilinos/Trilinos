@@ -36,8 +36,8 @@ namespace Kokkos {
 
 //! Kokkos::BaseSparseSolve: A reference class for computing sparse matrix triangular solve operations.
 
-/*! The Kokkos::BaseSparseSolve provide basic functionality for computing sparse matrix times vector, or
-    sparse matrix times multivector operations.  This class is templated on the ordinal (integer) and 
+/*! The Kokkos::BaseSparseSolve provide basic functionality for computing sparse triangular solves with one or more
+    right-hand-side vectors.  This class is templated on the ordinal (integer) and 
     scalar (floating point) types, so it can compute using any reasonable data type.
 
   <b>Constructing Kokkos::BaseSparseSolve objects</b>
@@ -106,7 +106,9 @@ namespace Kokkos {
       This interface supports matrices that implement the Kokkos::CisMatrix matrix interface
 .
       \param A (In)  An instance of a class that implements the Kokkos::CisMatrix.  All necessary information
-             about the matrix can be obtained via this interface.
+             about the matrix can be obtained via this interface, including whether or not the matrix is upper or lower
+	     triangular, and whether or not the diagonal is part of the structure, or should be implicitly assume to be
+	     unit diagonal.
       \param willKeepValues (In) If set to true, the user is asserting that the strucuture of the matrix, as
              defined in the getIndices() method of the CisMatrix object A will be kept.  Specifically, the pointer to an 
 	     array of indices returned for each i in that method will continue to point to valid index data.  By default,
@@ -127,10 +129,11 @@ namespace Kokkos {
 	
     //! Returns the result of a Kokkos_BaseSparseSolve multiplied by a vector x in y.
     /*! 
-      \param x (In) A Kokkos::Vector to multiply by.
-      \param y (Out) A Kokkos::Vector containing results.
-      \param transA (In) If true, multiply by the transpose of matrix, otherwise just use matrix.
-      \param conjA (In) If true, multiply by the conjugate of matrix values, otherwise just use matrix values.
+      \param x (In) A Kokkos::Vector to solve with.
+      \param y (Out) A Kokkos::Vector containing results.  Note that any implementation must support x and y being 
+             the same object.
+      \param transA (In) If true, solve using the transpose of matrix, otherwise just use matrix.
+      \param conjA (In) If true, solve using the conjugate of matrix values, otherwise just use matrix values.
 		
       \return Integer error code, set to 0 if successful.
     */
@@ -139,10 +142,11 @@ namespace Kokkos {
 
     //! Returns the result of a Kokkos_BaseSparseSolve multiplied by multiple vectors in x, results in y.
     /*! 
-      \param x (In) A Kokkos::MultiVector to multiply by.
-      \param y (Out) A Kokkos::MultiVector containing results.
-      \param transA (In) If true, multiply by the transpose of matrix, otherwise just use matrix.
-      \param conjA (In) If true, multiply by the conjugate of matrix values, otherwise just use matrix values.
+      \param x (In) A Kokkos::MultiVector to solve with.
+      \param y (Out) A Kokkos::MultiVector containing results.  Note that any implementation must support x and y being 
+             the same object.
+      \param transA (In) If true, solve using the transpose of matrix, otherwise just use matrix.
+      \param conjA (In) If true, solve using the conjugate of matrix values, otherwise just use matrix values.
 		
       \return Integer error code, set to 0 if successful.
     */
@@ -513,27 +517,79 @@ namespace Kokkos {
     if ((isRowOriented_ && !transA) ||
 	(!isRowOriented_ && transA)) {
 
-      for(i = 0; i < numRC_; i++) {
-	curNumEntries = *profile++;
-	curIndices = *indices++;
-	curValues  = *values++;
-	ScalarType sum = 0.0;
-	for(j = 0; j < curNumEntries; j++)
-	  sum += curValues[j] * xp[curIndices[j]];
-	yp[i] = sum;
+      if (isUpper_) {
+	profile += numRC_-1; // Point to end of structures
+	indices += numRC_-1;
+	values += numRC_-1;
+
+	OrdinalType j0 = 1;
+	if (hasUnitDiagonal_) j0--;
+ 	for(i = numRC_-1; i >=0; i--) {
+	  curNumEntries = *profile--;
+	  curIndices = *indices--;
+	  curValues  = *values-;
+	  ScalarType sum = 0.0;
+	  for(j = j0; j < curNumEntries; j++)
+	    sum += curValues[j] * xp[k][curIndices[j]];
+	  if (hasUnitDiagonal_)
+	    yp[i] = yp[i] - sum;
+	  else
+	    yp[i] = (yp[i] - sum)/curValues[0];
+	}
+      }
+      else { // Lower triangular
+	OrdinalType j0 = 1;
+	if (hasUnitDiagonal_) j0--;
+	for(i = 0; i < numRC_; i++) {
+	  curNumEntries = *profile++;
+	  curIndices = *indices++;
+	  curValues  = *values++;
+	  ScalarType sum = 0.0;
+	  for(j = 0; j < curNumEntries; j++)
+	    sum += curValues[j] * xp[curIndices[j]];
+	  if (hasUnitDiagonal_)
+	    yp[i] = yp[i] - sum;
+	  else
+	    yp[i] = (yp[i] - sum)/curValues[curNumEntries];
+	}
       }
     }
     else {
       
       for(i = 0; i < numRC_; i++)
-	yp[i] = 0.0; // Initialize y for transpose multiply
+	yp[i] = xp[i]; // Initialize y for transpose multiply
 
-      for(i = 0; i < numRC_; i++) {
-	curNumEntries = *profile++;
-	curIndices = *indices++;
-	curValues  = *values++;
-	for(j = 0; j < curNumEntries; j++)
-	  yp[curIndices[j]] += curValues[j] * xp[i];
+      if (isUpper_) {
+	OrdinalType j0 = 1;
+	if (hasUnitDiagonal_) j0--;
+	for(i = 0; i < numRC_; i++) {
+	  curNumEntries = *profile++;
+	  curIndices = *indices++;
+	  curValues  = *values++;
+	  if (!hasUnitDiagonal) 
+	    yp[k][i] = yp[k][i]/curValues[0];
+	  for(j = 0; j < curNumEntries; j++)
+	    yp[curIndices[j]] -= curValues[j] * xp[i];
+	}
+      }
+      else { // Lower triangular
+
+	profile += numRC_-1; // Point to end of structures
+	indices += numRC_-1;
+	values += numRC_-1;
+
+	j0 = 1;
+	if (hasUnitDiagonal_) j0--; // Include first term if no diagonal
+
+	for(i = 0; i < numRC_; i++) {
+	  curNumEntries = *profile-- - j0;
+	  curIndices = *indices--;
+	  curValues  = *values--;
+	    if (!hasUnitDiagonal) 
+	      yp[i] = yp[i]/curValues[curNumEntries];
+	    for(j = 0; j < curNumEntries; j++)
+	      yp[curIndices[j]] -= curValues[j] * yp[i];
+	}
       }
     }
     updateFlops(costOfSolve_);
@@ -566,31 +622,87 @@ namespace Kokkos {
     if ((isRowOriented_ && !transA) ||
 	(!isRowOriented_ && transA)) {
 
-      for(i = 0; i < numRC_; i++) {
-	curNumEntries = *profile++;
-	curIndices = *indices++;
-	curValues  = *values++;
-	for (k=0; k<numVectors; k++) {
-	  ScalarType sum = 0.0;
-	  for(j = 0; j < curNumEntries; j++)
-	    sum += curValues[j] * xp[k][curIndices[j]];
-	  yp[k][i] = sum;
+      if (isUpper_) {
+	profile += numRC_-1; // Point to end of structures
+	indices += numRC_-1;
+	values += numRC_-1;
+
+	OrdinalType j0 = 1;
+	if (hasUnitDiagonal_) j0--;
+	for(i = numRC_-1; i >=0; i--) {
+	  curNumEntries = *profile--;
+	  curIndices = *indices--;
+	  curValues  = *values-;
+	  for (k=0; k<numVectors; k++) {
+	    ScalarType sum = 0.0;
+	    for(j = j0; j < curNumEntries; j++)
+	      sum += curValues[j] * xp[k][curIndices[j]];
+	    if (hasUnitDiagonal_)
+	      yp[k][i] = yp[k][i] - sum;
+	    else
+	      yp[k][i] = (yp[k][i] - sum)/curValues[0];
+	  }
+	}
+      }
+      else { // Lower triangular
+	OrdinalType j0 = 1;
+	if (hasUnitDiagonal_) j0--;
+	for(i = 0; i < numRC_; i++) {
+	  curNumEntries = *profile++ - j0;
+	  curIndices = *indices++;
+	  curValues  = *values++;
+	  for (k=0; k<numVectors; k++) {
+	    ScalarType sum = 0.0;
+	    for(j = 0; j < curNumEntries; j++)
+	      sum += curValues[j] * xp[k][curIndices[j]];
+	    if (hasUnitDiagonal_)
+	      yp[k][i] = yp[k][i] - sum;
+	    else
+	      yp[k][i] = (yp[k][i] - sum)/curValues[curNumEntries];
+	  }
 	}
       }
     }
-    else {
+    else { // ColOriented and no tranpose or RowOriented and transpose
       
       for (k=0; k<numVectors; k++)
 	for(i = 0; i < numRC_; i++)
-	  yp[k][i] = 0.0; // Initialize y
+	  yp[k][i] = xp[k][i]; // Initialize y
       
-      for(i = 0; i < numRC_; i++) {
-	curNumEntries = *profile++;
-	curIndices = *indices++;
-	curValues  = *values++;
-	for (k=0; k<numVectors; k++) {
-	  for(j = 0; j < curNumEntries; j++)
-	    yp[k][curIndices[j]] += curValues[j] * xp[k][i];
+      if (isUpper_) {
+	OrdinalType j0 = 1;
+	if (hasUnitDiagonal_) j0--;
+	for(i = 0; i < numRC_; i++) {
+	  curNumEntries = *profile++;
+	  curIndices = *indices++;
+	  curValues  = *values++;
+	  for (k=0; k<numVectors; k++) {
+	    if (!hasUnitDiagonal) 
+	      yp[k][i] = yp[k][i]/curValues[0];
+	    for(j = j0; j < curNumEntries; j++)
+	      yp[k][curIndices[j]] -= curValues[j] * yp[k][i];
+	  }
+	}
+      }
+      else { // Lower triangular
+
+	profile += numRC_-1; // Point to end of structures
+	indices += numRC_-1;
+	values += numRC_-1;
+
+	j0 = 1;
+	if (hasUnitDiagonal_) j0--; // Include first term if no diagonal
+
+	for(i = 0; i < numRC_; i++) {
+	  curNumEntries = *profile-- - j0;
+	  curIndices = *indices--;
+	  curValues  = *values--;
+	  for (k=0; k<numVectors; k++) {
+	    if (!hasUnitDiagonal) 
+	      yp[k][i] = yp[k][i]/curValues[curNumEntries];
+	    for(j = 0; j < curNumEntries; j++)
+	      yp[k][curIndices[j]] -= curValues[j] * yp[k][i];
+	  }
 	}
       }
     }

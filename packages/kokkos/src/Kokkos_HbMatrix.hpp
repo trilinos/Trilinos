@@ -156,7 +156,9 @@ namespace Kokkos {
     virtual int setHasDiagonalEntries(bool tf) {hasDiagonalEntries_=tf; return(0);};
 	
     //! Set whether or not the compressed index matrix should be treated as unit diagonal, assumed false
-    /*! \warning This method will not accept a "true" argument unless setHasDiagonalEntries() has be called with a "false" argument first.
+    /*! \warning This method will not accept a "true" argument unless setHasDiagonalEntries() has be 
+        called with a "false" argument first.
+    */
     virtual int setHasImplicitUnitDiagonal(bool tf) {
       if (tf && hasDiagonalEntries_) return(-1); // Cannot set unit diagonal unless there are no explicit diagonal entries
       hasImplicitUnitDiagonal_=tf; 

@@ -193,6 +193,7 @@ namespace Kokkos {
     bool isRowOriented_;
     bool haveStructure_;
     bool haveValues_;
+    bool hasUnitDiagonal_;
   
     OrdinalType numRows_;
     OrdinalType numCols_;
@@ -220,6 +221,7 @@ namespace Kokkos {
       isRowOriented_(true),
       haveStructure_(false),
       haveValues_(false),
+      hasUnitDiagonal_(false),
       numRows_(0),
       numCols_(0),
       numRC_(0),
@@ -244,6 +246,7 @@ namespace Kokkos {
       isRowOriented_(source.isRowOriented_),
       haveStructure_(source.haveStructure_),
       haveValues_(source.haveValues_),
+      hasUnitDiagonal_(source.hasUnitDiagonal_),
       numRows_(source.numRows_),
       numCols_(source.numCols_),
       numRC_(source.numRC_),
@@ -387,6 +390,7 @@ namespace Kokkos {
     numRows_ = A.getNumRows();
     numCols_ = A.getNumCols();
     numEntries_ = A.getNumEntries();
+    hasUnitDiagonal_ = A.getHasImplicitUnitDiagonal();
     numRC_ = numCols_;
     if (isRowOriented_) numRC_ = numRows_;
 
@@ -507,6 +511,8 @@ namespace Kokkos {
 	curIndices = *indices++;
 	curValues  = *values++;
 	ScalarType sum = 0.0;
+	if (hasUnitDiagonal_) 
+	  sum = xp[i];
 	for(j = 0; j < curNumEntries; j++)
 	  sum += curValues[j] * xp[curIndices[j]];
 	yp[i] = sum;
@@ -514,8 +520,12 @@ namespace Kokkos {
     }
     else {
       
-      for(i = 0; i < numRC_; i++)
-	yp[i] = 0.0; // Initialize y for transpose multiply
+      if (hasUnitDiagonal_) 
+	for(i = 0; i < numRC_; i++)
+	  yp[i] = xp[i]; // Initialize y for transpose multiply
+      else
+	for(i = 0; i < numRC_; i++)
+	  yp[i] = 0.0; // Initialize y for transpose multiply
 
       for(i = 0; i < numRC_; i++) {
 	curNumEntries = *profile++;
@@ -561,6 +571,8 @@ namespace Kokkos {
 	curValues  = *values++;
 	for (k=0; k<numVectors; k++) {
 	  ScalarType sum = 0.0;
+	  if (hasUnitDiagonal_) 
+	    sum = xp[k][i];
 	  for(j = 0; j < curNumEntries; j++)
 	    sum += curValues[j] * xp[k][curIndices[j]];
 	  yp[k][i] = sum;
@@ -569,9 +581,14 @@ namespace Kokkos {
     }
     else {
       
-      for (k=0; k<numVectors; k++)
-	for(i = 0; i < numRC_; i++)
-	  yp[k][i] = 0.0; // Initialize y
+      if (hasUnitDiagonal_) 
+	for (k=0; k<numVectors; k++)
+	  for(i = 0; i < numRC_; i++)
+	    yp[k][i] = xp[k][i]; // Initialize y for transpose multiply
+      else
+	for (k=0; k<numVectors; k++)
+	  for(i = 0; i < numRC_; i++)
+	    yp[k][i] = 0.0; // Initialize y
       
       for(i = 0; i < numRC_; i++) {
 	curNumEntries = *profile++;
