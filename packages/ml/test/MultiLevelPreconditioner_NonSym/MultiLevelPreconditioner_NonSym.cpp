@@ -48,7 +48,7 @@
 #endif
 
 #include "Teuchos_ParameterList.hpp"
-#include "ml_epetra_preconditioner.h"
+#include "ml_MultiLevelPreconditioner.h"
 #include "AztecOO.h"
 
 #include "Trilinos_Util_CrsMatrixGallery.h"
@@ -397,9 +397,20 @@ int main(int argc, char *argv[]) {
 
 int main(int argc, char *argv[])
 {
-  puts("Please configure ML with --with-ml_epetra --with-ml_teuchos --with-ml_triutils");
 
-  return 0;
+  // still need to deal with MPI, some architecture don't like
+  // an exit(0) without MPI_Finalize()
+#ifdef ML_MPI
+  MPI_Init(&argc,&argv);
+#endif
+    
+  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
+
+#ifdef ML_MPI
+  MPI_Finalize();
+#endif
+
+  return(0);
 }
 
 #endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */

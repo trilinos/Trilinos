@@ -29,7 +29,7 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 #include "ml_epetra_utils.h"
-#include "ml_epetra_preconditioner.h"
+#include "ml_MultiLevelPreconditioner.h"
 #include "Teuchos_ParameterList.hpp"
 struct user_partition {               
   int *my_global_ids;      /* my_global_ids[i]: id of ith local unknown.     */
@@ -486,9 +486,20 @@ ML_Operator *user_T_build(struct user_partition *Edge_Partition,
 
 int main(int argc, char *argv[])
 {
+
+  // still need to deal with MPI, some architecture don't like
+  // an exit(0) without MPI_Finalize()
+#ifdef ML_MPI
+  MPI_Init(&argc,&argv);
+#endif
+    
   puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
 
-  return 0;
+#ifdef ML_MPI
+  MPI_Finalize();
+#endif
+
+  return(0);
 }
 
 #endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
