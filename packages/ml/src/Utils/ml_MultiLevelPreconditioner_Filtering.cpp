@@ -352,8 +352,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 
       ML_Gen_Smoother_Amesos(flt_ml_, 0, ML_AMESOS_KLU, -1);
       ML_Gen_Solver(flt_ml_, ML_MGV, 1, 0);
-   
-      ml_->void_options = (void *) flt_ml_;
+
+      // I use my version of filtering, in ApplyInverse(), rather
+      // than Haim's (that is based on some dense matrix products)
+      //      ml_->void_options = (void *) flt_ml_;
 
       if( verbose_ ) cout << endl;
       

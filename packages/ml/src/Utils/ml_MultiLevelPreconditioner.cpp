@@ -1368,6 +1368,12 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
     default:
       ML_Solve_MGV(ml_ptr, xvectors[i], yvectors[i]); 
     }
+
+    if( flt_ml_ ) {
+      ML_Cycle_MG(&(flt_ml_->SingleLevel[flt_ml_->ML_finest_level]),
+		  yvectors[i], xvectors[i],
+		  ML_ZERO, flt_ml_->comm, ML_NO_RES_NORM, flt_ml_);
+    }
   }
 
   /* ********************************************************************** */
@@ -1912,12 +1918,8 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
   /* almost everything here is experimental ;)                              */
   /* ********************************************************************** */
 
-#ifndef MARZIO
-  string RandPSmoothing = "classic";
-#else
   sprintf(parameter,"%sR and P smoothing: type", Prefix_);
   string RandPSmoothing = List_.get(parameter, "classic");
-#endif
 
   /* start looping over different options */
 
