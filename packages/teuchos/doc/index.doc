@@ -86,6 +86,16 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
   pointer for managing dynamically allocated memory that is safe under
   multiple inheritance.
 
+	<li> Abstract factories:
+    <ul>
+    <li> Teuchos::AbstractFactory - defines a basic "Abstract Factory" interface
+         that allocates objects and returns them wrapped in <tt>Teuchos::RefCountPtr</tt>
+         objects.
+    <li> Teuchos::AbstractFactoryStd - defines a general concrete implementation of 
+         Teuchos::AbstractFactory that allows creating quick concrete subclass
+         implementations for concrete types.
+    </ul>
+
   <li> Dynamic casting: Teuchos::dyn_cast - a wrapper for
   <tt>dynamic_cast<></tt> that throws <tt>std::bad_cast</tt>
   exceptions with very detailed error messages on what types are involved.

@@ -32,9 +32,9 @@
 #ifndef TEUCHOS_STANDARD_MEMBER_COMPOSITION_MACROS_H
 #define TEUCHOS_STANDARD_MEMBER_COMPOSITION_MACROS_H
 
-/*! \file Teuchos_StandardMemberCompositionMacros.hpp
-    \brief Macro that adds <<std member comp>> members as attribute members 
-	for any class
+/*! \file Teuchos_StandardMemberCompositionMacros.hpp \brief Macro
+	that adds <<std member comp>> members as attribute members for any
+	class.
 */
 #include "Teuchos_ConfigDefs.hpp"
 
