@@ -176,8 +176,6 @@ echo  >> .compile_input
 echo yes >> .compile_input
 echo no >> .compile_input
 echo no >> .compile_input
-cat .compile_input
-exit
 ./installer < .compile_input
 mv ${ML_HOME}/Obj/mlguide ${ML_HOME}/aztecsupermpi
 fi
