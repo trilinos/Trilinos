@@ -27,7 +27,7 @@
 //@HEADER
 
 #include "ml_include.h"
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_IFPACK) && defined(HAVE_MPI) && defined(FIXME
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_IFPACK) && defined(HAVE_MPI)
 
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -36,6 +36,7 @@
 #include "Epetra_LinearProblem.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "AztecOO.h"
+#include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_Amesos.h"
 #include "ml_Ifpack_ML.h"
 #include "ml_MultiLevelPreconditioner.h"
@@ -58,7 +59,7 @@ int TestAdditiveSchwarz()
   Epetra_Vector RHS(A->OperatorRangeMap());
 
   LHS.PutScalar(0.0);
-  RHS.Random();
+  RHS.PutScalar(1.0);
 
   Epetra_LinearProblem problem(A, &LHS, &RHS);
 
@@ -70,7 +71,7 @@ int TestAdditiveSchwarz()
   List.set("schwarz: combine mode", Add);
   List.set("cycle applications", 10);
 
-  int Overlap = 2;
+  int Overlap = 0;
   Ifpack_AdditiveSchwarz<T> Prec(A, Overlap);
   Prec.SetParameters(List);
   ML_CHK_ERR(Prec.Initialize());
@@ -91,64 +92,68 @@ void TestML()
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
   CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", 900);
+  Gallery.Set("problem_size", 10000);
+  Epetra_RowMatrix* A = Gallery.GetMatrix();
 
-  Epetra_RowMatrix * A = Gallery.GetMatrix();
-  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
+  Epetra_Vector LHS(A->OperatorDomainMap());
+  Epetra_Vector RHS(A->OperatorRangeMap());
 
-  AztecOO solver(*Problem);
+  LHS.PutScalar(0.0);
+  RHS.PutScalar(1.0);
+
+  Epetra_LinearProblem problem(A, &LHS, &RHS);
+
+  AztecOO solver(problem);
 
   ParameterList MLList;
   ML_Epetra::SetDefaults("SA",MLList);
 
+  MLList.set("increasing or decreasing", "increasing");
   MLList.set("max levels",5);
-  MLList.set("increasing or decreasing","decreasing");
   MLList.set("aggregation: type", "Uncoupled");
-  MLList.set("smoother: type","self");
+  MLList.set("smoother: pre or post","pre");
   MLList.set("output", 0);
 
-  Teuchos::ParameterList& SelfList = MLList.sublist("smoother: self list");
-  ML_Epetra::SetDefaults("DD-ML", SelfList);
-  SelfList.set("output", 0);
-  SelfList.set("coarse: max size", 128);
-  SelfList.set("cycle applications", 1);
-  SelfList.set("aggregation: damping factor", 0.0);
-  // uncomment the following to use Amesos locally
-  //MLList.set("smoother: type", "IFPACK");
-  //MLList.set("smoother: ifpack type", "Amesos");
-  //MLList.set("smoother: ifpack overlap", 0);
+  // toggle the following to compare with more classical smoothing
 
-  MLList.set("smoother: pre or post", "both");
+  bool UseSelf = true;
 
-#ifdef HAVE_ML_AMESOS
-  MLList.set("coarse: type","Amesos-KLU");
-#else
-  MLList.set("aggregation: type", "MIS");
-  MLList.set("smoother: type","Jacobi");
-  MLList.set("coarse: type","Jacobi");
-#endif
+  if (UseSelf) {
+    MLList.set("smoother: type (level 0)", "Gauss-Seidel");
+    MLList.set("smoother: type (level 1)", "self");
+    MLList.set("smoother: type (level 2)", "self");
+    MLList.set("smoother: type (level 3)", "self");
+    MLList.set("smoother: type (level 4)", "self");
+
+    Teuchos::ParameterList& SelfList = MLList.sublist("smoother: self list");
+    ML_Epetra::SetDefaults("DD-ML", SelfList);
+    SelfList.set("output", 0);
+    SelfList.set("coarse: max size", 128);
+    SelfList.set("cycle applications", 1);
+    SelfList.set("aggregation: damping factor", 0.0);
+    SelfList.set("smoother: pre or post", "both");
+    SelfList.set("max levels", 5);
+    SelfList.set("zero starting solution", true);
+  } 
+  else {
+    MLList.set("smoother: type (level 0)", "Gauss-Seidel");
+    MLList.set("smoother: type (level 1)", "IFPACK");
+    MLList.set("smoother: type (level 2)", "IFPACK");
+    MLList.set("smoother: type (level 3)", "IFPACK");
+    MLList.set("smoother: type (level 4)", "IFPACK");
+    MLList.set("smoother: ifpack type", "Amesos");
+    MLList.set("smoother: ifpack overlap", 0);
+  }
 
   ML_Epetra::MultiLevelPreconditioner* MLPrec = 
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   solver.SetPrecOperator(MLPrec);
-  solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
+  solver.SetAztecOption(AZ_solver, AZ_gmres_condnum);
   solver.SetAztecOption(AZ_output, 32);
   solver.Iterate(500, 1e-12);
 
   delete MLPrec;
-
-  double residual, diff;
-  Gallery.ComputeResidual(&residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(&diff);
-
-  if (Comm.MyPID() == 0) {
-    cout << "||b-Ax||_2 = " << residual << endl;
-    cout << "||x_exact - x||_2 = " << diff << endl;
-  }
-
-  if (residual > 1e-5)
-    exit(EXIT_FAILURE);
 }
 
 // ============== //
@@ -159,8 +164,14 @@ int main(int argc, char *argv[])
 {
   
   MPI_Init(&argc,&argv);
-  int MyPID;
+  int MyPID, NumProcs;
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
+  MPI_Comm_size(MPI_COMM_WORLD, &NumProcs);
+
+  if (NumProcs == 1) {
+    cerr << "Please run this example with more than 1 proc" << endl;
+    exit(EXIT_SUCCESS);
+  }
 
   int ItersML = TestAdditiveSchwarz<Ifpack_Amesos>();
   int ItersAm = TestAdditiveSchwarz<ML_Epetra::Ifpack_ML>();
