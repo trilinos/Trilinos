@@ -579,7 +579,7 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
 
   int value = -777;
   sprintf(parameter,"%saggregation: type",Prefix_);
-  string CoarsenScheme = List_.get(parameter,"METIS");
+  string CoarsenScheme = List_.get(parameter,"Hybrid");
   
   for( int level=0 ; level<NumLevels_-1 ; ++level ) {  
 
@@ -594,6 +594,8 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
       ML_Aggregate_Set_CoarsenSchemeLevel_MIS(level,NumLevels_,agg_);
     else if(  CoarsenScheme == "Uncoupled" ) 
       ML_Aggregate_Set_CoarsenSchemeLevel_Uncoupled(level,NumLevels_,agg_);
+    else if ( CoarsenScheme == "Hybrid" )
+      ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(level,NumLevels_,agg_);
     else if(  CoarsenScheme == "Coupled" ) 
       ML_Aggregate_Set_CoarsenSchemeLevel_Coupled(level,NumLevels_,agg_);
     else {
@@ -693,7 +695,7 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
   DampingFactor = List_.get(parameter, DampingFactor);
   ML_Aggregate_Set_DampingFactor( agg_, DampingFactor ); 
   
-  int MaxCoarseSize = 512;
+  int MaxCoarseSize = 50;
   sprintf(parameter,"%scoarse: max size", Prefix_);
   MaxCoarseSize = List_.get(parameter, MaxCoarseSize);
   ML_Aggregate_Set_MaxCoarseSize(agg_, MaxCoarseSize );
@@ -739,13 +741,15 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
 
   sprintf(parameter,"%ssmoother: damping factor", Prefix_);
   double omega = List_.get(parameter,1.0);
+// what about parallel????  JJH
 
   sprintf(parameter,"%ssmoother: pre or post", Prefix_);
   int pre_or_post;
   string PreOrPostSmoother = List_.get(parameter,"post");
 
   sprintf(parameter,"%ssmoother: type", Prefix_);
-  string Smoother = List_.get(parameter,"Jacobi");
+  string Smoother = List_.get(parameter,"MLS");
+// Gauss Seidel ...... JJH
 
   sprintf(parameter,"%ssmoother: aztec options", Prefix_);
   int * SmootherOptionsPtr = NULL;
@@ -760,7 +764,7 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
   int aztec_its;
 
   sprintf(parameter,"%ssmoother: MLS polynomial order", Prefix_);
-  int MLSPolynomialOrder = List_.get(parameter,3);
+  int MLSPolynomialOrder = List_.get(parameter,2);
 
   sprintf(parameter,"%ssmoother: MLS alpha",Prefix_);
   double MLSalpha = List_.get(parameter,30.0);;
@@ -907,7 +911,8 @@ int Epetra_ML_Preconditioner::ComputePreconditioner()
   if( NumLevels_ > 1 ) {  
 
     sprintf(parameter,"%scoarse: type", Prefix_);
-    string CoarseSolution = List_.get(parameter, "Amesos_KLU");
+    string CoarseSolution = List_.get(parameter, "SuperLU");
+//JJH SuperLU
     sprintf(parameter,"%scoarse: sweeps", Prefix_);
     int NumSmootherSteps = List_.get(parameter, 1);
     sprintf(parameter,"%scoarse: damping factor", Prefix_);
