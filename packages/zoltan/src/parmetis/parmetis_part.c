@@ -196,33 +196,35 @@ int LB_ParMetis(
 #endif
   
   vtxdist = (idxtype *)LB_MALLOC((lb->Num_Proc+1)* sizeof(idxtype));
-  global_ids = (LB_GID *) LB_MALLOC(num_obj * sizeof(LB_GID) );
-  local_ids = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID) );
-  if (vwgt_dim)
-    float_vwgt = (float *)LB_MALLOC(vwgt_dim*num_obj * sizeof(float));
-  else {
-    float_vwgt = NULL;
-    vwgt = NULL;
-  }
-  if (!vtxdist || !global_ids || !local_ids || (vwgt_dim && !float_vwgt)){
-    /* Not enough memory */
-    printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
-    FREE_MY_MEMORY;
-    return LB_MEMERR;
-  }
-  LB_Get_Obj_List(lb, global_ids, local_ids, vwgt_dim, float_vwgt, &ierr);
-  if (ierr){
-    /* Return error */
-    printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
-    FREE_MY_MEMORY;
-    return LB_FATAL;
-  }
-
+  if (num_obj>0){
+    global_ids = (LB_GID *) LB_MALLOC(num_obj * sizeof(LB_GID) );
+    local_ids = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID) );
+    if (vwgt_dim)
+      float_vwgt = (float *)LB_MALLOC(vwgt_dim*num_obj * sizeof(float));
+    else {
+      float_vwgt = NULL;
+      vwgt = NULL;
+    }
+    if (!vtxdist || !global_ids || !local_ids || (vwgt_dim && !float_vwgt)){
+      /* Not enough memory */
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      FREE_MY_MEMORY;
+      return LB_MEMERR;
+    }
+    LB_Get_Obj_List(lb, global_ids, local_ids, vwgt_dim, float_vwgt, &ierr);
+    if (ierr){
+      /* Return error */
+      printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+      FREE_MY_MEMORY;
+      return LB_FATAL;
+    }
+  
 #ifdef LB_DEBUG
     printf("[%1d] Debug: Global ids = ", lb->Proc);
     for (i99=0; i99<num_obj; i99++) printf("%d ", global_ids[i99]);
     printf("\n");
 #endif
+  }
   
   /* The vtxdist array is required by all ParMetis routines */
   /* Scan over all procs to determine the number range for each proc */
@@ -259,12 +261,12 @@ int LB_ParMetis(
 #endif
   
     /* Allocate space for ParMETIS data structs */
-    xadj   = (idxtype *)LB_MALLOC((num_obj+1)* sizeof(idxtype));
-    adjncy = (idxtype *)LB_MALLOC(sum_edges * sizeof(idxtype));
+    xadj   = (idxtype *)LB_MALLOC((num_obj+1) * sizeof(idxtype));
+    adjncy = (idxtype *)LB_MALLOC((sum_edges+1) * sizeof(idxtype));
     if (ewgt_dim) 
       adjwgt = (idxtype *)LB_MALLOC(ewgt_dim*sum_edges * sizeof(idxtype));
   
-    if (!xadj || !adjncy || (ewgt_dim && !adjwgt)){
+    if (!xadj || !adjncy || (sum_edges && ewgt_dim && !adjwgt)){
       /* Not enough memory */
       printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
@@ -282,7 +284,7 @@ int LB_ParMetis(
       sizeof(struct LB_hash_node));
     hashtab = (struct LB_hash_node **) LB_MALLOC(num_obj *
       sizeof(struct LB_hash_node *) );
-    if ((!hash_nodes) || (!hashtab)){
+    if (num_obj && ((!hash_nodes) || (!hashtab))){
       /* Not enough memory */
       printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
@@ -308,9 +310,10 @@ int LB_ParMetis(
     nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
     proc_list = (struct LB_vtx_list **) LB_MALLOC(lb->Num_Proc *
       sizeof(struct LB_vtx_list *) );
-    proc_nodes = (struct LB_vtx_list **) LB_MALLOC((sum_edges/CHUNKSIZE+1) *
+    proc_nodes = (struct LB_vtx_list **) LB_MALLOC((sum_edges/CHUNKSIZE+2) *
       sizeof(struct LB_vtx_list *) );
-    if ((!nbors_global) || (!nbors_proc) || (!proc_list) || (!proc_nodes)){
+    if ((max_edges && ((!nbors_global) || (!nbors_proc))) || 
+        (!proc_list) || (!proc_nodes)){
       /* Not enough memory */
       printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
@@ -329,7 +332,7 @@ int LB_ParMetis(
     for (i=0; i< lb->Num_Proc; i++){
       proc_list[i] = NULL;
     }
-    for (i=0; i< sum_edges/CHUNKSIZE+1; i++){
+    for (i=0; i< sum_edges/CHUNKSIZE+2; i++){
       proc_nodes[i] = NULL;
     }
   
@@ -417,7 +420,6 @@ int LB_ParMetis(
     printf("[%1d] Debug: nsend =%d\n", lb->Proc, nsend);
 #endif
   
-    if (nsend>0){
       /* Exchange info between processors to resolve global_number */
   
       /* Determine required buffer sizes */
@@ -441,7 +443,8 @@ int LB_ParMetis(
       recvbuf = (char *) LB_MALLOC(sum_edges*size);
       request = (MPI_Request *) LB_MALLOC(nsend*sizeof(MPI_Request));
       status  = (MPI_Status *) LB_MALLOC(nsend*sizeof(MPI_Status));
-      if ((!sendbuf) || (!recvbuf) || (!request) || (!status)){
+      if ((max_edges && !sendbuf) || (sum_edges && !recvbuf) || 
+          (nsend && !request) || (nsend && !status)){
         /* Not enough space */
         printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
         FREE_MY_MEMORY;
@@ -544,7 +547,6 @@ int LB_ParMetis(
       LB_FREE(&recvbuf);
       LB_FREE(&request);
       LB_FREE(&status);
-    } /* end if (nsend>0) */
   
     /* Free space for temp data structures */
     for (i=0; proc_nodes[i] != NULL; i++){
@@ -626,6 +628,7 @@ int LB_ParMetis(
 #ifdef LB_DEBUG
     printf("[%1d] Debug: Calling ParMETIS partitioner ...\n", lb->Proc);
 #endif
+
   if (strcmp(alg, "PARTKWAY") == 0){
     ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, &(lb->Num_Proc), options, &edgecut, part, &(lb->Communicator));
