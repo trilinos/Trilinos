@@ -275,7 +275,7 @@ int Ifpack_CrsRiluk::InitAllValues(const Epetra_RowMatrix & OverlapA, int MaxNum
     U_->PutScalar(0.0);
   }
 
-
+  D_->PutScalar(0.0); // Set diagonal values to zero
   double *DV;
   EPETRA_CHK_ERR(D_->ExtractView(&DV)); // Get view of diagonal
     
