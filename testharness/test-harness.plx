@@ -998,6 +998,17 @@ report($SUMMARY);
         $hostHardware =~ s/\s*$//; 
         $hostName =~ s/\s*$//; 
         
+        # grab the repository tag        
+        chdir "$options{'TRILINOS_DIR'}[0]/CVS";
+        my $tag = "";
+        my $cvsDirContents = `ls`;
+        if ($cvsDirContents =~ m/Tag/) {
+            $tag = `cat Tag`;
+        } else {
+            $tag = "development";
+        }          
+        chdir "$options{'TRILINOS_DIR'}[0]/testharness/temp";
+        
         # remove path from test name
         if (defined $testName) {
             $testName =~ s/.*\///;
@@ -1196,6 +1207,9 @@ report($SUMMARY);
         #    $body .= "Host Hardware:    $hostHardware\n";}     # unnecessary info
         if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
             $body .= "Host Name:        $hostName\n";}
+        if (defined $tag) {
+            $body .= "\n";
+            $body .= "Tag:              $tag\n";}
         if (defined $comm) {
             $body .= "\n";
             $body .= "Comm:             $comm\n";}
