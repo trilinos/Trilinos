@@ -4114,3 +4114,55 @@ int ML_Gen_Blocks_Metis(ML *ml, int level, int *nblocks, int **block_list)
                              nblocks, *block_list, NULL, NULL, 0);
    return 0;
 }
+/* ------------------------------------------------------------------------- */
+/* generate the Hiptmair smoother (SOR)                                  */
+/* ------------------------------------------------------------------------- */
+
+int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
+			      double omega, ML_Operator *Tmat)
+{
+   int (*fun)(void *, int, double *, int, double *);
+   int start_level, end_level, i, status = 1;
+   char str[80];
+
+   if (nl == ML_ALL_LEVELS) {start_level = 0; end_level = ml->ML_num_levels-1;}
+   else { start_level = nl; end_level = nl;}
+   if (start_level < 0) {
+      printf("ML_Gen_Smoother_GaussSeidel: cannot set smoother on level %d\n",start_level);
+      return 1;
+   }
+
+   fun = ML_Smoother_Hiptmair;
+
+   if (pre_or_post == ML_PRESMOOTHER) {
+      for (i = start_level; i <= end_level; i++) {
+             sprintf(str,"Hiptmair_pre%d",i);
+             status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+				      (void *) Tmat,
+                                      fun, NULL, ntimes, omega, str);
+      }
+   }
+   else if (pre_or_post == ML_POSTSMOOTHER) {
+      for (i = start_level; i <= end_level; i++) {
+             sprintf(str,"Hiptmair_post%d",i);
+             status = ML_Smoother_Set(&(ml->post_smoother[i]),ML_INTERNAL,
+				      (void *) Tmat,
+                             fun, NULL, ntimes, omega, str);
+      }
+   }
+   else if (pre_or_post == ML_BOTH) {
+      for (i = start_level; i <= end_level; i++) {
+             sprintf(str,"Hiptmair_pre%d",i);
+             status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+				      (void *) Tmat,
+                                      fun, NULL, ntimes, omega, str);
+             sprintf(str,"Hiptmair_post%d",i);
+             status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
+				      (void *) Tmat,
+                             fun, NULL, ntimes, omega, str);
+      }
+   }
+   else return(pr_error("ML_Gen_Smoother_Hiptmair: unknown pre_or_post choice\n"));
+   return(status);
+}
+
