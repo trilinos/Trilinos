@@ -638,19 +638,32 @@ if test "X$ac_cv_use_amesos_scalapack" != "Xno" ||
       TAC_ARG_WITH_SUB( amesos, scalapacklib, [Set scalapack library],  ${tac_with_amesos_scalapackdir}/libscalapack.a )
       TAC_CHECK_FILE(${tac_with_amesos_scalapacklib})
 
-      TAC_ARG_WITH_SUB( amesos, blacsdir, [Set blacs directory],  ${tac_with_trilinos3pldir}/blacs )
+      TAC_ARG_WITH_SUB( amesos, blacsdir, [Set blacs directory],  ${tac_with_trilinos3pldir}/BLACS/LIB/ )
       TAC_CHECK_FILE(${tac_with_amesos_blacsdir})
 
       TAC_ARG_WITH_SUB( amesos, blacslib, [Set blacs library],  ${tac_with_amesos_blacsdir}/libblacs.a )
       TAC_CHECK_FILE(${tac_with_amesos_blacslib})
 
-      AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, true ) 
-      AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
-      amesos_libs="${amesos_libs} ${tac_with_amesos_scalapacklib} ${tac_with_amesos_blacslib}"
+      TAC_ARG_WITH_SUB( amesos, blacsclib, [Set blacs C library],  ${tac_with_amesos_blacsdir}/libcblacs.a )
+      TAC_CHECK_FILE(${tac_with_amesos_blacsclib})
+
+      AC_F77_FUNC(dgebs2d)
 
     SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_scalapacklib} ${tac_with_amesos_blacslib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
-     AC_TRY_LINK_FUNC(pdgetrf_,,
+    LIBS="${tac_with_amesos_blacslib}  ${tac_with_amesos_cblacslib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
+     AC_TRY_LINK_FUNC($dgebs2d,,
+      AC_MSG_ERROR([[Cannot find blacs library, specify a location using --with-amesos-blacslib, (ex. --with-amesos-blacsdir=/home/kstanley/Trilinos3PL/BLACS/LIB).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
+    LIBS="${SAVE_LIBS}"
+
+      AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, true ) 
+      AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
+      amesos_libs="${amesos_libs} ${tac_with_amesos_scalapacklib} ${tac_with_amesos_blacslib} ${tac_with_amesos_blacsclib}  ${tac_with_amesos_blacslib} "
+
+      AC_F77_FUNC(pdgetrf)
+
+    SAVE_LIBS="${LIBS}"
+    LIBS="${tac_with_amesos_scalapacklib} ${tac_with_amesos_blacslib}  ${tac_with_amesos_cblacslib} ${tac_with_amesos_blacslib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
+     AC_TRY_LINK_FUNC($pdgetrf,,
       AC_MSG_ERROR([[Cannot find scalapack library, specify a location using --with-amesos-scalapacklib, (ex. --with-amesos-scalapacklib=/home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/libsuperludist.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
     LIBS="${SAVE_LIBS}"
 

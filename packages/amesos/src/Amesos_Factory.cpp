@@ -32,6 +32,9 @@
 #ifdef HAVE_AMESOS_MUMPS
 #include "Amesos_Mumps.h"
 #endif
+#ifdef HAVE_AMESOS_SCALAPACK
+#include "Amesos_Scalapack.h"
+#endif
 #ifdef HAVE_AMESOS_UMFPACK
 #include "Amesos_Umfpack.h"
 #endif
@@ -54,6 +57,14 @@ Amesos_BaseSolver* Amesos_Factory::Create( AmesosClassType ClassType,
     return new Amesos_Mumps(LinearProblem,ParameterList); 
 #else
     cerr << "Amesos_Mumps is not implemented" << endl ; 
+    return 0 ; 
+#endif
+    break;
+  case AMESOS_SCALAPACK:
+#ifdef HAVE_AMESOS_SCALAPACK
+    return new Amesos_Scalapack(LinearProblem,ParameterList); 
+#else
+    cerr << "Amesos_Scalapack is not implemented" << endl ; 
     return 0 ; 
 #endif
     break;
