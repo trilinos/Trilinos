@@ -109,10 +109,8 @@ install_sh = @install_sh@
 
 AUTOMAKE_OPTIONS = foreign
 
-EXTRA_DIST = bootstrap \
-	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
-	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 
-
+EXTRA_DIST = \
+	testharness/subdir-list testharness/checkin-test-harness
 
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs
 
@@ -288,7 +286,7 @@ distcleancheck_listfiles = find . -type f -print
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkinstalldirs) $(distdir)/config
+	$(mkinstalldirs) $(distdir)/testharness
 	@list='$(DISTFILES)'; for file in $$list; do \
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
 	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
