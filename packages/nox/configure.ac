@@ -925,7 +925,7 @@ fi
 
 if test X${ADDON_lapack} = Xyes || test X${BUILD_ANY_EXAMPLES} = Xyes || test X${BUILD_LIBLOCA} = Xyes; then
 
-  AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
+  AC_SEARCH_LIBS(pow,[m],,AC_MSG_WARN(Cannot find math library))
   AC_CHECK_FUNCS([pow sqrt])
 
   dnl Checks for libraries.
