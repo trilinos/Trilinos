@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1376">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title> Zoltan Developer's Guide:  Hash function</title>
@@ -21,26 +21,27 @@
 </head>
 <body bgcolor="#FFFFFF">
 
-<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_services_time.html">Next</a>&nbsp; |&nbsp; <a href="dev_services_parallel.html">Previous</a></i></b></div>
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_services_time.html">Next</a>&nbsp; |&nbsp; <a href="dev_services_parallel.html">Previous</a></i></b></div>
 
 <h2>
 Hash Function</h2>
-Zoltan provides a hash function for global IDs. Recall that a global ID
-may be of an arbitrary data type so the hash function treats it as a string
-of bytes.
+Zoltan provides a hash function for global and local IDs. The hash function
+computes a non-negative integer value in a certain range<i> </i>from an
+ID.
 <blockquote><b><a href="#LB_Hash">LB_Hash</a></b>&nbsp; : hash a global
-ID into integers of a certain range</blockquote>
+or local ID into non-negative integers</blockquote>
 
 <hr><a NAME="LB_Hash"></a>unsigned int<b> LB_Hash</b>(
-<b><a href="dev_lb_structs.html#LB_Struct">LB_GID</a></b>
-<i>key</i>, int <i>n</i>);&nbsp;
+<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR
+</a></b><i>key</i>,
+int <i>num_id_entries</i>, int <i>n</i>);&nbsp;
 <hr>
-<p><b>LB_Hash </b>computes a hash value for a global ID. Note that this
-hash function has been optimized for 32-bit integer systems, but should&nbsp;
-work on any machine.
-<br>The current implementation uses a&nbsp; simple multiplicative algorithm
-based on Don Knuth's golden ratio method, see <i>The Art of&nbsp; Computer
-Programming,</i> vol. 3.
+<p><b>LB_Hash </b>computes a hash value for a global or local ID. Note
+that this hash function has been optimized for 32-bit integer systems,
+but should&nbsp; work on any machine. The current implementation uses a
+simple multiplicative hash function based on Don Knuth's golden ratio method,
+see <i>The Art of&nbsp; Computer Programming,</i> vol. 3.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
@@ -52,13 +53,20 @@ Programming,</i> vol. 3.
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>key</i></td>
 
-<td>The global ID to be hashed.</td>
+<td>A pointer to the ID to be hashed.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>num_id_entries</i></td>
+
+<td>The length of the ID (as given by <b><a href="../ug_html/ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a></b>
+or <b><a href="../ug_html/ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a></b>).</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>n</i></td>
 
-<td>The hash value will be between 0 and <i>n</i>-1.&nbsp;</td>
+<td>The computed hash value will be between 0 and <i>n</i>-1.&nbsp;</td>
 </tr>
 
 <tr>
