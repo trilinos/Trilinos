@@ -3,7 +3,6 @@
 #include "ml_include.h"
 #include <iostream>
 #include "MLAPI_Space.h"
-#include "MLAPI_DoubleVector.h"
 #include "MLAPI_Workspace.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
@@ -14,8 +13,8 @@ namespace MLAPI {
 Operator Gallery(const string ProblemType,
                  const Space& MySpace)
 {
-  int NumGlobalElements = MySpace.NumGlobalElements();
-  Trilinos_Util::CrsMatrixGallery Gallery(ProblemType.c_str(), GetEpetraComm());
+  int NumGlobalElements = MySpace.GetNumGlobalElements();
+  Trilinos_Util::CrsMatrixGallery Gallery(ProblemType.c_str(), GetEpetra_Comm());
   Gallery.Set("problem_size", NumGlobalElements);
   Epetra_CrsMatrix* EpetraA = new Epetra_CrsMatrix(*(Gallery.GetMatrix()));
   

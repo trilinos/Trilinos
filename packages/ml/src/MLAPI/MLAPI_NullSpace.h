@@ -20,7 +20,7 @@ public:
   NullSpace()
   {
     Dimension_ = 0;
-    Values_    = Teuchos::null;
+    RCPValues_    = Teuchos::null;
   }
 
   //! Builds default null space, gives ownership.
@@ -39,9 +39,9 @@ public:
   //! Copy constructor.
   NullSpace(const NullSpace& rhs)
   {
-    VectorSpace_ = rhs.VectorSpace();
-    Dimension_   = rhs.Dimension();
-    Values_      = rhs.RCPValues();
+    VectorSpace_ = rhs.GetVectorSpace();
+    Dimension_   = rhs.GetDimension();
+    RCPValues_      = rhs.GetRCPValues();
   }
 
   // @}
@@ -51,9 +51,9 @@ public:
   NullSpace& operator=(const NullSpace& rhs) 
   {
     if (this != &rhs) {
-      VectorSpace_ = rhs.VectorSpace();
-      Dimension_   = rhs.Dimension();
-      Values_      = rhs.RCPValues();
+      VectorSpace_ = rhs.GetVectorSpace();
+      Dimension_   = rhs.GetDimension();
+      RCPValues_      = rhs.GetRCPValues();
     }
 
     return(*this);
@@ -62,12 +62,12 @@ public:
   //! Returns the \c row component of the \c null space vector.
   double operator()(const int row, const int col) const
   {
-    return(Values()[row + col * MyLength()]);
+    return(GetValues()[row + col * GetMyLength()]);
   }
 
   ~NullSpace()
   {
-    Values_ = Teuchos::null;
+    RCPValues_ = Teuchos::null;
   }
 
   // @}
@@ -79,21 +79,21 @@ public:
     if (InputDimension == 0)
       ML_THROW("Zero null space dimension", -1);
 
-    if (VectorSpace.NumGlobalElements() == 0)
+    if (VectorSpace.GetNumGlobalElements() == 0)
       ML_THROW("Empty vector space", -1);
 
     VectorSpace_ = VectorSpace;
     Dimension_   = InputDimension;
-    Values_      = Teuchos::null;
-    Values_      = Teuchos::rcp(new double[Dimension() * MyLength()]);
+    RCPValues_      = Teuchos::null;
+    RCPValues_      = Teuchos::rcp(new double[GetDimension() * GetMyLength()]);
 
     // populate the null space with default 0's and 1's
-    for (int v = 0 ; v < Dimension() ; ++v) {
-      for (int i = 0 ; i < MyLength() ; ++i) {
+    for (int v = 0 ; v < GetDimension() ; ++v) {
+      for (int i = 0 ; i < GetMyLength() ; ++i) {
         if ((i + 1) % (v + 1) == 0)
-          Values()[i + v * MyLength()] = 1.0;
+          GetValues()[i + v * GetMyLength()] = 1.0;
         else
-          Values()[i + v * MyLength()] = 0.0;
+          GetValues()[i + v * GetMyLength()] = 0.0;
       }
     }
   }
@@ -104,52 +104,52 @@ public:
   {
     VectorSpace_ = VectorSpace;
     Dimension_   = Dimension;
-    Values_      = Teuchos::rcp(Values, ownership);
+    RCPValues_      = Teuchos::rcp(Values, ownership);
   }
 
   // @}
   // @{ Query methods
            
   //! Returns the Space of \c this operator.
-  const Space& VectorSpace() const 
+  const Space& GetVectorSpace() const 
   {
     return(VectorSpace_);
   }
 
   //! Returns the local length of the null space vector.
-  int MyLength() const
+  int GetMyLength() const
   {
-    return(VectorSpace_.NumMyElements());
+    return(VectorSpace_.GetNumMyElements());
   }
 
   //! Returns the global length of the null space vector.
-  int GlobalLength() const
+  int GetGlobalLength() const
   {
-    return(VectorSpace_.NumGlobalElements());
+    return(VectorSpace_.GetNumGlobalElements());
   }
 
   //! Returns the dimension of the null space.
-  int Dimension() const 
+  int GetDimension() const 
   {
     return(Dimension_);
   }
 
   //! Returns a pointer to the internally stores null space vector (non-const).
-  double* Values()
+  double* GetValues()
   {
-    return(Values_.get());
+    return(RCPValues_.get());
   }
 
   //! Returns a pointer to the internally stores null space vector (const).
-  const double* Values() const 
+  const double* GetValues() const 
   {
-    return(Values_.get());
+    return(RCPValues_.get());
   }
 
   //! Returns the RefCountPtr for the internally stored null space vector.
-  const Teuchos::RefCountPtr<double> RCPValues() const 
+  const Teuchos::RefCountPtr<double> GetRCPValues() const 
   {
-    return(Values_);
+    return(RCPValues_);
   }
 
   //! Prints basic information about \c this object.
@@ -157,44 +157,44 @@ public:
                               const bool verbose = true) const
   {
     os << std::endl;
-    if (MyPID() == 0) {
+    if (GetMyPID() == 0) {
       os << "*** MLAPI::NullSpace ***" << endl;
       os << "Label        = " << GetLabel() << endl;
-      os << "MyLength     = " << MyLength() << endl;
-      os << "GlobalLength = " << GlobalLength() << endl;
-      os << "Dimension    = " << Dimension() << endl;
+      os << "MyLength     = " << GetMyLength() << endl;
+      os << "GlobalLength = " << GetGlobalLength() << endl;
+      os << "Dimension    = " << GetDimension() << endl;
       os << endl << endl;
     }
 
     if (verbose) {
 
-      if (MyPID() == 0) {
+      if (GetMyPID() == 0) {
         os.width(10);
         os << "ProcID";
         os.width(20);
         os << "LID";
         os.width(20);
         os << "GID";
-        for (int v = 0 ; v < Dimension() ; ++v) {
+        for (int v = 0 ; v < GetDimension() ; ++v) {
           os.width(20);
           os << "comp " << v;
         }
         os << endl << endl;
       }
       
-      for (int iproc = 0 ; iproc < NumProc() ; ++iproc) {
+      for (int iproc = 0 ; iproc < GetNumProcs() ; ++iproc) {
 
-        if (MyPID() == iproc) {
+        if (GetMyPID() == iproc) {
 
-          for (int i = 0 ; i < MyLength() ; ++i) {
+          for (int i = 0 ; i < GetMyLength() ; ++i) {
             os.width(10);
-            os << MyPID();
+            os << GetMyPID();
             os.width(20);
             os << i;
             os.width(20);
-            os << VectorSpace()(i);
+            os << GetVectorSpace()(i);
             os.width(20);
-            for (int v = 0 ; v < Dimension() ; ++v) {
+            for (int v = 0 ; v < GetDimension() ; ++v) {
               os.width(20);
               os << (*this)(i,v);
             }
@@ -202,7 +202,7 @@ public:
           }
         }
 
-        GetEpetra_Comm().Barrier();
+        Barrier();
       }
     }
 
@@ -218,7 +218,7 @@ private:
   //! Dimension of the null space.
   int Dimension_;
   //! Contains the null space pointer (as one vector).
-  Teuchos::RefCountPtr<double> Values_;
+  Teuchos::RefCountPtr<double> RCPValues_;
 };
 
 } // namespace MLAPI

@@ -57,8 +57,6 @@ public:
   virtual std::ostream& Print(std::ostream& os, 
                               const bool Verbose = true) const = 0;
 
-protected:
-
   string toString(const int& x) const {
     char s[100];
     sprintf(s, "%d", x);

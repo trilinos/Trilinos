@@ -14,7 +14,7 @@ namespace MLAPI {
 
 static ML_Comm* ML_Comm_ = 0;
 static Epetra_Comm* Epetra_Comm_ = 0;
-static Teuchos::ParameterList WorkSpaceList;
+
 void Init();
 
 /*!
@@ -50,7 +50,7 @@ void Barrier()
 }
 
 //! Returns the ID of the calling process.
-int MyPID()
+int GetMyPID()
 {
   if (Epetra_Comm_ == 0) Init();
 
@@ -58,7 +58,7 @@ int MyPID()
 }
 
 //! Returns the total number of processes in the computation.
-int NumProc()
+int GetNumProcs()
 {
   if (Epetra_Comm_ == 0) Init();
 
@@ -68,7 +68,7 @@ int NumProc()
 //! Retutns the level of output (always 0 if MyPID() != 0).
 int GetPrintLevel() 
 {
-  if (MyPID())
+  if (GetMyPID())
     return(0);
   else
     return(ML_Get_PrintLevel());
@@ -110,22 +110,22 @@ void Init()
 
   if (j != 0)
   {
-    if (MyPID()  == 0) cout << "Host and Process Ids for tasks" << endl;
-    for (i = 0; i <NumProc() ; i++) {
-      if (i == MyPID() ) {
+    if (GetMyPID()  == 0) cout << "Host and Process Ids for tasks" << endl;
+    for (i = 0; i < GetNumProcs() ; i++) {
+      if (i == GetMyPID() ) {
 #ifdef COUGAR
         sprintf(buf, "Host: %s   PID: %d", "janus", getpid());
 #else
         gethostname(hostname, sizeof(hostname));
         sprintf(buf, "Host: %s\tMyPID(): %d\tPID: %d",
-                hostname, MyPID(), getpid());
+                hostname, GetMyPID(), getpid());
 #endif
         printf("%s\n",buf);
         fflush(stdout);
         sleep(1);
       }
     }
-    if (MyPID() == 0) {
+    if (GetMyPID() == 0) {
       printf("\n");
       printf("** Pausing because environment variable ML_BREAK_FOR_DEBUGGER has been set,\n");
       puts("** or file ML_debug_now has been created");

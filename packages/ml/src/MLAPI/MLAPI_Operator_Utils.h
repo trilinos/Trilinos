@@ -13,7 +13,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "MLAPI_Space.h"
-#include "MLAPI_DoubleVector.h"
+#include "MLAPI_MultiVector.h"
 #include "MLAPI_Operator.h"
 
 /*!
@@ -38,22 +38,24 @@ namespace MLAPI {
 Operator RAP(const Operator& R, const Operator& A, 
              const Operator& P)
 {
-  ML_Operator* Rmat = R.GetData();
-  ML_Operator* Amat = A.GetData();
-  ML_Operator* Pmat = P.GetData();
+  ML_Operator* Rmat = R.GetML_Operator();
+  ML_Operator* Amat = A.GetML_Operator();
+  ML_Operator* Pmat = P.GetML_Operator();
   ML_Operator* result = 0;
 
   result = ML_Operator_Create (Rmat->comm);
 
   ML_rap(Rmat, Amat, Pmat, result, MatrixType);
 
-  Operator op(P.DomainSpace(),P.DomainSpace(), result);
+  Operator op(P.GetDomainSpace(),P.GetDomainSpace(), result);
   return(op);
 }
 
 #include "ml_aggregate.h"
 #include "ml_agg_METIS.h"
 
+// DELETE THIS CRAP
+#if 0
 //! Builds the tentative prolongator using aggregation.
 Operator BuildP(const Operator& A, Teuchos::ParameterList& List)
 {
@@ -128,15 +130,16 @@ Operator BuildP(const Operator& A, Teuchos::ParameterList& List)
   return(Ptent);
 
 }
+#endif
 
 //! Returns a newly created transpose of \c A.
 Operator Transpose(const Operator& A) 
 {
   ML_Operator* ML_transp;
   ML_transp = ML_Operator_Create(GetML_Comm());
-  ML_Operator_Transpose_byrow(A.GetData(),ML_transp);
+  ML_Operator_Transpose_byrow(A.GetML_Operator(),ML_transp);
 
-  Operator transp(A.RangeSpace(),A.DomainSpace(), ML_transp,true);
+  Operator transp(A.GetRangeSpace(),A.GetDomainSpace(), ML_transp,true);
   return(transp);
 }
 
@@ -144,7 +147,7 @@ Operator Transpose(const Operator& A)
 Operator Identity(const Space& DomainSpace, const Space& RangeSpace)
 {
   ML_Operator* ML_eye = ML_Operator_Create(GetML_Comm());
-  int size = DomainSpace.NumMyElements();
+  int size = DomainSpace.GetNumMyElements();
   ML_Operator_Set_ApplyFuncData(ML_eye, size, size,
             NULL, size, eye_matvec, 0);
   ML_Operator_Set_Getrow(ML_eye, size, eye_getrows);
@@ -155,7 +158,7 @@ Operator Identity(const Space& DomainSpace, const Space& RangeSpace)
 int diag_matvec(ML_Operator *Amat_in, int ilen, double p[], 
                 int olen, double ap[])
 {
-  DoubleVector* D = (DoubleVector*)Amat_in->data;
+  MultiVector* D = (MultiVector*)Amat_in->data;
   
   for (int i = 0; i < olen; i++) ap[i] = (*D)(i) * p[i];
 
@@ -166,7 +169,7 @@ int diag_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
                  int allocated_space, int columns[], double values[],
                  int row_lengths[])
 {
-  DoubleVector* D = (DoubleVector*)data->data;
+  MultiVector* D = (MultiVector*)data->data;
 
   if (allocated_space < N_requested_rows) {
     ML_avoid_unused_param(data);
@@ -182,20 +185,20 @@ int diag_getrows(ML_Operator *data, int N_requested_rows, int requested_rows[],
 }
 
 //! Returns a vector containing the diagonal elements of \c A.
-DoubleVector Diagonal(const Operator& A)
+MultiVector Diagonal(const Operator& A)
 {
   // FIXME
-  if (A.DomainSpace() != A.RangeSpace()) {
+  if (A.GetDomainSpace() != A.GetRangeSpace()) {
     cerr << "ERROR: In Diagonal()" << endl;
     cerr << "ERROR: (file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
     cerr << "ERROR: Currently only square matrices are supported." << endl;
     throw(-1);
   }
 
-  DoubleVector D(A.DomainSpace());
+  MultiVector D(A.GetDomainSpace());
   D = 0.0;
   
-  ML_Operator* matrix = A.GetData();
+  ML_Operator* matrix = A.GetML_Operator();
 
   if (matrix->getrow == NULL) {
     cerr << "ERROR: In Diagonal()" << endl;
@@ -225,16 +228,16 @@ DoubleVector Diagonal(const Operator& A)
 }
 
 //! Returns a newly created operator, containing D on the diagonal.
-Operator Diagonal(const DoubleVector& D)
+Operator Diagonal(const MultiVector& D)
 {
   ML_Operator* MLDiag = ML_Operator_Create(GetML_Comm());
-  int size = D.MyLength();
+  int size = D.GetMyLength();
   // FIXME: this is a memory leak!
-  DoubleVector* D2 = new DoubleVector(D);
+  MultiVector* D2 = new MultiVector(D);
   ML_Operator_Set_ApplyFuncData(MLDiag, size, size,
             (void*)D2, size, diag_matvec, 0);
   ML_Operator_Set_Getrow(MLDiag, size, diag_getrows);
-  Operator Diag(D.VectorSpace(),D.VectorSpace(),MLDiag,true);
+  Operator Diag(D.GetVectorSpace(),D.GetVectorSpace(),MLDiag,true);
   return(Diag);
 }
 
@@ -243,7 +246,7 @@ Operator JacobiIterationOperator(const Operator& Amat, double Damping,
                                  struct ML_AGG_Matrix_Context* widget)
 {
 
-  widget->Amat = Amat.GetData();
+  widget->Amat = Amat.GetML_Operator();
   widget->omega  = Damping;
   ML_Operator* AGGsmoother = ML_Operator_Create(GetML_Comm());
   ML_Operator_Set_ApplyFuncData(AGGsmoother, widget->Amat->invec_leng,
@@ -255,7 +258,7 @@ Operator JacobiIterationOperator(const Operator& Amat, double Damping,
   ML_CommInfoOP_Clone(&(AGGsmoother->getrow->pre_comm),
                       widget->Amat->getrow->pre_comm);
 
-  Operator tmp(Amat.DomainSpace(), Amat.RangeSpace(), AGGsmoother, false);
+  Operator tmp(Amat.GetDomainSpace(), Amat.GetRangeSpace(), AGGsmoother, false);
 
   return(tmp);
 }
@@ -485,74 +488,16 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
 
 }
 
-
-//! Computes the maximum eigenvalue of \c Op.
-double MaxEigenvalue(const Operator& Op, const string Type = "Anorm", 
-                     const bool DiagonalScaling = false) 
+void AnalyzeCheap(const Operator& A) 
 {
+  ML_Operator_Analyze(A.GetML_Operator(), const_cast<char*>(A.GetLabel().c_str()));
+}
 
-  ML_Krylov *kdata;
-  int Nfine = Op.GetData()->outvec_leng;
-  double MaxEigen = 0.0;
-
-  if (Type == "cg") {
-
-    kdata = ML_Krylov_Create(GetML_Comm());
-    if (DiagonalScaling == false)
-      kdata->ML_dont_scale_by_diag = ML_TRUE;
-    else
-      kdata->ML_dont_scale_by_diag = ML_FALSE;
-    ML_Krylov_Set_PrintFreq(kdata, 0);
-    ML_Krylov_Set_ComputeEigenvalues( kdata );
-    ML_Krylov_Set_Amatrix(kdata, Op.GetData());
-    ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
-    MaxEigen = ML_Krylov_Get_MaxEigenvalue(kdata);
-    ML_Krylov_Destroy(&kdata);
-
-  }
-  else if (Type == "anasazi") {
-
-    bool DiagScal;
-    if (DiagonalScaling)
-      DiagScal = ML_TRUE;
-    else
-      DiagScal = ML_FALSE;
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
-    ML_Anasazi_Get_SpectralNorm_Anasazi(Op.GetData(), 0, 10, 1e-5,
-                                        ML_FALSE, DiagScal, &MaxEigen);
-#else
-    fprintf(stderr,
-            "--enable-epetra --enable-anasazi --enable-teuchos required\n"
-            "(file %s, line %d)\n",
-            __FILE__,
-            __LINE__);
-    exit(EXIT_FAILURE);
-#endif
-  }
-  else if (Type == "power-method") {
-
-    kdata = ML_Krylov_Create(GetML_Comm());
-    if (DiagonalScaling == false)
-      kdata->ML_dont_scale_by_diag = ML_TRUE;
-    else
-      kdata->ML_dont_scale_by_diag = ML_FALSE;
-    ML_Krylov_Set_PrintFreq(kdata, 0);
-    ML_Krylov_Set_ComputeNonSymEigenvalues(kdata);
-    ML_Krylov_Set_Amatrix(kdata, Op.GetData());
-    ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
-    MaxEigen = ML_Krylov_Get_MaxEigenvalue(kdata);
-  }
-  else if ("Anorm") {
-    MaxEigen = ML_Operator_MaxNorm(Op.GetData(), DiagonalScaling);
-  }
-  else {
-    cerr << "ERROR: In MaxEigenvalue()" << endl;
-    cerr << "ERROR: (file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
-    cerr << "ERROR: Eigenscheme (" << Type << ") not recognized" << endl;
-    throw(-1);
-  }
-
-  return(MaxEigen);
+void PrintSparsity(const Operator& A, char* title,
+                   char* FileName, int NumPDEEquations)
+{
+  ML_Operator_PrintSparsity(A.GetML_Operator(), title,
+                            FileName, ML_TRUE, NumPDEEquations = 1);
 }
 
 } // namespace MLAPI

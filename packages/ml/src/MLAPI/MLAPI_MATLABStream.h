@@ -24,10 +24,8 @@ public:
   //! Opens the specified file for writing.
   MATLABStream(const string& FileName, bool UseSparse = true) 
   {
-    MyPID_ = GetML_Comm()->ML_mypid;
-    NumProc_ = GetML_Comm()->ML_nprocs;
     FileName_ = FileName;
-    if (MyPID_ == 0) {
+    if (GetMyPID() == 0) {
       fp_ = fopen(FileName_.c_str(),"w");
       fclose(fp_);
     }
@@ -43,7 +41,7 @@ public:
   //! Writes on file input integer on process 0 only.
   MATLABStream& operator << (const int i)
   {
-    if (MyPID_ == 0)
+    if (GetMyPID() == 0)
       fprintf(fp_,"%d",i);
     return(*this);
   }
@@ -51,7 +49,7 @@ public:
   //! Writes on file input string on process 0 only.
   MATLABStream& operator << (const string s)
   {
-    if (MyPID_ == 0)
+    if (GetMyPID() == 0)
       fprintf(fp_,"%s",s.c_str());
     return(*this);
   }
@@ -62,7 +60,7 @@ public:
     int    *bindx;
     double *val;
     int    allocated, row_length;
-    ML_Operator* matrix = Op.GetData();
+    ML_Operator* matrix = Op.GetML_Operator();
 
     if (matrix->getrow == NULL) {
       cerr << "ERROR: In MATLABStream::operator<<" << endl;
@@ -75,19 +73,19 @@ public:
     bindx = (int    *)  ML_allocate(allocated*sizeof(int   ));
     val   = (double *)  ML_allocate(allocated*sizeof(double));
 
-    int NumGlobalRows = Op.DomainSpace().NumGlobalElements();
-    int NumGlobalCols = Op.RangeSpace().NumGlobalElements();
+    int NumGlobalRows = Op.GetDomainSpace().GetNumGlobalElements();
+    int NumGlobalCols = Op.GetRangeSpace().GetNumGlobalElements();
 
-    if (MyPID_ == 0) {
+    if (GetMyPID() == 0) {
       fp_ = fopen(FileName_.c_str(),"a");
       fprintf(fp_,"%s = zeros(%d,%d);\n",
               Op.GetLabel().c_str(), NumGlobalRows, NumGlobalCols);
       fclose(fp_);
     }
 
-    for (int iproc = 0 ; iproc < NumProc_ ; ++iproc) {
+    for (int iproc = 0 ; iproc < GetNumProcs() ; ++iproc) {
 
-      if (MyPID_ == iproc) {
+      if (GetMyPID() == iproc) {
 
         fp_ = fopen(FileName_.c_str(),"a");
 
@@ -95,8 +93,8 @@ public:
           ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
                             &row_length, 0);
           for  (int j = 0; j < row_length; j++) {
-            int GlobalRow = Op.DomainSpace()(i) + 1;
-            int GlobalCol = Op.ColumnSpace()(bindx[j]) + 1;
+            int GlobalRow = Op.GetDomainSpace()(i) + 1;
+            int GlobalCol = Op.GetColumnSpace()(bindx[j]) + 1;
             fprintf(fp_,"%s(%d,%d) = %e;\n",
                     Op.GetLabel().c_str(), GlobalRow, GlobalCol, val[j]);
           }
@@ -113,28 +111,28 @@ public:
     return (*this);
   }
 
-  //! Writes on file input DoubleVector, one process at-a-time.
-  MATLABStream& operator << (const DoubleVector& v)
+  //! Writes on file input MultiVector, one process at-a-time.
+  MATLABStream& operator << (const MultiVector& v)
   {
-    int NumMyRows = v.VectorSpace().NumMyElements();
-    int NumGlobalRows = v.VectorSpace().NumGlobalElements();
+    int NumMyRows = v.GetVectorSpace().GetNumMyElements();
+    int NumGlobalRows = v.GetVectorSpace().GetNumGlobalElements();
 
-    if (MyPID_ == 0) {
+    if (GetMyPID() == 0) {
       fp_ = fopen(FileName_.c_str(),"a");
       fprintf(fp_,"%s = zeros(%d);\n",
               v.GetLabel().c_str(), NumGlobalRows);
       fclose(fp_);
     }
 
-    for (int iproc = 0 ; iproc < NumProc_ ; ++iproc) {
+    for (int iproc = 0 ; iproc < GetNumProcs() ; ++iproc) {
 
-      if (MyPID_ == iproc) {
+      if (GetMyPID() == iproc) {
 
         fp_ = fopen(FileName_.c_str(),"a");
 
         for (int i = 0 ; i < NumMyRows ; ++i)
           fprintf(fp_,"%s(%d) = %e;\n",
-                  v.GetLabel().c_str(), v.VectorSpace()(i) + 1, v(i));
+                  v.GetLabel().c_str(), v.GetVectorSpace()(i) + 1, v(i));
         fclose(fp_);
       }
 #ifdef HAVE_MPI
@@ -148,19 +146,19 @@ public:
   //! Writes on file input Space, one process at-a-time.
   MATLABStream& operator << (const Space& S)
   {
-    int NumMyRows = S.NumMyElements();
-    int NumGlobalRows = S.NumGlobalElements();
+    int NumMyRows = S.GetNumMyElements();
+    int NumGlobalRows = S.GetNumGlobalElements();
 
-    if (MyPID_ == 0) {
+    if (GetMyPID() == 0) {
       fp_ = fopen(FileName_.c_str(),"a");
       fprintf(fp_,"%s = zeros(%d);\n",
               S.GetLabel().c_str(), NumGlobalRows);
       fclose(fp_);
     }
 
-    for (int iproc = 0 ; iproc < NumProc_ ; ++iproc) {
+    for (int iproc = 0 ; iproc < GetNumProcs() ; ++iproc) {
 
-      if (MyPID_ == iproc) {
+      if (GetMyPID() == iproc) {
 
         fp_ = fopen(FileName_.c_str(),"a");
 
@@ -182,10 +180,6 @@ private:
   // @}
   // @{ Internal data
   
-  //! ID of calling process.
-  int MyPID_;
-  //! Total number of available processes.
-  int NumProc_;
   //! Name of output file.
   string FileName_;
   //! FILE pointer.

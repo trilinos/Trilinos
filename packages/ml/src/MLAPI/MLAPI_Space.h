@@ -28,10 +28,10 @@ public:
   //! Default constructor, defines an empty space.
   Space()
   {
-    NumMyElements_ = 0;
+    NumMyElements_     = 0;
     NumGlobalElements_ = 0;
-    IsLinear_ = false;
-    Offset_ = 0;
+    IsLinear_          = false;
+    Offset_            = 0;
   }
 
   //! Constructor with specified number of global and local elements.
@@ -69,11 +69,11 @@ public:
   //! Copy constructor.
   Space(const Space& RHS)
   {
-    NumMyElements_     = RHS.NumMyElements();
-    NumGlobalElements_ = RHS.NumGlobalElements();
-    Offset_            = RHS.Offset();
-    IsLinear_          = RHS.IsLinear();
-    MyGlobalElements_  = RHS.MyGlobalElements();
+    NumMyElements_       = RHS.GetNumMyElements();
+    NumGlobalElements_   = RHS.GetNumGlobalElements();
+    Offset_              = RHS.GetOffset();
+    IsLinear_            = RHS.IsLinear();
+    RCPMyGlobalElements_ = RHS.GetRCPMyGlobalElements();
   }
 
   //! Destructor.
@@ -85,11 +85,11 @@ public:
   //! Operator =.
   Space& operator=(const Space& RHS)
   {
-    NumMyElements_     = RHS.NumMyElements();
-    NumGlobalElements_ = RHS.NumGlobalElements();
-    Offset_            = RHS.Offset();
-    IsLinear_          = RHS.IsLinear();
-    MyGlobalElements_  = RHS.MyGlobalElements();
+    NumMyElements_       = RHS.GetNumMyElements();
+    NumGlobalElements_   = RHS.GetNumGlobalElements();
+    Offset_              = RHS.GetOffset();
+    IsLinear_            = RHS.IsLinear();
+    RCPMyGlobalElements_ = RHS.GetRCPMyGlobalElements();
     return(*this);
   }
 
@@ -101,9 +101,9 @@ public:
   {
     if (IsLinear() != RHS.IsLinear())
       return(false);
-    if (NumGlobalElements() != RHS.NumGlobalElements())
+    if (GetNumGlobalElements() != RHS.GetNumGlobalElements())
       return(false);
-    if (NumMyElements() != RHS.NumMyElements())
+    if (GetNumMyElements() != RHS.GetNumMyElements())
       return(false);
 
     return(true);
@@ -129,9 +129,9 @@ public:
   inline int operator() (int i) const
   {
     if (IsLinear())
-      return(i + Offset_);
+      return(i + GetOffset());
     else
-      return((*MyGlobalElements_)[i]);
+      return((*RCPMyGlobalElements_)[i]);
   }
 
   // @}
@@ -141,19 +141,14 @@ public:
   void Reshape(const int NumGlobalElements, const int NumMyElements = -1)
   {
 
-    if (NumGlobalElements <= 0 && NumMyElements < 0) {
-      cerr << "ERROR: In Space::Reshape()" << endl;
-      cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
-      cerr << "ERROR: wrong input parameters," << endl;
-      cerr << "ERROR: NumGlobalElements = " << NumGlobalElements << " and "
-           << "ERROR: NumMyElements = " << NumMyElements << endl;
-      throw(-1);
-    }
+    if (NumGlobalElements <= 0 && NumMyElements < 0)
+      ML_THROW("NumGlobalElements = " + toString(NumGlobalElements) +
+               " and NumMyElements = " + toString(NumMyElements), -1);
 
     if (NumMyElements == -1) {
-      NumMyElements_ = NumGlobalElements / NumProc();
-      if (MyPID() == 0)
-        NumMyElements_ += NumGlobalElements % NumProc();
+      NumMyElements_ = NumGlobalElements / GetNumProcs();
+      if (GetMyPID() == 0)
+        NumMyElements_ += NumGlobalElements % GetNumProcs();
     }
     else
       NumMyElements_ = NumMyElements;
@@ -161,14 +156,10 @@ public:
     NumGlobalElements_ = ML_Comm_GsumInt(GetML_Comm(),NumMyElements_);
 
     if (NumGlobalElements != -1) {
-      if (NumGlobalElements != NumGlobalElements_) {
-        cerr << "ERROR: In Space()::Reshape()" << endl;
-        cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
-        cerr << "ERROR: Specified number of global elements does not match" << endl;
-        cerr << "ERROR: the sum of local elements (" << NumGlobalElements
-             << " vs. " << NumGlobalElements_ << ")" << endl;
-        throw(-1);
-      }
+      if (NumGlobalElements != NumGlobalElements_) 
+        ML_THROW("Specified # of global elements the sum of local elements (" +
+                 toString(NumGlobalElements) + " vs. " +
+                 toString(NumGlobalElements_), -1);
     }
 
     Offset_   = ML_gpartialsum_int(NumMyElements_,GetML_Comm());
@@ -180,19 +171,14 @@ public:
   void Reshape(const int NumGlobalElements, const int NumMyElements, 
                const int* MyGlobalElements)
   {
-    if (NumGlobalElements <= 0 && NumMyElements < 0) {
-      cerr << "ERROR: In Space::Reshape() (file " << __FILE__
-           << ", line " << __LINE__ << ")" << endl;
-      cerr << "ERROR: wrong input parameters," << endl;
-      cerr << "ERROR: NumGlobalElements = " << NumGlobalElements << " and "
-           << "ERROR: NumMyElements = " << NumMyElements << endl;
-      throw(-1);
-    }
+    if (NumGlobalElements <= 0 && NumMyElements < 0)
+      ML_THROW("NumGlobalElements = " + toString(NumGlobalElements) +
+               " and NumMyElements = " + toString(NumMyElements), -1);
 
     if (NumMyElements == -1) {
-      NumMyElements_ = NumGlobalElements / NumProc();
-      if (MyPID() == 0)
-        NumMyElements_ += NumGlobalElements % NumProc();
+      NumMyElements_ = NumGlobalElements / GetNumProcs();
+      if (GetMyPID() == 0)
+        NumMyElements_ += NumGlobalElements % GetNumProcs();
     }
     else
       NumMyElements_ = NumMyElements;
@@ -200,22 +186,18 @@ public:
     NumGlobalElements_ = ML_Comm_GsumInt(GetML_Comm(),NumMyElements_);
 
     if (NumGlobalElements != -1) {
-      if (NumGlobalElements != NumGlobalElements_) {
-        cerr << "ERROR: In Space() constructor (file " << __FILE__
-             << ", line " << __LINE__ << ")" << endl;
-        cerr << "ERROR: Specified number of global elements does not match" << endl;
-        cerr << "ERROR: the sum of local elements (" << NumGlobalElements
-             << " vs. " << NumGlobalElements_ << ")" << endl;
-        throw(-1);
-      }
+      if (NumGlobalElements != NumGlobalElements_)
+        ML_THROW("Specified # of global elements the sum of local elements (" +
+                 toString(NumGlobalElements) + " vs. " +
+                 toString(NumGlobalElements_), -1);
     }
 
-    MyGlobalElements_ = Teuchos::rcp(new Epetra_IntSerialDenseVector);
-    MyGlobalElements_->Resize(NumMyElements_);
+    RCPMyGlobalElements_ = Teuchos::rcp(new Epetra_IntSerialDenseVector);
+    RCPMyGlobalElements_->Resize(NumMyElements_);
     for (int i = 0 ; i < NumMyElements_ ; ++i)
-      (*MyGlobalElements_)[i] = MyGlobalElements[i];
+      (*RCPMyGlobalElements_)[i] = MyGlobalElements[i];
 
-    Offset_ = -1; // not set
+    Offset_   = -1; // not set
     IsLinear_ = false;
   }
 
@@ -223,19 +205,19 @@ public:
   // @{ Query methods
 
   //! Returns the local number of elements on the calling process.
-  int NumMyElements() const
+  int GetNumMyElements() const
   {
     return(NumMyElements_);
   }
 
   //! Returns the global number of elements.
-  int NumGlobalElements() const
+  int GetNumGlobalElements() const
   {
     return(NumGlobalElements_);
   }
 
   //! Returns the global ID of the first element on the calling process (for linear distributions only).
-  inline int Offset() const
+  inline int GetOffset() const
   {
     return(Offset_);
   }
@@ -248,9 +230,9 @@ public:
 
   //! Returns a pointer to the list of global nodes.
   inline const Teuchos::RefCountPtr<Epetra_IntSerialDenseVector> 
-    MyGlobalElements() const
+    GetRCPMyGlobalElements() const
   {
-    return(MyGlobalElements_);
+    return(RCPMyGlobalElements_);
   }
 
   //! Prints on ostream basic information about \c this object.
@@ -258,12 +240,12 @@ public:
                       const bool verbose = true) const
   {
     os << std::endl;
-    if (MyPID() == 0) {
+    if (GetMyPID() == 0) {
       os << "*** MLAPI::Space ***" << endl;
       os << "Label               = " << GetLabel() << endl;
-      os << "NumMyElements()     = " << NumMyElements() << endl;
-      os << "NumGlobalElements() = " << NumGlobalElements() << endl;
-      os << "Offset              = " << Offset() << endl;
+      os << "NumMyElements()     = " << GetNumMyElements() << endl;
+      os << "NumGlobalElements() = " << GetNumGlobalElements() << endl;
+      os << "Offset              = " << GetOffset() << endl;
       if (IsLinear())
         os << "Distribution is linear" << endl;
       else
@@ -272,7 +254,7 @@ public:
     }
 
     if (verbose) {
-      if (MyPID() == 0) {
+      if (GetMyPID() == 0) {
         os.width(10);
         os << "ProcID";
         os.width(20);
@@ -281,11 +263,11 @@ public:
         os << "GID" << endl << endl;
       }
 
-      GetEpetra_Comm().Barrier();
+      Barrier();
 
-      for (int i = 0 ; i < NumMyElements() ; ++i) {
+      for (int i = 0 ; i < GetNumMyElements() ; ++i) {
         os.width(10);
-        os << MyPID();
+        os << GetMyPID();
         os.width(20);
         os << i;
         os.width(20);
@@ -310,7 +292,7 @@ private:
   //! GID of the first local element (for linear decompositions only).
   int Offset_;
   //! Container of global numbering of local elements.
-  Teuchos::RefCountPtr<Epetra_IntSerialDenseVector> MyGlobalElements_;
+  Teuchos::RefCountPtr<Epetra_IntSerialDenseVector> RCPMyGlobalElements_;
 
   // @}
 };

@@ -13,8 +13,8 @@
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_Amesos.h"
 #include "MLAPI_Space.h"
-#include "MLAPI_DoubleVector.h"
-#include "MLAPI_DoubleVector_Utils.h"
+#include "MLAPI_MultiVector.h"
+#include "MLAPI_MultiVector_Utils.h"
 #include "MLAPI_Workspace.h"
 #include "MLAPI_DataBase.h"
 
@@ -46,8 +46,8 @@ public:
   InverseOperator(const InverseOperator& RHS)
   {
     Op_ = RHS.GetOperator();
-    RowMatrix_ = RHS.RowMatrix();
-    Data_ = RHS.GetData();
+    RCPRowMatrix_ = RHS.RCPRowMatrix();
+    RCPData_ = RHS.GetRCPData();
     SetLabel(RHS.GetLabel());
   }
 
@@ -65,8 +65,8 @@ public:
       return(*this);
 
     Op_ = RHS.GetOperator();
-    RowMatrix_ = RHS.RowMatrix();
-    Data_ = RHS.GetData();
+    RCPRowMatrix_ = RHS.RCPRowMatrix();
+    RCPData_ = RHS.GetRCPData();
 
     SetLabel(RHS.GetLabel());
     return(*this);
@@ -90,7 +90,7 @@ public:
   {
     Op_ = Op;
 
-    RowMatrix_ = Teuchos::rcp(new ML_Epetra::RowMatrix(Op.GetData(),
+    RCPRowMatrix_ = Teuchos::rcp(new ML_Epetra::RowMatrix(Op.GetML_Operator(),
                                                        &GetEpetra_Comm()));
 
     string Type = DB.GetType();
@@ -110,7 +110,7 @@ public:
     IFPACKList.set("fact: ilut level-of-fill", LOF_ilut);
     IFPACKList.set("relaxation: zero starting solution", false);
     
-    bool verbose = (MyPID() == 0 && GetPrintLevel() > 5);
+    bool verbose = (GetMyPID() == 0 && GetPrintLevel() > 5);
 
     Ifpack_Preconditioner* Prec;
 
@@ -126,7 +126,7 @@ public:
         cout << endl;
       }
       IFPACKList.set("relaxation: type", "Jacobi");
-      Prec = new Ifpack_PointRelaxation(RowMatrix_.get());
+      Prec = new Ifpack_PointRelaxation(RowMatrix());
     }
     else if (Type == "Gauss-Seidel") {
       if (verbose) {
@@ -135,7 +135,7 @@ public:
         cout << endl;
       }
       IFPACKList.set("relaxation: type", "Gauss-Seidel");
-      Prec = new Ifpack_PointRelaxation(RowMatrix_.get());
+      Prec = new Ifpack_PointRelaxation(RowMatrix());
     }
     else if (Type == "symmetric Gauss-Seidel") {
       if (verbose) {
@@ -144,7 +144,7 @@ public:
         cout << endl;
       }
       IFPACKList.set("relaxation: type", "symmetric Gauss-Seidel");
-      Prec = new Ifpack_PointRelaxation(RowMatrix_.get());
+      Prec = new Ifpack_PointRelaxation(RowMatrix());
     }
     else if (Type == "ILU") {
       if (verbose) {
@@ -152,7 +152,7 @@ public:
              << LOF_ilu << endl;
         cout << endl;
       }
-      Prec = new Ifpack_ILU(RowMatrix_.get());
+      Prec = new Ifpack_ILU(RowMatrix());
     }
     else if (Type == "ILUT") {
       if (verbose) {
@@ -160,7 +160,7 @@ public:
              << LOF_ilu << endl;
         cout << endl;
       }
-      Prec = new Ifpack_ILUT(RowMatrix_.get());
+      Prec = new Ifpack_ILUT(RowMatrix());
     }
     else if (Type == "IC") {
       if (verbose) {
@@ -168,7 +168,7 @@ public:
              << LOF_ilu << endl;
         cout << endl;
       }
-      Prec = new Ifpack_IC(RowMatrix_.get());
+      Prec = new Ifpack_IC(RowMatrix());
     }
     else if (Type == "ICT") {
       if (verbose) {
@@ -176,42 +176,42 @@ public:
              << LOF_ilu << endl;
         cout << endl;
       }
-      Prec = new Ifpack_ICT(RowMatrix_.get());
+      Prec = new Ifpack_ICT(RowMatrix());
     }
     else if (Type == "LU") {
       if (verbose) {
         cout << "LU factorization, ov = 0, local solver = KLU" << endl;
         cout << endl;
       }
-      Prec = new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(RowMatrix_.get());
+      Prec = new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(RowMatrix());
     }
     else if (Type == "Amesos" || Type == "Amesos-KLU")  {
       if (verbose) {
         cout << "Amesos-KLU direct solver" << endl;
         cout << endl;
       }
-      Prec = new Ifpack_Amesos(RowMatrix_.get());
+      Prec = new Ifpack_Amesos(RowMatrix());
     }
     else
       ML_THROW("Requested type (" + Type + ") not recognized", -1);
 
-    Data_ = Teuchos::rcp(Prec);
+    RCPData_ = Teuchos::rcp(Prec);
 
-    Data_->SetParameters(IFPACKList);
-    Data_->Initialize();
-    Data_->Compute();
+    RCPData_->SetParameters(IFPACKList);
+    RCPData_->Initialize();
+    RCPData_->Compute();
   }
 
   void Reshape(const Operator& Op, const CoarseSolverDataBase& DB)
   {
     Op_ = Op;
 
-    RowMatrix_ = Teuchos::rcp(new ML_Epetra::RowMatrix(Op.GetData(),
+    RCPRowMatrix_ = Teuchos::rcp(new ML_Epetra::RowMatrix(Op.GetML_Operator(),
                                                        &GetEpetra_Comm()));
 
     string Type = DB.GetType();
 
-    bool verbose = (MyPID() == 0 && GetPrintLevel() > 5);
+    bool verbose = (GetMyPID() == 0 && GetPrintLevel() > 5);
 
     Ifpack_Preconditioner* Prec;
 
@@ -225,40 +225,46 @@ public:
         cout << "Amesos-KLU direct solver" << endl;
         cout << endl;
       }
-      Prec = new Ifpack_Amesos(RowMatrix_.get());
+      Prec = new Ifpack_Amesos(RowMatrix());
     }
     else
       ML_THROW("Requested type (" + Type + ") not recognized", -1);
 
-    Data_ = Teuchos::rcp(Prec);
+    RCPData_ = Teuchos::rcp(Prec);
 
-    Data_->Initialize();
-    Data_->Compute();
+    RCPData_->Initialize();
+    RCPData_->Compute();
   }
 
   // @}
   // @{ Query methods
   
   //! Returns a reference to the range space of \c this object.
-  const Space& RangeSpace() const {
-    return(Op_.RangeSpace());
+  const Space& GetRangeSpace() const {
+    return(Op_.GetRangeSpace());
   }
 
   //! Returns a reference to the domain space of \c this object.
-  const Space& DomainSpace() const {
-    return(Op_.DomainSpace());
+  const Space& GetDomainSpace() const {
+    return(Op_.GetDomainSpace());
   }
 
   //! Returns pointer of the internally stored ML_Epetra::RowMatrix object.
-  const Teuchos::RefCountPtr<ML_Epetra::RowMatrix> RowMatrix() const
+  const Teuchos::RefCountPtr<ML_Epetra::RowMatrix> RCPRowMatrix() const
   {
-    return(RowMatrix_);
+    return(RCPRowMatrix_);
+  }
+
+  //! Returns pointer of the internally stored ML_Epetra::RowMatrix object.
+  ML_Epetra::RowMatrix* RowMatrix() const
+  {
+    return(RCPRowMatrix_.get());
   }
 
   //! Returns a pointer to the internally stored IFPACK preconditioner.
-  const Teuchos::RefCountPtr<Ifpack_Preconditioner> GetData() const
+  const Teuchos::RefCountPtr<Ifpack_Preconditioner> GetRCPData() const
   {
-    return(Data_);
+    return(RCPData_);
   }
 
   //! Returns a reference to the Operator of which \c this object defines the inverse.
@@ -272,7 +278,7 @@ public:
   {
 
     // FIXME: to be completed in some way???
-    if (MyPID() == 0) {
+    if (GetMyPID() == 0) {
       os << "InverseOperator `" << GetLabel() << "'" << endl;
     }
 
@@ -284,31 +290,31 @@ public:
   // @{ Mathematical methods
   
   //! Applies \c this object to vector \c lhs, returns values in \c rhs.
-  int ApplyInverse(const DoubleVector& lhs, DoubleVector& rhs) const
+  int ApplyInverse(const MultiVector& lhs, MultiVector& rhs) const
   {
-    Epetra_Vector elhs(View,RowMatrix_->OperatorDomainMap(),
+    Epetra_Vector elhs(View,RowMatrix()->OperatorDomainMap(),
                        (double*)&(lhs(0)));
-    Epetra_Vector erhs(View,RowMatrix_->OperatorRangeMap(),
+    Epetra_Vector erhs(View,RowMatrix()->OperatorRangeMap(),
                        (double*)&(rhs(0)));
 
-    Data_->ApplyInverse(elhs,erhs);
+    RCPData_->ApplyInverse(elhs,erhs);
     return(0);
   }
 
   //! Applies the operator to LHS, returns the results.
-  DoubleVector operator()(const DoubleVector& LHS)
+  MultiVector operator()(const MultiVector& LHS)
   {
-    DoubleVector RHS(LHS.VectorSpace());
+    MultiVector RHS(LHS.GetVectorSpace());
     RHS = 0.0;
     ApplyInverse(LHS,RHS);
     return(RHS);
   }
 
   //! Applies the operator to LHS using RHS as initial solution, returns the results.
-  DoubleVector operator()(const DoubleVector& LHS,
-                          const DoubleVector& RHS)
+  MultiVector operator()(const MultiVector& LHS,
+                          const MultiVector& RHS)
   {
-    DoubleVector RHS2 = Duplicate(RHS);
+    MultiVector RHS2 = Duplicate(RHS);
     ApplyInverse(LHS,RHS2);
     return(RHS2);
   }
@@ -321,9 +327,9 @@ private:
   //! Operator of which \c this object define the inverse.
   Operator Op_;
   //! Wrapper for IFPACK
-  Teuchos::RefCountPtr<ML_Epetra::RowMatrix> RowMatrix_;
+  Teuchos::RefCountPtr<ML_Epetra::RowMatrix> RCPRowMatrix_;
   //! IFPACK preconditioner.
-  Teuchos::RefCountPtr<Ifpack_Preconditioner> Data_;
+  Teuchos::RefCountPtr<Ifpack_Preconditioner> RCPData_;
 
   // @}
   

@@ -4,7 +4,7 @@
 #include "ml_include.h"
 #include "MLAPI_Operator.h"
 #include "MLAPI_Operator_Utils.h"
-#include "MLAPI_DoubleVector.h"
+#include "MLAPI_MultiVector.h"
 #include "MLAPI_InverseOperator.h"
 #include "MLAPI_Expressions.h"
 #include "MLAPI_Preconditioner.h"
@@ -12,6 +12,7 @@
 #include "MLAPI_NullSpace.h"
 #include "MLAPI_Aggregation.h"
 #include "MLAPI_DataBase.h"
+#include "MLAPI_Eig.h"
 #include <vector>
 
 #include "ml_agg_genP.h"
@@ -44,15 +45,16 @@ public:
 
     FineMatrix_ = FineMatrix;
 
+    MaxLevels_           = ADB.GetMaxLevels();
     double Damping       = ADB.GetDamping();
     string EigenAnalysis = ADB.GetEigenAnalysisType();
-    MaxLevels_           = ADB.GetMaxLevels();
+    int MaxCoarseSize    = ADB.GetMaxCoarseSize();
 
     // setup the null space for the finest level
     // FIXME: now only default null space!
     // to get nullspace-stuff from GetOption
     int NullSpaceDimension = 1;
-    NullSpace ThisNS(FineMatrix.DomainSpace(), NullSpaceDimension);
+    NullSpace ThisNS(FineMatrix.GetDomainSpace(), NullSpaceDimension);
     NullSpace NextNS;     // contains the next-level null space
 
     A_.resize(MaxLevels_);
@@ -89,7 +91,14 @@ public:
       BuildPtent(A, ADB, ThisNS, Ptent, NextNS);
       ThisNS = NextNS;
       
-      LambdaMax = MaxEigenvalue(A,EigenAnalysis,true);
+      if (EigenAnalysis == "Anorm")
+        LambdaMax = MaxEigAnorm(A,true);
+      else if (EigenAnalysis == "cg")
+        LambdaMax = MaxEigCG(A,true);
+      else if (EigenAnalysis == "power-method")
+        LambdaMax = MaxEigPowerMethod(A,true);
+      else
+        ML_THROW("incorrect parameter (" + EigenAnalysis + ")", -1);
 
       if (GetPrintLevel()) {
         cout << endl;
@@ -101,11 +110,11 @@ public:
       }
 
 #if 0
-      DoubleVector Diag(A.DomainSpace());
+      MultiVector Diag(A.GetDomainSpace());
       Diag = Diagonal(A);
       Diag = (Damping / LambdaMax) / Diag;
-      Operator Dinv = Diagonal(A.DomainSpace(),A.RangeSpace(),Diag);
-      Operator I = Identity(A.DomainSpace(),A.RangeSpace());
+      Operator Dinv = Diagonal(A.GetDomainSpace(),A.GetRangeSpace(),Diag);
+      Operator I = Identity(A.GetDomainSpace(),A.GetRangeSpace());
       Operator DinvA = Dinv * A;
       //Operator IminusA = I - (Damping / LambdaMax) * DinvA;
       Operator IminusA = I - DinvA;
@@ -127,7 +136,7 @@ public:
       S_[level] = S;
 
       // break if coarse matrix is below specified tolerance
-      if (C.DomainSpace().NumGlobalElements() < 32) {
+      if (C.GetDomainSpace().GetNumGlobalElements() < MaxCoarseSize) {
         ++level;
         break;
       }
@@ -145,14 +154,14 @@ public:
   { }
 
   //! Applies the preconditioner to b_f with starting solution x_f.
-  int Solve(const DoubleVector& b_f, DoubleVector& x_f) const
+  int Solve(const MultiVector& b_f, MultiVector& x_f) const
   {
     SolveMultiLevelSA(b_f,x_f,0);
     return(0);
   }
 
   //! Applies the preconditioner to b_f with starting solution x_f.
-  int Solve(const DoubleVector& b_f, DoubleVector& x_f,
+  int Solve(const MultiVector& b_f, MultiVector& x_f,
             const int FinestLevel = 0) const
   {
     SolveMultiLevelSA(b_f,x_f,FinestLevel);
@@ -160,16 +169,16 @@ public:
   }
 
   //! Recursively called core of the multi level preconditioner.
-  int SolveMultiLevelSA(const DoubleVector& b_f,DoubleVector& x_f, int level) const 
+  int SolveMultiLevelSA(const MultiVector& b_f,MultiVector& x_f, int level) const 
   {
     if (level == MaxLevels_ - 1) {
       x_f = S(level) * b_f;
       return(0);
     }
 
-    DoubleVector r_f(P(level).RangeSpace());
-    DoubleVector r_c(P(level).DomainSpace());
-    DoubleVector z_c(P(level).DomainSpace());
+    MultiVector r_f(P(level).GetRangeSpace());
+    MultiVector r_c(P(level).GetDomainSpace());
+    MultiVector z_c(P(level).GetDomainSpace());
 
     // apply pre-smoother
     x_f = S(level) * b_f;
@@ -188,13 +197,13 @@ public:
   }
 
   //! Returns a copy of the internally stored domain space.
-  const Space DomainSpace() const {
-    return(FineMatrix_.DomainSpace());
+  const Space GetDomainSpace() const {
+    return(FineMatrix_.GetDomainSpace());
   }
 
   //! Returns a copy of the internally stored range space.
-  const Space RangeSpace() const {
-    return(FineMatrix_.RangeSpace());
+  const Space GetRangeSpace() const {
+    return(FineMatrix_.GetRangeSpace());
   }
 
   //! Returns a reference to the restriction operator of level \c i.
@@ -225,43 +234,25 @@ public:
   std::ostream& Print(std::ostream& os, 
                       const bool verbose = true) const
   {
-    if (MyPID() == 0) {
+    if (GetMyPID() == 0) {
       os << "MLAPI::MultiLevelSA, label = `" << GetLabel() << "'" << endl;
       os << endl;
-      os << "Number of levels = " << MaxLevels() << endl;
-      os << "Smoother type    = " << SmootherType() << endl;
-      os << "Coarse solver    = " << CoarseType() << endl;
+      os << "Number of levels = " << GetMaxLevels() << endl;
       os << endl;
     }
     return(os);
   }
 
   //! Returns the actual number of levels
-  int MaxLevels() const
+  int GetMaxLevels() const
   {
     return(MaxLevels_);
-  }
-
-  //! Returns the smoother type
-  string SmootherType() const
-  {
-    return(SmootherType_);
-  }
-
-  //! Returns the coarse solver type
-  string CoarseType() const
-  {
-    return(CoarseType_);
   }
 
 private:
 
   //! Maximum number of levels.
   int MaxLevels_;
-  //! Contains the smoother type (the same on all levels)
-  string SmootherType_;
-  //! Contains the coarse solver type.
-  string CoarseType_;
   //! Fine-level matrix.
   Operator FineMatrix_;
   //! Contains the hierarchy of operators.

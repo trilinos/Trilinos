@@ -4,7 +4,7 @@
 
 namespace MLAPI {
 
-class DoubleVector;
+class MultiVector;
 class Space;
 
 /*!
@@ -31,13 +31,13 @@ public:
   virtual ~Preconditioner() {}
 
   //! Applies the preconditioner to LHS, using RHS as starting solution.
-  virtual int Solve(const DoubleVector& LHS, DoubleVector& RHS) const = 0;
+  virtual int Solve(const MultiVector& LHS, MultiVector& RHS) const = 0;
 
   //! Returns a copy of the domain space of \c this object.
-  virtual const Space DomainSpace() const = 0;
+  virtual const Space GetDomainSpace() const = 0;
 
   //! Returns a copy of the range space of \c this object.
-  virtual const Space RangeSpace() const = 0;
+  virtual const Space GetRangeSpace() const = 0;
 
 };
 } // namespace MLAPI

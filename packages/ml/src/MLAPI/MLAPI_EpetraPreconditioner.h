@@ -47,16 +47,16 @@ public:
 
     assert (LHS.NumVectors() == 1);
 
-    DoubleVector LHS2(Prec_.DomainSpace(),&(LHS[0][0]));
+    MultiVector LHS2(Prec_.GetDomainSpace(),&(LHS[0][0]));
 
     // need additional vector for AztecOO
-    DoubleVector RHS2(Prec_.RangeSpace());
+    MultiVector RHS2(Prec_.GetRangeSpace());
 
     ML_CHK_ERR(Prec_.Solve(LHS2,RHS2));
     
     int n = RHS.MyLength();
     int incr = 1;
-    DCOPY_F77(&n, RHS2.Values(), &incr, RHS[0], &incr);
+    DCOPY_F77(&n, RHS2.GetValues(), &incr, RHS[0], &incr);
 
     return(0);
   }

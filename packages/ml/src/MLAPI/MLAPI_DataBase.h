@@ -8,11 +8,20 @@ namespace MLAPI {
 
 const int ALL_LEVELS = -1;
 
+/*!
+ * \class SmootherDataBase
+ *
+ * \brief Container of all options for smoothers.
+ *
+ * \author Marzio Sala, SNL 9214.
+ *
+ * \date Last updated on Feb-05.
+ */
 class SmootherDataBase : public BaseObject {
 
 public:
 
-  // @{ Constructors and destructors
+  //@{ Constructors and destructors
 
   //! Initializes to default values.
   SmootherDataBase(const int MaxLevels = 20) 
@@ -125,7 +134,7 @@ public:
   ostream& Print(ostream& os, bool verbose) const 
   {
     os << std::endl;
-    if (MyPID() == 0) {
+    if (GetMyPID() == 0) {
       os << "*** MLAPI::SmootherDataBase ***" << endl;
       os << "Label                 = " << GetLabel() << endl;
       os << endl;
@@ -135,6 +144,9 @@ public:
 
 private:  
 
+  //@}
+  //@{ Internal data
+  
   //! Maximum number of levels
   int    MaxLevels_;
   int    CurrentLevel_;
@@ -145,8 +157,18 @@ private:
   double ILUTFill_;
   double ICTFill_;
 
+  //@}
 };
 
+/*!
+ * \class CoarseSolverDataBase
+ *
+ * \brief Container of all options for coarse solver.
+ *
+ * \author Marzio Sala, SNL 9214.
+ *
+ * \date Last updated on Feb-05.
+ */
 class CoarseSolverDataBase : public BaseObject {
 
 public:
@@ -187,7 +209,7 @@ public:
   ostream& Print(ostream& os, bool verbose) const 
   {
     os << std::endl;
-    if (MyPID() == 0) {
+    if (GetMyPID() == 0) {
       os << "*** MLAPI::CoarseSolverDataBase ***" << endl;
       os << endl;
     }
@@ -201,11 +223,20 @@ private:
 
 };
 
+/*!
+ * \class AggregationDataBase
+ *
+ * \brief Container of all options for aggregation.
+ *
+ * \author Marzio Sala, SNL 9214.
+ *
+ * \date Last updated on Feb-05.
+ */
 class AggregationDataBase : public BaseObject {
 
 public:
 
-  // @{ Constructors and destructors
+  //@{ Constructors and destructors
 
   //! Initializes to default values.
   AggregationDataBase(const int MaxLevels = 20) 
@@ -215,6 +246,7 @@ public:
     NPA_           = 64;
     EigenAnalysis_ = "Anorm";
     Damping_       = 1.333;
+    MaxCoarseSize_ = 128;
     CurrentLevel_  = 0;
   }
 
@@ -226,6 +258,7 @@ public:
     Threshold_     = List.get("aggregation: threshold", 0.0);
     NPA_           = List.get("aggregation: nodes per aggregate", 64);
     EigenAnalysis_ = List.get("eigen-analysis: type", "Anorm");
+    MaxCoarseSize_ = List.get("aggregation: max coarse size", 128);
     CurrentLevel_  = 0;
   }
 
@@ -243,7 +276,7 @@ public:
   }
 
   //! Gets the coarsening string.
-  string GetType() const
+  string GetType(const int level = ALL_LEVELS) const
   {
     return(Type_);
   }
@@ -297,6 +330,16 @@ public:
     EigenAnalysis_ = EigenAnalysis;
   }
   
+  void SetMaxCoarseSize(const int MaxCoarseSize)
+  {
+    MaxCoarseSize_ = MaxCoarseSize;
+  }
+
+  int GetMaxCoarseSize() const
+  {
+    return(MaxCoarseSize_);
+  }
+
   void SetCurrentLevel(const int CurrentLevel)
   {
     CurrentLevel_ = CurrentLevel;
@@ -311,9 +354,15 @@ public:
   ostream& Print(ostream& os, bool verbose) const 
   {
     os << std::endl;
-    if (MyPID() == 0) {
+    if (GetMyPID() == 0) {
       os << "*** MLAPI::AggregationDataBase ***" << endl;
-      os << "Label                 = " << GetLabel() << endl;
+      os << "Maximum number of levels  = " << GetMaxLevels() << endl;
+      os << "Aggregation threshold     = " << GetThreshold() << endl;
+      os << "Nodes per aggregate       = " << GetNodesPerAggregate() << endl;
+      os << "Coarsening type (level 0) = " << GetType(0) << endl;
+      os << "Damping factor            = " << GetDamping() << endl;
+      os << "Eigenanalysis type        = " << GetEigenAnalysisType() << endl;
+      os << "Maximum coarse size       = " << GetMaxCoarseSize() << endl;
       os << endl;
     }
     return(os);
@@ -332,8 +381,100 @@ private:
   double Damping_;
   //! Eigen-analysis type
   string EigenAnalysis_;
+  //! Maximum size of coarse operator.
+  //! Maximum size of coarse operator.
+  int MaxCoarseSize_;
+  //! Current level.
   int CurrentLevel_;
 
+};
+
+/*
+ * \class KrylovDataBase
+ *
+ * \brief Container of all options for Krylov methods.
+ *
+ * \author Marzio Sala, SNL 9214.
+ *
+ * \date Last updated on Feb-05.
+ */
+class KrylovDataBase : public BaseObject {
+
+public:
+
+  // @{ Constructors and destructors
+
+  //! Initializes to default values.
+  KrylovDataBase()
+  {
+    Type_          = "gmres";
+    MaxIters_ = 1550;
+    Tolerance_ = 1e-9;
+  }
+
+  //! Dtor
+  ~KrylovDataBase()
+  {}
+
+  // @}
+  // @{ Set and get methods
+
+  //! Sets the coarsening scheme.
+  void SetType(const string Type)
+  {
+    Type_ = Type;
+  }
+
+  //! Gets the coarsening string.
+  string GetType() const
+  {
+    return(Type_);
+  }
+
+  //! Sets the maximum number of iterations.
+  void SetMaxIters(const int MaxIters)
+  {
+    MaxIters_ = MaxIters;
+  }
+
+  //! Gets the coarsening string.
+  int GetMaxIters() const
+  {
+    return(MaxIters_);
+  }
+
+  //! Sets the linear system tolerance.
+  void SetTolerance(const double Tolerance)
+  {
+    Tolerance_ = Tolerance;
+  }
+
+  //! Gets the coarsening string.
+  double GetTolerance() const
+  {
+    return(Tolerance_);
+  }
+
+  //! Prints basic information about \c this object.
+  ostream& Print(ostream& os, bool verbose) const 
+  {
+    os << std::endl;
+    if (GetMyPID() == 0) {
+      os << "*** MLAPI::KrylovDataBase ***" << endl;
+      os << "Solver type        = " << GetType() << endl;
+      os << "Maximum iterations = " << GetMaxIters() << endl;
+      os << "Tolerances         = " << GetTolerance() << endl;
+      os << endl;
+    }
+    return(os);
+  }
+
+
+private:  
+
+  string Type_;
+  int MaxIters_;
+  double Tolerance_;
 };
 } // namespace MLAPI
 
