@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "rib.h"
 
@@ -97,3 +104,7 @@ RIB_STRUCT    *rib;                   /* Data structure for RIB. */
     ZOLTAN_FREE(&(zz->LB.Data_Structure));
   }
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

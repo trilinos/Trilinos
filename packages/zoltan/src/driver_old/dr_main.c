@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 /*--------------------------------------------------------------------------*/
 /* Purpose: Driver for dynamic load-balance library, ZOLTAN.                */
 /*                                                                          */
@@ -318,3 +325,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
   mesh->ecmap_neighids           = NULL;
   mesh->elements                 = NULL;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __MEM_CONST_H
 #define __MEM_CONST_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #ifdef __STDC__
 #include <string.h>
@@ -56,6 +63,10 @@ extern int Zoltan_Memory_Num();
 extern void Zoltan_Multifree(int n, ...);
 #else
 extern void Zoltan_Multifree();
+#endif
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
 #endif
 
 #endif

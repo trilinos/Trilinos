@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __SHARED_CONST_H
 #define __SHARED_CONST_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 /* Definitions shared by parallel RCB and RIB */
 #define DEFAULT_CHECK_GEOM 1
@@ -55,5 +62,9 @@ extern void Zoltan_RB_stats(ZZ *, double, struct Dot_Struct *, int , double *,
   int *, int, int *, void *, int);
 
 extern int Zoltan_RB_Use_IDs(ZZ *);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif

@@ -331,3 +331,29 @@ zdrive action = 1
 # NOTE:  The Fortran90 driver zfdrive ignores this input line.
 #-----------------------------------------------------------------------------
 Test DDirectory = 1
+
+#-----------------------------------------------------------------------------
+# Test Null Import Lists = <integer>
+#
+# This line signals that zdrive should test Zoltan's capability to accept
+# NULL import lists to Zoltan_Help_Migrate.  It allows the driver to pass NULL
+# import lists.  This flag's value should not affect the output of zdrive.
+#
+# Default value is 0.
+#
+# NOTE:  The Fortran90 driver zfdrive ignores this input line.
+#-----------------------------------------------------------------------------
+Test Null Import Lists = 0
+
+#-----------------------------------------------------------------------------
+# Test Multi Callbacks = <integer>
+#
+# This line signals that zdrive should test the list-based (MULTI) callback
+# functions.  If this line is set to 1, zdrive registers list-based callback 
+# functions.  Otherwise, callbacks on individual functions are registered.
+# This flag's value should not affect the output of zdrive.
+#
+# Default value is 0.
+#-----------------------------------------------------------------------------
+Test Multi Callbacks = 0
+

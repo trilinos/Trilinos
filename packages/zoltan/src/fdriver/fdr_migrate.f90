@@ -117,28 +117,51 @@ type(Zoltan_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
     migrate_elements = .false.; return
   endif
 
-! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_OBJ_SIZE_FN_TYPE, migrate_elem_size, &
-!              mesh_wrapper) == ZOLTAN_FATAL) then
-  if (Zoltan_Set_Obj_Size_Fn(zz_obj, migrate_elem_size, &
-               mesh_wrapper) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_Set_Fn()"
-    migrate_elements = .false.; return
-  endif
+  if (Test_Multi_Callbacks.eq.1) then
+    if (Zoltan_Set_Obj_Size_Multi_Fn(zz_obj, migrate_elem_size_multi, &
+                 mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      migrate_elements = .false.; return
+    endif
 
-! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_PACK_OBJ_FN_TYPE, migrate_pack_elem, &
-!               mesh_wrapper) == ZOLTAN_FATAL) then
-  if (Zoltan_Set_Pack_Obj_Fn(zz_obj, migrate_pack_elem, & 
-                mesh_wrapper) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_Set_Fn()"
-    migrate_elements = .false.; return
-  endif
+    if (Zoltan_Set_Pack_Obj_Multi_Fn(zz_obj, migrate_pack_elem_multi, & 
+                  mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      migrate_elements = .false.; return
+    endif
 
-! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_UNPACK_OBJ_FN_TYPE, migrate_unpack_elem, &
-!               mesh_wrapper) == ZOLTAN_FATAL) then
-  if (Zoltan_Set_Unpack_Obj_Fn(zz_obj, migrate_unpack_elem, &
-                mesh_wrapper) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_Set_Fn()"
-    migrate_elements = .false.; return
+    if (Zoltan_Set_Unpack_Obj_Multi_Fn(zz_obj, migrate_unpack_elem_multi, &
+                  mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      migrate_elements = .false.; return
+    endif
+
+  else
+
+!   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_OBJ_SIZE_FN_TYPE, migrate_elem_size, &
+!                mesh_wrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Obj_Size_Fn(zz_obj, migrate_elem_size, &
+                 mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      migrate_elements = .false.; return
+    endif
+
+!   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_PACK_OBJ_FN_TYPE, migrate_pack_elem, &
+!                 mesh_wrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Pack_Obj_Fn(zz_obj, migrate_pack_elem, & 
+                  mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      migrate_elements = .false.; return
+    endif
+
+!   if (Zoltan_Set_Fn(zz_obj, ZOLTAN_UNPACK_OBJ_FN_TYPE, migrate_unpack_elem, &
+!                 mesh_wrapper) == ZOLTAN_FATAL) then
+    if (Zoltan_Set_Unpack_Obj_Fn(zz_obj, migrate_unpack_elem, &
+                  mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      migrate_elements = .false.; return
+    endif
+
   endif
 
   if (Zoltan_Help_Migrate(zz_obj, &
@@ -568,6 +591,32 @@ end function migrate_elem_size
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
+subroutine migrate_elem_size_multi(data, num_gid_entries, num_lid_entries, num_ids, elem_gid, elem_lid, num_bytes, ierr)
+type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries, num_ids
+integer(Zoltan_INT), intent(in) :: elem_gid(*), elem_lid(*)
+integer(Zoltan_INT), intent(out) :: num_bytes(*)
+integer(Zoltan_INT), intent(out) :: ierr
+integer(Zoltan_INT) :: i;
+
+  do i = 1, num_ids
+    if (num_lid_entries.gt.0) then
+      num_bytes(i) = migrate_elem_size(data, num_gid_entries, num_lid_entries, &
+                                     elem_gid((i-1)*num_gid_entries+1),        &
+                                     elem_lid((i-1)*num_lid_entries+1), ierr);
+    else
+!     Don't index into a NULL elem_lid array; just pass along the NULL.
+      num_bytes(i) = migrate_elem_size(data, num_gid_entries, num_lid_entries, &
+                                     elem_gid((i-1)*num_gid_entries+1),        &
+                                     elem_lid, ierr);
+    end if
+  end do
+
+end subroutine migrate_elem_size_multi
+
+!/*****************************************************************************/
+!/*****************************************************************************/
+!/*****************************************************************************/
 subroutine migrate_pack_elem(data, num_gid_entries, num_lid_entries, &
                              elem_gid, elem_lid,  mig_proc, &
                              elem_data_size, buf, ierr)
@@ -695,6 +744,38 @@ end subroutine migrate_pack_elem
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
+subroutine migrate_pack_elem_multi(data, num_gid_entries, num_lid_entries, &
+  num_ids, elem_gid, elem_lid, mig_proc, elem_data_size, idx,              &
+  buf, ierr)
+type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries, num_ids
+integer(Zoltan_INT), intent(in) :: elem_gid(*), elem_lid(*)
+integer(Zoltan_INT), intent(in) :: mig_proc(*), elem_data_size(*), idx(*)
+integer(Zoltan_INT), intent(out) :: buf(*)
+integer(Zoltan_INT), intent(out) :: ierr
+integer(Zoltan_INT) :: i;
+
+  do i = 1, num_ids
+    if (num_lid_entries.gt.0) then
+      call migrate_pack_elem(data, num_gid_entries, num_lid_entries, &
+                             elem_gid((i-1)*num_gid_entries+1),      &
+                             elem_lid((i-1)*num_lid_entries+1),      &
+                             mig_proc(i), elem_data_size(i),         &
+                             buf(idx(i)), ierr);
+    else
+!     Don't index into a NULL elem_lid array; just pass along the NULL.
+      call migrate_pack_elem(data, num_gid_entries, num_lid_entries, &
+                             elem_gid((i-1)*num_gid_entries+1),      &
+                             elem_lid,                               &
+                             mig_proc(i), elem_data_size(i),         &
+                             buf(idx(i)), ierr);
+    end if
+  end do
+
+end subroutine migrate_pack_elem_multi
+!/*****************************************************************************/
+!/*****************************************************************************/
+!/*****************************************************************************/
 subroutine migrate_unpack_elem(data, num_gid_entries, &
                                elem_gid, elem_data_size, buf, ierr)
 type(Zoltan_User_Data_2), intent(in) :: data
@@ -726,7 +807,7 @@ integer(Zoltan_INT), intent(out) :: ierr
 
   idx = in_list(elem_gid(gid), New_Elem_Index_Size, New_Elem_Index)
   if (idx == -1) then
-    print *, "fatal: Unable to locate position for element"
+    print *, "fatal: Unable to locate position for element", elem_gid(gid)
     ierr = ZOLTAN_FATAL
     return
   endif
@@ -826,6 +907,26 @@ integer(Zoltan_INT), intent(out) :: ierr
   endif
 end subroutine migrate_unpack_elem
 
+!/*****************************************************************************/
+!/*****************************************************************************/
+!/*****************************************************************************/
+subroutine migrate_unpack_elem_multi(data, num_gid_entries, num_ids, &
+                               elem_gid, elem_data_size, idx, buf, ierr)
+type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: num_gid_entries, num_ids
+integer(Zoltan_INT), intent(in) :: elem_gid(*)
+integer(Zoltan_INT), intent(in) :: elem_data_size(*), idx(*)
+integer(Zoltan_INT), intent(in) :: buf(*)
+integer(Zoltan_INT), intent(out) :: ierr
+integer(Zoltan_INT) :: i
+
+  do i = 1, num_ids
+    call migrate_unpack_elem(data, num_gid_entries,                  &
+                             elem_gid((i-1)*num_gid_entries+1),      &
+                             elem_data_size(i), buf(idx(i)), ierr);
+  end do
+
+end subroutine migrate_unpack_elem_multi
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/

@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __ZOLTAN_CONST_H
 #define __ZOLTAN_CONST_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,7 +50,7 @@
  * has.
  */
 #define UTIL_NAME "zoltan"
-#define ZOLTAN_VER   1.3
+#define ZOLTAN_VER   1.4
 
 
 /*
@@ -345,9 +352,18 @@ struct Zoltan_Struct {
                                           the data for a single object for
                                           migration.                         */
   ZOLTAN_OBJ_SIZE_FORT_FN *Get_Obj_Size_Fort;
-                                       /* Fortran version                 */
+                                       /* Fortran version                    */
   void *Get_Obj_Size_Data;             /* Ptr to user defined data to be
                                           passed to Get_Obj_Size()           */
+  ZOLTAN_OBJ_SIZE_MULTI_FN *Get_Obj_Size_Multi;
+                                       /* Function that returns the size of
+                                          contiguous memory needed to store
+                                          the data for multiple objects for
+                                          migration.                         */
+  ZOLTAN_OBJ_SIZE_MULTI_FORT_FN *Get_Obj_Size_Multi_Fort;
+                                       /* Fortran version                    */
+  void *Get_Obj_Size_Multi_Data;       /* Ptr to user defined data to be
+                                          passed to Get_Obj_Size_Multi()     */
   ZOLTAN_PACK_OBJ_FN *Pack_Obj;        /* Routine that packs object data for
                                           a given object into contiguous
                                           memory for migration.              */
@@ -355,13 +371,31 @@ struct Zoltan_Struct {
                                        /* Fortran version                    */
   void *Pack_Obj_Data;                 /* Ptr to user defined data to be
                                           passed to Pack_Obj()               */
+  ZOLTAN_PACK_OBJ_MULTI_FN *Pack_Obj_Multi;
+                                       /* Routine that packes object data for
+                                          multiple objects into contiguous
+                                          memory for migration.              */
+  ZOLTAN_PACK_OBJ_MULTI_FORT_FN *Pack_Obj_Multi_Fort;
+                                       /* Fortran version                    */
+  void *Pack_Obj_Multi_Data;                 /* Ptr to user defined data to be
+                                          passed to Pack_Obj_Multi()         */
+
+
   ZOLTAN_UNPACK_OBJ_FN *Unpack_Obj;    /* Routine that unpacks object data for
                                           a given object from contiguous
                                           memory after migration.            */
   ZOLTAN_UNPACK_OBJ_FORT_FN *Unpack_Obj_Fort;
-                                       /* Fortran version                 */
+                                       /* Fortran version                    */
   void *Unpack_Obj_Data;               /* Ptr to user defined data to be
                                           passed to Unpack_Obj()             */
+  ZOLTAN_UNPACK_OBJ_MULTI_FN *Unpack_Obj_Multi;
+                                       /* Routine that unpacks object data for
+                                          multiple objects from contiguous
+                                          memory after migration.            */
+  ZOLTAN_UNPACK_OBJ_MULTI_FORT_FN *Unpack_Obj_Multi_Fort;
+                                       /* Fortran version                    */
+  void *Unpack_Obj_Multi_Data;         /* Ptr to user defined data to be
+                                          passed to Unpack_Obj_Multi()       */
   ZOLTAN_GET_PROCESSOR_NAME_FN *Get_Processor_Name; 
                                                /* Fn ptr to get proc name   */
   void *Get_Processor_Name_Data;               /* Ptr to user defined data   */
@@ -431,5 +465,9 @@ typedef struct Zoltan_Struct ZZ;
 extern void Zoltan_Get_Obj_List(ZZ *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, 
                                 int, float*, int*);
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -865,3 +872,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   return 1;
 }
 #endif /* ZOLTAN_NEMESIS */
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

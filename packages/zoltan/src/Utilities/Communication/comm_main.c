@@ -12,6 +12,11 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpi.h"
@@ -663,3 +668,7 @@ int my_proc)
         printf("\n");
     }
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

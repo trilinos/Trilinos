@@ -27,6 +27,8 @@ private
 public :: DRIVER_NAME, VER_STR, PROB_INFO, MESH_INFO, Mesh, &
           FILENAME_MAX, MAX_PARAMETER_LEN, Parameter_Pair
 
+public :: Test_Multi_Callbacks
+
 !/*****************************************************************************
 ! *  Definitions for the Zoltan library driver program.
 ! *****************************************************************************/
@@ -34,6 +36,9 @@ public :: DRIVER_NAME, VER_STR, PROB_INFO, MESH_INFO, Mesh, &
 character(len=7), parameter :: DRIVER_NAME = "zfdrive"
 character(len=3), parameter :: VER_STR = "1.0"
 
+! A global variable indicating whether list-based (multi) query functions
+! should be registered.  Default is 0.
+integer(Zoltan_INT) :: Test_Multi_Callbacks = 0
 
 !/* If it doesn't get defined in stdio.h then use this as a default */
 integer(Zoltan_INT), parameter :: FILENAME_MAX = 1024

@@ -115,17 +115,19 @@ The user can use
 <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign"><b>Zoltan_LB_Point_Assign</b></a>
 to add a new point to the
 appropriate partition.  The bounding box coordinates,
-the final partition, and other related information persist after partitioning.
+the final partition, and other related information are maintained after partitioning if the KEEP_CUTS
+parameter is set by the user. The KEEP_CUTS parameter must be set by the user for Point Assign!
 The extended bounded box is
 used to compute the new point's inverse Hilbert coordinate.  Then the
 routine performs a binary search on the final partition to determine the partition (interval) which
 includes the point. The routine returns the partition number assigned to that
-interval.  This function requires the KEEP_CUTS parameter to be set by the user.
+interval.   The Point Assign function now works for any point in space, even if the point is
+outside the original bounding box.
 
 <BR>&nbsp;
 <h3>Box Assign</h3>
-The user can use 
-<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign"><b>Zoltan_LB_Box_Assign</b></a> 
+The user can use
+<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign"><b>Zoltan_LB_Box_Assign</b></a>
 to determine the partitions whose
 corresponding subdomains intersect the user's box.  Currently,
 this algorithm creates a regular lattice of points filling the user's box.
@@ -133,6 +135,8 @@ The point assign function is called repeatedly to determine the partition
 for each lattice point.  The function then refines the lattice and repeats
 the process until the same list of partitions is obtained.  This list is
 returned to the user.  This function requires the KEEP_CUTS parameter to be set by the user.
+The Box Assign function now works for any box in space, even if it has regions outside the
+original bounding box.
 
 <p>
 

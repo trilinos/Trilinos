@@ -12,6 +12,11 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include "comm.h"
 
@@ -73,3 +78,7 @@ int       nvals)		/* length of these two arrays */
 
     return(ZOLTAN_OK);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpi.h"
@@ -136,3 +143,7 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
 
     return(comm_flag);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

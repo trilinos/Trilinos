@@ -78,7 +78,10 @@ public :: &
    ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE, &
    ZOLTAN_NUM_CHILD_FN_TYPE, &
    ZOLTAN_CHILD_LIST_FN_TYPE, &
-   ZOLTAN_CHILD_WEIGHT_FN_TYPE
+   ZOLTAN_CHILD_WEIGHT_FN_TYPE, &
+   ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE, &
+   ZOLTAN_PACK_OBJ_MULTI_FN_TYPE, &
+   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE
 
 public :: &
    ZOLTAN_OTHER_REF, &
@@ -122,7 +125,9 @@ public :: &
    Zoltan_Set_Child_Weight_Fn, &
    Zoltan_Set_Pre_Migrate_Fn, Zoltan_Set_Mid_Migrate_Fn, &
    Zoltan_Set_Post_Migrate_Fn, &
-   Zoltan_Set_Obj_Size_Fn, Zoltan_Set_Pack_Obj_Fn, Zoltan_Set_Unpack_Obj_Fn 
+   Zoltan_Set_Obj_Size_Fn, Zoltan_Set_Pack_Obj_Fn, Zoltan_Set_Unpack_Obj_Fn, &
+   Zoltan_Set_Obj_Size_Multi_Fn, &
+   Zoltan_Set_Pack_Obj_Multi_Fn, Zoltan_Set_Unpack_Obj_Multi_Fn 
 
 public :: &
    Zoltan_Get_Child_Order ! TEMP child_order
@@ -193,7 +198,10 @@ type(ZOLTAN_FN_TYPES), parameter :: &
    ZOLTAN_UNPACK_OBJ_FN_TYPE       = ZOLTAN_FN_TYPES(17_Zoltan_INT), &
    ZOLTAN_COARSE_OBJ_LIST_FN_TYPE  = ZOLTAN_FN_TYPES(19_Zoltan_INT), &
    ZOLTAN_CHILD_LIST_FN_TYPE       = ZOLTAN_FN_TYPES(23_Zoltan_INT), &
-   ZOLTAN_CHILD_WEIGHT_FN_TYPE     = ZOLTAN_FN_TYPES(24_Zoltan_INT)
+   ZOLTAN_CHILD_WEIGHT_FN_TYPE     = ZOLTAN_FN_TYPES(24_Zoltan_INT), &
+   ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(25_Zoltan_INT), &
+   ZOLTAN_PACK_OBJ_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(26_Zoltan_INT), &
+   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE = ZOLTAN_FN_TYPES(27_Zoltan_INT)
 
 ! Type of refinement used when building a refinement tree
 ! These values must agree with the values in zoltan.h
@@ -937,6 +945,9 @@ end interface
 #include "set_objsize.if"
 #include "set_packobj.if"
 #include "set_unpackobj.if"
+#include "set_objsizemulti.if"
+#include "set_packobjmulti.if"
+#include "set_unpackobjmulti.if"
 #include "set_numcoarseobj.if"
 #include "set_coarseobjlist.if"
 #include "set_firstcoarseobj.if"
@@ -1720,6 +1731,9 @@ end subroutine Zf90_Reftree_Get_Child_Order
 #include "set_objsize.fn"
 #include "set_packobj.fn"
 #include "set_unpackobj.fn"
+#include "set_objsizemulti.fn"
+#include "set_packobjmulti.fn"
+#include "set_unpackobjmulti.fn"
 #include "set_numcoarseobj.fn"
 #include "set_coarseobjlist.fn"
 #include "set_firstcoarseobj.fn"

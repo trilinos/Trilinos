@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 
 /*****************************************************************************/
@@ -114,13 +121,25 @@ int ierr;
     ierr = Zoltan_Set_Obj_Size_Fn(zz, 
                   (ZOLTAN_OBJ_SIZE_FN *) fn, data);
     break;
+  case ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE:
+    ierr = Zoltan_Set_Obj_Size_Multi_Fn(zz, 
+                  (ZOLTAN_OBJ_SIZE_MULTI_FN *) fn, data);
+    break;
   case ZOLTAN_PACK_OBJ_FN_TYPE:
     ierr = Zoltan_Set_Pack_Obj_Fn(zz, 
                   (ZOLTAN_PACK_OBJ_FN *) fn, data);
     break;
+  case ZOLTAN_PACK_OBJ_MULTI_FN_TYPE:
+    ierr = Zoltan_Set_Pack_Obj_Multi_Fn(zz, 
+                  (ZOLTAN_PACK_OBJ_MULTI_FN *) fn, data);
+    break;
   case ZOLTAN_UNPACK_OBJ_FN_TYPE:
     ierr = Zoltan_Set_Unpack_Obj_Fn(zz, 
                   (ZOLTAN_UNPACK_OBJ_FN *) fn, data);
+    break;
+  case ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE:
+    ierr = Zoltan_Set_Unpack_Obj_Multi_Fn(zz, 
+                  (ZOLTAN_UNPACK_OBJ_MULTI_FN *) fn, data);
     break;
   case ZOLTAN_NUM_COARSE_OBJ_FN_TYPE:
     ierr = Zoltan_Set_Num_Coarse_Obj_Fn(zz, 
@@ -337,6 +356,23 @@ int Zoltan_Set_Obj_Size_Fn(
 {
   zz->Get_Obj_Size = fn;
   zz->Get_Obj_Size_Data = data;
+  zz->Get_Obj_Size_Multi = NULL;
+  zz->Get_Obj_Size_Multi_Data = NULL;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
+int Zoltan_Set_Obj_Size_Multi_Fn(
+  ZZ *zz, 
+  ZOLTAN_OBJ_SIZE_MULTI_FN *fn, 
+  void *data
+)
+{
+  zz->Get_Obj_Size_Multi = fn;
+  zz->Get_Obj_Size_Multi_Data = data;
+  zz->Get_Obj_Size = NULL;
+  zz->Get_Obj_Size_Data = NULL;
   return ZOLTAN_OK;
 }
 
@@ -350,6 +386,23 @@ int Zoltan_Set_Pack_Obj_Fn(
 {
   zz->Pack_Obj = fn;
   zz->Pack_Obj_Data = data;
+  zz->Pack_Obj_Multi = NULL;
+  zz->Pack_Obj_Multi_Data = NULL;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
+int Zoltan_Set_Pack_Obj_Multi_Fn(
+  ZZ *zz, 
+  ZOLTAN_PACK_OBJ_MULTI_FN *fn, 
+  void *data
+)
+{
+  zz->Pack_Obj_Multi = fn;
+  zz->Pack_Obj_Multi_Data = data;
+  zz->Pack_Obj = NULL;
+  zz->Pack_Obj_Data = NULL;
   return ZOLTAN_OK;
 }
 
@@ -363,6 +416,23 @@ int Zoltan_Set_Unpack_Obj_Fn(
 {
   zz->Unpack_Obj = fn;
   zz->Unpack_Obj_Data = data;
+  zz->Unpack_Obj_Multi = NULL;
+  zz->Unpack_Obj_Multi_Data = NULL;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
+int Zoltan_Set_Unpack_Obj_Multi_Fn(
+  ZZ *zz, 
+  ZOLTAN_UNPACK_OBJ_MULTI_FN *fn, 
+  void *data
+)
+{
+  zz->Unpack_Obj_Multi = fn;
+  zz->Unpack_Obj_Multi_Data = data;
+  zz->Unpack_Obj = NULL;
+  zz->Unpack_Obj_Data = NULL;
   return ZOLTAN_OK;
 }
 
@@ -456,3 +526,7 @@ int Zoltan_Set_Child_Weight_Fn(
   zz->Get_Child_Weight_Data = data;
   return ZOLTAN_OK;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

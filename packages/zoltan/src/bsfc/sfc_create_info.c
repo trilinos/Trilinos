@@ -12,6 +12,11 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
@@ -84,3 +89,7 @@ void Zoltan_BSFC_create_info(
   ZOLTAN_TRACE_EXIT(zz, yo);
   return;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

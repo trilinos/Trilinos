@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #ifdef __STDC__
 #include <string.h>
@@ -210,3 +217,7 @@ char *name 			/* parameter name */
     return (ZOLTAN_OK);
 }
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

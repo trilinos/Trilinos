@@ -11,11 +11,22 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __PARMETIS_JOSTLE_CONST_H
 #define __PARMETIS_JOSTLE_CONST_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 /* Zoltan function prototypes */
 extern int Zoltan_ParMetis_Set_Param(char *, char *);
 extern int Zoltan_Jostle_Set_Param(char *, char *);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif

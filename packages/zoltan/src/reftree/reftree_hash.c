@@ -6,6 +6,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "zz_util_const.h"
 #include "reftree.h"
@@ -136,3 +142,7 @@ void Zoltan_Reftree_Clear_Hash_Table(struct Zoltan_Reftree_hash_node **hashtab,
   }
 
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,6 +11,12 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include "zz_const.h"
 #include "order_const.h"
 #include "key_params.h"
@@ -280,3 +286,6 @@ char *val)                      /* value of variable */
     return(status);
 }
 
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

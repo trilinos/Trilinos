@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __ZOLTAN_UTIL_H
 #define __ZOLTAN_UTIL_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 /*****************************************************************************/
 /* 
@@ -49,5 +56,9 @@
   printf("ZOLTAN (Processor %d) %s: %s\n", (proc), (yo), \
          ((str) != NULL ? (str) : " "));
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif /* !__ZOLTAN_UTIL_H */

@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef _DR_UTIL_CONST_H_
 #define _DR_UTIL_CONST_H_
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 /* Function prototypes */
 extern
@@ -75,5 +82,9 @@ void sort_int (
 
 extern void sort2_index(int n, int ra[], int sa[], int indx[]);
 extern void safe_free(void **ptr);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif /* _DR_UTIL_CONST_H_ */

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 
 
@@ -35,3 +42,7 @@ int Zoltan_LB_Box_Assign (
 
   return zz->LB.Box_Assign (zz, xlo, ylo, zlo, xhi, yhi, zhi, procs, count) ;
   }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

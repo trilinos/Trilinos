@@ -11,8 +11,14 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __ORDER_CONST_H
 #define __ORDER_CONST_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 #include "zoltan.h"
 
@@ -76,5 +82,9 @@ extern int Zoltan_Inverse_Perm(ZZ *, int *, int *, int *, char *, int);
 /* Misc. constants */
 #define RETURN_RANK  1
 #define RETURN_IPERM 2
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif

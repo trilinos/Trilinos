@@ -11,6 +11,12 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include "zz_const.h"
 #include "order_const.h"
 
@@ -77,3 +83,7 @@ int Zoltan_Order_Destroy(ZOS **order_info)
   /* ZOLTAN_TRACE_EXIT(zz, yo); */
   return (ierr);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

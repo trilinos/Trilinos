@@ -12,6 +12,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -318,3 +324,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
 
    return ZOLTAN_DD_GID_ADDED ;
    }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

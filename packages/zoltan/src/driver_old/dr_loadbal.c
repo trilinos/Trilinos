@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <strings.h>
@@ -530,3 +537,7 @@ ELEM_INFO *elem, *found_elem = NULL;
   
   return(found_elem);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 
 
@@ -29,3 +36,7 @@ int Zoltan_LB_Point_Assign (
 
   return zz->LB.Point_Assign (zz, x, proc) ;    /* call appropriate method */
   }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -9,6 +9,12 @@
 #ifndef __OCTANT_CONST_H
 #define __OCTANT_CONST_H
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 
 typedef double COORD[3];
@@ -84,5 +90,9 @@ extern void    Zoltan_Oct_setCpid(pOctant octant, int i, int cpid);
  * extern void    PZoltan_Oct_setOrientation(pOctant octant, int orientation);
  * extern int     PZoltan_Oct_getOrientation(pOctant octant);
  */
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif

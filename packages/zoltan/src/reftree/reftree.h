@@ -9,6 +9,12 @@
 #ifndef __REFTREE_H
 #define __REFTREE_H
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "reftree_const.h"
 /* Some constants */
 
@@ -82,5 +88,9 @@ extern void Zoltan_Reftree_Hash_Remove(ZZ *zz, ZOLTAN_REFTREE *reftree_node,
 extern void Zoltan_Reftree_Clear_Hash_Table(struct Zoltan_Reftree_hash_node **hashtab,
                                  int size);
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif /* __REFTREE_CONST_H */

@@ -6,6 +6,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "msg_const.h"
 
@@ -82,3 +88,7 @@ static void msg_abort(MPI_Comm communicator, int proc, int errcode)
   MPI_Abort(communicator,errcode);
   abort();
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

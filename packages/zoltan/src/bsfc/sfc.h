@@ -14,6 +14,12 @@
 
 #ifndef _ZOLTAN_BSFC_H
 #define _ZOLTAN_BSFC_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
@@ -118,5 +124,9 @@ int Zoltan_BSFC_create_compare_key(ZZ *zz, unsigned sfc_key[], unsigned compare_
 
 int Zoltan_BSFC_check_refine(unsigned* sfc_key, unsigned* compare_key,
 		     unsigned* AND_operator_array);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif /* _ZOLTAN_BSFC_H */

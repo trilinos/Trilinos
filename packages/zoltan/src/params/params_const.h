@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __PARAMS_CONST_H
 #define __PARAMS_CONST_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #ifndef HAVE_PROTOTYPES
 #   if defined(__STDC__) || defined(__GNUC__) || defined(__cplusplus) || defined(c_plusplus)
@@ -72,5 +79,9 @@ extern void Zoltan_Print_Params(PARAM_LIST *ptr);
 extern int Zoltan_Check_Param(char *, char *, PARAM_VARS *,
     PARAM_UTYPE *, int *);
 extern void Zoltan_Free_Params(PARAM_LIST **);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif

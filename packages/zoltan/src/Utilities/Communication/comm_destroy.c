@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include "comm.h"
 #include "zoltan_mem.h"
@@ -44,3 +51,7 @@ ZOLTAN_COMM_OBJ **plan)		/* communication data structure pointer */
 
     return(ZOLTAN_OK);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

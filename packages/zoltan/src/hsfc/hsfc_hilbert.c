@@ -57,6 +57,12 @@ the SFC
 
 ----------------------------------------------------------------------*/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include <stdlib.h>
 #include <limits.h>
 #include <math.h>
@@ -315,3 +321,7 @@ double Zoltan_HSFC_IHilbert3d (double *coord)
    Zoltan_HSFC_fhsfc3d (coord, 2, key) ;
    return ldexp((double) key[0], -32) + ldexp((double) key[1], -64) ;
    }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

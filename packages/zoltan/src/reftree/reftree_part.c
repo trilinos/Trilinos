@@ -6,6 +6,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include "zz_const.h"
 #include "reftree.h"
@@ -57,7 +63,7 @@ static void Zoltan_Reftree_Mark_and_Count(ZOLTAN_REFTREE *subroot, int part,
 static void Zoltan_Reftree_Export_Lists(ZZ *zz, ZOLTAN_REFTREE *subroot, 
        int *num_export, ZOLTAN_ID_PTR *export_global_ids,
        ZOLTAN_ID_PTR *export_local_ids, int **export_to_partition);
-int get_partition(ZOLTAN_REFTREE *subroot, ZZ *zz); /* TEMP k != p */
+static int get_partition(ZOLTAN_REFTREE *subroot, ZZ *zz); /* TEMP k != p */
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -78,7 +84,7 @@ int Zoltan_Reftree_Part(
         export_to_partition.  For the sake of everything else, I am just
         renaming it here, but eventually it should really be in the interface */
   int **export_to_partition
-/*  int **export_procs            /* list of processors to export to */
+/*  int **export_procs */           /* list of processors to export to */
 )
 {
 char *yo = "Zoltan_Reftree_Part";
@@ -878,7 +884,7 @@ int i, old_partition;
         be called with subroot as a leaf.
 */
 
-int get_partition(ZOLTAN_REFTREE *subroot, ZZ *zz)
+static int get_partition(ZOLTAN_REFTREE *subroot, ZZ *zz)
 {
   int result;
   if (subroot->assigned_to_me)
@@ -887,3 +893,7 @@ int get_partition(ZOLTAN_REFTREE *subroot, ZZ *zz)
     result = zz->Proc-1;
   return(result);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

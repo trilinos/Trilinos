@@ -12,6 +12,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -65,5 +71,10 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn1 (
 static unsigned int dd_nh1 (ZOLTAN_ID_PTR gid, int gid_length,
  unsigned int nproc)
    {
-   return (*gid < max_gid) ? (*gid / groupsize) : (*gid % nproc) ;
+   int id = (signed) *gid ;
+   return (id < max_gid) ? (id / groupsize) : (id % nproc) ;
    }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

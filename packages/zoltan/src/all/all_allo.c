@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
@@ -231,3 +238,7 @@ int Zoltan_Special_Free(ZZ *zz, void **array,
 /*****************************************************************************/
 /*                      END of all_allo.c                                     */
 /*****************************************************************************/
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

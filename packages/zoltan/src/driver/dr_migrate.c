@@ -11,7 +11,12 @@
  *    $Revision$
  ****************************************************************************/
 
-/*define NULL_IMPORT_LISTS_TO_HELP_MIGRATE*/
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to migrate elements.                                */
 /*          Contains all of the callback functions that Zoltan needs        */
@@ -55,9 +60,18 @@
  */
 ZOLTAN_PRE_MIGRATE_FN migrate_pre_process;
 ZOLTAN_POST_MIGRATE_FN migrate_post_process;
+
+/* Object-based migration callbacks; only one of these or the list-based
+ * callbacks are actually needed. */
 ZOLTAN_OBJ_SIZE_FN migrate_elem_size;
 ZOLTAN_PACK_OBJ_FN migrate_pack_elem;
 ZOLTAN_UNPACK_OBJ_FN migrate_unpack_elem;
+
+/* List-based migration callbacks; only one of these or the object-based
+ * callbacks are actually needed. */
+ZOLTAN_OBJ_SIZE_MULTI_FN migrate_elem_size_multi;
+ZOLTAN_PACK_OBJ_MULTI_FN migrate_pack_elem_multi;
+ZOLTAN_UNPACK_OBJ_MULTI_FN migrate_unpack_elem_multi;
 
 /*****************************************************************************/
 /*
@@ -104,65 +118,96 @@ char *yo = "migrate_elements";
   /*
    * register migration functions
    */
-#ifndef NULL_IMPORT_LISTS_TO_HELP_MIGRATE
-  if (Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_FN_TYPE, (void (*)()) migrate_pre_process,
-                (void *) mesh) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-    return 0;
+  if (!Test_Null_Import_Lists) {
+    /* If not passing NULL import lists, let Help_Migrate call the
+     * pre-processing and post-processing routines.
+     */
+    if (Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_FN_TYPE, 
+                      (void (*)()) migrate_pre_process,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+
+    if (Zoltan_Set_Fn(zz, ZOLTAN_POST_MIGRATE_FN_TYPE, 
+                      (void (*)()) migrate_post_process,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
   }
 
-  if (Zoltan_Set_Fn(zz, ZOLTAN_POST_MIGRATE_FN_TYPE, (void (*)()) migrate_post_process,
-                (void *) mesh) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-    return 0;
-  }
-#endif
+  if (Test_Multi_Callbacks) {
+    if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE, 
+                      (void (*)()) migrate_elem_size_multi,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
 
-  if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE, (void (*)()) migrate_elem_size,
-               (void *) mesh) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-    return 0;
+    if (Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_MULTI_FN_TYPE,
+                      (void (*)()) migrate_pack_elem_multi,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+  
+    if (Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE,
+                      (void (*)()) migrate_unpack_elem_multi,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+  }
+  else {
+    if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,
+                      (void (*)()) migrate_elem_size,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+
+    if (Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE, 
+                      (void (*)()) migrate_pack_elem,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+
+    if (Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE,
+                      (void (*)()) migrate_unpack_elem,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
   }
 
-  if (Zoltan_Set_Fn(zz, ZOLTAN_PACK_OBJ_FN_TYPE, (void (*)()) migrate_pack_elem,
-                (void *) mesh) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-    return 0;
-  }
 
-  if (Zoltan_Set_Fn(zz, ZOLTAN_UNPACK_OBJ_FN_TYPE, (void (*)()) migrate_unpack_elem,
-                (void *) mesh) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-    return 0;
-  }
-
-#ifndef NULL_IMPORT_LISTS_TO_HELP_MIGRATE
-  if (Zoltan_Help_Migrate(zz, 
+  if (!Test_Null_Import_Lists) {
+    if (Zoltan_Help_Migrate(zz, 
                       num_imp, imp_gids, imp_lids, imp_procs,
                       num_exp, exp_gids, exp_lids, exp_procs) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Help_Migrate()\n");
-    return 0;
+      Gen_Error(0, "fatal:  error returned from Zoltan_Help_Migrate()\n");
+      return 0;
+    }
   }
-#else
-  {
-  /* Call Zoltan_Help_Migrate with empty import lists. */
-  /* Have to "manually" call migrate_pre_process and migrate_post_process. */
-  int ierr = 0;
-  migrate_pre_process((void *) mesh, 1, 1,
-                      num_imp, imp_gids, imp_lids, imp_procs,
-                      num_exp, exp_gids, exp_lids, exp_procs, &ierr);
-  if (Zoltan_Help_Migrate(zz, 
+  else {
+    /* Call Zoltan_Help_Migrate with empty import lists. */
+    /* Have to "manually" call migrate_pre_process and migrate_post_process. */
+    int ierr = 0;
+    migrate_pre_process((void *) mesh, 1, 1,
+                        num_imp, imp_gids, imp_lids, imp_procs,
+                        num_exp, exp_gids, exp_lids, exp_procs, &ierr);
+    if (Zoltan_Help_Migrate(zz, 
                       -1, NULL, NULL, NULL,
                       num_exp, exp_gids, exp_lids, exp_procs) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Help_Migrate()\n");
-    return 0;
+      Gen_Error(0, "fatal:  error returned from Zoltan_Help_Migrate()\n");
+      return 0;
+    }
+    migrate_post_process((void *) mesh, 1, 1,  
+                         num_imp, imp_gids, imp_lids, imp_procs,
+                         num_exp, exp_gids, exp_lids, exp_procs, &ierr);
   }
-  migrate_post_process((void *) mesh, 1, 1,  
-                       num_imp, imp_gids, imp_lids, imp_procs,
-                       num_exp, exp_gids, exp_lids, exp_procs, &ierr);
-  }
-#endif
-
 
   DEBUG_TRACE_END(Proc, yo);
   return 1;
@@ -844,3 +889,97 @@ void migrate_unpack_elem(void *data, int num_gid_entries, ZOLTAN_ID_PTR elem_gid
   else
     *ierr = ZOLTAN_OK;
 }
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+void migrate_elem_size_multi(
+  void *data,
+  int num_gid_entries,
+  int num_lid_entries,
+  int num_ids,
+  ZOLTAN_ID_PTR global_ids,
+  ZOLTAN_ID_PTR local_ids,
+  int *num_bytes,
+  int *ierr
+)
+{
+int i;
+
+  *ierr = ZOLTAN_OK;
+  for (i = 0; i < num_ids; i++) {
+    num_bytes[i] = migrate_elem_size(data, num_gid_entries, num_lid_entries,
+                  &(global_ids[i*num_gid_entries]),
+                  (num_lid_entries!=0 ? &(local_ids[i*num_lid_entries]) : NULL),
+                  ierr);
+    if (*ierr != ZOLTAN_OK)
+      return;
+  }
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+void migrate_pack_elem_multi(
+  void *data,
+  int num_gid_entries,
+  int num_lid_entries,
+  int num_ids,
+  ZOLTAN_ID_PTR global_ids,
+  ZOLTAN_ID_PTR local_ids,
+  int *dest_proc,
+  int *size,
+  int *index,
+  char *buffer,
+  int *ierr
+)
+{
+int i;
+
+  *ierr = ZOLTAN_OK;
+  for (i = 0; i < num_ids; i++) {
+    migrate_pack_elem(data, num_gid_entries, num_lid_entries,
+            &(global_ids[i*num_gid_entries]),
+            (num_lid_entries!=0 ? &(local_ids[i*num_lid_entries]) : NULL),
+            dest_proc[i], size[i], &(buffer[index[i]]), ierr);
+    if (*ierr != ZOLTAN_OK)
+      return;
+  }
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+void migrate_unpack_elem_multi(
+  void *data,
+  int num_gid_entries,
+  int num_ids,
+  ZOLTAN_ID_PTR global_ids,
+  int *size,
+  int *index,
+  char *buffer,
+  int *ierr
+)
+{
+int i;
+
+  *ierr = ZOLTAN_OK;
+  for (i = 0; i < num_ids; i++) {
+    migrate_unpack_elem(data, num_gid_entries,
+                        &(global_ids[i*num_gid_entries]),
+                        size[i], &(buffer[index[i]]), ierr);
+    if (*ierr != ZOLTAN_OK)
+      return;
+  }
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

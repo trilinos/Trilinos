@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "zoltan_util.h"
@@ -151,3 +158,7 @@ char msg[256];
 
   MPI_Barrier(communicator);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

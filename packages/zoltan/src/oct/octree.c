@@ -6,6 +6,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "all_allo_const.h"
 #include "octree_const.h"
@@ -227,3 +233,7 @@ int Zoltan_Oct_POct_delTree(OCT_Global_Info *OCT_info, pOctant *root) {
   }
   return 1;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

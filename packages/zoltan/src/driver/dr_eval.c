@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -73,3 +80,7 @@ float gsumload, gmaxload, gminload;
            gmaxcuts, gmincuts, gsumcuts);
   }
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

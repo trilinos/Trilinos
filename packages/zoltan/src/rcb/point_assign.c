@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include "zz_const.h"
 #include "rcb.h"
@@ -111,3 +118,7 @@ int      *proc)                 /* processor that point lands in */
         return(ZOLTAN_FATAL);
      }
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

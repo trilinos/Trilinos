@@ -43,6 +43,9 @@ $(ZOD)/fwrap.f90: 	fwrap.fpp lbif.fpp lbfn.fpp \
 		set_objsize.if			set_objsize.fn \
 		set_packobj.if			set_packobj.fn \
 		set_unpackobj.if		set_unpackobj.fn \
+		set_objsizemulti.if		set_objsizemulti.fn \
+		set_packobjmulti.if		set_packobjmulti.fn \
+		set_unpackobjmulti.if		set_unpackobjmulti.fn \
 		set_numchild.if 		set_numchild.fn \
 		set_childweight.if 		set_childweight.fn \
 		set_childlist.if 		set_childlist.fn \

@@ -6,6 +6,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "octree_const.h"
 #include "migoct_const.h"
@@ -242,12 +248,12 @@ int Zoltan_Oct_migrate_octants(ZZ *zz, int *newpids, pOctant *octs, int nocts, i
  */
 
 
-static int Zoltan_Oct_Update_Connections(zz, octs,newpids,newocts,nocts)
-ZZ *zz;
-pOctant *octs;      /* octs[nocts]    */
-int *newpids;       /* newpids[nocts] */
-pOctant *newocts;   /* newocts[nocts] */
-int nocts;          /* number of octants leaving this processor */
+static int Zoltan_Oct_Update_Connections(
+ZZ *zz,
+pOctant *octs,      /* octs[nocts]    */
+int *newpids,       /* newpids[nocts] */
+pOctant *newocts,   /* newocts[nocts] */
+int nocts)          /* number of octants leaving this processor */
 {
   int i, j;
   int nsends;
@@ -422,13 +428,13 @@ int nocts;          /* number of octants leaving this processor */
  *
  */
 
-static int Zoltan_Oct_Final_Migration(zz, octs,newpids,newocts,nocts,nrecocts)
-ZZ *zz;
-pOctant *octs;      /* octs[nocts]    */
-int *newpids;       /* newpids[nocts] */
-pOctant *newocts;   /* newocts[nocts] */
-int nocts;          /* number of octants leaving this processor */
-int nrecocts;       /* number of octants received in this processor */
+static int Zoltan_Oct_Final_Migration(
+ZZ *zz,
+pOctant *octs,      /* octs[nocts]    */
+int *newpids,       /* newpids[nocts] */
+pOctant *newocts,   /* newocts[nocts] */
+int nocts,          /* number of octants leaving this processor */
+int nrecocts)       /* number of octants received in this processor */
 {
   int i;
   Migrate_msg *msnd = NULL, *mrcv = NULL;
@@ -659,3 +665,7 @@ static int Zoltan_Oct_Update_Map(ZZ *zz) {
     ZOLTAN_FREE(&rootlists);
   return ierr;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

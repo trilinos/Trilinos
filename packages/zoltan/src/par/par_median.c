@@ -11,6 +11,13 @@
  *    Revision: 1.6.2.1 $
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "par_median_const.h"
@@ -694,3 +701,7 @@ static void Zoltan_RB_max_double(
          MPI_Send(x, 1, MPI_DOUBLE, to, tag, comm);
    }
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "lb_init_const.h"
 #include "params_const.h"
@@ -142,6 +149,9 @@ ZZ *zz;
   zz->Pack_Obj = NULL;
   zz->Unpack_Obj = NULL;
   zz->Get_Obj_Size = NULL;
+  zz->Pack_Obj_Multi = NULL;
+  zz->Unpack_Obj_Multi = NULL;
+  zz->Get_Obj_Size_Multi = NULL;
   
   zz->Pack_Obj_Fort = NULL;
   zz->Unpack_Obj_Fort = NULL;
@@ -196,3 +206,7 @@ static void Zoltan_Free_Structures(
 
  /* Add calls to additional module-specific free routines here.  */
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -6,6 +6,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "octree_const.h"
 #include "costs.h"
@@ -153,3 +159,7 @@ static float Zoltan_Oct_costs_weight(pOctant octant) {
   }
   return cost;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

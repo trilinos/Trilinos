@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef __STDC__
@@ -65,3 +72,7 @@ void *var)			/* pointer to variable to be associated with the parameter name */
     ZOLTAN_FREE(&name2);
     return (ZOLTAN_WARN);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -132,6 +132,7 @@ if (! $?run ) then
     case generic:
     case gcc:
     case gccP3:
+    case g++:
     case linux:
     case solaris:
     case sun:

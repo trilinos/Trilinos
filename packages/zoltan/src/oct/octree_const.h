@@ -1,9 +1,23 @@
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
 
 #ifndef __OCT_OCTREE_CONST_H
 #define __OCT_OCTREE_CONST_H
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "octant_const.h"
 #include "rootlist_const.h"
+
 
 typedef struct {
   int npid;
@@ -67,5 +81,9 @@ extern int     Zoltan_Oct_POct_delTree(OCT_Global_Info *OCT_info,pOctant *root);
 /* KDDKDDFREE moved to octree_const.h to allow OCT_Global_Info arg. */
 extern void    Zoltan_Oct_free(OCT_Global_Info *OCT_info, pOctant *oct);
 extern int     RL_delRootOctant(OCT_Global_Info *OCT_info, pRList *rootlist, pOctant oct);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif /*__OCT_OCTREE_CONST_H*/

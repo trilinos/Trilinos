@@ -12,6 +12,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -111,11 +117,12 @@ static unsigned int dd_nh2 (ZOLTAN_ID_PTR gid, int gid_length,
    {
    Range_Info *p ;
    char *yo = "dd_ny2" ;
+   int id = (signed) *gid ;
 
    /* check if gid is out of range */
-   if (*gid > high_limit || *gid < low_limit)
+   if (id > high_limit || id < low_limit)
       {
-      return *gid % nproc ;
+      return id % nproc ;
       }
 
    p = (Range_Info *) bsearch (gid, ptr, count, sizeof (Range_Info),
@@ -125,7 +132,7 @@ static unsigned int dd_nh2 (ZOLTAN_ID_PTR gid, int gid_length,
       {
       if (debug_level > 1)
          ZOLTAN_PRINT_ERROR (0, yo, "C function bsearch returned NULL.") ;
-      return *gid % nproc ;
+      return id % nproc ;
       }
 
    return p->proc ;
@@ -147,8 +154,9 @@ static int compare_sort (const void *a, const void *b)
 
 static int compare_search (const void *a, const void *b)
     {
-    if (*((ZOLTAN_ID_TYPE *) a) < ((Range_Info *) b)->low)  return -1 ;
-    if (*((ZOLTAN_ID_TYPE *) a) > ((Range_Info *) b)->high) return  1 ;
+    int temp = (signed) *((ZOLTAN_ID_TYPE *) a) ;
+    if (temp < ((Range_Info *) b)->low)  return -1 ;
+    if (temp > ((Range_Info *) b)->high) return  1 ;
     else return 0 ;
     }
 
@@ -160,3 +168,7 @@ static void dd_nh2_cleanup (void)
    {
    ZOLTAN_FREE (&ptr) ;
    }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "par_const.h"
@@ -50,3 +57,7 @@ void Zoltan_Print_Stats (MPI_Comm communicator, int debug_proc, double x, char *
             msg, max, sum, max*(num_proc)/sum);
 
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

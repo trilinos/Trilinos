@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef _DR_ELM_CONST_H
 #define _DR_ELM_CONST_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 /* Define element types */
 typedef enum {E_TYPE_ERROR=-1, SPHERE, BAR1, BAR2, QUAD1, S_QUAD2, QUAD2,
@@ -80,4 +87,8 @@ int get_ss_mirror(
  */
 #define MAX_ELEM_SIDES	6
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 #endif /* _DR_ELM_CONST_H */

@@ -38,8 +38,7 @@ zoltan:
 	  '$(RANLIB)' \
 	  '$(ZOLTAN_ARCH)' \
 	  '$(ZOLTAN_LIB_DIR)' ;\
-        fi; \
-        cd ..;\
+	cd ..;\
 	sh -x zoltan_script \
 	  '$(DEFS)' \
 	  '$(CC)' \
@@ -53,8 +52,8 @@ zoltan:
 	  '$(AR)' \
 	  '$(RANLIB)' \
 	  '$(ZOLTAN_ARCH)' \
-	  '$(ZOLTAN_LIB_DIR)' ;
-
+	  '$(ZOLTAN_LIB_DIR)' ;\
+	 fi;
 
 clean:
 	@for a in $(SUBDIRS); do \

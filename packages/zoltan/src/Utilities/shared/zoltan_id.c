@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include "zoltan_types.h"
 #include "zoltan_id.h"
@@ -143,3 +150,7 @@ int i;
 
   return(0); /* because a == b */
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

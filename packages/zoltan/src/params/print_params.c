@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include "params_const.h"
 
@@ -29,3 +36,7 @@ void Zoltan_Print_Params(
     }
     printf("\n");
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

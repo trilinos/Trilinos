@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __RIB_H
 #define __RIB_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #include "shared.h"
 #include "rib_const.h"
@@ -50,5 +57,9 @@ extern int Zoltan_RIB_inertial3d(ZZ *, struct Dot_Struct *, int, int, double *,
                          double *, double *, MPI_Comm, int, int, int);
 extern void Zoltan_RIB_reduce_double(double *, double *, int, MPI_Comm, int, int, int,
                              int);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif

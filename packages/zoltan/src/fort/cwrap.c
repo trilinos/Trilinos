@@ -10,6 +10,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "all_allo_const.h"
 #include "sppr_header"
@@ -413,6 +420,21 @@ int Zoltan_Obj_Size_Fort_Wrapper(void *data, int num_gid_entries,
              global_id, local_id, ierr);
 }
 
+void Zoltan_Obj_Size_Multi_Fort_Wrapper(
+  void *data,
+  int num_gid_entries,
+  int num_lid_entries,
+  int num_ids,
+  ZOLTAN_ID_PTR global_ids,
+  ZOLTAN_ID_PTR local_ids,
+  int *num_bytes,
+  int *ierr)
+{
+   Zoltan_Current->Get_Obj_Size_Multi_Fort(data,
+             &num_gid_entries, &num_lid_entries, &num_ids,
+             global_ids, local_ids, num_bytes, ierr);
+}
+
 void Zoltan_Pre_Migrate_Fort_Wrapper(void *data, 
                                  int num_gid_entries, int num_lid_entries,
                                  int num_import,
@@ -483,6 +505,45 @@ void Zoltan_Pack_Obj_Fort_Wrapper(void *data,
                                         &dest_proc, &size, buf, ierr);
 }
 
+void Zoltan_Pack_Obj_Multi_Fort_Wrapper(
+  void *data,
+  int num_gid_entries,
+  int num_lid_entries,
+  int num_ids,
+  ZOLTAN_ID_PTR global_ids,
+  ZOLTAN_ID_PTR local_ids,
+  int *dest_proc,
+  int *size,
+  int *index,
+  char *buffer,
+  int *ierr)
+{
+  int factor = sizeof(int) / sizeof(char);
+  int i;
+ 
+  /* Convert index array from indices into char * to indices into int *. */
+  /* Add 1 for F90 one-based indexing. */
+  for (i = 0; i < num_ids; i++) {
+    /* Sanity check */
+    if (index[i] % factor != 0) {
+      ZOLTAN_PRINT_ERROR(-1, "Zoltan_Pack_Obj_Multi_Fort_Wrapper", 
+                         "Alignment problem in index array.");
+      
+      *ierr = ZOLTAN_FATAL;
+      return;
+    }
+    index[i] = index[i]/factor + 1;
+  }
+     
+  Zoltan_Current->Pack_Obj_Multi_Fort(data, &num_gid_entries, &num_lid_entries,
+                                      &num_ids, global_ids, local_ids,
+                                      dest_proc, size, index, buffer, ierr);
+
+  /* Restore index array to original condition. */
+  for (i = 0; i < num_ids; i++) 
+    index[i] = (index[i] - 1) * factor;
+}
+
 void Zoltan_Unpack_Obj_Fort_Wrapper(void *data, int num_gid_entries,
                                 ZOLTAN_ID_PTR global_id, int size,
                                 char *buf, int *ierr)
@@ -490,6 +551,42 @@ void Zoltan_Unpack_Obj_Fort_Wrapper(void *data, int num_gid_entries,
    Zoltan_Current->Unpack_Obj_Fort(data, &num_gid_entries, 
                                           global_id, &size, buf, ierr);
 }
+
+void Zoltan_Unpack_Obj_Multi_Fort_Wrapper(
+  void *data,
+  int num_gid_entries,
+  int num_ids,
+  ZOLTAN_ID_PTR global_ids,
+  int *size,
+  int *index,
+  char *buffer,
+  int *ierr)
+{
+  int factor = sizeof(int) / sizeof(char);
+  int i;
+ 
+  /* Convert index array from indices into char * to indices into int *. */
+  /* Add 1 for F90 one-based indexing. */
+  for (i = 0; i < num_ids; i++) {
+    /* Sanity check */
+    if (index[i] % factor != 0) {
+      ZOLTAN_PRINT_ERROR(-1, "Zoltan_Pack_Obj_Multi_Fort_Wrapper", 
+                         "Alignment problem in index array.");
+      
+      *ierr = ZOLTAN_FATAL;
+      return;
+    }
+    index[i] = index[i]/factor + 1;
+  }
+     
+  Zoltan_Current->Unpack_Obj_Multi_Fort(data, &num_gid_entries, &num_ids,
+                                        global_ids, size, index, buffer, ierr);
+
+  /* Restore index array to original condition. */
+  for (i = 0; i < num_ids; i++) 
+    index[i] = (index[i] - 1) * factor;
+}
+
 
 int Zoltan_Num_Coarse_Obj_Fort_Wrapper(void *data, int *ierr)
 {
@@ -745,6 +842,21 @@ int Zfw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
       lb->Unpack_Obj_Fort = (ZOLTAN_UNPACK_OBJ_FORT_FN *) fn;
       return Zoltan_Set_Fn(lb, *type, 
                (void (*)())Zoltan_Unpack_Obj_Fort_Wrapper, data);
+      break;
+   case ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE:
+      lb->Get_Obj_Size_Multi_Fort = (ZOLTAN_OBJ_SIZE_MULTI_FORT_FN *) fn;
+      return Zoltan_Set_Fn(lb, *type, 
+               (void (*)())Zoltan_Obj_Size_Multi_Fort_Wrapper, data);
+      break;
+   case ZOLTAN_PACK_OBJ_MULTI_FN_TYPE:
+      lb->Pack_Obj_Multi_Fort = (ZOLTAN_PACK_OBJ_MULTI_FORT_FN *) fn;
+      return Zoltan_Set_Fn(lb, *type, 
+               (void (*)())Zoltan_Pack_Obj_Multi_Fort_Wrapper, data);
+      break;
+   case ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE:
+      lb->Unpack_Obj_Multi_Fort = (ZOLTAN_UNPACK_OBJ_MULTI_FORT_FN *) fn;
+      return Zoltan_Set_Fn(lb, *type, 
+               (void (*)())Zoltan_Unpack_Obj_Multi_Fort_Wrapper, data);
       break;
    case ZOLTAN_NUM_COARSE_OBJ_FN_TYPE:
       lb->Get_Num_Coarse_Obj_Fort = (ZOLTAN_NUM_COARSE_OBJ_FORT_FN *) fn;
@@ -1193,3 +1305,7 @@ void Zfw_Reftree_Get_Child_Order(int *addr_lb, int *nbytes, int *order, int *ier
    Zoltan_Reftree_Get_Child_Order(lb,order,ierr);
 }
 /* end TEMP child_order */
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

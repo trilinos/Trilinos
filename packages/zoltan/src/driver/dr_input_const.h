@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef _DR_INPUT_CONST_H_
 #define _DR_INPUT_CONST_H_
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 /* define the input file types */
 #define NEMESIS_FILE 0
@@ -100,5 +107,9 @@ extern int read_chaco_mesh(
   MESH_INFO_PTR mesh
 );
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif /* _DR_INPUT_CONST_H_ */

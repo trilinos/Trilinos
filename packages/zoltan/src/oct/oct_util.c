@@ -6,6 +6,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "SFC.h"
 #include "zz_const.h"
 #include "octant_const.h"
@@ -322,3 +328,7 @@ void Zoltan_Oct_Free_Structure(ZZ *zz)
     ZOLTAN_FREE(&(zz->LB.Data_Structure));
   }
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

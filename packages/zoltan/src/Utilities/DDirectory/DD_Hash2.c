@@ -12,6 +12,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "DD.h"
@@ -55,15 +61,15 @@
 
 unsigned int Zoltan_DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n)
 {
-  unsigned int h, rest, *p;
+  unsigned int h, rest, *p, bytes, num_bytes;
   char *byteptr;
-  int bytes;
-  int num_bytes = num_id_entries * sizeof(ZOLTAN_ID_TYPE);
+
+  num_bytes = (unsigned int) num_id_entries * sizeof(ZOLTAN_ID_TYPE);
 
   /* First hash the int-sized portions of the key */
   h = 0;
   for (p = (unsigned int *)key, bytes=num_bytes;
-       bytes >= sizeof(int); 
+       bytes >= (unsigned int) sizeof(int);
        bytes-=sizeof(int), p++){
     h = (h*ZOLTAN_DD_HASH_CONSTANT) ^ (*p);
   }
@@ -81,3 +87,8 @@ unsigned int Zoltan_DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int
   /* Return h mod n */
   return (h%n);
 }
+
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -12,6 +12,11 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
@@ -484,3 +489,7 @@ int Zoltan_BSFC_check_refine(unsigned* sfc_key, unsigned* compare_key,
 
   return iflag;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

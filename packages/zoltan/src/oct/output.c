@@ -6,6 +6,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "octant_const.h"
 #include "octupdate_const.h"
@@ -201,3 +207,7 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
   MPI_Barrier(zz->Communicator);
 
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

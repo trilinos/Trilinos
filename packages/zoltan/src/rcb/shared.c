@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "rcb.h"
 #include "rib.h"
@@ -246,6 +253,7 @@ int Zoltan_RB_Send_Outgoing(
 
   if (outgoing)
     if ((proc_list = (int *) ZOLTAN_MALLOC(outgoing*sizeof(int))) == NULL) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT(zz, yo);
       return ZOLTAN_MEMERR;
     }
@@ -338,6 +346,7 @@ int Zoltan_RB_Send_Dots(
       *gidpt = ZOLTAN_REALLOC_GID_ARRAY(zz, *gidpt, *dotmax);
       *lidpt = ZOLTAN_REALLOC_LID_ARRAY(zz, *lidpt, *dotmax);
       if (!*gidpt || (num_lid_entries && !*lidpt)) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         ZOLTAN_TRACE_EXIT(zz, yo);
         return ZOLTAN_MEMERR;
       }
@@ -345,6 +354,7 @@ int Zoltan_RB_Send_Dots(
     *dotpt = (struct Dot_Struct *) 
              ZOLTAN_REALLOC(*dotpt,(unsigned) *dotmax * sizeof(struct Dot_Struct));
     if (!*dotpt) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT(zz, yo);
       return ZOLTAN_MEMERR;
     }
@@ -534,17 +544,20 @@ int num_lid_entries = zz->Num_LID;
 
   if (!Zoltan_Special_Malloc(zz,(void **)import_global_ids,num_import,
                          ZOLTAN_SPECIAL_MALLOC_GID)) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
   if (!Zoltan_Special_Malloc(zz,(void **)import_local_ids,num_import,
                          ZOLTAN_SPECIAL_MALLOC_LID)) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     Zoltan_Special_Free(zz,(void **)import_global_ids,ZOLTAN_SPECIAL_MALLOC_GID);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
   if (!Zoltan_Special_Malloc(zz,(void **)import_procs,num_import,
                          ZOLTAN_SPECIAL_MALLOC_INT)) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     Zoltan_Special_Free(zz,(void **)import_global_ids,ZOLTAN_SPECIAL_MALLOC_GID);
     Zoltan_Special_Free(zz,(void **)import_local_ids,ZOLTAN_SPECIAL_MALLOC_LID);
     ZOLTAN_TRACE_EXIT(zz, yo);
@@ -929,3 +942,7 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
 
   MPI_Barrier(zz->Communicator);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -99,3 +106,7 @@ int i;
   safe_free((void **) &(mesh->ecmap_sideids));
   safe_free((void **) &(mesh->ecmap_neighids));
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

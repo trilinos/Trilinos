@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <mpi.h>
@@ -174,3 +181,7 @@ MPI_Request *req = NULL;
   free(status);
 }
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

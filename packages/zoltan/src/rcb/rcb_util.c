@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "rcb.h"
 
@@ -108,3 +115,7 @@ RCB_STRUCT *rcb;                      /* Data structure for RCB.             */
     ZOLTAN_FREE(&(zz->LB.Data_Structure));
   }
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

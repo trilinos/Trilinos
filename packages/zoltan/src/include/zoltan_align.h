@@ -14,6 +14,11 @@
 #ifndef __ZOLTAN_ALIGN_H
 #define __ZOLTAN_ALIGN_H
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 /* 
  * Plauger alignment algorithm, The Standard C Library.
  * Forces malloc'ed variable size struct alignment.
@@ -27,5 +32,9 @@
 #endif
 
 extern int Zoltan_Align(int);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif

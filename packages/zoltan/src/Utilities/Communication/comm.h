@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __COMM_H
 #define __COMM_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 /* Data structures and macros for the Zoltan Communication Package.  */
 /* This file should be included only by communication package files. */
@@ -89,5 +96,9 @@ struct Zoltan_Comm_Obj {	/* data for mapping between decompositions */
     MPI_Status *status;		/* MPI status for those recvs */
 };
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif

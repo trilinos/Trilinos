@@ -195,6 +195,11 @@ type(PARIO_INFO) :: pio_info
            prob%num_params = prob%num_params+1
         endif
     endif
+
+    if (lowercase(trim(command)) == "zdrive test multi") then
+        Test_Multi_Callbacks = iachar(trim(inp_line(index(inp_line,"=")+1:)))
+    endif
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! end of hacks to allow more of input file to be read (KDD, 10/2000) !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

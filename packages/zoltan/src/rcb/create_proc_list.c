@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "create_proc_list_const.h"
 
@@ -239,3 +246,7 @@ static void Zoltan_RB_Gather(
          MPI_Send(send, len, MPI_INT, to, tag, comm);
    }
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -12,6 +12,11 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include "comm.h"
 #include "zoltan_mem.h"
@@ -292,3 +297,7 @@ Mem_Err:
     *cobj = plan;
     return (comm_flag);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

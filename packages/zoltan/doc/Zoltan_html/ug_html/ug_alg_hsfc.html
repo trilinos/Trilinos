@@ -58,8 +58,8 @@ assign determines an appropriate partition interval (associated with a specific 
 for a new point.   The box assign determines the list of processors
 whose associated subdomains intersect the given box.  In order to
 use either of these routines, the user parameter KEEP_CUTS must be turned on.
-NOTE: At this time neither point assign nor box assign can be used to add points beyond
-the original bounding box. An error is returned when this is attempted.
+Both point assign and box assign now work for any points or boxes in space even if
+they are exterior to the original bounding box.
 <p>
 The Zoltan implementation of HSFC has one parameter that can be modified
 by the <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
@@ -88,7 +88,7 @@ Please refer to the Zoltan Developers Guide,
 <tr>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> KEEP_CUTS</i></td>
 
-<td>Information about cuts is necessary
+<td>Information about cuts and bounding box is necessary
 if the application wants to add more objects to the decomposition via calls
 to <b><a href="ug_interface_augment.html#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</a></b>
 or to <b><a href="ug_interface_augment.html#Zoltan_LB_Box_Assign">Zoltan_LB_Box_Assign</a></b>.&nbsp;

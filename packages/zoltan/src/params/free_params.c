@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "params_const.h"
@@ -38,3 +45,7 @@ PARAM_LIST **params)				/* parameters structure */
 
     *params = NULL;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

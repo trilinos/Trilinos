@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -1663,3 +1670,7 @@ E_Type etype = (E_Type) itype;
     return("NULL");
   }
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 /* This software was developed by Bruce Hendrickson and Robert Leland   *
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
@@ -219,3 +226,7 @@ static void eigenvec2(
      res2 = fabs(A[1][1]) + fabs(A[1][0]);
      *res /= max(res1, res2);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

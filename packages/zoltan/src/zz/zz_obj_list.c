@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <ctype.h>
 #include "zz_const.h"
 
@@ -78,3 +85,7 @@ void Zoltan_Get_Obj_List(
     *ierr = ZOLTAN_FATAL;
   }
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

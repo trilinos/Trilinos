@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __PARMETIS_JOSTLE_H
 #define __PARMETIS_JOSTLE_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #include <limits.h>
 #include "zoltan_comm.h"
@@ -135,5 +142,9 @@ extern int Zoltan_Build_Graph( ZZ *zz, int graph_type,
        int obj_wgt_dim, int edge_wgt_dim,
        idxtype **vtxdist, idxtype **xadj, idxtype **adjncy, float **ewgts);
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif

@@ -12,6 +12,11 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include "mpi.h"
 #include "comm.h"
@@ -118,3 +123,7 @@ MPI_Comm  comm)			/* communicator */
 
     return(ZOLTAN_OK);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

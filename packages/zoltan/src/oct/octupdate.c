@@ -6,6 +6,11 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include "zz_const.h"
 #include "octree_const.h"
 #include "costs_const.h"
@@ -1429,3 +1434,7 @@ int ret = TRUE;
  
   return ret;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

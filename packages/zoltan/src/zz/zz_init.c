@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 
 /*****************************************************************************/
@@ -53,3 +60,7 @@ int mpi_flag;
 
   return (ZOLTAN_OK);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

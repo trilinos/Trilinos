@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef _DR_OUTPUT_CONST_H_
 #define _DR_OUTPUT_CONST_H_
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #include "dr_input_const.h"
 
@@ -38,5 +45,9 @@ extern int output_gnu(char *cmd_file,
   PROB_INFO_PTR prob,
   PARIO_INFO_PTR pio_info,
   MESH_INFO_PTR mesh);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif /* _DR_OUTPUT_CONST_H_ */

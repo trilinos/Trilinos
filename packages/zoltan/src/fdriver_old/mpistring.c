@@ -10,6 +10,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 /* Wrapper for MPI routines that take string arguments, to avoid the
    difference between how Fortran compilers pass strings */
 
@@ -26,3 +33,7 @@ void my_get_processor_name_(int *int_name, int *namelen, int *ierr)
    if (*namelen > fnamelen) *namelen=fnamelen;
    for (i=0; i<*namelen; i++) int_name[i] = (int)name[i];
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

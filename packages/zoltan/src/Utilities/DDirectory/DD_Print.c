@@ -12,6 +12,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -63,3 +69,7 @@ int Zoltan_DD_Print (
    }
 
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -160,11 +167,31 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
         }
       }
 
+      /****** List-based (MULTI) callback function testing ******/
+      else if (token_compare(cptr, "test multi callbacks")) {
+        cptr = strtok(NULL, "\t=");
+        strip_string(cptr, " \t\n");
+        if(sscanf(cptr, "%d", &Test_Multi_Callbacks) != 1) {
+          Gen_Error(0, "fatal: test multi callbacks must be an integer.");
+          return 0;
+        }
+      }
+
+      /****** Null import lists to Help_Migrate testing******/
+      else if (token_compare(cptr, "test null import lists")) {
+        cptr = strtok(NULL, "\t=");
+        strip_string(cptr, " \t\n");
+        if(sscanf(cptr, "%d", &Test_Null_Import_Lists) != 1) {
+          Gen_Error(0, "fatal: test null import lists must be an integer.");
+          return 0;
+        }
+      }
+
       /****** DDirectory testing flag ******/
       else if (token_compare(cptr, "test ddirectory")) {
         cptr = strtok(NULL, "\t=");
         strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &DDirectory_Test) != 1) {
+        if(sscanf(cptr, "%d", &Test_DDirectory) != 1) {
           Gen_Error(0, "fatal: test ddirectory must be an integer.");
           return 0;
         }
@@ -519,7 +546,9 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 /***************************** BEGIN EXECUTION ******************************/
 
   MPI_Bcast(&Debug_Driver, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&DDirectory_Test, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&Test_DDirectory, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&Test_Multi_Callbacks, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&Test_Null_Import_Lists, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&Gnuplot_Output, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&Number_Iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&Driver_Action, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -676,3 +705,7 @@ void gen_par_filename(char *scalar_fname, char *par_fname,
 
   return;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "dr_const.h"
 #include "dr_maps_const.h"
 #include "dr_util_const.h"
@@ -261,7 +268,7 @@ struct map_list_head *tmp_maps = NULL, *map = NULL;
   safe_free((void **) &tmp_maps);
   safe_free((void **) &sindex);
 
-  if (DDirectory_Test) 
+  if (Test_DDirectory) 
     compare_maps_with_ddirectory_results(proc, mesh);
 
   DEBUG_TRACE_END(proc, yo);
@@ -486,7 +493,7 @@ ZOLTAN_COMM_OBJ *comm;
   for (i = 0, j = 0; i < num_others; i++, j += want_size) {
     nbor_proc = others_want[j];
     map_size++;
-    if (i == (num_others - 1) || nbor_proc != others_want[j+want_size]) {
+    if (i == (num_others - 1) || nbor_proc != (int) others_want[j+want_size]) {
       /* End of map reached */
       num_maps++;
       if (map_size > max_map_size) max_map_size = map_size;
@@ -539,14 +546,14 @@ ZOLTAN_COMM_OBJ *comm;
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
       if (current->adj[k] == -1) continue;
       if (current->adj_proc[k] == nbor_proc && 
-          current->adj[k] == others_want[j+3]) {
+          current->adj[k] == (int) others_want[j+3]) {
         map.side_id[map_size] = k + 1;
         map.neigh_id[map_size] = current->adj[k];
         break;
       }
     }
     map_size++;
-    if (i == (num_others-1) || nbor_proc != others_want[j+want_size]) {
+    if (i == (num_others-1) || nbor_proc != (int) others_want[j+want_size]) {
       /*
        * End of map has been reached.
        * Sort and compare the current map.
@@ -676,3 +683,7 @@ int indx;
   }
 }
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

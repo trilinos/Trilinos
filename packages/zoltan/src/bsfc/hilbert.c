@@ -57,6 +57,11 @@ the SFC
 
 ----------------------------------------------------------------------*/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include <stdlib.h>
 #include <limits.h>
 #include "hilbert_const.h"
@@ -287,3 +292,7 @@ void Zoltan_BSFC_fhsfc3d(
   c[2] = (unsigned) (( imax < c2 ) ? imax : c2 );
   Zoltan_BSFC_hsfc3d( c , nkey , key );
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

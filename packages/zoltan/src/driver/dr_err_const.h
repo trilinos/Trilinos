@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef _DR_ERR_CONST_H_
 #define _DR_ERR_CONST_H_
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #define MAX_ERR_MSG 1024
 
@@ -44,5 +51,9 @@ void error_add(
 
 extern
 void error_report(int proc);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif /* _DR_ERR_CONST_H_ */

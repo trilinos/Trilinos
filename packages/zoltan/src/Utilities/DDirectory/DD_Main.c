@@ -12,6 +12,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 /*  Program tests the Zoltan Distributed Directory software (stand-alone mode).
 */
 
@@ -405,3 +411,7 @@ static int get_params (Param *param)
     return 0 ;
     }
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

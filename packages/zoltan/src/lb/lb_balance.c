@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "key_params.h"
 #include "timer_const.h"
@@ -414,3 +421,7 @@ int Zoltan_LB_Free_Data(
   return (ZOLTAN_OK);
 
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

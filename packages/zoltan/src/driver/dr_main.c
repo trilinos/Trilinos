@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 /*--------------------------------------------------------------------------*/
 /* Purpose: Driver for dynamic load-balance library, ZOLTAN.                */
 /*                                                                          */
@@ -39,7 +46,12 @@
 #include "dr_elem_util_const.h"
 
 int Debug_Driver = 1;
-int DDirectory_Test = 1;  /* Flag indicating whether to exercise DDirectory */
+int Test_DDirectory = 1;       /* Flag indicating whether to exercise 
+                                  DDirectory */
+int Test_Multi_Callbacks = 0;  /* Flag indicating whether to use 
+                                  list-based (MULTI) callbacks */
+int Test_Null_Import_Lists = 0;/* Flag indicating whether to test passing
+                                  NULL import lists to Help_Migrate */
 int Gnuplot_Output = 0;
 int Number_Iterations = 1;
 int Driver_Action = 1;	/* Flag indicating load-balancing or ordering. */
@@ -319,3 +331,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
   mesh->ecmap_neighids           = NULL;
   mesh->elements                 = NULL;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

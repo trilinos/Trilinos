@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -39,7 +46,7 @@
 int token_compare(char *token, const char *key)
 {
 
-  int i1, key_len, kcnt=0;
+  unsigned int i1, key_len, kcnt=0;
 
   key_len = strlen(key);
 
@@ -503,3 +510,7 @@ void sort2_index(int n, int ra[], int sa[], int indx[])
     indx[i]=irra;
   }
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

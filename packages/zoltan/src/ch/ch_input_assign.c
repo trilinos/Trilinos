@@ -1,18 +1,38 @@
+/*****************************************************************************
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
+ * This software is distributed under the GNU Lesser General Public License. *
+ * For more info, see the README file in the top-level Zoltan directory.     *
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
 /* This software was developed by Bruce Hendrickson and Robert Leland   *
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 #include	<stdio.h>
 #include        <string.h>
 #include        "ch_input_const.h"
 
-static int input_assign_normal(), input_assign_inv();
+static int input_assign_normal(FILE *, char *, int, short*), 
+           input_assign_inv(FILE *, char *, int, short*);
 
-int chaco_input_assign(finassign, inassignname, nvtxs, assignment)
-FILE     *finassign;		/* input assignment file */
-char     *inassignname;		/* name of input assignment file */
-int       nvtxs;		/* number of vertices to output */
-short    *assignment;		/* values to be printed */
+int chaco_input_assign(
+FILE     *finassign,		/* input assignment file */
+char     *inassignname,		/* name of input assignment file */
+int       nvtxs,		/* number of vertices to output */
+short    *assignment)		/* values to be printed */
 {
     int       i;		/* return value */
 
@@ -30,11 +50,11 @@ short    *assignment;		/* values to be printed */
 
 
 
-static int input_assign_normal(finassign, inassignname, nvtxs, assignment)
-FILE     *finassign;		/* input assignment file */
-char     *inassignname;		/* name of input assignment file */
-int       nvtxs;		/* number of vertices to output */
-short    *assignment;		/* values to be printed */
+static int input_assign_normal(
+FILE     *finassign,		/* input assignment file */
+char     *inassignname,		/* name of input assignment file */
+int       nvtxs,		/* number of vertices to output */
+short    *assignment)		/* values to be printed */
 {
     char *yo = "input_assign_normal";
     int       flag;		/* logical conditional */
@@ -113,11 +133,11 @@ short    *assignment;		/* values to be printed */
 }
 
 
-static int input_assign_inv(finassign, inassignname, nvtxs, assignment)
-FILE     *finassign;		/* input assignment file */
-char     *inassignname;		/* name of input assignment file */
-int       nvtxs;		/* number of vertices to output */
-short    *assignment;		/* values to be printed */
+static int input_assign_inv(
+FILE     *finassign,		/* input assignment file */
+char     *inassignname,		/* name of input assignment file */
+int       nvtxs,		/* number of vertices to output */
+short    *assignment)		/* values to be printed */
 {
     char *yo = "input_assign_inv";
     int       set;		/* set number being read */
@@ -240,3 +260,7 @@ short    *assignment;		/* values to be printed */
     DEBUG_TRACE_END(0, yo);
     return (0);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

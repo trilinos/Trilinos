@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include "zz_const.h"
 #include "key_params.h"
@@ -280,3 +287,7 @@ void Zoltan_Print_Key_Params(ZZ *zz)
   if (zz->Tflops_Special)   /* print only if set */
      printf("ZOLTAN Parameter %s = %s\n", Key_params[12].name, "TRUE");
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

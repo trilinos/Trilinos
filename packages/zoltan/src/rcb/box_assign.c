@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <math.h>
 #include "zz_const.h"
@@ -316,3 +323,7 @@ int               procmid)      /* 1st processor in upper half */
      if (box->hi[0] >= cut)
         Box_Assign1(itree, box, procs, numprocs, itree[procmid].right_leaf);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

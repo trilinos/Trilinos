@@ -1,3 +1,18 @@
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
+#ifndef __OCT_SFC_H
+#define __OCT_SFC_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 static int Hilbert3dIndexToMap[24][8] = {
     {0, 1, 3, 2, 6, 7, 5, 4},
@@ -172,3 +187,9 @@ static int Morton2dRuleMap[1][8] = {
     {0, 0, 0, 0}
 };
 #endif /* KDDKDD */
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
+
+#endif

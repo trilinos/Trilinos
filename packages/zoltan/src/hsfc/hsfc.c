@@ -12,6 +12,11 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 /* Andy Bauer's Space Filling Curve (SFC) partitioning modified by Bob Heaphy */
 
 /* This code uses the Inverse Hilbert Space-Filling Curve to map 1-3 dimensional
@@ -171,7 +176,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
       ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Malloc error for partitions, targets") ;
 
    /* Get bounding box, smallest coordinate aligned box containing all dots */
-   for (i =  0              ; i <   d->ndimension ; i++)   in[i] =  0.0L ;
+   for (i =  0              ; i <   d->ndimension ; i++)   in[i] =  0.0 ;
    for (i =   d->ndimension ; i < 2*d->ndimension ; i++)   in[i] = -HUGE_VAL ;
    for (i = 2*d->ndimension ; i < 3*d->ndimension ; i++)   in[i] =  HUGE_VAL ;
    for (i = 0 ; i < ndots ; i++)
@@ -191,8 +196,8 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
       d->bbox_hi[i] = out[i+  d->ndimension] + temp ;
       d->bbox_lo[i] = out[i+2*d->ndimension] - temp ;
       d->bbox_extent[i] = d->bbox_hi[i] - d->bbox_lo[i] ;
-      if (d->bbox_extent[i] == 0.0L)
-          d->bbox_extent[i]  = 1.0L ; /* degenerate axis, avoid divide by zero */
+      if (d->bbox_extent[i] == 0.0)
+          d->bbox_extent[i]  = 1.0 ; /* degenerate axis, avoid divide by zero */
       }
    ZOLTAN_TRACE_DETAIL (zz, yo, "Determined problem bounding box") ;
 
@@ -211,7 +216,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
 
    /* Initialize work fraction (should be user specified vector in future) */
    for (i = 0 ; i < zz->Num_Proc ; i++)
-      work_fraction[i] = 1.0L / (double) zz->Num_Proc ;
+      work_fraction[i] = 1.0 / (double) zz->Num_Proc ;
 
    /* Initialize grand partition to equally spaced intervals on [0,1] */
    for (i = 0 ; i < pcount ; i++)
@@ -227,7 +232,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    for (loop = 0 ; loop < MAX_LOOPS ; loop++)
       {
       /* initialize bins, DEFAULT_BIN_MAX is less than any possible max, etc. */
-      for (i = 0        ; i <   pcount ; i++) temp_weight[i] = 0.0L ;           /* SUM */
+      for (i = 0        ; i <   pcount ; i++) temp_weight[i] = 0.0 ;           /* SUM */
       for (i =   pcount ; i < 2*pcount ; i++) temp_weight[i] = DEFAULT_BIN_MAX; /* MAX */
       for (i = 2*pcount ; i < 3*pcount ; i++) temp_weight[i] = DEFAULT_BIN_MIN; /* MIN */
 
@@ -238,7 +243,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
           &&             dots[i].fsfc >=  grand_partition[dots[i].proc].l)
              p = &grand_partition[dots[i].proc] ;
          else
-             p = bsearch (&dots[i].fsfc, grand_partition, pcount,
+             p = (Partition *) bsearch (&dots[i].fsfc, grand_partition, pcount,
               sizeof(Partition), Zoltan_HSFC_compare) ;
          if (p == NULL)
             ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "BSEARCH RETURNED ERROR") ;
@@ -259,7 +264,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
       /* Allocate ideal weights per partition -- once is sufficient */
       if (loop == 0)
          {
-         total_weight = 0.0L ;
+         total_weight = 0.0 ;
          for (i = 0 ; i < pcount ; i++)
             total_weight += grand_weight[i] ;
          for (i = 0 ; i < zz->Num_Proc ; i++)
@@ -280,7 +285,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
       for (i = 0 ; i < pcount ; i++)    /* since grand weight modified below */
          temp_weight[i] = grand_weight[i] ;
       done = 1 ;                       /* flag, 1 means done is true */
-      sum  = 0.0L ;
+      sum  = 0.0 ;
       for (k = i = 0 ; i < pcount && k < (zz->Num_Proc-1) ; )
          if (sum +  grand_weight[i] <= target[k])
              sum += grand_weight[i++] ;
@@ -293,9 +298,9 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
             /* If a "bin" holds multiple processors worth of dots: */
             if (k > 0 && partition[k-1] >= partition[k])
                {
-               partition[k] = partition[k-1] + 0.5L
+               partition[k] = partition[k-1] + 0.5
                 * (grand_partition[i].r - partition[k-1]) ;
-               delta[k] = delta[k-1] = delta[k-1] * 0.5L ;
+               delta[k] = delta[k-1] = delta[k-1] * 0.5 ;
                }
 
             /* test if current bin is capable of further refinement */
@@ -305,7 +310,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
 
             /* get ready for next loop */
             grand_weight[i] -= (target[k] - sum) ; /* prevents systematic bias */
-            sum = 0.0L ;
+            sum = 0.0 ;
             k++ ;
             }
       if (done)
@@ -316,8 +321,8 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
          for (j = 0 ; j < N ; j++, k++)
             grand_partition[k+1].l = grand_partition[k].r
              = partition[i] + j * delta[i] ;
-      grand_partition[0].l        = 0.0L ;
-      grand_partition[pcount-1].r = 1.0L ;
+      grand_partition[0].l        = 0.0 ;
+      grand_partition[pcount-1].r = 1.0 ;
       } /* end of loop */
 
 
@@ -334,7 +339,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
 
    /* set new partition on [0,1] by summing grand_weights until targets met */
    /* k counts partitions and i counts grand partitions */
-   sum = 0.0L ;
+   sum = 0.0 ;
    out_of_tolerance = 0 ;
    corrected = target[0] ;
    actual = desired = total_weight ;
@@ -361,11 +366,11 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
          actual   -= sum ;
          desired  -= target[k] ;
          if (k+1 < zz->Num_Proc)
-            corrected = target[++k] * ((desired == 0) ? 1.0L : actual/desired) ;
-         sum       = 0.0L ;                         /* preparing for next loop */
+            corrected = target[++k] * ((desired == 0) ? 1.0 : actual/desired) ;
+         sum       = 0.0 ;                         /* preparing for next loop */
          }
-   d->final_partition[0].l              = 0.0L ;
-   d->final_partition[zz->Num_Proc-1].r = 1.0L ;
+   d->final_partition[0].l              = 0.0 ;
+   d->final_partition[zz->Num_Proc-1].r = 1.0 ;
    d->final_partition[zz->Num_Proc-1].index = zz->Num_Proc-1 ;
    if (k < zz->Num_Proc && sum > target[k] * zz->LB.Imbalance_Tol)
       out_of_tolerance = 1 ;
@@ -380,7 +385,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
        && dots[i].fsfc >= d->final_partition[j].l)
           p = d->final_partition + j ;
       else
-          p = bsearch (&dots[i].fsfc, d->final_partition, zz->Num_Proc,
+          p = (Partition *) bsearch (&dots[i].fsfc, d->final_partition, zz->Num_Proc,
            sizeof(Partition), Zoltan_HSFC_compare) ;
       if (p == NULL)
          ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "BSEARCH RETURNED ERROR") ;
@@ -568,3 +573,7 @@ void Zoltan_HSFC_mpi_sum_max_min (void *in, void *inout, int *len, MPI_Datatype 
       if (((double *)in)[i]    < ((double *)inout)[i])
           ((double *)inout)[i] = ((double *)in)[i] ;
    }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to migrate elements.                                */
 /*          Contains all of the callback functions that Zoltan needs        */
@@ -820,3 +827,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid,
   else
     *ierr = LB_OK;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

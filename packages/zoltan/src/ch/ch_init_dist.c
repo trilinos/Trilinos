@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "dr_const.h"
 #include "dr_input_const.h"
 #include "dr_err_const.h"
@@ -291,3 +298,7 @@ int rest, i, n;
   }
 
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

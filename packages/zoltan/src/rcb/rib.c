@@ -11,6 +11,13 @@
  *    Revision: 1.6.2.2 $
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
@@ -726,3 +733,7 @@ static void Zoltan_RIB_min_max(
    *min = tmp[0];
    *max = tmp[1];
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

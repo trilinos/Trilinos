@@ -10,6 +10,12 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include <ctype.h>
 #include "zz_const.h"
 #include "zz_util_const.h"
@@ -591,3 +597,6 @@ static int hash_lookup (ZZ *zz, struct Hash_Node **hashtab, ZOLTAN_ID_PTR key,
 
 #endif /* (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS)) */
 
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 /* This software was developed by Bruce Hendrickson and Robert Leland   *
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
@@ -42,3 +49,7 @@ int Zoltan_RIB_inertial1d(
 
      return(ZOLTAN_OK);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -6,6 +6,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "octree_const.h"
 #include "dfs.h"
@@ -392,3 +398,7 @@ static void Zoltan_Oct_visit_by_dist(ZZ *zz,pOctant octant, pOctant children[8])
     }
   }
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

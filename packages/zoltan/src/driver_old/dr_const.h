@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef _DR_CONST_H
 #define _DR_CONST_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -147,5 +154,9 @@ extern int Chaco_In_Assign_Inv;
 #define DEBUG_TRACE_DETAIL(proc,yo,str) \
   if (Debug_Driver > 2) \
     printf("%d DRIVER %s: %s\n", proc,yo, str);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif /* _DR_CONST_H */

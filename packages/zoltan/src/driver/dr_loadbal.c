@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <strings.h>
@@ -187,6 +194,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     /*
      * Call Zoltan
      */
+    MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
     stime = MPI_Wtime();
     if (Zoltan_LB_Balance(zz, &new_decomp, &num_gid_entries, &num_lid_entries,
                    &num_imported, &import_gids,
@@ -224,14 +232,20 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     /*
      * Call another routine to perform the migration
      */
+    MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
+    stime = MPI_Wtime();
     if (new_decomp) {
       if (!migrate_elements(Proc, mesh, zz, num_gid_entries, num_lid_entries,
-                          num_imported, import_gids, import_lids, import_procs,
-                          num_exported, export_gids, export_lids, export_procs)) {
+                        num_imported, import_gids, import_lids, import_procs,
+                        num_exported, export_gids, export_lids, export_procs)) {
         Gen_Error(0, "fatal:  error returned from migrate_elements()\n");
         return 0;
       }
     }
+    mytime = MPI_Wtime() - stime;
+    MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    if (Proc == 0)
+      printf("DRIVER:  Total migration time = %g\n", maxtime);
   
     /* Evaluate the new balance */
     if (Debug_Driver > 0) {
@@ -568,3 +582,7 @@ ELEM_INFO *elem, *found_elem = NULL;
   
   return(found_elem);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

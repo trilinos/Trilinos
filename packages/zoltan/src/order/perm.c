@@ -11,6 +11,12 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include "zz_const.h"
 #include "order_const.h"
 
@@ -195,3 +201,6 @@ static int owner(int *vtxdist, int p, int index)
   return lo;
 }
 
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

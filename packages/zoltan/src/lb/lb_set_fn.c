@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 
 /*****************************************************************************/
@@ -52,3 +59,7 @@ int Zoltan_Set_Post_Migrate_Fn(
   zz->Migrate.Post_Migrate_Data = data;
   return ZOLTAN_OK;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

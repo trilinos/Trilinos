@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -129,3 +136,7 @@ int *matched_index)		/* where in struct the match occurs */
 
     return (status);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

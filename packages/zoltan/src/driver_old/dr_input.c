@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -666,3 +673,7 @@ void gen_par_filename(char *scalar_fname, char *par_fname,
 
   return;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -62,6 +62,9 @@ enum Zoltan_Fn_Type {
   ZOLTAN_NUM_CHILD_FN_TYPE,
   ZOLTAN_CHILD_LIST_FN_TYPE,
   ZOLTAN_CHILD_WEIGHT_FN_TYPE,
+  ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE,
+  ZOLTAN_PACK_OBJ_MULTI_FN_TYPE,
+  ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE,
   ZOLTAN_GET_PROCESSOR_NAME_FN_TYPE,
   ZOLTAN_MAX_FN_TYPES               /*  This entry should always be last. */
 };
@@ -585,10 +588,8 @@ typedef int ZOLTAN_NEXT_BORDER_OBJ_FORT_FN(
 
 /*****************************************************************************/
 /*
- *  Function to return the size (in bytes) of data to be migrated.
- *  This function is needed only when the application
- *  wants the load-balancer to help migrate the data.  It is used by the
- *  comm.c routines to allocate message buffers.
+ *  Function to return the size (in bytes) of data associated with an object.
+ *  
  *  Input:  
  *    data                --  pointer to user defined data structure
  *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
@@ -622,11 +623,52 @@ typedef int ZOLTAN_OBJ_SIZE_FORT_FN(
 );
 
 /*****************************************************************************/
+/* 
+ *  MULTI-ID version of ZOLTAN_OBJ_SIZE_FN 
+ *  Function to return the size (in bytes) of data associated with each of
+ *  multiple objects.
+ * 
+ *  Input:
+ *    data                --  pointer to user-defined data structure.
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    num_ids             --  number of objects whose size is sought
+ *    global_ids          --  the Global IDs for the objects 
+ *    local_ids           --  the Local IDs for the objects
+ *  Output:
+ *    num_bytes           --  array of sizes (in bytes) for the given IDs 
+ *    ierr                --  Zoltan error code
+ */
+
+typedef void ZOLTAN_OBJ_SIZE_MULTI_FN(
+  void *data,
+  int num_gid_entries,
+  int num_lid_entries,
+  int num_ids,
+  ZOLTAN_ID_PTR global_ids,
+  ZOLTAN_ID_PTR local_ids,
+  int *num_bytes,
+  int *ierr);
+
+typedef void ZOLTAN_OBJ_SIZE_MULTI_FORT_FN(
+  void *data,
+  int *num_gid_entries,
+  int *num_lid_entries,
+  int *num_ids,
+  ZOLTAN_ID_PTR global_ids,
+  ZOLTAN_ID_PTR local_ids,
+  int *num_bytes,
+  int *ierr);
+
+/*****************************************************************************/
 /*
  *  Function called as a pre-processor to the migration.  This function is 
  *  optional, and is used only when the application wants the load-balancer 
  *  to help migrate the data.  The application can perform any type of 
  *  pre-processing in this function.
+ *
  *  Input:  
  *    data                --  pointer to user defined data structure
  *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
@@ -840,6 +882,70 @@ typedef void ZOLTAN_PACK_OBJ_FORT_FN(
 
 /*****************************************************************************/
 /*
+ *  MULTI-ID version of ZOLTAN_PACK_OBJ_FN 
+ *  Function to pack data for multiple given objects.
+ *
+ *  Input:
+ *    data                --  pointer to user-defined data structure.
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    num_ids             --  number of objects whose data is to be packed
+ *    global_ids          --  the Global IDs for the objects 
+ *    local_ids           --  the Local IDs for the objects
+ *    dest_proc           --  Processor IDs of the destination processor for the
+ *                            objects.
+ *    size                --  number of bytes allowed for each object to
+ *                            be packed.
+ *                            size[i] = # of bytes to store the i-th object's 
+ *                            data.  Each size includes padding for alignment.
+ *    index               --  Indices into buf giving the starting location 
+ *                            of each object's data;
+ *                            data for the i-th object are stored in
+ *                              buf[index[i]],
+ *                              buf[index[i]+1], ...,
+ *                              buf[index[i]+size[i]-1].
+ *                            Since Zoltan adds some tag information
+ *                            to packed data, index[i] != sum[j=0,i-1](size[j]) 
+ *    buf                 --  starting address of buffer into which to
+ *                            pack the object.
+ *  Output:
+ *    buf                 --  the buffer is rewritten with the packed
+ *                            data.
+ *    ierr                --  error code
+ */
+
+typedef void ZOLTAN_PACK_OBJ_MULTI_FN(
+  void *data,
+  int num_gid_entries,
+  int num_lid_entries,
+  int num_ids,
+  ZOLTAN_ID_PTR global_ids,
+  ZOLTAN_ID_PTR local_ids,
+  int *dest_proc,
+  int *size,
+  int *index,
+  char *buffer,
+  int *ierr
+);
+
+typedef void ZOLTAN_PACK_OBJ_MULTI_FORT_FN(
+  void *data,
+  int *num_gid_entries,
+  int *num_lid_entries,
+  int *num_ids,
+  ZOLTAN_ID_PTR global_ids,
+  ZOLTAN_ID_PTR local_ids,
+  int *dest_proc,
+  int *size,
+  int *index,
+  char *buffer,
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
  *  Function to unpack data for an object migrated to a new processor.
  *  This function is needed only when the application wants the load-balancer 
  *  to help migrate the data.  The data is stored in a buffer (char *); the
@@ -872,6 +978,59 @@ typedef void ZOLTAN_UNPACK_OBJ_FORT_FN(
   ZOLTAN_ID_PTR global_id,
   int *size,
   char *buf,
+  int *ierr
+);
+
+/*****************************************************************************/
+
+/*  
+ * MULTI-ID version of ZOLTAN_UNPACK_OBJ_FN 
+ *  Function to unpack data for an object migrated to a new processor.
+ *
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_ids             --  number of objects whose data is to be unpacked
+ *    global_id           --  Global ID of the objects
+ *    size                --  number of bytes in the buffer for the
+ *                            objects.
+ *                            size[i] = # of bytes to store the i-th ID's data.
+ *                            Each size includes padding for alignment.
+ *    index               --  Pointers into buf giving the starting location of
+ *                            each object's data;
+ *                            data for the i-th ID are stored in
+ *                              buf[index[i]],
+ *                              buf[index[i]+1], ...,
+ *                              buf[index[i]+size[i]-1].
+ *                            Since Zoltan adds some tag information
+ *                            to packed data,
+ *                              index[i] != sum[j=0,i-1](size[j]) 
+ *    buf                 --  starting address of buffer from which to
+ *                            unpack the objects.
+ *  Output:
+ *    ierr                --  error code
+ */
+
+typedef void ZOLTAN_UNPACK_OBJ_MULTI_FN(
+  void *data,
+  int num_gid_entries,
+  int num_ids,
+  ZOLTAN_ID_PTR global_ids,
+  int *size,
+  int *index,
+  char *buffer,
+  int *ierr
+);
+
+typedef void ZOLTAN_UNPACK_OBJ_MULTI_FORT_FN(
+  void *data,
+  int *num_gid_entries,
+  int *num_ids,
+  ZOLTAN_ID_PTR global_ids,
+  int *size,
+  int *index,
+  char *buffer,
   int *ierr
 );
 
@@ -1468,15 +1627,33 @@ extern int Zoltan_Set_Obj_Size_Fn(
   void *data_ptr
 );
 
+extern int Zoltan_Set_Obj_Size_Multi_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_OBJ_SIZE_MULTI_FN *fn_ptr, 
+  void *data_ptr
+);
+
 extern int Zoltan_Set_Pack_Obj_Fn(
   struct Zoltan_Struct *zz, 
   ZOLTAN_PACK_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
+extern int Zoltan_Set_Pack_Obj_Multi_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_PACK_OBJ_MULTI_FN *fn_ptr, 
+  void *data_ptr
+);
+
 extern int Zoltan_Set_Unpack_Obj_Fn(
   struct Zoltan_Struct *zz, 
   ZOLTAN_UNPACK_OBJ_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_Unpack_Obj_Multi_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_UNPACK_OBJ_MULTI_FN *fn_ptr, 
   void *data_ptr
 );
 

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -220,3 +227,7 @@ FILE *cmd_fp;
 
   fclose(cmd_fp);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -12,18 +12,16 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 
 #include "hsfc.h"
 
 /* For a detailed explaination of this module, please see the Developers
-   Guide.  For instructions on its use, please see the Users Guide.
-
-   Currently, this routine returns an error for points outside of the
-   bounding box created during the load balancing phase.  This limitation
-   is expected to be removed in the future.
-*/
-
+   Guide.  For instructions on its use, please see the Users Guide.   */
 
 
 /* Point drop for refinement after above partitioning */
@@ -35,28 +33,29 @@ int Zoltan_HSFC_Point_Assign (ZZ *zz, double *x, int *proc)
    int        i ;
    HSFC_Data *d ;
    int        err ;
+   const double PI = 3.1415926536 ;
    char *yo = "Zoltan_HSFC_Point_Assign" ;
 
    ZOLTAN_TRACE_ENTER (zz, yo) ;
    d = (HSFC_Data *) zz->LB.Data_Structure ;
    if (d == NULL)
-      ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, 
-          "No Decomposition Data available; use KEEP_CUTS parameter.");
-
-
-   /* Insure that point is in bounding box */
-   for (i = 0 ; i < d->ndimension ; i++)
-      if ((x[i] > d->bbox_hi[i]) || (x[i] < d->bbox_lo[i]))
-         ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "Point outside bounding box") ;
+      ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL,
+       "No Decomposition Data available; use KEEP_CUTS parameter.") ;
 
    /* Calculate scaled coordinates, calculate HSFC coordinate */
    for (i = 0 ; i < d->ndimension ; i++)
-      scaled[i] = (x[i] - d->bbox_lo[i]) / d->bbox_extent[i] ;
+      if ((x[i] < d->bbox_hi[i]) && (x[i] > d->bbox_lo[i]))
+         scaled[i] = (x[i] - d->bbox_lo[i]) / d->bbox_extent[i] ;
+      else
+         scaled[i] = atan(x[i] - (d->bbox_lo[i] + d->bbox_extent[i]/2.0)) / PI
+          + 0.5 ;
    fsfc = d->fhsfc (scaled) ;           /* Note, this is a function call */
 
    /* Find partition containing point and return its number */
    p = (Partition *) bsearch (&fsfc, d->final_partition, zz->Num_Proc,
     sizeof (Partition), Zoltan_HSFC_compare) ;
+   if (p == NULL && fsfc <= 1.0 && fsfc >= 0.0)
+       p = &(d->final_partition[zz->Num_Proc - 1]) ;
    if (p == NULL)
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "programming error, shouldn't happen") ;
    *proc = p->index ;
@@ -67,3 +66,6 @@ free:
    return err ;
    }
 
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

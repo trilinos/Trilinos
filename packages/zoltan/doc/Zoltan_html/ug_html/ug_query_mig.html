@@ -30,9 +30,23 @@
 <a NAME="Migration Query Functions"></a>Migration Query Functions</h2>
 The following query functions must be registered to use any of the migration
 tools described in <a href="ug_interface_mig.html">Migration Functions</a>:
-<blockquote><b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
-<br><b><a href="#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN</a></b>
-<br><b><a href="#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN</a></b></blockquote>
+<blockquote>
+<b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b> or
+<b><a href="#ZOLTAN_OBJ_SIZE_MULTI_FN">ZOLTAN_OBJ_SIZE_MULTI_FN</a></b>
+<br>
+<b><a href="#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN</a></b> or
+<b><a href="#ZOLTAN_PACK_OBJ_MULTI_FN">ZOLTAN_PACK_OBJ_MULTI_FN</a></b>
+<br>
+<b><a href="#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN</a></b> or
+<b><a href="#ZOLTAN_UNPACK_OBJ_MULTI_FN">ZOLTAN_UNPACK_OBJ_MULTI_FN</a></b>
+</blockquote>
+The "MULTI_" versions of the packing/unpacking functions take lists of IDs
+as input and pack/unpack data for all objects in the lists.  Only one function
+of each type must be provided (e.g., either a 
+<b><a href="#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN</a></b> or
+<b><a href="#ZOLTAN_PACK_OBJ_MULTI_FN">ZOLTAN_PACK_OBJ_MULTI_FN</a></b>,
+but not both).
+<p>
 Optional, additional query functions for migration may also be registered:
 <blockquote><b><a href="#ZOLTAN_PRE_MIGRATE_FN">ZOLTAN_PRE_MIGRATE_FN</a></b>
 <br><b><a href="#ZOLTAN_MID_MIGRATE_FN">ZOLTAN_MID_MIGRATE_FN</a></b>
@@ -51,7 +65,7 @@ typedef int <b>ZOLTAN_OBJ_SIZE_FN</b>(void
 *<i> data</i>, int <i>num_gid_entries</i>,&nbsp; int <i>num_lid_entries</i>,
 <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>global_id,</i> <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>local_id,</i> int *i<i>err</i>);
+<i>local_id</i>, int <i>*ierr</i>);
 <br>&nbsp;</td>
 </tr>
 
@@ -125,7 +139,7 @@ ID.&nbsp; This value is the maximum value over all processors of the parameter
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp; ierr</i></td>
 
 <td>Error code to be set by function.</td>
 </tr>
@@ -145,6 +159,130 @@ ID.&nbsp; This value is the maximum value over all processors of the parameter
 
 <p>
 
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_OBJ_SIZE_MULTI_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_OBJ_SIZE_MULTI_FN</b>(void
+*<i> data</i>, int <i>num_gid_entries</i>,&nbsp; int <i>num_lid_entries</i>,
+int <i>num_ids</i>,
+<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<i>global_ids,</i> <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<i>local_ids</i>, int <i>*sizes</i>, int <i>*ierr</i>);
+<br>&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Obj_Size_Multi</i></b>(<i>data, num_gid_entries,&nbsp; num_lid_entries</i>,
+<i>num_ids, global_ids, local_ids, sizes, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_ids
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_ids,&nbsp; local_ids
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: sizes&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_OBJ_SIZE_MULTI_FN</b> 
+query function is the multiple-ID
+version of <a href="#ZOLTAN_OBJ_SIZE_FN"><b>ZOLTAN_OBJ_SIZE_FN</b></a>.  
+For a list of objects, it returns the per-objects sizes
+(in bytes) of the data buffers needed to pack object
+data.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td NOSAVE>The number of array entries used to describe a single global
+ID.&nbsp; This value is the maximum value over all processors of the parameter
+<a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td><i>&nbsp;&nbsp; num_lid_entries</i></td>
+
+<td NOSAVE>The number of array entries used to describe a single local
+ID.&nbsp; This value is the maximum value over all processors of the parameter
+<a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td><i>&nbsp;&nbsp; num_ids</i></td>
+
+<td NOSAVE>The number of objects whose sizes are to be returned.
+</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp; <i>global_ids</i></td>
+
+<td>An array of global IDs of the objects.  The ID for the <i>i</i>-th 
+object begins in <i>global_ids[i*num_gid_entries]</i>.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp; <i>local_ids</i></td>
+
+<td>An array of local IDs of the objects.   The ID for the <i>i</i>-th 
+object begins in <i>local_ids[i*num_lid_entries]</i>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp; sizes</i></td>
+
+<td>Upon return, array of sizes (in bytes) for each object in the ID lists.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>The size (in bytes) of the required data buffer.</td>
+</tr>
+</table>
+
+<p>
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
 <a NAME="ZOLTAN_PACK_OBJ_FN"></a>
@@ -270,6 +408,151 @@ data should be packed.</td>
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_PACK_OBJ_MULTI_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_PACK_OBJ_MULTI_FN</b> (void
+*<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
+int <i>num_ids</i>,
+<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<i>global_ids</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<i>local_ids</i>, int <i>*dest_proc</i>, int <i>*sizes</i>, 
+int <i>*idx</i>, char *<i>buf</i>,
+int *<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Pack_Obj_Multi</i></b>(<i>data, num_gid_entries, num_lid_entries,
+num_ids, global_ids, local_ids, dest_proc, sizes, idx, buf, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: dest_proc
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: sizes&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: idx&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: buf&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_PACK_OBJ_MULTI_FN</b> query function is the 
+multiple-ID version of a
+<a href="#ZOLTAN_PACK_OBJ_FN"><b>ZOLTAN_PACK_OBJ_FN</b></a>.  It allows the application
+to tell Zoltan how to copy all needed data for a given list of 
+objects into a communication buffer.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_PACK_OBJ_FN_MULTI_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single global ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single local ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td><i>&nbsp;&nbsp; num_ids</i></td>
+
+<td NOSAVE>The number of objects to be packed.
+</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp; <i>global_ids</i></td>
+
+<td>An array of global IDs of the objects.  The ID for the <i>i</i>-th 
+object begins in <i>global_ids[i*num_gid_entries]</i>.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp; <i>local_ids</i></td>
+
+<td>An array of local IDs of the objects.   The ID for the <i>i</i>-th 
+object begins in <i>local_ids[i*num_lid_entries]</i>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; dest_proc</i></td>
+
+<td>An array of destination processor IDs (i.e., the processors to which the objects
+are being sent)</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; sizes</i></td>
+
+<td>An array containing the per-object sizes (in bytes) of the communication buffer for each object.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; idx</i></td>
+
+<td>For each object, an index into the <i>buf</i> array giving the starting
+location of that object's data.
+ Data for the <i>i</i>-th object are stored in
+                              <i>buf[idx[i]],
+                                buf[idx[i]+1], ...,
+                                buf[idx[i]+sizes[i]-1]</i>.
+Because Zoltan adds some tag information
+   to packed data, <i>idx[i]</i>&nbsp; !=&nbsp; sum[<i>j</i>=0,<i>i</i>-1](<i>sizes[j]</i>).
+
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; buf</i></td>
+
+<td>The address of the communication buffer into which the objects'
+data should be packed.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
 <a NAME="ZOLTAN_UNPACK_OBJ_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
@@ -356,6 +639,124 @@ buffer.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; buf</i></td>
 
 <td>The starting address of the communication buffer for this object.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_UNPACK_OBJ_MULTI_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_UNPACK_OBJ_MULTI_FN</b>
+(void *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_ids</i>,
+<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<i>global_ids</i>, int <i>*sizes</i>, int <i>*idx</i>, char *<i>buf</i>, int *<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Unpack_Obj_Multi</i></b>(<i>data, num_gid_entries, num_ids, global_ids, 
+sizes, idx, buf, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(INOUT) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_ids
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: sizes&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: idx&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: buf&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_UNPACK_OBJ_MULTI_FN</b> query function is the
+multiple-ID version of a
+<a href="#ZOLTAN_UNPACK_OBJ_FN"><b>ZOLTAN_UNPACK_OBJ_FN</b></a>.
+It allows the application
+to tell Zoltan how to copy all needed data for a given list of
+objects from a communication buffer into the application's data structure.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single global ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td><i>&nbsp;&nbsp; num_ids</i></td>
+
+<td NOSAVE>The number of objects to be unpacked.
+</td>
+</tr>
+<tr>
+<td>&nbsp;&nbsp; <i>global_ids</i></td>
+
+<td>An array of global IDs of the objects.  The ID for the <i>i</i>-th 
+object begins in <i>global_ids[i*num_gid_entries]</i>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; sizes</i></td>
+
+<td>An array containing the per-object sizes (in bytes) of the communication buffer for each object.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; idx</i></td>
+
+<td>For each object, an index into the <i>buf</i> array giving the starting
+location of that object's data.
+ Data for the <i>i</i>-th object are stored in
+                              <i>buf[idx[i]],
+                                buf[idx[i]+1], ...,
+                                buf[idx[i]+sizes[i]-1]</i>.
+Because Zoltan adds some tag information
+   to packed data, <i>idx[i]</i>&nbsp; !=&nbsp; sum[<i>j</i>=0,<i>i</i>-1](<i>sizes[j]</i>).
+
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; buf</i></td>
+
+<td>The address of the communication buffer from which data is unpacked.</td>
 </tr>
 
 <tr>

@@ -15,6 +15,11 @@
 #ifndef __HSFC_HILBERT_CONST_H
 #define __HSFC_HILBERT_CONST_H
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 /* Bits per unsigned word */
 
 #define MaxBits ( sizeof(unsigned) * CHAR_BIT )
@@ -29,5 +34,9 @@ extern void Zoltan_HSFC_fhsfc3d(double coord[], int nkey, unsigned int key[]);
 extern double Zoltan_HSFC_IHilbert1d(double *coord); /* allows 1D problems */
 extern double Zoltan_HSFC_IHilbert2d(double *coord);
 extern double Zoltan_HSFC_IHilbert3d(double *coord);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif

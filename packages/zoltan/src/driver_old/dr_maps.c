@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "dr_const.h"
 #include "dr_maps_const.h"
 #include "dr_util_const.h"
@@ -676,3 +683,7 @@ int indx;
   }
 }
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

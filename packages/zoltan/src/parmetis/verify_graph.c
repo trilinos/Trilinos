@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "parmetis_jostle.h"
 
@@ -405,3 +412,7 @@ barrier1:
 
 }
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -6,6 +6,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "all_allo_const.h"
 #include "rootlist_const.h"
@@ -160,3 +166,7 @@ int RL_printRootOctants(pRList rlist) {
   }
   return 0;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

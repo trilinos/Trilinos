@@ -5,8 +5,14 @@
  *    $Date$
  *    $Revision$
  ****************************************************************************/
+
 #ifndef __OCTUPDATE_CONST_H
 #define __OCTUPDATE_CONST_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 #include "octree_const.h"
 
@@ -19,4 +25,8 @@ extern int     Zoltan_Oct_subtree_insert(ZZ *, pOctant oct, pRegion region);
 extern void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, 
                            int *counters, float *c, int STATS_TYPE);
 extern int Zoltan_Oct_Set_Param(char *name, char *val);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 #endif

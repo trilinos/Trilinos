@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef CH_INIT_DIST_CONST_H
 #define CH_INIT_DIST_CONST_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #include "dr_const.h"
 #include "dr_input_const.h"
@@ -27,5 +34,9 @@ extern int ch_dist_num_vtx(int, short *);
 extern int ch_dist_max_num_vtx(short *);
 extern void ch_dist_vtx_list(int*, int*, int, short *);
 extern int ch_dist_proc(int, short *);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif  /* CH_INIT_DIST_CONST_H */

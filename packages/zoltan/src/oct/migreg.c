@@ -6,6 +6,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "migreg.h"
 #include "zoltan_comm.h"
 #include "dfs_const.h"
@@ -344,3 +350,7 @@ static int Zoltan_Oct_copy_info(ZZ *zz, pRegion src, pRegion *dest) {
   copy->attached = 0;
   return ierr;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

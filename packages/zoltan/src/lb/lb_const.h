@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __LB_CONST_H
 #define __LB_CONST_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #include "zoltan.h"
 
@@ -162,5 +169,9 @@ extern ZOLTAN_LB_POINT_ASSIGN_FN Zoltan_HSFC_Point_Assign;
 /* BOX_ASSIGN FUNCTIONS */
 extern ZOLTAN_LB_BOX_ASSIGN_FN Zoltan_RB_Box_Assign;
 extern ZOLTAN_LB_BOX_ASSIGN_FN Zoltan_HSFC_Box_Assign;
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif

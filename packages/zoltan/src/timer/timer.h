@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __TIMER_H
 #define __TIMER_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #include <time.h> /* ANSI C; defines clock_t and clock() */
 #include "timer_const.h"
@@ -54,6 +61,10 @@ extern int getrusage(); /* Should be in sys/resource.h, but isn't always */
 /* Similarly, guess the value of CLK_TCK if it is not defined */
 #ifndef CLK_TCK
 #define CLK_TCK 60 /* Correct for SunOs 4.1 */
+#endif
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
 #endif
 
 #endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
@@ -334,3 +341,7 @@ int Zoltan_BSFC_refine_partition(ZZ *zz, int* local_balanced_flag,
 }
 
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
@@ -512,3 +519,7 @@ int       Zoltan_Malloc_Num()
 /*****************************************************************************/
 /*                      END of mem.c                                         */
 /*****************************************************************************/
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

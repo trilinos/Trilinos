@@ -6,6 +6,12 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "octant_const.h"
 #include "oct_util_const.h"
@@ -521,3 +527,7 @@ int Zoltan_Oct_childnum(pOctant octant)
 void Zoltan_Oct_setCpid(pOctant octant, int i, int cpid) {
   octant->cpid[i] = cpid;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

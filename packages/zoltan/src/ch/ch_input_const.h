@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __CH_INPUT_CONST_H
 #define __CH_INPUT_CONST_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #include <mpi.h>
 #include "dr_const.h"
@@ -38,5 +45,9 @@ extern int read_int(FILE *, int *);
 #define FALSE (0)
 #define TRUE  (1)
 #endif /* !TRUE */
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif

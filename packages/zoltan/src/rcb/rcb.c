@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
@@ -342,17 +349,20 @@ static int rcb_fn(
   if (dotmax > 0) {
     dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
     if (dotmark == NULL) {
+      ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT(zz, yo);
       return ZOLTAN_MEMERR;
     }
     coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
     if (coord == NULL) {
+      ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
       ZOLTAN_FREE(&dotmark);
       ZOLTAN_TRACE_EXIT(zz, yo);
       return ZOLTAN_MEMERR;
     }
     wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
     if (wgts == NULL) {
+      ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
       ZOLTAN_FREE(&dotmark);
       ZOLTAN_FREE(&coord);
       ZOLTAN_TRACE_EXIT(zz, yo);
@@ -360,6 +370,7 @@ static int rcb_fn(
     }
     dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
     if (dotlist == NULL) {
+      ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
       ZOLTAN_FREE(&wgts);
       ZOLTAN_FREE(&dotmark);
       ZOLTAN_FREE(&coord);
@@ -388,6 +399,7 @@ static int rcb_fn(
 
       if (outgoing)
         if ((proc_list = (int *) ZOLTAN_MALLOC(outgoing*sizeof(int))) == NULL) {
+          ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
           ZOLTAN_FREE(&dotmark);
           ZOLTAN_FREE(&coord);
           ZOLTAN_FREE(&wgts);
@@ -510,6 +522,7 @@ static int rcb_fn(
      }
      dim_spec = (int *) ZOLTAN_MALLOC(level*sizeof(int));
      if (dim_spec == NULL) {
+        ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
         ZOLTAN_FREE(&wgts);
         ZOLTAN_FREE(&dotmark);
         ZOLTAN_FREE(&coord);
@@ -595,6 +608,7 @@ static int rcb_fn(
     ierr = Zoltan_Divide_Machine(zz, proc, local_comm, &set, &proclower,
                              &procmid, &num_procs, &fractionlo);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      ZOLTAN_PRINT_ERROR(proc, yo, "Error in Zoltan_Divide_Machine.");
       ZOLTAN_FREE(&dotmark);
       ZOLTAN_FREE(&coord);
       ZOLTAN_FREE(&wgts);
@@ -631,17 +645,20 @@ static int rcb_fn(
       ZOLTAN_FREE(&dotlist);
       dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
       if (dotmark == NULL) {
+        ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
         ZOLTAN_TRACE_EXIT(zz, yo);
         return ZOLTAN_MEMERR;
       }
       coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
       if (coord == NULL) {
+        ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
         ZOLTAN_FREE(&dotmark);
         ZOLTAN_TRACE_EXIT(zz, yo);
         return ZOLTAN_MEMERR;
       }
       wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
       if (wgts == NULL) {
+        ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
         ZOLTAN_FREE(&dotmark);
         ZOLTAN_FREE(&coord);
         ZOLTAN_TRACE_EXIT(zz, yo);
@@ -649,6 +666,7 @@ static int rcb_fn(
       }
       dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
       if (dotlist == NULL) {
+        ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
         ZOLTAN_FREE(&wgts);
         ZOLTAN_FREE(&dotmark);
         ZOLTAN_FREE(&coord);
@@ -915,3 +933,7 @@ static void print_rcb_tree(ZZ *zz, struct rcb_tree *treept)
   printf("          right_leaf = %d\n", treept->right_leaf);
   Zoltan_Print_Sync_End(zz->Communicator, TRUE);
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

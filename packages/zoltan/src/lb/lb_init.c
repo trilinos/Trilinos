@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "lb_init_const.h"
 
@@ -40,3 +47,7 @@ void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb)
   lb->Point_Assign = Zoltan_RB_Point_Assign;
   lb->Box_Assign = Zoltan_RB_Box_Assign;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

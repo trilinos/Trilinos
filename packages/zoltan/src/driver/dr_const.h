@@ -14,6 +14,13 @@
 #ifndef _DR_CONST_H
 #define _DR_CONST_H
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "zoltan.h"
@@ -133,7 +140,9 @@ typedef struct Problem_Description *PROB_INFO_PTR;
 
 /* Global variables for driver */
 extern int Debug_Driver;
-extern int DDirectory_Test;
+extern int Test_DDirectory;
+extern int Test_Multi_Callbacks;
+extern int Test_Null_Import_Lists;
 extern int Gnuplot_Output;
 extern int Number_Iterations;
 extern int Driver_Action;
@@ -150,4 +159,8 @@ extern int Chaco_In_Assign_Inv;
   if (Debug_Driver > 2) \
     printf("%d DRIVER %s: %s\n", proc,yo, str);
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 #endif /* _DR_CONST_H */

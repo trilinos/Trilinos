@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zoltan_align.h"
 
 /*****************************************************************************/
@@ -31,3 +38,7 @@ int Zoltan_Align(int a)
 return((ZOLTAN_ALIGN_VAL + a) & ~ZOLTAN_ALIGN_VAL);
 }
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include "zz_const.h"
 #include "ha_const.h"
 
@@ -44,3 +51,7 @@ int Zoltan_Get_Processor_Name(
   return ierr;
 }
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

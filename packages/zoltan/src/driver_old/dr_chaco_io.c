@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -349,3 +356,7 @@ static int fill_elements(
   DEBUG_TRACE_END(Proc, yo);
   return 1;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __ALL_ALLO_H
 #define __ALL_ALLO_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #include "zz_const.h"
 #include "zoltan_mem.h"
@@ -52,5 +59,9 @@ extern int Zoltan_Special_Free(ZZ *zz, void **array,
                       ZOLTAN_SPECIAL_MALLOC_TYPE type);
 extern void Zoltan_Register_Fort_Malloc(ZOLTAN_FORT_MALLOC_INT_FN *,
                                         ZOLTAN_FORT_FREE_INT_FN *);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif

@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <ctype.h>
 #include "zz_const.h"
 #include "zz_util_const.h"
@@ -408,7 +415,7 @@ int Zoltan_Jostle(
 
   /* Call the real Jostle/ParMetis interface */
   return Zoltan_ParMetis_Jostle( zz, num_imp, imp_gids, imp_lids,
-            imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
+            imp_procs, num_exp, exp_gids, exp_lids, exp_procs, NULL,
             alg, &output_level, NULL, NULL, NULL, NULL);
 
 #endif /* ZOLTAN_JOSTLE */
@@ -1176,6 +1183,8 @@ free:
  *   mode == 1 : scale each weight dimension separately
  *   mode == 2 : use same scale factor for all weights
  * 
+ * Note that we use ceil() instead of round() to avoid
+ * rounding to zero weights.
  */
 
 static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim, 
@@ -1193,7 +1202,7 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
   if (mode == 0) {
     /* No scaling; just convert to int */
     for (i=0; i<n*dim; i++){
-      iwgts[i] = (int) fwgts[i];
+      iwgts[i] = (int) ceil((double) fwgts[i]);
     }
   }
   else{
@@ -1229,7 +1238,8 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
       for (i=0; i<n; i++){
         for (j=0; j<dim; j++){
           if (!nonint_local[j]){ 
-            tmp = fwgts[i*dim+j]; /* Converts to nearest int */
+            /* tmp = (int) roundf(fwgts[i]);  EB: Valid C99, but not C89 */
+            tmp = (int) floor((double) fwgts[i] + .5); /* Nearest int */
             if (fabs((double)tmp-fwgts[i*dim+j]) > INT_EPSILON){
               nonint_local[j] = 1;
             }
@@ -1285,10 +1295,7 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
       /* Convert weights to positive integers using the computed scale factor */
       for (i=0; i<n; i++){
         for (j=0; j<dim; j++){
-          if (scale[j] == 1)
-             iwgts[i*dim+j] = (int) fwgts[i*dim+j];
-          else
-             iwgts[i*dim+j] = (int) ceil(fwgts[i*dim+j]*scale[j]);
+          iwgts[i*dim+j] = (int) ceil((double) fwgts[i*dim+j]*scale[j]);
         }
       }
 
@@ -1381,3 +1388,6 @@ char *val)                      /* value of variable */
 }
 
 
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

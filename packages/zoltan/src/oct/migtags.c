@@ -1,3 +1,16 @@
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 
 #include "zz_const.h"
@@ -520,3 +533,7 @@ int Zoltan_Oct_fix_tags(ZZ *zz, ZOLTAN_ID_PTR *import_global_ids, ZOLTAN_ID_PTR 
     return ierr;
 }
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

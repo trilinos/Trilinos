@@ -11,6 +11,13 @@
  *    $Revision$
  ****************************************************************************/
 
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
@@ -895,3 +902,7 @@ int Zoltan_BSFC_single_wgt_find_imbalance(float* work_percent_array,
   return(balanced_flag);
 }
 
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

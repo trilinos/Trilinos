@@ -11,8 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+
 #ifndef __COMM_CONST_H
 #define __COMM_CONST_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #include <mpi.h>
 
@@ -44,5 +51,9 @@ extern int Zoltan_Comm_Do(ZOLTAN_COMM_OBJ *, int, char *, int, char *);
 
 extern int Zoltan_Comm_Do_Reverse(ZOLTAN_COMM_OBJ *, int, char *, int, int *, 
     char *);
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif
