@@ -829,6 +829,14 @@ report($SUMMARY);
             for (my $i=0; $i<=$lastElementIndex; $i++) { 
                 if ($line =~ m/$dependencies{$brokenPackage}[$i]\b/i) {
                     $dropLine = 1;   
+                    
+                    # SPECIAL CASE # Nox / LOCA dependency issue
+                    # removing --enable-loca is not enough, 
+                    # we need to also manually add --disable-loca
+                    if ($dependencies{$brokenPackage}[$i] =~ m/--enable-loca/) {
+                        $newInvokeConfigure .= "--disable-loca \\\n";
+                    }
+                    
                 }   
             }    
             
@@ -838,7 +846,8 @@ report($SUMMARY);
             } else {
                 $changeMade = 1;
             }
-        } # while ($line)
+        } # while ($line)        
+        
         close INVOKE_CONFIGURE;
         
         if (!$changeMade) {
