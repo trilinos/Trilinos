@@ -27,6 +27,10 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Directory.h"
 
+#ifdef EPETRA_BLOCKMAP_NEW_LID
+#include "Epetra_HashTable.h"
+#endif
+
 
 //==============================================================================
 // Epetra_BlockMap constructor for a Epetra-defined uniform linear distribution of constant size elements.
@@ -48,6 +52,12 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int ElementSize, int Ind
     MaxElementSize_(ElementSize),
     ConstantElementSize_(true),
     LinearMap_(true)
+#ifdef EPETRA_BLOCKMAP_NEW_LID
+    ,
+    LastContiguousGIDLoc_(0),
+    LIDHash_(0)
+#endif
+    
 {
   // Each processor gets roughly numGlobalPoints/p points
   // This routine automatically defines a linear partitioning of a
@@ -109,6 +119,11 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
     MaxElementSize_(ElementSize),
     ConstantElementSize_(true),
     LinearMap_(true)
+#ifdef EPETRA_BLOCKMAP_NEW_LID
+    ,
+    LastContiguousGIDLoc_(0),
+    LIDHash_(0)
+#endif
 {
   // Each processor gets NumMyElements points
   
@@ -201,6 +216,11 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
     MaxElementSize_(ElementSize),
     ConstantElementSize_(true),
     LinearMap_(false)
+#ifdef EPETRA_BLOCKMAP_NEW_LID
+    ,
+    LastContiguousGIDLoc_(0),
+    LIDHash_(0)
+#endif
 {
   int i;
   // Each processor gets NumMyElements points
@@ -309,6 +329,11 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
     Directory_(0),
     ConstantElementSize_(false),
     LinearMap_(false)
+#ifdef EPETRA_BLOCKMAP_NEW_LID
+    ,
+    LastContiguousGIDLoc_(0),
+    LIDHash_(0)
+#endif
 {
   int i;
   // Each processor gets NumMyElements points
@@ -454,6 +479,11 @@ Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap& map)
     ConstantElementSize_(map.ConstantElementSize_),
     LinearMap_(map.LinearMap_),
     DistributedGlobal_(map.DistributedGlobal_)
+#ifdef EPETRA_BLOCKMAP_NEW_LID
+    ,
+    LastContiguousGIDLoc_(map.LastContiguousGIDLoc_),
+    LIDHash_(new Epetra_HashTable(*map.LIDHash_))
+#endif
 {
   int i;
 
@@ -502,6 +532,10 @@ Epetra_BlockMap::~Epetra_BlockMap(void)  {
 
   if (LID_ !=0 && NumMyElements_>0) delete [] LID_;
   LID_ = 0;
+
+#ifdef EPETRA_BLOCKMAP_NEW_LID
+  if( LIDHash_ ) delete LIDHash_;
+#endif
 }
 
 
@@ -708,6 +742,23 @@ void Epetra_BlockMap::GlobalToLocalSetup() {
   }
   else {
     // Build LID_ vector to make look up of local index values fast
+
+#ifdef EPETRA_BLOCKMAP_NEW_LID
+
+    //check for initial contiguous block
+    int val = MyGlobalElements_[0];
+    for( i = 0 ; (++val == MyGlobalElements_[i]) && i<NumMyElements_; ++i );
+    LastContiguousGIDLoc_ = i-1;
+
+    //Hash everything else
+    if( i < NumMyElements_ )
+    {
+      LIDHash_ = new Epetra_HashTable( NumMyElements_-i+1 );
+      for( ; i < NumMyElements_; ++i )
+        LIDHash_->Add( MyGlobalElements_[i], i );
+    }
+
+#else
     
     int SpanGID = MaxMyGID_ - MinMyGID_ + 1;
     LID_ = new int[SpanGID];
@@ -719,6 +770,8 @@ void Epetra_BlockMap::GlobalToLocalSetup() {
       assert(tmp>=0); assert(tmp <SpanGID);
       LID_[MyGlobalElements_[i]-MinMyGID_] = i; // Spread local indices
     }
+
+#endif
     
     if (Directory_ ==0) Directory_ = Comm().CreateDirectory(*this); // Make directory
   }
@@ -729,7 +782,20 @@ int Epetra_BlockMap::LID(int GID) const {
 
   if (GID<MinMyGID_ || GID > MaxMyGID_ || NumMyElements_==0) return(-1); // Out of range
   else if (LinearMap()) return(GID-MinMyGID_); // Can compute with an offset
+
+#ifdef EPETRA_BLOCKMAP_NEW_LID
+
+  else
+    if( GID >= MyGlobalElements_[0] && GID <= MyGlobalElements_[LastContiguousGIDLoc_] )
+      return( GID - MyGlobalElements_[0] );
+    else
+      return LIDHash_->Get( GID );
+
+#else
+
   else return(LID_[GID-MinMyGID_]); // Find it in LID array
+
+#endif
 }
 //==============================================================================
 int Epetra_BlockMap::GID(int LID) const {
