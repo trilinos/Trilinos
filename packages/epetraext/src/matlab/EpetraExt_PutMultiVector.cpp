@@ -37,14 +37,14 @@
 
 using namespace Matlab;
 namespace Matlab {
-int CopyMultiVector(mxArray* matlabA, const Epetra_MultiVector& A) {
+int CopyMultiVector(double** matlabApr, const Epetra_MultiVector& A) {
 
   Epetra_BlockMap bmap = A.Map();
   const Epetra_Comm & comm = bmap.Comm();
   int numProc = comm.NumProc();
 
   if (numProc==1)
-    DoCopyMultiVector(matlabA, A);
+    DoCopyMultiVector(matlabApr, A);
   else {
 
     // In the case of more than one column in the multivector, and writing to MatrixMarket
@@ -53,7 +53,7 @@ int CopyMultiVector(mxArray* matlabA, const Epetra_MultiVector& A) {
     // multivector
     if (A.NumVectors() > 1) {
       for (int i=0; i < A.NumVectors(); i++)
-	if (CopyMultiVector(*(A(i)))) return(-1);
+	if (CopyMultiVector(matlabApr, *(A(i)))) return(-1);
       return(0);
     }
 
@@ -100,13 +100,13 @@ int CopyMultiVector(mxArray* matlabA, const Epetra_MultiVector& A) {
       if (importA.Import(A1, importer, Insert)) return(-1); 
 
       // Finally we are ready to write this strip of the matrix to ostream
-      if (DoCopyMultiVector(matlabA, importA)) return(-1);
+      if (DoCopyMultiVector(matlabApr, importA)) return(-1);
     }
   }
   return(0);
 }
 
-int DoCopyMultiVector(mxArray* matlabA, const Epetra_MultiVector& A) {
+int DoCopyMultiVector(double** matlabApr, const Epetra_MultiVector& A) {
 
   int ierr = 0;
   int length = A.GlobalLength();
@@ -117,11 +117,10 @@ int DoCopyMultiVector(mxArray* matlabA, const Epetra_MultiVector& A) {
   }
   else {
     if (length!=A.MyLength()) ierr = -1;
-    /*for (int i=0; i<length; i++) {
-      for (int j=0; j<numVectors; j++) {
-	double val = A[j][i];
-      }
-    }*/
+    double* matlabAvalues = *matlabApr;
+    double* Aptr = A.Values();
+    memcpy((void *)matlabAvalues, (void *)Aptr, sizeof(*Aptr) * length * A.NumVectors());
+    matlabAvalues += length;
   }
   int ierrGlobal;
   comm.MinAll(&ierr, &ierrGlobal, 1); // If any processor has -1, all return -1

@@ -48,6 +48,7 @@
 #include "Epetra_IntSerialDenseMatrix.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_DataAccess.h"
+
 #include "EpetraExt_MatlabEngine.h"
 
 #define BUFSIZE 200
@@ -68,12 +69,22 @@ int main(int argc, char *argv[]) {
   char matlabBuffer [MATLABBUF];
   EpetraExt::MatlabEngine engine (comm);
   
-  /* MultiVector test
-  Epetra_Map map (50, 0, comm);
-  Epetra_MultiVector multiVector (map, 25, false);
-  multiVector.Random();
+  ///* MultiVector test
+  int numGlobalElements = 100;
+  int M = numGlobalElements/comm.NumProc();
+  int N = 3;
+  int numMyElements = M * N;
+  double* A = new double[numMyElements];
+  double* Aptr = A;
+  
+  for(int i=0; i < numMyElements; i++) {
+      *Aptr++ = i;
+  }
+  Epetra_Map map (numGlobalElements, 0, comm);
+  Epetra_MultiVector multiVector (Copy, map, A, M, N);
+  //cout << multiVector;
   engine.PutMultiVector(multiVector, "MULT");
-  */
+  //*/
   
   /*SerialDenseMatrix test
   double* A = new double[30];

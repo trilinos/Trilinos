@@ -46,8 +46,8 @@ class Epetra_MultiVector;
 
 namespace Matlab {
 
-  int CopyMultiVector(mxArray* matlabA, const Epetra_MultiVector& A)
-  int DoCopyMultiVector(mxArray* matlabA, const Epetra_MultiVector& A);
+  int CopyMultiVector(double** matlabApr, const Epetra_MultiVector& A);
+  int DoCopyMultiVector(double** matlabApr, const Epetra_MultiVector& A);
   
   
 } // namespace Matlab

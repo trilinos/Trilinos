@@ -27,6 +27,7 @@
 //@HEADER
 
 #include "EpetraExt_MatlabEngine.h"
+#include "EpetraExt_PutMultiVector.h"
 #include "Epetra_Comm.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_SerialDenseMatrix.h"
@@ -88,24 +89,24 @@ int MatlabEngine::PutMultiVector(const Epetra_MultiVector& A, const char * varia
       matlabA = mxCreateDoubleMatrix(A.GlobalLength(), A.NumVectors(), mxREAL);
       double* pr = mxGetPr(matlabA);
 	
-	/*if (CopyMultiVector(matlabA, multiVector)) {
+	if (Matlab::CopyMultiVector(&pr, A)) {
 	  mxDestroyArray(matlabA);
 	  return(-2);
 	}
 
 	if (Comm_.MyPID() == 0)
 	  if (engPutVariable(Engine_, variableName, matlabA)) {
-		mxDestroyArray(matlabA)
+		mxDestroyArray(matlabA);
 		return(-1);
 	  }
 	
-	mxDestroyArray(matlabA);*/
+	mxDestroyArray(matlabA);
 	return(0);
 }
 
 //=============================================================================
 int MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* variableName, bool transA) {
-    mxArray* matlabA = 0;
+    /*mxArray* matlabA = 0;
     if (Comm_.MyPID() == 0)
 	  // since matlab uses column major for matrices, switch row and column numbers
 	  matlabA = mxCreateSparse(A.NumGlobalCols(), A.NumGlobalRows(), A.NumGlobalNonzeros(), mxREAL);
@@ -128,7 +129,7 @@ int MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* variableNa
 		}
 	}
 
-	mxDestroyArray(matlabA);
+	mxDestroyArray(matlabA);*/
 	return(0);
 }
 
@@ -139,11 +140,12 @@ int MatlabEngine::PutCrsGraph(const Epetra_CrsGraph& A, const char* variableName
 
 int MatlabEngine::PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const char* variableName) {
   int ierr = 0;
-
+  mxArray* matlabA = 0;
+  
 	if (Comm_.MyPID() == 0) {
 	  int numRows = A.M();
 	  int numCols = A.N();
-	  mxArray* matlabA = 0;
+	  
 	  // need to add global opp to send remote sdMatrix to proc 0
 	  matlabA = mxCreateDoubleMatrix(numRows, numCols, mxREAL);
 
@@ -174,10 +176,11 @@ int MatlabEngine::PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const 
 //=============================================================================
 int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName) {
 	int ierr = 0;
+	mxArray* matlabA = 0;
 	if (Comm_.MyPID() == 0) {
 	  int numRows = A.M();
 	  int numCols = A.N();
-	  mxArray* matlabA = 0;
+	  
 	  // need to add global opp to send remote sdMatrix to proc 0
 	  matlabA = mxCreateDoubleMatrix(numRows, numCols, mxREAL);
 
