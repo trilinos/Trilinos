@@ -10399,7 +10399,7 @@ fi
 #		example/Makefile
 #		example/ifpack_hb/Makefile
 
-                                                                                                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile src/Makefile.include example/Makefile example/Makefile.include test/Makefile test/PreconditionerFactory/Makefile test/PreconditionerFactory/Makefile.include test/TestAll/Makefile test/TestAll/Makefile.include test/CrsRiluk/Makefile test/CrsRiluk/Makefile.include test/IlukGraph/Makefile test/IlukGraph/Makefile.include test/SetParameters/Makefile test/SetParameters/Makefile.include test/PointPreconditioner/Makefile test/PointPreconditioner/Makefile.include test/AdditiveSchwarz/Makefile test/AdditiveSchwarz/Makefile.include test/Container/Makefile test/Container/Makefile.include test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
+                                                                                                                                                                                                                                                                                                                                ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile src/Makefile.include example/Makefile example/Makefile.include test/Makefile test/PreconditionerFactory/Makefile test/PreconditionerFactory/Makefile.include test/TestAll/Makefile test/TestAll/Makefile.include test/CrsRiluk/Makefile test/CrsRiluk/Makefile.include test/IlukGraph/Makefile test/IlukGraph/Makefile.include test/SetParameters/Makefile test/SetParameters/Makefile.include test/PointPreconditioner/Makefile test/PointPreconditioner/Makefile.include test/AdditiveSchwarz/Makefile test/AdditiveSchwarz/Makefile.include test/Container/Makefile test/Container/Makefile.include test/OverlappingRowMatrix/Makefile test/OverlappingRowMatrix/Makefile.include test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11051,6 +11051,8 @@ do
   "test/AdditiveSchwarz/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/AdditiveSchwarz/Makefile.include" ;;
   "test/Container/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Container/Makefile" ;;
   "test/Container/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/Container/Makefile.include" ;;
+  "test/OverlappingRowMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/OverlappingRowMatrix/Makefile" ;;
+  "test/OverlappingRowMatrix/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/OverlappingRowMatrix/Makefile.include" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
   "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
   "test/scripts/daily/mpi/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/Makefile" ;;
