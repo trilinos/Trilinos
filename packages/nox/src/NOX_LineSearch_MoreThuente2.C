@@ -365,10 +365,6 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
       
       print.printStep(nfev, stp, finit, f, message);
 
-      // Set the adjusted tolerance
-      eta = 1.0 - stp * (1.0 - eta_original);
-      paramsPtr->setParameter("Adjusted Tolerance", eta);
-
       // Returning the line search flag
       return info;
 

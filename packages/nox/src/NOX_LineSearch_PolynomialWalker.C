@@ -341,9 +341,6 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp,
     step = recoveryStep;
     computeNewF(newGrp, oldGrp, dir, step);
 
-    eta = 1.0 - step * (1.0 - eta_original);
-    paramsPtr->setParameter("Adjusted Tolerance", eta);
-    
     message = "(USING RECOVERY STEP!)";
   }
 
@@ -352,7 +349,6 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp,
   else
     print.printStep(nIters, step, meritFuncOld, meritFuncNew, message);
 
-  paramsPtr->setParameter("Adjusted Tolerance", eta);
   counter.setValues(*paramsPtr);
   return (!isFailed);
 }

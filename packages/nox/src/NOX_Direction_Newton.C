@@ -35,6 +35,7 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
+#include "NOX_Solver_LineSearchBased.H"
 #include "NOX_Utils.H"
 #include "NOX_Parameter_UserNorm.H"
 
@@ -130,9 +131,10 @@ bool NOX::Direction::Newton::compute(NOX::Abstract::Vector& dir,
     NOX::Direction::Newton::throwError("compute", "Unable to compute F");
 
   // Reset the linear solver tolerance.
-  if (useAdjustableForcingTerm)
+  if (useAdjustableForcingTerm) {
     resetForcingTerm(soln, solver.getPreviousSolutionGroup(), 
-		     solver.getNumIterations(), solver.getParameterList());
+		     solver.getNumIterations(), solver);
+  }
   else { 
     if (utils.isPrintProcessAndType(Utils::Details)) {
       cout << "       CALCULATING FORCING TERM" << endl;
@@ -174,23 +176,20 @@ bool NOX::Direction::Newton::compute(NOX::Abstract::Vector& dir,
 bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
 				     const NOX::Abstract::Group& oldsoln, 
 				     int niter,
-				     const NOX::Parameter::List& solverParams)
+				     const NOX::Solver::Generic& solver)
 {
   // Get linear solver current tolerance. 
-  // NOTE: These valuse are changing at each nonlinear iteration and 
+  // NOTE: These values are changing at each nonlinear iteration and 
   // must be updated from the parameter list each time a reset is called!
-  double eta_km1 = 0.0;
-  if (((method == "Type 1") || (method == "Type 2")) 
-	&& (solverParams.sublist("Line Search").isParameterDouble("Adjusted Tolerance"))) {
-    
-    // Tolerance may have been adjusted in a line search algorithm  
-    eta_km1 = solverParams.sublist("Line Search").getParameter("Adjusted Tolerance", 0.0);
-    
-  }
-  else {
-    // Default to the old tolerance
-    eta_km1 = paramsPtr->sublist("Newton").sublist("Linear Solver").getParameter("Tolerance", 0.0);
-    
+  double eta_km1 = paramsPtr->sublist("Newton").sublist("Linear Solver")
+                   .getParameter("Tolerance", 0.0);
+
+  // Tolerance may have been adjusted in a line search algorithm so we 
+  // have to account for this.
+  const NOX::Solver::LineSearchBased* solverPtr = 0;
+  solverPtr = dynamic_cast<const NOX::Solver::LineSearchBased*>(&solver);
+  if (solverPtr != 0) {
+    eta_km1 = 1.0 - solverPtr->getStepSize() * (1.0 - eta_km1);
   }
 
   const string indent = "       ";

@@ -235,7 +235,7 @@ protected:
   virtual bool resetForcingTerm(const NOX::Abstract::Group& soln, 
 				const NOX::Abstract::Group& oldSoln, 
 				int niter, 
-				const NOX::Parameter::List& solverParams);
+				const NOX::Solver::Generic& solver);
 
 
 private:
