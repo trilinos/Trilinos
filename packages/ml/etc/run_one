@@ -53,7 +53,7 @@
         then
            EXE_MOD=`echo ${PARALLEL_CMD} $Nprocs $EXE`
         fi
-        ${EXE_MOD} | grep -vi Reading > ${SCRATCH_DIRECTORY}/${1}/${2}/xxxxxx${ttt}
+        ${EXE_MOD} | grep -vi Reading >! ${SCRATCH_DIRECTORY}/${1}/${2}/xxxxxx${ttt}
         cat ${SCRATCH_DIRECTORY}/${1}/${2}/xxxxxx${ttt} | grep -v ime > ${SCRATCH_DIRECTORY}/${1}/${2}/output${ttt}
         rm -f ${SCRATCH_DIRECTORY}/${1}/${2}/xxxxxx${ttt}
         diff -w output${ttt} ${SCRATCH_DIRECTORY}/${1}/${2}/output${ttt} > \
