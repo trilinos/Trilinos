@@ -2139,6 +2139,256 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
    return 0;
 }
 
+static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
+                         int allocated_space, int columns[], double values[],
+                         int row_lengths[])
+{
+  int ierr;
+  int i, count;
+  int BlockCol, BlockRow;
+  double DiagValue = 0.0;
+  double dist;
+  double threshold = data->aux_data->threshold;
+  double* x_coord = data->grid_info->x;
+  double* y_coord = data->grid_info->y;
+  double* z_coord = data->grid_info->z;
+  int* itmp = data->aux_data->itmp;
+  double* dtmp = data->aux_data->dtmp;
+  int N_dimensions = data->grid_info->Ndim;
+  int LocalRow, Nnz, DiagID;
+
+  ierr = (*(data->aux_data->aux_func_ptr))(data, N_requested_rows, requested_rows,
+                                      allocated_space, columns, values, row_lengths);
+  if (ierr == 0)
+    return(0);
+ 
+  if (N_dimensions == 0) {
+    fprintf(stderr, "Error: Zero-dimensional problem in ML_Aux_Getrow()\n"
+            "(file %s, line% d)\n",
+            __FILE__, __LINE__);
+    exit(EXIT_FAILURE);
+  }
+
+  if (N_requested_rows != 1) {
+    fprintf(stderr, "ML_Aux_Getrow() works only is N_requested_rows == 1\n"
+            "(file %s, line %d)\n",
+            __FILE__, __LINE__);
+    exit(EXIT_FAILURE);
+  }
+
+  if (row_lengths[0] > data->aux_data->allocated)
+  {
+    data->aux_data->allocated = row_lengths[0] + 1;
+    ML_free(data->aux_data->itmp);
+    ML_free(data->aux_data->itmp);
+    data->aux_data->itmp = (int*)ML_allocate(sizeof(int) * (data->aux_data->allocated));
+    data->aux_data->dtmp = (double*)ML_allocate(sizeof(double) * (data->aux_data->allocated));
+  }
+
+  for (i = 0 ; i < row_lengths[0] ; ++i)
+  {
+    itmp[i] = columns[i];
+    dtmp[i] = values[i];
+  }
+
+  BlockRow = requested_rows[0] / data->aux_data->num_PDEs;
+  DiagID = -1;
+
+  for (i = 0 ; i < row_lengths[0] ; ++i) 
+  {
+    if (values[i] == 0.0)
+      continue;
+
+    BlockCol = columns[i] / data->aux_data->num_PDEs;
+    dist = 0.0;
+    if (BlockCol != BlockRow) {
+      switch (N_dimensions)
+      {
+      case 3:
+        dist += (z_coord[BlockRow] - z_coord[BlockCol]) * (z_coord[BlockRow] - z_coord[BlockCol]);
+      case 2:
+        dist += (y_coord[BlockRow] - y_coord[BlockCol]) * (y_coord[BlockRow] - y_coord[BlockCol]);
+      case 1:
+        dist += (x_coord[BlockRow] - x_coord[BlockCol]) * (x_coord[BlockRow] - x_coord[BlockCol]);
+      }
+
+      if (dist == 0.0)
+      {
+        printf("node %d = %e ", BlockRow, x_coord[BlockRow]);
+        if (N_dimensions > 1) printf(" %e ", y_coord[BlockRow]);
+        if (N_dimensions > 2) printf(" %e ", z_coord[BlockRow]);
+        printf("\n");
+        printf("node %d = %e ", BlockCol, x_coord[BlockCol]);
+        if (N_dimensions > 1) printf(" %e ", y_coord[BlockCol]);
+        if (N_dimensions > 2) printf(" %e ", z_coord[BlockCol]);
+        printf("\n");
+        printf("Operator has inlen = %d and outlen = %d\n",
+               data->invec_leng, data->outvec_leng);
+        //exit(EXIT_FAILURE);
+      }
+        
+      dist = 1.0 / dist;
+      dtmp[i] = dist;
+      DiagValue += dist;
+    }
+    else if (columns[i] == requested_rows[0])
+    {
+      DiagID = i;
+    }
+  }
+
+  if (DiagID == -1)
+  {
+    fprintf(stderr, "ERROR: matrix has no diagonal!\n"
+            "ERROR: (file %s, line %d)\n",
+            __FILE__, __LINE__);
+    exit(EXIT_FAILURE);
+  }
+
+  threshold *= DiagValue;
+  DiagValue = values[DiagID];
+  count = 0;
+
+  for (i = 0 ; i < row_lengths[0] ; ++i) 
+  {
+    if (values[i] == 0.0 || i == DiagID)
+      continue;
+
+    if (dtmp[i] > threshold) 
+    {
+      columns[count] = columns[i];
+      values[count]  = values[i];
+      count++;
+    }
+    else 
+    {
+      DiagValue += values[i];
+    }
+
+  }
+
+  columns[count] = requested_rows[0];
+  values[count] = DiagValue;
+  ++count;
+
+  row_lengths[0] = count;
+
+  return(ierr);
+}
+
+void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
+                            ML_Operator* Cmat)
+{
+  int i;
+  double* new_x_coord = NULL;
+  double* new_y_coord = NULL;
+  double* new_z_coord = NULL;
+  int PDEs = Cmat->num_PDEs;
+  int Nghost;
+  ML_Operator* Rmat;
+  char name[80];
+
+  if (PDEs != Amat->aux_data->num_PDEs)
+  {
+    fprintf(stderr, "ERROR: Cmat->num_PDEs != Amat->aux_data->numPDEs (%d vs. %d)\n"
+            "ERROR: (file %s, line %d)\n",
+            PDEs, Amat->aux_data->num_PDEs,
+            __FILE__, __LINE__);
+    exit(EXIT_FAILURE);
+  }
+
+  if (Pmat->getrow->func_ptr != CSR_getrow) 
+  {
+    fprintf(stderr, "ERROR: only CSR_getrow() is currently supported\n"
+            "ERROR: (file %s, line %d)\n",
+            __FILE__, __LINE__);
+    exit(EXIT_FAILURE);
+  }
+  Pmat->getrow->func_ptr = CSR_get_one_row;
+  
+  if (Amat->grid_info == NULL) 
+  {
+    fprintf(stderr, "Amat->grid_info == NULL\n"
+            "ERROR: (file %s, line %d)\n",
+            __FILE__, __LINE__);
+    exit(EXIT_FAILURE);
+  }
+  
+  ML_Operator_AmalgamateAndDropWeak(Pmat, PDEs, 0.);
+  /* ML_Operator_ImplicitTranspose(Pmat,Rmat,ML_FALSE); */
+  Rmat = ML_Operator_Create(Pmat->comm);
+  ML_Operator_Transpose(Pmat,Rmat);
+
+  if (Cmat->getrow->pre_comm == NULL)
+    Nghost = 0;
+  else {
+    if (Cmat->getrow->pre_comm->total_rcv_length <= 0)
+      ML_CommInfoOP_Compute_TotalRcvLength(Cmat->getrow->pre_comm);
+    Nghost = Cmat->getrow->pre_comm->total_rcv_length;
+  }
+  
+  ML_Operator_AmalgamateAndDropWeak(Cmat, PDEs, 0.);
+
+  if (Amat->grid_info->x!= NULL) 
+  {
+    sprintf(name, "x_coord_%d", Rmat->outvec_leng + Nghost);
+    ML_memory_alloc((void*)&new_x_coord, sizeof(double)*(Rmat->outvec_leng + Nghost + 1),
+                    name);
+    ML_Operator_Apply(Rmat, Rmat->invec_leng, Amat->grid_info->x, Rmat->outvec_leng,
+                      new_x_coord);
+    if (Cmat->grid_info->x) 
+    {
+      ML_memory_free((void*)&(Cmat->grid_info->x));
+      Cmat->grid_info->x = NULL;
+    }
+    ML_exchange_bdry(new_x_coord,Cmat->getrow->pre_comm,Cmat->outvec_leng,
+                     Cmat->comm, ML_OVERWRITE,NULL);
+    Cmat->grid_info->x = new_x_coord;
+  }
+
+  if (Amat->grid_info->y != NULL) 
+  {
+    sprintf(name, "y_coord_%d", Rmat->outvec_leng + Nghost);
+    ML_memory_alloc((void*)&new_y_coord, sizeof(double)*(Rmat->outvec_leng + Nghost + 1),
+                    name);
+    ML_Operator_Apply(Rmat, Rmat->invec_leng, Amat->grid_info->y, Rmat->outvec_leng,
+                      new_y_coord);
+    if (Cmat->grid_info->y)
+    {
+      ML_memory_free((void*)&(Cmat->grid_info->y));
+      Cmat->grid_info->y= NULL;
+    }
+    ML_exchange_bdry(new_y_coord,Cmat->getrow->pre_comm,Cmat->outvec_leng,
+                     Cmat->comm, ML_OVERWRITE,NULL);
+    Cmat->grid_info->y = new_y_coord;
+  }
+
+  if (Amat->grid_info->z != NULL) 
+  {
+    sprintf(name, "z_coord_%d", Rmat->outvec_leng + Nghost);
+    ML_memory_alloc((void*)&new_z_coord, sizeof(double)*(Rmat->outvec_leng + Nghost + 1),
+                    name);
+    ML_Operator_Apply(Rmat, Rmat->invec_leng, Amat->grid_info->z, Rmat->outvec_leng,
+                      new_z_coord);
+    if (Cmat->grid_info->z) 
+    {
+      ML_memory_free((void*)&(Cmat->grid_info->z));
+      Cmat->grid_info->z = NULL;
+    }
+    ML_exchange_bdry(new_y_coord,Cmat->getrow->pre_comm,Cmat->outvec_leng,
+                     Cmat->comm, ML_OVERWRITE,NULL);
+    Cmat->grid_info->z = new_z_coord;
+  }
+
+  Cmat->grid_info->Ndim = Amat->grid_info->Ndim;
+
+  ML_Operator_UnAmalgamateAndDropWeak(Pmat, PDEs, 0.);
+  ML_Operator_UnAmalgamateAndDropWeak(Cmat, PDEs, 0.);
+
+  Pmat->getrow->func_ptr = CSR_getrow;
+  ML_Operator_Destroy(&Rmat);
+}
+
 /* ************************************************************************* */
 /* new version of ML_Gen_MGHierarchy_UsingAggregation                        */
 /* I dropped out the domain_decomposition lines                              */
@@ -2246,8 +2496,9 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 {
    int level, next, flag, count=1;
    int i, j, bail_flag, N_input_vector;
-   ML_Operator *Pmat;
+   ML_Operator *Pmat, *Ptent;
    ML_CommInfoOP *getrow_comm;
+   int aux_flag;
    
 #ifdef ML_TIMING
    double t0;
@@ -2259,6 +2510,26 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 
    while (next >= 0) 
    {
+     aux_flag = (ml->Amat[fine_level].aux_data->enable && 
+                 level <= ml->Amat[fine_level].aux_data->max_level);
+     if (aux_flag)
+     {
+       if (ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel()) 
+       {
+         printf("ML_Gen_MultiLevelHierarchy (level %d) : Using auxiliary matrix\n",
+                level);
+         printf("ML_Gen_MultiLevelHierarchy (level %d) : threshold = %e\n", 
+                level, ml->Amat[level].aux_data->threshold);
+       }
+
+       ml->Amat[level].aux_data->aux_func_ptr  = ml->Amat[level].getrow->func_ptr;
+       ml->Amat[level].getrow->func_ptr = ML_Aux_Getrow;
+       ml->Amat[level].aux_data->allocated = 1024;
+       ml->Amat[level].aux_data->itmp = (int*)ML_allocate(sizeof(int) * 1024);
+       ml->Amat[level].aux_data->dtmp = (double*)ML_allocate(sizeof(double) * 1024);
+       ml->Amat[level].aux_data->num_PDEs = ml->Amat[level].num_PDEs;
+     }
+
       if ( ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel()) 
          printf("ML_Gen_MultiLevelHierarchy (level %d) : Gen Restriction and Prolongator \n",
 		level );
@@ -2271,7 +2542,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       bail_flag = 0;
       N_input_vector = Pmat->invec_leng;
       getrow_comm = Pmat->getrow->pre_comm;
-      if ( getrow_comm != NULL)
+      if (getrow_comm != NULL)
       {
          for (i = 0; i < getrow_comm->N_neighbors; i++) {
             for (j = 0; j < getrow_comm->neighbors[i].N_send; j++) {
@@ -2303,6 +2574,17 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 
       (*user_gen_restriction)(ml, level, next,user_data);
 
+     if (aux_flag)
+     {
+       ml->Amat[level].getrow->func_ptr = ml->Amat[level].aux_data->aux_func_ptr;
+       ml->Amat[level].aux_data->aux_func_ptr = 0;
+       ml->Amat[level].aux_data->allocated = 0;
+       ML_free(ml->Amat[level].aux_data->itmp);
+       ML_free(ml->Amat[level].aux_data->dtmp);
+       ml->Amat[level].aux_data->itmp = NULL;
+       ml->Amat[level].aux_data->dtmp = NULL;
+     }
+
 #ifdef ML_TIMING
       t0 = GetClock();
 #endif
@@ -2325,6 +2607,30 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
          printf("ML_Gen_MultiLevelHierarchy (level %d) : RAP time = %e\n", level, t0);
 #endif
 
+      if (aux_flag)
+      {
+        if (((ML_Aggregate*)user_data)->smoothP_damping_factor != 0.0) 
+        {
+          Ptent = ((ML_Aggregate*)user_data)->P_tentative[next];
+          if (Ptent == NULL) 
+          {
+            fprintf(stderr, "ERROR: Ptent is NULL!\n"
+                    "(file %s, line %d)\n", 
+                    __FILE__, __LINE__);
+            exit(EXIT_FAILURE);
+          }
+          Ptent->num_PDEs = ml->Pmat[next].num_PDEs;
+        }
+        else
+        {
+          Ptent = &(ml->Pmat[next]);
+        }
+
+        ML_Project_Coordinates(&(ml->Amat[level]), Ptent, &(ml->Amat[next]));
+
+        ml->Amat[next].aux_data->threshold = ml->Amat[level].aux_data->threshold * 1.0;
+        ml->Amat[next].aux_data->num_PDEs = ml->Amat[next].num_PDEs;
+      }        
       level = next;
       next  = user_next_level(ml, next, user_data);
 
