@@ -38,9 +38,9 @@
 #endif // TPETRA_MPI
 
 template <typename OrdinalType, typename ScalarType>
-int unitTests(bool verbose, bool debug, int rank, int size);
+int unitTests(bool verbose, bool debug, int myImageID, int numImages);
 template <typename OrdinalType, typename ScalarType>
-void codeCoverage(bool verbose, bool debug, int rank, int size);
+void codeCoverage(bool verbose, bool debug, int myImageID, int numImages);
 
 int main(int argc, char* argv[]) {
   // initialize verbose & debug flags
@@ -55,30 +55,30 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-  int rank = 0; // assume we are on serial
-  int size = 1; // if MPI, will be reset later
+  int myImageID = 0; // assume we are on serial
+  int numImages = 1; // if MPI, will be reset later
   
   // initialize MPI if needed
 #ifdef TPETRA_MPI
-  size = -1;
-  rank = -1;
+  numImages = -1;
+  myImageID = -1;
   MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &numImages);
+  MPI_Comm_rank(MPI_COMM_WORLD, &myImageID);
 #endif // TPETRA_MPI
   
   // change verbose to only be true on Image 0
   // if debug is enabled, it will still output on all nodes
-  verbose = (verbose && (rank == 0));
+  verbose = (verbose && (myImageID == 0));
   
   // start the testing
 	if(verbose) outputStartMessage("Platform");
   int ierr = 0;
   
   // call the actual test routines
-	ierr += unitTests<int, int>(verbose, debug, rank, size);
-	ierr += unitTests<int, double>(verbose, debug, rank, size);
-  ierr += unitTests<int, complex<double> >(verbose, debug, rank, size);
+	ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
+	ierr += unitTests<int, double>(verbose, debug, myImageID, numImages);
+  ierr += unitTests<int, complex<double> >(verbose, debug, myImageID, numImages);
   
 	// finish up
 #ifdef TPETRA_MPI
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
 
 //======================================================================
 template <typename OrdinalType, typename ScalarType>
-int unitTests(bool verbose, bool debug, int rank, int size) {
+int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
   std::string className = "Platform<" + Teuchos::OrdinalTraits<OrdinalType>::name() + "," + Teuchos::ScalarTraits<ScalarType>::name() + ">";
   if(verbose) outputHeading("Stating unit tests for " + className);
 
@@ -100,7 +100,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 	// ======================================================================
 	// code coverage section - just call functions, no testing
 	// ======================================================================
-  codeCoverage<OrdinalType, ScalarType>((verbose && debug), rank, size);
+  codeCoverage<OrdinalType, ScalarType>((verbose && debug), myImageID, numImages);
 	
 	// ======================================================================
 	// actual testing section - affects return code
@@ -118,16 +118,16 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 
   // test getMyImageID
   if(verbose) cout << "Testing getMyImageID... ";
-  int platform_rank = platform.getMyImageID();
+  int platform_myImageID = platform.getMyImageID();
   if(debug) {
     if(verbose) cout << endl;
     comm.barrier();
-    cout << "[Image " << rank << "] getMyImageID: " << platform_rank << endl;
-    cout << "[Image " << rank << "] Expected: " << rank << endl;
+    cout << "[Image " << myImageID << "] getMyImageID: " << platform_myImageID << endl;
+    cout << "[Image " << myImageID << "] Expected: " << myImageID << endl;
     comm.barrier();
     if(verbose) cout << "getMyImageID test ";
   }
-  if(platform_rank != rank) {
+  if(platform_myImageID != myImageID) {
     if(verbose) cout << "failed" << endl;
     ierr++;
   }
@@ -138,16 +138,16 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 
   // test getNumImages
   if(verbose) cout << "Testing getNumImages... ";
-  int platform_size = platform.getNumImages();
+  int platform_numImages = platform.getNumImages();
   if(debug) {
     if(verbose) cout << endl;
     comm.barrier();
-    cout << "[Image " << rank << "] getNumImages: " << platform_size << endl;
-    cout << "[Image " << rank << "] Expected: " << size << endl;
+    cout << "[Image " << myImageID << "] getNumImages: " << platform_numImages << endl;
+    cout << "[Image " << myImageID << "] Expected: " << numImages << endl;
     comm.barrier();
     if(verbose) cout << "getNumImages test ";
   }
-  if(platform_size != size) {
+  if(platform_numImages != numImages) {
     if(verbose) cout << "failed" << endl;
     ierr++;
   }
@@ -172,7 +172,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 
 //======================================================================
 template <typename OrdinalType, typename ScalarType>
-void codeCoverage(bool verbose, int rank, int size) { 
+void codeCoverage(bool verbose, int myImageID, int numImages) { 
   if(verbose) outputSubHeading("Starting code coverage section...");
 
 #ifdef TPETRA_MPI

@@ -316,9 +316,9 @@ AC_CONFIG_FILES([
 		test/Makefile
     test/Platform/Makefile
 		test/Comm/Makefile
+		test/Distributor/Makefile
 		test/ElementSpace/Makefile
     test/Directory/Makefile
-		test/Distributor/Makefile
     test/ImportExport/Makefile
 		test/BlockElementSpace/Makefile
 		test/VectorSpace/Makefile

@@ -107,19 +107,19 @@ namespace Tpetra {
     //@{ \name Execute Gather/Scatter Operations (Constant size objects)
     
     //! Execute plan on buffer of export objects in a single step
-    virtual void doPostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) = 0;
+    virtual void doPostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) = 0;
     
     //! Post buffer of export objects (can do other local work before executing Waits)
-    virtual void doPosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) = 0;
+    virtual void doPosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) = 0;
     
     //! Wait on a set of posts
     virtual void doWaits() = 0;
     
     //! Execute reverse of plan on buffer of export objects in a single step
-    virtual void doReversePostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) = 0;
+    virtual void doReversePostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) = 0;
     
     //! Do reverse post of buffer of export objects (can do other local work before executing Waits)
-    virtual void doReversePosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) = 0;
+    virtual void doReversePosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) = 0;
     
     //! Wait on a reverse set of posts
     virtual void doReverseWaits() = 0;

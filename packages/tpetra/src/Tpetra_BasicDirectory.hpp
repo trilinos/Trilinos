@@ -29,6 +29,7 @@
 #ifndef TPETRA_BASICDIRECTORY_HPP
 #define TPETRA_BASICDIRECTORY_HPP
 
+#include "../test/tpetra_test_util.hpp"
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_Object.hpp"
@@ -55,7 +56,7 @@ namespace Tpetra {
     
     //! constructor
     BasicDirectory(ElementSpace<OrdinalType> const& ElementSpace)	
-      : Object("Tpetra::MpiDirectory") 
+      : Object("Tpetra::BasicDirectory") 
       , ElementSpace_(ElementSpace) 
     {
       // A directory is not necessary for a non-global ES.
@@ -100,7 +101,7 @@ namespace Tpetra {
       \param Out
              images - On return contains list of Image IDs owning the Global IDs in question.
     */
-    void getDirectoryEntries(std::vector<OrdinalType> const globalEntries, std::vector<OrdinalType> images) const {
+    void getDirectoryEntries(std::vector<OrdinalType> const& globalEntries, std::vector<OrdinalType>& images) const {
       getEntries(globalEntries, images, images, false);
     };
     
@@ -117,7 +118,7 @@ namespace Tpetra {
       \param Out
              localEntries - On return contains the local ID of the global on the owning image. 
     */
-    void getDirectoryEntries(std::vector<OrdinalType> const globalEntries, std::vector<OrdinalType> images, std::vector<OrdinalType> localEntries) const {
+    void getDirectoryEntries(std::vector<OrdinalType> const& globalEntries, std::vector<OrdinalType>& images, std::vector<OrdinalType>& localEntries) const {
       getEntries(globalEntries, images, localEntries, true);
     };
     
@@ -137,10 +138,16 @@ namespace Tpetra {
     BasicDirectory<OrdinalType>& operator = (BasicDirectory<OrdinalType> const& Source);
 
     // common code for both versions of getDirectoryEntries
-    void getEntries(std::vector<OrdinalType> const globalEntries, std::vector<OrdinalType> images, std::vector<OrdinalType> localEntries, bool computeLIDs) const {
+    void getEntries(std::vector<OrdinalType> const& globalEntries, std::vector<OrdinalType>& images, std::vector<OrdinalType>& localEntries, bool computeLIDs) const {
       OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
       OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
       OrdinalType const negOne = zero - one;
+
+      // allocate space in images and localEntries
+      // resize to same length as globalEntries and fill with -1s.
+      images.assign(globalEntries.size(), negOne);
+      if(computeLIDs)
+        localEntries.assign(globalEntries.size(), negOne);
 
       bool ierr = false;
       OrdinalType const myImageID = es().platform().getMyImageID();
@@ -152,10 +159,7 @@ namespace Tpetra {
       if(!es().isGlobal()) {
         for(OrdinalType i = zero; i < numEntries; i++) {
           if(!es().isMyGID(globalEntries[i])) { // This means something bad happened
-            images[i] = negOne;                 // As there should be no non-local elements in a non-global ES
-            if(computeLIDs)
-              localEntries[i] = negOne;
-            ierr = true;
+            ierr = true;                        // As there should be no non-local elements in a non-global ES
           }
           else {
             images[i] = myImageID;
@@ -175,8 +179,10 @@ namespace Tpetra {
           OrdinalType LID = negOne; // Assume not found
           OrdinalType image = negOne;
           OrdinalType GID = globalEntries[i];
-          if(GID < minAllGID || GID > maxAllGID)
+          if(GID < minAllGID || GID > maxAllGID) {
+            cerr << "ERROR (Image " << myImageID << ") GID " << GID << " is outside the range of this ES (" << minAllGID << " - " << maxAllGID << ")" << endl;
             ierr = true;
+          }
           else {
             // Guess uniform distribution and start a little above it
             OrdinalType image1 = TPETRA_MIN((GID / TPETRA_MAX(nOverP, one)) + one + one, numImages - one);
@@ -202,8 +208,9 @@ namespace Tpetra {
           if(computeLIDs)
             localEntries[i] = LID;
         }
-        if(ierr)
-          throw reportError("Some GIDs specified were not found in this ElementSpace", 1);
+        //if(ierr)
+          //throw reportError("Some GIDs specified were not found in this ElementSpace", 2);
+          //cerr << "ERROR: BasicDirectory::getEntries - Some GIDs specified were not found in this ElementSpace" << endl;
       }
         
       // General Case: ElementSpace is distributed and allocated arbitrarily
@@ -258,7 +265,7 @@ namespace Tpetra {
         OrdinalType* ptr = imports;
         for(OrdinalType i = zero; i < numRecv; i++) {
           currLID = *ptr++;
-          for(OrdinalType j = zero; j < numEntries; i++) {
+          for(OrdinalType j = zero; j < numEntries; j++) {
             if(currLID == globalEntries[j]) {
               images[j] = *ptr++;
               if(computeLIDs)
@@ -267,7 +274,6 @@ namespace Tpetra {
             }
           }
         }
-
         delete[] cImports;
       }
     };

@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
 
 	int temp1 = obj1.getTracebackMode();
 	cout << obj1 << endl;
+  cout << temp1 << endl;
 
 	// test SerialComm
 	cout << "*** Creating SerialComm..." << endl;
@@ -55,6 +56,7 @@ int main(int argc, char *argv[])
 	Tpetra::SerialPlatform<int, int> platform1;
   int temp2 = platform1.getNumImages();
 	cout << platform1 << endl;
+  cout << temp2 << endl;
 
 	cout << "*** Finished." << endl;
 

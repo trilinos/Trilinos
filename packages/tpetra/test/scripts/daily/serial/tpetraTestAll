@@ -77,7 +77,7 @@ echo `uname -a` >>& $file
 # but are invoked from various build directories
 
 # List the subdirectories of 'test' containing test exe's in the foreach loop
-foreach f (BlockElementSpace CisMatrix Comm Distributor ElementSpace Platform Vector VectorSpace)
+foreach f (Platform Comm Distributor ElementSpace Directory ImportExport BlockElementSpace VectorSpace Vector CisMatrix)
 	cd $f
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file

@@ -35,6 +35,7 @@
 #include "Tpetra_Comm.hpp"
 #include "Tpetra_MpiTraits.hpp"
 #include "Tpetra_PacketTraits.hpp"
+#include "Tpetra_MpiData.hpp"
 
 namespace Tpetra {
 
@@ -210,7 +211,5 @@ class MpiData;
 	}; // MpiComm class
   
 } // namespace Tpetra
-
-#include "Tpetra_MpiData.hpp"
 
 #endif // TPETRA_MPICOMM_HPP

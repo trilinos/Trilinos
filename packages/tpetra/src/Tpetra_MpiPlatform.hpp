@@ -36,12 +36,10 @@
 #include "Tpetra_MpiComm.hpp"
 #include "Tpetra_BasicDirectory.hpp"
 #include "Tpetra_MpiDistributor.hpp"
+#include "Tpetra_MpiData.hpp"
+#include "Tpetra_ElementSpace.hpp"
 
 namespace Tpetra {
-
-// forward declaration of MpiData, needed to prevent circular inclusions
-// actual #include statement at the end of this file
-class MpiData;
 
 	//! Tpetra::MpiPlatform: MPI Implementation of the Platform class.
 
@@ -150,7 +148,5 @@ class MpiData;
 	}; // MpiPlatform class
   
 } // namespace Tpetra
-
-#include "Tpetra_MpiData.hpp"
 
 #endif // TPETRA_MPIPLATFORM_HPP

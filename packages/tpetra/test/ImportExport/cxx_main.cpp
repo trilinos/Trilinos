@@ -76,6 +76,8 @@ int main(int argc, char* argv[]) {
 	if(verbose) outputStartMessage("ImportExport");
   int ierr = 0;
   
+  //mpiBreakpoint(rank);
+
   // call the actual test routines
 	ierr += unitTests<int>(verbose, debug, rank, size);
   
@@ -180,7 +182,6 @@ void codeCoverage(bool verbose, int rank, int size) {
   OrdinalType const negOne = zero - Teuchos::OrdinalTraits<OrdinalType>::one();
   OrdinalType const five = intToOrdinal<OrdinalType>(5);
   OrdinalType const ten = intToOrdinal<OrdinalType>(10);
-
   if(verbose) cout << "Creating ElementSpaces..." << endl;
   Tpetra::ElementSpace<OrdinalType> source(negOne, ten, zero, platform);
   Tpetra::ElementSpace<OrdinalType> target(negOne, five, zero, platform);

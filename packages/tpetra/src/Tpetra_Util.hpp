@@ -63,30 +63,31 @@ namespace Tpetra {
   // functions for converting types to strings
   // mainly used for doing output
   template <typename T>
-  std::string toString(T const& x)
-  {
-    return(Teuchos::toString(x));
-  }
+  std::string toString(T const& x) {return(Teuchos::toString(x));}
 
   // this function works much the way Teuchos::Array::toString works.
   // it allows std::vector to be used with an ostream.
   // The contents of the vector are printed in the following format:
   // "{4, 7, 18, 23, 6, 2}"
-  template<typename T>
-  inline ostream& operator<<(ostream& os, std::vector<T> const& vector)
-  {
-    os << "{";
-    if(!vector.empty()) {
-      typename std::vector<T>::const_iterator i = vector.begin();
-      os << *i;
+  template <typename T>
+  std::string toString(std::vector<T> const& x) {
+    std::string output("{");
+    if(!x.empty()) {
+      typename std::vector<T>::const_iterator i = x.begin();
+      output += toString(*i);
       i++;
-      for(; i != vector.end(); i++)
-        os << "," << *i;
+      for(; i != x.end(); i++)
+        output = output + "," + toString(*i);
     }
-    os << "}";
-    return(os);
+    output += "}";
+    return(output);
   }
 
+  template <typename T>
+  std::string toString(std::complex<T> const& x) {
+    return("(" + toString(x.real()) + "," + toString(x.imag()) + ")");
+  }
+ 
   // sort function for multiple arrays
   // The values in sortVals will be sorted in ascending order.
   // The same permutation required to sort sortVals will be applied

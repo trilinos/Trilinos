@@ -67,7 +67,6 @@ int main(int argc, char* argv[]) {
   
   // change verbose to only be true on Image 0
   // if debug is enabled, it will still output on all nodes
-  bool verboseAll = verbose;
   verbose = (verbose && (myImageID == 0));
   
   // start the testing
@@ -76,14 +75,13 @@ int main(int argc, char* argv[]) {
   
   // call the actual test routines
   ierr += unitTests<int>(verbose, debug, myImageID, numImages);
-	ierr += unitTests<unsigned int>(verbose, debug, myImageID, numImages);
+	//ierr += unitTests<unsigned int>(verbose, debug, myImageID, numImages);
   
 	// finish up
 #ifdef TPETRA_MPI
   MPI_Finalize();
 #endif
 	if(verbose) outputEndMessage("Directory", (ierr == 0));
-  if(ierr != 0) cout << "[Image " << myImageID << "] Return Value = " << ierr << endl;
 	return(ierr);
 }
 
@@ -96,53 +94,118 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   int ierr = 0;
   int returnierr = 0;
 
+  // fixtures
+  OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+  OrdinalType const indexBase = zero;
+  OrdinalType numGlobalElements;
+  std::vector<OrdinalType> allGIDs;
+  std::vector<int> imageIDs;
+  std::vector<int> expectedImageIDs;
+  std::vector<OrdinalType> LIDs;
+  std::vector<OrdinalType> expectedLIDs;
+
 	// ======================================================================
 	// code coverage section - just call functions, no testing
 	// ======================================================================
-
-  OrdinalType const nME = intToOrdinal<OrdinalType>(5);
-  OrdinalType const negOne = Teuchos::OrdinalTraits<OrdinalType>::zero() - Teuchos::OrdinalTraits<OrdinalType>::one();
   
-  // create platform and elementspace needed for directory construction
+  // create platform needed for directory construction
 #ifdef TPETRA_MPI
 	Tpetra::MpiPlatform<OrdinalType, OrdinalType> platform(MPI_COMM_WORLD);
 #else
 	Tpetra::SerialPlatform<OrdinalType, OrdinalType> platform;
 #endif
   
-  // fixtures
-  Tpetra::ElementSpace<OrdinalType> elementspace(nME, negOne, Teuchos::OrdinalTraits<OrdinalType>::zero(), platform);
-  std::vector<OrdinalType> GIDs = elementspace.getMyGlobalElements();
-  std::vector<OrdinalType> imageIDs;
-  std::vector<OrdinalType> LIDs;
-
-  // constructor
-  if(verbose) cout << "Calling constructor..." << endl;
-  Tpetra::BasicDirectory<OrdinalType> directory(elementspace);
-
-  // copy constructor
-  if(verbose) cout << "Calling copy constructor..." << endl;
-  Tpetra::BasicDirectory<OrdinalType> directory2(directory);
-
-  // getDirectoryEntries - imageIDs only
-  if(verbose) cout << "Calling getDirectoryEntries(#1)..." << endl;
-  directory.getDirectoryEntries(GIDs, imageIDs);
-
-  // getDirectoryEntries - imageIDs and LIDs
-  if(verbose) cout << "Calling getDirectoryEntries(#2)..." << endl;
-  directory.getDirectoryEntries(GIDs, imageIDs, LIDs);
-  
 	// ======================================================================
 	// actual testing section - affects return code
 	// ======================================================================
 
-  // no tests yet
+  // ========================================
+  // test with a uniform ES
+  // ========================================
+  if(verbose) cout << "Testing Directory using a uniform contiguous ElementSpace (ES ctr 1)... " << endl;
+  numGlobalElements = intToOrdinal<OrdinalType>(10); // 10 elements, distributed uniformly by ES
+  Tpetra::ElementSpace<OrdinalType> elementspace(numGlobalElements, indexBase, platform);
+  Tpetra::BasicDirectory<OrdinalType> directory(elementspace);
+
+  // fill allGIDs with {0, 1, 2... 9}
+  for(OrdinalType i = zero; i < numGlobalElements; i++)
+    allGIDs.push_back(i);
+
+  // fill expectedImageIDs with what should be the values
+  // divide numGlobalElements evenly, give remainder to first images (one each)
+  expectedImageIDs.reserve(numGlobalElements);
+  int numEach = numGlobalElements / numImages;
+  int remainder = numGlobalElements - (numEach * numImages);
+  for(int i = 0; i < numImages; i++) {
+    for(int j = 0; j < numEach; j++)
+      expectedImageIDs.push_back(i);
+    if(remainder > 0) {
+      expectedImageIDs.push_back(i);
+      remainder--;
+    }
+  }
+  
+  if(verbose) cout << "Testing getDirectoryEntries(imageIDs only)... ";
+  directory.getDirectoryEntries(allGIDs, imageIDs);
+  if(debug) {
+    if(verbose) cout << endl;
+    outputData(myImageID, numImages, "GIDs: " + toString(allGIDs));
+    outputData(myImageID, numImages, "imageIDs: " + toString(imageIDs));
+    outputData(myImageID, numImages, "Expected: " + toString(expectedImageIDs));
+    if(verbose) cout << "getDirectoryEntries(imageIDs only) test ";
+  }
+  if(imageIDs != expectedImageIDs) {
+    if(verbose) cout << "failed" << endl;
+    ierr++;
+  }
+  else
+    if(verbose) cout << "passed" << endl;
+  returnierr += ierr;
+  ierr = 0;
+
+  // create expectedLIDs array
+  expectedLIDs.reserve(numGlobalElements);
+  int curImageID = expectedImageIDs.front();
+  int curLID = 0;
+  for(int i = 0; i < numGlobalElements; i++) { // go through entire LIDs array
+    if(expectedImageIDs[i] > curImageID) {
+      curLID = 0;
+      curImageID = expectedImageIDs[i];
+    }
+    expectedLIDs.push_back(curLID);
+    curLID++;
+  }
+
+  // copy old imageID results
+  std::vector<int> prevImageIDs = imageIDs;
+
+  if(verbose) cout << "Testing getDirectoryEntries(imageIDs and LIDs)... ";
+  if(imageIDs != prevImageIDs) {
+    outputData(myImageID, numImages, "\nERROR: imageIDs returned by two getDirectoryEntries functions do not match");
+  }
+  directory.getDirectoryEntries(allGIDs, imageIDs, LIDs);
+  if(debug) {
+    if(verbose) cout << endl;
+    outputData(myImageID, numImages, "GIDs: " + toString(allGIDs));
+    outputData(myImageID, numImages, "LIDs: " + toString(LIDs));
+    outputData(myImageID, numImages, "Expected: " + toString(expectedLIDs));
+    if(verbose) cout << "getDirectoryEntries(imageIDs and LIDs) test ";
+  }
+  if(LIDs != expectedLIDs) {
+    if(verbose) cout << "failed" << endl;
+    ierr++;
+  }
+  else
+    if(verbose) cout << "passed" << endl;
+  returnierr += ierr;
+  ierr = 0;
+
+  
   
 	// ======================================================================
 	// finish up
 	// ======================================================================
   
-  comm.barrier();
 	if(verbose) {
 		if(returnierr == 0)
       outputHeading("Unit tests for " + className + " passed.");

@@ -72,8 +72,7 @@ int main(int argc, char* argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 #endif // TPETRA_MPI
   
-  // change verbose to only be true on Image 0, and verboseAll to have the original verbose setting
-  bool verboseAll = verbose;
+  // change verbose to only be true on Image 0
   verbose = (verbose && (rank == 0));
   
   // start the testing

@@ -27,12 +27,12 @@
 // @HEADER
 
 #include "../tpetra_test_util.hpp"
-#include "Tpetra_PacketTraits.hpp"
-#include "Tpetra_Util.hpp"
 #ifdef TPETRA_MPI
 #include <mpi.h>
+#include "Tpetra_MpiPlatform.hpp"
 #include "Tpetra_MpiComm.hpp"
 #else
+#include "Tpetra_SerialPlatform.hpp"
 #include "Tpetra_SerialComm.hpp"
 #endif // TPETRA_MPI
 
@@ -66,7 +66,6 @@ int main(int argc, char* argv[]) {
   
   // change verbose to only be true on Image 0
   // if debug is enabled, it will still output on all nodes
-  bool verboseAll = verbose;
   verbose = (verbose && (myImageID == 0));
   
   // start the testing
@@ -84,7 +83,6 @@ int main(int argc, char* argv[]) {
   MPI_Finalize();
 #endif
 	if(verbose) outputEndMessage("Comm", (ierr == 0));
-  if(ierr != 0) cout << "[Image " << myImageID << "] Return Value = " << ierr << endl;
 	return(ierr);
 }
 
@@ -133,15 +131,13 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   generateColumn(myVals, myImageID, length); // set myVals
   if(debug) {
     if(verbose) cout << endl;
-    comm.barrier();
-    cout << "[Image " << myImageID << "] Values prior to broadcast: " << myVals << endl;
+    outputData(myImageID, numImages, "Values prior to broadcast: " + toString(myVals));
   }
   comm.broadcast(&myVals.front(), length, root);
   generateColumn(expected, root, length);
   if(debug) {
-    cout << "[Image " << myImageID << "] Values after broadcast:    " << myVals << endl;
-    if(verbose) cout << "[  All  ] Expected values:           " << expected << endl;
-    comm.barrier();
+    outputData(myImageID, numImages, "Values after broadcast:    " + toString(myVals));
+    if(verbose) cout << "[  All  ] Expected values:           " << toString(expected) << endl;
     if(verbose) cout << "Broadcast test ";
   }
   if(myVals != expected) {
@@ -161,11 +157,9 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   generateMultipleColumns(expected, 0, (numImages-1), length);
   if(debug) {
     if(verbose) cout << endl;
-    comm.barrier();
-    cout << "[Image " << myImageID << "] myVals:   " << myVals << endl;
-    cout << "[Image " << myImageID << "] allVals:  " << allVals << endl;
-    if(verbose) cout << "[  All  ] Expected: " << expected << endl;
-    comm.barrier();
+    outputData(myImageID, numImages, "myVals:   " + toString(myVals));
+    outputData(myImageID, numImages, "allVals:  " + toString(allVals));
+    if(verbose) cout << "[  All  ] Expected: " << toString(expected) << endl;
     if(verbose) cout << "GatherAll test ";
   }
   if(allVals != expected) {
@@ -184,11 +178,9 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   generateRowSums(expected, 0, numImages-1, length);
   if(debug) {
     if(verbose) cout << endl;
-    comm.barrier();
-    cout << "[Image " << myImageID << "] localSums:  " << myVals << endl;
-    cout << "[Image " << myImageID << "] globalSums: " << allVals << endl;
-    if(verbose) cout << "[  All  ] Expected:   " << expected << endl;
-    comm.barrier();
+    outputData(myImageID, numImages, "localSums:  " + toString(myVals));
+    outputData(myImageID, numImages, "globalSums: " + toString(allVals));
+    if(verbose) cout << "[  All  ] Expected:   " << toString(expected) << endl;
     if(verbose) cout << "SumAll test ";
   }
   if(allVals != expected) {
@@ -206,11 +198,9 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   generateRowMaxs(expected, 0, numImages-1, length);
   if(debug) {
     if(verbose) cout << endl;
-    comm.barrier();
-    cout << "[Image " << myImageID << "] localMaxs:  " << myVals << endl;
-    cout << "[Image " << myImageID << "] globalMaxs: " << allVals << endl;
-    if(verbose) cout << "[  All  ] Expected:   " << expected << endl;
-    comm.barrier();
+    outputData(myImageID, numImages, "localMaxs:  " + toString(myVals));
+    outputData(myImageID, numImages, "globalMaxs: " + toString(allVals));
+    if(verbose) cout << "[  All  ] Expected:   " << toString(expected) << endl;
     if(verbose) cout << "MaxAll test ";
   }
   if(allVals != expected) {
@@ -229,9 +219,9 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   if(debug) {
     if(verbose) cout << endl;
     comm.barrier();
-    cout << "[Image " << myImageID << "] localMins:  " << myVals << endl;
-    cout << "[Image " << myImageID << "] globalMins: " << allVals << endl;
-    if(verbose) cout << "[  All  ] Expected:   " << expected << endl;
+    outputData(myImageID, numImages, "localMins:  " + toString(myVals));
+    outputData(myImageID, numImages, "globalMins: " + toString(allVals));
+    if(verbose) cout << "[  All  ] Expected:   " << toString(expected) << endl;
     comm.barrier();
     if(verbose) cout << "MinAll test ";
   }
@@ -250,11 +240,9 @@ int unitTests(bool const verbose, bool const debug, int const myImageID, int con
   generateRowSums(expected, 0, myImageID, length);
   if(debug) {
     if(verbose) cout << endl;
-    comm.barrier();
-    cout << "[Image " << myImageID << "] localScanSums:  " << myVals << endl;
-    cout << "[Image " << myImageID << "] globalScanSums: " << allVals << endl;
-    cout << "[Image " << myImageID << "] Expected:       " << expected << endl;
-    comm.barrier();
+    outputData(myImageID, numImages, "localScanSums:  " + toString(myVals));
+    outputData(myImageID, numImages, "globalScanSums: " + toString(allVals));
+    outputData(myImageID, numImages, "Expected:  " + toString(expected));
     if(verbose) cout << "ScanSum test ";
   }
   if(allVals != expected) {

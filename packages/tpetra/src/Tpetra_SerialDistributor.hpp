@@ -93,12 +93,12 @@ namespace Tpetra {
     //@{ \name Execute Gather/Scatter Operations (Constant size objects)
 
     //! doPostsAndWaits
-    void doPostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) {
+    void doPostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) {
       throw reportError("This method should never be called.", -1);
     };
     
     //! doPosts
-    void doPosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) {
+    void doPosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) {
       throw reportError("This method should never be called.", -1);
     };
 
@@ -108,12 +108,12 @@ namespace Tpetra {
     };
 
     //! doReversePostsAndWaits
-    void doReversePostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) {
+    void doReversePostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) {
       throw reportError("This method should never be called.", -1);
     };
     
     //! doReversePosts
-    void doReversePosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) {
+    void doReversePosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) {
       throw reportError("This method should never be called.", -1);
     };
 

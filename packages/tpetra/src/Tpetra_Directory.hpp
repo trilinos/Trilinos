@@ -56,7 +56,7 @@ namespace Tpetra {
       \param Out
              imageIDs - On return contains list of Image IDs owning the Global IDs in question.
     */
-    virtual void getDirectoryEntries(std::vector<OrdinalType> const globalEntries, std::vector<OrdinalType> images) const = 0;
+    virtual void getDirectoryEntries(std::vector<OrdinalType> const& globalEntries, std::vector<OrdinalType>& images) const = 0;
     
     //! getDirectoryEntries : Returns image and local id info for non-local ElementSpace entries
     /*! Given a list of Global Entry IDs, this function returns the list of
@@ -71,7 +71,7 @@ namespace Tpetra {
       \param Out
              localEntries - On return contains the local ID of the global on the owning image. 
     */
-    virtual void getDirectoryEntries(std::vector<OrdinalType> const globalEntries, std::vector<OrdinalType> images, std::vector<OrdinalType> localEntries) const = 0;
+    virtual void getDirectoryEntries(std::vector<OrdinalType> const& globalEntries, std::vector<OrdinalType>& images, std::vector<OrdinalType>& localEntries) const = 0;
 
     //@}
     

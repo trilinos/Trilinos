@@ -206,8 +206,8 @@ namespace Tpetra {
           lgMap[i + zero] = elementList[i]; // lgmap: LID=key, GID=mapped
           glMap[elementList[i]] = (i + zero); // glmap: GID=key, LID=mapped
         }
-        minMyGID = elementList[zero];
-        maxMyGID = elementList[numMyElements - one];
+        minMyGID = *min_element(elementList.begin(), elementList.end());
+        maxMyGID = *max_element(elementList.begin(), elementList.end());
       }
       
       // set min/maxAllGIDs
@@ -250,7 +250,7 @@ namespace Tpetra {
       data().Directory_->getDirectoryEntries(GIDList, imageIDList);
     };
     
-    //! Returns local ID of global ID passed in, throws exception -1 if not found on this image.
+    //! Returns local ID of global ID passed in, throws exception 1 if not found on this image.
     OrdinalType getLID(OrdinalType GID) const {
       if(!isMyGID(GID)) 
         throw reportError("Global ID " + toString(GID) + " was not found on this image.", 1);
@@ -261,7 +261,7 @@ namespace Tpetra {
       }
     };
     
-    //! Returns global ID of local ID passed in, throws exception -1 if not found on this image.
+    //! Returns global ID of local ID passed in, throws exception 2 if not found on this image.
     OrdinalType getGID(OrdinalType LID) const {
       if(!isMyLID(LID))
         throw reportError("Local ID " + toString(LID) + " was not found on this image.", 2);

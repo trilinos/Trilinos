@@ -123,15 +123,15 @@ namespace Tpetra {
     //! print method inherited from Object
   	virtual void print(ostream& os) const {
       os << "Import Data Members:" << endl;
-      os << "permuteToLIDs_: " << getPermuteToLIDs() << endl;;
-      os << "permuteFromLIDs_: " << getPermuteFromLIDs() << endl;
-      os << "remoteLIDs_: " << getRemoteLIDs() << endl;
-      //os << "exportLIDs_: N/A" << endl;
-      //os << "exportImageIDs_: N/A" << endl;
+      os << "permuteToLIDs_: " << toString(getPermuteToLIDs()) << endl;;
+      os << "permuteFromLIDs_: " << toString(getPermuteFromLIDs()) << endl;
+      os << "remoteLIDs_: " << toString(getRemoteLIDs()) << endl;
+      os << "exportLIDs_: " << toString(getExportLIDs()) << endl;
+      os << "exportImageIDs_: " << toString(getExportImageIDs()) << endl;
       os << "numSameIDs_: " << getNumSameIDs() << endl;
       os << "numPermuteIDs_: " << getNumPermuteIDs() << endl;
       os << "numRemoteIDs_: " << getNumRemoteIDs() << endl;
-      //os << "numExportIDs_: N/A" << endl;
+      os << "numExportIDs_: " << getNumExportIDs() << endl;
       os << "\nsource_: " << endl << getSourceSpace();
       os << "\ntarget_: " << endl << getTargetSpace();
       //os << "distributor_: N/A" << endl;

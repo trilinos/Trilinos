@@ -29,18 +29,16 @@
 #ifndef TPETRA_MPIDISTRIBUTOR_HPP
 #define TPETRA_MPIDISTRIBUTOR_HPP
 
+#include "../test/tpetra_test_util.hpp"
 #include <mpi.h>
 #include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_MpiTraits.hpp"
 #include "Tpetra_Util.hpp"
+#include "Tpetra_MpiData.hpp"
 
 namespace Tpetra {
-
-  // forward declaration of MpiData, needed to prevent circular inclusions
-  // actual #include statement at the end of this file
-  class MpiData;
   
   //! Tpetra::MpiDistributor:  The Tpetra MPI implementation of the Tpetra::Distributor Gather/Scatter Setup Class.
   /*! The MpiDistributor class is an MPI implement of Tpetra::Distributor.
@@ -65,7 +63,7 @@ namespace Tpetra {
       , request_(0)
       , status_(0)
       , totalReceiveLength_(Teuchos::OrdinalTraits<OrdinalType>::zero())
-      , tag_(26000)
+      , tag_(data->getMpiTag())
     {};
     
     //! Copy Constructor
@@ -265,7 +263,6 @@ namespace Tpetra {
                          std::vector<OrdinalType>& exportImageIDs)
 		{
       computeSends(numRemoteIDs, remoteGIDs, remoteImageIDs, numExportIDs, exportGIDs, exportImageIDs, data().getMyImageID());
-      
       OrdinalType testNumRemoteIDs; // dummy-ish variable
       createFromSends(numExportIDs, exportImageIDs, deterministic, testNumRemoteIDs);
     };
@@ -276,18 +273,18 @@ namespace Tpetra {
     //@{ \name Execute Gather/Scatter Operations (Constant size objects)
 
     //! Execute plan on buffer of export objects in a single step
-    void doPostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) {
+    void doPostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) {
       doPosts(export_objs, obj_size, len_import_objs, import_objs);
       doWaits();
     };
     
     //! Post buffer of export objects (can do other local work before executing Waits)
-    void doPosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) {
+    void doPosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) {
       OrdinalType const zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
       OrdinalType const one = Teuchos::OrdinalTraits<OrdinalType>::one();
       OrdinalType myImageID = data().getMyImageID();
       OrdinalType selfReceiveAddress = zero;
-        
+      
       if(len_import_objs < (totalReceiveLength_ * obj_size)) {
         if(len_import_objs) 
           delete [] import_objs;
@@ -308,7 +305,6 @@ namespace Tpetra {
         
         j += (lengthsFrom_[i] * obj_size);
       }
-      
       MPI_Barrier(data().getMpiComm());
       
       //setup scan through procs_to list starting w/ higher numbered procs 
@@ -384,10 +380,10 @@ namespace Tpetra {
     };
 
     //! Execute reverse of plan on buffer of export objects in a single step
-    void doReversePostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) {};
+    void doReversePostsAndWaits(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) {};
     
     //! Do reverse post of buffer of export objects (can do other local work before executing Waits)
-    void doReversePosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char* import_objs) {};
+    void doReversePosts(char* export_objs, OrdinalType const& obj_size, OrdinalType& len_import_objs, char*& import_objs) {};
     
     //! Wait on a reverse set of posts
     void doReverseWaits() {};
@@ -398,7 +394,32 @@ namespace Tpetra {
     //@{ \name I/O Methods
 
     //! print method inherited from Object
-    void print(ostream& os) const {};
+    void print(ostream& os) const {
+      int const myImageID = data().getMyImageID();
+      int const numImages = data().getNumImages();
+      for(int i = 0; i < numImages; i++) {
+        MPI_Barrier(data().getMpiComm());
+        if(i == myImageID) {
+          cout << "[Image " << myImageID << " of " << numImages << "]" << endl;
+          cout << " numExports: " << numExports_ << endl;
+          cout << " selfMessage: " << selfMessage_ << endl;
+          cout << " numSends_: " << numSends_ << endl;
+          cout << " imagesTo_: " << toString(imagesTo_) << endl;
+          cout << " startsTo_: " << toString(startsTo_) << endl;
+          cout << " lengthsTo_: " << toString(lengthsTo_) << endl;
+          cout << " maxSendLength_: " << maxSendLength_ << endl;
+          cout << " indicesTo_: " << toString(indicesTo_) << endl;
+          cout << " numReceives_: " << numReceives_ << endl;
+          cout << " totalReceiveLength_: " << totalReceiveLength_ << endl;
+          cout << " tag_: " << tag_ << endl;
+          cout << " lengthsFrom_: " << toString(lengthsFrom_) << endl;
+          cout << " imagesFrom_: " << toString(imagesFrom_) << endl;
+          cout << " indicesFrom_: " << toString(indicesFrom_) << endl;
+          cout << " startsFrom_: " << toString(startsFrom_) << endl;
+          cout << " sendArraySize_: " << sendArraySize_ << endl;
+        }
+      }
+    };
 
     //! printInfo method inherited from Distributor
     void printInfo(ostream& os) const {os << *this;};
@@ -426,11 +447,11 @@ namespace Tpetra {
     MPI_Request* request_;
     MPI_Status* status_;
     OrdinalType totalReceiveLength_;
+    int tag_;
     std::vector<OrdinalType> lengthsFrom_;
     std::vector<OrdinalType> imagesFrom_;
     std::vector<OrdinalType> indicesFrom_;
     std::vector<OrdinalType> startsFrom_;
-    int tag_;
     OrdinalType sendArraySize_;
     char* sendArray_;
 
@@ -444,9 +465,7 @@ namespace Tpetra {
       
       for(OrdinalType i = zero; i < (numSends_ + selfMessage_); i++)
         msg_count[imagesTo_[i]] = one;
-      
       MPI_Reduce_scatter(&msg_count.front(), &numReceives_, &counts.front(), MpiTraits<OrdinalType>::datatype(), MpiTraits<OrdinalType>::sumOp(), data().getMpiComm()); // MPI
-
       lengthsFrom_.assign(numReceives_, zero);
       imagesFrom_.assign(numReceives_, zero);
       
@@ -458,12 +477,10 @@ namespace Tpetra {
           lengthsFrom_[numReceives_-one] = lengthsTo_[i];
           imagesFrom_[numReceives_-one] = myImageID;
         }
-      
       for(OrdinalType i = zero; i < (numReceives_ - selfMessage_); i++) {
         MPI_Recv(&lengthsFrom_[i], 1, MpiTraits<OrdinalType>::datatype(), MPI_ANY_SOURCE, tag_, data().getMpiComm(), &status); // MPI
         imagesFrom_[i] = status.MPI_SOURCE; // MPI
       }
-      
       MPI_Barrier(data().getMpiComm()); // MPI
       
       sortArrays(imagesFrom_, lengthsFrom_);
@@ -532,13 +549,10 @@ namespace Tpetra {
       }
 
       delete[] c_export_objs;
-      
     };
     
   }; // class MpiDistributor
   
 } // namespace Tpetra
-
-#include "Tpetra_MpiData.hpp"
 
 #endif // TPETRA_MPIDISTRIBUTOR_HPP
