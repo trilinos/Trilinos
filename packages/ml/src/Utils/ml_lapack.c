@@ -7448,6 +7448,32 @@ return( *b >= 0 ? x : -x);
 }
 #endif
 
+#ifndef ML_S_CAT_FUNC
+#ifdef KR_headers
+int s_cat(lp, rpp, rnp, np, ll) char *lp, *rpp[]; ftnlen rnp[], *np, ll;
+#else
+int s_cat(char *lp, char *rpp[], int rnp[], int *np, ftnlen ll)
+#endif
+{
+ftnlen i, n, nc;
+char *f__rp;
+
+n = (int)*np;
+for(i = 0 ; i < n ; ++i)
+        {
+        nc = ll;
+        if(rnp[i] < nc)
+                nc = rnp[i];
+        ll -= nc;
+        f__rp = rpp[i];
+        while(--nc >= 0)
+                *lp++ = *f__rp++;
+        }
+while(--ll >= 0)
+        *lp++ = ' ';
+}
+#endif
+
 #ifndef ML_POW_DI_FUNC
 #ifdef KR_headers
 double pow_di(ap, bp) doublereal *ap; integer *bp;
@@ -9619,6 +9645,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
        If it looks like we're on a Cray, take the square root of   
        SMALL and LARGE to avoid overflow and underflow problems. */
+#ifdef CRAY
     /* Builtin functions */
     double d_lg10(doublereal *), sqrt(doublereal);
 
@@ -9627,6 +9654,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	*small = sqrt(*small);
 	*large = sqrt(*large);
     }
+#endif
 
     return 0;
 
@@ -10431,7 +10459,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 } /* dorm2r_ */
 #endif
 
-#ifndef ML_DROML2_FUNC
+#ifndef ML_DORML2_FUNC
 
 /* Subroutine */ int dorml2_(char *side, char *trans, integer *m, integer *n, 
 	integer *k, doublereal *a, integer *lda, doublereal *tau, doublereal *
