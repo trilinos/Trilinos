@@ -96,7 +96,7 @@ else {
 # This email will be used to create the database for SNL Tech. Transfer.
 
 $database_mgr = "kddevin\@cs.sandia.gov";
-open(MAIL, "|mail $database_mgr $recipient") || dienow "Unable to send mail.";
+open(MAIL, "|/usr/lib/sendmail $database_mgr $recipient") || dienow "Unable to send mail.";
 print MAIL "$pkg|$ul|$in{email}|$in{name}|$in{company}|$in{addr1}|$in{addr2}|$in{city}|$in{state}|$in{zip}|$in{country}|$ENV{'REMOTE_ADDR'}\n\n";
 close MAIL;
 
