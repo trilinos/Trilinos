@@ -424,23 +424,23 @@ int checkSharedOwnership(Epetra_Comm& Comm, bool verbose) {
 	soleOutput = SoleOwner.OptimizeStorage();
 	sharedOutput = SharedOwner.OptimizeStorage();
 	EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
-	EPETRA_TEST_ERR(!(sharedOutput == 1), ierr);
+	EPETRA_TEST_ERR(!(sharedOutput == 0), ierr);
 	if(verbose && ierr > 0) cout << "soleOutput = " << soleOutput << " sharedOutput = " << sharedOutput << endl;
 
 	// RemoveMyIndices (#1)
 	if(verbose) cout << "RemoveMyIndices..." << endl;
 	soleOutput = SoleOwner.RemoveMyIndices(0, 1, &array1[1]);
 	sharedOutput = SharedOwner.RemoveMyIndices(0, 1, &array1[1]);
-	EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
-	EPETRA_TEST_ERR(!(sharedOutput == 1), ierr);
+	EPETRA_TEST_ERR(!(soleOutput == -1), ierr);
+	EPETRA_TEST_ERR(!(sharedOutput == -1), ierr);
 	if(verbose && ierr > 0) cout << "soleOutput = " << soleOutput << " sharedOutput = " << sharedOutput << endl;
 
 	// RemoveMyIndices (#2)
 	if(verbose) cout << "RemoveMyIndices(#2)..." << endl;
 	soleOutput = SoleOwner.RemoveMyIndices(0);
 	sharedOutput = SharedOwner.RemoveMyIndices(0);
-	EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
-	EPETRA_TEST_ERR(!(sharedOutput == 1), ierr);
+	EPETRA_TEST_ERR(!(soleOutput == -1), ierr);
+	EPETRA_TEST_ERR(!(sharedOutput == -1), ierr);
 	if(verbose && ierr > 0) cout << "soleOutput = " << soleOutput << " sharedOutput = " << sharedOutput << endl;
 
 	// FillComplete (#2)
