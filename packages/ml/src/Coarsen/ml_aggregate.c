@@ -1014,7 +1014,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    t0 = ML_gsum_double(t0, comm);
    t0 = t0/((double) comm->ML_nprocs);
    if (comm->ML_mypid == 0)
-      printf(" Aggregation time \t= %e\n",t0);
+      printf("Aggregation time \t= %e\n",t0);
 #endif
 
    return Ncoarse;
@@ -1051,6 +1051,7 @@ int ML_Aggregate_Print( ML_Aggregate *ag )
            printf("ML_Aggregate : attach scheme      = MINRANK\n");
            break;
    }
+   /* MS comment this out because it doesn't always work 
    switch (ag->coarsen_scheme)
    {
       case ML_AGGR_UNCOUPLED :
@@ -1060,6 +1061,7 @@ int ML_Aggregate_Print( ML_Aggregate *ag )
            printf("ML_Aggregate : coarsen scheme     = COUPLED\n");
            break;
    }
+   */
    printf("ML_Aggregate : strong threshold   = %e\n", ag->threshold);
    printf("ML_Aggregate : P damping factor   = %e\n", 
                                 ag->smoothP_damping_factor);

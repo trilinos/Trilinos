@@ -89,12 +89,12 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
       if ( ml_ag->coarsen_scheme == 4 )
       {
          level = ML_Gen_MGHierarchy(ml, start, ML_AGG_Increment_Two_Level,
-                     ML_AGG_Gen_DDProlongator, NULL, ML_INTERNAL, ml_ag);
+				    ML_AGG_Gen_DDProlongator, NULL, ML_INTERNAL, ml_ag);
       }
       else
       {
          level = ML_Gen_MGHierarchy(ml, start, ML_AGG_Increment_Level,
-                     ML_AGG_Gen_Prolongator, NULL, ML_INTERNAL, ml_ag);
+				    ML_AGG_Gen_Prolongator, NULL, ML_INTERNAL, ml_ag);
       }
    }
    else if (increment_or_decrement == ML_DECREASING)
@@ -102,12 +102,12 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
       if ( ml_ag->coarsen_scheme == 4 )
       {
          level = ML_Gen_MGHierarchy(ml, start, ML_AGG_Decrement_Two_Level,
-                     ML_AGG_Gen_DDProlongator, NULL, ML_INTERNAL, ml_ag);
+				    ML_AGG_Gen_DDProlongator, NULL, ML_INTERNAL, ml_ag);
       }
       else
       {
          level = ML_Gen_MGHierarchy(ml, start, ML_AGG_Decrement_Level,
-                     ML_AGG_Gen_Prolongator, NULL, ML_INTERNAL, ml_ag);
+				    ML_AGG_Gen_Prolongator, NULL, ML_INTERNAL, ml_ag);
       }
    }
    else 
@@ -151,8 +151,8 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
 /* ------------------------------------------------------------------------- */
 
 int ML_Gen_MGHierarchy(ML *ml, int fine_level,
-        int (*next_level)(ML *, int, ML_Operator *, ML_Aggregate *ag2),
-        int (*user_gen_prolongator)(ML *, int, int, void *, ML_Aggregate *),
+        int (*next_level)(ML *, int,  void *),
+        int (*user_gen_prolongator)(ML *, int, int, void *),
         void *data, int internal_or_external, ML_Aggregate *ag)
 {
    int level, next, flag, count=1;
@@ -190,7 +190,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 
    ml->ML_finest_level = fine_level;
    level = fine_level;
-   next  = next_level(ml, level, &(ml->Amat[fine_level]), ag);
+   next  = next_level(ml, level, ag);
 
    while (next >= 0) 
    {
@@ -222,12 +222,11 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 
       if (internal_or_external == ML_INTERNAL)
       {
-         flag = user_gen_prolongator(ml, level, next,
-                                     (void*)&(ml->Amat[level]),ag);
+         flag = (*user_gen_prolongator)(ml, level, next,(void *)ag);
       }
       else 
       {
-         flag = user_gen_prolongator(ml, level, next, data, ag);
+         flag = (*user_gen_prolongator)(ml, level, next, (void *)ag);
       }
       if (flag < 0) break;
 
@@ -279,10 +278,9 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 	sprintf(str,"Pmat_%d",next); ML_Operator_Set_Label( &(ml->Pmat[next]),str);
 
         if (internal_or_external == ML_INTERNAL)
-          flag = user_gen_prolongator(ml, level, next,
-                                      (void*)&(ml->Amat[level]),ag);
+          flag = (*user_gen_prolongator)(ml, level, next,(void *)ag);
         else
-          flag = user_gen_prolongator(ml, level, next, data, ag);
+          flag = (*user_gen_prolongator)(ml, level, next, (void *)ag);
       }
 
 #endif
@@ -339,7 +337,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
          printf("ML_Gen_MGHierarchy : Gen_RAP done\n");
 
       level = next;
-      next  = next_level(ml, next, &(ml->Amat[next]), ag);
+      next  = next_level(ml, next, ag);
       count++;
    }
    return(count);
@@ -349,8 +347,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 /* generate smooth prolongator                                               */
 /* ------------------------------------------------------------------------- */
 
-int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
-                             ML_Aggregate *ag)
+int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 {
    int         Ncoarse, Nfine, gNfine, gNcoarse, jj;
    double      max_eigen = -1.;
@@ -359,7 +356,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    struct      ML_AGG_Matrix_Context widget;
    ML_Krylov   *kdata;
    ML_Operator *t2 = NULL, *t3 = NULL;
-
+   ML_Aggregate * ag = (ML_Aggregate *) data;
 #ifdef GEOMETRIC_2D
    int nx, nxcoarse, ii, coarse_me, fine_me, *rowptr, *bindx, k,free_ptr,start;
    int i,j, end;
@@ -378,8 +375,9 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
      fflush(stdout);
    }
 
+   Amat = &(ml->Amat[level]);
+   
    widget.near_bdry = NULL;
-   Amat     = (ML_Operator *) data;
    Amat->num_PDEs = ag->num_PDE_eqns;
    prev_P_tentatives = (ML_Operator **) ag->P_tentative;
    max_eigen = Amat->lambda_max;
@@ -767,17 +765,19 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 #endif
    return 0;
 }
-
+  
 /* ************************************************************************* */
 /* function for advancing to the next coarser level with coarse level        */
 /* number larger than the fine levels                                        */
 /* ------------------------------------------------------------------------- */
 
-int ML_AGG_Increment_Level(ML *ml, int current_level, ML_Operator *Amat,
-                           ML_Aggregate *ag)
+int ML_AGG_Increment_Level(ML *ml, int current_level,
+                           void *data)
 {
    int total_size, temp;
-
+   ML_Operator * Amat = &(ml->Amat[current_level]);
+   ML_Aggregate * ag = (ML_Aggregate *)data;
+     
    if (current_level == ml->ML_num_levels-1) return(-1);
 
    total_size = Amat->invec_leng;
@@ -792,11 +792,12 @@ int ML_AGG_Increment_Level(ML *ml, int current_level, ML_Operator *Amat,
 /* smaller than the fine levels                                              */
 /* ------------------------------------------------------------------------- */
 
-int ML_AGG_Decrement_Level(ML *ml, int current_level, ML_Operator *Amat,
-                           ML_Aggregate *ag)
+int ML_AGG_Decrement_Level(ML *ml, int current_level, void * data)
 {
    int total_size, temp;
-
+   ML_Operator * Amat = &(ml->Amat[current_level]);
+   ML_Aggregate * ag = (ML_Aggregate *)data;
+   
    if (current_level == 0 ) return(-1);
 
    total_size = Amat->invec_leng;
@@ -810,26 +811,25 @@ int ML_AGG_Decrement_Level(ML *ml, int current_level, ML_Operator *Amat,
 /* function for enforcing a 2-level scheme                                   */
 /* ------------------------------------------------------------------------- */
 
-int ML_AGG_Increment_Two_Level(ML *ml,int current_level,ML_Operator *Amat,
-                               ML_Aggregate *ag)
+int ML_AGG_Increment_Two_Level(ML *ml,int current_level,
+                               void * data)
 {
-   (void) Amat;
-   (void) ml;
-   if ( current_level == ag->begin_level ) return (current_level+1);
-   return(-1);
+  ML_Aggregate *ag = (ML_Aggregate *)data;
+  (void) ml;
+  if ( current_level == ag->begin_level ) return (current_level+1);
+  return(-1);
 }
 
 /* ************************************************************************* */
 /* function for enforcing a 2-level scheme                                   */
 /* ------------------------------------------------------------------------- */
 
-int ML_AGG_Decrement_Two_Level(ML *ml,int current_level,ML_Operator *Amat,
-                               ML_Aggregate *ag)
+int ML_AGG_Decrement_Two_Level(ML *ml,int current_level,void * data)
 {
-   (void) Amat;
-   (void) ml;
-   if ( current_level == ag->begin_level ) return (current_level-1);
-   return(-1);
+  ML_Aggregate *ag = (ML_Aggregate *)data;
+  (void) ml;
+  if ( current_level == ag->begin_level ) return (current_level-1);
+  return(-1);
 }
 
 /* ************************************************************************* */
@@ -894,7 +894,7 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
 			    values, row_lengths);
    else 
    {
-      printf("Invalid getrow id (%d)\n",getrow_obj->ML_id);
+      printf("Invalid getrow id (level %d)\n",getrow_obj->ML_id);
       exit(1);
    }
    if (info == 0) return(0);
@@ -1048,8 +1048,7 @@ int ML_AGG_Amat_Getrows(void *data, int N_requested_rows,
 /* generate smooth prolongator for 2-level DD method                         */
 /* ------------------------------------------------------------------------- */
 
-int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
-                             ML_Aggregate *ag)
+int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data)
 {
    int          i, j, Nfine, nbytes, newNlevels, nnz, *col_ind;
    int          k, newClevel, lengc, lengf, ap_ncols, *ap_cols;
@@ -1066,7 +1065,8 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
    ML_Aggregate_Comm *aggr_comm;
    ML_GetrowFunc *getrow_obj;
    int           (*getrowfunc)(void *,int,int*,int,int*,double*,int*);
-
+   ML_Aggregate * ag = (ML_Aggregate *)data;
+   
 #ifdef ML_TIMING
    double t0;
    t0 =  GetClock();
@@ -1079,7 +1079,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
    if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
       printf("Aggregation : building multilevel hierarchy at level %d\n",level);
    widget.near_bdry = NULL; 
-   Amat     = (ML_Operator *) data;
+   Amat     = &(ml->Amat[level]);
    Nfine    = Amat->outvec_leng;
    getrow_obj = Amat->getrow;
    if (getrow_obj->ML_id == ML_EXTERNAL) getrowfunc = getrow_obj->external;
@@ -1697,8 +1697,7 @@ int ML_AGG_Extract_Matrix(ML_Operator *mat, int *ncols, int **cols,
 /* generate smooth prolongator for 2-level DD method                         */
 /* ------------------------------------------------------------------------- */
 
-int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data,
-                             ML_Aggregate *ag)
+int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data)
 {
    int          i, k, Nfine, nbytes, newNlevels, newClevel;
    int          *new_ia, *new_ja;
@@ -1709,7 +1708,8 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data,
    ML_Aggregate_Comm            *aggr_comm;
    struct ML_CSR_MSRdata        *csr_data;
    struct ML_AGG_Matrix_Context widget, *context;
-
+   ML_Aggregate *ag = (ML_Aggregate *)data;
+   
 #ifdef ML_TIMING
    double t0;
    t0 =  GetClock();
@@ -1978,8 +1978,7 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
      if (ag->smoothP_damping_factor != 0.0) {
        ML_Operator_Clean(mat);
        ML_Operator_Init(mat,ml->comm);
-       ML_AGG_Gen_Prolongator(ml, old_mesh_level, mesh_level, 
-			      &(ml->Amat[old_mesh_level]), ag);
+       ML_AGG_Gen_Prolongator(ml, old_mesh_level, mesh_level, (void*) ag);
      }
 
      /* clean and regenerate R */

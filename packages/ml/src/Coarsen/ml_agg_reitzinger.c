@@ -1141,8 +1141,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
            ML_Aggregate_Set_DampingFactor(ag, 4.0/3.0);
         else
            ML_Aggregate_Set_DampingFactor(ag, smooth_factor);
-        ML_AGG_Gen_Prolongator(ml_edges,grid_level+1,grid_level,
-                               (void *) &(ml_edges->Amat[grid_level+1]), ag);
+        ML_AGG_Gen_Prolongator(ml_edges,grid_level+1,grid_level,(void*) ag);
         
         /* Weed out small values in Pe. */
         droptol = 1e-4;
