@@ -228,9 +228,9 @@ public:
   ///
   static void MvTransMv( const TSFCore::MultiVector<TYPE>& mv, TYPE alpha, const TSFCore::MultiVector<TYPE>& A, Teuchos::SerialDenseMatrix<int,TYPE>& B )
     {
-      // B = alpha * A' * mv
+      // B = alpha * mv' * A
       RefCountPtr<TSFCore::MultiVector<TYPE> > B_mv = mv.domain()->createMembers(A.domain()->dim());
-      A.apply( TSFCore::TRANS, mv, &*B_mv, alpha, ST::zero() );
+      mv.apply( TSFCore::TRANS, A, &*B_mv, alpha, ST::zero() );
       copy( *B_mv, &B );
     }
   ///
