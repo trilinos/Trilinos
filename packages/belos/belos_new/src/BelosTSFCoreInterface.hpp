@@ -14,7 +14,7 @@
 #include "BelosConfigDefs.hpp"
 
 // TSFCore files
-//#include "TSFCoreVectorSpaceDecl.hpp"
+#include "TSFCoreVectorSpace.hpp"
 #include "TSFCoreMultiVector.hpp"
 #include "TSFCoreMultiVectorStdOps.hpp"
 #include "TSFCoreLinearOp.hpp"
@@ -63,60 +63,60 @@ public:
   //  not copied; instead a new MultiVec is created containing
   //  a non-zero amount of columns.
   //
-  virtual MultiVec<TYPE> * Clone ( const int );
+  MultiVec<TYPE> * Clone ( const int );
   //
   //  the following is a virtual copy constructor returning
   //  a pointer to the pure virtual class. vector values are
   //  copied and a new stand-alone MultiVector is created.
   //  (deep copy).
   //
-  virtual MultiVec<TYPE> * CloneCopy ();
+  MultiVec<TYPE> * CloneCopy ();
   //
   //  Selective deep copy (or copy) constructor.
   //
-  virtual MultiVec<TYPE> * CloneCopy ( int [], int );
+  MultiVec<TYPE> * CloneCopy ( int [], int );
   //
   //  the following is a virtual view constructor returning
   //  a pointer to the pure virtual class. vector values are 
   //  shared and hence no memory is allocated for the columns.
   //
-  virtual MultiVec<TYPE> * CloneView ( int [], int );
+  MultiVec<TYPE> * CloneView ( int [], int );
   //
-  virtual int GetNumberVecs () const;
-  virtual int GetVecLength () const;
+  int GetNumberVecs () const;
+  int GetVecLength () const;
   //
   //  set a block of this multivec with the multivecs specified by
   //  the index.
   //
-  virtual void SetBlock ( MultiVec<TYPE>& A, int index[], 
+  void SetBlock ( MultiVec<TYPE>& A, int index[], 
 			  int NumVecs ); 
   //
   // *this <- alpha * A * B + beta * (*this)
   //
-  virtual void MvTimesMatAddMv ( TYPE alpha, MultiVec<TYPE>& A, 
+  void MvTimesMatAddMv ( TYPE alpha, MultiVec<TYPE>& A, 
 				 Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta );
   //
   // *this <- alpha * A + beta * B
   //
-  virtual void MvAddMv ( TYPE alpha , MultiVec<TYPE>& A, TYPE beta,
+  void MvAddMv ( TYPE alpha , MultiVec<TYPE>& A, TYPE beta,
 			 MultiVec<TYPE>& B);
   //
   // B <- alpha * A^T * (*this)
   //
-  virtual void MvTransMv ( TYPE alpha, MultiVec<TYPE>& A, 
+  void MvTransMv ( TYPE alpha, MultiVec<TYPE>& A, 
 			   Teuchos::SerialDenseMatrix<int,TYPE>& B );
   //
   // alpha[i] = norm of i-th column of (*this)
   //
-  virtual ReturnType MvNorm ( TYPE* normvec, NormType norm_type = TwoNorm );
+  ReturnType MvNorm ( TYPE* normvec, NormType norm_type = TwoNorm );
   //
   // random vectors in i-th column of (*this)
   //
-  virtual void MvRandom();
+  void MvRandom();
   //
   // initializes each element of (*this) with alpha
   //
-  virtual void MvInit ( TYPE alpha = Teuchos::ScalarTraits<TYPE>::zero() );
+  void MvInit ( TYPE alpha = Teuchos::ScalarTraits<TYPE>::zero() );
   //
 private:
   // Data container
