@@ -56,15 +56,15 @@ For example, consider the following function prototype:
 void f( const int x_size, const double x[] );
 \endcode
 
-which takes a <tt>const</tt> array of <tt>double</tt>s of length
-<tt>x_size</tt>.  Generally, to call this function one would have to
-first declare an array and then call the function as:
+which takes an array of <tt>double</tt>s of length <tt>x_size</tt>.
+Generally, to call this function one would have to first declare an
+array and then call the function as:
 
 \code
 void f()
 {
   ...
-  double x[] = { 1.0, 2.0, 3.0 };
+  const double x[] = { 1.0, 2.0, 3.0 };
   f( 3, x );
   ...
 \endcode
@@ -93,32 +93,69 @@ void f()
 
 but the former, slightly more verbose, version is to be preferred
 since it makes explicit what type of array is being created and insures
-that the compiler will not get confused about the final implicit conversion
+that the compiler will not get confused about the final (implicit) conversion
 to a raw <tt>const double*</tt> pointer.
 
-The <tt>arrayArg()</tt> function is overloaded to accept 1, 2, 3, 4, 5 and 6 
-arguments.  If more elements are needed, then more overrides are easy to add.
-
-The utility functions <tt>arrayArg()</tt> can only be used
-to pass in arrays of <tt>const</tt> objects.  Using this utility for
-non-<tt>const</tt> objects is generally not possible due to the fact that
-compilers are not allowed to pass in compiler-generated objects into
-a function through non-<tt>const</tt> reference arguments.  For example,
-to pass in a non-<tt>const</tt> array for the function:
+Note that a copy is made of the array arguments before they are passed into
+the function so care must be taken when using <tt>arrayArg()</tt> to pass
+a non-<tt>const</tt> input-output or output-only array of objects.  For example,
+consider the following function:
 
 \code
 void f2( const int y_size, double y[] );
 \endcode
 
-one would have to call it as:
+The above function <tt>f2()</tt> modifies the objects in the array <tt>y[]</tt>.
+If this function is attempted to be called as:
 
 \code
 void g2()
 {
-  double y[3]; // Output argument
-  f2(3,y );
+  double a, b, c;
+  f2( 3, arrayArg(a,b,c)() );
 }
 \endcode
+
+then the objects <tt>a</tt>, <tt>b</tt> and <tt>c</tt> will not be
+modified as might be expected.  Instead, this function must be called as:
+
+\code
+void g2()
+{
+  double y[3];
+  f2( 3, y );
+  double a=y[0], b=y[1], c=y[2];
+}
+\endcode
+
+However, the <tt>arrayArg()</tt> function can be used to pass
+an array of pointers to non-<tt>const</tt> objects.  For example,
+consider the function:
+
+\code
+void f3( const int y_size, double* y[] );
+\endcode
+
+which modifies an array of <tt>double</tt> objects through pointers.
+We could then call this function as:
+
+\code
+void g3()
+{
+  double a, b, c;
+  f2( 3, arrayArg(&a,&b,&c)() );
+}
+\endcode
+
+which will result in objects <tt>a</tt>, <tt>b</tt> and <tt>c</tt>
+being modified correctly.
+
+Warning! Never try to pass an array of references (which should almost
+never be used anyway) using <tt>arrayArg()</tt>.  This will result in the
+copy constructor being called which is almost never a desirable situation.
+
+The <tt>arrayArg()</tt> function is overloaded to accept 1, 2, 3, 4, 5 and 6 
+arguments.  If more elements are needed, then more overrides are easy to add.
 
 */
 
@@ -131,13 +168,13 @@ template<int N, class T>
 class ArrayArg {
 public:
   /// Basic constructor taking a copy of the \c array of length \c N
-  ArrayArg( const T array[] ) { std::copy( array, array+N, array_ ); }
+  ArrayArg( T array[] ) { std::copy( array, array+N, array_ ); }
 
   /// Return a \c const pointer to the internal array
-  const T* operator()() { return array_; }
+  T* operator()() { return array_; }
 
   /// Return a \c const pointer to the internal array
-  operator const T* () { return array_; }
+  operator T* () { return array_; }
 
 private:
   T array_[N]; //  Can't be a const array!
@@ -149,9 +186,9 @@ private:
  * \ingroup Teuchos_Array_Arguments
  */
 template<class T>
-inline ArrayArg<1,T> arrayArg( const T &t1 )
+inline ArrayArg<1,T> arrayArg( T t1 )
 {
-  const T array[] = { t1 };
+  T array[] = { t1 };
   return ArrayArg<1,T>(array);
 }
 
@@ -161,9 +198,9 @@ inline ArrayArg<1,T> arrayArg( const T &t1 )
  * \ingroup Teuchos_Array_Arguments
  */
 template<class T>
-inline ArrayArg<2,T> arrayArg( const T &t1, const T &t2 )
+inline ArrayArg<2,T> arrayArg( T t1, T t2 )
 {
-  const T array[] = { t1, t2 };
+  T array[] = { t1, t2 };
   return ArrayArg<2,T>(array);
 }
 
@@ -173,9 +210,9 @@ inline ArrayArg<2,T> arrayArg( const T &t1, const T &t2 )
  * \ingroup Teuchos_Array_Arguments
  */
 template<class T>
-inline ArrayArg<3,T> arrayArg( const T &t1, const T &t2, const T &t3 )
+inline ArrayArg<3,T> arrayArg( T t1, T t2, T t3 )
 {
-  const T array[] = { t1, t2, t3 };
+  T array[] = { t1, t2, t3 };
   return ArrayArg<3,T>(array);
 }
 
@@ -185,9 +222,9 @@ inline ArrayArg<3,T> arrayArg( const T &t1, const T &t2, const T &t3 )
  * \ingroup Teuchos_Array_Arguments
  */
 template<class T>
-inline ArrayArg<4,T> arrayArg( const T &t1, const T &t2, const T &t3, const T &t4 )
+inline ArrayArg<4,T> arrayArg( T t1, T t2, T t3, T t4 )
 {
-  const T array[] = { t1, t2, t3, t4 };
+  T array[] = { t1, t2, t3, t4 };
   return ArrayArg<4,T>(array);
 }
 
@@ -197,9 +234,9 @@ inline ArrayArg<4,T> arrayArg( const T &t1, const T &t2, const T &t3, const T &t
  * \ingroup Teuchos_Array_Arguments
  */
 template<class T>
-inline ArrayArg<5,T> arrayArg( const T &t1, const T &t2, const T &t3, const T &t4, const T &t5 )
+inline ArrayArg<5,T> arrayArg( T t1, T t2, T t3, T t4, T t5 )
 {
-  const T array[] = { t1, t2, t3, t4, t5 };
+  T array[] = { t1, t2, t3, t4, t5 };
   return ArrayArg<5,T>(array);
 }
 
@@ -209,9 +246,9 @@ inline ArrayArg<5,T> arrayArg( const T &t1, const T &t2, const T &t3, const T &t
  * \ingroup Teuchos_Array_Arguments
  */
 template<class T>
-inline ArrayArg<6,T> arrayArg( const T &t1, const T &t2, const T &t3, const T &t4, const T &t5, const T &t6 )
+inline ArrayArg<6,T> arrayArg( T t1, T t2, T t3, T t4, T t5, T t6 )
 {
-  const T array[] = { t1, t2, t3, t4, t5, t6 };
+  T array[] = { t1, t2, t3, t4, t5, t6 };
   return ArrayArg<6,T>(array);
 }
 
