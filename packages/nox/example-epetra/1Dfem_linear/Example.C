@@ -195,7 +195,8 @@ int main(int argc, char *argv[])
   // End Nonlinear Solver **************************************
 
   // Output the parameter list
-  if (NOX::Utils::doPrint(NOX::Utils::Parameters)) {
+  NOX::Utils utils(printParams);
+  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
     solver.getParameterList().print(cout);
