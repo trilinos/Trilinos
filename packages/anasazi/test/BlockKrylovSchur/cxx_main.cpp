@@ -49,7 +49,7 @@
 
 int main(int argc, char *argv[]) 
 {
-  int i, info = 0;
+  int info = 0;
   double zero = 0.0;
   double one = 1.0;
   
@@ -67,8 +67,8 @@ int main(int argc, char *argv[])
 #endif
   
   int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
   
+  Anasazi::ReturnType returnCode = Anasazi::Ok;
   bool testFailed = false;
   bool verbose = 0;
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
@@ -76,9 +76,6 @@ int main(int argc, char *argv[])
   if (verbose && MyPID == 0)
     cout << Anasazi::Anasazi_Version() << endl << endl;
   
-  int numberFailedTests = 0;
-  int returnCode = 0;  
-
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
 
@@ -108,7 +105,7 @@ int main(int argc, char *argv[])
   int maxBlocks = 8;
   int maxRestarts = 20;
   double tol = tolCG * 10.0;
-  std::string which = "SA";  
+  std::string which = "SM";  
   
   // Create parameter list to pass into solver
   Teuchos::ParameterList MyPL;
@@ -123,8 +120,7 @@ int main(int argc, char *argv[])
   ivec->Random();
   
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(opStiffness, M, ivec) );
-  MyProblem->SetPrec( Teuchos::rcp( const_cast<Epetra_Operator *>(opStiffness->getPreconditioner()), false ) );
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(K, M, ivec) );
   
   // Inform the eigenproblem that the operator A is symmetric
   MyProblem->SetSymmetric(true);
@@ -138,7 +134,7 @@ int main(int argc, char *argv[])
     cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
 
   // Create default output manager 
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>() );
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
 
   // Set verbosity level
   if (verbose && MyPID == 0)
@@ -153,29 +149,40 @@ int main(int argc, char *argv[])
   Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
   
   // Solve the problem to the specified tolerances or length
-  MySolver.solve();
+  returnCode = MySolver.solve();
+  if (returnCode != Anasazi::Ok)
+    testFailed = true;
   
   // Obtain results directly
   Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
   Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
+  cout << *evecs << endl;
   
+  // Check the results
+  //testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
+
   Epetra_MultiVector tempvec(K->OperatorDomainMap(), evecs->NumVectors());	
   K->Apply( *evecs, tempvec );
 
   Epetra_LocalMap LocalMap(nev, 0, Comm);
   Epetra_MultiVector dmatr( LocalMap, nev );
   dmatr.Multiply( 'T', 'N', one, *evecs, tempvec, zero ); 
+  cout << dmatr << endl;
   
-  /*  if ( MyOM->doOutput() ) {
+  if ( MyOM->doPrint() ) {
     double compeval = 0.0;
     cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
     cout<<"Real Part \t Rayleigh Error"<<endl;
-    for (i=0; i<nev; i++) {
-    compeval = dmatr(i,i);
+    for (int i=0; i<nev; i++) {
+      compeval = dmatr[i][i];
       cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-one/(*evals)[i])<<endl;
-      }
     }
-  */  
-
+  }
+  
+  if (testFailed)
+    return 1;
+  //
+  // Default return value
+  // 
   return 0;
 }	

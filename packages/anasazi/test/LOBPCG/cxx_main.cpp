@@ -48,8 +48,7 @@
 
 int main(int argc, char *argv[]) 
 {
-  int i, info = 0;
-  double zero = 0.0;
+  int info = 0;
   
 #ifdef EPETRA_MPI
   
@@ -65,7 +64,6 @@ int main(int argc, char *argv[])
 #endif
   
   int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
   
   bool testFailed = false;
   bool verbose = 0;
@@ -74,9 +72,8 @@ int main(int argc, char *argv[])
   if (verbose && MyPID == 0)
     cout << Anasazi::Anasazi_Version() << endl << endl;
   
-  int numberFailedTests = 0;
-  int returnCode = 0;  
-
+  Anasazi::ReturnType returnCode = Anasazi::Ok;  
+  
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
 
@@ -88,7 +85,7 @@ int main(int argc, char *argv[])
   elements[0] = 50;
 
   // Create default output manager 
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>() );
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
 
   // Set verbosity level
   if (verbose && MyPID == 0)
@@ -139,12 +136,18 @@ int main(int argc, char *argv[])
   if (info)
     cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
   
-  // Create the eigensolver
- 
+  // Create the eigensolver 
   Anasazi::LOBPCG<double, MV, OP> MySolver(MyProblem, MyOM, MyPL);
   
   // Solve the problem to the specified tolerances or length
-  MySolver.solve();
+  returnCode = MySolver.solve();
+  if (returnCode != Anasazi::Ok)
+    testFailed = true;
 
+  if (testFailed)
+    return 1;
+  //
+  // Default return statement
+  //
   return 0;
 }	

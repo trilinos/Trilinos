@@ -347,9 +347,9 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
     Epetra_MultiVector SOL(View, X.Map(), valSOL, xrow, blkSize);
     SOL.PutScalar(0.0);
 
-    int ii;
-    int iter;
-    int nFound;
+    int ii = 0;
+    int iter = 0;
+    int nFound = 0;
 
     R.Norm2(initNorm);
 

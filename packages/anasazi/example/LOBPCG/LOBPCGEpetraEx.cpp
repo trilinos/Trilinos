@@ -46,8 +46,7 @@
 #include "Epetra_Map.h"
 
 int main(int argc, char *argv[]) {
-	int i, info;
-	double zero = 0.0;
+	int i, info = 0;
 
 #ifdef EPETRA_MPI
 
@@ -63,10 +62,6 @@ int main(int argc, char *argv[]) {
 #endif
 
 	int MyPID = Comm.MyPID();
-	int NumProc = Comm.NumProc();
-	cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive."<<endl;
-
-	bool verbose = (MyPID==0);
 
 	//  Dimension of the matrix
         int nx = 10;  			// Discretization points in any one direction.

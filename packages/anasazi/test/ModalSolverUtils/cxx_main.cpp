@@ -61,7 +61,6 @@ int main(int argc, char *argv[])
 #endif
   
   int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
   
   bool testFailed = false;
   bool verbose = 0;
@@ -71,10 +70,9 @@ int main(int argc, char *argv[])
     cout << Anasazi::Anasazi_Version() << endl << endl;
   
   int numberFailedTests = 0;
-  int returnCode = 0;  
 
   //  Create default output manager 
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > om = Teuchos::rcp( new Anasazi::OutputManager<double>() );
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > om = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
 
   //  Create ModalSolverUtils object
   Anasazi::ModalSolverUtils<double, Epetra_MultiVector, Epetra_Operator> msUtils( om );

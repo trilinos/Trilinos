@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
 	//	  
 	int nev = 4;
 	int blockSize = 2;
-	int maxBlocks = 20;
+	int maxBlocks = 15;
 	int maxRestarts = 300;
 	int step = 1;
 	double tol = 1e-8;
@@ -283,7 +283,7 @@ int main(int argc, char *argv[]) {
 	// Create an output manager to handle the I/O from the solver
 	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
 	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-	MyOM->SetVerbosity( Anasazi::FinalSummary );	
+	MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary );	
 
 	// Initialize the Block Arnoldi solver
 	Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
@@ -345,7 +345,8 @@ int main(int argc, char *argv[]) {
 	while (i < nev) {
 	  normA[i] = lapack.LAPY2( normA[i], tempnrm[i] );
 	  if (MyProblem->IsSymmetric()) {
-	    normA[i] /= Teuchos::ScalarTraits<double>::magnitude((*evals)[i]);
+	    if ((*evals)[i] != zero)
+	      normA[i] /= Teuchos::ScalarTraits<double>::magnitude((*evals)[i]);
 	    i++;
 	  } else {
 	    normA[i] /= lapack.LAPY2( (*evals)[i], (*evals)[nev+i] );
