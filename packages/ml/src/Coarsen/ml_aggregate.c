@@ -54,10 +54,10 @@ extern int **global_mapping = NULL, global_nrows, global_ncoarse;
 #define ML_AGGR_METIS        7
 #define ML_AGGR_PARMETIS     8
 #define ML_AGGR_ZOLTAN       9
+#define ML_AGGR_VBMETIS     10  /*mgee*/
 #define ML_AGGR_USER        11
 /*ms*/
 
-#define ML_AGGR_VBMETIS      10  /*mgee*/
 
 /* ************************************************************************* */
 /* Constructor                                                               */
