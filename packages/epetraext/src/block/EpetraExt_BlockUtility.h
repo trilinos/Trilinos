@@ -52,7 +52,7 @@ class BlockUtility {
 	\param In
 	RowIndex - Defines the index used for this block row.
   */
-  static Epetra_CrsGraph GenerateBlockGraph( const Epetra_CrsGraph & BaseGraph, const std::vector<int> & RowStencil, int RowIndex, const Epetra_Comm & GlobalComm );
+  static Epetra_CrsGraph * GenerateBlockGraph( const Epetra_CrsGraph & BaseGraph, const std::vector<int> & RowStencil, int RowIndex, const Epetra_Comm & GlobalComm );
   
 };
 

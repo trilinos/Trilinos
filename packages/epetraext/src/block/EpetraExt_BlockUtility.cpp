@@ -35,7 +35,7 @@ namespace EpetraExt {
 using std::vector;
 
 //==============================================================================
-Epetra_CrsGraph BlockUtility::GenerateBlockGraph(
+Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
         const Epetra_CrsGraph & BaseGraph,
         const vector<int> & RowStencil,
         int RowIndex,
@@ -66,7 +66,7 @@ Epetra_CrsGraph BlockUtility::GenerateBlockGraph(
   vector<int> Indices(MaxIndices);
   int NumIndices;
 
-  Epetra_CrsGraph GlobalGraph( Copy, 
+  Epetra_CrsGraph * GlobalGraph = new Epetra_CrsGraph( Copy, 
                                dynamic_cast<Epetra_BlockMap&>(GlobalMap),
                                0 );
 
@@ -85,10 +85,10 @@ Epetra_CrsGraph BlockUtility::GenerateBlockGraph(
       for( int k = 0; k < NumIndices; ++k )
         Indices[k] += ColOffset;
 
-      GlobalGraph.InsertGlobalIndices( GlobalRow, NumIndices, &Indices[0] );
+      GlobalGraph->InsertGlobalIndices( GlobalRow, NumIndices, &Indices[0] );
     }
   }
-  GlobalGraph.TransformToLocal();
+  GlobalGraph->TransformToLocal();
   
   return GlobalGraph;
 }

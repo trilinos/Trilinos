@@ -40,7 +40,7 @@ BlockCrsMatrix::BlockCrsMatrix(
         const vector<int> & RowStencil,
         int RowIndex,
         const Epetra_Comm & GlobalComm  ) 
-  : Epetra_CrsMatrix( Copy, BlockUtility::GenerateBlockGraph( BaseGraph, RowStencil, RowIndex, GlobalComm ) ),
+  : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseGraph, RowStencil, RowIndex, GlobalComm )) ),
     RowIndex_( RowIndex ),
     RowStencil_( RowStencil ),
     BaseGraph_( BaseGraph )
@@ -62,6 +62,8 @@ BlockCrsMatrix::BlockCrsMatrix( const BlockCrsMatrix & Matrix )
 BlockCrsMatrix::~BlockCrsMatrix()
 {
   DeleteBlocks_();
+
+  delete Graph_;
 }
 
 //==============================================================================
