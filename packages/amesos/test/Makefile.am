@@ -41,13 +41,16 @@ AmesosShellScript$(EXEEXT): $(srcdir)/AmesosShellScript
 	cp  $(srcdir)/In_K5000.triS  K5000.triS
 	cp  $(srcdir)/In_SuperLU.triU  SuperLU.triU
 	cp  $(srcdir)/In_Khead.triS  Khead.triS
+	cp  $(srcdir)/In_bcsstk01.mtx bcsstk01.mtx 
 
 
 
 
 SRC_CXX =  $(srcdir)/SparseDirectTimingVars.cpp $(srcdir)/SparseSolverResult.cpp \
 	$(srcdir)/Comm_assert_equal.cpp $(srcdir)/Trilinos_Util_CountTriples.cpp \
-	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp
+	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp \
+	$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp \
+	$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp
 
 amesos_test_SOURCES = $(srcdir)/Amesos_TestDriver.cpp  $(srcdir)/Amesos_TestSolver.cpp \
 	 $(srcdir)/Amesos_TestMultiSolver.cpp  $(srcdir)/Amesos_TestMrhsSolver.cpp \

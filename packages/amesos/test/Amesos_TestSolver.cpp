@@ -1,6 +1,7 @@
 #include "Amesos_ConfigDefs.h"
 #include <string>
 #include "Trilinos_Util_ReadTriples2Epetra.h"
+#include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
 #include "Trilinos_Util.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_Map.h"
@@ -85,19 +86,28 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   string FileName = matrix_file ;
   int FN_Size = FileName.size() ; 
   string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
+  string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
   if ( LastFiveBytes == ".triU" ) { 
     // Call routine to read in unsymmetric Triplet matrix
-    Trilinos_Util_ReadTriples2Epetra( matrix_file, false, Comm, readMap, readA, readx, 
-				      readb, readxexact);
+	EPETRA_CHK_ERR( 1 ) ; 
+    EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, false, Comm, readMap, readA, readx, 
+						      readb, readxexact) );
   } else {
     if ( LastFiveBytes == ".triS" ) { 
       // Call routine to read in symmetric Triplet matrix
-      Trilinos_Util_ReadTriples2Epetra( matrix_file, true, Comm, readMap, readA, readx, 
-					readb, readxexact);
+	EPETRA_CHK_ERR( 1 ) ; 
+      EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, true, Comm, readMap, readA, readx, 
+							readb, readxexact) );
     } else {
-      // Call routine to read in HB problem
-      Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, readA, readx, 
-				   readb, readxexact);
+      if (  LastFourBytes == ".mtx" ) { 
+	EPETRA_CHK_ERR( Trilinos_Util_ReadMatrixMarket2Epetra( matrix_file, Comm, readMap, 
+							       readA, readx, readb, readxexact) );
+      } else {
+	EPETRA_CHK_ERR( 1 ) ; 
+	// Call routine to read in HB problem
+	Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, readA, readx, 
+						     readb, readxexact) ;
+      }
     }
   }
 
@@ -219,6 +229,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     for ( int i = 0; i < 1+special ; i++ ) { 
       DscpackOO dscpack( Problem ) ; 
       EPETRA_CHK_ERR( dscpack.Solve( true ) ); 
+      cout << " Amesos_TestSolver::after call to DscpackOO " << endl ; 
    }
 #endif
 #ifdef TEST_SPOOLES

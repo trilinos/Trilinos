@@ -1,5 +1,7 @@
 #include "Amesos_ConfigDefs.h"
 
+#include "Trilinos_Util_ReadTriples2Epetra.h"
+#include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
 #include "Trilinos_Util.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_Map.h"
@@ -22,6 +24,9 @@
 #endif
 #ifdef TEST_AZTEC
 #include "AztecOO.h"
+#endif
+#ifdef HAVE_AMESOS_DSCPACK
+#include "DscpackOO.h"
 #endif
 #if 0
 #include "UmfpackOO.h"
@@ -72,10 +77,40 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   Epetra_Vector * readx; 
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
-   
+
+#if 0   
   // Call routine to read in HB problem
   Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, readA, readx, 
 			       readb, readxexact);
+#endif
+
+  string FileName = matrix_file ;
+  int FN_Size = FileName.size() ; 
+  string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
+  string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
+  if ( LastFiveBytes == ".triU" ) { 
+    // Call routine to read in unsymmetric Triplet matrix
+	EPETRA_CHK_ERR( 1 ) ; 
+    EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, false, Comm, readMap, readA, readx, 
+						      readb, readxexact) );
+  } else {
+    if ( LastFiveBytes == ".triS" ) { 
+      // Call routine to read in symmetric Triplet matrix
+	EPETRA_CHK_ERR( 1 ) ; 
+      EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, true, Comm, readMap, readA, readx, 
+							readb, readxexact) );
+    } else {
+      if (  LastFourBytes == ".mtx" ) { 
+	EPETRA_CHK_ERR( Trilinos_Util_ReadMatrixMarket2Epetra( matrix_file, Comm, readMap, 
+							       readA, readx, readb, readxexact) );
+      } else {
+	EPETRA_CHK_ERR( 1 ) ; 
+	// Call routine to read in HB problem
+	Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, readA, readx, 
+						     readb, readxexact) ;
+      }
+    }
+  }
 
 
   Epetra_CrsMatrix transposeA(Copy, *readMap, 0);
@@ -202,6 +237,30 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
       Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
       EPETRA_CHK_ERR( superludist2.Solve( factor ) ); 
+      factor = false; 
+      if ( i == 0 ) 
+	SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 
+      if ( i < numsolves-1 ) 
+	SparseDirectTimingVars::SS_Result.Set_Middle_Time( TotalTime.ElapsedTime() ); 
+      else
+	SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
+
+    }
+#endif
+#ifdef HAVE_AMESOS_DSCPACK
+  } else if ( SparseSolver == DSCPACK ) { 
+    DscpackOO dscpack( Problem ) ; 
+    dscpack.SetTrans( transpose ) ; 
+    assert( true) ;
+
+    bool factor = true; 
+    for ( int i= 0 ; i < numsolves ; i++ ) { 
+      //    set up to sovle A X[:,i] = B[:,i]
+      Epetra_Vector *passb_i = (*passb)(i) ;
+      Epetra_Vector *passx_i = (*passx)(i) ;
+      Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
+      Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+      EPETRA_CHK_ERR( dscpack.Solve( factor ) ); 
       factor = false; 
       if ( i == 0 ) 
 	SparseDirectTimingVars::SS_Result.Set_First_Time( TotalTime.ElapsedTime() ); 

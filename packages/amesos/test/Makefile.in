@@ -106,7 +106,9 @@ AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
 
 SRC_CXX = $(srcdir)/SparseDirectTimingVars.cpp $(srcdir)/SparseSolverResult.cpp \
 	$(srcdir)/Comm_assert_equal.cpp $(srcdir)/Trilinos_Util_CountTriples.cpp \
-	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp
+	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp \
+	$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp \
+	$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp
 
 
 amesos_test_SOURCES = $(srcdir)/Amesos_TestDriver.cpp  $(srcdir)/Amesos_TestSolver.cpp \
@@ -162,7 +164,9 @@ am_amesos_test_OBJECTS = amesos_test-Amesos_TestDriver.$(OBJEXT) \
 	amesos_test-SparseSolverResult.$(OBJEXT) \
 	amesos_test-Comm_assert_equal.$(OBJEXT) \
 	amesos_test-Trilinos_Util_CountTriples.$(OBJEXT) \
-	amesos_test-Trilinos_Util_ReadTriples2Epetra.$(OBJEXT)
+	amesos_test-Trilinos_Util_ReadTriples2Epetra.$(OBJEXT) \
+	amesos_test-Trilinos_Util_CountMatrixMarket.$(OBJEXT) \
+	amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.$(OBJEXT)
 amesos_test_OBJECTS = $(am_amesos_test_OBJECTS)
 amesos_test_LDFLAGS =
 
@@ -179,7 +183,9 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/amesos_test-Comm_assert_equal.Po \
 @AMDEP_TRUE@	$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po \
 @AMDEP_TRUE@	$(DEPDIR)/amesos_test-SparseSolverResult.Po \
+@AMDEP_TRUE@	$(DEPDIR)/amesos_test-Trilinos_Util_CountMatrixMarket.Po \
 @AMDEP_TRUE@	$(DEPDIR)/amesos_test-Trilinos_Util_CountTriples.Po \
+@AMDEP_TRUE@	$(DEPDIR)/amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.Po \
 @AMDEP_TRUE@	$(DEPDIR)/amesos_test-Trilinos_Util_ReadTriples2Epetra.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -231,6 +237,10 @@ amesos_test-Trilinos_Util_CountTriples.$(OBJEXT): \
 	$(srcdir)/Trilinos_Util_CountTriples.cpp
 amesos_test-Trilinos_Util_ReadTriples2Epetra.$(OBJEXT): \
 	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp
+amesos_test-Trilinos_Util_CountMatrixMarket.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp
+amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.$(OBJEXT): \
+	$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp
 amesos_test$(EXEEXT): $(amesos_test_OBJECTS) $(amesos_test_DEPENDENCIES) 
 	@rm -f amesos_test$(EXEEXT)
 	$(CXXLINK) $(amesos_test_LDFLAGS) $(amesos_test_OBJECTS) $(amesos_test_LDADD) $(LIBS)
@@ -248,7 +258,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-Comm_assert_equal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-SparseDirectTimingVars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-SparseSolverResult.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-Trilinos_Util_CountMatrixMarket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-Trilinos_Util_CountTriples.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/amesos_test-Trilinos_Util_ReadTriples2Epetra.Po@am__quote@
 
 distclean-depend:
@@ -373,6 +385,30 @@ amesos_test-Trilinos_Util_ReadTriples2Epetra.obj: $(srcdir)/Trilinos_Util_ReadTr
 @AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Trilinos_Util_ReadTriples2Epetra.Po' tmpdepfile='$(DEPDIR)/amesos_test-Trilinos_Util_ReadTriples2Epetra.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Trilinos_Util_ReadTriples2Epetra.obj `cygpath -w $(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp`
+
+amesos_test-Trilinos_Util_CountMatrixMarket.o: $(srcdir)/Trilinos_Util_CountMatrixMarket.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp' object='amesos_test-Trilinos_Util_CountMatrixMarket.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Trilinos_Util_CountMatrixMarket.Po' tmpdepfile='$(DEPDIR)/amesos_test-Trilinos_Util_CountMatrixMarket.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Trilinos_Util_CountMatrixMarket.o `test -f $(srcdir)/Trilinos_Util_CountMatrixMarket.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp
+
+amesos_test-Trilinos_Util_CountMatrixMarket.obj: $(srcdir)/Trilinos_Util_CountMatrixMarket.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp' object='amesos_test-Trilinos_Util_CountMatrixMarket.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Trilinos_Util_CountMatrixMarket.Po' tmpdepfile='$(DEPDIR)/amesos_test-Trilinos_Util_CountMatrixMarket.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Trilinos_Util_CountMatrixMarket.obj `cygpath -w $(srcdir)/Trilinos_Util_CountMatrixMarket.cpp`
+
+amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.o: $(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp' object='amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.Po' tmpdepfile='$(DEPDIR)/amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.o `test -f $(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp || echo '$(srcdir)/'`$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp
+
+amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.obj: $(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp' object='amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.Po' tmpdepfile='$(DEPDIR)/amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(amesos_test_CXXFLAGS) $(CXXFLAGS) -c -o amesos_test-Trilinos_Util_ReadMatrixMarket2Epetra.obj `cygpath -w $(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 
@@ -608,6 +644,7 @@ AmesosShellScript$(EXEEXT): $(srcdir)/AmesosShellScript
 	cp  $(srcdir)/In_K5000.triS  K5000.triS
 	cp  $(srcdir)/In_SuperLU.triU  SuperLU.triU
 	cp  $(srcdir)/In_Khead.triS  Khead.triS
+	cp  $(srcdir)/In_bcsstk01.mtx bcsstk01.mtx 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

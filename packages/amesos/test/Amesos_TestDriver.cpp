@@ -326,9 +326,9 @@ main(int argc, char **argv)
       cerr << "AZTEC accepts only distributed matrices on multiple processes" << endl ;
     exit_value = -1 ; 
   }
-  if ( numsolves != 1 &&  SparseSolver != SuperLU && SparseSolver != SuperLUdist ) {
+  if ( numsolves != 1 &&  SparseSolver != SuperLU && SparseSolver != SuperLUdist  && SparseSolver != DSCPACK ) {
     if ( verbose ) 
-      cerr << "Only SuperLU and SuperLUdist support MRHS and BRHS" << endl ;
+      cerr << "Only SuperLU, SuperLUdist and DSCPACK support MRHS and BRHS" << endl ;
     exit_value = -1 ; 
   }
     

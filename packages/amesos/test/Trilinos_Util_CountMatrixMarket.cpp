@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <vector>
-// #include "Trilinos_Util_Triples.h"
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 
@@ -12,13 +11,13 @@
 //
 //  Returns:  N_rows and nnz replicated across all processes
 //
-void Trilinos_Util_CountTriples( const char *data_file, 
-				 bool symmetric, 
-				 vector<int> &non_zeros,
-				 int &N_rows, int &nnz, 
-				 const Epetra_Comm  &comm) { 
+void Trilinos_Util_CountMatrixMarket( const char *data_file, 
+				      vector<int> &non_zeros,
+				      int &N_rows, int &nnz, 
+				      const Epetra_Comm  &comm) { 
 
   FILE *in_file ;
+  bool symmetric = true;  // Later we should pick this off of line 1 of the file
   
   N_rows = 0 ; 
   nnz = 0 ; 
@@ -40,7 +39,8 @@ void Trilinos_Util_CountTriples( const char *data_file,
 	exit(1);
       }
     
-    
+    fgets( buffer, BUFSIZE, in_file ) ;
+    fgets( buffer, BUFSIZE, in_file ) ;
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int i, j; 
       double val ; 
