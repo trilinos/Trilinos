@@ -181,6 +181,9 @@ int main(int argc, char *argv[])
     cout << "Total Time = " << Time.ElapsedTime() << endl;
   }
 
+  ML_Aggregate_Destroy(&agg_object);
+  ML_Destroy(&ml_handle);
+
   // for testing purposes only
   if (diff > 1e-5)
     exit(EXIT_FAILURE);

@@ -392,7 +392,7 @@ void sample3(struct data *Afine_data, struct data *Acoarse_data,
    ML_Set_Restrictor_Matvec(my_ml,  grid1, myrestrict);
 
    ML_Gen_Solver    (my_ml, 0, fine_grid, grid0);
-   free(diagonal);
+   ML_free(diagonal);
 
    ML_Iterate(my_ml, sol, rhs);
    ML_Destroy(&my_ml);
@@ -441,6 +441,7 @@ void sample1(struct data *Afine_data, struct data *Acoarse_data,
    ML_Gen_Solver    (my_ml, 0, fine_grid, grid0);
    ML_Iterate(my_ml, sol, rhs);
    ML_Destroy(&my_ml);
+   ML_free(diagonal);
 
 }
 

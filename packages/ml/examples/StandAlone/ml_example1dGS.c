@@ -405,7 +405,7 @@ void sample3(struct data *Afine_data, struct data *Acoarse_data,
    ML_Set_Restrictor_Matvec(my_ml,  grid1, myrestrict);
 
    ML_Gen_Solver    (my_ml, 0, fine_grid, grid0);
-   free(diagonal);
+   ML_free(diagonal);
 
    ML_Iterate(my_ml, sol, rhs);
    
@@ -453,7 +453,8 @@ void sample1(struct data *Afine_data, struct data *Acoarse_data,
 /* ML_Gen_Smoother_Jacobi(my_ml, grid0, ML_PRESMOOTHER, 200, ML_DEFAULT); */
    ML_Gen_Solver    (my_ml, 0, fine_grid, grid0);
    ML_Iterate(my_ml, sol, rhs);
-
+   ML_free(diagonal);
+   ML_Destroy(&my_ml);
 }
 
 void sample2(struct data *Afine_data, struct data *Acoarse_data,
