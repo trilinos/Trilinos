@@ -349,8 +349,76 @@ adding or editing autoconf-specific files such as configure.ac.
 
 \subsection{Adding and Removing Source Files}
 
-**(bootstrapping, correct AC/AM versions)**
+Commonly a developer needs to add files to or remove files from a Trilinos 
+package.  We outline the steps for adding or removing source files below.  
+The below outline assumes the simple addition or removal of files.  Special 
+situations such as adding header file or library dependencies to 
+a Trilinos package require a more complicated process.
+\begin{enumerate}
+\item Obtain the supported versions of Autoconf and Automake.
+The current supported versions of Autoconf and Automake are documented in 
+the Trilinos repository.  Trilinos/config/AutotoolsVersionInfo contains the 
+information.  The Trilinos team does not attempt to keep up with the latest 
+versions of Autoconf and Automake, so please do not assume that the most 
+recent versions are supported.  The supported versions of Autoconf and 
+Automake can always be found on software.sandia.gov.
 
+\item Update source code from Trilinos repository
+Obtain the most current version of Trilinos (for the branch being worked on) 
+
+
+\item List new files in/remove obsolete files from Makefile.am
+(describe)
+
+\item Bootstrap
+First, cd to the top-level directory of the appropriate Trilinos package.  
+For example Trilinos/packages/epetra.  Then type './bootstrap'.  The process 
+should complete without any errors, but the following warnings do commonly 
+occur:
+\begin{verbatim}
+configure.ac:9: warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
+configure.ac:184: warning: do not use m4_regexp: use regexp or m4_bregexp
+\end{verbatim}
+
+\item Test the new code
+Reconfigure and rebuild the Trilinos package.  Perform tests associated with 
+the new code, as well as the rest of the tests for the package to insure that 
+both the new code works and existing code has not been broken.
+
+\item Update source code from Trilinos repository
+Didn't we just do this?  Yes, but there are two good reasons to do it again.
+
+\bullet Other developers could have committed changes during the past several 
+steps of this process.  Though is not likely, it is worth checking.  If 
+changes were committed, minimally the testing step will need to be redone.  
+If files related to configuring or building were modified, more will have to 
+be done if collisions occur.  Some of the possibilities are beyond the scope 
+of this introductory document, however we will briefly discuss the most 
+common collision scenario.  Typically the generated files will contain 
+collisions (for example configure, Makefile.in, or aclocal.m4), while the 
+changes in the files created by developers (for example configure.ac or 
+Makefile.am) will be successfully merged by CVS.  In this case, the best 
+course of action is to remove the files with collisions, cd to the top level 
+of the Trilinos package, perform a cvs update, and then begin the above 
+process again from ``Bootstrap'' step.  As long as the changes are merged in 
+the non-generated files, bootstrapping should resolve the problem.
+\bullet 
+\item Commit the changes to the Trilinos repository (FIX-UP)
+Once all of the above steps are completed, the final step is to commit the 
+changes to the repository by typing...
+\begin{verbatim}
+cvs commit
+\begin{verbatim}
+Next, look at the list of files that are to be added or modified.  It is 
+easy to inadvertantly commit files.  Perhaps a developer is working on two 
+changes to files in the same package, or has forgotten about an abandoned 
+effort that was never cleaned up.  Finally, enter an appropriate log message, 
+save the file, and exit the CVS editor.  It is recommended that a developer 
+consider testing the new code...
+
+\end{enumerate}
+
+ADDING FILES PRELIMINARILY!!!
 
 % start reading Mike's stuff at 243
 
