@@ -518,20 +518,20 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     bool NoRedundancies() const {return(NoRedundancies_);};
     void SetAllocated(bool Flag) {Allocated_ = Flag;};
 
-    int CheckSizes(const Epetra_DistObject& A);
-    int CopyAndPermute(const Epetra_DistObject & Source,
+    int CheckSizes(const Epetra_SrcDistObject& A);
+    int CopyAndPermute(const Epetra_SrcDistObject & Source,
 		     int NumSameIDs, 
 		     int NumPermuteIDs, int * PermuteToLIDs,
 		     int *PermuteFromLIDs);
   
-  int PackAndPrepare(const Epetra_DistObject & Source,
+  int PackAndPrepare(const Epetra_SrcDistObject & Source,
 				     int NumExportIDs, int * ExportLIDs,
 				     int Nsend, int Nrecv,
 				     int & LenExports, char * & Exports, int & LenImports, 
 				     char * & Imports, 
 				     int & SizeOfPacket, Epetra_Distributor & Distor);
   
-  int UnpackAndCombine(const Epetra_DistObject & Source,
+  int UnpackAndCombine(const Epetra_SrcDistObject & Source,
 		       int NumImportIDs, int * ImportLIDs, 
 		       char * Imports, int & SizeOfPacket, 
 		       Epetra_Distributor & Distor, Epetra_CombineMode CombineMode);

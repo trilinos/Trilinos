@@ -1331,13 +1331,13 @@ double Epetra_CrsMatrix::NormOne() const {
   return(NormOne_);
 }
 //=========================================================================
-int Epetra_CrsMatrix::CheckSizes(const Epetra_DistObject & Source) {
+int Epetra_CrsMatrix::CheckSizes(const Epetra_SrcDistObject & Source) {
   const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Source);
   if (!A.Graph().GlobalConstantsComputed()) EPETRA_CHK_ERR(-1); // Must have global constants to proceed
   return(0);
 }
 //=========================================================================
-int Epetra_CrsMatrix::CopyAndPermute(const Epetra_DistObject & Source, int NumSameIDs, 
+int Epetra_CrsMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source, int NumSameIDs, 
 				     int NumPermuteIDs, int * PermuteToLIDs,
 				     int *PermuteFromLIDs) {
   
@@ -1420,7 +1420,7 @@ int Epetra_CrsMatrix::CopyAndPermute(const Epetra_DistObject & Source, int NumSa
 }
 
 //=========================================================================
-int Epetra_CrsMatrix::PackAndPrepare(const Epetra_DistObject & Source, 
+int Epetra_CrsMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source, 
 				     int NumExportIDs, int * ExportLIDs,
 				     int Nsend, int Nrecv,
 				     int & LenExports, char * & Exports, int & LenImports, 
@@ -1487,7 +1487,7 @@ int Epetra_CrsMatrix::PackAndPrepare(const Epetra_DistObject & Source,
 }
 
 //=========================================================================
-int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_DistObject & Source, 
+int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source, 
 				       int NumImportIDs, int * ImportLIDs, 
 				       char * Imports, int & SizeOfPacket, 
 				       Epetra_Distributor & Distor, 

@@ -25,6 +25,7 @@
 #ifndef _EPETRA_DISTOBJECT_H_
 #define _EPETRA_DISTOBJECT_H_
 #include "Epetra_Object.h"
+#include "Epetra_SrcDistObject.h"
 class Epetra_Comm;
 class Epetra_BlockMap;
 class Epetra_Import;
@@ -56,7 +57,7 @@ class Epetra_Distributor;
 */
 
 //==========================================================================
-class Epetra_DistObject: public Epetra_Object {
+class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObject {
 
   public:
   //@{ \name Constructors/Destructor.
@@ -115,7 +116,7 @@ class Epetra_DistObject: public Epetra_Object {
 
     \return Integer error code, set to 0 if successful.
   */
-  int Import(const Epetra_DistObject& A, const Epetra_Import & Importer, Epetra_CombineMode CombineMode);
+  int Import(const Epetra_SrcDistObject& A, const Epetra_Import & Importer, Epetra_CombineMode CombineMode);
 
   //! Imports an Epetra_DistObject using the Epetra_Export object.
   /*!
@@ -130,7 +131,7 @@ class Epetra_DistObject: public Epetra_Object {
 
     \return Integer error code, set to 0 if successful.
   */
-  int Import(const Epetra_DistObject& A, const Epetra_Export & Exporter, Epetra_CombineMode CombineMode);
+  int Import(const Epetra_SrcDistObject& A, const Epetra_Export & Exporter, Epetra_CombineMode CombineMode);
 
   //! Exports an Epetra_DistObject using the Epetra_Import object.
   /*!
@@ -145,7 +146,7 @@ class Epetra_DistObject: public Epetra_Object {
 
     \return Integer error code, set to 0 if successful.
   */
-  int Export(const Epetra_DistObject& A, const Epetra_Import & Importer, Epetra_CombineMode CombineMode);
+  int Export(const Epetra_SrcDistObject& A, const Epetra_Import & Importer, Epetra_CombineMode CombineMode);
 
   //! Exports an Epetra_DistObject using the Epetra_Export object.
   /*!
@@ -160,7 +161,7 @@ class Epetra_DistObject: public Epetra_Object {
 
     \return Integer error code, set to 0 if successful.
   */
-  int Export(const Epetra_DistObject& A, const Epetra_Export & Exporter, Epetra_CombineMode CombineMode);
+  int Export(const Epetra_SrcDistObject& A, const Epetra_Export & Exporter, Epetra_CombineMode CombineMode);
   //@}
   
   //@{ \name Attribute accessor methods.
@@ -184,7 +185,7 @@ class Epetra_DistObject: public Epetra_Object {
 
   //@{ \name Internal utilities  
   //! Perform actual transfer (redistribution) of data across memory images, using Epetra_Distributor object.
-  virtual int DoTransfer(const Epetra_DistObject& A, Epetra_CombineMode CombineMode,
+  virtual int DoTransfer(const Epetra_SrcDistObject& A, Epetra_CombineMode CombineMode,
 			 int NumSameIDs, int NumPermuteIDs, int NumRemoteIDs, int NumExportIDs, 
 			 int *PermuteToLIDs, int *PermuteFromLIDs, int *RemoteLIDs, int * ExportLIDs,
 			 int Nsend, int Nrecv,
@@ -198,20 +199,20 @@ class Epetra_DistObject: public Epetra_Object {
 
   //@{ \name Virtual methods to be implemented by derived class.
   //! Allows the source and target (\e this) objects to be compared for compatibility, return nonzero if not.
-  virtual int CheckSizes(const Epetra_DistObject& Source) = 0;
+  virtual int CheckSizes(const Epetra_SrcDistObject& Source) = 0;
   //! Perform ID copies and permutations that are on processor.
-  virtual int CopyAndPermute(const Epetra_DistObject & Source, int NumSameIDs, 
+  virtual int CopyAndPermute(const Epetra_SrcDistObject& Source, int NumSameIDs, 
 			     int NumPermuteIDs, int * PermuteToLIDs, int * PermuteFromLIDs) = 0;
 
   //! Perform any packing or preparation required for call to DoTransfer().
-  virtual int PackAndPrepare(const Epetra_DistObject & Source, int NumExportIDs, int * ExportLIDs,
+  virtual int PackAndPrepare(const Epetra_SrcDistObject& Source, int NumExportIDs, int * ExportLIDs,
 			     int Nsend, int Nrecv,
 			     int & LenExports, char * & Exports, int & LenImports, 
 			     char * & Imports, 
 			     int & SizeOfPacket, Epetra_Distributor & Distor) = 0;
   
   //! Perform any unpacking and combining after call to DoTransfer().
-  virtual int UnpackAndCombine(const Epetra_DistObject & Source, 
+  virtual int UnpackAndCombine(const Epetra_SrcDistObject & Source, 
 			       int NumImportIDs, int * ImportLIDs, 
 			       char * Imports, int & SizeOfPacket, 
 			       Epetra_Distributor & Distor, Epetra_CombineMode CombineMode ) = 0;

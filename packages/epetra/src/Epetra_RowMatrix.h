@@ -32,6 +32,7 @@ class Epetra_Export;
 class Epetra_Vector;
 class Epetra_MultiVector;
 #include "Epetra_Operator.h"
+#include "Epetra_SrcDistObject.h"
 
 
 //! Epetra_RowMatrix: A pure virtual class for using real-valued double-precision row matrices.
@@ -45,7 +46,7 @@ class Epetra_MultiVector;
 */    
 
 
-class Epetra_RowMatrix: public virtual Epetra_Operator {
+class Epetra_RowMatrix: public virtual Epetra_Operator, public virtual Epetra_SrcDistObject {
       
  public:
   //@{ \name Destructor.
@@ -66,6 +67,10 @@ class Epetra_RowMatrix: public virtual Epetra_Operator {
     \return Integer error code, set to 0 if successful.
   */
     virtual int NumMyRowEntries(int MyRow, int & NumEntries) const = 0;
+
+
+    //! Returns the maximum of NumMyRowEntries() over all rows.
+    virtual int MaxNumEntries() const = 0;
 
     //! Returns a copy of the specified local row in user-provided arrays.
     /*! 

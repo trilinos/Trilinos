@@ -1026,13 +1026,13 @@ int Epetra_CrsGraph::NumAllocatedGlobalIndices(int Row) const {
   else return(0); // No indices allocated for this row on this processor
 }
 //=========================================================================
-int Epetra_CrsGraph::CheckSizes(const Epetra_DistObject & Source) {
+int Epetra_CrsGraph::CheckSizes(const Epetra_SrcDistObject & Source) {
   const Epetra_CrsGraph & A = dynamic_cast<const Epetra_CrsGraph &>(Source);
   if (!A.GlobalConstantsComputed()) EPETRA_CHK_ERR(-1); // Must have global constants to proceed
   return(0);
 }
 //=========================================================================
-int Epetra_CrsGraph::CopyAndPermute(const Epetra_DistObject & Source,
+int Epetra_CrsGraph::CopyAndPermute(const Epetra_SrcDistObject & Source,
 					 int NumSameIDs, 
 					 int NumPermuteIDs, int * PermuteToLIDs,
 					 int *PermuteFromLIDs) {
@@ -1099,7 +1099,7 @@ int Epetra_CrsGraph::CopyAndPermute(const Epetra_DistObject & Source,
 }
 
 //=========================================================================
-int Epetra_CrsGraph::PackAndPrepare(const Epetra_DistObject & Source, 
+int Epetra_CrsGraph::PackAndPrepare(const Epetra_SrcDistObject & Source, 
 				     int NumExportIDs, int * ExportLIDs,
 				     int Nsend, int Nrecv,
 				     int & LenExports, char * & Exports, int & LenImports, 
@@ -1158,7 +1158,7 @@ return(0);
 }
 
 //=========================================================================
-int Epetra_CrsGraph::UnpackAndCombine(const Epetra_DistObject & Source, 
+int Epetra_CrsGraph::UnpackAndCombine(const Epetra_SrcDistObject & Source, 
 				       int NumImportIDs, int * ImportLIDs, 
 				       char * Imports, int & SizeOfPacket, 
 				      Epetra_Distributor & Distor, Epetra_CombineMode CombineMode) {

@@ -314,12 +314,12 @@ void Epetra_MapColoring::Print(ostream& os) const {
   return;
 }
 //=========================================================================
-int Epetra_MapColoring::CheckSizes(const Epetra_DistObject& Source) {
+int Epetra_MapColoring::CheckSizes(const Epetra_SrcDistObject& Source) {
   return(0);
 }
 
 //=========================================================================
-int Epetra_MapColoring::CopyAndPermute(const Epetra_DistObject& Source, int NumSameIDs, 
+int Epetra_MapColoring::CopyAndPermute(const Epetra_SrcDistObject& Source, int NumSameIDs, 
 				       int NumPermuteIDs, int * PermuteToLIDs, 
 				       int *PermuteFromLIDs) {
 
@@ -343,7 +343,7 @@ int Epetra_MapColoring::CopyAndPermute(const Epetra_DistObject& Source, int NumS
 }
 
 //=========================================================================
-int Epetra_MapColoring::PackAndPrepare(const Epetra_DistObject & Source, int NumExportIDs, int * ExportLIDs,
+int Epetra_MapColoring::PackAndPrepare(const Epetra_SrcDistObject & Source, int NumExportIDs, int * ExportLIDs,
 				      int Nsend, int Nrecv,
 				      int & LenExports, char * & Exports, int & LenImports, 
 				      char * & Imports, 
@@ -384,7 +384,7 @@ int Epetra_MapColoring::PackAndPrepare(const Epetra_DistObject & Source, int Num
 }
 
 //=========================================================================
-int Epetra_MapColoring::UnpackAndCombine(const Epetra_DistObject & Source,
+int Epetra_MapColoring::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 					 int NumImportIDs, int * ImportLIDs, 
 					char * Imports, int & SizeOfPacket, 
 					 Epetra_Distributor & Distor, 

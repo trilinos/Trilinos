@@ -211,12 +211,12 @@ void Epetra_IntVector::Print(ostream& os) const {
   return;
 }
 //=========================================================================
-int Epetra_IntVector::CheckSizes(const Epetra_DistObject& Source) {
+int Epetra_IntVector::CheckSizes(const Epetra_SrcDistObject& Source) {
   return(0);
 }
 
 //=========================================================================
-int Epetra_IntVector::CopyAndPermute(const Epetra_DistObject& Source, int NumSameIDs, 
+int Epetra_IntVector::CopyAndPermute(const Epetra_SrcDistObject& Source, int NumSameIDs, 
 				       int NumPermuteIDs, int * PermuteToLIDs, 
 				       int *PermuteFromLIDs) {
 
@@ -303,7 +303,7 @@ int Epetra_IntVector::CopyAndPermute(const Epetra_DistObject& Source, int NumSam
 }
 
 //=========================================================================
-int Epetra_IntVector::PackAndPrepare(const Epetra_DistObject & Source, int NumExportIDs, int * ExportLIDs,
+int Epetra_IntVector::PackAndPrepare(const Epetra_SrcDistObject & Source, int NumExportIDs, int * ExportLIDs,
 				      int Nsend, int Nrecv,
 				      int & LenExports, char * & Exports, int & LenImports, 
 				      char * & Imports, 
@@ -384,7 +384,7 @@ int Epetra_IntVector::PackAndPrepare(const Epetra_DistObject & Source, int NumEx
 }
 
 //=========================================================================
-int Epetra_IntVector::UnpackAndCombine(const Epetra_DistObject & Source,
+int Epetra_IntVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 					 int NumImportIDs, int * ImportLIDs, 
 					char * Imports, int & SizeOfPacket, 
 					 Epetra_Distributor & Distor, 

@@ -187,16 +187,17 @@ void Epetra_VbrMatrix::InitializeDefaults() { // Initialize all attributes that 
   // State variable for extracting block diagonal entries
   CurBlockDiag_ = -1; // Set to -1 to allow a simple sanity check when extracting entries
 
-	// Atributes that support the Epetra_RowMatrix and Epetra_Operator interfaces
-	RowMatrixRowMap_ = 0;
-	RowMatrixColMap_ = 0;
-	RowMatrixImporter_ = 0;
-	OperatorDomainMap_ = 0;
-	OperatorRangeMap_ = 0;
-	HavePointObjects_ = false;
+  // Atributes that support the Epetra_RowMatrix and Epetra_Operator interfaces
+  RowMatrixRowMap_ = 0;
+  RowMatrixColMap_ = 0;
+  RowMatrixImporter_ = 0;
+  OperatorDomainMap_ = 0;
+  OperatorRangeMap_ = 0;
+  HavePointObjects_ = false;
+  
+  OperatorX_ = 0;
+  OperatorY_ = 0;
 
-	OperatorX_ = 0;
-	OperatorY_ = 0;
   return;
 }
 
@@ -1112,6 +1113,19 @@ int Epetra_VbrMatrix::CopyMatDiag(double * A, int LDA, int NumRows, int NumCols,
   return(0);
 }
 //=============================================================================
+int Epetra_VbrMatrix::MaxNumEntries() const {
+
+  int outval = 0;
+
+  for(int i=0; i<NumMyBlockRows_; i++){
+    int NumBlockEntries = NumMyBlockEntries(i);
+    int NumEntries = 0;
+    for (int j=0; j<NumBlockEntries; j++) NumEntries += ColDims_[i][j];
+    outval = EPETRA_MAX(outval,NumEntries);
+  }
+  return(outval);
+}
+//=============================================================================
 int Epetra_VbrMatrix::NumMyRowEntries(int MyRow, int & NumEntries) const {
 
   int BlockRow, BlockOffset;
@@ -1849,13 +1863,13 @@ void Epetra_VbrMatrix::BlockRowNormOne(int RowDim, int NumEntries, int * BlockRo
   return;
 }
 //=========================================================================
-int Epetra_VbrMatrix::CheckSizes(const Epetra_DistObject & Source) {
+int Epetra_VbrMatrix::CheckSizes(const Epetra_SrcDistObject & Source) {
   const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
   if (!A.Graph().GlobalConstantsComputed()) EPETRA_CHK_ERR(-1); // Must have global constants to proceed
   return(0);
 }
 //=========================================================================
-int Epetra_VbrMatrix::CopyAndPermute(const Epetra_DistObject & Source,
+int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
 				     int NumSameIDs, 
 				     int NumPermuteIDs, int * PermuteToLIDs,
 				     int *PermuteFromLIDs){
@@ -1917,7 +1931,7 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_DistObject & Source,
 }
 
 //=========================================================================
-int Epetra_VbrMatrix::PackAndPrepare(const Epetra_DistObject & Source,int NumExportIDs, int * ExportLIDs,
+int Epetra_VbrMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,int NumExportIDs, int * ExportLIDs,
 				      int Nsend, int Nrecv,
 				      int & LenExports, char * & Exports, int & LenImports, 
 				      char * & Imports, 
@@ -2004,7 +2018,7 @@ int Epetra_VbrMatrix::PackAndPrepare(const Epetra_DistObject & Source,int NumExp
 }
 
 //=========================================================================
-int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_DistObject & Source, 
+int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source, 
 				       int NumImportIDs, int * ImportLIDs, 
 				       char * Imports, int & SizeOfPacket, 
 				       Epetra_Distributor & Distor, 

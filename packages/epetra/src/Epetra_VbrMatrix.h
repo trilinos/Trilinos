@@ -1006,6 +1006,9 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   */
     int NumMyRowEntries(int MyRow, int & NumEntries) const;
 
+    //! Returns the maximum of NumMyRowEntries() over all rows.
+    int MaxNumEntries() const;
+
     //! Returns the EpetraMap object associated with the rows of this matrix.
     const Epetra_Map & RowMatrixRowMap() const 
 			{ if (!HavePointObjects_) GeneratePointObjects(); return(*RowMatrixRowMap_); };
@@ -1081,19 +1084,19 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 		       int * ColFirstPointInElementList, double * x) const;
   void SetStaticGraph(bool Flag) {StaticGraph_ = Flag;};
 
-  int CheckSizes(const Epetra_DistObject& A);
-  int CopyAndPermute(const Epetra_DistObject & Source,
+  int CheckSizes(const Epetra_SrcDistObject& A);
+  int CopyAndPermute(const Epetra_SrcDistObject & Source,
 		     int NumSameIDs, 
 		     int NumPermuteIDs, int * PermuteToLIDs,
 		     int *PermuteFromLIDs);
   
-  int PackAndPrepare(const Epetra_DistObject & Source,int NumExportIDs, int * ExportLIDs,
+  int PackAndPrepare(const Epetra_SrcDistObject & Source,int NumExportIDs, int * ExportLIDs,
 				      int Nsend, int Nrecv,
 				      int & LenExports, char * & Exports, int & LenImports, 
 				      char * & Imports, 
 				      int & SizeOfPacket, Epetra_Distributor & Distor);
   
-  int UnpackAndCombine(const Epetra_DistObject & Source, 
+  int UnpackAndCombine(const Epetra_SrcDistObject & Source, 
 		       int NumImportIDs, int * ImportLIDs, 
 		       char * Imports, int & SizeOfPacket, 
 		       Epetra_Distributor & Distor, Epetra_CombineMode CombineMode);

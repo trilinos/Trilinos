@@ -88,7 +88,7 @@ Epetra_DistObject::~Epetra_DistObject(){
 
 }
 //=========================================================================
-int Epetra_DistObject::Import(const Epetra_DistObject& A, const Epetra_Import & Importer,
+int Epetra_DistObject::Import(const Epetra_SrcDistObject& A, const Epetra_Import & Importer,
 				  Epetra_CombineMode CombineMode) {
 
   if (!Map_->SameAs(Importer.TargetMap())) EPETRA_CHK_ERR(-2);
@@ -112,7 +112,7 @@ int Epetra_DistObject::Import(const Epetra_DistObject& A, const Epetra_Import & 
   return(0);
 }
 //=========================================================================
-int Epetra_DistObject::Export(const Epetra_DistObject& A, const Epetra_Export & Exporter,
+int Epetra_DistObject::Export(const Epetra_SrcDistObject& A, const Epetra_Export & Exporter,
 				  Epetra_CombineMode CombineMode) {
 
   if (!Map_->SameAs(Exporter.TargetMap())) EPETRA_CHK_ERR(-2);
@@ -136,7 +136,7 @@ int Epetra_DistObject::Export(const Epetra_DistObject& A, const Epetra_Export & 
   return(0);
 }
 //=========================================================================
-int Epetra_DistObject::Import(const Epetra_DistObject& A, const Epetra_Export & Exporter,
+int Epetra_DistObject::Import(const Epetra_SrcDistObject& A, const Epetra_Export & Exporter,
 				  Epetra_CombineMode CombineMode) {
 
   if (!Map_->SameAs(Exporter.SourceMap())) EPETRA_CHK_ERR(-2);
@@ -160,7 +160,7 @@ int Epetra_DistObject::Import(const Epetra_DistObject& A, const Epetra_Export & 
   return(0);
 }
 //=========================================================================
-int Epetra_DistObject::Export(const Epetra_DistObject& A, const Epetra_Import & Importer,
+int Epetra_DistObject::Export(const Epetra_SrcDistObject& A, const Epetra_Import & Importer,
 				  Epetra_CombineMode CombineMode) {
 
   if (!Map_->SameAs(Importer.SourceMap())) EPETRA_CHK_ERR(-2);
@@ -185,7 +185,7 @@ int Epetra_DistObject::Export(const Epetra_DistObject& A, const Epetra_Import & 
   return(0);
 }
 //=========================================================================
-int Epetra_DistObject::DoTransfer(const Epetra_DistObject& A, Epetra_CombineMode CombineMode, 
+int Epetra_DistObject::DoTransfer(const Epetra_SrcDistObject& A, Epetra_CombineMode CombineMode, 
 				      int NumSameIDs, int NumPermuteIDs, int NumRemoteIDs, int NumExportIDs, 
 				      int *PermuteToLIDs, int *PermuteFromLIDs, int *RemoteLIDs, 
 				      int * ExportLIDs,

@@ -1008,17 +1008,17 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 			int VectorIndex, double ScalarValue, bool SumInto);
   int ChangeMyValue(int MyBlockRow, int BlockRowOffset, 
 		    int VectorIndex, double ScalarValue, bool SumInto);
-  int CheckSizes(const Epetra_DistObject& A);
-  int CopyAndPermute(const Epetra_DistObject & Source, int NumSameIDs, 
+  int CheckSizes(const Epetra_SrcDistObject& A);
+  int CopyAndPermute(const Epetra_SrcDistObject & Source, int NumSameIDs, 
 		     int NumPermuteIDs, int * PermuteToLIDs, int * PermuteFromLIDs);
 
-  int PackAndPrepare(const Epetra_DistObject & Source, int NumExportIDs, int * ExportLIDs,
+  int PackAndPrepare(const Epetra_SrcDistObject & Source, int NumExportIDs, int * ExportLIDs,
 		     int Nsend, int Nrecv,
 		     int & LenExports, char * & Exports, int & LenImports, 
 		     char * & Imports, 
 		     int & SizeOfPacket, Epetra_Distributor & Distor);
   
-  int UnpackAndCombine(const Epetra_DistObject & Source,
+  int UnpackAndCombine(const Epetra_SrcDistObject & Source,
 		       int NumImportIDs, int * ImportLIDs, 
 		       char * Imports, int & SizeOfPacket, 
 		       Epetra_Distributor & Distor, Epetra_CombineMode CombineMode );

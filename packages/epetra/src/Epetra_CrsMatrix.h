@@ -613,10 +613,10 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     //! Returns the allocated number of nonzero entries in specified global row on this processor.
     int NumAllocatedGlobalEntries(int Row) const{return(Graph_->NumAllocatedGlobalIndices(Row));};
 
-    //! Returns the maximu number of nonzero entries across all rows on this processor.
+    //! Returns the maximum number of nonzero entries across all rows on this processor.
     int MaxNumEntries() const {return(Graph_->MaxNumIndices());};
 
-    //! Returns the maximu number of nonzero entries across all rows on this processor.
+    //! Returns the maximum number of nonzero entries across all rows on this processor.
     int GlobalMaxNumEntries() const {return(Graph_->GlobalMaxNumIndices());};
 
     //! Returns the current number of nonzero entries in specified local row on this processor.
@@ -807,19 +807,19 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
   int InsertValues(int LocalRow, int NumEntries, double * Values, int *Indices);
   void SetStaticGraph(bool Flag) {StaticGraph_ = Flag;};
-  int CheckSizes(const Epetra_DistObject& A);
-  int CopyAndPermute(const Epetra_DistObject & Source,
+  int CheckSizes(const Epetra_SrcDistObject& A);
+  int CopyAndPermute(const Epetra_SrcDistObject& Source,
 		     int NumSameIDs, 
 		     int NumPermuteIDs, int * PermuteToLIDs,
 		     int *PermuteFromLIDs);
   
-  int PackAndPrepare(const Epetra_DistObject & Source,int NumExportIDs, int * ExportLIDs,
+  int PackAndPrepare(const Epetra_SrcDistObject& Source,int NumExportIDs, int * ExportLIDs,
 				      int Nsend, int Nrecv,
 				      int & LenExports, char * & Exports, int & LenImports, 
 				      char * & Imports, 
 				      int & SizeOfPacket, Epetra_Distributor & Distor);
   
-  int UnpackAndCombine(const Epetra_DistObject & Source, 
+  int UnpackAndCombine(const Epetra_SrcDistObject& Source, 
 		       int NumImportIDs, int * ImportLIDs, 
 		       char * Imports, int & SizeOfPacket, 
 		       Epetra_Distributor & Distor, Epetra_CombineMode CombineMode);
