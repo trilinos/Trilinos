@@ -397,34 +397,7 @@ fi
 #  U M F P A C K  #
 #  =============  #
 
-  if test "X$superludist_lib_ok" != "Xyes"; then
-#
-#       2)  Next try to compile with -lsuperludist.  This allows the user to specify 
-#           the directory while using the default name for the library
-     LIBS=" -lsuperludist ${LIBS}"
-
-     AC_TRY_LINK_FUNC(pdgssvx,superludist_with_lib="yes",superludist_with_lib="no")
-
-     if test "X$superludist_with_lib" == "Xyes"; then
-       amesos_libs="${amesos_libs} -lsuperludist"
-     else
-#       3)  Then try the existing Triliinos3PL scheme. 
-#
-       TAC_ARG_WITH_SUB( amesos, superludistlib, [Set SuperLU dist library],  
-                         ${tac_with_amesos_superludistdir}/libsuperludist.a )
-       TAC_CHECK_FILE(${tac_with_amesos_superludistlib})
-       LIBS="${tac_with_amesos_superludistlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
-       amesos_libs="${amesos_libs} ${tac_with_amesos_superludistlib}"
-     fi
-  fi
-#
-#   At this point, LIBS and amesos_libs both have our best shot, if they don't work now
-#   we give up
-
-#   This causes problems when you use build with both superlu and superludist
-#
-#    AC_TRY_LINK_FUNC( set_default_options,
-#                        AC_DEFINE(OLD_SUPERLUDIST,,[Define if we are using the old Superludist]) ) 
+if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
 
   AC_TRY_LINK_FUNC(umfdi_local_search,,
   AC_MSG_ERROR([[Cannot find the UMFPACK library, specify a location using --with-libs, (ex. --with-libs=/home/username/lib/libumfpack.a, or use --with-libs=-lumfpack --with-ldflags=-L/home/username/lib).]]))
