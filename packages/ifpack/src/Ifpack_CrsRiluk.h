@@ -46,7 +46,9 @@ class Epetra_Vector;
 class Epetra_MultiVector;
 
 #ifdef HAVE_IFPACK_TEUCHOS
-#include <Teuchos_ParameterList.hpp>
+namespace Teuchos {
+  class ParameterList;
+}
 #endif
 
 //! Ifpack_CrsRiluk: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Epetra_RowMatrix.
@@ -247,8 +249,17 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   void SetOverlapMode( Epetra_CombineMode OverlapMode) {OverlapMode_ = OverlapMode; return;}
 
 #ifdef HAVE_IFPACK_TEUCHOS
-  int SetParameters(Teuchos::ParameterList& parameterlist,
-                    bool cerr_warning_if_unused);
+  //! Set parameters using a Teuchos::ParameterList object.
+  /* This method is only available if the configure argument
+    '--enable-ifpack-teuchos' was used.
+     This method recognizes three parameter names: relax_value,
+     absolute_threshold and relative_threshold. These names are case
+     insensitive, and in each case the ParameterEntry must have type double.
+
+     This method does not currently support setting of the OverlapMode.
+  */
+  int SetParameters(const Teuchos::ParameterList& parameterlist,
+                    bool cerr_warning_if_unused=false);
 #endif
 
   //! Compute ILU factors L and U using the specified graph, diagonal perturbation thresholds and relaxation parameters.
@@ -307,6 +318,15 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   int Condest(bool Trans, double & ConditionNumberEstimate) const;
   // Atribute access functions
   
+  //! Get RILU(k) relaxation parameter
+  double GetRelaxValue() {return RelaxValue_;}
+
+  //! Get absolute threshold value
+  double GetAbsoluteThreshold() {return Athresh_;}
+
+  //! Get relative threshold value
+  double GetRelativeThreshold() {return Rthresh_;}
+
     
   //! Returns the number of global matrix rows.
   int NumGlobalRows() const {return(Graph().NumGlobalRows());};

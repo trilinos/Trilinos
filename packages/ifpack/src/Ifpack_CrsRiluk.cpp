@@ -36,6 +36,11 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 
+#ifdef HAVE_IFPACK_TEUCHOS
+#include <Teuchos_ParameterList.hpp>
+#include <ifp_parameters.h>
+#endif
+
 //==============================================================================
 Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph) 
   : UserMatrixIsVbr_(false),
@@ -45,6 +50,11 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph)
     IlukDomainMap_(0),
     IlukRangeMap_(0),
     Comm_(Graph.Comm()),
+    L_(0),
+    U_(0),
+    L_Graph_(0),
+    U_Graph_(0),
+    D_(0),
     UseTranspose_(false),
     NumMyDiagonals_(0),
     Allocated_(false),
@@ -74,6 +84,11 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_CrsRiluk & FactoredMatrix)
     IlukDomainMap_(FactoredMatrix.IlukDomainMap_),
     IlukRangeMap_(FactoredMatrix.IlukRangeMap_),
     Comm_(FactoredMatrix.Comm_),
+    L_(0),
+    U_(0),
+    L_Graph_(0),
+    U_Graph_(0),
+    D_(0),
     UseTranspose_(FactoredMatrix.UseTranspose_),
     NumMyDiagonals_(FactoredMatrix.NumMyDiagonals_),
     Allocated_(FactoredMatrix.Allocated_),
@@ -178,6 +193,24 @@ int Ifpack_CrsRiluk::AllocateVbr() {
   SetAllocated(true);
   return(0);
 }
+
+#ifdef HAVE_IFPACK_TEUCHOS
+//==========================================================================
+int Ifpack_CrsRiluk::SetParameters(const Teuchos::ParameterList& parameterlist,
+                                   bool cerr_warning_if_unused)
+{
+  Ifpack::param_struct params;
+  params.double_params[Ifpack::absolute_threshold] = Athresh_;
+  params.double_params[Ifpack::relative_threshold] = Rthresh_;
+
+  Ifpack::set_parameters(parameterlist, params, cerr_warning_if_unused);
+
+  Athresh_ = params.double_params[Ifpack::absolute_threshold];
+  Rthresh_ = params.double_params[Ifpack::relative_threshold];
+  return(0);
+}
+#endif
+
 //==========================================================================
 int Ifpack_CrsRiluk::InitValues(const Epetra_CrsMatrix & A) {
 

@@ -28,6 +28,9 @@
 
 // SetParameters Test routine
 #include <Ifpack_ConfigDefs.h>
+#include <Ifpack_IlukGraph.h>
+#include <Ifpack_CrsRiluk.h>
+
 #include <Epetra_CrsGraph.h>
 
 #ifdef HAVE_IFPACK_TEUCHOS
@@ -35,9 +38,11 @@
 #endif
 
 #include <ifp_parameters.h>
+#include <Epetra_SerialComm.h>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
+#include <Epetra_MpiComm.h>
 #endif
 
 int main(int argc, char* argv[]) {
@@ -53,6 +58,9 @@ int main(int argc, char* argv[]) {
 
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
 #endif
 
   if (verbose1) {
@@ -64,6 +72,8 @@ int main(int argc, char* argv[]) {
 
   Teuchos::ParameterList paramlist;
   paramlist.set("absolute_threshold", 44.0);
+  paramlist.set("level_fill", 2);
+  paramlist.set("LEVEL_OVERLAP", 2);
 
   Ifpack::set_parameters(paramlist, params);
 
@@ -71,6 +81,52 @@ int main(int argc, char* argv[]) {
     if (verbose1) {
       cerr << "SetParameters test failed to correctly set absolute_threshold."<<endl;
     }
+    return(-1);
+  }
+#endif
+
+  int local_n = 5;
+  int my_pid = Comm.MyPID();
+  int num_procs = Comm.NumProc();
+  int global_n = num_procs*local_n;
+
+  Epetra_Map map(global_n, 0, Comm);
+  Epetra_CrsGraph graph(Copy, map, 1);
+  int first_global_row = my_pid*local_n;
+
+  for(int i=0; i<local_n; ++i) {
+    int row = first_global_row + i;
+    graph.InsertGlobalIndices(row, 1, &row);
+  }
+
+  Ifpack_IlukGraph ilukgraph(graph, 1,1);
+  Ifpack_CrsRiluk crsiluk(ilukgraph);
+
+#ifdef HAVE_IFPACK_TEUCHOS
+  ilukgraph.SetParameters(paramlist);
+ 
+  int levelfill = ilukgraph.LevelFill();
+  if (levelfill != 2) {
+    cerr << "SetParameters test failed to correctly set level_fill."
+        << endl;
+    return(-1);
+  }
+ 
+  int leveloverlap = ilukgraph.LevelOverlap();
+  if (leveloverlap != 2) {
+    cerr << "SetParameters test failed to correctly set level_overlap."
+        << endl;
+    return(-1);
+  }
+#endif
+
+#ifdef HAVE_IFPACK_TEUCHOS
+  crsiluk.SetParameters(paramlist);
+ 
+  double athresh = crsiluk.GetAbsoluteThreshold();
+  if (athresh != 44.0) {
+    cerr << "SetParameters test failed to correctly set absolute_threshold."
+        << endl;
     return(-1);
   }
 #endif

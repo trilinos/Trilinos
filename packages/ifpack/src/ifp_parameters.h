@@ -60,8 +60,8 @@ enum parameter {
   use_reciprocal
 };
 
-#define FIRST_INT_PARAM level_fill
-#define LAST_INT_PARAM num_steps
+#define FIRST_INT_PARAM Ifpack::level_fill
+#define LAST_INT_PARAM Ifpack::num_steps
 
 //define struct with union of all Ifpack parameters
 struct param_struct {

@@ -33,6 +33,13 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_Object.h" 
 #include "Epetra_CrsGraph.h"
+
+#ifdef HAVE_IFPACK_TEUCHOS
+namespace Teuchos {
+  class ParameterList;
+}
+#endif
+
 //! Ifpack_IlukGraph: A class for constructing level filled graphs for use with ILU(k) class preconditioners.
 
 /*! The Ifpack_IlukGraph class enable the construction matrix graphs using level-fill algorithms.  The only function
@@ -53,8 +60,6 @@ InsertIndices and RemoveIndices functions.  However, in this case FillComplete m
 called before the graph is used for subsequent operations.
 
 */    
-
-
 class Ifpack_IlukGraph {
       
   // Give ostream << function some access to private and protected data/functions.
@@ -85,6 +90,17 @@ class Ifpack_IlukGraph {
   //! Ifpack_IlukGraph Destructor
   virtual ~Ifpack_IlukGraph();
   
+#ifdef HAVE_IFPACK_TEUCHOS
+  //!Set parameters using Teuchos::ParameterList object.
+  /* This method is only available if the configure argument
+     '--enable-ifpack-teuchos' was used.
+     This method recogizes two parameter names: Level_fill and Level_overlap.
+     Both are case insensitive, and in both cases the ParameterEntry must
+     have type int.
+  */
+  int SetParameters(const Teuchos::ParameterList& parameterlist,
+                    bool cerr_warning_if_unused=false);
+#endif
 
   //! Does the actual construction of the graph.
   /* 
