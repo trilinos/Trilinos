@@ -31,12 +31,19 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
 			       int nregions, int *c2) {
   int i;                         /* index counter */
   int n_import;
+<<<<<<< migreg.c
+  int msgtag, msgtag2;
+  COMM_OBJ *comm_plan;           /* Object returned by communication routines */
+  Region *import_objs;          /* Array of import objects used to request 
+=======
   COMM_OBJ *comm_plan;           /* Communication object returned by 
 				    Bruce and Steve's communication routines */
   Region *import_objs = NULL;    /* Array of import objects used to request 
+>>>>>>> 1.16
 				    the objs from other processors. */
 
-  comm_plan = LB_Comm_Create(nregions, npids, lb->Communicator, &n_import);
+  msgtag = 32768;
+  LB_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, msgtag, &n_import);
   *c2 = n_import;
   if (n_import > 0) {
     import_objs = (Region *) LB_Array_Alloc(__FILE__, __LINE__, 1, n_import,
@@ -49,7 +56,8 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
     }
   }
 
-  LB_Comm_Do(comm_plan, (char *) regions, sizeof(Region), 
+  msgtag2 = 32767;
+  LB_Comm_Do(comm_plan, msgtag2, (char *) regions, sizeof(Region), 
           (char *) import_objs);
 
   for (i=0; i<n_import; i++) {

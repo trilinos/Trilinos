@@ -248,18 +248,30 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   int i;                                  /* index counter */
   int nreceives;                          /* number of messages received */
   pRegion imp;                            /* array of tags being imported */
+<<<<<<< migoct.c
+  pRegion tmp;
+  int msgtag, msgtag2;
+=======
   pRegion tmp = NULL;
+>>>>>>> 1.18
   int j;
   float im_load;
-  COMM_OBJ *comm_plan;           /* Communication object returned by 
-				    Bruce and Steve's communication routines */
+  COMM_OBJ *comm_plan;           /* Object returned by communication routines */
 
   im_load = 0;
+<<<<<<< migoct.c
+  msgtag = 32768;
+  LB_Comm_Create(&comm_plan, nsentags, tag_pids, lb->Communicator, 
+      msgtag, &nreceives);
+  tmp = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, nreceives,
+                                 sizeof(Region));
+=======
   comm_plan = LB_Comm_Create(nsentags, tag_pids, lb->Communicator, &nreceives);
 
   if (nreceives > 0) {
     tmp = (pRegion) LB_Array_Alloc(__FILE__, __LINE__, 1, nreceives,
                                    sizeof(Region));
+>>>>>>> 1.18
   
     if(tmp == NULL) {
       fprintf(stderr,"ERROR in LB_migreg_migrate_regions: %s\n",
@@ -268,7 +280,9 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
     }
   }
   
-  LB_Comm_Do(comm_plan, (char *) export_tags, sizeof(Region), (char *) tmp);
+  msgtag2 = 32767;
+  LB_Comm_Do(comm_plan, msgtag2, (char *) export_tags, sizeof(Region),
+      (char *) tmp);
   LB_Comm_Destroy(&comm_plan);
 
   /* get each message sent, and store region in import array */

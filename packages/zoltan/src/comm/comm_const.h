@@ -17,29 +17,34 @@
 
 #include <mpi.h>
 
-/* data structure for irregular communication */
+/* Data structures for communication object. */
 
-struct Comm_Obj {
-  int nsend;                 /* # of messages to send (not including self) */
-  int nrecv;                 /* # of messages to recv (not including self) */
-  int nself;                 /* 0 = no data to copy to self, 1 = yes */
-  int nsendmax;              /* # of datums in largest send message */
-  int *procs_to;             /* list of procs to send to */
-  int *lengths_to;           /* # of datums to send to each proc w/ self */
-  int *indices_to;           /* which datums to send to each proc w/ self */
-  int *procs_from;           /* list of procs to recv from */
-  int *lengths_from;         /* # of datums to recv from each proc */
-  MPI_Request *request;      /* MPI requests for posted recvs */
-  MPI_Status *status;        /* MPI statuses for Waitall */
-  MPI_Comm comm;             /* duplicated MPI Comm for all communication */
+struct Comm_Obj {		/* data for mapping between decompositions */
+    int      *lengths_to;       /* lengths of messages I'll send */
+    int      *procs_to;         /* processors I'll send to (-1 ends) */
+    int      *indices_to;       /* offsets for where to read sending data */
+    int      *lengths_from;     /* lengths of messages I'll receive */
+    int      *procs_from;       /* processors I'll receive from (-1 ends) */
+    int      *indices_from;     /* offsets for where to put arriving data */
+    int       nrecvs;		/* number of msgs I'll recv (w/o self_msg) */
+    int       nsends;		/* number of msgs I'll send (w/o self_msg) */
+    int       self_msg;		/* do I have data for myself? */
+    int       max_send_length;  /* size of longest message I send */
+    int       total_recv_length;/* total amount of data I'll recv */
+    MPI_Comm  comm;		/* communicator for operation */
+    MPI_Request *request;       /* MPI requests for posted recvs */
+    MPI_Status *status;		/* MPI status for those recvs */
 };
 
 typedef struct Comm_Obj COMM_OBJ;
 
 /* function prototypes */
 
-extern void LB_Comm_Do(struct Comm_Obj *, char *, int, char *);
-extern struct Comm_Obj *LB_Comm_Create(int, int *, MPI_Comm, int *);
-extern void LB_Comm_Destroy(struct Comm_Obj **);
+extern int LB_Comm_Create(COMM_OBJ **, int, int *, MPI_Comm, int, int *);
+extern int LB_Comm_Do(COMM_OBJ *, int, char *, int, char *);
+extern int LB_Comm_Do_Reverse(COMM_OBJ *, int, char *, int, char *);
+extern int LB_Comm_Destroy(COMM_OBJ **);
+extern int LB_Invert_Map(int *, int *, int, int, int **, int **, int *,
+    int, int, int, MPI_Comm);
 
 #endif
