@@ -113,6 +113,15 @@ public:
     return const_cast<T&>(Teuchos::any_cast<T>( val_ ));
   }
 
+  /*! \brief Direct access to the Teuchos::any data value underlying
+   * this object. 
+   * \note This is needed for conversion of a Teuchos parameter entry
+   * to a NOX parameter entry. KL 7 August 2004.
+   */
+  const any& getAny() const 
+  {
+    return val_;
+  }
   //@}
 
   //@{ \name Attribute Methods  
@@ -122,6 +131,22 @@ public:
 
   //! Return whether or not the value itself is a list.
   bool isList() const { return isList_; }
+
+  /*! \brief Test the type of the data being contained. 
+   * \note This is not strictly necessary for conversion to NOX parameters, 
+   * but allows us to use the type-specific NOX parameter constructors 
+   * for standard data types (ints, doubles, strings, sublists, etc) which 
+   * gives us better type diagnostics in NOX. Anything non-standard can 
+   * be written to a NOX AnyPtr parameter. 
+   * KL 7 August 2004 */
+  template <typename T> 
+  bool isType() const 
+  {
+    return val_.type() == typeid(T);
+  }
+
+  /** Indicate whether this entry takes on the default value */
+  bool isDefault() const {return isDefault_;}
   //@}
 
   //@{ \name I/O Methods

@@ -509,10 +509,45 @@ AC_SUBST(TRILINOS_TEMPLATE_OBJS)
 TAC_ARG_CONFIG_EXPAT
 
 # ------------------------------------------------------------------------
+# Check to see if libxml2 enabled and if any special configuration done
+# ------------------------------------------------------------------------
+
+TAC_ARG_CONFIG_LIBXML2
+
+if test "X${HAVE_PKG_LIBXML2}" = "Xyes"; then
+  if test "X${HAVE_PKG_EXPAT}" = "Xyes"; then
+    AC_MSG_ERROR([[You have specified both expat and libxml2. Please enable only one XML parser]])
+  fi  
+fi
+
+# ------------------------------------------------------------------------
+# Get the absolute path to the build directory.  
+# 
+# We need this as a reference point from which 
+# to figure out paths to the libraries for the other Trilinos packages. 
+# 
+# ------------------------------------------------------------------------
+
+AC_MSG_CHECKING([finding build directory])
+if test "X" = "X"; then
+  TEUCHOS_BUILD_DIRECTORY=`pwd`
+  AC_MSG_RESULT($TEUCHOS_BUILD_DIRECTORY)
+fi
+
+
+# ------------------------------------------------------------------------
 # Perform substitutions in output files
 # ------------------------------------------------------------------------
 
 AC_SUBST(ac_aux_dir)
+AC_SUBST(TEUCHOS_BUILD_DIRECTORY)
+AC_SUBST(MPI_LIBS)
+AC_SUBST(MPI_LIBDIR)
+AC_SUBST(MPI_INC)
+AC_SUBST(MPI_DIR)
+AC_SUBST(AMDEP_TRUE)
+AC_SUBST(AMDEP_FALSE)
+
 
 # ------------------------------------------------------------------------
 # Output files
@@ -524,6 +559,7 @@ AC_SUBST(ac_aux_dir)
 #  to add a new directory.
 AC_CONFIG_FILES([
 		Makefile 
+		Makefile.export 
 		src/Makefile
 		test/Makefile
 		test/BLAS/Makefile

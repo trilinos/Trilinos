@@ -55,7 +55,7 @@ int XMLObjectImplem::numChildren() const {return children_.length();}
 
 void XMLObjectImplem::addAttribute(const string& name, const string& value)
 {
-  attributes_.put(name, value);
+  attributes_[name] = value;
 }
 
 void XMLObjectImplem::addChild(const XMLObject& child)
@@ -77,39 +77,35 @@ string XMLObjectImplem::header() const
 {
 	string rtn = "<" + tag_;
       
-	Array<string> names;
-	Array<string> values;
-	attributes_.arrayify(names, values);
-
-	for (int i=0; i<names.length(); i++)
+  for (Map::const_iterator i=attributes_.begin(); i!=attributes_.end(); ++i)
 		{
-			rtn += " " + names[i] + "=\"" + values[i] + "\"";
+			rtn += " " + (*i).first + "=\"" + (*i).second + "\"";
 		}
-	rtn += ">";
+
+  if (content_.length()==0 && children_.length()==0) 
+    {
+      rtn += "/>";
+    }
+  else
+    {
+      rtn += ">";
+    }
 	return rtn;
 }
 
 string XMLObjectImplem::toString() const
 {
-  string rtn = "<" + tag_;
+  string rtn = header() + "\n";
       
-  Array<string> names;
-  Array<string> values;
-  attributes_.arrayify(names, values);
-  int i = 0;
-  for (i=0; i<names.length(); i++)
-    {
-      rtn += " " + names[i] + "=\"" + values[i] + "\"";
-    }
+  
   if (content_.length()==0 && children_.length()==0) 
     {
-      rtn += "/>\n" ;
+      return rtn;
     }
   else
     {
-      rtn += ">\n";
       bool allBlankContent = true;
-      for (i=0; i<content_.length(); i++)
+      for (int i=0; i<content_.length(); i++)
         {
           if (!StrUtils::isWhite(content_[i])) 
             {
@@ -119,17 +115,64 @@ string XMLObjectImplem::toString() const
         }
       if (allBlankContent)
         {
-          for (i=0; i<content_.length(); i++)
+          for (int i=0; i<content_.length(); i++)
             {
               rtn += content_[i] + "\n";
             }
         }
-      for (i=0; i<children_.length(); i++)
+      for (int i=0; i<children_.length(); i++)
         {
           rtn += children_[i].toString();
         }
       rtn += "</" + tag_ + ">\n";
     }
   return rtn;
+}
+
+void XMLObjectImplem::print(ostream& os, int indent) const
+{
+  for (int i=0; i<indent; i++) os << " ";
+  
+  os << header() << endl;
+  
+  if (content_.length()==0 && children_.length()==0) 
+    {
+      return;
+    }
+  else
+    {
+      printContent(os, indent+2);
+
+      for (int i=0; i<children_.length(); i++)
+        {
+          children_[i].print(os, indent+2);
+        }
+      for (int i=0; i<indent; i++) os << " ";
+      os << "</" << tag_ << ">\n";
+    }
+}
+
+void XMLObjectImplem::printContent(ostream& os, int indent) const 
+{
+  string space = "";
+  for (int i=0; i<indent; i++) space += " ";
+
+  bool allBlankContent = true;
+  for (int i=0; i<content_.length(); i++)
+    {
+      if (!StrUtils::isWhite(content_[i])) 
+        {
+          allBlankContent=false;
+          break;
+        }
+    }
+  
+  if (allBlankContent)
+    {
+      for (int i=0; i<content_.length(); i++)
+        {
+          os << space << content_[i];
+        }
+    }
 }
 

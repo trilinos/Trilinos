@@ -47,6 +47,7 @@ namespace Teuchos
    */
   class TreeBuildingXMLHandler
     {
+      typedef Teuchos::map<string, string> Map;
     public:
       /** \brief Empty constructor */
       TreeBuildingXMLHandler();
@@ -62,7 +63,7 @@ namespace Teuchos
 
       /** \brief Receive notification of the start of an element */
       void startElement(const string& tag,
-                        const Hashtable<string,string>& attributes);
+                        const Map<string,string>& attributes);
 
     private:
       XMLObject root_;

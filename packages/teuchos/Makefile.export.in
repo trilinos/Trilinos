@@ -1,0 +1,143 @@
+# @HEADER
+# ************************************************************************
+# 
+#                    Teuchos: Common Tools Package
+#                 Copyright (2004) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# 
+# ************************************************************************
+# @HEADER
+
+
+##########################################################################
+#
+# Macro definitions to be exported from Teuchos to clients.
+# 
+# -- KL 9 August 2004
+#
+#
+# To link with everything required by Teuchos, simply add 
+# $(TEUCHOS_EXPORT_LIBS) to the linker command line in your Makefile.
+#
+##########################################################################
+
+TEUCHOS_EXPORT_LIBS = -L$(TEUCHOS_BUILD_DIRECTORY)/src  -lteuchos \
+                      -L$(TEUCHOS_XML_LIBDIR) $(TEUCHOS_XML_LIBS) \
+                      -L$(TEUCHOS_MPI_LIBDIR) $(TEUCHOS_MPI_LIBS)
+
+
+
+##########################################################################
+#
+# Set the absolute path to the Teuchos build directory
+#
+##########################################################################
+
+TEUCHOS_BUILD_DIRECTORY = @TEUCHOS_BUILD_DIRECTORY@
+
+
+
+
+
+############################################################################
+#
+# Export compiler settings 
+#
+############################################################################
+
+# Extra definitions
+TEUCHOS_DEFS = @DEFS@
+
+# Fortran compilation flags
+TEUCHOS_FFLAGS = @FFLAGS@
+
+# C compilation flags
+TEUCHOS_CFLAGS = @CFLAGS@
+
+# C++ compilation flags
+TEUCHOS_CXXFLAGS = @CXXFLAGS@
+
+# linker flags
+TEUCHOS_LDFLAGS = @LDFLAGS@
+
+
+############################################################################
+#
+# Export the ranlib and archiver to be used
+#
+############################################################################
+
+TEUCHOS_RANLIB = @RANLIB@
+
+
+
+############################################################################
+#
+# Export MPI settings 
+#
+############################################################################
+
+# MPI libraries
+TEUCHOS_MPI_LIBS = @MPI_LIBS@
+
+# MPI include path
+TEUCHOS_MPI_INC = @MPI_INC@
+
+# Path to MPI libraries
+TEUCHOS_MPI_LIBDIR = @MPI_LIBDIR@
+
+# Path to MPI root
+TEUCHOS_MPI_DIR = @MPI_DIR@
+
+
+############################################################################
+#
+# Export Fortran, BLAS, and LAPACK libraries
+#
+############################################################################
+
+# Fortran & standard math libs
+TEUCHOS_FLIBS = @FLIBS@
+
+# BLAS libraries
+TEUCHOS_BLAS_LIBS = @BLAS_LIBS@
+
+# LAPACK libraries
+TEUCHOS_LAPACK_LIBS = @LAPACK_LIBS@
+
+
+
+############################################################################
+#
+# Export XML libraries and paths
+#
+############################################################################
+
+# XML libraries
+TEUCHOS_XML_LIBS = @XML_LIBS@
+
+# XML library directory
+TEUCHOS_XML_LIBDIR = @XML_LIBDIR@
+
+# XML includes
+TEUCHOS_XML_INC = @XML_INC@
+
+

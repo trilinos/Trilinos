@@ -64,13 +64,15 @@ class ParameterList {
   //! Parameter container typedef
   typedef Teuchos::map<string, ParameterEntry> Map;
 
-  //! Parameter container const iterator typedef
-  typedef Map::const_iterator ConstIterator;
-
   //! Parameter container iterator typedef
   typedef Map::iterator Iterator;
   
 public:
+
+  /* Made this typedef public so that we can use iterators in 
+   * converting to NOX parameter lists -- KL 7 August 2004 */
+  //! Parameter container const iterator typedef
+  typedef Map::const_iterator ConstIterator;
   
   //@{ \name Constructors/Destructor.
   //! Constructor
@@ -115,7 +117,13 @@ public:
    */
   void set(const string& name, ParameterList value)
   { sublist(name) = value; }
-  
+
+  /*! \brief Set a parameter directly as a ParameterEntry. 
+   * \note This is required to preserve the isDefault value when reading back
+   * from XML. KL 7 August 2004 
+   */
+  void setEntry(const string& name, const ParameterEntry& entry)
+  {params_[name] = entry;}
   //@}
   
   //@{ \name Get Methods
@@ -204,17 +212,28 @@ public:
   //! Print out unused parameters in the ParameterList.
   void unused(ostream& os) const;
   //@}
-  
-private:
+
+
+  /* Added these methods to facilitate conversion to NOX parameter lists 
+   * -- KL 7 August 2004 */
+  //@{ \name Read-only access to the iterator
+  //! An iterator pointing to the first entry
+  ConstIterator begin() const ;
+
+  //! An iterator pointing beyond the last entry
+  ConstIterator end() const ;
+
+  //! Access to ParameterEntry (i.e., returns i->second)
+  const ParameterEntry& entry(ConstIterator i) const;
   
   //! Access to name (i.e., returns i->first)
   const string& name(ConstIterator i) const;
+  //@}
+  
+private:
   
   //! Access to ParameterEntry (i.e., returns i->second)
   ParameterEntry& entry(Iterator i);
-  
-  //! Access to ParameterEntry (i.e., returns i->second)
-  const ParameterEntry& entry(ConstIterator i) const;
   
 private:
   

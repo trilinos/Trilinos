@@ -80,6 +80,9 @@
 /* Define if want to build libcheck */
 #undef HAVE_LIBCHECK
 
+/* define if we want to use LIBXML2 */
+#undef HAVE_LIBXML2
+
 /* Define to 1 if you have the <list> header file. */
 #undef HAVE_LIST
 

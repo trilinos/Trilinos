@@ -26,60 +26,39 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_ExpatHandlerAdapter.hpp"
+#ifndef Teuchos_XMLPARAMETERLISTREADER_H
+#define Teuchos_XMLPARAMETERLISTREADER_H
 
-#ifdef HAVE_EXPAT
+/*! \file Teuchos_XMLParameterListReader.hpp
+    \brief Writes an XML object to a parameter list
+*/
 
-#include "Teuchos_TreeBuildingXMLHandler.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_XMLObject.hpp"
+#include "Teuchos_Utils.hpp"
 
-using namespace Teuchos;
-
-void expatStartElementHandler(void* handler, 
-															const XML_Char* name, 
-															const XML_Char** attr)
+namespace Teuchos
 {
-	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
-	
-	string tag = name;
-	Teuchos::map<string, string> attributes;
-	
-	/* the attribute data is stored in a C array of C strings, in order 
-	 * {key1, val1, key2, val2, ...}. */
 
-	for (int i=0; attr[i] != 0; i+=2)
+	/** \ingroup XML 
+	 * \brief Writes an XML object to a parameter list
+	 */
+
+	class XMLParameterListReader
 		{
-			string key = attr[i];
-			string val = attr[i+1];
-			attributes[key] = val;
-		}
+		public:
+			/** \name Constructors */
+			//@{
+      /** Construct a reader */
+      XMLParameterListReader();
+			//@}
 
-	h->startElement(tag, attributes);
-}
-
-void expatEndElementHandler(void* handler, 
-														const XML_Char* name)
-{
-	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
+      /** Write the given XML object to a parameter list */
+      ParameterList toParameterList(const XMLObject& xml) const ;
 	
-	string tag = name;
+		private:
 
-	h->endElement(tag);
+		};
 }
-
-void expatCharacterDataHandler(void* handler, 
-															 const XML_Char* s,
-															 int len)
-{
-	char* str = new char[len+1];
-	strncpy(str, s, len);
-
-
-  str[len] = '\0';
-	string chars = str;
-
-	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
-	h->characters(chars, chars.length());
-  delete [] str;
-}
-
 #endif
+

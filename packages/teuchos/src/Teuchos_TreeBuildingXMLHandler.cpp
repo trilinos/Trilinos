@@ -49,7 +49,7 @@ void TreeBuildingXMLHandler::characters(const string& chars,
 }
 
 void TreeBuildingXMLHandler::startElement(const string& tag, 
-																					const Hashtable<string,string>& attributes)
+																					const Map<string,string>& attributes)
 {
   XMLObject parent;
   
@@ -62,13 +62,12 @@ void TreeBuildingXMLHandler::startElement(const string& tag,
   path_.push(current_);
   current_ = XMLObject(tag);
   parent.addChild(current_);
-  
-  Array<string> keys;
-  Array<string> vals;
-  attributes.arrayify(keys, vals);
-  for (int i=0; i<keys.length(); i++)
+
+  for (Map::const_iterator i=attributes.begin(); i != attributes.end(); ++i)
     {
-      current_.addAttribute(keys[i], vals[i]);
+      const string& key = (*i).first;
+      const string& val = (*i).second;
+      current_.addAttribute(key, val);
     }
 }
 

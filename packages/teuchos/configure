@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_TEUCHOS_COMPLEX_TRUE HAVE_TEUCHOS_COMPLEX_FALSE HAVE_TEUCHOS_EXTENDED_TRUE HAVE_TEUCHOS_EXTENDED_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS EXPAT_LIBS EXPAT_INC HAVE_EXPAT_TRUE HAVE_EXPAT_FALSE ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR USE_ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_TEUCHOS_COMPLEX_TRUE HAVE_TEUCHOS_COMPLEX_FALSE HAVE_TEUCHOS_EXTENDED_TRUE HAVE_TEUCHOS_EXTENDED_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS XML_LIBDIR XML_LIBS XML_INC HAVE_EXPAT_TRUE HAVE_EXPAT_FALSE HAVE_LIBXML2_TRUE HAVE_LIBXML2_FALSE ac_aux_dir TEUCHOS_BUILD_DIRECTORY MPI_LIBS MPI_LIBDIR MPI_INC MPI_DIR LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -900,6 +900,7 @@ Optional Features:
   --enable-teuchos-gmp    Enable Teuchos interface support for the GNU MP
                           Library (default is no)
   --enable-expat          Enable expat XML parser
+  --enable-libxml2        Enable libxml2 XML parser
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -939,10 +940,10 @@ Optional Packages:
                           format
   --with-blas=<lib>       use BLAS library <lib>
   --with-lapack=<lib>     use LAPACK library <lib>
-  --with-expat            specify root directory of EXPAT installation
   --with-expat-include    specify include directory for EXPAT
-  --with-expat-libs       specify EXPAT libraries
   --with-expat-libdir     specify location of EXPAT libraries
+  --with-libxml2-include  specify include directory for LIBXML2
+  --with-libxml2-libdir   specify location of LIBXML2 libraries
 
 Some influential environment variables:
   CC          C compiler command
@@ -1748,7 +1749,7 @@ else
 echo "$as_me: WARNING: \`missing' script is too old or missing" >&2;}
 fi
 
-if mkdir -p -- . 2>/dev/null; then
+if mkdir -p --version . >/dev/null 2>&1 && test ! -d ./--version; then
   # Keeping the `.' argument allows $(mkdir_p) to be used without
   # argument.  Indeed, we sometimes output rules like
   #   $(mkdir_p) $(somedir)
@@ -1761,7 +1762,7 @@ else
   # recognize any option.  It will interpret all options as
   # directories to create, and then abort because `.' already
   # exists.
-  for d in ./-p ./--;
+  for d in ./-p ./--version;
   do
     test -d $d && rmdir $d
   done
@@ -3588,7 +3589,9 @@ else
     : > sub/conftest.c
     for i in 1 2 3 4 5 6; do
       echo '#include "conftst'$i'.h"' >> sub/conftest.c
-      : > sub/conftst$i.h
+      # Using `: > sub/conftst$i.h' creates only sub/conftst1.h with
+      # Solaris 8's {/usr,}/bin/sh.
+      touch sub/conftst$i.h
     done
     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
 
@@ -3616,9 +3619,14 @@ else
        grep sub/conftest.${OBJEXT-o} sub/conftest.Po > /dev/null 2>&1 &&
        ${MAKE-make} -s -f confmf > /dev/null 2>&1; then
       # icc doesn't choke on unknown options, it will just issue warnings
-      # (even with -Werror).  So we grep stderr for any message
-      # that says an option was ignored.
-      if grep 'ignoring option' conftest.err >/dev/null 2>&1; then :; else
+      # or remarks (even with -Werror).  So we grep stderr for any message
+      # that says an option was ignored or not supported.
+      # When given -MP, icc 7.0 and 7.1 complain thusly:
+      #   icc: Command line warning: ignoring option '-M'; no argument required
+      # The diagnosis changed in icc 8.0:
+      #   icc: Command line remark: option '-MP' not supported
+      if (grep 'ignoring option' conftest.err ||
+          grep 'not supported' conftest.err) >/dev/null 2>&1; then :; else
         am_cv_CC_dependencies_compiler_type=$depmode
         break
       fi
@@ -4045,7 +4053,9 @@ else
     : > sub/conftest.c
     for i in 1 2 3 4 5 6; do
       echo '#include "conftst'$i'.h"' >> sub/conftest.c
-      : > sub/conftst$i.h
+      # Using `: > sub/conftst$i.h' creates only sub/conftst1.h with
+      # Solaris 8's {/usr,}/bin/sh.
+      touch sub/conftst$i.h
     done
     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
 
@@ -4073,9 +4083,14 @@ else
        grep sub/conftest.${OBJEXT-o} sub/conftest.Po > /dev/null 2>&1 &&
        ${MAKE-make} -s -f confmf > /dev/null 2>&1; then
       # icc doesn't choke on unknown options, it will just issue warnings
-      # (even with -Werror).  So we grep stderr for any message
-      # that says an option was ignored.
-      if grep 'ignoring option' conftest.err >/dev/null 2>&1; then :; else
+      # or remarks (even with -Werror).  So we grep stderr for any message
+      # that says an option was ignored or not supported.
+      # When given -MP, icc 7.0 and 7.1 complain thusly:
+      #   icc: Command line warning: ignoring option '-M'; no argument required
+      # The diagnosis changed in icc 8.0:
+      #   icc: Command line remark: option '-MP' not supported
+      if (grep 'ignoring option' conftest.err ||
+          grep 'not supported' conftest.err) >/dev/null 2>&1; then :; else
         am_cv_CXX_dependencies_compiler_type=$depmode
         break
       fi
@@ -4198,7 +4213,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4201:" \
+echo "$as_me:4216:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4594,6 +4609,7 @@ else
 fi
 
 fi
+
 
 
 
@@ -9545,7 +9561,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9548: \"$ac_link\") >&5
+(eval echo $as_me:9564: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9623,7 +9639,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9626: \"$ac_link\") >&5
+(eval echo $as_me:9642: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12156,7 +12172,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:12159: \"$ac_link\") >&5
+(eval echo $as_me:12175: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12234,7 +12250,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:12237: \"$ac_link\") >&5
+(eval echo $as_me:12253: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12457,25 +12473,10 @@ if test "${enable_expat+set}" = set; then
   enableval="$enable_expat"
 
 HAVE_PKG_EXPAT=yes
-EXPAT_LIBS=-lexpat
+XML_LIBS=-lexpat
 
 else
   HAVE_PKG_EXPAT=no
-
-fi;
-
-
-# Check whether --with-expat or --without-expat was given.
-if test "${with_expat+set}" = set; then
-  withval="$with_expat"
-
-HAVE_PKG_EXPAT=yes
-EXPAT_DIR=${withval}
-echo "$as_me:$LINENO: checking EXPAT directory" >&5
-echo $ECHO_N "checking EXPAT directory... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${EXPAT_DIR}" >&5
-echo "${ECHO_T}${EXPAT_DIR}" >&6
-
 
 fi;
 
@@ -12485,26 +12486,11 @@ if test "${with_expat_include+set}" = set; then
   withval="$with_expat_include"
 
 HAVE_PKG_EXPAT=yes
-EXPAT_INC=${withval}
+XML_INC=${withval}
 echo "$as_me:$LINENO: checking user-defined EXPAT includes" >&5
 echo $ECHO_N "checking user-defined EXPAT includes... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${EXPAT_INC}" >&5
-echo "${ECHO_T}${EXPAT_INC}" >&6
-
-
-fi;
-
-
-# Check whether --with-expat-libs or --without-expat-libs was given.
-if test "${with_expat_libs+set}" = set; then
-  withval="$with_expat_libs"
-
-HAVE_PKG_EXPAT=yes
-EXPAT_LIBS=${withval}
-echo "$as_me:$LINENO: checking user-defined EXPAT libraries" >&5
-echo $ECHO_N "checking user-defined EXPAT libraries... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${EXPAT_LIBS}" >&5
-echo "${ECHO_T}${EXPAT_LIBS}" >&6
+echo "$as_me:$LINENO: result: ${XML_INC}" >&5
+echo "${ECHO_T}${XML_INC}" >&6
 
 
 fi;
@@ -12515,11 +12501,11 @@ if test "${with_expat_libdir+set}" = set; then
   withval="$with_expat_libdir"
 
 HAVE_PKG_EXPAT=yes
-EXPAT_LIBDIR=${withval}
+XML_LIBDIR=${withval}
 echo "$as_me:$LINENO: checking user-defined EXPAT libraries" >&5
 echo $ECHO_N "checking user-defined EXPAT libraries... $ECHO_C" >&6
-echo "$as_me:$LINENO: result: ${EXPAT_LIBS}" >&5
-echo "${ECHO_T}${EXPAT_LIBS}" >&6
+echo "$as_me:$LINENO: result: ${XML_LIBS}" >&5
+echo "${ECHO_T}${XML_LIBS}" >&6
 
 
 fi;
@@ -12544,6 +12530,7 @@ fi
 
 
 
+
 if test "X${HAVE_PKG_EXPAT}" = "Xyes"; then
   HAVE_EXPAT_TRUE=
   HAVE_EXPAT_FALSE='#'
@@ -12555,8 +12542,117 @@ fi
 
 
 # ------------------------------------------------------------------------
+# Check to see if libxml2 enabled and if any special configuration done
+# ------------------------------------------------------------------------
+
+
+# Check whether --enable-libxml2 or --disable-libxml2 was given.
+if test "${enable_libxml2+set}" = set; then
+  enableval="$enable_libxml2"
+
+HAVE_PKG_LIBXML2=yes
+XML_LIBS=-lxml2
+
+else
+  HAVE_PKG_LIBXML2=no
+
+fi;
+
+
+# Check whether --with-libxml2-include or --without-libxml2-include was given.
+if test "${with_libxml2_include+set}" = set; then
+  withval="$with_libxml2_include"
+
+XML_INC=${withval}
+echo "$as_me:$LINENO: checking user-defined LIBXML2 includes" >&5
+echo $ECHO_N "checking user-defined LIBXML2 includes... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${XML_INC}" >&5
+echo "${ECHO_T}${XML_INC}" >&6
+
+
+fi;
+
+
+# Check whether --with-libxml2-libdir or --without-libxml2-libdir was given.
+if test "${with_libxml2_libdir+set}" = set; then
+  withval="$with_libxml2_libdir"
+
+XML_LIBDIR=${withval}
+echo "$as_me:$LINENO: checking user-defined LIBXML2 libraries" >&5
+echo $ECHO_N "checking user-defined LIBXML2 libraries... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${XML_LIBDIRS}" >&5
+echo "${ECHO_T}${XML_LIBDIRS}" >&6
+
+
+fi;
+
+echo "$as_me:$LINENO: checking whether we are using LIBXML2" >&5
+echo $ECHO_N "checking whether we are using LIBXML2... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${HAVE_PKG_LIBXML2}" >&5
+echo "${ECHO_T}${HAVE_PKG_LIBXML2}" >&6
+
+if test "X${HAVE_PKG_LIBXML2}" = "Xyes"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LIBXML2
+_ACEOF
+
+fi
+
+
+
+
+
+
+
+
+
+if test "X${HAVE_PKG_LIBXML2}" = "Xyes"; then
+  HAVE_LIBXML2_TRUE=
+  HAVE_LIBXML2_FALSE='#'
+else
+  HAVE_LIBXML2_TRUE='#'
+  HAVE_LIBXML2_FALSE=
+fi
+
+
+
+if test "X${HAVE_PKG_LIBXML2}" = "Xyes"; then
+  if test "X${HAVE_PKG_EXPAT}" = "Xyes"; then
+    { { echo "$as_me:$LINENO: error: You have specified both expat and libxml2. Please enable only one XML parser" >&5
+echo "$as_me: error: You have specified both expat and libxml2. Please enable only one XML parser" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+fi
+
+# ------------------------------------------------------------------------
+# Get the absolute path to the build directory.
+#
+# We need this as a reference point from which
+# to figure out paths to the libraries for the other Trilinos packages.
+#
+# ------------------------------------------------------------------------
+
+echo "$as_me:$LINENO: checking finding build directory" >&5
+echo $ECHO_N "checking finding build directory... $ECHO_C" >&6
+if test "X" = "X"; then
+  TEUCHOS_BUILD_DIRECTORY=`pwd`
+  echo "$as_me:$LINENO: result: $TEUCHOS_BUILD_DIRECTORY" >&5
+echo "${ECHO_T}$TEUCHOS_BUILD_DIRECTORY" >&6
+fi
+
+
+# ------------------------------------------------------------------------
 # Perform substitutions in output files
 # ------------------------------------------------------------------------
+
+
+
+
+
+
+
+
 
 
 
@@ -12568,7 +12664,7 @@ fi
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BLAS/Makefile test/LAPACK/Makefile test/DenseMatrix/Makefile test/dyn_cast/Makefile test/ParameterList/Makefile test/Containers/Makefile test/Time/Makefile test/RefCountPtr/Makefile test/XML/Makefile test/Workspace/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile example/Makefile example/BLAS/Makefile example/CommandLineProcessor/Makefile example/DenseMatrix/Makefile example/hilbert/Makefile example/LAPACK/Makefile example/ParameterList/Makefile example/RefCountPtr/Makefile example/TimeMonitor/Makefile"
+                                                                                                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile test/Makefile test/BLAS/Makefile test/LAPACK/Makefile test/DenseMatrix/Makefile test/dyn_cast/Makefile test/ParameterList/Makefile test/Containers/Makefile test/Time/Makefile test/RefCountPtr/Makefile test/XML/Makefile test/Workspace/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile example/Makefile example/BLAS/Makefile example/CommandLineProcessor/Makefile example/DenseMatrix/Makefile example/hilbert/Makefile example/LAPACK/Makefile example/ParameterList/Makefile example/RefCountPtr/Makefile example/TimeMonitor/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -12750,6 +12846,13 @@ if test -z "${HAVE_EXPAT_TRUE}" && test -z "${HAVE_EXPAT_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_EXPAT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_EXPAT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_LIBXML2_TRUE}" && test -z "${HAVE_LIBXML2_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_LIBXML2\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_LIBXML2\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -13198,6 +13301,7 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+  "Makefile.export" ) CONFIG_FILES="$CONFIG_FILES Makefile.export" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/BLAS/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BLAS/Makefile" ;;
@@ -13382,6 +13486,7 @@ s,@ac_ct_RANLIB@,$ac_ct_RANLIB,;t t
 s,@USE_ALTERNATE_AR_TRUE@,$USE_ALTERNATE_AR_TRUE,;t t
 s,@USE_ALTERNATE_AR_FALSE@,$USE_ALTERNATE_AR_FALSE,;t t
 s,@ALTERNATE_AR@,$ALTERNATE_AR,;t t
+s,@USE_ALTERNATE_AR@,$USE_ALTERNATE_AR,;t t
 s,@CXXCPP@,$CXXCPP,;t t
 s,@EGREP@,$EGREP,;t t
 s,@BUILD_TESTS_TRUE@,$BUILD_TESTS_TRUE,;t t
@@ -13396,11 +13501,19 @@ s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
 s,@TRILINOS_TEMPLATE_OBJS@,$TRILINOS_TEMPLATE_OBJS,;t t
-s,@EXPAT_LIBS@,$EXPAT_LIBS,;t t
-s,@EXPAT_INC@,$EXPAT_INC,;t t
+s,@XML_LIBDIR@,$XML_LIBDIR,;t t
+s,@XML_LIBS@,$XML_LIBS,;t t
+s,@XML_INC@,$XML_INC,;t t
 s,@HAVE_EXPAT_TRUE@,$HAVE_EXPAT_TRUE,;t t
 s,@HAVE_EXPAT_FALSE@,$HAVE_EXPAT_FALSE,;t t
+s,@HAVE_LIBXML2_TRUE@,$HAVE_LIBXML2_TRUE,;t t
+s,@HAVE_LIBXML2_FALSE@,$HAVE_LIBXML2_FALSE,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t
+s,@TEUCHOS_BUILD_DIRECTORY@,$TEUCHOS_BUILD_DIRECTORY,;t t
+s,@MPI_LIBS@,$MPI_LIBS,;t t
+s,@MPI_LIBDIR@,$MPI_LIBDIR,;t t
+s,@MPI_INC@,$MPI_INC,;t t
+s,@MPI_DIR@,$MPI_DIR,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
@@ -14028,14 +14141,14 @@ echo X"$mf" |
   grep '^DEP_FILES *= *[^ #]' < "$mf" > /dev/null || continue
   # Extract the definition of DEP_FILES from the Makefile without
   # running `make'.
-  DEPDIR=`sed -n -e '/^DEPDIR = / s///p' < "$mf"`
+  DEPDIR=`sed -n 's/^DEPDIR = //p' < "$mf"`
   test -z "$DEPDIR" && continue
   # When using ansi2knr, U may be empty or an underscore; expand it
-  U=`sed -n -e '/^U = / s///p' < "$mf"`
+  U=`sed -n 's/^U = //p' < "$mf"`
   test -d "$dirpart/$DEPDIR" || mkdir "$dirpart/$DEPDIR"
   # We invoke sed twice because it is the simplest approach to
   # changing $(DEPDIR) to its actual value in the expansion.
-  for file in `sed -n -e '
+  for file in `sed -n '
     /^DEP_FILES = .*\\\\$/ {
       s/^DEP_FILES = //
       :loop

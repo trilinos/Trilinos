@@ -26,60 +26,41 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_ExpatHandlerAdapter.hpp"
+#ifndef Teuchos_XMLPARAMETERLISTWRITER_H
+#define Teuchos_XMLPARAMETERLISTWRITER_H
 
-#ifdef HAVE_EXPAT
+/*! \file Teuchos_XMLObject.hpp
+    \brief Writes a ParameterList to an XML object
+*/
 
-#include "Teuchos_TreeBuildingXMLHandler.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_XMLObject.hpp"
+#include "Teuchos_Utils.hpp"
 
-using namespace Teuchos;
-
-void expatStartElementHandler(void* handler, 
-															const XML_Char* name, 
-															const XML_Char** attr)
+namespace Teuchos
 {
-	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
-	
-	string tag = name;
-	Teuchos::map<string, string> attributes;
-	
-	/* the attribute data is stored in a C array of C strings, in order 
-	 * {key1, val1, key2, val2, ...}. */
 
-	for (int i=0; attr[i] != 0; i+=2)
+	/** \ingroup XML 
+	 * \brief Writes a ParameterList to an XML object
+	 */
+
+	class XMLParameterListWriter
 		{
-			string key = attr[i];
-			string val = attr[i+1];
-			attributes[key] = val;
-		}
+		public:
+			/** \name Constructors */
+			//@{
+      /** Construct a writer */
+      XMLParameterListWriter();
+			//@}
 
-	h->startElement(tag, attributes);
-}
-
-void expatEndElementHandler(void* handler, 
-														const XML_Char* name)
-{
-	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
+      /** Write the given list to an XML object */
+      XMLObject toXML(const ParameterList& p) const ;
 	
-	string tag = name;
+		private:
 
-	h->endElement(tag);
+      /** Write the given parameter entry to an XML object */
+      XMLObject toXML(const ParameterEntry& p) const ;
+		};
 }
-
-void expatCharacterDataHandler(void* handler, 
-															 const XML_Char* s,
-															 int len)
-{
-	char* str = new char[len+1];
-	strncpy(str, s, len);
-
-
-  str[len] = '\0';
-	string chars = str;
-
-	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
-	h->characters(chars, chars.length());
-  delete [] str;
-}
-
 #endif
+

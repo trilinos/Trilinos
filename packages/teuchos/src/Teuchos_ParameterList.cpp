@@ -136,6 +136,17 @@ ostream& ParameterList::print(ostream& os, int indent) const
   return os;
 }
 
+ParameterList::ConstIterator ParameterList::begin() const
+{
+  return params_.begin();
+}
+
+ParameterList::ConstIterator ParameterList::end() const
+{
+  return params_.end();
+}
+
+
 
 #if defined(TFLOP)
 

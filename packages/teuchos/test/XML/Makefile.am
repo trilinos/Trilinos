@@ -36,5 +36,5 @@ XML_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 
 XML_test_CXXFLAGS = -I$(top_srcdir)/src
 
-XML_test_LDADD = $(top_builddir)/src/libteuchos.a $(XML_LIBS) $(EXPAT_LIBS) $(LIBS) $(FLIBS)
+XML_test_LDADD = $(top_builddir)/src/libteuchos.a $(XML_LIBS) $(LIBS) $(FLIBS)
 

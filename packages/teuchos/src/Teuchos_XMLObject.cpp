@@ -66,11 +66,11 @@ bool XMLObject::getRequiredBool(const string& name) const
 	if (hasAttribute(name))
 		{
 			string val = StrUtils::allCaps(getRequired(name));
-			if (val=="TRUE" || val=="YES")
+			if (val=="TRUE" || val=="YES" || val=="1")
 				{
 					return true;
 				}
-			else if (val=="FALSE" || val=="NO")
+			else if (val=="FALSE" || val=="NO" || val=="0")
 				{
 					return false;
 				}
@@ -78,7 +78,7 @@ bool XMLObject::getRequiredBool(const string& name) const
 				{
 					TEST_FOR_EXCEPTION(true, runtime_error, 
                              "XMLObject::getRequiredBool value [" << val 
-                             << "] should have been {TRUE|FALSE|YES|NO}");
+                             << "] should have been {TRUE|FALSE|YES|NO|0|1}");
 				}
 		}
 	return false; // -Wall

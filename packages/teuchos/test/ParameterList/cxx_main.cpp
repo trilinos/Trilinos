@@ -30,6 +30,11 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Version.hpp"
 
+#ifdef HAVE_TEUCHOS_EXTENDED
+#include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_XMLParameterListReader.hpp"
+#endif
+
 #ifdef HAVE_MPI
 #include "mpi.h"
 #endif
@@ -349,7 +354,86 @@ int main(int argc, char *argv[])
 	if (verbose) cout<<"yes"<<endl;
     }    
 #endif
-  }	
+  }
+
+
+  //-----------------------------------------------------------
+  // Print using the public iterators
+  // KL - 7 August 2004
+  //-----------------------------------------------------------
+  ParameterList::ConstIterator iter;
+  
+  if (verbose) 
+    {
+      print_break();
+      cout << " printing using public iterators " 
+           << endl;
+      print_break();
+    }
+  for (iter = PL_Main.begin(); iter != PL_Main.end(); ++iter)
+    {
+      const ParameterEntry& val = PL_Main.entry(iter);
+      const string& name = PL_Main.name(iter);
+      if (val.isList())
+        {
+          if (verbose) cout << name << endl;
+          const ParameterList& sublist = getValue<ParameterList>(val);
+          ParameterList::ConstIterator i;
+          for (i=sublist.begin(); i != sublist.end(); ++i)
+            {
+              const string& nm = sublist.name(i);              
+              const ParameterEntry& v = sublist.entry(i);
+              if (v.isList())
+                {
+                  if (verbose) cout << "  " << nm << endl;
+                  if (verbose) getValue<ParameterList>(v).print(cout, 6);
+                }
+              else
+                {
+                  if (verbose) cout << "  " << nm << " " << v << endl;
+                }
+            }
+        }
+      else
+        {
+          if (verbose) cout << name << " " << val << endl;
+        }
+    }
+
+
+#ifdef HAVE_TEUCHOS_EXTENDED
+  //-----------------------------------------------------------
+  // Write to XML
+  // KL - 7 August 2004
+  //-----------------------------------------------------------
+  try
+    {
+      if (verbose) {
+        print_break();
+        cout << "writing to XML" << endl;
+        print_break();
+      }
+      XMLParameterListWriter writer;
+      XMLObject xml = writer.toXML(PL_Main);
+      
+      if (verbose) cout << xml << endl;
+      if (verbose) {
+        print_break();
+        cout << "reading from XML" << endl;
+        print_break();
+      }
+      XMLParameterListReader reader;
+      ParameterList readBack = reader.toParameterList(xml);
+      if (verbose) readBack.print(cout);
+    }
+  catch(std::exception& e)
+    {
+      cerr << "caught exception " << e.what() << endl;
+      FailedTests += 1;
+    }
+
+#endif
+    
 
 
   //-----------------------------------------------------------
@@ -367,6 +451,7 @@ int main(int argc, char *argv[])
 	cout << "Number of Failed Tests : " << FailedTests << endl;
 	print_break();
   }
+
 
   //-----------------------------------------------------------
   // Return -1 if there are any failed tests, 

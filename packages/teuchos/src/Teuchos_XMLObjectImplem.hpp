@@ -33,7 +33,8 @@
     \brief Low level implementation of XMLObject
 */
 
-#include "Teuchos_Hashtable.hpp"
+#include "Teuchos_map.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
 namespace Teuchos
@@ -47,6 +48,8 @@ namespace Teuchos
 	 */
 	class XMLObjectImplem
 		{
+      typedef Teuchos::map<string, string> Map;
+
 		public:
 			//! Construct with a tag string 
 			XMLObjectImplem(const string& string);
@@ -55,7 +58,7 @@ namespace Teuchos
 			XMLObjectImplem* deepCopy() const ;
 
 			//! Add a [name, value] attribute
-         		void addAttribute(const string& name, const string& value);
+      void addAttribute(const string& name, const string& value);
 
 			//! Add a child XMLObject
 			void addChild(const XMLObject& child);
@@ -77,11 +80,11 @@ namespace Teuchos
 
 			//! Determine whether an attribute exists
 			bool hasAttribute(const string& name) const 
-				{return attributes_.containsKey(name);}
+				{return attributes_.find(name) != attributes_.end();}
 
 			//! Look up an attribute by name
 			const string& getAttribute(const string& name) const 
-				{return attributes_.get(name);}
+      {return (*(attributes_.find(name))).second;}
 
 			//! Return the number of children
 			int numChildren() const ;
@@ -95,9 +98,16 @@ namespace Teuchos
 			//! Look up a content line by index
 			const string& getContentLine(int i) const {return content_[i];}
 
+      //!  Print to stream with the given indentation level
+      void print(ostream& os, int indent) const ;
+
 		private:
+
+      //! Print content lines using the given indentation level
+      void printContent(ostream& os, int indent) const ;
+
 			string tag_;
-			Hashtable<string, string> attributes_;
+			Map attributes_;
 			Array<XMLObject> children_;
 			Array<string> content_;
 		};

@@ -26,60 +26,39 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_ExpatHandlerAdapter.hpp"
+#ifndef TEUCHOS_LIBXML2HANDLERADAPTER_H
+#define TEUCHOS_LIBXML2HANDLERADAPTER_H
 
-#ifdef HAVE_EXPAT
+/*! \file Teuchos_Libxml2HandlerAdapter.hpp
+    \brief libxml2 adapter for the TreeBuildingXMLHandler
+*/
 
+#include "Teuchos_ConfigDefs.hpp"
+
+#ifdef HAVE_LIBXML2
 #include "Teuchos_TreeBuildingXMLHandler.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
-using namespace Teuchos;
+#include <libxml2/libxml/parser.h>
 
-void expatStartElementHandler(void* handler, 
-															const XML_Char* name, 
-															const XML_Char** attr)
+extern "C"
 {
-	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
-	
-	string tag = name;
-	Teuchos::map<string, string> attributes;
-	
-	/* the attribute data is stored in a C array of C strings, in order 
-	 * {key1, val1, key2, val2, ...}. */
+  /** \ingroup libXML2 callback for start of an XML element. */
+  void xmlSAX2StartElement(void* context,
+                           const xmlChar* name,
+                           const xmlChar** attr);
 
-	for (int i=0; attr[i] != 0; i+=2)
-		{
-			string key = attr[i];
-			string val = attr[i+1];
-			attributes[key] = val;
-		}
+  /** \ingroup libXML2 callback for end of an XML element. */
+  void xmlSAX2EndElement(void* context,
+                         const xmlChar* name);
 
-	h->startElement(tag, attributes);
-}
+  /** \ingroup libXML2 callback for character data. */
+  void xmlSAX2Characters(void* context,
+                         const xmlChar* s,
+                         int len);
+};
 
-void expatEndElementHandler(void* handler, 
-														const XML_Char* name)
-{
-	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
-	
-	string tag = name;
+#endif
 
-	h->endElement(tag);
-}
-
-void expatCharacterDataHandler(void* handler, 
-															 const XML_Char* s,
-															 int len)
-{
-	char* str = new char[len+1];
-	strncpy(str, s, len);
-
-
-  str[len] = '\0';
-	string chars = str;
-
-	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
-	h->characters(chars, chars.length());
-  delete [] str;
-}
 
 #endif

@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef Teuchos_XMLOBJECT_H
-#define Teuchos_XMLOBJECT_H
+#ifndef Teuchos_XMLPARAMETERLISTWRITER_H
+#define Teuchos_XMLPARAMETERLISTWRITER_H
 
 /*! \file Teuchos_XMLObject.hpp
     \brief An object representation of a subset of XML data
@@ -51,7 +51,7 @@ namespace Teuchos
 			//@{
 
 			//! Empty constructor
-			XMLObject() : ptr_() {;}
+			XMLObject() : ptr_(null) {;}
 
 			//! Construct using a node labeled by tag
 			XMLObject(const string& tag);
@@ -121,11 +121,6 @@ namespace Teuchos
 			//! Represent this node and its children as a string
 			string toString() const {return ptr_->toString();}
 
-      //! Print this node and its children to stream with the given indentation
-      void print(ostream& os, int indent) const
-      {ptr_->print(os, indent);}
-
-
 			//! Write the header for this object to a string
 			string header() const {return ptr_->header();}
 
@@ -176,8 +171,7 @@ namespace Teuchos
         */
 	inline ostream& operator<<(ostream& os, const XMLObject& xml)
 		{
-      xml.print(os, 0);
-			return os;
+			return os << xml.toString();
 		}
 
 	/** \relates XMLObject 

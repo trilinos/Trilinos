@@ -103,6 +103,7 @@ EXTRA_EXTENDED_H = \
 	$(srcdir)/Teuchos_HashSet.hpp \
 	$(srcdir)/Teuchos_Hashtable.hpp \
 	$(srcdir)/Teuchos_HashUtils.hpp \
+	$(srcdir)/Teuchos_Libxml2HandlerAdapter.hpp \
 	$(srcdir)/Teuchos_MPIComm.hpp \
 	$(srcdir)/Teuchos_MPIContainerComm.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
@@ -114,13 +115,16 @@ EXTRA_EXTENDED_H = \
 	$(srcdir)/Teuchos_XMLInputSource.hpp\
 	$(srcdir)/Teuchos_XMLInputStream.hpp\
 	$(srcdir)/Teuchos_XMLObject.hpp\
-	$(srcdir)/Teuchos_XMLObjectImplem.hpp
+	$(srcdir)/Teuchos_XMLObjectImplem.hpp \
+	$(srcdir)/Teuchos_XMLParameterListReader.hpp \
+	$(srcdir)/Teuchos_XMLParameterListWriter.hpp
 
 EXTRA_EXTENDED = \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp \
 	$(srcdir)/Teuchos_FileInputSource.cpp \
 	$(srcdir)/Teuchos_FileInputStream.cpp \
 	$(srcdir)/Teuchos_HashUtils.cpp \
+	$(srcdir)/Teuchos_Libxml2HandlerAdapter.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp \
 	$(srcdir)/Teuchos_MPISession.cpp \
 	$(srcdir)/Teuchos_StrUtils.cpp \
@@ -130,7 +134,9 @@ EXTRA_EXTENDED = \
 	$(srcdir)/Teuchos_XMLInputSource.cpp \
 	$(srcdir)/Teuchos_XMLInputStream.cpp \
 	$(srcdir)/Teuchos_XMLObject.cpp \
-	$(srcdir)/Teuchos_XMLObjectImplem.cpp
+	$(srcdir)/Teuchos_XMLObjectImplem.cpp \
+	$(srcdir)/Teuchos_XMLParameterListReader.cpp \
+	$(srcdir)/Teuchos_XMLParameterListWriter.cpp
 
 UTIL_H = \
 	$(srcdir)/Teuchos_Version.hpp
@@ -171,6 +177,8 @@ MPI =
 
 endif
 
+
+
 # -------------------------------------------------------------
 # Enable compilation of experimental code if feature is enabled
 # -------------------------------------------------------------
@@ -208,7 +216,7 @@ COMP =
 #np#   Remove epetra if this package does not need it
 #  
 #AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
-AM_CPPFLAGS =
+AM_CPPFLAGS = $(XML_INC)
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.
 #np# replace teuchos with the name of the package being autotool'ed here

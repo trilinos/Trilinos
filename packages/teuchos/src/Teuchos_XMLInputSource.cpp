@@ -30,50 +30,19 @@
 #include "Teuchos_TreeBuildingXMLHandler.hpp"
 
 
-#ifdef HAVE_XERCES
-#include "XercesHandlerAdapter.h"
-#include "XercesInputSourceAdapter.h"
-#include "XercesInputStreamAdapter.h"
-#include <util/PlatformUtils.hpp>
-#endif
-
 #ifdef HAVE_EXPAT
 #include "Teuchos_ExpatHandlerAdapter.hpp"
 #define EXPAT_BUFSIZE 8192
 #endif
 
+#ifdef HAVE_LIBXML2
+#include <libxml/parser.h>
+#endif
 
 using namespace Teuchos;
 
 XMLObject XMLInputSource::getObject() const
 {
-#ifdef HAVE_XERCES
-
-	static bool first = true;
-	if (first)
-		{
-			XMLPlatformUtils::Initialize();
-			first = false;
-		}
-
-	SAXParser parser;
-	XercesHandlerAdapter handler(new TreeBuildingXMLHandler());
-	XercesInputSourceAdapter inputSource(this);
-
-	parser.setDocumentHandler(&handler);
-
-	try 
-		{
-			parser.parse(inputSource);
-		}
-	catch(exception& e)
-		{
-			TEST_FOR_EXCEPTION(true, runtime_error, 
-                         "exception detected in SAX parsing: " << e.what());
-		}
-	return handler.getObject();
-#endif
-
 #ifdef HAVE_EXPAT
 
 	RefCountPtr<TreeBuildingXMLHandler> handler = rcp(new TreeBuildingXMLHandler());
@@ -105,7 +74,9 @@ XMLObject XMLInputSource::getObject() const
 
 	return handler->getObject();
 
+  
 #else
+
   TEST_FOR_EXCEPTION(true, logic_error, "XMLInputSource::getObject() - no XML parser installed");
   return XMLObject(); // -Wall
 #endif

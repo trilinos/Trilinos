@@ -53,7 +53,7 @@ namespace Teuchos
     public:
 
       //! Create an empty HashSet
-      inline HashSet(int capacity=101);
+      inline HashSet(int capacity=19);
 
       //! Check for the presence of a key
       inline bool containsKey(const Key& key) const ;
@@ -69,6 +69,9 @@ namespace Teuchos
 
       //! Get list of keys in Array form
       inline Array<Key> arrayify() const ;
+
+      //! Get list of keys in Array form
+      inline void arrayify(Array<Key>& keys) const ;
 
       //! Write to a string
       inline string toString() const ;
@@ -185,6 +188,20 @@ namespace Teuchos
         }
 
       return rtn;
+    }
+
+  template<class Key> inline
+    void HashSet<Key>::arrayify(Array<Key>& rtn) const
+    {
+      rtn.resize(0);
+
+      for (int i=0; i<data_.length(); i++)
+        {
+          for (int j=0; j<data_[i].length(); j++)
+            {
+              rtn.append(data_[i][j]);
+            }
+        }
     }
 
   template<class Key>  inline

@@ -26,21 +26,22 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_ExpatHandlerAdapter.hpp"
+#include "Teuchos_Libxml2HandlerAdapter.hpp"
 
-#ifdef HAVE_EXPAT
+#ifdef HAVE_LIBXML2
 
 #include "Teuchos_TreeBuildingXMLHandler.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 using namespace Teuchos;
 
-void expatStartElementHandler(void* handler, 
-															const XML_Char* name, 
-															const XML_Char** attr)
+void xmlSAX2StartElement(void* handler, 
+                         const xmlChar* name, 
+                         const xmlChar** attr)
 {
 	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
 	
-	string tag = name;
+	string tag = (const char*) name;
 	Teuchos::map<string, string> attributes;
 	
 	/* the attribute data is stored in a C array of C strings, in order 
@@ -48,30 +49,30 @@ void expatStartElementHandler(void* handler,
 
 	for (int i=0; attr[i] != 0; i+=2)
 		{
-			string key = attr[i];
-			string val = attr[i+1];
+			string key = (const char*) attr[i];
+			string val = (const char*) attr[i+1];
 			attributes[key] = val;
 		}
 
 	h->startElement(tag, attributes);
 }
 
-void expatEndElementHandler(void* handler, 
-														const XML_Char* name)
+void xmlSAX2EndElement(void* handler, 
+                       const xmlChar* name)
 {
 	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
 	
-	string tag = name;
+	string tag = (const char*) name;
 
 	h->endElement(tag);
 }
 
-void expatCharacterDataHandler(void* handler, 
-															 const XML_Char* s,
-															 int len)
+void xmlSAX2CharacterData(void* handler, 
+                          const xmlChar* s,
+                          int len)
 {
 	char* str = new char[len+1];
-	strncpy(str, s, len);
+	strncpy(str, (const char*) s, len);
 
 
   str[len] = '\0';
