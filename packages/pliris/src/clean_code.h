@@ -28,5 +28,16 @@
 // @HEADER
 */
 
+#ifndef __CLEANCODE__
+#define __CLEANCODE__
+
+#ifdef __cplusplus
+extern "C" {
+#endif 
+
 void cleancode_ ( ) ;
 
+#ifdef __cplusplus
+}
+#endif 
+#endif
