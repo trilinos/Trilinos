@@ -65,8 +65,12 @@ foreach f (CrsRiluk)
 		    if( "$status" != "0" ) then
 		    # A test failed.
 			set AnError = True
+			echo "  ******** Test failed ********" >>& ../$file
 			echo "############" $g "##############" >>& ../$file2
 			./$g -v >>& ../$file2
+		    else
+		    # Tests passed
+			echo "******** Test passed ********" >>& ../$file
 		    endif
 		else
 		# This is not an automated test.

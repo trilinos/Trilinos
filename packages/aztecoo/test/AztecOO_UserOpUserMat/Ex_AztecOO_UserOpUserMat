@@ -5,8 +5,8 @@ if ("$1" == "-v") then
 endif
 grep "Solver converged" log.txt >> log.txt
 if( "$status" != "0" ) then
-  echo " ******** Test failed ******** "
+  echo "  ******** Test failed ********"
 else 
-  echo " ******** Test passed ******** "
+  echo "******** Test passed ********"
 endif
 rm -f log.txt
