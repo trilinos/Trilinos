@@ -39,8 +39,32 @@ char *recv_data)		/* array of data I'll own after comm */
     int       offset;		/* offset into array I'm copying into */
     int       self_index;	/* offset for data I'm keeping */
     int       i, j, k;		/* loop counters */
+    static char *yo = "LB_Comm_Do";
+
+    /* Check input parameters */
+    if (!plan){
+      fprintf(stderr, "Zoltan error in %s: Communication plan = NULL\n", 
+        yo);
+      return LB_FATAL;
+    }
 
     MPI_Comm_rank(plan->comm, &my_proc);
+
+    if (!send_data){
+      fprintf(stderr, "Zoltan error in %s: Proc %d has send_data = NULL\n", 
+        yo, my_proc);
+      return LB_FATAL;
+    }
+    if (!recv_data){
+      fprintf(stderr, "Zoltan error in %s: Proc %d has recv_data = NULL\n", 
+        yo, my_proc);
+      return LB_FATAL;
+    }
+    if (nsize<=0){
+      fprintf(stderr, "Zoltan error in %s: Proc %d has nsize = %d\n", 
+        yo, my_proc, nsize);
+      return LB_FATAL;
+    }
 
     /* Post irecvs */
 
