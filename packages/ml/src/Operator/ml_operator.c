@@ -1786,9 +1786,9 @@ void ML_Operator_GetGlobalDimensions(ML_Operator *A,int *nrows,int *ncols)
 
 void ML_Aux_Data_Create(ML_Aux_Data** ptr)
 {
-  *ptr = ML_allocate(sizeof(ML_Aux_Data));
+  *ptr = (ML_Aux_Data *) ML_allocate(sizeof(ML_Aux_Data));
   (*ptr)->threshold = 0.0;
-  (*ptr)->allocated = 0.0;
+  (*ptr)->allocated = 0;
   (*ptr)->itmp = 0;
   (*ptr)->dtmp = 0;
   (*ptr)->enable = 0;
@@ -1800,7 +1800,7 @@ void ML_Aux_Data_Destroy(ML_Aux_Data** ptr)
 {
   (*ptr)->itmp = 0;
   (*ptr)->threshold = 0.0;
-  (*ptr)->allocated = 0.0;
+  (*ptr)->allocated = 0;
   if ((*ptr)->itmp != NULL) 
     ML_free((*ptr)->itmp);
   if ((*ptr)->dtmp != NULL) 

@@ -2331,13 +2331,13 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   if (Amat->grid_info->x!= NULL) 
   {
     sprintf(name, "x_coord_%d", Rmat->outvec_leng + Nghost);
-    ML_memory_alloc((void*)&new_x_coord, sizeof(double)*(Rmat->outvec_leng + Nghost + 1),
+    ML_memory_alloc((void**)&new_x_coord, sizeof(double)*(Rmat->outvec_leng + Nghost + 1),
                     name);
     ML_Operator_Apply(Rmat, Rmat->invec_leng, Amat->grid_info->x, Rmat->outvec_leng,
                       new_x_coord);
     if (Cmat->grid_info->x) 
     {
-      ML_memory_free((void*)&(Cmat->grid_info->x));
+      ML_memory_free((void**)&(Cmat->grid_info->x));
       Cmat->grid_info->x = NULL;
     }
     ML_exchange_bdry(new_x_coord,Cmat->getrow->pre_comm,Cmat->outvec_leng,
@@ -2348,13 +2348,13 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   if (Amat->grid_info->y != NULL) 
   {
     sprintf(name, "y_coord_%d", Rmat->outvec_leng + Nghost);
-    ML_memory_alloc((void*)&new_y_coord, sizeof(double)*(Rmat->outvec_leng + Nghost + 1),
+    ML_memory_alloc((void**)&new_y_coord, sizeof(double)*(Rmat->outvec_leng + Nghost + 1),
                     name);
     ML_Operator_Apply(Rmat, Rmat->invec_leng, Amat->grid_info->y, Rmat->outvec_leng,
                       new_y_coord);
     if (Cmat->grid_info->y)
     {
-      ML_memory_free((void*)&(Cmat->grid_info->y));
+      ML_memory_free((void**)&(Cmat->grid_info->y));
       Cmat->grid_info->y= NULL;
     }
     ML_exchange_bdry(new_y_coord,Cmat->getrow->pre_comm,Cmat->outvec_leng,
@@ -2365,13 +2365,13 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   if (Amat->grid_info->z != NULL) 
   {
     sprintf(name, "z_coord_%d", Rmat->outvec_leng + Nghost);
-    ML_memory_alloc((void*)&new_z_coord, sizeof(double)*(Rmat->outvec_leng + Nghost + 1),
+    ML_memory_alloc((void**)&new_z_coord, sizeof(double)*(Rmat->outvec_leng + Nghost + 1),
                     name);
     ML_Operator_Apply(Rmat, Rmat->invec_leng, Amat->grid_info->z, Rmat->outvec_leng,
                       new_z_coord);
     if (Cmat->grid_info->z) 
     {
-      ML_memory_free((void*)&(Cmat->grid_info->z));
+      ML_memory_free((void**)&(Cmat->grid_info->z));
       Cmat->grid_info->z = NULL;
     }
     ML_exchange_bdry(new_y_coord,Cmat->getrow->pre_comm,Cmat->outvec_leng,
