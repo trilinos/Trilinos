@@ -605,21 +605,31 @@ library and related examples do depend on MPI.
     <ul>
       <li> Enables MPI mode. Defines HAVE_MPI in the NOX_Config.h
            file. Will test for the ability to preprocess the MPI header file
-           and may test ability to link with MPI.
+           and may test ability to link with MPI. Note that this does not
+	   automatically use the MPI compilers.
     </ul>
-  <li> \c --with-mpi-cxx
+  <li> \c --with-mpi-compilers[=PATH]
     <ul>
-      <li> If no argument is specified, uses "mpiCC". Otherwise, uses
-           specified MPI C++ compiler. Automatically enables MPI mode.
+      <li> Use the MPI compilers (mpicxx or mpiCC, mpicc, and
+      mpif77). If the optional PATH is specified, then it uses those
+      compilers that it finds in the specified directories. For the
+      C++ compiler, it looks for mpicxx first. If it doesn't find
+      that, it defaults to mpiCC. Alternatively, each compiler may be
+      specified precisely using the CXX, CC, and F77 environmental
+      variables.
     </ul>
   <li> \c --with-mpi=MPIROOT
     <ul>
-      <li> Specify the MPI root directory. Automatically enables MPI mode.
+      <li> Specify the MPI root directory. Then
+           <tt>MPIROOT/include</tt> is assumed to be the include
+           directory and and <tt>MPIROOT/lib</tt> is assumed to be the
+           lib directory. Automatically enables MPI mode.
     </ul>
   <li> \c --with-mpi-libs="LIBS"
     <ul>
       <li> Specify the MPI libraries. 
-           Defaults to \c "-lmpi" if either \c --with-mpi or \c --with-mpi-libdir is specified.
+           If this is not specified, defaults to \c "-lmpi" if either
+           \c --with-mpi or \c --with-mpi-libdir is specified.
     </ul>
   <li> \c --with-mpi-incdir=DIR
     <ul>
@@ -1563,19 +1573,8 @@ immediately before the word that is causing the link. For example,
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page lapack_interface Using the lapack-support interface
+/*! \page epetra_interface The Epetra interface
 
-    Roger's Job
-
-*/
-
-/* ************************************************************************ */
-/* ************************************************************************ */
-/* ************************************************************************ */
-
-/*! \page epetra_interface Using the epetra-support interface
-
-    Roger's Job
 
 */
 
@@ -1583,12 +1582,12 @@ immediately before the word that is causing the link. For example,
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page petsc_interface Using the petsc-support interface
+/*! \page petsc_interface The PETSc interface
 
-At present, %NOX supports a concrete implementation of the 
-<b>%NOX::Abstract::Group</b> and <b>%NOX::Abstract::Vector</b> using PETSc 
-data structures.  The current implementation has been tested against 
-PETSc 2.1.6. 
+At present, %NOX supports a concrete implementation of the
+<b>NOX::Abstract::Group</b> and <b>NOX::Abstract::Vector</b> using
+PETSc data structures in the namespace NOX::Petsc.  The current
+implementation has been tested against PETSc 2.1.6.
 
 \subsection build_nox_petsc_library Building the Library
 
