@@ -104,7 +104,7 @@ static int old_readfile (
     int vdim=0, edim=0;
     char *yo = "old_readfile";
           
-    *base     = 1;   /* IBM-format files are assumed to be 1-based. */
+    *base = 1;   /* IBM-format files are assumed to be 1-based. */
     rewind(f);       /* need to read first line again! */
     do {
        if (!fgets (string, 80, f)) {
@@ -281,6 +281,7 @@ char *yo = "patoh_readfile";
        err = ZOLTAN_MEMERR;
        goto End;
        }
+    }
              
     /* nEdge HYPEREDGE LINES */
     /* KDD -- This logic is wrong if no pins are specified. */
