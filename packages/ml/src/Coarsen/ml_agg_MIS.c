@@ -719,7 +719,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
       if (k >= aggr_count) aggr_count = k+1;
    }
    fclose(fp);
-#endif
+#endif /*ifdef ML_AGGR_MARKINAGGR*/
 
    /* make sure that boundary nodes are not in any aggregate */
 
@@ -773,7 +773,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
       if (k >= aggr_count) aggr_count = k+1;
    }
    fclose(fp);
-#endif
+#endif /*ifdef ML_AGGR_INAGGR*/
 
    /* I'm not sure if I need most of this 'if' code. I just took it from */
    /* Charles ... but I guess that the majority of it is not needed.     */
@@ -982,13 +982,14 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    fp = fopen(fname,"w");
    agg_offset = ML_gpartialsum_int(aggr_count, comm);
    vertex_offset = ML_gpartialsum_int(nvertices, comm);
-   for (i = 0; i < nvertices ; i++) {
+   for (i = 0; i < nvertices ; i++)
+   {
 #ifndef MAXWELL
 #ifdef ALEGRA
       if (level_count == 0) { j = i; k = i;}
 #else
       if (level_count == 0) { j = update_index[i]; k = update[i];}
-#endif
+#endif /*ifdef ALEGRA*/
 #else
       if (level_count == 0) { j = reordered_glob_nodes[i]; k = global_node_inds[i];}
 #endif /* ifndef MAXWELL */
@@ -1008,7 +1009,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
       if (level_count == 0) { j = i+nvertices; k =  (int) dtemp[i+nvertices];}
 #else
       if (level_count == 0) { j = extern_index[i]; k = external[i];} 
-#endif
+#endif /*ifdef ALEGRA*/
 #else
       if (level_count == 0) { j = reordered_node_externs[i]; k =
 	  global_node_externs[i];}
@@ -1024,7 +1025,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
 #elif INPUT_AGGREGATES
    agg_offset = ML_gpartialsum_int(aggr_count, comm);
    vertex_offset = ML_gpartialsum_int(nvertices, comm);
-#endif
+#endif /*ifdef ML_AGGR_OUTAGGR*/
 
    /* ============================================================= */
    /* Form tentative prolongator                                    */
