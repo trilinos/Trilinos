@@ -541,7 +541,7 @@ static int pmatching_ipm(
   send = dest = size = rec = index = aux = visit = cmatch = select = NULL;
   permute = edgebuf = NULL;
   nPermute = nDest = nSize = nIndex = nAux = 1 + MAX(nTotal, gmax_nVtx);
-  nSend = nRec = nEdgebuf = HEADER_COUNT + MAX(gmax_nPins, gmax_nVtx+2);
+  nSend = nRec = nEdgebuf = MAX (1000, MAX(gmax_nPins, gmax_nVtx+2));
   
   if (hg->nVtx)  
     if (!(cmatch = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
@@ -720,6 +720,20 @@ static int pmatching_ipm(
 
          /* HEADER_COUNT (row, col, gno, count of <lno, psum> pairs) */                    
         msgsize = HEADER_COUNT + 2 * count;
+        
+        /* iff necessary, resize send buffer to fit at least one message */
+        if (nsend == 0 && (msgsize > nSend))
+           {
+uprintf (hgc, "RTHRTH needed to realloc send buffer\n");  
+           nSend += msgsize;         
+           send = (int*) ZOLTAN_REALLOC(send, nSend * sizeof(int));
+           if (send == NULL) {
+              ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+              err = ZOLTAN_MEMERR;
+              goto fini;
+              }
+           s = send;    
+           }
 
         if (sendsize + msgsize <= nSend)  {
           /* current partial sums fit, so put them into the send buffer */
@@ -739,41 +753,21 @@ static int pmatching_ipm(
           }          
         }
         else  {           /* psum message doesn't fit into buffer */
-          /* KDDKDD  THIS IS A TEMPORARY TEST -- BUT IT REMOVES ALL DOUBT
-           * KDDKDD  WHEN AND WHERE AN INFINITE LOOP IS HAPPENING.
-           * KDDKDD  REMOVE THIS TEST AND ERROR CONDITION ONCE BOB ADDS A
-           * KDDKDD  BUFFER REALLOC TO ACCOMMODATE AT LEAST ONE MSG. 
-           */
-          if (k == kstart) {
-            char msg[256];
-            sprintf(msg, "Send buffer is too small to hold even one message. "
-                         "An infinite loop will result, so we may as well quit."
-                         " k == kstart == %d;  nTotal == %d\n", k, nTotal);
-            ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-            err = ZOLTAN_FATAL;
-            goto fini;
-          }
           for (i = 0; i < count; i++)              
             sums[aux[i]] = 0.0;        
           break;
         }  
-      }                  /* DONE: loop over k */          
-           
+      }                  /* DONE: loop over k */                    
 
       /* synchronize all rows in this column to next kstart value */
       old_kstart = kstart;      
       MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
             
       /* Send inner product data in send buffer to appropriate rows */
-      MPI_Allreduce (&nsend, &nrec, 1, MPI_INT, MPI_SUM, hgc->col_comm);
-
-      recsize = 0;
-      if (nrec)  {
-        err = communication_by_plan (zz, nsend, dest, size, 1, send, &nrec, 
-         &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
-        if (err != ZOLTAN_OK)
-          goto fini;
-      }
+      err = communication_by_plan (zz, nsend, dest, size, 1, send, &nrec, 
+       &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
+      if (err != ZOLTAN_OK)
+        goto fini;
       
       /* build index into receive buffer pointer for each new row of data */
       old_row = -1;
@@ -864,7 +858,7 @@ static int pmatching_ipm(
       for (i = 1; i < hgc->nProc_y; i++)
         dest[i] = dest[i-1] + size[i-1];
         
-      if (recsize > nRec) {
+      if (recsize > nRec) {  /* Karen suggests free, malloc rather than realloc ???*/
         nRec = recsize;
         rec = (int*) ZOLTAN_REALLOC (rec, nRec * sizeof(int));
         if (rec == NULL)  {
@@ -907,14 +901,11 @@ static int pmatching_ipm(
     }                                       /* DONE: kstart < nTotal loop */
      
     /* MASTER ROW only: send best results to candidates' owners */
-    MPI_Allreduce (&nsend, &nrec, 1, MPI_INT, MPI_SUM, hgc->row_comm);
-recsize = 0;    
-    if (nrec)  {    
-      err = communication_by_plan (zz, nmaster, master_procs, NULL, 3,
-       master_data, &nrec, &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
-      if (err != ZOLTAN_OK)
-        goto fini;  
-    }  
+    err = communication_by_plan (zz, nmaster, master_procs, NULL, 3,
+     master_data, &nrec, &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+5);
+    if (err != ZOLTAN_OK)
+      goto fini;  
+
 
     /* read each message (candidate id, best match id, and best i.p.) */ 
     if (hgc->myProc_y == 0) 
@@ -960,15 +951,11 @@ recsize = 0;
       }
         
     /* send match results only to impacted parties */
-    MPI_Allreduce (&nsend, &nrec, 1, MPI_INT, MPI_SUM, hgc->row_comm);
-    recsize = 0;
-    if (nrec)  {    
-      err = communication_by_plan (zz, nsend, dest, NULL, 2, send, &nrec,
-       &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+10);
-      if (err != ZOLTAN_OK)
-        goto fini;
-    }
-                    
+    err = communication_by_plan (zz, nsend, dest, NULL, 2, send, &nrec,
+     &recsize, &nRec, &rec, hgc->row_comm, IPM_TAG+10);
+    if (err != ZOLTAN_OK)
+      goto fini;
+
     /* update match array with current selections */
     /* Note: -gno-1 designates an external match as a negative number */
     if (hgc->myProc_y == 0)
@@ -1009,7 +996,7 @@ uprintf (hgc, "RTHRTH %d unmatched, %d external, %d local of %d\n",
 
 
 
-if (1)
+if (0)
 {
 /* The following tests that the global match array is a valid permutation */
 /* NOTE:  THESE TESTS ARE NOT MANDATORY; THEY CAN BE EXCLUDED AFTER WE 
