@@ -348,14 +348,20 @@ AC_SUBST(ac_aux_dir)
 #
 AC_CONFIG_FILES([
 		Makefile
+		Makefile.export
                 src/Makefile
 		example/Makefile
                 example/UG_Ex1/Makefile
+                example/UG_Ex1/Makefile.include
                 example/simple_epetra_aztecoo/Makefile
+                example/simple_epetra_aztecoo/Makefile.include
                 example/AztecOO_UserOpUserMat/Makefile
+                example/AztecOO_UserOpUserMat/Makefile.include
                 example/AztecOO/Makefile
+                example/AztecOO/Makefile.include
 		test/Makefile
 		test/AztecOO_SetParameters/Makefile
+		test/AztecOO_SetParameters/Makefile.include
 		test/AztecOO_UserOpUserMat/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile

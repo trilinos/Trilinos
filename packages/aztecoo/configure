@@ -10700,7 +10700,7 @@ fi
 #                example/aztec_app/Makefile
 #                example/aztec_hb/Makefile
 #
-                                                                                                                                  ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile example/UG_Ex1/Makefile example/simple_epetra_aztecoo/Makefile example/AztecOO_UserOpUserMat/Makefile example/AztecOO/Makefile test/Makefile test/AztecOO_SetParameters/Makefile test/AztecOO_UserOpUserMat/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile"
+                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile example/Makefile example/UG_Ex1/Makefile example/UG_Ex1/Makefile.include example/simple_epetra_aztecoo/Makefile example/simple_epetra_aztecoo/Makefile.include example/AztecOO_UserOpUserMat/Makefile example/AztecOO_UserOpUserMat/Makefile.include example/AztecOO/Makefile example/AztecOO/Makefile.include test/Makefile test/AztecOO_SetParameters/Makefile test/AztecOO_SetParameters/Makefile.include test/AztecOO_UserOpUserMat/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -11301,14 +11301,20 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+  "Makefile.export" ) CONFIG_FILES="$CONFIG_FILES Makefile.export" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "example/UG_Ex1/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/UG_Ex1/Makefile" ;;
+  "example/UG_Ex1/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES example/UG_Ex1/Makefile.include" ;;
   "example/simple_epetra_aztecoo/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/simple_epetra_aztecoo/Makefile" ;;
+  "example/simple_epetra_aztecoo/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES example/simple_epetra_aztecoo/Makefile.include" ;;
   "example/AztecOO_UserOpUserMat/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/AztecOO_UserOpUserMat/Makefile" ;;
+  "example/AztecOO_UserOpUserMat/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES example/AztecOO_UserOpUserMat/Makefile.include" ;;
   "example/AztecOO/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/AztecOO/Makefile" ;;
+  "example/AztecOO/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES example/AztecOO/Makefile.include" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/AztecOO_SetParameters/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/AztecOO_SetParameters/Makefile" ;;
+  "test/AztecOO_SetParameters/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/AztecOO_SetParameters/Makefile.include" ;;
   "test/AztecOO_UserOpUserMat/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/AztecOO_UserOpUserMat/Makefile" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
   "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;

@@ -1,0 +1,7 @@
+
+# Macro to be used for executables that need to link aztecoo
+
+AZTECOO_LIBS = $(top_builddir)/src/libaztecoo.a \
+	$(top_builddir)/../triutils/src/libtriutils.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
