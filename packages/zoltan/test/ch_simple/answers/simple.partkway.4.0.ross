@@ -1,0 +1,13 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters	= parmetis_method=partkway
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+3
+4
+5
+8
+9
+10
+13
