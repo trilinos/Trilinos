@@ -27,6 +27,7 @@ static ZOLTAN_HG_MATCHING_FN matching_rm2;  /* random, light edge matching, rand
 static ZOLTAN_HG_MATCHING_FN matching_rhm;  /* random, heavy edge matching */
 static ZOLTAN_HG_MATCHING_FN matching_grm;  /* greedy edge matching, Hi to Lo */
 static ZOLTAN_HG_MATCHING_FN matching_gm2;  /* greedy edge matching, Lo to Hi */
+static ZOLTAN_HG_MATCHING_FN matching_gm3;  /* greedy edge matching, Hi to Lo weight/size ratio */
 static ZOLTAN_HG_MATCHING_FN matching_lhm;  /* locally heaviest matching */
 static ZOLTAN_HG_MATCHING_FN matching_pgm;  /* path growing matching */
 static ZOLTAN_HG_MATCHING_FN matching_aug2; /* post matching optimizer */
@@ -49,6 +50,7 @@ int found = 1;
   else if (!strcasecmp(hgp->redm_str, "rhm"))  hgp->matching = matching_rhm;
   else if (!strcasecmp(hgp->redm_str, "grm"))  hgp->matching = matching_grm;
   else if (!strcasecmp(hgp->redm_str, "gm2"))  hgp->matching = matching_gm2;
+  else if (!strcasecmp(hgp->redm_str, "gm3"))  hgp->matching = matching_gm3;
   else if (!strcasecmp(hgp->redm_str, "lhm"))  hgp->matching = matching_lhm;
   else if (!strcasecmp(hgp->redm_str, "pgm"))  hgp->matching = matching_pgm;
   else if (!strcasecmp(hgp->redm_str, "no"))   hgp->matching = NULL;
@@ -460,7 +462,7 @@ char *yo = "matching_grm";
 static int matching_gm2 (ZZ *zz, HGraph *hg, Matching pack, int *limit)
 {
 int   i, j, *size = NULL, *sorted = NULL, vertex;
-char *yo = "matching_grm";
+char *yo = "matching_gm2";
 
 /* Sort the hyperedges according to their weight and size */
   if (!(size   = (int*) ZOLTAN_MALLOC (hg->nEdge * sizeof(int)))
@@ -496,6 +498,49 @@ char *yo = "matching_grm";
 
 /*****************************************************************************/
 
+
+/* greedy matching, hypergraph version, matching based on
+   hyperdge weight divided by size. */
+
+static int matching_gm3 (ZZ *zz, HGraph *hg, Matching pack, int *limit)
+{
+int   i, j, *sorted = NULL, vertex;
+float *ratio = NULL;
+char *yo = "matching_gm3";
+
+/* Sort the hyperedges according to their weight/size ratio */
+  if (!(ratio   = (float*) ZOLTAN_MALLOC (hg->nEdge * sizeof(float)))
+   || !(sorted = (int*) ZOLTAN_MALLOC (hg->nEdge * sizeof(int))) ) {
+      Zoltan_Multifree (__FILE__, __LINE__, 2, &ratio, &sorted);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+      }
+  for (i = 0; i < hg->nEdge; i++)
+     ratio[i] = hg->ewgt[i]/(hg->hindex[i+1] - hg->hindex[i]);
+  for (i = 0; i < hg->nEdge; i++)
+     sorted[i] = i;
+  Zoltan_quicksort_pointer_dec_float (sorted,ratio,0,hg->nEdge -1);
+  ZOLTAN_FREE ((void**) &ratio);
+
+  /* Match hyperedges along decreasing weight/size ratio  */
+  for (i = hg->nEdge-1; i >= 0  &&  *limit > 0; i--)
+     for (j = hg->hindex[sorted[i]]; j < hg->hindex[sorted[i]+1]; j++)
+        if (pack[hg->hvertex[j]] == hg->hvertex[j]) {
+           vertex = hg->hvertex[j];
+           for (j++; j < hg->hindex[sorted[i]+1]  &&  *limit > 0; j++)
+              if (pack[hg->hvertex[j]] == hg->hvertex[j]) {
+                  pack[vertex]          = hg->hvertex[j];
+                  pack[hg->hvertex[j]]  = vertex;
+                  (*limit)--;
+                  break;
+                  }
+           break;
+           }
+  ZOLTAN_FREE ((void**) &sorted);
+  return ZOLTAN_OK;
+  }
+
+/*****************************************************************************/
 
 
 #undef LAM_ORIG
