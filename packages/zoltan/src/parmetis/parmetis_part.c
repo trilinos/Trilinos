@@ -74,7 +74,7 @@ int LB_ParMetis(
   int i, j, ierr, size, flag, offset, hi, row, ndims;
   int num_obj, nedges, sum_edges, max_edges, edgecut;
   int options[MAX_OPTIONS], *nbors_proc;
-  int nsend, ewgt_dim, vwgt_dim, wgtflag, numflag;
+  int nsend, wgtflag, numflag;
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *adjptr, *vwgt, *adjwgt, *part;
   float  max_wgt, *float_vwgt, *xyz;
@@ -90,8 +90,6 @@ int LB_ParMetis(
 
   PARAM_VARS parmetis_params[] = {
         { "PARMETIS_METHOD", NULL, "STRING" },
-        { "PARMETIS_VWGT_DIM", NULL, "INT" },
-        { "PARMETIS_EWGT_DIM", NULL, "INT" },
         { "PARMETIS_COARSE_ALG", NULL, "INT" },
         { "PARMETIS_FOLD", NULL, "INT" },
         { "PARMETIS_OUTPUT_LEVEL", NULL, "INT" },
@@ -122,16 +120,12 @@ int LB_ParMetis(
 
   /* Set parameters */
   strcpy(alg, "PARTKWAY");
-  vwgt_dim = 0;
-  ewgt_dim = 0;
   for (i=0; i<MAX_OPTIONS; i++)
     options[i] = -1;
   parmetis_params[0].ptr = (void *) alg;
-  parmetis_params[1].ptr = (void *) &vwgt_dim;
-  parmetis_params[2].ptr = (void *) &ewgt_dim;
-  parmetis_params[3].ptr = (void *) &(options[OPTION_IPART]);
-  parmetis_params[4].ptr = (void *) &(options[OPTION_FOLDF]);
-  parmetis_params[5].ptr = (void *) &(options[OPTION_DBGLVL]);
+  parmetis_params[1].ptr = (void *) &(options[OPTION_IPART]);
+  parmetis_params[2].ptr = (void *) &(options[OPTION_FOLDF]);
+  parmetis_params[3].ptr = (void *) &(options[OPTION_DBGLVL]);
 
   LB_Assign_Param_Vals(lb->Params, parmetis_params);
 
@@ -155,8 +149,8 @@ int LB_ParMetis(
   }
 
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: alg=%s, vwgt_dim=%d, ewgt_dim=%d\n", lb->Proc, 
-      alg, vwgt_dim, ewgt_dim);
+    printf("[%1d] Debug: alg=%s, Obj_Weight_Dim=%d, Comm_Weight_Dim=%d\n", lb->Proc, 
+      alg, lb->Obj_Weight_Dim, lb->Comm_Weight_Dim);
     printf("[%1d] Debug: ParMetis options = %d, %d, %d, %d\n", lb->Proc,
       options[0], options[1], options[2], options[3]);
 #endif
@@ -199,19 +193,19 @@ int LB_ParMetis(
   if (num_obj>0){
     global_ids = (LB_GID *) LB_MALLOC(num_obj * sizeof(LB_GID) );
     local_ids = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID) );
-    if (vwgt_dim)
-      float_vwgt = (float *)LB_MALLOC(vwgt_dim*num_obj * sizeof(float));
+    if (lb->Obj_Weight_Dim)
+      float_vwgt = (float *)LB_MALLOC((lb->Obj_Weight_Dim)*num_obj * sizeof(float));
     else {
       float_vwgt = NULL;
       vwgt = NULL;
     }
-    if (!vtxdist || !global_ids || !local_ids || (vwgt_dim && !float_vwgt)){
+    if (!vtxdist || !global_ids || !local_ids || (lb->Obj_Weight_Dim && !float_vwgt)){
       /* Not enough memory */
       printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
       return LB_MEMERR;
     }
-    LB_Get_Obj_List(lb, global_ids, local_ids, vwgt_dim, float_vwgt, &ierr);
+    LB_Get_Obj_List(lb, global_ids, local_ids, lb->Obj_Weight_Dim, float_vwgt, &ierr);
     if (ierr){
       /* Return error */
       printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
@@ -263,10 +257,11 @@ int LB_ParMetis(
     /* Allocate space for ParMETIS data structs */
     xadj   = (idxtype *)LB_MALLOC((num_obj+1) * sizeof(idxtype));
     adjncy = (idxtype *)LB_MALLOC((sum_edges+1) * sizeof(idxtype));
-    if (ewgt_dim) 
-      adjwgt = (idxtype *)LB_MALLOC(ewgt_dim*sum_edges * sizeof(idxtype));
+    if (lb->Comm_Weight_Dim) 
+      adjwgt = (idxtype *)LB_MALLOC((lb->Comm_Weight_Dim) 
+                * sum_edges * sizeof(idxtype));
   
-    if (!xadj || !adjncy || (sum_edges && ewgt_dim && !adjwgt)){
+    if (!xadj || !adjncy || (sum_edges && lb->Comm_Weight_Dim && !adjwgt)){
       /* Not enough memory */
       printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
@@ -347,7 +342,7 @@ int LB_ParMetis(
                local_ids[i], &ierr);
       xadj[i+1] = xadj[i] + nedges;
       lb->Get_Edge_List(lb->Get_Edge_List_Data, global_ids[i], local_ids[i],
-          nbors_global, nbors_proc, ewgt_dim, adjwgt, &ierr);
+          nbors_global, nbors_proc, lb->Comm_Weight_Dim, adjwgt, &ierr);
       if (ierr){
         /* Return error */
         printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
@@ -560,17 +555,18 @@ int LB_ParMetis(
     LB_FREE(&hashtab);
   
     /* Get vertex weights if needed */
-    if (vwgt_dim){
+    if (lb->Obj_Weight_Dim){
 #ifdef LB_DEBUG
       printf("[%1d] Debug: Converting vertex weights...\n", lb->Proc);
 #endif
-      vwgt = (idxtype *)LB_MALLOC(vwgt_dim*num_obj * sizeof(idxtype));
+      vwgt = (idxtype *)LB_MALLOC((lb->Obj_Weight_Dim*num_obj)
+                          * sizeof(idxtype));
       max_wgt = 0;
       for (i=0; i<num_obj; i++){
         if (float_vwgt[i]>max_wgt) max_wgt = float_vwgt[i];
       }
       /* Convert weights to integers between 1 and 100 */
-      for (i=0; i<vwgt_dim*num_obj; i++){
+      for (i=0; i<(lb->Obj_Weight_Dim)*num_obj; i++){
         vwgt[i] = ceil(float_vwgt[i]*100/max_wgt);
       }
       LB_FREE(&float_vwgt);
@@ -611,9 +607,9 @@ int LB_ParMetis(
   }
 
   /* Get ready to call ParMETIS */
-  wgtflag = 2*(vwgt_dim>0) + (ewgt_dim>0); /* Multidim wgts not supported yet */
+  wgtflag = 2*(lb->Obj_Weight_Dim>0) + (lb->Comm_Weight_Dim>0); /* Multidim wgts not supported yet */
   numflag = 0;
-  part = (idxtype *)LB_MALLOC(num_obj * sizeof(idxtype));
+  part = (idxtype *)LB_MALLOC((num_obj+1) * sizeof(idxtype));
   if (!part){
     /* Not enough memory */
     printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
@@ -630,6 +626,10 @@ int LB_ParMetis(
 #endif
 
   if (strcmp(alg, "PARTKWAY") == 0){
+#ifdef LB_DEBUG
+    printf("[%1d] Debug: vtxdist, xadj, adjncy, part = 0x%x, 0x%x, 0x%x, 0x%x\n", 
+           lb->Proc, vtxdist, xadj, adjncy, part);
+#endif
     ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, &(lb->Num_Proc), options, &edgecut, part, &(lb->Communicator));
   }
@@ -677,8 +677,8 @@ int LB_ParMetis(
 #endif
 
   /* Free weights; they are no longer needed */
-  if (vwgt_dim) LB_FREE(&vwgt);
-  if (ewgt_dim) LB_FREE(&adjwgt);
+  if (lb->Obj_Weight_Dim) LB_FREE(&vwgt);
+  if (lb->Comm_Weight_Dim) LB_FREE(&adjwgt);
 
   /* Determine number of objects to export */
   nsend = 0;
