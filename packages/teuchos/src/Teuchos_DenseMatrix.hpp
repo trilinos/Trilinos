@@ -1,8 +1,3 @@
-/*Paul
-27-May-2002 General cleanup. Changed method names to fit namingConvention (already done).
-06-August-2002 Changed to images (nothing changed). Documentation cleaned up a bit.
-*/
-
 // Kris
 // 06.18.03 -- Removed comments/documentation; file too hard to edit otherwise. Will replace later.
 //          -- Begin conversion from <ScalarType> template to <OrdinalType, ScalarType>
@@ -122,9 +117,9 @@ int DenseMatrix<OrdinalType, ScalarType>::reshape(int numRows, int numCols)
   int numCols_tmp = TEUCHOS_MIN(numCols_, numCols);
   if(values_ != 0)
     {
-      CopyMat(values_, stride_, numRows_tmp, numCols_tmp, values_tmp, numRows); // Copy principal submatrix of A to new A
+      copyMat(values_, stride_, numRows_tmp, numCols_tmp, values_tmp, numRows, 0, 0); // Copy principal submatrix of A to new A
     }
-  DeleteArrays(); // Get rid of anything that might be already allocated
+  deleteArrays(); // Get rid of anything that might be already allocated
   numRows_ = numRows;
   numCols_ = numCols;
   stride_ = numRows_;

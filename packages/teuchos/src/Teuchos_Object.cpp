@@ -1,10 +1,3 @@
-/*Paul
-27-May-2002 General cleanup. Changed method names to fit namingConvention. Moved some code in from Tpetra::Object.h. Commented out reportError method.
-09-June-2002 Switched comment format.
-06-August-2002 Changed to images (nothing changed). Also touched up a few things.
-04-Feb-2003 Moved reportError method into seperate file.
-*/
-
 // Kris
 // 07.08.03 -- Move into Teuchos package/namespace
 

@@ -1,8 +1,3 @@
-/*Paul
-27-May-2002 General cleanup. Checked for newNamingConvention (already done). Moved some code here from Teuchos_CompObject.h
-06-August-2002 Changed to images (nothing changed).
-*/
-
 // Kris
 // 07.08.03 -- Move into Teuchos package/namespace
 

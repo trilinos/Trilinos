@@ -1,13 +1,3 @@
-/*Paul
-04-Aug-2002 Status: Templated for class T. All Epetra methods except Distributor. Fully documented. Switched to images.
-03-Sept-2002 Took out Directory and ImageID methods. Templated for PacketType, OrdinalType.
-12-Oct-2002 Added some consts (still some left). Updated for Common->Compiler_Directives renaming.
-30-Oct-2002 Updated for Compiler_Directives -> ConfigDefs renaming.
-12-Nov-2002 Changed remaining template<class...> to template<typename...>
-19-Nov-2002 myImageID and numImages moved back from Platform.
-06-Feb-2003 Updated const syntax.
-*/
-
 // Kris
 // 07.08.03 -- Move into Teuchos package/namespace
 

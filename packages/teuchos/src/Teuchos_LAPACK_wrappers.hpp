@@ -1,5 +1,3 @@
-// 27-May-2002 General cleanup. Changed method names to fit namingConvention (nothing changed).
-
 // Kris
 // 06.11.03 -- Format cleanup
 // 06.17.03 -- Added LAPY2 and GEES by request

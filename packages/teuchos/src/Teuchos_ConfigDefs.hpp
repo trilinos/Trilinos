@@ -1,11 +1,3 @@
-/*Paul
-24-July-2002 Initial writeup. All system includes go here, and a few other things too.
-06-August-2002 Changed to images (nothing changed).
-09-Oct-2002 Changed name to Tpetra_Compiler_Directives.h
-30-Oct-2002 Changed name to Tpetra_ConfigDefs.h (hopefully done renaming now).
-04-Dec-2002 Moved configs out of Tpetra_ScalarTraits.h.
-*/
-
 // Kris
 // 07.08.03 -- Move into Teuchos package/namespace
 

@@ -1,7 +1,3 @@
-/*Paul
-Modified 04-Feb-2003
-*/
-
 // Kris
 // 07.08.03 -- Move into Teuchos package/namespace
 

@@ -1,9 +1,3 @@
-/*Paul
-27-May-2002 Major Overhaul. Changed method names to fit namingConvention (already done).
-28-May-2002 Heroux fixes things.
-06-August-2002 Changed to images (nothing changed). Also updated a few naming conventions, and to use a templated Comm.
-*/
-
 // Kris
 // 07.08.03 -- Move into Teuchos package/namespace
 

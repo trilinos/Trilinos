@@ -1,7 +1,3 @@
-/*Paul
-19-Nov-2002 OrdinalTraits written, based on ScalarTraits form
-*/
-
 // Kris
 // 07.08.03 -- Move into Teuchos package/namespace
 

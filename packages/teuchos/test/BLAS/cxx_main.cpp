@@ -1,5 +1,6 @@
 // Kris
 // 07.24.03 -- Initial checkin
+// 08.08.03 -- All test suites except for TRSM are finished.
 
 /*
 
@@ -21,11 +22,11 @@ using namespace Teuchos;
 
 // SType1 and SType2 define the datatypes for which BLAS output will be compared.
 // SType2 should generally be a control datatype "officially" supported by the BLAS; SType1 should be the experimental type being checked.
-#define SType1     mp_real
+#define SType1     float
 #define SType2     double
 // TOL defines the tolerance allowed for differences in BLAS output. Set to 0 for strict comparisons.
-#define TOL        0.00001
-// MVMIN/MAX define the minimum and maximum dimensions of generated matrices, respectively.
+#define TOL        1
+// MVMIN/MAX define the minimum and maximum dimensions of generated matrices and vectors, respectively.
 #define MVMIN      2
 #define MVMAX      20
 // SCALARMAX defines the maximum positive value (with a little leeway) generated for matrix and vector elements and scalars:
@@ -33,22 +34,22 @@ using namespace Teuchos;
 // Set SCALARMAX to a floating-point value (e.g. 10.0) to enable floating-point random number generation, such that
 // random numbers in (-SCALARMAX - 1, SCALARMAX + 1) will be generated.
 // Large values of SCALARMAX may cause problems with SType2 = int, as large integer values will overflow floating-point types.
-#define SCALARMAX  10.0
+#define SCALARMAX  10
 // These define the number of tests to be run for each individual BLAS routine.
-#define ASUMTESTS  100
-#define AXPYTESTS  100
-#define COPYTESTS  100
-#define DOTTESTS   100
-#define IAMAXTESTS 100
-#define NRM2TESTS  100
-#define SCALTESTS  100
-#define GEMVTESTS  100
-#define GERTESTS   100
-#define TRMVTESTS  100
-#define GEMMTESTS  100
-#define SYMMTESTS  100
-#define TRMMTESTS  100
-#define TRSMTESTS  0
+#define ASUMTESTS  0
+#define AXPYTESTS  0
+#define COPYTESTS  0
+#define DOTTESTS   0
+#define IAMAXTESTS 0
+#define NRM2TESTS  0
+#define SCALTESTS  0
+#define GEMVTESTS  0
+#define GERTESTS   0
+#define TRMVTESTS  0
+#define GEMMTESTS  0
+#define SYMMTESTS  0
+#define TRMMTESTS  0
+#define TRSMTESTS  1
 
 // Returns ScalarTraits<TYPE>::random() (the input parameters are ignored)
 template<typename TYPE>
@@ -875,14 +876,15 @@ int main(int argc, char *argv[])
       M = GetRandom(MVMIN, MVMAX);
       N = GetRandom(MVMIN, MVMAX);
 
-      // M = 3; N = 3;
+      M = 3;
+      N = 3;
 
       SType1B = new SType1[M * N];
       SType2B = new SType2[M * N];
 
       SIDE = RandomSIDE();
 
-      SIDE = 'L';
+      SIDE = 'R';
 
       if(SIDE == 'L')
 	{
@@ -908,29 +910,12 @@ int main(int argc, char *argv[])
 	  LDA = N;
 	}
 
-//       SType1A[0] = 1; SType1A[3] = 0; SType1A[6] = 2;
-//       SType1A[1] = 0; SType1A[4] = 2; SType1A[7] = 0;
-//       SType1A[2] = 0; SType1A[5] = 0; SType1A[8] = 1;
-//       SType2A[0] = 1; SType2A[3] = 0; SType2A[6] = 2;
-//       SType2A[1] = 0; SType2A[4] = 2; SType2A[7] = 0;
-//       SType2A[2] = 0; SType2A[5] = 0; SType2A[8] = 1;
-
-      // SType1A[3] = 0; SType1A[6] = 0; SType1A[7] = 0;
-      // SType2A[3] = 0; SType2A[6] = 0; SType2A[7] = 0;
-
       for(j = 0; j < M * N; j++)
 	{
 	  SType1B[j] = GetRandom(-SCALARMAX, SCALARMAX);
 	  SType2B[j] = ConvertType(SType1B[j], convertTo);
 	}
       
-//       SType1B[0] = 1; SType1B[3] = 2; SType1B[6] = 3;
-//       SType1B[1] = 4; SType1B[4] = 5; SType1B[7] = 6;
-//       SType1B[2] = 7; SType1B[5] = 8; SType1B[8] = 9;
-//       SType2B[0] = 1; SType2B[3] = 2; SType2B[6] = 3;
-//       SType2B[1] = 4; SType2B[4] = 5; SType2B[7] = 6;
-//       SType2B[2] = 7; SType2B[5] = 8; SType2B[8] = 9;
-
       SType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
       SType1alpha = 1;
       SType2alpha = ConvertType(SType1alpha, convertTo);

@@ -1,12 +1,3 @@
-/*Paul
-16-May-2002 - Changed to use Epetra_LAPACK instead of Petra_LAPACK
-16-May-2002 - Switched names from TPetra to Tpetra
-28-May-2002 - Heroux fixes things.
-06-August-2002 Switched to images (nothing changed). Cleaned up a bit.
-19-Nov-2002 ScalarTraits throws exceptions now instead of calling std::abort()
-04-Dec-2002 Moved configs to Tpetra_ConfigDefs.h.
-*/
-
 // Kris
 // 06.18.03 -- Minor formatting changes
 //          -- Changed calls to LAPACK objects to use new <OType, SType> templates

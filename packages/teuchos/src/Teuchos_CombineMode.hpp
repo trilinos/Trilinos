@@ -1,9 +1,3 @@
-/*Paul
-27-May-2002 General cleanup. Checked for newNamingConvention (nothing changed).
-06-August-2002 Changed to images.
-04-Feb-2003 Moved into Tpetra namespace & renamed
-*/
-
 // Kris
 // 07.08.03 -- Move into Teuchos package/namespace
 

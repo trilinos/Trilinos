@@ -356,6 +356,7 @@ AC_CONFIG_FILES([
 		test/LAPACK/Makefile
 		test/DenseMatrix/Makefile
 		test/ParameterList/Makefile
+		example/Hilbert/Makefile
 		])
 
 AC_OUTPUT()
@@ -363,5 +364,5 @@ AC_OUTPUT()
 # Bye World!
 #  #np# change package name
 echo "----------------------------------------"
-echo "Finished Running Teuchos Configure Script TEST!!!!!!!!!!!!!"
+echo "Finished Running Teuchos Configure Script"
 echo "----------------------------------------"

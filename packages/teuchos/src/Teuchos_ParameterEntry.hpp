@@ -1,9 +1,11 @@
 // Kris
 // 07.08.03 -- Move into Teuchos package/namespace
 
+
+
 namespace Teuchos {
 
-class ParameterList;
+class ParameterList; // forward declaration so an Entry can be of type ParameterList itself
 
 template<typename EntryType>
 class Entry
@@ -37,8 +39,6 @@ Entry<EntryType>::Entry(EntryType newData, bool isCreatedByGet = 0)
   isSetByGet = isCreatedByGet;
 }
 
-// specialized copy/= for pointer datatypes?
-
 template<typename EntryType>
 Entry<EntryType>::Entry(const Entry &Source)
 {
@@ -46,15 +46,6 @@ Entry<EntryType>::Entry(const Entry &Source)
   isGotten = Source.isGotten;
   isSetByGet = Source.isSetByGet;
 }
-
-// template<>
-// Entry<ParameterList*>::Entry(const Entry &Source)
-// {
-//   data = new ParameterList;
-//   data = Source.data;
-//   isGotten = Source.isGotten;
-//   isSetByGet = Source.isSetByGet;
-// }
 
 template<typename EntryType>
 Entry<EntryType> & Entry<EntryType>::operator= (const Entry &Source)

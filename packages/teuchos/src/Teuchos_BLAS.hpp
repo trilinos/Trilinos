@@ -1,8 +1,3 @@
-/*Paul
-// 27-May-2002 General cleanup. Checked for newNamingConvention (nothing changed).
-06-August-2002 Changed to images (nothing changed).
-*/
-
 // Kris
 // 06.16.03 -- Start over from scratch
 // 06.16.03 -- Initial templatization (Tpetra_BLAS.cpp is no longer needed)
@@ -16,6 +11,7 @@
 //             * All of the routines that make use of both an incx and incy parameter (which includes much of the L1 BLAS) are set up to work iff incx == incy && incx > 0. Allowing for differing/negative values of incx/incy should be relatively trivial.
 //             * All of the L2/L3 routines assume that the entire matrix is being used (that is, if A is mxn, LDA = m); they don't work on submatrices yet. This *should* be a reasonably trivial thing to fix, as well.
 //          -- Removed warning messages for generic calls
+// 08.08.03 -- TRSM now works for all cases where SIDE == L and DIAG == N. DIAG == U is implemented but does not work correctly; SIDE == R is not yet implemented.
 
 #ifndef _TEUCHOS_BLAS_HPP_
 #define _TEUCHOS_BLAS_HPP_
@@ -734,23 +730,25 @@ namespace Teuchos
 	      }
 	    if(Side == 'L')
 	      {
+		cout << "L";
 		if(Triangular == 'U')
 		  {
+		    cout << "U";
 		    if(TransposeA == 'N')
 		      {
+			cout << "N";
 			if(UnitDiagonal == 'N')
 			  {
+			    cout << "N";
 			    for(j = 0; j < n; j++)
 			      {
 				for(k = (m - 1); k > -1; k--)
 				  {
-				    if(B[k + (j * m)] != zero) // B[k][j] != 0
+				    if(B[k + (j * m)] != zero)
 				      {
-					// B[k][j] = B[k][j] / A[k][k];
 					B[k + (j * m)] = B[k + (j * m)] / A[k + (k * m)];
 					for(i = 0; i < k; i++)
 					  {
-					    // B[i][j] = B[i][j] - (B[k][j] * A[i][k]);
 					    B[i + (j * m)] = B[i + (j * m)] - (B[k + (j * m)] * A[i + (k * m)]);
 					  }
 				      }
@@ -759,25 +757,152 @@ namespace Teuchos
 			  }
 			else // UnitDiagonal == U
 			  {
-			    
+			    cout << "U";
+			    for(j = 0; j < n; j++)
+			      {
+				for(k = (m - 1); k > -1; k--)
+				  {
+				    if(B[k + (j * m)] != zero)
+				      {
+					for(i = 0; i < k; i++)
+					  {
+					    B[i + (j * m)] = B[i + (j * m)] - (B[k + (j * m)] * A[i + (k * m)]);
+					  }
+				      }
+				  }
+			      }
 			  }
 		      }
 		    else // TransposeA == T or C
 		      {
-			
+			cout << "T";
+			if(UnitDiagonal == 'N')
+			  {
+			    cout << "N";
+			    ScalarType temp;
+			    for(j = 0; j < n; j++)
+			      {
+				for(i = 0; i < m; i++)
+				  {
+				    temp = alpha * B[i + (j * m)];
+				    for(k = 0; k < (i - 0); k++)
+				      {
+					temp -= (A[k + (i * m)] * B[k + (j * m)]);
+				      }
+				    temp /= A[i + (i * m)];
+				    B[i + (j * m)] = temp;
+				  }
+			      }
+			  }
+			else if(UnitDiagonal == 'U')
+			  {
+			    cout << "U";
+			    ScalarType temp;
+			    for(j = 0; j < n; j++)
+			      {
+				for(i = 0; i < m; i++)
+				  {
+				    temp = alpha * B[i + (j * m)];
+				    for(k = 0; k < (i - 0); k++)
+				      {
+					temp -= (A[k + (i * m)] * B[k + (j * m)]);
+				      }
+				    B[i + (j * m)] = temp;
+				  }
+			      }
+			  }
 		      }
 		  }
 		else // Triangular == L
 		  {
-		    
+		    cout << "L";
+		    if(TransposeA == 'N')
+		      {
+			cout << "N";
+			if(UnitDiagonal == 'N')
+			  {
+			    cout << "N";
+			    for(j = 0; j < n; j++)
+			      {
+				for(k = 0; k < m; k++)
+				  {
+				    if(B[k + (j * m)] != zero)
+				      {
+					B[k + (j * m)] = B[k + (j * m)] / A[k + (k * m)];
+					for(i = (k + 1); i < m; i++)
+					  {
+					    B[i + (j * m)] = B[i + (j * m)] - (B[k + (j * m)] * A[i + (k * m)]);
+					  }
+				      }
+				  }
+			      }
+			  }
+			else // UnitDiagonal == U
+			  {
+			    cout << "U";
+			    for(j = 0; j < n; j++)
+			      {
+				for(k = 0; k < m; k++)
+				  {
+				    if(B[k + (j * m)] != zero)
+				      {
+					for(i = (k + 1); i < m; i++)
+					  {
+					    B[i + (j * m)] = B[i + (j * m)] - (B[k + (j * m)] * A[i + (k * m)]);
+					  }
+				      }
+				  }
+			      }
+			  }
+		      }
+		    else // TransposeA == T or C
+		      {
+			cout << "T";
+			if(UnitDiagonal == 'N')
+			  {
+			    cout << "N";
+			    ScalarType temp;
+			    for(j = 0; j < n; j++)
+			      {
+				for(i = (m - 1); i > -1; i--)
+				  {
+				    temp = alpha * B[i + (j * m)];
+				    for(k = (i + 1); k < m; k++)
+				      {
+					temp -= (A[k + (i * m)] * B[k + (j * m)]);
+				      }
+				    temp /= A[i + (i * m)];
+				    B[i + (j * m)] = temp;
+				  }
+			      }
+			  }
+			else if(UnitDiagonal == 'U')
+			  {
+			    cout << "U";
+			    ScalarType temp;
+			    for(j = 0; j < n; j++)
+			      {
+				for(i = (m - 1); i > -1; i--)
+				  {
+				    temp = alpha * B[i + (j * m)];
+				    for(k = (i + 1); k < m; k++)
+				      {
+					temp -= (A[k + (i * m)] * B[k + (j * m)]);
+				      }
+				    B[i + (j * m)] = temp;
+				  }
+			      }
+			  }
+		      }
 		  }
 	      }
 	    else // Side == R
 	      {
-		
+
 	      }
 	  }
       }
+    cout << endl;
   }
   
   template<typename OrdinalType, typename ScalarType>
@@ -785,6 +910,8 @@ namespace Teuchos
   {
     std::cout << "Warning: default BLAS::XERBLA() doesn't do anything!" << std::endl;
   }
+
+#if 0
 
   template<typename OrdinalType>
   class BLAS<OrdinalType, float>
@@ -869,6 +996,8 @@ namespace Teuchos
   template<typename OrdinalType>
   void BLAS<OrdinalType, float>::XERBLA(char xerbla_arg, int info)
   { XERBLA_F77(&xerbla_arg, &info); }
+
+#endif
 
   template<typename OrdinalType>
   class BLAS<OrdinalType, double>

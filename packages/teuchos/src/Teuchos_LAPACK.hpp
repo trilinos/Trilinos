@@ -1,8 +1,3 @@
-/*Paul
-27-May-2002 General cleanup. Changed method names to fit namingConvention (nothing changed).
-06-August-2002 Changed to images (nothing changed).
-*/
-
 // Kris
 // 06.11.03 -- Format cleanup
 // 06.13.03 -- Initial templatization (Tpetra_LAPACK.cpp is no longer needed)

@@ -1,6 +1,8 @@
 // Kris
 // 07.08.03 -- Move into Teuchos package/namespace
 
+// Currently, support for Arbitrary and sublist (ParameterList) parameters has been disabled. I have been experiencing difficulty using pointer Entries as the data in the <key, data> pair in the STL map class.
+
 #include <complex>
 #include <iostream>
 #include <map>
@@ -133,13 +135,10 @@ ParameterList::ParameterList(const ParameterList &Source)
   StringMap = Source.StringMap;
 //   ArbitraryMap = Source.ArbitraryMap;
 //   ParameterListMap = Source.ParameterListMap;
-
-  std::cout << "copy constructor!!" << std::endl;
 }
 
 ParameterList & ParameterList::operator= (const ParameterList &Source)
 {
-  std::cout << "operator=!!!" << std::endl;
   if(this != &Source)
     {
       CharMap = Source.CharMap;
@@ -321,7 +320,6 @@ float ParameterList::GetParameter(std::string name, float nominal)
 template<>
 int ParameterList::GetParameter(std::string name, int nominal)
 {
-  cout << "GetParameter!!" << endl;
   int result = nominal;
   std::map<std::string, Entry<int> >::iterator findIter = IntMap.find(name);
   if(findIter != IntMap.end())

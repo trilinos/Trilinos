@@ -1,7 +1,3 @@
-/*Paul
-19-Nov-2002 PacketTraits written, based on ScalarTraits form
-*/
-
 #ifndef _TEUCHOS_PACKETTRAITS_HPP_
 #define _TEUCHOS_PACKETTRAITS_HPP_
 
