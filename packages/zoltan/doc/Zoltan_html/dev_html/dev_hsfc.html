@@ -33,12 +33,14 @@
 <H3>
 Outline of Algorithm</H3>
 
-This partitioning algorithm is based on the 2D & 3D Hilbert tables used in Octree
+This partitioning algorithm is loosely based on the 2D & 3D Hilbert tables used in Octree
 and on the BSFC partitioning implementation by Andrew C. Bauer, Department of
 Engineering, State University of New York at Buffalo, as his summer project at 
 SNL in 2001.  Please refer to the corresponding section in the Zoltan User's guide,
 <a href="../ug_html/ug_alg_hsfc.html"><b>Hilbert Space Filling Curve (HSFC),</b></a>
-for information about how to use this module and its parameters.
+for information about how to use this module and its parameters. Note: the partitioning,
+point assign and box assign functions in this code module can be trivially extended
+to any space filling curve for which we have a state table definition of the curve.
 <p>
 First, the weights and inverse Hilbert coordinates for each object
 are determined. If the objects do not have weights, unit weights are assigned.
@@ -205,6 +207,10 @@ original bounding box.  The box vertices are scaled and projected exactly like t
 in the Point Assign function described above.  However, to allow the search to use a proper
 volumn, projected points, lines, and planes are converted to a usable volume by the
 fuzzy region process described above.
+<p>
+This algorithm will work for any space filling curve.  All that is necessary is to
+provide the tables (derieved from the curve's state transition diagram) in place of
+the Hilbert Space Filling Curve tables.
 
 <p>
 

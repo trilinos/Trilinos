@@ -28,10 +28,14 @@
 
 <h2>
 <a NAME="HSFC"></a>Hilbert Space Filling Curve (HSFC)</h2>
-This partitioning algorithm is based on the 2D & 3D Hilbert tables used in the Octree
+This partitioning algorithm is loosely based on the 2D & 3D Hilbert tables used in the Octree
 partitioner and on the BSFC partitioning implementation by Andrew C. Bauer, Department
 of Engineering, State University of New York at Buffalo, as his summer project at SNL
-in 2001.
+in 2001.  The box assign algorithm is loosely based on the papers by Lawder referenced both
+in the developers guide and the code itself.  NOTE: This code can be trivially extended to
+any space filling curve by providing the tables implimenting the curve's state transition
+diagram.  The only dependance on the curve is through the tables and the box assign
+algorithm will work for all space filling curves (if we have their tables.)
 <p>
 The Inverse Hilbert Space-Filling Curve functions map a point in one, two or three dimensions
 into the interval [0,1].  The Hilbert functions that map [0, 1] to normal spatial
@@ -149,7 +153,7 @@ or <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
 </table>
 
 <p>
-<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; |
 <a href="ug_alg_reftree.html">Next:&nbsp; Refinement Tree Partitioning</a>
 |&nbsp; <a href="ug_alg_rib.html">Previous:&nbsp; Recursive Inertial Bisection</a>]
 </body>
