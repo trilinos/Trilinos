@@ -30,7 +30,16 @@
 #    define FORTRAN_CHAR_1_ARG(ARG_NAME) char* ARG_NAME
 #    define FORTRAN_CONST_CHAR_1_ARG(ARG_NAME) const char* ARG_NAME
 
-#  endif 
+#  else
+
+#    define F77_CALL_PREFIX
+#    define FORTRAN_CHAR_1_ARG(ARG_NAME) char* ARG_NAME
+#    define FORTRAN_CONST_CHAR_1_ARG(ARG_NAME) const char* ARG_NAME
+
+#  endif
+
+/* RAB: 20030924: ToDo: Find a way to see if const is supported or not by C or
+   just decide that this will only be for C++ code and be done with it. */
 
 #endif
 
