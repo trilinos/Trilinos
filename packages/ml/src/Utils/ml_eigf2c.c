@@ -13,8 +13,6 @@
 #define TRUE_ (1)
 #include "ml_eigf2c.h"
 
-#define HAVE_ML_PARPACK
-
 int ml_pdmout__(int *comm, int *lout, int *m, int *n, double *a, 
 		  int *lda, int *idigit)
 {
@@ -33,11 +31,12 @@ int ml_pdmout__(int *comm, int *lout, int *m, int *n, double *a,
 nd direct residuals", (ftnlen)44);
 
 #else
-    
+#ifdef HAVE_ML_ARPACK    
     dmout_(lout, m, n, &a[a_offset], lda, idigit, "Ritz values (Real,Imag) a\
 nd direct residuals", (ftnlen)44);
    
        
+#endif
 #endif
     
     return 0;
@@ -115,7 +114,7 @@ int ml_pdneupc__(int *comm,
     printf("\n\t\t Parallel arpack iterations\n"); 
     
 #else
-    
+#ifdef HAVE_ML_ARPACK    
     
     dneupd_(&rvec, "A", select, &d__[1], &d__[*ncv + 1], &v[v_offset], ldv, &
 	    sigma, &mu, &workev[1], bmat, n, which, nev, tol, &resid[1], ncv, 
@@ -124,6 +123,7 @@ int ml_pdneupc__(int *comm,
    
     printf("\n\t\t Serial arpack iterations\n"); 
 
+#endif
 #endif
 
     ML_free(select);
