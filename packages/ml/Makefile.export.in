@@ -1,0 +1,90 @@
+##########################################################################
+#
+# Modified from TSFExtended/Makefile.export.in
+#
+# Macro definitions to be exported from ML to clients.
+# 
+# To link with everything required by ml, simply add 
+# $(ML_EXPORT_LIBS) to the linker command line in your Makefile.
+#
+##########################################################################
+
+
+ML_EXPORT_LIBS = -L$(ML_BUILD_DIRECTORY)/src -lml \
+                  -L$(AZTECOO_BUILD_DIRECTORY)/src  -laztecoo \
+                  -L$(IFPACK_BUILD_DIRECTORY)/src  $(IFPACK_LIBS) \
+                  -L$(AMESOS_BUILD_DIRECTORY)/src  $(AMESOS_LIBS) \
+                  -L$(EPETRA_BUILD_DIRECTORY)/src  -lepetra \
+                  -L$(TEUCHOS_BUILD_DIRECTORY)/src  $(TEUCHOS_LIBS)
+
+##########################################################################
+# Set the absolute path to the ml build directory
+##########################################################################
+
+ML_BUILD_DIRECTORY = @ML_BUILD_DIRECTORY@
+
+
+##########################################################################
+# Using the absolute location of ml's build directory as
+# a reference point, get the paths to the other build directories.
+##########################################################################
+
+TEUCHOS_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../teuchos
+
+EPETRA_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../epetra
+
+IFPACK_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../ifpack
+
+AZTECOO_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../aztecoo
+
+AMESOS_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../amesos
+
+ML_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../ml
+
+
+
+##########################################################################
+# Decide whether to link with Amesos, Teuchos, or Ifpack libraries
+##########################################################################
+
+HAVE_ML_IFPACK = @HAVE_ML_IFPACK@
+ifeq ($(HAVE_ML_IFPACK),true)
+IFPACK_LIBS = libifpack.a
+else
+IFPACK_LIBS =
+endif
+
+HAVE_ML_TEUCHOS = @HAVE_ML_TEUCHOS@
+ifeq ($(HAVE_ML_TEUCHOS),true)
+TEUCHOS_LIBS = libteuchos.a
+else
+TEUCHOS_LIBS =
+endif
+
+HAVE_ML_AMESOS = @HAVE_ML_AMESOS@
+ifeq ($(HAVE_ML_AMESOS),true)
+AMESOS_LIBS = libamesos.a
+#amesos depends on teuchos
+TEUCHOS_LIBS = libteuchos.a
+else
+AMESOS_LIBS = 
+endif
+
+##########################################################################
+#
+# Macro definitions to be exported from ml to non-Trilinos clients.
+#
+# It is assumed that the client's configuration sets the macro 
+# TRILINOS_DIR to the Trilinos installation directory. 
+#
+# In order for these include and lib paths to be valid, 
+# Trilinos needs to be installed with "make install" so that
+# the libraries and headers are put in $(TRILINOS_DIR)/lib and 
+# $(TRILINOS_DIR)/include, respectively. 
+#
+##########################################################################
+
+TRILINOS_INCLUDES = -I$(TRILINOS_DIR)/include
+
+TRILINOS_LIBS = -L$(TRILINOS_DIR)/lib $(ML_EXPORT_LIBS)
+
