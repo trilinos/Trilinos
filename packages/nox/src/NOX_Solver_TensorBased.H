@@ -320,7 +320,7 @@ protected:
   //! Performs a standard tensor linesearch (tensor or Newton direction)
   bool performLinesearch(NOX::Abstract::Group& newsoln,
 			 double& step,
-			 const NOX::Abstract::Vector& dir,
+			 const NOX::Abstract::Vector& lsDir,
 			 const NOX::Solver::Generic& s);
 
   //! Compute the residual norm of the local model

@@ -467,7 +467,7 @@ void NOX::Solver::TensorBased::printUpdate()
   }
 
   // All processes participate in the computation of these norms...
-  if (utils.isPrintType(NOX::Utils::InnerIteration))
+  if (utils.isPrintType(NOX::Utils::OuterIteration))
   {
     normSoln = solnPtr->getNormF();
     normStep = (nIter > 0) ? tensorVec.norm() : 0;
@@ -485,7 +485,7 @@ void NOX::Solver::TensorBased::printUpdate()
       cout << " (Converged!)";
     if (status == NOX::StatusTest::Failed)
       cout << " (Failed!)";
-    cout << "\n" << Utils::fill(72) << "\n" << endl;
+    cout << "\n" << NOX::Utils::fill(72) << "\n" << endl;
   }
 
   // Print the final parameter values of the status test
@@ -855,6 +855,7 @@ NOX::Solver::TensorBased::implementGlobalStrategy(NOX::Abstract::Group& newGrp,
   else if (lsType == Dual)
   {
     double fTensor;
+    double fNew;
     double tensorStep;
     bool isTensorDescent = false;
 
@@ -872,10 +873,10 @@ NOX::Solver::TensorBased::implementGlobalStrategy(NOX::Abstract::Group& newGrp,
 
     // Backtrack along the Newton direction.
     ok = performLinesearch(newGrp, step, newtonVec, s);
-    double fNew = 0.5 * newGrp.getNormF() * newGrp.getNormF();
+    fNew = 0.5 * newGrp.getNormF() * newGrp.getNormF();
 
     // If backtracking on the tensor step produced a better step, then use it.
-    if (isTensorDescent  &&  (fTensor < fNew))
+    if (isTensorDescent  &&  (fTensor <= fNew))
     {
       newGrp.computeX(oldGrp, tensorVec, tensorStep);
       newGrp.computeF();    
@@ -889,7 +890,7 @@ NOX::Solver::TensorBased::implementGlobalStrategy(NOX::Abstract::Group& newGrp,
 bool
 NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
 					    double& step,
-					    const NOX::Abstract::Vector& dir,
+					    const NOX::Abstract::Vector& lsDir,
 					    const NOX::Solver::Generic& s)
 {
   if (print.isPrintProcessAndType(NOX::Utils::InnerIteration))
@@ -922,7 +923,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
 
   // Compute first trial point and its function value
   step = defaultStep;
-  newSoln.computeX(oldSoln, dir, step);
+  newSoln.computeX(oldSoln, lsDir, step);
   newSoln.computeF();    
   double fNew = 0.5 * newSoln.getNormF() * newSoln.getNormF();  
 
@@ -938,7 +939,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
   if ((lsType == Curvilinear)  &&  !(isNewtonDirection)) 
     fprime = slopeObj.computeSlope(newtonVec, oldSoln);
   else 
-    fprime = slopeObj.computeSlope(dir, oldSoln);
+    fprime = slopeObj.computeSlope(lsDir, oldSoln);
   numJvMults++;  // computeSlope() has J*v inside of it
   
   // Compute the convergence criteria for the line search 
@@ -949,7 +950,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
   if (!isAcceptable)
   { 
     counter.incrementNumNonTrivialLineSearches();
-    tmpVec = dir;
+    tmpVec = lsDir;
   }
 
   // Iterate until the trial point is accepted....
@@ -966,7 +967,10 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
     print.printStep(lsIterations, step, fOld, fNew);
 
     // Is the full tensor step a descent direction?  If not, switch to Newton
-    if ((!isNewtonDirection) && (isFirstPass && fprime >= 0))
+    if (isFirstPass &&
+	(!isNewtonDirection) &&
+	(fprime >= 0) &&
+	(lsType != Curvilinear) )
     {
       tmpVec = newtonVec;
       fprime = slopeObj.computeSlope(tmpVec, oldSoln);
@@ -1030,11 +1034,20 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
       }
       else
       {
-	// Update the group using Newton direction and recovery step
-	newSoln.computeX(oldSoln, newtonVec, step);
+	// Update the group using recovery step
+	if ((lsType == Curvilinear) && !(isNewtonDirection))
+	{
+	  bool ok = computeCurvilinearStep(tmpVec, oldSoln, s, step);
+	  // Note: oldSoln is needed above to get correct preconditioner 
+	  newSoln.computeX(oldSoln, tmpVec, 1.0);
+	}
+	else
+	{
+	  newSoln.computeX(oldSoln, tmpVec, step);
+	}
+	//newSoln.computeX(oldSoln, lsDir, step);
 	newSoln.computeF();
 	fNew = 0.5 * newSoln.getNormF() * newSoln.getNormF();
-	
 	message = "(USING RECOVERY STEP!)";
       }
     }
