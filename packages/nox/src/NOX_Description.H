@@ -100,9 +100,9 @@ Discussion forum for NOX developers. (Developers)
 CVS Commit Message (Active  Developers)
 </ul>
 
-\section contributors APPSPACK Contributors
+\section contributors NOX Contributors
 
-The following people have contributed code to APPSPACK:
+The following people have contributed code to NOX:
 
 <ul>
 <li> Russ Hooper, Sandia National Labs, rhoope@sandia.gov
