@@ -160,6 +160,13 @@ struct ML_Sm_Hiptmair_Data_Struct
    int   reduced_smoother;
 };
 
+#define FULL_HIPTMAIR 0  
+             /* smoothes on edges, nodes and then edges */
+
+#define HALF_HIPTMAIR 1
+             /* smoothes on edges then node for pre-smoothing */
+             /* smoothes on nodes then edges fr post-smoothing */
+
 /* for block hiptmair */
 
 struct ML_Sm_BlockHiptmair_Data_Struct
