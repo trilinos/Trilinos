@@ -145,6 +145,9 @@ int read_exoII_file(int Proc,
     return 0;
   }
 
+  mesh->hindex = (int) malloc(sizeof(int));
+  mesh->hindex[0] = 0;
+
   if (ex_get_elem_blk_ids(pexoid, mesh->eb_ids) < 0) {
     Gen_Error(0, "fatal: Error returned from ex_get_elem_blk_ids");
     return 0;

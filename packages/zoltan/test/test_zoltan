@@ -168,6 +168,7 @@ if (! $?run ) then
     case gccP3:
     case g++:
     case linux:
+    case mac:
     case purecov:
     case solaris:
     case sun:

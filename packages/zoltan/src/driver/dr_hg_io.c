@@ -319,8 +319,7 @@ static int dist_hyperedges(
   int     **hgid,		/* global hyperedge numbers */
   int     **hindex,		/* Starting hvertex entry for hyperedges */
   int     **hvertex,		/* Array of vertices in hyperedges; returned
-                                   values are local IDs for owned vertices,
-                                   global IDs for off-proc vertices. */
+                                   values are global IDs for vertices */
   int     **hvertex_proc,	/* Array of processor assignments for 
                                    vertices in hvertex.  */
   int     *hewgt_dim,           /* number of weights per hyperedge */
@@ -342,8 +341,6 @@ int *size = NULL, *num_send = NULL;
 int **send = NULL;
 int *send_hgid = NULL, *send_hindex = NULL; 
 int *send_hvertex = NULL, *send_hvertex_proc = NULL;
-int *local_ids = NULL, *vtx_list = NULL;
-int num_vtx, max_vtx, min_vtx;
 int max_size, max_num_send;
 int hcnt[2];
 int hecnt, hvcnt;
@@ -364,9 +361,6 @@ int num_dist_procs;
   else
     /* Reset num_dist_procs if not set validly by input */
     num_dist_procs = nprocs;
-
-  chaco_init_local_ids(&local_ids, &vtx_list, &min_vtx, &max_vtx, &num_vtx,
-                       gnvtxs, assignments, base);
 
   /* Broadcast to all procs */
   MPI_Bcast( hewgt_dim, 1, MPI_INT, host_proc, comm);
@@ -397,20 +391,17 @@ int num_dist_procs;
 
     /* Determine to which processors hyperedges should be sent */
     for (h = 0; h < *gnhedges; h++) {
-      for (i = old_hindex[h]; i < old_hindex[h+1]; i++) {
-        if (pio_info->init_dist_type == INITIAL_CYCLIC)  
-          p = h % num_dist_procs;
-        else if (pio_info->init_dist_type == INITIAL_LINEAR) 
-          p = (int) ((float) (h * num_dist_procs) / (float)(*gnhedges));
-        else if (pio_info->init_dist_type == INITIAL_OWNER) 
-          p = ch_dist_proc(old_hvertex[i], assignments, base);
+      if (pio_info->init_dist_type == INITIAL_CYCLIC)  
+        p = h % num_dist_procs;
+      else if (pio_info->init_dist_type == INITIAL_LINEAR) 
+        p = (int) ((float) (h * num_dist_procs) / (float)(*gnhedges));
+      else if (pio_info->init_dist_type == INITIAL_OWNER) 
+        p = ch_dist_proc(old_hvertex[old_hindex[h]], assignments, base);
+      size[p] += (old_hindex[h+1] - old_hindex[h]);
+      num_send[p]++;
+      send[p][h] = 1;
+      for (i = old_hindex[h]; i < old_hindex[h+1]; i++) 
         old_hvertex_proc[i] = ch_dist_proc(old_hvertex[i], assignments, base);
-        if (send[p][h] == 0) {
-          size[p] += (old_hindex[h+1] - old_hindex[h]);
-          num_send[p]++;
-          send[p][h] = 1;
-        }
-      }
     }
 
     /* Determine size of send buffers and allocate them. */
@@ -493,10 +484,7 @@ int num_dist_procs;
         hecnt++;
         for (i = old_hindex[h]; i < old_hindex[h+1]; i++) {
           (*hvertex_proc)[hvcnt] = old_hvertex_proc[i];
-          if (old_hvertex_proc[i] == myproc)
-            (*hvertex)[hvcnt] = local_ids[old_hvertex[i] - base - min_vtx];
-          else
-            (*hvertex)[hvcnt] = old_hvertex[i];  /* Global index */
+          (*hvertex)[hvcnt] = old_hvertex[i];  /* Global index */
           hvcnt++;
         }
       }
@@ -527,14 +515,7 @@ int num_dist_procs;
     if (*hewgt_dim)
       MPI_Recv(*hewgts, hcnt[0]* *hewgt_dim, MPI_FLOAT, host_proc, 6, comm, 
                &status);
-
-    for (i = 0; i < (*hindex)[*nhedges]; i++)
-      if ((*hvertex_proc)[i] == myproc)
-        (*hvertex)[i] = local_ids[(*hvertex)[i]-base-min_vtx];
   }
-
-  safe_free((void **) &local_ids);
-  safe_free((void **) &vtx_list);
 
   DEBUG_TRACE_END(myproc, yo);
   return 1;

@@ -54,6 +54,7 @@ extern "C" {
 #include "dr_output_const.h"
 #include "dr_elem_util_const.h"
 #include "dr_maps_const.h"
+#include "dr_dd.h"
 
 /*
  *  PROTOTYPES for load-balancer interface functions.
@@ -588,6 +589,14 @@ int adj_elem;
 
   if (!build_elem_comm_maps(proc, mesh)) {
     Gen_Error(0, "Fatal: error rebuilding elem comm maps");
+  }
+
+  if (mesh->data_type == HYPERGRAPH && !update_elem_dd(mesh)) {
+    Gen_Error(0, "Fatal: error updating element dd");
+  }
+
+  if (!update_hvertex_proc(mesh)) {
+    Gen_Error(0, "Fatal: error updating hyperedges");
   }
 
   if (Debug_Driver > 3)

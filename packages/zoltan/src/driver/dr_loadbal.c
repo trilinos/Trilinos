@@ -44,7 +44,6 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 #include "ch_init_dist_const.h"
 
 static int Num_GID = 1, Num_LID = 1;
-static PARIO_INFO_PTR Pio_Info_For_Callbacks;
 static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,
    struct Zoltan_Struct *);
 
@@ -455,8 +454,6 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 /***************************** BEGIN EXECUTION ******************************/
 
   DEBUG_TRACE_START(Proc, yo);
-
-  Pio_Info_For_Callbacks = pio_info;
 
   if (Driver_Action & 1){
 
@@ -1328,27 +1325,9 @@ int tmp;
   mesh = (MESH_INFO_PTR) data;
   *ierr = ZOLTAN_OK;
 
-#define KDD_UNIQUE_EDGES    
-/* Temporary; later Zoltan will remove duplicates */
-#ifdef KDD_UNIQUE_EDGES 
-  if (Pio_Info_For_Callbacks->init_dist_type == INITIAL_OWNER) { 
-    int i;
-    int Proc;
-    MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
-    /* Each hyperedge is reported to Zoltan only once.
-     * Report edges for which this proc owns the first vertex 
-     */ 
-    tmp = 0;
-    for (i = 0; i < mesh->nhedges; i++)
-      if (mesh->hvertex_proc[mesh->hindex[i]] == Proc) tmp++;
-  }
-  else
-#endif
-  tmp = mesh->nhedges;
-
   STOP_CALLBACK_TIMER;
 
-  return tmp;
+  return mesh->nhedges;
 }
 
 /*****************************************************************************/
@@ -1372,28 +1351,9 @@ int get_num_hg_pins(
 
   *ierr = ZOLTAN_OK;
 
-#ifdef KDD_UNIQUE_EDGES
-  if (Pio_Info_For_Callbacks->init_dist_type == INITIAL_OWNER) { 
-    int i;
-    int Proc;
-    MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
-    /* Each hyperedge is reported to Zoltan only once. 
-     * Report pins for edges for which this proc owns the first vertex 
-     */
-
-    tmp = 0;
-    for (i = 0; i < mesh->nhedges; i++)
-      if (mesh->hvertex_proc[mesh->hindex[i]] == Proc) 
-        tmp += mesh->hindex[i+1] - mesh->hindex[i];
-  }
-  else
-#endif
-
-  tmp = mesh->hindex[mesh->nhedges];
-
   STOP_CALLBACK_TIMER;
 
-  return tmp;
+  return mesh->hindex[mesh->nhedges];
 }
 
 /*****************************************************************************/
@@ -1431,29 +1391,18 @@ int get_hg_edge_list(
 
   mesh = (MESH_INFO_PTR) data;
   hindex = mesh->hindex;
-#ifndef KDD_UNIQUE_EDGES
   if (nedges != mesh->nhedges) {
     ierr = ZOLTAN_FATAL;
     goto End;
   }
-#endif
 
   pcnt = ecnt = 0;
   for (i = 0; i < mesh->nhedges; i++) {
-#ifdef KDD_UNIQUE_EDGES
-    if (Pio_Info_For_Callbacks->init_dist_type == INITIAL_OWNER) 
-      if (mesh->hvertex_proc[mesh->hindex[i]] != Proc) 
-        continue;
-#endif
     tmp = hindex[i+1] - hindex[i];
     edge_sizes[ecnt] = tmp;
     for (j = hindex[i]; j < hindex[i+1]; j++) {
       edge_procs[pcnt] = mesh->hvertex_proc[j];  
-      if (edge_procs[pcnt] == Proc)
-        edge_verts[gid+pcnt*num_gid_entries] = 
-                                     mesh->elements[mesh->hvertex[j]].globalID;
-      else
-        edge_verts[gid+pcnt*num_gid_entries] = mesh->hvertex[j];
+      edge_verts[gid+pcnt*num_gid_entries] = mesh->hvertex[j];
       pcnt++;
     }
     for (j = 0; j < ewgt_dim; j++) {

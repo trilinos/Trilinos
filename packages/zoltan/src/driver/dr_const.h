@@ -102,6 +102,7 @@ typedef struct Element_Description *ELEM_INFO_PTR;
 /* Structure used to store information about the mesh */
 struct Mesh_Description
 {
+  struct Zoltan_DD_Struct *dd;  /* Distributed directory for elt globalIDs */
   enum DATA_TYPE data_type;     /* Type of data stored in this data structure,
                                    based on input file type.
                                    Valid types are MESH, GRAPH, or HYPERGRAPH.*/
@@ -154,9 +155,7 @@ struct Mesh_Description
                                    hvertex for that hyperedge.               */ 
   int    *hvertex;              /* for hypergraphs, an array listing the 
                                    vertices making up each hyperedge.
-                                   If the vertex is local, the local ID (index
-                                   into elements array) is stored; otherwise,
-                                   the global ID is stored.        */
+                                   Global IDs are always stored. */
   int    *hvertex_proc;         /* array listing the processor owning vertices
                                    in hvertex. */
   float  *hewgts;               /* for hypergraphs, an array of hyperedge

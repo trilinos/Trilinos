@@ -44,6 +44,7 @@ extern "C" {
 #include "dr_output_const.h"
 #include "dr_err_const.h"
 #include "dr_elem_util_const.h"
+#include "dr_dd.h"
 
 int Debug_Driver = 1;
 int Number_Iterations = 1;
@@ -212,13 +213,25 @@ int main(int argc, char *argv[])
      * This is the only function call to do this. Upon return,
      * the mesh struct and the elements array should be filled.
      */
-    if (iteration == 1)
+    if (iteration == 1) {
       if (!read_mesh(Proc, Num_Proc, &prob, &pio_info, &mesh)) {
         Gen_Error(0, "fatal: Error returned from read_mesh\n");
         error_report(Proc);
         print_output = 0;
         goto End;
       }
+      /* 
+       *  Create a Zoltan DD for tracking elements during repartitioning.
+       */
+
+      if (mesh.data_type == HYPERGRAPH && !build_elem_dd(&mesh)) {
+        Gen_Error(0, "fatal: Error returned from build_elem_dd\n");
+        error_report(Proc);
+        print_output = 0;
+        goto End;
+      }
+    }
+
 
 #ifdef KDDKDD_COOL_TEST
 /* KDD Cool test of changing number of partitions  */
@@ -281,6 +294,7 @@ int main(int argc, char *argv[])
 
 End:
   Zoltan_Destroy(&zz);
+  if (mesh.dd) Zoltan_DD_Destroy(&(mesh.dd));
 
   Zoltan_Memory_Stats();
 
@@ -387,6 +401,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
 {
 /* Initializes mesh variables */
 
+  mesh->dd = NULL;
   mesh->data_type = MESH;
   mesh->num_elems = mesh->num_nodes
                   = mesh->num_dims
