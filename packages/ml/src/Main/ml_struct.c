@@ -21,6 +21,13 @@
 #ifdef ML_MPI
 #include "mpi.h"
 #endif
+#ifdef HAVE_ML_ANASAZI
+extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
+					       int MaxIters, double Tolerance,
+					       int IsProblemSymmetric,
+					       int UseDiagonalScaling,
+					       double * LambdaMax );
+#endif
 
 /* ************************************************************************* *
  * Structure to hold user-selected ML output level.                          *
@@ -2028,7 +2035,20 @@ int ML_Gimmie_Eigenvalues(ML_Operator *Amat, int scale_by_diag,
      kdata = ML_Krylov_Create( Amat->comm );
      if (scale_by_diag == 0) ML_Krylov_Set_DiagScaling_Eig(kdata, 0);
      if (matrix_is_nonsymmetric && (symmetrize_matrix == 0))
+#ifdef HAVE_ML_ANASAZI
+       /* Ray, this is how the function is organized:
+	  - 10 is the maximum number of iterations
+	  - 1e10 a tolerance
+	  - ML_FALSE because the problem is non-symmetric
+	  - ML_TRUE because you want diagonal scaling
+	  (the function is in ml_anasazi.cpp)
+       */
+       ML_Anasazi_Get_SpectralNorm_Anasazi(Amat,10,1e-10,
+					   ML_FALSE, ML_TRUE,
+					   &(Amat->lambda_max) );
+#else
        ML_Krylov_Set_ComputeNonSymEigenvalues( kdata );
+#endif
      else 
        ML_Krylov_Set_ComputeEigenvalues( kdata );
 
