@@ -37,14 +37,15 @@ CFLAGS=$(ARCH_FLAGS) $(DEFINES) $(INCLUDES)
 
 ML_C = ml_ggraph.c       ml_aggregate.c    ml_agg_genP.c \
        ml_agg_MIS.c      ml_agg_coupled.c  ml_agg_uncoupled.c \
-       ml_agg_dd.c       ml_check.c
+       ml_agg_dd.c       ml_check.c        ml_amg_genP.c \
+       ml_amg.c          ml_amg_MIS.c
 
 #=======================================================================
 # ML include files
 #=======================================================================
 
 ML_INC = ml_ggraph.h         ml_aggregate.h      ml_agg_genP.h\
-	 ml_check.h 
+	 ml_check.h          ml_amg.h
 
 #=======================================================================
 # copy object files to library directory
@@ -114,6 +115,21 @@ ml_agg_dd.o : ml_agg_dd.c ml_aggregate.h ../Comm/ml_comm.h \
         ../Comm/ml_comminfoop.h ../Include/ml_defs.h ../Operator/ml_operator.h\
         ../Operator/ml_mat_formats.h ../Utils/ml_memory.h
 	@$(CC) -c $(CFLAGS) ml_agg_dd.c -o $@
+
+ml_amg.o : ml_amg.c ml_amg.h ../Comm/ml_comm.h \
+             ../Include/ml_defs.h ../Utils/ml_lapack.h ../Utils/ml_memory.h\
+             ../Operator/ml_operator.h
+	@$(CC) -c $(CFLAGS) ml_amg.c -o $@
+
+ml_amg_MIS.o : ml_amg_MIS.c ml_amg.h ../Comm/ml_comm.h \
+             ../Include/ml_defs.h ../Utils/ml_lapack.h ../Utils/ml_memory.h\
+             ../Operator/ml_operator.h
+	@$(CC) -c $(CFLAGS) ml_amg_MIS.c -o $@
+
+ml_amg_genP.o : ml_amg_genP.c ml_amg.h ../Comm/ml_comm.h \
+             ../Include/ml_defs.h ../Utils/ml_lapack.h ../Utils/ml_memory.h\
+             ../Operator/ml_operator.h
+	@$(CC) -c $(CFLAGS) ml_amg_genP.c -o $@
 
 #=======================================================================
 
