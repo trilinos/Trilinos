@@ -855,7 +855,7 @@ report($SUMMARY);
         
         # link to MIME::Lite module
         if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
-            use lib "/home/jmwille/Trilinos/testharness/lib/MIME-Lite-3.01/lib";     # cvs checkin MIME::Lite
+            use lib "./lib/MIME-Lite-3.01/lib";     # cvs checkin MIME::Lite
             use MIME::Lite;                         # might need Net::SMTP
         }
         
