@@ -24,6 +24,13 @@ extern "C" {
  *           for example, vertex numbers.
  *   value - key values (floats) by which the heap are arranged.
  *           Not in (heap) arranged order.
+ *
+ * EBEB: Idea for saving memory: Typically, the value array is stored
+ * both in the application and a copy within the heap. We could
+ * let the heap use an external array, or alternatively, make the
+ * (internal) heap array visible to the application. Both approaches are
+ * dangerous because the application developer must take care to ensure
+ * the heap is properly updated when values change.
  */
 
 
@@ -31,8 +38,11 @@ extern "C" {
 static void heapify (HEAP*, int);
 
 
+/* Inititializes the heap values and allocates space. */
+/* Currently, we allocate space for as many heap entries as */
+/* the range of the input elements. These two parameters may be */
+/* decoupled in the future. */
 
-/* Inititializes the heap values and allocates space */
 int Zoltan_HG_heap_init (ZZ *zz, HEAP *h, int space)
 {
 char *yo = "Zoltan_HG_heap_init";
