@@ -50,7 +50,6 @@ set no_nemesis = $?ZOLTAN_NO_NEMESIS
 set no_rcb = $?ZOLTAN_NO_RCB
 set no_rib = $?ZOLTAN_NO_RIB
 set no_hsfc = $?ZOLTAN_NO_HSFC
-set no_bsfc = $?ZOLTAN_NO_BSFC
 set no_oct = $?ZOLTAN_NO_OCT
 set no_parmetis = $?ZOLTAN_NO_PARMETIS
 set yes_jostle = $?ZOLTAN_YES_JOSTLE
@@ -73,8 +72,6 @@ while ( $#argv )
      @ no_rib = 1
   else if ( "$1" == "-no_hsfc" ) then
      @ no_hsfc = 1
-  else if ( "$1" == "-no_bsfc" ) then
-     @ no_bsfc = 1
   else if ( "$1" == "-no_oct" ) then
      @ no_oct = 1
   else if ( "$1" == "-no_parmetis" ) then
@@ -270,9 +267,6 @@ if ( $yes_fortran ) then
     set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
     set ch_methods = ( $ch_methods hsfc-partlocal6 hsfc-partlocal7 )
   endif
-  if (! $no_bsfc) then
-    set ch_methods = ( $ch_methods bsfc )
-  endif
   if (! $no_oct) then
     set ch_methods = ( $ch_methods oct0 oct1 oct2 )
   endif
@@ -343,10 +337,6 @@ else
     set nem_methods = ( $nem_methods hsfc-partlocal1 hsfc-partlocal2 )
     set nem_methods = ( $nem_methods hsfc-partlocal3 hsfc-partlocal4 )
     set nem_methods = ( $nem_methods hsfc-partlocal6 hsfc-partlocal7 )    
-  endif
-  if (! $no_bsfc) then
-    set ch_methods = ( $ch_methods bsfc )
-    set nem_methods = ( $nem_methods bsfc )
   endif
   if (! $no_oct) then
     set ch_methods = ( $ch_methods oct0 oct1 oct2 )
@@ -679,7 +669,6 @@ usage:
   echo "   -no_rcb"
   echo "   -no_rib"
   echo "   -no_hsfc"
-  echo "   -no_bsfc"
   echo "   -no_oct"
   echo "   -no_parmetis"
   echo "   -no_nemesis"

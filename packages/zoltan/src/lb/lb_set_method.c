@@ -120,21 +120,6 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Point_Assign = Zoltan_RB_Point_Assign;
     zz->LB.Box_Assign = Zoltan_RB_Box_Assign;
   }
-  else if (strcmp(method_upper, "BSFC") == 0) {
-#ifdef ZOLTAN_BSFC
-    zz->LB.Method = BSFC;
-    zz->LB.LB_Fn = Zoltan_BSFC;
-    zz->LB.Free_Structure = NULL;
-    zz->LB.Point_Assign = NULL;
-    zz->LB.Box_Assign = NULL;
-#else
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                       "BSFC method selected but not compiled into Zoltan; "
-                       "Compile with ZOLTAN_BSFC=1.");
-    error = ZOLTAN_FATAL;
-    goto End;
-#endif
-  }
   else if (strcmp(method_upper, "HSFC") == 0) {
     zz->LB.Method = HSFC;
     zz->LB.LB_Fn = Zoltan_HSFC;

@@ -77,7 +77,6 @@ endif
 ##############################################################################
 # Default values for inclusion of methods.
 ZOLTAN_HG = 1
-ZOLTAN_BSFC = 1
 ZOLTAN_OCT = 1
 
 GDEFINES	= 
@@ -193,16 +192,6 @@ OCT_CSRC	=
 OCT_INC		=
 endif
 
-ifdef ZOLTAN_BSFC
-BSFC_CSRC	= hilbert.c sfc.c sfc_create_info.c sfc_create_bins.c \
-		  sfc_refine_partition_level.c sfc_refine_overloaded_bins.c
-BSFC_INC	= hilbert_const.h sfc.h sfc_const.h
-GDEFINES       += -DZOLTAN_BSFC
-else
-BSFC_CSRC	=
-BSFC_INC	=
-endif
-
 HSFC_CSRC 	= hsfc_hilbert.c hsfc.c hsfc_box_assign.c hsfc_point_assign.c
 HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 
@@ -275,7 +264,7 @@ endif
 
 ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(THIRD_PARTY_INCPATH)
 ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
-		  $(ORDER_CSRC) $(OCT_CSRC) $(BSFC_CSRC) $(HSFC_CSRC) \
+		  $(ORDER_CSRC) $(OCT_CSRC) $(HSFC_CSRC) \
 		  $(PARAMS_CSRC) $(PARMETIS_CSRC) $(HG_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) $(THIRD_PARTY_CSRC)
 ZOLTAN_VPATH	= $(SUB_VPATH) $(THIRD_PARTY_VPATH)
@@ -463,10 +452,6 @@ zscript:
 	@echo "echo 'Zoltan:  Compiling Zoltan/oct'" >> zoltan_script
 	@for iii in $(OCT_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../oct/$$iii >> zoltan_script; \
-	 done;
-	@echo "echo 'Zoltan:  Compiling Zoltan/bsfc'" >> zoltan_script
-	@for iii in $(BSFC_CSRC) ; do \
-	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../bsfc/$$iii >> zoltan_script; \
 	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/hsfc'" >> zoltan_script
 	@for iii in $(HSFC_CSRC) ; do \

@@ -32,9 +32,6 @@ extern "C" {
 #include "timer_const.h"
 #include "ha_const.h"
 #include "rib_const.h"
-#ifdef ZOLTAN_BSFC
-#include "sfc_const.h"
-#endif
 #include "hsfc_const.h"
 #include "all_allo_const.h"
 #include "order_const.h"
@@ -56,9 +53,6 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
 #endif
        Zoltan_Reftree_Set_Param,
        Zoltan_RIB_Set_Param,
-#ifdef ZOLTAN_BSFC
-       Zoltan_BSFC_Set_Param,
-#endif
        Zoltan_HSFC_Set_Param,
        Zoltan_Order_Set_Param,
 #ifdef ZOLTAN_HG

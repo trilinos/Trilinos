@@ -57,7 +57,6 @@ typedef enum Zoltan_LB_Method {
   JOSTLE,
   REFTREE,
   RIB,
-  BSFC,
   HSFC,
   HG,
   ZOLTAN_LB_MAX_METHODS          /*  This entry should always be last.      */
@@ -247,7 +246,6 @@ extern ZOLTAN_LB_FN Zoltan_ParMetis;
 extern ZOLTAN_LB_FN Zoltan_Jostle;
 extern ZOLTAN_LB_FN Zoltan_Reftree_Part;
 extern ZOLTAN_LB_FN Zoltan_RIB;
-extern ZOLTAN_LB_FN Zoltan_BSFC;
 extern ZOLTAN_LB_FN Zoltan_HSFC;
 extern ZOLTAN_LB_FN Zoltan_HG;
 
