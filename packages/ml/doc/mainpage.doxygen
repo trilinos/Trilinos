@@ -54,6 +54,8 @@ cumbersome aspects of generating an entirely new parallel algebraic multigrid
 code. We have used these flexibility to produce special multilevel methods using
 coarse grid finite element functions to serve as inter-grid transfers.
 
+A user-friendly, MATLAB-like interface to ML, called MLAPI, is under development.
+
 ML has been used within a number of applications at Sandia and a few applications
 outside of Sandia. ML is released for external distribution and can be obtained as
 part of the Trilinos development environment. 
@@ -666,7 +668,6 @@ existence of \c MLPrec.
 
   // solve with AztecOO
   solver.Iterate(500, 1e-5);
-\endcode
 
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
