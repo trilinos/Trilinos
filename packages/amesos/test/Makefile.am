@@ -205,11 +205,12 @@ SpoolesScript$(EXEEXT): $(srcdir)/SpoolesScript
 
 
 
-SRC_CXX =  $(srcdir)/SparseDirectTimingVars.cpp $(srcdir)/SparseSolverResult.cpp \
-	$(srcdir)/Comm_assert_equal.cpp $(srcdir)/Trilinos_Util_CountTriples.cpp \
-	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp \
-	$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp \
-	$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp
+SRC_CXX =  $(srcdir)/SparseDirectTimingVars.cpp $(srcdir)/SparseSolverResult.cpp 
+
+#	$(srcdir)/Comm_assert_equal.cpp $(srcdir)/Trilinos_Util_CountTriples.cpp \
+#	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp \
+#	$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp \
+#	$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp
 
 amesos_test_SOURCES = $(srcdir)/Amesos_TestDriver.cpp  $(srcdir)/Amesos_TestSolver.cpp \
 	 $(srcdir)/Amesos_TestMultiSolver.cpp  $(srcdir)/Amesos_TestMrhsSolver.cpp \
