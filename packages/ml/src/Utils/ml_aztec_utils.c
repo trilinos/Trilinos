@@ -376,6 +376,9 @@ void ML_precondition(double ff[], int options[], int proc_config[],
 void AZ_set_ML_preconditioner(AZ_PRECOND **Precond, AZ_MATRIX *Amat, 
                               ML *ml_handle, int options[])
 {
+   char str[80], coarsest[160], finest[160];
+   int  i;
+
    if (*Precond != NULL) {
       printf("AZ_set_ML_preconditioner: *Precond is not NULL. Is there already a preconditioner?\n");
       printf("\t\tIf so, use AZ_precond_destroy to remove. Otherwise, set to NULL before\n");
@@ -384,7 +387,32 @@ void AZ_set_ML_preconditioner(AZ_PRECOND **Precond, AZ_MATRIX *Amat,
    }
 #ifdef AZ_ver2_1_0_3
    *Precond = AZ_precond_create(Amat, ML_precondition, ml_handle);
-   AZ_set_precond_print_string(*Precond,"multilevel");
+   /*  take finest and coarsest grid smoothers and stick in string */
+   /*  along with the number of levels                             */
+   i = ml_handle->ML_finest_level;
+   finest[0]   = '\0';
+   coarsest[0] = '\0';
+   if (i != -1) {
+      if (ml_handle->pre_smoother[i].ML_id != ML_EMPTY) 
+         sprintf(finest, "%s", ml_handle->pre_smoother[i].label);
+      if (ml_handle->post_smoother[i].ML_id != ML_EMPTY) 
+         sprintf(finest, "%s/%s", finest,ml_handle->post_smoother[i].label);
+
+      if (i != ml_handle->ML_coarsest_level) {
+         i = ml_handle->ML_coarsest_level;
+         if (ml_handle->csolve[i].ML_id != ML_EMPTY) 
+            sprintf(coarsest, "%s", ml_handle->csolve[i].label);
+         else {
+            if (ml_handle->pre_smoother[i].ML_id != ML_EMPTY) 
+            sprintf(coarsest, "%s", ml_handle->pre_smoother[i].label);
+            if (ml_handle->post_smoother[i].ML_id != ML_EMPTY) 
+            sprintf(coarsest, "%s/%s", finest,ml_handle->post_smoother[i].label);
+         }
+      }
+      sprintf(str,"%d level MG ( %s, %s)", ml_handle->ML_num_actual_levels, finest, coarsest);
+   }
+   else sprintf(str,"multilevel");
+   AZ_set_precond_print_string(*Precond, str);
 #else
    *Precond = AZ_precond_create(Amat, ML_precondition);
 #endif
@@ -750,7 +778,7 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
     context->scaling = AZ_scaling_create();
 #endif
     ML_Set_Smoother(ml_handle,level,pre_or_post,(void *)context, 
-                    az_wrap_solvers);
+                    az_wrap_solvers, "Aztec");
 
     /* hack in a function that will be invoked */
     /* by ML_Destroy() to clean up memory       */
