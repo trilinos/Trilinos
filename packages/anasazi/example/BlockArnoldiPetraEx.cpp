@@ -10,6 +10,7 @@
 #include "AnasaziBlockArnoldi.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "Epetra_CrsMatrix.h"
+#include "Teuchos_LAPACK.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -21,6 +22,7 @@
 
 int main(int argc, char *argv[]) {
 	int ierr = 0, i, j;
+	double zero = 0.0;
 
 #ifdef EPETRA_MPI
 
@@ -209,29 +211,30 @@ int main(int argc, char *argv[]) {
 	//
 	//  Variables used for the Block Arnoldi Method
 	//
-	int block = 2;
+	int block = 1;
 	int length = 20;
 	int nev = 4;
 	double tol = 1.0e-14;
 	string which="SM";
-	int step = 1;
 	int restarts = 300;
+	//int step = 1;
+	int step = restarts*length*block;
 
-	// create a PetraAnasaziVec. Note that the decision to make a view or
+	// Create a PetraAnasaziVec. Note that the decision to make a view or
 	// or copy is determined by the petra constructor called by Anasazi::PetraVec.
 	// This is possible because I pass in arguements needed by petra.
 	Anasazi::PetraVec<double> ivec(Map, block);
 	ivec.MvRandom();
 
-	// call the ctor that calls the petra ctor for a matrix
+	// Call the ctor that calls the petra ctor for a matrix
 	Anasazi::PetraMat<double> Amat(A);	
 	Anasazi::Eigenproblem<double> MyProblem(&Amat, &ivec);
 
-	// initialize the Block Arnoldi solver
+	// Initialize the Block Arnoldi solver
 	Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, tol, nev, length, block, 
 						which, step, restarts);
 	
-	// inform the solver that the problem is symmetric
+	// Inform the solver that the problem is symmetric
 	//MyBlockArnoldi.setSymmetric(true);
 	MyBlockArnoldi.setDebugLevel(0);
 
@@ -239,10 +242,10 @@ int main(int argc, char *argv[]) {
 	Epetra_Time & timer = *new Epetra_Time(Comm);
 #endif
 
-	// iterate a few steps (if you wish)
+	// Iterate a few steps (if you wish)
 	//MyBlockArnoldi.iterate(5);
 
-	// solve the problem to the specified tolerances or length
+	// Solve the problem to the specified tolerances or length
 	MyBlockArnoldi.solve();
 
 #ifdef UNIX
@@ -251,22 +254,58 @@ int main(int argc, char *argv[]) {
 	double MFLOPs = total_flops/elapsed_time/1000000.0;
 #endif
 
-	// obtain results directly
+	// Obtain results directly
 	double* resids = MyBlockArnoldi.getResiduals();
 	double* evalr = MyBlockArnoldi.getEvals(); 
 	double* evali = MyBlockArnoldi.getiEvals();
 
-	// retrieve eigenvectors
+	// Retrieve eigenvectors
 	Anasazi::PetraVec<double> evecr(Map, nev);
 	MyBlockArnoldi.getEvecs( evecr );
 	Anasazi::PetraVec<double> eveci(Map, nev);
 	MyBlockArnoldi.getiEvecs( eveci );
 
-	// output results to screen
+	// Output results to screen
 	MyBlockArnoldi.currentStatus();
-
-
-
+	
+	// Compute residuals.
+	Teuchos::LAPACK<int,double> lapack;
+	Anasazi::PetraVec<double> tempevecr(Map,nev), tempeveci(Map,nev);
+	Anasazi::PetraVec<double> tempAevec(Map,nev);
+	Teuchos::SerialDenseMatrix<int,double> Breal(nev,nev), Bimag(nev,nev);
+	Teuchos::SerialDenseMatrix<int,double> Breal2(nev,nev), Bimag2(nev,nev);
+	double* normA = new double[nev];
+	double* tempnrm = new double[nev];
+	cout<<endl<< "Actual Residuals"<<endl;
+	cout<<"------------------------------------------------------"<<endl;
+	Breal.putScalar(0.0); Bimag.putScalar(0.0);
+	for (i=0; i<nev; i++) { Breal(i,i) = evalr[i]; Bimag(i,i) = evali[i]; }
+	Amat.ApplyMatrix( evecr, tempAevec );
+	tempAevec.MvTimesMatAddMv( -1.0, evecr, Breal, 1.0 );
+	tempAevec.MvTimesMatAddMv( 1.0, eveci, Bimag, 1.0 );
+	tempAevec.MvNorm( normA );
+	Amat.ApplyMatrix( eveci, tempAevec );
+	tempAevec.MvTimesMatAddMv( -1.0, evecr, Bimag, 1.0 );
+	tempAevec.MvTimesMatAddMv( -1.0, eveci, Breal, 1.0 );
+	tempAevec.MvNorm( tempnrm );
+	i = 0;
+	while (i < nev) {
+	  normA[i] = lapack.LAPY2( normA[i], tempnrm[i] );
+	  normA[i] /= lapack.LAPY2( evalr[i], evali[i] );
+	  if (evali[i] != zero) {
+	    normA[i+1] = normA[i];
+	    i = i+2;
+	  } else {
+	    i++;
+	  }
+	}
+	cout<<"Real Part"<<"\t"<<"Imag Part"<<"\t"<<"Residual"<<endl;
+	cout<<"------------------------------------------------------"<<endl;
+	for (i=0; i<nev; i++) {
+	  cout<< evalr[i] << "\t\t" << evali[i] << "\t\t"<< normA[i] << endl;
+	}  
+	cout<<"------------------------------------------------------"<<endl;
+	
 #ifdef UNIX
 	if (verbose)
 		cout << "\n\nTotal MFLOPs for Arnoldi = " << MFLOPs << " Elapsed Time = "<<  elapsed_time << endl;
