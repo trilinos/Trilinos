@@ -219,15 +219,30 @@ End:
    * KDDKDD code.  */
   if (err == ZOLTAN_OK) 
   {HGraph *hg = &zoltan_hg->PHG;
+   static int KDDcnt=0;
+   static double cutlsum = 0.0;
+   static double balsum = 0.0;
+   static double cutlmax = 0.0;
+   static double cutlmin = 1e100;
    double bal = Zoltan_PHG_Compute_Balance(zz, hg, zz->LB.Num_Global_Parts,
                                            parts);
    double cutl= Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts,
                                            zz->LB.Num_Global_Parts);
-   if (zz->Proc == 0)
+   cutlsum += cutl;
+   if (cutl > cutlmax) cutlmax = cutl;
+   if (cutl < cutlmin) cutlmin = cutl;
+   balsum += bal;
+   KDDcnt++;
+
+   if (zz->Proc == 0) {
      uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |Z|=%6d %s/%s/%s p=%d "
       "bal=%.2f cutl=%.2f\n", hg->info, hg->nVtx, hg->nEdge, hg->nPins,
       hgp.redm_str, hgp.coarsepartition_str, hgp.refinement_str, 
       zz->LB.Num_Global_Parts, bal, cutl);
+     uprintf(hg->comm, 
+             "STATS RUNS %d  cutl MAX %f  MIN %f  AVG %f  AVGBal %f\n", 
+             KDDcnt, cutlmax, cutlmin, cutlsum/KDDcnt, balsum/KDDcnt);
+   }
   }
   /* KDDKDD  End of printing section. */
 
