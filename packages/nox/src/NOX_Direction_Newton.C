@@ -170,30 +170,8 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
     else {
 
       // Return norm of predicted F
-
-      // do NOT use the following line!! This does NOT account for 
-      // line search step length taken.
-      //const double normpredf = oldsoln.getNormNewtonSolveResidual();
-      
-      // Create a new vector to be the predicted RHS
-      if (predRhs == NULL) {
-	predRhs = oldsoln.getF().clone(ShapeCopy);
-      }
-      if (stepDir == NULL) {
-	stepDir = oldsoln.getF().clone(ShapeCopy);
-      }
-      
-      // stepDir = X - oldX (i.e., the step times the direction)
-      stepDir->update(1.0, soln.getX(), -1.0, oldsoln.getX(), 0);
-      
-      // Compute predRhs = Jacobian * step * dir
-      oldsoln.applyJacobian(*stepDir, *predRhs);
-      
-      // Compute predRhs = RHSVector + predRhs (this is the predicted RHS)
-      predRhs->update(1.0, oldsoln.getF(), 1.0);
-      
-      // Return norm of predicted RHS
-      const double normpredf = predRhs->norm();
+      double normpredf = 0.0;
+      oldsoln.getNormLastLinearSolveResidual(normpredf);
       
       if (normpredf < 0) {
 	cerr << "NOX::Direction::Newton::resetForcingTerm " 
