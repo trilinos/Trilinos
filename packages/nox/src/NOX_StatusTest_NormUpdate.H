@@ -47,11 +47,14 @@ namespace NOX {
 
 namespace StatusTest {
 
-//! Various convergence tests based on the norm of the change in the solution vector, \f$ x \f$, between outer iterations.
 /*! 
 
-  Return \c StatusTest::Converged if \f$\alpha < \beta\f$ where \f$\alpha\f$
-  represents the norm of \f$ \Delta x \f$ and \f$\beta\f$ represents the tolerance.  We define:
+\brief Various convergence tests based on the norm of the change in
+the solution vector, \f$ x \f$, between outer iterations.
+
+Return \c StatusTest::Converged if \f$\alpha < \beta\f$ where
+\f$\alpha\f$ represents the norm of \f$ \Delta x \f$ and \f$\beta\f$
+represents the tolerance.  We define:
 
 \f[ \Delta x = x_k - x_{k-1} \f]
 
@@ -78,7 +81,12 @@ where \f$ x_k \f$ is the solution vector of the \f$ k \f$-th outer iterate.
 
   \f[  \beta  = \mbox{tolerance} \f]
 
-  NOTE:  If no iterations have been performed, then there is no information for\f$ x_{k-1} \f$.  If the test is called while the number of iterations is zero (i.e. before an iteration takes place), the code returns the status test as Unconverged and sets the value to -1.0.  Once an iteration has taken place the Norm of the update is calculated as above.  
+  NOTE: If no iterations have been performed, then there is no
+  information for\f$ x_{k-1} \f$.  If the test is called while the
+  number of iterations is zero (i.e. before an iteration takes place),
+  the code returns the status test as Unconverged and sets the value
+  to -1.0.  Once an iteration has taken place the Norm of the update
+  is calculated as above.
 
 */
 class NormUpdate : public Generic {
@@ -129,7 +137,7 @@ private:
   NOX::StatusTest::StatusType status;
 
   //! Vector containing the update for the current outer iteration 
-  NOX::Abstract::Vector* updateVector;
+  NOX::Abstract::Vector* updateVectorPtr;
 
   //! Type of norm to use
   NOX::Abstract::Vector::NormType normType;

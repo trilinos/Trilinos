@@ -42,7 +42,7 @@ using namespace NOX::StatusTest;
 
 NormUpdate::NormUpdate(double tol, Abstract::Vector::NormType ntype, ScaleType stype) :
   status(Unconverged),
-  updateVector(0),
+  updateVectorPtr(NULL),
   normType(ntype),
   scaleType(stype),
   tolerance(tol)
@@ -51,7 +51,7 @@ NormUpdate::NormUpdate(double tol, Abstract::Vector::NormType ntype, ScaleType s
 
 NormUpdate::NormUpdate(double tol, ScaleType stype) :
   status(Unconverged),
-  updateVector(0),
+  updateVectorPtr(NULL),
   normType(NOX::Abstract::Vector::TwoNorm),
   scaleType(stype),
   tolerance(tol)
@@ -60,7 +60,7 @@ NormUpdate::NormUpdate(double tol, ScaleType stype) :
 
 NormUpdate::~NormUpdate()
 {
-  delete updateVector;
+  delete updateVectorPtr;
 }
 
 StatusType NormUpdate::checkStatus(const Solver::Generic& problem)
@@ -74,31 +74,32 @@ StatusType NormUpdate::checkStatus(const Solver::Generic& problem)
   // we should return the test as unconverged until there is a valid 
   // old solution (i.e. the number of iterations is greater than zero).
   int niters = problem.getNumIterations();
-  if (niters == 0) {
+  if (niters == 0) 
+  {
     status = Unconverged;
     normUpdate = -1.0;
     return status;
   } 
 
-  if (updateVector == 0) 
-    updateVector = curSoln.clone();
+  if (updateVectorPtr == NULL) 
+    updateVectorPtr = curSoln.clone();
 
-  *updateVector = curSoln;
+  *updateVectorPtr = curSoln;
 
-  updateVector->update(-1.0, oldSoln, 1.0); 
+  updateVectorPtr->update(-1.0, oldSoln, 1.0); 
 
   int n = grp.getX().length();
 
   switch (normType) {
     
   case NOX::Abstract::Vector::TwoNorm:
-    normUpdate = updateVector->norm();
+    normUpdate = updateVectorPtr->norm();
     if (scaleType == Scaled)
       normUpdate /= sqrt(1.0 * n);
     break;
 
   default:
-    normUpdate = updateVector->norm(normType);
+    normUpdate = updateVectorPtr->norm(normType);
     if (scaleType == Scaled)
       normUpdate /= n;
     break;
