@@ -92,7 +92,7 @@ header file:
 <UL>
 <LI>classes that are used as <EM>base classes</EM>,
 <LI>classes that are used as <EM>member variables</EM>,
-<LI>classes that appear as <EM>return types</EM>or as <EM>argument
+<LI>classes that appear as <EM>return types</EM> or as <EM>argument
 types</EM> in function/member function prototypes.
 </UL>
 </ul>
@@ -110,15 +110,17 @@ sub-namespace. The choices are:
 <li><code>Parameter</code>
 <li><code>Solver</code>
 <li><code>Status</code>
+<li><code>Direction</code>
 <li><code>Epetra</code>
 <br>&nbsp;
 </ul>
 <li>Class names should begin with an uppercase letter. Variable and
 function names should begin with a lowercase letter.
 <br>&nbsp;
-<li>In names which consist of more than one word, the words are
+<li>In names (function, class, variable, etc) 
+    which consist of more than one word, the words are
     written together and each word that follows the first is begun
-    with an uppercase letter. (e.g., <code>NOX::Linesearch::MoreThuente</code>.
+    with an uppercase letter. (e.g., <code>NOX::Linesearch::MoreThuente</code>).
 <br>&nbsp;
 <li>Do not use identifiers which begin
 with one or two underscores (`<CODE>_</CODE>' or `<CODE>__</CODE>').
@@ -136,7 +138,11 @@ with one or two underscores (`<CODE>_</CODE>' or `<CODE>__</CODE>').
 <li>The public, protected, and private sections of a class are to be
     declared in that order (the public section is declared before the
     protected section which is declared before the private section).
-<li>No inline functions, except the empty <code>{}</code> function.
+<br>&nbsp;
+<li>No inline functions, except the empty <code>{}</code>
+function. The reason for this is that if the function does not inline
+correctly, it can actaully lead to slower code rather than faster
+code. 
 </ul>
 <h5>Functions</h5>
 <ul>
