@@ -2,27 +2,12 @@
 distutils."""
 
 # System includes
+import commands
 import os
 import sys
 
-# Get the build information
-uname        = os.uname()
-sysName      = uname[0].lower()
-sysNameLen   = len(sysName)
-vInfo        = sys.version_info
-pyVersion    = str(vInfo[0]) + "." + str(vInfo[1])
-pyVersionLen = len(pyVersion)
-
-# Search the build directory for this machine
-build   = os.path.join("..", "build")
-dirList = os.listdir(build)
-libDir  = None
-for dir in dirList:
-    if ((dir[:4]             == "lib."   ) and
-        (dir[4:sysNameLen+4] == sysName  ) and
-        (dir[-pyVersionLen:] == pyVersion)):
-        libDir = os.path.join(build, dir)
-        break
+# Get the path to the build directory
+libDir = os.path.join("..", commands.getoutput("../pyLocate --build"))
 
 # Insert the library directory name at the beginning of
 # the python search path
