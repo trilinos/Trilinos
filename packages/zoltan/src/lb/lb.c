@@ -612,8 +612,8 @@ double lb_time[2] = {0.0,0.0};
   if (lb->Proc == 0) {
     printf("LBLIB LB  Times:  \n");
   }
-  LB_Print_Time (lb, lb_time[0], "LBLIB     Balance:     ");
-  LB_Print_Time (lb, lb_time[1], "LBLIB     HelpMigrate: ");
+  LB_Print_Stats (lb, lb_time[0], "LBLIB     Balance:     ");
+  LB_Print_Stats (lb, lb_time[1], "LBLIB     HelpMigrate: ");
 
   *changes = 1;
   if (error)
