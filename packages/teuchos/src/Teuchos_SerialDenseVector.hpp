@@ -2,34 +2,139 @@
 #ifndef _TEUCHOS_SERIALDENSEVECTOR_HPP_
 #define _TEUCHOS_SERIALDENSEVECTOR_HPP_
 
+/*! \file Teuchos_SerialDenseVector.hpp
+    \brief Templated serial dense vector class
+*/
+
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Object.hpp" 
 #include "Teuchos_SerialDenseMatrix.hpp"
 
+/*! \class Teuchos::SerialDenseVector
+    \brief This class creates and provides basic support for dense vectors of templated type as a specialization of Teuchos::SerialDenseMatrix.  Additional methods for the SerialDenseVector class, like mathematical methods, can be found documented in SerialDenseMatrix.
+*/
 namespace Teuchos {
 
   template<typename OrdinalType, typename ScalarType>
   class SerialDenseVector : public SerialDenseMatrix<OrdinalType,ScalarType> {
     
   public:
-    
-    SerialDenseVector();
-    SerialDenseVector(int length);
-    SerialDenseVector(DataAccess CV, ScalarType* values, int length);
-    SerialDenseVector(const SerialDenseVector<OrdinalType,ScalarType>& Source);
-    int size(int length) {return(SerialDenseMatrix<OrdinalType, ScalarType>::shape(length, 1));};
-    int resize(int length) {return(SerialDenseMatrix<OrdinalType,ScalarType>::reshape(length, 1));};
-    virtual ~SerialDenseVector ();
-    bool operator == (const SerialDenseVector<OrdinalType, ScalarType> &Operand);
-    bool operator != (const SerialDenseVector<OrdinalType, ScalarType> &Operand);
-    SerialDenseVector<OrdinalType,ScalarType>& operator = (const SerialDenseVector<OrdinalType,ScalarType>& Source);
-    inline ScalarType& operator () (int index);
-    inline const ScalarType& operator () (int index) const;
-    inline ScalarType& operator [] (int index);
-    inline const ScalarType& operator [] (int index) const;
-    int length() const {return(numRows_);};
-    virtual void print(ostream& os) const;
+  //@{ \name Constructor/Destructor methods.
 
+    //! Default Constructor
+    /*! Creates an empty vector of no length.  The Sizing methods should be used to size this matrix.  Values of this matrix should be set using the [] or the () operators.
+    */
+    SerialDenseVector();
+
+    //! Shaped Constructor
+    /*!
+	\param length - Number of elements in this vector.
+
+	Creates a shaped vector of length \c length.  All values are initialized to zero.  Values of this vector should be set using [] or the () operators.
+    */
+    SerialDenseVector(int length);
+
+    //! Shaped Constructor with Values
+    /*!
+	\param CV - Enumerated type set to Teuchos::Copy or Teuchos::View.
+	\param values - Pointer to an array of ScalarType of the given \c length.
+	\param length - Length of vector to be constructed.
+    */
+    SerialDenseVector(DataAccess CV, ScalarType* values, int length);
+
+    //! Copy Constructor
+    SerialDenseVector(const SerialDenseVector<OrdinalType,ScalarType>& Source);
+
+    //! Destructor
+    virtual ~SerialDenseVector ();
+  //@}
+
+  //@{ \name Sizing methods.
+
+    //! Size method for changing the size of a SerialDenseVector, initializing entries to zero.
+    /*!
+	\param length - The length of the new vector.
+
+	This allows the user to define the length of a SerialDenseVector at any point.
+	This method can be called at any point after construction.  Any values previously in
+	this object will be destroyed and the resized vector starts will all zero values.
+    */
+    int size(int length) {return(SerialDenseMatrix<OrdinalType, ScalarType>::shape(length, 1));};
+
+    //! Resizing method for changing the size of a SerialDenseVector, keeping the entries.
+    /*!
+	\param length - The length of the new vector.
+	This allows the user to redefine the length of a SerialDenseVector at any point.
+	This method can be called at any point after construction.  Any values previously in
+	this object will be copied to the resized vector.
+    */	
+    int resize(int length) {return(SerialDenseMatrix<OrdinalType,ScalarType>::reshape(length, 1));};
+  //@}
+
+  //@{ \name Comparison methods.
+    //! Equality of two matrices.
+    /*! \return True if \c *this vector and \c Operand are of the same length and have the same entries, else False will be returned.
+    */
+    bool operator == (const SerialDenseVector<OrdinalType, ScalarType> &Operand);
+
+    //! Inequality of two matrices.
+    /*! \return True if \c *this vector and \c Operand are not of the same length or do not have the same entries, else False will be returned.
+    */
+    bool operator != (const SerialDenseVector<OrdinalType, ScalarType> &Operand);
+  //@}
+
+  //@{ \name Set methods.
+
+    //! Copies values from one vector to another.
+    /*!
+	The operator= copies the values from one existing SerialDenseVector to
+	another.  If \c Source is a view (i.e. CV = Teuchos::View), then this
+	method will return a view.  Otherwise, it will return a copy of \c Source.
+	\c *this will be resized if it is not large enough to copy \c Source into.
+    */
+    SerialDenseVector<OrdinalType,ScalarType>& operator = (const SerialDenseVector<OrdinalType,ScalarType>& Source);
+  //@}
+
+  //@{ \name Accessor methods.
+    //! Element access method (non-const).
+    /*! Returns the ith element if x(i) is specified, the expression x[i] will return the same element.
+	\return (*this)(index)
+	\warning The validity of \c index will only be checked if Teuchos is configured with --enable-teuchos-abc.
+    */
+    ScalarType& operator () (int index);
+    
+    //! Element access method (const).
+    /*! Returns the ith element if x(i) is specified, the expression x[i] will return the same element.
+	\return (*this)(index)
+	\warning The validity of \c index will only be checked if Teuchos is configured with --enable-teuchos-abc.
+    */
+    const ScalarType& operator () (int index) const;
+
+    //! Element access method (non-const).
+    /*! Returns the ith element if x[i] is specified, the expression x(i) will return the same element.
+	\return (*this)[index]
+	\warning The validity of \c index will only be checked if Teuchos is configured with --enable-teuchos-abc.
+    */
+    ScalarType& operator [] (int index);
+
+    //! Element access method (const).
+    /*! Returns the ith element if x[i] is specified, the expression x(i) will return the same element.
+    	\return (*this)[index]
+	\warning The validity of \c index will only be checked if Teuchos is configured with --enable-teuchos-abc.
+    */
+    const ScalarType& operator [] (int index) const;
+
+  //@}
+
+  //@{ \name Attribute methods.
+    //! Returns the length of this vector.
+    int length() const {return(numRows_);};
+  //@}
+
+  //@{ \name I/O methods.
+    //! Print method.  Define the behavior of the ostream << operator inherited from the Object class.
+    virtual void print(ostream& os) const;
+  //@}
 };
 
   template<typename OrdinalType, typename ScalarType>

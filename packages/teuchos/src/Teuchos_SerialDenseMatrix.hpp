@@ -19,6 +19,9 @@
 
 #ifndef _TEUCHOS_SERIALDENSEMATRIX_HPP_
 #define _TEUCHOS_SERIALDENSEMATRIX_HPP_
+/*! \file Teuchos_SerialDenseMatrix.hpp
+    \brief Templated serial dense matrix class
+*/
 
 #include "Teuchos_CompObject.hpp"
 #include "Teuchos_BLAS.hpp"
@@ -27,41 +30,246 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_TestForException.hpp"
 
-namespace Teuchos
-{
+  /*! 	\class Teuchos::SerialDenseMatrix
+  	\brief This class creates and provides basic support for dense rectangular matrix of templated type.
+  */
+
+namespace Teuchos {  
+
   template<typename OrdinalType, typename ScalarType>
   class SerialDenseMatrix : public CompObject, public Object, public BLAS<OrdinalType, ScalarType>
   {
   public:
+
+  //@{ \name Constructor/Destructor methods.
+
+    //! Default Constructor
+    /*! Creates a empty matrix of no dimension.  The Shaping methods should be used to size this matrix.
+	Values of this matrix should be set using the [] or the () operators.	
+    */
     SerialDenseMatrix();
+
+    //! Shaped Constructor
+    /*! 
+	\param numRows - Number of rows in matrix.
+	\param numCols - Number of columns in matrix.
+
+	Creates a shaped matrix with \c numRows rows and \c numCols cols.  All values are initialized to 0.
+	Values of this matrix should be set using the [] or the () operators.
+    */
     SerialDenseMatrix( int numRows, int numCols);
+
+    //! Shaped Constructor with Values
+    /*!
+	\param CV - Enumerated type set to Teuchos::Copy or Teuchos::View.
+	\param values - Pointer to an array of ScalarType.  The first column starts at \c values,
+		the second at \c values+stride, etc.
+	\param stride - The stride between the columns of the matrix in memory.
+	\param numRows - Number of rows in matrix.
+	\param numCols - Number of columns in matrix.
+    */
     SerialDenseMatrix(DataAccess CV, ScalarType* values, int stride, int numRows, int numCols);
+
+    //! Copy Constructor
     SerialDenseMatrix(const SerialDenseMatrix<OrdinalType, ScalarType> &Source);
-    SerialDenseMatrix(DataAccess CV, const SerialDenseMatrix<OrdinalType, ScalarType> &Source, int rows, int cols, int startRow=0, int startCol=0);
+
+    //! Submatrix Copy Constructor
+    /*! 
+	\param CV - Enumerated type set to Teuchos::Copy or Teuchos::View.
+	\param Source - Reference to another dense matrix from which values are to be copied.
+	\param numRows - The number of rows in this matrix.
+	\param numCols - The number of columns in this matrix.
+	\param startRow - The row of \c Source from which the submatrix copy should start. 
+	\param startCol - The column of \c Source from which the submatrix copy should start.
+
+	Creates a shaped matrix with \c numRows rows and \c numCols columns, which is a submatrix of \c Source.
+	If \c startRow and \c startCol are not given, then the submatrix is the leading submatrix of \c Source.
+	Otherwise, the (1,1) entry in the copied matrix is the (\c startRow, \c startCol) entry of \c Source.
+    */
+    SerialDenseMatrix(DataAccess CV, const SerialDenseMatrix<OrdinalType, ScalarType> &Source, int numRows, int numCols, int startRow=0, int startCol=0);
+
+    //! Destructor
     virtual ~SerialDenseMatrix();
+  //@}
+
+  //@{ \name Shaping methods.
+    //! Shape method for changing the size of a SerialDenseMatrix, initializing entries to zero.
+    /*!
+	\param numRows - The number of rows in this matrix.
+	\param numCols - The number of columns in this matrix.
+
+	This method allows the user to define the dimensions of a SerialDenseMatrix at any point.  This method
+	can be called at any point after construction.  Any values previously in this object will be destroyed
+	and the resized matrix starts of with all zero values.
+
+	\return Integer error code, set to 0 if successful.
+    */
     int shape(int numRows, int numCols);
+
+    //! Reshaping method for changing the size of a SerialDenseMatrix, keeping the entries.
+    /*!
+	\param numRows - The number of rows in this matrix.
+	\param numCols - The number of columns in this matrix.
+
+	This method allows the user to redefine the dimensions of a SerialDenseMatrix at any point.  This method
+	can be called at any point after construction.  Any values previously in this object will be copied into
+	the reshaped matrix.
+
+	\return Integer error code, set 0 if successful.
+    */
     int reshape(int numRows, int numCols);
+
+  //@}
+
+  //@{ \name Set methods.
+
+    //! Copies values from one matrix to another.
+    /*!
+	The operator= copies the values from one existing SerialDenseMatrix to another. 
+	If \c Source is a view (i.e. CV = Teuchos::View), then this method will 
+	return a view.  Otherwise, it will return a copy of \c Source.  \c *this
+	will be resized if it is not large enough to copy \c Source into.
+    */	
     SerialDenseMatrix& operator= (const SerialDenseMatrix& Source);
-    SerialDenseMatrix& operator+= (const SerialDenseMatrix& Source);
-    ScalarType& operator () (int rowIndex, int colIndex);
-    const ScalarType& operator () (int rowIndex, int colIndex) const;
-    ScalarType* operator [] (int colIndex);
-    const ScalarType* operator [] (int colIndex) const;
-    int scale ( const ScalarType alpha );
-    int multiply (ETransp transa, ETransp transb, ScalarType alpha, const SerialDenseMatrix<OrdinalType, ScalarType> &A, const SerialDenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta);
-    bool operator== (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand);
-    bool operator!= (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand);
-    int numRows() const { return(numRows_); };
-    int numCols() const { return(numCols_); };
-    int stride() const { return(stride_); };
-    ScalarType* values() const { return(values_); };
+
+    //! Set all values in the matrix to a constant value.
+    /*!
+	\param value - Value to use; zero if none specified.
+	\return Integer error code, set to 0 if successful.
+    */
     int putScalar( const ScalarType value = Teuchos::ScalarTraits<ScalarType>::zero() );
+
+    //! Set all values in the matrix to be random numbers.
     int random();
+
+  //@}
+
+  //@{ \name Accessor methods.
+
+    //! Element access method (non-const).
+    /*! Returns the element in the ith row and jth column if A(i,j) is specified, the
+	expression A[j][i] will return the same element.
+
+  	\return Element from the specified \c rowIndex row and \c colIndex column.
+	\warning The validity of \c rowIndex and \c colIndex will only be checked if Teuchos is
+	configured with --enable-teuchos-abc.
+    */
+    ScalarType& operator () (int rowIndex, int colIndex);
+
+    //! Element access method (const).
+    /*! Returns the element in the ith row and jth column if A(i,j) is specified, the expression
+	A[j][i] will return the same element.
+
+  	\return Element from the specified \c rowIndex row and \c colIndex column.
+	\warning The validity of \c rowIndex and \c colIndex will only be checked if Teuchos is
+	configured with --enable-teuchos-abc.
+    */
+    const ScalarType& operator () (int rowIndex, int colIndex) const;
+
+    //! Column access method (non-const).
+    /*! Returns the pointer to the ScalarType array at the jth column if A[j] is specified, the expression
+	A[j][i] will return the same element as A(i,j).
+
+	\return Pointer to the ScalarType array at the \c colIndex column ( \c values_+colIndex*stride_ ).
+	\warning The validity of \c colIndex will only be checked if Teuchos is	configured with 
+	--enable-teuchos-abc.
+    */
+    ScalarType* operator [] (int colIndex);
+
+    //! Column access method (const).
+    /*! Returns the pointer to the ScalarType array at the jth column if A[j] is specified, the expression
+	A[j][i] will return the same element as A(i,j).
+
+	\return Pointer to the ScalarType array at the \c colIndex column ( \c values_+colIndex*stride_ ).
+	\warning The validity of \c colIndex will only be checked if Teuchos is	configured with 
+	--enable-teuchos-abc.
+    */
+    const ScalarType* operator [] (int colIndex) const;
+
+    //! Data array access method.
+    /*! \return Pointer to the ScalarType data array contained in the object. */
+    ScalarType* values() const { return(values_); };
+
+  //@}
+
+  //@{ \name Mathematical methods.
+
+    //! Add another matrix to \c *this one.
+    /*! Add \c Source to \c *this if the dimension of both matrices are the same.  If not, \c *this matrix
+	will be returned unchanged.
+    */
+    SerialDenseMatrix& operator+= (const SerialDenseMatrix& Source);
+
+    //! Scale \c *this matrix; \c A = \c alpha*A.
+    /*!
+	\param alpha Scalar to multiply \c *this by.
+	\return Integer error code, set to 0 if successful.
+    */
+    int scale ( const ScalarType alpha );
+
+    //! Multiply \c A * \c B and add them to \c *this; \c *this = \c beta*(*this) + \c alpha*A*B.
+    /*!
+	\param transa - Use the transpose of \c A if transa = Teuchos::TRANS, else don't use the 
+	transpose if transa = Teuchos::NOTRANS.
+	\param transb - Use the transpose of \c B if transb = Teuchos::TRANS, else don't use the
+	transpose if transb = Teuchos::NOTRANS.
+	\param alpha - The scaling factor for \c A * \c B.
+	\param A - SerialDenseMatrix
+	\param B - SerialDenseMatrix
+	\param beta - The scaling factor for \c *this.
+
+	If the matrices \c A and \c B are not of the right dimension, consistent with \c *this, then \c *this
+	matrix will not be altered and -1 will be returned.
+	\return Integer error code, set to 0 if successful.
+    */
+    int multiply (ETransp transa, ETransp transb, ScalarType alpha, const SerialDenseMatrix<OrdinalType, ScalarType> &A, const SerialDenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta);
+  //@}
+
+  //@{ \name Comparison methods.
+
+    //! Equality of two matrices.
+    /*! \return True if \c *this matrix and \c Operand are of the same shape (rows and columns) and have
+	the same entries, else False will be returned.
+    */
+    bool operator== (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand);
+
+    //! Inequality of two matrices.
+    /*! \return True if \c *this matrix and \c Operand of not of the same shape (rows and columns) or don't
+	have the same entries, else False will be returned.
+    */
+    bool operator!= (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand);
+
+  //@}
+
+  //@{ \name Attribute methods.
+
+    //! Returns the row dimension of this matrix.
+    int numRows() const { return(numRows_); };
+
+    //! Returns the column dimension of this matrix.
+    int numCols() const { return(numCols_); };
+
+    //! Returns the stride between the columns of this matrix in memory.
+    int stride() const { return(stride_); };
+  //@}
+
+  //@{ \name Norm methods.
+
+    //! Returns the 1-norm of the matrix.
     typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, ScalarType>::normOne() const;
+
+    //! Returns the Infinity-norm of the matrix.
     typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, ScalarType>::normInf() const;
-    typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, ScalarType>::normFrobenius() const;
+
+    //! Returns the Frobenius-norm of the matrix.
+    typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, ScalarType>::normFrobenius() const; 
+  //@}
+
+  //@{ \name I/O methods.
+    //! Print method.  Defines the behavior of the ostream << operator inherited from the Object class.
     virtual void print(ostream& os) const;
 
+  //@}
   protected:
     void copyMat(ScalarType* inputMatrix, int strideInput, int numRows, int numCols, ScalarType* outputMatrix, int strideOutput, int startRow, int startCol, bool add);
     void deleteArrays();
@@ -110,13 +318,13 @@ namespace Teuchos
   }
   
   template<typename OrdinalType, typename ScalarType>
-  SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(DataAccess CV, const SerialDenseMatrix<OrdinalType, ScalarType> &Source, int rows, int cols, int startRow, int startCol) : CompObject(), numRows_(rows), numCols_(cols), stride_(Source.stride_), valuesCopied_(false), values_(Source.values_)
+  SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(DataAccess CV, const SerialDenseMatrix<OrdinalType, ScalarType> &Source, int numRows, int numCols, int startRow, int startCol) : CompObject(), numRows_(numRows), numCols_(numCols), stride_(Source.stride_), valuesCopied_(false), values_(Source.values_)
   {
     if(CV == Copy)
       {
-	stride_ = rows;
-	values_ = new ScalarType[stride_ * cols];
-	copyMat(Source.values_, Source.stride_, rows, cols, values_, stride_, startRow, startCol, false);
+	stride_ = numRows;
+	values_ = new ScalarType[stride_ * numCols];
+	copyMat(Source.values_, Source.stride_, numRows, numCols, values_, stride_, startRow, startCol, false);
 	valuesCopied_ = true;
       }
     else // CV == View
