@@ -78,6 +78,7 @@ EPETRA_CC = Epetra_SerialComm.cpp \
             Epetra_LAPACK.cpp \
             Epetra_LinearProblem.cpp \
             Epetra_Time.cpp Epetra_Object.cpp Epetra_Util.cpp Epetra_Flops.cpp \
+            Epetra_ReducedLinearProblem.cpp \
             $(EPETRA_EXTRACOMM_CLASS)
 
 EPETRA_F =

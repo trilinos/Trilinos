@@ -119,7 +119,7 @@ class Epetra_ReducedLinearProblem {
       unreduced, original problem will be in the LHS of the original Epetra_LinearProblem.
     
   */
-  int ConstructFullSolution();
+  int ComputeFullSolution();
   //@}
   //@{ \name Attribute Access Methods.
 
@@ -128,15 +128,15 @@ class Epetra_ReducedLinearProblem {
   //! Returns pointer to the derived reduced Epetra_LinearProblem.
   Epetra_LinearProblem * ReducedProblem(){return(ReducedProblem_);};
   //! Returns pointer to Epetra_CrsMatrix from full problem.
-  const Epetra_CrsMatrix & FullMatrix(){return(*FullMatrix_);};
+  Epetra_CrsMatrix * FullMatrix(){return(FullMatrix_);};
   //! Returns pointer to Epetra_CrsMatrix from full problem.
   Epetra_CrsMatrix * ReducedMatrix(){return(ReducedMatrix_);};
   //! Returns Epetra_Map containing Global Row IDs of full matrix.
-  const Epetra_Map & FullMatrixRowMap(){return(FullMatrix().RowMap());};
+  const Epetra_Map & FullMatrixRowMap(){return(FullMatrix()->RowMap());};
   //! Returns Epetra_Map containing domain map of full matrix.
-  const Epetra_Map & FullMatrixDomainMap(){return(dynamic_cast<const Epetra_Map &>(FullMatrix().DomainMap()));};
+  const Epetra_Map & FullMatrixDomainMap(){return(dynamic_cast<const Epetra_Map &>(FullMatrix()->DomainMap()));};
   //! Returns Epetra_Map containing import map of full matrix.
-  const Epetra_Map & FullMatrixImportMap(){return(FullMatrix().ImportMap());};
+  const Epetra_Map & FullMatrixImportMap(){return(FullMatrix()->ImportMap());};
   //! Returns pointer to Epetra_Map containing Global Row IDs that are eliminated from full problem.
   Epetra_Map * RowEliminateMap(){return(RowEliminateMap_);};
   //! Returns pointer to Epetra_Map containing Global Column IDs that are eliminated from full problem.
@@ -164,9 +164,13 @@ class Epetra_ReducedLinearProblem {
     Epetra_Map * ColEliminateMap_;
     Epetra_Map * ReducedMatrixRowMap_;
     Epetra_Map * ReducedMatrixDomainMap_;
-    Epetra_Import * Full2ReducedMatrixImporter_;
     Epetra_Import * Full2ReducedRHSImporter_;
     Epetra_Import * Full2ReducedLHSImporter_;
+    
+    int * ColSingletonRowLIDs_;
+    int * ColSingletonColLIDs_;
+    double * ColSingletonPivots_;
+
     
     int AbsoluteThreshold_;
     double RelativeThreshold_;

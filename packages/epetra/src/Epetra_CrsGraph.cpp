@@ -689,10 +689,10 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap & DomainMap, const E
     int IncBlockCols = EPETRA_MAX(EPETRA_MIN(NumMyBlockCols_/4,100),10);
     int MaxBlockCols = 0;
     int *ColIndices = 0;
-    if (DomainMap_->DistributedGlobal()) {
-      MaxBlockCols = NumMyBlockCols_;
-      ColIndices = new int[MaxBlockCols];
-    }
+    //if (DomainMap_->DistributedGlobal()) {
+    MaxBlockCols = NumMyBlockCols_;
+    ColIndices = new int[MaxBlockCols];
+      //}
     int *new_ColIndices = 0;
 
     int NewNumMyBlockCols = NumMyBlockCols_;
@@ -733,7 +733,7 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap & DomainMap, const E
 
     // Create ImportMap.  This map will be used to facilitate communication in matrix classes
     
-    if (DomainMap_->DistributedGlobal()) {
+    // if (DomainMap_->DistributedGlobal()) {
       
       // Find processors that own the off-processor GIDs
       int NumRemote = NewNumMyBlockCols - NumMyBlockCols_;
@@ -786,7 +786,7 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap & DomainMap, const E
       
       // Recompute number of local columns
       NumMyCols_ = ImportMap_->NumMyPoints();
-    }
+      // }
 
     // Now see if we need to define an export map.  This is only needed if RowMap and RangeMap are different
 

@@ -117,7 +117,7 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
   }
   
   if ( NumRemoteIDs_>0 && !SourceMap.DistributedGlobal())
-    throw ReportError("Error in Epetra_Export: Serial Export has remote IDs.", -1);
+    throw ReportError("Error in Epetra_Import: Serial Import has remote IDs.", -1);
   
   // Test for distributed cases
   

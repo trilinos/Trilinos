@@ -18,6 +18,8 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Export.h"
+#include "Epetra_LinearProblem.h"
+#include "Epetra_ReducedLinearProblem.h"
 
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_CrsMatrix.h"
@@ -63,9 +65,9 @@ int main(int argc, char *argv[]) {
   }
 
   // Uncomment the next three lines to debug in mpi mode
-  //int tmp;
-  //if (MyPID==0) cin >> tmp;
-  //Comm.Barrier();
+  int tmp;
+  if (MyPID==0) cin >> tmp;
+  Comm.Barrier();
 
   Epetra_Map * readMap;
   Epetra_CrsMatrix * readA; 
@@ -99,7 +101,7 @@ int main(int argc, char *argv[]) {
   assert(A.TransformToLocal()==0);    
   Comm.Barrier();
   double fillCompleteTime = FillTimer.ElapsedTime() - matrixRedistributeTime;
-  if (Comm.MyPID()==0)	{
+  if (verbose)	{
     cout << "\n\n****************************************************" << endl;
     cout << "\n Vector redistribute  time (sec) = " << vectorRedistributeTime<< endl;
     cout << "    Matrix redistribute time (sec) = " << matrixRedistributeTime << endl;
@@ -128,6 +130,45 @@ int main(int argc, char *argv[]) {
 
   Comm.Barrier();
 
+  x.PutScalar(0.0);
+
+  Epetra_LinearProblem FullProblem(&A, &x, &b); 
+  
+  Epetra_Time ReductionTimer(Comm);
+  Epetra_ReducedLinearProblem SingletonFilter(&FullProblem);
+  Comm.Barrier();
+  double reduceInitTime = ReductionTimer.ElapsedTime();
+  SingletonFilter.Analyze();
+  Comm.Barrier();
+  double reduceAnalyzeTime = ReductionTimer.ElapsedTime() - reduceInitTime;
+  SingletonFilter.ConstructReducedProblem();
+  Comm.Barrier();
+  double reduceConstructTime = ReductionTimer.ElapsedTime() - reduceInitTime;
+
+  double totalReduceTime = ReductionTimer.ElapsedTime();
+
+  if (verbose)
+    cout << "\n\n****************************************************" << endl
+	 << "    Reduction init  time (sec)           = " << reduceInitTime<< endl
+	 << "    Reduction Analyze time (sec)         = " << reduceAnalyzeTime << endl
+	 << "    Construct Reduced Problem time (sec) = " << reduceConstructTime << endl
+	 << "    Reduction Total time (sec)           = " << totalReduceTime << endl<< endl;
+
+  Epetra_LinearProblem * ReducedProblem = SingletonFilter.ReducedProblem();
+
+  Epetra_CrsMatrix * Ap = dynamic_cast<Epetra_CrsMatrix *>(ReducedProblem->GetMatrix());
+  Epetra_Vector * bp = (*ReducedProblem->GetRHS())(0);
+  Epetra_Vector * xp = (*ReducedProblem->GetLHS())(0);
+  
+  bool smallProblem = false;
+  if (Ap->RowMap().NumGlobalElements()<100) smallProblem = true;
+
+  if (smallProblem)
+    cout << "Original Matrix = " << endl << A   << endl
+	 << " Reduced Matrix = " << endl << *Ap << endl
+	 << " LHS before sol = " << endl << *xp << endl
+	 << " RHS            = " << endl << *bp << endl;
+
   // Construct ILU preconditioner
 
   double elapsed_time, total_flops, MFLOPs;
@@ -152,7 +193,7 @@ int main(int argc, char *argv[]) {
 
   if (LevelFill>-1) {
     elapsed_time = timer.ElapsedTime();
-    IlukGraph = new Ifpack_IlukGraph(A.Graph(), LevelFill, Overlap);
+    IlukGraph = new Ifpack_IlukGraph(Ap->Graph(), LevelFill, Overlap);
     assert(IlukGraph->ConstructFilledGraph()==0);
     elapsed_time = timer.ElapsedTime() - elapsed_time;
     if (verbose) cout << "Time to construct ILUK graph = " << elapsed_time << endl;
@@ -166,7 +207,7 @@ int main(int argc, char *argv[]) {
     ILUK->SetAbsoluteThreshold(Athresh);
     ILUK->SetRelativeThreshold(Rthresh);
     //assert(ILUK->InitValues()==0);
-    int initerr = ILUK->InitValues(A);
+    int initerr = ILUK->InitValues(*Ap);
     if (initerr!=0) cout << Comm << "InitValues error = " << initerr;
     assert(ILUK->Factor()==0);
     elapsed_time = timer.ElapsedTime() - elapsed_time;
@@ -181,22 +222,18 @@ int main(int argc, char *argv[]) {
   ILUK->Condest(false, Condest);
 
   if (verbose) cout << "Condition number estimate for this preconditioner = " << Condest << endl;
-  int Maxiter = 500;
-  double Tolerance = 1.0E-14;
-
-  Epetra_Vector xcomp(map);
-  Epetra_Vector resid(map);
+  int Maxiter = 50;
+  double Tolerance = 1.0E-11;
 
   Epetra_Flops counter;
-  A.SetFlopCounter(counter);
-  xcomp.SetFlopCounter(A);
-  b.SetFlopCounter(A);
-  resid.SetFlopCounter(A);
-  ILUK->SetFlopCounter(A);
+  Ap->SetFlopCounter(counter);
+  xp->SetFlopCounter(*Ap);
+  bp->SetFlopCounter(*Ap);
+  ILUK->SetFlopCounter(*Ap);
 
   elapsed_time = timer.ElapsedTime();
 
-  BiCGSTAB(A, xcomp, b, ILUK, Maxiter, Tolerance, &residual, verbose);
+  BiCGSTAB(*Ap, *xp, *bp, ILUK, Maxiter, Tolerance, &residual, verbose);
 
   elapsed_time = timer.ElapsedTime() - elapsed_time;
   total_flops = counter.Flops();
@@ -206,12 +243,32 @@ int main(int argc, char *argv[]) {
 		    << "Number of operations in solve = " << total_flops << endl
 		    << "MFLOPS for Solve = " << MFLOPs<< endl << endl;
 
-  resid.Update(1.0, xcomp, -1.0, xexact, 0.0); // resid = xcomp - xexact
+  SingletonFilter.ComputeFullSolution();
+
+  if (smallProblem)
+  cout << " Reduced LHS after sol = " << endl << *xp << endl
+       << " Full    LHS after sol = " << endl << x << endl
+       << " Full  Exact LHS         = " << endl << xexact << endl;
+
+  Epetra_Vector resid(x);
+
+  resid.Update(1.0, x, -1.0, xexact, 0.0); // resid = xcomp - xexact
 
   resid.Norm2(&residual);
 
-  if (verbose) cout << "Norm of the difference between exact and computed solutions = " << residual << endl;
-
+  if (verbose) 
+    cout << "2-norm of difference between computed and exact solution  = " << residual << endl;
+    
+  if (verbose && residual>1.0e-5) {
+    cout << "Difference between computed and exact solution appears large..." << endl
+      << "Computing norm of A times this difference.  If this norm is small, then matrix is singular"
+      << endl;
+    assert(A.Multiply(false, resid, b)==0);
+    assert(b.Norm2(&residual)==0);
+  if (verbose) 
+    cout << "2-norm of A times difference between computed and exact solution  = " << residual << endl;
+    
+  }
   
 
 
@@ -234,10 +291,10 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
 
   // Allocate vectors needed for iterations
   Epetra_Vector phat(x.Map()); phat.SetFlopCounter(x);
-  Epetra_Vector p(x.Map()); p.SetFlopCounter(x);
-  Epetra_Vector shat(x.Map()); shat.SetFlopCounter(x);
-  Epetra_Vector s(x.Map()); s.SetFlopCounter(x);
-  Epetra_Vector r(x.Map()); r.SetFlopCounter(x);
+  Epetra_Vector p(b.Map()); p.SetFlopCounter(x);
+  Epetra_Vector shat(b.Map()); shat.SetFlopCounter(x);
+  Epetra_Vector s(b.Map()); s.SetFlopCounter(x);
+  Epetra_Vector r(b.Map()); r.SetFlopCounter(x);
   Epetra_Vector rtilde(x.Map()); rtilde.Random(); rtilde.SetFlopCounter(x);
   Epetra_Vector v(x.Map()); v.SetFlopCounter(x);
   
@@ -308,7 +365,7 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
     if (verbose) cout << "Iter "<< i << " residual = " << r_norm
 		      << " Scaled residual = " << scaled_r_norm << endl;
 
-    if (scaled_r_norm < Tolerance) break;
+    if (r_norm < Tolerance) break;
   }
   return;
 }
