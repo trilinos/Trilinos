@@ -109,6 +109,18 @@ Abstract::Vector& Vector::init(double value)
   return *this;
 }
 
+Abstract::Vector& Vector::random()
+{
+  epetraVec->Random();
+  return *this;
+}
+
+Abstract::Vector& Vector::setSeed(double s)
+{
+  epetraVec->SetSeed(s);
+  return *this;
+}
+
 Abstract::Vector& Vector::abs(const Abstract::Vector& base)
 {
   return abs(dynamic_cast<const Vector&>(base));
