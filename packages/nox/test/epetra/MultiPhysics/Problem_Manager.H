@@ -120,6 +120,9 @@ public:
   // Solve problems using matrix-free coupling
   bool solveMF();
 
+  // Solve problems using matrix-free coupling
+  void outputSolutions(int timeStep = 0);
+
 
   // These allow inheritance from GenericEpetraProblem base class
 

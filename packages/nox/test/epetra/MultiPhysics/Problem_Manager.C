@@ -1007,3 +1007,30 @@ void Problem_Manager::generateGraph()
   return;
 }
 
+void Problem_Manager::outputSolutions(int timeStep)
+{ 
+
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+
+  // Loop over each problem being managed and write its solution vector
+  // to a file.
+  for( ; problemIter != problemLast; problemIter++) {
+
+    GenericEpetraProblem& problem = *(*problemIter).second;
+    int probId = problem.getId();
+
+    Epetra_Vector& xMesh = problem.getMesh();
+    Epetra_Vector& problemSoln = problem.getSolution();
+    int NumMyNodes = xMesh.Map().NumMyElements();
+    int NumGlobalNodes = xMesh.Map().NumGlobalElements();
+
+    char file_name[25];
+    FILE *ifp;
+    (void) sprintf(file_name, "output.%03d.%03d_%05d",probId,MyPID,timeStep);
+    ifp = fopen(file_name, "w");
+    for (int i=0; i<NumMyNodes; i++)
+      fprintf(ifp, "%d  %E  %E \n", i, xMesh[i], problemSoln[i]);
+    fclose(ifp);
+  }
+}
