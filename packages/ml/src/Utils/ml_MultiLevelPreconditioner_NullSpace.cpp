@@ -27,8 +27,8 @@ using namespace Teuchos;
 int ML_Epetra::MultiLevelPreconditioner::SetNullSpaceMaxwell()
 {
 
-  cout << "NULL SPACE FOR MAXWELL???" << endl;
-  ML_EXIT(-1);
+  // to be fixed??
+  return(0);
 }
 
 // ================================================ ====== ==== ==== == =
@@ -280,6 +280,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   return(0);
 }
 
+#if 0
 // FIXME: I believe that this already exists somewhere..
 static int ML_Operator_GetDiagonal(ML_Operator* Amat,
                                    double* diagonal)
@@ -323,5 +324,6 @@ static int ML_Operator_GetDiagonal(ML_Operator* Amat,
 
   return(0);
 }
+#endif
 
 #endif /*ifdef HAVE_ML_EPETRA && HAVE_ML_TEUCHOS*/

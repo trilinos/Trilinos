@@ -134,7 +134,7 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List,
 
   List.set("aggregation: type","METIS");
 
-  List.set("aggregation: local aggregates",1);
+  List.set("aggregation: local aggregates",128);
   
   List.set("aggregation: damping factor",1.333);
 
@@ -153,6 +153,8 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List,
   List.set("smoother: type","Aztec");
 
 #ifdef HAVE_ML_AZTECOO
+  options[AZ_precond] = AZ_dom_decomp;
+  options[AZ_subdomain_solve] = AZ_ilu;
   List.set("smoother: Aztec options",options);
     
   List.set("smoother: Aztec params",params);
@@ -210,6 +212,9 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List,
   List.set("smoother: type","Aztec");
 
 #ifdef HAVE_ML_AZTECOO
+  options[AZ_precond] = AZ_dom_decomp;
+  options[AZ_subdomain_solve] = AZ_lu;
+
   List.set("smoother: Aztec options",options);
     
   List.set("smoother: Aztec params",params);
@@ -290,6 +295,9 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List,
   List.set("smoother: type","Aztec");
   
 #ifdef HAVE_ML_AZTECOO
+  options[AZ_precond] = AZ_dom_decomp;
+  options[AZ_subdomain_solve] = AZ_ilu;
+
   List.set("smoother: Aztec options",options);
     
   List.set("smoother: Aztec params",params);
@@ -348,6 +356,9 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List,
   List.set("smoother: type","Aztec");
 
 #ifdef HAVE_ML_AZTECOO
+  options[AZ_precond] = AZ_dom_decomp;
+  options[AZ_subdomain_solve] = AZ_lu;
+
   List.set("smoother: Aztec options",options);
     
   List.set("smoother: Aztec params",params);
