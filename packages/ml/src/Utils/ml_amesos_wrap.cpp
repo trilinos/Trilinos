@@ -48,6 +48,10 @@ static double TimeForSolve__ = 0.0;
 static int Level__ = -1;
 static int NumSolves__ = 0;
 
+#ifdef DEBUG
+static double MaxError__ = 0.0;
+#endif
+
 int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 		  int MaxProcs, void **Amesos_Handle)
 {
@@ -103,7 +107,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 
   AMESOS::Parameter::List ParamList ;
 
-  AMESOS::Parameter::List SluParamList=ParamList.sublist("Superludist");
+  AMESOS::Parameter::List & SluParamList=ParamList.sublist("Superludist");
 
   // this is specific to Superludist-2.0
   if( choice == ML_AMESOS_SUPERLUDIST ) {
@@ -223,9 +227,27 @@ int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
 
   TimeForSolve__ += Time.ElapsedTime();
   NumSolves__++;
+
+#ifdef DEBUG
+  // verify that the residual is actually small (and print the max
+  // in the destruction phase)
+  Epetra_Vector Ax(map);
+  
+  (Amesos_LinearProblem->GetMatrix())->Multiply(false,EV_lhs,Ax);
+  
+  assert(Ax.Update(1.0, EV_rhs, -1.0)==0);
+  
+  double residual;
+  assert(Ax.Norm2(&residual)==0);
+  if( residual > MaxError__ ) MaxError__ = residual;
+#endif
   
   return 0;
 }
+
+#ifdef DEBUG
+#include <iomanip>
+#endif
 
 void ML_Amesos_Destroy(void *Amesos_Handle)
 {
@@ -238,12 +260,18 @@ void ML_Amesos_Destroy(void *Amesos_Handle)
     if( NumSolves__ ) 
       cout << "Amesos (level " << Level__
 	   << ") : avg time for solve = "
-	   << TimeForSolve__/NumSolves__ << " (s) ( # solve = "
+	   << TimeForSolve__/NumSolves__ << " (s) ( # solves = "
 	   << NumSolves__ << ")" << endl;
     else
       cout << "Amesos (level " << Level__
 	   << ") : no solve" << endl;
+
+#ifdef DEBUG
+    cout << "Amesos (level " << Level__
+	 << ") : max (over solves) ||Ax - b|| = " << setiosflags(ios::scientific) << MaxError__ << endl;
+#endif
     cout << endl;
+
   }
   
   Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle ;
