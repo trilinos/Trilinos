@@ -122,9 +122,12 @@ ML_FLOPS = HAVE_ML_FLOPS (jhu?)
             structures like: ML_Smoother, ML_Operator, ML_CSolve?
             
 ML_CATCH_MPI_ERRORS_IN_DEBUGGER (jhu?)
-   summary:
-   action:
-   details:
+   summary: This controls whether MPI errors return control to a debugger.
+   action:  Perhaps this guy should be rolled up with other useful options
+            (like breaking for a debugger, others?).  This way, developers
+            could turn on one configure switch to get everything.
+   details: This is useful on occasion for developers.  Users would never
+            want this, obviously.  Developer's 
 
 ML_LOWMEMORY  (rstumin)
    summary: This is off by default. This turns on memory savings like
