@@ -267,6 +267,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 #endif
          ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
          max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
+	 Amat->lambda_max = max_eigen; 
+	 Amat->lambda_max = kdata->ML_eigen_min; 
          ML_Krylov_Destroy( &kdata );
          if ( max_eigen <= 0.0 )
          {
