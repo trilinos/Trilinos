@@ -32,10 +32,20 @@ created by the python distutils module."""
 # System includes
 import commands
 import os
+import string
 import sys
 
+# Obtain the dictionary of make information
+f = open("../setup.txt")
+makeInfo = f.readlines()
+f.close()
+makeInfo = eval(string.join(makeInfo))
+
+# Build the command to get the build library name
+cmd = "../%s/pyLocate --build" % makeInfo["srcdir"]
+
 # Get the path to the build directory
-libDir = os.path.join("..", commands.getoutput("../pyLocate --build"))
+libDir = os.path.join("..", commands.getoutput(cmd))
 
 # Insert the library directory name at the beginning of
 # the python search path

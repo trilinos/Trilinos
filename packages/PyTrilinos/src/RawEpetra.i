@@ -156,14 +156,6 @@
   $1 = (int *) array->data;
 }
 
-%typemap(in,numinputs=0) (int & NumIndices, int *& Indices)
-{
-  int   temp1;
-  int * temp2;
-  $1 = &temp1;
-  $2 = &temp2;
-}
-
 %typemap(argout) (int & NumIndices, int *& Indices)
 {
   // Decrement the current result object
@@ -256,7 +248,7 @@
 }
 
 %extend Epetra_CrsMatrix {
-  double * & __getitem__(int i) {
+  double * __getitem__(int i) {
     return self->operator[](i);
   }
 }

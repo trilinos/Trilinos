@@ -71,7 +71,6 @@ public:
 
 private:
   // Private and not implemented
-  PyInterface();
   PyInterface(const PyInterface &);
   PyInterface & operator=(const PyInterface &);
 

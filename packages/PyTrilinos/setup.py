@@ -163,7 +163,7 @@ NOX_Epetra = Extension("PyTrilinos.NOX._Epetra",
                         noxPyInterface],
                        include_dirs    = epetraInc + noxInc + noxEpetraInc,
                        library_dirs    = epetraLibDir + noxLibDir + noxEpetraLibDir + \
-                                         aztecLibDir + ifpackLibDir + teuchosLibDir
+                                         aztecLibDir + ifpackLibDir + teuchosLibDir,
                        libraries       = noxEpetraLib + noxLib  + \
                                          aztecLib + ifpackLib + epetraLib + \
                                          teuchosLib + stdLibs,

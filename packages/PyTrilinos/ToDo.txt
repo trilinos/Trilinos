@@ -103,3 +103,50 @@
     ------ Epetra
     ------ EpetraExt
     ------ NOX
+
+==================================================
+Summer, 2005, List of Project Tasks (Tentative)
+
+* Complete wrapping of Epetra
+  - Epetra_MpiComm() and parallelization
+  - Other classes
+  - Interfacing with python Numeric
+  - Unit tests
+
+* Move python modules to package directories
+  - epetra
+  - new_package
+  - epetraext
+  - nox
+
+* Documentation
+  - Manual: differences in C++/python implementations
+  - Automatic: moving doxygen comments to python source
+
+* Autotools
+  - Check for python
+  - Check for swig
+  - Check for Numeric
+  - Check for MPI/serial
+  - Make swig a requirement for developers only
+
+* Software quality
+  - Dependencies
+  - Unit/regression tests on different platforms
+  - Trilinos test harness
+
+* Complete wrapping other modules
+  - EpetraExt
+  - NOX
+  - Unit tests
+
+* Start wrapping new modules
+  - Teuchos
+  - AztecOO
+  - Anasazi
+  - Ifpack
+  - ML
+  - LOCA (with Eric Phipps)
+  - etc.
+
+==================================================

@@ -1,3 +1,5 @@
+// -*- c++ -*-
+
 // @HEADER
 // ***********************************************************************
 //
@@ -26,9 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-// -*- c++ -*-
-
-%module Solver
+%module(package="PyTrilinos.NOX") Solver
 
 %{
 // NOX includes
@@ -43,7 +43,7 @@ using namespace NOX::Solver;
 
 // Ignore directives
 %ignore operator<<(ostream &, NOX::StatusTest::StatusType );
-%ignore *::print(ostream &, int) const;
+%ignore print;
 
 // Rename directives
 %rename(StatusTest_Generic) NOX::StatusTest::Generic;

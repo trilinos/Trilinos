@@ -1,3 +1,5 @@
+// -*- c++ -*-
+
 // @HEADER
 // ***********************************************************************
 //
@@ -26,9 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-// -*- c++ -*-
-
-%module Parameter
+%module(package="PyTrilinos.NOX") Parameter
 
 %{
 // System includes
@@ -46,26 +46,27 @@ using namespace NOX::Parameter;
 
 // Ignore directives
 %ignore NOX::Parameter::List::operator=(const List&);
-%ignore *::print(ostream &, int) const;
-%ignore NOX::Parameter::List::getParameter(string const &, bool        	 );
-%ignore NOX::Parameter::List::getParameter(string const &, int         	 );
-%ignore NOX::Parameter::List::getParameter(string const &, double      	 );
-%ignore NOX::Parameter::List::getParameter(string const &, string      	 );
-%ignore NOX::Parameter::List::getParameter(string const &, const char *	 );
-%ignore NOX::Parameter::List::getParameter(string const &, bool        	 ) const;
-%ignore NOX::Parameter::List::getParameter(string const &, int         	 ) const;
-%ignore NOX::Parameter::List::getParameter(string const &, double      	 ) const;
-%ignore NOX::Parameter::List::getParameter(string const &, string      	 ) const;
-%ignore NOX::Parameter::List::getParameter(string const &, string const &) const;
-%ignore NOX::Parameter::List::getParameter(string const &, const char *  ) const;
-%ignore NOX::Parameter::List::getParameter(string const &, Arbitrary const &) const;
-%ignore NOX::parameter::List::isParameterBool(const string &) const;
-%ignore NOX::Parameter::List::isParameterEqual(string const &, bool        ) const;
-%ignore NOX::Parameter::List::isParameterEqual(string const &, const char *) const;
-%ignore NOX::Parameter::List::setParameter(string const &, bool        );
-%ignore NOX::Parameter::List::setParameter(string const &, const char *);
-%ignore NOX::Parameter::List::setParameter(string const &, char *      );
-%ignore NOX::Parameter::List::sublist(     string const &              ) const;
+%ignore print;
+%ignore getParameter(string const &, bool             );
+%ignore getParameter(string const &, int              );
+%ignore getParameter(string const &, double           );
+%ignore getParameter(string const &, string           );
+%ignore getParameter(string const &, const char *     );
+%ignore getParameter(string const &, bool             ) const;
+%ignore getParameter(string const &, int              ) const;
+%ignore getParameter(string const &, double           ) const;
+%ignore getParameter(string const &, string           ) const;
+%ignore getParameter(string const &, string const &   ) const;
+%ignore getParameter(string const &, const char *     ) const;
+%ignore getParameter(string const &,
+                     NOX::Parameter::Arbitrary const &) const;
+%ignore isParameterBool( const string &               ) const;
+%ignore isParameterEqual(string const &, bool         ) const;
+%ignore isParameterEqual(string const &, const char * ) const;
+%ignore setParameter(string const &, bool        );
+%ignore setParameter(string const &, const char *);
+%ignore setParameter(string const &, char *      );
+%ignore sublist(     string const &              ) const;
 
 // Rename directives
 /* None */
@@ -95,22 +96,6 @@ using namespace std;
       return NULL;
     }
   }
-
-//   const PyObject * getParameter(const string & name) const {
-//     if (self->isParameterInt(name)) {
-//       int value(0);
-//       return PyInt_FromLong(long(self->getParameter(name, value)));
-//     } else if (self->isParameterDouble(name)) {
-//       double value(0.0);
-//       return PyFloat_FromDouble(self->getParameter(name, value));
-//     } else if (self->isParameterString(name)) {
-//       string value("");
-//       return PyString_FromString(self->getParameter(name, value).c_str());
-//     } else {
-//       PyErr_SetString(PyExc_TypeError,"Unknown Parameter Type");
-//       return NULL;
-//     }
-//   }
 
   string __str__() {
      stringstream os;

@@ -46,14 +46,10 @@ class EpetraExtTestCase(unittest.TestCase):
         self.comm = Epetra.SerialComm()
         self.map  = Epetra.Map(self.size,0,self.comm)
         self.crsg = Epetra.CrsGraph(Epetra.Copy, self.map, 3)
-        print "About to insert global indices..."
         self.crsg.InsertGlobalIndices(0,2,array([0,1]))
-        print "Global indices inserted."
         for i in range(1,self.size-1):
             self.crsg.InsertGlobalIndices(i,3,array([i-1,i,i+1]))
-        print "f"
         self.crsg.InsertGlobalIndices(self.size-1,2,array([self.size-2,self.size-1]))
-        print "g"
         self.crsg.FillComplete()
         colors = array([3,2,1])
         self.colors = resize(colors,(self.size,))

@@ -28,7 +28,8 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos") EpetraExt
+//%module(package="PyTrilinos") EpetraExt
+%module EpetraExt
 
 %{
 // System includes
@@ -74,9 +75,6 @@
 //   return $result;
 // }
 
-// C++ STL support
-%include "std_vector.i"
-
 // Epetra interface import
 %import "Epetra_Object.h"
 %import "Epetra_SrcDistObject.h"
@@ -85,16 +83,17 @@
 %import "Epetra_IntVector.h"
 %import "Epetra_MapColoring.h"
 
+// C++ STL support
+%include "std_vector.i"
+
 // EpetraExt interface includes
 %include "EpetraExt_Transform.h"
-%template (Transform_CrsGraph_MapColoring)
-  EpetraExt::Transform<Epetra_CrsGraph, Epetra_MapColoring>;
-%template (Transform_CrsGraph_MapColoringIndex)
-  EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
-%template (StructuralTransform_CrsGraph_MapColoring)
-  EpetraExt::StructuralTransform<Epetra_CrsGraph, Epetra_MapColoring>;
-%template (StructuralTransform_CrsGraph_MapColoringIndex)
-  EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
+%template () std::vector<Epetra_IntVector>;
+%template () EpetraExt::Transform<Epetra_CrsGraph, Epetra_MapColoring>;
+%template () EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector,
+							       std::allocator<Epetra_IntVector> > >;
+%template () EpetraExt::StructuralTransform<Epetra_CrsGraph, Epetra_MapColoring>;
+%template () EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
 
 %include "EpetraExt_MapColoring.h"
 %include "EpetraExt_MapColoringIndex.h"

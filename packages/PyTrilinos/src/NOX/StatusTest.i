@@ -1,3 +1,4 @@
+// -*- c++ -*-
 // @HEADER
 // ***********************************************************************
 //
@@ -26,9 +27,7 @@
 // ***********************************************************************
 // @HEADER
 
-// -*- c++ -*-
-
-%module StatusTest
+%module(package="PyTrilinos.NOX") StatusTest
 
 %{
 // System includes
@@ -52,7 +51,7 @@ using namespace NOX::StatusTest;
 
 // Ignore directives
 %ignore operator<<(ostream &, NOX::StatusTest::StatusType );
-%ignore *::print(ostream &, int) const;
+%ignore print;
 %ignore NOX::Abstract::Group::operator=(const NOX::Abstract::Group&);
 
 // Rename directives
