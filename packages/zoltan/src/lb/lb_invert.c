@@ -74,8 +74,6 @@ int Zoltan_Invert_Lists(
 char *yo = "Zoltan_Invert_Lists";
 char msg[256];
 ZOLTAN_COMM_OBJ *comm_plan;        /* Object returned communication routines  */
-int *my_proc_list = NULL;          /* Array containing current processor ID;
-                                      used to build out_procs. */
 int msgtag, msgtag2;               /* Message tags for communication routines */
 int num_gid_entries, num_lid_entries;  /* Length of global and local ids */
 int include_parts;                 /* Flag indicating whether to compute
@@ -111,21 +109,6 @@ int ierr, ret_ierr = ZOLTAN_OK;
   *out_procs = NULL;
   if (include_parts) *out_to_part = NULL;
 
-  /*
-   *  Build processor's list of requests for non-local objs.
-   */
-
-  if (num_in > 0) {
-    my_proc_list = (int *) ZOLTAN_MALLOC(num_in * sizeof(int));
-    if (!my_proc_list) {
-      ret_ierr = ZOLTAN_MEMERR;
-      goto End;
-    }
-
-    for (i = 0; i < num_in; i++) {
-      my_proc_list[i] = zz->Proc;
-    }
-  }
 
   /*
    *  Compute communication map and num_out, the number of objs this
@@ -207,16 +190,9 @@ int ierr, ret_ierr = ZOLTAN_OK;
     }
   }
 
-  msgtag2--;
-  ierr = Zoltan_Comm_Do(comm_plan, msgtag2, (char *) my_proc_list, 
-                    (int) sizeof(int), (char *) *out_procs);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    sprintf(msg, "Error %s returned from Zoltan_Comm_Do.", 
-            (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-    ret_ierr = ierr;
-  }
-
+  Zoltan_Comm_Info(comm_plan, NULL, NULL, NULL, NULL, NULL, NULL,
+                   NULL, NULL, NULL, NULL, NULL, *out_procs, NULL);
+  
   if (include_parts) {
     msgtag2--;
     ierr = Zoltan_Comm_Do(comm_plan, msgtag2, (char *) in_to_part, 
@@ -233,7 +209,6 @@ int ierr, ret_ierr = ZOLTAN_OK;
 
 End:
 
-  ZOLTAN_FREE(&my_proc_list);
   Zoltan_Comm_Destroy(&comm_plan);
 
   if (ret_ierr == ZOLTAN_MEMERR) {
