@@ -2371,7 +2371,8 @@ report($SUMMARY);
         if (!$short) {      
             print outFile "\n";  
             print outFile "#-------------------------------------------------------------------------------\n";
-            print outFile "# CVS command on this system. Note that CVS access must not require a password.\n";
+            print outFile "# CVS command on this system. Note that CVS access may require a password.\n";
+            print outFile "# An expect script can be used to supply a password if required.\n";
             print outFile "#\n";
             print outFile "# - multiple values recognized: NO\n";
             print outFile "# - value required: YES if CVS_UPDATE is set to YES\n";
