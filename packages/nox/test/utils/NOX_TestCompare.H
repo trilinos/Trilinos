@@ -1,0 +1,93 @@
+// $Id$ 
+// $Source$ 
+
+//@HEADER
+// ************************************************************************
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//                                                                                 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA                                                                                
+// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+// (rppawlo@sandia.gov), Sandia National Laboratories.
+// 
+// ************************************************************************
+//@HEADER
+
+#ifndef NOX_TESTCOMPARE_H
+#define NOX_TESTCOMPARE_H
+
+#include "NOX_Common.H"
+#include "NOX_Utils.H"
+
+namespace NOX {
+
+  //! Utility class to compare values for testing purposes
+  class TestCompare {
+
+  public:
+
+    //! Type of comparison
+    enum CompareType {
+
+      //! Absolute comparison
+      Absolute = 0,
+
+      //! Relative comparison
+      Relative = 1
+    };
+
+  public:
+
+    //! Constructor
+    /*!
+     * @param outputStream [in] Stream to print test details
+     * @param utilities [in] Utils object to determine verbosity level
+     */
+    TestCompare(std::ostream& outputStream, const NOX::Utils& utilities);
+
+    //! Destructor
+    ~TestCompare();
+    
+    //! Compare two values
+    /*!
+     * @param \c value [in] Computed value
+     * @param \c value_expected [in] Value to be compared to
+     * @param \c tolerence [in] Tolerance by which values are allowed to differ
+     * @param \c name [in] Name for this test when printing details
+     * @param \c compareType [in] Type of comparison (Absolute or Relative)
+     * @return Returns 0 for is values are within tolerance, 1 otherwise.
+     */
+    int testValue(double value, double value_expected, 
+		  double tolerance, const std::string& name, 
+		  NOX::TestCompare::CompareType compareType);
+
+  protected:
+
+    //! Output stream to print any messages
+    std::ostream& os;
+
+    //! Utils object determing what to print out
+    const NOX::Utils& utils;
+
+  };
+
+}
+
+#endif

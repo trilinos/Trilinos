@@ -155,32 +155,3 @@ ChanProblemInterface::printSolution(const NOX::LAPACK::Vector &x,
 
 }
 
-int testValue(double value, double value_expected, double tolerance,
-	      const string& name, bool verbose) 
-{
-  bool passed;
-
-  if (fabs(value-value_expected) > tolerance)
-    passed = false;
-  else
-    passed = true;
-
-  if (verbose) {
-    cout << endl
-	 << "\tChecking " << name << ":  ";
-    if (passed)
-      cout << "Passed." << endl;
-    else
-      cout << "Failed." << endl;
-    cout << "\t\tExpected value:  " << LOCA::Utils::Sci(value_expected) << endl
-	 << "\t\tComputed value:  " << LOCA::Utils::Sci(value) << endl
-	 << "\t\tTolerance     :  " << LOCA::Utils::Sci(tolerance) << endl 
-	 << "\t\tDifference    :  " 
-	 << LOCA::Utils::Sci(fabs(value-value_expected)) << endl;
-  }
-  
-  if (passed)
-    return 0;
-  else
-    return 1;
-}

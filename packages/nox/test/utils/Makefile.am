@@ -30,10 +30,12 @@
 # Needed so this is installed with distributions
 include_HEADERS = \
         $(srcdir)/NOX_TestError.H \
-        $(srcdir)/NOX_TestUtils.H
+        $(srcdir)/NOX_TestUtils.H \
+	$(srcdir)/NOX_TestCompare.H
 
 NOX_TEST_UTILS = \
-	$(srcdir)/NOX_TestUtils.C
+	$(srcdir)/NOX_TestUtils.C \
+	$(srcdir)/NOX_TestCompare.C
 
 lib_LIBRARIES = libnoxtestutils.a
 

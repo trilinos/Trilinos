@@ -348,18 +348,21 @@ pitchfork_exe_SOURCES = \
 pitchfork_exe_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a \
+	$(top_builddir)/test/utils/libnoxtestutils.a \
 	$(top_builddir)/src-loca/src/libloca.la \
         $(top_builddir)/src-loca/src-epetra/liblocaepetra.la
 
 pitchfork_exe_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
-		   -I$(top_srcdir)/src \
-                   -I$(top_srcdir)/src-epetra \
-		   -I$(top_srcdir)/src-loca/src \
-                   -I$(top_srcdir)/src-loca/src-epetra
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src-epetra \
+	-I$(top_srcdir)/src-loca/src \
+        -I$(top_srcdir)/src-loca/src-epetra \
+	-I$(top_srcdir)/test/utils 
 
 pitchfork_exe_LDADD = \
 	$(top_builddir)/src-loca/src-epetra/liblocaepetra.la \
 	$(top_builddir)/src-loca/src/libloca.la \
+	$(top_builddir)/test/utils/libnoxtestutils.a \
 	$(top_builddir)/src-epetra/libnoxepetra.a \
 	$(top_builddir)/src/libnox.a \
 	$(LIBS)

@@ -45,6 +45,7 @@ chanContinuation_exe_SOURCES = \
 chanContinuation_exe_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
 	$(top_builddir)/src-lapack/libnoxlapack.a \
+	$(top_builddir)/test/utils/libnoxtestutils.a \
 	$(top_builddir)/src-loca/src/libloca.la \
         $(top_builddir)/src-loca/src-lapack/liblocalapack.la
 
@@ -61,7 +62,8 @@ chanContinuation_exe_LDADD = \
                 $(top_builddir)/src-loca/src/libloca.la \
 		-L$(top_builddir)/src \
 		-L$(top_builddir)/src-lapack \
-                -lnoxlapack -lnox \
+		-L$(top_builddir)/test/utils \
+                -lnoxtestutils -lnoxlapack -lnox \
                 $(LIBS) $(FLIBS)
 
 chanTPContinuation_exe_SOURCES = \

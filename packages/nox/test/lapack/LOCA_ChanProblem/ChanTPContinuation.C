@@ -33,6 +33,7 @@
 #include "LOCA.H"
 #include "LOCA_LAPACK.H"
 #include "ChanProblemInterface.H"
+#include "NOX_TestCompare.H"
 
 int main(int argc, char *argv[])
 {
@@ -51,8 +52,6 @@ int main(int argc, char *argv[])
     if (argc>1) 
       if (argv[1][0]=='-' && argv[1][1]=='v') 
 	verbose = true;
-
-    cout << "Starting lapack/LOCA_ChanProblem/ChanTPContinuation_exe" << endl;
 
     // Create output file to save solutions
     ofstream outFile("ChanTPContinuation.dat");
@@ -150,8 +149,8 @@ int main(int argc, char *argv[])
 				 LOCA::Utils::StepperIteration +
 				 LOCA::Utils::StepperDetails +
 				 LOCA::Utils::Solver +
+				 LOCA::Utils::Parameters +
 				 LOCA::Utils::SolverDetails);
-      //locaUtilsList.setParameter("Output Precision", 10);
     }
     
     else
@@ -168,7 +167,8 @@ int main(int argc, char *argv[])
 				 NOX::Utils::OuterIteration + 
 				 NOX::Utils::InnerIteration +
 				 NOX::Utils::Details + 
-				 NOX::Utils::Warning);
+				 NOX::Utils::Warning +
+				 NOX::Utils::TestDetails);
     else
        nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
 
@@ -176,11 +176,6 @@ int main(int argc, char *argv[])
     // Create the "Line Search" sublist for the "Line Search Based" solver
     NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
     searchParams.setParameter("Method", "Full Step");
-
-    // Create the newton and  linear solver parameters sublist
-  NOX::Parameter::List& directionParameters = nlParams.sublist("Direction");
-  NOX::Parameter::List& newtonParameters = directionParameters.sublist("Newton");
-  NOX::Parameter::List& linearSolverParameters = newtonParameters.sublist("Linear Solver");
 
     // Set up the status tests
     NOX::StatusTest::NormF statusTestA(1.0e-6, NOX::StatusTest::NormF::Scaled);
@@ -216,38 +211,46 @@ int main(int argc, char *argv[])
     outFile.close();
 
     // Check some statistics on the solution
-    if (verbose)
-      cout << "***** Checking solutions statistics *****" << endl;
+    NOX::Utils utils(nlPrintParams);
+    NOX::TestCompare testCompare(cout, utils);
+    
+    if (utils.isPrintProcessAndType(NOX::Utils::TestDetails))
+      cout << endl << "***** Checking solutions statistics *****" << endl;
   
     // Check number of steps
     int numSteps = stepper.getStepNumber();
     int numSteps_expected = 9;
-    ierr += testValue(numSteps, numSteps_expected, 0.0,
-		      "number of continuation steps", verbose);
+    ierr += testCompare.testValue(numSteps, numSteps_expected, 0.0,
+				  "number of continuation steps", 
+				  NOX::TestCompare::Absolute);
 
     // Check number of failed steps
     int numFailedSteps = stepper.getNumFailedSteps();
     int numFailedSteps_expected = 0;
-    ierr += testValue(numFailedSteps, numFailedSteps_expected, 0.0, 
-		      "number of failed continuation steps", verbose);
+    ierr += testCompare.testValue(numFailedSteps, numFailedSteps_expected, 
+				  0.0, "number of failed continuation steps", 
+				  NOX::TestCompare::Absolute);
 
     // Check final value of continuation parameter
     double beta_final = finalGroup.getParam("beta");
     double beta_expected = 0.0;
-    ierr += testValue(beta_final, beta_expected, 1.0e-14,
-		      "final value of continuation parameter", verbose);
+    ierr += testCompare.testValue(beta_final, beta_expected, 1.0e-14,
+				  "final value of continuation parameter", 
+				  NOX::TestCompare::Relative);
 
     // Check final value of turning point parameter
     double alpha_final = finalGroup.getParam("alpha");
     double alpha_expected = 3.1601952;
-    ierr += testValue(alpha_final, alpha_expected, 1.0e-7,
-		      "final value of turning point parameter", verbose);
+    ierr += testCompare.testValue(alpha_final, alpha_expected, 1.0e-7,
+				  "final value of turning point parameter", 
+				  NOX::TestCompare::Relative);
 
     // Check norm of solution
     double norm_x = finalSolution.norm();
     double norm_x_expected = 63.1872045;
-    ierr += testValue(norm_x, norm_x_expected, 1.0e-7,
-		      "norm of final solution", verbose);
+    ierr += testCompare.testValue(norm_x, norm_x_expected, 1.0e-7,
+				  "norm of final solution", 
+				  NOX::TestCompare::Relative);
 
     if (ierr == 0)
       cout << "All tests passed!" << endl;

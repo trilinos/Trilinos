@@ -40,6 +40,7 @@
 // LOCA Objects
 #include "LOCA.H"
 #include "LOCA_Epetra.H"
+#include "NOX_TestCompare.H"
 
 // Trilinos Objects
 #ifdef HAVE_MPI
@@ -63,268 +64,322 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i;
+  int ierr = 0;
 
-  // Initialize MPI
+  try {
+
+    // Initialize MPI
 #ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
+    MPI_Init(&argc,&argv);
 #endif
 
-  // Create a communicator for Epetra objects
+    // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+    Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
-  Epetra_SerialComm Comm;
+    Epetra_SerialComm Comm;
 #endif
 
-  // Get the process ID and the total number of processors
-  int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
+    // Get the process ID and the total number of processors
+    int MyPID = Comm.MyPID();
+    int NumProc = Comm.NumProc();
 
-  // Check for verbose output
-  bool verbose = false;
-  if (argc>1) 
-    if (argv[1][0]=='-' && argv[1][1]=='v') 
-      verbose = true;
+    // Check for verbose output
+    bool verbose = false;
+    if (argc>1) 
+      if (argv[1][0]=='-' && argv[1][1]=='v') 
+	verbose = true;
 
-  // Get the number of elements from the command line
-  int NumGlobalElements = 0;
-  if ((argc > 2) && (verbose))
-    NumGlobalElements = atoi(argv[2]) + 1;
-  else if ((argc > 1) && (!verbose))
-    NumGlobalElements = atoi(argv[1]) + 1;
-  else 
-    NumGlobalElements = 101;
+    // Get the number of elements from the command line
+    int NumGlobalElements = 0;
+    if ((argc > 2) && (verbose))
+      NumGlobalElements = atoi(argv[2]) + 1;
+    else if ((argc > 1) && (!verbose))
+      NumGlobalElements = atoi(argv[1]) + 1;
+    else 
+      NumGlobalElements = 101;
 
-  // The number of unknowns must be at least equal to the 
-  // number of processors.
-  if (NumGlobalElements < NumProc) {
-    cout << "numGlobalBlocks = " << NumGlobalElements 
-	 << " cannot be < number of processors = " << NumProc << endl;
-    exit(1);
-  }
+    // The number of unknowns must be at least equal to the 
+    // number of processors.
+    if (NumGlobalElements < NumProc) {
+      cout << "numGlobalBlocks = " << NumGlobalElements 
+	   << " cannot be < number of processors = " << NumProc << endl;
+      exit(1);
+    }
 
-  int maxNewtonIters = 20;
-  double alpha = 1.0;
-  double beta = 0.0;
-  double lambda = -2.0;
+    int maxNewtonIters = 20;
+    double alpha = 1.0;
+    double beta = 0.0;
+    double lambda = -2.0;
 
-  // Create the FiniteElementProblem class.  This creates all required
-  // Epetra objects for the problem and allows calls to the 
-  // function (RHS) and Jacobian evaluation routines.
-  FiniteElementProblem Problem(NumGlobalElements, Comm);
+    // Create the FiniteElementProblem class.  This creates all required
+    // Epetra objects for the problem and allows calls to the 
+    // function (RHS) and Jacobian evaluation routines.
+    FiniteElementProblem Problem(NumGlobalElements, Comm);
 
-  // Get the vector from the Problem
-  Epetra_Vector& soln = Problem.getSolution();
+    // Get the vector from the Problem
+    Epetra_Vector& soln = Problem.getSolution();
 
-  // Initialize Solution
-  soln.PutScalar(0.0);
+    // Initialize Solution
+    soln.PutScalar(0.0);
   
-  // Begin LOCA Solver ************************************
+    // Begin LOCA Solver ************************************
 
-  // Create parameter list
-  NOX::Parameter::List paramList;
+    // Create parameter list
+    NOX::Parameter::List paramList;
 
-  // Create LOCA sublist
-  NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
+    // Create LOCA sublist
+    NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
 
-  // Create the stepper sublist and set the stepper parameters
-  NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
-  //locaStepperList.setParameter("Continuation Method", "Natural");
-  locaStepperList.setParameter("Continuation Method", "Arc Length");
-  //locaStepperList.setParameter("Continuation Method", "Householder Arc Length");
-  locaStepperList.setParameter("Continuation Parameter", "lambda");
-  locaStepperList.setParameter("Initial Value", lambda);
-  locaStepperList.setParameter("Max Value", 4.0);
-  locaStepperList.setParameter("Min Value", -4.0);
-  locaStepperList.setParameter("Max Steps", 50);
-  //locaStepperList.setParameter("Max Steps", 1);
-  locaStepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
-  locaStepperList.setParameter("Enable Arc Length Scaling", true);
-  locaStepperList.setParameter("Goal Arc Length Parameter Contribution", 0.5);
-  locaStepperList.setParameter("Max Arc Length Parameter Contribution", 0.7);
-  locaStepperList.setParameter("Initial Scale Factor", 1.0);
-  locaStepperList.setParameter("Min Scale Factor", 1.0e-8);
-  locaStepperList.setParameter("Enable Tangent Factor Step Size Scaling",false);
-  locaStepperList.setParameter("Min Tangent Factor", 0.8);
-  locaStepperList.setParameter("Tangent Factor Exponent",1.5);
+    // Create the stepper sublist and set the stepper parameters
+    NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
+    //locaStepperList.setParameter("Continuation Method", "Natural");
+    locaStepperList.setParameter("Continuation Method", "Arc Length");
+    //locaStepperList.setParameter("Continuation Method", "Householder Arc Length");
+    locaStepperList.setParameter("Continuation Parameter", "lambda");
+    locaStepperList.setParameter("Initial Value", lambda);
+    locaStepperList.setParameter("Max Value", 4.0);
+    locaStepperList.setParameter("Min Value", -4.0);
+    locaStepperList.setParameter("Max Steps", 50);
+    //locaStepperList.setParameter("Max Steps", 1);
+    locaStepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
+    locaStepperList.setParameter("Enable Arc Length Scaling", true);
+    locaStepperList.setParameter("Goal Arc Length Parameter Contribution", 0.5);
+    locaStepperList.setParameter("Max Arc Length Parameter Contribution", 0.7);
+    locaStepperList.setParameter("Initial Scale Factor", 1.0);
+    locaStepperList.setParameter("Min Scale Factor", 1.0e-8);
+    locaStepperList.setParameter("Enable Tangent Factor Step Size Scaling",false);
+    locaStepperList.setParameter("Min Tangent Factor", 0.8);
+    locaStepperList.setParameter("Tangent Factor Exponent",1.5);
   
 
-  // Create bifurcation sublist
+    // Create bifurcation sublist
     NOX::Parameter::List& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
     bifurcationList.setParameter("Method", "None");
 
 #ifdef HAVE_LOCA_ANASAZI
-  // Create Anasazi Eigensolver sublist (needs --with-loca-anasazi)
-  locaStepperList.setParameter("Compute Eigenvalues",true);
-  NOX::Parameter::List& aList = locaStepperList.sublist("Anasazi");
-  aList.setParameter("Block Size", 1);
-  aList.setParameter("Arnoldi Size", 10);
-  aList.setParameter("NEV", 3);
-  aList.setParameter("Tol", 2.0e-7);
-  aList.setParameter("Convergence Check", 1);
-  aList.setParameter("Restarts",2);
-  aList.setParameter("Frequency",1);
-  aList.setParameter("Debug Level",0);
+    // Create Anasazi Eigensolver sublist (needs --with-loca-anasazi)
+    locaStepperList.setParameter("Compute Eigenvalues",true);
+    NOX::Parameter::List& aList = locaStepperList.sublist("Anasazi");
+    aList.setParameter("Block Size", 1);
+    aList.setParameter("Arnoldi Size", 10);
+    aList.setParameter("NEV", 3);
+    aList.setParameter("Tol", 2.0e-7);
+    aList.setParameter("Convergence Check", 1);
+    aList.setParameter("Restarts",2);
+    aList.setParameter("Frequency",1);
+    aList.setParameter("Debug Level",0);
 #else
-   locaStepperList.setParameter("Compute Eigenvalues",false);
+    locaStepperList.setParameter("Compute Eigenvalues",false);
 #endif
   
-  // Create predictor sublist
-  NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
-  //predictorList.setParameter("Method", "Constant");
-  //predictorList.setParameter("Method", "Tangent");
-  predictorList.setParameter("Method", "Secant");
+    // Create predictor sublist
+    NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
+    //predictorList.setParameter("Method", "Constant");
+    //predictorList.setParameter("Method", "Tangent");
+    predictorList.setParameter("Method", "Secant");
 
-  // Create step size sublist
-  NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
-  //stepSizeList.setParameter("Method", "Constant");
-  stepSizeList.setParameter("Method", "Adaptive");
-  stepSizeList.setParameter("Initial Step Size", -0.1);
-  stepSizeList.setParameter("Min Step Size", 1.0e-3);
-  stepSizeList.setParameter("Max Step Size", 10.0);
-  stepSizeList.setParameter("Aggressiveness", 0.1);
-  stepSizeList.setParameter("Failed Step Reduction Factor", 0.7);
-  stepSizeList.setParameter("Successful Step Increase Factor", 1.26); // for constant
+    // Create step size sublist
+    NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
+    //stepSizeList.setParameter("Method", "Constant");
+    stepSizeList.setParameter("Method", "Adaptive");
+    stepSizeList.setParameter("Initial Step Size", -0.1);
+    stepSizeList.setParameter("Min Step Size", 1.0e-3);
+    stepSizeList.setParameter("Max Step Size", 10.0);
+    stepSizeList.setParameter("Aggressiveness", 0.1);
+    stepSizeList.setParameter("Failed Step Reduction Factor", 0.7);
+    stepSizeList.setParameter("Successful Step Increase Factor", 1.26); // for constant
 
-  // Set the LOCA Utilities
-  NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
-  locaUtilsList.setParameter("MyPID", MyPID);
-  if (verbose)
-    locaUtilsList.setParameter("Output Information", 
-			       LOCA::Utils::Error +
-			       LOCA::Utils::Warning +
-			       LOCA::Utils::StepperIteration +
-			       LOCA::Utils::StepperDetails +
-			       LOCA::Utils::Solver +
-			       LOCA::Utils::SolverDetails +
-			       LOCA::Utils::Parameters);
-  else
-    locaUtilsList.setParameter("Output Information", LOCA::Utils::Error);
-
-  // Create the "Solver" parameters sublist to be used with NOX Solvers
-  NOX::Parameter::List& nlParams = paramList.sublist("NOX");
-  nlParams.setParameter("Nonlinear Solver", "Line Search Based");
-
-  // Create the NOX printing parameter list
-  NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
-  nlPrintParams.setParameter("MyPID", MyPID); 
-  if (verbose)
-    nlPrintParams.setParameter("Output Information", 
-			       NOX::Utils::OuterIteration + 
-			       NOX::Utils::OuterIterationStatusTest + 
-			       NOX::Utils::InnerIteration +
-			       NOX::Utils::Parameters + 
-			       NOX::Utils::Details + 
-			       NOX::Utils::Warning +
-			       NOX::Utils::TestDetails + 
-			       NOX::Utils::Error);
-  else
-    nlPrintParams.setParameter("Output Information", NOX::Utils::Error +
-			       NOX::Utils::TestDetails);
-
-  // Create the "Line Search" sublist for the "Line Search Based" solver
-  NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  searchParams.setParameter("Method", "Full Step");
-
-  // Create the "Direction" sublist for the "Line Search Based" solver
-  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-  NOX::Parameter::List& newParams = dirParams.sublist("Newton");
-  dirParams.setParameter("Method", "Newton");
-  newParams.setParameter("Forcing Term Method", "Constant");
-
-  // Create the "Linear Solver" sublist for the "Direction" sublist
-  NOX::Parameter::List& lsParams = newParams.sublist("Linear Solver");
-  lsParams.setParameter("Aztec Solver", "GMRES");  
-  lsParams.setParameter("Max Iterations", 100);  
-  lsParams.setParameter("Tolerance", 1e-4);
-  if (verbose)
-    lsParams.setParameter("Output Frequency", 50);
-  else
-    lsParams.setParameter("Output Frequency", 0);    
-  lsParams.setParameter("Scaling", "None");             
-  lsParams.setParameter("Preconditioner", "Ifpack");
-  //lsParams.setParameter("Preconditioner", "AztecOO");
-  //lsParams.setParameter("Jacobian Operator", "Matrix-Free");
-  //lsParams.setParameter("Preconditioner Operator", "Finite Difference");
-  //lsParams.setParameter("Aztec Preconditioner", "ilut"); 
-  //lsParams.setParameter("Overlap", 2);   
-  //lsParams.setParameter("Fill Factor", 2.0); 
-  //lsParams.setParameter("Drop Tolerance", 1.0e-12);
-
-  // Create and initialize the parameter vector
-  LOCA::ParameterVector pVector;
-  pVector.addParameter("lambda",lambda);
-  pVector.addParameter("alpha", alpha);
-  pVector.addParameter("beta", beta);
-
-  // Create the interface between the test problem and the nonlinear solver
-  // This is created by the user using inheritance of the abstract base class:
-  // NLS_PetraGroupInterface
-  Problem_Interface interface(Problem);
-
-  // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner by 
-  // uncommenting one or more of the following lines:
-  // 1. User supplied (Epetra_RowMatrix)
-  Epetra_RowMatrix& A = Problem.getJacobian();
-  // 2. Matrix-Free (Epetra_Operator)
-  //NOX::Epetra::MatrixFree A(interface, soln);
-  // 3. Finite Difference (Epetra_RowMatrix)
-  //NOX::Epetra::FiniteDifference A(interface, soln);
-  // 4. Jacobi Preconditioner
-  //NOX::Epetra::JacobiPreconditioner Prec(soln);
-
-  // Create the linear systems
-  NOX::EpetraNew::LinearSystemAztecOO linsys(nlPrintParams, lsParams,
-					     interface, interface,
-					     A, soln);
-//   NOX::EpetraNew::LinearSystemAztecOO linsys(nlPrintParams, lsParams,
-// 					     interface, soln);
-
-  // Create the loca vector
-  NOX::Epetra::Vector locaSoln(soln);
-
-  // Create the Group
-  LOCA::EpetraNew::Group grp(nlPrintParams, interface, locaSoln, linsys,
-			     pVector);
-  grp.computeF();
-
-  // Create the Solver convergence test
-  NOX::StatusTest::NormF wrms(1.0e-8);
-  NOX::StatusTest::MaxIters maxiters(maxNewtonIters);
-  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
-  combo.addStatusTest(wrms);
-  combo.addStatusTest(maxiters);
-
-  // Create the stepper  
-  LOCA::Stepper stepper(grp, combo, paramList);
-  LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
-
-  if (status != LOCA::Abstract::Iterator::Finished) {
-    ierr = 1;
-    if (LOCA::Utils::doPrint(LOCA::Utils::Error))
-      cout << "Stepper failed to converge!" << endl;
-  }
-
-  // Output the parameter list
-  if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
-    cout << endl << "Final Parameters" << endl
-	 << "****************" << endl;
-    stepper.getParameterList().print(cout);
-    cout << endl;
-  }
-
-  if (MyPID == 0) {
-    if (ierr == 0)
-      cout << "All tests passed!" << endl;
+    // Set the LOCA Utilities
+    NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
+    locaUtilsList.setParameter("MyPID", MyPID);
+    if (verbose)
+      locaUtilsList.setParameter("Output Information", 
+				 LOCA::Utils::Error +
+				 LOCA::Utils::Warning +
+				 LOCA::Utils::StepperIteration +
+				 LOCA::Utils::StepperDetails +
+				 LOCA::Utils::Solver +
+				 LOCA::Utils::SolverDetails +
+				 LOCA::Utils::Parameters);
     else
-      cout << ierr << " test(s) failed!" << endl;
-  }
+      locaUtilsList.setParameter("Output Information", LOCA::Utils::Error);
+
+    // Create the "Solver" parameters sublist to be used with NOX Solvers
+    NOX::Parameter::List& nlParams = paramList.sublist("NOX");
+    nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+
+    // Create the NOX printing parameter list
+    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.setParameter("MyPID", MyPID); 
+    if (verbose)
+      nlPrintParams.setParameter("Output Information", 
+				 NOX::Utils::OuterIteration + 
+				 NOX::Utils::OuterIterationStatusTest + 
+				 NOX::Utils::InnerIteration +
+				 NOX::Utils::Parameters + 
+				 NOX::Utils::Details + 
+				 NOX::Utils::Warning +
+				 NOX::Utils::TestDetails + 
+				 NOX::Utils::Error);
+    else
+      nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
+
+    // Create the "Line Search" sublist for the "Line Search Based" solver
+    NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
+    searchParams.setParameter("Method", "Full Step");
+
+    // Create the "Direction" sublist for the "Line Search Based" solver
+    NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
+    NOX::Parameter::List& newParams = dirParams.sublist("Newton");
+    dirParams.setParameter("Method", "Newton");
+    newParams.setParameter("Forcing Term Method", "Constant");
+
+    // Create the "Linear Solver" sublist for the "Direction" sublist
+    NOX::Parameter::List& lsParams = newParams.sublist("Linear Solver");
+    lsParams.setParameter("Aztec Solver", "GMRES");  
+    lsParams.setParameter("Max Iterations", 100);  
+    lsParams.setParameter("Tolerance", 1e-4);
+    if (verbose)
+      lsParams.setParameter("Output Frequency", 50);
+    else
+      lsParams.setParameter("Output Frequency", 0);    
+    lsParams.setParameter("Scaling", "None");             
+    lsParams.setParameter("Preconditioner", "Ifpack");
+    //lsParams.setParameter("Preconditioner", "AztecOO");
+    //lsParams.setParameter("Jacobian Operator", "Matrix-Free");
+    //lsParams.setParameter("Preconditioner Operator", "Finite Difference");
+    //lsParams.setParameter("Aztec Preconditioner", "ilut"); 
+    //lsParams.setParameter("Overlap", 2);   
+    //lsParams.setParameter("Fill Factor", 2.0); 
+    //lsParams.setParameter("Drop Tolerance", 1.0e-12);
+
+    // Create and initialize the parameter vector
+    LOCA::ParameterVector pVector;
+    pVector.addParameter("lambda",lambda);
+    pVector.addParameter("alpha", alpha);
+    pVector.addParameter("beta", beta);
+
+    // Create the interface between the test problem and the nonlinear solver
+    // This is created by the user using inheritance of the abstract base class:
+    // NLS_PetraGroupInterface
+    Problem_Interface interface(Problem);
+
+    // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner by 
+    // uncommenting one or more of the following lines:
+    // 1. User supplied (Epetra_RowMatrix)
+    Epetra_RowMatrix& A = Problem.getJacobian();
+    // 2. Matrix-Free (Epetra_Operator)
+    //NOX::Epetra::MatrixFree A(interface, soln);
+    // 3. Finite Difference (Epetra_RowMatrix)
+    //NOX::Epetra::FiniteDifference A(interface, soln);
+    // 4. Jacobi Preconditioner
+    //NOX::Epetra::JacobiPreconditioner Prec(soln);
+
+    // Create the linear systems
+    NOX::EpetraNew::LinearSystemAztecOO linsys(nlPrintParams, lsParams,
+					       interface, interface,
+					       A, soln);
+    //   NOX::EpetraNew::LinearSystemAztecOO linsys(nlPrintParams, lsParams,
+    // 					     interface, soln);
+
+    // Create the loca vector
+    NOX::Epetra::Vector locaSoln(soln);
+
+    // Create the Group
+    LOCA::EpetraNew::Group grp(nlPrintParams, interface, locaSoln, linsys,
+			       pVector);
+    grp.computeF();
+
+    // Create the Solver convergence test
+    NOX::StatusTest::NormF wrms(1.0e-8);
+    NOX::StatusTest::MaxIters maxiters(maxNewtonIters);
+    NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
+    combo.addStatusTest(wrms);
+    combo.addStatusTest(maxiters);
+
+    // Create the stepper  
+    LOCA::Stepper stepper(grp, combo, paramList);
+    LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
+
+    if (status != LOCA::Abstract::Iterator::Finished) {
+      ierr = 1;
+      if (LOCA::Utils::doPrint(LOCA::Utils::Error))
+	cout << "Stepper failed to converge!" << endl;
+    }
+
+    // Get the final solution from the stepper
+    const LOCA::EpetraNew::Group& finalGroup = 
+      dynamic_cast<const LOCA::EpetraNew::Group&>(stepper.getSolutionGroup());
+    const NOX::Epetra::Vector& finalSolution = 
+      dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX());
+
+    // Output the parameter list
+    if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
+      cout << endl << "Final Parameters" << endl
+	   << "****************" << endl;
+      stepper.getParameterList().print(cout);
+      cout << endl;
+    }
+
+    // Check some statistics on the solution
+    NOX::Utils utils(nlPrintParams);
+    NOX::TestCompare testCompare(cout, utils);
+  
+    if (utils.isPrintProcessAndType(NOX::Utils::TestDetails))
+      cout << endl << "***** Checking solutions statistics *****" << endl;
+
+    // Check number of steps
+    int numSteps = stepper.getStepNumber();
+    int numSteps_expected = 13;
+    ierr += testCompare.testValue(numSteps, numSteps_expected, 0.0,
+				  "number of continuation steps",
+				  NOX::TestCompare::Absolute);
+
+    // Check number of failed steps
+    int numFailedSteps = stepper.getNumFailedSteps();
+    int numFailedSteps_expected = 0;
+    ierr += testCompare.testValue(numFailedSteps, numFailedSteps_expected, 0.0,
+				  "number of failed continuation steps",
+				  NOX::TestCompare::Absolute);
+
+    // Check final value of continuation parameter
+    double alpha_final = finalGroup.getParam("lambda");
+    double alpha_expected = -4.0;
+    ierr += testCompare.testValue(alpha_final, alpha_expected, 1.0e-14,
+				  "final value of continuation parameter", 
+				  NOX::TestCompare::Relative);
+ 
+    // Check norm of solution
+    double norm_x = finalSolution.norm();
+    double norm_x_expected = 0.0;
+    ierr += testCompare.testValue(norm_x, norm_x_expected, 1.0e-7,
+				  "norm of final solution",
+				  NOX::TestCompare::Relative);
+
+    if (MyPID == 0) {
+      if (ierr == 0)
+	cout << "All tests passed!" << endl;
+      else
+	cout << ierr << " test(s) failed!" << endl;
+    }
 
 #ifdef HAVE_MPI
-  MPI_Finalize() ;
+    MPI_Finalize() ;
 #endif
+
+  }
+
+  catch (string& s) {
+    cout << s << endl;
+  }
+  catch (char *s) {
+    cout << s << endl;
+  }
+  catch (...) {
+    cout << "Caught unknown exception!" << endl;
+  }
 
 /* end main
 */

@@ -33,6 +33,7 @@
 #include "LOCA.H"
 #include "LOCA_LAPACK.H"
 #include "ChanProblemInterface.H"
+#include "NOX_TestCompare.H"
 
 int main(int argc, char *argv[])
 {
@@ -52,8 +53,6 @@ int main(int argc, char *argv[])
     if (argc>1)
       if (argv[1][0]=='-' && argv[1][1]=='v') 
 	verbose = true;
-
-    cout << "Starting lapack/LOCA_ChanProblem/ChanContinuation_exe" << endl;
 
     // Create output file to save solutions
     ofstream outFile("ChanContinuation.dat");
@@ -136,7 +135,6 @@ int main(int argc, char *argv[])
 				 LOCA::Utils::Solver +
 				 LOCA::Utils::Parameters +
 				 LOCA::Utils::SolverDetails);
-      //locaUtilsList.setParameter("Output Precision", 10);
     }
     else
       locaUtilsList.setParameter("Output Information", LOCA::Utils::Error);
@@ -152,7 +150,8 @@ int main(int argc, char *argv[])
 				  NOX::Utils::Details +
 				  NOX::Utils::OuterIteration + 
 				  NOX::Utils::InnerIteration + 
-				  NOX::Utils::Warning);
+				  NOX::Utils::Warning +
+				  NOX::Utils::TestDetails);
      else
        nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
 
@@ -193,32 +192,39 @@ int main(int argc, char *argv[])
     outFile.close();
 
     // Check some statistics on the solution
-    if (verbose)
-      cout << "***** Checking solutions statistics *****" << endl;
+    NOX::Utils utils(nlPrintParams);
+    NOX::TestCompare testCompare(cout, utils);
+
+    if (utils.isPrintProcessAndType(NOX::Utils::TestDetails))
+      cout << endl << "***** Checking solutions statistics *****" << endl;
   
     // Check number of steps
     int numSteps = stepper.getStepNumber();
     int numSteps_expected = 32;
-    ierr += testValue(numSteps, numSteps_expected, 0.0,
-		      "number of continuation steps", verbose);
+    ierr += testCompare.testValue(numSteps, numSteps_expected, 0.0,
+				  "number of continuation steps",
+				  NOX::TestCompare::Absolute);
 
     // Check number of failed steps
     int numFailedSteps = stepper.getNumFailedSteps();
     int numFailedSteps_expected = 0;
-    ierr += testValue(numFailedSteps, numFailedSteps_expected, 0.0, 
-		      "number of failed continuation steps", verbose);
+    ierr += testCompare.testValue(numFailedSteps, numFailedSteps_expected, 0.0,
+				  "number of failed continuation steps",
+				  NOX::TestCompare::Absolute);
 
     // Check final value of continuation parameter
     double alpha_final = finalGroup.getParam("alpha");
     double alpha_expected = 5.0;
-    ierr += testValue(alpha_final, alpha_expected, 1.0e-14,
-		      "final value of continuation parameter", verbose);
+    ierr += testCompare.testValue(alpha_final, alpha_expected, 1.0e-14,
+				  "final value of continuation parameter", 
+				  NOX::TestCompare::Relative);
  
     // Check norm of solution
     double norm_x = finalSolution.norm();
     double norm_x_expected = 203.1991024;
-    ierr += testValue(norm_x, norm_x_expected, 1.0e-7,
-		      "norm of final solution", verbose);
+    ierr += testCompare.testValue(norm_x, norm_x_expected, 1.0e-7,
+				  "norm of final solution",
+				  NOX::TestCompare::Relative);
 
     if (ierr == 0)
       cout << "All tests passed!" << endl;
