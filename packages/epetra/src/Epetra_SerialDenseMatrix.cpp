@@ -241,7 +241,7 @@ void Epetra_SerialDenseMatrix::Print(ostream& os) const {
 
   for (int i=0; i<M_; i++) {
     for (int j=0; j<N_; j++){
-      os << (*this)(i,j);
+      os << (*this)(i,j) << " ";
     }
     os << endl;
   }
