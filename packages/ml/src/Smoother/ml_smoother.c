@@ -3455,6 +3455,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    double *dbl_arg1, *diagonal;
    struct ML_Operator_blockmat_data *mat_data;
 #ifdef GREG
+   static int stupid = 0;   /* Used for hardwired eigenvalues */
    struct MLSthing *widget;
 #endif
 #ifdef ML_TIMING_DETAILED
@@ -3610,6 +3611,16 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    dataptr->sm_nodal->ntimes = 1;
    dataptr->sm_nodal->omega = 1.0;
 
+#ifdef GREG
+printf("setting the nodal eigenvalues!!!!!!!!!!!!!!!!!!!!! %u %d\n",Amat->to,
+stupid);
+if (stupid == 0) {
+  tmpmat->lambda_max = 2.132849/1.1;
+  tmpmat->lambda_max = 2.127063/1.1;
+  stupid++;
+}
+else tmpmat->lambda_max = 1.881462/1.1;
+#endif
 
   if ( (nodal_smoother == (void *) ML_Gen_Smoother_Jacobi) ||
        (nodal_smoother == (void *) ML_Gen_Smoother_GaussSeidel) ||
@@ -7000,6 +7011,9 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    double beta, alpha, theta, delta, s1, rhok, rhokp1;
    int             *cols, allocated_space;
    double          *diagonal, *vals, *tdiag, dtemp1, dtemp2;
+#ifdef GREG
+double tmp;
+#endif
 
    n = outlen;
    widget = (struct MLSthing *) smooth_ptr->smoother->data;
@@ -7016,8 +7030,11 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    beta = 1.1*Amat->lambda_max;   /* try and bracket high */
    alpha = Amat->lambda_max/(widget->eig_ratio);
 #ifdef GREG
+#undef GREG
+#endif
+#ifdef GREG
 if (Amat->comm->ML_mypid == 0) {
-printf("Deg %d beta %e ratio %e\n",deg,beta,widget->eig_ratio);
+printf("Deg %d beta %20.13e ratio %20.13e\n",deg,beta,widget->eig_ratio);
 fflush(stdout);
 }
 #endif
@@ -7095,6 +7112,12 @@ fflush(stdout);
    }
    ML_free(dk);
    ML_free(pAux);
+#ifdef GREG
+tmp = sqrt(ML_gdot(n, x, x, Amat->comm));
+if (Amat->comm->ML_mypid == 0) 
+printf("X is %20.13e\n", tmp);
+#endif
+
    return 0;	
 }
 
@@ -7375,10 +7398,12 @@ int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
   alpha_real= beta_real/(widget->eig_ratio);
   alpha_img = beta_img;
 
+#ifdef GREG
 if (Amat->comm->ML_mypid == 0) {
-  printf("deg %d beta real %e img %e ratio %e\n",deg,beta_real,beta_img,widget->eig_ratio);
+  printf("deg %d beta real %20.13e img %20.13e ratio %20.13e\n",deg,beta_real,beta_img,widget->eig_ratio);
    fflush(stdout);
 }
+#endif
 
   delta_real = (beta_real - alpha_real)/2.;
   delta_img = (beta_img - alpha_img)/2.;
@@ -7437,14 +7462,18 @@ if (Amat->comm->ML_mypid == 0) {
     blockmat->M_diag = tdiag;  tdiag = NULL;
   }
   d2 = blockmat->M_diag;
+#ifdef GREG
 tmp = sqrt(ML_gdot(2*n, x, x, Amat->comm));
 if (Amat->comm->ML_mypid == 0) 
-printf("x is %e\n", tmp);
+printf("x is %20.13e\n", tmp);
+#endif
 
  if (smooth_ptr->init_guess == ML_NONZERO) {
+#ifdef GREG
 tmp = sqrt(ML_gdot(2*n, rhs, rhs, Amat->comm));
 if (Amat->comm->ML_mypid == 0) 
-printf("Res is %e\n", tmp);
+printf("Res is %20.13e\n", tmp);
+#endif
    ML_Operator_Apply(Amat, 2*n, x, 2*n, pAux);
    for (i = 0; i < 2*n; i++) {
      dk[i] = rhs[i] - pAux[i];
@@ -7462,9 +7491,11 @@ printf("Res is %e\n", tmp);
    }
 }
   else { 
+#ifdef GREG
 tmp = sqrt(ML_gdot(2*n, rhs, rhs, Amat->comm));
 if (Amat->comm->ML_mypid == 0) 
-printf("res is %e\n", tmp);
+printf("res is %20.13e\n", tmp);
+#endif
    for (k = 1; k < n+1; k++) {
        denom_real = theta_real*d1[k-1] - theta_img*d2[k-1];
        denom_img  = theta_real*d2[k-1] + theta_img*d1[k-1];
@@ -7476,9 +7507,11 @@ printf("res is %e\n", tmp);
        x[k-1] = dk[k-1];
        x[k+n-1] = dk[k+n-1];
      }
+#ifdef GREG
 tmp = sqrt(ML_gdot(2*n, x, x, Amat->comm));
 if (Amat->comm->ML_mypid == 0) 
-printf("x is %e\n", tmp);
+printf("x is %20.13e\n", tmp);
+#endif
 }
 for (k = 0; k < deg-1; k++) {
  thenorm = 0.;
@@ -7514,11 +7547,15 @@ thenorm += (tttipn*tttipn);
     x[i  -1] = x[i  -1] + dk[i  -1];
     x[i+n-1] = x[i+n-1] + dk[i+n-1];
    }
+#ifdef GREG
 tmp = sqrt(ML_gsum_double(thenorm, Amat->comm));
 if (Amat->comm->ML_mypid == 0) 
  printf("%d: the norm is %20.13e\n",k,tmp);
+#endif
   }
+#ifdef GREG
 if (Amat->comm->ML_mypid == 0)  fflush(stdout);
+#endif
   ML_free(dk);
   ML_free(pAux);
   return 0;
