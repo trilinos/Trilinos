@@ -1,13 +1,8 @@
 --enable-belos
---enable-tsfcore
---enable-tsfextended
---enable-tsf
 --enable-ml
 --enable-nox-epetra
---enable-tsfcoreutils
---enable-tsfcore-epetra
---enable-tpetra
---enable-meros
+--enable-loca
+--with-loca-anasazi
 --enable-teuchos
 --enable-teuchos-abc
 --enable-teuchos-complex
@@ -27,6 +22,7 @@
 --enable-amesos-umfpack
 --enable-amesos-klu
 --enable-aztecoo
+--enable-didasko
 --enable-epetra
 --enable-epetra-abc
 --enable-ifpack
