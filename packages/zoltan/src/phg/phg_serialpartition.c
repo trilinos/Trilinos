@@ -23,11 +23,12 @@ extern "C" {
  * AND add entry to CoarsePartitionFns array 
  * AND increment NUM_COARSEPARTITION_FN.
  */
-#define NUM_COARSEPARTITION_FNS 8
+#define NUM_COARSEPARTITION_FNS 9
 
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_ran;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_lin;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rip;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rip2;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr0;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr1;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr2;
@@ -42,7 +43,8 @@ static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] =
                                        &coarse_part_gr4,
                                        &coarse_part_ran,
                                        &coarse_part_lin,
-                                       &coarse_part_rip
+                                       &coarse_part_rip,
+                                       &coarse_part_rip2
                                       };
 
 static int local_coarse_partitioner(ZZ *, HGraph *, int, float *, Partition,
@@ -75,6 +77,7 @@ char *str, *str2;
   else if (!strcasecmp(str, "ran"))   return coarse_part_ran;
   else if (!strcasecmp(str, "lin"))   return coarse_part_lin;
   else if (!strcasecmp(str, "rip"))   return coarse_part_rip;
+  else if (!strcasecmp(str, "rip2"))  return coarse_part_rip2;
   else if (!strcasecmp(str, "gr0"))   return coarse_part_gr0;
   else if (!strcasecmp(str, "gr1"))   return coarse_part_gr1;
   else if (!strcasecmp(str, "gr2"))   return coarse_part_gr2;
@@ -410,7 +413,7 @@ static int coarse_part_ran (
 
 /**************************************************************************
  * Random inner product partitioning. 
- * Pick a random positive vector, compute inner products, sort the vertices
+ * Pick a random vector, compute inner products, sort the vertices
  * by the inner product values. Do sequence partitioning.
  * This is a fast method but better than pure random.
  */
@@ -466,6 +469,70 @@ static int coarse_part_rip (
     ZOLTAN_FREE ((void**) &iprod);
     return err;
 }
+
+/**************************************************************************
+ * Random inner product partitioning, slight variation.
+ * Pick a random positive vector, compute inner products, sort the vertices
+ * by the scaled inner product values. Do sequence partitioning.
+ * This is a fast method but better than pure random.
+ */
+static int coarse_part_rip2 (
+  ZZ *zz,
+  HGraph *hg,
+  int p,
+  float *part_sizes,
+  Partition part,
+  PHGPartParams *hgp
+)
+{
+    int i, j, k, err=0, nedges;
+    int *order=NULL; 
+    float *ran=NULL;
+    float *iprod = NULL;
+    char *yo = "coarse_part_rip2";
+
+    order  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int));
+    ran    = (float *) ZOLTAN_MALLOC (hg->nEdge*sizeof(float));
+    iprod  = (float *) ZOLTAN_MALLOC (hg->nVtx*sizeof(float));
+    if (!(order && ran && iprod)) {
+        ZOLTAN_FREE ((void**) &order);
+        ZOLTAN_FREE ((void**) &ran);
+        ZOLTAN_FREE ((void**) &iprod);
+        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+    }
+    for (i=0; i<hg->nVtx; i++)
+        order[i] = i;
+
+    /* Generate positive random numbers for edges */
+    for (j=0; j<hg->nEdge; j++){
+      ran[j] = ((float) Zoltan_HG_Rand())/RAND_MAX; 
+    }
+
+    /* Compute scaled inner products with random vector. */
+    for (i=0; i<hg->nVtx; i++){
+      iprod[i] = 0.0;
+      for (k=hg->vindex[i]; k<hg->vindex[i+1]; k++) {
+        j = hg->vedge[k];
+        iprod[i] += ran[j]*(hg->ewgt ? hg->ewgt[j] : 1.0);
+      }
+      nedges = (hg->vindex[i+1] - hg->vindex[i]);
+      if (nedges)
+        iprod[i] /= nedges;
+    }
+
+    /* Sort inner product values. */
+    Zoltan_quicksort_pointer_dec_float(order, iprod, 0, hg->nVtx-1);
+
+    /* Call sequence partitioning. */
+    err = seq_part (zz, hg, order, p, part_sizes, part, hgp);
+
+    ZOLTAN_FREE ((void**) &order);
+    ZOLTAN_FREE ((void**) &ran);
+    ZOLTAN_FREE ((void**) &iprod);
+    return err;
+}
+
 
 /*********************************************************************/
 /* Greedy ordering/partitioning based on a priority function
