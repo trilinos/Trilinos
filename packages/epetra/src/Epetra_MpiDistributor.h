@@ -63,7 +63,7 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
       Return the number of IDs being sent to me.
     \param NumExportIDs In
            Number of IDs that need to be sent from this processor.
-    \param ExportPIDs Out
+    \param ExportPIDs In
            List of processors that will get the exported IDs.
     \param Deterministic In
            If set to true, communication will be deterministic (repeatable) from call to call.
