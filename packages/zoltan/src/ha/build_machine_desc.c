@@ -67,7 +67,8 @@ int LB_Build_Machine_Desc(
   use_mach_desc = 0;
   filename = MACHINE_DESC_FILE_DEFAULT;
 
-  LB_Assign_Param_Vals(lb->Params, Mach_params, lb->Debug_Level, lb->Proc);
+  LB_Assign_Param_Vals(lb->Params, Mach_params, lb->Debug_Level, lb->Proc,
+                       lb->Debug_Proc);
 
   if (use_mach_desc > 0) {
     /* If lb->Machine_Desc already exists, don't rebuild it
