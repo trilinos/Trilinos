@@ -973,11 +973,10 @@ int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked,
 int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
                                          int **new_ja, double **new_aa) 
 {
-   int            i, j, row_leng, buf_leng, nrows, blk_num, diag_flag;
+   int            i, j, row_leng, buf_leng, nrows, blk_num;
    int            total_nnz, allocated, *col_ind=NULL, *mat_ja;
    double         *col_val=NULL, *dbuf=NULL, *mat_aa;
    ML_Comm        *comm;
-   ML_CommInfoOP  *comm_info;
 
    /* ----------------------------------------------------------------- */
    /* fetch information from incoming parameters                        */
@@ -1023,7 +1022,6 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
    for (i = 0 ; i < nrows; i++) 
    {
       ML_get_matrix_row(Amat,1,&i,&allocated,&col_ind,&col_val,&row_leng,0);
-      diag_flag = 0;
       for (j = 0; j < row_leng; j++) 
       {
          if ( col_ind[j] != i )
