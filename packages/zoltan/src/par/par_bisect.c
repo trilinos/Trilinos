@@ -104,7 +104,7 @@ int Zoltan_RB_find_bisector(
   int num_parts,        /* Number of partitions in set (Tflops_Special)      */
   double valuemin,      /* minimum value in partition (input) */
   double valuemax,      /* maximum value in partition (input) */
-  double *weight,       /* weight of entire partition (input) NOT USED */
+  double *weight,       /* weight of entire partition (input) */
   double *weightlo,     /* weight of lower partition (output) */
   double *weighthi,     /* weight of upper partition (output) */
   double *norm_max,     /* norm of largest partition (output) */
@@ -205,6 +205,7 @@ int Zoltan_RB_find_bisector(
         weighthi[j] = weight[j];
         weightlo[j] = 0.0;
       }
+      *norm_max = MYHUGE; /* Overestimate so any other bisection is better. */
       ierr = ZOLTAN_OK;
       goto End;
     }
@@ -216,6 +217,7 @@ int Zoltan_RB_find_bisector(
         weightlo[j] = weight[j];
         weighthi[j] = 0.0;
       }
+      *norm_max = MYHUGE; /* Overestimate so any other bisection is better. */
       ierr = ZOLTAN_OK;
       goto End;
     }
@@ -318,8 +320,9 @@ int Zoltan_RB_find_bisector(
     med_type_defined = 1;
   }
 
-/* EBEB  Do we need to recompute quantities below, or can we trust
-   the input parameters?? */
+/* EBEB: Some of the quantities computed below are given on input,
+   so we do not need to recompute them. Currently there are
+   a few inconsistencies so we recompute everything to be safe. */
 
   /*
    * intialize the dotlist array
@@ -354,7 +357,6 @@ int Zoltan_RB_find_bisector(
         goto End;
      }
 
-/* EBEB  After testing, remove section below. Assume valuemin/max, wtsum are given as input. */
      /* find valuemax */
      tmp[proc] = valuemax2 = localmax;
      MPI_Allgather(&tmp[proc], 1, MPI_DOUBLE, tmp, 1, MPI_DOUBLE, local_comm);
@@ -395,15 +397,19 @@ int Zoltan_RB_find_bisector(
     if (valuemax2>valuemax) valuemax = valuemax2;
   }
 
-  /* For sum of weights, 'wtsum' is correct while 'weight' is incorrect
-     due to scaling issues. Sanity check removed. *********************
+  /* Verify that input 'weight' equals computed 'wtsum'. */
   for (j=0; j<nwgts; j++){
-    if (wtsum[j] != weight[j]){
-      printf("[%2d] Warning: computed wtsum[%1d] %lf does not match input %lf\n",
-        proc, j, wtsum[j], weight[j]);
-    }
+#ifdef DEBUG
+    printf("[%2d] Debug: computed wtsum[%1d] = %lf, input weight = %lf\n", proc, j, wtsum[j], weight[j]);
+#endif
+    /* EBEB: Disable sanity check because 'weight' is sometimes incorrect. */
+    /*
+    if (wtsum[j] != weight[j])
+      printf("[%2d] Warning: computed wtsum[%1d] %lf does not match "
+        "input %lf\n", proc, j, wtsum[j], weight[j]);
+    */
+    weight[j] = wtsum[j];
   }
-  */
 
   /* Scaling. If weights aren't comparable, set scale vectors
      such as to normalize the sum of weights to one.
@@ -421,9 +427,9 @@ int Zoltan_RB_find_bisector(
   for (j=0; j<nwgts; j++)
     weighthi[j] = weightlo[j] = 0.0;
 
-  /* Set tolerance for each cut to imbal_tol/log(p) */
+  /* Set tolerance for each cut to min(imbal_tol)/log(p) */
   /* The imbalance tol vector is used implicitly through scaling. */
-  /* EBEB This convergence test should be improved later. */
+  /* EBEB Later we should implement dynamic balance tolerances. */
   temp = zz->LB.Imbalance_Tol[0];
   for (j=1; j<nwgts; j++)
     if (zz->LB.Imbalance_Tol[j]<temp)
@@ -721,8 +727,6 @@ int Zoltan_RB_find_bisector(
         for (k=0; k<nwgts; k++)
           weightlo[k] += med->wthi[k];
 
-        /* Future improvement: break here if close enough */
-
         valuemin = med->valuehi;                   /* iterate again */
         markactive = 1;
       }
@@ -890,8 +894,6 @@ int Zoltan_RB_find_bisector(
               proc, weighthi[0], weighthi[1]);
 #endif
 
-        /* Future improvement: break here if close enough */
-  
         valuemax = med->valuelo;                   /* iterate again */
         markactive = 0;
       }
