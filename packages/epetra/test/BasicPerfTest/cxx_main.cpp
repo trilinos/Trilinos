@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
   // Redefine verbose to only print on PE 0
   if (verbose && rank!=0) verbose = false;
 
-  int NumMyEquations = 10000;
+  int NumMyEquations = 1000000;
   int NumGlobalEquations = NumMyEquations*NumProc+EPETRA_MIN(NumProc,3);
   if (MyPID < 3) NumMyEquations++;
   int IndexBase = 0;
