@@ -30,6 +30,7 @@ extern "C" {
 #define TINY   1.0e-6
 #define FRACTION_SMALL 0.001  /* Smallest fraction of load allowed on 
                                  either side of cut */
+#define ALMOST_ONE 0.99       /* For scaling, should be slightly < 1.0 */
 #define MAX_BISECT_ITER 20    /* Max. no. of iterations in main bisection 
                                  loop. Avoids potential infinite loops. */
 
@@ -106,8 +107,7 @@ int Zoltan_RB_find_bisector(
   double *weightlo,     /* weight of lower partition (output) */
   double *weighthi,     /* weight of upper partition (output) */
   double *norm_max,     /* norm of largest partition (output) */
-  int    *dotlist,      /* list of active dots. EBEB: remove this parameter?  
-                                                KDDKDD:  No.  */
+  int    *dotlist,      /* list of active dots. */
   int rectilinear,      /* if 1, all dots with same value on same side of cut*/
   int obj_wgt_comparable /* 1 if object weights are of same units, no scaling */
 )
@@ -313,6 +313,8 @@ int Zoltan_RB_find_bisector(
     med_type_defined = 1;
   }
 
+/* EBEB  Do we need to recompute quantities below, or can we trust
+   the input parameters?? */
 
   /*
    * intialize the dotlist array
@@ -412,8 +414,8 @@ int Zoltan_RB_find_bisector(
           wgts[i*nwgts+j] /= wtsum[j];
         /* Then scale to make weights larger where the tolerance is low. */
         if (flag)
-          wgts[i*nwgts+j] /= (zz->LB.Imbalance_Tol[j]-0.9);
-          /* EBEB: 0.9 is a fudge factor, what is the best formula? */
+          /* Scale so weights are unchanged when Tol=1.1 */
+          wgts[i*nwgts+j] *= 0.1/(zz->LB.Imbalance_Tol[j]-ALMOST_ONE);
       }
     }
     /* Update wtsum. */
@@ -421,8 +423,8 @@ int Zoltan_RB_find_bisector(
       if (!obj_wgt_comparable)
         wtsum[j] = 1.0;
       if (flag)
-        /* EBEB Use same fudge factor as above. */
-        wtsum[j] /= (zz->LB.Imbalance_Tol[j]-0.9);
+        /* Scale so weights are unchanged when Tol=1.1 */
+        wtsum[j] *= 0.1/(zz->LB.Imbalance_Tol[j]-ALMOST_ONE);
     }
   }
 
@@ -540,14 +542,6 @@ int Zoltan_RB_find_bisector(
 
       /* combine bisector data struct across current subset of procs */
       
-      /* EBEB debug bisector structure medme */
-      /*
-      printf("[%2d] Debug: bisector struct medme before Allreduce\n", proc);
-      printf("[%2d] Debug: valuelo=%g, valuehi=%g\n", proc, medme->valuelo, medme->valuehi);
-      printf("[%2d] Debug: countlo=%d, counthi=%d\n", proc, medme->countlo, medme->counthi);
-      printf("[%2d] Debug: proclo=%d, prochi=%d\n", proc, medme->proclo, medme->prochi);
-      */
-
       if (counter != NULL) (*counter)++;
       if (Tflops_Special) {
          i = 1;
