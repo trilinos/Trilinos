@@ -128,6 +128,13 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     ML_Aggregate_VizAndStats_Clean( agg_, NumLevels_);
   }
 
+  // destroy aggregate information
+  if ((agg_)->aggr_info != NULL) {
+    for (int i = 0 ; i < NumLevels_ ; ++i) {
+      if ((agg_)->aggr_info[i] != NULL) 
+        ML_memory_free((void **)&((agg_)->aggr_info[i]));
+    } 
+  }
   // destroy main objects
   if (agg_ != 0) { ML_Aggregate_Destroy(&agg_); agg_ = 0; }
   if (agg_edge_ != 0) { ML_Aggregate_Destroy(&agg_edge_); agg_edge_ = 0; }
@@ -621,6 +628,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // ======================== //
 
   Epetra_Time Time(Comm());
+  Epetra_Time InitialTime(Comm());
   {
     int NumCompute = OutputList_.get("number of construction phases", 0);
     OutputList_.set("number of construction phases", ++NumCompute);
@@ -769,9 +777,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
         agg_->aggr_info[i] = NULL;
     }
 
-    /* ********************************************************************** */
-    /* create hierarchy for classical equations (all but Maxwell)             */
-    /* ********************************************************************** */
+    // ====================================================================== //
+    // create hierarchy for classical equations (all but Maxwell)             //
+    // ====================================================================== //
 
     ML_Create(&ml_,MaxCreationLevels);
     ml_->comm->ML_nprocs = Comm().NumProc();
@@ -800,12 +808,12 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   } else {
 
-    /* ********************************************************************** */
-    /* create hierarchy for Maxwell. Needs to define ml_edges_ and ml_nodes_  */
-    /* The only way to activate SolvingMaxwell_ == true is through the        */
-    /* constructor for Maxwell. I suppose that the matrices are called not    */
-    /* Matrix_, but moreover NodeMatrix_ and EdgeMatrix_.                     */
-    /* ********************************************************************** */
+    // ====================================================================== //
+    // create hierarchy for Maxwell. Needs to define ml_edges_ and ml_nodes_  //
+    // The only way to activate SolvingMaxwell_ == true is through the        //
+    // constructor for Maxwell. I suppose that the matrices are called not    //
+    // Matrix_, but moreover NodeMatrix_ and EdgeMatrix_.                     //
+    // ====================================================================== //
 
     if( verbose_ ) cout << PrintMsg_ << "Solving Maxwell Equations..." << endl;
 
@@ -904,27 +912,25 @@ ComputePreconditioner(const bool CheckPreconditioner)
       }
     } //if (ShouldRepartition)
   } //if( SolvingMaxwell_ ...
-  
 
-
-  /* **********************************************************************
-   * visualize aggregate shape and other statistics. 
-   * ********************************************************************** */
+  // ====================================================================== //
+  // visualize aggregate shape and other statistics.                        //
+  // ====================================================================== //
   
   bool viz = List_.get("viz: enable",false);
   if( viz == true )
     ML_Aggregate_VizAndStats_Setup(agg_,NumLevels_);
 
-  /* ********************************************************************** */
-  /* pick up coarsening strategy. METIS and ParMETIS requires additional    */
-  /* lines, as we have to set the number of aggregates                      */
-  /* ********************************************************************** */
+  // ====================================================================== //
+  // pick up coarsening strategy. METIS and ParMETIS requires additional    //
+  // lines, as we have to set the number of aggregates                      //
+  // ====================================================================== //
 
   SetAggregation();
 
-  /* ********************************************************************** */
-  /* minor settings                                                         */
-  /* ********************************************************************** */
+  // ====================================================================== //
+  // minor settings                                                         //
+  // ====================================================================== //
 
   double Threshold = 0.0;
   Threshold = List_.get("aggregation: threshold", Threshold);
@@ -969,10 +975,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
     
   }
 
-  /* ********************************************************************** */
-  /* one can use dropping on a symmetrized matrix                           */
-  /* (although, this can be quite expensive for the finest levels)          */
-  /* ********************************************************************** */
+  // ====================================================================== //
+  // one can use dropping on a symmetrized matrix                           //
+  // (although, this can be quite expensive for the finest levels)          //
+  // ====================================================================== //
      
   if (SolvingMaxwell_ == false) {
     bool UseSymmetrize = false;
@@ -982,10 +988,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
     else                       ML_Set_Symmetrize(ml_, ML_NO);  
   }
 
-  /* ********************************************************************** */
-  /* Define scheme to determine damping parameter in prolongator and        */
-  /* restriction smoother. Only for non-Maxwell.                            */
-  /* ********************************************************************** */
+  // ====================================================================== //
+  // Define scheme to determine damping parameter in prolongator and        //
+  // restriction smoother. Only for non-Maxwell.                            //
+  // ====================================================================== //
 
   if( SolvingMaxwell_ == false ) {
     ML_CHK_ERR(SetSmoothingDamping());
@@ -993,9 +999,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
   else 
     ML_Aggregate_Set_DampingFactor( agg_, 0.0);
 
-  /* ********************************************************************** */
-  /* set null space                                                         */
-  /* ********************************************************************** */
+  // ====================================================================== //
+  // set null space                                                         //
+  // ====================================================================== //
 
   if( SolvingMaxwell_ == false ) {
     ML_CHK_ERR(SetNullSpace());
@@ -1004,11 +1010,15 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ML_CHK_ERR(SetNullSpaceMaxwell());
   }
   
-  /************************************************************************/
-  /* Build hierarchy using smoothed aggregation.                          */
-  /* Then, retrive parameters for each level. Default values are given by */
-  /* entries in parameter list without (level %d)                         */
-  /*----------------------------------------------------------------------*/
+  OutputList_.set("time: initial phase", InitialTime.ElapsedTime() 
+                  + OutputList_.get("time: initial phase", 0.0));
+  InitialTime.ResetStartTime();
+
+  // ====================================================================== //
+  // Build hierarchy using smoothed aggregation.                            //
+  // Then, retrive parameters for each level. Default values are given by   //
+  // entries in parameter list without (level %d)                           //
+  // ====================================================================== //
 
   int Direction;
   if (IsIncreasing == "increasing")
@@ -1021,21 +1031,19 @@ ComputePreconditioner(const bool CheckPreconditioner)
     bool CreateFakeProblem = 
       List_.get("aggregation: use auxiliary matrix", false);
 
-    // west claims attentions, the VBR junk is a small gift for him
+    // west claims attentions, the VBR junk is a small gift to her
     Epetra_FECrsMatrix* FakeCrsMatrix = 0;
-    Epetra_Time AuxTime(Comm());
-    double ElapsedAuxTime = 0.0;
 
     bool MyCodeIsCrap = true;
     Epetra_VbrMatrix* MeDummy;
     int NumMyRowElements = 0;
     Epetra_SerialDenseMatrix** oldValues = 0;
 
-    Time.ResetStartTime();
-
     // difficile a credersi, ma una porcheria di questo tipo
     // ha le sue foxxuxe ragioni
     if (CreateFakeProblem == true) {
+
+      Time.ResetStartTime();
 
       // it appears that west doesn't really like vector<vector<XXX> >
       MeDummy = const_cast<Epetra_VbrMatrix*>
@@ -1072,16 +1080,24 @@ ComputePreconditioner(const bool CheckPreconditioner)
       }
       else
         ML_CHK_ERR(CreateAuxiliaryMatrixCrs(FakeCrsMatrix));
+
+      if (verbose_)
+        cout << PrintMsg_ << "Time to build the finest-level auxiliary matrix = "
+             << Time.ElapsedTime() << " (s)" << endl;
     }
     
-    ElapsedAuxTime += AuxTime.ElapsedTime();
+    Time.ResetStartTime();
 
     NumLevels_ = 
       ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
 
+    if (verbose_)
+      cout << PrintMsg_ << "Time to build the hierarchy = " 
+           << Time.ElapsedTime() << " (s)" << endl;
+    
     if (CreateFakeProblem == true) {
 
-      AuxTime.ResetStartTime();
+      Time.ResetStartTime();
     
       if (MeDummy && MyCodeIsCrap) {
 
@@ -1112,13 +1128,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
         delete FakeCrsMatrix;
       }
 
-      ElapsedAuxTime += AuxTime.ElapsedTime();
-
       // generate new hierarchy with "good" matrix
       if (verbose_) {
 	cout << endl;
-        cout << PrintMsg_ << "*** Time to build the auxiliary matrix = "
-             << ElapsedAuxTime << " (s)" << endl;
 	cout << PrintMsg_ 
 	     << "*** Now re-building the ML hierarchy with the actual matrix..." 
 	     << endl;
@@ -1126,6 +1138,11 @@ ComputePreconditioner(const bool CheckPreconditioner)
       }
 
       ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ml_, agg_);
+
+      if (verbose_)
+        cout << PrintMsg_ << "Time to re-build the hierarchy = " 
+             << Time.ElapsedTime() << " (s)" << endl;
+      Time.ResetStartTime();
 
     } // nothing special to be done if CreateFakeProblem is false
       
@@ -1170,9 +1187,14 @@ ComputePreconditioner(const bool CheckPreconditioner)
   
   if( verbose_ ) cout << PrintMsg_ << "Number of actual levels : " << NumLevels_ << endl;
 
-  /* ********************************************************************** */
-  /* Now cycling over all levels                                            */
-  /* ********************************************************************** */
+  OutputList_.set("time: hierarchy", InitialTime.ElapsedTime() 
+                  + OutputList_.get("time: hierarchy", 0.0));
+  InitialTime.ResetStartTime();
+
+  // ====================================================================== //
+  // Now cycling over all levels                                            //
+  // ====================================================================== //
+
   if (SolvingMaxwell_ == true) {
       // arguments for edge & node smoothers
       nodal_args_ = ML_Smoother_Arglist_Create(2);
@@ -1180,6 +1202,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
 
   ML_CHK_ERR(SetSmoothers());
+  /* FIXME: moved in DestroyPreconditioner()
   // this below *must* to be here and not before the construction of the smoothers
   if ((agg_)->aggr_info != NULL) {
     for (int i = 0 ; i < NumLevels_ ; ++i) {
@@ -1187,6 +1210,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
         ML_memory_free((void **)&((agg_)->aggr_info[i]));
     } 
   }
+  */
 
   if (AnalyzeMemory_) {
     call2 = ML_MaxMemorySize();
@@ -1200,9 +1224,13 @@ ComputePreconditioner(const bool CheckPreconditioner)
 #endif
   }
   
-  /* ********************************************************************** */
-  /* solution of the coarse problem                                         */
-  /* ********************************************************************** */
+  OutputList_.set("time: smoothers setup", InitialTime.ElapsedTime() 
+                  + OutputList_.get("time: smoothers setup", 0.0));
+  InitialTime.ResetStartTime();
+
+  // ====================================================================== //
+  // solution of the coarse problem                                         //
+  // ====================================================================== //
 
   if( NumLevels_ > 1 ) {
     ML_CHK_ERR(SetCoarse());
@@ -1210,13 +1238,17 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   ownership_ = false;
 
-  /* ********************************************************************** */
-  /* Specific   preconditioners                                             */
-  /* NOTE: the two-level DD preconditioners are kind of experimental!       */
-  /* I suppose that the user knows what he/she is doing.... No real checks  */
-  /* are performed. Note also that the coarse solver is somehow supposed to */
-  /* be implemented as a post smoother (FIXME)                              */
-  /* ********************************************************************** */
+  OutputList_.set("time: coarse solver setup", InitialTime.ElapsedTime() 
+                  + OutputList_.get("time: coarse solver setup", 0.0));
+  InitialTime.ResetStartTime();
+
+  // ====================================================================== //
+  // Specific   preconditioners                                             //
+  // NOTE: the two-level DD preconditioners are kind of experimental!       //
+  // I suppose that the user knows what he/she is doing.... No real checks  //
+  // are performed. Note also that the coarse solver is somehow supposed to //
+  // be implemented as a post smoother (FIXME)                              //
+  // ====================================================================== //
 
   if (AnalyzeMemory_) {
     call2 = ML_MaxMemorySize();
@@ -1236,21 +1268,21 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ML_Gen_Solver(ml_edges_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
   }
 
-  /* ********************************************************************** */
-  /* Use of filtering functions, here called `filtering: enable'            */
-  /* If this option is true, the code detects the non-converging modes of   */
-  /* I - ML^{-1}A (where ML is the preconditioner we have just built), and  */
-  /* creates a new V cycle to be added to the preconditioner. This part is  */
-  /* equivalent to the GGB files of Haim Waisman (files ml_struct.c and     */
-  /* ml_ggb.c, in the Main subdirectory).                                   */
-  /* ********************************************************************** */
+  // ====================================================================== //
+  // Use of filtering functions, here called `filtering: enable'            //
+  // If this option is true, the code detects the non-converging modes of   //
+  // I - ML^{-1}A (where ML is the preconditioner we have just built), and  //
+  // creates a new V cycle to be added to the preconditioner. This part is  //
+  // equivalent to the GGB files of Haim Waisman (files ml_struct.c and     //
+  // ml_ggb.c, in the Main subdirectory).                                   //
+  // ====================================================================== //
 
   ML_CHK_ERR(SetFiltering());
   
-  /* ********************************************************************** */
-  /* One may decide to print out the entire hierarchy (to be analyzed in    */
-  /* MATLAB, for instance).                                                 */
-  /* ********************************************************************** */
+  // ====================================================================== //
+  // One may decide to print out the entire hierarchy (to be analyzed in    //
+  // MATLAB, for instance).                                                 //
+  // ====================================================================== //
 
   bool PrintHierarchy = List_.get("print hierarchy", false);
   
@@ -1296,9 +1328,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
   
   }
 
-  /* ********************************************************************** */
-  /* Other minor settings                                                   */
-  /* ********************************************************************** */
+  // ====================================================================== //
+  // Other minor settings                                                   //
+  // ====================================================================== //
   
   CreateLabel();
   
@@ -1342,6 +1374,25 @@ ComputePreconditioner(const bool CheckPreconditioner)
 					  x_coord, y_coord, z_coord);
   }
 
+  OutputList_.set("time: final setup", InitialTime.ElapsedTime() 
+                  + OutputList_.get("time: final setup", 0.0));
+  InitialTime.ResetStartTime();
+
+  if (ML_Get_PrintLevel() == 10 && Comm().MyPID() == 0) {
+    cout << endl;
+    cout << "Cumulative timing for construction so far: " << endl;
+    cout << PrintMsg_ << "- for initial setup   = " 
+         << OutputList_.get("time: initial phase", 0.0) << " (s)" << endl;
+    cout << PrintMsg_ << "- for hierarchy setup = " 
+         << OutputList_.get("time: hierarchy", 0.0) << " (s)" << endl;
+    cout << PrintMsg_ << "- for smoothers setup = "
+         << OutputList_.get("time: smoothers setup", 0.0) << " (s)" << endl;
+    cout << PrintMsg_ << "- for coarse setup    = "
+         << OutputList_.get("time: coarse solver setup", 0.0) << " (s)" << endl;
+    cout << PrintMsg_ << "- for final setup     = " 
+         << OutputList_.get("time: final setup", 0.0) << " (s)" << endl;
+  }
+
   /* ------------------- that's all folks --------------------------------- */
 
   if( verbose_ )
@@ -1352,6 +1403,122 @@ ComputePreconditioner(const bool CheckPreconditioner)
   
   return 0;
   
+}
+
+// ================================================ ====== ==== ==== == =
+
+int ML_Epetra::MultiLevelPreconditioner::
+ReComputePreconditioner()
+{
+
+  if (SolvingMaxwell_ == true)
+    ML_CHK_ERR(-1);
+
+  if (IsPreconditionerComputed() == false)
+    ML_CHK_ERR(-2);
+
+  IsComputePreconditionerOK_ = false;
+
+  // =========================== //
+  // re-build the preconditioner //
+  // =========================== //
+
+  Epetra_Time Time(Comm());
+  Epetra_Time InitialTime(Comm());
+  {
+    int NumCompute = OutputList_.get("number of construction phases", 0);
+    OutputList_.set("number of construction phases", ++NumCompute);
+  }
+  
+  for (int i = 0; i < ml_->ML_num_levels; i++)
+  {
+    ML_Smoother_Clean(&(ml_->pre_smoother[i]));
+    ML_Smoother_Init(&(ml_->pre_smoother[i]), &(ml_->SingleLevel[i]));
+    ML_Smoother_Clean(&(ml_->post_smoother[i]));
+    ML_Smoother_Init(&(ml_->post_smoother[i]), &(ml_->SingleLevel[i]));
+    ML_CSolve_Clean(&(ml_->csolve[i]));
+    ML_CSolve_Init(&(ml_->csolve[i]));
+  }
+
+  if( verbose_ ) 
+    ML_print_line("-",78);
+  
+  FirstApplication_ = true;
+
+  if (verbose_) {
+    cout << PrintMsg_ << "Re-computing the preconditioner..." << endl;
+  }
+
+  Time.ResetStartTime();
+
+  ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ml_, agg_);
+
+  if (verbose_)
+    cout << PrintMsg_ << "Time to re-build the hierarchy = " 
+         << Time.ElapsedTime() << " (s)" << endl;
+  Time.ResetStartTime();
+
+  if( verbose_ ) cout << PrintMsg_ << "Number of actual levels : " << NumLevels_ << endl;
+
+  OutputList_.set("time: hierarchy", InitialTime.ElapsedTime() 
+                  + OutputList_.get("time: hierarchy", 0.0));
+  InitialTime.ResetStartTime();
+
+  // ====================================================================== //
+  // Now cycling over all levels                                            //
+  // ====================================================================== //
+
+  ML_CHK_ERR(SetSmoothers());
+
+  OutputList_.set("time: smoothers setup", InitialTime.ElapsedTime() 
+                  + OutputList_.get("time: smoothers setup", 0.0));
+  InitialTime.ResetStartTime();
+
+  // ====================================================================== //
+  // solution of the coarse problem                                         //
+  // ====================================================================== //
+
+  if( NumLevels_ > 1 ) {
+    ML_CHK_ERR(SetCoarse());
+  }
+
+  OutputList_.set("time: coarse solver setup", InitialTime.ElapsedTime() 
+                  + OutputList_.get("time: coarse solver setup", 0.0));
+  InitialTime.ResetStartTime();
+
+  ML_Gen_Solver(ml_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
+
+  IsComputePreconditionerOK_ = true;
+
+  OutputList_.set("time: final setup", InitialTime.ElapsedTime() 
+                  + OutputList_.get("time: final setup", 0.0));
+  InitialTime.ResetStartTime();
+
+  if (ML_Get_PrintLevel() == 10 && Comm().MyPID() == 0) {
+    cout << endl;
+    cout << "Cumulative timing for construction so far: " << endl;
+    cout << PrintMsg_ << "- for initial setup   = " 
+      << OutputList_.get("time: initial phase", 0.0) << " (s)" << endl;
+    cout << PrintMsg_ << "- for hierarchy setup = " 
+      << OutputList_.get("time: hierarchy", 0.0) << " (s)" << endl;
+    cout << PrintMsg_ << "- for smoothers setup = "
+      << OutputList_.get("time: smoothers setup", 0.0) << " (s)" << endl;
+    cout << PrintMsg_ << "- for coarse setup    = "
+      << OutputList_.get("time: coarse solver setup", 0.0) << " (s)" << endl;
+    cout << PrintMsg_ << "- for final setup     = " 
+      << OutputList_.get("time: final setup", 0.0) << " (s)" << endl;
+  }
+
+  /* ------------------- that's all folks --------------------------------- */
+
+  if (verbose_)
+    ML_print_line("-",78);
+
+  ConstructionTime_ += Time.ElapsedTime();
+  ++NumConstructions_;
+
+  return 0;
+
 }
 
 // ============================================================================

@@ -351,6 +351,9 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
   
   int ComputePreconditioner(const bool CheckFiltering = false);
 
+  //! Recomputed the preconditioner (not implemented for Maxwell).
+  int ReComputePreconditioner();
+
   int ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
                                     double* TentativeNullSpace);
 
