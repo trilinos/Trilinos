@@ -296,6 +296,21 @@ namespace LOCA {
 
       virtual bool isMassMatrix();
 
+      virtual NOX::Abstract::Group::ReturnType computeShiftedMatrix(const double& shift);
+
+      virtual NOX::Abstract::Group::ReturnType applyShiftedMatrix(const NOX::Abstract::Vector& input,
+                                                                  NOX::Abstract::Vector& result,
+                                                                  const double& shift, bool massMatrix) const;
+
+      virtual NOX::Abstract::Group::ReturnType applyShiftedMatrix(const NOX::Epetra::Vector& input,
+                                                                  NOX::Epetra::Vector& result,
+                                                                  const double& shift, bool massMatrix) const;
+
+      virtual NOX::Abstract::Group::ReturnType applyShiftedMatrixInverse(const NOX::Abstract::Vector& input,
+                                                                         NOX::Abstract::Vector& result,
+                                                                         const double& shift, bool massMatrix,
+                                                                         NOX::Parameter::List& params) const;
+
       /*! 
        * @name Implementation of LOCA::Bifurcation::TPBord::AbstractGroup virtual methods.
        */
@@ -352,9 +367,9 @@ namespace LOCA {
       LOCA::ParameterVector params;
 
       //! Reference to the user supplied interface functions
-      LOCA::EpetraNew::Interface::Required& userInterfaceReq;
+      LOCA::EpetraNew::Interface::Required& userInterface;
 
-      LOCA::EpetraNew::Interface::TimeDependent* userInterfaceTime;
+      bool interfaceTime;
 
       //! Extra vector needed for intermediate calculations of LOCA routines.
       /*! NOTE: there already is a tmpVectorPtr in the NOX::Epetra::Group.  This is a second temporary vector if that one extra isn't enough.
