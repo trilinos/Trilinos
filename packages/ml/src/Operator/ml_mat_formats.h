@@ -72,6 +72,10 @@ extern void ML_Scale_CSR(ML_Operator *input_matrix,
 extern int CSR_getrows(void *data,int N_requested_rows,int requested_rows[],
                        int allocated_space, int columns[], double values[],
                        int row_lengths[]);
+extern int CSR_get_ones_rows(void *data, int N_requested_rows, 
+			     int requested_rows[], int allocated_space, 
+			     int columns[], double values[], int row_lengths[]);
+
 
 extern int MSR_getrows(void *data, int N_requested_rows, int requested_rows[],
                        int allocated_space, int columns[], double values[],
@@ -79,6 +83,7 @@ extern int MSR_getrows(void *data, int N_requested_rows, int requested_rows[],
 
 extern int MSR_matvec(void *Amat, int, double p[], int, double ap[]);
 extern int CSR_matvec(void *Amat, int, double p[], int, double ap[]);
+extern int CSR_ones_matvec(void *Amat, int, double p[], int, double ap[]);
 extern int localCSR_matvec(void *Amat_in, int ilen, double p[], int olen, 
                            double ap[]);
 
