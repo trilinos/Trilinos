@@ -832,6 +832,8 @@ Optional Features:
   --enable-petsc-examples compile petsc examples
   --enable-loca-epetra-examples
                           compile loca epetra examples
+  --enable-prerelease     Enable compilation and documentation of prerelease
+                          code.
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5183,7 +5185,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5186:" \
+echo "$as_me:5188:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5350,7 +5352,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5353: \"$ac_link\") >&5
+(eval echo $as_me:5355: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5429,7 +5431,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5432: \"$ac_link\") >&5
+(eval echo $as_me:5434: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8881,6 +8883,43 @@ fi
 
 
 # ------------------------------------------------------------------------
+# Should we compile 'predevelopment'  versions of the code
+# ------------------------------------------------------------------------
+# Check whether --enable-prerelease or --disable-prerelease was given.
+if test "${enable_prerelease+set}" = set; then
+  enableval="$enable_prerelease"
+  WITH_PRERELEASE=$enableval
+else
+  WITH_PRERELEASE=no
+fi;
+
+
+if test X${WITH_PRERELEASE} = Xyes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define WITH_PRERELEASE
+_ACEOF
+
+fi
+
+if test X${WITH_PRERELEASE} = Xyes; then
+  WITH_PRERELEASE_SUBST=WITH_PRERELEASE
+else
+  WITH_PRERELEASE_SUBST=
+fi
+
+
+
+if test X${WITH_PRERELEASE} = Xyes; then
+  BUILD_PRERELEASE_TRUE=
+  BUILD_PRERELEASE_FALSE='#'
+else
+  BUILD_PRERELEASE_TRUE='#'
+  BUILD_PRERELEASE_FALSE=
+fi
+
+
+# ------------------------------------------------------------------------
 # Checks for library functions
 # ------------------------------------------------------------------------
 
@@ -8898,7 +8937,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile doc/Makefile src/Makefile src-epetra/Makefile example/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile src-loca/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile"
+ac_config_files="$ac_config_files Makefile doc/Makefile doc/Doxyfile src/Makefile src-epetra/Makefile example/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile src-loca/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9385,6 +9424,7 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
+  "doc/Doxyfile" ) CONFIG_FILES="$CONFIG_FILES doc/Doxyfile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "src-epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-epetra/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
@@ -9566,6 +9606,9 @@ s,@BUILD_PETSC_EXAMPLES_FALSE@,$BUILD_PETSC_EXAMPLES_FALSE,;t t
 s,@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@,$BUILD_LOCA_EPETRA_EXAMPLES_TRUE,;t t
 s,@BUILD_LOCA_EPETRA_EXAMPLES_FALSE@,$BUILD_LOCA_EPETRA_EXAMPLES_FALSE,;t t
 s,@CXXREPOS@,$CXXREPOS,;t t
+s,@BUILD_PRERELEASE_TRUE@,$BUILD_PRERELEASE_TRUE,;t t
+s,@BUILD_PRERELEASE_FALSE@,$BUILD_PRERELEASE_FALSE,;t t
+s,@WITH_PRERELEASE_SUBST@,$WITH_PRERELEASE_SUBST,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t
 CEOF
 

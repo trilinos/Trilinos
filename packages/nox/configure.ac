@@ -1102,6 +1102,28 @@ fi
 AC_SUBST(CXXREPOS)
 
 # ------------------------------------------------------------------------
+# Should we compile 'predevelopment'  versions of the code
+# ------------------------------------------------------------------------
+AC_ARG_ENABLE(prerelease,
+[AC_HELP_STRING([--enable-prerelease],[Enable compilation and documentation of prerelease code.])],
+[WITH_PRERELEASE=$enableval],
+[WITH_PRERELEASE=no])
+
+
+if test X${WITH_PRERELEASE} = Xyes; then
+  AC_DEFINE(WITH_PRERELEASE,,[define if we should include prerelease pieces of NOX])
+fi
+
+if test X${WITH_PRERELEASE} = Xyes; then
+  WITH_PRERELEASE_SUBST=WITH_PRERELEASE
+else
+  WITH_PRERELEASE_SUBST=
+fi
+
+AM_CONDITIONAL(BUILD_PRERELEASE, test X${WITH_PRERELEASE} = Xyes)
+AC_SUBST(WITH_PRERELEASE_SUBST)
+
+# ------------------------------------------------------------------------
 # Checks for library functions
 # ------------------------------------------------------------------------
 
@@ -1122,6 +1144,7 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
 		doc/Makefile
+		doc/Doxyfile
 		src/Makefile
 		src-epetra/Makefile 
 		example/Makefile

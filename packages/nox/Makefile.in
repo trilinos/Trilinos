@@ -102,6 +102,7 @@ PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
 RANLIB = @RANLIB@
 TRILINOS_CXXFLAGS = @TRILINOS_CXXFLAGS@
 VERSION = @VERSION@
+WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
 ac_aux_dir = @ac_aux_dir@
 am__include = @am__include@
 am__quote = @am__quote@
@@ -263,7 +264,7 @@ GZIP_ENV = --best
 distdir: $(DISTFILES)
 	-chmod -R a+w $(distdir) >/dev/null 2>&1; rm -rf $(distdir)
 	mkdir $(distdir)
-	$(mkinstalldirs) $(distdir)/config
+	$(mkinstalldirs) $(distdir)/config $(distdir)/doc
 	@for file in $(DISTFILES); do \
 	  if test -f $$file; then d=.; else d=$(srcdir); fi; \
 	  dir=`echo "$$file" | sed -e 's,/[^/]*$$,,'`; \
