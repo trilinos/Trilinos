@@ -1278,6 +1278,7 @@ if test X${ADDON_epetra} = Xyes; then
     TRILINOS_HEADER(epetraext,EpetraExt_config.h,src)
     TRILINOS_HEADER(epetraext,EpetraExt_ConfigDefs.h,src)
     TRILINOS_HEADER(epetraext,EpetraExt_Transform.h,src/transform)
+    TRILINOS_HEADER(epetraext,EpetraExt_BlockUtility.h,src/block)
     TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
   fi
 
