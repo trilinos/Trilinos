@@ -132,5 +132,7 @@ int main (int argc, char **argv)
          Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL),
          Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM) );
 
+  Zoltan_Memory_Stats();
+
   return 0;
 }

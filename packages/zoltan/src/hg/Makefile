@@ -2,7 +2,7 @@
 #C_pre          = purify -best-effort -cache-dir=/tmp
 
 #Compiler
-C_comp		= /Net/local/bin/cc -DHTEST -DZOLTAN_NO_MPI
+C_comp		= cc -DHTEST -DZOLTAN_NO_MPI
 
 # Assume that environment OSTYPE is set to 'solaris' or 'linux'!
 # OSTYPE        = solaris
