@@ -48,6 +48,6 @@ ostream& operator<<(ostream& os, NOX::StatusTest::StatusType type)
     os << "**";
     break;
   }
-  os << setiosflags(ios::right) << setfill(' ');
+  os << resetiosflags(ios::adjustfield) << setfill(' ');
   return os;
 }
