@@ -11,6 +11,7 @@
 #include "Epetra_MultiVector.h"
 #include "BuildTestProblems.h"
 #include "ExecuteTestProblems.h"
+#include "../epetra_test_err.h"
 
 int main(int argc, char *argv[]) {
 
@@ -76,16 +77,10 @@ int main(int argc, char *argv[]) {
   Epetra_LocalMap *LocalMap = new Epetra_LocalMap(NumMyElements1, IndexBase,
                               Comm);
   Epetra_BlockMap * BlockMap = new Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm);
-  ierr = MultiVectorTests(*BlockMap, NumVectors, verbose);
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
+  EPETRA_TEST_ERR(MultiVectorTests(*BlockMap, NumVectors, verbose),ierr);
 
-  assert(ierr==0);
 
-  ierr = MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose);
-
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
+  EPETRA_TEST_ERR(MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose),ierr);
 
   delete BlockMap;
 
@@ -97,16 +92,9 @@ int main(int argc, char *argv[]) {
 
   BlockMap = new Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm);
 
-  ierr = MultiVectorTests(*BlockMap, NumVectors, verbose);
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
+  EPETRA_TEST_ERR(MultiVectorTests(*BlockMap, NumVectors, verbose),ierr);
 
-  assert(ierr==0);
-
-  ierr = MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose);
-
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
+  EPETRA_TEST_ERR(MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose),ierr);
 
   delete BlockMap;
 
@@ -124,16 +112,9 @@ int main(int argc, char *argv[]) {
 
   BlockMap = new Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements, ElementSize,
 		      IndexBase, Comm);
-  ierr = MultiVectorTests(*BlockMap, NumVectors, verbose);
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
+  EPETRA_TEST_ERR(MultiVectorTests(*BlockMap, NumVectors, verbose),ierr);
 
-  assert(ierr==0);
-
-  ierr = MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose);
-
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
+  EPETRA_TEST_ERR(MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose),ierr);
 
   delete BlockMap;
 
@@ -163,17 +144,9 @@ int main(int argc, char *argv[]) {
 
   BlockMap = new Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements, ElementSizeList,
 		      IndexBase, Comm);
-  ierr = MultiVectorTests(*BlockMap, NumVectors, verbose);
+  EPETRA_TEST_ERR(MultiVectorTests(*BlockMap, NumVectors, verbose),ierr);
 
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
-
-  ierr = MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose);
-
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
+  EPETRA_TEST_ERR(MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose),ierr);
 
   // Test Copy constructor
 
@@ -183,17 +156,9 @@ int main(int argc, char *argv[]) {
 
   Epetra_BlockMap * BlockMap1 = new Epetra_BlockMap(*BlockMap);
 
-  ierr = MultiVectorTests(*BlockMap, NumVectors, verbose);
+  EPETRA_TEST_ERR(MultiVectorTests(*BlockMap, NumVectors, verbose),ierr);
 
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
-
-  ierr = MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose);
-
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
+  EPETRA_TEST_ERR(MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose),ierr);
 
   delete [] ElementSizeList;
   delete [] MyGlobalElements;
@@ -208,17 +173,9 @@ int main(int argc, char *argv[]) {
   if (verbose) cout << "*********************************************************" << endl;
 
   Epetra_Map * Map = new Epetra_Map(NumGlobalElements, IndexBase, Comm);
-  ierr = MultiVectorTests(*Map, NumVectors, verbose);
+  EPETRA_TEST_ERR(MultiVectorTests(*Map, NumVectors, verbose),ierr);
 
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
-
-  ierr = MatrixTests(*Map, *LocalMap, NumVectors, verbose);
-
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
+  EPETRA_TEST_ERR(MatrixTests(*Map, *LocalMap, NumVectors, verbose),ierr);
 
   delete Map;
 
@@ -230,17 +187,9 @@ int main(int argc, char *argv[]) {
 
   Map = new Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm);
 
-  ierr = MultiVectorTests(*Map, NumVectors, verbose);
+  EPETRA_TEST_ERR(MultiVectorTests(*Map, NumVectors, verbose),ierr);
 
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
-
-  ierr = MatrixTests(*Map, *LocalMap, NumVectors, verbose);
-
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
+  EPETRA_TEST_ERR(MatrixTests(*Map, *LocalMap, NumVectors, verbose),ierr);
 
   delete Map;
 
@@ -258,17 +207,9 @@ int main(int argc, char *argv[]) {
 
   Map = new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements, 
 		      IndexBase, Comm);
-  ierr = MultiVectorTests(*Map, NumVectors, verbose);
+  EPETRA_TEST_ERR(MultiVectorTests(*Map, NumVectors, verbose),ierr);
 
-  if (verbose && ierr==0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
-
-  ierr = MatrixTests(*Map, *LocalMap, NumVectors, verbose);
-
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
+  EPETRA_TEST_ERR(MatrixTests(*Map, *LocalMap, NumVectors, verbose),ierr);
 
   // Test Copy constructor
 
@@ -278,17 +219,9 @@ int main(int argc, char *argv[]) {
  
   Epetra_Map Map1(*Map);
 
-  ierr = MultiVectorTests(*Map, NumVectors, verbose);
+  EPETRA_TEST_ERR(MultiVectorTests(*Map, NumVectors, verbose),ierr);
 
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
-
-  ierr = MatrixTests(*Map, *LocalMap, NumVectors, verbose);
-
-  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
+  EPETRA_TEST_ERR(MatrixTests(*Map, *LocalMap, NumVectors, verbose),ierr);
 
   delete [] MyGlobalElements;
   delete Map;
@@ -360,6 +293,6 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
 #endif
 
-  return 0;
+  return ierr;
 }
 

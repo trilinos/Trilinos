@@ -6,6 +6,7 @@
 #endif
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Map.h"
+#include "../epetra_test_err.h"
 
 // Prototype
 
@@ -14,7 +15,7 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
 
  int main(int argc, char *argv[])
 {
-  int ierr = 0, i, j;
+  int ierr = 0, i, j, forierr = 0;
   int NumIndices;
   int * Indices;
   bool debug = true;
@@ -91,8 +92,8 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
   // Create a Epetra_CrsGraph
 
   Epetra_CrsGraph& A = *new Epetra_CrsGraph(Copy, Map, NumNz);
-  assert(!A.IndicesAreGlobal());
-  assert(!A.IndicesAreLocal());
+  EPETRA_TEST_ERR(A.IndicesAreGlobal(),ierr);
+  EPETRA_TEST_ERR(A.IndicesAreLocal(),ierr);
   
   // Add  rows one-at-a-time
   // Need some vectors to help
@@ -101,9 +102,9 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
 
   Indices = new int[2];
   int NumEntries;
-  
-  for (i=0; i<NumMyEquations; i++)
-    {
+
+  forierr = 0;
+  for (i=0; i<NumMyEquations; i++) {
     if (MyGlobalElements[i]==0)
       {
 	Indices[0] = 1;
@@ -120,21 +121,22 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
 	Indices[1] = MyGlobalElements[i]+1;
 	NumEntries = 2;
       }
-     assert(A.InsertGlobalIndices(MyGlobalElements[i], NumEntries, Indices)==0);
-     assert(A.InsertGlobalIndices(MyGlobalElements[i], 1, MyGlobalElements+i)>0); // Put in the diagonal entry (should cause realloc)
-    }
+     forierr += !(A.InsertGlobalIndices(MyGlobalElements[i], NumEntries, Indices)==0);
+     forierr += !(A.InsertGlobalIndices(MyGlobalElements[i], 1, MyGlobalElements+i)>0); // Put in the diagonal entry (should cause realloc)
+  }
+  EPETRA_TEST_ERR(forierr,ierr);
 
   delete [] Indices;
   
   // Finish up
-  assert(A.IndicesAreGlobal());
-  assert(A.TransformToLocal()==0);
-  assert(A.IndicesAreLocal());
-  assert(!A.StorageOptimized());
+  EPETRA_TEST_ERR(!(A.IndicesAreGlobal()),ierr);
+  EPETRA_TEST_ERR(!(A.TransformToLocal()==0),ierr);
+  EPETRA_TEST_ERR(!(A.IndicesAreLocal()),ierr);
+  EPETRA_TEST_ERR(A.StorageOptimized(),ierr);
   A.OptimizeStorage();
-  assert(A.StorageOptimized());
-  assert(!A.UpperTriangular());
-  assert(!A.LowerTriangular());
+  EPETRA_TEST_ERR(!(A.StorageOptimized()),ierr);
+  EPETRA_TEST_ERR(A.UpperTriangular(),ierr);
+  EPETRA_TEST_ERR(A.LowerTriangular(),ierr);
 
   if (verbose) cout << "\n\n*****Testing variable entry constructor" << endl<< endl;
 
@@ -142,11 +144,13 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
   if (A.LRID(0)>=0) NumMyNonzeros--; // If I own first global row, then there is one less nonzero
   if (A.LRID(NumGlobalEquations-1)>=0) NumMyNonzeros--; // If I own last global row, then there is one less nonzero
 
-  assert(check(A, NumMyEquations, NumGlobalEquations, NumMyNonzeros, 3*NumGlobalEquations-2, 
-	       MyGlobalElements, verbose)==0);
-
-  for (i=0; i<NumMyEquations; i++) assert(A.NumGlobalIndices(MyGlobalElements[i])==NumNz[i]+1);
-  for (i=0; i<NumMyEquations; i++) assert(A.NumMyIndices(i)==NumNz[i]+1);
+  EPETRA_TEST_ERR(check(A, NumMyEquations, NumGlobalEquations, NumMyNonzeros, 3*NumGlobalEquations-2, 
+	       MyGlobalElements, verbose),ierr);
+  forierr = 0;
+  for (i=0; i<NumMyEquations; i++) forierr += !(A.NumGlobalIndices(MyGlobalElements[i])==NumNz[i]+1);
+  EPETRA_TEST_ERR(forierr,ierr);
+  for (i=0; i<NumMyEquations; i++) forierr += !(A.NumMyIndices(i)==NumNz[i]+1);
+  EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "\n\nNumIndices function check OK" << endl<< endl;
 
@@ -166,20 +170,24 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
   //        that owns it will actually do anything
 
   int One = 1;
-  if (AA.MyGlobalRow(0)) assert(AA.InsertGlobalIndices(0, 0, &One)==0);
-  else assert(AA.InsertGlobalIndices(0, 1, &One)==-1);
-  assert(AA.TransformToLocal()==0);
-  assert(!AA.StorageOptimized());
-  assert(AA.UpperTriangular());
-  assert(AA.LowerTriangular());
-  
+  if (AA.MyGlobalRow(0)) {
+    EPETRA_TEST_ERR(!(AA.InsertGlobalIndices(0, 0, &One)==0),ierr);
+  }
+  else EPETRA_TEST_ERR(!(AA.InsertGlobalIndices(0, 1, &One)==-1),ierr);
+  EPETRA_TEST_ERR(!(AA.TransformToLocal()==0),ierr);
+  EPETRA_TEST_ERR(AA.StorageOptimized(),ierr);
+  EPETRA_TEST_ERR(!(AA.UpperTriangular()),ierr);
+  EPETRA_TEST_ERR(!(AA.LowerTriangular()),ierr);
+
   if (debug) Comm.Barrier();
-  assert(check(AA, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
-	       MyGlobalElements, verbose)==0);
+  EPETRA_TEST_ERR(check(AA, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
+	       MyGlobalElements, verbose),ierr);
 
   if (debug) Comm.Barrier();
 
-  for (i=0; i<NumMyEquations; i++) assert(AA.NumGlobalIndices(MyGlobalElements[i])==1);
+  forierr = 0;
+  for (i=0; i<NumMyEquations; i++) forierr += !(AA.NumGlobalIndices(MyGlobalElements[i])==1);
+  EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "\n\nNumIndices function check OK" << endl<< endl;
 
@@ -190,10 +198,12 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
   Epetra_CrsGraph & B = *new Epetra_CrsGraph(AA);
   delete &AA;
 
-  assert(check(B, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
-	       MyGlobalElements, verbose)==0);
+  EPETRA_TEST_ERR(check(B, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
+	       MyGlobalElements, verbose),ierr);
 
-  for (i=0; i<NumMyEquations; i++) assert(B.NumGlobalIndices(MyGlobalElements[i])==1);
+  forierr = 0;
+  for (i=0; i<NumMyEquations; i++) forierr += !(B.NumGlobalIndices(MyGlobalElements[i])==1);
+  EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "\n\nNumIndices function check OK" << endl<< endl;
 
@@ -201,7 +211,7 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
 
   if (verbose) cout << "\n\n*****Testing post construction modifications" << endl<< endl;
 
-  assert(B.InsertGlobalIndices(0, 1, &One)==-2);
+  EPETRA_TEST_ERR(!(B.InsertGlobalIndices(0, 1, &One)==-2),ierr);
   delete &B;
 
   // Release all objects
@@ -249,9 +259,9 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
     
     int *Indices1 = new int[2];
     int NumEntries1;
-    
-    for (i=0; i<NumMyEquations1; i++)
-      {
+
+    forierr = 0;
+    for (i=0; i<NumMyEquations1; i++) {
 	if (MyGlobalElements1[i]==1)
 	  {
 	    Indices1[0] = 2;
@@ -268,12 +278,13 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
 	    Indices1[1] = MyGlobalElements1[i]+1;
 	    NumEntries1 = 2;
 	  }
-	assert(A1.InsertGlobalIndices(MyGlobalElements1[i], NumEntries1, Indices1)==0);
-	assert(A1.InsertGlobalIndices(MyGlobalElements1[i], 1, MyGlobalElements1+i)>0); // Put in the diagonal entry
-      }
-    
+	forierr += !(A1.InsertGlobalIndices(MyGlobalElements1[i], NumEntries1, Indices1)==0);
+	forierr += !(A1.InsertGlobalIndices(MyGlobalElements1[i], 1, MyGlobalElements1+i)>0); // Put in the diagonal entry
+    }
+    EPETRA_TEST_ERR(forierr,ierr);
+
     // Finish up
-    assert(A1.TransformToLocal()==0);
+    EPETRA_TEST_ERR(!(A1.TransformToLocal()==0),ierr);
     
     if (verbose) cout << "\n\nPrint out tridiagonal matrix, each part on each processor. Index base is one.\n\n" << endl;
     cout << A1 << endl;
@@ -289,16 +300,16 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
 			
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
-#endif
+  #endif
 /* end main
-*/
+ */
 return ierr ;
 }
 
 int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonzeros1,
 	  int NumGlobalNonzeros1, int * MyGlobalElements, bool verbose) {  
 
-  int i, j;
+  int ierr =0, i, j, forierr = 0;
   int NumGlobalIndices;
   int NumMyIndices, * MyViewIndices, *GlobalViewIndices;
   int MaxNumIndices = A.MaxNumIndices();
@@ -310,71 +321,73 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
   int NumMyRows = A.NumMyRows();
   if (verbose) cout << "\n\nNumber of local Rows = " << NumMyRows << endl<< endl;
 
-  assert(NumMyRows==NumMyRows1);
+  EPETRA_TEST_ERR(!(NumMyRows==NumMyRows1),ierr);
 
   int NumMyNonzeros = A.NumMyNonzeros();
   if (verbose) cout << "\n\nNumber of local Nonzero entries = " << NumMyNonzeros << endl<< endl;
 
-  assert(NumMyNonzeros==NumMyNonzeros1);
+  EPETRA_TEST_ERR(!(NumMyNonzeros==NumMyNonzeros1),ierr);
 
   int NumGlobalRows = A.NumGlobalRows();
   if (verbose) cout << "\n\nNumber of global Rows = " << NumGlobalRows << endl<< endl;
 
-  assert(NumGlobalRows==NumGlobalRows1);
+  EPETRA_TEST_ERR(!(NumGlobalRows==NumGlobalRows1),ierr);
 
   int NumGlobalNonzeros = A.NumGlobalNonzeros();
   if (verbose) cout << "\n\nNumber of global Nonzero entries = " << NumGlobalNonzeros << endl<< endl;
 
-  assert(NumGlobalNonzeros==NumGlobalNonzeros1);
+  EPETRA_TEST_ERR(!(NumGlobalNonzeros==NumGlobalNonzeros1),ierr);
 
   // GlobalRowView should be illegal (since we have local indices)
 
-  assert(A.ExtractGlobalRowView(A.RowMap().MaxMyGID(), NumGlobalIndices, GlobalCopyIndices)==-2);
+  EPETRA_TEST_ERR(!(A.ExtractGlobalRowView(A.RowMap().MaxMyGID(), NumGlobalIndices, GlobalCopyIndices)==-2),ierr);
 
   // Other binary tests
 
-  assert(!A.NoDiagonal());
-  assert(A.Filled());
-  assert(A.Sorted());
-  assert(A.MyGRID(A.RowMap().MaxMyGID()));
-  assert(A.MyGRID(A.RowMap().MinMyGID()));
-  assert(!A.MyGRID(1+A.RowMap().MaxMyGID()));
-  assert(!A.MyGRID(-1+A.RowMap().MinMyGID()));
-  assert(A.MyLRID(0));
-  assert(A.MyLRID(NumMyRows-1));
-  assert(!A.MyLRID(-1));
-  assert(!A.MyLRID(NumMyRows));
+  EPETRA_TEST_ERR(A.NoDiagonal(),ierr);
+  EPETRA_TEST_ERR(!(A.Filled()),ierr);
+  EPETRA_TEST_ERR(!(A.Sorted()),ierr);
+  EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MaxMyGID())),ierr);
+  EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MinMyGID())),ierr);
+  EPETRA_TEST_ERR(A.MyGRID(1+A.RowMap().MaxMyGID()),ierr);
+  EPETRA_TEST_ERR(A.MyGRID(-1+A.RowMap().MinMyGID()),ierr);
+  EPETRA_TEST_ERR(!(A.MyLRID(0)),ierr);
+  EPETRA_TEST_ERR(!(A.MyLRID(NumMyRows-1)),ierr);
+  EPETRA_TEST_ERR(A.MyLRID(-1),ierr);
+  EPETRA_TEST_ERR(A.MyLRID(NumMyRows),ierr);
     
-
+  forierr = 0;
   for (i=0; i<NumMyRows; i++) {
     int Row = A.GRID(i);
     A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumGlobalIndices, GlobalCopyIndices);
     A.ExtractMyRowView(i, NumMyIndices, MyViewIndices);
-    assert(NumGlobalIndices==NumMyIndices);
-    for (j=1; j<NumMyIndices; j++) assert(MyViewIndices[j-1]<MyViewIndices[j]);
+    forierr += !(NumGlobalIndices==NumMyIndices);
+    for (j=1; j<NumMyIndices; j++) EPETRA_TEST_ERR(!(MyViewIndices[j-1]<MyViewIndices[j]),ierr);
     for (j=0; j<NumGlobalIndices; j++) {
-	assert(GlobalCopyIndices[j]==A.GCID(MyViewIndices[j]));
-	assert(A.LCID(GlobalCopyIndices[j])==MyViewIndices[j]);
+	forierr += !(GlobalCopyIndices[j]==A.GCID(MyViewIndices[j]));
+	forierr += !(A.LCID(GlobalCopyIndices[j])==MyViewIndices[j]);
     }
   }
-
+  EPETRA_TEST_ERR(forierr,ierr);
+  forierr = 0;
   for (i=0; i<NumMyRows; i++) {
     int Row = A.GRID(i);
     A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumGlobalIndices, GlobalCopyIndices);
     A.ExtractMyRowCopy(i, MaxNumIndices, NumMyIndices, MyCopyIndices);
-    assert(NumGlobalIndices==NumMyIndices);
-    for (j=1; j<NumMyIndices; j++) assert(MyCopyIndices[j-1]<MyCopyIndices[j]);
+    forierr += !(NumGlobalIndices==NumMyIndices);
+    for (j=1; j<NumMyIndices; j++) EPETRA_TEST_ERR(!(MyCopyIndices[j-1]<MyCopyIndices[j]),ierr);
     for (j=0; j<NumGlobalIndices; j++) {
-	assert(GlobalCopyIndices[j]==A.GCID(MyCopyIndices[j]));
-	assert(A.LCID(GlobalCopyIndices[j])==MyCopyIndices[j]);
+	forierr += !(GlobalCopyIndices[j]==A.GCID(MyCopyIndices[j]));
+	forierr += !(A.LCID(GlobalCopyIndices[j])==MyCopyIndices[j]);
     }
 
   }
+  EPETRA_TEST_ERR(forierr,ierr);
 
   delete [] MyCopyIndices;
   delete [] GlobalCopyIndices;
 
   if (verbose) cout << "\n\nRows sorted check OK" << endl<< endl;
 
-  return(0);
+  return (ierr);
 }

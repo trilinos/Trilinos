@@ -7,9 +7,10 @@
 
 #include "Epetra_Time.h"
 #include "Epetra_Util.h"
+#include "../epetra_test_err.h"
 
 int main(int argc, char *argv[]) {
-  int ierr = 0;
+  int ierr = 0, forierr = 0;
 
 #ifdef EPETRA_MPI
 
@@ -39,8 +40,8 @@ int main(int argc, char *argv[]) {
   Epetra_MpiComm petracomm( MPI_COMM_WORLD );
   int MyPID =  petracomm.MyPID();
   int NumProc =  petracomm.NumProc();
-  assert(petracomm.MyPID()==rank);
-  assert(petracomm.NumProc()==size);
+  EPETRA_TEST_ERR(!(petracomm.MyPID()==rank),ierr);
+  EPETRA_TEST_ERR(!(petracomm.NumProc()==size),ierr);
   if (verbose1) verbose = (MyPID==0);
   petracomm.Barrier();
 
@@ -52,10 +53,8 @@ int main(int argc, char *argv[]) {
                     << "Processor "<< rank1 <<" of " << size1
 		          << " (should be the same)."<<endl;
 
-  assert(rank1==rank);
-  assert(size1==size);
-
-
+  EPETRA_TEST_ERR(!(rank1==rank),ierr);
+  EPETRA_TEST_ERR(!(size1==size),ierr);
 
   // Do some timing to test barrier function
   
@@ -161,8 +160,7 @@ int main(int argc, char *argv[]) {
 
   // Method testing section
   // Test the Broadcast functions
-  ierr = petracomm.Broadcast(iVals,count,0);
-  assert(ierr==0);
+  EPETRA_TEST_ERR(petracomm.Broadcast(iVals,count,0),ierr);
   if (verbose1) {
     if (rank == 0) 
       cout << "The values on the root processor are: ";
@@ -172,17 +170,18 @@ int main(int argc, char *argv[]) {
       cout << iVals[i] << " ";
     cout << endl;
   }
-  ierr = 0;
+  // ierr = 0; need to track errors the whole way through the file - this line of code seems like a bad idea 
+  forierr = 0;
   for (int i=0; i<count; i++)
-    assert(iVals[i] == iBVals[i]); // otherwise Broadcast didn't occur properly
+    forierr += !(iVals[i] == iBVals[i]); // otherwise Broadcast didn't occur properly
+  EPETRA_TEST_ERR(forierr,ierr);
   delete iVals;
   delete iBVals;
   petracomm.Barrier();
   if (verbose) cout << endl << "Broadcast (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
 
-  ierr = petracomm.Broadcast(dVals,count,0);
-  assert(ierr==0);
+  EPETRA_TEST_ERR(petracomm.Broadcast(dVals,count,0),ierr);
   if (verbose1) {
     if (rank == 0)
       cout << "The values on the root processor are: ";
@@ -192,8 +191,10 @@ int main(int argc, char *argv[]) {
       cout << dVals[i] << " ";
     cout << endl;
   }
+  forierr = 0;
   for (int i=0; i<count; i++)
-    assert(dVals[i] == dBVals[i]); // otherwise Broadcast didn't occur properly
+    forierr += !(dVals[i] == dBVals[i]); // otherwise Broadcast didn't occur properly
+  EPETRA_TEST_ERR(forierr,ierr);
   delete dVals;
   delete dBVals;
   petracomm.Barrier();
@@ -208,8 +209,7 @@ int main(int argc, char *argv[]) {
       cout << iInputs[i] << " ";
     cout << endl;
   }
-  ierr = petracomm.MaxAll(iInputs,iGlobalMaxs,count);
-  assert(ierr==0);
+  EPETRA_TEST_ERR(petracomm.MaxAll(iInputs,iGlobalMaxs,count),ierr);
   petracomm.Barrier();
   
   if (verbose1) {
@@ -218,8 +218,11 @@ int main(int argc, char *argv[]) {
       cout << iGlobalMaxs[i] << " ";
     cout << endl;
   }
+  forierr = 0;
   for (int i=0; i<count; i++) 
-    assert(iMyGlobalMaxs[i] == iGlobalMaxs[i]);
+    forierr += !(iMyGlobalMaxs[i] == iGlobalMaxs[i]);
+  EPETRA_TEST_ERR(forierr,ierr);
+
   delete iGlobalMaxs;
   delete iMyGlobalMaxs;
   petracomm.Barrier();
@@ -233,8 +236,7 @@ int main(int argc, char *argv[]) {
       cout << dInputs[i] << " ";
     cout << endl;
   }
-  ierr = petracomm.MaxAll(dInputs,dGlobalMaxs,count);
-  assert(ierr==0);
+  EPETRA_TEST_ERR(petracomm.MaxAll(dInputs,dGlobalMaxs,count),ierr);
   petracomm.Barrier();
   
   if (verbose1) {
@@ -243,8 +245,10 @@ int main(int argc, char *argv[]) {
       cout << dGlobalMaxs[i] << " ";
     cout << endl;
   }
+  forierr = 0;
   for (int i=0; i<count; i++)
-    assert(Epetra_Util::Chop(dMyGlobalMaxs[i] - dGlobalMaxs[i]) == 0);
+    forierr += !(Epetra_Util::Chop(dMyGlobalMaxs[i] - dGlobalMaxs[i]) == 0);
+  EPETRA_TEST_ERR(forierr,ierr);
   delete dGlobalMaxs;
   delete dMyGlobalMaxs;
   petracomm.Barrier();
@@ -259,8 +263,7 @@ int main(int argc, char *argv[]) {
       cout << iInputs[i] << " ";
     cout << endl;
   }
-  ierr = petracomm.MinAll(iInputs,iGlobalMins,count);
-  assert(ierr==0);
+  EPETRA_TEST_ERR(petracomm.MinAll(iInputs,iGlobalMins,count),ierr);
   petracomm.Barrier();
 
   if (verbose1) {
@@ -269,8 +272,10 @@ int main(int argc, char *argv[]) {
       cout << iGlobalMins[i] << " ";
     cout << endl;
   }
+  forierr = 0;
   for (int i=0; i<count; i++) 
-    assert(iMyGlobalMins[i] == iGlobalMins[i]); // otherwise calculated min is wrong
+    forierr += !(iMyGlobalMins[i] == iGlobalMins[i]); // otherwise calculated min is wrong
+  EPETRA_TEST_ERR(forierr,ierr);
   delete iGlobalMins;
   delete iMyGlobalMins;
   petracomm.Barrier();
@@ -284,8 +289,7 @@ int main(int argc, char *argv[]) {
       cout << dInputs[i] << " ";
     cout << endl;
   }
-  ierr = petracomm.MinAll(dInputs,dGlobalMins,count);
-  assert(ierr==0);
+  EPETRA_TEST_ERR(petracomm.MinAll(dInputs,dGlobalMins,count),ierr);
   petracomm.Barrier();
 
   if (verbose1) {
@@ -294,8 +298,10 @@ int main(int argc, char *argv[]) {
       cout << dGlobalMins[i] << " ";
     cout << endl;
   }
+  forierr = 0;
   for (int i=0; i<count; i++)
-    assert (Epetra_Util::Chop(dMyGlobalMins[i] - dGlobalMins[i]) == 0); // otherwise calculated min is wrong
+    forierr += !(Epetra_Util::Chop(dMyGlobalMins[i] - dGlobalMins[i]) == 0); // otherwise calculated min is wrong
+  EPETRA_TEST_ERR(forierr,ierr);
   delete dGlobalMins;
   delete dMyGlobalMins;
   petracomm.Barrier();
@@ -310,8 +316,7 @@ int main(int argc, char *argv[]) {
       cout << iInputs[i] << " ";
     cout << endl;
   }
-  ierr = petracomm.SumAll(iInputs,iGlobalSums,count);
-  assert(ierr==0);
+  EPETRA_TEST_ERR(petracomm.SumAll(iInputs,iGlobalSums,count),ierr);
   petracomm.Barrier();
 
   if (verbose1) {
@@ -320,8 +325,10 @@ int main(int argc, char *argv[]) {
       cout << iGlobalSums[i] << " ";
     cout << endl;
   }
+  forierr = 0;
   for (int i=0; i<count; i++)
-    assert(iMyGlobalSums[i] == iGlobalSums[i]); // otherwise calculated sum is wrong
+    forierr += !(iMyGlobalSums[i] == iGlobalSums[i]); // otherwise calculated sum is wrong
+  EPETRA_TEST_ERR(forierr,ierr);
   delete iGlobalSums;
   delete iMyGlobalSums;
   petracomm.Barrier();
@@ -335,8 +342,7 @@ int main(int argc, char *argv[]) {
       cout << dInputs[i] << " ";
     cout << endl;
   }
-  ierr = petracomm.SumAll(dInputs,dGlobalSums,count);
-  assert(ierr==0);
+  EPETRA_TEST_ERR(petracomm.SumAll(dInputs,dGlobalSums,count),ierr);
   petracomm.Barrier();
 
   if (verbose1) {
@@ -345,8 +351,10 @@ int main(int argc, char *argv[]) {
       cout << dGlobalSums[i] << " ";
     cout << endl;
   }
+  forierr = 0;
   for (int i=0; i<count; i++)
-    assert(Epetra_Util::Chop(dMyGlobalSums[i] - dGlobalSums[i]) == 0); // otherwise calculated sum is wrong
+    forierr += !(Epetra_Util::Chop(dMyGlobalSums[i] - dGlobalSums[i]) == 0); // otherwise calculated sum is wrong
+  EPETRA_TEST_ERR(forierr,ierr);
 
   delete dGlobalSums;
   delete dMyGlobalSums;
@@ -363,8 +371,7 @@ int main(int argc, char *argv[]) {
     cout << endl;
   }
   
-  ierr = petracomm.ScanSum(iInputs,iScanSums,count);
-  assert(ierr==0);
+  EPETRA_TEST_ERR(petracomm.ScanSum(iInputs,iScanSums,count),ierr);
   petracomm.Barrier();
 
   if (verbose1) {
@@ -374,12 +381,14 @@ int main(int argc, char *argv[]) {
     }
     cout << endl;
   }
-    for (int i=0; i<count; i++)
-      assert(iMyScanSums[i] == iScanSums[i]);
-    delete iScanSums;
-    delete iMyScanSums;
-    petracomm.Barrier();
-    if (verbose) cout << endl << "ScanSum (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
+  forierr = 0;
+  for (int i=0; i<count; i++)
+    forierr += !(iMyScanSums[i] == iScanSums[i]);
+  EPETRA_TEST_ERR(forierr,ierr);
+  delete iScanSums;
+  delete iMyScanSums;
+  petracomm.Barrier();
+  if (verbose) cout << endl << "ScanSum (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
 
   double *dScanSums = new double[count];
@@ -390,8 +399,7 @@ int main(int argc, char *argv[]) {
     cout << endl;
   }
 
-  ierr = petracomm.ScanSum(dInputs,dScanSums,count);
-  assert(ierr==0);
+  EPETRA_TEST_ERR(petracomm.ScanSum(dInputs,dScanSums,count),ierr);
   petracomm.Barrier();
 
   if (verbose1) {
@@ -401,8 +409,10 @@ int main(int argc, char *argv[]) {
     }
     cout << endl;
   }
+  forierr = 0;
   for (int i=0; i<count; i++)
-    assert(Epetra_Util::Chop(dMyScanSums[i] - dScanSums[i])== 0);
+    forierr += !(Epetra_Util::Chop(dMyScanSums[i] - dScanSums[i])== 0);
+  EPETRA_TEST_ERR(forierr,ierr);
   delete dScanSums;
   delete dMyScanSums;
   petracomm.Barrier();
@@ -418,8 +428,7 @@ int main(int argc, char *argv[]) {
     cout << endl;
   }
   
-  ierr = petracomm.GatherAll(iInputs,iOrderedVals,count);
-  assert(ierr==0);
+  EPETRA_TEST_ERR(petracomm.GatherAll(iInputs,iOrderedVals,count),ierr);
   petracomm.Barrier();
 
   if (verbose1) {
@@ -429,8 +438,10 @@ int main(int argc, char *argv[]) {
     }
     cout << endl;
   }
+  forierr = 0;
   for (int i=0; i<totalVals; i++)
-    assert(iMyOrderedVals[i] == iOrderedVals[i]);
+    forierr += !(iMyOrderedVals[i] == iOrderedVals[i]);
+  EPETRA_TEST_ERR(forierr,ierr);
   delete iOrderedVals;
   delete iMyOrderedVals;
   petracomm.Barrier();
@@ -445,8 +456,7 @@ int main(int argc, char *argv[]) {
     cout << endl;
   }
   
-  ierr = petracomm.GatherAll(dInputs,dOrderedVals,count);
-  assert(ierr==0);
+  EPETRA_TEST_ERR(petracomm.GatherAll(dInputs,dOrderedVals,count),ierr);
   petracomm.Barrier();
 
   if (verbose1) {
@@ -456,8 +466,10 @@ int main(int argc, char *argv[]) {
     }
     cout << endl;
   }
+  forierr = 0;
   for (int i=0; i<totalVals; i++)
-    assert(Epetra_Util::Chop(dMyOrderedVals[i] - dOrderedVals[i]) == 0);
+    forierr += !(Epetra_Util::Chop(dMyOrderedVals[i] - dOrderedVals[i]) == 0);
+  EPETRA_TEST_ERR(forierr,ierr);
   delete dOrderedVals;
   delete dMyOrderedVals;
   petracomm.Barrier();
@@ -474,8 +486,8 @@ int main(int argc, char *argv[]) {
   int NumProc1 = comm.NumProc();
   if (verbose1) cout << comm << endl;
 
-  assert(MyPID1==0);
-  assert(NumProc1==1);
+  EPETRA_TEST_ERR(!(MyPID1==0),ierr);
+  EPETRA_TEST_ERR(!(NumProc1==1),ierr);
   comm.Barrier();
   if (verbose1) cout << comm << " is past serial barrier." << endl << flush;
 
@@ -488,7 +500,7 @@ int main(int argc, char *argv[]) {
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
-  return 0;
+  return ierr;
 }
 
 /*

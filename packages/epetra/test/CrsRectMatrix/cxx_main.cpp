@@ -8,11 +8,11 @@
 #include "Epetra_Time.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
-
+#include "../epetra_test_err.h"
  
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i, j;
+  int ierr = 0, i, j, forierr = 0;
   bool debug = false;
 
 #ifdef EPETRA_MPI
@@ -116,17 +116,18 @@ int main(int argc, char *argv[])
   Values[0] = 0.25;
   Values[1] = 0.5;
   Values[2] = 0.25;
+  forierr = 0;
   for (i=0; i<NumMyEquations; i++)
     {
       Indices[0] = 2*MyGlobalElements[i];
       Indices[1] = 2*MyGlobalElements[i]+1;
       Indices[2] = 2*MyGlobalElements[i]+2;
       NumEntries = 3;
-     assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
+      forierr += !(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
     }
-  
+  EPETRA_TEST_ERR(forierr,ierr);
   // Finish up
-  assert(A.TransformToLocal(&XMap, &YMap)==0);
+  EPETRA_TEST_ERR(!(A.TransformToLocal(&XMap, &YMap)==0),ierr);
 
 
   if (NumGlobalEquations<20) cout << "\n\n Matrix A = " << A << endl;
@@ -143,6 +144,7 @@ int main(int argc, char *argv[])
   Values[1] = 3.0/8.0;
   Values[2] = 1.0/16.0;
   int Valstart;
+  forierr = 0;
   for (i=0; i<NumMyEquations; i++)
     {
       if (MyGlobalElements[i] == 0) {
@@ -159,16 +161,17 @@ int main(int argc, char *argv[])
 	Valstart = 0;
       }
       if (MyGlobalElements[i] == NumGlobalEquations-1) NumEntries--;
-     assert(B.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+Valstart, Indices)==0);
+      forierr += !(B.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+Valstart, Indices)==0);
     }
-  
+  EPETRA_TEST_ERR(forierr,ierr);
+
   // Finish up
-  assert(B.TransformToLocal()==0);
+  EPETRA_TEST_ERR(!(B.TransformToLocal()==0),ierr);
   if (NumGlobalEquations<20) cout << "\n\nMatrix B = " << B << endl;
 
 
   Epetra_Time timer(Comm);
-  assert(B.Multiply(false, Y, BY)==0); // Compute BY = B*Y
+  EPETRA_TEST_ERR(!(B.Multiply(false, Y, BY)==0),ierr); // Compute BY = B*Y
   double elapsed_time = timer.ElapsedTime();
   double total_flops = B.Flops();
   double MFLOPs = total_flops/elapsed_time/1000000.0;
@@ -178,7 +181,7 @@ int main(int argc, char *argv[])
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
   timer.ResetStartTime();
-  assert(A.Multiply(true, Y, X)==0); // Compute X = A^T*Y
+  EPETRA_TEST_ERR(!(A.Multiply(true, Y, X)==0),ierr); // Compute X = A^T*Y
   elapsed_time = timer.ElapsedTime();
   total_flops = A.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
@@ -189,7 +192,7 @@ int main(int argc, char *argv[])
 
   // Iterate
   timer.ResetStartTime();
-  assert(A.Multiply(false, X, AATY)==0); // Compute AATY = A*X
+  EPETRA_TEST_ERR(!(A.Multiply(false, X, AATY)==0),ierr); // Compute AATY = A*X
   elapsed_time = timer.ElapsedTime();
   total_flops = A.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;

@@ -1,16 +1,54 @@
 #!/bin/tcsh
-set file = log.`eval date +%d%b%Y:%T`
+set error = 0
+set AnError = False
+#set printexitvalue
+if( "$5" == "True" ) then # $5 is an optional parameter indicating if 
+			  # this is an automated test or not
+    set file2 = logErrors.txt
+    echo $file2
+    echo "Test options: " $1 ", " $2 ", " >>& $file2
+    echo "    " $3 ", " $4 >>& $file2
+
+    echo "Date: " `eval date` >>& $file2
+    echo `uname -a` >>& $file2
+    set file = log`eval uname`.txt
+    echo "Test options: " $1 ", " $2 ", " >>& $file
+    echo "    " $3 ", " $4 >>& $file
+else
+    set file = log.`eval date +%d%b%Y:%T`
+    rm -f $file
+endif
 echo $file
-rm -f $file
 echo "Date: " `eval date` >>& $file
 echo `uname -a` >>& $file
 foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix ImportExport Map MultiVector Object VbrMatrix Vector)
 	cd $f
-	make $1 $2 $3 $4 clobber; make $1 $2 $3 $4
+	if( "$5" == "True" ) then
+	    make $1 $2 $3 $4 clobber; make $1 $2 $3 $4
+	else
+	    	make TRILINOS_ID=_DEBUG TRILINOS_COMM=SERIAL clobber; make TRILINOS_ID=_DEBUG TRILINOS_COMM=SERIAL
+	endif
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
-		./$g -v >>& ../$file
+		if( "$5" == "True" ) then
+		    ./$g >>& ../$file
+		    if( "$status" != "0" ) then
+			set AnError = True
+			echo "############" $g "##############" >>& ../$file2
+			./$g -v >>& ../$file2
+		    endif
+		else
+		    ./$g -v >>& ../$file
+		endif
 	end
-	make $1 $2 $3 $4 clobber
+	if( "$5" == "True" ) then
+	    make $1 $2 $3 $4 clobber
+	else
+	    make TRILINOS_ID=_DEBUG TRILINOS_COMM=SERIAL clobber
+	endif
 	cd ..
 end
+if( "$AnError" != "True" && "$5" == "True" ) then
+    rm -f $file2
+endif
+

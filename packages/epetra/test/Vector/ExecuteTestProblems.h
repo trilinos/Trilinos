@@ -3,6 +3,8 @@
 #include "Epetra_LocalMap.h"
 #include "Epetra_Vector.h"
 #include "BuildTestProblems.h"
+#include "../epetra_test_err.h"
+
 int MatrixTests(const Epetra_BlockMap & map, const Epetra_LocalMap & LocalMap,
 		    bool verbose);
 

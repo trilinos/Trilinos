@@ -13,10 +13,11 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
- 
+#include "../epetra_test_err.h"
+
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i, j;
+  int ierr = 0, i, j, forierr = 0;
   bool debug = false;
 
 #ifdef EPETRA_MPI
@@ -110,7 +111,7 @@ int main(int argc, char *argv[])
       NumRemoteIDs++;
     }
   }
-  assert(NumMyEquations==NumSameIDs+NumPermutedIDs+NumRemoteIDs);
+  EPETRA_TEST_ERR(!(NumMyEquations==NumSameIDs+NumPermutedIDs+NumRemoteIDs),ierr);
 
   Epetra_Map & TargetMap = *new Epetra_Map(-1, NumMyElements, TargetMyGlobalElements, 0, Comm);
 
@@ -128,17 +129,18 @@ int main(int argc, char *argv[])
 
   Epetra_Import & Importer = *new Epetra_Import(TargetMap, SourceMap);
 
-  assert(TargetMultiVector.Import(SourceMultiVector, Importer, Insert)==0);
+  EPETRA_TEST_ERR(!(TargetMultiVector.Import(SourceMultiVector, Importer, Insert)==0),ierr);
 
   // Test Target against expected values
-
+  forierr = 0;
   for (j=0; j < NumVectors; j++)
     for (i=0; i < NumMyElements; i++) {
       if (TargetMultiVector[j][i]!= (double) TargetMyGlobalElements[i]*(j+1))
 	cout << "TargetMultiVector["<<i<<"]["<<j<<"] = " << TargetMultiVector[j][i] 
 	     <<  "  TargetMyGlobalElements[i]*(j+1) = " <<  TargetMyGlobalElements[i]*(j+1) << endl;
-      assert(TargetMultiVector[j][i]== (double) TargetMyGlobalElements[i]*(j+1));
+      forierr += !(TargetMultiVector[j][i]== (double) TargetMyGlobalElements[i]*(j+1));
     }
+  EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "MultiVector Import using Importer Check OK" << endl << endl;
 
@@ -167,14 +169,16 @@ int main(int argc, char *argv[])
 
   for (i=0; i < NumMyElements; i++) SourceVector[i] =  (double) (MyPID+1);
 
-  assert(TargetVector.Export(SourceVector, Importer, Add)==0);
+  EPETRA_TEST_ERR(!(TargetVector.Export(SourceVector, Importer, Add)==0),ierr);
 
-    for (i=0; i < NumMyElements; i++) {
-      if (TargetVector[i]!= ExpectedTarget[i])
-	cout <<  "     TargetVector["<<i<<"] = " << TargetVector[i] 
-	     <<  "   ExpectedTarget["<<i<<"] = " <<  ExpectedTarget[i] << " on PE " << MyPID << endl;
-      assert(TargetVector[i]== ExpectedTarget[i]);
-    }
+  forierr = 0;
+  for (i=0; i < NumMyElements; i++) {
+    if (TargetVector[i]!= ExpectedTarget[i])
+      cout <<  "     TargetVector["<<i<<"] = " << TargetVector[i] 
+	   <<  "   ExpectedTarget["<<i<<"] = " <<  ExpectedTarget[i] << " on PE " << MyPID << endl;
+    forierr += !(TargetVector[i]== ExpectedTarget[i]);
+  }
+  EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "Vector Export using Importer Check OK" << endl << endl;
 
@@ -204,8 +208,8 @@ int main(int argc, char *argv[])
   // Create a standard Epetra_CrsGraph
 
   Epetra_CrsGraph& StandardGraph = *new Epetra_CrsGraph(Copy, StandardMap, 3);
-  assert(!StandardGraph.IndicesAreGlobal());
-  assert(!StandardGraph.IndicesAreLocal());
+  EPETRA_TEST_ERR(StandardGraph.IndicesAreGlobal(),ierr);
+  EPETRA_TEST_ERR(StandardGraph.IndicesAreLocal(),ierr);
   
   // Add  rows one-at-a-time
   // Need some vectors to help
@@ -215,6 +219,7 @@ int main(int argc, char *argv[])
   int *Indices = new int[2];
   int NumEntries;
   
+  forierr = 0;
   for (i=0; i<NumMyEquations; i++)
     {
     if (StandardMyGlobalElements[i]==0)
@@ -233,26 +238,27 @@ int main(int argc, char *argv[])
 	Indices[1] = StandardMyGlobalElements[i]+1;
 	NumEntries = 2;
       }
-     assert(StandardGraph.InsertGlobalIndices(StandardMyGlobalElements[i], NumEntries, Indices)==0);
-     assert(StandardGraph.InsertGlobalIndices(StandardMyGlobalElements[i], 1, StandardMyGlobalElements+i)==0); // Put in the diagonal entry
+    forierr += !(StandardGraph.InsertGlobalIndices(StandardMyGlobalElements[i], NumEntries, Indices)==0);
+    forierr += !(StandardGraph.InsertGlobalIndices(StandardMyGlobalElements[i], 1, StandardMyGlobalElements+i)==0); // Put in the diagonal entry
     }
-  
+  EPETRA_TEST_ERR(forierr,ierr);
+
   // Finish up
-  assert(StandardGraph.IndicesAreGlobal());
-  assert(StandardGraph.TransformToLocal()==0);
-  assert(StandardGraph.IndicesAreLocal());
-  assert(!StandardGraph.StorageOptimized());
+  EPETRA_TEST_ERR(!(StandardGraph.IndicesAreGlobal()),ierr);
+  EPETRA_TEST_ERR(!(StandardGraph.TransformToLocal()==0),ierr);
+  EPETRA_TEST_ERR(!(StandardGraph.IndicesAreLocal()),ierr);
+  EPETRA_TEST_ERR(StandardGraph.StorageOptimized(),ierr);
   StandardGraph.OptimizeStorage();
-  assert(StandardGraph.StorageOptimized());
-  assert(!StandardGraph.UpperTriangular());
-  assert(!StandardGraph.LowerTriangular());
+  EPETRA_TEST_ERR(!(StandardGraph.StorageOptimized()),ierr);
+  EPETRA_TEST_ERR(StandardGraph.UpperTriangular(),ierr);
+  EPETRA_TEST_ERR(StandardGraph.LowerTriangular(),ierr);
 
 
   // Create Epetra_CrsMatrix using the just-built graph
 
   Epetra_CrsMatrix& StandardMatrix = *new Epetra_CrsMatrix(Copy, StandardGraph);
-  assert(!StandardMatrix.IndicesAreGlobal());
-  assert(StandardMatrix.IndicesAreLocal());
+  EPETRA_TEST_ERR(StandardMatrix.IndicesAreGlobal(),ierr);
+  EPETRA_TEST_ERR(!(StandardMatrix.IndicesAreLocal()),ierr);
   
   // Add  rows one-at-a-time
   // Need some vectors to help
@@ -263,6 +269,7 @@ int main(int argc, char *argv[])
   Values[0] = -1.0; Values[1] = -1.0;
   double two = 2.0;
   
+  forierr = 0;
   for (i=0; i<NumMyEquations; i++)
     {
     if (StandardMyGlobalElements[i]==0)
@@ -281,17 +288,18 @@ int main(int argc, char *argv[])
 	Indices[1] = StandardMyGlobalElements[i]+1;
 	NumEntries = 2;
       }
-     assert(StandardMatrix.ReplaceGlobalValues(StandardMyGlobalElements[i], NumEntries, Values, Indices)==0);
-     assert(StandardMatrix.ReplaceGlobalValues(StandardMyGlobalElements[i], 1, &two, StandardMyGlobalElements+i)==0); // Put in the diagonal entry
+    forierr += !(StandardMatrix.ReplaceGlobalValues(StandardMyGlobalElements[i], NumEntries, Values, Indices)==0);
+    forierr += !(StandardMatrix.ReplaceGlobalValues(StandardMyGlobalElements[i], 1, &two, StandardMyGlobalElements+i)==0); // Put in the diagonal entry
     }
-  
+  EPETRA_TEST_ERR(forierr,ierr);
+
   // Finish up
-  assert(StandardMatrix.IndicesAreLocal());
-  assert(StandardMatrix.TransformToLocal()==0);
-  assert(StandardMatrix.IndicesAreLocal());
-  assert(StandardMatrix.StorageOptimized());
-  assert(!StandardMatrix.UpperTriangular());
-  assert(!StandardMatrix.LowerTriangular());
+  EPETRA_TEST_ERR(!(StandardMatrix.IndicesAreLocal()),ierr);
+  EPETRA_TEST_ERR(!(StandardMatrix.TransformToLocal()==0),ierr);
+  EPETRA_TEST_ERR(!(StandardMatrix.IndicesAreLocal()),ierr);
+  EPETRA_TEST_ERR(!(StandardMatrix.StorageOptimized()),ierr);
+  EPETRA_TEST_ERR(StandardMatrix.UpperTriangular(),ierr);
+  EPETRA_TEST_ERR(StandardMatrix.LowerTriangular(),ierr);
 
   // Construct an Overlapped Map of StandardMap that include the endpoints from two neighboring processors.
 
@@ -313,8 +321,8 @@ int main(int argc, char *argv[])
   // Create the Overlap Epetra_Matrix
 
   Epetra_CrsMatrix& OverlapMatrix = *new Epetra_CrsMatrix(Copy, OverlapMap, 4);
-  assert(!OverlapMatrix.IndicesAreGlobal());
-  assert(!OverlapMatrix.IndicesAreLocal());
+  EPETRA_TEST_ERR(OverlapMatrix.IndicesAreGlobal(),ierr);
+  EPETRA_TEST_ERR(OverlapMatrix.IndicesAreLocal(),ierr);
   
   // Add  matrix element one cell at a time.
   // Each cell does an incoming and outgoing flux calculation
@@ -323,6 +331,7 @@ int main(int argc, char *argv[])
   double pos_one = 1.0;
   double neg_one = -1.0;
 
+  forierr = 0;
   for (i=0; i<OverlapNumMyElements; i++)
     {
       int node_left = OverlapMyGlobalElements[i]-1;
@@ -330,34 +339,35 @@ int main(int argc, char *argv[])
       int node_right = node_left + 2;
       if (i>0) {
 	if (node_left>-1)
-	  assert(OverlapMatrix.InsertGlobalValues(node_center, 1, &neg_one, &node_left)==0);
-	assert(OverlapMatrix.InsertGlobalValues(node_center, 1, &pos_one, &node_center)==0);
+	  forierr += !(OverlapMatrix.InsertGlobalValues(node_center, 1, &neg_one, &node_left)==0);
+	forierr += !(OverlapMatrix.InsertGlobalValues(node_center, 1, &pos_one, &node_center)==0);
       }
       if (i<OverlapNumMyElements-1) {
-	assert(OverlapMatrix.InsertGlobalValues(node_center, 1, &pos_one, &node_center)==0);
+	forierr += !(OverlapMatrix.InsertGlobalValues(node_center, 1, &pos_one, &node_center)==0);
 	if (node_right<NumGlobalEquations) 
-	  assert(OverlapMatrix.InsertGlobalValues(node_center, 1, &neg_one, &node_right)==0);
+	  forierr += !(OverlapMatrix.InsertGlobalValues(node_center, 1, &neg_one, &node_right)==0);
       }
     }
+  EPETRA_TEST_ERR(forierr,ierr);
 
   // Handle endpoints
   if (MyPID==0) {
     int node_center = 0;
-    assert(OverlapMatrix.InsertGlobalValues(node_center, 1, &pos_one, &node_center)==0);
+    EPETRA_TEST_ERR(!(OverlapMatrix.InsertGlobalValues(node_center, 1, &pos_one, &node_center)==0),ierr);
   }
   if (MyPID==NumProc-1) {
     int node_center = OverlapMyGlobalElements[OverlapNumMyElements-1];
-    assert(OverlapMatrix.InsertGlobalValues(node_center, 1, &pos_one, &node_center)==0);
+    EPETRA_TEST_ERR(!(OverlapMatrix.InsertGlobalValues(node_center, 1, &pos_one, &node_center)==0),ierr);
   }
     
-  assert(OverlapMatrix.TransformToLocal()==0);
+  EPETRA_TEST_ERR(!(OverlapMatrix.TransformToLocal()==0),ierr);
 
   // Make a gathered matrix from OverlapMatrix.  It should be identical to StandardMatrix
 
   Epetra_CrsMatrix& GatheredMatrix = *new Epetra_CrsMatrix(Copy, StandardGraph);
   Epetra_Export & Exporter = *new Epetra_Export(OverlapMap, StandardMap);
-  assert(GatheredMatrix.Export(OverlapMatrix, Exporter, Add)==0);
-  assert(GatheredMatrix.TransformToLocal()==0);
+  EPETRA_TEST_ERR(!(GatheredMatrix.Export(OverlapMatrix, Exporter, Add)==0),ierr);
+  EPETRA_TEST_ERR(!(GatheredMatrix.TransformToLocal()==0),ierr);
 
   // Check if entries of StandardMatrix and GatheredMatrix are identical
 
@@ -367,17 +377,18 @@ int main(int argc, char *argv[])
 
   int StandardNumMyNonzeros = StandardMatrix.NumMyNonzeros();
   int GatheredNumMyNonzeros = GatheredMatrix.NumMyNonzeros();
-  assert(StandardNumMyNonzeros==GatheredNumMyNonzeros);
+  EPETRA_TEST_ERR(!(StandardNumMyNonzeros==GatheredNumMyNonzeros),ierr);
 
   int StandardNumMyRows = StandardMatrix.NumMyRows();
   int GatheredNumMyRows = GatheredMatrix.NumMyRows();
-  assert(StandardNumMyRows==GatheredNumMyRows);
+  EPETRA_TEST_ERR(!(StandardNumMyRows==GatheredNumMyRows),ierr);
 
+  forierr = 0;
   for (i=0; i< StandardNumMyRows; i++)
     {
-      assert(StandardMatrix.ExtractMyRowView(i, StandardNumEntries, StandardValues, StandardIndices)==0);
-      assert(GatheredMatrix.ExtractMyRowView(i, GatheredNumEntries, GatheredValues, GatheredIndices)==0);
-      assert(StandardNumEntries==GatheredNumEntries);
+      forierr += !(StandardMatrix.ExtractMyRowView(i, StandardNumEntries, StandardValues, StandardIndices)==0);
+      forierr += !(GatheredMatrix.ExtractMyRowView(i, GatheredNumEntries, GatheredValues, GatheredIndices)==0);
+      forierr += !(StandardNumEntries==GatheredNumEntries);
       for (j=0; j < StandardNumEntries; j++) {
 	//if (StandardIndices[j]!=GatheredIndices[j])
 	// cout << "MyPID = " << MyPID << " i = " << i << "   StandardIndices[" << j << "] = " << StandardIndices[j] 
@@ -385,10 +396,11 @@ int main(int argc, char *argv[])
 	//if (StandardValues[j]!=GatheredValues[j])
 	//cout << "MyPID = " << MyPID << " i = " << i << "    StandardValues[" << j << "] = " <<  StandardValues[j] 
 	//     << "    GatheredValues[" << j << "] = " <<  GatheredValues[j] << endl;
-	assert(StandardIndices[j]==GatheredIndices[j]);
-	assert(StandardValues[j]==GatheredValues[j]);
+	forierr += !(StandardIndices[j]==GatheredIndices[j]);
+	forierr += !(StandardValues[j]==GatheredValues[j]);
       }
     }
+  EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "Matrix Export Check OK" << endl;
   // Release all objects

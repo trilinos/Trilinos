@@ -10,6 +10,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Flops.h"
 #include "Epetra_VbrMatrix.h"
+#include "../epetra_test_err.h"
 
 // prototypes
 
@@ -31,7 +32,7 @@ int power_method(bool TransA, Epetra_VbrMatrix& A,
  
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i, j;
+  int ierr = 0, i, j, forierr = 0;
   bool debug = false;
 
 #ifdef EPETRA_MPI
@@ -114,8 +115,8 @@ int main(int argc, char *argv[])
   // Create a Epetra_Matrix
 
   Epetra_VbrMatrix A(Copy, Map, NumNz);
-  assert(!A.IndicesAreGlobal());
-  assert(!A.IndicesAreLocal());
+  EPETRA_TEST_ERR(A.IndicesAreGlobal(),ierr);
+  EPETRA_TEST_ERR(A.IndicesAreLocal(),ierr);
   
   // Use an array of Epetra_SerialDenseMatrix objects to build VBR matrix
 
@@ -179,25 +180,27 @@ int main(int argc, char *argv[])
 	if (i==NumMyElements-1) ColDims[2] = EPETRA_MAX(MinSize, EPETRA_MIN(MaxSize, MyPID)) - MinSize;
 	else ColDims[2] = ElementSizeList[i+1] - MinSize;
       }
-    assert(A.BeginInsertGlobalValues(CurRow, NumEntries, Indices)==0);
+    EPETRA_TEST_ERR(!(A.BeginInsertGlobalValues(CurRow, NumEntries, Indices)==0),ierr);
+    forierr = 0;
     for (j=0; j < NumEntries; j++) {
       Epetra_SerialDenseMatrix * AD = &(BlockEntries[RowDim][ColDims[j]]);
       NumMyNonzeros += AD->M() * AD->N();	  
-      assert(A.SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N())==0);
+      forierr += !(A.SubmitBlockEntry(AD->A(), AD->LDA(), AD->M(), AD->N())==0);
     }
+    EPETRA_TEST_ERR(forierr,ierr);
 
       A.EndSubmitEntries();
   }
   
   // Finish up
-  assert(A.IndicesAreGlobal());
-  assert(A.TransformToLocal()==0);
-  assert(A.IndicesAreLocal());
-  assert(!A.StorageOptimized());
+  EPETRA_TEST_ERR(!(A.IndicesAreGlobal()),ierr);
+  EPETRA_TEST_ERR(!(A.TransformToLocal()==0),ierr);
+  EPETRA_TEST_ERR(!(A.IndicesAreLocal()),ierr);
+  EPETRA_TEST_ERR(A.StorageOptimized(),ierr);
   // A.OptimizeStorage();
-  // assert(A.StorageOptimized());
-  assert(!A.UpperTriangular());
-  assert(!A.LowerTriangular());
+  // EPETRA_TEST_ERR(!(A.StorageOptimized()),ierr);
+  EPETRA_TEST_ERR(A.UpperTriangular(),ierr);
+  EPETRA_TEST_ERR(A.LowerTriangular(),ierr);
 
 
   for (int kr=0; kr<SizeRange; kr++) delete [] BlockEntries[kr];
@@ -217,12 +220,15 @@ int main(int argc, char *argv[])
   Comm.SumAll(&NumMyEquations, &NumGlobalEquations, 1);
   
 
-  assert(check(A, NumMyEquations, NumGlobalEquations, NumMyNonzeros, NumGlobalNonzeros, 
+  EPETRA_TEST_ERR(!(check(A, NumMyEquations, NumGlobalEquations, NumMyNonzeros, NumGlobalNonzeros, 
 	       NumMyElements, NumGlobalElements, NumMyBlockEntries, NumGlobalBlockEntries, 
-	       MyGlobalElements, verbose)==0);
-
-  for (i=0; i<NumMyElements; i++) assert(A.NumGlobalBlockEntries(MyGlobalElements[i])==NumNz[i]);
-  for (i=0; i<NumMyElements; i++) assert(A.NumMyBlockEntries(i)==NumNz[i]);
+	       MyGlobalElements, verbose)==0),ierr);
+  forierr = 0;
+  for (i=0; i<NumMyElements; i++) forierr += !(A.NumGlobalBlockEntries(MyGlobalElements[i])==NumNz[i]);
+  EPETRA_TEST_ERR(forierr,ierr);
+  forierr = 0;
+  for (i=0; i<NumMyElements; i++) forierr += !(A.NumMyBlockEntries(i)==NumNz[i]);
+  EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
 
@@ -342,9 +348,9 @@ int main(int argc, char *argv[])
 
   Epetra_VbrMatrix B(A);
 
-  assert(check(B, NumMyEquations, NumGlobalEquations, NumMyNonzeros, NumGlobalNonzeros, 
+  EPETRA_TEST_ERR(!(check(B, NumMyEquations, NumGlobalEquations, NumMyNonzeros, NumGlobalNonzeros, 
 	       NumMyElements, NumGlobalElements, NumMyBlockEntries, NumGlobalBlockEntries, 
-	       MyGlobalElements, verbose)==0);
+	       MyGlobalElements, verbose)==0),ierr);
 
 
   if (debug) Comm.Barrier();
@@ -352,7 +358,7 @@ int main(int argc, char *argv[])
   if (verbose) cout << "\n\n*****Testing post construction modifications" << endl<< endl;
 
   int One = 1;
-  if (B.MyGRID(0)) assert(B.BeginInsertGlobalValues(0, 1, &One)==-2);
+  if (B.MyGRID(0)) EPETRA_TEST_ERR(!(B.BeginInsertGlobalValues(0, 1, &One)==-2),ierr);
 
 
   /*
@@ -396,7 +402,8 @@ int main(int argc, char *argv[])
     int *Indices1 = new int[2];
     double two1 = 2.0;
     int NumEntries1;
-    
+
+    forierr = 0;
     for (i=0; i<NumMyElements1; i++)
       {
 	if (MyGlobalElements1[i]==0)
@@ -415,12 +422,12 @@ int main(int argc, char *argv[])
 	    Indices1[1] = MyGlobalElements1[i]+1;
 	    NumEntries1 = 2;
 	  }
-	assert(A1.InsertGlobalValues(MyGlobalElements1[i], NumEntries1, Values1, Indices1)==0);
-	assert(A1.InsertGlobalValues(MyGlobalElements1[i], 1, &two1, MyGlobalElements1+i)>0); // Put in the diagonal entry
+        forierr += !(A1.InsertGlobalValues(MyGlobalElements1[i], NumEntries1, Values1, Indices1)==0);
+	forierr += !(A1.InsertGlobalValues(MyGlobalElements1[i], 1, &two1, MyGlobalElements1+i)>0); // Put in the diagonal entry
       }
-    
+    EPETRA_TEST_ERR(forierr,ierr);
     // Finish up
-    assert(A1.TransformToLocal()==0);
+    EPETRA_TEST_ERR(!(A1.TransformToLocal()==0),ierr);
     
     if (verbose) cout << "\n\nPrint out tridiagonal matrix, each part on each processor.\n\n" << endl;
     cout << A1 << endl;
@@ -481,6 +488,7 @@ int check(Epetra_VbrMatrix& A,
 	  int NumMyBlockRows1, int NumGlobalBlockRows1, int NumMyBlockNonzeros1, int NumGlobalBlockNonzeros1, 
 	  int * MyGlobalElements, bool verbose) {
 
+  int ierr = 0, forierr = 0;
   // Test query functions
 
   int NumMyRows = A.NumMyRows();
@@ -488,42 +496,42 @@ int check(Epetra_VbrMatrix& A,
   // TEMP
   if (verbose) cout << "\n\nNumber of local Rows should = " << NumMyRows1 << endl<< endl;
 
-  assert(NumMyRows==NumMyRows1);
+  EPETRA_TEST_ERR(!(NumMyRows==NumMyRows1),ierr);
 
   int NumMyNonzeros = A.NumMyNonzeros();
   if (verbose) cout << "\n\nNumber of local Nonzero entries = " << NumMyNonzeros << endl<< endl;
 
-  assert(NumMyNonzeros==NumMyNonzeros1);
+  EPETRA_TEST_ERR(!(NumMyNonzeros==NumMyNonzeros1),ierr);
 
   int NumGlobalRows = A.NumGlobalRows();
   if (verbose) cout << "\n\nNumber of global Rows = " << NumGlobalRows << endl<< endl;
 
-  assert(NumGlobalRows==NumGlobalRows1);
+  EPETRA_TEST_ERR(!(NumGlobalRows==NumGlobalRows1),ierr);
 
   int NumGlobalNonzeros = A.NumGlobalNonzeros();
   if (verbose) cout << "\n\nNumber of global Nonzero entries = " << NumGlobalNonzeros << endl<< endl;
 
-  assert(NumGlobalNonzeros==NumGlobalNonzeros1);
+  EPETRA_TEST_ERR(!(NumGlobalNonzeros==NumGlobalNonzeros1),ierr);
 
   int NumMyBlockRows = A.NumMyBlockRows();
   if (verbose) cout << "\n\nNumber of local Block Rows = " << NumMyBlockRows << endl<< endl;
 
-  assert(NumMyBlockRows==NumMyBlockRows1);
+  EPETRA_TEST_ERR(!(NumMyBlockRows==NumMyBlockRows1),ierr);
 
   int NumMyBlockNonzeros = A.NumMyBlockEntries();
   if (verbose) cout << "\n\nNumber of local Nonzero Block entries = " << NumMyBlockNonzeros << endl<< endl;
 
-  assert(NumMyBlockNonzeros==NumMyBlockNonzeros1);
+  EPETRA_TEST_ERR(!(NumMyBlockNonzeros==NumMyBlockNonzeros1),ierr);
 
   int NumGlobalBlockRows = A.NumGlobalBlockRows();
   if (verbose) cout << "\n\nNumber of global Block Rows = " << NumGlobalBlockRows << endl<< endl;
 
-  assert(NumGlobalBlockRows==NumGlobalBlockRows1);
+  EPETRA_TEST_ERR(!(NumGlobalBlockRows==NumGlobalBlockRows1),ierr);
 
   int NumGlobalBlockNonzeros = A.NumGlobalBlockEntries();
   if (verbose) cout << "\n\nNumber of global Nonzero Block entries = " << NumGlobalBlockNonzeros << endl<< endl;
 
-  assert(NumGlobalNonzeros==NumGlobalNonzeros1);
+  EPETRA_TEST_ERR(!(NumGlobalNonzeros==NumGlobalNonzeros1),ierr);
 
   
   // Test RowMatrix interface implementations
@@ -538,21 +546,21 @@ int check(Epetra_VbrMatrix& A,
   A.NumMyRowEntries(NumMyRows-1, NumMyEntries);
   if (verbose) cout << "\n\nNumber of nonzero values in last row = " << NumMyEntries << endl<< endl;
 
-  assert(NumMyEntries==NumMyEntries1);
+  EPETRA_TEST_ERR(!(NumMyEntries==NumMyEntries1),ierr);
   
   // Other binary tests
 
-  assert(!A.NoDiagonal());
-  assert(A.Filled());
-  assert(A.Sorted());
-  assert(A.MyGRID(A.RowMap().MaxMyGID()));
-  assert(A.MyGRID(A.RowMap().MinMyGID()));
-  assert(!A.MyGRID(1+A.RowMap().MaxMyGID()));
-  assert(!A.MyGRID(-1+A.RowMap().MinMyGID()));
-  assert(A.MyLRID(0));
-  assert(A.MyLRID(NumMyBlockRows-1));
-  assert(!A.MyLRID(-1));
-  assert(!A.MyLRID(NumMyBlockRows));
+  EPETRA_TEST_ERR(A.NoDiagonal(),ierr);
+  EPETRA_TEST_ERR(!(A.Filled()),ierr);
+  EPETRA_TEST_ERR(!(A.Sorted()),ierr);
+  EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MaxMyGID())),ierr);
+  EPETRA_TEST_ERR(!(A.MyGRID(A.RowMap().MinMyGID())),ierr);
+  EPETRA_TEST_ERR(A.MyGRID(1+A.RowMap().MaxMyGID()),ierr);
+  EPETRA_TEST_ERR(A.MyGRID(-1+A.RowMap().MinMyGID()),ierr);
+  EPETRA_TEST_ERR(!(A.MyLRID(0)),ierr);
+  EPETRA_TEST_ERR(!(A.MyLRID(NumMyBlockRows-1)),ierr);
+  EPETRA_TEST_ERR(A.MyLRID(-1),ierr);
+  EPETRA_TEST_ERR(A.MyLRID(NumMyBlockRows),ierr);
 
     
   int i, j;
@@ -616,6 +624,7 @@ int check(Epetra_VbrMatrix& A,
 
 
   // For each row, test six approaches to extracting data from a given local index matrix
+  forierr = 0;
   for (i=0; i<NumMyBlockRows; i++) {
     int MyRow = i;
     int GlobalRow = A.GRID(i);
@@ -662,52 +671,53 @@ int check(Epetra_VbrMatrix& A,
 				 MyView2NumBlockEntries, MyView2BlockIndices,
 				 MyView2ColDims, MyView2LDAs, MyView2ValuesPointers);
 
-    assert(MyPointersNumBlockEntries==GlobalPointersNumBlockEntries);
-    assert(MyPointersNumBlockEntries==MyCopyNumBlockEntries);
-    assert(MyPointersNumBlockEntries==GlobalCopyNumBlockEntries);
-    assert(MyPointersNumBlockEntries==MyView1NumBlockEntries);
-    assert(MyPointersNumBlockEntries==MyView2NumBlockEntries);
+    forierr += !(MyPointersNumBlockEntries==GlobalPointersNumBlockEntries);
+    forierr += !(MyPointersNumBlockEntries==MyCopyNumBlockEntries);
+    forierr += !(MyPointersNumBlockEntries==GlobalCopyNumBlockEntries);
+    forierr += !(MyPointersNumBlockEntries==MyView1NumBlockEntries);
+    forierr += !(MyPointersNumBlockEntries==MyView2NumBlockEntries);
     for (j=1; j<MyPointersNumBlockEntries; j++) {
-      assert(MyCopyBlockIndices[j-1]<MyCopyBlockIndices[j]);
-      assert(MyView1BlockIndices[j-1]<MyView1BlockIndices[j]);
-      assert(MyView2BlockIndices[j-1]<MyView2BlockIndices[j]);
+      forierr += !(MyCopyBlockIndices[j-1]<MyCopyBlockIndices[j]);
+      forierr += !(MyView1BlockIndices[j-1]<MyView1BlockIndices[j]);
+      forierr += !(MyView2BlockIndices[j-1]<MyView2BlockIndices[j]);
 
-      assert(GlobalPointersBlockIndices[j]==A.GCID(MyPointersBlockIndices[j]));
-      assert(A.LCID(GlobalPointersBlockIndices[j])==MyPointersBlockIndices[j]);
-      assert(GlobalPointersBlockIndices[j]==GlobalCopyBlockIndices[j]);
+      forierr += !(GlobalPointersBlockIndices[j]==A.GCID(MyPointersBlockIndices[j]));
+      forierr += !(A.LCID(GlobalPointersBlockIndices[j])==MyPointersBlockIndices[j]);
+      forierr += !(GlobalPointersBlockIndices[j]==GlobalCopyBlockIndices[j]);
       
-      assert(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
+      forierr += !(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
 			   MyPointersRowDim, MyPointersColDims[j], 
 			   GlobalPointersValuesPointers[j], GlobalPointersLDAs[j], 
 			   GlobalPointersRowDim, GlobalPointersColDims[j])==0);
-      assert(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
+      forierr += !(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
 			   MyPointersRowDim, MyPointersColDims[j], 
 			   MyCopyValuesPointers[j], MyCopyLDAs[j], 
 			   MyCopyRowDim, MyCopyColDims[j])==0);
-      assert(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
+      forierr += !(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
 			   MyPointersRowDim, MyPointersColDims[j], 
 			   GlobalCopyValuesPointers[j], GlobalCopyLDAs[j], 
 			   GlobalCopyRowDim, GlobalCopyColDims[j])==0);
-      assert(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
+      forierr += !(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
 			   MyPointersRowDim, MyPointersColDims[j], 
 			   MyView1ValuesPointers[j], MyView1LDAs[j], 
 			   MyView1RowDim, MyView1ColDims[j])==0);
-      assert(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
+      forierr += !(CompareValues(MyPointersValuesPointers[j], MyPointersLDAs[j], 
 			   MyPointersRowDim, MyPointersColDims[j], 
 			   MyView2ValuesPointers[j], MyView2LDAs[j], 
 			   MyView2RowDim, MyView2ColDims[j])==0);
     }
   }
+  EPETRA_TEST_ERR(forierr,ierr);
 
   // GlobalRowView should be illegal (since we have local indices)
-  assert(A.BeginExtractGlobalBlockRowView(A.GRID(0), MyView1RowDim, 
+  EPETRA_TEST_ERR(!(A.BeginExtractGlobalBlockRowView(A.GRID(0), MyView1RowDim, 
 					  MyView1NumBlockEntries, MyView1BlockIndices,
-					  MyView1ColDims, MyView1LDAs)==-2);
+					  MyView1ColDims, MyView1LDAs)==-2),ierr);
   
   // Extract a view of block row in local index space (version 2)
-  assert(A.ExtractGlobalBlockRowView(A.GRID(0), MyView2RowDim, 
+  EPETRA_TEST_ERR(!(A.ExtractGlobalBlockRowView(A.GRID(0), MyView2RowDim, 
 				     MyView2NumBlockEntries, MyView2BlockIndices,
-				     MyView2ColDims, MyView2LDAs, MyView2ValuesPointers)==-2);
+				     MyView2ColDims, MyView2LDAs, MyView2ValuesPointers)==-2),ierr);
   
   delete [] MyPointersBlockIndices;
   delete [] GlobalPointersBlockIndices;
@@ -724,25 +734,27 @@ int check(Epetra_VbrMatrix& A,
   delete [] MyView1ValuesPointers;
   if (verbose) cout << "\n\nRows sorted check OK" << endl<< endl;
   
-  return(0);
+  return ierr;
 }
 
 //=============================================================================
 int CompareValues(double * A, int LDA, int NumRowsA, int NumColsA, 
 		  double * B, int LDB, int NumRowsB, int NumColsB) {
   
-  int i, j;
+  int i, j, ierr = 0, forierr = 0;
   double * ptr1 = B;
   double * ptr2;
   
-  if (NumRowsA!=NumRowsB) return(-2);
-  if (NumColsA!=NumColsB) return(-3);
+  if (NumRowsA!=NumRowsB) EPETRA_TEST_ERR(-2,ierr);
+  if (NumColsA!=NumColsB) EPETRA_TEST_ERR(-3,ierr);
  
 
-    for (j=0; j<NumColsA; j++) {
-      ptr1 = B + j*LDB;
-      ptr2 = A + j*LDA;
-      for (i=0; i<NumRowsA; i++) if (*ptr1++ != *ptr2++) return(-1);
-    }
-  return(0);
+  forierr = 0;
+  for (j=0; j<NumColsA; j++) {
+    ptr1 = B + j*LDB;
+    ptr2 = A + j*LDA;
+    for (i=0; i<NumRowsA; i++) forierr += (*ptr1++ != *ptr2++);
+  }
+  EPETRA_TEST_ERR(forierr,ierr);
+  return ierr;
 }

@@ -8,10 +8,11 @@
 #include "Epetra_Time.h"
 #include "Epetra_BlockMap.h"
 #include "checkmap.h"
+#include "../epetra_test_err.h"
 
 int main(int argc, char *argv[]) {
 
-  int i;
+  int i, ierr=0, returnierr=0;
 
 #ifdef EPETRA_MPI
 
@@ -41,11 +42,12 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
-
-  Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
+  if (!verbose) {
+    Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
+  }
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
-  cout << Comm << endl << flush;
+  if (verbose) cout << Comm << endl << flush;
   Comm.Barrier();
   bool verbose1 = verbose;
   if (verbose) verbose = (MyPID==0);
@@ -73,10 +75,16 @@ int main(int argc, char *argv[]) {
   }
   catch (int Error) {
     if (Error!=-1) {
-      if (verbose) cout << "Error code = " << Error << "Should be -1" << endl;
-      return 1;
+      if (Error!=0) {
+	EPETRA_TEST_ERR(Error,returnierr);
+	if (verbose) cout << "Error code should be -1" << endl;
+      }
+      else {
+	cout << "Error code = " << Error << "Should be -1" << endl;
+	returnierr+=1;
+      }
     }
-    if (verbose) cout << "Checked OK\n\n" << endl;
+    else if (verbose) cout << "Checked OK\n\n" << endl;
   }
 
   try {
@@ -85,10 +93,16 @@ int main(int argc, char *argv[]) {
   }
   catch (int Error) {
     if (Error!=-4) {
-      if (verbose) cout << "Error code = " << Error << "Should be -4" << endl;
-      return 1;
+      if (Error!=0) {
+	EPETRA_TEST_ERR(Error,returnierr);
+	if (verbose) cout << "Error code should be -4" << endl;
+      }
+      else {
+	cout << "Error code = " << Error << "Should be -4" << endl;
+	returnierr+=1;
+      }
     }
-    if (verbose) cout << "Checked OK\n\n" << endl;
+    else if (verbose) cout << "Checked OK\n\n" << endl;
   }
 
   if (verbose) cerr << flush;
@@ -103,15 +117,12 @@ int main(int argc, char *argv[]) {
   // Test Epetra-defined uniform linear distribution constructor
   Map = new Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm);
   if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm)" << endl;
-  int ierr = checkmap(*Map, NumGlobalElements, NumMyElements, 0, ElementSize, 0,
+  ierr = checkmap(*Map, NumGlobalElements, NumMyElements, 0, ElementSize, 0,
 		      NumGlobalElements*ElementSize, NumMyElements*ElementSize,
 		      IndexBase, Comm, DistributedGlobal);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
+  EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
 
   delete Map;
 
@@ -123,11 +134,8 @@ int main(int argc, char *argv[]) {
 		  NumGlobalElements*ElementSize, NumMyElements*ElementSize,
 		  IndexBase, Comm, DistributedGlobal);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
+  EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
 
   delete Map;
 
@@ -146,11 +154,9 @@ int main(int argc, char *argv[]) {
 		  NumGlobalElements*ElementSize, NumMyElements*ElementSize,
 		  IndexBase, Comm, DistributedGlobal);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
 
-  assert(ierr==0);
   Epetra_BlockMap * Map3 = new Epetra_BlockMap(*Map);// A map to test the SameAs method later
 
   delete Map;
@@ -181,41 +187,38 @@ int main(int argc, char *argv[]) {
 		  NumGlobalEquations, NumMyEquations,
 		  IndexBase, Comm, DistributedGlobal);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
+  EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
 
   // Test Copy constructor
   Epetra_BlockMap * Map1 = new Epetra_BlockMap(*Map);
 
   // Test SameAs() method
   bool same = Map1->SameAs(*Map);
-  assert(same==true);// should return true since Map1 is a copy of Map
+    EPETRA_TEST_ERR(!(same==true),returnierr);// should return true since Map1 is a copy of Map
 
   Epetra_BlockMap * Map2 = new Epetra_BlockMap(NumGlobalElements,NumMyElements,MyGlobalElements,ElementSizeList,IndexBase,Comm);
   same = Map2->SameAs(*Map);
-  assert(same==true); // Map and Map2 were created with the same sets of parameters
+    EPETRA_TEST_ERR(!(same==true),returnierr); // Map and Map2 were created with the same sets of parameters
   delete Map2;
 
   // now test SameAs() on some maps that are different
 
   Map2 = new Epetra_BlockMap(NumGlobalElements,NumMyElements,MyGlobalElements,ElementSizeList,IndexBase-1,Comm);
   same = Map2->SameAs(*Map);
-  assert(same==false); // IndexBases are different
+    EPETRA_TEST_ERR(!(same==false),returnierr); // IndexBases are different
   delete Map2;
 
   int *ElementSizeList1 = new int[NumMyElements];
   for (i=0; i<NumMyElements; i++) ElementSizeList1[i] = i%5 + 2; // element sizes go from 2 to 6
   Map2 = new Epetra_BlockMap(NumGlobalElements,NumMyElements,MyGlobalElements,ElementSizeList1,IndexBase,Comm);
   same = Map2->SameAs(*Map);
-  assert(same==false); // ElementSizes are different
+    EPETRA_TEST_ERR(!(same==false),returnierr); // ElementSizes are different
   delete [] ElementSizeList1;
   delete Map2;
 
   same = Map3->SameAs(*Map);
-  assert(same==false); // Map3 saved from an earlier test
+    EPETRA_TEST_ERR(!(same==false),returnierr); // Map3 saved from an earlier test
   delete Map3;
 
   // Back to testing copy constructor
@@ -224,11 +227,8 @@ int main(int argc, char *argv[]) {
 		  NumGlobalEquations, NumMyEquations,
 		  IndexBase, Comm, DistributedGlobal);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
+  EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
 
   if (verbose1) {
     if (verbose) cout << "Test ostream << operator" << endl << flush;
@@ -253,6 +253,6 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
 #endif
 
-  return 0;
+  return returnierr;
 }
 

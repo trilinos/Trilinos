@@ -10,9 +10,11 @@
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 #include "checkmap.h"
+#include "../epetra_test_err.h"
 
 int main(int argc, char *argv[]) {
 
+  int ierr=0, returnierr=0;
 
 #ifdef EPETRA_MPI
 
@@ -39,7 +41,9 @@ int main(int argc, char *argv[]) {
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
 
-  Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
+  if (!verbose) {
+    Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
+  }
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
   if (verbose) cout << Comm << endl;
@@ -70,10 +74,16 @@ int main(int argc, char *argv[]) {
   }
   catch (int Error) {
     if (Error!=-1) {
-      if (verbose) cout << "Error code = " << Error << "Should be -1" << endl;
-      return 1;
+      if (Error!=0) {
+	EPETRA_TEST_ERR(Error,returnierr);
+	if (verbose) cout << "Error code should be -1" << endl;
+      }
+      else {
+	cout << "Error code = " << Error << "Should be -1" << endl;
+	returnierr+=1;
+      }
     }
-    if (verbose) cout << "Checked OK\n\n" << endl;
+    else if (verbose) cout << "Checked OK\n\n" << endl;
   }
 
   try {
@@ -82,14 +92,16 @@ int main(int argc, char *argv[]) {
   }
   catch (int Error) {
     if (Error!=-4) {
-      if (verbose) {
-	cout << "Error code = " << Error << "Should be -4" << endl;
+      if (Error!=0) {
+	EPETRA_TEST_ERR(Error,returnierr);
+	if (verbose) cout << "Error code should be -4" << endl;
       }
-      return 1;
+      else {
+	cout << "Error code = " << Error << "Should be -4" << endl;
+	returnierr+=1;
+      }
     }
-    if (verbose) {
-      cout << "Checked OK\n\n" << endl;
-    }
+    else if (verbose) cout << "Checked OK\n\n" << endl;
   }
 
   if (verbose) cerr << flush;
@@ -105,14 +117,11 @@ int main(int argc, char *argv[]) {
   // Test Epetra-defined uniform linear distribution constructor
   Map = new Epetra_Map(NumGlobalElements, IndexBase, Comm);
   if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, IndexBase, Comm)" << endl;
-  int ierr = checkmap(*Map, NumGlobalElements, NumMyElements, 0, 
+  ierr = checkmap(*Map, NumGlobalElements, NumMyElements, 0, 
 		  IndexBase, Comm, DistributedGlobal);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
+  EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
 
   delete Map;
 
@@ -123,12 +132,8 @@ int main(int argc, char *argv[]) {
   ierr = checkmap(*Map, NumGlobalElements, NumMyElements, 0, 
 		  IndexBase, Comm, DistributedGlobal);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
-
+  EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
   delete Map;
 
   // Test User-defined arbitrary distribution constructor
@@ -145,29 +150,25 @@ int main(int argc, char *argv[]) {
   ierr = checkmap(*Map, NumGlobalElements, NumMyElements, MyGlobalElements, 
 		  IndexBase, Comm, DistributedGlobal);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
-
+  EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
   // Test Copy constructor
   Epetra_Map * Map1 = new Epetra_Map(*Map);
 
   // Test SameAs() method
   bool same = Map1->SameAs(*Map);
-  assert(same==true);// should return true since Map1 is a copy of Map
+  EPETRA_TEST_ERR(!(same==true),ierr);// should return true since Map1 is a copy of Map
 
   Epetra_BlockMap * Map2 = new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,  IndexBase, Comm);
   same = Map2->SameAs(*Map);
-  assert(same==true); // Map and Map2 were created with the same sets of parameters
+  EPETRA_TEST_ERR(!(same==true),ierr); // Map and Map2 were created with the same sets of parameters
   delete Map2;
 
   // now test SameAs() on a map that is different
 
   Map2 =  new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements, IndexBase-1, Comm);
   same = Map2->SameAs(*Map);
-  assert(same==false); // IndexBases are different
+  EPETRA_TEST_ERR(!(same==false),ierr); // IndexBases are different
   delete Map2;
 
   // Back to testing copy constructor
@@ -175,12 +176,8 @@ int main(int argc, char *argv[]) {
   ierr = checkmap(*Map1, NumGlobalElements, NumMyElements, MyGlobalElements, 
 		  IndexBase, Comm, DistributedGlobal);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
-
+  EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
   Epetra_Map * SmallMap = 0;
   if (verbose1) {
     // Build a small map for test cout.  Use 10 elements from current map
@@ -202,24 +199,16 @@ int main(int argc, char *argv[]) {
   ierr = checkmap(*LocalMap, NumMyElements1, NumMyElements1, 0, 
 		  IndexBase, Comm, false);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
-
+  EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
   // Test Copy constructor
   Epetra_LocalMap * LocalMap1 = new Epetra_LocalMap(*LocalMap);
   if (verbose) cout << "Checking Epetra_LocalMap(*LocalMap)" << endl;
   ierr = checkmap(*LocalMap1, NumMyElements1, NumMyElements1, 
 		  0, IndexBase, Comm, false);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
-
-  assert(ierr==0);
-
+  EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
   delete LocalMap1;
   delete LocalMap;
   if (verbose1) {
@@ -231,7 +220,6 @@ int main(int argc, char *argv[]) {
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
-
-  return 0;
+  return returnierr;
 }
 

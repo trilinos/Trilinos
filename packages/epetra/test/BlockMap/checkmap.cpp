@@ -5,40 +5,46 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
 	     int IndexBase, Epetra_Comm& Comm,
 	     bool DistributedGlobal)
 {
-  int i;
+
+  int i, ierr=0, forierr=0;// forierr is used in for loops, then is tested
+  // after for loop completes to see if it is non zero - potentially prevents
+  // thousands of error messages
 
   if (ElementSizeList==0)
     {
-      if (!Map.ConstantElementSize()) return(-1);
+      EPETRA_TEST_ERR(!Map.ConstantElementSize(),ierr);
     }
   else
-    if (Map.ConstantElementSize()) return(-1);
+    EPETRA_TEST_ERR(Map.ConstantElementSize(),ierr);
   
-  if (DistributedGlobal!=Map.DistributedGlobal()) return(-2);
+  EPETRA_TEST_ERR(DistributedGlobal!=Map.DistributedGlobal(),ierr);
 
       int *MyElementSizeList;
 
   if (ElementSizeList==0)
     {
-      if (Map.ElementSize()!=ElementSize) return(-3);
+      EPETRA_TEST_ERR(Map.ElementSize()!=ElementSize,ierr);
       
       MyElementSizeList = new int[NumMyElements];
       
-      if (Map.ElementSizeList(MyElementSizeList)!=0) return(-4);
+      EPETRA_TEST_ERR(Map.ElementSizeList(MyElementSizeList)!=0,ierr);
+      forierr = 0;
       for (i=0; i<NumMyElements; i++) 
-        if (MyElementSizeList[i]!=ElementSize) return(-4);
+        forierr += MyElementSizeList[i]!=ElementSize;
+      EPETRA_TEST_ERR(forierr,ierr);
 
-      if (Map.MaxMyElementSize() != ElementSize) return(-5);
-      if (Map.MinMyElementSize() != ElementSize) return(-5);
+      EPETRA_TEST_ERR(Map.MaxMyElementSize() != ElementSize,ierr);
+      EPETRA_TEST_ERR(Map.MinMyElementSize() != ElementSize,ierr);
     }
   else
     {
       MyElementSizeList = new int[NumMyElements];
-      if (Map.ElementSizeList(MyElementSizeList)!=0) return(-4);
+      EPETRA_TEST_ERR(Map.ElementSizeList(MyElementSizeList)!=0,ierr);
       int MaxSize = MyElementSizeList[0];
       int MinSize = MyElementSizeList[0];
+      forierr=0;
       for (i=0; i<NumMyElements; i++) {
-        if (MyElementSizeList[i]!=ElementSizeList[i]) return(-4);
+        forierr += MyElementSizeList[i]!=ElementSizeList[i];
 	if (MyElementSizeList[i] > MaxSize)
 	  MaxSize = MyElementSizeList[i];
 	if (MyElementSizeList[i] < MinSize)
@@ -46,111 +52,119 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
 
 	// Test ElementSize(int LID) method	
 
-	if (Map.ElementSize(Map.LID(MyGlobalElements[i])) != ElementSizeList[i])
-	  return(-51);
+	forierr += Map.ElementSize(Map.LID(MyGlobalElements[i])) != ElementSizeList[i];
       }
-      if (MaxSize !=Map.MaxMyElementSize()) return(-5);
-      if (MinSize !=Map.MinMyElementSize()) return(-5);
+      EPETRA_TEST_ERR(forierr,ierr);
+   
+      EPETRA_TEST_ERR(MaxSize !=Map.MaxMyElementSize(),ierr);
+      EPETRA_TEST_ERR(MinSize !=Map.MinMyElementSize(),ierr);
     }
 
   const Epetra_Comm & Comm1 = Map.Comm();
 
-  if (Comm1.NumProc()!=Comm.NumProc()) return(-6);
+  EPETRA_TEST_ERR(Comm1.NumProc()!=Comm.NumProc(),ierr);
 
-  if (Comm1.MyPID()!=Comm.MyPID()) return(-7);
+  EPETRA_TEST_ERR(Comm1.MyPID()!=Comm.MyPID(),ierr);
 
-  if (Map.IndexBase()!=IndexBase) return(-8);
+  EPETRA_TEST_ERR(Map.IndexBase()!=IndexBase,ierr);
 
-  if (!Map.LinearMap() && MyGlobalElements==0) return(-9);
+  EPETRA_TEST_ERR(!Map.LinearMap() && MyGlobalElements==0,ierr);
 
-  if (Map.LinearMap() && MyGlobalElements!=0) return(-9);
+  EPETRA_TEST_ERR(Map.LinearMap() && MyGlobalElements!=0,ierr);
 
-  if (Map.MaxAllGID()!=NumGlobalElements-1+IndexBase) return(-10);
+  EPETRA_TEST_ERR(Map.MaxAllGID()!=NumGlobalElements-1+IndexBase,ierr);
 
-  if (Map.MaxElementSize()!=ElementSize) return(-11);
+  EPETRA_TEST_ERR(Map.MaxElementSize()!=ElementSize,ierr);
 
   int MaxLID = Map.MaxLID();
-  if (MaxLID!=NumMyElements-1) return(-12);
+  EPETRA_TEST_ERR(MaxLID!=NumMyElements-1,ierr);
 
   int MaxMyGID = (Comm.MyPID()+1)*NumMyElements-1+IndexBase;
   if (Comm.MyPID()>2) MaxMyGID+=3;
   if (!DistributedGlobal) MaxMyGID = NumMyElements-1+IndexBase;
-  if (Map.MaxMyGID()!=MaxMyGID) return(-13);
+  EPETRA_TEST_ERR(Map.MaxMyGID()!=MaxMyGID,ierr);
 
-  if (Map.MinAllGID()!=IndexBase) return(-14);
+  EPETRA_TEST_ERR(Map.MinAllGID()!=IndexBase,ierr);
 
   if (ElementSizeList==0)
     {
-      if (Map.MinElementSize()!=ElementSize) return(-15);
+      EPETRA_TEST_ERR(Map.MinElementSize()!=ElementSize,ierr);
     }
-  else if (Map.MinElementSize()!=2) return(-15);
+  else EPETRA_TEST_ERR(Map.MinElementSize()!=2,ierr);
 
   int MinLID = Map.MinLID();
-  if (MinLID!=0) return(-16);
+  EPETRA_TEST_ERR(MinLID!=0,ierr);
 
   int MinMyGID = Comm.MyPID()*NumMyElements+IndexBase;
   if (Comm.MyPID()>2) MinMyGID+=3;
   if (!DistributedGlobal) MinMyGID = IndexBase; // Not really needed
-  if (Map.MinMyGID()!=MinMyGID) return(-17);
+  EPETRA_TEST_ERR(Map.MinMyGID()!=MinMyGID,ierr);
 
   int * MyGlobalElements1 = new int[NumMyElements];
-  if (Map.MyGlobalElements(MyGlobalElements1)!=0) return(-18);
+  EPETRA_TEST_ERR(Map.MyGlobalElements(MyGlobalElements1)!=0,ierr);
   
-  if (MyGlobalElements==0)
-    {
-      for (i=0; i<NumMyElements; i++) 
-	if (MyGlobalElements1[i]!=MinMyGID+i) return(-18);
-    }
-  else
+  forierr = 0;
+  if (MyGlobalElements==0) {
+    for (i=0; i<NumMyElements; i++) 
+      forierr += MyGlobalElements1[i]!=MinMyGID+i;
+    EPETRA_TEST_ERR(forierr,ierr);
+  }
+  else {
     for (i=0; i<NumMyElements; i++)
-      if (MyGlobalElements[i]!=MyGlobalElements1[i]) return(-18);
+      forierr += MyGlobalElements[i]!=MyGlobalElements1[i];
+    EPETRA_TEST_ERR(forierr,ierr);
+  }
+  EPETRA_TEST_ERR(Map.NumGlobalElements()!=NumGlobalElements,ierr);
   
-  if (Map.NumGlobalElements()!=NumGlobalElements) return(-19);
+  EPETRA_TEST_ERR(Map.NumGlobalPoints()!=NumGlobalPoints,ierr);
   
-  if (Map.NumGlobalPoints()!=NumGlobalPoints) return(-20);
-  
-  if (Map.NumMyElements()!=NumMyElements) return(-21);  
+  EPETRA_TEST_ERR(Map.NumMyElements()!=NumMyElements,ierr);  
 
-  if (Map.NumMyPoints()!=NumMyPoints) return(-22);
+  EPETRA_TEST_ERR(Map.NumMyPoints()!=NumMyPoints,ierr);
 
   int MaxMyGID2 = Map.GID(Map.LID(MaxMyGID));
-  if (MaxMyGID2 != MaxMyGID) return (-23);
+  EPETRA_TEST_ERR(MaxMyGID2 != MaxMyGID,ierr);
   int MaxLID2 = Map.LID(Map.GID(MaxLID));
-  if (MaxLID2 != MaxLID) return(-24);
+  EPETRA_TEST_ERR(MaxLID2 != MaxLID,ierr);
 
-  if (Map.GID(MaxLID+1) != IndexBase-1) return(-25);// MaxLID+1 doesn't exist
-  if (Map.LID(MaxMyGID+1) != -1) return(-26);// MaxMyGID+1 doesn't exist or is on a different processor
+  EPETRA_TEST_ERR(Map.GID(MaxLID+1) != IndexBase-1,ierr);// MaxLID+1 doesn't exist
+  EPETRA_TEST_ERR(Map.LID(MaxMyGID+1) != -1,ierr);// MaxMyGID+1 doesn't exist or is on a different processor
 
-  if (!Map.MyGID(MaxMyGID)) return (-27);
-  if (Map.MyGID(MaxMyGID+1)) return (-28);
+  EPETRA_TEST_ERR(!Map.MyGID(MaxMyGID),ierr);
+  EPETRA_TEST_ERR(Map.MyGID(MaxMyGID+1),ierr);
 
-  if (!Map.MyLID(MaxLID)) return (-29);
-  if (Map.MyLID(MaxLID+1)) return (-30);
+  EPETRA_TEST_ERR(!Map.MyLID(MaxLID),ierr);
+  EPETRA_TEST_ERR(Map.MyLID(MaxLID+1),ierr);
 
-  if (!Map.MyGID(Map.GID(MaxLID))) return(-31);
-  if (Map.MyGID(Map.GID(MaxLID+1))) return(-32);
+  EPETRA_TEST_ERR(!Map.MyGID(Map.GID(MaxLID)),ierr);
+  EPETRA_TEST_ERR(Map.MyGID(Map.GID(MaxLID+1)),ierr);
 
-  if (!Map.MyLID(Map.LID(MaxMyGID))) return(-33);
-  if (Map.MyLID(Map.LID(MaxMyGID+1))) return(-34);
+  EPETRA_TEST_ERR(!Map.MyLID(Map.LID(MaxMyGID)),ierr);
+  EPETRA_TEST_ERR(Map.MyLID(Map.LID(MaxMyGID+1)),ierr);
 
   // Test the FirstPointInElementList methods, begin by testing that they produce identical results
   int * FirstPointInElementList = new int[NumMyElements+1];
   Map.FirstPointInElementList(FirstPointInElementList);
   int * FirstPointInElementList1 = Map.FirstPointInElementList();
+  forierr = 0;
   for (i=0; i<=NumMyElements; i++)
-    if (FirstPointInElementList[i]!=FirstPointInElementList1[i]) return(-35);
+    forierr += FirstPointInElementList[i]!=FirstPointInElementList1[i];
+  EPETRA_TEST_ERR(forierr,ierr);
   // Now make sure values are correct
+  forierr = 0;
   if (Map.ConstantElementSize()) {
     for (i=0; i<=NumMyElements; i++)
-      if (FirstPointInElementList1[i]!=(i*ElementSize)) return(-36);// NOTE:FirstPointInElement[NumMyElements] is not the first point of an element
+      forierr += FirstPointInElementList1[i]!=(i*ElementSize);// NOTE:FirstPointInElement[NumMyElements] is not the first point of an element
+    EPETRA_TEST_ERR(forierr,ierr);
   }
   else {
     int FirstPoint = 0;
     for (i=0; i<NumMyElements; i++) {
-      if (FirstPointInElementList1[i]!=FirstPoint) return(-37);
+      forierr += FirstPointInElementList1[i]!=FirstPoint;
       FirstPoint += ElementSizeList[i];
     }
-    if (FirstPointInElementList[NumMyElements] != NumMyPoints) return (-38);// The last entry in the array = the total number of Points on the proc
+    EPETRA_TEST_ERR(forierr,ierr);
+    EPETRA_TEST_ERR(FirstPointInElementList[NumMyElements] != NumMyPoints,ierr);// The last entry in the array = the total number of Points on the proc
   }
   delete [] FirstPointInElementList;
 
@@ -160,29 +174,34 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
   int * PointToElementList = new int[NumMyPoints];
   Map.PointToElementList(PointToElementList);
   int * PointToElementList1 = Map.PointToElementList();
+  forierr = 0;
   for (i=0; i<NumMyPoints; i++)
-    if (PointToElementList1[i] != PointToElementList[i])return(-39);
+    forierr += PointToElementList1[i] != PointToElementList[i];
+  EPETRA_TEST_ERR(forierr,ierr);
   //Now make sure values are correct
+  forierr=0;
   if (Map.ConstantElementSize()) {
     for (i=0; i<NumMyElements; i++)
       for (int j=0; j<ElementSize; j++) {
-	if (PointToElementList[i*ElementSize+j] != i) return (-40);
+	forierr += PointToElementList[i*ElementSize+j] != i;
 	// Test FindLocalElementID method
 	Map.FindLocalElementID(i*ElementSize+j,ElementID,Offset);
-	if (ElementID != i || Offset != j) return (-41);
+	forierr += ElementID != i || Offset != j;
       }
+    EPETRA_TEST_ERR(forierr,ierr);
   }
   else {
     int MyPointTot = 0; // Keep track of total number of points in all previously completely checked elements
     for (i=0; i<NumMyElements; i++) {
       for (int j=0; j<ElementSizeList[i]; j++) {
-	if (PointToElementList[MyPointTot+j] != i) return(-42);
+	forierr += PointToElementList[MyPointTot+j] != i;
 	// Test FindLocalElementID method
 	Map.FindLocalElementID(MyPointTot+j,ElementID,Offset);
-	if (ElementID != i || Offset != j) return (-43);
+	forierr += ElementID != i || Offset != j;
       }
       MyPointTot += ElementSizeList[i];
     }
+    EPETRA_TEST_ERR(forierr,ierr);
   }
   delete [] PointToElementList;
 
@@ -206,16 +225,18 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
     Comm.GatherAll(MyGIDlist,GIDlist,NumElePerProc);// Get a few values from each proc
     Map.RemoteIDList(TotalNumEle, GIDlist, PIDlist, LIDlist, SizeList);
     int MyPID= Comm.MyPID();
+    forierr = 0;
     for (i=0; i<TotalNumEle; i++) {
       if (Map.MyGID(GIDlist[i])) {
-	if (PIDlist[i] != MyPID) return(-44);
-	if (!Map.MyLID(Map.LID(GIDlist[i])) || Map.LID(GIDlist[i]) != LIDlist[i] || Map.GID(LIDlist[i]) != GIDlist[i]) return(-45);
-	if (SizeList[i] != Map.ElementSize(LIDlist[i])) return(-46);
+	forierr += PIDlist[i] != MyPID;
+	forierr += !Map.MyLID(Map.LID(GIDlist[i])) || Map.LID(GIDlist[i]) != LIDlist[i] || Map.GID(LIDlist[i]) != GIDlist[i];
+	forierr += SizeList[i] != Map.ElementSize(LIDlist[i]);
       }
       else {
-	if (PIDlist[i] == MyPID) return(-47); // If MyGID comes back false, the PID listed should be that of another proc
+	forierr += PIDlist[i] == MyPID; // If MyGID comes back false, the PID listed should be that of another proc
       }
     }
+    EPETRA_TEST_ERR(forierr,ierr);
 
     delete [] MyGIDlist;
     delete [] GIDlist;
@@ -245,12 +266,12 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
 
     NumIDs = 0;
 
-    //assert(PIDList[NumIDs]==-1);
-    //assert(LIDList[NumIDs++]==-1);
+    //EPETRA_TEST_ERR(!(PIDList[NumIDs]==-1),ierr);
+    //EPETRA_TEST_ERR(!(LIDList[NumIDs++]==-1),ierr);
 
-    if (Map.MinMyGID()-1>=Map.MinAllGID()) assert(PIDList[NumIDs++]==MyPID-1);
-    if (Map.MaxMyGID()+1<=Map.MaxAllGID()) assert(PIDList[NumIDs]==MyPID+1);
-    if (Map.MaxMyGID()+1<=Map.MaxAllGID()) assert(LIDList[NumIDs++]==0);
+    if (Map.MinMyGID()-1>=Map.MinAllGID()) EPETRA_TEST_ERR(!(PIDList[NumIDs++]==MyPID-1),ierr);
+    if (Map.MaxMyGID()+1<=Map.MaxAllGID()) EPETRA_TEST_ERR(!(PIDList[NumIDs]==MyPID+1),ierr);
+    if (Map.MaxMyGID()+1<=Map.MaxAllGID()) EPETRA_TEST_ERR(!(LIDList[NumIDs++]==0),ierr);
 
     delete [] GIDList;
     delete [] PIDList;
@@ -258,5 +279,5 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
 
 
   }
-  return(0);
+  return (ierr);
 }
