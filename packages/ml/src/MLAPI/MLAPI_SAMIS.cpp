@@ -711,7 +711,8 @@ void ReadSAMISMatrix(const char *filen, Operator& A, int& NumPDEEqns)
 } // ReadSAMISMatrix
 
 // ====================================================================== 
-void ReadSAMISKernel(const char *myKerFileName, MultiVector& A)
+void ReadSAMISKernel(const char *myKerFileName, MultiVector& A, 
+         const int limKer)
 {
 
   if (GetNumProcs() != 1)
@@ -720,7 +721,6 @@ void ReadSAMISKernel(const char *myKerFileName, MultiVector& A)
   int ascii = 0;
   int nDof, nNod, nKer;
   int err;
-  int limKer = 0; // ???
 
   err = MLAPI::SAMIS::prefetchKers(ascii, nDof, nNod, nKer, myKerFileName);
   if (err)

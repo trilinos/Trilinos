@@ -32,7 +32,8 @@ class Operator;
   //! Reads null space vectors from SAMIS binary format.
   // ====================================================================== 
 
-  void ReadSAMISKernel(const char *myKerFileName, MultiVector& A);
+  void ReadSAMISKernel(const char *myKerFileName, MultiVector& A, 
+           const int limKer=-1 /* -in- limit num of kernels used */);
 
 } // namespace MLAPI
 
