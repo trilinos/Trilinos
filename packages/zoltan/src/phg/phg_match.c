@@ -21,10 +21,6 @@ extern "C" {
 #include "phg.h"
 
 
-    /*
-#define _DEBUG
-    */
-    
 static ZOLTAN_PHG_MATCHING_FN matching_ipm;  /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN matching_loc;  /* local ipm (in other words HCM:heavy connectivity matching) */
 
@@ -104,92 +100,91 @@ static int matching_loc(ZZ *zz, PHGraph *hg, Matching match)
     char *yo = "matching_loc";
     PHGComm *hgc=hg->comm;
     struct {
-        int matchcnt;
+        int nNonZero;
         int rank;
     } rootin, root;
 
-
-    if (!(visit = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
-        || !(adj = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
-        || !(eweight = (int*) ZOLTAN_CALLOC (hg->nVtx, sizeof(int))) ) {
-        Zoltan_Multifree (__FILE__, __LINE__, 3, &visit, &adj, &eweight);
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-        return ZOLTAN_MEMERR;
-    }
-    for (i=0; i<hg->nVtx; ++i)
-        visit[i] = i;
-    Zoltan_PHG_Rand_Perm_Int(visit, hg->nVtx);
-
-    for (i = 0; i<hg->nVtx; ++i) {
-        int v = visit[i];
-        if (match[v] == v) {
-            if ( hg->vindex[v] == hg->vindex[v+1] )
-                degzero++; // isolated vertex detection
-            else {
-                int maxuv=-1, maxu=-1, adjsz=0, k;
-
-                for (j = hg->vindex[v]; j < hg->vindex[v+1]; ++j) {
-                    int edge = hg->vedge[j];
-                    for (k = hg->hindex[edge]; k < hg->hindex[edge+1]; ++k) {
-                        int u = hg->hvertex[k];
-                        if (u == match[u] && u != v) {
-                            if (eweight[u]==0)
-                                adj[adjsz++] = u;
-                            ++eweight[u];
-                        }
-                    }
-                }
-                for (k = 0; k < adjsz; ++k) {
-                    int u = adj[k];
-                    if (eweight[u] > maxuv) {
-                        maxu = u;
-                        maxuv = eweight[u];
-                    }
-                    eweight[u] = 0;
-                }
-                if (maxu!=-1) {
-                    //match the maximally connected one with the current vertex
-                    match[v] = maxu;
-                    match[maxu] = v;
-                    ++matchcnt;
-                }
-            }
-        }
-    }
-
-
-    // match isolated vertices
-    if (degzero) {
-        int v = -1; // mark the first isolated vertex with -1
-        for (i = 0; i< hg->nVtx; ++i)
-            if (hg->vindex[i]==hg->vindex[i+1]) { /* degree zero */
-                if (v == -1)
-                    v = i;
-                else {
-                    match[i] = v;
-                    match[v] = i;
-                    v = -1;
-                    ++matchcnt;
-                }                
-            }
-    }
-
-#ifdef _DEBUG
-    uprintf(hgc, "there are %d matches\n", matchcnt);
-#endif
-    
-    /* find the index of the proc in column group with the best match; it will be our root proc */
-    rootin.matchcnt = matchcnt; 
+    /* find the index of the proc in column group with the most #nonzeros; it will be our root
+       proc for computing moves since it has better knowedge about global hypergraph */
+    rootin.nNonZero = hg->nNonZero; 
     rootin.rank = hgc->myProc_y;
     MPI_Allreduce(&rootin, &root, 1, MPI_2INT, MPI_MAXLOC, hgc->col_comm);
 
-#ifdef _DEBUG    
-    uprintf(hgc, "root is %d with matchcnt=%d \n", root.rank, root.matchcnt);
-#endif
+    uprintf(hgc, "root is %d with %d nonzero\n", root.rank, root.nNonZero);
+
     
+    if (hgc->myProc_y==root.rank) { /* only root of each column does this */
+        if (!(visit = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
+            || !(adj = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
+            || !(eweight = (int*) ZOLTAN_CALLOC (hg->nVtx, sizeof(int))) ) {
+            Zoltan_Multifree (__FILE__, __LINE__, 3, &visit, &adj, &eweight);
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+            return ZOLTAN_MEMERR;
+        }
+        for (i=0; i<hg->nVtx; ++i)
+            visit[i] = i;
+        Zoltan_PHG_Rand_Perm_Int(visit, hg->nVtx);
+
+        for (i = 0; i<hg->nVtx; ++i) {
+            int v = visit[i];
+            if (match[v] == v) {
+                if ( hg->vindex[v] == hg->vindex[v+1] )
+                    degzero++; // isolated vertex detection
+                else {
+                    int maxuv=-1, maxu=-1, adjsz=0, k;
+
+                    for (j = hg->vindex[v]; j < hg->vindex[v+1]; ++j) {
+                        int edge = hg->vedge[j];
+                        for (k = hg->hindex[edge]; k < hg->hindex[edge+1]; ++k) {
+                            int u = hg->hvertex[k];
+                            if (u == match[u] && u != v) {
+                                if (eweight[u]==0)
+                                    adj[adjsz++] = u;
+                                ++eweight[u];
+                            }
+                        }
+                    }
+                    for (k = 0; k < adjsz; ++k) {
+                        int u = adj[k];
+                        if (eweight[u] > maxuv) {
+                            maxu = u;
+                            maxuv = eweight[u];
+                        }
+                        eweight[u] = 0;
+                    }
+                    if (maxu!=-1) {
+                        //match the maximally connected one with the current vertex
+                        match[v] = maxu;
+                        match[maxu] = v;
+                        ++matchcnt;
+                    }
+                }
+            }
+        }
+
+
+        // match isolated vertices
+        if (degzero) {
+            int v = -1; // mark the first isolated vertex with -1
+            for (i = 0; i< hg->nVtx; ++i)
+                if (hg->vindex[i]==hg->vindex[i+1]) { /* degree zero */
+                    if (v == -1)
+                        v = i;
+                    else {
+                        match[i] = v;
+                        match[v] = i;
+                        v = -1;
+                        ++matchcnt;
+                    }                
+                }
+        }
+        uprintf(hgc, "there are %d matches\n", matchcnt);
+    }
     MPI_Bcast(match, hg->nVtx, MPI_INT, root.rank, hgc->col_comm);
 
     Zoltan_Multifree (__FILE__, __LINE__, 3, &visit, &adj, &eweight);
+    MPI_Barrier(hgc->Communicator);
+    uprintf(hgc, "exiting the local maching\n");
     return ZOLTAN_OK;
 }
     
@@ -227,9 +222,12 @@ static int matching_ipm (ZZ *zz, PHGraph *hg, Matching match)
   PHGComm *hgc = hg->comm;  
   char  *yo = "matching_ipm";
       
+uprintf (hgc, "starting ipm matching\n");
+  
   /* compute NLOOP as 1/2 * total vertices/total columns */
-  NLOOP = hg->dist_x[hgc->nProc_x] / (2 * hgc->nProc_x);
-  NDO   = 1;           /* later, it should be say 10% of vertices on processor */
+  NDO   = 100;           /* later, it should be say 10% of vertices on processor */  
+  NLOOP = 0.98 * hg->dist_x[hgc->nProc_x] / (2 * hgc->nProc_x * NDO);
+
   
   for (i = 0; i < hg->nVtx; i++)
      match[i] = i;
@@ -295,9 +293,9 @@ static int matching_ipm (ZZ *zz, PHGraph *hg, Matching match)
      /* determine the size of the send buffer & allocate it */   
      count = 0;
      for (i = 0; i < NDO; i++)
-        count += (hg->vindex[select[i]+1] - hg->vindex[select[i]]);
+        count += (hg->vindex[select[i]+1] - hg->vindex[select[i]]);                  
      count = (2 * NDO) + count;         /* append size of vtx and counts */
-          
+     
      if (!(buffer    = (char*) ZOLTAN_MALLOC (count        * sizeof(int)))
       || !(each_size = (int *) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int))))
          {
@@ -332,8 +330,7 @@ static int matching_ipm (ZZ *zz, PHGraph *hg, Matching match)
            *ip++ = EDGE_LNO_TO_GNO (hg, hg->vedge[j]);            /* edges */
         }
           
-     /* send NDO vertices/edges to all row neighbors */
-     /* rec all globally transmitted vertices/edges  */    
+     /* send/rec NDO vertices/edges to all row neighbors */
      MPI_Allgatherv (buffer, count, MPI_INT, rbuffer, each_size, displs, MPI_INT,
       hgc->row_comm);
                
@@ -384,7 +381,7 @@ static int matching_ipm (ZZ *zz, PHGraph *hg, Matching match)
        
         /* Want to use sparse communication with explicit summing later but
            for now, all procs in my column have same complete inner products */      
-        MPI_Allreduce(psums, tsums, hg->nVtx, MPI_INT, MPI_SUM, hgc->col_comm);
+        MPI_Allreduce(psums, tsums, hg->nVtx, MPI_INT, MPI_SUM, hgc->col_comm);              
                                  
         /* each proc computes best, all rows in a column compute same answer */ 
         maxpsum = -1;
@@ -393,13 +390,20 @@ static int matching_ipm (ZZ *zz, PHGraph *hg, Matching match)
               {
               m_bestsum [vertex]   = tsums[i];
               m_bestv   [vertex]   = i;
+              maxpsum              = tsums[i];
               }
+              
         if (maxpsum >= 0)
            cmatch [m_bestv[vertex]] = -1;      /* force match[i] != i */  
         else
            m_bestsum[vertex] = -1;
            m_bestv[vertex]   = 0;  /* dummy assignment */   
-        }    
+           
+           
+        }
+        
+
+
            
      /************************ PHASE 3: **************************************/
 
@@ -498,6 +502,13 @@ static int matching_ipm (ZZ *zz, PHGraph *hg, Matching match)
         }
      Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);                       
      } /* end of large loop over LOOP */
+     
+count = 0;
+for (i = 0; i < hg->nVtx; i++)
+   if (match[i] != i)
+      count++;
+           
+uprintf (hgc, "exiting ipm matching, loop = %d, count %d of %d\n", loop, count, hg->nVtx);     
      
   Zoltan_Multifree (__FILE__, __LINE__, 4, &psums, &tsums, &select, &cmatch); 
   Zoltan_Multifree (__FILE__, __LINE__, 5, &m_vindex, &m_vedge, &m_gno,
