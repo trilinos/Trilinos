@@ -1,13 +1,250 @@
 /*! \mainpage Trilinos/IFPACK: Object-oriented Algebraic Preconditioner Package
-\htmlonly
-\endhtmlonly
+
+\image html ../IFPACKLogo.gif
+
+\section table Table of Contents
+
+- \ref intro
+- \ref download
+- \ref example 
+- \ref note 
+- \ref tools 
+- \ref copyright
 
 \section intro Introduction
-IFPACK provides a suite of object-oriented algebraic preconditioners
+
+IFPACK, developed by Micheal Heroux and Marzio Sala (9214), 
+provides a suite of object-oriented algebraic preconditioners
 for the solution of preconditioned iterative solvers.  IFPACK
 constructors expect an Epetra_RowMatrix object for construction.
 IFPACK is part of the Trilinos Solver Project and IFPACK object
-interact well with other Trilinos classes.  In particular, IFPACK can
+interacts well with other Trilinos classes.  In particular, IFPACK can
 be used as a preconditioner for AztecOO.
 
+<P>All IFPACK preconditioners can be rewritten as additive Schwarz methods,
+of overlapping domain decomposition type. The user can adopt
+a minimal-overlap (that is, zero-row overlap), 
+or ask IFPACK to extend the overlap.
+The resulting preconditioner reads:
+\f[
+P_{IFPACK}^{-1} = \sum_{i = 0}^{NumProcs-1} P_i A_i^{-1} R_i
+\f]
+where \f$R_i\f$ is the restriction from the global vector, to the
+overlapping subdomain \f$i\f$,
+and \f$P_i\f$ is the prolongator. \f$P_i\f$ can simply be the transpose of 
+\f$R_i\f$.
+If is supposed that each subdomain
+is assigned to a different processors.
+
+<P>The action of the inverse of the local matrix can be defined by one of the
+following:
+- one or more steps of a point/block method (like Jacobi and Gauss-Seidel);
+- an incomplete factorization (ICT or RILUK);
+- an exact LU solve (using Amesos' factorizations).
+
+More precisely, the choices for \f$A_i^{-1}\f$ are:
+- simple point preconditioners:
+  - Jacobi
+  - Gauss-Seidel
+  - symmetric Guass-Seidel
+  - SOR
+  - SSOR
+- block preconditioners:
+  - block Jacobi
+  - block Gauss-Seidel
+  - block symmetric Gauss-Seidel
+- point incomplete factorizations:
+  - ICT(K) for symmetric problems
+  - RILU(K) for general problems
+- exact factorizations:
+  - all Amesos classes can be used to compute the LU factorization
+    of a given matrix.
+
+Point preconditioners are generally used as smoothers in a multilevel
+setting (for instance, within ML). The user can select the damping factor,
+and the number of sweeps.
+
+Block preconditioners can be very effective on some classes of problems.
+For small blocks, LAPACK functions can be used to apply the inverse of each
+block. For large blocks, any class derived from Ifpack_Preconditioner
+can be used. IFPACK already furnishes an interface to Amesos (this requires
+IFPACK to be configured with \c --enable-amesos), so that all Amesos-supported
+(and enables) factorizations can be used to apply the inverse of each
+block.
+
+\note Block Jacobi allows overlapping blocks, while block
+Gauss-Seidel and block symmetric Gauss-Seidel support only non-overlapping
+blocks. Here overlap refers to the overlap between blocks within local rows
+
+
+\section download Download IFPACK
+
+IFPACK can be downloaded from the web page http://software.sandia.gov/trilinos/downloads.html
+
+\section example Examples of Usage
+
+This section details how to use the IFPACK Factory class.
+
+<P>Probably, the easiest way to use IFPACK is through the function class
+Ifpack. This is a \e factory class, that returns an instance of the
+selected preconditioner. 
+An example of usage is reported by the following code:
+\code
+#include "Ifpack.h"
+...
+Ifpack Factory;
+Epetra_RowMatrix* A; 
+string PrecType = "Amesos"; // exact solve on each subdomain 
+int OverlapLevel = 1; // one row of overlap among the processes
+Ifpack_Preconditioner* Prec = Factory.Create(PrecType, A, OverlapLevel);
+assert (Prec != 0);
+
+IFPACK_CHK_ERR(Prec->SetParameters(List));
+IFPACK_CHK_ERR(Prec->Initialize());
+IFPACK_CHK_ERR(Prec->Compute());
+\endcode
+Please refer to the doxygen documentation of this class for more details.
+
+<P>Ifpack factory is appropriate for most users, but for more customized
+preconditioners the user should directly create them, as outlined
+in the following fragment of code:
+\code
+#include "Ifpack_AdditiveSchwarz.h"
+...
+Epetra_RowMatrix* A; 
+int OverlapLevel = 1;
+Ifpack_AdditiveSchwarz Prec<Ifpack_Amesos> (A, OverlapLevel);
+\endcode
+
+Another example is the following, where the local solve is
+a block Jacobi method, which uses dense containers (LAPACK).
+\code
+#include "Ifpack_AdditiveSchwarz.h"
+#include "Ifpack_DenseContainer.h"
+#include "Ifpack_BlockJacobi.h"
+...
+Epetra_RowMatrix* A; 
+int OverlapLevel = 1;
+Ifpack_AdditiveSchwarz Prec<Ifpack_BlockJacobi<Ifpack_DenseContainer> > (A, OverlapLevel);
+\endcode
+
+Using sparse containers and Amesos the code may look as follows.
+\code
+#include "Ifpack_AdditiveSchwarz.h"
+#include "Ifpack_SparseContainer.h"
+#include "Ifpack_BlockJacobi.h"
+#include "Ifpack_Amesos.h"
+...
+Epetra_RowMatrix* A; 
+int OverlapLevel = 1;
+Ifpack_AdditiveSchwarz Prec<Ifpack_BlockJacobi<Ifpack_SparseContainer<Ifpack_Amesos> > > (A, OverlapLevel);
+\endcode
+
+<P>Other examples are reported in the \c example subdirectory with several
+comments:
+- \ref ex_factory shows how to use Ifpack factory to create
+                            a variety of IFPACK preconditioners.  This is the simplest way to use IFPACK.  The example details all the phases of IFPACK. Difficulty = beginners.
+- \ref ex_amesos      shows how to use exact LU solvers on
+                            each subdomain, using Amesos. This example
+                            is very similar to the previous one.
+                            Difficulty = beginners.
+- \ref ex_ict     shows how to define incomplete Cholesky
+                            factorizations and tune parameters. Although
+                            an ICT factorization can be constructed using
+                            the Factory (as done in file
+                            Ifpack_ex_Factory.cpp), this example tells
+                            the real story: how to define an
+                            Ifpack_AdditiveSchwar which uses ICT on
+                            each subdomain.
+                            Difficulty: intermediate.
+- \ref ex_block  shows how to define block preconditioner
+                            in the more general case, using
+                            Ipfack_AdditiveSchwarz.
+                            Difficulty: advanced.
+
+\section note Note On IFPACK Classes
+
+Users of IFPACK should consider only three preconditioing classes:
+- Ifpack_AdditiveSchwarz;
+- Ifpack_CrsIct;
+- Ifpack_CrsRiluk.
+
+The last two are available through Ifpack_AdditiveSchwarz. The
+distributed contains several other classes, that are supposed to 
+be used as \e tools for Ifpack_AdditiveSchwarz (see above examples). These
+classes are Ifpack_Jacobi, Ifpack_GaussSeidel, Ifpack_SymGaussSeidel,
+Ifpack_SOR, Ifpack_SSOR, Ifpack_BlockJacobi, Ifpack_BlockGaussSeidel,
+Ifpack_SymBlockGaussSeidel, Ifpack_Amesos, Ifpack_Ict, Ifpack_Riluk.
+These classes operate on local components only (with the assumption that
+OperatorDomainMap(), OperatorRangeMap() and RowMatrixRowMap()
+coincide). A robust code should use them directly only
+to specify templates for Ifpack_AdditiveSchwarz objects.
+
+
+\section tools Developers' Tools 
+
+IFPACK contains several classes, meant for developers rather than
+for users:
+- Graphs are derived from Ifpack_Graph, which is implemented
+  in Ifpack_Graph_Epetra_CrsGraph and Ifpack_Graph_Epetra_RowMatrix;
+- Containers are derived from Ifpack_Container, which is implemented
+  in Ifpack_DenseContainer and Ifpack_SparseContainer;
+- Reorderings are derived from Ifpack_Reordering, which is
+  implemented in Ifpack_RCMReordering and Ifpack_METISReordering;
+- Partitioners are derived from Ifpack_Partitioner, which is
+  implemented in Ifpack_LinearPartitioner, Ifpack_METISPartitioner
+  and Ifpack_EquationPartitioner;
+- Available filters are Ifpack_LocalFilter, Ifpack_ReorderFilter,
+  Ifpack_DropFilter, Ifpack_SparsityFilter;
+- Semi-virtual classes are Ifpack_PointPreconditioner and
+  Ifpack_BlockPreconditioner.
+
+\section copyright Copyright
+
+\verbatim
+Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+license for use of this work by or on behalf of the U.S. Government.
+
+This library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation; either version 2.1 of the
+License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+USA
+\endverbatim
+
 */
+
+/*! \page ex_factory
+
+\include Ifpack_ex_Factory.cpp
+
+*/
+
+/*! \page ex_amesos
+
+\include Ifpack_ex_Amesos.cpp
+
+*/
+
+/*! \page ex_ict
+
+\include Ifpack_ex_Ict.cpp
+
+*/
+
+/*! \page ex_block
+
+\include Ifpack_ex_BlockPrec.cpp
+
+*/
+
+
