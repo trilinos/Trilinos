@@ -347,27 +347,16 @@
    fun:int*alloc_dist
    fun:dSolveInit
 }
-
-
-
 #
 #
 #
 #  The following are needed to run TestOptions on herouxsmp:
 #
  {
-   <insert a suppression name here>
+   <memory overlap in lam>
    Memcheck:Overlap
    fun:memcpy
    fun:lam_arr_remove_index
    fun:finalize1
    fun:lam_ssi_rpi_usysv_finalize
-}
- {
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:DISABLE_FOR_NOW__builtin_new
-   fun:_Znwj
-   fun:_ZN18Epetra_MultiVectorclEi
-   fun:_ZN10Amesos_Klu5SolveEv
 }

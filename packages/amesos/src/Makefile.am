@@ -134,12 +134,14 @@ if HAVE_AMESOS_KLU
 #
 KLU_H = \
 	$(srcdir)/klu_btf/klu_btf.h \
-	$(srcdir)/klu_btf/klu_btf.h \
 	$(srcdir)/klu_btf/klu_dump.h \
 	$(srcdir)/klu_kernel/klu_kernel.h\
 	$(srcdir)/klu_btf/klu_btf_internal.h \
 	$(srcdir)/klu_kernel/klu.h \
 	$(srcdir)/klu_kernel/tictoc.h \
+	$(srcdir)/btf/btf.h \
+	$(srcdir)/AMD/Include/amd.h \
+	$(srcdir)/colamd/colamd.h \
 	$(srcdir)/Amesos_Klu.h
 
 KLU = \
@@ -156,7 +158,9 @@ KLU = \
 	$(srcdir)/AMD/Source/amd_post_tree.c \
 	$(srcdir)/AMD/Source/amd_preprocess.c \
 	$(srcdir)/AMD/Source/amd_valid.c \
+	$(srcdir)/AMD/Source/amd_internal.h \
 	$(srcdir)/btf/btf_order.c \
+	$(srcdir)/btf/btf_internal.h \
 	$(srcdir)/btf/maxtrans.c \
 	$(srcdir)/btf/strongcomp.c \
 	$(srcdir)/colamd/colamd.c \
@@ -207,6 +211,28 @@ KUNDERT = \
        $(srcdir)/ksparse/spalloc.c \
        $(srcdir)/ksparse/spfactor.c \
        $(srcdir)/ksparse/spsmp.c \
+       $(srcdir)/ksparse/spmatrix.h \
+       $(srcdir)/ksparse/sperror.h \
+       $(srcdir)/ksparse/spconfig.h \
+       $(srcdir)/ksparse/iferrmsg.h \
+       $(srcdir)/ksparse/strext.h \
+       $(srcdir)/ksparse/spice.h \
+       $(srcdir)/ksparse/util.h \
+       $(srcdir)/ksparse/misc.h \
+       $(srcdir)/ksparse/suffix.h \
+       $(srcdir)/ksparse/port.h \
+       $(srcdir)/ksparse/hw.h \
+       $(srcdir)/ksparse/config.h \
+       $(srcdir)/ksparse/capabil.h \
+       $(srcdir)/ksparse/os_linux.h \
+       $(srcdir)/ksparse/os_unix.h \
+       $(srcdir)/ksparse/hw_ieee.h \
+       $(srcdir)/ksparse/smpdefs.h \
+       $(srcdir)/ksparse/spdefs.h \
+       $(srcdir)/ksparse/sppars.h \
+       $(srcdir)/ksparse/spmat.h \
+       $(srcdir)/ksparse/smpdefs.h \
+       $(srcdir)/ksparse/complex.h \
        $(srcdir)/ksparse/sputils.c
 else
 KUNDERT_H = 

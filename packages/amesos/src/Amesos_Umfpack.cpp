@@ -461,12 +461,6 @@ int Amesos_Umfpack::Solve()
     SerialBextract->Import(*vecB,*ImportToSerial_,Insert);
     SerialB = SerialBextract; 
     SerialX = SerialXextract; 
-#if 0 
-    int SBlda;
-    assert( SerialB->ExtractView( &SerialBvalues, &SBlda ) == 0 ) ; 
-    if (Comm().MyPID() == 0 )
-      SerialBvalues[0] = 0.001 ;    // kludge
-#endif
 
   } 
 
