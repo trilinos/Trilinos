@@ -1,6 +1,6 @@
 
-/* Copyright (2001) Sandia Corportation. Under the terms of Contract 
- * DE-AC04-94AL85000, there is a non-exclusive license for use of this 
+/* Copyright (2001) Sandia Corportation. Under the terms of Contract
+ * DE-AC04-94AL85000, there is a non-exclusive license for use of this
  * work by or on behalf of the U.S. Government.  Export of this program
  * may require a license from the United States Government. */
 
@@ -14,7 +14,7 @@
  * worldwide license in this data to reproduce, prepare derivative works,
  * distribute copies to the public, perform publicly and display
  * publicly, and to permit others to do so.
- * 
+ *
  * NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
  * OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
  * ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
@@ -39,6 +39,40 @@ const double Epetra_Overflow = 1.79E308; // Used to test if equilibration should
 const double Epetra_Underflow = 2.23E-308;
 
 #ifdef HAVE_CONFIG_H
+
+/*
+ * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
+ * be undef'd here to avoid warnings when this file is included from another package.
+ * KL 11/25/02
+ */
+#ifdef PACKAGE
+#undef PACKAGE
+#endif
+
+#ifdef PACKAGE_NAME
+#undef PACKAGE_NAME
+#endif
+
+#ifdef PACKAGE_BUGREPORT
+#undef PACKAGE_BUGREPORT
+#endif
+
+#ifdef PACKAGE_STRING
+#undef PACKAGE_STRING
+#endif
+
+#ifdef PACKAGE_TARNAME
+#undef PACKAGE_TARNAME
+#endif
+
+#ifdef PACKAGE_VERSION
+#undef PACKAGE_VERSION
+#endif
+
+#ifdef VERSION
+#undef VERSION
+#endif
+
 #include <Epetra_config.h>
 
 #ifdef HAVE_MPI
@@ -79,7 +113,7 @@ const double Epetra_Underflow = 2.23E-308;
 
 /* Every line that begins with 'using' should eventually be dependent
    on some check within the configure script */
-   
+
 
 #ifndef TFLOP
 #ifdef HAVE_CMATH
@@ -99,8 +133,8 @@ using std::endl;
 #endif
 
 /*-----------------------------------------------------------------------
-Must refine the following up to #else HAVE_CONFIG_H is not defined
------------------------------------------------------------------------*/
+  Must refine the following up to #else HAVE_CONFIG_H is not defined
+  -----------------------------------------------------------------------*/
 
 #ifdef EPETRA_SIMULATE_BOOL
 #ifdef bool
@@ -122,10 +156,10 @@ Must refine the following up to #else HAVE_CONFIG_H is not defined
 // RAB: 2002/1/25: Define EPETRA_ANSI_CPP as an argument to the compiler!
 //#undef EPETRA_ANSI_CPP // Do not use ANSI/ISO C++ (curently just checked for I/O functions)
 /*#ifdef EPETRA_ANSI_CPP
-typedef std::ios_base::fmtflags   Epetra_fmtflags;
-#else
-typedef long int                  Epetra_fmtflags;
-#endif*/
+  typedef std::ios_base::fmtflags   Epetra_fmtflags;
+  #else
+  typedef long int                  Epetra_fmtflags;
+  #endif*/
 
 #ifndef HAVE_FORMAT_IO
 const bool Epetra_FormatStdout = false; // Set true if the ostream << operator should format output
@@ -136,13 +170,13 @@ const bool Epetra_FormatStdout = true;
 // Define DefultTracebackMode (HAVE_WARNING_MESSAGES and HAVE_FATAL_MESSAGES can be defined
 // via the configure script command line)
 
-#ifdef HAVE_WARNING_MESSAGES 
-const int DefaultTracebackMode = 2; 
-#elif defined HAVE_FATAL_MESSAGES 
-const int DefaultTracebackMode = 1; 
-#else 
-const int DefaultTracebackMode = 0; 
-#endif 
+#ifdef HAVE_WARNING_MESSAGES
+const int DefaultTracebackMode = 2;
+#elif defined HAVE_FATAL_MESSAGES
+const int DefaultTracebackMode = 1;
+#else
+const int DefaultTracebackMode = 0;
+#endif
 
 #else /*HAVE_CONFIG_H is not defined*/
 
@@ -209,13 +243,13 @@ using namespace std;
 // RAB: 2002/1/25: Define EPETRA_ANSI_CPP as an argument to the compiler!
 //#undef EPETRA_ANSI_CPP // Do not use ANSI/ISO C++ (curently just checked for I/O functions)
 /*#ifdef EPETRA_ANSI_CPP
-typedef std::ios_base::fmtflags   Epetra_fmtflags;
-#else
-typedef long int                  Epetra_fmtflags;
-#endif */
+  typedef std::ios_base::fmtflags   Epetra_fmtflags;
+  #else
+  typedef long int                  Epetra_fmtflags;
+  #endif */
 
 const bool Epetra_FormatStdout = true; // Set true if the ostream << operator should format output
-const int DefaultTracebackMode = 1; 
+const int DefaultTracebackMode = 1;
 
 #endif /*HAVE_CONFIG_H*/
 

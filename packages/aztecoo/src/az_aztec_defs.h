@@ -27,6 +27,15 @@
 #define __AZTECDEFSH__
 
 #ifdef HAVE_CONFIG_H
+
+/* undefine PACKAGE before reading AztecOO_config.h
+ * in order to eliminate multiple definition warnings when
+ * AztecOO is used with other Trilinos packages. KL 11/25/2002 */
+
+#ifdef PACKAGE
+#undef PACKAGE
+#endif
+
 #include "AztecOO_config.h"
 /*This file doesn't exist in old make and configure system*/
 
@@ -170,7 +179,7 @@
 
 #ifndef AZ_MAX_MEMORY_SIZE
 #define AZ_MAX_MEMORY_SIZE   16000000  /* maximum memory size used for the LU */
-                                       /* within domain decomposition.        */
+/* within domain decomposition.        */
 #endif
 #ifndef AZ_MAX_MSG_BUFF_SIZE
 #define AZ_MAX_MSG_BUFF_SIZE 100000    /* max usable message buffer size      */
@@ -202,9 +211,9 @@
 #define AZ_fixed_pt         8 /* fixed point iteration                        */
 #define AZ_analyze          9 /* fixed point iteration                        */
 #define AZ_lu              10 /* sparse LU direct method. Also used for a     */
-                              /* preconditioning option.  NOTE: this should   */
-                              /* be the last solver so that AZ_check_input()  */
-                              /* works properly.                              */
+/* preconditioning option.  NOTE: this should   */
+/* be the last solver so that AZ_check_input()  */
+/* works properly.                              */
 
 /*******************************************************************************
  *
@@ -220,8 +229,8 @@
 #define AZ_sym_row_sum      5 /* symmetric diagonal scaling                   */
 #define AZ_equil            6 /* equilib scaling */
 #define AZ_sym_BJacobi      7 /* symmetric block Jacobi scaling. NOTE: this   */
-                              /* should be last so that AZ_check_input()      */
-                              /* works properly.                              */
+/* should be last so that AZ_check_input()      */
+/* works properly.                              */
 
 /*******************************************************************************
  *
@@ -230,9 +239,9 @@
  ******************************************************************************/
 
 #define AZ_none             0 /* no preconditioning. Note: also used for      */
-                              /* scaling, output, overlap options options     */
+/* scaling, output, overlap options options     */
 #define AZ_Jacobi           1 /* Jacobi preconditioning. Note: also used for  */
-                              /* scaling options                              */
+/* scaling options                              */
 #define AZ_sym_GS           2 /* symmetric Gauss-Siedel preconditioning       */
 #define AZ_Neumann          3 /* Neumann series polynomial preconditioning    */
 #define AZ_ls               4 /* least-squares polynomial preconditioning     */
@@ -245,9 +254,9 @@
 #define AZ_recursive       12 /* Recursive call to AZ_iterate()               */
 #define AZ_smoother        13 /* Recursive call to AZ_iterate()               */
 #define AZ_dom_decomp      14 /* Domain decomposition using subdomain solver  */
-                              /* given by options[AZ_subdomain_solve]         */
+/* given by options[AZ_subdomain_solve]         */
 #define AZ_multilevel      15 /* Do multiplicative domain decomp with coarse  */
-                              /* grid (not supported).                        */
+/* grid (not supported).                        */
 #define AZ_user_precond    16 /*  user's preconditioning */
 /* Begin Aztec 2.1 mheroux mod */
 #define AZ_bilu_ifp        17 /* dom decomp with bilu using ifpack in subdom  */
@@ -281,8 +290,8 @@
  ******************************************************************************/
 
 #define AZ_all             -3 /* Print out everything including matrix        */
-                              /* Must be lowest value so that AZ_check_input()*/
-                              /* works properly.                              */
+/* Must be lowest value so that AZ_check_input()*/
+/* works properly.                              */
 /* #define AZ_none          0    Print out no results (not even warnings)     */
 #define AZ_last            -1 /* Print out final residual and warnings        */
 #define AZ_warnings        -2 /* Print out only warning messages              */
@@ -294,26 +303,26 @@
  ******************************************************************************/
 
 #define AZ_input_form       0 /* Print out the matrix arrays as they appear   */
-                              /* along with some additional information. The  */
-                              /* idea here is to print out the information    */
-                              /* that the user must supply as input to the    */
-                              /* function AZ_transform()                      */
+/* along with some additional information. The  */
+/* idea here is to print out the information    */
+/* that the user must supply as input to the    */
+/* function AZ_transform()                      */
 #define AZ_global_mat       1 /* Print out the matrix as a(i,j) where i and j */
-                              /* are the global indices. This option must     */
-                              /* be invoked only after AZ_transform() as the  */
-                              /* array update_index[] is used.                */
-                              /* NOTE: for VBR matrices the matrix is printed */
-                              /* as a(I(i),J(j)) where I is the global block  */
-                              /* row and J is the global block column and i   */
-                              /* and j are the row and column indices within  */
-                              /* the block.                                   */
+/* are the global indices. This option must     */
+/* be invoked only after AZ_transform() as the  */
+/* array update_index[] is used.                */
+/* NOTE: for VBR matrices the matrix is printed */
+/* as a(I(i),J(j)) where I is the global block  */
+/* row and J is the global block column and i   */
+/* and j are the row and column indices within  */
+/* the block.                                   */
 #define AZ_explicit         2 /* Print out the matrix as a(i,j) where i and j */
-                              /* are the local indices.                       */
-                              /* NOTE: for VBR matrices the matrix is printed */
-                              /* as a(I(i),J(j)) where I is the global block  */
-                              /* row and J is the global block column and i   */
-                              /* and j are the row and column indices within  */
-                              /* the block.                                   */
+/* are the local indices.                       */
+/* NOTE: for VBR matrices the matrix is printed */
+/* as a(I(i),J(j)) where I is the global block  */
+/* row and J is the global block column and i   */
+/* and j are the row and column indices within  */
+/* the block.                                   */
 
 /*******************************************************************************
  *
@@ -325,8 +334,8 @@
 #define AZ_recalc           2 /* use last symbolic information                */
 #define AZ_reuse            3 /* use a previous factorization to precondition */
 #define AZ_sys_reuse        4 /* use last factorization to precondition       */
-                              /* NOTE: AZ_sys_reuse should be last so that    */
-                              /* AZ_check_input() works properly.             */
+/* NOTE: AZ_sys_reuse should be last so that    */
+/* AZ_check_input() works properly.             */
 
 /*******************************************************************************
  *
@@ -337,8 +346,8 @@
 /* #define AZ_none          0    No overlap                                   */
 #define AZ_diag            -1 /* Use diagonal blocks for overlapping          */
 #define AZ_full             1 /* Use external rows   for overlapping          */
-                              /* Note: must be highest value so that          */
-                              /*       AZ_check_input() works properly.       */
+/* Note: must be highest value so that          */
+/*       AZ_check_input() works properly.       */
 
 /*******************************************************************************
  *
@@ -495,14 +504,14 @@
 #define AZ_rec_r               3
 #define AZ_scaled_r            4
 #define AZ_first_precond       5     /* This is used to record the time for */
-                                     /* the first preconditioning step. The */
-                                     /* intention is time factorization     */
-                                     /* routines. Note: not mentioned in    */
-                                     /* manual                              */
+/* the first preconditioning step. The */
+/* intention is time factorization     */
+/* routines. Note: not mentioned in    */
+/* manual                              */
 #define AZ_solve_time          6     /* This is used to record the time for */
-                                     /* the entire solve.                   */
+/* the entire solve.                   */
 #define AZ_Aztec_version       7     /* This is used to record the current  */
-                                     /* version of Aztec.                   */
+/* version of Aztec.                   */
 
 /*******************************************************************************
  *
@@ -581,15 +590,15 @@
  ******************************************************************************/
 
 #define AZ_NOT_FIRST           0   /* not the first residual expression       */
-                                   /* request. Information should be available*/
-                                   /* from a previous request and the residual*/
-                                   /* may not be available.                   */
+/* request. Information should be available*/
+/* from a previous request and the residual*/
+/* may not be available.                   */
 #define AZ_FIRST_TIME          1   /* first time that a residual expression   */
-                                   /* is requested for a particular iterative */
-                                   /* solve. This means that the true residual*/
-                                   /* is available and that certain invariant */
-                                   /* information (e.g. r_0, ||A||) must be   */
-                                   /* computed.                               */
+/* is requested for a particular iterative */
+/* solve. This means that the true residual*/
+/* is available and that certain invariant */
+/* information (e.g. r_0, ||A||) must be   */
+/* computed.                               */
 
 /*******************************************************************************
  *
@@ -630,7 +639,7 @@
 #define AZ_left_and_right_scaling   3 /*  scaling on left and right */
 #define AZ_call_scale_f             4 /*  use scaling subroutine    */
 #define AZ_inv_scaling              5 /*  within scaling routine    */
-                                      /*  perform inverse operation */
+/*  perform inverse operation */
 #define AZ_low             0
 #define AZ_high            1
 
