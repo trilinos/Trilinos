@@ -1034,5 +1034,8 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
     }
   }
 
+  delete [] values;
+  delete [] indices;
+
   return(0);
 }

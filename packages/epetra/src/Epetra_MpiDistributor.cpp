@@ -382,8 +382,12 @@ int Epetra_MpiDistributor::ComputeRecvs( const int & my_proc,
   delete [] counts;
 
   if (nrecvs_>0) {
-    lengths_from_ = new int[ nrecvs_ ];
-    procs_from_ = new int[ nrecvs_ ];
+    lengths_from_ = new int[ nrecvs_ + self_msg_ ];
+    procs_from_ = new int[ nrecvs_ + self_msg_ ];
+    for(i=0; i<nrecvs_+self_msg_; ++i) {
+      lengths_from_[i] = 0;
+      procs_from_[i] = 0;
+    }
   }
   for( i = 0; i < nsends_; i++ )
     if( procs_to_[i] != my_proc ) {
