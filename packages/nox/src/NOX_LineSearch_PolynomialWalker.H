@@ -47,7 +47,7 @@ namespace LineSearch {
 //! Use quad/cubic polynomial fit from Dennis & Schnabel Sec. 6.3.2 with modifications for Homer Walker's Ared/Pred inexact Newton methods.
 /*!
   
-  This line search is based on materials in the following books:
+  This line search is based on the following materials:
 
   - Section 6.3.2 and Algorithm 6.3.1 of "Numerical Methods for
     Unconstrained Optimization and Nonlinear Equations," J. E. Dennis
@@ -66,17 +66,15 @@ namespace LineSearch {
   -# Old solution group: \f$ x_{\rm old} \f$ 
   -# Direction vector: \f$ s \f$ 
 
-  The line search attempts to minimize the function <br><br>
-  - For Armijo-Goldstein conditions:  
+  The line search attempts to minimize the merit function \f$ \phi \$ along a line in the direction \f$ s \f$ by controlling the step length \f$ \lambda \f$. The merit function can be defined in one of two choices:<br><br> 
+  - "Norm-F Squared"  
   \f[ 
-  \phi(\lambda) \equiv \frac{1}{2}||F (x_{\rm old} + \lambda s)||_2^2 
+  \phi(\lambda) \equiv \frac{1}{2}||F (x_{\rm old} + \lambda s)||^2 
   \f]
-  - For Ared/Pred conditions:
+  - "Norm-F"
   \f[ 
-  \phi(\lambda) \equiv ||F (x_{\rm old} + \lambda s)||_2 
+  \phi(\lambda) \equiv ||F (x_{\rm old} + \lambda s)|| 
   \f]
-
-  where \f$ \lambda \f$ is the step length.  
 
   We compute \f$ \lambda \f$ based on polynomial fits to information
   on \f$ \phi \f$ and its derivative \f$ \phi' \f$ at the old solution and
@@ -130,11 +128,11 @@ namespace LineSearch {
   The line search iterates over the computation of \f$ \lambda \f$ until:
 
 - The "Convergence Criteria" is met (the user has two choices): 
-  -# "Armijo-Goldstein" conditions: \f$ f(x_{n-1}+ \lambda s) \le
-     f(x_{n-1}) +\alpha \lambda \phi'(0) \f$ 
+  -# "Armijo-Goldstein" conditions: \f$ \phi(x_{n-1}+ \lambda s) \le
+     \phi(x_{n-1}) +\alpha \lambda \phi'(0) \f$ 
   -# "Ared/Pred" conditions: \f$ \| F(x_{\rm old}+ \lambda s) \| \le
-     \| F(x_{\rm old}) \| (1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear
-     solve tolerance in the inexact Newton method. 
+     \| F(x_{\rm old}) \| (1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the 
+     linear solve tolerance in the inexact Newton method. 
   -# "None" - If "Force Interpolation" is true, accept the result of
      the first interpolation. Otherwise, accept the default step.
 - The maximum iterations are reached. This is considered a failure
@@ -156,7 +154,7 @@ namespace LineSearch {
 
   <B> Input Parameters </B> 
 
-  The following parameters can be specified in the "Polynomial"
+  The following parameters can be specified in the "PolynomialWalker"
   sublist of the "Line Search" sublist.
  
   - "Default Step" - starting step length (defaults to 1.0)
@@ -175,6 +173,13 @@ namespace LineSearch {
     -# "Armijo-Goldstein" 
     -# "Ared/Pred" 
     -# "None"
+
+  - "Merit Function" - choice of the merit function to use in the 
+    interpolation of a new step length.  Choices are (See above 
+    for explanations):
+    
+    -# "Norm-F"
+    -# "Norm-F Squared"
 
   - "Alpha Factor" - Used in Armijo-Goldstein stopping criteria \f$
     \alpha \f$ (defaults to 1.0e-4)
@@ -230,7 +235,7 @@ Line searches typically allow steps to be accepted only if they meet sufficient 
 
   - "Maximum Increase Steps" - (defaults to "Max Iters") - maximum number of outer iterations for which the preceding acceptability criterion is allowed.  After this number of outer iterations, the original curvature and decrease conditions must be met for a step to be accepted.
 
-  \author Russ Hooper, Org. 9233, Sandia National Labs
+  \author Roger Pawlowski, Org. 9233, Sandia National Labs
 */
 
 class PolynomialWalker : public Generic {
@@ -268,10 +273,16 @@ protected:
     f_{\rm new} \leq f_{\rm old} + (1 - \alpha (1 - \eta))
     \f]
   */
-  bool isSufficientDecrease(double newf, double oldf, double step, double slope, double eta) const;
+  bool isSufficientDecrease(double step, double eta) const;
+
+  //! Updates the newGrpand computes the values of newf_1, newf_2 and newf_interp
+  bool computeNewF(NOX::Abstract::Group& newGrp, 
+		   const NOX::Abstract::Group& oldGrp,
+		   const NOX::Abstract::Vector& dir, 
+		   double step);
 
   //! Provides a check to see if a step leading to an increase in the residual is allowed
-  bool isIncreaseAllowed(double newf, double oldf, int nOuterIters) const;
+  bool isIncreaseAllowed(int nOuterIters) const;
 
 protected:
 
@@ -291,6 +302,14 @@ protected:
     Quadratic, 
     //! Use quadratic interpolation in the first inner iteration and cubic interpolation otherwise
     Cubic
+  };
+
+  //! Merit Function Type
+  enum MeritFunctionType {
+    //! The merit function is computed by: \f[ f = \|F\| \f]
+    NormF,
+    //! The merit function is computed by: \f[ f = \frac{1}{2}\|F\|^2 \f]
+    NormFSquared
   };
 
   //! Choice of convergence criteria
@@ -343,6 +362,22 @@ protected:
 
   //! Common slope calculations for line searches.
   NOX::LineSearch::Utils::Slope slopeObj;
+
+  //! If set to false, all computed norms are the standard Two-Norm: \f[ \|F\|_2 = \sqrt{\sum_{i=1}^{N}f_i^2}  \f]  If set to true, all norms are Two-Norms that are scaled by the global number of unknowns, \f$ N \f$: \f[ \|F\|_2 = \sqrt{\frac{1}{N}\sum_{i=1}^{N}f_i^2}  \f]
+  bool useScaledNorm;
+
+  //! Type of merit function to use for the interpolation of the step length.
+  MeritFunctionType meritFunctionType;
+
+  double oldf_1;
+  double oldf_2;
+  double oldf_interp;
+  double slope_1;
+  double slope_2;
+  double slope_interp;
+  double newf_1;
+  double newf_2;
+  double newf_interp;
 
 };
 } // namespace LineSearch
