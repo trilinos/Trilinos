@@ -278,7 +278,8 @@ AMESOS_H = \
 	$(KUNDERT_H) \
 	$(COMP_H) \
 	$(srcdir)/Amesos_BaseSolver.h \
-	$(srcdir)/Amesos_ComponentBaseSolver.h
+	$(srcdir)/Amesos_ComponentBaseSolver.h \
+	$(srcdir)/Amesos_TestRowMatrix.h
 
 
 libamesos_a_SOURCES = \
