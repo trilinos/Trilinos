@@ -39,7 +39,6 @@ static void calc_blk_diag_Chol(double *val, int *indx, int *bindx, int *rpntr,
                                int *cpntr, int *bpntr, double *L, int *d_indx,
                                int *d_bindx, int *d_rpntr, int *d_bpntr,
                                int *data_org);
-extern void sym_row_sum_scaling(int proc_config[]);
 
 /******************************************************************************/
 /******************************************************************************/
@@ -62,14 +61,14 @@ void AZ_scale_f(int action, AZ_MATRIX *Amat, int options[], double b[], double x
   ===============
 
   val:             Array containing the nonzero entries of the matrix (see
-                    Aztec Usert).
+                    Aztec Users Guide).
 
   indx,
   bindx,
   rpntr,
   cpntr,
   bpntr:           Arrays used for DMSR and DVBR sparse matrix storage (see
-                   file  Aztec Usert).
+                   file  Aztec Users Guide).
 
   b:               Right hand side of linear system.
 
@@ -80,7 +79,7 @@ void AZ_scale_f(int action, AZ_MATRIX *Amat, int options[], double b[], double x
 
   data_org:        Array containing information on the distribution of the
                    matrix to this processor as well as communication parameters
-                   (see  Aztec Usert).
+                   (see  Aztec Users Guide).
 
   proc_config:     Machine configuration.  proc_config[AZ_node] is the node
                    number.  proc_config[AZ_N_procs] is the number of processors.
@@ -143,7 +142,12 @@ void AZ_scale_f(int action, AZ_MATRIX *Amat, int options[], double b[], double x
     break;
 
   case AZ_sym_row_sum:
-    AZ_sym_row_sum_scaling_sl(action, Amat, 
+    AZ_sym_row_sum_scaling(action, Amat, 
+                              b, x, options, proc_config, scaling);
+    break;
+
+  case AZ_equil:
+    AZ_equil_scaling(action, Amat,
                               b, x, options, proc_config, scaling);
     break;
 
@@ -196,14 +200,14 @@ void AZ_block_diagonal_scaling(int action, AZ_MATRIX *Amat, double val[], int in
   ===============
 
   val:             Array containing the nonzero entries of the matrix (see
-                    Aztec Usert).
+                    Aztec Users Guide).
 
   indx,
   bindx,
   rpntr,
   cpntr,
   bpntr:           Arrays used for DMSR and DVBR sparse matrix storage (see
-                   file  Aztec Usert).
+                   file  Aztec Users Guide).
 
   b:               Right hand side of linear system.
 
@@ -211,7 +215,7 @@ void AZ_block_diagonal_scaling(int action, AZ_MATRIX *Amat, double val[], int in
 
   data_org:        Array containing information on the distribution of the
                    matrix to this processor as well as communication parameters
-                   (see  Aztec Usert).
+                   (see  Aztec Users Guide).
 
   proc_config:     Machine configuration.  proc_config[AZ_node] is the node
                    number.  proc_config[AZ_N_procs] is the number of processors.
@@ -537,14 +541,14 @@ void AZ_sym_block_diagonal_scaling(double val[], int indx[], int bindx[],
   ===============
 
   val:             Array containing the nonzero entries of the matrix (see
-                    Aztec Usert).
+                    Aztec Users Guide).
 
   indx,
   bindx,
   rpntr,
   cpntr,
   bpntr:           Arrays used for DMSR and DVBR sparse matrix storage (see
-                   file  Aztec Usert).
+                   file  Aztec Users Guide).
 
   b:               Right hand side of linear system.
 
@@ -552,7 +556,7 @@ void AZ_sym_block_diagonal_scaling(double val[], int indx[], int bindx[],
 
   data_org:        Array containing information on the distribution of the
                    matrix to this processor as well as communication parameters
-                   (see  Aztec Usert).
+                   (see  Aztec Users Guide).
 
   proc_config:     Machine configuration.  proc_config[AZ_node] is the node
                    number.  proc_config[AZ_N_procs] is the number of processors.
@@ -860,14 +864,14 @@ void AZ_row_sum_scaling(int action, AZ_MATRIX *Amat, double b[],
   ===============
 
   val:             Array containing the nonzero entries of the matrix (see
-                    Aztec Usert).
+                    Aztec Users Guide).
 
   indx,
   bindx,
   rpntr,
   cpntr,
   bpntr:           Arrays used for DMSR and DVBR sparse matrix storage (see
-                   file  Aztec Usert).
+                   file  Aztec Users Guide).
 
   b:               Right hand side of linear system.
 
@@ -875,7 +879,7 @@ void AZ_row_sum_scaling(int action, AZ_MATRIX *Amat, double b[],
 
   data_org:        Array containing information on the distribution of the
                    matrix to this processor as well as communication parameters
-                   (see  Aztec Usert).
+                   (see  Aztec Users Guide).
 
   proc_config:     Machine configuration.  proc_config[AZ_node] is the node
                    number.  proc_config[AZ_N_procs] is the number of processors.
@@ -1069,48 +1073,6 @@ void AZ_row_sum_scaling(int action, AZ_MATRIX *Amat, double b[],
 /******************************************************************************/
 /******************************************************************************/
 
-void sym_row_sum_scaling(int proc_config[])
-
-/*******************************************************************************
-
-  Routine to symmetricaly row-sum scale sparse matrix problem; Note: this scales
-  the entire matrix problem Ax = b, the routine sym_rescale must be used to
-  transform solution back to recover soution to original problem.
-
-  Author:          , SNL,
-  =======
-
-  Return code:     void
-  ============
-
-  Parameter list:
-  ===============
-
-  proc_config:     Machine configuration.  proc_config[AZ_node] is the node
-                   number.  proc_config[AZ_N_procs] is the number of processors.
-
-*******************************************************************************/
-
-{
-
-  /* local variables */
-
-  char *yo = "sym_row_sum_scaling: ";
-
-  /**************************** execution begins ******************************/
-
-  if (proc_config[AZ_node]  == 0) {
-    (void) fprintf(stderr, "%sWARNING: sym_row_sum_scaling not implemented"
-                   "           for VBR matrices\n"
-                   "No preconditioning performed\n", yo);
-  }
-
-} /* sym_row_sum_scaling */
-
-/******************************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-
 void AZ_sym_diagonal_scaling(int action, AZ_MATRIX *Amat, 
 		        double b[], double x[], 
                         int options[], 
@@ -1120,7 +1082,7 @@ void AZ_sym_diagonal_scaling(int action, AZ_MATRIX *Amat,
 
   Routine to symmetrically diagonally scale sparse matrix problem; Note: this
   scales the entire matrix problem Ax = b, the routine sym_rescale must be used
-  to transform solution back to recover soution to original problem.
+  to transform solution back to recover solution to original problem.
 
   Author:          John N. Shadid, SNL, 1421 (MSR format)
   =======          Lydie Prevost, SNL 1422 (VBR format) 
@@ -1132,16 +1094,16 @@ void AZ_sym_diagonal_scaling(int action, AZ_MATRIX *Amat,
   ===============
 
   val:             Array containing the nonzero entries of the matrix (see
-                    Aztec Usert).
+                    Aztec Users Guide).
 
   bindx:           Arrays used for DMSR and DVBR sparse matrix storage (see
-                   file  Aztec Usert).
+                   file  Aztec Users Guide).
 
   b:               Right hand side of linear system.
 
   data_org:        Array containing information on the distribution of the
                    matrix to this processor as well as communication parameters
-                   (see  Aztec Usert).
+                   (see  Aztec Users Guide).
 
   options:         Determines specific solution method and other parameters.
 
@@ -1334,7 +1296,7 @@ void AZ_sym_diagonal_scaling(int action, AZ_MATRIX *Amat,
 /******************************************************************************/
 /******************************************************************************/
 
-void AZ_sym_row_sum_scaling_sl(int action, AZ_MATRIX *Amat, 
+void AZ_sym_row_sum_scaling(int action, AZ_MATRIX *Amat, 
                               double b[],
                               double x[], int options[], 
 			      int proc_config[], struct AZ_SCALING *scaling)
@@ -1343,10 +1305,11 @@ void AZ_sym_row_sum_scaling_sl(int action, AZ_MATRIX *Amat,
 
   Routine to symmetrically diagonally scale sparse matrix problem; Note: this
   scales the entire matrix problem Ax = b, the routine sym_rescale must be used
-  to transform solution back to recover soution to original problem.
+  to transform solution back to recover solution to original problem.
 
-  Author:          John N. Shadid, SNL, 1421
-  =======
+  Author:          John N. Shadid, SNL, 1421 (MSR format)
+  =======          David Day,      SNL, 9214 (VBR format)
+
 
   Return code:     void
   ============
@@ -1355,16 +1318,16 @@ void AZ_sym_row_sum_scaling_sl(int action, AZ_MATRIX *Amat,
   ===============
 
   val:             Array containing the nonzero entries of the matrix (see
-                    Aztec Usert).
+                    Aztec Users Guide).
 
   bindx:           Arrays used for DMSR and DVBR sparse matrix storage (see
-                   file  Aztec Usert).
+                   file  Aztec Users Guide).
 
   b:               Right hand side of linear system.
 
   data_org:        Array containing information on the distribution of the
                    matrix to this processor as well as communication parameters
-                   (see  Aztec Usert).
+                   (see  Aztec Users Guide).
 
   options:         Determines specific solution method and other parameters.
 
@@ -1373,35 +1336,31 @@ void AZ_sym_row_sum_scaling_sl(int action, AZ_MATRIX *Amat,
 
   x:               Current solution vector.
 
+  Implementation note:  Symmetric row scaling initially matched the sign of
+  the diagonal entries, and terminated if a diagonal vanished.  This feature
+  (i.e. mistake ) has been discontinued, and zero rows are scaled by one.
 *******************************************************************************/
-
 {
 
   /* local variables */
 
-  register int j, k, irow;
-  int          N;
-  int          i, jcol, j_last, bindx_row;
-  double       row_sum, *sc_vec, *val;
-  char        *yo = "AZ_sym_row_sum_scaling_sl: ";
+  register int indx_ptr, row, col, blkrow, blkcol, locblk, iblk = 0;
+  int          i, j, j_last, bindx_row, k;
+  int          rblksz, numblk, cblksz, index;
+  int          N;   /* number of unknowns  (rows) */
+  int          m;   /* number of blocks (c.f. vbr) */
+  int          nnzers;
+  double       row_sum = 0.0, *sc_vec, one = 1.0;
+  char        *yo = "AZ_sym_row_sum_scaling: ";
   char         label[80];
-  int         *bindx, *data_org;
-
-
+  int         *indx, *bindx, *rptr, *cptr, *bptr, *data_org;
+  double      *val;
 
   /**************************** execution begins ******************************/
 
   val = Amat->val;
   bindx = Amat->bindx;
   data_org = Amat->data_org;
-  if (data_org[AZ_matrix_type] == AZ_VBR_MATRIX) {
-     if ( (options[AZ_pre_calc] >= AZ_reuse) && (proc_config[AZ_node]  == 0)) {
-       (void) fprintf(stderr, "%sWARNING: sym_row_sum_scaling not implemented"
-                   "\n           for VBR matrices\n"
-                   "No scaling performed\n", yo);
-     }
-     return;
-  }
   N = data_org[AZ_N_internal] + data_org[AZ_N_border];
 
   if (action == AZ_INVSCALE_SOL) {
@@ -1424,35 +1383,35 @@ void AZ_sym_row_sum_scaling_sl(int action, AZ_MATRIX *Amat,
                    data_org[AZ_name]);
     exit(-1);
   }
-
   if ( (options[AZ_pre_calc] <= AZ_recalc) && (action == AZ_SCALE_MAT_RHS_SOL)) {
-    for(irow = 0; irow < N; irow++) {
+    if (data_org[AZ_matrix_type] == AZ_MSR_MATRIX) {
+
+	/***** MSR Matrix *****/
+
+    for(row = 0; row < N; row++) {
 
       /* get row sum */
 
-      j_last  = bindx[irow+1] - bindx[irow];
-      bindx_row = bindx[irow];
-      row_sum = fabs(val[irow]);
+      j_last  = bindx[row+1] - bindx[row];
+      bindx_row = bindx[row];
+      row_sum = fabs(val[row]);
 
-      for (jcol = 0; jcol < j_last; jcol++) {
-        k        = bindx_row + jcol;
+      for (col = 0; col < j_last; col++) {
+        k        = bindx_row + col;
         row_sum += fabs(val[k]);
       }
 
-      if (fabs(row_sum) < DBL_MIN) {
-        (void) fprintf(stderr, "%sERROR: Row %d is all zero's\n", yo, irow);
-        exit(-1);
-      }
+      if (fabs(row_sum) < DBL_MIN) row_sum = one;
 
-      sc_vec[irow] = 1.0 / sqrt(fabs(row_sum));
+      sc_vec[row] = one/ sqrt(fabs(row_sum));
 
       /* scale matrix row */
 
-      val[irow] *= sc_vec[irow];
+      val[row] *= sc_vec[row];
 
-      for (jcol = 0; jcol < j_last; jcol++) {
-        k       = bindx_row + jcol;
-        val[k] *= sc_vec[irow];
+      for (col = 0; col < j_last; col++) {
+        k       = bindx_row + col;
+        val[k] *= sc_vec[row];
       }
     }
 
@@ -1461,30 +1420,398 @@ void AZ_sym_row_sum_scaling_sl(int action, AZ_MATRIX *Amat,
     /* do right diagonal scaling */
     /* index through rows of matrix */
 
-    for (irow = 0; irow < N; irow++) {
-      val[irow] *= sc_vec[irow];
-      j_last     = bindx[irow+1] - bindx[irow];
-      bindx_row    = bindx[irow];
+    for (row = 0; row < N; row++) {
+      val[row] *= sc_vec[row];
+      j_last     = bindx[row+1] - bindx[row];
+      bindx_row    = bindx[row];
 
       for (j = 0; j < j_last; j++) {
         k       = bindx_row + j;
         val[k] *= sc_vec[bindx[k]];
       }
     }
+  } else {
+      
+      /***** VBR Matrix *****/
+
+      m = data_org[AZ_N_int_blk] + data_org[AZ_N_bord_blk];
+      nnzers = indx[bptr[m]];
+
+      for (blkrow = 0; blkrow < m; blkrow++) {
+        rblksz = rptr[blkrow+1] - rptr[blkrow];
+        numblk = bptr[blkrow+1] - bptr[blkrow];
+        for (row = 0; row < rblksz; row++) {
+          i = rptr[blkrow] + row;
+/*        
+          Debugging tool
+          if( i >= N  ){
+            printf("i %d > N %d   m %d > blkrow %d  and  %d > %d\n",
+                    i, N, m, blkrow, rblksz, row);
+          }
+*/
+          for (blkcol = 0; blkcol < numblk; blkcol++) {
+            locblk = bindx[iblk];
+            indx_ptr = indx[iblk++];
+            cblksz = cptr[locblk+1] - cptr[locblk];
+            for (col = 0; col < cblksz; col++) {
+              index = indx_ptr + col*rblksz + row;
+              row_sum += fabs(val[index]);
+/*        
+              Debugging tool
+              if( index >= nnzers ){
+                printf("N_nz %d < index %d\n", nnzers, index);
+              }
+*/
+
+
+
+
+            }
+          }
+          if (fabs(row_sum) < DBL_MIN){ 
+/*        
+              Debugging tool
+              printf("Zed: i= %d   %d > %d  and  %d > %d\n",
+                      i, numblk, blkcol, rblksz, row);
+*/
+            row_sum = one;
+          }
+          sc_vec[i]   = one/ row_sum;
+          row_sum     = 0.0;
+          iblk -= numblk;
+        }
+        iblk += numblk;
+      }
+      AZ_exchange_bdry(sc_vec, data_org, proc_config);
+
+      /* Symmetricly scale the matrix */
+
+      iblk = 0;
+      for (blkrow = 0; blkrow < m; blkrow++) {
+        rblksz = rptr[blkrow+1] - rptr[blkrow];
+        numblk = bptr[blkrow+1] - bptr[blkrow];
+        for (row = 0; row < rblksz; row++) {
+          i = rptr[blkrow] + row;  
+          row_sum = sc_vec[i];     /* Single look up */
+          for (blkcol = 0; blkcol < numblk; blkcol++) {
+            locblk = bindx[iblk];
+            indx_ptr = indx[iblk++];
+            cblksz = cptr[locblk+1] - cptr[locblk];
+            for (col = 0; col < cblksz; col++) {
+              j = cptr[locblk] + col;
+              index = indx_ptr + col*rblksz + row;
+              val[index] *= (row_sum * sc_vec[j]);
+            }
+          }
+          iblk -= numblk;
+        }
+        iblk += numblk;
+      }
+    } /* VBR */
   }
 
   if ( (action == AZ_SCALE_RHS) ) {
-       for (irow = 0; irow < N; irow++) b[irow] *= sc_vec[irow];
+       for (row = 0; row < N; row++) b[row] *= sc_vec[row];
   }
   if ( action == AZ_INVSCALE_RHS)  {
-       for (irow = 0; irow < N; irow++) b[irow] /= sc_vec[irow];
+       for (row = 0; row < N; row++) b[row] /= sc_vec[row];
   }
   if (action == AZ_SCALE_MAT_RHS_SOL) {
-       for (irow = 0; irow < N; irow++) b[irow] *= sc_vec[irow];
-       for (irow = 0; irow < N; irow++) x[irow] /= sc_vec[irow];
+       for (row = 0; row < N; row++) b[row] *= sc_vec[row];
+       for (row = 0; row < N; row++) x[row] /= sc_vec[row];
+  }
+} /* AZ_sym_row_sum_scaling */
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+
+void AZ_equil_scaling(int action, AZ_MATRIX *Amat,
+                              double b[],
+                              double x[], int options[],
+                              int proc_config[], struct AZ_SCALING *scaling)
+
+/*******************************************************************************
+
+  Symmetricly diagonally scale a sparse matrix.
+  Use sym_rescale to recover the solution.  The
+  scaling that equilibriates the matrix results
+  from accumulating a few iterations of symmetric
+  row sum scaling.
+
+  Author:          David Day,      SNL, 9214
+
+
+  Return code:     void
+  ============
+
+  Parameter list:
+  ===============
+
+  val:             Array containing the nonzero entries of the matrix (see
+                   the Aztec Users Guide).
+
+  bindx:           Arrays used for DMSR and DVBR sparse matrix storage (see
+                   the Aztec Users Guide).
+
+  b:               Right hand side of linear system.
+
+  data_org:        Array containing information on the distribution of the
+                   matrix to this processor as well as communication parameters
+                   (see the Aztec Users Guide).
+
+  options:         Determines specific solution method and other parameters.
+
+  proc_config:     Machine configuration.  proc_config[AZ_node] is the node
+                   number.  proc_config[AZ_N_procs] is the number of processors.
+
+  x:               Current solution vector.
+
+*******************************************************************************/
+{
+
+  /* local variables */
+
+  register int indx_ptr, row, col, blkrow, blkcol, locblk, iblk = 0;
+  int          i, j, j_last, bindx_row;
+  int          rblksz, numblk, cblksz, index;
+  int          m, k, N, Npe, iteration;
+  double      *sc_vec, *rowsum, *colsum, one = 1.0, zed= 0.0, scaledval;
+  double       maxrow, minrow;
+  double       maxcol, mincol;
+  char        *yo = "AZ_equilibration: ";
+  char         label[80];
+  int         *indx, *bindx, *rptr, *cptr, *bptr, *data_org;
+  int          p;
+  double      *val;
+
+  /******************************** ExEcutE ***********************************/
+
+  val = Amat->val;
+  indx = Amat->indx;
+  bindx = Amat->bindx;
+  rptr = Amat->rpntr;
+  cptr = Amat->cpntr;
+  bptr = Amat->bpntr;
+  data_org = Amat->data_org;
+  N        = data_org[AZ_N_internal] + data_org[AZ_N_border];
+  Npe      = N + data_org[AZ_N_external];
+  p          = proc_config[AZ_node];
+
+  if (action == AZ_INVSCALE_SOL) {
+     AZ_sym_reinvscale_sl(x, data_org, options, proc_config, scaling); return;
+  }
+  if (action == AZ_SCALE_SOL) {
+     AZ_sym_rescale_sl(x, data_org, options, proc_config, scaling); return;
   }
 
-} /* sym_row_sum_scaling */
+  sprintf(label,"sc_vec%d",options[AZ_recursion_level]);
+  sc_vec = (double *) AZ_manage_memory( Npe * sizeof(double), AZ_ALLOC,
+                                       data_org[AZ_name], label, &i);
+  scaling->action = AZ_left_and_right_scaling;
+
+  if ((options[AZ_pre_calc] >= AZ_reuse) && (i == AZ_NEW_ADDRESS)) {
+    (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
+                   "with\ndata_org[AZ_name] = %d. Check\n"
+                   "options[AZ_pre_calc]\n", yo, data_org[AZ_name]);
+    exit(-1);
+  }
+  if ( (options[AZ_pre_calc] <= AZ_recalc) && (action == AZ_SCALE_MAT_RHS_SOL)) {
+
+    rowsum = (double *) malloc(Npe*sizeof(double));
+    colsum = (double *) malloc(Npe*sizeof(double));
+    if (colsum == NULL){
+      perror("Error: Not enough space to create matrix");
+    }
+    else if (data_org[AZ_matrix_type] == AZ_MSR_MATRIX) {
+
+      if( p == 0 ){
+         printf("Untested code.  Comments to dmday@sandia.gov\n");
+      }
+      /***** MSR Matrix *****/
+
+      for(i= 0; i< Npe; i++) {
+        rowsum[i] = zed;
+        sc_vec[i] = one;
+      }
+
+      for(iteration=0; iteration<5; iteration++){
+        for(i= 0; i< Npe; i++) {
+          colsum[i] = zed;
+        }
+        scaledval = fabs(val[0])*sc_vec[0]*sc_vec[0];
+        maxrow = zed;
+        minrow = 1.e+40;
+
+        for(row = 0; row < N; row++) {
+          bindx_row = bindx[row];
+          j_last  = bindx[row+1] - bindx_row;
+          scaledval = fabs(val[row])*sc_vec[row]*sc_vec[row];
+
+          /* Initialize sums to diagonal values */
+          rowsum[row] = scaledval;
+          colsum[row] = scaledval;
+
+          for (j = 0; j < j_last; j++) {
+            k        = bindx_row + j;
+            col      = bindx[k];
+            scaledval = fabs(val[k])*sc_vec[row]*sc_vec[col];
+            rowsum[row] += scaledval;
+            colsum[col] += scaledval;
+          }
+
+          if( rowsum[row] < minrow ) minrow = rowsum[row];
+          if( rowsum[row] > maxrow ) maxrow = rowsum[row];
+        }
+        AZ_sum_bdry(colsum, data_org, proc_config);
+
+        /* Update Scaling */
+        for(row = 0; row < N; row++) {
+          scaledval = rowsum[row] + colsum[row];
+          if( scaledval > DBL_MIN){
+            if (rowsum[row] < DBL_MIN){
+              scaledval = colsum[row];
+            } else if (colsum[row] < DBL_MIN){
+              scaledval = rowsum[row];
+            } else {
+              scaledval = sqrt( rowsum[row] * colsum[row] );
+            }
+            sc_vec[row] /= sqrt(scaledval);
+          }
+        }
+        AZ_exchange_bdry(sc_vec, data_org, proc_config);
+      } /* iteration */
+
+      /* Scale Matrix */
+      for(row = 0; row < N; row++) {
+        scaledval   = sc_vec[row]*sc_vec[row];
+        val[row]   *= scaledval;
+        bindx_row   = bindx[row];
+        j_last      = bindx[row+1] - bindx_row;
+        for (j = 0; j < j_last; j++) {
+          k        = bindx_row + j;
+          col      = bindx[k];
+          scaledval = sc_vec[row]*sc_vec[col];
+          val[k]   *= scaledval;
+        }
+      }
+    } else {
+
+      /***** VBR Matrix *****/
+
+      for(i= 0; i< Npe; i++) {
+        sc_vec[i] = one;
+      }
+      m = data_org[AZ_N_int_blk] + data_org[AZ_N_bord_blk];
+
+      for(iteration=0; iteration<5; iteration++){
+        for(i= 0; i< Npe; i++) {
+          rowsum[i] = zed;
+          colsum[i] = zed;
+        }
+        scaledval = fabs(val[indx[0]])*sc_vec[0]*sc_vec[0];
+        maxrow = zed;
+        minrow = 1.e+40;
+
+        iblk = 0;
+        for (blkrow = 0; blkrow < m; blkrow++) {
+          rblksz = rptr[blkrow+1] - rptr[blkrow];
+          numblk = bptr[blkrow+1] - bptr[blkrow];
+          for (row = 0; row < rblksz; row++) {
+            i = rptr[blkrow] + row;
+            for (blkcol = 0; blkcol < numblk; blkcol++) {
+              locblk = bindx[iblk];
+              indx_ptr = indx[iblk++];
+              cblksz = cptr[locblk+1] - cptr[locblk];
+              for (col = 0; col < cblksz; col++) {
+                j = cptr[locblk] + col;
+                index = indx_ptr + col*rblksz + row;
+                scaledval = fabs(val[index])*sc_vec[i]*sc_vec[j];
+                rowsum[i] += scaledval;
+                colsum[j] += scaledval;
+              }
+            }
+            iblk -= numblk;
+            if( rowsum[i] < minrow ) minrow = rowsum[i];
+            if( rowsum[i] > maxrow ) maxrow = rowsum[i];
+          }
+          iblk += numblk;
+        }
+
+        /* Complete column sums */
+        AZ_sum_bdry(colsum, data_org, proc_config);
+
+        /* Diagnostics */
+        maxcol = colsum[0]; 
+        mincol = colsum[0]; 
+        for (col = 1; col < N; col++) {
+          if( colsum[col] < mincol ) mincol = colsum[col];
+          if( colsum[col] > maxcol ) maxcol = colsum[col];
+        }
+        if( p == 0 )
+        printf("(%d) AZ_equil: enter sum %d    %e row %e    %e col %e\n",
+                p,iteration, minrow, maxrow, mincol, maxcol);
+
+        /* Update Scaling */
+        for (blkrow = 0; blkrow < m; blkrow++) {
+          rblksz = rptr[blkrow+1] - rptr[blkrow];
+          numblk = bptr[blkrow+1] - bptr[blkrow];
+          for (row = 0; row < rblksz; row++) {
+            i = rptr[blkrow] + row;
+            scaledval = rowsum[i] + colsum[i];
+            if( scaledval > DBL_MIN){
+              if (rowsum[i] < DBL_MIN){
+                scaledval = colsum[i];
+              } else if (colsum[i] < DBL_MIN){
+                scaledval = rowsum[i];
+              } else {
+                scaledval = sqrt( rowsum[i] * colsum[i] );
+              }
+              sc_vec[i] /= sqrt(scaledval);
+            }
+          }
+        }
+        AZ_exchange_bdry(sc_vec, data_org, proc_config);
+      } /* iteration */
+
+      /* Symmetricly scale the matrix */
+      iblk = 0;
+      for (blkrow = 0; blkrow < m; blkrow++) {
+        rblksz = rptr[blkrow+1] - rptr[blkrow];
+        numblk = bptr[blkrow+1] - bptr[blkrow];
+        for (row = 0; row < rblksz; row++) {
+          i = rptr[blkrow] + row;
+          scaledval = sc_vec[i];     /* Single look up */
+          for (blkcol = 0; blkcol < numblk; blkcol++) {
+            locblk = bindx[iblk];
+            indx_ptr = indx[iblk++];
+            cblksz = cptr[locblk+1] - cptr[locblk];
+            for (col = 0; col < cblksz; col++) {
+              j = cptr[locblk] + col;
+              index = indx_ptr + col*rblksz + row;
+              val[index] *= (scaledval * sc_vec[j]);
+            }
+          }
+          iblk -= numblk;
+        }
+        iblk += numblk;
+      }
+    } /* VBR */
+    free((void *) rowsum);
+    free((void *) colsum);
+  }
+
+  if ( (action == AZ_SCALE_RHS) ) {
+       for (row = 0; row < N; row++) b[row] *= sc_vec[row];
+  }
+  if ( action == AZ_INVSCALE_RHS)  {
+       for (row = 0; row < N; row++) b[row] /= sc_vec[row];
+  }
+  if (action == AZ_SCALE_MAT_RHS_SOL) {
+       for (row = 0; row < N; row++) b[row] *= sc_vec[row];
+       for (row = 0; row < N; row++) x[row] /= sc_vec[row];
+  }
+} /* AZ_equil_scaling */
 
 /******************************************************************************/
 /******************************************************************************/
@@ -1511,7 +1838,7 @@ void AZ_sym_rescale_sl(double x[], int data_org[], int options[],
 
   data_org:        Array containing information on the distribution of the
                    matrix to this processor as well as communication parameters
-                   (see  Aztec Usert).
+                   (see  Aztec Users Guide).
 
 *******************************************************************************/
 
@@ -1580,7 +1907,7 @@ void AZ_sym_reinvscale_sl(double x[], int data_org[], int options[],
 
   data_org:        Array containing information on the distribution of the
                    matrix to this processor as well as communication parameters
-                   (see  Aztec Usert).
+                   (see  Aztec Users Guide).
 
 *******************************************************************************/
 
@@ -1650,14 +1977,14 @@ static void calc_blk_diag_Chol(double *val, int *indx, int *bindx, int *rpntr,
   ===============
 
   val:             Array containing the nonzero entries of the matrix (see
-                    Aztec Usert).
+                    Aztec Users Guide).
 
   indx,
   bindx,
   rpntr,
   cpntr,
   bpntr:           Arrays used for DMSR and DVBR sparse matrix storage (see
-                   file  Aztec Usert).
+                   file  Aztec Users Guide).
 
   L:               Vector containing the upper Cholesky factors of the diagonal
                    blocks.
@@ -1676,7 +2003,7 @@ static void calc_blk_diag_Chol(double *val, int *indx, int *bindx, int *rpntr,
 
   data_org:        Array containing information on the distribution of the
                    matrix to this processor as well as communication parameters
-                   (see  Aztec Usert).
+                   (see  Aztec Users Guide).
 
 *******************************************************************************/
 
@@ -1853,9 +2180,96 @@ struct AZ_SCALING *AZ_scaling_create()
    temp->mat_name = 0;
    temp->scaling_opt = AZ_none;
    return temp;
-}
+} /* AZ_scaling_create() */
+
 void AZ_scaling_destroy(struct AZ_SCALING **temp)
 {
    if (*temp != NULL) AZ_free(*temp);
    *temp = NULL;
-}
+} /* AZ_scaling_destroy */
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+void AZ_sum_bdry(double x[], int data_org[], int proc_config[])
+
+/*******************************************************************************
+
+  Sum the external values to the corresponding border value. AZ_sum_bdry is 
+  derived from the Schwarz preconditioning functions developed by Ray Tuminaro.
+
+  Author:          David Day, SNL
+  =======
+
+  Return code:     void
+  ============
+
+  Parameter list:
+  ===============
+
+  data_org:        Array containing information on the distribution of the
+                   matrix to this processor as well as communication parameters
+
+  x:               Vector of unknowns defined on the current processor.
+
+*******************************************************************************/
+
+{
+  static int type = 0; /* avoid AZ_sys_msg_type bug */
+  int name, total, i, j, count=0, st, from, N_unpadded, N;
+  int p, nwords;
+  MPI_AZRequest request[AZ_MAX_NEIGHBORS];  /* Message handle */
+  double *buffer;                    /* for incoming messages */
+  N_unpadded = data_org[AZ_N_internal] + data_org[AZ_N_border];
+  N          = N_unpadded + data_org[AZ_N_external];
+  name       = data_org[AZ_name];
+  type       = (type += 1) % AZ_NUM_MSGS;
+  p          = proc_config[AZ_node];
+
+  /* Send the external points to neighbors */
+  total = 0;
+  for ( i = 0 ; i < data_org[AZ_N_neigh] ; i++ )
+     total += data_org[AZ_send_length+i];
+  /*
+  printf("(%d) mtype %d n_mes %d total words %d\n",p, type, data_org[AZ_N_neigh],total);
+   */
+  buffer= (double *) AZ_manage_memory(total*sizeof(double), AZ_ALLOC,
+                     name, "temp in combine", &i);
+  for ( i = 0 ; i < total ; i++ ) buffer[i] = 0.;
+
+  /* Post receives */
+  count = 0;
+  for ( i = 0 ; i < data_org[AZ_N_neigh] ; i++ ) {
+     from = data_org[AZ_neighbors+i];
+     (void) mdwrap_iread((void *) &(buffer[count]),
+                  sizeof(double)*data_org[AZ_send_length+i],
+                  &from, &type, request+i);
+     count += data_org[AZ_send_length+i];
+     /*
+      * printf("(%d) post receive %d from %d count %d\n",p, i, from, count);
+      */
+  }
+
+  /* Send messages */
+  count = N_unpadded;
+  for ( i = 0 ; i < data_org[AZ_N_neigh] ; i++ ) {
+     (void) mdwrap_write((void *) &(x[count]), data_org[AZ_rec_length+i]*
+                     sizeof(double), data_org[AZ_neighbors+i], type, &st);
+     count += data_org[AZ_rec_length+i];
+  }
+ 
+  /* Receive messages and sum recvd values to the send list */
+  count = 0;
+  for ( i = 0 ; i < data_org[AZ_N_neigh] ; i++ ) {
+     from = data_org[AZ_neighbors+i];
+     nwords = data_org[AZ_send_length+i];
+     (void) mdwrap_wait((void *) &(buffer[count]),
+                  sizeof(double)*nwords, &from, &type, &st,request+i);
+     count += nwords;
+     /*
+      * printf("(%d) receive %d from %d count %d\n",p, i, from, count);
+      */
+  }
+  for ( j = 0 ; j < total; j++ )
+       x[ data_org[AZ_send_list + j] ] += buffer[j];
+} /* AZ_sum_bdry */

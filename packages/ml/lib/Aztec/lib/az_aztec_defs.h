@@ -127,7 +127,8 @@
 #define AZ_row_sum          3 /* point row-sum scaling                        */
 #define AZ_sym_diag         4 /* symmetric diagonal scaling                   */
 #define AZ_sym_row_sum      5 /* symmetric diagonal scaling                   */
-#define AZ_sym_BJacobi      6 /* symmetric block Jacobi scaling. NOTE: this   */
+#define AZ_equil            6 /* equilib scaling */
+#define AZ_sym_BJacobi      7 /* symmetric block Jacobi scaling. NOTE: this   */
                               /* should be last so that AZ_check_input()      */
                               /* works properly.                              */
 

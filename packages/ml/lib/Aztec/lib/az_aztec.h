@@ -945,6 +945,11 @@ extern void AZ_domain_decomp(double x[], AZ_MATRIX *Amat, int options[],
 
 extern void   AZ_dtrans(int *, int *, double *);
 
+extern void AZ_equil_scaling(int action, AZ_MATRIX *Amat, 
+                              double b[],
+                              double x[], int options[],
+                              int proc_config[], struct AZ_SCALING *scaling);
+
 extern void AZ_exchange_bdry(double x[], int data_org[], int proc_config[]);
 
 extern void   AZ_exchange_local_info(int N_neighbors, int proc_num_neighbor[],
@@ -1406,6 +1411,9 @@ extern void   AZ_splitup_big_msg(int num_neighbors, char *buffer, char *buf2,
 
 extern double AZ_srandom1(int *seed);
 
+extern void AZ_sum_bdry(double x[], int data_org[], int proc_config[]);
+
+
 extern void   AZ_sym_block_diagonal_scaling(double val[], int indx[],
                                             int bindx[], int rpntr[],
                                             int cpntr[], int bpntr[],
@@ -1431,7 +1439,7 @@ extern void AZ_sym_reinvscale_sl(double x[], int data_org[], int options[],
 extern void   AZ_sym_rescale_sl(double x[], int data_org[], int options[],
 				int proc_config[],struct AZ_SCALING * );
 
-extern void AZ_sym_row_sum_scaling_sl(int action, AZ_MATRIX *Amat, 
+extern void AZ_sym_row_sum_scaling(int action, AZ_MATRIX *Amat, 
                               double b[],
                               double x[], int options[],
                               int proc_config[], struct AZ_SCALING *scaling);
