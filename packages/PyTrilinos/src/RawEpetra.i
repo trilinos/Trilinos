@@ -1,6 +1,6 @@
 // -*- c++ -*-
 
-%module RawEpetra
+%module(package="PyTrilinos") RawEpetra
 
 %{
 // System includes

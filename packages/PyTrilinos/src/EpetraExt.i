@@ -1,6 +1,6 @@
 // -*- c++ -*-
 
-%module EpetraExt
+%module(package="PyTrilinos") EpetraExt
 
 %{
 // System includes
