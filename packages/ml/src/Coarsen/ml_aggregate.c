@@ -1746,6 +1746,26 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   return 0;
 }
 
+/* ************************************************************************* */
+/* Use A instead of AT in restriction                                        */
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_SmoothRestrictionWithA( ML_Aggregate *ag )
+{
+  ag->Restriction_smoothagg_transpose = ML_TRUE;
+  return 0;
+}
+
+/* ************************************************************************* */
+/* Use A in restriction (default)                                            */
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Set_SmoothRestrictionWithAT( ML_Aggregate *ag )
+{
+  ag->Restriction_smoothagg_transpose = ML_FALSE;
+  return 0;
+}
+
 
 
 

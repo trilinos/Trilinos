@@ -354,14 +354,16 @@ int  ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *, ML_Comm *,
 int ML_Aggregate_Set_CoarsenScheme_METIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_ParMETIS( ML_Aggregate *ag  );
 
-
+int ML_Aggregate_Set_SmoothRestrictionWithA( ML_Aggregate *ag );
+int ML_Aggregate_Set_SmoothRestrictionWithAT( ML_Aggregate *ag );
+  
 /* ------------------------------------------------------------------------- */
 /* functions for visualization                                               */
 /* ------------------------------------------------------------------------- */
 
 extern int ML_Aggregate_VizAndStats_Setup( ML_Aggregate *ag, int MaxLevels );
 extern int ML_Aggregate_VizAndStats_Clean( ML_Aggregate *ag, int MaxLevels );
-
+  
 #ifndef ML_CPP
 #ifdef __cplusplus
 }

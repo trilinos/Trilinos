@@ -116,6 +116,20 @@ int ML_Set_Compute_GraphRadiusFlag(int i)
   return 0;
 }
 
+int USE_DROPPING = ML_YES;
+
+int ML_Aggregate_Set_UseDropping(int i)
+{
+  USE_DROPPING = i;
+  return 0;
+}
+
+int ML_Aggregate_Get_UseDropping() 
+{
+  return USE_DROPPING;
+}
+
+
 /* ======================================================================== */
 /*!
  \brief Set the number of nodes for each aggregate (for graph-based
@@ -764,17 +778,33 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   int * perm = NULL;
   FILE *fp;
   char str[80];
+  struct amalg_drop * temp;
+  double * scaled_diag;
   
   /* ------------------- execution begins --------------------------------- */
-
+  
   t0 = GetClock();
 
   sprintf( str, "METIS (level %d) :", current_level );
   
   comm = Amatrix->comm;
+
+  /* forget dropping for a moment */
+
+  if( ML_Aggregate_Get_UseDropping() == ML_NO ) {
+    
+    if( comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() ) {
+      printf( "%s Warning : Dropping is not used\n", str);
+    }
+    
+    temp = (struct amalg_drop *) Amatrix->data;
+    scaled_diag  = temp->scaled_diag;
+    temp->scaled_diag = NULL;
+    
+  }
   
   /* dimension of the problem (NOTE: only local matrices) */
-
+  
   Nrows = Amatrix->getrow->Nrows;
   perm = (int *) malloc( sizeof(int) * Nrows );
 
@@ -867,6 +897,8 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   }
 
   *total_nz = count;
+
+  if( ML_Aggregate_Get_UseDropping() == ML_NO ) temp->scaled_diag = scaled_diag;
   
 #ifdef DUMP_MATLAB_FILE
       sprintf( str, "METIS_proc%d.m", comm->ML_mypid);
@@ -1185,7 +1217,6 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
  function, the user has to define the number of aggregate (or the # of
  nodes in each aggregate) using the functions \c ML_Aggregate_Set_LocalNumber
  or \c ML_Aggregate_Set
-
  \note this function is derived from ML_Aggregate_CoarsenMIS
 
 */

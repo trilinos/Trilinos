@@ -167,6 +167,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
    int m,i,j,row,k, bsize;
    double s;
 #endif
+#define USE_ATtttt
 #ifdef USE_AT
    char str[80];
 #endif
@@ -206,7 +207,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
         ag->use_transpose = ML_TRUE;
 	if (1 == 1) {  
 	  ml->symmetrize_matrix = ML_FALSE;
-	  printf(" what is this %e\n",ml->Amat[level].lambda_max);
+	  /*	  printf(" what is this %e\n",ml->Amat[level].lambda_max); */
 	  ml->Amat[level].lambda_max = 2.;
 	}
       }
@@ -600,7 +601,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
        ML_Operator_Transpose_byrow(Amat,t3);
        t3->lambda_max = 1.5;
        max_eigen = t3->lambda_max;
-       printf("A^T lambda_max is settttttt\n");
+       /*       printf("A^T lambda_max is settttttt\n");*/
      }
      else
 #endif
