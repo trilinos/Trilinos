@@ -1226,8 +1226,8 @@ if test X${REQUIRE_TEUCHOS} = Xyes; then
 fi
 
 if test X${ADDON_belos} = Xyes; then
-   TRILINOS_HEADER(belos,Belos_config.h,belos_new/src)
-   TRILINOS_HEADER(belos,BelosReturnType.hpp,belos_new/src)
+   TRILINOS_HEADER(belos,Belos_config.h,src)
+   TRILINOS_HEADER(belos,BelosTypes.hpp,src)
    TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
 fi
 
@@ -1326,7 +1326,7 @@ if test X${REQUIRE_TEUCHOS} = Xyes; then
 fi
 
 if test X${ADDON_belos} = Xyes; then
-  TRILINOS_LIB_CHECK(belos,belos,belos_new/src)
+  TRILINOS_LIB_CHECK(belos,belos,src)
   AC_DEFINE(HAVE_NOX_BELOS,1,[define that Belos is activated in nox])
 fi
 

@@ -15256,7 +15256,7 @@ rm -f conftest.err conftest.$ac_ext
 
   # Next try the Trilinos build dir
   if test $done = no; then
-    CPPFLAGS="-I../belos/belos_new/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    CPPFLAGS="-I../belos/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -15293,8 +15293,8 @@ else
 fi
 if test -z "$ac_cpp_err"; then
    done=yes
-      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../belos/belos_new/src ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I../belos/belos_new/src ${ABS_TRILINOS_CPPFLAGS}"
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../belos/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../belos/src ${ABS_TRILINOS_CPPFLAGS}"
 
 else
   echo "$as_me: failed program was:" >&5
@@ -15308,7 +15308,7 @@ rm -f conftest.err conftest.$ac_ext
 
   # Next try the Trilinos source dir
   if test $done = no && test -n "$srcdir"; then
-    CPPFLAGS="-I$srcdir/../belos/belos_new/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    CPPFLAGS="-I$srcdir/../belos/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -15345,8 +15345,8 @@ else
 fi
 if test -z "$ac_cpp_err"; then
    done=yes
-      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../belos/belos_new/src ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../belos/belos_new/src ${ABS_TRILINOS_CPPFLAGS}"
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../belos/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../belos/src ${ABS_TRILINOS_CPPFLAGS}"
 
 else
   echo "$as_me: failed program was:" >&5
@@ -15389,7 +15389,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#include "BelosReturnType.hpp"
+#include "BelosTypes.hpp"
 
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
@@ -15437,7 +15437,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#include "BelosReturnType.hpp"
+#include "BelosTypes.hpp"
 
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
@@ -15474,7 +15474,7 @@ rm -f conftest.err conftest.$ac_ext
 
   # Next try the Trilinos build dir
   if test $done = no; then
-    CPPFLAGS="-I../belos/belos_new/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    CPPFLAGS="-I../belos/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -15489,7 +15489,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#include "BelosReturnType.hpp"
+#include "BelosTypes.hpp"
 
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
@@ -15511,8 +15511,8 @@ else
 fi
 if test -z "$ac_cpp_err"; then
    done=yes
-      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../belos/belos_new/src ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I../belos/belos_new/src ${ABS_TRILINOS_CPPFLAGS}"
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../belos/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../belos/src ${ABS_TRILINOS_CPPFLAGS}"
 
 else
   echo "$as_me: failed program was:" >&5
@@ -15526,7 +15526,7 @@ rm -f conftest.err conftest.$ac_ext
 
   # Next try the Trilinos source dir
   if test $done = no && test -n "$srcdir"; then
-    CPPFLAGS="-I$srcdir/../belos/belos_new/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    CPPFLAGS="-I$srcdir/../belos/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -15541,7 +15541,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 #undef VERSION
-#include "BelosReturnType.hpp"
+#include "BelosTypes.hpp"
 
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
@@ -15563,8 +15563,8 @@ else
 fi
 if test -z "$ac_cpp_err"; then
    done=yes
-      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../belos/belos_new/src ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../belos/belos_new/src ${ABS_TRILINOS_CPPFLAGS}"
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../belos/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../belos/src ${ABS_TRILINOS_CPPFLAGS}"
 
 else
   echo "$as_me: failed program was:" >&5
@@ -15578,12 +15578,12 @@ rm -f conftest.err conftest.$ac_ext
 
   if test $done = no; then
     echo "------"
-    echo "Cannot preprocess the include file BelosReturnType.hpp, part of the belos package."
+    echo "Cannot preprocess the include file BelosTypes.hpp, part of the belos package."
     echo "Try --with-belos-incdir=<dir> to specify a single directory or"
     echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
     echo "------"
-    { { echo "$as_me:$LINENO: error: Cannot find belos include directory containing BelosReturnType.hpp" >&5
-echo "$as_me: error: Cannot find belos include directory containing BelosReturnType.hpp" >&2;}
+    { { echo "$as_me:$LINENO: error: Cannot find belos include directory containing BelosTypes.hpp" >&5
+echo "$as_me: error: Cannot find belos include directory containing BelosTypes.hpp" >&2;}
    { (exit 1); exit 1; }; }
   fi
 
@@ -17620,7 +17620,7 @@ if test X${ADDON_belos} = Xyes; then
   # If so, just assume the libraries will be built later.
   if test X$INSIDE_TRILINOS = Xyes; then
     PWD=`pwd`
-    LDFLAGS="-L$PWD/../belos/belos_new/src $save_LDFLAGS"
+    LDFLAGS="-L$PWD/../belos/src $save_LDFLAGS"
     done=auto
   fi
 
@@ -17750,7 +17750,7 @@ rm -f conftest.err conftest.$ac_objext \
   # Next try the Trilinos build dir
    if test $done = no; then
     PWD=`pwd`
-    LDFLAGS="-L$PWD/../belos/belos_new/src $save_LDFLAGS"
+    LDFLAGS="-L$PWD/../belos/src $save_LDFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
