@@ -1,0 +1,32 @@
+Test example for the communication library.
+
+To run the test, do the following (this example is for gcc, adapt to your platform):
+
+a) Go to the Zoltan/Utilities directory and type 'gmake ZOLTAN_ARCH=gcc zdrive_comm'
+b) cd Communication/test
+c) Run ../../Obj_gcc/zdrive_comm under mpi, for example,
+   mpirun -np 4 ../../Obj_gcc/zdrive_comm
+
+The output you get should look something like this:
+
+>> Right answer for forward communication!
+>> Right answer for reverse communication!
+>> Right answer for forward communication!
+>> Non-blocked, variable-sized recvs not supported
+>> Right answer for forward communication!
+>> Right answer for reverse communication!
+>> Right answer for forward communication!
+>> Right answer for reverse communication!
+>> Right answer for forward communication!
+>> Right answer for reverse communication!
+>> Right answer for forward communication!
+>> Non-blocked, variable-sized recvs not supported
+>> Right answer for forward communication!
+>> Right answer for reverse communication!
+>> Right answer for forward communication!
+>> Right answer for reverse communication!
+Proc 2: Calls to malloc = 298,  Calls to free = 298, maximum bytes = 1492
+Proc 0: Calls to malloc = 298,  Calls to free = 298, maximum bytes = 1528
+Proc 3: Calls to malloc = 298,  Calls to free = 298, maximum bytes = 1532
+Proc 1: Calls to malloc = 298,  Calls to free = 298, maximum bytes = 1732
+
