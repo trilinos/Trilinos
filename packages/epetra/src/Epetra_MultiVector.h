@@ -693,7 +693,7 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
     if we denote the ith vector in the multivector by \f$x\f$, and the ith weight
     vector by \f$w\f$ and let j represent the jth entry of each vector, on return
     Result[i] will contain the following result:
-    \f[\sqrt{(1/n)\sum_{j=1}^n(w_jx_j)^2}\f],
+    \f[\sqrt{(1/n)\sum_{j=1}^n(x_j/w_j)^2}\f],
     where \f$n\f$ is the global length of the vectors.
 
     \return Integer error code, set to 0 if successful.
