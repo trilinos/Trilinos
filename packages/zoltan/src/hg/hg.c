@@ -120,7 +120,10 @@ printf ("RTHRTH: starting\n");
   }
 
 
+/*
 hgp.kway = ((!strcasecmp(hgp.local_str, "fmkway")) ? 1 : 0);
+*/
+hgp.kway = ((strstr(hgp.local_str,"kway")) ? 1 : 0);
 
 printf ("RTHRTH  type is %s\n", (hgp.kway ? "kway": "recursive bisection"));  fflush (NULL);
   if (hgp.kway) {

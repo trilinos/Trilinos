@@ -18,8 +18,10 @@ extern "C" {
 
 #include "hypergraph.h"
 static double hcut_size_links (ZZ*, HGraph*, int p, Partition);
+/*
 static int orphan (ZZ*, HGraph*, int p, Partition, HGPartParams*);
 static double calc_bal (ZZ*, HGraph*, Partition);
+*/
 
 
 /****************************************************************************/
@@ -478,6 +480,8 @@ char *yo = "Zoltan_HG_HPart_Info";
 /****************************************************************************/
 
 /* counts and fixes orphans, points that have no hyperedges in their partition */
+
+/*
 static int orphan (ZZ *zz, HGraph *hg, int p, Partition part,HGPartParams *hgp)
 {
 int total;
@@ -491,7 +495,7 @@ double bal_tol, ratio;
 bal_tol = hgp->bal_tol;
 ratio = hg->ratio;
 
-  /* Calculate the weights in each partition and total, then maxima */
+  * Calculate the weights in each partition and total, then maxima *
   part_weight[0] = 0.0;
   part_weight[1] = 0.0;
   if (hg->vwgt)  {
@@ -533,11 +537,11 @@ ratio = hg->ratio;
 #endif
              {
 #ifdef RTHRTH
-             part[vertex] = 1 - part[vertex];    /* fixes orphans */
+             part[vertex] = 1 - part[vertex];    * fixes orphans *
              part_weight[source] -= weight;
              part_weight[dest]   += weight;
 #endif
-             total++;  /* only counts "fixable" orphans */
+             total++;  * only counts "fixable" orphans *
              }
           }
       }
@@ -561,6 +565,7 @@ if (subtotal[0] > subtotal[1])
 else
    return 2.0 * subtotal[1]/total;
 }
+*/
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -56,7 +56,7 @@ static void times_output () {}
 
 int main (int argc, char **argv)
 {
-int    i, p = 2, *part, *part2, memory_graph;
+int    i, p = 2, *part, memory_graph;
 char   hgraphfile[100] = "grid5x5.hg";
 HGraph hg;
 HGPartParams hgp;
@@ -159,7 +159,7 @@ hgp.orphan_flag = 0;
      return 1;
   ADD_NEW_TIME(t_load);
 
-  hgp.kway = (!strcasecmp(hgp.local_str, "fmkway")
+  hgp.kway = (strstr(hgp.local_str, "kway")
    ||         !strcasecmp(hgp.local_str, "no")) ? 1 : 0;
   if (!((part) = (int*) calloc ((unsigned)(hg.nVtx), sizeof(int))))
      return 1;
