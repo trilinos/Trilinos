@@ -115,7 +115,7 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int                   total_aggs, phase_one_aggregated, count2;
    /*   int kk, old_upper, nnzs, count2, newptr; */
 #ifdef DDEBUG
-   int curagg,myagg,*good,*bad;
+   int curagg,myagg,*good,*bad, kk;
 #endif
 
 #if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR) || (ML_AGGR_MARKINAGGR)
