@@ -252,6 +252,12 @@ namespace LOCA {
       virtual NOX::Abstract::MultiVector::DenseMatrix&
       getScalars();
 
+      //! Returns number of scalars
+      virtual int getNumScalars() const;
+
+      //! Returns number of vectors
+      virtual int getNumVectors() const;
+
     protected:
 
       //! %Vector constructor.

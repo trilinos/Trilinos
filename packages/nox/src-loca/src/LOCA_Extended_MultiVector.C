@@ -110,10 +110,11 @@ LOCA::Extended::MultiVector::MultiVector(
 
     // Copy Scalars
     if (isCont) {
-      double *vals = source.scalarsPtr->values();
+      double *vals = source.scalarsPtr->values() + 
+	source.scalarsPtr->numRows()*index[0];
       scalarsPtr = 
 	new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::View,
-						    vals+index[0],
+						    vals,
 						    numScalarRows,
 						    numScalarRows,
 						    numColumns);
@@ -133,10 +134,11 @@ LOCA::Extended::MultiVector::MultiVector(
 
     // Copy scalars
     if (isCont) {
-      double *vals = source.scalarsPtr->values();
+      double *vals = source.scalarsPtr->values() + 
+	source.scalarsPtr->numRows()*index[0];
       scalarsPtr = 
 	new NOX::Abstract::MultiVector::DenseMatrix(Teuchos::Copy,
-						    vals+index[0],
+						    vals,
 						    numScalarRows,
 						    numScalarRows,
 						    numColumns);
@@ -675,6 +677,18 @@ LOCA::Extended::MultiVector::getVector(int i) const
   return *(extendedVectorPtrs[i]);
 }
 
+int
+LOCA::Extended::MultiVector::getNumScalarRows() const
+{
+  return numScalarRows;
+}
+
+int
+LOCA::Extended::MultiVector::getNumMultiVectors() const
+{
+  return numMultiVecRows;
+}
+
 LOCA::Extended::MultiVector::MultiVector(int nColumns, int nVectorRows,
 					 int nScalarRows) :
   numColumns(nColumns),
@@ -732,10 +746,10 @@ void
 LOCA::Extended::MultiVector::checkIndex(const string& callingFunction,
 					int i, int j) const 
 {
-  if ( i < 0 || i >= numColumns ) 
-    LOCA::ErrorCheck::throwError(callingFunction, "Invalid column index");
-  if ( j < 0 || j >= numScalarRows ) 
+  if ( i < 0 || i >= numScalarRows ) 
     LOCA::ErrorCheck::throwError(callingFunction, "Invalid row index");
+  if ( j < 0 || j >= numColumns ) 
+    LOCA::ErrorCheck::throwError(callingFunction, "Invalid column index");
 }
 
 bool

@@ -467,9 +467,22 @@ LOCA::Extended::Vector::getScalars()
   return *scalarsPtr;
 }
 
+int
+LOCA::Extended::Vector::getNumScalars() const
+{
+  return numScalars;
+}
+
+int
+LOCA::Extended::Vector::getNumVectors() const
+{
+  return vectorPtrs.size();
+}
+
 LOCA::Extended::MultiVector*
 LOCA::Extended::Vector::generateMultiVector(int nColumns, int nVectorRows, 
 					    int nScalarRows) const
 {
   return new LOCA::Extended::MultiVector(nColumns, nVectorRows, nScalarRows);
 }
+

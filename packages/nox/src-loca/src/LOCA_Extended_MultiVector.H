@@ -262,6 +262,12 @@ namespace LOCA {
        */
       virtual const LOCA::Extended::Vector& getVector(int i) const;
 
+      //! Returns number of scalars rows
+      virtual int getNumScalarRows() const;
+
+      //! Returns number of multi vectors
+      virtual int getNumMultiVectors() const;
+
       //@}
 
     protected:
