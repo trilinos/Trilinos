@@ -633,8 +633,9 @@ int Trilinos_Util_MatrixGallery::CreateMap(void)
       }
     }
 
-  } else if( name_ == "hb" ) {
-    // The global number of elements has been set in ReadHBMatrix
+  } else if( name_ == "hb" || name_ == "matrix_market" ||
+	     name_ == "triples_sym" || name_ == "triples_nonsym" ) {
+    // The global number of elements has been set in reading matrix
     if( NumGlobalElements_ <= 0 ) {
       cerr << ErrorMsg << "problem size not correct\n";
       return -1;
@@ -823,10 +824,11 @@ int Trilinos_Util_MatrixGallery::CreateMatrix(void)
   // Here the idea is to read the matrix on proc 0, then build the
   // map, then redistribute it linearly
 
-  if( name_ == "hb" ) {
+  if( name_ == "hb" || name_ == "matrix_market" ||
+      name_ == "triples_sym" || name_ == "triples_nonsym" ) {
 
     Epetra_Time Time(*comm_);
-    ReadHBMatrix();
+    ReadMatrix();
     if( verbose_ == true ) {
       cout << OutputMsg << "Time to create matrix: "
 	   << Time.ElapsedTime() << " (s)\n";
@@ -1614,11 +1616,11 @@ int Trilinos_Util_MatrixGallery::CreateMatrixJordblock(void)
   return 0;
 }
 // ================================================ ====== ==== ==== == =
-int Trilinos_Util_MatrixGallery::ReadHBMatrix(void)
+int Trilinos_Util_MatrixGallery::ReadMatrix(void)
 {
 
   if( verbose_ == true ) {
-    cout << OutputMsg << "Reading HB matrix `"
+    cout << OutputMsg << "Reading " << name_ << "  matrix `"
 	 << FileName_ << "'...\n";
   }
 
@@ -1628,10 +1630,28 @@ int Trilinos_Util_MatrixGallery::ReadHBMatrix(void)
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
     
-  // Call routine to read in HB problem
-    
-  Trilinos_Util_ReadHb2Epetra((char*)FileName_.c_str(), *comm_, readMap, readA, readx, 
-			      readb, readxexact);
+  // Call routine to read in problem from file
+
+  if( name_ == "hb" ) 
+    Trilinos_Util_ReadHb2Epetra((char*)FileName_.c_str(), *comm_, readMap,
+				readA, readx, 
+				readb, readxexact);
+  else if( name_ == "matrix_market" )
+    Trilinos_Util_ReadMatrixMarket2Epetra((char*)FileName_.c_str(), *comm_,
+					  readMap, readA, readx, 
+					  readb, readxexact );
+  else if( name_ == "triples_sym" )
+    Trilinos_Util_ReadTriples2Epetra((char*)FileName_.c_str(), false, *comm_,
+				     readMap, readA, readx, 
+				     readb, readxexact );
+  else if( name_ == "triples_nonsym" )
+    Trilinos_Util_ReadTriples2Epetra((char*)FileName_.c_str(), true, *comm_,
+				     readMap, readA, readx, 
+				     readb, readxexact );
+  else {
+    cerr << ErrorMsg << "problem type not correct (" << name_ << ")\n";
+    exit( EXIT_FAILURE );
+  }
     
   NumGlobalElements_ = readMap->NumGlobalElements();
 

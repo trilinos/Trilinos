@@ -426,8 +426,8 @@ private:
   int CreateMatrixJordblock();
 
   
-  // read an HB matrix. This function required Trilinos_Util_ReadHb2Epetra.
-  int ReadHBMatrix();
+  // read an HB matrix. This function requires other Trilinos util files
+  int ReadMatrix();
 
   // Creates a block map, based on map, wich NumPDEEqns equations on each node.
   int CreateBlockMap(void);

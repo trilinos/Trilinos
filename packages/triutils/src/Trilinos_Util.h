@@ -26,6 +26,9 @@
 // ************************************************************************
 //@HEADER
 
+#ifndef _TRILINOS_UTIL_H_
+#define _TRILINOS_UTIL_H_
+
 class Epetra_Comm;
 class Epetra_Vector;
 class Epetra_Map;
@@ -308,3 +311,22 @@ void Trilinos_Util_GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, i
 				      Epetra_MultiVector *& x,
 				      Epetra_MultiVector *& b,
 				      Epetra_MultiVector *&xexact);
+
+int Trilinos_Util_ReadTriples2Epetra( char *data_file,
+				      bool symmetric, 
+				      const Epetra_Comm  &comm, 
+				      Epetra_Map *& map, 
+				      Epetra_CrsMatrix *& A, 
+				      Epetra_Vector *& x, 
+				      Epetra_Vector *& b,
+				      Epetra_Vector *&xexact );
+				      
+int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
+				      const Epetra_Comm  &comm, 
+				      Epetra_Map *& map, 
+				      Epetra_CrsMatrix *& A, 
+				      Epetra_Vector *& x, 
+				      Epetra_Vector *& b,
+				      Epetra_Vector *&xexact );
+
+#endif /* _TRILINOS_UTIL_H_ */
