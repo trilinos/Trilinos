@@ -61,9 +61,7 @@ struct ijv *mat;
     /* Initialize */
     *nVtx  = *nEdge  = *nPins = *vwgt_dim = *ewgt_dim = 0;
 
-    *base = 0;   /* MatrixMarket is 1-based, but we convert to 0-based. */
-                 /* Warning: This causes zdrive output to be 0-based 
-                    while the input was 1-based! We need to fix this.  */
+    *base = 1;   /* MatrixMarket is 1-based. */
     rewind(f);   /* need to read first line again! */
           
 
@@ -121,17 +119,13 @@ struct ijv *mat;
     for (k=0; k<nz; k++)
     {
         fscanf(f, "%d %d %lg\n", &mat[k].i, &mat[k].j, &mat[k].val);
-        if (*base == 0){
-          /* adjust from 1-based to 0-based */
-          (mat[k].i)--;  
-          (mat[k].j)--;
-        }
         if (matrix_obj==ROWS){
           /* swap (i,j) to transpose matrix and switch vertices/hyperedges */
           tmp = mat[k].i;
           mat[k].i = mat[k].j;
           mat[k].j = tmp;
         }
+        (mat[k].i)--;  
     }
 
     /* if (f !=stdin) fclose(f); */
