@@ -142,10 +142,10 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
   bool brackt = false;		// has the soln been bracketed?
   bool stage1 = true;		// are we in stage 1?
   int nfev = 0;			// number of function evaluations
-  double finit = 0.5 * oldgrp.getNormF(); // initial function value
+  double finit = 0.5 * oldgrp.getNormF() * oldgrp.getNormF(); // initial function value
   double dgtest = ftol * dginit; // f for curvature condition
   double width = stpmax - stpmin; // interval width
-  double width1 = 2*width;	// ???
+  double width1 = 2 * width;	// ???
 
   // The variables stx, fx, dgx contain the values of the step,
   // function, and directional derivative at the best step.  The
@@ -198,7 +198,7 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
 
     newgrp.computeX(oldgrp, dir, stp);
     newgrp.computeF();
-    double f = 0.5 * newgrp.getNormF();
+    double f = 0.5 * newgrp.getNormF() * newgrp.getNormF();
     newgrp.computeJacobian();
     nfev ++;
 
