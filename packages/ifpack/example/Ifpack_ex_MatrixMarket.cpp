@@ -113,6 +113,9 @@ int main(int argc, char *argv[])
     cerr << "containing the matrix, using --matrix=my_file.mtx" << endl;
     cerr << "Run this example with option --help for more details" << endl;
     // return success not to break tests
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     exit(EXIT_SUCCESS);
   }
       

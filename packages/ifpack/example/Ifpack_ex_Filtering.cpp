@@ -52,6 +52,9 @@ int main(int argc, char *argv[])
   if (Comm.NumProc() != 1) {
     cerr << "This example must be run with one process only." << endl;
     // exit with success not to break the test harness
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     exit(EXIT_SUCCESS);
   }
   
