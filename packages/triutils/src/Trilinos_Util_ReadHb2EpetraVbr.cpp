@@ -106,7 +106,7 @@ void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
       free ((void *) x_in);
       free ((void *) xexact_in);
       free ((void *) MyGlobalElements);
-      free ((void *) ElementSizeList);
+      delete [] ElementSizeList;
     }
   return;
 }
