@@ -46,7 +46,7 @@ USING_MPI=no
 GOT_BLAS=no
 GOT_LAPACK=no
 ARCH=
-PACKAGES=
+PACKAGES=-Dbinary
 INC_PATH=
 LIBRARIES=
 ML_HOME=$PWD
@@ -318,12 +318,12 @@ then
             LA_SRC="blas1.f blas2.f blas3.f"
             make "CC=${CC}" "FC=${FC}" "AR=${AR}" "TIMER=md_timer_generic.c" \
                  "COMMUNICATION=${AZCOMM}" "RNLIB=${RANLIB}" \
-                 "CFLAGS=${tFLAGS} ${ARCH_FLAGS}" "BLAS=${BLAS}" \
+                 "CFLAGS=${tFLAGS} ${ARCH_FLAGS} -Dbinary" "BLAS=${BLAS}" \
                  -f Makefile.template
          else
             make "CC=${CC}" "FC=${FC}" "AR=${AR}" "TIMER=md_timer_generic.c" \
                  "COMMUNICATION=${AZCOMM}" "RNLIB=${RANLIB}" \
-                 "CFLAGS=${tFLAGS} ${ARCH_FLAGS}" "LA_SRC=" "BLAS=${BLAS}" \
+                 "CFLAGS=${tFLAGS} ${ARCH_FLAGS} -Dbinary" "LA_SRC=" "BLAS=${BLAS}" \
                  -f Makefile.template
          fi
       fi
