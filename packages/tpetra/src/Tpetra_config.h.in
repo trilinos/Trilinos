@@ -53,6 +53,9 @@
 /* Define to 1 if you have the <iostream.h> header file. */
 #undef HAVE_IOSTREAM_H
 
+/* Define if you have LAPACK library. */
+#undef HAVE_LAPACK
+
 /* Define to 1 if you have the <map> header file. */
 #undef HAVE_MAP
 
