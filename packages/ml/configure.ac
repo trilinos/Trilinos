@@ -293,6 +293,7 @@ AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_ml_aztecoo" != "Xyes")
  TAC_ARG_ENABLE_OPTION(ml_flops, [Enable flop counting.], ML_FLOPS, no)
 #
  TAC_ARG_ENABLE_OPTION(ml_benchmarking, [For benchmarking suite.], ML_BENCHMARKING, no)
+AM_CONDITIONAL(ML_BENCHMARKING, test "X$ac_cv_use_ml_benchmarking" != "Xno")
 
 #TAC_ARG_ENABLE_FEATURE_SUB( ml, slud, [Enable ML interface support for SuperLU], ML_SLU, no)
 

@@ -54,6 +54,9 @@ ml_readfile_SOURCES = $(srcdir)/ml_readfile.c
 ml_read_elas_SOURCES = $(srcdir)/ml_read_elas.c
 ml_recirc_SOURCES = $(srcdir)/ml_recirc.c
 ml_read_salsa_SOURCES = $(srcdir)/ml_read_salsa.c
+if ML_BENCHMARKING
+ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
+endif
 endif
 
 # One DEPENDENCIES primary is needed for each exe listed above.  List any
@@ -165,4 +168,9 @@ ml_recirc_LINK = ${mllink}
 ml_read_salsa_CFLAGS = ${ml_common_include_locations}
 ml_read_salsa_LDADD = ${ml_libs}
 ml_read_salsa_LINK = ${mllink}
+if ML_BENCHMARKING
+ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
+ml_read_maxwell_LDADD = ${ml_libs}
+ml_read_maxwell_LINK = ${mllink}
+endif
 endif
