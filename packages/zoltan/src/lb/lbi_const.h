@@ -877,8 +877,10 @@ typedef int LB_FIRST_COARSE_OBJ_FORT_FN(void *data,
  *    int num_lid_entries       --  number of array entries of type LB_ID_TYPE
  *                                  in a local ID
  *  Output:
- *    LB_ID_PTR global_id       --  Global ID of the next coarse object
- *    LB_ID_PTR local_id        --  Local ID of the next coarse object
+ *    LB_ID_PTR global_id       --  Global ID of the previous coarse object
+ *    LB_ID_PTR local_id        --  Local ID of the previous coarse object
+ *    LB_ID_PTR next_global_id  --  Global ID of the next coarse object
+ *    LB_ID_PTR next_local_id   --  Local ID of the next coarse object
  *    int *assigned             --  indicates processor assignment.
  *                                  1 if the object is currently
  *                                  assigned to this processor; 0 otherwise.
@@ -901,20 +903,22 @@ typedef int LB_FIRST_COARSE_OBJ_FORT_FN(void *data,
  */
 
 typedef int LB_NEXT_COARSE_OBJ_FN(void *data, 
-                                  int num_gid_entries, int num_lid_entries,
-                                   LB_ID_PTR global_id, LB_ID_PTR local_id,
-                                   int *assigned,
-                                   int *num_vert, int *vertices,
-                                   int *in_vertex,
-                                   int *out_vertex, int *ierr);
+                             int num_gid_entries, int num_lid_entries,
+                             LB_ID_PTR global_id, LB_ID_PTR local_id,
+                             LB_ID_PTR next_global_id, LB_ID_PTR next_local_id,
+                             int *assigned,
+                             int *num_vert, int *vertices,
+                             int *in_vertex,
+                             int *out_vertex, int *ierr);
 
 typedef int LB_NEXT_COARSE_OBJ_FORT_FN(void *data, 
-                                     int *num_gid_entries, int *num_lid_entries,
-                                     LB_ID_PTR global_id, LB_ID_PTR local_id,
-                                     int *assigned,
-                                     int *num_vert, int *vertices,
-                                     int *in_vertex,
-                                     int *out_vertex, int *ierr);
+                             int *num_gid_entries, int *num_lid_entries,
+                             LB_ID_PTR global_id, LB_ID_PTR local_id,
+                             LB_ID_PTR next_global_id, LB_ID_PTR next_local_id,
+                             int *assigned,
+                             int *num_vert, int *vertices,
+                             int *in_vertex,
+                             int *out_vertex, int *ierr);
 
 /*****************************************************************************/
 /*
