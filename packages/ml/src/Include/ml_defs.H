@@ -10,6 +10,8 @@
 #define ML_NONE           10
 #define ML_MGV            11
 #define ML_MG2CGC         12
+#define ML_RSAMG             13
+#define ML_SAAMG             14
 
 #define ML_GRID_DIMENSION   21
 #define ML_GRID_NVERTICES   22
@@ -59,8 +61,6 @@
 
 #define ML_PRESMOOTHER      201
 #define ML_POSTSMOOTHER     202
-#define ML_PRESMOOTH        201
-#define ML_POSTSMOOTH       202
 #define ML_BOTH             203
 
 #define ML_BDRY_DIRICHLET   1
@@ -73,31 +73,21 @@
 #define ML_FALSE              0
 #define ML_TRUE               1
 
-#ifndef ML_MAX_NEIGHBORS
-#define ML_MAX_NEIGHBORS    250
-#endif
-
-#ifndef ML_MAX_MSG_BUFF_SIZE
+#define ML_MAX_NEIGHBORS   1024
 #define ML_MAX_MSG_BUFF_SIZE 100000  /* max usable message buffer size */
-#endif
 
 #define ML_OVERWRITE          0
 #define ML_ADD                1
 #define ML_NO                 0
 #define ML_YES                1
-#define ML_PRE                0
-#define ML_POST               1
 
 #define ML_EMPTY             -1
-#define ML_USER_DEFINED      10
-#define ML_SET                1
 #define ML_DEFAULT           -2
+#define ML_ONE_STEP_CG       -100
 #define ML_ZERO               3
 #define ML_NONZERO            4
 #define ML_INTERNAL         111
 #define ML_EXTERNAL         112
-#define JACOBI              301
-#define GS                  302
 #define ML_CONVERGE          -2
 #define ML_NOTSET            -1
 
