@@ -1286,3 +1286,77 @@ int ML_Comm_Envelope_Increment_Tag(ML_Comm_Envelope* envelope)
    envelope->tag++;
    return 0;
 }
+
+/********************************************************************
+ * Take a standard 'pre_comm' communication object and transpose it
+ * so that we can do post communication. This routine is used when
+ * transposing a matrix. 
+ *    On input:
+ *        pre_comm     An existing communication structure that
+ *                     will be transposed.
+ *        invec_leng   The length of the local vector for which the
+ *                     pre  communication is defined.
+ *
+ *    On output
+ *        post_comm    A new communication structure that corresponds
+ *                     to taking a matrix and transposing it (but 
+ *                     keeping the transpose of the data local).
+ *
+ *    Returns the number of ghost nodes in the new communicator. 
+ *
+ ********************************************************************/
+int ML_CommInfoOP_TransComm(ML_CommInfoOP *pre_comm, ML_CommInfoOP **post_comm,
+			    int invec_leng)
+{
+   int osize, Nneighbors, remap_leng, Nrcv, Nsend, i, j;
+   int *neigh_list, *send_list, *rcv_list, *remap;
+   int Nghost = 0, Nghost2 = 0;
+
+   osize = invec_leng;
+
+   /* transpose communication list. This means that PRE communication */
+   /* is replaced by POST, ML_OVERWRITE is replaced by ML_ADD, and the send  */
+   /* send and receive lists are swapped.                                    */
+
+   Nneighbors = ML_CommInfoOP_Get_Nneighbors(pre_comm);
+   neigh_list = ML_CommInfoOP_Get_neighbors(pre_comm);
+   remap_leng = osize;
+   Nrcv = 0;
+   Nsend = 0;
+   for (i = 0; i < Nneighbors; i++) {
+      Nrcv  += ML_CommInfoOP_Get_Nrcvlist (pre_comm, neigh_list[i]);
+      Nsend += ML_CommInfoOP_Get_Nsendlist(pre_comm, neigh_list[i]);
+   }
+   remap_leng = osize + Nrcv + Nsend;
+   remap = (int *) ML_allocate( remap_leng*sizeof(int));
+   for (i = 0; i < osize; i++) remap[i] = i;
+   for (i = osize; i < osize+Nrcv+Nsend; i++) 
+      remap[i] = -1;
+ 
+   ML_CommInfoOP_Set_neighbors(post_comm, Nneighbors,
+ 			      neigh_list,ML_ADD,remap,remap_leng);
+   ML_free(remap);
+   for (i = 0; i < Nneighbors; i++) {
+      Nsend      = ML_CommInfoOP_Get_Nsendlist(pre_comm, neigh_list[i]);
+      send_list  = ML_CommInfoOP_Get_sendlist (pre_comm, neigh_list[i]);
+      Nrcv       = ML_CommInfoOP_Get_Nrcvlist (pre_comm, neigh_list[i]);
+      Nghost    += Nrcv;
+      rcv_list   = ML_CommInfoOP_Get_rcvlist(pre_comm, neigh_list[i]);
+      /* handle empty rows ... i.e. ghost variables not used */
+      if (rcv_list != NULL) {
+         for (j = 0; j < Nrcv; j++) {
+            if (rcv_list[j] > Nghost2 + osize - 1)
+               Nghost2 = rcv_list[j] - osize + 1;
+         }
+      }
+ 
+      ML_CommInfoOP_Set_exch_info(*post_comm, neigh_list[i], Nsend, send_list,
+ 				 Nrcv,rcv_list);
+      if (send_list != NULL) ML_free(send_list);
+      if ( rcv_list != NULL) ML_free( rcv_list);
+   }
+   if (neigh_list != NULL) ML_free(neigh_list);
+   if (Nghost2 > Nghost) Nghost = Nghost2;
+
+   return Nghost;
+}

@@ -105,6 +105,10 @@ extern int ML_CommInfoOP_Compute_TotalRcvLength(ML_CommInfoOP *comm_info);
 
 extern int  ML_CommInfoOP_Print(ML_CommInfoOP *c_info, char *label);
 
+extern int ML_CommInfoOP_TransComm(ML_CommInfoOP *pre_comm, 
+				   ML_CommInfoOP **post_comm,
+				   int invec_leng);
+
 extern void ML_create_unique_col_id(int Ncols, int **map, ML_CommInfoOP *,
                                     int *max_per_proc, ML_Comm *comm);
 extern void ML_create_unique_id(int N_local, int **map, ML_CommInfoOP *, ML_Comm *comm);
