@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  Query Functions</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -29,17 +29,17 @@
 <h2>
 <a NAME="Application-Registered Query Functions"></a>Application-Registered
 Query Functions</h2>
-The load-balancing library gets information about a processor's objects
-and work load through calls to load-balancing query functions. These functions
-must be provided by the application. They are "registered" with the load-balancing
-library; that is, a pointer to the function is passed to the load-balancing
-library, which can then call that function when its information is needed.&nbsp;
+Zoltan gets information about a processor's objects
+through calls to query functions. These functions
+must be provided by the application. They are "registered" with Zoltan; 
+that is, a pointer to the function is passed to Zoltan, 
+which can then call that function when its information is needed.&nbsp;
 Two categories of query functions are used by the library:
-<blockquote><a href="ug_query_lb.html">Load-Balancing Query Functions</a>
+<blockquote><a href="ug_query_lb.html">General Zoltan Query Functions</a>
 <br><a href="ug_query_mig.html">Migration Query Functions</a></blockquote>
 In each category, a variety of query functions can be registered by the
-user. The query functions have a function type, describing their purpose
-to the load-balancing library.&nbsp; Functions can be registered with a
+user. The query functions have a function type, describing their 
+purpose.&nbsp; Functions can be registered with a
 Zoltan structure in two ways:&nbsp; through calls to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
 or through calls to query-function-specific functions <b><a href="ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></b>.&nbsp;
 When a function is registered through a call to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>,
@@ -47,7 +47,7 @@ its function type is passed in the <i>fn_type</i> argument. When <b><a href="ug_
 is used to register functions, the type of the function is implicit in
 the <i>fn_ptr</i> argument.&nbsp; Each function description below includes
 both its function type and function prototype.
-<p>Some algorithms in the load-balancing library require that certain query
+<p>Some algorithms in Zoltan require that certain query
 functions be registered by the application; for example, geometric partitioning
 algorithms such as Recursive Coordinate Bisection (RCB) require that an
 <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
@@ -58,8 +58,8 @@ algorithms are included in the <a href="ug_alg.html">Algorithms</a> section.
 <p>Many of the functions have both global and local object identifiers
 (IDs) in their argument lists. The global IDs provided by the application
 must be unique across all processors; they are used for identification
-within the load-balancing library. The local IDs are not used by the load-balancing
-library; they are provided for the convenience of the application and can
+within Zoltan. The local IDs are not used by Zoltan; 
+they are provided for the convenience of the application and can
 be anything the application desires. The local IDs can be used by application
 query routines to enable direct access to application data. For example,
 the object with global ID "3295" may be stored by the application in location
@@ -70,17 +70,15 @@ query routines can subsequently use the local ID to index directly into
 the local storage array. See <a href="ug_usage.html#Data Types for Object IDs">Data
 Types for Object IDs</a> for a description of global and local IDs. All
 of the functions have, as their first argument, a pointer to data that
-is passed to the load-balancing library through <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+is passed to Zoltan through <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
 or <b><a href="ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></b>.&nbsp;
-This data is not used by the load-balancing library. A different set of
+This data is not used by Zoltan. A different set of
 data can be supplied for each registered function. For example, if the
 local ID is an index into an array of data structures, then the data pointer
 might point to the head of the data structure array.
-<p>As their last argument, all functions have an error code that should
-be set and returned by the registered function. Currently, only two error
-codes are recognized. If the function exits without an error, the error
-code should be set to 0. If there is a problem, the error code should be
-set to some non-zero value.
+<p>As their last argument, all functions have 
+an <a href="ug_interface.html#Error Codes">error code</a> that should
+be set and returned by the registered function. 
 <br>&nbsp;
 <br>&nbsp;
 <p>

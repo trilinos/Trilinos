@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  Migration Interface</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -29,7 +29,7 @@
 <h2>
 <a NAME="Migration Functions"></a>Migration Functions</h2>
 If requested, Zoltan can automatically transfer an application's data between
-processors to realize the new decomposition. This functionality will be
+processors to realize a new decomposition. This functionality will be
 performed as part of the call to <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
 if the <b><a href="ug_alg.html#General_Parameters">AUTO_MIGRATE</a></b>
 parameter is set to TRUE (nonzero) via a call to <b><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
@@ -105,7 +105,7 @@ to be used in this invocation of the migration routine.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import&nbsp;</i></td>
 
 <td>The number of objects that are needed by this processor that are stored
-on other processors in the old decomposition (i.e., the number of objects
+on other processors (i.e., the number of objects
 to be imported to this processor).</td>
 </tr>
 
@@ -113,7 +113,7 @@ to be imported to this processor).</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
 
 <td>An array of <i>num_import</i> global IDs of objects needed by this
-processor that are stored on other processors in the old decomposition.
+processor that are stored on other processors.
 <br>(size = <i>num_import</i> * <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>)</td>
 </tr>
 
@@ -121,7 +121,7 @@ processor that are stored on other processors in the old decomposition.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
 
 <td>An array of <i>num_import</i> local IDs of objects needed by this processor
-that are stored on other processors in the old decomposition.
+that are stored on other processors.
 <br>(size = <i>num_import</i> * <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>)</td>
 </tr>
 
@@ -136,8 +136,8 @@ processors).</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_export</i></td>
 
-<td>Upon return, the number of objects that were stored on this processor
-in the previous decomposition that are needed by other processors (i.e.,
+<td>Upon return, the number of objects on this processor that
+are needed by other processors (i.e.,
 the number of objects that must be sent from this processor to other processors).</td>
 </tr>
 
@@ -247,7 +247,7 @@ to be used in this invocation of the migration routine.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import&nbsp;</i></td>
 
 <td>The number of objects that are needed by this processor that are stored
-on other processors in the old decomposition (i.e., the number of objects
+on other processors (i.e., the number of objects
 to be imported to this processor).</td>
 </tr>
 
@@ -255,7 +255,7 @@ to be imported to this processor).</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
 
 <td>An array of <i>num_import</i> global IDs of objects needed by this
-processor that are stored on other processors in the old decomposition.
+processor that are stored on other processors.
 <br>(size = <i>num_import</i> * <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>)</td>
 </tr>
 
@@ -263,7 +263,7 @@ processor that are stored on other processors in the old decomposition.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
 
 <td>An array of <i>num_import</i> local IDs of objects needed by this processor
-that are stored on other processors in the old decomposition.
+that are stored on other processors.
 <br>(size = <i>num_import</i> * <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>)</td>
 </tr>
 

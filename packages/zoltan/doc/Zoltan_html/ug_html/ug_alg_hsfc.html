@@ -1,5 +1,5 @@
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -23,7 +23,7 @@
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_alg_reftree.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_jostle.html">Previous</a></i></b></div>
+<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_alg_reftree.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_rib.html">Previous</a></i></b></div>
 
 
 <h2>
@@ -34,11 +34,12 @@ partitioning implementation by Andrew C. Bauer, Department of Engineering, State
 of New York at Buffalo, as his summer project at SNL in 2001.
 <p>
 The Inverse Hilbert Space-Filling Curve routines by H. Carter Edwards map a point in
-2 to 3 dimensions into the interval, [0,infinity).  This implementation further
+two or three dimensions into the interval [0,infinity).  This implementation further
 scales the Inverse Hilbert coordinate to a double precision floating point
-number in the unit interval, [0,1].  This algorithm is designed to work for 1 to 3
-dimensional problems.  (The 1-dimensional inverse Hilbert curve is defined here
-as the identity function, f(x)=x for all x) ;
+number in the unit interval [0,1].  This algorithm is designed to work for one,
+two, or three
+dimensional problems.  (The one-dimensional inverse Hilbert curve is defined here
+as the identity function, f(x)=x for all x).
 <p>
 The algorithm seeks to divide [0,1] into P intervals each containing
 the same weight of objects associated to these intervals by their inverse Hilbert
@@ -55,8 +56,8 @@ This code returns an error if the final imbalance exceeds the user specified tol
 This code implements both the point assign and box assign functionality.  The point
 assign determines an appropriate partition interval (associated with a specific processor)
 for a new point.   The box assign determines the list of processors
-whose associated 1 to 3 dimensional spaces intersect the given box.  In order to
-use either of these routines, the user parameter to KEEP_CUTS (below) must be turned on.
+whose associated subdomains intersect the given box.  In order to
+use either of these routines, the user parameter KEEP_CUTS must be turned on.
 NOTE: At this time neither point assign nor box assign can be used to add points beyond
 the original bounding box. An error is returned when this is attempted.
 <p>
@@ -84,7 +85,7 @@ function.
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> KEEP_CUTS</i></td>
 
 <td>Information about cuts is necessary
-if application wants to add more objects to the decomposition via calls
+if the application wants to add more objects to the decomposition via calls
 to <b><a href="ug_interface_augment.html#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</a></b>
 or to <b><a href="ug_interface_augment.html#Zoltan_LB_Box_Assign">Zoltan_LB_Box_Assign</a></b>.&nbsp;
 <br>0 = don't keep cuts; 1 = keep cuts.</td>
@@ -140,7 +141,7 @@ pair</td>
 
 <p>
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
-<a href="ug_alg_reftree.html">Next:&nbsp; Refinement Tree Based Partitioning</a>
-|&nbsp; <a href="ug_alg_jostle.html">Previous:&nbsp; Jostle</a>]
+<a href="ug_alg_reftree.html">Next:&nbsp; Refinement Tree Partitioning</a>
+|&nbsp; <a href="ug_alg_rib.html">Previous:&nbsp; Recursive Inertial Bisection</a>]
 </body>
 </html>

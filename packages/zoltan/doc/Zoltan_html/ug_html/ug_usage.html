@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  Library Usage</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -77,7 +77,7 @@ by default, one unsigned integer represents an ID. Applications may use
 whatever format is most convenient to store their IDs; the IDs can then
 be converted to and from Zoltan's ID format in the <a href="ug_query.html">application-registered
 query functions</a>.
-<p>The following type definitions are defined in <i>lb/lbi_const.h</i>; they can
+<p>The following type definitions are defined in <i>include/zoltan_types.h</i>; they can
 be used by an application for memory allocation, MPI communication, and
 as arguments to
 <a href="ug_interface.html">load-balancing interface functions</a>
@@ -112,7 +112,7 @@ where <i>&lt;platform></i> specifies the particular platform for which
 Zoltan is being built.&nbsp; Paths to compilers, include files, and libraries
 are defined in this file and are then read by the top-level Makefile.&nbsp;
 Examples of configuration files for Solaris, Sandia's ASCI Red (tflop)
-computer, an Intel Paragon, SGI workstations, and PCs running Linux are
+computer, SGI workstations, and PCs running Linux are
 included in the <i>Utilities/Config</i> subdirectory.&nbsp;&nbsp; A well-commented
 version of the configuration file, <i>Utilities/Config/Config.generic</i>,
 is also included; this file can be used as a template for new environment-specific
@@ -159,12 +159,11 @@ or if you are using a Bourne-type shell (e.g., sh or bash), type
 <blockquote>
 ZOLTAN_ARCH = <i>&lt;platform>; </i>export ZOLTAN_ARCH
 </blockquote>
-The resulting library <i>libzoltan.a</i>, object files, dependency files,
-and <a href="../dev_html/dev_util.html">utility libraries</a> <i>libzoltan_comm.a</i>
-and <i>libzoltan_mem.a</i> are stored in the directory Obj_&lt;<i>platform</i>>.
+The resulting library <i>libzoltan.a</i>, object files, and dependency files
+are stored in the directory Obj_&lt;<i>platform</i>>.
 <h3>
 <a NAME="Building Applications"></a>Building Applications that use Zoltan</h3>
-The library interface is described in the C include file <i>lb/lbi_const.h</i>;
+The library interface is described in the C include file <i>include/zoltan_types.h</i>;
 this file should be included in all application source files that call
 Zoltan library routines. Similarly, <a href="ug_fortran_apps.html">Fortran applications</a> must USE
 <a href="ug_fortran_api.html#fortran ug api zoltan module">module
@@ -173,13 +172,9 @@ specify <i>Zoltan/Obj_&lt;platform></i>
 as a directory to be searched for module information files.
 The application should then be linked with the Zoltan library
 and its <a href="../dev_html/dev_util.html">utility libraries</a> by including
-<blockquote><i>-lzoltan -lzoltan_comm -lzoltan_mem</i></blockquote>
-in the linking command for the application. The <i>zoltan_comm</i> and
-<i>zoltan_mem</i>
-libraries are
-<a href="../dev_html/dev_util.html">low level utilities</a>
-that Zoltan uses for unstructured communication and memory management.
-They are automatically compiled along with Zoltan. Communication within
+<blockquote><i>-lzoltan </i></blockquote>
+in the linking command for the application. 
+Communication within
 Zoltan is performed through MPI, so appropriate MPI libraries must be linked
 with the application. Third-party libraries, such as <a href="ug_alg_parmetis.html">ParMETIS</a>
 and <a href="http://www.gre.ac.uk/~jjg01/">Jostle</a>, must be also be

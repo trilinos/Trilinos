@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  Migration Query Functions</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -70,7 +70,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_OBJ_SIZE_FN</b> query function returns the size
+<hr WIDTH="100%">A <b>ZOLTAN_OBJ_SIZE_FN</b> query function returns the size
 (in bytes) of the data buffer that is needed to pack all of a single object's
 data.
 <br>&nbsp;
@@ -175,8 +175,8 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_PACK_OBJ_FN</b> query function allows the application
-to tell the load-balancing library how to copy all needed data for a given
+<hr WIDTH="100%">A <b>ZOLTAN_PACK_OBJ_FN</b> query function allows the application
+to tell Zoltan how to copy all needed data for a given
 object into a communication buffer. The object's data can then be sent
 to another processor as part of data migration. It may also perform other
 operations, such as removing the object from the processor's data structure.
@@ -291,8 +291,8 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_UNPACK_OBJ_FN</b> query function allows the application
-to tell the load-balancing library how to copy all needed data for a given
+<hr WIDTH="100%">A <b>ZOLTAN_UNPACK_OBJ_FN</b> query function allows the application
+to tell Zoltan how to copy all needed data for a given
 object from a communication buffer into the application's data structure.
 This operation is needed as the final step of importing objects during
 data migration. The query function may also perform other computation,
@@ -392,7 +392,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_PRE_MIGRATE_FN</b> query function performs any
+<hr WIDTH="100%">A <b>ZOLTAN_PRE_MIGRATE_FN</b> query function performs any
 pre-processing desired by the application. If it is registered, it is called
 at the beginning of the <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
 routine. The arguments passed to <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
@@ -504,7 +504,7 @@ destination processors.</td>
 <tr>
 <td VALIGN=TOP></td>
 
-<td>No pre-processing is done if an <b>ZOLTAN_PRE_MIGRATE_FN</b> is not registered.</td>
+<td>No pre-processing is done if a <b>ZOLTAN_PRE_MIGRATE_FN</b> is not registered.</td>
 </tr>
 </table>
 
@@ -547,7 +547,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_MID_MIGRATE_FN</b> query function performs any
+<hr WIDTH="100%">A <b>ZOLTAN_MID_MIGRATE_FN</b> query function performs any
 processing desired by the application between the packing and unpacking
 of objects being migrated. If it is registered, it is called after export
 objects are packed in <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>;
@@ -663,7 +663,7 @@ destination processors.</td>
 <tr>
 <td VALIGN=TOP></td>
 
-<td>No processing is done if an <b>ZOLTAN_MID_MIGRATE_FN</b> is not registered.</td>
+<td>No processing is done if a <b>ZOLTAN_MID_MIGRATE_FN</b> is not registered.</td>
 </tr>
 </table>
 
@@ -706,7 +706,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_POST_MIGRATE_FN</b> query function performs any
+<hr WIDTH="100%">A <b>ZOLTAN_POST_MIGRATE_FN</b> query function performs any
 post-processing desired by the application. If it is registered, it is
 called at the end of the <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
 routine. The arguments passed to <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
@@ -818,7 +818,7 @@ destination processors.</td>
 <tr>
 <td VALIGN=TOP></td>
 
-<td>No post-processing is done if an <b>ZOLTAN_POST_MIGRATE_FN</b> is not registered.</td>
+<td>No post-processing is done if a <b>ZOLTAN_POST_MIGRATE_FN</b> is not registered.</td>
 </tr>
 </table>
 

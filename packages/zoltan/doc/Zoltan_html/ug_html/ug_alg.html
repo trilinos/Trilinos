@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  Algorithms</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -27,17 +27,18 @@
 |&nbsp; <a href="ug_alg_rcb.html">Next</a>&nbsp; |&nbsp; <a href="ug_query_mig.html">Previous</a></i></b></div>
 
 <h2>
-<a NAME="Algorithms"></a>Algorithms</h2>
+<a NAME="Algorithms"></a>Load-Balancing Algorithms</h2>
 The following dynamic load-balancing algorithms are currently included
 in the Zoltan library:
 <blockquote><a href="ug_alg_rcb.html">Recursive Coordinate Bisection
 (RCB)</a>
 <br><a href="ug_alg_rib.html">Recursive Inertial Bisection (RIB)</a>
+<br><a href="ug_alg_hsfc.html">Hilbert Space-Filling Curve (HSFC)</a>
+<br><a href="ug_alg_reftree.html">Refinement Tree Based Partitioning (REFTREE)</a>
 <br><a href="ug_alg_parmetis.html">ParMETIS (PARMETIS)</a>
 <br><a href="ug_alg_jostle.html">Jostle (JOSTLE)</a>
 <br><a href="ug_alg_oct.html">Octree Partitioning (OCTPART)</a>
-<br><a href="ug_alg_hsfc.html">Hilbert Space-Filling Curve (HSFC)</a>
-<br><a href="ug_alg_reftree.html">Refinement Tree Based Partitioning (REFTREE)</a></blockquote>
+</blockquote>
 The parenthetical string is the input argument for <b><a href="ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>
 to enable the corresponding method.
 <p><a href="#General_Parameters">Parameters
@@ -50,7 +51,7 @@ and Devine</a>].
 <br>&nbsp;
 <h3>
 <a NAME="General_Parameters"></a><b>General Parameters</b></h3>
-The behavior of each load-balancing method is controlled by several parameters
+The behavior of Zoltan is controlled by several parameters
 which can be set by calls to <b><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 Many of the parameters are specific to individual partitioning algorithms,
 and are listed in the descriptions of the individual algorithms.&nbsp;
@@ -134,18 +135,18 @@ shouldn't exceed 1.2.&nbsp;</td>
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp; <a name="OBJ_WEIGHT_DIM"></a><i>OBJ_WEIGHT_DIM</i></td>
 
-<td NOSAVE>The number of weights associated with an object to be used for
-load balancing. If this parameter is zero, load balancing is performed
-with respect to the number of objects. Some algorithms may not support
+<td NOSAVE>The number of weights associated with an object.
+If this parameter is zero, all objects have equal weight.
+Some algorithms may not support
 multiple (multidimensional) weights.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp; <a name="EDGE_WEIGHT_DIM"></a><i>EDGE_WEIGHT_DIM</i></td>
 
-<td NOSAVE>The number of communication weights associated with an edge
-to be used for load balancing. If there is no communication graph, set
-this parameter to zero. Many algorithms do not support multiple (multidimensional)
+<td NOSAVE>The number of weights associated with an edge.
+If this parameter is zero, all edges have equal weight. 
+Many algorithms do not support multiple (multidimensional)
 weights.</td>
 </tr>
 
@@ -174,15 +175,15 @@ of the <a href="ug_interface_mig.html">migration interface functions</a>.&nbsp;<
 <tr VALIGN=TOP NOSAVE>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>USE_MACHINE_DESC</i></td>
 
-<td NOSAVE>Currently unused; will be used when load balancing for heterogeneous
-computers is available.</td>
+<td NOSAVE>Currently unused; will be used when heterogeneous
+computers are supported.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>MACHINE_DESC_FILE</i></td>
 
-<td NOSAVE>Currently unused; will be used when load balancing for heterogeneous
-computers is available.</td>
+<td NOSAVE>Currently unused; will be used when heterogeneous
+computers are supported.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -268,12 +269,6 @@ memory-allocation should be kept by Zoltan's <a href="../dev_html/dev_util_mem.h
 <tr VALIGN=TOP>
 <td></td>
 
-<td><i>KEEP_CUTS</i> = 0</td>
-</tr>
-
-<tr VALIGN=TOP>
-<td></td>
-
 <td><i>USE_MACHINE_DESC</i> = 0</td>
 </tr>
 
@@ -324,20 +319,20 @@ This synchronization requires all processors to use the same value of <i>DEBUG_L
 <td>&nbsp;&nbsp;&nbsp; 1</td>
 
 <td NOSAVE>Values of all parameters set by <b><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
-and used by the load-balancing method.</td>
+and used by Zoltan.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp; 2</td>
 
-<td NOSAVE>Timing information for Zoltan's load-balancing and auto-migration
+<td NOSAVE>Timing information for Zoltan's main
 routines.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
 <td NOSAVE>&nbsp;&nbsp;&nbsp; 3</td>
 
-<td NOSAVE>Timing information within load-balancing algorithms (support
+<td NOSAVE>Timing information within Zoltan's algorithms (support
 by algorithms is optional).</td>
 </tr>
 

@@ -1,5 +1,5 @@
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -22,14 +22,14 @@
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_alg_reftree.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_jostle.html">Previous</a></i></b></div>
+<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_examples.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_jostle.html">Previous</a></i></b></div>
 
 
 <H2>
-<A NAME="Octree"></A>Octree Partitioning</H2>
+<A NAME="Octree"></A>Octree Partitioning (OCTPART)</H2>
 The Octree Partitioning algorithm is based upon work in load balancing
 for parallel mesh generation at Rensselaer Polytechnic Institute [<A HREF="ug_refs.html#flaherty">Flaherty,
-Loy et al.</A>]. It was implemented in the library by Luis Gervasio, Department
+Loy et al.</A>]. It was implemented in Zoltan by Luis Gervasio, Department
 of Computer Science, Rensselaer Polytechnic Institute, as his summer project
 in 1998 [<A HREF="ug_refs.html#gervasio">Gervasio</A>].  An octree is a spatial
 decomposition of the computational domain in which the root of the tree,
@@ -52,8 +52,7 @@ better connectivity and partition quality properties than others. Currently,
 Morton Indexing (i.e., Z-curve), Grey Code, and Hilbert SFCs are supported.
 Morton Indexing and Grey Code SFCs are the simplest (and currently, the
 fastest) of the SFC algorithms, but they produce lower-quality partitions
-than the Hilbert SFC. Further work will be performed to improve the performance
-of the Hilbert SFC algorithm implemented in the library.
+than the Hilbert SFC. 
 <BR>&nbsp;
 <TABLE WIDTH="100%" NOSAVE >
 <TR>
@@ -181,7 +180,7 @@ pair</TD>
 
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
-<A HREF="ug_alg_reftree.html">Next:&nbsp; Refinement Tree Partition</A>&nbsp;
+<A HREF="ug_examples.html">Next:&nbsp; Examples of Library Usage</A>&nbsp;
 |&nbsp; <A HREF="ug_alg_jostle.html">Previous:&nbsp;&nbsp; Jostle</A>]
 </BODY>
 </HTML>

@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  Query-Functon Examples</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -29,21 +29,21 @@
 <h2>
 <a NAME="Query-Function Example"></a>Query-Function Examples</h2>
 Examples of query functions provided by a simple application are included
-below.&nbsp; The load-balancing examples include a simple implementation
+below.&nbsp; The general-interface examples include a simple implementation
 of <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a> </b>and <b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
 query functions and variants of the simple implementation that exploit
 local identifiers and data pointers.&nbsp; Migration examples for packing
 and unpacking objects are also included.&nbsp;&nbsp; Robust error checking
 is not included in the routines; application developers should include
 more explicit error checking in their query functions.
-<ul><a href="#lb_query_example">Load-Balancing Examples</a>
+<ul><a href="#lb_query_example">General Interface Examples</a>
 <ul><a href="#basic_query_example">Basic example</a>
 <br><a href="#data_ptr_query_example">User-defined data pointer</a></ul>
 <a href="#mig_query_example">Migration Examples</a>
 <ul><a href="#mig_pack_example">Packing and unpacking functions</a></ul>
 </ul>
 All the examples use a mesh data structure consisting of nodes in the mesh.&nbsp;
-Load balancing is performed on the nodes.&nbsp; A node is described by
+these nodes are the objects passed to Zoltan.&nbsp; A node is described by
 its 3D coordinates and a global ID number that is unique across all processors.&nbsp;&nbsp;
 The type definitions for the mesh and node data structures used in the
 examples are included <a href="#query example data types">below</a>.
@@ -95,12 +95,12 @@ examples are included <a href="#query example data types">below</a>.
 </table></center>
 
 <h3>
-<a NAME="lb_query_example"></a>Load-Balancing Query Function Examples</h3>
+<a NAME="lb_query_example"></a>General Interface Query Function Examples</h3>
 In the following examples, <b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
 and <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN </a></b>query functions
 are implemented for an application using the mesh and node data structures
-described <a href="#query example data types">above</a>.&nbsp; Dynamic
-load-balancing is performed on the nodes of the mesh.
+described <a href="#query example data types">above</a>.&nbsp; 
+The nodes are the objects passed to Zoltan.
 <p>Through a call to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>,
 the function <i>user_return_owned_nodes</i> is registered as the <b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
 query function.&nbsp; It returns&nbsp; global and local identifiers for
@@ -117,7 +117,7 @@ global application data structures and a local numbering scheme for the
 local identifiers.&nbsp; The <a href="#data_ptr_query_example">User-Defined
 Data Pointer Example</a> uses only local application data structures; this
 model is useful if the application does not have global data structures
-or if load-balancing is to be performed on more than one data structure.&nbsp;
+or if objects from more than one data structure are to be passed to Zoltan.&nbsp;
 Differences between the latter example and the Basic Example are
 shown in <font color="#FF0000">red</font>.
 <h4>
@@ -136,7 +136,7 @@ in<i> user_return_owned_nodes</i>.&nbsp; It is used to access the global
 <tr>
 <td><a NAME="query example one"></a><tt>/* <i>in application's program
 file</i> */&nbsp;</tt>
-<br><tt>#include "lb/lbi_const.h"</tt>
+<br><tt>#include "zoltan.h"</tt>
 <p><tt>/* <i>Declare a global Mesh data structure.</i> */</tt>
 <br><tt>struct Mesh_Type Mesh;</tt>
 <p><tt>main()&nbsp;</tt>
@@ -148,7 +148,7 @@ one integer each. */</i></tt>
 "<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
-<p><tt>&nbsp;&nbsp;&nbsp; /* <i>Register load-balancing query functions.</i>
+<p><tt>&nbsp;&nbsp;&nbsp; /* <i>Register query functions.</i>
 */</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i>Do not register a data pointer with the
 functions;</i> */</tt>
@@ -197,7 +197,7 @@ used.</i> */</tt>
 <br><tt>}</tt></td>
 </tr>
 
-<caption ALIGN=BOTTOM><i>Example of load-balancing query functions (simplest
+<caption ALIGN=BOTTOM><i>Example of general interface query functions (simplest
 implementation).</i></caption>
 </table></center>
 
@@ -219,7 +219,7 @@ one integer each.&nbsp;</i></tt>
 "<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
-<p><tt>&nbsp;&nbsp;&nbsp; ! <i>Register load-balancing query functions.</i></tt>
+<p><tt>&nbsp;&nbsp;&nbsp; ! <i>Register query functions.</i></tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>Do not register a data pointer with the
 functions;</i></tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>the global Mesh data structure will be
@@ -272,7 +272,7 @@ used.</i></tt>
 <br><tt>end subroutine</tt></td>
 </tr>
 
-<caption ALIGN=BOTTOM><i>Fortran example of load-balancing query functions
+<caption ALIGN=BOTTOM><i>Fortran example of general interface query functions
 (simplest implementation).</i></caption>
 </table></center>
 
@@ -290,7 +290,7 @@ Example</a>.&nbsp; Differences between this example and the <a href="#basic_quer
 Example</a> are shown in <font color="#FF0000">red</font>.
 <p>This model is useful when the application does not have a global data
 structure that can be accessed by the query functions.&nbsp; It can also
-be used for load balancing on different data objects.&nbsp; For example,
+be used for operations on different data structures.&nbsp; For example,
 if an application had more than one mesh, load balancing could be performed
 separately on each mesh without having different query routines for each
 mesh.&nbsp; Calls to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
@@ -302,7 +302,7 @@ calls.
 <tr>
 <td><a NAME="query example three"></a><tt>/* <i>in application's program
 file</i> */</tt>
-<br><tt>#include "lb/lbi_const.h"</tt>
+<br><tt>#include "zoltan.h"</tt>
 <p><tt>main()</tt>
 <br><tt>{</tt>
 <br><tt><font color="#FF0000">/* <i>declare a local mesh data structure.</i>
@@ -315,7 +315,7 @@ one integer each. */</i></tt>
 "<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
-<p><tt>&nbsp;&nbsp;&nbsp; /* <i>Register load-balancing query functions.</i>
+<p><tt>&nbsp;&nbsp;&nbsp; /* <i>Register query functions.</i>
 */</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i><font color="#FF0000">Register the address
 of mesh as the data pointer.</font></i> */</tt>
@@ -371,7 +371,7 @@ of mesh as the data pointer.</font></i> */</tt>
 <br><tt>}</tt></td>
 </tr>
 
-<caption ALIGN=BOTTOM><i>Example of load-balancing query functions using
+<caption ALIGN=BOTTOM><i>Example of general interface query functions using
 the application-defined data pointer.</i></caption>
 </table></center>
 
@@ -401,7 +401,7 @@ one integer each.&nbsp;</i></tt>
 "<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
-<p><tt>&nbsp;&nbsp;&nbsp; ! <i>Register load-balancing query functions.</i></tt>
+<p><tt>&nbsp;&nbsp;&nbsp; ! <i>Register query functions.</i></tt>
 <br><tt><font color="#FF0000">&nbsp;&nbsp;&nbsp; ! <i>Use the User_Data
 variable to pass the mesh data
 </i></font></tt>
@@ -460,7 +460,7 @@ User_Data argument</i></font></tt>
 <br><tt>end subroutine</tt></td>
 </tr>
 
-<caption ALIGN=BOTTOM><i>Fortran example of load-balancing query functions
+<caption ALIGN=BOTTOM><i>Fortran example of general interface query functions
 using the application-defined data pointer.</i></caption>
 </table></center>
 

@@ -1,5 +1,5 @@
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -51,13 +51,13 @@ than the auto-migration capabilities Zoltan can provide.
 <A NAME="Auto-migration example"></A>Auto-Migration Example</H2>
 In the <A HREF="#Auto-Migration Example Fig">figure</A> below, an example
 of the load-balancing calling sequence for a particle simulation using
-Zoltan's auto-migration tools is shown. The application registers the geometric
-query functions that will be used by the load-balancing algorithm. It also
+Zoltan's auto-migration tools is shown. 
+The application 
 requests auto-migration by turning on the <B>AUTO_MIGRATE</B> option
 through a call to <B><A HREF="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</A></B>
 and registers functions to pack and unpack a particle's data. During the
 call to <B><A HREF="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</A></B>,
-the load-balancing library computes the new decomposition and, using calls
+Zoltan computes the new decomposition and, using calls
 to the packing and unpacking query functions, automatically migrates particles
 to their new processors. The application then frees the arrays returned
 by <B><A HREF="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</A></B> and
@@ -67,18 +67,8 @@ for data migration.
 <BR>&nbsp;
 <CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <TR>
-<TD><A NAME="Auto-Migration Example Fig"></A><TT>/* <I>Register load-balancing
-query functions.</I> */</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN_TYPE</A>,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_dimension, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN_TYPE</A>,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_coords, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN_TYPE</A>,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_num_particles, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</A>(zz, <A HREF="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN_TYPE</A>,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_particle_list, NULL);</TT>&nbsp;
-
-<P><TT>/* <I>Tell library to automatically migrate data for the application.</I>
+<TD><A NAME="Auto-Migration Example Fig"></A>
+<TT>/* <I>Tell Zoltan to automatically migrate data for the application.</I>
 */</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</A>(zz, "AUTO_MIGRATE",
 "TRUE");</TT>&nbsp;
@@ -101,7 +91,7 @@ query functions.</I> */</TT>&nbsp;
 <br><tt>&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&nbsp;</TT>
 <BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs);&nbsp;</TT>&nbsp;
 
-<P><TT>/* <I>Free memory allocated for load-balancing results by Zoltan library</I>
+<P><TT>/* <I>Free memory allocated for load-balancing results by Zoltan </I>
 */</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</A>(&amp;imp_global_ids,
 &amp;imp_local_ids, &amp;imp_procs,&nbsp;</TT>&nbsp;
@@ -155,7 +145,7 @@ for building the appropriate request lists.
 <CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <TR NOSAVE>
 <TD NOSAVE><A NAME="User-guided Migration Example Fig"></A><TT>/* <I>Assume
-the load-balancing library returns a decomposition of the</I> */</TT>&nbsp;
+Zoltan returns a decomposition of the</I> */</TT>&nbsp;
 <BR><TT>/* <I>nodes of a finite element mesh.</I> */</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</A>(zz,&amp;new,&amp;num_gid_entries,&amp;num_lid_entries,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,&nbsp;</TT>&nbsp;

@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  ParMETIS Interface</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -24,7 +24,7 @@
 <body bgcolor="#FFFFFF">
 
 <div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
-|&nbsp; <a href="ug_alg_jostle.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_rib.html">Previous</a></i></b></div>
+|&nbsp; <a href="ug_alg_jostle.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_reftree.html">Previous</a></i></b></div>
 
 <h2>
 <a NAME="ParMETIS"></a>ParMETIS</h2>
@@ -86,12 +86,12 @@ Any self edges (loops) will be ignored. Multiple edges between
 a pair of vertices is not allowed. All weights must
 be non-negative. The graph does not have to be connected.
 
-<p>Zoltan is currently compatible with ParMETIS version 2.0.&nbsp;
+<p>Zoltan is currently compatible with ParMETIS version 2.0 or 3.0_beta.&nbsp;
 There is no guarantee that Zoltan will work correctly if you have a different
 version of ParMETIS on your computer. Source and documentation for ParMETIS
 can be obtained from the <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS
 home page</a>. As a courtesy service,&nbsp; a compatible version of the
-ParMETIS&nbsp; source code is distributed with Zoltan. However, ParMETIS
+ParMETIS 2.0 source code is distributed with Zoltan. However, ParMETIS
 is a completely separate library. If you do not wish to install ParMETIS,
 it is possible to compile Zoltan without any references to ParMETIS&nbsp;
 (when you 'make' Zoltan, comment out the PARMETIS_LIBPATH variable in the
@@ -263,7 +263,7 @@ pair</td>
 
 <p>
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_alg_jostle.html">Next:&nbsp;
-Jostle</a>&nbsp; |&nbsp; <a href="ug_alg_rib.html">Previous:&nbsp; 
-Recursive Inertial Bisection (RIB)</a>]
+Jostle</a>&nbsp; |&nbsp; <a href="ug_alg_reftree.html">Previous:&nbsp; 
+Refinement Tree Partitioning</a>]
 </body>
 </html>

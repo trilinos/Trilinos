@@ -5,9 +5,9 @@
    <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1377">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
-   <title>Zoltan User's Guide:  Load-Balancing Query Functions</title>
+   <title>Zoltan User's Guide:  General Zoltan Query Functions</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -27,17 +27,20 @@
 |&nbsp; <a href="ug_query_mig.html">Next</a>&nbsp; |&nbsp; <a href="ug_query.html">Previous</a></i></b></div>
 
 <h2>
-<a NAME="Load-Balancing Query Functions"></a>Load-Balancing Query Functions</h2>
-The following registered functions are used by various load-balancing algorithms
+<a NAME="Load-Balancing Query Functions"></a>General Zoltan Query Functions</h2>
+The following registered functions are used by various Zoltan algorithms
 in the Zoltan library. No single algorithm uses all the query functions;
 the <a href="ug_alg.html">algorithm descriptions</a> indicate which query
 functions are required by individual algorithms.
-<blockquote><a href="#General Functions">General Functions</a>
+<blockquote><a href="#General Functions">Object ID Functions</a>
 <blockquote><b><a href="#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b>
 <br><b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
 <br><b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>
 <br><b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
-<br><b><a href="#ZOLTAN_NUM_BORDER_OBJ_FN">ZOLTAN_NUM_BORDER_OBJ_FN</a></b>
+</blockquote>
+<a href="#Border Functions">Border Object Functions (currently unused)</a>
+<blockquote>
+<b><a href="#ZOLTAN_NUM_BORDER_OBJ_FN">ZOLTAN_NUM_BORDER_OBJ_FN</a></b>
 <br><b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b>
 <br><b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>
 <br><b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b></blockquote>
@@ -59,8 +62,9 @@ functions are required by individual algorithms.
 
 <hr><hr>
 <h2>
-<a NAME="General Functions"></a>General Functions</h2>
+<a NAME="General Functions"></a>Object ID Functions</h2>
 
+<hr WIDTH="100%">
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
@@ -86,8 +90,8 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_NUM_OBJ_FN</b> query function returns the number
-of objects to be balanced that are currently assigned to the processor.
+<hr WIDTH="100%">A <b>ZOLTAN_NUM_OBJ_FN</b> query function returns the number
+of objects that are currently assigned to the processor.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -123,7 +127,7 @@ of objects to be balanced that are currently assigned to the processor.
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<td>The number of objects to be balanced that are assigned to the processor.</td>
+<td>The number of objects that are assigned to the processor.</td>
 </tr>
 </table>
 
@@ -165,14 +169,14 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_OBJ_LIST_FN</b> query function fills two (three
+<hr WIDTH="100%">A <b>ZOLTAN_OBJ_LIST_FN</b> query function fills two (three
 if weights are used) arrays with information about the objects currently
 assigned to the processor. Both arrays are allocated (and subsequently
-freed) by the load-balancing library using a query to an <b><a href="#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b>
-query function to get the array size. For many algorithms, either an <b>ZOLTAN_OBJ_LIST_FN</b>
-query function or an <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
-query-function pair must be registered to allow the load-balancing library
-to obtain needed object information; however, both query options need not
+freed) by Zoltan; their size is determined by a call to a <b><a href="#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b>
+query function to get the array size. For many algorithms, either a <b>ZOLTAN_OBJ_LIST_FN</b>
+query function or a <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
+query-function pair must be registered;
+however, both query options need not
 be provided.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
@@ -285,18 +289,18 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_FIRST_OBJ_FN</b> query function initializes an
+<hr WIDTH="100%">A <b>ZOLTAN_FIRST_OBJ_FN</b> query function initializes an
 iteration over objects assigned to the processor. It returns the global
 and local IDs of the first object on the processor. Subsequent calls to
-an <b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b> query function iterate
+a <b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b> query function iterate
 over and return other objects assigned to the processor. This query-function
 pair frees the application from having to build an array of objects (as
-in <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>) and allows the
-load-balancing routines to obtain only as much information about objects
-as they need. For many algorithms, either an <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
-query function or an <b>ZOLTAN_FIRST_OBJ_FN</b><i>/</i><b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
-query-function pair must be registered to allow the load-balancing library
-to obtain needed object information; however, both query options need not
+in <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>) and allows 
+Zoltan's routines to obtain only as much information about objects
+as they need. For many algorithms, either a <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+query function or a <b>ZOLTAN_FIRST_OBJ_FN</b><i>/</i><b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
+query-function pair must be registered;
+however, both query options need not
 be provided.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -431,17 +435,17 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_NEXT_OBJ_FN</b> query function is an iterator
+<hr WIDTH="100%">A <b>ZOLTAN_NEXT_OBJ_FN</b> query function is an iterator
 function which, when given an object assigned to the processor, returns
 the next object assigned to the processor. The first object of the iteration
-is provided by an <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>
+is provided by a <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>
 query function. This query-function pair frees the application from having
 to build an array of objects (as in <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>)
-and allows the load-balancing routines to obtain only as much information
-about objects as they need. For many algorithms, either an <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
-query function or an <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b>ZOLTAN_NEXT_OBJ_FN</b>
-query-function pair must be registered to allow the load-balancing library
-to obtain needed object information; however, both query options need not
+and allows Zoltan's routines to obtain only as much information
+about objects as they need. For many algorithms, either a <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+query function or a <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b>ZOLTAN_NEXT_OBJ_FN</b>
+query-function pair must be registered;
+however, both query options need not
 be provided.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -546,6 +550,10 @@ of the next object.</td>
 </table>
 
 <p>
+<hr><hr>
+<h2>
+<a NAME="Border Functions"></a>Border Object Functions (currently not used)</h2>
+
 <hr WIDTH="100%">
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
@@ -574,7 +582,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_NUM_BORDER_OBJ_FN</b> query function returns
+<hr WIDTH="100%">A <b>ZOLTAN_NUM_BORDER_OBJ_FN</b> query function returns
 the number of objects sharing a processor subdomain border (in the communication
 graph of the application) with a given processor.
 <br>&nbsp;
@@ -664,15 +672,14 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_BORDER_OBJ_LIST_FN</b> query function fills two
+<hr WIDTH="100%">A <b>ZOLTAN_BORDER_OBJ_LIST_FN</b> query function fills two
 arrays with information about the objects currently assigned to the processor
 that share a processor subdomain border (in the communication graph of
 the application) with a given processor. Both arrays are allocated (and
-subsequently freed) by the load-balancing library using a query to an <b><a href="#ZOLTAN_NUM_BORDER_OBJ_FN">ZOLTAN_NUM_BORDER_OBJ_FN</a></b>
-query function to get the array size. For certain load-balancing algorithms,
-either an <b>ZOLTAN_BORDER_OBJ_LIST_FN</b> query function or an <b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>/<b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b>
-query-function pair must be registered to allow the load-balancing library
-to obtain needed object information; however, both query options need not
+subsequently freed) by Zoltan; their size is determined by a call to a <b><a href="#ZOLTAN_NUM_BORDER_OBJ_FN">ZOLTAN_NUM_BORDER_OBJ_FN</a></b>
+query function to get the array size. For certain Zoltan algorithms,
+either a <b>ZOLTAN_BORDER_OBJ_LIST_FN</b> query function or a <b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>/<b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b>
+query-function pair must be registered; however, both query options need not
 be provided.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
@@ -796,20 +803,19 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_FIRST_BORDER_OBJ_FN</b> query function initializes
+<hr WIDTH="100%">A <b>ZOLTAN_FIRST_BORDER_OBJ_FN</b> query function initializes
 an iteration over objects assigned to the processor that share a processor
 subdomain border with a given processor. It returns the global and local
 IDs of the first object on the processor along the specified subdomain
-border. Subsequent calls to an <b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b>
+border. Subsequent calls to a <b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b>
 query function iterate over and return other objects along the requested
 subdomain border. This query-function pair frees the application from having
 to build an array of objects (as in <b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b>)
-and allows the load-balancing routines to obtain only as much information
-about objects as they need. For some load-balancing algorithms, either
-an <b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b> query
-function or an <b>ZOLTAN_FIRST_BORDER_OBJ_FN</b>/<b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b>
-query-function pair must be registered to allow the load-balancing library
-to obtain needed object information; however, both query options need not
+and allows Zoltan to obtain only as much information
+about objects as it needs. For some algorithms, either
+a <b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b> query
+function or a <b>ZOLTAN_FIRST_BORDER_OBJ_FN</b>/<b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b>
+query-function pair must be registered; however, both query options need not
 be provided.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -953,19 +959,19 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_NEXT_BORDER_OBJ_FN</b> query function is an iterator
+<hr WIDTH="100%">A <b>ZOLTAN_NEXT_BORDER_OBJ_FN</b> query function is an iterator
 function which, when given an object assigned to the processor and a neighboring
 processor ID, returns the next object assigned to the processor that shares
 a subdomain border with the neighboring processor. The first object of
-the iteration is provided by an <b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>
+the iteration is provided by a <b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>
 query function. This query-function pair frees the application from having
 to build an array of objects (as in <b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b>)
-and allows the load-balancing routines to obtain only as much information
-about objects as they need. For some load-balancing algorithms, either
-an <b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b> query
-function or an <b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>/<b>ZOLTAN_NEXT_BORDER_OBJ_FN</b>
-query-function pair must be registered to allow the load-balancing library
-to obtain needed object information; however, both query options need not
+and allows Zoltan to obtain only as much information
+about objects as it needs. For some algorithms, either
+a <b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b> query
+function or a <b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>/<b>ZOLTAN_NEXT_BORDER_OBJ_FN</b>
+query-function pair must be registered;
+however, both query options need not
 be provided.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -1106,7 +1112,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_NUM_GEOM_FN</b> query function returns the number
+<hr WIDTH="100%">A <b>ZOLTAN_NUM_GEOM_FN</b> query function returns the number
 of values needed to express the geometry of an object. For example, for
 a two-dimensional mesh-based application, (<i>x</i>,<i>y</i>) coordinates
 are needed to describe an object's geometry; thus the <b>ZOLTAN_NUM_GEOM_FN</b>
@@ -1187,9 +1193,9 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_GEOM_FN</b> query function returns a vector of
+<hr WIDTH="100%">A <b>ZOLTAN_GEOM_FN</b> query function returns a vector of
 geometry values for a given object. The geometry vector is allocated by
-the load-balancing library to be of the size returned by an <b><a href="#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b>
+Zoltan to be of the size returned by a <b><a href="#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b>
 query function.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -1291,7 +1297,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_NUM_EDGES_FN</b> query function returns the number
+<hr WIDTH="100%">A <b>ZOLTAN_NUM_EDGES_FN</b> query function returns the number
 of edges for a given object in the communication graph of the application
 (i.e., the number of objects with which the given object must share information).
 <br>&nbsp;
@@ -1406,12 +1412,12 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_EDGE_LIST_FN</b> query function returns lists
+<hr WIDTH="100%">A <b>ZOLTAN_EDGE_LIST_FN</b> query function returns lists
 of global IDs, processor IDs, and optionally edge weights for objects sharing
 an edge with a given object (i.e., objects that must share information
 with the given object). The arrays for the returned neighbor lists are
-allocated by the load-balancing library; their size is determined by a
-call to an <b><a href="#ZOLTAN_NUM_EDGES">ZOLTAN_NUM_EDGES_FN</a></b> query function.
+allocated by Zoltan; their size is determined by a
+call to a <b><a href="#ZOLTAN_NUM_EDGES">ZOLTAN_NUM_EDGES_FN</a></b> query function.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
@@ -1528,7 +1534,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_NUM_COARSE_OBJ_FN</b> query function returns
+<hr WIDTH="100%">A <b>ZOLTAN_NUM_COARSE_OBJ_FN</b> query function returns
 the number of objects (elements) in the initial coarse grid.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -1611,7 +1617,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_COARSE_OBJ_LIST_FN</b> query function returns
+<hr WIDTH="100%">A <b>ZOLTAN_COARSE_OBJ_LIST_FN</b> query function returns
 lists of global IDs, local IDs, vertices, and order information for all
 objects (elements) of the initial coarse grid. The vertices are a designation
 on the local processor of the vertices such that if two elements share
@@ -1619,8 +1625,8 @@ a vertex then the same integer designates that vertex in both elements.
 The user may choose to provide the order in which the elements should be
 traversed or have Zoltan determine the order. If the user provides the
 order, then entry and exit vertices for a path through the elements may
-also be provided. The arrays for the returned values are allocated by the
-load-balancing library; their size is determined by a call to an <b><a href="#ZOLTAN_NUM_COARSE_OBJ_FN">ZOLTAN_NUM_COARSE_OBJ_FN</a></b>
+also be provided. The arrays for the returned values are allocated by 
+Zoltan; their size is determined by a call to a <b><a href="#ZOLTAN_NUM_COARSE_OBJ_FN">ZOLTAN_NUM_COARSE_OBJ_FN</a></b>
 query function.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
@@ -1770,10 +1776,10 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_FIRST_COARSE_OBJ_FN</b> query function initializes
+<hr WIDTH="100%">A <b>ZOLTAN_FIRST_COARSE_OBJ_FN</b> query function initializes
 an iteration over the objects of the initial coarse grid. It returns the
 global ID, local ID, vertices, and order information for the first object
-(element) of the initial coarse grid. Subsequent calls to an <b><a href="#ZOLTAN_NEXT_COARSE_OBJ_FN">ZOLTAN_NEXT_COARSE_OBJ_FN</a></b>
+(element) of the initial coarse grid. Subsequent calls to a <b><a href="#ZOLTAN_NEXT_COARSE_OBJ_FN">ZOLTAN_NEXT_COARSE_OBJ_FN</a></b>
 iterate over and return other objects from the coarse grid. The vertices
 are a designation on the local processor of the vertices such that if two
 elements share a vertex then the same integer designates that vertex in
@@ -1949,10 +1955,10 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_NEXT_COARSE_OBJ_FN</b> query function is an iterator
-function that returns the next object in the initial coarse grid. initializes
-an iteration over the objects of the initial coarse grid. The first object
-of the iteration is provided by an <b><a href="#ZOLTAN_FIRST_COARSE_OBJ_FN">ZOLTAN_FIRST_COARSE_OBJ_FN</a></b>
+<hr WIDTH="100%">A <b>ZOLTAN_NEXT_COARSE_OBJ_FN</b> query function is an iterator
+function that returns the next object in the initial coarse grid. 
+The first object
+of the iteration is provided by a <b><a href="#ZOLTAN_FIRST_COARSE_OBJ_FN">ZOLTAN_FIRST_COARSE_OBJ_FN</a></b>
 query function.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
@@ -2115,7 +2121,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_NUM_CHILD_FN</b> query function returns the number
+<hr WIDTH="100%">A <b>ZOLTAN_NUM_CHILD_FN</b> query function returns the number
 of children of the element with the given global and local IDs. If the
 element has not been refined, the number of children is 0.
 <br>&nbsp;
@@ -2232,7 +2238,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_CHILD_LIST_FN</b> query function returns lists
+<hr WIDTH="100%">A <b>ZOLTAN_CHILD_LIST_FN</b> query function returns lists
 of global IDs, local IDs, vertices, and order information for all children
 of a refined element. The vertices are a designation on the local processor
 of the vertices such that if two elements share a vertex then the same
@@ -2241,8 +2247,8 @@ provide the order in which the children should be traversed, or have Zoltan
 determine the order based on the type of element refinement used to create
 the children. If the user provides the order, then entry and exit vertices
 for a path through the elements may also be provided. The arrays for the
-returned values are allocated by the load-balancing library; their size
-is determined by a call to an <b><a href="#ZOLTAN_NUM_CHILD_FN">ZOLTAN_NUM_CHILD_FN</a></b>
+returned values are allocated by Zoltan; their size
+is determined by a call to a <b><a href="#ZOLTAN_NUM_CHILD_FN">ZOLTAN_NUM_CHILD_FN</a></b>
 query function.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
@@ -2426,7 +2432,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>ZOLTAN_CHILD_WEIGHT_FN</b> query function returns the
+<hr WIDTH="100%">A <b>ZOLTAN_CHILD_WEIGHT_FN</b> query function returns the
 weight of an object. Interior nodes of the refinement tree as well as the
 leaves are allowed to have weights.
 <br>&nbsp;

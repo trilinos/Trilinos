@@ -5,9 +5,9 @@
    <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1377">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
-   <title>Zoltan User's Guide:  Initialization Interface</title>
+   <title>Zoltan User's Guide:  General Zoltan Interface</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -27,8 +27,8 @@
 |&nbsp; <a href="ug_interface_lb.html">Next</a>&nbsp; |&nbsp; <a href="ug_interface.html">Previous</a></i></b></div>
 
 <h2>
-<a NAME="Initialization Functions"></a>Initialization Functions</h2>
-Functions used to initialize the library and load-balancing data structures
+<a NAME="Initialization Functions"></a>General Interface Functions</h2>
+Functions used to initialize and manipulate Zoltan's data structures
 are described below:
 <ul><a href="#Zoltan_Initialize">Zoltan_Initialize</a>
 <br><a href="#Zoltan_Create">Zoltan_Create</a>
@@ -59,10 +59,10 @@ float&nbsp;*<i>ver</i>);</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">The <b>Zoltan_Initialize</b> function initializes values needed
-in the load-balancing tools. If the application uses MPI, this function
+<hr WIDTH="100%">The <b>Zoltan_Initialize</b> function initializes 
+MPI for Zoltan. If the application uses MPI, this function
 should be called after calling <b>MPI_Init</b>. If the application does
-not use MPI, this function calls <b>MPI_Init</b> for use by the load balancer.
+not use MPI, this function calls <b>MPI_Init</b> for use by Zoltan.
 This function is called with the <i>argc</i> and <i>argv</i> command-line
 arguments from the main program, which are used if <b>Zoltan_Initialize</b>
 calls <b>MPI_Init</b>. From C,&nbsp; if <b>MPI_Init</b> has already been
@@ -71,8 +71,8 @@ their values will be ignored.&nbsp; From Fortran, if one of <i>argc</i>
 or <i>argv</i> is omitted, they must both be omitted. If they are omitted,
 <i>ver</i>
 does NOT have to be passed as a keyword argument.
-<p><b>Zoltan_Initialize</b> returns the version of the dynamic load-balancing
-library so that users can verify which version of the library their application
+<p><b>Zoltan_Initialize</b> returns the the Zoltan version number
+so that users can verify which version of the library their application
 is linked to.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -134,11 +134,12 @@ is linked to.
 </table>
 
 <hr WIDTH="100%">The <b>Zoltan_Create</b> function allocates memory for storage
-of load-balancing information to be used by the load-balancing library
-and sets the default values for the load- balancing information. The pointer
-returned by this function is passed to many subsequent load-balancing functions.
-An application may allocate more than one <b>Zoltan_Struct</b> data structure
-if, say, it uses different decompositions with different load-balancing
+of information to be used by Zoltan
+and sets the default values for the information. The pointer
+returned by this function is passed to many subsequent functions.
+An application may allocate more than one <b>Zoltan_Struct</b> data structure;
+for example, an application may use several <b>Zoltan_Struct</b> structures if,
+say, it uses different decompositions with different load-balancing
 techniques.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -152,9 +153,9 @@ techniques.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; communicator</i></td>
 
 <td>The MPI communicator to be used for this Zoltan structure.
-Only those processors included in the communicator participate in load
-balancing. If all processors currently used by the application are to participate
-in load balancing, <i>communicator</i> should be <b>MPI_COMM_WORLD</b> .</td>
+Only those processors included in the communicator participate in Zoltan
+functions. If all processors are to participate, 
+<i>communicator</i> should be <b>MPI_COMM_WORLD</b> .</td>
 </tr>
 
 <tr>
@@ -166,7 +167,7 @@ in load balancing, <i>communicator</i> should be <b>MPI_COMM_WORLD</b> .</td>
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct</b> *</td>
 
-<td>Pointer to memory for storage of load-balancing information. If an
+<td>Pointer to memory for storage of Zoltan information. If an
 error occurs, NULL will be returned in C, or the result will be a nullified
 pointer in Fortran. Any error that occurs in this function is assumed to
 be fatal.</td>
@@ -205,7 +206,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Set_Fn</b> registers an application-supplied query
-function in the Zoltan structure. Both load-balancing and migration
+function in the Zoltan structure. All types of query
 functions can be registered through calls to <b>Zoltan_Set_Fn</b>.&nbsp; To
 register functions while maintaining strict type-checking of the <i>fn_ptr</i>
 argument, use <b><a href="#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></b>.
@@ -294,8 +295,8 @@ of the query function types, register specific types of <a href="ug_query.html">
 query functions</a> in the Zoltan structure. One interface function
 exists for each type of query function.&nbsp; For example, <b>Zoltan_Set_Num_Geom_Fn</b>
 registers a query function of type <b><a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b>.&nbsp;
-Each load-balancing and migration query function has an associated <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>.&nbsp;
-A complete list of these functions is included in <i>lb/lbi_const.h.</i>
+Each query function has an associated <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>.&nbsp;
+A complete list of these functions is included in <i>include/zoltan.h.</i>
 <p>Query functions can be registered using either <b><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
 or <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>.
 <br><b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn </b>provides strict type checking

@@ -9,11 +9,11 @@
    <meta name="sandia.approved" content="SAND99-1377">
    <meta name="sandia.create_date" content="05/28/99">
    <meta name="keywords" content="Zoltan, Zoltan user's guide, Zoltan dynamic load balancing library, Zoltan parallel computing">
-   <meta name="description" content="Zoltan:  User's Guide for the Zoltan Dynamic Load-Balancing project">
+   <meta name="description" content="Zoltan:  User's Guide for the Zoltan project">
    <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <title>Zoltan User's Guide</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -197,7 +197,7 @@ Library for Parallel Applications</font></font></b>
 <a href="ug_interface.html">Zoltan Interface Functions</a></h4>
 
 <blockquote><a href="ug_interface.html#Error Codes">Error Codes</a>
-<br><a href="ug_interface_init.html">Initialization Functions</a>
+<br><a href="ug_interface_init.html">General Zoltan Interface Functions</a>
 <br><a href="ug_interface_lb.html">Load-Balancing Functions</a>
 <br><a href="ug_interface_augment.html">Functions for Adding Items to a
 Decomposition</a>
@@ -206,14 +206,17 @@ Decomposition</a>
 <h4>
 <a href="ug_query.html">Application-Registered Query Functions</a></h4>
 
-<blockquote><a href="ug_query_lb.html">Load-Balancing Query Functions</a></blockquote>
+<blockquote><a href="ug_query_lb.html">General Zoltan Query Functions</a></blockquote>
 
 <ol>
-<ol><a href="ug_query_lb.html#General Functions">General Functions</a>
+<ol>
+<a href="ug_query_lb.html#General Functions">Object ID Functions</a>
+<br><a href="ug_query_lb.html#Border Functions">Border Object Functions</a>
 <br><a href="ug_query_lb.html#Geometry-based Functions">Geometry-based
 Functions</a>
 <br><a href="ug_query_lb.html#Graph-based Functions">Graph-based Functions</a>
-<br><a href="ug_query_lb.html#Tree-based Functions">Tree-based Functions</a></ol>
+<br><a href="ug_query_lb.html#Tree-based Functions">Tree-based Functions</a>
+</ol>
 </ol>
 
 <blockquote><a href="ug_query_mig.html">Migration Query Functions</a></blockquote>
@@ -226,17 +229,17 @@ Functions</a>
 <br><a href="ug_alg.html#Debug Levels in Zoltan">Debugging Levels</a>
 <br><a href="ug_alg_rcb.html">Recursive Coordinate Bisection (RCB)</a>
 <br><a href="ug_alg_rib.html">Recursive Inertial Bisection (RIB)</a>
+<br><a href="ug_alg_hsfc.html">Hilbert Space-Filling Curve (HSFC) Partitioning</a>
+<br><a href="ug_alg_reftree.html">Refinement Tree Based Partitioning</a>
 <br><a href="ug_alg_parmetis.html">ParMETIS</a> (graph partitioning and repartitioning)
 <br><a href="ug_alg_jostle.html">Jostle</a> (more graph partitioning and repartitioning)
-<br><a href="ug_alg_hsfc.html">Hilbert Space-Filling Curve (HSFC) Partitioning</a>
 <br><a href="ug_alg_oct.html">Octree/Space-Filling Curve (SFC) Partitioning</a>
-<br><a href="ug_alg_reftree.html">Refinement Tree Based Partitioning</a>
 </blockquote>
 
 <h4>
 <a href="ug_examples.html">Examples of Library Usage</a></h4>
 
-<blockquote><a href="ug_examples_init.html">Initialization</a>
+<blockquote><a href="ug_examples_init.html">General Usage</a>
 <br><a href="ug_examples_lb.html">Load-Balancing</a>
 <br><a href="ug_examples_mig.html">Migration</a>
 <br><a href="ug_examples_query.html">Query Functions</a></blockquote>
@@ -251,9 +254,6 @@ Functions</a>
 <br><a href="ug_fortran_sys.html">System-Specific Remarks</a></ul>
 
 <h4>
-<a href="ug_future.html">Future Work</a></h4>
-
-<h4>
 <a href="ug_refs.html">References</a></h4>
 
 <h4>
@@ -261,7 +261,7 @@ Functions</a>
 
 <hr WIDTH="100%">
 Copyright (c) 2000, Sandia National Laboratories. <br>
-The Zoltan Dynamic Load-Balancing Library and its documentation are released
+The Zoltan Library and its documentation are released
 under the <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser General Public License (LGPL)</a>.  
 See the README file in the main Zoltan directory for more information.
 

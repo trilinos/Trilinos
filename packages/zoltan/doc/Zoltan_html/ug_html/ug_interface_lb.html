@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  Load-Balancing Interface</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -81,6 +81,7 @@ Valid values for <i>string</i> are&nbsp;
 <blockquote>"RCB" (for <a href="ug_alg_rcb.html#RCB">recursive coordinate
 bisection</a>),&nbsp;
 <br>"RIB" (for <a href="ug_alg_rib.html">recursive inertial bisection</a>),
+<br>"HSFC" (for <a href="ug_alg_rib.html">Hilbert space-filling curve partitioning</a>),
 <br>"PARMETIS" (for any of the methods in the <a href="ug_alg_parmetis.html">ParMETIS</a>
 library),&nbsp;
 <br>"JOSTLE" (for any of the methods in the <a href="ug_alg_jostle.html">Jostle</a>
@@ -161,7 +162,7 @@ if desired.
 <td VALIGN=TOP><i>&nbsp;&nbsp; param_name</i></td>
 
 <td>A string containing the name of the parameter to be altered.&nbsp;
-Note that the string is case-insensitive.&nbsp; Also, different load-balancing
+Note that the string is case-insensitive.&nbsp; Also, different Zoltan
 structures can have different parameter values.&nbsp;</td>
 </tr>
 
@@ -542,7 +543,7 @@ Zoltan to return the results of <b><a href="#Zoltan_LB_Balance">Zoltan_LB_Balanc
 Memory pointed to by the arguments is freed and the arguments are set to
 NULL in C or nullified in Fortran. NULL arguments may be passed to 
 <b>Zoltan_LB_Free_Data</b>.  Note that this function does not destroy the
-load-balancing data structure itself; it is deallocated through a call to <b><a href="#Zoltan_Destroy">Zoltan_Destroy</a></b>.
+Zoltan data structure itself; it is deallocated through a call to <b><a href="#Zoltan_Destroy">Zoltan_Destroy</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -619,7 +620,7 @@ objects in the new decomposition (i.e., the destination processors).</td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>Zoltan_Destroy</b> frees the memory associated with a load-balancing
+<hr WIDTH="100%"><b>Zoltan_Destroy</b> frees the memory associated with a Zoltan
 structure and sets the structure to NULL in C or nullifies the structure
 in Fortran. Note that <b>Zoltan_Destroy</b> does not deallocate the import
 and export arrays returned from <b><a href="#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>;

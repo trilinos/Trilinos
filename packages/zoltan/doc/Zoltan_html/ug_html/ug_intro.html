@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  Introduction</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -83,7 +83,7 @@ algorithms, only one algorithm is implemented and comparisons to other
 load-balancing methods are not performed to find, perhaps, a more effective
 strategy.&nbsp; See [<a href="ug_refs.html#hendrickson-devine">Hendrickson
 and Devine</a>] for a more thorough discussion of these issues.
-<p>The goal of the Zoltan Dynamic Load-Balancing Library project is to
+<p>The goal of the Zoltan Library project is to
 provide application developers a general-purpose dynamic load-balancing
 tool that can be easily used by a variety of applications. The library
 consists of several different dynamic load-balancing algorithms and is
@@ -97,8 +97,8 @@ These simple query functions must be provided by the application and "registered
 with the library. In this manner, the library never directly accesses the
 application's data structures. Use of the library in a different application
 requires only that the new application supply its own set of query functions
-to the load-balancing library. Once the appropriate query functions are
-registered with the load-balancing library, the application can easily
+to Zoltan. Once the appropriate query functions are
+registered with Zoltan, the application can easily
 select from a number of load-balancing algorithms and invoke load balancing
 at the appropriate places in its computation. While some extra memory and
 function-call overhead is required by this call-back protocol, the generality
@@ -115,7 +115,7 @@ either NemesisI or
 <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a>
 input files, runs Zoltan using this input, and 
 writes simple output files containing information about the resulting
-decomposition.  It allows load-balancing algorithm developers 
+decomposition.  It allows algorithm developers 
 to test changes to Zoltan without having to run Zoltan in 
 a large application code.  Application developers can use the <i>zdrive</i>
 code to see examples of function calls to Zoltan and the implementation of 
@@ -263,9 +263,9 @@ mesh-refinement application).
 <p>A typical interaction between an application and the dynamic load-balancing
 tools is shown in the <a href="#lb_interaction.gif">figure</a> below. Through
 a call to <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
-the application creates a load-balancing data structure, which is storage
-space to hold pointers to registered functions and load-balancing data.
-This structure is passed to a number of load-balancing functions. The application
+the application creates a data structure, which is storage
+space to hold pointers to registered functions and data.
+This structure is passed to a number of Zoltan functions. The application
 then selects a load-balancing method to be used (Recursive Coordination
 Bisection, "RCB," in the example) through a call to <b><a href="ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
 Several query functions needed by the RCB algorithm are registered through
@@ -277,7 +277,7 @@ for a given object (<i>user_return_coords_fn</i>). When the application
 needs load balancing, 
 it calls <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
 to compute a new decomposition on the processors.
-<p>The load-balancing library then follows pointers to the registered query
+<p>Zoltan then follows pointers to the registered query
 functions to build the data structures needed for the RCB algorithm. An
 array of data is built, with one entry for each object owned by the processor.
 The number of objects is determined by following the <i>Get_Num_Obj</i>
@@ -287,7 +287,7 @@ by following the <i>Get_Obj_List</i> function pointer to the <i>user_return_elem
 Then, for each object, the object's coordinates are obtained through calls
 through the <i>Get_Geom</i> function pointer to the registered function
 <i>user_return_coords_fn</i>.
-Once the data structures are built, the load-balancing library can perform
+Once the data structures are built, Zoltan can perform
 the RCB decomposition and return arrays of information describing the new
 decomposition to the application.
 <br>&nbsp;
@@ -331,7 +331,7 @@ decomposition to the application.
 <tr>
 <td><tt>...</tt>
 <br><tt>/* <i>call registered functions to build </i> */</tt>
-<br><tt>/* <i>load-balancing data structures</i> */</tt>
+<br><tt>/* <i>Zoltan data structures</i> */</tt>
 <br><tt>num_objs = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, </tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &amp;ierr);&nbsp;</tt>
@@ -372,7 +372,7 @@ For example, in a finite element application, the "objects" used in load
 balancing may be elements. But when elements are migrated to new processors,
 the nodes associated with those elements must also be sent to the new processors,
 increasing the dependence of data migration on the application.
-<p>A general-purpose load-balancing library can not perform all the operations
+<p>A general-purpose library can not perform all the operations
 required for data migration in all applications. However, it can assist
 an application with the communication required for data migration. As a
 result of the load-balancing algorithm, the library knows where data must
@@ -483,7 +483,7 @@ and the migration tools.</i></caption>
 tools. Thus, an application does not have to use the migration tools
 even though it uses the dynamic load-balancing tools to compute a new decomposition.
 If the application has its own migration routines, it can use them in conjunction
-with the load-balancing routines in the load-balancing library.
+with the load-balancing routines in Zoltan.
 <br>&nbsp;
 
 <h2>
@@ -495,7 +495,7 @@ we have tested the code with other MPI implementations on a variety
 of platforms.  We have every expectation that Zoltan will work fine
 with any MPI library (version 1.1 or later).
 <p>
-Zoltan also uses two other low level 
+Zoltan also uses three other low level 
 <a href="../dev_html/dev_util.html">utility libraries</a>.
 Although these were developed in conjunction with Zoltan, we
 chose to separate them since they provide functionality which may be
@@ -508,7 +508,10 @@ The second library provides support for
 Specifically, it helps with the determination of communication patterns
 for complex sets of messages, and performs the data transfers
 efficiently.  Most of the non-trivial communication operations within
-Zoltan are performed by this library.
+Zoltan are performed by this library.  The third library contains a 
+<a href="../dev_html/dev_util_dd.html">distributed data directory</a>
+that provides efficient, distributed methods for locating off-processor
+data.
 
 <p>
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_usage.html">Next:&nbsp;

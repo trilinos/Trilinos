@@ -7,7 +7,7 @@
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  Load-Balancing Examples</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
@@ -32,11 +32,7 @@ An example of the typical calling sequence for load balancing using Zoltan
 in a finite element application is shown in the <a href="#LB Example Fig">figure</a>
 below. An application first selects a load-balancing algorithm through
 a call to <b><a href="ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
-Appropriate query functions are then registered with the load-balancing
-library through a series of calls to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>.
-In the example, a geometric algorithm, such as RCB, is assumed. Application
-query functions returning lists and coordinates of nodes of the finite
-element mesh are registered. Next, some parameter values are set by calls
+Next, some parameter values are set by calls
 to <b><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 After some computation, load balancing is invoked by calling <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.
 The results of the load balancing include the number of nodes to be imported
@@ -51,8 +47,6 @@ in this <a href="#LB Example Fig">figure</a> but will be addressed in the
 examples</a>. After the data migration is completed, the arrays of information
 about imported and exported nodes returned by <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
 are freed by a call to <b><a href="ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a></b>.
-Finally, when the application is finished with the load balancing operations,
-it calls <b><a href="ug_interface_lb.html#Zoltan_Destroy">Zoltan_Destroy</a></b>.
 <br>&nbsp;
 <br>&nbsp;
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
@@ -68,18 +62,7 @@ imp_local_ids, exp_local_ids;</tt>
 <br><tt>read_load_balancing_info_from_input_file(&amp;lb_method);</tt>
 <br><tt><a href="ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a>(zz,
 lb_method);</tt>
-<p><tt>/* <i>Register load-balancing query functions.</i> */</tt>
-<br><tt><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz, <a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN_TYPE</a>, </tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_dimension, NULL);</tt>
-<br><tt><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz, <a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN_TYPE</a>,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_coords, NULL);</tt>
-<br><tt><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz, <a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN_TYPE</a>,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_num_node, NULL);</tt>
-<br><tt><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz, <a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN_TYPE</a>,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_owned_nodes, NULL);</tt>
 <p><tt>/* <i>Reset some load-balancing parameters.</i> */</tt>
-<br><tt><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
-"debug_level", "4");</tt>
 <br><tt><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "RCB_Reuse", "TRUE");</tt>
 <p><tt>/* <i>Perform computations</i> */</tt>
@@ -97,8 +80,7 @@ lb_method);</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;exp_global_ids, &amp;exp_local_ids,
 &amp;exp_procs);&nbsp;</tt>
 <br><tt>...</tt>
-<br><tt><a href="ug_interface_lb.html#Zoltan_Destroy">Zoltan_Destroy</a> (&amp;zz);&nbsp;</tt>
-<br><tt>...</tt></td>
+</td>
 </tr>
 
 <caption ALIGN=BOTTOM><i>Typical calling sequence for performing load balancing
@@ -122,19 +104,7 @@ with the Zoltan library.</i></caption>
 <br><tt>lb_method = "RCB"</tt>
 <br><tt>ierr = <a href="ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a>(zz,
 lb_method)</tt>
-<p><tt>! <i>Register load-balancing query functions.</i></tt>
-<br><tt>! omit data = C NULL</tt>
-<br><tt>ierr = <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
-<a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN_TYPE</a>, user_return_dimension)</tt>
-<br><tt>ierr = <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
-<a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN_TYPE</a>, user_return_coords)</tt>
-<br><tt>ierr = <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
-<a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN_TYPE</a>, user_return_num_node)</tt>
-<br><tt>ierr = <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
-<a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN_TYPE</a>, user_return_owned_nodes)</tt>
-<p><tt>! <i>Reset some load-balancing parameters.</i></tt>
-<br><tt>ierr = <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
-"debug_level", "4")</tt>
+<p><tt>! <i>Reset some load-balancing parameters</i></tt>
 <br><tt>ierr = <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "RCB_Reuse", "TRUE")</tt>
 <p><tt>! <i>Perform computations</i></tt>
@@ -152,18 +122,16 @@ lb_method)</tt>
 imp_local_ids, imp_procs, &amp;&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; exp_global_ids, exp_local_ids,
 exp_procs)&nbsp;</tt>
-<br><tt>...</tt>
-<br><tt>call <a href="ug_interface_lb.html#Zoltan_Destroy">Zoltan_Destroy</a>(zz)&nbsp;</tt>
 <br><tt>...</tt></td>
 </tr>
 
-<caption ALIGN=BOTTOM><i>Fortran version of the load balancing example.</i></caption>
+<caption ALIGN=BOTTOM><i>Fortran version of the load-balancing example.</i></caption>
 </table></center>
 
 <p>
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
 <a href="ug_examples_mig.html">Next:&nbsp;
 Migration Examples</a>&nbsp; |&nbsp; <a href="ug_examples_init.html">Previous:&nbsp;
-Initialization Example</a>]
+General Usage Example</a>]
 </body>
 </html>
