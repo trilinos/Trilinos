@@ -19,7 +19,6 @@
 /* Prototypes for functions internal to this file */
 
 static void LB_Reftree_Free_Subtree(LB_REFTREE *subroot);
-static int any_vert_equals(int vert_match, int *vertices, int start, int finish);
 static int order_tri_bisect(LB *lb, int *vert1, int *order, int *vertices,
                      int *in_vertex, int *out_vertex, LB_REFTREE *subroot);
 static int order_other_ref(LB *lb, LB_REFTREE *parent, int num_child, 
@@ -1114,21 +1113,6 @@ int hashsize;              /* size of the hash table */
 
   return(final_ierr);
 
-}
-
-/*****************************************************************************/
-
-static int any_vert_equals(int vert_match, int *vertices, int start, int finish)
-{
-/*
- * function to see if one of the vertices between start and finish is vert_match
- */
-int i, result;
-  result = 0;
-  for (i=start; i<=finish; i++) {
-    if (vertices[i] == vert_match) result = 1;
-  }
-  return(result);
 }
 
 /*****************************************************************************/
