@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1377">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  Jostle Interface</title>
@@ -22,7 +22,8 @@
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_alg_oct.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_parmetis.html">Previous</a></i></b></div>
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_alg_oct.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_parmetis.html">Previous</a></i></b></div>
 
 <h2>
 <a NAME="Jostle"></a>Jostle</h2>
@@ -38,11 +39,12 @@ description of graph partitioning as a model for load balancing.
 <p>At present, only the most common Jostle options are supported by Zoltan.
 These are briefly described below. For further details, see the documentation
 available from the <a href="http://www.gre.ac.uk/jostle/">Jostle home page</a>.
-More options may be added to Zoltan upon request.
+Other options may be added to Zoltan upon request.
 <p>Note that Jostle is not distributed with Zoltan. If you wish to use
 Jostle within Zoltan, you must first obtain a <a href="http://www.gre.ac.uk/jostle/plicense.ps.gz">license
 for Parallel Jostle</a> and install it on your system. The license is currently
-free for academic use.
+free for academic use.&nbsp; Zoltan has only been tested with&nbsp; parallel
+Jostle version 1.2.0 and may be incompatible with other versions.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
@@ -93,8 +95,16 @@ instead of multilevel graph partitioning. (Valid values are "on" and "off".)</td
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>JOSTLE_CONNECT</i></td>
 
-<td>Make a diconnected graph connected before partitioning. (Valid values
+<td>Make a disconnected graph connected before partitioning. (Valid values
 are "on" and "off".)</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp;&nbsp; <i>JOSTLE_SCATTER</i></td>
+
+<td NOSAVE>Scatter graph to all processors before partitioning.&nbsp; This
+option requires that the entire graph (that is, all objects) is initially
+located on processor 0. (Valid values are "on" and "off".)</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
