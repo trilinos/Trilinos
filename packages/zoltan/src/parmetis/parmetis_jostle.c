@@ -200,7 +200,7 @@ static int Zoltan_ParMetis_Shared(
   /* Call the real ParMetis interface */
   return Zoltan_ParMetis_Jostle( zz, num_imp, imp_gids, imp_lids,
             imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
-            alg, options, &itr, NULL, NULL, order_info);
+            alg, options, &itr, rank, iperm, order_info);
 
 #endif /* ZOLTAN_PARMETIS */
 }
@@ -236,7 +236,7 @@ int Zoltan_ParMetis_Order(
 )
 {
   /* ParMetis only computes the inverse permutation */
-  *return_args = RETURN_RANK;
+  *return_args = RETURN_IPERM;
 
   /* Call ParMetis_Shared */
   return Zoltan_ParMetis_Shared(zz, NULL, &gids, &lids, NULL,

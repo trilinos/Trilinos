@@ -170,14 +170,16 @@ int Zoltan_Order(
 
   if (ierr) {
     sprintf(msg, "Ordering routine returned error code %d.", ierr);
-    if (ierr == ZOLTAN_FATAL){
+    if (ierr == ZOLTAN_WARN){
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+    } else {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
       ZOLTAN_TRACE_EXIT(zz, yo);
       return (ierr);
     }
-    else
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
   }
+
+  ZOLTAN_TRACE_DETAIL(zz, yo, "Done ordering");
 
   /* Compute inverse permutation if necessary */
   ierr = Zoltan_Get_Distribution(zz, &vtxdist);
@@ -189,10 +191,12 @@ int Zoltan_Order(
 
   if (!(return_args & RETURN_RANK)){
     /* Compute rank from iperm */
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
     Zoltan_Inverse_Perm(zz, iperm, rank, vtxdist, order_type, start_index);
   }
   else if (!(return_args & RETURN_IPERM)){
     /* Compute iperm from rank */
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
     Zoltan_Inverse_Perm(zz, rank, iperm, vtxdist, order_type, start_index);
   }
   ZOLTAN_FREE(&vtxdist);

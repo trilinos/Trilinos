@@ -42,7 +42,7 @@ int Zoltan_Get_Distribution(ZZ *zz, int **vtxdist)
   char *yo = "Zoltan_Get_Distribution";
 
   num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
-  if (ierr){
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
     /* Return error code */
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Get_Num_Obj.");
     return (ierr);
@@ -81,6 +81,7 @@ int Zoltan_Inverse_Perm(
   int i, ierr, num_obj, nrecv, offset;
   int *proclist, *sendlist, *recvlist;
   ZOLTAN_COMM_OBJ *comm_plan;
+  char msg[256];
   char *yo = "Zoltan_Inverse_Perm";
   static int owner();
 
@@ -120,19 +121,20 @@ int Zoltan_Inverse_Perm(
     }
     ierr = Zoltan_Comm_Create(&comm_plan, num_obj, proclist, 
              zz->Communicator, TAG1, &nrecv);
-    if (ierr){
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_Comm_Create");
       goto error;
     }
     if (nrecv != num_obj){
       /* This should never happen. */
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Internal error: nrecv != num_obj. Permutation may be invalid.");
+      sprintf(msg, "Internal error: nrecv (%3d) != num_obj (%3d). Invalid permutation.\n", nrecv, num_obj); 
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
       ierr = ZOLTAN_FATAL;
       goto error;
     }
     /* Do the communication. */
     ierr = Zoltan_Comm_Do(comm_plan, TAG2, (char *)sendlist, 2*sizeof(int), (char *) recvlist);
-    if (ierr){
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_Comm_Do");
       goto error;
     }
@@ -145,6 +147,7 @@ int Zoltan_Inverse_Perm(
   }
   else {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unknown order_type.");
+    ierr = ZOLTAN_FATAL;
     goto error;
   }
 
@@ -187,6 +190,8 @@ static int owner(int *vtxdist, int p, int index)
     else /* index == vtxdist[mid] */
       return mid;
   }
+  /* printf("DEBUG: proc %d owns object %d\n", lo, index); */
+
   return lo;
 }
 
