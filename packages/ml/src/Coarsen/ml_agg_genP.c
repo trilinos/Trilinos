@@ -2232,9 +2232,18 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      fov = (struct ML_Field_Of_Values * )(ag->field_of_values);
 
      /* compute box surrounding field-of-values */
-     
-     ML_Anasazi_Get_FiledOfValuesBox_Interface(Amat,fov);
 
+#ifdef ML_HAVE_ANASAZI
+     ML_Anasazi_Get_FiledOfValuesBox_Interface(Amat,fov);
+#else
+     fprintf( stderr,
+	      "ERROR: You must compile with --with-ml_anasazi for eigen-analysis\n"
+	      "ERROR: (file %s, line %d)\n",
+	      __FILE__,
+	      __LINE__ );
+     exit( EXIT_FAILURE );
+#endif
+     
      if( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
        printf("Field of Values Box (level %d) : Max Real = %e\n",
 	      level,
