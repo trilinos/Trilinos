@@ -132,7 +132,7 @@ OutputManager<ScalarType>::OutputManager() :
 	printID_(0),
 	vb_(Anasazi::Error),
 	iPrint_(true),
-	myOS_(cout)
+	myOS_(std::cout)
 {
 }
 

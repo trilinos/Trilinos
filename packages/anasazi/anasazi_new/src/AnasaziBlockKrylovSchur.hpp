@@ -395,8 +395,11 @@ namespace Anasazi {
     // If this is the first steps of Block Krylov Schur, initialize the first block of _basisvecs
     //
     if (!_iter) {
-      std::vector<int> index( _blockSize );
-      for (i=0; i<_blockSize; i++) {
+      int numIVecs = MVT::GetNumberVecs( *(_problem->GetInitVec()) );
+      if (numIVecs > _blockSize)
+        numIVecs = _blockSize;
+      std::vector<int> index( numIVecs );
+      for (i=0; i<numIVecs; i++) {
 	index[i] = i;
       }
       //
@@ -405,8 +408,22 @@ namespace Anasazi {
       //
       MVT::SetBlock( *(_problem->GetInitVec()), index, *_basisvecs );
       //
+      // Augment the initial vectors with random vectors if necessary
+      //
+      numIVecs = _blockSize - MVT::GetNumberVecs( *(_problem->GetInitVec()) );
+      if (numIVecs > 0) {
+        index.resize(numIVecs);
+        for (i=0; i<numIVecs; i++)
+          index[i] = _blockSize - numIVecs + i;
+        Teuchos::RefCountPtr<MV> tmpIVec = MVT::CloneView( *_basisvecs, index );
+        MVT::MvRandom( *tmpIVec );
+      }  
+      //
       // Orthogonalize the first block of vectors.
       //      
+      index.resize(_blockSize);
+        for (i=0; i<_blockSize; i++)
+          index[i] = i;
       Teuchos::RefCountPtr<MV> U_vec = MVT::CloneView( *_basisvecs, index );
       Teuchos::SerialDenseMatrix<int,ScalarType> G10( _blockSize,_blockSize );
       QRFactorization( *U_vec, G10 );

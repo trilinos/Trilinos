@@ -124,7 +124,7 @@ namespace Anasazi {
     //
     // print (*this)
     //
-    void MvPrint() const { cout<< *this << endl; };
+    void MvPrint() const { std::cout<< *this << endl; };
   private:
   };
   //-------------------------------------------------------------
