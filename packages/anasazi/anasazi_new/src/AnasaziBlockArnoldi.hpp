@@ -29,15 +29,17 @@
 #ifndef ANASAZI_BLOCK_ARNOLDI_HPP
 #define ANASAZI_BLOCK_ARNOLDI_HPP
 
+#include "AnasaziEigensolver.hpp"
+#include "AnasaziEigenproblem.hpp"
+#include "AnasaziSortManager.hpp"
+#include "AnasaziOutputManager.hpp"
+
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "AnasaziEigenproblem.hpp"
-#include "AnasaziSortManager.hpp"
-#include "AnasaziOutputManager.hpp"
 
 /*!	\class Anasazi::BlockArnoldi
 
@@ -50,7 +52,7 @@
 namespace Anasazi {
   
   template <class TYPE>
-  class BlockArnoldi { 
+  class BlockArnoldi : public Eigensolver<TYPE> { 
   public:
     //@{ \name Constructor/Destructor.
     
@@ -85,13 +87,43 @@ namespace Anasazi {
     //@{ \name Solution return methods.
     
     //! This method returns the real part of the computed Ritz values.
-    const TYPE * GetRealRitzVals() { return _ritzvals_r; };
+    const TYPE * GetRealRitzVals() { return(_ritzvals_r); };
     
     //! This method returns the imaginary part of the computed Ritz values.
-    const TYPE * GetImagRitzVals() { return _ritzvals_i; };
+    const TYPE * GetImagRitzVals() { return(_ritzvals_i); };
     
     //! This method returns the Ritz residuals for the computed eigenpairs.
-    const TYPE * GetRitzResiduals() { return _ritzresiduals; };
+    const TYPE * GetRitzResiduals() { return(_ritzresiduals); };
+
+    //! Get the current iteration count.
+    int GetNumIters() const { return(_iter); };
+    
+    //! Get the current restart count of the iteration method.
+    /*! Some eigensolvers can perform restarts (i.e. Arnoldi) to reduce memory
+      and orthogonalization costs.  For other eigensolvers that don't
+      perform restarts (i.e. LOBPCG), this is not a valid stopping criteria.
+    */
+    int GetNumRestarts() const { return(_restarts); };
+    
+    //! Get the solvers native residuals for the current eigenpairs. 
+    /*! This is not be the same as the true residuals for most solvers. Sometimes the native
+      residuals are not in multivector form, so the norm type is solver dependent.  
+      
+      \note
+      <ol>
+      <li> If the native residual is in multivector form then a non-null pointer will be
+      returned, else the normvec will be populated with the current residual norms. 
+      <li> If the native residual is returned in multivector form, the memory is managed
+      by the calling routine.
+      </ol>
+    */
+    MultiVec<TYPE>* GetNativeResiduals( TYPE* normvec ) const {};
+    
+    /*! \brief Get a constant reference to the current linear problem, 
+      which may include a current solution.
+    */
+    Eigenproblem<TYPE>& GetEigenproblem() const { return(_problem); };
+    
     //@}
     
     //@{ \name Output methods.
@@ -1389,9 +1421,9 @@ namespace Anasazi {
     //cout<<"Before sorting the Schur form (H):"<<endl;
     //H.print(cout);	  
     if (_problem.IsSymmetric())
-      _sm.sort( n, _ritzvals_r, _order );
+      _sm.sort( this, n, _ritzvals_r, _order );
     else
-      _sm.sort( n, _ritzvals_r, _ritzvals_i, _order );
+      _sm.sort( this, n, _ritzvals_r, _ritzvals_i, _order );
     //
     // Copy the nev eigenvalues into the proper vectors
     // NOTE:  If we don't have nev Ritz values, then only n are copied

@@ -120,6 +120,11 @@ public:
 
 	virtual void MvTransMv ( TYPE alpha, MultiVec<TYPE>& A, Teuchos::SerialDenseMatrix<int,TYPE>& B) = 0;
 
+	/*! \brief Compute a vector \c b where the components are the individual dot-products, i.e.\c b[i] = \c A[i]^T*\c this[i] where \c A[i] is the i-th column of A.
+	*/
+
+	virtual void MvDot ( MultiVec<TYPE>& A, TYPE b[] ) = 0;
+
 	//@}
 	//@{ \name Norm method.
 

@@ -103,14 +103,21 @@ public:
 	// B <- alpha * A^T * (*this)
 	//
 	void MvTransMv ( double alpha, MultiVec<double>& A, Teuchos::SerialDenseMatrix<int,double>& B );
+        //
+        // b[i] = A[i]^T * this[i]
+        // 
+        void MvDot ( MultiVec<double>& A, double b[] );
 	//
 	// alpha[i] = norm of i-th column of (*this)
-	//
-	void MvNorm ( double* normvec);
-	//
+	//	
+        void MvNorm ( double * normvec ) {
+	  if (normvec)
+	    assert( Norm2(normvec) == 0 );
+	};
+  	//
 	// random vectors in i-th column of (*this)
 	//
-	void MvRandom();
+	void MvRandom() { assert( Random() == 0 ); };
         //
         // initializes each element of (*this) with alpha
         //
@@ -275,27 +282,17 @@ void PetraVec::MvTransMv ( double alpha, MultiVec<double>& A,
 		assert(info==0);
 	}
 }
-//
-// alpha[i] = norm of i-th column of (*this)
-//
 
-void PetraVec::MvNorm ( double * normvec ) 
-{
-	int info=0;
-	if (normvec) {
-		info = Norm2(normvec);
-		assert(info==0);
-	}
-}
 //
-// random vectors in i-th column of (*this)
-//
+// b[i] = A[i]^T * this[i]
+// 
 
-void PetraVec::MvRandom () 
+void PetraVec::MvDot ( MultiVec<double>& A, double b[] )
 {
-	int info=0;
-	info = Random();
-	assert(info==0);
+  PetraVec *A_vec = dynamic_cast<PetraVec *>(&A); assert(A_vec!=NULL);
+  if (b) {
+    assert( this->Dot( *A_vec, b ) == 0 );
+  }
 }
 //
 // initializes each element of (*this) with alpha

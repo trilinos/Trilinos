@@ -57,19 +57,12 @@ namespace Anasazi {
     //! Empty constructor - allows Anasazi::Eigenproblem to be described at a later time through "Set Methods".
     Eigenproblem(void);
     
-    //! Standard Eigenvalue Problem Constructor.
-    Eigenproblem( Operator<TYPE>* A, MultiVec<TYPE>* Ivec );
+    //! Standard Eigenvalue Problem Constructor with Operator [optional].
+    Eigenproblem( Operator<TYPE>* A, MultiVec<TYPE>* Ivec, Operator<TYPE>* Op = 0 );
     
-    //! Standard Eigenvalue Problem Constructor w/ Operator.
-    Eigenproblem( Operator<TYPE>* A, MultiVec<TYPE>* Ivec, Operator<TYPE>* Op );
-    
-    //! Generalized Eigenvalue Problem Constructor
+    //! Generalized Eigenvalue Problem Constructor with Operator [optional].
     Eigenproblem( Operator<TYPE>* A, Operator<TYPE>* B,
-		  MultiVec<TYPE>* Ivec );
-    
-    //! Generalized Eigenvalue Problem Constructor with Matrix A
-    Eigenproblem( Operator<TYPE>* A, Operator<TYPE>* B,
-		  MultiVec<TYPE>* Ivec, Operator<TYPE>* Op );
+		  MultiVec<TYPE>* Ivec, Operator<TYPE>* Op = 0 );
     
     //! Copy Constructor.
     Eigenproblem( const Eigenproblem<TYPE>& Problem );	
@@ -246,28 +239,9 @@ namespace Anasazi {
   //=============================================================================
     
   template<class TYPE>
-  Eigenproblem<TYPE>::Eigenproblem( Operator<TYPE>* A, MultiVec<TYPE>* Ivec ) :
-    _A(A), _B(0), _Op(0), _Prec(0), _InitVec(Ivec), _REvals(0), 
-    _IEvals(0), _REvecs(0), _IEvecs(0), _nev(1), _blocksize(1), _isSym(false)
-  {
-  }
-  
-  //=============================================================================
-  
-  template<class TYPE>
   Eigenproblem<TYPE>::Eigenproblem( Operator<TYPE>* A, MultiVec<TYPE>* Ivec, 
 				    Operator<TYPE>* Op ) :    
     _A(A), _B(0), _Op(Op), _Prec(0), _InitVec(Ivec), _REvals(0),
-    _IEvals(0), _REvecs(0), _IEvecs(0), _nev(1), _blocksize(1), _isSym(false)
-  {
-  }
-  
-  //=============================================================================
-  
-  template<class TYPE>
-  Eigenproblem<TYPE>::Eigenproblem( Operator<TYPE>* A, Operator<TYPE>* B,
-				    MultiVec<TYPE>* Ivec ) :
-    _A(A), _B(B), _Op(0), _Prec(0), _InitVec(Ivec), _REvals(0),
     _IEvals(0), _REvecs(0), _IEvecs(0), _nev(1), _blocksize(1), _isSym(false)
   {
   }

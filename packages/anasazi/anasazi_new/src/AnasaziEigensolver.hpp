@@ -35,7 +35,6 @@
 */
 
 #include "AnasaziEigenproblem.hpp"
-#include "AnasaziOperator.hpp"
 #include "AnasaziMultiVec.hpp"
 
 /*! \class Anasazi::Eigensolver

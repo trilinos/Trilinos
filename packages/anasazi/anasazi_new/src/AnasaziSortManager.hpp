@@ -40,6 +40,7 @@
 */
 
 #include "AnasaziReturnType.hpp"
+#include "AnasaziEigensolver.hpp"
 
 namespace Anasazi {
 
@@ -56,6 +57,8 @@ namespace Anasazi {
 
     //! Sort the vector of eigenvalues, optionally returning the permutation vector.
     /**
+       @param solver [in] Eigensolver that is calling the sorting routine
+
        @param n [in] Size of the array
 
        @param evals [in/out] Array of length n containing the eigenvalues to be sorted
@@ -64,10 +67,12 @@ namespace Anasazi {
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    virtual ReturnType sort(int n, TYPE *evals, int *perm = 0) const { return Undefined; };
+    virtual ReturnType sort(Eigensolver<TYPE>* solver, int n, TYPE *evals, int *perm = 0) const { return Undefined; };
     
     //! Sort the vectors of eigenpairs, optionally returning the permutation vector.
     /**
+       @param solver [in] Eigensolver that is calling the sorting routine
+
        @param n [in] Size of the array
 
        @param r_evals [in/out] Array of length n containing the real part of the eigenvalues to be sorted 
@@ -78,7 +83,7 @@ namespace Anasazi {
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    virtual ReturnType sort(int n, TYPE *r_evals, TYPE *i_evals, int *perm = 0) const { return Undefined; };
+    virtual ReturnType sort(Eigensolver<TYPE>* solver, int n, TYPE *r_evals, TYPE *i_evals, int *perm = 0) const { return Undefined; };
     
   };
   

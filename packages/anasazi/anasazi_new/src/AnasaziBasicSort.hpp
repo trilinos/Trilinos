@@ -66,6 +66,8 @@ namespace Anasazi {
 
     //! Sort the vector of eigenvalues with respect to the chosen sorting type, optionally returning the permutation vector.
     /**
+       @param solver [in] Eigensolver that is calling the sorting routine
+
        @param n [in] Size of the array
 
        @param evals [in/out] Array of length n containing the eigenvalues to be sorted
@@ -74,10 +76,12 @@ namespace Anasazi {
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(int n, TYPE *evals, int *perm = 0) const;
+    ReturnType sort(Eigensolver<TYPE>* solver, int n, TYPE *evals, int *perm = 0) const;
     
     //! Sort the vectors of eigenpairs with respect to the chosen sorting type, optionally returning the permutation vector.
     /**
+       @param solver [in] Eigensolver that is calling the sorting routine
+
        @param n [in] Size of the array
 
        @param r_evals [in/out] Array of length n containing the real part of the eigenvalues to be sorted 
@@ -88,7 +92,7 @@ namespace Anasazi {
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(int n, TYPE *r_evals, TYPE *i_evals, int *perm = 0) const;
+    ReturnType sort(Eigensolver<TYPE>* solver, int n, TYPE *r_evals, TYPE *i_evals, int *perm = 0) const;
     
   protected: 
     
@@ -97,7 +101,7 @@ namespace Anasazi {
   };
 
   template<class TYPE>
-  ReturnType BasicSort<TYPE>::sort(int n, TYPE *evals, int *perm) const 
+  ReturnType BasicSort<TYPE>::sort(Eigensolver<TYPE>* solver, int n, TYPE *evals, int *perm) const 
   {
     int i, j, tempord;
     TYPE temp, temp2;
@@ -213,7 +217,7 @@ namespace Anasazi {
   
 
   template<class TYPE>
-  ReturnType BasicSort<TYPE>::sort(int n, TYPE *r_evals, TYPE *i_evals, int *perm) const {
+  ReturnType BasicSort<TYPE>::sort(Eigensolver<TYPE>* solver, int n, TYPE *r_evals, TYPE *i_evals, int *perm) const {
     int i, j, tempord;
     TYPE temp, tempr, tempi;
     Teuchos::LAPACK<int,TYPE> lapack;
