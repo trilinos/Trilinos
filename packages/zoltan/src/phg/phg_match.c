@@ -795,7 +795,10 @@ skip_phase1:
 
         if (sendsize + msgsize <= nSend)  {
           /* current partial sums fit, so put them into the send buffer */
-          dest[sendcnt]   = gno % hgc->nProc_y;  /* processor to compute tsum */
+          if (cFLAG)
+            dest[sendcnt]   = 0;  /* debug: let row 0 do sum */
+          else
+            dest[sendcnt]   = gno % hgc->nProc_y;  /* proc to compute tsum */
           size[sendcnt++] = msgsize;             /* size of message */
           sendsize     += msgsize;             /* cummulative size of message */
           
@@ -956,9 +959,12 @@ skip_phase1:
             master_procs[nmaster++] = VTX_TO_PROC_X (hg, gno);
           }
         } 
+      if (cFLAG)  {
+        /* Broadcast what we matched so far */
+        MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
+      }    
     }                                       /* DONE: kstart < nTotal loop */
-    if (cFLAG)   {
-      MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
+    if (cFLAG)  {
       break;      /* done, no more phases (3 or 4) or rounds */
     }    
 
