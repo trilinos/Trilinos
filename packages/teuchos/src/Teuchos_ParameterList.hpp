@@ -138,19 +138,6 @@ public:
   	template<typename T>
   	const T& get(const string& name) const;  
 
-  	/*! \brief Retrieves parameter \c name of type \c T from a list.  
-		\note <b>It is not recommended that this method be used directly!</b>  
-		Please use either the helper function <b>getParameter</b> or the other <b>get</b> methods. 
-  	*/
-  	template<typename T>
-  	T& get(const string& name, T* def_ptr);
-
-  	/*! \brief Retrieves parameter \c name of type \c T from a const list.  
-		\note <b>It is not recommended that this method be used directly!</b>  
-		Please use either the helper function <b>getParameter</b> or the other <b>get</b> methods. 
-  	*/
-  	template<typename T>
-  	const T& get(const string& name, T* def_ptr) const;
   //@}
 
   //@{ \name Sublist Methods
@@ -267,34 +254,6 @@ const T& ParameterList::get(const string& name) const
 }
 
 template<typename T>
-T& ParameterList::get(const string& name, T* def_ptr)
-{
-  ConstIterator i = params_.find(name);
-
-  // The parameter was not found, add it to the list
-  if (i == params_.end()) {
-    params_[name].setValue(*def_ptr, true);
-    i = params_.find(name);
-  }
-  // Return the value of the parameter
-  return getValue<T>(entry(i));
-}
-
-template<typename T>
-const T& ParameterList::get(const string& name, T* def_ptr) const
-{
-  ConstIterator i = params_.find(name);
-
-  // If this parameter was not found and is of the right type, return it.
-  if (i != params_.end() && isType(name, def_ptr)) {
-	return getValue<T>(entry(i));
-  }
-
-  // Return the value of the default parameter if not found.
-  return *def_ptr;
-}
-
-template<typename T>
 bool ParameterList::isType(const string& name, T* ptr) const
 {
   ConstIterator i = params_.find(name);
@@ -331,7 +290,8 @@ bool ParameterList::isType(const string& name) const
   // If no exception was thrown, we should be OK.
   return true;
 }
- 
+
+
 /*! \relates ParameterList
     \brief A templated helper function for getting a parameter from a non-const list.
     This helper function prevents the need for giving a nominal value of the specific template type.
@@ -341,16 +301,17 @@ bool ParameterList::isType(const string& name) const
 template<typename T>
 T& getParameter( ParameterList& l, const string& name )
 {
-  // CAREFUL:  We need to be sure the parameter exists before using the (T*)NULL to get the parameter.
+  T temp_var;
+  // CAREFUL:  We need to be sure the parameter exists before using the temp variable to get the parameter.
   // This parameter was not found or is wrong type, throw an exception
   TEST_FOR_EXCEPTION( !l.isParameter( name ), std::runtime_error,
 	"getParameter ( " << name << " ) failed -- parameter does not exist! " );
-  TEST_FOR_EXCEPTION( !l.isType( name, (T*)NULL ), std::runtime_error,
+  TEST_FOR_EXCEPTION( !l.isType( name, &temp_var ), std::runtime_error,
 	"getParameter ( " << name << " ) failed -- parameter is wrong type! " );
   //
   // This parameter exists and is of the right type, so we can retrieve it safely.    
   //
-  return l.get( name, (T*)NULL );
+  return l.get( name, temp_var );
 }
 
 /*! \relates ParameterList
@@ -362,16 +323,17 @@ T& getParameter( ParameterList& l, const string& name )
 template<typename T>
 const T& getParameter( const ParameterList& l, const string& name )
 {
-  // CAREFUL:  We need to be sure the parameter exists before using the (T*)NULL to get the parameter.
+  T temp_var;
+  // CAREFUL:  We need to be sure the parameter exists before using the temp variable to get the parameter.
   // This parameter was not found or is wrong type, throw an exception
   TEST_FOR_EXCEPTION( !l.isParameter( name ), std::runtime_error,
 	"getParameter ( " << name << " ) failed -- parameter does not exist! " );
-  TEST_FOR_EXCEPTION( !l.isType( name, (T*)NULL ), std::runtime_error,
+  TEST_FOR_EXCEPTION( !l.isType( name, &temp_var ), std::runtime_error,
 	"getParameter ( " << name << " ) failed -- parameter is wrong type! " );
   //
   // This parameter exists and is of the right type, so we can retrieve it safely.    
   //
-  return l.get( name, (T*)NULL );
+  return l.get( name, temp_var );
 }
 
 /*! \relates ParameterList
