@@ -42,7 +42,8 @@
 using namespace NOX;
 using namespace NOX::LineSearch;
 
-Polynomial::Polynomial(Parameter::List& params) 
+Polynomial::Polynomial(Parameter::List& params) :
+  inputList(0)
 {
   reset(params);
 }
@@ -54,10 +55,37 @@ Polynomial::~Polynomial()
 
 bool Polynomial::reset(Parameter::List& params)
 { 
+  if (params.isParameterString("Convergence Criteria")) {
+    string choice = params.getParameter("Convergence Criteria", "Ared/Pred");
+    if (choice == "Ared/Pred") {
+      convCriteria = AredPred;
+    }
+    else if (choice == "Armijo-Goldstein") {
+      convCriteria = ArmijoGoldstein;
+    }
+    else {
+      cout << "ERROR: NOX::LineSearch::Quadratic::reset() - the choice of "
+	   << "\"Convergence Criteria\" parameter is invalid." << endl;
+      throw "NOX Error";
+    }
+  }
+  else {
+    // default to "Armijo-Goldstein" if "Convergence Criteria" is not set
+    convCriteria = ArmijoGoldstein;
+  } 
+
   minstep = params.getParameter("Minimum Step", 1.0e-12);
   defaultstep = params.getParameter("Default Step", 1.0);
   recoverystep = params.getParameter("Recovery Step", defaultstep);
   maxiters = params.getParameter("Max Iters", 100);
+  alpha = params.getParameter("Alpha Factor", 1.0e-4);
+  minBoundFactor = params.getParameter("Min Bounds Factor", 0.1);
+  maxBoundFactor = params.getParameter("Max Bounds Factor", 0.9);
+  inputList = &params;
+  totalNumLineSearchCalls = 0;
+  totalNumNonTrivialLineSearches = 0;
+  totalNumFailedLineSearches = 0;
+  totalNumIterations = 0;
   return true;
 }
 
@@ -65,6 +93,8 @@ bool Polynomial::compute(Abstract::Group& newgrp, double& step,
 			 const Abstract::Vector& dir,
 			 const Solver::Generic& s) 
 {
+  totalNumLineSearchCalls += 1;
+
   const Abstract::Group& oldgrp = s.getPreviousSolutionGroup();
   
   double oldf = 0.5*oldgrp.getNormF()*oldgrp.getNormF();  
@@ -95,7 +125,29 @@ bool Polynomial::compute(Abstract::Group& newgrp, double& step,
    cout << "\n" << Utils::fill(72) << "\n" << "-- Polynomial Line Search -- \n";
   }
 
-  while (newf >= oldf+0.0001*step*oldfprime) {  //Armijo-Goldstein condition, RH
+  // Get the linear solve tolerance if doing ared/pred for conv criteria
+  const NOX::Parameter::List& p = s.getParameterList();
+  double eta_original = 0.0;
+  double eta = 0.0;
+  if (convCriteria == AredPred) {
+    eta_original = p.sublist("Direction").sublist("Linear Solver").getParameter("Tolerance", -1.0);
+    eta = eta_original;
+  }
+
+  // Compute the convergence criteria for the line search 
+  double convergence = 0.0;
+  if (convCriteria == ArmijoGoldstein) {
+    convergence = oldf + alpha*step*oldfprime;
+  }
+  else if (convCriteria == AredPred) {
+    convergence = oldf*(1.0-alpha*(1.0-eta));
+  }
+  
+  // Increment the number of newton steps requiring a line search
+  if (newf >= convergence)
+    totalNumNonTrivialLineSearches += 1;
+
+  while (newf >= convergence) {
 
     if (Utils::doPrint(Utils::InnerIteration)) {
       cout << setw(3) << niters << ":";
@@ -105,79 +157,119 @@ bool Polynomial::compute(Abstract::Group& newgrp, double& step,
       cout << endl;
     }
 
-    if( firstPass == true)
-    {
+    // update the iteration count 
+    totalNumIterations += 1;
+    
+    if( firstPass == true) {
 
-     /*   First try quadratic  */
-
+      /*   First try quadratic  */
+      
       tempStep = -oldfprime/(2.0*(newf - oldf - oldfprime)) ;
       firstPass = false;
-     }
-
-     else {
-
-     /*   Do cubic as many times as needed */
-
-       term1 = newf - oldf - step*oldfprime ;
-       term2 = prevf - oldf - previousStep*oldfprime ;
-       a = 1.0/(step-previousStep)*( term1/step/step -
-                                    term2/previousStep/previousStep) ;
-       b = 1.0/(step-previousStep)*( -term1*previousStep/step/step +
-                                    term2*step/previousStep/previousStep) ;
-       disc = b*b - 3.0*a*oldfprime ;
-       if(disc < 0) {
-         step = recoverystep;
-         newgrp.computeX(oldgrp, dir, step);
-         newgrp.computeF();    
-         newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
-         cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-         cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2.*oldf));
-         cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2.*newf));
-         cout << " (USING RECOVERY STEP!)" << endl;
-         cout << Utils::fill(72) << "\n" << endl;
-         isfailed = true;
-         return(!isfailed);
-       }
-       if( fabs(a) < 1.e-12)
-          tempStep = -oldfprime/2.0/b ;
-       else
-          tempStep = (-b + sqrt(disc))/3.0/a ;
-
-       if(tempStep > 0.5*step) tempStep = 0.5*step ;
-
-     }
-    
-     previousStep = step ;
-     prevf = newf ; 
-
-     /*   Respect bounds, which are hard-coded here  */ 
-
-    if(tempStep < 0.10*step) step *= 0.10;
-    else step = tempStep ;
-
-
-    if ((step < minstep) || (niters > maxiters))
-    {
-      step = recoverystep;
-      newgrp.computeX(oldgrp, dir, step);
-      newgrp.computeF();    
-      newf = 0.5*newgrp.getNormF()*newgrp.getNormF(); 
-      cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-      cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2.*oldf));
-      cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2.*newf));
-      cout << " (USING RECOVERY STEP!)" << endl;
-      cout << Utils::fill(72) << "\n" << endl;
-      isfailed = true;
-      return(!isfailed);
     }
+    else {
+
+      /*   Do cubic as many times as needed */
+      
+      term1 = newf - oldf - step*oldfprime ;
+      term2 = prevf - oldf - previousStep*oldfprime ;
+      a = 1.0/(step-previousStep)*( term1/step/step -
+                                    term2/previousStep/previousStep) ;
+      b = 1.0/(step-previousStep)*( -term1*previousStep/step/step +
+                                    term2*step/previousStep/previousStep) ;
+      disc = b*b - 3.0*a*oldfprime ;
+      if(disc < 0) {
+	step = recoverystep;
+	newgrp.computeX(oldgrp, dir, step);
+	newgrp.computeF();    
+	newf = 0.5*newgrp.getNormF()*newgrp.getNormF(); 
+	if (Utils::doPrint(Utils::InnerIteration)) { 
+	  cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
+	  cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2.*oldf));
+	  cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2.*newf));
+	  cout << " (USING RECOVERY STEP!)" << endl;
+	  cout << Utils::fill(72) << "\n" << endl;
+	}
+	isfailed = true;
+	setOutputParameters();
+	return(!isfailed);
+      }
+      if( fabs(a) < 1.e-12)
+	tempStep = -oldfprime/2.0/b ;
+      else
+	tempStep = (-b + sqrt(disc))/3.0/a ;
+      
+      if(tempStep > 0.5*step) tempStep = 0.5*step ;
+      
+    }
+    
+    previousStep = step ;
+    prevf = newf ; 
+    
+    if (tempStep < minBoundFactor*step) 
+      step *= minBoundFactor;
+    else if (tempStep > maxBoundFactor*step) 
+      step *= maxBoundFactor;
+    else step = tempStep;
+    
+    // Safeguard while loop termination for by adjusting eta during "Ared/Pred".
+    // The "Direction" also needs to use this eta in the next computation
+    // if using inexact Newton with "Type 1" or Type 2" eta computation.
+    eta = 1.0-tempStep*(1.0-eta);
+    
+    if ((step < minstep) || (niters > maxiters))
+      {
+	totalNumFailedLineSearches += 1;
+	step = recoverystep;
+	
+	// For directions that require an iterative linear solve:
+	// If we are not using a constant tolerance in the linear solver 
+	// (i.e. we are using Homer Walker's "Type 1" or "Type 2" criteria) 
+	// then we must adjust the old tolerance to be used in the next 
+	// computation of eta in the direction object based on these 
+	// linesearch results
+	eta = 1.0-step*(1.0-eta_original);
+	inputList->setParameter("Adjusted Tolerance", eta);
+	
+	// Update the group, and exit compute()
+	newgrp.computeX(oldgrp, dir, step);
+	newgrp.computeF();    
+	newf = 0.5*newgrp.getNormF()*newgrp.getNormF(); 
+	if (Utils::doPrint(Utils::InnerIteration)) {
+	  cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
+	  cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2.*oldf));
+	  cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2.*newf));
+	  cout << " (USING RECOVERY STEP!)" << endl;
+	  cout << Utils::fill(72) << "\n" << endl;
+	}
+	isfailed = true;
+	setOutputParameters();
+	return(!isfailed);
+      }
     
     niters ++;
     newgrp.computeX(oldgrp, dir, step);
     newgrp.computeF();    
-    newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
-                            // Redefined f(), RH
-  } 
-
+    newf = 0.5*newgrp.getNormF()*newgrp.getNormF(); 
+    
+    // Compute the convergence criteria for the line search 
+    if (convCriteria == AredPred) {
+      convergence = oldf*(1.0-alpha*(1.0-eta));
+    } 
+    else {
+      // defaults to Armijo-Goldstein
+      convergence = oldf + alpha*step*oldfprime;
+    }
+    
+  } // End while loop 
+  
+  // For directions that require an iterative linear solve:
+  // If we are not using a constant tolerance in the linear solver 
+  // (i.e. we are using Homer Walker's "Type 1" or "Type 2" criteria) 
+  // then we must adjust the old tolerance to be used in the next 
+  // computation of eta in the direction object based on these 
+  // linesearch results
+  inputList->setParameter("Adjusted Tolerance", eta);
   
   if (Utils::doPrint(Utils::InnerIteration)) {
       cout << setw(3) << niters << ":";
@@ -189,6 +281,15 @@ bool Polynomial::compute(Abstract::Group& newgrp, double& step,
 
   }
 
+  setOutputParameters();
   return (!isfailed);
 }
 
+bool Polynomial::setOutputParameters() {
+  NOX::Parameter::List& outputList = inputList->sublist("Output");
+  outputList.setParameter("Total Number of Line Search Calls", totalNumLineSearchCalls);
+  outputList.setParameter("Total Number of Non-trivial Line Searches", totalNumNonTrivialLineSearches);
+  outputList.setParameter("Total Number of Failed Line Searches", totalNumFailedLineSearches);
+  outputList.setParameter("Total Number of Line Search Inner Iterations", totalNumIterations);
+  return true;
+}
