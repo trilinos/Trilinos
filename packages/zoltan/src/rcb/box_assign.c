@@ -236,7 +236,7 @@ int             *numparts,      /* current number of partitions on list */
 int              partmid)       /* 1st partition in upper half */
 {
      double p1[3], p2[3];       /* two points of the box used to test */
-     double min, max;           /* values for two points */
+     volatile double min, max;  /* values for two points */
      double cut;                /* current cut */
 
      /* end recursion when partition size is a single partition */
@@ -315,7 +315,7 @@ int             *numparts,      /* current number of partitions on list */
 int              partmid)       /* 1st partition in upper half */
 {
      double p1[2], p2[2];       /* two points of the box used to test */
-     double min, max;           /* values for two points */
+     volatile double min, max;  /* values for two points */
      double cut;                /* current cut */
 
      /* end recursion when partition size is a single partition */
