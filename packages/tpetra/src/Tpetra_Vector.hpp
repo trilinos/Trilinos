@@ -82,6 +82,99 @@ public:
 
   //@}
 
+	//@{ \name Post-Construction Modification Routines
+
+	//! Submit entries. Values submitted will be summed with existing values.
+	void submitEntries(OrdinalType numEntries, OrdinalType* indices, ScalarType* values);
+
+	//! Set all entries to scalarValue.
+	void setAllToScalar(ScalarType const value);
+
+	//! Set all entries to random values.
+	void setAllToRandom();
+
+	//@}
+
+
+	//@{ \name Extraction Methods
+
+	//! Put vector entries into user array (copy)
+	void extractCopy(ScalarType* userArray) const;
+
+	//! Put pointers to vector entries into user array (view)
+	void extractView(ScalarType** userPointerArray) const;
+
+	//@}
+
+
+	//@{ \name Mathematical Methods
+
+	//! Returns result of dot product, \e this = X.Y.
+	void dotProduct(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType> const& y) const;
+
+	//! Changes this vector to elementwise absolute values of x.
+	void absoluteValue(Vector<OrdinalType, ScalarType> const& x);
+
+  //! Changes this vector to element-wise reciprocal values of x.
+  void reciprocal(Vector<OrdinalType, ScalarType> const& x);
+
+  //! Scale the current values of a vector, \e this = scalarThis*\e this.
+  void scale(ScalarType scalarThis);
+
+  //! Replace vector values with scaled values of x, \e this = scalarX*x.
+  void scale(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x);
+
+  //! Update vector values with scaled values of x, \e this = scalarThis*\e this + scalarX*x.
+  void update(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x, ScalarType scalarThis);
+
+  //! Update vector with scaled values of x and y, \e this = scalarThis*\e this + scalarX*x + scalarY*y.
+  void update(ScalarType scalarX, Vector<OrdinalType, ScalarType> const& x, ScalarType scalarY, 
+							Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis);
+
+  //! Compute 1-norm of vector.
+  ScalarType norm1() const;
+
+  //! Compute 2-norm of vector.
+  ScalarType norm2() const;
+
+  //! Compute Inf-norm of vector.
+  ScalarType normInf() const;
+
+  //! Compute Weighted 2-norm (RMS Norm) of vector.
+  ScalarType normWeighted(Vector<OrdinalType, ScalarType> const& weights) const;
+
+  //! Compute minimum value of vector.
+  ScalarType minValue() const;
+
+  //! Compute maximum value of vector.
+  ScalarType maxValue() const;
+
+  //! Compute mean (average) value of vector.
+  ScalarType meanValue() const;
+
+	//! Vector multiplication (elementwise) 
+	/*! \e this = scalarThis*\e this + scalarXY*x@y, where @ represents elementwise multiplication. */
+	void elementwiseMultiply(ScalarType scalarXY, Vector<OrdinalType, ScalarType> const& x, 
+													 Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis);
+
+	//! Reciprocal multiply (elementwise)
+	/*! \e this = scalarThis*\e this + scalarXY*y@x, where @ represents elementwise division. */
+	void elementwiseReciprocalMultiply(ScalarType scalarXY, Vector<OrdinalType, ScalarType> const& x, 
+																		 Vector<OrdinalType, ScalarType> const& y, ScalarType scalarThis);
+
+	//@}
+
+
+	//@{ \name Random number utilities
+
+	//! Get seed
+	ScalarType getSeed() const;
+
+	//! Set seed
+	void setSeed(ScalarType seed);
+
+	//@}
+
 
 	//@{ \name Element access methods
 
