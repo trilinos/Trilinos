@@ -419,7 +419,7 @@ Group::applyRightPreconditioning(const Vector& input, Vector& result) const
   ierr = PCSetVector(pc,r);CHKERRQ(ierr);
 
   // Apply the preconditioner
-  ierr = PCApply(pc,input.getPetscVector(),r);CHKERRQ(ierr);
+  ierr = PCApply(pc,input.getPetscVector(),r, PC_RIGHT);CHKERRQ(ierr);
 
   // Cleanup
   ierr = PCDestroy(pc);CHKERRQ(ierr);
