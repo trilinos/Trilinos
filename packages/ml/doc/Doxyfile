@@ -244,7 +244,7 @@ WARN_FORMAT            = "$file:$line: $text"
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces. 
 
-INPUT                  = index.doc ../src
+INPUT                  = index.doc ../src/
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
@@ -414,7 +414,7 @@ EXTRA_PACKAGES         =
 # the first chapter. If it is left blank doxygen will generate a 
 # standard header. Notice: only use this tag if you know what you are doing! 
 
-LATEX_HEADER           = header.tex
+LATEX_HEADER           = 
 
 # If the PDF_HYPERLINKS tag is set to YES, the LaTeX that is generated 
 # is prepared for conversion to pdf (using ps2pdf). The pdf file will 
@@ -551,7 +551,7 @@ INCLUDE_FILE_PATTERNS  =
 # or name=definition (no spaces). If the definition and the = are 
 # omitted =1 is assumed. 
 
-PREDEFINED             = DOXYGEN_SHOULD_SKIP_THIS 
+PREDEFINED             = HAVE_ML_EPETRA HAVE_ML_ANASAZI HAVE_ML_TEUCHOS HAVE_ML_IFAPCK HAVE_ML_MPI ML_MPI HAVE_ML_TRIUTILS HAVE_ML_METIS HAVE_ML_PARMETIS2X HAVE_ML_PARMETIS3X HAVE_ML_AMESOS
 
 # If the MACRO_EXPANSION and EXPAND_PREDEF_ONLY tags are set to YES then 
 # this tag can be used to specify a list of macro names that should be expanded. 
