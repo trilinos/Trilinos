@@ -108,6 +108,7 @@ EXTRA_EXTENDED_H = \
 	$(srcdir)/Teuchos_MPIContainerComm.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
 	$(srcdir)/Teuchos_MPITraits.hpp \
+	$(srcdir)/Teuchos_ParameterXMLFileReader.hpp \
 	$(srcdir)/Teuchos_StringInputSource.hpp \
 	$(srcdir)/Teuchos_StringInputStream.hpp \
 	$(srcdir)/Teuchos_StrUtils.hpp \
@@ -127,6 +128,7 @@ EXTRA_EXTENDED = \
 	$(srcdir)/Teuchos_Libxml2HandlerAdapter.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp \
 	$(srcdir)/Teuchos_MPISession.cpp \
+	$(srcdir)/Teuchos_ParameterXMLFileReader.cpp \
 	$(srcdir)/Teuchos_StrUtils.cpp \
 	$(srcdir)/Teuchos_StringInputSource.cpp \
 	$(srcdir)/Teuchos_StringInputStream.cpp \

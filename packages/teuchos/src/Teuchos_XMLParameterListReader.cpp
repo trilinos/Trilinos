@@ -43,10 +43,10 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
 
   ParameterList rtn;
 
-
   for (int i=0; i<xml.numChildren(); i++)
     {
       XMLObject child = xml.getChild(i);
+
       TEST_FOR_EXCEPTION( (child.getTag() != "ParameterList" 
                            && child.getTag() != "Parameter"), 
                          runtime_error,
