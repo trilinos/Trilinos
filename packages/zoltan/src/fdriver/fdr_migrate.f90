@@ -503,6 +503,8 @@ type(MESH_INFO), pointer :: mesh_data
     print *, "Fatal: error rebuilding elem comm maps"
   endif
 
+  ierr = ZOLTAN_OK
+
 end subroutine migrate_post_process
 
 !/*****************************************************************************/
@@ -699,7 +701,7 @@ type(Zoltan_User_Data_2), intent(in) :: data
 integer(Zoltan_INT), intent(in) :: num_gid_entries
 integer(Zoltan_INT), intent(in) :: elem_gid(*)
 integer(Zoltan_INT), intent(in) :: elem_data_size
-integer(Zoltan_INT), intent(out) :: buf(*)
+integer(Zoltan_INT), intent(in) :: buf(*)
 integer(Zoltan_INT), intent(out) :: ierr
 
   type(ELEM_INFO), pointer :: elem(:)

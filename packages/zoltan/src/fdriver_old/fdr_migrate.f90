@@ -503,6 +503,8 @@ type(MESH_INFO), pointer :: mesh_data
     print *, "Fatal: error rebuilding elem comm maps"
   endif
 
+  ierr = LB_OK
+
 end subroutine migrate_post_process
 
 !/*****************************************************************************/
@@ -699,7 +701,7 @@ type(LB_User_Data_2), intent(in) :: data
 integer(LB_INT), intent(in) :: num_gid_entries
 integer(LB_INT), intent(in) :: elem_gid(*)
 integer(LB_INT), intent(in) :: elem_data_size
-integer(LB_INT), intent(out) :: buf(*)
+integer(LB_INT), intent(in) :: buf(*)
 integer(LB_INT), intent(out) :: ierr
 
   type(ELEM_INFO), pointer :: elem(:)
