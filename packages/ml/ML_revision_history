@@ -68,3 +68,8 @@ mystring = ml2_1_0_0-branch-patch_1
     in order for Alegra to be able to build epetra interfaces.
     Minor changes to block matrix (equivalent real form) capabilities.
     Fixed compiler warnings.
+
+mystring = ml2_1_1_0-merge
+
+    Merged in ml2_1_0_0-branch-patch_1 to main trunk.  (The trunk is what you
+    get with "cvs checkout ml").
