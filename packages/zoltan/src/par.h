@@ -1,0 +1,25 @@
+/*====================================================================
+ * ------------------------
+ * | CVS File Information |
+ * ------------------------
+ *
+ * $RCSfile$
+ *
+ * $Author$
+ *
+ * $Date$
+ *
+ * $Revision$
+ *
+ *====================================================================*/
+
+#ifndef __PAR_H
+#define __PAR_H
+
+#ifndef lint
+static char *cvs_par_h = "$Id$";
+#endif
+
+int Proc = 0;        /* Processor ID Number.                                */
+
+#endif
