@@ -47,7 +47,7 @@
 # Swig interface files
 # ------------------------------------------------------------------------
 
-SOURCES = $(nodist__Abstract_la_SOURCES) $(nodist__Epetra_la_SOURCES) $(nodist__LAPACK_la_SOURCES) $(nodist__Parameter_la_SOURCES) $(nodist__Solver_la_SOURCES) $(nodist__StatusTest_la_SOURCES)
+SOURCES = $(nodist__Abstract_la_SOURCES) $(dist__Epetra_la_SOURCES) $(nodist__Epetra_la_SOURCES) $(nodist__LAPACK_la_SOURCES) $(dist__Parameter_la_SOURCES) $(nodist__Parameter_la_SOURCES) $(nodist__Solver_la_SOURCES) $(nodist__StatusTest_la_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -100,18 +100,21 @@ nodist__Abstract_la_OBJECTS = _Abstract_la-wrap_NOX_Abstract.lo
 _Abstract_la_OBJECTS = $(nodist__Abstract_la_OBJECTS)
 am__DEPENDENCIES_3 = $(top_builddir)/src-epetra/libnoxepetra.a
 _Epetra_la_DEPENDENCIES = $(am__DEPENDENCIES_3) $(am__DEPENDENCIES_2)
-nodist__Epetra_la_OBJECTS = _Epetra_la-wrap_NOX_Epetra.lo \
-	_Epetra_la-Epetra_VectorHelper.lo _Epetra_la-NumPyArray.lo \
-	_Epetra_la-NumPyWrapper.lo _Epetra_la-Callback.lo \
-	_Epetra_la-PyInterface.lo
-_Epetra_la_OBJECTS = $(nodist__Epetra_la_OBJECTS)
+dist__Epetra_la_OBJECTS = _Epetra_la-Epetra_VectorHelper.lo \
+	_Epetra_la-NumPyArray.lo _Epetra_la-NumPyWrapper.lo \
+	_Epetra_la-Callback.lo _Epetra_la-PyInterface.lo
+nodist__Epetra_la_OBJECTS = _Epetra_la-wrap_NOX_Epetra.lo
+_Epetra_la_OBJECTS = $(dist__Epetra_la_OBJECTS) \
+	$(nodist__Epetra_la_OBJECTS)
 am__DEPENDENCIES_4 = $(top_builddir)/src-lapack/libnoxlapack.a
 _LAPACK_la_DEPENDENCIES = $(am__DEPENDENCIES_4) $(am__DEPENDENCIES_2)
 nodist__LAPACK_la_OBJECTS = _LAPACK_la-wrap_NOX_LAPACK.lo
 _LAPACK_la_OBJECTS = $(nodist__LAPACK_la_OBJECTS)
 _Parameter_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
+dist__Parameter_la_OBJECTS =
 nodist__Parameter_la_OBJECTS = _Parameter_la-wrap_NOX_Parameter.lo
-_Parameter_la_OBJECTS = $(nodist__Parameter_la_OBJECTS)
+_Parameter_la_OBJECTS = $(dist__Parameter_la_OBJECTS) \
+	$(nodist__Parameter_la_OBJECTS)
 _Solver_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
 nodist__Solver_la_OBJECTS = _Solver_la-wrap_NOX_Solver.lo
 _Solver_la_OBJECTS = $(nodist__Solver_la_OBJECTS)
@@ -149,10 +152,12 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(nodist__Abstract_la_SOURCES) $(nodist__Epetra_la_SOURCES) \
-	$(nodist__LAPACK_la_SOURCES) $(nodist__Parameter_la_SOURCES) \
+SOURCES = $(nodist__Abstract_la_SOURCES) $(dist__Epetra_la_SOURCES) \
+	$(nodist__Epetra_la_SOURCES) $(nodist__LAPACK_la_SOURCES) \
+	$(dist__Parameter_la_SOURCES) $(nodist__Parameter_la_SOURCES) \
 	$(nodist__Solver_la_SOURCES) $(nodist__StatusTest_la_SOURCES)
-DIST_SOURCES =
+DIST_SOURCES = $(dist__Epetra_la_SOURCES) \
+	$(dist__Parameter_la_SOURCES)
 nodist_noxPythonexecPYTHON_INSTALL = $(INSTALL_DATA)
 py_compile = $(top_srcdir)/config/py-compile
 ETAGS = etags
@@ -456,8 +461,7 @@ CLEANFILES = wrap_* $(WRAPPERS)
 SWIG_PYTHON_LIBS = 
 SWIG_NOX_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/python \
-	-I$(top_srcdir)/../PyTrilinos/src
+	-I$(top_srcdir)/python 
 
 SWIG_EPETRA_CXXFLAGS = \
 	-I$(top_srcdir)/src-epetra 
@@ -494,6 +498,7 @@ _Abstract_la_LIBADD = $(SWIG_NOX_LIBADD)
 # Definitions for _Parameter.la
 # ------------------------------------------------------------------------
 nodist__Parameter_la_SOURCES = wrap_NOX_Parameter.C Utils_enums.H
+dist__Parameter_la_SOURCES = Utils_enums.H
 _Parameter_la_CXXFLAGS = $(SWIG_NOX_CXXFLAGS)
 _Parameter_la_LDFLAGS = $(SWIG_LDFLAGS)
 _Parameter_la_LIBADD = $(SWIG_NOX_LIBADD)
@@ -518,7 +523,9 @@ _Solver_la_LIBADD = $(SWIG_NOX_LIBADD)
 # Definitions for _Epetra.la
 # ------------------------------------------------------------------------
 nodist__Epetra_la_SOURCES = \
-	wrap_NOX_Epetra.C \
+	wrap_NOX_Epetra.C 
+
+dist__Epetra_la_SOURCES = \
 	Epetra_VectorHelper.H \
 	Epetra_VectorHelper.C \
 	NumPyArray.H \
@@ -689,30 +696,6 @@ _Abstract_la-wrap_NOX_Abstract.lo: wrap_NOX_Abstract.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Abstract_la_CXXFLAGS) $(CXXFLAGS) -c -o _Abstract_la-wrap_NOX_Abstract.lo `test -f 'wrap_NOX_Abstract.C' || echo '$(srcdir)/'`wrap_NOX_Abstract.C
 
-_Epetra_la-wrap_NOX_Epetra.o: wrap_NOX_Epetra.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Epetra_la_CXXFLAGS) $(CXXFLAGS) -MT _Epetra_la-wrap_NOX_Epetra.o -MD -MP -MF "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo" -c -o _Epetra_la-wrap_NOX_Epetra.o `test -f 'wrap_NOX_Epetra.C' || echo '$(srcdir)/'`wrap_NOX_Epetra.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo" "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Po"; else rm -f "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_NOX_Epetra.C' object='_Epetra_la-wrap_NOX_Epetra.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Po' tmpdepfile='$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Epetra_la_CXXFLAGS) $(CXXFLAGS) -c -o _Epetra_la-wrap_NOX_Epetra.o `test -f 'wrap_NOX_Epetra.C' || echo '$(srcdir)/'`wrap_NOX_Epetra.C
-
-_Epetra_la-wrap_NOX_Epetra.obj: wrap_NOX_Epetra.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Epetra_la_CXXFLAGS) $(CXXFLAGS) -MT _Epetra_la-wrap_NOX_Epetra.obj -MD -MP -MF "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo" -c -o _Epetra_la-wrap_NOX_Epetra.obj `if test -f 'wrap_NOX_Epetra.C'; then $(CYGPATH_W) 'wrap_NOX_Epetra.C'; else $(CYGPATH_W) '$(srcdir)/wrap_NOX_Epetra.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo" "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Po"; else rm -f "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_NOX_Epetra.C' object='_Epetra_la-wrap_NOX_Epetra.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Po' tmpdepfile='$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Epetra_la_CXXFLAGS) $(CXXFLAGS) -c -o _Epetra_la-wrap_NOX_Epetra.obj `if test -f 'wrap_NOX_Epetra.C'; then $(CYGPATH_W) 'wrap_NOX_Epetra.C'; else $(CYGPATH_W) '$(srcdir)/wrap_NOX_Epetra.C'; fi`
-
-_Epetra_la-wrap_NOX_Epetra.lo: wrap_NOX_Epetra.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Epetra_la_CXXFLAGS) $(CXXFLAGS) -MT _Epetra_la-wrap_NOX_Epetra.lo -MD -MP -MF "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo" -c -o _Epetra_la-wrap_NOX_Epetra.lo `test -f 'wrap_NOX_Epetra.C' || echo '$(srcdir)/'`wrap_NOX_Epetra.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo" "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Plo"; else rm -f "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_NOX_Epetra.C' object='_Epetra_la-wrap_NOX_Epetra.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Plo' tmpdepfile='$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Epetra_la_CXXFLAGS) $(CXXFLAGS) -c -o _Epetra_la-wrap_NOX_Epetra.lo `test -f 'wrap_NOX_Epetra.C' || echo '$(srcdir)/'`wrap_NOX_Epetra.C
-
 _Epetra_la-Epetra_VectorHelper.o: Epetra_VectorHelper.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Epetra_la_CXXFLAGS) $(CXXFLAGS) -MT _Epetra_la-Epetra_VectorHelper.o -MD -MP -MF "$(DEPDIR)/_Epetra_la-Epetra_VectorHelper.Tpo" -c -o _Epetra_la-Epetra_VectorHelper.o `test -f 'Epetra_VectorHelper.C' || echo '$(srcdir)/'`Epetra_VectorHelper.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Epetra_la-Epetra_VectorHelper.Tpo" "$(DEPDIR)/_Epetra_la-Epetra_VectorHelper.Po"; else rm -f "$(DEPDIR)/_Epetra_la-Epetra_VectorHelper.Tpo"; exit 1; fi
@@ -832,6 +815,30 @@ _Epetra_la-PyInterface.lo: PyInterface.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Epetra_la-PyInterface.Plo' tmpdepfile='$(DEPDIR)/_Epetra_la-PyInterface.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Epetra_la_CXXFLAGS) $(CXXFLAGS) -c -o _Epetra_la-PyInterface.lo `test -f 'PyInterface.C' || echo '$(srcdir)/'`PyInterface.C
+
+_Epetra_la-wrap_NOX_Epetra.o: wrap_NOX_Epetra.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Epetra_la_CXXFLAGS) $(CXXFLAGS) -MT _Epetra_la-wrap_NOX_Epetra.o -MD -MP -MF "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo" -c -o _Epetra_la-wrap_NOX_Epetra.o `test -f 'wrap_NOX_Epetra.C' || echo '$(srcdir)/'`wrap_NOX_Epetra.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo" "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Po"; else rm -f "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_NOX_Epetra.C' object='_Epetra_la-wrap_NOX_Epetra.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Po' tmpdepfile='$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Epetra_la_CXXFLAGS) $(CXXFLAGS) -c -o _Epetra_la-wrap_NOX_Epetra.o `test -f 'wrap_NOX_Epetra.C' || echo '$(srcdir)/'`wrap_NOX_Epetra.C
+
+_Epetra_la-wrap_NOX_Epetra.obj: wrap_NOX_Epetra.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Epetra_la_CXXFLAGS) $(CXXFLAGS) -MT _Epetra_la-wrap_NOX_Epetra.obj -MD -MP -MF "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo" -c -o _Epetra_la-wrap_NOX_Epetra.obj `if test -f 'wrap_NOX_Epetra.C'; then $(CYGPATH_W) 'wrap_NOX_Epetra.C'; else $(CYGPATH_W) '$(srcdir)/wrap_NOX_Epetra.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo" "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Po"; else rm -f "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_NOX_Epetra.C' object='_Epetra_la-wrap_NOX_Epetra.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Po' tmpdepfile='$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Epetra_la_CXXFLAGS) $(CXXFLAGS) -c -o _Epetra_la-wrap_NOX_Epetra.obj `if test -f 'wrap_NOX_Epetra.C'; then $(CYGPATH_W) 'wrap_NOX_Epetra.C'; else $(CYGPATH_W) '$(srcdir)/wrap_NOX_Epetra.C'; fi`
+
+_Epetra_la-wrap_NOX_Epetra.lo: wrap_NOX_Epetra.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Epetra_la_CXXFLAGS) $(CXXFLAGS) -MT _Epetra_la-wrap_NOX_Epetra.lo -MD -MP -MF "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo" -c -o _Epetra_la-wrap_NOX_Epetra.lo `test -f 'wrap_NOX_Epetra.C' || echo '$(srcdir)/'`wrap_NOX_Epetra.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo" "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Plo"; else rm -f "$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_NOX_Epetra.C' object='_Epetra_la-wrap_NOX_Epetra.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.Plo' tmpdepfile='$(DEPDIR)/_Epetra_la-wrap_NOX_Epetra.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Epetra_la_CXXFLAGS) $(CXXFLAGS) -c -o _Epetra_la-wrap_NOX_Epetra.lo `test -f 'wrap_NOX_Epetra.C' || echo '$(srcdir)/'`wrap_NOX_Epetra.C
 
 _LAPACK_la-wrap_NOX_LAPACK.o: wrap_NOX_LAPACK.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_LAPACK_la_CXXFLAGS) $(CXXFLAGS) -MT _LAPACK_la-wrap_NOX_LAPACK.o -MD -MP -MF "$(DEPDIR)/_LAPACK_la-wrap_NOX_LAPACK.Tpo" -c -o _LAPACK_la-wrap_NOX_LAPACK.o `test -f 'wrap_NOX_LAPACK.C' || echo '$(srcdir)/'`wrap_NOX_LAPACK.C; \

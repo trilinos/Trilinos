@@ -178,8 +178,7 @@ SWIG_PYTHON_LIBS =
 
 SWIG_NOX_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/python \
-	-I$(top_srcdir)/../PyTrilinos/src
+	-I$(top_srcdir)/python 
 
 SWIG_EPETRA_CXXFLAGS = \
 	-I$(top_srcdir)/src-epetra 
@@ -222,6 +221,8 @@ _Abstract_la_LIBADD = $(SWIG_NOX_LIBADD)
 
 nodist__Parameter_la_SOURCES = wrap_NOX_Parameter.C Utils_enums.H
 
+dist__Parameter_la_SOURCES = Utils_enums.H
+
 _Parameter_la_CXXFLAGS = $(SWIG_NOX_CXXFLAGS)
 
 _Parameter_la_LDFLAGS = $(SWIG_LDFLAGS)
@@ -257,7 +258,9 @@ _Solver_la_LIBADD = $(SWIG_NOX_LIBADD)
 # ------------------------------------------------------------------------
 
 nodist__Epetra_la_SOURCES = \
-	wrap_NOX_Epetra.C \
+	wrap_NOX_Epetra.C 
+
+dist__Epetra_la_SOURCES = \
 	Epetra_VectorHelper.H \
 	Epetra_VectorHelper.C \
 	NumPyArray.H \

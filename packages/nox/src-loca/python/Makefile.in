@@ -47,7 +47,7 @@
 # Swig interface files
 # ------------------------------------------------------------------------
 
-SOURCES = $(nodist__Abstract_la_SOURCES) $(nodist__Bifurcation_la_SOURCES) $(nodist__Chan_la_SOURCES) $(nodist__Continuation_la_SOURCES) $(nodist__Homotopy_la_SOURCES) $(nodist__LAPACK_la_SOURCES) $(nodist__MultiContinuation_la_SOURCES) $(nodist__TimeDependent_la_SOURCES) $(nodist__TopLevel_la_SOURCES)
+SOURCES = $(nodist__Abstract_la_SOURCES) $(nodist__Bifurcation_la_SOURCES) $(nodist__Chan_la_SOURCES) $(nodist__Continuation_la_SOURCES) $(nodist__Homotopy_la_SOURCES) $(nodist__LAPACK_la_SOURCES) $(nodist__MultiContinuation_la_SOURCES) $(nodist__TimeDependent_la_SOURCES) $(dist__TopLevel_la_SOURCES) $(nodist__TopLevel_la_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -130,8 +130,10 @@ nodist__TimeDependent_la_OBJECTS =  \
 	_TimeDependent_la-wrap_LOCA_TimeDependent.lo
 _TimeDependent_la_OBJECTS = $(nodist__TimeDependent_la_OBJECTS)
 _TopLevel_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
+dist__TopLevel_la_OBJECTS =
 nodist__TopLevel_la_OBJECTS = _TopLevel_la-wrap_LOCA_TopLevel.lo
-_TopLevel_la_OBJECTS = $(nodist__TopLevel_la_OBJECTS)
+_TopLevel_la_OBJECTS = $(dist__TopLevel_la_OBJECTS) \
+	$(nodist__TopLevel_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -168,8 +170,8 @@ SOURCES = $(nodist__Abstract_la_SOURCES) \
 	$(nodist__Homotopy_la_SOURCES) $(nodist__LAPACK_la_SOURCES) \
 	$(nodist__MultiContinuation_la_SOURCES) \
 	$(nodist__TimeDependent_la_SOURCES) \
-	$(nodist__TopLevel_la_SOURCES)
-DIST_SOURCES =
+	$(dist__TopLevel_la_SOURCES) $(nodist__TopLevel_la_SOURCES)
+DIST_SOURCES = $(dist__TopLevel_la_SOURCES)
 nodist_locaPythonexecPYTHON_INSTALL = $(INSTALL_DATA)
 py_compile = $(top_srcdir)/config/py-compile
 ETAGS = etags
@@ -475,8 +477,7 @@ SWIG_LOCA_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/python \
 	-I$(top_srcdir)/src-loca/src \
-	-I$(top_srcdir)/src-loca/python \
-	-I$(top_srcdir)/../PyTrilinos/src
+	-I$(top_srcdir)/src-loca/python 
 
 SWIG_LAPACK_CXXFLAGS = \
 	-I$(top_srcdir)/src-lapack \
@@ -499,6 +500,7 @@ SWIG_LAPACK_LIBADD = \
 # Definitions for _TopLevel.la
 # ------------------------------------------------------------------------
 nodist__TopLevel_la_SOURCES = wrap_LOCA_TopLevel.C Utils_enums.H
+dist__TopLevel_la_SOURCES = Utils_enums.H
 _TopLevel_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 _TopLevel_la_LDFLAGS = $(SWIG_LDFLAGS)
 _TopLevel_la_LIBADD = $(SWIG_LOCA_LIBADD)

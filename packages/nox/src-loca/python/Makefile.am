@@ -159,8 +159,7 @@ SWIG_LOCA_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/python \
 	-I$(top_srcdir)/src-loca/src \
-	-I$(top_srcdir)/src-loca/python \
-	-I$(top_srcdir)/../PyTrilinos/src
+	-I$(top_srcdir)/src-loca/python 
 
 SWIG_LAPACK_CXXFLAGS = \
 	-I$(top_srcdir)/src-lapack \
@@ -185,6 +184,8 @@ SWIG_LAPACK_LIBADD = \
 # ------------------------------------------------------------------------
 
 nodist__TopLevel_la_SOURCES = wrap_LOCA_TopLevel.C Utils_enums.H
+
+dist__TopLevel_la_SOURCES = Utils_enums.H
 
 _TopLevel_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 
