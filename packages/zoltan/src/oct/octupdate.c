@@ -53,8 +53,8 @@ static int MINOCTREGIONS = 1;                    /* minimum number of regions pe
 static PARAM_VARS OCT_params[] = {
   { "OCT_DIM",          NULL, "INT" },
   { "OCT_METHOD",       NULL, "INT" },
-  { "OCT_MAXOCTREGIONS",  NULL, "INT" },
-  { "OCT_MINOCTREGIONS",  NULL, "INT" },
+  { "OCT_MAXOBJECTS",   NULL, "INT" },
+  { "OCT_MINOBJECTS",   NULL, "INT" },
   { "OCT_OUTPUT_LEVEL", NULL, "INT" },
   {  NULL,              NULL,  NULL }};
 
@@ -107,8 +107,8 @@ int error = FALSE;            /* error flag                                  */
 
   LB_Bind_Param(OCT_params, "OCT_DIM", (void *) &oct_dim);
   LB_Bind_Param(OCT_params, "OCT_METHOD", (void *) &oct_method);
-  LB_Bind_Param(OCT_params, "OCT_MAXOCTREGIONS", (void *) &oct_maxoctregions);
-  LB_Bind_Param(OCT_params, "OCT_MINOCTREGIONS", (void *) &oct_minoctregions);
+  LB_Bind_Param(OCT_params, "OCT_MAXOBJECTS", (void *) &oct_maxoctregions);
+  LB_Bind_Param(OCT_params, "OCT_MINOBJECTS", (void *) &oct_minoctregions);
   LB_Bind_Param(OCT_params, "OCT_OUTPUT_LEVEL", (void *) &oct_output_level);
 
   LB_Assign_Param_Vals(lb->Params, OCT_params, lb->Debug_Level, lb->Proc, 
@@ -131,7 +131,7 @@ int error = FALSE;            /* error flag                                  */
     error = TRUE;
   }
   if (oct_maxoctregions < 1) {
-    fprintf(stderr, "OCT Error in OCTPART: OCT_MAXOCTREGIONS "
+    fprintf(stderr, "OCT Error in OCTPART: OCT_MAXOBJECTS "
                     "must be greater than 0\n");
     error = TRUE;
   }
