@@ -231,15 +231,14 @@ static int Zoltan_PHG_Initialize_Params(
                     (void*) &hgp->num_coarse_tries);   */
 
   /* Set default values */
-  /* ipm should be made default matching method when it's ready */
-  strncpy(hgp->redm_str,            "l-rrm", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->redm_str,            "ipm",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->redmo_str,           "aug2",  MAX_PARAM_STRING_LEN);  
   strncpy(hgp->coarsepartition_str, "gr0",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);
   
   hgp->LocalCoarsePartition = 0;
   hgp->locmatching = NULL;
-  hgp->ews = 1;
+  hgp->ews = 0;
   hgp->check_graph = 1;
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
   hgp->redl = MAX(2*zz->LB.Num_Global_Parts, 100);
