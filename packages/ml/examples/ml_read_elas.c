@@ -48,11 +48,11 @@ int    which_filename = 0;
   int    *cpntr = NULL, *bindx = NULL, N_update, iii;
 
 double *scaling_vect = NULL;
-#define SCALE_ME
+#define SCXLE_ME
 
 int main(int argc, char *argv[])
 {
-	int num_PDE_eqns=3, N_levels=4, nsmooth=4;
+	int num_PDE_eqns=6, N_levels=4, nsmooth=2;
 
 	int    leng, level, N_grid_pts, coarsest_level;
 
@@ -86,6 +86,7 @@ int *rowi_col = NULL, rowi_N, count2, ccc;
 double *rowi_val = NULL;
 int max_nz_row, big_ind = -1, ii;
 double max_diag, min_diag, max_sum, sum;
+ int nBlocks, Nper_block, *blockIndices, Ndof;
 #ifdef ML_partition
    FILE *fp2;
    int count;
@@ -97,10 +98,8 @@ double max_diag, min_diag, max_sum, sum;
    else sscanf(argv[1],"%d",&nblocks);
 #endif
 
-
-#ifdef ML_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
-
   /* get number of processors and the name of this processor */
 
   AZ_set_proc_config(proc_config, MPI_COMM_WORLD);
@@ -130,8 +129,6 @@ double max_diag, min_diag, max_sum, sum;
   leng = AZ_gsum_int(leng, proc_config);
 
   N_grid_pts=leng/num_PDE_eqns;
-
-
 
   /* initialize the list of global indices. NOTE: the list of global */
   /* indices must be in ascending order so that subsequent calls to  */
@@ -168,7 +165,7 @@ double max_diag, min_diag, max_sum, sum;
 
   options[AZ_scaling] = AZ_none;
   ML_Create(&ml, N_levels);
-  ML_Set_PrintLevel(3);
+  ML_Set_PrintLevel(10);
 			
 			
   /* set up discretization matrix and matrix vector function */
@@ -218,9 +215,13 @@ double max_diag, min_diag, max_sum, sum;
 #else
   ML_Aggregate_Set_DampingFactor(ag,1.5);
 #endif
+#ifdef HAVE_METIS
+  ML_Aggregate_Set_CoarsenScheme_METIS(ag);
+  ML_Aggregate_Set_NodesPerAggr( ml, ag, -1, 35);
+#endif
+
   ML_Aggregate_Set_Threshold(ag, 0.0);
   ML_Aggregate_Set_MaxCoarseSize( ag, 300);
-  /*  ML_Aggregate_Set_MaxCoarseSize( ag, 7); */
 
 
   /* read in the rigid body modes */
@@ -266,7 +267,6 @@ double max_diag, min_diag, max_sum, sum;
        else sprintf(filename,"rigid_body_mode%d",i+1);
        AZ_input_msr_matrix(filename,update,&mode,&garbage,N_update,proc_config);
        AZ_reorder_vec(mode, data_org, update_index, NULL);
-
        /* here is something to stick a rigid body mode as the initial */
        /* The idea is to solve A x = 0 without smoothing with a two   */
        /* level method. If everything is done properly, we should     */
@@ -331,21 +331,24 @@ double max_diag, min_diag, max_sum, sum;
 
         /* orthogonalize mode with respect to previous modes. */
 
-#ifndef	MB_MODIF
         for (j = 0; j < i; j++) {
            alpha = -AZ_gdot(N_update, mode, &(rigid[j*N_update]), proc_config)/
                     AZ_gdot(N_update, &(rigid[j*N_update]), 
                                &(rigid[j*N_update]), proc_config);
-           daxpy_(&N_update,&alpha,&(rigid[j*N_update]),  &one, mode, &one);
+	   /*           daxpy_(&N_update,&alpha,&(rigid[j*N_update]),  &one, mode, &one); */
         }
+#ifndef	MB_MODIF
+       printf(" after mb %e %e %e\n",mode[0],mode[1],mode[2]);
 #endif
 
         for (j = 0; j < N_update; j++) rigid[i*N_update+j] = mode[j];
         free(mode);
         free(garbage); garbage = NULL;
+
     }
 
     if (Nrigid != 0) {
+             ML_Aggregate_Set_BlockDiagScaling(ag);
        ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, Nrigid, rigid, N_update);
        free(rigid);
     }
@@ -382,7 +385,14 @@ double max_diag, min_diag, max_sum, sum;
      /* does a Gauss-Seidel on its local submatrix independent of the     */
      /* other processors.                                                 */
 
-     ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 30., nsmooth);
+     /* ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 30., nsmooth); */
+     Ndof = ml->Amat[level].invec_leng;
+
+     ML_Gen_Blocks_Aggregates(ag, level, &nBlocks, &blockIndices);
+
+     ML_Gen_Smoother_BlockDiagScaledCheby(ml, level, ML_BOTH, 30.,nsmooth,
+					  nBlocks, blockIndices);
+
      /*
       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
      */
@@ -450,20 +460,28 @@ double max_diag, min_diag, max_sum, sum;
    old_sol  = options[AZ_solver];
    old_tol  = params[AZ_tol];
    params[AZ_tol] = 1.0e-9;
-   options[AZ_precond] = AZ_none;
+   params[AZ_tol] = 1.0e-5;
+   options[AZ_precond] = AZ_Jacobi;
    options[AZ_solver]  = AZ_cg;
    options[AZ_poly_ord] = 1;
-   options[AZ_conv] = AZ_noscaled;
+   options[AZ_conv] = AZ_r0;
    options[AZ_orth_kvecs] = AZ_TRUE;
-   options[AZ_keep_kvecs] = ml->Amat[coarsest_level].outvec_leng - 6;
+
+   j = AZ_gsum_int(ml->Amat[coarsest_level].outvec_leng, proc_config); 
+
+   options[AZ_keep_kvecs] = j - 6;
+   options[AZ_max_iter] =  options[AZ_keep_kvecs];
+
    ML_Gen_SmootherAztec(ml, coarsest_level, options, params,
             proc_config, status, options[AZ_keep_kvecs], ML_PRESMOOTHER, NULL);
 
+   options[AZ_conv] = AZ_noscaled;
    options[AZ_keep_kvecs] = 0;
    options[AZ_orth_kvecs] = 0;
    options[AZ_precond] = old_prec;
    options[AZ_solver] = old_sol;
    params[AZ_tol] = old_tol;
+
    /*   */
 
 
@@ -478,6 +496,7 @@ double max_diag, min_diag, max_sum, sum;
 #endif
 	
    options[AZ_solver]   = AZ_GMRESR;
+         options[AZ_solver]   = AZ_cg;
    options[AZ_scaling]  = AZ_none;
    options[AZ_precond]  = AZ_user_precond;
    options[AZ_conv]     = AZ_r0;
@@ -485,9 +504,9 @@ double max_diag, min_diag, max_sum, sum;
    options[AZ_output]   = 1;
    options[AZ_max_iter] = 500;
    options[AZ_poly_ord] = 5;
-   options[AZ_kspace]   = 130;
+   options[AZ_kspace]   = 40;
    params[AZ_tol]       = 4.8e-6;
-	
+
    AZ_set_ML_preconditioner(&Pmat, Amat, ml, options); 
    setup_time = AZ_second() - start_time;
 	
@@ -509,22 +528,28 @@ double max_diag, min_diag, max_sum, sum;
    }
    AZ_reorder_vec(rhs, data_org, update_index, NULL);
 
-
-   /* Set x */
+   printf("changing rhs by multiplying with A\n");
+  Amat->matvec(rhs, xxx, Amat, proc_config);
+  for (i = 0; i < N_update; i++) rhs[i] = xxx[i];
 
    fp = fopen("AZ_capture_init_guess.dat","r");
    if (fp != NULL) {
       fclose(fp);
       if (proc_config[AZ_node]== 0) printf("reading initial guess from file\n");
       AZ_input_msr_matrix("AZ_capture_init_guess.dat", update, &xxx, &garbage,
-			  N_update, proc_config);
+      			  N_update, proc_config);
       free(garbage);
+
+
+      xxx = (double *) realloc(xxx, sizeof(double)*(
+					 Amat->data_org[AZ_N_internal]+
+					 Amat->data_org[AZ_N_border] +
+					 Amat->data_org[AZ_N_external]));
    }
    AZ_reorder_vec(xxx, data_org, update_index, NULL);
 
    /* if Dirichlet BC ... put the answer in */
 
-printf("hey .... should we do something here?\n");
 /*
    for (i = 0; i < data_org[AZ_N_internal]+data_org[AZ_N_border]; i++) {
       if ( (val[i] > .99999999) && (val[i] < 1.0000001))
@@ -561,7 +586,7 @@ printf("hey .... should we do something here?\n");
       options[AZ_keep_info] = 1;
       options[AZ_conv] = AZ_noscaled;
       options[AZ_conv] = AZ_r0;
-      params[AZ_tol] = 1.0e-3;
+      params[AZ_tol] = 1.0e-7;
       /* ML_Iterate(ml, xxx, rhs); */
 alpha = sqrt(AZ_gdot(N_update, xxx, xxx, proc_config));
 printf("init guess = %e\n",alpha);
@@ -648,7 +673,7 @@ max_diag, min_diag, max_sum);
    free(rhs);
 
 
-#ifdef ML_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 	
