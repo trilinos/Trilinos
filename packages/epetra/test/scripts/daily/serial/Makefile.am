@@ -6,11 +6,11 @@ EXEEXT = .exe
 if HAVE_MPI
 else
 
-noinst_PROGRAMS = autotoolsTestAll
+noinst_PROGRAMS = epetraTestAll
 
-autotoolsTestAll_SOURCES = $(srcdir)/autotoolsTestAll
+epetraTestAll_SOURCES = $(srcdir)/epetraTestAll
 
-autotoolsTestAll$(EXEEXT): $(srcdir)/autotoolsTestAll
-	cp $(srcdir)/autotoolsTestAll autotoolsTestAll$(EXEEXT) 
+epetraTestAll$(EXEEXT): $(srcdir)/epetraTestAll
+	cp $(srcdir)/epetraTestAll epetraTestAll$(EXEEXT) 
 
 endif

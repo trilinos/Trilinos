@@ -5,12 +5,12 @@ EXEEXT = .exe
 # Nothing should be done for a serial build
 if  HAVE_MPI
 
-noinst_PROGRAMS = autotoolsTestAllMpi
+noinst_PROGRAMS = epetraTestAllMpi
 
-autotoolsTestAllMpi_SOURCES = $(srcdir)/autotoolsTestAllMpi
+epetraTestAllMpi_SOURCES = $(srcdir)/epetraTestAllMpi
 
-autotoolsTestAllMpi$(EXEEXT): $(srcdir)/autotoolsTestAllMpi
-	cp $(srcdir)/autotoolsTestAllMpi autotoolsTestAllMpi$(EXEEXT) 
+epetraTestAllMpi$(EXEEXT): $(srcdir)/epetraTestAllMpi
+	cp $(srcdir)/epetraTestAllMpi epetraTestAllMpi$(EXEEXT) 
 
 endif
 
