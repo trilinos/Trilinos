@@ -233,6 +233,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 
     for ( int i = 0; i < 1+special ; i++ ) { 
       AMESOS::Parameter::List ParamList ;
+      //      (void) ParamList.sublist("Bogus");   // At one point, I thought that this kept parameter list from crashing when run on paunchy with Purify
       Amesos_Dscpack A_dscpack( Problem, ParamList ) ; 
       EPETRA_CHK_ERR( A_dscpack.Solve(  ) ); 
       //      cout << " After the call to A_dscpack.Solve() " << endl ; 
