@@ -141,7 +141,7 @@ int DoCopyRowMatrix(mxArray* matlabA, int& valueCount, const Epetra_RowMatrix& A
 		*matlabAvaluesPtr = values[j];
 		*matlabArowIndicesPtr = J;
 		// increment all matlabA pointers
-		mablabAvaluesPtr++;
+		matlabAvaluesPtr++;
 		matlabArowIndicesPtr++;
 		valueCount++;
 	//fprintf(handle, "%d %d %22.16e\n", I, J, val);

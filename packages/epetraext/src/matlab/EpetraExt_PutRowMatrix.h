@@ -46,7 +46,7 @@ class Epetra_RowMatrix;
 
 namespace Matlab {
 
-  int CopyRowMatrix(mxArray* matlabA, const Epetra_RowMatrix& A)
+  int CopyRowMatrix(mxArray* matlabA, const Epetra_RowMatrix& A);
   int DoCopyRowMatrix(mxArray* matlabA, int& valueCount, const Epetra_RowMatrix& A);
   
   

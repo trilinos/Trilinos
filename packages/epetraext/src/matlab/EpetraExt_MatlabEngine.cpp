@@ -28,6 +28,8 @@
 
 #include "EpetraExt_MatlabEngine.h"
 #include "EpetraExt_PutMultiVector.h"
+#include "EpetraExt_PutRowMatrix.h"
+
 #include "Epetra_Comm.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_SerialDenseMatrix.h"
@@ -115,22 +117,25 @@ int MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* variableNa
 	  // since matlab uses column major for matrices, switch row and column numbers
 	  matlabA = mxCreateSparse(A.NumGlobalCols(), A.NumGlobalRows(), A.NumGlobalNonzeros(), mxREAL);
 
-	if (CopyRowMatrix(matlabA, A)) {
+	if (Matlab::CopyRowMatrix(matlabA, A)) {
 	  mxDestroyArray(matlabA);
 	  return(-2);
 	}
 
 	if (Comm_.MyPID() == 0) {
-	  if (PutIntoMatlab(Engine_, variableName, matlabA)) {
+	  if (PutIntoMatlab(variableName, matlabA)) {
 		mxDestroyArray(matlabA);
 		return(-1);
 	  }
 
-	  if (!tranA)
-		if (EvalString(sprintf("%s = %s'", variableName, variableName))) {
-		  mxDestroyArray(matlabA);
-		  return(-3);
-		}
+	  if (!transA) {
+		char* buff = new char[128];
+		sprintf(buff, "%s = %s'", variableName, variableName);
+		  if (EvalString(buff)) {
+			mxDestroyArray(matlabA);
+			return(-3);
+		  }
+	  }
 	}
 
 	mxDestroyArray(matlabA);

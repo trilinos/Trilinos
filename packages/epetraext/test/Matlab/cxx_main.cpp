@@ -72,6 +72,11 @@ cout << "going to setup MPI...\n";
   cout << "going to init matlab\n";
   EpetraExt::MatlabEngine engine (comm);
   cout << "matlab started";
+
+  ///* CrsMatrix test
+  
+  //*/
+
   /* MultiVector test
   cout << MyPID << " going to do multivector test...\n";
   int numGlobalElements = 100;
