@@ -174,7 +174,9 @@ LANG_WRAPS =
 
 DIST_H = \
 	$(srcdir)/Tpetra_ElementSpace.hpp \
-	$(srcdir)/Tpetra_ElementSpaceData.hpp
+	$(srcdir)/Tpetra_ElementSpaceData.hpp \
+	$(srcdir)/Tpetra_BlockElementSpace.hpp \
+	$(srcdir)/Tpetra_BlockElementSpaceData.hpp
 
 
 DIST = 

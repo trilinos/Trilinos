@@ -26,4 +26,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = Comm Platform Distributor ElementSpace
+SUBDIRS = Comm Platform Distributor ElementSpace BlockElementSpace

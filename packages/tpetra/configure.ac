@@ -339,6 +339,7 @@ AC_CONFIG_FILES([
 		test/Distributor/Makefile
 		test/Platform/Makefile
 		test/ElementSpace/Makefile
+		test/BlockElementSpace/Makefile
 		])
 
 AC_OUTPUT()

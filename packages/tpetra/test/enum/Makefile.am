@@ -32,11 +32,13 @@ noinst_PROGRAMS = enum_test
 
 enum_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-enum_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a
+enum_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
 
-enum_test_CXXFLAGS = -I$(top_srcdir)/src
+enum_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../teuchos/src \
+	-I$(top_builddir)/../teuchos/src
 
-enum_test_LDADD = $(top_builddir)/src/libtpetra.a $(BLAS_LIBS) \
+enum_test_LDADD = $(top_builddir)/src/libtpetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LIBS) $(FLIBS)
-
 

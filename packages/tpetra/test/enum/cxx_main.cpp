@@ -1,5 +1,5 @@
 
-#include <iostream>
+#include "Tpetra_ConfigDefs.hpp"
 
 namespace Tpetra {
 	enum DataAccess {copy, view};

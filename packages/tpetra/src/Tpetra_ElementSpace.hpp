@@ -170,7 +170,7 @@ template<typename OrdinalType>
 ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalType indexBase, 
 																				Platform<OrdinalType, OrdinalType> const& Platform)
   : Object("Tpetra::ElementSpace")
-	, ElementSpaceData_(0)
+	, ElementSpaceData_()
 {
 	// initial throws
 	if (numGlobalElements < 0)
@@ -214,7 +214,7 @@ template<typename OrdinalType>
 ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, OrdinalType indexBase, 
 																				Platform<OrdinalType, OrdinalType> const& Platform)
 	: Object("Tpetra::ElementSpace")
-	, ElementSpaceData_(0)
+	, ElementSpaceData_()
 {
 	// initial throws
   if(numGlobalElements < -1) 
@@ -266,7 +266,7 @@ template<typename OrdinalType>
 ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, OrdinalType* elementList, 
 																				OrdinalType indexBase, Platform<OrdinalType, OrdinalType> const& Platform)
   : Object("Tpetra::ElementSpace")
-	, ElementSpaceData_(0)
+	, ElementSpaceData_()
 {
 	// initial throws
   if(numGlobalElements < -1) 
