@@ -382,3 +382,313 @@ int ML_memory_clean( char *name, int inlen )
    return 0;
 }
 
+
+int ml_allo_count = 0, ml_free_count = 0;
+
+#ifdef ML_MEM_CHECK
+/* sophisticated wrappers for allocating memory */
+
+struct ml_widget {                  /* ml_widget is used to maintain a linked   */
+   int order;                    /* list of all memory that was allocated */
+   int size;
+   char *address;
+   struct ml_widget *next;
+};
+struct ml_widget *ml_widget_head =  NULL;  /* points to first element of allocated */
+                                     /* memory linked list.                  */
+
+/***************************************************************************/
+/***************************************************************************/
+/***************************************************************************/
+
+void ML_print_it() {
+/*
+ * Print out the allocated memory linked list
+ */
+
+   struct ml_widget *current;
+
+   current = ml_widget_head;
+   while (current != NULL) {
+      printf("(%d,%d,%u)\n",current->order, current->size, current->address);
+      current = current->next;
+   }
+}
+
+/***************************************************************************/
+/***************************************************************************/
+/***************************************************************************/
+
+char *ML_allocate(unsigned int isize) {
+
+/* 
+ *  Allocate memory and record the event by placing an entry in the 
+ *  ml_widget_head list. Also recored the size of this entry as well.
+ *
+ *  Note: we actually allocate more memory than is requested (7 doubles more).
+ *  This additional memory is used to record the 'size' and to mark the
+ *  memory with a header and trailer which we can later check to see if
+ *  they were overwritten.
+ *
+ */
+
+    char *ptr, *header_start, *header_end;
+    struct ml_widget *ml_widget;
+    int *size_ptr, i, size;
+    double *dptr;
+
+    size = (int) isize;
+
+    size = size + 7*sizeof(double);
+    ml_widget = (struct ml_widget *) malloc(sizeof(struct ml_widget));
+    if (ml_widget == NULL) return(NULL);
+    ptr = (char *) malloc(size);
+    if (ptr == NULL) {
+       free(ml_widget);
+       return(NULL);
+    }
+    ml_allo_count++;
+
+    /* put trash in the space to make sure nobody is expecting zeros */
+    for (i = 0 ; i < size/sizeof(char) ; i++ ) 
+       ptr[i] = 'f';
+
+
+    /* record the entry */
+
+    ml_widget->order = ml_allo_count;
+if (size == -7*sizeof(double) ) {
+printf("allocating 0 space %u (%d)\n",ptr,size);
+ i = 0;
+ size = 1/i;
+ ml_widget = NULL;
+}
+    ml_widget->size  = size - 7*sizeof(double);
+    ml_widget->next  = ml_widget_head;
+    ml_widget_head   = ml_widget;
+    ml_widget->address = ptr;
+
+    size_ptr = (int *) ptr;
+    size_ptr[0] = size - 7*sizeof(double);
+    dptr     = (double *) ptr;
+
+    /* mark the header */
+
+    header_start = (char *) &(dptr[1]);
+
+    for (i = 0 ; i < 3*sizeof(double)/sizeof(char) ; i++ )
+       header_start[i] = 'x';
+
+    /* mark the trailer */
+
+    header_end = &(ptr[ (size/sizeof(char)) - 1]);
+    header_start = (char *) &(dptr[4]);
+    header_start = & (header_start[(size-7*sizeof(double))/sizeof(char)]);
+
+    while (header_start <= header_end) {
+       *header_start = 'x';
+       header_start++;
+    }
+
+    return( (char *) &(dptr[4]) );
+}
+
+/***************************************************************************/
+/***************************************************************************/
+/***************************************************************************/
+
+void ML_myfree(void *vptr) {
+/*
+ * Free memory and remove the corresponding entry from the ml_widget_head
+ * list. Additionally, check that the size stored in the header is correct
+ * and that there has not been any memory overwritten in the header or
+ * the trailer.
+ *
+ */
+
+   struct ml_widget *current, *prev;
+   double *dptr;
+   int *iptr, size, i;
+   char *header_start, *header_end, *ptr;
+
+    ptr = (char *) vptr;
+    ml_free_count++;
+    if (ptr == NULL) {
+       printf("Trying to free a NULL ptr\n");
+i = 0;
+size = 1/i;
+ml_widget_head = NULL;
+    }
+    else {
+       current = ml_widget_head;
+       prev    = NULL;
+       dptr = (double *) ptr;
+       --dptr;
+       --dptr;
+       --dptr;
+       --dptr;
+       ptr = (char *) dptr;
+       while (current != NULL) {
+          if (current->address == ptr) break;
+          else { prev = current; current = current->next; }
+       }
+       if (current == NULL) {
+          printf("the pointer %u was not found and thus can not be freed.\n",
+                  ptr);
+	  size = 0;
+	  size = 1/size;
+	  sqrt(-23.);
+	  while (1 == 1) ;
+          exit(1);
+       }
+       else {
+           /* check to see if the header is corrupted */
+           iptr = (int *) ptr;
+           header_start = (char *) &(dptr[1]);
+
+           for (i = 0 ; i < 3*sizeof(double)/sizeof(char) ; i++ ) {
+              if (header_start[i] != 'x') {
+                 printf("header is corrupted for %u (%d,%d)\n",ptr,
+                         current->size,current->order);
+                 size =  0;
+                 size = 1/size;
+              }
+           }
+           size = iptr[0];
+
+           /* check to see if the sizes are different */
+
+           if (current->size != size) {
+              printf("Freeing %u whose size has changed (%d,%d)\n",
+                     current->address,current->size,size);
+              exit(1);
+           }
+
+           /* check to see if the trailer is corrupted */
+
+           header_end = &(ptr[ ((size+7*sizeof(double))/sizeof(char)) - 1]);
+           header_start = (char *) &(dptr[4]);
+           header_start = &(header_start[size/sizeof(char)]);
+
+           while (header_start <= header_end) {
+              if ( *header_start != 'x') {
+                 printf("trailer is corrupted for %u (%d,%d)\n",
+                         ptr, size,
+                         current->order);
+                 size =  0;
+                 size = 1/size;
+              }
+              header_start++;
+           }
+
+           /* free the space and the ml_widget */
+
+           free(ptr);
+           if (ml_widget_head == current) ml_widget_head = current->next;
+           else prev->next = current->next;
+           free(current);
+
+       }
+   }
+
+}
+
+char *ML_realloc(void *vptr, unsigned int new_size) {
+
+   struct ml_widget *current, *prev;
+   int i, *iptr, size, *new_size_ptr;
+   char *header_start, *header_end, *ptr;
+   char *data1, *data2, *new_ptr, *new_header_start, *new_header_end;
+   int newmsize, smaller;
+   double *dptr, *new_dptr;
+
+    ptr = (char *) vptr;
+    if (ptr == NULL) {
+       printf("Trying to realloc a NULL ptr\n");
+       exit(1);
+    }
+    else {
+       current = ml_widget_head;
+       prev    = NULL;
+data1 = ptr;
+       dptr = (double *) ptr;
+       --dptr;
+       --dptr;
+       --dptr;
+       --dptr;
+       ptr = (char *) dptr;
+       while (current != NULL) {
+          if (current->address == ptr) break;
+          else { prev = current; current = current->next; }
+       }
+       if (current == NULL) {
+          printf("the pointer %u was not found and thus can not be realloc.\n",
+                  ptr);
+          exit(1);
+       }
+       else {
+           /* check to see if the header is corrupted */
+           iptr = (int *) ptr;
+           header_start = (char *) &(dptr[1]);
+
+           for (i = 0 ; i < 3*sizeof(double)/sizeof(char) ; i++ ) {
+              if (header_start[i] != 'x') {
+                 printf("realloc header is corrupted for %u (%d,%d)\n",ptr,
+                         current->size,current->order);
+                 size =  0;
+                 size = 1/size;
+              }
+/* DO WE CHECK THE TRAILER ???? */
+           }
+           size = iptr[0];
+
+
+    newmsize = new_size + 7*sizeof(double);
+    new_ptr = (char *) malloc(newmsize);
+    if (new_ptr == NULL) return(NULL);
+
+
+    new_size_ptr = (int *) new_ptr;
+    new_size_ptr[0] = new_size;
+    new_dptr     = (double *) new_ptr;
+data2 = (char *) &(new_dptr[4]);
+
+    new_header_start = (char *) &(new_dptr[1]);
+
+    for (i = 0 ; i < 3*sizeof(double)/sizeof(char) ; i++ )
+       new_header_start[i] = 'x';
+
+    new_header_end = &(new_ptr[ (newmsize/sizeof(char)) - 1]);
+    new_header_start = (char *) &(new_dptr[4]);
+    new_header_start= &(new_header_start[new_size/sizeof(char)]);
+
+    while (new_header_start <= new_header_end) {
+       *new_header_start = 'x';
+       new_header_start++;
+    }
+
+    smaller = current->size;
+    if (smaller > new_size ) smaller = new_size;
+    for (i = 0 ; i < smaller; i++) data2[i] = data1[i];
+
+    free(dptr);
+    current->size  = new_size;
+    current->address = (char *) new_dptr;
+    return( (char *) &(new_dptr[4]));
+
+       }
+    }
+}
+   
+
+
+
+
+void ML_spit_it_out()
+{
+printf("malloc/free %d %d\n",ml_allo_count,ml_free_count);
+if (ml_allo_count != ml_free_count) 
+printf("WHOA XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n");
+ML_print_it();
+}
+#endif
