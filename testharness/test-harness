@@ -65,8 +65,7 @@ if ($date =~/Sun/) {
   $frequency="weekly";
 }
 print "$frequency\n";
-# Set proper location of cvsroot and cvscmd
-my $cvsroot=":ext:jmwille\@software.sandia.gov:/space/CVS";
+# Set proper location of cvscmd if necessary, otherwise leave it at "cvs"
 my $cvscmd="cvs";
 
 # name of the file containing the names of the machines to be used for parallel jobs
@@ -79,9 +78,6 @@ my $hostfile="$homedir/$basehostfile"; # change path here if necessary
 #
 # Determine host os
 #
-
-## When porting, port in autotest dir
-## need mpigo_nv somewhere in tar ball
 
 chomp (my $hostos=`uname -a`);
 chomp (my $ARCH=`uname`); # This value must match the middle portion of the name of the log
@@ -108,8 +104,8 @@ SWITCH: {
 }
 print "\$hostos=$hostos\n";
 
-# permissions needed
-my $permissions=0775;
+# permissions needed?
+#my $permissions=0775;
 
 chdir"$homedir";
 use lib "lib"; #ended up needing to use a relative address - don't need?
@@ -151,6 +147,7 @@ if ($result) {
   die " *** ERROR updating TRILINOS! ***\n";
 }
 
+chdir"$homedir";
 
 #
 # Determine which Build directories are to be used in the test process
