@@ -931,6 +931,24 @@ AC_SUBST(AMESOS_LIBS,${amesos_libs})
 AC_F77_LIBRARY_LDFLAGS
 
 # -- DEC CXX --
+# MS # Add the following 21-Apr-04
+case $target in
+  alpha*)
+    if test $CXX = cxx; then
+      TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
+    fi
+  ;;
+esac
+
+AC_MSG_CHECKING([for template-specific object files to be linked])
+if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+ AC_MSG_RESULT(none)
+else
+ AC_MSG_RESULT($TRILINOS_TEMPLATE_OBJS)
+fi
+
+AC_SUBST(TRILINOS_TEMPLATE_OBJS)
+
 dnl if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
 dnl    XTRALDADD="cxx_repository/*.o"
 dnl fi
