@@ -77,7 +77,7 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int     N_neighbors, *neighbors = NULL, printflag, diff_level;
    int     *Asqrd_rcvleng= NULL, *Asqrd_sndleng= NULL, *send_list = NULL;
    int     total_recv_leng = 0, total_send_leng = 0, offset, msgtype;
-   int     aggr_count, index, mypid, attach_scheme, num_PDE_eqns;
+   int     aggr_count, index, mypid, num_PDE_eqns;
    int     *aggr_index = NULL, *itmp_array = NULL, nullspace_dim;
    int     *sendlist_proc = NULL, Ncoarse, count, *int_buf = NULL;
    int     *int_buf2, *aggr_stat = NULL, procnum;
@@ -85,7 +85,7 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int     *new_send_neighbors = NULL, *new_send_list = NULL;
    int     max_count, *new_ia = NULL, *new_ja = NULL, new_Nrows;
    int     *new_recv_leng=NULL, exp_Ncoarse, new_N_recv;
-   int     *new_recv_neighbors=NULL, *aggr_cnt_array = NULL, ordering;
+   int     *new_recv_neighbors=NULL, *aggr_cnt_array = NULL;
    int     level, index3, count3, *recv_list = NULL, max_agg_size;
    int     **rows_in_aggs = NULL, lwork, info;
    double  dcompare1, *new_val = NULL, epsilon;
@@ -96,7 +96,6 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    struct ML_CSR_MSRdata *csr_data;
    ML_Aggregate_Comm     *aggr_comm;
    ML_GetrowFunc         *getrow_obj;
-   ML_CommInfoOP         *getrow_comm;
    USR_REQ               *request;
    ML_Operator           *Asqrd = NULL, *tmatrix;
    struct ML_CSR_MSRdata *temp;
@@ -114,7 +113,7 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int                   send_count = 0, recv_count = 0, total_nz = 0;
    int                   total_aggs, phase_one_aggregated;
 
-#if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES)
+#if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR)
 extern int *update_index, *update, *extern_index, *external;
 FILE *fp;
 char fname[80];
@@ -122,8 +121,6 @@ static int level_count = 0;
 double *d2temp;
 int agg_offset, vertex_offset;
 extern int ML_gpartialsum_int(int val, ML_Comm *comm);
-#else
-char fname[80];
 int level_count = 0;
 FILE *fp;
 #endif
@@ -134,8 +131,6 @@ FILE *fp;
 
    mypid                   = comm->ML_mypid;
    epsilon                 = ml_ag->threshold;
-   ordering                = ml_ag->ordering;
-   attach_scheme           = ml_ag->attach_scheme;
    num_PDE_eqns            = ml_ag->num_PDE_eqns;
    nullspace_dim           = ml_ag->nullspace_dim;
    nullspace_vect          = ml_ag->nullspace_vect;
@@ -262,7 +257,6 @@ FILE *fp;
    /* Need to set up communication for the matrix A (as opposed to Asqrd) */
 
    getrow_obj   = Amatrix->getrow;
-   getrow_comm  = getrow_obj->pre_comm;
    N_neighbors  = getrow_obj->pre_comm->N_neighbors;
    total_recv_leng = 0;
    for (i = 0; i < N_neighbors; i++) {
@@ -605,7 +599,6 @@ printf("changing this to be compatable with Ray not Mark\n");
    nvertices  *= num_PDE_eqns;
    exp_Nrows  *= num_PDE_eqns;
    getrow_obj  = Amatrix->getrow;
-   getrow_comm = getrow_obj->pre_comm;
    N_neighbors = getrow_obj->pre_comm->N_neighbors;
 
 

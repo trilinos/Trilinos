@@ -12,12 +12,16 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
         ML_Operator **matvec_data) {
 
    int *sep, *s_sizes, *mapper;
-   int i, j, jj, kk, *global_numbering, Nsend, Nrecv, N_procs, N_bits;
-   int start, mask2;
+   int i, j, Nsend, Nrecv, N_procs, N_bits;
+#ifdef out
+   int jj, kk, *global_numbering, mask2, sub_mask, old_Ncount,
+       mask, proc;
+#endif
+   int start;
    int Nrows;
    ML_Operator *Amat, *omatrix;
    ML_CommInfoOP *getrow_comm;
-   int total_rows, sep_space, sub_mask, N_count, old_Ncount, mask, proc;
+   int total_rows, sep_space, N_count;
    double *dmapper;
    int N_nz, allocated, *bindx, *row_ptr, row_length, max_nz_per_row;
    int *neighbors;
@@ -40,7 +44,6 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
       perror("No communication information for getrow! Can't setup henry\n");
 
    N_procs = my_ml->comm->ML_nprocs;
-   proc    = my_ml->comm->ML_mypid;
    *Nlocal = Nrows;
    /* generate a unique numbering */
 
@@ -81,12 +84,13 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
 
    sep     = (int *) malloc(sep_space*sizeof(int));
    s_sizes = (int *) malloc( (N_bits+2)*sizeof(int) );
-   sub_mask = 0;
    N_count = 0;
    *Nseparators = N_bits + 1;
-   old_Ncount = N_count;
-   mask2 = 0;
 #ifdef out
+   proc    = my_ml->comm->ML_mypid;
+   old_Ncount = N_count;
+   sub_mask = 0;
+   mask2 = 0;
    for (j = N_bits-1 ; j >= 0; j--) {
      mask = 1<<j;
      if ( (mask & proc) == 0) {
@@ -251,7 +255,6 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
   int   mask;             /* bit pattern identifying partner */
   int   hbit;             /* largest nonzero bit in nprocs */
   int   nprocs_small;     /* largest power of 2 <= nprocs */
-  int   k;
   int   node, nprocs;
   char *yo = "ML_gpartial_sum_int: ";
   int   partial_sum = 0, temp;
@@ -391,7 +394,7 @@ int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
                     int total_length,int sub_mask)
 {
    int     mask, partner, hbit, msgtype, msgbase=145;
-   int     i, k, nbytes, mypid, nprocs, sub_cube, nprocs_small;
+   int     nbytes, mypid, nprocs, sub_cube, nprocs_small;
    USR_REQ Request;
 
   /*********************** first executable statment *****************/
@@ -524,6 +527,7 @@ if ((sub_mask & partner) == sub_cube) {
     (*cur_length) = (nbytes / sizeof(int));
 }
   }
+  return 0;
 
 } /* ML_gappend */
 
@@ -534,7 +538,7 @@ extern void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
 /*int CSR_submv(ML_Operator *Amat, double p[], double ap[], int mask)*/
 int oldCSR_submv(ML_Operator *Amat, double p[], double ap[])
 {
-   int i, j, k, Nrows, *bindx, total_send, total_rcv, bindx_row, nzeros;
+   int i, k, Nrows, *bindx, total_send, total_rcv;
    double *p2, *val, sum;
    struct ML_CSR_MSRdata *temp;
    ML_CommInfoOP *getrow_comm;
@@ -575,10 +579,9 @@ int oldCSR_submv(ML_Operator *Amat, double p[], double ap[])
 double total_submv = 0.;
 int CSR_submv(ML_Operator *Amat, double p[], double ap[])
 {
-   int i, j, k, Nrows, *bindx, total_send, total_rcv, bindx_row, nzeros;
-   double *p2, *val, sum;
+   int i, j, k, Nrows, *bindx;
+   double *val, sum;
    struct ML_CSR_MSRdata *temp;
-   ML_CommInfoOP *getrow_comm;
    int *row_ptr;
 
    Nrows = Amat->matvec->Nrows;
@@ -603,7 +606,7 @@ int CSR_submv(ML_Operator *Amat, double p[], double ap[])
 }
 int ML_submv(ML_Operator *Amat, double p[], double ap[])
 {
-   int i, j, k, Nrows, total_send, total_rcv, nzeros, *cols, col, allocated_space, length;
+   int i, j, Nrows, total_send, total_rcv, *cols, col, allocated_space, length;
    double *p2, *vals, dtemp;
    ML_CommInfoOP *getrow_comm;
 
@@ -695,7 +698,7 @@ int ML_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
 }
 int CSR_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
 {
-   int i, j, k, Nrows, *bindx, total_send, total_rcv, bindx_row, nzeros;
+   int i, k, Nrows, *bindx, total_send, total_rcv;
    double *p2, *val, sum;
    struct ML_CSR_MSRdata *temp;
    ML_CommInfoOP *getrow_comm;
@@ -773,7 +776,7 @@ void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
 {
   register double *ptrd;
   double          *ptr_send_list, *ptr_recv_list, *orig_ptr;
-  int              type, N_neighbors, *temp, i, j, k, rtype;
+  int              type, N_neighbors, *temp, i, j, rtype;
   int             proc, sub_proc;
   USR_REQ         *request;
   ML_NeighborList *neighbor;
@@ -837,7 +840,7 @@ void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
     neighbor = &(comm_info->neighbors[i]);
     rtype = type;   j = sizeof(double)* neighbor->N_rcv;
     if ((neighbor->ML_id & mask) == sub_proc ) {
-       k = comm->USR_waitbytes((void *) ptr_recv_list, j, &(neighbor->ML_id),
+       comm->USR_waitbytes((void *) ptr_recv_list, j, &(neighbor->ML_id),
                         &rtype, comm->USR_comm, request+i);
     }
     ptr_recv_list         += neighbor->N_rcv;
@@ -851,10 +854,12 @@ void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
 
 int ML_Gen_CoarseSolverXYT( ML *ml, int i)
 {
+#ifdef XYT
   int *local2global;
   int *separator, *sep_size;
   int Nseparators, Nlocal, Nghost;
   ML_Operator *matrix_data;
+#endif
 #ifdef ML_TIMING
    double t0;
 #endif
@@ -902,9 +907,9 @@ int ML_Gen_CoarseSolverXYT( ML *ml, int i)
 
 void ML_XYTfree(void *temp)
 {
+#ifdef XYT
   ML_Operator *matrix_data;
 
-#ifdef XYT
   matrix_data = (ML_Operator *) ML_XYT_free((xyt_ADT) temp);
   ML_Operator_Destroy(matrix_data);
 #else

@@ -91,8 +91,6 @@ void ML_Reader_ReadInput(char *cmd_file_name, struct reader_context **context)
 
 {
   FILE *ifp;
-  int   problem_type;
-  char  input[MAX_INPUT_STR_LN];
 
 
   /*********************** BEGIN EXECUTION ***********************************/
@@ -126,10 +124,6 @@ void ML_Reader_GetGeneralSpecs(FILE *ifp, struct reader_context *context)
 {
 /* Read the General Problem specification section of the input file. */
 
-  int         num_found;
-  int         problem_type;
-  int         ntokes;
-  char       *token_ptrs[MAX_TOKENS];
   char        input[MAX_INPUT_STR_LN], *c_srch;
   static char yo[] = "get_general_specs";
 
@@ -360,7 +354,6 @@ void ML_Reader_GetSolutionSpecs(FILE *ifp, struct reader_context *context)
 
   char *yo = "get_solution_specs";
 
-  int   num_scanned;
   char  input[MAX_INPUT_STR_LN], *c_srch;
 
   /* Read in Solution Specifications */
@@ -457,7 +450,6 @@ void ML_Reader_GetAggregationSpecs(FILE *ifp, struct reader_context *context)
 
   char *yo = "get_aggregation_specs";
 
-  int   num_scanned;
   char  input[MAX_INPUT_STR_LN], *c_srch;
 
   /* Read in Aggregation Specifications */

@@ -74,8 +74,6 @@ int ML_CSolve_Init(ML_CSolve *ml_cs)
 
 int ML_CSolve_Destroy(ML_CSolve **cs)
 {
-   ML_CSolve *ml_cs;
-
    ML_CSolve_Clean(*cs);
    ML_memory_free( (void**) cs );
    (*cs) = NULL; 
