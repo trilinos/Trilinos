@@ -378,7 +378,6 @@ namespace Teuchos {
     numRows_ = numRows;
     numCols_ = numCols;
     stride_ = numRows_;
-    ScalarType zero = ScalarTraits<ScalarType>::zero();
     values_ = new ScalarType[stride_*numCols_];
     putScalar();
     valuesCopied_ = true;
