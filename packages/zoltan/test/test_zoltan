@@ -1,4 +1,4 @@
-#!/bin/csh 
+#!/bin/csh
 ##############################################################################
 # Zoltan Library for Parallel Applications                                   #
 # Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
@@ -133,6 +133,7 @@ if (! $?run ) then
     switch ( $arch )
     case generic:
     case gcc:
+    case gcc64
     case gccP3:
     case g++:
     case linux:
