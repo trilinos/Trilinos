@@ -1828,7 +1828,9 @@ int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
   }
 
   /* OpenDX, does not support everything (like plotting vector values),
-   * but it works for 1D, 2D, and 3D */
+   * but it works for 1D, 2D, and 3D
+   * Note that the input file has adash (`-') and not an underscore (`_')
+   * as for OpenDX. */
   if( choice == 0 ) {
 
     if( info[level].is_filled == ML_YES ) {
@@ -1856,13 +1858,13 @@ int ML_Aggregate_Viz( ML *ml, ML_Aggregate *ag, int choice,
     if( info[level].is_filled == ML_YES ) {
       if( base_filename != NULL ) 
 	sprintf( graphfile,
-		"%s_level%d.xyz",
+		"%s-level%d.xyz",
 		base_filename,
 		level );
 
       else  
 	sprintf( graphfile,
-		".graph_level%d.xyz",
+		".graph-level%d.xyz",
 		level );
 
       if( comm->ML_mypid == 0 ) 
