@@ -251,19 +251,23 @@ va_dcl
 /*****************************************************************************/
 /*****************************************************************************/
 
-double *Zoltan_Calloc (int num, int size, char *filename, int lineno)
-   {
-   double *p ;
-   p = Zoltan_Malloc (num*size, filename, lineno) ;
-   memset ((void *) p, '\0', num*size) ;
-   return p ;
-   }
+/* Safe version of calloc.  */
 
+double *Zoltan_Calloc (int num, int size, char *filename, int lineno)
+{
+double *p ;
+  p = Zoltan_Malloc (num*size, filename, lineno) ;
+  memset ((void *) p, '\0', num*size) ;
+  return p ;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 
 /* Safe version of malloc.  Does not initialize memory .*/
 
 double *Zoltan_Malloc(int n, char *filename, int lineno)
-
 {
   char *yo = "Zoltan_Malloc";
   struct malloc_debug_data *new_ptr;     /* data structure for malloc data */
