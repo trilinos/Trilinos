@@ -61,7 +61,7 @@ extern int ML_Mapper_SetData(ML_Mapper*,void*);
 extern int ML_Mapper_GetLength(ML_Mapper*,int*,int*);
 extern int ML_Mapper_Apply(ML_Mapper *, double *, double *);
 
-// WKC -- Added header for Epetra stuff
+/* WKC -- Added header for Epetra stuff */
 #ifdef WKC
 extern int ML_Mapper_Apply(ML_Mapper *, Epetra_MultiVector & , Epetra_MultiVector &);
 #endif

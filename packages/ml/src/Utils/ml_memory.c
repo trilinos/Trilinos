@@ -381,7 +381,7 @@ int ML_memory_clean( char *name, int inlen )
          }
          if ( clean_flag == 0 )
          {
-            ML_free( (int *) malloc_addr_log[i] );
+            ML_free( malloc_addr_log[i] );
             malloc_leng_log[i] = -1;
          }
       }

@@ -999,7 +999,7 @@ int ML_MSR2CSR(struct ML_CSR_MSRdata *csr_data, int Nrows, int *Ncolumns)
 
 
 #ifdef WKC
-// WKC -- note that the double * coming in are really Epetra_MultiVectors
+/* WKC -- note that the double * coming in are really Epetra_MultiVectors */
 
 /*********************************************************************/
 /* matvec in MSR format                                              */
@@ -1047,8 +1047,8 @@ int MSR_matvec_WKC(void *Amat_in, int ilen, double *ep_p, int olen, double *ep_a
     big_p = pp_p;
    }
 
-// This could be blocked,  ZZZZ
-// Weird blocking scheme already
+/* This could be blocked,  ZZZZ
+   Weird blocking scheme already */
    sum = new double [X.NumVectors()];
   j = bindx[0];
   bindx_ptr = &bindx[j];

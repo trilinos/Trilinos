@@ -5441,9 +5441,8 @@ int ML_build_ggb(ML *ml, void *data)
 
 
 #ifdef WKC
-/////////////////////////////////////////////////////////////////////////
 
-// WKC -- herein lies all modified code for using Epetra_MultiVectors!
+/* WKC -- herein lies all modified code for using Epetra_MultiVectors! */
 
 #include <iostream>
 #include <stdio.h>
@@ -5451,7 +5450,7 @@ int ML_build_ggb(ML *ml, void *data)
 
 int ML_Solve_MGV( ML *ml , const Epetra_MultiVector &in, Epetra_MultiVector &out)
 {
-// Copy input to maintain const
+/* Copy input to maintain const */
    Epetra_MultiVector  in_temp ( in );
    int    i, leng, dir_leng, *dir_list, k, level;
    double *diag, *scales, *din_temp;
@@ -5501,7 +5500,7 @@ int ML_Solve_MGV( ML *ml , const Epetra_MultiVector &in, Epetra_MultiVector &out
 /* watch out for this !!!!! */
 scales = NULL;
 
-// This can be made much faster by not copying the data above
+/* This can be made much faster by not copying the data above */
    if ( scales != NULL ) {
       for ( i = 0; i < leng; i++ ) 
       for ( int KK = 0 ; KK != in.NumVectors() ; KK++ )
@@ -5525,7 +5524,7 @@ scales = NULL;
 /* solve using V-cycle multigrid                                             */
 /*-------------------------------------------------------------------------- */
 
-// FOR SIMPLICITY,  #ifdef ML_ANALYSIS ... #endif is removed
+/* FOR SIMPLICITY,  #ifdef ML_ANALYSIS ... #endif is removed */
 
 double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol, 
         Epetra_MultiVector &ep_rhs,
@@ -5563,7 +5562,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
    /* ------------------------------------------------------------ */
    if (Rmat->to == NULL) {    /* coarsest grid */
 
-//if ( comm->ML_mypid == 0 ) cout << ep_sol.MyLength() << " " << ep_sol.GlobalLength() << " " << endl;
+/*if ( comm->ML_mypid == 0 ) cout << ep_sol.MyLength() << " " << ep_sol.GlobalLength() << " " << endl; */
 
       if ( ML_CSolve_Check( csolve ) == 1 ) {
          ML_CSolve_Apply(csolve, lengf, ep_sol, lengf, ep_rhss);
@@ -5572,7 +5571,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
          ML_Smoother_Apply(post, lengf, ep_sol, lengf, ep_rhss, ML_NONZERO);
       }
       if (res_norm_or_not == ML_COMPUTE_RES_NORM) {
-// Need to do this better!
+/* Need to do this better! */
             res_norm = 0.0;
       }
    }
@@ -5602,18 +5601,18 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
 
 
       if (res_norm_or_not == ML_COMPUTE_RES_NORM)
-// need to think of something to do here!
+/* need to think of something to do here! */
          res_norm = 0.0;
-//         res_norm = sqrt(ML_gdot(lengf, res, res, comm));
+/*         res_norm = sqrt(ML_gdot(lengf, res, res, comm)); */
 
       lengc = Rmat->outvec_leng;
 
-// ADDED COMMUNICATION HERE!!!
+/* ADDED COMMUNICATION HERE!!! */
       int tot_size_WKC;
       MPI_Allreduce ( (void *)&lengc , (void *)&tot_size_WKC , 1 , MPI_INT ,
                       MPI_SUM , comm->USR_comm );
 
-//if ( comm->ML_mypid == 0 ) cout << "Recursing down" << endl;
+/*if ( comm->ML_mypid == 0 ) cout << "Recursing down" << endl; */
 
       Epetra_Map Map ( tot_size_WKC , lengc , 0 , ep_res.Comm() );
       Epetra_MultiVector ep_rhs2 ( Map , ep_res.NumVectors() );
@@ -5666,7 +5665,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
       if (ml->ML_scheme == ML_MGW) 
 	ML_Cycle_MG( Rmat->to, ep_sol2, ep_rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
 
-//if ( comm->ML_mypid == 0 ) cout << "Recursing up" << endl;
+/*if ( comm->ML_mypid == 0 ) cout << "Recursing up" << endl; */
       /* ------------------------------------------------------------ */
       /* transform the data from equation to grid space, do grid      */
       /* transfer and then transfer back to equation space            */

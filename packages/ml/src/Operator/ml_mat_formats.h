@@ -95,7 +95,7 @@ extern int MSR_getrows(void *data, int N_requested_rows, int requested_rows[],
 extern int MSR_matvec(void *Amat, int, double p[], int, double ap[]);
 
 #ifdef WKC
-// WKC -- double * happen to be Epetra_MultiVectors in cognito
+/* WKC -- double * happen to be Epetra_MultiVectors in cognito */
 extern int MSR_matvec_WKC(void *Amat, int, double *p, int, double *ap);
 #endif
 

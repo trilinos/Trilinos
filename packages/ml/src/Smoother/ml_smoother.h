@@ -227,7 +227,7 @@ extern  int ML_Smoother_Set_Label( ML_Smoother *smoo, char *label);
 extern  int ML_Smoother_Apply(ML_Smoother *,int,double *,int,double*,int);
 
 #ifdef WKC
-// WKC Added proto for Epetra stuff!
+/* WKC Added proto for Epetra stuff! */
 extern  int ML_Smoother_Apply(ML_Smoother *,int,Epetra_MultiVector &,
                               int,Epetra_MultiVector &,int);
 #endif
@@ -246,7 +246,7 @@ extern  int ML_Smoother_MLS_Apply(void *, int, double *, int, double *);
 extern int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[]);
 
 #ifdef WKC
-// WKC -- double * are actually Epetra_MultiVectors
+/* WKC -- double * are actually Epetra_MultiVectors */
 extern int ML_Cheby_WKC(void *sm, int inlen, double *x, int outlen, double *rhs);
 #endif
 

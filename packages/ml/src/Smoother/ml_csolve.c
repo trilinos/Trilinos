@@ -299,7 +299,7 @@ int ML_CSolve_Clean_Aggr( void *vsolver, ML_CSolveFunc *func)
 
 
 #ifdef WKC
-// WKC  EPETRA STUFF TO FOLLOW
+/* WKC  EPETRA STUFF TO FOLLOW */
 
 /* *********************************************************************** */
 /* perform solve                                                           */

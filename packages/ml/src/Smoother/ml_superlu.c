@@ -2365,10 +2365,10 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
 
 
 #ifdef WKC
-// WKC  The double * is actually an Epetra_MultiVector *
+/* WKC  The double * is actually an Epetra_MultiVector * */
 
-// NO NEED TO BLOCK, SOLVING A #proc x #proc system at this point, 
-// communication costs vastly dominates the calculation.
+/* NO NEED TO BLOCK, SOLVING A #proc x #proc system at this point, 
+   communication costs vastly dominates the calculation.  */
 
 int ML_SuperLU_Solve_WKC(void *vsolver,int ilen,double *pep_x,int olen,double *pep_rhs)
 {
@@ -2431,9 +2431,9 @@ for ( int KK = 0 ; KK != ep_x.NumVectors() ; KK++ ) {
          ML_memory_free((void**)&(((NRformat *) A->Store)->colind));
          ML_memory_free((void**)&(((NRformat *) A->Store)->rowptr));
          ML_memory_free((void**)&(((NRformat *) A->Store)->nzval));
-//WKC         ML_memory_free((void*)&(((NRformat *) A->Store)->colind));
-//WKC         ML_memory_free((void*)&(((NRformat *) A->Store)->rowptr));
-//WKC         ML_memory_free((void*)&(((NRformat *) A->Store)->nzval));
+/*WKC         ML_memory_free((void*)&(((NRformat *) A->Store)->colind));
+  WKC         ML_memory_free((void*)&(((NRformat *) A->Store)->rowptr));
+  WKC         ML_memory_free((void*)&(((NRformat *) A->Store)->nzval)); */
          SUPERLU_FREE( ((NRformat *) A->Store)->nzval);
          SUPERLU_FREE( A->Store );
          ML_memory_free((void**) &A);

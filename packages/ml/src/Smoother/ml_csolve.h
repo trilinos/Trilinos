@@ -81,7 +81,7 @@ extern int ML_CSolve_Set_1Level(ML_CSolve *, ML_1Level *);
 extern int ML_CSolve_Apply(ML_CSolve *, int, double *, int, double *);
 
 #ifdef WKC
-// WKC -- Added prototype
+/* WKC -- Added prototype */
 extern int ML_CSolve_Apply(ML_CSolve *, int, Epetra_MultiVector &, int, 
                            Epetra_MultiVector &);
 #endif

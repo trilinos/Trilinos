@@ -423,7 +423,7 @@ void  ML_ARPACK_driver(char which[],
 		      ddot_(&nloc2, rhs, &one, rhs, &one));
 	    
 	    
-	    d[j+2*ncv] =   a2; //  /dlapy2_(&lamR,&lamI);
+	    d[j+2*ncv] =   a2; /*  /dlapy2_(&lamR,&lamI); */
 	    
 	    d[j+1+2*ncv] = a2;
 	    

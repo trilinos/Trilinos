@@ -170,12 +170,13 @@ int ML_Mapper_Apply(ML_Mapper *ml_mapper, double *invec, double *outvec)
 
 
 #ifdef WKC
-// WKC
-//  EXTENSION FOR EPETRA CLASSES
+/* WKC
+   EXTENSION FOR EPETRA CLASSES
+*/
 /* ******************************************************************** */
 /* apply mapping function                                               */
 /* -------------------------------------------------------------------- */
-// NOT CALLED!
+/* NOT CALLED! */
 
 int ML_Mapper_Apply(ML_Mapper *ml_mapper, Epetra_MultiVector &ep_invec, 
                     Epetra_MultiVector &ep_outvec)

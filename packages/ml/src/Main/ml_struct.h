@@ -48,7 +48,7 @@ typedef struct ML_Struct ML;
 #include <string.h>
 
 #ifdef WKC
-// WKC -- added header(s) for the new datastructures
+/* WKC -- added header(s) for the new datastructures */
 #include <Epetra_MultiVector.h> 
 #include <Epetra_LocalMap.h>
 #endif
@@ -285,7 +285,7 @@ extern int ML_Solve(ML *ml, int inlen, double *sol, int outlen, double *rhs);
 int ML_Solve_MGV( ML *ml , double *din, double *dout);
 
 #ifdef WKC
-// WKC -- new prototype for V-cycle solve
+/* WKC -- new prototype for V-cycle solve */
 int ML_Solve_MGV( ML *ml , const Epetra_MultiVector &in ,
                          Epetra_MultiVector &out );
 #endif
@@ -298,7 +298,7 @@ extern double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
                      int approx_all_zeros, ML_Comm *comm, int, ML *ml);
 
 #ifdef WKC
-// WKC -- new prototype for V-cycle solve
+/* WKC -- new prototype for V-cycle solve */
 extern double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol, 
                      Epetra_MultiVector &ep_rhs,
                      int approx_all_zeros, ML_Comm *comm, int, ML *ml);

@@ -1517,7 +1517,7 @@ int ML_Operator_Move2HierarchyAndDestroy_fragile(ML_Operator *newmat,
 /* ******************************************************************** */
 /* apply the operator to a vector and apply boundary conditions         */
 /************************************************************************/
-// NOT BLOCKED ZZZZZZ
+/* NOT BLOCKED ZZZZZZ */
 #include "ml_epetra_utils.h"
 int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen, 
                       Epetra_MultiVector &ep_din, int olen, 
@@ -1589,7 +1589,7 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, Epetra_MultiVector &ep_din,
 
    if (Op->matvec->ML_id == ML_EXTERNAL) {
       if ( (void *)Op->matvec->external == (void *)Epetra_ML_matvec )
-// WKC  Call the new blocked function!!
+/* WKC  Call the new blocked function!! */
          Epetra_ML_matvec_WKC ( Op->data, inlen, (double *)&ep_din, olen,
                                 (double *)&ep_dout );
 

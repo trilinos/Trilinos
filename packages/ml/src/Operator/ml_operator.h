@@ -184,7 +184,7 @@ extern int ML_Operator_Get_Diag(ML_Operator *Amat, int length, double **diag);
 extern int ML_Operator_Apply(ML_Operator *, int, double *, int, double *);
 
 #ifdef WKC
-// WKC -- ADDED HEADER
+/* WKC -- ADDED HEADER */
 extern int ML_Operator_Apply(ML_Operator *, int, Epetra_MultiVector &, 
                              int, Epetra_MultiVector & );
 #endif
@@ -195,7 +195,7 @@ extern int ML_Operator_ApplyAndResetBdryPts(ML_Operator *, int, double *,
 extern int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
 			   int matrix_type, double scalar);
 #ifdef WKC
-// WKC -- ADDED HEADER
+/* WKC -- ADDED HEADER */
 extern int ML_Operator_ApplyAndResetBdryPts(ML_Operator *, int, 
                      Epetra_MultiVector &, int olen, Epetra_MultiVector &);
 #endif
