@@ -125,7 +125,7 @@ int Zoltan_BSFC(
                                    this processor's new decomposition.       */
   int **export_to_part          /* Returned value:  array of partitions to
                                    which exported objects should be assigned.
-                                   KDDKDD  Currently unused.  */
+                                   KDDKDD  Currently assume #parts == #procs.*/
 
 )
 {
@@ -496,12 +496,20 @@ int Zoltan_BSFC(
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
+  ierr = Zoltan_Special_Malloc(zz, (void**) export_to_part,
+			   *num_export, ZOLTAN_SPECIAL_MALLOC_INT);
+  if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return(ZOLTAN_MEMERR);
+  }
   
   /* fill in the export data */
   j = 0;
   for(i=0;i<num_local_objects;i++) 
     if(sfc_vert_ptr[i].destination_proc != zz->Proc) {
       *((*export_procs)+j) = sfc_vert_ptr[i].destination_proc;
+      /* Assumes #parts == #procs */
+      *((*export_to_part)+j) = sfc_vert_ptr[i].destination_proc;  
       ZOLTAN_SET_GID(zz, (*export_global_ids+j*num_gid_entries), (global_ids+i*num_gid_entries));
       ZOLTAN_SET_LID(zz, (*export_local_ids+j*num_lid_entries), (local_ids+i*num_lid_entries));
       j++;
