@@ -415,7 +415,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
 
       /* Fill in export arrays */
       for (j = i = 0 ; i < ndots ; i++)
-        if (dots[i].part != parts[i] || zz->Proc != Zoltan_LB_Part_To_Proc(zz, p->index))
+        if (dots[i].part != parts[i] || zz->Proc != Zoltan_LB_Part_To_Proc(zz, dots[i].part))
           {
           *((*export_procs)   +j) = Zoltan_LB_Part_To_Proc (zz, dots[i].part) ;
           *((*export_to_parts)+j) = dots[i].part ;
