@@ -520,7 +520,21 @@ fi
 AC_SUBST(TRILINOS_CXXFLAGS)
 
 # ------------------------------------------------------------------------
-# Checks for building examples
+# Checks for building simple examples
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(examples,
+[  --enable-examples       compile simple examples],
+[BUILD_EXAMPLES=${enableval}],
+[BUILD_EXAMPLES=no]
+)
+
+AC_MSG_CHECKING(whether we should build the basic examples)
+AC_MSG_RESULT(${BUILD_EXAMPLES})
+AM_CONDITIONAL(BUILD_EXAMPLES, test X${BUILD_EXAMPLES} = Xyes)
+
+# ------------------------------------------------------------------------
+# Checks for building epetra examples
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(noxepetra-examples,
@@ -538,13 +552,25 @@ AC_MSG_CHECKING(whether we should build the noxepetra examples)
 AC_MSG_RESULT(${BUILD_EPETRA_EXAMPLES})
 
 # ------------------------------------------------------------------------
-# Checks for basic libraries
+# Checks for basic libraries for examples
 # ------------------------------------------------------------------------
 
-if test ${BUILD_EPETRA_EXAMPLES} = yes; then
+if test ${BUILD_EXAMPLES} = yes || test ${BUILD_EPETRA_EXAMPLES} = yes; then
 
   AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
   AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
+
+  dnl Checks for libraries.
+  AC_F77_LIBRARY_LDFLAGS
+  LIBS="${LIBS} ${FLIBS}"
+
+  # Find valid BLAS
+  AC_LANG_FORTRAN77
+  AC_SEARCH_LIBS(dcopy,[cxml blas],,AC_MSG_ERROR([Cannot find BLAS library]))
+
+  # Find valid LAPACK
+  AC_LANG_FORTRAN77
+  AC_SEARCH_LIBS(dgetrs,[cxml lapack],,AC_MSG_ERROR([Cannot find LAPACK library]))
 
 fi
 
@@ -614,18 +640,6 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
 ])
 
 if test X${BUILD_EPETRA_EXAMPLES} = Xyes; then
-
-  dnl Checks for libraries.
-  AC_F77_LIBRARY_LDFLAGS
-  LIBS="${LIBS} ${FLIBS}"
-
-  # Find valid BLAS
-  AC_LANG_FORTRAN77
-  AC_SEARCH_LIBS(dcopy,[cxml blas],,AC_MSG_ERROR([Cannot find BLAS library]))
-
-  # Find valid LAPACK
-  AC_LANG_FORTRAN77
-  AC_SEARCH_LIBS(dgetrs,[cxml lapack],,AC_MSG_ERROR([Cannot find LAPACK library]))
 
   # Determine TRILINOS_TARGET
   AC_MSG_CHECKING(whether TRILINOS_ARCH is defined)
@@ -782,6 +796,7 @@ AC_CONFIG_FILES([
 		doc/Makefile
 		src/Makefile
 		src-epetra/Makefile 
+		example/Makefile
 		example-epetra/Makefile 
 		example-epetra/DS6.5.1/Makefile
 		example-epetra/1Dfem_linear/Makefile
