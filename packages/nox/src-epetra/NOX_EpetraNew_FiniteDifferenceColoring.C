@@ -416,6 +416,6 @@ void FiniteDifferenceColoring::createColorContainers()
 
   // Now create a map to use with the index object
   for( int i = 0; i < numColors; i++ )
-    colorToNumMap.insert( pair< int, int > ( colorList[i], i ) );
+    colorToNumMap[ colorList[i] ] =  i;
 
 }
