@@ -1036,6 +1036,8 @@ int cCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
   return(1);
 }
 
+/******************************************************************************/
+
 int CSR_densematvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 {
 
@@ -1044,7 +1046,7 @@ int CSR_densematvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
            struct ML_CSR_MSRdata *temp;
            ML_CommInfoOP     *getrow_comm;
            ML_Operator       *Amat;
-           int               Nstored;
+           int               *row_ptr, Nstored;
            ML_Comm           *comm;
 
            Amat    = (ML_Operator *) Amat_in;
@@ -1053,6 +1055,7 @@ int CSR_densematvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
            Nstored = Amat->getrow->Nrows;
            temp    = (struct ML_CSR_MSRdata *) Amat->data;
            val     = temp->values;
+           row_ptr = temp->rowptr;
 
            getrow_comm= Amat->getrow->pre_comm;
            if (getrow_comm != NULL) {
@@ -1118,12 +1121,14 @@ int CSR_densematvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
               ML_free(ap2);
           }
           return(1);
-        }
+}
 
-        int CSR_ones_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
-        {
+/******************************************************************************/
 
-           int i, jj, k, /* Nrows,*/ *bindx;
+int CSR_ones_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
+{
+
+   int i, jj, k, /* Nrows,*/ *bindx;
    double            *p2, sum, *ap2;
    struct ML_CSR_MSRdata *temp;
    ML_CommInfoOP     *getrow_comm;
@@ -1191,6 +1196,8 @@ int CSR_densematvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
   }
   return(1);
 }
+
+/******************************************************************************/
 
 int localCSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
 {

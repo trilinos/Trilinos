@@ -795,10 +795,8 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   int NcenterNodes;
   int * perm = NULL;
   char str[80];
-  /*
   struct amalg_drop * temp = 0;
   double * scaled_diag = 0;
-  */
   
   /* ------------------- execution begins --------------------------------- */
   

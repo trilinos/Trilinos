@@ -29,6 +29,7 @@
 void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 		     struct ML_CSR_MSRdata *mydata, int Debug_Flag, 
 		    int GGB_alp_flag) 
+{
   /* Eigenvalue definitions */
   int      iparam[11];
   int      nev, ncv, info, mode, nconv, Fattening;
@@ -623,7 +624,8 @@ extern int ML_OperatorGGB_Apply (double *densemat, int Nrows, int Ncols, double 
   
   
    
-  dgemv_(trans, &Nrows, &Ncols, &alp, densemat, &Nrows, din, &one, &beta, dout, &one, (ftnlen)1);
+  /*DGEMV_F77(trans, &Nrows, &Ncols, &alp, densemat, &Nrows, din, &one, &beta, dout, &one, (ftnlen)1);*/
+  DGEMV_F77(trans, &Nrows, &Ncols, &alp, densemat, &Nrows, din, &one, &beta, dout, &one);
 
 
   return (1);
@@ -885,8 +887,8 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
 
 
   /* Get QR factorization for both matrices */
-  dgeqrf_(&m, &ncols1, A, &lda, tau, work, &lwork, &info);  
-  dgeqrf_(&m, &ncols2, A1, &lda, tau1, work1, &lwork1, &info1);  
+  DGEQRF_F77(&m, &ncols1, A, &lda, tau, work, &lwork, &info);  
+  DGEQRF_F77(&m, &ncols2, A1, &lda, tau1, work1, &lwork1, &info1);  
   
 
   if (info !=0 | info1 !=0)  {
@@ -912,8 +914,8 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
   
 
   /* Now we obtain Q's  */
-  dorgqr_(&m, &ncols1,&ncols1, A, &lda, tau, work, &lwork, &info);
-  dorgqr_(&m, &ncols2, &ncols2, A1, &lda, tau1, work1, &lwork1, &info1);
+  DORGQR_F77(&m, &ncols1,&ncols1, A, &lda, tau, work, &lwork, &info);
+  DORGQR_F77(&m, &ncols2, &ncols2, A1, &lda, tau1, work1, &lwork1, &info1);
 
   if (info !=0 | info1 !=0)  {
     printf("Problem with QR factorization in ML_subspace function dorgqr_\n");
@@ -971,7 +973,7 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
   work     = (double *)  ML_allocate(lwork* sizeof(double));
 
   /* SVD */
-  dgesvd_(jobu, jobvt, &ncols1, &ncols2, B, &lda, S, U, &ldu, VT, &ldvt, 
+  DGESVD_F77(jobu, jobvt, &ncols1, &ncols2, B, &lda, S, U, &ldu, VT, &ldvt, 
 	  work, &lwork, &info);
 
   if (info !=0 )  {
