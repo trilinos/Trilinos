@@ -169,7 +169,7 @@ public:
 
   inline double GetSolTime() const 
   {
-    return SolFactTime_;
+    return SolTime_;
   }
 
   inline double GetConvTime() const

@@ -284,7 +284,7 @@ int Amesos_Mumps::ConvertToTriplet()
 int Amesos_Mumps::ReadParameterList()
 {
 
-  if( ParameterList_ == NULL ) return;
+  if( ParameterList_ == NULL ) return 0;
   
   bool value = 0;
   value = ParameterList_->getParameter("print information",value);
