@@ -51,30 +51,36 @@ Their detailed descriptions can be found below.
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD><A NAME="LB_Compute_Destinations"></A>int <B>LB_Compute_Destinations</B>(struct
-<B>LB_Struct</B> * <I>lb</I>, int <I>num_import</I>,<B> LB_GID </B>* <I>import_global_ids</I>,
-<B>LB_LID</B> * <I>import_local_ids</I>,&nbsp; int * <I>import_procs</I>,
-int * <I>num_export</I>, <B>LB_GID</B> ** <I>export_global_ids</I>, <B>LB_LID</B>
-** <I>export_local_ids</I>, int ** <I>export_procs</I>);&nbsp;
+<TD><A NAME="LB_Compute_Destinations"></A>int <B>LB_Compute_Destinations</B>
+(struct&nbsp;<B>LB_Struct</B>&nbsp;*<I>lb</I>,
+int&nbsp;<I>num_gid_entries</I>,
+int&nbsp;<I>num_lid_entries</I>,
+int&nbsp;<I>num_import</I>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>import_global_ids</I>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>import_local_ids</I>,
+int&nbsp;*<I>import_procs</I>,
+int&nbsp;*<I>num_export</I>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;*<I>export_global_ids</I>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;*<I>export_local_ids</I>,
+int&nbsp;**<I>export_procs</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD>FUNCTION <B>LB_Compute_Destinations</B>(<I>lb, num_import, import_global_ids,
+<TD>FUNCTION <B>LB_Compute_Destinations</B>(<I>lb, num_gid_entries, num_lid_entries, num_import, import_global_ids,
 import_local_ids, import_procs, num_export, export_global_ids, export_local_ids,
 export_procs</I>)&nbsp;
 <BR>INTEGER(LB_INT) :: LB_Compute_Destinations&nbsp;
 <BR>TYPE(LB_Struct),INTENT(IN) :: lb&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <BR>INTEGER(LB_INT), INTENT(IN) :: num_import&nbsp;
 <BR>INTEGER(LB_INT), INTENT(OUT) :: num_export&nbsp;
-<BR>&lt;<I>type-gid</I>>, POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
-<BR>&lt;<I>type-lid</I>>, POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
+<BR>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
+<BR>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
 <BR>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;
-
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;</TD>
+</TD>
 </TR>
 </TABLE>
 
@@ -99,6 +105,22 @@ to satisfy their assignments of non-local objects.
 to be used in this invocation of the migration routine.</TD>
 </TR>
 
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import&nbsp;</I></TD>
 
@@ -110,17 +132,19 @@ to be imported to this processor).</TD>
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
 
-<TD>An array of size <I>num_import</I> listing the global IDs of objects
+<TD>An array of <I>num_import</I> global IDs of objects
 needed by this processor that are stored on other processors in the old
-decomposition.</TD>
+decomposition.<br>
+(size = <i>num_import</i> * <i>num_gid_entries</i>)</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_local_ids</I></TD>
 
-<TD>An array of size <I>num_import</I> listing the local IDs of objects
+<TD>An array of <I>num_import</I> local IDs of objects
 needed by this processor that are stored on other processors in the old
-decomposition.</TD>
+decomposition.<br>
+(size = <i>num_import</i> * <i>num_lid_entries</i>)</TD>
 </TR>
 
 <TR>
@@ -142,15 +166,19 @@ the number of objects that must be sent from this processor to other processors)
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids</I></TD>
 
-<TD>Upon return, an array of size <I>num_export </I>listing the global
-IDs of objects to be sent from this processor.</TD>
+<TD>Upon return, an array of <I>num_export</I> global
+IDs of objects to be sent from this processor.<br>
+(size = <i>num_export</i> * <i>num_gid_entries</i>)
+</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
 
-<TD>&nbsp;Upon return, an array of size <I>num_export </I>listing the local
-IDs of objects to be sent from this processor.</TD>
+<TD>&nbsp;Upon return, an array of <I>num_export</I> local
+IDs of objects to be sent from this processor.<br>
+(size = <i>num_export</i> * <i>num_lid_entries</i>)
+</TD>
 </TR>
 
 <TR>
@@ -180,29 +208,35 @@ IDs of processors that need the sent objects (i.e., the destination processors).
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD><A NAME="LB_Help_Migrate"></A>int <B>LB_Help_Migrate</B>(struct <B>LB_Struct</B>
-* <I>lb</I>, int <I>num_import</I>, <B>LB_GID</B> * <I>import_global_ids</I>,
-<B>LB_LID</B> * <I>import_local_ids</I>, int * <I>import_procs</I>, int
-<I>num_export</I>, <B>LB_GID</B> * <I>export_global_ids</I>, <B>LB_LID</B>
-* <I>export_local_ids</I>,&nbsp; int * <I>export_procs</I>);&nbsp;
+<TD><A NAME="LB_Help_Migrate"></A>int <B>LB_Help_Migrate</B>
+(struct&nbsp;<B>LB_Struct</B>&nbsp;*<I>lb</I>,
+int&nbsp;<I>num_gid_entries</I>,
+int&nbsp;<I>num_lid_entries</I>,
+int&nbsp;<I>num_import</I>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>import_global_ids</I>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>import_local_ids</I>,
+int&nbsp;*<I>import_procs</I>,
+int&nbsp;<I>num_export</I>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>export_global_ids</I>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>export_local_ids</I>,
+int&nbsp;*<I>export_procs</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD>FUNCTION <B>LB_Help_Migrate</B>(<I>lb, num_import, import_global_ids,
+<TD>FUNCTION <B>LB_Help_Migrate</B>(<I>lb, num_gid_entries, num_lid_entries, num_import, import_global_ids,
 import_local_ids, import_procs, num_export, export_global_ids, export_local_ids,
 export_procs</I>)&nbsp;
 <BR>INTEGER(LB_INT) :: LB_Help_Migrate&nbsp;
 <BR>TYPE(LB_Struct),INTENT(IN) :: lb&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <BR>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
-<BR>&lt;<I>type-gid</I>>, POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
-<BR>&lt;<I>type-lid</I>>, POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
+<BR>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
+<BR>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
 <BR>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;
-
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;</TD>
+</TD>
 </TR>
 </TABLE>
 
@@ -238,6 +272,22 @@ data structures.
 to be used in this invocation of the migration routine.</TD>
 </TR>
 
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import&nbsp;</I></TD>
 
@@ -249,23 +299,27 @@ to be imported to this processor).</TD>
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
 
-<TD>An array of size <I>num_import</I> listing the global IDs of objects
+<TD>An array of <I>num_import</I> global IDs of objects
 needed by this processor that are stored on other processors in the old
-decomposition.</TD>
+decomposition.<br>
+(size = <i>num_import</i> * <i>num_gid_entries</i>)
+</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_local_ids</I></TD>
 
-<TD>An array of size <I>num_import</I> listing the local IDs of objects
+<TD>An array of <I>num_import</I> local IDs of objects
 needed by this processor that are stored on other processors in the old
-decomposition.</TD>
+decomposition.<br>
+(size = <i>num_import</i> * <i>num_lid_entries</i>)
+</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_procs</I></TD>
 
-<TD>An array of size <I>num_import </I>listing the processor IDs of the
+<TD>An array of size <I>num_import</I> listing the processor IDs of the
 processors that own objects needed by this processor (i.e., the source
 processors).</TD>
 </TR>
@@ -281,15 +335,18 @@ objects that must be sent from this processor to other processors).</TD>
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids</I></TD>
 
-<TD>An array of size <I>num_export </I>listing the global IDs of objects
-to be sent from this processor.</TD>
+<TD>An array of <I>num_export</I> global IDs of objects
+to be sent from this processor.<br>
+(size = <i>num_export</i> * <i>num_gid_entries</i>)</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
 
-<TD>An array of size <I>num_export </I>listing the local IDs of objects
-to be sent from this processor.</TD>
+<TD>An array of <I>num_export</I> local IDs of objects
+to be sent from this processor.<br>
+(size = <i>num_export</i> * <i>num_lid_entries</i>)
+</TD>
 </TR>
 
 <TR>

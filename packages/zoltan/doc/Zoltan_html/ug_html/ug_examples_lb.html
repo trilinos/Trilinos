@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Load-Balancing Examples</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -10,175 +18,150 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1377">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_examples_mig.html">Next</a>&nbsp; |&nbsp; <a href="ug_examples_init.html">Previous</a></i></b></div>
 
-   <TITLE>Zoltan User's Guide:  Load-Balancing Examples</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
-
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_examples_mig.html">Next</a>&nbsp; |&nbsp; <a href="ug_examples_init.html">Previous</a></i></b></div>
-
-
-<H2>
-<A NAME="Load-Balancing Example"></A>Load-Balancing Example</H2>
+<h2>
+<a NAME="Load-Balancing Example"></a>Load-Balancing Example</h2>
 An example of the typical calling sequence for load balancing using Zoltan
-in a finite element application is shown in the <A HREF="#LB Example Fig">figure</A>
-below. An application first selects a load-balancing algorithm through a
-call to <B><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.
+in a finite element application is shown in the <a href="#LB Example Fig">figure</a>
+below. An application first selects a load-balancing algorithm through
+a call to <b><a href="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>.
 Appropriate query functions are then registered with the load-balancing
-library through a series of calls to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.
+library through a series of calls to <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>.
 In the example, a geometric algorithm, such as RCB, is assumed. Application
 query functions returning lists and coordinates of nodes of the finite
 element mesh are registered. Next, some parameter values are set by calls
-to <B><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B>.
-After some computation, load balancing is
-invoked by calling <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.
+to <b><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>.
+After some computation, load balancing is invoked by calling <b><a href="ug_interface_lb.html#LB_Balance">LB_Balance</a></b>.
 The results of the load balancing include the number of nodes to be imported
 and exported to the processor, lists of global and local IDs of the imported
 and exported nodes, and source and destination processors of the imported
-and exported nodes. The return value of <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
+and exported nodes. The return value of <b><a href="ug_interface_lb.html#LB_Balance">LB_Balance</a></b>
 is tested to see whether the new decomposition differs from the old one.
 If the decompositions differ, some sort of data migration is needed to
 establish the new decomposition; the details of migration are not shown
-in this <A HREF="#LB Example Fig">figure</A> but will be addressed in the
-<A HREF="ug_examples_mig.html">migration examples</A>. After the data migration
-is completed, the arrays of information about imported and exported nodes
-returned by <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
-are freed by a call to <B><A HREF="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A></B>.
+in this <a href="#LB Example Fig">figure</a> but will be addressed in the
+<a href="ug_examples_mig.html">migration
+examples</a>. After the data migration is completed, the arrays of information
+about imported and exported nodes returned by <b><a href="ug_interface_lb.html#LB_Balance">LB_Balance</a></b>
+are freed by a call to <b><a href="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</a></b>.
 Finally, when the application is finished with the load balancing operations,
-it calls <B><A HREF="ug_interface_lb.html#LB_Destroy">LB_Destroy</A></B>.
-<BR>&nbsp;
-<BR>&nbsp;
-<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
-<TR>
-<TD><A NAME="LB Example Fig"></A><TT>char *lb_method;</TT>&nbsp;
-<BR><TT>int new, num_imp, num_exp, *imp_procs, *exp_procs;</TT>&nbsp;
-<BR><TT><A HREF="ug_usage.html#Macro defs">LB_GID</A> *imp_global_ids,
-*exp_global_ids;</TT>&nbsp;
-<BR><TT><A HREF="ug_usage.html#Macro defs">LB_LID</A> *imp_local_ids, *exp_local_ids;</TT>&nbsp;
+it calls <b><a href="ug_interface_lb.html#LB_Destroy">LB_Destroy</a></b>.
+<br>&nbsp;
+<br>&nbsp;
+<center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<tr>
+<td><a NAME="LB Example Fig"></a><tt>char *lb_method;</tt>
+<br><tt>int new, num_imp, num_exp, *imp_procs, *exp_procs;</tt>
+<br><tt>int num_gid_entries, num_lid_entries;</tt>
+<br><tt><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;imp_global_ids,
+exp_global_ids;</tt>
+<br><tt><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>
+imp_local_ids, exp_local_ids;</tt>
+<p><tt>/* <i>Set load-balancing method.</i> */</tt>
+<br><tt>read_load_balancing_info_from_input_file(&amp;lb_method);</tt>
+<br><tt><a href="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a>(lb,
+lb_method, &amp;(lb_params[0]));</tt>
+<p><tt>/* <i>Register load-balancing query functions.</i> */</tt>
+<br><tt><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb, <a href="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</a>,
+(void (*)()) user_return_dimension, NULL);</tt>
+<br><tt><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb, <a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</a>,
+(void (*)()) user_return_coords, NULL);</tt>
+<br><tt><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb, <a href="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN_TYPE</a>,
+(void (*)()) user_return_num_node, NULL);</tt>
+<br><tt><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb, <a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</a>,
+(void (*)()) user_return_owned_nodes, NULL);</tt>
+<p><tt>/* <i>Reset some load-balancing parameters.</i> */</tt>
+<br><tt><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+"imbalance_tol", "0.1");</tt>
+<br><tt><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+"RCB_Reuse", "TRUE");</tt>
+<p><tt>/* <i>Perform computations</i> */</tt>
+<br><tt>...</tt>
+<br><tt>/* <i>Perform load balancing</i> */</tt>
+<br><tt><a href="ug_interface_lb.html#LB_Balance">LB_Balance</a>(lb,&amp;new,&amp;num_gid_entries,&amp;num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs);&nbsp;</tt>
+<br><tt>if (new)</tt>
+<br><tt>&nbsp; perform_data_migration(...);</tt>
+<p><tt>/* <i>Free memory allocated for load-balancing results by LB library</i>
+*/</tt>
+<br><tt><a href="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</a>(&amp;imp_global_ids,
+&amp;imp_local_ids, &amp;imp_procs,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;exp_global_ids, &amp;exp_local_ids,
+&amp;exp_procs);&nbsp;</tt>
+<br><tt>...</tt>
+<br><tt><a href="ug_interface_lb.html#LB_Destroy">LB_Destroy</a> (&amp;lb);&nbsp;</tt>
+<br><tt>...</tt></td>
+</tr>
 
-<P><TT>/* <I>Set load-balancing method.</I> */</TT>&nbsp;
-<BR><TT>read_load_balancing_info_from_input_file(&amp;lb_method);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A>(lb,
-lb_method, &amp;(lb_params[0]));</TT>&nbsp;
+<caption ALIGN=BOTTOM><i>Typical calling sequence for performing load balancing
+with the Zoltan library.</i></caption>
+</table></center>
 
-<P><TT>/* <I>Register load-balancing query functions.</I> */</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</A>,
-(void (*)()) user_return_dimension, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,
-(void (*)()) user_return_coords, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN_TYPE</A>,
-(void (*)()) user_return_num_node, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,
-(void (*)()) user_return_owned_nodes, NULL);</TT>&nbsp;
+<br>&nbsp;
+<center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<tr>
+<td><tt>character(len=3) lb_method</tt>
+<br><tt>logical new</tt>
+<br><tt>integer(lb_int) num_imp, num_exp</tt>
+<br><tt>integer(lb_int)&nbsp;num_gid_entries, num_lid_entries&nbsp;</tt>
+<br><tt>integer(lb_int), pointer :: imp_procs(:), exp_procs(:)</tt>
+<br><tt>integer(lb_int), pointer :: imp_global_ids(:), exp_global_ids(:)
+! global IDs</tt>
+<br><tt>integer(lb_int), pointer :: imp_local_ids(:), exp_local_ids(:)
+! local IDs</tt>
+<br><tt>integer(lb_int) ierr</tt>
+<p><tt>! <i>Set load-balancing method.</i></tt>
+<br><tt>lb_method = "RCB"</tt>
+<br><tt>ierr = <a href="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a>(lb,
+lb_method)</tt>
+<p><tt>! <i>Register load-balancing query functions.</i></tt>
+<br><tt>ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</a>, user_return_dimension)
+! omit data = C NULL</tt>
+<br><tt>ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</a>, user_return_coords)</tt>
+<br><tt>ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN_TYPE</a>, user_return_num_node)</tt>
+<br><tt>ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</a>, user_return_owned_nodes)</tt>
+<p><tt>! <i>Reset some load-balancing parameters.</i></tt>
+<br><tt>ierr = <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+"imbalance_tol", "0.1")</tt>
+<br><tt>ierr = <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+"RCB_Reuse", "TRUE")</tt>
+<p><tt>! <i>Perform computations</i></tt>
+<br><tt>...</tt>
+<br><tt>! <i>Perform load balancing</i></tt>
+<br><tt>ierr = <a href="ug_interface_lb.html#LB_Balance">LB_Balance</a>(lb,new,num_gid_entries,num_lid_entries,&nbsp;&amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_imp,imp_global_ids,imp_local_ids,
+&amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; imp_procs,num_exp,exp_global_ids,exp_local_ids,exp_procs)&nbsp;</tt>
+<br><tt>if (new) then</tt>
+<br><tt>&nbsp; perform_data_migration(...)</tt>
+<br><tt>endif</tt>
+<p><tt>! <i>Free memory allocated for load-balancing results by LB library</i></tt>
+<br><tt>ierr = <a href="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</a>(imp_global_ids,
+imp_local_ids, imp_procs, &amp;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; exp_global_ids, exp_local_ids,
+exp_procs)&nbsp;</tt>
+<br><tt>...</tt>
+<br><tt>call <a href="ug_interface_lb.html#LB_Destroy">LB_Destroy</a>(lb)&nbsp;</tt>
+<br><tt>...</tt></td>
+</tr>
 
-<P><TT>/* <I>Reset some load-balancing parameters.</I> */</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A>(lb, 
-"imbalance_tol", "0.1");</TT>
-<BR><TT><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A>(lb, 
-"RCB_Reuse", "TRUE");</TT>
+<caption ALIGN=BOTTOM><i>Fortran version of the load balancing example.</i></caption>
+</table></center>
 
-<P><TT>/* <I>Perform computations</I> */</TT>&nbsp;
-<BR><TT>...</TT>&nbsp;
-<BR><TT>/* <I>Perform load balancing</I> */</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,&amp;new,&amp;num_imp,&amp;imp_global_ids,&amp;imp_local_ids,&amp;imp_procs,</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_global_ids,&amp;exp_local_ids,&amp;exp_procs);&nbsp;</TT>&nbsp;
-<BR><TT>if (new)</TT>&nbsp;
-<BR><TT>&nbsp; perform_data_migration(...);</TT>&nbsp;
-
-<P><TT>/* <I>Free memory allocated for load-balancing results by LB library</I>
-*/</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A>(&amp;imp_global_ids,
-&amp;imp_local_ids, &amp;imp_procs,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;exp_global_ids, &amp;exp_local_ids,
-&amp;exp_procs);&nbsp;</TT>&nbsp;
-<BR><TT>...</TT>
-<BR><TT><A HREF="ug_interface_lb.html#LB_Destroy">LB_Destroy</A>
-(&amp;lb);
-
-<BR><TT>...</TT>
-
-</TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I>Typical calling sequence for performing load balancing
-with the Zoltan library.</I></CAPTION>
-</TABLE></CENTER>
-&nbsp;
-
-<BR>&nbsp;
-<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
-<TR>
-<TD><TT>character(len=3) lb_method</TT>&nbsp;
-<BR><TT>logical new</TT>&nbsp;
-<BR><TT>integer(lb_int) num_imp, num_exp</TT>&nbsp;
-<BR><TT>integer(lb_int), pointer :: imp_procs(:), exp_procs(:)</TT>&nbsp;
-<BR><TT><A HREF="ug_fortran_api.html#fortran ug api IDs">type(LB_GID)</A>,
-pointer :: imp_global_ids(:), exp_global_ids(:)
-! app defined global IDs</TT>&nbsp;
-<BR><TT>integer(lb_int), pointer :: imp_local_ids(:), exp_local_ids(:)
-! integer local IDs</TT>&nbsp;
-<BR><TT>integer(lb_int) ierr</TT>&nbsp;
-
-<P><TT>! <I>Set load-balancing method.</I></TT>&nbsp;
-<BR><TT>lb_method = "RCB"</TT>&nbsp;
-<BR><TT>ierr = <A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A>(lb,
-lb_method)</TT>&nbsp;
-
-<P><TT>! <I>Register load-balancing query functions.</I></TT>&nbsp;
-<BR><TT>ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</A>,
-user_return_dimension) ! omit data = C NULL</TT>&nbsp;
-<BR><TT>ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,
-user_return_coords)</TT>&nbsp;
-<BR><TT>ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN_TYPE</A>,
-user_return_num_node)</TT>&nbsp;
-<BR><TT>ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,
-user_return_owned_nodes)</TT>&nbsp;
-
-<P><TT>! <I>Reset some load-balancing parameters.</I></TT>&nbsp;
-<BR><TT>ierr = <A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A>(lb, 
-"imbalance_tol", "0.1")</TT>
-<BR><TT>ierr = <A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A>(lb, 
-"RCB_Reuse", "TRUE")</TT>
-
-<P><TT>! <I>Perform computations</I></TT>&nbsp;
-<BR><TT>...</TT>&nbsp;
-<BR><TT>! <I>Perform load balancing</I></TT>&nbsp;
-<BR><TT>ierr = <A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A>(lb,new,num_imp,imp_global_ids,imp_local_ids, &amp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; imp_procs,num_exp,exp_global_ids,exp_local_ids,exp_procs)&nbsp;</TT>&nbsp;
-<BR><TT>if (new) then</TT>&nbsp;
-<BR><TT>&nbsp; perform_data_migration(...)</TT>&nbsp;
-<BR><TT>endif</TT>&nbsp;
-
-<P><TT>! <I>Free memory allocated for load-balancing results by LB library</I>
-</TT>&nbsp;
-<BR><TT>ierr = <A HREF="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A>(imp_global_ids,
-imp_local_ids, imp_procs, &amp;&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; exp_global_ids, exp_local_ids,
-exp_procs)&nbsp;</TT>&nbsp;
-<BR><TT>...</TT>
-<BR><TT>call <A HREF="ug_interface_lb.html#LB_Destroy">LB_Destroy</A>(lb)
-
-<BR><TT>...</TT>
-
-</TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I>Fortran version of the load balancing
-example.</I></CAPTION>
-</TABLE></CENTER>
-&nbsp;
-
-<P>
-<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
-<A HREF="ug_examples_mig.html">Next:&nbsp; Migration Examples</A>&nbsp;
-|&nbsp; <A HREF="ug_examples_init.html">Previous:&nbsp; Initialization
-Example</A>]
-</BODY>
-</HTML>
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
+<a href="ug_examples_mig.html">Next:&nbsp;
+Migration Examples</a>&nbsp; |&nbsp; <a href="ug_examples_init.html">Previous:&nbsp;
+Initialization Example</a>]
+</body>
+</html>

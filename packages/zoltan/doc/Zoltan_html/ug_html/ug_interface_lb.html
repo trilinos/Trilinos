@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1377">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  Load-Balancing Interface</title>
@@ -195,35 +195,36 @@ being set. As above, the string is case-insensitive.&nbsp;</td>
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td><a NAME="LB_Balance"></a>int <b>LB_Balance</b>(struct <b>LB_Struct</b>
-* <i>lb</i>, int * <i>changes</i>, int * <i>num_import</i>, <b>LB_GID</b>
-** <i>import_global_ids</i>, <b>LB_LID</b> ** <i>import_local_ids</i>,
-int ** <i>import_procs</i>, int * <i>num_export</i>, <b>LB_GID </b>**<i>
-export_global_ids</i>, <b>LB_LID</b> ** <i>export_local_ids</i>, int **
+* <i>lb</i>, int * <i>changes</i>, int&nbsp;*<i>num_gid_entries</i>, int&nbsp;*<i>num_lid_entries</i>,&nbsp;
+int *<i>num_import</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_local_ids</i>, int ** <i>import_procs</i>,
+int * <i>num_export</i>, <a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_local_ids</i>, int **
 <i>export_procs</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>LB_Balance</b>(<i>lb, changes, num_import, import_global_ids,
-import_local_ids, import_procs, num_export, export_global_ids, export_local_ids,
-export_procs</i>)&nbsp;
+<td>FUNCTION <b>LB_Balance</b>(<i>lb, changes, num_gid_entries, num_lid_entries,
+num_import, import_global_ids, import_local_ids, import_procs, num_export,
+export_global_ids, export_local_ids, export_procs</i>)&nbsp;
 <br>INTEGER(LB_INT) :: LB_Balance&nbsp;
 <br>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
 <br>LOGICAL, INTENT(OUT) :: changes&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
 <br>INTEGER(LB_INT), INTENT(OUT) :: num_import, num_export&nbsp;
-<br>&lt;<i>type-gid</i>>, POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
-<br>&lt;<i>type-lid</i>>, POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
-<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;</td>
+<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
 </tr>
 </table>
 
 <hr WIDTH="100%"><b>LB_Balance</b> invokes the load-balancing routine specified
 by <b><a href="#LB_Set_Method">LB_Set_Method</a></b>.
 <br>&nbsp;
-<table WIDTH="100%" >
+<table WIDTH="100%" NOSAVE >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
 
@@ -244,6 +245,22 @@ to be used in this invocation of the load-balancing routine.</td>
 method; 0 or .FALSE. otherwise.</td>
 </tr>
 
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>Upon return, the number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>Upon return, the number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import&nbsp;</i></td>
 
@@ -255,15 +272,17 @@ the number of objects to be imported to this processor).</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
 
-<td>Upon return, an array of size <i>num_import</i> listing the global
-IDs of objects to be imported to this processor.</td>
+<td>Upon return, an array of <i>num_import</i> global IDs of objects to
+be imported to this processor.
+<br>(size = <i>num_import</i> * <i>num_gid_entries</i>)</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
 
-<td>Upon return, an array of size <i>num_import</i> listing the local IDs
-of objects to be imported to this processor.</td>
+<td>Upon return, an array of&nbsp; <i>num_import</i> local IDs of objects
+to be imported to this processor.
+<br>(size = <i>num_import</i> * <i>num_lid_entries</i>)</td>
 </tr>
 
 <tr>
@@ -286,15 +305,17 @@ to other processors).</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids</i></td>
 
-<td>Upon return, an array of size <i>num_export</i> listing the global
-IDs of objects to be exported from this processor.</td>
+<td>Upon return, an array of <i>num_export</i> global IDs of objects to
+be exported from this processor.&nbsp;
+<br>(size = <i>num_export</i> * <i>num_gid_entries</i>)</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
 
-<td>Upon return, an array of size <i>num_export</i> listing the local IDs
-of objects to be exported from this processor.</td>
+<td>Upon return, an array of <i>num_export</i> local IDs of objects to
+be exported from this processor.
+<br>(size = <i>num_export</i> * <i>num_lid_entries</i>)</td>
 </tr>
 
 <tr>
@@ -458,14 +479,10 @@ The same principle holds for <i>cut_wgt.</i>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_Free_Data"></a>int <b>LB_Free_Data</b>(<b>LB_GID</b> **
-<i>import_global_ids</i>,
-<b>LB_LID</b>
-** <i>import_local_ids</i>, int ** <i>import_procs</i>, <b>LB_GID
-</b>**
-<i>export_global_ids</i>,
-<b>LB_LID</b>
-** <i>export_local_ids</i>, int ** <i>export_procs</i>);&nbsp;</td>
+<td><a NAME="LB_Free_Data"></a>int <b>LB_Free_Data</b>(<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_local_ids</i>, int&nbsp;**<i>import_procs</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_local_ids</i>, int&nbsp;**<i>export_procs</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
@@ -474,19 +491,18 @@ The same principle holds for <i>cut_wgt.</i>
 <td>FUNCTION <b>LB_Free_Data</b>(<i>import_global_ids, import_local_ids,
 import_procs, export_global_ids, export_local_ids, export_procs</i>)&nbsp;
 <br>INTEGER(LB_INT) :: LB_Free_Data&nbsp;
-<br>&lt;<i>type-gid</i>>, POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
-<br>&lt;<i>type-lid</i>>, POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
 <br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;
-<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;</td>
+</td>
 </tr>
 </table>
 
 <hr WIDTH="100%"><b>LB_Free_Data</b> frees the memory allocated by the
 load-balancing routines to return the results of <b><a href="#LB_Balance">LB_Balance</a></b>.
 Memory pointed to by the arguments is freed and the arguments are set to
-NULL in C or nullified in Fortran. Note that this does not destroy the
-load balancing data structure itself. That requires a call to <b><a href="#LB_Destroy">LB_Destroy</a></b>.
+NULL in C or nullified in Fortran. Note that this function does not destroy the
+load-balancing data structure itself; it is deallocated through a call to <b><a href="#LB_Destroy">LB_Destroy</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -567,8 +583,8 @@ objects in the new decomposition (i.e., the destination processors).</td>
 <hr WIDTH="100%"><b>LB_Destroy</b> frees the memory associated with a load-balancing
 structure and sets the structure to NULL in C or nullifies the structure
 in Fortran. Note that <b>LB_Destroy</b> does not deallocate the import
-and export arrays returned from <b><a href="#LB_Balance">LB_Balance</a></b>.
-This requires a separate call to <b><a href="#LB_Free_Data">LB_Free_Data</a></b>.
+and export arrays returned from <b><a href="#LB_Balance">LB_Balance</a></b>;
+these arrays can be deallocated through a separate call to <b><a href="#LB_Free_Data">LB_Free_Data</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>

@@ -117,31 +117,33 @@ This assumption may be relaxed in future releases of the library.
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD><A NAME="LB_PRE_MIGRATE_FN"></A>typedef void <B>LB_PRE_MIGRATE_FN</B>(void
-*<I> data</I>, int <I>num_import</I>, <B>LB_GID </B>*<I> import_global_ids</I>,
-<B>LB_LID</B> *<I> import_local_ids</I>, int *<I> import_procs</I>, int
-<I>num_export</I>, <B>LB_GID </B>*<I> export_global_ids</I>, <B>LB_LID
-</B>*<I> export_local_ids</I>, int *<I> export_procs</I>,<I> </I>int<I>
-*ierr</I>);&nbsp;
+<TD><A NAME="LB_PRE_MIGRATE_FN"></A>typedef void <B>LB_PRE_MIGRATE_FN</B>
+(void&nbsp;*<I>data</I>, 
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+int&nbsp;<I>num_import</I>, 
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>import_global_ids</I>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>import_local_ids</I>, int&nbsp;*<I>import_procs</I>, int&nbsp;<I>num_export</I>, 
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>export_global_ids</I>, 
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>export_local_ids</I>, int&nbsp;*<I>export_procs</I>, int&nbsp;*<I>ierr</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD> SUBROUTINE <B><I>Pre_Migrate</I></B>(<I>data, num_import,
+<TD> SUBROUTINE <B><I>Pre_Migrate</I></B>(<I>data, num_gid_entries, num_lid_entries, num_import,
 import_global_ids, import_local_ids, import_procs, num_export,
 export_global_ids, export_local_ids, export_procs, ierr</I>)&nbsp;
 <BR>&lt;<I>type-data</I>>, INTENT(INOUT) :: data&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <BR>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
 <BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
 <BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
 where <I>x</I> is 1, 2, 3 or 4. See the section on
 <A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
@@ -174,6 +176,23 @@ are made available for use in the pre-processing routine.
 
 <TD>Pointer to user-defined data.</TD>
 </TR>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import</I></TD>
@@ -259,31 +278,33 @@ destination processors.</TD>
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD><A NAME="LB_MID_MIGRATE_FN"></A>typedef void <B>LB_MID_MIGRATE_FN</B>(void
-*<I> data</I>, int <I>num_import</I>, <B>LB_GID </B>*<I> import_global_ids</I>,
-<B>LB_LID</B> *<I> import_local_ids</I>, int *<I> import_procs</I>, int
-<I>num_export</I>, <B>LB_GID </B>*<I> export_global_ids</I>, <B>LB_LID
-</B>*<I> export_local_ids</I>, int *<I> export_procs</I>,<I> </I>int<I>
-*ierr</I>);&nbsp;
+<TD><A NAME="LB_MID_MIGRATE_FN"></A>typedef void <B>LB_MID_MIGRATE_FN</B>
+(void&nbsp;*<I>data</I>, 
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+int&nbsp;<I>num_import</I>, 
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>import_global_ids</I>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>import_local_ids</I>, int&nbsp;*<I>import_procs</I>, int&nbsp;<I>num_export</I>, 
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>export_global_ids</I>, 
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>export_local_ids</I>, int&nbsp;*<I>export_procs</I>, int&nbsp;*<I>ierr</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD> SUBROUTINE <B><I>Mid_Migrate</I></B>(<I>data, num_import,
+<TD> SUBROUTINE <B><I>Mid_Migrate</I></B>(<I>data, num_gid_entries, num_lid_entries, num_import,
 import_global_ids, import_local_ids, import_procs, num_export,
 export_global_ids, export_local_ids, export_procs, ierr</I>)&nbsp;
 <BR>&lt;<I>type-data</I>>, INTENT(INOUT) :: data&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <BR>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
 <BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
 <BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
 where <I>x</I> is 1, 2, 3 or 4. See the section on
 <A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
@@ -318,6 +339,22 @@ are made available for use in the processing routine.
 
 <TD>Pointer to user-defined data.</TD>
 </TR>
+, 
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import</I></TD>
@@ -402,30 +439,32 @@ destination processors.</TD>
 <TABLE WIDTH="100%" NOSAVE >
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
-<TD><A NAME="LB_POST_MIGRATE_FN"></A>typedef void <B>LB_POST_MIGRATE_FN</B>(void
-*<I> data</I>, int <I>num_import</I>, <B>LB_GID </B>*<I> import_global_ids</I>,
-<B>LB_LID</B> *<I> import_local_ids</I>, int *<I> import_procs</I>, int
-<I>num_export</I>, <B>LB_GID </B>*<I> export_global_ids</I>, <B>LB_LID
-</B>*<I> export_local_ids</I>, int *<I> export_procs</I>,<I> </I>int<I>
-*ierr</I>);&nbsp;
+<TD><A NAME="LB_POST_MIGRATE_FN"></A>typedef void <B>LB_POST_MIGRATE_FN</B>
+(void&nbsp;*<I>data</I>, 
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+int&nbsp;<I>num_import</I>, 
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>import_global_ids</I>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>import_local_ids</I>, int&nbsp;*<I>import_procs</I>, int&nbsp;<I>num_export</I>, 
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>export_global_ids</I>, 
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>export_local_ids</I>, int&nbsp;*<I>export_procs</I>, int&nbsp;*<I>ierr</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
-<TD> SUBROUTINE <B><I>Post_Migrate</I></B>(<I>data, num_import,
+<TD> SUBROUTINE <B><I>Post_Migrate</I></B>(<I>data, num_gid_entries, num_lid_entries, num_import,
 import_global_ids, import_local_ids, import_procs, num_export,
 export_global_ids, export_local_ids, export_procs, ierr</I>)&nbsp;
 <BR>&lt;<I>type-data</I>>, INTENT(INOUT) :: data&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <BR>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
 <BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
 <BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
 where <I>x</I> is 1, 2, 3 or 4. See the section on
 <A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
@@ -458,6 +497,22 @@ are made available for use in the post-processing routine.
 
 <TD>Pointer to user-defined data.</TD>
 </TR>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import</I></TD>
@@ -542,28 +597,33 @@ destination processors.</TD>
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD><A NAME="LB_PACK_OBJ_FN"></A>typedef void <B>LB_PACK_OBJ_FN</B>(void
-*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, <B>LB_LID</B><I>local_id</I>,
-int <I>dest_proc</I>, int <I>size</I>, char *<I> buf</I>,<I> </I>int<I>
-*ierr</I>);&nbsp;
+<TD><A NAME="LB_PACK_OBJ_FN"></A>typedef void <B>LB_PACK_OBJ_FN</B>
+(void&nbsp;*<I>data</I>, 
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>global_id</I>, 
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>local_id</I>,
+int&nbsp;<I>dest_proc</I>,
+int&nbsp;<I>size</I>,
+char&nbsp;*<I>buf</I>,
+int&nbsp;*<I>ierr</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD> SUBROUTINE <B><I>Pack_Obj</I></B>(<I>data, global_id, local_id,
+<TD> SUBROUTINE <B><I>Pack_Obj</I></B>(<I>data, num_gid_entries, num_lid_entries, global_id, local_id,
 dest_proc, size, buf, ierr</I>)&nbsp;
 <BR>&lt;<I>type-data</I>>, INTENT(IN) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
-<BR>&lt;<I>type-lid</I>>, INTENT(IN) :: local_id&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
 <BR>INTEGER(LB_INT), INTENT(IN) :: dest_proc, size&nbsp;
 <BR>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: buf&nbsp;
 <BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
 where <I>x</I> is 1, 2, 3 or 4. See the section on
 <A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
@@ -598,6 +658,22 @@ for each object to be sent to another processor.
 
 <TD>Pointer to user-defined data.</TD>
 </TR>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
@@ -649,25 +725,29 @@ data should be packed.</TD>
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD><A NAME="LB_UNPACK_OBJ_FN"></A>typedef void <B>LB_UNPACK_OBJ_FN</B>(void
-*<I> data</I>, <B>LB_GID</B> <I>global_id</I>, int <I>size</I>, char *<I>
-buf</I>,<I> </I>int<I> *ierr</I>);&nbsp;
+<TD><A NAME="LB_UNPACK_OBJ_FN"></A>typedef void <B>LB_UNPACK_OBJ_FN</B>
+(void&nbsp;*<I>data</I>,
+int&nbsp;<i>num_gid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<I>global_id</I>,
+int&nbsp;<I>size</I>,
+char&nbsp;*<I>buf</I>,
+int&nbsp;*<I>ierr</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD> SUBROUTINE <B><I>Unpack_Obj</I></B>(<I>data, global_id,
+<TD> SUBROUTINE <B><I>Unpack_Obj</I></B>(<I>data, num_gid_entries, global_id,
 size, buf, ierr</I>)&nbsp;
 <BR>&lt;<I>type-data</I>>, INTENT(INOUT) :: data&nbsp;
-<BR>&lt;<I>type-gid</I>>, INTENT(IN) :: global_id&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
 <BR>INTEGER(LB_INT), INTENT(IN) :: size&nbsp;
 <BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: buf&nbsp;
 <BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+<p>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
 REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
 where <I>x</I> is 1, 2, 3 or 4. See the section on
 <A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
@@ -705,6 +785,14 @@ the exporting, not the importing, processor.)
 
 <TD>Pointer to user-defined data.</TD>
 </TR>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; global_id</I></TD>
