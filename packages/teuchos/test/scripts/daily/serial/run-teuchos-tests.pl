@@ -35,14 +35,64 @@ use strict 'refs';
 # and therefore I will write all of my relative paths from that
 #
 printf
-  "\n******************************".
-  "\n*** Running Teuchos tests ****".
-  "\n******************************\n";
+  "\n*****************************************************".
+  "\n*** Running Teuchos tests (no news is good news) ****".
+  "\n*****************************************************\n";
 
 my $success = 1;  # Boolean (false=0,true=nonzero)
 my $result;       # success=0, failure=nonzero
+
+#************************************
+# RefCountPtr test
+#************************************
 $result = system ('./RefCountPtr/RefCountPtr_test.exe --quiet');
-$success = 0 if ($result != 0);
+if ($result != 0) {
+  # If we failed run it again in verbose mode.
+  $success = 0;
+  printf
+    "\n\n*****************************************".
+    "\n*** Running Teuchos RefCountPtr test ****".
+    "\n*****************************************\n\n";
+  system ('./RefCountPtr/RefCountPtr_test.exe');
+}
+#************************************
+# BLAS test
+#************************************
 $result = system ('./BLAS/BLAS_test.exe');
-$success = 0 if ($result != 0);
+if ($result != 0) {
+  $success = 0;  
+  # If we failed run it again in verbose mode.
+  printf
+    "\n\n*****************************************".
+    "\n*** Running Teuchos BLAS test ****".
+    "\n*****************************************\n\n";
+  system ('./BLAS/BLAS_test.exe -v');
+}
+#************************************
+# DenseMatrix test
+#************************************
+$result = system ('./DenseMatrix/DenseMatrix_test.exe');
+if ($result != 0) {
+  $success = 0;
+  # If we failed run it again in verbose mode.
+  printf
+    "\n\n*****************************************".
+    "\n*** Running Teuchos DenseMatrix test ****".
+    "\n*****************************************\n\n";
+  system ('./DenseMatrix/DenseMatrix_test.exe -v');
+}
+#************************************
+# ParameterList test
+#************************************
+$result = system ('./ParameterList/ParameterList_test.exe');
+if ($result != 0) {
+  $success = 0;  
+  # If we failed run it again in verbose mode.
+  printf
+    "\n\n*****************************************".
+    "\n*** Running Teuchos ParameterList test ****".
+    "\n*****************************************\n\n";
+  system ('./ParameterList/ParameterList_test.exe --v');
+}
+# Return 0 if all the tests were successful, else return -1.
 exit ($success ? 0 : -1 );
