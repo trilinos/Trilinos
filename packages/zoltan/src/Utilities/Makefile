@@ -141,7 +141,7 @@ CCOMP		= $(CC) $(INC_PATH) $(CFLAGS)
 # lint defines
 #
 LINT		= lint 
-LINT_INC_PATH	= -Ishared -IMemory -ICommunication -IDDirectory $(INC_PATH)
+LINT_INC_PATH	= -I../include -Ishared -IMemory -ICommunication -IDDirectory $(INC_PATH)
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
 VPATH		= $(SUBDIRS) 
 
