@@ -114,7 +114,8 @@ int Zoltan_ParMetis(
          NULL, NULL, NULL, NULL);
 }
 
-/* Zoltan_ParMetis_Shared is also called by Zoltan_ParMetis_Order */
+/* Zoltan_ParMetis_Shared is shared by Zoltan_ParMetis
+   and Zoltan_ParMetis_Order */
 
 static int Zoltan_ParMetis_Shared(
   ZZ *zz,               /* Zoltan structure */
@@ -415,8 +416,8 @@ int Zoltan_Jostle(
 
   /* Call the real Jostle/ParMetis interface */
   return Zoltan_ParMetis_Jostle( zz, num_imp, imp_gids, imp_lids,
-            imp_procs, num_exp, exp_gids, exp_lids, exp_procs, NULL,
-            alg, &output_level, NULL, NULL, NULL, NULL);
+            imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
+            alg, &output_level, NULL, NULL, NULL, NULL, NULL);
 
 #endif /* ZOLTAN_JOSTLE */
 }
@@ -757,7 +758,11 @@ static int Zoltan_ParMetis_Jostle(
   }
 #endif
 
-  /* Scatter graph? */
+  /* Scatter graph? 
+   * If data distribution is highly imbalanced, it is better to
+   * redistribute the graph data structure before calling ParMetis.
+   * After partitioning, the results must be mapped back.
+   */
   tmp_num_obj = num_obj;
   if ((scatter>0) && (scatter<3)){
     /* Decide if the data imbalance is so bad that we should scatter the graph. */
@@ -778,6 +783,9 @@ static int Zoltan_ParMetis_Jostle(
     }
   }
 
+  /* EBEB: We need to make sure we don't scatter the graph 
+   * if local ordering (METIS) is used. 
+   */
   if (scatter){
     ierr = Zoltan_Scatter_Graph(&vtxdist, &xadj, &adjncy, &vwgt, &vsize,
               &adjwgt, &xyz, ndims, zz, &comm_plan);
@@ -1074,7 +1082,6 @@ static int Zoltan_ParMetis_Jostle(
       ierr = ZOLTAN_WARN;
     }
     /* If we did local ordering via METIS, then we also have the inv. perm. */
-    /* EBEB: Assume that local ordering is not used with scatter_graph. */
     if (graph_type == LOCAL_GRAPH){
       for (i=0; i<num_obj; i++){
         iperm[i] = iperm[i] + start_index;
