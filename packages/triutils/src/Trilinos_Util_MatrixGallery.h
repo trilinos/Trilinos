@@ -46,6 +46,11 @@
 
 #include <string>
 
+// NOTE: on some architectures (e.g., west), it may be difficult to
+// use STL, required by ShellOptions. In this case, undefine
+// the variable below. MatrixGallery will no longer use ShellOptions.
+#define TRILINOS_UTIL_MATRIX_GALLERY_WITH_SHELL_OPTIONS
+
 class Trilinos_Util_MatrixGallery 
 {
 public:
@@ -236,8 +241,10 @@ return 0 ;
   int Set(string parameter, Epetra_Vector & value);
 
   //! Sets gallery options using values passed from the shell
+#ifdef TRILINOS_UTIL_MATRIX_GALLERY_WITH_SHELL_OPTIONS
   int Set(Trilinos_Util_ShellOptions & ShellOptions);
-  
+#endif
+
   //@}
 
   //@{ \name Extraction methods.

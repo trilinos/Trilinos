@@ -306,6 +306,7 @@ int Trilinos_Util_MatrixGallery::Set(string parameter, Epetra_Vector & value)
 }
 
 // ================================================ ====== ==== ==== == =  
+#ifdef TRILINOS_UTIL_MATRIX_GALLERY_WITH_SHELL_OPTIONS
 #include <set>
 
 int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
@@ -371,6 +372,7 @@ int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
 
   return 0;
 }
+#endif
 
 // ================================================ ====== ==== ==== == =  
 Epetra_CrsMatrix * Trilinos_Util_MatrixGallery::GetMatrix() 
@@ -618,7 +620,7 @@ int Trilinos_Util_MatrixGallery::CreateMap()
     if( MyPID < NumGlobalElements_%NumProcs ) NumMyElements++;
       
     int count = 0;
-    int MyGlobalElements[NumMyElements];
+    int * MyGlobalElements = new int[NumMyElements];
       
     for( int i=0 ; i<NumGlobalElements_ ; ++i ) {
       if( i%NumProcs == MyPID ) 
@@ -633,6 +635,7 @@ int Trilinos_Util_MatrixGallery::CreateMap()
     }
     
     map_ = new Epetra_Map (NumGlobalElements_,NumMyElements,MyGlobalElements,0,*comm_);
+    delete MyGlobalElements;
 
   } else {
     cerr << ErrorMsg << "MapType has an incorrect value (" << MapType_ << ")\n";
@@ -847,7 +850,7 @@ int Trilinos_Util_MatrixGallery::CreateEye()
   
   a_ = 1.0;
   CreateMatrixDiag();
-    
+  return 0;    
 }
 
 // ================================================ ====== ==== ==== == =
@@ -941,7 +944,8 @@ int Trilinos_Util_MatrixGallery::CreateMatrixLaplace1d()
   c_ = -1.0;
 
   CreateMatrixTriDiag();
-    
+  
+  return 0;
 }
 
 // ================================================ ====== ==== ==== == =
@@ -1034,6 +1038,8 @@ int Trilinos_Util_MatrixGallery::CreateMatrixLaplace2d()
   e_ = -1.0;
 
   CreateMatrixCrossStencil2d();
+
+  return 0;
 }
 
 // ================================================ ====== ==== ==== == =
@@ -1053,6 +1059,8 @@ int Trilinos_Util_MatrixGallery::CreateMatrixLaplace3d()
   g_ = -1.0;
 
   CreateMatrixCrossStencil3d();
+
+  return 0;
 }
 
 // ================================================ ====== ==== ==== == =
@@ -1156,8 +1164,8 @@ int Trilinos_Util_MatrixGallery::CreateMatrixLehmer()
   // this is actually a dense matrix, stored into Crs format
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int Indices[NumGlobalElements_];
-  double Values[NumGlobalElements_];
+  int * Indices = new int[NumGlobalElements_];
+  double * Values = new double[NumGlobalElements_];
 
   for( int i=0 ; i<NumGlobalElements_ ; ++i ) Indices[i] = i;
   
@@ -1171,6 +1179,9 @@ int Trilinos_Util_MatrixGallery::CreateMatrixLehmer()
       
   }
     
+  delete Indices;
+  delete Values;
+
   assert(matrix_->TransformToLocal()==0);
   
   return 0;
@@ -1187,8 +1198,8 @@ int Trilinos_Util_MatrixGallery::CreateMatrixMinij()
   // this is actually a dense matrix, stored into Crs format
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int Indices[NumGlobalElements_];
-  double Values[NumGlobalElements_];
+  int * Indices = new int[NumGlobalElements_];
+  double * Values = new double[NumGlobalElements_];
 
   for( int i=0 ; i<NumGlobalElements_ ; ++i ) Indices[i] = i;
   
@@ -1202,6 +1213,9 @@ int Trilinos_Util_MatrixGallery::CreateMatrixMinij()
       
   }
     
+  delete Indices;
+  delete Values;
+
   assert(matrix_->TransformToLocal()==0);
   
   return 0;
@@ -1218,8 +1232,8 @@ int Trilinos_Util_MatrixGallery::CreateMatrixRis()
   // this is actually a dense matrix, stored into Crs format
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int Indices[NumGlobalElements_];
-  double Values[NumGlobalElements_];
+  int * Indices = new int[NumGlobalElements_];
+  double * Values = new double[NumGlobalElements_];
 
   for( int i=0 ; i<NumGlobalElements_ ; ++i ) Indices[i] = i;
   
@@ -1233,6 +1247,9 @@ int Trilinos_Util_MatrixGallery::CreateMatrixRis()
       
   }
     
+  delete Indices;
+  delete Values;
+
   assert(matrix_->TransformToLocal()==0);
   
   return 0;
@@ -1249,8 +1266,8 @@ int Trilinos_Util_MatrixGallery::CreateMatrixHilbert()
   // this is actually a dense matrix, stored into Crs format
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,NumGlobalElements_);
 
-  int Indices[NumGlobalElements_];
-  double Values[NumGlobalElements_];
+  int * Indices = new int[NumGlobalElements_];
+  double * Values = new double[NumGlobalElements_];
 
   for( int i=0 ; i<NumGlobalElements_ ; ++i ) Indices[i] = i;
   
@@ -1263,6 +1280,9 @@ int Trilinos_Util_MatrixGallery::CreateMatrixHilbert()
       
   }
     
+  delete Indices;
+  delete Values;
+
   assert(matrix_->TransformToLocal()==0);
   
   return 0;
@@ -1411,8 +1431,8 @@ void Trilinos_Util_MatrixGallery::CreateVbrMatrix(void)
   int * CrsIndices;
   double * CrsValues;
     
-  int Indices[MaxNnzPerRow];
-  double Values[MaxBlockSize];
+  int * Indices = new int[MaxNnzPerRow];
+  double * Values = new double[MaxBlockSize];
   int BlockRows = NumPDEEqns_;
   int ierr;
     
@@ -1455,7 +1475,8 @@ void Trilinos_Util_MatrixGallery::CreateVbrMatrix(void)
     VbrMatrix_->EndSubmitEntries();
   }
     
-  cout << "end opf insertion\n";
+  delete Indices;
+  delete Values;
 
   VbrMatrix_->TransformToLocal();
   
