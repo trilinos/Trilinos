@@ -126,7 +126,27 @@ echo "export LINKER"     >> .arch_env
 echo "export ARCH_LIBS"  >> .arch_env
 echo "export AR"         >> .arch_env
 echo "export RANLIB"     >> .arch_env
-grep "=" etc/makefile.${ARCH} \
+#
+# some stupid code to use ar instead of xar
+# on some TFLOP environments
+#
+\rm -f etc/makefile.copy
+cp etc/makefile.${ARCH} etc/makefile.copy
+if test `expr ${ARCH}` = 'TFLOP' 
+then
+\rm -f .artemp
+which xar 2>>.artemp 1>>.artemp
+noar=`cat .artemp | grep " in " | wc | sed "s/^ *//" | sed "s/ .*//"`
+if test `expr $noar` = '1'
+then
+\rm -f etc/makefile.copy
+cat etc/makefile.${ARCH} | sed "s/xar/ar/" > etc/makefile.copy
+fi
+fi
+\rm -f .artemp
+#
+#
+grep "=" etc/makefile.copy \
          |  grep -v "^\#"  \
          | sed "s/\#.*//"  \
          | sed 's/=/=\"/' | sed 's/$/\"/' \
@@ -135,4 +155,4 @@ grep "=" etc/makefile.${ARCH} \
 echo "./install_packages" >> .arch_env
 chmod a+x .arch_env
 sh .arch_env
-\rm -f .arch_env
+\rm -f .arch_env etc/makefile.copy
