@@ -36,6 +36,10 @@ static char *cvs_lbuserconsth_id = "$Id$";
  *  application can provide any values it wants for local identifiers, and
  *  can use them to make access of object information in the query routines
  *  more efficient.
+ *
+ *  LB_GID_IS_INT and LB_LID_IS_INT are flags to indicate whether or not
+ *  the type of the ID is "int".  Each should be set to 1 if the definition
+ *  is "int", and 0 otherwise.
  */
 
 #ifdef USE_LID_POINTERS
@@ -47,6 +51,8 @@ static char *cvs_lbuserconsth_id = "$Id$";
 
 #define LB_GID int
 #define LB_LID void *
+#define LB_GID_IS_INT 0
+#define LB_LID_IS_INT 1
 
 #else
 
@@ -57,6 +63,8 @@ static char *cvs_lbuserconsth_id = "$Id$";
  */
 #define LB_GID int
 #define LB_LID int
+#define LB_GID_IS_INT 1
+#define LB_LID_IS_INT 1
 
 #endif
 
