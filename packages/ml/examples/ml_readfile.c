@@ -131,13 +131,18 @@ int main(int argc, char *argv[])
    FILE *fp2;
    int count;
 
-   if (argc != 2) {
+   nblocks = -1;
+   if (argc < 2) {
      printf("Usage: ml_readfile num_processors\n");
      exit(1);
    }
    else sscanf(argv[1],"%d",&nblocks);
-#endif
+   if (nblocks == -1) {
+     printf("Usage: ml_readfile num_processors\n");
+     ereader_context xit(1);
+   }
 
+#endif
 
 #ifdef ML_MPI
   MPI_Init(&argc,&argv);
@@ -153,13 +158,18 @@ int main(int argc, char *argv[])
    if (proc_config[AZ_node] == 0) {
       ML_Reader_ReadInput("ml_inputfile", &context);
    }
-   AZ_broadcast((char *) &context,  sizeof(struct reader_context), proc_config,
+   else context = (struct reader_context *) malloc(sizeof(struct reader_context));
+   AZ_broadcast((char *) context,  sizeof(struct reader_context), proc_config,
                 AZ_PACK);
    AZ_broadcast((char *) NULL        ,   0          , proc_config, AZ_SEND);
 
    N_levels = context->N_levels;
    nsmooth   = context->nsmooth;
    num_PDE_eqns = context->N_dofPerNode;
+#else
+   context = (struct reader_context *) malloc(sizeof(struct reader_context));
+   ML_Reader_InitContext(context);
+
 #endif
 
   /* read in the number of matrix equations */
@@ -203,7 +213,6 @@ int main(int argc, char *argv[])
   /* all block (including the ghost nodes the same size.       */
 
   AZ_block_MSR(&bindx, &val, N_update, num_PDE_eqns, update);
-
 
   AZ_transform(proc_config, &external, bindx, val,  update, &update_index,
 	       &extern_index, &data_org, N_update, 0, 0, 0, &cpntr,
@@ -254,8 +263,6 @@ int main(int argc, char *argv[])
 #endif
 
 	
-printf("this is %d %e %e %s\n",context->output,
-context->agg_damping , context->tol, context->agg_spectral_norm);
   ML_Set_ResidualOutputFrequency(ml, context->output);
   ML_Set_Tolerance(ml, context->tol);
   ML_Aggregate_Create( &ag );
@@ -319,16 +326,6 @@ context->agg_damping , context->tol, context->agg_spectral_norm);
       if (proc_config[AZ_node] == 0) printf("reading rhs from a file\n");
       AZ_input_msr_matrix("rhsfile", update, &rhs, &garbage, N_update, 
                           proc_config);
-/*
-      ch = getc(fp);
-      if (ch == 'S') {
-         while ( (ch = getc(fp)) != '\n') ;
-      }
-      else ungetc(ch,fp);
-      for (i = 0; i < data_org[AZ_N_internal]+data_org[AZ_N_border]; i++) 
-         fscanf(fp,"%lf",&(rhs[i]));
-      fclose(fp);
-*/
    }
    AZ_reorder_vec(rhs, data_org, update_index, NULL);
 
