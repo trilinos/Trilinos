@@ -2361,6 +2361,7 @@ int pr_error(char *fmt,  ... )
      }
   }
   va_end(ap);
+  fflush(stdout);
   exit(1);
   return(1);
 }
