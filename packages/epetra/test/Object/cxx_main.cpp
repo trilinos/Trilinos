@@ -11,6 +11,7 @@
 
 int main(int argc, char *argv[]) {
 
+  int ierr = 0;
 #ifdef EPETRA_MPI
 
   // Initialize MPI
@@ -43,18 +44,57 @@ int main(int argc, char *argv[]) {
 
   Epetra_Object obj;
 
-  if (verbose) cout << "This is the default Epetra_Object Name: " << obj <<endl;
+  // Test Epetra_Object label and the method to get the label attribute
+  char* ObjLabel = obj.Label();
+  char* ObjLabel1 = "Epetra::Object";
+  if (verbose) cout << endl << endl << "This should say " << ObjLabel1 << ": " << ObjLabel << endl << endl << endl;
+  ierr = strcmp(ObjLabel1,ObjLabel);
+  assert (ierr==0);
 
-  obj.SetLabel("New name for Epetra_Object");
+  // Test Epetra_Object SetLabel attribute set method
+  char* NewObjLabel = "New name for Epetra_Object";
+  obj.SetLabel(NewObjLabel);
+  char* NewObjLabel1 = obj.Label();
+  if (verbose) cout << endl << "This should say " << NewObjLabel << ": " << NewObjLabel1 << endl << endl << endl;
+  ierr = strcmp(NewObjLabel1,NewObjLabel);
+  assert (ierr==0);
 
-  if (verbose) cout << "This should say \"New name for Epetra_Object\": " << obj <<endl;
-
+  // Test GetRacebackMode and SetTracebackMode methods
   assert(obj.GetTracebackMode()==ConstDefaultTracebackMode);
-  if (verbose) cout << "Default Traceback Mode value = " << obj.GetTracebackMode() << endl;
+  if (verbose) cout << endl <<"Default Traceback Mode value = " << obj.GetTracebackMode() << endl;
 
   obj.SetTracebackMode(ConstDefaultTracebackMode-1);
-  if (verbose) cout << "Set Traceback Mode value to one less than default = " << obj.GetTracebackMode() << endl;
+  if (verbose) cout << "Set Traceback Mode value to one less than default = " << obj.GetTracebackMode() << endl << endl;
   assert(obj.GetTracebackMode()==ConstDefaultTracebackMode-1);
+
+  // Test constructors other than the default
+  Epetra_Object obj1(1); // pass only TracebackMode
+  int TbM = obj1.GetTracebackMode();
+  if (verbose) cout << endl << endl << "This should say 1: " << TbM << endl << endl;
+  assert (1==TbM);
+
+  Epetra_Object obj2(NewObjLabel); // pass only a label
+  char* NewObjLabel2 = obj2.Label();
+  if (verbose) cout << endl << endl << "This should say " << NewObjLabel << ": " << NewObjLabel2 << endl << endl << endl;
+  ierr = strcmp(NewObjLabel2,NewObjLabel);
+  assert (ierr==0);
+
+  Epetra_Object obj3(NewObjLabel,1); // pass a label and a TracebackMode
+  char* NewObjLabel3 = obj3.Label();
+  int TbM1 = obj3.GetTracebackMode();
+  if (verbose) cout << endl << "This should say " << NewObjLabel << "," << "1: " << NewObjLabel3 << "," << TbM1 << endl << endl << endl;
+  ierr = strcmp(NewObjLabel3,NewObjLabel);
+  assert (ierr==0);
+  assert (1==TbM1);
+  
+  Epetra_Object obj4(obj3); // copy constructor
+  char* NewObjLabel4 = obj4.Label();
+  int TbM2 = obj4.GetTracebackMode();
+  if (verbose) cout << endl << "This should say " << NewObjLabel << "," << "1: " << NewObjLabel4 << "," << TbM2 << endl << endl << endl;
+  ierr = strcmp(NewObjLabel4,NewObjLabel);
+  assert (ierr==0);
+  assert (1==TbM2);
+  
 
 #ifdef EPETRA_MPI
   MPI_Finalize();
