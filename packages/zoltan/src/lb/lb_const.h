@@ -66,7 +66,8 @@ typedef struct LB_Param {
 typedef struct LB_Struct LB;
 typedef struct LB_Tag_Struct LB_TAG;
 
-typedef int LB_FN(LB *, int*, LB_GID**, LB_LID**, int **);
+typedef int LB_FN(LB *, int *, LB_GID **, LB_LID **, int **,
+                        int *, LB_GID **, LB_LID **, int **);
 
 /*
  *  Define the possible load balancing methods allowed.
