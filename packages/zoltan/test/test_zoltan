@@ -1,4 +1,4 @@
-#!/bin/csh 
+#!/bin/csh -v
 ##############################################################################
 # Zoltan Library for Parallel Applications                                   #
 # Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
@@ -32,55 +32,29 @@ set nem_nproc = (5 6 9) # no. of procs
 set nem_pdisk = (1 2 2) # parallel disk info
 
 # Set default options
-@ no_chaco = 0
-@ no_nemesis = 0
-@ no_rcb = 0
-@ no_rib = 0
-@ no_hsfc = 0
-@ no_bsfc = 0
-@ no_oct = 0
-@ no_parmetis = 0
-@ yes_jostle = 0
-@ yes_fortran = 0
 set out_tag = out
 set logfile = test_zoltan.log
 set answers = answers
 set outdir = output
 unset run
+unset arch
 
 # Check for environment variables.
+# They all start with ZOLTAN_ to avoid namespace pollution in the shell.
 if ($?ZOLTAN_ARCH) then
    set arch = $ZOLTAN_ARCH
 endif
-if ($?NO_NEMESIS) then
-   set no_nemesis = $NO_NEMESIS
-endif
-if ($?NO_RCB) then
-   set no_rcb = $NO_RCB
-endif
-if ($?NO_RIB) then
-   set no_rib = $NO_RIB
-endif
-if ($?NO_HSFC) then
-   set no_hsfc = $NO_HSFC
-endif
-if ($?NO_BSFC) then
-   set no_bsfc = $NO_BSFC
-endif
-if ($?NO_OCT) then
-   set no_oct = $NO_OCT
-endif
-if ($?NO_PARMETIS) then
-   set no_parmetis = $NO_PARMETIS
-endif
-if ($?YES_JOSTLE) then
-   set yes_jostle = $YES_JOSTLE
-endif
-if ($?YES_FORTRAN) then
-   set yes_fortran = $YES_FORTRAN
-   set no_nemesis = 1
-   set out_tag = fout
-endif
+
+set no_chaco = $?ZOLTAN_NO_CHACO
+set no_nemesis = $?ZOLTAN_NO_NEMESIS
+set no_rcb = $?ZOLTAN_NO_RCB
+set no_rib = $?ZOLTAN_NO_RIB
+set no_hsfc = $?ZOLTAN_NO_HSFC
+set no_bsfc = $?ZOLTAN_NO_BSFC
+set no_oct = $?ZOLTAN_NO_OCT
+set no_parmetis = $?ZOLTAN_NO_PARMETIS
+set yes_jostle = $?ZOLTAN_YES_JOSTLE
+set yes_fortran = $?ZOLTAN_YES_FORTRAN
 
 # Parse command-line options. 
 # These options will override the environment variables.
@@ -109,8 +83,6 @@ while ( $#argv )
      @ yes_jostle = 1
   else if ( "$1" == "-yes_fortran" ) then
      @ yes_fortran = 1
-     @ no_nemesis = 1
-     set out_tag = fout
   else if ( "$1" == "-logfile" || "$1" == "-log" ) then
   
     if ( $#argv < 2 ) then
@@ -193,6 +165,11 @@ if (! $?run ) then
   endif
 endif
   
+# Fortran?
+if ( $yes_fortran ) then
+   set no_nemesis = 1
+   set out_tag = fout
+endif
 
 # Find the right zdrive to run
 @ found = 0
