@@ -32,6 +32,7 @@ struct aztec_context {
    int    prec_or_solver;
    ML_Comm *comm;
    int     offset;
+   int    matrix_type;
 #ifdef AZ_ver2_1_0_3
    struct AZ_SCALING *scaling;
 #endif

@@ -58,6 +58,7 @@ int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
    /* build Aztec context */
 
    context = (struct aztec_context *) ML_allocate(sizeof(struct aztec_context));
+   context->matrix_type  = Amat->matrix_type;
    context->Amat         = Amat;
    context->proc_config  = proc_config;
    context->comm         = ml_handle->comm;
@@ -228,7 +229,8 @@ void AZ_ML_Clean(void *data)
    struct aztec_context *context;
 
    context = (struct aztec_context *) data;
-   if (context->Amat->matrix_type != AZ_USER_MATRIX) 
+   /*if (context->Amat->matrix_type != AZ_USER_MATRIX) */
+   if (context->matrix_type != AZ_USER_MATRIX) 
       ML_free(context->getrowstuff);
    ML_free(context);
 } 
