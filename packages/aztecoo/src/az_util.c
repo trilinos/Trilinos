@@ -2634,6 +2634,7 @@ void AZ_set_MATFREE(AZ_MATRIX *Amat, void *data,
    data_org[AZ_N_bord_blk]  = data_org[AZ_N_border];
    data_org[AZ_N_ext_blk]   = data_org[AZ_N_external];
    data_org[AZ_N_neigh]     = 0;
+   data_org[AZ_total_send]  = 0;
    Amat->matvec      = matvec;
    Amat->matvec_data = data;
 }
@@ -3104,6 +3105,7 @@ void AZ_matfree_2_msr(AZ_MATRIX *Amat, double *val, int *bindx, int N_nz)
   
    nz_ptr = N+1;
    bindx[0] = nz_ptr;
+   val[N] = 0;
    for (i = 0; i < N; i++) {
       flag = Amat->getrow(&(bindx[nz_ptr]), &(val[nz_ptr]), &length, Amat, 1, 
                    &i, N_nz);
