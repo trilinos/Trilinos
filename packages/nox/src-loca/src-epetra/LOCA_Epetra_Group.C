@@ -169,6 +169,9 @@ LOCA::Epetra::Group::getParam(string paramID) const
 NOX::Abstract::Group::ReturnType
 LOCA::Epetra::Group::computeF() 
 {
+
+  if (isF())
+    return Abstract::Group::Ok;
   
   // Set the parameters prior to computing F
   userInterface.setParameters(params);
@@ -179,6 +182,9 @@ LOCA::Epetra::Group::computeF()
 NOX::Abstract::Group::ReturnType 
 LOCA::Epetra::Group::computeJacobian() 
 {
+
+  if (isJacobian())
+    return Abstract::Group::Ok;
   
   // Set the parameters prior to computing F
   userInterface.setParameters(params);
