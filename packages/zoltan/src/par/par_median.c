@@ -190,10 +190,10 @@ int LB_find_median(
     /* on 2nd option: could push valuehalf towards geometric center 
        with "1.0-factor" to force overshoot */
 
-    if (first_iteration && first_guess) {
-      tmp_half = *valuehalf;
-      if (tmp_half < valuemin || tmp_half > valuemax)
-        tmp_half = 0.5 * (valuemin + valuemax);	  
+      if (first_iteration && first_guess) {
+        tmp_half = *valuehalf;
+        if (tmp_half < valuemin || tmp_half > valuemax)
+          tmp_half = 0.5 * (valuemin + valuemax);	  
       }
       else if (weight)
         tmp_half = valuemin + (targetlo - weightlo) /
