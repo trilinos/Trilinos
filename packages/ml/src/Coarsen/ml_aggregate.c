@@ -940,7 +940,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    double t0;
    t0 = GetClock();
 #endif
-   
+
    label = ML_memory_check(NULL);
    if (label != NULL) 
      if ( label[0] == 'L')
@@ -1041,7 +1041,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    /* original A.                                                            */
 
 #ifdef ML_repartition
-   status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, ag->num_PDE_eqns);
+   status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs);
    
    if (status == 0) {
      if (ag->nullspace_vect != NULL) {
@@ -1149,6 +1149,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    if (i != 1) ML_memory_check("L%d: agg end",i);
    else ML_memory_check("agg end");
 
+   ag->num_PDE_eqns = Amatrix->num_rigid;
 
    return Ncoarse;
 }
@@ -1626,14 +1627,23 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 
    the_length = nprocs - 3; /* reduces the number of processors with */
                             /* points */
+
+   if (num_PDE_eqns != 1)
+     ML_Operator_AmalgamateAndDropWeak(mat, num_PDE_eqns, 0.);
    ML_Operator_BlockPartition(mat, mat->outvec_leng,
                              &the_length, block_list, NULL, NULL, 0,
 			      ML_USEPARMETIS);
+   if (num_PDE_eqns != 1)
+     ML_Operator_UnAmalgamateAndDropWeak(mat, num_PDE_eqns, 0.);
+
    
 
    dvec = (double *) ML_allocate(sizeof(double)*mat->outvec_leng);
-   for (i = 0; i < mat->outvec_leng; i++) 
-     dvec[i] = (double) ( block_list[i] + 1);
+   for (i = 0; i < mat->outvec_leng/num_PDE_eqns; i++) 
+     for (j = 0; j < num_PDE_eqns; j++)
+       dvec[j+i*num_PDE_eqns] = (double) ( block_list[i] + 1);
+
+
    ML_free(block_list);
 
 #else
