@@ -894,9 +894,9 @@ void Generate_mesh(int N_elements, ML_GridAGX **meshp, int *N_update,
 
    nnode_x       = nelmnt_part_xy + 1;
    nnode_y       = nelmnt_part_xy + 1;
-   ML_memory_alloc((void*) &square, nnode_x * sizeof(int*), "AP2");
+   ML_memory_alloc((void**) &square, nnode_x * sizeof(int*), "AP2");
    for ( i = 0; i < nnode_x; i++ )
-      ML_memory_alloc((void*) &(square[i]), nnode_y * sizeof(int), "AP3");
+      ML_memory_alloc((void**) &(square[i]), nnode_y * sizeof(int), "AP3");
    icnt = 0;
    x_begin = 1;
    y_begin = 1;
