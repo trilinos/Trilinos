@@ -72,17 +72,17 @@ extern int OPTIMAL_LOCAL_COARSE_SIZE;
  *  PROTOTYPES for load-balancer interface functions.
  */
 
-ZOLTAN_NUM_OBJ_FN get_num_entries;
-ZOLTAN_OBJ_LIST_FN get_entries;
+ZOLTAN_NUM_OBJ_FN ML_get_num_entries;
+ZOLTAN_OBJ_LIST_FN ML_get_entries;
 
-ZOLTAN_NUM_GEOM_FN get_num_geom;
-ZOLTAN_GEOM_MULTI_FN get_geom_multi;
+ZOLTAN_NUM_GEOM_FN ML_get_num_geom;
+ZOLTAN_GEOM_MULTI_FN ML_get_geom_multi;
 
 #ifdef USE_GRAPH
 /* These two functions are needed to use ParMETIS thru Zoltan. */
 /* They are not needed for geometric methods. */
-ZOLTAN_NUM_EDGES_MULTI_FN get_num_edges_multi;
-ZOLTAN_EDGE_LIST_MULTI_FN get_edge_list_multi;
+ZOLTAN_NUM_EDGES_MULTI_FN ML_get_num_edges_multi;
+ZOLTAN_EDGE_LIST_MULTI_FN ML_get_edge_list_multi;
 #endif
 
 /* "...crappy code..."
@@ -107,7 +107,6 @@ static int MLZ_offset;
 
 static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A)
 {
-  int ierr;                      /* Error code */
 
   /* Set the load-balance method */
   /* You can change "RCB" to any Zoltan method below. */
@@ -121,28 +120,28 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A)
    * Set the callback functions
    */
 
-  if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_OBJ_FN_TYPE, (void (*)()) get_num_entries,
+  if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_OBJ_FN_TYPE, (void (*)()) ML_get_num_entries,
                     (void *) A) == ZOLTAN_FATAL) {
     printf("fatal(2)  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
   if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_LIST_FN_TYPE,
-                    (void (*)()) get_entries,
+                    (void (*)()) ML_get_entries,
                     (void *) A) == ZOLTAN_FATAL) {
     printf("fatal(3)  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
   /* Functions for geometry based algorithms */
-  if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_GEOM_FN_TYPE, (void (*)()) get_num_geom,
+  if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_GEOM_FN_TYPE, (void (*)()) ML_get_num_geom,
                     (void *) A) == ZOLTAN_FATAL) {
     printf("fatal(4)  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
 
   if (Zoltan_Set_Fn(zz, ZOLTAN_GEOM_MULTI_FN_TYPE,
-                    (void (*)()) get_geom_multi,
+                    (void (*)()) ML_get_geom_multi,
                     (void *) A) == ZOLTAN_FATAL) {
     printf("fatal(5)  error returned from Zoltan_Set_Fn()\n");
     return 0;
@@ -153,13 +152,13 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A)
   /* These two functions are needed to use ParMETIS thru Zoltan. */
   /* They are not needed for geometric methods. */
   if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_EDGES_MULTI_FN_TYPE,
-                    (void (*)()) get_num_edges_multi,
+                    (void (*)()) ML_get_num_edges_multi,
                     (void *) A) == ZOLTAN_FATAL) {
     printf("fatal(6)  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
   if (Zoltan_Set_Fn(zz, ZOLTAN_EDGE_LIST_MULTI_FN_TYPE,
-                    (void (*)()) get_edge_list_multi,
+                    (void (*)()) ML_get_edge_list_multi,
                     (void *) A) == ZOLTAN_FATAL) {
     printf("fatal(7)  error returned from Zoltan_Set_Fn()\n");
     return 0;
@@ -173,7 +172,7 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A)
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int run_zoltan(struct Zoltan_Struct *zz, ML_Operator* A,
+static int run_zoltan(int N_parts, struct Zoltan_Struct *zz, ML_Operator* A,
                       int Nrows, int graph_decomposition[],
                       int MyPID)
 {
@@ -196,9 +195,13 @@ static int run_zoltan(struct Zoltan_Struct *zz, ML_Operator* A,
   int num_gid_entries;           /* Number of array entries in a global ID.  */
   int num_lid_entries;           /* Number of array entries in a local ID.   */
 
-  int *ptr;
-  int myrank;
-  int i, ierr, k;
+  int i;
+
+  /* sets the number of partitions */
+
+  char value[80];
+  sprintf(value,"%d",N_parts);
+  Zoltan_Set_Param(zz,"num_global_partitions", value);
 
   /*
    * Call Zoltan to compute a new decomposition. 
@@ -224,7 +227,7 @@ static int run_zoltan(struct Zoltan_Struct *zz, ML_Operator* A,
     graph_decomposition[i] = MyPID;
   if (new_decomp){
     for (i = 0 ; i < num_exported ; ++i) {
-      graph_decomposition[export_gids[i] - MLZ_offset] = export_procs[i];
+      graph_decomposition[export_gids[i] - MLZ_offset] = export_to_part[i];
     }
 #if 0
     printf("[Proc %1d] My data to export are:\n", myrank);
@@ -248,7 +251,7 @@ static int run_zoltan(struct Zoltan_Struct *zz, ML_Operator* A,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-static int get_num_entries (void *data, int *ierr)
+int ML_get_num_entries (void *data, int *ierr)
 {
 
   ML_Operator *A;
@@ -268,9 +271,9 @@ static int get_num_entries (void *data, int *ierr)
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-static void get_entries(void *data, int num_gid_entries, int num_lid_entries,
-                  ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
-                  int wdim, float *wgt, int *ierr)
+void ML_get_entries(void *data, int num_gid_entries, int num_lid_entries,
+                 ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
+                 int wdim, float *wgt, int *ierr)
 {
 
   ML_Operator* A;
@@ -302,7 +305,7 @@ static void get_entries(void *data, int num_gid_entries, int num_lid_entries,
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int get_num_geom(void *data, int *ierr)
+int ML_get_num_geom(void *data, int *ierr)
 {
   *ierr = ZOLTAN_OK; /* set error flag */
   return(MLZ_dim);
@@ -311,7 +314,7 @@ static int get_num_geom(void *data, int *ierr)
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-static void get_geom_multi(void *data, int num_gid_entries, int num_lid_entries,
+void ML_get_geom_multi(void *data, int num_gid_entries, int num_lid_entries,
               int num_obj, ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
               int num_dim, double *coor, int *ierr)
 {
@@ -369,24 +372,10 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
 {
 
 #ifdef HAVE_ML_ZOLTAN
-  int i, j,jj,  count;
-  int Nrows;
+  int i, Nrows;
   ML_Comm * comm = Amatrix->comm;
-  int allocated = 0;
-  int * rowi_col = NULL;
-  int rowi_N;
-  double * rowi_val = NULL;
-  int *global_numbering = NULL;
-  int N_procs = Amatrix->comm->ML_nprocs;
   int mypid = Amatrix->comm->ML_mypid;
-  int * offsets = NULL;
-  int ncon = 1;
-  int ok;
-  int * nodes_per_aggre = NULL, * nodes_per_aggre2 = NULL;
   double t0;
-  double debug_starting_time;
-  int mod;
-  int Nrows_global;
   struct Zoltan_Struct *zz;
   float version;
   int error;
@@ -431,18 +420,6 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
 #endif
 
   if (N_parts <= 0) N_parts = 1;
-
-#ifdef FIXME
-  /* allocates memory for global_ordering */
-
-  ML_build_global_numbering(Amatrix, comm, &global_numbering);
-
-#ifdef ML_MPI
-  MPI_Allreduce( &Nrows, &Nrows_global, 1, MPI_INT, MPI_SUM, comm );
-#else
-  Nrows_global = Nrows;
-#endif
-#endif
 
   /* ********************************************************************** */
   /* no need to call Zoltan if only one global aggregate is required.       */
@@ -493,7 +470,7 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
    * Run Zoltan to compute a new load balance.
    * Data migration may also happen here.
    */
-  if (!run_zoltan(zz, Amatrix, Nrows, graph_decomposition,
+  if (!run_zoltan(N_parts, zz, Amatrix, Nrows, graph_decomposition,
                   comm->ML_mypid)) {
     printf("fatal(13) Error returned from run_zoltan\n");
     goto End;
@@ -515,13 +492,8 @@ End:
 	   t0 );
   }
   
-#ifdef FIXME
-  if (global_numbering)
-    ML_free(global_numbering);
-#endif
-
   /* returns the *global* number of partitions */
-  return(comm->ML_nprocs);
+  return(N_parts);
 #else
   puts("you must configure ml with Zoltan support, using");
   puts("parameter --with-ml_zoltan in your configuration line");
@@ -585,7 +557,6 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    char str[80], * str2;
    double * new_nullspace_vect = NULL;
    int * graph_decomposition = NULL;
-   double debug_starting_time;
    int N_dimensions = 0;
    double* old_x = NULL;
    double* old_y = NULL;
@@ -1321,7 +1292,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* =================================== */
 
    /* free memory */
-   if (old_nodal_coord) 
+   if (old_nodal_coord && diff_level) 
      ML_free(old_nodal_coord);
 
    if( nodes_per_aggre != NULL ) {
@@ -1762,6 +1733,7 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    /* ------------------- that's all folks --------------------------------- */
 
+   printf("finishing here from process %d\n", mypid);
    return Ncoarse*nullspace_dim;
 
 } /* ML_Aggregate_CoarsenZoltan */
