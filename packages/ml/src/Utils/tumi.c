@@ -344,11 +344,11 @@ char str [80];
    
    Tmat = ML_Operator_Create(ml_edges->comm);
    
-   ML_Operator_Set_ApplyFuncData(Tmat, *Nnodes, *Nedges, ML_EXTERNAL,
+   ML_Operator_Set_ApplyFuncData(Tmat, *Nnodes, *Nedges, ML_INTERNAL,
 				 (void *) wrap_grad_greg_data, *Nedges,
 				 ml_grad_matvec_wrap_of_greg, 0);
    
-   ML_Operator_Set_Getrow(Tmat,ML_EXTERNAL,*Nedges,ml_grad_getrow_wrap_of_greg);
+   ML_Operator_Set_Getrow(Tmat,ML_INTERNAL,*Nedges,ml_grad_getrow_wrap_of_greg);
    ML_CommInfoOP_Generate(&(Tmat->getrow->pre_comm),ml_grad_comm_wrap_of_greg,
 			  wrap_grad_greg_data, ml_edges->comm,Tmat->invec_leng,
 			  Nghost_node);
@@ -952,8 +952,10 @@ int ml_grad_matvec_wrap_of_greg(void *data, int inlen, double x[],
   struct wrap_greg_data *wrap_greg_data;
   int Nghost, i;
   double *temp;
+  ML_Operator *mat_in;
 
-  wrap_greg_data = (struct wrap_greg_data *) data;
+  mat_in = (ML_Operator *) data;
+  wrap_greg_data = (struct wrap_greg_data *) ML_Get_MyMatvecData(mat_in);
   Nghost         =  wrap_greg_data->Nghost;
 
   temp = (double *) malloc(sizeof(double)*(inlen+Nghost));
@@ -991,8 +993,11 @@ int ml_grad_getrow_wrap_of_greg(void *data, int N_requested,
 			  int row_lengths[])
 {
   struct wrap_greg_data *wrap_greg_data;
+  ML_Operator *mat_in;
 
-  wrap_greg_data = (struct wrap_greg_data *) data;
+  mat_in = (ML_Operator *) data;
+
+  wrap_greg_data = (struct wrap_greg_data *) ML_Get_MyGetrowData(mat_in);
 
   if (allocated < 13) return 0;
   

@@ -222,9 +222,9 @@ int ML_AMG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    }
    AMGIdentity = ML_Operator_Create(ml->comm);
    ML_Operator_Set_ApplyFuncData(AMGIdentity, Amat->invec_leng,
-                                  Amat->outvec_leng, ML_EXTERNAL, (void*) Amat,
+                                  Amat->outvec_leng, ML_INTERNAL, (void*) Amat,
                                   Amat->matvec->Nrows, NULL, 0);
-   ML_Operator_Set_Getrow(AMGIdentity, ML_EXTERNAL, Amat->getrow->Nrows, 
+   ML_Operator_Set_Getrow(AMGIdentity, ML_INTERNAL, Amat->getrow->Nrows, 
                           ML_AMG_Identity_Getrows);
    ML_CommInfoOP_Clone(&(AMGIdentity->getrow->pre_comm),Amat->getrow->pre_comm);
    ML_2matmult(AMGIdentity, Pmatrix, &(ml->Pmat[clevel]), ML_CSR_MATRIX );
@@ -286,11 +286,6 @@ int ML_AMG_Identity_Getrows(void *data, int N_requested_rows,
            int requested_rows[], int allocated_space, int columns[], 
            double values[], int row_lengths[])
 {
-  /*
-   ML_Operator    *Amat;
-
-   Amat = (ML_Operator *) data;
-  */
    if (N_requested_rows > 1) 
    {
       printf("Too bad. This routine only works with 1 row at a time\n");

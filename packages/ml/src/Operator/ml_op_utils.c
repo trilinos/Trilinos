@@ -788,11 +788,11 @@ int ML_Operator_ColPartition2RowPartition(ML_Operator *A, ML_Operator *Atrans)
   eye2 = ML_Operator_Create(A->comm);
  
   ML_Operator_Set_ApplyFuncData(eye1, A->invec_leng, A->invec_leng,
-            ML_EXTERNAL,NULL, A->invec_leng, eye_matvec, 0);
+            ML_INTERNAL,NULL, A->invec_leng, eye_matvec, 0);
   ML_Operator_Set_Getrow(eye1, ML_INTERNAL, A->invec_leng, eye_getrows);
  
   ML_Operator_Set_ApplyFuncData(eye2, A->invec_leng, A->invec_leng,
-            ML_EXTERNAL,NULL, A->invec_leng, eye_matvec, 0);
+            ML_INTERNAL,NULL, A->invec_leng, eye_matvec, 0);
   ML_Operator_Set_Getrow(eye2, ML_INTERNAL, A->invec_leng, eye_getrows);
   ML_2matmult(A, eye1, Atrans, ML_CSR_MATRIX);
 
