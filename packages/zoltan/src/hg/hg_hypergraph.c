@@ -285,7 +285,7 @@ int Zoltan_HG_Create_Mirror (
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* determine which data to "mirror" and set corresponding data pointers. */
-  if (hg &&  hg->hindex && (hg->nPins == 0 || hg->hvertex)
+  if (hg &&  (hg->nEdge == 0 || hg->hindex) && (hg->nPins == 0 || hg->hvertex)
    && !hg->vindex && !hg->vedge) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Have hindex; building vindex.");
 
@@ -303,7 +303,7 @@ int Zoltan_HG_Create_Mirror (
       return ZOLTAN_MEMERR;
     }
   }
-  else if (hg && hg->vindex && (hg->nPins == 0 || hg->vedge)
+  else if (hg && (hg->nVtx == 0 || hg->vindex) && (hg->nPins == 0 || hg->vedge)
    && !hg->hindex && !hg->hvertex) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Have vindex; building hindex.");
 
