@@ -38,7 +38,7 @@ GenericEpetraProblem::GenericEpetraProblem(int numGlobalNodes,
   createMaps();
 
   // Construction and initialization of mesh and solution vectors are
-  // left to the derived problem
+  // left to the derived problem class.
 }
 
 
@@ -174,6 +174,18 @@ Epetra_CrsMatrix& GenericEpetraProblem::getJacobian()
     cout << "ERROR: No valid Jacobian exists for this problem !!" << endl;
     return *A;
   }
+}
+
+void GenericEpetraProblem::setSolution(const Epetra_Vector& data)
+{
+  // Ensure that the derived problem class created the solution vector
+  if(!initialSolution)
+  {
+    cout << "ERROR: No solution vector exists for this problem !!" << endl;
+    throw "GenericEpetraProblem ERROR";
+  }
+
+  *initialSolution = data;
 }
 
 void GenericEpetraProblem::setAuxillarySolution(const Epetra_Vector& data)

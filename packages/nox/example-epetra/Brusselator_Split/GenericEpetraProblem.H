@@ -52,6 +52,9 @@ public:
 
   virtual void reset(const Epetra_Vector& x) {};
 
+  // Set the solution vector (initialSolution)
+  virtual void setSolution(const Epetra_Vector&); 
+
   // Set auxillary (other problem variables) vector
   virtual void setAuxillarySolution(const Epetra_Vector&); 
 

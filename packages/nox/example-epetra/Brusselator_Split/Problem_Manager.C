@@ -114,6 +114,8 @@ bool Problem_Manager::solve()
   vector<GenericEpetraProblem*>::iterator problemIter = Problems.begin();
   vector<GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
+  // These iterators would be needed in general, but we later specialize
+  // for the case of a 2-problem system.
   vector<NOX::Epetra::Group*>::iterator     groupIter = Groups.begin();
   vector<Problem_Interface*>::iterator  interfaceIter = Interfaces.begin();
   vector<NOX::Solver::Manager*>::iterator  solverIter = Solvers.begin();
@@ -142,9 +144,12 @@ bool Problem_Manager::solve()
   double normSum = grpA.getNormF() + grpB.getNormF();
 
   // Now do the decoupled solve
+  int iter = 0;
 
-  while( normSum > 1.e-5 )
+  while( normSum > 1.e-5 ) // Hard-coded convergence criterion for now.
   {
+    iter++;
+
     solverA.reset(grpA, *statusTest, *nlParams);
     solverA.solve();
 
@@ -167,43 +172,31 @@ bool Problem_Manager::solve()
     problemA.setAuxillarySolution(finalSolutionB);
     grpA.setX(finalSolutionA);
     grpA.computeF();
+    problemB.setAuxillarySolution(finalSolutionA);
     grpB.setX(finalSolutionB);
     grpB.computeF();
 
-    cout << "Initial 2-Norms of F (A, B) --> " << grpA.getNormF() << " ,  "
-         << grpB.getNormF() << endl;
+    cout << "Decoupled iteration #" << iter << " : 2-Norms of F (A, B) --> " 
+         << grpA.getNormF() << " ,  " << grpB.getNormF() << endl;
     normSum = grpA.getNormF() + grpB.getNormF();
   }
- 
-
-  cout << "\n\n*****************  Final Solutions ********************\n"
-       << endl << endl;
-    // Extract and use final solutions
-    const NOX::Epetra::Group& finalGroupA =
-      dynamic_cast<const NOX::Epetra::Group&>(solverA.getSolutionGroup());
-    const NOX::Epetra::Group& finalGroupB =
-      dynamic_cast<const NOX::Epetra::Group&>(solverB.getSolutionGroup());
-    const Epetra_Vector& finalSolutionA =
-      (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupA.getX())).getEpetraVector();
-    const Epetra_Vector& finalSolutionB =
-      (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupB.getX())).getEpetraVector();
   
-  for (int i=0; i<problemA.NumMyNodes; i++)
-    printf("%d  %E  %E  %E\n", i, problemA.getMesh()[i], finalSolutionA[i],
-                                   finalSolutionB[i]);
+  cout << "\nDecoupled solution required --> " << iter << " iterations.\n" 
+       << endl;
 
-/*
-  while( problemIter != problemLast )
-  {
-    (*solverIter)->solve();
-    cout << "\n\n\n\t\t------- Finished solving a problem !! -------" << endl;
-    problemIter++;
-    groupIter++;
-    interfaceIter++;
-    solverIter++;
-    //cout << (*iter++)->getSolution() << endl << endl;
-  }
-*/
+  // Extract and use final solutions
+  const NOX::Epetra::Group& finalGroupA =
+    dynamic_cast<const NOX::Epetra::Group&>(solverA.getSolutionGroup());
+  const NOX::Epetra::Group& finalGroupB =
+    dynamic_cast<const NOX::Epetra::Group&>(solverB.getSolutionGroup());
+  const Epetra_Vector& finalSolutionA =
+    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupA.getX())).getEpetraVector();
+  const Epetra_Vector& finalSolutionB =
+    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupB.getX())).getEpetraVector();
+  
+  // Put final solutions back into problems
+  problemA.setSolution(finalSolutionA);
+  problemB.setSolution(finalSolutionB);
 
   return true;
 }

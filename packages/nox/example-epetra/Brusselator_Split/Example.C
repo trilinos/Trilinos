@@ -71,7 +71,6 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i;
 
   // Initialize MPI
 #ifdef HAVE_MPI
@@ -107,7 +106,8 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // NOTE: For now these parameters apply to all problems handled by
-  // Problem_Manager.
+  // Problem_Manager.  Each problem could be made to have its own
+  // parameter list as wwell as its own convergence test(s).
 
   // Create the top level parameter list
   NOX::Parameter::List nlParams;
@@ -186,10 +186,18 @@ int main(int argc, char *argv[])
   // Now start trying to hook up the Problem_Manager.......
   Problem_Manager problemManager(nlParams);
 
+  // An interesting note: the order of solving each problem is based on the
+  // order of adding.  For this decoupled problem, problem B is linear
+  // with respect to its variables, whereas problem A is nonlinear wrt to its
+  // variables.  The order of solution appears to strongly affect the rate
+  // of convergence of the decoupled Brusselator.  Solving problem A first
+  // dramatically reduces the number of total iterations.
   problemManager.addProblem(ProblemA);
   problemManager.addProblem(ProblemB);
 
   // Create the convergence tests
+  // Note: as for the parameter list, both (all) problems use the same 
+  // convergence test(s) for now, but each could have its own.
   NOX::StatusTest::NormF absresid(1.0e-8);
   NOX::StatusTest::NormUpdate update(1.0e-5);
   NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
@@ -200,93 +208,27 @@ int main(int argc, char *argv[])
   combo.addStatusTest(converged);
 
   problemManager.registerStatusTest(combo);
-  problemManager.registerComplete();
-
-  // Dummy call to solve to see how things are working to this point.....
-  problemManager.solve();
-  exit(1);
-
-/*
-  // Get the vector from the Problem
-  Epetra_Vector& soln = Problem.getSolution();
-
-  // Create the interface between the test problem and the nonlinear solver
-  Problem_Interface interface(Problem);
-
-  // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
-  // 1. User supplied (Epetra_RowMatrix)
-  Epetra_RowMatrix& A = Problem.getJacobian(); // Default
-  // 2. Matrix-Free (Epetra_Operator)
-  //NOX::Epetra::MatrixFree A(interface, soln);
-  // 3. Finite Difference (Epetra_RowMatrix)
-  //NOX::Epetra::FiniteDifference A(interface, soln);
-  //  A.setDifferenceMethod(NOX::Epetra::FiniteDifference::Backward);
-  // 4. Jacobi Preconditioner
-  //NOX::Epetra::JacobiPreconditioner Prec(soln);
-  // 5. Finite Difference with Coloring......uncomment the following
-/* -------------- Uncomment this block to use coloring --------------- //
-#ifdef HAVE_NOX_EPETRAEXT 
-  bool verbose = false; 
-  EpetraExt::CrsGraph_MapColoring tmpMapColoring( verbose ); 
-  Epetra_MapColoring* colorMap = &tmpMapColoring(Problem.getGraph());
-  EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
-  vector<Epetra_IntVector>* columns = &colorMapIndex(Problem.getGraph());
-  NOX::Epetra::FiniteDifferenceColoring A(interface, soln, Problem.getGraph(),
-                                          *colorMap, *columns);//, 1.e-2, 1.e-2);
-  //A.setDifferenceMethod(NOX::Epetra::FiniteDifference::Forward);
-#else 
-  cout << "Cannot use Coloring without package epetraext !!!!" << endl;
-  exit(0);
-#endif 
-// -------------- End of block needed to use coloring --------------- */
-/*
-
-  // Create the Group
-  NOX::Epetra::Group grp(printParams, lsParams, interface, soln, A); 
-  //NOX::Epetra::Group grp(lsParams, interface, soln, A, Prec); 
-  grp.computeF();
-
-  // Use an Epetra Scaling object if desired
-  Epetra_Vector scaleVec(soln);
-  NOX::Epetra::Scaling scaling;
-  scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
-  //grp.setLinearSolveScaling(scaling);
-
-  // Create the convergence tests
-  NOX::StatusTest::NormF absresid(1.0e-8);
-  NOX::StatusTest::NormF relresid(grp, 1.0e-2);
-  NOX::StatusTest::NormUpdate update(1.0e-5);
-  NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
-  NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
-  converged.addStatusTest(absresid);
-  converged.addStatusTest(relresid);
-  converged.addStatusTest(wrms);
-  converged.addStatusTest(update);
-  NOX::StatusTest::MaxIters maxiters(100);
-  NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
-  combo.addStatusTest(converged);
-  combo.addStatusTest(maxiters);
-
-  // Create the method
-  NOX::Solver::Manager solver(grp, combo, nlParams);
+  problemManager.registerComplete(); // Trigger setup of groups, solvers, etc.
 
   // Initialize time integration parameters
-  int maxTimeSteps = 1;
+  int maxTimeSteps = 10;
   int timeStep = 0;
   double time = 0.;
-  double dt = Problem.getdt();
+  double dt = ProblemA.getdt();
+  if( dt != ProblemB.getdt() )
+    cout << "WARNING: Time steps differ between problems !!" << endl;
   
   // Print initial solution
   char file_name[25];
   FILE *ifp;
-  Epetra_Vector& xMesh = Problem.getMesh();
+  Epetra_Vector& xMesh = ProblemA.getMesh();
   int NumMyNodes = xMesh.Map().NumMyElements();
   (void) sprintf(file_name, "output.%d_%d",MyPID,timeStep);
   ifp = fopen(file_name, "w");
-  for (i=0; i<NumMyNodes; i++)
+  for (int i=0; i<NumMyNodes; i++)
     fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, 
-                                 xMesh[i], soln[i], 
-                                 (*Problem.auxSolution)[i]);
+                                 xMesh[i], ProblemA.getSolution()[i], 
+                                 ProblemB.getSolution()[i]);
   fclose(ifp);
   
   // Time integration loop
@@ -297,55 +239,36 @@ int main(int argc, char *argv[])
   
     cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
   
-    NOX::StatusTest::StatusType status = solver.solve();
+    problemManager.solve(); // Need a status test check here ....
   
-    if (status != NOX::StatusTest::Converged)
-      if (MyPID==0) 
-        cout << "Nonlinear solver failed to converge!" << endl;
-
-    // Get the Epetra_Vector with the final solution from the solver
-    const NOX::Epetra::Group& finalGroup = 
-      dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
-    const Epetra_Vector& finalSolution = 
-      (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
-
-    // End Nonlinear Solver **************************************
-
-    // Print solution
+    // Write solution
     (void) sprintf(file_name, "output.%03d_%05d",MyPID,timeStep);
     ifp = fopen(file_name, "w");
-    for (i=0; i<NumMyNodes; i++)
-      fprintf(ifp, "%d  %E  %E  %E\n", soln.Map().MinMyGID()+i,
-                                   xMesh[i], finalSolution[i],
-                                   (*Problem.auxSolution)[i]);
+    for (int i=0; i<NumMyNodes; i++)
+      fprintf(ifp, "%d  %E  %E  %E\n", 
+                      ProblemA.getSolution().Map().MinMyGID()+i,
+                      xMesh[i], ProblemA.getSolution()[i],
+                      ProblemB.getSolution()[i]);
     fclose(ifp);
 
-    grp.setX(finalSolution);
-    grp.computeF();
-    cout << "\n\tResidual Norm --> " << grp.getNormF() << endl;
-
-    Problem.reset(finalSolution);
-    grp.setX(finalSolution);
-    solver.reset(grp, combo, nlParams);
-    grp.computeF();
-    cout << "\n\tResidual Norm --> " << grp.getNormF() << endl;
+    // Reset problems by copying solution into old solution
+    ProblemA.reset(ProblemA.getSolution());
+    ProblemB.reset(ProblemB.getSolution());
 
   } // end time step while loop
 
-  // Output the parameter list
-  NOX::Utils utils(printParams);
-  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
-    cout << endl << "Final Parameters" << endl
-	 << "****************" << endl;
-    solver.getParameterList().print(cout);
-    cout << endl;
-  }
+//  // Output the parameter list
+//  NOX::Utils utils(printParams);
+//  if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
+//    cout << endl << "Final Parameters" << endl
+//	 << "****************" << endl;
+//    solver.getParameterList().print(cout);
+//    cout << endl;
+//  }
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 
-/* end main
-*/
-return ierr ;
+return 0 ;
 }

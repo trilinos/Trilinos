@@ -266,12 +266,7 @@ bool Equation_A::evaluate(FillType f,
 
 #ifdef DEBUG
   A->Print(cout);
-  cin.get();
-#endif
 
-  if( (flag == F_ONLY) || (flag == ALL) )
-    cout << "For residual fill :" << endl << *rhs << endl;
-/* 
   if( (flag == F_ONLY) || (flag == ALL) )
     cout << "For residual fill :" << endl << *rhs << endl;
 
@@ -280,8 +275,7 @@ bool Equation_A::evaluate(FillType f,
     A->Print(cout);
   }
 
-  cin.get();
-*/
+#endif
 
 
   return true;
