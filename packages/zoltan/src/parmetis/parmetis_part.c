@@ -468,7 +468,7 @@ int LB_ParMetis(
 #ifdef LB_DEBUG
       printf("[%1d] Debug: Finished issuing the recvs\n", lb->Proc);
 #endif
-      /* Barrier */
+      /* Barrier is required when we use Rsend */
       MPI_Barrier(lb->Communicator);
       /* Issue the sends */
       for (i=0; i<lb->Num_Proc; i++){
@@ -722,10 +722,10 @@ int LB_ParMetis(
   /* Output timing results if desired */
   if (get_times){
     if (lb->Proc==0) printf("\nZoltan/ParMETIS timing statistics:\n");
-    LB_Print_Time(lb, times[1]-times[0], "ParMETIS  Pre-processing time  ");
-    LB_Print_Time(lb, times[2]-times[1], "ParMETIS  Library time         ");
-/*  LB_Print_Time(lb, times[3]-times[2], "ParMETIS  Post-processing time "); */
-    LB_Print_Time(lb, times[3]-times[0], "ParMETIS  Total time           ");
+    LB_Print_Stats(lb, times[1]-times[0], "ParMETIS  Pre-processing time  ");
+    LB_Print_Stats(lb, times[2]-times[1], "ParMETIS  Library time         ");
+/*  LB_Print_Stats(lb, times[3]-times[2], "ParMETIS  Post-processing time "); */
+    LB_Print_Stats(lb, times[3]-times[0], "ParMETIS  Total time           ");
     if (lb->Proc==0) printf("\n");
   }
 
