@@ -128,7 +128,6 @@ int flag;
   lb->Tolerance = 0.9;
   lb->Data_Structure = NULL;
 
-  lb->Get_Obj_Weight = NULL;
   lb->Get_Num_Edges = NULL;
   lb->Get_Edge_List = NULL;
   lb->Get_Num_Geom = NULL;
@@ -173,10 +172,6 @@ int LB_Set_Fn(LB *lb, LB_FN_TYPE fn_type, void *fn(), void *data)
 char *yo = "LB_Set_Fn";
 
   switch (fn_type) {
-  case LB_OBJ_WEIGHT_FN_TYPE:
-    lb->Get_Obj_Weight = (LB_OBJ_WEIGHT_FN *) fn;
-    lb->Get_Obj_Weight_Data = data;
-    break;
   case LB_NUM_EDGES_FN_TYPE:
     lb->Get_Num_Edges = (LB_NUM_EDGES_FN *) fn;
     lb->Get_Num_Edges_Data = data;
