@@ -156,6 +156,7 @@ FiniteDifference::FiniteDifference(NOX::EpetraNew::Interface::Required& i,
 
 FiniteDifference::~FiniteDifference()
 {
+  delete groupPtr;
   delete fmPtr;
   delete jacobian;
   delete graph;
@@ -532,6 +533,8 @@ void FiniteDifference::Print(ostream& strm) const
 void FiniteDifference::setGroupForComputeF(NOX::Abstract::Group& group)
 {
   useGroupForComputeF = true;
+  delete groupPtr;
+  groupPtr = 0;
   groupPtr = group.clone();
   return;
 }

@@ -266,6 +266,8 @@ double MatrixFree::getPerturbation() const
 void MatrixFree::setGroupForComputeF(NOX::Abstract::Group& group)
 {
   useGroupForComputeF = true;
+  delete groupPtr;
+  groupPtr = 0;
   groupPtr = group.clone();
   return;
 }

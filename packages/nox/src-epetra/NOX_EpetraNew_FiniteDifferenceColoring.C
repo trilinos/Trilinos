@@ -143,7 +143,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   int myMax = map.MaxMyGID(); // Maximum Local ID value
 
   // Compute the RHS at the initial solution
-  interface.computeF(x, fo, NOX::EpetraNew::Interface::Required::Jac);
+  computeF(x, fo, NOX::EpetraNew::Interface::Required::Jac);
 
   xCol_perturb->Import(x, *rowColImporter, Insert);
 
@@ -178,13 +178,13 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     xCol_perturb->Update(scaleFactor, mappedColorVect, 1.0);
 
     // Compute the perturbed RHS
-    interface.computeF(*xCol_perturb, fp, 
-		       NOX::EpetraNew::Interface::Required::Jac);
+    computeF(*xCol_perturb, fp, 
+	     NOX::EpetraNew::Interface::Required::Jac);
     
     if ( diffType == Centered ) {
       xCol_perturb->Update(-2.0, mappedColorVect, 1.0);
-      interface.computeF(*xCol_perturb, fm, 
-			 NOX::EpetraNew::Interface::Required::Jac);
+      computeF(*xCol_perturb, fm, 
+	       NOX::EpetraNew::Interface::Required::Jac);
     }
 
     // Compute the column k of the Jacobian
