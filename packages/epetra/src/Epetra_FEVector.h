@@ -71,6 +71,14 @@ class Epetra_FEVector : public Epetra_MultiVector {
     */
    int ReplaceGlobalValues(int numIDs, const int* GIDs, const double* values);
 
+   int SumIntoGlobalValues(int numIDs, const int* GIDs,
+			   const int* numValuesPerID,
+			   const double* values);
+
+   int ReplaceGlobalValues(int numIDs, const int* GIDs,
+			   const int* numValuesPerID,
+			   const double* values);
+
    /** Gather any overlapping/shared data into the non-overlapping partitioning
       defined by the Map that was passed to this vector at construction time.
       Data imported from other processors is stored on the owning processor
@@ -93,7 +101,15 @@ class Epetra_FEVector : public Epetra_MultiVector {
                   const int* GIDs, const double* values,
                   bool accumulate);
 
+  int inputValues(int numIDs,
+                  const int* GIDs, const int* numValuesPerID,
+		  const double* values,
+                  bool accumulate);
+
   int inputNonlocalValue(int GID, double value, bool accumulate);
+
+  int inputNonlocalValues(int GID, int numValues, const double* values,
+			  bool accumulate);
 
   void destroyNonlocalData();
 
@@ -102,9 +118,10 @@ class Epetra_FEVector : public Epetra_MultiVector {
   double* myCoefs_;
 
   int* nonlocalIDs_;
+  int* nonlocalElementSize_;
   int numNonlocalIDs_;
   int allocatedNonlocalLength_;
-  double* nonlocalCoefs_;
+  double** nonlocalCoefs_;
 
   bool ignoreNonLocalEntries_;
 };

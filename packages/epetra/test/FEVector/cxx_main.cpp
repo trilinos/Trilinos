@@ -75,6 +75,12 @@ int main(int argc, char *argv[]) {
 
   EPETRA_TEST_ERR( fevec1(Comm, verbose), ierr);
 
+  Comm.Barrier();
+  cout << endl;
+  Comm.Barrier();
+
+  EPETRA_TEST_ERR( fevec2(Comm, verbose), ierr);
+
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
