@@ -74,6 +74,11 @@ void LB_print_stats(LB *lb, double timetotal, double *timers, int *counters,
                                              sizeof(LB_GID));
   obj_local_ids  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 1, numobj,
                                              sizeof(LB_LID));
+  if (!obj_global_ids || !obj_local_ids) {
+    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", proc, yo);
+    exit(-1);
+  }
+
   lb->Get_Obj_List(lb->Get_Obj_List_Data, obj_global_ids, obj_local_ids,
                    &ierr);
   if (ierr) {

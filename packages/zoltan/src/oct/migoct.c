@@ -76,7 +76,7 @@ void LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
 		     import_regions, pimreg, npimregs, c3);
 
   if(npimregs > 0)
-    free(pimreg);
+    LB_safe_free((void **) &pimreg);
 
   if(max_objs > (*counter3))
    (*counter3) = max_objs;
@@ -161,8 +161,10 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
 
   if (count > 0) {
     /* allocate some space */
-    mtags = (pRegion)malloc((unsigned)count * sizeof(Region));
-    export_pids = (int *)malloc((unsigned)count * sizeof(int));
+    mtags = (pRegion) LB_array_alloc(__FILE__, __LINE__, 1, (unsigned)count,
+                                     sizeof(Region));
+    export_pids = (int *) LB_array_alloc(__FILE__, __LINE__, 1, (unsigned)count,
+                                         sizeof(int));
     if(export_pids == NULL) {
       fprintf(stderr, "ERROR: unable to malloc export_pids in tag_regions\n");
       abort();
@@ -182,7 +184,8 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
   
   if (count2 > 0) {
     /* allocate some space */
-    ptags = (pRegion)malloc((unsigned)count2 * sizeof(Region));
+    ptags = (pRegion) LB_array_alloc(__FILE__, __LINE__, 1, (unsigned)count2,
+                                     sizeof(Region));
     if(ptags == NULL) {
       fprintf(stderr, "(%d)ERROR: unable to malloc %d ptags in tag_regions\n",
 	      lb->Proc, count2);
@@ -257,7 +260,8 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
 
   im_load = 0;
   comm_plan = LB_comm_create(nsentags, tag_pids, lb->Communicator, &nreceives);
-  tmp = (pRegion)malloc(nreceives * sizeof(Region));
+  tmp = (pRegion) LB_array_alloc(__FILE__, __LINE__, 1, nreceives,
+                                 sizeof(Region));
   
   if((nreceives != 0) && (tmp == NULL)) {
     fprintf(stderr,"ERROR in LB_migreg_migrate_regions: %s\n",
@@ -278,7 +282,8 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   }
   
   if((j + npimtags) != 0) {                   /* malloc import array */
-    imp = (pRegion)malloc((j + npimtags) * sizeof(Region));
+    imp = (pRegion) LB_array_alloc(__FILE__, __LINE__, 1, (j + npimtags),
+                                   sizeof(Region));
     if(imp == NULL) {
       fprintf(stderr, "ERROR in malloc_new_objects, %s\n",
 	      "unable to malloc import array.");
@@ -304,7 +309,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   }
   *nrectags = j;
 
-  free(tmp);
+  LB_safe_free((void **) &tmp);
 
   /*
    * fprintf(stderr,
@@ -337,6 +342,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
 void LB_fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
                  int **import_procs, int nrectags, pRegion import_regs)
 {
+  char *yo = "LB_fix_tags";
   int i;                                  /* index counter */
 
   if (nrectags == 0) {
@@ -354,8 +360,8 @@ void LB_fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
                                                   1, nrectags, sizeof(LB_LID));
     *import_procs      = (int *)   LB_array_alloc(__FILE__, __LINE__,
                                                   1, nrectags, sizeof(int));
-    if(*import_procs == NULL) {
-      fprintf(stderr,"ERROR in LB_fix_tags, unable to allocate space\n");
+    if (!(*import_global_ids) || !(*import_local_ids) || !(*import_procs)) {
+      fprintf(stderr,"ERROR in %s, unable to allocate space\n", yo);
       abort();
     }
 
@@ -369,9 +375,10 @@ void LB_fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
 #if 0
 
   /* KDD -- LB_Compute_Destinations will perform this operation for us.
-  new_export = (LB_TAG *)malloc(sizeof(LB_TAG) * (*nsentags));
+  new_export = (LB_TAG *) LB_array_alloc(__FILE__, __LINE__, 1, *nsentags,
+                                         sizeof(LB_TAG));
   if(((*nsentags) > 0) && (new_export == NULL)) {
-    fprintf(stderr,"ERROR in LB_fix_tags, unable to allocate space\n");
+    fprintf(stderr,"ERROR in %s, unable to allocate space\n", yo);
     abort();
   }
 

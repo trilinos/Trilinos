@@ -195,9 +195,9 @@ void lb_oct_init(
   else
     LB_print_stats(lb, timestop - timestart, timers, counters, c, 1);
 
-  free(export_regs);
-  free(import_regs);
-  free(export_tags);
+  LB_safe_free((void **) &export_regs);
+  LB_safe_free((void **) &import_regs);
+  LB_safe_free((void **) &export_tags);
   root = POC_localroots();
   while(root != NULL) {
     root2 = root->next;
@@ -343,7 +343,8 @@ void LB_oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
     part = hold / lb->Num_Proc;          /* how many octants per partition */
     remainder = hold % lb->Num_Proc; /* extra octants, not evenly divisible */
     extra = lb->Num_Proc - remainder;/* where to start adding extra octants */
-    array = (Map *)malloc(hold * sizeof(Map));         /* allocate map array */
+    array = (Map *) LB_array_alloc(__FILE__, __LINE__, 1, hold,
+                                   sizeof(Map));       /* allocate map array */
     if(array == NULL) {
       fprintf(stderr, "ERROR on proc %d, could not allocate array map\n",
 	      lb->Proc);
@@ -412,10 +413,10 @@ void LB_oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
  */
   LB_migreg_migrate_orphans(lb, ptr1, num_extra, level, array, c1, c2);
   
-  free(array);
+  LB_safe_free((void **) &array);
   while(ptr1 != NULL) {
     ptr = ptr1->next;
-    free(ptr1);
+    LB_safe_free((void **) &ptr1);
     ptr1 = ptr;
   }
 }
@@ -451,6 +452,11 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
                                             1, *num_objs, sizeof(LB_GID));
   obj_local_ids  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__,
                                             1, *num_objs, sizeof(LB_LID));
+  if (!obj_global_ids || !obj_local_ids) {
+    fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
+    exit(-1);
+  }
+
 
   if(lb->Get_Obj_List == NULL &&
     (lb->Get_First_Obj == NULL || lb->Get_Next_Obj == NULL)) {
@@ -559,7 +565,7 @@ static void initialize_region(LB *lb, pRegion *ret, LB_GID global_id,
   int ierr = 0;
   char *yo = "initialize_region";
 
-  reg = (pRegion)malloc(sizeof(Region));
+  reg = (pRegion) LB_SMALLOC(sizeof(Region));
   *ret = reg;
   LB_SET_GID(reg->Tag.Global_ID, global_id);
   LB_SET_LID(reg->Tag.Local_ID, local_id);
@@ -914,7 +920,7 @@ void LB_oct_terminal_refine(LB *lb, pOctant oct,int count)
     cnum=LB_child_which_wrapper(oct, region->Coord);
     /* add region to octant's regionlist */
     POC_addRegion(child[cnum], region);
-    free(region);
+    LB_safe_free((void **) &region);
     region = entry;
   }
 
@@ -1137,8 +1143,10 @@ void LB_oct_roots_in_order(pOctant **roots_ret, int *nroots_ret)
     /* set the return variables */
     *nroots_ret=nroots;
     if(nroots) {
-      roots=(pOctant *)malloc(sizeof(pOctant)*nroots);
-      rootid=(Rootid *)malloc(sizeof(Rootid)*nroots);
+      roots=(pOctant *) LB_array_alloc(__FILE__, __LINE__, 1, nroots,
+                                       sizeof(pOctant));
+      rootid=(Rootid *) LB_array_alloc(__FILE__, __LINE__, 1, nroots,
+                                       sizeof(Rootid));
       if((roots == NULL) || (rootid == NULL)) {
 	fprintf(stderr, "LB_oct_roots_in_order: error in malloc\n");
 	abort();
@@ -1167,7 +1175,7 @@ void LB_oct_roots_in_order(pOctant **roots_ret, int *nroots_ret)
   for (i=0; i<nroots; i++)
     roots[i]=rootid[i].ptr;
 
-  free(rootid);
+  LB_safe_free((void **) &rootid);
 }
 
 /*****************************************************************************/
