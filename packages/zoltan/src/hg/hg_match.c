@@ -795,9 +795,10 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
     float *ips = NULL; 
     char  *yo = "matching_ipm";
 
-    if (!(ips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float))) 
+    if (hg->nVtx && 
+        (!(ips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float))) 
      || !(adj = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
-     || !(order = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))) {
+     || !(order = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int))))) {
         Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &adj, &order);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
