@@ -26,6 +26,8 @@
 // ************************************************************************
 //@HEADER
 
+#include "Trilinos_Util.h"
+
 int Trilinos_Util_csrcsc(int n, int n2, int job, int ipos, double * a, 
            int *ja, int *ia, double *ao, int *jao, int *iao)
 {

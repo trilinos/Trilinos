@@ -79,6 +79,30 @@ class Epetra_MultiVector;
 #endif
 #endif
 
+#ifdef HAVE_CSTDLIB
+#include <cstdlib>
+#else
+#include <stdlib.h>
+#endif
+
+#ifdef HAVE_CSTDIO
+#include <cstdio>
+#else
+#include <stdio.h>
+#endif
+
+#ifdef HAVE_CMATH
+#include <cmath>
+#else
+#include <math.h>
+#endif
+
+#else /*HAVE_CONFIG_H*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+
 #endif /*HAVE_CONFIG_H*/
 
 void Trilinos_Util_read_hb(char *data_file, int MyPID,

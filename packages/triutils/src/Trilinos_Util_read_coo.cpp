@@ -26,8 +26,6 @@
 // ************************************************************************
 //@HEADER
 
-#include <stdlib.h>
-#include <stdio.h>
 #include "Trilinos_Util.h"
 
 void Trilinos_Util_read_coo(char *data_file, int MyPID,

@@ -26,7 +26,6 @@
 // ************************************************************************
 //@HEADER
 
-#include <stdlib.h>
 #include "Trilinos_Util.h"
 #include "Epetra_Comm.h"
 #include "Epetra_BlockMap.h"

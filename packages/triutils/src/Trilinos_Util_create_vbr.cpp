@@ -26,10 +26,8 @@
 // ************************************************************************
 //@HEADER
 
-#include <stdlib.h>
-#include <stdio.h>
-#include "Epetra_Comm.h"
 #include "Trilinos_Util.h"
+#include "Epetra_Comm.h"
 
 void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, char *partition_file,
 		int *N_global, int *N_blk_global, 

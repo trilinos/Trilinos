@@ -26,6 +26,8 @@
 // ************************************************************************
 //@HEADER
 
+#include "Trilinos_Util.h"
+
 int Trilinos_Util_coocsr( int nrow, int nnz, double *a, int *ir, int *jc,
                           double *ao, int *jao, int *iao) {
     int i, j, k;

@@ -26,9 +26,6 @@
 // ************************************************************************
 //@HEADER
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
 #include "Trilinos_Util.h"
 
 double Trilinos_Util_svbrres (int m, int n, int m_blk,
