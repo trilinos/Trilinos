@@ -196,9 +196,6 @@ EXTRA_ZOLTAN_H = \
      $(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.h \
      $(srcdir)/zoltan/EpetraExt_ZoltanOrder_CrsGraph.h \
      $(srcdir)/zoltan/EpetraExt_ZoltanQuery.h \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.h \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.h \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.h \
      $(srcdir)/zoltan/Zoltan_LoadBalance.h \
      $(srcdir)/zoltan/Zoltan_MigrationContainer.h \
      $(srcdir)/zoltan/Zoltan_MigrationFunctions.h \
@@ -211,9 +208,6 @@ EXTRA_ZOLTAN = \
      $(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.cpp \
      $(srcdir)/zoltan/EpetraExt_ZoltanOrder_CrsGraph.cpp \
      $(srcdir)/zoltan/EpetraExt_ZoltanQuery.cpp \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp \
      $(srcdir)/zoltan/Zoltan_LoadBalance.cpp \
      $(srcdir)/zoltan/Zoltan_MigrationContainer.cpp \
      $(srcdir)/zoltan/Zoltan_MigrationFunctions.cpp \
@@ -222,13 +216,35 @@ EXTRA_ZOLTAN = \
      $(srcdir)/zoltan/Zoltan_QueryFunctions.cpp \
      $(srcdir)/zoltan/Zoltan_QueryObject.cpp
 
+EXTRA_ZOLTAN_EXPERIMENTAL_H = \
+     $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.h \
+     $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.h \
+     $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.h
+
+EXTRA_ZOLTAN_EXPERIMENTAL = \
+     $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp \
+     $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp \
+     $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp
+
 if BUILD_ZOLTAN
+
+if BUILD_EXPERIMENTAL
+
+ZOLTAN_H = \
+     $(EXTRA_ZOLTAN_H) $(EXTRA_ZOLTAN_EXPERIMENTAL_H)
+
+ZOLTAN = \
+     $(EXTRA_ZOLTAN) $(EXTRA_ZOLTAN_EXPERIMENTAL)
+
+else
 
 ZOLTAN_H = \
      $(EXTRA_ZOLTAN_H)
 
 ZOLTAN = \
      $(EXTRA_ZOLTAN)
+
+endif
 
 else
 

@@ -30,8 +30,16 @@ if BUILD_EXAMPLES
 
 if BUILD_INOUT
 
-SUBDIRS = inout
+INOUT_SUBDIRS = inout
 
 endif
+
+if BUILD_ZOLTAN
+
+ZOLTAN_SUBDIRS = zoltan
+
+endif
+
+SUBDIRS = $(INOUT_SUBDIRS) $(ZOLTAN_SUBDIRS)
 
 endif

@@ -68,6 +68,15 @@
 /* Define if you have LAPACK library. */
 #undef HAVE_LAPACK
 
+/* Define to 1 if you have the `metis' library (-lmetis). */
+#undef HAVE_LIBMETIS
+
+/* Define to 1 if you have the `parmetis' library (-lparmetis). */
+#undef HAVE_LIBPARMETIS
+
+/* Define to 1 if you have the `zoltan' library (-lzoltan). */
+#undef HAVE_LIBZOLTAN
+
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
 

@@ -118,43 +118,46 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-noinst_PROGRAMS = Zoltan_test
+noinst_PROGRAMS = zoltan_example
 
-Zoltan_test_SOURCES = \
-  $(srcdir)/cxx_main.cpp \
-  $(top_srcdir)/test/epetra_test_err.h
-
-
-Zoltan_test_DEPENDENCIES = \
-  $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a
+zoltan_example_SOURCES = \
+  $(srcdir)/cxx_main.cpp
 
 
-Zoltan_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
-                       -I$(top_srcdir)/src/zoltan \
-                       -I$(top_srcdir)/src \
-                       -I$(top_builddir)/src \
-                       -I$(top_srcdir)/../epetra/src \
-                       -I$(top_builddir)/../epetra/src
-
-
-Zoltan_test_LDADD = \
+zoltan_example_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../triutils/src/libtriutils.a
+
+
+zoltan_example_CXXFLAGS = -I$(top_srcdir)/src/transform \
+                         -I$(top_srcdir)/src/zoltan \
+                         -I$(top_builddir)/src \
+                         -I$(top_srcdir)/src \
+                         -I$(top_srcdir)/../epetra/src \
+                         -I$(top_builddir)/../epetra/src \
+                         -I$(top_srcdir)/../triutils/src \
+                         -I$(top_builddir)/../triutils/src
+
+
+zoltan_example_LDADD = \
+  $(top_builddir)/src/libepetraext.a \
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../triutils/src/libtriutils.a \
   $(BLAS_LIBS) \
   $(LIBS) \
   $(FLIBS)
 
-subdir = test/Zoltan
+subdir = example/zoltan
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/EpetraExt_config.h
 CONFIG_CLEAN_FILES =
-noinst_PROGRAMS = Zoltan_test$(EXEEXT)
+noinst_PROGRAMS = zoltan_example$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
-am_Zoltan_test_OBJECTS = Zoltan_test-cxx_main.$(OBJEXT)
-Zoltan_test_OBJECTS = $(am_Zoltan_test_OBJECTS)
-Zoltan_test_LDFLAGS =
+am_zoltan_example_OBJECTS = zoltan_example-cxx_main.$(OBJEXT)
+zoltan_example_OBJECTS = $(am_zoltan_example_OBJECTS)
+zoltan_example_LDFLAGS =
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
@@ -163,21 +166,16 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Zoltan_test-cxx_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/zoltan_example-cxx_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
-CFLAGS = @CFLAGS@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(Zoltan_test_SOURCES)
+DIST_SOURCES = $(zoltan_example_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(Zoltan_test_SOURCES)
+SOURCES = $(zoltan_example_SOURCES)
 
 all: all-am
 
@@ -185,16 +183,16 @@ all: all-am
 .SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/Zoltan/Makefile
+	  $(AUTOMAKE) --foreign  example/zoltan/Makefile
 Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-Zoltan_test-cxx_main.$(OBJEXT): $(srcdir)/cxx_main.cpp
-Zoltan_test$(EXEEXT): $(Zoltan_test_OBJECTS) $(Zoltan_test_DEPENDENCIES) 
-	@rm -f Zoltan_test$(EXEEXT)
-	$(CXXLINK) $(Zoltan_test_LDFLAGS) $(Zoltan_test_OBJECTS) $(Zoltan_test_LDADD) $(LIBS)
+zoltan_example-cxx_main.$(OBJEXT): $(srcdir)/cxx_main.cpp
+zoltan_example$(EXEEXT): $(zoltan_example_OBJECTS) $(zoltan_example_DEPENDENCIES) 
+	@rm -f zoltan_example$(EXEEXT)
+	$(CXXLINK) $(zoltan_example_LDFLAGS) $(zoltan_example_OBJECTS) $(zoltan_example_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -202,7 +200,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Zoltan_test-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zoltan_example-cxx_main.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -219,17 +217,17 @@ distclean-depend:
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
 
-Zoltan_test-cxx_main.o: $(srcdir)/cxx_main.cpp
-@AMDEP_TRUE@	source='$(srcdir)/cxx_main.cpp' object='Zoltan_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Zoltan_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/Zoltan_test-cxx_main.TPo' @AMDEPBACKSLASH@
+zoltan_example-cxx_main.o: $(srcdir)/cxx_main.cpp
+@AMDEP_TRUE@	source='$(srcdir)/cxx_main.cpp' object='zoltan_example-cxx_main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/zoltan_example-cxx_main.Po' tmpdepfile='$(DEPDIR)/zoltan_example-cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Zoltan_test_CXXFLAGS) $(CXXFLAGS) -c -o Zoltan_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zoltan_example_CXXFLAGS) $(CXXFLAGS) -c -o zoltan_example-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
 
-Zoltan_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@AMDEP_TRUE@	source='$(srcdir)/cxx_main.cpp' object='Zoltan_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Zoltan_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/Zoltan_test-cxx_main.TPo' @AMDEPBACKSLASH@
+zoltan_example-cxx_main.obj: $(srcdir)/cxx_main.cpp
+@AMDEP_TRUE@	source='$(srcdir)/cxx_main.cpp' object='zoltan_example-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/zoltan_example-cxx_main.Po' tmpdepfile='$(DEPDIR)/zoltan_example-cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Zoltan_test_CXXFLAGS) $(CXXFLAGS) -c -o Zoltan_test-cxx_main.obj `cygpath -w $(srcdir)/cxx_main.cpp`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zoltan_example_CXXFLAGS) $(CXXFLAGS) -c -o zoltan_example-cxx_main.obj `cygpath -w $(srcdir)/cxx_main.cpp`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 

@@ -5985,7 +5985,7 @@ fi
 
 
 
-if test "X$ac_cv_use_tests" != "Xno"; then
+if test "X$ac_cv_use_epetraext_tests" != "Xno"; then
   BUILD_TESTS_TRUE=
   BUILD_TESTS_FALSE='#'
 else
@@ -6020,7 +6020,7 @@ fi
 
 
 
-if test "X$ac_cv_use_examples" != "Xno"; then
+if test "X$ac_cv_use_epetraext_examples" != "Xno"; then
   BUILD_EXAMPLES_TRUE=
   BUILD_EXAMPLES_FALSE='#'
 else
@@ -6055,7 +6055,7 @@ fi
 
 
 
-if test "X$ac_cv_use_experimental" != "Xno"; then
+if test "X$ac_cv_use_epetraext_experimental" != "Xno"; then
   BUILD_EXPERIMENTAL_TRUE=
   BUILD_EXPERIMENTAL_FALSE='#'
 else
@@ -8452,6 +8452,216 @@ fi
 
 #fi
 
+if test "X$ac_cv_use_epetraext_zoltan" != "Xno"; then
+
+echo "$as_me:$LINENO: checking for METIS_PartGraphKway in -lmetis" >&5
+echo $ECHO_N "checking for METIS_PartGraphKway in -lmetis... $ECHO_C" >&6
+if test "${ac_cv_lib_metis_METIS_PartGraphKway+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmetis  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char METIS_PartGraphKway ();
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+METIS_PartGraphKway ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_metis_METIS_PartGraphKway=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_metis_METIS_PartGraphKway=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_metis_METIS_PartGraphKway" >&5
+echo "${ECHO_T}$ac_cv_lib_metis_METIS_PartGraphKway" >&6
+if test $ac_cv_lib_metis_METIS_PartGraphKway = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBMETIS 1
+_ACEOF
+
+  LIBS="-lmetis $LIBS"
+
+else
+  { { echo "$as_me:$LINENO: error: Cannot find libmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>" >&5
+echo "$as_me: error: Cannot find libmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+
+echo "$as_me:$LINENO: checking for ParMETIS_PartKway in -lparmetis" >&5
+echo $ECHO_N "checking for ParMETIS_PartKway in -lparmetis... $ECHO_C" >&6
+if test "${ac_cv_lib_parmetis_ParMETIS_PartKway+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lparmetis  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char ParMETIS_PartKway ();
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+ParMETIS_PartKway ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_parmetis_ParMETIS_PartKway=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_parmetis_ParMETIS_PartKway=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_parmetis_ParMETIS_PartKway" >&5
+echo "${ECHO_T}$ac_cv_lib_parmetis_ParMETIS_PartKway" >&6
+if test $ac_cv_lib_parmetis_ParMETIS_PartKway = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBPARMETIS 1
+_ACEOF
+
+  LIBS="-lparmetis $LIBS"
+
+else
+  { { echo "$as_me:$LINENO: error: Cannot find libparmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>" >&5
+echo "$as_me: error: Cannot find libparmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+
+echo "$as_me:$LINENO: checking for Zoltan_LB_Balance in -lzoltan" >&5
+echo $ECHO_N "checking for Zoltan_LB_Balance in -lzoltan... $ECHO_C" >&6
+if test "${ac_cv_lib_zoltan_Zoltan_LB_Balance+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lzoltan  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char Zoltan_LB_Balance ();
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+Zoltan_LB_Balance ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_zoltan_Zoltan_LB_Balance=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_zoltan_Zoltan_LB_Balance=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_zoltan_Zoltan_LB_Balance" >&5
+echo "${ECHO_T}$ac_cv_lib_zoltan_Zoltan_LB_Balance" >&6
+if test $ac_cv_lib_zoltan_Zoltan_LB_Balance = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBZOLTAN 1
+_ACEOF
+
+  LIBS="-lzoltan $LIBS"
+
+else
+  { { echo "$as_me:$LINENO: error: Cannot find libzoltan.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>" >&5
+echo "$as_me: error: Cannot find libzoltan.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+fi
+
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
 # ------------------------------------------------------------------------
@@ -8508,7 +8718,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8511: \"$ac_link\") >&5
+(eval echo $as_me:8721: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8587,7 +8797,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8590: \"$ac_link\") >&5
+(eval echo $as_me:8800: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8780,7 +8990,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # Output files
 # ------------------------------------------------------------------------
 ##
-ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BTF/Makefile test/Composite/Makefile test/MapColoring/Makefile test/MatrixMatrix/Makefile test/Overlap/Makefile test/Permutation/Makefile test/SingletonFilter/Makefile test/SymmRCM/Makefile test/View/Makefile test/Zoltan/Makefile test/inout/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/scripts/weekly/Makefile test/scripts/weekly/serial/Makefile test/scripts/weekly/mpi/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BTF/Makefile test/Composite/Makefile test/MapColoring/Makefile test/MatrixMatrix/Makefile test/Overlap/Makefile test/Permutation/Makefile test/SingletonFilter/Makefile test/SymmRCM/Makefile test/View/Makefile test/Zoltan/Makefile test/inout/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/mpi/Makefile test/scripts/weekly/Makefile test/scripts/weekly/serial/Makefile test/scripts/weekly/mpi/Makefile example/Makefile example/inout/Makefile example/zoltan/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9404,6 +9614,9 @@ do
   "test/scripts/weekly/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/weekly/Makefile" ;;
   "test/scripts/weekly/serial/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/weekly/serial/Makefile" ;;
   "test/scripts/weekly/mpi/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/weekly/mpi/Makefile" ;;
+  "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
+  "example/inout/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/inout/Makefile" ;;
+  "example/zoltan/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/zoltan/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/EpetraExt_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/EpetraExt_config.h:src/EpetraExt_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

@@ -26,7 +26,7 @@
 // ************************************************************************
 //@HEADER
 
-// SymmRCM Test routine
+// EpetraExt::CrsGraph_Zoltan Example routine
 #include <Epetra_ConfigDefs.h>
 
 #ifdef EPETRA_MPI
@@ -39,13 +39,14 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
+#include "Epetra_LinearProblem.h"
 
-//#include "Trilinos_Util.h"
+#include "Trilinos_Util.h"
 
 #include "EpetraExt_Zoltan_CrsGraph.h"
+#include "EpetraExt_SymmRCM_CrsGraph.h"
 //#include "EpetraExt_ZoltanOrder_CrsGraph.h"
 #include "EpetraExt_LPTrans_From_GraphTrans.h"
-#include "../epetra_test_err.h"
 
 #define perror(str) { fprintf(stderr,"%s\n",str);  exit(-1); }
 #define perror1(str,ierr) { fprintf(stderr,"%s %d\n",str,ierr);  exit(ierr); }
@@ -74,7 +75,8 @@ int main(int argc, char *argv[]) {
   bool verbose = false;
 
   // Check if we should print results to standard out
-//  if (argc>2) if (argv[2][0]=='-' && argv[2][1]=='v') verbose = true;
+  if (argc>2) if (argv[2][0]=='-' && argv[2][1]=='v') verbose = true;
+  if (argc<2) perror("error: enter name of data file on cmd line");
 
 #ifdef EPETRA_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -93,7 +95,6 @@ int main(int argc, char *argv[]) {
 
   if (verbose) verbose = (MyPID==0);
 
-/*
   //Read in Matrix File and distribute
   int NumGlobalEqs;
   int NumLocalEqs;
@@ -123,13 +124,14 @@ int main(int argc, char *argv[]) {
   //Add individual rows
   double *RowVals;
   int *ColInds;
+  int NumEntries;
   for( int i = 0; i < NumLocalEqs; ++i )
   {
     RowVals = Values + Bindx[i];
     ColInds = Bindx + Bindx[i];
     NumEntries = Bindx[i+1] - Bindx[i];
     ierr = A.InsertGlobalValues( Update[i], NumEntries, RowVals, ColInds );
-    if( ierr ) { printf("Row %d:", Update[Row] ); perror1("Error Putting Row: ",ierr); }
+    if( ierr ) { printf("Row %d:", Update[i] ); perror1("Error Putting Row: ",ierr); }
     ierr = A.InsertGlobalValues( Update[i], 1, Values+i, Update+i);
     if( ierr ) { perror1("Error Putting Diag: ",ierr); }
   }
@@ -145,7 +147,7 @@ int main(int argc, char *argv[]) {
   //Generate Zoltan Load Balanced Version of Linear Problem
   if( verbose ) cout << "Creating Zoltan Partitioning Transform!\n";
 
-  EpetraExt::CrsGraph_Zoltan * ZoltanTrans = new EpetraExt::CrsGraph_Zoltan();
+  EpetraExt::Zoltan_CrsGraph * ZoltanTrans = new EpetraExt::Zoltan_CrsGraph();
   EpetraExt::LinearProblem_GraphTrans * ZoltanLPTrans =
     new EpetraExt::LinearProblem_GraphTrans( 
          *(dynamic_cast<EpetraExt::StructuralSameTypeTransform<Epetra_CrsGraph>*>(ZoltanTrans)) );
@@ -160,7 +162,6 @@ int main(int argc, char *argv[]) {
 
   if( verbose ) cout << "Creating SymmRCMed Linear Problem\n";
   Epetra_LinearProblem &RCMProb = (*RCMLPTrans)(BalancedProb);
-*/
 
 #ifdef EPETRA_MPI
   MPI_Finalize();

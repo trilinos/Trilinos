@@ -28,23 +28,26 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = inout_example
+noinst_PROGRAMS = zoltan_example
 
-inout_example_SOURCES = \
+zoltan_example_SOURCES = \
   $(srcdir)/cxx_main.cpp
 
-inout_example_DEPENDENCIES = \
+zoltan_example_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../triutils/src/libtriutils.a
 
-inout_example_CXXFLAGS = -I$(top_srcdir)/src/inout \
+zoltan_example_CXXFLAGS = -I$(top_srcdir)/src/transform \
+                         -I$(top_srcdir)/src/zoltan \
                          -I$(top_builddir)/src \
+                         -I$(top_srcdir)/src \
                          -I$(top_srcdir)/../epetra/src \
                          -I$(top_builddir)/../epetra/src \
                          -I$(top_srcdir)/../triutils/src \
                          -I$(top_builddir)/../triutils/src
 
-inout_example_LDADD = \
+zoltan_example_LDADD = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
   $(top_builddir)/../triutils/src/libtriutils.a \

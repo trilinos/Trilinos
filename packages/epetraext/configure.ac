@@ -294,11 +294,11 @@ TAC_ARG_ENABLE_FEATURE(experimental, [Build experimental code for all Trilinos p
 AM_CONDITIONAL(BUILD_EXPERIMENTAL, test "X$ac_cv_use_experimental" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, tests, [Build tests for EpetraExt package], TESTS, yes)
-AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_epetraext_tests" != "Xno")
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, examples, [Build examples for EpetraExt package], EXAMPLES, no)
-AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_epetraext_examples" != "Xno")
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, experimental, [Build experimental code for EpetraExt package], EXPERIMENTAL, no)
-AM_CONDITIONAL(BUILD_EXPERIMENTAL, test "X$ac_cv_use_experimental" != "Xno")
+AM_CONDITIONAL(BUILD_EXPERIMENTAL, test "X$ac_cv_use_epetraext_experimental" != "Xno")
 
 # ------------------------------------------------------------------------
 
@@ -340,6 +340,12 @@ TAC_ARG_WITH_LAPACKLIB
 #  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, please specify additional locations using --with-ldflags, additional lib names using --with-lapacklib or type --with-referencelapack on the configure line in the Trilinos level directory to use the lapack library included in the distribution]])])
   ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
 #fi
+
+if test "X$ac_cv_use_epetraext_zoltan" != "Xno"; then
+  AC_CHECK_LIB(metis,METIS_PartGraphKway,[],[AC_MSG_ERROR([Cannot find libmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>])])
+  AC_CHECK_LIB(parmetis,ParMETIS_PartKway,[],[AC_MSG_ERROR([Cannot find libparmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>])])
+  AC_CHECK_LIB(zoltan,Zoltan_LB_Balance,[],[AC_MSG_ERROR([Cannot find libzoltan.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>])])
+fi
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
@@ -407,6 +413,9 @@ AC_CONFIG_FILES([
                 test/scripts/weekly/Makefile
                 test/scripts/weekly/serial/Makefile
                 test/scripts/weekly/mpi/Makefile
+                example/Makefile
+                example/inout/Makefile
+                example/zoltan/Makefile
 		])
 
 AC_OUTPUT()

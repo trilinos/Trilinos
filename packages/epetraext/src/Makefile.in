@@ -274,9 +274,6 @@ EXTRA_ZOLTAN_H = \
      $(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.h \
      $(srcdir)/zoltan/EpetraExt_ZoltanOrder_CrsGraph.h \
      $(srcdir)/zoltan/EpetraExt_ZoltanQuery.h \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.h \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.h \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.h \
      $(srcdir)/zoltan/Zoltan_LoadBalance.h \
      $(srcdir)/zoltan/Zoltan_MigrationContainer.h \
      $(srcdir)/zoltan/Zoltan_MigrationFunctions.h \
@@ -290,9 +287,6 @@ EXTRA_ZOLTAN = \
      $(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.cpp \
      $(srcdir)/zoltan/EpetraExt_ZoltanOrder_CrsGraph.cpp \
      $(srcdir)/zoltan/EpetraExt_ZoltanQuery.cpp \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp \
-     $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp \
      $(srcdir)/zoltan/Zoltan_LoadBalance.cpp \
      $(srcdir)/zoltan/Zoltan_MigrationContainer.cpp \
      $(srcdir)/zoltan/Zoltan_MigrationFunctions.cpp \
@@ -302,13 +296,31 @@ EXTRA_ZOLTAN = \
      $(srcdir)/zoltan/Zoltan_QueryObject.cpp
 
 
-@BUILD_ZOLTAN_TRUE@ZOLTAN_H = \
-@BUILD_ZOLTAN_TRUE@     $(EXTRA_ZOLTAN_H)
+EXTRA_ZOLTAN_EXPERIMENTAL_H = \
+     $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.h \
+     $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.h \
+     $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.h
+
+
+EXTRA_ZOLTAN_EXPERIMENTAL = \
+     $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp \
+     $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp \
+     $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp
+
+
+@BUILD_EXPERIMENTAL_FALSE@@BUILD_ZOLTAN_TRUE@ZOLTAN_H = \
+@BUILD_EXPERIMENTAL_FALSE@@BUILD_ZOLTAN_TRUE@     $(EXTRA_ZOLTAN_H)
+
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@ZOLTAN_H = \
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@     $(EXTRA_ZOLTAN_H) $(EXTRA_ZOLTAN_EXPERIMENTAL_H)
 
 @BUILD_ZOLTAN_FALSE@ZOLTAN_H = 
 
-@BUILD_ZOLTAN_TRUE@ZOLTAN = \
-@BUILD_ZOLTAN_TRUE@     $(EXTRA_ZOLTAN)
+@BUILD_EXPERIMENTAL_FALSE@@BUILD_ZOLTAN_TRUE@ZOLTAN = \
+@BUILD_EXPERIMENTAL_FALSE@@BUILD_ZOLTAN_TRUE@     $(EXTRA_ZOLTAN)
+
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@ZOLTAN = \
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@     $(EXTRA_ZOLTAN) $(EXTRA_ZOLTAN_EXPERIMENTAL)
 
 @BUILD_ZOLTAN_FALSE@ZOLTAN = 
 
@@ -486,25 +498,28 @@ am__objects_7 = EpetraExt_mmio.$(OBJEXT) \
 @BUILD_INOUT_FALSE@am__objects_8 =
 am__objects_9 = EpetraExt_Zoltan_CrsGraph.$(OBJEXT) \
 	EpetraExt_ZoltanOrder_CrsGraph.$(OBJEXT) \
-	EpetraExt_ZoltanQuery.$(OBJEXT) \
-	EpetraExt_ZoltanMpiComm.$(OBJEXT) \
-	EpetraExt_ZoltanMpiCommData.$(OBJEXT) \
-	EpetraExt_ZoltanMpiDistributor.$(OBJEXT) \
-	Zoltan_LoadBalance.$(OBJEXT) \
+	EpetraExt_ZoltanQuery.$(OBJEXT) Zoltan_LoadBalance.$(OBJEXT) \
 	Zoltan_MigrationContainer.$(OBJEXT) \
 	Zoltan_MigrationFunctions.$(OBJEXT) \
 	Zoltan_MigrationObject.$(OBJEXT) \
 	Zoltan_QueryContainer.$(OBJEXT) Zoltan_QueryFunctions.$(OBJEXT) \
 	Zoltan_QueryObject.$(OBJEXT)
-@BUILD_ZOLTAN_TRUE@am__objects_10 = $(am__objects_9)
-@BUILD_ZOLTAN_FALSE@am__objects_10 =
-am__objects_11 = EpetraExt_MapColoring.$(OBJEXT) \
+am__objects_10 = EpetraExt_ZoltanMpiComm.$(OBJEXT) \
+	EpetraExt_ZoltanMpiCommData.$(OBJEXT) \
+	EpetraExt_ZoltanMpiDistributor.$(OBJEXT)
+@BUILD_EXPERIMENTAL_FALSE@@BUILD_ZOLTAN_TRUE@am__objects_11 = \
+@BUILD_EXPERIMENTAL_FALSE@@BUILD_ZOLTAN_TRUE@	$(am__objects_9)
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@am__objects_11 = \
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@	$(am__objects_9) \
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@	$(am__objects_10)
+@BUILD_ZOLTAN_FALSE@am__objects_11 =
+am__objects_12 = EpetraExt_MapColoring.$(OBJEXT) \
 	EpetraExt_MapColoringIndex.$(OBJEXT)
-@BUILD_COLORING_TRUE@am__objects_12 = $(am__objects_11)
-@BUILD_COLORING_FALSE@am__objects_12 =
+@BUILD_COLORING_TRUE@am__objects_13 = $(am__objects_12)
+@BUILD_COLORING_FALSE@am__objects_13 =
 am_libepetraext_a_OBJECTS = $(am__objects_1) $(am__objects_4) \
-	$(am__objects_6) $(am__objects_8) $(am__objects_10) \
-	$(am__objects_12)
+	$(am__objects_6) $(am__objects_8) $(am__objects_11) \
+	$(am__objects_13)
 libepetraext_a_OBJECTS = $(am_libepetraext_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -719,12 +734,6 @@ EpetraExt_ZoltanOrder_CrsGraph.$(OBJEXT): \
 	$(srcdir)/zoltan/EpetraExt_ZoltanOrder_CrsGraph.cpp
 EpetraExt_ZoltanQuery.$(OBJEXT): \
 	$(srcdir)/zoltan/EpetraExt_ZoltanQuery.cpp
-EpetraExt_ZoltanMpiComm.$(OBJEXT): \
-	$(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp
-EpetraExt_ZoltanMpiCommData.$(OBJEXT): \
-	$(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp
-EpetraExt_ZoltanMpiDistributor.$(OBJEXT): \
-	$(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp
 Zoltan_LoadBalance.$(OBJEXT): $(srcdir)/zoltan/Zoltan_LoadBalance.cpp
 Zoltan_MigrationContainer.$(OBJEXT): \
 	$(srcdir)/zoltan/Zoltan_MigrationContainer.cpp
@@ -737,6 +746,12 @@ Zoltan_QueryContainer.$(OBJEXT): \
 Zoltan_QueryFunctions.$(OBJEXT): \
 	$(srcdir)/zoltan/Zoltan_QueryFunctions.cpp
 Zoltan_QueryObject.$(OBJEXT): $(srcdir)/zoltan/Zoltan_QueryObject.cpp
+EpetraExt_ZoltanMpiComm.$(OBJEXT): \
+	$(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp
+EpetraExt_ZoltanMpiCommData.$(OBJEXT): \
+	$(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp
+EpetraExt_ZoltanMpiDistributor.$(OBJEXT): \
+	$(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp
 EpetraExt_MapColoring.$(OBJEXT): \
 	$(srcdir)/coloring/EpetraExt_MapColoring.cpp
 EpetraExt_MapColoringIndex.$(OBJEXT): \
@@ -1235,42 +1250,6 @@ EpetraExt_ZoltanQuery.obj: $(srcdir)/zoltan/EpetraExt_ZoltanQuery.cpp
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ZoltanQuery.obj `cygpath -w $(srcdir)/zoltan/EpetraExt_ZoltanQuery.cpp`
 
-EpetraExt_ZoltanMpiComm.o: $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp
-@AMDEP_TRUE@	source='$(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp' object='EpetraExt_ZoltanMpiComm.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_ZoltanMpiComm.Po' tmpdepfile='$(DEPDIR)/EpetraExt_ZoltanMpiComm.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ZoltanMpiComm.o `test -f '$(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp
-
-EpetraExt_ZoltanMpiComm.obj: $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp
-@AMDEP_TRUE@	source='$(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp' object='EpetraExt_ZoltanMpiComm.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_ZoltanMpiComm.Po' tmpdepfile='$(DEPDIR)/EpetraExt_ZoltanMpiComm.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ZoltanMpiComm.obj `cygpath -w $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp`
-
-EpetraExt_ZoltanMpiCommData.o: $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp
-@AMDEP_TRUE@	source='$(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp' object='EpetraExt_ZoltanMpiCommData.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_ZoltanMpiCommData.Po' tmpdepfile='$(DEPDIR)/EpetraExt_ZoltanMpiCommData.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ZoltanMpiCommData.o `test -f '$(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp
-
-EpetraExt_ZoltanMpiCommData.obj: $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp
-@AMDEP_TRUE@	source='$(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp' object='EpetraExt_ZoltanMpiCommData.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_ZoltanMpiCommData.Po' tmpdepfile='$(DEPDIR)/EpetraExt_ZoltanMpiCommData.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ZoltanMpiCommData.obj `cygpath -w $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp`
-
-EpetraExt_ZoltanMpiDistributor.o: $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp
-@AMDEP_TRUE@	source='$(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp' object='EpetraExt_ZoltanMpiDistributor.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_ZoltanMpiDistributor.Po' tmpdepfile='$(DEPDIR)/EpetraExt_ZoltanMpiDistributor.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ZoltanMpiDistributor.o `test -f '$(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp
-
-EpetraExt_ZoltanMpiDistributor.obj: $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp
-@AMDEP_TRUE@	source='$(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp' object='EpetraExt_ZoltanMpiDistributor.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_ZoltanMpiDistributor.Po' tmpdepfile='$(DEPDIR)/EpetraExt_ZoltanMpiDistributor.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ZoltanMpiDistributor.obj `cygpath -w $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp`
-
 Zoltan_LoadBalance.o: $(srcdir)/zoltan/Zoltan_LoadBalance.cpp
 @AMDEP_TRUE@	source='$(srcdir)/zoltan/Zoltan_LoadBalance.cpp' object='Zoltan_LoadBalance.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Zoltan_LoadBalance.Po' tmpdepfile='$(DEPDIR)/Zoltan_LoadBalance.TPo' @AMDEPBACKSLASH@
@@ -1354,6 +1333,42 @@ Zoltan_QueryObject.obj: $(srcdir)/zoltan/Zoltan_QueryObject.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Zoltan_QueryObject.Po' tmpdepfile='$(DEPDIR)/Zoltan_QueryObject.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Zoltan_QueryObject.obj `cygpath -w $(srcdir)/zoltan/Zoltan_QueryObject.cpp`
+
+EpetraExt_ZoltanMpiComm.o: $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp
+@AMDEP_TRUE@	source='$(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp' object='EpetraExt_ZoltanMpiComm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_ZoltanMpiComm.Po' tmpdepfile='$(DEPDIR)/EpetraExt_ZoltanMpiComm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ZoltanMpiComm.o `test -f '$(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp
+
+EpetraExt_ZoltanMpiComm.obj: $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp
+@AMDEP_TRUE@	source='$(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp' object='EpetraExt_ZoltanMpiComm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_ZoltanMpiComm.Po' tmpdepfile='$(DEPDIR)/EpetraExt_ZoltanMpiComm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ZoltanMpiComm.obj `cygpath -w $(srcdir)/zoltan/EpetraExt_ZoltanMpiComm.cpp`
+
+EpetraExt_ZoltanMpiCommData.o: $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp
+@AMDEP_TRUE@	source='$(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp' object='EpetraExt_ZoltanMpiCommData.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_ZoltanMpiCommData.Po' tmpdepfile='$(DEPDIR)/EpetraExt_ZoltanMpiCommData.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ZoltanMpiCommData.o `test -f '$(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp
+
+EpetraExt_ZoltanMpiCommData.obj: $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp
+@AMDEP_TRUE@	source='$(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp' object='EpetraExt_ZoltanMpiCommData.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_ZoltanMpiCommData.Po' tmpdepfile='$(DEPDIR)/EpetraExt_ZoltanMpiCommData.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ZoltanMpiCommData.obj `cygpath -w $(srcdir)/zoltan/EpetraExt_ZoltanMpiCommData.cpp`
+
+EpetraExt_ZoltanMpiDistributor.o: $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp
+@AMDEP_TRUE@	source='$(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp' object='EpetraExt_ZoltanMpiDistributor.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_ZoltanMpiDistributor.Po' tmpdepfile='$(DEPDIR)/EpetraExt_ZoltanMpiDistributor.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ZoltanMpiDistributor.o `test -f '$(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp
+
+EpetraExt_ZoltanMpiDistributor.obj: $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp
+@AMDEP_TRUE@	source='$(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp' object='EpetraExt_ZoltanMpiDistributor.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_ZoltanMpiDistributor.Po' tmpdepfile='$(DEPDIR)/EpetraExt_ZoltanMpiDistributor.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_ZoltanMpiDistributor.obj `cygpath -w $(srcdir)/zoltan/EpetraExt_ZoltanMpiDistributor.cpp`
 
 EpetraExt_MapColoring.o: $(srcdir)/coloring/EpetraExt_MapColoring.cpp
 @AMDEP_TRUE@	source='$(srcdir)/coloring/EpetraExt_MapColoring.cpp' object='EpetraExt_MapColoring.o' libtool=no @AMDEPBACKSLASH@
