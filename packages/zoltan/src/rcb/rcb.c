@@ -1053,7 +1053,9 @@ static int rcb_fn(
     treept[0].dim = -1;
   }
 
+/* KDDKDD DO NOT COMMIT 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+*/
     print_rcb_tree(zz, np, fp, &(treept[fp]));
 
   end_time = Zoltan_Time(zz->Timer);
@@ -1427,7 +1429,7 @@ static int serial_rcb(
         coord[i] = dotpt[dindx[i]].X[dim];
         for (j=0; j<wgtflag; j++){
           /* use the scaled weights. */
-          wgts[i*wgtflag+j] = wgtscale[j]*dotpt[i].Weight[j];
+          wgts[i*wgtflag+j] = wgtscale[j]*dotpt[dindx[i]].Weight[j];
         }
       }
   
