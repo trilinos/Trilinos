@@ -18,8 +18,20 @@ extern "C" {
 
 #include "hypergraph.h"
 
+typedef struct
+   {
+   double weight;
+   float gain;
+   int   vertex;
+   int   source;
+   int   destination;
+   } Vdata;
+
 static int isabove (int origin, int test, int p);
 static int isbelow (int origin, int test, int p);
+static int comparison (const void*, const void*);
+static int comparison2 (const void*, const void*);
+
 
 
 static ZOLTAN_HG_LOCAL_REF_FN local_no;
@@ -533,6 +545,12 @@ char   *yo="local_fm";
 
 /***************************************************************************/
 
+/* This algorithm is loosely based on "A Coarse-Grained Parallel Formulation */
+/* of Multilevel k-way Graph Partitioning Algorithm", Karypis & Kumar, 1997. */
+/* It is implimented in serial as a testbed for future parallel development  */
+
+
+
 static int local_fmkway (
   ZZ *zz,
   HGraph *hg,
@@ -542,129 +560,181 @@ static int local_fmkway (
   float bal_tol
 )
 {
-const int MAX_LOOP = 4;
-int     i, j, k, loop;
-HEAP   *heap;
-double *part_weight, total_weight, max_weight, perfect_weight;
+const int MAX_LOOP = 5;
+int     i, loop, vertex, edge, ipart;  /* loop counters */
+double *part_weight, total_weight, max_weight;
 float  *gain, tgain;
-int   **cuts, *store;
-int     edge, vertex, bestpart, limit, *tpart;
+int   **cuts, *store1, *ends;
+Vdata **lists, *store2;
+int     bestpart;
 char   *yo="local_fmkway";
 
+double smallest;
+int found, smallpart;
+
   /* allocate necessary storage for heaps and weight calculation */
-  if  (!(heap        = (HEAP*)   ZOLTAN_CALLOC (p,         sizeof (HEAP)))
-   ||  !(part_weight = (double*) ZOLTAN_CALLOC (p,         sizeof (double)))
+  if  (!(part_weight = (double*) ZOLTAN_CALLOC (p,         sizeof (double)))
    ||  !(gain        = (float*)  ZOLTAN_CALLOC (p,         sizeof (float)))
    ||  !(cuts        = (int**)   ZOLTAN_CALLOC (hg->nEdge, sizeof (int)))
-   ||  !(tpart       = (int*)    ZOLTAN_CALLOC (hg->nVtx,  sizeof (int)))
-   ||  !(store       = (int*)    ZOLTAN_CALLOC (hg->nEdge * p, sizeof (int))))
+   ||  !(store1      = (int*)    ZOLTAN_CALLOC (hg->nEdge * p, sizeof (int)))
+   ||  !(lists       = (Vdata**) ZOLTAN_CALLOC (p,         sizeof (Vdata)))
+   ||  !(store2      = (Vdata*)  ZOLTAN_CALLOC (hg->nVtx * p, sizeof (Vdata)))
+   ||  !(ends        = (int*)    ZOLTAN_CALLOC (p,         sizeof (int))))
      {
-     Zoltan_Multifree(__FILE__,__LINE__, 6, &heap, &part_weight, &gain, &cuts,
-      &tpart, &store);
+     Zoltan_Multifree(__FILE__,__LINE__, 7, &part_weight, &gain, &cuts,
+      &store1, &lists, &store2, &ends);
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
      }
 
-  /* simulate a 2 dimensional array whose dimensions are known at run time */
-  for (i = 0; i < hg->nEdge; i++)
-     cuts[i] = store + i * p;
+  /* simulate 2 dimensional arrays whose dimensions are known at run time */
+  for (edge = 0; edge < hg->nEdge; edge++) cuts[edge]   = store1 + edge  * p;
+  for (ipart = 0; ipart < p; ipart++)      lists[ipart] = store2 + ipart * hg->nVtx;
 
-  /* Initialize the heaps  */
-  for (i = 0; i < p; i++)
-     Zoltan_HG_heap_init (zz, &heap[i], hg->nVtx);
+  /* Calculate the total weights (local vertices weight) */
+  /* most general case, need MPI global communication for total weight */
+  total_weight = 0.0;
+  memset (part_weight, 0, p * sizeof (double));
+  if (hg->vwgt)
+     for (vertex = 0; vertex < hg->nVtx; vertex++)  {
+         total_weight              += hg->vwgt[vertex];
+         part_weight[part[vertex]] += hg->vwgt[vertex];
+         }
+  else {
+     total_weight = hg->nVtx;
+     for (vertex = 0; vertex < hg->nVtx; vertex++)
+        part_weight[part[vertex]] += 1.0;
+     }
+  max_weight = bal_tol * total_weight / p;
+
+  /* determine if there are any overfilled partitions */
+  smallest = part_weight[0];
+  smallpart = 0;
+  found = 0;
+  memset (ends, 0, p * sizeof (int));
+  for (ipart = 0; ipart < p; ipart++)  {
+     if (part_weight[ipart] < smallest)  {
+        smallest = part_weight[ipart];
+        smallpart = ipart;
+        }
+     if (part_weight[ipart] > max_weight)
+        found = 1;
+     }
+
+  /* overfilled partitions found, move vertices out of it */     
+  if (found)  {
+     for (vertex = 0; vertex < hg->nVtx; vertex++)  {
+        ipart = part[vertex];
+
+        lists[ipart][ends[ipart]].weight      = hg->vwgt[vertex];
+        lists[ipart][ends[ipart]].vertex      = vertex;
+        lists[ipart][ends[ipart]].source      = ipart;
+        lists[ipart][ends[ipart]].destination = -1;
+        lists[ipart][ends[ipart]].gain        = 0.0;
+        ++ends[ipart];
+        }
+     for (ipart = 0; ipart < p; ipart++)
+        qsort (lists[ipart], ends[ipart], sizeof (Vdata), comparison2);
+
+     for (ipart = 0; ipart < p; ipart++)
+        for (i = 0;  (part_weight[ipart] > max_weight) && (i < ends[ipart]); i++)  {
+           part_weight[ipart] -= lists[ipart][i].weight;
+           part[lists[ipart][i].vertex] = smallpart;
+           }
+     }
 
   /* algorithm loops to create interprocessor communication sections */
-  for (loop = 0; loop < MAX_LOOP; loop++) {
-     int evenloop = (loop%2) ? 0 : 1;   /* determines direction of legal moves */
+  for (loop = 0; loop < MAX_LOOP; loop++)   {
+     int oddloop = loop & 1;         /* determines direction of legal moves */
+     memset (ends, 0, p * sizeof (int));
 
-    /* Calculate the total weights (local vertices weight) */
+     /* Calculate the total weights (local vertices weight) */
+     /* most general case, need MPI global communication for total weight */
      total_weight = 0.0;
      memset (part_weight, 0, p * sizeof (double));
      if (hg->vwgt)
-        for (i = 0; i < hg->nVtx; i++) {
-           total_weight         += hg->vwgt[i];
-           part_weight[part[i]] += hg->vwgt[i];
+        for (vertex = 0; vertex < hg->nVtx; vertex++)  {
+           total_weight              += hg->vwgt[vertex];
+           part_weight[part[vertex]] += hg->vwgt[vertex];
            }
      else {
         total_weight = hg->nVtx;
-        for (i = 0; i < hg->nVtx; i++)
-           part_weight[part[i]] += 1.0;
+        for (vertex = 0; vertex < hg->nVtx; vertex++)
+           part_weight[part[vertex]] += 1.0;
         }
-     /* most general case, need MPI global communication for total weight here */
-     /* temporary equal fill RTHRTH, should use target weight vector */
-     max_weight     = (total_weight / (double)p)  * bal_tol;
-     perfect_weight =  total_weight / (double)p;
+     max_weight = bal_tol * total_weight / p;
 
      /* Initial calculation of the cut distribution */
-     memset (store, 0, hg->nEdge * p);
-     for (i = 0; i < hg->nEdge; i++)
-        for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
-           ++cuts[i][part[hg->hvertex[j]]];
+     memset (store1, 0, hg->nEdge * p);
+     for (edge = 0; edge < hg->nEdge; edge++)
+        for (i = hg->hindex[edge]; i < hg->hindex[edge+1]; i++)
+           ++cuts[edge][part[hg->hvertex[i]]];
 
-     for (i = 0; i < hg->nVtx; i++)  {
-        for (j = 0; j < p; j++)
-           gain[j] = 0.0;
-
+     for (vertex = 0; vertex < hg->nVtx; vertex++)  {
         /* calculate gains */
-        for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)  {
-           edge = hg->vedge[j];
-           for (k = 0; k < p; k++)  {
-              if (k == part[i])
+        memset (gain, 0, p * sizeof (float));
+        for (i = hg->vindex[vertex]; i < hg->vindex[vertex+1]; i++)  {
+           edge = hg->vedge[i];
+           for (ipart = 0; ipart < p; ipart++)  {
+              if (ipart == part[vertex])
                  continue;
-              if (cuts[edge][k] != 0 && cuts[edge][part[i]] == 1)
-                 gain[k] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
-              if (cuts[edge][k] == 0)
-                 gain[k] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
+              if (cuts[edge][ipart] != 0 && cuts[edge][part[vertex]] == 1)
+                 gain[ipart] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
+              if (cuts[edge][ipart] == 0)
+                 gain[ipart] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
               }
            }
 
         /* save best move, if any, for each vertex */
-        tpart[i] = bestpart = -1;                 /* arbitrary illegal value */
+        /* oddloop, isabove, isbelow control move direction each pass */
+        bestpart = -1;                            /* arbitrary illegal value */
         tgain = -1.0e37;                          /* arbitrary small value */
-        for (j = 0; j < p; j++)
-           if (j != part[i] && gain[j] >= tgain
-            && ((evenloop && isabove (part[i], j, p)) /* legal move direction */
-            || (!evenloop && isbelow (part[i], j, p))))  {
-                     bestpart = j;
-                     tgain = gain[j];
+        for (ipart = 0; ipart < p; ipart++)
+           if (ipart != part[vertex] && gain[ipart] >= tgain
+            && ((!oddloop && isabove (part[vertex], ipart, p))
+            ||   (oddloop && isbelow (part[vertex], ipart, p))))  {
+                     if (gain[ipart] > tgain)  {
+                        bestpart = ipart;
+                        tgain    = gain[ipart];
+                        }
+                     else if (part_weight[ipart] < part_weight[bestpart])  {
+                        bestpart = ipart;
+                        tgain    = gain[ipart];
+                        }
                      }
 
         /* fill heaps with the best, legal gain value per vertex */
         if (bestpart != -1 && tgain >= 0.0)  {
-           Zoltan_HG_heap_input (&heap[bestpart], i, tgain);
-           tpart[i] = bestpart;
+           lists[bestpart][ends[bestpart]].weight      = hg->vwgt[vertex];
+           lists[bestpart][ends[bestpart]].vertex      = vertex;
+           lists[bestpart][ends[bestpart]].source      = part[vertex];
+           lists[bestpart][ends[bestpart]].destination = bestpart;
+           lists[bestpart][ends[bestpart]].gain        = tgain;
+           ++ends[bestpart];
            }
-        } /* end of loop over all vertices --- i */
+        } /* end of loop over all vertices */
 
-     /* make moves until while balance is OK */
-     for (i = 0; i < p; i++)  {
-        Zoltan_HG_heap_make (&heap[i]);
+     for (ipart = 0; ipart < p; ipart++)
+        qsort (lists[ipart], ends[ipart], sizeof (Vdata), comparison);
 
-        limit = 0.35 * Zoltan_HG_heap_count (&heap[i]);
-        while (Zoltan_HG_heap_not_empty (&heap[i]) && limit-- > 0)  {
-            vertex = Zoltan_HG_heap_extract_max(&heap[i], &tgain);
-            if ((hg->vwgt[vertex] + part_weight[i]) < max_weight)  {
-               part_weight[i] += hg->vwgt[vertex];
-               part[vertex] = i;                          /* fake update (no global comm) */
+     /* make moves until while balance is OK upto a maximum fraction */
+     for (ipart = 0; ipart < p; ipart++)
+        for (i = 0; i < 0.30 * ends[ipart]; i++)  {
+            vertex = lists[ipart][i].vertex;
+            if (hg->vwgt[vertex] + part_weight[ipart] < max_weight)  {
+               part[vertex] = ipart;
+               part_weight[ipart] += hg->vwgt[vertex];
                }
             }
-        }
 
      /* communicate back moves made/rejected, update info (faked above) */
      /* update "ghost" vertices by either the previous comm is all to all, */
      /* or by a third comm by vertex owners to ghost owners */
      /* NOTE: this too is implicit in this serial version */
 
-     /* clear heaps for next loop */
-     for (i = 0; i < p; i++)
-        Zoltan_HG_heap_clear(&heap[i]);
      }   /* end of loop over loop */
-
-  for (i = 0; i < p; i++)
-     Zoltan_HG_heap_free(&heap[i]);
-  Zoltan_Multifree(__FILE__,__LINE__, 6, &heap, &part_weight, &gain, &cuts,
-   &tpart, &store);
-
+  Zoltan_Multifree(__FILE__,__LINE__, 7, &part_weight, &gain, &cuts, &store1,
+   &store2, &lists, &ends);
   return ZOLTAN_OK;
 }
 
@@ -698,6 +768,33 @@ static int isbelow (int origin, int test, int p)
          return 0;
       return 1;
       }
+   }
+
+   
+
+/* note: sort is normally asending order, need the opposite!  */
+static int comparison (const void *a, const void *b)
+   {
+   if (((Vdata*)a)->gain < ((Vdata*)b)->gain)       return  1;
+   if (((Vdata*)a)->gain > ((Vdata*)b)->gain)       return -1;
+
+   if (((Vdata*)a)->weight < ((Vdata*)b)->weight)   return  1;
+   if (((Vdata*)a)->weight > ((Vdata*)b)->weight)   return -1;
+
+   if (((Vdata*)a)->vertex > ((Vdata*)b)->vertex)   return  1;
+   if (((Vdata*)a)->vertex < ((Vdata*)b)->vertex)   return -1;
+
+   return 0;
+   }
+
+
+
+static int comparison2 (const void *a, const void *b)
+   {
+   if (((Vdata*)a)->weight > ((Vdata*)b)->weight)   return  1;
+   if (((Vdata*)a)->weight < ((Vdata*)b)->weight)   return -1;
+
+   return 0;
    }
 
 
