@@ -106,6 +106,8 @@ int hashsize;              /* size of the hash table */
 int i, j;                  /* loop counters */
 unsigned char *p;          /* for setting IDs to NULL */
 
+  LB_TRACE_ENTER(lb, yo);
+
   final_ierr = LB_OK;
 
   if (lb->Obj_Weight_Dim == 0) {
@@ -127,6 +129,7 @@ unsigned char *p;          /* for setting IDs to NULL */
   if (root == NULL) {
     fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
             lb->Proc, yo);
+    LB_TRACE_EXIT(lb, yo);
     return(LB_MEMERR);
   }
 
@@ -155,6 +158,7 @@ unsigned char *p;          /* for setting IDs to NULL */
     fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
             lb->Proc, yo);
     LB_Reftree_Free_Structure(lb);
+    LB_TRACE_EXIT(lb, yo);
     return(LB_MEMERR);
   }
   for (i=0; i<wdim; i++) {
@@ -177,6 +181,7 @@ unsigned char *p;          /* for setting IDs to NULL */
     fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
             lb->Proc, yo);
     LB_Reftree_Free_Structure(lb);
+    LB_TRACE_EXIT(lb, yo);
     return(LB_MEMERR);
   }
   for (i=0; i<hashsize; i++)
@@ -206,6 +211,7 @@ unsigned char *p;          /* for setting IDs to NULL */
     fprintf(stderr, "[%d] Error in %s: Must register LB_NUM_COARSE_OBJ_FN.\n",
             lb->Proc, yo);
     LB_Reftree_Free_Structure(lb);
+    LB_TRACE_EXIT(lb, yo);
     return(LB_FATAL);
   }
 
@@ -214,6 +220,7 @@ unsigned char *p;          /* for setting IDs to NULL */
     fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
                     "Get_Num_Coarse_Obj.\n", lb->Proc, yo);
     LB_Reftree_Free_Structure(lb);
+    LB_TRACE_EXIT(lb, yo);
     return(ierr);
   }
 
@@ -246,6 +253,7 @@ unsigned char *p;          /* for setting IDs to NULL */
       LB_FREE(&in_vertex);
       LB_FREE(&out_vertex);
       LB_Reftree_Free_Structure(lb);
+      LB_TRACE_EXIT(lb, yo);
       return(LB_MEMERR);
     }
 
@@ -269,6 +277,7 @@ unsigned char *p;          /* for setting IDs to NULL */
         LB_FREE(&in_vertex);
         LB_FREE(&out_vertex);
         LB_Reftree_Free_Structure(lb);
+        LB_TRACE_EXIT(lb, yo);
         return(ierr);
       }
 
@@ -301,6 +310,7 @@ unsigned char *p;          /* for setting IDs to NULL */
         LB_FREE(&in_vertex);
         LB_FREE(&out_vertex);
         LB_Reftree_Free_Structure(lb);
+        LB_TRACE_EXIT(lb, yo);
         return(ierr);
       }
 
@@ -324,6 +334,7 @@ unsigned char *p;          /* for setting IDs to NULL */
           LB_FREE(&in_vertex);
           LB_FREE(&out_vertex);
           LB_Reftree_Free_Structure(lb);
+          LB_TRACE_EXIT(lb, yo);
           return(ierr);
         }
       }
@@ -349,6 +360,7 @@ unsigned char *p;          /* for setting IDs to NULL */
       LB_FREE(&in_vertex);
       LB_FREE(&out_vertex);
       LB_Reftree_Free_Structure(lb);
+      LB_TRACE_EXIT(lb, yo);
       return(LB_FATAL);
     }
   } /* endif (num_obj > 0) */
@@ -375,6 +387,7 @@ unsigned char *p;          /* for setting IDs to NULL */
     LB_FREE(&num_obj_all);
     LB_FREE(&displs);
     LB_Reftree_Free_Structure(lb);
+    LB_TRACE_EXIT(lb, yo);
     return(LB_MEMERR);
   }
 
@@ -402,6 +415,7 @@ unsigned char *p;          /* for setting IDs to NULL */
     LB_FREE(&displs);
     LB_FREE(&all_gids);
     LB_Reftree_Free_Structure(lb);
+    LB_TRACE_EXIT(lb, yo);
     return(LB_MEMERR);
   }
 
@@ -441,6 +455,7 @@ unsigned char *p;          /* for setting IDs to NULL */
     LB_FREE(&all_gids);
     LB_FREE(&order);
     LB_Reftree_Free_Structure(lb);
+    LB_TRACE_EXIT(lb, yo);
     return(LB_MEMERR);
   }
 
@@ -492,6 +507,7 @@ unsigned char *p;          /* for setting IDs to NULL */
     LB_FREE(&in_vertex);
     LB_FREE(&out_vertex);
     LB_Reftree_Free_Structure(lb);
+    LB_TRACE_EXIT(lb, yo);
     return(LB_MEMERR);
   }
 
@@ -537,6 +553,7 @@ unsigned char *p;          /* for setting IDs to NULL */
     LB_FREE(&out_vertex);
     LB_FREE(&order);
     LB_Reftree_Free_Structure(lb);
+    LB_TRACE_EXIT(lb, yo);
     return(LB_MEMERR);
   }
   root->num_child = total_num_obj;
@@ -557,6 +574,7 @@ unsigned char *p;          /* for setting IDs to NULL */
     LB_FREE(&out_vertex);
     LB_FREE(&order);
     LB_Reftree_Free_Structure(lb);
+    LB_TRACE_EXIT(lb, yo);
     return(LB_FATAL);
   }
 
@@ -593,6 +611,7 @@ unsigned char *p;          /* for setting IDs to NULL */
       LB_FREE(&out_vertex);
       LB_FREE(&order);
       LB_Reftree_Free_Structure(lb);
+      LB_TRACE_EXIT(lb, yo);
       return(LB_MEMERR);
     }
 
@@ -675,6 +694,7 @@ unsigned char *p;          /* for setting IDs to NULL */
   LB_FREE(&in_vertex);
   LB_FREE(&out_vertex);
   LB_FREE(&order);
+  LB_TRACE_EXIT(lb, yo);
   return(final_ierr);
 }
 
@@ -929,12 +949,12 @@ int hashsize;              /* size of the hash table */
     break;
   case LB_QUAD_QUAD:
     /* TEMP */
-    printf("Oops, still got into case for QUAD_QUAD\n");
+    fprintf(stderr, "%s Oops, still got into case for QUAD_QUAD\n", yo);
     for (i=0; i<num_obj; i++) order[i] = i;
     break;
   case LB_HEX3D_OCT:
     /* TEMP */
-    printf("Oops, still got into case for HEX3D_OCT\n");
+    fprintf(stderr, "%s Oops, still got into case for HEX3D_OCT\n", yo);
     for (i=0; i<num_obj; i++) order[i] = i;
     break;
   case LB_OTHER_REF:
