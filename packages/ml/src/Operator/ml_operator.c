@@ -79,6 +79,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->label               = NULL;
    mat->comm                = comm;
    mat->num_PDEs            = 1;
+   mat->num_rigid           = 1;
    return 0;
 }
 
@@ -144,6 +145,7 @@ int ML_Operator_Clean( ML_Operator *mat)
    ML_memory_free((void**)&(mat->getrow));
    if (mat->label != NULL) { free(mat->label); mat->label = NULL; }
    mat->num_PDEs            = 1;
+   mat->num_rigid           = 1;
 
    return 0;
 }
@@ -194,6 +196,7 @@ ML_Operator *ML_Operator_halfClone( ML_Operator *original)
    mat->label               = original->label;
    mat->comm                = original->comm;
    mat->num_PDEs            = original->num_PDEs;
+   mat->num_rigid           = original->num_rigid;
    return mat;
 }
 
@@ -739,7 +742,7 @@ int ML_amalg_drop_getrow(void *data, int N_requested_rows, int requested_rows[],
    row_lengths[0] = 0;
 
    for (j = 0; j < offset; j++) {
-      tcol = tcolumns[j]/block_size;
+      tcol = temp->blk_inds[tcolumns[j]];
       for (k = 0; k < row_lengths[0]; k++) 
          if (tcol == columns[k]) break;
 
@@ -783,6 +786,7 @@ int ML_Operator_UnAmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
       Amat->invec_leng  *= temp->block_size;
       Amat->outvec_leng *= temp->block_size;
       Amat->num_PDEs     = temp->block_size;
+      if (temp->blk_inds != NULL) free(temp->blk_inds);
       if (temp->scaled_diag != NULL) free(temp->scaled_diag);
       free(temp);
    }
@@ -800,8 +804,8 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
    struct amalg_drop  *new_data;
    int Nneigh, *neighbors, sendleng, rcvleng, *newsend, *newrcv, i, j, k;
    int sendcount, rcvcount, temp, row_length;
-   int allocated, *bindx, Nghost, Nrows;
-   double *val, *scaled_diag;
+   int allocated, *bindx, Nghost, Nrows, block_count, t2, current;
+   double *val, *scaled_diag, *dtemp;
    ML_Comm *comm;
 
    /* create a new widget to hold the amalgamation and drop information */
@@ -814,21 +818,70 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
         printf("ML_Operator_AmalgamateAndDropWeak: out of space\n");
         exit(1);
      }
+     Nrows                     = Amat->getrow->Nrows;
      new_data->original_data   = Amat->data;
      new_data->original_getrow = Amat->getrow;
      new_data->scaled_diag     = NULL;
      new_data->block_size      = block_size;
      new_data->drop_tolerance  = drop_tolerance;
      new_data->Amat            = Amat;
-     Nrows                     = Amat->getrow->Nrows;
+
+     /* figure out the block indices (need communication for ghost points) */
+     /* and store these in new_data->blk_inds[]                            */
+
+
+     i = Amat->invec_leng + 1;
+     if (Amat->getrow->pre_comm != NULL) {
+        i += Amat->getrow->pre_comm->total_rcv_length;
+     }
+     new_data->blk_inds   = (int    *) ML_allocate(sizeof(int)* i );
+     dtemp                = (double *) ML_allocate(sizeof(double)* i );
+     if (dtemp == NULL) 
+        pr_error("ML_Operator_AmalgamateAndDropWeak: out of space\n");
+                                        
+     for (i = 0; i < Amat->invec_leng; i++)
+        dtemp[i] = (double) (i/block_size);
+
+     if (Amat->getrow->pre_comm != NULL) {
+       ML_exchange_bdry(dtemp,Amat->getrow->pre_comm, Amat->invec_leng,
+                        comm, ML_OVERWRITE);
+     }
+     for (i = 0; i < Amat->invec_leng; i++)
+        new_data->blk_inds[i] = (int) dtemp[i];
+
+     Nneigh    = ML_CommInfoOP_Get_Nneighbors(Amat->getrow->pre_comm);
+     neighbors = ML_CommInfoOP_Get_neighbors(Amat->getrow->pre_comm);
+
+     block_count = Amat->invec_leng/block_size;
+     for (i = 0; i < Nneigh; i++) {
+       rcvleng = ML_CommInfoOP_Get_Nrcvlist(Amat->getrow->pre_comm,
+                                                neighbors[i]);
+       newrcv = ML_CommInfoOP_Get_rcvlist(Amat->getrow->pre_comm, 
+                                              neighbors[i]);
+       for (j = 0; j < rcvleng; j++) {
+          current = (int) dtemp[ newrcv[j] ];
+          if (current >= 0) {
+             new_data->blk_inds[newrcv[j]] = block_count;
+             for (k = j; k < rcvleng; k++) {
+                t2 = (int) dtemp[ newrcv[k] ];
+                if (current == t2) {
+                   dtemp[ newrcv[k] ] = -1.;
+                   new_data->blk_inds[newrcv[k]] = block_count;
+                }
+             }
+             block_count++;
+          }
+       }
+       ML_free(newrcv);
+    }
+    ML_free(dtemp);
+
 
      /* we need to get the matrix diagonal, scale it by drop_tolerance, */
      /* and store it */
 
      if ( drop_tolerance >= 0.0) {
 
-        Nneigh    = ML_CommInfoOP_Get_Nneighbors(Amat->getrow->pre_comm);
-        neighbors = ML_CommInfoOP_Get_neighbors(Amat->getrow->pre_comm);
         Nghost = 0;
         for (i = 0; i < Nneigh; i++) {
            rcvleng = ML_CommInfoOP_Get_Nrcvlist(Amat->getrow->pre_comm,
@@ -904,6 +957,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
         Nneigh    = ML_CommInfoOP_Get_Nneighbors(Amat->getrow->pre_comm);
         neighbors = ML_CommInfoOP_Get_neighbors(Amat->getrow->pre_comm);
 
+
         for (i = 0; i < Nneigh; i++) {
            sendleng = ML_CommInfoOP_Get_Nsendlist(Amat->getrow->pre_comm, 
                                                   neighbors[i]);
@@ -911,7 +965,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
                                                 neighbors[i]);
            sendcount = 0;
            for (j = 0 ; j < sendleng; j++) {
-              temp = newsend[j]/block_size;
+              temp = new_data->blk_inds[newsend[j]];
 
               /* search to see if it is already in the list */
               for (k = 0; k < sendcount; k++) 
@@ -924,7 +978,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
            newrcv = ML_CommInfoOP_Get_rcvlist(Amat->getrow->pre_comm, neighbors[i]);
            rcvcount = 0;
            for (j = 0 ; j < rcvleng; j++) {
-              temp = newrcv[j]/block_size;
+              temp = new_data->blk_inds[newrcv[j]];
 
               /* search to see if it is already in the list */
               for (k = 0; k < rcvcount; k++) 
@@ -941,5 +995,31 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
      }
   }
   return 0;
+}
+
+/* This function is not finished. Started by Ray Tuminaro ... but I don't need it for now. */
+extern int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked, int **unblocked, int *size);
+int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked, int **unblocked, int *size)
+{
+/* Take a vector created in the blocked matrix and transform it to a vector corresponding
+   to the unblocked matrix. This is a bit tricky due to the ghost nodes (where not every
+   DOF within a block might appear as a ghost node. */
+   
+      struct amalg_drop  *temp;
+      int j;
+
+     temp = (struct amalg_drop *) Amat->data;
+     *size = temp->Amat->invec_leng;
+     if (temp->Amat->getrow->pre_comm != NULL) {
+        *size += temp->Amat->getrow->pre_comm->total_rcv_length;
+     }
+     *unblocked = (int *) ML_allocate(sizeof(int)*(*size+1));
+     if (*unblocked == NULL)
+        pr_error("ML_Operator_Amalgamate_Vec_Trans: out of space\n");
+
+     for (j = 0; j < *size; j++) {
+       (*unblocked)[j] = blocked[ temp->blk_inds[j] ];
+    }
+    return 0;
 }
 

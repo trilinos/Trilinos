@@ -85,7 +85,7 @@ struct ML_Operator_Struct {
    ML_BdryPts    *bc;
    double        build_time, apply_time;
    char          *label; 
-   int           num_PDEs;
+   int           num_PDEs, num_rigid;
 };
 
 /* -------------------------------------------------------------------- */
@@ -102,6 +102,7 @@ struct amalg_drop {
    int                  block_size;
    double               drop_tolerance;
    ML_Operator          *Amat;
+   int                  *blk_inds;
 };
 
 /* ******************************************************************** */

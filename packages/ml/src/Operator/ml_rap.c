@@ -123,6 +123,7 @@ void ML_rap(ML *ml, ML_Operator *Rmat, ML_Operator *Amat,
       ML_Scale_CSR(RAPcomm, scales, 1);
 
    RAPcomm->num_PDEs = Amat->num_PDEs;
+   RAPcomm->num_rigid = Amat->num_rigid;
    ML_back_to_local(RAPcomm,Result, max_per_proc);
 
    ML_RECUR_CSR_MSRdata_Destroy(RAPcomm);
