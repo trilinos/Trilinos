@@ -29,7 +29,7 @@
 
 #ifndef _MATLAB_ENGINE_H_
 #define _MATLAB_ENGINE_H_
-#include "MATLAB_Engine_config.h"
+//#include "MATLAB_Engine_config.h"
 #include "Epetra_ConfigDefs.h"
 #include "MATLAB_Engine.h"
 
@@ -39,6 +39,8 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Comm.h"
+// MATLAB engine declarations:
+#include "engine.h"
 //! MATLAB_Engine: 
 
 /*! The MATLAB_Engine class provides access to MATLAB from Trilinos 
@@ -69,7 +71,7 @@ class MATLAB_Engine {
 
   */
   MATLAB_Engine(const Epetra_Comm& Comm);
-
+  ~MATLAB_Engine();
   //! MATLAB_Engine copy constructor.  There is no copy...
   
   // MATLAB_Engine(const MATLAB_Engine& Source);
@@ -78,7 +80,7 @@ class MATLAB_Engine {
   //@{ \name LotsHere methods
 
   //! EvalString method
-  void EvalString (char* command);
+  void EvalString (char* command, char* output, int n) const;
 
   //@}
 
@@ -86,11 +88,10 @@ class MATLAB_Engine {
  private:
 
     Engine *Engine_ ;
-    char* Buffer_ ;	// MATLAB output goes here
     bool echo_ ;	// if true, print the output
     int MyPID_ ;
 
-    const Epetra_Comm& Comm_ ; 
+    const Epetra_Comm& Comm_ ;
 
 };
 

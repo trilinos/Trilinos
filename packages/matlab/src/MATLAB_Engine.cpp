@@ -29,21 +29,16 @@
 
 #include "MATLAB_Engine.h"
 #include "Epetra_Comm.h"
-
-// MATLAB engine declarations:
-#include "engine.h"
-
 //=============================================================================
 MATLAB_Engine::MATLAB_Engine (const Epetra_Comm& Comm):Comm_(Comm) {
 
     // MATLAB engOpen, to construct the MATLAB engine
 
     MyPID_ = Comm_.MyPID();
-    if (MyPID == 0) {
+    if (MyPID_ == 0) {
 	cout << "Hello.  I am matlab " << endl ; 
 	// Gentlemen, start your engines ...
 	Engine_ = engOpen ((char *) 0) ;
-	Buffer_ = (char *) 0 ;
     }
 
 } 
@@ -92,29 +87,4 @@ void MATLAB_Engine::EvalString (char* command, char* output, int n) const {
     }
 
 }
-
-
-//=======================================================================
-void MATLAB_Engine::OutputBuffer (char * buffer, int n)  const {
-
-    // tell MATLAB where to send its output
-    if (MyPID_ == 0) {
-
-	// keep track of where the user's buffer is
-	Buffer_ = buffer ;
-
-	cout << "Tell matlab where to send its otput:" << endl ;
-
-	int result = engOutputBuffer (Engine_, Buffer_, n) ;
-
-	if (result == 1)
-	{
-	    cout << "That was bad.  engEvalString failed." << endl ; 
-	}
-
-    }
-
-}
-
-
 

@@ -43,10 +43,10 @@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
-	$(srcdir)/Newp_Hello.h 
+	$(srcdir)/MATLAB_Engine.h
 
 CORE = \
-	$(srcdir)/Newp_Hello.cpp
+	$(srcdir)/MATLAB_Engine.cpp
 
 UTIL_H = 
 
@@ -87,25 +87,25 @@ MPI =
 endif
 #np# This section should come out, or be modified to reflect options in the 
 #np# package being autotool'ed
-EXTRA_NEWP_SWAHILI_H = \
-	$(srcdir)/Newp_Jambo.h 
+#EXTRA_NEWP_SWAHILI_H = \
+#	$(srcdir)/Newp_Jambo.h 
 
-EXTRA_NEWP_SWAHILI = \
-	$(srcdir)/Newp_Jambo.cpp
+#EXTRA_NEWP_SWAHILI = \
+#	$(srcdir)/Newp_Jambo.cpp
 
-if HAVE_NEWP_SWAHILI
+#if HAVE_NEWP_SWAHILI
 
-NEWP_SWAHILI_H = \
+#NEWP_SWAHILI_H = \
 	$(EXTRA_NEWP_SWAHILI_H)
-NEWP_SWAHILI = \
+#NEWP_SWAHILI = \
 	$(EXTRA_NEWP_SWAHILI)
 
-else
+#else
 
-NEWP_SWAHILI_H =
-NEWP_SWAHILI =
+#NEWP_SWAHILI_H =
+#NEWP_SWAHILI =
 
-endif
+#endif
 
 
 
@@ -139,10 +139,10 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 # New_Package library specifications
 # ------------------------------------------------------------------------
 #np# replace new_package with the name of the package being autotool'ed here
-NEW_PACKAGE_LIB = libnew_package.a
+MATLAB_LIB = libmatlab.a
 
 #np# replace new_package with the name of the package being autotool'ed here
-NEW_PACKAGE_H = \
+MATLAB_H = \
 	$(CORE_H) \
 	$(UTIL_H) \
 	$(ENUM_H) \
@@ -155,7 +155,7 @@ NEW_PACKAGE_H = \
 	$(NEWP_SWAHILI_H)
 
 #np# replace new_package with the name of the package being autotool'ed here
-libnew_package_a_SOURCES = \
+libmatlab_a_SOURCES = \
 	$(CORE) \
 	$(UTIL) \
 	$(UNIPROC) \
@@ -166,7 +166,7 @@ libnew_package_a_SOURCES = \
 	$(NEWP_SWAHILI)
 
 #np# replace new_package with the name of the package being autotool'ed here
-EXTRA_libnew_package_a_SOURCES = \
+EXTRA_libmatlab_a_SOURCES = \
 	$(EXTRA_MPI) \
 	$(EXTRA_MPI_H) \
 	$(EXTRA_NEWP_SWAHILI) \
@@ -185,11 +185,11 @@ EXTRA_libnew_package_a_SOURCES = \
 if USE_ALTERNATE_AR
 
 #np# replace new_package with the name of the package being autotool'ed here
-libnew_package_a_AR = $(ALTERNATE_AR)
+libmatlab_a_AR = $(ALTERNATE_AR)
 else
 
 #np# replace new_package with the name of the package being autotool'ed here
-libnew_package_a_AR = $(AR) cru
+libmatlab_a_AR = $(AR) cru
 
 endif
 
@@ -199,21 +199,21 @@ endif
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-libnew_package_a_LIBADD = $(XTRALDADD)
+libmatlab_a_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-lib_LIBRARIES = $(NEW_PACKAGE_LIB)
+lib_LIBRARIES = $(MATLAB_LIB)
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-include_HEADERS = $(NEW_PACKAGE_H) 
+include_HEADERS = $(MATLAB_H) 
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
@@ -228,7 +228,7 @@ include_HEADERS = $(NEW_PACKAGE_H)
 # All Trilinos headers are now installed in the same directory
 execincludedir = $(exec_prefix)/include
 #np# replace new_package with the name of the package being autotool'ed here
-nodist_execinclude_HEADERS = New_Package_config.h
+nodist_execinclude_HEADERS = MATLAB_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
