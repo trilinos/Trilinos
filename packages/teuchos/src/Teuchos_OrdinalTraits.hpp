@@ -67,7 +67,7 @@ namespace Teuchos {
 	struct OrdinalTraits {
 
 		//! Allows testing to see if ordinal traits machine parameters are defined.
-		static inline bool haveMachineParameters() {return(false);}; 
+		static const bool hasMachineParameters = false;
 		
 		//! Returns representation of zero for this ordinal type.
 		static inline T zero()                     { return UndefinedOrdinalTraits<T>::notDefined(); };
@@ -84,7 +84,7 @@ namespace Teuchos {
 	template<>
 	struct OrdinalTraits<int> {
 
-		static inline bool haveMachineParameters() {return(false);}; // Allows testing to see if ordinal traits machine parameters defined 
+		static const bool hasMachineParameters = false;
 		static inline int zero()                   {return(0);};
 		static inline int one()                    {return(1);};
 		static inline std::string name()           {return("int");};
@@ -93,7 +93,7 @@ namespace Teuchos {
 	template<>
 	struct OrdinalTraits<long int> {
 
-		static inline bool haveMachineParameters() {return(false);}; // Allows testing to see if ordinal traits machine parameters defined 
+		static const bool hasMachineParameters = false;
 		static inline long int zero()              {return(static_cast<long int>(0));};
 		static inline long int one()               {return(static_cast<long int>(1));};
 		static inline std::string name()           {return("long int");};
