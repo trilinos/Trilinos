@@ -21,12 +21,13 @@ noinst_PROGRAMS = amesos_test AmesosShellScript AmesosDscpack AmesosDscpackShort
 	AmesosJanusScript SpoolesJanusScript SpoolesScript AmesosSuperLUserial \
 	AmesosUmfpack AmesosUmfpackShort AmesosUmfpackSerial AmesosMumps \
 	AmesosKlu AmesosKluShort AmesosKluSerial \
-	AmesosSuperludist AmesosSuperludistShort AmesosSuperludistSerial 
+	AmesosSuperludist AmesosSuperludistShort AmesosSuperludistSerial \
+	A_Superludist  B_Superludist  C_Superludist 
 
 AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
-A_Superludist_SOURCES = $(srcdir)/AmesosDscpack
-B_Superludist_SOURCES = $(srcdir)/AmesosDscpack
-C_Superludist_SOURCES = $(srcdir)/AmesosDscpack
+A_Superludist_SOURCES = $(srcdir)/A_Superludist
+B_Superludist_SOURCES = $(srcdir)/B_Superludist
+C_Superludist_SOURCES = $(srcdir)/C_Superludist
 AmesosDscpack_SOURCES = $(srcdir)/AmesosDscpack
 AmesosDscpackShort_SOURCES = $(srcdir)/AmesosDscpackShort
 AmesosMumps_SOURCES = $(srcdir)/AmesosMumps
