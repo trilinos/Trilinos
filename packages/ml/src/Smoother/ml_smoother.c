@@ -820,7 +820,7 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
 int ML_Smoother_BlockHiptmair(void *sm, int inlen, double x[], int outlen, 
                             double rhs[])
 {
-  int iter, kk, Nrows, init_guess, crap;
+  int iter, kk, Nrows, init_guess; 
    ML_Operator *Tmat, *Tmat_trans, *TtATmat, *Ke_mat;
    ML_Smoother  *smooth_ptr;
    ML_Sm_BlockHiptmair_Data *dataptr;
@@ -866,12 +866,6 @@ int ML_Smoother_BlockHiptmair(void *sm, int inlen, double x[], int outlen,
 
    if (Ke_mat->getrow->ML_id == ML_EMPTY) 
       pr_error("Error(ML_Hiptmair): Need getrow() for Hiptmair smoother\n");
-
-   /* A Josh hack to see if blockA is right */
-   ML_Operator_Apply(Ke_mat, Ke_mat->invec_leng,
-                     rhs, Ke_mat->outvec_leng,res_edge);
-   printf("\n\t%d: ||A*rhs|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-		            sqrt((ML_gdot(Nrows, res_edge, res_edge, Tmat_trans->comm))));
 
 #ifdef ML_DEBUG_SMOOTHER
    printf("\n--------------------------------\n");
@@ -930,16 +924,28 @@ int ML_Smoother_BlockHiptmair(void *sm, int inlen, double x[], int outlen,
       }
       init_guess = ML_NONZERO;
 
-      for (kk = 0; kk < TtATmat->invec_leng/2; kk++) x_nodal1[kk] = 0.;
-      for (kk = TtATmat->invec_leng/2; kk < TtATmat->invec_leng; kk++) 
-	      x_nodal2[kk] = 0.;
+      for (kk = 0; kk < TtATmat->invec_leng; kk++) {
+	x_nodal1[kk] = 0.;
+	x_nodal2[kk] = 0.;
+      }
+      //for (kk = TtATmat->invec_leng/2; kk < TtATmat->invec_leng; kk++) 
+//	      x_nodal2[kk] = 0.;
 
       ML_Comm_Envelope_Increment_Tag(envelope);
    
       /* calculate initial residual */ 
       ML_Operator_Apply(Ke_mat, Ke_mat->invec_leng,
                         x, Ke_mat->outvec_leng,res_edge);
+      /*
+#ifdef ML_DEBUG_SMOOTHER
+      ML_DVector_Print(Nrows, res_edge, "Atimesx", Ke_mat->comm);
+      exit(1);
+#endif
+      printf("\t%d: ||A*x|| = %20.15e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Nrows, res_edge, res_edge, Tmat_trans->comm)));
+      */
       for (kk = 0; kk < Nrows; kk++) res_edge[kk] = rhs[kk] - res_edge[kk];
+
 
       /* split residual for separate nodal calculations */
       res_edge1 = (double *) ML_allocate( Nrows/2 * sizeof(double));
@@ -950,10 +956,14 @@ int ML_Smoother_BlockHiptmair(void *sm, int inlen, double x[], int outlen,
 #ifdef ML_DEBUG_SMOOTHER
 
       printf("After SGS on edges\n");
-      printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+      printf("\t%d: ||x|| = %20.15e\n", Tmat_trans->comm->ML_mypid,
              sqrt(ML_gdot(Nrows, x, x, Tmat_trans->comm)));
       printf("\t%d: ||res|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
              sqrt(ML_gdot(Nrows,res_edge,res_edge,Tmat_trans->comm)));
+      printf("\t%d: ||res1|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Nrows/2,res_edge1,res_edge1,Tmat_trans->comm)));
+      printf("\t%d: ||res2| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Nrows/2,res_edge2,res_edge2,Tmat_trans->comm)));
 #endif
    
       /****************************
@@ -1021,6 +1031,12 @@ int ML_Smoother_BlockHiptmair(void *sm, int inlen, double x[], int outlen,
    
       for (kk=0; kk < Nrows/2; kk++) x[kk] += edge_update1[kk];
       for (kk=Nrows/2; kk < Nrows; kk++) x[kk] += edge_update2[kk-Nrows/2];
+      
+#ifdef ML_DEBUG_SMOOTHER
+      printf("After edge correction\n");
+      printf("\t%d: ||x_corrected|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
+             sqrt(ML_gdot(Nrows,x,x,Tmat_trans->comm)));
+#endif
 
       if (reduced_smoother_flag)
       {
@@ -1039,13 +1055,14 @@ int ML_Smoother_BlockHiptmair(void *sm, int inlen, double x[], int outlen,
       {
          ML_Smoother_Apply(&(dataptr->ml_edge->pre_smoother[0]),
 			               inlen, x, outlen, rhs, ML_NONZERO);
+      
 #ifdef ML_DEBUG_SMOOTHER
 #ifdef PRINTITNOW
          printf("\t(2) smooth_ptr->pre_or_post = %d\n",smooth_ptr->pre_or_post);
 #endif
 #endif
       }
-
+	 
 #ifdef ML_DEBUG_SMOOTHER
       printf("After updating edge solution\n");
       printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
