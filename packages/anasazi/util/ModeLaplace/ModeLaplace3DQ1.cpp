@@ -28,6 +28,10 @@
 
 #include "ModeLaplace3DQ1.h"
 
+// Required for IBM, which defines hz for some reason.
+#ifdef hz
+#undef hz
+#endif
 
 const int ModeLaplace3DQ1::dofEle = 8;
 const int ModeLaplace3DQ1::maxConnect = 27;
