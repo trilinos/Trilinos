@@ -11,7 +11,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   int coarsest_level, counter, Nghost, i, *Tcoarse_bindx = NULL;
   int *Tcoarse_rowptr, nz_ptr, row_length, j, *bindx = NULL;
   double *Tcoarse_val = NULL, *node2proc, *val = NULL;
-  int allocated = 50, lower;
+  int allocated = 0, lower;
   ML_Operator *Kn_coarse, *Rn_coarse, *Tcoarse, *Pn_coarse;
   ML_Operator *Pe, *Tcoarse_trans, *Tfine;
   struct ML_CSR_MSRdata *csr_data;
