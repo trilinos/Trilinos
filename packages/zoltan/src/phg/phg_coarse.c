@@ -62,16 +62,17 @@ int Zoltan_PHG_Coarsening
      return ZOLTAN_MEMERR;
   }    
   
-  if (hg->vwgt == NULL && hg->VtxWeightDim > 0)
-     {
-     hg->vwgt = (float*) ZOLTAN_MALLOC (hg->nVtx * hg->VtxWeightDim 
-      * sizeof(float));
+  if (hg->VtxWeightDim == 0)
+     hg->VtxWeightDim = 1;   /* must use at least unitary weighting */
+  if (hg->vwgt == NULL)  {
+     hg->vwgt = (float*) ZOLTAN_CALLOC (hg->nVtx * hg->VtxWeightDim,
+      sizeof(float));
      for (i = 0; i < hg->nVtx * hg->VtxWeightDim; i++)
         hg->vwgt[i] = 1;
-     }
-  if (hg->VtxWeightDim > 0)
-    c_hg->vwgt = (float*) ZOLTAN_MALLOC (hg->nVtx * hg->VtxWeightDim
-     * sizeof(float));   
+  }
+  if (c_hg->vwgt == NULL)   
+     c_hg->vwgt = (float*) ZOLTAN_CALLOC (hg->nVtx * hg->VtxWeightDim,
+      sizeof(float));    
  
   for (i = 0; i < hg->nVtx; i++)
      cmatch[i] = match[i];         /* working copy of match array */
@@ -207,7 +208,7 @@ int Zoltan_PHG_Coarsening
   
        for (j = 0; j < hg->VtxWeightDim; j++)
          c_hg->vwgt[c_hg->nVtx * hg->VtxWeightDim + j]
-          = hg->vwgt[vertex    * hg->VtxWeightDim + j] ;
+          += hg->vwgt[vertex   * hg->VtxWeightDim + j] ;
             
        for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)  {
          if (used_edges [hg->vedge[j]] <= i)   {
@@ -225,7 +226,7 @@ int Zoltan_PHG_Coarsening
         
         for (j = 0; j < hg->VtxWeightDim; j++)
           c_hg->vwgt[c_hg->nVtx * hg->VtxWeightDim + j]
-           = hg->vwgt[vertex    * hg->VtxWeightDim + j] ;        
+           += hg->vwgt[vertex   * hg->VtxWeightDim + j] ;        
            
         for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++)  {
           if (used_edges [hg->vedge[j]] <= i)  {
@@ -279,8 +280,6 @@ int Zoltan_PHG_Coarsening
     };
   }
   else  {
-    c_hg->dist_y  = hg->dist_y;
-    c_hg->ratio   = hg->ratio;
     c_hg->vmap    = hg->vmap;
     c_hg->hindex  = NULL;
     c_hg->hvertex = NULL;
@@ -295,13 +294,12 @@ int Zoltan_PHG_Coarsening
     c_hg->ratio   = hg->ratio;        /* for "global" recursive bisectioning */
     c_hg->redl    = hg->redl;         /* to stop coarsening near desired count */
     
-    c_hg->VtxWeightDim  = MAX(hg->VtxWeightDim,1);
+    c_hg->VtxWeightDim  = hg->VtxWeightDim;
     c_hg->EdgeWeightDim = hg->EdgeWeightDim;
-  }
-  
+  }  
+      
   Zoltan_Multifree (__FILE__, __LINE__, 7, &buffer, &rbuffer, &listgno, &listlno,
    &cmatch, &displs, &each_size);  
-
   ZOLTAN_TRACE_EXIT (zz, yo);
   return Zoltan_HG_Create_Mirror(zz, c_hg);
 }
