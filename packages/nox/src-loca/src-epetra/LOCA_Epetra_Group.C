@@ -400,6 +400,15 @@ LOCA::Epetra::Group::applyHouseholderJacobianInverse(
   
   return NOX::Abstract::Group::Ok;
 }
+
+void
+LOCA::Epetra::Group::scaleVector(NOX::Abstract::Vector& x) const
+{
+  if (scaleVecPtr == NULL)
+    x.scale(1.0 / sqrt(static_cast<double>(x.length())));
+  else 
+    x.scale(*scaleVecPtr);
+}
     
 NOX::Abstract::Group::ReturnType 
 LOCA::Epetra::Group::applyBorderedJacobianInverse(bool trans,

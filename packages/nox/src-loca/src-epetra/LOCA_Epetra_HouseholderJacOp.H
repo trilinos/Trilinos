@@ -54,8 +54,9 @@ namespace LOCA {
      * \f]
      * where \f$J\f$ is an Epetra_Operator representing an \f$n\times n\f$
      * Jacobian matrix \f$\frac{df}{dx}\f$, and \f$Q\in\Re^{n+1\times n}\f$ is
-     * orthogonal whose columns span \f$v^{\perp}\f$ with \f$v\in\Re^{n+1}\f$
-     * is a supplied vector.  The action of \f$Q\f$ is defined for any 
+     * orthogonal and whose columns span \f$v^{\perp}\f$ with 
+     * \f$v\in\Re^{n+1}\f$
+     * a supplied vector.  The action of \f$Q\f$ is defined for any 
      * \f$z\in\Re^n\f$ by
      * \f[
      *    Q z = P \begin{bmatrix} z \\ 0 \end{bmatrix}.
@@ -73,7 +74,11 @@ namespace LOCA {
      * \f[
      *    \begin{bmatrix}
      *      J & \frac{df}{dp}
-     *   \end{bmatrix} \Delta x = f \qquad \text{s.t.}\; v^T\Delta x = 0
+     *    \end{bmatrix} 
+     *    \begin{bmatrix}
+     *      \Delta x \\
+     *      \Delta p
+     *    \end{bmatrix} = f \quad \text{s.t.}\quad v^T\begin{bmatrix}\Delta x \\ \Delta p\end{bmatrix} = 0
      * \f]
      * in an iterative solver context for pseudo-arclength continuation 
      * where \f$v\f$ is the predictor vector.
@@ -88,7 +93,7 @@ namespace LOCA {
        * and Epetra_Vector's \em dfdpVec and \em houseVec_x.  Here
        * \em houseVec_x is the x (solution) component of the Householder
        * vector, \em houseVec_p is the parameter component, and \em b is
-       * this scalar in the Householder transformation.
+       * the scalar in the Householder transformation.
        */
       HouseholderJacOp(Epetra_Operator& jac, 
 		       const Epetra_MultiVector& dfdpVec, 

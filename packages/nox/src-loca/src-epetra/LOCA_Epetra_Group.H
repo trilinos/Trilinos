@@ -234,6 +234,19 @@ namespace LOCA {
 				      NOX::Abstract::Vector& result_x,
 				      double& result_p) const;
 
+      //! Scales a vector using scaling vector
+      /*! 
+       * The implementation here uses the scaling vector \f$s\f$ if one
+       * is supplied:
+       * \f[
+       *     x_i = a_i*s_i.
+       * \f]
+       * If the scaling vector is not provided, the vector is rescaled by
+       * the square root of its length.
+       */
+      virtual void
+      scaleVector(NOX::Abstract::Vector& x) const;
+
       //@}
 
       /*! 
