@@ -46,7 +46,7 @@ my $result;       # success=0, failure=nonzero
 # Check to see if we are on Stratus.
 # If so, we need to 'prun' NOT 'mpirun'
 #
-$result = $ENV{"HOSTNAME"};
+$result = $ENV{"HOST"};
 if ($result =~ /stratus/) {
   $mpirun = "prun -n 3 "
 } else {
