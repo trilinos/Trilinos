@@ -61,39 +61,44 @@ int Zoltan_HG_Global (ZZ *zz, HGraph *hg, int p, Partition part, HGPartParams *h
 static int seq_part (ZZ *zz, HGraph *hg, int *order, int p, Partition part)
 { 
   int i, j, number;
-  float weight_avg = 0.0, weight_sum = 0.0, old_sum, cutoff;
+  float weight_sum = 0.0, part_sum = 0.0, old_sum, cutoff;
 
-  /* First sum up all the weights and find average. */
+  /* First sum up all the weights. */
   if (hg->vwgt){
     for (i=0; i<hg->nVtx; i++)
-      weight_avg += hg->vwgt[i];
+      weight_sum += hg->vwgt[i];
   }
   else
-    weight_avg = (float)hg->nVtx;
-  weight_avg /= (float)p;
+    weight_sum = (float)hg->nVtx;
 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
-    printf("GLOBAL_PART weight_avg:%f\n",weight_avg);
+    printf("GLOBAL_PART weight_sum=%f, avg=%f\n",weight_sum, weight_sum/hg->nVtx);
   number = 0; /* Assign next vertex to partition no. number */
-  cutoff = weight_avg; /* Cutoff for current partition */
+  cutoff = weight_sum/p;  /* Cutoff for current partition */
   for (i=0; i<hg->nVtx; i++)
   { 
     /* If order==NULL, then use linear order. */
     j = order ? order[i] : i;
     part[j] = number;
-    old_sum = weight_sum;
-    weight_sum += hg->vwgt?hg->vwgt[j]:1.0;
+    old_sum = part_sum;
+    part_sum += hg->vwgt?hg->vwgt[j]:1.0;
     /* Check if we passed the cutoff and should start a new partition */
-    /* cutoff = (number+1)*weight_avg for uniform partition sizes */
-    if ((number+1)<p && weight_sum > cutoff){
-      /* Check if current vertex should be moved to the next partition */
-      if (weight_sum-cutoff > cutoff-old_sum)
-        part[j]++;
+    if ((number+1)<p && part_sum > cutoff){
       number++;
-      cutoff += weight_avg;
+      /* Decide if current vertex should be moved to the next partition */
+      if (part_sum-cutoff > cutoff-old_sum){
+        part[j]++;
+        part_sum = old_sum; 
+      }
+      weight_sum -= part_sum;
+      cutoff = weight_sum/(p-number);
+      if (part[j] == number)
+        part_sum = hg->vwgt?hg->vwgt[j]:1.0;
+      else
+        part_sum = 0.0;
     }
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
-      printf("GLOBAL_PART i=%2d, part[%2d] = %2d, weightsum:%f\n",i,j,part[j],weight_sum);
+      printf("GLOBAL_PART i=%2d, part[%2d] = %2d, part_sum=%f\n",i,j,part[j],part_sum);
   }
 
   return ZOLTAN_OK;
@@ -199,20 +204,22 @@ error:
 static int bfs_order (
   ZZ *zz, 
   HGraph *hg,		/* Hypergraph. */
-  int *order,		/* Order array. On exit, order[0] is the first vertex and so on. */
-  int *start,		/* Start the BFS from this vertex. */
-                        /*           On exit, an unmarked vertex. */
-  int *index,		/* Optional: Number vertices starting at this value. */
+  int *order,		/* Order array. May be partially filled on entry. */
+ 			/*           On exit, order[i] is the i'th vertex. */
+  int *start_vtx,	/* Start the BFS from this vertex. */
+                        /*           On exit, an unmarked vertex (or -1). */
+  int *start_index,	/* Optional: Number vertices starting at this value. */
   			/*           On exit, highest ordered vertex + 1 */
-  int *rank,		/* Optional: Rank of vertices numbered so far (array). */
+  int *rank,            /* Optional: Rank of vertices numbered so far (array). */
   float *cutoff		/* Optional: Number vertices until the sum > cutoff. */
 			/*           On exit, actual size of labeled piece. */
 )
 {
   int i, j, vtx, edge, number, nbor, unmarked, free_rank; 
-  int first, last, *Q=NULL;
+  int first, last;
   int ierr=ZOLTAN_OK;
   float weight_sum = 0.0;
+  char msg[128];
   static char *yo = "bfs_order";
 
 /*
@@ -231,15 +238,22 @@ static int bfs_order (
           add w to end of queue
 */
 
-  if (!(Q  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx)))
-  { ZOLTAN_FREE ((void **) &Q) ;
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    return ZOLTAN_MEMERR;
-  }
+  number = start_index ? (*start_index) : 0; /* Assign next vertex this number */
 
   /* If rank array is given, use it, otherwise allocate it here. */
-  free_rank = 0;
-  if (!rank){
+  if (rank){
+    free_rank = 0;
+    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL){
+      /* Verify input data. */
+      for (i=0; i<number; i++)
+        if (rank[order[i]] != i){
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input arrays order and rank are inconsistent.");
+          ierr = ZOLTAN_FATAL;
+          goto error;
+        }
+    }
+  }
+  else { /* !rank */
     free_rank = 1;
     if (!(rank  = (int *)   ZOLTAN_MALLOC (sizeof (int) * hg->nVtx))) {
       ZOLTAN_FREE ((void **) &rank) ;
@@ -248,39 +262,58 @@ static int bfs_order (
     }
     for (i=0; i<hg->nVtx; i++)
       rank[i] = -1;  /* -1 means this vtx has not yet been numbered */
+    /* Fill in rank information from partial order array. */
+    for (i=0; i<number; i++)
+      rank[order[i]] = i;
   }
 
-  /* Initially, the queue contains only the start vertex. */
-  Q[0] = start?(*start):0;
-  first = 0;
-  last = 1;
+  /* Use order array as a queue. Put start_vtx in queue. */
+  first = number;
+  last = first+1;
+  if (start_vtx)
+    order[first] = *start_vtx;
+  else
+    ZOLTAN_PRINT_ERROR(0, yo, "Input start_vtx is NULL.");
  
   /* printf("Starting new BFS at vertex %d\n", *start); */
   unmarked = 0; /* Next unmarked vertex */
-
-  number = index ? (*index) : 0; /* Assign next vertex this number */
 
   while (number < hg->nVtx && !(cutoff && (weight_sum >= *cutoff))) {
     /* Is queue empty? */
     if (last == first){
       ZOLTAN_PRINT_WARN(0, yo, "Queue is empty; hypergraph must be disconnected");
+      /* printf("debug: first = last = %d, value is %d\n", first, order[first]);*/
+
       /* Find an unmarked vertex to put in queue */
-      while (rank[unmarked]>=0) unmarked++;
-      Q[last++] = unmarked;
+      while (unmarked<hg->nVtx && rank[unmarked]>=0) unmarked++;
+      if (unmarked==hg->nVtx){
+        ZOLTAN_PRINT_ERROR(0, yo, "All vertices looks to be visited, but that cant be!");
+        ierr = ZOLTAN_FATAL;
+        goto error;
+      }
+      order[last++] = unmarked;
     }
     /* Get next vertex from queue */
-    vtx = Q[first++];
-    rank[vtx] = number++;
+    vtx = order[first++];
+    if (rank[vtx]<0)
+      rank[vtx] = number++;
+    else{
+      sprintf(msg, "Vertex %d in queue already labeled", vtx);
+      ZOLTAN_PRINT_ERROR(0, yo, msg);
+      ierr = ZOLTAN_FATAL;
+      goto error;
+    }
     weight_sum += hg->vwgt?hg->vwgt[vtx]:1.0;
      
-    /* Add nbors to queue */
+    /* Add nbors to queue. */
+    /* Possible variation: pick heaviest edge first. */
     for (j=hg->vindex[vtx]; j<hg->vindex[vtx+1]; j++){
       edge = hg->vedge[j];
       for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++){
         nbor = hg->hvertex[i];
         /* printf("debug: vtx=%2d, nbor=%2d, rank[nbor] = %2d\n", vtx, nbor, rank[nbor]); */
         if (rank[nbor] == -1){
-          Q[last++] = nbor;
+          order[last++] = nbor;
           if (last > hg->nVtx) {
             ZOLTAN_PRINT_ERROR(0, yo, "Queue is full");
             ierr = ZOLTAN_FATAL;
@@ -292,12 +325,12 @@ static int bfs_order (
     }
   }
 
-  /* Order is the inverse permutation of rank. */
-  for (i=0; i<hg->nVtx; i++)
-      order[i] = -1;
+  /* Order should be the inverse permutation of rank. */
   for (i=0; i<hg->nVtx; i++){
-    if (rank[i]>=0) order[rank[i]] = i;
-    /* Clean out queue */
+    if (rank[i]>=0) 
+      if (order[rank[i]] != i)
+         ZOLTAN_PRINT_WARN(0, yo, "Arrays order and rank are inconsistent.");
+    /* Clean out queue for possible future bfs. */
     if (rank[i] == -2) rank[i] = -1; 
   }
 
@@ -308,12 +341,11 @@ static int bfs_order (
 */
 
   /* Update return arguments. */
-  if (cutoff) *cutoff = weight_sum;
-  if (index)  *index = number;
-  if (start)  *start = (first<hg->nVtx ? Q[first] : -1);
+  if (start_vtx)    *start_vtx = (first<hg->nVtx ? order[first] : -1);
+  if (start_index)  *start_index = number;
+  if (cutoff)       *cutoff = weight_sum;
 
 error:
-  ZOLTAN_FREE ((void **) &Q);
   if (free_rank)
     ZOLTAN_FREE ((void **) &rank);
   return ierr;
