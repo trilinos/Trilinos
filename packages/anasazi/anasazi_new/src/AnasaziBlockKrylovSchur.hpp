@@ -112,20 +112,6 @@ namespace Anasazi {
      */
     int GetKSFactLength() const { return(_totallength); };
     
-    //! Get the solvers native residuals for the current eigenpairs. 
-    /*! This is not be the same as the true residuals for most solvers. Sometimes the native
-      residuals are not in multivector form, so the norm type is solver dependent.  
-      
-      \note
-      <ol>
-      <li> If the native residual is in multivector form then a non-null pointer will be
-      returned, else the normvec will be populated with the current residual norms. 
-      <li> If the native residual is returned in multivector form, the memory is managed
-      by the calling routine.
-      </ol>
-    */
-    Teuchos::RefCountPtr<const MV> GetNativeResiduals( ScalarType* normvec ) const { return Teuchos::null; };
-    
     /*! \brief Get a constant reference to the current linear problem, 
       which may include a current solution.
     */
@@ -881,7 +867,7 @@ namespace Anasazi {
   void BlockKrylovSchur<ScalarType,MV,OP>::QRFactorization (MV& VecIn, 
 							    Teuchos::SerialDenseMatrix<int,ScalarType>& FourierR) {
     int i,j,k;
-    int nb = VecIn.GetNumberVecs(); assert (nb == _blocksize);
+    int nb = MVT::GetNumberVecs( VecIn ); assert (nb == _blocksize);
     const int IntOne=1;
     std::vector<int> index;
     std::vector<int> index2(IntOne);

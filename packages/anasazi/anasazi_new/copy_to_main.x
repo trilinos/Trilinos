@@ -26,6 +26,12 @@ cp ./test/ModalSolverUtils/Makefile* ../test/ModalSolverUtils/.
 mkdir ../test/BlockDavidson
 cp ./test/BlockDavidson/*.cpp ../test/BlockDavidson/.
 cp ./test/BlockDavidson/Makefile* ../test/BlockDavidson/.
+mkdir ../test/BlockKrylovSchur
+cp ./test/BlockKrylovSchur/*.cpp ../test/BlockKrylovSchur/.
+cp ./test/BlockKrylovSchur/Makefile* ../test/BlockKrylovSchur/.
+mkdir ../test/LOBPCG
+cp ./test/LOBPCG/*.cpp ../test/LOBPCG/.
+cp ./test/LOBPCG/Makefile* ../test/LOBPCG/.
 
 mkdir ../util
 cp ./util/Makefile* ../util/.

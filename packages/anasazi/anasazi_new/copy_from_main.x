@@ -22,6 +22,10 @@ cp ../test/ModalSolverUtils/Makefile* ./test/ModalSolverUtils/.
 cp ../test/ModalSolverUtils/*.cpp ./test/ModalSolverUtils/.
 cp ../test/BlockDavidson/Makefile* ./test/BlockDavidson/.
 cp ../test/BlockDavidson/*.cpp ./test/BlockDavidson/.
+cp ../test/BlockKrylovSchur/Makefile* ./test/BlockKrylovSchur/.
+cp ../test/BlockKrylovSchur/*.cpp ./test/BlockKrylovSchur/.
+cp ../test/LOBPCG/Makefile* ./test/LOBPCG/.
+cp ../test/LOBPCG/*.cpp ./test/LOBPCG/.
 
 cp ../util/Makefile* ./util/.
 cp ../util/ModeLaplace/Makefile* ./util/ModeLaplace/.

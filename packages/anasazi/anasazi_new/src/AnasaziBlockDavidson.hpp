@@ -94,24 +94,10 @@ namespace Anasazi {
       and orthogonalization costs.  For other eigensolvers, like LOBPCG or block Davidson,
       this is not a valid stopping criteria.
     */
-    int GetNumRestarts() const { return(_restartIter); };
+    int GetNumRestarts() const { return(_numRestarts); };
 
     //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
     int GetBlockSize() const { return(_blockSize); }
-    
-    //! Get the solvers native residuals for the current eigenpairs. 
-    /*! This is not be the same as the true residuals for most solvers. Sometimes the native
-      residuals are not in multivector form, so the norm type is solver dependent.  
-      
-      \note
-      <ol>
-      <li> If the native residual is in multivector form then a non-null pointer will be
-      returned, else the normvec will be populated with the current residual norms. 
-      <li> If the native residual is returned in multivector form, the memory is managed
-      by the calling routine.
-      </ol>
-    */
-    Teuchos::RefCountPtr<const MV> GetNativeResiduals( ScalarType* normvec ) const { return Teuchos::null; };
     
     /*! \brief Get a constant reference to the current linear problem, 
       which may include a current solution.
@@ -150,7 +136,7 @@ namespace Anasazi {
     //
     const int _numBlocks, _maxIter, _blockSize;
     const ScalarType _residual_tolerance;
-    int _restartIter, _iter, _dimSearch, _knownEV;
+    int _numRestarts, _iter, _dimSearch, _knownEV;
     int _lwork;
     //
     // Internal utilities class required by eigensolver.
@@ -195,7 +181,7 @@ namespace Anasazi {
     _maxIter(maxIter),
     _blockSize(blockSize),
     _residual_tolerance(tol),
-    _restartIter(0), 
+    _numRestarts(0), 
     _iter(0), 
     _dimSearch(0),    
     _knownEV(0),
@@ -266,7 +252,7 @@ namespace Anasazi {
       _os <<endl;
       _os <<"********************CURRENT STATUS********************"<<endl;
       _os <<"Iterations :\t"<<_iter<<endl;
-      _os <<"Restarts :\t"<<_restartIter<<endl;
+      _os <<"Restarts :\t"<<_numRestarts<<endl;
       _os <<"Block Size :\t"<<_blockSize<<endl;
       _os <<"Requested Eigenvalues : "<<_nev<<endl;
       _os <<"Computed Eigenvalues : "<<_knownEV<<endl;
@@ -409,7 +395,7 @@ namespace Anasazi {
 	  // Reinitialize all counters and randomize the starting block
 	  //
 	  reStart = true;
-	  _restartIter++;
+	  _numRestarts++;
 	  index.resize( _blockSize );
 	  for (i=0; i<_blockSize; i++)
 	    index[i] = _knownEV + i;

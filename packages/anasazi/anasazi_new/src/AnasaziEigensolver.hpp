@@ -76,20 +76,6 @@ class Eigensolver {
   //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
   virtual int GetBlockSize() const = 0;
 
-  //! Get the solvers native residuals for the current eigenpairs. 
-  /*! This is not be the same as the true residuals for most solvers. Sometimes the native
-    residuals are not in multivector form, so the norm type is solver dependent.  
-
-    \note
-    <ol>
-      <li> If the native residual is in multivector form then a non-null pointer will be
-      returned, else the normvec will be populated with the current residual norms. 
-      <li> If the native residual is returned in multivector form, the memory is managed
-      by the calling routine.
-    </ol>
-  */
-  virtual Teuchos::RefCountPtr<const MV> GetNativeResiduals( ScalarType* normvec ) const = 0;
-
   /*! \brief Get a constant reference to the current linear problem, 
     	which may include a current solution.
   */

@@ -405,6 +405,8 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/ModalSolverUtils/Makefile
 		test/BlockDavidson/Makefile
+		test/BlockKrylovSchur/Makefile
+		test/LOBPCG/Makefile
 		util/Makefile
 		util/ModeLaplace/Makefile
 		])
