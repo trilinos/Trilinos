@@ -91,6 +91,7 @@ partitioning</a>), and
 <td NOSAVE><a NAME="RETURN_LISTS"></a>&nbsp;&nbsp;&nbsp; <i>RETURN_LISTS</i></td>
 
 <td>The lists returned by calls to 
+<a href="ug_interface_lb.html#Zoltan_LB_Partition"><b>Zoltan_LB_Partition</b></a> or
 <a href="ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>.
 Valid values are "IMPORT" (to return only information about objects to be 
 imported to a processor), "EXPORT" (to return only information about objects
@@ -114,7 +115,9 @@ shouldn't exceed 1.2.&nbsp;</td>
 <td NOSAVE><i>&nbsp;&nbsp;&nbsp; <a name="AUTO_MIGRATE"></a>AUTO_MIGRATE</i></td>
 
 <td>If this value is set to TRUE (non-zero), Zoltan will automatically
-perform the data migration during calls to <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.
+perform the data migration during calls to 
+<a href="ug_interface_lb.html#Zoltan_LB_Partition"><b>Zoltan_LB_Partition</b></a> or
+<b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.
 A full discussion of automatic migration can be found in the description
 of the <a href="ug_interface_mig.html">migration interface functions</a>.&nbsp;</td>
 </tr>

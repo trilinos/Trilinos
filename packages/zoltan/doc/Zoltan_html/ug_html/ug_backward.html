@@ -26,7 +26,129 @@
 <div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_refs.html">Next</a>&nbsp; |&nbsp; <a href="ug_fortran_sys.html">Previous</a></i></b></div>
 <!---------------------------------------------------------------------------->
 <h2>
-Backward Compatibility with Earlier Versions of Zoltan
+Backward Compatibility with Previous Versions of Zoltan
+</h2>
+
+As new features have been added to Zoltan, backward compatibility with previous
+versions of Zoltan has been maintained.  Thus, users of previous versions of
+Zoltan can upgrade to a new version <b> without changing their application
+source code</b>.
+Modifications to application source code are needed <b>only</b> if the
+applications use new Zoltan functionality.
+<p>
+Enhancements to the Zoltan interface are described below.
+<blockquote>
+<a href="#Backward v1.5">Versions 1.5 and higher</a>
+<br><a href="#Backward v1.3">Versions 1.3 and higher</a>
+</blockquote>
+
+<!---------------------------------------------------------------------------->
+
+<h2><a name="Backward v1.5"></a>
+<hr>Backward Compatibility: Versions 1.5 and higher
+</h2>
+
+The ability to generate more partitions than processors was added to Zoltan
+in version 1.5.  Thus, Zoltan's partitioning and migration routines were 
+enhanced to return and use both partition assignments and processor assignments.
+New interface and query functions were added to support this additional
+information.  All former Zoltan <a href="ug_param.html">parameters</a> 
+apply to the new functions as they did to the old; new parameters 
+<a href="ug_param.html#NUM_GLOBAL_PARTITIONS"><i>NUM_GLOBAL_PARTITIONS</i></a>
+and 
+<a href="ug_param.html#NUM_LOCAL_PARTITIONS"><i>NUM_LOCAL_PARTITIONS</i></a>
+apply only to the new functions.
+<p>
+The table below lists the Zoltan function that uses both partition and 
+processor information, along with the analogous function that returns only
+processor information.  Applications requiring only one partition per 
+processor can use either version of the functions.
+<p>
+<table border="1" cellpadding="5">
+<tr>
+<td>
+<b>Function with Partition and Processor info (v1.5 and higher)</b>
+</td>
+<td>
+<b>Function with only Processor info (v1.3 and higher)</b>
+</td>
+</tr>
+<tr>
+<td>
+<a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a>
+</td>
+<td>
+<a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a>
+</td>
+</tr>
+<tr>
+<td>
+<a href="ug_interface_mig.html#Zoltan_Invert_Lists">Zoltan_Invert_Lists</a>
+</td>
+<td>
+<a href="ug_interface_mig.html#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a>
+</td>
+</tr>
+<tr>
+<td>
+<a href="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a>
+</td>
+<td>
+<a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a>
+</td>
+</tr>
+<tr>
+<td>
+<a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_PP_FN">ZOLTAN_PRE_MIGRATE_PP_FN</a>
+</td>
+<td>
+<a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_FN">ZOLTAN_PRE_MIGRATE_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+<a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_PP_FN">ZOLTAN_MID_MIGRATE_PP_FN</a>
+</td>
+<td>
+<a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_FN">ZOLTAN_MID_MIGRATE_FN</a>
+</td>
+</tr>
+<tr>
+<td>
+<a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_PP_FN">ZOLTAN_POST_MIGRATE_PP_FN</a>
+</td>
+<td>
+<a href="ug_query_mig.html#ZOLTAN_POST_MIGRATE_FN">ZOLTAN_POST_MIGRATE_FN</a>
+</td>
+</tr>
+</table>
+<p>
+
+To continue using the v1.3 partition functions, no changes to C or Fortran90
+applications are needed.  Zoltan interfaces from versions earlier than 1.3
+are also still supported (see 
+<a href="#Backward v1.3">below</a>), 
+requiring no changes to application programs.
+<p>
+To use the new v1.5 partitioning functions:
+<ul>
+<li>
+C users must include file <i>zoltan.h</i> in their applications and edit 
+their applications to use the appropriate new functions.
+</li>
+<li>
+Fortran90 users must put 
+<a href="ug_fortran_api.html#fortran ug api query">user-defined data types</a>
+in <i>zoltan_user_data.f90</i> and edit their applications to
+use the appropriate new functions.  The new partitioning functions do not
+work with user-defined data types in <i>lb_user_const.f90</i>.
+</li>
+</ul>
+
+<!---------------------------------------------------------------------------->
+
+<h2><a name="Backward v1.3"></a>
+<hr>Backward Compatibility: Versions 1.3 and higher
 </h2>
 <p>
 Versions of Zoltan before version 1.3 used a different naming convention for 
@@ -66,24 +188,22 @@ names can be found through the <a href="#Backward Index">index below</a>.
 <li>
 C programs: Include file <i>zoltan.h</i> instead of <i>lbi_const.h</i>.
 <li>
-F90 programs: Put user-defined data types in file <i>zoltan_user_data.f90</i> instead of <i>lb_user_const.f90</i>.
+F90 programs: Put <a href="ug_fortran_api.html#fortran ug api query">user-defined data types</a> in file <i>zoltan_user_data.f90</i> instead of <i>lb_user_const.f90</i>.
 </ul>
 
 
 <!---------------------------------------------------------------------------->
-<h2>
-<a NAME="Backward Index"></a><hr>Backward Compatilibity Index for Interface and Query Functions</h2>
+<h4>
+<a NAME="Backward Index"></a>Backward Compatilibity Index for Interface and Query Functions
+</h4>
 
-
-<table>
+<table border="1" cellpadding="5">
 <tr>
 <td>
-Name in Earlier Zoltan Versions
-<hr>
+<b>Name in Earlier Zoltan Versions</b>
 </td>
 <td>
-Name in Zoltan Version 1.3 and higher
-<hr>
+<b>Name in Zoltan Version 1.3 and higher</b>
 </td>
 </tr>
 <tr>

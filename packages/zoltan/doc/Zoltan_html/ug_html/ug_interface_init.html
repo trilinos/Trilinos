@@ -49,10 +49,10 @@ are described below:
 <td VALIGN=TOP WIDTH="15%" NOSAVE>C:</td>
 
 <td WIDTH="85%">
-int <b>Zoltan_Initialize</b>
-(int&nbsp;<i>argc</i>,
-char&nbsp;**<i>argv</i>,
-float&nbsp;*<i>ver</i>);</td>
+int <b>Zoltan_Initialize</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;<i>argc</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;**<i>argv</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;float&nbsp;*<i>ver</i>);</td>
 </tr>
 
 <tr NOSAVE>
@@ -132,8 +132,9 @@ is linked to.
 <td VALIGN=TOP WIDTH="15%"NOSAVE>C:</td>
 
 <td WIDTH="85%">
-struct <b>Zoltan_Struct</b> *<b>Zoltan_Create</b>
-(MPI_Comm&nbsp;<i>communicator</i>);&nbsp;</td>
+struct <b>Zoltan_Struct</b> *<b>Zoltan_Create</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MPI_Comm&nbsp;<i>communicator</i>);
+</td>
 </tr>
 
 <tr NOSAVE>
@@ -197,10 +198,11 @@ be fatal.</td>
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td WIDTH="85%">
-int <b>Zoltan_Set_Param</b>
-(struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
-char&nbsp;*<i>param_name</i>,
-char&nbsp;*<i>new_val</i>);&nbsp;</td>
+int <b>Zoltan_Set_Param</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*<i>param_name</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*<i>new_val</i>);
+</td>
 </tr>
 
 <tr NOSAVE>
@@ -284,11 +286,12 @@ being set. As above, the string is case-insensitive.&nbsp;</td>
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td WIDTH="85%">
-int <b>Zoltan_Set_Fn</b>
-(struct&nbsp;<b>Zoltan_Struct&nbsp;*</b><i>zz</i>,
-<b>ZOLTAN_FN_TYPE&nbsp;</b><i>fn_type</i>,
-void&nbsp;(*<i>fn_ptr</i>)(),
-void&nbsp;*<i>data</i>);</td>
+int <b>Zoltan_Set_Fn</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;<b>Zoltan_Struct&nbsp;*</b><i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>ZOLTAN_FN_TYPE&nbsp;</b><i>fn_type</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void&nbsp;(*<i>fn_ptr</i>)(),
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void&nbsp;*<i>data</i>);
+</td>
 </tr>
 
 <tr NOSAVE>
@@ -372,10 +375,11 @@ it may be omitted.</td>
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td WIDTH="85%">
-int <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>
-(struct&nbsp;<b>Zoltan_Struct&nbsp;</b>*<i>zz</i>,
-&lt;<b><i><a href="ug_query.html">zoltan_fn_type</a></i></b>>&nbsp;(*<i>fn_ptr</i>)(), 
-void&nbsp;*<i>data</i>);</td>
+int <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;<b>Zoltan_Struct&nbsp;</b>*<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<b><i><a href="ug_query.html">zoltan_fn_type</a></i></b>>&nbsp;(*<i>fn_ptr</i>)(), 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void&nbsp;*<i>data</i>);
+</td>
 </tr>
 
 <tr NOSAVE>
@@ -481,8 +485,8 @@ query function.</td>
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td WIDTH="85%">
-void <b>Zoltan_Destroy</b>
-(struct&nbsp;<b>Zoltan_Struct</b>&nbsp;**<i>zz</i>);&nbsp;</td>
+void <b>Zoltan_Destroy</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;<b>Zoltan_Struct</b>&nbsp;**<i>zz</i>);</td>
 </tr>
 
 <tr NOSAVE>

@@ -47,10 +47,24 @@ of each type must be provided (e.g., either a
 <b><a href="#ZOLTAN_PACK_OBJ_MULTI_FN">ZOLTAN_PACK_OBJ_MULTI_FN</a></b>,
 but not both).
 <p>
-Optional, additional query functions for migration may also be registered:
-<blockquote><b><a href="#ZOLTAN_PRE_MIGRATE_FN">ZOLTAN_PRE_MIGRATE_FN</a></b>
+Optional, additional query functions for migration may also be registered; these
+functions are called at the beginning, middle, and end of migration in
+<a href="ug_interface_mig.html#Zoltan_Migrate"><b>Zoltan_Migrate</b></a>.
+<blockquote>
+<b><a href="#ZOLTAN_PRE_MIGRATE_PP_FN">ZOLTAN_PRE_MIGRATE_PP_FN</a></b>
+<br><b><a href="#ZOLTAN_MID_MIGRATE_PP_FN">ZOLTAN_MID_MIGRATE_PP_FN</a></b>
+<br><b><a href="#ZOLTAN_POST_MIGRATE_PP_FN">ZOLTAN_POST_MIGRATE_PP_FN</a></b>
+</blockquote>
+
+For <a href="ug_backward.html">backward compatibility</a> 
+with previous versions of Zoltan, 
+the following functions may be used with 
+<a href="ug_interface_mig.html#Zoltan_Help_Migrate"><b>Zoltan_Help_Migrate</b></a>.
+<blockquote>
+<b><a href="#ZOLTAN_PRE_MIGRATE_FN">ZOLTAN_PRE_MIGRATE_FN</a></b>
 <br><b><a href="#ZOLTAN_MID_MIGRATE_FN">ZOLTAN_MID_MIGRATE_FN</a></b>
-<br><b><a href="#ZOLTAN_POST_MIGRATE_FN">ZOLTAN_POST_MIGRATE_FN</a></b></blockquote>
+<br><b><a href="#ZOLTAN_POST_MIGRATE_FN">ZOLTAN_POST_MIGRATE_FN</a></b>
+</blockquote>
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
@@ -61,12 +75,14 @@ Optional, additional query functions for migration may also be registered:
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td WIDTH="85%">
-typedef int <b>ZOLTAN_OBJ_SIZE_FN</b>(void
-*<i> data</i>, int <i>num_gid_entries</i>,&nbsp; int <i>num_lid_entries</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>global_id,</i> <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>local_id</i>, int <i>*ierr</i>);
-<br>&nbsp;</td>
+typedef int <b>ZOLTAN_OBJ_SIZE_FN</b>(
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *<i>data</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>,&nbsp; 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>global_id</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>local_id</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>*ierr</i>);
+</td>
 </tr>
 
 <tr NOSAVE>
@@ -168,13 +184,16 @@ ID.&nbsp; This value is the maximum value over all processors of the parameter
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td WIDTH="85%">
-typedef void <b>ZOLTAN_OBJ_SIZE_MULTI_FN</b>(void
-*<i> data</i>, int <i>num_gid_entries</i>,&nbsp; int <i>num_lid_entries</i>,
-int <i>num_ids</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>global_ids,</i> <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>local_ids</i>, int <i>*sizes</i>, int <i>*ierr</i>);
-<br>&nbsp;</td>
+typedef void <b>ZOLTAN_OBJ_SIZE_MULTI_FN</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *<i>data</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>global_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>*sizes</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>*ierr</i>);
+</td>
 </tr>
 
 <tr NOSAVE>
@@ -292,12 +311,17 @@ object begins in <i>local_ids[i*num_lid_entries]</i>.</td>
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td WIDTH="85%">
-typedef void <b>ZOLTAN_PACK_OBJ_FN</b> (void
-*<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>global_id</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>local_id</i>, int <i>dest_proc</i>, int <i>size</i>, char *<i>buf</i>,
-int *<i>ierr</i>);&nbsp;</td>
+typedef void <b>ZOLTAN_PACK_OBJ_FN</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *<i>data</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>global_id</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>local_id</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>dest_proc</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>size</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char *<i>buf</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>ierr</i>);
+</td>
 </tr>
 
 <tr NOSAVE>
@@ -415,14 +439,19 @@ data should be packed.</td>
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td WIDTH="85%">
-typedef void <b>ZOLTAN_PACK_OBJ_MULTI_FN</b> (void
-*<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
-int <i>num_ids</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>global_ids</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>local_ids</i>, int <i>*dest_proc</i>, int <i>*sizes</i>, 
-int <i>*idx</i>, char *<i>buf</i>,
-int *<i>ierr</i>);&nbsp;</td>
+typedef void <b>ZOLTAN_PACK_OBJ_MULTI_FN</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *<i>data</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>global_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>*dest_proc</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>*sizes</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>*idx</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char *<i>buf</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>ierr</i>);
+</td>
 </tr>
 
 <tr NOSAVE>
@@ -561,9 +590,14 @@ data should be packed.</td>
 
 <td WIDTH="85%">
 typedef void <b>ZOLTAN_UNPACK_OBJ_FN</b>
-(void *<i>data</i>, int <i>num_gid_entries</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>global_id</i>, int <i>size</i>, char *<i>buf</i>, int *<i>ierr</i>);&nbsp;</td>
+(
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *<i>data</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>global_id</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>size</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char *<i>buf</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>ierr</i>);
+</td>
 </tr>
 
 <tr NOSAVE>
@@ -659,9 +693,16 @@ buffer.</td>
 
 <td WIDTH="85%">
 typedef void <b>ZOLTAN_UNPACK_OBJ_MULTI_FN</b>
-(void *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_ids</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>global_ids</i>, int <i>*sizes</i>, int <i>*idx</i>, char *<i>buf</i>, int *<i>ierr</i>);&nbsp;</td>
+(
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *<i>data</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>global_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>*sizes</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>*idx</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char *<i>buf</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>ierr</i>);
+</td>
 </tr>
 
 <tr NOSAVE>
@@ -769,36 +810,45 @@ Because Zoltan adds some tag information
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
-<a NAME="ZOLTAN_PRE_MIGRATE_FN"></a>
+<a NAME="ZOLTAN_PRE_MIGRATE_PP_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td WIDTH="85%">
-typedef void <b>ZOLTAN_PRE_MIGRATE_FN</b>
-(void *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
-int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>import_global_ids</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>import_local_ids</i>, int *<i>import_procs</i>, int <i>num_export</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>export_global_ids</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>export_local_ids</i>, int *<i>export_procs</i>, int *<i>ierr</i>);&nbsp;</td>
+typedef void <b>ZOLTAN_PRE_MIGRATE_PP_FN</b>
+(
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *<i>data</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_import</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>import_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>import_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>import_to_part</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_export</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>export_global_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>export_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>export_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>export_to_part</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>ierr</i>);
+</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>SUBROUTINE <b><i>Pre_Migrate</i></b>(<i>data, num_gid_entries, num_lid_entries,
-num_import, import_global_ids, import_local_ids, import_procs, num_export,
-export_global_ids, export_local_ids, export_procs, ierr</i>)&nbsp;
+<td>SUBROUTINE <b><i>Pre_Migrate_PP</i></b>(<i>data, num_gid_entries, num_lid_entries,
+num_import, import_global_ids, import_local_ids, import_procs, import_to_part, num_export,
+export_global_ids, export_local_ids, export_procs, export_to_part, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(INOUT) :: data&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_import, num_export&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_to_part, export_to_part&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
 <p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
 REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
@@ -808,17 +858,17 @@ query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">A <b>ZOLTAN_PRE_MIGRATE_FN</b> query function performs any
+<hr WIDTH="100%">A <b>ZOLTAN_PRE_MIGRATE_PP_FN</b> query function performs any
 pre-processing desired by the application. If it is registered, it is called
-at the beginning of the <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
-routine. The arguments passed to <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+at the beginning of the <b><a href="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>
+routine. The arguments passed to <b><a href="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>
 are made available for use in the pre-processing routine.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>ZOLTAN_PRE_MIGRATE_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_PRE_MIGRATE_PP_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -874,7 +924,16 @@ does not necessarily need to know which objects it will receive.</td>
 
 <td>An array of size <i>num_import</i> listing the processor IDs of the
 source processors. This array may be NULL, as the processor does not necessarily
-need to know from which processors it will be receiving objects.</td>
+need to know which objects is will receive.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_to_part</i></td>
+
+<td>An array of size <i>num_import</i> listing the partitions to which
+objects will be imported.
+This array may be NULL, as the processor does not necessarily
+need to know from which objects it will receive.</td>
 </tr>
 
 <tr>
@@ -906,9 +965,476 @@ destination processors.</td>
 </tr>
 
 <tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_to_part</i></td>
+
+<td>An array of size <i>num_export</i> listing the partitions to which
+objects will be sent. </td>
+</tr>
+<tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
 
 <td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Default:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>No pre-processing is done if a <b>ZOLTAN_PRE_MIGRATE_PP_FN</b> is not registered.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_MID_MIGRATE_PP_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_MID_MIGRATE_PP_FN</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *<i>data</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_import</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>import_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>import_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>import_to_part</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_export</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>export_global_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>export_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>export_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>export_to_part</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>ierr</i>);
+</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Mid_Migrate_PP</i></b>(<i>data, num_gid_entries, num_lid_entries,
+num_import, import_global_ids, import_local_ids, import_procs, import_to_part, num_export,
+export_global_ids, export_local_ids, export_procs, export_to_part, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(INOUT) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_import, num_export&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_to_part, export_to_part&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_MID_MIGRATE_PP_FN</b> query function performs any
+processing desired by the application between the packing and unpacking
+of objects being migrated. If it is registered, it is called after export
+objects are packed in <b><a href="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>;
+imported objects are unpacked after the <b>ZOLTAN_MID_MIGRATE_PP_FN</b> query
+function is called. The arguments passed to <b><a href="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>
+are made available for use in the processing routine.
+<br>&nbsp;
+<table WIDTH="100%" >
+<caption>,&nbsp;</caption>
+
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_MID_MIGRATE_PP_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single global ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single local ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import</i></td>
+
+<td>The number of objects that will be received by this processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
+
+<td>An array of <i>num_import</i> global IDs of objects
+to be received by this processor. This array may be NULL, as the processor
+does not necessarily need to know which objects it will receive.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
+
+<td>An array of <i>num_import</i> local IDs of objects
+to be received by this processor. This array may be NULL, as the processor
+does not necessarily need to know which objects it will receive.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_procs</i></td>
+
+<td>An array of size <i>num_import</i> listing the processor IDs of the
+source processors. This array may be NULL, as the processor does not necessarily
+need to know which objects is will receive.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_to_part</i></td>
+
+<td>An array of size <i>num_import</i> listing the partitions to which
+objects will be imported.
+This array may be NULL, as the processor does not necessarily
+need to know from which objects it will receive.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_export</i></td>
+
+<td>The number of objects that will be sent from this processor to other
+processors.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids</i></td>
+
+<td>An array of <i>num_export</i> global IDs of objects
+to be sent from this processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
+
+<td>An array of <i>num_export</i> local IDs of objects
+to be sent from this processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_procs</i></td>
+
+<td>An array of size <i>num_export</i> listing the processor IDs of the
+destination processors.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_to_part</i></td>
+
+<td>An array of size <i>num_export</i> listing the partitions to which
+objects will be sent. </td>
+</tr>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Default:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>No processing is done if a <b>ZOLTAN_MID_MIGRATE_PP_FN</b> is not registered.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_POST_MIGRATE_PP_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_POST_MIGRATE_PP_FN</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *<i>data</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_import</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>import_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>import_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>import_to_part</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_export</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>export_global_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>export_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>export_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>export_to_part</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>ierr</i>);
+</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Post_Migrate_PP</i></b>(<i>data, num_gid_entries, num_lid_entries,
+num_import, import_global_ids, import_local_ids, import_procs, import_to_part, num_export,
+export_global_ids, export_local_ids, export_procs, export_to_part, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(INOUT) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_import, num_export&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_to_part, export_to_part&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_POST_MIGRATE_PP_FN</b> query function performs any
+post-processing desired by the application. If it is registered, it is
+called at the end of the <b><a href="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>
+routine. The arguments passed to <b><a href="ug_interface_mig.html#Zoltan_Migrate">Zoltan_Migrate</a></b>
+are made available for use in the post-processing routine.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_POST_MIGRATE_PP_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single global ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single local ID.&nbsp;
+This value is the maximum value over all processors of the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import</i></td>
+
+<td>The number of objects that will be received by this processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
+
+<td>An array of <i>num_import</i> global IDs of objects
+to be received by this processor. This array may be NULL, as the processor
+does not necessarily need to know which objects it will receive.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
+
+<td>An array of <i>num_import</i> local IDs of objects
+to be received by this processor. This array may be NULL, as the processor
+does not necessarily need to know which objects it will receive.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_procs</i></td>
+
+<td>An array of size <i>num_import</i> listing the processor IDs of the
+source processors. This array may be NULL, as the processor does not necessarily
+need to know which objects is will receive.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_to_part</i></td>
+
+<td>An array of size <i>num_import</i> listing the partitions to which
+objects will be imported.
+This array may be NULL, as the processor does not necessarily
+need to know from which objects it will receive.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_export</i></td>
+
+<td>The number of objects that will be sent from this processor to other
+processors.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids</i></td>
+
+<td>An array of <i>num_export</i> global IDs of objects
+to be sent from this processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
+
+<td>An array of <i>num_export</i> local IDs of objects
+to be sent from this processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_procs</i></td>
+
+<td>An array of size <i>num_export</i> listing the processor IDs of the
+destination processors.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_to_part</i></td>
+
+<td>An array of size <i>num_export</i> listing the partitions to which
+objects will be sent. </td>
+</tr>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Default:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>No post-processing is done if a <b>ZOLTAN_POST_MIGRATE_PP_FN</b> is not registered.</td>
+</tr>
+</table>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_PRE_MIGRATE_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_PRE_MIGRATE_FN</b>
+(
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *<i>data</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_import</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>import_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>import_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_export</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>export_global_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>export_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>export_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>ierr</i>);
+</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Pre_Migrate</i></b>(<i>data, num_gid_entries, num_lid_entries,
+num_import, import_global_ids, import_local_ids, import_procs, num_export,
+export_global_ids, export_local_ids, export_procs, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(INOUT) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_import, num_export&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_PRE_MIGRATE_FN</b> query function performs any
+pre-processing desired by applications using 
+<b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>.
+Its function is analogous to 
+<b><a href="#ZOLTAN_PRE_MIGRATE_PP_FN">ZOLTAN_PRE_MIGRATE_PP_FN</a></b>, but
+it cannot be used with <a href="ug_interface_mig.html#Zoltan_Migrate"><b>Zoltan_Migrate</b></a>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_PRE_MIGRATE_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>
+All arguments are analogous to those in
+<a href="#ZOLTAN_PRE_MIGRATE_PP_FN"><b>ZOLTAN_PRE_MIGRATE_PP_FN</b></a>.
+Partition-assignment arguments <i>import_to_part</i> and <i>export_to_part</i>
+are not included, as processor and partitions
+numbers are considered to be the same in 
+<a href="ug_interface_mig.html#Zoltan_Help_Migrate"><b>Zoltan_Help_Migrate</b></a>.
+</td>
 </tr>
 
 <tr>
@@ -935,15 +1461,20 @@ destination processors.</td>
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td WIDTH="85%">
-typedef void <b>ZOLTAN_MID_MIGRATE_FN</b>
-(void *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
-int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>import_global_ids</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>import_local_ids</i>, int *<i>import_procs</i>, int <i>num_export</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>export_global_ids</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>export_local_ids</i>, int *<i>export_procs</i>, int *<i>ierr</i>);&nbsp;</td>
+typedef void <b>ZOLTAN_MID_MIGRATE_FN</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *<i>data</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_import</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>import_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>import_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_export</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>export_global_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>export_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>export_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>ierr</i>);
+</td>
 </tr>
 
 <tr NOSAVE>
@@ -968,16 +1499,13 @@ query functions</a> for an explanation.&nbsp;</td>
 </table>
 
 <hr WIDTH="100%">A <b>ZOLTAN_MID_MIGRATE_FN</b> query function performs any
-processing desired by the application between the packing and unpacking
-of objects being migrated. If it is registered, it is called after export
-objects are packed in <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>;
-imported objects are unpacked after the <b>ZOLTAN_MID_MIGRATE_FN</b> query
-function is called. The arguments passed to <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
-are made available for use in the processing routine.
+mid-migration processing desired by applications using 
+<b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>.
+Its function is analogous to 
+<b><a href="#ZOLTAN_MID_MIGRATE_PP_FN">ZOLTAN_MID_MIGRATE_PP_FN</a></b>, but
+it cannot be used with <a href="ug_interface_mig.html#Zoltan_Migrate"><b>Zoltan_Migrate</b></a>.
 <br>&nbsp;
 <table WIDTH="100%" >
-<caption>,&nbsp;</caption>
-
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
@@ -991,87 +1519,16 @@ are made available for use in the processing routine.
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+<td VALIGN=TOP></td>
 
-<td>Pointer to user-defined data.</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
-
-<td>The number of array entries used to describe a single global ID.&nbsp;
-This value is the maximum value over all processors of the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
-
-<td>The number of array entries used to describe a single local ID.&nbsp;
-This value is the maximum value over all processors of the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import</i></td>
-
-<td>The number of objects that will be received by this processor.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
-
-<td>An array of <i>num_import</i> global IDs of objects
-to be received by this processor. This array may be NULL, as the processor
-does not necessarily need to know which objects it will receive.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
-
-<td>An array of <i>num_import</i> local IDs of objects
-to be received by this processor. This array may be NULL, as the processor
-does not necessarily need to know which objects it will receive.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_procs</i></td>
-
-<td>An array of size <i>num_import</i> listing the processor IDs of the
-source processors. This array may be NULL, as the processor does not necessarily
-need to know from which processors it will be receiving objects.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_export</i></td>
-
-<td>The number of objects that will be sent from this processor to other
-processors.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids</i></td>
-
-<td>An array of <i>num_export</i> global IDs of objects
-to be sent from this processor.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
-
-<td>An array of <i>num_export</i> local IDs of objects
-to be sent from this processor.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_procs</i></td>
-
-<td>An array of size <i>num_export</i> listing the processor IDs of the
-destination processors.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
-
-<td>Error code to be set by function.</td>
+<td>
+All arguments are analogous to those in
+<a href="#ZOLTAN_MID_MIGRATE_PP_FN"><b>ZOLTAN_MID_MIGRATE_PP_FN</b></a>.
+Partition-assignment arguments <i>import_to_part</i> and <i>export_to_part</i>
+are not included, as processor and partitions
+numbers are considered to be the same in 
+<a href="ug_interface_mig.html#Zoltan_Help_Migrate"><b>Zoltan_Help_Migrate</b></a>.
+</td>
 </tr>
 
 <tr>
@@ -1098,15 +1555,20 @@ destination processors.</td>
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td WIDTH="85%">
-typedef void <b>ZOLTAN_POST_MIGRATE_FN</b>
-(void *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
-int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>import_global_ids</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>import_local_ids</i>, int *<i>import_procs</i>, int <i>num_export</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>export_global_ids</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
-<i>export_local_ids</i>, int *<i>export_procs</i>, int *<i>ierr</i>);&nbsp;</td>
+typedef void <b>ZOLTAN_POST_MIGRATE_FN</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *<i>data</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_lid_entries</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_import</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>import_global_ids</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>import_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>import_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_export</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>export_global_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>export_local_ids</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>export_procs</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>ierr</i>);
+</td>
 </tr>
 
 <tr NOSAVE>
@@ -1131,10 +1593,11 @@ query functions</a> for an explanation.&nbsp;</td>
 </table>
 
 <hr WIDTH="100%">A <b>ZOLTAN_POST_MIGRATE_FN</b> query function performs any
-post-processing desired by the application. If it is registered, it is
-called at the end of the <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
-routine. The arguments passed to <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
-are made available for use in the post-processing routine.
+post-processing desired by applications using 
+<b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>.
+Its function is analogous to 
+<b><a href="#ZOLTAN_POST_MIGRATE_PP_FN">ZOLTAN_POST_MIGRATE_PP_FN</a></b>, but
+it cannot be used with <a href="ug_interface_mig.html#Zoltan_Migrate"><b>Zoltan_Migrate</b></a>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -1150,87 +1613,16 @@ are made available for use in the post-processing routine.
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+<td VALIGN=TOP></td>
 
-<td>Pointer to user-defined data.</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
-
-<td>The number of array entries used to describe a single global ID.&nbsp;
-This value is the maximum value over all processors of the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
-
-<td>The number of array entries used to describe a single local ID.&nbsp;
-This value is the maximum value over all processors of the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import</i></td>
-
-<td>The number of objects that will be received by this processor.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
-
-<td>An array of <i>num_import</i> global IDs of objects
-to be received by this processor. This array may be NULL, as the processor
-does not necessarily need to know which objects it will receive.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
-
-<td>An array of <i>num_import</i> local IDs of objects
-to be received by this processor. This array may be NULL, as the processor
-does not necessarily need to know which objects it will receive.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_procs</i></td>
-
-<td>An array of size <i>num_import</i> listing the processor IDs of the
-source processors. This array may be NULL, as the processor does not necessarily
-need to know from which processors it will be receiving objects.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_export</i></td>
-
-<td>The number of objects that will be sent from this processor to other
-processors.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids</i></td>
-
-<td>An array of <i>num_export</i> global IDs of objects
-to be sent from this processor.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
-
-<td>An array of <i>num_export</i> local IDs of objects
-to be sent from this processor.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_procs</i></td>
-
-<td>An array of size <i>num_export</i> listing the processor IDs of the
-destination processors.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
-
-<td>Error code to be set by function.</td>
+<td>
+All arguments are analogous to those in
+<a href="#ZOLTAN_POST_MIGRATE_PP_FN"><b>ZOLTAN_POST_MIGRATE_PP_FN</b></a>.
+Partition-assignment arguments <i>import_to_part</i> and <i>export_to_part</i>
+are not included, as processor and partitions
+numbers are considered to be the same in 
+<a href="ug_interface_mig.html#Zoltan_Help_Migrate"><b>Zoltan_Help_Migrate</b></a>.
+</td>
 </tr>
 
 <tr>
