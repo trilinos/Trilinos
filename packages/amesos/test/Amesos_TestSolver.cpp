@@ -7,6 +7,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #ifdef TEST_KUNDERT
 #include "KundertOO.h"

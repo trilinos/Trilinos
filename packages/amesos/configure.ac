@@ -247,19 +247,9 @@ AC_CHECK_FILE(${tac_with_trilinos3pldir})
 #  --enable-amesos-slud, --with-amesos-sluddir, --with-amesos-sludlib, 
 #    --with-amesos-sludincdir
 #
-TAC_ARG_ENABLE_FEATURE(amesos_slud,[Enable Amesos interface support for SuperLU serial], 
+TAC_ARG_ENABLE_FEATURE(amesos_slud,[Enable Amesos interface support for SuperLU Dist], 
 		AMESOS_SLUD, no)
 
-
-TAC_ARG_WITH( amesos_sluddir, [Set SuperLU dist directory],  ${tac_with_trilinos3pldir}/SuperLU_DIST )
-AC_CHECK_FILE(${tac_with_amesos_sluddir})
-
-
-TAC_ARG_WITH( amesos_sludlib, [Set SuperLU dist library],  ${tac_with_amesos_sluddir}/libsuperludist.a )
-AC_CHECK_FILE(${tac_with_amesos_sludlib})
-
-TAC_ARG_WITH( amesos_sludincdir, [Set SuperLU serial include directory],  ${tac_with_amesos_sluddir}/SRC )
-AC_CHECK_FILE(${tac_with_amesos_sludincdir})
 
 #
 #  Test to see if everything is where it ought to be:
@@ -269,6 +259,16 @@ AC_CHECK_FILE(${tac_with_amesos_sludincdir})
 if test "X$ac_cv_use_amesos_slud" != "Xno"; then
   AC_LANG_SAVE
   AC_LANG_C
+
+  TAC_ARG_WITH( amesos_sluddir, [Set SuperLU dist directory],  ${tac_with_trilinos3pldir}/SuperLU_DIST )
+  AC_CHECK_FILE(${tac_with_amesos_sluddir})
+
+  TAC_ARG_WITH( amesos_sludlib, [Set SuperLU dist library],  ${tac_with_amesos_sluddir}/libsuperludist.a )
+  AC_CHECK_FILE(${tac_with_amesos_sludlib})
+
+  TAC_ARG_WITH( amesos_sludincdir, [Set SuperLU serial include directory],  ${tac_with_amesos_sluddir}/SRC )
+  AC_CHECK_FILE(${tac_with_amesos_sludincdir})
+
 #
 # This is a bad way to check for supermatrix.h, it won't pick supermatrix.h up if
 # it is in the includ epath, i.e. /usr/include - see tac_arg_check_mpi for a better way

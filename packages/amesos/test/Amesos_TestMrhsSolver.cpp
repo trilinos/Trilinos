@@ -6,6 +6,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #ifdef TEST_KUNDERT
 #include "KundertOO.h"
@@ -162,6 +163,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 
     }
 #endif
+#ifdef HAVE_AMESOS_SLUD
   } else if ( SparseSolver == SuperLUdist ) { 
     SuperludistOO superludist( Problem ) ; 
     superludist.SetTrans( transpose ) ; 
@@ -183,6 +185,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	SparseDirectTimingVars::SS_Result.Set_Last_Time( TotalTime.ElapsedTime() ); 
 
     }
+#endif
 #ifdef TEST_SPOOLES
   } else if ( SparseSolver == SPOOLES ) { 
     SpoolesOO spooles( (Epetra_RowMatrix *) passA, 
