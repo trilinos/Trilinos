@@ -1,0 +1,51 @@
+How to Add a Script to the Test Harness (Initial DRAFT)
+
+-Preliminaries:
+
+This discussion assumes that the reader has test executables for one or more 
+Trilinos packages that are produced by autotools and would like to add those
+tests to the automated daily or weekly testing for Trilinos.  Also, tests
+should return 0 to indicate 'pass' and non zero to indicate 'fail'.  Output
+from the tests will be captured for the script owners.  It is recommened 
+that scripts accept a '-v' for verbose mode.  Example scripts run all tests
+without -v, and rerun test executables that return a non zero return code
+with -v.
+
+-Platforms that currently run the test harness:
+
+Linux
+
+-Writing a script to call the test executables.
+
+Scripts used in the test harness must follow certain requirements.  These
+requirements are easy to follow for packages using a directory structure like
+that of epetra.  Other directory structures require slightly more work.
+See Trilinos/packages/epetra/test/scripts/daily/mpi/autotoolsTestAllMpi for 
+an example of how to write a script that will run tests in parallel.  See 
+Trilinos/packages/epetra/test/scripts/daily/serial/autotoolsTestAll for an 
+example of how to write a script that will run tests in serial.  When 
+customizing these files, pay special attention to the lines beginning with
+'##'.  Also, keep in mind that paths must be specified relatively.  Reading
+ahead is highly recommended as it will help a script author determine where
+the finished script will live.  Questions or comments can be directed to 
+jmwille@sandia.gov.
+
+-Adding the script to the automated process.
+
+After a script is finished, adding it to the test harness is easy.  The 
+directory that the script should reside in is based on whether the script is
+to be run in parallel or serial, and if the script should be run daily or 
+weekly.  For example, if a script is to be run in parallel on a daily basis,
+check it into the repository in the
+Trilinos/packages/(name_of_package)/test/scripts/daily/mpi/ directory.  If
+this directory does not exist, simply create it, the test harness will find it.
+The owner listed inside the script will receive emails with test results.
+
+-Future enhancements
+
+In the near future we will add a trilinosdata directory to store data that
+can be used as inputs for tests.  The test harness will be run on additional
+platforms as the harness is ported to those platforms.
+
+Questions, comments, and suggestions concerning these instructions and the
+process in general are welcome.  Contact jmwille@sandia.gov.
