@@ -118,7 +118,8 @@ private:
 	const int _nev, _length, _block, _restarts, _step;
 	const TYPE _residual_tolerance;
 	TYPE *_ritzresiduals, *_actualresiduals, *_evalr, *_evali;
-	int _restartiter, _iter, _jstart, _jend, _nevblock, _debuglevel, _nconv, _defblock;
+	int _restartiter, _iter, _jstart, _jend, _nevblock,_debuglevel, _defblock;
+        int _offset, _maxoffset;
 	bool _initialguess, _issym, _isdecompcurrent, _isevecscurrent, exit_flg, dep_flg;
 	TYPE _schurerror, _dep_tol, _blk_tol, _sing_tol, _def_tol;
 	string _which;
@@ -139,16 +140,18 @@ BlockArnoldi<TYPE>::BlockArnoldi(Eigenproblem<TYPE> & problem,
 				_ritzresiduals(0), _evalr(0), _evali(0), _restartiter(0), 
 				_iter(0), _jstart(0), _jend(0), _which(which),
 				_initialguess(true), _debuglevel(0), _nevblock(0), _defblock(0),
-				_issym(false), _nconv(0), _schurerror(1.0), dep_flg(false),
-				_dep_tol(0), _sing_tol(0), _blk_tol(0), _def_tol(0), 
+				_issym(false), _schurerror(1.0), dep_flg(false), _offset(0),
+				_maxoffset(0), _dep_tol(0), _sing_tol(0), _blk_tol(0), _def_tol(0), 
 				exit_flg(false), _isevecscurrent(false), _isdecompcurrent(false) {
 	//	cout << "ctor:BlockArnoldi " << this << endl;
 	//
 	// Determine _nevblock : how many blocks it will take to contain the _nev eigenvalues/vectors
         // NOTE: An additional block is kept if _nev is a perfect multiple of _block because of the
-        // potential presence of complex eigenvalue pairs.
+        // potential presence of complex eigenvalue pairs.  Additional blocks can be retained, up to
+        // _maxoffset if the block ends with one eigenvalue of a complex conjugate pair.
 	//
 	_nevblock = _nev/_block + 1;
+	_maxoffset = (_length-_nevblock)/2;
 	//
 	// Retrieve the initial vector from the Anasazi::Eigenproblem.
 	//
@@ -362,14 +365,14 @@ void BlockArnoldi<TYPE>::currentStatus() {
 	int i;
 	cout<<" "<<endl;
 	cout<<"********************CURRENT STATUS********************"<<endl;
-	cout<<"Iteration\t"<<_iter<<" of\t"<< _length+_restarts*(_length-_nevblock)<<endl;
+	cout<<"Iterations :\t"<<_iter<<endl;
 
 	if (_restartiter > _restarts) 
-		cout<<"Restart \t"<<_restartiter-1<<" of\t"<< _restarts<<endl;
+		cout<<"Restarts :\t"<<_restartiter-1<<" of\t"<< _restarts<<endl;
 	else
-		cout<<"Restart \t"<<_restartiter<<" of\t"<< _restarts<<endl;
+		cout<<"Restarts :\t"<<_restartiter<<" of\t"<< _restarts<<endl;
 
-	cout<<"Block Size : "<<_block<<endl;
+	cout<<"Block Size :\t"<<_block<<endl;
 	cout<<"Requested Eigenvalues : "<<_nev<<endl;
 	cout<<"Requested Ordering : "<<_which<<endl;
 	cout<<"Residual Tolerance : "<<_residual_tolerance<<endl;	
@@ -395,7 +398,7 @@ void BlockArnoldi<TYPE>::currentStatus() {
 	if (_jstart < _nevblock) { _nevtemp = _jstart*_block; }
 	//
 	if (_issym) {
-		cout<<"Eigenvalue \t Ritz Residual"<<endl;
+		cout<<"Eigenvalue\tRitz Residual"<<endl;
 		cout<<"------------------------------------------------------"<<endl;
 		for (i=0; i<_nevtemp; i++) {
 			cout.width(10);
@@ -403,11 +406,11 @@ void BlockArnoldi<TYPE>::currentStatus() {
 		}
 		cout<<"------------------------------------------------------"<<endl;
 		} else {
-		cout<<"Real Part \t Imag Part \t Ritz Residual"<<endl;
+		cout<<"Real Part\tImag Part\tRitz Residual"<<endl;
 		cout<<"------------------------------------------------------"<<endl;
 		for (i=0; i<_nevtemp; i++) {
 			cout.width(10);
-			cout<<_evalr[i]<<"\t"<<_evali[i]<<"\t"<<_ritzresiduals[i]<<endl;
+			cout<<_evalr[i]<<"\t"<<_evali[i]<<"\t\t"<<_ritzresiduals[i]<<endl;
 		}
 		cout<<"------------------------------------------------------"<<endl;
 		cout<<" "<<endl;
@@ -470,6 +473,18 @@ void BlockArnoldi<TYPE>::SetInitBlock() {
 
 	// Clean up
 	delete [] index;
+}
+
+template <class TYPE>
+void BlockArnoldi<TYPE>::solve () {
+	//int rem_iters = _length+_restarts*(_length-_nevblock)-_iter;
+	//
+	// Right now the solver will just go the remaining iterations, but this design will allow
+	// for checking of the residuals every so many iterations, independent of restarts.
+	//
+	while (_schurerror > _residual_tolerance && _restartiter <= _restarts && !exit_flg) {
+		iterate( _step );
+	}
 }
 
 template <class TYPE>
@@ -554,17 +569,6 @@ void BlockArnoldi<TYPE>::iterate(const int steps) {
 
 }
 
-template <class TYPE>
-void BlockArnoldi<TYPE>::solve () {
-	//int rem_iters = _length+_restarts*(_length-_nevblock)-_iter;
-	//
-	// Right now the solver will just go the remaining iterations, but this design will allow
-	// for checking of the residuals every so many iterations, independent of restarts.
-	//
-	while (_schurerror > _residual_tolerance && _iter < _length+_restarts*(_length-_nevblock) && !exit_flg) {
-		iterate( _step );
-	}
-}
 
 template<class TYPE>
 void BlockArnoldi<TYPE>::BlockReduction () {
@@ -1119,17 +1123,12 @@ void BlockArnoldi<TYPE>::ComputeResiduals( const bool apply ) {
 	int i=0,j=0;
 	int m = _jstart*_block, n=_jstart*_block;
 	int mm1 = (_jstart-1)*_block;
-	int _nevtemp, _nevtemp2;
+	int _nevtemp, _nevtemp2, numimag;
 	const TYPE one = 1.0;
 	const TYPE zero = 0.0;
 	Teuchos::SerialDenseMatrix<int,TYPE> Q(n,n);
 	Teuchos::LAPACK<int,TYPE> lapack;
 	Teuchos::BLAS<int,TYPE> blas;
-	if (_jstart < _nevblock) {
-	  _nevtemp = n; _nevtemp2 = n;
-	} else {
-	  _nevtemp = _nevblock*_block; _nevtemp2 = _nev;
-	}
 	//
 	// If we are going to restart then we can overwrite the 
 	// hessenberg matrix with the Schur factorization, else we
@@ -1137,13 +1136,24 @@ void BlockArnoldi<TYPE>::ComputeResiduals( const bool apply ) {
 	// on return.
 	//
 	if (apply) {
-		Teuchos::SerialDenseMatrix<int,TYPE> Hj(Teuchos::View, _hessmatrix, m, n, i, j);		
-		SortSchurForm( Hj, Q );
+	  Teuchos::SerialDenseMatrix<int,TYPE> Hj(Teuchos::View, _hessmatrix, m, n);		
+	  SortSchurForm( Hj, Q );
+	  //
+	  // Determine new offset depending upon placement of conjugate pairs.	
+	  //
+	  _offset = _maxoffset;
+	  for (i=0; i<_maxoffset; i++) {
+	    numimag = 0;
+	    for (j=0; j<(_nevblock+i)*_block; j++) { 
+	      if (_evali[j]!=zero) { numimag++; }; 
+	    }
+	    if (!(numimag % 2)) { _offset = i; break; }
+	  }
 	} else {	
-		// Create a view into the current hessenberg matrix and
-		// make a copy.
-		Teuchos::SerialDenseMatrix<int,TYPE> Hj(Teuchos::Copy, _hessmatrix, m, n, i, j);
-		SortSchurForm( Hj, Q );
+	  // Create a view into the current hessenberg matrix and
+	  // make a copy.
+	  Teuchos::SerialDenseMatrix<int,TYPE> Hj(Teuchos::Copy, _hessmatrix, m, n);
+	  SortSchurForm( Hj, Q );
 	}
 	// Check the residual error for the Krylov-Schur decomposition.
 	// The residual for the Schur decomposition A(VQ) = (VQ)T + FB_m^TQ
@@ -1155,6 +1165,11 @@ void BlockArnoldi<TYPE>::ComputeResiduals( const bool apply ) {
 	//
 	//  Calculate the B matrix for the Krylov-Schur basis F_vec*B^T
 	//
+	if (_jstart < _nevblock+_offset) {
+	  _nevtemp = n; _nevtemp2 = n;
+	} else {
+	  _nevtemp = (_nevblock+_offset)*_block; _nevtemp2 = _nev;
+	}
 	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_hess(Teuchos::View, _hessmatrix, _block, _block, m, mm1);
 	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_q(Teuchos::View, Q, _block, _nevtemp, mm1 );
 	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_b( _block, _nevtemp );
@@ -1166,7 +1181,7 @@ void BlockArnoldi<TYPE>::ComputeResiduals( const bool apply ) {
         //  2-norm to scale.
         //
         TYPE temp, _scalefactor = lapack.LAPY2(_evalr[0],_evali[0]);
-        for (i=1; i<_nevtemp; i++) {
+        for (i=1; i<n; i++) {
                 temp = lapack.LAPY2(_evalr[i],_evali[i]);
                 if (temp > _scalefactor) _scalefactor = temp;
         }
@@ -1249,7 +1264,6 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	  basistemp = _basisvecs->Clone( n );
 	  MultiVec<TYPE>* basistemp2 = _basisvecs->CloneCopy( index, n );
 	  basistemp->MvTimesMatAddMv ( one, *basistemp2, Q, zero );
-	  delete basistemp2;
 	} else {
 	  //
 	  // We can aquire the Ritz vectors from the current decomposition.
@@ -1286,7 +1300,7 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	  TYPE enormscale;
 	  for (j=0; j<n; j++) {
 	    enormscale = blas.NRM2(n, Q[j], 1);
-	    blas.SCAL(n, one/enormscale, Q[j], 1);
+	    blas.SCAL( n, one/enormscale, Q[j], 1 );
 	  }
 	  //
 	  //  Convert back to approximate eigenvectors of the operator.
@@ -1306,13 +1320,13 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	  i = 0;
 	  while ( i<_nev ) {	
 	    if (_evali[i] != zero) {
-	      // Copy the real part of the eigenvector.  Scale by 0.5 to normalize the vector.
+	      // Copy the real part of the eigenvector.  Scale by square-root of 2 to normalize the vector.
 	      evecstempr = evecstemp->CloneView( index+i, 1 );
 	      evecr1 = _evecr->CloneView( index+i, 1 );
-	      evecr1->MvAddMv( one/(2*one), *evecstempr, zero, *evecstempr );
+	      evecr1->MvAddMv( one/sqrt(2.0), *evecstempr, zero, *evecstempr );
 	      delete evecr1; evecr1=0;
 	      evecr1 = _evecr->CloneView( index+i+1, 1 );
-	      evecr1->MvAddMv( one/(2*one), *evecstempr, zero, *evecstempr );
+	      evecr1->MvAddMv( one/sqrt(2.0), *evecstempr, zero, *evecstempr );
 	      delete evecr1; evecr1=0;
 	      // Note where imaginary part of eigenvector is.
 	      indexi[conjprs] = i+1;
@@ -1342,13 +1356,13 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	    for (i=0; i<conjprs; i++) {
 	      evecstempi = evecstemp->CloneView( indexi+i, 1 ); 
 	      eveci1 = _eveci->CloneView( indexi+i, 1 );
-	      eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
+	      eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/(_evali[indexi[i]]*sqrt(2.0)),
 			       *evecstempi, zero, *evecstempi );
 	      delete eveci1; eveci1=0;
 	      // Change index and set non-conjugate part of imag eigenvector.
 	      indexi[i]--;
 	      eveci1 = _eveci->CloneView( indexi+i, 1 );
-	      eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
+	      eveci1->MvAddMv( Teuchos::ScalarTraits<TYPE>::magnitude(_evali[indexi[i]])/(_evali[indexi[i]]*sqrt(2.0)),
 			       *evecstempi, zero, *evecstempi );
 	      delete eveci1; eveci1=0;
 	      delete evecstempi; evecstempi=0;
@@ -1429,49 +1443,31 @@ void BlockArnoldi<TYPE>::SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H,
 	// a stack-like fashion.  Also take into account conjugate pairs, which may mess
 	// up the reordering, since the pair is moved if one of the pair is moved.
 	//
-	int _nevtemp, _nevtemp2, _nevtemp3, _nevtemp4;
-	int extprs, numimag=0;
-	if (_jstart < _nevblock) {
-	  _nevtemp = n; _nevtemp2 = n; _nevtemp4 = n;
-	} else {
-	  _nevtemp = _nevblock*_block; _nevtemp2 = _nev;
-	  
-	  // Count the number of eigenvalues with imaginary parts.
-	  for (i=0; i<_nevtemp; i++) { if (_evali[i]!=zero) { numimag++; }; }
-	  
-	  // Use this information to determine how many pairs we have (conjprs)
-	  // and if there is a pair off the end of the _nev eigenvalues (extprs).
-	  extprs = numimag % 2;
-	  
-	  // So how many eigenvalues do we need to pay attention to, including all     
-	  // the conjugate pairs?
-	  _nevtemp4 = _nevtemp + extprs;
-	}
-	
+	int _nevtemp = 0;
 	char * compq = "V";
-	int *offset = new int[ _nevtemp4 ]; assert(offset!=NULL);
-	int *_order2 = new int[ _nevtemp4 ]; assert(_order2!=NULL);
-	i = 0; _nevtemp3 = 0;
-	while (i < _nevtemp4) {
+	int *offset2 = new int[ n ]; assert(offset2!=NULL);
+	int *_order2 = new int[ n ]; assert(_order2!=NULL);
+	i = 0; 
+	while (i < n) {
 	  if (_evali[i] != zero) {
-	    offset[_nevtemp3] = 0;
-	    for (j=i; j<_nevtemp4; j++) {
-	      if (_order[j] > _order[i]) { offset[_nevtemp3]++; }
+	    offset2[_nevtemp] = 0;
+	    for (j=i; j<n; j++) {
+	      if (_order[j] > _order[i]) { offset2[_nevtemp]++; }
 	    }
-	    _order2[_nevtemp3] = _order[i];
+	    _order2[_nevtemp] = _order[i];
 	    i = i+2;
 	  } else {
-	    offset[_nevtemp3] = 0;
-	    for (j=i; j<_nevtemp4; j++) {
-	      if (_order[j] > _order[i]) { offset[_nevtemp3]++; }
+	    offset2[_nevtemp] = 0;
+	    for (j=i; j<n; j++) {
+	      if (_order[j] > _order[i]) { offset2[_nevtemp]++; }
 	    }
-	    _order2[_nevtemp3] = _order[i];
+	    _order2[_nevtemp] = _order[i];
 	    i = i++;
 	  }
-	  _nevtemp3++;
+	  _nevtemp++;
 	}
-	for (i=_nevtemp3-1; i>=0; i--) {
-	  lapack.TREXC( *compq, n, ptr_h, ldh, ptr_q, ldq, _order2[i]+1+offset[i], 
+	for (i=_nevtemp-1; i>=0; i--) {
+	  lapack.TREXC( *compq, n, ptr_h, ldh, ptr_q, ldq, _order2[i]+1+offset2[i], 
 			1, work, &info );
 	  assert(info==0);
 	}
@@ -1491,7 +1487,7 @@ void BlockArnoldi<TYPE>::SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H,
 	delete [] work; 
 	delete [] bwork,
 	delete [] select;
-	delete [] offset;
+	delete [] offset2;
 	delete [] _order2;
 }
 
@@ -1502,7 +1498,7 @@ void BlockArnoldi<TYPE>::Restart() {
 	//  restart the factorization.
 	//
 	int i,j;
-	int _nevtemp = _nevblock*_block;
+	int _nevtemp = (_nevblock+_offset)*_block;
 	int *index = new int[ _nevtemp ];
 	//
 	//  Move the F_vec block to the _jstart+1 position.	
@@ -1549,7 +1545,7 @@ void BlockArnoldi<TYPE>::Restart() {
 	//
 	//  Reset the pointer.
 	//
-	_jstart = _nevblock; 
+	_jstart = _nevblock+_offset; 
 	//
 	//  Clean up
 	//
