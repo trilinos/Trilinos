@@ -54,13 +54,13 @@ const bool Scaling = false;
 
 // ================================================ ====== ==== ==== == =
 Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery(const string name, 
-							       const Epetra_Comm & comm ) :
-  comm_(&comm), name_(name)
+                                                  const Epetra_Comm & comm ) :
+comm_(&comm), name_(name)
 {
   ZeroOutData();
-  // verbosity level
-  if( comm_->MyPID()==0 ) verbose_ = true;
-  else verbose_ = false;
+  // verbosity level (now always false)
+  // if( comm_->MyPID()==0 ) verbose_ = true;
+  verbose_ = false;
   // fix error message
   ErrorMsg = "ERROR [CrsMatrixGallery]: ";
   OutputMsg = "CrsMatrixGallery: ";
@@ -209,7 +209,22 @@ int Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const int value
 
     NumVectors_ = value;
     return 0;
-  } 
+  } else if( parameter == "output" ) {
+
+    if( value != 0 && value != 1) {
+      cerr << ErrorMsg << "output level should be 0 or 1" << endl;
+      return -1;
+    }
+
+    if (value == 0)
+      verbose_ = false;
+    if (value == 1) {
+      if (comm_->MyPID() == 0)
+        verbose_ = true;
+    }
+
+    return 0;
+  }
 
   cerr << ErrorMsg << "input string (" << parameter << ") not valid\n";
   return -2;
