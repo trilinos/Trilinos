@@ -28,6 +28,5 @@
 //@HEADER
 //LOCA::Epetra Objects
 #include "NOX_Epetra.H"
-#include "LOCA_Epetra_Vector.H"
 #include "LOCA_Epetra_Group.H"
 #include "LOCA_Epetra_Interface.H"
