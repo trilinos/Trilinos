@@ -38,16 +38,18 @@
 using namespace NOX;
 using namespace NOX::Epetra;
 
-MatrixFree::MatrixFree(Interface& i, const Epetra_Vector& x) :
+MatrixFree::MatrixFree(Interface& i, const Epetra_Vector& x, double lambda_) :
   label("NOX::Matrix-Free"),
   interface(i),
   currentX(x),
   perturbX(x),
   fo(x),
   fp(x),
+  fmPtr(0),
+  lambda(lambda_),
+  diffType(Forward),
   epetraMap(0),
   ownsMap(false),
-  lambda(1.0e-6),
   eta(0.0),
   userEta(1.0e-6),
   computeEta(true)
@@ -141,6 +143,18 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     vectorNorm = 1.0;
   }
 
+  // Create an extra perturbed residual vector pointer if needed
+  if ( diffType == Centered )
+    if ( !fmPtr )
+	fmPtr = new Epetra_Vector(fo);
+
+  // Create a reference to the extra perturbed residual vector
+  Epetra_Vector& fm = *fmPtr;
+
+  double scaleFactor = 1.0;
+  if ( diffType == Backward )
+    scaleFactor = -1.0;
+
   if (computeEta)
     eta = lambda*(lambda + solutionNorm/vectorNorm);
   else
@@ -151,11 +165,23 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   Y = X;
   Y.Scale(eta);
   perturbX.Update(1.0,Y,1.0);
-  interface.computeF(perturbX, fp, Interface::Jacobian);
+  interface.computeF(perturbX, fp, Interface::MatrixFreeF);
   
+  if ( diffType == Centered ) {
+    Y.Scale(-2.0);
+    perturbX.Update(scaleFactor,Y,1.0);
+    interface.computeF(perturbX, fm, Interface::MatrixFreeF);
+  }
+
   // Compute the directional derivative
-  Y.Update(1.0, fp, -1.0, fo, 0.0);
-  Y.Scale(1.0/eta);
+  if ( diffType != Centered ) {
+    Y.Update(1.0, fp, -1.0, fo, 0.0);
+    Y.Scale( 1.0/(scaleFactor * eta) );
+  }
+  else {
+    Y.Update(1.0, fp, -1.0, fm, 0.0);
+    Y.Scale( 1.0/(2.0 * eta) );
+  }
 
   return 0;
 }
@@ -214,7 +240,12 @@ bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
   // derivative.
   currentX = x;
 
-  return interface.computeF(x, fo, Interface::Jacobian);
+  return interface.computeF(x, fo, Interface::MatrixFreeF);
+}
+
+void MatrixFree::setDifferenceMethod(DifferenceType diffType_)
+{
+  diffType = diffType_;
 }
 
 void MatrixFree::setLambda(double lambda_)

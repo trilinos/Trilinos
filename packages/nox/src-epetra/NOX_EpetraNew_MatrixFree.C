@@ -47,9 +47,11 @@ MatrixFree::MatrixFree(Interface::Required& i, const Epetra_Vector& x) :
   perturbX(x),
   fo(x),
   fp(x),
+  fmPtr(0),
   epetraMap(0),
   ownsMap(false),
   lambda(1.0e-6),
+  diffType(Forward),
   eta(0.0),
   userEta(1.0e-6),
   computeEta(true),
@@ -146,6 +148,18 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     vectorNorm = 1.0;
   }
 
+  // Create an extra perturbed residual vector pointer if needed
+  if ( diffType == Centered )
+    if ( !fmPtr )
+      fmPtr = new Epetra_Vector(fo);
+  
+  // Create a reference to the extra perturbed residual vector
+  Epetra_Vector& fm = *fmPtr;
+  
+  double scaleFactor = 1.0;
+  if ( diffType == Backward )
+  scaleFactor = -1.0;
+
   if (computeEta)
     eta = lambda*(lambda + solutionNorm/vectorNorm);
   else
@@ -167,10 +181,30 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       (groupPtr->getF()).getEpetraVector();
   } 
 
-  // Compute the directional derivative
-  Y.Update(1.0, fp, -1.0, fo, 0.0);
-  Y.Scale(1.0/eta);
+  if ( diffType == Centered ) {
+    Y.Scale(-2.0);
+    perturbX.Update(scaleFactor,Y,1.0);
+    if (!useGroupForComputeF)
+      interface.computeF(perturbX, fm, NOX::EpetraNew::Interface::Required::MF_Res);
+    else{
+      NOX::Epetra::Vector noxX(perturbX, NOX::DeepCopy, true);
+      groupPtr->setX(noxX);
+      groupPtr->computeF();
+      fm = dynamic_cast<const NOX::Epetra::Vector&>
+        (groupPtr->getF()).getEpetraVector();
+    } 
+  }
 
+  // Compute the directional derivative
+  if ( diffType != Centered ) {
+    Y.Update(1.0, fp, -1.0, fo, 0.0);
+    Y.Scale( 1.0/(scaleFactor * eta) );
+  }
+  else {
+    Y.Update(1.0, fp, -1.0, fm, 0.0);
+    Y.Scale( 1.0/(2.0 * eta) );
+  }
+  
   return 0;
 }
 
@@ -240,6 +274,11 @@ bool MatrixFree::computeJacobian(const Epetra_Vector& x)
     ok = true;
   }
   return ok;
+}
+
+void MatrixFree::setDifferenceMethod(DifferenceType diffType_)
+{
+  diffType = diffType_;
 }
 
 void MatrixFree::setLambda(double lambda_)

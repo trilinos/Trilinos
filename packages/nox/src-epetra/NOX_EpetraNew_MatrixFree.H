@@ -75,6 +75,9 @@ class MatrixFree : public Epetra_Operator,
       
  public:
 
+  //! Define types for use of the perturbation parameter \f$ \delta\f$.
+  enum DifferenceType {Forward, Backward, Centered};
+
   //! Constructor 
   MatrixFree(NOX::EpetraNew::Interface::Required& i, const Epetra_Vector& x);
 
@@ -139,6 +142,9 @@ class MatrixFree : public Epetra_Operator,
 
   //! Compute Jacobian given the specified input vector, x.  Returns true if computation was successful.
   virtual bool computeJacobian(const Epetra_Vector& x);
+
+  //! Set the type of perturbation method used (default is Forward)
+  virtual void setDifferenceMethod( DifferenceType type );
  
   //! Allows the user to change the value of \f$ \lambda \f$ in the perturbation calculation.
   void setLambda(double lambda_);
@@ -175,6 +181,9 @@ protected:
   //! Function evaluation at perturbX 
   mutable Epetra_Vector fp;
 
+  //! Optional pointer to function evaluation at -perturbX - needed only for centered finite differencing
+  mutable Epetra_Vector* fmPtr;
+
   //! Epetra_Map object used in the returns of the Epetra_Operator derived methods.
   /*! If the user is using Epetra_BlockMaps, then NOX::EpetraNew::MatrixFree must create an equivalent Epetra_Map from the Epetra_BlockMap that can be used as the return object of the OperatorDomainMap() and OperatorRangeMap() methods.
    */ 
@@ -184,6 +193,9 @@ protected:
   /*! If the user is using Epetra_BlockMaps, then NOX::EpetraNew::MatrixFree must create an equivalent Epetra_Map from the Epetra_BlockMap that can be used as the return object of the OperatorDomainMap() and OperatorRangeMap() methods.  This flag tells the destructor whether or not to destroy the Epetra_Map.
    */ 
   bool ownsMap;
+
+  //! Define types for use of the perturbation parameter \f$ \delta\f$.
+  DifferenceType diffType;
 
   //! Scale factor for eta calculation
   double lambda;
