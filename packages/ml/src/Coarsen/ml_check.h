@@ -16,6 +16,8 @@ extern void ML_interp_check(ML *ml, int, int);
 
 extern int  ML_Check(ML *ml);
 
+extern int ML_Reitzinger_Check_Hierarchy(ML *ml, ML_Operator **Tmat_array, int incr_or_decr);
+
 #ifdef __cplusplus
 }
 #endif

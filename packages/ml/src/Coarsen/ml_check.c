@@ -82,7 +82,63 @@ void ML_interp_check(ML *ml, int coarse_level, int fine_level)
    free(c_data);
 }
 
+/* For systems derived from time-dependent Maxwell's equations, check the
+ * relationship S*T on each level. */
 
+int ML_Reitzinger_Check_Hierarchy(ML *ml, ML_Operator **Tmat_array, int incr_or_decr)
+{
+  int i,j;
+  int finest_level, coarsest_level;
+  ML_Operator *Amat, *Tmat;
+  double *randvec, *result, *result1;
+  double dnorm;
+
+  finest_level = ml->ML_finest_level;
+  coarsest_level = ml->ML_coarsest_level;
+
+  if (incr_or_decr == ML_INCREASING) {
+    if (ml->comm->ML_mypid == 0) {
+      printf("ML_Reitzinger_Check_Hierarchy: ML_INCREASING is not supported ");
+      printf(" at this time.  Not checking hierarchy.\n");
+    }
+    return 1;
+  }
+
+  if ( ML_Get_PrintLevel() > 5 ) {
+    printf("ML_Reitzinger_Check_Hierarchy: Checking null space\n");
+  }
+
+  for (i=finest_level; i>coarsest_level; i--) {
+
+     Amat = ml->Amat+i;
+     Tmat = Tmat_array[i];
+
+     /* normalized random vector */
+     randvec = (double *) ML_allocate(Tmat->invec_leng * sizeof(double) );
+     ML_random_vec(randvec,Tmat->invec_leng, ml->comm);
+     dnorm = sqrt( ML_gdot(Tmat->invec_leng, randvec, randvec, ml->comm) );
+     for (j=0; j<Tmat->invec_leng; j++) randvec[j] /=  dnorm;
+
+     result = (double *) ML_allocate(Amat->invec_leng * sizeof(double) );
+     result1 = (double *) ML_allocate(Amat->outvec_leng * sizeof(double) );
+
+     ML_Operator_Apply(Tmat, Tmat->invec_leng, randvec,
+                       Tmat->outvec_leng, result);
+     ML_Operator_Apply(Amat, Amat->invec_leng, result,
+                       Amat->outvec_leng, result1);
+
+     dnorm = sqrt( ML_gdot(Amat->outvec_leng, result1, result1, ml->comm) );
+     if ( (ML_Get_PrintLevel() > 5) && (ml->comm->ML_mypid == 0) ) {
+       printf("Level %d: for random v,  ||S*T*v|| = %15.10e\n",i,dnorm);
+     }
+
+     ML_free(randvec);
+     ML_free(result);
+     ML_free(result1);
+  }
+  if ( (ML_Get_PrintLevel() > 5) && (ml->comm->ML_mypid == 0) ) printf("\n");
+
+}
 
 /*
 void ML_check_it(double sol[], double rhs[], ML *ml)
