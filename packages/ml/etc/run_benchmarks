@@ -4,10 +4,12 @@
 # Users indicate a directory containing subdirectories which 
 # describe data corresponding to different problems (one directory
 # for each problem). The script automatically descends each 
-# subdirectory and runs the executable (given on the command line)
-# within the subdirectory. All data necessary to run the executable
-# must be within this subdirectory. The problem is run and the output
-# is compared with an output file in this subdirectory. Some summary
+# subdirectory and runs the appropriate executable within the subdirectory. 
+# The name of the executable is given within the subdirectory in a file
+# named 'exe.name'. If this executable does not exist in the 
+# executable directory, it is compiled. All data necessary to run the 
+# executable must be within this subdirectory. The problem is run and the 
+# output is compared with an output file in this subdirectory. Some summary
 # statistics are reported.
 # Note: This script is often used with the executable ml_readfile
 #        which contains comments on setting up problems. 
@@ -15,8 +17,9 @@
 #echo "Usage: run_benchmarks [bench_directory executable scratch_directory]
 
 BENCH_DIRECTORY=/home/tuminaro/ml_bench
-EXECUTABLE=/home/tuminaro/codes/Aztec/ml/Obj/ml_readfile
+EXECUTABLE_DIRECTORY=/home/tuminaro/codes/Aztec/ml/Obj
 SCRATCH_DIRECTORY=/tmp/poop
+PARALLEL=TRUE
 
 #echo "Usage: run_benchmarks [bench_directory executable scratch_directory]
 
@@ -25,25 +28,37 @@ echo $* $#
 # Take command line arguments and replace defaults
 #
 #if test `expr ${*}` -ge `expr 3`
-if test $# -ge 4
+if test $# -ge 5
 then
   echo "Usage: run_benchmarks [bench_directory executable scratch_directory]"
   exit
 fi
+if test $# -eq 0
+then
+  echo "Taking defaults for everything:"
+  echo "      BENCH DIRECTORY      = " $BENCH_DIRECTORY
+  echo "      EXECUTABLE DIRECTORY = " $EXECUTABLE_DIRECTORY
+  echo "      SCRATCH DIRECTORY    = " $SCRATCH_DIRECTORY
+  echo 
+  echo "If defaults not wanted, overwrite using ..."
+  echo "    Usage: run_benchmarks [bench_directory executable scratch_directory]"
+  echo
+fi
 if test $# -ge 1
 then
-  echo at least one argument
   BENCH_DIRECTORY=$1
 fi
 if test $# -ge 2
 then
-  echo at least two argument
   EXECUTABLE=$2
 fi
 if test $# -ge 3
 then
-  echo at least three argument
   SCRATCH_DIRECTORY=$3
+fi
+if test $# -ge 4
+then
+  PARALLEL=$4
 fi
 
 #
@@ -60,16 +75,16 @@ else
 fi
 
 #
-#  Check for the executable 
+#  Check for the executable directory
 #
 temp=`echo ${EXECUTABLE} | sed "s/ .*//"`
 echo $temp
 
-if test -f ${temp}
+if test -d ${EXECUTABLE_DIRECTORY}
 then
-  ls ${temp} > /dev/null
+  touch ${EXECUTABLE_DIRECTORY}
 else
-  echo "The executable ${temp} does not exist?"
+  echo "The directory ${EXECUTABLE_DIRECTORY} does not exist?"
   exit
 fi
 
@@ -114,6 +129,25 @@ do
          mkdir ${SCRATCH_DIRECTORY}/${i}
       fi
       /bin/rm -f ml_inputfile
+#     check that the executable file name is there
+      if test -f exe.name
+      then
+#         check if the executable exists
+#       
+          temp=`cat exe.name`
+          EXE=`echo ${EXECUTABLE_DIRECTORY}/$temp`
+          if test -f $EXE
+          then
+             touch $EXE
+          else
+             cd ${EXECUTABLE_DIRECTORY}
+             make APPLICATION_C=${temp}.c
+             cd ${BENCH_DIRECTORY}/$i
+          fi
+#
+#
+#     execute any file that starts with ml_inputfile ...
+#
       for j in ml_inputfile*
       do
         ttt=`echo $j | sed "s/ml_inputfile//"`
@@ -121,13 +155,25 @@ do
         /bin/rm -f ml_inputfile
         cp $j ml_inputfile
         Nprocs=`grep -i "^Number of processors" ml_inputfile | sed s"/.*=//"`
-        ${EXECUTABLE} ${Nprocs} | grep -v ime > ${SCRATCH_DIRECTORY}/${i}/output${ttt}
+#
+#       run only if parallel=TRUE or nprocs = 1 or []
+#
+        temp=`echo xx${Nprocs}xx | sed "s/ *//g"`
+        if test `expr ${PARALLEL}` = 'TRUE' -o \
+           `expr ${temp}` = 'xxxx' -o \
+           `expr ${temp}` = 'xx1xx' 
+        then
+        ${EXE} ${Nprocs} | grep -v ime > ${SCRATCH_DIRECTORY}/${i}/output${ttt}
         diff -w output${ttt} ${SCRATCH_DIRECTORY}/${i}/output${ttt} > \
                                     ${SCRATCH_DIRECTORY}/${i}/difs${ttt}
         wc ${SCRATCH_DIRECTORY}/${i}/difs${ttt} >> ${SCRATCH_DIRECTORY}/summary
         tail -1 ${SCRATCH_DIRECTORY}/summary
+      fi
       done
       /bin/rm -f ml_inputfile
+      else 
+         echo "The file does not exist ${BENCH_DIRECTORY}/$i/exe.name?"
+      fi
       cd ..
    fi
 done
