@@ -1546,8 +1546,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        ML_2matmult(Tcoarse_trans, perm[1], Tnew, ML_CSR_MATRIX); 
        ML_Operator_Move2HierarchyAndDestroy(&Tnew, Tcoarse_trans);
 
-       ML_Operator_Clean(perm[0]);
-       ML_Operator_Clean(perm[1]);
+       ML_Operator_Destroy(&(perm[0]));
+       ML_Operator_Destroy(&(perm[1]));
        ML_free(perm);
      }
 

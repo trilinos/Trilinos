@@ -436,10 +436,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
       sprintf(parameter,"smoother: Hiptmair subsmoother type (level %d)", level);
       SubSmootherType = List_.get(parameter,SubSmootherType);
-  
-      // arguments for edge & node smoothers
-      nodal_args_ = ML_Smoother_Arglist_Create(2);
-      edge_args_ = ML_Smoother_Arglist_Create(2);
 
       int logical_level = LevelID_[level];
       void *edge_smoother = 0, *nodal_smoother = 0;
