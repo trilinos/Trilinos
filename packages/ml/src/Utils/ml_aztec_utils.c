@@ -3384,14 +3384,6 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 			   num_smoother_steps, pre_or_post_smoother, NULL); 
       break;
 
-    case MLAZ_IFPACK:
-      if( proc_config[AZ_node] == 0 ) 
-	printf("Smoother (level %d) : IFPACK\n",
-	       i);
-      sprintf( label, "IFPACK");
-      ML_Gen_Smoother_Ifpack(ml, i, pre_or_post_smoother, NULL, NULL);
-      break;
-
     default:
       fprintf( stderr,
 	       "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
