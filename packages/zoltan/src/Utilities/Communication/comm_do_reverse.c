@@ -41,8 +41,7 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
 
     /* Check input parameters */
     if (!plan){
-      fprintf(stderr, "Zoltan error in %s: Communication plan = NULL\n", 
-        yo);
+      ZOLTAN_COMM_ERROR("Communication plan = NULL.", yo, -1);
       return ZOLTAN_FATAL;
     }
 

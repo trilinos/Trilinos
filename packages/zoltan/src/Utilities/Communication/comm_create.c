@@ -31,7 +31,7 @@ MPI_Comm  comm,			/* communicator for xfer operation */
 int       tag,			/* message tag I can use */
 int      *pnvals_recv)		/* returned # vals I own after communication */
 {
-    ZOLTAN_COMM_OBJ *plan;		/* returned communication data structure */
+    ZOLTAN_COMM_OBJ *plan;	/* returned communication data structure */
     int      *starts=NULL;	/* pointers into list of vals for procs */
     int      *lengths_to=NULL;	/* lengths of messages I'll send */
     int      *procs_to=NULL;	/* processors I'll send to */
