@@ -405,26 +405,31 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
     return(RowMatrix_->Map());
   }
 
+  //! Returns the global number of rows in the matrix.
   int NumGlobalRows() const
   {
     return(RowMatrix_->NumGlobalRows());
   }
   
+  //! Returns the global number of columns in the matrix.
   int NumGlobalCols() const
   {
     return(RowMatrix_->NumGlobalCols());
   }
   
+  //! Returns the local number of rows in the matrix.
   int NumMyRows() const
   {
     return(RowMatrix_->NumMyRows());
   }
   
+  //! Returns the local number of columns in the matrix.
   int NumMyCols() const
   {
     return(RowMatrix_->NumMyCols());
   }
   
+  //@}
   //@{ \name debugging and other utilities
 
   //! Stops the code, waiting for a debugger to attach
@@ -496,6 +501,7 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
     return agg_;
   }
 
+  //! Generic interface to visualization methods.
   int Visualize(bool VizAggre, bool VizPreSmoother,
 		bool VizPostSmoother, bool VizCycle,
 		int NumApplPreSmoother, int NumApplPostSmoother,
@@ -701,9 +707,6 @@ private:
   int memory_[ML_MEM_SIZE];
 
   // filtering stuff
-#ifdef DELETE_FLT
-  Epetra_MultiVector * flt_R_;
-#endif
   vector<double> flt_NullSpace_;
   ML* flt_ml_;
   ML_Aggregate* flt_agg_;

@@ -143,47 +143,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 
   assert (size < 2 * NumEigenvalues + 1);
 
-#ifdef DELETE_FLT
-  // build the restriction operator as a collection of vectors
-  flt_R_ = new Epetra_MultiVector(Map(),size);
-  assert( flt_R_ != 0 );
-
-  for( int i=0 ; i<NumRealEigenvectors ; ++i ) {
-    for( int j=0 ; j<NumMyRows() ; ++j ) 
-      (*flt_R_)[i][j] = RealEigenvectors[j+i*NumMyRows()];
-  }
-
-  for( int i=0 ; i<NumImagEigenvectors ; ++i ) {
-    for( int j=0 ; j<NumMyRows() ; ++j ) 
-      (*flt_R_)[NumRealEigenvectors+i][j] = ImagEigenvectors[j+i*NumMyRows()];
-  }
-
-  //FIXME      Epetra_MultiVector AQ(Map(),size);
-  //FIXME AQ.PutScalar(0.0);
-
-  //FIXME      RowMatrix_->Multiply(false,*flt_R_, AQ);
-
-  // 5.- epetra linear problem for dense matrices
-  flt_rhs_.Reshape(size,1);
-  flt_lhs_.Reshape(size,1);
-  flt_A_.Reshape(size,size);
-  flt_solver_.SetVectors(flt_lhs_, flt_rhs_);
-  flt_solver_.SetMatrix(flt_A_);
-
-  // 6.- build the "coarse" matrix as a serial matrix, replicated
-  //     over all processes. LAPACK will be used for its solution
-  for( int i=0 ; i<size ; ++i ) {
-    for( int j=0 ; j<size ; ++j ) {
-      double value;
-      (*flt_R_)(i)->Dot(*((*flt_R_)(j)), &value); // FIXME : it was AQ(j)
-      flt_A_(i,j) = value;
-    }
-  }
-
-  // compute the inverse, overwrite the old values of A
-  flt_solver_.Invert();
-#endif
-
   // this is equivalent to the "fattening" of Haim. I build a new ML
   // hierarchy, using the null space just computed. I have at least one
   // aggregate per subdomain, using METIS.

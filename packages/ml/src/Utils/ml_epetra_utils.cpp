@@ -30,7 +30,9 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "ml_FilterType.h"
+#ifdef HAVE_ML_TEUCHOS
 #include "Teuchos_ParameterList.hpp"
+#endif
 
 // ====================================================================== 
 
@@ -232,6 +234,7 @@ int Epetra_ML_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
   return(1);
 }
 
+#ifdef HAVE_ML_TEUCHOS
 void ML_Set_Filter(Teuchos::ParameterList& List)
 {
   Filter_.Type    = List.get("filter: type", ML_Epetra::ML_NO_FILTER);
@@ -242,6 +245,7 @@ void ML_Set_Filter(Teuchos::ParameterList& List)
   Filter_.SecondDivider = List.get("filter: second divider", 0);
   Filter_.Mask          = List.get("filter: mask", (double*)0);
 }
+#endif
 
 // ====================================================================== 
 
