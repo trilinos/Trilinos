@@ -1118,11 +1118,15 @@ int Trilinos_Util_MatrixGallery::CreateMatrixTriDiag(void)
     } else if (MyGlobalElements_[i] == NumGlobalElements_-1) {
       Indices[0] = NumGlobalElements_-2;
       NumEntries = 1;
-      if( VectorC_ == NULL ) Values[0] = c_;
-      else Values[0] = (*VectorC_)[i];
+      if( VectorB_ == NULL ) Values[0] = b_;
+      else Values[0] = (*VectorB_)[i];
     } else {
       Indices[0] = MyGlobalElements_[i]-1;
+      if( VectorB_ == NULL ) Values[1] = b_;
+      else Values[1] = (*VectorB_)[i];
       Indices[1] = MyGlobalElements_[i]+1;
+      if( VectorC_ == NULL ) Values[0] = c_;
+      else Values[0] = (*VectorC_)[i];
       NumEntries = 2;
     }
     assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices)==0);
@@ -1344,7 +1348,7 @@ int Trilinos_Util_MatrixGallery::CreateMatrixRecirc2d(void)
 {
 
   // largely based on a ML example by Ray Tuminaro
-  
+
   if( verbose_ == true ) {
     cout << OutputMsg << "Creating matrix `recirc_2d'...\n";
   }
