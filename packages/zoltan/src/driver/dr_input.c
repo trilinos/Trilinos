@@ -33,9 +33,8 @@ extern "C" {
 
 
 #define SKIPW    "%*[,\t ]"         /* eat up white space amd comma */
-#define SKIPEQ   "%*[\t ]=%*[\t ]"  /* eat up white space and req'd = sign */
+#define SKIPEQ   " = "                /* eat up white space and req'd = sign */
 #define BIGSKIP  "%*[={()},\t ]"    /* eat up list starts, stops, white space */
-#define SKIPS    "%*[s\t ]=%*[\t ]"  /* eat up final s, white space, req'd = */
 #define NEXTARG  "%*[,\t ]%[^=\t ]"  /* argument w/o comma, whitespace */
 #define LASTARG  SKIPEQ "%[^,\t\n ]" /* last arg w/o comma, whitespace */
 #define NEXTLIST BIGSKIP "%[^,)}=\t\n ]"
@@ -91,8 +90,8 @@ int read_cmd_file (
         pline = line;
 
         while (pline+n < pmax)  {
-          i = sscanf(pline += n, SKIPW "initial" NEXTARG LASTARG "%n",
-                     string, value, &n);
+          i = sscanf(pline += n, SKIPW "initial" NEXTARG LASTARG "%n", string,
+           value, &n);
           if (i != 2)
             break;
 
@@ -139,21 +138,21 @@ int read_cmd_file (
         pio_info->init_vwgt_dim = 1;     /* default */
 
         strcpy(pio_info->pexo_fname, "random");
-        while (pline+n < pmax && sscanf(pline += n, NEXTARG LASTARG "%n",
-                                        string, value, &n) == 2)  {
-          if (!strcmp(string, "dimension")
-           && sscanf(value, "%d%n", &pio_info->init_dim, &n) == 1)
-            continue;
-          else if (!strcmp(string, "obj_weight_dim")
-           && sscanf(value, "%d%n", &pio_info->init_vwgt_dim, &n) == 1)
-            continue;
-          else if (!strcmp(string, "size")
-           && sscanf(value, "%d%n", &pio_info->init_size, &n) == 1)
-            continue;
-          else  {
-            Gen_Error(0, "fatal: bad file type = random file parameters");
-            return 0;
-          }
+        while (pline+n < pmax && sscanf(pline += n, NEXTARG LASTARG "%n", string,
+         value, &n) == 2)  {
+            if (!strcmp(string, "dimension")
+             && sscanf(value, "%d%n", &pio_info->init_dim, &n) == 1)
+               continue;
+            else if (!strcmp(string, "obj_weight_dim")
+             && sscanf(value, "%d%n", &pio_info->init_vwgt_dim, &n) == 1)
+               continue;
+            else if (!strcmp(string, "size")
+             && sscanf(value, "%d%n", &pio_info->init_size, &n) == 1)
+               continue;
+            else  {
+               Gen_Error(0, "fatal: bad file type = random file parameters");
+               return 0;
+            }
         }
       }
       else  {
@@ -227,11 +226,10 @@ int read_cmd_file (
     else if (sscanf(line," parallel file location %[=]%n", dummy, &n)==1) {
       pline = line;
       while (pline+n < pmax)  {
-        i = sscanf(pline += n, NEXTARG " = %[^\n\t,= ]%n", string, value, &n);
+        i = sscanf(pline += n, NEXTARG LASTARG "%n", string, value, &n);
         if (i != 2)
           break;
-        sscanf(original_line + (pline-line), NEXTARG " = %[^\n\t,= ]", 
-               dummy, value); /* reread value from orig line to preserve case */
+        sscanf(original_line + (pline-line), NEXTARG LASTARG, dummy, value); /* reread value from orig line to preserve case */
                        
         if (strcmp(string, "root") == 0)
           strcpy(pio_info->pdsk_root, value);
@@ -245,51 +243,72 @@ int read_cmd_file (
       }
     }
 
-    else if (sscanf(line, " plot partition" SKIPS "%d",
-                    &Output.Plot_Partitions) == 1)
+    else if (sscanf(line, " plot partitions" SKIPEQ "%d%n",
+                    &Output.Plot_Partitions, &n) == 1)
       continue;                    /* Plot processor numbers or partitions? */
-
-    else if (sscanf(line, " print mesh info file" SKIPEQ "%d",
-                    &Output.Mesh_Info_File) == 1)
+    else if (sscanf(line, " plot partition" SKIPEQ "%d%n",
+                    &Output.Plot_Partitions, &n) == 1)
+      continue;                    /* Plot processor numbers or partitions? */
+      
+    else if (sscanf(line, " print mesh info file" SKIPEQ "%d&n",
+                    &Output.Mesh_Info_File, &n) == 1)
       continue;                                /* Generate ASCII mesh file? */
 
-    else if (sscanf(line, " test ddirectory" SKIPEQ "%d", &Test.DDirectory)==1)
+    else if (sscanf(line, " test ddirectory" SKIPEQ "%d%n", 
+                    &Test.DDirectory, &n) == 1)
       continue;                                  /* DDirectory testing flag */
 
-    else if (sscanf(line, " test drops" SKIPEQ "%d", &Test.Drops) == 1)
+    else if (sscanf(line, " test drops" SKIPEQ "%d%n", &Test.Drops, &n) == 1)
       continue;                         /* Box- and Point-drop testing flag */
 
-    else if (sscanf(line, " test generate file" SKIPS "%d",
-                    &Test.Gen_Files) == 1)
+    else if (sscanf(line, " test generate files" SKIPEQ "%d%n",
+                    &Test.Gen_Files, &n) == 1)
       continue;                             /* file generation testing flag */
+    else if (sscanf(line, " test generate file" SKIPEQ "%d%n",
+                    &Test.Gen_Files, &n) == 1)
+      continue;                             /* file generation testing flag */      
 
-    else if (sscanf(line, " test local partition" SKIPS "%d",
-                    &Test.Local_Partitions) == 1)
+    else if (sscanf(line, " test local partitions" SKIPEQ "%d%n",
+                    &Test.Local_Partitions, &n) == 1)
+      continue;                /* Unusual Partition generation testing flag */
+    else if (sscanf(line, " test local partition" SKIPEQ "%d%n",
+                    &Test.Local_Partitions, &n) == 1)
       continue;                /* Unusual Partition generation testing flag */
 
-    else if (sscanf(line, " test multi callback" SKIPS "%d",
-                    &Test.Multi_Callbacks) == 1)
+    else if (sscanf(line, " test multi callbacks" SKIPEQ "%d%n",
+                    &Test.Multi_Callbacks, &n) == 1)
       continue;             /* List-based (MULTI) callback function testing */
-
-    else if (sscanf(line, " test null export list" SKIPS "%d", &n) == 1)  {
-      if (n == 1)              /* Null export lists to Help_Migrate testing */
+    else if (sscanf(line, " test multi callback" SKIPEQ "%d%n",
+                    &Test.Multi_Callbacks, &n) == 1)
+      continue;             /* List-based (MULTI) callback function testing */
+      
+    else if (sscanf(line, " test null export lists" SKIPEQ "%d%n", &i,&n)==1) {
+      if (i == 1)              /* Null export lists to Help_Migrate testing */
         Test.Null_Lists = EXPORT_LISTS;
-    }
+      }
+    else if (sscanf(line, " test null export list" SKIPEQ "%d%n", &i,&n) == 1) {
+      if (i == 1)              /* Null export lists to Help_Migrate testing */
+        Test.Null_Lists = EXPORT_LISTS;        
+      }
 
-    else if (sscanf(line, " test null import list" SKIPS "%d", &n) == 1)  {
-      if (n == 1)              /* Null import lists to Help_Migrate testing */
+    else if (sscanf(line, " test null import lists" SKIPEQ "%d%n", &i,&n) == 1){
+      if (i == 1)              /* Null import lists to Help_Migrate testing */
+        Test.Null_Lists = IMPORT_LISTS;
+      }
+    else if (sscanf(line, " test null import list" SKIPEQ "%d%n", &i,&n) == 1) {
+      if (i == 1)              /* Null import lists to Help_Migrate testing */
         Test.Null_Lists = IMPORT_LISTS;
     }
 
-    else if (sscanf(line, " zdrive action" SKIPEQ "%d", &Driver_Action) == 1)
+    else if (sscanf(line, " zdrive action" SKIPEQ "%d%n", &Driver_Action,&n) == 1)
       continue;            /* zdrive action: Do load-balancing or ordering? */
 
-    else if (sscanf(line, " zdrive debug level" SKIPEQ "%d", &Debug_Driver)==1)
+    else if (sscanf(line, " zdrive debug level" SKIPEQ "%d%n", &Debug_Driver,&n)==1)
       continue;                                /* The Debug reporting level */
 
     else if (sscanf(line, " zoltan parameter %*[s\t ]%[=]%n", dummy, &n)==1) {
       pline = line;
-      while (pline+n < pmax && sscanf(pline += n, NEXTARG " = %[^,=\t\n ]%n",
+      while (pline+n < pmax && sscanf(pline += n, NEXTARG LASTARG "%n",
                                    prob->params[prob->num_params].Name,
                                    prob->params[prob->num_params].Val, &n)==2) {
         prob->params[prob->num_params++].Index = -1;
@@ -302,25 +321,26 @@ int read_cmd_file (
       }
     }
 
-    else if (sscanf(line, " zoltan vector parameter" SKIPS "%[^,=\t\n ]" "%n",
-                    string, &n) == 1   || 
-             sscanf(line, " zoltan parameter vector" SKIPS "%[^,=\t\n ]" "%n",
-                    string, &n) == 1)  {
-      pline = line;
-      i = 0;
-      while (pline+n < pmax && sscanf(pline += n, BIGSKIP "%[^,\t\n) ]%n",
-                                  prob->params[prob->num_params].Val, &n)==1) {
-        prob->params[prob->num_params].Index = i++;
-        strcpy(prob->params[prob->num_params++].Name, string);
+    else if (sscanf(line, " zoltan vector parameters" LASTARG "%n",string,&n)==1
+       ||    sscanf(line, " zoltan vector parameter"  LASTARG "%n",string,&n)==1
+       ||    sscanf(line, " zoltan parameter vectors" LASTARG "%n",string,&n)==1 
+       ||    sscanf(line, " zoltan parameter vector"  LASTARG "%n",string,&n)==1)
+         {
+         pline = line;
+         i = 0;
+         while (pline+n < pmax && sscanf(pline += n, BIGSKIP "%[^,\t\n) ]%n",
+          prob->params[prob->num_params].Val, &n)==1) {
+             prob->params[prob->num_params].Index = i++;
+             strcpy(prob->params[prob->num_params++].Name, string);
              
-        prob->params = (Parameter_Pair*) realloc(prob->params,
-                                 (prob->num_params+1) * sizeof(Parameter_Pair));
-        if (prob->params == NULL)  {
-          Gen_Error(0, "fatal, realloc failed for Zoltan Parameters");
-          return 0;
-        }
-      }             
-    }
+             prob->params = (Parameter_Pair*) realloc(prob->params,
+              (prob->num_params+1) * sizeof(Parameter_Pair));
+             if (prob->params == NULL)  {
+                Gen_Error(0, "fatal, realloc failed for Zoltan Parameters");
+                return 0;
+                }
+            }             
+         }
 
     else {
       char buffer[200];
@@ -338,7 +358,6 @@ int read_cmd_file (
   fclose (file_cmd);
   return 1;
 }
-
 
 
 
