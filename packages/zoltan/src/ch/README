@@ -1,0 +1,25 @@
+
+CH DIRECTORY -- code for reading Chaco input files.
+---------------------------------------------------
+
+Note:  This code is not currently compiled in Zoltan.
+Most of it was written by Hendrickson and Leland for reading
+Chaco input files.  At one time, I thought I'd use the existing
+Chaco examples for testing; I'm not convinced of the value of
+that approach anymore.
+
+ch_input.h        -- Declarations of global variables DEBUG_TRACE,
+                     CHECK_INPUT and DEBUG_INPUT.
+ch_input_const.h  -- Prototypes for chaco_input_graph and chaco_input_geom.
+                     External declarations of global variables.
+
+
+ch_input_graph.c  -- Contains routine chaco_input_graph, which processes
+                     Chaco graph input.
+
+ch_input_geom.c   -- Contains routine chaco_input_geom, which processes
+                     Chaco geometry input.
+
+ch_input_read.c   -- Contains routines read_val, read_int, and flush_line,
+                     for reading input files.
+
