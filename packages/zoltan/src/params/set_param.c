@@ -6,6 +6,7 @@
 #include "params_const.h"
 #include "all_allo_const.h"
 #include "rcb_const.h"
+#include "octupdate_const.h"
 #include "parmetis_const.h"
 
 static int add_param(LB *, char *, char *);
@@ -52,7 +53,6 @@ char *val1)			/* value to set this parameter to */
 
     status = LB_Set_Key_Param(lb, name, val);
 
-
     if (status == 1)
         status = LB_Set_Malloc_Param(name, val);
 
@@ -62,6 +62,8 @@ char *val1)			/* value to set this parameter to */
     if (status == 1)
         status = LB_Set_ParMetis_Param(name, val);
 
+    if (status == 1)
+        status = LB_Set_Octpart_Param(name, val);
 /*
     if (status == 1)
 	status = LB_SFC_Set_Param(name, val);

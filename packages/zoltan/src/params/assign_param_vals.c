@@ -15,54 +15,56 @@ PARAM_VARS * params)		/* structure describing parameters */
     char     *val;		/* new value for parameter */
     int       found;		/* is name found? */
     int       i;		/* loop counter */
+    PARAM_VARS *param_ptr;       /* pointer to current param */
 
     while (change_list != NULL) {
+        param_ptr = params;
 	name = change_list->name;
 	val = change_list->new_val;
 
 	found = 0;
-	while (params->name != NULL) {
-	    if (!strcmp(params->name, name)) {
+	while (param_ptr->name != NULL) {
+	    if (!strcmp(param_ptr->name, name)) {
 		found = 1;
 		break;
 	    }
-	    params++;
+	    param_ptr++;
 	}
 
 	if (found) {		/* name found */
 	    /* Figure out what type it is and read value. */
-	    if (!strcmp(params->type, "INT") || !strcmp(params->type, "INTEGER")) {
+	    if (!strcmp(param_ptr->type, "INT") || !strcmp(param_ptr->type, "INTEGER")) {
 		/* First special case if True or False */
 		if (*val == 'T')
-		    *((int *) params->ptr) = 1;
+		    *((int *) param_ptr->ptr) = 1;
 		else if (*val == 'F')
-		    *((int *) params->ptr) = 0;
+		    *((int *) param_ptr->ptr) = 0;
 		else {
-		    *((int *) params->ptr) = atoi(val);
+		    *((int *) param_ptr->ptr) = atoi(val);
 		}
 	    }
 
-	    else if (!strcmp(params->type, "DOUBLE")) {
-		*((double *) params->ptr) = atof(val);
+	    else if (!strcmp(param_ptr->type, "DOUBLE")) {
+		*((double *) param_ptr->ptr) = atof(val);
 	    }
 
-	    else if (!strcmp(params->type, "LONG")) {
+	    else if (!strcmp(param_ptr->type, "LONG")) {
 		/* First special case if True or False */
 		if (*val == 'T')
-		    *((long *) params->ptr) = 1;
+		    *((long *) param_ptr->ptr) = 1;
 		else if (*val == 'F')
-		    *((long *) params->ptr) = 0;
+		    *((long *) param_ptr->ptr) = 0;
 		else {
-		    *((long *) params->ptr) = atol(val);
+		    *((long *) param_ptr->ptr) = atol(val);
 		}
 	    }
 
-	    else if (!strcmp(params->type, "STRING")) {
-		strncpy((char *) params->ptr, val, MAX_PARAM_STRING_LEN);
+	    else if (!strcmp(param_ptr->type, "STRING")) {
+		strncpy((char *) param_ptr->ptr, val, MAX_PARAM_STRING_LEN);
 	    }
 
-	    else if (!strcmp(params->type, "CHAR")) {
-		*((char *) params->ptr) = *val;
+	    else if (!strcmp(param_ptr->type, "CHAR")) {
+		*((char *) param_ptr->ptr) = *val;
 	    }
 	}
 
