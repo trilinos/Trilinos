@@ -298,7 +298,11 @@ have to be set if autoconf does not choose the correct compilers by default.
 
 \item --with-mpi=MPIROOT 
 
-Specify the MPI root directory. Automatically enables MPI mode. 
+Specify the MPI root directory. Automatically enables MPI mode.  If this 
+option is set, --with-mpi-incdir and --with-mpi-libdir should not be used.  
+--with-mpi is meant to be a shortcut for setting --with-mpi-libdir=MPIROOT/lib 
+and --with-mpi-incdir=MPIROOT/include.  Use these two options instead if 
+these default locations are not correct.
 
 \item --with-mpi-libdir=DIR 
 
