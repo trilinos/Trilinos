@@ -89,14 +89,12 @@ noinst_PROGRAMS = $(EXAMPLE)
 
 power_method_example_SOURCES = $(srcdir)/cxx_main.cpp
 
+power_method_example_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-#power_method_example_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 power_method_example_CXXFLAGS = -I$(top_srcdir)/src
 
-@BUILD_BLAS_TRUE@REFERENCE_BLAS_LIBS = -L$(top_builddir)/../../external/blas -lblas
-
 power_method_example_LDADD = -L$(top_builddir)/src -lepetra $(BLAS_LIBS) \
-	$(REFERENCE_BLAS_LIBS) $(LIBS) $(FLIBS)
+	$(LIBS) $(FLIBS)
 
 subdir = example/petra_power_method
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -108,8 +106,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_power_method_example_OBJECTS = \
 	power_method_example-cxx_main.$(OBJEXT)
 power_method_example_OBJECTS = $(am_power_method_example_OBJECTS)
-@BUILD_BLAS_TRUE@power_method_example_DEPENDENCIES =
-@BUILD_BLAS_FALSE@power_method_example_DEPENDENCIES =
 power_method_example_LDFLAGS =
 
 DEFS = @DEFS@

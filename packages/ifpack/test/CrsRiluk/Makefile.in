@@ -88,19 +88,18 @@ noinst_PROGRAMS = CrsRiluk_test
 
 CrsRiluk_test_SOURCES = $(srcdir)/cxx_main.cpp
 
+CrsRiluk_test_DEPENDENCIES = \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/src/libifpack.a
 
-#CrsRiluk_test_DEPENDENCIES = \
-#	$(top_builddir)/../epetra/src/libepetra.a \
-#	$(top_builddir)/src/libifpack.a
+
 CrsRiluk_test_CXXFLAGS = -I$(top_srcdir)/src \
 	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 
 
-@BUILD_BLAS_TRUE@REFERENCE_BLAS_LIBS = -L$(top_builddir)/../../external/blas -lblas
-
 CrsRiluk_test_LDADD = -L$(top_builddir)/src -lifpack \
 	-L$(top_builddir)/../epetra/src -lepetra \
-	$(BLAS_LIBS) $(REFERENCE_BLAS_LIBS) $(FLIBS)
+	$(BLAS_LIBS) $(FLIBS)
 
 subdir = test/CrsRiluk
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -111,8 +110,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 
 am_CrsRiluk_test_OBJECTS = CrsRiluk_test-cxx_main.$(OBJEXT)
 CrsRiluk_test_OBJECTS = $(am_CrsRiluk_test_OBJECTS)
-@BUILD_BLAS_TRUE@CrsRiluk_test_DEPENDENCIES =
-@BUILD_BLAS_FALSE@CrsRiluk_test_DEPENDENCIES =
 CrsRiluk_test_LDFLAGS =
 
 DEFS = @DEFS@

@@ -17,9 +17,6 @@
 /* Define if you have a BLAS library. */
 #undef HAVE_BLAS
 
-/* Define if want to build with referenceblasandlapack enabled */
-#undef HAVE_BLASANDLAPACK
-
 /* define if bool is a built-in type */
 #undef HAVE_BOOL
 
@@ -40,9 +37,6 @@
 
 /* Define if you have the <ctime> header file. */
 #undef HAVE_CTIME
-
-/* Define if want to build with debug enabled */
-#undef HAVE_DEBUG
 
 /* Define if you have the <float.h> header file. */
 #undef HAVE_FLOAT_H
@@ -74,20 +68,11 @@
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
 
-/* Define if want to build with oldifpack enabled */
+/* Define if want to build oldifpack */
 #undef HAVE_OLDIFPACK
-
-/* Define if want to build with opt enabled */
-#undef HAVE_OPTIMIZE
 
 /* Define if you have the `pow' function. */
 #undef HAVE_POW
-
-/* Define if want to build with profile enabled */
-#undef HAVE_PROFILE
-
-/* Define if want to build with purify enabled */
-#undef HAVE_PURIFY
 
 /* Define if you have the `sqrt' function. */
 #undef HAVE_SQRT
@@ -122,7 +107,7 @@
 /* Define if you have the `uname' function. */
 #undef HAVE_UNAME
 
-/* Define if want to build with referencey12m enabled */
+/* Define if want to build referencey12m */
 #undef HAVE_Y12M
 
 /* Name of package */

@@ -91,13 +91,11 @@ MultiVector_test_SOURCES = $(srcdir)/cxx_main.cpp \
 	   $(srcdir)/BuildTestProblems.h $(srcdir)/ExecuteTestProblems.h
 
 
+MultiVector_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-#MultiVector_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 MultiVector_test_CXXFLAGS = -I$(top_srcdir)/src
 
-@BUILD_BLAS_TRUE@REFERENCE_BLAS_LIBS = -L$(top_builddir)/../../external/blas -lblas
-
-MultiVector_test_LDADD = -L$(top_builddir)/src -lepetra $(BLAS_LIBS) $(REFERENCE_BLAS_LIBS) $(LIBS) $(FLIBS)
+MultiVector_test_LDADD = -L$(top_builddir)/src -lepetra $(BLAS_LIBS) $(LIBS) $(FLIBS)
 subdir = test/MultiVector
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Epetra_config.h
@@ -109,8 +107,6 @@ am_MultiVector_test_OBJECTS = MultiVector_test-cxx_main.$(OBJEXT) \
 	MultiVector_test-BuildTestProblems.$(OBJEXT) \
 	MultiVector_test-ExecuteTestProblems.$(OBJEXT)
 MultiVector_test_OBJECTS = $(am_MultiVector_test_OBJECTS)
-@BUILD_BLAS_TRUE@MultiVector_test_DEPENDENCIES =
-@BUILD_BLAS_FALSE@MultiVector_test_DEPENDENCIES =
 MultiVector_test_LDFLAGS =
 
 DEFS = @DEFS@

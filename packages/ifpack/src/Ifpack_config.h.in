@@ -17,9 +17,6 @@
 /* Define if you have a BLAS library. */
 #undef HAVE_BLAS
 
-/* Define if want to build with referenceblasandlapack enabled */
-#undef HAVE_BLASANDLAPACK
-
 /* define if bool is a built-in type */
 #undef HAVE_BOOL
 
@@ -34,9 +31,6 @@
 
 /* Define if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
-
-/* Define if want to build with debug enabled */
-#undef HAVE_DEBUG
 
 /* Define if you have the <iostream> header file. */
 #undef HAVE_IOSTREAM
@@ -62,17 +56,8 @@
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
 
-/* Define if want to build with oldifpack enabled */
+/* Define if want to build oldifpack */
 #undef HAVE_OLDIFPACK
-
-/* Define if want to build with opt enabled */
-#undef HAVE_OPTIMIZE
-
-/* Define if want to build with profile enabled */
-#undef HAVE_PROFILE
-
-/* Define if want to build with purify enabled */
-#undef HAVE_PURIFY
 
 /* Define if you have the <stdio.h> header file. */
 #undef HAVE_STDIO_H

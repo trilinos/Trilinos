@@ -198,11 +198,12 @@ TAC_ARG_WITH_BLASLIB
 ## works with the ACX_BLAS macro
 
 # find or choose to supply a valid blas library
-TAC_ARG_WITH_PACKAGE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
-AM_CONDITIONAL(BUILD_BLAS, test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-if test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
-  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, please specify additional locations using --with-libdirs, additional lib names using --with-blaslib or type --with-referenceblasandlapack on the configure line in the Trilinos level directory to use the blas and lapack libraries included in the distribution]])])
-fi
+#TAC_ARG_ENABLE_FEATURE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
+#AM_CONDITIONAL(BUILD_BLAS, test "X$ac_cv_use_referenceblasandlapack" != "Xno")
+#if test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
+#  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, please specify additional locations using --with-libdirs, additional lib names using --with-blaslib or type --with-referenceblasandlapack on the configure line in the Trilinos level directory to use the blas and lapack libraries included in the distribution]])])
+  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, please specify additional locations using --with-libdirs or additional lib names using --with-blaslib]])])
+#fi
 
 # ------------------------------------------------------------------------
 # Checks for linker characteristics

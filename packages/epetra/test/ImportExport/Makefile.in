@@ -88,14 +88,12 @@ noinst_PROGRAMS = ImportExport_test
 
 ImportExport_test_SOURCES = $(srcdir)/cxx_main.cpp
 
+ImportExport_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-#ImportExport_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 ImportExport_test_CXXFLAGS = -I$(top_srcdir)/src
 
-@BUILD_BLAS_TRUE@REFERENCE_BLAS_LIBS = -L$(top_builddir)/../../external/blas -lblas
-
 ImportExport_test_LDADD = -L$(top_builddir)/src -lepetra $(BLAS_LIBS) \
-	$(REFERENCE_BLAS_LIBS) $(LIBS) $(FLIBS)
+	$(LIBS) $(FLIBS)
 
 subdir = test/ImportExport
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -106,8 +104,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 
 am_ImportExport_test_OBJECTS = ImportExport_test-cxx_main.$(OBJEXT)
 ImportExport_test_OBJECTS = $(am_ImportExport_test_OBJECTS)
-@BUILD_BLAS_TRUE@ImportExport_test_DEPENDENCIES =
-@BUILD_BLAS_FALSE@ImportExport_test_DEPENDENCIES =
 ImportExport_test_LDFLAGS =
 
 DEFS = @DEFS@

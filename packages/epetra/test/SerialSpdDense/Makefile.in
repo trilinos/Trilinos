@@ -88,15 +88,11 @@ noinst_PROGRAMS = SerialSpdDense_test
 
 SerialSpdDense_test_SOURCES = $(srcdir)/cxx_main.cpp
 
+SerialSpdDense_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-#SerialSpdDense_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 SerialSpdDense_test_CXXFLAGS = -I$(top_srcdir)/src
 
-@BUILD_BLAS_TRUE@REFERENCE_BLAS_LIBS = -L$(top_builddir)/../../external/blas -lblas
-
-@BUILD_LAPACK_TRUE@REFERENCE_LAPACK_LIBS = -L$(top_builddir)/../../external/lapack -llapack
-
-SerialSpdDense_test_LDADD = -L$(top_builddir)/src -lepetra $(LAPACK_LIBS) $(REFERENCE_LAPACK_LIBS) $(BLAS_LIBS) $(REFERENCE_BLAS_LIBS) $(LIBS) $(FLIBS)
+SerialSpdDense_test_LDADD = -L$(top_builddir)/src -lepetra $(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 subdir = test/SerialSpdDense
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Epetra_config.h
@@ -106,10 +102,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 
 am_SerialSpdDense_test_OBJECTS = SerialSpdDense_test-cxx_main.$(OBJEXT)
 SerialSpdDense_test_OBJECTS = $(am_SerialSpdDense_test_OBJECTS)
-@BUILD_BLAS_FALSE@@BUILD_LAPACK_TRUE@SerialSpdDense_test_DEPENDENCIES =
-@BUILD_BLAS_FALSE@@BUILD_LAPACK_FALSE@SerialSpdDense_test_DEPENDENCIES =
-@BUILD_BLAS_TRUE@@BUILD_LAPACK_TRUE@SerialSpdDense_test_DEPENDENCIES =
-@BUILD_BLAS_TRUE@@BUILD_LAPACK_FALSE@SerialSpdDense_test_DEPENDENCIES =
 SerialSpdDense_test_LDFLAGS =
 
 DEFS = @DEFS@

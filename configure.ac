@@ -13,33 +13,33 @@ AM_INIT_AUTOMAKE(Trilinos, 2.1)
 AC_PREREQ(2.52)
 
 
-TAC_ARG_WITH_PACKAGE(referencey12m, [Build y12m lib included in the distribution], Y12M, no)
+TAC_ARG_ENABLE_FEATURE(referencey12m, [Build y12m lib included in the distribution], Y12M, no)
 AM_CONDITIONAL(BUILD_Y12M, test "X$ac_cv_use_referencey12m" != "Xno")
 
 # For now, blas and lapack will not be included
-#TAC_ARG_WITH_PACKAGE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
+#TAC_ARG_ENABLE_FEATURE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
 #AM_CONDITIONAL(BUILD_BLAS, test "X$ac_cv_use_referenceblasandlapack" != "Xno")
 
-#TAC_ARG_WITH_PACKAGE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
+#TAC_ARG_ENABLE_FEATURE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
 #AM_CONDITIONAL(BUILD_LAPACK, test "X$ac_cv_use_referencelapack" != "Xno" || test "X$ac_cv_use_referenceblasandlapack" != "Xno")
 
 
-TAC_ARG_WITH_PACKAGE(komplex, [Build package Komplex], KOMPLEX, yes)
+TAC_ARG_ENABLE_FEATURE(komplex, [Build komplex], KOMPLEX, yes)
 AM_CONDITIONAL(BUILD_KOMPLEX, test "X$ac_cv_use_komplex" != "Xno")
 
-TAC_ARG_WITH_PACKAGE(aztecoo, [Build package AztecOO], AZTECOO, yes)
+TAC_ARG_ENABLE_FEATURE(aztecoo, [Build aztecoo], AZTECOO, yes)
 AM_CONDITIONAL(BUILD_AZTECOO, test "X$ac_cv_use_aztecoo" != "Xno" || 
 	test "X$ac_cv_use_komplex" != "Xno")
 
-TAC_ARG_WITH_PACKAGE(ifpack, [Build package Ifpack], IFPACK, yes)
-TAC_ARG_WITH_PACKAGE(oldifpack, [Build Ifpack and old Ifpack ], OLDIFPACK, no)
+TAC_ARG_ENABLE_FEATURE(ifpack, [Build ifpack], IFPACK, yes)
+TAC_ARG_ENABLE_FEATURE(oldifpack, [Build ifpack and old ifpack ], OLDIFPACK, no)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_oldifpack" != "Xno")
 
-TAC_ARG_WITH_PACKAGE(triutils, [Build package Triutils], TRIUTILS, yes)
+TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, yes)
 AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
-TAC_ARG_WITH_PACKAGE(epetra, [Build package Epetra], EPETRA, yes)
+TAC_ARG_ENABLE_FEATURE(epetra, [Build epetra], EPETRA, yes)
 AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" || 
 	test "X$ac_cv_use_ifpack" != "Xno" || 
 	test "X$ac_cv_use_oldifpack" != "Xno" ||

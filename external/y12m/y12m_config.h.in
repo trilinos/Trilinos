@@ -1,17 +1,5 @@
 /* y12m_config.h.in.  Generated automatically from configure.ac by autoheader.  */
 
-/* Define if want to build with debug enabled */
-#undef HAVE_DEBUG
-
-/* Define if want to build with opt enabled */
-#undef HAVE_OPTIMIZE
-
-/* Define if want to build with profile enabled */
-#undef HAVE_PROFILE
-
-/* Define if want to build with purify enabled */
-#undef HAVE_PURIFY
-
 /* Name of package */
 #undef PACKAGE
 

@@ -91,14 +91,12 @@ Vector_test_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/BuildTestProblems.cpp \
 		  $(srcdir)/ExecuteTestProblems.h $(srcdir)/BuildTestProblems.h
 
 
+Vector_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-#Vector_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 Vector_test_CXXFLAGS = -I$(top_srcdir)/src
 
-@BUILD_BLAS_TRUE@REFERENCE_BLAS_LIBS = -L$(top_builddir)/../../external/blas -lblas
-
 Vector_test_LDADD = -L$(top_builddir)/src -lepetra $(BLAS_LIBS) \
-	$(REFERENCE_BLAS_LIBS) $(LIBS) $(FLIBS)
+	$(LIBS) $(FLIBS)
 
 subdir = test/Vector
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -111,8 +109,6 @@ am_Vector_test_OBJECTS = Vector_test-cxx_main.$(OBJEXT) \
 	Vector_test-BuildTestProblems.$(OBJEXT) \
 	Vector_test-ExecuteTestProblems.$(OBJEXT)
 Vector_test_OBJECTS = $(am_Vector_test_OBJECTS)
-@BUILD_BLAS_TRUE@Vector_test_DEPENDENCIES =
-@BUILD_BLAS_FALSE@Vector_test_DEPENDENCIES =
 Vector_test_LDFLAGS =
 
 DEFS = @DEFS@

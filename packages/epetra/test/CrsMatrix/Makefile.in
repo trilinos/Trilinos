@@ -88,14 +88,12 @@ noinst_PROGRAMS = CrsMatrix_test
 
 CrsMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp
 
+CrsMatrix_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-#CrsMatrix_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 CrsMatrix_test_CXXFLAGS = -I$(top_srcdir)/src
 
-@BUILD_BLAS_TRUE@REFERENCE_BLAS_LIBS = -L$(top_builddir)/../../external/blas -lblas
-
 CrsMatrix_test_LDADD = -L$(top_builddir)/src -lepetra $(BLAS_LIBS) \
-	$(REFERENCE_BLAS_LIBS) $(LIBS) $(FLIBS)
+	$(LIBS) $(FLIBS)
 
 subdir = test/CrsMatrix
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -106,8 +104,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 
 am_CrsMatrix_test_OBJECTS = CrsMatrix_test-cxx_main.$(OBJEXT)
 CrsMatrix_test_OBJECTS = $(am_CrsMatrix_test_OBJECTS)
-@BUILD_BLAS_TRUE@CrsMatrix_test_DEPENDENCIES =
-@BUILD_BLAS_FALSE@CrsMatrix_test_DEPENDENCIES =
 CrsMatrix_test_LDFLAGS =
 
 DEFS = @DEFS@

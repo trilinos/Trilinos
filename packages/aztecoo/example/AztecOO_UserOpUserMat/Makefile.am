@@ -19,20 +19,12 @@ if BUILD_Y12M
 REFERENCE_Y12M_LIBS=-L$(top_builddir)/../../external/y12m -ly12m
 endif
 
-if BUILD_BLAS
-REFERENCE_BLAS_LIBS=-L$(top_builddir)/../../external/blas -lblas
-endif
-if BUILD_LAPACK
-REFERENCE_LAPACK_LIBS=-L$(top_builddir)/../../external/lapack -llapack
-endif
-
 if BUILD_OLDIFPACK
 OLDIFPACK_LIBS=-L$(top_builddir)/../ifpack/src -lifpack
 endif 
 
 Poisson2d_LDADD = -L$(top_builddir)/src -laztecoo $(OLDIFPACK_LIBS) \
 	-L$(top_builddir)/../epetra/src -lepetra $(REFERENCE_Y12M_LIBS) \
-	$(LAPACK_LIBS) $(REFERENCE_LAPACK_LIBS) $(BLAS_LIBS) \
-	$(REFERENCE_BLAS_LIBS) $(LIBS) $(FLIBS)
+	$(LAPACK_LIBS) $(BLAS_LIBS) $(LIBS) $(FLIBS)
 
 

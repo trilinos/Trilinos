@@ -32,9 +32,6 @@
 /* Define if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
-/* Define if want to build with debug enabled */
-#undef HAVE_DEBUG
-
 /* Define if you have the `floor' function. */
 #undef HAVE_FLOOR
 
@@ -59,17 +56,8 @@
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
 
-/* Define if want to build with opt enabled */
-#undef HAVE_OPTIMIZE
-
 /* Define if you have the `pow' function. */
 #undef HAVE_POW
-
-/* Define if want to build with profile enabled */
-#undef HAVE_PROFILE
-
-/* Define if want to build with purify enabled */
-#undef HAVE_PURIFY
 
 /* Define if you have the `sqrt' function. */
 #undef HAVE_SQRT

@@ -88,14 +88,12 @@ noinst_PROGRAMS = VbrMatrix_test
 
 VbrMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp
 
+VbrMatrix_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-#VbrMatrix_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 VbrMatrix_test_CXXFLAGS = -I$(top_srcdir)/src
 
-@BUILD_BLAS_TRUE@REFERENCE_BLAS_LIBS = -L$(top_builddir)/../../external/blas -lblas
-
 VbrMatrix_test_LDADD = -L$(top_builddir)/src -lepetra $(BLAS_LIBS) \
-	$(REFERENCE_BLAS_LIBS) $(LIBS) $(FLIBS)
+	$(LIBS) $(FLIBS)
 
 subdir = test/VbrMatrix
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -106,8 +104,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 
 am_VbrMatrix_test_OBJECTS = VbrMatrix_test-cxx_main.$(OBJEXT)
 VbrMatrix_test_OBJECTS = $(am_VbrMatrix_test_OBJECTS)
-@BUILD_BLAS_TRUE@VbrMatrix_test_DEPENDENCIES =
-@BUILD_BLAS_FALSE@VbrMatrix_test_DEPENDENCIES =
 VbrMatrix_test_LDFLAGS =
 
 DEFS = @DEFS@

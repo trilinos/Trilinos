@@ -89,14 +89,12 @@ noinst_PROGRAMS = $(EXAMPLE)
 
 example_SOURCES = $(srcdir)/cxx_main.cpp
 
+example_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
-#example_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 example_CXXFLAGS = -I$(top_srcdir)/src
 
-@BUILD_BLAS_TRUE@REFERENCE_BLAS_LIBS = -L$(top_builddir)/../../external/blas -lblas
-
 example_LDADD = -L$(top_builddir)/src -lepetra $(BLAS_LIBS) \
-	$(REFERENCE_BLAS_LIBS) $(LIBS) $(FLIBS)
+	$(LIBS) $(FLIBS)
 
 subdir = example/verySimple
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -107,8 +105,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 
 am_example_OBJECTS = example-cxx_main.$(OBJEXT)
 example_OBJECTS = $(am_example_OBJECTS)
-@BUILD_BLAS_TRUE@example_DEPENDENCIES =
-@BUILD_BLAS_FALSE@example_DEPENDENCIES =
 example_LDFLAGS =
 
 DEFS = @DEFS@

@@ -725,25 +725,27 @@ AC_DEFUN([TAC_ARG_ENABLE_COMPILER_OPTIONS],
 # Check for --enable-debug, --enable-opt, --enable-profile, and --enable-purify
 #------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_OPTION(debug, [enable debugging], DEBUG, no)
+#TAC_ARG_ENABLE_OPTION(debug, [enable debugging], DEBUG, no)
 
-TAC_ARG_ENABLE_OPTION(opt,[enable optimization],OPTIMIZE,no)
+#TAC_ARG_ENABLE_OPTION(opt,[enable optimization],OPTIMIZE,no)
 
-TAC_ARG_ENABLE_OPTION(profile,[enable profiling],PROFILE,no)
+#TAC_ARG_ENABLE_OPTION(profile,[enable profiling],PROFILE,no)
 
-TAC_ARG_ENABLE_OPTION(purify,[enable purify],PURIFY,no)
+#TAC_ARG_ENABLE_OPTION(purify,[enable purify],PURIFY,no)
 
 #------------------------------------------------------------------------
 # Check if any user overrides were defined in the above section
 #------------------------------------------------------------------------
-AC_ARG_WITH(platform,
-AC_HELP_STRING([--with-platform],[Utilize a custom platform] (must specify)),
-ac_cv_use_platform=$withval, ac_cv_use_platform=no)
+# Likely will permanently remove the concept of a custom platform when 
+# another way to turn on debug, opt, profile, and purify is found.
+#AC_ARG_WITH(platform,
+#AC_HELP_STRING([--with-platform],[Utilize a custom platform] (must specify)),
+#ac_cv_use_platform=$withval, ac_cv_use_platform=no)
 
-AC_MSG_CHECKING(whether to use a custom platform)
+#AC_MSG_CHECKING(whether to use a custom platform)
 
-if test "X$ac_cv_use_platform" != "Xno"; then
-  AC_MSG_RESULT(yes)  
+#if test "X$ac_cv_use_platform" != "Xno"; then
+#  AC_MSG_RESULT(yes)  
   dnl users who define a custom platform need to add a case below
   dnl that will recognize the name of the platform and run the correct m4 macro
   # case $ac_cv_use_platform in
@@ -753,66 +755,35 @@ if test "X$ac_cv_use_platform" != "Xno"; then
   dnl 'TAC_SET_COMPILE_OPTIONS_FOO', use the following syntax:
   # foo*) TAC_SET_COMPILE_OPTIONS_FOO;;
   # esac
-else
-  AC_MSG_RESULT(no) 
-  if test "X$ac_cv_use_debug" != "Xno" || test "X$ac_cv_use_opt" != "Xno" ||
-     test "X$ac_cv_use_profile" != "Xno"|| test "X$ac_cv_use_purify" != "Xno"; then
-    if test "X${CXX}" != "XmpiCC"; then
-      BASE_CXX=${CXX}
-    fi
+#else
+#  AC_MSG_RESULT(no) 
+#  if test "X$ac_cv_use_debug" != "Xno" || test "X$ac_cv_use_opt" != "Xno" ||
+#     test "X$ac_cv_use_profile" != "Xno"|| test "X$ac_cv_use_purify" != "Xno"; then
+#    if test "X${CXX}" != "XmpiCC"; then
+#      BASE_CXX=${CXX}
+#    fi
   # Check if user defined a custom platform name
   #otherwise parse info gathered
-  case $target in
-    *linux*)
-      case $BASE_CXX in
- 	 *g++*) TAC_SET_COMPILE_OPTIONS_LINUX_GCC;;
-    esac
-    ;;
+#  case $target in
+#    *linux*)
+#      case $BASE_CXX in
+# 	 *g++*) TAC_SET_COMPILE_OPTIONS_LINUX_GCC;;
+#    esac
+#    ;;
 
-    *solaris*)
-      case $BASE_CXX in
-	*cc* | *CC*) TAC_SET_COMPILE_OPTIONS_SOLARIS_CC;;
-    esac
-    ;;
+#    *solaris*)
+#      case $BASE_CXX in
+#	*cc* | *CC*) TAC_SET_COMPILE_OPTIONS_SOLARIS_CC;;
+#    esac
+#    ;;
     # need to add case for cplant
 
     # need to add case for sgi - and sub-cases for 32 and 64
 
-  esac
+#  esac
 
-  fi
-fi
-])
-
-
-dnl @synopsis TAC_ARG_ENABLE_OPTION(FEATURE_NAME, FEATURE_DESCRIPTION, HAVE_NAME, DEFAULT_VAL)
-dnl
-dnl Test for --enable-${FEATURE_NAME} and set to DEFAULT_VAL value if feature not specified.
-dnl Also calls AC_DEFINE to define HAVE_${HAVE_NAME} if value is not equal to "no"
-dnl
-dnl Use this macro to facilitate definition of options in a package.  For example:
-dnl 
-dnl TAC_ARG_ENABLE_OPTION(threads, [enable shared memory threads], THREADS, no)
-dnl 
-dnl will test for --enable-threads when configure is run.  If it is defined (and not set to "no")
-dnl then HAVE_THREADS will be defined, Otherwise HAVE_THREADS will not be defined.
-dnl
-dnl @author Mike Heroux <mheroux@cs.sandia.gov>
-dnl
-AC_DEFUN([TAC_ARG_ENABLE_OPTION],
-[
-AC_ARG_ENABLE([$1],
-AC_HELP_STRING([--enable-$1],[$2 (default is [$4])]),
-ac_cv_use_$1=$enableval, ac_cv_use_$1=$4)
-
-AC_MSG_CHECKING(whether to use [$1])
-
-if test "X$ac_cv_use_$1" != "Xno"; then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE([HAVE_$3],1,[Define if want to build with $1 enabled])
-else
-  AC_MSG_RESULT(no)
-fi
+#  fi
+#fi
 ])
 
 
@@ -1148,33 +1119,41 @@ if test "$ac_cv_cxx_std_sprintf" = yes; then
 fi
 ])
 
-dnl @synopsis TAC_ARG_WITH_PACKAGE(FEATURE_NAME, FEATURE_DESCRIPTION, HAVE_NAME, DEFAULT_VAL)
+dnl @synopsis TAC_ARG_ENABLE_FEATURE(FEATURE_NAME, FEATURE_DESCRIPTION, HAVE_NAME, DEFAULT_VAL)
 dnl
-dnl Test for --with-${FEATURE_NAME} and set to DEFAULT_VAL value if feature not specified.
+dnl Test for --enable-${FEATURE_NAME} and set to DEFAULT_VAL value if feature not specified.
 dnl Also calls AC_DEFINE to define HAVE_${HAVE_NAME} if value is not equal to "no"
 dnl 
-dnl Use this macro to help defining whether or not interfaces for optional 
-dnl package should compiled.  For example:
+dnl Use this macro to help defining whether or not optional 
+dnl features* should compiled.  For example:
 dnl
-dnl TAC_ARG_WITH_PACKAGE(zoltan, [Enable Zoltan interface support], ZOLTAN, no)
+dnl TAC_ARG_ENABLE_FEATURE(epetra, [Configure and build epetra], EPETRA, yes)
 dnl 
-dnl will test for --with-zoltan when configure is run.  If it is defined 
-dnl (and not set to "no") then HAVE_ZOLTAN will be defined, 
-dnl Otherwise HAVE_ZOLTAN will not be defined.
+dnl will test for --enable-epetra when configure is run.  If it is defined 
+dnl and not set to "no" or not defined (default is "yes") then HAVE_EPETRA will
+dnl be defined, if --enable-epetra is defined to be "no", HAVE_EPETRA will not
+dnl be defined.
 dnl
-dnl @author Mike Heroux <mheroux@cs.sandia.gov>
+dnl *NOTE: epetra, aztecoo, komplex, ifpack, and other software found in
+dnl subdirectories of Trilinos/packages are "packages" in their own right.
+dnl However, these packages are also "features" of the larger package
+dnl "Trilinos".  Therefore, when configuring from the Trilinos directory,
+dnl it is appropriate to refer to these software packages as "features".
 dnl
-AC_DEFUN([TAC_ARG_WITH_PACKAGE],
+dnl This file was based on tac_arg_with_package.m4 by Mike Heroux
+dnl @author James Willenbring <jmwille@sandia.gov>
+dnl
+AC_DEFUN([TAC_ARG_ENABLE_FEATURE],
 [
-AC_ARG_WITH([$1],
-AC_HELP_STRING([--with-$1],[$2 (default is [$4])]),
-ac_cv_use_$1=$withval, ac_cv_use_$1=$4)
+AC_ARG_ENABLE([$1],
+AC_HELP_STRING([--enable-$1],[$2 (default is [$4])]),
+ac_cv_use_$1=$enableval, ac_cv_use_$1=$4)
 
 AC_MSG_CHECKING(whether to use [$1])
 
 if test "X$ac_cv_use_$1" != "Xno"; then
   AC_MSG_RESULT(yes)  
-  AC_DEFINE([HAVE_$3],,[Define if want to build with $1 enabled])
+  AC_DEFINE([HAVE_$3],,[Define if want to build $1])
 else
   AC_MSG_RESULT(no)
 fi

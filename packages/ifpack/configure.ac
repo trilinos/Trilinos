@@ -183,7 +183,7 @@ AC_CXX_STD_SPRINTF
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
-TAC_ARG_WITH_PACKAGE(oldifpack, [Build old ifpack], OLDIFPACK, no)
+TAC_ARG_ENABLE_FEATURE(oldifpack, [Build old ifpack], OLDIFPACK, no)
 AM_CONDITIONAL(BUILD_OLDIFPACK, test "X$ac_cv_use_oldifpack" != "Xno")
 
 ### fill in ifdefs here - EPETRA_MPI, DEBUG, CRAY, COMPLEX_SUPPORT
@@ -216,16 +216,18 @@ TAC_ARG_WITH_LAPACKLIB
 ## works with the ACX_BLAS macro
 
 # find or choose to supply valid blas and lapack libraries
-TAC_ARG_WITH_PACKAGE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
-AM_CONDITIONAL(BUILD_BLAS, test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-if test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
-  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, please specify additional locations using --with-libdirs, additional lib names using --with-blaslib or type --with-referenceblasandlapack on the configure line in the Trilinos level directory to use the blas and lapack libraries included in the distribution]])])
-fi
-TAC_ARG_WITH_PACKAGE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
-AM_CONDITIONAL(BUILD_LAPACK, test "X$ac_cv_use_referencelapack" != "Xno" || test "X$ac_cv_use_referenceblasandlapack" != "Xno")
-if test "X$ac_cv_use_referencelapack" = "Xno" && test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
-  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, please specify additional locations using --with-libdirs, additional lib names using --with-lapacklib or type --with-referencelapack on the configure line in the Trilinos level directory to use the lapack library included in the distribution]])])
-fi
+#TAC_ARG_ENABLE_FEATURE(referenceblasandlapack, [Build blas and lapack libs included in the distribution], BLASANDLAPACK, no)
+#AM_CONDITIONAL(BUILD_BLAS, test "X$ac_cv_use_referenceblasandlapack" != "Xno")
+#if test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
+#  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, please specify additional locations using --with-libdirs, additional lib names using --with-blaslib or type --with-referenceblasandlapack on the configure line in the Trilinos level directory to use the blas and lapack libraries included in the distribution]])])
+  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, please specify additional locations using --with-libdirs or additional lib names using --with-blaslib]])])
+#fi
+#TAC_ARG_ENABLE_FEATURE(referencelapack, [Build lapack lib included in the distribution], LAPACK, no)
+#AM_CONDITIONAL(BUILD_LAPACK, test "X$ac_cv_use_referencelapack" != "Xno" || test "X$ac_cv_use_referenceblasandlapack" != "Xno")
+#if test "X$ac_cv_use_referencelapack" = "Xno" && test "X$ac_cv_use_referenceblasandlapack" = "Xno"; then
+#  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, please specify additional locations using --with-libdirs, additional lib names using --with-lapacklib or type --with-referencelapack on the configure line in the Trilinos level directory to use the lapack library included in the distribution]])])
+  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, please specify additional locations using --with-libdirs or additional lib names using --with-lapacklib]])])
+#fi
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
