@@ -126,14 +126,17 @@ int LB_Jostle(
   return LB_FATAL;
 
 #else /* LB_JOSTLE */
-  static LB lb_obj = NULL; /* Last lb object used */
-  int options[JOSTLE_OPTIONS];
-  char *alg;
+  static LB *lb_obj = NULL; /* Last lb object used */
+  static char *alg = "JOSTLE";
   char str[MAX_PARAM_STRING_LEN+1]; 
   char blank[MAX_PARAM_STRING_LEN+1]; 
   char matching[MAX_PARAM_STRING_LEN+1];
   char reduction[MAX_PARAM_STRING_LEN+1];
-  int  i, threshold, gather_threshold; 
+  int  i, option, threshold, gather_threshold; 
+  int num_proc = lb->Num_Proc;     /* Temporary variables whose addresses are */
+  int proc = lb->Proc;             /* passed to Jostle. We don't              */
+  MPI_Comm comm = lb->Communicator;/* want to risk letting external packages  */
+                                   /* change our lb struct.                   */
 
   PARAM_VARS jostle_params[] = {
         { "JOSTLE_OUTPUT_LEVEL", NULL, "INT" },
@@ -158,12 +161,11 @@ int LB_Jostle(
   blank[MAX_PARAM_STRING_LEN] = '\0';
 
   /* Set parameters */
-  alg = "JOSTLE";
   threshold = 0;
   gather_threshold = 0;
-  matching = NULL;
-  reduction = NULL;
-  jostle_params[0].ptr = (void *) &(options[0]);
+  matching[0] = '\0';
+  reduction[0] = '\0';
+  jostle_params[0].ptr = (void *) &option;
   jostle_params[1].ptr = (void *) threshold;
   jostle_params[2].ptr = (void *) gather_threshold;
   jostle_params[3].ptr = (void *) matching;
@@ -182,25 +184,25 @@ int LB_Jostle(
     sprintf(str, "gather threshold = %d", gather_threshold);
     jostle_env(str);
   }
-  if (matching){
+  if (matching[0]){
     sprintf(str, "%s", blank);
     sprintf(str, "matching = %s", matching);
     jostle_env(str);
   }
-  if (reduction){
+  if (reduction[0]){
     sprintf(str, "%s", blank);
     sprintf(str, "reduction = %s", reduction);
     jostle_env(str);
   }
 
   /* Always set imbalance tolerance */
-  sprintf(imbal, "imbalance = %3d ", 100*(lb->Imbalance_Tol - 1));
-  jostle_env(imbal);
+  sprintf(str, "imbalance = %3d ", 100*(lb->Imbalance_Tol - 1));
+  jostle_env(str);
 
   /* Call the real Jostle/ParMetis interface */
   return LB_ParMetis_Jostle( lb, num_imp, imp_gids, imp_lids,
             imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
-            alg, options);
+            alg, &option);
 
 #endif /* LB_JOSTLE */
 }
@@ -962,6 +964,7 @@ char *val)                      /* value of variable */
     PARAM_VARS jostle_params[] = {
         { "JOSTLE_OUTPUT_LEVEL", NULL, "INT" },
         { "JOSTLE_THRESHOLD", NULL, "INT" },
+        { "JOSTLE_GATHER_THRESHOLD", NULL, "INT" },
         { "JOSTLE_MATCHING", NULL, "STRING" },
         { "JOSTLE_REDUCTION", NULL, "STRING" },
         { NULL, NULL, NULL } };
