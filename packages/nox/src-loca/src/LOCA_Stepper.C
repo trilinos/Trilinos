@@ -41,21 +41,6 @@
 #include "LOCA_Continuation_ExtendedGroup.H"
 #include "LOCA_Continuation_NaturalGroup.H"
 
-/* Some compilers (in particular the SGI and ASCI Red - TFLOP)
- * fail to find the max and min function.  Therfore we redefine them
- * here.
- */
-#ifdef max
-#undef max
-#endif
-#define max(a,b) ((a)>(b)) ? (a) : (b);
-
-#ifdef min
-#undef min
-#endif
-#define min(a,b) ((a)<(b)) ? (a) : (b);
-
-
 LOCA::Stepper::Stepper(LOCA::Continuation::AbstractGroup& initialGuess,
 		       NOX::StatusTest::Generic& t,
 		       NOX::Parameter::List& p) :

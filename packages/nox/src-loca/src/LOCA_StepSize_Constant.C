@@ -112,9 +112,9 @@ LOCA::StepSize::Constant::compute(
         stepSize *= successFactor;
 
         if (startStepSize > 0.0)
-          stepSize = min(stepSize, startStepSize);
+          stepSize = NOX_MIN(stepSize, startStepSize);
         else
-          stepSize = max(stepSize, startStepSize);
+          stepSize = NOX_MAX(stepSize, startStepSize);
      }
     }
   }
@@ -174,9 +174,9 @@ LOCA::StepSize::Constant::compute(
         stepSize *= successFactor;
 
         if (startStepSize > 0.0)
-          stepSize = min(stepSize, startStepSize);
+          stepSize = NOX_MIN(stepSize, startStepSize);
         else
-          stepSize = max(stepSize, startStepSize);
+          stepSize = NOX_MAX(stepSize, startStepSize);
      }
     }
   }

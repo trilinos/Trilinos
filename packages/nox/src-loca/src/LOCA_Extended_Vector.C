@@ -313,8 +313,8 @@ LOCA::Extended::Vector::norm(NormType type) const
 
   case NOX::Abstract::Vector::MaxNorm:
     for (unsigned int i=0; i<vectorPtrs.size(); i++) 
-      n = max(n, vectorPtrs[i]->norm(type));
-    n = max(n, scalarsPtr->normInf());
+      n = NOX_MAX(n, vectorPtrs[i]->norm(type));
+    n = NOX_MAX(n, scalarsPtr->normInf());
     break;
 
   case NOX::Abstract::Vector::OneNorm:
