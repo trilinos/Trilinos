@@ -36,6 +36,12 @@
 #include "NOX_Common.H"		 // class data element (string)
 #include "NOX_Parameter_Entry.H" // class data element 
 
+// The following using statement facilitates proper wrapping by SWIG,
+// the simple wrapper interface generator, when creating a python
+// interface to Trilinos/NOX.  The statement can be wrapped with
+// #ifdefs if it creates a porting problem, but must be in this file.
+using namespace std;
+
 namespace NOX {
 namespace Parameter {
 
