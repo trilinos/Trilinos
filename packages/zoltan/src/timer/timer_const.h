@@ -22,13 +22,14 @@ static char *cvs_timerconsth_id = "$Id$";
 
 #include <time.h> /* ANSI C; defines clock_t and clock() */
 
-/* POSIX.1 compliant systems should use times() for user+system timing */
-#if (defined(_POSIX_) || defined(POSIX) || defined(POSIX1))
+/* POSIX compliant systems should use times() for user+system timing */
+#if (defined(_POSIX_) || defined(POSIX) || \
+     defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE))
 #define HAVE_TIMES
 #endif
 
 /* BSD-like systems should use getrusage() for user+system timing */
-#if (defined(BSD) || defined(BSD_COMP) || defined(sun))
+#if (defined(BSD) || defined(BSD43) || defined(sun))
 #define HAVE_RUSAGE
 #endif
 
@@ -36,11 +37,11 @@ static char *cvs_timerconsth_id = "$Id$";
 #if defined(HAVE_TIMES)
 #include <sys/types.h>
 #include <sys/times.h>
-extern clock_t times();
+/* extern clock_t times(); */ /* Should be defined in sys/times.h */
 #elif defined(HAVE_RUSAGE)
 #include <sys/time.h>
 #include <sys/resource.h>
-extern int getrusage();
+extern int getrusage(); /* Should be in sys/resource.h, but isn't always */
 #endif
 
 /* Some non-ANSI systems return clock() in microseconds
@@ -63,7 +64,6 @@ extern int getrusage();
 /* Function prototypes */
 double LB_Time();
 double LB_Time_Resolution();
-void LB_Print_Time (LB *, double, char *);
 int LB_Set_Timer_Param(char *, char *);
 
 #endif

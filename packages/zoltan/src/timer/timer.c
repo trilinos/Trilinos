@@ -20,10 +20,18 @@ static char *cvs_timerc_id = "$Id$";
 #include "params_const.h"
 #include "timer_const.h"
 
+/*
+ * Symbols being used in this file:
+ *
+ * _CLOCK_T    : if defined, clock() is available
+ * HAVE_TIMES  : if defined, times() is available
+ * HAVE_RUSAGE : if defined, getrusage() is available
+ */
+ 
 /* Static variables */
 static int Timer = LB_TIME_WALL;
 
-/* Timer parameters */
+/* Interpret and set timer parameters */
 
 int LB_Set_Timer_Param(
 char *name,                     /* name of variable */
@@ -38,10 +46,6 @@ char *val)                      /* value of variable */
     };
 
     status = LB_Check_Param(name, val, timer_params, &result, &index);
-/*
-    printf("Debug: In LB_Set_Timer_Param, name=%s, val=%s, status=%d, index=%d\n", 
-      name, val, status, index);
-*/
 
     if (status == 0 && index == 0) {
         status = 3; /* Don't add to params list */
@@ -172,19 +176,3 @@ double LB_Time_Resolution()
 }
 
 
-
-/* Print out a time with a message. Print max, sum, and imbalance. */
-
-void LB_Print_Time (LB *lb, double time, char *msg)
-{
-  double sum, max;
-
-  MPI_Reduce((void *)&time, (void *)&sum, 1, MPI_DOUBLE, MPI_SUM, 0, lb->Communicator);
-
-  MPI_Reduce((void *)&time, (void *)&max, 1, MPI_DOUBLE, MPI_MAX, 0, lb->Communicator);
-
-  if (lb->Proc == 0 && sum != 0.0)
-    printf("%s: Max: %g, Sum: %g, Imbal.: %g\n", 
-            msg, max, sum, max*(lb->Num_Proc)/sum-1.);
-
-}
