@@ -2,7 +2,6 @@
 #include "ml_include.h"
 #ifdef ML_MPI
 #include "mpi.h"
-#endif
 
 extern int Poisson_getrow(ML_Operator *mat_in, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[]);
@@ -215,3 +214,12 @@ int post_msg(char *recv_buffer,  int length, int neighbor, USR_REQ *request)
                   &type, MPI_COMM_WORLD, request);
    return 0;
 }
+#else
+int main(int argc, char *argv[])
+{
+  printf("In order to use this example, you must configure with the option\n--with-mpi-compilers=full_path_to_your_mpi_compilers and recompile.\n");
+  /* returns ok not to break the test harness */
+  return(EXIT_SUCCESS);
+
+}
+#endif /* ifdef ML_MPI */
