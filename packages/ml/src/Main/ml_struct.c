@@ -17,8 +17,6 @@
 #ifdef ML_MPI
 #include "mpi.h"
 #endif
-#include "Matrix.h"
-#include "ParaSails.h"
 
 extern int SuperLU_Solve(void *,int,double *,int,double *);
 
@@ -1473,9 +1471,9 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
 /* generate the sparse approximate inverse smoother */
 /* ------------------------------------------------------------------------- */
 
-extern  int ML_Smoother_ParaSails(void *, int, double *, int, double *);
-extern  int ML_Smoother_ParaSailsSym(void *, int, double *, int, double *);
-extern  int ML_Smoother_ParaSailsTrans(void *, int, double *, int, double *);
+#ifdef PARASAILS
+#include "Matrix.h"
+#include "ParaSails.h"
 
 extern int    parasails_factorized;
 extern double parasails_loadbal;
@@ -1551,6 +1549,7 @@ for (j = 0; j < row_length; j++)
 	 MatrixComplete(mat);
 
 	 /* nonsymmetric preconditioner */
+
 	 ps  = ParaSailsCreate(ml->comm->USR_comm, start_row, end_row, 
 	    parasails_factorized);
          ps->loadbal_beta = parasails_loadbal;
@@ -1581,6 +1580,9 @@ for (j = 0; j < row_length; j++)
 
    return(status);
 }
+#elseif
+     printf("ParaSails not linked\n");
+#endif
 
 /* ************************************************************************* */
 /* functions to generate Galerkin coarse grid operator                       */
