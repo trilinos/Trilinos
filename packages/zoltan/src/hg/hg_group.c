@@ -25,7 +25,6 @@ static ZOLTAN_HG_GROUPING_FN grouping_reg;  /* random edge grouping */
 static ZOLTAN_HG_GROUPING_FN grouping_rrg;  /* random, random grouping */
 static ZOLTAN_HG_GROUPING_FN grouping_rhg;  /* random, heavy grouping */
 static ZOLTAN_HG_GROUPING_FN grouping_grg;  /* greedy grouping */
-static ZOLTAN_HG_GROUPING_FN grouping_aug1; /* augmenting path; length 1 */
 static ZOLTAN_HG_GROUPING_FN grouping_aug2; /* augmenting path; length 2 */
 
 /****************************************************************************/
@@ -46,7 +45,7 @@ int found = 1;
   if (hgp->grouping) {
      /* If reduction method is a grouping, set the improvement and edge weight
       * scaling functions accordingly */
-     if     (!strcasecmp(hgp->redmo_str,"aug1"))hgp->grouping_opt=grouping_aug1;
+     if     (!strcasecmp(hgp->redmo_str,"aug1"))hgp->grouping_opt=grouping_mxg;
      else if(!strcasecmp(hgp->redmo_str,"aug2"))hgp->grouping_opt=grouping_aug2;
      else                                       hgp->grouping_opt=NULL;
      }
@@ -60,7 +59,7 @@ int found = 1;
 int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp,
 int *limit)
 { int   ierr = ZOLTAN_OK;
-  float *old_ewgt=NULL, *new_ewgt;
+  float *old_ewgt = NULL, *new_ewgt;
   char  *yo = "Zoltan_HG_Grouping";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -78,7 +77,7 @@ int *limit)
      }
 
   /* Do the grouping */
-  ierr = hgp->grouping(zz,hg,pack,limit);
+  ierr = hgp->grouping(zz, hg, pack, limit);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
      goto End;
 
@@ -136,7 +135,7 @@ static int grouping_mxg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    groups whatever is available in that edge. Time O(|I|)  */
 static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    {
-   int i, j, *edges=NULL, edge, random, vertex, first_vertex;
+   int i, j, *edges = NULL, edge, random, vertex, first_vertex;
    char *yo = "grouping_reg";
 
    if (!(edges = (int*) ZOLTAN_MALLOC (hg->nEdge * sizeof(int)))) {
@@ -182,7 +181,7 @@ static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    whatever is available. Time O(|I|) */
 static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    {
-   int i, j, edge, random, *vertices=NULL, vertex, first_vertex, count;
+   int i, j, edge, random, *vertices = NULL, vertex, first_vertex, count;
    char *yo = "grouping_rrg";
 
    if (!(vertices  = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
@@ -229,15 +228,14 @@ static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    whatever is available. Time O(|I|) */
 static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
-   int   i, j, *vertices=NULL, *del_edges=NULL, vertex, first_vertex, edge,
+   int   i, j, *vertices = NULL, *del_edges = NULL, vertex, first_vertex, edge,
     number, best_edge, best_size, best_neighbors, random, size;
    float best_ewgt;
    char  *yo = "grouping_heg";
 
    if (!(vertices  = (int *) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
     || !(del_edges = (int *) ZOLTAN_CALLOC (hg->nEdge, sizeof(int)))) {
-       ZOLTAN_FREE ((void **) &vertices);
-       ZOLTAN_FREE ((void **) &del_edges);
+       Zoltan_Multifree (__FILE__, __LINE__, 2, &vertices, &del_edges);
        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
        return ZOLTAN_MEMERR;
        }
@@ -300,8 +298,7 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
             }
       del_edges[best_edge] = 1;
       }
-   ZOLTAN_FREE ((void **) &vertices);
-   ZOLTAN_FREE ((void **) &del_edges);
+   Zoltan_Multifree (__FILE__, __LINE__, 2, &vertices, &del_edges);
    return ZOLTAN_OK;
 }
 
@@ -313,14 +310,13 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    and groups whatever is available. Time O(|I|+|E|*log(|E|)) */
 static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
-  int   i, j, *size=NULL, *sorted=NULL, first_vertex, vertex;
+  int   i, j, *size = NULL, *sorted = NULL, first_vertex, vertex;
   char *yo = "grouping_grg";
 
 /* Sort the hyperedges according to their weight and size */
   if (!(size   = (int*) ZOLTAN_MALLOC (hg->nEdge * sizeof(int)))
    || !(sorted = (int*) ZOLTAN_MALLOC (hg->nEdge * sizeof(int)))) {
-      ZOLTAN_FREE ((void**) &size);
-      ZOLTAN_FREE ((void**) &sorted);
+      Zoltan_Multifree (__FILE__, __LINE__, 2, &size, &sorted);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
       }
@@ -350,21 +346,17 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 
 /****************************************************************************/
 
-/* augmenting of size 1 is identicqal to maximal grouping. */
-static int grouping_aug1 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
+
+
+static int grouping_aug2 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
+/* Placeholder for grouping_aug2. */
   return grouping_mxg (zz, hg, pack, limit);
 }
 
 /****************************************************************************/
 
-static int grouping_aug2 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
-{
-/* Placeholder for grouping_aug2. */
-  return grouping_aug1 (zz, hg, pack, limit);
-}
 
-/****************************************************************************/
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

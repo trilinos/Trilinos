@@ -170,36 +170,6 @@ int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
 
 
 
-/* This is the similarity measure between two vertices in a hypergraph.
-   The similarity is equal to the scaled weight of the edge in the
-   transformed graph. But with this function we calculate the edge
-   weights on the fly without explicitly constructing the graph. */
-float sim (HGraph *hg, int a, int b)
-{ int    i, j, edge, pins, end;
-  float  weight, sim=0.0;
-
-  /* First calculate the edge weight of the graph between a and b */
-  for (i = hg->vindex[a]; i < hg->vindex[a+1]; i++) {
-     edge = hg->vedge[i];
-     end  = hg->hindex[edge+1];
-     j    = hg->hindex[edge];
-     while (j < end && hg->hvertex[j] != b)
-        j++;
-     if (j < end) {
-        pins = end - hg->hindex[edge];
-        weight = 2.0 / ((pins-1) * pins);
-        if (hg->ewgt)
-           weight *= hg->ewgt[edge];
-        sim += weight;
-        }
-     }
-  return sim;
-}
-
-/****************************************************************************/
-
-
-
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 
-extern int Zoltan_HG_Set_Param(char *, char *);
+int Zoltan_HG_Set_Param(char*, char*);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

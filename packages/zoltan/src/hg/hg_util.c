@@ -72,14 +72,11 @@ void Zoltan_HG_Graph_Init(
 /****************************************************************************/
 
 
-
+/* Frees memory associated with a hypergraph; but not the hypergraph itself */
 int Zoltan_HG_HGraph_Free(
   HGraph *hg
 )
 {
-/* Frees all memory associated with a hypergraph;
- * does not free the hypergraph itself.
- */
   if (hg) {
      ZOLTAN_FREE ((void**) &hg->coor);
      ZOLTAN_FREE ((void**) &hg->vwgt);

@@ -20,11 +20,6 @@ extern "C" {
 
 
 
-/*
-static void check_upper_bound_of_matching_weight (Graph*, ZZ*, Matching);
-static int graph_connected_components (int, int*, int*, int);
-*/
-
 static ZOLTAN_HG_MATCHING_FN matching_mxm;  /* maximal matching */
 static ZOLTAN_HG_MATCHING_FN matching_rem;  /* random edge matching */
 static ZOLTAN_HG_MATCHING_FN matching_rrm;  /* random, random edge matching */
@@ -32,9 +27,11 @@ static ZOLTAN_HG_MATCHING_FN matching_rhm;  /* random, heavy edge matching */
 static ZOLTAN_HG_MATCHING_FN matching_grm;  /* greedy edge matching */
 static ZOLTAN_HG_MATCHING_FN matching_lhm;  /* locally heaviest matching */
 static ZOLTAN_HG_MATCHING_FN matching_pgm;  /* path growing matching */
-static ZOLTAN_HG_MATCHING_FN matching_aug1; /* post matching optimizer */
 static ZOLTAN_HG_MATCHING_FN matching_aug2; /* post matching optimizer */
 
+static float sim (HGraph*, int, int);
+/* static void check_upper_bound_of_matching_weight (Graph*, ZZ*, Matching); */
+/* static int graph_connected_components (int, int*, int*, int);             */
 /*****************************************************************************/
 
 
@@ -57,12 +54,45 @@ int found = 1;
      /* If reduction method is a matching, set the improvement and edge weight
         scaling functions accordingly. */
 
-     if     (!strcasecmp(hgp->redmo_str, "aug1"))hgp->matching_opt=matching_aug1;
+     /* Note: matching_aug1 is identical to matching_mxm -> it was eliminated */
+     if     (!strcasecmp(hgp->redmo_str, "aug1"))hgp->matching_opt=matching_mxm;
      else if(!strcasecmp(hgp->redmo_str, "aug2"))hgp->matching_opt=matching_aug2;
      else                                        hgp->matching_opt=NULL;
      }
   return found;
 }
+
+/****************************************************************************/
+
+
+
+/* This is the similarity measure between two vertices in a hypergraph.
+   The similarity is equal to the scaled weight of the edge in the
+   transformed graph. But with this function we calculate the edge
+   weights on the fly without explicitly constructing the graph. */
+static float sim (HGraph *hg, int a, int b)
+{ int    i, j, edge, pins, end;
+  float  weight, sim=0.0;
+
+  /* First calculate the edge weight of the graph between a and b */
+  for (i = hg->vindex[a]; i < hg->vindex[a+1]; i++) {
+     edge = hg->vedge[i];
+     end  = hg->hindex[edge+1];
+     j    = hg->hindex[edge];
+     while (j < end && hg->hvertex[j] != b)
+        j++;
+     if (j < end) {
+        pins = end - hg->hindex[edge];
+        weight = 2.0 / ((pins-1) * pins);
+        if (hg->ewgt)
+           weight *= hg->ewgt[edge];
+        sim += weight;
+        }
+     }
+  return sim;
+}
+
+
 
 /*****************************************************************************/
 
@@ -72,7 +102,7 @@ int Zoltan_HG_Matching (
   Matching match,
   HGPartParams *hgp,
   int *limit)
-{ int   ierr, need_graph=0;
+{ int   err, need_graph = 0;
   char  *yo = "Zoltan_HG_Matching";
   float *old_ewgt=NULL, *new_ewgt;
   Graph g;
@@ -95,19 +125,19 @@ int Zoltan_HG_Matching (
   if (hgp->matching == matching_lhm) {
      need_graph = 1;
      Zoltan_HG_Graph_Init (&g);
-     ierr = Zoltan_HG_HGraph_to_Graph (zz, hg, &g);
-     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+     err = Zoltan_HG_HGraph_to_Graph (zz, hg, &g);
+     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
         goto End;
      }
 
   /* Do the matching */
-  ierr = hgp->matching(zz,hg,&g,match,limit);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+  err = hgp->matching(zz,hg,&g,match,limit);
+  if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
      goto End;
 
   /* Optimization */
   if (hgp->matching_opt)
-     ierr = hgp->matching_opt (zz,hg,&g,match,limit);
+     err = hgp->matching_opt (zz,hg,&g,match,limit);
 
 End:
   /* more temporary code while graphs are being replaced by hypergraphs */
@@ -120,19 +150,19 @@ End:
      ZOLTAN_FREE ((void **) &new_ewgt);
      }
   ZOLTAN_TRACE_EXIT(zz, yo);
-  return ierr;
+  return err;
 }
 
 /*****************************************************************************/
 
 
 
+/* maximal matching */
 static int matching_mxm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
-{ int  i, j, edge, vertex, *Hindex;
+{ int  i, j, edge, vertex, *Hindex = NULL;
   char *yo = "matching_mxm";
 
   if (!(Hindex = (int*) ZOLTAN_MALLOC (sizeof(int) * (hg->nEdge+1)) )) {
-     ZOLTAN_FREE ((void **) &Hindex);
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
      }
@@ -160,13 +190,15 @@ static int matching_mxm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 
 
 
+/* Random edge matching */
 static int matching_rem(ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
    {
-   int i, j, *edges=NULL, edge, random, vertex, *Hindex, partner;
+   int i, j, *edges = NULL, edge, random, vertex, *Hindex = NULL, partner;
    char *yo = "matching_rem";
 
    if (!(Hindex = (int*) ZOLTAN_MALLOC ((hg->nEdge+1)* sizeof(int)) )
     || !(edges  = (int*) ZOLTAN_MALLOC  (hg->nEdge   * sizeof(int))) ) {
+       Zoltan_Multifree (__FILE__, __LINE__, 2, &Hindex, &edges);
        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
        return ZOLTAN_MEMERR;
        }
@@ -198,8 +230,7 @@ static int matching_rem(ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
             }
          }
       }
-   ZOLTAN_FREE ((void**) &Hindex);
-   ZOLTAN_FREE ((void**) &edges);
+   Zoltan_Multifree (__FILE__, __LINE__, 2, &Hindex, &edges);
    return ZOLTAN_OK;
    }
 
@@ -207,13 +238,16 @@ static int matching_rem(ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
 
 
 
+/* randoom vertex, then random edge matching */
 static int matching_rrm (ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
    {
-   int i, j, k, edge, random, *vertices, vertex, *stack, pstack, partner;
+   int i, j, k, edge, random, vertex, pstack, partner;
+   int *vertices = NULL, *stack = NULL ;
    char *yo = "matching_rrm";
 
    if (!(vertices = (int*) ZOLTAN_MALLOC (hg->nVtx   * sizeof(int)))
     || !(stack    = (int*) ZOLTAN_MALLOC (hg->nInput * sizeof(int))) ) {
+       Zoltan_Multifree (__FILE__, __LINE__, 2, &stack, &vertices);
        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
        return ZOLTAN_MEMERR;
        }
@@ -242,8 +276,7 @@ static int matching_rrm (ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
             }
          }
       }
-   ZOLTAN_FREE ((void**) &stack);
-   ZOLTAN_FREE ((void**) &vertices);
+   Zoltan_Multifree (__FILE__, __LINE__, 2, &stack, &vertices);
    return ZOLTAN_OK;
    }
 
@@ -251,15 +284,18 @@ static int matching_rrm (ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
 
 
 
+/* random heavy edge matching */
 static int matching_rhm (ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
    {
-   int i, j, k, edge, random, *vertices, vertex, *stack, pstack, partner, pins;
-   float weight, max_weight, sim, *sims;
+   int i, j, k, edge, random, vertex, pstack, partner, pins;
+   int *vertices = NULL, *stack = NULL ;
+   float weight, max_weight, sim, *sims = NULL ;
    char *yo = "matching_rhm";
 
    if (!(vertices = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
     || !(stack    = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
     || !(sims     = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(int))) ) {
+       Zoltan_Multifree (__FILE__, __LINE__, 3, &stack, &vertices, &sims);
        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
        return ZOLTAN_MEMERR;
        }
@@ -310,9 +346,7 @@ static int matching_rhm (ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
             }
          }
       }
-   ZOLTAN_FREE ((void**) &stack);
-   ZOLTAN_FREE ((void**) &vertices);
-   ZOLTAN_FREE ((void**) &sims);
+   Zoltan_Multifree (__FILE__, __LINE__, 3, &stack, &vertices, &sims);
    return ZOLTAN_OK;
    }
 
@@ -320,8 +354,9 @@ static int matching_rhm (ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
 /*****************************************************************************/
 /* Replacing graph version below with following hypergraph version */
 #ifdef RTHRTH
+/* random greedy matching (graph) */
 static int matching_grm (ZZ *zz,HGraph *hg Graph *g,Matching match,int *limit)
-{ int   i, j, *order, *vertex, vertex1, vertex2;
+{ int   i, j, *order = NULL, *vertex = NULL, vertex1, vertex2;
   char *yo = "matching_grm";
 
   if (!g->ewgt)
@@ -329,8 +364,7 @@ static int matching_grm (ZZ *zz,HGraph *hg Graph *g,Matching match,int *limit)
 
   if (!(order  = (int*) ZOLTAN_MALLOC (g->nEdge * sizeof(int)))
    || !(vertex = (int*) ZOLTAN_MALLOC (g->nEdge * sizeof(int))) ) {
-      ZOLTAN_FREE ((void**) &order);
-      ZOLTAN_FREE ((void**) &vertex);
+      Zoltan_Multifree (__FILE__, __LINE__, 2, &order, &vertex) ;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
       }
@@ -353,24 +387,23 @@ static int matching_grm (ZZ *zz,HGraph *hg Graph *g,Matching match,int *limit)
          (*limit)--;
          }
      }
-  ZOLTAN_FREE ((void **) &order);
-  ZOLTAN_FREE ((void **) &vertex);
+  Zoltan_Multifree (__FILE__, __LINE__, 2, &order, &vertex);
   return ZOLTAN_OK;
 }
 #endif
 
 
 
+/* greedy matching, hypergraph version */
 static int matching_grm (ZZ *zz,HGraph *hg,Graph *g,Matching pack,int *limit)
 {
-  int   i, j, *size=NULL, *sorted=NULL, vertex;
+  int   i, j, *size = NULL, *sorted = NULL, vertex;
   char *yo = "matching_grm";
 
 /* Sort the hyperedges according to their weight and size */
   if (!(size   = (int*) ZOLTAN_MALLOC (hg->nEdge * sizeof(int)))
    || !(sorted = (int*) ZOLTAN_MALLOC (hg->nEdge * sizeof(int))) ) {
-      ZOLTAN_FREE ((void**) &size);
-      ZOLTAN_FREE ((void**) &sorted);
+      Zoltan_Multifree (__FILE__, __LINE__, 2, &size, &sorted) ;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
       }
@@ -404,7 +437,7 @@ static int matching_grm (ZZ *zz,HGraph *hg,Graph *g,Matching pack,int *limit)
 
 
 #undef LAM_ORIG
-
+/* helper function for locally heavy matching (matching_lhm) below */
 static int lhm_match (int a, int b, float ewgt_ab, int *nindex, int *neigh,
  float *ewgt, int *Nindex, int *limit, int *match)
 { int Nindex_a_old=Nindex[a], Nindex_b_old=Nindex[b], c, c_deg,
@@ -460,8 +493,9 @@ static int lhm_match (int a, int b, float ewgt_ab, int *nindex, int *neigh,
 
 
 
+/* locally heavy matching, hypergraph version */
 static int matching_lhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
-{ int  i, j, *Nindex;
+{ int  i, j, *Nindex = NULL;
   char *yo = "matching_lhm";
 
   if (!(Nindex = (int*) ZOLTAN_MALLOC ((hg->nVtx+1) * sizeof(int))))
@@ -484,6 +518,7 @@ static int matching_lhm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 
 
 
+/* path growing matching, hypergraph version */
 static int matching_pgm (ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
 { int i, j, k, side=0, edge, vertex, *Match[2], limits[2], neighbor,
    next_vertex, pins;
@@ -494,6 +529,7 @@ static int matching_pgm (ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
   Match[0] = match;
   if (!(Match[1] = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
    || !(sims     = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(int))) ) {
+      Zoltan_Multifree (__FILE__, __LINE__, 2, &Match[1], &sims);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
       }
@@ -553,8 +589,7 @@ static int matching_pgm (ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
   else
      (*limit) = limits[0];
 
-  ZOLTAN_FREE ((void**) &Match[1]);
-  ZOLTAN_FREE ((void**) &sims);
+  Zoltan_Multifree (__FILE__, __LINE__, 2, &Match[1], &sims);
   return ZOLTAN_OK;
 }
 
@@ -562,21 +597,14 @@ static int matching_pgm (ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
 
 
 
-
-static int matching_aug1 (ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
-{
-  return matching_mxm (zz, hg, g, match, limit);
-}
-
-/*****************************************************************************/
-
+/* optimization passed on augmenting path of length 2 */
 static int matching_aug2 (ZZ *zz,HGraph *hg,Graph *g,Matching match,int *limit)
 { int   i, j, k, *stack, free_p=0, edge, vertex, best_2;
   float gain, gain_2;
   char  *yo = "matching_aug2";
 
   if (!(hg->ewgt))
-     return matching_aug1 (zz, hg, g, match, limit);
+     return matching_mxm (zz, hg, g, match, limit);
 
   if (!(stack = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -743,8 +771,10 @@ static int graph_connected_components (int n, int *ep, int *edge, int Out)
   int components=0, first_unlocked=0;
 
   if (!(queue  = (int*) ZOLTAN_MALLOC (n*sizeof(int)))
-   || !(locked = (int*) ZOLTAN_CALLOC (n,sizeof(int))) )
+   || !(locked = (int*) ZOLTAN_CALLOC (n,sizeof(int))) ) {
+      Zoltan_Multifree (__FILE__, __LINE__, 2, &locked, &queue) ;
       return ZOLTAN_MEMERR;
+      }
 
   if (Out > 1)
      printf ("Component Sizes     : ");
@@ -777,8 +807,7 @@ static int graph_connected_components (int n, int *ep, int *edge, int Out)
      printf ("\n");
   if (Out > 0)
      printf("Components          : %d\n",components);
-  ZOLTAN_FREE((void**) &locked);
-  ZOLTAN_FREE((void**) &queue);
+  Zoltan_Multifree (__FILE__, __LINE__, 2, &locked, &queue) ;
   return components;
 }
 */

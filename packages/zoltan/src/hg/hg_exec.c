@@ -128,16 +128,16 @@ int main (int argc, char **argv)
   printf ("local %s, global %s, redl %d\n", hgp.local_str, hgp.global_str,
    hgp.redl);
 
-  if (Zoltan_HG_Info (&zz,&hg))
+  if (Zoltan_HG_Info  (&zz, &hg))
      return 1;
-  if (Zoltan_HG_Check (&zz,&hg))
+  if (Zoltan_HG_Check (&zz, &hg))
      return 1;
   ADD_NEW_TIME(t_load);
 
   /* partition hypergraph */
   if (!((part) = (int*)calloc((unsigned)(hg.nVtx),sizeof(int))))
      return 1;
-  if (Zoltan_HG_HPart_Lib(&zz,&hg,p,part,&hgp))
+  if (Zoltan_HG_HPart_Lib(&zz, &hg, p, part, &hgp))
      return 1;
   ADD_NEW_TIME(t_part);
 

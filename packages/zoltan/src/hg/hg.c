@@ -20,16 +20,9 @@ extern "C" {
 #include "params_const.h"
 #include "all_allo_const.h"
 
-/*
- *  Main routine for Zoltan interface to hypergraph partitioning.
- *  Builds input data structures, set parameters, etc.
- */
 
 
-
-/*****************************************************************************/
 /*  Parameters structure for HG method.  */
-
 static PARAM_VARS HG_params[] = {
  /* Add parameters here. */
  { "HG_REDUCTION_LIMIT",             NULL, "INT" },
@@ -41,6 +34,7 @@ static PARAM_VARS HG_params[] = {
  { "CHECK_GRAPH",                    NULL, "INT" },
  { NULL, NULL, NULL } };
 
+/* prototypes for static functions: */
 static int Zoltan_HG_Initialize_Params(ZZ*, HGPartParams*);
 static int Zoltan_HG_Return_Lists(ZZ*, ZHG *, Partition, int*,
  ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*, int**, int**);
@@ -49,10 +43,9 @@ static int Zoltan_HG_Return_Lists(ZZ*, ZHG *, Partition, int*,
 
 
 
-/* Main partitioning routine:  Type = ZOLTAN_LB_FN.  */
-
-int Zoltan_HG(
-  ZZ *zz,                    /* The Zoltan structure  */
+/* Main routine for Zoltan interface to hypergraph partitioning. Builds input
+ * data structures, set parameters, etc.  Type = ZOLTAN_LB_FN.  */
+int Zoltan_HG(ZZ *zz,        /* The Zoltan structure  */
   int *num_imp,              /* not computed */
   ZOLTAN_ID_PTR *imp_gids,   /* not computed */
   ZOLTAN_ID_PTR *imp_lids,   /* not computed */
@@ -66,9 +59,8 @@ int Zoltan_HG(
                                 are assigned. */
 )
 {
-
 ZHG *zoltan_hg = NULL;
-int i, ierr = ZOLTAN_OK;
+int i, err = ZOLTAN_OK;
 int nVtx;                       /* Temporary variable for base graph. */
 HGPartParams hgp;               /* Hypergraph parameters. */
 Partition output_parts = NULL;  /* Output partition from HG partitioner. */
@@ -83,13 +75,13 @@ char *yo = "Zoltan_HG";
   *imp_procs = *exp_procs = NULL;
 
   /* Initialize HG parameters. */
-  ierr = Zoltan_HG_Initialize_Params(zz, &hgp);
-  if (ierr != ZOLTAN_OK)
+  err = Zoltan_HG_Initialize_Params(zz, &hgp);
+  if (err != ZOLTAN_OK)
      goto End;
 
   /* build initial Zoltan hypergraph. */
-  ierr = Zoltan_HG_Build_Hypergraph(zz, &zoltan_hg, hgp.check_graph);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+  err = Zoltan_HG_Build_Hypergraph(zz, &zoltan_hg, hgp.check_graph);
+  if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph.");
      goto End;
      }
@@ -98,16 +90,18 @@ char *yo = "Zoltan_HG";
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
      Zoltan_HG_HGraph_Print(zz, zoltan_hg, &(zoltan_hg->HG));
 
-  /* Call partitioning routines. */
+  /* allocate output partition memory */
   output_parts = (Partition) ZOLTAN_MALLOC(nVtx * sizeof(int));
   if (output_parts == NULL) {
-     ierr = ZOLTAN_MEMERR;
+     err = ZOLTAN_MEMERR;
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error for output partition.");
      goto End;
      }
 
-  ierr = Zoltan_HG_HPart_Lib(zz, &(zoltan_hg->HG), zz->LB.Num_Global_Parts,
+  /* Call partitioning routines. */
+  err = Zoltan_HG_HPart_Lib(zz, &(zoltan_hg->HG), zz->LB.Num_Global_Parts,
    output_parts, &hgp);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+  if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
      goto End;
      }
@@ -117,56 +111,46 @@ char *yo = "Zoltan_HG";
    exp_lids, exp_procs, exp_to_part);
 
 End:
-  if (ierr == ZOLTAN_MEMERR)
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-  ZOLTAN_FREE((void **) &output_parts);
+  ZOLTAN_FREE((void**) &output_parts);
   Zoltan_HG_Free_Structure(zz);
   ZOLTAN_TRACE_EXIT(zz, yo);
-  return ierr;
+  return err;
 }
 
 /*****************************************************************************/
 
 
 
+/* frees all data associated with LB.Data_Structure for hypergraphs */
 void Zoltan_HG_Free_Structure(ZZ *zz)
 {
 ZHG *zoltan_hg = (ZHG *)(zz->LB.Data_Structure);
 
   if (zoltan_hg != NULL) {
-     ZOLTAN_FREE((void **) &(zoltan_hg->Global_IDs));
-     ZOLTAN_FREE((void **) &(zoltan_hg->Local_IDs));
-     ZOLTAN_FREE((void **) &(zoltan_hg->Parts));
-     Zoltan_HG_HGraph_Free(&(zoltan_hg->HG));
-     ZOLTAN_FREE((void **) &(zz->LB.Data_Structure));
+     Zoltan_Multifree (__FILE__, __LINE__, 3, &(zoltan_hg->Global_IDs),
+      &(zoltan_hg->Local_IDs), &(zoltan_hg->Parts));
+     Zoltan_HG_HGraph_Free (&(zoltan_hg->HG));
+     ZOLTAN_FREE((void**) &(zz->LB.Data_Structure));
      }
 }
 
 /*****************************************************************************/
 
 
-static int Zoltan_HG_Initialize_Params(
-  ZZ *zz,
+
+/* Binds user's partitioning parameters to storage */
+static int Zoltan_HG_Initialize_Params(ZZ *zz,   /* the Zoltan data structure */
   HGPartParams *hgp
 )
 {
-int ierr = ZOLTAN_OK;
-
-  /* Bind storage with parameter. */
-  Zoltan_Bind_Param(HG_params, "HG_REDUCTION_LIMIT",
-   (void *) &(hgp->redl));
-  Zoltan_Bind_Param(HG_params, "HG_REDUCTION_METHOD",
-   (void *) hgp->redm_str);
-  Zoltan_Bind_Param(HG_params, "HG_REDUCTION_LOCAL_IMPROVEMENT",
-   (void *) hgp->redmo_str);
-  Zoltan_Bind_Param(HG_params, "HG_EDGE_WEIGHT_SCALING",
-   (void *) &(hgp->ews));
-  Zoltan_Bind_Param(HG_params, "HG_GLOBAL_PARTITIONING",
-   (void *) hgp->global_str);
-  Zoltan_Bind_Param(HG_params, "HG_LOCAL_REFINEMENT",
-   (void *) hgp->local_str);
-  Zoltan_Bind_Param(HG_params, "CHECK_GRAPH",
-   (void *) &(hgp->check_graph));
+  Zoltan_Bind_Param(HG_params,"HG_REDUCTION_LIMIT",    (void*) &(hgp->redl));
+  Zoltan_Bind_Param(HG_params,"HG_REDUCTION_METHOD",   (void*) hgp->redm_str);
+  Zoltan_Bind_Param(HG_params,"HG_EDGE_WEIGHT_SCALING",(void*) &(hgp->ews));
+  Zoltan_Bind_Param(HG_params,"HG_GLOBAL_PARTITIONING",(void*) hgp->global_str);
+  Zoltan_Bind_Param(HG_params,"HG_LOCAL_REFINEMENT",   (void*) hgp->local_str);
+  Zoltan_Bind_Param(HG_params,"CHECK_GRAPH",       (void*) &(hgp->check_graph));
+  Zoltan_Bind_Param(HG_params,"HG_REDUCTION_LOCAL_IMPROVEMENT",
+   (void*) hgp->redmo_str);
 
   /* Set default values */
   strcpy(hgp->redm_str,   "grg");
@@ -183,14 +167,14 @@ int ierr = ZOLTAN_OK;
    zz->Debug_Proc);
 
   /* Convert strings to function pointers. */
-  ierr = Zoltan_HG_Set_Part_Options(zz, hgp);
-  return ierr;
+  return Zoltan_HG_Set_Part_Options(zz, hgp);
 }
 
 /*****************************************************************************/
 
 
 
+/* associates value to named variable for hypergraph partitioning parameters */
 int Zoltan_HG_Set_Param(
 char *name,                     /* name of variable */
 char *val)                      /* value of variable */
@@ -205,8 +189,9 @@ char *val)                      /* value of variable */
 
 
 
-static int Zoltan_HG_Return_Lists(
-  ZZ *zz,
+
+/* Routine to build export lists of ZOLTAN_LB_FN. */
+static int Zoltan_HG_Return_Lists(ZZ *zz,
   ZHG *zoltan_hg,
   Partition output_parts,
   int *num_exp,
@@ -216,18 +201,16 @@ static int Zoltan_HG_Return_Lists(
   int **exp_to_part
 )
 {
-/* Routine to build export lists of ZOLTAN_LB_FN. */
 int i, j;
 int eproc;
-int num_gid_entries = zz->Num_GID;
-int num_lid_entries = zz->Num_LID;
+int num_gid_entries   = zz->Num_GID;
+int num_lid_entries   = zz->Num_LID;
 int nVtx              = zoltan_hg->HG.nVtx;
 Partition input_parts = zoltan_hg->Parts;
 ZOLTAN_ID_PTR gids    = zoltan_hg->Global_IDs;
 ZOLTAN_ID_PTR lids    = zoltan_hg->Local_IDs;
 
   if (zz->LB.Return_Lists) {
-
     /* Count number of objects with new partitions or new processors. */
     *num_exp = 0;
     for (i = 0; i < nVtx; i++)
@@ -237,14 +220,14 @@ ZOLTAN_ID_PTR lids    = zoltan_hg->Local_IDs;
 
     /* Allocate memory for return lists. */
     if (*num_exp > 0) {
-       if (!Zoltan_Special_Malloc(zz, (void **)exp_gids,   *num_exp,
-        ZOLTAN_SPECIAL_MALLOC_GID)
-        || !Zoltan_Special_Malloc(zz, (void **)exp_lids,   *num_exp,
-        ZOLTAN_SPECIAL_MALLOC_LID)
-        || !Zoltan_Special_Malloc(zz, (void **)exp_procs,  *num_exp,
-        ZOLTAN_SPECIAL_MALLOC_INT)
-        || !Zoltan_Special_Malloc(zz, (void **)exp_to_part,*num_exp,
-        ZOLTAN_SPECIAL_MALLOC_INT))
+       if (!Zoltan_Special_Malloc(zz, (void**)exp_gids,    *num_exp,
+         ZOLTAN_SPECIAL_MALLOC_GID)
+        || !Zoltan_Special_Malloc(zz, (void**)exp_lids,    *num_exp,
+         ZOLTAN_SPECIAL_MALLOC_LID)
+        || !Zoltan_Special_Malloc(zz, (void**)exp_procs,   *num_exp,
+         ZOLTAN_SPECIAL_MALLOC_INT)
+        || !Zoltan_Special_Malloc(zz, (void**)exp_to_part, *num_exp,
+         ZOLTAN_SPECIAL_MALLOC_INT))
           {
           Zoltan_Special_Free(zz,(void**)exp_gids,   ZOLTAN_SPECIAL_MALLOC_GID);
           Zoltan_Special_Free(zz,(void**)exp_lids,   ZOLTAN_SPECIAL_MALLOC_LID);
@@ -275,19 +258,15 @@ ZOLTAN_ID_PTR lids    = zoltan_hg->Local_IDs;
 
 
 
-void Zoltan_HG_HGraph_Print(
-  ZZ *zz,
+/* Printing routine. Can be used to print a Zoltan_HGraph or just an HGraph.
+ * Set zoltan_hg to NULL if want to print only an HGraph.
+ * Lots of output; synchronized across processors, so is a bottleneck. */
+void Zoltan_HG_HGraph_Print(ZZ *zz,          /* the Zoltan data structure */
   ZHG *zoltan_hg,
   HGraph *hg
 )
 {
-/* Printing routine. Can be used to print a Zoltan_HGraph or just an HGraph.
- * Set zoltan_hg to NULL if want to print only an HGraph.
- * Lots of output; synchronized across processors, so is a bottleneck.
- */
 int i;
-int num_gid = zz->Num_GID;
-int num_lid = zz->Num_LID;
 char *yo = "Zoltan_HG_HGraph_Print";
 
   if ((zoltan_hg != NULL) && (hg != &(zoltan_hg->HG))) {
@@ -302,15 +281,16 @@ char *yo = "Zoltan_HG_HGraph_Print";
   printf("Vertices (GID, LID, index)\n");
   for (i = 0; i < hg->nVtx; i++) {
      printf("(");
-     ZOLTAN_PRINT_GID(zz,  &(zoltan_hg->Global_IDs[i*num_gid]));
+     ZOLTAN_PRINT_GID(zz,  &(zoltan_hg->Global_IDs[i * zz->Num_GID]));
      printf(", ");
-     ZOLTAN_PRINT_LID(zz,  &(zoltan_hg->Local_IDs [i*num_lid]));
+     ZOLTAN_PRINT_LID(zz,  &(zoltan_hg->Local_IDs [i * zz->Num_LID]));
      printf(", %d)\n", i);
      }
-
   Zoltan_HG_Print(zz, hg);
+
   Zoltan_Print_Sync_End(zz->Communicator, 1);
 }
+
 
 /*****************************************************************************/
 #ifdef __cplusplus
