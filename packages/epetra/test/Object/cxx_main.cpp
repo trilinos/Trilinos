@@ -1,13 +1,8 @@
 // Epetra_Object Test routine
 
-#include <math.h>
-#include <unistd.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
 #ifdef EPETRA_MPI
-#include <mpi.h>
 #include "Epetra_MpiComm.h"
+#include <mpi.h>
 #else
 #include "Epetra_SerialComm.h"
 #endif

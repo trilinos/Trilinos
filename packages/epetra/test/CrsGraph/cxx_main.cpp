@@ -1,12 +1,6 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <assert.h>
-#include <string.h>
-#include <math.h>
 #ifdef EPETRA_MPI
-#include <mpi.h>
 #include "Epetra_MpiComm.h"
+#include <mpi.h>
 #else
 #include "Epetra_SerialComm.h"
 #endif
