@@ -129,6 +129,18 @@ AC_ARG_WITH(cxxflags,
 )
 
 
+AC_ARG_WITH(cflags,
+[AC_HELP_STRING([--with-cflags],[add extra C compiler flags])],
+[EXTRA_CFLAGS=${withval}]
+)
+
+
+AC_ARG_WITH(fflags,
+[AC_HELP_STRING([--with-fflags],[add extra FORTRAN compiler flags])],
+[EXTRA_FFLAGS=${withval}]
+)
+
+
 AC_ARG_WITH(ldflags,
 [AC_HELP_STRING([--with-ldflags],[add extra linker (typically -L) flags])],
 [EXTRA_LDFLAGS=${withval}]
@@ -405,6 +417,24 @@ else
 
 fi
 
+# Test for user-defined CFLAGS flags
+AC_MSG_CHECKING([for C flags])
+
+if test "X${USERDEF_CFLAGS}" = "Xyes"; then
+
+  AC_MSG_RESULT([${CFLAGS} (user-specified via CFLAGS)])
+
+# Otherwise, determine the flags automatically
+else
+
+  if test -n "${CFLAGS_MISC}"; then
+    CFLAGS="${CFLAGS} ${CFLAGS_MISC}"
+  fi			  
+
+  AC_MSG_RESULT([${CFLAGS}])
+
+fi
+
 # Check for user-defined F77 compiler (used only for compiler checks)
 if test "X${USERDEF_F77}" != "Xyes"; then
   if test -n "${F77_MISC}"; then
@@ -437,6 +467,24 @@ if test -z "${EXTRA_CXXFLAGS}"; then
 else
   AC_MSG_RESULT([${EXTRA_CXXFLAGS}])
   CXXFLAGS="${CXXFLAGS} ${EXTRA_CXXFLAGS}"
+fi
+
+# Add on any extra CFLAGS
+AC_MSG_CHECKING([for extra C compiler flags])
+if test -z "${EXTRA_CFLAGS}"; then
+  AC_MSG_RESULT(none)
+else
+  AC_MSG_RESULT([${EXTRA_CFLAGS}])
+  CFLAGS="${CFLAGS} ${EXTRA_CFLAGS}"
+fi
+
+# Add on any extra FFLAGS
+AC_MSG_CHECKING([for extra F77 compiler flags])
+if test -z "${EXTRA_FFLAGS}"; then
+  AC_MSG_RESULT(none)
+else
+  AC_MSG_RESULT([${EXTRA_FFLAGS}])
+  FFLAGS="${FFLAGS} ${EXTRA_FFLAGS}"
 fi
 
 # Add on any extra CPPFLAGS
