@@ -93,7 +93,8 @@ then
   echo >  make_${ARCH}.variables
   cd Obj; make clean; cd ..
 else
-  etc/flatten 
+  cd etc
+  flatten 
 fi
 #
 # Set up the machine dependent environment variables
