@@ -60,6 +60,12 @@ namespace NOX {
       //! Access the (i,j) entry of A
       const double& operator()(int i, int j) const;
 
+      //! Scale the matrix by a constant value.
+      /*! This is needed to manipulate matrices in the LOCA library 
+	routines. 
+      */
+      void scale(double value);
+
       //! Print this object to the given stream
       ostream& leftshift(ostream& stream) const;
 

@@ -61,6 +61,12 @@ const double& Matrix::operator()(int i, int j) const
   return entries(i + (p*j));
 }
 
+void Matrix::scale(double value)
+{
+  entries.scale(value);
+  return;
+}
+
 ostream& Matrix::leftshift(ostream& stream) const
 {
   for (int i = 0; i < p; i++) {
