@@ -21,11 +21,15 @@ TestAmesos_DEPENDENCIES = \
 
 TestAmesos_CXXFLAGS = -I$(top_srcdir)/src
 
+#
+#  libamesos.a is loaded twice.  The second time allows umfpack to pick up AMD.
+#
 TestAmesos_LDADD = $(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(AMESOS_LIBS) \
+	$(top_builddir)/src/libamesos.a \
         $(LAPACK_LIBS) \
 	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
 
