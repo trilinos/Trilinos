@@ -138,19 +138,19 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #   Paths to submodules
 #
 SUB_VPATH	= ../include ../Utilities/shared \
-		  ../zz ../all ../lb ../par ../rcb ../oct ../bsfc ../hsfc ../hg \
+		  ../zz ../all ../lb ../par ../rcb ../oct ../bsfc ../hsfc ../phg  ../hg \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
                   ../order ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory \
                   ../Utilities/DDirectory 
 SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../zz -I../all -I../lb -I../par -I../rcb  -I../oct  \
-		  -I../order -I../bsfc -I../hsfc -I../hg \
+		  -I../order -I../bsfc -I../hsfc -I../phg -I../hg \
 		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch -I../parmetis -I../timer \
                   -I../ha -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory 
-SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb oct hg \
+SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb oct phg hg\
                   bsfc hsfc parmetis params \
 		  timer ha  reftree include
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
@@ -194,6 +194,17 @@ endif
 
 HSFC_CSRC 	= hsfc_hilbert.c hsfc.c hsfc_box_assign.c hsfc_point_assign.c
 HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
+
+ifdef ZOLTAN_HG
+PHG_CSRC 	= phg.c phg_build.c phg_coarse.c phg_refinement.c \
+		  phg_heap.c phg_serialpartition.c phg_sort.c phg_scale.c \
+		  phg_match.c phg_Vcycle.c phg_plot.c phg_util.c 
+PHG_INC 		= phg.h phypergraph.h phg_util.h
+GDEFINES       += -DZOLTAN_HG
+else
+PHG_CSRC		= phg_util.c
+PHG_INC		= phg_util.h
+endif
 
 ifdef ZOLTAN_HG
 HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
@@ -266,7 +277,7 @@ endif
 ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(THIRD_PARTY_INCPATH)
 ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
 		  $(ORDER_CSRC) $(OCT_CSRC) $(HSFC_CSRC) \
-		  $(PARAMS_CSRC) $(PARMETIS_CSRC) $(HG_CSRC) \
+		  $(PARAMS_CSRC) $(PARMETIS_CSRC) $(PHG_CSRC) $(HG_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) $(THIRD_PARTY_CSRC)
 ZOLTAN_VPATH	= $(SUB_VPATH) $(THIRD_PARTY_VPATH)
 ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o)
@@ -293,7 +304,7 @@ F90COMP		= $(F90) $(CFLAGS) $(FFLAGS)
 LINT		= lint
 LINT_INC_PATH	= -Iinclude -Idriver$(ZOLTAN_OLD) -Ich -Izz -Iall -Ilb \
 		  -Iorder -Ipar -Ircb -Iparams \
-		  -Ioct -Ibsfc -Ihsfc -Iparmetis -Itimer -Iha -Ireftree -Ihg \
+		  -Ioct -Ibsfc -Ihsfc -Iparmetis -Itimer -Iha -Ireftree -Iphg -Ihg \
 		  -IUtilities/shared -IUtilities/Memory \
 		  -IUtilities/Communication -IUtilities/DDirectory \
 		  -I$(ZOLTAN_INC_PATH)
@@ -458,10 +469,14 @@ zscript:
 	@for iii in $(HSFC_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../hsfc/$$iii >> zoltan_script; \
 	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/phg'" >> zoltan_script
+	@for iii in $(PHG_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../phg/$$iii >> zoltan_script; \
+	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/hg'" >> zoltan_script
 	@for iii in $(HG_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../hg/$$iii >> zoltan_script; \
-	 done;
+	 done;     
 	@echo "echo 'Zoltan:  Compiling Zoltan/params'" >> zoltan_script
 	@for iii in $(PARAMS_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../params/$$iii >> zoltan_script; \
