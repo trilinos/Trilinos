@@ -6,10 +6,12 @@
 # Remove files from main so that they are not commited
 
 rm ../configure*
+rm ../Makefile*
 
 rm ../src/*.hpp
 rm ../src/*.cpp
 rm ../src/Makefile*
+rm ../src/*.in
 
 rm ../example/Makefile*
 rm ../example/ModeLaplace/Makefile*
