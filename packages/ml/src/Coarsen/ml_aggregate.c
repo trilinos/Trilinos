@@ -608,6 +608,62 @@ int ML_Aggregate_Set_NullSpace(ML_Aggregate *ag, int num_PDE_eqns,
 }
 
 /* ************************************************************************* */
+/* scale the null space using the vector 'scale_vect'. Note: the nullspace   */
+/* can be NULL, in which case the default nullspace (ones for each PDE) will */
+/* be used.  length is the local dimension of A                              */
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Scale_NullSpace(ML_Aggregate *ag, double *scale_vect,
+				 int length)
+{
+   int nbytes, j, k;
+   double *null_vect;
+   int num_PDE_eqns, null_dim;
+
+   /* first pull out null space information */
+
+   num_PDE_eqns = ag->num_PDE_eqns;
+   null_dim     = ag->nullspace_dim;
+   null_vect    = ag->nullspace_vect;
+
+
+   if ((null_vect == NULL) && (num_PDE_eqns != null_dim)) 
+   {
+      printf("WARNING:  When no nullspace vector is specified, the number\n");
+      printf("of PDE equations must equal the nullspace dimension.\n");
+   }
+
+
+   /* if the user-supplied nullspace vector is null, allocate space */
+   /* and load it */
+
+   if (null_vect == NULL) {
+     nbytes = length * null_dim * sizeof(double);
+	
+     ML_memory_alloc((void **)&(ag->nullspace_vect), nbytes, "ns");
+     null_vect = ag->nullspace_vect;
+
+     for (j = 0; j < length; j++) {
+       for (k = 0; k < null_dim; k++) {
+	  if (j % num_PDE_eqns == k) null_vect[k*length+j] = 1.0;
+	  else                       null_vect[k*length+j] = 0.0;
+       }
+      }
+   }
+
+   if (scale_vect == NULL) {
+     printf("ML_Aggregate_Scale_NullSpace: scale vector is null\n");
+     return 1;
+   }
+
+   for (k = 0; k < null_dim; k++) {
+      for (j = 0; j < length; j++) null_vect[k*length+j] /= scale_vect[j];
+   }
+
+   return 0;
+}
+
+/* ************************************************************************* */
 /* ************************************************************************* */
 /* Coarsening routine                                                        */
 /* ------------------------------------------------------------------------- */

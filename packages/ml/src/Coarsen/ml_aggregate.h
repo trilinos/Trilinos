@@ -189,6 +189,8 @@ extern int ML_Gen_Blocks_Aggregates(ML_Aggregate *ag, int level,
 /* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_Set_NullSpace(ML_Aggregate *, int, int, double *, int);
+int ML_Aggregate_Scale_NullSpace(ML_Aggregate *ag, double *scale_vect,
+				 int length);
 
 int ML_Aggregate_Coarsen( ML_Aggregate *, ML_Operator *A,
                           ML_Operator **P, ML_Comm *comm );
