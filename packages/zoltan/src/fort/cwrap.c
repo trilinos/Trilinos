@@ -14,6 +14,7 @@
 #define LB_fw_Initialize                 lb_fw_initialize
 #define LB_fw_Initialize1                lb_fw_initialize1
 #define LB_fw_Create_Object              lb_fw_create_object
+#define LB_fw_Destroy_Object             lb_fw_destroy_object
 #define LB_fw_Set_Fn0f                   lb_fw_set_fn0f
 #define LB_fw_Set_Fn1f                   lb_fw_set_fn1f
 #define LB_fw_Set_Fn2f                   lb_fw_set_fn2f
@@ -31,12 +32,11 @@
 #define LB_fw_Set_Fn6s                   lb_fw_set_fn6s
 #define LB_fw_Set_Fn7s                   lb_fw_set_fn7s
 #define LB_fw_Set_Method                 lb_fw_set_method
-#define LB_fw_Set_Params                 lb_fw_set_params
+#define LB_fw_Set_Param                  lb_fw_set_param
 #define LB_fw_Balance11                  lb_fw_balance11
 #define LB_fw_Balance12                  lb_fw_balance12
 #define LB_fw_Balance21                  lb_fw_balance21
 #define LB_fw_Balance22                  lb_fw_balance22
-#define LB_fw_Set_Migration              lb_fw_set_migration
 #define LB_fw_Compute_Destinations11     lb_fw_compute_destinations11
 #define LB_fw_Compute_Destinations12     lb_fw_compute_destinations12
 #define LB_fw_Compute_Destinations21     lb_fw_compute_destinations21
@@ -55,6 +55,7 @@
 #define LB_fw_Initialize                 LB_FW_INITIALIZE
 #define LB_fw_Initialize1                LB_FW_INITIALIZE1
 #define LB_fw_Create_Object              LB_FW_CREATE_OBJECT
+#define LB_fw_Destroy_Object             LB_FW_DESTROY_OBJECT
 #define LB_fw_Set_Fn0f                   LB_FW_SET_FN0F
 #define LB_fw_Set_Fn1f                   LB_FW_SET_FN1F
 #define LB_fw_Set_Fn2f                   LB_FW_SET_FN2F
@@ -72,12 +73,11 @@
 #define LB_fw_Set_Fn6s                   LB_FW_SET_FN6S
 #define LB_fw_Set_Fn7s                   LB_FW_SET_FN7S
 #define LB_fw_Set_Method                 LB_FW_SET_METHOD
-#define LB_fw_Set_Params                 LB_FW_SET_PARAMS
+#define LB_fw_Set_Param                  LB_FW_SET_PARAM
 #define LB_fw_Balance11                  LB_FW_BALANCE11
 #define LB_fw_Balance12                  LB_FW_BALANCE12
 #define LB_fw_Balance21                  LB_FW_BALANCE21
 #define LB_fw_Balance22                  LB_FW_BALANCE22
-#define LB_fw_Set_Migration              LB_FW_SET_MIGRATION
 #define LB_fw_Compute_Destinations11     LB_FW_COMPUTE_DESTINATIONS11
 #define LB_fw_Compute_Destinations12     LB_FW_COMPUTE_DESTINATIONS12
 #define LB_fw_Compute_Destinations21     LB_FW_COMPUTE_DESTINATIONS21
@@ -96,6 +96,7 @@
 #define LB_fw_Initialize                 lb_fw_initialize_
 #define LB_fw_Initialize1                lb_fw_initialize1_
 #define LB_fw_Create_Object              lb_fw_create_object_
+#define LB_fw_Destroy_Object             lb_fw_destroy_object_
 #define LB_fw_Set_Fn0f                   lb_fw_set_fn0f_
 #define LB_fw_Set_Fn1f                   lb_fw_set_fn1f_
 #define LB_fw_Set_Fn2f                   lb_fw_set_fn2f_
@@ -113,12 +114,11 @@
 #define LB_fw_Set_Fn6s                   lb_fw_set_fn6s_
 #define LB_fw_Set_Fn7s                   lb_fw_set_fn7s_
 #define LB_fw_Set_Method                 lb_fw_set_method_
-#define LB_fw_Set_Params                 lb_fw_set_params_
+#define LB_fw_Set_Param                  lb_fw_set_param_
 #define LB_fw_Balance11                  lb_fw_balance11_
 #define LB_fw_Balance12                  lb_fw_balance12_
 #define LB_fw_Balance21                  lb_fw_balance21_
 #define LB_fw_Balance22                  lb_fw_balance22_
-#define LB_fw_Set_Migration              lb_fw_set_migration_
 #define LB_fw_Compute_Destinations11     lb_fw_compute_destinations11_
 #define LB_fw_Compute_Destinations12     lb_fw_compute_destinations12_
 #define LB_fw_Compute_Destinations21     lb_fw_compute_destinations21_
@@ -137,6 +137,7 @@
 #define LB_fw_Initialize                 lb_fw_initialize__
 #define LB_fw_Initialize1                lb_fw_initialize1__
 #define LB_fw_Create_Object              lb_fw_create_object__
+#define LB_fw_Destroy_Object             lb_fw_destroy_object__
 #define LB_fw_Set_Fn0f                   lb_fw_set_fn0f__
 #define LB_fw_Set_Fn1f                   lb_fw_set_fn1f__
 #define LB_fw_Set_Fn2f                   lb_fw_set_fn2f__
@@ -154,12 +155,11 @@
 #define LB_fw_Set_Fn6s                   lb_fw_set_fn6s__
 #define LB_fw_Set_Fn7s                   lb_fw_set_fn7s__
 #define LB_fw_Set_Method                 lb_fw_set_method__
-#define LB_fw_Set_Params                 lb_fw_set_params__
+#define LB_fw_Set_Param                  lb_fw_set_param__
 #define LB_fw_Balance11                  lb_fw_balance11__
 #define LB_fw_Balance12                  lb_fw_balance12__
 #define LB_fw_Balance21                  lb_fw_balance21__
 #define LB_fw_Balance22                  lb_fw_balance22__
-#define LB_fw_Set_Migration              lb_fw_set_migration__
 #define LB_fw_Compute_Destinations11     lb_fw_compute_destinations11__
 #define LB_fw_Compute_Destinations12     lb_fw_compute_destinations12__
 #define LB_fw_Compute_Destinations21     lb_fw_compute_destinations21__
@@ -189,7 +189,14 @@ static struct LB_Struct *LB_Current_lb;
 
 MPI_Comm LB_comm_f2c(int *f_comm)
 {
+#ifndef NO_MPI2
+/* MPI 2 provides a standard way of doing this
+   return MPI_Comm_f2c((MPI_Fint)(*f_comm));
+#else
+/* will probably need some special cases here */
+/* when in doubt, just return the input */
    return (MPI_Comm)(*f_comm);
+#endif
 }
 
 /* These routines get the address of an array allocated by fortran and
@@ -355,7 +362,7 @@ int LB_fw_Initialize(float *ver)
    myArgv[1] = NULL;
    result = LB_Initialize(myArgc,myArgv,ver);
 /* TEMP should myArgv be freed or kept? */
-/* LB_Free((void **)&myArgv); */
+/* LB_FREE((void **)&myArgv); */
    return result;
 }
 
@@ -374,7 +381,7 @@ int LB_fw_Initialize1(int *argc, int *argv, int *starts, float *ver)
    }
    myArgv[*argc] = NULL;
    result = LB_Initialize(*argc,myArgv,ver);
-   LB_Free((void **)&myArgv);
+   LB_FREE((void **)&myArgv);
    return result;
 }
 
@@ -389,6 +396,16 @@ void LB_fw_Create_Object(int *f_communicator, int *addr_lb, int *nbytes)
    lb->Fortran = 1;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {addr_lb[i] = (int)*p; p++;}
+}
+
+void LB_fw_Destroy_Object(int *addr_lb, int *nbytes)
+{
+   struct LB_Struct *lb;
+   unsigned char *p;
+   int i;
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   LB_Destroy_Object(&lb);
 }
 
 int LB_fw_Set_Fn(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),
@@ -586,26 +603,27 @@ int LB_fw_Set_Method(int *addr_lb, int *nbytes, int *int_str, int *len)
    for (i=0; i<(*len); i++) str[i] = (char)int_str[i];
    str[*len] = '\0';
    result = LB_Set_Method(lb, str);
-   LB_Free((void **)&str);
+   LB_FREE((void **)&str);
    return result;
 }
 
-int LB_fw_Set_Params(int *addr_lb, int *nbytes, int *int_param_name,
+int LB_fw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,
                    int *param_name_len, int *int_new_value, int *new_value_len)
 {
    struct LB_Struct *lb;
    char *param_name, *new_value;
    unsigned char *p;
    int i;
+   param_name = (char *)LB_Malloc(*param_name_len+1,__FILE__,__LINE__);
+   new_value = (char *)LB_Malloc(*new_value_len+1,__FILE__,__LINE__);
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    LB_Current_lb = lb;
    for (i=0; i<(*param_name_len); i++) param_name[i] = (char)int_param_name[i];
+   param_name[*param_name_len] = '\0';
    for (i=0; i<(*new_value_len); i++) new_value[i] = (char)int_new_value[i];
-/* TEMP not yet available
-   return LB_Set_Params(lb, param_name, new_value);
-*/
-   return 0;
+   new_value[*new_value_len] = '\0';
+   return LB_Set_Param(lb, param_name, new_value);
 }
 
 int LB_fw_Balance11(int *addr_lb, int *nbytes, int *changes, int *num_import,
@@ -631,7 +649,7 @@ int LB_fw_Balance11(int *addr_lb, int *nbytes, int *changes, int *num_import,
    LB_GID *temp_imp_gid[F90LB_TEMP], *temp_exp_gid[F90LB_TEMP];
    LB_LID *temp_imp_lid[F90LB_TEMP], *temp_exp_lid[F90LB_TEMP];
    int *temp_imp_proc[F90LB_TEMP], *temp_exp_proc[F90LB_TEMP];
-#undef F90LB_TEMP_SIZE
+#undef F90LB_TEMP
 
 /* reconstruct the lb pointer from the nbyte 1-byte integers in addr_lb */
 
@@ -728,19 +746,6 @@ int LB_fw_Balance22(int *addr_lb, int *nbytes, int *changes, int *num_import,
                     );
 }
 
-int LB_fw_Set_Migration(int *addr_lb, int *nbytes, int *int_flag)
-{
-   struct LB_Struct *lb;
-   unsigned char *p;
-   int i;
-   int auto_migrate_flag;
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   LB_Current_lb = lb;
-   if (*int_flag) {auto_migrate_flag = TRUE;} else {auto_migrate_flag = FALSE;}
-   return LB_Set_Migration(lb,auto_migrate_flag);
-}
-
 int LB_fw_Compute_Destinations11(int *addr_lb, int *nbytes, int *num_import,
                     LB_GID *import_global_ids, LB_LID *import_local_ids,
                     int *import_procs, int *num_export,
@@ -762,7 +767,7 @@ int LB_fw_Compute_Destinations11(int *addr_lb, int *nbytes, int *num_import,
    LB_GID *temp_exp_gid[F90LB_TEMP];
    LB_LID *temp_exp_lid[F90LB_TEMP];
    int *temp_exp_proc[F90LB_TEMP];
-#undef F90LB_TEMP_SIZE
+#undef F90LB_TEMP
 
 /* reconstruct the lb pointer from the nbyte 1-byte integers in addr_lb */
 
@@ -814,7 +819,7 @@ int LB_fw_Compute_Destinations12(int *addr_lb, int *nbytes, int *num_import,
    LB_GID *temp_exp_gid[F90LB_TEMP];
    LB_LID *temp_exp_lid[F90LB_TEMP];
    int *temp_exp_proc[F90LB_TEMP];
-#undef F90LB_TEMP_SIZE
+#undef F90LB_TEMP
 
 /* reconstruct the lb pointer from the nbyte 1-byte integers in addr_lb */
 
@@ -866,7 +871,7 @@ int LB_fw_Compute_Destinations21(int *addr_lb, int *nbytes, int *num_import,
    LB_GID *temp_exp_gid[F90LB_TEMP];
    LB_LID *temp_exp_lid[F90LB_TEMP];
    int *temp_exp_proc[F90LB_TEMP];
-#undef F90LB_TEMP_SIZE
+#undef F90LB_TEMP
 
 /* reconstruct the lb pointer from the nbyte 1-byte integers in addr_lb */
 
@@ -918,7 +923,7 @@ int LB_fw_Compute_Destinations22(int *addr_lb, int *nbytes, int *num_import,
    LB_GID *temp_exp_gid[F90LB_TEMP];
    LB_LID *temp_exp_lid[F90LB_TEMP];
    int *temp_exp_proc[F90LB_TEMP];
-#undef F90LB_TEMP_SIZE
+#undef F90LB_TEMP
 
 /* reconstruct the lb pointer from the nbyte 1-byte integers in addr_lb */
 
@@ -1019,13 +1024,11 @@ int LB_fw_Help_Migrate22(int *addr_lb, int *nbytes, int *num_import,
 
 void LB_fw_Register_Fort_Malloc(LB_FORT_MALLOC_INT_FN *fort_malloc_int,
                                 LB_FORT_MALLOC_GID_FN *fort_malloc_GID,
-                                LB_FORT_MALLOC_LID_FN *fort_malloc_LID)
+                                LB_FORT_MALLOC_LID_FN *fort_malloc_LID,
+                                LB_FORT_FREE_INT_FN *fort_free_int,
+                                LB_FORT_FREE_GID_FN *fort_free_GID,
+                                LB_FORT_FREE_LID_FN *fort_free_LID)
 {
-   LB_Register_Fort_Malloc(fort_malloc_int,fort_malloc_GID,fort_malloc_LID);
-}
-
-/* TEMP */
-void fn_ptr_()
-{
-printf("OOPS!! called the fake fn_ptr\n");
+   LB_Register_Fort_Malloc(fort_malloc_int,fort_malloc_GID,fort_malloc_LID,
+                           fort_free_int,fort_free_GID,fort_free_LID);
 }

@@ -1,3 +1,4 @@
+#include 'sppr_header'
 !--------------------------------------------------------------------------
 ! preprocessor directives to handle special case compilers
 
@@ -51,6 +52,7 @@ public :: &
    LB_FIRST_BORDER_OBJ_FN_TYPE, &
    LB_NEXT_BORDER_OBJ_FN_TYPE, &
    LB_PRE_MIGRATE_FN_TYPE, &
+   LB_POST_MIGRATE_FN_TYPE, &
    LB_OBJ_SIZE_FN_TYPE, &
    LB_PACK_OBJ_FN_TYPE, &
    LB_UNPACK_OBJ_FN_TYPE
@@ -64,12 +66,12 @@ public :: &
 public :: &
    LB_Initialize, &
    LB_Create_Object, &
+   LB_Destroy_Object, &
    LB_Set_Fn, &
    LB_Set_Method, &
-   LB_Set_Params, &
+   LB_Set_Param, &
    LB_Balance, &
    LB_Free_Data, &
-   LB_Set_Migration, &
    LB_Compute_Destinations, &
    LB_Help_Migrate
 
@@ -79,7 +81,10 @@ public :: &
 type LB_Struct
    private
    type(LB_PTR) :: addr
-   integer :: dummy ! workaround for a bug in the Absoft compiler
+#ifdef ABSOFT
+! workaround for a bug in the Absoft compiler
+   integer :: dummy
+#endif
 end type LB_Struct
 
 !--------------------------------------------------------------------------
@@ -98,7 +103,12 @@ type LB_FN_TYPES
    integer(LB_INT) :: choice
 end type LB_FN_TYPES
 
+#ifdef SUNSOFT
+! bug in SunSoft compiler prevents using parameter
+type(LB_FN_TYPEF) :: &
+#else
 type(LB_FN_TYPEF), parameter :: &
+#endif
    LB_NUM_EDGES_FN_TYPE        = LB_FN_TYPEF(0_LB_INT), &
    LB_NUM_GEOM_FN_TYPE         = LB_FN_TYPEF(2_LB_INT), &
    LB_NUM_OBJ_FN_TYPE          = LB_FN_TYPEF(4_LB_INT), &
@@ -107,21 +117,32 @@ type(LB_FN_TYPEF), parameter :: &
    LB_NUM_BORDER_OBJ_FN_TYPE   = LB_FN_TYPEF(8_LB_INT), &
    LB_FIRST_BORDER_OBJ_FN_TYPE = LB_FN_TYPEF(10_LB_INT), &
    LB_NEXT_BORDER_OBJ_FN_TYPE  = LB_FN_TYPEF(11_LB_INT), &
-   LB_OBJ_SIZE_FN_TYPE         = LB_FN_TYPEF(13_LB_INT)
+   LB_OBJ_SIZE_FN_TYPE         = LB_FN_TYPEF(14_LB_INT)
 
+#ifdef SUNSOFT
+! bug in SunSoft compiler prevents using parameter
+type(LB_FN_TYPES) :: &
+#else
 type(LB_FN_TYPES), parameter :: &
+#endif
    LB_EDGE_LIST_FN_TYPE        = LB_FN_TYPES(1_LB_INT), &
    LB_GEOM_FN_TYPE             = LB_FN_TYPES(3_LB_INT), &
    LB_OBJ_LIST_FN_TYPE         = LB_FN_TYPES(5_LB_INT), &
    LB_BORDER_OBJ_LIST_FN_TYPE  = LB_FN_TYPES(9_LB_INT), &
    LB_PRE_MIGRATE_FN_TYPE      = LB_FN_TYPES(12_LB_INT), &
-   LB_PACK_OBJ_FN_TYPE         = LB_FN_TYPES(14_LB_INT), &
-   LB_UNPACK_OBJ_FN_TYPE       = LB_FN_TYPES(15_LB_INT)
+   LB_POST_MIGRATE_FN_TYPE     = LB_FN_TYPES(13_LB_INT), &
+   LB_PACK_OBJ_FN_TYPE         = LB_FN_TYPES(15_LB_INT), &
+   LB_UNPACK_OBJ_FN_TYPE       = LB_FN_TYPES(16_LB_INT)
 
 ! Error codes for LB library
 ! These values must agree with the values in lb/lbi_const.h
 
+#ifdef SUNSOFT
+! bug in SunSoft compiler prevents using parameter
+integer(LB_INT) :: &
+#else
 integer(LB_INT), parameter :: &
+#endif
    LB_OK     =  0_LB_INT, &
    LB_WARN   =  1_LB_INT, &
    LB_FATAL  = -1_LB_INT, &
@@ -199,6 +220,17 @@ integer INTENT_IN communicator
 integer(LB_INT), dimension(*), intent(out) :: lb
 integer(LB_INT) INTENT_IN nbytes
 end subroutine LB_fw_Create_Object
+end interface
+
+interface
+!NAS$ ALIEN "F77 lb_fw_destroy_object"
+subroutine LB_fw_Destroy_Object(lb,nbytes)
+use zoltan_types
+use lb_user_const
+implicit none
+integer(LB_INT), dimension(*) INTENT_IN lb
+integer(LB_INT) INTENT_IN nbytes
+end subroutine LB_fw_Destroy_Object
 end interface
 
 interface
@@ -548,16 +580,16 @@ end function LB_fw_Set_Method
 end interface
 
 interface
-!NAS$ ALIEN "F77 lb_fw_set_params"
-function LB_fw_Set_Params(lb,nbytes,param_name,param_name_len, &
+!NAS$ ALIEN "F77 lb_fw_set_param"
+function LB_fw_Set_Param(lb,nbytes,param_name,param_name_len, &
                           new_value,new_value_len)
 use zoltan_types
 use lb_user_const
 implicit none
-integer(LB_INT) :: LB_fw_Set_Params
+integer(LB_INT) :: LB_fw_Set_Param
 integer(LB_INT), dimension(*) INTENT_IN lb, param_name, new_value
 integer(LB_INT) INTENT_IN nbytes, param_name_len, new_value_len
-end function LB_fw_Set_Params
+end function LB_fw_Set_Param
 end interface
 
 interface
@@ -634,19 +666,6 @@ integer(LB_INT), pointer, dimension(:) :: import_global_ids, export_global_ids
 integer(LB_INT), pointer, dimension(:) :: import_local_ids, export_local_ids
 integer(LB_INT), pointer, dimension(:) :: import_procs, export_procs
 end function LB_fw_Balance22
-end interface
-
-interface
-!NAS$ ALIEN "F77 lb_fw_set_migration"
-function LB_fw_Set_Migration(lb,nbytes,auto_migrate_flag)
-use zoltan_types
-use lb_user_const
-implicit none
-integer(LB_INT) :: LB_fw_Set_Migration
-integer(LB_INT), dimension(*) INTENT_IN lb
-integer(LB_INT) INTENT_IN nbytes
-integer(LB_INT) INTENT_IN auto_migrate_flag
-end function LB_fw_Set_Migration
 end interface
 
 interface
@@ -812,14 +831,16 @@ end interface
 
 interface
 !NAS$ ALIEN "F77 lb_fw_register_fort_malloc"
-subroutine LB_fw_Register_Fort_Malloc(malloc_int,malloc_gid,malloc_lid)
+subroutine LB_fw_Register_Fort_Malloc(malloc_int,malloc_gid,malloc_lid, &
+                                      free_int,free_gid,free_lid)
 use zoltan_types
 use lb_user_const
 implicit none
 #ifdef NASOFTWARE
-type(address), intent(in) :: malloc_int,malloc_gid,malloc_lid
+type(address), intent(in) :: malloc_int,malloc_gid,malloc_lid, &
+                             free_int,free_gid,free_lid
 #else
-external malloc_int,malloc_gid,malloc_lid
+external malloc_int,malloc_gid,malloc_lid,free_int,free_gid,free_lid
 #endif
 end subroutine LB_fw_Register_Fort_Malloc
 end interface
@@ -834,6 +855,10 @@ end interface
 
 interface LB_Create_Object
    module procedure f90LB_Create_Object
+end interface
+
+interface LB_Destroy_Object
+   module procedure f90LB_Destroy_Object
 end interface
 
 interface LB_Set_Fn
@@ -859,8 +884,8 @@ interface LB_Set_Method
    module procedure f90LB_Set_Method
 end interface
 
-interface LB_Set_Params
-   module procedure f90LB_Set_Params
+interface LB_Set_Param
+   module procedure f90LB_Set_Param
 end interface
 
 interface LB_Balance
@@ -875,10 +900,6 @@ interface LB_Free_Data
    module procedure f90LB_Free_Data12
    module procedure f90LB_Free_Data21
    module procedure f90LB_Free_Data22
-end interface
-
-interface LB_Set_Migration
-   module procedure f90LB_Set_Migration
 end interface
 
 interface LB_Compute_Destinations
@@ -951,6 +972,36 @@ else
 endif
 end subroutine fort_malloc_lid
 
+subroutine fort_free_int(array)
+! This gets called by the C special_free to do the deallocation
+integer(LB_INT), pointer :: array(:)
+integer :: stat
+deallocate(array,stat=stat)
+if (stat /= 0) then
+   write(stderr,*) "Warning: failed to deallocate memory from Fortran"
+endif
+end subroutine fort_free_int
+
+subroutine fort_free_gid(array)
+! This gets called by the C special_free to do the deallocation
+type(LB_GID), pointer :: array(:)
+integer :: stat
+deallocate(array,stat=stat)
+if (stat /= 0) then
+   write(stderr,*) "Warning: failed to deallocate memory from Fortran"
+endif
+end subroutine fort_free_gid
+
+subroutine fort_free_lid(array)
+! This gets called by the C special_free to do the deallocation
+type(LB_LID), pointer :: array(:)
+integer :: stat
+deallocate(array,stat=stat)
+if (stat /= 0) then
+   write(stderr,*) "Warning: failed to deallocate memory from Fortran"
+endif
+end subroutine fort_free_lid
+
 !--------------------------------------------------------------------------
 ! Fortran wrapper procedures
 
@@ -959,9 +1010,11 @@ integer(LB_INT) :: f90LB_Initialize
 real(LB_FLOAT), intent(out) :: ver
 #ifdef NASOFTWARE
 call LB_fw_Register_Fort_Malloc(loc(fort_malloc_int),loc(fort_malloc_gid), &
-                                loc(fort_malloc_lid))
+                                loc(fort_malloc_lid),loc(fort_free_int), &
+                                loc(fort_free_gid),loc(fort_free_lid))
 #else
-call LB_fw_Register_Fort_Malloc(fort_malloc_int,fort_malloc_gid,fort_malloc_lid)
+call LB_fw_Register_Fort_Malloc(fort_malloc_int,fort_malloc_gid,fort_malloc_lid,&
+                                fort_free_int,fort_free_gid,fort_free_lid)
 #endif
 f90LB_Initialize = LB_fw_Initialize(ver)
 end function f90LB_Initialize
@@ -975,9 +1028,11 @@ integer(LB_INT), allocatable, dimension(:) :: int_argv,starts
 integer(LB_INT) :: i, j, leng
 #ifdef NASOFTWARE
 call LB_fw_Register_Fort_Malloc(loc(fort_malloc_int),loc(fort_malloc_gid), &
-                                loc(fort_malloc_lid))
+                                loc(fort_malloc_lid),loc(fort_free_int), &
+                                loc(fort_free_gid),loc(fort_free_lid))
 #else
-call LB_fw_Register_Fort_Malloc(fort_malloc_int,fort_malloc_gid,fort_malloc_lid)
+call LB_fw_Register_Fort_Malloc(fort_malloc_int,fort_malloc_gid,fort_malloc_lid,&
+                                fort_free_int,fort_free_gid,fort_free_lid)
 #endif
 allocate(starts(argc+1), int_argv(len(argv)*argc))
 starts(1) = 1
@@ -1011,6 +1066,19 @@ if (isnull) then
    nullify(f90LB_Create_Object)
 endif
 end function f90LB_Create_Object
+
+subroutine f90LB_Destroy_Object(lb)
+type(LB_Struct), pointer :: lb
+integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
+integer(LB_INT) :: nbytes, i
+nbytes = LB_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+call LB_fw_Destroy_Object(lb_addr,nbytes)
+deallocate(lb)
+nullify(lb)
+end subroutine f90LB_Destroy_Object
 
 function f90LB_Set_Fn0f(lb,fn_type,fn_ptr)
 integer(LB_INT) :: f90LB_Set_Fn0f
@@ -1332,8 +1400,8 @@ end do
 f90LB_Set_Method = LB_fw_Set_Method(lb_addr,nbytes,int_string,length)
 end function f90LB_Set_Method
 
-function f90LB_Set_Params(lb,param_name,new_value)
-integer(LB_INT) :: f90LB_Set_Params
+function f90LB_Set_Param(lb,param_name,new_value)
+integer(LB_INT) :: f90LB_Set_Param
 type(LB_Struct) INTENT_IN lb
 character(len=*) INTENT_IN param_name, new_value
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1352,9 +1420,9 @@ end do
 do i=1,new_value_len
    int_new_value(i) = ichar(new_value(i:i))
 end do
-f90LB_Set_Params = LB_fw_Set_Params(lb_addr,nbytes,int_param_name, &
+f90LB_Set_Param = LB_fw_Set_Param(lb_addr,nbytes,int_param_name, &
                                     param_name_len,int_new_value,new_value_len)
-end function f90LB_Set_Params
+end function f90LB_Set_Param
 
 function f90LB_Balance11(lb,changes,num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
@@ -1559,24 +1627,6 @@ if (associated(export_procs)) deallocate(export_procs,stat=stat)
 if (stat /= 0) f90LB_Free_Data22 = LB_WARN
 nullify(export_procs)
 end function f90LB_Free_Data22
-
-function f90LB_Set_Migration(lb,auto_migrate_flag)
-integer(LB_INT) :: f90LB_Set_Migration
-type(LB_Struct) INTENT_IN lb
-logical INTENT_IN auto_migrate_flag
-integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
-integer(LB_INT) :: nbytes, i, int_flag
-nbytes = LB_PTR_LENGTH
-do i=1,nbytes
-   lb_addr(i) = ichar(lb%addr%addr(i:i))
-end do
-if (auto_migrate_flag) then
-   int_flag = 1
-else
-   int_flag = 0
-endif
-f90LB_Set_Migration = LB_fw_Set_Migration(lb_addr,nbytes,int_flag)
-end function f90LB_Set_Migration
 
 function f90LB_Compute_Destinations11(lb,num_import,import_global_ids, &
                        import_local_ids,import_procs,num_export, &
