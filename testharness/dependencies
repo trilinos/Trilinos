@@ -42,6 +42,7 @@ ifpack = \
 
 kokkos = \
 --enable-kokkos
+--enable-tpetra
 
 komplex = \
 --enable-komplex
