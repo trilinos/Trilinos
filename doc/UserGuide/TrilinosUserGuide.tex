@@ -1,41 +1,38 @@
- \documentclass[12pt,strict]{TrilinosUserGuide}
+\documentclass[12pt,relax]{TrilinosUserGuide}
 \usepackage{array}
     \title{Trilinos Users Guide}
 \SANDsubtitle{}
 
 \author{
-Michael A. Heroux \\
-James M. Willenbring\\
-Computational Mathematics \& Algorithms \\
+Michael A. Heroux and James M. Willenbring \\
  \\
-Sandia National Laboratories\\
-P.O. Box 5800\\
-Albuquerque, NM 87185-1110 \\
- \\
-maherou@sandia.gov \\
-jmwille@sandia.gov \\
+Sandia National Laboratories \\
+P.O. Box 5800 \\
+Albuquerque, NM 87185-1110
 }
 
     % There is a "Printed" date on the title page of a SAND report, so
     % the generic \date should generally be empty.
-    \date{\today} % Remove ``\today'' in final version
+    \date{} % Remove ``\today'' in final version
 
 
 \SANDnum{SAND2003-xxxx}
-\SANDprintDate{April 2003}
+\SANDprintDate{August 2003}
 \SANDauthor{
-Michael A. Heroux, James M. Willenbring, \\
-Sandia National Laboratories}
+Michael A. Heroux and James M. Willenbring \\
+Computational Math and Algorithms Departmment \\
+ \\
+Sandia National Laboratories\\
+P.O. Box 5800\\
+Albuquerque, NM 87185-1110 
+}
 
 
 \SANDreleaseType{Unlimited Release}
 
-
-\SANDdistcategory{UC-999}    
-
 \begin{document}
 \maketitle
-\setcounter{page}{3} % Accounts for blank page at beginning
+%\setcounter{page}{3} % Accounts for blank page at beginning
 \begin{abstract}
 
 The Trilinos Project is an effort to facilitate the design, development,
@@ -57,8 +54,9 @@ is provided, along with a list of supported computer platforms.
 
 \end{abstract}
 
+\clearpage
 
-\section*{Acknowledgement}
+\section*{Acknowledgments}
 The authors would like to acknowledge the support of the ASCI and LDRD 
 programs that funded development of Trilinos and recognize all Trilinos 
 contributors: Teri Barth, Ross Bartlett, David Day, Bob Heaphy, 
@@ -113,10 +111,9 @@ Figure~\ref{Figure:TrilinosPackages}.
 
 \begin{figure}
 \begin{center}
-\includegraphics[height=9in]{../CommonFiles/TrilinosPackagesDiagram}
+\includegraphics[height=6in,angle=90]{../CommonFiles/TrilinosPackagesDiagram}
 \end{center}
-\label{Figure:TrilinosPackages}
-\caption{Current collection of Trilinos Packages}
+\caption{\label{Figure:TrilinosPackages}Current collection of Trilinos Packages}
 \end{figure}
 
 \subsection{Typographical Conventions}
@@ -222,7 +219,7 @@ Feature and issue reports are tracked using Bugzilla~\cite{Bugzilla}.
 Bugzilla can be found on the web at 
 \InlineDirectory{http://software.sandia.gov/bugzilla}.  
 A Bugzilla account is necessary for submitting bugs.  Those interested can 
-sign up at the website.  All bugs related to any package of Trilnos that uses 
+sign up at the website.  All bugs related to any package of Trilinos that uses 
 Bugzilla should be submitted to Bugzilla.  This even applies to cases in which 
 one developer diagnoses and fixes a bug within a short period of time.  A bug 
 report is still very valuable in this case because it provides an artifact 
@@ -253,7 +250,7 @@ Lists for new packages can be set up very easily.  Each package usually has
 five mailing lists.  The example mailing lists mentioned below are to be used 
 for issues relating to all of Trilinos.  The names for the lists pertaining to 
 individual packages follow the same naming scheme, simply replace ``Trilinos'' 
-with the name of the package.  For example the list for Trilnos users is 
+with the name of the package.  For example the list for Trilinos users is 
 called Trilinos-Users and the email address is 
 \InlineCommand{trilinos-users@software.sandia.gov}  The list 
 for Epetra users is called Epetra-Users and the associated email address is 
@@ -319,7 +316,7 @@ Petra is an object model for parallel,
 distributed-memory, object-oriented matrix and vector classes.
 Presently there are three Petra libraries: Epetra, Jpetra and Tpetra.
 Of the three, Epetra is the most mature and the one presently used in
-production computing setttings.  Epetra is a collection of concrete
+production computing settings.  Epetra is a collection of concrete
 classes that supports the construction and use of vectors, sparse
 graphs, and dense and sparse matrices.  It provides serial, parallel and
 distributed memory
@@ -374,7 +371,7 @@ detail in~\cite{TSFCore}.
 includes overloaded operators, block and composite operators, both of
 which support powerful abstraction capabilities.  The Meros package
 relies on TSFExtended to implicitly construct sophisticated
-Schur compliment preconditioners in terms of exising component
+Schur compliment preconditioners in terms of existing component
 operators with little overhead in time or memory.
 \end{enumerate}
 
@@ -391,14 +388,13 @@ developers a single API that provides access to many solver packages.
 Figure~\ref{Figure:TrilinosPackageDependencies} shows how the present
 \begin{figure}
 %\begin{center}
-\includegraphics[height=8in]{../CommonFiles/TrilinosPackageDependencies}
+\includegraphics[height=6in,angle=90]{../CommonFiles/TrilinosPackageDependencies}
 %\end{center}
-\label{Figure:TrilinosPackageDependencies}
-\caption{Current Trilinos Package Dependencies}
+\caption{\label{Figure:TrilinosPackageDependencies}Current Trilinos Package Dependencies}
 \end{figure}
 collection of Trilinos packages depend on each other.
 
-%\section{Platform Portablility}
+%\section{Platform Portability}
 %	**(List platforms - encourage script submission)**
 
 \clearpage

@@ -119,8 +119,7 @@ packages in Trilinos is shown in Figure~\ref{Figure:TrilinosPackages}.
 \begin{center}
 \includegraphics[height=6in,angle=90]{../CommonFiles/TrilinosPackagesDiagram}
 \end{center}
-\label{Figure:TrilinosPackages}
-\caption{Current collection of Trilinos Packages}
+\caption{\label{Figure:TrilinosPackages}Current collection of Trilinos Packages}
 \end{figure}
 
 \subsection{How To Use This Guide}
@@ -541,7 +540,7 @@ Feature and issue reports are tracked using Bugzilla~\cite{Bugzilla}.
 Bugzilla can be found on the web at 
 \InlineDirectory{http://software.sandia.gov/bugzilla}.  
 A Bugzilla account is necessary for submitting bugs.  Those interested can 
-sign up at the website.  All issues related to any Trilnos package that uses 
+sign up at the website.  All issues related to any Trilinos package that uses 
 Bugzilla should be submitted to Bugzilla.  This even applies to cases in which 
 one developer diagnoses and fixes a bug within a short period of time.  A bug 
 report is still very valuable in this case because it provides an artifact 
@@ -572,7 +571,7 @@ Lists for new packages can be set up very easily.  Each package usually has
 five mailing lists.  The example mailing lists mentioned below are to be used 
 for issues relating to all of Trilinos.  The names for the lists pertaining to 
 individual packages follow the same naming scheme, simply replace ``Trilinos'' 
-with the name of the package.  For example, the list for Trilnos users is 
+with the name of the package.  For example, the list for Trilinos users is 
 called Trilinos-Users and the email address is 
 \InlineCommand{trilinos-users@software.sandia.gov}  The list 
 for Epetra users is called Epetra-Users and the associated email address is 
@@ -1012,7 +1011,7 @@ Petra is an object model for parallel,
 distributed-memory, object-oriented matrix and vector classes.
 Presently there are three Petra libraries: Epetra, Jpetra and Tpetra.
 Of the three, Epetra is the most mature and the one presently used in
-production computing setttings.  Epetra is a collection of concrete
+production computing settings.  Epetra is a collection of concrete
 classes that supports the construction and use of vectors, sparse
 graphs, and dense and sparse matrices.  It provides serial, parallel and
 distributed memory
@@ -1244,7 +1243,7 @@ that all packages can be tested thoroughly via the test harness.
 
 \item Perform tests.
 
-Buid with and without package options and run all tests associated with np on 
+Build with and without package options and run all tests associated with np on 
 a variety of platforms.  Make sure that dependencies have been properly 
 established in the Autotools system so that users cannot disable packages that 
 np is dependent on.  Finally, run the checkin test harness to ensure that 
@@ -1288,12 +1287,11 @@ Figure~\ref{Figure:TrilinosPackageDependencies} shows how the present
 %\begin{center}
 \includegraphics[height=6in,angle=90]{../CommonFiles/TrilinosPackageDependencies}
 %\end{center}
-\label{Figure:TrilinosPackageDependencies}
-\caption{Current Trilinos Package Dependencies}
+\caption{\label{Figure:TrilinosPackageDependencies}Current Trilinos Package Dependencies}
 \end{figure}
 collection of Trilinos packages depend on each other.
 
-%\section{Platform Portablility}
+%\section{Platform Portability}
 %	**(List platforms - encourage script submission)**
 
 \clearpage
