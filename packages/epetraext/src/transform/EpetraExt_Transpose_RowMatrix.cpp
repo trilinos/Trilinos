@@ -188,7 +188,7 @@ operator()( OriginalTypeRef orig )
 
   assert(TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add)==0);
   
-  assert(TransposeMatrix_->TransformToLocal()==0);
+  assert(TransposeMatrix_->TransformToLocal(&(orig.OperatorRangeMap()),TransposeRowMap_)==0);
 
   if (MakeDataContiguous_)
     assert(TransposeMatrix_->MakeDataContiguous()==0);
