@@ -103,7 +103,8 @@ void ML_Reader_ReadInput(char *cmd_file_name, struct reader_context **context)
   /* Open the command input file */
 
   if ( (ifp = fopen(cmd_file_name, "r")) != NULL) {
-    (void) fprintf(stderr, "ML input mode\n");
+      ;
+/*    (void) fprintf(stderr, "ML input mode\n"); */
   } else {
     (void) fprintf(stderr, "read_input_file: Can't open input file, %s,",
                    cmd_file_name);
