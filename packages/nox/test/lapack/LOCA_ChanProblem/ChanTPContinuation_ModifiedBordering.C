@@ -96,6 +96,16 @@ int main()
     stepperList.setParameter("Min Tangent Factor", -1.0);
     stepperList.setParameter("Tangent Factor Exponent",1.0);
 
+    // Create bifurcation sublist
+    NOX::Parameter::List& bifurcationList = 
+      locaParamsList.sublist("Bifurcation");
+    bifurcationList.setParameter("Method", "Modified Turning Point");
+    bifurcationList.setParameter("Bifurcation Parameter", "alpha");
+    bifurcationList.setParameter("Length Normalization Vector", 
+			 dynamic_cast<NOX::Abstract::Vector*>(&nullVec));
+    bifurcationList.setParameter("Initial Null Vector",
+			 dynamic_cast<NOX::Abstract::Vector*>(&nullVec));
+
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
     //predictorList.setParameter("Method", "Constant");
@@ -159,12 +169,9 @@ int main()
     NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
-    // Create a turning point group that uses the lapack group
-    LOCA::Bifurcation::TPBord::ModifiedBorderingGroup tpgrp(grp, nullVec, 
-							    nullVec, 0);
-
+    
     // Create the stepper  
-    LOCA::Stepper stepper(tpgrp, combo, paramList);
+    LOCA::Stepper stepper(grp, combo, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
