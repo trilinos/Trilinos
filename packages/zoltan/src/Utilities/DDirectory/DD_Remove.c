@@ -100,7 +100,7 @@ int Zoltan_DD_Remove (Zoltan_DD_Directory *dd,
 
    /* allocate receive buffer for nrec DD_Remove_Msg structures */
    rbuff = (char *) LB_MALLOC (nrec * dd->remove_msg_size) ;
-   if (rbuff == NULL)
+   if (nrec > 0 && rbuff == NULL)
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc receive buffer") ;
       err = ZOLTAN_DD_MEMORY_ERROR ;

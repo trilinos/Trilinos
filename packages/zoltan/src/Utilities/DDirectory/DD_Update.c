@@ -145,7 +145,7 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
 
    /* allocate receive buffer for nrec DD_Update_Msg structures */
    rbuff = (char *) LB_MALLOC (nrec * dd->update_msg_size) ;
-   if (rbuff == NULL)
+   if (nrec > 0 && rbuff == NULL)
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc receive buffer") ;
       err = ZOLTAN_DD_MEMORY_ERROR ;

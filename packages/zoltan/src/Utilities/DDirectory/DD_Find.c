@@ -123,7 +123,7 @@ int Zoltan_DD_Find (Zoltan_DD_Directory *dd,
 
    /* allocate total receive buffer */
    rbuff = (char *) LB_MALLOC (nrec * dd->find_msg_size) ;
-   if (rbuff == NULL)
+   if (nrec > 0 && rbuff == NULL)
       {
       err = ZOLTAN_DD_MEMORY_ERROR ;
       goto fini ;
