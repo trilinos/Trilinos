@@ -2309,6 +2309,7 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	 }
        }
        best_score = -1000000;
+       best_agg = -1; best_connect = -1;
        for (j = 0; j < rowi_N; j++) {
 	 current_agg = aggr_index[rowi_col[j]];
 	 if (( current_agg >= 0) && (current_agg < Nphase1_agg) && 
