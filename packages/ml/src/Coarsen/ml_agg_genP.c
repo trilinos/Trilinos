@@ -140,6 +140,9 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 
    while (next >= 0) 
    {
+      if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+         printf("ML_Gen_MGHierarchy : applying coarsening \n");
+
       if (internal_or_external == ML_INTERNAL)
       {
          flag = user_gen_prolongator(ml, level, next,
@@ -150,15 +153,17 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
          flag = user_gen_prolongator(ml, level, next, data, ag);
       }
       if (flag < 0) break;
+      if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
+         printf("ML_Gen_MGHierarchy : applying coarsening \n");
       ML_Gen_Restrictor_TransP(ml, level, next);
 
       if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
-         printf("ML_Aggregate : Gen_RAP\n");
+         printf("ML_Gen_MGHierarchy : Gen_RAP\n");
 
       ML_Gen_AmatrixRAP(ml, level, next);
 
       if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
-         printf("ML_Aggregate : Gen_RAP done\n");
+         printf("ML_Gen_MGHierarchy : Gen_RAP done\n");
 
       level = next;
       next  = next_level(ml, next, &(ml->Amat[next]), ag);
