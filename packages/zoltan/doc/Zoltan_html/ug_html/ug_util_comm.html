@@ -71,18 +71,29 @@ communication operations allow for any object to be sent to any destination
 processor. However, if the objects are grouped in such a way that all those
 being sent to a particular processor are consecutive, the time and
 memory of an additional copy is avoided.
-<p> A similar function
+<p> Function
 <b><a href="#Zoltan_Comm_Do_Reverse">Zoltan_Comm_Do_Reverse</a></b>
-allows for reversing the communication plan to send back messages to the originators.
-<p> In order to allow overlap between communication and processing, POST and WAIT
+reverses the communication plan to send back messages to the originators.
+<p> To allow overlap between communication and processing, POST and WAIT
 variants of
 <b><a href="#Zoltan_Comm_Do">Zoltan_Comm_Do</a></b>
 and
 <b><a href="#Zoltan_Comm_Do_Reverse">Zoltan_Comm_Do_Reverse</a></b>
-are provided.  Communication is initialized by the POST. Then the user is free to
-continue processing. After the processing is complete the corresponding WAIT routine is called
-which completes when the communication is finished.  These routines use the same calling
-arguments as the corresponding non POST and WAIT routines for convenience.
+are provided.  Communication is initiated by the POST function 
+(<b><a href="#Zoltan_Comm_Do">Zoltan_Comm_Do_Post</a></b> or
+<b><a href="#Zoltan_Comm_Do_Reverse">Zoltan_Comm_Do_Reverse_Post</a></b>);
+incoming messages are posted and outgoing messages are sent.
+Then the user can continue processing. 
+After the processing is complete, the corresponding WAIT function
+(<b><a href="#Zoltan_Comm_Do">Zoltan_Comm_Do_Wait</a></b> or
+<b><a href="#Zoltan_Comm_Do_Reverse">Zoltan_Comm_Do_Reverse_Wait</a></b>)
+ is called to wait for all incoming messages to be received.
+For convenience,
+these functions use the same calling
+arguments as 
+<b><a href="#Zoltan_Comm_Do">Zoltan_Comm_Do</a></b> and
+<b><a href="#Zoltan_Comm_Do_Reverse">Zoltan_Comm_Do_Reverse</a></b>.
+
 <p>All the functions in the unstructured communication library return integer
 <a href="../ug_html/ug_interface.html#Error Codes">error codes</a> identical to those used by Zoltan.   A Fortran90 interface is not yet available.
 
