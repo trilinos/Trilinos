@@ -1,0 +1,10 @@
+To tag a version, simply do
+     cvs tag <mystring> SuperLU_DIST 
+To checkout a version simply do
+     cvs checkout -r <mystring> SuperLU_DIST
+Sometimes useful: cvs status -v filename
+
+mystring = SuperLU_DIST1_2_0
+
+    10/30/2001  (jhu) Added changes from dmday to correct race condition
+        in MPI calls.
