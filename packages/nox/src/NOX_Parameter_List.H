@@ -98,7 +98,8 @@ public:
   void setParameter(const string& name, const char* value);
   void setParameter(const string& name, char *value);
   void setParameter(const string& name, const string& value);
-  void setParameter(const string& name, const Arbitrary& value);
+  void setParameter(const string& name, 
+		    const NOX::Parameter::Arbitrary& value);
   //@}
 
   /** @name Getting Parameters 
@@ -116,14 +117,17 @@ public:
   double getParameter(const string& name, double nominal);
   const string& getParameter(const string& name, const char* nominal);
   const string& getParameter(const string& name, const string& nominal);
-  const Arbitrary& getParameter(const string& name, const Arbitrary& nominal);
+  const NOX::Parameter::Arbitrary& 
+  getParameter(const string& name, const NOX::Parameter::Arbitrary& nominal);
 
   bool getParameter(const string& name, bool nominal) const;
   int getParameter(const string& name, int nominal) const;
   double getParameter(const string& name, double nominal) const;
   const string& getParameter(const string& name, const char* nominal) const;
   const string& getParameter(const string& name, const string& nominal) const;
-  const Arbitrary& getParameter(const string& name, const Arbitrary& nominal) const;
+  const NOX::Parameter::Arbitrary& 
+  getParameter(const string& name, 
+	       const NOX::Parameter::Arbitrary& nominal) const;
 
   //@}
 
@@ -135,7 +139,8 @@ public:
   first.
   */
   //@{
-  const Arbitrary& getArbitraryParameter(const string& name) const;
+  const NOX::Parameter::Arbitrary& 
+  getArbitraryParameter(const string& name) const;
 #ifdef HAVE_NOX_ANY
   template <class T> T* getAnyPtrParameter(const string& name) const;
   template <class T> const T* getAnyConstPtrParameter(const string& name) const;
