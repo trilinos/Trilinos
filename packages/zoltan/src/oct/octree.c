@@ -64,7 +64,9 @@ extern pOctant LB_POct_new(OCT_Global_Info *OCT_info) {
  * KDDKDDFREE to the calling routine. */
 void LB_POct_free(OCT_Global_Info *OCT_info, pOctant *oct) {
 
+  /* KDDKDDFREE  This variable no longer needed.
   pRList RootList = LB_POct_localroots(OCT_info);
+   * KDDKDDFREE */
 
   /* traverse through local root list, if octant a local root */
 

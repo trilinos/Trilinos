@@ -323,6 +323,13 @@ static int lb_oct_init(
   LB_FREE(&import_regs);
 
   LB_oct_global_clear(OCT_info);
+  /* KDDKDD Don't understand how re-used octree will work, especially without
+   * KDDKDD the LB_Bounds_Geom function.  For now, we'll delete everything;
+   * KDDKDD we can move back to saving some of the tree later.
+   */
+  LB_OCT_Free_Structure(lb);
+  /* KDDKDD END */
+
   /* Temporary return value until error codes are fully implemented. */
   LB_TRACE_EXIT(lb, yo);
   return(LB_OK);
