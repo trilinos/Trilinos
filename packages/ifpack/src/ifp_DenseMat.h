@@ -341,6 +341,7 @@ inline ifp_LocalMat *ifp_DenseMat::CreateInv(ifp_LocalPrecon& local_precon) cons
         ifp_error("The local preconditioner you have chosen is not available\n"
                 "for the type of blocks (ifp_DenseMat) in the block matrix.", 0);
     }
+    return(0); // Zero pointer (never returned because ifp_error aborts, but this satisfies the compiler)
 }
 
 inline ifp_DenseMat_LU::ifp_DenseMat_LU(const ifp_DenseMat& A)
