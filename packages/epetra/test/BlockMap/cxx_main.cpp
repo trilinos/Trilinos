@@ -76,6 +76,11 @@ int main(int argc, char *argv[]) {
   }
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
+
+  int verbose_int = verbose ? 1 : 0;
+  MPI_Bcast(&verbose_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  verbose = verbose_int==1 ? true : false;
+
   if (verbose) cout << Comm << endl << flush;
   Comm.Barrier();
   bool verbose1 = verbose;
@@ -262,15 +267,17 @@ int main(int argc, char *argv[]) {
 
   if (verbose1) {
     if (verbose) cout << "Test ostream << operator" << endl << flush;
+  }
     // Build a small map for test cout.  Use 10 elements from current map
     int * MyEls = Map->MyGlobalElements();
     int * MySz  = Map->ElementSizeList();
     int IndBase = Map->IndexBase();
     int MyLen = EPETRA_MIN(10+Comm.MyPID(),Map->NumMyElements());
     Epetra_BlockMap * SmallMap = new Epetra_BlockMap(-1, MyLen, MyEls, MySz, IndBase, Comm);
+    if (verbose1) {
     cout << *SmallMap;
+    }
     delete SmallMap;
-  }
 
   delete[] ElementSizeList;
   delete[] MyGlobalElements;
