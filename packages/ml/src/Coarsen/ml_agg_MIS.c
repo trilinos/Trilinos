@@ -640,6 +640,11 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 
    /* communicate the phase two/three information  */
 
+   if ( mypid == 0 && 9 < ML_Get_PrintLevel())
+   {
+      printf("Communicating phase 2/3 info\n");
+      fflush(stdout);
+   }
    count = 0;
    send_count = 0;
    recv_count = 0;
@@ -725,6 +730,12 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
       for (j = num_PDE_eqns-1; j >= 0; j--) {
          aggr_index[i*num_PDE_eqns+j] = aggr_index[i];
       }
+   }
+
+   if ( mypid == 0 && 9 < ML_Get_PrintLevel())
+   {
+      printf("Calling ML_Operator_UnAmalgamateAndDropWeak\n");
+      fflush(stdout);
    }
 
    ML_Operator_UnAmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
