@@ -16,9 +16,7 @@
 static char *cvs_parmetis_part_id = "$Id$";
 #endif
 
-/* Interface routine between Zoltan and ParMetis. */
-
-/* #define LB_DEBUG*/  /* turn on debug print statements? */
+#define LB_DEBUG  /* turn on debug print statements? */
 
 #include <math.h>
 #include <strings.h>
@@ -27,6 +25,21 @@ static char *cvs_parmetis_part_id = "$Id$";
 #include "all_allo_const.h"
 #include "comm_const.h"
 #include "parmetis_const.h"
+#include "params_const.h"
+
+/* ParMetis option defs. These must be identical to the defs
+ * in defs.h in the version of ParMetis you are using!
+ */
+#define OPTION_IPART            1
+#define OPTION_FOLDF            2
+#define OPTION_DBGLVL           3
+#define MAX_OPTIONS             4
+
+/* Function prototypes */
+int LB_ParMetis_Set_Param(char *, char *);
+
+
+/******** Interface routine between Zoltan and ParMetis. ************/
 
 int LB_ParMetis_Part(
   LB *lb,             /* load balancing object */
@@ -43,8 +56,8 @@ int LB_ParMetis_Part(
 #else /* !LB_NO_PARMETIS */
   int i, j, ierr, size, flag, offset, hi, ndims;
   int num_obj, nedges, sum_edges, max_edges, edgecut;
-  int options[4], *destproc, *nbors_proc;
-  int nsend, nrecv, ewgt_dim, vwgt_dim, wgtflag, numflag, pmethod;
+  int options[MAX_OPTIONS], *destproc, *nbors_proc;
+  int nsend, nrecv, ewgt_dim, vwgt_dim, wgtflag, numflag;
   int get_graph_data, get_geom_data;
   idxtype *vtxdist, *xadj, *adjncy, *adjptr, *vwgt, *adjwgt, *part;
   float  max_wgt, *float_vwgt, *xyz;
@@ -53,11 +66,20 @@ int LB_ParMetis_Part(
   struct LB_hash_node **hashtab, *hash_nodes;
   LB_LID *local_ids;
   LB_GID *global_ids, *nbors_global;
-  char *sendbuf, *recvbuf, *alg;
+  char *sendbuf, *recvbuf, alg[MAX_PARAM_STRING_LEN+1];
   struct Comm_Obj *plan;
   MPI_Request *request;
   MPI_Status *status;
 
+  PARAM_VARS parmetis_params[] = {
+        { "PARMETIS_METHOD", NULL, "STRING" },
+        { "PARMETIS_VWGT_DIM", NULL, "INT" },
+        { "PARMETIS_EWGT_DIM", NULL, "INT" },
+        { "PARMETIS_COARSE_ALG", NULL, "INT" },
+        { "PARMETIS_FOLD", NULL, "INT" },
+        { "PARMETIS_OUTPUT_LEVEL", NULL, "INT" },
+        { NULL, NULL, NULL } };
+  
 #ifdef LB_DEBUG
   int i99, *p99, myproc;
   MPI_Comm_rank(lb->Communicator, &myproc);
@@ -72,67 +94,45 @@ int LB_ParMetis_Part(
   *imp_procs = NULL;
   */
 
-  /* Get options. */
-/* BAH: This stuff is now obsolete.  Need to replace it. */
-#if 0
-  if (lb->Params == NULL) { 
-    pmethod = 0;
-    vwgt_dim = 0;
-    ewgt_dim = 0;
-  } 
-  else { 
-    if (lb->Params[0] == LB_PARAMS_INIT_VALUE)
-      pmethod = 0;
-    else
-      pmethod = lb->Params[0]; 
-    if (lb->Params[1] == LB_PARAMS_INIT_VALUE)
-      vwgt_dim = 0;
-    else
-      vwgt_dim = lb->Params[1];
-    if (lb->Params[2] == LB_PARAMS_INIT_VALUE)
-      ewgt_dim = 0;
-    else
-      ewgt_dim = lb->Params[2];
-  }
-#endif
-pmethod = 0; /* temporary hack */
+  /* Set parameters */
+  strcpy(alg, "PartKway");
+  vwgt_dim = 0;
+  ewgt_dim = 0;
+  for (i=0; i<MAX_OPTIONS; i++)
+    options[i] = -1;
+  parmetis_params[0].ptr = (void *) alg;
+  parmetis_params[1].ptr = (void *) &vwgt_dim;
+  parmetis_params[2].ptr = (void *) &ewgt_dim;
+  parmetis_params[3].ptr = (void *) &(options[OPTION_IPART]);
+  parmetis_params[4].ptr = (void *) &(options[OPTION_FOLDF]);
+  parmetis_params[5].ptr = (void *) &(options[OPTION_DBGLVL]);
 
-  /* Convert pmethod from integer to a string. Rationale: 
-     We want the user to set the string alg directly with 
-     LB_Set_Param() in future versions. */
-  switch(pmethod){
-  case 0:
-    alg = "PartKway";
-    break;
-  case 1:
-    alg = "PartGeomKway";
-    break;
-  case 2:
-    alg = "PartGeom";
-    break;
-  case 3:
-    alg = "RepartLDiffusion";
-    break;
-  case 4:
-    alg = "RepartGDiffusion";
-    break;
-  case 5:
-    alg = "RepartRemap";
-    break;
-  case 6:
-    alg = "RepartMLRemap";
-    break;
-  case 7:
-    alg = "RefineKway";
-    break;
-  default:
-    printf("Warning: Unknown ParMetis method %d, using PartKway.\n");
-    alg = "PartKway";
+  LB_Assign_Param_Vals(lb->Params, parmetis_params);
+
+  /* Set options[0] to 1 if any of the low level ParMetis options were set,
+     or 0 otherwise. This is required by ParMetis. */
+  for (i=1; i<MAX_OPTIONS; i++)
+    if (options[i]>0) options[0] = 1;
+  if (options[0] == -1) 
+    options[0] = 0;
+  else {
+    /* If one option was set, fill in the others. We need to do this
+     * because ParMetis requires all or nothing! 
+     * The default values below are consistent with ParMetis 2.0 
+     */
+    if (options[OPTION_IPART] == -1)
+      options[OPTION_IPART] = 2; 
+    if (options[OPTION_FOLDF] == -1)
+      options[OPTION_FOLDF] = 150; 
+    if (options[OPTION_DBGLVL] == -1)
+      options[OPTION_DBGLVL] = 0; 
   }
 
 #ifdef LB_DEBUG
     printf("[%1d] Debug: alg=%s, vwgt_dim=%d, ewgt_dim=%d\n", myproc, 
       alg, vwgt_dim, ewgt_dim);
+    printf("[%1d] Debug: ParMetis options = %d, %d, %d, %d\n", myproc,
+      options[0], options[1], options[2], options[3]);
 #endif
 
   /* Most ParMetis methods use only graph data */
@@ -522,7 +522,6 @@ pmethod = 0; /* temporary hack */
   }
 
   /* Call ParMETIS */
-  options[0] = 0; /* No ParMetis options for now */
   wgtflag = 2*(vwgt_dim>0) + (ewgt_dim>0); /* Multidim wgts not supported yet */
   numflag = 0;
   part = (idxtype *)LB_MALLOC(num_obj * sizeof(idxtype));
@@ -692,4 +691,50 @@ pmethod = 0; /* temporary hack */
 #endif /* LB_NO_PARMETIS */
 }
 
+/*********************************************************************/
+
+int LB_ParMetis_Set_Param(
+char *name,                     /* name of variable */
+char *val)                      /* value of variable */
+{
+    int status, i;
+    PARAM_UTYPE result;         /* value returned from Check_Param */
+    int index;                  /* index returned from Check_Param */
+    PARAM_VARS parmetis_params[] = {
+        { "PARMETIS_METHOD", NULL, "STRING" },
+        { "PARMETIS_VWGT_DIM", NULL, "INT" },
+        { "PARMETIS_EWGT_DIM", NULL, "INT" },
+        { "PARMETIS_COARSE_ALG", NULL, "INT" },
+        { "PARMETIS_FOLD", NULL, "INT" },
+        { "PARMETIS_OUTPUT_LEVEL", NULL, "INT" },
+        { NULL, NULL, NULL } };
+    char *valid_methods[] = {
+        "PartKway", "PartGeomKway", "PartGeom", 
+        "RepartLDiffusion", "RepartGDiffusion",
+        "RepartRemap", "RepartMLRemap",
+        "RefineKway",
+         NULL };
+
+    status = LB_Check_Param(name, val, parmetis_params, &result, &index);
+
+    if (status == 0){
+      /* OK so far, do sanity check of parameter values */
+
+      if (index == 0){
+        status = 2;
+        for (i=0; valid_methods[i] != NULL; i++){
+          if (strcasecmp(val, valid_methods[i]) == 0){
+            status = 0; 
+            break;
+          }
+        }
+      }
+      else{ /* index > 0 */
+        if (result.ival < 0)
+          status = 2; /* all integer parameters must be non-negative */
+      }
+    }
+
+    return(status);
+}
 
