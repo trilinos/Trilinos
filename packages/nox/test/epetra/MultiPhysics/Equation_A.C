@@ -374,8 +374,6 @@ void Equation_A::generateGraph()
     }
   }
   AA->TransformToLocal();
-  AA->SortIndices();
-  AA->RemoveRedundantIndices();
   
   return;
 }

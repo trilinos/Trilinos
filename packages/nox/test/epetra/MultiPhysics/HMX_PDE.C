@@ -430,8 +430,6 @@ void HMX_PDE::generateGraph()
     }
   }
   AA->TransformToLocal();
-  AA->SortIndices();
-  AA->RemoveRedundantIndices();
   
   return;
 }

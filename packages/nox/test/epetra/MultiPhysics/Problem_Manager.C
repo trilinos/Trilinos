@@ -1294,8 +1294,6 @@ void Problem_Manager::generateGraph()
         delete [] dependentColIndices; dependentColIndices = 0;
 
 	offGraph.TransformToLocal();
-	offGraph.SortIndices();
-	offGraph.RemoveRedundantIndices();
 #ifdef DEBUG
 	offGraph.Print(cout);
 #endif
@@ -1312,8 +1310,6 @@ void Problem_Manager::generateGraph()
   } // end doOffBlocks
 
   AA->TransformToLocal();
-  AA->SortIndices();
-  AA->RemoveRedundantIndices();
 
 #ifdef DEBUG
   AA->Print(cout);

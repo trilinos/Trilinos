@@ -341,8 +341,6 @@ bool Interface::createGraph()
     }
   }
   Graph->TransformToLocal();
-  Graph->SortIndices();
-  Graph->RemoveRedundantIndices();
   return true;
 }
 
