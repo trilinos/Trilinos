@@ -26,21 +26,25 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_ConfigDefs.hpp" // for <iostream> and <stdlib>
 
-namespace Tpetra {
-	enum DataAccess {copy, view};
-	
-	
-	void getArg(DataAccess cv) {
-		cout << "Argument = " << cv << endl;
-	}
-	
-	int main(int argc, char* argv[]) {
-		cout << "Starting..." << endl;
-		int copy = 4;
-		getArg(copy);
-		return(0);
+int main(int argc, char* argv[]) {
+	// initialize verbose & debug flags
+	bool verbose = false;
+	bool debug = false;
+	if(argc > 1) {
+		if(argv[1][0] == '-' && argv[1][1] == 'v')
+			verbose = true;
+		if(argv[1][0] == '-' && argv[1][1] == 'd') {
+			debug = true;
+			verbose = true;
+		}
 	}
 
+	// call test routine
+	int ierr = 0;
+	if(verbose) cout << "Starting BasicPerfTest..." << endl;
+
+	return(ierr);
 }
+

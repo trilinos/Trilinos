@@ -39,7 +39,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(tpetra, 1.0, pmsext@software.sandia.gov)
+AC_INIT(tpetra, 1.0, maherou@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
@@ -280,6 +280,7 @@ AC_CONFIG_FILES([
 		test/VectorSpace/Makefile
 		test/Vector/Makefile
 		test/SparseMatrix/Makefile
+		test/BasicPerfTest/Makefile
 		])
 
 AC_OUTPUT()
