@@ -1089,7 +1089,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
 #define newstuff
 #ifdef newstuff
    ML_Aggregate_Phase2_3_Cleanup(ml_ag, Amat, &aggr_count, Nrows, aggr_index,
-   				 Nrows, comm, NULL, "UC_Phase2_3");
+   				 Nrows, comm, NULL, "UC_Phase2_3",NULL);
 #else
    /* ============================================================= */
    /* Phase 2 : aggregate the rest of the nodes into one of the     */

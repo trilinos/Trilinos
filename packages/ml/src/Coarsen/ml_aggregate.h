@@ -104,6 +104,12 @@ typedef struct ML_Aggregate_Comm_Struct
 
 } ML_Aggregate_Comm;
 
+typedef struct ML_agg_indx_comm_struct {
+  int N_neighbors;
+  int *temp_leng, *send_leng, *recv_leng, *send_list, *recv_list, *tem2_index, 
+    *neighbors, *temp_index;
+} ML_agg_indx_comm;
+
 /* ************************************************************************* */
 /* ************************************************************************* */
 /* functions to manipulate the aggregate data structure                      */
@@ -163,7 +169,8 @@ int ML_Aggregate_Set_CoarsenScheme_UncoupledCoupled( ML_Aggregate *ag  );
 int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 				  int *aggr_count, int nvertices, 
 				  int *aggr_index, int exp_Nrows, 
-				  ML_Comm *comm, char *input_bdry,char *label);
+				  ML_Comm *comm, char *input_bdry,char *label,
+                                  ML_agg_indx_comm *);
 
 
 /* ------------------------------------------------------------------------- */
@@ -251,6 +258,15 @@ int ML_Aggregate_ExchangeBdry(double *data, void *comm);
 int ML_Aggregate_ExchangeData(char *rbuf, char *sbuf, int N_neigh,
                               int *neigh, int *rleng, int *sleng,
                               int msgid, int datatype, ML_Comm *comm);
+
+int ML_aggr_index_communicate(int N_neighbors, int temp_leng[], int send_leng[],
+			   int recv_leng[], int send_list[], int recv_list[],
+			   int nvertices,
+			   ML_Comm *comm, int aggr_index[], int msgtype,
+			   int tem2_index[], int neighbors[], int temp_index[],int);
+
+
+
 
 int ML_Aggregate_Print(ML_Aggregate *);
 int ML_Aggregate_Print_Complexity(ML_Aggregate *);

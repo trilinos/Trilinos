@@ -42,6 +42,7 @@ extern int **global_mapping = NULL, global_nrows, global_ncoarse;
 #define ML_AGGR_UNCOUPLED 1
 #define ML_AGGR_COUPLED   2
 
+
 /* ******************************************************************** */
 /* ******************************************************************** */
 /* The following subroutine is useful to ensure coupling between        */
@@ -99,6 +100,8 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int                   *send_leng = NULL, *recv_leng = NULL;
    int                   send_count = 0, recv_count = 0, total_nz = 0;
    int                   count2;
+   ML_agg_indx_comm      agg_indx_comm;
+
    /*   int kk, old_upper, nnzs, count2, newptr; */
 
 
@@ -472,44 +475,24 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    tem2_index = (int *) ML_allocate(sizeof(int)*(1+total_send_leng+total_recv_leng));
    temp_leng  = (int *) ML_allocate(sizeof(int)*(N_neighbors+1));
 
-   count = 0;
-   send_count = 0;
-   recv_count = 0;
-   for ( i = 0; i < N_neighbors; i++ ) {
-      temp_leng[i] = send_leng[i] + recv_leng[i];
-      for ( j = 0; j < send_leng[i]; j++ ) {
-         index = send_list[send_count++];
-         if (aggr_index[index] < 0) temp_index[count] = -1;
-         else temp_index[count] = -100 - mypid;
-         count++;
-      }
-      for ( j = 0; j < recv_leng[i]; j++ ) {
-         index = recv_list[recv_count++];
-         if (aggr_index[index] < 0) temp_index[count] = -1;
-         else temp_index[count] = -100 - mypid;
-         count++;
-      }
-   }
-   msgtype = 1563;
-   ML_Aggregate_ExchangeData((char*) tem2_index, (char*) temp_index,
-      N_neighbors, neighbors, temp_leng, temp_leng, msgtype, ML_INT, comm);
-   count = 0;
-   send_count = 0;
-   recv_count = 0;
-   for ( i = 0; i < N_neighbors; i++ ) {
-      for ( j = 0; j < recv_leng[i]; j++ ) {
-         index = recv_list[recv_count++];
-         if (tem2_index[count] != -1) aggr_index[index] = tem2_index[count];
-         count++;
-      }
-      for ( j = 0; j < send_leng[i]; j++ ) {
-         index = send_list[send_count++];
-         if (tem2_index[count] != -1) aggr_index[index] = tem2_index[count];
-         count++;
-      }
-   }
+   ML_aggr_index_communicate(N_neighbors, temp_leng, send_leng, recv_leng, send_list, 
+			     recv_list, nvertices, comm, aggr_index, 1563, tem2_index, 
+			     neighbors, temp_index,1);
+
+   agg_indx_comm.N_neighbors = N_neighbors;
+   agg_indx_comm.temp_leng = temp_leng;
+   agg_indx_comm.send_leng = send_leng;
+   agg_indx_comm.recv_leng = recv_leng;
+   agg_indx_comm.send_list = send_list;
+   agg_indx_comm.recv_list = recv_list;
+   agg_indx_comm.tem2_index = tem2_index;
+   agg_indx_comm.neighbors = neighbors;
+   agg_indx_comm.temp_index = temp_index;
+
    ML_Aggregate_Phase2_3_Cleanup(ml_ag, Amatrix, &aggr_count, nvertices, aggr_index,
-				 exp_Nrows, comm, bdry, "MIS");
+				 exp_Nrows, comm, bdry, "MIS", &agg_indx_comm);
+
+
 
 
    /* make sure that boundary nodes are not in any aggregate */
@@ -527,51 +510,10 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
       printf("Communicating phase 2/3 info\n");
       fflush(stdout);
    }
-   count = 0;
-   send_count = 0;
-   recv_count = 0;
-   for ( i = 0; i < N_neighbors; i++ ) {
-      temp_leng[i] = send_leng[i] + recv_leng[i];
-      for ( j = 0; j < send_leng[i]; j++ ) {
-         index = send_list[send_count++];
-         if (index > nvertices) {
-	   printf("ML_agg_MIS%d: sending something in rcv list %d %d\n",
-		  comm->ML_mypid, index,nvertices);
-	   exit(1);
-         }
-         if (aggr_index[index] == -1) temp_index[count] = -1;
-         else if (aggr_index[index] <= -100) temp_index[count]=aggr_index[index];
-         else temp_index[count] = -100 - mypid;
-         count++;
-      }
-      for ( j = 0; j < recv_leng[i]; j++ ) {
-         index = recv_list[recv_count++];
-         if (aggr_index[index] == -1) temp_index[count] = -1;
-         else if (aggr_index[index] <= -100) temp_index[count]=aggr_index[index];
-         else temp_index[count] = -100 - mypid;
-         count++;
-      }
-   }
-   msgtype = 1963;
-   ML_Aggregate_ExchangeData((char*) tem2_index, (char*) temp_index,
-      N_neighbors, neighbors, temp_leng, temp_leng, msgtype, ML_INT, comm);
-   count = 0;
-   send_count = 0;
-   recv_count = 0;
-   for ( i = 0; i < N_neighbors; i++ ) {
-      for ( j = 0; j < recv_leng[i]; j++ ) {
-         index = recv_list[recv_count++];
-         if ((aggr_index[index] == -1) &&(tem2_index[count] != -1))
-	   aggr_index[index] = tem2_index[count];
-         count++;
-      }
-      for ( j = 0; j < send_leng[i]; j++ ) {
-         index = send_list[send_count++];
-         if ((aggr_index[index] == -1) && (tem2_index[count] != -1))
-	   aggr_index[index] = tem2_index[count];
-         count++;
-      }
-   }
+   ML_aggr_index_communicate(N_neighbors, temp_leng, send_leng, recv_leng, send_list, 
+			     recv_list, nvertices, comm, aggr_index, 1963, tem2_index, 
+			     neighbors, temp_index,1);
+
    free(temp_leng);
    free(tem2_index);
    free(temp_index);
@@ -1729,6 +1671,10 @@ int ML_Aggregate_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
    USR_REQ *Request;
    int msg_type = 1041;
    unsigned int nbytes;
+#ifdef RANDMISROOTS
+   double *tvec2;
+   int *tvec, *neworder;
+#endif
 
    N_remaining_vertices = vlist_cnt;
    NremainingRcvProcs   = recv_cnt;
@@ -1810,6 +1756,8 @@ int ML_Aggregate_LabelVertices(int vlist_cnt, int *vlist, char Vtype,
       ML_memory_alloc((void**) &pref_list, nbytes, "ggo" );
    }   
    pref_cnt = 0;
+   /* Why is pref_cnt 0????? shouldn't it be m????? */
+   /* perhaps it is because nothing is aggregated yet? */
    
    /* -------------------------------------------------------- */
    /* get ready for the coarsening                             */
@@ -1829,8 +1777,25 @@ printf("%d: N_remaining_vertices is %d |%d\n",comm->ML_mypid,
    loop_cnt = 0;
    pref_index = 0;     /* pointer to a stack of vertex numbers */
 
+#ifdef RANDMISROOTS
+   tvec2 = (double *) malloc( (vlist_cnt+1)*sizeof(double));
+   tvec  = (int *) malloc( (vlist_cnt+1)*sizeof(int));
+   ML_random_vec(tvec2, vlist_cnt, comm);
+   for (i = 0; i < vlist_cnt; i++) tvec[i] = (int) (100000.*tvec2[i]);
+   free(tvec2);
+   neworder  = (int *) malloc( (vlist_cnt+1)*sizeof(int));
+   for (i = 0; i < vlist_cnt; i++) neworder[i] = i;
+   ML_az_sort(tvec, vlist_cnt, neworder, NULL);
+   free(tvec);
+#endif
+
+
    do {
       pref_index = 0;     /* pointer to a stack of vertex numbers */
+#ifdef RANDMISROOTS
+   pref_index = vlist_cnt + 1000;
+#endif
+
       /* loop_cnt is to monitor the performance of coarsening */
 
       loop_cnt++;
@@ -1854,6 +1819,9 @@ printf("%d: N_remaining_vertices is %d |%d\n",comm->ML_mypid,
          /*        front                                      */
 
          index = vlist[i];
+#ifdef RANDMISROOTS
+         index = vlist[neworder[i]];
+#endif
 #ifdef ML_AGGR_DEBUG
 printf("%d: near the top%d, (%d %d) | %d %d %d\n",comm->ML_mypid,
         N_remaining_vertices,i,index,pref_index,pref_cnt,pref_list[pref_index]); 
@@ -2135,6 +2103,9 @@ printf("the new NremainingRcvProcs is %d\n",NremainingRcvProcs); fflush(stdout);
    }
    if ( nvertices > 0 ) ML_memory_free( (void **) &pref_list );
    free(in_preflist);
+#ifdef RANDMISROOTS
+   free(neworder);
+#endif
    return nselected;
 }
 
@@ -2233,17 +2204,18 @@ printf("the new NremainingRcvProcs is %d\n",*NremainingRcvProcs); fflush(stdout)
 int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 				  int *aggr_count, int nvertices, 
 				  int *aggr_index, int exp_Nrows, 
-				  ML_Comm *comm, char *input_bdry, char *label)
+				  ML_Comm *comm, char *input_bdry, char *label,
+                                  ML_agg_indx_comm *agg_indx_comm)
 {
   int Nphase1_agg, phase_one_aggregated, i, j, aggd_neighbors, nonaggd_neighbors;
   int current_agg, total_aggs, *agg_incremented = NULL, *connect_type = NULL, 
     *number_connections = NULL;
   int best_score, score, best_agg, best_connect, mypid;
   double printflag;
-  int                   allocated = 0, *rowi_col = NULL, rowi_N;
-  double                *rowi_val = NULL;
+  int                   allocated = 0, *rowi_col = NULL, rowi_N,total_vertices;
+  double                *rowi_val = NULL, factor = 1.;
   char *bdry = NULL;
-
+  int send_count, k, kk, flag, *temp_aggr_index;
 
   if (input_bdry == NULL) {
    bdry = (char *) ML_allocate(sizeof(char)*(exp_Nrows + 1));
@@ -2271,6 +2243,20 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    phase_one_aggregated = 0;
    for (i = 0; i < nvertices; i++) {
+     if ((aggr_index[i] != -1) && (bdry[i] == 'F')) {
+        phase_one_aggregated++;
+     }
+   }
+   phase_one_aggregated = ML_Comm_GsumInt( comm, phase_one_aggregated);
+   total_vertices       = ML_Comm_GsumInt( comm, nvertices);
+
+   /* base the number of new aggregates created on the percentage of */
+   /* unaggregated nodes.                                            */
+
+   factor = ((double) phase_one_aggregated)/((double)(total_vertices + 1));
+   factor = sqrt(factor);
+
+   for (i = 0; i < nvertices; i++) {
      if ((aggr_index[i] == -1) && (bdry[i] != 'T')) {
        ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val, &rowi_N, 0);
        aggd_neighbors = 0;
@@ -2281,7 +2267,7 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	 else if (rowi_col[j] < nvertices) nonaggd_neighbors++;
        }
        if ((rowi_N > 3) && 
-	   (((double) nonaggd_neighbors)/((double) rowi_N) > .86)) {
+	   (((double) nonaggd_neighbors)/((double) rowi_N) > factor)) {
 	 aggr_index[i] = (*aggr_count)++;
 	 for (j = 0; j < rowi_N; j++) {
 	   if ( (aggr_index[ rowi_col[j]] == -1) && (rowi_col[j] < nvertices))
@@ -2289,10 +2275,8 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	 }
        }
      }
-     else if (bdry[i] == 'F') phase_one_aggregated++;
    }
 
-   phase_one_aggregated = ML_Comm_GsumInt( comm, phase_one_aggregated);
 
    if ( printflag < ML_Get_PrintLevel()) {
 
@@ -2315,19 +2299,24 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    for (i = 0; i < exp_Nrows; i++) connect_type[i] = 100;
    number_connections = (int *) ML_allocate(sizeof(int)*(*aggr_count+1));
    for (i = 0; i <= *aggr_count; i++) number_connections[i] = 0;
+   /* iiiiiiiiiiiiiiiissss this big enough for the new aggregates that */
+   /* will follow??????                                                */
 
 
    /* Try to stick unaggregated nodes into a neighboring aggegrate (the */
    /* smallest on processor) if they are not already too big. Otherwise */
    /* make a new aggregate.                                             */
 
+   for (kk = 0; kk < 2; kk++) {
    for (i = 0; i < nvertices; i++) {
      if ((aggr_index[i] == -1) && (bdry[i] != 'T')) {
        ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
 			 &rowi_N, 0);
        for (j = 0; j < rowi_N; j++) {
 	 current_agg = aggr_index[rowi_col[j]];
-	 if ((current_agg >= 0) && (current_agg < Nphase1_agg) &&(rowi_col[j] < nvertices)) {
+
+	 /*********** do we neeeeed the extra condition????????? */
+	 if ((current_agg >= 0) && /*(current_agg < Nphase1_agg) &&*/ (rowi_col[j] < nvertices)) {
 	   number_connections[current_agg] += connect_type[rowi_col[j]];
 	 }
        }
@@ -2335,7 +2324,7 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
        best_agg = -1; best_connect = -1;
        for (j = 0; j < rowi_N; j++) {
 	 current_agg = aggr_index[rowi_col[j]];
-	 if (( current_agg >= 0) && (current_agg < Nphase1_agg) && 
+ if (( current_agg >= 0) && /* (current_agg < Nphase1_agg) && do we need this???? */
 	     (number_connections[current_agg] != 0) ) {
 	   score = number_connections[current_agg]-agg_incremented[current_agg];
 	   if (score > best_score) {
@@ -2349,19 +2338,177 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	   number_connections[current_agg] = 0;
 	 }
        }
-       if (best_score < 0) { 
+       if (best_score >= 0) { 
+	 aggr_index[i] = best_agg;
+	 agg_incremented[best_agg]++;
+	 connect_type[i] = best_connect - 10;
+       }
+     }
+   }
+   }
+
+   /* only MIS can have aggregates that span processors */
+
+   if (agg_indx_comm != NULL) {
+     ML_aggr_index_communicate(agg_indx_comm->N_neighbors, agg_indx_comm->temp_leng, 
+			     agg_indx_comm->send_leng, agg_indx_comm->recv_leng, 
+			     agg_indx_comm->send_list, agg_indx_comm->recv_list, 
+			     nvertices, comm, aggr_index, 1573, agg_indx_comm->tem2_index, 
+			     agg_indx_comm->neighbors, agg_indx_comm->temp_index,1);
+
+
+     /* Find unaggregated points that I own. Assign them to an aggregate defined */
+     /* on another processor. The main difficulty is that we do not have the     */
+     /* aggregate index on the other processor .... so .... set temp_aggr_index  */
+     /* to aggr_index[] and communicate without stuffing in the '-100-mypid'     */
+     /* stuff. Now, look at neighbors of each unaggregated point, i,  until we   */
+     /* find one assigned to an aggregate on another processor (we must also     */
+     /* check that the ith point is a ghost node of the other processor). Set    */
+     /* aggr_index[i] = aggr_index[neighbor] and communicate. This gives all     */
+     /* processors who do not own the aggregate the correct '-100-mypid value.Set*/
+     /* temp_aggr_index[i] = temp_aggr_index[neighbor] and communicate. This puts*/
+     /* the correct aggregate number in the temp_aggr_index. Find all k such that*/
+     /* aggr_index[k] = -100 - mypid and do aggr_index[k] = temp_aggr_index[k]   */
+
+     temp_aggr_index = (int *) ML_allocate(sizeof(int)* (exp_Nrows+1));
+     for (i = 0; i < exp_Nrows; i++) {
+       if (aggr_index[i] >= 0) temp_aggr_index[i] = aggr_index[i];
+       else temp_aggr_index[i] = -1;
+     }
+     /* communicate 'temp_aggr_index' twice to make sure that it gets there */
+     /* even if stuff is communicated via an intermediate processor.        */
+
+     ML_aggr_index_communicate(agg_indx_comm->N_neighbors, agg_indx_comm->temp_leng, 
+			     agg_indx_comm->send_leng, agg_indx_comm->recv_leng, 
+			     agg_indx_comm->send_list, agg_indx_comm->recv_list, 
+			     nvertices, comm, 
+			     temp_aggr_index, 1593, 
+                             agg_indx_comm->tem2_index, 
+			     agg_indx_comm->neighbors, agg_indx_comm->temp_index,0);
+
+     ML_aggr_index_communicate(agg_indx_comm->N_neighbors, agg_indx_comm->temp_leng, 
+			     agg_indx_comm->send_leng, agg_indx_comm->recv_leng, 
+			     agg_indx_comm->send_list, agg_indx_comm->recv_list, 
+			     nvertices, comm, 
+			     temp_aggr_index, 1594, 
+                             agg_indx_comm->tem2_index, 
+			     agg_indx_comm->neighbors, agg_indx_comm->temp_index,0);
+
+
+     for (i = 0; i < nvertices; i++) {
+       if ((aggr_index[i] == -1) && (bdry[i] != 'T')) {
+#ifdef CLEAN_DEBUG
+	 printf("%d: Trying to assign %d to someone\n",comm->ML_mypid,i);
+#endif
+	 ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+			   &rowi_N, 0);
+	 flag = 1;
+	 for (j = 0; j < rowi_N; j++) {
+	   current_agg = aggr_index[rowi_col[j]];
+#ifdef CLEAN_DEBUG
+	   printf("%d: a neighbor %d %d | %d\n",
+		  comm->ML_mypid,rowi_col[j],current_agg,temp_aggr_index[rowi_col[j]]);
+#endif
+
+	   /* This node needs to be a ghost node of the processor that */
+	   /* owns the aggregate!!!!!                                  */
+	   if  ((flag==1)&&(current_agg < -1) && (temp_aggr_index[rowi_col[j]] >= 0)) {
+	     current_agg = -100 - current_agg;
+#ifdef CLEAN_DEBUG
+	     printf("%d: lets go for it %d | proc = %d \n",comm->ML_mypid,i,current_agg); fflush(stdout);
+#endif
+
+	     /* Do I send this node to the processor 'current_agg'  */
+	     send_count = 0;
+	     for ( k = 0; k < agg_indx_comm->N_neighbors; k++ ) {
+	       if (agg_indx_comm->neighbors[k] == current_agg) {
+		 for (kk = 0; kk < agg_indx_comm->send_leng[k]; kk++) {
+		   if (agg_indx_comm->send_list[send_count+kk] == i) {
+#ifdef CLEAN_DEBUG
+		     printf("%d: yes this is in %d on %d\n",
+			    comm->ML_mypid,temp_aggr_index[rowi_col[j]],current_agg);
+#endif
+		     flag = 0;
+		     aggr_index[i] = aggr_index[rowi_col[j]];
+		     temp_aggr_index[i] = -10 - temp_aggr_index[rowi_col[j]];
+		   }
+		 }
+	       }
+	       send_count += agg_indx_comm->send_leng[k];
+	     }
+	   }
+	 }
+       }
+     }
+
+     /* communicate twice 'aggr_index' and 'temp_aggr_index' to make sure that */
+     /* everyone gets everything. I think this is needed because some data     */
+     /* might be communicated through another processor.                       */
+
+     ML_aggr_index_communicate(agg_indx_comm->N_neighbors, agg_indx_comm->temp_leng, 
+			     agg_indx_comm->send_leng, agg_indx_comm->recv_leng, 
+			     agg_indx_comm->send_list, agg_indx_comm->recv_list, 
+			     nvertices, comm, 
+			     aggr_index, 
+			     1578, agg_indx_comm->tem2_index, 
+			     agg_indx_comm->neighbors, agg_indx_comm->temp_index,1);
+     ML_aggr_index_communicate(agg_indx_comm->N_neighbors, agg_indx_comm->temp_leng, 
+			     agg_indx_comm->send_leng, agg_indx_comm->recv_leng, 
+			     agg_indx_comm->send_list, agg_indx_comm->recv_list, 
+			     nvertices, comm, 
+			     temp_aggr_index, 
+			     1579, agg_indx_comm->tem2_index, 
+			     agg_indx_comm->neighbors, agg_indx_comm->temp_index,0);
+     ML_aggr_index_communicate(agg_indx_comm->N_neighbors, agg_indx_comm->temp_leng, 
+			     agg_indx_comm->send_leng, agg_indx_comm->recv_leng, 
+			     agg_indx_comm->send_list, agg_indx_comm->recv_list, 
+			     nvertices, comm, 
+			     aggr_index, 
+			     1580, agg_indx_comm->tem2_index, 
+			     agg_indx_comm->neighbors, agg_indx_comm->temp_index,1);
+     ML_aggr_index_communicate(agg_indx_comm->N_neighbors, agg_indx_comm->temp_leng, 
+			     agg_indx_comm->send_leng, agg_indx_comm->recv_leng, 
+			     agg_indx_comm->send_list, agg_indx_comm->recv_list, 
+			     nvertices, comm, 
+			     temp_aggr_index, 
+			     1581, agg_indx_comm->tem2_index, 
+			     agg_indx_comm->neighbors, agg_indx_comm->temp_index,0);
+
+     for (i= nvertices; i < exp_Nrows; i++) {
+       if (aggr_index[i] == -100 - comm->ML_mypid) {
+	 aggr_index[i] = -10 - temp_aggr_index[i];
+#ifdef CLEAN_DEBUG
+	 printf("%d: assigning %d to %d\n", comm->ML_mypid,i,aggr_index[i]);
+#endif
+       }
+     }
+     ML_free(temp_aggr_index);
+   }
+   for (i = 0; i < nvertices; i++) {
+     if ((aggr_index[i] == -1) && (bdry[i] != 'T')) {
+#ifdef CLEAN_DEBUG
+       printf("%d: this guy is left %d    %d %d\n",comm->ML_mypid,i,nvertices,Nphase1_agg);
+#endif
+       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+			 &rowi_N, 0);
 	 /* We don't want a singleton. So lets see if there is an unaggregated */
 	 /* neighbor that we can also but with this point.                     */
 
+       flag = 1;
 	 for (j = 0; j < rowi_N; j++) {
-	   if (rowi_col[j] != i) {
+	   if ((rowi_col[j] != i) && (rowi_col[j] < nvertices)) {
 	     current_agg = aggr_index[rowi_col[j]];
-	     if ( current_agg == -1) break;
+	     if ( current_agg == -1) {
+	       flag = 0;
+#ifdef CLEAN_DEBUG
+	       printf("%d:      neighboring aggs %d %d\n",comm->ML_mypid,current_agg,rowi_col[j]);
+#endif
+	       aggr_index[rowi_col[j]] = *aggr_count;
+	       connect_type[rowi_col[j]] = 100;
+	     }
 	   }
 	 }
-	 if (j < rowi_N) {
-	   aggr_index[rowi_col[j]] = *aggr_count;
-	   connect_type[rowi_col[j]] = 100;
+	 if (flag == 0) {
 	   connect_type[i] = 100;
 	   aggr_index[i] = (*aggr_count)++;
 	 }
@@ -2371,7 +2518,7 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	   /* any higher phase aggregate.                                    */
 	   for (j = 0; j < rowi_N; j++) {
 	     current_agg = aggr_index[rowi_col[j]];
-	     if ( current_agg >= 0) break;
+	     if (( current_agg >= 0) && (rowi_col[j] < nvertices) ) break;
 	   }
 	   if (j < rowi_N) {
 	     aggr_index[i] = current_agg;
@@ -2379,18 +2526,25 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	     connect_type[i] = connect_type[rowi_col[j]] - 11;
 	   }
 	   else {
-	     aggr_index[i] = (*aggr_count)++;
-	     connect_type[i] = 100;
+#ifdef CLEAN_DEBUG
+	     printf("%d: oh well  %d\n",comm->ML_mypid,i);
+#endif
+	     /* Singletons are problematics when the nullspace dimension */
+	     /* is larger than the number of pde equations!!! This is    */
+	     /* due to the QR factorization that occurs later.           */
+	     if ((ml_ag->nullspace_dim > ml_ag->num_PDE_eqns) && ((*aggr_count)>0)) {
+	       aggr_index[i] = 0; connect_type[i] = 1;
+	     }
+	     else {
+	       aggr_index[i] = (*aggr_count)++;
+	       connect_type[i] = 100;
+	     }
 	   }
 	 } 
-       }
-       else {
-	 aggr_index[i] = best_agg;
-	 agg_incremented[best_agg]++;
-	 connect_type[i] = best_connect - 10;
-       }
      }
    }
+
+
 
    if (printflag < ML_Get_PrintLevel()) {
      total_aggs = ML_Comm_GsumInt( comm, *aggr_count);
@@ -2412,3 +2566,59 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
   return 0;
 }
 
+
+int ML_aggr_index_communicate(int N_neighbors, int temp_leng[], int send_leng[],
+			   int recv_leng[], int send_list[], int recv_list[],
+			   int nvertices,
+			   ML_Comm *comm, int aggr_index[], int msgtype,
+			   int tem2_index[], int neighbors[], int temp_index[],
+			      int flag)
+{
+   int count = 0, send_count = 0, recv_count = 0, i, j;
+   int index;
+
+   for ( i = 0; i < N_neighbors; i++ ) {
+      temp_leng[i] = send_leng[i] + recv_leng[i];
+      for ( j = 0; j < send_leng[i]; j++ ) {
+         index = send_list[send_count++];
+         if (index > nvertices) {
+	   printf("ML_agg_MIS%d: sending something in rcv list %d %d\n",
+		  comm->ML_mypid, index,nvertices);
+	   exit(1);
+         }
+         if (aggr_index[index] == -1) temp_index[count] = -1;
+         else if (aggr_index[index] <= -100) temp_index[count]=aggr_index[index];
+         else if (flag == 1) temp_index[count] = -100 - comm->ML_mypid;
+	 else  temp_index[count]=aggr_index[index];
+         count++;
+      }
+      for ( j = 0; j < recv_leng[i]; j++ ) {
+         index = recv_list[recv_count++];
+         if (aggr_index[index] == -1) temp_index[count] = -1;
+         else if (aggr_index[index] <= -100) temp_index[count]=aggr_index[index];
+         else if (flag == 1) temp_index[count] = -100 - comm->ML_mypid;
+	 else  temp_index[count]=aggr_index[index];
+         count++;
+      }
+   }
+   ML_Aggregate_ExchangeData((char*) tem2_index, (char*) temp_index,
+      N_neighbors, neighbors, temp_leng, temp_leng, msgtype, ML_INT, comm);
+   count = 0;
+   send_count = 0;
+   recv_count = 0;
+   for ( i = 0; i < N_neighbors; i++ ) {
+      for ( j = 0; j < recv_leng[i]; j++ ) {
+         index = recv_list[recv_count++];
+         if ((aggr_index[index] == -1) &&(tem2_index[count] != -1))
+	   aggr_index[index] = tem2_index[count];
+         count++;
+      }
+      for ( j = 0; j < send_leng[i]; j++ ) {
+         index = send_list[send_count++];
+         if ((aggr_index[index] == -1) && (tem2_index[count] != -1))
+	   aggr_index[index] = tem2_index[count];
+         count++;
+      }
+   }
+   return 1;
+}
