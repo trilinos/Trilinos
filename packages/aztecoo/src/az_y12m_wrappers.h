@@ -12,15 +12,15 @@ extern "C" {
 #include <stdio.h>
 #endif
 
-void Y12MBF_F77(int *n, int *z, double val[], int snr[], int *nn,
+void PREFIX Y12MBF_F77(int *n, int *z, double val[], int snr[], int *nn,
                       int rnr[], int *nn1, int ha[], int *iha, double aflag[],
                       int iflag[], int *ifail);
 
-void Y12MCF_F77(int *n, int *z, double val[], int snr[], int *nn,
+void PREFIX Y12MCF_F77(int *n, int *z, double val[], int snr[], int *nn,
                       int rnr[], int *nn1, double pivot[], double b[], int ha[],
                       int *iha, double aflag[], int iflag[], int *ifail);
 
-void Y12MDF_F77(int *n, double val[], int *nn, double b[], double pivot[],
+void PREFIX Y12MDF_F77(int *n, double val[], int *nn, double b[], double pivot[],
                       int snr[], int ha[], int *iha, int iflag[], int *ifail);
 
 #ifdef __cplusplus

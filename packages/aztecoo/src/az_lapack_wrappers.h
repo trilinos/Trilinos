@@ -51,28 +51,28 @@ extern "C" {
 #include <stdio.h>
 #endif
 
-void DLASWP_F77(int *, double *, int *, int *, int *, int *, int *);
+void PREFIX DLASWP_F77(int *, double *, int *, int *, int *, int *, int *);
 
-void DLAIC1_F77(int * , int *, double *, double *, double *, double *,
+void PREFIX DLAIC1_F77(int * , int *, double *, double *, double *, double *,
 			  double *, double *, double *);
-void SLASWP_F77(int *, float *, int *, int *, int *, int *, int *);
+void PREFIX SLASWP_F77(int *, float *, int *, int *, int *, int *, int *);
 
-void SLAIC1_F77(int * , int *, float *, float *, float *, float *,
+void PREFIX SLAIC1_F77(int * , int *, float *, float *, float *, float *,
 			  float *, float *, float *);
 
   /* Double precision LAPACK linear solvers */
-void DGETRF_F77(int* m, int* n, double* a, int* lda, int* ipiv, int* info); 
-void DGETRS_F77(az_fcd, int* n, int* nrhs, double* a,
+void PREFIX DGETRF_F77(int* m, int* n, double* a, int* lda, int* ipiv, int* info); 
+void PREFIX DGETRS_F77(az_fcd, int* n, int* nrhs, double* a,
                        int* lda, int*ipiv, double*x , int* ldx, int* info);
-void DGETRI_F77(int* n, double* a, int* lda, int*ipiv, double * work , int* lwork, int* info);
-void DPOTRF_F77(az_fcd, int* n, double* a, int* lda, int* info); 
+void PREFIX DGETRI_F77(int* n, double* a, int* lda, int*ipiv, double * work , int* lwork, int* info);
+void PREFIX DPOTRF_F77(az_fcd, int* n, double* a, int* lda, int* info); 
 
   /* Single precision LAPACK linear solvers*/
-void SGETRF_F77(int* m, int* n, float* a, int* lda, int* ipiv, int* info); 
-void SGETRS_F77(az_fcd, int* m, int* n, float* a,
+void PREFIX SGETRF_F77(int* m, int* n, float* a, int* lda, int* ipiv, int* info); 
+void PREFIX SGETRS_F77(az_fcd, int* m, int* n, float* a,
                        int* lda, int*ipiv, float*x , int* ldx, int* info);
-void SGETRI_F77(int* n, float* a, int* lda, int*ipiv, float * work , int* lwork, int* info);
-void SPOTRF_F77(az_fcd, int* n, float* a, int* lda, int* info); 
+void PREFIX SGETRI_F77(int* n, float* a, int* lda, int*ipiv, float * work , int* lwork, int* info);
+void PREFIX SPOTRF_F77(az_fcd, int* n, float* a, int* lda, int* info); 
 
 
 #ifdef __cplusplus
@@ -81,7 +81,7 @@ void SPOTRF_F77(az_fcd, int* n, float* a, int* lda, int* info);
 
 #endif /* _AZ_LAPACK_WRAPPERS_H_ */
 
-void DGETRS_F77(az_fcd, int* n, int* nrhs, double* a,
+void PREFIX DGETRS_F77(az_fcd, int* n, int* nrhs, double* a,
                        int* lda, int*ipiv, double*x , int* ldx, int* info);
-void SGETRS_F77(az_fcd, int* m, int* n, float* a,
+void PREFIX SGETRS_F77(az_fcd, int* m, int* n, float* a,
                        int* lda, int*ipiv, float*x , int* ldx, int* info);

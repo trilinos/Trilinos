@@ -36,13 +36,13 @@
 #endif
 
 
-#define F77_FUNC(lcase,UCASE) PREFIX UCASE
+#define F77_FUNC(lcase,UCASE) UCASE
 
 #ifdef F77_FUNC_
 #undef F77_FUNC_
 #endif
 
-#define F77_FUNC_(lcase,UCASE) PREFIX UCASE
+#define F77_FUNC_(lcase,UCASE) UCASE
 
 #else /* Define az_fcd for all other machines */
 
@@ -56,11 +56,11 @@
 #endif
 
 #ifdef TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE
-#define F77_FUNC(lcase,UCASE) PREFIX lcase
-#define F77_FUNC_(lcase,UCASE) PREFIX lcase
+#define F77_FUNC(lcase,UCASE) lcase
+#define F77_FUNC_(lcase,UCASE) lcase
 #else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
-#define F77_FUNC(lcase,UCASE) PREFIX lcase ## _
-#define F77_FUNC_(lcase,UCASE) PREFIX lcase ## __
+#define F77_FUNC(lcase,UCASE) lcase ## _
+#define F77_FUNC_(lcase,UCASE) lcase ## __
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 #endif /* HAVE_CONFIG_H */
 
