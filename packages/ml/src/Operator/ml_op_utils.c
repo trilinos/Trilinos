@@ -3133,7 +3133,7 @@ int ML_Operator_Get_Nnz(ML_Operator *A)
 {
   int i;
   int space=0, *columns=NULL, row_lengths;
-  double *values;
+  double *values = NULL;
 
 
   if (A == NULL) return 0;
