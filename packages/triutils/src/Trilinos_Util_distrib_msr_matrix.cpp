@@ -128,10 +128,8 @@ void Trilinos_Util_distrib_msr_matrix(Epetra_Comm & Comm, int *N_global,
 	  bindx1[i+1] = bindx1[i];
 
 #ifdef DEBUG	  
-	  printf("Proc %d of %d: Global row = %d: Local row = %d: 
-                  b = %12.4g: x = %12.4g: bindx = %d: val = %12.4g \n",
-		 MyPID,NumProc, 
-		 row, i, b1[i], x1[i], bindx1[i], val1[i]) ;
+	  printf("Proc %d of %d: Global row = %d: Local row = %d: b = %12.4g: x = %12.4g: bindx = %d: val = %12.4g \n",
+		 MyPID,NumProc, row, i, b1[i], x1[i], bindx1[i], val1[i]) ;
 #endif
 
 	  for (j = (*bindx)[row]; j < (*bindx)[row+1]; j++)
@@ -175,8 +173,8 @@ void Trilinos_Util_distrib_msr_matrix(Epetra_Comm & Comm, int *N_global,
 	  printf(
      "The residual using MSR format and exact solution on processor %d is %12.4g\n",
 	      MyPID,
-	      Trilinos_Util_smsrres (*N_update, (*N_global), (*val), (*bindx), 
-		       (*xexact), (*xexact), (*b)));
+	      Trilinos_Util_smsrres (*N_update, (*N_global), (*val), 
+              (*bindx), (*xexact), (*xexact), (*b)));
 	}
 
   

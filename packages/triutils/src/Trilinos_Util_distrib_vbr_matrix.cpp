@@ -175,8 +175,7 @@ void Trilinos_Util_distrib_vbr_matrix(Epetra_Comm & Comm,
 	    bpntr1[i+1] = bpntr1[i];
 	    
 #ifdef DEBUG	  
-	    printf("Proc %d of %d: Global row = %d: Local row = %d: 
-                    b = %12.4g: x = %12.4g: bindx = %d: val = %12.4g \n",
+	    printf("Proc %d of %d: Global row = %d: Local row = %d: b = %12.4g: x = %12.4g: bindx = %d: val = %12.4g \n",
 		    MyPID,NumProc, 
 		    row, i, b1[i], x1[i], bindx1[i], val1[i]) ;
 #endif
