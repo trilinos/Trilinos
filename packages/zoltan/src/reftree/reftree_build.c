@@ -2138,13 +2138,17 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
         determined */
           if (tree_node->in_vertex == 0) tree_node->in_vertex = in_vertex[i];
           if (tree_node->out_vertex == 0) tree_node->out_vertex = out_vertex[i];
-          lid = (num_lid_entries ? &(local_lids[i*num_lid_entries]) : NULL);
-          zz->Get_Child_Weight(zz->Get_Child_Weight_Data, 
+          if (zz->Obj_Weight_Dim == 0)    /* KAREN */
+            tree_node->weight[0] = 0.0;
+          else {
+            lid = (num_lid_entries ? &(local_lids[i*num_lid_entries]) : NULL);
+            zz->Get_Child_Weight(zz->Get_Child_Weight_Data, 
                                num_gid_entries, num_lid_entries,
                                &(local_gids[i*num_gid_entries]),
                                lid,
                                zz->Obj_Weight_Dim,
                                tree_node->weight, &ierr);
+          }
         }
       }
       ZOLTAN_FREE(&local_gids);
@@ -2210,7 +2214,10 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
         determined */
         if (tree_node->in_vertex == 0) tree_node->in_vertex = sin_vertex;
         if (tree_node->out_vertex == 0) tree_node->out_vertex = sout_vertex;
-        zz->Get_Child_Weight(zz->Get_Child_Weight_Data, 
+        if (zz->Obj_Weight_Dim == 0)    /* KAREN */
+          tree_node->weight[0] = 0.0;
+        else
+          zz->Get_Child_Weight(zz->Get_Child_Weight_Data, 
                              num_gid_entries, num_lid_entries,
                              slocal_gids, slocal_lids, zz->Obj_Weight_Dim,
                              tree_node->weight, &ierr);
@@ -2229,6 +2236,7 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
     ZOLTAN_FREE(&slocal_lids);
     ZOLTAN_FREE(&plocal_gids);
     ZOLTAN_FREE(&plocal_lids);
+    ZOLTAN_FREE(&vertices);  /* KAREN */
   }
   return(final_ierr);
 }
