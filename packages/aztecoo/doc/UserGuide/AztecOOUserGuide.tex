@@ -1,0 +1,439 @@
+ \documentclass[12pt,relax]{AztecOOUserGuide}
+ \usepackage{fancyvrb}
+\SANDsubtitle{}
+\title{\AztecOOTM{} User Guide}
+
+\author{Michael A. Heroux \\
+	\\
+	    Sandia National Laboratories\\
+	    P.O. Box 5800\\
+	    Albuquerque, NM 87185-1110 
+	 }
+
+    % There is a "Printed" date on the title page of a SAND report, so
+    % the generic \date should generally be empty.
+    \date{} % Remove ``\today'' in final version
+
+
+\SANDnum{SAND2003-xxxx}
+\SANDprintDate{Printed September 2003}
+\SANDauthor{Michael A. Heroux \\
+	Computational Mathematics and Algorithms Department \\
+	 Sandia National Laboratories \\
+	P.~O.~Box 5800 \\
+	Albuquerque, NM 87185-1110}
+
+
+\SANDreleaseType{Unlimited Release}
+
+
+% New commands
+
+\newcommand{\comm}{Epetra\_Comm}
+\newcommand{\serialcomm}{Epetra\_SerialComm}
+\newcommand{\mpicomm}{Epetra\_MpiComm}
+\newcommand{\mpismpcomm}{Epetra\_MpiSmpComm}
+\newcommand{\lbcomm}{Epetra\_LbComm}
+\newcommand{\map}{Epetra\_Map}
+\newcommand{\blockmap}{Epetra\_BlockMap}
+\newcommand{\serialdensevector}{Epetra\_SerialDenseVector}
+\newcommand{\intserialdensevector}{Epetra\_IntSerialDenseVector}
+\renewcommand{\vector}{Epetra\_Vector}
+\newcommand{\multivector}{Epetra\_MultiVector}
+\newcommand{\crsgraph}{Epetra\_CrsGraph}
+\newcommand{\crsmatrix}{Epetra\_CrsMatrix}
+\newcommand{\vbrmatrix}{Epetra\_VbrMatrix}
+\newcommand{\rowmatrix}{Epetra\_RowMatrix}
+\newcommand{\distobject}{Epetra\_DistObject}
+\newcommand{\linearproblem}{Epetra\_LinearProblem}
+\newcommand{\operator}{Epetra\_Operator}
+\newcommand{\fecrsmatrix}{Epetra\_FECrsMatrix}
+\newcommand{\fevbrmatrix}{Epetra\_FEVbrMatrix}
+\newcommand{\msrmatrix}{Epetra\_MsrMatrix}
+\newcommand{\statustest}{AztecOO\_StatusTest}
+\newcommand{\oooperator}{AztecOO\_Operator}
+
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+
+The \TrilinosTM{} Project is an effort to facilitate the design, development,
+integration and ongoing support of mathematical software libraries.
+\AztecOOTM{} is a package within Trilinos that enables the use of the Aztec solver 
+library~\cite{Aztec2.1} with \EpetraTM{}~\cite{Epetra-Users-Guide} objects.  
+AztecOO provides access to Aztec preconditioners and solvers by
+implementing the Aztec ``matrix-free'' interface using Epetra.
+While Aztec is written in C and procedure-oriented, 
+AztecOO is written in C++ and is object-oriented.
+
+In addition to providing access to Aztec capabilities, AztecOO also
+provides some signficant new functionality.  In particular it provides
+an extensible status testing capability that allows expression of
+sophisticated stopping criteria as is needed in production use of
+iterative solvers.  AztecOO also provides mechanisms for using 
+Ifpack~\cite{Ifpack-Ref-Guide}, ML~\cite{ML-home-page} and AztecOO
+itself as preconditioners.
+\end{abstract}
+
+
+\section*{Acknowledgement}
+The authors would like to acknowledge the support of the ASCI and LDRD 
+programs that funded development of AztecOO and the authors of Aztec
+2.1 upon which AztecOO is built: Ray Tuminaro, Mike Heroux, Scott
+Hutchinson and John Shadid.  
+
+\clearpage
+\tableofcontents
+\listoffigures
+\listoftables
+
+\clearpage
+
+
+NOTE: Add section on repeated use of AztecOO objects.
+
+
+\section{Introduction}
+\label{Section:Introduction}
+
+AztecOO is a collection of C++ classes that support the construction
+and use of objects for solving linear systems of equations via
+preconditioned Krylov methods, as provided in Aztec.
+
+This user guide is intended to (i) introduce a new
+user to the basic features of AztecOO, (ii) discuss the details of AztecOO
+constructors, and (iii) illustrate the use of
+AztecOO's advanced uses.  This document is not intended as a reference
+manual.  Detailed descriptions of AztecOO classes and methods can be
+found online at the Trilinos Project home page~\cite{Trilinos-home-page}.
+
+
+\subsection{Overview of Major AztecOO Classes and Features}
+
+AztecOO contains a variety of classes to support the solution of
+linear systems of equations of the form $Ax=b$ using preconditioned
+iterative methods.  AztecOO also fully contains Aztec, so any application
+that is using Aztec can use the AztecOO library in place of Aztec.  
+
+The primary AztecOO class is of the same name, AztecOO.  An AztecOO
+class instance acts as a manager of Aztec, accepting user data as
+Epetra objects.  If an AztecOO object is instantiated using Epetra
+objects, all of Aztec's preconditioners and Krylov methods can be
+applied the Epetra-defined problem.  However, AztecOO provides a
+variety of mechanisms to override default Aztec capabilities.  Users
+can construct and use preconditioners from Ifpack or ML, or can use
+another instance of the AztecOO class as a preconditioner.  Users can
+also override the default convergence tests in Aztec and use any
+combination of available status tests in \statustest{} classes,
+or define their own.
+
+\subsection{Use of Epetra}
+
+AztecOO relies on Epetra for both concrete and abstract classes that
+describe matrix, vector and linear operator objects.  
+Although  concrete classes are needed to construct matrices, AztecOO
+itself uses these matrices via two Epetra abstract classes.  By using
+abstract interfaces, we can support any of the predefined classes that
+implement the abstract interfaces andallows users to define
+new implementations.  This allows AztecOO
+to be easily extended.  
+
+\subsubsection{Epetra Abstract Classes}
+
+The two primary abstract Epetra classes used by AztecOO are:
+\begin{enumerate}
+\item {\bf \rowmatrix{}: } Supports the use of any class that is
+conceptually a linear operator with access to coefficient data.
+Although row-orientation is assumed, this class works equally well
+with column oriented data, since transpose operations are supported.  
+This class provides an interface to access matrix data.  In addition,
+it extends the \operator{} interface, so any class that implements
+\rowmatrix{} also implmenents \operator{}, described next.  There are
+four primary classes in Epetra that implement \rowmatrix{}, namely 
+the \crsmatrix{}, \vbrmatrix{}, \fecrsmatrix{} and \fevbrmatrix{}
+classes.  AztecOO also provides an implementation of \crsmatrix{}
+called \msrmatrix{}.  \msrmatrix{} allows users whose application is
+already forming Aztec DMSR matrix structs to encapsulate the DMSR
+matrix in a class that implements \rowmatrix.  The encapsulation does
+not copy the data in the DMSR matrix struct.  This feature is
+important for people making a transition from Aztec to AztecOO.
+\item {\bf \operator{}: } Supports the use of any class that is
+conceptually a linear operator.  There are only a handful of methods
+in this class, the most important of which are the Apply() and
+ApplyInverse() (ApplyInverse() can be defined as nonexistent).  
+A large number of Epetra classes implement the
+\operator{} interface, including the \crsmatrix{}, \vbrmatrix{},
+\fecrsmatrix{} and \fevbrmatrix{} since these classes implement
+\rowmatrix{} and \rowmatrix{} extends \operator{}.  In addition, ML
+and IFPACK both implement the \operator{} interface, so they can be
+used as preconditioners for AztecOO.  A class called \oooperator{}
+also implements the \operator{} interface using an existing AztecOO
+class instance.  This allows AztecOO to be used as a preconditioner
+for itself.
+
+\end{enumerate}
+
+\subsubsection{Epetra Concrete Classes}
+
+Given the above abstract classes, we need some concrete classes in
+order to construct explicit objects.  Specifically,
+the following concrete Epetra classes are used:
+\begin{enumerate}
+\item {\bf \vector{}: } Supports construction and use of distributed
+vectors of double-precision numbers.  Once constructed, \vector{}
+objects can be used in multiple ways.  Common operations such as
+norms, dot products and vector updates are supported by methods in
+this class.  Additional functionality is available via several
+extension techniques discussed later.
+\item{\bf \multivector{}: } An \multivector{} object is a collection
+of \vector{} objects (although \vector{} is actually implemented as a
+specialization of \multivector{}).  Specifically, an \multivector{}
+object is a collection of vectors with the same size and
+distribution.  This kind of object is useful for block algorithms and
+applications that manage multiple vectors simultaneously.  \vector{}
+and \multivector{} objects are understood by all Trilinos packages.
+\item{\bf \crsgraph{}:} Supports the construction and use of adjacency
+graphs.  These graphs are used to describe the pattern of Epetra
+sparse matrix classes and provide pattern-based information to
+load-balancing interfaces.  The graphs are also used to implement
+overlapping subdomain algorithms and a variety of other parallel
+algorithms.
+\item{\bf \crsmatrix{}:} Supports construction and use of distributed
+sparse matrix objects.  Once constructed, an \crsmatrix{} object can
+be used with any Trilinos solvers or preconditioners.  This class also
+supports common matrix and matrix-vector operations such as matrix
+scaling, matrix norms and matrix-vector multiplication.
+\item{\bf \vbrmatrix{}:} Although less frequently used than the
+\crsmatrix{} class, this class supports the construction of sparse
+matrices whose entries are dense matrices.  This type of matrix is
+frequently found in applications where multiple degrees of freedom are
+tracked at each mesh point.  When properly used, the \vbrmatrix{}
+class can offer substantial machine performance and algorithmic
+robustness improvements.
+\item{\bf \linearproblem{}:} An \linearproblem{} object is an
+aggregate object that encapsulates the problem $Ax=b$.  It contains a
+pointer to an \rowmatrix{} or \operator{} representing $A$, and an 
+\multivector{} for $x$ and another for $b$.  (NOTE:  Although the
+interface supports multiple right-hand-sides and solution vectors,
+AztecOO presently supports the solution of only one right-hand-side.)
+Although use of the \linearproblem{} is not required for passing $A$,
+$x$ and $b$ to AztecOO, it is highly recommended.  Use of
+\linearproblem{} guarantees that the matrix, left-hand-side and
+right-hand-side are compatible.  Also, the \linearproblem{} class
+provides methods for scaling the linear problem using any of a variety
+of diagonal scaling methods.
+\end{enumerate}
+
+
+
+
+\section{A First Example}
+\label{Section:FirstExample}
+Before proceeding with additional descriptive information, we
+introduce a simple example in this section in order to explicitly
+illustrate a straight-forward use of AztecOO.  Although this example only
+starts to tap the capabilities of AztecOO, we hope the reader finds it
+useful.
+
+The example code, listed in Figure~\ref{Figure:FirstExample}
+and~\ref{Figure:PowerMethod}, is the main program driver and
+a simple implementation of the Power Method~\cite{GoluVanL96} for computing the dominant
+eigenvalue and associated eigenvector of a given matrix,
+respectively.  In the remainder of this section we proceed with a
+description of the code in these figures.
+\begin{figure}
+\begin{center}
+\input{Ex1}
+\end{center}
+\caption{\label{Figure:FirstExample} Simple AztecOO/Epetra Example}
+\end{figure}
+
+\subsection{Explanation of Figure~\ref{Figure:FirstExample}}
+
+\paragraph{Lines 1--2}
+Include system header files needed for screen output and system
+functions.
+\paragraph{Line 3}
+Include the AztecOO\_config.h file.  This file contains macros
+definitions that were defined during the configuration process.  In
+particular, the macro HAVE\_MPI will be defined or undefined in this
+file, depending on whether AztecOO was built in MPI mode or not.  We
+will use HAVE\_MPI below to determine if our example code should be
+compiled with MPI support or not.
+\paragraph{Lines 4--9}
+Include the appropriate implementation of the \comm{} class.  If
+AztecOO was built in MPI mode, the macro ``HAVE\_MPI'' will be defined
+and this example will be built with MPI support.  If not, then the
+example will be built in serial mode.  Note that these lines of code
+ and lines 18--23 are the only difference between a serial and distributed memory
+version of the example. 
+\paragraph{Lines 10--14}
+Include the other AztecOO header files needed to use AztecOO classes.
+It is a good practice to explicitly include header files for all
+AztecOO classes you explicitly use and only those header files.
+\paragraph{Line 16}
+Declare prototype for power\_method function.
+\paragraph{Line 17}
+Start of main program.  Note that argv[1] will be used to pass in the
+problem size.
+\paragraph{Lines 18--24}
+Depending on whether or not AztecOO was built in MPI
+mode\footnote{Whether or not Trilinos, and AztecOO as a Trilinos package, is built
+in MPI mode is determined by how the Trilinos (or AztecOO) {\tt
+configure} script in invoked.  If no MPI-related arguments are passed
+to the configure script, then packages are built in serial mode only.
+If one or more MPI options are invoked, then packages are built with
+MPI support (in addition to serial support).}, MPI will be initialized
+and an \mpicomm{} object will be constructed, or an \serialcomm{}
+object will be constructed.  Please note that, in principle, the serial
+version of this example would work, even if AztecOO were built in MPI
+mode.  Serial mode is always available.
+
+Line 24 prints the Comm object to cout.  Most AztecOO classes have
+implemented the ostream << operator so that an instance of an AztecOO
+object can be viewed.  Sometime the volume of output can be very
+large, so some care is needed when using this feature.
+\paragraph{Lines 25--30}
+This example accepts a single integer argument
+specifying the number of equations that should be used.  These lines
+of code capture that number and put it into NumGlobalElements.
+\paragraph{Lines 31--33}
+Constructs an \map{} object that has NumGlobalElements elements spread
+across the parallel (or serial) machine.  The second argument (a
+``0'') indicates that our global indices are zero-based.  Fortran
+users would typically pass in a ``1'' here.  The third argument is the
+Comm object we just built.
+\paragraph{Line 35}
+Once an \map{} object is constructed, we can query it for how many
+elements of the map are on the calling process\footnote{For readers
+who are not familiar with a single-program, multiple data (SPMD)
+programming model, it may be useful to read a bit about it.  Typing
+``SPMD tutorial'' into a web search engine should be a sufficient
+starting point.}.  In this way, the remainder of our code can operate
+independent of how data is distributed.
+\paragraph{Lines 37--57: Preview}
+The majority of executable code in this sample driver is devoted to
+constructing our sparse matrix.  At the end of this code segment we
+will have constructed a diagonal with each processor owning roughly
+the same number of rows and columns.  All diagonal values will be set
+to 2.0, except for the very first diagonal value, which will be set to
+4.0.  Since our matrix is diagonal, its eigenvalues are the diagonal
+values and the dominant eigenvalue is 4.0.  
+\paragraph{Line 37}
+Instantiates (creates) an \crsmatrix{}.  The first argument tells the
+constructor whether or not data passed in to this object should be
+copied (user values and indices will be copied to internal storage) or
+viewed (user values and indices will be pointed to by this object and
+the user {\it must} guarantee the integrity of that data).  View mode
+is available across many AztecOO classes.  In general, this is a very
+dangerous practice.  However, in certain very important situations, it
+is essential to have this mode.  This is especially true when using
+AztecOO with Fortran, or when accepting matrix data from other parts of
+application where it is too expensive to replicate the data storage.
+
+The second argument is the \map{} object we just constructed.  The
+third argument is an advisory value telling the constructor
+approximately how many nonzero values will be defined for each row of
+the matrix\footnote{getting this value wrong does not
+affect the correctness of results, but may affect performance and
+efficient use of memory}.  We are constructing a diagonal matrix, so the value ``1''
+is appropriate.
+
+At this point the matrix is an empty ``bucket'' ready to receive
+matrix values and indices.  Also, at this point, most of the methods
+in the \crsmatrix{} cannot be called successfully for this object.
+\paragraph{Lines 39--41}
+Here we create two helper objects that not really necessary for such a
+simple example, but which illustrate how examples that are more
+complex might
+use the \serialdensevector{} and \intserialdensevector{} classes
+effectively.
+Line 39 allocates a vector of length one to hold the diagonal value
+we will insert into each row.  Line 40 sets the value to 2.0, which is
+the value we will assign to all the diagonals of our matrix.  We will
+later replace the first diagonal value with a value of 4.0.
+\paragraph{Lines 42--48}
+These lines insert values and indices into the matrix we just
+instantiated.  Our matrix is very simple--a single diagonal entry per
+row--so these lines may seem too complicated, but we are illustrating
+a process that is effective for more realistic settings.  
+The \crsmatrix{} class is
+designed to accept matrix entries in a variety of ways.  However,
+there is a strong bias in the interface to accept multiple entries in
+a specified row.  Values for any matrix entry can be submitted one or more times,
+with subsequent values being added to any existing value.
+Section~\ref{Section:ConstructingCrsMatrices} discusses these issues
+in detail.
+
+Line 42 loops over all elements
+owned by the calling processor.  Line 43 get the global ID associated
+with the current loop index.  This value will be passed in as the
+first argument to the 
+InsertGlobalValues() method to indicate the global row into which the calling
+processor is inserting values.  Line 44 sets the column index to the
+same as the row index because we have only a diagonal value.  
+
+Lines 46--47 is a call the the InsertGlobalValues() method on our matrix
+object A.  The first argument is the ID of the global row that the
+calling processor will add values to.  The second argument indicates
+how many values we are passing in on this call.  We are using the
+Length() method of the \serialdensevector{} class to provide this
+information.  The third argument is a pointer to an array of doubles
+that are the values we are passing in,
+provided by the Values() method from \serialdensevector{}.  Finally
+the last argument is a pointer to an array of ints that are the column
+indices we are passing in.  Because we are only passing in a single
+value per row, both of the last arguments to InsertGlobalValues() are trivial
+uses of arrays, but illustrate a general process.
+\paragraph{Lines 49--55}
+The last modification we want to make to our matrix is to put a value
+of 4.0 in the first diagonal entry.  We accomplish this by having each
+processor query the map to see the processor owns GID 0.  Only the
+processor that does own that GID will execute the remaining lines of
+code in this segment.  Lines 50--52 set up the value and index
+information.  Lines 53--54 are a call to ReplaceGlobalValues(), which
+will replace existing values in our matrix with the new values we submit.
+\paragraph{Line 57}
+After all values are submitted to our matrix, we finally call the
+method TransformToLocal().  This method performs all of the analysis
+on our matrix required for efficient execution on a parallel
+computer.  Part of the procces involves changing the index values of
+the matrix to a local index system on each processor.  This will be
+described in greater detail in
+Section~\ref{Section:ConstructingCrsMatrices}.
+\paragraph{Lines 59--60}
+After constructing our matrix, we call the power method function,
+passing in our matrix.  Then we print out the eigenvalue estimate that
+was returned.
+\paragraph{Lines 61--63}
+If our code was compile in MPI mode, we need to call MPI\_Finalize()
+for proper clean up.
+\paragraph{Line 64} Program exit.
+
+\section{ Advanced topics}
+\subsection {Using \crsmatrix{} Objects as Column Matrices}
+
+\clearpage
+\bibliographystyle{plain}
+\bibliography{AztecOOUserGuide}
+\addcontentsline{toc}{section}{References}
+
+\appendix
+\section{Troubleshooting}
+\label{Section:Troubleshooting}
+\subsection{Conditional Code, Incorrect Results and Stalled Programs}
+Many methods in AztecOO distributed classes (those derive from the
+\distobject{} class) require all processors to
+participate in the method call.  For example, to compute the update of
+an \vector{}, all processors that own a portion of the vector must
+call the Update() method.  When calling a Norm2() method or something
+similar, all processors, regardless of whether they own any portion of
+a vector, must participate in the Norm2() call.  
+Figure~\ref{Figure:HungCode} illustrates
+several versions of a code segment that computes the 2-norm of a residual
+and prints it from processor 0.  Only the final version is correct.
+
+\end{document}
+
