@@ -216,79 +216,79 @@ integer(Zoltan_INT), parameter :: &
 ! generic names for the Fortran wrapper procedures
 
 interface LB_Initialize
-   module procedure f90LB_Initialize
-   module procedure f90LB_Initialize1
+   module procedure Zf90_Initialize
+   module procedure Zf90_Initialize1
 end interface
 
 interface LB_Create
-   module procedure f90LB_Create
+   module procedure Zf90_Create
 end interface
 
 interface LB_Destroy
-   module procedure f90LB_Destroy
+   module procedure Zf90_Destroy
 end interface
 
 interface LB_Memory_Stats
-   module procedure f90LB_Memory_Stats
+   module procedure Zf90_Memory_Stats
 end interface
 
 interface LB_Set_Fn
-   module procedure f90LB_Set_Fn0f
-   module procedure f90LB_Set_Fn1f
-   module procedure f90LB_Set_Fn2f
-   module procedure f90LB_Set_Fn3f
-   module procedure f90LB_Set_Fn4f
-   module procedure f90LB_Set_Fn5f
-   module procedure f90LB_Set_Fn6f
-   module procedure f90LB_Set_Fn7f
-   module procedure f90LB_Set_Fn0s
-   module procedure f90LB_Set_Fn1s
-   module procedure f90LB_Set_Fn2s
-   module procedure f90LB_Set_Fn3s
-   module procedure f90LB_Set_Fn4s
-   module procedure f90LB_Set_Fn5s
-   module procedure f90LB_Set_Fn6s
-   module procedure f90LB_Set_Fn7s
+   module procedure Zf90_Set_Fn0f
+   module procedure Zf90_Set_Fn1f
+   module procedure Zf90_Set_Fn2f
+   module procedure Zf90_Set_Fn3f
+   module procedure Zf90_Set_Fn4f
+   module procedure Zf90_Set_Fn5f
+   module procedure Zf90_Set_Fn6f
+   module procedure Zf90_Set_Fn7f
+   module procedure Zf90_Set_Fn0s
+   module procedure Zf90_Set_Fn1s
+   module procedure Zf90_Set_Fn2s
+   module procedure Zf90_Set_Fn3s
+   module procedure Zf90_Set_Fn4s
+   module procedure Zf90_Set_Fn5s
+   module procedure Zf90_Set_Fn6s
+   module procedure Zf90_Set_Fn7s
 end interface
 
 interface LB_Set_Method
-   module procedure f90LB_Set_Method
+   module procedure Zf90_LB_Set_Method
 end interface
 
 interface LB_Set_Param
-   module procedure f90LB_Set_Param
+   module procedure Zf90_Set_Param
 end interface
 
 interface LB_Balance
-   module procedure f90LB_Balance
+   module procedure Zf90_LB_Balance
 end interface
 
 interface LB_Eval
-   module procedure f90LB_Eval
+   module procedure Zf90_LB_Eval
 end interface
 
 interface LB_Free_Data
-   module procedure f90LB_Free_Data
+   module procedure Zf90_LB_Free_Data
 end interface
 
 interface LB_Point_Assign
-   module procedure f90LB_Point_Assign
+   module procedure Zf90_LB_Point_Assign
 end interface
 
 interface LB_Box_Assign
-   module procedure f90LB_Box_Assign
+   module procedure Zf90_LB_Box_Assign
 end interface
 
 interface LB_Compute_Destinations
-   module procedure f90LB_Compute_Destinations
+   module procedure Zf90_Compute_Destinations
 end interface
 
 interface LB_Help_Migrate
-   module procedure f90LB_Help_Migrate
+   module procedure Zf90_Help_Migrate
 end interface
 
 ! TEMP child_order
 interface LB_Get_Child_Order
-   module procedure f90LB_Get_Child_Order
+   module procedure Zf90_LB_Get_Child_Order
 end interface
 

@@ -1,6 +1,6 @@
 
-function f90LB_Set_Next_Coarse_Obj_Fn0f(lb,fn_ptr)
-integer(Zoltan_INT) :: f90LB_Set_Next_Coarse_Obj_Fn0f
+function Zf90_Set_Next_Coarse_Obj_Fn0f(lb,fn_ptr)
+integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn0f
 type(LB_Struct) INTENT_IN lb
 interface
   function fn_ptr(dummy, num_gid_entries, num_lid_entries, global_id, local_id, &
@@ -25,15 +25,15 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn0f = LB_fw_Set_Fn0f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr))
+Zf90_Set_Next_Coarse_Obj_Fn0f = Zfw_Set_Fn0f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr))
 #else
-f90LB_Set_Next_Coarse_Obj_Fn0f = LB_fw_Set_Fn0f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr)
+Zf90_Set_Next_Coarse_Obj_Fn0f = Zfw_Set_Fn0f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr)
 #endif
-end function f90LB_Set_Next_Coarse_Obj_Fn0f
+end function Zf90_Set_Next_Coarse_Obj_Fn0f
 
 
-function f90LB_Set_Next_Coarse_Obj_Fn1f(lb,fn_ptr,data)
-integer(Zoltan_INT) :: f90LB_Set_Next_Coarse_Obj_Fn1f
+function Zf90_Set_Next_Coarse_Obj_Fn1f(lb,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn1f
 type(LB_Struct) INTENT_IN lb
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
@@ -59,15 +59,15 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn1f = LB_fw_Set_Fn1f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Next_Coarse_Obj_Fn1f = Zfw_Set_Fn1f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Next_Coarse_Obj_Fn1f = LB_fw_Set_Fn1f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Next_Coarse_Obj_Fn1f = Zfw_Set_Fn1f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function f90LB_Set_Next_Coarse_Obj_Fn1f
+end function Zf90_Set_Next_Coarse_Obj_Fn1f
 
 
-function f90LB_Set_Next_Coarse_Obj_Fn2f(lb,fn_ptr,data)
-integer(Zoltan_INT) :: f90LB_Set_Next_Coarse_Obj_Fn2f
+function Zf90_Set_Next_Coarse_Obj_Fn2f(lb,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn2f
 type(LB_Struct) INTENT_IN lb
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
@@ -93,15 +93,15 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn2f = LB_fw_Set_Fn2f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Next_Coarse_Obj_Fn2f = Zfw_Set_Fn2f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Next_Coarse_Obj_Fn2f = LB_fw_Set_Fn2f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Next_Coarse_Obj_Fn2f = Zfw_Set_Fn2f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function f90LB_Set_Next_Coarse_Obj_Fn2f
+end function Zf90_Set_Next_Coarse_Obj_Fn2f
 
 
-function f90LB_Set_Next_Coarse_Obj_Fn3f(lb,fn_ptr,data)
-integer(Zoltan_INT) :: f90LB_Set_Next_Coarse_Obj_Fn3f
+function Zf90_Set_Next_Coarse_Obj_Fn3f(lb,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn3f
 type(LB_Struct) INTENT_IN lb
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
@@ -127,15 +127,15 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn3f = LB_fw_Set_Fn3f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Next_Coarse_Obj_Fn3f = Zfw_Set_Fn3f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Next_Coarse_Obj_Fn3f = LB_fw_Set_Fn3f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Next_Coarse_Obj_Fn3f = Zfw_Set_Fn3f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function f90LB_Set_Next_Coarse_Obj_Fn3f
+end function Zf90_Set_Next_Coarse_Obj_Fn3f
 
 
-function f90LB_Set_Next_Coarse_Obj_Fn4f(lb,fn_ptr,data)
-integer(Zoltan_INT) :: f90LB_Set_Next_Coarse_Obj_Fn4f
+function Zf90_Set_Next_Coarse_Obj_Fn4f(lb,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn4f
 type(LB_Struct) INTENT_IN lb
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
@@ -162,15 +162,15 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn4f = LB_fw_Set_Fn4f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Next_Coarse_Obj_Fn4f = Zfw_Set_Fn4f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Next_Coarse_Obj_Fn4f = LB_fw_Set_Fn4f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Next_Coarse_Obj_Fn4f = Zfw_Set_Fn4f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function f90LB_Set_Next_Coarse_Obj_Fn4f
+end function Zf90_Set_Next_Coarse_Obj_Fn4f
 
 
-function f90LB_Set_Next_Coarse_Obj_Fn5f(lb,fn_ptr,data)
-integer(Zoltan_INT) :: f90LB_Set_Next_Coarse_Obj_Fn5f
+function Zf90_Set_Next_Coarse_Obj_Fn5f(lb,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn5f
 type(LB_Struct) INTENT_IN lb
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
@@ -197,15 +197,15 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn5f = LB_fw_Set_Fn5f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Next_Coarse_Obj_Fn5f = Zfw_Set_Fn5f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Next_Coarse_Obj_Fn5f = LB_fw_Set_Fn5f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Next_Coarse_Obj_Fn5f = Zfw_Set_Fn5f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function f90LB_Set_Next_Coarse_Obj_Fn5f
+end function Zf90_Set_Next_Coarse_Obj_Fn5f
 
 
-function f90LB_Set_Next_Coarse_Obj_Fn6f(lb,fn_ptr,data)
-integer(Zoltan_INT) :: f90LB_Set_Next_Coarse_Obj_Fn6f
+function Zf90_Set_Next_Coarse_Obj_Fn6f(lb,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn6f
 type(LB_Struct) INTENT_IN lb
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
@@ -232,15 +232,15 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn6f = LB_fw_Set_Fn6f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Next_Coarse_Obj_Fn6f = Zfw_Set_Fn6f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Next_Coarse_Obj_Fn6f = LB_fw_Set_Fn6f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Next_Coarse_Obj_Fn6f = Zfw_Set_Fn6f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function f90LB_Set_Next_Coarse_Obj_Fn6f
+end function Zf90_Set_Next_Coarse_Obj_Fn6f
 
 
-function f90LB_Set_Next_Coarse_Obj_Fn7f(lb,fn_ptr,data)
-integer(Zoltan_INT) :: f90LB_Set_Next_Coarse_Obj_Fn7f
+function Zf90_Set_Next_Coarse_Obj_Fn7f(lb,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Next_Coarse_Obj_Fn7f
 type(LB_Struct) INTENT_IN lb
 interface
   function fn_ptr(data, num_gid_entries, num_lid_entries, global_id, local_id, &
@@ -267,10 +267,10 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Next_Coarse_Obj_Fn7f = LB_fw_Set_Fn7f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Next_Coarse_Obj_Fn7f = Zfw_Set_Fn7f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Next_Coarse_Obj_Fn7f = LB_fw_Set_Fn7f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Next_Coarse_Obj_Fn7f = Zfw_Set_Fn7f(lb_addr,nbytes,ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function f90LB_Set_Next_Coarse_Obj_Fn7f
+end function Zf90_Set_Next_Coarse_Obj_Fn7f
 
 

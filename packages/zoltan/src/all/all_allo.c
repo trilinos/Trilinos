@@ -20,8 +20,8 @@
 
 /* Fortran memory allocation callback functions */
 
-static LB_FORT_MALLOC_INT_FN *LB_Fort_Malloc_int;
-static LB_FORT_FREE_INT_FN *LB_Fort_Free_int;
+static ZOLTAN_FORT_MALLOC_INT_FN *LB_Fort_Malloc_int;
+static ZOLTAN_FORT_FREE_INT_FN *LB_Fort_Free_int;
 
 
 int LB_Set_Malloc_Param(
@@ -73,8 +73,8 @@ char *val)			/* value of variable */
  *
  *****************************************************************************/
 
-void LB_Register_Fort_Malloc(LB_FORT_MALLOC_INT_FN *fort_malloc_int,
-                             LB_FORT_FREE_INT_FN *fort_free_int)
+void Zoltan_Register_Fort_Malloc(ZOLTAN_FORT_MALLOC_INT_FN *fort_malloc_int,
+                                 ZOLTAN_FORT_FREE_INT_FN *fort_free_int)
 {
    LB_Fort_Malloc_int = fort_malloc_int;
    LB_Fort_Free_int = fort_free_int;

@@ -1,6 +1,6 @@
 
-function f90LB_Set_Coarse_Obj_List_Fn0s(lb,fn_ptr)
-integer(Zoltan_INT) :: f90LB_Set_Coarse_Obj_List_Fn0s
+function Zf90_Set_Coarse_Obj_List_Fn0s(lb,fn_ptr)
+integer(Zoltan_INT) :: Zf90_Set_Coarse_Obj_List_Fn0s
 type(LB_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(dummy, num_gid_entries, num_lid_entries, global_id, &
@@ -22,15 +22,15 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Coarse_Obj_List_Fn0s = LB_fw_Set_Fn0s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr))
+Zf90_Set_Coarse_Obj_List_Fn0s = Zfw_Set_Fn0s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr))
 #else
-f90LB_Set_Coarse_Obj_List_Fn0s = LB_fw_Set_Fn0s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr)
+Zf90_Set_Coarse_Obj_List_Fn0s = Zfw_Set_Fn0s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr)
 #endif
-end function f90LB_Set_Coarse_Obj_List_Fn0s
+end function Zf90_Set_Coarse_Obj_List_Fn0s
 
 
-function f90LB_Set_Coarse_Obj_List_Fn1s(lb,fn_ptr,data)
-integer(Zoltan_INT) :: f90LB_Set_Coarse_Obj_List_Fn1s
+function Zf90_Set_Coarse_Obj_List_Fn1s(lb,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Coarse_Obj_List_Fn1s
 type(LB_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
@@ -53,15 +53,15 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Coarse_Obj_List_Fn1s = LB_fw_Set_Fn1s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Coarse_Obj_List_Fn1s = Zfw_Set_Fn1s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Coarse_Obj_List_Fn1s = LB_fw_Set_Fn1s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Coarse_Obj_List_Fn1s = Zfw_Set_Fn1s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function f90LB_Set_Coarse_Obj_List_Fn1s
+end function Zf90_Set_Coarse_Obj_List_Fn1s
 
 
-function f90LB_Set_Coarse_Obj_List_Fn2s(lb,fn_ptr,data)
-integer(Zoltan_INT) :: f90LB_Set_Coarse_Obj_List_Fn2s
+function Zf90_Set_Coarse_Obj_List_Fn2s(lb,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Coarse_Obj_List_Fn2s
 type(LB_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
@@ -84,15 +84,15 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Coarse_Obj_List_Fn2s = LB_fw_Set_Fn2s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Coarse_Obj_List_Fn2s = Zfw_Set_Fn2s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Coarse_Obj_List_Fn2s = LB_fw_Set_Fn2s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Coarse_Obj_List_Fn2s = Zfw_Set_Fn2s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function f90LB_Set_Coarse_Obj_List_Fn2s
+end function Zf90_Set_Coarse_Obj_List_Fn2s
 
 
-function f90LB_Set_Coarse_Obj_List_Fn3s(lb,fn_ptr,data)
-integer(Zoltan_INT) :: f90LB_Set_Coarse_Obj_List_Fn3s
+function Zf90_Set_Coarse_Obj_List_Fn3s(lb,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Coarse_Obj_List_Fn3s
 type(LB_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
@@ -115,15 +115,15 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Coarse_Obj_List_Fn3s = LB_fw_Set_Fn3s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Coarse_Obj_List_Fn3s = Zfw_Set_Fn3s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Coarse_Obj_List_Fn3s = LB_fw_Set_Fn3s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Coarse_Obj_List_Fn3s = Zfw_Set_Fn3s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function f90LB_Set_Coarse_Obj_List_Fn3s
+end function Zf90_Set_Coarse_Obj_List_Fn3s
 
 
-function f90LB_Set_Coarse_Obj_List_Fn4s(lb,fn_ptr,data)
-integer(Zoltan_INT) :: f90LB_Set_Coarse_Obj_List_Fn4s
+function Zf90_Set_Coarse_Obj_List_Fn4s(lb,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Coarse_Obj_List_Fn4s
 type(LB_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
@@ -147,15 +147,15 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Coarse_Obj_List_Fn4s = LB_fw_Set_Fn4s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Coarse_Obj_List_Fn4s = Zfw_Set_Fn4s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Coarse_Obj_List_Fn4s = LB_fw_Set_Fn4s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Coarse_Obj_List_Fn4s = Zfw_Set_Fn4s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function f90LB_Set_Coarse_Obj_List_Fn4s
+end function Zf90_Set_Coarse_Obj_List_Fn4s
 
 
-function f90LB_Set_Coarse_Obj_List_Fn5s(lb,fn_ptr,data)
-integer(Zoltan_INT) :: f90LB_Set_Coarse_Obj_List_Fn5s
+function Zf90_Set_Coarse_Obj_List_Fn5s(lb,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Coarse_Obj_List_Fn5s
 type(LB_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
@@ -179,15 +179,15 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Coarse_Obj_List_Fn5s = LB_fw_Set_Fn5s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Coarse_Obj_List_Fn5s = Zfw_Set_Fn5s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Coarse_Obj_List_Fn5s = LB_fw_Set_Fn5s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Coarse_Obj_List_Fn5s = Zfw_Set_Fn5s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function f90LB_Set_Coarse_Obj_List_Fn5s
+end function Zf90_Set_Coarse_Obj_List_Fn5s
 
 
-function f90LB_Set_Coarse_Obj_List_Fn6s(lb,fn_ptr,data)
-integer(Zoltan_INT) :: f90LB_Set_Coarse_Obj_List_Fn6s
+function Zf90_Set_Coarse_Obj_List_Fn6s(lb,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Coarse_Obj_List_Fn6s
 type(LB_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
@@ -211,15 +211,15 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Coarse_Obj_List_Fn6s = LB_fw_Set_Fn6s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Coarse_Obj_List_Fn6s = Zfw_Set_Fn6s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Coarse_Obj_List_Fn6s = LB_fw_Set_Fn6s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Coarse_Obj_List_Fn6s = Zfw_Set_Fn6s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function f90LB_Set_Coarse_Obj_List_Fn6s
+end function Zf90_Set_Coarse_Obj_List_Fn6s
 
 
-function f90LB_Set_Coarse_Obj_List_Fn7s(lb,fn_ptr,data)
-integer(Zoltan_INT) :: f90LB_Set_Coarse_Obj_List_Fn7s
+function Zf90_Set_Coarse_Obj_List_Fn7s(lb,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_Coarse_Obj_List_Fn7s
 type(LB_Struct) INTENT_IN lb
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, global_id, &
@@ -243,10 +243,10 @@ do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-f90LB_Set_Coarse_Obj_List_Fn7s = LB_fw_Set_Fn7s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_Coarse_Obj_List_Fn7s = Zfw_Set_Fn7s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-f90LB_Set_Coarse_Obj_List_Fn7s = LB_fw_Set_Fn7s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_Coarse_Obj_List_Fn7s = Zfw_Set_Fn7s(lb_addr,nbytes,ZOLTAN_COARSE_OBJ_LIST_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function f90LB_Set_Coarse_Obj_List_Fn7s
+end function Zf90_Set_Coarse_Obj_List_Fn7s
 
 

@@ -24,162 +24,162 @@
 
 #if FMANGLE==LOWERCASE
 
-#define LB_fw_Initialize                 lb_fw_initialize
-#define LB_fw_Initialize1                lb_fw_initialize1
-#define LB_fw_Create                     lb_fw_create       
-#define LB_fw_Destroy                    lb_fw_destroy       
-#define LB_fw_Memory_Stats               lb_fw_Memory_Stats       
-#define LB_fw_Set_Fn0f                   lb_fw_set_fn0f
-#define LB_fw_Set_Fn1f                   lb_fw_set_fn1f
-#define LB_fw_Set_Fn2f                   lb_fw_set_fn2f
-#define LB_fw_Set_Fn3f                   lb_fw_set_fn3f
-#define LB_fw_Set_Fn4f                   lb_fw_set_fn4f
-#define LB_fw_Set_Fn5f                   lb_fw_set_fn5f
-#define LB_fw_Set_Fn6f                   lb_fw_set_fn6f
-#define LB_fw_Set_Fn7f                   lb_fw_set_fn7f
-#define LB_fw_Set_Fn0s                   lb_fw_set_fn0s
-#define LB_fw_Set_Fn1s                   lb_fw_set_fn1s
-#define LB_fw_Set_Fn2s                   lb_fw_set_fn2s
-#define LB_fw_Set_Fn3s                   lb_fw_set_fn3s
-#define LB_fw_Set_Fn4s                   lb_fw_set_fn4s
-#define LB_fw_Set_Fn5s                   lb_fw_set_fn5s
-#define LB_fw_Set_Fn6s                   lb_fw_set_fn6s
-#define LB_fw_Set_Fn7s                   lb_fw_set_fn7s
-#define LB_fw_Set_Method                 lb_fw_set_method
-#define LB_fw_Set_Param                  lb_fw_set_param
-#define LB_fw_Balance                    lb_fw_balance
-#define LB_fw_Eval                       lb_fw_eval
-#define LB_fw_Point_Assign               lb_fw_point_assign
-#define LB_fw_Box_Assign                 lb_fw_box_assign
-#define LB_fw_Compute_Destinations       lb_fw_compute_destinations
-#define LB_fw_Help_Migrate               lb_fw_help_migrate  
-#define LB_fw_Register_Fort_Malloc       lb_fw_register_fort_malloc
-#define LB_fw_Get_Address_int            lb_fw_get_address_int
-#define LB_fw_Get_Wgt_Dim                lb_fw_get_wgt_dim
-#define LB_fw_Get_Comm_Dim               lb_fw_get_comm_dim
+#define Zfw_Initialize                 zfw_initialize
+#define Zfw_Initialize1                zfw_initialize1
+#define Zfw_Create                     zfw_create       
+#define Zfw_Destroy                    zfw_destroy       
+#define Zfw_Memory_Stats               zfw_memory_stats       
+#define Zfw_Set_Fn0f                   zfw_set_fn0f
+#define Zfw_Set_Fn1f                   zfw_set_fn1f
+#define Zfw_Set_Fn2f                   zfw_set_fn2f
+#define Zfw_Set_Fn3f                   zfw_set_fn3f
+#define Zfw_Set_Fn4f                   zfw_set_fn4f
+#define Zfw_Set_Fn5f                   zfw_set_fn5f
+#define Zfw_Set_Fn6f                   zfw_set_fn6f
+#define Zfw_Set_Fn7f                   zfw_set_fn7f
+#define Zfw_Set_Fn0s                   zfw_set_fn0s
+#define Zfw_Set_Fn1s                   zfw_set_fn1s
+#define Zfw_Set_Fn2s                   zfw_set_fn2s
+#define Zfw_Set_Fn3s                   zfw_set_fn3s
+#define Zfw_Set_Fn4s                   zfw_set_fn4s
+#define Zfw_Set_Fn5s                   zfw_set_fn5s
+#define Zfw_Set_Fn6s                   zfw_set_fn6s
+#define Zfw_Set_Fn7s                   zfw_set_fn7s
+#define Zfw_LB_Set_Method              zfw_lb_set_method
+#define Zfw_Set_Param                  zfw_set_param
+#define Zfw_LB_Balance                 zfw_lb_balance
+#define Zfw_LB_Eval                    zfw_lb_eval
+#define Zfw_LB_Point_Assign            zfw_lb_point_assign
+#define Zfw_LB_Box_Assign              zfw_lb_box_assign
+#define Zfw_Compute_Destinations       zfw_compute_destinations
+#define Zfw_Help_Migrate               zfw_help_migrate  
+#define Zfw_Register_Fort_Malloc       zfw_register_fort_malloc
+#define Zfw_Get_Address_int            zfw_get_address_int
+#define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim
+#define Zfw_Get_Comm_Dim               zfw_get_comm_dim
 /* TEMP child_order */
-#define LB_fw_Get_Child_Order            lb_fw_get_child_order
+#define Zfw_LB_Get_Child_Order         zfw_lb_get_child_order
 
 #elif FMANGLE==UPPERCASE
 
-#define LB_fw_Initialize                 LB_FW_INITIALIZE
-#define LB_fw_Initialize1                LB_FW_INITIALIZE1
-#define LB_fw_Create                     LB_FW_CREATE       
-#define LB_fw_Destroy                    LB_FW_DESTROY       
-#define LB_fw_Memory_Stats               LB_FW_MEMORY_STATS  
-#define LB_fw_Set_Fn0f                   LB_FW_SET_FN0F
-#define LB_fw_Set_Fn1f                   LB_FW_SET_FN1F
-#define LB_fw_Set_Fn2f                   LB_FW_SET_FN2F
-#define LB_fw_Set_Fn3f                   LB_FW_SET_FN3F
-#define LB_fw_Set_Fn4f                   LB_FW_SET_FN4F
-#define LB_fw_Set_Fn5f                   LB_FW_SET_FN5F
-#define LB_fw_Set_Fn6f                   LB_FW_SET_FN6F
-#define LB_fw_Set_Fn7f                   LB_FW_SET_FN7F
-#define LB_fw_Set_Fn0s                   LB_FW_SET_FN0S
-#define LB_fw_Set_Fn1s                   LB_FW_SET_FN1S
-#define LB_fw_Set_Fn2s                   LB_FW_SET_FN2S
-#define LB_fw_Set_Fn3s                   LB_FW_SET_FN3S
-#define LB_fw_Set_Fn4s                   LB_FW_SET_FN4S
-#define LB_fw_Set_Fn5s                   LB_FW_SET_FN5S
-#define LB_fw_Set_Fn6s                   LB_FW_SET_FN6S
-#define LB_fw_Set_Fn7s                   LB_FW_SET_FN7S
-#define LB_fw_Set_Method                 LB_FW_SET_METHOD
-#define LB_fw_Set_Param                  LB_FW_SET_PARAM
-#define LB_fw_Balance                    LB_FW_BALANCE
-#define LB_fw_Eval                       LB_FW_EVAL
-#define LB_fw_Point_Assign               LB_FW_POINT_ASSIGN
-#define LB_fw_Box_Assign                 LB_FW_BOX_ASSIGN
-#define LB_fw_Compute_Destinations       LB_FW_COMPUTE_DESTINATIONS  
-#define LB_fw_Help_Migrate               LB_FW_HELP_MIGRATE  
-#define LB_fw_Register_Fort_Malloc       LB_FW_REGISTER_FORT_MALLOC
-#define LB_fw_Get_Address_int            LB_FW_GET_ADDRESS_INT
-#define LB_fw_Get_Comm_Dim               LB_FW_GET_COMM_DIM
+#define Zfw_Initialize                 ZFW_INITIALIZE
+#define Zfw_Initialize1                ZFW_INITIALIZE1
+#define Zfw_Create                     ZFW_CREATE       
+#define Zfw_Destroy                    ZFW_DESTROY       
+#define Zfw_Memory_Stats               ZFW_MEMORY_STATS  
+#define Zfw_Set_Fn0f                   ZFW_SET_FN0F
+#define Zfw_Set_Fn1f                   ZFW_SET_FN1F
+#define Zfw_Set_Fn2f                   ZFW_SET_FN2F
+#define Zfw_Set_Fn3f                   ZFW_SET_FN3F
+#define Zfw_Set_Fn4f                   ZFW_SET_FN4F
+#define Zfw_Set_Fn5f                   ZFW_SET_FN5F
+#define Zfw_Set_Fn6f                   ZFW_SET_FN6F
+#define Zfw_Set_Fn7f                   ZFW_SET_FN7F
+#define Zfw_Set_Fn0s                   ZFW_SET_FN0S
+#define Zfw_Set_Fn1s                   ZFW_SET_FN1S
+#define Zfw_Set_Fn2s                   ZFW_SET_FN2S
+#define Zfw_Set_Fn3s                   ZFW_SET_FN3S
+#define Zfw_Set_Fn4s                   ZFW_SET_FN4S
+#define Zfw_Set_Fn5s                   ZFW_SET_FN5S
+#define Zfw_Set_Fn6s                   ZFW_SET_FN6S
+#define Zfw_Set_Fn7s                   ZFW_SET_FN7S
+#define Zfw_LB_Set_Method              ZFW_LB_SET_METHOD
+#define Zfw_Set_Param                  ZFW_SET_PARAM
+#define Zfw_LB_Balance                 ZFW_LB_BALANCE
+#define Zfw_LB_Eval                    ZFW_LB_EVAL
+#define Zfw_LB_Point_Assign            ZFW_LB_POINT_ASSIGN
+#define Zfw_LB_Box_Assign              ZFW_LB_BOX_ASSIGN
+#define Zfw_Compute_Destinations       ZFW_COMPUTE_DESTINATIONS  
+#define Zfw_Help_Migrate               ZFW_HELP_MIGRATE  
+#define Zfw_Register_Fort_Malloc       ZFW_REGISTER_FORT_MALLOC
+#define Zfw_Get_Address_int            ZFW_GET_ADDRESS_INT
+#define Zfw_Get_Comm_Dim               ZFW_GET_COMM_DIM
 /* TEMP child_order */
-#define LB_fw_Get_Child_Order            LB_FW_GET_CHILD_ORDER
+#define Zfw_LB_Get_Child_Order         ZFW_LB_GET_CHILD_ORDER
 
 #elif FMANGLE==UNDERSCORE
 
-#define LB_fw_Initialize                 lb_fw_initialize_
-#define LB_fw_Initialize1                lb_fw_initialize1_
-#define LB_fw_Create                     lb_fw_create_
-#define LB_fw_Destroy                    lb_fw_destroy_
-#define LB_fw_Memory_Stats               lb_fw_memory_stats_
-#define LB_fw_Set_Fn0f                   lb_fw_set_fn0f_
-#define LB_fw_Set_Fn1f                   lb_fw_set_fn1f_
-#define LB_fw_Set_Fn2f                   lb_fw_set_fn2f_
-#define LB_fw_Set_Fn3f                   lb_fw_set_fn3f_
-#define LB_fw_Set_Fn4f                   lb_fw_set_fn4f_
-#define LB_fw_Set_Fn5f                   lb_fw_set_fn5f_
-#define LB_fw_Set_Fn6f                   lb_fw_set_fn6f_
-#define LB_fw_Set_Fn7f                   lb_fw_set_fn7f_
-#define LB_fw_Set_Fn0s                   lb_fw_set_fn0s_
-#define LB_fw_Set_Fn1s                   lb_fw_set_fn1s_
-#define LB_fw_Set_Fn2s                   lb_fw_set_fn2s_
-#define LB_fw_Set_Fn3s                   lb_fw_set_fn3s_
-#define LB_fw_Set_Fn4s                   lb_fw_set_fn4s_
-#define LB_fw_Set_Fn5s                   lb_fw_set_fn5s_
-#define LB_fw_Set_Fn6s                   lb_fw_set_fn6s_
-#define LB_fw_Set_Fn7s                   lb_fw_set_fn7s_
-#define LB_fw_Set_Method                 lb_fw_set_method_
-#define LB_fw_Set_Param                  lb_fw_set_param_
-#define LB_fw_Balance                    lb_fw_balance_
-#define LB_fw_Eval                       lb_fw_eval_
-#define LB_fw_Point_Assign               lb_fw_point_assign_
-#define LB_fw_Box_Assign                 lb_fw_box_assign_
-#define LB_fw_Compute_Destinations       lb_fw_compute_destinations_
-#define LB_fw_Help_Migrate               lb_fw_help_migrate_
-#define LB_fw_Register_Fort_Malloc       lb_fw_register_fort_malloc_
-#define LB_fw_Get_Address_int            lb_fw_get_address_int_
-#define LB_fw_Get_Wgt_Dim                lb_fw_get_wgt_dim_
-#define LB_fw_Get_Comm_Dim               lb_fw_get_comm_dim_
+#define Zfw_Initialize                 zfw_initialize_
+#define Zfw_Initialize1                zfw_initialize1_
+#define Zfw_Create                     zfw_create_
+#define Zfw_Destroy                    zfw_destroy_
+#define Zfw_Memory_Stats               zfw_memory_stats_
+#define Zfw_Set_Fn0f                   zfw_set_fn0f_
+#define Zfw_Set_Fn1f                   zfw_set_fn1f_
+#define Zfw_Set_Fn2f                   zfw_set_fn2f_
+#define Zfw_Set_Fn3f                   zfw_set_fn3f_
+#define Zfw_Set_Fn4f                   zfw_set_fn4f_
+#define Zfw_Set_Fn5f                   zfw_set_fn5f_
+#define Zfw_Set_Fn6f                   zfw_set_fn6f_
+#define Zfw_Set_Fn7f                   zfw_set_fn7f_
+#define Zfw_Set_Fn0s                   zfw_set_fn0s_
+#define Zfw_Set_Fn1s                   zfw_set_fn1s_
+#define Zfw_Set_Fn2s                   zfw_set_fn2s_
+#define Zfw_Set_Fn3s                   zfw_set_fn3s_
+#define Zfw_Set_Fn4s                   zfw_set_fn4s_
+#define Zfw_Set_Fn5s                   zfw_set_fn5s_
+#define Zfw_Set_Fn6s                   zfw_set_fn6s_
+#define Zfw_Set_Fn7s                   zfw_set_fn7s_
+#define Zfw_LB_Set_Method              zfw_lb_set_method_
+#define Zfw_Set_Param                  zfw_set_param_
+#define Zfw_LB_Balance                 zfw_lb_balance_
+#define Zfw_LB_Eval                    zfw_lb_eval_
+#define Zfw_LB_Point_Assign            zfw_lb_point_assign_
+#define Zfw_LB_Box_Assign              zfw_lb_box_assign_
+#define Zfw_Compute_Destinations       zfw_compute_destinations_
+#define Zfw_Help_Migrate               zfw_help_migrate_
+#define Zfw_Register_Fort_Malloc       zfw_register_fort_malloc_
+#define Zfw_Get_Address_int            zfw_get_address_int_
+#define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim_
+#define Zfw_Get_Comm_Dim               zfw_get_comm_dim_
 /* TEMP child_order */
-#define LB_fw_Get_Child_Order            lb_fw_get_child_order_
+#define Zfw_LB_Get_Child_Order         zfw_lb_get_child_order_
 
 #elif FMANGLE==UNDERSCORE2
 
-#define LB_fw_Initialize                 lb_fw_initialize__
-#define LB_fw_Initialize1                lb_fw_initialize1__
-#define LB_fw_Create                     lb_fw_create__
-#define LB_fw_Destroy                    lb_fw_destroy__
-#define LB_fw_Memory_Stats               lb_fw_memory_stats__
-#define LB_fw_Set_Fn0f                   lb_fw_set_fn0f__
-#define LB_fw_Set_Fn1f                   lb_fw_set_fn1f__
-#define LB_fw_Set_Fn2f                   lb_fw_set_fn2f__
-#define LB_fw_Set_Fn3f                   lb_fw_set_fn3f__
-#define LB_fw_Set_Fn4f                   lb_fw_set_fn4f__
-#define LB_fw_Set_Fn5f                   lb_fw_set_fn5f__
-#define LB_fw_Set_Fn6f                   lb_fw_set_fn6f__
-#define LB_fw_Set_Fn7f                   lb_fw_set_fn7f__
-#define LB_fw_Set_Fn0s                   lb_fw_set_fn0s__
-#define LB_fw_Set_Fn1s                   lb_fw_set_fn1s__
-#define LB_fw_Set_Fn2s                   lb_fw_set_fn2s__
-#define LB_fw_Set_Fn3s                   lb_fw_set_fn3s__
-#define LB_fw_Set_Fn4s                   lb_fw_set_fn4s__
-#define LB_fw_Set_Fn5s                   lb_fw_set_fn5s__
-#define LB_fw_Set_Fn6s                   lb_fw_set_fn6s__
-#define LB_fw_Set_Fn7s                   lb_fw_set_fn7s__
-#define LB_fw_Set_Method                 lb_fw_set_method__
-#define LB_fw_Set_Param                  lb_fw_set_param__
-#define LB_fw_Balance                    lb_fw_balance__
-#define LB_fw_Eval                       lb_fw_eval__
-#define LB_fw_Point_Assign               lb_fw_point_assign__
-#define LB_fw_Box_Assign                 lb_fw_box_assign__
-#define LB_fw_Compute_Destinations       lb_fw_compute_destinations__
-#define LB_fw_Help_Migrate               lb_fw_help_migrate__
-#define LB_fw_Register_Fort_Malloc       lb_fw_register_fort_malloc__
-#define LB_fw_Get_Address_int            lb_fw_get_address_int__
-#define LB_fw_Get_Wgt_Dim                lb_fw_get_wgt_dim__
-#define LB_fw_Get_Comm_Dim               lb_fw_get_comm_dim__
+#define Zfw_Initialize                 zfw_initialize__
+#define Zfw_Initialize1                zfw_initialize1__
+#define Zfw_Create                     zfw_create__
+#define Zfw_Destroy                    zfw_destroy__
+#define Zfw_Memory_Stats               zfw_memory_stats__
+#define Zfw_Set_Fn0f                   zfw_set_fn0f__
+#define Zfw_Set_Fn1f                   zfw_set_fn1f__
+#define Zfw_Set_Fn2f                   zfw_set_fn2f__
+#define Zfw_Set_Fn3f                   zfw_set_fn3f__
+#define Zfw_Set_Fn4f                   zfw_set_fn4f__
+#define Zfw_Set_Fn5f                   zfw_set_fn5f__
+#define Zfw_Set_Fn6f                   zfw_set_fn6f__
+#define Zfw_Set_Fn7f                   zfw_set_fn7f__
+#define Zfw_Set_Fn0s                   zfw_set_fn0s__
+#define Zfw_Set_Fn1s                   zfw_set_fn1s__
+#define Zfw_Set_Fn2s                   zfw_set_fn2s__
+#define Zfw_Set_Fn3s                   zfw_set_fn3s__
+#define Zfw_Set_Fn4s                   zfw_set_fn4s__
+#define Zfw_Set_Fn5s                   zfw_set_fn5s__
+#define Zfw_Set_Fn6s                   zfw_set_fn6s__
+#define Zfw_Set_Fn7s                   zfw_set_fn7s__
+#define Zfw_LB_Set_Method              zfw_lb_set_method__
+#define Zfw_Set_Param                  zfw_set_param__
+#define Zfw_LB_Balance                 zfw_lb_balance__
+#define Zfw_LB_Eval                    zfw_lb_eval__
+#define Zfw_LB_Point_Assign            zfw_lb_point_assign__
+#define Zfw_LB_Box_Assign              zfw_lb_box_assign__
+#define Zfw_Compute_Destinations       zfw_compute_destinations__
+#define Zfw_Help_Migrate               zfw_help_migrate__
+#define Zfw_Register_Fort_Malloc       zfw_register_fort_malloc__
+#define Zfw_Get_Address_int            zfw_get_address_int__
+#define Zfw_Get_Wgt_Dim                zfw_get_wgt_dim__
+#define Zfw_Get_Comm_Dim               zfw_get_comm_dim__
 /* TEMP child_order */
-#define LB_fw_Get_Child_Order            lb_fw_get_child_order__
+#define Zfw_LB_Get_Child_Order         zfw_lb_get_child_order__
 
 #endif /* FMANGLE */
 
 /*--------------------------------------------------------------------*/
 /* Variables                                                          */
 
-static struct Zoltan_Struct *LB_Current_lb;
-void LB_Get_Child_Order(struct Zoltan_Struct *, int *, int *);
+static struct Zoltan_Struct *Zoltan_Current;
+void Zoltan_LB_Get_Child_Order(struct Zoltan_Struct *, int *, int *);
 
 
 /*--------------------------------------------------------------------*/
@@ -189,7 +189,7 @@ void LB_Get_Child_Order(struct Zoltan_Struct *, int *, int *);
    communicator and a C communicator.  This routine is used to perform the
    conversion.  It may need different forms for different MPI libraries. */
 
-MPI_Comm LB_comm_f2c(int *f_comm)
+MPI_Comm Zoltan_comm_f2c(int *f_comm)
 {
 #ifndef NO_MPI2
 /* MPI 2 provides a standard way of doing this */
@@ -204,28 +204,28 @@ MPI_Comm LB_comm_f2c(int *f_comm)
 /* These routines get the address of an array allocated by fortran and
    return it */
 #ifdef PTR_64BIT
-void LB_fw_Get_Address_int(int *addr,
+void Zfw_Get_Address_int(int *addr,
                            long *ret_addr)
 {
    if (sizeof(long) != sizeof(int *)) {
-     ZOLTAN_PRINT_ERROR(-1, "LB_fw_Get_Address_int", 
+     ZOLTAN_PRINT_ERROR(-1, "Zfw_Get_Address_int", 
        "sizeof(long) != sizeof(int *); F90 allocation will not work properly.");
    }
    *ret_addr = (long)addr;
 }
 #else
-void LB_fw_Get_Address_int(int *addr,
+void Zfw_Get_Address_int(int *addr,
                            int *ret_addr)
 {
    if (sizeof(int) != sizeof(int *)) {
-     ZOLTAN_PRINT_ERROR(-1, "LB_fw_Get_Address_int", 
+     ZOLTAN_PRINT_ERROR(-1, "Zfw_Get_Address_int", 
        "sizeof(int) != sizeof(int *); F90 allocation will not work properly.");
    }
    *ret_addr = (int)addr;
 }
 #endif  /* PTR_64BIT */
 
-int LB_fw_Get_Wgt_Dim(int *addr_lb, int *nbytes)
+int Zfw_Get_Wgt_Dim(int *addr_lb, int *nbytes)
 {
    struct Zoltan_Struct *lb;
    unsigned char *p;
@@ -235,7 +235,7 @@ int LB_fw_Get_Wgt_Dim(int *addr_lb, int *nbytes)
    return lb->Obj_Weight_Dim;
 }
 
-int LB_fw_Get_Comm_Dim(int *addr_lb, int *nbytes)
+int Zfw_Get_Comm_Dim(int *addr_lb, int *nbytes)
 {
    struct Zoltan_Struct *lb;
    unsigned char *p;
@@ -248,100 +248,100 @@ int LB_fw_Get_Comm_Dim(int *addr_lb, int *nbytes)
 /*--------------------------------------------------------------------*/
 /* Reverse wrappers for callbacks                                     */
 
-int LB_Num_Edges_Fort_Wrapper(void *data, 
+int Zoltan_Num_Edges_Fort_Wrapper(void *data, 
                               int num_gid_entries, int num_lid_entries,
                               ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
                               int *ierr)
 {
-   return LB_Current_lb->Get_Num_Edges_Fort(data,
+   return Zoltan_Current->Get_Num_Edges_Fort(data,
                                             &num_gid_entries, &num_lid_entries,
                                             global_id, local_id, ierr);
 }
 
-void LB_Edge_List_Fort_Wrapper(void *data, 
+void Zoltan_Edge_List_Fort_Wrapper(void *data, 
                                int num_gid_entries, int num_lid_entries,
                                ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
                                ZOLTAN_ID_PTR nbor_global_id, int *nbor_procs,
                                int wdim, float *nbor_ewgts, int *ierr)
 {
-   LB_Current_lb->Get_Edge_List_Fort(data, &num_gid_entries, &num_lid_entries,
+   Zoltan_Current->Get_Edge_List_Fort(data, &num_gid_entries, &num_lid_entries,
                                      global_id, local_id,
                                      nbor_global_id, nbor_procs, &wdim,
                                      nbor_ewgts, ierr);
 }
 
-int LB_Num_Geom_Fort_Wrapper(void *data, int *ierr)
+int Zoltan_Num_Geom_Fort_Wrapper(void *data, int *ierr)
 {
-   return LB_Current_lb->Get_Num_Geom_Fort(data,ierr);
+   return Zoltan_Current->Get_Num_Geom_Fort(data,ierr);
 }
 
-void LB_Geom_Fort_Wrapper(void *data, int num_gid_entries, int num_lid_entries,
+void Zoltan_Geom_Fort_Wrapper(void *data, int num_gid_entries, int num_lid_entries,
                           ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
                           double *geom_vec, int *ierr)
 {
-   LB_Current_lb->Get_Geom_Fort(data, &num_gid_entries, &num_lid_entries,
+   Zoltan_Current->Get_Geom_Fort(data, &num_gid_entries, &num_lid_entries,
                                 global_id, local_id, geom_vec, ierr);
 }
 
-int LB_Num_Obj_Fort_Wrapper(void *data, int *ierr)
+int Zoltan_Num_Obj_Fort_Wrapper(void *data, int *ierr)
 {
-   return LB_Current_lb->Get_Num_Obj_Fort(data, ierr);
+   return Zoltan_Current->Get_Num_Obj_Fort(data, ierr);
 }
 
-void LB_Obj_List_Fort_Wrapper(void *data,
+void Zoltan_Obj_List_Fort_Wrapper(void *data,
                               int num_gid_entries, int num_lid_entries,
                               ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
                               int wdim, float *objwgts, int *ierr)
 {
-   LB_Current_lb->Get_Obj_List_Fort(data, &num_gid_entries, &num_lid_entries,
+   Zoltan_Current->Get_Obj_List_Fort(data, &num_gid_entries, &num_lid_entries,
                                     global_ids, local_ids, &wdim,
                                     objwgts, ierr);
 }
 
-int LB_First_Obj_Fort_Wrapper(void *data, 
+int Zoltan_First_Obj_Fort_Wrapper(void *data, 
                               int num_gid_entries, int num_lid_entries, 
                               ZOLTAN_ID_PTR first_global_id,
                               ZOLTAN_ID_PTR first_local_id,
                               int wdim, float *first_obj_wgt, int *ierr)
 {
-   return LB_Current_lb->Get_First_Obj_Fort(data, 
+   return Zoltan_Current->Get_First_Obj_Fort(data, 
                                             &num_gid_entries, &num_lid_entries,
                                             first_global_id,
                                             first_local_id, &wdim,
                                             first_obj_wgt, ierr);
 }
 
-int LB_Next_Obj_Fort_Wrapper(void *data, 
+int Zoltan_Next_Obj_Fort_Wrapper(void *data, 
                              int num_gid_entries, int num_lid_entries, 
                              ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
                              ZOLTAN_ID_PTR next_global_id, ZOLTAN_ID_PTR next_local_id,
                              int wdim, float *next_obj_wgt, int *ierr)
 {
-   return LB_Current_lb->Get_Next_Obj_Fort(data, 
+   return Zoltan_Current->Get_Next_Obj_Fort(data, 
                                            &num_gid_entries, &num_lid_entries, 
                                            global_id, local_id,
                                            next_global_id, next_local_id,
                                            &wdim, next_obj_wgt, ierr);
 }
 
-int LB_Num_Border_Obj_Fort_Wrapper(void *data, int nbor_proc, int *ierr)
+int Zoltan_Num_Border_Obj_Fort_Wrapper(void *data, int nbor_proc, int *ierr)
 {
-   return LB_Current_lb->Get_Num_Border_Obj_Fort(data, &nbor_proc, ierr);
+   return Zoltan_Current->Get_Num_Border_Obj_Fort(data, &nbor_proc, ierr);
 }
 
-void LB_Border_Obj_List_Fort_Wrapper(void *data, 
+void Zoltan_Border_Obj_List_Fort_Wrapper(void *data, 
                                      int num_gid_entries, int num_lid_entries, 
                                      int nbor_proc,
                                      ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
                                      int wdim, float *objwgts, int *ierr)
 {
-   LB_Current_lb->Get_Border_Obj_List_Fort(data, 
+   Zoltan_Current->Get_Border_Obj_List_Fort(data, 
                                            &num_gid_entries, &num_lid_entries, 
                                            &nbor_proc, global_ids,
                                            local_ids, &wdim, objwgts, ierr);
 }
 
-int LB_First_Border_Obj_Fort_Wrapper(void *data, 
+int Zoltan_First_Border_Obj_Fort_Wrapper(void *data, 
                                      int num_gid_entries, int num_lid_entries,
                                      int nbor_proc,
                                      ZOLTAN_ID_PTR first_global_id,
@@ -349,7 +349,7 @@ int LB_First_Border_Obj_Fort_Wrapper(void *data,
                                      int wdim, float *first_obj_wgt,
                                      int *ierr)
 {
-   return LB_Current_lb->Get_First_Border_Obj_Fort(data, 
+   return Zoltan_Current->Get_First_Border_Obj_Fort(data, 
                                                    &num_gid_entries, 
                                                    &num_lid_entries, 
                                                    &nbor_proc,
@@ -358,7 +358,7 @@ int LB_First_Border_Obj_Fort_Wrapper(void *data,
                                                    first_obj_wgt, ierr);
 }
 
-int LB_Next_Border_Obj_Fort_Wrapper(void *data, 
+int Zoltan_Next_Border_Obj_Fort_Wrapper(void *data, 
                                     int num_gid_entries, int num_lid_entries,
                                     ZOLTAN_ID_PTR global_id,
                                     ZOLTAN_ID_PTR local_id, int nbor_proc,
@@ -367,7 +367,7 @@ int LB_Next_Border_Obj_Fort_Wrapper(void *data,
                                     int wdim, float *next_obj_wgt,
                                     int *ierr)
 {
-   return LB_Current_lb->Get_Next_Border_Obj_Fort(data, 
+   return Zoltan_Current->Get_Next_Border_Obj_Fort(data, 
                                                   &num_gid_entries,
                                                   &num_lid_entries,
                                                   global_id, local_id,
@@ -376,16 +376,16 @@ int LB_Next_Border_Obj_Fort_Wrapper(void *data,
                                                   next_obj_wgt, ierr);
 }
 
-int LB_Obj_Size_Fort_Wrapper(void *data, int num_gid_entries,
+int Zoltan_Obj_Size_Fort_Wrapper(void *data, int num_gid_entries,
             int num_lid_entries, ZOLTAN_ID_PTR global_id, 
             ZOLTAN_ID_PTR local_id, int *ierr)
 {
-   return LB_Current_lb->Migrate.Get_Obj_Size_Fort(data,
+   return Zoltan_Current->Migrate.Get_Obj_Size_Fort(data,
              &num_gid_entries, &num_lid_entries,
              global_id, local_id, ierr);
 }
 
-void LB_Pre_Migrate_Fort_Wrapper(void *data, 
+void Zoltan_Pre_Migrate_Fort_Wrapper(void *data, 
                                  int num_gid_entries, int num_lid_entries,
                                  int num_import,
                                  ZOLTAN_ID_PTR import_global_ids,
@@ -394,7 +394,7 @@ void LB_Pre_Migrate_Fort_Wrapper(void *data,
                                  ZOLTAN_ID_PTR export_local_ids, int *export_procs,
                                  int *ierr)
 {
-   LB_Current_lb->Migrate.Pre_Migrate_Fort(data, 
+   Zoltan_Current->Migrate.Pre_Migrate_Fort(data, 
                                            &num_gid_entries,
                                            &num_lid_entries,
                                            &num_import,
@@ -405,7 +405,7 @@ void LB_Pre_Migrate_Fort_Wrapper(void *data,
                                            ierr);
 }
 
-void LB_Mid_Migrate_Fort_Wrapper(void *data, 
+void Zoltan_Mid_Migrate_Fort_Wrapper(void *data, 
                                  int num_gid_entries, int num_lid_entries,
                                  int num_import,
                                  ZOLTAN_ID_PTR import_global_ids,
@@ -414,7 +414,7 @@ void LB_Mid_Migrate_Fort_Wrapper(void *data,
                                  ZOLTAN_ID_PTR export_local_ids, int *export_procs,
                                  int *ierr)
 {
-   LB_Current_lb->Migrate.Mid_Migrate_Fort(data,
+   Zoltan_Current->Migrate.Mid_Migrate_Fort(data,
                                            &num_gid_entries,
                                            &num_lid_entries,
                                            &num_import,
@@ -425,7 +425,7 @@ void LB_Mid_Migrate_Fort_Wrapper(void *data,
                                            ierr);
 }
 
-void LB_Post_Migrate_Fort_Wrapper(void *data, 
+void Zoltan_Post_Migrate_Fort_Wrapper(void *data, 
                                   int num_gid_entries, int num_lid_entries,
                                   int num_import,
                                   ZOLTAN_ID_PTR import_global_ids,
@@ -434,7 +434,7 @@ void LB_Post_Migrate_Fort_Wrapper(void *data,
                                   ZOLTAN_ID_PTR export_local_ids, int *export_procs,
                                   int *ierr)
 {
-   LB_Current_lb->Migrate.Post_Migrate_Fort(data,
+   Zoltan_Current->Migrate.Post_Migrate_Fort(data,
                                             &num_gid_entries, &num_lid_entries, 
                                             &num_import,
                                             import_global_ids,
@@ -444,38 +444,38 @@ void LB_Post_Migrate_Fort_Wrapper(void *data,
                                             ierr);
 }
 
-void LB_Pack_Obj_Fort_Wrapper(void *data, 
+void Zoltan_Pack_Obj_Fort_Wrapper(void *data, 
                             int num_gid_entries, int num_lid_entries,
                             ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
                             int dest_proc, int size, char *buf, int *ierr)
 {
-   LB_Current_lb->Migrate.Pack_Obj_Fort(data, 
+   Zoltan_Current->Migrate.Pack_Obj_Fort(data, 
                                         &num_gid_entries, &num_lid_entries, 
                                         global_id, local_id,
                                         &dest_proc, &size, buf, ierr);
 }
 
-void LB_Unpack_Obj_Fort_Wrapper(void *data, int num_gid_entries,
+void Zoltan_Unpack_Obj_Fort_Wrapper(void *data, int num_gid_entries,
                                 ZOLTAN_ID_PTR global_id, int size,
                                 char *buf, int *ierr)
 {
-   LB_Current_lb->Migrate.Unpack_Obj_Fort(data, &num_gid_entries, 
+   Zoltan_Current->Migrate.Unpack_Obj_Fort(data, &num_gid_entries, 
                                           global_id, &size, buf, ierr);
 }
 
-int LB_Num_Coarse_Obj_Fort_Wrapper(void *data, int *ierr)
+int Zoltan_Num_Coarse_Obj_Fort_Wrapper(void *data, int *ierr)
 {
-   return LB_Current_lb->Get_Num_Coarse_Obj_Fort(data, ierr);
+   return Zoltan_Current->Get_Num_Coarse_Obj_Fort(data, ierr);
 }
 
-void LB_Coarse_Obj_List_Fort_Wrapper(void *data, 
+void Zoltan_Coarse_Obj_List_Fort_Wrapper(void *data, 
                            int num_gid_entries, int num_lid_entries,
                            ZOLTAN_ID_PTR global_ids,
                            ZOLTAN_ID_PTR local_ids, int *assigned, int *num_vert,
                            int *vertices, int *in_order, int *in_vertex,
                            int *out_vertex, int *ierr)
 {
-   LB_Current_lb->Get_Coarse_Obj_List_Fort(data, 
+   Zoltan_Current->Get_Coarse_Obj_List_Fort(data, 
                                            &num_gid_entries, &num_lid_entries,
                                            global_ids, local_ids,
                                            assigned, num_vert, vertices,
@@ -483,7 +483,7 @@ void LB_Coarse_Obj_List_Fort_Wrapper(void *data,
                                            ierr);
 }
 
-int LB_First_Coarse_Obj_Fort_Wrapper(void *data, 
+int Zoltan_First_Coarse_Obj_Fort_Wrapper(void *data, 
                                      int num_gid_entries, int num_lid_entries, 
                                      ZOLTAN_ID_PTR global_id,
                                      ZOLTAN_ID_PTR local_id, int *assigned,
@@ -491,7 +491,7 @@ int LB_First_Coarse_Obj_Fort_Wrapper(void *data,
                                      int *in_order, int *in_vertex,
                                      int *out_vertex, int *ierr)
 {
-   return LB_Current_lb->Get_First_Coarse_Obj_Fort(data, 
+   return Zoltan_Current->Get_First_Coarse_Obj_Fort(data, 
                                                    &num_gid_entries, 
                                                    &num_lid_entries,
                                                    global_id, local_id,
@@ -500,7 +500,7 @@ int LB_First_Coarse_Obj_Fort_Wrapper(void *data,
                                                    out_vertex, ierr);
 }
 
-int LB_Next_Coarse_Obj_Fort_Wrapper(void *data, int num_gid_entries, 
+int Zoltan_Next_Coarse_Obj_Fort_Wrapper(void *data, int num_gid_entries, 
                                     int num_lid_entries, ZOLTAN_ID_PTR global_id,
                                     ZOLTAN_ID_PTR local_id, 
                                     ZOLTAN_ID_PTR next_global_id, 
@@ -509,7 +509,7 @@ int LB_Next_Coarse_Obj_Fort_Wrapper(void *data, int num_gid_entries,
                                     int *num_vert, int *vertices,
                                     int *in_vertex, int *out_vertex, int *ierr)
 {
-   return LB_Current_lb->Get_Next_Coarse_Obj_Fort(data, &num_gid_entries,
+   return Zoltan_Current->Get_Next_Coarse_Obj_Fort(data, &num_gid_entries,
                                                   &num_lid_entries,
                                                   global_id, local_id,
                                                   next_global_id, next_local_id,
@@ -517,17 +517,17 @@ int LB_Next_Coarse_Obj_Fort_Wrapper(void *data, int num_gid_entries,
                                                   in_vertex, out_vertex, ierr);
 }
 
-int LB_Num_Child_Fort_Wrapper(void *data, 
+int Zoltan_Num_Child_Fort_Wrapper(void *data, 
                               int num_gid_entries, int num_lid_entries, 
                               ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
                               int *ierr)
 {
-   return LB_Current_lb->Get_Num_Child_Fort(data, 
+   return Zoltan_Current->Get_Num_Child_Fort(data, 
                                             &num_gid_entries, &num_lid_entries,
                                             global_id, local_id, ierr);
 }
 
-void LB_Child_List_Fort_Wrapper(void *data, 
+void Zoltan_Child_List_Fort_Wrapper(void *data, 
                                 int num_gid_entries, int num_lid_entries, 
                                 ZOLTAN_ID_PTR parent_gid,
                                 ZOLTAN_ID_PTR parent_lid, ZOLTAN_ID_PTR child_gids,
@@ -536,19 +536,19 @@ void LB_Child_List_Fort_Wrapper(void *data,
                                 ZOLTAN_REF_TYPE *ref_type, int *in_vertex,
                                 int *out_vertex, int *ierr)
 {
-   LB_Current_lb->Get_Child_List_Fort(data, &num_gid_entries, &num_lid_entries,
+   Zoltan_Current->Get_Child_List_Fort(data, &num_gid_entries, &num_lid_entries,
                                       parent_gid, parent_lid,
                                       child_gids, child_lids, assigned,
                                       num_vert, vertices,
                                       ref_type, in_vertex, out_vertex, ierr);
 }
 
-void LB_Child_Weight_Fort_Wrapper(void *data, 
+void Zoltan_Child_Weight_Fort_Wrapper(void *data, 
                                   int num_gid_entries, int num_lid_entries,
                                   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
                                   int wgt_dim, float *obj_wgt, int *ierr)
 {
-   LB_Current_lb->Get_Child_Weight_Fort(data, 
+   Zoltan_Current->Get_Child_Weight_Fort(data, 
                                         &num_gid_entries, &num_lid_entries,
                                         global_id, local_id, &wgt_dim,
                                         obj_wgt, ierr);
@@ -556,7 +556,7 @@ void LB_Child_Weight_Fort_Wrapper(void *data,
 /*--------------------------------------------------------------------*/
 /* C wrapper functions                                                */
 
-int LB_fw_Initialize(float *ver)
+int Zfw_Initialize(float *ver)
 {
    int myArgc;
    char **myArgv;
@@ -570,7 +570,7 @@ int LB_fw_Initialize(float *ver)
    return result;
 }
 
-int LB_fw_Initialize1(int *argc, int *argv, int *starts, float *ver)
+int Zfw_Initialize1(int *argc, int *argv, int *starts, float *ver)
 {
    int i, j, result;
    char **myArgv;
@@ -590,20 +590,20 @@ int LB_fw_Initialize1(int *argc, int *argv, int *starts, float *ver)
    return result;
 }
 
-void LB_fw_Create(int *f_communicator, int *addr_lb, int *nbytes)
+void Zfw_Create(int *f_communicator, int *addr_lb, int *nbytes)
 {
    struct Zoltan_Struct *lb;
    unsigned char *p;
    int i;
    MPI_Comm c_communicator;
-   c_communicator = LB_comm_f2c(f_communicator);
+   c_communicator = Zoltan_comm_f2c(f_communicator);
    lb = Zoltan_Create(c_communicator);
    lb->Fortran = 1;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {addr_lb[i] = (int)*p; p++;}
 }
 
-void LB_fw_Destroy(int *addr_lb, int *nbytes)
+void Zfw_Destroy(int *addr_lb, int *nbytes)
 {
    struct Zoltan_Struct *lb;
    unsigned char *p;
@@ -613,12 +613,12 @@ void LB_fw_Destroy(int *addr_lb, int *nbytes)
    Zoltan_Destroy(&lb);
 }
 
-void LB_fw_Memory_Stats()
+void Zfw_Memory_Stats()
 {
    Zoltan_Memory_Stats();
 }
 
-int LB_fw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                  void *data)
 {
    struct Zoltan_Struct *lb;
@@ -626,107 +626,107 @@ int LB_fw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   LB_Current_lb = lb;
+   Zoltan_Current = lb;
    switch(*type) {
    case ZOLTAN_NUM_EDGES_FN_TYPE:
       lb->Get_Num_Edges_Fort = (ZOLTAN_NUM_EDGES_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Num_Edges_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Num_Edges_Fort_Wrapper, data);
       break;
    case ZOLTAN_EDGE_LIST_FN_TYPE:
       lb->Get_Edge_List_Fort = (ZOLTAN_EDGE_LIST_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Edge_List_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Edge_List_Fort_Wrapper, data);
       break;
    case ZOLTAN_NUM_GEOM_FN_TYPE:
       lb->Get_Num_Geom_Fort = (ZOLTAN_NUM_GEOM_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Num_Geom_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Num_Geom_Fort_Wrapper, data);
       break;
    case ZOLTAN_GEOM_FN_TYPE:
       lb->Get_Geom_Fort = (ZOLTAN_GEOM_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Geom_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Geom_Fort_Wrapper, data);
       break;
    case ZOLTAN_NUM_OBJ_FN_TYPE:
       lb->Get_Num_Obj_Fort = (ZOLTAN_NUM_OBJ_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Num_Obj_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Num_Obj_Fort_Wrapper, data);
       break;
    case ZOLTAN_OBJ_LIST_FN_TYPE:
       lb->Get_Obj_List_Fort = (ZOLTAN_OBJ_LIST_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Obj_List_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Obj_List_Fort_Wrapper, data);
       break;
    case ZOLTAN_FIRST_OBJ_FN_TYPE:
       lb->Get_First_Obj_Fort = (ZOLTAN_FIRST_OBJ_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_First_Obj_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_First_Obj_Fort_Wrapper, data);
       break;
    case ZOLTAN_NEXT_OBJ_FN_TYPE:
       lb->Get_Next_Obj_Fort = (ZOLTAN_NEXT_OBJ_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Next_Obj_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Next_Obj_Fort_Wrapper, data);
       break;
    case ZOLTAN_NUM_BORDER_OBJ_FN_TYPE:
       lb->Get_Num_Border_Obj_Fort = (ZOLTAN_NUM_BORDER_OBJ_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Num_Border_Obj_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Num_Border_Obj_Fort_Wrapper, data);
       break;
    case ZOLTAN_BORDER_OBJ_LIST_FN_TYPE:
       lb->Get_Border_Obj_List_Fort = (ZOLTAN_BORDER_OBJ_LIST_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Border_Obj_List_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Border_Obj_List_Fort_Wrapper, data);
       break;
    case ZOLTAN_FIRST_BORDER_OBJ_FN_TYPE:
       lb->Get_First_Border_Obj_Fort = (ZOLTAN_FIRST_BORDER_OBJ_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_First_Border_Obj_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_First_Border_Obj_Fort_Wrapper, data);
       break;
    case ZOLTAN_NEXT_BORDER_OBJ_FN_TYPE:
       lb->Get_Next_Border_Obj_Fort = (ZOLTAN_NEXT_BORDER_OBJ_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Next_Border_Obj_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Next_Border_Obj_Fort_Wrapper, data);
       break;
    case ZOLTAN_PRE_MIGRATE_FN_TYPE:
       lb->Migrate.Pre_Migrate_Fort = (ZOLTAN_PRE_MIGRATE_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Pre_Migrate_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Pre_Migrate_Fort_Wrapper, data);
       break;
    case ZOLTAN_MID_MIGRATE_FN_TYPE:
       lb->Migrate.Mid_Migrate_Fort = (ZOLTAN_MID_MIGRATE_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Mid_Migrate_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Mid_Migrate_Fort_Wrapper, data);
       break;
    case ZOLTAN_POST_MIGRATE_FN_TYPE:
       lb->Migrate.Post_Migrate_Fort = (ZOLTAN_POST_MIGRATE_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Post_Migrate_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Post_Migrate_Fort_Wrapper, data);
       break;
    case ZOLTAN_OBJ_SIZE_FN_TYPE:
       lb->Migrate.Get_Obj_Size_Fort = (ZOLTAN_OBJ_SIZE_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Obj_Size_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Obj_Size_Fort_Wrapper, data);
       break;
    case ZOLTAN_PACK_OBJ_FN_TYPE:
       lb->Migrate.Pack_Obj_Fort = (ZOLTAN_PACK_OBJ_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Pack_Obj_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Pack_Obj_Fort_Wrapper, data);
       break;
    case ZOLTAN_UNPACK_OBJ_FN_TYPE:
       lb->Migrate.Unpack_Obj_Fort = (ZOLTAN_UNPACK_OBJ_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Unpack_Obj_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Unpack_Obj_Fort_Wrapper, data);
       break;
    case ZOLTAN_NUM_COARSE_OBJ_FN_TYPE:
       lb->Get_Num_Coarse_Obj_Fort = (ZOLTAN_NUM_COARSE_OBJ_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Num_Coarse_Obj_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Num_Coarse_Obj_Fort_Wrapper, data);
       break;
    case ZOLTAN_COARSE_OBJ_LIST_FN_TYPE:
       lb->Get_Coarse_Obj_List_Fort = (ZOLTAN_COARSE_OBJ_LIST_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Coarse_Obj_List_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Coarse_Obj_List_Fort_Wrapper, data);
       break;
    case ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE:
       lb->Get_First_Coarse_Obj_Fort = (ZOLTAN_FIRST_COARSE_OBJ_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_First_Coarse_Obj_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_First_Coarse_Obj_Fort_Wrapper, data);
       break;
    case ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE:
       lb->Get_Next_Coarse_Obj_Fort = (ZOLTAN_NEXT_COARSE_OBJ_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Next_Coarse_Obj_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Next_Coarse_Obj_Fort_Wrapper, data);
       break;
    case ZOLTAN_NUM_CHILD_FN_TYPE:
       lb->Get_Num_Child_Fort = (ZOLTAN_NUM_CHILD_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Num_Child_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Num_Child_Fort_Wrapper, data);
       break;
    case ZOLTAN_CHILD_LIST_FN_TYPE:
       lb->Get_Child_List_Fort = (ZOLTAN_CHILD_LIST_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Child_List_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Child_List_Fort_Wrapper, data);
       break;
    case ZOLTAN_CHILD_WEIGHT_FN_TYPE:
       lb->Get_Child_Weight_Fort = (ZOLTAN_CHILD_WEIGHT_FORT_FN *) fn;
-      return Zoltan_Set_Fn(lb, *type, (void (*)())LB_Child_Weight_Fort_Wrapper, data);
+      return Zoltan_Set_Fn(lb, *type, (void (*)())Zoltan_Child_Weight_Fort_Wrapper, data);
       break;
 
    default:
@@ -735,109 +735,109 @@ int LB_fw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
    }
 }
 
-int LB_fw_Set_Fn0f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)())
+int Zfw_Set_Fn0f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)())
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)NULL);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)NULL);
 }
 
-int LB_fw_Set_Fn1f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn1f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   int *data)
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn2f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn2f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   float *data)
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn3f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn3f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   double *data)
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn4f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn4f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_1) */
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn5f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn5f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_2) */
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn6f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn6f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_3) */
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn7f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn7f(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_4) */
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn0s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)())
+int Zfw_Set_Fn0s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)())
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)NULL);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)NULL);
 }
 
-int LB_fw_Set_Fn1s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn1s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   int *data)
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn2s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn2s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   float *data)
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn3s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn3s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   double *data)
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn4s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn4s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_1) */
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn5s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn5s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_2) */
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn6s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn6s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_3) */
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Fn7s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
+int Zfw_Set_Fn7s(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
                   void *data)
 /* data is type(LB_User_Data_4) */
 {
-   return LB_fw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
+   return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
 }
 
-int LB_fw_Set_Method(int *addr_lb, int *nbytes, int *int_str, int *len)
+int Zfw_LB_Set_Method(int *addr_lb, int *nbytes, int *int_str, int *len)
 {
    struct Zoltan_Struct *lb;
    char *str;
@@ -846,7 +846,7 @@ int LB_fw_Set_Method(int *addr_lb, int *nbytes, int *int_str, int *len)
    str = (char *)ZOLTAN_MALLOC(*len+1);
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   LB_Current_lb = lb;
+   Zoltan_Current = lb;
    for (i=0; i<(*len); i++) str[i] = (char)int_str[i];
    str[*len] = '\0';
    result = Zoltan_LB_Set_Method(lb, str);
@@ -854,7 +854,7 @@ int LB_fw_Set_Method(int *addr_lb, int *nbytes, int *int_str, int *len)
    return result;
 }
 
-int LB_fw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,
+int Zfw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,
                    int *param_name_len, int *int_new_value, int *new_value_len)
 {
    struct Zoltan_Struct *lb;
@@ -865,7 +865,7 @@ int LB_fw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,
    new_value = (char *)ZOLTAN_MALLOC(*new_value_len+1);
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   LB_Current_lb = lb;
+   Zoltan_Current = lb;
    for (i=0; i<(*param_name_len); i++) param_name[i] = (char)int_param_name[i];
    param_name[*param_name_len] = '\0';
    for (i=0; i<(*new_value_len); i++) new_value[i] = (char)int_new_value[i];
@@ -876,7 +876,7 @@ int LB_fw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,
    return result;
 }
 
-int LB_fw_Balance(int *addr_lb, int *nbytes, int *changes, 
+int Zfw_LB_Balance(int *addr_lb, int *nbytes, int *changes, 
                   int *num_gid_entries, int *num_lid_entries,
                   int *num_import,
                   ZOLTAN_ID_PTR *import_global_ids, ZOLTAN_ID_PTR *import_local_ids,
@@ -916,7 +916,7 @@ int LB_fw_Balance(int *addr_lb, int *nbytes, int *changes,
 
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   LB_Current_lb = lb;
+   Zoltan_Current = lb;
 
 /* put the address of the Fortran pointer into temp_*[1] to be passed to
    Fortran for allocation.  The address of the allocated space will be
@@ -940,7 +940,7 @@ int LB_fw_Balance(int *addr_lb, int *nbytes, int *changes,
    temp_exp_proc[2] = (int *)exp_proc_hide;
 #endif
 
-/* call LB_Balance */
+/* call Zoltan_LB_Balance */
 
    return Zoltan_LB_Balance(lb, changes, num_gid_entries, num_lid_entries, 
                      num_import, temp_imp_gid, temp_imp_lid,
@@ -949,7 +949,7 @@ int LB_fw_Balance(int *addr_lb, int *nbytes, int *changes,
 }
 
 
-int LB_fw_Eval(int *addr_lb, int *nbytes, int *print_stats,
+int Zfw_LB_Eval(int *addr_lb, int *nbytes, int *print_stats,
                 int *nobj, float *obj_wgt, int *ncuts, float *cut_wgt,
                 int *nboundary, int *nadj,
                 int *is_nobj, int *is_obj_wgt, int *is_ncuts, int *is_cut_wgt,
@@ -962,7 +962,7 @@ int LB_fw_Eval(int *addr_lb, int *nbytes, int *print_stats,
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   LB_Current_lb = lb;
+   Zoltan_Current = lb;
    if (*is_nobj) {loc_nobj = nobj;} else {loc_nobj = NULL;}
    if (*is_ncuts) {loc_ncuts = ncuts;} else {loc_ncuts = NULL;}
    if (*is_obj_wgt) {loc_obj_wgt = obj_wgt;} else {loc_obj_wgt = NULL;}
@@ -974,19 +974,19 @@ int LB_fw_Eval(int *addr_lb, int *nbytes, int *print_stats,
            loc_nboundary, loc_nadj);
 }
 
-int LB_fw_Point_Assign(int *addr_lb, int *nbytes, double *coords, int *proc)
+int Zfw_LB_Point_Assign(int *addr_lb, int *nbytes, double *coords, int *proc)
 {
    struct Zoltan_Struct *lb;
    unsigned char *p;
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   LB_Current_lb = lb;
+   Zoltan_Current = lb;
 
    return Zoltan_LB_Point_Assign(lb, coords, proc);
 }
 
-int LB_fw_Box_Assign(int *addr_lb, int *nbytes, double *xmin, double *ymin,
+int Zfw_LB_Box_Assign(int *addr_lb, int *nbytes, double *xmin, double *ymin,
                      double *zmin, double *xmax, double *ymax, double *zmax,
                      int *procs, int *numprocs)
 {
@@ -995,13 +995,13 @@ int LB_fw_Box_Assign(int *addr_lb, int *nbytes, double *xmin, double *ymin,
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   LB_Current_lb = lb;
+   Zoltan_Current = lb;
 
    return Zoltan_LB_Box_Assign(lb, *xmin, *ymin, *zmin, *xmax, *ymax, *zmax, procs,
                         numprocs);
 }
 
-int LB_fw_Compute_Destinations(int *addr_lb, int *nbytes, 
+int Zfw_Compute_Destinations(int *addr_lb, int *nbytes, 
                     int *num_gid_entries, int *num_lid_entries, int *num_import,
                     ZOLTAN_ID_PTR import_global_ids, ZOLTAN_ID_PTR import_local_ids,
                     int *import_procs, int *num_export,
@@ -1037,7 +1037,7 @@ int LB_fw_Compute_Destinations(int *addr_lb, int *nbytes,
 
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   LB_Current_lb = lb;
+   Zoltan_Current = lb;
 
 /* put the address of the Fortran pointer into temp_*[1] to be passed to
    Fortran for allocation.  The address of the allocated space will be
@@ -1065,7 +1065,7 @@ int LB_fw_Compute_Destinations(int *addr_lb, int *nbytes,
 }
 
 
-int LB_fw_Help_Migrate(int *addr_lb, int *nbytes, 
+int Zfw_Help_Migrate(int *addr_lb, int *nbytes, 
                     int *num_import,
                     ZOLTAN_ID_PTR import_global_ids, ZOLTAN_ID_PTR import_local_ids,
                     int *import_procs, int *num_export,
@@ -1077,27 +1077,27 @@ int LB_fw_Help_Migrate(int *addr_lb, int *nbytes,
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   LB_Current_lb = lb;
+   Zoltan_Current = lb;
    return Zoltan_Help_Migrate(lb,
                           *num_import,import_global_ids,import_local_ids,
                           import_procs,*num_export,export_global_ids,
                           export_local_ids,export_procs);
 }
 
-void LB_fw_Register_Fort_Malloc(LB_FORT_MALLOC_INT_FN *fort_malloc_int,
-                                LB_FORT_FREE_INT_FN *fort_free_int)
+void Zfw_Register_Fort_Malloc(ZOLTAN_FORT_MALLOC_INT_FN *fort_malloc_int,
+                                    ZOLTAN_FORT_FREE_INT_FN *fort_free_int)
 {
-   LB_Register_Fort_Malloc(fort_malloc_int,fort_free_int);
+   Zoltan_Register_Fort_Malloc(fort_malloc_int,fort_free_int);
 }
 
 /* TEMP child_order */
-void LB_fw_Get_Child_Order(int *addr_lb, int *nbytes, int *order, int *ierr)
+void Zfw_LB_Get_Child_Order(int *addr_lb, int *nbytes, int *order, int *ierr)
 {
    struct Zoltan_Struct *lb;
    unsigned char *p;
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   LB_Get_Child_Order(lb,order,ierr);
+   Zoltan_LB_Get_Child_Order(lb,order,ierr);
 }
 /* end TEMP child_order */
