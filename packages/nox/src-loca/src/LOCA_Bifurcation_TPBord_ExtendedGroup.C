@@ -227,21 +227,17 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::computeDfDp(int paramID,
 double
 LOCA::Bifurcation::TPBord::ExtendedGroup::getBifParam() const 
 {
-  LOCA::ParameterVector params(grpPtr->getParams());
-  return params[bifParamId];
+  return grpPtr->getParam(bifParamId);
 }
 
 void
 LOCA::Bifurcation::TPBord::ExtendedGroup::setBifParam(double param) 
 {
-  LOCA::ParameterVector params(grpPtr->getParams());
+  grpPtr->setParam(bifParamId, param);
 
-  params[bifParamId] = param;
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
-
-  grpPtr->setParams(params);
 }
 
 void
@@ -256,6 +252,7 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::setX(
 {
   grpPtr->setX( y.getXVec() );
   tpXVec = y;
+  setBifParam(tpXVec.getBifParam());
 
   isValidF = false;
   isValidJacobian = false;

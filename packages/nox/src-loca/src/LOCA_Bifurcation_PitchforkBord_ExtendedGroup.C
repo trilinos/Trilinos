@@ -241,21 +241,17 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::computeDfDp(int paramID,
 double
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::getBifParam() const 
 {
-  LOCA::ParameterVector params(grpPtr->getParams());
-  return params[bifParamId];
+  return grpPtr->getParam(bifParamId);
 }
 
 void
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::setBifParam(double param) 
 {
-  LOCA::ParameterVector params(grpPtr->getParams());
+  grpPtr->setParam(bifParamId, param);
 
-  params[bifParamId] = param;
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
-
-  grpPtr->setParams(params);
 }
 
 void
@@ -266,10 +262,11 @@ LOCA::Bifurcation::PitchforkBord::ExtendedGroup::setX(const NOX::Abstract::Vecto
 
 void
 LOCA::Bifurcation::PitchforkBord::ExtendedGroup::setX(
-                              const LOCA::Bifurcation::PitchforkBord::ExtendedVector& y) 
+                   const LOCA::Bifurcation::PitchforkBord::ExtendedVector& y) 
 {
   grpPtr->setX( y.getXVec() );
   pfXVec = y;
+  setBifParam(pfXVec.getBifParam());
 
   isValidF = false;
   isValidJacobian = false;
