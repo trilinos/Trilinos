@@ -1098,13 +1098,34 @@ ordering and a global column numbering. The
 matrix will be written in MATLAB (i,j,k) format to file \verb!label.m!. The
 last two parameters can be se to NULL.
 
-\subsection{Timing}
+\subsection{Timing and Performance}
 
 The following variables can be used to track timing:
 \begin{itemize}
 \item \verb!ML_TIMING!;
 \item \verb!ML_TIMING_DETAILED!.
 \end{itemize}
+They are turned on with the configure line option \verb!--enable-ml_timing!.
+Detailed communication and apply time information is printed to the screen for smoothers
+and operators as they are destroyed.
+
+The function
+\verb!ML_Operator_Profile(ML_Operator *, char *, int)!
+profiles the performance of an individual \verb!ML_Operator!.
+This function applies an ML\_Operator to a random vector
+a user-specified number of times.
+The (optional) character string argument is appended to the matrix label to help identify
+it.
+Detailed matrix and performance statistics are then written to the screen:
+matrix size, nonzeros, number of neighboring processors, number of active
+processors, communication time, amount of data communicated, number of applies, and apply
+time.
+In parallel, each value is typically reported with a mininum, maximum, average, and
+standard deviation.
+Calls to this function will not affect the statistics printed out when the
+\verb!ML_Operator! is destroyed.
+Note that \verb!ML_Operator_Profile()! requires the macro \verb!ML_TIMING_DETAILED! to be
+defined (via the configure line option \verb!--enable-ml_timing!).
 
 \subsection{Checking Memory Usage}
 
