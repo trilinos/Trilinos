@@ -123,8 +123,9 @@ void bounds_to_origin(COORD min, COORD max, COORD origin)
   }
 }
 
-void child_bounds_wrapper(pOctant oct, int input, COORD cmin, COORD cmax) {
+void child_bounds_wrapper(pOctant oct, COORD cmin[], COORD cmax[]) {
   int cnum;                               /* child number */
+  int i;
   COORD min,
         max;
   COORD origin;
@@ -137,30 +138,35 @@ void child_bounds_wrapper(pOctant oct, int input, COORD cmin, COORD cmax) {
   if(HILBERT) {
     /* fprintf(stderr,"Using Hilbert\n"); */
     if(OCT_dimension == 3)
-      cnum = hilbert_bounds(min, max, input);
+      hilbert_bounds(min, max, cmin, cmax);
     else {
-      if(input < 4)
-	cnum = hilbert2d_bounds(min,max,input);
-      else
-	cnum = input; 
+      hilbert2d_bounds(min, max, cmin, cmax);
+      for(i=4; i<8; i++) {
+	child_bounds(min, max, origin, i, cmin[i], cmax[i]);
+      }
     }
   }
   else if(GRAY) {
     /* fprintf(stderr,"Using Gray\n"); */
-    cnum = convert_from_gray(input);        /* used for renumbering children */
+    for(i=0; i<8; i++) {
+      cnum = convert_from_gray(i);         /* used for renumbering children */
+      child_bounds(min, max, origin, cnum, cmin[i], cmax[i]);
+    }
   }
   else {
     /* fprintf(stderr,"Using Default\n"); */
-    cnum = input;
+    for(i=0; i<8; i++) {
+      child_bounds(min, max, origin, i, cmin[i], cmax[i]);
+    }
   }
 
-  child_bounds(min, max, origin, cnum, cmin, cmax);
+  /* child_bounds(min, max, origin, cnum, cmin, cmax); */
 }
 
 extern int compare( unsigned * x, unsigned * y)
 { return ( *x == *y ) ? 0 : ( ( *x < *y ) ? -1 : 1 ); }
 
-int hilbert2d_bounds(COORD min, COORD max, int cnum) {
+int hilbert2d_bounds(COORD min, COORD max, COORD cmin[], COORD cmax[]) {
   unsigned ihsfc[4][2];
   unsigned Nword = 1;
   COORD child_min[4],
@@ -168,7 +174,7 @@ int hilbert2d_bounds(COORD min, COORD max, int cnum) {
   COORD centroid,
         origin;
   double center[2];
-  int i, k;
+  int i, k, j;
   
   bounds_to_origin(min,max,origin);
   for(i=0; i<4; i++) {
@@ -182,11 +188,17 @@ int hilbert2d_bounds(COORD min, COORD max, int cnum) {
 
   qsort(ihsfc, 4, 2*sizeof(unsigned), (int (*)())compare );
 
-  k=ihsfc[cnum][1];
+  for(i=0; i<4; i++) {
+    k=ihsfc[i][1];
+    for(j=0; j<3; j++) {
+      cmin[i][j] = child_min[k][j];
+      cmax[i][j] = child_max[k][j];
+    }
+  }
   return(k);
 }
 
-int hilbert_bounds(COORD min, COORD max, int cnum) {
+int hilbert_bounds(COORD min, COORD max, COORD cmin[], COORD cmax[]) {
   unsigned ihsfc[8][2];
   unsigned Nword = 1;
   COORD child_min[8],
@@ -194,7 +206,7 @@ int hilbert_bounds(COORD min, COORD max, int cnum) {
   COORD centroid,
         origin,
         center;
-  int i, k;
+  int i, k, j;
   
   bounds_to_origin(min,max,origin);
   for(i=0; i<8; i++) {
@@ -209,7 +221,13 @@ int hilbert_bounds(COORD min, COORD max, int cnum) {
 
   qsort(ihsfc, 8, 2*sizeof(unsigned), (int (*)())compare );
 
-  k=ihsfc[cnum][1];
+  for(i=0; i<8; i++) {
+    k=ihsfc[i][1];
+    for(j=0; j<3; j++) {
+      cmin[i][j] = child_min[k][j];
+      cmax[i][j] = child_max[k][j];
+    }
+  }
   return(k);
 }
 
@@ -246,10 +264,10 @@ int child_which_wrapper(pOctant oct, COORD point) {
         max;
   COORD origin;
 
-  POC_bounds(oct,min,max);                   /* get the bounds of the octant */
-  bounds_to_origin(min,max,origin);            /* convert to bound to origin */
+  POC_bounds(oct,min,max);                  /* get the bounds of the octant */
+  bounds_to_origin(min,max,origin);           /* convert to bound to origin */
   
-  cnum = child_which(origin, point);          /* find closest child to coord */
+  cnum = child_which(origin, point);         /* find closest child to coord */
   
   if(HILBERT) {
     /* fprintf(stderr,"Using Hilbert\n"); */

@@ -148,7 +148,7 @@ void lb_oct_init(
   timers[1] = time2 - time1;              /* time took to partition octree */
 
   /* intermediate result print out */
-  if(LB_Debug > 6)                                   /* WARNING BIG OUTPUT!! */
+  if(lb->Params[4] != LB_PARAMS_INIT_VALUE)          /* WARNING BIG OUTPUT!! */
     for(i=0; i<LB_Num_Proc; i++) {
       if(LB_Proc == i) {
 	POC_printResults();
@@ -334,9 +334,9 @@ void oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,
     else
       hold = (int)pow(8, level);
 
-    part = hold / LB_Num_Proc;              /* how many octants per partition */
-    remainder = hold % LB_Num_Proc;    /* extra octants, not evenly divisible */
-    extra = LB_Num_Proc - remainder;   /* where to start adding extra octants */
+    part = hold / LB_Num_Proc;             /* how many octants per partition */
+    remainder = hold % LB_Num_Proc;   /* extra octants, not evenly divisible */
+    extra = LB_Num_Proc - remainder;  /* where to start adding extra octants */
     array = (Map *)malloc(hold * sizeof(Map));         /* allocate map array */
     if(array == NULL) {
       fprintf(stderr, "ERROR on proc %d, could not allocate array map\n",
@@ -784,7 +784,7 @@ void oct_terminal_refine(pOctant oct,int count)
   pRegion region;                 /* a region to be associated to an octant */
   pRegion entry;
   Region reg;
-  COORD cmin, cmax;
+  COORD cmin[8], cmax[8];
   int new_order;
 
   for(i=0;i<3;i++)
@@ -814,10 +814,10 @@ void oct_terminal_refine(pOctant oct,int count)
   /* create the children and set their id's */
   j = 0;
 
+  child_bounds_wrapper(oct, cmin, cmax);
   for (i=0; i<8; i++) {
-    child_bounds_wrapper(oct, i, cmin, cmax);
     if(OCT_dimension == 2) {
-      if(cmin[2] > OCT_gmin[2]) {                  /* ignore the z+ octants */
+      if(cmin[i][2] > OCT_gmin[2]) {                /* ignore the z+ octants */
 	child[i] = NULL;
 	continue;
       }
@@ -835,7 +835,7 @@ void oct_terminal_refine(pOctant oct,int count)
 #ifdef LGG_MIGOCT
     POC_setID(child[i], oct_nextId());                /* set child id number */
 #endif /* LGG_MIGOCT */
-    POC_setbounds(child[i],cmin,cmax);                   /* set child bounds */
+    POC_setbounds(child[i], cmin[i], cmax[i]);           /* set child bounds */
     POC_setCpid(oct, i, LB_Proc);      /* set child to be a local octant */
     /*    POC_setOrientation(child[i], 
 		       child_orientation(oct->orientation, oct->which));

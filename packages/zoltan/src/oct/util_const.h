@@ -27,14 +27,14 @@ extern void   bounds_to_origin_size(COORD min, COORD max,
 				    COORD origin, double size[3]);
 extern void   bounds_to_origin(COORD min, COORD max, 
 			       COORD origin);
-extern void   child_bounds_wrapper(pOctant oct, int input, 
-				   COORD cmin, COORD cmax);
+extern void   child_bounds_wrapper(pOctant oct, COORD cmin[], COORD cmax[]);
 extern void   child_bounds(COORD pmin, COORD pmax, COORD porigin,
 			   int cnum, COORD cmin, COORD cmax);
 
 extern int    compare(unsigned *x, unsigned *y);
-extern int    hilbert_bounds(COORD min, COORD max, int cnum);
-extern int    hilbert2d_bounds(COORD min, COORD max, int cnum);
+extern int    hilbert_bounds(COORD min, COORD max, COORD cmin[], COORD cmax[]);
+extern int    hilbert2d_bounds(COORD min, COORD max, 
+			       COORD cmin[], COORD cmax[]);
 
 extern int    child_which_wrapper(pOctant oct, COORD point);
 extern int    child_which(COORD origin, COORD point);
