@@ -18,7 +18,7 @@
 \newcommand{\trilinos}  {{\sc Trilinos}}
 \newcommand{\amesos}  {{\sc Amesos}}
 \newcommand{\anasazi}  {{\sc Anasazi}}
-\newcommand{\umfpack}  {{\sc Umfpack }}
+\newcommand{\umfpack}  {{\sc Umfpack}}
 \newcommand{\superlu}  {{\sc SuperLU}}
 \newcommand{\superludist}  {{\sc SuperLU\_dist}}
 \newcommand{\mumps}  {{\sc Mumps}}
@@ -27,7 +27,9 @@
 \newcommand{\parmetis}  {{\sc ParMetis}}
 \newcommand{\triutils}  {{\sc Triutils}}
 \newcommand{\ifpack}  {{\sc Ifpack}}
+\newcommand{\parasails}  {{\sc ParaSails}}
 \newcommand{\teuchos}  {{\sc Teuchos}}
+
 %
 % ***********************************************************************
 % * 02 July 1993: McCorkle                                              *
@@ -84,7 +86,7 @@ Printed May 2004
 \vspace{0.2in}
 
 \begin{center}
-{\Large {\bf ML 3.0 Smoothed Aggregation User's Guide}}
+{\Large {\bf ML 4.0 Smoothed Aggregation User's Guide (DRAFT)}}
 %\footnote{ Sandia is a multiprogram laboratory operated by Sandia Corporation,
 %a Lockheed Martin Company, for the United States Department of Energy's
 %National Nuclear Security Administration under contract DE-AC04-94AL85000.}}}
@@ -420,7 +422,7 @@ can also find a complete list and explanations by typing {\tt
 %
 
 \ML\ can be configured with the following third party libraries (TPLs):
-\superlu, \superludist, \metis, and \parmetis. It can take advantage of
+\superlu, \superludist, \parasails, \metis, and \parmetis. It can take advantage of
 the following \trilinos~packages: \ifpack, \teuchos, \triutils,
 \amesos. Through \amesos, \ML\ can interface with the direct solvers
 \klu, \umfpack, \superlu, \superludist\footnote{Currently, \ML\ can
@@ -473,6 +475,9 @@ for various eigenvalue computations.}
 The following configure line options enable interfaces in \ML\ to certain TPLs.
 \smallskip
 
+%
+\choicebox{\tt --with-ml\_parasails}{Enables interface for
+  \parasails~\cite{parasails}.}
 %
 \choicebox{\tt --with-ml\_metis}{Enables interface for \metis~\cite{METIS}.}
 %
@@ -1138,8 +1143,6 @@ parameter {\tt coarse: damping parameter}) as a solver. \\
 \verb!Amesos-Superludist! & Use \superludist through \amesos. \\
 \verb!Amesos-MUMPS! & Use double precision version of \mumps~through
 \amesos. \\
-\verb!Amesos-ScaLAPACK! & Use double precision version of {\sc ScaLAPACK}~through
-\amesos. \\
 \verb!SuperLU! & Use \ML\ interface to \superlu. \\
 \hline
 \end{tabular}
@@ -1279,7 +1282,595 @@ Damping factor in the coarse solver.}
 
 \choicebox{\tt coarse: max processes}{ Maximum number of processes to be used in the
   coarse grid solution (only for {\tt
-    Amesos-Superludist, Amesos-MUMPS, Amesos-ScaLAPACK}).}
+    Amesos-Superludist, Amesos-MUMPS}).}
+
+%%% ======================= %%%
+%%% Detection of null space %%%
+%%% ======================= %%%
+
+\subsection{Null Space Detection}
+
+If used in conjuction with Anasazi, \ML~can compute an approximate null space
+of the linear operator to precondition. This can be done using the following
+options:
+
+\medskip
+
+\choicebox{\tt null space: type}{[{\tt string}] If {\tt default vectors}, the
+  default null space are used (no computation required). If {\tt
+    pre-computed}, a pointer to the already-computed null is obtained from
+    option {\tt null space: vector}. If {\tt enriched}, \ML~will compute,
+  usign Anasazi, an approximation of the null space of the operator.}
+
+\choicebox{\tt null space: vectors to compute}{[{\tt int}]. If {\tt null
+  space: type} is set to {\tt enriched}, this option indicates the number of
+  eigenvectors to compute. Default: 1.}
+
+\choicebox{\tt null space: add default vectors}{[{\tt bool}]. If {\tt true},
+  the default null space (one constant vector for each unknown) will be added
+    to the computed null space. Default: {\tt true}.}
+
+\choicebox{\tt eigen-analysis: tolerance}{[{\tt double}] Tolerance for
+  Anasazi. Default: {\tt 0.1}.}
+
+\choicebox{\tt eigen-analysis: restart}{[{\tt int}] Number of restarts for
+  Anasazi. Default: {\tt 2}.}
+
+%%% ====================== %%%
+%%% auxiliary matrix stuff %%%
+%%% ====================== %%%
+
+\subsection{Aggregation Strategies}
+\label{sec:MLP:auxiliary}
+
+In some case, it is preferable to generate the aggregates using a
+matrix defined as follows:
+\begin{equation}
+L_{i,j} = (\mathbf{x}_i - \mathbf{x}_j)^{-2},
+\label{eq:discrete_laplacian}
+\end{equation}
+where $\mathbf{x}_i$ represents the coordinates of node $i$.
+This may happen, for instance, when working with strecthed elements. 
+\ML~can be instructed to generate the aggregates using
+matrix~(\ref{eq:discrete_laplacian}), then build the preconditioner using the
+linear system matrix, as done in the following code fragment:
+\begin{verbatim}
+double* x_coord;
+double* y_coord;
+double* z_coord;
+// here we define the nodal coordinates...
+
+MLList.set("aggregation: x-coordinates", x_coord );
+MLList.set("aggregation: y-coordinates", y_coord );
+MLList.set("aggregation: z-coordinates", z_coord );
+MLList.set("aggregation: use auxiliary matrix", true);
+MLList.set("aggregation: use symmetric pattern", true);
+\end{verbatim}
+The double vectors \verb!y_coord! and/or \verb!z_coord! can be set to \verb!0!.
+\verb!x_coord! (and \verb!y_coord! if 2D, and
+\verb!z_coord! if 3D) must be allocated to contain the coordinates for all
+nodes assigned to the calling processor, plus that of the ghost nodes. For
+systems of PDE equations, the coordinates must refer to the block nodes (that
+is, x-coordinate of local row \verb!i! will be reported in
+\verb!x_coord[i/NumPDEEqns]!.
+
+The following options can be used:
+\smallskip
+
+\choicebox{\tt aggregation: use auxiliary matrix}{[{\tt bool}]. Enable/disable
+the use of 
+matrix~(\ref{eq:discrete_laplacian}. Default: {\tt false}.}
+
+\choicebox{\tt aggregation: use symmetric pattern}{[{\tt bool}]. If
+{\tt true}, matrix~(\ref{eq:discrete_laplacian}) will have a symmetric
+pattern. Default: {\tt false}.}
+
+\choicebox{\tt aggregation: theta}{[{\tt double}]. If $\theta$ is 
+different from zero, the
+code create the aggregates using matrix $\theta A + (1 - \theta)L$. Default:
+{\tt 0.0}.}
+
+
+%%% ============================ %%%
+%%% here stuff for visualization %%%
+%%% and other statistics         %%%
+%%% ============================ %%%
+
+\subsection{Analyzing the ML preconditioner}
+\label{sec:MLP:analyze}
+
+Multilevel methods require the careful setup of a large variety of parameters,
+from the smoother for each level, to the aggregation scheme, and others.
+Often, for non-standard problems, there is no theory to support this choice.
+Also, sometimes it is difficult to understand which component of the
+multilevel cycle is not properly working. \ML~allows users to (empirically)
+analyze several components of the multilevel cycles, and of the finest-level
+matrix.
+
+Two examples are included in the \ML~distribution:
+\begin{itemize}
+\item File \verb!ml_example_epetra_preconditioner_viz.cpp! shows how to
+visualize the effect of the \ML~cycle and each level's smoother on a random vector;
+\item File \verb!ml_example_epetra_preconditioner_analyze.cpp! shows who to
+get some quantitative information about each level's matrix, and multilevel preconditioner.
+\end{itemize}
+
+In the following subsections, we suppose that a MultiLevelPreconditioner 
+object has already be defined,
+and the preconditioned computed. 
+
+%%%
+%%%
+%%%
+
+\subsubsection{Cheap Analysis of All Level Matrices}
+
+Method \verb!AnalyzeMatrixCheap()! will
+report on standard output general information about each level's matrix. An
+example of output is as reported below. (Here, we report only the part of output
+related to the finest level.)
+\begin{verbatim}
+        *** Analysis of ML_Operator `A matrix level 0' ***
+
+        Number of global rows                              = 256
+        Number of equations                                = 1
+        Number of stored elements                          = 1216
+        Number of nonzero elements                         = 1216
+        Mininum number of nonzero elements/row             = 3
+        Maximum number of nonzero elements/row             = 5
+        Average number of nonzero elements/rows            = 4.750000
+        Nonzero elements in strict lower part              = 480
+        Nonzero elements in strict upper part              = 480
+        Max |i-j|, a(i,j) != 0                             = 16
+        Number of diagonally dominant rows                 = 86 (= 33.59%)
+        Number of weakly diagonally dominant rows          = 67 (= 26.17%)
+        Number of Dirichlet rows                           = 0 (=  0.00%)
+        ||A||_F                                            = 244.066240
+        Min_{i,j} ( a(i,j) )                               = -14.950987
+        Max_{i,j} ( a(i,j) )                               = 15.208792
+        Min_{i,j} ( abs(a(i,j)) )                          = 0.002890
+        Max_{i,j} ( abs(a(i,j)) )                          = 15.208792
+        Min_i ( abs(a(i,i)) )                              = 2.004640
+        Max_i ( abs(a(i,i)) )                              = 15.208792
+        Min_i ( \sum_{j!=i} abs(a(i,j)) )                  = 2.004640
+        Max_i ( \sum_{j!=i} abs(a(i,j)) )                  = 15.205902
+        max eig(A) (using power method)                    = 27.645954
+        max eig(D^{-1}A) (using power method)              = 1.878674
+
+        Total time for analysis = 3.147979e-03 (s)
+\end{verbatim}
+This analysis is ``cheap'' in the sense that it involves only element-by-element
+comparison, plus the computation of the largest-magnitude eigenvalue (which
+requires some matrix-vector products). \verb!AnalyzeMatrixCheap()! can be used
+for both serial and parallel runs.
+
+%%%
+%%%
+%%%
+
+\subsubsection{Eigenvalue Computations}
+
+\ML~can be used to compute the eigenvalues of the non-preconditioned and
+preconditioned finest-level matrix. In the following fragment of code,
+we compute all the eigenvalues of the finest-level matrix $A$, and all the
+eigenvalues of $P^{-1}A$, where $P$ is the already computed \ML~preconditioner:
+\begin{verbatim}
+  // MLPrec is a ML_Epetra::MultiLevelPreconditioner pointer
+  // first compute the eigenvalues of the finest-level matrix A
+  MLPrec->AnalyzeMatrixEigenvaluesDense("A");
+
+  // now the eigenvalues of A, with the ML preconditioner
+  MLPrec->AnalyzeMatrixEigenvaluesDense("P^{-1}A");
+\end{verbatim}
+On standard output, the code will print out information of this kind:
+\begin{verbatim}
+------------------------------------------------------------------------------
+*** ************************************************ ***
+*** Analysis of the spectral properties using LAPACK ***
+*** ************************************************ ***
+*** Operator = A
+
+        *** Computing eigenvalues of finest-level matrix
+        *** using LAPACK. This may take some time...
+        *** results are on file `eig_A.m'.
+
+        min |lambda_i(A)|         = 0.155462
+        max |lambda_i(A)|         = 26.3802
+        spectral condition number = 169.689
+
+** Total time = 0.305511(s)
+------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------
+*** ************************************************ ***
+*** Analysis of the spectral properties using LAPACK ***
+*** ************************************************ ***
+*** Operator = P^{-1}A
+
+        *** Computing eigenvalues of ML^{-1}A
+        *** using LAPACK. This may take some time...
+        *** results are on file `eig_PA.m'.
+
+        min |lambda_i(ML^{-1}A)|  = 0.776591
+        max |lambda_i(ML^{-1}A)|  = 1.09315
+        spectral condition number = 1.40762
+
+** Total time = 0.730494(s)
+------------------------------------------------------------------------------
+\end{verbatim}
+The eigenvalues of $A$ are saved in file
+\verb!eig_A.m!, while those of $P^{-1}A$ in file \verb!eig_PA.m!.
+The file contains, on line \verb!i!, the real and the imaginary component of
+the \verb!i!-th eigenvalue, computed using LAPACK.
+
+Figure~\ref{fig:analysis_dense} shows the eigenvalue distribution of the
+non-preconditioned and the preconditioned operator.
+\begin{figure}
+\centering
+\includegraphics[height=6cm,width=5cm,angle=-90]{analysis_dense_A.ps} \hspace{0.5cm}
+\includegraphics[height=6cm,width=5cm,angle=-90]{analysis_dense_PA.ps} 
+\caption{Eigenvalue distribution on the complex plane of the
+non-preconditioned (left) and the preconditioned operator (right), obtained by calling {\tt
+AnalyzeMatrixEigenvaluesDense()}, and post-processing with {\tt octave}.}
+\label{fig:analysis_dense}
+\end{figure}
+
+Method \verb!AnalyzeMatrixEigenvaluesDense()! can be used only for serial
+runs. Alternatively, methods \verb!AnalyzeMatrixEigenvaluesSparse()! can be
+used to compute the lowest-magnitude and the largest-magnitude of the
+spectrum. This method requires \ML\ to be configured with support for Anasazi
+(see Section~\ref{sec:configure:3pl}). The following options can be used to
+tune the sparse eigensolver:
+
+\smallskip
+
+\choicebox{\tt analysis: eigenvalues}{[{\tt int}] 
+  Number of eigenvalues to compute.
+  Default = {\tt 128}.}
+
+\choicebox{\tt analysis: tolerance}{[{\tt double}]
+  Tolerance for eigensolver. Default =
+  {\tt 1e-2}.}
+
+\choicebox{\tt analysis: Anasazi restart}{[{\tt int}]
+  Maximum number of restarts. Default =
+{\tt 2}.}
+
+\choicebox{\tt analysis: Anasazi output}{[{\tt int}]
+  Output level, from 0 to 10 
+  (10 being verbose). Default = {\tt 0}.}
+
+\choicebox{\tt analysis: print Anasazi status}{[{\tt bool}]
+  If true!, prints out the status of the eigensolver after
+    convergence. Default: {\tt false}.}
+
+This fragment of code computes the eigenvalues of $A$ and $P^{-1}A$ using
+Anasazi:
+\begin{verbatim}
+  // first compute the eigenvalues of the finest-level matrix A
+  MLPrec->AnalyzeMatrixEigenvaluesSparse("A");
+
+  // now the eigenvalues of A, with the ML preconditioner
+  MLPrec->AnalyzeMatrixEigenvaluesSparse("P^{-1}A");
+\end{verbatim}
+
+As for the dense case, the (computed) eigenvalues of $A$ are saved in file
+\verb!eig_A.m!, while those of $P^{-1}A$ in file \verb!eig_PA.m!.
+
+%%%
+%%%
+%%%
+
+\subsubsection{Analyze the Effect of Smoothers}
+
+For each level, method \verb!AnalyzeSmoothersDense()! computes the eigenvectors of the matrix (say, $A$). 
+Then, for each eigenvector (say, $v$) of $A$, the smoother is applied to the solution of the homogeneous system
+\[
+A e = 0
+\]
+with starting solution $e_0 = v$. The code reports on file the real and
+imaginary values of the eigenvalue corresponding to eigenvector $v$, and the
+$||e|| / ||e_0||$. 
+
+Method \verb!AnalyzeSmoothersDense()! can be used only for serial
+runs. Alternatively, method \verb!AnalyzeSmoothersSparse(NumPre, NumPost)! can
+be used. \verb!NumPre! is the number of pre-smoother applications, and
+\verb!NumPost! the number of post-smoother applications. This
+function reports on the stadard output the following information:
+\begin{verbatim}
+Solving Ae = 0, with a random initial guess
+- number of pre-smoother cycle(s) = 5
+- number of post-smoother cycle(s) = 5
+- all reported data are scaled with their values
+  before the application of the solver
+  (0 == perfect solution, 1 == no effect)
+- SF is the smoothness factor
+
+Solver                                  Linf       L2         SF
+Presmoother  (level 0, eq 0)            0.827193   0.804528   0.313705
+Postsmoother (level 0, eq 0)            0.822015   0.810521   0.342827
+Presmoother  (level 1, eq 0)            0.972593   0.908874   2.51318
+Postsmoother (level 1, eq 0)            0.982529   0.922668   2.53639
+\end{verbatim}
+
+%%%
+%%%
+%%%
+
+\subsubsection{Analyze the effect of the ML cycle on a random vector} 
+
+Method \verb!AnalyzeCycle()! applies the alread computed \ML~preconditioner to
+a random vector, and reports on standard output the following informatin:
+\begin{verbatim}
+Solving Ae = 0, with a random initial guess
+using 5 ML cycle(s).
+- (eq 0) scaled Linf norm after application(s) = 0.0224609
+- (eq 0) scaled L2 norm after application(s)   = 0.000249379
+- (eq 0) scaled smoothness factor              = 10.6517
+\end{verbatim}
+
+
+%%%
+%%%
+%%%
+
+\subsubsection{Test different smoothers} 
+
+The MultiLevelPreconditioner class offers a very easy way to test the effect
+of a variety of smoothers on the problem at hand. Once the preconditioning
+object has been created, a call to
+\verb!TestSmoothers()! performs the following operations:
+\begin{enumerate}
+\item Creates a new linear system, whose matrix is the one used to construct
+the MultiLevelPreconditioner object;
+\item Defines a random solution, and the corresponding right-hand side;
+\item Defines a zero starting vector for the Krylov solver;
+\item Creates a new preconditioning object, with the same options as in the
+current preconditioner, except for the choice of the smoothers;
+\item Solve the linear system with the newly created preconditioner;
+\item Reports in a table the iterations to converge and the corresponding CPU
+time.
+\end{enumerate}
+
+The following options, to be set {\sl before} calling
+\verb!ComputePreconditioner()!, can be used to tune the test session:
+\smallskip
+
+\choicebox{\tt test: max iters}{[{\tt int}] Maximum number of iterations for
+  the Krylov solver. Default: {\tt 500}.}
+
+\choicebox{\tt test: tolerance}{[{\tt double}] Tolerance for the Krylov
+  solver. Default: {\tt 1e-5}.}
+
+\choicebox{\tt test: Jacobi}{[{\tt bool}] Enable/Disable test with Jacobi
+  smoother. Default: {\tt true}.}
+
+\choicebox{\tt test: Gauss-Seidel}{[{\tt bool}] Enable/Disable test with
+  Gauss-Seidel
+  smoother. Default: {\tt true}.}
+
+\choicebox{\tt test: symmetric Gauss-Seidel}{[{\tt bool}] Enable/Disable test
+  with symmetric Gauss-Seidel
+  smoother. Default: {\tt true}.}
+
+\choicebox{\tt test: block Gauss-Seidel}{[{\tt bool}] Enable/Disable test with 
+  block Gauss-Seidel 
+  smoother. Default: {\tt true}.}
+
+\choicebox{\tt test: Aztec}{[{\tt bool}] Enable/Disable test with Aztec
+  smoother. Default: {\tt true}.}
+
+\choicebox{\tt test: Aztec as solver}{[{\tt bool}] Enable/Disable test with Aztec
+  solver
+  smoother. Default: {\tt true}.}
+
+\choicebox{\tt test: ParaSails}{[{\tt bool}] Enable/Disable test with
+  ParaSails
+  smoother. Default: {\tt true}.}
+
+\choicebox{\tt test: IFPACK}{[{\tt bool}] Enable/Disable test with IFPACK
+  smoother. Default: {\tt true}.}
+
+
+An example of  output is reported below. 
+Note that some smoothers (ParaSails, IFPACK)
+will be tested only if \ML~has been properly configured.
+Note also that \verb!TestSmoothers()! requires \ML~to be configured with option
+\verb!--enable-aztecoo!.
+
+
+\begin{verbatim}
+------------------------------------------------------------------------------
+*** ************************************* ***
+*** Analysis of ML parameters (smoothers) ***
+*** ************************************* ***
+
+*** maximum iterations = 500
+*** tolerance          = 1e-05
+
+*** All options as in the input parameter list, except that
+*** all levels have the same smoother
+
+*** M: maximum iterations exceeded without convergence
+*** N: normal exit status (convergence achieved)
+*** B: breakdown occurred
+*** I: matrix is ill-conditioned
+*** L: numerical loss of precision occurred
+
+count  smoother type.................its.......||r||/||r_0||..time (s).......
+
+- Jacobi
+#0.....n=5, omega=2.50e-01...........12........2.97314e-06....0.0839319......N
+#1.....n=5, omega=5.00e-01...........12........6.21844e-06....0.0820519......N
+#2.....n=5, omega=7.50e-01...........12........7.52614e-06....0.082267.......N
+#3.....n=5, omega=1.00e+00...........12........3.80406e-06....0.082956.......N
+#4.....n=5, omega=1.25e+00...........12........2.15858e-06....0.0824361......N
+
+- Gauss-Seidel
+#5.....n=5, omega=2.50e-01...........7.........2.20736e-06....0.0857691......N
+#6.....n=5, omega=5.00e-01...........7.........1.91864e-06....0.0789189......N
+#7.....n=5, omega=7.50e-01...........6.........8.40948e-06....0.076307.......N
+#8.....n=5, omega=1.00e+00...........7.........1.36415e-06....0.0792729......N
+#9.....n=5, omega=1.25e+00...........7.........1.4833e-06.....0.0790809......N
+
+- Gauss-Seidel (sym)
+#10....n=5, omega=2.50e-01...........4.........2.32835e-06....0.149586.......N
+#11....n=5, omega=5.00e-01...........4.........2.68576e-06....0.092068.......N
+#12....n=5, omega=7.50e-01...........4.........8.51966e-07....0.0793679......N
+#13....n=5, omega=1.00e+00...........4.........1.34439e-06....0.0787291......N
+#14....n=5, omega=1.25e+00...........4.........5.09185e-06....0.0790669......N
+
+- Gauss-Seidel (block)
+#15....n=5, omega=2.50e-01...........6.........6.56673e-06....0.0920131......N
+#16....n=5, omega=5.00e-01...........7.........1.77309e-06....0.0881529......N
+#17....n=5, omega=7.50e-01...........6.........8.53488e-06....0.0846661......N
+#18....n=5, omega=1.00e+00...........6.........2.66381e-06....0.0839909......N
+#19....n=5, omega=1.25e+00...........6.........4.87356e-06....0.083786.......N
+
+- Aztec preconditioner
+#20....ILU(fill=0)...................7.........4.93736e-06....0.0712331......N
+#21....ILU(fill=1)...................6.........3.54992e-06....0.0647091......N
+#22....ILU(fill=2)...................7.........1.4724e-06.....0.0678911......N
+
+- Aztec as solver
+#23....iterations=1..................7.........1.94081e-06....0.140772.......N
+#24....iterations=3..................4.........8.90029e-08....0.0687031......N
+#25....iterations=5..................3.........1.00778e-07....0.069193.......N
+
+- ParaSails
+#26....default.......................20........6.60045e-06....0.214094.......N
+
+*** The best iteration count was obtain in test 25
+*** The best CPU-time was obtain in test 21
+
+
+*** Total time = 2.43798(s)
+------------------------------------------------------------------------------
+\end{verbatim}
+
+
+\subsubsection{Visualizing the Aggregates}
+\label{sec:viz:aggre}
+
+\ML~offers the possibility to visualize the aggregates for all levels. 
+
+
+Data are stored on a file in a simple format. For each aggregate, the file
+contains a line of type
+\begin{verbatim}
+x-coord y-coord <z-coord> aggregate-number
+\end{verbatim}
+(\verb!z-coord! is present only for 3D computations.) 
+A visualization software, called \verb!XD3D!\footnote{,
+More information about {\tt XD3D} can be found at the web site
+{\tt http://www.inria.fr/.....}}
+can be used to visualize files in this format, but only for 2D problems.
+Results can be as reported in figure~\ref{fig:viz:aggr}.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=12cm]{aggregate_decomposition.ps}
+\caption{Decomposition into aggregates. Uniform colors between blue spheres
+  represent the interior of aggregates.}
+\label{fig:viz:aggr}
+\end{figure}
+
+%%%
+%%%
+%%%
+
+\subsubsection{Visualizing the effect of the \ML~Preconditioner and Smoothers}
+
+In some cases, it may be useful to visualize the effect of the \ML~preconditioner, or of each level's smoother, on
+a random vector (whose components are contained in the interval$[0.5,1]$), 
+to understand if there are zones or directions that are not
+affected by the current multilevel preconditioner. This can be easily 
+done with the following code fragment:
+\begin{verbatim}
+MLList.set("viz: enable", true);
+MLList.set("viz: x-coordinates", x_coord);
+MLList.set("viz: y-coordinates", y_coord);
+// by default the starting solution is not printed
+MLList.set("viz: print starting solution", true);
+
+// create the preconditioner
+ML_Epetra::MultiLevelPreconditioner * MLPrec = 
+  new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
+
+// visualize the effect of the ML preconditioner on a 
+// random vector. We ask for 10 multilevel cycles
+MLPrec->VisualizeCycle(10);
+
+// visualize the effect of each level's smoother on a
+// random vector. We ask for 5 steps of presmoothers,
+// and 1 step of postsmoother
+MLPrec->VisualizeSmoothers(5,1);
+\end{verbatim}
+(File \verb!ml_example_epetra_preconditioner_viz.cpp! contains the compilable
+ code.) We note that the parameters must be set {\sl before} calling
+{\tt ComputePreconditioner()}. 
+Results will be written in the following files:
+\begin{itemize}
+\item \verb!before-presmoother-eqX-levelY.xyz! contains the random vector
+before
+the application of the presmoother, for equation \verb!X! at level 
+\verb!Y!;
+\item \verb!after-presmoother-eqX-levelY.xyz! contains the random vector after
+the application of the presmoother, for equation \verb!X! at level
+\verb!Y!;
+\item \verb!before-postsmoother-eqX-levelY.xyz! contains the random vector
+before
+the application of the postsmoother, for equation \verb!X! at level
+\verb!Y!;
+\item \verb!after-postsmoother-eqX-levelY.xyz! contains the random vector after
+the application of the postsmoother, for equation \verb!X! at level
+\verb!Y!;
+\item \verb!before-cycle-eqX-levelY.xyz! contains the random vector
+before
+the application of the \ML cycle, for equation \verb!X! at the finest level;
+\item \verb!after-cycle-eqX-levelY.xyz! contains the random vector after
+the application of the ML cycle, for equation \verb!X! at finest level.
+\end{itemize}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=7cm]{before_cycle.ps} \hspace{0.5cm}
+\includegraphics[width=7cm]{after_cycle.ps}
+\caption{Starting solution (left) and solution after 10 \ML!cycles (right).}
+\label{fig:viz:cycle}
+\end{figure}
+
+%%%
+%%%
+%%%
+
+\subsubsection{Print the Computational Stencil for a 2D Cartesian Grid}
+
+Method \verb!PrintStencil2D()! can be used to print out the computational
+stencil for problems defined on 2D Cartesian grids, if the nodes numbering
+follows the x-axis. The following fragment of code shows the use of this
+method:
+\begin{verbatim}
+int Nx = 16; // nodes along the x-axis
+int Ny = 32; // nodes along the y-axis
+int NodeID = -1; // print the stencil for this node
+int EquationID = 0; // for vector problems
+
+// MLPrec is a pointer to an already created 
+// ML_Epetra::MultiLevelPreconditioner
+MLPrec->PrintStencil2D(Nx,Ny,NodeID, EquationID);
+\end{verbatim}
+If \verb!NodeID == -1!, the code considers a node in the center of the
+computational domain. The result can be something as follows:
+\begin{verbatim}
+2D computational stencil for equation 0 at node 136 (grid is 16 x 16)
+
+                       0              -1               0
+                      -1               4              -1
+                       0              -1               0
+\end{verbatim}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Advanced Usage of \ML} \label{high level sample}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2056,75 +2647,6 @@ fine grid discretization matrix via
 %%%
 %%%
 %%%
-
-\section{Visualization Capabilities}
-\label{sec:viz}
-
-\ML\ supports limited capabilities for the visualization of and statistical
-information for aggregates, with an interface to OpenDX.
-Currently, only {\tt Uncoupled,
-METIS} and {\tt ParMETIS} aggregation routines can dump files in OpenDX
-format.
-
-The procedure to create the OpenDX input files is as follows:
-\begin{enumerate}
-\item Add the following line after the creation of the ML\_Aggregate object
-\begin{verbatim}
-   ML_Aggregate_VizAndStats_Setup( ag, MaxMgLevels );
-\end{verbatim}
-  where \verb!MaxMgLevels! is the maximum number of levels (this is the
-  same value used to create the \ML\ object).
-\item Create the multilevel hierarchy;
-\item Write OpenDX file using the instruction
-%\begin{verbatim}
-%   ML_Aggregate_Visualize( ml, ag, MaxMgLevels, x, y, z, option, filename);
-%\end{verbatim}
-\begin{verbatim}
-   ML_Aggregate_VizAndStats_Compute( ml, ag, MaxMgLevels, x, y, z,
-                                     option, filename);
-\end{verbatim}
-   where \verb!ml! is the \ML\ object, \verb!ag! the ML\_Aggregation object, 
-   and \verb!x,y,z! are double vectors, whose size
-   equals the number of local nodes in the fine grid, containing the coordinates
-   of fine grids nodes. \verb!option! is an integer value defined so
-   that:
-   \begin{itemize}
-   \item option = 1 : solution of 1D problem ({\tt y} and {\tt z} can be
-     {\tt NULL});
-   \item option = 2 : solution of 2D problems ({\tt z} can be {\tt NULL});
-   \item option = 3 : solution of 3D problems.
-   \end{itemize}
-   Processor X will write its own file, \verb!filename_levelY_procX!, where
-   \verb!Y! is the level. \verb!filename! can be set to {\tt NULL} (default value of
-   \verb!.graph! will be used in this case).
-   
-   Note that in AMG there is no mesh associated with coarser
-   levels. Therefore \newline {\sf ML\_Aggregate\_VizAndStats\_Compute} needs to
-   assign a set of coordinates  to each aggregate.
-   This is done by computing the center
-   of gravity of each aggregate (starting from the fine grid and finishing
-   at the coarsest level).
-
-   \verb!ML_Aggregate_VizAndStats_Compute!
-   will also write statistical
-   information to the screen.
-
-\item Deallocate memory using
-\begin{verbatim}
-  ML_Aggregate_VizAndStats_Clean( ag, MaxMgLevels ).
-\end{verbatim}
-\end{enumerate}
-
-At this point, one should copy file \verb!viz_aggre.net! and
-\verb!viz_aggre.cfg! (located in \verb!$ML_HOME/util/!) in the directory
-where the output files are located, and run OpendDX with the instruction
-\begin{verbatim}
-% dx -edit viz_aggre.net
-\end{verbatim}
-Other instructions are reported in file
-\verb!$ML_HOME/util/viz_aggre.README!. An example of code can be found in
-file \verb!$ML_HOME/examples/ml_aztec_simple_METIS.c!.
-
 
 %%%
 %%%
