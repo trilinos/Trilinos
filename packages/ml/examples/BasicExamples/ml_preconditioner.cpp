@@ -129,13 +129,16 @@ int main(int argc, char *argv[])
   // some of the parameters do not differ from their default value,
   // and they are here reported for the sake of clarity
   
+  // output level, 0 being silent and 10 verbose
+  MLList.set("output", 10);
   // maximum number of levels
   MLList.set("max levels",5);
-  MLList.set("increasing or decreasing","decreasing");
+  // set finest level to 0
+  MLList.set("increasing or decreasing","increasing");
 
-  // use Uncoupled scheme to create the aggregate,
-  // from level 3 use the better but more expensive MIS
+  // use Uncoupled scheme to create the aggregate
   MLList.set("aggregation: type", "Uncoupled");
+  // from level 3 use the higher quality but more expensive MIS
   MLList.set("aggregation: type (level 3)", "MIS");
 
   // smoother is symmetric Gauss-Seidel. Example file 
@@ -161,13 +164,24 @@ int main(int argc, char *argv[])
   // `delete' because the destructor contains some calls to MPI (as
   // required by ML and possibly Amesos). This is an issue only if the
   // destructor is called **after** MPI_Finalize().
-
   ML_Epetra::MultiLevelPreconditioner * MLPrec = 
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   // verify unused parameters on process 0 (put -1 to print on all
   // processes)
   MLPrec->PrintUnused(0);
+
+  // ML allows the user to cheaply recompute the preconditioner. You can
+  // simply uncomment the following line:
+  // 
+  // MLPrec->ReComputePreconditioner();
+  //
+  // It is supposed that the linear system matrix has different values, but
+  // **exactly** the same structure and layout. The code re-built the
+  // hierarchy and re-setup the smoothers and the coarse solver using
+  // already available information on the hierarchy. A particular
+  // care is required to use ReComputePreconditioner() with nonzero
+  // threshold.
 
   // =========================== end of ML part =============================
   
