@@ -47,6 +47,7 @@
 #include "EpetraExt_MatlabEngine.h"
 
 #define BUFSIZE 200
+#define MATLABBUF 1024
 
 int main(int argc, char *argv[]) {
 
@@ -60,7 +61,9 @@ int main(int argc, char *argv[]) {
   int MyPID = comm.MyPID();
 
   char s [BUFSIZE] ;
+  char matlabBuffer [MATLABBUF];
   EpetraExt::MatlabEngine engine (comm);
+  int err;
   while(1) {
       // Prompt the user and get a string
       printf (">> ") ;
@@ -72,7 +75,14 @@ int main(int argc, char *argv[]) {
       
       // Send the command to MATLAB
       // output goes to stdout
-      engine.EvalString (s) ;
+      err = engine.EvalString (s, matlabBuffer, MATLABBUF) ;
+      if (err != 0) {
+          printf("there was an error: %d", err);
+	  err = 0;
+      }
+      else {
+      	  printf("Matlab Output:\n%s", matlabBuffer);
+      }
   }
   
   //delete engine ;

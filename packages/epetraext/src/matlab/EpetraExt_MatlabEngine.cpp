@@ -29,6 +29,7 @@
 
 #include "EpetraExt_MatlabEngine.h"
 #include "Epetra_Comm.h"
+#include "Epetra_MultiVector.h"
 
 using namespace EpetraExt;
 namespace EpetraExt {
@@ -40,9 +41,9 @@ MatlabEngine::MatlabEngine (const Epetra_Comm& Comm):Comm_(Comm) {
 
     MyPID_ = Comm_.MyPID();
     if (MyPID_ == 0) {
-	cout << "Hello.  I am matlab " << endl ; 
-	// Gentlemen, start your engines ...
-	Engine_ = engOpen (NULL) ;
+		cout << "Hello.  I am matlab " << endl ; 
+		// Gentlemen, start your engines ...
+		Engine_ = engOpen (NULL) ;
     }
 
 } 
@@ -66,22 +67,36 @@ MatlabEngine::~MatlabEngine (void) {
 
 }
 
-//=======================================================================
-void MatlabEngine::EvalString (char* command) const {
+//==========================================================================
+int MatlabEngine::EvalString (char* command) {
+	
+	return EvalString(command, NULL, -1);
+}
 
+int MatlabEngine::EvalString (char* command, char* outputBuffer, int outputBufferSize) {
+	int err = 0;
     // send a string command to the MATLAB engine
     if (MyPID_ == 0) {
-
-	cout << "Sending command to matlab:" << command << endl ;
-
-	int result = engEvalString (Engine_, command) ;
-
-	if (result != 0)
-	{
-	    cout << "That was bad.  engEvalString failed." << endl ; 
-	}
-
+		cout << "Sending command to matlab:" << command << endl ;
+		if (outputBuffer != NULL) {
+			err = engOutputBuffer(Engine_, outputBuffer, outputBufferSize);
+			if (err != 0) {
+				return -1;
+			}
+		}
+		err = engEvalString (Engine_, command) ;
+		return err;
     }
-
 }
+
+//==========================================================================
+int MatlabEngine::PutMultiVector(const Epetra_MultiVector & multiVector, const char * variableName) {
+	mxArray * mxCreateDoubleMatrix(multiVector.MyLength(), multiVector.NumVectors(), mxREAL);
+	multiVector.ExtractCopy((double *)mxGetPr(mxArray), multiVector.MyLength());
+	//memcpy((void *)mxGetPr(mxArray), (void *), multiVector.MyLength() * multiVector.NumVectors());
+	engPutVariable(Engine_, variableName, mxArray);
+	
+	return 0;
+}
+
 } // namespace EpetraExt

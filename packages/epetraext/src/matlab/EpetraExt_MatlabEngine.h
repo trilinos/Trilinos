@@ -1,4 +1,3 @@
-
 //@HEADER
 // ***********************************************************************
 // 
@@ -41,7 +40,10 @@
 #include "Epetra_Comm.h"
 // MatlabEngine declarations:
 #include "engine.h"
+#include "mex.h"
 //! MatlabEngine: 
+
+class Epetra_MultiVector;
 
 /*! The MATLAB_Engine class provides access to MATLAB from Trilinos 
 
@@ -82,15 +84,20 @@ class MatlabEngine {
   //@{ \name LotsHere methods
 
   //! EvalString method
-  void EvalString (char* command) const;
+  int EvalString (char* command);
+  
+  /*! err codes
+   -1 engOutputBuffer matlab call returned an error
+   -2 engEvalString matlab call returned an error */
+  int EvalString (char* command, char* outputBuffer, int outputBufferSize);
 
   //@}
 
-
+  int PutMultiVector(const Epetra_MultiVector & multiVector, const char * variableName);
+  
  private:
 
     Engine *Engine_ ;
-    bool echo_ ;	// if true, print the output
     int MyPID_ ;
 
     const Epetra_Comm& Comm_ ;
