@@ -440,8 +440,6 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
     return ZOLTAN_OK;
 }
 
-
-
 /****************************************************************************
  * inner product matching
  * Parallelized version of the serial algorithm (see hg_match.c)
@@ -458,6 +456,12 @@ static int communication_by_plan (ZZ* zz, int nsend, int* dest, int* size,
  int scale, int* send, int* nrec, int* recsize, int* nRec, int** rec,
  MPI_Comm comm, int tag);
  
+/* Because this calculation is done in two locations it has been converted to
+** a subroutine to assure it is always consistant.  */
+static int calc_nCandidates (int num_vtx, int procs)
+ /* 2 below because each match pairs 2 vertices */
+ {return num_vtx ? 1 + num_vtx/(2 * procs * ROUNDS_CONSTANT) : 0;}
+ 
 
 static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
 {
@@ -469,7 +473,7 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
   int nSend, nDest, nSize, nRec, nIndex, nAux;        /* buffer sizes in ints */
   float *sums, *f, bestsum;                           /* working buffer, float */
   int *visit, *cmatch, *select, *permute, *edgebuf;   /* fixed usage arrays */
-  int nEdgebuf;                                       /* buffer size in ints */
+  int nEdgebuf, nPermute;                             /* array size in ints */
   PHGComm *hgc = hg->comm;
   int err = ZOLTAN_OK, old_row, row, col, nPins, nVtx;
   int *rows[hgc->nProc_y + 1], bestlno, vertex, nselect;
@@ -484,37 +488,44 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
   
   /* determine basic working limits and row rank */
   nRounds     = hgc->nProc_x * ROUNDS_CONSTANT;
-  nCandidates = hg->nVtx/(2 * nRounds) + 1;  /* 2: each match pairs 2 vertices */
+  nCandidates = calc_nCandidates (hg->nVtx, hgc->nProc_x) ;
   
-  /* determine maximum global number of candidates (nTotal), nVtx, nPins */
+  /* determine maximum global number of nVtx and nPins */
+  /* determine sum of all candidates, nTotal*/
   MPI_Allreduce (&hg->nPins, &nPins, 1, MPI_INT, MPI_MAX, hgc->row_comm);
   nVtx = nTotal = 0;
   for (i = 0; i < hgc->nProc_x; i++)  {
     count = hg->dist_x[i+1]-hg->dist_x[i];    /* number of vertices on proc i */
     if (count > nVtx)
        nVtx = count;
-    nTotal += (1 + (count / (2 * hgc->nProc_x * ROUNDS_CONSTANT)));
+    nTotal += calc_nCandidates (count, hgc->nProc_x);
   }
             
   /* allocate working and fixed sized array storage */
   sums = NULL;
   send = dest = size = rec = index = aux = visit = cmatch = select = NULL;
   permute = edgebuf = NULL;
-  nDest = nSize = nIndex = nAux = 1 + MAX(nTotal, nVtx);    /* initial sizing */
-  nSend = nRec = nEdgebuf       = 1 + MAX(nPins, nVtx+2);   /* initial sizing */
-    
-  if (!(cmatch = (int*)   ZOLTAN_MALLOC (hg->nVtx    * sizeof (int)))
-   || !(visit  = (int*)   ZOLTAN_MALLOC (hg->nVtx    * sizeof (int)))
-   || !(permute= (int*)   ZOLTAN_MALLOC (hg->nVtx    * sizeof (int)))
-   || !(edgebuf= (int*)   ZOLTAN_MALLOC (nEdgebuf    * sizeof (int)))
-   || !(select = (int*)   ZOLTAN_MALLOC (nCandidates * sizeof (int)))        
-   || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,     sizeof (float)))
-   || !(send   = (int*)   ZOLTAN_MALLOC (nSend       * sizeof (int)))
-   || !(dest   = (int*)   ZOLTAN_MALLOC (nDest       * sizeof (int)))
-   || !(size   = (int*)   ZOLTAN_MALLOC (nSize       * sizeof (int)))
-   || !(rec    = (int*)   ZOLTAN_MALLOC (nRec        * sizeof (int)))
-   || !(index  = (int*)   ZOLTAN_MALLOC (nIndex      * sizeof (int)))
-   || !(aux    = (int*)   ZOLTAN_MALLOC (nAux        * sizeof (int))))  {
+  nPermute = nDest = nSize = nIndex = nAux = 1 + MAX(nTotal, nVtx);
+  nSend = nRec = nEdgebuf                  = 1 + MAX(nPins, nVtx+2);
+  
+  if (hg->nVtx)  
+    if (!(cmatch = (int*)   ZOLTAN_MALLOC ((hg->nVtx) * sizeof (int)))
+     || !(visit  = (int*)   ZOLTAN_MALLOC ((hg->nVtx) * sizeof (int)))
+     || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,    sizeof (float))))  {
+       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+       err = ZOLTAN_MEMERR;
+       goto fini;
+    }
+  
+  if (!(permute= (int*)   ZOLTAN_MALLOC (nPermute     * sizeof (int)))
+   || !(edgebuf= (int*)   ZOLTAN_MALLOC (nEdgebuf     * sizeof (int)))
+   || !(select = (int*)   ZOLTAN_MALLOC ((1+nCandidates)  * sizeof (int)))        
+   || !(send   = (int*)   ZOLTAN_MALLOC (nSend        * sizeof (int)))
+   || !(dest   = (int*)   ZOLTAN_MALLOC (nDest        * sizeof (int)))
+   || !(size   = (int*)   ZOLTAN_MALLOC (nSize        * sizeof (int)))
+   || !(rec    = (int*)   ZOLTAN_MALLOC (nRec         * sizeof (int)))
+   || !(index  = (int*)   ZOLTAN_MALLOC (nIndex       * sizeof (int)))
+   || !(aux    = (int*)   ZOLTAN_MALLOC (nAux         * sizeof (int))))  {
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
      err = ZOLTAN_MEMERR;
      goto fini;
@@ -534,7 +545,7 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
    * Each loop has 4 phases:
    * Phase 1: send ncandidates vertices for global matching - horizontal comm
    * Phase 2: sum  inner products, find best        - vertical communication
-   * Phase 3: return best sums to owning column     - horizontal communication
+   * Phase 3: return best sums to owner's column    - horizontal communication
    * Phase 4: return actual match selections        - horizontal communication
    *
    * No conflict resolution required because temp locking prevents conflicts. */
@@ -659,7 +670,7 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
           if (match[lno] == lno  &&  sums[lno] > PSUM_THRESHOLD)
             aux[count++] = lno;        /* save lno for significant partial sum */
           else
-            sums[lno] = 0.0;  /* (partially) clear buffer for next calc */  
+            sums[lno] = 0.0;           /* clear unwanted entries */  
         }     
         if (count == 0)
           continue;
@@ -724,6 +735,10 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
         m = 0;              
         gno = edgebuf [permute[n]];
                 
+        /* Not sure if this test makes any speedup ???, works without! */
+        if (gno % hgc->nProc_y != hgc->myProc_y)
+          continue;                           /* this gno is not on this proc */
+        
         /* merge step: look for target gno from each row's data */
         for (i = 0; i < hgc->nProc_y; i++)  {
           if (rows[i] < &rec[recsize] && *rows[i] == gno)  {       
@@ -882,7 +897,7 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
       if (hgc->myProc_y == 0)
         for (r = rec; r < rec + 2 * nrec; )  {
           gno    = *r++;
-          vertex = *r++; 
+          vertex = *r++;
 
           if (VTX_TO_PROC_X (hg, gno)    == hgc->myProc_x
            && VTX_TO_PROC_X (hg, vertex) == hgc->myProc_x)   {
@@ -898,9 +913,44 @@ static int matching_ipm (ZZ *zz, HGraph* hg, Matching match, PHGPartParams *hgp)
         }      
     }                            /* DONE: kstart < nTotal loop */
               
-    /* crude way to update match array to the entire column */  
+    /* update match array to the entire column */   
     MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
-  }                                           /* DONE: loop over rounds */
+  }      
+                                       /* DONE: loop over rounds */
+#ifdef RTHRTH 
+/* The following tests that the global match array is a valid permutation */                                    
+for (i = 0; i < hg->nVtx; i++)
+  if (match[i] < 0)  cmatch[i] = -match[i] - 1;
+  else               cmatch[i] = VTX_LNO_TO_GNO (hg, match[i]);
+  
+MPI_Allgather (&hg->nVtx, 1, MPI_INT, size, 1, MPI_INT, hgc->row_comm);  
+  
+recsize = 0;
+for (i = 0; i < hgc->nProc_x; i++)
+  recsize += size[i];
+  
+dest[0] = 0;
+for (i = 1; i < hgc->nProc_x; i++)
+  dest[i] = dest[i-1] + size[i-1];
+  
+if (nRec < recsize)
+  rec = (int*) ZOLTAN_REALLOC (rec, recsize * sizeof(int));
+MPI_Allgatherv (cmatch, hg->nVtx, MPI_INT, rec, size, dest, MPI_INT, hgc->row_comm);
+
+if (nSend < recsize)
+  send = (int*) ZOLTAN_REALLOC (send, recsize * sizeof(int));
+for (i = 0; i < recsize; i++)
+  send[i] = 0;
+for (i = 0; i < recsize; i++)
+  ++send[rec[i]];
+
+count = 0;
+for (i = 0; i < recsize; i++)
+  if (send[i] != 1)
+    count++;
+if (count)    
+  uprintf (hgc, "RTHRTH %d FINAL MATCH ERRORS of %d\n", count, recsize); 
+#endif
 
 fini:
   Zoltan_Multifree (__FILE__, __LINE__, 12, &cmatch, &visit, &sums, &send,
@@ -963,3 +1013,5 @@ static int communication_by_plan (ZZ* zz, int nsend, int* dest, int* size,
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
+
+
