@@ -618,7 +618,7 @@ int Epetra_CrsGraph::ComputeGlobalConstants() {
 //==========================================================================
 int Epetra_CrsGraph::SortIndices() {
 
-  if (!IndicesAreLocal()) EPETRA_CHK_ERR(-1);
+  if (IndicesAreGlobal()) EPETRA_CHK_ERR(-1);
   if (Sorted()) return(0);
 
   // For each row, sort column entries from smallest to largest.
@@ -711,7 +711,7 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap & DomainMap, const Epetra_
   if (ColMap_!=0) return(0); // Already have a Column Map
 
   ComputeIndexState(); // Update index state by checking IndicesAreLocal/Global on all PEs
-  if (!IndicesAreGlobal()) EPETRA_CHK_ERR(-1); // Return error: Indices must be global
+  if (IndicesAreLocal()) EPETRA_CHK_ERR(-1); // Return error: Indices must be global
   
   // Scan all column indices and sort into two groups: 
   // Local:  those whose GID matches a GID of the domain map on this processor and
@@ -849,7 +849,7 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap & DomainMap, const E
   
   // Transform indices to local index space
 
-  if (!IndicesAreLocal()) {
+  if (IndicesAreGlobal()) {
 
     for (int i=0; i<NumMyBlockRows_; i++) {
       const int NumIndices = NumIndicesPerRow_[i];
