@@ -13,7 +13,6 @@
 #include "Epetra_CrsMatrix.h"
 
 #include "Trilinos_Util.h"
-#include "Util.h"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -60,12 +59,12 @@ int main(int argc, char *argv[]) {
 	//
 	// *****Read in matrix from HB file******
 	//
-	read_hb_matrix(argv[1], MyPID, &NumGlobalElements, &n_nonzeros, &val, 
+	Trilinos_Util_read_hb(argv[1], MyPID, &NumGlobalElements, &n_nonzeros, &val, 
 		                    &bindx);
 	//
 	// *****Distribute data among processors*****
 	//
-	distrib_msr_matrix(Comm, &NumGlobalElements, &n_nonzeros, &N_update,
+	Trilinos_Util_distrib_msr_matrix(Comm, &NumGlobalElements, &n_nonzeros, &N_update,
 		                             &update, &val, &bindx);
 	//
 	// *****Construct the matrix*****
