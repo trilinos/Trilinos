@@ -171,6 +171,8 @@ PARAMETER_H = \
         $(srcdir)/NOX_Parameter_Arbitrary.H \
         $(srcdir)/NOX_Parameter_UserNorm.H \
         $(srcdir)/NOX_Parameter_MeritFunction.H \
+	$(srcdir)/NOX_Parameter_DirectionConstructor.H \
+	$(srcdir)/NOX_Parameter_DirectionConstructorT.H \
 	$(srcdir)/NOX_Parameter_List.H 
 
 PARAMETER = \

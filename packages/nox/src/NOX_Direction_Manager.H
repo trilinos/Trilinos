@@ -56,12 +56,49 @@ namespace Direction {
    <li> "Newton" (NOX::Direction::Newton) [Default]
    <li> "Steepest Descent" (NOX::Direction::SteepestDescent)
    <li> "NonlinearCG" (NOX::Direction::NonlinearCG)
-   <li> "User Defined" (user can pass their own direction through the parameter list as a NOX::Parameter::Arbitrary derived object)
+   <li> "User Defined" - see below
    </ul>
 
-   <li> "User Defined Direction" - an object derived from the NOX::Parameter::Arbitrary and NOX::Direction::Generic objects that allows the user to define their own direction object.  Will only be used if the "Method" is set to "User Defined".
+   <li> "User Defined Direction" - see below.
 
    </ul>
+
+<b>Using a User-Defined %Direction</b>
+
+The user has the option of passing in a user-defined direction as
+follows.  
+
+<ol>
+
+<li> Create a direction that derives from
+NOX::Direction::Generic. For example, the direction \c Foo might be
+defined as shown below.
+
+\code
+class Foo : public NOX::Direction::Generic {
+// Insert class definition here
+}
+\endcode
+
+<li> Define a class that derives from
+NOX::Parameter::DirectionConstructor. The easiest way to do this is to
+use the templated version of this class, called
+NOX::Parameter::DirectionConstructorT.
+
+\code
+NOX::Parameter::DirectionConstructorT<Foo> foo;
+\endcode
+
+<li> Create the appropriate entries in the parameter list, as follows.
+
+\code
+params.sublist("Direction").setParameter("Method", "User Defined");
+params.sublist("Direction").setParameter("User Defined Direction Constructor", foo);
+\endcode
+
+</ol>
+
+
  */  
 class Manager : public Generic {
 
@@ -89,6 +126,16 @@ public:
 
 private:
 
+  /*!
+    \brief Prints a warning message. 
+    
+    \param name - Name of the subroutine where the error occurs
+    \param warning - The warning
+  */
+  void printWarning(const string& name, const string& warning);
+
+private:
+
   //! Printing Utils.
   const NOX::Utils& utils;
 
@@ -97,9 +144,6 @@ private:
 
   //! Pointer to actual direction calculation method.
   NOX::Direction::Generic* ptr;
-
-  //! Boolean that determines if the direction object is created/owned by the manager.  If so it will be deleted by the manager.
-  bool isOwned;
 
 };
 } // namespace Direction

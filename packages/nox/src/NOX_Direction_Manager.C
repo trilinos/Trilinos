@@ -31,11 +31,12 @@
 //@HEADER
 
 #include "NOX_Direction_Manager.H" // class definition
-
-// All the different direction methods 
+#include "NOX_Utils.H"
+#include "NOX_Parameter_List.H"
 #include "NOX_Direction_Newton.H"
 #include "NOX_Direction_NonlinearCG.H"
 #include "NOX_Direction_SteepestDescent.H"
+#include "NOX_Parameter_DirectionConstructor.H"
 
 #ifdef WITH_PRERELEASE
 #include "NOX_Direction_Tensor.H"
@@ -44,101 +45,102 @@
 #include "NOX_Direction_Broyden.H"
 #endif
 
-#include "NOX_Utils.H"
-#include "NOX_Parameter_List.H"
-
-using namespace NOX;
-using namespace NOX::Direction;
-
-Manager::Manager(const NOX::Utils& u) :
+NOX::Direction::Manager::Manager(const NOX::Utils& u) :
   utils(u),
   method(""),
-  ptr(NULL),
-  isOwned(false)
+  ptr(NULL)
 {
 }
 
-Manager::Manager(const NOX::Utils& u, Parameter::List& params) :
+NOX::Direction::Manager::Manager(const NOX::Utils& u, NOX::Parameter::List& params) :
   utils(u),
   method(""),
-  ptr(NULL),
-  isOwned(false)
+  ptr(NULL)
 {
   reset(params);
 }
 
-Manager::~Manager()
+NOX::Direction::Manager::~Manager()
 {
-  if (isOwned)
-    delete ptr;
+  delete ptr;
 }
 
-bool Manager::reset(Parameter::List& params)
+bool NOX::Direction::Manager::reset(NOX::Parameter::List& params)
 {
   string newmethod = params.getParameter("Method", "Newton");
 
-  if (method != newmethod) {
-    
-    method = newmethod;
-    
-    if (isOwned) {
-      delete ptr;
-      ptr = NULL;
-    }
+  // If the method has not changeed, just call reset on the method.
+  if (method == newmethod) 
+  {
+    return ptr->reset(params);
+  }
 
-    isOwned = true;
-    
-    if (method == "Newton")
-      ptr = new Newton(utils, params);
-    else if (method == "NonlinearCG")
-      ptr = new NonlinearCG(utils, params);
-    else if (method == "Steepest Descent")
-      ptr = new SteepestDescent(utils, params);
+  // Otherwise, construct a whole new direction
+  method = newmethod;
+  
+  delete ptr;
+  ptr = NULL;
+  
+  if (method == "Newton")
+    ptr = new Newton(utils, params);
+  else if (method == "NonlinearCG")
+    ptr = new NonlinearCG(utils, params);
+  else if (method == "Steepest Descent")
+    ptr = new SteepestDescent(utils, params);
 #ifdef WITH_PRERELEASE
-    else if (method == "Tensor")
-      ptr = new Tensor(params);
-    else if (method == "Modified-Newton")
-      ptr = new ModifiedNewton(params);
-    else if (method == "Quasi-Newton")
-      ptr = new QuasiNewton(utils, params);
-    else if (method == "Broyden")
-      ptr = new Broyden(utils, params);
+  else if (method == "Tensor")
+    ptr = new Tensor(params);
+  else if (method == "Modified-Newton")
+    ptr = new ModifiedNewton(params);
+  else if (method == "Quasi-Newton")
+    ptr = new QuasiNewton(utils, params);
+  else if (method == "Broyden")
+    ptr = new Broyden(utils, params);
 #endif
-    else if ((method == "User Defined") && 
-	     (params.isParameterArbitrary("User Defined Direction"))) {
-
-      const NOX::Direction::Generic* tmpPtr = 
-	dynamic_cast<const NOX::Direction::Generic*>
-	(&(params.getArbitraryParameter("User Defined Direction")));
-      
-      ptr = NULL;
-      ptr = const_cast<NOX::Direction::Generic*>(tmpPtr);
-
-      if (ptr == NULL) {
-	if (utils.isPrintProcessAndType(NOX::Utils::Warning)) {
-	  cout << "NOX::Direction::Manager::reset() - Failed to dynamic_cast "
-	       << "arbitrary parameter in \"User Defined Direction\" into "
-	       << "a NOX::Direction::Generic object!" << endl;
-	  throw "NOX Error";
-	}
-
-      }
-      isOwned = false;  
+  else if (method == "User Defined")
+  {
+    // Check that the corresponding Direction parameter exists
+    if (!params.isParameterArbitrary("User Defined Direction Constructor"))
+    {
+      printWarning("reset", "No \"User Defined Direction Constructor\" specified");
+      return false;
     }
-    else {
-      ptr = NULL;
-      if (utils.isPrintProcessAndType(NOX::Utils::Warning)) {
-	cerr << "NOX::Direction::Manager::reset() - invalid choice (" 
-	     << method << ") for direction method " << endl;
-      }
+    
+    // Extract the Arbitrary Parameter
+    const NOX::Parameter::Arbitrary& ap = params.getArbitraryParameter("User Defined Direction Constructor");
+    
+    // Dynamically cast the Arbitrary Parameter to a DirectionConstructor Parameter
+    const NOX::Parameter::DirectionConstructor* dcPtr = 
+      dynamic_cast<const NOX::Parameter::DirectionConstructor*>(&ap);
+    
+    // Check that the cast was successful
+    if (dcPtr == NULL)
+    {
+      printWarning("reset", "Cannot do dynamic cast from Arbitrary to DirectionConstructor");
+      return false;
+    }
+    
+    // Create a new direction from the DirectionConstructor object
+    ptr = dcPtr->newDirection(utils, params);
+    
+    // Check that the creation was successful
+    if (ptr == NULL) 
+    {
+      printWarning("reset", "ArbiraryDirectionConstructor object failed to create new direction");
       return false;
     }
   }
+  else 
+  {
+    printWarning("reset", "invalid choice (" + method + ") for direction method");
+    return false;
+  }
 
-  return ptr->reset(params);
+  return (ptr != NULL);
 }
 
-bool Manager::compute(Abstract::Vector& dir, Abstract::Group& grp, 
+
+bool NOX::Direction::Manager::compute(Abstract::Vector& dir, Abstract::Group& grp, 
 		      const Solver::Generic& solver) 
 {
   if (ptr == NULL) 
@@ -151,7 +153,7 @@ bool Manager::compute(Abstract::Vector& dir, Abstract::Group& grp,
   return ptr->compute(dir, grp, solver);
 }
 
-bool Manager::compute(Abstract::Vector& dir, Abstract::Group& grp, 
+bool NOX::Direction::Manager::compute(Abstract::Vector& dir, Abstract::Group& grp, 
 		      const Solver::LineSearchBased& solver) 
 {
   if (ptr == NULL) 
@@ -164,3 +166,8 @@ bool Manager::compute(Abstract::Vector& dir, Abstract::Group& grp,
   return ptr->compute(dir, grp, solver);
 }
 
+void NOX::Direction::Manager::printWarning(const string& name, const string& warning)
+{
+  if (Utils::doPrint(NOX::Utils::Warning)) 
+    cout << "Calling NOX::Direction::Manager::" << name << " - " << warning << endl;
+}
