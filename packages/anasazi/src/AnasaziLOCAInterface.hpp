@@ -11,8 +11,9 @@
 #include "NOX_Parameter_List.H"
 #include <typeinfo>
 
-enum AnasaziDataAccess {Copy, View};
-
+namespace Anasazi {
+enum DataAccess {Copy, View};
+}
 //
 //--------template class AnasaziLOCAMat-----------------------
 //
@@ -37,10 +38,10 @@ public:
 // constructors
 	AnasaziLOCAVec(const NOX::Abstract::Vector& N_vec, int NumVecs );
 	AnasaziLOCAVec(const vector< NOX::Abstract::Vector *> N_vecPtrs, 
-			AnasaziDataAccess type = Copy );
+			Anasazi::DataAccess type = Anasazi::Copy );
 	AnasaziLOCAVec(const AnasaziLOCAVec<TYPE>& source, 
-			AnasaziDataAccess type = Copy );
-	AnasaziLOCAVec(AnasaziDataAccess type, const AnasaziLOCAVec<TYPE>& source, 
+			Anasazi::DataAccess type = Anasazi::Copy );
+	AnasaziLOCAVec(Anasazi::DataAccess type, const AnasaziLOCAVec<TYPE>& source, 
 			int index[], int NumVecs); 
 
 	~AnasaziLOCAVec();
@@ -114,7 +115,7 @@ public:
 private:
 // Data container
  	vector< NOX::Abstract::Vector* > mvPtrs;
-	AnasaziDataAccess CV;
+	Anasazi::DataAccess CV;
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -123,7 +124,7 @@ private:
 
 template<class TYPE>
 AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( const NOX::Abstract::Vector& N_vec, int NumVecs ) :
-					mvPtrs(NumVecs), CV(Copy)
+					mvPtrs(NumVecs), CV(Anasazi::Copy)
 {
 	for (int i=0; i<NumVecs; i++) {
 		mvPtrs[i] = N_vec.clone(NOX::ShapeCopy);
@@ -135,11 +136,11 @@ AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( const NOX::Abstract::Vector& N_vec, int Nu
 
 template<class TYPE>
 AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( const vector< NOX::Abstract::Vector *> N_vecPtrs,
-					AnasaziDataAccess type ) : 
+					Anasazi::DataAccess type ) : 
 					mvPtrs(N_vecPtrs.size()), CV(type)
 {
 	int i;
-	if (type == Copy) {
+	if (type == Anasazi::Copy) {
 		for ( i=0; i<mvPtrs.size(); i++) {
 			mvPtrs[i] = N_vecPtrs[i]->clone(NOX::DeepCopy);
 		}
@@ -153,12 +154,12 @@ AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( const vector< NOX::Abstract::Vector *> N_v
 
 template<class TYPE>
 AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( const AnasaziLOCAVec<TYPE>& source, 
-			AnasaziDataAccess type ) : mvPtrs(source.mvPtrs.size()),
+			Anasazi::DataAccess type ) : mvPtrs(source.mvPtrs.size()),
 			CV(type)
 {
 	int i;
 
-	if (type == Copy) {
+	if (type == Anasazi::Copy) {
 		for (i=0; i<mvPtrs.size(); i++) {
 			mvPtrs[i] = source.mvPtrs[i]->clone(NOX::DeepCopy);
 		}
@@ -171,12 +172,12 @@ AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( const AnasaziLOCAVec<TYPE>& source,
 }
 
 template<class TYPE>
-AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( AnasaziDataAccess type, const AnasaziLOCAVec<TYPE>& source, 
+AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( Anasazi::DataAccess type, const AnasaziLOCAVec<TYPE>& source, 
 					int index[], int NumVecs ): mvPtrs(NumVecs), CV(type)
 {
 	int i;
 
-	if (type == Copy) {
+	if (type == Anasazi::Copy) {
 		for ( i=0; i<NumVecs; i++ ) {
 			mvPtrs[i] = source.mvPtrs[ index[i] ]->clone(NOX::DeepCopy);
 //			std::cout<<"ALV_copy_init "<<i<<"\t"<<
@@ -195,7 +196,7 @@ AnasaziLOCAVec<TYPE>::AnasaziLOCAVec( AnasaziDataAccess type, const AnasaziLOCAV
 template<class TYPE>
 AnasaziLOCAVec<TYPE>::~AnasaziLOCAVec()
 {
-	if (CV == Copy) {
+	if (CV == Anasazi::Copy) {
 		for (int i=0; i<mvPtrs.size(); i++) {
 			delete mvPtrs[i];
 		}
@@ -228,14 +229,14 @@ AnasaziMultiVec<TYPE>* AnasaziLOCAVec<TYPE>::CloneCopy() {
 template<class TYPE>
 AnasaziMultiVec<TYPE>* AnasaziLOCAVec<TYPE>::CloneCopy ( int index[], int NumVecs ) {
 	
-	AnasaziLOCAVec *ptr_alv = new AnasaziLOCAVec( Copy, *this, index, NumVecs );
+	AnasaziLOCAVec *ptr_alv = new AnasaziLOCAVec( Anasazi::Copy, *this, index, NumVecs );
 	return ptr_alv; // safe upcast.
 }
 
 template<class TYPE>
 AnasaziMultiVec<TYPE>* AnasaziLOCAVec<TYPE>::CloneView ( int index[], int NumVecs ) {
 	
-	AnasaziLOCAVec *ptr_alv = new AnasaziLOCAVec( View, *this, index, NumVecs );
+	AnasaziLOCAVec *ptr_alv = new AnasaziLOCAVec( Anasazi::View, *this, index, NumVecs );
 	return ptr_alv; // safe upcast.
 }
 
