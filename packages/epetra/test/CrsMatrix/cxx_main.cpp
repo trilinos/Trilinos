@@ -718,6 +718,8 @@ cout << A2;
     InvSumsBroke = true;
   }
   */
+  delete [] ColRightScaleValues;
+  delete [] DomainRightScaleValues;
   if (verbose) cout << "Begin partial sum testing." << endl;
   // Test with a matrix that has partial sums for a subset of the rows 
   // on multiple processors. (Except for the serial case, of course.)
