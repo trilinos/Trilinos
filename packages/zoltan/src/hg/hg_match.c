@@ -784,11 +784,13 @@ char  *yo = "matching_pgm";
 
 static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
 {
-    int   i, j, v1, v2, edge, ip, maxip, maxindex, count1, count2;
-    int*  checked;
-    char* yo = "matching_ipm";
+    int   i, j, k, v1, v2, edge, ip, maxip, maxindex;
+    int   *checked, *vector;
+    char  *yo = "matching_ipm";
 
-    if (!(checked = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
+    if (!(checked = (int*) ZOLTAN_MALLOC (hg->nVtx  * sizeof(int))) 
+     || !(vector  = (int*) ZOLTAN_MALLOC (hg->nEdge * sizeof(int)))) {
+        Zoltan_Multifree (__FILE__, __LINE__, 2, &checked, &vector);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
     }
@@ -823,16 +825,34 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
     //draw_matrix(hg);
     //printf("\n");
         
+    /*
+     * Next optimization: Vertex switching
+     * When we check a vertex, we move it to the end of the data structure,
+     * rather than marking a checked array.  We then avoid the overhead of
+     * misses when we check the checked array.
+     *
+     * To do this, introduce another array, indices into the vindex array.
+     * Initially each element is its index, but is swapped with the last
+     * element whenever its vertex is checked.  We thereby avoid actual
+     * modification of the HGraph structure.  A similar procedure is used
+     * in the randomized algorithms above.
+     */
+     
     for(i = 0; i < hg->nVtx; i++)
         checked[i] = -1;
+    for(i = 0; i < hg->nEdge; i++)
+        vector[i] = -1;
     
     /* for every vertex */
     for (v1 = 0; v1 < hg->nVtx  &&  *limit > 0; v1++) {
-        maxip = 0;
-        maxindex = -1;
-        
         if(match[v1] != v1)
             continue;
+        
+        maxip = 0;
+        maxindex = -1;
+        for(i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++)
+            vector[hg->vedge[i]] = v1;
+            
         /* for every hyperedge containing the vertex */
         for(i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
             edge = hg->vedge[i];
@@ -842,39 +862,30 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
                 v2 = hg->hvertex[j];
                 
                 /* ignore matched and previously checked vertices */
-                if(match[v2] != v2 || v1 == v2 || checked[v2] == v1)
+                if(match[v2] != v2 || checked[v2] == v1 || v1 == v2)
                     continue;
             
-                /* compute inner product of vertex i with vertex j */
+                /* compute inner product of vertex v1 with vertex v2 */
                 ip = 0;
-                count1 = hg->vindex[v1];
-                count2 = hg->vindex[v2];
-                while(count1 < hg->vindex[v1+1] && count2 < hg->vindex[v2+1]) {
-                    if(hg->vedge[count1] == hg->vedge[count2]) {
-                        count1++;
-                        count2++;
+                for(k = hg->vindex[v2]; k < hg->vindex[v2+1]; k++) {
+                    if(vector[hg->vedge[k]] == v1)
                         ip++;
-                    } else if(hg->vedge[count1] < hg->vedge[count2])
-                        count1++;
-                    else
-                        count2++;
-                } 
+                }
                 checked[v2] = v1;
-                
-                //printf("IP of %d with %d is %d\n", v1, v2, ip);
                 
                 /* keep track of best match seen */
                 if(maxip < ip) {
                     maxip = ip;
                     maxindex = v2;
                 }
+                //printf("IP of %d with %d is %d\n", v1, v2, ip);
             }
         }
 
         //printf("Done with %d, best match is %d with product %d\n",
         //        v1, maxindex, maxip);
 
-        /* match i with j having greatest ip */
+        /* match v1 with v2 having greatest inner product */
         if(maxindex != -1) {
             match[v1] = maxindex;
             match[maxindex] = v1;
@@ -890,7 +901,7 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
     //    printf("%2d ",match[i]);
     //printf("\n");
 
-    ZOLTAN_FREE ((void**) &checked);
+    Zoltan_Multifree (__FILE__, __LINE__, 2, &checked, &vector);
     return ZOLTAN_OK;
 }
 
