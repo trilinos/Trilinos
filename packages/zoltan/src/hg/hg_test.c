@@ -71,10 +71,11 @@ int main (int argc, char **argv)
     puts("                           mxg,reg,rrg,rhg,(grg)}");
     puts("-reda   reduction augment:{no,(aug3)}");
     puts("-reds   reduction scaling:(1)");
-    puts("-g      global method:    {ran,(lin)}");
+    puts("-g      global method:    {ran,(lin),bfs}");
     puts("-l      local method:     (no)");
     puts("-d      debug level:      (1)");
     puts("default values are in brackets ():");
+    return 0;
   }
   i = 0;
   while (++i<argc)

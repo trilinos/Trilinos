@@ -53,10 +53,10 @@ int Zoltan_HG_Global (ZZ *zz, HGraph *hg, int p, Partition part, HGPartParams *h
    in a given order. Currently, even partition sizes
    are assumed. Multi-weights are not yet supported. 
 
-   This function is called by global_lin and global_rand. 
+   This function is called by global_lin and global_ran. 
 
-   EB: This is a quick heuristic. We could alternatively 
-   use a more expensive but optimal algorithm, see paper by Ali Pinar. */
+   EB: This is a quick heuristic. We could alternatively use 
+   a more expensive but optimal algorithm, see e.g. Ali Pinar's thesis. */
 
 static int seq_part (ZZ *zz, HGraph *hg, int *order, int p, Partition part)
 { 
@@ -166,7 +166,7 @@ static int global_bfs (
   Partition part
 )
 { 
-  int ierr, start, *order=NULL;
+  int i, j, ierr, start, *order=NULL;
   static int srand_set = 0;
   static int bfs_order();
   char *yo = "global_bfs" ;
@@ -182,15 +182,30 @@ static int global_bfs (
     return ZOLTAN_MEMERR;
   }
 
-  /* Pick random start vertex */
+  /* Find pseudo-peripheral start vertex */
   start = rand()%(hg->nVtx);
+  for (j=0; j<2; j++){
+    ierr = bfs_order(zz, hg, start, order);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+      goto error;
+    for (i=0; i<hg->nVtx; i++){
+      if (order[i] == hg->nVtx-1) {
+        start = i;
+        break;
+      }
+    }
+  }
+
 
   /* Compute BFS order */
-  bfs_order(zz, hg, start, order);
+  ierr = bfs_order(zz, hg, start, order);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+    goto error;
 
-  /* Call sequence partitioning with random order array. */
+  /* Call sequence partitioning with BFS order array. */
   ierr = seq_part( zz, hg, order, p, part);
 
+error:
   ZOLTAN_FREE ((void **) &order);
   return (ierr);
 }
@@ -237,29 +252,8 @@ static int global_bfsr (
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
     printf("GLOBAL_PART weight_avg:%f\n",weight_avg);
 
-  /* Sequence partitioning in BFS order. */
   /* Select random start vertex */
   start = rand()%(hg->nVtx);
-
-/*
-    Breadth first search algorithm:
-    --------------------------------
-    unmark all vertices with -1 
-    num = 0
-    sum_weight = 0;
-    part[start_vtx] = num
-    queue Q = start_vtx
-    while Q nonempty
-      choose some vertex v from front of queue
-      part[v] = num
-      remove v from front of queue 
-      if (sum_weight>cutoff)
-        num++
-        empty queue
-      for each hyperedge v shares
-        for each unmarked neighbor w
-          add w to end of queue
-*/
 
   for (i=0; i<hg->nVtx; i++)
     part[i] = -1;  /* -1 means this vtx has not yet been assigned to a part */
@@ -311,7 +305,8 @@ static int global_bfsr (
 
 /****************************************************************************/
 
-/* Compute BFS order on a hypergraph. */
+/* Compute BFS order on a hypergraph. 
+   order[0] is the first vertex, order[1] the next, etc. */
 
 static int bfs_order (
   ZZ *zz, 
@@ -320,7 +315,7 @@ static int bfs_order (
   int *order
 )
 {
-  int i, j, vtx, edge, number, nbor;
+  int i, j, vtx, edge, number, nbor, unmarked, ierr=ZOLTAN_OK;
   int first, last, *Q=NULL;
   static char *yo = "bfs_order";
 
@@ -354,9 +349,17 @@ static int bfs_order (
   first = 0;
   last = 1;
  
+  /* printf("Starting new BFS at vertex %d\n", start); */
+  unmarked = 0; /* Next unmarked vertex */
   number = 0; /* Assign next vertex this number */
-  while (number < hg->nVtx)
-  {
+  while (number < hg->nVtx) {
+    /* Is queue empty? */
+    if (last == first){
+      ZOLTAN_PRINT_WARN(0, yo, "Queue is empty; hypergraph must be disconnected");
+      /* Find an unmarked vertex to put in queue */
+      while (order[unmarked]>0) unmarked++;
+      Q[last++] = unmarked;
+    }
     /* Get next vertex from queue */
     vtx = Q[first++];
     order[vtx] = number++;
@@ -368,16 +371,31 @@ static int bfs_order (
         nbor = hg->hvertex[i];
         if (order[nbor] == -1){
           Q[last++] = nbor;
-          if (last > hg->nVtx) ZOLTAN_PRINT_WARN(0, yo, "Queue is full");
+          if (last > hg->nVtx) {
+            ZOLTAN_PRINT_ERROR(0, yo, "Queue is full");
+            ierr = ZOLTAN_FATAL;
+            goto error;
+          }
           order[nbor] = -2; /* nbor is now in queue */
         }
       }
     }
   }
 
-  ZOLTAN_FREE ((void **) &Q);
+  /* Compute inverse permutation of order. Use Q as scratch array. */
+  for (i=0; i<hg->nVtx; i++)
+    Q[order[i]] = i;
+  for (i=0; i<hg->nVtx; i++)
+    order[i] = Q[i];
+  /*
+  printf("BFS order = ");
+  for (i=0; i<hg->nVtx; i++) printf("%3d ", order[i]);
+  printf("\n");
+  */
 
-  return ZOLTAN_OK;
+error:
+  ZOLTAN_FREE ((void **) &Q);
+  return ierr;
 }
 
 #ifdef __cplusplus
