@@ -46,6 +46,10 @@ class Interface {
 
 public:
  
+  Interface() {};
+
+  virtual ~Interface() {};
+
   //! Compute RHS given the specified input vector, x.
   virtual void computeRHS(const Epetra_Vector& x, Epetra_Vector& RHS) = 0;
   
