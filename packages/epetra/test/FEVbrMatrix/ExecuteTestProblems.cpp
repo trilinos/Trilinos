@@ -227,7 +227,7 @@ int quad2(const Epetra_Map& map, bool verbose)
   int firstNode = myFirstNode;
   for(int el=0; el<numMyElems; ++el) {
     for(i=0; i<nodesPerElem; ++i) {
-   
+
       for(int n=0; n<nodesPerElem; ++n) elemNodes[n] = firstNode+n;
 
       int blkrow = firstNode+i;

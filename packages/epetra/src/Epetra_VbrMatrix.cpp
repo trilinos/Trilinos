@@ -580,11 +580,11 @@ int Epetra_VbrMatrix::EndInsertValues() {
 
   delete [] ValidBlockIndices;
 
-  EPETRA_CHK_ERR(Graph_->InsertIndices(CurBlockRow_, CurNumBlockEntries_, CurBlockIndices_)); // Update graph
-
   for(j=0; j<CurNumBlockEntries_; ++j) {
     delete TempEntries_[j];
   }
+
+  EPETRA_CHK_ERR(Graph_->InsertIndices(CurBlockRow_, CurNumBlockEntries_, CurBlockIndices_)); // Update graph
 
   EPETRA_CHK_ERR(ierr);
   return(0);

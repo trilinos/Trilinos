@@ -110,7 +110,11 @@ Epetra_SerialDenseMatrix::~Epetra_SerialDenseMatrix()
 //=============================================================================
 void Epetra_SerialDenseMatrix::DeleteArrays(void)
 {
-  if (A_Copied_)   {delete [] A_; A_ = 0; A_Copied_ = false;}
+  if (A_Copied_)   {
+    delete [] A_;
+    A_ = 0;
+    A_Copied_ = false;
+  }
 }
 //=============================================================================
 Epetra_SerialDenseMatrix & Epetra_SerialDenseMatrix::operator = ( const Epetra_SerialDenseMatrix & Source) {
