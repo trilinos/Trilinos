@@ -68,7 +68,6 @@ Amesos_Dscpack::~Amesos_Dscpack(void) {
 
 
 int Amesos_Dscpack::PerformSymbolicFactorization() {
-  bool factor = true; 
 
   vector <int> Replicates;
   vector <int> Ap;
@@ -106,9 +105,8 @@ int Amesos_Dscpack::PerformSymbolicFactorization() {
   EPETRA_CHK_ERR( ReplicatedGraph.Import( (CastCrsMatrixA->Graph()), importer, Insert) );
   EPETRA_CHK_ERR( ReplicatedGraph.TransformToLocal() ) ; 
 
-  if ( factor ) { 
     //
-    //  Step 6) Convert the matrix to Ap, Ai
+    //  Convert the matrix to Ap, Ai
     //
     Replicates.resize( numrows );
     for( int i = 0 ; i < numrows; i++ ) Replicates[i] = 1; 
@@ -116,7 +114,6 @@ int Amesos_Dscpack::PerformSymbolicFactorization() {
     Ai.resize( EPETRA_MAX( numrows, numentries) ) ; 
 
     int NumEntriesPerRow ;
-    double *RowValues = 0 ;
     int *ColIndices = 0 ;
     int Ai_index = 0 ; 
     for ( int MyRow = 0; MyRow <numrows; MyRow++ ) {
@@ -129,7 +126,6 @@ int Amesos_Dscpack::PerformSymbolicFactorization() {
     }
     assert( Ai_index == numentries ) ; 
     Ap[ numrows ] = Ai_index ; 
-  }
 
   //
   //  Call Dscpack Symbolic Factorization
@@ -138,7 +134,6 @@ int Amesos_Dscpack::PerformSymbolicFactorization() {
   vector<double> MyANonZ;
   int numprocs  = Comm.NumProc() ;            
   
-  if ( factor ) { 
     NumLocalNonz = 0 ; 
     GlobalStructNewColNum = 0 ; 
     GlobalStructNewNum = 0 ;  
@@ -180,17 +175,12 @@ int Amesos_Dscpack::PerformSymbolicFactorization() {
     } 
 
     A_and_LU_built = true; 
-  } else {  // if ( factor)
-    assert( numprocs == Comm.NumProc() ) ; 
-  }  //End else if ( factor ) 
 
   SymbolicFactorizationOK_ = true ; 
+  return 0;
 }
 
 int Amesos_Dscpack::PerformNumericFactorization() {
-
-
-  bool factor = true; 
 
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
@@ -213,14 +203,9 @@ int Amesos_Dscpack::PerformNumericFactorization() {
   //
   //  Call Dscpack to perform Numeric Factorization
   //  
-  int OrderCode = 2;
   vector<double> MyANonZ;
-  int numprocs  = Comm.NumProc() ;            
   Epetra_Map DscMap( numrows, NumLocalCols, LocalStructOldNum, 0, Comm ) ;
   
-  if ( factor ) { 
-
-    assert( numprocs == Comm.NumProc() ) ; 
     //
     //  Import from the CrsMatrix
     //
@@ -237,7 +222,6 @@ int Amesos_Dscpack::PerformNumericFactorization() {
     assert( MyDscRank >= 0 || NumGlobalCols == 0  ) ; 
     MyANonZ.resize( NumLocalNonz ) ; 
     int NonZIndex = 0 ; 
-    int num_my_row_entries  = -13 ; 
 
     int max_num_entries = DscMat.MaxNumEntries() ; 
     vector<int> col_indices( max_num_entries ) ; 
@@ -267,7 +251,6 @@ int Amesos_Dscpack::PerformNumericFactorization() {
       assert( GlobalStructOwner[ OldRowNumber ] != -1 ) ; 
 
       int NewRowNumber = GlobalStructNewColNum[ my_global_elements[ i ] ] ; 
-      assert( numprocs > 1 || NewRowNumber == i ) ; 
 
       //
       //  Sort the column elements 
@@ -308,7 +291,6 @@ int Amesos_Dscpack::PerformNumericFactorization() {
     }
 
     if ( MyDscRank >= 0 ) { 
-      int TotalMemory, MaxSingleBlock; 
       const int SchemeCode = 1; 
 #ifndef USE_LOCAL
       assert( NonZIndex == NumLocalNonz );
@@ -319,11 +301,9 @@ int Amesos_Dscpack::PerformNumericFactorization() {
 
     }        //     if ( MyDscRank >= 0 ) 
 
-  } else {  // if ( factor)
-    assert( numprocs == Comm.NumProc() ) ; 
-  }  //End else if ( factor ) 
 
   NumericFactorizationOK_ = true ; 
+  return 0;
 }
 
 
@@ -429,12 +409,6 @@ int Amesos_Dscpack::Solve() {
   dscmapB.Import( *vecBvector, ImportOriginalToDsc, Insert ) ;
 
 
-  //
-  //  Step 7)  Call Dscpack
-  //  
-  int OrderCode = 2;
-  int numprocs  = Comm.NumProc() ;            
-  
   vector<double> ValuesInNewOrder( NumLocalCols ) ; 
 
   if ( MyDscRank >= 0 ) {

@@ -383,7 +383,6 @@ int DscpackOO::Solve(bool factor) {
 				    assert( MyDscRank >= 0 || NumGlobalCols == 0  ) ; 
 				    MyANonZ.resize( NumLocalNonz ) ; 
 				    int NonZIndex = 0 ; 
-				    int num_my_row_entries  = -13 ; 
 				    int max_num_entries = DscMat.MaxNumEntries() ; 
 				    vector<int> col_indices( max_num_entries ) ; 
 				    vector<double> mat_values( max_num_entries ) ; 
