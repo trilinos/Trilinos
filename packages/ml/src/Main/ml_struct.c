@@ -241,8 +241,8 @@ int ML_Destroy(ML **ml_ptr)
       ML_memory_free( (void**) &(ml->spectral_radius) );
       if (ml->timing != NULL) ML_memory_free( (void**) &(ml->timing) );
       ML_Comm_Destroy( &(ml->comm) );
-      ML_memory_free( (void**) &(ml) );
       ML_qr_fix_Destroy( &(ml->xCDeadNodDof) );
+      ML_memory_free( (void**) &(ml) );
 
       (*ml_ptr) = NULL;
 #ifdef ML_DEBUG
