@@ -36,7 +36,6 @@
 
 // LOCA Includes
 #include "LOCA_Utils.H"		                // for static function doPrint
-#include "LOCA_ErrorCheck.H"
 #include "LOCA_Continuation_AbstractGroup.H"   // class data element
 #include "LOCA_Continuation_ExtendedGroup.H"
 #include "LOCA_Continuation_NaturalGroup.H"
@@ -171,7 +170,7 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
   if (stepperList.isParameter("Initial Value"))
     startValue = stepperList.getParameter("Initial Value", 0.0);
   else {
-    LOCA::ErrorCheck::throwError("LOCA::Stepper::reset()",
+    errorCheck.throwError("LOCA::Stepper::reset()",
 				 "\"Initial Value\" of continuation parameter is not set!");
   }
 
@@ -181,7 +180,7 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
 						   "None"), 
 			  startValue);
   else {
-     LOCA::ErrorCheck::throwError("LOCA::Stepper::reset()",
+     errorCheck.throwError("LOCA::Stepper::reset()",
 				  "\"Continuation Parameter\" name is not set!");
   }
   
@@ -189,13 +188,13 @@ LOCA::Stepper::reset(LOCA::Continuation::AbstractGroup& initialGuess,
   if (stepperList.isParameter("Max Value"))
     maxValue = stepperList.getParameter("Max Value", 0.0);
   else {
-     LOCA::ErrorCheck::throwError("LOCA::Stepper::reset()",
+     errorCheck.throwError("LOCA::Stepper::reset()",
 				  "\"Maximum Value\" of continuation parameter is not set!");
   }
   if (stepperList.isParameter("Min Value"))
     minValue = stepperList.getParameter("Min Value", 0.0);
   else {
-    LOCA::ErrorCheck::throwError("LOCA::Stepper::reset()",
+    errorCheck.throwError("LOCA::Stepper::reset()",
 				 "\"Minimum Value\" of continuation parameter is not set!");
   }
   

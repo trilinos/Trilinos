@@ -56,25 +56,25 @@ namespace LOCA {
     enum ActionType {ThrowError, PrintWarning};
 
     //! Generic call to throw that prints info to the screen.
-    static void throwError(string callingFunction = "<Unknown Method>",
+    void throwError(string callingFunction = "<Unknown Method>",
 			   string message = "",
-			   string throwLabel = "LOCA Error");
+			   string throwLabel = "LOCA Error") const;
 
     //! Generic printing algorithm for sending warnings to the screen.
-    static void printWarning(string callingFunction = "<Unknown Method>",
-			     string message = "");
+    void printWarning(string callingFunction = "<Unknown Method>",
+			     string message = "") const;
 
     //! Checks the return type for the NOX::AbstractGroup and may throw an error or print a warning to the screen based on the ActionType requested.
-    static void checkReturnType(NOX::Abstract::Group::ReturnType status,
+    void checkReturnType(NOX::Abstract::Group::ReturnType status,
 				ActionType action,
 				string callingFunction = "<Unknown Method>",
-				string message = "");
+				string message = "") const;
 
   private:
 
     //! Converts the NOX::Abstract::Group::ReturnType to a string
-    static string 
-    getReturnTypeString(NOX::Abstract::Group::ReturnType status);
+    string 
+    getReturnTypeString(NOX::Abstract::Group::ReturnType status) const;
 
   };
 } // namespace LOCA

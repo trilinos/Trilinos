@@ -32,7 +32,6 @@
 
 #include "LOCA_Continuation_ArcLengthGroup.H"
 #include "LOCA_Utils.H"
-#include "LOCA_ErrorCheck.H"
 
 LOCA::Continuation::ArcLengthGroup::ArcLengthGroup(
 				 LOCA::Continuation::AbstractGroup& g,
@@ -519,7 +518,7 @@ LOCA::Continuation::ArcLengthGroup::getNormNewtonSolveResidual() const
   
   NOX::Abstract::Group::ReturnType res = applyJacobian(newtonVec, residual);
   if (res != NOX::Abstract::Group::Ok) {
-    LOCA::ErrorCheck::throwError("LOCA::Continuation::ArcLengthGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok");
+    errorCheck.throwError("LOCA::Continuation::ArcLengthGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok");
     return 0.0;
   }
 

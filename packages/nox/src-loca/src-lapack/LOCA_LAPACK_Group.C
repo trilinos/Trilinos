@@ -34,7 +34,6 @@
 #include "NOX_BLAS_Wrappers.H"
 #include "NOX_LAPACK_Wrappers.H"
 #include "LOCA_Utils.H"
-#include "LOCA_ErrorCheck.H"
 
 LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface,
 			   bool hasMassMat) : 
@@ -277,7 +276,7 @@ LOCA::LAPACK::Group::computeEigenvalues(NOX::Parameter::List& params)
 #ifndef HAVE_LAPACK_GENEV
   if (hasMassMatrix) {
     if (Utils::doPrint(Utils::StepperIteration)) {
-      LOCA::ErrorCheck::printWarning("LOCA::LAPACK::Group::computeEigenvalues",
+      errorCheck.printWarning("LOCA::LAPACK::Group::computeEigenvalues",
 				     "LAPACK Generalized eigensolver (dggev) requested but not available!");
     }
     return LOCA::Abstract::Group::Ok;

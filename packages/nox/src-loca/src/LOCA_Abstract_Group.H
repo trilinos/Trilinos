@@ -221,7 +221,7 @@ namespace LOCA {
       augmentJacobianForHomotopy(double conParamValue);
 
       //@}
-    
+      
     };
   } // namespace Abstract
 } // namespace LOCA

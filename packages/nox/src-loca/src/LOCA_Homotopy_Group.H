@@ -37,7 +37,6 @@
 #include "LOCA_Extended_AbstractGroup.H"        // base class
 #include "LOCA_Homotopy_AbstractGroup.H"        // class data element
 
-#include "LOCA_ErrorCheck.H"        // class data member
 #include "LOCA_Parameter_Vector.H"  // class data member
 
 namespace LOCA { 
@@ -320,9 +319,6 @@ namespace LOCA {
       
       //! Contains the string used to identify the homotopy parameter in the ParameterVector object.
       const string conParamLabel;
-
-      //! Utility to check return types, print warnings and throw errors.
-      LOCA::ErrorCheck utils;
 
       //! Tells whether the underlying group was created by the Group.  If so, the destructor should destroy the group.  
       bool ownsGroup;

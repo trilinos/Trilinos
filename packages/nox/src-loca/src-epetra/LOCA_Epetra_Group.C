@@ -39,7 +39,6 @@
 #include "NOX_Epetra_SharedOperator.H"
 #include "Epetra_Vector.h"
 #include "LOCA_Utils.H"
-#include "LOCA_ErrorCheck.H"
 
 LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
 			   NOX::Parameter::List& par, 
@@ -237,7 +236,7 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
   }
 
   // Otherwise this alg won't work
-  LOCA::ErrorCheck::throwError("LOCA::Epetra::Group::augmentJacobianForHomotopy()","the Jacobian must be either an Epetra_CrsMatrix or an Epetra_VbrMatrix!");
+  errorCheck.throwError("LOCA::Epetra::Group::augmentJacobianForHomotopy()","the Jacobian must be either an Epetra_CrsMatrix or an Epetra_VbrMatrix!");
 
   return LOCA::Abstract::Group::Ok;
 }

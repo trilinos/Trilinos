@@ -32,7 +32,6 @@
 
 #include "LOCA_Abstract_Group.H"
 #include "NOX_Parameter_List.H"
-#include "LOCA_ErrorCheck.H"
 
 LOCA::Abstract::Group::Group(const LOCA::DerivUtils& d)
   : LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup(d),
@@ -142,8 +141,8 @@ LOCA::Abstract::Group::augmentJacobianForHomotopy(double conParamValue)
 NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::computeMassMatrix()
 {
-  LOCA::ErrorCheck::throwError("LOCA::Abstract::Group::computeMassMatrix",
-			       "No mass matrix defined for group");
+  errorCheck.throwError("LOCA::Abstract::Group::computeMassMatrix",
+			"No mass matrix defined for group");
   return NOX::Abstract::Group::NotDefined;
 }
 
@@ -151,7 +150,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::applyMassMatrix(const NOX::Abstract::Vector& input,
 				       NOX::Abstract::Vector& result) const
 {
-  LOCA::ErrorCheck::throwError("LOCA::Abstract::Group::applyMassMatrix",
+  errorCheck.throwError("LOCA::Abstract::Group::applyMassMatrix",
 			       "No mass matrix defined for group");
   return NOX::Abstract::Group::NotDefined;
 }
@@ -165,8 +164,8 @@ LOCA::Abstract::Group::applyComplexInverse(
 			       NOX::Abstract::Vector& result_real,
 			       NOX::Abstract::Vector& result_imag) const
 {
-  LOCA::ErrorCheck::throwError("LOCA::Abstract::Group::applyComplexInverse",
-			       "No mass matrix defined for group");
+  errorCheck.throwError("LOCA::Abstract::Group::applyComplexInverse",
+			"No mass matrix defined for group");
   return NOX::Abstract::Group::NotDefined;
 }
 

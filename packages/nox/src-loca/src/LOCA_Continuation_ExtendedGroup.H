@@ -38,6 +38,7 @@
 #include "LOCA_Continuation_AbstractGroup.H"       // class data element
 #include "LOCA_Continuation_ExtendedVector.H"      // class data element
 #include "NOX_Common.H"                            // for string 
+#include "LOCA_ErrorCheck.H"       // class data member
 
 namespace LOCA { 
 
@@ -261,6 +262,9 @@ namespace LOCA {
 
       //! Stores scaling factor
       double theta;
+
+      //! Utility to check errors
+      LOCA::ErrorCheck errorCheck; 
     };
 
   } // namespace Continuation

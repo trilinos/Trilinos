@@ -34,7 +34,6 @@
 #include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Parameter_List.H"
-#include "LOCA_ErrorCheck.H"
 #include "LOCA_Utils.H"
 
 LOCA::Bifurcation::TPBord::ExtendedGroup::ExtendedGroup(
@@ -713,7 +712,7 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::getNormF() const
 const NOX::Abstract::Vector&
 LOCA::Bifurcation::TPBord::ExtendedGroup::getGradient() const 
 {
-  LOCA::ErrorCheck::throwError("LOCA::Bifurcation::TPBord::ExtendedGroup::getGradient()"," - not implemented");
+  errorCheck.throwError("LOCA::Bifurcation::TPBord::ExtendedGroup::getGradient()"," - not implemented");
   return getNewton();
 }
 
@@ -730,7 +729,7 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::getNormNewtonSolveResidual() const
   
   NOX::Abstract::Group::ReturnType res = applyJacobian(tpNewtonVec, residual);
   if (res != NOX::Abstract::Group::Ok) {
-    LOCA::ErrorCheck::throwError("LOCA::Bifurcation::TPBord::ExtendedGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok"); 
+    errorCheck.throwError("LOCA::Bifurcation::TPBord::ExtendedGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok"); 
     return 0.0;
   }
 
@@ -781,7 +780,7 @@ LOCA::Bifurcation::TPBord::ExtendedGroup::init()
   double lVecDotNullVec = lTransNorm(tpXVec.getNullVec());
 
   if (lVecDotNullVec == 0.0) {
-    LOCA::ErrorCheck::throwError("LOCA::Bifurcation::TPBord::ExtendedGroup::init()","null vector can be orthogonal to length-scaling vector");
+    errorCheck.throwError("LOCA::Bifurcation::TPBord::ExtendedGroup::init()","null vector can be orthogonal to length-scaling vector");
   }
   if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
     cout << "\tIn LOCA::Bifurcation::TPBord::ExtendedGroup::init(), scaling null vector by:" 

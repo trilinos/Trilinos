@@ -41,6 +41,7 @@
 #include "LOCA_StepSize_Manager.H" // class data element
 #include "NOX_StatusTest_Generic.H"  // for enum StatusType
 #include "NOX_Common.H"              // for <string> class
+#include "LOCA_ErrorCheck.H"       // class data member
 
 // Forward Declarations
 namespace LOCA {
@@ -194,6 +195,9 @@ namespace LOCA {
 
     //! Flag indicating whether to compute eigenvalues after eachs step
     bool calcEigenvalues;
+
+    //! Utility to check errors
+    LOCA::ErrorCheck errorCheck; 
   };
 } // end namespace LOCA
 

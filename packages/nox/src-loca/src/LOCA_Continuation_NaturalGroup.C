@@ -30,7 +30,6 @@
 // ************************************************************************
 //@HEADER
 #include "LOCA_Continuation_NaturalGroup.H"
-#include "LOCA_ErrorCheck.H"
 
 LOCA::Continuation::NaturalGroup::NaturalGroup(
 				  LOCA::Continuation::AbstractGroup& g,
@@ -438,7 +437,7 @@ LOCA::Continuation::NaturalGroup::getNormNewtonSolveResidual() const
   
   NOX::Abstract::Group::ReturnType res = applyJacobian(newtonVec, residual);
   if (res != NOX::Abstract::Group::Ok) {
-    LOCA::ErrorCheck::throwError("LOCA::Continuation::NaturalGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok");
+    errorCheck.throwError("LOCA::Continuation::NaturalGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok");
     return 0.0;
   }
 

@@ -132,7 +132,7 @@ LOCA::Homotopy::Group::Group(const LOCA::Homotopy::Group& source,
     resetIsValidFlags();
   }
   else {
-    utils.throwError("LOCA::Homotopy::Group::Group(copy ctor)",
+    errorCheck.throwError("LOCA::Homotopy::Group::Group(copy ctor)",
 		     "CopyType is invalid!");
   }
 
@@ -294,7 +294,7 @@ NOX::Abstract::Group::ReturnType LOCA::Homotopy::Group::computeF()
   NOX::Abstract::Group::ReturnType status;
 
   status = grpPtr->computeF();
-  utils.checkReturnType(status, ErrorCheck::PrintWarning,
+  errorCheck.checkReturnType(status, ErrorCheck::PrintWarning,
 			"LOCA::Homotopy::Group::computeF",
 			"grpPtr->computeF() failed!");
   if (status != NOX::Abstract::Group::Ok)
@@ -319,7 +319,7 @@ LOCA::Homotopy::Group::computeJacobian()
     return NOX::Abstract::Group::Ok;
 
   NOX::Abstract::Group::ReturnType status = grpPtr->computeJacobian();
-  utils.checkReturnType(status, ErrorCheck::PrintWarning,
+  errorCheck.checkReturnType(status, ErrorCheck::PrintWarning,
 			"LOCA::Homotopy::Group::computeJacobian",
 			"grpPtr->computeJacobian() failed!");
   if (status != NOX::Abstract::Group::Ok)
@@ -390,7 +390,7 @@ LOCA::Homotopy::Group::applyJacobian(const NOX::Abstract::Vector& input,
   NOX::Abstract::Group::ReturnType status = 
     grpPtr->applyJacobian(input, result);
 
-  utils.checkReturnType(status, ErrorCheck::PrintWarning,
+  errorCheck.checkReturnType(status, ErrorCheck::PrintWarning,
 			"LOCA::Homotopy::Group::applyJacobian",
 			"grpPtr->applyJacobian() failed!");
   return status;
@@ -407,7 +407,7 @@ LOCA::Homotopy::Group::applyJacobianTranspose(
   NOX::Abstract::Group::ReturnType status = 
     grpPtr->applyJacobianTranspose(input, result);
   
-  utils.checkReturnType(status, ErrorCheck::PrintWarning,
+  errorCheck.checkReturnType(status, ErrorCheck::PrintWarning,
 			"LOCA::Homotopy::Group::applyJacobianTranspose",
 			"grpPtr->applyJacobianTranspose() failed!");
   return status;
@@ -421,7 +421,7 @@ LOCA::Homotopy::Group::applyJacobianInverse(NOX::Parameter::List& params,
   NOX::Abstract::Group::ReturnType status = 
     grpPtr->applyJacobianInverse(params, input, result);
 
-  utils.checkReturnType(status, ErrorCheck::PrintWarning,
+  errorCheck.checkReturnType(status, ErrorCheck::PrintWarning,
 			"LOCA::Homotopy::Group::applyJacobianInverse",
 			"grpPtr->applyJacobianInverse() failed!");
   return status;
@@ -473,7 +473,7 @@ const NOX::Abstract::Vector&
 LOCA::Homotopy::Group::getGradient() const 
 {
   if (gradVecPtr == 0) {
-    utils.throwError("LOCA::Homotopy::Group::getGradient", 
+    errorCheck.throwError("LOCA::Homotopy::Group::getGradient", 
 		     "gradVecPtr is NULL!");
   }
   return *gradVecPtr;
@@ -483,7 +483,7 @@ const NOX::Abstract::Vector&
 LOCA::Homotopy::Group::getNewton() const 
 {
   if (newtonVecPtr == 0) {
-    utils.throwError("LOCA::Homotopy::Group::getNewton", 
+    errorCheck.throwError("LOCA::Homotopy::Group::getNewton", 
 		     "newtonVecPtr is NULL!");
   }
   return *newtonVecPtr;

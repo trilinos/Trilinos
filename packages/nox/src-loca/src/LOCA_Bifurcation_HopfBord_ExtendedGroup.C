@@ -34,7 +34,6 @@
 #include "LOCA_Bifurcation_HopfBord_AbstractGroup.H" 
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_Parameter_List.H"
-#include "LOCA_ErrorCheck.H"
 #include "LOCA_Utils.H"
 
 LOCA::Bifurcation::HopfBord::ExtendedGroup::ExtendedGroup(
@@ -878,7 +877,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::getNormF() const
 const NOX::Abstract::Vector&
 LOCA::Bifurcation::HopfBord::ExtendedGroup::getGradient() const 
 {
-  LOCA::ErrorCheck::throwError("LOCA::Bifurcation::HopfBord::ExtendedGroup::getGradient()"," - not implemented");
+  errorCheck.throwError("LOCA::Bifurcation::HopfBord::ExtendedGroup::getGradient()"," - not implemented");
   return getNewton();
 }
 
@@ -895,7 +894,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::getNormNewtonSolveResidual() const
   
   NOX::Abstract::Group::ReturnType res = applyJacobian(hopfNewtonVec,residual);
   if (res != NOX::Abstract::Group::Ok) {
-     LOCA::ErrorCheck::throwError("LOCA::Bifurcation::HopfBord::ExtendedGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok"); 
+     errorCheck.throwError("LOCA::Bifurcation::HopfBord::ExtendedGroup::getNormNewtonSolveResidual", "applyJacobian() returned not ok"); 
     return 0.0;
   }
 
@@ -956,7 +955,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::init()
   ldz = hopfXVec.getImagEigenVec().dot(*lengthVecPtr);
 
   if (ldy == 0.0) {
-     LOCA::ErrorCheck::throwError("LOCA::Bifurcation::HopfBord::ExtendedGroup::init()","Real component of eigenvector cannot be orthogonal to length vector!");
+     errorCheck.throwError("LOCA::Bifurcation::HopfBord::ExtendedGroup::init()","Real component of eigenvector cannot be orthogonal to length vector!");
   }
 
   denom = ldy*ldy + ldz*ldz;
