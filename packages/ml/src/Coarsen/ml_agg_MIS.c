@@ -2268,7 +2268,6 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      else if (bdry[i] == 'F') phase_one_aggregated++;
    }
 
-   //   printf("hmmmmmmm %d \n",Nphase1_agg);
    phase_one_aggregated = ML_Comm_GsumInt( comm, phase_one_aggregated);
 
    if ( printflag < ML_Get_PrintLevel()) {

@@ -52,7 +52,7 @@ double *scaling_vect = NULL;
 
 int main(int argc, char *argv[])
 {
-	int num_PDE_eqns=3, N_levels=8, nsmooth=1;
+	int num_PDE_eqns=3, N_levels=8, nsmooth=4;
 
 	int    leng, level, N_grid_pts, coarsest_level;
 
