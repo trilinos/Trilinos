@@ -337,6 +337,9 @@ setenv LD_LIBRARY_PATH ${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH}
 
 /*! \page devinfo NOX Developer's Information
 
+To become a NOX developer, contact Tammy Kolda (tgkolda@sandia.gov) or
+Roger Pawlowski (rppawlo@sandia.gov).
+
 \section cvsrepos CVS Repository for NOX
 
 The CVS repository is located on <a
@@ -345,24 +348,520 @@ Sery (pgsery@sandia.gov) or Tammy Kolda (tgkolda@sandia.gov) for an
 account.
 
 You should not do any development of software.sandia.gov. Instead,
-check out a copy to your local machine as follows.
+check out a copy to your local machine.  Be sure to correctly set your
+\c CVS_SSH environment variable to \c ssh.
 
-First, be sure to correctly set your \c CVS_SSH environment
-variable. For example, in (t)csh, you would type:
-
-\verbatim
-setenv CVS_RSH ssh
-\endverbatim
-
-Next, to check out nox, type
+<ul>
+<li>
+To check out nox:
 \verbatim
 cvs -d :ext:username@hopper.ca.sandia.gov:/space/CVS checkout -P nox
 \endverbatim
 
-To update your copy of nox to the latest version, type
+<li>
+To update your copy of nox to the latest version:
 \verbatim
 cvs update -d -P
 \endverbatim
+</ul>
+
+We have installed a <a
+href="http://software.sandia.gov/bonsai/cvsqueryform.cgi?cvsroot=/space/CVS&module=nox">web
+front end for browsing and querying the CVS repository</a>. 
+
+<ul>
+<li> \b Browsing: From the
+"CVS Query Form" select the "Trilinos Tree" under "Browse" in the
+yellow box on the right hand side. Next, choose "Trilinos", then
+"packages", and finally "nox".
+<li> \b Querying: Select "nox" as the "Module"
+</ul>
+
+\section coding Coding Guidelines
+
+\htmlonly
+Adapted largely from <a
+href="http://www.doc.ic.ac.uk/lab/cplus/c++.rules/">Programming in
+C++, Rules and Recommendations, by Mats Henricson and Erik
+Nyquist</a>.
+
+
+<H3>Structure of the Files</H3>
+
+<H5>Naming Conventions</H5>
+<ul>
+<li>C++ header files end in <code>.H</code> and source files end in
+<code>.C</code>
+<br>&nbsp;
+<li>The name of the files should correspond to the name of the class
+they define, with double-colons replaced by underscores. For example,
+the definition of the class <code>NOX::Abstract::Group</code> is in
+the file <code>NOX_Abstract_Group.H</code>.
+<br>&nbsp;
+</ul>
+
+<H5>General File Structure</H5>
+<ul>
+<li>Each file should begin as follows:
+
+<pre>
+// $Id$
+// $Source$
+//@HEADER
+# ************************************************************************
+# 
+#            NOX: An Object-Oriented Nonlinear Solver Package
+#                 Copyright (2002) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2, or (at your option)
+# any later version.
+#   
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#   
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+# 
+# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+# (rppawlo@sandia.gov).
+# 
+# ************************************************************************
+//@HEADER
+</pre>
+
+Once the file is committed to the CVS repository, the first two lines
+will look something like the following:
+
+<pre>
+// $Id$ 
+// $Source$ 
+</pre>
+
+The header information is automatically filled in between the two
+<code>//@HEADER</code> keys when we run the <code>nox/maintenance/autoheader</code> command.
+
+</ul>
+
+
+<H5>Include File Structure</H5>
+<ul>
+<li>No include file should define more than one class.
+<br>&nbsp;
+<li>Every include file must contain a mechanism that prevents multiple
+inclusions of the file. For example, the following should follow the
+header information for the <code>NOX_Abstract_Vector.H</code> header
+file.
+
+<pre>
+#ifndef NOX_ABSTRACT_VECTOR_H
+#define NOX_ABSTRACT_VECTOR_H
+
+<em>...body of include file goes here...</em>
+
+#endif
+</pre>
+
+<li>Do not include system files (e.g., <CODE>iostream</CODE>) directly
+in your files. Instead, include <CODE>NOX_Common.H</CODE>. The goal is
+to better enable system portability since some machines have
+<CODE>math.h</CODE> and others have <CODE>cmath</CODE> and so
+on. Currently, we have the following system headers:
+<br>&nbsp;
+<ul>
+<li><code>iostream</code>
+<li><code>iomanip</code>
+<li><code>string</code>
+<li><code>cmath</code>
+<li><code>vector</code>
+<li><code>map</code>
+<br>&nbsp;
+</ul>
+<li>Definitions of classes that are only accessed via pointers
+(<CODE>*</CODE>) or references (<CODE>&amp;</CODE>) should be declared
+using forward declarations, and <EM>not</EM> by including the header files.
+<br>&nbsp;
+
+<li>These are the cases when header files should be included in the
+header file:
+<br>&nbsp;
+<UL>
+<LI>classes that are used as <EM>base classes</EM>,
+<LI>classes that are used as <EM>member variables</EM>,
+<LI>classes that appear as <EM>return types</EM> or as <EM>argument
+types</EM> in function/member function prototypes.
+</UL>
+</ul>
+
+<H3>Naming Conventions</H3>
+<ul>
+<li>Everything must be declared within the <code>NOX</code>
+namespace. No exceptions! 
+<br>&nbsp;
+<li>Furthermore, each class should be within the approiate
+sub-namespace. The choices are:
+<br>&nbsp;
+<ul>
+<li><code>Abstract</code>
+<li><code>Parameter</code>
+<li><code>Solver</code>
+<li><code>Status</code>
+<li><code>Direction</code>
+<li><code>Epetra</code>
+<br>&nbsp;
+</ul>
+<li>Class names should begin with an uppercase letter. Variable and
+function names should begin with a lowercase letter.
+<br>&nbsp;
+<li>In names (function, class, variable, etc) 
+    which consist of more than one word, the words are
+    written together and each word that follows the first is begun
+    with an uppercase letter. (e.g., <code>NOX::Linesearch::MoreThuente</code>).
+<br>&nbsp;
+<li>Do not use identifiers which begin
+with one or two underscores (`<CODE>_</CODE>' or `<CODE>__</CODE>').
+<br>&nbsp;
+<li>Names should not include abbreviations that are not generally
+    accepted.
+<br>&nbsp;
+<li>Choose variable names that suggest the usage. 
+</ul>
+
+<H3>Style</H3>
+
+<h5>Classes</h5>
+<ul>
+<li>The public, protected, and private sections of a class are to be
+    declared in that order (the public section is declared before the
+    protected section which is declared before the private section).
+<br>&nbsp;
+<li>No inline functions, except the empty <code>{}</code>
+function. The reason for this is that if the function does not inline
+correctly, it can actaully lead to slower code rather than faster
+code. 
+</ul>
+<h5>Functions</h5>
+<ul>
+<li>Always provide the
+<EM>return type</EM> of a function explicitly.
+<br>&nbsp;
+
+
+<li>When declaring functions, the leading parenthesis and the first
+argument (if any) are to be written on the <EM>same line</EM> as the
+function name. If space permits, other arguments and the closing
+parenthesis may also be written on the same line as the function
+name. Otherwise, each additional argument is to be written on a
+separate line (with the closing parenthesis directly after the last
+argument).
+<br>&nbsp;
+
+<li>Always write the left parenthesis
+directly after a function name.
+<PRE>
+   void foo ();    // No!!
+   void foo();     // Better
+</PRE>
+</ul>
+
+<h5>Variable declations</h5>
+
+<ul>
+<li>Only one variable per line.
+<PRE>
+   int i,j;   // No!!
+
+   int i;     // Yes   
+   int j;   
+</PRE>
+
+<li>
+The characters `<CODE>*</CODE>' and `<CODE>&amp;</CODE>' should
+be written together with the types of variables instead of with the
+names of variables in order to emphasize that they are part of the type
+definition. Instead of saying that <CODE>*i</CODE> is an <CODE>int</CODE>,
+say that <CODE>i</CODE> is an <CODE>int*</CODE>.
+<PRE>
+   int *i;   // No!!
+   int* i;   // Yes   
+</PRE>
+</ul>
+
+<h5>Loops and conditionals: <code>if</code>, <code>for</code>,
+<code>while</code>, etc.</h5>
+
+<ul>
+
+<li>User parens to make code readable.
+<pre>
+  if (a == b && c < d || e == f) { // No!
+    /* Stuff */
+  }
+
+  if (((a == b) && (c < d)) || (e == f)) { // Yes
+    /* Stuff */
+  } 
+</pre>
+<li>The block of any <code>if</code> statement should always follow on
+a separate line.
+<PRE>
+   if ( /*Something*/ ) i++; // No!!
+
+   if ( /*Something*/ )      // Yes!
+     i++; 
+</PRE>
+<li>Braces ("{}") which enclose a block should be aligned in the
+K&amp;R format. 
+<PRE>
+   if ( /*Something*/ ) // No!
+   {
+     i++; 
+     j++;
+   }
+
+   if ( /*Something*/ ) { // Yes!
+     i++; 
+     j++;
+   }
+</PRE>
+
+
+</ul>
+
+
+<h5>Miscellaneous</h5>
+<UL>
+<li>Always provide a space on both sides of <code>=</code> signs and all logical
+operators.
+<br>&nbsp;
+<li>Each statement shall always be in a separate line, however small it may appear. 
+<br>&nbsp;
+ 
+<Li>Do not use <EM>spaces</EM> around
+`<CODE>.</CODE>' or `<CODE>-&gt;</CODE>', nor between unary operators
+and operands.
+<br>&nbsp;
+<li>Use the c++ mode in GNU Emacs to
+format code.
+</UL>
+
+<H3>Coding Rules</H3>
+
+
+<ul>
+<li>A public member function must never return a non-const reference
+or pointer to member data. 
+<br>&nbsp;
+<li>Constants are to be defined using <code>const</code> or
+<code>enum</code>; never using <code>#define</code>. 
+<br>&nbsp;
+<li>A switch statement must always contain a default branch which
+handles unexpected cases.  
+</ul>
+
+
+<H3>Output</H3>
+
+The <code>NOX::Utils</code> class has static utility functions related
+to printing. To use it, include <code>NOX_Utils.H</code>.
+
+<ul>
+<li>For <b>any</b> non-error print statement, call the
+<code>NOX::Utils::doPrint()</code> function with the appropriate
+MsgType flag. The flags are:
+<br>&nbsp;
+<ul>
+<li><code>NOX::Utils::Error  </code>
+<li><code>NOX::Utils::Warning</code>
+<li><code>NOX::Utils::OuterIteration</code>
+<li><code>NOX::Utils::InnerIteration</code>
+<li><code>NOX::Utils::Parameters</code>
+<li><code>NOX::Utils::Details</code>
+</ul>
+
+<br>&nbsp;
+
+<li><em>We need to add a mechanism for controlling the
+output streams. Currently, all output goes to cout and cerr.</em>
+<br>&nbsp;
+
+</ul>
+
+
+<H3>Error Handling</H3>
+
+<ul>
+<li>Always check return values of functions for errors.
+<li>In general, try to recover from errors.
+<li>If you must throw an exception, always print an explanation with
+the function name to <code>cerr</code> and then throw an exception with the string
+<code>"NOX Error"</code>. For example,
+
+<pre>
+  if (/* Error Condition */) {
+    cerr << "ERROR: NOX::Epetra::Group::getNewton() - invalid Newton vector" << endl;
+    throw "NOX Error";
+  }
+</pre>
+
+</ul>
+
+<H3>Comments</H3>
+
+We use Doxygen for the comments. To generate the documentation, do the
+following:
+
+<pre>
+cd nox/doc
+doxygen 
+</pre>
+
+<ul>
+<li> Document each class, function, and enum in the header
+files.
+<br>&nbsp;
+<ul>
+<li> The one exception is that functions in derived objects do not
+need to be documented <b>if</b> the documentation is inherited from
+the base class. This should be tested in Doxygen to be sure that it
+works correctly.
+<br>&nbsp;
+</ul>
+<li> Here's an example of documented a class. Note the formatting of
+the comments. It's a C-style comment. The open comment marker
+(<code>/*</code>) is followed by an exclamation mark to indicate that
+it's a Doxygen comment. The open and close comment markers are on
+lines by themselves, and the text of the comment is indented two
+spaces. Always include a <code>\brief</code> description. The long
+description follows. Observe the use of the formatting tags
+<code>\c</code> and <code>\e</code>. The <code>\note</code> tag is
+used for any special notes. The <code>\author</code> tag is
+recommended.
+
+<pre>
+/*!
+  \brief Arbitrary combination of status tests.
+
+  In the \c AND (see NOX::Status::Combo::ComboType) combination, the
+  result is \c Unconverged (see NOX::Status::StatusType) if \e any of
+  the tests is \c Unconverged. Otherwise, the result is equal to the
+  result of the \e first test in the list that is either \c Converged
+  or \c Failed. It is not recommended to mix \c Converged and \c
+  Failed tests in an \c AND combination.
+
+  In the \c OR combination, the result is \c Unconverged if \e all of
+  the tests are \c Unconverged. Otherwise, it is the result of the \e
+  first test in the list that is either \c Converged or \c
+  Failed. Therefore, it will generally make sense to put the \c Failed
+  -type tests at the end of the \c OR list.
+
+  \note We always runs through all tests, even if we don't need
+  to. This is useful so that the user knows which tests have and have
+  not be satisfied.
+
+  \author Tammy Kolda (SNL 8950)
+*/
+class Combo : public Test {
+...
+}; // class Combo
+</pre>
+
+<li>Any parameters that are used within the class <b>must</b> be
+documented in the class description <b>and</b> in the file NOX_Description.H on the parameters "page".
+Note that the name, a brief description, and the default value for
+each parameter is listed.
+<pre>
+/*!
+  \brief %Newton-like solver with a line search.
+  
+  The following parameters are valid for this solver:
+
+  - "Line Search" - Sublist of the line search parameters, passed to
+    the NOX::Linesearch::Manager constructor. Defaults to an empty list.
+
+  - "Linear %Solver" - Sublist of the linear solver paramaters, passed
+    to Abstract::Group::computeNewton(). Furthermore, the "Tolerance"
+    within this list may be modified by the
+    resetForcingTerm(). Defaults to an empty list.
+
+  - "Forcing Term Method" - Method to compute the forcing term, i.e.,
+    the tolerance for the linear solver. Defaults to ""
+    (nothing). Choices are "Type 1" and "Type 2".
+
+  - "Forcing Term Minimum Tolerance" - Minimum acceptable linear
+    solver tolerance. Defaults to 1.0e-6.
+
+  - "Forcing Term Maximum Tolerance" = Maximum acceptable linear
+    solver tolerance. Default to 0.01.
+
+  - "Forcing Term Alpha" - Used for the "Type 2" forcing term
+    calcuation. Defaults to 1.5.
+
+  - "Forcing Term Gamma" - Used for the "Type 2" forcing term
+    calcuation. Defaults to 0.9.
+
+  \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
+*/
+</pre>
+Here's a more complicated example to produce a two-tiered list.
+<pre>
+/*! 
+   The parameters must specify the type of line search as well as all
+   the corresponding parameters for that line search.
+ 
+   &lt;ul&gt;
+   &lt;li&gt; "Method" - Name of the line search. Valid choices are
+   &lt;ul&gt; 
+   &lt;li&gt; "Full Step" (NOX::Linesearch::FullStep)
+   &lt;li&gt; "Interval %Halving" (NOX::Linesearch::Halving)
+   &lt;li&gt; "%Polynomial" (NOX::Linesearch::Polynomial)
+   &lt;li&gt; "More'-Thuente" (NOX::Linesearch::MoreThuente)
+   &lt;/ul&gt;
+   &lt;/ul&gt;
+ */
+</pre>
+
+
+<li>Constants and enums can generally be described with simple
+<code>\brief</code> comments. Those can be formatted in either of two
+ways, as follows.
+
+<pre>
+  /*! 
+    \brief The test can be either the AND of all the component
+    tests, or the OR of all the component tests.
+  */
+  enum ComboType {AND, OR};
+
+  //! Constructor
+  Combo(ComboType t = OR);
+</pre>
+
+<li>Doxygen does automatically cross-linking, which is very
+convienent. However, sometimes it cross-links when you don't intend
+for it to. For example, the following line would automatically
+generate a link from the word <code>Newton</code> to the
+NOX::Solver::Newton class. 
+
+<pre>
+//! Newton-like solver with a line search.
+</pre>
+ 
+To prevent that automatic link, insert a percent sign (<code>%</code>)
+immediately before the word that is causing the link. For example,
+
+<pre>
+//! %Newton-like solver with a line search.
+</pre>
+</ul>
+\endhtmlonly
 
 */
 
@@ -423,8 +922,8 @@ cvs update -d -P
   object. Users are free to create additional status tests that derive
   from the NOX::StatusTest::Generic class.
 
-
- */
+    
+    */
  
 /*! \page parameters NOX Parameter Reference Page
 
