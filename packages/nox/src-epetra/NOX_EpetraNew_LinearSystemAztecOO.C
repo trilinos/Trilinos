@@ -897,6 +897,10 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
   double endTime = timer.WallTime();
   timeCreatePreconditioner += (endTime - startTime);
 
+  if (utils.isPrintProcessAndType(Utils::LinearSolverDetails))
+    cout << "\n       Time required to create precondtioner : " 
+         << (endTime - startTime) << " (sec.)" << endl;;
+
   return true;
 }
 

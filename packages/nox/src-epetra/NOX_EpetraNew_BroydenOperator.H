@@ -44,41 +44,102 @@ namespace NOX {
 
 namespace EpetraNew {
 
-/*! \brief Pure virtual class for creating an Operator for NOX.
-  This class derives from the Epetra_Operator class with a single
-  additional method: compute().    This allows the user to supply their own
-  preconditioner or jacobian operators.
+/*! \brief A concrete implementation of a Broyden-type operator for NOX.
+
+  This operator is intended to allow cheap updates to an existing Jacobian
+  or preconditioning matrix that would otherwise be difficult or impossible
+  to obtain by other means.  It computes updates using secant approximations
+  emobdied in truncated %Broyden updates that preserve matrix sparsity.
+
+  This class derives from NOX::Parameter::PrePostOperator in order to
+  perform a Broyden-type update on an existing matrix that it holds but does
+  not own.  This update is performed after each nonlinear iteration within
+  method runPostIterate(...) according to the recursive formula:
+
+  \f[ \tilde{B}_{k+1} = \tilde{B}_k + \frac{({y_k -
+    \tilde{B}_k s_k})s_k^T}{s^T s} \f]
+
+  where \f[ y_k = F_{k+1} - F_k \f] and \f[ s_k = x_{k+1} - x_k \f]
+
+  The tilde on the matrices \f$ B \f$ indicates that the updates
+  are constrained so that the nonzero structure of the original matrix
+  passed into the constructor is preserved.  Inasmuch as unconstrained
+  %Broyden updates produce dense matrices, these constrained updates lead
+  to a loss of Broyden-matrix properties, e.g.
+  
+  \f[ \tilde{B}_{k+1} s_k \ne \tilde{B}_k + s_k \f]
+
+  \f[ \tilde{B}_{k+1} q \ne \tilde{B}_k q \quad \forall q : s_k^T q = 0 \f]
+
+  One could recover these properties by passing into the constructor
+  a dense %Epetra_CrsMatrix, though the cost of typical use of this
+  matrix, e.g.  applying ILU to it, would be significant.  Additionally,
+  "better" values obtained from another Jacobian or preconditioning
+  matrix can be used to replace corresponding values in the updated
+  %Broyden matrix by passing the Jacobian or preconditioning matrix and
+  its associated interface to the constructor.  The structure of the
+  Jacobain or preconditioning matrix typically represents a subset of
+  the %Broyden matrix, e.g. a block diagonal matrix.
+
  */
 class BroydenOperator : public NOX::Parameter::PrePostOperator,
+                        public NOX::EpetraNew::Interface::Jacobian,
                         public NOX::EpetraNew::Interface::Preconditioner {
 
  public:
 
-  //! Constructor
+  //! Constructor taking an initial matrix to be updated
   BroydenOperator(NOX::Parameter::List & nlParams, Epetra_Vector & solnVec,
-                  Epetra_CrsMatrix & mat);
+                  Epetra_CrsMatrix & broydMat0, bool verbose = false);
+
+  //! Constructor taking an initial matrix to be updated along with a Jacobian matrix whose values replace those of the %Broyden update.
+  BroydenOperator(NOX::Parameter::List & nlParams, Epetra_Vector & solnVec,
+                  Epetra_CrsMatrix & broydMat0, 
+		  NOX::EpetraNew::Interface::Jacobian & jacInt,
+                  Epetra_CrsMatrix & jacMatrix, 
+		  bool verbose = false);
+
+  //! Constructor taking an initial matrix to be updated along with a preconditioning matrix whose values replace those of the %Broyden update.
+  BroydenOperator(NOX::Parameter::List & nlParams, Epetra_Vector & solnVec,
+                  Epetra_CrsMatrix & broydMat0,
+		  NOX::EpetraNew::Interface::Preconditioner & precInt,
+                  Epetra_CrsMatrix & precMatrix, 
+		  bool verbose = false);
 
   //! Copy Constructor
   BroydenOperator(const BroydenOperator &);
 
-  //! Pure virtual destructor
+  //! Destructor
   virtual ~BroydenOperator();
 
+  //! Return a reference to the %Broyden matrix.  The matrix is not owned but is obtained from the client at construction.
   Epetra_CrsMatrix & getBroydenMatrix()
   { return crsMatrix; };
 
-  // 
+ protected:
+
+  //! Allow for fill of Jacobian matrix whose values will replace corresponding entries in the %Broyden matrix.
+  virtual bool computeJacobian( const Epetra_Vector & x);
+
+  //! Allow for fill of preconditioning matrix whose values will replace corresponding entries in the %Broyden matrix.
   virtual bool computePreconditioner( const Epetra_Vector &, 
                                       NOX::Parameter::List * params = 0 );
 
-  //
+  //! Update the %Broyden matrix using changes in residuals the solution vector from the most recent nnlinear iteration.
   virtual void runPostIterate( const NOX::Solver::Generic & solver);
 
+  //! A dummy method needed for inheritance.
   virtual NOX::Parameter::Arbitrary * clone() const;
 
+  //! A dummy method needed for inheritance.
   virtual const string & getType() const; 
 
+  //! Replace values in %Broyden matrix with either Jacobian or preconditioning matrix entries.
+  void replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat);
+
  protected:
+
+  bool verbose;
 
   NOX::Epetra::Vector * updateVectorPtr;
   NOX::Epetra::Vector & updateVector;
@@ -86,7 +147,15 @@ class BroydenOperator : public NOX::Parameter::PrePostOperator,
   NOX::Epetra::Vector * broydenVecPtr;
   NOX::Epetra::Vector * residualVecPtr;
 
+  NOX::Epetra::Vector * tempVecPtr;
+
   Epetra_CrsMatrix & crsMatrix;
+
+  NOX::EpetraNew::Interface::Jacobian * jacIntPtr;
+  Epetra_CrsMatrix * jacMatrixPtr;
+
+  NOX::EpetraNew::Interface::Preconditioner * precIntPtr;
+  Epetra_CrsMatrix * precMatrixPtr;
 
   std::string myType;
 };
