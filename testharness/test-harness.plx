@@ -582,18 +582,25 @@ report($SUMMARY);
                 # locate all test dirs under Trilinos/packages        
                 chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";        
                 my @testDirs = `find packages/ -name test -print`; 
-		# Figure out how to run an mpi job.
-		my $result;       # success=0, failure=nonzero
-
-		$result = $ENV{"HOSTNAME"};
-		if (!$result) {
-		  $result = $ENV{"HOST"};
-		}
-		if ($result =~ /stratus/) {
-		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "prun -n "
-		} else {
-		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "mpirun -np "
-		}
+                
+                ################################################################
+                # Removed in favor of new config-file option
+                ################################################################
+                
+        		# Figure out how to run an mpi job.
+        		#my $result;       # success=0, failure=nonzero
+            
+        		#$result = $ENV{"HOSTNAME"};
+        		#if (!$result) {
+        		#  $result = $ENV{"HOST"};
+        		#}
+        		#if ($result =~ /stratus/) {
+        		#  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "prun -n ";
+        		#} else {
+        		#  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "mpirun -np ";
+        		#}
+        		
+        		$ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "$options{'TRILINOS_DIR'}[0]";
  
                 # run all tests 
                 foreach my $testDir (@testDirs) {
@@ -650,6 +657,9 @@ report($SUMMARY);
                                           
                     } # unless (unsupported)
                 } # foreach $testDir
+                
+                $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "";
+                
             } # if (!-n)
             
             printEvent("\n");
@@ -812,10 +822,6 @@ report($SUMMARY);
         }
         
         if (defined $brokenPackage) {
-            $brokenPackage =~ s/^\s*//;             # trim leading spaces
-            $brokenPackage =~ s/\s*$//;             # trim trailing spaces
-            $brokenPackage = lc($brokenPackage);    # convert to lowercase
-            $brokenPackage =~ s/ /_/g;              # convert spaces to underscores
         } else {
             printEvent("error fixing invoke-configure--can't detect package\n");
             return ("error", "error");
@@ -1885,7 +1891,13 @@ report($SUMMARY);
                     }
                 } 
             }         
-        }      
+        }         
+        
+        # if MPIGO_CMD is specified, enforce on and only one trailing space
+        if (defined $options{'MPIGO_CMD'} && defined $options{'MPIGO_CMD'}[0]) {
+            $options{'MAKE_FLAGS'}[0] =~ s/\s*$//;  # trim trailing spaces
+            $options{'MAKE_FLAGS'}[0] .= " ";       # append trailing space 
+        }
         
         # if MAKE_FLAGS are specified, but don't begin with a '-', add one
         if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
@@ -2046,6 +2058,28 @@ report($SUMMARY);
         if (defined $options{'MPI_SHUTDOWN_CMD'}[1]) {
             my $message = "";
             $message .= "only one MPI_SHUTDOWN_CMD allowed\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # MPIGO_CMD ------------------------------------------------------------
+        
+        # enforce presence of MPIGO_CMD if MPI_DIR exists
+        if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]
+            && (!defined $options{'MPIGO_CMD'} 
+            || !defined $options{'MPIGO_CMD'}[0])) {
+            my $message = "";
+            $message .= "MPIGO_CMD must be supplied if MPI_DIR is present\n";
+            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
+            printEvent($message);
+            $configError = 1;
+        }
+        
+        # enforce only one MPIGO_CMD
+        elsif (defined $options{'MPIGO_CMD'}[1]) {
+            my $message = "";
+            $message .= "only one MPIGO_CMD allowed\n";
             if (!$flags{p}) { report($CONFIG_ERROR, $message); }
             printEvent($message);
             $configError = 1;
@@ -2443,6 +2477,25 @@ report($SUMMARY);
         
         push (@optionsOrder, "MPI_SHUTDOWN_CMD");
         if (!$silent) { print outFile "MPI_SHUTDOWN_CMD                = \n"; }
+        
+        if (!$short) {      
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n";
+            print outFile "# Specify the command (and options) for executing an MPI process. \n";
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - value required: YES if MPI_DIR is supplied\n";
+            print outFile "# - The final option MUST be the option that specifies the number of processors,\n"; 
+            print outFile "#   but MUST omit the actual number--the individual tests will provide the\n";
+            print outFile "#   number of processors to be used.\n";
+            print outFile "#   Some examples:\n";
+            print outFile "#   MPIGO_CMD                     = \"prun -n \"\n";
+            print outFile "#   MPIGO_CMD                     = \"mpirun -np \"\n";
+            print outFile "\n";
+        }
+ 
+        push (@optionsOrder, "MPIGO_CMD");
+        if (!$silent) { print outFile "MPIGO_CMD                       = \n"; }
         
         if (!$short) {      
             print outFile "\n";  
