@@ -28,6 +28,7 @@
 
 #include "Kokkos_DenseMultiVector.hpp"
 #include "Kokkos_DenseVector.hpp"
+#include "Kokkos_Version.hpp"
 
 using namespace std;
 using namespace Kokkos;
@@ -44,6 +45,9 @@ int main(int argc, char* argv[])
   bool verbose = 0;
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
+  if (verbose)  
+     cout << Kokkos::Kokkos_Version() << endl << endl;  
+  
   int numberFailedTests = 0;
   string testName = "";
 

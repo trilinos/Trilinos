@@ -34,6 +34,7 @@
 #include "Kokkos_BaseSparseSolve.hpp"
 #include "Kokkos_Time.hpp"
 #include "Kokkos_Flops.hpp"
+#include "Kokkos_Version.hpp"
 #include "GenerateHbProblem.hpp"
 
 using namespace std;
@@ -87,6 +88,9 @@ int main(int argc, char* argv[])
   bool verbose = 0;
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
+  if (verbose)  
+     cout << Kokkos::Kokkos_Version() << endl << endl;  
+  
   int numberFailedTests = 0;
   string testName = "";
 

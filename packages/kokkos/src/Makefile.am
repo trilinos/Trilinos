@@ -53,10 +53,10 @@ UTIL_H = \
 	$(srcdir)/Kokkos_Flops.hpp \
 	$(srcdir)/Kokkos_Time.hpp \
 	$(srcdir)/Kokkos_Fortran_wrappers.hpp \
-	$(srcdir)/Kokkos_f77func.hpp 
+	$(srcdir)/Kokkos_f77func.hpp \
+     $(srcdir)/Kokkos_Version.hpp
 
 UTIL = \
-	$(srcdir)/Kokkos_Version.cpp \
 	$(srcdir)/Kokkos_dcrsmv.f \
 	$(srcdir)/Kokkos_dcrsmm.f 
 

@@ -40,7 +40,7 @@
 # Optional 3rd argument is email address for bugs.
 
 #  package name, version number, and e-mail address below
-AC_INIT(kokkos, 1.0, jmwille@sandia.gov)
+AC_INIT(kokkos, 1.1d, jmwille@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
@@ -52,7 +52,7 @@ echo "----------------------------------------"
 # preferably one that is unlikely to be removed or renamed.
 
 # #np# - file name below
-AC_CONFIG_SRCDIR(/src/Kokkos_Version.cpp)
+AC_CONFIG_SRCDIR(/src/Kokkos_Version.hpp)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
