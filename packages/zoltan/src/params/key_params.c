@@ -150,8 +150,8 @@ char *val)			/* value of variable */
       case 8:           /* Num_GID_Entries */
         if (result.def)
             result.ival = LB_NUM_ID_ENTRIES_DEF;
-        if (result.ival < 0) {
-	    sprintf(msg, "Invalid Num_GID_Entries value (%d) "
+        if (result.ival < 1) {
+	    sprintf(msg, "Invalid Num_GID_Entries value (%d); "
 		"being set to %d.", result.ival, LB_NUM_ID_ENTRIES_DEF);
             LB_PRINT_WARN(lb->Proc, yo, msg);
             result.ival = LB_NUM_ID_ENTRIES_DEF;
@@ -164,7 +164,7 @@ char *val)			/* value of variable */
         if (result.def)
             result.ival = LB_NUM_ID_ENTRIES_DEF;
         if (result.ival < 0) {
-	    sprintf(msg, "Invalid Num_LID_Entries value (%d) "
+	    sprintf(msg, "Invalid Num_LID_Entries value (%d); "
 		"being set to %d.", result.ival, LB_NUM_ID_ENTRIES_DEF);
             LB_PRINT_WARN(lb->Proc, yo, msg);
             result.ival = LB_NUM_ID_ENTRIES_DEF;
