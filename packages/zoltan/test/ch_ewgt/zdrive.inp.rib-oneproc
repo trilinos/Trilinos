@@ -1,4 +1,4 @@
-Decomposition Method 	= irb
+Decomposition Method 	= rib
 Zoltan Parameters	= comm_weight_dim=1
 File Type		= Chaco, initial procs = 1
 File Name		= ewgt

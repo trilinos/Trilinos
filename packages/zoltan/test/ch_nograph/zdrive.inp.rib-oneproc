@@ -1,5 +1,5 @@
-Decomposition Method    = irb
+Decomposition Method    = rib
 Zoltan Parameters       =
-File Type               = Chaco
+File Type               = Chaco, initial procs = 1
 File Name               = nograph
 Parallel Disk Info      = number=0
