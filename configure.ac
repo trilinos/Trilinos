@@ -53,6 +53,8 @@ TAC_ARG_ENABLE_FEATURE(belos, [Build belos], BELOS, no)
 
 TAC_ARG_ENABLE_FEATURE(claps, [Build claps], CLAPS, no)
 
+TAC_ARG_ENABLE_FEATURE(didasko, [Build didasko (a Trilinos tutorial)], DIDASKO, no)
+
 TAC_ARG_ENABLE_DEFAULT_FEATURE(epetra, [Build epetra], EPETRA)
 
 TAC_ARG_ENABLE_DEFAULT_FEATURE(epetraext, [Build epetraext], EPETRAEXT)
@@ -356,6 +358,17 @@ else
   BUILD_TPETRA=no
 fi
 AM_CONDITIONAL(BUILD_TPETRA, test "X$BUILD_TPETRA" != "Xno")
+
+if test "X$ac_cv_use_didasko" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/didasko])
+  BUILD_DIDASKO=yes
+  if test "X$ac_cv_use_didasko_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-didasko"
+  fi
+else
+  BUILD_DIDASKO=no
+fi
+AM_CONDITIONAL(BUILD_DIDASKO, test "X$BUILD_DIDASKO" != "Xno")
 
 AC_ARG_ENABLE(,[
 

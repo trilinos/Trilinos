@@ -18,6 +18,9 @@
 /* Define if want to build default-packages */
 #undef HAVE_DEFAULT_PACKAGES
 
+/* Define if want to build didasko */
+#undef HAVE_DIDASKO
+
 /* Define if want to build epetra */
 #undef HAVE_EPETRA
 
