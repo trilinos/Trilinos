@@ -33,8 +33,10 @@ static char *cvs_dr_exoII_io = "$Id$";
 
 #include <mpi.h>
 
+#ifndef LB_NO_NEMESIS
 #include "exodusII.h"
 #include "ne_nemesisI.h"
+#endif /* LB_NO_NEMESIS */
 
 #include "dr_const.h"
 #include "dr_input_const.h"
