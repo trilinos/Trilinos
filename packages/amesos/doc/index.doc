@@ -53,8 +53,16 @@ If Trilinos/config has a configure invocation script for your
 architecture, you can look for --with-mpi there.  
 Mpich, a portable implementation of MPI, is available from 
 the <a href="http://www-unix.mcs.anl.gov/mpi/mpich">MPICH website</a>. 
-LAM/MPI  is available from the <a href="http://www.lam-mpi.org/"> LAM/MPI website</a>.
+LAM/MPI  is available from the <a href="http://www.lam-mpi.org/"> LAM/MPI website</a>.  On many systems using the right mpicc and mpif77 for compilation and linking avoids the need to specify the mpi libraries and include path.  LAM/MPI uses hcc and hf77.  
+
+<li><b>For existing Trilinos users:</b> Trilinos uses configure to help
+find mpi and the blas.  If you have already configured Trilinos with
+mpi, configure presumably found mpi and the blas.  To find a lin
+command which configure used, cd to packages/epetra in your build
+directory and type: "grep conftest config.log | tail" and examine the
+last line.
 </ul>
+
 
 \subsection blas Finding Optimized BLAS for your architecture
 
@@ -64,7 +72,9 @@ If Trilinos/config has a configure invocation script for your
 architecture, you can look for --with-blas there.
 If your architecture does not offer optimized BLAS,
 <a href="http://math-atlas.sourceforge.net">ATLAS</a> will create an 
-optimized BLAS library for you.  </ul>
+optimized BLAS library for you.  
+
+</ul>
 
 \subsection thirdparty Installing third party software
 
@@ -189,6 +199,14 @@ those parameters, many other combinations work.
 
 <li><b>Copyright.</b>
 </ul>
+</ul>
+
+\subsection Common link errors
+
+<ul>
+<li>e_wsfe, do_fio and other undefined externals are fortran I/O routines required by some BLAS libraries.  Use a fortran linker or see the instructions above for determining find how configure links.
+<li>dgemm, dgemv, daxpy and other undefined externals are in the BLAS library.  See above for instructions on how to find a blas library.  
+<li>MPI_Init, MPI_Barrier and other undefined externals are from the MPI library.  See instructions above for finding the MPI library for your system.  
 </ul>
 
 \section config Configuring and building Trilinos with Amesos

@@ -41,7 +41,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(amesos, 0.1, ksstanl@sandia.gov)
+AC_INIT([amesos],[0.1],[ksstanl@sandia.gov])
 
 # Hello World!
 echo "----------------------------------------"
@@ -83,7 +83,7 @@ AM_INIT_AUTOMAKE(amesos, 0.1)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.52)
+AC_PREREQ(2.57)
 
 # Specify revision number of configure.ac that was used to generate
 # configure.
@@ -285,10 +285,10 @@ AM_CONDITIONAL(NEED_PARAMETER_LIST, false )
 #    Make sure that SuperLU_timer is in the SuperLU distributed library
 #
 amesos_libs=" " 
+#  AC_LANG_PUSH
+#  AC_LANG([C])
 
 if test "X$ac_cv_use_amesos_slud" != "Xno"; then
-  AC_LANG_SAVE
-  AC_LANG_C
 
   if test "X${HAVE_PKG_MPI}" != "Xyes"; then
     AC_MSG_ERROR([[Amesos/SuperludistOO requires MPI.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details]])
@@ -361,8 +361,6 @@ fi
 #    Make sure that DSC_Clock is in the library pointed to by amesos-dscpacklib
 #
 if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
-  AC_LANG_SAVE
-  AC_LANG_C
 
   if test "X${HAVE_PKG_MPI}" != "Xyes"; then
     AC_MSG_ERROR([[Amesos/DscpackOO requires MPI.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]])
@@ -417,8 +415,6 @@ fi
 #
 
 if test "X$ac_cv_use_amesos_slus" != "Xno"; then
-  AC_LANG_SAVE
-  AC_LANG_C
 
   TAC_ARG_WITH_SUB( amesos, slusdir, [Set SuperLU serial directory],  ${tac_with_trilinos3pldir}/SuperLU )
   AC_CHECK_FILE(${tac_with_amesos_slusdir})
@@ -509,7 +505,7 @@ fi
 
 
 
-
+#  AC_LANG_POP
 
 AC_SUBST(AMESOS_LIBS,${amesos_libs}) 
 
@@ -546,8 +542,6 @@ AC_SUBST(AMESOS_LIBS,${amesos_libs})
 ### In the future we need to be able to disable dependence on Kundert lib
 
 ## if test "X$ADDON_SLUD" != "Xno"; then
-##   AC_LANG_SAVE
-##   AC_LANG_C
 ##   AC_SEARCH_LIBS(SuperLU_timer_,[superludist],,
 ##   AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-ldflags (ex. --with-ldflags=-L/usr/path/lib).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]]))  
 ## fi
@@ -620,7 +614,7 @@ AC_CONFIG_FILES([
 		test/scripts/daily/mpi/Makefile
 		])
 
-AC_OUTPUT()
+AC_OUTPUT
 
 # Bye World!
 echo "----------------------------------------"
