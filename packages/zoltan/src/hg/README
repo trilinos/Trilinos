@@ -1,0 +1,5 @@
+This directory contains the source code for the serial 
+hypergraph partitioner developed for the Zoltan toolkit.
+Not for public distribution.
+
+The parallel hypergraph partitioner resides in the directory ../phg.

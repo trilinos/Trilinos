@@ -18,6 +18,7 @@ extern "C" {
 
 #include "hypergraph.h"
 
+/* Local refinement algorithms. */
 static ZOLTAN_HG_LOCAL_REF_FN local_no;
 static ZOLTAN_HG_LOCAL_REF_FN local_fm2baseline;
 static ZOLTAN_HG_LOCAL_REF_FN local_fm2;
@@ -272,6 +273,8 @@ int Zoltan_HG_move_vertex_kway (HGraph *hg, int vertex, int sour, int dest,
 }
 
 /****************************************************************************/
+/* FM 2-way refinement, baseline (not latest) implementation.               */
+/****************************************************************************/
 
 static int local_fm2baseline (
   ZZ *zz,
@@ -481,6 +484,7 @@ while (rth < &locked_list [hg->nVtx-1])
 }
 
 /****************************************************************************/
+/* FM 2-way refinement, latest & greatest implementation.                   */
 /****************************************************************************/
 
 static int local_fm2 (
@@ -652,6 +656,8 @@ int    best_imbalance, imbalance;
 }
 
 /***************************************************************************/
+/* FM k-way refinement.                                                     */
+/****************************************************************************/
 
 
 
@@ -884,6 +890,8 @@ char   *yo="local_fmkway";
   return ZOLTAN_OK;
 }
 
+/***************************************************************************/
+/* Greedy k-way refinement.                                                */
 /***************************************************************************/
 
 /* This algorithm is loosely based on "A Coarse-Grained Parallel Formulation */
