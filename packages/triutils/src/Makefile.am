@@ -162,13 +162,13 @@ libtriutils_a_LIBADD = $(XTRALDADD)
 lib_LIBRARIES = $(TRIUTILS_LIB)
 
 # ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
-pkginclude_HEADERS = $(TRIUTILS_H)
+include_HEADERS = $(TRIUTILS_H)
 
 # ------------------------------------------------------------------------
-# Special stuff to install in our special $(pkgexecincludedir)
+# Special stuff to install in our special $(execincludedir)
 # ------------------------------------------------------------------------
 
 # SPECIAL NOTE: Triutils_config.h is a machine-dependent file, so we need
@@ -176,8 +176,8 @@ pkginclude_HEADERS = $(TRIUTILS_H)
 # not a default installation directory, so we had to create it
 # special.
 
-pkgexecincludedir = $(exec_prefix)/include/triutils
-nodist_pkgexecinclude_HEADERS = Triutils_config.h
+execincludedir = $(exec_prefix)/include
+nodist_execinclude_HEADERS = Triutils_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

@@ -257,13 +257,13 @@ libaztecoo_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 lib_LIBRARIES = $(AZTECOO_LIB)
 
 # ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
-pkginclude_HEADERS = $(AZTECOO_H)
+include_HEADERS = $(AZTECOO_H)
 
 # ------------------------------------------------------------------------
-# Special stuff to install in our special $(pkgexecincludedir)
+# Special stuff to install in our special $(execincludedir)
 # ------------------------------------------------------------------------
 
 # SPECIAL NOTE: AztecOO_config.h is a machine-dependent file, so we need
@@ -271,8 +271,8 @@ pkginclude_HEADERS = $(AZTECOO_H)
 # not a default installation directory, so we had to create it
 # special.
 
-pkgexecincludedir = $(exec_prefix)/include/aztecoo
-nodist_pkgexecinclude_HEADERS = AztecOO_config.h
+execincludedir = $(exec_prefix)/include
+nodist_execinclude_HEADERS = AztecOO_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

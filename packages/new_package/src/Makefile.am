@@ -184,14 +184,14 @@ libnew_package_a_LIBADD = $(XTRALDADD)
 lib_LIBRARIES = $(NEW_PACKAGE_LIB)
 
 # ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-pkginclude_HEADERS = $(NEW_PACKAGE_H) 
+include_HEADERS = $(NEW_PACKAGE_H) 
 
 # ------------------------------------------------------------------------
-# Special stuff to install in our special $(pkgexecincludedir)
+# Special stuff to install in our special $(execincludedir)
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
@@ -200,10 +200,10 @@ pkginclude_HEADERS = $(NEW_PACKAGE_H)
 # not a default installation directory, so we had to create it
 # special.
 
+# All Trilinos headers are now installed in the same directory
+execincludedir = $(exec_prefix)/include
 #np# replace new_package with the name of the package being autotool'ed here
-pkgexecincludedir = $(exec_prefix)/include/new_package
-#np# replace new_package with the name of the package being autotool'ed here
-nodist_pkgexecinclude_HEADERS = New_Package_config.h
+nodist_execinclude_HEADERS = New_Package_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

@@ -337,21 +337,21 @@ lib_LIBRARIES = $(ML_LIB)
 
 
 # ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
-pkginclude_HEADERS = $(ML_H) 
+include_HEADERS = $(ML_H) 
 
 
 # ------------------------------------------------------------------------
-# Special stuff to install in our special $(pkgexecincludedir)
+# Special stuff to install in our special $(execincludedir)
 # ------------------------------------------------------------------------
 
 # SPECIAL NOTE: ml_config.h is a machine-dependent file, so we need
 # to install it in the machine-dependent directory. However, that is
 # not a default installation directory, so we had to create it
 # special.
-pkgexecincludedir = $(exec_prefix)/include/ml
-nodist_pkgexecinclude_HEADERS = ml_config.h
+execincludedir = $(exec_prefix)/include
+nodist_execinclude_HEADERS = ml_config.h
 
 
 # ------------------------------------------------------------------------
@@ -457,10 +457,9 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(libml_a_SOURCES) $(EXTRA_libml_a_SOURCES)
-HEADERS = $(nodist_pkgexecinclude_HEADERS) $(pkginclude_HEADERS)
+HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
 
-DIST_COMMON = $(pkginclude_HEADERS) Makefile.am Makefile.in \
-	ml_config.h.in
+DIST_COMMON = $(include_HEADERS) Makefile.am Makefile.in ml_config.h.in
 SOURCES = $(libml_a_SOURCES) $(EXTRA_libml_a_SOURCES)
 
 all: ml_config.h
@@ -1404,41 +1403,41 @@ ml_epetra_utils.obj: $(srcdir)/Utils/ml_epetra_utils.cpp
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_epetra_utils.obj `cygpath -w $(srcdir)/Utils/ml_epetra_utils.cpp`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
-nodist_pkgexecincludeHEADERS_INSTALL = $(INSTALL_HEADER)
-install-nodist_pkgexecincludeHEADERS: $(nodist_pkgexecinclude_HEADERS)
+includeHEADERS_INSTALL = $(INSTALL_HEADER)
+install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(pkgexecincludedir)
-	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
+	$(mkinstalldirs) $(DESTDIR)$(includedir)
+	@list='$(include_HEADERS)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(nodist_pkgexecincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f"; \
-	  $(nodist_pkgexecincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	  echo " $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f"; \
+	  $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f; \
 	done
 
-uninstall-nodist_pkgexecincludeHEADERS:
+uninstall-includeHEADERS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(nodist_pkgexecinclude_HEADERS)'; for p in $$list; do \
+	@list='$(include_HEADERS)'; for p in $$list; do \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(pkgexecincludedir)/$$f"; \
-	  rm -f $(DESTDIR)$(pkgexecincludedir)/$$f; \
+	  echo " rm -f $(DESTDIR)$(includedir)/$$f"; \
+	  rm -f $(DESTDIR)$(includedir)/$$f; \
 	done
-pkgincludeHEADERS_INSTALL = $(INSTALL_HEADER)
-install-pkgincludeHEADERS: $(pkginclude_HEADERS)
+nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
+install-nodist_execincludeHEADERS: $(nodist_execinclude_HEADERS)
 	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(pkgincludedir)
-	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	$(mkinstalldirs) $(DESTDIR)$(execincludedir)
+	@list='$(nodist_execinclude_HEADERS)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(pkgincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f"; \
-	  $(pkgincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(pkgincludedir)/$$f; \
+	  echo " $(nodist_execincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(execincludedir)/$$f"; \
+	  $(nodist_execincludeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(execincludedir)/$$f; \
 	done
 
-uninstall-pkgincludeHEADERS:
+uninstall-nodist_execincludeHEADERS:
 	@$(NORMAL_UNINSTALL)
-	@list='$(pkginclude_HEADERS)'; for p in $$list; do \
+	@list='$(nodist_execinclude_HEADERS)'; for p in $$list; do \
 	  f="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " rm -f $(DESTDIR)$(pkgincludedir)/$$f"; \
-	  rm -f $(DESTDIR)$(pkgincludedir)/$$f; \
+	  echo " rm -f $(DESTDIR)$(execincludedir)/$$f"; \
+	  rm -f $(DESTDIR)$(execincludedir)/$$f; \
 	done
 
 ETAGS = etags
@@ -1508,7 +1507,7 @@ check: check-am
 all-am: Makefile $(LIBRARIES) $(HEADERS) ml_config.h
 
 installdirs:
-	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(pkgexecincludedir) $(DESTDIR)$(pkgincludedir)
+	$(mkinstalldirs) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execincludedir)
 
 install: install-am
 install-exec: install-exec-am
@@ -1552,10 +1551,9 @@ info: info-am
 
 info-am:
 
-install-data-am: install-pkgincludeHEADERS
+install-data-am: install-includeHEADERS
 
-install-exec-am: install-libLIBRARIES \
-	install-nodist_pkgexecincludeHEADERS
+install-exec-am: install-libLIBRARIES install-nodist_execincludeHEADERS
 
 install-info: install-info-am
 
@@ -1571,23 +1569,22 @@ mostlyclean: mostlyclean-am
 
 mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
-	uninstall-nodist_pkgexecincludeHEADERS \
-	uninstall-pkgincludeHEADERS
+uninstall-am: uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
 .PHONY: GTAGS all all-am check check-am clean clean-generic \
 	clean-libLIBRARIES distclean distclean-compile distclean-depend \
 	distclean-generic distclean-hdr distclean-tags distdir dvi \
 	dvi-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-libLIBRARIES install-man \
-	install-nodist_pkgexecincludeHEADERS install-pkgincludeHEADERS \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic tags uninstall \
-	uninstall-am uninstall-info-am uninstall-libLIBRARIES \
-	uninstall-nodist_pkgexecincludeHEADERS \
-	uninstall-pkgincludeHEADERS
+	install-data-am install-exec install-exec-am \
+	install-includeHEADERS install-info install-info-am \
+	install-libLIBRARIES install-man \
+	install-nodist_execincludeHEADERS install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic tags uninstall uninstall-am \
+	uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

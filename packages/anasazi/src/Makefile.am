@@ -167,26 +167,23 @@ libanasazi_a_LIBADD = $(XTRALDADD)
 lib_LIBRARIES = $(ANASAZI_LIB)
 
 # ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-pkginclude_HEADERS = $(ANASAZI_H) 
+include_HEADERS = $(ANASAZI_H) 
 
 # ------------------------------------------------------------------------
-# Special stuff to install in our special $(pkgexecincludedir)
+# Special stuff to install in our special $(execincludedir)
 # ------------------------------------------------------------------------
 
-#np# replace new_package with the name of the package being autotool'ed here
 # SPECIAL NOTE: New_Package_config.h is a machine-dependent file, so we need
 # to install it in the machine-dependent directory. However, that is
 # not a default installation directory, so we had to create it
 # special.
 
-#np# replace new_package with the name of the package being autotool'ed here
-pkgexecincludedir = $(exec_prefix)/include/anasazi
-#np# replace new_package with the name of the package being autotool'ed here
-nodist_pkgexecinclude_HEADERS = Anasazi_config.h
+execincludedir = $(exec_prefix)/include
+nodist_execinclude_HEADERS = Anasazi_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

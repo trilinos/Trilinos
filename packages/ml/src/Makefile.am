@@ -253,13 +253,13 @@ libml_a_LIBADD = $(XTRALDADD)
 lib_LIBRARIES = $(ML_LIB)
 
 # ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
-pkginclude_HEADERS = $(ML_H) 
+include_HEADERS = $(ML_H) 
 
 # ------------------------------------------------------------------------
-# Special stuff to install in our special $(pkgexecincludedir)
+# Special stuff to install in our special $(execincludedir)
 # ------------------------------------------------------------------------
 
 # SPECIAL NOTE: ml_config.h is a machine-dependent file, so we need
@@ -267,8 +267,8 @@ pkginclude_HEADERS = $(ML_H)
 # not a default installation directory, so we had to create it
 # special.
 
-pkgexecincludedir = $(exec_prefix)/include/ml
-nodist_pkgexecinclude_HEADERS = ml_config.h
+execincludedir = $(exec_prefix)/include
+nodist_execinclude_HEADERS = ml_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

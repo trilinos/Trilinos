@@ -130,13 +130,13 @@ libbelos_a_LIBADD = $(XTRALDADD)
 lib_LIBRARIES = $(BELOS_LIB)
 
 # ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
-pkginclude_HEADERS = $(BELOS_H)
+include_HEADERS = $(BELOS_H)
 
 # ------------------------------------------------------------------------
-# Special stuff to install in our special $(pkgexecincludedir)
+# Special stuff to install in our special $(execincludedir)
 # ------------------------------------------------------------------------
 
 # SPECIAL NOTE: Belos_config.h is a machine-dependent file, so we need
@@ -144,8 +144,8 @@ pkginclude_HEADERS = $(BELOS_H)
 # not a default installation directory, so we had to create it
 # special.
 
-pkgexecincludedir = $(exec_prefix)/include/belos
-nodist_pkgexecinclude_HEADERS = Belos_config.h
+execincludedir = $(exec_prefix)/include
+nodist_execinclude_HEADERS = Belos_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

@@ -144,13 +144,13 @@ libifpack_a_LIBADD = $(XTRALDADD)
 lib_LIBRARIES = $(IFPACK_LIB)
 
 # ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
-pkginclude_HEADERS = $(IFPACK_H)
+include_HEADERS = $(IFPACK_H)
 
 # ------------------------------------------------------------------------
-# Special stuff to install in our special $(pkgexecincludedir)
+# Special stuff to install in our special $(execincludedir)
 # ------------------------------------------------------------------------
 
 # SPECIAL NOTE: Ifpack_config.h is a machine-dependent file, so we need
@@ -158,8 +158,8 @@ pkginclude_HEADERS = $(IFPACK_H)
 # not a default installation directory, so we had to create it
 # special.
 
-pkgexecincludedir = $(exec_prefix)/include/ifpack
-nodist_pkgexecinclude_HEADERS = Ifpack_config.h
+execincludedir = $(exec_prefix)/include
+nodist_execinclude_HEADERS = Ifpack_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

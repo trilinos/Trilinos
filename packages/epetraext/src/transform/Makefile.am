@@ -183,13 +183,13 @@ libepetraext_trans_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 lib_LIBRARIES = $(EPETRAEXT_TRANSFORM_LIB)
 
 # ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
-pkginclude_HEADERS = $(EPETRAEXT_TRANSFORM_H) 
+include_HEADERS = $(EPETRAEXT_TRANSFORM_H) 
 
 # ------------------------------------------------------------------------
-# Special stuff to install in our special $(pkgexecincludedir)
+# Special stuff to install in our special $(execincludedir)
 # ------------------------------------------------------------------------
 
 # SPECIAL NOTE: Epetra_config.h is a machine-dependent file, so we need
@@ -197,8 +197,8 @@ pkginclude_HEADERS = $(EPETRAEXT_TRANSFORM_H)
 # not a default installation directory, so we had to create it
 # special.
 
-pkgexecincludedir = $(exec_prefix)/include/epetraext
-nodist_pkgexecinclude_HEADERS =../EpetraExt_config.h
+execincludedir = $(exec_prefix)/include
+nodist_execinclude_HEADERS =../EpetraExt_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

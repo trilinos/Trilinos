@@ -158,11 +158,9 @@ EXTRA_libteuchos_a_SOURCES = \
 
 if USE_ALTERNATE_AR
 
-#np# replace new_package with the name of the package being autotool'ed here
 libteuchos_a_AR = $(ALTERNATE_AR)
 else
 
-#np# replace new_package with the name of the package being autotool'ed here
 libteuchos_a_AR = $(AR) cru
 
 endif
@@ -172,37 +170,31 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-#np# replace new_package with the name of the package being autotool'ed here
 libteuchos_a_LIBADD = $(XTRALDADD) 
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
 
-#np# replace new_package with the name of the package being autotool'ed here
 lib_LIBRARIES = $(TEUCHOS_LIB)
 
 # ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
+# List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
-#np# replace new_package with the name of the package being autotool'ed here
-pkginclude_HEADERS = $(TEUCHOS_H) 
+include_HEADERS = $(TEUCHOS_H) 
 
 # ------------------------------------------------------------------------
-# Special stuff to install in our special $(pkgexecincludedir)
+# Special stuff to install in our special $(execincludedir)
 # ------------------------------------------------------------------------
 
-#np# replace new_package with the name of the package being autotool'ed here
 # SPECIAL NOTE: New_Package_config.h is a machine-dependent file, so we need
 # to install it in the machine-dependent directory. However, that is
 # not a default installation directory, so we had to create it
 # special.
 
-#np# replace new_package with the name of the package being autotool'ed here
-pkgexecincludedir = $(exec_prefix)/include/teuchos
-#np# replace new_package with the name of the package being autotool'ed here
-nodist_pkgexecinclude_HEADERS = Teuchos_config.h
+execincludedir = $(exec_prefix)/include
+nodist_execinclude_HEADERS = Teuchos_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
