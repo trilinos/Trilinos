@@ -557,6 +557,7 @@ AC_CONFIG_FILES([
 		test/VerySimple/Makefile
 		test/AztecSimple/Makefile
 		test/2d_Poisson/Makefile
+		test/3d_Poisson/Makefile
 		test/Zoltan/Makefile
                 test/scripts/Makefile
                 test/scripts/daily/Makefile
