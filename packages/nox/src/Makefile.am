@@ -50,7 +50,7 @@ libnox_a_SOURCES = \
 	$(STATUSTEST) \
 	$(UTILS) 
 
-nodist_libnox_a_sources = \
+nodist_libnox_a_SOURCES = \
 	$(PRERELEASE)
 
 # ------------------------------------------------------------------------

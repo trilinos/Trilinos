@@ -130,7 +130,7 @@ libnox_a_SOURCES = \
 	$(UTILS) 
 
 
-nodist_libnox_a_sources = \
+nodist_libnox_a_SOURCES = \
 	$(PRERELEASE)
 
 
@@ -346,7 +346,10 @@ am_libnox_a_OBJECTS = NOX_Abstract_Vector.$(OBJEXT) \
 	NOX_StatusTest_Combo.$(OBJEXT) \
 	NOX_StatusTest_MaxIters.$(OBJEXT) \
 	NOX_StatusTest_NormWRMS.$(OBJEXT) NOX_Utils.$(OBJEXT)
-libnox_a_OBJECTS = $(am_libnox_a_OBJECTS)
+@BUILD_PRERELEASE_TRUE@nodist_libnox_a_OBJECTS = \
+@BUILD_PRERELEASE_TRUE@	NOX_Direction_QuasiNewton.$(OBJEXT)
+@BUILD_PRERELEASE_FALSE@nodist_libnox_a_OBJECTS =
+libnox_a_OBJECTS = $(am_libnox_a_OBJECTS) $(nodist_libnox_a_OBJECTS)
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I.
@@ -359,6 +362,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Manager.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Newton.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_NonlinearCG.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_QuasiNewton.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_SteepestDescent.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Direction_Tensor.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_LineSearch_Backtrack.Po \
@@ -392,7 +396,7 @@ HEADERS = $(nodist_pkgexecinclude_HEADERS) $(pkginclude_HEADERS)
 
 DIST_COMMON = $(pkginclude_HEADERS) ./stamp-h.in Makefile.am \
 	Makefile.in NOX_Config.h.in
-SOURCES = $(libnox_a_SOURCES)
+SOURCES = $(libnox_a_SOURCES) $(nodist_libnox_a_SOURCES)
 
 all: NOX_Config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -493,6 +497,8 @@ NOX_StatusTest_Combo.$(OBJEXT): $(srcdir)/NOX_StatusTest_Combo.C
 NOX_StatusTest_MaxIters.$(OBJEXT): $(srcdir)/NOX_StatusTest_MaxIters.C
 NOX_StatusTest_NormWRMS.$(OBJEXT): $(srcdir)/NOX_StatusTest_NormWRMS.C
 NOX_Utils.$(OBJEXT): $(srcdir)/NOX_Utils.C
+NOX_Direction_QuasiNewton.$(OBJEXT): \
+	$(srcdir)/NOX_Direction_QuasiNewton.C
 libnox.a: $(libnox_a_OBJECTS) $(libnox_a_DEPENDENCIES) 
 	-rm -f libnox.a
 	$(libnox_a_AR) libnox.a $(libnox_a_OBJECTS) $(libnox_a_LIBADD)
@@ -509,6 +515,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Newton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_NonlinearCG.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_QuasiNewton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_SteepestDescent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Direction_Tensor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_LineSearch_Backtrack.Po@am__quote@
@@ -870,6 +877,18 @@ NOX_Utils.obj: $(srcdir)/NOX_Utils.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Utils.Po' tmpdepfile='$(DEPDIR)/NOX_Utils.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Utils.obj `cygpath -w $(srcdir)/NOX_Utils.C`
+
+NOX_Direction_QuasiNewton.o: $(srcdir)/NOX_Direction_QuasiNewton.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_QuasiNewton.C' object='NOX_Direction_QuasiNewton.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_QuasiNewton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_QuasiNewton.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_QuasiNewton.o `test -f $(srcdir)/NOX_Direction_QuasiNewton.C || echo '$(srcdir)/'`$(srcdir)/NOX_Direction_QuasiNewton.C
+
+NOX_Direction_QuasiNewton.obj: $(srcdir)/NOX_Direction_QuasiNewton.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Direction_QuasiNewton.C' object='NOX_Direction_QuasiNewton.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Direction_QuasiNewton.Po' tmpdepfile='$(DEPDIR)/NOX_Direction_QuasiNewton.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Direction_QuasiNewton.obj `cygpath -w $(srcdir)/NOX_Direction_QuasiNewton.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 install-nodist_pkgexecincludeHEADERS: $(nodist_pkgexecinclude_HEADERS)
