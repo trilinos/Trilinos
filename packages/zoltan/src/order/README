@@ -1,0 +1,28 @@
+##############################################################################
+# Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
+# Copyright (c) 2000, Sandia National Laboratories.                          #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+
+ORDER DIRECTORY -- Zoltan ordering tools.
+------------------------------------------------------------------------
+
+order.c          -- Routines for computing orderings.
+
+order_struct.c   -- Routines to create, destroy, and access
+                     an ordering struct.
+
+order_const.h    -- Zoltan data structures for orderings;
+                    these data structures are private to the 
+                    library (i.e., not seen by the application). 
+                    Also includes macros and prototypes for Zoltan
+                    ordering functions.
+
