@@ -589,7 +589,7 @@ int ML_CSolve_Clean_SuperLU( void *vsolver, ML_CSolveFunc *func)
 
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
-   func->func_ptr( vsolver, 0, NULL, 0, NULL);
+   func->func_ptr( (ML_Solver *) vsolver, 0, NULL, 0, NULL);
 
    Amat = (SuperMatrix*) solver->Mat1;
    if (Amat != NULL )
@@ -711,7 +711,7 @@ int ML_Clean_CSolveSuperLU( void *vsolver, ML_CSolveFunc *func)
 
    solver = (ML_Solver *) vsolver;
    solver->reuse_flag = -999;
-   func->func_ptr( vsolver, 0, NULL, 0, NULL);
+   func->func_ptr( (ML_Solver *) vsolver, 0, NULL, 0, NULL);
 
    Amat = (SuperMatrix*) solver->Mat1;
    if (Amat != NULL ) {
@@ -808,7 +808,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       row_ptr[0] = nz_ptr;
       flag = 1;
       for (i = 0; i < osize; i++) {
-	flag = op->getrow->func_ptr((void*)op, 1, &i, space-nz_ptr, 
+	flag = op->getrow->func_ptr(op, 1, &i, space-nz_ptr, 
                               &(cols[nz_ptr]), &(vals[nz_ptr]), &length);
          if (flag == 0) break;
          zero_flag = 1;
@@ -943,7 +943,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
             solver->dble_params1 = NULL;
          }
          solver->reuse_flag = -999;
-         ML_SuperLU_Solve((void*)solver, 0, NULL, 0, NULL);
+         ML_SuperLU_Solve(solver, 0, NULL, 0, NULL);
          solver->reuse_flag = 0;
          /* Charles look at these  */
          /* if (solver->Mat1 != NULL )
