@@ -1,6 +1,7 @@
 #ifndef NUMPYARRAY_H
 #define NUMPYARRAY_H
 
+#define NO_IMPORT_ARRAY
 #include "numeric_include.h"
 
 #include <iostream>

@@ -8,8 +8,7 @@
 // Numeric/arrayobject.h directly.
 
 #include <Python.h>
-
-//#define PY_ARRAY_UNIQUE_SYMBOL Py_Array_PyTrilinos
+#define PY_ARRAY_UNIQUE_SYMBOL PyTrilinos
 #include <Numeric/arrayobject.h>
 
 #endif // numeric_include

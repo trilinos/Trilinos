@@ -332,5 +332,3 @@ PyArrayObject * NumPyWrapper::array_check(PyArrayObject * arr       ,
 
   return arr;
 }
-
-

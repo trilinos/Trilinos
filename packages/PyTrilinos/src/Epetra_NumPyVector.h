@@ -1,8 +1,10 @@
 #ifndef EPETRA_NUMPYVECTOR_H
 #define EPETRA_NUMPYVECTOR_H
 
-#include <Python.h>
-#include <Numeric/arrayobject.h>
+//#include <Python.h>
+//#include <Numeric/arrayobject.h>
+#define NO_IMPORT_ARRAY
+#include "numeric_include.h"
 
 #include "Epetra_SerialComm.h"
 #include "Epetra_BlockMap.h"
