@@ -69,8 +69,19 @@ void Trilinos_Util_CountMatrixMarket( const char *data_file,
     fgets( buffer, BUFSIZE, in_file ) ;
     bool symmetric = false ; 
     string headerline1 = buffer;
+#ifdef TFLOP
+    // This is a fix for Janus since its string class does not recognize
+    // string::npos.  The integer returned when "symmetric" is not found in
+    // the string makes no logical sense and must be a system dependent variable.
+    // However, since find returns the index of the first position in the
+    // string where "symmetric" is found, we will check to see if this
+    // number is larger than the buffer size.  This fix works for Janus, but is
+    // not recommended for other platforms since find may also return a
+    // negative number. ( HKT 3/16/2004 )
+    if ( headerline1.find("symmetric") < BUFSIZE ) symmetric = true;
+#else
     if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
-
+#endif
     fgets( buffer, BUFSIZE, in_file ) ;
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int i, j; 
