@@ -1,21 +1,21 @@
-Date:  April 16, 2003
+Date:  June 9, 2003
 
-FIRST CHECK-IN OF ANASAZI
+CURRENT STATUS OF ANASAZI
 --------------------------------------------
 
 NOTE:  	HTML Documentation for Anasazi can be created through doxygen using the doxygen_config file.  
-	This is only partially completed right now.
+	in the "doc" directory.  This is only partially completed right now.
 
-Source files:
+Source files (found in anasazi/src):
 -----------------------------
 AnasaziBlockArnoldi.hpp	
 	(block Arnoldi solver) 
 	This solver can compute the eigenvalues and eigenvectors of a nonsymmetric operator.
-	A restarting technique has been implemented, but not tested.  Its use is not recommended
-	at this time.  Debugging routines have been implemented to track the convergence of 
-	requested eigenvalues and validity of the orthogonal basis.  The parameters will be
-	discussed below, the default arguments of the constructor are in parentheses.  This
-	method is written using templates, so TYPE refers to the template argument <TYPE> which
+	A restarting technique has been implemented, and has passed initial testing.  It can be used
+	at this time with caution, i.e. look at debugging output.  Debugging routines have been 
+	implemented to track the convergence of requested eigenvalues and validity of the orthogonal basis.  
+	The parameters will be discussed below, the default arguments of the constructor are in parentheses.  
+	This method is written using templates, so TYPE refers to the template argument <TYPE> which
 	is the floating-point precision used during the calculations.
 	
 	Parameters:
@@ -33,6 +33,9 @@ AnasaziBlockArnoldi.hpp
 				"SM" - smallest magnitude
 				"SR" - smallest real part
 				"SI" - smallest imaginary part
+		step 	- (int) the number of steps to take in the expansion phase before checking
+			  for convergence.  This allows the user to check for convergence sooner than
+			  every restart.
 		restarts- (int) the number of restarts allows. (0) 
 			  Note: restarting block Arnoldi is not recommended at this time.
 
@@ -72,6 +75,25 @@ AnasaziMatrix.hpp
 	interfaces must be filled out by the user to describe the underlying vector spaces.
 	Two interfaces are provided at this time for Epetra and LOCA (see below).
 
+AnasaziPetraInterface.hpp
+	This interface allows AnasaziBlockArnoldi to operate on Epetra multivecs and
+	apply Epetra matrices.  An example is provided for this interface:  
+	BlockArnoldiPetraEx.cpp	
+
+AnasaziLOCAInterface.hpp
+	This interface allows AnasaziBlockArnoldi to operate on a vector of NOX abstract
+	vectors and use the NOX abstract group to apply the inverse Jacobian function.
+	
+
+Utilities (found in anasazi/utils):
+-----------------------------
+
+read_hb_matrix.cpp
+distrib_msr_matrix.cpp
+	These routines are needed for reading a matrix from a Harwell-Boeing
+	data set and distributing the matrix across the processors.  These are
+	both modified versions of those routines found in TrilinosUtils.
+
 AnasaziLAPACK.hpp
 AnasaziLAPACK.cpp
 AnasaziLAPACKwrappers.hpp
@@ -82,22 +104,10 @@ AnasaziBLASwrappers.hpp
 	These routines are needed internally for calculations on the subspace computed by
 	block Arnoldi.
 
-Interfaces:
------------------------------
-AnasaziPetraInterface.hpp
-	This interface allows AnasaziBlockArnoldi to operate on Epetra multivecs and
-	apply Epetra matrices.  An example is provided for this interface:  
-	BlockArnoldiPetraEx.cpp	
-AnasaziLOCAInterface.hpp
-	This interface allows AnasaziBlockArnoldi to operate on a vector of NOX abstract
-	vectors and use the NOX abstract group to apply the inverse Jacobian function.
-	This interface has not been thoroughly tested, so its correctness cannot be
-	insured at this time.
-
-Examples:
+Examples (found in anasazi/example):
 -----------------------------
 BlockArnoldiPetraEx.cpp
-	This example computes the eigenvalues of a discretized 2D Laplacian.  It shows
+	This example computes the eigenvalues of a discretized 1D Laplacian.  It shows
 	the construction of an Epetra matrix and initialization of an AnasaziMatrix and 
 	AnasaziMultiVec.  This example also demonstrates how the solver can be iterated
 	or solved and how to extract information from the solver.
