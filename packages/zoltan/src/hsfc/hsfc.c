@@ -79,6 +79,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    double  total_weight ;
 
    /* temporary variables, loop counters, etc. */
+   int        tmp;
    int        i, j, k ;            /* loop counters */
    double     sum ;
    int        done, out_of_tolerance ;    /* binary flags */
@@ -414,10 +415,11 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
          ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc proc list") ;
 
       /* Fill in export arrays */
-      for (j = i = 0 ; i < ndots ; i++)
-        if (dots[i].part != parts[i] || zz->Proc != Zoltan_LB_Part_To_Proc(zz, dots[i].part))
+      for (j = i = 0 ; i < ndots ; i++) {
+        tmp = Zoltan_LB_Part_To_Proc(zz, dots[i].part);
+        if (dots[i].part != parts[i] || zz->Proc != tmp)
           {
-          *((*export_procs)   +j) = Zoltan_LB_Part_To_Proc (zz, dots[i].part) ;
+          *((*export_procs)   +j) = tmp;
           *((*export_to_parts)+j) = dots[i].part ;
           if (zz->Num_GID > 0)
              ZOLTAN_SET_GID (zz, *export_gids + j*zz->Num_GID, gids + i*zz->Num_GID);
@@ -425,6 +427,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
              ZOLTAN_SET_LID (zz, *export_lids + j*zz->Num_LID, lids + i*zz->Num_LID);
           j++ ;
           }
+        }
       }
     ZOLTAN_TRACE_DETAIL (zz, yo, "Filled in export information") ;
 
