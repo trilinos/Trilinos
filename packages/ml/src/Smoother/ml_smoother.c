@@ -117,9 +117,6 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
    int    nprocs, mypid;
    double t1;
 #endif
-   ML_Sm_BGS_Data     *ml_data;
-   ML_Sm_ILUT_Data    *ilut_data;
-   ML_Sm_Schwarz_Data *schwarz_data;
 
 #ifdef ML_DETAILED_TIMING
    mypid  = ml_sm->my_level->comm->ML_mypid;
@@ -162,32 +159,12 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
    ml_sm->omega = 0;
    ml_sm->init_guess = ML_NONZERO;
    ml_sm->tol = 0;
-   if (ml_sm->data_destroy != NULL) 
+   if ((ml_sm->data_destroy != NULL) && (ml_sm->smoother->data != NULL)) {
       ml_sm->data_destroy( ml_sm->smoother->data );
+      ml_sm->smoother->data = NULL;
+   }
    ml_sm->data_destroy = NULL;
-   if ( ml_sm->smoother->internal == ML_Smoother_VBlockSGS ||
-        /* ml_sm->smoother->internal == ML_Smoother_BGS || */
-        ml_sm->smoother->internal == ML_Smoother_VBlockJacobi )
-   {
-      ml_data = ml_sm->smoother->data;
-      ML_Smoother_Destroy_BGS_Data(&(ml_data));
-      ml_sm->smoother->data = NULL;
-   }
-   if ( ml_sm->smoother->internal == ML_Smoother_OverlappedILUT &&
-        ml_sm->smoother->data != NULL )
-   {
-      ilut_data = ml_sm->smoother->data;
-      ML_Smoother_Destroy_ILUT_Data(&(ilut_data));
-      ml_sm->smoother->data = NULL;
-   }
-   if ( ((ml_sm->smoother->internal == ML_Smoother_VBlockAdditiveSchwarz) ||
-         (ml_sm->smoother->internal == ML_Smoother_VBlockMultiplicativeSchwarz)) &&
-        ml_sm->smoother->data != NULL )
-   {
-      schwarz_data = ml_sm->smoother->data;
-      ML_Smoother_Destroy_Schwarz_Data(&(schwarz_data));
-      ml_sm->smoother->data = NULL;
-   }
+
    ML_memory_free((void**)&(ml_sm->smoother));
    if (ml_sm->label != NULL) { free(ml_sm->label); ml_sm->label = NULL; }
 
@@ -202,6 +179,7 @@ int ML_Smoother_Set_Label( ML_Smoother *smoo, char *label)
 {
   int size;
 
+   if (smoo->label != NULL) { free(smoo->label); smoo->label == NULL; }
    size = strlen(label) + 1;
    smoo->label = (char *) malloc(size*sizeof(char));
    if (smoo->label == NULL) 
@@ -266,7 +244,7 @@ pre->init_guess = init_guess;
 int ML_Smoother_Set(ML_Smoother *smoo,int internal_or_external,void *data,
                     int (*internal)(void*,int,double*,int,double *),
                     int (*external)(void*,int,double*,int,double *), 
-                    int ntimes, double omega)
+                    int ntimes, double omega, char *str)
 {
    if (internal_or_external == ML_EXTERNAL) 
    {
@@ -281,6 +259,7 @@ int ML_Smoother_Set(ML_Smoother *smoo,int internal_or_external,void *data,
    smoo->smoother->data= data;
    smoo->ntimes = ntimes;
    smoo->omega = omega;
+   if (str != NULL) ML_Smoother_Set_Label( smoo, str);
    return 0;
 }
 
@@ -1771,12 +1750,12 @@ int ML_Smoother_Create_BGS_Data(ML_Sm_BGS_Data **data)
 /* Destructor for Sm_BGS_Data                                          */
 /* ******************************************************************** */
 
-int ML_Smoother_Destroy_BGS_Data(ML_Sm_BGS_Data **data)
+void ML_Smoother_Destroy_BGS_Data(void *data)
 {
    int i;
    ML_Sm_BGS_Data *ml_data;
 
-   ml_data = (*data);
+   ml_data = (ML_Sm_BGS_Data *) data;
    if ( ml_data->blockfacts != NULL )
    {
       for ( i = 0; i < ml_data->Nblocks; i++ )
@@ -1791,9 +1770,8 @@ int ML_Smoother_Destroy_BGS_Data(ML_Sm_BGS_Data **data)
    }
    if ( ml_data->blocklengths != NULL )
       free( ml_data->blocklengths );
-   ml_data->blockmap = NULL;
-   ML_memory_free((void**) data);
-   return 0;
+   free(ml_data->blockmap);
+   ML_memory_free((void**) &ml_data);
 }
 
 /* ************************************************************************* */
@@ -1846,17 +1824,16 @@ int ML_Smoother_Create_ILUT_Data(ML_Sm_ILUT_Data **data)
 /* Destructor for ML_Sm_ILUT_Data                                            */
 /* ************************************************************************* */
 
-int ML_Smoother_Destroy_ILUT_Data(ML_Sm_ILUT_Data **data)
+void ML_Smoother_Destroy_ILUT_Data(void *data)
 {
    ML_Sm_ILUT_Data *ml_data;
 
-   ml_data = (ML_Sm_ILUT_Data *) (*data);
+ 
+   ml_data = (ML_Sm_ILUT_Data *) data;
    if ( ml_data->mat_ia != NULL ) free(ml_data->mat_ia);
    if ( ml_data->mat_ja != NULL ) free(ml_data->mat_ja);
    if ( ml_data->mat_aa != NULL ) free(ml_data->mat_aa);
-   ML_memory_free( (void **) data );
-   (*data) = NULL;
-   return 0;
+   ML_memory_free( (void **) &ml_data);
 }
 
 /* ************************************************************************* */
@@ -1894,7 +1871,7 @@ int ML_Smoother_Create_Schwarz_Data(ML_Sm_Schwarz_Data **data)
 /* Destructor for ML_Sm_Schwarz_Data                                         */
 /* ************************************************************************* */
 
-int ML_Smoother_Destroy_Schwarz_Data(ML_Sm_Schwarz_Data **data)
+void ML_Smoother_Destroy_Schwarz_Data(void *data)
 {
    int                i;
    ML_Sm_Schwarz_Data *ml_data;
@@ -1902,7 +1879,7 @@ int ML_Smoother_Destroy_Schwarz_Data(ML_Sm_Schwarz_Data **data)
    SuperMatrix        *A, *L, *U;
 #endif
 
-   ml_data = (ML_Sm_Schwarz_Data *) (*data);
+   ml_data = (ML_Sm_Schwarz_Data *) data;
    if ( ml_data->bmat_ia  != NULL ) 
    {
       for ( i = 0; i < ml_data->nblocks; i++ ) free(ml_data->bmat_ia[i]);
@@ -1997,9 +1974,7 @@ int ML_Smoother_Destroy_Schwarz_Data(ML_Sm_Schwarz_Data **data)
       free( ml_data->perm_r );
    }
 #endif
-   ML_memory_free( (void **) data );
-   (*data) = NULL;
-   return 0;
+   ML_memory_free( (void **) &ml_data);
 }
 
 /* ************************************************************************* */
@@ -2098,12 +2073,17 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
       printf("ML_Gen_VBGSFacts : Nblocks = %d.\n", Nblocks);
       exit(1);
    }
-   dataptr->blockmap = blockIndices;
+
    if ( blockIndices == NULL )
    { 
       printf("ML_Gen_VBGSFacts : blocking information not available.\n");
       exit(1);
    }
+   dataptr->blockmap = (int *) malloc( Nrows * sizeof(int));
+   if (dataptr->blockmap == NULL) 
+      pr_error("ML_Smoother_Gen_VBGSFacts: out of space\n");
+   for (i = 0; i < Nrows; i++) dataptr->blockmap[i] = blockIndices[i];
+
    dataptr->blocklengths = (int*) malloc( Nblocks * sizeof(int));
    block_sizes = dataptr->blocklengths;
 
@@ -2154,7 +2134,7 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    cols = (int    *) malloc(allocated_space*sizeof(int    ));
    vals = (double *) malloc(allocated_space*sizeof(double ));
    if (vals == NULL) 
-      pr_error("Error in ML_Gen_VBJacobiFacts: Not enough space\n");
+      pr_error("Error in ML_Smoother_Gen_VBGSFacts: Not enough space\n");
 
    for ( i = 0; i < Nblocks; i++) block_sizes[i] = 0; 
    for (i = 0; i < Nrows; i++) 
@@ -2196,7 +2176,8 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
                         perms[i], &info);
       if (info != 0)
       {
-         printf("Error in ML_Gen_VBJacobi: dgetrf returned %d (!=0)\n",info);
+         printf("Error in ML_Smoother_Gen_VBGSFacts: dgetrf returned %d (!=0)\n",info);
+         printf("This was caused by block %d of size %d\n",i,length);
          exit(1);
       }
    }

@@ -892,6 +892,8 @@ int ML_Gen_CoarseSolverXYT( ML *ml, int i)
   free(local2global);
 
   ml->SingleLevel[i].csolve->data_destroy = ML_XYTfree;
+  ML_CSolve_Set_Label( ml->SingleLevel[i].csolve, "XYT");
+
 
 #ifdef ML_TIMING
    t0 = GetClock() - t0;

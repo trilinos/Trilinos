@@ -132,7 +132,7 @@ extern  int ML_Smoother_Apply(ML_Smoother *,int,double *,int,double*,int);
 extern  int ML_Smoother_Set(ML_Smoother *, int, void *,
                  int (*internal)(void*,int,double*,int,double *),
                  int (*external)(void*,int,double*,int,double *),
-                 int, double);
+                 int, double, char *);
 extern  int ML_Smoother_Jacobi(void *, int, double *x, int, double *);
 extern  int ML_Smoother_GaussSeidel(void *, int, double *, int, double *);
 extern  int ML_Smoother_SGS(void *, int, double *, int, double *);
@@ -155,14 +155,14 @@ extern  int ML_Smoother_VBlockMultiplicativeSchwarz(void *,int,double*,int,doubl
 /* ******************************************************************** */
 
 extern  int ML_Smoother_Create_BGS_Data(ML_Sm_BGS_Data **data);
-extern  int ML_Smoother_Destroy_BGS_Data(ML_Sm_BGS_Data **data);
+extern void ML_Smoother_Destroy_BGS_Data(void *data);
 extern void ML_Smoother_Clean_BGS_Data(void *data);
 extern  int ML_Smoother_Create_ILUT_Data(ML_Sm_ILUT_Data **data);
-extern  int ML_Smoother_Destroy_ILUT_Data(ML_Sm_ILUT_Data **data);
+extern void ML_Smoother_Destroy_ILUT_Data(void *data);
 extern  int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **, ML_Operator *,int); 
 extern  int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data**,ML_Operator*,int,int*); 
 extern  int ML_Smoother_Create_Schwarz_Data(ML_Sm_Schwarz_Data **data);
-extern  int ML_Smoother_Destroy_Schwarz_Data(ML_Sm_Schwarz_Data **data);
+extern void ML_Smoother_Destroy_Schwarz_Data(void *data);
 extern void ML_Smoother_Clean_ParaSails(void *data);
 
 extern  int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *, ML_Operator *, 
