@@ -221,14 +221,14 @@ Symbolic and numeric factorizations are computed using methods
   A_Base->SymbolicFactorization();
   A_Base->NumericFactorization();
 \end{verbatim}
-The numeric factorization phase will checl whether a symbolic
+The numeric factorization phase will check whether a symbolic
 factorization exists or not. If not, method
 \verb!SymbolicFactorization()! is invoked.  Solution is computed (after
 setting of LHS and RHS in the linear problem), using
 \begin{verbatim}
   A_Base->Solve();
 \end{verbatim}
-The solution phase will checl whether a numeric factorization exists or
+The solution phase will check whether a numeric factorization exists or
 not. If not, method \verb!SymbolicFactorization()! is called.
 
 Users must provide the nonzero structure of the matrix for the symbolic

@@ -41,7 +41,7 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Amesos_Factory.h"
+#include "Amesos.h"
 #include "Trilinos_Util_CommandLineParser.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 
   // initialize Amesos solver  
   Amesos_BaseSolver * Solver;
-  Amesos_Factory A_Factory;
+  Amesos Amesos_Factory;
 
   // empty parameter list
   Teuchos::ParameterList List;
@@ -90,11 +90,11 @@ int main(int argc, char *argv[]) {
 
   switch( choice ) {
   case 0:
-    Solver = A_Factory.Create(AMESOS_KLU, *Problem, List );
+    Solver = A_Factory.Create("Amesos_Klu", *Problem);
     break;
 
   case 1:
-    Solver = A_Factory.Create(AMESOS_UMFPACK, *Problem, List );
+    Solver = A_Factory.Create("Amesos_Umfpack", *Problem);
     break;
 
   }
