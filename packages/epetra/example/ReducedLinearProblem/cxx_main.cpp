@@ -12,7 +12,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Export.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_CrsSingletonFilter.h"
+#include "Epetra_CrsSingletonFilter_new.h"
 
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_CrsMatrix.h"
@@ -89,10 +89,10 @@ int main(int argc, char *argv[]) {
   Epetra_LinearProblem FullProblem(A, x, b); 
   
   Epetra_Time ReductionTimer(Comm);
-  Epetra_CrsSingletonFilter SingletonFilter(&FullProblem);
+  Epetra_CrsSingletonFilter SingletonFilter;
   Comm.Barrier();
   double reduceInitTime = ReductionTimer.ElapsedTime();
-  SingletonFilter.Analyze();
+  SingletonFilter.Analyze(A);
   Comm.Barrier();
   double reduceAnalyzeTime = ReductionTimer.ElapsedTime() - reduceInitTime;
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     cout << "Singletons not found" << endl;
     exit(1);
   }
-  SingletonFilter.ConstructReducedProblem();
+  SingletonFilter.ConstructReducedProblem(&FullProblem);
   Comm.Barrier();
   double reduceConstructTime = ReductionTimer.ElapsedTime() - reduceInitTime;
 
