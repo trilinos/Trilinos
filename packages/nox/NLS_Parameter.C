@@ -65,7 +65,7 @@ NLS_Parameter::NLS_Parameter(const string& value) :
 {
 }
 
-NLS_Parameter::NLS_Parameter(const List& value) : 
+NLS_Parameter::NLS_Parameter(const NLS_ParameterList& value) : 
   type(LIST),
   bval(false),
   ival(0),
@@ -109,7 +109,7 @@ void NLS_Parameter::setValue(const string& value)
   isused = false;
 }
 
-void NLS_Parameter::setValue(const List& value)
+void NLS_Parameter::setValue(const NLS_ParameterList& value)
 {
   type = LIST;
   lval = &value;
@@ -166,7 +166,7 @@ const string& NLS_Parameter::getStringValue() const
   return sval;
 }
 
-const List& NLS_Parameter::getListValue() const
+const NLS_ParameterList& NLS_Parameter::getListValue() const
 {
   isused = true;
   return *lval;

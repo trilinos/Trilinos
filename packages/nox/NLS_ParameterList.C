@@ -57,7 +57,7 @@ void NLS_ParameterList::setParameter(const string& name, const string& value)
 }
 
 //PRIVATE
-bool NLS_ParameterList::isRecursive(const List& l) const
+bool NLS_ParameterList::isRecursive(const NLS_ParameterList& l) const
 {
   // Check if l or any of its sublists points to "this"
   if (&l == this)
@@ -72,7 +72,7 @@ bool NLS_ParameterList::isRecursive(const List& l) const
   return false;
 }
 
-bool NLS_ParameterList::setParameter(const string& name, const List& value)
+bool NLS_ParameterList::setParameter(const string& name, const NLS_ParameterList& value)
 {
   // Cannot add this list if it or any of its sublists is this!
   if (isRecursive(value)) 
@@ -126,7 +126,7 @@ const string& NLS_ParameterList::getParameter(const string& name, const string& 
   return nominal;
 }
   
-const List& NLS_ParameterList::getParameter(const string& name, const List& nominal) const
+const NLS_ParameterList& NLS_ParameterList::getParameter(const string& name, const NLS_ParameterList& nominal) const
 {
   PCIterator i = params.find(name);
   if ((i != params.end()) && (i->second.isList()))

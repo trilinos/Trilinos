@@ -20,9 +20,10 @@
 //! Manipulating lists of parameters
 class NLS_ParameterList {
 
-// Useful typedefs
-typedef map<string, NLS_Parameter> ParamContainer;
-typedef ParamContainer::const_iterator PCIterator;
+  //! Parameter container typedef
+  typedef map<string, NLS_Parameter> ParamContainer;
+  //! Parameter container iterator typedef
+  typedef ParamContainer::const_iterator PCIterator;
 
 public:
 
@@ -51,7 +52,7 @@ public:
   //! Note that this only retains a reference to the list, not a copy.
   //! Returns false is the "value" cannot be added. 
   //! This happens when "value" contains "this".
-  bool setParameter(const string& name, const List& value);
+  bool setParameter(const string& name, const NLS_ParameterList& value);
   //@}
 
   /** @name Getting Parameters 
@@ -67,7 +68,7 @@ public:
   double getParameter(const string& name, double nominal) const;
   const string& getParameter(const string& name, const char* nominal) const;
   const string& getParameter(const string& name, const string& nominal) const;
-  const List& getParameter(const string& name, const List& nominal) const;
+  const NLS_ParameterList& getParameter(const string& name, const NLS_ParameterList& nominal) const;
   //@}
 
   //! Return true if a parameter with this name exists.
@@ -80,7 +81,7 @@ public:
 private:
 
   //! Check to see if "l" or any of its sublists is "this"
-  bool isRecursive(const List& l) const;
+  bool isRecursive(const NLS_ParameterList& l) const;
 
 
 private:
