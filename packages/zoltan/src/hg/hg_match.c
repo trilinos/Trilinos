@@ -215,10 +215,18 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 }
 #endif
 
-static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching pack, int *limit)
+static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
    {
-   int i, j, *edges=NULL, edge, random, vertex ;
+   int i, j, *edges=NULL, edge, random, vertex, *Hindex, n, temp ;
    char *yo = "matching_rem" ;
+
+   if (!(Hindex    = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nEdge+1)) ))
+      {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR ;
+      }
+   for (i=0; i<=hg->nEdge; i++)
+      Hindex[i] = hg->hindex[i];
 
    if (!(edges = (int *) ZOLTAN_MALLOC (hg->nEdge*sizeof(int))))
       {
@@ -233,25 +241,32 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching pack, int *limit
       random = Zoltan_HG_Rand() % i ;
       edge = edges[random] ;
       edges[random] = edges[i-1] ;
-
-      for (j = hg->hindex[edge] ; j < hg->hindex[edge+1]; j++)
-         if (pack[hg->hvertex[j]] == hg->hvertex[j])
+      for (j = Hindex[edge]++ ; j < hg->hindex[edge+1]; j = Hindex[edge]++)
+         if (match[hg->hvertex[j]] == hg->hvertex[j])
             {
             vertex = hg->hvertex[j] ;
-            for (j++ ; j < hg->hindex[edge+1] && (*limit)>0 ; j++)
-                if (pack[hg->hvertex[j]] == hg->hvertex[j])
-                   {
-                   pack[vertex] = hg->hvertex[j] ;
-                   pack [hg->hvertex[j]] = vertex ;
-                   (*limit)--;
-                   break ;
-                   }
+            while (hg->hindex[edge+1] > (j=Hindex[edge]++))
+               {
+               n = Zoltan_HG_Rand() % (hg->hindex[edge+1]-j) ;
+               temp = hg->hvertex[j] ;
+               hg->hvertex[j]   = hg->hvertex[j+n] ;
+               hg->hvertex[j+n] = temp ;
+               if (match[hg->hvertex[j]] == hg->hvertex[j])
+                  {
+                  match[vertex]          = hg->hvertex[j] ;
+                  match [hg->hvertex[j]] = vertex ;
+                  (*limit)-- ;
+                  break ;
+                  }
+               }
             break ;
             }
       }
+   ZOLTAN_FREE ((void **) &Hindex);
    ZOLTAN_FREE ((void **) &edges) ;
    return ZOLTAN_OK ;
    }
+
 
 /*****************************************************************************/
 /* Replacing graph version below with hypergraph version */
@@ -288,9 +303,9 @@ static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
 }
 #endif
 
-static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching pack, int *limit)
+static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limit)
    {
-   int i, j, edge, random, *vertices=NULL, vertex, count ;
+   int i, j, edge, random, *vertices=NULL, vertex, *Hindex, n, temp, *stack, pstack ;
    char *yo = "matching_rrm" ;
 
    if (!(vertices  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int))))
@@ -299,40 +314,65 @@ static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching pack, int *limit
       return ZOLTAN_MEMERR;
       }
    for (i = 0 ; i < hg->nVtx ;  i++)
-      vertices[i] = pack[i] = i ;
+      vertices[i] = i ;
+   if (!(Hindex    = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nEdge+1)) ))
+      {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR ;
+      }
+   for (i=0; i<=hg->nEdge; i++)
+      Hindex[i] = hg->hindex[i];
+   if (!(stack    = (int *) ZOLTAN_MALLOC (sizeof (int) * (hg->nEdge+1)) ))
+      {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR ;
+      }
 
    for (i = hg->nVtx ; i > 0 && (*limit)>0; i--)
       {
       random = Zoltan_HG_Rand() % i ;
       vertex = vertices[random] ;
       vertices[random] = vertices[i-1] ;
-      if (pack[vertex] != vertex)
+      if (match[vertex] != vertex)
          continue ;          /* vertex already packed, move on */
 
-      count = hg->vindex[vertex+1] - hg->vindex[vertex] ;  /* count edges */
-      if (count == 0)
+      pstack = 0 ;
+      for (j = hg->vindex[vertex] ; j < hg->vindex[vertex+1] ; j++)
+         {
+         edge = hg->vedge[j] ;
+         if (hg->hindex[edge+1]- Hindex[edge] > 1)
+            stack[pstack++] = edge ;
+         }
+      if (pstack == 0)
          continue ;
+      edge = stack[Zoltan_HG_Rand() % pstack]  ;
 
-      edge = hg->vedge[hg->vindex[vertex] + (Zoltan_HG_Rand() % count)] ;  /* random edge */
-      for (j = hg->hindex[edge] ; j < hg->hindex[edge+1] ; j++)
-         if (pack[hg->hvertex[j]] == hg->hvertex[j])
+      for (j = Hindex[edge]++ ; j < hg->hindex[edge+1] ; j = Hindex[edge]++)
+         if (match[hg->hvertex[j]] == hg->hvertex[j])
             {
             vertex = hg->hvertex[j] ;
-            for (j++ ; j < hg->hindex[edge+1] && (*limit)>0; j++)
-               if (pack[hg->hvertex[j]] == hg->hvertex[j])
+            while (hg->hindex[edge+1] > (j=Hindex[edge]++))
+               {
+               n = Zoltan_HG_Rand() % (hg->hindex[edge+1]-j) ;
+               temp = hg->hvertex[j] ;
+               hg->hvertex[j]   = hg->hvertex[j+n] ;
+               hg->hvertex[j+n] = temp ;
+               if (match[hg->hvertex[j]] == hg->hvertex[j])
                   {
-                  pack[vertex]         = hg->hvertex[j] ;
-                  pack[hg->hvertex[j]] = vertex ;
-                  (*limit)--;
+                  match[vertex]         = hg->hvertex[j] ;
+                  match[hg->hvertex[j]] = vertex ;
+                  (*limit)-- ;
                   break ;
                   }
+               }
             break ;
             }
       }
+   ZOLTAN_FREE ((void **) &stack) ;
    ZOLTAN_FREE ((void **) &vertices) ;
+   ZOLTAN_FREE ((void **) &Hindex);
    return ZOLTAN_OK ;
    }
-
 /*****************************************************************************/
 /* Replacing graph version below with hypergraph version */
 #ifdef RTHRTH
