@@ -1441,7 +1441,7 @@ int ML_Aggregate_CoarsenVBMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
          index2--;
       for (j=index1; j>index2; j--)
       {
-         if (j==i && i != 0)
+         if (j<i && i != 0)
          {
             fprintf( stderr,
 		     "*ML*ERR* check the code for blockrow %d\n*ML*ERR* (file %s, line %d)\n",
