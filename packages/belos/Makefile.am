@@ -79,9 +79,10 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 
 if BUILD_TESTS
 TEST_SUBDIR=test
+UTILS_SUBDIR=utils
 endif
 
-SUBDIRS = src $(TEST_SUBDIR)
+SUBDIRS = src $(UTILS_SUBDIR) $(TEST_SUBDIR)
  
 
 
