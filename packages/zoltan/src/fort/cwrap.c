@@ -802,8 +802,8 @@ int LB_fw_Balance22(int *addr_lb, int *nbytes, int *changes, int *num_import,
                     );
 }
 
-void LB_fw_Eval(int *addr_lb, int *nbytes, int *print_stats, int *vwgt_dim,
-                int *ewgt_dim, int *nobj, float *obj_wgt, int *cut_wgt,
+void LB_fw_Eval(int *addr_lb, int *nbytes, int *print_stats,
+                int *nobj, float *obj_wgt, int *cut_wgt,
                 int *nboundary, int *nadj, int *ierr)
 {
    struct LB_Struct *lb;
@@ -813,7 +813,7 @@ void LB_fw_Eval(int *addr_lb, int *nbytes, int *print_stats, int *vwgt_dim,
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
    LB_Current_lb = lb;
 
-   LB_Eval(lb, *print_stats, *vwgt_dim, *ewgt_dim, nobj, obj_wgt, cut_wgt,
+   LB_Eval(lb, *print_stats, nobj, obj_wgt, cut_wgt,
            nboundary, nadj, ierr);
 }
 

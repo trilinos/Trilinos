@@ -673,13 +673,13 @@ end interface
 
 interface
 !NAS$ ALIEN "F77 lb_fw_eval"
-subroutine LB_fw_Eval(lb,nbytes,print_stats,vwgt_dim,ewgt_dim,nobj,obj_wgt, &
+subroutine LB_fw_Eval(lb,nbytes,print_stats,nobj,obj_wgt, &
                       cut_wgt,nboundary,nadj,ierr)
 use zoltan_types
 use lb_user_const
 implicit none
 integer(LB_INT), dimension(*) INTENT_IN lb
-integer(LB_INT) INTENT_IN nbytes, print_stats, vwgt_dim, ewgt_dim
+integer(LB_INT) INTENT_IN nbytes, print_stats
 integer(LB_INT), intent(out) :: nobj, cut_wgt, nboundary, nadj, ierr
 real(LB_FLOAT), intent(out) :: obj_wgt(*)
 end subroutine LB_fw_Eval
@@ -1570,11 +1570,10 @@ f90LB_Balance22 = LB_fw_Balance22(lb_addr,nbytes,changes, &
                              export_local_ids,export_procs)
 end function f90LB_Balance22
 
-subroutine f90LB_Eval(lb,print_stats,vwgt_dim,ewgt_dim,nobj,obj_wgt, &
+subroutine f90LB_Eval(lb,print_stats,nobj,obj_wgt, &
                       cut_wgt,nboundary,nadj,ierr)
 type(LB_Struct) INTENT_IN lb
 logical INTENT_IN print_stats
-integer(LB_INT) INTENT_IN vwgt_dim, ewgt_dim
 integer(LB_INT), intent(out) :: nobj, cut_wgt, nboundary, nadj, ierr
 real(LB_FLOAT), intent(out) :: obj_wgt(:)
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
@@ -1588,7 +1587,7 @@ if (print_stats) then
 else
    int_print_stats = 0
 endif
-call LB_fw_Eval(lb_addr,nbytes,int_print_stats,vwgt_dim,ewgt_dim,nobj,obj_wgt, &
+call LB_fw_Eval(lb_addr,nbytes,int_print_stats,nobj,obj_wgt, &
                 cut_wgt,nboundary,nadj,ierr)
 end subroutine f90LB_Eval
 
