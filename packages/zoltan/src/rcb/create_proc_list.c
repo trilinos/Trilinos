@@ -128,25 +128,27 @@ int LB_Create_Proc_List(
         recieving.  The processor which causes k > j is the first processor
         that we send dots to.  We continue to send dots to processors beyond
         that one until we run out of dots to send. */
-     for (i = j = 0; i < rank; i++)
-        if (sets[i] == set)                  /* only overwrote other half */
-           j += send[i];
-     for (i = k = 0; k <= j; i++)
-        if (sets[i] != set)
-           k += send[i];
-     i--;
-     num_to = (outgoing < (k - j)) ? outgoing : (k - j);
-     for (k = 0; k < num_to; k++)
-        proclist[k] = i;
-     outgoing -= num_to;
-     while (outgoing > 0) {
-        i++;
-        while (sets[i] == set)
-           i++;
-        num_to = (outgoing < send[i]) ? outgoing : send[i];
-        outgoing -= num_to;
-        for (j = 0; j < num_to; j++, k++)
+     if (outgoing) {
+        for (i = j = 0; i < rank; i++)
+           if (sets[i] == set)               /* only overwrote other half */
+              j += send[i];
+        for (i = k = 0; k <= j; i++)
+           if (sets[i] != set)
+              k += send[i];
+        i--;
+        num_to = (outgoing < (k - j)) ? outgoing : (k - j);
+        for (k = 0; k < num_to; k++)
            proclist[k] = i;
+        outgoing -= num_to;
+        while (outgoing > 0) {
+           i++;
+           while (sets[i] == set)
+              i++;
+           num_to = (outgoing < send[i]) ? outgoing : send[i];
+           outgoing -= num_to;
+           for (j = 0; j < num_to; j++, k++)
+              proclist[k] = i;
+        }
      }
 
      /* free memory and return */
