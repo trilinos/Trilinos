@@ -362,7 +362,12 @@ void ML_precondition(double ff[], int options[], int proc_config[],
   /* then apply a two level preconditioning */
 
   ffout = (double*) malloc(lenf * sizeof(double));
+#ifdef        MB_MODIF
+   if (ml->ML_scheme == ML_MGFULLV)    ML_Solve_MGFull( ml, ff, ffout );
+   else if (ml->ML_scheme == ML_SAAMG) ML_Solve_AMGV( ml, ff, ffout);
+#else
   if (ml->ML_scheme == ML_MGFULLV) ML_Solve_MGFull( ml, ff, ffout );
+#endif
   else ML_Solve_MGV( ml, ff, ffout );
   for (i = 0; i < lenf; i++) ff[i] = ffout[i];
   free(ffout);
