@@ -1,6 +1,12 @@
 Basic Usage of Zoltan C++ Interface
 -----------------------------------
 
+SETUP
+-----
+1. Set ZOLTAN_H_INCLUDES= (location of zoltan header files)
+2. Be sure $TRILINOS_HOME/build is setup as appropriate for Trilinos builds
+3. library will be placed in $TRILINOS_HOME/lib/{ARCH}/libzoltan_cpp.a
+
 Version 1.0:
 
 1. class Zoltan_LoadBalance is the main wrapper interface.

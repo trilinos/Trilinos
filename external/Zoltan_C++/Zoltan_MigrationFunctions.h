@@ -30,7 +30,8 @@
 #ifndef ZOLTAN_MIGRATIONFUNCTIONS_H_
 #define ZOLTAN_MIGRATIONFUNCTIONS_H_
 
-#include <lbi_const.h>
+// #include <lbi_const.h>
+#include <zoltan.h>
 
 class Zoltan_MigrationFunctions
 {
@@ -40,20 +41,20 @@ public:
   static int Object_Size        ( void * data,
 				int num_gid_entries,
 				int num_lid_entries,
-                                LB_ID_PTR global_id,
-                                LB_ID_PTR local_id,
+                                ZOLTAN_ID_PTR global_id,
+                                ZOLTAN_ID_PTR local_id,
 				int * ierr );
 
   static void Pre_Migrate       ( void * data,
 				int num_gid_entries,
 				int num_lid_entries,
 				int num_import,
-				LB_ID_PTR import_global_ids,
-				LB_ID_PTR import_local_ids,
+				ZOLTAN_ID_PTR import_global_ids,
+				ZOLTAN_ID_PTR import_local_ids,
 				int * import_procs,
 				int num_export,
-				LB_ID_PTR export_global_ids,
-				LB_ID_PTR export_local_ids,
+				ZOLTAN_ID_PTR export_global_ids,
+				ZOLTAN_ID_PTR export_local_ids,
 				int * export_procs,
 				int * ierr );
 
@@ -61,12 +62,12 @@ public:
 				int num_gid_entries,
 				int num_lid_entries,
 				int num_import,
-				LB_ID_PTR import_global_ids,
-				LB_ID_PTR import_local_ids,
+				ZOLTAN_ID_PTR import_global_ids,
+				ZOLTAN_ID_PTR import_local_ids,
 				int * import_procs,
 				int num_export,
-				LB_ID_PTR export_global_ids,
-				LB_ID_PTR export_local_ids,
+				ZOLTAN_ID_PTR export_global_ids,
+				ZOLTAN_ID_PTR export_local_ids,
 				int * export_procs,
 				int * ierr );
 
@@ -74,20 +75,20 @@ public:
 				int num_gid_entries,
 				int num_lid_entries,
 				int num_import,
-				LB_ID_PTR import_global_ids,
-				LB_ID_PTR import_local_ids,
+				ZOLTAN_ID_PTR import_global_ids,
+				ZOLTAN_ID_PTR import_local_ids,
 				int * import_procs,
 				int num_export,
-				LB_ID_PTR export_global_ids,
-				LB_ID_PTR export_local_ids,
+				ZOLTAN_ID_PTR export_global_ids,
+				ZOLTAN_ID_PTR export_local_ids,
 				int * export_procs,
 				int * ierr );
 
   static void Pack_Object       ( void * data,
 				int num_gid_entries,
 				int num_lid_entries,
-				LB_ID_PTR global_id,
-				LB_ID_PTR local_id,
+				ZOLTAN_ID_PTR global_id,
+				ZOLTAN_ID_PTR local_id,
 				int destination_processor,
 				int size,
 				char * buffer,
@@ -95,7 +96,7 @@ public:
 
   static void Unpack_Object     ( void * data,
 				int num_gid_entries,
-				LB_ID_PTR global_id,
+				ZOLTAN_ID_PTR global_id,
 				int size,
 				char * buffer,
 				int * ierr );

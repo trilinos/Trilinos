@@ -28,7 +28,9 @@
 #ifndef ZOLTAN_LOADBALANCE_H_
 #define ZOLTAN_LOADBALANCE_H_
 
-#include <lbi_const.h>
+#include <zoltan.h>
+
+#include <string>
 
 class Zoltan_QueryObject;
 class Zoltan_MigrationObject;
@@ -49,7 +51,7 @@ public:
 
 #ifdef ZOLTAN_OLD_CALLBACK
 
- int Set_CallBack_Fn  ( LB_FN_TYPE fn_type,
+ int Set_CallBack_Fn  ( ZOLTAN_FN_TYPE fn_type,
 			void * fn_ptr,
 			void * data = 0 );
 
@@ -58,55 +60,55 @@ public:
 //Individual Callback Function Registration
 //-----------------------------------------
 
-int Set_Num_Edges_Fn        ( LB_NUM_EDGES_FN * fn_ptr,
+int Set_Num_Edges_Fn        ( ZOLTAN_NUM_EDGES_FN * fn_ptr,
                               void * data = 0 );
-int Set_Edge_List_Fn        ( LB_EDGE_LIST_FN * fn_ptr,
+int Set_Edge_List_Fn        ( ZOLTAN_EDGE_LIST_FN * fn_ptr,
                               void * data = 0 );
-int Set_Num_Geom_Fn         ( LB_NUM_GEOM_FN * fn_ptr,
+int Set_Num_Geom_Fn         ( ZOLTAN_NUM_GEOM_FN * fn_ptr,
                               void * data = 0 );
-int Set_Geom_Fn             ( LB_GEOM_FN * fn_ptr,
+int Set_Geom_Fn             ( ZOLTAN_GEOM_FN * fn_ptr,
                               void * data = 0 );
-int Set_Num_Obj_Fn          ( LB_NUM_OBJ_FN * fn_ptr,
+int Set_Num_Obj_Fn          ( ZOLTAN_NUM_OBJ_FN * fn_ptr,
                               void * data = 0 );
-int Set_Obj_List_Fn         ( LB_OBJ_LIST_FN * fn_ptr,
+int Set_Obj_List_Fn         ( ZOLTAN_OBJ_LIST_FN * fn_ptr,
                               void * data = 0 );
-int Set_First_Obj_Fn        ( LB_FIRST_OBJ_FN * fn_ptr,
+int Set_First_Obj_Fn        ( ZOLTAN_FIRST_OBJ_FN * fn_ptr,
                               void * data = 0 );
-int Set_Next_Obj_Fn         ( LB_NEXT_OBJ_FN * fn_ptr,
+int Set_Next_Obj_Fn         ( ZOLTAN_NEXT_OBJ_FN * fn_ptr,
                               void * data = 0 );
-int Set_Num_Border_Obj_Fn   ( LB_NUM_BORDER_OBJ_FN * fn_ptr,
+int Set_Num_Border_Obj_Fn   ( ZOLTAN_NUM_BORDER_OBJ_FN * fn_ptr,
                               void * data = 0 );
-int Set_Border_Obj_List_Fn  ( LB_BORDER_OBJ_LIST_FN * fn_ptr,
+int Set_Border_Obj_List_Fn  ( ZOLTAN_BORDER_OBJ_LIST_FN * fn_ptr,
                               void * data = 0 );
-int Set_First_Border_Obj_Fn ( LB_FIRST_BORDER_OBJ_FN * fn_ptr,
+int Set_First_Border_Obj_Fn ( ZOLTAN_FIRST_BORDER_OBJ_FN * fn_ptr,
                               void * data = 0 );
-int Set_Next_Border_Obj_Fn  ( LB_NEXT_BORDER_OBJ_FN * fn_ptr,
+int Set_Next_Border_Obj_Fn  ( ZOLTAN_NEXT_BORDER_OBJ_FN * fn_ptr,
                               void * data = 0 );
-int Set_Num_Coarse_Obj_Fn   ( LB_NUM_COARSE_OBJ_FN * fn_ptr,
+int Set_Num_Coarse_Obj_Fn   ( ZOLTAN_NUM_COARSE_OBJ_FN * fn_ptr,
                               void * data = 0 );
-int Set_Coarse_Obj_List_Fn  ( LB_COARSE_OBJ_LIST_FN * fn_ptr,
+int Set_Coarse_Obj_List_Fn  ( ZOLTAN_COARSE_OBJ_LIST_FN * fn_ptr,
                               void * data = 0 );
-int Set_First_Coarse_Obj_Fn ( LB_FIRST_COARSE_OBJ_FN * fn_ptr,
+int Set_First_Coarse_Obj_Fn ( ZOLTAN_FIRST_COARSE_OBJ_FN * fn_ptr,
                               void * data = 0 );
-int Set_Next_Coarse_Obj_Fn  ( LB_NEXT_COARSE_OBJ_FN * fn_ptr,
+int Set_Next_Coarse_Obj_Fn  ( ZOLTAN_NEXT_COARSE_OBJ_FN * fn_ptr,
                               void * data = 0 );
-int Set_Num_Child_Fn        ( LB_NUM_CHILD_FN * fn_ptr,
+int Set_Num_Child_Fn        ( ZOLTAN_NUM_CHILD_FN * fn_ptr,
                               void * data = 0 );
-int Set_Child_List_Fn       ( LB_CHILD_LIST_FN * fn_ptr,
+int Set_Child_List_Fn       ( ZOLTAN_CHILD_LIST_FN * fn_ptr,
                               void * data = 0 );
-int Set_Child_Weight_Fn     ( LB_CHILD_WEIGHT_FN * fn_ptr,
+int Set_Child_Weight_Fn     ( ZOLTAN_CHILD_WEIGHT_FN * fn_ptr,
                               void * data = 0 );
-int Set_Pre_Migrate_Fn      ( LB_PRE_MIGRATE_FN * fn_ptr,
+int Set_Pre_Migrate_Fn      ( ZOLTAN_PRE_MIGRATE_FN * fn_ptr,
                               void * data = 0 );
-int Set_Mid_Migrate_Fn      ( LB_MID_MIGRATE_FN * fn_ptr,
+int Set_Mid_Migrate_Fn      ( ZOLTAN_MID_MIGRATE_FN * fn_ptr,
                               void * data = 0 );
-int Set_Post_Migrate_Fn     ( LB_POST_MIGRATE_FN * fn_ptr,
+int Set_Post_Migrate_Fn     ( ZOLTAN_POST_MIGRATE_FN * fn_ptr,
                               void * data = 0 );
-int Set_Obj_Size_Fn         ( LB_OBJ_SIZE_FN * fn_ptr,
+int Set_Obj_Size_Fn         ( ZOLTAN_OBJ_SIZE_FN * fn_ptr,
                               void * data = 0 );
-int Set_Pack_Obj_Fn         ( LB_PACK_OBJ_FN * fn_ptr,
+int Set_Pack_Obj_Fn         ( ZOLTAN_PACK_OBJ_FN * fn_ptr,
                               void * data = 0 );
-int Set_Unpack_Obj_Fn       ( LB_UNPACK_OBJ_FN * fn_ptr,
+int Set_Unpack_Obj_Fn       ( ZOLTAN_UNPACK_OBJ_FN * fn_ptr,
                               void * data = 0 );
 
 #endif /* ZOLTAN_OLD_CALLBACK */
@@ -115,21 +117,29 @@ int Set_Unpack_Obj_Fn       ( LB_UNPACK_OBJ_FN * fn_ptr,
 
  int Set_MigrationObject( Zoltan_MigrationObject * migration_obj_ptr );
 
- int Set_Method( char * string );
-
- int Set_Param( char * param, char * val );
+ int Set_Param( const std::string & param, const std::string & value );
 
  int Balance  ( int * changes,
                 int * num_gid_entries,
                 int * num_lid_entries,
 		int * num_import,
-		LB_ID_PTR * import_global_ids,
-		LB_ID_PTR * import_local_ids,
+		ZOLTAN_ID_PTR * import_global_ids,
+		ZOLTAN_ID_PTR * import_local_ids,
 		int ** import_procs,
 		int * num_export,
-		LB_ID_PTR * export_global_ids,
-		LB_ID_PTR * export_local_ids,
+		ZOLTAN_ID_PTR * export_global_ids,
+		ZOLTAN_ID_PTR * export_local_ids,
 		int ** export_procs );
+
+#ifdef ZOLTAN_ORDER
+ int Order    ( int * num_gid_entries,
+                int * num_lid_entries,
+                int num_objs,
+		ZOLTAN_ID_PTR global_ids,
+		ZOLTAN_ID_PTR local_ids,
+                int * rank,
+                int * iperm );
+#endif
 
  void Evaluate( int print_stats,
 		int * num_objects,
@@ -139,11 +149,11 @@ int Set_Unpack_Obj_Fn       ( LB_UNPACK_OBJ_FN * fn_ptr,
 		int * num_boundary_objects,
 		int * num_adj_procs );
 
- int Free_Data( LB_ID_PTR * import_global_ids,
-		LB_ID_PTR * import_local_ids,
+ int Free_Data( ZOLTAN_ID_PTR * import_global_ids,
+		ZOLTAN_ID_PTR * import_local_ids,
 		int ** import_procs,
-		LB_ID_PTR * export_global_ids,
-		LB_ID_PTR * export_local_ids,
+		ZOLTAN_ID_PTR * export_global_ids,
+		ZOLTAN_ID_PTR * export_local_ids,
 		int ** export_procs );
 
  //Decomposition Augmentation
@@ -161,24 +171,24 @@ int Set_Unpack_Obj_Fn       ( LB_UNPACK_OBJ_FN * fn_ptr,
 
  //Migration Functions
  int Compute_Destinations     ( int num_import,
-				LB_ID_PTR import_global_ids,
-				LB_ID_PTR import_local_ids,
+				ZOLTAN_ID_PTR import_global_ids,
+				ZOLTAN_ID_PTR import_local_ids,
 				int * import_procs,
 				int * num_export,
-				LB_ID_PTR * export_global_ids,
-				LB_ID_PTR * export_local_ids,
+				ZOLTAN_ID_PTR * export_global_ids,
+				ZOLTAN_ID_PTR * export_local_ids,
 				int ** export_procs );
 
  int Help_Migrate     ( int num_import,
-			LB_ID_PTR import_global_ids,
-			LB_ID_PTR import_local_ids,
+			ZOLTAN_ID_PTR import_global_ids,
+			ZOLTAN_ID_PTR import_local_ids,
 			int * import_procs,
 			int num_export,
-			LB_ID_PTR export_global_ids,
-			LB_ID_PTR export_local_ids,
+			ZOLTAN_ID_PTR export_global_ids,
+			ZOLTAN_ID_PTR export_local_ids,
 			int * export_procs );
 
- LB_Struct * Return_LB_Struct();
+ Zoltan_Struct * Return_Zoltan_Struct() { return LoadBalance_Ptr_; }
 
 private:
 
@@ -186,7 +196,7 @@ private:
 
  int ObjectID;
 
- LB_Struct * LoadBalance_Ptr_; 
+ Zoltan_Struct * LoadBalance_Ptr_; 
 
  Zoltan_QueryObject * QueryObject_Ptr_;
  Zoltan_MigrationObject * MigrationObject_Ptr_;
