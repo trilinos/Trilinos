@@ -90,7 +90,7 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
 
   // Define remote and permutation lists
 
-  int * ExportGIDs;
+  int * ExportGIDs = 0;
   if (NumExportIDs_>0) {
     ExportLIDs_ = new int[NumExportIDs_];
     ExportGIDs = new int[NumExportIDs_];

@@ -221,7 +221,7 @@ Epetra_MultiVector::~Epetra_MultiVector(){
 
   delete [] Vectors_;
 
-  if (!UserAllocated_) delete [] Values_;
+  if (!UserAllocated_ && Values_!=0) delete [] Values_;
 
   delete [] Pointers_;
 
@@ -408,7 +408,7 @@ int Epetra_MultiVector::AllocateForCopy(void)
     throw ReportError("Number of Vectors = " + toString(NumVectors_) + ", but must be greater than zero", -1);
 
   Stride_ = Map_->NumMyPoints();
-  Values_ = new double[Stride_ * NumVectors_];
+  if (Stride_>0) Values_ = new double[Stride_ * NumVectors_];
   Pointers_ = new double *[NumVectors_];
 
   DoubleTemp_ = new double[NumVectors_];
