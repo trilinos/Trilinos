@@ -22,6 +22,9 @@ CORE_H = \
 
 CORE = 
 
+UTIL = \
+	$(srcdir)/BelosVersion.cpp
+
 ### add in paths as needed
 
 AM_CPPFLAGS =-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src 
@@ -91,6 +94,7 @@ BELOS_H = \
 
 libbelos_a_SOURCES = \
 	$(CORE) \
+	$(UTIL) \
 	$(SERIAL) \
 	$(LANG_WRAPS) \
 	$(DIST) \
