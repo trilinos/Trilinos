@@ -150,6 +150,10 @@ if BUILD_CLAPS
 CLAPS_SUBDIR = claps
 endif
 
+if BUILD_DIDASKO
+DIDASKO_SUBDIR = didasko
+endif
+
 #Epetra must be listed first due to aztecoo's dependence on Epetra
 ## #np# - Add your subdir, i.e. $(NEW_PACKAGE_SUBDIR) which is defined 
 ## above, to this list
@@ -162,6 +166,6 @@ SUBDIRS = $(TEUCHOS_SUBDIR) $(KOKKOS_SUBDIR) $(EPETRA_SUBDIR) \
 		$(TSFEXTENDED_SUBDIR) \
 	  $(EPETRAEXT_SUBDIR) \
 	  $(MEROS_SUBDIR) $(NEW_PACKAGE_SUBDIR) \
-          $(NOX_SUBDIR)
+          $(NOX_SUBDIR) $(DIDASKO_SUBDIR)
 
 
