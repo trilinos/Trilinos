@@ -139,6 +139,7 @@ mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 if ML_USING_AMESOS
 # Amesos require Teuchos
 amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
+             $(top_builddir)/../amesos/amd/src/libamd.a \
              $(top_builddir)/../teuchos/src/libteuchos.a
 else
 amesos_lib =
