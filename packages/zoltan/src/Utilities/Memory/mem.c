@@ -309,8 +309,6 @@ double *Zoltan_Malloc(int n, char *filename, int lineno)
     new_ptr->next = top;
     top = new_ptr;
     bytes_used += n;
-fprintf (stderr, "bytes_used is %d, n = %d\n", bytes_used,n) ;
-
     if (bytes_used > bytes_max) {
       bytes_max = bytes_used;
     }
