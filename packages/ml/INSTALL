@@ -1,77 +1,48 @@
 To compile ml ...
 
-1) Set environment variables (see src/Makefile for more info).
+There is now a script 'installer' that tries to do these things automatically.
+You should try running things to see what happens ... before reading this stuff.
 
-   Here are some sample .csrhc's:
+1) If you don't have 'Obj/' --> 'cd etc; flatten; cd ..'
+2) Compile any package not built
+3) setenv ARCH machine
+       where machine is one of CPLANT, DEC, HP, PCLINUX, SGI, 
+       SMOS, SOLARIS, SP2, SUN, TFLOP.
+4) create the file 'make_\${ARCH}.variables' in \'ml/\' listing
+   all packages being used, include paths, and libraries.
 
-*************************************************************************
-                              SGI 
+   For example:
+            PACKAGES=-DML_MPI -DAZTEC -DSUPERLU -DPARASAILS -DMETIS
+            LIB_HOME=/home/doe/ml/lib
+            INC_PATH=-I${LIB_HOME}/ParMetis-2.0/METISLib -I${LIB_HOME}/ParaSails \
+                     -I${LIB_HOME}/DSuperLU/SRC -I${LIB_HOME}/Aztec/lib \
+                     -I/usr/local/mpich/include
+            LIBRARIES= -L${LIB_HOME}/ParMetis-2.0 -lmetis -L${LIB_HOME}/ParaSails \
+                       -lParaSails ${LIB_HOME}/DSuperLU/superluPCLINUX.a \
+                       -L${LIB_HOME}/Aztec/lib -laztec -L/usr/local/mpich/lib -lmpich"
 
-    setenv ARCH           "SGI"
-    setenv PACKAGES       "-DAZTEC -DML_MPI -DSUPERLU"
-    setenv MPI_INC_PATH   "-I/usr/people/tuminaro/codes/mpich/include"
-    setenv AZTEC_INC_PATH "-I/usr/people/tuminaro/codes/Aztec/az"
-    setenv SUPERLU_INC_PATH "-I/usr/people/tuminaro/codes/ml/lib/DSuperLU/SRC"
-    setenv MPI_LIB_PATH   \
-        "-L/usr/people/tuminaro/codes/mpich/lib/IRIX64/ch_p4 -lmpi"
-    setenv AZTEC_LIB_PATH \
-        "-L/usr/people/tuminaro/codes/arch/sgi/lib -laztec -ly12m -lblas"
-    setenv SUPERLU_LIB_PATH "/home/tuminaro/codes/ml/lib/DSuperLU/superlu_sgi.a"
-*************************************************************************
-                              LINUX PC
 
-    setenv ARCH           "PCLINUX"
-    setenv PACKAGES       "-DAZTEC -DML_MPI"
-    setenv MPI_INC_PATH   "-I/home/people/chtong/mpich/include"
-    setenv AZTEC_INC_PATH \
-        "-I/home/people/tuminaro/codes/arch/pclinux/include"
-    setenv SUPERLU_INC_PATH "-I/usr/people/tuminaro/codes/ml/lib/DSuperLU/SRC"
-    setenv MPI_LIB_PATH   \
-        "-L/home/people/chtong/mpich/lib/LINUX/ch_p4 -lmpi"
-    setenv AZTEC_LIB_PATH \
-        "-L/home/people/tuminaro/codes/arch/pclinux/lib -laztec -ly12m -lblas"
-    setenv SUPERLU_LIB_PATH "/home/tuminaro/codes/ml/lib/DSuperLU/superlu_linux.a"
-*************************************************************************
-                              TFLOP
+5) etc/makefile.$(ARCH) contains basic definitions for CC and compiler 
+   optimizations. In some cases, you might want to tune these.
 
-    setenv ARCH           "TFLOP"
-    setenv PACKAGES       "-DAZTEC -DML_MPI"
-    setenv MPI_LIB_PATH   "-lmpi"
-    setenv AZTEC_INC_PATH "-I/home/u/tuminaro/Aztec/az"
-    setenv SUPERLU_INC_PATH "-I/usr/people/tuminaro/codes/ml/lib/DSuperLU/SRC"
-    setenv AZTEC_LIB_PATH  \
-       "-L/home/tuminaro/Aztec/Obj_tflop/ -laztec -L/Net/pecos/rf_crew/arch/tflop/lib -ly12m -lmydgemv"
-    setenv SUPERLU_LIB_PATH "/home/tuminaro/codes/ml/lib/DSuperLU/superlu_tflop.a"
-*************************************************************************
+6) For object files in 'Obj'  ==> type 'cd Obj; make'
 
-    Omit relevant entries if not using AZTEC, MPI or SUPERLU.
-    NOTE: IF USING AN EXTERNAL AZTEC COPY, -ly12m/-lblas are not needed. 
+   When the day is done, you will find a libml.a file in the Obj
+   directory.  
 
- 2) etc/makefile.$(ARCH) contains basic definitions for CC and compiler 
-    optimizations. In some cases, you might want to tune these.
-
- 3) For object files in 'src'  ==> type 'cd src; make'
-    If you prefer object files in Obj_xxx
-	        ==> type 'etc/build_obj Obj_xxx; cd Obj_xxx; make'
-
-    When the day is done, you will find a libml.a file in the src/lib
-    directory.  To use packages such as MPI or SuperLU, edit the environment
-    variable PACKAGES (e.g. setenv PACKAGE "-DSUPERLU -DML_MPI") before "make".
-
- 4) There is a major porting problem associated with blas and lapack. In particular,
-    different machines have different portions of blas/lapack and different packages
-    such as Aztec or SuperLU might also have different portions of blas/lapack. 
-    The trick is to compile ml without having undefines or multiple defines.
-    Each blas/lapack subroutine xxx has associated with it a define of the form 
-    ML_XXX_FUNC (for a complete list: grep "ifndef ML" src/ml_lapack.c).  By 
-    setting defines, you tell ml not to compile its version of the corresponding 
-    subroutine. Currently, defines are set either via CFLAGS in a 
-    etc/makefile.machine file or in the files etc/ml_aztec_lapack.h 
-    etc/ml_superlu_lapack.h etc/ml_vendor_lapack.h that are included by 
-    src/ml_lapack.c. You may need to add new definitions if the defaults don't 
-    work for you.
+4) There is a major porting problem associated with blas and lapack. In particular,
+   different machines have different portions of blas/lapack and different packages
+   such as Aztec or SuperLU might also have different portions of blas/lapack. 
+   The trick is to compile ml without having undefines or multiple defines.
+   Each blas/lapack subroutine xxx has associated with it a define of the form 
+   ML_XXX_FUNC (for a complete list: grep "ifndef ML" src/ml_lapack.c).  By 
+   setting defines, you tell ml not to compile its version of the corresponding 
+   subroutine. Currently, defines are set either via CFLAGS in a 
+   etc/makefile.machine file or in the files etc/ml_aztec_lapack.h 
+   etc/ml_superlu_lapack.h etc/ml_vendor_lapack.h that are included by 
+   src/ml_lapack.c. You may need to add new definitions if the defaults don't 
+   work for you.
     
 
-FOR ML DEVELOPERS: When new files are added, the perl script 
-		   'etc/build_depends' should be run. 
+FOR ML DEVELOPERS: When new files are added, the perl script 'etc/build_depends' should be run. 
 
