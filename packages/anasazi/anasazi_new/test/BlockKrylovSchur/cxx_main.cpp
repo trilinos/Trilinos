@@ -106,9 +106,16 @@ int main(int argc, char *argv[])
   int nev = 4;
   int blockSize = 5;
   int maxBlocks = 8;
-  int maxIter = 500;
+  int maxRestarts = 20;
   double tol = tolCG * 10.0;
-  std::string which = "SA";
+  std::string which = "SA";  
+  
+  // Create parameter list to pass into solver
+  Teuchos::ParameterList MyPL;
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Max Blocks", maxBlocks );
+  MyPL.set( "Max Restarts", maxRestarts );
+  MyPL.set( "Tol", tol );
   
   // Create eigenproblem
 
@@ -141,8 +148,7 @@ int main(int argc, char *argv[])
   
   // Create the eigensolver
   
-  Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, tol,
-						     blockSize, maxBlocks, 1, maxIter);
+  Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
   
   // Solve the problem to the specified tolerances or length
   MySolver.solve();

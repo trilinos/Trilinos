@@ -10317,7 +10317,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                              ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile example/BlockKrylovSchur/Makefile test/Makefile test/ModalSolverUtils/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/LOBPCG/Makefile util/Makefile util/ModeLaplace/Makefile"
+                                                                                                                        ac_config_files="$ac_config_files Makefile src/Makefile util/Makefile util/ModeLaplace/Makefile example/Makefile example/BlockDavidson/Makefile example/BlockKrylovSchur/Makefile test/Makefile test/ModalSolverUtils/Makefile test/BlockDavidson/Makefile test/BlockKrylovSchur/Makefile test/LOBPCG/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10948,15 +10948,16 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
+  "util/Makefile" ) CONFIG_FILES="$CONFIG_FILES util/Makefile" ;;
+  "util/ModeLaplace/Makefile" ) CONFIG_FILES="$CONFIG_FILES util/ModeLaplace/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
+  "example/BlockDavidson/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/BlockDavidson/Makefile" ;;
   "example/BlockKrylovSchur/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/BlockKrylovSchur/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/ModalSolverUtils/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/ModalSolverUtils/Makefile" ;;
   "test/BlockDavidson/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockDavidson/Makefile" ;;
   "test/BlockKrylovSchur/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockKrylovSchur/Makefile" ;;
   "test/LOBPCG/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/LOBPCG/Makefile" ;;
-  "util/Makefile" ) CONFIG_FILES="$CONFIG_FILES util/Makefile" ;;
-  "util/ModeLaplace/Makefile" ) CONFIG_FILES="$CONFIG_FILES util/ModeLaplace/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Anasazi_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Anasazi_config.h:src/Anasazi_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -11863,3 +11864,4 @@ fi
 echo "----------------------------------------"
 echo "Finished Running Anasazi Configure Script"
 echo "----------------------------------------"
+

@@ -45,12 +45,8 @@
 
 /*!	\class Anasazi::BlockDavidson
 
-	\brief This class implements the Restarted Block Krylov Schur Method,
-	an iterative method for solving eigenvalue problems.
-
-	This method is a block version of the method presented by G.W. Stewart 
-	in "A Krylov-Schur Algorithm for Large Eigenproblems", 
-	SIAM J. Matrix Anal. Appl., Vol 28, No. 8, pp. 601-614.
+	\brief This class implements the block Davidson method, an iterative
+	method for solving symmetric eigenvalue problems.
 
 	\author Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
 */
@@ -65,10 +61,7 @@ namespace Anasazi {
     //! %Anasazi::BlockDavidson constructor.
     BlockDavidson( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
 		   const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
-		   const ScalarType tol=1.0e-6,
-		   const int blockSize = 1,
-		   const int length=25, 
-		   const int maxIter=300 
+		   Teuchos::ParameterList &pl
 		   );
     
     //! %Anasazi::BlockDavidson destructor.
@@ -113,6 +106,11 @@ namespace Anasazi {
 
     //@}
   private:
+
+    /*! \brief These methods will not be defined.
+     */
+    BlockDavidson(const BlockDavidson<ScalarType,MV,OP> &method);
+    BlockDavidson<ScalarType,MV,OP>& operator=(const BlockDavidson<ScalarType,MV,OP> &method);
     //
     // Internal methods
     //
@@ -122,6 +120,7 @@ namespace Anasazi {
     //
     const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem; 
     const Teuchos::RefCountPtr<OutputManager<ScalarType> > _om; 
+  Teuchos::ParameterList _pl;
     //
     // Information obtained from the eigenproblem
     //
@@ -154,24 +153,22 @@ namespace Anasazi {
   //
   template <class ScalarType, class MV, class OP>
   BlockDavidson<ScalarType,MV,OP>::BlockDavidson(const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-					    const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
-					    const ScalarType tol,
-					    const int blockSize,
-					    const int numBlocks, 
-					    const int maxIter
-					    ): 
+						 const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
+						 Teuchos::ParameterList &pl
+						 ):
     _problem(problem), 
     _om(om),
+    _pl(pl),
     _Op(_problem->GetOperator()),
     _BOp(_problem->GetB()),
     _Prec(_problem->GetPrec()),
     _evecs(_problem->GetEvecs()), 
     _evals(problem->GetEvals()), 
     _nev(problem->GetNEV()), 
-    _numBlocks(numBlocks), 
-    _maxIter(maxIter),
-    _blockSize(blockSize),
-    _residual_tolerance(tol),
+    _maxIter(_pl.get("Max Iters", 300)),
+    _blockSize(_pl.get("Block Size", 1)),
+    _numBlocks(_pl.get("Max Blocks", 25)), 
+    _residual_tolerance(_pl.get("Tol", 1.0e-6)),
     _numRestarts(0), 
     _iter(0), 
     _dimSearch(_blockSize*_numBlocks),    

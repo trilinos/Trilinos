@@ -16,6 +16,8 @@ cp ../src/*.in ./src/.
 cp ../example/Makefile* ./example/.
 cp ../example/BlockKrylovSchur/Makefile* ./example/BlockKrylovSchur/.
 cp ../example/BlockKrylovSchur/*.cpp ./example/BlockKrylovSchur/.
+cp ../example/BlockDavidson/Makefile* ./example/BlockDavidson/.
+cp ../example/BlockDavidson/*.cpp ./example/BlockDavidson/.
 
 cp ../test/Makefile* ./test/.
 cp ../test/ModalSolverUtils/Makefile* ./test/ModalSolverUtils/.

@@ -137,13 +137,22 @@ int main(int argc, char *argv[]) {
 	//
         //  Variables used for the Block Arnoldi Method
         // 
-        int blocksize = 5;
-        int length = 10;
         int nev = 5;
+        int blockSize = 5;
+        int maxBlocks = 10;
+        int maxRestarts = 10;
+        int step = 5;
         double tol = 1.0e-8;
         string which="LM";
-        int step = 5;
-        int restarts = 10;
+	//
+	// Create parameter list to pass into solver
+	//
+	Teuchos::ParameterList MyPL;
+	MyPL.set( "Block Size", blockSize );
+	MyPL.set( "Max Blocks", maxBlocks );
+	MyPL.set( "Max Restarts", maxRestarts );
+	MyPL.set( "Tol", tol );
+	MyPL.set( "Step Size", step );
 
 	typedef Epetra_MultiVector MV;
 	typedef Epetra_Operator OP;
@@ -151,7 +160,7 @@ int main(int argc, char *argv[]) {
 	//
         // Create the eigenproblem to be solved.
         //
-        Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blocksize) );
+        Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blockSize) );
         ivec->Random();
 	
 	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
@@ -177,8 +186,7 @@ int main(int argc, char *argv[]) {
 	//
 	//  Initialize the Block Arnoldi solver
 	//
-        Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, tol, 
-							   blocksize, length, step, restarts);
+        Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
 	
         // solve the problem to the specified tolerances or length
         MySolver.solve();

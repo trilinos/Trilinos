@@ -27,16 +27,13 @@
 // @HEADER
 //
 //  This example computes the eigenvalues of smallest magnitude of the discretized 1D Laplacian
-//  equation using the block Implicitly-Restarted Arnoldi method.  This problem shows the 
-//  construction of an inner-outer iteration using Belos as the linear solver within Anasazi.  
-//  An Ifpack preconditioner is constructed to precondition the linear solver.  This operator 
-//  is discretized using finite elements and constructed as an Epetra matrix, then passed into 
-//  the AnasaziPetraMat to be used in the construction of the Krylov decomposition.  The 
-//  specifics of the block Arnoldi method can be set by the user.
+//  equation using the block Davidson method.  This problem shows the construction of an 
+//  inner-outer iteration using Belos as the linear solver within Anasazi.  
+//  An Ifpack preconditioner is constructed to precondition the linear solver.  
+//
 
-#include "AnasaziBlockKrylovSchur.hpp"
+#include "AnasaziBlockDavidson.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "Ifpack_CrsIct.h"
@@ -110,8 +107,10 @@ int main(int argc, char *argv[]) {
         }
 
         // Create both the stiffness and mass Epetra_Matrix        
-        Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]));
-        Teuchos::RefCountPtr<Epetra_CrsMatrix> B = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]));
+        Teuchos::RefCountPtr<Epetra_CrsMatrix> A = 
+	  Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]));
+        Teuchos::RefCountPtr<Epetra_CrsMatrix> B = 
+	  Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]));
 
         const double one = 1.0;
         std::vector<double> ValuesA(2);
@@ -165,6 +164,8 @@ int main(int argc, char *argv[]) {
         assert(B->TransformToLocal()==0);
 	assert(B->OptimizeStorage()==0);
         B->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
+
+
 	//
         //*****Select the Preconditioner*****
         //
@@ -207,7 +208,7 @@ int main(int argc, char *argv[]) {
 	// Set up Belos Block GMRES operator for inner iteration
 	//*******************************************************
 	//
-	int blockSize = 3;  // block size used by linear solver and eigensolver [ not required to be the same ]
+	int blockSize = 3;  // blocksize used by linear solver and eigensolver [ not required to be the same ]
         int maxits = NumGlobalElements/blockSize - 1; // maximum number of iterations to run
         double btol = 1.0e-7;  // relative residual tolerance
         //
@@ -239,8 +240,8 @@ int main(int argc, char *argv[]) {
 	//
 	// Create the Belos::EpetraOperator
 	//
-	Teuchos::RefCountPtr<Belos::EpetraOperator<double> > BelosOp = 
-	  Teuchos::rcp( new Belos::EpetraOperator<double>(My_LP, My_Test, My_OM, My_List ));
+	Teuchos::RefCountPtr<Belos::EpetraOperator<double> > BelosOp =
+	  Teuchos::rcp( new Belos::EpetraOperator<double>( My_LP, My_Test, My_OM, My_List ) );
 	//
 	//************************************
 	// Start the block Arnoldi iteration
@@ -250,74 +251,61 @@ int main(int argc, char *argv[]) {
 	//
 	int nev = 10;
 	int maxBlocks = 20;
-	int maxRestarts = 5;
-	int step = 5;
+	int maxIters = 300;
 	double tol = 1.0e-6;
-	string which="LM";
 	//
 	// Create parameter list to pass into solver
 	//
 	Teuchos::ParameterList MyPL;
 	MyPL.set( "Block Size", blockSize );
 	MyPL.set( "Max Blocks", maxBlocks );
-	MyPL.set( "Max Restarts", maxRestarts );
+	MyPL.set( "Max Iters", maxIters );
 	MyPL.set( "Tol", tol );
-	MyPL.set( "Step Size", step );
 
 	typedef Anasazi::MultiVec<double> MV;
 	typedef Anasazi::Operator<double> OP;
 
 	// Create a AnasaziEpetraMultiVec for an initial vector to start the solver.
 	// Note:  This needs to have the same number of columns as the blocksize.
-	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = 
-	  Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blockSize) );
-	ivec->MvRandom();
+	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> iVec = Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blockSize) );
+	iVec->MvRandom();
     
-	// Call the ctor that calls the petra ctor for a matrix
+	// Create Anasazi::EpetraOps to define the problem
 	Teuchos::RefCountPtr<Anasazi::EpetraOp> Amat = Teuchos::rcp( new Anasazi::EpetraOp(A) );
 	Teuchos::RefCountPtr<Anasazi::EpetraOp> Bmat = Teuchos::rcp( new Anasazi::EpetraOp(B) );
 	Teuchos::RefCountPtr<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(BelosOp, B) );	
 
 	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
-	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, Bmat, ivec) );
-
+	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, Bmat, iVec) );
+	
 	// Inform the eigenproblem that the matrix pencil (A,B) is symmetric
 	MyProblem->SetSymmetric(true);
-
+	
 	// Set the number of eigenvalues requested 
 	MyProblem->SetNEV( nev );
-
+	
         // Inform the eigenproblem that you are finishing passing it information
         assert( MyProblem->SetProblem() == 0 );
 
-        // Create a sorting manager to handle the sorting of eigenvalues in the solver
-	Teuchos::RefCountPtr<Anasazi::BasicSort<double,MV,OP> > MySort = 
-	  Teuchos::rcp( new Anasazi::BasicSort<double,MV,OP>(which) );
-	
         // Create an output manager to handle the I/O from the solver
         Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
 	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
         MyOM->SetVerbosity( Anasazi::FinalSummary );
-
-	// Initialize the Block Arnoldi solver
-	Anasazi::BlockKrylovSchur<double,MV,OP> MySolver(MyProblem, MySort, MyOM, MyPL);
+	
+	// Initialize the Block Davidson solver
+	Anasazi::BlockDavidson<double,MV,OP> MySolver(MyProblem, MyOM, MyPL);
 	
 	// solve the problem to the specified tolerances or length
 	MySolver.solve();
 	
 	// obtain eigenvectors directly
 	Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals(); 
-
-	// retrieve real and imaginary parts of the eigenvectors
-	// The size of the eigenvector storage is nev.
-	// The real part of the eigenvectors is stored in the first nev vectors.
-	// The imaginary part of the eigenvectors is stored in the second nev vectors.
-	Anasazi::EpetraMultiVec* evecr = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneCopy());
+	Anasazi::EpetraMultiVec* evecs = dynamic_cast<Anasazi::EpetraMultiVec *>(MyProblem->GetEvecs().get());
 
 	Teuchos::SerialDenseMatrix<int,double> dmatr(nev,nev);
-	Anasazi::EpetraMultiVec tempvec(Map, evecr->GetNumberVecs());	
-	A->Apply( *evecr, tempvec );
-	tempvec.MvTransMv( 1.0, *evecr, dmatr );
+	Anasazi::EpetraMultiVec tempvec(Map, evecs->GetNumberVecs());	
+	A->Apply( *evecs, tempvec );
+	tempvec.MvTransMv( 1.0, *evecs, dmatr );
 
 	double compeval = 0.0;
 	cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;

@@ -26,5 +26,5 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = BlockKrylovSchur
+SUBDIRS = BlockDavidson BlockKrylovSchur
 

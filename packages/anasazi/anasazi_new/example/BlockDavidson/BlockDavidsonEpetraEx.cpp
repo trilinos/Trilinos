@@ -26,18 +26,16 @@
 // ***********************************************************************
 // @HEADER
 //
-//  This example computes the specified eigenvalues of the discretized 2D Convection-Diffusion
-//  equation using the block Krylov-Schur method.  This discretized operator is constructed as an
-//  Epetra matrix, then passed into the Anasazi::EpetraOp to be used in the construction of the
-//  Krylov decomposition.  The specifics of the block Krylov-Schur method can be set by the user.
+//  This example computes the specified eigenvalues of the discretized 2D Laplacian
+//  using the block Davidson.  
 
-#include "AnasaziBlockKrylovSchur.hpp"
+#include "AnasaziBlockDavidson.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_LAPACK.hpp"
+#include "BlockPCGSolver.h"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -118,15 +116,11 @@ int main(int argc, char *argv[]) {
 
 	Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]) );
 
-	// Diffusion coefficient, can be set by user.
-	// When rho*h/2 <= 1, the discrete convection-diffusion operator has real eigenvalues.
-	// When rho*h/2 > 1, the operator has complex eigenvalues.
-	double rho = 0.0;  
-
 	// Compute coefficients for discrete convection-diffution operator
 	const double one = 1.0;
 	std::vector<double> Values(4);
 	std::vector<int> Indices(4);
+	double rho = 0.0;  
 	double h = one /(nx+1);
 	double h2 = h*h;
 	double c = 5.0e-01*rho/ h;
@@ -218,27 +212,24 @@ int main(int argc, char *argv[]) {
 	A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 
 	//************************************
-	// Start the block Arnoldi iteration
+	// Start the block Davidson iteration
 	//***********************************
 	//
-	//  Variables used for the Block Krylov Schur Method
-	//	  
+	//  Variables used for the Block Davidson Method
+	//
 	int nev = 4;
-	int blockSize = 2;
-	int maxBlocks = 20;
-	int maxRestarts = 300;
-	int step = 1;
-	double tol = 1e-8;
-	string which="SM";	
+	int blockSize = 5;
+	int maxBlocks = 8;
+	int maxIters = 300;
+	double tol = 1e-8;	
 	//
 	// Create parameter list to pass into solver
 	//
 	Teuchos::ParameterList MyPL;
 	MyPL.set( "Block Size", blockSize );
 	MyPL.set( "Max Blocks", maxBlocks );
-	MyPL.set( "Max Restarts", maxRestarts );
+	MyPL.set( "Max Iters", maxIters );
 	MyPL.set( "Tol", tol );
-	MyPL.set( "Step Size", step );
 
 	typedef Epetra_MultiVector MV;
 	typedef Epetra_Operator OP;
@@ -249,12 +240,20 @@ int main(int argc, char *argv[]) {
 	Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blockSize) );
 	ivec->Random();
 
+	// Create preconditioner
+	int maxIterCG = 100;
+	double tolCG = 1e-6;
+	
+	Teuchos::RefCountPtr<BlockPCGSolver> opStiffness = 
+	  Teuchos::rcp( new BlockPCGSolver(Comm, A.get(), tolCG, maxIterCG, 3) );
+	opStiffness->setPreconditioner( 0 );
+									 
 	// Create the eigenproblem.
 	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(A, ivec) );
+	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(opStiffness, ivec) );
 	
 	// Inform the eigenproblem that the operator A is symmetric
-	MyProblem->SetSymmetric(rho==0.0); 
+	MyProblem->SetSymmetric(true); 
 	
 	// Set the number of eigenvalues requested
 	MyProblem->SetNEV( nev );
@@ -262,17 +261,13 @@ int main(int argc, char *argv[]) {
 	// Inform the eigenproblem that you are finishing passing it information
 	assert( MyProblem->SetProblem() == 0 );
 	
-	// Create a sorting manager to handle the sorting of eigenvalues in the solver
-	Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 
-	  Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
-
 	// Create an output manager to handle the I/O from the solver
 	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
 	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
 	MyOM->SetVerbosity( Anasazi::FinalSummary );	
-
-	// Initialize the Block Arnoldi solver
-	Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
+	
+	// Initialize the Block Davidson solver
+	Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MyOM, MyPL);
 	
 	// Solve the problem to the specified tolerances or length
 	MySolver.solve();
@@ -281,83 +276,30 @@ int main(int argc, char *argv[]) {
 	Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
 
 	// Retrieve eigenvectors
-	// The size of the eigenvector storage is 2 x nev.  
-	// The real part of the eigenvectors is stored in the first nev vectors.
-	// The imaginary part of the eigenvectors is stored in the second nev vectors.
-	Teuchos::RefCountPtr<Epetra_MultiVector> evecr, eveci;
-	std::vector<int> index(nev);
-	
-	// Get real part.
 	Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
 
-	// Get imaginary part, if needed.
-	if (MyProblem->IsSymmetric()) {
-          evecr = evecs;
-        }
-        else {
-          evecr = Teuchos::rcp( new Epetra_MultiVector( View, *evecs, 0, nev ) );
-          eveci = Teuchos::rcp( new Epetra_MultiVector( View, *evecs, nev, nev ) );	  
-	}	  
-	
 	// Compute residuals.
-	Teuchos::LAPACK<int,double> lapack;
-	Epetra_MultiVector tempAevec(Map,nev);
-	Teuchos::SerialDenseMatrix<int,double> Breal(nev,nev), Breal2(nev,nev);
-	Teuchos::SerialDenseMatrix<int,double> Bimag(nev,nev), Bimag2(nev,nev);
+	Teuchos::SerialDenseMatrix<int,double> T(nev, nev);
+	Epetra_MultiVector tempAevec( Map, nev );
 	std::vector<double> normA(nev);
-	std::vector<double> tempnrm(nev);
 	cout<<endl<< "Actual Residuals"<<endl;
 	cout<<"------------------------------------------------------"<<endl;
-	Breal.putScalar(0.0); 
-	if (!MyProblem->IsSymmetric())
-	  Bimag.putScalar(0.0);
-	for (i=0; i<nev; i++) { 
-	  normA[i] = 0.0;
-	  Breal(i,i) = (*evals)[i]; 
-	  if (!MyProblem->IsSymmetric())
-	    Bimag(i,i) = (*evals)[nev+i]; 
-	}
-	A->Apply( *evecr, tempAevec );
-	MVT::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, tempAevec );
-	if (!MyProblem->IsSymmetric()) {
-	  MVT::MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0, tempAevec );
-	  MVT::MvNorm( tempAevec, &normA );
-	  A->Apply( *eveci, tempAevec );
-	  MVT::MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0, tempAevec );
-	  MVT::MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0, tempAevec );
-	}
-	MVT::MvNorm( tempAevec, &tempnrm );
-	i = 0;
-	while (i < nev) {
-	  normA[i] = lapack.LAPY2( normA[i], tempnrm[i] );
-	  if (MyProblem->IsSymmetric()) {
-	    normA[i] /= Teuchos::ScalarTraits<double>::magnitude((*evals)[i]);
-	    i++;
-	  } else {
-	    normA[i] /= lapack.LAPY2( (*evals)[i], (*evals)[nev+i] );
-	    if ((*evals)[nev + i] != zero) {
-	      normA[i+1] = normA[i];
-	      i = i+2;
-	    } else {
-	      i++;
-	    }
-	  }
-	}
-	if (MyProblem->IsSymmetric()) {
-	  cout<<"Real Part"<<"\t"<<"Direct Residual"<<endl;
+	T.putScalar(0.0); 
+	for (i=0; i<nev; i++)
+	  T(i,i) = (*evals)[i]; 
+	A->Apply( *evecs, tempAevec );
+	MVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, tempAevec );
+	MVT::MvNorm( tempAevec, &normA );
+	for (i=0; i<nev; i++)
+	  normA[i] /= Teuchos::ScalarTraits<double>::magnitude((*evals)[i]);
+	
+	if (MyOM->doPrint()) {
+	  cout<<"Eigenvalue"<<"\t"<<"Direct Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	  for (i=0; i<nev; i++) {
 	    cout<< (*evals)[i] << "\t\t"<< normA[i] << endl;
 	  }  
 	  cout<<"------------------------------------------------------"<<endl;
-	} else {
-	  cout<<"Real Part"<<"\t"<<"Imag Part"<<"\t"<<"Direct Residual"<<endl;
-	  cout<<"------------------------------------------------------"<<endl;
-	  for (i=0; i<nev; i++) {
-	    cout<< (*evals)[i] << "\t\t" << (*evals)[nev + i] << "\t\t"<< normA[i] << endl;
-	  }  
-	  cout<<"------------------------------------------------------"<<endl;
-	}	
-
+	}
 	return 0;
 }

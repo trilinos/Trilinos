@@ -141,20 +141,27 @@ int main(int argc, char *argv[]) {
 	//
 	//  Variables used for the Block Arnoldi Method
 	//
-	int blocksize = 1;
-	int length = 10;
 	int nev = 4;
+	int blockSize = 1;
+	int maxBlocks = 10;
+	int maxRestarts = 20;
 	double tol = lapack.LAMCH('E');
 	string which="LM";
-	int restarts = 300;
-	int step = restarts*length*blocksize;
+	//
+	// Create parameter list to pass into solver
+	//
+	Teuchos::ParameterList MyPL;
+	MyPL.set( "Block Size", blockSize );
+	MyPL.set( "Max Blocks", maxBlocks );
+	MyPL.set( "Max Restarts", maxRestarts );
+	MyPL.set( "Tol", tol );
 
 	typedef Anasazi::MultiVec<double> MV;
 	typedef Anasazi::Operator<double> OP;
 
 	// Create an Anasazi::EpetraMultiVec for an initial vector to start the solver. 
 	// Note:  This needs to have the same number of columns as the blocksize.
-	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(ColMap, blocksize) );
+	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(ColMap, blockSize) );
 	ivec->MvRandom();
 
 	// Call the constructor for the (A^T*A) operator
@@ -181,8 +188,7 @@ int main(int argc, char *argv[]) {
 	MyOM->SetVerbosity( Anasazi::FinalSummary );	
 
 	// Initialize the Block Arnoldi solver
-	Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, tol, 
-							   blocksize, length, step, restarts);	
+	Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
 	
 	// Solve the problem to the specified tolerances or length
 	MySolver.solve();

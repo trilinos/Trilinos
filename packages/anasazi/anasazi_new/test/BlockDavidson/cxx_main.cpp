@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
   // Create preconditioner
   int maxIterCG = 100;
-  double tolCG = 1e-10;
+  double tolCG = 1e-6;
   
   Teuchos::RefCountPtr<BlockPCGSolver> opStiffness = Teuchos::rcp( new BlockPCGSolver(Comm, K.get(), tolCG, maxIterCG, 3) );
   opStiffness->setPreconditioner( 0 );
@@ -111,8 +111,16 @@ int main(int argc, char *argv[])
   int nev = 4;
   int blockSize = 5;
   int maxBlocks = 8;
-  int maxIter = 500;
+  int maxIters = 500;
   double tol = tolCG * 10.0;
+  //
+  // Create parameter list to pass into solver
+  //
+  Teuchos::ParameterList MyPL;
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Max Blocks", maxBlocks );
+  MyPL.set( "Max Iters", maxIters );
+  MyPL.set( "Tol", tol );
   
   // Create eigenproblem
 
@@ -134,8 +142,7 @@ int main(int argc, char *argv[])
 
   // Create the eigensolver
 
-  Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MyOM, tol,
-						  blockSize, maxBlocks, maxIter);
+  Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MyOM, MyPL);
 
   // Solve the problem to the specified tolerances or length
   MySolver.solve();

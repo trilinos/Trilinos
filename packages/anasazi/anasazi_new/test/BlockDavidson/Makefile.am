@@ -40,7 +40,6 @@ BlockDavidson_test_SOURCES = $(srcdir)/cxx_main.cpp
 #np# Add packages that np is dependent on; remove epetra if np does not need it
 
 AM_CPPFLAGS = \
-	-I$(top_srcdir)/util/ModeLaplace \
 	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
         -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
 
@@ -54,7 +53,7 @@ BlockDavidson_test_DEPENDENCIES = \
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
-BlockDavidson_test_CXXFLAGS = -I$(top_srcdir)/src
+BlockDavidson_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.

@@ -66,7 +66,7 @@ class OutputManager {
 	OutputManager();
 
 	//! Basic constructor.
-	OutputManager( int myID, MsgType type = Anasazi::Error, int printID = 0, ostream& os = std::cout );
+	OutputManager( int myID, int vb = Anasazi::Error, int printID = 0, ostream& os = std::cout );
 
 	//! Destructor.
 	virtual ~OutputManager() {};
@@ -78,7 +78,7 @@ class OutputManager {
 	void SetOStream( ostream& os ) { myOS_ = os; };
 
 	//! Set the message output types for this manager.
-	void SetVerbosity( MsgType type ) { msgType_ = type; }; 
+	void SetVerbosity( int vb ) { vb_ = vb; }; 
 
 	//@}
 
@@ -95,7 +95,7 @@ class OutputManager {
 	/*! This method is used by the solver to determine whether computations are
 		necessary for this message type.
 	*/
-	bool isVerbosity( MsgType type ) { return (( type == Anasazi::Error ) || ( msgType_ & type )); }; 
+	bool isVerbosity( MsgType type ) { return (( type == Anasazi::Error ) || ( vb_ & type )); }; 
 
 	//! Find out whether this processor needs to print out information for this message type.
 	/*! This method is used by the solver to determine whether this output stream has been
@@ -121,7 +121,7 @@ class OutputManager {
 	//@}
 
 	int myID_, printID_;
-	int msgType_;
+	int vb_;
 	bool iPrint_;
 	ostream& myOS_;	
 };
@@ -130,17 +130,17 @@ template<class ScalarType>
 OutputManager<ScalarType>::OutputManager() :
 	myID_(0),
 	printID_(0),
-	msgType_(0),
+	vb_(Anasazi::Error),
 	iPrint_(true),
 	myOS_(cout)
 {
 }
 
 template<class ScalarType>
-OutputManager<ScalarType>::OutputManager( int myID, MsgType type, int printID, ostream& os ) :
+OutputManager<ScalarType>::OutputManager( int myID, int vb, int printID, ostream& os ) :
 	myID_(myID),
 	printID_(printID),
-	msgType_(type),
+	vb_(vb),
 	iPrint_(myID == printID),
 	myOS_(os)
 {

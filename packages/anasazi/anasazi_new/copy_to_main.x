@@ -17,6 +17,9 @@ cp ./example/Makefile* ../example/.
 mkdir ../example/BlockKrylovSchur
 cp ./example/BlockKrylovSchur/*.cpp ../example/BlockKrylovSchur/.
 cp ./example/BlockKrylovSchur/Makefile* ../example/BlockKrylovSchur/.
+mkdir ../example/BlockDavidson
+cp ./example/BlockDavidson/*.cpp ../example/BlockDavidson/.
+cp ./example/BlockDavidson/Makefile* ../example/BlockDavidson/.
 
 mkdir ../test
 cp ./test/Makefile* ../test/.

@@ -400,15 +400,16 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
+		util/Makefile
+		util/ModeLaplace/Makefile
 		example/Makefile
+		example/BlockDavidson/Makefile
 		example/BlockKrylovSchur/Makefile
 		test/Makefile
 		test/ModalSolverUtils/Makefile
 		test/BlockDavidson/Makefile
 		test/BlockKrylovSchur/Makefile
 		test/LOBPCG/Makefile
-		util/Makefile
-		util/ModeLaplace/Makefile
 		])
 
 AC_OUTPUT()
@@ -418,3 +419,4 @@ AC_OUTPUT()
 echo "----------------------------------------"
 echo "Finished Running Anasazi Configure Script"
 echo "----------------------------------------"
+
