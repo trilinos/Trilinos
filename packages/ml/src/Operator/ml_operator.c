@@ -569,6 +569,8 @@ int ML_Operator_Print(ML_Operator *matrix, char label[])
    int    *bindx;
    double *val;
    int    allocated, row_length;
+   FILE   *fid;
+   char   filename[80];
 
    if ( matrix->getrow == NULL) return(1);
 
@@ -576,16 +578,20 @@ int ML_Operator_Print(ML_Operator *matrix, char label[])
    bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
    val   = (double *)  ML_allocate( allocated*sizeof(double));
 
+   sprintf(filename,"%s.%d",label,matrix->comm->ML_mypid);
+   printf("Writing matrix to file %s...\n",filename);
+   fid = fopen(filename,"w");
    for (i = 0 ; i < matrix->getrow->Nrows; i++) {
       ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
                         &row_length, 0);
       for  (j = 0; j < row_length; j++) {
-         printf("%s(%d,%d) = %20.13e;\n",label,i+1,bindx[j]+1, val[j]);
 /*
-         printf("%d  %d %20.13e\n",i+1,bindx[j]+1, val[j]);
+         printf("%s(%d,%d) = %20.13e;\n",label,i+1,bindx[j]+1, val[j]);
 */
+         fprintf(fid,"(%d,%d) %20.13e\n",i+1,bindx[j]+1, val[j]);
       }
    }
+   fclose(fid);
    fflush(stdout);
    ML_free(val);
    ML_free(bindx);
