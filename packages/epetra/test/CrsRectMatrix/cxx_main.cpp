@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
   bool verbose = false;
 
   // Check if we should print results to standard out
-  // if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
+  if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
 
 
