@@ -36,10 +36,9 @@ import os
 import string
 import sys
 
-# Build the python library directory name and library name.  These will be used
-# when the linker is invoked to create the python extensions.
-pythonDir = [sysconfig.get_config_var('LIBPL'  )      ]
-pythonLib = [sysconfig.get_config_var('LIBRARY')[3:-2]]
+# Define the python library directory name and library name.
+pythonDir = sysconfig.get_config_var("LIBPL"  )
+pythonLib = sysconfig.get_config_var("LIBRARY")[3:-2]
 
 # Any information that needs to be transferred from the autotooled Makefile is
 # written to file setup.txt using python syntax to define a dictionary.  The
@@ -53,67 +52,52 @@ try:
 except IOError:
     makeInfo = { }
 
-# Certain directory paths are needed by setup.py.  srcDir is the path for the
-# python source directory, pakDir is the path for the epetra package directory,
-srcDir = makeInfo.get("srcdir","")
+# Certain directory paths are needed by setup.py.  pakDir is the path for the
+# epetra package directory, and srcDir is the path for the python source directory
 pakDir = makeInfo.get("top_srcdir","")
+srcDir = makeInfo.get("srcdir"    ,"")
 
-# Define the include paths required by various packages.  Each of these is
-# defined as a list of a single or more strings.  Thus they can be added
-# together to yield a list of multiple strings.
-epetraInc = [os.path.join(pakDir, "src")]
-
-# Define the library search directories needed to link to various package
-# libraries.  Each of these is defined as a list of a single string.  Thus they
-# can be added together to yield a list of multiple strings.
-epetraLibDir    = [os.path.join("..", "..", "src")]
-
-# Define the library names for various packages.  Each of these is defined as a
-# list of a single string.  Thus they can be added together to yield a list of
-# multiple strings.
-epetraLib    = ["epetra"]
-
-# Get the UNIX system name
-sysName = os.uname()[0]
+# Define the epetra include path, library directory and library name
+epetraInc    = os.path.join(pakDir, "src")
+epetraLibDir = os.path.join("..", "..", "src")
+epetraLib    = "epetra"
 
 # Standard libraries.  This is currently a hack.  The library "stdc++" is added
 # to the standard library list for a case where we know it needs it.
+stdLibs = [ ]
+sysName = os.uname()[0]
 if sysName == "Linux":
-    stdLibs = ["stdc++"]
-else:
-    stdLibs = [ ]
+    stdLibs.append("stdc++")
 
 # Create the extra arguments list and complete the standard libraries list.  This
 # is accomplished by looping over the arguments in LDFLAGS, FLIBS and LIBS and
 # adding them to the appropriate list.
 extraArgs = [ ]
-libs = makeInfo.get('LDFLAGS','').split() + makeInfo.get('FLIBS','').split() + \
-       makeInfo.get('LIBS'   ,'').split()
+libs = makeInfo.get("LDFLAGS","").split() + makeInfo.get("FLIBS","").split() + \
+       makeInfo.get("LIBS"   ,"").split()
 for lib in libs:
     if lib[:2] == "-l":
         stdLibs.append(lib[2:])
     else:
         extraArgs.append(lib)
 
-# Define the strings that refer to the specified source files.  These should be
-# combined together as needed in a list as the second argument to the Extension
-# constructor.
+# Define the strings that refer to the required source files.
 wrapEpetra         = os.path.join(srcDir,"wrap_Epetra.cpp"        )
 epetraNumPyVector  = os.path.join(srcDir,"Epetra_NumPyVector.cpp" )
 epetraVectorHelper = os.path.join(srcDir,"Epetra_VectorHelper.cpp")
 numPyArray         = os.path.join(srcDir,"NumPyArray.cpp"         )
 numPyWrapper       = os.path.join(srcDir,"NumPyWrapper.cpp"       )
 
-# Epetra extension module
+# _Epetra extension module
 _Epetra = Extension("PyTrilinos._Epetra",
                     [wrapEpetra,
                      epetraNumPyVector,
                      epetraVectorHelper,
                      numPyArray,
-                     numPyWrapper],
-                    include_dirs    = epetraInc,
-                    library_dirs    = epetraLibDir + pythonDir,
-                    libraries       = epetraLib + stdLibs + pythonLib,
+                     numPyWrapper      ],
+                    include_dirs    = [epetraInc],
+                    library_dirs    = [epetraLibDir, pythonDir],
+                    libraries       = [epetraLib, pythonLib] + stdLibs,
                     extra_link_args = extraArgs
                     )
 
