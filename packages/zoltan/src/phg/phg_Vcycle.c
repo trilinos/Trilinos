@@ -89,7 +89,7 @@ static int allocVCycle(VCycle *v)
 
 
 
-static VCycle *newVCycle(HGraph *hg, Partition part, int *levmap, VCycle *finer)
+static VCycle *newVCycle(HGraph *hg, Partition part, VCycle *finer)
 {
   VCycle *vcycle;
     
@@ -98,7 +98,8 @@ static VCycle *newVCycle(HGraph *hg, Partition part, int *levmap, VCycle *finer)
         
   vcycle->finer    = finer;
   vcycle->part     = part;
-  vcycle->LevelMap = levmap;    
+  vcycle->LevelMap = NULL;
+  vcycle->LevelData = NULL;
   vcycle->hg       = hg ? hg : (HGraph*) ZOLTAN_MALLOC (sizeof(HGraph));
   if (!vcycle->hg)  {
     ZOLTAN_FREE (&vcycle);
@@ -135,7 +136,7 @@ int Zoltan_PHG_Partition (
 
   ZOLTAN_TRACE_ENTER(zz, yo);
     
-  if (!(vcycle = newVCycle(hg, Parts, NULL, NULL))) {
+  if (!(vcycle = newVCycle(hg, Parts, NULL))) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "VCycle is NULL.");
     return ZOLTAN_MEMERR;
   }
@@ -177,7 +178,7 @@ int Zoltan_PHG_Partition (
         goto End;
       }
             
-      if (!(coarser = newVCycle(NULL, NULL, NULL, vcycle))) {
+      if (!(coarser = newVCycle(NULL, NULL, vcycle))) {
         ZOLTAN_FREE ((void**) &match);
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "coarser is NULL.");
         goto End;
@@ -287,17 +288,15 @@ End:
   vcycle = del;
   while (vcycle) {
     if (vcycle->finer) {   /* cleanup by level */
-/*  ZOLTAN_FREE (&vcycle->LevelData);  */
- 
       Zoltan_HG_HGraph_Free (vcycle->hg);
-      Zoltan_Multifree (__FILE__, __LINE__, 2, &vcycle->part, &vcycle->LevelMap);
+      Zoltan_Multifree (__FILE__, __LINE__, 4, &vcycle->part, &vcycle->LevelMap,
+                        &vcycle->LevelData, &vcycle->hg);
     }
     else                   /* cleanup top level */
-      ZOLTAN_FREE(&vcycle->LevelMap);
-/* ZOLTAN_FREE (&vcycle->LevelData); */
-      del = vcycle;
-      vcycle = vcycle->finer;
-      ZOLTAN_FREE(&del);
+      Zoltan_Multifree (__FILE__, __LINE__, 2, &vcycle->LevelMap, &vcycle->LevelData);
+    del = vcycle;
+    vcycle = vcycle->finer;
+    ZOLTAN_FREE(&del);
   }
 
   ZOLTAN_TRACE_EXIT(zz, yo) ;
