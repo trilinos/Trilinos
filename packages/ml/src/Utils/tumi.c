@@ -10,7 +10,7 @@
 #define ML_NEWNORM
 #define ML_SCALEIT
 
-#define ML_JANUS_FORT(iiii) iiii##_
+#define ML_JANUS_FORT(iiii) iiii
 
 /**************************************************************************/
 /* structure/functions to wrap greg's routines.                           */
