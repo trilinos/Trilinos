@@ -116,7 +116,7 @@ local identifiers.&nbsp; The <a href="#data_ptr_query_example">User-Defined
 Data Pointer Example</a> uses only local application data structures; this
 model is useful if the application does not have global data structures
 or if load-balancing is to be performed on more than one data structure.&nbsp;
-Differences between the latter&nbsp; examples and the Basic Example are
+Differences between the latter example and the Basic Example are
 shown in <font color="#FF0000">red</font>.
 <h4>
 <a NAME="basic_query_example"></a>Basic Example</h4>
@@ -164,7 +164,7 @@ used.</i> */</tt>
 <br><tt>}&nbsp;</tt>
 <p><tt>void user_return_owned_nodes(void *data,&nbsp;&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int num_gid_entries, int num_lid_entries,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; LB_ID_PTR&nbsp;global_ids, LB_ID_PTR&nbsp;local_ids,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;global_ids, <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;local_ids,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int wgt_dim, float *obj_wgts,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int *ierr)&nbsp;</tt>
 <br><tt>{&nbsp;</tt>
@@ -183,7 +183,7 @@ used.</i> */</tt>
 <br><tt>}&nbsp;</tt>
 <p><tt>void user_return_coords(void *data,&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int num_gid_entries, int num_lid_entries,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; LB_ID_PTR&nbsp;global_id, LB_ID_PTR local_id,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;global_id, <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> local_id,&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; double *geom_vec, int *ierr)&nbsp;</tt>
 <br><tt>{&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i>use local_id to index into the Nodes array.</i>
@@ -232,8 +232,8 @@ used.</i></tt>
 <tt>user_return_owned_nodes)&nbsp;&nbsp;</tt>
 <br><tt>...&nbsp;</tt>
 <br><tt>end program&nbsp;</tt>
-<p><tt>subroutine user_return_owned_nodes(data, num_gid_entries, num_lid_entries,
-&amp;</tt>
+<p><tt>subroutine user_return_owned_nodes(data, &amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; num_gid_entries, num_lid_entries, &amp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; global_ids, local_ids, wgt_dim, obj_wgts, ierr)&nbsp;</tt>
 <br><tt>use zoltan&nbsp;</tt>
 <br><tt>use Global_Mesh_Data&nbsp;</tt>
@@ -247,8 +247,8 @@ used.</i></tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>return global node numbers as global_ids.</i>&nbsp;&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>return index into Nodes array for local_ids.</i>&nbsp;&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; do i = 1, Mesh%Number_Owned&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids(1+(i-1)*num_gid_entries)
-= Mesh%Nodes(i)%Global_ID_Num&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids(1+(i-1)*num_gid_entries) = &amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Mesh%Nodes(i)%Global_ID_Num&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids(1+(i-1)*num_lid_entries)
 = i&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; end do&nbsp;</tt>
@@ -329,23 +329,23 @@ of mesh as the data pointer.</font></i> */</tt>
 <br><tt>}</tt>
 <p><tt>void user_return_owned_nodes(void *data,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int num_gid_entries, int num_lid_entries,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; LB_ID_PTR global_ids, LB_ID_PTR&nbsp;local_ids,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> global_ids, <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;local_ids,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int wgt_dim, float *obj_wgts,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int *ierr)&nbsp;</tt>
 <br><tt>{</tt>
 <br><tt>int i;&nbsp;</tt>
 <br><tt><font color="#FF0000">/* <i>cast data pointer to type Mesh_Type.</i>
 */</font></tt>
-<br><tt><font color="#FF0000">struct Mesh_Type *mesh_ptr = (struct Mesh_Type
+<br><tt><font color="#FF0000">struct Mesh_Type *ptr = (struct Mesh_Type
 *) data;</font></tt>
 <p><tt>&nbsp;&nbsp;&nbsp; /* <i>return global node numbers as global_ids.</i>
 */</tt>&nbsp;<tt>&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i>return index into Nodes array for local_ids.</i>
 */</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; mesh_ptr->Number_Owned; i++)
+<br><tt>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; ptr->Number_Owned; i++)
 {</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids[i*num_gid_entries]
-= <font color="#FF0000">mesh_ptr->Nodes[i].Global_ID_Num</font>;</tt>
+= <font color="#FF0000">ptr->Nodes[i].Global_ID_Num</font>;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i*num_lid_entries]
 = i;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; }</tt>
@@ -353,18 +353,18 @@ of mesh as the data pointer.</font></i> */</tt>
 <br><tt>}</tt>
 <p><tt>void user_return_coords(void *data,&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int num_gid_entries, int num_lid_entries,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; LB_ID_PTR global_id, LB_ID_PTR local_id,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> global_id, <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> local_id,&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; double *geom_vec, int *ierr)</tt>
 <br><tt>{</tt>
 <p><tt><font color="#FF0000">/* <i>cast data pointer to type Mesh_Type.</i>
 */</font></tt>
-<br><tt><font color="#FF0000">struct Mesh_Type *mesh_ptr = (struct Mesh_Type
+<br><tt><font color="#FF0000">struct Mesh_Type *ptr = (struct Mesh_Type
 *) data;</font></tt>
 <p><tt>&nbsp;&nbsp;&nbsp; /* <i>use local_id to address the requested node.</i>
 */</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; geom_vec[0] = <font color="#FF0000">mesh_ptr->Nodes[local_id[0]].Coordinates[0]</font>;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; geom_vec[1] = <font color="#FF0000">mesh_ptr->Nodes[local_id[0]].Coordinates[1]</font>;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; geom_vec[2] = <font color="#FF0000">mesh_ptr->Nodes[local_id[0]].Coordinates[2]</font>;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; geom_vec[0] = <font color="#FF0000">ptr->Nodes[local_id[0]].Coordinates[0]</font>;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; geom_vec[1] = <font color="#FF0000">ptr->Nodes[local_id[0]].Coordinates[1]</font>;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; geom_vec[2] = <font color="#FF0000">ptr->Nodes[local_id[0]].Coordinates[2]</font>;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</tt>
 <br><tt>}</tt></td>
 </tr>
@@ -414,8 +414,8 @@ variable to pass the mesh data
 <tt>user_return_owned_nodes<font color="#FF0000">, data</font>)&nbsp;&nbsp;</tt>
 <br><tt>...&nbsp;</tt>
 <br><tt>end program&nbsp;</tt>
-<p><tt>subroutine user_return_owned_nodes(data, num_gid_entries, num_lid_entries,
-&amp;</tt>
+<p><tt>subroutine user_return_owned_nodes(data, &amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; num_gid_entries, num_lid_entries, &amp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; global_ids, local_ids, wgt_dim, obj_wgts, ierr)&nbsp;</tt>
 <br><tt>use zoltan&nbsp;</tt>
 <br><tt><font color="#FF0000">type(LB_User_Data_1) :: data</font></tt>
@@ -439,8 +439,8 @@ User_Data argument</i></font></tt>
 <br><tt>&nbsp;&nbsp;&nbsp; end do&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</tt>
 <br><tt>end subroutine&nbsp;</tt>
-<p><tt>subroutine user_return_coords(data, global_id, local_id, geom_vec,
-ierr)&nbsp;</tt>
+<p><tt>subroutine user_return_coords(data, global_id, local_id, &amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; geom_vec, ierr)&nbsp;</tt>
 <br><tt>use zoltan&nbsp;</tt>
 <br><tt><font color="#FF0000">type(LB_User_Data_1) :: data</font></tt>
 <br><tt>integer(lb_int), intent(in)&nbsp;::&nbsp;num_gid_entries, num_lid_entries</tt>
@@ -482,9 +482,6 @@ allocate memory for each node.&nbsp; Such dynamic allocation would have
 to be accounted for in the <a href="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</a>,
 <a href="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN</a>,
 and <a href="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN</a> routines.&nbsp;
-The <a href="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</a> should
-return the size of the largest object to be migrated among all processors,
-as all migrating objects must have the same size.
 <br>&nbsp;
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <tr>
@@ -498,26 +495,34 @@ functions;</i> */</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i>the global Mesh data structure will be
 used.</i> */</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</a>,
+<a href="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 (void (*)()) user_size_node, NULL);&nbsp;&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</a>,
+<a href="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 (void (*)()) user_pack_node, NULL);&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</a>,
+<a href="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 (void (*)()) user_unpack_node, NULL);&nbsp;&nbsp;</tt>
 <br><tt>...&nbsp;</tt>
 <br><tt>}&nbsp;</tt>
-<p><tt>int user_size_node(void *data, int *ierr)</tt>
+<p><tt>int user_size_node(void *data, </tt>
+<br><tt>&nbsp;&nbsp;&nbsp; int num_gid_entries, int num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> global_id, <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> local_id, int *ierr)</tt>
 <br><tt>{</tt>
 <br><tt>/* <i>Return the size of data associated with one node.</i> */</tt>
+<br><tt>/* <i>This case is simple because all nodes have the same size.</i> */</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; return(sizeof(struct Node_Type));</tt>
 <br><tt>}</tt>
-<p><tt>void user_pack_node(void *data, int num_gid_entries, int num_lid_entries,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-LB_ID_PTR global_id, LB_ID_PTR local_id,&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<p><tt>void user_pack_node(void *data, </tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;
+int num_gid_entries, int num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> global_id, <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> local_id,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;
 int dest_proc, int size, char *buf, int *ierr)&nbsp;</tt>
 <br><tt>{</tt>
 <br><tt>/* Copy<i> the specified node's data into buffer buf.</i> */</tt>
@@ -529,9 +534,9 @@ int dest_proc, int size, char *buf, int *ierr)&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; node_buf->Global_ID_Num = Mesh.Nodes[local_id[0]].Global_ID_Num;</tt>
 <br><tt>}</tt>
 <p><tt>void user_unpack_node(void *data, int num_gid_entries,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-LB_ID_PTR global_id, int size,&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> global_id, int size,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;
 char *buf, int *ierr)</tt>
 <br><tt>{</tt>
 <br><tt>/* <i>Copy the node data in buf into the Mesh data structure. </i>*/</tt>

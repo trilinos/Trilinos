@@ -53,8 +53,9 @@ A Unix-like operating system (e.g., Linux or Solaris) and
 <i>gmake</i> (GNU Make) are recommended to build the library.</li>
 
 <li>
-A Fortran90 compatible compiler is required if you wish to use Zoltan
-with Fortran applications.</li>
+A Fortran90 compatible compiler is required if you wish to 
+<a href="ug_fortran.html">use Zoltan
+with Fortran applications</a>.</li>
 </ul>
 
 Zoltan has been tested on a variety of platforms, including Linux, Solaris, Irix,
@@ -74,7 +75,7 @@ by default, one unsigned integer represents an ID. Applications may use
 whatever format is most convenient to store their IDs; the IDs can then
 be converted to and from Zoltan's ID format in the <a href="ug_query.html">application-registered
 query functions</a>.
-<p>The following type definitions are defined in lb/lbi_const.h; they can
+<p>The following type definitions are defined in <i>lb/lbi_const.h</i>; they can
 be used by an application for memory allocation, MPI communication, and
 as arguments to
 <a href="ug_interface.html">load-balancing interface functions</a>
@@ -95,11 +96,12 @@ query functions</a> for more details. The source code distribution contains
 an example application <i><a href="../dev_html/dev_driver.html">zdrive</a></i>
 in which global IDs are integers and local IDs are local array indices.
 One may choose not to use local ids at all, in which case <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>
-should be set to zero.
+may be set to zero.
 <h3>
 <a NAME="Building the Library"></a>Building the Zoltan Library</h3>
 The Zoltan library is implemented in ANSI C and can be compiled with any
-ANSI C compiler.&nbsp; Makefiles are included with the source code. The
+ANSI C compiler.&nbsp; Makefiles are included with the source code; these
+makefiles require the GNU Make (gmake) utility.  The
 top-level Makefile defines targets for the Zoltan library and <a href="../dev_html/dev_driver.html">test
 driver</a> programs in C and Fortran90.&nbsp; This Makefile need not be
 edited to build Zoltan.&nbsp; Instead, environment-specific definitions
@@ -119,7 +121,7 @@ new system's environment.
 where the options that may be specified are listed below.
 <table WIDTH="100%" >
 <tr>
-<td WIDTH="20%"><b>Options to gmake:</b></td>
+<td><b>Options to gmake:</b></td>
 
 <td>&nbsp;</td>
 </tr>
@@ -160,11 +162,14 @@ and <a href="../dev_html/dev_util.html">utility libraries</a> <i>libzoltan_comm.
 and <i>libzoltan_mem.a</i> are stored in the directory Obj_&lt;<i>platform</i>>.
 <h3>
 <a NAME="Building Applications"></a>Building Applications that use Zoltan</h3>
-The library interface is described in the C include file "lbi_const.h";
+The library interface is described in the C include file <i>lb/lbi_const.h</i>;
 this file should be included in all application source files that call
-Zoltan library routines. Similarly, Fortran applications must USE
+Zoltan library routines. Similarly, <a href="ug_fortran_apps.html">Fortran applications</a> must USE
 <a href="ug_fortran_api.html#fortran ug api zoltan module">module
-zoltan</a>. The application should then be linked with the Zoltan library
+zoltan</a> and 
+specify <i>Zoltan/Obj_&lt;platform></i>
+as a directory to be searched for module information files.
+The application should then be linked with the Zoltan library
 and its <a href="../dev_html/dev_util.html">utility libraries</a> by including
 <blockquote><i>-lzoltan -lzoltan_comm -lzoltan_mem</i></blockquote>
 in the linking command for the application. The <i>zoltan_comm</i> and
@@ -180,11 +185,6 @@ linked with the application if they were included in compilation of the
 Zoltan library.&nbsp; (A courtesy copy of <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
 is included with the Zoltan distribution; <a href="http://www.gre.ac.uk/~jjg01/">Jostle</a>
 must be obtained directly from <a href="http://www.gre.ac.uk/~jjg01/">http://www.gre.ac.uk/~jjg01/</a>.)
-In Zoltan's top-level <a href="#Building the Library">Makefile</a>, the
-variable $THIRD_PARTY_LIBS&nbsp; specifies the library names that can be
-used with Zoltan.&nbsp; <a href="ug_fortran_apps.html">Compiling Fortran
-applications</a> also requires specifying<i> Zoltan/Obj_&lt;platform></i>
-as a directory to be searched for module information files.
 <br>&nbsp;
 <p>
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_interface.html">Next:&nbsp;

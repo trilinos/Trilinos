@@ -30,7 +30,7 @@ The Octree Partitioning algorithm is based upon work in load balancing
 for parallel mesh generation at Rensselaer Polytechnic Institute [<A HREF="ug_refs.html#flaherty">Flaherty,
 Loy et al.</A>]. It was implemented in the library by Luis Gervasio, Department
 of Computer Science, Rensselaer Polytechnic Institute, as his summer project
-in 1998 [<A HREF="ug_refs.html#gervasio">Gervasio</A>].An octree is a spatial
+in 1998 [<A HREF="ug_refs.html#gervasio">Gervasio</A>].  An octree is a spatial
 decomposition of the computational domain in which the root of the tree,
 representing the entire domain, is recursively divided by two in each coordinate
 direction (producing eight or four "child" octants in 3D or 2D, respectively)
@@ -38,7 +38,7 @@ until each subregion holds at most an application-specified number of objects.
 These subregions are represented by the leaves of the octree. The octree
 data structure is widely used in mesh generation and adaptive mesh refinement
 [<U><A HREF="ug_refs.html#baehmann">Baehmann et al.</A></U>, <U><A HREF="ug_refs.html#shephard">Shephard
-and Georges</A></U>].The octree resulting from such a spatial decomposition
+and Georges</A></U>].  The octree resulting from such a spatial decomposition
 of the domain can be used to partition an application's work [<A HREF="ug_refs.html#edwards">Edwards</A>,
 <A HREF="ug_refs.html#pilkington">Pilkington and Baden</A>, <A HREF="ug_refs.html#warren">Warren
 and Salmon</A>]. To partition an octree, a traversal of the tree is used
@@ -56,7 +56,7 @@ of the Hilbert SFC algorithm implemented in the library.
 <BR>&nbsp;
 <TABLE WIDTH="100%" NOSAVE >
 <TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Method String:</B></TD>
+<TD VALIGN=TOP><B>Method String:</B></TD>
 
 <TD><B>OCTPART</B></TD>
 </TR>
@@ -86,11 +86,19 @@ to the <I>xy</I>-plane without overlapping points.&nbsp;
 </TR>
 
 <TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>OCT_GRANULARITY</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>OCT_MINOBJECTS</I></TD>
+
+<TD>The minimum number of objects to allow in a leaf octant of the octree.
+These objects will be assigned as a group to a processor, so this parameter
+helps define the granularity of the load-balancing problem.  Values greater than
+or equal to one are allowable.</TD>
+</TR>
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>OCT_MAXOBJECTS</I></TD>
 
 <TD>The maximum number of objects to allow in a leaf octant of the octree.
 These objects will be assigned as a group to a processor, so this parameter
-defines the granularity of the load-balancing problem.Values greater than
+helps define the granularity of the load-balancing problem.  Values greater than
 or equal to one are allowable.</TD>
 </TR>
 
@@ -122,7 +130,12 @@ or equal to one are allowable.</TD>
 <TR>
 <TD></TD>
 
-<TD><I>OCT_GRANULARITY</I> = 1</TD>
+<TD><I>OCT_MINOBJECTS</I> = 1</TD>
+</TR>
+<TR>
+<TD></TD>
+
+<TD><I>OCT_MAXOBJECTS</I> = 1</TD>
 </TR>
 
 <TR>

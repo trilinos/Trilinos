@@ -142,15 +142,15 @@ Zoltan requires that each object have a unique identifier (ID).
 In this example, the elements have unique numbers
 assigned to them, as shown by the numbers in the elements.  These unique
 numbers can be used as <i>global IDs</i> in Zoltan.  In addition, on each
-processor, local numbering information about the elements may be available.
+processor, local numbering information may be available.
 For instance, the elements owned by a processor may be stored in arrays
-in the processor's memory.  The local array index may be provided to Zoltan
+in the processor's memory.  An element's local array index may be provided to Zoltan
 as a <i>local ID</i> to improve the efficiency of functions that provide
-information about specific elements to Zoltan.
+information about the element to Zoltan.
 <p>
 For geometric partitioning methods, the application must provide coordinate
-information to Zoltan.  In this example, the coordinate information provided
-is the coordinates of the mid-point of the elements.
+information to Zoltan.  In this example, the coordinates of the mid-point of 
+an element are used.
 <p>
 For graph-based partitioning methods, information about the connectivity of
 the objects must be provided to Zoltan.  In this example, the application may
@@ -298,12 +298,16 @@ decomposition to the application.
 <br><tt>/* <i>Register method and application query functions</i> */</tt>
 <br><tt>lb = LB_Create(MPI_COMM_WORLD);</tt>
 <br><tt>LB_Set_Method(lb, "RCB");</tt>
-<br><tt>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,(void (*)())user_return_coords_fn,NULL);</tt>
-<br><tt>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,(void (*)())user_return_num_elems_fn,NULL);</tt>
-<br><tt>LB_Set_Fn(lb,LB_OBJ_LIST_FN_TYPE,(void (*)())user_return_elem_list_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)())user_return_coords_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)())user_return_num_elems_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb,LB_OBJ_LIST_FN_TYPE,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)())user_return_elem_list_fn,NULL);</tt>
 <br><tt>...</tt>
 <br><tt>/* <i>Call the load balancer</i> */</tt>
-<br><tt>LB_Balance(lb,&amp;new,&amp;num_imp,&amp;imp_glob_ids,&amp;imp_loc_ids,&amp;imp_procs,</tt>
+<br><tt>LB_Balance(lb,&amp;new,&amp;num_gid,&amp;num_lid,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;num_imp,&amp;imp_glob_ids,&amp;imp_loc_ids,&amp;imp_procs,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_glob_ids,&amp;exp_loc_ids,&amp;exp_procs);</tt></td>
 </tr>
 </table>
@@ -328,18 +332,19 @@ decomposition to the application.
 <br><tt>num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, </tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &amp;ierr);&nbsp;</tt>
-<p><tt>/* <i>allocate memory for global and local IDs </i>*/</tt>
-<br><tt>lb->Get_Obj_List(lb->Get_Obj_List_Data, global_ids,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-local_ids, 0, NULL, &amp;ierr);&nbsp;</tt>
+<br><tt>/* <i>allocate memory for global and local IDs </i>*/</tt>
+<br><tt>...</tt>
+<br><tt>/* <i>call query functions to obtain object data</i>*/</tt>
+<br><tt>lb->Get_Obj_List(lb->Get_Obj_List_Data,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_gid, num_lid,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids, local_ids,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0, NULL, &amp;ierr);&nbsp;</tt>
 <br><tt>for (i = 0; i &lt; num_objs; i++) {</tt>
-<br><tt>&nbsp;&nbsp; lb->Data[i].Global_Tag = global_ids[i];</tt>
-<br><tt>&nbsp;&nbsp; lb->Data[i].Local_Tag = local_ids[i];</tt>
-<br><tt>&nbsp;&nbsp; lb->Get_Geom(lb->Get_Geom_Data, global_ids[i],&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-local_ids[i], lb->Data[i].Coords,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&amp;ierr);</tt>
+<br><tt>&nbsp;&nbsp; LB_SET_GID(lb, lb->Data[i].Global_Tag, &amp;global_ids[i]);</tt>
+<br><tt>&nbsp;&nbsp; LB_SET_LID(lb, lb->Data[i].Local_Tag, &amp;local_ids[i]);</tt>
+<br><tt>&nbsp;&nbsp; lb->Get_Geom(lb->Get_Geom_Data, num_gid, num_lid,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;global_ids[i], &amp;local_ids[i],&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; lb->Data[i].Coords, &amp;ierr);</tt>
 <br><tt>}</tt>
 <br><tt>/* <i>perform balancing on lb->Data</i> */</tt>
 <br><tt>...</tt></td>
@@ -406,10 +411,12 @@ communication required for data movement.
 <tr>
 <td><tt>...</tt>
 <br><tt>/* <i>Register packing and unpacking functions</i> */</tt>
-<br><tt>LB_Set_Fn(lb,LB_OBJ_SIZE_FN_TYPE,(void (*)())user_elem_size_fn,NULL);</tt>
-<br><tt>LB_Set_Fn(lb,LB_PACK_OBJ_FN_TYPE,(void (*)())user_pack_one_elem_fn,NULL);</tt>
-<br><tt>LB_Set_Fn(lb,LB_UNPACK_OBJ_FN_TYPE,(void (*)())user_unpack_one_elem_fn,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NULL);</tt>
+<br><tt>LB_Set_Fn(lb, LB_OBJ_SIZE_FN_TYPE,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)())user_elem_size_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb, LB_PACK_OBJ_FN_TYPE,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)())user_pack_one_elem_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb, LB_UNPACK_OBJ_FN_TYPE,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)())user_unpack_one_elem_fn, NULL);</tt>
 <br><tt>...</tt></td>
 </tr>
 </table>
@@ -429,30 +436,36 @@ communication required for data movement.
 <div ALIGN=right><table BORDER=2 COLS=1 WIDTH="80%" NOSAVE >
 <tr NOSAVE>
 <td NOSAVE><tt>...</tt>
-<br><tt>size = lb->Get_Obj_Size(lb->Get_Obj_Size_Data,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&amp;ierr);</tt>
+<br><tt>total_size = 0;</tt>
+<br><tt>for each object i being exported {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; size[i] = lb->Get_Obj_Size(lb->Get_Obj_Size_Data,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_gid, num_lid,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;exp_global_id[i],</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;exp_local_id[i],</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;ierr);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; total_size += size[i];</tt>
+<br><tt>}</tt>
+<br>
+<br><tt>/* <i>allocate export buffer with size total_size</i> */</tt>
+<br><tt>...</tt>
+<br>
 <br><tt>/* <i>pack all objects for export</i> */</tt>
 <br><tt>for each object i being exported</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; lb->Pack_Obj(lb->Pack_Obj_Data,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_gid, num_lid,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;exp_global_id[i],</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;exp_local_id[i], exp_procs[i], </tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-exp_global_id[i],</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-exp_local_id[i], exp_procs[i], </tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-size, export_buf[i], &amp;ierr);&nbsp;</tt>
+size[i], export_buf[i], &amp;ierr);&nbsp;</tt>
 <p><tt>/* <i>perform communication using map</i> */</tt>
-<br><tt>communicate(lb->Comm_Map, export_buf, </tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&amp;import_buf);</tt>
+<br><tt>communicate(lb, export_buf, &amp;import_buf);</tt>
 <p><tt>/* <i>unpack all imported objects</i> */</tt>
 <br><tt>for each object i received</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; lb->Unpack_Obj(lb->Unpack_Obj_Data, </tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-imp_global_id[i],</tt>
+num_gid, &amp;imp_global_id[i],</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-size, import_buf[i], &amp;ierr);</tt>
+size[i], import_buf[i], &amp;ierr);</tt>
 <br><tt>...</tt></td>
 </tr>
 </table></div>
@@ -470,7 +483,6 @@ If the application has its own migration routines, it can use them in conjunctio
 with the load-balancing routines in the load-balancing library.
 <br>&nbsp;
 
-<br><a href="#Component Libraries">Component Libraries</a>
 <h2>
 <a NAME="Component Libraries"></a>Component Libraries</h2>
 

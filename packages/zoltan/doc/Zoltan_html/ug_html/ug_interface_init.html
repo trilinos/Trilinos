@@ -34,6 +34,7 @@ are described below:
 <br><a href="#LB_Set_Specific_Fn">LB_Set_&lt;<i>lb_fn_type</i>>_Fn</a></ul>
 
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -74,7 +75,7 @@ is linked to.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
-<td WIDTH="20%"><b>Parameters:</b></td>
+<td WIDTH="20%"><b>Arguments:</b></td>
 
 <td>&nbsp;</td>
 </tr>
@@ -94,7 +95,7 @@ is linked to.
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ver</i></td>
 
-<td>The version number of the library.</td>
+<td>Upon return, the version number of the library.</td>
 </tr>
 
 <tr>
@@ -111,6 +112,7 @@ is linked to.
 </table>
 
 <p>
+<hr WIDTH="100%">
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
@@ -139,7 +141,7 @@ techniques.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
-<td WIDTH="20%"><b>Parameters:</b></td>
+<td WIDTH="20%"><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -150,7 +152,7 @@ techniques.
 <td>The MPI communicator to be used for this load-balancing structure.
 Only those processors included in the communicator participate in load
 balancing. If all processors currently used by the application are to participate
-in load balancing, communicator should be <b>MPI_COMM_WORLD</b> .</td>
+in load balancing, <i>communicator</i> should be <b>MPI_COMM_WORLD</b> .</td>
 </tr>
 
 <tr>
@@ -170,6 +172,7 @@ be fatal.</td>
 </table>
 
 <p>
+<hr WIDTH="100%">
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
@@ -203,11 +206,11 @@ query functions</a> for an explanation.&nbsp;</td>
 function in the load-balancing structure. Both load-balancing and migration
 functions can be registered through calls to <b>LB_Set_Fn</b>.&nbsp; To
 register functions while maintaining strict type-checking of the <i>fn_ptr</i>
-argument, see <b><a href="#LB_Set_Specific_Fn">LB_Set_&lt;<i>lb_fn_type</i>>_Fn</a></b>.
+argument, use <b><a href="#LB_Set_Specific_Fn">LB_Set_&lt;<i>lb_fn_type</i>>_Fn</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -253,6 +256,7 @@ it may be omitted.</td>
 </tr>
 </table>
 
+<hr WIDTH="100%">
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
@@ -300,7 +304,7 @@ type checking, as the pointer to the registered function is cast to a void
 pointer.
 <table WIDTH="100%" NOSAVE >
 <tr>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -324,7 +328,7 @@ in the name <b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>A pointer to user defined data that will be passed, as an argument,
-to the function pointed to by fn_ptr. In C it may be NULL. In Fortran it
+to the function pointed to by <i>fn_ptr</i>. In C it may be NULL. In Fortran it
 may be omitted.</td>
 </tr>
 
@@ -351,8 +355,8 @@ may be omitted.</td>
 
 <td VALIGN=TOP NOSAVE>The interface function
 <br>&nbsp;&nbsp;&nbsp; int <b>LB_Set_Geom_Fn</b>(struct <b>LB_Struct</b>
-*lb, <b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a></b> (*fn_ptr)(),
-void *data);
+*lb, <b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a></b> (*fn_ptr)(),<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void *data);
 <br>registers an <b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a></b>
 query function.</td>
 </tr>

@@ -49,7 +49,7 @@ use.&nbsp; Zoltan has been tested only with&nbsp; parallel Jostle version
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
-<td VALIGN=TOP WIDTH="20%"><b>Method String:</b></td>
+<td VALIGN=TOP><b>Method String:</b></td>
 
 <td><b>JOSTLE</b></td>
 </tr>
@@ -67,20 +67,20 @@ use.&nbsp; Zoltan has been tested only with&nbsp; parallel Jostle version
 </tr>
 
 <tr>
-<td>&nbsp;&nbsp;&nbsp; <i>JOSTLE_THRESHOLD</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>JOSTLE_THRESHOLD</i></td>
 
 <td>Threshold at which the graph contraction phase is stopped. (integer)</td>
 </tr>
 
 <tr>
-<td>&nbsp;&nbsp;&nbsp; <i>JOSTLE_GATHER_THRESHOLD</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>JOSTLE_GATHER_THRESHOLD</i></td>
 
 <td>Duplicate coarse graph on all processors when there are fewer than
 this number of nodes. (integer)</td>
 </tr>
 
 <tr>
-<td>&nbsp;&nbsp;&nbsp; <i>JOSTLE_MATCHING</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>JOSTLE_MATCHING</i></td>
 
 <td>Matching algorithm for graph contraction. (Valid values are "local"
 and "global".)</td>
@@ -95,7 +95,7 @@ and "off".)</td>
 </tr>
 
 <tr>
-<td>&nbsp;&nbsp;&nbsp; <i>JOSTLE_CONNECT</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>JOSTLE_CONNECT</i></td>
 
 <td>Make a disconnected graph connected before partitioning. (Valid values
 are "on" and "off".)</td>
@@ -104,8 +104,8 @@ are "on" and "off".)</td>
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp; <i>CHECK_GRAPH</i></td>
 
-<td NOSAVE>Level of error checking for graph input.: 0 = no checking, 1
-= on-processor checking, 2 = full checking (this is very slow and should
+<td NOSAVE>Level of error checking for graph input: 0 = no checking, 1
+= on-processor checking, 2 = full checking.  (CHECK_GRAPH==2 is very slow and should
 be used only during debugging).</td>
 </tr>
 
@@ -114,8 +114,8 @@ be used only during debugging).</td>
 
 <td NOSAVE>Scatter graph data by distributing contiguous chunks of objects
 (vertices)&nbsp; of roughly equal size to each processor before calling
-the partitioner? 0 = don't scatter, 1 = scatter only if all objects are
-on a single processor, 2 = scatter if at least one processor owns no objects,&nbsp;
+the partitioner.  0 = don't scatter; 1 = scatter only if all objects are
+on a single processor; 2 = scatter if at least one processor owns no objects;&nbsp;
 3 = always scatter.&nbsp;</td>
 </tr>
 

@@ -28,7 +28,7 @@
 <a NAME="Zoltan Interface Functions"></a>Zoltan Interface Functions</h2>
 An application calls a series of dynamic load-balancing library functions
 to initialize the load balancer, perform load balancing and migrate data.
-This section details the syntax of each type of interface function:
+This section describes the syntax of each type of interface function:
 <blockquote><a href="ug_interface_init.html">Initialization Interface Functions</a>
 <br><a href="ug_interface_lb.html">Load-Balancing Interface Functions</a>
 <br><a href="ug_interface_augment.html">Functions for Augmenting a Decomposition</a>
@@ -43,7 +43,9 @@ of Library Usage</a>.
 <a NAME="Error Codes"></a>Error Codes</h2>
 All interface functions, with the exception of <b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>,
 return an error code to the application. The possible return codes are
-defined in lbi_const.h and Fortran module zoltan, and are listed in the
+defined in <i>lb/lbi_const.h</i> and Fortran 
+<a href="ug_fortran_api.html#fortran ug api zoltan module">module zoltan</a>, 
+and are listed in the
 <a href="#error codes table">table</a>
 below.
 <p>Note:&nbsp; Robust error handling in parallel has not yet been achieved
@@ -72,7 +74,7 @@ to continue to run.</td>
 <tr>
 <td VALIGN=TOP><i>LB_FATAL&nbsp;</i></td>
 
-<td>A fatal error occured within the LB library.</td>
+<td>A fatal error occured within the Zoltan library.</td>
 </tr>
 
 <tr>
@@ -80,7 +82,7 @@ to continue to run.</td>
 
 <td>An error occurred while allocating memory. When this error occurs,
 the library frees any allocated memory and returns control to the application.
-If the application then wants to try to use another, less memory-intensive,
+If the application then wants to try to use another, less memory-intensive
 algorithm, it can do so.</td>
 </tr>
 

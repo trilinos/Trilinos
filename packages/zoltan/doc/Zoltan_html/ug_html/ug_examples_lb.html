@@ -40,7 +40,7 @@ After some computation, load balancing is invoked by calling <b><a href="ug_inte
 The results of the load balancing include the number of nodes to be imported
 and exported to the processor, lists of global and local IDs of the imported
 and exported nodes, and source and destination processors of the imported
-and exported nodes. The return value of <b><a href="ug_interface_lb.html#LB_Balance">LB_Balance</a></b>
+and exported nodes. A returned argument of <b><a href="ug_interface_lb.html#LB_Balance">LB_Balance</a></b>
 is tested to see whether the new decomposition differs from the old one.
 If the decompositions differ, some sort of data migration is needed to
 establish the new decomposition; the details of migration are not shown
@@ -67,17 +67,17 @@ imp_local_ids, exp_local_ids;</tt>
 <br><tt><a href="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a>(lb,
 lb_method, &amp;(lb_params[0]));</tt>
 <p><tt>/* <i>Register load-balancing query functions.</i> */</tt>
-<br><tt><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb, <a href="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</a>,
-(void (*)()) user_return_dimension, NULL);</tt>
-<br><tt><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb, <a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</a>,
-(void (*)()) user_return_coords, NULL);</tt>
-<br><tt><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb, <a href="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN_TYPE</a>,
-(void (*)()) user_return_num_node, NULL);</tt>
-<br><tt><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb, <a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</a>,
-(void (*)()) user_return_owned_nodes, NULL);</tt>
+<br><tt><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb, <a href="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</a>, </tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_dimension, NULL);</tt>
+<br><tt><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb, <a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_coords, NULL);</tt>
+<br><tt><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb, <a href="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_num_node, NULL);</tt>
+<br><tt><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb, <a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_owned_nodes, NULL);</tt>
 <p><tt>/* <i>Reset some load-balancing parameters.</i> */</tt>
 <br><tt><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
-"imbalance_tol", "0.1");</tt>
+"debug_level", "4");</tt>
 <br><tt><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
 "RCB_Reuse", "TRUE");</tt>
 <p><tt>/* <i>Perform computations</i> */</tt>
@@ -132,7 +132,7 @@ lb_method)</tt>
 <a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</a>, user_return_owned_nodes)</tt>
 <p><tt>! <i>Reset some load-balancing parameters.</i></tt>
 <br><tt>ierr = <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
-"imbalance_tol", "0.1")</tt>
+"debug_level", "4")</tt>
 <br><tt>ierr = <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
 "RCB_Reuse", "TRUE")</tt>
 <p><tt>! <i>Perform computations</i></tt>

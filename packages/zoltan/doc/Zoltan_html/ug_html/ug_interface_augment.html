@@ -38,6 +38,7 @@ algorithms.
 <BR><B><A HREF="#LB_Box_Assign">LB_Box_Assign</A></B></BLOCKQUOTE>
 
 <HR WIDTH="100%">
+<HR WIDTH="100%">
 <TABLE WIDTH="100%" NOSAVE >
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
@@ -64,13 +65,13 @@ generated decompositions (currently only
 <A HREF="ug_alg_rcb.html">RCB</A> and
 <a href="ug_alg_rib.html">RIB</a>).
 If the parameter <B>KEEP_CUTS</B>
-is set to TRUE, then the recursive sequence of cuts which define the 
+is set to TRUE, then the recursive sequence of cuts that define the 
 decomposition is saved. Given a new geometric point, the processor which
 owns it can be determined.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
 <TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+<TD VALIGN=TOP WIDTH="20%"><B>Arguments:</B></TD>
 </TR>
 
 <TR>
@@ -82,13 +83,13 @@ owns it can be determined.
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; coords</I></TD>
 
-<TD>The <I>(x,y)</I> of <I>(x,y,z)</I> coordinates of the point being assigned.</TD>
+<TD>The <I>(x,y)</I> or <I>(x,y,z)</I> coordinates of the point being assigned.</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; proc</I></TD>
 
-<TD>Upon return, the ID of the processor the point should belong to.</TD>
+<TD>Upon return, the ID of the processor to which the point should belong.</TD>
 </TR>
 
 <TR>
@@ -104,6 +105,7 @@ owns it can be determined.
 </TR>
 </TABLE>
 &nbsp;
+<HR WIDTH="100%">
 <HR WIDTH="100%">
 <TABLE WIDTH="100%" NOSAVE >
 <TR NOSAVE>
@@ -146,7 +148,7 @@ is necessary for <B>LB_Box_Assign</B> to do its job.
 <P>&nbsp;
 <TABLE WIDTH="100%" >
 <TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+<TD VALIGN=TOP WIDTH="20%"><B>Arguments:</B></TD>
 </TR>
 
 <TR>
@@ -159,16 +161,16 @@ is necessary for <B>LB_Box_Assign</B> to do its job.
 <TD VALIGN=TOP><I>&nbsp;&nbsp; xmin, ymin, zmin</I></TD>
 
 <TD>The coordinates of the lower extent of the bounding box around the
-object.&nbsp; If your geometry is only 2- dimensional then the z value
-will be ignored.&nbsp;</TD>
+object.&nbsp; If the geometry is only two-dimensional, the <i>z</i> value
+is ignored.&nbsp;</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp; xmax, ymax, zmax</I></TD>
 
 <TD>The coordinates of the upper extent of the bounding box around the
-object.&nbsp; If your geometry is only 2- dimensional then the z value
-will be ignored.&nbsp;</TD>
+object.&nbsp; If the geometry is only two-dimensional, the <i>z</i> value
+is ignored.&nbsp;</TD>
 </TR>
 
 <TR>

@@ -36,6 +36,7 @@ Zoltan library; their descriptions are included below.
 <br><b><a href="#LB_Destroy">LB_Destroy</a></b></blockquote>
 
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -60,7 +61,7 @@ algorithm should be used by the application.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 </tr>
 
 <tr>
@@ -115,6 +116,7 @@ is used.</td>
 </table>
 
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -142,7 +144,7 @@ if desired.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 </tr>
 
 <tr>
@@ -193,6 +195,7 @@ being set. As above, the string is case-insensitive.&nbsp;</td>
 </table>
 
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -230,11 +233,15 @@ export_global_ids, export_local_ids, export_procs</i>)&nbsp;
 </table>
 
 <hr WIDTH="100%"><b>LB_Balance</b> invokes the load-balancing routine specified
-by <b><a href="#LB_Set_Method">LB_Set_Method</a></b>.
+by <b><a href="#LB_Set_Method">LB_Set_Method</a></b>.  Results of the 
+partitioning are returned in lists of objects to be imported and exported.
+These arrays are allocated in Zoltan; applications should not allocate these
+arrays before calling <b>LB_Balance</b>.  The arrays are later freed through
+calls to <a href="#LB_Free_Data"><b>LB_Free_Data</b></a>.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -359,6 +366,7 @@ IDs of processors that will own the exported objects in the new decomposition
 
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -388,16 +396,16 @@ cut_wgt, nboundary, nadj</i>)&nbsp;
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>LB_Eval </b>evaluates the quality of the load balance
-in the load-balance structure pointed to by <i>lb</i>. Some quality metrics
-are only available if the graph query functions have been registered. <b>LB_Eval
+<hr WIDTH="100%"><b>LB_Eval </b>evaluates the quality of a decomposition.
+Some quality metrics
+are available only if the graph query functions have been registered. <b>LB_Eval
 </b>may
 either print a summary of the results to <i>stdout</i> or return the results
 in the output parameters.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -429,27 +437,27 @@ containing the sum of object weights on this processor.</td>
 </tr>
 
 <tr>
-<td>&nbsp;&nbsp;&nbsp; <i>ncuts</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ncuts</i></td>
 
 <td>Upon return,&nbsp; the number of (communication) edge cuts&nbsp; for
 this processor.</td>
 </tr>
 
 <tr>
-<td>&nbsp;&nbsp;&nbsp; <i>cut_wgt</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>cut_wgt</i></td>
 
 <td>Upon return, an array (of dimension <a href="ug_alg.html#COMM_WEIGHT_DIM">COMM_WEIGHT_DIM</a>) 
 of cut weights for this processor.&nbsp;</td>
 </tr>
 
 <tr>
-<td>&nbsp;&nbsp;&nbsp; <i>nboundary</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nboundary</i></td>
 
 <td>Upon return,&nbsp; the number of boundary objects on this processor.</td>
 </tr>
 
 <tr>
-<td>&nbsp;&nbsp;&nbsp; <i>nadj</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nadj</i></td>
 
 <td>Upon return,&nbsp; the number of adjacent processors as defined by
 the communication graph.</td>
@@ -499,6 +507,7 @@ the number of edges cut in the graph (because each edge is counted twice).
 The same principle holds for <i>cut_wgt.</i>
 <p>
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -526,14 +535,16 @@ import_procs, export_global_ids, export_local_ids, export_procs</i>)&nbsp;
 </table>
 
 <hr WIDTH="100%"><b>LB_Free_Data</b> frees the memory allocated by the
-load-balancing routines to return the results of <b><a href="#LB_Balance">LB_Balance</a></b>.
+Zoltan to return the results of <b><a href="#LB_Balance">LB_Balance</a></b> or
+<b><a href="ug_interface_mig.html#LB_Compute_Destinations">LB_Compute_Destinations</a></b>.
 Memory pointed to by the arguments is freed and the arguments are set to
-NULL in C or nullified in Fortran. Note that this function does not destroy the
+NULL in C or nullified in Fortran. NULL arguments may be passed to 
+<b>LB_Free_Data</b>.  Note that this function does not destroy the
 load-balancing data structure itself; it is deallocated through a call to <b><a href="#LB_Destroy">LB_Destroy</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -590,6 +601,7 @@ objects in the new decomposition (i.e., the destination processors).</td>
 </table>
 
 <hr WIDTH="100%">
+<hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
@@ -614,7 +626,7 @@ these arrays can be deallocated through a separate call to <b><a href="#LB_Free_
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
 <td></td>
 </tr>

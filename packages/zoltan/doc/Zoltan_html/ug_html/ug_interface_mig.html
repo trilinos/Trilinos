@@ -36,13 +36,14 @@ simple. For more complicated data movement, the application can leave <b><a href
 FALSE and call <b><a href="#LB_Help_Migrate">LB_Help_Migrate</a></b> itself.
 In either case, <a href="ug_query_mig.html#Migration Query Functions">routines
 to pack and unpack object data</a> must be provided by the application.
-See <a href="ug_examples_mig.html#Migration Example">Migration Examples</a>
+See the <a href="ug_examples_mig.html#Migration Example">Migration Examples</a>
 for examples with and without auto-migration.
 <p>The following functions are the migration interface functions. Their
 detailed descriptions can be found below.
 <blockquote><b><a href="#LB_Compute_Destinations">LB_Compute_Destinations</a></b>
 <br><b><a href="#LB_Help_Migrate">LB_Help_Migrate</a></b></blockquote>
 
+<hr WIDTH="100%">
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
@@ -79,11 +80,14 @@ export_procs</i>)&nbsp;
 map needed to export data. That is, given, for each processor, a list of
 non-local objects assigned to the processor, <b>LB_Compute_Destinations</b>
 computes the list of objects each processor needs to export to other processors
-to satisfy their assignments of non-local objects.
+to satisfy their assignments of non-local objects.  The export lists are 
+allocated in Zoltan; they should not be allocated by the application before
+calling <b>LB_Compute_Destinations</b>.  These lists can be freed through a 
+call to <b><a href="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -108,7 +112,7 @@ to be imported to this processor).</td>
 
 <td>An array of <i>num_import</i> global IDs of objects needed by this
 processor that are stored on other processors in the old decomposition.
-<br>(size = <i>num_import</i> * <i>num_gid_entries</i>)</td>
+<br>(size = <i>num_import</i> * <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>)</td>
 </tr>
 
 <tr>
@@ -116,7 +120,7 @@ processor that are stored on other processors in the old decomposition.
 
 <td>An array of <i>num_import</i> local IDs of objects needed by this processor
 that are stored on other processors in the old decomposition.
-<br>(size = <i>num_import</i> * <i>num_lid_entries</i>)</td>
+<br>(size = <i>num_import</i> * <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>)</td>
 </tr>
 
 <tr>
@@ -140,7 +144,7 @@ the number of objects that must be sent from this processor to other processors)
 
 <td>Upon return, an array of <i>num_export</i> global IDs of objects to
 be sent from this processor.
-<br>(size = <i>num_export</i> * <i>num_gid_entries</i>)</td>
+<br>(size = <i>num_export</i> * <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>)</td>
 </tr>
 
 <tr>
@@ -148,7 +152,7 @@ be sent from this processor.
 
 <td>&nbsp;Upon return, an array of <i>num_export</i> local IDs of objects
 to be sent from this processor.
-<br>(size = <i>num_export</i> * <i>num_lid_entries</i>)</td>
+<br>(size = <i>num_export</i> * <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>)</td>
 </tr>
 
 <tr>
@@ -171,12 +175,13 @@ IDs of processors that need the sent objects (i.e., the destination processors).
 </tr>
 </table>
 
-<p>Note that the number of global and local id entries (<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
+<p>Note that the number of global and local ID entries (<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
 and <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>) should be
 set using <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>
 before calling <b>LB_Compute_Destinations</b>. All processors must have
 the same values for these two parameters.
 <p>
+<hr WIDTH="100%">
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
@@ -225,7 +230,7 @@ data structures.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
-<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -250,7 +255,7 @@ to be imported to this processor).</td>
 
 <td>An array of <i>num_import</i> global IDs of objects needed by this
 processor that are stored on other processors in the old decomposition.
-<br>(size = <i>num_import</i> * <i>num_gid_entries</i>)</td>
+<br>(size = <i>num_import</i> * <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>)</td>
 </tr>
 
 <tr>
@@ -258,7 +263,7 @@ processor that are stored on other processors in the old decomposition.
 
 <td>An array of <i>num_import</i> local IDs of objects needed by this processor
 that are stored on other processors in the old decomposition.
-<br>(size = <i>num_import</i> * <i>num_lid_entries</i>)</td>
+<br>(size = <i>num_import</i> * <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>)</td>
 </tr>
 
 <tr>
@@ -282,7 +287,7 @@ objects that must be sent from this processor to other processors).</td>
 
 <td>An array of <i>num_export</i> global IDs of objects to be sent from
 this processor.
-<br>(size = <i>num_export</i> * <i>num_gid_entries</i>)</td>
+<br>(size = <i>num_export</i> * <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>)</td>
 </tr>
 
 <tr>
@@ -290,7 +295,7 @@ this processor.
 
 <td>An array of <i>num_export</i> local IDs of objects to be sent from
 this processor.
-<br>(size = <i>num_export</i> * <i>num_lid_entries</i>)</td>
+<br>(size = <i>num_export</i> * <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>)</td>
 </tr>
 
 <tr>
@@ -313,7 +318,7 @@ that need the sent objects (i.e., the destination processors).</td>
 </tr>
 </table>
 
-<p>Note that the number of global and local id entries (<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
+<p>Note that the number of global and local ID entries (<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
 and <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>) should be
 set using <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>
 before calling <b>LB_Help_Migrate</b>. All processors must have the same

@@ -44,7 +44,7 @@ connected elements moved to the new processors, and migrated elements may
 also need "ghost" nodes (i.e., copies of nodes assigned to other processors)
 to satisfy their connectivity requirements on the new processor. This complex
 data migration requires a more user-controlled approach to data migration
-than the auto-migration capabilities of Zoltan can provide.
+than the auto-migration capabilities Zoltan can provide.
 <BR>&nbsp;
 <H2>
 <A NAME="Auto-migration example"></A>Auto-Migration Example</H2>
@@ -68,14 +68,14 @@ for data migration.
 <TR>
 <TD><A NAME="Auto-Migration Example Fig"></A><TT>/* <I>Register load-balancing
 query functions.</I> */</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</A>,
-(void (*)()) user_return_dimension, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,
-(void (*)()) user_return_coords, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN_TYPE</A>,
-(void (*)()) user_return_num_particles, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,
-(void (*)()) user_return_particle_list, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_dimension, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_coords, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_num_particles, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_particle_list, NULL);</TT>&nbsp;
 
 <P><TT>/* <I>Tell library to automatically migrate data for the application.</I>
 */</TT>&nbsp;
@@ -85,12 +85,12 @@ query functions.</I> */</TT>&nbsp;
 <P><TT>/* <I>Register additional functions for packing and unpacking data</I>
 */</TT>&nbsp;
 <BR><TT>/* <I>by migration tools. </I>*/</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A>,
-(void (*)()) user_return_particle_data_size, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>,
-(void (*)()) user_pack_particle_data, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A>,
-(void (*)()) user_unpack_particle_data, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_return_particle_data_size, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_pack_particle_data, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) user_unpack_particle_data, NULL);</TT>&nbsp;
 <BR><TT>...</TT>&nbsp;
 <BR><TT>/* <I>Perform computations</I> */</TT>&nbsp;
 <BR><TT>...</TT>&nbsp;
@@ -165,22 +165,22 @@ the load-balancing library returns a decomposition of the</I> */</TT>&nbsp;
 <BR><TT>/* <I>While unpacking nodes, build list of requests for elements
 needed</I> */</TT>&nbsp;
 <BR><TT>/* <I>to support the imported nodes.</I>*/</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A>,
-(void (*)()) migrate_node_size, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>,
-(void (*)()) migrate_pack_node, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A>,
-(void (*)()) migrate_unpack_node, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_node_size, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_pack_node, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_unpack_node, NULL);</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A>(lb,num_import,imp_global_ids,imp_local_ids,imp_procs,&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; num_export,exp_global_ids,exp_local_ids,exp_procs);&nbsp;</TT>&nbsp;
 
 <P><TT>/* <I>Prepare for migration of requested elements.</I> */</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>,
-(void (*)()) migrate_pack_element, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A>,
-(void (*)()) migrate_unpack_element, NULL);</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A>,
-(void (*)()) migrate_element_size, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_pack_element, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_unpack_element, NULL);</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (void (*)()) migrate_element_size, NULL);</TT>&nbsp;
 
 <P><TT>/* <I>From the request lists, a processor knows which elements it
 needs</I> */</TT>&nbsp;

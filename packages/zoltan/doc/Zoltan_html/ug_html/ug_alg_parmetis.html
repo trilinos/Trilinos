@@ -55,7 +55,7 @@ partitioning. This keeps the migration cost low. All the problems described
 above are NP-hard so no efficient exact algorithm is known. We remark that
 in Zoltan, the number of partitions is always the same as the number of
 MPI processes (which is normally equal to the number of processors).
-<p>We only give a brief summary of the various ParMETIS methods here; for
+<p>We give only a brief summary of the various ParMETIS methods here; for
 more details see the <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
 documentation. The methods fall into three categories:
 <ol>
@@ -72,7 +72,7 @@ multiple times to reduce the communication cost (cut weight) if desired.</li>
 </ol>
 As a rule of thumb, use one of the Part* methods if you have a poor initial
 balance and you are willing to spend some time doing migration. One such
-case is static load balancing, that is, you only need to balance once.
+case is static load balancing; that is, you need to balance only once.
 Use the Repart* methods when you have a reasonably good load balance that
 you wish to update incrementally. These methods are well suited&nbsp; for
 dynamic load balancing (for example,&nbsp; adaptive mesh refinement). A
@@ -97,7 +97,7 @@ IMBALANCE_TOL in Zoltan.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
-<td VALIGN=TOP WIDTH="20%"><b>Method String:</b></td>
+<td VALIGN=TOP><b>Method String:</b></td>
 
 <td><b>PARMETIS</b></td>
 </tr>
@@ -155,7 +155,7 @@ more information (for example, 3=1+2, 5=1+4, 7=1+2+4).</td>
 <td>&nbsp;&nbsp;&nbsp; <i>CHECK_GRAPH</i></td>
 
 <td NOSAVE>Level of error checking for graph input: 0 = no checking, 1
-= on-processor checking, 2 = full checking (this is very slow and should
+= on-processor checking, 2 = full checking.  (CHECK_GRAPH==2 is very slow and should
 be used only during debugging).</td>
 </tr>
 
@@ -163,10 +163,10 @@ be used only during debugging).</td>
 <td>&nbsp;&nbsp;&nbsp; <i>SCATTER_GRAPH</i></td>
 
 <td NOSAVE>Scatter graph data by distributing contiguous chunks of objects
-(vertices)&nbsp; of roughly equal size to each processor before calling
-the partitioner? 0 = don't scatter, 1 = scatter only if all objects are
-on a single processor, 2 = scatter if at least one processor owns no objects
-(recommended to avoid a bug in ParMETIS 2.0.0),&nbsp; 3 = always scatter.&nbsp;</td>
+(vertices) of roughly equal size to each processor before calling
+the partitioner. 0 = don't scatter; 1 = scatter only if all objects are
+on a single processor; 2 = scatter if at least one processor owns no objects
+(recommended to avoid a bug in ParMETIS 2.0.0); 3 = always scatter.&nbsp;</td>
 </tr>
 
 <tr>

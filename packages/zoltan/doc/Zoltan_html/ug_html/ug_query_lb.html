@@ -95,7 +95,7 @@ of objects to be balanced that are currently assigned to the processor.
 </tr>
 
 <tr>
-<td><b>Parameters:</b></td>
+<td><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -181,7 +181,7 @@ be provided.
 </tr>
 
 <tr>
-<td><b>Parameters:</b></td>
+<td><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -211,13 +211,13 @@ the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
 
-<td>An array of unique global IDs for all objects assigned to the processor.</td>
+<td>Upon return, an array of unique global IDs for all objects assigned to the processor.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
-<td>An array of local IDs, the meaning of which can be determined by the
+<td>Upon return, an array of local IDs, the meaning of which can be determined by the
 application, for all objects assigned to the processor.</td>
 </tr>
 
@@ -225,13 +225,14 @@ application, for all objects assigned to the processor.</td>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
 <td>The number of weights associated with an object (typically 1), or 0
-if weights are not requested.</td>
+if weights are not requested.  This value is set through the parameter
+<a href="ug_alg.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>obj_wgts</i></td>
 
-<td>An array of object weights. Weight <i>i </i>is stored in o<i>bj_wgts[(i-1)*wgt_dim:i*wgt_dim-1]</i>.&nbsp;
+<td>Upon return, an array of object weights. Weights for object <i>i</i> are stored in <i>obj_wgts[(i-1)*wgt_dim:i*wgt_dim-1]</i>.&nbsp;
 If <i>wgt_dim</i>=0, the return value of <i>obj_wgts</i> is undefined and
 may be NULL.</td>
 </tr>
@@ -304,7 +305,7 @@ be provided.
 </tr>
 
 <tr>
-<td><b>Parameters:</b></td>
+<td><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -349,13 +350,14 @@ is ignored if there are no objects.</td>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
 <td>The number of weights associated with an object (typically 1), or 0
-if weights are not requested.</td>
+if weights are not requested.  This value is set through the parameter
+<a href="ug_alg.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
 </tr>
 
 <tr>
-<td>&nbsp;&nbsp;&nbsp; <i>first_obj_wgt</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>first_obj_wgt</i></td>
 
-<td>Object weight, an array of length <i>wgt_dim. </i>Undefined if <i>wgt_dim=0.</i></td>
+<td>Upon return, the first object's weights; an array of length <i>wgt_dim. </i>Undefined if <i>wgt_dim=0.</i></td>
 </tr>
 
 <tr>
@@ -448,7 +450,7 @@ be provided.
 </tr>
 
 <tr>
-<td><b>Parameters:</b></td>
+<td><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -505,13 +507,14 @@ ignored if there are no more objects.</td>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
 <td>The number of weights associated with an object (typically 1), or 0
-if weights are not requested.</td>
+if weights are not requested.  This value is set through the parameter
+<a href="ug_alg.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
 </tr>
 
 <tr>
-<td>&nbsp;&nbsp;&nbsp; <i>next_obj_wgt</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>next_obj_wgt</i></td>
 
-<td>Object weight, an array of length <i>wgt_dim. </i>Undefined if <i>wgt_dim=0.</i></td>
+<td>Upon return, the next object's weights; an array of length <i>wgt_dim. </i>Undefined if <i>wgt_dim=0.</i></td>
 </tr>
 
 <tr>
@@ -581,7 +584,7 @@ graph of the application) with a given processor.
 </tr>
 
 <tr>
-<td VALIGN=TOP><b>Parameters:</b></td>
+<td VALIGN=TOP><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -678,7 +681,7 @@ be provided.
 </tr>
 
 <tr>
-<td><b>Parameters:</b></td>
+<td><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -716,14 +719,14 @@ returned.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
 
-<td>An array of unique global IDs for all objects assigned to the processor
+<td>Upon return, an array of unique global IDs for all objects assigned to the processor
 that share a subdomain border with <i>nbor_proc</i>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
-<td>An array of local IDs, the meaning of which can be determined by the
+<td>Upon return, an array of local IDs, the meaning of which can be determined by the
 application, for all objects assigned to the processor that share a subdomain
 border with <i>nbor_proc</i>.</td>
 </tr>
@@ -732,13 +735,14 @@ border with <i>nbor_proc</i>.</td>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
 <td>The number of weights associated with an object (typically 1), or 0
-if weights are not requested.</td>
+if weights are not requested.  This value is set through the parameter
+<a href="ug_alg.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>obj_wgts</i></td>
 
-<td>An array of object weights. Weight <i>i </i>is stored in <i>obj_wgts[(i-1)*wgt_dim:i*wgt_dim-1]</i>.&nbsp;
+<td>Upon return, an array of object weights. Weights for object <i>i</i> are stored in <i>obj_wgts[(i-1)*wgt_dim:i*wgt_dim-1]</i>.&nbsp;
 If <i>wgt_dim=0,</i> <i>obj_wgts</i> is undefined and may be NULL.</td>
 </tr>
 
@@ -814,7 +818,7 @@ be provided.
 </tr>
 
 <tr>
-<td><b>Parameters:</b></td>
+<td><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -866,13 +870,14 @@ is ignored if there are no objects along the border.</td>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
 <td>The number of weights associated with an object (typically 1), or 0
-if weights are not requested.</td>
+if weights are not requested.  This value is set through the parameter
+<a href="ug_alg.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
 </tr>
 
 <tr>
-<td>&nbsp;&nbsp;&nbsp; <i>first_obj_wgt</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>first_obj_wgt</i></td>
 
-<td>First object weight. Undefined if&nbsp; <i>wgt_dim=</i>0.</td>
+<td>Upon return, the first object's weights; an array of size <i>wgt_dim</i>. Undefined if&nbsp; <i>wgt_dim=</i>0.</td>
 </tr>
 
 <tr>
@@ -969,7 +974,7 @@ be provided.
 </tr>
 
 <tr>
-<td><b>Parameters:</b></td>
+<td><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -1033,13 +1038,14 @@ ignored if there are no more objects along the border.</td>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
 <td>The number of weights associated with an object (typically 1), or 0
-if weights are not requested.</td>
+if weights are not requested.  This value is set through the parameter
+<a href="ug_alg.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
 </tr>
 
 <tr>
-<td>&nbsp;&nbsp;&nbsp; <i>next_obj_wgt</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>next_obj_wgt</i></td>
 
-<td>Weight of the next object. Undefined if <i>wgt_dim</i>=0.</td>
+<td>Upon return, the weights for the next object; an array of size <i>wgt_dim</i>.  Undefined if <i>wgt_dim</i>=0.</td>
 </tr>
 
 <tr>
@@ -1113,7 +1119,7 @@ application, the return value should be three.
 </tr>
 
 <tr>
-<td VALIGN=TOP><b>Parameters:</b></td>
+<td VALIGN=TOP><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -1192,7 +1198,7 @@ query function.
 </tr>
 
 <tr>
-<td><b>Parameters:</b></td>
+<td><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -1234,7 +1240,7 @@ the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>geom_vec</i></td>
 
-<td>An array in which the geometry values should be stored.</td>
+<td>Upon return, an array containing geometry values.</td>
 </tr>
 
 <tr>
@@ -1295,7 +1301,7 @@ of edges for a given object in the communication graph of the application
 </tr>
 
 <tr>
-<td VALIGN=TOP><b>Parameters:</b></td>
+<td VALIGN=TOP><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -1413,7 +1419,7 @@ call to an <b><a href="#LB_NUM_EDGES">LB_NUM_EDGES_FN</a></b> query function.
 </tr>
 
 <tr>
-<td><b>Parameters:</b></td>
+<td><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -1443,13 +1449,13 @@ the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_id</i></td>
 
-<td>The global ID of the object for which edge lists should be returned.</td>
+<td>The global ID of the object for which an edge list should be returned.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_id</i></td>
 
-<td>The local ID of the object for which edge lists should be returned.</td>
+<td>The local ID of the object for which an edge list should be returned.</td>
 </tr>
 
 <tr>
@@ -1470,14 +1476,15 @@ objects reside.</td>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
 <td>The number of weights associated with an edge (typically 1), or 0 if
-edge weights are not requested.</td>
+edge weights are not requested.  This value is set through the parameter
+<a href="ug_alg.html#COMM_WEIGHT_DIM">COMM_WEIGHT_DIM</a>.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>ewgts</i></td>
 
-<td>Upon return, an array of edge weights, where <i>ewgts[i*wgt_dim: (i+1)*wgt_dim-1]</i>
-<br>corresponds to the <i>i</i>th edge weight. If <i>wgt_dim=0 </i>the
+<td>Upon return, an array of edge weights, where <i>ewgts[i*wgt_dim:(i+1)*wgt_dim-1]</i>
+<br>corresponds to the weights for the <i>i</i>th edge. If <i>wgt_dim=0</i>, the
 return value of <i>ewgts </i>is undefined and may be NULL.</td>
 </tr>
 
@@ -1530,7 +1537,7 @@ the number of objects (elements) in the initial coarse grid.
 </tr>
 
 <tr>
-<td VALIGN=TOP><b>Parameters:</b></td>
+<td VALIGN=TOP><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -1622,7 +1629,7 @@ query function.
 </tr>
 
 <tr>
-<td><b>Parameters:</b></td>
+<td><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -1781,7 +1788,7 @@ may also be provided.
 </tr>
 
 <tr>
-<td><b>Parameters:</b></td>
+<td><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -1954,7 +1961,7 @@ query function.
 </tr>
 
 <tr>
-<td><b>Parameters:</b></td>
+<td><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -2118,7 +2125,7 @@ element has not been refined, the number of children is 0.
 </tr>
 
 <tr>
-<td VALIGN=TOP><b>Parameters:</b></td>
+<td VALIGN=TOP><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -2244,7 +2251,7 @@ query function.
 </tr>
 
 <tr>
-<td><b>Parameters:</b></td>
+<td><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -2429,7 +2436,7 @@ leaves are allowed to have weights.
 </tr>
 
 <tr>
-<td><b>Parameters:</b></td>
+<td><b>Arguments:</b></td>
 
 <td></td>
 </tr>
@@ -2472,13 +2479,14 @@ the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
 
 <td>The number of weights associated with an object (typically 1), or 0
-if weights are not requested.</td>
+if weights are not requested.  This value is set through the parameter
+<a href="ug_alg.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>obj_wgt</i></td>
 
-<td>An array containing the object weight. If <i>wgt_dim</i>=0, the return
+<td>Upon return, an array containing the object's weights. If <i>wgt_dim</i>=0, the return
 value of <i>obj_wgts</i> is undefined and may be NULL.</td>
 </tr>
 
