@@ -290,7 +290,7 @@ int AztecOO::SetParameters(Teuchos::ParameterList& parameterlist,
       cerr << "AztecOO:SetParameters warning: '"<<name<<"' not used."<<endl;
     }
 
-    name.clear();
+    name = " ";
   }
 
   return(0);
