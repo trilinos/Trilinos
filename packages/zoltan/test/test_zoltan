@@ -328,7 +328,7 @@ endif
 # Set up log file
 if ( -e $logfile ) /bin/mv $logfile ${logfile}.old
 echo "Test date  = `date`" > $logfile
-echo "System     = `uname -a`" > $logfile
+echo "System     = `uname -a`" >> $logfile
 echo "Arch       = ${arch}" >> $logfile
 echo "Fortran    = $yes_fortran" >> $logfile
 echo "Run cmd    = $run" >> $logfile
