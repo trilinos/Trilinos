@@ -1,4 +1,4 @@
-/* Trilinos_config.h.in.  Generated automatically from configure.ac by autoheader.  */
+/* Trilinos_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define if want to build aztecoo */
 #undef HAVE_AZTECOO
@@ -21,11 +21,29 @@
 /* Define if want to build triutils */
 #undef HAVE_TRIUTILS
 
+/* Define if want to build tsf */
+#undef HAVE_TSF
+
 /* Define if want to build referencey12m */
 #undef HAVE_Y12M
 
 /* Name of package */
 #undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
 
 /* Version number of package */
 #undef VERSION

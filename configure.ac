@@ -43,6 +43,11 @@ AM_CONDITIONAL(BUILD_Y12M, test "X$ac_cv_use_referencey12m" != "Xno")
 TAC_ARG_ENABLE_FEATURE(nox, [Build nox], NOX, no)
 AM_CONDITIONAL(BUILD_NOX, test "X$ac_cv_use_nox" != "Xno")
 
+# After building TSF from the Trilinos level is stabilized, 
+# the default should be changed to yes.
+TAC_ARG_ENABLE_FEATURE(tsf, [Build TSF], TSF, no)
+AM_CONDITIONAL(BUILD_TSF, test "X$ac_cv_use_tsf" != "Xno")
+
 TAC_ARG_ENABLE_FEATURE(komplex, [Build komplex], KOMPLEX, yes)
 AM_CONDITIONAL(BUILD_KOMPLEX, test "X$ac_cv_use_komplex" != "Xno")
 
@@ -61,6 +66,7 @@ AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 TAC_ARG_ENABLE_FEATURE(epetra, [Build epetra], EPETRA, yes)
 AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" || 
 	test "X$ac_cv_use_ifpack" != "Xno" || 
+	test "X$ac_cv_use_tsf" != "Xyes" || 
 	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
@@ -84,6 +90,7 @@ fi
 if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" || 
+	test "X$ac_cv_use_tsf" != "Xno" || 
 	test "X$ac_cv_use_aztecoo" != "Xno" || 
 	test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/epetra])
@@ -109,6 +116,10 @@ fi
 
 if test "X$ac_cv_use_nox" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/nox])
+fi
+
+if test "X$ac_cv_use_tsf" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/TSF])
 fi
 
 AC_CONFIG_FILES([
