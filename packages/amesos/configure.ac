@@ -247,7 +247,7 @@ AC_CHECK_FILE(${tac_with_trilinos3pldir})
 #  --enable-amesos-slud, --with-amesos-sluddir, --with-amesos-sludlib, 
 #    --with-amesos-sludincdir
 #
-TAC_ARG_ENABLE_FEATURE(amesos_slud,[Enable Amesos interface support for SuperLU Dist], 
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, slud, [Enable Amesos interface support for SuperLU Dist], 
 		AMESOS_SLUD, no)
 
 
@@ -260,25 +260,25 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
   AC_LANG_SAVE
   AC_LANG_C
 
-  TAC_ARG_WITH( amesos_sluddir, [Set SuperLU dist directory],  ${tac_with_trilinos3pldir}/SuperLU_DIST )
+  TAC_ARG_WITH_SUB( amesos, sluddir, [Set SuperLU dist directory],  ${tac_with_trilinos3pldir}/SuperLU_DIST_2.0 )
   AC_CHECK_FILE(${tac_with_amesos_sluddir})
 
-  TAC_ARG_WITH( amesos_sludlib, [Set SuperLU dist library],  ${tac_with_amesos_sluddir}/libsuperludist.a )
+  TAC_ARG_WITH_SUB( amesos, sludlib, [Set SuperLU dist library],  ${tac_with_amesos_sluddir}/libsuperludist.a )
   AC_CHECK_FILE(${tac_with_amesos_sludlib})
 
-  TAC_ARG_WITH( amesos_sludincdir, [Set SuperLU serial include directory],  ${tac_with_amesos_sluddir}/SRC )
+  TAC_ARG_WITH_SUB( amesos, sludincdir, [Set SuperLU serial include directory],  ${tac_with_amesos_sluddir}/SRC )
   AC_CHECK_FILE(${tac_with_amesos_sludincdir})
 
 #
 # This is a bad way to check for supermatrix.h, it won't pick supermatrix.h up if
-# it is in the includ epath, i.e. /usr/include - see tac_arg_check_mpi for a better way
+# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
 #
 
 
   AC_CHECK_FILE(${tac_with_amesos_sludincdir}/supermatrix.h)
-  AC_CHECK_FILE(/home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h)
+  AC_CHECK_FILE(/home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/SRC/supermatrix.h)
 
-  AC_CHECK_FILE(/home/kstanley/Trilinos3PL/SuperLU_DIST/SRC/supermatrix.h,,
+  AC_CHECK_FILE(/home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/SRC/supermatrix.h,,
     AC_MSG_ERROR([[Cannot find supermatrix.h, specify a location using --with-amesos_sluincdir, --with-ameos_sluddir or --with-trilinos3pldir]] ))
 
 
@@ -294,7 +294,7 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
     SAVE_LIBS="${LIBS}"
     LIBS="${tac_with_amesos_sludlib} ${LIBS}"
     AC_TRY_LINK_FUNC(SuperLU_timer_,,
-      AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos_sludlib, (ex. --with-amesos_sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
+      AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-sludlib, (ex. --with-amesos-sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/libsuperludist.a)]]))  
     LIBS="${SAVE_LIBS}"
   AM_CONDITIONAL(HAVE_AMESOS_SLUD, true ) 
 else
@@ -307,8 +307,8 @@ AC_SUBST(AMESOS_LIBS,${tac_with_amesos_sludlib})
 
 
 
-## AC_ARG_ENABLE(amesos_slud,
-## [AC_HELP_STRING([--enable-amesos_slud],[compile SuperLU Dist interface])],
+## AC_ARG_ENABLE(amesos-slud,
+## [AC_HELP_STRING([--enable-amesos-slud],[compile SuperLU Dist interface])],
 ## [ADDON_SLUD=$enableval],
 ## [ADDON_SLUD=yes]
 ## )

@@ -4,7 +4,7 @@
    libraries. */
 #undef F77_DUMMY_MAIN
 
-/* Define if want to build amesos_slud */
+/* Define if want to build amesos-slud */
 #undef HAVE_AMESOS_SLUD
 
 /* Define to 1 if you have the <assert.h> header file. */
