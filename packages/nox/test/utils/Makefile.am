@@ -29,7 +29,8 @@
 
 # Needed so this is installed with distributions
 include_HEADERS = \
-        $(srcdir)/NOX_TestError.H 
+        $(srcdir)/NOX_TestError.H \
+        $(srcdir)/NOX_TestUtils.H
 
 NOX_TEST_UTILS = \
 	$(srcdir)/NOX_TestUtils.C
