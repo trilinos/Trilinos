@@ -589,7 +589,7 @@ integer(Zoltan_INT), intent(out) :: ierr
 integer(Zoltan_INT) :: i
 
   do i = 1, num_obj
-    if (num_lid_entries .gt. 0) then
+    if (num_lid_entries .eq. 0) then
       call get_geom(data, num_gid_entries, num_lid_entries, &
                     global_id((i-1)*num_gid_entries + 1),   &
                     local_id, coor((i-1)*num_dim + 1), ierr)

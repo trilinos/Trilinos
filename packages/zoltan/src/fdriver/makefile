@@ -1,6 +1,21 @@
 ZOD = ../$(ZOLTAN_OBJ_DIR)
 ZOM = $(F90_MODULE_PREFIX)$(ZOD)
 
+COMPILE = $(F90)
+COMPILE_LIB = -lm
+
+# To use purify with zfdrive (yes, it really works!), replace the COMPILE and 
+# COMPILE_LIB macros with the two macros below and compile on paunchy.
+# (FYI:  dbx told me which libraries are automatically linked using $(F90);
+# these libraries must be explicitly specified when using cc.)
+#COMPILE =  purify -best-effort -follow-child-processes=yes \
+#                -cache-dir=/Net/local/proj/zoltan/tmp/purify \
+#                -chain-length=12 /Net/local/bin/cc 
+#COMPILE_LIB =   -lc -lm -lfui -lfai -lfai2 -lfsumai -lfprodai \
+#	        -lfminlai -lfmaxlai -lfminvai -lfmaxvai \
+#	        -lfsu -lsunmath -lmp -lm
+
+
 zfdrive:	$(ZOD)/fdr_migrate.o \
 		$(ZOD)/farg.o \
 		$(ZOD)/mpistring.o \
@@ -11,34 +26,13 @@ zfdrive:	$(ZOD)/fdr_migrate.o \
 		$(ZOD)/fdr_chaco_io.o \
 		$(ZOD)/fdr_const.o \
 		$(ZOD)/libzoltan.a
-	$(F90) -o 	zfdrive $(ZOD)/fdr_main.o \
-				$(ZOD)/fdr_loadbal.o $(ZOD)/fdr_input.o \
-        			$(ZOD)/fdr_chaco_io.o $(ZOD)/fdr_const.o \
-				$(ZOD)/fdr_migrate.o $(ZOD)/farg.o \
-				$(ZOD)/mpistring.o $(ZOD)/lampmpi.o \
-				-L$(ZOD) -lzoltan $(LNK_LIBS) -lm
-	/bin/mv zfdrive $(ZOD)
-
-# To use purify with zfdrive (yes, it really works!), replace the commands
-# for zfdrive above with the following commands and compile on paunchy.
-# (FYI:  dbx told me which libraries are automatically linked using $(F90);
-# these libraries must be explicitly specified when using cc.)
-#	purify -best-effort -follow-child-processes=yes \
-#		-cache-dir=/Net/local/proj/zoltan/tmp/purify \
-#		-chain-length=12 \
-#		/Net/local/bin/cc \
-#		-o      zfdrive $(ZOD)/fdr_main.o \
-#			        $(ZOD)/fdr_loadbal.o $(ZOD)/fdr_input.o \
-#			        $(ZOD)/fdr_chaco_io.o $(ZOD)/fdr_const.o \
-#			        $(ZOD)/fdr_migrate.o $(ZOD)/farg.o \
-#			        $(ZOD)/mpistring.o $(ZOD)/lampmpi.o \
-#			        -L$(ZOD) -lzoltan $(LNK_LIBS) -lc -lm \
-#			        -lfui -lfai -lfai2 -lfsumai -lfprodai \
-#			        -lfminlai -lfmaxlai -lfminvai -lfmaxvai \
-#			        -lfsu \
-#			        -lsunmath -lmp -lm
-#	/bin/mv zfdrive $(ZOD)
-
+		$(COMPILE) -o      zfdrive $(ZOD)/fdr_main.o \
+			        $(ZOD)/fdr_loadbal.o $(ZOD)/fdr_input.o \
+			        $(ZOD)/fdr_chaco_io.o $(ZOD)/fdr_const.o \
+			        $(ZOD)/fdr_migrate.o $(ZOD)/farg.o \
+			        $(ZOD)/mpistring.o $(ZOD)/lampmpi.o \
+			        -L$(ZOD) -lzoltan $(LNK_LIBS) $(COMPILE_LIB)
+		/bin/mv zfdrive $(ZOD)
 
 $(ZOD)/farg.o: $(FARG).f
 	$(F90) -o $(ZOD)/farg.o -c $(FARG).f
