@@ -6,6 +6,8 @@
 06-August-2002 Switched to images.
 03-Sept-2002 Added == and != operators
 16-Oct-2002 Updated for BESData
+12-Nov-2002 Updated to use createOrdinalComm() instead of createComm() (nothing changed)
+14-Nov-2002 Changed slightly for switch to massive constructor call
 */
 
 #ifndef _TPETRA_BLOCKELEMENTSPACE_H_
@@ -17,7 +19,7 @@
 
 namespace Tpetra {
 
-	template<typename OrdinalType> class BlockElementSpaceData;
+template<typename OrdinalType> class BlockElementSpaceData;
 
 //! Tpetra::BlockElementSpace: A class for constructing and using template<OrdinalType> BlockElementSpaces.
 /*! BlockElementSpace objects can have variable element sizes. (If variable element sizes are not needed, an ElementSpace object should probably be used instead.) Some BlockElementSpace methods throw exceptions, and should be enclosed in a try/catch block. All BlockElementSpace objects require an ElementSpace object, which requires a Comm object.  
@@ -27,6 +29,7 @@ BlockElementSpace error codes (positive for non-fatal, negative for fatal):
   <li> +1  Specified Point ID not found on this image.
   <li> +2  Specified Local ID not found on this image.
   <li> +3  elementSize requested in a variable-sized BlockElementSpace.
+  <li> +4  Pointer passed to getFirstPointInElementList, getElementSizeList, or getPointToElementList does not have child allocated. (Null pointer).
   <li> -1  elementSize (or element in elementSizeList) <= 0.  Should be > 0.
   <li> -99 Internal BlockElementSpace error.  Contact developer.
   </ol>*/
@@ -48,7 +51,7 @@ BlockElementSpace(ElementSpace<OrdinalType>& ElementSpace, OrdinalType* elementS
 BlockElementSpace(BlockElementSpace<OrdinalType>& BlockElementSpace);
 
 //! Tpetra::BlockElementSpace destructor.
-~BlockElementSpace() {};
+ ~BlockElementSpace() { /*cout << "BES destructor called." << endl;*/};
 
 //@}
 
@@ -110,16 +113,16 @@ bool operator!=(const BlockElementSpace<OrdinalType>& BlockElementSpace) const {
 
 //@{ \name Array Accessor Functions. Each of these methods is implemented twice, one that returns a pointer, and one that copies the array into one passed in by the user.
 
-//! Returns a pointer to the internal array of the mapping between the local elements, and the first local point number in each element.
-OrdinalType* getFirstPointInElementList() const;
-void getFirstPointInElementList(OrdinalType* firstPointInElementList) const;
-
 //! Returns a pointer to array of the sizes of all the elements that belong to the calling image.
-OrdinalType* getElementSizeList() const {return(BlockElementSpaceData_->elementSizeList_);};
+const OrdinalType* getElementSizeList() const {return(BlockElementSpaceData_->elementSizeList_);};
 void getElementSizeList(OrdinalType* elementSizeList) const;
 
+//! Returns a pointer to the internal array of the mapping between the local elements, and the first local point number in each element.
+const OrdinalType* getFirstPointInElementList() const;
+void getFirstPointInElementList(OrdinalType* firstPointInElementList) const;
+
 //! Returns a pointer to an array that lists the LID of the element that each point belongs to.
-OrdinalType* getPointToElementList() const;
+const OrdinalType* getPointToElementList() const;
 void getPointToElementList(OrdinalType* pointToElementList) const;
 
 //@}
@@ -142,6 +145,6 @@ boost::shared_ptr<BlockElementSpaceData<OrdinalType> > BlockElementSpaceData_; /
 
 } // Tpetra namespace
 
-#include "Tpetra_BlockElementSpace.cpp"
 #include "Tpetra_BlockElementSpaceData.h"
+#include "Tpetra_BlockElementSpace.cpp"
 #endif // _TPETRA_BLOCKELEMENTSPACE_H_

@@ -3,7 +3,9 @@
 05-August-2002 switched to images.
 06-August-2002 Completed switch.
 21-Sept-2002 Platform/Comm switch done.
-16-Oct-2002 Updated to use BESData 
+16-Oct-2002 Updated to use BESData
+12-Nov-2002 Updated to use createOrdinalComm() instead of createComm() (nothing changed)
+24-Nov-2002 Updated for imageID methods moved back to Comm. Changed to use massive BESData constructor calls.
 */
 
 namespace Tpetra {
@@ -12,7 +14,7 @@ namespace Tpetra {
 template<typename OrdinalType>
 BlockElementSpace<OrdinalType>::BlockElementSpace(ElementSpace<OrdinalType>& ElementSpace, OrdinalType elementSize) 
   : Object("Tpetra::BlockElementSpace") 
-	, BlockElementSpaceData_(new BlockElementSpaceData<OrdinalType>(ElementSpace, true))
+	, BlockElementSpaceData_()
 {
 	// get ES data
   OrdinalType numMyElements = ElementSpace.getNumMyElements();
@@ -23,29 +25,34 @@ BlockElementSpace<OrdinalType>::BlockElementSpace(ElementSpace<OrdinalType>& Ele
     throw reportError("elementSize = " + toString(elementSize) + ".  Should be > 0.", -1);
 
 	// initialize elementSizeList
+	OrdinalType* elementSizeList = 0;
   if(numMyElements > 0) {
-		BlockElementSpaceData_->elementSizeList_ = new OrdinalType[numMyElements];
+		elementSizeList = new OrdinalType[numMyElements];
 		for(OrdinalType i = 0; i < numMyElements; i++)
-			BlockElementSpaceData_->elementSizeList_[i] = elementSize;
+			elementSizeList[i] = elementSize;
 	}
 
 	// set sizes
-  BlockElementSpaceData_->elementSize_ = elementSize;
-  BlockElementSpaceData_->minMySize_ = elementSize;
-  BlockElementSpaceData_->maxMySize_ = elementSize;
-  BlockElementSpaceData_->minGlobalSize_ = elementSize;
-  BlockElementSpaceData_->maxGlobalSize_ = elementSize;
+  OrdinalType minMySize = elementSize;
+  OrdinalType maxMySize = elementSize;
+  OrdinalType minGlobalSize = elementSize;
+  OrdinalType maxGlobalSize = elementSize;
 
 	// compute numGlobalPoints & numMyPoints
-  BlockElementSpaceData_->numGlobalPoints_ = elementSize * numGlobalElements;
-  BlockElementSpaceData_->numMyPoints_ = elementSize * numMyElements;
+  OrdinalType numGlobalPoints = elementSize * numGlobalElements;
+  OrdinalType numMyPoints = elementSize * numMyElements;
+
+	// call BESData constructor
+	BlockElementSpaceData_.reset(new BlockElementSpaceData<OrdinalType>(ElementSpace, true, elementSize, numMyPoints, 
+																																			numGlobalPoints, minMySize, maxMySize, 
+																																			minGlobalSize, maxGlobalSize, elementSizeList));
 }
 
 //=======================================================================
 template<typename OrdinalType>
 BlockElementSpace<OrdinalType>::BlockElementSpace(ElementSpace<OrdinalType>& ElementSpace, OrdinalType* elementSizeList) 
   : Object("Tpetra::BlockElementSpace")
-	, BlockElementSpaceData_(new BlockElementSpaceData<OrdinalType>(ElementSpace, false))
+	, BlockElementSpaceData_()
 {
 	// get ES data
   OrdinalType numMyElements = ElementSpace.getNumMyElements();
@@ -56,37 +63,39 @@ BlockElementSpace<OrdinalType>::BlockElementSpace(ElementSpace<OrdinalType>& Ele
       throw reportError("An element in elementSizeList = " + toString(elementSizeList[i]) + ".  Should be > 0.", -1);
 
 	// initialize elementSizeList and compute minMySize, MaxMySize, & numMyPoints
+	//   we copy elementSizeList into our own array because elementSizeList (the user's array)
+	//   is not guaranteed to always hold the same values it does now.
+	OrdinalType* myElementSizeList = 0;
+	OrdinalType minMySize = 1;
+	OrdinalType maxMySize = 1;
+	OrdinalType numMyPoints = 0;
 	if(numMyElements > 0) {
-    BlockElementSpaceData_->elementSizeList_ = new OrdinalType[numMyElements];
-    OrdinalType minMySize = elementSizeList[0];
-    OrdinalType maxMySize = elementSizeList[0];
-    OrdinalType numMyPoints = 0;
+    myElementSizeList = new OrdinalType[numMyElements];
+    minMySize = elementSizeList[0];
+    maxMySize = elementSizeList[0];
+    numMyPoints = 0;
     for(OrdinalType i = 0; i < numMyElements; i++) {
-      BlockElementSpaceData_->elementSizeList_[i] = elementSizeList[i];
+      myElementSizeList[i] = elementSizeList[i];
       minMySize = TPETRA_MIN(minMySize, elementSizeList[i]);
       maxMySize = TPETRA_MAX(maxMySize, elementSizeList[i]);
       numMyPoints += elementSizeList[i];
 		}
-		BlockElementSpaceData_->minMySize_ = minMySize;
-		BlockElementSpaceData_->maxMySize_ = maxMySize;
-		BlockElementSpaceData_->numMyPoints_ = numMyPoints;
 	}
-  else {
-    BlockElementSpaceData_->minMySize_ = 1;
-    BlockElementSpaceData_->maxMySize_ = 1;
-    BlockElementSpaceData_->numMyPoints_ = 0;
-  }
 
 	// compute minGlobalSize & maxGlobalSize
-  if(elementSpace().isGlobal() == false) {
-    BlockElementSpaceData_->minGlobalSize_ = BlockElementSpaceData_->minMySize_;
-    BlockElementSpaceData_->maxGlobalSize_ = BlockElementSpaceData_->maxMySize_;
+	OrdinalType numGlobalPoints = numMyPoints;
+	OrdinalType minGlobalSize = minMySize;
+	OrdinalType maxGlobalSize = maxMySize;
+  if(ElementSpace.isGlobal() == true) {
+    ElementSpace.comm().sumAll(&numMyPoints, &numGlobalPoints, 1);
+    ElementSpace.comm().minAll(&minMySize, &minGlobalSize, 1);
+    ElementSpace.comm().maxAll(&maxMySize, &maxGlobalSize, 1);
   }
-  else {
-    elementSpace().comm().sumAll(&BlockElementSpaceData_->numMyPoints_, &BlockElementSpaceData_->numGlobalPoints_, 1);
-    elementSpace().comm().minAll(&BlockElementSpaceData_->minMySize_, &BlockElementSpaceData_->minGlobalSize_, 1);
-    elementSpace().comm().maxAll(&BlockElementSpaceData_->maxMySize_, &BlockElementSpaceData_->maxGlobalSize_, 1);
-  }
+
+	// call BESData constructor
+	BlockElementSpaceData_.reset(new BlockElementSpaceData<OrdinalType>(ElementSpace, false, 0, numMyPoints, 
+																																			numGlobalPoints, minMySize, maxMySize, 
+																																			minGlobalSize, maxGlobalSize, myElementSizeList));
 }
 
 //=======================================================================
@@ -180,71 +189,84 @@ bool BlockElementSpace<OrdinalType>::isSameAs(const BlockElementSpace<OrdinalTyp
 }
 
 //=======================================================================
-template<typename OrdinalType>
-OrdinalType* BlockElementSpace<OrdinalType>::getFirstPointInElementList() const {
-  OrdinalType nME = elementSpace().getNumMyElements();
-	if((BlockElementSpaceData_->firstPointList_ == 0) && (nME > 0)) {
-    BlockElementSpaceData_->firstPointList_ = new OrdinalType[nME];
-    getFirstPointInElementList(BlockElementSpaceData_->firstPointList_);
-  }
-  return(BlockElementSpaceData_->firstPointList_);
-}
-
-//=======================================================================
-template<typename OrdinalType>
-void BlockElementSpace<OrdinalType>::getFirstPointInElementList(OrdinalType* firstPointInElementList) const {
-  OrdinalType iB = elementSpace().getIndexBase();
-	firstPointInElementList[0] = iB;
-  OrdinalType nME = elementSpace().getNumMyElements();
-  for(OrdinalType i = 1; i < nME; i++)
-    firstPointInElementList[i] = firstPointInElementList[i - 1] + BlockElementSpaceData_->elementSizeList_[i - 1];
-}
-
-//=======================================================================
+// LID -> size of that element
 template<typename OrdinalType>
 void BlockElementSpace<OrdinalType>::getElementSizeList(OrdinalType* elementSizeList) const {
+	if(elementSizeList == 0) 
+    throw reportError("This pointer does not have a child allocated.", 4);
   OrdinalType nME = elementSpace().getNumMyElements();
   for(OrdinalType i = 0; i < nME; i++)
     elementSizeList[i] = BlockElementSpaceData_->elementSizeList_[i];
 }
 
 //=======================================================================
+// LID -> lowest PointID contained in that element
 template<typename OrdinalType>
-OrdinalType* BlockElementSpace<OrdinalType>::getPointToElementList() const {
+const OrdinalType* BlockElementSpace<OrdinalType>::getFirstPointInElementList() const {
+	OrdinalType nME = elementSpace().getNumMyElements();
+	if((BlockElementSpaceData_->firstPointList_ == 0) && (nME > 0)) {
+		OrdinalType* tmpPtr = new OrdinalType[nME];
+		getFirstPointInElementList(tmpPtr);
+		BlockElementSpaceData_->firstPointList_ = tmpPtr;
+	}
+	return(BlockElementSpaceData_->firstPointList_);
+}
+
+//=======================================================================
+template<typename OrdinalType>
+void BlockElementSpace<OrdinalType>::getFirstPointInElementList(OrdinalType* firstPointInElementList) const {
+	if(firstPointInElementList == 0) 
+    throw reportError("This pointer does not have a child allocated.", 4);
+  OrdinalType iB = elementSpace().getIndexBase();
+	firstPointInElementList[0] = iB;
+	OrdinalType nME = elementSpace().getNumMyElements();
+	for(OrdinalType i = 1; i < nME; i++)
+		firstPointInElementList[i] = firstPointInElementList[i-1] + BlockElementSpaceData_->elementSizeList_[i-1];
+}
+
+//=======================================================================
+// pointID -> LID containing that point
+template<typename OrdinalType>
+const OrdinalType* BlockElementSpace<OrdinalType>::getPointToElementList() const {
 	OrdinalType numPoints = getNumMyPoints();
-  if((BlockElementSpaceData_->pointToElementList_ == 0) && (numPoints > 0)) {
-    BlockElementSpaceData_->pointToElementList_ = new OrdinalType[numPoints];
-    getPointToElementList(BlockElementSpaceData_->pointToElementList_);
-  }
-  return(BlockElementSpaceData_->pointToElementList_);
+	if((BlockElementSpaceData_->pointToElementList_ == 0) && (numPoints > 0)) {
+		OrdinalType* tmpPtr = new OrdinalType[numPoints];
+		//for(OrdinalType i = 0; i < numPoints; i++)
+		//	tmpPtr[i] = i+1;
+		getPointToElementList(tmpPtr);
+		BlockElementSpaceData_->pointToElementList_ = tmpPtr;
+	}
+	return(BlockElementSpaceData_->pointToElementList_);
 }
 
 //=======================================================================
 template<typename OrdinalType>
 void BlockElementSpace<OrdinalType>::getPointToElementList(OrdinalType* pointToElementList) const {
-  OrdinalType currPos = 0;
-  OrdinalType nME = elementSpace().getNumMyElements();
-  OrdinalType currLID = elementSpace().getIndexBase();
-  OrdinalType currSize;
-  for(OrdinalType i = 0; i < nME; i++) {
-    currSize = BlockElementSpaceData_->elementSizeList_[i];
-    for(OrdinalType j = 0; j < currSize; j++) {
-      pointToElementList[currPos] = currLID;
-      currPos++;
-    }
-    currLID++;
-  }
+	if(pointToElementList == 0) 
+    throw reportError("This pointer does not have a child allocated.", 4);
+	OrdinalType currPos = 0;
+	OrdinalType nME = elementSpace().getNumMyElements();
+	OrdinalType currLID = elementSpace().getIndexBase();
+	OrdinalType currSize;
+	for(OrdinalType i = 0; i < nME; i++) {
+		currSize = BlockElementSpaceData_->elementSizeList_[i];
+		for(OrdinalType j = 0; j < currSize; j++) {
+			pointToElementList[currPos] = currLID;
+			currPos++;
+		}
+		currLID++;
+	}
 }
 
 //=======================================================================
 template<typename OrdinalType>
 void BlockElementSpace<OrdinalType>::print(ostream& os) const {
-	OrdinalType* elementSizeList1 = getElementSizeList();
-  OrdinalType* firstPointList1 = getFirstPointInElementList(); 
-  OrdinalType* pointToElementList1 = getPointToElementList(); 
+	const	OrdinalType* elementSizeList1 = getElementSizeList();
+  const OrdinalType* firstPointList1 = getFirstPointInElementList(); 
+  const OrdinalType* pointToElementList1 = getPointToElementList(); 
  
-  int myImageID = elementSpace().platform().getMyImageID();
-  int numImages = elementSpace().platform().getNumImages();
+  int myImageID = elementSpace().comm().getMyImageID();
+  int numImages = elementSpace().comm().getNumImages();
 
   for(int imageCtr = 0; imageCtr < numImages; imageCtr++) {
     if(myImageID == imageCtr) {

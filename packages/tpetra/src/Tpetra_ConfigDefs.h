@@ -3,6 +3,7 @@
 06-August-2002 Changed to images (nothing changed).
 09-Oct-2002 Changed name to Tpetra_Compiler_Directives.h
 30-Oct-2002 Changed name to Tpetra_ConfigDefs.h (hopefully done renaming now).
+04-Dec-2002 Moved configs out of Tpetra_ScalarTraits.h.
 */
 
 #ifndef _TPETRA_CONFIGDEFS_H_
@@ -12,6 +13,27 @@
 #define __cplusplus
 #endif
 
+// configs from ScalarTraits
+
+//  If we're using a Sun compiler, version earlier than 5.0,
+//  then complex isn't available.
+#if defined(__SUNPRO_CC) && __SUNPRO_CC < 0x500
+#define NO_COMPLEX
+#endif
+
+//  If we're using the tflops Portland Group compiler, then complex isn't
+//  available. (As of July 21, 2000. abw)
+#if defined(__PGI) && defined(__i386)
+#define NO_COMPLEX
+#endif
+
+#if defined(__SUNPRO_CC) && __SUNPRO_CC < 0x500
+#define TYPENAME
+#else
+#define TYPENAME typename
+#endif
+
+// end of ScalarTraits configs
 
 #if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT)
 
@@ -108,10 +130,6 @@ const bool Tpetra_FormatStdout = true; // Set true if the ostream << operator sh
 #define TPETRA_CHK_REF(a) { return(a);}
 const int Tpetra_DefaultTracebackMode = 1; // Default value for traceback behavior
 
-// PlatformType definitions
-//namespace Tpetra {
-//class Serial;
-//class MPI;
 //} // namespace Tpetra
 
 #endif // _TPETRA_CONFIGDEFS_H_

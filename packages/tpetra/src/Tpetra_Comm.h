@@ -3,6 +3,8 @@
 03-Sept-2002 Took out Directory and ImageID methods. Templated for PacketType, OrdinalType.
 12-Oct-2002 Added some consts (still some left). Updated for Common->Compiler_Directives renaming.
 30-Oct-2002 Updated for Compiler_Directives -> ConfigDefs renaming.
+12-Nov-2002 Changed remaining template<class...> to template<typename...>
+19-Nov-2002 myImageID and numImages moved back from Platform.
 */
 
 #ifndef _TPETRA_COMM_H_
@@ -25,7 +27,7 @@ namespace Tpetra {
   to the appropriate interface based on argument typing.
 */
 
-template<class PacketType, class OrdinalType>
+template<typename PacketType, typename OrdinalType>
 class Comm {
   public:
 
@@ -33,6 +35,13 @@ class Comm {
   //! Destructor
   virtual ~Comm() {};
   //@}
+
+	//@{ \name Image Info Methods
+	//! getMyImageID
+	virtual int getMyImageID() const = 0;
+	//! getNumImages
+	virtual int getNumImages() const = 0;
+	//@}
   
   //@{ \name Barrier Methods
   //! Barrier. Each image must stop until all images have reached the barrier.

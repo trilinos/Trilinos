@@ -1,6 +1,7 @@
 /*Paul
 16-July-2002 CommTester.
 21-Sept-2002 Updated for Comm/Platform split.
+12-Nov-2002 Updated for new templating scheme (no changes).
 */
 
 #include <iostream>

@@ -9,6 +9,8 @@
 07-Oct-2002 ElementSpaceData move started
 13-Oct-2002 Updated constructors to use new ESData constructor.
 22-Oct-2002 Modified slightly - ESData constructor now takes Comm* argument
+12-Nov-2002 Updated to use createOrdinalComm() instead of createComm()
+24-Nov-2002 Updated for imageID methods moved back to Comm
 */
 
 #include "Tpetra_Platform.h"
@@ -28,9 +30,9 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
     throw reportError("numGlobalElements = " + toString(numGlobalElements) + ".  Should be >= 0.", -1);
 
 	// platform & comm setup
-  OrdinalType numImages = Platform.getNumImages();
-  OrdinalType myImageID = Platform.getMyImageID();
-	Comm<OrdinalType, OrdinalType>* comm = Platform.createComm();
+	Comm<OrdinalType, OrdinalType>* comm = Platform.createOrdinalComm();
+  OrdinalType numImages = comm->getNumImages();
+  OrdinalType myImageID = comm->getMyImageID();
   
 	// compute numMyElements
   OrdinalType numMyElements = numGlobalElements / numImages;
@@ -74,9 +76,9 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
     throw reportError("numMyElements = " + toString(numMyElements) + ".  Should be >= 0.", -2);
 
 	// platform & comm setup
-  OrdinalType numImages = Platform.getNumImages();
-  OrdinalType myImageID = Platform.getMyImageID();
-	Comm<OrdinalType, OrdinalType>* comm = Platform.createComm();
+	Comm<OrdinalType, OrdinalType>* comm = Platform.createOrdinalComm();
+  OrdinalType numImages = comm->getNumImages();
+  OrdinalType myImageID = comm->getMyImageID();
 
 	// check for invalid numGlobalElements
 	//   Sum up all local element counts to get global count, and then
@@ -126,9 +128,9 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
     throw reportError("numMyElements = " + toString(numMyElements) + ".  Should be >= 0.", -2);
 
 	// platform & comm setup
-  OrdinalType numImages = Platform.getNumImages();
-  OrdinalType myImageID = Platform.getMyImageID();
-	Comm<OrdinalType, OrdinalType>* comm = Platform.createComm();
+	Comm<OrdinalType, OrdinalType>* comm = Platform.createOrdinalComm();
+  OrdinalType numImages = comm->getNumImages();
+  OrdinalType myImageID = comm->getMyImageID();
 
 	// check for invalid numGlobalElements
   //   Sum up all local element counts to get global count, and then
@@ -299,8 +301,8 @@ bool ElementSpace<OrdinalType>::isSameAs (const ElementSpace<OrdinalType>& Eleme
 template<typename OrdinalType>
 void ElementSpace<OrdinalType>::print(ostream& os) const {
   OrdinalType* myGlobalElements1 = getMyGlobalElements();
-  OrdinalType myImageID = platform().getMyImageID();
-  OrdinalType numImages = platform().getNumImages();
+  OrdinalType myImageID = comm().getMyImageID();
+  OrdinalType numImages = comm().getNumImages();
 	OrdinalType minLID = getMinLID();
 	OrdinalType nME = getNumMyElements();
   

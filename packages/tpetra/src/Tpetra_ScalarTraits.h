@@ -3,108 +3,95 @@
 16-May-2002 - Switched names from TPetra to Tpetra
 28-May-2002 - Heroux fixes things.
 06-August-2002 Switched to images (nothing changed). Cleaned up a bit.
+19-Nov-2002 ScalarTraits throws exceptions now instead of calling std::abort()
+04-Dec-2002 Moved configs to Tpetra_ConfigDefs.h.
 */
 
 #ifndef _TPETRA_SCALARTRAITS_H_
 #define _TPETRA_SCALARTRAITS_H_
 
 #include <cmath> //for the fabs function...
-#include <complex>
 #include "Tpetra_LAPACK.h"
+#include "Tpetra_ConfigDefs.h"
+#ifndef NO_COMPLEX
+#include <complex>
+#endif
 
 // Modified from the original ESI "ESI_scalarTraits.h" file. 
 namespace Tpetra {
   /** The Tpetra ScalarTraits file.
-
-      For the most general type 'class T', we define aborting functions, 
-      which should restrict implementations from using traits other than the
-      specializations defined below.
-  */
-
-  template<class T>
-    struct ScalarTraits {
-
-      typedef T magnitudeType;
-
-      static inline bool haveMachineParameters() {return(false);}; // Allows testing to see if scalar traits machine parameters defined 
-      static inline T basicErrorMessage() {
-				cout << "Tpetra::ScalarTraits: Machine parameters are undefined for this scalar type." << endl; 
-				std::abort();
-				T a;
-				return(a);
-      };
-			static inline magnitudeType eps()   {return(basicErrorMessage());};
-      static inline magnitudeType sfmin() {return(basicErrorMessage());};
-      static inline magnitudeType base()  {return(basicErrorMessage());};
-      static inline magnitudeType prec()  {return(basicErrorMessage());};
-      static inline magnitudeType t()     {return(basicErrorMessage());};
-      static inline magnitudeType rnd()   {return(basicErrorMessage());};
-      static inline magnitudeType emin()  {return(basicErrorMessage());};
-      static inline magnitudeType rmin()  {return(basicErrorMessage());};
-      static inline magnitudeType emax()  {return(basicErrorMessage());};
-      static inline magnitudeType rmax()  {return(basicErrorMessage());};
-      static inline magnitudeType magnitude(T a) { 
-				cout << "Tpetra::ScalarTraits: unsupported scalar type." << endl; 
-				std::abort(); 
-				return(a);
-      };
-
-      static inline T zero() {
-				cout << "Tpetra::ScalarTraits: unsupported scalar type." << endl; 
-				std::abort();
-				T a;
-				return(a);
-      };
 			
-      static inline T one() {
-				cout << "Tpetra::ScalarTraits: unsupported scalar type." << endl; 
-				std::abort();
-				T a;
-				return(a);
-      };
+	For the most general type 'class T', we define aborting functions, 
+	which should restrict implementations from using traits other than the
+	specializations defined below.
+  */
 	
-      static inline T random() {
-				cout << "Tpetra::ScalarTraits: unsupported scalar type." << endl; 
-				std::abort();
-				T a;
-				return(a);
-      };
-      static inline const char* name() {
-				cout << "Tpetra::ScalarTraits: unsupported scalar type." << endl; 
-				std::abort(); 
-				return(0); 
-      };
-    };
-
-  template<>
-  struct ScalarTraits<int> {
-
+	template<class T>
+	struct ScalarTraits {
+		
+		typedef T magnitudeType;
+		
+		static inline int undefinedParameters() {
+#ifndef TPETRA_NO_ERROR_REPORTS
+			cerr << endl << "Tpetra::ScalarTraits: Machine parameters are undefined for this scalar type." << endl;
+#endif
+			return(-1);
+		}
+		static inline int unsupportedType() {
+#ifndef TPETRA_NO_ERROR_REPORTS
+			cerr << endl << "Tpetra::ScalarTraits: unsupported scalar type." << endl;
+#endif
+			return(-2);
+		}
+		
+		static inline bool haveMachineParameters() {return(false);}; // Allows testing to see if scalar traits machine parameters defined
+		static inline magnitudeType eps()   {throw(undefinedParameters());};
+		static inline magnitudeType sfmin() {throw(undefinedParameters());};
+		static inline magnitudeType base()  {throw(undefinedParameters());};
+		static inline magnitudeType prec()  {throw(undefinedParameters());};
+		static inline magnitudeType t()     {throw(undefinedParameters());};
+		static inline magnitudeType rnd()   {throw(undefinedParameters());};
+		static inline magnitudeType emin()  {throw(undefinedParameters());};
+		static inline magnitudeType rmin()  {throw(undefinedParameters());};
+		static inline magnitudeType emax()  {throw(undefinedParameters());};
+		static inline magnitudeType rmax()  {throw(undefinedParameters());};
+		
+		static inline magnitudeType magnitude(T a) {throw(unsupportedType());};
+		static inline T zero()                     {throw(unsupportedType());};
+		static inline T one()                      {throw(unsupportedType());};
+		static inline T random()                   {throw(unsupportedType());};
+		static inline const char* name()           {throw(unsupportedType());};
+	};
+	
+	template<>
+	struct ScalarTraits<int> {
+		
 		typedef long long magnitudeType;
 		
+		static inline int undefinedParameters() {
+#ifndef TPETRA_NO_ERROR_REPORTS
+			cerr << endl << "Tpetra::ScalarTraits: Machine parameters are undefined for this scalar type." << endl;
+#endif
+			return(-1);
+		}
+
 		static inline magnitudeType magnitude(int a) { 
 			return(abs(a)); 
 		};
 		static inline bool haveMachineParameters() {return(false);}; // Allows testing to see if scalar traits machine parameters defined 
-		static inline magnitudeType basicErrorMessage() {
-			cout << "Tpetra::ScalarTraits: Machine parameters are undefined for this scalar type." << endl; 
-			std::abort();
-			magnitudeType a;
-			return(a);
-		};
-		static inline magnitudeType eps()   {return(basicErrorMessage());};
-		static inline magnitudeType sfmin() {return(basicErrorMessage());};
-		static inline magnitudeType base()  {return(basicErrorMessage());};
-		static inline magnitudeType prec()  {return(basicErrorMessage());};
-		static inline magnitudeType t()     {return(basicErrorMessage());};
-		static inline magnitudeType rnd()   {return(basicErrorMessage());};
-		static inline magnitudeType emin()  {return(basicErrorMessage());};
-		static inline magnitudeType rmin()  {return(basicErrorMessage());};
-		static inline magnitudeType emax()  {return(basicErrorMessage());};
-		static inline magnitudeType rmax()  {return(basicErrorMessage());};
+		static inline magnitudeType eps()   {throw(undefinedParameters());};
+		static inline magnitudeType sfmin() {throw(undefinedParameters());};
+		static inline magnitudeType base()  {throw(undefinedParameters());};
+		static inline magnitudeType prec()  {throw(undefinedParameters());};
+		static inline magnitudeType t()     {throw(undefinedParameters());};
+		static inline magnitudeType rnd()   {throw(undefinedParameters());};
+		static inline magnitudeType emin()  {throw(undefinedParameters());};
+		static inline magnitudeType rmin()  {throw(undefinedParameters());};
+		static inline magnitudeType emax()  {throw(undefinedParameters());};
+		static inline magnitudeType rmax()  {throw(undefinedParameters());};
 		
 		static inline int zero()  {return(0);};
 		static inline int one()   {return(1);};
-		
 		
 		static inline int random() {return(rand()/RAND_MAX);};
 		
@@ -112,10 +99,10 @@ namespace Tpetra {
 			return("int"); 
 		};
 	};
-
-
-  template<>
-  struct ScalarTraits<float> {
+	
+	
+	template<>
+	struct ScalarTraits<float> {
 		
 		static inline bool haveMachineParameters() {return(true);}; // Allows testing to see if scalar traits machine parameters defined 
 		typedef float magnitudeType;
@@ -147,8 +134,8 @@ namespace Tpetra {
 			return("float"); 
 		};
 	};
-
-
+	
+	
   template<>
   struct ScalarTraits<double> {
 		
@@ -181,25 +168,7 @@ namespace Tpetra {
 		};
 	};
 
-
-//  If we're using a Sun compiler, version earlier than 5.0,
-//  then complex isn't available.
-
-#if defined(__SUNPRO_CC) && __SUNPRO_CC < 0x500
-#define NO_COMPLEX
-#endif
-
-
-//  If we're using the tflops Portland Group compiler, then complex isn't
-//  available. (As of July 21, 2000. abw)
-
-#if defined(__PGI) && defined(__i386)
-#define NO_COMPLEX
-#endif
-
 #ifndef NO_COMPLEX
-
-#include <complex>
 
   template<> 
 	struct ScalarTraits< std::complex<float> > {
@@ -274,16 +243,6 @@ namespace Tpetra {
 	};
 
 #endif  // NO_COMPLEX
-
-
-//  If we're using a Sun compiler, version earlier than 5.0,
-//  then 'typename' isn't available.
-
-#if defined(__SUNPRO_CC) && __SUNPRO_CC < 0x500
-#define TYPENAME
-#else
-#define TYPENAME typename
-#endif
 
 }     // Tpetra namespace
 #endif // _TPETRA_SCALARTRAITS_H_

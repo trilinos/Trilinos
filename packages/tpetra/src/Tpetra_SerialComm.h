@@ -2,6 +2,8 @@
 04-Aug-2002 Status: Templated for class T. All Epetra methods except Distributor. Fully documented. Switched to images.
 03-Sept-2002 Took out Directory and ImageID methods. Templated for PacketType, OrdinalType.
 12-Oct-2002 Added some consts (still some left).
+12-Nov-2002 Changed remaining template<class...> to template<typename...>
+19-Nov-2002 myImageID and numImages moved back from Platform, print method updated
 */
 
 #ifndef _TPETRA_SERIALCOMM_H_
@@ -17,7 +19,7 @@ namespace Tpetra {
   information and services needed for other Tpetra classes to run on a serial computer.
 */
 
-template<class PacketType, class OrdinalType>
+template<typename PacketType, typename OrdinalType>
 class SerialComm : public Object, public virtual Comm<PacketType, OrdinalType> {
 public:
   //@{ \name Constructor/Destructor Methods
@@ -41,6 +43,13 @@ public:
   */
   ~SerialComm();
   //@}
+
+	//@{ \name Image Info Methods
+	//! getMyImageID - In serial mode, always returns 0.
+	int getMyImageID() const {return(0);};
+	//! getNumImages - In serial mode, always returns 1.
+	int getNumImages() const {return(1);};
+	//@}
 
   //@{ \name Barrier Methods
   //! Barrier function. 
@@ -131,7 +140,7 @@ public:
 
 	//@{ \name I/O Methods
 	//! Print methods
-	void print(ostream& os) const { os << label();};
+	void print(ostream& os) const {os << "::Memory Image " << getMyImageID() << " of " << getNumImages() << " total images" << endl;};
 	void printInfo(ostream& os) const {print(os);};
 	//@}
 

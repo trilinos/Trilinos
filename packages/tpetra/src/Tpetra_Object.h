@@ -15,12 +15,10 @@
 namespace Tpetra
 {
 
-
 //! Tpetra::Object:  The base Tpetra class.
 /*! The Object class provides capabilities common to all Tpetra objects,
     such as a label that identifies an object instance, constant definitions,
     enum types.
-  
 */
 
 class Object

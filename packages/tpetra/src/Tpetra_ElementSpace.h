@@ -14,6 +14,7 @@
 03-Sept-2002 Added == and != operators.
 21-Sept-2002 Comm/Platform split.
 07-Oct-2002 ElementSpaceData move started
+12-Nov-2002 Updated to use createOrdinalComm() instead of createComm() (nothing changed)
 */
 
 #ifndef _TPETRA_ELEMENTSPACE_H_
@@ -29,7 +30,7 @@ namespace Tpetra {
 
 // forward declarations
 template<typename PacketType, typename OrdinalType> class Comm;
-template<typename PacketType, typename OrdinalType> class Platform;
+template<typename ScalarType, typename OrdinalType> class Platform;
 
 //! Tpetra::ElementSpace: A class for constructing and using template<ordinalType> ElementSpaces.
 /*! ElementSpace objects are defined to have an element size of 1. Variable element sizes are implemented in Tpetra::BlockElementSpace. Some ElementSpace methods throw exceptions, and should be enclosed in a try/catch block. All Tpetra_ElementSpace objects require a Tpetra_Comm object. Local IDs (LIDs) are always in the range indexBase to numMyElements - indexBase.

@@ -29,13 +29,14 @@ int main(int argc, char* argv[]) {
 		}
 	}
   
-  // Comm
+  // Platform
   if(verbose) cout << "Creating platform" << endl;
   Tpetra::SerialPlatform<ORDINALTYPE, ORDINALTYPE> platform;
 
   // ElementSpace
+	// commented out lines are for creating alternate es objects.
   if(verbose) cout << "Creating es, constructor1" << endl;
-  Tpetra::ElementSpace<ORDINALTYPE> es(5, 0, platform);
+  Tpetra::ElementSpace<ORDINALTYPE> es(NUMELEMENTS, INDEXBASE, platform);
   //if(verbose) cout << "Creating es, constructor2" << endl;
   //Tpetra::ElementSpace<ORDINALTYPE> es(-1, NUMELEMENTS, INDEXBASE, platform);
   //if(verbose) cout << "Creating es, constructor3" << endl;
@@ -45,12 +46,19 @@ int main(int argc, char* argv[]) {
 
   //BlockElementSpace
   if(verbose) cout << "Creating bes, constructor1" << endl;
-  Tpetra::BlockElementSpace<int> bes(es, 2);
+  Tpetra::BlockElementSpace<ORDINALTYPE> bes(es, ELEMENTSIZE);
   if(debug) cout << bes;
 
 	if(verbose) cout << "Creating bes, constructor2" << endl;
-	ORDINALTYPE esizelist[NUMELEMENTS] = {3,2,1,5,2};
+	ORDINALTYPE* esizelist = new ORDINALTYPE[NUMELEMENTS];
+	esizelist[0] = 1;
+	esizelist[1] = 1;
+	esizelist[2] = 2;
+	esizelist[3] = 3;
+	esizelist[4] = 5;
 	Tpetra::BlockElementSpace<ORDINALTYPE> bes2(es, esizelist);
+	delete[] esizelist;
+	esizelist = 0;
 	if(debug) cout << bes2;
 	
 	cout << "BlockElementSpace testing successful." << endl;

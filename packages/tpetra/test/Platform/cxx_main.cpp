@@ -1,7 +1,7 @@
 // Tpetra Platform tester
-// Modified: 14-Oct-2002
+// Modified: 12-Nov-2002
 
-#define PACKETTYPE int
+#define SCALARTYPE float
 #define ORDINALTYPE int
 
 #ifdef TPETRA_MPI
@@ -22,24 +22,28 @@ int main(int argc, char* argv[]) {
   int size, rank; // Number of MPI processes, My process ID
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  Tpetra::MpiPlatform<PACKETTYPE, ORDINALTYPE> platform( MPI_COMM_WORLD );
+  Tpetra::MpiPlatform<SCALARTYPE, ORDINALTYPE> platform( MPI_COMM_WORLD );
 #else
   int size = 1; // Serial case (not using MPI)
   int rank = 0;
-  Tpetra::SerialPlatform<PACKETTYPE, ORDINALTYPE> platform;
+  if(verbose) cout << "Creating SerialPlatform object...";
+  Tpetra::SerialPlatform<SCALARTYPE, ORDINALTYPE> platform;
+  //if(debug) cout << platform.label() << endl;
+	if(verbose) cout << "Successful." << endl;
 #endif
 
-  if(verbose) cout << "\nPlatform object created." << endl;
-  if(verbose) cout << platform.label() << endl;
-  
-  if(verbose) cout << "Testing getImageID and getNumImages...";
-  assert(platform.getMyImageID() == rank);
-  assert(platform.getNumImages() == size);
+	if(verbose) cout << "Creating Comm objects...";
+	Tpetra::Comm<SCALARTYPE, ORDINALTYPE>* comm1 = platform.createScalarComm();
+	Tpetra::Comm<ORDINALTYPE, ORDINALTYPE>* comm2 = platform.createOrdinalComm();
+	delete comm1;
+	delete comm2;
 	if(verbose) cout << "Successful." << endl;
 
-	if(verbose) cout << "Creating Comm object...";
-	Tpetra::Comm<PACKETTYPE, ORDINALTYPE>* comm = platform.createComm();
-	delete comm;
+	if(verbose) cout << "Creating Distributor objects...";
+	Tpetra::Distributor<SCALARTYPE, ORDINALTYPE>* distributor1 = platform.createScalarDistributor();
+	Tpetra::Distributor<ORDINALTYPE, ORDINALTYPE>* distributor2 = platform.createOrdinalDistributor();
+	delete distributor1;
+	delete distributor2;
 	if(verbose) cout << "Successful." << endl;
   
 	cout << "Platform test successful." << endl;
