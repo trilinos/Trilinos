@@ -873,12 +873,10 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
       case ML_AGGR_METIS :
            Ncoarse = ML_Aggregate_CoarsenMETIS(ag,Amatrix,Pmatrix,comm);
            break;
+	   
       case ML_AGGR_PARMETIS :
-/*
            Ncoarse = ML_Aggregate_CoarsenParMETIS(ag,Amatrix,Pmatrix,comm);
            break;
-*/
-           exit( EXIT_FAILURE );
 /*ms*/
    default :
            if (mypid == 0) printf("ML_Aggregate_Coarsen : invalid scheme.\n");
