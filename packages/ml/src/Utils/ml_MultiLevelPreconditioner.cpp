@@ -36,6 +36,8 @@
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 #include "ml_memory.h"
 #include "ml_DD_prec.h"
+extern int ML_USE_EDGE_WEIGHT; // defined in ml_agg_METIS.c
+extern double ML_WEIGHT_THRES; // defined in ml_agg_METIS.c
 #include <iomanip>
 
 #include "Epetra_Map.h"
@@ -184,7 +186,7 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     
     ML_print_line("-",78);
     double TotalTime = FirstApplicationTime_ + ApplicationTime_;
-    cout << PrintMsg_ << "   ML time information                    total          iter avg" << endl << endl
+    cout << PrintMsg_ << "   ML time information                    total          avg" << endl << endl
 	 << PrintMsg_ << "   1- Construction time             = " 
          << std::setw(10) << ConstructionTime_ << "  "
          << std::setw(10) << ConstructionTime_ / NumConstructions_ << " (s)" << endl;
@@ -887,9 +889,19 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   double Threshold = 0.0;
   Threshold = List_.get(Prefix_ + "aggregation: threshold", Threshold);
-  ML_Aggregate_Set_Threshold(agg_,Threshold);
-    
-  int MaxCoarseSize = 50;
+  if (Threshold < 0.0) {
+    // if negative, it means that METIS has to use this threshold
+    // for the edge weighting. This is recognized by METIS only
+    // at the moment (03-Dec-04)
+    ML_WEIGHT_THRES = -Threshold;
+    ML_USE_EDGE_WEIGHT = ML_YES;
+    // set this anyway
+    ML_Aggregate_Set_Threshold(agg_,-Threshold);
+  }
+  else
+    ML_Aggregate_Set_Threshold(agg_,Threshold);
+   
+  int MaxCoarseSize = 128;
   MaxCoarseSize = List_.get(Prefix_ + "coarse: max size", MaxCoarseSize);
   ML_Aggregate_Set_MaxCoarseSize(agg_, MaxCoarseSize );
 
@@ -917,27 +929,16 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
 
   /* ********************************************************************** */
-  /* METIS and ParMETIS may suffer (that is, core dump) is the graph is     */
-  /* highly non-symmetric. In this case, it is better to set this parameter */
-  /* to ML_NO. It does affect METIS and ParMETIS only.                      */
-  /* ********************************************************************** */
-
-  bool UseDropping = true;
-  UseDropping = List_.get(Prefix_ + "aggregation: use dropping", UseDropping);
-  if( UseDropping == true ) ML_Aggregate_Set_UseDropping( ML_YES );
-  else                      ML_Aggregate_Set_UseDropping( ML_NO );  
- 
-  /* ********************************************************************** */
-  /* alternatively, one can use dropping on a symmetrized matrix            */
+  /* one can use dropping on a symmetrized matrix                           */
   /* (although, this can be quite expensive for the finest levels)          */
   /* ********************************************************************** */
      
-  if( SolvingMaxwell_ == false ) {
+  if (SolvingMaxwell_ == false) {
     bool UseSymmetrize = false;
     UseSymmetrize = List_.get(Prefix_ + "aggregation: symmetrize",
 			      UseSymmetrize);
-    if( UseSymmetrize == true ) ML_Set_Symmetrize(ml_, ML_YES );
-    else                        ML_Set_Symmetrize(ml_, ML_NO );  
+    if (UseSymmetrize == true) ML_Set_Symmetrize(ml_, ML_YES);
+    else                       ML_Set_Symmetrize(ml_, ML_NO);  
   }
 
   /* ********************************************************************** */
@@ -1688,16 +1689,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
  * - \c Uncoupled
  * - \c Coupled (deprecated)
  * - \c MIS
+ * - \c user
  */
 int ML_Epetra::MultiLevelPreconditioner::SetAggregation() 
 {
 
   char parameter[80];
   
-  int value = -777;
+  int value = -777; /* pagina 777 di televideo */
   string CoarsenScheme = List_.get(Prefix_ + "aggregation: type","Uncoupled");
 
-  if ( CoarsenScheme == "Uncoupled-MIS" )
+  if (CoarsenScheme == "Uncoupled-MIS")
       ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(agg_);
   else {
      for( int level=0 ; level<NumLevels_-1 ; ++level ) {  
@@ -1706,37 +1708,39 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
            Prefix_.c_str(),LevelID_[level]);
        CoarsenScheme = List_.get(parameter,CoarsenScheme);
 
-       if( CoarsenScheme == "METIS" )
+       if (CoarsenScheme == "METIS")
          ML_Aggregate_Set_CoarsenSchemeLevel_METIS(level,NumLevels_,agg_);
-       else if( CoarsenScheme == "ParMETIS" ) 
+       else if (CoarsenScheme == "ParMETIS") 
          ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS(level,NumLevels_,agg_);
-       else if(  CoarsenScheme == "Zoltan" ) 
+       else if (CoarsenScheme == "Zoltan")
          ML_Aggregate_Set_CoarsenSchemeLevel_Zoltan(level,NumLevels_,agg_);
-       else if( CoarsenScheme == "MIS" ) 
+       else if (CoarsenScheme == "MIS")
          ML_Aggregate_Set_CoarsenSchemeLevel_MIS(level,NumLevels_,agg_);
-       else if(  CoarsenScheme == "Uncoupled" ) 
+       else if (CoarsenScheme == "Uncoupled") 
          ML_Aggregate_Set_CoarsenSchemeLevel_Uncoupled(level,NumLevels_,agg_);
-       else if(  CoarsenScheme == "Coupled" ) 
+       else if (CoarsenScheme == "Coupled") 
          ML_Aggregate_Set_CoarsenSchemeLevel_Coupled(level,NumLevels_,agg_);
+       else if (CoarsenScheme == "user") 
+         ML_Aggregate_Set_CoarsenSchemeLevel_User(level,NumLevels_,agg_);
        else {
          if( Comm().MyPID() == 0 ) {
            cout << ErrorMsg_ << "specified options ("
                 << CoarsenScheme << ") not valid. Should be:" << endl;
-           cout << ErrorMsg_ << "<METIS> / <ParMETIS> / <Zoltan> /<MIS> / <Uncoupled> / <Coupled>" << endl;
+           cout << ErrorMsg_ << "<METIS> / <ParMETIS> / <Zoltan> /<MIS> / <Uncoupled> / <Coupled> / <user>" << endl;
          }
          exit( EXIT_FAILURE );
        }
 
-       if( CoarsenScheme == "Zoltan" ) {
+       if (CoarsenScheme == "Zoltan" || CoarsenScheme == "user") {
          // This copies the coordinates if the aggregation scheme
          // of at least one level is Zoltan. Coordinates will be
          // projected for ALL levels independently of the 
          // aggregation scheme.
 
-         double * coord = List_.get(Prefix_ + "aggregation: zoltan coordinates",
+         double * coord = List_.get(Prefix_ + "aggregation: coordinates",
                         (double *)0);
          int NumDimensions = List_.get(Prefix_ +
-                              "aggregation: zoltan dimensions", 0);
+                              "aggregation: dimensions", 0);
 
          ML_Aggregate_Set_NodalCoordinates(ml_, agg_, coord);
          ML_Aggregate_Set_Dimensions(agg_, NumDimensions);
