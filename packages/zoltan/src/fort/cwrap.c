@@ -869,6 +869,7 @@ int LB_fw_Balance(int *addr_lb, int *nbytes, int *changes,
 /* Fujitsu and Lahey use a hidden argument for every argument */
 /* TEMP need to verify this with Fujitsu or Lahey */
                    ,int *addr_lb_hide, int *nbytes_hide, int *changes_hide,
+                    int *num_gid_entries_hide, int *num_lid_entries_hide,
                     int *num_import_hide, int *imp_gid_hide, int *imp_lid_hide,
                     int *imp_proc_hide, int *num_export_hide, int *exp_gid_hide,
                     int *exp_lid_hide, int *exp_proc_hide
@@ -987,7 +988,9 @@ int LB_fw_Compute_Destinations(int *addr_lb, int *nbytes,
                     ,int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide
 #endif
 #ifdef FUJITSU
-                   ,int *addr_lb_hide, int *nbytes_hide, int *num_import_hide,
+                   ,int *addr_lb_hide, int *nbytes_hide,
+                    int *num_gid_entries_hide, int *num_lid_entries_hide,
+                    int *num_import_hide,
                     int *import_global_ids_hide, int *import_local_ids_hide,
                     int *import_procs_hide, int *num_export_hide,
                     int *exp_gid_hide, int *exp_lid_hide, int *exp_proc_hide
