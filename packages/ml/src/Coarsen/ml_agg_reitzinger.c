@@ -1185,7 +1185,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
             ML_build_global_numbering(Ke,Ke->comm, &glob_fine_node_nums);
             Ke = ml_nodes->Amat+grid_level;
             ML_build_global_numbering(Ke,Ke->comm, &glob_coarse_node_nums);
-            // ml_edges->Amat+grid_level doesn't exist yet..
+            /* ml_edges->Amat+grid_level doesn't exist yet.. */
             ML_build_global_numbering(Tcoarse,Tcoarse->comm,
                                       &glob_coarse_edge_nums);
 
