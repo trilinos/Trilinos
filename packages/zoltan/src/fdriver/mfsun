@@ -1,0 +1,75 @@
+F90 = f90
+FFLAGS = -g
+CFLAGS = -DFMANGLE=UNDERSCORE -g
+
+### For LAM
+#MPIINC = -I$(LAMHOME)/include
+#MPILIB = -L$(LAMHOME)/lib -lmpi -lm
+#MPIH_PATH = -I$(LAMHOME)/include
+#LAMHF77 = $(F90)
+#LINK = hf77
+#LAMHCC = cc
+#CC = hcc
+
+### For MPICH
+MPIINC = -I$(MPIR_HOME)/include -I$(MPIR_HOME)/lib/solaris/ch_p4
+MPILIB = -L$(MPIR_HOME)/lib/solaris/ch_p4 -lpmpich -lmpich -lsocket -lnsl \
+	-laio -lm
+MPIH_PATH =
+LINK = $(F90)
+CC = cc
+
+CINC_PATH = -I. -I../lb -I../par -I../all -I../params $(MPIINC)
+
+fdriver: cwrap.o fwrap.o lb_user_const.o ztypes.o \
+	dr_main.o dr_loadbal.o dr_input.o dr_chaco_io.o dr_const.o \
+	../Obj_nistsun/libzoltan.a
+	$(LINK) $(FFLAGS) -o zfdriver cwrap.o fwrap.o lb_user_const.o ztypes.o \
+	dr_main.o dr_loadbal.o dr_input.o dr_chaco_io.o dr_const.o \
+	./../Obj_nistsun -lzoltan $(MPILIB)
+
+dr_main.o: dr_main.f90 fwrap.o mpi_h.o dr_const.o dr_input.o dr_chaco_io.o \
+	dr_loadbal.o
+	$(F90) $(FFLAGS) -c dr_main.f90
+
+dr_loadbal.o: dr_loadbal.f90 fwrap.o mpi_h.o dr_const.o lb_user_const.o
+	$(F90) $(FFLAGS) -c dr_loadbal.f90
+
+dr_input.o: dr_input.f90 fwrap.o mpi_h.o dr_const.o
+	$(F90) $(FFLAGS) -c dr_input.f90
+
+dr_chaco_io.o: dr_chaco_io.f90 fwrap.o mpi_h.o dr_const.o dr_input.o \
+	lb_user_const.o
+	$(F90) $(FFLAGS) -c dr_chaco_io.f90
+
+dr_const.o: dr_const.f90 fwrap.o
+	$(F90) $(FFLAGS) -c dr_const.f90
+
+mpi_h.o: mpi_h.f90
+	$(F90) $(FFLAGS) $(MPIH_PATH) -c mpi_h.f90
+
+fwrap.o: fwrap.F90 ztypes.o lb_user_const.o
+	$(F90) $(FFLAGS) -DSUNSOFT -c fwrap.F90
+
+fwrap.F90: ../fort/fwrap.fpp
+	cp ../fort/fwrap.fpp fwrap.F90
+
+sppr: ../fort/sppr.f90
+	$(F90) $(FFLAGS) -o sppr ../fort/sppr.f90
+
+lb_user_const.o: ../fort/lb_user_const.f90 ztypes.o
+	$(F90) $(FFLAGS) -c ../fort/lb_user_const.f90
+
+ztypes.o: ztypes.F90
+	$(F90) $(FFLAGS) -c ztypes.F90
+
+ztypes.F90: ../fort/ztypes.fpp
+	cp ../fort/ztypes.fpp ztypes.F90
+
+cwrap.o: ../fort/cwrap.c
+	$(CC) $(CFLAGS) $(CINC_PATH) -c ../fort/cwrap.c
+
+../Obj_nistsun/libzoltan.a:
+	cd ..; zmake nistsun
+clean:
+	rm -f *.o *.F90 *.mod zfdriver

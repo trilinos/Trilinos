@@ -1,0 +1,92 @@
+### For NAG
+F90 = nagf95
+FFLAGS = -g -mismatch
+CFLAGS = -DFMANGLE=UNDERSCORE -g
+
+### For Absoft
+#F90 = abf90
+##FFLAGS = -g -YEXT_NAMES=LCS -YCFRL=1 -YEXT_SFX=__
+##CFLAGS = -DFMANGLE=UNDERSCORE2 -g
+#FFLAGS = -g -YEXT_NAMES=LCS -YCFRL=1 -YEXT_SFX=_
+#CFLAGS = -DFMANGLE=UNDERSCORE -g
+
+### For PGI
+#F90 = pgf90
+#FFLAGS = -Msecond_underscore -g
+#CFLAGS = -DFMANGLE=UNDERSCORE2 -DPGI -g
+
+### For LAM
+MPIINC = -I$(LAMHOME)/include
+MPILIB = -L$(LAMHOME)/lib -lmpi -lm
+MPIH_PATH = -I$(LAMHOME)/include
+LAMHF77 = $(F90)
+LINK = hf77
+LAMHCC = gcc
+CC = hcc
+
+### For MPICH
+#MPIINC = -I$(MPIR_HOME)/include -I$(MPIR_HOME)/lib/LINUX/ch_p4
+#MPILIB = -L$(MPIR_HOME)/lib/LINUX/ch_p4 -lpmpich -lmpich \
+#	-L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66 -lgcc -lm
+#MPIH_PATH =
+#LINK = $(F90)
+#CC = cc
+
+CINC_PATH = -I. -I../lb -I../par -I../all -I../params $(MPIINC)
+
+fdriver: cwrap.o fwrap.o lb_user_const.o ztypes.o dr_migrate.o \
+	dr_main.o dr_loadbal.o dr_input.o dr_chaco_io.o dr_const.o \
+	../Obj_nistlinux/libzoltan.a
+	$(LINK) $(FFLAGS) -o zfdriver cwrap.o fwrap.o lb_user_const.o ztypes.o \
+	dr_main.o dr_loadbal.o dr_input.o dr_chaco_io.o dr_const.o dr_migrate.o \
+	-L../Obj_nistlinux -lzoltan $(MPILIB)
+
+dr_main.o: dr_main.f90 fwrap.o mpi_h.o dr_const.o dr_input.o dr_chaco_io.o \
+	dr_loadbal.o
+	$(F90) $(FFLAGS) -c dr_main.f90
+
+dr_migrate.o: dr_migrate.f90 fwrap.o mpi_h.o dr_const.o lb_user_const.o dr_chaco_io.o
+	$(F90) $(FFLAGS) -c dr_migrate.f90
+
+dr_loadbal.o: dr_loadbal.f90 fwrap.o mpi_h.o dr_const.o lb_user_const.o dr_migrate.o
+	$(F90) $(FFLAGS) -c dr_loadbal.f90
+
+dr_input.o: dr_input.f90 fwrap.o mpi_h.o dr_const.o
+	$(F90) $(FFLAGS) -c dr_input.f90
+
+dr_chaco_io.o: dr_chaco_io.f90 fwrap.o mpi_h.o dr_const.o dr_input.o \
+	lb_user_const.o
+	$(F90) $(FFLAGS) -c dr_chaco_io.f90
+
+dr_const.o: dr_const.f90 fwrap.o
+	$(F90) $(FFLAGS) -c dr_const.f90
+
+mpi_h.o: mpi_h.f90
+	$(F90) $(FFLAGS) $(MPIH_PATH) -c mpi_h.f90
+
+fwrap.o: fwrap.f90 ztypes.o lb_user_const.o
+	$(F90) $(FFLAGS) -c fwrap.f90
+
+fwrap.f90: ../fort/fwrap.fpp sppr
+	./sppr < ../fort/fwrap.fpp > fwrap.f90
+
+sppr: ../fort/sppr.f90
+	$(F90) $(FFLAGS) -o sppr ../fort/sppr.f90
+
+lb_user_const.o: ../fort/lb_user_const.f90 ztypes.o
+	$(F90) $(FFLAGS) -c ../fort/lb_user_const.f90
+
+ztypes.o: ztypes.f90
+	$(F90) $(FFLAGS) -c ztypes.f90
+
+ztypes.f90: ../fort/ztypes.fpp sppr
+	./sppr < ../fort/ztypes.fpp > ztypes.f90
+
+cwrap.o: ../fort/cwrap.c
+	$(CC) $(CFLAGS) $(CINC_PATH) -c ../fort/cwrap.c
+
+../Obj_nistlinux/libzoltan.a:
+	cd ..; zmake nistlinux
+clean:
+	rm -f *.o fwrap.f90 ztypes.f90 *.mod debug V* *.vo *.dbg zfdriver sppr
+	rm -Rf album
