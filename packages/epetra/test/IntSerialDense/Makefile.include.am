@@ -28,13 +28,14 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = VbrMatrix_test
+noinst_PROGRAMS = IntSerialDense_test
 
-VbrMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp
+IntSerialDense_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-VbrMatrix_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
+IntSerialDense_test_DEPENDENCIES = $(EPETRA_LIBS)
 
-VbrMatrix_test_CXXFLAGS = -I$(top_srcdir)/src
+IntSerialDense_test_CXXFLAGS = $(EPETRA_INCLUDE)
 
-VbrMatrix_test_LDADD = $(top_builddir)/src/libepetra.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+IntSerialDense_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+

@@ -28,15 +28,15 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = MapColoring_test
+noinst_PROGRAMS = FEVbrMatrix_test
 
-MapColoring_test_SOURCES = $(srcdir)/cxx_main.cpp
+FEVbrMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp \
+                  $(srcdir)/ExecuteTestProblems.cpp \
+		  $(srcdir)/ExecuteTestProblems.h 
 
-MapColoring_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
+FEVbrMatrix_test_DEPENDENCIES = $(EPETRA_LIBS)
 
-MapColoring_test_CXXFLAGS = -I$(top_srcdir)/src
+FEVbrMatrix_test_CXXFLAGS = $(EPETRA_INCLUDE)
 
-MapColoring_test_LDADD = $(top_builddir)/src/libepetra.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
-
+FEVbrMatrix_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 

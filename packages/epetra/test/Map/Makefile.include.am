@@ -28,15 +28,14 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = FECrsMatrix_test
+noinst_PROGRAMS = Map_test
 
-FECrsMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp \
-                  $(srcdir)/ExecuteTestProblems.cpp \
-		  $(srcdir)/ExecuteTestProblems.h 
+Map_test_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/checkmap.cpp $(srcdir)/checkmap.h
 
-FECrsMatrix_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
+Map_test_DEPENDENCIES = $(EPETRA_LIBS)
 
-FECrsMatrix_test_CXXFLAGS = -I$(top_srcdir)/src
+Map_test_CXXFLAGS = $(EPETRA_INCLUDE)
+#Unsure why this test has to link with BLAS for IBM
+Map_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 
-FECrsMatrix_test_LDADD = $(top_builddir)/src/libepetra.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+

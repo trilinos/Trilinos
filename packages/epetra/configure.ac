@@ -356,20 +356,33 @@ AC_CONFIG_FILES([
 		test/CrsRectMatrix/Makefile
 		test/CrsRectMatrix/Makefile.include
 		test/FECrsGraph/Makefile
+		test/FECrsGraph/Makefile.include
 		test/FECrsMatrix/Makefile
+		test/FECrsMatrix/Makefile.include
 		test/FEVbrMatrix/Makefile
+		test/FEVbrMatrix/Makefile.include
 		test/FEVector/Makefile
 		test/FEVector/Makefile.include
 		test/ImportExport/Makefile
+		test/ImportExport/Makefile.include
                 test/IntSerialDense/Makefile
+                test/IntSerialDense/Makefile.include
 		test/Map/Makefile
+		test/Map/Makefile.include
 		test/MapColoring/Makefile
+		test/MapColoring/Makefile.include
 		test/MultiVector/Makefile
+		test/MultiVector/Makefile.include
 		test/Object/Makefile
+		test/Object/Makefile.include
 		test/SerialDense/Makefile
+		test/SerialDense/Makefile.include
 		test/SerialSpdDense/Makefile
+		test/SerialSpdDense/Makefile.include
 		test/VbrMatrix/Makefile
+		test/VbrMatrix/Makefile.include
 		test/Vector/Makefile
+		test/Vector/Makefile.include
 		example/Makefile 
 		example/petra_power_method/Makefile
 		example/verySimple/Makefile

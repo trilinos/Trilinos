@@ -28,13 +28,14 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = SerialSpdDense_test
+noinst_PROGRAMS = MapColoring_test
 
-SerialSpdDense_test_SOURCES = $(srcdir)/cxx_main.cpp
+MapColoring_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-SerialSpdDense_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
+MapColoring_test_DEPENDENCIES = $(EPETRA_LIBS)
 
-SerialSpdDense_test_CXXFLAGS = -I$(top_srcdir)/src
+MapColoring_test_CXXFLAGS = $(EPETRA_INCLUDE)
 
-SerialSpdDense_test_LDADD = $(top_builddir)/src/libepetra.a \
-	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+MapColoring_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+
+

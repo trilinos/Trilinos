@@ -34,9 +34,8 @@ Vector_test_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/BuildTestProblems.cpp \
                   $(srcdir)/ExecuteTestProblems.cpp \
 		  $(srcdir)/ExecuteTestProblems.h $(srcdir)/BuildTestProblems.h
 
-Vector_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
+Vector_test_DEPENDENCIES = $(EPETRA_LIBS)
 
-Vector_test_CXXFLAGS = -I$(top_srcdir)/src
+Vector_test_CXXFLAGS = $(EPETRA_INCLUDE)
 
-Vector_test_LDADD = $(top_builddir)/src/libepetra.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+Vector_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)

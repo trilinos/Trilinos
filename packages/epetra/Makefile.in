@@ -409,7 +409,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/test/BasicPerfTest $(distdir)/test/BlockMap $(distdir)/test/Comm $(distdir)/test/CrsGraph $(distdir)/test/CrsMatrix $(distdir)/test/CrsRectMatrix $(distdir)/test/FEVector
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/test/BasicPerfTest $(distdir)/test/BlockMap $(distdir)/test/Comm $(distdir)/test/CrsGraph $(distdir)/test/CrsMatrix $(distdir)/test/CrsRectMatrix $(distdir)/test/FECrsGraph $(distdir)/test/FECrsMatrix $(distdir)/test/FEVbrMatrix $(distdir)/test/FEVector $(distdir)/test/ImportExport $(distdir)/test/IntSerialDense $(distdir)/test/Map $(distdir)/test/MapColoring $(distdir)/test/MultiVector $(distdir)/test/Object $(distdir)/test/SerialDense $(distdir)/test/SerialSpdDense $(distdir)/test/VbrMatrix $(distdir)/test/Vector
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

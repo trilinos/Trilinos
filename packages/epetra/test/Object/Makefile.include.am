@@ -28,15 +28,14 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = IntSerialDense_test
+noinst_PROGRAMS = Object_test
 
-IntSerialDense_test_SOURCES = $(srcdir)/cxx_main.cpp
+Object_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-IntSerialDense_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
+Object_test_DEPENDENCIES = $(EPETRA_LIBS)
 
-IntSerialDense_test_CXXFLAGS = -I$(top_srcdir)/src
+Object_test_CXXFLAGS = $(EPETRA_INCLUDE)
 
-IntSerialDense_test_LDADD = $(top_builddir)/src/libepetra.a \
-	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+Object_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 
 

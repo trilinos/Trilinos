@@ -28,15 +28,12 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = FEVbrMatrix_test
+noinst_PROGRAMS = SerialSpdDense_test
 
-FEVbrMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp \
-                  $(srcdir)/ExecuteTestProblems.cpp \
-		  $(srcdir)/ExecuteTestProblems.h 
+SerialSpdDense_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-FEVbrMatrix_test_DEPENDENCIES = $(top_builddir)/src/libepetra.a
+SerialSpdDense_test_DEPENDENCIES = $(EPETRA_LIBS)
 
-FEVbrMatrix_test_CXXFLAGS = -I$(top_srcdir)/src
+SerialSpdDense_test_CXXFLAGS = $(EPETRA_INCLUDE)
 
-FEVbrMatrix_test_LDADD = $(top_builddir)/src/libepetra.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
+SerialSpdDense_test_LDADD = $(EPETRA_LIBS) $(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
