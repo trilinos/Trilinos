@@ -306,7 +306,7 @@ void LB_OCT_Free_Structure(LB *lb)
       RL_freeList(&(OCT_info->map[i].list));
     }
     /* free map array */
-    LB_FREE(&(OCT_info->map));
+    ZOLTAN_FREE(&(OCT_info->map));
     /* Free the octree */
     RootList = LB_POct_localroots(OCT_info); 
     while ((RootOct = RL_nextRootOctant(&RootList))){
@@ -319,6 +319,6 @@ void LB_OCT_Free_Structure(LB *lb)
     RL_freeList(&(OCT_info->OCT_rootlist));
     /* KDDKDD End of previously commented-out section. 12/2000 */
 
-    LB_FREE(&(lb->Data_Structure));
+    ZOLTAN_FREE(&(lb->Data_Structure));
   }
 }

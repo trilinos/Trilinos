@@ -110,18 +110,18 @@ int main (int argc, char *argv[])
 
    param.slen = sizeof (Data) + param.glen + param.llen + param.ulen ;
    param.slen = (align + param.slen) & ~align ;
-   store = (char *) LB_MALLOC (param.count * param.slen) ;
+   store = (char *) ZOLTAN_MALLOC (param.count * param.slen) ;
 
    /* allocate storage for various lists */
-   glist = (ZOLTAN_ID_PTR) LB_MALLOC (sizeof(ZOLTAN_ID_TYPE) * param.count
+   glist = (ZOLTAN_ID_PTR) ZOLTAN_MALLOC (sizeof(ZOLTAN_ID_TYPE) * param.count
                                                              * param.glen) ;
-   plist = (int *)     LB_MALLOC (sizeof (int)        * param.count) ;
-   olist = (int *)     LB_MALLOC (sizeof (int)        * param.count) ;
+   plist = (int *)     ZOLTAN_MALLOC (sizeof (int)        * param.count) ;
+   olist = (int *)     ZOLTAN_MALLOC (sizeof (int)        * param.count) ;
    if (param.llen != 0)
-      llist = (ZOLTAN_ID_PTR) LB_MALLOC (sizeof (ZOLTAN_ID_TYPE) * param.count 
+      llist = (ZOLTAN_ID_PTR) ZOLTAN_MALLOC (sizeof (ZOLTAN_ID_TYPE) * param.count 
                                                                  * param.llen) ;
    if (param.ulen != 0)
-      ulist = (ZOLTAN_ID_PTR) LB_MALLOC (sizeof (ZOLTAN_ID_TYPE) * param.count 
+      ulist = (ZOLTAN_ID_PTR) ZOLTAN_MALLOC (sizeof (ZOLTAN_ID_TYPE) * param.count 
                                                                  * param.ulen) ;
 
 
@@ -319,13 +319,13 @@ int main (int argc, char *argv[])
    Zoltan_DD_Stats (dd) ;
 
    /* done, now free memory, stop MPI & directory, return */
-   LB_FREE (&store) ;
-   LB_FREE (&glist) ;
-   LB_FREE (&plist) ;
-   LB_FREE (&olist) ;
+   ZOLTAN_FREE (&store) ;
+   ZOLTAN_FREE (&glist) ;
+   ZOLTAN_FREE (&plist) ;
+   ZOLTAN_FREE (&olist) ;
 
-   if (param.llen != 0)   LB_FREE (&llist) ;
-   if (param.ulen != 0)   LB_FREE (&ulist) ;
+   if (param.llen != 0)   ZOLTAN_FREE (&llist) ;
+   if (param.ulen != 0)   ZOLTAN_FREE (&ulist) ;
 
 ZOLTAN_PRINT_INFO (myproc, yo, "Completing program") ;
    Zoltan_DD_Destroy (&dd) ;

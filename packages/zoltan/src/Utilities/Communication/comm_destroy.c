@@ -21,26 +21,26 @@ struct Comm_Obj **plan)		/* communication data structure pointer */
 {
 
     /* Free fields of the communication object. */
-    LB_FREE((void **) &((*plan)->status));
-    LB_FREE((void **) &((*plan)->request));
-    LB_FREE((void **) &((*plan)->sizes));
-    LB_FREE((void **) &((*plan)->sizes_to));
-    LB_FREE((void **) &((*plan)->sizes_from));
-    LB_FREE((void **) &((*plan)->starts_to_ptr));
-    LB_FREE((void **) &((*plan)->starts_from_ptr));
-    LB_FREE((void **) &((*plan)->indices_to_ptr));
-    LB_FREE((void **) &((*plan)->indices_from_ptr));
-    LB_FREE((void **) &((*plan)->indices_from));
-    LB_FREE((void **) &((*plan)->indices_to));
-    LB_FREE((void **) &((*plan)->lengths_from));
-    LB_FREE((void **) &((*plan)->starts_to));
-    LB_FREE((void **) &((*plan)->starts_from));
-    LB_FREE((void **) &((*plan)->lengths_to));
-    LB_FREE((void **) &((*plan)->procs_from));
-    LB_FREE((void **) &((*plan)->procs_to));
+    ZOLTAN_FREE((void **) &((*plan)->status));
+    ZOLTAN_FREE((void **) &((*plan)->request));
+    ZOLTAN_FREE((void **) &((*plan)->sizes));
+    ZOLTAN_FREE((void **) &((*plan)->sizes_to));
+    ZOLTAN_FREE((void **) &((*plan)->sizes_from));
+    ZOLTAN_FREE((void **) &((*plan)->starts_to_ptr));
+    ZOLTAN_FREE((void **) &((*plan)->starts_from_ptr));
+    ZOLTAN_FREE((void **) &((*plan)->indices_to_ptr));
+    ZOLTAN_FREE((void **) &((*plan)->indices_from_ptr));
+    ZOLTAN_FREE((void **) &((*plan)->indices_from));
+    ZOLTAN_FREE((void **) &((*plan)->indices_to));
+    ZOLTAN_FREE((void **) &((*plan)->lengths_from));
+    ZOLTAN_FREE((void **) &((*plan)->starts_to));
+    ZOLTAN_FREE((void **) &((*plan)->starts_from));
+    ZOLTAN_FREE((void **) &((*plan)->lengths_to));
+    ZOLTAN_FREE((void **) &((*plan)->procs_from));
+    ZOLTAN_FREE((void **) &((*plan)->procs_to));
 
     /* Free the communication object itself */
-    LB_FREE((void **) plan);
+    ZOLTAN_FREE((void **) plan);
 
     return(COMM_OK);
 }

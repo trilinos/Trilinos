@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &my_proc);
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
-    LB_Set_Memory_Debug(2);
+    Zoltan_Memory_Debug(2);
 
     if (argc > 1) strcpy(file_name, argv[1]);
     else strcpy(file_name,"comm_input.dat");
@@ -100,8 +100,8 @@ if (out_level > 1) printf("%d: About to call comm_create\n", my_proc);
 
 if (out_level > 2) print_plan("BEFORE RESIZE", plan, my_proc);
 	/* "4" reflects the max_sizes value in gen_comm_data */
-	recv_data = (float *) LB_MALLOC(nvals_recv * 4 * sizeof(float));
-	reverse_data = (float *) LB_MALLOC(my_send_data.nvals * 4 * sizeof(float));
+	recv_data = (float *) ZOLTAN_MALLOC(nvals_recv * 4 * sizeof(float));
+	reverse_data = (float *) ZOLTAN_MALLOC(my_send_data.nvals * 4 * sizeof(float));
 
 	if (my_send_data.sizes != NULL) {
 if (out_level > 1) printf("%d: About to call comm_resize\n", my_proc);
@@ -149,8 +149,8 @@ if (out_level > 1) printf("%d: Comm_Do_Reverse returned error code %d\n", my_pro
 
 
 	/* Free up data structures */
-	LB_FREE((void *) &reverse_data);
-	LB_FREE((void *) &recv_data);
+	ZOLTAN_FREE((void *) &reverse_data);
+	ZOLTAN_FREE((void *) &recv_data);
 
 	free_comm_data(&data, &my_send_data, &true_answer);
 
@@ -161,7 +161,7 @@ if (out_level > 1) printf("%d: Comm_Do_Reverse returned error code %d\n", my_pro
 
     }
 
-    LB_Memory_Stats();
+    Zoltan_Memory_Stats();
     MPI_Finalize();
 
     return(0);
@@ -224,18 +224,18 @@ int nprocs)
     int       index;		/* pointer into vals array */
     int       i, j;		/* loop counters */
 
-    data->proc_owner = (int *) LB_MALLOC(params->nvals * sizeof(int));
-    data->proc_dest = (int *) LB_MALLOC(params->nvals * sizeof(int));
+    data->proc_owner = (int *) ZOLTAN_MALLOC(params->nvals * sizeof(int));
+    data->proc_dest = (int *) ZOLTAN_MALLOC(params->nvals * sizeof(int));
     if (params->variable_sizes) {
-	data->sizes = (int *) LB_MALLOC((params->nvals + 1) * sizeof(int));
+	data->sizes = (int *) ZOLTAN_MALLOC((params->nvals + 1) * sizeof(int));
 	data->vals = (float *)
-	   LB_MALLOC(params->nvals * sizes_max * sizeof(float));
+	   ZOLTAN_MALLOC(params->nvals * sizes_max * sizeof(float));
     }
     else {
 	data->sizes = NULL;
 	data->same_size = params->same_size;
 	data->vals = (float *)
-	   LB_MALLOC(params->nvals * data->same_size * sizeof(float));
+	   ZOLTAN_MALLOC(params->nvals * data->same_size * sizeof(float));
     }
 
     data->nvals = params->nvals;
@@ -287,16 +287,16 @@ int nprocs)
 	recv_size = recv_count * data->same_size;
 
     answer->nvals = recv_count;
-    answer->proc_sender = (int *) LB_MALLOC(recv_count * sizeof(int));
+    answer->proc_sender = (int *) ZOLTAN_MALLOC(recv_count * sizeof(int));
     if (data->sizes == NULL) {
 	answer->same_size = data->same_size;
 	answer->sizes = NULL;
     }
     else {
-	answer->sizes = (int *) LB_MALLOC((recv_count + 1) * sizeof(int));
+	answer->sizes = (int *) ZOLTAN_MALLOC((recv_count + 1) * sizeof(int));
     }
 
-    answer->vals = (float *) LB_MALLOC(recv_size * sizeof(float));
+    answer->vals = (float *) ZOLTAN_MALLOC(recv_size * sizeof(float));
 
     /* Now copy correct answer into vals.  Use dumb algorithm since */
     /* it's just for testing. */
@@ -364,12 +364,12 @@ int    nprocs)
 	my_data->same_size = data->same_size;
     }
     else {
-	my_data->sizes = (int *) LB_MALLOC((my_size + 1) * sizeof(int));
+	my_data->sizes = (int *) ZOLTAN_MALLOC((my_size + 1) * sizeof(int));
     }
 
     my_data->proc_owner = NULL;
-    my_data->proc_dest = (int *) LB_MALLOC(my_data->nvals * sizeof(int));
-    my_data->vals = (float *) LB_MALLOC(my_size * sizeof(float));
+    my_data->proc_dest = (int *) ZOLTAN_MALLOC(my_data->nvals * sizeof(int));
+    my_data->vals = (float *) ZOLTAN_MALLOC(my_size * sizeof(float));
 
     /* Now I can copy data into my_data */
     /* Two cases - data blocked by destination processor or not */
@@ -529,19 +529,19 @@ struct Data *data,
 struct Data *my_data,
 struct Answer *true_answer)
 {
-    LB_FREE((void *) &data->vals);
-    LB_FREE((void *) &data->sizes);
-    LB_FREE((void *) &data->proc_dest);
-    LB_FREE((void *) &data->proc_owner);
+    ZOLTAN_FREE((void *) &data->vals);
+    ZOLTAN_FREE((void *) &data->sizes);
+    ZOLTAN_FREE((void *) &data->proc_dest);
+    ZOLTAN_FREE((void *) &data->proc_owner);
 
-    LB_FREE((void *) &my_data->vals);
-    LB_FREE((void *) &my_data->sizes);
-    LB_FREE((void *) &my_data->proc_dest);
-    LB_FREE((void *) &my_data->proc_owner);
+    ZOLTAN_FREE((void *) &my_data->vals);
+    ZOLTAN_FREE((void *) &my_data->sizes);
+    ZOLTAN_FREE((void *) &my_data->proc_dest);
+    ZOLTAN_FREE((void *) &my_data->proc_owner);
 
-    LB_FREE((void *) &true_answer->vals);
-    LB_FREE((void *) &true_answer->sizes);
-    LB_FREE((void *) &true_answer->proc_sender);
+    ZOLTAN_FREE((void *) &true_answer->vals);
+    ZOLTAN_FREE((void *) &true_answer->sizes);
+    ZOLTAN_FREE((void *) &true_answer->proc_sender);
 }
 
 

@@ -405,12 +405,12 @@ int Zoltan_LB_Free_Data(
  *  Routine to free the arrays returning the results of the load balancing.
  */
 
-  LB_FREE(import_global_ids);
-  LB_FREE(import_local_ids);
-  LB_FREE(import_procs);
-  LB_FREE(export_global_ids);
-  LB_FREE(export_local_ids);
-  LB_FREE(export_procs);
+  ZOLTAN_FREE(import_global_ids);
+  ZOLTAN_FREE(import_local_ids);
+  ZOLTAN_FREE(import_procs);
+  ZOLTAN_FREE(export_global_ids);
+  ZOLTAN_FREE(export_local_ids);
+  ZOLTAN_FREE(export_procs);
 
   return (ZOLTAN_OK);
 

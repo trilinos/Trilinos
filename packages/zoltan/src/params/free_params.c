@@ -29,9 +29,9 @@ LB_PARAM **params)				/* load balance structure */
     ptr = *params;
     while (ptr != NULL) {
 	next = ptr->next;
-	LB_FREE(&(ptr->name));
-	LB_FREE(&(ptr->new_val));
-	LB_FREE(&ptr);
+	ZOLTAN_FREE(&(ptr->name));
+	ZOLTAN_FREE(&(ptr->new_val));
+	ZOLTAN_FREE(&ptr);
 	ptr = next;
     }
 

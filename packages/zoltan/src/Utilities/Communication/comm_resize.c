@@ -48,13 +48,13 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	return(COMM_FATAL);
     }
 
-    LB_FREE((void *) &plan->sizes);
-    LB_FREE((void *) &plan->sizes_to);
-    LB_FREE((void *) &plan->sizes_from);
-    LB_FREE((void *) &plan->starts_to_ptr);
-    LB_FREE((void *) &plan->starts_from_ptr);
-    LB_FREE((void *) &plan->indices_to_ptr);
-    LB_FREE((void *) &plan->indices_from_ptr);
+    ZOLTAN_FREE((void *) &plan->sizes);
+    ZOLTAN_FREE((void *) &plan->sizes_to);
+    ZOLTAN_FREE((void *) &plan->sizes_from);
+    ZOLTAN_FREE((void *) &plan->starts_to_ptr);
+    ZOLTAN_FREE((void *) &plan->starts_from_ptr);
+    ZOLTAN_FREE((void *) &plan->indices_to_ptr);
+    ZOLTAN_FREE((void *) &plan->indices_from_ptr);
 
     nsends = plan->nsends;
     nrecvs = plan->nrecvs;
@@ -77,7 +77,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
     }
 
     else {		/* Need to actually compute message sizes */
-	plan->sizes = (int *) LB_MALLOC((plan->nvals + 1) * sizeof(int));
+	plan->sizes = (int *) ZOLTAN_MALLOC((plan->nvals + 1) * sizeof(int));
 	if (plan->sizes == NULL) {
 	    return_flag = COMM_MEMERR;
 	    goto Mem_Err;
@@ -85,13 +85,13 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	for (i = 0; i < plan->nvals; i++) plan->sizes[i] = sizes[i];
 
 	return_flag = COMM_OK;
-	sizes_to = (int *) LB_MALLOC((nsends + self_msg) * sizeof(int));
+	sizes_to = (int *) ZOLTAN_MALLOC((nsends + self_msg) * sizeof(int));
 	if (sizes_to == NULL && (nsends + self_msg) != 0) {
 	    return_flag = COMM_MEMERR;
 	    goto Mem_Err;
 	}
 
-	sizes_from = (int *) LB_MALLOC((nrecvs + self_msg) * sizeof(int));
+	sizes_from = (int *) ZOLTAN_MALLOC((nrecvs + self_msg) * sizeof(int));
 	if (sizes_from == NULL && (nrecvs + self_msg) != 0) {
 	    return_flag = COMM_MEMERR;
 	    goto Mem_Err;
@@ -108,7 +108,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 		need to allocate, set indices_to_ptr
 	   3,4. mirror cases for _from
 	*/
-	starts_to_ptr = (int *) LB_MALLOC((nsends + self_msg) * sizeof(int));
+	starts_to_ptr = (int *) ZOLTAN_MALLOC((nsends + self_msg) * sizeof(int));
 	if (starts_to_ptr == NULL && (nsends + self_msg) != 0) {
 	    return_flag = COMM_MEMERR;
 	    goto Mem_Err;
@@ -117,8 +117,8 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	if (plan->indices_to == NULL) {
 	    /* Simpler case; sends already blocked by processor */
 
-	    index = (int *) LB_MALLOC((nsends + self_msg) * sizeof(int));
-	    sort_val = (int *) LB_MALLOC((nsends + self_msg) * sizeof(int));
+	    index = (int *) ZOLTAN_MALLOC((nsends + self_msg) * sizeof(int));
+	    sort_val = (int *) ZOLTAN_MALLOC((nsends + self_msg) * sizeof(int));
 	    if ((index == NULL || sort_val == NULL) && nsends + self_msg > 0) {
 	        return_flag = COMM_MEMERR;
 	        goto Mem_Err;
@@ -147,13 +147,13 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 		sum += sizes_to[index[i]];
 	    }
 
-	    LB_FREE((void *) &index);
-	    LB_FREE((void *) &sort_val);
+	    ZOLTAN_FREE((void *) &index);
+	    ZOLTAN_FREE((void *) &sort_val);
 	}
 
 	else {		/* Harder case, sends not blocked */
-	    offset = (int *) LB_MALLOC(plan->nvals * sizeof(int));
-	    indices_to_ptr = (int *) LB_MALLOC(plan->nvals * sizeof(int));
+	    offset = (int *) ZOLTAN_MALLOC(plan->nvals * sizeof(int));
+	    indices_to_ptr = (int *) ZOLTAN_MALLOC(plan->nvals * sizeof(int));
 	    if ((offset == NULL || indices_to_ptr == NULL) && plan->nvals != 0) {
 	        return_flag = COMM_MEMERR;
 	        goto Mem_Err;
@@ -180,7 +180,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	            plan->max_send_size = sizes_to[i];
 		sum += sizes_to[i];
 	    }
-	    LB_FREE((void *) &offset);
+	    ZOLTAN_FREE((void *) &offset);
 	}
 
 
@@ -192,7 +192,7 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	    sizes_from, plan->procs_from, nrecvs, 
 	    &plan->total_recv_size, my_proc, tag, plan->comm);
 
-	starts_from_ptr = (int *) LB_MALLOC((nrecvs + self_msg) * sizeof(int));
+	starts_from_ptr = (int *) ZOLTAN_MALLOC((nrecvs + self_msg) * sizeof(int));
 	if (starts_from_ptr == NULL && (nrecvs + self_msg) != 0) {
 	    return_flag = COMM_MEMERR;
 	    goto Mem_Err;
@@ -202,8 +202,8 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 	    /* Simpler case; recvs already blocked by processor */
 	    /* Harder case currently excluded at top of file */
 
-	    index = (int *) LB_MALLOC((nrecvs + self_msg) * sizeof(int));
-	    sort_val = (int *) LB_MALLOC((nrecvs + self_msg) * sizeof(int));
+	    index = (int *) ZOLTAN_MALLOC((nrecvs + self_msg) * sizeof(int));
+	    sort_val = (int *) ZOLTAN_MALLOC((nrecvs + self_msg) * sizeof(int));
 	    if ((index == NULL || sort_val == NULL) && nrecvs + self_msg > 0) {
 	        return_flag = COMM_MEMERR;
 	        goto Mem_Err;
@@ -221,8 +221,8 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 		sum += sizes_from[index[i]];
 	    }
 
-	    LB_FREE((void *) &index);
-	    LB_FREE((void *) &sort_val);
+	    ZOLTAN_FREE((void *) &index);
+	    ZOLTAN_FREE((void *) &sort_val);
 	}
 
 	/*else {*/	/* Harder case, recvs not blocked */
@@ -234,16 +234,16 @@ int      *sum_recv_sizes)       /* sum of the sizes of the items I'll receive */
 
 Mem_Err:
     if (return_flag == COMM_MEMERR) {
-	LB_FREE((void *) &index);
-	LB_FREE((void *) &sort_val);
-	LB_FREE((void *) &offset);
-	LB_FREE((void *) &plan->sizes);
-	LB_FREE((void *) &plan->sizes_to);
-	LB_FREE((void *) &plan->sizes_from);
-	LB_FREE((void *) &plan->starts_to_ptr);
-	LB_FREE((void *) &plan->starts_from_ptr);
-	LB_FREE((void *) &plan->indices_to_ptr);
-	LB_FREE((void *) &plan->indices_from_ptr);
+	ZOLTAN_FREE((void *) &index);
+	ZOLTAN_FREE((void *) &sort_val);
+	ZOLTAN_FREE((void *) &offset);
+	ZOLTAN_FREE((void *) &plan->sizes);
+	ZOLTAN_FREE((void *) &plan->sizes_to);
+	ZOLTAN_FREE((void *) &plan->sizes_from);
+	ZOLTAN_FREE((void *) &plan->starts_to_ptr);
+	ZOLTAN_FREE((void *) &plan->starts_from_ptr);
+	ZOLTAN_FREE((void *) &plan->indices_to_ptr);
+	ZOLTAN_FREE((void *) &plan->indices_from_ptr);
     }
 
     plan->sizes_to = sizes_to;

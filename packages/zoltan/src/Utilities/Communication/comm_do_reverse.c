@@ -61,7 +61,7 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
 	    max_recv_length = plan->lengths_from[i];
     }
 
-    plan_reverse = (struct Comm_Obj *) LB_MALLOC(sizeof(struct Comm_Obj));
+    plan_reverse = (struct Comm_Obj *) ZOLTAN_MALLOC(sizeof(struct Comm_Obj));
 
     plan_reverse->nvals = plan->nvals_recv;
     plan_reverse->nvals_recv = plan->nvals;
@@ -89,51 +89,51 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
 
 
     plan_reverse->request = (MPI_Request *)
-	LB_MALLOC(plan_reverse->nrecvs * sizeof(MPI_Request));
+	ZOLTAN_MALLOC(plan_reverse->nrecvs * sizeof(MPI_Request));
     if (plan_reverse->request == NULL && plan_reverse->nrecvs != 0) {
-        LB_FREE((void **) &plan_reverse);
+        ZOLTAN_FREE((void **) &plan_reverse);
 	return(COMM_MEMERR);
     }
 
     plan_reverse->status = (MPI_Status *)
-	LB_MALLOC(plan_reverse->nrecvs * sizeof(MPI_Status));
+	ZOLTAN_MALLOC(plan_reverse->nrecvs * sizeof(MPI_Status));
     if (plan_reverse->status == NULL && plan_reverse->nrecvs != 0) {
-        LB_FREE((void **) &(plan_reverse->request));
-        LB_FREE((void **) &plan_reverse);
+        ZOLTAN_FREE((void **) &(plan_reverse->request));
+        ZOLTAN_FREE((void **) &plan_reverse);
 	return(COMM_MEMERR);
     }
 
     comm_flag = LB_Comm_Resize(plan_reverse, sizes, tag, &sum_recv_sizes);
 
     if (comm_flag != COMM_OK && comm_flag != COMM_WARN) {
-        LB_FREE((void **) &(plan_reverse->status));
-        LB_FREE((void **) &(plan_reverse->request));
-        LB_FREE((void **) &plan_reverse);
+        ZOLTAN_FREE((void **) &(plan_reverse->status));
+        ZOLTAN_FREE((void **) &(plan_reverse->request));
+        ZOLTAN_FREE((void **) &plan_reverse);
 	return(comm_flag);
     }
 
     if (sum_recv_sizes != plan_reverse->total_recv_size){
        /* Sanity check */
-       LB_FREE((void **) &(plan_reverse->status));
-       LB_FREE((void **) &(plan_reverse->request));
-       LB_FREE((void **) &plan_reverse);
+       ZOLTAN_FREE((void **) &(plan_reverse->status));
+       ZOLTAN_FREE((void **) &(plan_reverse->request));
+       ZOLTAN_FREE((void **) &plan_reverse);
        return(COMM_FATAL);
     }
 
     comm_flag = LB_Comm_Do(plan_reverse, tag, send_data, nbytes, recv_data);
 
     if (sizes != NULL) {
-        LB_FREE((void *) &plan_reverse->sizes);
-	LB_FREE((void *) &plan_reverse->sizes_to);
-	LB_FREE((void *) &plan_reverse->sizes_from);
-	LB_FREE((void *) &plan_reverse->starts_to_ptr);
-	LB_FREE((void *) &plan_reverse->starts_from_ptr);
-	LB_FREE((void *) &plan_reverse->indices_to_ptr);
-	LB_FREE((void *) &plan_reverse->indices_from_ptr);
+        ZOLTAN_FREE((void *) &plan_reverse->sizes);
+	ZOLTAN_FREE((void *) &plan_reverse->sizes_to);
+	ZOLTAN_FREE((void *) &plan_reverse->sizes_from);
+	ZOLTAN_FREE((void *) &plan_reverse->starts_to_ptr);
+	ZOLTAN_FREE((void *) &plan_reverse->starts_from_ptr);
+	ZOLTAN_FREE((void *) &plan_reverse->indices_to_ptr);
+	ZOLTAN_FREE((void *) &plan_reverse->indices_from_ptr);
     }
-    LB_FREE((void **) &(plan_reverse->status));
-    LB_FREE((void **) &(plan_reverse->request));
-    LB_FREE((void **) &plan_reverse);
+    ZOLTAN_FREE((void **) &(plan_reverse->status));
+    ZOLTAN_FREE((void **) &(plan_reverse->request));
+    ZOLTAN_FREE((void **) &plan_reverse);
 
     return(comm_flag);
 }

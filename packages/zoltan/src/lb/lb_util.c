@@ -168,7 +168,7 @@ char **pstring2) 		/* cleaned string to return */
     while (end > start && isspace((int)(string1[end])))
 	end--;
 
-    string2 = (char *) LB_MALLOC((end - start + 1) * sizeof(char));
+    string2 = (char *) ZOLTAN_MALLOC((end - start + 1) * sizeof(char));
     *pstring2 = string2;
 
     if (string2 == NULL)

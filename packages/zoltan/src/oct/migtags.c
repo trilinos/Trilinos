@@ -74,13 +74,13 @@ int LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
   }
 
   if(npimregs > 0){
-    LB_FREE(&pimreg);
-    LB_FREE(&pim_gids);
-    LB_FREE(&pim_lids);
+    ZOLTAN_FREE(&pimreg);
+    ZOLTAN_FREE(&pim_gids);
+    ZOLTAN_FREE(&pim_lids);
   }
-  LB_FREE(&export_regions);
-  LB_FREE(&export_gids);
-  LB_FREE(&export_lids);
+  ZOLTAN_FREE(&export_regions);
+  ZOLTAN_FREE(&export_gids);
+  ZOLTAN_FREE(&export_lids);
 
   if(max_objs > (*counter3))
     (*counter3) = max_objs;
@@ -93,7 +93,7 @@ int LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
    *  for(i=0; i<(*nrecregs); i++)
    *    fprintf(stderr,"%d\n", (*import_regions)[i].Proc);
    */
-  LB_FREE(&tag_pids);
+  ZOLTAN_FREE(&tag_pids);
   return ierr;
 }
 
@@ -176,24 +176,24 @@ static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
 
   if (count > 0) {
     /* allocate some space */
-    if((mtags = (pRegion)LB_MALLOC((unsigned)count * sizeof(Region))) == NULL){
+    if((mtags = (pRegion)ZOLTAN_MALLOC((unsigned)count * sizeof(Region))) == NULL){
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
-    if((export_pids = (int *)LB_MALLOC((unsigned)count * sizeof(int))) == NULL){
+    if((export_pids = (int *)ZOLTAN_MALLOC((unsigned)count * sizeof(int))) == NULL){
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      LB_FREE(&mtags);
+      ZOLTAN_FREE(&mtags);
       return ZOLTAN_MEMERR;
     }
-    *export_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, count);
-    *export_lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, count);
+    *export_gids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, count);
+    *export_lids = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, count);
     if(!(*export_gids) || (num_lid_entries && !(*export_lids))) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      LB_FREE(&mtags);
-      LB_FREE(&export_pids);
+      ZOLTAN_FREE(&mtags);
+      ZOLTAN_FREE(&export_pids);
       return ZOLTAN_MEMERR;
     }
   }
@@ -209,27 +209,27 @@ static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
   
   if (count2 > 0) {
     /* allocate some space */
-    if((ptags = (pRegion)LB_MALLOC((unsigned)count2 * sizeof(Region))) == NULL){
+    if((ptags = (pRegion)ZOLTAN_MALLOC((unsigned)count2 * sizeof(Region))) == NULL){
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient Memory.");
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      LB_FREE(&mtags);
-      LB_FREE(&export_pids);
-      LB_FREE(export_gids);
-      LB_FREE(export_lids);
+      ZOLTAN_FREE(&mtags);
+      ZOLTAN_FREE(&export_pids);
+      ZOLTAN_FREE(export_gids);
+      ZOLTAN_FREE(export_lids);
       return ZOLTAN_MEMERR;
     }
-    *prev_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, count2);
-    *prev_lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, count2);
+    *prev_gids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, count2);
+    *prev_lids = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, count2);
     if(!(*prev_gids) || (num_lid_entries && !(*prev_lids))) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient Memory.");
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      LB_FREE(&mtags);
-      LB_FREE(&export_pids);
-      LB_FREE(export_gids);
-      LB_FREE(export_lids);
-      LB_FREE(&ptags);
-      LB_FREE(prev_gids);
-      LB_FREE(prev_lids);
+      ZOLTAN_FREE(&mtags);
+      ZOLTAN_FREE(&export_pids);
+      ZOLTAN_FREE(export_gids);
+      ZOLTAN_FREE(export_lids);
+      ZOLTAN_FREE(&ptags);
+      ZOLTAN_FREE(prev_gids);
+      ZOLTAN_FREE(prev_lids);
       return ZOLTAN_MEMERR;
     }
   }
@@ -328,14 +328,14 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
 
 
   if (nreceives > 0) {
-    tmp = (pRegion) LB_MALLOC(nreceives * sizeof(Region));
-    tmp_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, nreceives);
-    tmp_lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, nreceives);
+    tmp = (pRegion) ZOLTAN_MALLOC(nreceives * sizeof(Region));
+    tmp_gids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, nreceives);
+    tmp_lids = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, nreceives);
     if(tmp == NULL || !tmp_gids || (num_lid_entries && !tmp_lids)) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_FREE(&tmp);
-      LB_FREE(&tmp_gids);
-      LB_FREE(&tmp_lids);
+      ZOLTAN_FREE(&tmp);
+      ZOLTAN_FREE(&tmp_gids);
+      ZOLTAN_FREE(&tmp_lids);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
@@ -347,9 +347,9 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   if(ierr != COMM_OK && ierr != COMM_WARN) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&tmp);
-    LB_FREE(&tmp_gids);
-    LB_FREE(&tmp_lids);
+    ZOLTAN_FREE(&tmp);
+    ZOLTAN_FREE(&tmp_gids);
+    ZOLTAN_FREE(&tmp_lids);
     return((ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL));
   }
 
@@ -360,9 +360,9 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
     fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo,
             (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-    LB_FREE(&tmp);
-    LB_FREE(&tmp_gids);
-    LB_FREE(&tmp_lids);
+    ZOLTAN_FREE(&tmp);
+    ZOLTAN_FREE(&tmp_gids);
+    ZOLTAN_FREE(&tmp_lids);
     return((ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL));
   }
 
@@ -372,9 +372,9 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
                       sizeof(ZOLTAN_ID_TYPE)*num_lid_entries, (char *) tmp_lids);
     if (ierr != COMM_OK && ierr != COMM_WARN) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
-      LB_FREE(&tmp);
-      LB_FREE(&tmp_gids);
-      LB_FREE(&tmp_lids);
+      ZOLTAN_FREE(&tmp);
+      ZOLTAN_FREE(&tmp_gids);
+      ZOLTAN_FREE(&tmp_lids);
       return((ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL));
     }
   }
@@ -383,7 +383,7 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   if(ierr != COMM_OK && ierr != COMM_WARN) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Destroy.");
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&tmp);
+    ZOLTAN_FREE(&tmp);
     return((ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL));
   }
 
@@ -397,12 +397,12 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   }
   
   if((j + npimtags) != 0) {                   /* malloc import array */
-    if((imp = (pRegion) LB_MALLOC((j + npimtags) * sizeof(Region))) == NULL) {
+    if((imp = (pRegion) ZOLTAN_MALLOC((j + npimtags) * sizeof(Region))) == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      LB_FREE(&tmp);
-      LB_FREE(&tmp_gids);
-      LB_FREE(&tmp_lids);
+      ZOLTAN_FREE(&tmp);
+      ZOLTAN_FREE(&tmp_gids);
+      ZOLTAN_FREE(&tmp_lids);
       return ZOLTAN_MEMERR;
     }
   }
@@ -416,14 +416,14 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   for (i=0; i<nreceives; i++) {
     if(tmp[i].Proc != lb->Proc) {
       imp[j] = tmp[i];
-      imp[j].Global_ID = ZOLTAN_LB_MALLOC_GID(lb);
-      imp[j].Local_ID  = ZOLTAN_LB_MALLOC_LID(lb);
+      imp[j].Global_ID = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
+      imp[j].Local_ID  = ZOLTAN_ZOLTAN_MALLOC_LID(lb);
       if (!(imp[j].Global_ID) || (num_lid_entries && !(imp[j].Local_ID))) {
         ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         ZOLTAN_LB_TRACE_EXIT(lb, yo);
-        LB_FREE(&tmp);
-        LB_FREE(&tmp_gids);
-        LB_FREE(&tmp_lids);
+        ZOLTAN_FREE(&tmp);
+        ZOLTAN_FREE(&tmp_gids);
+        ZOLTAN_FREE(&tmp_lids);
         return ZOLTAN_MEMERR;
       }
       ZOLTAN_LB_SET_GID(lb, imp[j].Global_ID, &(tmp_gids[i*num_gid_entries]));
@@ -435,14 +435,14 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   if(npimtags > 0) {
     for(i=0; i<npimtags; i++) {
       imp[j] = prev_tags[i];
-      imp[j].Global_ID = ZOLTAN_LB_MALLOC_GID(lb);
-      imp[j].Local_ID  = ZOLTAN_LB_MALLOC_LID(lb);
+      imp[j].Global_ID = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
+      imp[j].Local_ID  = ZOLTAN_ZOLTAN_MALLOC_LID(lb);
       if (!(imp[j].Global_ID) || (num_lid_entries && !(imp[j].Local_ID))) {
         ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         ZOLTAN_LB_TRACE_EXIT(lb, yo);
-        LB_FREE(&tmp);
-        LB_FREE(&tmp_gids);
-        LB_FREE(&tmp_lids);
+        ZOLTAN_FREE(&tmp);
+        ZOLTAN_FREE(&tmp_gids);
+        ZOLTAN_FREE(&tmp_lids);
         return ZOLTAN_MEMERR;
       }
       ZOLTAN_LB_SET_GID(lb, imp[j].Global_ID, &(prev_gids[i*num_gid_entries]));
@@ -452,9 +452,9 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   }
   *nrectags = j;
 
-  LB_FREE(&tmp);
-  LB_FREE(&tmp_gids);
-  LB_FREE(&tmp_lids);
+  ZOLTAN_FREE(&tmp);
+  ZOLTAN_FREE(&tmp_gids);
+  ZOLTAN_FREE(&tmp_lids);
 
   /*
    * fprintf(stderr,

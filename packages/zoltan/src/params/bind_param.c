@@ -52,7 +52,7 @@ void *var)			/* pointer to variable to be associated with the parameter name */
     for (ptr = params; ptr->name != NULL; ptr++) {
 	if (!strcmp(name2, ptr->name)) {	/* string match */
 	    ptr->ptr = var;
-            LB_FREE(&name2);
+            ZOLTAN_FREE(&name2);
 	    return (ZOLTAN_OK);
 	}
     }
@@ -61,6 +61,6 @@ void *var)			/* pointer to variable to be associated with the parameter name */
     sprintf(msg, "Parameter name %s not found; it will"
                  "not be bound to any variable.", name2);
     ZOLTAN_PRINT_WARN(-1, yo, msg);
-    LB_FREE(&name2);
+    ZOLTAN_FREE(&name2);
     return (ZOLTAN_WARN);
 }

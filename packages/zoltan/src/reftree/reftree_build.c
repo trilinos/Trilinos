@@ -176,7 +176,7 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
                        lb->Debug_Proc);
 
   hashtab = (struct LB_reftree_hash_node **)
-            LB_MALLOC(sizeof(struct LB_reftree_hash_node *)*hashsize);
+            ZOLTAN_MALLOC(sizeof(struct LB_reftree_hash_node *)*hashsize);
   if (hashtab == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_Reftree_Free_Structure(lb);
@@ -191,7 +191,7 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    */
 
   reftree_data = (struct LB_reftree_data_struct *)
-                 LB_MALLOC(sizeof(struct LB_reftree_data_struct));
+                 ZOLTAN_MALLOC(sizeof(struct LB_reftree_data_struct));
   reftree_data->reftree_root = root;
   reftree_data->hash_table = hashtab;
   reftree_data->hash_table_size = hashsize;
@@ -229,13 +229,13 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
   if (num_obj > 0) {
 
     num_obj += 1; /* allocate one extra spot for the last call to NEXT_OBJ */
-    local_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, num_obj);
-    local_lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, num_obj);
-    assigned   = (int *) LB_MALLOC(num_obj*sizeof(int));
-    num_vert   = (int *) LB_MALLOC(num_obj*sizeof(int));
-    vertices   = (int *) LB_MALLOC(MAXVERT*num_obj*sizeof(int));
-    in_vertex  = (int *) LB_MALLOC(num_obj*sizeof(int));
-    out_vertex = (int *) LB_MALLOC(num_obj*sizeof(int));
+    local_gids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, num_obj);
+    local_lids = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, num_obj);
+    assigned   = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+    num_vert   = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+    vertices   = (int *) ZOLTAN_MALLOC(MAXVERT*num_obj*sizeof(int));
+    in_vertex  = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+    out_vertex = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
     num_obj -= 1;
 
     if (local_gids == NULL || (num_lid_entries > 0 && local_lids == NULL) || 
@@ -243,13 +243,13 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
         num_vert   == NULL || vertices   == NULL || in_vertex == NULL ||
         out_vertex == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_FREE(&local_gids);
-      LB_FREE(&local_lids);
-      LB_FREE(&assigned);
-      LB_FREE(&num_vert);
-      LB_FREE(&vertices);
-      LB_FREE(&in_vertex);
-      LB_FREE(&out_vertex);
+      ZOLTAN_FREE(&local_gids);
+      ZOLTAN_FREE(&local_lids);
+      ZOLTAN_FREE(&assigned);
+      ZOLTAN_FREE(&num_vert);
+      ZOLTAN_FREE(&vertices);
+      ZOLTAN_FREE(&in_vertex);
+      ZOLTAN_FREE(&out_vertex);
       LB_Reftree_Free_Structure(lb);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return(ZOLTAN_MEMERR);
@@ -269,13 +269,13 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
       if (ierr) {
         ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                       "Error returned from user function Get_Coarse_Obj_List.");
-        LB_FREE(&local_gids);
-        LB_FREE(&local_lids);
-        LB_FREE(&assigned);
-        LB_FREE(&num_vert);
-        LB_FREE(&vertices);
-        LB_FREE(&in_vertex);
-        LB_FREE(&out_vertex);
+        ZOLTAN_FREE(&local_gids);
+        ZOLTAN_FREE(&local_lids);
+        ZOLTAN_FREE(&assigned);
+        ZOLTAN_FREE(&num_vert);
+        ZOLTAN_FREE(&vertices);
+        ZOLTAN_FREE(&in_vertex);
+        ZOLTAN_FREE(&out_vertex);
         LB_Reftree_Free_Structure(lb);
         ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return(ierr);
@@ -305,13 +305,13 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
       if (ierr) {
         ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                      "Error returned from user function Get_First_Coarse_Obj.");
-        LB_FREE(&local_gids);
-        LB_FREE(&local_lids);
-        LB_FREE(&assigned);
-        LB_FREE(&num_vert);
-        LB_FREE(&vertices);
-        LB_FREE(&in_vertex);
-        LB_FREE(&out_vertex);
+        ZOLTAN_FREE(&local_gids);
+        ZOLTAN_FREE(&local_lids);
+        ZOLTAN_FREE(&assigned);
+        ZOLTAN_FREE(&num_vert);
+        ZOLTAN_FREE(&vertices);
+        ZOLTAN_FREE(&in_vertex);
+        ZOLTAN_FREE(&out_vertex);
         LB_Reftree_Free_Structure(lb);
         ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return(ierr);
@@ -336,13 +336,13 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
         if (ierr) {
           ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                       "Error returned from user function Get_Next_Coarse_Obj.");
-          LB_FREE(&local_gids);
-          LB_FREE(&local_lids);
-          LB_FREE(&assigned);
-          LB_FREE(&num_vert);
-          LB_FREE(&vertices);
-          LB_FREE(&in_vertex);
-          LB_FREE(&out_vertex);
+          ZOLTAN_FREE(&local_gids);
+          ZOLTAN_FREE(&local_lids);
+          ZOLTAN_FREE(&assigned);
+          ZOLTAN_FREE(&num_vert);
+          ZOLTAN_FREE(&vertices);
+          ZOLTAN_FREE(&in_vertex);
+          ZOLTAN_FREE(&out_vertex);
           LB_Reftree_Free_Structure(lb);
           ZOLTAN_LB_TRACE_EXIT(lb, yo);
           return(ierr);
@@ -362,13 +362,13 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Must define and register either "
         "ZOLTAN_COARSE_OBJ_LIST_FN or "
         "ZOLTAN_FIRST_COARSE_OBJ_FN/ZOLTAN_NEXT_COARSE_OBJ_FN pair.");
-      LB_FREE(&local_gids);
-      LB_FREE(&local_lids);
-      LB_FREE(&assigned);
-      LB_FREE(&num_vert);
-      LB_FREE(&vertices);
-      LB_FREE(&in_vertex);
-      LB_FREE(&out_vertex);
+      ZOLTAN_FREE(&local_gids);
+      ZOLTAN_FREE(&local_lids);
+      ZOLTAN_FREE(&assigned);
+      ZOLTAN_FREE(&num_vert);
+      ZOLTAN_FREE(&vertices);
+      ZOLTAN_FREE(&in_vertex);
+      ZOLTAN_FREE(&out_vertex);
       LB_Reftree_Free_Structure(lb);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return(ZOLTAN_FATAL);
@@ -383,19 +383,19 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    * First determine how many coarse objects are on each processor
    */
 
-  num_obj_all = (int *)LB_MALLOC(nproc*sizeof(int));
-  displs = (int *)LB_MALLOC(nproc*sizeof(int));
+  num_obj_all = (int *)ZOLTAN_MALLOC(nproc*sizeof(int));
+  displs = (int *)ZOLTAN_MALLOC(nproc*sizeof(int));
   if (num_obj_all == NULL || displs == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_FREE(&local_gids);
-    LB_FREE(&local_lids);
-    LB_FREE(&assigned);
-    LB_FREE(&num_vert);
-    LB_FREE(&vertices);
-    LB_FREE(&in_vertex);
-    LB_FREE(&out_vertex);
-    LB_FREE(&num_obj_all);
-    LB_FREE(&displs);
+    ZOLTAN_FREE(&local_gids);
+    ZOLTAN_FREE(&local_lids);
+    ZOLTAN_FREE(&assigned);
+    ZOLTAN_FREE(&num_vert);
+    ZOLTAN_FREE(&vertices);
+    ZOLTAN_FREE(&in_vertex);
+    ZOLTAN_FREE(&out_vertex);
+    ZOLTAN_FREE(&num_obj_all);
+    ZOLTAN_FREE(&displs);
     LB_Reftree_Free_Structure(lb);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return(ZOLTAN_MEMERR);
@@ -411,19 +411,19 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    * Then get the coarse objects from all processors
    */
 
-  all_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, sum_num_obj);
+  all_gids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, sum_num_obj);
   if (all_gids == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_FREE(&local_gids);
-    LB_FREE(&local_lids);
-    LB_FREE(&assigned);
-    LB_FREE(&num_vert);
-    LB_FREE(&vertices);
-    LB_FREE(&in_vertex);
-    LB_FREE(&out_vertex);
-    LB_FREE(&num_obj_all);
-    LB_FREE(&displs);
-    LB_FREE(&all_gids);
+    ZOLTAN_FREE(&local_gids);
+    ZOLTAN_FREE(&local_lids);
+    ZOLTAN_FREE(&assigned);
+    ZOLTAN_FREE(&num_vert);
+    ZOLTAN_FREE(&vertices);
+    ZOLTAN_FREE(&in_vertex);
+    ZOLTAN_FREE(&out_vertex);
+    ZOLTAN_FREE(&num_obj_all);
+    ZOLTAN_FREE(&displs);
+    ZOLTAN_FREE(&all_gids);
     LB_Reftree_Free_Structure(lb);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return(ZOLTAN_MEMERR);
@@ -441,8 +441,8 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
                  (void *)all_gids,num_obj_all,displs,ZOLTAN_ID_MPI_TYPE,
                  lb->Communicator);
 
-  LB_FREE(&displs);
-  LB_FREE(&num_obj_all);
+  ZOLTAN_FREE(&displs);
+  ZOLTAN_FREE(&num_obj_all);
 
   /*
    * Finally, build a list with each coarse grid element, beginning with
@@ -451,18 +451,18 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    */
 
   local_gids = ZOLTAN_LB_REALLOC_GID_ARRAY(lb, local_gids, sum_num_obj);
-  order = (int *) LB_MALLOC(sum_num_obj*sizeof(int));
+  order = (int *) ZOLTAN_MALLOC(sum_num_obj*sizeof(int));
   if (local_gids == NULL || order == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_FREE(&local_gids);
-    LB_FREE(&local_lids);
-    LB_FREE(&assigned);
-    LB_FREE(&num_vert);
-    LB_FREE(&vertices);
-    LB_FREE(&in_vertex);
-    LB_FREE(&out_vertex);
-    LB_FREE(&all_gids);
-    LB_FREE(&order);
+    ZOLTAN_FREE(&local_gids);
+    ZOLTAN_FREE(&local_lids);
+    ZOLTAN_FREE(&assigned);
+    ZOLTAN_FREE(&num_vert);
+    ZOLTAN_FREE(&vertices);
+    ZOLTAN_FREE(&in_vertex);
+    ZOLTAN_FREE(&out_vertex);
+    ZOLTAN_FREE(&all_gids);
+    ZOLTAN_FREE(&order);
     LB_Reftree_Free_Structure(lb);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return(ZOLTAN_MEMERR);
@@ -507,19 +507,19 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
     final_ierr = ZOLTAN_WARN;
   }
 
-  LB_FREE(&all_gids);
+  ZOLTAN_FREE(&all_gids);
 
-  num_vert = (int *) LB_REALLOC(num_vert,total_num_obj*sizeof(int));
+  num_vert = (int *) ZOLTAN_REALLOC(num_vert,total_num_obj*sizeof(int));
   if (num_vert == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_FREE(&local_gids);
-    LB_FREE(&local_lids);
-    LB_FREE(&assigned);
-    LB_FREE(&num_vert);
-    LB_FREE(&vertices);
-    LB_FREE(&in_vertex);
-    LB_FREE(&out_vertex);
-    LB_FREE(&order);
+    ZOLTAN_FREE(&local_gids);
+    ZOLTAN_FREE(&local_lids);
+    ZOLTAN_FREE(&assigned);
+    ZOLTAN_FREE(&num_vert);
+    ZOLTAN_FREE(&vertices);
+    ZOLTAN_FREE(&in_vertex);
+    ZOLTAN_FREE(&out_vertex);
+    ZOLTAN_FREE(&order);
     LB_Reftree_Free_Structure(lb);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return(ZOLTAN_MEMERR);
@@ -553,17 +553,17 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    * Allocate the children of the root
    */
 
-  reorder_nvert = (int *) LB_MALLOC(total_num_obj*sizeof(int));
+  reorder_nvert = (int *) ZOLTAN_MALLOC(total_num_obj*sizeof(int));
   if (reorder_nvert == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_FREE(&local_gids);
-    LB_FREE(&local_lids);
-    LB_FREE(&assigned);
-    LB_FREE(&num_vert);
-    LB_FREE(&vertices);
-    LB_FREE(&in_vertex);
-    LB_FREE(&out_vertex);
-    LB_FREE(&order);
+    ZOLTAN_FREE(&local_gids);
+    ZOLTAN_FREE(&local_lids);
+    ZOLTAN_FREE(&assigned);
+    ZOLTAN_FREE(&num_vert);
+    ZOLTAN_FREE(&vertices);
+    ZOLTAN_FREE(&in_vertex);
+    ZOLTAN_FREE(&out_vertex);
+    ZOLTAN_FREE(&order);
     LB_Reftree_Free_Structure(lb);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return(ZOLTAN_MEMERR);
@@ -577,17 +577,17 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
 
   ierr = alloc_reftree_nodes(lb, &(root->children), total_num_obj,
                              reorder_nvert);
-  LB_FREE(&reorder_nvert);
+  ZOLTAN_FREE(&reorder_nvert);
   if (ierr == ZOLTAN_MEMERR) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned by alloc_reftree_nodes.");
-    LB_FREE(&local_gids);
-    LB_FREE(&local_lids);
-    LB_FREE(&assigned);
-    LB_FREE(&num_vert);
-    LB_FREE(&vertices);
-    LB_FREE(&in_vertex);
-    LB_FREE(&out_vertex);
-    LB_FREE(&order);
+    ZOLTAN_FREE(&local_gids);
+    ZOLTAN_FREE(&local_lids);
+    ZOLTAN_FREE(&assigned);
+    ZOLTAN_FREE(&num_vert);
+    ZOLTAN_FREE(&vertices);
+    ZOLTAN_FREE(&in_vertex);
+    ZOLTAN_FREE(&out_vertex);
+    ZOLTAN_FREE(&order);
     LB_Reftree_Free_Structure(lb);
     return(ierr);
   }
@@ -600,14 +600,14 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
 
   if (lb->Obj_Weight_Dim != 0 && lb->Get_Child_Weight == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Must register ZOLTAN_CHILD_WEIGHT_FN.");
-    LB_FREE(&local_gids);
-    LB_FREE(&local_lids);
-    LB_FREE(&assigned);
-    LB_FREE(&num_vert);
-    LB_FREE(&vertices);
-    LB_FREE(&in_vertex);
-    LB_FREE(&out_vertex);
-    LB_FREE(&order);
+    ZOLTAN_FREE(&local_gids);
+    ZOLTAN_FREE(&local_lids);
+    ZOLTAN_FREE(&assigned);
+    ZOLTAN_FREE(&num_vert);
+    ZOLTAN_FREE(&vertices);
+    ZOLTAN_FREE(&in_vertex);
+    ZOLTAN_FREE(&out_vertex);
+    ZOLTAN_FREE(&order);
     LB_Reftree_Free_Structure(lb);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return(ZOLTAN_FATAL);
@@ -696,14 +696,14 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    * clean up and return error code
    */
 
-  LB_FREE(&local_gids);
-  LB_FREE(&local_lids);
-  LB_FREE(&assigned);
-  LB_FREE(&num_vert);
-  LB_FREE(&vertices);
-  LB_FREE(&in_vertex);
-  LB_FREE(&out_vertex);
-  LB_FREE(&order);
+  ZOLTAN_FREE(&local_gids);
+  ZOLTAN_FREE(&local_lids);
+  ZOLTAN_FREE(&assigned);
+  ZOLTAN_FREE(&num_vert);
+  ZOLTAN_FREE(&vertices);
+  ZOLTAN_FREE(&in_vertex);
+  ZOLTAN_FREE(&out_vertex);
+  ZOLTAN_FREE(&order);
   ZOLTAN_LB_TRACE_EXIT(lb, yo);
   return(final_ierr);
 }
@@ -849,39 +849,39 @@ int existing;              /* existing child that agrees with GET_CHILD data */
 
   if (num_obj > ssize) {
     if (ssize > 0) {
-      LB_FREE(&slocal_gids);
-      LB_FREE(&slocal_lids);
-      LB_FREE(&sassigned);
-      LB_FREE(&snum_vert);
-      LB_FREE(&svertices);
-      LB_FREE(&sin_vertex);
-      LB_FREE(&sout_vertex);
-      LB_FREE(&svert1);
+      ZOLTAN_FREE(&slocal_gids);
+      ZOLTAN_FREE(&slocal_lids);
+      ZOLTAN_FREE(&sassigned);
+      ZOLTAN_FREE(&snum_vert);
+      ZOLTAN_FREE(&svertices);
+      ZOLTAN_FREE(&sin_vertex);
+      ZOLTAN_FREE(&sout_vertex);
+      ZOLTAN_FREE(&svert1);
     }
-    slocal_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, num_obj);
-    slocal_lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, num_obj);
-    sassigned   = (int *) LB_MALLOC(num_obj*sizeof(int));
-    snum_vert   = (int *) LB_MALLOC(num_obj*sizeof(int));
-    svertices   = (int *) LB_MALLOC(MAXVERT*num_obj*sizeof(int));
-    sin_vertex  = (int *) LB_MALLOC(num_obj*sizeof(int));
-    sout_vertex = (int *) LB_MALLOC(num_obj*sizeof(int));
-    svert1      = (int *) LB_MALLOC((num_obj+1)*sizeof(int));
-    sorder      = (int *) LB_MALLOC(num_obj*sizeof(int));
+    slocal_gids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, num_obj);
+    slocal_lids = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, num_obj);
+    sassigned   = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+    snum_vert   = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+    svertices   = (int *) ZOLTAN_MALLOC(MAXVERT*num_obj*sizeof(int));
+    sin_vertex  = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+    sout_vertex = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+    svert1      = (int *) ZOLTAN_MALLOC((num_obj+1)*sizeof(int));
+    sorder      = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
     ssize = num_obj;
     if (slocal_gids == NULL || (num_lid_entries > 0 && slocal_lids == NULL) || 
         sassigned   == NULL ||
         snum_vert   == NULL || svertices   == NULL || sin_vertex == NULL ||
         sout_vertex == NULL || svert1      == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_FREE(&slocal_gids);
-      LB_FREE(&slocal_lids);
-      LB_FREE(&sassigned);
-      LB_FREE(&snum_vert);
-      LB_FREE(&svertices);
-      LB_FREE(&sin_vertex);
-      LB_FREE(&sout_vertex);
-      LB_FREE(&svert1);
-      LB_FREE(&sorder);
+      ZOLTAN_FREE(&slocal_gids);
+      ZOLTAN_FREE(&slocal_lids);
+      ZOLTAN_FREE(&sassigned);
+      ZOLTAN_FREE(&snum_vert);
+      ZOLTAN_FREE(&svertices);
+      ZOLTAN_FREE(&sin_vertex);
+      ZOLTAN_FREE(&sout_vertex);
+      ZOLTAN_FREE(&svert1);
+      ZOLTAN_FREE(&sorder);
       ssize = 0;
       LB_Reftree_Free_Structure(lb);
       return(ZOLTAN_MEMERR);
@@ -1074,7 +1074,7 @@ int existing;              /* existing child that agrees with GET_CHILD data */
       final_ierr = ZOLTAN_WARN;
     }
 
-    reorder_nvert = (int *) LB_MALLOC(num_obj*sizeof(int));
+    reorder_nvert = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
     if (reorder_nvert == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_Reftree_Free_Structure(lb);
@@ -1086,7 +1086,7 @@ int existing;              /* existing child that agrees with GET_CHILD data */
 
     ierr = alloc_reftree_nodes(lb, &(subroot->children), num_obj, reorder_nvert);
 
-    LB_FREE(&reorder_nvert);
+    ZOLTAN_FREE(&reorder_nvert);
 
     subroot->num_child = num_obj;
 
@@ -1546,12 +1546,12 @@ int *on_path;       /* flag for already placed element on path */
    * Determine which elements contain the in and out vertices of the parent
    */
 
-  has_in = (int *) LB_MALLOC(num_child*sizeof(int));
-  has_out = (int *) LB_MALLOC(num_child*sizeof(int));
+  has_in = (int *) ZOLTAN_MALLOC(num_child*sizeof(int));
+  has_out = (int *) ZOLTAN_MALLOC(num_child*sizeof(int));
   if (has_in == NULL || has_out == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_FREE(&has_in);
-    LB_FREE(&has_out);
+    ZOLTAN_FREE(&has_in);
+    ZOLTAN_FREE(&has_out);
     return(ZOLTAN_MEMERR);
   }
 
@@ -1568,22 +1568,22 @@ int *on_path;       /* flag for already placed element on path */
    * Determine which elements share vertices other than the in/out vertices
    */
 
-  share_vert = (int **) LB_MALLOC(num_child*sizeof(int *));
+  share_vert = (int **) ZOLTAN_MALLOC(num_child*sizeof(int *));
   if (share_vert == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_FREE(&share_vert);
-    LB_FREE(&has_in);
-    LB_FREE(&has_out);
+    ZOLTAN_FREE(&share_vert);
+    ZOLTAN_FREE(&has_in);
+    ZOLTAN_FREE(&has_out);
     return(ZOLTAN_MEMERR);
   }
   for (i=0; i<num_child; i++) {
-    share_vert[i] = (int *) LB_MALLOC(num_child*sizeof(int));
+    share_vert[i] = (int *) ZOLTAN_MALLOC(num_child*sizeof(int));
     if (share_vert[i] == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      for (j=0; j<=i; j++) LB_FREE(&(share_vert[j]));
-      LB_FREE(&share_vert);
-      LB_FREE(&has_in);
-      LB_FREE(&has_out);
+      for (j=0; j<=i; j++) ZOLTAN_FREE(&(share_vert[j]));
+      ZOLTAN_FREE(&share_vert);
+      ZOLTAN_FREE(&has_in);
+      ZOLTAN_FREE(&has_out);
       return(ZOLTAN_MEMERR);
     }
   }
@@ -1616,14 +1616,14 @@ int *on_path;       /* flag for already placed element on path */
    */
 
   solved = 0;
-  on_path = (int *) LB_MALLOC(num_child*sizeof(int));
+  on_path = (int *) ZOLTAN_MALLOC(num_child*sizeof(int));
   if (on_path == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    for (j=0; j<=i; j++) LB_FREE(&(share_vert[j]));
-    LB_FREE(&on_path);
-    LB_FREE(&share_vert);
-    LB_FREE(&has_in);
-    LB_FREE(&has_out);
+    for (j=0; j<=i; j++) ZOLTAN_FREE(&(share_vert[j]));
+    ZOLTAN_FREE(&on_path);
+    ZOLTAN_FREE(&share_vert);
+    ZOLTAN_FREE(&has_in);
+    ZOLTAN_FREE(&has_out);
     return(ZOLTAN_MEMERR);
   }
   for (i=0; i<num_child; i++) on_path[i]=0;
@@ -1650,9 +1650,9 @@ int *on_path;       /* flag for already placed element on path */
     final_ierr = ZOLTAN_WARN;
   }
 
-  LB_FREE(&on_path);
-  LB_FREE(&share_vert);
-  LB_FREE(&has_out);
+  ZOLTAN_FREE(&on_path);
+  ZOLTAN_FREE(&share_vert);
+  ZOLTAN_FREE(&has_out);
 
   /*
    * Finally, determine the in and out vertices of each child
@@ -1683,7 +1683,7 @@ int *on_path;       /* flag for already placed element on path */
   for (i=0; i<num_child; i++) {
     order[i] = has_in[i];
   }
-  LB_FREE(&has_in);
+  ZOLTAN_FREE(&has_in);
 
   return(final_ierr);
 }
@@ -1837,23 +1837,23 @@ char *yo = "alloc_reftree_nodes";
 
 /* allocate the structures themselves */
 
-  *node = (LB_REFTREE *) LB_MALLOC(num_node*sizeof(LB_REFTREE));
+  *node = (LB_REFTREE *) ZOLTAN_MALLOC(num_node*sizeof(LB_REFTREE));
 
 /* allocate memory to be used within the structures */
 
-  gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, num_node);
-  lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, num_node);
-  float_mem = (float *) LB_MALLOC(3*wdim*num_node*sizeof(float));
-  int_mem   = (int   *) LB_MALLOC(sum_vert*sizeof(int));
+  gids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, num_node);
+  lids = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, num_node);
+  float_mem = (float *) ZOLTAN_MALLOC(3*wdim*num_node*sizeof(float));
+  int_mem   = (int   *) ZOLTAN_MALLOC(sum_vert*sizeof(int));
 
   if (node == NULL || gids == NULL || lids == NULL || float_mem == NULL ||
       int_mem == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_FREE(&gids);
-    LB_FREE(&lids);
-    LB_FREE(&float_mem);
-    LB_FREE(&int_mem);
-    LB_FREE(&node);
+    ZOLTAN_FREE(&gids);
+    ZOLTAN_FREE(&lids);
+    ZOLTAN_FREE(&float_mem);
+    ZOLTAN_FREE(&int_mem);
+    ZOLTAN_FREE(&node);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return(ZOLTAN_MEMERR);
   }
@@ -1887,11 +1887,11 @@ void free_reftree_nodes(LB_REFTREE **node)
  *  allocated by that call are freed.
  */
 
-  LB_FREE(&((*node)->global_id));
-  LB_FREE(&((*node)->local_id));
-  LB_FREE(&((*node)->weight));
-  LB_FREE(&((*node)->vertices));
-  LB_FREE(node);
+  ZOLTAN_FREE(&((*node)->global_id));
+  ZOLTAN_FREE(&((*node)->local_id));
+  ZOLTAN_FREE(&((*node)->weight));
+  ZOLTAN_FREE(&((*node)->vertices));
+  ZOLTAN_FREE(node);
 
 }
 
@@ -1946,10 +1946,10 @@ int i;                                       /* loop counter */
 
   if (hashtab != NULL) {
     LB_Reftree_Clear_Hash_Table(hashtab,hashsize);
-    LB_FREE(&hashtab);
+    ZOLTAN_FREE(&hashtab);
   }
 
-  LB_FREE(&(lb->Data_Structure));
+  ZOLTAN_FREE(&(lb->Data_Structure));
 
 }
 
@@ -2067,26 +2067,26 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
     }
 
     if (num_obj > 0) {
-      local_gids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, num_obj);
-      local_lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, num_obj);
-      assigned   = (int *) LB_MALLOC(num_obj*sizeof(int));
-      num_vert   = (int *) LB_MALLOC(num_obj*sizeof(int));
-      vertices   = (int *) LB_MALLOC(MAXVERT*num_obj*sizeof(int));
-      in_vertex  = (int *) LB_MALLOC(num_obj*sizeof(int));
-      out_vertex = (int *) LB_MALLOC(num_obj*sizeof(int));
+      local_gids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, num_obj);
+      local_lids = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, num_obj);
+      assigned   = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+      num_vert   = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+      vertices   = (int *) ZOLTAN_MALLOC(MAXVERT*num_obj*sizeof(int));
+      in_vertex  = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
+      out_vertex = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
 
       if (local_gids == NULL || (num_lid_entries > 0 && local_lids == NULL) ||
           assigned   == NULL ||
           num_vert   == NULL || vertices   == NULL || in_vertex == NULL ||
           out_vertex == NULL) {
         ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-        LB_FREE(&local_gids);
-        LB_FREE(&local_lids);
-        LB_FREE(&assigned);
-        LB_FREE(&num_vert);
-        LB_FREE(&vertices);
-        LB_FREE(&in_vertex);
-        LB_FREE(&out_vertex);
+        ZOLTAN_FREE(&local_gids);
+        ZOLTAN_FREE(&local_lids);
+        ZOLTAN_FREE(&assigned);
+        ZOLTAN_FREE(&num_vert);
+        ZOLTAN_FREE(&vertices);
+        ZOLTAN_FREE(&in_vertex);
+        ZOLTAN_FREE(&out_vertex);
         return(ZOLTAN_MEMERR);
       }
 
@@ -2098,13 +2098,13 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
       if (ierr) {
         ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                       "Error returned from user function Get_Coarse_Obj_List.");
-        LB_FREE(&local_gids);
-        LB_FREE(&local_lids);
-        LB_FREE(&assigned);
-        LB_FREE(&num_vert);
-        LB_FREE(&vertices);
-        LB_FREE(&in_vertex);
-        LB_FREE(&out_vertex);
+        ZOLTAN_FREE(&local_gids);
+        ZOLTAN_FREE(&local_lids);
+        ZOLTAN_FREE(&assigned);
+        ZOLTAN_FREE(&num_vert);
+        ZOLTAN_FREE(&vertices);
+        ZOLTAN_FREE(&in_vertex);
+        ZOLTAN_FREE(&out_vertex);
         return(ierr);
       }
 
@@ -2141,13 +2141,13 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
                                tree_node->weight, &ierr);
         }
       }
-      LB_FREE(&local_gids);
-      LB_FREE(&local_lids);
-      LB_FREE(&assigned);
-      LB_FREE(&num_vert);
-      LB_FREE(&vertices);
-      LB_FREE(&in_vertex);
-      LB_FREE(&out_vertex);
+      ZOLTAN_FREE(&local_gids);
+      ZOLTAN_FREE(&local_lids);
+      ZOLTAN_FREE(&assigned);
+      ZOLTAN_FREE(&num_vert);
+      ZOLTAN_FREE(&vertices);
+      ZOLTAN_FREE(&in_vertex);
+      ZOLTAN_FREE(&out_vertex);
     }
 
   }
@@ -2157,18 +2157,18 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    * Get objects via first/next
    */
 
-    slocal_gids = ZOLTAN_LB_MALLOC_GID(lb);
-    slocal_lids = ZOLTAN_LB_MALLOC_LID(lb);
-    plocal_gids = ZOLTAN_LB_MALLOC_GID(lb);
-    plocal_lids = ZOLTAN_LB_MALLOC_LID(lb);
-    vertices = (int *) LB_MALLOC(MAXVERT*sizeof(int));
+    slocal_gids = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
+    slocal_lids = ZOLTAN_ZOLTAN_MALLOC_LID(lb);
+    plocal_gids = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
+    plocal_lids = ZOLTAN_ZOLTAN_MALLOC_LID(lb);
+    vertices = (int *) ZOLTAN_MALLOC(MAXVERT*sizeof(int));
     if (slocal_gids == NULL || (num_lid_entries > 0 && slocal_lids == NULL) || 
         plocal_gids == NULL || (num_lid_entries > 0 && plocal_lids == NULL) || 
         vertices == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_FREE(&slocal_gids);
-      LB_FREE(&slocal_lids);
-      LB_FREE(&vertices);
+      ZOLTAN_FREE(&slocal_gids);
+      ZOLTAN_FREE(&slocal_lids);
+      ZOLTAN_FREE(&vertices);
       return(ZOLTAN_MEMERR);
     }
 
@@ -2180,9 +2180,9 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
     if (ierr) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                      "Error returned from user function Get_First_Coarse_Obj.");
-      LB_FREE(&slocal_gids);
-      LB_FREE(&slocal_lids);
-      LB_FREE(&vertices);
+      ZOLTAN_FREE(&slocal_gids);
+      ZOLTAN_FREE(&slocal_lids);
+      ZOLTAN_FREE(&vertices);
       return(ierr);
     }
     while (found) {
@@ -2219,10 +2219,10 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
                                       &snum_vert, vertices,
                                       &sin_vertex, &sout_vertex, &ierr);
     }
-    LB_FREE(&slocal_gids);
-    LB_FREE(&slocal_lids);
-    LB_FREE(&plocal_gids);
-    LB_FREE(&plocal_lids);
+    ZOLTAN_FREE(&slocal_gids);
+    ZOLTAN_FREE(&slocal_lids);
+    ZOLTAN_FREE(&plocal_gids);
+    ZOLTAN_FREE(&plocal_lids);
   }
   return(final_ierr);
 }

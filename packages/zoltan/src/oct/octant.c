@@ -25,7 +25,7 @@ static int     LB_Oct_nlocal(pOctant oct);
 static pOctant LB_Oct_mallocremote() {
   pOctant ptr;                                  /* pointer to the new octant */
   
-  ptr=(pOctant) LB_MALLOC(sizeof(Octant));                /* allocate space */
+  ptr=(pOctant) ZOLTAN_MALLOC(sizeof(Octant));                /* allocate space */
   if (!ptr) 
     return NULL;
 
@@ -40,7 +40,7 @@ static pOctant LB_Oct_mallocremote() {
 static pOctant LB_Oct_malloc() {
   pOctant ptr;                                  /* pointer to the new octant */
   
-  ptr=(pOctant) LB_MALLOC(sizeof(Octant));                /* allocate space */
+  ptr=(pOctant) ZOLTAN_MALLOC(sizeof(Octant));                /* allocate space */
   if (!ptr) 
     return NULL;
 
@@ -128,7 +128,7 @@ pOctant LB_Oct_new() {
   return(new_ptr);
 }
 
-/* KDDKDDFREE changed oct to *oct to allow NULL ptr from LB_FREE to 
+/* KDDKDDFREE changed oct to *oct to allow NULL ptr from ZOLTAN_FREE to 
  * KDDKDDFREE propagate back to the calling routine. */
 void LB_Oct_free(OCT_Global_Info *OCT_info, pOctant *oct) {
 /* KDDKDDFREE Bookkeeping -- set parent's child pointers and children's
@@ -158,7 +158,7 @@ pOctant parent;
   (*oct)->list = NULL;
   if((*oct)->type == LOCALOCT)
     OCT_count--;
-  LB_FREE(oct);
+  ZOLTAN_FREE(oct);
 }
 
 /*****************************************************************************/
@@ -352,14 +352,14 @@ int LB_Oct_addRegion(LB *lb, pOctant oct, pRegion region) {
   if(oct == NULL) 
     return ZOLTAN_WARN;
 
-  entry = (pRegion) LB_MALLOC(sizeof(Region));   /* malloc space for region */
+  entry = (pRegion) ZOLTAN_MALLOC(sizeof(Region));   /* malloc space for region */
   if(entry == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Cannot allocated memory for region.");
     return ZOLTAN_MEMERR;
   }
 
-  entry->Global_ID = ZOLTAN_LB_MALLOC_GID(lb);
-  entry->Local_ID = ZOLTAN_LB_MALLOC_LID(lb);
+  entry->Global_ID = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
+  entry->Local_ID = ZOLTAN_ZOLTAN_MALLOC_LID(lb);
   /* copy region information into the entry */
   vector_set(entry->Coord, region->Coord);
   entry->Weight = region->Weight;
@@ -384,9 +384,9 @@ void LB_Oct_clearRegions(pOctant oct) {
   ptr = oct->list;
   while(ptr != NULL) {
     oct->list = ptr->next;
-    LB_FREE(&(ptr->Global_ID));
-    LB_FREE(&(ptr->Local_ID));
-    LB_FREE(&ptr);
+    ZOLTAN_FREE(&(ptr->Global_ID));
+    ZOLTAN_FREE(&(ptr->Local_ID));
+    ZOLTAN_FREE(&ptr);
     ptr = oct->list;
   }
   oct->list=NULL;

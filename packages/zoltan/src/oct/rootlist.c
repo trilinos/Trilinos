@@ -16,8 +16,8 @@ static int RL_OctEqual(pOctant oct1, pOctant oct2) {
 }
 
 pRList  RL_initRootList() {
-  pRList sentinal1 = (pRList) LB_MALLOC(sizeof(RList));
-  pRList sentinal2 = (pRList) LB_MALLOC(sizeof(RList));
+  pRList sentinal1 = (pRList) ZOLTAN_MALLOC(sizeof(RList));
+  pRList sentinal2 = (pRList) ZOLTAN_MALLOC(sizeof(RList));
   sentinal1->oct = NULL;
   sentinal1->next = sentinal2;
   sentinal2->oct = NULL;
@@ -40,7 +40,7 @@ int RL_addRootOctant(pRList rlist, pOctant oct) {
   if((oct == NULL) || (rlist == NULL) || (rlist->oct != NULL))
     return -1;
 
-  node = (pRList) LB_MALLOC(sizeof(RList));
+  node = (pRList) ZOLTAN_MALLOC(sizeof(RList));
 
   prev = rlist;
   while((rootoct = RL_nextRootOctant(&rlist))) {
@@ -82,7 +82,7 @@ int RL_delRootOctant(OCT_Global_Info *OCT_info, pRList *rootlist, pOctant oct) {
       if (temp == prev && temp == rlist)
         *rootlist = NULL;
       /* END KDDKDDFREE */
-      LB_FREE(&temp);
+      ZOLTAN_FREE(&temp);
       result = 0;
     }
     if(result == 0)
@@ -93,7 +93,7 @@ int RL_delRootOctant(OCT_Global_Info *OCT_info, pRList *rootlist, pOctant oct) {
   return result;
 }
 
-/* KDDKDDFREE changed rlist to *rlist to allow NULL from LB_FREE to propagate 
+/* KDDKDDFREE changed rlist to *rlist to allow NULL from ZOLTAN_FREE to propagate 
  * KDDKDDFREE back to the calling routine.  */
 int RL_clearRootOctants(pRList *rlist) {
   pRList  head;
@@ -103,13 +103,13 @@ int RL_clearRootOctants(pRList *rlist) {
   *rlist = (*rlist)->next;
   while((*rlist)->next != head) {  
     head->next = (*rlist)->next;
-    LB_FREE(rlist);
+    ZOLTAN_FREE(rlist);
     *rlist = head->next;
   }
   return ZOLTAN_OK;
 }
 
-/* KDDKDDFREE changed rlist to *rlist to allow NULL from LB_FREE to propagate 
+/* KDDKDDFREE changed rlist to *rlist to allow NULL from ZOLTAN_FREE to propagate 
  * KDDKDDFREE back to the calling routine.  */
 int RL_freeList(pRList *rlist) {
   pRList  head;
@@ -119,10 +119,10 @@ int RL_freeList(pRList *rlist) {
   *rlist = (*rlist)->next;
   while(*rlist != head) {  
     head->next = (*rlist)->next;
-    LB_FREE(rlist);
+    ZOLTAN_FREE(rlist);
     *rlist = head->next;
   }
-  LB_FREE(rlist);
+  ZOLTAN_FREE(rlist);
   return ZOLTAN_OK;
 }
 

@@ -45,7 +45,7 @@ LB *lb;
    * Allocate storage for the load-balancing structure.
    */
 
-  lb = (LB *) LB_MALLOC(sizeof(LB));
+  lb = (LB *) ZOLTAN_MALLOC(sizeof(LB));
   if (!lb) {
     int proc;
     MPI_Comm_rank(communicator, &proc);
@@ -177,6 +177,6 @@ void Zoltan_Destroy(LB **lb)
 
     MPI_Comm_free(&((*lb)->Communicator));
 
-    LB_FREE(lb);
+    ZOLTAN_FREE(lb);
   }
 }

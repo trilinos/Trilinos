@@ -82,7 +82,7 @@ int Zoltan_DD_Update (
    /* allocate memory for list of processors to contact */
    if (count > 0)
       {
-      procs = (int *) LB_MALLOC (sizeof (int) * count) ;
+      procs = (int *) ZOLTAN_MALLOC (sizeof (int) * count) ;
       if (procs == NULL)
          {
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc proc list.") ;
@@ -95,7 +95,7 @@ int Zoltan_DD_Update (
    /* allocate memory for DD_Update_Msg send buffer */
    if (count > 0)
       {
-      sbuff = (char *) LB_MALLOC (dd->update_msg_size * count) ;
+      sbuff = (char *) ZOLTAN_MALLOC (dd->update_msg_size * count) ;
       if (sbuff == NULL)
          {
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc send buffer.") ;
@@ -144,7 +144,7 @@ int Zoltan_DD_Update (
    /* allocate receive buffer for nrec DD_Update_Msg structures */
    if (nrec > 0)
       {
-      rbuff = (char *) LB_MALLOC (nrec * dd->update_msg_size) ;
+      rbuff = (char *) ZOLTAN_MALLOC (nrec * dd->update_msg_size) ;
       if (rbuff == NULL)
          {
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Receive buffer malloc failed.") ;
@@ -189,9 +189,9 @@ int Zoltan_DD_Update (
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After update.");
 
 fini:
-   LB_FREE (&procs) ;
-   LB_FREE (&sbuff) ;
-   LB_FREE (&rbuff) ;
+   ZOLTAN_FREE (&procs) ;
+   ZOLTAN_FREE (&sbuff) ;
+   ZOLTAN_FREE (&rbuff) ;
    LB_Comm_Destroy (&plan) ;
 
    if (dd->debug_level > 0)
@@ -291,7 +291,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
        }
 
    /* gid not found. Create new DD_Node and fill it in */
-   *ptr = (DD_Node *) LB_MALLOC (dd->node_size)  ;
+   *ptr = (DD_Node *) ZOLTAN_MALLOC (dd->node_size)  ;
    if (*ptr == NULL)
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc new Node.") ;

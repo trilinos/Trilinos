@@ -12,7 +12,7 @@
 OCT_Global_Info *LB_POct_init(LB *lb, int pid, int dim) {
   char *yo = "LB_POct_init";
   OCT_Global_Info *OCT_info;
-  if((OCT_info = (OCT_Global_Info *) LB_MALLOC(sizeof(OCT_Global_Info))) == NULL) {
+  if((OCT_info = (OCT_Global_Info *) ZOLTAN_MALLOC(sizeof(OCT_Global_Info))) == NULL) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return NULL;
   }
@@ -54,7 +54,7 @@ extern pOctant LB_POct_new(OCT_Global_Info *OCT_info) {
  * LB_Oct_clearRegions 
  */
 
-/* KDDKDDFREE Changed oct to *oct to allow NULL from LB_FREE to propagate back 
+/* KDDKDDFREE Changed oct to *oct to allow NULL from ZOLTAN_FREE to propagate back 
  * KDDKDDFREE to the calling routine. */
 void LB_POct_free(OCT_Global_Info *OCT_info, pOctant *oct) {
 
@@ -184,7 +184,7 @@ int LB_POct_local(OCT_Global_Info *OCT_info, pOctant octant, int i) {
  *
  * recursivly traverses down root's subtree deleting all the octants
  */
-/* KDDKDDFREE Changed root to *root to allow NULL from LB_FREE to propagate 
+/* KDDKDDFREE Changed root to *root to allow NULL from ZOLTAN_FREE to propagate 
  * KDDKDDFREE back to calling routine. */
 int LB_POct_delTree(OCT_Global_Info *OCT_info, pOctant *root) {
   int i;                                               /* index counter */

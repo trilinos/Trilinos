@@ -60,7 +60,7 @@ int Zoltan_DD_Create (
 
    /* malloc memory for the directory structure + hash table */
    size = (table_length == 0) ? ZOLTAN_DD_HASH_TABLE_COUNT : table_length ;
-   *dd  = (Zoltan_DD_Directory *) LB_MALLOC (sizeof (Zoltan_DD_Directory)
+   *dd  = (Zoltan_DD_Directory *) ZOLTAN_MALLOC (sizeof (Zoltan_DD_Directory)
         + size * sizeof (DD_Node*)) ;
    if (*dd == NULL)
       {

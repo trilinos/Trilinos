@@ -32,7 +32,7 @@ int            i, ierr = 0;
      the other fields can be reused. */
 
   if (lb->Data_Structure == NULL) {
-    rib = (RIB_STRUCT *) LB_MALLOC(sizeof(RIB_STRUCT));
+    rib = (RIB_STRUCT *) ZOLTAN_MALLOC(sizeof(RIB_STRUCT));
     if (rib == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
@@ -44,7 +44,7 @@ int            i, ierr = 0;
     rib->Dots = NULL;
 
     rib->Tree_Ptr = (struct rib_tree *)
-                    LB_MALLOC(lb->Num_Proc* sizeof(struct rib_tree));
+                    ZOLTAN_MALLOC(lb->Num_Proc* sizeof(struct rib_tree));
     if (rib->Tree_Ptr == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_RIB_Free_Structure(lb);
@@ -61,9 +61,9 @@ int            i, ierr = 0;
   }
   else {
     rib = (RIB_STRUCT *) lb->Data_Structure;
-    LB_FREE(&(rib->Global_IDs));
-    LB_FREE(&(rib->Local_IDs));
-    LB_FREE(&(rib->Dots));
+    ZOLTAN_FREE(&(rib->Global_IDs));
+    ZOLTAN_FREE(&(rib->Local_IDs));
+    ZOLTAN_FREE(&(rib->Dots));
   }
 
   ierr = LB_RB_Build_Structure(lb, &(rib->Global_IDs), &(rib->Local_IDs),
@@ -90,10 +90,10 @@ RIB_STRUCT    *rib;                   /* Data structure for RIB. */
   rib = (RIB_STRUCT *) lb->Data_Structure;
 
   if (rib != NULL) {
-    LB_FREE(&(rib->Tree_Ptr));
-    LB_FREE(&(rib->Global_IDs));
-    LB_FREE(&(rib->Local_IDs));
-    LB_FREE(&(rib->Dots));
-    LB_FREE(&(lb->Data_Structure));
+    ZOLTAN_FREE(&(rib->Tree_Ptr));
+    ZOLTAN_FREE(&(rib->Global_IDs));
+    ZOLTAN_FREE(&(rib->Local_IDs));
+    ZOLTAN_FREE(&(rib->Dots));
+    ZOLTAN_FREE(&(lb->Data_Structure));
   }
 }

@@ -250,9 +250,9 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
    */
 
   if (count == 0)
-    leaf_list = ZOLTAN_LB_MALLOC_GID(lb);
+    leaf_list = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
   else
-    leaf_list = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, count);
+    leaf_list = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -277,13 +277,13 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
    * Determine the request size of all processors
    */
 
-  reqsize_all = (int *)LB_MALLOC(nproc*sizeof(int));
-  displs = (int *)LB_MALLOC(nproc*sizeof(int));
+  reqsize_all = (int *)ZOLTAN_MALLOC(nproc*sizeof(int));
+  displs = (int *)ZOLTAN_MALLOC(nproc*sizeof(int));
   if (reqsize_all == NULL || displs == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_FREE(&displs);
-    LB_FREE(&reqsize_all);
-    LB_FREE(&leaf_list);
+    ZOLTAN_FREE(&displs);
+    ZOLTAN_FREE(&reqsize_all);
+    ZOLTAN_FREE(&leaf_list);
     return(ZOLTAN_MEMERR);
   }
 
@@ -299,9 +299,9 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
    */
 
   if (sum_reqsize == 0) {
-    LB_FREE(&displs);
-    LB_FREE(&reqsize_all);
-    LB_FREE(&leaf_list);
+    ZOLTAN_FREE(&displs);
+    ZOLTAN_FREE(&reqsize_all);
+    ZOLTAN_FREE(&leaf_list);
   }
   else {
 
@@ -309,13 +309,13 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
    * Gather the request list from all processors
    */
 
-    all_leaflist = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, sum_reqsize);
+    all_leaflist = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, sum_reqsize);
     if (all_leaflist == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_FREE(&all_leaflist);
-      LB_FREE(&displs);
-      LB_FREE(&reqsize_all);
-      LB_FREE(&leaf_list);
+      ZOLTAN_FREE(&all_leaflist);
+      ZOLTAN_FREE(&displs);
+      ZOLTAN_FREE(&reqsize_all);
+      ZOLTAN_FREE(&leaf_list);
       return(ZOLTAN_MEMERR);
     }
 
@@ -331,8 +331,8 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
                    (void *)all_leaflist,reqsize_all,displs,ZOLTAN_ID_MPI_TYPE,
                    lb->Communicator);
 
-    LB_FREE(&displs);
-    LB_FREE(&leaf_list);
+    ZOLTAN_FREE(&displs);
+    ZOLTAN_FREE(&leaf_list);
 
     for (i=0; i<nproc; i++) reqsize_all[i] = reqsize_all[i]/num_gid_entries;
 
@@ -340,12 +340,12 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
    * Create a list with the partial sums this processor has
    */
 
-    send_float = (float *) LB_MALLOC(sizeof(float)*wdim*sum_reqsize);
+    send_float = (float *) ZOLTAN_MALLOC(sizeof(float)*wdim*sum_reqsize);
     if (send_float == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_FREE(&send_float);
-      LB_FREE(&all_leaflist);
-      LB_FREE(&reqsize_all);
+      ZOLTAN_FREE(&send_float);
+      ZOLTAN_FREE(&all_leaflist);
+      ZOLTAN_FREE(&reqsize_all);
       return(ZOLTAN_MEMERR);
     }
 
@@ -364,23 +364,23 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
    */
 
     if (reqsize == 0)
-      req_weights = (float *) LB_MALLOC(sizeof(float)*wdim);
+      req_weights = (float *) ZOLTAN_MALLOC(sizeof(float)*wdim);
     else
-      req_weights = (float *) LB_MALLOC(sizeof(float)*wdim*reqsize);
+      req_weights = (float *) ZOLTAN_MALLOC(sizeof(float)*wdim*reqsize);
     if (req_weights == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_FREE(&req_weights);
-      LB_FREE(&send_float);
-      LB_FREE(&all_leaflist);
-      LB_FREE(&reqsize_all);
+      ZOLTAN_FREE(&req_weights);
+      ZOLTAN_FREE(&send_float);
+      ZOLTAN_FREE(&all_leaflist);
+      ZOLTAN_FREE(&reqsize_all);
       return(ZOLTAN_MEMERR);
     }
 
     MPI_Reduce_scatter((void *)send_float, (void *)req_weights, reqsize_all,
                        MPI_FLOAT, MPI_SUM, lb->Communicator);
 
-    LB_FREE(&send_float);
-    LB_FREE(&reqsize_all);
+    ZOLTAN_FREE(&send_float);
+    ZOLTAN_FREE(&reqsize_all);
 
   /*
    * Set the weights this processor requested
@@ -393,8 +393,8 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
       for (j=0; j<wdim; j++) node->summed_weight[j] = req_weights[i*wdim+j];
     }
 
-    LB_FREE(&req_weights);
-    LB_FREE(&all_leaflist);
+    ZOLTAN_FREE(&req_weights);
+    ZOLTAN_FREE(&all_leaflist);
   }
 
   /*
@@ -489,9 +489,9 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
    */
 
   if (count == 0)
-    leaf_list = ZOLTAN_LB_MALLOC_GID(lb);
+    leaf_list = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
   else
-    leaf_list = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, count);
+    leaf_list = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -541,12 +541,12 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
    */
 
     if (reqsize+newsize == 0)
-      newlist = ZOLTAN_LB_MALLOC_GID(lb);
+      newlist = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
     else
-      newlist = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, (reqsize+newsize));
+      newlist = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, (reqsize+newsize));
     if (newlist == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_FREE(&leaf_list);
+      ZOLTAN_FREE(&leaf_list);
       return(ZOLTAN_MEMERR);
     }
     if (myproc < other_proc) {
@@ -562,7 +562,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
       }
       my_start += newsize;
     }
-    LB_FREE(&leaf_list);
+    ZOLTAN_FREE(&leaf_list);
     leaf_list = newlist;
 
   /*
@@ -592,10 +592,10 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
    * Create a list with the partial sums this processor has
    */
 
-  send_float = (float *) LB_MALLOC(sizeof(float)*wdim*reqsize);
+  send_float = (float *) ZOLTAN_MALLOC(sizeof(float)*wdim*reqsize);
   if (send_float == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_FREE(&leaf_list);
+    ZOLTAN_FREE(&leaf_list);
     return(ZOLTAN_MEMERR);
   }
 
@@ -612,11 +612,11 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
    * Sum the weights over all the processors
    */
 
-  req_weights = (float *) LB_MALLOC(sizeof(float)*wdim*reqsize);
+  req_weights = (float *) ZOLTAN_MALLOC(sizeof(float)*wdim*reqsize);
   if (req_weights == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_FREE(&leaf_list);
-    LB_FREE(&send_float);
+    ZOLTAN_FREE(&leaf_list);
+    ZOLTAN_FREE(&send_float);
     return(ZOLTAN_MEMERR);
   }
 
@@ -624,7 +624,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
   MPI_Allreduce((void *)send_float, (void *)req_weights, reqsize, MPI_FLOAT,
                 MPI_SUM, lb->Communicator);
 
-  LB_FREE(&send_float);
+  ZOLTAN_FREE(&send_float);
 
   /*
    * Set the weights this processor requested
@@ -636,8 +636,8 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
     for (j=0; j<wdim; j++) node->summed_weight[j] = req_weights[(i+my_start)*wdim+j];
   }
 
-  LB_FREE(&req_weights);
-  LB_FREE(&leaf_list);
+  ZOLTAN_FREE(&req_weights);
+  ZOLTAN_FREE(&leaf_list);
 
   /*
    * All the leaves now have summed_weight set.
@@ -725,9 +725,9 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
    */
 
   if (count == 0)
-    leaf_list = ZOLTAN_LB_MALLOC_GID(lb);
+    leaf_list = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
   else
-    leaf_list = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, count);
+    leaf_list = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -767,10 +767,10 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
    */
 
       if (myproc != comm_loop) {
-        recv_gid = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, reqsize);
+        recv_gid = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, reqsize);
         if (recv_gid == NULL) {
           ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-          LB_FREE(&leaf_list);
+          ZOLTAN_FREE(&leaf_list);
           return(ZOLTAN_MEMERR);
         }
       }
@@ -794,11 +794,11 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
 
       if (myproc != comm_loop) {
 
-        send_float = (float *) LB_MALLOC(sizeof(float)*wdim*reqsize);
+        send_float = (float *) ZOLTAN_MALLOC(sizeof(float)*wdim*reqsize);
         if (send_float == NULL) {
           ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-          LB_FREE(&recv_gid);
-          LB_FREE(&leaf_list);
+          ZOLTAN_FREE(&recv_gid);
+          ZOLTAN_FREE(&leaf_list);
           return(ZOLTAN_MEMERR);
         }
 
@@ -814,8 +814,8 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
 
         MPI_Send((void *)send_float,wdim*reqsize,MPI_FLOAT,comm_loop,
                  100+comm_loop,lb->Communicator);
-        LB_FREE(&send_float);
-        LB_FREE(&recv_gid);
+        ZOLTAN_FREE(&send_float);
+        ZOLTAN_FREE(&recv_gid);
       }
 
   /*
@@ -823,10 +823,10 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
    */
 
       if (myproc == comm_loop) {
-        recv_float = (float *)LB_MALLOC(sizeof(float)*wdim*reqsize);
+        recv_float = (float *)ZOLTAN_MALLOC(sizeof(float)*wdim*reqsize);
         if (recv_float == NULL) {
           ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-          LB_FREE(&leaf_list);
+          ZOLTAN_FREE(&leaf_list);
           return(ZOLTAN_MEMERR);
         }
 
@@ -841,13 +841,13 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
             for (j=0; j<wdim; j++) node->summed_weight[j] += recv_float[i];
           }
         }
-        LB_FREE(&recv_float);
+        ZOLTAN_FREE(&recv_float);
       }
     }
 
   } /* end comm_loop */
 
-  LB_FREE(&leaf_list);
+  ZOLTAN_FREE(&leaf_list);
 
   /*
    * All the leaves now have summed_weight set.

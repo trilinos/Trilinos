@@ -88,12 +88,12 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
   if (num_obj>0){
 
     /* Allocate space for object data */
-    global_ids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, num_obj);
-    local_ids  = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, num_obj);
+    global_ids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, num_obj);
+    local_ids  = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, num_obj);
       
     if ((!global_ids) || (num_lid_entries && !local_ids)){
-      LB_FREE(&global_ids);
-      LB_FREE(&local_ids);
+      ZOLTAN_FREE(&global_ids);
+      ZOLTAN_FREE(&local_ids);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
@@ -101,13 +101,13 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
 
   /* Allocate space for weights if needed */
   if (lb->Obj_Weight_Dim>0){
-    vwgts   = (float  *) LB_MALLOC(lb->Obj_Weight_Dim*num_obj * sizeof(float));
-    tmp_vwgt = (float *) LB_MALLOC(4*lb->Obj_Weight_Dim * sizeof(float));
+    vwgts   = (float  *) ZOLTAN_MALLOC(lb->Obj_Weight_Dim*num_obj * sizeof(float));
+    tmp_vwgt = (float *) ZOLTAN_MALLOC(4*lb->Obj_Weight_Dim * sizeof(float));
     if ((num_obj && !vwgts) || (!tmp_vwgt)){
-      LB_FREE(&global_ids);
-      LB_FREE(&local_ids);
-      LB_FREE(&vwgts);
-      LB_FREE(&tmp_vwgt);
+      ZOLTAN_FREE(&global_ids);
+      ZOLTAN_FREE(&local_ids);
+      ZOLTAN_FREE(&vwgts);
+      ZOLTAN_FREE(&tmp_vwgt);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
@@ -115,8 +115,8 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
   
   LB_Get_Obj_List(lb, global_ids, local_ids, lb->Obj_Weight_Dim, vwgts, &ierr);
   if (ierr == ZOLTAN_FATAL){
-    LB_FREE(&global_ids);
-    LB_FREE(&local_ids);
+    ZOLTAN_FREE(&global_ids);
+    ZOLTAN_FREE(&local_ids);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ierr;
   }
@@ -156,10 +156,10 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
       if (ierr){
         sprintf(msg, "Get_Num_Edges returned error code %d.", ierr);
         ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
-        LB_FREE(&global_ids);
-        LB_FREE(&local_ids);
-        LB_FREE(&vwgts);
-        LB_FREE(&tmp_vwgt);
+        ZOLTAN_FREE(&global_ids);
+        ZOLTAN_FREE(&local_ids);
+        ZOLTAN_FREE(&vwgts);
+        ZOLTAN_FREE(&tmp_vwgt);
         ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ierr;
       }
@@ -167,27 +167,27 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
     }
 
     /* Allocate edge list space */
-    nbors_global = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, max_edges);
-    nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
+    nbors_global = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, max_edges);
+    nbors_proc = (int *)ZOLTAN_MALLOC(max_edges * sizeof(int));
     /* Allocate a proc list for computing nadjacent */
-    proc = (int *)LB_MALLOC((lb->Num_Proc)* sizeof(int));
+    proc = (int *)ZOLTAN_MALLOC((lb->Num_Proc)* sizeof(int));
     /* Allocate space for edge weights if needed */
     if (lb->Comm_Weight_Dim){
-      ewgts = (float *)LB_MALLOC((lb->Comm_Weight_Dim)*max_edges * sizeof(float));
-      tmp_cutwgt = (float *) LB_MALLOC(4*(lb->Comm_Weight_Dim) * sizeof(float));
+      ewgts = (float *)ZOLTAN_MALLOC((lb->Comm_Weight_Dim)*max_edges * sizeof(float));
+      tmp_cutwgt = (float *) ZOLTAN_MALLOC(4*(lb->Comm_Weight_Dim) * sizeof(float));
     }
 
     if ((max_edges && ((!nbors_global) || (!nbors_proc) || (lb->Comm_Weight_Dim && !ewgts))) || 
         (lb->Comm_Weight_Dim && (!tmp_cutwgt)) || (!proc)){
-      LB_FREE(&global_ids);
-      LB_FREE(&local_ids);
-      LB_FREE(&vwgts);
-      LB_FREE(&tmp_vwgt);
-      LB_FREE(&nbors_global);
-      LB_FREE(&nbors_proc);
-      LB_FREE(&ewgts);
-      LB_FREE(&tmp_cutwgt);
-      LB_FREE(&proc);
+      ZOLTAN_FREE(&global_ids);
+      ZOLTAN_FREE(&local_ids);
+      ZOLTAN_FREE(&vwgts);
+      ZOLTAN_FREE(&tmp_vwgt);
+      ZOLTAN_FREE(&nbors_global);
+      ZOLTAN_FREE(&nbors_proc);
+      ZOLTAN_FREE(&ewgts);
+      ZOLTAN_FREE(&tmp_cutwgt);
+      ZOLTAN_FREE(&proc);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
@@ -207,15 +207,15 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
                                  &(global_ids[gid_off]),
                                  lid, &ierr);
       if (ierr == ZOLTAN_FATAL){
-        LB_FREE(&global_ids);
-        LB_FREE(&local_ids);
-        LB_FREE(&vwgts);
-        LB_FREE(&tmp_vwgt);
-        LB_FREE(&nbors_global);
-        LB_FREE(&nbors_proc);
-        LB_FREE(&ewgts);
-        LB_FREE(&tmp_cutwgt);
-        LB_FREE(&proc);
+        ZOLTAN_FREE(&global_ids);
+        ZOLTAN_FREE(&local_ids);
+        ZOLTAN_FREE(&vwgts);
+        ZOLTAN_FREE(&tmp_vwgt);
+        ZOLTAN_FREE(&nbors_global);
+        ZOLTAN_FREE(&nbors_proc);
+        ZOLTAN_FREE(&ewgts);
+        ZOLTAN_FREE(&tmp_cutwgt);
+        ZOLTAN_FREE(&proc);
         ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ierr;
       }
@@ -225,15 +225,15 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
                         nbors_global, nbors_proc, 
                         lb->Comm_Weight_Dim, ewgts, &ierr);
       if (ierr == ZOLTAN_FATAL){
-        LB_FREE(&global_ids);
-        LB_FREE(&local_ids);
-        LB_FREE(&vwgts);
-        LB_FREE(&tmp_vwgt);
-        LB_FREE(&nbors_global);
-        LB_FREE(&nbors_proc);
-        LB_FREE(&ewgts);
-        LB_FREE(&tmp_cutwgt);
-        LB_FREE(&proc);
+        ZOLTAN_FREE(&global_ids);
+        ZOLTAN_FREE(&local_ids);
+        ZOLTAN_FREE(&vwgts);
+        ZOLTAN_FREE(&tmp_vwgt);
+        ZOLTAN_FREE(&nbors_global);
+        ZOLTAN_FREE(&nbors_proc);
+        ZOLTAN_FREE(&ewgts);
+        ZOLTAN_FREE(&tmp_cutwgt);
+        ZOLTAN_FREE(&proc);
         ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ierr;
       }
@@ -369,15 +369,15 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
   }
 
   /* Free data */
-  LB_FREE(&global_ids);
-  LB_FREE(&local_ids);
-  LB_FREE(&tmp_vwgt);
-  LB_FREE(&tmp_cutwgt);
-  LB_FREE(&vwgts);
-  LB_FREE(&ewgts);
-  LB_FREE(&nbors_global);
-  LB_FREE(&nbors_proc);
-  LB_FREE(&proc);
+  ZOLTAN_FREE(&global_ids);
+  ZOLTAN_FREE(&local_ids);
+  ZOLTAN_FREE(&tmp_vwgt);
+  ZOLTAN_FREE(&tmp_cutwgt);
+  ZOLTAN_FREE(&vwgts);
+  ZOLTAN_FREE(&ewgts);
+  ZOLTAN_FREE(&nbors_global);
+  ZOLTAN_FREE(&nbors_proc);
+  ZOLTAN_FREE(&proc);
   ZOLTAN_LB_TRACE_EXIT(lb, yo);
 
   return ierr;

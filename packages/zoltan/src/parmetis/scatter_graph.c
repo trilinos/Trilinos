@@ -73,7 +73,7 @@ int LB_Scatter_Graph(
   *xyz = NULL;
 
   /* Compute new distribution, *vtxdist */
-  (*vtxdist) = (idxtype *)LB_MALLOC((lb->Num_Proc+1)* sizeof(idxtype));
+  (*vtxdist) = (idxtype *)ZOLTAN_MALLOC((lb->Num_Proc+1)* sizeof(idxtype));
   for (i=0; i<=lb->Num_Proc; i++){
     (*vtxdist)[i] = (i*old_vtxdist[lb->Num_Proc])/lb->Num_Proc;
   }
@@ -90,15 +90,15 @@ int LB_Scatter_Graph(
   if (lb->Debug_Level >= LB_DEBUG_ALL) 
     printf("[%1d] Debug: New number of objects = %d\n", lb->Proc, num_obj);
   if (have_graph)
-    *xadj = (idxtype *) LB_MALLOC((num_obj+1)*sizeof(idxtype));
+    *xadj = (idxtype *) ZOLTAN_MALLOC((num_obj+1)*sizeof(idxtype));
   if (vwgt_dim)
-    *vwgt = (idxtype *) LB_MALLOC(vwgt_dim*num_obj*sizeof(idxtype));
+    *vwgt = (idxtype *) ZOLTAN_MALLOC(vwgt_dim*num_obj*sizeof(idxtype));
   if (ndims)
-    *xyz = (float *) LB_MALLOC(ndims*num_obj*sizeof(float));
+    *xyz = (float *) ZOLTAN_MALLOC(ndims*num_obj*sizeof(float));
 
   if (old_num_obj > 0) {
     /* Set up the communication plan for the vertex data */
-    proclist = (int *) LB_MALLOC(old_num_obj * sizeof(int));
+    proclist = (int *) ZOLTAN_MALLOC(old_num_obj * sizeof(int));
     /* Let j be the new owner of vertex old_vtxdist[lb->Proc]+i */
     j = 0;
     while (old_vtxdist[lb->Proc] >= (*vtxdist)[j+1]) j++;
@@ -115,7 +115,7 @@ int LB_Scatter_Graph(
       lb->Proc, nrecv, num_obj);
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     /* Free data */
-    LB_FREE(&proclist);
+    ZOLTAN_FREE(&proclist);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
   }
@@ -152,13 +152,13 @@ int LB_Scatter_Graph(
   
     /* Allocate space for new edge data structures */
     num_edges = (*xadj)[num_obj];
-    *adjncy = (idxtype *) LB_MALLOC(num_edges*sizeof(idxtype));
+    *adjncy = (idxtype *) ZOLTAN_MALLOC(num_edges*sizeof(idxtype));
   
     if (ewgt_dim)
-      *adjwgt = (idxtype *) LB_MALLOC(ewgt_dim*num_edges*sizeof(idxtype));
+      *adjwgt = (idxtype *) ZOLTAN_MALLOC(ewgt_dim*num_edges*sizeof(idxtype));
   
     /* Set up the communication plan for the edge data. */
-    ptr = proclist2 = (int *) LB_MALLOC(old_xadj[old_num_obj] * sizeof(int));
+    ptr = proclist2 = (int *) ZOLTAN_MALLOC(old_xadj[old_num_obj] * sizeof(int));
     for (i=0; i<old_num_obj; i++)
       for (j=0; j<old_xadj[i]; j++)
         *ptr++ = proclist[i];
@@ -171,8 +171,8 @@ int LB_Scatter_Graph(
         lb->Proc, nrecv, num_edges);
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
       /* Free data */
-      LB_FREE(&proclist);
-      LB_FREE(&proclist2);
+      ZOLTAN_FREE(&proclist);
+      ZOLTAN_FREE(&proclist2);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_FATAL;
     }
@@ -195,14 +195,14 @@ int LB_Scatter_Graph(
   } /* end of have_graph */
 
   /* Free data structures */
-  LB_FREE(&proclist);
-  LB_FREE(&proclist2);
-  LB_FREE(&old_vtxdist);
-  LB_FREE(&old_xadj);
-  LB_FREE(&old_adjncy);
-  LB_FREE(&old_vwgt);
-  LB_FREE(&old_adjwgt);
-  LB_FREE(&old_xyz);
+  ZOLTAN_FREE(&proclist);
+  ZOLTAN_FREE(&proclist2);
+  ZOLTAN_FREE(&old_vtxdist);
+  ZOLTAN_FREE(&old_xadj);
+  ZOLTAN_FREE(&old_adjncy);
+  ZOLTAN_FREE(&old_vwgt);
+  ZOLTAN_FREE(&old_adjwgt);
+  ZOLTAN_FREE(&old_xyz);
 
   ZOLTAN_LB_TRACE_EXIT(lb, yo);
   return ZOLTAN_OK;

@@ -83,7 +83,7 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
   
   ZOLTAN_LB_TRACE_ENTER(lb, yo);
   binned_weight_array = 
-    (float *) LB_MALLOC(sizeof(float) * 2 * bins_per_proc * wgt_dim);
+    (float *) ZOLTAN_MALLOC(sizeof(float) * 2 * bins_per_proc * wgt_dim);
 
   if(binned_weight_array == NULL && bins_per_proc > 0) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
@@ -111,7 +111,7 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
 							       greater than 0 */
 
   sfc_hash_ptr = (SFC_HASH_OBJ_PTR *)
-    LB_MALLOC(sizeof(SFC_HASH_OBJ_PTR) * hashtable_length);
+    ZOLTAN_MALLOC(sizeof(SFC_HASH_OBJ_PTR) * hashtable_length);
 
   if(sfc_hash_ptr == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
@@ -158,13 +158,13 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
   /* create array of processors to send data to
      and create array of objects to send */
   send_buffer = (SFC_BIN_WEIGHT_PTR) 
-    LB_MALLOC(sizeof(SFC_BIN_WEIGHT) * off_proc_objects);
+    ZOLTAN_MALLOC(sizeof(SFC_BIN_WEIGHT) * off_proc_objects);
 
   if(send_buffer == NULL && off_proc_objects > 0) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }    
-  proclist = (int*) LB_MALLOC(sizeof(int) * off_proc_objects);
+  proclist = (int*) ZOLTAN_MALLOC(sizeof(int) * off_proc_objects);
   if(proclist == NULL && off_proc_objects > 0) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -198,7 +198,7 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
     return(ZOLTAN_MEMERR);
   }
 
-  rcv_buffer = (SFC_BIN_WEIGHT_PTR) LB_MALLOC(sizeof(SFC_BIN_WEIGHT) * nreturn);
+  rcv_buffer = (SFC_BIN_WEIGHT_PTR) ZOLTAN_MALLOC(sizeof(SFC_BIN_WEIGHT) * nreturn);
   if(rcv_buffer == NULL && nreturn > 0) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
@@ -256,19 +256,19 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
   *plan = NULL; 
   sfc_clear_hashtable(sfc_hash_ptr, hashtable_length);
 
-  LB_FREE(&sfc_hash_ptr);
-  LB_FREE(&send_buffer);
-  LB_FREE(&rcv_buffer);
-  LB_FREE(&proclist);
+  ZOLTAN_FREE(&sfc_hash_ptr);
+  ZOLTAN_FREE(&send_buffer);
+  ZOLTAN_FREE(&rcv_buffer);
+  ZOLTAN_FREE(&proclist);
 
   /* global distributed array has been created,
      now perform the scan operation on it */
   
   /* first, must sum up total weight */
   if(wgt_dim < lb->Num_Proc)
-    extra_float_array = (float*) LB_MALLOC(sizeof(float) * lb->Num_Proc);
+    extra_float_array = (float*) ZOLTAN_MALLOC(sizeof(float) * lb->Num_Proc);
   else
-    extra_float_array = (float*) LB_MALLOC(sizeof(float) * wgt_dim);
+    extra_float_array = (float*) ZOLTAN_MALLOC(sizeof(float) * wgt_dim);
   if(extra_float_array == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -305,7 +305,7 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
     for(j=0;j<wgt_dim;j++) 
       extra_float_array[j] += binned_weight_array[i*wgt_dim+j];
   
-  extra_float_array2 = (float*) LB_MALLOC(sizeof(float) * wgt_dim);
+  extra_float_array2 = (float*) ZOLTAN_MALLOC(sizeof(float) * wgt_dim);
   if(extra_float_array2 == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -313,13 +313,13 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
   for(i=0;i<wgt_dim;i++)
     extra_float_array2[i] = extra_float_array[i];
   
-  scanned_work_prev_allocated = (float*) LB_MALLOC(sizeof(float) * wgt_dim);
+  scanned_work_prev_allocated = (float*) ZOLTAN_MALLOC(sizeof(float) * wgt_dim);
   if(scanned_work_prev_allocated == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   actual_work_allocated = 
-    (float*) LB_MALLOC(sizeof(float)*(lb->Num_Proc)*wgt_dim);
+    (float*) ZOLTAN_MALLOC(sizeof(float)*(lb->Num_Proc)*wgt_dim);
 
   if(actual_work_allocated == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
@@ -335,18 +335,18 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
     scanned_work_prev_allocated[i] = 
       total_weight_array[i] - scanned_work_prev_allocated[i];
   
-  LB_FREE(&extra_float_array);
-  LB_FREE(&extra_float_array2);
+  ZOLTAN_FREE(&extra_float_array);
+  ZOLTAN_FREE(&extra_float_array2);
   
   /* each processor needs to know which bins get partitioned
      into which processor, bin_proc_array lists max bin that
      a processor should get */
-  bin_proc_array = (int*) LB_MALLOC(sizeof(int) * lb->Num_Proc);
+  bin_proc_array = (int*) ZOLTAN_MALLOC(sizeof(int) * lb->Num_Proc);
   if(bin_proc_array == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }    
-  number_of_cuts_in_bin = (int*) LB_MALLOC(sizeof(int) * 2*bins_per_proc);
+  number_of_cuts_in_bin = (int*) ZOLTAN_MALLOC(sizeof(int) * 2*bins_per_proc);
   if(number_of_cuts_in_bin == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -390,9 +390,9 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
 		       (lb->Num_Proc)*wgt_dim, MPI_FLOAT, 
 		       MPI_MAX, lb->Communicator);
 
-  LB_FREE(&actual_work_allocated);
+  ZOLTAN_FREE(&actual_work_allocated);
   
-  global_bin_proc_array = (int*) LB_MALLOC(sizeof(int)*lb->Num_Proc);
+  global_bin_proc_array = (int*) ZOLTAN_MALLOC(sizeof(int)*lb->Num_Proc);
   if(global_bin_proc_array == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -400,7 +400,7 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
   ierr = MPI_Allreduce(bin_proc_array, global_bin_proc_array, lb->Num_Proc,
 		       MPI_INT, MPI_MIN, lb->Communicator);
 
-  LB_FREE(&bin_proc_array);
+  ZOLTAN_FREE(&bin_proc_array);
 
   /* specify which processor an object belongs to,
      we will know this because we know what bin an object 
@@ -433,7 +433,7 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
 				      work_percent_array, total_weight_array, 
 				      global_actual_work_allocated);
   
-  LB_FREE(&number_of_cuts_in_bin);    
+  ZOLTAN_FREE(&number_of_cuts_in_bin);    
 
   if(wgt_dim == 1) {
     local_balanced_flag = 
@@ -452,9 +452,9 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
   ierr = MPI_Allreduce(&local_balanced_flag, balanced_flag, 1,
 		       MPI_INT, MPI_MAX, lb->Communicator);
 
-  LB_FREE(&global_bin_proc_array);
-  LB_FREE(&binned_weight_array);
-  LB_FREE(&scanned_work_prev_allocated);
+  ZOLTAN_FREE(&global_bin_proc_array);
+  ZOLTAN_FREE(&binned_weight_array);
+  ZOLTAN_FREE(&scanned_work_prev_allocated);
   /* if the current partitioning is acceptable, the algorithm is finished */
   if(*balanced_flag == SFC_BALANCED) {
     return ZOLTAN_OK;
@@ -512,19 +512,19 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
   /*create array of processors to send data to and
     create array of objects to send */
   send_vert_buffer = 
-    (SFC_VERTEX_PTR) LB_MALLOC(sizeof(SFC_VERTEX) * off_proc_objects);
+    (SFC_VERTEX_PTR) ZOLTAN_MALLOC(sizeof(SFC_VERTEX) * off_proc_objects);
   if(send_vert_buffer == NULL && off_proc_objects > 0) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   send_wgt_buffer = 
-    (float*) LB_MALLOC(sizeof(float) * wgt_dim * off_proc_objects);
+    (float*) ZOLTAN_MALLOC(sizeof(float) * wgt_dim * off_proc_objects);
   if(send_wgt_buffer == NULL && off_proc_objects > 0) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
 
-  proclist = (int*) LB_MALLOC(sizeof(int) * off_proc_objects);
+  proclist = (int*) ZOLTAN_MALLOC(sizeof(int) * off_proc_objects);
   if(proclist == NULL && off_proc_objects > 0) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -556,7 +556,7 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
   }
   /* send out vertices */
   *vert_in_cut_ptr = 
-    (SFC_VERTEX_PTR) LB_MALLOC(sizeof(SFC_VERTEX) * (*num_vert_in_cut));
+    (SFC_VERTEX_PTR) ZOLTAN_MALLOC(sizeof(SFC_VERTEX) * (*num_vert_in_cut));
   if(*vert_in_cut_ptr == NULL && *num_vert_in_cut > 0) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -574,11 +574,11 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Do.");
     return(ZOLTAN_MEMERR);
   }
-  LB_FREE(&send_vert_buffer);
+  ZOLTAN_FREE(&send_vert_buffer);
   
   /* send out weights of vertices */
   *wgts_in_cut_ptr = 
-    (float*) LB_MALLOC(sizeof(float) * (*num_vert_in_cut) * wgt_dim);
+    (float*) ZOLTAN_MALLOC(sizeof(float) * (*num_vert_in_cut) * wgt_dim);
   if(*wgts_in_cut_ptr == NULL && *num_vert_in_cut > 0) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -596,9 +596,9 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Do.");
     return(ZOLTAN_MEMERR);
   }
-  LB_FREE(&send_wgt_buffer);
+  ZOLTAN_FREE(&send_wgt_buffer);
   
-  LB_FREE(&proclist);
+  ZOLTAN_FREE(&proclist);
 
   /* objects that are in a bin that has a cut in it have been sent to 
      their corresponding processors */
@@ -674,8 +674,8 @@ void sfc_clear_hashtable(SFC_HASH_OBJ_PTR * sfc_hash_ptr,
     while(extra_hash_ptr != NULL) {
       another_hash_ptr = extra_hash_ptr;
       extra_hash_ptr = extra_hash_ptr->next;
-      LB_FREE(&(another_hash_ptr->weight_ptr));
-      LB_FREE(&another_hash_ptr);
+      ZOLTAN_FREE(&(another_hash_ptr->weight_ptr));
+      ZOLTAN_FREE(&another_hash_ptr);
     }
   }
 
@@ -705,7 +705,7 @@ int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
   /* if this location has not been filled yet */
   if(sfc_hash_ptr[array_location] == NULL) { 
     sfc_hash_ptr[array_location] = 
-      (SFC_HASH_OBJ_PTR) LB_MALLOC(sizeof(SFC_HASH_OBJ));
+      (SFC_HASH_OBJ_PTR) ZOLTAN_MALLOC(sizeof(SFC_HASH_OBJ));
     if(sfc_hash_ptr[array_location] == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
@@ -716,7 +716,7 @@ int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
     (sfc_hash_ptr[array_location])->next = NULL;
     (sfc_hash_ptr[array_location])->prev = NULL;
     (sfc_hash_ptr[array_location])->weight_ptr = 
-      (float *) LB_MALLOC(sizeof(float) * wgt_dim);
+      (float *) ZOLTAN_MALLOC(sizeof(float) * wgt_dim);
     if((sfc_hash_ptr[array_location])->weight_ptr == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
@@ -727,7 +727,7 @@ int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
   /* location is at the beginning of the linklist */
   else if(extra_hash_ptr->id > sfc_vert_ptr->my_bin) { 
     sfc_hash_ptr[array_location] = 
-      (SFC_HASH_OBJ_PTR) LB_MALLOC(sizeof(SFC_HASH_OBJ));
+      (SFC_HASH_OBJ_PTR) ZOLTAN_MALLOC(sizeof(SFC_HASH_OBJ));
     if(sfc_hash_ptr[array_location] == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
@@ -739,7 +739,7 @@ int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
     extra_hash_ptr->prev = sfc_hash_ptr[array_location];
     (sfc_hash_ptr[array_location])->prev = NULL;
     (sfc_hash_ptr[array_location])->weight_ptr = 
-      (float *) LB_MALLOC(sizeof(float) * wgt_dim);
+      (float *) ZOLTAN_MALLOC(sizeof(float) * wgt_dim);
     if((sfc_hash_ptr[array_location])->weight_ptr == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
@@ -759,7 +759,7 @@ int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
     else if(extra_hash_ptr->next == NULL) {
       SFC_HASH_OBJ_PTR another_hash_ptr = extra_hash_ptr;
       extra_hash_ptr->next =
-	(SFC_HASH_OBJ_PTR) LB_MALLOC(sizeof(SFC_HASH_OBJ));
+	(SFC_HASH_OBJ_PTR) ZOLTAN_MALLOC(sizeof(SFC_HASH_OBJ));
       if(extra_hash_ptr->next == NULL) {
 	ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
 	return(ZOLTAN_MEMERR);
@@ -770,7 +770,7 @@ int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
       extra_hash_ptr->next = NULL;
       extra_hash_ptr->prev = another_hash_ptr;
       extra_hash_ptr->weight_ptr = 
-	(float *) LB_MALLOC(sizeof(float) * wgt_dim);
+	(float *) ZOLTAN_MALLOC(sizeof(float) * wgt_dim);
       if(extra_hash_ptr->weight_ptr == NULL) {
 	ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
 	return(ZOLTAN_MEMERR);
@@ -782,7 +782,7 @@ int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
       SFC_HASH_OBJ_PTR another_hash_ptr = extra_hash_ptr;
       extra_hash_ptr = extra_hash_ptr->prev;
       extra_hash_ptr->next =
-	(SFC_HASH_OBJ_PTR) LB_MALLOC(sizeof(SFC_HASH_OBJ));
+	(SFC_HASH_OBJ_PTR) ZOLTAN_MALLOC(sizeof(SFC_HASH_OBJ));
       if(extra_hash_ptr->next == NULL) {
 	ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
 	return(ZOLTAN_MEMERR);
@@ -794,7 +794,7 @@ int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr,
       extra_hash_ptr->destination_proc = sfc_vert_ptr->destination_proc;
       extra_hash_ptr->next = another_hash_ptr;
       extra_hash_ptr->weight_ptr = 
-	(float *) LB_MALLOC(sizeof(float) * wgt_dim);
+	(float *) ZOLTAN_MALLOC(sizeof(float) * wgt_dim);
       if(extra_hash_ptr->weight_ptr == NULL) {
 	ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
 	return(ZOLTAN_MEMERR);

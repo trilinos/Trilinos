@@ -62,8 +62,8 @@ struct LB_reftree_hash_node *new_entry;
   i = LB_Hash(reftree_node->global_id, lb->Num_GID, (unsigned int)size);
 
   new_entry = (struct LB_reftree_hash_node *)
-              LB_MALLOC(sizeof(struct LB_reftree_hash_node));
-  new_entry->gid = ZOLTAN_LB_MALLOC_GID(lb);
+              ZOLTAN_MALLOC(sizeof(struct LB_reftree_hash_node));
+  new_entry->gid = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
   ZOLTAN_LB_SET_GID(lb, new_entry->gid,reftree_node->global_id);
   new_entry->reftree_node = reftree_node;
   new_entry->next = hashtab[i];
@@ -93,8 +93,8 @@ void LB_Reftree_Hash_Remove (LB *lb, LB_REFTREE *reftree_node,
   while (ptr != NULL) {
     if (ZOLTAN_LB_EQ_GID(lb, ptr->gid, reftree_node->global_id)) {
       next = ptr->next;
-      LB_FREE(&(ptr->gid));
-      LB_FREE(&ptr);
+      ZOLTAN_FREE(&(ptr->gid));
+      ZOLTAN_FREE(&ptr);
       if (prev == NULL) {
         hashtab[i] = next;
       } else {
@@ -128,8 +128,8 @@ void LB_Reftree_Clear_Hash_Table(struct LB_reftree_hash_node **hashtab,
     ptr = hashtab[i];
     while (ptr != NULL) {
       next = ptr->next;
-      LB_FREE(&(ptr->gid));
-      LB_FREE(&ptr);
+      ZOLTAN_FREE(&(ptr->gid));
+      ZOLTAN_FREE(&ptr);
       ptr = next;
     }
     hashtab[i] = (struct LB_reftree_hash_node *)NULL;

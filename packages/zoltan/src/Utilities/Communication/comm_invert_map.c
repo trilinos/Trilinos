@@ -39,15 +39,15 @@ MPI_Comm  comm)			/* communicator */
     int       i;		/* loop counter */
     MPI_Status status;		/* return MPI argument */
 
-    msg_count = (int *) LB_MALLOC(nprocs * sizeof(int));
-    counts = (int *) LB_MALLOC(nprocs * sizeof(int));
+    msg_count = (int *) ZOLTAN_MALLOC(nprocs * sizeof(int));
+    counts = (int *) ZOLTAN_MALLOC(nprocs * sizeof(int));
 
     if (msg_count == NULL || counts == NULL) out_of_mem = 1;
 
     MPI_Allreduce((void *) &out_of_mem, (void *) &i, 1, MPI_INT, MPI_MAX, comm);
     if (i) {
-	LB_FREE((void **) &counts);
-	LB_FREE((void **) &msg_count);
+	ZOLTAN_FREE((void **) &counts);
+	ZOLTAN_FREE((void **) &msg_count);
 	return(COMM_MEMERR);
     }
 
@@ -61,11 +61,11 @@ MPI_Comm  comm)			/* communicator */
     MPI_Reduce_scatter((void *) msg_count, (void *) &nrecvs, counts, MPI_INT,
 	MPI_SUM, comm);
 
-    LB_FREE((void **) &counts);
-    LB_FREE((void **) &msg_count);
+    ZOLTAN_FREE((void **) &counts);
+    ZOLTAN_FREE((void **) &msg_count);
 
-    lengths_from = (int *) LB_MALLOC(nrecvs*sizeof(int));
-    procs_from = (int *) LB_MALLOC(nrecvs*sizeof(int));
+    lengths_from = (int *) ZOLTAN_MALLOC(nrecvs*sizeof(int));
+    procs_from = (int *) ZOLTAN_MALLOC(nrecvs*sizeof(int));
 
     /* Note: these mallocs should never fail as prior frees are larger. */
 

@@ -68,7 +68,7 @@ int Zoltan_DD_Find (
    /* allocate memory for processors to contact for directory info */
    if (count > 0)
       {
-      procs = (int *) LB_MALLOC (sizeof (int) * count) ;
+      procs = (int *) ZOLTAN_MALLOC (sizeof (int) * count) ;
       if (procs == NULL)
         {
         ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc proc list.") ;
@@ -81,10 +81,10 @@ int Zoltan_DD_Find (
    /* allocate memory for DD_Find_Msg send buffer */
    if (count > 0)
       {
-      sbuff = (char *) LB_MALLOC (dd->find_msg_size * count) ;
+      sbuff = (char *) ZOLTAN_MALLOC (dd->find_msg_size * count) ;
       if (sbuff == NULL)
          {
-         LB_FREE (&procs) ;
+         ZOLTAN_FREE (&procs) ;
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc send buffer.") ;
          if (dd->debug_level > 1)
             ZOLTAN_TRACE_EXIT(dd->my_proc, yo, NULL);
@@ -120,7 +120,7 @@ int Zoltan_DD_Find (
    /* allocate receive buffer */
    if (nrec > 0)
       {
-      rbuff = (char *) LB_MALLOC (nrec * dd->find_msg_size) ;
+      rbuff = (char *) ZOLTAN_MALLOC (nrec * dd->find_msg_size) ;
       if (rbuff == NULL)
          {
          err = ZOLTAN_DD_MEMORY_ERROR ;
@@ -189,9 +189,9 @@ int Zoltan_DD_Find (
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill return lists.");
 
 fini:
-   LB_FREE (&sbuff) ;
-   LB_FREE (&rbuff) ;
-   LB_FREE (&procs) ;
+   ZOLTAN_FREE (&sbuff) ;
+   ZOLTAN_FREE (&rbuff) ;
+   ZOLTAN_FREE (&procs) ;
    LB_Comm_Destroy (&plan) ;
 
    if (err != ZOLTAN_DD_NORMAL_RETURN)

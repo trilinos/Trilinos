@@ -82,7 +82,7 @@ char *val1)			/* value to set this parameter to */
 	return (flag);
     flag = LB_clean_string(val1, &val);
     if (flag) {
-	LB_FREE(&name);
+	ZOLTAN_FREE(&name);
 	return (flag);
     }
 
@@ -100,22 +100,22 @@ char *val1)			/* value to set this parameter to */
 	sprintf(msg, "Parameter `%s' not found; not reset to `%s'.\n", 
                 name, val);
         ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
-	LB_FREE(&name);
-    	LB_FREE(&val);
+	ZOLTAN_FREE(&name);
+    	ZOLTAN_FREE(&val);
     }
     else {
         if (!strcmp(val, "DEFAULT")){
 	    remove_param(lb, name);	/* Remove parameter from list */
             status = 0; 		/* "DEFAULT" is always valid */
-    	    LB_FREE(&name);
-    	    LB_FREE(&val);
+    	    ZOLTAN_FREE(&name);
+    	    ZOLTAN_FREE(&val);
         }
         else if (status == 0){		/* Parameter OK */
     	    add_param(lb, name, val); 	/* Add parameter to list */
         }
         else { 				/* Parameter not OK. Don't add.  */
-    	    LB_FREE(&name);             /* (It may be used to set values */
-    	    LB_FREE(&val);              /* directly in lb rather than in */
+    	    ZOLTAN_FREE(&name);             /* (It may be used to set values */
+    	    ZOLTAN_FREE(&val);              /* directly in lb rather than in */
                                         /* the parameter list.)          */
         }
     }
@@ -147,7 +147,7 @@ char *val)			/* value to set this parameter to */
     ptr = lb->Params;
     while (ptr != NULL) {
 	if (!strcmp(name, ptr->name)) {	/* string match */
-	    LB_FREE(&(ptr->new_val));
+	    ZOLTAN_FREE(&(ptr->new_val));
 	    ptr->new_val = val;
 	    return (ZOLTAN_OK);
 	}
@@ -155,10 +155,10 @@ char *val)			/* value to set this parameter to */
     }
 
     /* This is a new parameter, add it to list. */
-    param = (LB_PARAM *) LB_MALLOC(sizeof(LB_PARAM));
+    param = (LB_PARAM *) ZOLTAN_MALLOC(sizeof(LB_PARAM));
     if (param == NULL) {
-	LB_FREE(&name);
-	LB_FREE(&val);
+	ZOLTAN_FREE(&name);
+	ZOLTAN_FREE(&val);
 	return (ZOLTAN_MEMERR);
     }
     ptr = lb->Params;
@@ -191,9 +191,9 @@ char *name 			/* parameter name */
             else
                oldptr->next = ptr->next;
             /* Free parameter */
-            LB_FREE(&(ptr->name));
-            LB_FREE(&(ptr->new_val));
-            LB_FREE(&ptr);
+            ZOLTAN_FREE(&(ptr->name));
+            ZOLTAN_FREE(&(ptr->new_val));
+            ZOLTAN_FREE(&ptr);
             /* Return OK */
 	    return (ZOLTAN_OK);
 	}

@@ -42,7 +42,7 @@ static struct malloc_debug_data {
 
 
 /******************************************************************************/
-void LB_Set_Memory_Debug(int new_level) {
+void Zoltan_Memory_Debug(int new_level) {
 /*
  *  Routine to allow user to set DEBUG_MEMORY level.
  */
@@ -65,16 +65,16 @@ void LB_Set_Memory_Debug(int new_level) {
  *
  *      POINT    **points, corner;
  *
- *      points = (POINT **)LB_Array_Alloc(file, lineno, 2, x, y, sizeof(POINT));
- *                                        ^     ^       ^  ^  ^
- *                                        |     |       |  |  |
- *                 name of calling file---*     |       |  |  |
- *                                              |       |  |  |
- *                  line number of call---------*       |  |  |
- *                                                      |  |  |
- *                 number of dimensions-----------------+  |  |
- *                                                         |  |
- *                  first dimension max--------------------+  |
+ *      points = (POINT **)Zoltan_Array_Alloc(file,lineno,2,x,y,sizeof(POINT));
+ *                                             ^     ^    ^ ^ ^
+ *                                             |     |    | | |
+ *                 name of calling file--------*     |    | | |
+ *                                                   |    | | |
+ *                  line number of call--------------*    | | |
+ *                                                        | | |
+ *                 number of dimensions-------------------+ | |
+ *                                                          | |
+ *                  first dimension max---------------------+ |
  *                                                            |
  *                 second dimension max-----------------------+
  *
@@ -92,7 +92,7 @@ void LB_Set_Memory_Debug(int new_level) {
 *       The following section is a commented section containing
 *       an example main code:
 *******************************************************************************
-*double *LB_Array_Alloc();
+*double *Zoltan_Array_Alloc();
 *main()
 *{
 *  int ***temp;
@@ -129,11 +129,11 @@ void LB_Set_Memory_Debug(int new_level) {
 
 #ifdef __STDC__
 
-double *LB_Array_Alloc(char *file, int lineno, int numdim, ...)
+double *Zoltan_Array_Alloc(char *file, int lineno, int numdim, ...)
 
 #else
 
-double *LB_Array_Alloc(va_alist)
+double *Zoltan_Array_Alloc(va_alist)
 va_dcl
 
 #endif
@@ -143,7 +143,7 @@ va_dcl
 /*****************************************************************************/
 
 {
-  char *yo = "LB_Array_Alloc";
+  char *yo = "Zoltan_Array_Alloc";
   int i, j;
   struct dimension {
     long index;  /* Number of elements in the dimension  */
@@ -222,7 +222,7 @@ va_dcl
 
   total = dim[numdim-1].off + dim[numdim-1].total * dim[numdim-1].size;
 
-  dfield = (double *) LB_Malloc((int) total, file, lineno); 
+  dfield = (double *) Zoltan_Malloc((int) total, file, lineno); 
 
   if (dfield != NULL) {
     field  = (char *) dfield;
@@ -237,7 +237,7 @@ va_dcl
 
   return dfield;
 
-} /* LB_Array_Alloc */
+} /* Zoltan_Array_Alloc */
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -246,10 +246,10 @@ va_dcl
 
 /* Safe version of malloc.  Does not initialize memory .*/
 
-double *LB_Malloc(int n, char *filename, int lineno)
+double *Zoltan_Malloc(int n, char *filename, int lineno)
 
 {
-  char *yo = "LB_Malloc";
+  char *yo = "Zoltan_Malloc";
   struct malloc_debug_data *new_ptr;     /* data structure for malloc data */
   int       proc;             /* processor ID for debugging msg */
   double *pntr;           /* return value */
@@ -309,13 +309,13 @@ double *LB_Malloc(int n, char *filename, int lineno)
 
   return pntr;
 
-} /* LB_Malloc */
+} /* Zoltan_Malloc */
 
 /* Safe version of realloc. Does not initialize memory. */
 
-double *LB_Realloc(void *ptr, int n, char *filename, int lineno)
+double *Zoltan_Realloc(void *ptr, int n, char *filename, int lineno)
 {
-  char *yo = "LB_Realloc";
+  char *yo = "Zoltan_Realloc";
   struct malloc_debug_data *dbptr;   /* loops through debug list */
   int       proc;             /* processor ID */
   double   *p;                /* returned pointer */
@@ -325,12 +325,12 @@ double *LB_Realloc(void *ptr, int n, char *filename, int lineno)
       p = NULL;
     }
     else {
-      p = LB_Malloc(n, filename, lineno);
+      p = Zoltan_Malloc(n, filename, lineno);
     }
   }
   else {
     if (n == 0) {
-      LB_Free((void **) &ptr, filename, lineno);
+      Zoltan_Free((void **) &ptr, filename, lineno);
       p = NULL;
     }
     else {
@@ -366,14 +366,14 @@ double *LB_Realloc(void *ptr, int n, char *filename, int lineno)
   }
 
   return (p);
-} /* LB_Realloc */
+} /* Zoltan_Realloc */
 
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Free (void **ptr, char *filename, int lineno)
+void Zoltan_Free (void **ptr, char *filename, int lineno)
 {
   struct malloc_debug_data *dbptr;   /* loops through debug list */
   struct malloc_debug_data **prev;   /* holds previous pointer */
@@ -414,7 +414,7 @@ void LB_Free (void **ptr, char *filename, int lineno)
   /* Set value of ptr to NULL, to flag further references to it. */
   *ptr = NULL;
 
-}  /* LB_Free */
+}  /* Zoltan_Free */
 
 
 #if 0 /* Not sure we need this feature */
@@ -423,21 +423,21 @@ void LB_Free (void **ptr, char *filename, int lineno)
 
 #ifdef __STDC__
 
-void LB_Multifree(char *filename, int lineno, int n, ...)
+void Zoltan_Multifree(char *filename, int lineno, int n, ...)
 {
   int i;
   va_list va;
   
   va_start(va, n);
   for (i=0; i<n; i++){
-    LB_Free(va_arg(va, void **), filename, lineno);
+    Zoltan_Free(va_arg(va, void **), filename, lineno);
   }
   va_end(va);
 }
 
 #else
 
-void LB_Multifree(va_alist)
+void Zoltan_Multifree(va_alist)
 va_decl
 {
   int i, n, lineno;
@@ -449,7 +449,7 @@ va_decl
   lineno = va_arg(va, int);
   n = va_arg(va, int);
   for (i=0; i<n; i++){
-    LB_Free(va_arg(va, void **), filename, lineno);
+    Zoltan_Free(va_arg(va, void **), filename, lineno);
   }
   va_end(va);
 }
@@ -460,7 +460,7 @@ va_decl
 
 /* Print out status of malloc/free calls.  Flag any memory leaks. */
 
-void      LB_Memory_Stats()
+void      Zoltan_Memory_Stats()
 {
     struct malloc_debug_data *dbptr;	/* loops through debug list */
     int       proc;		/* processor ID */
@@ -498,14 +498,14 @@ void      LB_Memory_Stats()
 	    }
 	}
     }
-} /* LB_Memory_Stats */
+} /* Zoltan_Memory_Stats */
 
 
 /* Return number associated with the most recent malloc call. */
-int       LB_Malloc_Num()
+int       Zoltan_Malloc_Num()
 {
   return (nmalloc);
-} /* LB_Memory_Num */
+} /* Zoltan_Malloc_Num */
 
 
 

@@ -279,29 +279,29 @@ static int rib_fn(
 
   allocflag = 0;
   if (dotmax > 0) {
-    dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
+    dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
     if (dotmark == NULL) {
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
-    value = (double *) LB_MALLOC(dotmax*sizeof(double));
+    value = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
     if (value == NULL) {
-      LB_FREE(&dotmark);
+      ZOLTAN_FREE(&dotmark);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
-    wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
+    wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
     if (wgts == NULL) {
-      LB_FREE(&dotmark);
-      LB_FREE(&value);
+      ZOLTAN_FREE(&dotmark);
+      ZOLTAN_FREE(&value);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
-    dotlist = (int *) LB_MALLOC(dotmax*sizeof(int));
+    dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
     if (dotlist == NULL) {
-      LB_FREE(&wgts);
-      LB_FREE(&dotmark);
-      LB_FREE(&value);
+      ZOLTAN_FREE(&wgts);
+      ZOLTAN_FREE(&dotmark);
+      ZOLTAN_FREE(&value);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
@@ -365,9 +365,9 @@ static int rib_fn(
     ierr = LB_divide_machine(lb, proc, local_comm, &set, &proclower,
                              &procmid, &num_procs, &fractionlo);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      LB_FREE(&dotmark);
-      LB_FREE(&value);
-      LB_FREE(&wgts);
+      ZOLTAN_FREE(&dotmark);
+      ZOLTAN_FREE(&value);
+      ZOLTAN_FREE(&wgts);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ierr);
     }
@@ -376,33 +376,33 @@ static int rib_fn(
 
     if (allocflag) {
       allocflag = 0;
-      LB_FREE(&dotmark);
-      LB_FREE(&value);
-      LB_FREE(&wgts);
-      LB_FREE(&dotlist);
-      dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
+      ZOLTAN_FREE(&dotmark);
+      ZOLTAN_FREE(&value);
+      ZOLTAN_FREE(&wgts);
+      ZOLTAN_FREE(&dotlist);
+      dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
       if (dotmark == NULL) {
         ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
-      value = (double *) LB_MALLOC(dotmax*sizeof(double));
+      value = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
       if (value == NULL) {
-        LB_FREE(&dotmark);
+        ZOLTAN_FREE(&dotmark);
         ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
-      wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
+      wgts = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double));
       if (wgts == NULL) {
-        LB_FREE(&dotmark);
-        LB_FREE(&value);
+        ZOLTAN_FREE(&dotmark);
+        ZOLTAN_FREE(&value);
         ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
-      dotlist = (int *) LB_MALLOC(dotmax*sizeof(int));
+      dotlist = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int));
       if (dotlist == NULL) {
-        LB_FREE(&wgts);
-        LB_FREE(&dotmark);
-        LB_FREE(&value);
+        ZOLTAN_FREE(&wgts);
+        ZOLTAN_FREE(&dotmark);
+        ZOLTAN_FREE(&value);
         ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
@@ -456,9 +456,9 @@ static int rib_fn(
                         wgtflag, valuelo, valuehi, weight, &weightlo,
                         &weighthi, dotlist)) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from find_median.");
-      LB_FREE(&dotmark);
-      LB_FREE(&value);
-      LB_FREE(&wgts);
+      ZOLTAN_FREE(&dotmark);
+      ZOLTAN_FREE(&value);
+      ZOLTAN_FREE(&wgts);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_FATAL;
     }
@@ -498,9 +498,9 @@ static int rib_fn(
                                old_nprocs);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Outgoing.");
-      LB_FREE(&dotmark);
-      LB_FREE(&value);
-      LB_FREE(&wgts);
+      ZOLTAN_FREE(&dotmark);
+      ZOLTAN_FREE(&value);
+      ZOLTAN_FREE(&wgts);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ierr;
     }
@@ -541,10 +541,10 @@ static int rib_fn(
 
   if (!lb->Tflops_Special) MPI_Comm_free(&local_comm);
 
-  LB_FREE(&value);
-  LB_FREE(&wgts);
-  LB_FREE(&dotmark);
-  LB_FREE(&dotlist);
+  ZOLTAN_FREE(&value);
+  ZOLTAN_FREE(&wgts);
+  ZOLTAN_FREE(&dotmark);
+  ZOLTAN_FREE(&dotlist);
 
   end_time = LB_Time(lb->Timer);
   lb_time[1] = end_time - start_time;
@@ -637,9 +637,9 @@ static int rib_fn(
   }
   else {
     /* Free only Dots and IDs; keep other structures. */
-    LB_FREE(&(rib->Global_IDs));
-    LB_FREE(&(rib->Local_IDs));
-    LB_FREE(&(rib->Dots));
+    ZOLTAN_FREE(&(rib->Global_IDs));
+    ZOLTAN_FREE(&(rib->Local_IDs));
+    ZOLTAN_FREE(&(rib->Dots));
   }
 
   ZOLTAN_LB_TRACE_EXIT(lb, yo);

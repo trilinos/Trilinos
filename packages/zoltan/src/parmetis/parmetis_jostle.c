@@ -280,15 +280,15 @@ int LB_Jostle(
 #define FREE_MY_MEMORY \
   { \
   ZOLTAN_PRINT_ERROR(lb->Proc, yo, "ParMETIS/Jostle error."); \
-  LB_FREE(&vtxdist); LB_FREE(&xadj); LB_FREE(&adjncy); \
-  LB_FREE(&vwgt); LB_FREE(&adjwgt); LB_FREE(&part); \
-  LB_FREE(&float_vwgt); LB_FREE(&ewgts); LB_FREE(&xyz); \
-  LB_FREE(&sendbuf); LB_FREE(&recvbuf); \
-  LB_FREE(&hash_nodes); LB_FREE(&hashtab); \
-  LB_FREE(&nbors_proc); LB_FREE(&nbors_global); \
-  LB_FREE(&local_ids); LB_FREE(&global_ids); \
-  LB_FREE(&proc_list); LB_FREE(&proc_list_nbor); LB_FREE(&plist); \
-  LB_FREE(&tmp_ewgts); \
+  ZOLTAN_FREE(&vtxdist); ZOLTAN_FREE(&xadj); ZOLTAN_FREE(&adjncy); \
+  ZOLTAN_FREE(&vwgt); ZOLTAN_FREE(&adjwgt); ZOLTAN_FREE(&part); \
+  ZOLTAN_FREE(&float_vwgt); ZOLTAN_FREE(&ewgts); ZOLTAN_FREE(&xyz); \
+  ZOLTAN_FREE(&sendbuf); ZOLTAN_FREE(&recvbuf); \
+  ZOLTAN_FREE(&hash_nodes); ZOLTAN_FREE(&hashtab); \
+  ZOLTAN_FREE(&nbors_proc); ZOLTAN_FREE(&nbors_global); \
+  ZOLTAN_FREE(&local_ids); ZOLTAN_FREE(&global_ids); \
+  ZOLTAN_FREE(&proc_list); ZOLTAN_FREE(&proc_list_nbor); ZOLTAN_FREE(&plist); \
+  ZOLTAN_FREE(&tmp_ewgts); \
   }
 
 static int LB_ParMetis_Jostle(
@@ -452,12 +452,12 @@ static int LB_ParMetis_Jostle(
     printf("[%1d] Debug: num_obj =%d\n", lb->Proc, num_obj);
 
   
-  vtxdist = (idxtype *)LB_MALLOC((lb->Num_Proc+1)* sizeof(idxtype));
+  vtxdist = (idxtype *)ZOLTAN_MALLOC((lb->Num_Proc+1)* sizeof(idxtype));
   if (num_obj>0){
-    global_ids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, num_obj);
-    local_ids =  ZOLTAN_LB_MALLOC_LID_ARRAY(lb, num_obj);
+    global_ids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, num_obj);
+    local_ids =  ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, num_obj);
     if (obj_wgt_dim)
-      float_vwgt = (float *)LB_MALLOC(obj_wgt_dim*num_obj * sizeof(float));
+      float_vwgt = (float *)ZOLTAN_MALLOC(obj_wgt_dim*num_obj * sizeof(float));
     if (!vtxdist || !global_ids || (num_lid_entries && !local_ids) || 
         (obj_wgt_dim && !float_vwgt)){
       /* Not enough memory */
@@ -526,10 +526,10 @@ static int LB_ParMetis_Jostle(
       printf("[%1d] Debug: num_edges = %d\n", lb->Proc, num_edges);
 
     /* Allocate space for ParMETIS data structs */
-    xadj   = (idxtype *)LB_MALLOC((num_obj+1) * sizeof(idxtype));
-    adjncy = (idxtype *)LB_MALLOC(num_edges * sizeof(idxtype));
+    xadj   = (idxtype *)ZOLTAN_MALLOC((num_obj+1) * sizeof(idxtype));
+    adjncy = (idxtype *)ZOLTAN_MALLOC(num_edges * sizeof(idxtype));
     if (comm_wgt_dim) 
-      adjwgt = (idxtype *)LB_MALLOC(comm_wgt_dim * num_edges 
+      adjwgt = (idxtype *)ZOLTAN_MALLOC(comm_wgt_dim * num_edges 
                  * sizeof(idxtype));
   
     if (!xadj || (num_edges && !adjncy) || 
@@ -546,9 +546,9 @@ static int LB_ParMetis_Jostle(
     /* First compute a global dense numbering of the objects/vertices */
   
     /* Construct local hash table */
-    hash_nodes = (struct LB_hash_node *)LB_MALLOC(num_obj *
+    hash_nodes = (struct LB_hash_node *)ZOLTAN_MALLOC(num_obj *
       sizeof(struct LB_hash_node));
-    hashtab = (struct LB_hash_node **) LB_MALLOC(num_obj *
+    hashtab = (struct LB_hash_node **) ZOLTAN_MALLOC(num_obj *
       sizeof(struct LB_hash_node *) );
     if (num_obj && ((!hash_nodes) || (!hashtab))){
       /* Not enough memory */
@@ -589,12 +589,12 @@ static int LB_ParMetis_Jostle(
        max_proc_list_len = 0;
     
     /* Allocate edge list data */
-    nbors_global = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, max_edges);
-    nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
-    plist = (int *)LB_MALLOC(lb->Num_Proc * sizeof(int));
+    nbors_global = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, max_edges);
+    nbors_proc = (int *)ZOLTAN_MALLOC(max_edges * sizeof(int));
+    plist = (int *)ZOLTAN_MALLOC(lb->Num_Proc * sizeof(int));
     if (comm_wgt_dim && max_edges){
-      tmp_ewgts = (float *)LB_MALLOC(comm_wgt_dim * max_edges * sizeof(float));
-      ewgts = (float *)LB_MALLOC(comm_wgt_dim * num_edges * sizeof(float));
+      tmp_ewgts = (float *)ZOLTAN_MALLOC(comm_wgt_dim * max_edges * sizeof(float));
+      ewgts = (float *)ZOLTAN_MALLOC(comm_wgt_dim * num_edges * sizeof(float));
     }
 
     if ((max_edges && ((!nbors_global) || (!nbors_proc) ||
@@ -612,13 +612,13 @@ static int LB_ParMetis_Jostle(
       /* Allocate space for processor list */
       while ((proc_list==NULL || proc_list_nbor == NULL)
           && (max_proc_list_len>=CHUNKSIZE)){
-        proc_list = (struct LB_edge_info *) LB_MALLOC(max_proc_list_len *
+        proc_list = (struct LB_edge_info *) ZOLTAN_MALLOC(max_proc_list_len *
           sizeof(struct LB_edge_info) );
-        proc_list_nbor = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, max_proc_list_len);
+        proc_list_nbor = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, max_proc_list_len);
         if (!proc_list || !proc_list_nbor){
           /* Not enough memory, try shorter list */
-          LB_FREE(&proc_list);
-          LB_FREE(&proc_list_nbor);
+          ZOLTAN_FREE(&proc_list);
+          ZOLTAN_FREE(&proc_list_nbor);
           if (lb->Debug_Level >= LB_DEBUG_ALL) {
             printf("[%1d] Debug: Could not allocate %d list nodes, "
                    "trying %d instead.\n", lb->Proc,
@@ -725,7 +725,7 @@ static int LB_ParMetis_Jostle(
                      lb->Proc, max_proc_list_len, CHUNKSIZE);
 
             max_proc_list_len += CHUNKSIZE;
-            proc_list = (struct LB_edge_info *) LB_REALLOC(proc_list,
+            proc_list = (struct LB_edge_info *) ZOLTAN_REALLOC(proc_list,
                          max_proc_list_len*sizeof(struct LB_edge_info));
             proc_list_nbor = ZOLTAN_LB_REALLOC_GID_ARRAY(lb, proc_list_nbor,
                               max_proc_list_len);
@@ -768,10 +768,10 @@ static int LB_ParMetis_Jostle(
     }
     cross_edges = offset;
 
-    LB_FREE(&plist);
-    LB_FREE(&nbors_global);
-    LB_FREE(&nbors_proc);
-    LB_FREE(&tmp_ewgts);
+    ZOLTAN_FREE(&plist);
+    ZOLTAN_FREE(&nbors_global);
+    ZOLTAN_FREE(&nbors_proc);
+    ZOLTAN_FREE(&tmp_ewgts);
 
     /* Warn if we removed any self-edges */
     if (check_graph >= 1){
@@ -800,8 +800,8 @@ static int LB_ParMetis_Jostle(
 
     /* Allocate send buffer */
     packet_size = gid_size + sizeof(int);
-    sendbuf = (char *) LB_MALLOC(nsend * packet_size);
-    plist = (int *) LB_MALLOC(nsend * sizeof(int));
+    sendbuf = (char *) ZOLTAN_MALLOC(nsend * packet_size);
+    plist = (int *) ZOLTAN_MALLOC(nsend * sizeof(int));
 
     if (nsend && (!sendbuf || !plist) ){
       /* Not enough space */
@@ -845,7 +845,7 @@ static int LB_ParMetis_Jostle(
     }
 
     /* Allocate recv buffer */
-    recvbuf = (char *) LB_MALLOC(nrecv * packet_size);
+    recvbuf = (char *) ZOLTAN_MALLOC(nrecv * packet_size);
     if (nrecv && (!sendbuf || !plist) ){
       /* Not enough space */
       FREE_MY_MEMORY;
@@ -877,9 +877,9 @@ static int LB_ParMetis_Jostle(
 
     /* Change hash table to contain only border objects */
     /* that we received from other procs.               */
-    hash_nodes = (struct LB_hash_node *)LB_REALLOC(hash_nodes,
+    hash_nodes = (struct LB_hash_node *)ZOLTAN_REALLOC(hash_nodes,
       nrecv * sizeof(struct LB_hash_node));
-    hashtab = (struct LB_hash_node **) LB_REALLOC(hashtab,
+    hashtab = (struct LB_hash_node **) ZOLTAN_REALLOC(hashtab,
       nrecv * sizeof(struct LB_hash_node *) );
     if (nrecv && ((!hash_nodes) || (!hashtab))){
       /* Not enough memory */
@@ -933,17 +933,17 @@ static int LB_ParMetis_Jostle(
     }
 
     /* Free space */
-    LB_FREE(&sendbuf);
-    LB_FREE(&recvbuf);
-    LB_FREE(&proc_list);
-    LB_FREE(&proc_list_nbor);
-    LB_FREE(&plist);
-    LB_FREE(&hash_nodes);
-    LB_FREE(&hashtab);
+    ZOLTAN_FREE(&sendbuf);
+    ZOLTAN_FREE(&recvbuf);
+    ZOLTAN_FREE(&proc_list);
+    ZOLTAN_FREE(&proc_list_nbor);
+    ZOLTAN_FREE(&plist);
+    ZOLTAN_FREE(&hash_nodes);
+    ZOLTAN_FREE(&hashtab);
   
     /* Get vertex weights if needed */
     if (obj_wgt_dim){
-      vwgt = (idxtype *)LB_MALLOC(obj_wgt_dim*num_obj
+      vwgt = (idxtype *)ZOLTAN_MALLOC(obj_wgt_dim*num_obj
                           * sizeof(idxtype));
       ierr = scale_round_weights(float_vwgt, vwgt, num_obj, obj_wgt_dim, 1,
                                  (int) MAX_WGT_SUM, lb->Debug_Level, lb->Communicator);
@@ -961,7 +961,7 @@ static int LB_ParMetis_Jostle(
           printf("[%1d] Debug: scaled weights for vertex %d = %s\n", 
                  lb->Proc, vtxdist[lb->Proc]+i99, msg);
         }
-      LB_FREE(&float_vwgt);
+      ZOLTAN_FREE(&float_vwgt);
     }
 
     /* Get edge weights if needed */
@@ -988,7 +988,7 @@ static int LB_ParMetis_Jostle(
           printf("%d ", adjwgt[j]);
         printf("\n");
       }
-      LB_FREE(&ewgts);
+      ZOLTAN_FREE(&ewgts);
     }
 
   } /* end get_graph_data */
@@ -1003,7 +1003,7 @@ static int LB_ParMetis_Jostle(
       return (ierr);
     }
     /* Allocate space for the geometry data */
-    xyz = (float *) LB_MALLOC(ndims*num_obj * sizeof(float));
+    xyz = (float *) ZOLTAN_MALLOC(ndims*num_obj * sizeof(float));
     if (ndims && num_obj && !xyz){
       /* Not enough space */
       FREE_MY_MEMORY;
@@ -1063,7 +1063,7 @@ static int LB_ParMetis_Jostle(
   edgecut = -1; 
   wgtflag = 2*(obj_wgt_dim>0) + (comm_wgt_dim>0); 
   numflag = 0;
-  part = (idxtype *)LB_MALLOC((tmp_num_obj+1) * sizeof(idxtype));
+  part = (idxtype *)ZOLTAN_MALLOC((tmp_num_obj+1) * sizeof(idxtype));
   if (!part){
     /* Not enough memory */
     FREE_MY_MEMORY;
@@ -1072,7 +1072,7 @@ static int LB_ParMetis_Jostle(
   }
   if (obj_wgt_dim>0){
     /* Set Imbalance Tolerance for each component. For now, they are all the same. */
-    imb_tols = (float *) LB_MALLOC(obj_wgt_dim * sizeof(float));
+    imb_tols = (float *) ZOLTAN_MALLOC(obj_wgt_dim * sizeof(float));
     for (i=0; i<obj_wgt_dim; i++)
       imb_tols[i] = lb->Imbalance_Tol;
   }
@@ -1244,12 +1244,12 @@ static int LB_ParMetis_Jostle(
 
   /* Free weights; they are no longer needed */
   if (obj_wgt_dim) {
-    LB_FREE(&vwgt);
-    if (float_vwgt) LB_FREE(&float_vwgt);
-    LB_FREE(&imb_tols);
+    ZOLTAN_FREE(&vwgt);
+    if (float_vwgt) ZOLTAN_FREE(&float_vwgt);
+    ZOLTAN_FREE(&imb_tols);
   }
   if (comm_wgt_dim){
-    LB_FREE(&adjwgt);
+    ZOLTAN_FREE(&adjwgt);
   }
 
   /* If we have been using a scattered graph, convert partition result back to 
@@ -1257,7 +1257,7 @@ static int LB_ParMetis_Jostle(
    */
   if (scatter){
     /* Allocate space for partition array under original distribution */
-    part2 = (idxtype *) LB_MALLOC(num_obj*sizeof(idxtype)); 
+    part2 = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype)); 
     if (num_obj && !part2){
       FREE_MY_MEMORY;
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
@@ -1276,7 +1276,7 @@ static int LB_ParMetis_Jostle(
     LB_Comm_Destroy(&comm_plan); /* Destroy the comm. plan */
     /* We don't need the partition array with the scattered distribution 
      * any more */
-    LB_FREE(&part); 
+    ZOLTAN_FREE(&part); 
     /* part is now the partition array under the original distribution */
     part = part2;   
   }
@@ -1323,13 +1323,13 @@ static int LB_ParMetis_Jostle(
   }
 
   /* Free space */
-  LB_FREE(&part);
-  LB_FREE(&local_ids);
-  LB_FREE(&global_ids);
-  LB_FREE(&vtxdist);
-  LB_FREE(&xadj);
-  LB_FREE(&adjncy);
-  LB_FREE(&xyz);
+  ZOLTAN_FREE(&part);
+  ZOLTAN_FREE(&local_ids);
+  ZOLTAN_FREE(&global_ids);
+  ZOLTAN_FREE(&vtxdist);
+  ZOLTAN_FREE(&xadj);
+  ZOLTAN_FREE(&adjncy);
+  ZOLTAN_FREE(&xyz);
 
   /* Get a time here */
   if (get_times) times[3] = LB_Time(lb->Timer);
@@ -1383,23 +1383,23 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
   }
   else{
       /* Allocate local arrays */
-      nonint = (int *)LB_MALLOC(dim*sizeof(int));
-      nonint_local = (int *)LB_MALLOC(dim*sizeof(int));
-      scale = (float *)LB_MALLOC(dim*sizeof(float));
-      sum_wgt = (float *)LB_MALLOC(dim*sizeof(float));
-      sum_wgt_local = (float *)LB_MALLOC(dim*sizeof(float));
-      max_wgt = (float *)LB_MALLOC(dim*sizeof(float));
-      max_wgt_local = (float *)LB_MALLOC(dim*sizeof(float));
+      nonint = (int *)ZOLTAN_MALLOC(dim*sizeof(int));
+      nonint_local = (int *)ZOLTAN_MALLOC(dim*sizeof(int));
+      scale = (float *)ZOLTAN_MALLOC(dim*sizeof(float));
+      sum_wgt = (float *)ZOLTAN_MALLOC(dim*sizeof(float));
+      sum_wgt_local = (float *)ZOLTAN_MALLOC(dim*sizeof(float));
+      max_wgt = (float *)ZOLTAN_MALLOC(dim*sizeof(float));
+      max_wgt_local = (float *)ZOLTAN_MALLOC(dim*sizeof(float));
       if (!(nonint && nonint_local && scale && sum_wgt && sum_wgt_local
            && max_wgt && max_wgt_local)){
         ZOLTAN_PRINT_ERROR(proc, yo, "Out of memory.");
-        LB_FREE(&nonint);
-        LB_FREE(&nonint_local);
-        LB_FREE(&scale);
-        LB_FREE(&sum_wgt);
-        LB_FREE(&sum_wgt_local);
-        LB_FREE(&max_wgt);
-        LB_FREE(&max_wgt_local);
+        ZOLTAN_FREE(&nonint);
+        ZOLTAN_FREE(&nonint_local);
+        ZOLTAN_FREE(&scale);
+        ZOLTAN_FREE(&sum_wgt);
+        ZOLTAN_FREE(&sum_wgt_local);
+        ZOLTAN_FREE(&max_wgt);
+        ZOLTAN_FREE(&max_wgt_local);
         return ZOLTAN_MEMERR;
       }
       /* Initialize */
@@ -1478,13 +1478,13 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
         }
       }
 
-    LB_FREE(&nonint);
-    LB_FREE(&nonint_local);
-    LB_FREE(&scale);
-    LB_FREE(&sum_wgt);
-    LB_FREE(&sum_wgt_local);
-    LB_FREE(&max_wgt);
-    LB_FREE(&max_wgt_local);
+    ZOLTAN_FREE(&nonint);
+    ZOLTAN_FREE(&nonint_local);
+    ZOLTAN_FREE(&scale);
+    ZOLTAN_FREE(&sum_wgt);
+    ZOLTAN_FREE(&sum_wgt_local);
+    ZOLTAN_FREE(&max_wgt);
+    ZOLTAN_FREE(&max_wgt_local);
   }
   return ierr;
 }

@@ -103,7 +103,7 @@ int LB_Migrate_Octants(LB *lb, int *newpids, pOctant *octs, int nocts, int *nrec
   char *yo = "LB_Migrate_Octants";
   pOctant *newocts = NULL;                          /* New foreign octant pointers */
 
-  if((newocts = (pOctant *) LB_MALLOC(sizeof(pOctant)*(nocts+10))) == NULL) {
+  if((newocts = (pOctant *) ZOLTAN_MALLOC(sizeof(pOctant)*(nocts+10))) == NULL) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
@@ -122,13 +122,13 @@ int LB_Migrate_Octants(LB *lb, int *newpids, pOctant *octs, int nocts, int *nrec
   /* build message array */
 
 /*   if(nsends > 0) { */
-    if((snd_reply = (OCTNEW_msg *) LB_MALLOC((nsends + 1) * sizeof(OCTNEW_msg))) == NULL) {
+    if((snd_reply = (OCTNEW_msg *) ZOLTAN_MALLOC((nsends + 1) * sizeof(OCTNEW_msg))) == NULL) {
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
-    if((despid = (int *) LB_MALLOC((nsends+10) * sizeof(int))) == NULL) {
+    if((despid = (int *) ZOLTAN_MALLOC((nsends+10) * sizeof(int))) == NULL) {
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      LB_FREE(&snd_reply);
+      ZOLTAN_FREE(&snd_reply);
       return ZOLTAN_MEMERR;
     }
 /*   } */
@@ -149,16 +149,16 @@ int LB_Migrate_Octants(LB *lb, int *newpids, pOctant *octs, int nocts, int *nrec
   ierr = LB_Comm_Create(&comm_plan, nsends, despid, lb->Communicator, MigOctCommCreate, &nreceives);
   if(ierr != COMM_OK && ierr != COMM_WARN) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&snd_reply);
-    LB_FREE(&despid);
+    ZOLTAN_FREE(&snd_reply);
+    ZOLTAN_FREE(&despid);
     return (ierr);
   }
 
-  if((rcv_reply = (OCTNEW_msg *) LB_MALLOC((nreceives + 1) * sizeof(OCTNEW_msg))) == NULL) {
+  if((rcv_reply = (OCTNEW_msg *) ZOLTAN_MALLOC((nreceives + 1) * sizeof(OCTNEW_msg))) == NULL) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&snd_reply);
-    LB_FREE(&despid);
-    LB_FREE(&rcv_reply);
+    ZOLTAN_FREE(&snd_reply);
+    ZOLTAN_FREE(&despid);
+    ZOLTAN_FREE(&rcv_reply);
     return ZOLTAN_MEMERR;
   }
 
@@ -166,9 +166,9 @@ int LB_Migrate_Octants(LB *lb, int *newpids, pOctant *octs, int nocts, int *nrec
 		    sizeof(OCTNEW_msg), (char *) rcv_reply);
   if(ierr != COMM_OK && ierr != COMM_WARN) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&snd_reply);
-    LB_FREE(&despid);
-    LB_FREE(&rcv_reply);
+    ZOLTAN_FREE(&snd_reply);
+    ZOLTAN_FREE(&despid);
+    ZOLTAN_FREE(&rcv_reply);
     return (ierr);
   }
     /* Reply to malloc requests and Receive malloc replies */
@@ -181,9 +181,9 @@ int LB_Migrate_Octants(LB *lb, int *newpids, pOctant *octs, int nocts, int *nrec
 			    sizeof(OCTNEW_msg), NULL, (char *) snd_reply);
   if(ierr != COMM_OK && ierr != COMM_WARN) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&snd_reply);
-    LB_FREE(&despid);
-    LB_FREE(&rcv_reply);
+    ZOLTAN_FREE(&snd_reply);
+    ZOLTAN_FREE(&despid);
+    ZOLTAN_FREE(&rcv_reply);
     return (ierr);
   }
   
@@ -197,16 +197,16 @@ int LB_Migrate_Octants(LB *lb, int *newpids, pOctant *octs, int nocts, int *nrec
   ierr = LB_Comm_Destroy(&comm_plan);
   if(ierr != COMM_OK && ierr != COMM_WARN) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&snd_reply);
-    LB_FREE(&despid);
-    LB_FREE(&rcv_reply);
+    ZOLTAN_FREE(&snd_reply);
+    ZOLTAN_FREE(&despid);
+    ZOLTAN_FREE(&rcv_reply);
     return (ierr);
   }
 
 
-  LB_FREE(&snd_reply);
-  LB_FREE(&despid);
-  LB_FREE(&rcv_reply);
+  ZOLTAN_FREE(&snd_reply);
+  ZOLTAN_FREE(&despid);
+  ZOLTAN_FREE(&rcv_reply);
 
   /* set return value */
 
@@ -226,7 +226,7 @@ int LB_Migrate_Octants(LB *lb, int *newpids, pOctant *octs, int nocts, int *nrec
   
   LB_Update_Map(lb);
 
-  LB_FREE(&newocts);
+  ZOLTAN_FREE(&newocts);
   return ierr;
 }
 
@@ -282,21 +282,21 @@ int nocts;          /* number of octants leaving this processor */
       nsends++;
 
   if(nocts > 0) {
-    if((remoteumsg = (Update_msg *) LB_MALLOC((nocts+1) * sizeof(Update_msg)*9)) == NULL) {
+    if((remoteumsg = (Update_msg *) ZOLTAN_MALLOC((nocts+1) * sizeof(Update_msg)*9)) == NULL) {
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     
-    if((localumsg  = (Update_msg *) LB_MALLOC((nocts+1) * sizeof(Update_msg)*9)) == NULL) {
+    if((localumsg  = (Update_msg *) ZOLTAN_MALLOC((nocts+1) * sizeof(Update_msg)*9)) == NULL) {
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      LB_FREE(&remoteumsg);
+      ZOLTAN_FREE(&remoteumsg);
       return ZOLTAN_MEMERR;
     }
     
-    if((despid = (int *) LB_MALLOC((nocts+1) * sizeof(int)*9)) == NULL) {
+    if((despid = (int *) ZOLTAN_MALLOC((nocts+1) * sizeof(int)*9)) == NULL) {
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      LB_FREE(&remoteumsg);
-      LB_FREE(&localumsg);
+      ZOLTAN_FREE(&remoteumsg);
+      ZOLTAN_FREE(&localumsg);
       return ZOLTAN_MEMERR;
     }
   }
@@ -346,19 +346,19 @@ int nocts;          /* number of octants leaving this processor */
 			MigUpdCommCreate, &nreceives);
   if(ierr != COMM_OK && ierr != COMM_WARN) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&remoteumsg);
-    LB_FREE(&localumsg);
-    LB_FREE(&despid);
+    ZOLTAN_FREE(&remoteumsg);
+    ZOLTAN_FREE(&localumsg);
+    ZOLTAN_FREE(&despid);
     return (ierr);
   }
 
 
 /*   if(nreceives > 0) { */
-    if((rcv_umsg = (Update_msg *) LB_MALLOC((nreceives +1) * sizeof(Update_msg)*9)) == NULL) {
+    if((rcv_umsg = (Update_msg *) ZOLTAN_MALLOC((nreceives +1) * sizeof(Update_msg)*9)) == NULL) {
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      LB_FREE(&remoteumsg);
-      LB_FREE(&localumsg);
-      LB_FREE(&despid);
+      ZOLTAN_FREE(&remoteumsg);
+      ZOLTAN_FREE(&localumsg);
+      ZOLTAN_FREE(&despid);
       return ZOLTAN_MEMERR;
     }
 
@@ -367,10 +367,10 @@ int nocts;          /* number of octants leaving this processor */
 		      sizeof(Update_msg), (char *) rcv_umsg);
     if(ierr != COMM_OK && ierr != COMM_WARN) {
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      LB_FREE(&remoteumsg);
-      LB_FREE(&localumsg);
-      LB_FREE(&despid);
-      LB_FREE(&rcv_umsg);
+      ZOLTAN_FREE(&remoteumsg);
+      ZOLTAN_FREE(&localumsg);
+      ZOLTAN_FREE(&despid);
+      ZOLTAN_FREE(&rcv_umsg);
       return (ierr);
     }
 
@@ -402,17 +402,17 @@ int nocts;          /* number of octants leaving this processor */
   ierr = LB_Comm_Destroy(&comm_plan);
   if(ierr != COMM_OK && ierr != COMM_WARN) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&remoteumsg);
-    LB_FREE(&localumsg);
-    LB_FREE(&despid);
-    LB_FREE(&rcv_umsg);
+    ZOLTAN_FREE(&remoteumsg);
+    ZOLTAN_FREE(&localumsg);
+    ZOLTAN_FREE(&despid);
+    ZOLTAN_FREE(&rcv_umsg);
     return (ierr);
   }
 
-  LB_FREE(&remoteumsg);
-  LB_FREE(&localumsg);
-  LB_FREE(&rcv_umsg);
-  LB_FREE(&despid);
+  ZOLTAN_FREE(&remoteumsg);
+  ZOLTAN_FREE(&localumsg);
+  ZOLTAN_FREE(&rcv_umsg);
+  ZOLTAN_FREE(&despid);
   return ierr;
 }
 
@@ -449,14 +449,14 @@ int nrecocts;       /* number of octants received in this processor */
     if (newpids[i]!=lb->Proc)
       nsends++;
 
-  if((despid = (int *) LB_MALLOC((nocts+10) * sizeof(int))) == NULL) {
+  if((despid = (int *) ZOLTAN_MALLOC((nocts+10) * sizeof(int))) == NULL) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
 
-  if((msnd   = (Migrate_msg *) LB_MALLOC((nocts+10) * sizeof(Migrate_msg))) == NULL) {
+  if((msnd   = (Migrate_msg *) ZOLTAN_MALLOC((nocts+10) * sizeof(Migrate_msg))) == NULL) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&despid);
+    ZOLTAN_FREE(&despid);
     return ZOLTAN_MEMERR;
   }
 
@@ -467,7 +467,7 @@ int nrecocts;       /* number of octants received in this processor */
 	FILLMIGRATEMSG(octs[i], newocts[i], msnd[remotecount], lb->Proc); /* bug */
 	despid[remotecount++] = newpids[i];
 	LB_Oct_clearRegions(octs[i]);
-        /* KDDKDDFREE Change oct to &oct to allow NULL from LB_FREE 
+        /* KDDKDDFREE Change oct to &oct to allow NULL from ZOLTAN_FREE 
          * KDDKDDFREE to propagate back. */
 	LB_POct_free(OCT_info, &(octs[i]));
       }
@@ -476,15 +476,15 @@ int nrecocts;       /* number of octants received in this processor */
 			MigFinCommCreate, &nreceives);
   if(ierr != COMM_OK && ierr != COMM_WARN) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&despid);
-    LB_FREE(&msnd);
+    ZOLTAN_FREE(&despid);
+    ZOLTAN_FREE(&msnd);
     return (ierr);
   }
 
-  if((mrcv = (Migrate_msg *) LB_MALLOC((nreceives+10) * sizeof(Migrate_msg))) == NULL) {
+  if((mrcv = (Migrate_msg *) ZOLTAN_MALLOC((nreceives+10) * sizeof(Migrate_msg))) == NULL) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&despid);
-    LB_FREE(&msnd);
+    ZOLTAN_FREE(&despid);
+    ZOLTAN_FREE(&msnd);
     return ZOLTAN_MEMERR;
   }
 
@@ -492,9 +492,9 @@ int nrecocts;       /* number of octants received in this processor */
 		    sizeof(Migrate_msg), (char *) mrcv);
   if(ierr != COMM_OK && ierr != COMM_WARN) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&despid);
-    LB_FREE(&msnd);
-    LB_FREE(&mrcv);
+    ZOLTAN_FREE(&despid);
+    ZOLTAN_FREE(&msnd);
+    ZOLTAN_FREE(&mrcv);
     return (ierr);
   }
 
@@ -512,15 +512,15 @@ int nrecocts;       /* number of octants received in this processor */
   ierr = LB_Comm_Destroy(&comm_plan);
   if(ierr != COMM_OK && ierr != COMM_WARN) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&despid);
-    LB_FREE(&msnd);
-    LB_FREE(&mrcv);
+    ZOLTAN_FREE(&despid);
+    ZOLTAN_FREE(&msnd);
+    ZOLTAN_FREE(&mrcv);
     return (ierr);
   }
 
-  LB_FREE(&despid);
-  LB_FREE(&msnd);
-  LB_FREE(&mrcv);
+  ZOLTAN_FREE(&despid);
+  ZOLTAN_FREE(&msnd);
+  ZOLTAN_FREE(&mrcv);
 
   return ierr;
 }
@@ -543,14 +543,14 @@ static int LB_build_global_rootlist(LB *lb,Migrate_msg  **ret_rmsg, int *size) {
  
   nroots = RL_numRootOctants(LB_POct_localroots(OCT_info));
 
-  if((despid = (int *) LB_MALLOC((lb->Num_Proc)*nroots * sizeof(int))) == NULL) {
+  if((despid = (int *) ZOLTAN_MALLOC((lb->Num_Proc)*nroots * sizeof(int))) == NULL) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
 
-  if((snd_rmsg = (Migrate_msg *) LB_MALLOC((lb->Num_Proc)*nroots * sizeof(Migrate_msg))) == NULL) {
+  if((snd_rmsg = (Migrate_msg *) ZOLTAN_MALLOC((lb->Num_Proc)*nroots * sizeof(Migrate_msg))) == NULL) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&despid);
+    ZOLTAN_FREE(&despid);
     return ZOLTAN_MEMERR;
   }
   
@@ -571,15 +571,15 @@ static int LB_build_global_rootlist(LB *lb,Migrate_msg  **ret_rmsg, int *size) {
 
   if(ierr != COMM_OK && ierr != COMM_WARN) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&despid);
-    LB_FREE(&snd_rmsg);
+    ZOLTAN_FREE(&despid);
+    ZOLTAN_FREE(&snd_rmsg);
     return (ierr);
   }
 
-  if((rcv_rmsg = (Migrate_msg *) LB_MALLOC(nreceives * sizeof(Migrate_msg))) == NULL) {
+  if((rcv_rmsg = (Migrate_msg *) ZOLTAN_MALLOC(nreceives * sizeof(Migrate_msg))) == NULL) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&despid);
-    LB_FREE(&snd_rmsg);
+    ZOLTAN_FREE(&despid);
+    ZOLTAN_FREE(&snd_rmsg);
     return ZOLTAN_MEMERR;
   }
 
@@ -588,14 +588,14 @@ static int LB_build_global_rootlist(LB *lb,Migrate_msg  **ret_rmsg, int *size) {
   ierr = LB_Comm_Do(comm_plan, RootListCommDo, (char *) snd_rmsg, sizeof(Migrate_msg), (char *) rcv_rmsg);
   if(ierr != COMM_OK && ierr != COMM_WARN) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    LB_FREE(&despid);
-    LB_FREE(&snd_rmsg);
-    LB_FREE(&rcv_rmsg);
+    ZOLTAN_FREE(&despid);
+    ZOLTAN_FREE(&snd_rmsg);
+    ZOLTAN_FREE(&rcv_rmsg);
     return (ierr);
   }
 
-  LB_FREE(&despid);
-  LB_FREE(&snd_rmsg);
+  ZOLTAN_FREE(&despid);
+  ZOLTAN_FREE(&snd_rmsg);
 
 
   ierr = LB_Comm_Destroy(&comm_plan);
@@ -658,6 +658,6 @@ static int LB_Update_Map(LB *lb) {
   }
 
   if(rlsize > 0)
-    LB_FREE(&rootlists);
+    ZOLTAN_FREE(&rootlists);
   return ierr;
 }

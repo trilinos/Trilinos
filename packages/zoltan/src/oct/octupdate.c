@@ -314,10 +314,10 @@ static int lb_oct_init(
   }
 
   for (kk = 0; kk < nrectags; kk++) {
-    LB_FREE(&(import_regs[kk].Global_ID));
-    LB_FREE(&(import_regs[kk].Local_ID));
+    ZOLTAN_FREE(&(import_regs[kk].Global_ID));
+    ZOLTAN_FREE(&(import_regs[kk].Local_ID));
   }
-  LB_FREE(&import_regs);
+  ZOLTAN_FREE(&import_regs);
 
   ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling LB_oct_global_clear");
   LB_oct_global_clear(OCT_info);
@@ -500,7 +500,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
     part = hold / lb->Num_Proc;          /* how many octants per partition */
     remainder = hold % lb->Num_Proc; /* extra octants, not evenly divisible */
     extra = lb->Num_Proc - remainder;/* where to start adding extra octants */
-    array = (Map *) LB_MALLOC(hold * sizeof(Map));       /* allocate map array */
+    array = (Map *) ZOLTAN_MALLOC(hold * sizeof(Map));       /* allocate map array */
     if(array == NULL) {
       fprintf(stderr, "OCT ERROR on proc %d, could not allocate array map\n",
 	      lb->Proc);
@@ -578,12 +578,12 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
   ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling LB_migreg_migrate_orphans");
   LB_migreg_migrate_orphans(lb, ptr1, num_extra, level, OCT_info->map, c1, c2);
 
-/*   LB_FREE(&array); */
+/*   ZOLTAN_FREE(&array); */
   while(ptr1 != NULL) {
     ptr = ptr1->next;
-    LB_FREE(&(ptr1->Global_ID));
-    LB_FREE(&(ptr1->Local_ID));
-    LB_FREE(&ptr1);
+    ZOLTAN_FREE(&(ptr1->Global_ID));
+    ZOLTAN_FREE(&(ptr1->Local_ID));
+    ZOLTAN_FREE(&ptr1);
     ptr1 = ptr;
   }
   ZOLTAN_LB_TRACE_EXIT(lb, yo);
@@ -622,9 +622,9 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   }
 
   if (*num_objs > 0) {
-    obj_global_ids = ZOLTAN_LB_MALLOC_GID_ARRAY(lb,(*num_objs));
-    obj_local_ids  = ZOLTAN_LB_MALLOC_LID_ARRAY(lb,(*num_objs));
-    obj_wgts       = (float *) LB_MALLOC((*num_objs) * sizeof(float));
+    obj_global_ids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb,(*num_objs));
+    obj_local_ids  = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb,(*num_objs));
+    obj_wgts       = (float *) ZOLTAN_MALLOC((*num_objs) * sizeof(float));
     if (!obj_global_ids || (num_lid_entries && !obj_local_ids) || !obj_wgts) {
       fprintf(stderr, "OCT [%d] Error from %s: Insufficient memory\n",lb->Proc,yo);
       exit(-1);
@@ -717,9 +717,9 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   
       ptr = NULL;
     }
-    LB_FREE(&obj_global_ids);
-    LB_FREE(&obj_local_ids);
-    LB_FREE(&obj_wgts);
+    ZOLTAN_FREE(&obj_global_ids);
+    ZOLTAN_FREE(&obj_local_ids);
+    ZOLTAN_FREE(&obj_wgts);
   }
   
   MPI_Allreduce(&(min[0]), &(global_min[0]), 3, 
@@ -758,10 +758,10 @@ static void initialize_region(LB *lb, pRegion *ret, ZOLTAN_ID_PTR global_id,
   pRegion reg;
   int ierr = 0;
   char *yo = "initialize_region";
-  reg = (pRegion) LB_MALLOC(sizeof(Region));
+  reg = (pRegion) ZOLTAN_MALLOC(sizeof(Region));
   *ret = reg;
-  reg->Global_ID = ZOLTAN_LB_MALLOC_GID(lb);
-  reg->Local_ID = ZOLTAN_LB_MALLOC_LID(lb);
+  reg->Global_ID = ZOLTAN_ZOLTAN_MALLOC_GID(lb);
+  reg->Local_ID = ZOLTAN_ZOLTAN_MALLOC_LID(lb);
   ZOLTAN_LB_SET_GID(lb, reg->Global_ID, global_id);
   ZOLTAN_LB_SET_LID(lb, reg->Local_ID, local_id);
   reg->Proc = lb->Proc;
@@ -1100,9 +1100,9 @@ static void LB_oct_terminal_refine(LB *lb, pOctant oct,int count)
     cnum=LB_child_which_wrapper(OCT_info,oct, region->Coord);
     /* add region to octant's regionlist */
     LB_Oct_addRegion(lb, child[cnum], region);
-    LB_FREE(&(region->Global_ID));
-    LB_FREE(&(region->Local_ID));
-    LB_FREE(&region);
+    ZOLTAN_FREE(&(region->Global_ID));
+    ZOLTAN_FREE(&(region->Local_ID));
+    ZOLTAN_FREE(&region);
     region = entry;
   }
 

@@ -38,7 +38,7 @@ int num_geom;
    */
 
   if (lb->Data_Structure == NULL) {
-    rcb = (RCB_STRUCT *) LB_MALLOC(sizeof(RCB_STRUCT));
+    rcb = (RCB_STRUCT *) ZOLTAN_MALLOC(sizeof(RCB_STRUCT));
     if (rcb == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
@@ -51,8 +51,8 @@ int num_geom;
     rcb->Dots = NULL;
 
     rcb->Tree_Ptr = (struct rcb_tree *)
-      LB_MALLOC(lb->Num_Proc* sizeof(struct rcb_tree));
-    rcb->Box = (struct rcb_box *) LB_MALLOC(sizeof(struct rcb_box));
+      ZOLTAN_MALLOC(lb->Num_Proc* sizeof(struct rcb_tree));
+    rcb->Box = (struct rcb_box *) ZOLTAN_MALLOC(sizeof(struct rcb_box));
     if (rcb->Tree_Ptr == NULL || rcb->Box == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_RCB_Free_Structure(lb);
@@ -69,9 +69,9 @@ int num_geom;
   }
   else {
     rcb = (RCB_STRUCT *) lb->Data_Structure;
-    LB_FREE(&(rcb->Global_IDs));
-    LB_FREE(&(rcb->Local_IDs));
-    LB_FREE(&(rcb->Dots));
+    ZOLTAN_FREE(&(rcb->Global_IDs));
+    ZOLTAN_FREE(&(rcb->Local_IDs));
+    ZOLTAN_FREE(&(rcb->Dots));
   }
 
   ierr = LB_RB_Build_Structure(lb, &(rcb->Global_IDs), &(rcb->Local_IDs),
@@ -100,11 +100,11 @@ RCB_STRUCT *rcb;                      /* Data structure for RCB.             */
   rcb = (RCB_STRUCT *) lb->Data_Structure;
 
   if (rcb != NULL) {
-    LB_FREE(&(rcb->Tree_Ptr));
-    LB_FREE(&(rcb->Box));
-    LB_FREE(&(rcb->Global_IDs));
-    LB_FREE(&(rcb->Local_IDs));
-    LB_FREE(&(rcb->Dots));
-    LB_FREE(&(lb->Data_Structure));
+    ZOLTAN_FREE(&(rcb->Tree_Ptr));
+    ZOLTAN_FREE(&(rcb->Box));
+    ZOLTAN_FREE(&(rcb->Global_IDs));
+    ZOLTAN_FREE(&(rcb->Local_IDs));
+    ZOLTAN_FREE(&(rcb->Dots));
+    ZOLTAN_FREE(&(lb->Data_Structure));
   }
 }

@@ -76,13 +76,13 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
     amount_of_bits = 8*size_of_unsigned * SFC_KEYLENGTH - *amount_of_used_bits;
   number_of_bins = pow(2,i);
     
-  ll_prev_bins = (int*) LB_MALLOC(sizeof(int) * (number_of_cuts+1));
+  ll_prev_bins = (int*) ZOLTAN_MALLOC(sizeof(int) * (number_of_cuts+1));
   if(ll_prev_bins == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }    
   
-  ll_bins_head_copy = (int*) LB_MALLOC(sizeof(int) * (number_of_cuts+1));
+  ll_bins_head_copy = (int*) ZOLTAN_MALLOC(sizeof(int) * (number_of_cuts+1));
   if(ll_bins_head_copy == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -92,7 +92,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
     ll_bins_head_copy[i] = -1;
   
   work_prev_allocated_copy = 
-    (float*) LB_MALLOC(sizeof(float) *wgt_dim * (number_of_cuts+1));
+    (float*) ZOLTAN_MALLOC(sizeof(float) *wgt_dim * (number_of_cuts+1));
   if(work_prev_allocated_copy == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -116,7 +116,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
 	ll_location = vert_in_cut_ptr[ll_location].next_sfc_vert_index;
       }  
       
-      binned_weight_array = (float*) LB_MALLOC(number_of_bins*wgt_dim*sizeof(float));
+      binned_weight_array = (float*) ZOLTAN_MALLOC(number_of_bins*wgt_dim*sizeof(float));
       if(binned_weight_array == NULL) {
 	ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
 	return(ZOLTAN_MEMERR);
@@ -133,7 +133,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
 	ll_location = vert_in_cut_ptr[ll_location].next_sfc_vert_index;
       }
       
-      bin_proc_array = (int*) LB_MALLOC(sizeof(int) * (1+number_of_cuts));
+      bin_proc_array = (int*) ZOLTAN_MALLOC(sizeof(int) * (1+number_of_cuts));
       if(bin_proc_array == NULL) {
 	ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
 	return(ZOLTAN_MEMERR);
@@ -221,8 +221,8 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
 	if(ll_prev_bins[i] != -1)
 	  vert_in_cut_ptr[ll_prev_bins[i]].next_sfc_vert_index = -1;
 
-      LB_FREE(&binned_weight_array);
-      LB_FREE(&bin_proc_array);
+      ZOLTAN_FREE(&binned_weight_array);
+      ZOLTAN_FREE(&bin_proc_array);
     }
   
   for(i=0;i<=number_of_cuts;i++) {
@@ -231,9 +231,9 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
       work_prev_allocated[i*wgt_dim+j] = work_prev_allocated_copy[i*wgt_dim+j];
   }
   
-  LB_FREE(&ll_prev_bins);
-  LB_FREE(&ll_bins_head_copy);
-  LB_FREE(&work_prev_allocated_copy);
+  ZOLTAN_FREE(&ll_prev_bins);
+  ZOLTAN_FREE(&ll_bins_head_copy);
+  ZOLTAN_FREE(&work_prev_allocated_copy);
   
 
   *amount_of_used_bits += amount_of_bits;

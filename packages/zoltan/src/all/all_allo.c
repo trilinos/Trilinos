@@ -38,7 +38,7 @@ char *val)			/* value of variable */
 
     status = LB_Check_Param(name, val, malloc_params, &result, &index);
     if (status == 0 && index == 0) {
-	LB_Set_Memory_Debug(result.ival);
+	Zoltan_Memory_Debug(result.ival);
 	status = 3;
     }
 
@@ -146,15 +146,15 @@ int LB_Special_Malloc(LB *lb, void **array, int size,
 
       switch(type) {
       case LB_SPECIAL_MALLOC_INT:
-         *array = (int *) LB_MALLOC(size*sizeof(int));
+         *array = (int *) ZOLTAN_MALLOC(size*sizeof(int));
          if (*array==NULL) success=0;
          break;
       case LB_SPECIAL_MALLOC_GID:
-         *array = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, size);
+         *array = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, size);
          if (*array==NULL) success=0;
          break;
       case LB_SPECIAL_MALLOC_LID:
-         *array = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, size);
+         *array = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, size);
          if (lb->Num_LID > 0 && *array==NULL) success = 0;
          break;
       default:
@@ -224,7 +224,7 @@ int LB_Special_Free(LB *lb, void **array,
 
 /* deallocation from C */
 
-      LB_FREE(array);
+      ZOLTAN_FREE(array);
    }
    return success;
 }

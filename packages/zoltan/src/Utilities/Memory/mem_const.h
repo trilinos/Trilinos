@@ -33,29 +33,29 @@
 #   define	PROTO(x)	()
 #endif
 
-#define LB_MALLOC(a) LB_Malloc((a), __FILE__, __LINE__)
-#define LB_REALLOC(a, b) LB_Realloc((a), (b), __FILE__, __LINE__)
-#define LB_FREE(a) LB_Free((void **) (a), __FILE__, __LINE__)
+#define ZOLTAN_MALLOC(a) Zoltan_Malloc((a), __FILE__, __LINE__)
+#define ZOLTAN_REALLOC(a, b) Zoltan_Realloc((a), (b), __FILE__, __LINE__)
+#define ZOLTAN_FREE(a) Zoltan_Free((void **) (a), __FILE__, __LINE__)
 
 /* function declarations for dynamic array allocation */
 
 #ifdef __STDC__
-extern double *LB_Array_Alloc(char *file, int lineno, int numdim, ...);
+extern double *Zoltan_Array_Alloc(char *file, int lineno, int numdim, ...);
 #else
-extern double *LB_Array_Alloc();
+extern double *Zoltan_Array_Alloc();
 #endif
 
-extern void LB_Set_Memory_Debug(int);
-extern void LB_Free(void **ptr, char *file, int lineno);
-extern double *LB_Malloc(int n, char *file, int lineno);
-extern double *LB_Realloc(void *ptr, int n, char *filename, int lineno);
-extern void LB_Memory_Stats();
-extern int LB_Memory_Num();
+extern void Zoltan_Memory_Debug(int);
+extern void Zoltan_Free(void **ptr, char *file, int lineno);
+extern double *Zoltan_Malloc(int n, char *file, int lineno);
+extern double *Zoltan_Realloc(void *ptr, int n, char *filename, int lineno);
+extern void Zoltan_Memory_Stats();
+extern int Zoltan_Memory_Num();
 
 #ifdef __STDC__
-extern void LB_Multifree(int n, ...);
+extern void Zoltan_Multifree(int n, ...);
 #else
-extern void LB_Multifree();
+extern void Zoltan_Multifree();
 #endif
 
 #endif

@@ -49,7 +49,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
     return(ZOLTAN_FATAL);
   }      
 
-  overloaded_bin_flag = (int*) LB_MALLOC(sizeof(int) * lb->Num_Proc);
+  overloaded_bin_flag = (int*) ZOLTAN_MALLOC(sizeof(int) * lb->Num_Proc);
   if(overloaded_bin_flag == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -63,7 +63,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
   
   overloaded_bin_flag[lb->Proc] = j;
     
-  istore = (int*) LB_MALLOC(sizeof(int) * lb->Num_Proc);
+  istore = (int*) ZOLTAN_MALLOC(sizeof(int) * lb->Num_Proc);
   if(istore == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -72,7 +72,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
   i = MPI_Allreduce(overloaded_bin_flag, istore, lb->Num_Proc, 
 		    MPI_INT, MPI_SUM, lb->Communicator);
   
-  LB_FREE(&overloaded_bin_flag);
+  ZOLTAN_FREE(&overloaded_bin_flag);
   
   number_of_bins_to_refine=0;
   for(i=0;i<lb->Num_Proc;i++) 
@@ -80,7 +80,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
     
   if(number_of_bins_to_refine==0) {
     /* all of the bins are okay! */
-    LB_FREE(&istore);
+    ZOLTAN_FREE(&istore);
     return(ZOLTAN_OK);
   }
 
@@ -106,7 +106,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
   number_of_bits = i;
   
   /* figure out which coarse bins to refine */
-  istore2 = (int*) LB_MALLOC(sizeof(int) * number_of_bins_to_refine);
+  istore2 = (int*) ZOLTAN_MALLOC(sizeof(int) * number_of_bins_to_refine);
   if(istore2 == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -126,7 +126,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
       k += istore[i]; 
   }
   
-  bins_to_refine = (int*) LB_MALLOC(sizeof(int) * number_of_bins_to_refine);
+  bins_to_refine = (int*) ZOLTAN_MALLOC(sizeof(int) * number_of_bins_to_refine);
   if(bins_to_refine == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -134,7 +134,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
   i = MPI_Allreduce(istore2, bins_to_refine, number_of_bins_to_refine, 
 		    MPI_INT, MPI_SUM, lb->Communicator);
   
-  LB_FREE(&istore2);
+  ZOLTAN_FREE(&istore2);
   
   /* now go through all of the bins separately and refine them until 
      all bins are less than max_cuts_in_bin */
@@ -180,20 +180,20 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
     }
   }
 
-  LB_FREE(&istore);
-  LB_FREE(&bins_to_refine);
+  ZOLTAN_FREE(&istore);
+  ZOLTAN_FREE(&bins_to_refine);
   
   /* make sure that every processor has a correct copy of the work allocated
      to all processors */
   
-  fstore = (float*) LB_MALLOC(sizeof(float) * lb->Num_Proc);
+  fstore = (float*) ZOLTAN_MALLOC(sizeof(float) * lb->Num_Proc);
   for(i=0;i<lb->Num_Proc;i++)
     fstore[i] = actual_work_allocated[i];
   
   i = MPI_Allreduce(fstore, actual_work_allocated, lb->Num_Proc, MPI_FLOAT,
 		    MPI_MIN, lb->Communicator);
   
-  LB_FREE(&fstore);
+  ZOLTAN_FREE(&fstore);
   
   return(ZOLTAN_OK);
 }
@@ -237,7 +237,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
   for(i=0;i<=SFC_KEYLENGTH;i++)
     check_bin[i] = 0;
   
-  binned_wgt_array = (float*) LB_MALLOC(sizeof(float)*my_bins_per_proc*wgt_dim); 
+  binned_wgt_array = (float*) ZOLTAN_MALLOC(sizeof(float)*my_bins_per_proc*wgt_dim); 
   if(binned_wgt_array == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -266,7 +266,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
     if(i == 1) {
       ZOLTAN_PRINT_WARN(lb->Proc, yo, 
          "A coarse bin has too many cuts in it and the cuts are all from one object.");
-      LB_FREE(&binned_wgt_array);
+      ZOLTAN_FREE(&binned_wgt_array);
       return(ZOLTAN_OK);
     }
   }
@@ -297,7 +297,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
     
   if(proc == lb->Proc) {
     summed_binned_wgt_array = 
-      (float*) LB_MALLOC(sizeof(float)*my_bins_per_proc*wgt_dim);
+      (float*) ZOLTAN_MALLOC(sizeof(float)*my_bins_per_proc*wgt_dim);
     if(summed_binned_wgt_array == NULL) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
@@ -308,14 +308,14 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
 		 my_bins_per_proc*wgt_dim, MPI_FLOAT, MPI_SUM, 
 		 proc, lb->Communicator);
   
-  bin_proc_array = (int*) LB_MALLOC(sizeof(int)*(number_of_cuts+1));
+  bin_proc_array = (int*) ZOLTAN_MALLOC(sizeof(int)*(number_of_cuts+1));
   if(bin_proc_array == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }  
   for(i=0;i<=number_of_cuts;i++)
     bin_proc_array[i] = my_bins_per_proc;
-  number_of_cuts_in_bin = (int*) LB_MALLOC(sizeof(int) * my_bins_per_proc);
+  number_of_cuts_in_bin = (int*) ZOLTAN_MALLOC(sizeof(int) * my_bins_per_proc);
   if(number_of_cuts_in_bin == NULL) {
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
@@ -328,7 +328,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
 
   /* only proc finds the new cuts */
   if(proc == lb->Proc) {
-    float* summed_wgts = (float*) LB_MALLOC(sizeof(float) * wgt_dim);
+    float* summed_wgts = (float*) ZOLTAN_MALLOC(sizeof(float) * wgt_dim);
     for(i=0;i<wgt_dim;i++)
       summed_wgts[i] = 0;
     for(i=0;i<my_bins_per_proc;i++)
@@ -353,7 +353,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
 				    my_bins_per_proc, &new_number_of_cuts, number_of_cuts,
 				    0, number_of_cuts_in_bin);
     }
-    LB_FREE(&summed_wgts);
+    ZOLTAN_FREE(&summed_wgts);
   }
 
   /* send out bin_proc_array from proc to the rest of the processors */
@@ -413,10 +413,10 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
     j += number_of_cuts_in_bin[i];
   }
       
-  LB_FREE(&number_of_cuts_in_bin);
-  LB_FREE(&binned_wgt_array);
-  LB_FREE(&bin_proc_array);
-  LB_FREE(&summed_binned_wgt_array);
+  ZOLTAN_FREE(&number_of_cuts_in_bin);
+  ZOLTAN_FREE(&binned_wgt_array);
+  ZOLTAN_FREE(&bin_proc_array);
+  ZOLTAN_FREE(&summed_binned_wgt_array);
 
   return ZOLTAN_OK;
 }

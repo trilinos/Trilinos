@@ -54,7 +54,7 @@ void Zoltan_DD_Destroy (
       for (ptr = (*dd)->table[i] ; ptr != NULL ; ptr = next)
          {
          next = ptr->next ;            /* save before deletion         */
-         LB_FREE (&ptr) ;              /* destroy node                 */
+         ZOLTAN_FREE (&ptr) ;              /* destroy node                 */
          }
 
    /* execute user registered cleanup function, if needed */
@@ -66,7 +66,7 @@ void Zoltan_DD_Destroy (
    debug_level = (*dd)->debug_level ;  /* save for final debug print   */
    my_proc     = (*dd)->my_proc ;      /* save for final debug print   */
 
-   LB_FREE (dd) ;                      /* free directory structure     */
+   ZOLTAN_FREE (dd) ;                      /* free directory structure     */
 
    if (debug_level > 1)
       ZOLTAN_TRACE_EXIT (my_proc, yo, NULL) ;

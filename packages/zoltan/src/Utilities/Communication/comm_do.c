@@ -94,7 +94,7 @@ char *recv_data)		/* array of data I'll own after comm */
 	recv_buff = recv_data;
     }
     else {			/* Need to buffer receive to reorder */
-	recv_buff = (char *) LB_MALLOC(plan->total_recv_size * nbytes);
+	recv_buff = (char *) ZOLTAN_MALLOC(plan->total_recv_size * nbytes);
 	if (recv_buff == NULL && plan->total_recv_size * nbytes != 0)
 	    out_of_mem = 1;
     }
@@ -136,7 +136,7 @@ char *recv_data)		/* array of data I'll own after comm */
 
     /* Do remaining allocation to check for any mem problems. */
     if (plan->indices_to != NULL) {	/* can't sent straight from input */
-	send_buff = (char *) LB_MALLOC(plan->max_send_size * nbytes);
+	send_buff = (char *) ZOLTAN_MALLOC(plan->max_send_size * nbytes);
 	if (send_buff == 0 && plan->max_send_size * nbytes != 0)
 	    out_of_mem = 1;
     }
@@ -149,9 +149,9 @@ char *recv_data)		/* array of data I'll own after comm */
     MPI_Allreduce(&out_of_mem, &j, 1, MPI_INT, MPI_SUM, plan->comm);
 
     if (j > 0) {		/* Some proc is out of memory -> Punt */
-	LB_FREE((void **) &send_buff);
+	ZOLTAN_FREE((void **) &send_buff);
 	if (plan->indices_from != NULL)
-	    LB_FREE((void **) &recv_buff);
+	    ZOLTAN_FREE((void **) &recv_buff);
 	return (COMM_MEMERR);
     }
 
@@ -218,7 +218,7 @@ char *recv_data)		/* array of data I'll own after comm */
 		}
 	    }
 
-	    LB_FREE((void **) &send_buff);
+	    ZOLTAN_FREE((void **) &send_buff);
 	}
     }
     else {			/* Data of differing sizes */
@@ -277,7 +277,7 @@ char *recv_data)		/* array of data I'll own after comm */
 		}
 	    }
 
-	    LB_FREE((void **) &send_buff);
+	    ZOLTAN_FREE((void **) &send_buff);
 	}
     }
 
@@ -320,7 +320,7 @@ char *recv_data)		/* array of data I'll own after comm */
 	    }
 	}
 
-	LB_FREE((void **) &recv_buff);
+	ZOLTAN_FREE((void **) &recv_buff);
     }
 
     return (COMM_OK);

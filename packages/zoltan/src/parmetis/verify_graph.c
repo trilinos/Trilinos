@@ -280,9 +280,9 @@ barrier1:
   if (check_graph >= 2) {
     /* Allocate space for off-proc data */
     mesg_size = (2+ewgt_dim)*sizeof(idxtype);
-    sendbuf = (char *) LB_MALLOC(cross_edges*mesg_size);
-    recvbuf = (char *) LB_MALLOC(cross_edges*mesg_size);
-    proclist = (int *) LB_MALLOC(cross_edges*sizeof(int));
+    sendbuf = (char *) ZOLTAN_MALLOC(cross_edges*mesg_size);
+    recvbuf = (char *) ZOLTAN_MALLOC(cross_edges*mesg_size);
+    proclist = (int *) ZOLTAN_MALLOC(cross_edges*sizeof(int));
 
     if (cross_edges && !(sendbuf && recvbuf && proclist)){
        ZOLTAN_PRINT_ERROR(proc, yo, "Out of memory.");
@@ -374,9 +374,9 @@ barrier1:
     }
 
     /* Free memory */
-    LB_FREE(&sendbuf);
-    LB_FREE(&recvbuf);
-    LB_FREE(&proclist);
+    ZOLTAN_FREE(&sendbuf);
+    ZOLTAN_FREE(&recvbuf);
+    ZOLTAN_FREE(&proclist);
   }
 
   /* Compute global error code */

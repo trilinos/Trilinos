@@ -63,7 +63,7 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
 
     /* Make data structures that will allow me to traverse arrays quickly. */
     /* Begin by determining number of objects I'm sending to each processor. */
-    starts = (int *) LB_MALLOC((nprocs + 1) * sizeof(int));
+    starts = (int *) ZOLTAN_MALLOC((nprocs + 1) * sizeof(int));
 
     out_of_mem = FALSE;
     if (starts == NULL) { 
@@ -107,9 +107,9 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
 	    if (starts[i] != 0) ++nsends;
 	}
 	indices_to = NULL;
-	lengths_to = (int *) LB_MALLOC(nsends * sizeof(int));
-	starts_to = (int *) LB_MALLOC(nsends * sizeof(int));
-	procs_to = (int *) LB_MALLOC(nsends * sizeof(int));
+	lengths_to = (int *) ZOLTAN_MALLOC(nsends * sizeof(int));
+	starts_to = (int *) ZOLTAN_MALLOC(nsends * sizeof(int));
+	procs_to = (int *) ZOLTAN_MALLOC(nsends * sizeof(int));
         if (nsends != 0 && (lengths_to == NULL || starts_to == NULL ||
 			    procs_to == NULL)) {
 	    out_of_mem = TRUE;
@@ -154,7 +154,7 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
 
 	starts[0] = 0;
 
-	indices_to = (int *) LB_MALLOC(nactive * sizeof(int));
+	indices_to = (int *) ZOLTAN_MALLOC(nactive * sizeof(int));
 
         if (nactive != 0 && indices_to == NULL) {
 	    out_of_mem = TRUE;
@@ -179,9 +179,9 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
 
 	/* Construct lengths_to, starts_to and procs_to arrays. */
 	/* Note: If indices_to is needed, procs are in increasing order */
-	lengths_to = (int *) LB_MALLOC(nsends * sizeof(int));
-	starts_to = (int *) LB_MALLOC(nsends * sizeof(int));
-	procs_to = (int *) LB_MALLOC(nsends * sizeof(int));
+	lengths_to = (int *) ZOLTAN_MALLOC(nsends * sizeof(int));
+	starts_to = (int *) ZOLTAN_MALLOC(nsends * sizeof(int));
+	procs_to = (int *) ZOLTAN_MALLOC(nsends * sizeof(int));
         if (nsends != 0 && (lengths_to == NULL || starts_to == NULL ||
 			    procs_to == NULL)) {
 	    out_of_mem = TRUE;
@@ -205,7 +205,7 @@ int      *pnvals_recv)		/* returned # vals I own after communication */
     /* Now change nsends to count only non-self messages */
     nsends -= self_msg;
 
-    LB_FREE((void **) &starts);
+    ZOLTAN_FREE((void **) &starts);
 
 
 Mem_Err:
@@ -215,7 +215,7 @@ Mem_Err:
 	       &lengths_from, &procs_from, &nrecvs, my_proc, nprocs,
 	       out_of_mem,tag, comm);
 
-    starts_from = (int *) LB_MALLOC((nrecvs + self_msg) * sizeof(int));
+    starts_from = (int *) ZOLTAN_MALLOC((nrecvs + self_msg) * sizeof(int));
     if (starts_from == NULL && nrecvs + self_msg != 0) {
 	comm_flag = COMM_MEMERR;
     }
@@ -231,12 +231,12 @@ Mem_Err:
         if (comm_flag == COMM_MEMERR) {
 	    COMM_ERROR("Out of memory", yo, my_proc);
 	}
-	LB_FREE((void **) &starts_from);
-	LB_FREE((void **) &indices_to);
-	LB_FREE((void **) &procs_to);
-	LB_FREE((void **) &starts_to);
-	LB_FREE((void **) &lengths_to);
-	LB_FREE((void **) &starts);
+	ZOLTAN_FREE((void **) &starts_from);
+	ZOLTAN_FREE((void **) &indices_to);
+	ZOLTAN_FREE((void **) &procs_to);
+	ZOLTAN_FREE((void **) &starts_to);
+	ZOLTAN_FREE((void **) &lengths_to);
+	ZOLTAN_FREE((void **) &starts);
 	return(comm_flag);
     }
 
@@ -244,7 +244,7 @@ Mem_Err:
     for (i = 0; i < nrecvs + self_msg; i++)
 	total_recv_size += lengths_from[i];
 
-    plan = (COMM_OBJ *) LB_MALLOC(sizeof(COMM_OBJ));
+    plan = (COMM_OBJ *) ZOLTAN_MALLOC(sizeof(COMM_OBJ));
     plan->lengths_to = lengths_to;
     plan->starts_to = starts_to;
     plan->procs_to = procs_to;
@@ -273,8 +273,8 @@ Mem_Err:
     plan->total_recv_size = total_recv_size;
     plan->comm = comm;
 
-    plan->request = (MPI_Request *) LB_MALLOC(plan->nrecvs * sizeof(MPI_Request));
-    plan->status = (MPI_Status *) LB_MALLOC(plan->nrecvs * sizeof(MPI_Status));
+    plan->request = (MPI_Request *) ZOLTAN_MALLOC(plan->nrecvs * sizeof(MPI_Request));
+    plan->status = (MPI_Status *) ZOLTAN_MALLOC(plan->nrecvs * sizeof(MPI_Status));
 
     if (plan->nrecvs && ((plan->request == NULL) || (plan->status == NULL))) 
         comm_flag = COMM_MEMERR;

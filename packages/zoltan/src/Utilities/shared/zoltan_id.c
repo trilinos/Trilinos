@@ -43,7 +43,11 @@ ZOLTAN_ID_PTR ZOLTAN_Malloc_ID(int n, char *file, int line)
 ZOLTAN_ID_PTR tmp;
 char *yo = "ZOLTAN_Malloc_ID";
 
-  tmp = (ZOLTAN_ID_PTR) LB_Malloc(n * sizeof(ZOLTAN_ID_TYPE), file, line);
+  /* 
+   * Don't use ZOLTAN_MALLOC macro here; prefer to pass file and line 
+   * where ZOLTAN_Malloc_ID was called.
+   */
+  tmp = (ZOLTAN_ID_PTR) Zoltan_Malloc(n * sizeof(ZOLTAN_ID_TYPE), file, line);
 
   if (tmp != NULL) {
     ZOLTAN_INIT_ID(n,tmp);

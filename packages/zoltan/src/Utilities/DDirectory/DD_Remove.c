@@ -66,7 +66,7 @@ int Zoltan_DD_Remove (
    /* allocate memory for processor contact list */
    if (count > 0)
       {
-      procs = (int *) LB_MALLOC (sizeof (int) * count);
+      procs = (int *) ZOLTAN_MALLOC (sizeof (int) * count);
       if (procs == NULL)
          {
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc proc list.") ;
@@ -79,7 +79,7 @@ int Zoltan_DD_Remove (
    /* allocate memory for DD_Remove_Msg send buffer */
    if (count > 0)
       {
-      sbuff = (char *) LB_MALLOC (dd->remove_msg_size * count) ;
+      sbuff = (char *) ZOLTAN_MALLOC (dd->remove_msg_size * count) ;
       if (sbuff == NULL)
          {
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc send buffer.") ;
@@ -116,7 +116,7 @@ int Zoltan_DD_Remove (
    /* allocate receive buffer for nrec DD_Remove_Msg structures */
    if (nrec > 0)
       {
-      rbuff = (char *) LB_MALLOC (nrec * dd->remove_msg_size) ;
+      rbuff = (char *) ZOLTAN_MALLOC (nrec * dd->remove_msg_size) ;
       if (rbuff == NULL)
          {
          ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Receive buffer malloc failed.") ;
@@ -152,9 +152,9 @@ int Zoltan_DD_Remove (
 
    /* done, now free up things and return */
  fini:
-   LB_FREE (&procs) ;
-   LB_FREE (&sbuff) ;
-   LB_FREE (&rbuff) ;
+   ZOLTAN_FREE (&procs) ;
+   ZOLTAN_FREE (&sbuff) ;
+   ZOLTAN_FREE (&rbuff) ;
    LB_Comm_Destroy (&plan) ;
 
    if (dd->debug_level > 0)
@@ -211,7 +211,7 @@ static int DD_Remove_Local (Zoltan_DD_Directory *dd,
          /* found node to remove, need to preserve its next ptr. */
           old =  *ptr ;
          *ptr = (*ptr)->next ;
-         LB_FREE (&old) ;       /* now OK to delete node */
+         ZOLTAN_FREE (&old) ;       /* now OK to delete node */
 
          if (dd->debug_level > 2)
             ZOLTAN_TRACE_EXIT (dd->my_proc, yo, NULL) ;

@@ -57,10 +57,10 @@ int LB_Create_Proc_List(
      else
         MPI_Comm_size(comm, &nprocs);
 
-     if ((send = (int *) LB_MALLOC(3*nprocs*sizeof(int))) == NULL)
+     if ((send = (int *) ZOLTAN_MALLOC(3*nprocs*sizeof(int))) == NULL)
         return ZOLTAN_MEMERR;
-     if ((tmp_send = (int *) LB_MALLOC(3*nprocs*sizeof(int))) == NULL) {
-        LB_FREE(&send);
+     if ((tmp_send = (int *) ZOLTAN_MALLOC(3*nprocs*sizeof(int))) == NULL) {
+        ZOLTAN_FREE(&send);
         return ZOLTAN_MEMERR;
      }
      rem = &send[nprocs];
@@ -86,7 +86,7 @@ int LB_Create_Proc_List(
         MPI_Allreduce(tmp_send, send, i, MPI_INT, MPI_SUM, comm);
      }
 
-     LB_FREE(&tmp_send);
+     ZOLTAN_FREE(&tmp_send);
 
      /* Convert processor numbers to local (for this communicator) numbering
         and determine which subset of processors a processor is in. */
@@ -178,7 +178,7 @@ int LB_Create_Proc_List(
      }
 
      /* free memory and return */
-     LB_FREE(&send);
+     ZOLTAN_FREE(&send);
 
      return ZOLTAN_OK;
 }

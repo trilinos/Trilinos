@@ -280,15 +280,15 @@ void LB_dfs_migrate(LB *lb, int *nsentags,
   char *yo = "LB_dfs_migrate";
 
   if(LB_Oct_nOctants()) {        /* allocate space for octants being migrated */
-    docts = (pOctant *) LB_MALLOC(LB_Oct_nOctants() * sizeof(pOctant));
+    docts = (pOctant *) ZOLTAN_MALLOC(LB_Oct_nOctants() * sizeof(pOctant));
     if(!docts) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "cannot allocate arrays.");
       abort();
     }
-    dpids = (int *) LB_MALLOC(LB_Oct_nOctants() * sizeof(int));
+    dpids = (int *) ZOLTAN_MALLOC(LB_Oct_nOctants() * sizeof(int));
     if(!dpids) {
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, "cannot allocate arrays.");
-      LB_FREE(&docts);
+      ZOLTAN_FREE(&docts);
       abort();
     }
   }
@@ -324,8 +324,8 @@ void LB_dfs_migrate(LB *lb, int *nsentags,
                      import_regs, nrectags, c2, c3, counter3, counter4);
   LB_Migrate_Octants(lb, dpids, docts, dcount, &nrecocts);
 
-  LB_FREE(&docts);
-  LB_FREE(&dpids);
+  ZOLTAN_FREE(&docts);
+  ZOLTAN_FREE(&dpids);
 }
 
 /*****************************************************************************/

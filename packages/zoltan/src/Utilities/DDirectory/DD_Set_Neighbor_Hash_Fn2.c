@@ -79,7 +79,7 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn2 (
    dd->cleanup = dd_nh2_cleanup ;
 
    /* malloc and initialize storage for range information structures */
-   ptr = (Range_Info *)  LB_MALLOC (n * sizeof (Range_Info)) ;
+   ptr = (Range_Info *)  ZOLTAN_MALLOC (n * sizeof (Range_Info)) ;
    if (ptr == NULL)
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to Malloc range info") ;
@@ -158,5 +158,5 @@ static int compare_search (const void *a, const void *b)
 
 static void dd_nh2_cleanup (void)
    {
-   LB_FREE (&ptr) ;
+   ZOLTAN_FREE (&ptr) ;
    }

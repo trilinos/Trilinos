@@ -34,8 +34,8 @@
  * Macros for allocating single IDs; IDs are also initialized.
  * If lb->Num_LID is zero, the macro returns NULL.
  */
-#define ZOLTAN_LB_MALLOC_GID(lb) ZOLTAN_Malloc_ID((lb)->Num_GID, __FILE__, __LINE__)
-#define ZOLTAN_LB_MALLOC_LID(lb) \
+#define ZOLTAN_ZOLTAN_MALLOC_GID(lb) ZOLTAN_Malloc_ID((lb)->Num_GID, __FILE__, __LINE__)
+#define ZOLTAN_ZOLTAN_MALLOC_LID(lb) \
     ((lb)->Num_LID \
       ? ZOLTAN_Malloc_ID((lb)->Num_LID, __FILE__, __LINE__) \
       : NULL)
@@ -44,9 +44,9 @@
  * Macros for allocating arrays of IDs; arrays are also initialized.
  * If lb->Num_LID is zero, the macro returns NULL.
  */
-#define ZOLTAN_LB_MALLOC_GID_ARRAY(lb,num_obj) \
+#define ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb,num_obj) \
     ZOLTAN_Malloc_ID((num_obj) * (lb)->Num_GID, __FILE__, __LINE__)
-#define ZOLTAN_LB_MALLOC_LID_ARRAY(lb,num_obj) \
+#define ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb,num_obj) \
     ((lb)->Num_LID \
        ? ZOLTAN_Malloc_ID((num_obj) * (lb)->Num_LID, __FILE__, __LINE__) \
        : NULL)
@@ -55,10 +55,10 @@
  * Macros for reallocating arrays of IDs.
  */
 #define ZOLTAN_LB_REALLOC_GID_ARRAY(lb,ptr,num_obj) \
-  (ZOLTAN_ID_PTR) LB_REALLOC(ptr,(num_obj)*(lb)->Num_GID*sizeof(ZOLTAN_ID_TYPE))
+  (ZOLTAN_ID_PTR) ZOLTAN_REALLOC(ptr,(num_obj)*(lb)->Num_GID*sizeof(ZOLTAN_ID_TYPE))
 #define ZOLTAN_LB_REALLOC_LID_ARRAY(lb,ptr,num_obj) \
   ((lb)->Num_LID \
-    ? (ZOLTAN_ID_PTR)LB_REALLOC(ptr, \
+    ? (ZOLTAN_ID_PTR)ZOLTAN_REALLOC(ptr, \
                                (num_obj)*(lb)->Num_LID*sizeof(ZOLTAN_ID_TYPE)) \
     : NULL)
 
