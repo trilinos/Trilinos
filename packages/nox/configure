@@ -925,11 +925,11 @@ Optional Packages:
   --with-mpi-libs="LIBS"  MPI libraries ["-lmpi"]
   --with-mpi-incdir=DIR   MPI include directory [MPIROOT/include]
   --with-mpi-libdir=DIR   MPI library directory [MPIROOT/lib]
+  --with-trilinos         building inside Trilinos directory structure
   --with-loca-anasazi     compile anasazi support into libloca
   --with-loca-mf          compile MF support into libloca
   --with-blas=<lib>       use BLAS library <lib>
   --with-lapack=<lib>     use LAPACK library <lib>
-  --with-trilinos         building inside Trilinos directory structure
   --with-epetra-incdir    specify location of all epetra header files
   --with-epetra-libdir    specify location of epetra library
   --with-nox-epetraext    compile epetraext support into the noxepetra library
@@ -5897,6 +5897,24 @@ fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 
 # ------------------------------------------------------------------------
+# Determine if nox is being built as part of Trilinos or as a stand-alone
+# package.  This will affect the default settings such as building loca.
+# ------------------------------------------------------------------------
+
+# Check whether --with-trilinos or --without-trilinos was given.
+if test "${with_trilinos+set}" = set; then
+  withval="$with_trilinos"
+  INSIDE_TRILINOS=$withval
+else
+  INSIDE_TRILINOS=no
+fi;
+
+echo "$as_me:$LINENO: checking whether nox is being built as part of a Trilinos build" >&5
+echo $ECHO_N "checking whether nox is being built as part of a Trilinos build... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${INSIDE_TRILINOS}" >&5
+echo "${ECHO_T}${INSIDE_TRILINOS}" >&6
+
+# ------------------------------------------------------------------------
 # Which Add-Ons To Build
 # ------------------------------------------------------------------------
 
@@ -6219,7 +6237,7 @@ if test "${enable_loca+set}" = set; then
   enableval="$enable_loca"
   BUILD_LIBLOCA=${enableval}
 else
-  BUILD_LIBLOCA=yes
+  BUILD_LIBLOCA=${INSIDE_TRILINOS}
 
 fi;
 echo "$as_me:$LINENO: checking whether we should build the loca library" >&5
@@ -7109,7 +7127,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7112: \"$ac_link\") >&5
+(eval echo $as_me:7130: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7187,7 +7205,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7190: \"$ac_link\") >&5
+(eval echo $as_me:7208: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9860,13 +9878,6 @@ fi
 # ------------------------------------------------------------------------
 # Trilinos include file check for building noxepetra library
 # ------------------------------------------------------------------------
-
-
-# Check whether --with-trilinos or --without-trilinos was given.
-if test "${with_trilinos+set}" = set; then
-  withval="$with_trilinos"
-  INSIDE_TRILINOS=$withval
-fi;
 
 
 # Check whether --with-epetra-incdir or --without-epetra-incdir was given.

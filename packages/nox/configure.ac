@@ -647,6 +647,18 @@ AC_COMPILE_IFELSE(
 ])
 
 # ------------------------------------------------------------------------
+# Determine if nox is being built as part of Trilinos or as a stand-alone 
+# package.  This will affect the default settings such as building loca.
+# ------------------------------------------------------------------------
+AC_ARG_WITH(trilinos,
+[AC_HELP_STRING([--with-trilinos],[building inside Trilinos directory structure])],
+[INSIDE_TRILINOS=$withval],
+[INSIDE_TRILINOS=no])
+
+AC_MSG_CHECKING(whether nox is being built as part of a Trilinos build)
+AC_MSG_RESULT(${INSIDE_TRILINOS})
+
+# ------------------------------------------------------------------------
 # Which Add-Ons To Build
 # ------------------------------------------------------------------------
 
@@ -728,7 +740,7 @@ AM_CONDITIONAL(BUILD_BELOS_EXAMPLES, test X${ADDON_belos_EXAMPLES} = Xyes)
 AC_ARG_ENABLE(loca,
 [AC_HELP_STRING([--enable-loca],[compile the loca libraries])],
 [BUILD_LIBLOCA=${enableval}],
-[BUILD_LIBLOCA=yes]
+[BUILD_LIBLOCA=${INSIDE_TRILINOS}]
 )
 AC_MSG_CHECKING(whether we should build the loca library)
 AC_MSG_RESULT([${BUILD_LIBLOCA}])
@@ -1013,10 +1025,6 @@ fi
 # ------------------------------------------------------------------------
 # Trilinos include file check for building noxepetra library
 # ------------------------------------------------------------------------
-
-AC_ARG_WITH(trilinos,
-[AC_HELP_STRING([--with-trilinos],[building inside Trilinos directory structure])],
-[INSIDE_TRILINOS=$withval])
 
 AC_ARG_WITH(epetra-incdir,
 [AC_HELP_STRING([--with-epetra-incdir],[specify location of all epetra header files])],
