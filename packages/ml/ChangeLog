@@ -33,58 +33,72 @@ report bugs to jhu@sandia.gov.
 
 Overview of main ML changes from ml-2.0 to ml-3.0
 -------------------------------------------------
-	
-The ML version contains in Trilinos 4.0 has been enhanced with respect
+
+
+The ML version contained in Trilinos 4.0 has been enhanced with respect
 to the one included in the Trilinos 3.1 distribution as follows:
 
-- ML presents an improved interface to C++. Two new classes have been
-introduced to use ML as a preconditioner for Epetra_LinearProblem (both
-in the ML_Epetra namespace): MultiLevelOperator and
-MultiLevelPreconditioner. ML can be used as a black-box solver to define
-multilevel (possibly domain decomposition based) preconditioners for
-Epetra_RowMatrix. The user provides only the linear system matrix, and
-all the parameters defining the preconditioners, specified in a Teuchos
-parameters list.
+- ML now has extended capabilities to define preconditioners for
+Epetra_LinearProblem objects. Two new classes have been 
+introduced (both in the ML_Epetra namespace): MultiLevelOperator (derived from
+Epetra_Operator) and MultiLevelPreconditioner (derived from Epetra_RowMatrix).
+The latter is particularly easy to use, and requires, as input parameters, the
+linear system matrix, and a list of parameters only. Using this class, 
+ML can be used as a black-box solver to define multilevel (possibly domain
+decomposition based) preconditioners.  
 
-- ML uses Teuchos if class ML_Epetra::MultiLevelPreconditioner, and in
-some other internal classes.
+- ML users can take advantage of several other Trilinos packages: Epetra,
+  Teuchos, Amesos, Anasazi, Triutils, IFPACK. 
+
+- ML uses Teuchos to specify the input parameters for
+ML_Epetra::MultiLevelPreconditioner objects, and in 
+some other internal classes (mainly, the interface with Amesos and Anasazi).
 
 - ML now supports the Trilinos package Amesos as primary direct
 sequential and parallel direct solvers. Through Amesos, KLU, UMFPACK
 4.1, SuperLU_DIST 2.0, MUMPS 4.3.1, and ScaLAPACK can be used. The user can
 specify the maximum number of processes to be used in the coarse
-solution.
+solution, or let Amesos decide.
 
 - ML interface to SuperLU and SuperLU_DIST is now deprecated in favor of
-the Amesos one.
+the Amesos interface (but still available).
 
-- ML now implements and interfaces to the Trilinos package
-Anasazi. Anasazi can be used to estimate the maximum eigenvalue for both
-symmetric and non-symmetric problems.
+- ML can use the Trilinos package Anasazi to estimate the maximum eigenvalue for
+both symmetric and non-symmetric problems.
+
+- A basic interface to the Trilinos package IFPACK is available.
 
 - Two new aggregation schemes, based on graph partitioning algorithms,
-have been added. To that aim, third-party libraries METIS and ParMETIS
-can be used. ML must be configured with options --with-ml_metis and
---with-ml_parmetis_3x to use graph partitioning algorithms to create the
-aggregates. (ParMETIS requires Epetra support).
+have been added. Interfaces to the third-party libraries METIS and ParMETIS
+are available. Users can now specify the number of nodes to be included in each
+aggregate (or the number of local or global aggregates); this allows aggressive
+coarsening. ML must be configured with options --with-ml_metis and 
+--with-ml_parmetis_3x to use graph partitioning algorithms. ParMETIS support
+requires Epetra. 
 
-- A basic interface to the Trilinos package IFPACK is now included.
-
-- ML can use a simple power method to estimate lambda max for
-non-symmetric problems.
-
-- The set of examples has been extended. Now about 30 examples are available.
+- ML can use a simple power method to estimate the maximum eigenvalue for
+non-symmetric problems, in addition to the A-norm scheme.
+ 
+- The set of examples has been extended. Now about 30 examples are available,
+mainly in C. A couple of C++ examples, that use
+Trilinos_Utils::CrsMatrixGallery to define the linear system matrix, is included
+in the distribution. 
 
 - Improved the MLS preconditioner for block systems.
 
 - In the configuration phase, ML automatically recognizes which Trilinos
 package has been enabled, and compiles all functions sing this package (if any).
 
-- A new user's guide is available in the doc subdirectory.
+- (Limited) visualization and statistics capabilities are available for METIS
+and Uncoupled aggregation schemes. The user can visualize the shape of the
+aggregates for all levels using OpenDX. 
 
 - (Limited) doxygen documentation is available. Type doxygen in the doc
-subdirectory. Almost all C++ code, and part of the C code, has been
-modified with doxygen-compatible comments.
+subdirectory to create the documentation. Almost all the C++ code, and a small
+part of the C code, has been modified with doxygen-compatible comments.
+
+- A new user's guide is available in the doc subdirectory (Sandia report
+SAND-2004-22195). 
 
 ==============================================================================
 	
