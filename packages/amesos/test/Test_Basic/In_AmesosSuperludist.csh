@@ -58,10 +58,6 @@
 #   NumSolves < 0 means use multiple right hand sides
 #   NumSolves > 1 means use blocked right hand sides
 #
-## Some machines use a command different than mpirun to run mpi jobs.  The
-## test-harness.plx script sets the environment variable
-## "TRILINOS_TEST_HARNESS_MPIGO_COMMAND".  We test for
-## this value below.  If not set, we set it to a default value.
 
 # Some machines use a command different than mpirun to run mpi jobs.  The
 # test-harness.plx script sets the following environment variable

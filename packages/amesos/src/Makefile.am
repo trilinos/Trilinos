@@ -207,7 +207,6 @@ KUNDERT = \
        $(srcdir)/ksparse/spbuild.c \
        $(srcdir)/ksparse/spoutput.c \
        $(srcdir)/ksparse/spsolve.c \
-       $(srcdir)/ksparse/driver.c \
        $(srcdir)/ksparse/spalloc.c \
        $(srcdir)/ksparse/spfactor.c \
        $(srcdir)/ksparse/spsmp.c \
@@ -388,6 +387,7 @@ nodist_execinclude_HEADERS = Amesos_config.h
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
+
 
 
 

@@ -163,7 +163,7 @@ EXTRA_DIST = $(srcdir)/662_bus.rsa \
 	$(srcdir)/In_AmesosUmfpackSerial.csh \
 	$(srcdir)/In_Suppressions
 
-clean:
+clean:  clean-am
 	rm -f  662_bus_out.rsa \
 	ImpcolA.rua \
         ImpcolB.rua \
@@ -184,11 +184,14 @@ clean:
         Khead.triS \
         KheadSorted.mtx \
 	AmesosSuperludist.csh  \
+	TestBasic.csh  \
 	AmesosDscpack.csh AmesosUmfpack.csh \
 	AmesosKlu.csh AmesosSuperlu.csh \
 	AmesosScalapack.csh   AmesosMumps.csh \
 	AmesosKluSerial.csh  AmesosSuperluSerial.csh \
 	AmesosUmfpackSerial.csh \
-	Suppressions
+	Suppressions \
+	SST.* \
+	AME.* 
 
 

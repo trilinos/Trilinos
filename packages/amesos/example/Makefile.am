@@ -128,5 +128,5 @@ compare_solvers_LDADD = $(top_builddir)/src/libamesos.a \
 	$(LAPACK_LIBS) \
 	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
 
-clean:
+clean:  clean-am
 	rm -f  662_bus_out.rsa
