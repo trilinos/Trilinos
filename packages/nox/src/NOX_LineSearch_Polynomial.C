@@ -81,6 +81,8 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
     interpolationType = Cubic;
   else if (choice == "Quadratic")
     interpolationType = Quadratic;
+  else if (choice == "Quadratic3")
+    interpolationType = Quadratic3;
   else 
   {
     cerr << "NOX::LineSearch::Polynomial::reset - Invalid \"Interpolation Type\"" << endl;
@@ -186,7 +188,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
   if ((useCounter) && (!isConverged))
     counter.incrementNumNonTrivialLineSearches();
 	
-  double prevPhi = 0.0;	// \phi(\lambda_{k-1})
+  double prevPhi = 0.0;		// \phi(\lambda_{k-1})
   double prevPrevPhi = 0.0;	// \phi(\lambda_{k-2})
   double prevStep = 0.0;	// \lambda_{k-1}
   double prevPrevStep = 0.0;	// \lambda_{k-2}

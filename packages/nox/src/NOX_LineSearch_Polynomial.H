@@ -150,7 +150,7 @@ namespace LineSearch {
   - \lambda_{k-1} [\phi(\lambda_{k-2}) -\phi(0)]}
   \f]
 
-  <ul>
+  </ul>
 
   For "Quadratic" and "Cubic", see computeSlope() for details on how
   \f$ \phi'(0) \f$ is calculated.
@@ -210,6 +210,7 @@ namespace LineSearch {
      <ul>
      <li> "Cubic" [default]
      <li> "Quadratic"
+     <li> "Quadratic3"
      </ul>
 
   <li> "Min Bounds Factor" - Choice for \f$ \gamma_{min} \f$, i.e.,
