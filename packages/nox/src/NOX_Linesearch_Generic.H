@@ -44,6 +44,8 @@ class List;
 }
 
 namespace NOX {
+
+//! %NOX linesearches
 namespace Linesearch {
 
 //! %Generic line search interface
