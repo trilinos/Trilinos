@@ -22,6 +22,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   int *encoded_dir_node, *temp_bindx, Npos_dirichlet = 0, Nneg_dirichlet = 0;
   int Nnondirichlet, Nnz_finegrid, Nnz_allgrids;
   double *pos_coarse_dirichlet, *neg_coarse_dirichlet, *temp_val, d1, d2;
+  double droptol;
 
   /*
   double *fido,*yyy, *vvv, dtemp;
@@ -46,8 +47,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   /* Set up the operators corresponding to regular unsmoothed         */
   /* aggregation on the nodal matrix.                                 */
   /*------------------------------------------------------------------*/
-  Nnz_finegrid = ml_edges->Amat[fine_level].N_nonzeros;
-  Nnz_allgrids = ml_edges->Amat[fine_level].N_nonzeros;
+  Nnz_finegrid = ml_edges->Amat[fine_level].N_nonzeros;                       
+  Nnz_allgrids = ml_edges->Amat[fine_level].N_nonzeros; 
 
   Nlevels_nodal = ML_Gen_MGHierarchy_UsingAggregation(ml_nodes, fine_level, 
                                             ML_DECREASING, ag);
@@ -127,9 +128,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
      for (i = 0 ; i < Tfine->getrow->Nrows; i++) {
        ML_get_matrix_row(Tfine, 1, &i, &allocated, &temp_bindx, &temp_val,
-			 &row_length, 0);
+            &row_length, 0);
        if (row_length == 2) {
-	 if (temp_val[1] == 0.) row_length--;
+     if (temp_val[1] == 0.) row_length--;
 	 if (temp_val[0] == 0.) {
 	   row_length--;
 	   if (row_length != 0) {
@@ -687,25 +688,57 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      exit(1);
 #endif /*postprocesscheck*/
 
-     /* Smooth prolongator. */
+     /***************************
+     * Smooth edge prolongator. *
+     ***************************/
      if (smooth_flag == ML_YES)
      {
         if (Tmat->comm->ML_mypid == 0)
         if (Tfine->comm->ML_mypid==0 && 2 < ML_Get_PrintLevel())
            printf("Smoothing edge prolongator...\n");
         ML_Aggregate_Set_Flag_SmoothExistingTentativeP(ag, ML_YES);
-        /* default: smooth_factor = 4.0/3.0 */
-        if (smooth_factor != ML_DDEFAULT)
+        /* default for smoothing factor is 4.0/3.0 */
+        if (smooth_factor == ML_DDEFAULT)
+           ML_Aggregate_Set_DampingFactor(ag, 4.0/3.0);
+        else
            ML_Aggregate_Set_DampingFactor(ag, smooth_factor);
-
         ML_AGG_Gen_Prolongator(ml_edges,grid_level+1,grid_level,
                                (void *) &(ml_edges->Amat[grid_level+1]), ag);
+    
+        /* Weed out small values in Pe. */
+        droptol = 1e-12;
+        if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel()) {
+           printf("Dropping Pe entries with absolute value smaller than %e\n",
+                  droptol);
+        }
+        Pe = &(ml_edges->Pmat[grid_level]);
+        csr_data = (struct ML_CSR_MSRdata *) Pe->data;
+        lower = csr_data->rowptr[0];
+        nz_ptr = 0;
+        for (i = 0; i < Pe->outvec_leng; i++) {
+          for (j = lower; j < csr_data->rowptr[i+1]; j++) {
+            if (ML_abs(csr_data->values[j]) > droptol) nz_ptr++;
+          }
+          lower = csr_data->rowptr[i+1];
+          csr_data->rowptr[i+1] = nz_ptr;
+        }
+        nz_ptr = 0;
+        for (i = 0; i < lower; i++) {
+          if (ML_abs(csr_data->values[i]) > droptol) {
+            csr_data->values[nz_ptr] = csr_data->values[i];
+            csr_data->columns[nz_ptr] = csr_data->columns[i];
+            nz_ptr++;
+          }
+        }
+
+        Pe->N_nonzeros = nz_ptr;
      }
-     if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel())
-     {
-        printf("Pe: Total nonzeros = %d (Nrows = %d)\n",
-               ml_edges->Pmat[grid_level].N_nonzeros,
-               ml_edges->Pmat[grid_level].outvec_leng);
+
+     if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel()) {
+        Pe = &(ml_edges->Pmat[grid_level]);
+        nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
+        printf("Pe: Total nonzeros = %d (Nrows = %d)\n", nz_ptr,
+               Pe->outvec_leng);
      }
    
      ML_Operator_Set_1Levels(&(ml_edges->Pmat[grid_level]),
@@ -715,21 +748,29 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_Gen_AmatrixRAP(ml_edges, grid_level+1, grid_level);
      Nnz_allgrids += ml_edges->Amat[grid_level].N_nonzeros;
 
+     if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel()) {
+        Pe = &(ml_edges->Amat[grid_level]);
+        nz_ptr = ML_Comm_GsumInt(ml_edges->comm, Pe->N_nonzeros);
+        printf("Ke: Total nonzeros = %d (Nrows = %d)\n", nz_ptr,
+               Pe->outvec_leng);
+     }
 
      Tfine = Tcoarse;
   } /* Main FOR loop: for grid_level = fine_level-1 ... */
 
-
-  if (ag->print_flag < ML_Get_PrintLevel()) {
+  if (ag->print_flag < ML_Get_PrintLevel())
+  {
     ML_gsum_vec_int(&Nnz_allgrids,&j,1,ml_nodes->comm);
     ML_gsum_vec_int(&Nnz_finegrid,&j,1,ml_nodes->comm);
 
-    if (Tfine->comm->ML_mypid==0 ) {
+    if (Tfine->comm->ML_mypid==0 )
+    {
       if (Nnz_finegrid == 0) 
-	printf("Number of nonzeros on finest grid not given! Complexity not computed!\n");
+         printf("Number of nonzeros on finest grid not given!"
+                " Complexity not computed!\n");
       else
-	printf("Multilevel complexity is %e\n",((double) Nnz_allgrids)/
-	     ((double) Nnz_finegrid));
+         printf("Multilevel complexity is %e\n",
+               ((double) Nnz_allgrids)/ ((double) Nnz_finegrid));
     }
   }
 

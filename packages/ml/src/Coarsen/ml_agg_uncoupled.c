@@ -650,6 +650,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
    k     = new_ia[0];
    index = k;
+   nz_cnt = 0;
    for (i = 0; i < Nrows; i++)
    {
       for (j = k; j < new_ia[i+1]; j++ )
@@ -658,10 +659,12 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
          {
             new_val[index]  = new_val[j];  
             new_ja[index++] = new_ja[j];  
+            nz_cnt++;
          }
       }
 	  /* JJH This code fragment forces at least one entry in each row,
-			 even if that entry is zero.
+			 even if that entry is zero.  This can cause failures in
+             parallel.
       if ( index == new_ia[i] ) 
       {
          new_val[index] = new_val[k]; new_ja[index++] = new_ja[k];
@@ -672,17 +675,11 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    }
    ML_memory_alloc((void**) &csr_data,sizeof(struct ML_CSR_MSRdata),"AVP");
 
+   (*Pmatrix)->N_nonzeros = ML_Comm_GsumInt( comm, nz_cnt);
+
    csr_data->rowptr  = new_ia;
    csr_data->columns = new_ja;
    csr_data->values  = new_val;
-/*
-if (comm->ML_mypid == 0 )
-{
-   for ( i = 0; i < Nrows; i++ )
-   for ( j = new_ia[i]; j < new_ia[i+1]; j++ )
-      printf("tentP(%4d,%4d,%4d) = %e\n", i, new_ja[j], Nrows, new_val[j]);
-}
-*/
 
    ML_Operator_Set_ApplyFuncData( *Pmatrix, Ncoarse, Nrows, ML_EMPTY,
                                   csr_data, Nrows, NULL, 0);
@@ -716,15 +713,13 @@ if (comm->ML_mypid == 0 )
    ML_memory_free((void**)&agg_sizes);
    for (i = 0; i < aggr_count; i++) ML_free(rows_in_aggs[i]);
    ML_memory_free((void**)&rows_in_aggs);
-   ML_memory_free((void**)&qr_tmp);
-   ML_memory_free((void**)&tmp_vect);
+   ML_memory_free((void**)&qr_tmp); ML_memory_free((void**)&tmp_vect);
    ML_memory_free((void**)&work);
    ML_memory_free((void**)&aggr_comm);
 
    /* tuminaro change */
    /* I think this is what Charles wanted */
    if ( nvblockflag == 1 ) ML_memory_free((void**)&vblock_info);
-
 
    return Ncoarse;
 }
