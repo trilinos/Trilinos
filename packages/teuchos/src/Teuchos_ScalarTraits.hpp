@@ -9,6 +9,10 @@
 #ifndef _TEUCHOS_SCALARTRAITS_HPP_
 #define _TEUCHOS_SCALARTRAITS_HPP_
 
+/*! \file Teuchos_ScalarTraits.hpp
+    \brief Defines basic traits for the scalar field type
+*/
+
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 #if ( defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H) ) && defined(HAVE_TEUCHOS_COMPLEX)
@@ -20,19 +24,36 @@
 #include "mp/mpreal.h"
 #endif
 
+/*! \struct Teuchos::ScalarTraits
+    \brief This structure defines some basic traits for the scalar field type.
+
+    Scalar traits are an essential part of templated codes.  This structure offers
+    the basic traits of the templated scalar type, like defining zero and one,
+    and basic functions on the templated scalar type, like performing a square root.
+
+    For the general type, or default implementation, an aborting function
+    is defined which should restrict implementations from using scalar traits other than
+    the defined specializations.
+
+    \note 
+     <ol>
+	<li> The default defined specializations for ScalarTraits are: \c int, \c float, and \c double.
+     	<li> If Teuchos is configured with \c --enable-teuchos-complex then ScalarTraits also has the specializations:
+	\c complex<float> and \c complex<double>
+     	<li>ScalarTraits can be used with the Arbitrary Precision Library ( \c http://crd.lbl.gov/~dhbailey/mpdist/ )
+	by configuring Teuchos with \c --enable-teuchos-arprec and giving the appropriate paths to ARPREC.
+	Then ScalarTraits has the specialization: \c mp_real
+     </ol>
+*/
+
 namespace Teuchos {
-  /** The Teuchos ScalarTraits file.
-      
-  For the most general type 'class T', we define aborting functions, 
-  which should restrict implementations from using traits other than the
-  specializations defined below.
-  */
   
   template<class T>
   struct ScalarTraits 
   {
     typedef T magnitudeType;
     
+    //! Aborting function to restrict non-supported implementations of ScalarTraits.
     static inline int undefinedParameters()
     {
 #ifndef TEUCHOS_NO_ERROR_REPORTS
@@ -41,6 +62,7 @@ namespace Teuchos {
       return(-1);
     }
     
+    //! Aborting function to restrict non-supported implementations of ScalarTraits.
     static inline int unsupportedType()
     {
 #ifndef TEUCHOS_NO_ERROR_REPORTS
@@ -49,25 +71,60 @@ namespace Teuchos {
       return(-2);
     }
     
+    //! Does this scalar type have machine-specific parameters.
     static inline bool haveMachineParameters() { return false; };
+
+    //! Returns relative machine precision.
     static inline magnitudeType eps()   { throw(undefinedParameters()); };
+
+    //! Returns safe minimum (sfmin), such that 1/sfmin does not overflow.
     static inline magnitudeType sfmin() { throw(undefinedParameters()); };
+
+    //! Returns the base of the machine.
     static inline magnitudeType base()  { throw(undefinedParameters()); };
+
+    //! Returns \c eps*base.
     static inline magnitudeType prec()  { throw(undefinedParameters()); };
+
+    //! Returns the number of (base) digits in the mantissa.
     static inline magnitudeType t()     { throw(undefinedParameters()); };
+
+    //! Returns 1.0 when rounding occurs in addition, 0.0 otherwise
     static inline magnitudeType rnd()   { throw(undefinedParameters()); };
+
+    //! Returns the minimum exponent before (gradual) underflow.
     static inline magnitudeType emin()  { throw(undefinedParameters()); };
+
+    //! Returns the underflow threshold - \c base^(emin-1)
     static inline magnitudeType rmin()  { throw(undefinedParameters()); };
+
+    //! Returns the largest exponent before overflow.
     static inline magnitudeType emax()  { throw(undefinedParameters()); };
+
+    //! Overflow theshold - \c (base^emax)*(1-eps)
     static inline magnitudeType rmax()  { throw(undefinedParameters()); };
+
+    //! Returns the magnitudeType of the scalar type \c a.
     static inline magnitudeType magnitude(T a) { throw(unsupportedType()); };
+
+    //! Returns representation of zero for this scalar type.
     static inline T zero()                     { throw(unsupportedType()); };
+
+    //! Returns representation of one for this scalar type.
     static inline T one()                      { throw(unsupportedType()); };
+
+    //! Returns a random number of this scalar type.
     static inline T random()                   { throw(unsupportedType()); };
+
+    //! Returns the name of this scalar type.
     static inline const char* name()           { throw(unsupportedType()); };
+
+    //! Returns a number of magnitudeType that is the square root of this scalar type \c x. 
     static inline magnitudeType squareroot(T x) { throw(unsupportedType()); };
   };
   
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
   template<>
   struct ScalarTraits<int>
   {
@@ -265,6 +322,8 @@ namespace Teuchos {
   };
   
 #endif
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 } // Teuchos namespace
 
