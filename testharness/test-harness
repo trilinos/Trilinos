@@ -42,8 +42,7 @@
 # Useful vocabulary
 #
 
-# Parameters - compile flags for building Trilinos
-#              ex. TRILINOS_ID=_DEBUG TRILINOS_COMM=SERIAL
+# None at this time.
 
 #
 # THESE OPTIONS CAN BE CONFIGURED AS NEEDED
@@ -52,7 +51,6 @@
 
 ### Need to redo comments to account for autotools and new directory structure - also note that subdirs must be set up as desired.
 ### Try a make dist also to ensure tarballs can be made
-### This would be a good place to include instructions on how to write scripts.
 # location of the directory in which this file is located
 # default location is just below user's home directory
 my $homedir="$ENV{'HOME'}/Trilinos";
@@ -77,6 +75,7 @@ my $hostfile="$homedir/$basehostfile"; # change path here if necessary
 #
 
 chomp (my $hostos=`uname -a`);
+chomp (my $machinename=`uname -n`);
 chomp (my $ARCH=`uname`); # This value must match the middle portion of the name of the log
 # file written to by the testAll file - for example on a Linux platform, the
 # log file is called logLinux.txt, so $ARCH=Linux
@@ -360,15 +359,15 @@ sub sendemail {
 
     # At least one problem occurred throughout the course of testing
 
-    my $subject_line=join " - ", $ARCH,'At least one error occurred';
+    my $subject_line=join " - ", $ARCH, $machinename,'At least one error occurred';
     if ( $updateerror ) {
-      $subject_line=join " - ", $ARCH,'CVS update error';
+      $subject_line=join " - ", $ARCH, $machinename,'CVS update error';
     }
     elsif ( $trilinosCompileError ) {
-      $subject_line=join " - ", $ARCH, $comm,'Trilinos compile error';
+      $subject_line=join " - ", $ARCH, $machinename, $comm,'Trilinos compile error';
     }
     else {
-      $subject_line=join " - ", $ARCH,'At least one test failed';
+      $subject_line=join " - ", $ARCH, $machinename, $comm,'At least one test failed';
     }
 
     my $msg=MIME::Lite->new(
@@ -423,35 +422,35 @@ sub sendemail {
 		);
   }
 
-  if ($testCompileError) {
+  if ($testCompileError && -f "testCompileLog.txt") {
     $msg->attach(Type=>'TEXT',
 		 Path=>'testCompileLog.txt',
 		 Disposition=>'attachment'
 		 );
   }
 
-  if (-f "errors.txt") {
+  if ($errorcount && -f "errors.txt") {
     print SUMM "--> For additional information about errors that occured, \nSee attachment \"errors.txt\".\n\n";
     $msg->attach(Type=>'TEXT',
 		 Path=>'errors.txt',
 		 Disposition =>'attachment'
 		 );
   }
-  if ($warningcount) {
+  if ($warningcount && -f "warnings.txt") {
     print SUMM "--> At least one non-testing warning occurred (i.e. script/paramter related).\nSee attachment \"warnings.txt\".\n\n";
     $msg->attach(Type=>'TEXT',
 		 Path=>'warnings.txt',
 		 Disposition =>'attachment'
 		);
   }
-  if ($updateerror) {
+  if ($updateerror && -f "updatelog.txt") {
     print SUMM "--> At least one error occurred during CVS update.\nSee attachment \"updatelog.txt\".\n\n";
     $msg->attach(Type=>'TEXT',
 		 Path=>'updatelog.txt',
 		 Disposition=>'attachment'
 		 );
   }
-  if ($trilinosCompileError) {
+  if ($trilinosCompileError && -f "trilinosCompileLog.txt") {
     print SUMM "--> At least one error occurred while compiling Trilinos.\nSee attachment \"trilinosCompileLog.txt\".\n\n";
     $msg->attach(Type=>'TEXT',
 		 Path=>'trilinosCompileLog.txt',
@@ -471,7 +470,7 @@ system "rm -f logErrors.txt logMpiErrors.txt";
   }
   else {
     # No problems occurred of any kind
-    my $subject_line=join " - ", $ARCH,'All tests passed';
+    my $subject_line=join " - ", $ARCH, $machinename, $comm,'All tests passed';
     my $msg=MIME::Lite->new(
 			    From =>'trilinos-regression@software.sandia.gov',
 			    To => $mail_to,
