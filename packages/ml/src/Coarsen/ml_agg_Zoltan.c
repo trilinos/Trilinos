@@ -58,7 +58,7 @@ extern int OPTIMAL_LOCAL_COARSE_SIZE;
 #endif
 #endif
 
-#if defined(HAVE_ML_ZOLTAN) && defined(HAVE_ML_MPI)
+#if defined(HAVE_ML_ZOLTAN) && defined(HAVE_MPI)
 #include "zoltan.h"
 
 /*
@@ -407,7 +407,7 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
 {
 
   int i, Nrows;
-#if defined(HAVE_ML_ZOLTAN) && defined(HAVE_ML_MPI)
+#if defined(HAVE_ML_ZOLTAN) && defined(HAVE_MPI)
   ML_Comm * comm = Amatrix->comm;
   int mypid = Amatrix->comm->ML_mypid;
   double t0;
