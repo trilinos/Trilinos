@@ -2089,6 +2089,139 @@ void AZ_zeroDirichletcolumns(AZ_MATRIX *Amat, double rhs[], int proc_config[] )
   }
 }
 
+int ML_MSR_sym_diagonal_scaling(AZ_MATRIX *Amat, 
+				int proc_config[], double **scale_vect)
+
+/*******************************************************************************
+
+  Routine to symmetrically diagonally scale sparse matrix problem; 
+
+  Author:          John N. Shadid, SNL, 1421 (MSR format)
+
+  Return code:     int
+  ============
+
+  Parameter list:
+  ===============
+
+  val:             Array containing the nonzero entries of the matrix (see
+                    Aztec Users Guide).
+
+  bindx:           Arrays used for DMSR and DVBR sparse matrix storage (see
+                   file  Aztec Users Guide).
+
+  b:               Right hand side of linear system.
+
+  data_org:        Array containing information on the distribution of the
+                   matrix to this processor as well as communication parameters
+                   (see  Aztec Users Guide).
+
+  options:         Determines specific solution method and other parameters.
+
+  proc_config:     Machine configuration.  proc_config[AZ_node] is the node
+                   number.  proc_config[AZ_N_procs] is the number of processors.
+
+  x:               Current solution vector.
+
+*******************************************************************************/
+
+{
+
+  /* local variables */
+
+  register int j, k, irow, icol;
+  int          N, m;
+  int          j_last, bindx_row, i;
+  double       *sc_vec;
+  int count;
+  char         label[80];
+
+  char        *yo = "AZ_sym_diagonal_scaling: ";
+  int         *indx, *bindx, *rpntr, *cpntr, *bpntr, *data_org;
+  double      *val;
+
+
+  /**************************** execution begins ******************************/
+
+  val  = Amat->val;
+  indx = Amat->indx;
+  bindx = Amat->bindx;
+  data_org = Amat->data_org;
+
+  N = data_org[AZ_N_internal] + data_org[AZ_N_border];
+
+  sc_vec = (double *) ML_allocate((N + data_org[AZ_N_external]) *
+				   sizeof(double));
+  *scale_vect = sc_vec;
+ 
+  if (sc_vec == NULL) {
+    printf("ML_MSR_sym_diagonal_scaling: Not enough memory\n");
+    exit(1);
+  }
+
+  if (data_org[AZ_matrix_type] != AZ_MSR_MATRIX) {
+    printf("ML_MSR_sym_diagonal_scaling: Matrix must be of type MSR\n");
+    exit(1);
+  }
+
+  for (irow = 0; irow < N; irow++) {
+
+    /* scale matrix */
+
+    j_last  = bindx[irow+1] - bindx[irow];
+    bindx_row = bindx[irow];
+
+    if (fabs(val[irow]) < DBL_MIN) {
+      (void) fprintf(stderr, "%sERROR: diagonal of row %d is zero\n", yo,
+		     irow);
+      exit(-1);
+    }
+
+    sc_vec[irow] = 1.0 / sqrt(fabs(val[irow]));
+
+    for (j = 0; j < j_last; j++) {
+          k       = bindx_row + j;
+          val[k] *= sc_vec[irow];
+    }
+    val[irow] *= sc_vec[irow];
+  }
+
+  /* do right diagonal scaling */
+
+  AZ_exchange_bdry(sc_vec, data_org, proc_config);
+
+  /* index through rows of matrix */
+
+  for (irow = 0; irow < N; irow++) {
+    val[irow] *= sc_vec[irow];
+
+    j_last     = bindx[irow+1] - bindx[irow];
+    bindx_row    = bindx[irow];
+
+    for (j = 0; j < j_last; j++) {
+      k       = bindx_row + j;
+      val[k] *= sc_vec[bindx[k]];
+    }
+  }
+  return 0;
+}
+int ML_MSR_scalerhs(double *rhs, double *scale_vect,int length)
+{
+  int i;
+
+  if (scale_vect == NULL) return 0;
+  for (i = 0; i < length; i++) rhs[i] *= scale_vect[i];
+  return 0;
+}
+int ML_MSR_scalesol(double *x, double *scale_vect,int length)
+{
+  int i;
+
+  if (scale_vect == NULL) return 0;
+  for (i = 0; i < length; i++) x[i] /= scale_vect[i];
+  return 0;
+}
+
 #else
 
 /* to satisfy the requirement of certain compilers */

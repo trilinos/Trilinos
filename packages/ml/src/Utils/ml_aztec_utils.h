@@ -125,6 +125,12 @@ extern void ML_precondition(double ff[], int options[], int proc_config[],
 
 extern void AZ_ML_Clean(void *data);
 
+extern int ML_MSR_sym_diagonal_scaling(AZ_MATRIX *Amat, 
+				       int proc_config[], double **);
+
+extern int ML_MSR_scalesol(double *x, double *scale_vect,int length);
+extern int ML_MSR_scalesol(double *x, double *scale_vect,int length);
+
 extern int  wrapper_DCSR_getrow(int columns[], double values[], int row_lengths[],
         	     struct AZ_MATRIX_STRUCT *Amat, int N_requested_rows,
                      int requested_rows[], int allocated_space);
