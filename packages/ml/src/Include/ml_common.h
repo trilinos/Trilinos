@@ -130,6 +130,36 @@
 #define ML_BENCHMARK
 #endif
 
+#ifdef HAVE_AMESOS
+#ifndef HAVE_ML_AMESOS
+#define HAVE_ML_AMESOS
+#endif
+#endif
+
+#ifdef HAVE_IFPACK
+#ifndef HAVE_ML_IFPACK
+#define HAVE_ML_IFPACK
+#endif
+#endif
+
+#ifdef HAVE_TEUCHOS
+#ifndef HAVE_ML_TEUCHOS
+#define HAVE_ML_TEUCHOS
+#endif
+#endif
+
+#ifdef HAVE_ANASAZI
+#ifndef HAVE_ML_ANASAZI
+#define HAVE_ML_ANASAZI
+#endif
+#endif
+
+#ifdef HAVE_TRIUTILS
+#ifndef HAVE_ML_TRIUTILS
+#define HAVE_ML_TRIUTILS
+#endif
+#endif
+
 #endif /*ifdef HAVE_CONFIG_H*/
 
 #endif

@@ -877,10 +877,12 @@ Optional Features:
   --enable-dependency-tracking   do not reject slow dependency extractors
   --enable-ml_multiple_rhs
                           experimental (default is no)
-  --enable-ml_enrich      Enable latest enriched Maxwell prolongator (default
-                          is no)
+  --enable-epetra         Enable Epetra support (default is yes)
+  --enable-aztecoo        Enable Aztecoo support (default is yes)
   --enable-ml_newtpe      Enable latest Maxwell prolongator fixes (default is
                           yes)
+  --enable-ml_enrich      Enable latest enriched Maxwell prolongator (default
+                          is no)
   --enable-ml_complex_maxwell
                           Enable complex maxwell solver capability (default is
                           no)
@@ -888,6 +890,27 @@ Optional Features:
   --enable-ml_flops       Enable flop counting. (default is no)
   --enable-ml_benchmarking
                           For benchmarking suite. (default is no)
+  --enable-amesos         Enable AMESOS support. Amesos, a Trilinos package,
+                          can be used to interface ML with various direct
+                          solvers, such as SuperLU, MUMPS, UMFPACK, KLU, and
+                          other. Amesos requires --with-ml_epetra. See notes
+                          for --enable-ml_metis. (default is no)
+  --enable-ifpack         Enable IFPACK support. Ifpack, a Trilinos package,
+                          can provide incomplete factorization smoothers to
+                          ML. Ifpack requires --enable_epetra. See notes for
+                          --enable-ml_metis. (default is no)
+  --enable-teuchos        Enable TEUCHOS support. Teuchos, a Trilinos package,
+                          is required by the class Epetra_ML_Preconditioner.
+                          Teuchos requires --enable_epetra. See notes for
+                          --enable-ml_metis. (default is no)
+  --enable-anasazi        Enable ANASAZI support. Anasazi, a Trilinos package,
+                          can be used for eigenvalue estimates. Anasazi
+                          requires --enable_epetra and --enable-teuchos.
+                          (default is no)
+  --enable-triutils       Enable TRIUTILS support. Triutils, a Trilinos
+                          package, is used if some ML examples to construct
+                          the linear system. Triutils requires
+                          --enable_epetra. (default is no)
   --enable-examples       Build examples for ML package (default is yes)
 
 Optional Packages:
@@ -917,11 +940,15 @@ Optional Packages:
   --with-ldflags          additional LDFLAGS flags to be added: will prepend
                           to LDFLAGS
   --with-ar               override archiver command (default is "ar cru")
-  --with-ml_epetra        Enable Epetra support (default is yes)
-  --with-ml_aztecoo       Enable Aztecoo support (default is yes)
   --with-ml_external_mpi_functions
                           Use mpi-provided global communication functions (not
                           ml's internal implementation) (default is yes)
+  --with-ml_aztec2_1      Enable Aztec 2.1 support (default is no)
+  --with-ml-64bit-integer Support for 64-bit integers; required if ML used
+                          with MPSalsa. Examples:
+                          --with-ml-64bit-integer="long long" for LINUX,
+                          TFLOP, IRIXN32"; --with-ml-64bit-integer="long" for
+                          IRIX64, ALPHA (Cplant)
   --with-ml_superlu       Enable SuperLU support. Note 1: SuperLU is a third
                           party library. As such, configure assumes that it
                           has already been built. Note 2: You must also
@@ -941,7 +968,6 @@ Optional Packages:
                           --with-ldflags="-L<SuperLU_DIST-library-path>"
                           --with-incdirs="<SuperLU_DIST-include-path>".
                           (default is no)
-  --with-ml_aztec2_1      Enable Aztec 2.1 support (default is no)
   --with-ml_metis         Enable METIS support. METIS can be used to create
                           aggregates using graph-decomposition algorithsm.
                           Note 1: METIS is a third party library. As such,
@@ -956,32 +982,6 @@ Optional Packages:
                           --with-ml_metis. (default is no)
   --with-ml_parmetis3x    Enable ParMETIS support, version 3.x. See notes for
                           --with-ml_metis. (default is no)
-  --with-ml_amesos        Enable AMESOS support. Amesos, a Trilinos package,
-                          can be used to interface ML with various direct
-                          solvers, such as SuperLU, MUMPS, UMFPACK, KLU, and
-                          other. Amesos requires --with-ml_epetra. See notes
-                          for --enable-ml_metis. (default is no)
-  --with-ml_ifpack        Enable IFPACK support. Ifpack, a Trilinos package,
-                          can provide incomplete factorization smoothers to
-                          ML. Ifpack requires --with-ml_epetra. See notes for
-                          --enable-ml_metis. (default is no)
-  --with-ml_teuchos       Enable TEUCHOS support. Teuchos, a Trilinos package,
-                          is required by the class Epetra_ML_Preconditioner.
-                          Teuchos requires --with-ml_epetra. See notes for
-                          --enable-ml_metis. (default is no)
-  --with-ml_anasazi       Enable ANASAZI support. Anasazi, a Trilinos package,
-                          can be used for eigenvalue estimates. Anasazi
-                          requires --with-ml_epetra and --with-ml_teuchos.
-                          (default is no)
-  --with-ml_triutils      Enable TRIUTILS support. Triutils, a Trilinos
-                          package, is used if some ML examples to construct
-                          the linear system. Triutils requires
-                          --with-ml_epetra. (default is no)
-  --with-ml-64bit-integer Support for 64-bit integers; required if ML used
-                          with MPSalsa. Examples:
-                          --with-ml-64bit-integer="long long" for LINUX,
-                          TFLOP, IRIXN32"; --with-ml-64bit-integer="long" for
-                          IRIX64, ALPHA (Cplant)
   --with-libdirs          OBSOLETE use --with-ldflags instead. (ex.
                           --with-ldflags="-L<DIR> -L<DIR2>")
   --with-incdirs          additional directories containing include files:
@@ -6132,28 +6132,27 @@ fi
 
 # invoke with "with-xxxxxx", where xxxxxx is the first argument, e.g., ml_aztec
 
-###########################
-# these are ON by default
-###########################
+#####################################
+# Following options are ON by default
+#####################################
 
-
-# Check whether --with-ml_epetra or --without-ml_epetra was given.
-if test "${with_ml_epetra+set}" = set; then
-  withval="$with_ml_epetra"
-  ac_cv_use_ml_epetra=$withval
+# Check whether --enable-epetra or --disable-epetra was given.
+if test "${enable_epetra+set}" = set; then
+  enableval="$enable_epetra"
+  ac_cv_use_epetra=$enableval
 else
-  ac_cv_use_ml_epetra=yes
+  ac_cv_use_epetra=yes
 fi;
 
-echo "$as_me:$LINENO: checking whether to use ml_epetra" >&5
-echo $ECHO_N "checking whether to use ml_epetra... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use epetra" >&5
+echo $ECHO_N "checking whether to use epetra... $ECHO_C" >&6
 
-if test "X$ac_cv_use_ml_epetra" != "Xno"; then
+if test "X$ac_cv_use_epetra" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_EPETRA
+#define HAVE_ML_EPETRA 1
 _ACEOF
 
 else
@@ -6161,39 +6160,38 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-#
 
-
-# Check whether --with-ml_aztecoo or --without-ml_aztecoo was given.
-if test "${with_ml_aztecoo+set}" = set; then
-  withval="$with_ml_aztecoo"
-  ac_cv_use_ml_aztecoo=$withval
+# Check whether --enable-aztecoo or --disable-aztecoo was given.
+if test "${enable_aztecoo+set}" = set; then
+  enableval="$enable_aztecoo"
+  ac_cv_use_aztecoo=$enableval
 else
-  ac_cv_use_ml_aztecoo=yes
+  ac_cv_use_aztecoo=yes
 fi;
 
-echo "$as_me:$LINENO: checking whether to use ml_aztecoo" >&5
-echo $ECHO_N "checking whether to use ml_aztecoo... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use aztecoo" >&5
+echo $ECHO_N "checking whether to use aztecoo... $ECHO_C" >&6
 
-if test "X$ac_cv_use_ml_aztecoo" != "Xno"; then
+if test "X$ac_cv_use_aztecoo" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_AZTEC
+#define HAVE_ML_AZTEC 1
 _ACEOF
 
 else
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
 fi
+
 
 #if we're not using aztecoo, then build certain ML examples
 #without dependencies on libepetra.a  or libaztecoo.a
 #(See ml/examples/Makefile.am.)
 
 
-if test "X$ac_cv_use_ml_aztecoo" != "Xyes"; then
+if test "X$ac_cv_use_aztecoo" != "Xyes"; then
   ML_STANDALONE_MODE_TRUE=
   ML_STANDALONE_MODE_FALSE='#'
 else
@@ -6201,7 +6199,7 @@ else
   ML_STANDALONE_MODE_FALSE=
 fi
 
-# TAC_ARG_WITH_PACKAGE(ml_mpi, [Enable mpi support], ML_MPI, yes)
+
 
 
 # Check whether --with-ml_external_mpi_functions or --without-ml_external_mpi_functions was given.
@@ -6228,34 +6226,7 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-# TAC_ARG_WITH_PACKAGE(ml_vendor_blas, [Use system blas library (not ml's internal reference blas)], ML_VENDOR_BLAS, yes)
-# TAC_ARG_WITH_PACKAGE(ml_vendor_lapack, [Use system lapack library (not ml's internal reference lapack)], ML_VENDOR_LAPACK, yes)
 
-# Check whether --enable-ml_enrich or --disable-ml_enrich was given.
-if test "${enable_ml_enrich+set}" = set; then
-  enableval="$enable_ml_enrich"
-  ac_cv_use_ml_enrich=$enableval
-else
-  ac_cv_use_ml_enrich=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use ml_enrich" >&5
-echo $ECHO_N "checking whether to use ml_enrich... $ECHO_C" >&6
-
-if test "X$ac_cv_use_ml_enrich" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_ENRICH 1
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-#
 
 # Check whether --enable-ml_newtpe or --disable-ml_newtpe was given.
 if test "${enable_ml_newtpe+set}" = set; then
@@ -6282,28 +6253,27 @@ echo "${ECHO_T}no" >&6
 fi
 
 
-###########################
-# these are OFF by default
-###########################
+#######################################
+# Following options are OFF by default
+#######################################
 
-
-# Check whether --with-ml_superlu or --without-ml_superlu was given.
-if test "${with_ml_superlu+set}" = set; then
-  withval="$with_ml_superlu"
-  ac_cv_use_ml_superlu=$withval
+# Check whether --enable-ml_enrich or --disable-ml_enrich was given.
+if test "${enable_ml_enrich+set}" = set; then
+  enableval="$enable_ml_enrich"
+  ac_cv_use_ml_enrich=$enableval
 else
-  ac_cv_use_ml_superlu=no
+  ac_cv_use_ml_enrich=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use ml_superlu" >&5
-echo $ECHO_N "checking whether to use ml_superlu... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use ml_enrich" >&5
+echo $ECHO_N "checking whether to use ml_enrich... $ECHO_C" >&6
 
-if test "X$ac_cv_use_ml_superlu" != "Xno"; then
+if test "X$ac_cv_use_ml_enrich" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_SUPERLU
+#define HAVE_ML_ENRICH 1
 _ACEOF
 
 else
@@ -6311,35 +6281,6 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-#
-
-
-# Check whether --with-ml_superlu_dist or --without-ml_superlu_dist was given.
-if test "${with_ml_superlu_dist+set}" = set; then
-  withval="$with_ml_superlu_dist"
-  ac_cv_use_ml_superlu_dist=$withval
-else
-  ac_cv_use_ml_superlu_dist=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use ml_superlu_dist" >&5
-echo $ECHO_N "checking whether to use ml_superlu_dist... $ECHO_C" >&6
-
-if test "X$ac_cv_use_ml_superlu_dist" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_SUPERLU_DIST
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-# Note 2: You must also specify the location of the SuperLU_DIST headers and libraries via the configure options --with-ldflags=<SuperLU_DIST-library-path/library-name> and --with-incdirs=SuperLU_DIST-include-directory.], ML_SUPERLU_DIST, no)
 #
 
 
@@ -6482,13 +6423,88 @@ else
   ML_BENCHMARKING_FALSE=
 fi
 
+#
 
-#TAC_ARG_ENABLE_FEATURE_SUB( ml, slud, [Enable ML interface support for SuperLU], ML_SLU, no)
+# Check whether --with-ml-64bit-integer or --without-ml-64bit-integer was given.
+if test "${with_ml_64bit_integer+set}" = set; then
+  withval="$with_ml_64bit_integer"
+  ML_BIG_INT_SUPPORT=${withval}
+else
+  ML_BIG_INT_SUPPORT="int"
 
-#if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
-#  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  ml requires at least one or the other.]])
-#fi
+fi;
 
+cat >>confdefs.h <<_ACEOF
+#define ML_BIG_INT $ML_BIG_INT_SUPPORT
+_ACEOF
+
+
+if test "X${ML_BIG_INT_SUPPORT}" = "Xyes" && test "X${ML_BIG_INT}" = "X" || test "X${ML_BIG_INT_SUPPORT}" = "X" && test "X${ML_BIG_INT}" = "X"; then
+  echo "ERROR: An argument to --with-ml-64bit-integer must be specified!"
+  echo "  For example:"
+  echo "    --with-ml-64bit-integer=\"long long\" for LINUX, TFLOP, IRIXN32"
+  echo "    --with-ml-64bit-integer=\"long\"      for IRIX64, ALPHA (Cplant)"
+  exit 1
+fi
+#
+############################################
+#### interfaces to 3rd party packages
+############################################
+#
+
+
+# Check whether --with-ml_superlu or --without-ml_superlu was given.
+if test "${with_ml_superlu+set}" = set; then
+  withval="$with_ml_superlu"
+  ac_cv_use_ml_superlu=$withval
+else
+  ac_cv_use_ml_superlu=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use ml_superlu" >&5
+echo $ECHO_N "checking whether to use ml_superlu... $ECHO_C" >&6
+
+if test "X$ac_cv_use_ml_superlu" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML_SUPERLU
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+#
+
+
+# Check whether --with-ml_superlu_dist or --without-ml_superlu_dist was given.
+if test "${with_ml_superlu_dist+set}" = set; then
+  withval="$with_ml_superlu_dist"
+  ac_cv_use_ml_superlu_dist=$withval
+else
+  ac_cv_use_ml_superlu_dist=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use ml_superlu_dist" >&5
+echo $ECHO_N "checking whether to use ml_superlu_dist... $ECHO_C" >&6
+
+if test "X$ac_cv_use_ml_superlu_dist" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML_SUPERLU_DIST
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+#
 
 
 # Check whether --with-ml_metis or --without-ml_metis was given.
@@ -6570,25 +6586,28 @@ echo "${ECHO_T}no" >&6
 fi
 
 #
+############################################
+#### interfaces to other Trilinos packages
+############################################
+#
 
-
-# Check whether --with-ml_amesos or --without-ml_amesos was given.
-if test "${with_ml_amesos+set}" = set; then
-  withval="$with_ml_amesos"
-  ac_cv_use_ml_amesos=$withval
+# Check whether --enable-amesos or --disable-amesos was given.
+if test "${enable_amesos+set}" = set; then
+  enableval="$enable_amesos"
+  ac_cv_use_amesos=$enableval
 else
-  ac_cv_use_ml_amesos=no
+  ac_cv_use_amesos=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use ml_amesos" >&5
-echo $ECHO_N "checking whether to use ml_amesos... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use amesos" >&5
+echo $ECHO_N "checking whether to use amesos... $ECHO_C" >&6
 
-if test "X$ac_cv_use_ml_amesos" != "Xno"; then
+if test "X$ac_cv_use_amesos" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_AMESOS
+#define HAVE_ML_AMESOS 1
 _ACEOF
 
 else
@@ -6598,7 +6617,7 @@ fi
 
 
 
-if test "X$ac_cv_use_ml_amesos" = "Xyes"; then
+if test "X$ac_cv_use_amesos" = "Xyes"; then
   ML_USING_AMESOS_TRUE=
   ML_USING_AMESOS_FALSE='#'
 else
@@ -6608,24 +6627,23 @@ fi
 
 #
 
-
-# Check whether --with-ml_ifpack or --without-ml_ifpack was given.
-if test "${with_ml_ifpack+set}" = set; then
-  withval="$with_ml_ifpack"
-  ac_cv_use_ml_ifpack=$withval
+# Check whether --enable-ifpack or --disable-ifpack was given.
+if test "${enable_ifpack+set}" = set; then
+  enableval="$enable_ifpack"
+  ac_cv_use_ifpack=$enableval
 else
-  ac_cv_use_ml_ifpack=no
+  ac_cv_use_ifpack=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use ml_ifpack" >&5
-echo $ECHO_N "checking whether to use ml_ifpack... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use ifpack" >&5
+echo $ECHO_N "checking whether to use ifpack... $ECHO_C" >&6
 
-if test "X$ac_cv_use_ml_ifpack" != "Xno"; then
+if test "X$ac_cv_use_ifpack" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_IFPACK
+#define HAVE_ML_IFPACK 1
 _ACEOF
 
 else
@@ -6635,7 +6653,7 @@ fi
 
 
 
-if test "X$ac_cv_use_ml_ifpack" = "Xyes"; then
+if test "X$ac_cv_use_ifpack" = "Xyes"; then
   ML_USING_IFPACK_TRUE=
   ML_USING_IFPACK_FALSE='#'
 else
@@ -6645,24 +6663,23 @@ fi
 
 #
 
-
-# Check whether --with-ml_teuchos or --without-ml_teuchos was given.
-if test "${with_ml_teuchos+set}" = set; then
-  withval="$with_ml_teuchos"
-  ac_cv_use_ml_teuchos=$withval
+# Check whether --enable-teuchos or --disable-teuchos was given.
+if test "${enable_teuchos+set}" = set; then
+  enableval="$enable_teuchos"
+  ac_cv_use_teuchos=$enableval
 else
-  ac_cv_use_ml_teuchos=no
+  ac_cv_use_teuchos=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use ml_teuchos" >&5
-echo $ECHO_N "checking whether to use ml_teuchos... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use teuchos" >&5
+echo $ECHO_N "checking whether to use teuchos... $ECHO_C" >&6
 
-if test "X$ac_cv_use_ml_teuchos" != "Xno"; then
+if test "X$ac_cv_use_teuchos" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_TEUCHOS
+#define HAVE_ML_TEUCHOS 1
 _ACEOF
 
 else
@@ -6670,9 +6687,10 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+#
 
 
-if test "X$ac_cv_use_ml_teuchos" = "Xyes"; then
+if test "X$ac_cv_use_teuchos" = "Xyes"; then
   ML_USING_TEUCHOS_TRUE=
   ML_USING_TEUCHOS_FALSE='#'
 else
@@ -6682,24 +6700,23 @@ fi
 
 #
 
-
-# Check whether --with-ml_anasazi or --without-ml_anasazi was given.
-if test "${with_ml_anasazi+set}" = set; then
-  withval="$with_ml_anasazi"
-  ac_cv_use_ml_anasazi=$withval
+# Check whether --enable-anasazi or --disable-anasazi was given.
+if test "${enable_anasazi+set}" = set; then
+  enableval="$enable_anasazi"
+  ac_cv_use_anasazi=$enableval
 else
-  ac_cv_use_ml_anasazi=no
+  ac_cv_use_anasazi=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use ml_anasazi" >&5
-echo $ECHO_N "checking whether to use ml_anasazi... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use anasazi" >&5
+echo $ECHO_N "checking whether to use anasazi... $ECHO_C" >&6
 
-if test "X$ac_cv_use_ml_anasazi" != "Xno"; then
+if test "X$ac_cv_use_anasazi" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_ANASAZI
+#define HAVE_ML_ANASAZI 1
 _ACEOF
 
 else
@@ -6709,7 +6726,7 @@ fi
 
 
 
-if test "X$ac_cv_use_ml_anasazi" = "Xyes"; then
+if test "X$ac_cv_use_anasazi" = "Xyes"; then
   ML_USING_ANASAZI_TRUE=
   ML_USING_ANASAZI_FALSE='#'
 else
@@ -6719,24 +6736,23 @@ fi
 
 #
 
-
-# Check whether --with-ml_triutils or --without-ml_triutils was given.
-if test "${with_ml_triutils+set}" = set; then
-  withval="$with_ml_triutils"
-  ac_cv_use_ml_triutils=$withval
+# Check whether --enable-triutils or --disable-triutils was given.
+if test "${enable_triutils+set}" = set; then
+  enableval="$enable_triutils"
+  ac_cv_use_triutils=$enableval
 else
-  ac_cv_use_ml_triutils=no
+  ac_cv_use_triutils=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use ml_triutils" >&5
-echo $ECHO_N "checking whether to use ml_triutils... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use triutils" >&5
+echo $ECHO_N "checking whether to use triutils... $ECHO_C" >&6
 
-if test "X$ac_cv_use_ml_triutils" != "Xno"; then
+if test "X$ac_cv_use_triutils" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_TRIUTILS
+#define HAVE_ML_TRIUTILS 1
 _ACEOF
 
 else
@@ -6746,7 +6762,7 @@ fi
 
 
 
-if test "X$ac_cv_use_ml_triutils" = "Xyes"; then
+if test "X$ac_cv_use_triutils" = "Xyes"; then
   ML_USING_TRIUTILS_TRUE=
   ML_USING_TRIUTILS_FALSE='#'
 else
@@ -6755,28 +6771,7 @@ else
 fi
 
 #
-
-# Check whether --with-ml-64bit-integer or --without-ml-64bit-integer was given.
-if test "${with_ml_64bit_integer+set}" = set; then
-  withval="$with_ml_64bit_integer"
-  ML_BIG_INT_SUPPORT=${withval}
-else
-  ML_BIG_INT_SUPPORT="int"
-
-fi;
-
-cat >>confdefs.h <<_ACEOF
-#define ML_BIG_INT $ML_BIG_INT_SUPPORT
-_ACEOF
-
-
-if test "X${ML_BIG_INT_SUPPORT}" = "Xyes" && test "X${ML_BIG_INT}" = "X" || test "X${ML_BIG_INT_SUPPORT}" = "X" && test "X${ML_BIG_INT}" = "X"; then
-  echo "ERROR: An argument to --with-ml-64bit-integer must be specified!"
-  echo "  For example:"
-  echo "    --with-ml-64bit-integer=\"long long\" for LINUX, TFLOP, IRIXN32"
-  echo "    --with-ml-64bit-integer=\"long\"      for IRIX64, ALPHA (Cplant)"
-  exit 1
-fi
+#############################################
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
@@ -6919,7 +6914,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6922: \"$ac_link\") >&5
+(eval echo $as_me:6917: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6997,7 +6992,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7000: \"$ac_link\") >&5
+(eval echo $as_me:6995: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9865,7 +9860,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9868: \"$ac_link\") >&5
+(eval echo $as_me:9863: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9943,7 +9938,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9946: \"$ac_link\") >&5
+(eval echo $as_me:9941: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

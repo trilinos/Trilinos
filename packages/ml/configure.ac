@@ -263,32 +263,25 @@ AC_CXX_STD_SPRINTF
 
 # invoke with "with-xxxxxx", where xxxxxx is the first argument, e.g., ml_aztec
 
-###########################
-# these are ON by default
-###########################
- TAC_ARG_WITH_PACKAGE(ml_epetra, [Enable Epetra support], ML_EPETRA, yes)
-#
- TAC_ARG_WITH_PACKAGE(ml_aztecoo, [Enable Aztecoo support], ML_AZTEC, yes)
+#####################################
+# Following options are ON by default
+#####################################
+ TAC_ARG_ENABLE_OPTION(epetra, [Enable Epetra support], ML_EPETRA, yes)
+ TAC_ARG_ENABLE_OPTION(aztecoo, [Enable Aztecoo support], ML_AZTEC, yes)
+
 #if we're not using aztecoo, then build certain ML examples
 #without dependencies on libepetra.a  or libaztecoo.a
 #(See ml/examples/Makefile.am.)
-AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_ml_aztecoo" != "Xyes")
-# TAC_ARG_WITH_PACKAGE(ml_mpi, [Enable mpi support], ML_MPI, yes)
- TAC_ARG_WITH_PACKAGE(ml_external_mpi_functions, [Use mpi-provided global communication functions (not ml's internal implementation)], ML_EXTERNAL_MPI_FUNCTIONS, yes)
-# TAC_ARG_WITH_PACKAGE(ml_vendor_blas, [Use system blas library (not ml's internal reference blas)], ML_VENDOR_BLAS, yes)
-# TAC_ARG_WITH_PACKAGE(ml_vendor_lapack, [Use system lapack library (not ml's internal reference lapack)], ML_VENDOR_LAPACK, yes)
- TAC_ARG_ENABLE_OPTION(ml_enrich, [Enable latest enriched Maxwell prolongator], ML_ENRICH, no)
-#
+AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_aztecoo" != "Xyes")
+
+TAC_ARG_WITH_PACKAGE(ml_external_mpi_functions, [Use mpi-provided global communication functions (not ml's internal implementation)], ML_EXTERNAL_MPI_FUNCTIONS, yes)
+
  TAC_ARG_ENABLE_OPTION(ml_newtpe, [Enable latest Maxwell prolongator fixes], ML_NEW_T_PE, yes)
 
-###########################
-# these are OFF by default
-###########################
- TAC_ARG_WITH_PACKAGE(ml_superlu, [Enable SuperLU support.  Note 1: SuperLU is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu" --with-ldflags="-L<SuperLU-library-path>" --with-incdirs="<SuperLU-include-path>".], ML_SUPERLU, no)
-#
- TAC_ARG_WITH_PACKAGE(ml_superlu_dist, [Enable SuperLU_DIST support.  Note 1: SuperLU_DIST is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU_DIST headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu_dist" --with-ldflags="-L<SuperLU_DIST-library-path>" --with-incdirs="<SuperLU_DIST-include-path>".], ML_SUPERLU_DIST, no)
- 
-# Note 2: You must also specify the location of the SuperLU_DIST headers and libraries via the configure options --with-ldflags=<SuperLU_DIST-library-path/library-name> and --with-incdirs=SuperLU_DIST-include-directory.], ML_SUPERLU_DIST, no)
+#######################################
+# Following options are OFF by default
+#######################################
+ TAC_ARG_ENABLE_OPTION(ml_enrich, [Enable latest enriched Maxwell prolongator], ML_ENRICH, no)
 #
  TAC_ARG_WITH_PACKAGE(ml_aztec2_1, [Enable Aztec 2.1 support], ML_AZTEC2_1, no)
 #
@@ -301,33 +294,6 @@ AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_ml_aztecoo" != "Xyes")
 #
  TAC_ARG_ENABLE_OPTION(ml_benchmarking, [For benchmarking suite.], ML_BENCHMARKING, no)
 AM_CONDITIONAL(ML_BENCHMARKING, test "X$ac_cv_use_ml_benchmarking" != "Xno")
-
-#TAC_ARG_ENABLE_FEATURE_SUB( ml, slud, [Enable ML interface support for SuperLU], ML_SLU, no)
-
-#if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
-#  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  ml requires at least one or the other.]])
-#fi
-
-TAC_ARG_WITH_PACKAGE(ml_metis, [Enable METIS support.  METIS can be used to create aggregates using graph-decomposition algorithsm. Note 1: METIS is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of headers and libraries like, for instance: configure --with-libs="<other libraries> -lmetis" --with-ldflags="-L<METIS-library-path>" and --with-incdirs="<METIS-include-path>".], ML_METIS, no)
-#
-TAC_ARG_WITH_PACKAGE(ml_parmetis2x, [Enable ParMETIS support, version 2.x. See notes for --with-ml_metis.], ML_PARMETIS_2x, no) 
-#
-TAC_ARG_WITH_PACKAGE(ml_parmetis3x, [Enable ParMETIS support, version 3.x. See notes for --with-ml_metis.], ML_PARMETIS_3x, no) 
-#
-TAC_ARG_WITH_PACKAGE(ml_amesos, [Enable AMESOS support. Amesos, a Trilinos package, can be used to interface ML with various direct solvers, such as SuperLU, MUMPS, UMFPACK, KLU, and other. Amesos requires --with-ml_epetra. See notes for --enable-ml_metis.], ML_AMESOS, no)
-AM_CONDITIONAL(ML_USING_AMESOS, test "X$ac_cv_use_ml_amesos" = "Xyes")
-#
-TAC_ARG_WITH_PACKAGE(ml_ifpack, [Enable IFPACK support. Ifpack, a Trilinos package, can provide incomplete factorization smoothers to ML. Ifpack requires --with-ml_epetra. See notes for --enable-ml_metis.], ML_IFPACK, no)
-AM_CONDITIONAL(ML_USING_IFPACK, test "X$ac_cv_use_ml_ifpack" = "Xyes")
-#
-TAC_ARG_WITH_PACKAGE(ml_teuchos, [Enable TEUCHOS support. Teuchos, a Trilinos package, is required by the class Epetra_ML_Preconditioner. Teuchos requires --with-ml_epetra. See notes for --enable-ml_metis.], ML_TEUCHOS, no)
-AM_CONDITIONAL(ML_USING_TEUCHOS, test "X$ac_cv_use_ml_teuchos" = "Xyes")
-#
-TAC_ARG_WITH_PACKAGE(ml_anasazi, [Enable ANASAZI support. Anasazi, a Trilinos package, can be used for eigenvalue estimates. Anasazi requires --with-ml_epetra and --with-ml_teuchos.], ML_ANASAZI, no)
-AM_CONDITIONAL(ML_USING_ANASAZI, test "X$ac_cv_use_ml_anasazi" = "Xyes")
-#
-TAC_ARG_WITH_PACKAGE(ml_triutils, [Enable TRIUTILS support. Triutils, a Trilinos package, is used if some ML examples to construct the linear system. Triutils requires --with-ml_epetra.], ML_TRIUTILS, no)
-AM_CONDITIONAL(ML_USING_TRIUTILS, test "X$ac_cv_use_ml_triutils" = "Xyes")
 #
 AC_ARG_WITH(ml-64bit-integer,
 [AC_HELP_STRING([--with-ml-64bit-integer],[Support for 64-bit integers; required if ML used
@@ -345,6 +311,42 @@ if test "X${ML_BIG_INT_SUPPORT}" = "Xyes" && test "X${ML_BIG_INT}" = "X" || test
   echo "    --with-ml-64bit-integer=\"long\"      for IRIX64, ALPHA (Cplant)"
   exit 1
 fi
+#
+############################################
+#### interfaces to 3rd party packages
+############################################
+#
+TAC_ARG_WITH_PACKAGE(ml_superlu, [Enable SuperLU support.  Note 1: SuperLU is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu" --with-ldflags="-L<SuperLU-library-path>" --with-incdirs="<SuperLU-include-path>".], ML_SUPERLU, no)
+#
+TAC_ARG_WITH_PACKAGE(ml_superlu_dist, [Enable SuperLU_DIST support.  Note 1: SuperLU_DIST is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU_DIST headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu_dist" --with-ldflags="-L<SuperLU_DIST-library-path>" --with-incdirs="<SuperLU_DIST-include-path>".], ML_SUPERLU_DIST, no)
+#
+TAC_ARG_WITH_PACKAGE(ml_metis, [Enable METIS support.  METIS can be used to create aggregates using graph-decomposition algorithsm. Note 1: METIS is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of headers and libraries like, for instance: configure --with-libs="<other libraries> -lmetis" --with-ldflags="-L<METIS-library-path>" and --with-incdirs="<METIS-include-path>".], ML_METIS, no)
+#
+TAC_ARG_WITH_PACKAGE(ml_parmetis2x, [Enable ParMETIS support, version 2.x. See notes for --with-ml_metis.], ML_PARMETIS_2x, no) 
+#
+TAC_ARG_WITH_PACKAGE(ml_parmetis3x, [Enable ParMETIS support, version 3.x. See notes for --with-ml_metis.], ML_PARMETIS_3x, no) 
+#
+############################################
+#### interfaces to other Trilinos packages
+############################################
+#
+TAC_ARG_ENABLE_OPTION(amesos, [Enable AMESOS support. Amesos, a Trilinos package, can be used to interface ML with various direct solvers, such as SuperLU, MUMPS, UMFPACK, KLU, and other. Amesos requires --with-ml_epetra. See notes for --enable-ml_metis.], ML_AMESOS, no)
+AM_CONDITIONAL(ML_USING_AMESOS, test "X$ac_cv_use_amesos" = "Xyes")
+#
+TAC_ARG_ENABLE_OPTION(ifpack, [Enable IFPACK support. Ifpack, a Trilinos package, can provide incomplete factorization smoothers to ML. Ifpack requires --enable_epetra. See notes for --enable-ml_metis.], ML_IFPACK, no)
+AM_CONDITIONAL(ML_USING_IFPACK, test "X$ac_cv_use_ifpack" = "Xyes")
+#
+TAC_ARG_ENABLE_OPTION(teuchos, [Enable TEUCHOS support. Teuchos, a Trilinos package, is required by the class Epetra_ML_Preconditioner. Teuchos requires --enable_epetra. See notes for --enable-ml_metis.], ML_TEUCHOS, no)
+#
+AM_CONDITIONAL(ML_USING_TEUCHOS, test "X$ac_cv_use_teuchos" = "Xyes")
+#
+TAC_ARG_ENABLE_OPTION(anasazi, [Enable ANASAZI support. Anasazi, a Trilinos package, can be used for eigenvalue estimates. Anasazi requires --enable_epetra and --enable-teuchos.], ML_ANASAZI, no)
+AM_CONDITIONAL(ML_USING_ANASAZI, test "X$ac_cv_use_anasazi" = "Xyes")
+#
+TAC_ARG_ENABLE_OPTION(triutils, [Enable TRIUTILS support. Triutils, a Trilinos package, is used if some ML examples to construct the linear system. Triutils requires --enable_epetra.], ML_TRIUTILS, no)
+AM_CONDITIONAL(ML_USING_TRIUTILS, test "X$ac_cv_use_triutils" = "Xyes")
+#
+#############################################
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
