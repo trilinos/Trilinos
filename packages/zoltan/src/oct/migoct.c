@@ -374,7 +374,7 @@ void LB_fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
   }
 #if 0
 
-  /* KDD -- LB_Compute_Destinations will perform this operation for us.
+  /* KDD -- LB_Compute_Destinations will perform this operation for us. */
   new_export = (LB_TAG *) LB_array_alloc(__FILE__, __LINE__, 1, *nsentags,
                                          sizeof(LB_TAG));
   if(((*nsentags) > 0) && (new_export == NULL)) {

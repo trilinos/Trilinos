@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "all_allo_const.h"
 #include "ch_input_const.h"
 
@@ -99,21 +100,20 @@ float   **eweights;		/* edge weight list data */
     vtxnums = option - 10 * (option / 10);
 
     /* Allocate space for rows and columns. */
-    *start = (int *) LB_SMALLOC((unsigned) (*nvtxs + 1) * sizeof(int));
+    *start = (int *) malloc((unsigned) (*nvtxs + 1) * sizeof(int));
     if (narcs != 0)
-	*adjacency = (int *)
-                       LB_SMALLOC((unsigned) (2 * narcs + 1) * sizeof(int));
+	*adjacency = (int *) malloc((unsigned) (2 * narcs + 1) * sizeof(int));
     else
 	*adjacency = NULL;
 
     if (using_vwgts)
-	*vweights = (int *) LB_SMALLOC((unsigned) (*nvtxs) * sizeof(int));
+	*vweights = (int *) malloc((unsigned) (*nvtxs) * sizeof(int));
     else
 	*vweights = NULL;
 
     if (using_ewgts)
 	*eweights = (float *)
-                      LB_SMALLOC((unsigned) (2 * narcs + 1) * sizeof(float));
+                     malloc((unsigned) (2 * narcs + 1) * sizeof(float));
     else
 	*eweights = NULL;
 

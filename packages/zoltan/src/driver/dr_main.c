@@ -38,15 +38,18 @@ static char *cvs_dr_main = "$Id$";
 
 #include "dr_const.h"
 #include "dr_input_const.h"
+#include "dr_loadbal_const.h"
+#include "dr_output_const.h"
 #include "dr_err_const.h"
 
 /* global mesh information struct variable */
 MESH_INFO Mesh;
 
-extern int run_zoltan(int, PROB_INFO_PTR, ELEM_INFO_PTR *);
-extern int output_results(int, int, PARIO_INFO_PTR, ELEM_INFO *);
+static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, ELEM_INFO_PTR *);
 
-int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, ELEM_INFO_PTR *);
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
 
 int main(int argc, char *argv[])
 {
@@ -197,11 +200,12 @@ int main(int argc, char *argv[])
  * file is added to the driver, then a section needs to be added for
  * it here.
  *---------------------------------------------------------------------------*/
-int read_mesh(int Proc,
-              int Num_Proc,
-              PROB_INFO_PTR prob,
-              PARIO_INFO_PTR pio_info,
-              ELEM_INFO **elements)
+static int read_mesh(
+  int Proc,
+  int Num_Proc,
+  PROB_INFO_PTR prob,
+  PARIO_INFO_PTR pio_info,
+  ELEM_INFO **elements)
 {
 /* local declarations */
 /*-----------------------------Execution Begins------------------------------*/
@@ -211,14 +215,12 @@ int read_mesh(int Proc,
         return 0;
     }
   }
-#ifdef NEMESIS_IO
   else if (pio_info->file_type == NEMESIS_FILE) {
     if (!read_exoII_mesh(Proc, Num_Proc, prob, pio_info, elements)) {
         Gen_Error(0, "fatal: Error returned from read_exoII_mesh\n");
         return 0;
     }
   }
-#endif
   return 1;
 }
 

@@ -36,6 +36,7 @@ static char *cvs_migrate = "$Id$";
 
 #include "dr_const.h"
 #include "dr_err_const.h"
+#include "dr_loadbal_const.h"
 
 /*
  *  PROTOTYPES for load-balancer interface functions.

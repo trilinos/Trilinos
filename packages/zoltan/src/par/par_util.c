@@ -88,7 +88,7 @@ int LB_find_median(
 
   int     i, j, k, wtflag, numlist;
   int     first_iteration;
-  int    *dotlist;                   /* list of active dots */
+  int    *dotlist = NULL;            /* list of active dots */
   int     indexlo, indexhi;          /* indices of dot closest to median */
   int     breakflag;                 /* for breaking out of median iteration */
   int     markactive;                /* which side of cut is active = 0/1 */

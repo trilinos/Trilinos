@@ -61,7 +61,7 @@ static char *cvs_lbconsth_id = "$Id$";
 typedef struct LB_Struct LB;
 typedef struct LB_Tag_Struct LB_TAG;
 
-typedef void LB_FN(LB *, int*, LB_GID**, LB_LID**, int **);
+typedef int LB_FN(LB *, int*, LB_GID**, LB_LID**, int **);
 
 /*
  *  Define the possible load balancing methods allowed.
@@ -163,13 +163,6 @@ struct LB_Struct {
                                       Communicator.                          */
   int Debug;                      /*  Debug level for this instance of
                                       load balancing.                        */
-  /*
-   *  KDD_DLB  --  The Communicator and Proc/Num_Proc are not yet used 
-   *  KDD_DLB  --  in the algorithms!
-   *  KDD_DLB  --  It will have to be incorporated appropriately.
-   *  KDD_DLB  --  But I wanted to get the interface ready!
-   */
-
   LB_METHOD Method;               /*  Method to be used for load balancing.  */
   LB_FN *LB_Fn;                   /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
