@@ -189,11 +189,11 @@ class Eigenproblem {
 
     protected:
 
+        Operator<TYPE> *_Op;
+        Matrix<TYPE> *_Amat, *_Bmat; 
+        MultiVec<TYPE> *_InitVec;
 	TYPE *_REvals, *_IEvals;
 	MultiVec<TYPE> *_REvecs, *_IEvecs; 	
-	MultiVec<TYPE> *_InitVec;
-	Matrix<TYPE> *_Amat, *_Bmat; 
-	Operator<TYPE> *_Op;
 };		
 
 //=============================================================================

@@ -23,8 +23,8 @@ class LOCAMat : public Matrix<TYPE> {
 public:
 	LOCAMat( NOX::Parameter::List&, NOX::Abstract::Group& );
 	~LOCAMat();
-	_ReturnType ApplyMatrix ( const MultiVec<TYPE>& x, 
-					MultiVec<TYPE>& y ) const;
+	ReturnType ApplyMatrix ( const MultiVec<TYPE>& x, 
+				       MultiVec<TYPE>& y ) const;
 private:
 	NOX::Parameter::List& locaParams;
 	NOX::Abstract::Group& locaGroup;
@@ -86,7 +86,7 @@ public:
 	// *this <- alpha * A * B + beta * (*this)
 	//
 	virtual void MvTimesMatAddMv ( TYPE alpha, MultiVec<TYPE>& A, 
-		DenseMatrix<TYPE>& B, TYPE beta );
+		Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta );
 	//
 	// *this <- alpha * A + beta * B
 	//
@@ -96,7 +96,7 @@ public:
 	// B <- alpha * A^T * (*this)
 	//
 	virtual void MvTransMv ( TYPE alpha, MultiVec<TYPE>& A, 
-		DenseMatrix<TYPE>& B );
+		Teuchos::SerialDenseMatrix<int,TYPE>& B );
 	//
 	// alpha[i] = norm of i-th column of (*this)
 	//
@@ -204,8 +204,8 @@ LOCAVec<TYPE>::LOCAVec( DataAccess type, const LOCAVec<TYPE>& source,
 template<class TYPE>
 LOCAVec<TYPE>::~LOCAVec()
 {
-	if (CV == ::Copy) {
-		for (int i=0; i<mvPtrs.size(); i++) {
+	if (CV == Copy) {
+		for (unsigned int i=0; i<mvPtrs.size(); i++) {
 			delete mvPtrs[i];
 		}
 	}
@@ -237,14 +237,14 @@ MultiVec<TYPE>* LOCAVec<TYPE>::CloneCopy() {
 template<class TYPE>
 MultiVec<TYPE>* LOCAVec<TYPE>::CloneCopy ( int index[], int NumVecs ) {
 	
-	LOCAVec *ptr_alv = new LOCAVec( ::Copy, *this, index, NumVecs );
+	LOCAVec *ptr_alv = new LOCAVec( Copy, *this, index, NumVecs );
 	return ptr_alv; // safe upcast.
 }
 
 template<class TYPE>
 MultiVec<TYPE>* LOCAVec<TYPE>::CloneView ( int index[], int NumVecs ) {
 	
-	LOCAVec *ptr_alv = new LOCAVec( ::View, *this, index, NumVecs );
+	LOCAVec *ptr_alv = new LOCAVec( View, *this, index, NumVecs );
 	return ptr_alv; // safe upcast.
 }
 
@@ -277,14 +277,14 @@ void LOCAVec<TYPE>::SetBlock( MultiVec<TYPE>& A, int index[], int NumVecs ) {
 //
 template<class TYPE>
 void LOCAVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, MultiVec<TYPE>& A, 
-						   DenseMatrix<TYPE>& B, TYPE beta ) 
+				      Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta ) 
 {
 	int i,j;
 	LOCAVec *A_vec = dynamic_cast<LOCAVec *>(&A); assert(A_vec!=NULL);
-	int m = B.getrows();
-	int n = B.getcols();
-	int ldb = B.getld();
-	TYPE *Bvals = B.getarray();  	
+	int m = B.numRows();
+	int n = B.numCols();
+	int ldb = B.stride();
+	TYPE *Bvals = B.values();  	
 	LOCAVec *temp_vec = new LOCAVec(*(mvPtrs[0]),n);
 	temp_vec->MvInit(0.0);
 	TYPE one = 1.0;
@@ -318,13 +318,13 @@ void LOCAVec<TYPE>::MvAddMv ( TYPE alpha , MultiVec<TYPE>& A,
 //
 template<class TYPE>
 void LOCAVec<TYPE>::MvTransMv ( TYPE alpha, MultiVec<TYPE>& A,
-						   DenseMatrix<TYPE>& B) {
+				Teuchos::SerialDenseMatrix<int,TYPE>& B) {
 	int i,j;
 	LOCAVec *A_vec = dynamic_cast<LOCAVec *>(&A); assert(A_vec!=NULL);
-	int m = B.getrows();
-	int n = B.getcols();
-	int ldb = B.getld();
-	TYPE *Bvals = B.getarray();  	
+	int m = B.numRows();
+	int n = B.numCols();
+	int ldb = B.stride();
+	TYPE *Bvals = B.values();  	
 
 	for (j=0; j<n; j++) {
 		for (i=0; i<m; i++) {
@@ -351,7 +351,7 @@ void LOCAVec<TYPE>::MvNorm ( TYPE * normvec )
 template<class TYPE>
 void LOCAVec<TYPE>::MvRandom () 
 {
-	for (int i=0; i<mvPtrs.size(); i++) {
+	for (unsigned int i=0; i<mvPtrs.size(); i++) {
 		mvPtrs[i]->random();
 	}	
 }
@@ -404,8 +404,8 @@ LOCAMat<TYPE>::~LOCAMat() {
 // Matrix matrix multiply
 //
 template <class TYPE>
-_ReturnType LOCAMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x, 
-					  MultiVec<TYPE>& y ) const {
+ReturnType LOCAMat<TYPE>::ApplyMatrix ( const MultiVec<TYPE>& x, 
+					MultiVec<TYPE>& y ) const {
 	
 	NOX::Abstract::Group::ReturnType res;
 	MultiVec<TYPE> &temp_x = const_cast<MultiVec<TYPE> &>(x);
