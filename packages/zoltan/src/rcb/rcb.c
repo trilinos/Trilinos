@@ -82,7 +82,6 @@ char *val)			/* value of variable */
     PARAM_VARS RCB_params[] = {
 	{ "RCB_OVERALLOC", NULL, "DOUBLE" },
 	{ "RCB_REUSE", NULL, "INT" },
-	{ "RCB_WGTFLAG", NULL, "INT" },
 	{ "RCB_CHECK", NULL, "INT" },
 	{ "RCB_STATS", NULL, "INT" },
         { "KEEP_CUTS", NULL, "INT" },
