@@ -118,39 +118,14 @@ int Zoltan_PHG(
     goto End;
   }
 
-  hgp.kway = ((strstr(hgp.local_str,"kway")) ? 1 : 0);  
-  if (hgp.kway) {
-    err = Zoltan_PHG_HPart_Lib (zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
-     output_parts, &hgp, 0);
-    if (err != ZOLTAN_OK)
-      return err;
+  /* call main V cycle routine */
+  err = Zoltan_PHG_HPart_Lib (zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
+   output_parts, &hgp, 0);
+  if (err != ZOLTAN_OK) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
+    goto End;
   }
-  else {
-    /* vmap associates original vertices to sub hypergraphs */
-    zoltan_hg->HG.vmap = (int*)ZOLTAN_MALLOC(zoltan_hg->HG.nVtx * sizeof (int));
-    if (zoltan_hg->HG.vmap == NULL)  {
-      err = ZOLTAN_MEMERR;
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      goto End;
-    }
-    for (i = 0; i < zoltan_hg->HG.nVtx; i++)
-      zoltan_hg->HG.vmap[i] = i;
-
-    /* tighten balance tolerance for recursive bisection process */
-    if (zz->LB.Num_Global_Parts > 2)
-      hgp.bal_tol = pow (hgp.bal_tol,
-       1.0 / ceil (log((double)zz->LB.Num_Global_Parts) / log(2.0)));
-
-    /* partition hypergraph */
-    err = Zoltan_PHG_rdivide (1, zz->LB.Num_Global_Parts, output_parts, zz,
-     &zoltan_hg->HG, &hgp, 0);
-    if (err != ZOLTAN_OK)  {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
-      goto End;
-    }
-    ZOLTAN_FREE (&zoltan_hg->HG.vmap);
-  }
-
+   
   /* Build Zoltan's return arguments. */
   Zoltan_PHG_Return_Lists(zz, zoltan_hg, output_parts, num_exp, exp_gids,
    exp_lids, exp_procs, exp_to_part);
@@ -350,50 +325,9 @@ void Zoltan_PHG_HGraph_Print(
   Zoltan_Print_Sync_End(zz->Communicator, 1);
 }
 
-
-
-/* static double hcut_size_links (ZZ *zz, PHGraph *hg, int p, Partition part)
-{
-  int i, j, *parts, nparts;
-  double cut = 0.0;
-  char *yo = "hcut_size_links";
-
-  if (!(parts = (int*) ZOLTAN_CALLOC (p, sizeof(int)))) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    return ZOLTAN_MEMERR;
-  }
-
-  for (i = 0; i < hg->nEdge; i++) {
-    nparts = 0;
-    for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++) {
-      if (parts[part[hg->hvertex[j]]] < i + 1)
-        nparts++;
-      parts[part[hg->hvertex[j]]] = i + 1;
-    }
-    cut += (nparts-1) * (hg->ewgt ? hg->ewgt[i] : 1.0);
-  }
-  ZOLTAN_FREE ((void**) &parts);
-  return cut;
-}
-*/
-
-/* static double hcut_size_total (HGraph *hg, Partition part)
-{
-  int i, j, hpart;
-  double cut = 0.0;
-
-  for (i = 0; i < hg->nEdge; i++) {
-    hpart = part[hg->hvertex[hg->hindex[i]]];
-    for (j = hg->hindex[i] + 1; j < hg->hindex[i+1]
-     && part[hg->hvertex[j]] == hpart; j++);
-      if (j != hg->hindex[i+1])
-        cut += (hg->ewgt ? hg->ewgt[i] : 1.0);
-  }
-  return cut;
-}
-*/
-
 /*****************************************************************************/
+
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
