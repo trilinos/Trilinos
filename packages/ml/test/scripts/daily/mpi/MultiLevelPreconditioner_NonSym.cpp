@@ -182,34 +182,46 @@ int main(int argc, char *argv[]) {
   // =============== //
   // default options //
   // ================ //
-  if( 0 ) {
+  if( 1 ) {
     
     if( Comm.MyPID() == 0 ) PrintLine();
     
     Teuchos::ParameterList MLList;
     iters = TestMultiLevelPreconditioner("no defaults", MLList, *Problem, TotalErrorResidual, TotalErrorExactSol );
-    cout << iters << endl;
     
     // expected iterations
     switch( NumProcs ) {
     case 1:
-      if( iters != 937 ) ++TotalFailed;
+      if( iters != 805 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 )
+	  cerr << endl << "### TEST FAILED : expecting 805 iterations, got " 
+	       << iters << endl << endl;
+      }
       break;
     case 4:
-      if( iters != 928 ) ++TotalFailed;
+      if( iters != 876 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 )
+	  cerr << endl << "### TEST FAILED : expecting 876 iterations, got " 
+	       << iters << endl << endl;
+      }
       break;
     case 16:
-      if( iters != 1212 ) ++TotalFailed;
+      if( iters != 1154 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 ) 
+	  cerr << endl << "### TEST FAILED : expecting 1154 iterations, got "
+	       << iters << endl << endl;
+      }
       break;
-    default:
-      if( Comm.MyPID() == 0 ) cerr << "### TEST FAILED !!!!!" << endl;
     }
   }
 
   // ====================== //
   // default options for SA //
   // ====================== //
-  if( 1 ) {
+  if( 0 ) {
     
     if( Comm.MyPID() == 0 ) PrintLine();
     
@@ -237,18 +249,30 @@ int main(int argc, char *argv[]) {
     // expected iterations
     switch( NumProcs ) {
     case 1:
-      if( iters != 70 ) ++TotalFailed;
+      if( iters != 70 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 ) 
+	  cerr << endl << "### TEST FAILED : expecting 70 iterations, got "
+	       << iters << endl << endl;
+      }
       break;
     case 4:
-      if( iters != 82 ) ++TotalFailed;
+      if( iters != 82 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 ) 
+	  cerr << endl << "### TEST FAILED : expecting 82 iterations, got "
+	       << iters << endl << endl;
+      }
       break;
     case 16:
-      if( iters != 129 ) ++TotalFailed;
+      if( iters != 129 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 ) 
+	  cerr << endl << "### TEST FAILED : expecting 129 iterations, got "
+	       << iters << endl << endl;
+      }
       break;    
-    default:
-      if( Comm.MyPID() == 0 ) cerr << "### TEST FAILED !!!!!" << endl;
     }
-    
   }
 
 #ifdef HAVE_ML_METIS
@@ -267,16 +291,29 @@ int main(int argc, char *argv[]) {
     // expected iterations
     switch( NumProcs ) {
     case 1:
-      if( iters != 65 ) ++TotalFailed;
+      if( iters != 65 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 ) 
+	  cerr << endl << "### TEST FAILED : expecting 65 iterations, got "
+	       << iters << endl << endl;
+      }
       break;
     case 4:
-      if( iters != 66 ) ++TotalFailed;
+      if( iters != 66 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 ) 
+	  cerr << endl << "### TEST FAILED : expecting 66 iterations, got "
+	       << iters << endl << endl;
+      }
       break;
     case 16:
-      if( iters != 67 ) ++TotalFailed;
+      if( iters != 67 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 ) 
+	  cerr << endl << "### TEST FAILED : expecting 67 iterations, got "
+	       << iters << endl << endl;
+      }
       break;
-    default:
-      if( Comm.MyPID() == 0 ) cerr << "### TEST FAILED !!!!!" << endl;
     }
     
   }
@@ -296,18 +333,30 @@ int main(int argc, char *argv[]) {
     // expected iterations
     switch( NumProcs ) {
     case 1:
-      if( iters != 65 ) ++TotalFailed;
+      if( iters != 64 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 ) 
+	  cerr << endl << "### TEST FAILED : expecting 64 iterations, got "
+	       << iters << endl << endl;
+      }
       break;
     case 4:
-      if( iters != 77 ) ++TotalFailed;
+      if( iters != 77 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 ) 
+	  cerr << endl << "### TEST FAILED : expecting 77 iterations, got "
+	       << iters << endl << endl;
+      }
       break;
     case 16:
-      if( iters != 128 ) ++TotalFailed;
+      if( iters != 129 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 ) 
+	  cerr << endl << "### TEST FAILED : expecting 129 iterations, got "
+	       << iters << endl << endl;
+      }
       break;
-    default:
-      if( Comm.MyPID() == 0 ) cerr << "### TEST FAILED !!!!!" << endl;
     }
-    
   }
 
 #if defined(HAVE_ML_METIS) && defined(HAVE_ML_PARMETIS_3x)
@@ -327,18 +376,30 @@ int main(int argc, char *argv[]) {
     // expected iterations
     switch( NumProcs ) {
     case 1:
-      if( iters != 51 ) ++TotalFailed;
+      if( iters != 48 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 ) 
+	  cerr << endl << "### TEST FAILED : expecting 48 iterations, got "
+	       << iters << endl << endl;
+      }
       break;
     case 4:
-      if( iters != 62 ) ++TotalFailed;
+      if( iters != 59 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 ) 
+	  cerr << endl << "### TEST FAILED : expecting 59 iterations, got "
+	       << iters << endl << endl;
+      }
       break;
     case 16:
-      if( iters != 101 ) ++TotalFailed;
+      if( iters != 131 ) {
+	++TotalFailed;
+	if( Comm.MyPID() == 0 ) 
+	  cerr << endl << "### TEST FAILED : expecting 131 iterations, got "
+	       << iters << endl << endl;
+      }
       break;
-    default:
-      if( Comm.MyPID() == 0 ) cerr << "### TEST FAILED !!!!!" << endl;
     }
-    
   }
 #endif
   

@@ -69,7 +69,6 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 if ML_USING_AMESOS
 # Amesos require Teuchos
 amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
-             $(top_builddir)/../amesos/amd/src/libamd.a \
              $(top_builddir)/../teuchos/src/libteuchos.a
 else
 amesos_lib =
