@@ -85,9 +85,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
   printf("\acheck allocation sizes for Tcoarse in ml_agg_reitzinger.c\n");
 
-  Tcoarse_bindx = (int    *) ML_allocate(Kn_coarse->N_nonzeros*10*sizeof(int));
-  Tcoarse_val = (double *) ML_allocate(Kn_coarse->N_nonzeros*10*sizeof(double));
-  Tcoarse_rowptr= (int    *) ML_allocate(Kn_coarse->outvec_leng*10*sizeof(int));
+  Tcoarse_bindx =(int    *) ML_allocate(Kn_coarse->N_nonzeros *sizeof(int) );
+  Tcoarse_val = (double *) ML_allocate(Kn_coarse->N_nonzeros *sizeof(double));
+  Tcoarse_rowptr= (int    *) ML_allocate(Kn_coarse->N_nonzeros *sizeof(int));
   Tcoarse_rowptr[0] = 0;
   nz_ptr = 0;
   for (i = 0; i < Kn_coarse->outvec_leng; i++)
