@@ -519,6 +519,56 @@ the dominant eigenvalue.  Note that the vector q is our associated
 approximate eigenvector, but for this example we do not return it.
 
 \section{Epetra Maps and BlockMaps}
+
+\map{} objects are used to describe the layout of distributed
+objects.  The \map{} class is actually a specialization of an
+\blockmap{}.  Specifically, an \map{} object {\it isa} \blockmap{}
+with a constant block size of one.  However, to simplify discussion,
+we first introduce the \map{} class.
+
+An \map{} object contains all information needed to work with
+distributed memory objects.  Its primary data is a collection of {\it
+elements}.  Each element of a map has a global ID (GID) and a local ID
+(LID).  Elements are ordered on each processor by their LIDs.  On each
+processor, LID values range from 0 to the number of elements on the 
+processor.  The GIDs
+of an \map{} are a set of signed integer value.  GIDs are used as
+labels and need not be contiguous, ordered or uniquely associated with
+a processor.  There are several map constructors that support varying
+complexity in assigning GIDs to elements on a processor.  The example
+code in Figure~\ref{Figure:MapExamples} illustrate use of the three
+\map{} constructors (there is also a copy constructor).  We also
+summarize them as follows:
+\begin{enumerate}
+\item {\bf Uniform linear map:}  The simplest form of map is
+constructed by specifying the total number of elements that will be in
+the map.  Given this value the \map{} constructor will assign
+approximately the same number of elements to each processor and assign
+GIDs to each element in a contiguous, increasing order starting with
+processor 0.  Figure~\ref{Figure:MapExamples} shows the details for a
+map with 100 elements on 3 processors.
+\item {\bf Non-uniform linear map:}  This form of map is a small
+generalization where the calling processor specifies the number of
+elements it want assigned to itself.  The constructor will determine
+the total number of elements in the map and will assign GIDs in a
+contiguous, increasing order.
+\item {\bf General map:} The most general map is constructed by each
+processor passing in a list of GIDs to the \map{} constructor.  The
+map will be constructed with the number of specified elements and the
+exact set of GIDs passed in.  In this case, the calling processor may
+define the GIDs to be any integer values.  No order is assumed, and
+repeated values are allowed.  Also, no range of integer values is
+assumed.  This most general form of map allows us to support very
+flexible data communication and redistribution capabilities.
+\end{enumerate}
+
+\begin{figure}
+\begin{center}
+\input{ExMaps}
+\end{center}
+\caption{\label{Figure:MapExamples} Three \map{} constructor examples.}
+\end{figure}
+
 \subsection{Global and Local IDs}
 \subsection{Constructing Maps}
 \subsubsection{Uniform Maps}
@@ -526,11 +576,11 @@ approximate eigenvector, but for this example we do not return it.
 \subsubsection{General Maps}
 
 \section{Epetra Vectors}
-\subsection{Constructing \vectors{}}
-\subsection{Using \vectors{}}
+\subsection{Constructing \vector{} Objects}
+\subsection{Using \vector{} Objects}
 \section{Epetra MultiVectors}
-\subsection{Constructing \multivectors{}}
-\subsubsection{Using \multivectors{}
+\subsection{Constructing \multivector{} Objects}
+\subsubsection{Using \multivector{} Objects}
 \section{All About Epetra Maps, Matrices and Graphs}
 \label{Section:MapsAndMatrices}
 
