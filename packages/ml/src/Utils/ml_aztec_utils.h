@@ -257,7 +257,7 @@ extern void new_norm(AZ_PRECOND *prec, double res[], double *result);
 #define MLAZ_threshold              3
 #define MLAZ_dumping_factor         4
 
-extern void MLAZ_Defaults( );
+extern void MLAZ_Defaults(void);
 extern void MLAZ_Iterate( double delta_x[], double resid_vector[],
 			  int options[], double params[],
 			  double status[], int proc_config[],
