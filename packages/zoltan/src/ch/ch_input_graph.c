@@ -359,13 +359,13 @@ float   **eweights 		/* edge weight list data */
 
     else {
 	/* Graph was empty */
-	LB_FREE(start);
+	free(*start);
 	if (*adjacency != NULL)
-	    LB_FREE(*adjacency);
+	    free(*adjacency);
 	if (*vweights != NULL)
-	    LB_FREE(*vweights);
+	    free(*vweights);
 	if (*eweights != NULL)
-	    LB_FREE(*eweights);
+	    free(*eweights);
 	*start = NULL;
 	*adjacency = NULL;
     }
