@@ -22,6 +22,18 @@
 #include "ml_viz_stats.h"
 #include "ml_agg_info.h"
 
+#if defined(OUTPUT_AGGREGATES) || defined(INPUT_AGGREGATES) || (ML_AGGR_INAGGR) || (ML_AGGR_OUTAGGR) || (ML_AGGR_MARKINAGGR)
+#ifndef MAXWELL
+#ifndef ALEGRA
+        extern int *update_index, *update, *extern_index, *external;
+#endif
+#else
+        extern int *reordered_glob_nodes, *global_node_inds,
+                   *reordered_node_externs, *global_node_externs;
+#endif /*ifdef MAXWELL */
+extern int ML_gpartialsum_int(int val, ML_Comm *comm);
+#endif
+
 /* ********************************************************************** */
 /*! \file ml_agg_METIS.c: functions to decompose a local graph using METIS
 
@@ -1266,7 +1278,7 @@ int ML_Aggregate_CoarsenMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 FILE *fp;
 char fname[80];
 static int level_count = 0;
-double *d2temp;
+double *d2temp,*dtemp;
 int agg_offset, vertex_offset;
 #endif
  int * graph_decomposition = NULL;
