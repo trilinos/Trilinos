@@ -676,11 +676,16 @@ float *tmpwgts = NULL;
   }
 
   if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
-    /* Don't need the plan long-term; destroy it now. */
-    Zoltan_Comm_Destroy(&(zhg->VtxPlan));
-    if (zhg->Recv_GNOs == app.vtx_gno) app.vtx_gno = NULL;
-    ZOLTAN_FREE(&(zhg->Recv_GNOs));
-    zhg->nRecv_GNOs = 0;
+    int gnremove;
+    MPI_Allreduce(&(zhg->nRemove), &gnremove, 1, MPI_INT, MPI_SUM, 
+                  zz->Communicator);
+    if (!hgp->final_output || !gnremove) {
+      /* Don't need the plan long-term; destroy it now. */
+      Zoltan_Comm_Destroy(&(zhg->VtxPlan));
+      if (zhg->Recv_GNOs == app.vtx_gno) app.vtx_gno = NULL;
+      ZOLTAN_FREE(&(zhg->Recv_GNOs));
+      zhg->nRecv_GNOs = 0;
+    }
   }
 
   /*  Send edge weights, if any */
@@ -901,7 +906,7 @@ double ewgt;
   if (!parts) MEMORY_ERROR;
 
   cnt = 0;
-  loccuts[0] = loccuts[1] = 0;
+  loccuts[0] = loccuts[1] = 0.;
   for (i = 0; i < zhg->nRemove; i++) {
     nparts = 0;
     for (j = 0; j < zhg->Remove_Esize[i]; j++) {
