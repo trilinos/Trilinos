@@ -58,8 +58,8 @@ extern "C" {
 /*
  *  PROTOTYPES for load-balancer interface functions.
  */
-ZOLTAN_PRE_MIGRATE_FN migrate_pre_process;
-ZOLTAN_POST_MIGRATE_FN migrate_post_process;
+ZOLTAN_PRE_MIGRATE_PP_FN migrate_pre_process;
+ZOLTAN_POST_MIGRATE_PP_FN migrate_post_process;
 
 /* Object-based migration callbacks; only one of these or the list-based
  * callbacks are actually needed. */
@@ -124,14 +124,14 @@ char *yo = "migrate_elements";
     /* If not passing NULL import lists, let Help_Migrate call the
      * pre-processing and post-processing routines.
      */
-    if (Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_FN_TYPE, 
+    if (Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_PP_FN_TYPE, 
                       (void (*)()) migrate_pre_process,
                       (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
       return 0;
     }
 
-    if (Zoltan_Set_Fn(zz, ZOLTAN_POST_MIGRATE_FN_TYPE, 
+    if (Zoltan_Set_Fn(zz, ZOLTAN_POST_MIGRATE_PP_FN_TYPE, 
                       (void (*)()) migrate_post_process,
                       (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");

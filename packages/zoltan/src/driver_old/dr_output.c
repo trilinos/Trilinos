@@ -188,8 +188,9 @@ int output_results(char *cmd_file,
     echo_cmd_file(fp, cmd_file);
 
   fprintf(fp, "Global element ids assigned to processor %d\n", Proc);
-  for (i = 0; i < mesh->num_elems; i++)
-    fprintf(fp, "%d\n", global_ids[i]);
+  fprintf(fp, "GID\tPart\tPerm\tIPerm\n");
+  for (i = 0; i < mesh->num_elems; i++) 
+    fprintf(fp, "%d\t%d\t%d\t%d\n", global_ids[i], Proc, -1, -1);
 
   fclose(fp);
   free(global_ids);

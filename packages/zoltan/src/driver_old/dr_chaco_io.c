@@ -322,7 +322,7 @@ static int fill_elements(
         elem_id = adj[start[i] + j];
 
         /* determine which processor the adjacent vertex is on */
-        k = ch_dist_proc(elem_id, assignments);
+        k = ch_dist_proc(elem_id, assignments, 1);
 
         /*
          * if the adjacent element is on this processor

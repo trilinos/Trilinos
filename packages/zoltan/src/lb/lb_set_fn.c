@@ -23,6 +23,45 @@ extern "C" {
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
+int Zoltan_Set_Pre_Migrate_PP_Fn(
+  ZZ *zz,
+  ZOLTAN_PRE_MIGRATE_PP_FN *fn,
+  void *data
+)
+{
+  zz->Migrate.Pre_Migrate_PP = fn;
+  zz->Migrate.Pre_Migrate_PP_Data = data;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
+int Zoltan_Set_Mid_Migrate_PP_Fn(
+  ZZ *zz,
+  ZOLTAN_MID_MIGRATE_PP_FN *fn,
+  void *data
+)
+{
+  zz->Migrate.Mid_Migrate_PP = fn;
+  zz->Migrate.Mid_Migrate_PP_Data = data;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
+int Zoltan_Set_Post_Migrate_PP_Fn(
+  ZZ *zz,
+  ZOLTAN_POST_MIGRATE_PP_FN *fn,
+  void *data
+)
+{
+  zz->Migrate.Post_Migrate_PP = fn;
+  zz->Migrate.Post_Migrate_PP_Data = data;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
 int Zoltan_Set_Pre_Migrate_Fn(
   ZZ *zz,
   ZOLTAN_PRE_MIGRATE_FN *fn,

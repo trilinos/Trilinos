@@ -109,6 +109,18 @@ int ierr;
     ierr = Zoltan_Set_Next_Border_Obj_Fn(zz, 
                   (ZOLTAN_NEXT_BORDER_OBJ_FN *) fn, data);
     break;
+  case ZOLTAN_PRE_MIGRATE_PP_FN_TYPE:
+    ierr = Zoltan_Set_Pre_Migrate_PP_Fn(zz, 
+                  (ZOLTAN_PRE_MIGRATE_PP_FN *) fn, data);
+    break;
+  case ZOLTAN_MID_MIGRATE_PP_FN_TYPE:
+    ierr = Zoltan_Set_Mid_Migrate_PP_Fn(zz, 
+                  (ZOLTAN_MID_MIGRATE_PP_FN *) fn, data);
+    break;
+  case ZOLTAN_POST_MIGRATE_PP_FN_TYPE:
+    ierr = Zoltan_Set_Post_Migrate_PP_Fn(zz, 
+                  (ZOLTAN_POST_MIGRATE_PP_FN *) fn, data);
+    break;
   case ZOLTAN_PRE_MIGRATE_FN_TYPE:
     ierr = Zoltan_Set_Pre_Migrate_Fn(zz, 
                   (ZOLTAN_PRE_MIGRATE_FN *) fn, data);

@@ -22,6 +22,7 @@ extern "C" {
 #include "key_params.h"
 #include "timer_const.h"
 #include "ha_const.h"
+#include "all_allo_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -129,6 +130,13 @@ int *export_to_part = NULL;    /* Array used as dummy arg in partitioning. */
 
 
 End:
+  /* Not returning import/export partition information; free it if allocated. */
+  if (import_to_part != NULL) 
+    Zoltan_Special_Free(zz, (void **) &import_to_part, 
+                        ZOLTAN_SPECIAL_MALLOC_INT);
+  if (export_to_part != NULL) 
+    Zoltan_Special_Free(zz, (void **) &export_to_part, 
+                        ZOLTAN_SPECIAL_MALLOC_INT);
   ZOLTAN_TRACE_EXIT(zz, yo);
   return(ierr);
 }

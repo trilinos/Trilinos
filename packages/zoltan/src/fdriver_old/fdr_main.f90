@@ -354,8 +354,9 @@ type(ELEM_INFO), pointer :: elements(:)
   endif
 
   write(fp,*) "Global element ids assigned to processor ", Proc
+  write(fp,*) "GID      Part    Perm    IPerm"
   do i = 0, Mesh%num_elems-1
-    write(fp,*) global_ids(i)
+    write(fp,*) global_ids(i)," ", Proc, "      ", -1, "        ", -1
   end do
 
   close(fp)

@@ -134,9 +134,37 @@ struct Zoltan_Migrate_Struct {
    *  Pointers to routines that depend on the application.
    */
 
+  ZOLTAN_PRE_MIGRATE_PP_FN *Pre_Migrate_PP;
+                                       /* Function that performs application
+                                          specific pre-processing (including
+                                          partition lists).  Optional
+                                          for migration.                */
+  ZOLTAN_PRE_MIGRATE_PP_FORT_FN *Pre_Migrate_PP_Fort;
+                                       /* Fortran version               */
+  void *Pre_Migrate_PP_Data;         /* Ptr to user defined data to be
+                                          passed to Pre_Migrate_PP()       */
+  ZOLTAN_MID_MIGRATE_PP_FN *Mid_Migrate_PP;
+                                       /* Function that performs application
+                                          specific processing  (including
+                                          partition lists) between packing
+                                          and unpacking.  Optional
+                                          for migration.                */
+  ZOLTAN_MID_MIGRATE_PP_FORT_FN *Mid_Migrate_PP_Fort;
+                                       /* Fortran version               */
+  void *Mid_Migrate_PP_Data;         /* Ptr to user defined data to be
+                                          passed to Mid_Migrate_PP()       */
+  ZOLTAN_POST_MIGRATE_PP_FN *Post_Migrate_PP;
+                                       /* Function that performs application
+                                          specific post-processing (including 
+                                          partition lists).  Optional
+                                          for migration.                */
+  ZOLTAN_POST_MIGRATE_PP_FORT_FN *Post_Migrate_PP_Fort;
+                                       /* Fortran version             */
+  void *Post_Migrate_PP_Data;        /* Ptr to user defined data to be
+                                          passed to Post_Migrate_PP()      */
   ZOLTAN_PRE_MIGRATE_FN *Pre_Migrate;  /* Function that performs application
                                           specific pre-processing.  Optional
-                                          for help-migration.                */
+                                          for migration.                */
   ZOLTAN_PRE_MIGRATE_FORT_FN *Pre_Migrate_Fort;
                                        /* Fortran version               */
   void *Pre_Migrate_Data;              /* Ptr to user defined data to be
@@ -144,14 +172,14 @@ struct Zoltan_Migrate_Struct {
   ZOLTAN_MID_MIGRATE_FN *Mid_Migrate;  /* Function that performs application
                                           specific processing between packing
                                           and unpacking.  Optional
-                                          for help-migration.                */
+                                          for migration.                */
   ZOLTAN_MID_MIGRATE_FORT_FN *Mid_Migrate_Fort;
                                        /* Fortran version               */
   void *Mid_Migrate_Data;              /* Ptr to user defined data to be
                                           passed to Mid_Migrate()            */
   ZOLTAN_POST_MIGRATE_FN *Post_Migrate;/* Function that performs application
                                           specific post-processing.  Optional
-                                          for help-migration.                */
+                                          for migration.                */
   ZOLTAN_POST_MIGRATE_FORT_FN *Post_Migrate_Fort;
                                        /* Fortran version             */
   void *Post_Migrate_Data;             /* Ptr to user defined data to be

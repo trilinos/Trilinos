@@ -49,6 +49,9 @@ enum Zoltan_Fn_Type {
   ZOLTAN_BORDER_OBJ_LIST_FN_TYPE,
   ZOLTAN_FIRST_BORDER_OBJ_FN_TYPE,
   ZOLTAN_NEXT_BORDER_OBJ_FN_TYPE,
+  ZOLTAN_PRE_MIGRATE_PP_FN_TYPE,
+  ZOLTAN_MID_MIGRATE_PP_FN_TYPE,
+  ZOLTAN_POST_MIGRATE_PP_FN_TYPE,
   ZOLTAN_PRE_MIGRATE_FN_TYPE,
   ZOLTAN_MID_MIGRATE_FN_TYPE,
   ZOLTAN_POST_MIGRATE_FN_TYPE,
@@ -698,191 +701,6 @@ typedef void ZOLTAN_OBJ_SIZE_MULTI_FORT_FN(
   int *num_bytes,
   int *ierr);
 
-/*****************************************************************************/
-/*
- *  Function called as a pre-processor to the migration.  This function is 
- *  optional, and is used only when the application wants the load-balancer 
- *  to help migrate the data.  The application can perform any type of 
- *  pre-processing in this function.
- *
- *  Input:  
- *    data                --  pointer to user defined data structure
- *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
- *                            in a global ID
- *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
- *                            in a local ID
- *    num_import          --  Number of objects to be imported.
- *    import_global_ids   --  Global IDs of objects to be imported.
- *    import_local_ids    --  Local IDs of objects to be imported.
- *    import_procs        --  Processor IDs of importing processors.
- *    import_to_part      --  Partition numbers to which objs are imported.
- *    num_export          --  Number of objects to be exported.
- *    export_global_ids   --  Global IDs of objects to be exported.
- *    export_local_ids    --  Local IDs of objects to be exported.
- *    export_procs        --  Processor IDs of processors to receive
- *                            the objects.
- *    export_to_part      --  Partition numbers to which objs are exported.
- *  Output:
- *    ierr                --  error code
- */
-
-typedef void ZOLTAN_PRE_MIGRATE_FN(
-  void *data, 
-  int num_gid_entries,
-  int num_lid_entries,
-  int num_import,
-  ZOLTAN_ID_PTR import_global_ids,
-  ZOLTAN_ID_PTR import_local_ids,
-  int *import_procs,
-  int *import_to_part,
-  int num_export,
-  ZOLTAN_ID_PTR export_global_ids,
-  ZOLTAN_ID_PTR export_local_ids,
-  int *export_procs,
-  int *export_to_part,
-  int *ierr
-);
-
-typedef void ZOLTAN_PRE_MIGRATE_FORT_FN(
-  void *data, 
-  int *num_gid_entries,
-  int *num_lid_entries,
-  int *num_import,
-  ZOLTAN_ID_PTR import_global_ids,
-  ZOLTAN_ID_PTR import_local_ids, 
-  int *import_procs,
-/*  int *import_to_part, WFM comment out until cwrap.c is updated */
-  int *num_export, 
-  ZOLTAN_ID_PTR export_global_ids,
-  ZOLTAN_ID_PTR export_local_ids, 
-  int *export_procs,
-/*  int *export_to_part, WFM comment out until cwrap.c is updated */
-  int *ierr
-);
-
-/*****************************************************************************/
-/*
- *  Function called between the packing and unpacking phases of data migration.
- *  Within ZOLTAN_Help_Migrate, the data to be migrated is packed and 
- *  communicated; then this function is called (if specified). This function is 
- *  optional, and is used only when the application wants the load-balancer 
- *  to help migrate the data.  The application can perform any type of 
- *  processing in this function.
- *  Input:  
- *    data                --  pointer to user defined data structure
- *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
- *                            in a global ID
- *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
- *                            in a local ID
- *    num_import          --  Number of objects to be imported.
- *    import_global_ids   --  Global IDs of objects to be imported.
- *    import_local_ids    --  Local IDs of objects to be imported.
- *    import_procs        --  Processor IDs of importing processors.
- *    import_to_part      --  Partition numbers to which objs are imported.
- *    num_export          --  Number of objects to be exported.
- *    export_global_ids   --  Global IDs of objects to be exported.
- *    export_local_ids    --  Local IDs of objects to be exported.
- *    export_procs        --  Processor IDs of processors to receive
- *                            the objects.
- *    export_to_part      --  Partition numbers to which objs are exported.
- *  Output:
- *    ierr                --  error code
- */
-
-typedef void ZOLTAN_MID_MIGRATE_FN(
-  void *data, 
-  int num_gid_entries,
-  int num_lid_entries,
-  int num_import,
-  ZOLTAN_ID_PTR import_global_ids,
-  ZOLTAN_ID_PTR import_local_ids,
-  int *import_procs,
-  int *import_to_part,
-  int num_export,
-  ZOLTAN_ID_PTR export_global_ids,
-  ZOLTAN_ID_PTR export_local_ids,
-  int *export_procs,
-  int *export_to_part,
-  int *ierr
-);
-
-typedef void ZOLTAN_MID_MIGRATE_FORT_FN(
-  void *data, 
-  int *num_gid_entries,
-  int *num_lid_entries,
-  int *num_import,
-  ZOLTAN_ID_PTR import_global_ids,
-  ZOLTAN_ID_PTR import_local_ids, 
-  int *import_procs,
-/*  int *import_to_part, WFM comment out until cwrap.c is updated */
-  int *num_export, 
-  ZOLTAN_ID_PTR export_global_ids,
-  ZOLTAN_ID_PTR export_local_ids, 
-  int *export_procs,
-/*  int *export_to_part, WFM comment out until cwrap.c is updated */
-  int *ierr
-);
-
-/*****************************************************************************/
-/*
- *  Function called as a post-processor to the migration.  This function is 
- *  optional, and is used only when the application wants the load-balancer 
- *  to help migrate the data.  The application can perform any type of 
- *  post-processing in this function.
- *  Input:  
- *    data                --  pointer to user defined data structure
- *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
- *                            in a global ID
- *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
- *                            in a local ID
- *    num_import          --  Number of objects to be imported.
- *    import_global_ids   --  Global IDs of objects to be imported.
- *    import_local_ids    --  Local IDs of objects to be imported.
- *    import_procs        --  Processor IDs of importing processors.
- *    import_to_part      --  Partition numbers to which objs are imported.
- *    num_export          --  Number of objects to be exported.
- *    export_global_ids   --  Global IDs of objects to be exported.
- *    export_local_ids    --  Local IDs of objects to be exported.
- *    export_procs        --  Processor IDs of processors to receive
- *                            the objects.
- *    export_to_part      --  Partition numbers to which objs are exported.
- *  Output:
- *    ierr                --  error code
- */
-
-typedef void ZOLTAN_POST_MIGRATE_FN(
-  void *data, 
-  int num_gid_entries,
-  int num_lid_entries,
-  int num_import,
-  ZOLTAN_ID_PTR import_global_ids,
-  ZOLTAN_ID_PTR import_local_ids,
-  int *import_procs,
-  int *import_to_part,
-  int num_export,
-  ZOLTAN_ID_PTR export_global_ids,
-  ZOLTAN_ID_PTR export_local_ids,
-  int *export_procs,
-  int *export_to_part,
-  int *ierr
-);
-
-typedef void ZOLTAN_POST_MIGRATE_FORT_FN(
-  void *data, 
-  int *num_gid_entries,
-  int *num_lid_entries,
-  int *num_import,
-  ZOLTAN_ID_PTR import_global_ids,
-  ZOLTAN_ID_PTR import_local_ids, 
-  int *import_procs,
-/*  int *import_to_part, WFM comment out until cwrap.c is updated */
-  int *num_export, 
-  ZOLTAN_ID_PTR export_global_ids,
-  ZOLTAN_ID_PTR export_local_ids, 
-  int *export_procs,
-/*  int *export_to_part, WFM comment out until cwrap.c is updated */
-  int *ierr
-);
 
 /*****************************************************************************/
 /*
@@ -1088,6 +906,365 @@ typedef void ZOLTAN_UNPACK_OBJ_MULTI_FORT_FN(
   int *ierr
 );
 
+/*****************************************************************************/
+/*
+ *  Function called as a pre-processor to migration; it includes partition
+ *  as well as processor information.  This function is 
+ *  optional, and is used only when the application wants Zoltan
+ *  to help migrate the data.  The application can perform any type of 
+ *  pre-processing in this function.
+ *
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    num_import          --  Number of objects to be imported.
+ *    import_global_ids   --  Global IDs of objects to be imported.
+ *    import_local_ids    --  Local IDs of objects to be imported.
+ *    import_procs        --  Processor IDs of importing processors.
+ *    import_to_part      --  Partition numbers to which objs are imported.
+ *    num_export          --  Number of objects to be exported.
+ *    export_global_ids   --  Global IDs of objects to be exported.
+ *    export_local_ids    --  Local IDs of objects to be exported.
+ *    export_procs        --  Processor IDs of processors to receive
+ *                            the objects.
+ *    export_to_part      --  Partition numbers to which objs are exported.
+ *  Output:
+ *    ierr                --  error code
+ */
+
+typedef void ZOLTAN_PRE_MIGRATE_PP_FN(
+  void *data, 
+  int num_gid_entries,
+  int num_lid_entries,
+  int num_import,
+  ZOLTAN_ID_PTR import_global_ids,
+  ZOLTAN_ID_PTR import_local_ids,
+  int *import_procs,
+  int *import_to_part,
+  int num_export,
+  ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids,
+  int *export_procs,
+  int *export_to_part,
+  int *ierr
+);
+
+typedef void ZOLTAN_PRE_MIGRATE_PP_FORT_FN(
+  void *data, 
+  int *num_gid_entries,
+  int *num_lid_entries,
+  int *num_import,
+  ZOLTAN_ID_PTR import_global_ids,
+  ZOLTAN_ID_PTR import_local_ids, 
+  int *import_procs,
+  int *import_to_part,
+  int *num_export, 
+  ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids, 
+  int *export_procs,
+  int *export_to_part,
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function called between the packing and unpacking phases of data migration.
+ *  It includes partition as well as processor information.
+ *  Within Zoltan_Migrate, the data to be migrated is packed and 
+ *  communicated; then this function is called (if specified). This function is 
+ *  optional, and is used only when the application wants Zoltan
+ *  to help migrate the data.  The application can perform any type of 
+ *  processing in this function.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    num_import          --  Number of objects to be imported.
+ *    import_global_ids   --  Global IDs of objects to be imported.
+ *    import_local_ids    --  Local IDs of objects to be imported.
+ *    import_procs        --  Processor IDs of importing processors.
+ *    import_to_part      --  Partition numbers to which objs are imported.
+ *    num_export          --  Number of objects to be exported.
+ *    export_global_ids   --  Global IDs of objects to be exported.
+ *    export_local_ids    --  Local IDs of objects to be exported.
+ *    export_procs        --  Processor IDs of processors to receive
+ *                            the objects.
+ *    export_to_part      --  Partition numbers to which objs are exported.
+ *  Output:
+ *    ierr                --  error code
+ */
+
+typedef void ZOLTAN_MID_MIGRATE_PP_FN(
+  void *data, 
+  int num_gid_entries,
+  int num_lid_entries,
+  int num_import,
+  ZOLTAN_ID_PTR import_global_ids,
+  ZOLTAN_ID_PTR import_local_ids,
+  int *import_procs,
+  int *import_to_part,
+  int num_export,
+  ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids,
+  int *export_procs,
+  int *export_to_part,
+  int *ierr
+);
+
+typedef void ZOLTAN_MID_MIGRATE_PP_FORT_FN(
+  void *data, 
+  int *num_gid_entries,
+  int *num_lid_entries,
+  int *num_import,
+  ZOLTAN_ID_PTR import_global_ids,
+  ZOLTAN_ID_PTR import_local_ids, 
+  int *import_procs,
+  int *import_to_part,
+  int *num_export, 
+  ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids, 
+  int *export_procs,
+  int *export_to_part,
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function called as a post-processor to the migration.  It includes 
+ *  partition as well as processor information.  This function is 
+ *  optional, and is used only when the application wants Zoltan
+ *  to help migrate the data.  The application can perform any type of 
+ *  post-processing in this function.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    num_import          --  Number of objects to be imported.
+ *    import_global_ids   --  Global IDs of objects to be imported.
+ *    import_local_ids    --  Local IDs of objects to be imported.
+ *    import_procs        --  Processor IDs of importing processors.
+ *    import_to_part      --  Partition numbers to which objs are imported.
+ *    num_export          --  Number of objects to be exported.
+ *    export_global_ids   --  Global IDs of objects to be exported.
+ *    export_local_ids    --  Local IDs of objects to be exported.
+ *    export_procs        --  Processor IDs of processors to receive
+ *                            the objects.
+ *    export_to_part      --  Partition numbers to which objs are exported.
+ *  Output:
+ *    ierr                --  error code
+ */
+
+typedef void ZOLTAN_POST_MIGRATE_PP_FN(
+  void *data, 
+  int num_gid_entries,
+  int num_lid_entries,
+  int num_import,
+  ZOLTAN_ID_PTR import_global_ids,
+  ZOLTAN_ID_PTR import_local_ids,
+  int *import_procs,
+  int *import_to_part,
+  int num_export,
+  ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids,
+  int *export_procs,
+  int *export_to_part,
+  int *ierr
+);
+
+typedef void ZOLTAN_POST_MIGRATE_PP_FORT_FN(
+  void *data, 
+  int *num_gid_entries,
+  int *num_lid_entries,
+  int *num_import,
+  ZOLTAN_ID_PTR import_global_ids,
+  ZOLTAN_ID_PTR import_local_ids, 
+  int *import_procs,
+  int *import_to_part,
+  int *num_export, 
+  ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids, 
+  int *export_procs,
+  int *export_to_part,
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function called as a pre-processor to migration; it includes only
+ *  processor information.  This function is 
+ *  optional, and is used only when the application wants Zoltan
+ *  to help migrate the data.  The application can perform any type of 
+ *  pre-processing in this function.
+ *
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    num_import          --  Number of objects to be imported.
+ *    import_global_ids   --  Global IDs of objects to be imported.
+ *    import_local_ids    --  Local IDs of objects to be imported.
+ *    import_procs        --  Processor IDs of importing processors.
+ *    num_export          --  Number of objects to be exported.
+ *    export_global_ids   --  Global IDs of objects to be exported.
+ *    export_local_ids    --  Local IDs of objects to be exported.
+ *    export_procs        --  Processor IDs of processors to receive
+ *                            the objects.
+ *  Output:
+ *    ierr                --  error code
+ */
+
+typedef void ZOLTAN_PRE_MIGRATE_FN(
+  void *data, 
+  int num_gid_entries,
+  int num_lid_entries,
+  int num_import,
+  ZOLTAN_ID_PTR import_global_ids,
+  ZOLTAN_ID_PTR import_local_ids,
+  int *import_procs,
+  int num_export,
+  ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids,
+  int *export_procs,
+  int *ierr
+);
+
+typedef void ZOLTAN_PRE_MIGRATE_FORT_FN(
+  void *data, 
+  int *num_gid_entries,
+  int *num_lid_entries,
+  int *num_import,
+  ZOLTAN_ID_PTR import_global_ids,
+  ZOLTAN_ID_PTR import_local_ids, 
+  int *import_procs,
+  int *num_export, 
+  ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids, 
+  int *export_procs,
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function called between the packing and unpacking phases of data migration.
+ *  It includes only processor information.
+ *  Within Zoltan_Migrate, the data to be migrated is packed and 
+ *  communicated; then this function is called (if specified). This function is 
+ *  optional, and is used only when the application wants Zoltan
+ *  to help migrate the data.  The application can perform any type of 
+ *  processing in this function.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    num_import          --  Number of objects to be imported.
+ *    import_global_ids   --  Global IDs of objects to be imported.
+ *    import_local_ids    --  Local IDs of objects to be imported.
+ *    import_procs        --  Processor IDs of importing processors.
+ *    num_export          --  Number of objects to be exported.
+ *    export_global_ids   --  Global IDs of objects to be exported.
+ *    export_local_ids    --  Local IDs of objects to be exported.
+ *    export_procs        --  Processor IDs of processors to receive
+ *                            the objects.
+ *  Output:
+ *    ierr                --  error code
+ */
+
+typedef void ZOLTAN_MID_MIGRATE_FN(
+  void *data, 
+  int num_gid_entries,
+  int num_lid_entries,
+  int num_import,
+  ZOLTAN_ID_PTR import_global_ids,
+  ZOLTAN_ID_PTR import_local_ids,
+  int *import_procs,
+  int num_export,
+  ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids,
+  int *export_procs,
+  int *ierr
+);
+
+typedef void ZOLTAN_MID_MIGRATE_FORT_FN(
+  void *data, 
+  int *num_gid_entries,
+  int *num_lid_entries,
+  int *num_import,
+  ZOLTAN_ID_PTR import_global_ids,
+  ZOLTAN_ID_PTR import_local_ids, 
+  int *import_procs,
+  int *num_export, 
+  ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids, 
+  int *export_procs,
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function called as a post-processor to the migration.  It includes 
+ *  only processor information.  This function is 
+ *  optional, and is used only when the application wants Zoltan
+ *  to help migrate the data.  The application can perform any type of 
+ *  post-processing in this function.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    num_import          --  Number of objects to be imported.
+ *    import_global_ids   --  Global IDs of objects to be imported.
+ *    import_local_ids    --  Local IDs of objects to be imported.
+ *    import_procs        --  Processor IDs of importing processors.
+ *    num_export          --  Number of objects to be exported.
+ *    export_global_ids   --  Global IDs of objects to be exported.
+ *    export_local_ids    --  Local IDs of objects to be exported.
+ *    export_procs        --  Processor IDs of processors to receive
+ *                            the objects.
+ *  Output:
+ *    ierr                --  error code
+ */
+
+typedef void ZOLTAN_POST_MIGRATE_FN(
+  void *data, 
+  int num_gid_entries,
+  int num_lid_entries,
+  int num_import,
+  ZOLTAN_ID_PTR import_global_ids,
+  ZOLTAN_ID_PTR import_local_ids,
+  int *import_procs,
+  int num_export,
+  ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids,
+  int *export_procs,
+  int *ierr
+);
+
+typedef void ZOLTAN_POST_MIGRATE_FORT_FN(
+  void *data, 
+  int *num_gid_entries,
+  int *num_lid_entries,
+  int *num_import,
+  ZOLTAN_ID_PTR import_global_ids,
+  ZOLTAN_ID_PTR import_local_ids, 
+  int *import_procs,
+  int *num_export, 
+  ZOLTAN_ID_PTR export_global_ids,
+  ZOLTAN_ID_PTR export_local_ids, 
+  int *export_procs,
+  int *ierr
+);
 /*****************************************************************************/
 /*  Function to get the name of the physical processor on which
  *  the current process is running. 
@@ -1663,6 +1840,23 @@ extern int Zoltan_Set_Next_Border_Obj_Fn(
   void *data_ptr
 );
 
+extern int Zoltan_Set_Pre_Migrate_PP_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_PRE_MIGRATE_PP_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_Mid_Migrate_PP_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_MID_MIGRATE_PP_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_Post_Migrate_PP_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_POST_MIGRATE_PP_FN *fn_ptr, 
+  void *data_ptr
+);
 extern int Zoltan_Set_Pre_Migrate_Fn(
   struct Zoltan_Struct *zz, 
   ZOLTAN_PRE_MIGRATE_FN *fn_ptr, 

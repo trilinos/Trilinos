@@ -248,13 +248,29 @@ int *actual_exp_to_part = NULL;          /* processor may not be included.  */
     }
   }
 
-  if (zz->Migrate.Pre_Migrate != NULL) {
-    zz->Migrate.Pre_Migrate(zz->Migrate.Pre_Migrate_Data,
+  if (zz->Migrate.Pre_Migrate_PP != NULL) {
+    zz->Migrate.Pre_Migrate_PP(zz->Migrate.Pre_Migrate_PP_Data,
                             num_gid_entries, num_lid_entries,
                             num_import, import_global_ids,
                             import_local_ids, import_procs, import_to_part,
                             num_export, export_global_ids,
                             export_local_ids, export_procs, export_to_part,
+                            &ierr);
+    if (ierr) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
+                      "Migrate.Pre_Migrate_PP function.");
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return (ZOLTAN_FATAL);
+    }
+  }
+
+  if (zz->Migrate.Pre_Migrate != NULL) {
+    zz->Migrate.Pre_Migrate(zz->Migrate.Pre_Migrate_Data,
+                            num_gid_entries, num_lid_entries,
+                            num_import, import_global_ids,
+                            import_local_ids, import_procs, 
+                            num_export, export_global_ids,
+                            export_local_ids, export_procs,
                             &ierr);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
@@ -377,7 +393,8 @@ int *actual_exp_to_part = NULL;          /* processor may not be included.  */
       zz->Pack_Obj_Multi(zz->Pack_Obj_Multi_Data,
                          num_gid_entries, num_lid_entries, actual_num_exp,
                          actual_exp_gids, actual_exp_lids, 
-                         (actual_exp_to_part!=NULL ? actual_exp_to_part : actual_exp_procs),
+                         (actual_exp_to_part!=NULL ? actual_exp_to_part 
+                                                   : actual_exp_procs),
                          sizes, idx, export_buf, &ierr);
       if (ierr) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
@@ -400,7 +417,8 @@ int *actual_exp_to_part = NULL;          /* processor may not be included.  */
 
         /* Pack the object's data */
         lid = (num_lid_entries ? &(actual_exp_lids[i*num_lid_entries]) : NULL);
-        dest = (actual_exp_to_part != NULL ? actual_exp_to_part[i] : actual_exp_procs[i]);
+        dest = (actual_exp_to_part != NULL ? actual_exp_to_part[i] 
+                                           : actual_exp_procs[i]);
         zz->Pack_Obj(zz->Pack_Obj_Data, 
                            num_gid_entries, num_lid_entries,
                            &(actual_exp_gids[i*num_gid_entries]), lid, dest,
@@ -428,8 +446,8 @@ int *actual_exp_to_part = NULL;          /* processor may not be included.  */
    */
 
   msgtag = 32767;
-  ierr = Zoltan_Comm_Create(&comm_plan, actual_num_exp, actual_exp_procs, zz->Communicator,
-                        msgtag, &actual_import);
+  ierr = Zoltan_Comm_Create(&comm_plan, actual_num_exp, actual_exp_procs,
+                            zz->Communicator, msgtag, &actual_import);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     sprintf(msg, "Error %s returned from Zoltan_Comm_Create.", 
             (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
@@ -497,8 +515,8 @@ int *actual_exp_to_part = NULL;          /* processor may not be included.  */
   /* 
    *  Perform application-specified processing before unpacking the data.
    */
-  if (zz->Migrate.Mid_Migrate != NULL) {
-    zz->Migrate.Mid_Migrate(zz->Migrate.Mid_Migrate_Data,
+  if (zz->Migrate.Mid_Migrate_PP != NULL) {
+    zz->Migrate.Mid_Migrate_PP(zz->Migrate.Mid_Migrate_PP_Data,
                             num_gid_entries, num_lid_entries,
                             num_import, import_global_ids,
                             import_local_ids, import_procs, import_to_part,
@@ -507,12 +525,26 @@ int *actual_exp_to_part = NULL;          /* processor may not be included.  */
                             &ierr);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
+                      "Migrate.Mid_Migrate_PP function.");
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return (ZOLTAN_FATAL);
+    }
+  }
+
+  if (zz->Migrate.Mid_Migrate != NULL) {
+    zz->Migrate.Mid_Migrate(zz->Migrate.Mid_Migrate_Data,
+                            num_gid_entries, num_lid_entries,
+                            num_import, import_global_ids,
+                            import_local_ids, import_procs,
+                            num_export, export_global_ids,
+                            export_local_ids, export_procs,
+                            &ierr);
+    if (ierr) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
                       "Migrate.Mid_Migrate function.");
       ZOLTAN_TRACE_EXIT(zz, yo);
       return (ZOLTAN_FATAL);
     }
-
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Done mid-migration processing");
   }
 
   /*
@@ -605,8 +637,8 @@ int *actual_exp_to_part = NULL;          /* processor may not be included.  */
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done unpacking objects");
 
-  if (zz->Migrate.Post_Migrate != NULL) {
-    zz->Migrate.Post_Migrate(zz->Migrate.Post_Migrate_Data,
+  if (zz->Migrate.Post_Migrate_PP != NULL) {
+    zz->Migrate.Post_Migrate_PP(zz->Migrate.Post_Migrate_PP_Data,
                              num_gid_entries, num_lid_entries,
                              num_import, import_global_ids,
                              import_local_ids, import_procs, import_to_part,
@@ -615,12 +647,26 @@ int *actual_exp_to_part = NULL;          /* processor may not be included.  */
                              &ierr);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
+                      "Migrate.Post_Migrate_PP function.");
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return (ZOLTAN_FATAL);
+    }
+  }
+
+  if (zz->Migrate.Post_Migrate != NULL) {
+    zz->Migrate.Post_Migrate(zz->Migrate.Post_Migrate_Data,
+                             num_gid_entries, num_lid_entries,
+                             num_import, import_global_ids,
+                             import_local_ids, import_procs,
+                             num_export, export_global_ids,
+                             export_local_ids, export_procs,
+                             &ierr);
+    if (ierr) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from user defined "
                       "Migrate.Post_Migrate function.");
       ZOLTAN_TRACE_EXIT(zz, yo);
       return (ZOLTAN_FATAL);
     }
-
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Done post-migration processing");
   }
 
   if (actual_allocated) {

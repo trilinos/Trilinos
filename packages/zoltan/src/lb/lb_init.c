@@ -29,12 +29,24 @@ void Zoltan_Migrate_Init(struct Zoltan_Migrate_Struct *mig)
 {
   mig->Auto_Migrate = ZOLTAN_AUTO_MIGRATE_DEF;
   mig->Only_Proc_Changes = ZOLTAN_MIGRATE_ONLY_PROC_CHANGES_DEF;
+  mig->Pre_Migrate_PP = NULL;
+  mig->Mid_Migrate_PP = NULL;
+  mig->Post_Migrate_PP = NULL;
   mig->Pre_Migrate = NULL;
   mig->Mid_Migrate = NULL;
   mig->Post_Migrate = NULL;
+  mig->Pre_Migrate_PP_Fort = NULL;
+  mig->Mid_Migrate_PP_Fort = NULL;
+  mig->Post_Migrate_PP_Fort = NULL;
   mig->Pre_Migrate_Fort = NULL;
   mig->Mid_Migrate_Fort = NULL;
   mig->Post_Migrate_Fort = NULL;
+  mig->Pre_Migrate_PP_Data = NULL;
+  mig->Mid_Migrate_PP_Data = NULL;
+  mig->Post_Migrate_PP_Data = NULL;
+  mig->Pre_Migrate_Data = NULL;
+  mig->Mid_Migrate_Data = NULL;
+  mig->Post_Migrate_Data = NULL;
 }
 
 void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb, int num_proc)
