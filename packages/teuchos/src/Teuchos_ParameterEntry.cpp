@@ -33,9 +33,9 @@
 using namespace Teuchos;
 
 ParameterEntry::ParameterEntry() : 
+  isList_(false),
   isUsed_(false),
-  isDefault_(false),
-  isList_(false)
+  isDefault_(false)
 {
 }
 
