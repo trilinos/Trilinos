@@ -12,12 +12,12 @@ QUICK INSTALL
  You need the CCAFFEINE framework somewhere on your machine. If not,
  get these from http://www.cca-forum.org/ccafe
 
- Edit ZOLTAN_HOME/Utilities/Config/Config.linux and fill in the 
+ Edit ZOLTAN_HOME/Utilities/Config/Config.linux_cca and fill in the 
  CCA_SPEC_DIR and DCCAFE_DIR spaces.
 
  NOTE : If you are not on a Sandia machine, you cannot run the NEMESIS tests;
  you probably will not have the exodus library. Ensure that the NEMESIS_*
- keys in Config.<arch> are commented out.
+ keys in Config.<arch> are commented out. <arch> is linux_cca.
 
  In ZOLTAN_HOME/ do gmake ZOLTAN_ARCH=<arch> zoltan_component. Done.
  As of 09/08/03, only arch=linux is supported. 
@@ -44,7 +44,7 @@ b) the CCA framework, compiled at least to support classic interfaces. Both
    component was tested with the version of ccafe as it stood on December 11th, 2002.
 
 Once (a) and (b) have been compiled and installed, one specifies the directories
-in which they have been installed in $(ZOLTAN_HOME)/Utilities/Config/Config.linux.
+in which they have been installed in $(ZOLTAN_HOME)/Utilities/Config/Config.linux_cca.
 The particular fields that have to be filled in are :
 
   (i) CCA_SPEC_DIR 
