@@ -31,7 +31,6 @@ CORE_H = \
 	$(srcdir)/Teuchos_Object.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_PacketTraits.hpp \
-	$(srcdir)/Teuchos_ParameterArbitrary.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_ReportError.hpp \
@@ -46,6 +45,8 @@ CORE = \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
+	$(srcdir)/Teuchos_ParameterEntry.cpp \
+	$(srcdir)/Teuchos_ParameterList.cpp \
 	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_Time.cpp \
 	$(srcdir)/Teuchos_Utils.cpp

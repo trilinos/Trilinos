@@ -124,7 +124,6 @@ CORE_H = \
 	$(srcdir)/Teuchos_Object.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_PacketTraits.hpp \
-	$(srcdir)/Teuchos_ParameterArbitrary.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_ReportError.hpp \
@@ -140,6 +139,8 @@ CORE = \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
+	$(srcdir)/Teuchos_ParameterEntry.cpp \
+	$(srcdir)/Teuchos_ParameterList.cpp \
 	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_Time.cpp \
 	$(srcdir)/Teuchos_Utils.cpp
@@ -374,8 +375,10 @@ LIBRARIES = $(lib_LIBRARIES)
 
 libteuchos_a_DEPENDENCIES =
 am__objects_1 = Teuchos_CompObject.$(OBJEXT) Teuchos_Flops.$(OBJEXT) \
-	Teuchos_Object.$(OBJEXT) Teuchos_TestForException.$(OBJEXT) \
-	Teuchos_Time.$(OBJEXT) Teuchos_Utils.$(OBJEXT)
+	Teuchos_Object.$(OBJEXT) Teuchos_ParameterEntry.$(OBJEXT) \
+	Teuchos_ParameterList.$(OBJEXT) \
+	Teuchos_TestForException.$(OBJEXT) Teuchos_Time.$(OBJEXT) \
+	Teuchos_Utils.$(OBJEXT)
 am__objects_2 =
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
 @HAVE_MPI_FALSE@am__objects_3 =
@@ -427,6 +430,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_MPISession.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Object.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Out.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ParameterEntry.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ParameterList.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_RandomNumberGeneratorBase.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_RefCountPtr.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_StrUtils.Po \
@@ -517,6 +522,8 @@ clean-libLIBRARIES:
 Teuchos_CompObject.$(OBJEXT): $(srcdir)/Teuchos_CompObject.cpp
 Teuchos_Flops.$(OBJEXT): $(srcdir)/Teuchos_Flops.cpp
 Teuchos_Object.$(OBJEXT): $(srcdir)/Teuchos_Object.cpp
+Teuchos_ParameterEntry.$(OBJEXT): $(srcdir)/Teuchos_ParameterEntry.cpp
+Teuchos_ParameterList.$(OBJEXT): $(srcdir)/Teuchos_ParameterList.cpp
 Teuchos_TestForException.$(OBJEXT): \
 	$(srcdir)/Teuchos_TestForException.cpp
 Teuchos_Time.$(OBJEXT): $(srcdir)/Teuchos_Time.cpp
@@ -580,6 +587,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_MPISession.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Object.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Out.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterEntry.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterList.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_RandomNumberGeneratorBase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_RefCountPtr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StrUtils.Po@am__quote@
@@ -646,6 +655,30 @@ Teuchos_Object.obj: $(srcdir)/Teuchos_Object.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_Object.Po' tmpdepfile='$(DEPDIR)/Teuchos_Object.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Object.obj `cygpath -w $(srcdir)/Teuchos_Object.cpp`
+
+Teuchos_ParameterEntry.o: $(srcdir)/Teuchos_ParameterEntry.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_ParameterEntry.cpp' object='Teuchos_ParameterEntry.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_ParameterEntry.Po' tmpdepfile='$(DEPDIR)/Teuchos_ParameterEntry.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterEntry.o `test -f '$(srcdir)/Teuchos_ParameterEntry.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_ParameterEntry.cpp
+
+Teuchos_ParameterEntry.obj: $(srcdir)/Teuchos_ParameterEntry.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_ParameterEntry.cpp' object='Teuchos_ParameterEntry.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_ParameterEntry.Po' tmpdepfile='$(DEPDIR)/Teuchos_ParameterEntry.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterEntry.obj `cygpath -w $(srcdir)/Teuchos_ParameterEntry.cpp`
+
+Teuchos_ParameterList.o: $(srcdir)/Teuchos_ParameterList.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_ParameterList.cpp' object='Teuchos_ParameterList.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_ParameterList.Po' tmpdepfile='$(DEPDIR)/Teuchos_ParameterList.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterList.o `test -f '$(srcdir)/Teuchos_ParameterList.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_ParameterList.cpp
+
+Teuchos_ParameterList.obj: $(srcdir)/Teuchos_ParameterList.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Teuchos_ParameterList.cpp' object='Teuchos_ParameterList.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/Teuchos_ParameterList.Po' tmpdepfile='$(DEPDIR)/Teuchos_ParameterList.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterList.obj `cygpath -w $(srcdir)/Teuchos_ParameterList.cpp`
 
 Teuchos_TestForException.o: $(srcdir)/Teuchos_TestForException.cpp
 @AMDEP_TRUE@	source='$(srcdir)/Teuchos_TestForException.cpp' object='Teuchos_TestForException.o' libtool=no @AMDEPBACKSLASH@
