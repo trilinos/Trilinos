@@ -347,7 +347,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* perform coarsening                                            */
    /* ============================================================= */
 
-   if (ml_ag->num_PDE_eqns-1 != 1)
+   if (ml_ag->num_PDE_eqns != 1)
       ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Amatrix,amal_mat_indx,
                                         bdry_array, &aggr_count, &aggr_index); 
    else 
