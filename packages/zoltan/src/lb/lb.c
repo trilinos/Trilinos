@@ -1109,34 +1109,42 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
   /* First compute number of objs and object weight on each proc */
   num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, ierr);
 
-  /* Allocate space for object data */
-  global_ids = (LB_GID *) LB_MALLOC(num_obj * sizeof(LB_GID));
-  local_ids  = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID));
-  if (vwgt_dim>0){
-    vwgts      = (float  *) LB_MALLOC(vwgt_dim*num_obj * sizeof(float));
-    tmp_wgt = (float *) LB_MALLOC(3*vwgt_dim * sizeof(float));
-  }
-    
-  if ((!global_ids) || (!local_ids) || (vwgt_dim && ((!vwgts) || (!tmp_wgt)))){
-    *ierr = LB_MEMERR;
-    LB_FREE(&global_ids);
-    LB_FREE(&local_ids);
-    LB_FREE(&vwgts);
-    LB_FREE(&tmp_wgt);
-    return;
-  }
+  if (num_obj>0){
 
-  LB_Get_Obj_List(lb, global_ids, local_ids, vwgt_dim, vwgts, ierr);
-  if (*ierr == LB_FATAL){
-    LB_FREE(&global_ids);
-    LB_FREE(&local_ids);
-    LB_FREE(&vwgts);
-    LB_FREE(&tmp_wgt);
-    return;
-  }
+    /* Allocate space for object data */
+    global_ids = (LB_GID *) LB_MALLOC(num_obj * sizeof(LB_GID));
+    local_ids  = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID));
+      
+    if ((!global_ids) || (!local_ids) || (vwgt_dim && ((!vwgts) || (!tmp_wgt)))){
+      *ierr = LB_MEMERR;
+      LB_FREE(&global_ids);
+      LB_FREE(&local_ids);
+      return;
+    }
+  
+    LB_Get_Obj_List(lb, global_ids, local_ids, vwgt_dim, vwgts, ierr);
+    if (*ierr == LB_FATAL){
+      LB_FREE(&global_ids);
+      LB_FREE(&local_ids);
+      return;
+    }
+  
+  } 
 
   /* Compute object weight sums */
   if (vwgt_dim>0){
+    vwgts   = (float  *) LB_MALLOC(vwgt_dim*num_obj * sizeof(float));
+    tmp_wgt = (float *) LB_MALLOC(3*vwgt_dim * sizeof(float));
+    if ((num_obj && !vwgts) || (!tmp_wgt)){
+      *ierr = LB_MEMERR;
+      LB_FREE(&global_ids);
+      LB_FREE(&local_ids);
+      LB_FREE(&vwgts);
+      LB_FREE(&tmp_wgt);
+      return;
+    }
+  
+
     for (j=0; j<vwgt_dim; j++)
       tmp_wgt[j] = 0;
     for (i=0; i<num_obj; i++){
@@ -1145,6 +1153,7 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
       }
     }
   }
+
 
   /* Compute (weighted) edge cuts, #boundary vertices,
      and # adjacent procs if possible */
@@ -1173,6 +1182,7 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
       }
       if (nedges>max_edges) max_edges = nedges;
     }
+
     /* Allocate edge list space */
     nbors_global = (LB_GID *)LB_MALLOC(max_edges * sizeof(LB_GID));
     nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
@@ -1180,7 +1190,8 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
     /* Allocate a proc list for computing nadjacent */
     proc = (int *)LB_MALLOC((lb->Num_Proc)* sizeof(int));
 
-    if ((!nbors_global) || (!nbors_proc) || (ewgt_dim && (!ewgts)) || (!proc)){
+    if (max_edges && ((!nbors_global) || (!nbors_proc) || 
+        (ewgt_dim && (!ewgts)) || (!proc))){
       *ierr = LB_MEMERR;
       LB_FREE(&global_ids);
       LB_FREE(&local_ids);
@@ -1196,7 +1207,7 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
     for (i=0; i<lb->Num_Proc; i++)
       proc[i] = 0;
 
-    for (i=0; i< num_obj; i++){
+    for (i=0; i<num_obj; i++){
       flag = 0;
       nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, global_ids[i], 
                local_ids[i], ierr);
@@ -1263,6 +1274,7 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
     stats[1] = cut_weight;
     stats[2] = num_boundary;
     stats[3] = num_adj;
+
     /* Compute max and sum in the upper portions of the stats array. */
     MPI_Allreduce(stats, &stats[NUM_GSTATS], NUM_GSTATS, MPI_INT, MPI_MAX, 
                   lb->Communicator);
