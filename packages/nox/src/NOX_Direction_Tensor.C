@@ -37,7 +37,6 @@ Tensor::Tensor(Parameter::List& p)
 
 Tensor::~Tensor()
 {
-  cout << "\n\nDestroying Tensor object\n";  // bwb
   delete predf;
   
   for (int i=0; i<maxDim; i++)
@@ -107,14 +106,11 @@ bool Tensor::compute(Abstract::Vector& dir,
       kmax = n;
     maxDim = kmax + p;
 
-    /* may need to delete these if reset more than once - bwb */
+    /* may need to delete these pointers if reset more than once - bwb */
     basisVptr = new Abstract::Vector* [maxDim];
     for (int i=0; i<maxDim; i++)
       basisVptr[i] = soln.getX().clone(ShapeCopy);
 
-    // givensC = allocate_matrix(p+1, maxDim);
-    // givensS = allocate_matrix(p+1, maxDim);
-    // hess = allocate_matrix(maxDim,kmax);
     allocate_matrix(maxDim, kmax, hess);
     for (int i=0; i<maxDim; i++)
       for (int j=0; j<kmax; j++)
@@ -130,11 +126,12 @@ bool Tensor::compute(Abstract::Vector& dir,
   }
 
 #ifdef STORE_HESSENBERG
-  double** hess2 = allocate_matrix(maxDim,kmax);
+  double** hess2 = NULL;
+  allocate_matrix(maxDim, kmax, hess2);
   for (int i=0; i<maxDim; i++)
     for (int j=0; j<kmax; j++)
       hess2[i][j] = 0;
-#endif STORE_HESSENBERG
+#endif
 
   // Set iteration-specific local parameters....
   bool breakdown = false;
@@ -195,28 +192,28 @@ bool Tensor::compute(Abstract::Vector& dir,
   acPtr->update(1.0, solver.getPreviousSolutionGroup().getF(),
 		-1.0, soln.getF(), -1.0);    
   acPtr->scale(1/(normS*normS*normS*normS));
-#endif CHECK_RESIDUALS
+#endif
 
 
 #if DEBUG_LEVEL > 1
   cout << "Current Point: " << soln.getX().length() 
-       << "  " << soln.getX().norm() << "  " 
-       << dynamic_cast<const NOX::Example::Vector&>(soln.getX()) << endl;
+       << "  " << soln.getX().norm() << "  "; 
+  soln.getX().print();
   cout << "Previous direction: " << basisVptr[0]->length() 
-       << "  " << normS << "  " 
-       << dynamic_cast<const NOX::Example::Vector&>(*basisVptr[0]) << endl;
-  cout << "Current F: " 
-       << dynamic_cast<const NOX::Example::Vector&>(soln.getF()) << endl;
-  cout << "Previous F: " 
-       << dynamic_cast<const NOX::Example::Vector&>(solver.getPreviousSolutionGroup().getF()) << endl;
+       << "  " << normS << "  "; 
+  basisVptr[0]->print();
+  cout << "Current ";
+  soln.getF().print();
+  cout << "Previous F: "; 
+  solver.getPreviousSolutionGroup().getF().print();
 #ifdef CHECK_RESIDUALS
   cout << "Jcxsc: " << jcxscPtr->length() << "  " 
-       << jcxscPtr->norm() << "  " 
-       << dynamic_cast<const NOX::Example::Vector&>(*jcxscPtr) << endl;
+       << jcxscPtr->norm() << "  "; 
+  jcxscPtr->print();
   cout << "Tensor term: " << acPtr->length() 
-       << "  " << acPtr->norm() << "  " 
-       << dynamic_cast<const NOX::Example::Vector&>(*acPtr) << endl;
-#endif CHECK_RESIDUALS
+       << "  " << acPtr->norm() << "  ";
+  acPtr->print();
+#endif
 #endif
 
   
@@ -243,14 +240,14 @@ bool Tensor::compute(Abstract::Vector& dir,
 #endif
   
 #if DEBUG_LEVEL > 1
-  cout << "prev F: " 
-       << dynamic_cast<const NOX::Example::Vector&>(solver.getPreviousSolutionGroup().getF()) << endl;
-  cout << "Basis 0: "
-       << dynamic_cast<const NOX::Example::Vector&>(*basisVptr[0]) << endl;
-  cout << "Basis 1: "
-       << dynamic_cast<const NOX::Example::Vector&>(*basisVptr[1]) << endl;
-  cout << "Basis 2: "
-       << dynamic_cast<const NOX::Example::Vector&>(*basisVptr[2]) << endl;
+  cout << "prev F: "; 
+  solver.getPreviousSolutionGroup().getF().print();
+  cout << "Basis 0: ";
+  basisVptr[0]->print();
+  cout << "Basis 1: ";
+  basisVptr[1]->print();
+  cout << "Basis 2: ";
+  basisVptr[2]->print();
   cout << "old norm: " << normS << " new: " << basisVptr[0]->norm() << "\n"; 
 #endif
   
@@ -304,7 +301,7 @@ bool Tensor::compute(Abstract::Vector& dir,
 #ifdef STORE_HESSENBERG
     for (int i=0; i<maxDim; i++)
       hess2[i][k] = newHessCol[i];
-#endif STORE_HESSENBERG
+#endif
 
 
     // Calculate projected tensor term using a shortcut method...
@@ -440,7 +437,7 @@ bool Tensor::compute(Abstract::Vector& dir,
 #ifdef STORE_HESSENBERG
   cout << "Original Hessenberg: \n";
   print_matrix(maxDim,kmax,hess2);
-#endif STORE_HESSENBERG
+#endif
   cout << "\n\nModified Hessenberg: \n";
   print_matrix(maxDim,kmax,hess);
   cout << "modified vecg ";
@@ -466,8 +463,8 @@ bool Tensor::compute(Abstract::Vector& dir,
   for (int i=0; i<iterations; i++)
     dir.update(-yn[i], *basisVptr[i], 1);
 #if DEBUG_LEVEL > 1
-  cout << "Newton Direction 1: "
-       << dynamic_cast<const NOX::Example::Vector&>(dir) << endl;
+  cout << "Newton Direction 1: ";
+  dir.print();
 #endif
 
 
@@ -486,8 +483,8 @@ bool Tensor::compute(Abstract::Vector& dir,
   ok = soln.computeNewton(paramsptr->sublist("Linear Solver"));
 
 #if DEBUG_LEVEL > 1
-  cout << "Newton Direction 2: "
-       << dynamic_cast<const NOX::Example::Vector&>(soln.getNewton()) << endl;
+  cout << "Newton Direction 2: ";
+  soln.getNewton().print();
   soln.applyJacobian(soln.getNewton(), *predf);    
   predf->update(1.0, soln.getF(), 1.0);
   double residual2 = predf->norm();
@@ -538,8 +535,8 @@ bool Tensor::compute(Abstract::Vector& dir,
     dir.update(yt[i], *basisVptr[i], 1);
 
 #if DEBUG_LEVEL > 1
-  cout << "Tensor Direction: " 
-       << dynamic_cast<const NOX::Example::Vector&>(dir) << endl;
+  cout << "Tensor Direction: "; 
+  dir.print();
 #endif
 #if DEBUG_LEVEL > 0
   double beta = basisVptr[0]->dot(dir) * normS;
@@ -552,7 +549,7 @@ bool Tensor::compute(Abstract::Vector& dir,
   predf->update(1.0, soln.getF(), beta*beta, *acPtr, 1.0);
   double residual3 = predf->norm();
   printf("Actual tensor residual = %8e\n", residual3);
-#endif CHECK_RESIDUALS
+#endif
 #endif
 
 #if DEBUG_LEVEL > 1
@@ -575,14 +572,14 @@ bool Tensor::compute(Abstract::Vector& dir,
 #ifdef CHECK_RESIDUALS
   delete acPtr;
   delete jcxscPtr;
-#endif CHECK_RESIDUALS
+#endif
 #ifdef STORE_HESSENBERG
   delete_matrix(hess2);
-#endif STORE_HESSENBERG
+#endif
 
   // Set search direction...
   // dir = soln.getNewton();
-  // dir.scale(-1.0);   //bwb
+  // dir.scale(-1.0);   //bwb - to test linesearch
 
   return ok;
 }
@@ -593,8 +590,6 @@ bool Tensor::compute(Abstract::Vector& dir,
 
 void** Tensor::allocate_matrix(int m, int n, double**& a)
 {
-  //double** a = NULL;
-
   if (a) {
     // delete_matrix(a);
     cout << "Warning: Possibly a previously allocated matrix\n";
