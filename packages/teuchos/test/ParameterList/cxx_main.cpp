@@ -69,28 +69,28 @@ int main(int argc, char *argv[])
   	cout<<PL_Main<< endl;
   }
   if (verbose) cout << "Is 'Direction' recognized as a sublist of 'Main' ... ";
-  if ( PL_Main.isParameterSublist( "Direction" ) ) {  
+  if ( PL_Main.isSublist( "Direction" ) ) {  
 	if (verbose) cout << "yes"<< endl;
   } else {
 	if (verbose) cout << "no"<< endl;
 	FailedTests++;		
   }
   if (verbose) cout << "Is 'Newton' recognized as a sublist of 'Direction' ... ";
-  if ( PL_Direction.isParameterSublist( "Newton" ) ) {  
+  if ( PL_Direction.isSublist( "Newton" ) ) {  
 	if (verbose) cout << "yes"<< endl;
   } else {
 	if (verbose) cout << "no"<< endl;
 	FailedTests++;		
   }
   if (verbose) cout << "Is 'Linear Solver' recognized as a sublist of 'Newton' ... ";
-  if ( PL_Newton.isParameterSublist( "Linear Solver" ) ) {  
+  if ( PL_Newton.isSublist( "Linear Solver" ) ) {  
 	if (verbose) cout << "yes"<< endl;
   } else {
 	if (verbose) cout << "no"<< endl;
 	FailedTests++;		
   }
   if (verbose) cout << "Is 'Line Search' recognized as a sublist of 'Main' ... ";
-  if ( PL_Main.isParameterSublist( "Line Search" ) ) {  
+  if ( PL_Main.isSublist( "Line Search" ) ) {  
 	if (verbose) cout << "yes"<< endl;
   } else {
 	if (verbose) cout << "no"<< endl;
@@ -100,10 +100,10 @@ int main(int argc, char *argv[])
   //-----------------------------------------------------------
   // Fill in Direction Sublist
   //-----------------------------------------------------------
-  PL_Direction.getParameter("Method", "Newton");
-  PL_LinSol.setParameter("Tol",1e-5);
-  double tol = PL_LinSol.getParameter("Tolerance",1e-10);
-  bool RBNS = PL_Newton.getParameter("Rescue Bad Newton Solve", true );
+  PL_Direction.get("Method", "Newton");
+  PL_LinSol.set("Tol",1e-5);
+  double tol = PL_LinSol.get("Tolerance",1e-10);
+  bool RBNS = PL_Newton.get("Rescue Bad Newton Solve", true );
 
   //-----------------------------------------------------------
   // Print out Direction Sublist
@@ -149,24 +149,24 @@ int main(int argc, char *argv[])
   //-----------------------------------------------------------
   if (!FailedTests) {
     ParameterList PL_My_LineSearch;
-    string ls_method = PL_My_LineSearch.getParameter("Method", "Polynomial");
+    string ls_method = PL_My_LineSearch.get("Method", "Polynomial");
     ParameterList& PL_Polynomial = PL_My_LineSearch.sublist("Polynomial");
-    int ARI = PL_Polynomial.getParameter("Allowed Relative Increase", 100 );
-    double alpha_factor = PL_Polynomial.getParameter("Alpha Factor", 0.0001 );
-    int default_step = PL_Polynomial.getParameter("Default Step", 1 );
-    bool force_interp = PL_Polynomial.getParameter("Force Interpolation", false );
-    string interp_type = PL_Polynomial.getParameter("Interpolation Type", "Cubic" );
-    double max_bnds_factor = PL_Polynomial.getParameter("Max Bounds Factor", 0.5 );
-    PL_Polynomial.setParameter("Max Iters", 3 );
-    int max_iter_inc = PL_Polynomial.getParameter("Maximum Iteration for Increase", 0 );
-    double min_bnds_factor = PL_Polynomial.getParameter("Min Bounds Factor", 0.1 );
-    int rec_step = PL_Polynomial.getParameter("Recovery Step", 1 );
-    string rec_step_type = PL_Polynomial.getParameter("Recovery Step Type", "Constant");
-    string suff_dec_cond = PL_Polynomial.getParameter("Sufficient Decrease Condition", "Armijo-Goldstein" );
-    bool use_cntrs = PL_Polynomial.getParameter("Use Counters", true );
+    int ARI = PL_Polynomial.get("Allowed Relative Increase", 100 );
+    double alpha_factor = PL_Polynomial.get("Alpha Factor", 0.0001 );
+    int default_step = PL_Polynomial.get("Default Step", 1 );
+    bool force_interp = PL_Polynomial.get("Force Interpolation", false );
+    string interp_type = PL_Polynomial.get("Interpolation Type", "Cubic" );
+    double max_bnds_factor = PL_Polynomial.get("Max Bounds Factor", 0.5 );
+    PL_Polynomial.set("Max Iters", 3 );
+    int max_iter_inc = PL_Polynomial.get("Maximum Iteration for Increase", 0 );
+    double min_bnds_factor = PL_Polynomial.get("Min Bounds Factor", 0.1 );
+    int rec_step = PL_Polynomial.get("Recovery Step", 1 );
+    string rec_step_type = PL_Polynomial.get("Recovery Step Type", "Constant");
+    string suff_dec_cond = PL_Polynomial.get("Sufficient Decrease Condition", "Armijo-Goldstein" );
+    bool use_cntrs = PL_Polynomial.get("Use Counters", true );
 
-    PL_Main.setParameter("Nonlinear Solver", "Line Search Based"); 
-
+    PL_Main.set("Nonlinear Solver", "Line Search Based"); 
+ 
     //-----------------------------------------------------------
     // Set the Line Search Parameter List equal to the one just constructed
     //-----------------------------------------------------------
@@ -191,16 +191,17 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------
     // Retrieve some information from the parameter list using templated "get" method.
     //-----------------------------------------------------------
-    int max_iters;
+    int max_iters, def_step;
     string nonlin_solver;
+    double alpha_fact;
     bool tempMeth = true;
     try {
-      max_iters = PL_My_Polynomial.template getParameter<int>("Max Iters");
-      nonlin_solver = PL_Main.template getParameter<string>("Nonlinear Solver");
+      max_iters = PL_My_Polynomial.template get<int>("Max Iters");
+      nonlin_solver = PL_Main.template get<string>("Nonlinear Solver");
     }
     catch( exception& e ) { tempMeth = false; }  
     if (verbose) {
-	cout<< "Is the templated 'getParameter' method functional ... "<<endl;
+	cout<< "Is the templated 'get' method functional ... "<<endl;
 	cout<< "  Can we retrieve information using the CORRECT variable type ... ";
     }
     if (tempMeth && max_iters==3) { if (verbose) cout << "yes" << endl; }
@@ -213,7 +214,7 @@ int main(int argc, char *argv[])
     tempMeth = false;
     FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
     try {
-	mbf = PL_LinSol.template getParameter<float>( "Tol" );
+	mbf = PL_LinSol.template get<float>( "Tol" );
     }
     catch( exception& e ) {
 	tempMeth = true;
@@ -226,14 +227,29 @@ int main(int argc, char *argv[])
     else { if (verbose) cout << "yes" << endl; }
 
     //-----------------------------------------------------------
-    // Check templated isParameterType functionality
+    // Check the 'getParameter' helper function.
+    //-----------------------------------------------------------
+    tempMeth = true;
+    try {
+    	def_step = getParameter<int>(PL_Polynomial, "Default Step");
+	alpha_fact = getParameter<double>(PL_Polynomial, "Alpha Factor");
+    }
+    catch( exception& e ) { tempMeth = false; }
+    if (verbose && def_step==1) {
+	cout<< "Is the helper function 'getParameter' functional ... ";
+    }
+    if (tempMeth) { if (verbose) cout << "yes" << endl; }
+    else { if (verbose) cout << "no" << endl; FailedTests++; }
+
+    //-----------------------------------------------------------
+    // Check templated isType functionality
     //-----------------------------------------------------------
     bool PT1, PT2, PT3, PT4, PT5;
-    PT1 = PL_Polynomial.template isParameterType<int>("Default Step");
-    PT2 = PL_Polynomial.template isParameterType<long int>("Default Step");
-    PT3 = PL_Polynomial.template isParameterType<string>("Interpolation Type");
+    PT1 = PL_Polynomial.template isType<int>("Default Step");
+    PT2 = PL_Polynomial.template isType<long int>("Default Step");
+    PT3 = PL_Polynomial.template isType<string>("Interpolation Type");
     if (verbose) {
-	cout<< "Is the templated 'isParameterType' method functional ... "<<endl;
+	cout<< "Is the templated 'isType' method functional ... "<<endl;
 	cout<< "  Is the 'Default Step' of type 'int' ... ";
     }
     if (PT1) { if (verbose) cout<< "yes" << endl; }
@@ -268,8 +284,8 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------
     double * tempvec1 = new double[10];
     for (int i=0; i<10; i++) { tempvec1[i] = i; }
-    PL_Main.setParameter( "Address of Norm Vector", tempvec1 );
-    double* tempvec2 = PL_Main.template getParameter<double*>( "Address of Norm Vector" );
+    PL_Main.set( "Address of Norm Vector", tempvec1 );
+    double* tempvec2 = PL_Main.template get<double*>( "Address of Norm Vector" );
     tempvec1[4] = 2.0; tempvec1[6] = 1.0;
     if (verbose) {
 	cout<< "Can we pass a pointer to a vector to a parameter list ... ";
@@ -286,8 +302,8 @@ int main(int argc, char *argv[])
     // Use a simple function, pass it in and get it back out ...
     //-----------------------------------------------------------
     double (*pt2Function) (double, double);
-    PL_Main.setParameter( "Address to Simple Function", &Plus );
-    pt2Function = PL_Main.template getParameter<double(*)(double,double)>( "Address to Simple Function" ); 
+    PL_Main.set( "Address to Simple Function", &Plus );
+    pt2Function = PL_Main.template get<double(*)(double,double)>( "Address to Simple Function" ); 
     if (verbose) {
 	cout<< "Can we pass a pointer to a function to a parameter list ... ";
     }
@@ -308,6 +324,9 @@ int main(int argc, char *argv[])
 	print_break();
 	PL_Main.print(cout);
 	print_break();
+	cout << "The unused parameters" << endl;
+	PL_Main.unused(cout);
+        print_break();
 	cout << "Number of Failed Tests : " << FailedTests << endl;
 	print_break();
   }

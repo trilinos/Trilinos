@@ -43,6 +43,7 @@ class ParameterList; // another parameter type (forward declaration)
 
 /*! \class ParameterEntry
     \brief This object is held as the "value" in the Teuchos::ParameterList map.
+
     This structure holds a \c Teuchos::any value and information on the status of this
     parameter (isUsed, isDefault, etc.).  The type of parameter is chosen through the
     templated Set/Get methods.
@@ -51,7 +52,7 @@ class ParameterList; // another parameter type (forward declaration)
 class ParameterEntry {
 
 public:
-  //@{ \name Constructor/Destructor methods
+  //@{ \name Constructors/Destructor
 
   //! Default Constructor
   ParameterEntry();
@@ -72,15 +73,18 @@ public:
 
   //@}
 
-  //@{ \name Set methods.
+  //@{ \name Set Methods
 
   //! Replace the current parameter entry with \c source.
   ParameterEntry& operator=(const ParameterEntry& source);
 
-  //! Templated set method that uses the input value type to determine the
-  //! type of parameter.  Invalidates any previous values stored by this object
-  //! although it doesn't necessarily erase them.  Resets 'isUsed' functionality.
-  
+  /*! \brief Templated set method that uses the input value type to determine the type of parameter.  
+      
+      \note <ul>
+	    <li> Invalidates any previous values stored by this object although it doesn't necessarily erase them.  
+            <li> Resets 'isUsed' functionality.  
+	    </ul>
+  */
   template<typename T>
   void setValue(T value, bool isDefault = false)
   {
@@ -93,12 +97,13 @@ public:
 
   //@}
 
-  //@{ \name Get methods. 
+  //@{ \name Get Methods 
    
-  //! Templated get method that uses the input pointer type to determine the
-  //! type of parameter to return.  The returned value is nonsense if we do not
-  //! request the correct type of value. 
+  /*! \brief Templated get method that uses the input pointer type to determine the type of parameter to return.  
 
+      \note This method will cast the value to the type requested.  If that type is incorrect, 
+	    an exception will be thrown by the any_cast.
+  */
   template<typename T>
   T& getValue(T *ptr) const
   {
@@ -108,24 +113,23 @@ public:
 
   //@}
 
-  //@{ \name Is methods.  
+  //@{ \name Attribute Methods  
   
-  //! Return whether or not the value is used; i.e., whether or not
-  //! the value has been retrieved via a get function.
-
-  bool isUsed() const { return isUsed_; };
+  //! Return whether or not the value has been used; i.e., whether or not the value has been retrieved via a get function.
+  bool isUsed() const { return isUsed_; }
 
   //! Return whether or not the value itself is a list.
-  bool isList() const { return isList_; };
+  bool isList() const { return isList_; }
   //@}
 
   //@{ \name I/O Methods
 
-  //! Output a non-list parameter to the given output stream.  The parameter is followed by
-  //! "[default]" if it is the default value given through a Set method.  Otherwise,
-  //! if the parameter was unused (not accessed through a Get method), it will be 
-  //! followed by "[unused]".  This function is called by the "ostream& operator<<". 
+  /*! \brief Output a non-list parameter to the given output stream.  
 
+      The parameter is followed by "[default]" if it is the default value given through a 
+      Set method.  Otherwise, if the parameter was unused (not accessed through a Get method), 
+      it will be followed by "[unused]".  This function is called by the "ostream& operator<<". 
+  */
   ostream& leftshift(ostream& os) const;
   //@}
 
@@ -149,7 +153,7 @@ private:
 };
 
 /*! \relates ParameterEntry 
-    A templated helper function for returning the value of type \c T held in the ParameterEntry object,
+    \brief A templated helper function for returning the value of type \c T held in the ParameterEntry object,
     where the type \c T can be specified in the call.  This is an easier way to call the getValue method
     in the ParameterEntry class, since the user does not have to pass in a pointer of type \c T.
 */
@@ -160,7 +164,7 @@ T& getValue( const ParameterEntry &entry )
 }
 
 /*! \relates ParameterEntry 
-    Output stream operator for handling the printing of parameter entries.  
+    \brief Output stream operator for handling the printing of parameter entries.  
 */
 inline ostream& operator<<(ostream& os, const ParameterEntry& e) 
 { 
