@@ -1002,8 +1002,7 @@ void AZ_check_block_sizes(int bindx[], int cpntr[], int Nrows,
    }
    *new_block = N_blks;
 }
-void AZ_capture_matrix(double val[], int indx[], int bindx[], int rpntr[],
-                      int cpntr[], int bpntr[], int proc_config[],
+void AZ_capture_matrix(AZ_MATRIX *Amat, int proc_config[],
                       int data_org[], double b[])
 
 /*******************************************************************************
@@ -1061,9 +1060,19 @@ void AZ_capture_matrix(double val[], int indx[], int bindx[], int rpntr[],
   int  num_total_nonzeros;
   int  num_total_nodes, num_total_equations = 0;
   int  Proc, Num_Proc;
-
+  double * x, * y;
+  double * val;
+  int * indx, * bindx, * rpntr,* cpntr, * bpntr;
   /********** execution begins **********/
-  { FILE *AZ_capture_flag;
+  { 
+    val = Amat->val;
+    indx = Amat->indx;
+    bindx =Amat->bindx;
+    rpntr = Amat->rpntr;
+    cpntr = Amat->cpntr;
+    bpntr = Amat->bpntr;
+
+    FILE *AZ_capture_flag;
   AZ_capture_flag = fopen("AZ_write_matrix_now","r");
   if(AZ_capture_flag)
     {
@@ -1166,6 +1175,43 @@ void AZ_capture_matrix(double val[], int indx[], int bindx[], int rpntr[],
 	      fprintf(AZ_capt_matrix,"%d %d %22.16e\n", 
 		      i+1, bindx[j]+1, val[j]);
 	  }
+	  fclose(AZ_capt_matrix);
+	}
+
+	else { /* Matrix-free mode so multiply by e_j vecs */
+	  num_total_equations = data_org[AZ_N_internal]+data_org[AZ_N_border];
+
+	  num_total_nonzeros = 0;
+
+     /***** Print out the i,j,a(i,j) information for the matrix col-by-col *****/
+
+	  AZ_capt_matrix = fopen("AZ_capture_matrix.dat","a");
+#ifdef MB_MODIF
+	  fprintf(AZ_capt_matrix, "* Start of Matrix-free matrix\n");
+#else
+	  fprintf(AZ_capt_matrix, "Start of Matrix-free matrix\nDim and NNZ info at bottom\n\n");
+#endif
+	  x = (double *) malloc(num_total_equations * sizeof(double));
+	  y = (double *) malloc(num_total_equations * sizeof(double));
+	  for (i = 0; i < num_total_equations; i++) x[0] = 0.0;
+	  for (i = 0; i < num_total_equations; i++) y[0] = 0.0;
+	  for (i = 0; i < num_total_equations; i++) {
+	    /* For each column i, multiply by the vector e_i to extract the
+	       coefficients from the ith column.  Then write these out. */
+	    x[i] = 1.0;
+	    Amat->matvec(x, y, Amat, proc_config);
+	    for (j =0; j < num_total_equations; j++ )
+	      if (y[j] !=0.0) {
+		fprintf(AZ_capt_matrix,"%d %d %22.16e\n", 
+			j+1, i+1, y[j]);
+		num_total_nonzeros++;
+	      }
+	    x[i] = 0.0;
+	  }
+	  free ((void *) x);
+	  free ((void *) y);
+	  fprintf(AZ_capt_matrix, "%d %d\n", 
+		  num_total_equations, num_total_nonzeros);
 	  fclose(AZ_capt_matrix);
 	}
 
