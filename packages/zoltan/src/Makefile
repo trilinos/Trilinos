@@ -54,14 +54,13 @@ TARGET		= zdrive
 LIB_TARGET	= zoltan
 LIB_NAME	= libzoltan.a
 
-SUPP_TARGS	= "smos sun solaris sunos tflop"
-
 # Paths to third party libraries (not really part of Zoltan)
 # 
 # If you already have ParMetis on your machine, give the path here.
-# Otherwise you need to type "make parmetis" to compile 
-# the source that was distributed with Zoltan.
-PARMETISLIB_PATH = parmetis/ParMetis
+# Otherwise you first need to make ParMetis from the source in
+# the directory parmetis/ParMetis (type "make" over there),
+# and then move those libraries to the appropriate Obj_* directory. 
+PARMETISLIB_PATH = .
 
 # Makefile for load-balancing library.
 ############################################################################
@@ -196,8 +195,7 @@ SMOS_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
 SMOS_DR_OBJ	= $(SMOS_DR_CSRC:.c=.o)
 SMOS_DR_IPATH	= -I$(SMOS_ARCHD)/include
 SMOS_MPI_LIB	= -L/Net/local/mpi/lib/paragon/sunmos -lmpi
-SMOS_PAR_LPATH  = -L$(PARMETISLIB_PATH)/Obj_smos \
-                  -L../$(PARMETISLIB_PATH)/Obj_smos 
+SMOS_PAR_LPATH  = -L$(PARMETISLIB_PATH)
 SMOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SMOS_ARCHD)/lib $(NEM_LIBS) \
 		   $(SMOS_MPI_LIB) $(SMOS_PAR_LPATH) $(PARMETIS_LIBS)
 
@@ -227,8 +225,7 @@ TFLOP_DR_CSRC	= $(DR_CSRC) $(CH_CSRC)
 TFLOP_DR_OBJ	= $(TFLOP_DR_CSRC:.c=.o)
 TFLOP_DR_IPATH	= -I$(TFLOP_ARCHD)/include
 TFLOP_MPI_LIB	= -lmpi
-TFLOP_PAR_LPATH = -L$(PARMETISLIB_PATH)/Obj_tflop \
-                  -L../$(PARMETISLIB_PATH)/Obj_tflop 
+TFLOP_PAR_LPATH = -L$(PARMETISLIB_PATH)
 TFLOP_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(TFLOP_ARCHD)/lib $(NEM_LIBS) \
 	          $(TFLOP_MPI_LIB) $(TFLOP_PAR_LPATH) $(PARMETIS_LIBS)
 
@@ -258,8 +255,7 @@ SUN_INC_PATH	= -I/Net/local/lang/SC3.0.1/include \
 
 SUN_CCOMP	= $(SUN_CC) $(SUN_INC_PATH) $(SUN_DBG_FLAGS)
 
-SUN_PAR_LPATH   = -L$(PARMETISLIB_PATH)/Obj_sun \
-                  -L../$(PARMETISLIB_PATH)/Obj_sun 
+SUN_PAR_LPATH   = -L$(PARMETISLIB_PATH)
 
 SUN_DEFS	= $(GDEFINES)
 # driver stuff
@@ -299,8 +295,7 @@ SUNOS_INC_PATH	= -I/Net/local/lang/SC2.0.1/include \
 		  -I/Net/local/mpi/mpich/include \
                   -I/Net/local/mpi/mpich/lib/sun4/ch_p4 \
 		  $(SUBINCPATH)
-SUNOS_PAR_LPATH   = -L$(PARMETISLIB_PATH)/Obj_sunos \
-                  -L../$(PARMETISLIB_PATH)/Obj_sunos
+SUNOS_PAR_LPATH   = -L$(PARMETISLIB_PATH)
 SUNOS_DEFS	= $(GDEFINES)
 
 SUNOS_CCOMP	= $(SUNOS_CC) $(SUNOS_INC_PATH) $(SUNOS_DBG_FLAGS)
@@ -332,8 +327,7 @@ CPLANT_INC         = $(INC)
 CPLANT_OBJ         = $(CPLANT_CSRC:.c=.o)
 CPLANT_INC_PATH	= -I/Net/mp/cplant/current/include \
 		  $(SUBINCPATH)
-CPLANT_PAR_LPATH   = -L$(PARMETISLIB_PATH)/Obj_cplant \
-                  -L../$(PARMETISLIB_PATH)/Obj_cplant
+CPLANT_PAR_LPATH   = -L$(PARMETISLIB_PATH)
 CPLANT_DEFS	= $(GDEFINES)
 
 CPLANT_CCOMP	= $(CPLANT_CC) $(CPLANT_INC_PATH) $(CPLANT_DBG_FLAGS)
@@ -400,6 +394,9 @@ smos-dr:
 	"DEFS=$(SMOS_DEFS)" "VPATH=$(SUB_VPATH)" \
 	"RANLIB=$(SMOS_RANLIB)" "MAIN_OBJ=$(SMOS_DR_OBJ)" \
 	"LNK_LIBS=$(SMOS_DR_LIBS)"
+	@if [ ! -f test/$(TARGET).smos ]; \
+	then ln -s ../Obj_sun/$(TARGET) test/$(TARGET).smos; \
+	fi
 
 tflop:
 	@if [ ! -d Obj_tflop ]; \
@@ -427,6 +424,9 @@ tflop-dr:
 	"DEFS=$(TFLOP_DEFS)" "VPATH=$(SUB_VPATH)" \
 	"RANLIB=$(TFLOP_RANLIB)" "MAIN_OBJ=$(TFLOP_DR_OBJ)" \
 	"LNK_LIBS=$(TFLOP_DR_LIBS)"
+	@if [ ! -f test/$(TARGET).tflop ]; \
+	then ln -s ../Obj_sun/$(TARGET) test/$(TARGET).tflop; \
+	fi
 
 solaris: sun
 
@@ -459,6 +459,9 @@ sun-dr:
 	"DEFS=$(SUN_DEFS)" "VPATH=$(SUB_VPATH)" \
 	"RANLIB=$(SUN_RANLIB)" "MAIN_OBJ=$(SUN_DR_OBJ)" \
 	"LNK_LIBS=$(SUN_DR_LIBS)"
+	@if [ ! -f test/$(TARGET).sun ]; \
+	then ln -s ../Obj_sun/$(TARGET) test/$(TARGET).sun; \
+	fi
 
 sunos:
 	@if [ ! -d Obj_sunos ]; \
@@ -487,6 +490,9 @@ sunos-dr:
 	"DEFS=$(SUNOS_DEFS)" "VPATH=$(SUB_VPATH)" \
 	"RANLIB=$(SUNOS_RANLIB)" "MAIN_OBJ=$(SUNOS_DR_OBJ)" \
 	"LNK_LIBS=$(SUNOS_DR_LIBS)"
+	@if [ ! -f test/$(TARGET).sunos ]; \
+	then ln -s ../Obj_sun/$(TARGET) test/$(TARGET).sunos; \
+	fi
 
 cplant:
 	@if [ ! -d Obj_cplant ]; \
@@ -514,20 +520,14 @@ cplant-dr:
 	"DEFS=$(CPLANT_DEFS)" "VPATH=$(SUB_VPATH)" \
 	"RANLIB=$(CPLANT_RANLIB)" "MAIN_OBJ=$(CPLANT_DR_OBJ)" \
 	"LNK_LIBS=$(CPLANT_DR_LIBS)"
+	@if [ ! -f test/$(TARGET).cplant ]; \
+	then ln -s ../Obj_sun/$(TARGET) test/$(TARGET).cplant; \
+	fi
 #
 ############################################################################
 #          UTILITY TARGETS
 ############################################################################
 #
-
-default:
-	@echo " "
-	@echo "usage: make <target>"
-	@echo "where target is one of:"
-	@for targ in ${SUPP_TARGS}; \
-	do echo "  $$targ"; \
-	done
-	@echo " "
 
 $(LINT_TARGET): $(LIB_SRC_C)
 	@echo "Generating lint file for library..."
