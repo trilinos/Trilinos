@@ -105,13 +105,19 @@ install_sh = @install_sh@
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@		  ml_readfile ml_read_elas ml_recirc \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_read_salsa
 
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = mlguide mlguide_par
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_example1dGS ml_example2d ml_example3d ml_simple_max \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_aztec_simple_METIS ml_aztec_simple_ParMETIS \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@		  ml_readfile ml_read_elas ml_recirc \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_read_salsa
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_example1dGS ml_example2d ml_example3d ml_simple_max \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_aztec_simple_METIS ml_aztec_simple_ParMETIS \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@		          ml_readfile ml_read_elas ml_recirc \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_read_salsa
 
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_example1dGS ml_example2d ml_example3d ml_simple_max \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_aztec_simple_METIS ml_aztec_simple_ParMETIS \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_readfile ml_read_elas ml_recirc \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_read_salsa ml_read_maxwell
+
+@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = mlguide mlguide_par
 
 # One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
 # of the  following primaries that the pattern is 
@@ -131,6 +137,7 @@ mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 @ML_STANDALONE_MODE_FALSE@ml_read_elas_SOURCES = $(srcdir)/ml_read_elas.c
 @ML_STANDALONE_MODE_FALSE@ml_recirc_SOURCES = $(srcdir)/ml_recirc.c
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_SOURCES = $(srcdir)/ml_read_salsa.c
+@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
 
 
 # One DEPENDENCIES primary is needed for each exe listed above.  List any
@@ -237,44 +244,82 @@ mlguide_par_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_CFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_LDADD = ${ml_libs}
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_LINK = ${mllink}
+@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
+@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_LDADD = ${ml_libs}
+@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_LINK = ${mllink}
 subdir = examples
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT)
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	mlguide$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example1d$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example1dGS$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example2d$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_METIS$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_ParMETIS$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT)
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide_par$(EXEEXT)
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	mlguide$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	mlguide_par$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example1d$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example1dGS$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example2d$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_METIS$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_ParMETIS$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT)
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT)
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	mlguide$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example1d$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example1dGS$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example2d$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_METIS$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_ParMETIS$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT)
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT)
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	mlguide$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example1d$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example1dGS$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example2d$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_METIS$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_ParMETIS$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT)
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_TRUE@	mlguide_par$(EXEEXT)
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	mlguide$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	mlguide_par$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example1d$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example1dGS$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example2d$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_METIS$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_ParMETIS$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT)
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide_par$(EXEEXT)
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	mlguide$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	mlguide_par$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example1d$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example1dGS$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example2d$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_METIS$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple_ParMETIS$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_maxwell$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 @ML_STANDALONE_MODE_FALSE@am_ml_aztec_simple_OBJECTS = \
@@ -350,6 +395,17 @@ ml_read_elas_OBJECTS = $(am_ml_read_elas_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
 @ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../epetra/src/libepetra.a
 ml_read_elas_LDFLAGS =
+@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@am_ml_read_maxwell_OBJECTS = \
+@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_maxwell-ml_read_maxwell.$(OBJEXT)
+ml_read_maxwell_OBJECTS = $(am_ml_read_maxwell_OBJECTS)
+@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_TRUE@ml_read_maxwell_DEPENDENCIES =
+@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_DEPENDENCIES =
+@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_TRUE@ml_read_maxwell_DEPENDENCIES =
+@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_DEPENDENCIES = \
+@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/src/libml.a \
+@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
+@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../epetra/src/libepetra.a
+ml_read_maxwell_LDFLAGS =
 @ML_STANDALONE_MODE_FALSE@am_ml_read_salsa_OBJECTS = \
 @ML_STANDALONE_MODE_FALSE@	ml_read_salsa-ml_read_salsa.$(OBJEXT)
 ml_read_salsa_OBJECTS = $(am_ml_read_salsa_OBJECTS)
@@ -414,6 +470,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example2d-ml_example2d.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example3d-ml_example3d.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_elas-ml_read_elas.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_readfile-ml_readfile.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_recirc-ml_recirc.Po \
@@ -430,11 +487,12 @@ DIST_SOURCES = $(ml_aztec_simple_SOURCES) \
 	$(ml_aztec_simple_ParMETIS_SOURCES) $(ml_example1d_SOURCES) \
 	$(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) \
 	$(ml_example3d_SOURCES) $(ml_read_elas_SOURCES) \
-	$(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) \
-	$(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) \
-	$(mlguide_SOURCES) $(mlguide_par_SOURCES)
+	$(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) \
+	$(ml_readfile_SOURCES) $(ml_recirc_SOURCES) \
+	$(ml_simple_max_SOURCES) $(mlguide_SOURCES) \
+	$(mlguide_par_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_aztec_simple_ParMETIS_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
+SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_aztec_simple_ParMETIS_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
 
 all: all-am
 
@@ -482,6 +540,10 @@ ml_read_elas-ml_read_elas.$(OBJEXT): $(srcdir)/ml_read_elas.c
 ml_read_elas$(EXEEXT): $(ml_read_elas_OBJECTS) $(ml_read_elas_DEPENDENCIES) 
 	@rm -f ml_read_elas$(EXEEXT)
 	$(ml_read_elas_LINK) $(ml_read_elas_LDFLAGS) $(ml_read_elas_OBJECTS) $(ml_read_elas_LDADD) $(LIBS)
+ml_read_maxwell-ml_read_maxwell.$(OBJEXT): $(srcdir)/ml_read_maxwell.c
+ml_read_maxwell$(EXEEXT): $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_DEPENDENCIES) 
+	@rm -f ml_read_maxwell$(EXEEXT)
+	$(ml_read_maxwell_LINK) $(ml_read_maxwell_LDFLAGS) $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_LDADD) $(LIBS)
 ml_read_salsa-ml_read_salsa.$(OBJEXT): $(srcdir)/ml_read_salsa.c
 ml_read_salsa$(EXEEXT): $(ml_read_salsa_OBJECTS) $(ml_read_salsa_DEPENDENCIES) 
 	@rm -f ml_read_salsa$(EXEEXT)
@@ -521,6 +583,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example2d-ml_example2d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example3d-ml_example3d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_elas-ml_read_elas.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_readfile-ml_readfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_recirc-ml_recirc.Po@am__quote@
@@ -638,6 +701,18 @@ ml_read_elas-ml_read_elas.obj: $(srcdir)/ml_read_elas.c
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ml_read_elas-ml_read_elas.Po' tmpdepfile='$(DEPDIR)/ml_read_elas-ml_read_elas.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_elas_CFLAGS) $(CFLAGS) -c -o ml_read_elas-ml_read_elas.obj `cygpath -w $(srcdir)/ml_read_elas.c`
+
+ml_read_maxwell-ml_read_maxwell.o: $(srcdir)/ml_read_maxwell.c
+@AMDEP_TRUE@	source='$(srcdir)/ml_read_maxwell.c' object='ml_read_maxwell-ml_read_maxwell.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CFLAGS) $(CFLAGS) -c -o ml_read_maxwell-ml_read_maxwell.o `test -f '$(srcdir)/ml_read_maxwell.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_maxwell.c
+
+ml_read_maxwell-ml_read_maxwell.obj: $(srcdir)/ml_read_maxwell.c
+@AMDEP_TRUE@	source='$(srcdir)/ml_read_maxwell.c' object='ml_read_maxwell-ml_read_maxwell.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CFLAGS) $(CFLAGS) -c -o ml_read_maxwell-ml_read_maxwell.obj `cygpath -w $(srcdir)/ml_read_maxwell.c`
 
 ml_read_salsa-ml_read_salsa.o: $(srcdir)/ml_read_salsa.c
 @AMDEP_TRUE@	source='$(srcdir)/ml_read_salsa.c' object='ml_read_salsa-ml_read_salsa.o' libtool=no @AMDEPBACKSLASH@

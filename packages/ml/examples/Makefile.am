@@ -20,11 +20,19 @@ endif
 else
 
 if HAVE_MPI
+if !ML_BENCHMARKING
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
                   ml_aztec_simple_METIS ml_aztec_simple_ParMETIS \
-		  ml_readfile ml_read_elas ml_recirc \
+		          ml_readfile ml_read_elas ml_recirc \
                   ml_read_salsa
+else
+noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
+                  ml_example1dGS ml_example2d ml_example3d ml_simple_max \
+                  ml_aztec_simple_METIS ml_aztec_simple_ParMETIS \
+                  ml_readfile ml_read_elas ml_recirc \
+                  ml_read_salsa ml_read_maxwell
+endif
 else
 noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
