@@ -13,7 +13,7 @@ libinstall:
 	@echo "--------------------------------------------------------------"
 	@echo " "
 	cd $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)$(CUR_LIB)/; mkdir -p obj/$(TRILINOS_TARGET)
-	(cd $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)$(CUR_LIB)/obj/$(TRILINOS_TARGET); rm -f Makefile *.[fch]*; $(LN)  ../../src/Makefile . ; $(LN)  ../../src/*.[fch]* .; $(MAKE)) 
+	(cd $(TRILINOS_HOME)/packages/$(CUR_SRCPATH)$(CUR_LIB)/obj/$(TRILINOS_TARGET); rm -f classicMakefile *.[fch]*; $(LN)  ../../src/classicMakefile . ; $(LN)  ../../src/*.[fch]* .; $(MAKE) -f classicMakefile) 
 
 anasazi:
 	$(MAKE) TRILINOS_ARCH="$(TRILINOS_ARCH)" TRILINOS_COMM="$(TRILINOS_COMM)"\

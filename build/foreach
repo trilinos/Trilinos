@@ -1,7 +1,7 @@
 mkdir -p old
 mkdir -p new
 
-foreach f (*.h *.cc *.cpp *.hpp Makefile makefile)
+foreach f (*.h *.cc *.cpp *.hpp Makefile makefile classicMakefile)
   cp $f old
   sed -f $TRILINOS_HOME/build/Petra2Epetra.sed $f > new/$f
   diff $f new/$f

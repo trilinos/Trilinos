@@ -21,12 +21,12 @@ endif
 echo $file
 echo "Date: " `eval date` >>& $file
 echo `uname -a` >>& $file
-foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix ImportExport Map MapColoring MultiVector Object VbrMatrix Vector)
+foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix FECrsMatrix FEVector ImportExport Map MapColoring MultiVector Object VbrMatrix Vector)
 	cd $f
 	if( "$5" == "True" ) then
-	    gmake $1 $2 $3 $4 clobber; gmake $1 $2 $3 $4
+	    gmake -f classicMakefile $1 $2 $3 $4 clobber; gmake -f classicMakefile $1 $2 $3 $4
 	else
-	    	gmake TRILINOS_ID=_DEBUG TRILINOS_COMM=SERIAL clobber; gmake TRILINOS_ID=_DEBUG TRILINOS_COMM=SERIAL
+	    	gmake -f classicMakefile TRILINOS_ID=_DEBUG TRILINOS_COMM=SERIAL clobber; gmake -f classicMakefile TRILINOS_ID=_DEBUG TRILINOS_COMM=SERIAL
 	endif
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
@@ -42,9 +42,9 @@ foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix ImportExport Map MapCo
 		endif
 	end
 	if( "$5" == "True" ) then
-	    gmake $1 $2 $3 $4 clobber
+	    gmake -f classicMakefile $1 $2 $3 $4 clobber
 	else
-	    gmake TRILINOS_ID=_DEBUG TRILINOS_COMM=SERIAL clobber
+	    gmake -f classicMakefile TRILINOS_ID=_DEBUG TRILINOS_COMM=SERIAL clobber
 	endif
 	cd ..
 end
