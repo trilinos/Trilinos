@@ -21,6 +21,9 @@
 /* Define if want to build komplex */
 #undef HAVE_KOMPLEX
 
+/* Define if want to build meros */
+#undef HAVE_MEROS
+
 /* Define if want to build new_package */
 #undef HAVE_NEW_PACKAGE
 

@@ -118,6 +118,10 @@ if BUILD_TSF
 TSF_SUBDIR = TSF
 endif
 
+if BUILD_MEROS
+MEROS_SUBDIR = meros
+endif
+
 #Epetra must be listed first due to aztecoo's dependence on Epetra
 ## #np# - Add your subdir, i.e. $(NEW_PACKAGE_SUBDIR) which is defined 
 ## above, to this list
@@ -125,6 +129,6 @@ SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
 	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) $(NOX_SUBDIR) \
 	  $(TSFCOREUTILS_SUBDIR) $(TSFCORE_SUBDIR) $(TSF_SUBDIR) \
 	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR) $(BELOS_SUBDIR) \
-	  $(NEW_PACKAGE_SUBDIR)
+	  $(MEROS_SUBDIR) $(NEW_PACKAGE_SUBDIR)
 
 

@@ -39,15 +39,15 @@ AM_CONDITIONAL(BUILD_Y12M, test "X$ac_cv_use_referencey12m" != "Xno")
 TAC_ARG_ENABLE_FEATURE(amesos, [Build amesos], AMESOS, no)
 AM_CONDITIONAL(BUILD_AMESOS, test "X$ac_cv_use_amesos" != "Xno")
 
-# After building Nox from the Trilinos level is stabilized, the default should be 
-# changed to yes.
 TAC_ARG_ENABLE_FEATURE(nox, [Build nox], NOX, no)
 AM_CONDITIONAL(BUILD_NOX, test "X$ac_cv_use_nox" != "Xno")
 
-# After building TSF from the Trilinos level is stabilized, 
-# the default should be changed to yes.
+TAC_ARG_ENABLE_FEATURE(meros, [Build meros], MEROS, no)
+AM_CONDITIONAL(BUILD_MEROS, test "X$ac_cv_use_meros" != "Xno")
+
 TAC_ARG_ENABLE_FEATURE(tsf, [Build TSF], TSF, no)
-AM_CONDITIONAL(BUILD_TSF, test "X$ac_cv_use_tsf" != "Xno")
+AM_CONDITIONAL(BUILD_TSF, test "X$ac_cv_use_tsf" != "Xno" ||
+	test "X$ac_cv_use_meros" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(tsfcore, [Build TSFCore], TSFCORE, no)
 AM_CONDITIONAL(BUILD_TSFCORE, test "X$ac_cv_use_tsfcore" != "Xno")
@@ -76,14 +76,10 @@ TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, yes)
 AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno" || 
 	test "X$ac_cv_use_belos" != "Xno")
 
-# After building EpetraExt from the Trilinos level is stabilized, the 
-#default could be changed to yes.
 TAC_ARG_ENABLE_FEATURE(epetraext, [Build epetraext], EPETRAEXT, no)
 AM_CONDITIONAL(BUILD_EPETRAEXT, test "X$ac_cv_use_epetraext" != "Xno")
 
-## #np# - Copy the next four lines, and change the name
-## # After building New_Package from the Trilinos level is stabilized, the 
-## #default could be changed to yes.
+## #np# - Copy the next two lines, and change the name
 TAC_ARG_ENABLE_FEATURE(new_package, [Build new_package], NEW_PACKAGE, no)
 AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$ac_cv_use_new_package" != "Xno")
 
@@ -103,7 +99,8 @@ AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_new_package" != "Xno" || 
-        test "X$ac_cv_use_epetraext" != "Xno")
+        test "X$ac_cv_use_epetraext" != "Xno"  ||
+        test "X$ac_cv_use_meros" != "Xno")
 
 if test "X$ac_cv_use_y12m" != "Xno"; then
   AC_CONFIG_SUBDIRS([external/y12m])
@@ -116,6 +113,7 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_amesos" != "Xno" || 
 	test "X$ac_cv_use_aztecoo" != "Xno" || 
 	test "X$ac_cv_use_new_package" != "Xno" || 
+	test "X$ac_cv_use_meros" != "Xno" || 
         test "X$ac_cv_use_epetraext" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
@@ -146,7 +144,8 @@ if test "X$ac_cv_use_nox" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/nox])
 fi
 
-if test "X$ac_cv_use_tsf" != "Xno"; then
+if test "X$ac_cv_use_tsf" != "Xno" ||
+	test "X$ac_cv_use_meros" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/TSF])
 fi
 
@@ -171,8 +170,10 @@ if test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/belos])
 fi
 
-# REQUIRED CHANGE 
-# Copy the next three lines change the name
+if test "X$ac_cv_use_meros" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/meros])
+fi
+
 if test "X$ac_cv_use_new_package" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/new_package])
 fi

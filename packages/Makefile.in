@@ -141,12 +141,14 @@ AUTOMAKE_OPTIONS = foreign
 
 @BUILD_TSF_TRUE@TSF_SUBDIR = TSF
 
+@BUILD_MEROS_TRUE@MEROS_SUBDIR = meros
+
 #Epetra must be listed first due to aztecoo's dependence on Epetra
 SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
 	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) $(NOX_SUBDIR) \
 	  $(TSFCOREUTILS_SUBDIR) $(TSFCORE_SUBDIR) $(TSF_SUBDIR) \
 	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR) $(BELOS_SUBDIR) \
-	  $(NEW_PACKAGE_SUBDIR)
+	  $(MEROS_SUBDIR) $(NEW_PACKAGE_SUBDIR)
 
 subdir = packages
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -158,9 +160,9 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	uninstall-info-recursive all-recursive install-data-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
-DIST_COMMON = Makefile.am Makefile.in
+DIST_COMMON = Makefile.am Makefile.in configure.ac
 DIST_SUBDIRS = epetra triutils ifpack aztecoo komplex nox TSFCoreUtils \
-	TSFCore TSF amesos epetraext belos new_package
+	TSFCore TSF amesos epetraext belos meros new_package
 all: all-recursive
 
 .SUFFIXES:
