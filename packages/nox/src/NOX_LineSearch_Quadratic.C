@@ -85,7 +85,14 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
 
   // f = 0.5 * 2-Norm(F) * 2-Norm(F)
   newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
-                            
+
+  // Following lines will be used with Homer Walker's new stuff
+  // Compute forcing term, eta if a Newton solve was used
+  //double eta = oldgrp.getNewtonSolveResidual();
+  //if (Utils::doPrint(Utils::Details)) {
+  //  cout << "2-norm of linear model, ||Js+f|| = " << eta << endl;
+  //}
+
   int niters = 1;
 
   if (Utils::doPrint(Utils::InnerIteration)) {

@@ -259,6 +259,7 @@ public:
   virtual bool isJacobian() const;
   virtual bool isGradient() const;
   virtual bool isNewton() const;
+  virtual bool isNewtonSolveResidual() const;
 
   //@}
 
@@ -277,6 +278,8 @@ public:
   virtual const Abstract::Vector& getGradient() const;
 
   virtual const Abstract::Vector& getNewton() const;
+
+  double getNewtonSolveResidual() const;
 
   //@}
 
@@ -308,11 +311,13 @@ protected:
   //! Computes the preconditioner based on the current solution vector and sets the correct preconditioning option (Operator or RowMatrix) in the AztecOO object.
   virtual bool computePreconditioner(AztecOO& aztec) const;
   
+  //! Computes the 2-norm of the residual of the linear model used in the Newton solve computation, ||Js+f||.
+  virtual bool computeNewtonSolveResidual();
+  //@}
+
   //! Returns the type of operator that is passed into the group constructors.
   /*! Uses dynamic casting to identify the underlying object type. */
   virtual OperatorType getOperatorType(const Epetra_Operator& o);
-
-  //@}
 
 protected:
 
@@ -340,10 +345,14 @@ protected:
   bool isValidJacobian;
   bool isValidGrad;
   bool isValidNewton;
+  bool isValidNewtonSolveResidual;
   //@}
   
-  //! Norm of RHS
+  //! 2-Norm of RHS
   double normRHS;
+
+  //! 2-Norm of the Newton solve residual: ||Js+f||
+  double normNewtonSolveResidual;
 
   /** @name Shared Operators */
   //@{
