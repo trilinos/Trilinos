@@ -1,3 +1,4 @@
+#ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
 // 
@@ -27,7 +28,9 @@
 // ************************************************************************
 //@HEADER
 
-/* 
+/*!
+  \file Broyden.C
+  
    This is an example of using NOX with the NOX::Solver::TensorBased 
    tensor-Krylov method.
 
@@ -47,6 +50,8 @@
 
    The standard starting point is x(i) = -1, but x(i) = 0 requires a 
    few linesearches to test that code functionality.
+
+   \author Brett Bader, UC Boulder, 2002
 */
 
 
@@ -56,11 +61,12 @@
 #include "NOX_Example_Group.H"
 #include "NOX_Solver_TensorBased.H"  
 
-
+//! Interface to modified Broyden problem defined in Broyden.C
 class Broyden : public NOX::Example::Interface {
 
 public:
  
+  //! Constructor
   Broyden(int m, double lambdaVal=0) : 
     initialGuess(m),
     solution(m)
@@ -77,6 +83,7 @@ public:
     fevals = 0;
   };
 
+  //! Destructor
   ~Broyden() { cout << "Function evaluations: " << fevals << "\n"; };
 
   const NOX::Example::Vector& getInitialGuess()
@@ -130,14 +137,21 @@ public:
   };
 
 private:
-
-  int n, fevals;
+  
+  //! Problem size
+  int n;
+  //! Number of calls to computeF
+  int fevals;
+  //! Ill-conditioning parameters
   double lambda;
+  //! Initial guess
   NOX::Example::Vector initialGuess;
+  //! Correct answer
   NOX::Example::Vector solution;
 
 };
 
+//! Main subroutine of Broyden.C
 int main()
 {
   // Set up the problem interface
@@ -209,3 +223,4 @@ int main()
   // grp.print();
 
 }
+#endif
