@@ -6,12 +6,7 @@
 *
 */
 
-
-#include <stdio.h>
-#include <string.h>
-#include <malloc.h>
-#include <ctype.h>
-
+#include <Epetra_ConfigDefs.h>
 #include "EpetraExt_mmio.h"
 
 using namespace EpetraExt;
@@ -62,9 +57,13 @@ int mm_read_unsymmetric_sparse(const char *fname, int *M_, int *N_, int *nz_,
  
     /* reseve memory for matrices */
  
-    I = (int *) malloc(nz * sizeof(int));
-    J = (int *) malloc(nz * sizeof(int));
-    val = (double *) malloc(nz * sizeof(double));
+    //I = (int *) malloc(nz * sizeof(int));
+    //J = (int *) malloc(nz * sizeof(int));
+    //val = (double *) malloc(nz * sizeof(double));
+ 
+    I = new int[nz];
+    J = new int[nz];
+    val = new double[nz];
  
     *val_ = val;
     *I_ = I;
@@ -351,20 +350,26 @@ int mm_read_mtx_crd(char *fname, int *M, int *N, int *nz, int **I, int **J,
         return ret_code;
 
 
-    *I = (int *)  malloc(*nz * sizeof(int));
-    *J = (int *)  malloc(*nz * sizeof(int));
-    *val = NULL;
+    //*I = (int *)  malloc(*nz * sizeof(int));
+    //*J = (int *)  malloc(*nz * sizeof(int));
+    //*val = NULL;
+
+    *I = new int[*nz];
+    *J = new int[*nz];
+    *val = 0;
 
     if (mm_is_complex(*matcode))
     {
-        *val = (double *) malloc(*nz * 2 * sizeof(double));
+        //*val = (double *) malloc(*nz * 2 * sizeof(double));
+        *val = new double[2*(*nz)];
         ret_code = mm_read_mtx_crd_data(f, *M, *N, *nz, *I, *J, *val, 
                 *matcode);
         if (ret_code != 0) return ret_code;
     }
     else if (mm_is_real(*matcode))
     {
-        *val = (double *) malloc(*nz * sizeof(double));
+        //*val = (double *) malloc(*nz * sizeof(double));
+        *val = new double[*nz];
         ret_code = mm_read_mtx_crd_data(f, *M, *N, *nz, *I, *J, *val, 
                 *matcode);
         if (ret_code != 0) return ret_code;
@@ -387,7 +392,8 @@ int mm_write_banner(FILE *f, MM_typecode matcode)
     int ret_code;
 
     ret_code = fprintf(f, "%s %s\n", MatrixMarketBanner, str);
-    free(str);
+    //free(str);
+    delete [] str;
     return 0;
 }
 
