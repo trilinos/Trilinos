@@ -11,9 +11,11 @@ The following people have contributed to the development of Teuchos:
 
 <ul>
 	<li> Roscoe Bartlett, Sandia National Labs, rabartl@sandia.gov
+	<li> Michael Heroux, Sandia National Labs, maherou@sandia.gov
 	<li> Kris Kampshoff, University of Minnesota, kamp@cs.umn.edu
 	<li> Kevin Long, Sandia National Labs, krlong@sandia.gov
-	<li> Heidi Thornquist, Sandia National Labs, hkthorn@sandia.gov
+	<li> Paul Sexton, University of Illinois-Chicago, pmsexton@mac.com
+	<li> Heidi Thornquist (Package Lead), Sandia National Labs, hkthorn@sandia.gov
 </ul>
 
 \section startup Overview of Teuchos
