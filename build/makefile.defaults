@@ -64,7 +64,7 @@ LN=ln -sv
 
 ANASAZI_INCLUDES =    -I$(TRILINOS_HOME)/packages/anasazi/src
 AZTECOO_INCLUDES =    -I$(TRILINOS_HOME)/packages/aztecoo/src
-EPETRA_INCLUDES =     -I$(TRILINOS_HOME)/packages/epetra/src
+EPETRA_INCLUDES =     -I$(TRILINOS_HOME)/packages/epetra/src $(EPETRA_RTOP_INCLUDE)
 IFPACK_INCLUDES =     -I$(TRILINOS_HOME)/packages/ifpack/src
 KOMPLEX_INCLUDES =    -I$(TRILINOS_HOME)/packages/komplex/src
 PETRA_INCLUDES =      -I$(TRILINOS_HOME)/packages/petra/src
@@ -137,11 +137,6 @@ LIBSUPERLU   = $(TRILINOS_HOME)/external/DSuperLU/lib/$(TRILINOS_TARGET)/superlu
 
 ################### Package-specific defaults ##########################
 
-# RAB: 2002/1/29: Have to get this in someway
-ifdef EPETRA_ANSI_CPP
-EPETRA_DEFAULT_DEFINES += -DEPETRA_ANSI_CPP
-endif
-
 # These values seldom change and are not really target-related
 
 ## AztecOO
@@ -180,3 +175,16 @@ PETRA_COMM_SERIAL          = PETRA_SERIAL
 PETRA_COMM_MPI             = PETRA_MPI
 PETRA_COMM                 = $(PETRA_COMM_$(TRILINOS_COMM))
 
+# RAB: 2002/1/29: Is C++ compiler ANSI compatible
+ifdef EPETRA_ANSI_CPP
+EPETRA_DEFAULT_DEFINES += -DEPETRA_ANSI_CPP
+endif
+
+# RAB: 2002/6/6: Do we want to use RTOp?
+ifdef RTOP_BASE_DIR
+EPETRA_RTOP_INCLUDE += -I$(RTOP_BASE_DIR)
+EPETRA_DEFAULT_DEFINES += -DHAVE_RTOP
+ifeq ($(TRILINOS_COMM),MPI)
+EPETRA_DEFAULT_DEFINES += -DRTOp_USE_MPI
+endif
+endif

@@ -32,9 +32,13 @@ class Epetra_Import;
 class Epetra_Export;
 class Epetra_Distributor;
 class Epetra_Vector;
+
 #include "Epetra_DistObject.h"
 #include "Epetra_CompObject.h"
 #include "Epetra_BLAS.h"
+#ifdef HAVE_RTOP
+#include "RTOpPack/include/RTOp.h"
+#endif
 
 //! Epetra_MultiVector: A class for constructing and using dense multi-vectors, vectors and matrices in parallel.
 
@@ -156,6 +160,20 @@ numbers.  The ResetFlops() function resets the floating point counter.
 \warning A Epetra_Map, Epetra_LocalMap or Epetra_BlockMap object is required for all 
   Epetra_MultiVector constructors.
 
+<b> Reduction/Transformation Operators </b>
+
+Another very powerful feature of this interface (If the macro
+<tt>HAVE_RTOP</tt> is defined) is the ability to apply reduction/transformation
+operators over a sub-set of rows and columns in a set of multi-vector
+objects.  The behavior is identical as if the client extracted the
+rows or columns in a set of multi-vectors and called
+<tt>apply_reduction()</tt> or </tt>apply_transformation()<tt> individually.
+However, the advantage of using the multi-vector methods is that there may be
+greater opportunity to exploit parallelism.
+
+ToDo: Add documentation to describe how this is used or reference a paper that
+can describe this.
+
 */
 
 //==========================================================================
@@ -267,7 +285,65 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   //! Epetra_MultiVector destructor.  
   virtual ~Epetra_MultiVector();
   //@}
-  
+
+#ifdef HAVE_RTOP
+
+  //@{ \name Support for Reduction/Transformation Operators (RTOp).
+
+  ///
+  /** Apply a reduction/transformation operator column by column and return an array
+   * of the reduction objects.
+   *
+   * Note that \c *this is the first non-mutable vector before multi_vecs[].
+   *
+   * \param ToDo: Fill in
+   *
+   * Preconditions:<ul>
+   * <li> ToDo: Fill in!
+   * </ul>
+   *
+   * Postconditions:<ul>
+   * <li> ToDo: Fill in!
+   * </ul>
+   */
+  int apply_reduction(
+	  const RTOp_RTOp& primary_op
+	  ,const int num_multi_vecs,      const Epetra_MultiVector**   multi_vecs
+	  ,const int num_targ_multi_vecs, Epetra_MultiVector**         targ_multi_vecs
+	  ,RTOp_ReductTarget reduct_objs[]
+	  ,const int primary_first_ele   = 1, const int primary_sub_dim   = 0, const int primary_global_offset = 0
+	  ,const int secondary_first_col = 1, const int secondary_sub_dim = 0
+	  ) const;
+
+  ///
+  /** Apply a reduction/transformation operator column by column and return an array
+   * of the reduction objects.
+   *
+   * Note that \c *this is the first mutable vector before \c targ_multi_vecs[].
+   *
+   * \param ToDo: Fill in
+   *
+   * Preconditions:<ul>
+   * <li> ToDo: Fill in!
+   * </ul>
+   *
+   * Postconditions:<ul>
+   * <li> ToDo: Fill in!
+   * </ul>
+   */
+  int apply_transforamtion(
+	  const RTOp_RTOp& primary_op
+	  ,const int num_multi_vecs,      const Epetra_MultiVector**   multi_vecs
+	  ,const int num_targ_multi_vecs, Epetra_MultiVector**         targ_multi_vecs
+	  ,RTOp_ReductTarget reduct_objs[]
+	  ,const int primary_first_ele   = 1, const int primary_sub_dim   = 0, const int primary_global_offset = 0
+	  ,const int secondary_first_col = 1, const int secondary_sub_dim = 0
+	  );
+
+  //@}
+
+#endif // HAVE_RTOP
+
   //@{ \name Post-construction modification routines.
 
   //! Replace current value  at the specified (GlobalRow, VectorIndex) location with ScalarValue.
@@ -919,7 +995,17 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 		       int NumImportIDs, int * ImportLIDs, 
 		       char * Imports, int & SizeOfPacket, 
 		       Epetra_Distributor & Distor, Epetra_CombineMode CombineMode );
-
+#ifdef HAVE_RTOP
+  int apply_op(
+	  const Epetra_MultiVector* const_this, Epetra_MultiVector* nonconst_this
+	  ,const RTOp_RTOp& primary_op
+	  ,const int num_multi_vecs,      const Epetra_MultiVector**   multi_vecs
+	  ,const int num_targ_multi_vecs, Epetra_MultiVector**         targ_multi_vecs
+	  ,RTOp_ReductTarget reduct_objs[]
+	  ,const int primary_first_ele  , const int primary_sub_dim  , const int primary_global_offset
+	  ,const int secondary_first_col, const int secondary_sub_dim
+	  ) const;
+#endif // HAVE_RTOP
 
   int MyLength_;
   int GlobalLength_;

@@ -31,8 +31,10 @@
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_Distributor.h"
-
-
+#ifdef HAVE_RTOP
+#include "RTOpPack/include/RTOp_apply_op_mpi.h"
+#include "RTOpPack/include/RTOp_apply_op_serial.h"
+#endif
 
 //=============================================================================
 
@@ -228,6 +230,173 @@ Epetra_MultiVector::~Epetra_MultiVector(){
 
 
 }
+
+#ifdef HAVE_RTOP
+
+int Epetra_MultiVector::apply_reduction(
+	const RTOp_RTOp& primary_op
+	,const int num_multi_vecs,      const Epetra_MultiVector**   multi_vecs
+	,const int num_targ_multi_vecs, Epetra_MultiVector**         targ_multi_vecs
+	,RTOp_ReductTarget reduct_objs[]
+	,const int primary_first_ele  , const int primary_sub_dim  , const int primary_global_offset
+	,const int secondary_first_col, const int secondary_sub_dim
+	) const
+{
+	return apply_op(
+		this,NULL,primary_op,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs,reduct_objs
+		,primary_first_ele,primary_sub_dim,primary_global_offset,secondary_first_col,secondary_sub_dim
+		);
+}
+
+int Epetra_MultiVector::apply_transforamtion(
+	const RTOp_RTOp& primary_op
+	,const int num_multi_vecs,      const Epetra_MultiVector**   multi_vecs
+	,const int num_targ_multi_vecs, Epetra_MultiVector**         targ_multi_vecs
+	,RTOp_ReductTarget reduct_objs[]
+	,const int primary_first_ele  , const int primary_sub_dim  , const int primary_global_offset
+	,const int secondary_first_col, const int secondary_sub_dim
+	)
+{
+	return apply_op(
+		NULL,this,primary_op,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs,reduct_objs
+		,primary_first_ele,primary_sub_dim,primary_global_offset,secondary_first_col,secondary_sub_dim
+		);
+}
+
+int Epetra_MultiVector::apply_op(
+	const Epetra_MultiVector* const_this, Epetra_MultiVector* nonconst_this
+	,const RTOp_RTOp& primary_op
+	,const int num_multi_vecs_in,      const Epetra_MultiVector**   multi_vecs
+	,const int num_targ_multi_vecs_in, Epetra_MultiVector**         targ_multi_vecs
+	,RTOp_ReductTarget reduct_objs[]
+	,const int primary_first_ele  , const int primary_sub_dim  , const int primary_global_offset
+	,const int secondary_first_col, const int secondary_sub_dim
+	) const
+{
+	int err = 0;
+	//
+	// This implementatation loops over the columns one at a time and apply the
+	// RTOp operator primary_op.
+	//
+	// ToDo: Rework the RTOp tools so that all of the columns of the multivector
+	// are operated on simultaneously.  This will have much better performance
+	// when reductions are being performed.
+	//
+	typedef const RTOp_value_type*   RTOp_value_type_const_ptr_t;
+	typedef  RTOp_value_type*        RTOp_value_type_ptr_t;
+	int                              num_multi_vecs       = num_multi_vecs_in      + ( const_this      ? 1 : 0 );
+	int                              num_targ_multi_vecs  = num_targ_multi_vecs_in + ( nonconst_this ? 1 : 0 );
+	RTOp_value_type_const_ptr_t      *l_vec_ptrs          = NULL;
+	ptrdiff_t                        *l_vec_strides       = NULL;
+	RTOp_value_type_ptr_t            *l_targ_vec_ptrs     = NULL;
+	ptrdiff_t                        *l_targ_vec_strides  = NULL;
+	int k1, k2;
+
+	// ToDo: Validate that all of the multivectors are compatible before we continue!
+
+	//
+	const Epetra_BlockMap  &map   = this->Map();
+	const Epetra_Comm      &comm  = map.Comm();
+	// Get the dimensions and offset for this processor
+	const int
+		global_dim   = this->GlobalLength(),
+		local_dim    = this->MyLength(),
+		local_offset = map.MinMyGID() - map.IndexBase();
+	// Allocate arrays to hold local vector data
+	if( num_multi_vecs ) {
+		l_vec_ptrs    = new RTOp_value_type_const_ptr_t[num_multi_vecs];
+		l_vec_strides = new ptrdiff_t[num_multi_vecs];
+	}
+	if( num_targ_multi_vecs ) {
+		l_targ_vec_ptrs    = new RTOp_value_type_ptr_t[num_targ_multi_vecs];
+		l_targ_vec_strides = new ptrdiff_t[num_targ_multi_vecs];
+	}
+	// Get the range of column vectors to operator over
+	if( secondary_first_col < 1 || this->NumVectors() < secondary_first_col )
+		err = -1;
+	const int
+		first_col = secondary_first_col,
+		last_col  =  ( secondary_sub_dim
+					   ? first_col + secondary_sub_dim - 1 // Include only the number of columns as instructed
+					   : this->NumVectors()                // Include all of the remaining columns
+			);
+	if( last_col - first_col + 1 > this->NumVectors() )
+		err = -1; // Error! the client choose the number of columns incorrectly
+	// Peform in serial or parallel? (only works for MPI and serial implementations!)
+	const bool do_in_serial = ( global_dim == local_dim );
+#ifdef PETRA_COMM_MPI
+	const Epetra_MpiComm* mpi_comm = dynamic_cast<const Epetra_MpiComm*>(&comm);
+	if( !do_in_serial && !mpi_comm )
+		err = -1; // Error! MPI must be supported!
+#endif
+	// Any error?
+	if(err != 0) goto ERR_LABEL;
+	// Loop through the selected columns and perform the reduction/transformation.
+	for( int col_j = first_col; col_j <= last_col; ++col_j ) {
+		// Fill up arrays of pointers to local vector data
+		RTOp_value_type *local_values = NULL;
+		int             ld            = 0;
+		if( num_multi_vecs ) {
+			if(const_this) {
+				if( (err = const_this->ExtractView(&local_values,&ld)) != 0 ) goto ERR_LABEL;
+				l_vec_ptrs[0]    = local_values;
+				l_vec_strides[0] = 1;
+			}
+			for( k1 = 0, k2 = (const_this ? +1: 0); k1 < num_multi_vecs_in; ++k1, ++k2 ) {
+				if( (err = multi_vecs[k1]->ExtractView(&local_values,&ld)) != 0 ) goto ERR_LABEL;
+				l_vec_ptrs[k2]    = local_values;
+				l_vec_strides[k2] = 1;
+			}
+		}
+		if( num_targ_multi_vecs ) {
+			if(nonconst_this) {
+				if( (err = nonconst_this->ExtractView(&local_values,&ld)) != 0 ) goto ERR_LABEL;
+				l_targ_vec_ptrs[0]    = local_values;
+				l_targ_vec_strides[0] = 1;
+			}
+			for( k1 = 0, k2 = (nonconst_this ? +1: 0); k1 < num_targ_multi_vecs_in; ++k1, ++k2 ) {
+				if( (err = targ_multi_vecs[k1]->ExtractView(&local_values,&ld)) != 0 ) goto ERR_LABEL;
+				l_targ_vec_ptrs[k2]    = local_values;
+				l_targ_vec_strides[k2] = 1;
+			}
+		}
+		// Call the helper function to setup the sub-vectors for the logical vector
+		// specified by (first_ele,sub_dim,global_offset) and then perform the
+		// reduction/transformation operation.
+		if(do_in_serial) {
+			err = RTOp_apply_op_serial(
+				global_dim, num_multi_vecs, l_vec_ptrs, l_vec_strides
+				,num_targ_multi_vecs, l_targ_vec_ptrs, l_targ_vec_strides
+				,primary_first_ele,primary_sub_dim,primary_global_offset
+				,&primary_op, reduct_objs[col_j-first_col]
+				);
+			if(err!=0) goto ERR_LABEL;
+		} else {
+#ifdef PETRA_COMM_MPI
+			err = RTOp_apply_op_mpi(
+				mpi_comm->Comm(), global_dim, local_dim, local_offset, num_multi_vecs, l_vec_ptrs, l_vec_strides
+				,num_targ_multi_vecs, l_targ_vec_ptrs, l_targ_vec_strides, first_ele, sub_dim, global_offset
+				,&primary_op, reduct_objs[col_j-first_col]
+				);
+#else
+			err = -1; // Error! We can not do this is serial and MPI is not supported!
+#endif
+			if(err!=0) goto ERR_LABEL;
+		}
+		
+	} // next vector column in the set of multi vectors
+		
+ERR_LABEL:
+
+	// Delete dynamically allocated memory
+	if(num_multi_vecs)      { delete [] l_vec_ptrs;       delete [] l_vec_strides;      }
+	if(num_targ_multi_vecs) { delete [] l_targ_vec_ptrs;  delete [] l_targ_vec_strides; }
+	
+	return err;
+
+}
+
+#endif // HAVE_RTOP
 
 //=========================================================================
 int Epetra_MultiVector::AllocateForCopy(void)
