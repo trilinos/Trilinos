@@ -26,6 +26,44 @@
 // ***********************************************************************
 // @HEADER
 
+//
+//  Coding tasks:
+//  1)  Create the dense matrices in Solve()   DONE 
+//  2)  Make the call to dgsvx() in Factor() dONE 
+//  3)  Make the call to dgsvx() in Solve()  DONE
+//
+//  Later coding tasks:
+//  0)  Factor called twice
+//  1)  Refactor()
+//  2)  Parameter list
+//  3)  Transpose 
+//  4)  Destructor - In particular, need to call the SuperLU_FREE routines.
+//  5)  Coments - especially in Amesos_Superlu.h
+//
+//  SymbolicFactorization() performs no action other than making sure that Factorization 
+//    s performed
+//  NumericFactorization() performs the factorization but no solve (right hand side is
+//    is set to 0 vectors) reuses factors only if ReuseFactorization_ is set. 
+//    If FactorizationOK_() && ReuseSymbolic_ 
+//       ReFactor()
+//    else
+//       Factor() 
+//
+//  Solve() 
+//
+//  Factor() does everything from scratch:
+//    Redistributes the data if necessary
+//      Deletes any data structures left over from the previous call to Factor()
+//    Copies the data into the format that SuperLU wants it
+//    Calls dgssvx to factor the matrix with factor set to true
+//  ReFactor()
+//    Redistributes the data if necessary
+//      - Attempting to check to make sure that the non-zero structure is unchanged
+//    Copies the data into the format that SuperLU already has it
+//       FIRST PASS - assert( false ) 
+//    
+
+
 #ifndef _AMESOS_SUPERLU_H_
 #define _AMESOS_SUPERLU_H_
 
@@ -39,6 +77,7 @@
 #endif
 #include "Epetra_CrsGraph.h"
 
+class SLUData;
 
 //! Amesos_Klu:  A serial, unblocked code ideal for getting started and for very sparse matrices, such as circuit matrces.  AmesosKlu computes <p class="code">A<sup>T</sup> X = B</p> more efficiently than <p class="code">A X = B</p>.
 /*!  Amesos_Klu, an object-oriented wrapper for Klu, will solve a linear systems of equations: <TT>A X = B</TT>
@@ -239,9 +278,19 @@ public:
     will need to make an explicit call to ReadParameterList.
    */
   int ReadParameterList() ;
+
+  const Teuchos::ParameterList* getList() const
+  {
+    return (const Teuchos::ParameterList *) &ParameterList_;
+  }
+  
   //@}
 
  private:  
+
+  int Factor();
+  int ReFactor();
+
   /*
   ConvertToSerial - Convert matrix to a serial Epetra_CrsMatrix
     Preconditions:
@@ -261,30 +310,6 @@ public:
   int ConvertToSerial();
 
   /*
-    ConvertToSuperluCRS - Convert matirx to form expected by Superlu: Ai, Ap, Aval
-    Preconditions:
-      numentries_, NumGloalElements_ and SerialMatrix_ must be set.
-    Postconditions:
-      Ai, Ap, and Aval are resized and populated with a compresses row storage 
-      version of the input matrix A.
-  */
-  int ConvertToSuperluCRS(bool firsttime);     
-
-  /*
-    PerformSymbolicFactorization - Call Superlu to perform symbolic factorization
-    Preconditions:
-      IsLocal must be set to 1 if the input matrix is entirely stored on process 0
-      Ap, Ai and Aval are a compressed row storage version of the input matrix A.
-    Postconditions:
-      Symbolic points to an SUPERLU internal opaque object containing the
-        symbolic factorization and accompanying information.  
-      SymbolicFactorizationOK_ = true; 
-    Note:  All action is performed on process 0
-  */
-      
-  int PerformSymbolicFactorization(); 
-
-  /*
     PerformNumericFactorization - Call Superlu to perform numeric factorization
     Preconditions:
       IsLocal must be set 
@@ -300,19 +325,28 @@ public:
 
  protected:
 
-    int *Lp, *Li, *Up, *Ui, *P ;	
-    double *Lx, *Ux ;
-    Amesos_Superlu_Pimpl *PrivateSuperluData_; 
-    
+  SLUData * data_;
 
   //
   //  Ap, Ai, Aval form the compressed row storage used by Superlu
   //
-  vector <int> Ap;
-  vector <int> Ai;
-  vector <double> Aval;
+  //  #define NOVEC
+#ifdef NOVEC
+  int* Ap_;
+  int* Ai_;
+  double* Aval_;
+#else
+  vector <int> Ap_;
+  vector <int> Ai_;
+  vector <double> Aval_;
+#endif
 
-  int iam;                 //  Process number (i.e. Comm().MyPID() 
+  bool FactorizationDone_ ; 
+  bool FactorizationOK_ ; 
+  bool ReuseSymbolic_ ;
+  bool UseTranspose_;      
+
+  int iam_;                 //  Process number (i.e. Comm().MyPID() 
   
   int IsLocal_;            //  1 if Problem_->GetOperator() is stored entirely on process 0
                            //  Note:  Local Problems do not require redistribution of
@@ -325,22 +359,35 @@ public:
   Epetra_CrsMatrix *SerialMatrix_ ;      //  Points to a Serial Copy of A 
                                          //  IsLocal==1 - Points to the original matix 
                                          //  IsLocal==0 - Points to SerialCrsMatrixA
-  Epetra_CrsMatrix *TransposeMatrix_ ;   //  Points to a Serial Transposed Copy of A 
-  //
-  //  This USE_VIEW define shows that we can could easily support the 
-  //  Epetra_RowMatrix interface.  
-  //
-#define USE_VIEW
-#ifdef USE_VIEW
-  Epetra_CrsMatrix *Matrix_ ;            //  Points to the matrix that is used to compute
-#else
-  Epetra_RowMatrix *Matrix_ ;            //  Points to the matrix that is used to compute
-#endif                                         //  the values passed to Superlu
-                                     
-
-  bool UseTranspose_;      //  Set by 
   const Epetra_LinearProblem * Problem_;
   const Teuchos::ParameterList * ParameterList_ ; 
+
+#ifdef NOVEC
+  int* ColIndicesV_;
+  double* RowValuesV_;
+  //  int* Global_Columns_; 
+  double* berr_;
+  double* ferr_;
+
+  int* perm_r_;
+  int* perm_c_;
+  int* etree_;
+  double* R_;
+  double* C_;
+#else
+  vector<int> ColIndicesV_;
+  vector<double> RowValuesV_;
+  //  vector<int> Global_Columns_; 
+  vector<double> berr_;
+  vector<double> ferr_;
+
+  vector<int> perm_r_;
+  vector<int> perm_c_;
+  vector<int> etree_;
+  vector<double> R_;
+  vector<double> C_;
+#endif
+  char equed_;
 
 };  // End of  class Amesos_Superlu  
 #endif /* _AMESOS_SUPERLU_H_ */

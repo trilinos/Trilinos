@@ -316,7 +316,6 @@ int Amesos_Superludist::RedistributeA( ) {
 //   
 int Amesos_Superludist::Factor( ) {
 
-
   //
   //  For now, if you change the shape of a matrix, you need to 
   //  create a new Amesos instance.
@@ -368,11 +367,15 @@ int Amesos_Superludist::Factor( ) {
   double *RowValues;
   int *ColIndices;
   int MaxNumEntries_ = SuperluMat_->MaxNumEntries();
+
   Global_Columns_.resize( num_my_cols ) ; 
   for ( int i = 0 ; i < num_my_cols ; i ++ ) { 
     Global_Columns_[i] = SuperluMat_->RowMatrixColMap().GID( i ) ; 
   }
-
+  if ( SuperluCrs != 0 ) {
+    ColIndicesV_.resize(MaxNumEntries_);
+    RowValuesV_.resize(MaxNumEntries_);
+  }
   Epetra_CrsMatrix *SuperluCrs = dynamic_cast<Epetra_CrsMatrix *>(SuperluMat_);
   for ( MyRow = 0; MyRow < NumMyElements ; MyRow++ ) {
     if ( SuperluCrs != 0 ) {
@@ -381,8 +384,6 @@ int Amesos_Superludist::Factor( ) {
 					ColIndices ) != 0 ) ;
     }
     else {
-      ColIndicesV_.resize(MaxNumEntries_);
-      RowValuesV_.resize(MaxNumEntries_);
       EPETRA_CHK_ERR( SuperluMat_->
 		      ExtractMyRowCopy( MyRow, MaxNumEntries_, 
 					NzThisRow, &RowValuesV_[0], 
