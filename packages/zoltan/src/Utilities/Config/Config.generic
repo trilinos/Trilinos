@@ -23,7 +23,7 @@
 # Destination path for the Zoltan library.  If the destination is not defined,
 # the library will be placed in the Obj_$(ZOLTAN_ARCH) subdirectory.
 ##############################################################################
-ZOLTAN_LIB_DIR = /space/home/kddevin
+#ZOLTAN_LIB_DIR = /space/home/kddevin
 
 ##############################################################################
 # General variables used in compilation.
