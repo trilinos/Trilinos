@@ -202,40 +202,6 @@ LOCA::MultiContinuation::NaturalGroup::setStepSize(double deltaS, int i)
   isValidConstraints = false;
 }
 
-
-NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::NaturalGroup::applyJacobianInverseNewton(
-						NOX::Parameter::List& params) 
-{
-  // This method is specialized to the Newton solve where the right-hand-side
-  // is f.  We take advantage of the fact that f and df/dp are in a 
-  // contiguous multivector
-
-  string callingFunction = 
-    "LOCA::MultiContinuation::NaturalGroup::applyJacobianInverseNewton()";
-  
-  if (!isJacobian()) {
-    LOCA::ErrorCheck::throwError(callingFunction,
-				 "Called with invalid Jacobian!");
-  }
-
-  // Get x, param components of f vector (we only want the parameter 
-  // components of f, not df/dp)
-  const NOX::Abstract::Vector& f_x = fVec->getXVec();
-  const NOX::Abstract::MultiVector::DenseMatrix& f_p = fVec->getScalars();
-
-  // Get references to x, param components of newton vector
-  NOX::Abstract::Vector& newton_x = newtonVec->getXVec();
-  NOX::Abstract::MultiVector::DenseMatrix& newton_p = newtonVec->getScalars();
-
-  // Call bordered solver applyInverse method
-  NOX::Abstract::Group::ReturnType status = 
-    grpPtr->applyJacobianInverse(params, f_x, newton_x);
-  newton_p.putScalar(0.0);
-
-  return status;
-}
-
 void
 LOCA::MultiContinuation::NaturalGroup::resetIsValid() {
   LOCA::MultiContinuation::ExtendedGroup::resetIsValid();

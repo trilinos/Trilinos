@@ -316,10 +316,11 @@ LOCA::MultiContinuation::ExtendedGroup::computeJacobian()
 
   // Set blocks in bordered solver
   borderedSolver.setIsZero(false, isConstraintDerivativesXZero(),
-			   isConstraintDerivativesPZero());
-  borderedSolver.setBlocks(grpPtr, &(dfdpMultiVec->getXMultiVec()), 
-			   getConstraintDerivativesX(),
-			   getConstraintDerivativesP());
+			   isConstraintDerivativesPZero(), false, false);
+  borderedSolver.setIsContiguous(true);
+  borderedSolver.setMatrixBlocks(grpPtr, &(dfdpMultiVec->getXMultiVec()), 
+				 getConstraintDerivativesX(),
+				 getConstraintDerivativesP());
 
   isValidJacobian = true;
 
@@ -609,8 +610,8 @@ LOCA::MultiContinuation::ExtendedGroup::applyJacobianInverseMultiVector(
 
   // Call bordered solver applyInverse method
   NOX::Abstract::Group::ReturnType status = 
-    borderedSolver.applyInverse(params, false, false, false, &input_x, 
-				&input_param, result_x, result_param);
+    borderedSolver.applyInverse(params, &input_x, &input_param, 
+				result_x, result_param);
 
   return status;
 }
@@ -891,8 +892,7 @@ LOCA::MultiContinuation::ExtendedGroup::applyJacobianInverseNewton(
 
   // Call bordered solver applyInverse method
   NOX::Abstract::Group::ReturnType status = 
-    borderedSolver.applyInverse(params, false, false, true, &f_x, &f_p, 
-				newton_x, newton_p);
+    borderedSolver.applyInverse(params, &f_x, &f_p, newton_x, newton_p);
 
   return status;
 }

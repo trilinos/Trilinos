@@ -94,14 +94,18 @@ namespace LOCA {
       reset(NOX::Parameter::List& params) = 0;
 
       //! Set flags indicating if any blocks are zero
-      virtual void setIsZero(bool flagA, bool flagB, bool flagC) = 0;
+      virtual void setIsZero(bool flagA, bool flagB, bool flagC, bool flagF,
+			     bool flagG) = 0;
+
+      //! Set flag indicating whether F and A are continguous
+      virtual void setIsContiguous(bool flag) = 0;
 
       //! Set blocks
       /*!
        * Any of these block pointers (execpt the group pointer) may be NULL 
        * if the corresponding flag is set indicating the block is zero.
        */
-      virtual void setBlocks(
+      virtual void setMatrixBlocks(
 		   const NOX::Abstract::Group* group,
 		   const NOX::Abstract::MultiVector* blockA,
 		   const NOX::Abstract::MultiVector* blockB,
@@ -167,15 +171,10 @@ namespace LOCA {
        * \brief Solves the extended system as defined above
        */
       /*!
-       * The \em params argument is the linear solver parameters. If
-       * \em isZeroF or \em \isZeroG is true, than the corresponding
-       * \em F or \em G pointers may be NULL
+       * The \em params argument is the linear solver parameters. 
        */
       virtual NOX::Abstract::Group::ReturnType 
       applyInverse(NOX::Parameter::List& params,
-		   bool isZeroF,
-		   bool isZeroG,
-		   bool contiguousRHS,
 		   const NOX::Abstract::MultiVector* F,
 		   const NOX::Abstract::MultiVector::DenseMatrix* G,
 		   NOX::Abstract::MultiVector& X,

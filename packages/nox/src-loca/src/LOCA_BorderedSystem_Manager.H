@@ -85,10 +85,14 @@ namespace LOCA {
       reset(NOX::Parameter::List& params);
 
       //! Set flags indicating if any blocks are zero
-      virtual void setIsZero(bool flagA, bool flagB, bool flagC);
+      virtual void setIsZero(bool flagA, bool flagB, bool flagC, bool flagF,
+			     bool flagG);
+
+      //! Set flag indicating whether F and A are continguous
+      virtual void setIsContiguous(bool flag);
 
       //! Set blocks
-      virtual void setBlocks(
+      virtual void setMatrixBlocks(
 			const NOX::Abstract::Group* group,
 			const NOX::Abstract::MultiVector* blockA,
 			const NOX::Abstract::MultiVector* blockB,
@@ -117,9 +121,6 @@ namespace LOCA {
        */
       virtual NOX::Abstract::Group::ReturnType 
       applyInverse(NOX::Parameter::List& params,
-		   bool isZeroF,
-		   bool isZeroG,
-		   bool contiguousRHS,
 		   const NOX::Abstract::MultiVector* F,
 		   const NOX::Abstract::MultiVector::DenseMatrix* G,
 		   NOX::Abstract::MultiVector& X,

@@ -95,14 +95,18 @@ namespace LOCA {
       reset(NOX::Parameter::List& params);
 
       //! Set flags indicating if any blocks are zero
-      virtual void setIsZero(bool flagA, bool flagB, bool flagC);
+      virtual void setIsZero(bool flagA, bool flagB, bool flagC, bool flagF,
+			     bool flagG);
+
+      //! Set flag indicating whether F and A are continguous
+      virtual void setIsContiguous(bool flag);
 
       //! Set blocks
       /*!
        * Any of these block pointers (execpt the group pointer) may be NULL 
        * if the corresponding flag is set indicating the block is zero.
        */
-      virtual void setBlocks(
+      virtual void setMatrixBlocks(
 			const NOX::Abstract::Group* group,
 			const NOX::Abstract::MultiVector* blockA,
 			const NOX::Abstract::MultiVector* blockB,
@@ -176,13 +180,58 @@ namespace LOCA {
        */
       virtual NOX::Abstract::Group::ReturnType 
       applyInverse(NOX::Parameter::List& params,
-		   bool isZeroF,
-		   bool isZeroG,
-		   bool contiguousRHS,
 		   const NOX::Abstract::MultiVector* F,
 		   const NOX::Abstract::MultiVector::DenseMatrix* G,
 		   NOX::Abstract::MultiVector& X,
 		   NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+
+    protected:
+
+      /*! 
+       * \brief Solves the extended system when B = 0 and F and A are
+       * not contiguous
+       */
+      NOX::Abstract::Group::ReturnType  
+      solveBZeroNoncontiguous(
+			   NOX::Parameter::List& params,
+			   const NOX::Abstract::MultiVector* A,
+			   const NOX::Abstract::MultiVector::DenseMatrix* C,
+			   const NOX::Abstract::MultiVector* F,
+			   const NOX::Abstract::MultiVector::DenseMatrix* G,
+			   NOX::Abstract::MultiVector& X,
+			   NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+
+      /*! 
+       * \brief Solves the extended system when B is not 0 and F and A are
+       * not contiguous
+       */
+      NOX::Abstract::Group::ReturnType  
+      solveBNonZeroNoncontiguous(
+			   NOX::Parameter::List& params,
+			   const NOX::Abstract::MultiVector* A,
+			   const NOX::Abstract::MultiVector* B,
+			   const NOX::Abstract::MultiVector::DenseMatrix* C,
+			   const NOX::Abstract::MultiVector* F,
+			   const NOX::Abstract::MultiVector::DenseMatrix* G,
+			   NOX::Abstract::MultiVector& X,
+			   NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+
+      /*! 
+       * \brief Solves the extended system when B is not 0 and F and A are
+       * contiguous
+       */
+      NOX::Abstract::Group::ReturnType  
+      solveBNonZeroContiguous(
+			  NOX::Parameter::List& params,
+			  const NOX::Abstract::MultiVector* A,
+			  const NOX::Abstract::MultiVector* B,
+			  const NOX::Abstract::MultiVector::DenseMatrix* C,
+			  vector<int>& indexF,
+			  vector<int>& indexA,
+			  const NOX::Abstract::MultiVector* F,
+			  const NOX::Abstract::MultiVector::DenseMatrix* G,
+			  NOX::Abstract::MultiVector& X,
+			  NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
     protected:
 
@@ -206,6 +255,27 @@ namespace LOCA {
 
       //! flag indicating whether C block is zero
       bool isZeroC;
+
+      //! flag indicating whether F block is zero
+      bool isZeroF;
+
+      //! flag indicating whether G block is zero
+      bool isZeroG;
+
+      //! flag indicating whether F and A are contiguous
+      bool isContiguous;
+
+      //! flag indicating whether X block is zero
+      bool isZeroX;
+
+      //! flag indicating whether Y block is zero
+      bool isZeroY;
+
+      //! flag indicating whether B^T*X1 block is zero
+      bool isZeroT1;
+
+      //! flag indicating whether B^T*X2 block is zero
+      bool isZeroT2;
 
     };
   } // namespace BorderedSystem

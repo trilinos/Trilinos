@@ -105,22 +105,27 @@ LOCA::BorderedSystem::Manager::reset(NOX::Parameter::List& params)
 }
 
 void
-LOCA::BorderedSystem::Manager::setIsZero(bool flagA, bool flagB, bool flagC)
+LOCA::BorderedSystem::Manager::setIsZero(bool flagA, bool flagB, bool flagC,
+					 bool flagF, bool flagG)
 {
-  borderedPtr->setIsZero(flagA, flagB, flagC);
+  borderedPtr->setIsZero(flagA, flagB, flagC, flagF, flagG);
 }
 
 void
-LOCA::BorderedSystem::Manager::setBlocks(
+LOCA::BorderedSystem::Manager::setIsContiguous(bool flag)
+{
+  borderedPtr->setIsContiguous(flag);
+}
+
+void
+LOCA::BorderedSystem::Manager::setMatrixBlocks(
 			const NOX::Abstract::Group* group,
 			const NOX::Abstract::MultiVector* blockA,
 			const NOX::Abstract::MultiVector* blockB,
 			const NOX::Abstract::MultiVector::DenseMatrix* blockC)
 {
-  borderedPtr->setBlocks(group, blockA, blockB, blockC);
+  borderedPtr->setMatrixBlocks(group, blockA, blockB, blockC);
 }
-
-
 
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSystem::Manager::apply(
@@ -144,15 +149,11 @@ LOCA::BorderedSystem::Manager::applyTranspose(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSystem::Manager::applyInverse(
-			    NOX::Parameter::List& params,
-			    bool isZeroF,
-			    bool isZeroG,
-			    bool contiguousRHS,
-			    const NOX::Abstract::MultiVector* F,
-			    const NOX::Abstract::MultiVector::DenseMatrix* G,
-			    NOX::Abstract::MultiVector& X,
-		            NOX::Abstract::MultiVector::DenseMatrix& Y) const
+			      NOX::Parameter::List& params,
+			      const NOX::Abstract::MultiVector* F,
+			      const NOX::Abstract::MultiVector::DenseMatrix* G,
+			      NOX::Abstract::MultiVector& X,
+			      NOX::Abstract::MultiVector::DenseMatrix& Y) const
 {
-  return borderedPtr->applyInverse(params, isZeroF, isZeroG, contiguousRHS,
-				   F, G, X, Y);
+  return borderedPtr->applyInverse(params, F, G, X, Y);
 }

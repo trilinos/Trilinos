@@ -172,10 +172,6 @@ namespace LOCA {
 
     protected:
 
-      //! applyJacobianInverseMultiVector specialized to Newton solves
-      virtual NOX::Abstract::Group::ReturnType 
-      applyJacobianInverseNewton(NOX::Parameter::List& params);
-
       //! Resets all isValid flags to false
       virtual void resetIsValid();
 
