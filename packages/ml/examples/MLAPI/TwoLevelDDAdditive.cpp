@@ -37,21 +37,9 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_LinearProblem.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
 #include "Teuchos_ParameterList.hpp"
-#include "AztecOO.h"
 #include "ml_include.h"
-#include "MLAPI_Operator.h"
-#include "MLAPI_Space.h"
-#include "MLAPI_DoubleVector.h"
-#include "MLAPI_Preconditioner.h"
-#include "MLAPI_EpetraPreconditioner.h"
-#include "MLAPI_InverseOperator.h"
-#include "MLAPI_Expressions.h"
+#include "MLAPI.h"
 
 using namespace Teuchos;
 using namespace Trilinos_Util;
@@ -112,6 +100,7 @@ private:
 
 }; // TwoLevelDDAdditive
 
+#include "Trilinos_Util_CrsMatrixGallery.h"
 // ============== //
 // example driver //
 // ============== //
@@ -126,23 +115,29 @@ int main(int argc, char *argv[])
   Epetra_Comm Comm(MPI_COMM_WORLD);
 #endif
 
-  int NumGlobalElements = 10000;
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", NumGlobalElements);
-  Epetra_RowMatrix& A = *(Gallery.GetMatrix());
-  int NumMyElements = A.NumMyRows();
+  // Initialize the workspace and set the output level
+  Init();
 
   try {
 
-    // Initialize the workspace and set the output level
-    Init();
-    SetPrintLevel(10);
+    int NumGlobalElements = 10000;
+    // define the space for fine level vectors and operators.
+    Space FineSpace(NumGlobalElements);
+
+    // define the linear system matrix, solution and RHS
+    //Operator FineMatrix = Gallery("laplace_2d", FineSpace);
+
+  Trilinos_Util::CrsMatrixGallery Gallery("laplace_2d", GetEpetraComm());
+  Gallery.Set("problem_size", NumGlobalElements);
+  Operator FineMatrix(FineSpace,FineSpace,*(Gallery.GetMatrix()));
+
+    DoubleVector LHS(FineSpace);
+    DoubleVector RHS(FineSpace);
+
+    LHS = 0.0;
+    RHS.Random();
 
     Teuchos::ParameterList MLList;
-
-    // define the space for fine level vectors and operators.
-    Space FineSpace(NumMyElements);
-    Operator FineMatrix(FineSpace,FineSpace,A);
 
     // CoarseMatrix will contain the coarse level matrix,
     // while FineSolver and CoarseSolver will contain
@@ -178,21 +173,13 @@ int main(int argc, char *argv[])
     // `TwoLevelDDAdditive' to define an purely additive preconditioner.
     TwoLevelDDAdditive MLAPIPrec(FineMatrix,FineSolver,CoarseSolver,R,P);
 
-    // Define an AztecOO solver, wrap MLAPIPrec as an Epetra_Operator,
-    // then solve the problem
-    AztecOO solver(*Gallery.GetLinearProblem());
+    MLList.set("max iterations", 1550);
+    MLList.set("tolerance", 1e-9);
+    MLList.set("solver",  "gmres");
+    MLList.set("output", 16);
 
-    EpetraPreconditioner EpetraPrec(A.RowMatrixRowMap(),MLAPIPrec);
-
-    solver.SetPrecOperator(&EpetraPrec);
-
-    solver.SetAztecOption(AZ_solver, AZ_gmres);
-    solver.SetAztecOption(AZ_output, 16);
-
-    // solve with 500 iterations and 1e-12 tolerance  
-    // The problem should converge as follows:
-    solver.Iterate(500, 1e-5);
-
+    Krylov(FineMatrix, LHS, RHS, MLAPIPrec, MLList);
+    
   }
   catch (const char e[]) {
     cerr << "Caught exception: " << e << endl;

@@ -8,20 +8,43 @@
 #include "MLAPI_InverseOperator.h"
 #include "MLAPI_Expressions.h"
 #include "MLAPI_Preconditioner.h"
-#include "MLAPI_Container.h"
 #include "MLAPI_Workspace.h"
 #include <vector>
 
 #include "ml_agg_genP.h"
 
-static int MLAPI_count = 0;
-
 namespace MLAPI {
+
+/*!
+\class MultiLevel
+
+\brief Black-box multilevel smoothed aggregation preconditioner.
+
+\author Marzio Sala, SNL 9214
+
+\date Last updated on 07-Jan-05
+
+*/
 
 class MultiLevel : public Preconditioner {
 
 public:
 
+  //! Constructs the hierarchy for given Operator and parameters.
+  /*! Constructs the multilevel hierarchy.
+   *  \param FineMatrix (In) - Fine-level matrix
+   *
+   *  \param MLList (In) - Teuchos list containing all the parameters
+   *                that can affect the construction of the hierarchy,
+   *                the definition of smoothers and coarse solver.
+   *
+   *  \warning: Only a limited subset of parameters supported by
+   *  ML_Epetra::MultiLevelPreconditioner is recognized by this class.
+   *  In particular:
+   *  - only IFPACK smoothers can be defined;
+   *  - only Amesos coarse solver are supported.
+   *  - only increasing hierarchies.
+   */
   MultiLevel(const Operator FineMatrix,
              Teuchos::ParameterList& MLList)
   {
@@ -37,9 +60,13 @@ public:
       throw("invalid parameter");
     }
 
-    H_ = new Container[MaxLevels_];
+    A_.resize(MaxLevels_);
+    R_.resize(MaxLevels_);
+    P_.resize(MaxLevels_);
+    S_.resize(MaxLevels_);
 
-    H_[0].SetA(FineMatrix);
+    // work on increasing hierarchies only.
+    A_[0] = FineMatrix;
 
     double LambdaMax;
     Operator A;
@@ -59,7 +86,8 @@ public:
         cout << endl;
       }
 
-      A = H_[level].A();
+      // only to simplify the notation
+      A = A_[level];
       Ptent = BuildP(A,MLList);
       LambdaMax = MaxEigenvalue(A,EigenAnalysis,true);
 
@@ -75,8 +103,6 @@ public:
 #if 0
       DoubleVector Diag(A.DomainSpace());
       Diag = Diagonal(A);
-      cout << MLAPI_count << endl;
-      ++MLAPI_count;
       Diag = (Damping / LambdaMax) / Diag;
       Operator Dinv = Diagonal(A.DomainSpace(),A.RangeSpace(),Diag);
       Operator I = Identity(A.DomainSpace(),A.RangeSpace());
@@ -94,12 +120,11 @@ public:
       C = RAP(R,A,P);
       // build smoothers
       S.Reshape(A,"SGS",MLList);
-      // put operators in hierarchy
-      H_[level].SetR(R);
-      H_[level].SetP(P);
-      H_[level + 1].SetA(C);
-      // put smoothers in hierarchy
-      H_[level].SetS(S);
+      // put operators and inverse in hierarchy
+      R_[level] = R;
+      P_[level] = P;
+      A_[level + 1] = C;
+      S_[level] = S;
 
       // break if coarse matrix is below specified tolerance
       if (C.DomainSpace().NumGlobalElements() < 32) {
@@ -109,22 +134,23 @@ public:
     }
 
     // set coarse solver
-    S.Reshape(H_[level].A(),"Amesos",MLList);
-    H_[level].SetS(S);
+    S.Reshape(A_[level],"Amesos",MLList);
+    S_[level] = S;
     MaxLevels_ = level + 1;
   }
 
+  //! Destructor.
   virtual ~MultiLevel()
-  {
-    delete H_;
-  }
+  { }
 
+  //! Applies the preconditioner to b_f with starting solution x_f.
   int Solve(const DoubleVector& b_f, DoubleVector& x_f) const
   {
     SolveMultiLevel(b_f,x_f,0);
     return(0);
   }
 
+  //! Recursively called method, core of the multi level preconditioner.
   int SolveMultiLevel(const DoubleVector& b_f,DoubleVector& x_f, int level) const 
   {
     if (level == MaxLevels_ - 1) {
@@ -152,38 +178,53 @@ public:
     return(0);
   }
 
-  const Space& DomainSpace() const {
+  //! Returns a copy of the internally stored domain space.
+  const Space DomainSpace() const {
     return(FineMatrix_.DomainSpace());
   }
 
-  const Space& RangeSpace() const {
+  //! Returns a copy of the internally stored range space.
+  const Space RangeSpace() const {
     return(FineMatrix_.RangeSpace());
   }
 
+  //! Returns a reference to the restriction operator of level \c i.
   const Operator& R(const int i) const
   {
-    return(H_[i].R());
+    return(R_[i]);
   }
 
+  //! Returns a reference to the operator of level \c i.
   const Operator& A(const int i) const
   {
-    return(H_[i].A());
+    return(A_[i]);
   }
 
+  //! Returns a reference to the prolongator operator of level \c i.
   const Operator& P(const int i) const
   {
-    return(H_[i].P());
+    return(P_[i]);
   }
 
+  //! Returns a reference to the inverse operator of level \c i.
   const InverseOperator& S(const int i) const
   {
-    return(H_[i].S());
+    return(S_[i]);
   }
 
 private:
-  Operator FineMatrix_;
-  Container* H_;
+  //! Maximum number of levels.
   int MaxLevels_;
+  //! Fine-level matrix.
+  Operator FineMatrix_;
+  //! Contains the hierarchy of operators.
+  vector<Operator> A_;
+  //! Contains the hierarchy of restriction operators.
+  vector<Operator> R_;
+  //! Contains the hierarchy of prolongator operators.
+  vector<Operator> P_;
+  //! Contains the hierarchy of inverse operators.
+  vector<InverseOperator> S_;
 
 };
 

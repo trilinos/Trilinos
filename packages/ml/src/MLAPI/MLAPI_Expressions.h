@@ -123,6 +123,30 @@ Operator operator-(const BaseObjectMult<double,Operator>& A,
 }
 #endif
 
+// y = x * alpha
+DoubleVector
+operator*(const DoubleVector& x, const double alpha) 
+{
+  if (alpha == 0.0)
+    throw("dividing by zero!");
+
+  DoubleVector y(x);
+  y.Scale(alpha);
+  return(y);
+}
+
+// y = x / alpha
+DoubleVector
+operator/(const DoubleVector& x, const double alpha) 
+{
+  if (alpha == 0.0)
+    throw("dividing by zero!");
+
+  DoubleVector y(x);
+  y.Scale(1.0 / alpha);
+  return(y);
+}
+
 // LHS = S / rhs
 DoubleVector
 operator/(const InverseOperator& A, const DoubleVector& RHS) {

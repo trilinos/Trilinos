@@ -17,7 +17,7 @@
 #@HEADER
 #@HEADER
 
-SOURCES = $(MultiLevel_SOURCES) $(PowerMethod_SOURCES) $(TwoLevelDDAdditive_SOURCES)
+SOURCES = $(Blackboard_SOURCES) $(MultiLevel_SOURCES) $(PowerMethod_SOURCES) $(TwoLevelDDAdditive_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -40,8 +40,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = PowerMethod$(EXEEXT) TwoLevelDDAdditive$(EXEEXT) \
-	MultiLevel$(EXEEXT)
+noinst_PROGRAMS = Blackboard$(EXEEXT) PowerMethod$(EXEEXT) \
+	TwoLevelDDAdditive$(EXEEXT) MultiLevel$(EXEEXT)
 DIST_COMMON = README $(srcdir)/../Makefile-common.include \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 subdir = examples/MLAPI
@@ -75,34 +75,38 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_MultiLevel_OBJECTS = MultiLevel-MultiLevel.$(OBJEXT)
-MultiLevel_OBJECTS = $(am_MultiLevel_OBJECTS)
+am_Blackboard_OBJECTS = Blackboard-Blackboard.$(OBJEXT)
+Blackboard_OBJECTS = $(am_Blackboard_OBJECTS)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+Blackboard_DEPENDENCIES = $(am__DEPENDENCIES_2)
+am_MultiLevel_OBJECTS = MultiLevel-MultiLevel.$(OBJEXT)
+MultiLevel_OBJECTS = $(am_MultiLevel_OBJECTS)
 MultiLevel_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am_PowerMethod_OBJECTS = PowerMethod-PowerMethod.$(OBJEXT)
 PowerMethod_OBJECTS = $(am_PowerMethod_OBJECTS)
 PowerMethod_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am_TwoLevelDDAdditive_OBJECTS =  \
-	TwoLevelDDAdditive-CreateTwoLevelDD.$(OBJEXT)
+	TwoLevelDDAdditive-TwoLevelDDAdditive.$(OBJEXT)
 TwoLevelDDAdditive_OBJECTS = $(am_TwoLevelDDAdditive_OBJECTS)
 TwoLevelDDAdditive_DEPENDENCIES = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/MultiLevel-MultiLevel.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Blackboard-Blackboard.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/MultiLevel-MultiLevel.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/PowerMethod-PowerMethod.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Po
+@AMDEP_TRUE@	./$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(MultiLevel_SOURCES) $(PowerMethod_SOURCES) \
-	$(TwoLevelDDAdditive_SOURCES)
-DIST_SOURCES = $(MultiLevel_SOURCES) $(PowerMethod_SOURCES) \
-	$(TwoLevelDDAdditive_SOURCES)
+SOURCES = $(Blackboard_SOURCES) $(MultiLevel_SOURCES) \
+	$(PowerMethod_SOURCES) $(TwoLevelDDAdditive_SOURCES)
+DIST_SOURCES = $(Blackboard_SOURCES) $(MultiLevel_SOURCES) \
+	$(PowerMethod_SOURCES) $(TwoLevelDDAdditive_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -241,12 +245,17 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+Blackboard_SOURCES = $(srcdir)/Blackboard.cpp
+Blackboard_CPPFLAGS = ${ml_common_include_locations}
+Blackboard_CXXFLAGS = ${ml_common_include_locations}
+Blackboard_LDADD = ${ml_libs} 
+Blackboard_LINK = ${mllink}
 PowerMethod_SOURCES = $(srcdir)/PowerMethod.cpp
 PowerMethod_CPPFLAGS = ${ml_common_include_locations}
 PowerMethod_CXXFLAGS = ${ml_common_include_locations}
 PowerMethod_LDADD = ${ml_libs} 
 PowerMethod_LINK = ${mllink}
-TwoLevelDDAdditive_SOURCES = $(srcdir)/CreateTwoLevelDD.cpp
+TwoLevelDDAdditive_SOURCES = $(srcdir)/TwoLevelDDAdditive.cpp
 TwoLevelDDAdditive_CPPFLAGS = ${ml_common_include_locations}
 TwoLevelDDAdditive_CXXFLAGS = ${ml_common_include_locations}
 TwoLevelDDAdditive_LDADD = ${ml_libs} 
@@ -400,6 +409,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+Blackboard$(EXEEXT): $(Blackboard_OBJECTS) $(Blackboard_DEPENDENCIES) 
+	@rm -f Blackboard$(EXEEXT)
+	$(Blackboard_LINK) $(Blackboard_LDFLAGS) $(Blackboard_OBJECTS) $(Blackboard_LDADD) $(LIBS)
 MultiLevel$(EXEEXT): $(MultiLevel_OBJECTS) $(MultiLevel_DEPENDENCIES) 
 	@rm -f MultiLevel$(EXEEXT)
 	$(MultiLevel_LINK) $(MultiLevel_LDFLAGS) $(MultiLevel_OBJECTS) $(MultiLevel_LDADD) $(LIBS)
@@ -416,9 +428,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Blackboard-Blackboard.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiLevel-MultiLevel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PowerMethod-PowerMethod.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -435,6 +448,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+Blackboard-Blackboard.o: $(srcdir)/Blackboard.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Blackboard_CPPFLAGS) $(CPPFLAGS) $(Blackboard_CXXFLAGS) $(CXXFLAGS) -MT Blackboard-Blackboard.o -MD -MP -MF "$(DEPDIR)/Blackboard-Blackboard.Tpo" -c -o Blackboard-Blackboard.o `test -f '$(srcdir)/Blackboard.cpp' || echo '$(srcdir)/'`$(srcdir)/Blackboard.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Blackboard-Blackboard.Tpo" "$(DEPDIR)/Blackboard-Blackboard.Po"; else rm -f "$(DEPDIR)/Blackboard-Blackboard.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Blackboard.cpp' object='Blackboard-Blackboard.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Blackboard-Blackboard.Po' tmpdepfile='$(DEPDIR)/Blackboard-Blackboard.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Blackboard_CPPFLAGS) $(CPPFLAGS) $(Blackboard_CXXFLAGS) $(CXXFLAGS) -c -o Blackboard-Blackboard.o `test -f '$(srcdir)/Blackboard.cpp' || echo '$(srcdir)/'`$(srcdir)/Blackboard.cpp
+
+Blackboard-Blackboard.obj: $(srcdir)/Blackboard.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Blackboard_CPPFLAGS) $(CPPFLAGS) $(Blackboard_CXXFLAGS) $(CXXFLAGS) -MT Blackboard-Blackboard.obj -MD -MP -MF "$(DEPDIR)/Blackboard-Blackboard.Tpo" -c -o Blackboard-Blackboard.obj `if test -f '$(srcdir)/Blackboard.cpp'; then $(CYGPATH_W) '$(srcdir)/Blackboard.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Blackboard.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Blackboard-Blackboard.Tpo" "$(DEPDIR)/Blackboard-Blackboard.Po"; else rm -f "$(DEPDIR)/Blackboard-Blackboard.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Blackboard.cpp' object='Blackboard-Blackboard.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Blackboard-Blackboard.Po' tmpdepfile='$(DEPDIR)/Blackboard-Blackboard.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Blackboard_CPPFLAGS) $(CPPFLAGS) $(Blackboard_CXXFLAGS) $(CXXFLAGS) -c -o Blackboard-Blackboard.obj `if test -f '$(srcdir)/Blackboard.cpp'; then $(CYGPATH_W) '$(srcdir)/Blackboard.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Blackboard.cpp'; fi`
 
 MultiLevel-MultiLevel.o: $(srcdir)/MultiLevel.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevel_CPPFLAGS) $(CPPFLAGS) $(MultiLevel_CXXFLAGS) $(CXXFLAGS) -MT MultiLevel-MultiLevel.o -MD -MP -MF "$(DEPDIR)/MultiLevel-MultiLevel.Tpo" -c -o MultiLevel-MultiLevel.o `test -f '$(srcdir)/MultiLevel.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiLevel.cpp; \
@@ -468,21 +497,21 @@ PowerMethod-PowerMethod.obj: $(srcdir)/PowerMethod.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(PowerMethod_CPPFLAGS) $(CPPFLAGS) $(PowerMethod_CXXFLAGS) $(CXXFLAGS) -c -o PowerMethod-PowerMethod.obj `if test -f '$(srcdir)/PowerMethod.cpp'; then $(CYGPATH_W) '$(srcdir)/PowerMethod.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PowerMethod.cpp'; fi`
 
-TwoLevelDDAdditive-CreateTwoLevelDD.o: $(srcdir)/CreateTwoLevelDD.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(TwoLevelDDAdditive_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -MT TwoLevelDDAdditive-CreateTwoLevelDD.o -MD -MP -MF "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Tpo" -c -o TwoLevelDDAdditive-CreateTwoLevelDD.o `test -f '$(srcdir)/CreateTwoLevelDD.cpp' || echo '$(srcdir)/'`$(srcdir)/CreateTwoLevelDD.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Tpo" "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Po"; else rm -f "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CreateTwoLevelDD.cpp' object='TwoLevelDDAdditive-CreateTwoLevelDD.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Po' tmpdepfile='$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.TPo' @AMDEPBACKSLASH@
+TwoLevelDDAdditive-TwoLevelDDAdditive.o: $(srcdir)/TwoLevelDDAdditive.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(TwoLevelDDAdditive_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -MT TwoLevelDDAdditive-TwoLevelDDAdditive.o -MD -MP -MF "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Tpo" -c -o TwoLevelDDAdditive-TwoLevelDDAdditive.o `test -f '$(srcdir)/TwoLevelDDAdditive.cpp' || echo '$(srcdir)/'`$(srcdir)/TwoLevelDDAdditive.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Tpo" "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Po"; else rm -f "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TwoLevelDDAdditive.cpp' object='TwoLevelDDAdditive-TwoLevelDDAdditive.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Po' tmpdepfile='$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(TwoLevelDDAdditive_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -c -o TwoLevelDDAdditive-CreateTwoLevelDD.o `test -f '$(srcdir)/CreateTwoLevelDD.cpp' || echo '$(srcdir)/'`$(srcdir)/CreateTwoLevelDD.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(TwoLevelDDAdditive_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -c -o TwoLevelDDAdditive-TwoLevelDDAdditive.o `test -f '$(srcdir)/TwoLevelDDAdditive.cpp' || echo '$(srcdir)/'`$(srcdir)/TwoLevelDDAdditive.cpp
 
-TwoLevelDDAdditive-CreateTwoLevelDD.obj: $(srcdir)/CreateTwoLevelDD.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(TwoLevelDDAdditive_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -MT TwoLevelDDAdditive-CreateTwoLevelDD.obj -MD -MP -MF "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Tpo" -c -o TwoLevelDDAdditive-CreateTwoLevelDD.obj `if test -f '$(srcdir)/CreateTwoLevelDD.cpp'; then $(CYGPATH_W) '$(srcdir)/CreateTwoLevelDD.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CreateTwoLevelDD.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Tpo" "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Po"; else rm -f "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CreateTwoLevelDD.cpp' object='TwoLevelDDAdditive-CreateTwoLevelDD.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Po' tmpdepfile='$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.TPo' @AMDEPBACKSLASH@
+TwoLevelDDAdditive-TwoLevelDDAdditive.obj: $(srcdir)/TwoLevelDDAdditive.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(TwoLevelDDAdditive_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -MT TwoLevelDDAdditive-TwoLevelDDAdditive.obj -MD -MP -MF "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Tpo" -c -o TwoLevelDDAdditive-TwoLevelDDAdditive.obj `if test -f '$(srcdir)/TwoLevelDDAdditive.cpp'; then $(CYGPATH_W) '$(srcdir)/TwoLevelDDAdditive.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TwoLevelDDAdditive.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Tpo" "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Po"; else rm -f "$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TwoLevelDDAdditive.cpp' object='TwoLevelDDAdditive-TwoLevelDDAdditive.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.Po' tmpdepfile='$(DEPDIR)/TwoLevelDDAdditive-TwoLevelDDAdditive.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(TwoLevelDDAdditive_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -c -o TwoLevelDDAdditive-CreateTwoLevelDD.obj `if test -f '$(srcdir)/CreateTwoLevelDD.cpp'; then $(CYGPATH_W) '$(srcdir)/CreateTwoLevelDD.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CreateTwoLevelDD.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(TwoLevelDDAdditive_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -c -o TwoLevelDDAdditive-TwoLevelDDAdditive.obj `if test -f '$(srcdir)/TwoLevelDDAdditive.cpp'; then $(CYGPATH_W) '$(srcdir)/TwoLevelDDAdditive.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TwoLevelDDAdditive.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

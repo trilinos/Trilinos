@@ -3,6 +3,7 @@
 #include "ml_include.h"
 #include "ml_comm.h"
 #include "MLAPI_Workspace.h"
+#include "MLAPI_BaseObject.h"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Epetra_IntSerialDenseVector.h"
 
@@ -20,8 +21,8 @@ NumGlobalElements(), IsLinear(), and the operator().
 
 A simple example of usage follows.
 \code
-int NumMyElements = 2;
-MLAPI::Space MySpace(NumMyElements);
+int NumGlobalElements = 16;
+MLAPI::Space MySpace(NumGlobalElements);
 int LID = 2;
 int GID = MySpace(LID);
 \endcode
@@ -31,7 +32,7 @@ int GID = MySpace(LID);
 \date Last updated on 07-Jan-05.
 */
 
-class Space {
+class Space : public BaseObject {
 public:
   //! Default constructor.
   Space()
@@ -43,19 +44,36 @@ public:
   }
 
   //! Constructor with specified number of local element on the calling process.
-  Space(int NumMyElements)
+  Space(int NumGlobalElements, int NumMyElements = -1)
   {
+    if (NumGlobalElements <= 0 && NumMyElements < 0)
+      throw("Error in space constructor");
+
+    if (NumMyElements == -1) {
+      NumMyElements = NumGlobalElements / NumProc();
+      if (MyPID() == 0)
+        NumMyElements += NumGlobalElements % NumProc();
+    }
+
     NumMyElements_ = NumMyElements;
-    NumGlobalElements_ = ML_Comm_GsumInt(GetMLComm(),NumMyElements);
+    if (NumGlobalElements == -1)
+      NumGlobalElements_ = ML_Comm_GsumInt(GetMLComm(),NumMyElements);
+    else
+      NumGlobalElements_ = NumGlobalElements;
+
     Offset_ = ML_gpartialsum_int(NumMyElements,GetMLComm());
     IsLinear_ = true;
   }
 
   //! Constructor with specified number of local element on the calling process and their global numbering (starting from 0).
-  Space(int NumMyElements, const int* MyGlobalElements)
+  Space(int NumGlobalElements, int NumMyElements, const int* MyGlobalElements)
   {
     NumMyElements_ = NumMyElements;
-    NumGlobalElements_ = ML_Comm_GsumInt(GetMLComm(),NumMyElements);
+    if (NumGlobalElements_ == -1)
+      NumGlobalElements_ = ML_Comm_GsumInt(GetMLComm(),NumMyElements);
+    else
+      NumGlobalElements_ = NumGlobalElements;
+
     Offset_ = ML_gpartialsum_int(NumMyElements,GetMLComm());
     MyGlobalElements_ = Teuchos::rcp(new Epetra_IntSerialDenseVector);
     MyGlobalElements_->Resize(NumMyElements);
@@ -107,11 +125,22 @@ public:
     return(!(*this != RHS));
   }
 
+  //! Sets the name of \c this object.
+  Space& operator=(const string& Name)
+  {
+    SetName(Name);
+    return(*this);
+  }
+
   //! Reset the dimension of the space by specifying the local number of elements.
-  void Reshape(int NumMyElements)
+  void Reshape(int NumGlobalElements, int NumMyElements)
   {
     NumMyElements_ = NumMyElements;
-    NumGlobalElements_ = ML_Comm_GsumInt(GetMLComm(),NumMyElements);
+    if (NumGlobalElements == -1)
+      NumGlobalElements_ = ML_Comm_GsumInt(GetMLComm(),NumMyElements);
+    else
+      NumGlobalElements_ = NumGlobalElements;
+
     Offset_ = ML_gpartialsum_int(NumMyElements,GetMLComm());
     IsLinear_ = false;
     MyGlobalElements_ = Teuchos::null;

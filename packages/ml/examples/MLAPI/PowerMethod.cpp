@@ -39,10 +39,7 @@
 #include "Epetra_RowMatrix.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 #include "ml_include.h"
-#include "MLAPI_Space.h"
-#include "MLAPI_DoubleVector.h"
-#include "MLAPI_Operator.h"
-#include "MLAPI_Expressions.h"
+#include "MLAPI.h"
 
 using namespace Teuchos;
 using namespace Trilinos_Util;
@@ -62,59 +59,20 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  Gallery.Set("problem_size", 16);
-  Epetra_RowMatrix* EpetraA = Gallery.GetMatrix();
-
   try {
 
-    // initialize the MLAPI workspace (this has to be done only
-    // once, anywhere in the code). Users may want to call
-    // MLAPI::Finalize() before quitting their applications.
+    // must be a square number
+    int NumGlobalRows = 16;
+
+    // initialize the MLAPI workspace
     MLAPI::Init();
 
-    // All MLAPI objects (that is, DoubleVectors and Operators) requires
-    // in input one or more Space's. A space is a light-weight object,
-    // which defined the local and global number of elements in the space.
-    // A Space object also contains an Epetra_Comm object, so that it can 
-    // be used for global reduction operations.
-    // Space constructor is very simple, and basically requires the
-    // local number of rows. Each row *must* be assigned to exactly one
-    // process.
-    MLAPI::Space MySpace(EpetraA->NumMyRows());
+    // Create the space in which vectors and operators live
+    MLAPI::Space MySpace(NumGlobalRows);
 
-    // Once a space has been defined, we can construct DoubleVector's as
-    // follows:
-    MLAPI::DoubleVector x(MySpace), y(MySpace), z(MySpace);
-
-    // Assigning a constant to a vector is as simple as
-    x = 1.0;
-
-    // each vector element can be set using the [] operator:
-    for (int i = 0 ; i < MySpace.NumMyElements() ; ++i) {
-      y(i) = 2.0 * i;
-    }
-
-    // DoubleVectors can be added in MATLAB-like notation...
-    z = x + y;
-
-#if 0
-    // ... also with several vectors:
-    z = x - y - z;
-#endif
-
-    // to print a vector to standard output, simply type
-    cout << z;
-
-    // Operator's are defined as any application that maps from 
-    // one space (the so-called DomainSpace) to another space
-    // (so-called RangeSpace()). The two spaces can coincide.
-    // The Operator constructor accepts any ML_Operator and 
-    // Epetra_RowMatrix object. The MLAPI::Operator is a
-    // very simple, light-weighted wrapper, and it can be defined as
-    MLAPI::Operator A(MySpace,MySpace,*EpetraA);
-    // (where the first `MySpace refers to the DomainSpace, and the
-    // second to the RangeSpace).
+    // Define vectors and operator
+    MLAPI::DoubleVector x(MySpace), y(MySpace);
+    MLAPI::Operator A = Gallery("laplace_2d", MySpace);
 
     // We can now start coding the power method. We want a random vector of
     // unitary 2-norm. First, we set random elements in the vector. Then,
@@ -130,7 +88,8 @@ int main(int argc, char *argv[])
       // matrix-vector product
       y = A * x;
       // note that you need parenthesis in the following expression!
-      cout << "iter = " << i << ", RQ = " << (y * x) / (x * x) << endl;
+      if (MyPID() == 0)
+        cout << "iter = " << i << ", RQ = " << (y * x) / (x * x) << endl;
       x = y / sqrt(y * y);
     }
 

@@ -98,15 +98,33 @@ public:
     OperatorBox_ = Teuchos::rcp(new ML_Operator_Box(Op,true));
     Epetra2MLMatrix(&Matrix, OperatorBox_->GetOperator());
     BuildColumnSpace();
+
+  }
+
+  //! Constructor with given already FillComplete()'d object.
+  Operator(const Space& DomainSpace, const Space& RangeSpace,
+           Epetra_RowMatrix* Matrix)
+  {
+    RangeSpace_ = RangeSpace;
+    DomainSpace_ = DomainSpace;
+
+    RowMatrix_ = Teuchos::rcp(Matrix);
+
+    ML_Operator* Op = ML_Operator_Create(MLAPI::GetMLComm());
+    OperatorBox_ = Teuchos::rcp(new ML_Operator_Box(Op,true));
+    Epetra2MLMatrix(RowMatrix_.get(), OperatorBox_->GetOperator());
+    BuildColumnSpace();
+
   }
 
   //! Copy constructor.
   Operator(const Operator& RHS) 
   {
     DomainSpace_ = RHS.DomainSpace();
-    RangeSpace_ = RHS.RangeSpace();
+    RangeSpace_  = RHS.RangeSpace();
     ColumnSpace_ = RHS.ColumnSpace();
     OperatorBox_ = RHS.OperatorBox();
+    RowMatrix_   = RHS.RowMatrix();
     
     SetName(RHS.Name());
   }
@@ -117,9 +135,10 @@ public:
     Destroy();
 
     DomainSpace_ = RHS.DomainSpace();
-    RangeSpace_ = RHS.RangeSpace();
+    RangeSpace_  = RHS.RangeSpace();
     ColumnSpace_ = RHS.ColumnSpace();
     OperatorBox_ = RHS.OperatorBox();
+    RowMatrix_   = RHS.RowMatrix();
     
     SetName(RHS.Name());
     return(*this);
@@ -225,6 +244,11 @@ public:
     return(OperatorBox_);
   }
 
+  const Teuchos::RefCountPtr<Epetra_RowMatrix>& RowMatrix() const
+  {
+    return(RowMatrix_);
+  }
+
 private:
   //! Destroys all internal data.
   void Destroy() { }
@@ -237,6 +261,8 @@ private:
   Space ColumnSpace_;
   //! Container for the underlying ML_Operator pointer.
   Teuchos::RefCountPtr<ML_Operator_Box> OperatorBox_;
+  //! Container for the underlying Epetra_RowMatrix pointer
+  Teuchos::RefCountPtr<Epetra_RowMatrix> RowMatrix_;
   // FIXME: delete me ??
   mutable DoubleVector ApplyTemp_;
 
@@ -311,7 +337,7 @@ Operator BuildP(const Operator& A, Teuchos::ParameterList& List)
   }
 
   int NumMyElements = NewSize;
-  Space CoarseSpace(NumMyElements);
+  Space CoarseSpace(-1,NumMyElements);
   Operator Ptent(CoarseSpace,A.RangeSpace(),ML_Ptent,true);
 
   if (NullSpace == 0)
@@ -414,15 +440,16 @@ DoubleVector Diagonal(const Operator& A)
 
 }
 
-Operator Diagonal(const Space& DomainSpace, const Space& RangeSpace,
-                   const DoubleVector& D)
+Operator Diagonal(const DoubleVector& D)
 {
   ML_Operator* MLDiag = ML_Operator_Create(GetMLComm());
-  int size = DomainSpace.NumMyElements();
+  int size = D.MyLength();
+  // FIXME: this is a memory leak!
+  DoubleVector* D2 = new DoubleVector(D);
   ML_Operator_Set_ApplyFuncData(MLDiag, size, size,
-            (void*)&D, size, diag_matvec, 0);
+            (void*)D2, size, diag_matvec, 0);
   ML_Operator_Set_Getrow(MLDiag, size, diag_getrows);
-  Operator Diag(DomainSpace,DomainSpace,MLDiag,true);
+  Operator Diag(D.VectorSpace(),D.VectorSpace(),MLDiag,true);
   return(Diag);
 }
 

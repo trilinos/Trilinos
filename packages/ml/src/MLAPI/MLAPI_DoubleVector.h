@@ -54,7 +54,7 @@ public:
   //! Copy constructor.
   DoubleVector(const DoubleVector& RHS)
   {
-    exit(-12);
+    Initialize();
     Reshape(RHS.VectorSpace());
 
     for (int i = 0 ; i < MyLength_ ; ++i)
@@ -64,6 +64,8 @@ public:
   //! Constructor with a given Space, and user-provided array of values.
   DoubleVector(const Space& VectorSpace, double* Values)
   {
+    Initialize();
+
     VectorSpace_ = VectorSpace;
     MyLength_ = VectorSpace.NumMyElements();
     Values_ = Values;
@@ -185,6 +187,14 @@ public:
     for (int i = 0 ; i < MyLength_ ; ++i) {
       if (Values_[i] != 0.0)
         Values_[i] = 1.0 / Values_[i];
+    }
+  }
+
+  //! Scales each element by the specified factor.
+  void Scale(const double Factor) 
+  {
+    for (int i = 0 ; i < MyLength_ ; ++i) {
+        Values_[i] * Factor;
     }
   }
 

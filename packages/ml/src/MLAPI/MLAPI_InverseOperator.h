@@ -6,6 +6,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_PointRelaxation.h"
+#include "Ifpack_ICT.h"
 #include "Ifpack_Amesos.h"
 #include "MLAPI_Space.h"
 #include "MLAPI_DoubleVector.h"
@@ -83,6 +84,8 @@ public:
     Ifpack_Preconditioner* Prec;
     if (Type == "SGS") 
       Prec = new Ifpack_PointRelaxation(RowMatrix_.get());
+    else if (Type == "ILU")
+      Prec = new Ifpack_ICT(RowMatrix_.get());
     else if (Type == "Amesos") 
       Prec = new Ifpack_Amesos(RowMatrix_.get());
     else
@@ -90,6 +93,7 @@ public:
 
     Data_ = Teuchos::rcp(Prec);
 
+    List.set("relaxation: zero starting solution", false);
     Data_->SetParameters(List);
     Data_->Initialize();
     Data_->Compute();

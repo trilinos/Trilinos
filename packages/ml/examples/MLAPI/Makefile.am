@@ -8,9 +8,16 @@ EXEEXT = .exe
 
 # List the names of all exe's in this directory here
 
-noinst_PROGRAMS = PowerMethod          \
+noinst_PROGRAMS = Blackboard           \
+                  PowerMethod          \
                   TwoLevelDDAdditive   \
                   MultiLevel
+
+Blackboard_SOURCES  = $(srcdir)/Blackboard.cpp
+Blackboard_CPPFLAGS = ${ml_common_include_locations}
+Blackboard_CXXFLAGS = ${ml_common_include_locations}
+Blackboard_LDADD    = ${ml_libs} 
+Blackboard_LINK     = ${mllink}
 
 PowerMethod_SOURCES  = $(srcdir)/PowerMethod.cpp
 PowerMethod_CPPFLAGS = ${ml_common_include_locations}
@@ -18,7 +25,7 @@ PowerMethod_CXXFLAGS = ${ml_common_include_locations}
 PowerMethod_LDADD    = ${ml_libs} 
 PowerMethod_LINK     = ${mllink}
 
-TwoLevelDDAdditive_SOURCES  = $(srcdir)/CreateTwoLevelDD.cpp
+TwoLevelDDAdditive_SOURCES  = $(srcdir)/TwoLevelDDAdditive.cpp
 TwoLevelDDAdditive_CPPFLAGS = ${ml_common_include_locations}
 TwoLevelDDAdditive_CXXFLAGS = ${ml_common_include_locations}
 TwoLevelDDAdditive_LDADD    = ${ml_libs} 
