@@ -50,6 +50,7 @@ namespace Direction {
    <ul> 
    <li> "%Newton" (NOX::Direction::Newton) [Default]
    <li> "Steepest Descent" (NOX::Direction::SteepestDescent)
+   <li> "NonlinearCG" (NOX::Direction::NonlinearCG)
    </ul>
    </ul>
  */  
