@@ -43,20 +43,27 @@ namespace Direction {
 
 Calculates the direction
 \f[
-d = - \gamma \nabla f(x) = -\gamma J(x)^T F(x)
+s = - \gamma \nabla f(x) = -\gamma J(x)^T F(x)
 \f]
-where we are solving 
-\f$ F(x) = 0 \f$ 
-and 
-\f$ f(x) = \frac{1}{2} \|F(x)\|_2 \f$ and \f$ J(x) = \nabla F(x) \f$.
-The following parameters are valid for this solver:
+
+  To use this direction, specify that the "Method" is "Steepest Descent" in the
+  "Direction" sublist of the parameters that are passed to the solver
+  (see NOX::Direction::Manager for more information on choosing the
+  search direction).
+
+  The following options may be specified in the "Direction" sublist of
+  the solver parameters.
 
 <ul>
 <li>"Scaling Type" can be either of:
+
     <ul>
-    <li>"2-Norm" - \f$ \gamma = \displaystyle\frac{1}{\|d\|_2} \f$
+    <li>"2-Norm" - \f$ \gamma = \displaystyle\frac{1}{\|d\|_2} \f$ [default]
+
     <li>"Quadratic Model Min" - \f$ \gamma = \displaystyle\frac{\|d\|_2}{d^T J^T J d} \f$
+
     <li>"None" - No scaling
+
     </ul>
 </ul>
 
