@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Algorithms</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -10,19 +18,11 @@
      $Date$
      $Revision$
 >
-
-<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
-<html>
-<head>
-   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
-   <meta name="sandia.approved" content="SAND99-1377">
-   <meta name="author" content="karen devine, kddevin@sandia.gov">
-   <title>Zoltan User's Guide:  Algorithms</title>
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_alg_rcb.html">Next</a>&nbsp; |&nbsp; <a href="ug_query_mig.html">Previous</a></i></b></div>
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_alg_rcb.html">Next</a>&nbsp; |&nbsp; <a href="ug_query_mig.html">Previous</a></i></b></div>
 
 <h2>
 <a NAME="Algorithms"></a>Algorithms</h2>
@@ -82,6 +82,13 @@ all processors should use the same value of <i><a href="#Debug Levels in Zoltan"
 is 5.</td>
 </tr>
 
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>TIMER</i></td>
+
+<td>The timer with which you wish to measure time. Valid choices include
+<i>wall </i>and <i>cpu</i>.&nbsp;</td>
+</tr>
+
 <tr VALIGN=TOP NOSAVE>
 <td NOSAVE>&nbsp;&nbsp;&nbsp; <i>IMBALANCE_TOL</i></td>
 
@@ -96,18 +103,19 @@ shouldn't exceed 1.2.&nbsp;</td>
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp; <i>OBJ_WEIGHT_DIM</i></td>
 
-<td NOSAVE>The number of weights associated with an object to be used for load balancing.
-If this parameter is zero, load balancing is performed with respect to
-the number of objects. Some algorithms may not support multiple (multidimensional)
-weights.</td>
+<td NOSAVE>The number of weights associated with an object to be used for
+load balancing. If this parameter is zero, load balancing is performed
+with respect to the number of objects. Some algorithms may not support
+multiple (multidimensional) weights.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp; <i>COMM_WEIGHT_DIM</i></td>
 
-<td NOSAVE>The number of communication weights associated with an edge to be used for load
-balancing. If there is no communication graph, set this parameter to zero.
-Many algorithms do not support multiple (multidimensional) weights.</td>
+<td NOSAVE>The number of communication weights associated with an edge
+to be used for load balancing. If there is no communication graph, set
+this parameter to zero. Many algorithms do not support multiple (multidimensional)
+weights.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -146,15 +154,18 @@ geometric partitioning must be retained by setting <i>KEEP_CUTS</i> to
 
 <tr VALIGN=TOP NOSAVE>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>USE_MACHINE_DESC</i></td>
-<td NOSAVE>Currently unused; will be used when load balancing for 
-heterogeneous computers is available.</td>
+
+<td NOSAVE>Currently unused; will be used when load balancing for heterogeneous
+computers is available.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>MACHINE_DESC_FILE</i></td>
-<td NOSAVE>Currently unused; will be used when load balancing for 
-heterogeneous computers is available.</td>
+
+<td NOSAVE>Currently unused; will be used when load balancing for heterogeneous
+computers is available.</td>
 </tr>
+
 <tr>
 <td VALIGN=TOP><b>Default:</b></td>
 
@@ -171,6 +182,12 @@ heterogeneous computers is available.</td>
 <td></td>
 
 <td><i>DEBUG_PROCESSOR</i> = 0</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>TIMER</i> = wall</td>
 </tr>
 
 <tr>
@@ -208,11 +225,13 @@ heterogeneous computers is available.</td>
 
 <td><i>KEEP_CUTS</i> = 0</td>
 </tr>
+
 <tr>
 <td></td>
 
 <td><i>USE_MACHINE_DESC</i> = 0</td>
 </tr>
+
 <tr>
 <td></td>
 
