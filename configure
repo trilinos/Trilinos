@@ -2446,6 +2446,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_tsfextended" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno" ||
  	test "X$ac_cv_use_belos" != "Xno" ||
+	test "X$ac_cv_use_amesos" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno"; then
   BUILD_TEUCHOS_TRUE=
   BUILD_TEUCHOS_FALSE='#'
@@ -2535,6 +2536,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
  	test "X$ac_cv_use_tsfcore" != "Xno" ||
 	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno" ||
+	test "X$ac_cv_use_amesos" != "Xno" ||
  	test "X$ac_cv_use_anasazi" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno"; then
 
