@@ -118,7 +118,8 @@ PARMETIS_INC	= parmetis_jostle_const.h
 TIMER_CSRC	= timer.c
 TIMER_INC	= timer_const.h
 
-HA_CSRC         = divide_machine.c
+HA_CSRC         = divide_machine.c set_machine_param.c get_processor_name.c \
+                  build_machine_desc.c
 HA_INC          = ha_const.h
 
 REFTREE_CSRC    = reftree_build.c reftree_part.c reftree_hash.c
