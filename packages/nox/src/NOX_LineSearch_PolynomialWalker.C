@@ -42,7 +42,7 @@
 #include "NOX_Parameter_List.H"
 
 NOX::LineSearch::PolynomialWalker::PolynomialWalker(const NOX::Utils& u, Parameter::List& params) :
-  paramsPtr(NULL),
+  paramsPtr(0),
   print(u)
 {
   reset(params);
@@ -57,7 +57,7 @@ bool NOX::LineSearch::PolynomialWalker::reset(Parameter::List& params)
 { 
   NOX::Parameter::List& p = params.sublist("PolynomialWalker");
   
-  string choice = p.getParameter("Convergence Criteria", "Armijo-Goldstein");
+  string choice = p.getParameter("Sufficient Decrease Condition", "Armijo-Goldstein");
   if (choice == "Ared/Pred") 
     convCriteria = AredPred;
   else if (choice == "None")
@@ -85,6 +85,8 @@ bool NOX::LineSearch::PolynomialWalker::reset(Parameter::List& params)
   maxBoundFactor = p.getParameter("Max Bounds Factor", 0.5);
   doForceInterpolation = p.getParameter("Force Interpolation", false);
   paramsPtr = &params;
+
+  useScaledNorms = p.getParameter("Use Scaled Norms", false);
 
   choice = p.getParameter("Merit Function", "Norm-F Squared");
   if (choice == "Norm-F")
@@ -128,10 +130,16 @@ bool NOX::LineSearch::PolynomialWalker::compute(Abstract::Group& newGrp, double&
   int nIters = 1;
   counter.incrementNumLineSearches();
 
+  // Compute the scale factor for norms
+  if (useScaledNorms) 
+    factor = 1.0/(sqrt((double) (dir.length())));
+  else
+    factor = 1.0;
+
   // Get Old f(0)
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
-  oldf_1 = oldGrp.getNormF();
-  oldf_2 = 0.5 * oldGrp.getNormF() * oldGrp.getNormF();
+  oldf_1 = oldGrp.getNormF() * factor;
+  oldf_2 = 0.5 * oldGrp.getNormF() * oldGrp.getNormF() * factor * factor;
   oldf_interp = 0.0;
   if (meritFunctionType == NormF)
     oldf_interp = oldf_1;
@@ -348,8 +356,8 @@ bool NOX::LineSearch::PolynomialWalker::computeNewF(
   if (status != NOX::Abstract::Group::Ok)
     return false;
 
-  newf_1 = newGrp.getNormF();
-  newf_2 = 0.5 * newGrp.getNormF() * newGrp.getNormF();  
+  newf_1 = newGrp.getNormF() * factor;
+  newf_2 = 0.5 * newGrp.getNormF() * newGrp.getNormF() * factor * factor;  
   newf_interp = 0.0;
   if (meritFunctionType == NormF)
     newf_interp = newf_1;

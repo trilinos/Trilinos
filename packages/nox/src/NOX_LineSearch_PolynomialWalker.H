@@ -130,7 +130,7 @@ namespace LineSearch {
 
   The line search iterates over the computation of \f$ \lambda \f$ until:
 
-- The "Convergence Criteria" is met (the user has two choices): 
+- The "Sufficient Decrease Condition" is met (the user has two choices): 
   -# "Armijo-Goldstein" conditions: \f$ \phi(x_{n-1}+ \lambda s) \le
      \phi(x_{n-1}) +\alpha \lambda \phi'(0) \f$ 
   -# "Ared/Pred" conditions: \f$ \| F(x_{\rm old}+ \lambda s) \| \le
@@ -169,8 +169,8 @@ namespace LineSearch {
 
   - "Max Iters" - maximum number of line search iterations (default to 100)
 
-  - "Convergence Criteria" - choice of algorithm used to determine if
-    the line search algorithm has converged (defaults to
+  - "Sufficient Decrease Condition" - choice of algorithm used to determine 
+    if the line search algorithm has converged (defaults to
     "Armijo-Goldstein").  Choices are (See above for explanations):
 
     -# "Armijo-Goldstein" 
@@ -183,6 +183,8 @@ namespace LineSearch {
     
     -# "Norm-F"
     -# "Norm-F Squared"
+
+  - "Use Scaled Norms" - Boolean value.  Determines if the norms used in the sufficient decrease condition and the step length interpolation should be scaled by the number of unknowns in the problem.  If set to true, the Two-Norm is scaled by the global number of unknowns, \f$ N \f$: \f[ \|F\|_2 = \sqrt{\frac{1}{N}\sum_{i=1}^{N}f_i^2} \f].  If set to false, the standard Two-Norm is used: \f[ \|F\|_2 = \sqrt{\sum_{i=1}^{N}f_i^2} \f] 
 
   - "Alpha Factor" - Used in Armijo-Goldstein stopping criteria \f$
     \alpha \f$ (defaults to 1.0e-4)
@@ -273,7 +275,7 @@ protected:
 
     In the case of "Ared/Pred", we return true if
     \f[
-    f_{\rm new} \leq f_{\rm old} + (1 - \alpha (1 - \eta))
+    F_{\rm new} \leq F_{\rm old} + (1 - \alpha (1 - \eta))
     \f]
   */
   bool isSufficientDecrease(double step, double eta) const;
@@ -366,8 +368,8 @@ protected:
   //! Common slope calculations for line searches.
   NOX::LineSearch::Utils::Slope slopeObj;
 
-  //! If set to false, all computed norms are the standard Two-Norm: \f[ \|F\|_2 = \sqrt{\sum_{i=1}^{N}f_i^2}  \f]  If set to true, all norms are Two-Norms that are scaled by the global number of unknowns, \f$ N \f$: \f[ \|F\|_2 = \sqrt{\frac{1}{N}\sum_{i=1}^{N}f_i^2}  \f]
-  bool useScaledNorm;
+  //! Boolean that determines if the norms used in the merit function and the sufficient decrease test are scaled.  
+  bool useScaledNorms;
 
   //! Type of merit function to use for the interpolation of the step length.
   MeritFunctionType meritFunctionType;
@@ -381,6 +383,7 @@ protected:
   double newf_1;
   double newf_2;
   double newf_interp;
+  double factor;
 
 };
 } // namespace LineSearch
