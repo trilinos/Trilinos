@@ -258,12 +258,18 @@ bugs.  The differences between any two versions of a file may be viewed.
 \subsection Bugzilla
 
 Features and bug reports are tracked using Bugzilla~\cite{Bugzilla}.  Bugzilla 
-can be found on the web at ``http://software.sandia.gov/bugzilla''.  All bugs 
-related to any package of Trilnos that uses Bugzilla should be submitted to 
-Bugzilla.  This even applies to cases in which one developer diagnoses and 
-fixes a bug within a short period of time.  A bug report is still very 
-valuable in this case because it provides an artifact that outlines the 
-problem and explains how the problem was fixed.  
+can be found on the web at ``http://software.sandia.gov/bugzilla''.  A 
+Bugzilla account is necessary for submitting bugs.  Those interested can sign 
+up at the website.  All bugs related to any package of Trilnos that uses 
+Bugzilla should be submitted to Bugzilla.  This even applies to cases in which 
+one developer diagnoses and fixes a bug within a short period of time.  A bug 
+report is still very valuable in this case because it provides an artifact 
+that outlines the problem and explains how the problem was fixed.  A bug 
+report should be filled out with as much detail as possible.  Likewise, after 
+a bug has been resolved, the developer should also provide a detailed 
+description of the solution that was used.
+
+**explain how this is truly useful, and not just busy work.**
 
 NOTE: In the context of Bugzilla, ``bug'' can refer not only to an error in 
 existing code, but also to a desired enhancement.  For example, a bug report 
@@ -275,23 +281,66 @@ submitted to request a new Ifpack preconditioner.
 
 Email lists are maintained for Trilinos as a whole and for each package 
 through Mailman~\cite{Mailman}.  This tool can be found on the web at 
-``http://software.sandia.gov/mailman/listinfo''.  Support for new packages can 
-easily be added.  Each package usually has four mailing lists.  The mailing 
-lists listed below are to be used for issues relating to all of Trilinos.  The 
-names for the lists pertaining to individual packages follow the same naming 
-scheme, simply replace ``Trilinos'' with the name of the package.  For example 
-the list for Trilnos users is called Trilinos-Users and the email address is 
+``http://software.sandia.gov/mailman/listinfo''.  Those interested in signing 
+up for one or more lists may do so at the website.  Non-Sandians are able to 
+sign up for the ``Users'' and ``Announce'' lists.  Sandians should keep this 
+in mind when posting to these lists.
+
+Lists for new packages can be set up very easily.  Each package usually has 
+five mailing lists.  The example mailing lists mentioned below are to be used 
+for issues relating to all of Trilinos.  The names for the lists pertaining to 
+individual packages follow the same naming scheme, simply replace ``Trilinos'' 
+with the name of the package.  For example the list for Trilnos users is 
+called Trilinos-Users and the email address is 
 \begin{verbatim}trilinos-users@software.sandia.gov\end{verbatim}.  The list 
 for Epetra users is called Epetra-Users and the associated email address is 
 \begin{verbatim}epetra_users@software.sandia.gov\end{verbatim}.
 
-\triangleright **list 4 general types, mention leaders list **
+TIP: While those who use Epetra (or any other Trilinos package) are also
+``Trilinos users'', the lists are not set up to recognize this.  In other 
+words, those who subscribe to the Epetra-Users mailing list do not necessarily 
+form a subset of those who subscribe to the Trilinos-Users mailing list.  This 
+is also true of all other list types.  Keep this in mind when subscribing and 
+posting to lists.
+
+\triangleright Trilinos-Announce 
+\begin{verbatim}trilinos-announce@software.sandia.gov\end{verbatim}
+
+All Trilinos release announcements and other major news.
+
+\triangleright Trilinos-Checkins 
+\begin{verbatim}trilinos-checkins@software.sandia.gov\end{verbatim}
+
+CVS commit log messages that are releated to Trilinos in general or packages 
+that have not had separate lists established.
+
+\triangleright Trilinos-Developers 
+\begin{verbatim}trilinos-developers@software.sandia.gov\end{verbatim}
+
+All discussions releated to Trilinos-specific development (not specific to a 
+Trilinos package) are conducted via this list.  Important development 
+decisions that originate in other places (regular email, discussions, etc) 
+should also be posted to this list (or to the appropriate package list).  
+By doing this, the list archive can provide a record explaining why various 
+changes were made over time.
+
+\triangleright Trilinos-regression 
+\begin{verbatim}trilinos-regression@software.sandia.gov\end{verbatim}
+
+All regression test output that is not specific to a package. 
+
+\triangleright Trilinos-Users 
+\begin{verbatim}trilinos-users@software.sandia.gov\end{verbatim}
+
+List for Trilinos Users.  General discussions about the use of Trilinos.
+
+\bullet Trilinos-Leaders
+\begin{verbatim}trilinos-leaders@software.sandia.gov\end{verbatim}
+
+Mailing list for representatives for each Trilinos package.  There are no 
+leaders lists for individual packages.
 
 
-
-Tip : lists not sub/supersets of eachother...
-
-**Find out which lists are available to outsiders.**
 All 
 tools are accessible from the main Trilinos website~\cite{Trilinos-home-page}.
 
