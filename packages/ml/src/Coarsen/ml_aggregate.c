@@ -615,6 +615,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
 
 /* #### moved this somewhere else ?? */
    Amatrix->num_PDEs = ag->num_PDE_eqns;
+   Amatrix->num_rigid = ag->nullspace_dim;
 
    ndofs = Amatrix->outvec_leng;
    if ( ndofs < 2 ) ndofs = 0; else ndofs = 1;
