@@ -1083,3 +1083,64 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
    return 0;
 }
 
+/********************************************************************/
+/* Add two ML_Operators together to create a new ML_Operator.       */
+/* NOTE: it is assumed that each individual ML_Operator has the     */
+/* same number of rows and the same number of columns.              */
+/* ---------------------------------------------------------------- */
+
+ML_Operator *ML_Operator_Add(ML_Operator *A, ML_Operator *B)
+{
+  int A_allocated = 0, *A_bindx = NULL, B_allocated = 0, *B_bindx = NULL;
+  double *A_val = NULL, *B_val = NULL;
+  int i, A_length, B_length, *hashed_inds, *hashed_cols, total_Nz;
+  int max_nz_per_row, j;
+  int hash_val, index_length;
+
+
+  if (A->getrow == NULL) 
+    pr_error("ML_Operator_Add: A does not have a getrow function.\n");
+
+  if (B->getrow == NULL) 
+    pr_error("ML_Operator_Add: B does not have a getrow function.\n");
+
+  if (A->getrow->Nrows != B->getrow->Nrows) {
+    printf("ML_Operator_Add: Can not add, two matrices do not have the same");
+    printf(" number of rows %d vs %d",A->getrow->Nrows,B->getrow->Nrows);
+    exit(1);
+  }
+
+  if (A->invec_leng != B->invec_leng) {
+    printf("ML_Operator_Add: Can not add, two matrices do not have the same");
+    printf(" number of columns %d vs %d",A->getrow->Nrows,B->getrow->Nrows);
+    exit(1);
+  }
+
+  /* let's just count some things */
+
+  hashed_cols = (int *) ML_allocate(sizeof(int)*(A->invec_leng+1));
+  hashed_inds = (int *) ML_allocate(sizeof(int)*(A->invec_leng+1));
+  index_length = A->invec_leng;
+  for (i = 0; i < A->invec_leng; i++) hashed_cols[i] = -1;
+  printf("NOT FINISHED\n");
+
+  total_Nz = 0;
+  max_nz_per_row = 0;
+  for (i = 0 ; i < A->getrow->Nrows; i++) {
+      ML_get_matrix_row(A, 1, &i, &A_allocated, &A_bindx, &A_val,
+                        &A_length, 0);
+      for (j = 0; j < A_length; j++) {
+	hash_val = ML_hash_it(A_bindx[0], hashed_inds, index_length);
+      }
+      ML_get_matrix_row(B, 1, &i, &B_allocated, &B_bindx, &B_val,
+                        &B_length, 0);
+  }
+  ML_free(hashed_cols);
+  ML_free(hashed_inds);
+  ML_free(A_val);
+  ML_free(A_bindx);
+  ML_free(B_val);
+  ML_free(B_bindx);
+
+
+}
