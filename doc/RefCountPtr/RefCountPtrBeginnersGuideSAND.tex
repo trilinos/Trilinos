@@ -758,7 +758,8 @@ template<class T
 template<class T2, class T1> RefCountPtr<T2>  rcp_implicit_cast(const RefCountPtr<T1>& p1);
 template<class T2, class T1> RefCountPtr<T2>  rcp_static_cast(const RefCountPtr<T1>& p1);
 template<class T2, class T1> RefCountPtr<T2>  rcp_const_cast(const RefCountPtr<T1>& p1);
-template<class T2, class T1> RefCountPtr<T2>  rcp_dynamic_cast(const RefCountPtr<T1>& p1);
+template<class T2, class T1> RefCountPtr<T2>  rcp_dynamic_cast(const RefCountPtr<T1>& p1
+                                                ,bool throw_on_fail = false );
 template<class T1, class T2> int              set_extra_data( const T1 &extra_data
                                                 ,const std::string& name, RefCountPtr<T2> *p
                                                 ,bool force_unique = true
@@ -802,7 +803,10 @@ All of the following code examples used in this appendix are assumed
 to be in the namespace {}\texttt{Teuchos} or have appropriate
 {}\texttt{using Teuchos::...} declarations.  This removes the need to
 explicitly use {}\texttt{Teuchos::} to qualify classes, functions and
-other declarations from the {}\texttt{Teuchos} namespace.
+other declarations from the {}\texttt{Teuchos} namespace.  Note that
+some of the runtime checks are denoted as ``debug runtime checked''
+which means that checking will only be performed in a debug build
+(that is one where the macro {}\texttt{\_DEBUG} is defined at compile time).
 
 \begin{enumerate}
 
@@ -818,7 +822,7 @@ RefCountPtr<C> c_ptr = rcp(new C);
 \end{verbatim}}
 %
 \item {\bf Creating a \texttt{RefCountPtr<>} object to an array allocated using \texttt{new[n]}}
-\label{rcpqs:apdx:qs:new}
+\label{rcpqs:apdx:qs:array-new}
 %
  {\small\begin{verbatim}
 RefCountPtr<C> c_ptr = rcp(new C[n],DeallocArrayDelete<C>(),true);
@@ -913,7 +917,7 @@ a_ptr1 = a_ptr2; // Now a_ptr1 and a_ptr2 point to same C object
 %
 \begin{enumerate}
 %
-\item {\bf Access to object reference (runtime checked)}
+\item {\bf Access to object reference (debug runtime checked)}
 %
 {\small\begin{verbatim}
 C &c_ref = *c_ptr;
@@ -925,13 +929,13 @@ C &c_ref = *c_ptr;
 C *c_rptr = c_ptr.get();
 \end{verbatim}}
 %
-\item {\bf Access to object pointer (runtime checked, will not return \texttt{NULL})}
+\item {\bf Access to object pointer (debug runtime checked, will not return \texttt{NULL})}
 %
 {\small\begin{verbatim}
 C *c_rptr = &*c_ptr;
 \end{verbatim}}
 %
-\item {\bf Access of object's member (runtime checked)}
+\item {\bf Access of object's member (debug runtime checked)}
 %
 {\small\begin{verbatim}
 c_ptr->f();
@@ -956,17 +960,26 @@ RefCountPtr<A>        a_ptr  = rcp_const_cast<A>(ca_ptr); // cast away const!
 \item {\bf Static cast (no runtime check)}
 %
 {\small\begin{verbatim}
-RefCountPtr<D>     d_ptr = rcp(new E);
-RefCountPtr<E>     e_ptr = rcp_static_cast<E>(d_ptr); // Unchecked, unsafe?
+RefCountPtr<D>  d_ptr = rcp(new E);
+RefCountPtr<E>  e_ptr = rcp_static_cast<E>(d_ptr); // Unchecked, unsafe?
 \end{verbatim}}
 %
-\item {\bf Dynamic cast (runtime checked)}
+\item {\bf Dynamic cast (runtime checked, failed cast allowed)}
 %
 {\small\begin{verbatim}
-RefCountPtr<A>     a_ptr  = rcp(new C);
-RefCountPtr<B1>    b1_ptr = rcp_dynamic_cast<B1>(a_ptr);  // Checked, safe!
-RefCountPtr<B2>    b2_ptr = rcp_dynamic_cast<B2>(b1_ptr); // Checked, safe!
-RefCountPtr<C>     c_ptr  = rcp_dynamic_cast<C>(b2_ptr);  // Checked, safe!
+RefCountPtr<A>  a_ptr  = rcp(new C);
+RefCountPtr<B1> b1_ptr = rcp_dynamic_cast<B1>(a_ptr);  // Checked, safe!
+RefCountPtr<B2> b2_ptr = rcp_dynamic_cast<B2>(b1_ptr); // Checked, safe!
+RefCountPtr<C>  c_ptr  = rcp_dynamic_cast<C>(b2_ptr);  // Checked, safe!
+\end{verbatim}}
+%
+\item {\bf Dynamic cast (runtime checked, failed cast not allowed)}
+%
+{\small\begin{verbatim}
+RefCountPtr<A>  a_ptr1  = rcp(new C);
+RefCountPtr<A>  a_ptr2  = rcp(new A);
+RefCountPtr<B1> b1_ptr1 = rcp_dynamic_cast<B1>(a_ptr1,true); // Success!
+RefCountPtr<B1> b1_ptr2 = rcp_dynamic_cast<B1>(a_ptr2,true); // Throw std::bad_cast!
 \end{verbatim}}
 %
 \end{enumerate}
@@ -1025,9 +1038,9 @@ Thou shall put a pointer for an object allocated with operator
 The best way to insure this is to call operator {}\texttt{new}
 directly in a call to {}\texttt{rcp(...)} to create a dynamically
 allocated object that is to be managed by a
-{}\texttt{Ref\-Count\-Ptr<>} object (see item
+{}\texttt{Ref\-Count\-Ptr<>} object.  See item
 ({}\ref{rcpqs:apdx:qs:new}) in Appendix
-{}\ref{rcpqs:apdx:quickstart}).
+{}\ref{rcpqs:apdx:quickstart}.
 \end{commandment}
 
 \begin{anticommandment}
@@ -1042,16 +1055,26 @@ Thou shall never give a raw C++ pointer returned from operator
   RefCountPtr<A> a_ptr2 = rcp(ra_ptr); // no, No, NO !!!!
 \end{verbatim}}
 
+\begin{commandment}\label{rcp:cmd:rcp-new}
+Thou shall only pass in a raw C++ pointer created from {}\texttt{new[]}
+using {}\texttt{rcp(new C[n],DeallocArrayDelete<C)(),true)}.  See item
+({}\ref{rcpqs:apdx:qs:array-new}) in Appendix
+{}\ref{rcpqs:apdx:quickstart}.
+\end{commandment}
+
 \begin{anticommandment}
 Thou shall never give a raw C++ pointer to an array of objects
 returned from operator {}\texttt{new[]} to a
-{}\texttt{Ref\-Count\-Ptr<>} object.
+{}\texttt{Ref\-Count\-Ptr<>} object using {}\texttt{rcp(new C[n])}.
 \end{anticommandment}
 
 {}\noindent{}Example:
 {\small\begin{verbatim}
   RefCountPtr<std::vector<C> > c_array_ptr1 = rcp(new std::vector<C>(N)); // Okay
-  RefCountPtr<C>               c_array_ptr2 = rcp(new C[N]);              // no, No, NO !!!!
+  RefCountPtr<C>               c_array_ptr2 = rcp(new C[N]
+                                               ,DeallocArrayDelete<C>()
+                                               ,true);                    // Okay
+  RefCountPtr<C>               c_array_ptr3 = rcp(new C[N]);              // no, No, NO!
 \end{verbatim}}
 
 \begin{commandment}
