@@ -178,7 +178,9 @@ int main(int argc, char *argv[]) {
 
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: type", "Gauss-Seidel");
-  TestMultiLevelPreconditioner("SA", MLList, *Problem, 
+  char mystring[80];
+  strcpy(mystring,"SA");
+  TestMultiLevelPreconditioner(mystring, MLList, *Problem, 
                                TotalErrorResidual, TotalErrorExactSol);
 
   // ============================== //
@@ -190,7 +192,7 @@ int main(int argc, char *argv[]) {
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: type", "Jacobi");
 
-  TestMultiLevelPreconditioner("SA", MLList, *Problem, TotalErrorResidual, 
+  TestMultiLevelPreconditioner(mystring, MLList, *Problem, TotalErrorResidual,
                                TotalErrorExactSol);
 
   // =========================== //
@@ -202,7 +204,7 @@ int main(int argc, char *argv[]) {
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: type", "MLS");
 
-  TestMultiLevelPreconditioner("SA", MLList, *Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, *Problem, 
                                TotalErrorResidual, TotalErrorExactSol);
 
   // ===================== //
