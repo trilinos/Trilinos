@@ -1296,13 +1296,19 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
       if (lb->Get_Num_Edges != NULL){
         printf("%s  Cut weight       :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
           yo, stats[NUM_GSTATS+1], stats[2*NUM_GSTATS+1], 
-          stats[NUM_GSTATS+1]*nproc/stats[2*NUM_GSTATS+1]-1.);
+          (stats[2*NUM_GSTATS+1] > 0 
+                ? stats[NUM_GSTATS+1]*nproc/stats[2*NUM_GSTATS+1]-1.
+                : 0));
         printf("%s  Boundary objects :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
           yo, stats[NUM_GSTATS+2], stats[2*NUM_GSTATS+2], 
-          stats[NUM_GSTATS+2]*nproc/stats[2*NUM_GSTATS+2]-1.);
+          (stats[2*NUM_GSTATS+2] > 0
+                ? stats[NUM_GSTATS+2]*nproc/stats[2*NUM_GSTATS+2]-1.
+                : 0));
         printf("%s  Adjacent procs   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
           yo, stats[NUM_GSTATS+3], stats[2*NUM_GSTATS+3], 
-          stats[NUM_GSTATS+3]*nproc/stats[2*NUM_GSTATS+3]-1.);
+          (stats[2*NUM_GSTATS+3] > 0
+                ? stats[NUM_GSTATS+3]*nproc/stats[2*NUM_GSTATS+3]-1.
+                : 0));
       }
       printf("\n");
     }
