@@ -446,7 +446,8 @@ inline ifp_DenseMat_SVD::ifp_DenseMat_SVD(const ifp_DenseMat& A, double rthresh,
 
     F77NAME(dgesvd) (&job, &job, &N, &N, a, &N, s, u, &N, vt, &N,
 	work, &LWORK, &INFO);
-    if (INFO != 0)
+    //if (INFO != 0)
+    if (INFO < 0)
 	ifp_error("ifp_DenseMat_SVD: dgesvd error", INFO);
 
     delete [] work;

@@ -94,6 +94,7 @@ int Ifpack_CrsRiluk::InitValues() {
   
   OverlapA = new Epetra_CrsMatrix(Copy, *Graph_.OverlapGraph());
   OverlapA->Import(A_, *Graph_.OverlapImporter(), Insert);
+  OverlapA->TransformToLocal();
   }
 
   // Get Maximun Row length

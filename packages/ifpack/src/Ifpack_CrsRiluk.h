@@ -371,6 +371,9 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
 
     //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
     virtual const Epetra_BlockMap & RangeMap() const{return(A_.RangeMap());};
+
+    //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
+    virtual const Epetra_Comm & Comm() const{return(A_.Comm());};
   //@}
 
  protected:
