@@ -47,6 +47,7 @@ noinst_PROGRAMS = amesos_test AmesosShellScript AmesosDscpack AmesosDscpackShort
 	AmesosUmfpack AmesosUmfpackShort AmesosUmfpackSerial AmesosMumps \
 	AmesosKlu AmesosKluShort AmesosKluSerial \
 	AmesosSuperludist AmesosSuperludistShort \
+	AmesosSuperludistJanus AmesosUmfpackJanus AmesosKluJanus \
 	A_Superludist  B_Superludist  C_Superludist Timings DscpackTiming 
 
 AmesosShellScript_SOURCES = $(srcdir)/AmesosShellScript
@@ -145,6 +146,15 @@ AmesosJanusScript$(EXEEXT): $(srcdir)/AmesosJanusScript
 
 SpoolesJanusScript$(EXEEXT): $(srcdir)/SpoolesJanusScript
 	cp  $(srcdir)/SpoolesJanusScript  SpoolesJanusScript$(EXEEXT)
+
+AmesosSuperludistJanus$(EXEEXT): $(srcdir)/AmesosSuperludistJanus
+	cp  $(srcdir)/AmesosSuperludistJanus  AmesosSuperludistJanus$(EXEEXT)
+
+AmesosKluJanus$(EXEEXT): $(srcdir)/AmesosKluJanus
+	cp  $(srcdir)/AmesosKluJanus  AmesosKluJanus$(EXEEXT)
+
+AmesosUmfpackJanus$(EXEEXT): $(srcdir)/AmesosUmfpackJanus
+	cp  $(srcdir)/AmesosUmfpackJanus  AmesosUmfpackJanus$(EXEEXT)
 
 SpoolesScript$(EXEEXT): $(srcdir)/SpoolesScript
 	cp  $(srcdir)/SpoolesScript  SpoolesScript$(EXEEXT)
