@@ -129,8 +129,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   /* Set up the operators corresponding to regular unsmoothed         */
   /* aggregation on the nodal matrix.                                 */
   /*------------------------------------------------------------------*/
-  Nnz_finegrid = ml_edges->Amat[fine_level].N_nonzeros; 
-  Nnz_allgrids = ml_edges->Amat[fine_level].N_nonzeros;
+  Nnz_finegrid = ML_Operator_Get_Nnz(ml_edges->Amat+fine_level);
+  Nnz_allgrids = Nnz_finegrid;
   ml_edges->ML_finest_level = fine_level;
   ML_Operator_Profile(ml_edges->Amat+fine_level, "edge", profile_its);
 
@@ -1225,11 +1225,15 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      /* if we are using Zoltan and we have edge "coordinates",
         project them. */
 
-     if (ML_Repartition_Status(ml_edges) == ML_TRUE) {
+     if (ML_Repartition_Status(ml_edges) == ML_TRUE &&
+         ML_Repartition_Get_Partitioner(ml_edges) == ML_USEZOLTAN)
+     {
+       ML_Aggregate_Set_CurrentLevel( ag_edge, grid_level+1);
        Pe = &(ml_edges->Pmat[grid_level]);
        if (Pe->comm->ML_mypid == 0 && 4 < ML_Get_PrintLevel() )
          printf("projecting edge coordinates for repartitioning, relative level %d\n", fabs(fine_level-grid_level-1));
-       ML_Aggregate_ProjectCoordinates(Pe, ag_edge, 1, fabs(fine_level-grid_level-1));
+       ML_Aggregate_ProjectCoordinates(Pe, ag_edge, 1,
+                                       fabs(fine_level-grid_level-1));
      }
 
       /***************************
@@ -1533,8 +1537,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      ML_Operator_Profile(Pe, "edge_before_repartition", profile_its);
 
      ML_memory_check("L%d EdgeRepartition",grid_level);
-     if (ML_Repartition_Status(ml_edges) == ML_TRUE)
-       ML_Aggregate_Set_CurrentLevel( ag_edge, grid_level+1);
      perm = ML_repartition_Acoarse(ml_edges, grid_level+1, grid_level,
                                    ag_edge, ML_TRUE, ML_TRUE);
 
