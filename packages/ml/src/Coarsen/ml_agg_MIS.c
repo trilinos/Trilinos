@@ -122,6 +122,10 @@ static int level_count = 0;
 double *d2temp;
 int agg_offset, vertex_offset;
 extern int ML_gpartialsum_int(int val, ML_Comm *comm);
+#else
+char fname[80];
+int level_count = 0;
+FILE *fp;
 #endif
 
    /* ============================================================= */
@@ -563,6 +567,31 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    free(rowi_val);
    free(recv_list);
 
+#ifdef ML_AGGR_INAGGR
+
+   /*  When reading Mark's output this needs to be moved up */
+   /*  just before the double for loop above.               */
+   for (i = 0; i < exp_Nrows; i++) aggr_index[i] = -1;
+   sprintf(fname,"agg_%d",level_count); level_count++;
+   fp = fopen(fname,"r");
+   aggr_count = 0;
+printf("changing this to be compatable with Ray not Mark\n");
+   for (i = 0; i <nvertices; i++) {
+      /* changed this to be compatable with Mark's output */
+/* Mark
+*/
+      fscanf(fp,"%d%d",&k,&j);
+/* original */
+/*
+      fscanf(fp,"%d%d",&j,&k);
+*/
+/* */
+      aggr_index[j] = k;
+      if (k >= aggr_count) aggr_count = k+1;
+   }
+   fclose(fp);
+#endif
+
 
    for (i = exp_Nrows - 1; i >= 0; i-- ) {
       for (j = num_PDE_eqns-1; j >= 0; j--) {
@@ -579,19 +608,6 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    getrow_comm = getrow_obj->pre_comm;
    N_neighbors = getrow_obj->pre_comm->N_neighbors;
 
-#ifdef ML_AGGR_INAGGR
-
-   for (i = 0; i < exp_Nrows; i++) aggr_index[i] = -1;
-   sprintf(fname,"agg_%d",level_count); level_count++;
-   fp = fopen(fname,"r");
-   aggr_count = 0;
-   for (i = 0; i <nvertices; i++) {
-      fscanf(fp,"%d%d",&j,&k);
-      aggr_index[j] = k;
-      if (k >= aggr_count) aggr_count = k+1;
-   }
-   fclose(fp);
-#endif
 
    /* I'm not sure if I need most of this 'if' code. I just took it from */
    /* Charles ... but I guess that the majority of it is not needed.     */
