@@ -30,7 +30,8 @@
 #endif
 #include "ml_ifpack_wrap.h"
 #include "Teuchos_ParameterList.hpp"
-#include "ml_epetra_preconditioner.h"
+#include "ml_epetra.h"
+#include "ml_MultiLevelPreconditioner.h"
 
 using namespace Teuchos;
 
@@ -45,7 +46,7 @@ using namespace Teuchos;
  * - \c IFPACK (still under development)
  * - \c do-nothing
  */
-void ML_Epetra::MultiLevelPreconditioner::SetSmoothers() 
+int ML_Epetra::MultiLevelPreconditioner::SetSmoothers() 
 {
 
   char parameter[80];
@@ -349,7 +350,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 	     << ErrorMsg_ << "<Jacobi> / <Gauss-Seidel> / <block Gauss-Seidel>" << endl
 	     << ErrorMsg_ << "<symmetric Gauss-Seidel> / <Aztec> / <IFPACK>" << endl
 	     << ErrorMsg_ << "<MLS> / <ParaSails>" << endl;
-      exit( EXIT_FAILURE );
+      ML_EXIT(-99);
     }
     
     if( verbose_ ) 
@@ -359,7 +360,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
   if(  verbose_ ) cout << endl;
 
-  return;
+  return(0);
 }
 
 // ============================================================================
@@ -380,7 +381,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
  *   
  */
 
-void ML_Epetra::MultiLevelPreconditioner::SetSmoothersMaxwell()
+int ML_Epetra::MultiLevelPreconditioner::SetSmoothersMaxwell()
 {
 
   char parameter[80];
@@ -483,7 +484,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothersMaxwell()
     exit( EXIT_FAILURE );
   }
 
-  return;
+  return(0);
 }
 
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/

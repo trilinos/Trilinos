@@ -35,7 +35,8 @@
 #include "ml_agg_METIS.h"
 #include "ml_epetra_utils.h"
 
-#include "ml_epetra_preconditioner.h"
+#include "ml_epetra.h"
+#include "ml_MultiLevelPreconditioner.h"
 #include "ml_agg_ParMETIS.h"
 
 #include "ml_anasazi.h"
@@ -44,16 +45,16 @@ using namespace Teuchos;
 
 // ================================================ ====== ==== ==== == =
 
-void ML_Epetra::MultiLevelPreconditioner::SetNullSpaceMaxwell()
+int ML_Epetra::MultiLevelPreconditioner::SetNullSpaceMaxwell()
 {
 
   // FIXME...
-  
+  return(0);
 }
 
 // ================================================ ====== ==== ==== == =
 
-void ML_Epetra::MultiLevelPreconditioner::SetNullSpace() 
+int ML_Epetra::MultiLevelPreconditioner::SetNullSpace() 
 {
 
   char parameter[80];
@@ -329,11 +330,13 @@ void ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     if( verbose_ ) cout << PrintMsg_ << "Scaling Null Space..." << endl;
     ML_Aggregate_Scale_NullSpace(agg_,NullSpaceScaling,RowMatrix_->RowMatrixRowMap().NumMyElements());
   } 
+
+  return(0);
 }
 
 // ================================================ ====== ==== ==== == =
 
-void ML_Epetra::MultiLevelPreconditioner::SetEigenList() 
+int ML_Epetra::MultiLevelPreconditioner::SetEigenList() 
 {
 
   char parameter[80];
@@ -385,6 +388,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetEigenList()
   itemp =  List_.get(parameter, 10);
   EigenList_.set("output",itemp);
     
+  return(0);
 }
 
 int ML_Operator_GetDiagonal(ML_Operator* Amat,
@@ -427,12 +431,12 @@ int ML_Operator_GetDiagonal(ML_Operator* Amat,
   ML_free(colInd);
   ML_free(colVal);
 
-  return 0;
+  return(0);
 }
 
 // ================================================ ====== ==== ==== == =
 
-void ML_Epetra::MultiLevelPreconditioner::SetScaling() 
+int ML_Epetra::MultiLevelPreconditioner::SetScaling() 
 {
   
   int ierr;
@@ -441,7 +445,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetScaling()
   ScalingType = List_.get("scaling: type", "none");
 
   if (ScalingType == "none") 
-    return;
+    return(0);
 
   Scaling_ = new Epetra_Vector(RowMatrix_->RowMatrixRowMap());
   InvScaling_ = new Epetra_Vector(RowMatrix_->RowMatrixRowMap());
@@ -458,7 +462,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetScaling()
 	<< " Epetra_RowMatrix-derived class?" << endl;
       cerr << ErrorMsg_ << "Sorry, I must skip the scaling..." << endl;
       cerr << endl;
-      return;
+      ML_CHK_ERR(-1);
     }
 
     ierr = InvScaling_->Reciprocal(*Scaling_);
@@ -483,7 +487,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetScaling()
 	<< " Epetra_RowMatrix-derived class?" << endl;
       cerr << ErrorMsg_ << "Sorry, I must skip the scaling..." << endl;
       cerr << endl;
-      return;
+      return(-2);
     }
 
     ierr = Scaling_->Reciprocal(*InvScaling_);
@@ -494,7 +498,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetScaling()
     cerr << ErrorMsg_ << "Parameter `scaling type' as an incorrect" << endl
          << ErrorMsg_ << "value (" << ScalingType << "). It can be:" << endl
 	 << ErrorMsg_ << "<none> / <col sum>" << endl;
-    return;
+    return(-2);
   }
 
   if (verbose_)
@@ -508,7 +512,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetScaling()
   ierr = RM->RightScale(*Scaling_);
   assert(ierr == 0);
 
-  return;
+  return(0);
 }
  
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/

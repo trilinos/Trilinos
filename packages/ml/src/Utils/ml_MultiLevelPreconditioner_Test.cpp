@@ -21,7 +21,8 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "ml_epetra_preconditioner.h"
+#include "ml_epetra.h"
+#include "ml_MultiLevelPreconditioner.h"
 #include "AztecOO.h"
 
 // ============================================================================
@@ -60,7 +61,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
   // sanity checks
 
   if (RowMatrix_ == 0) 
-    return(-1); // Matrix not yet set
+    ML_CHK_ERR(-1); // Matrix not yet set
 
   // execution begins
 

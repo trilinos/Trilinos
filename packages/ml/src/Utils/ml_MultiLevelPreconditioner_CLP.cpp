@@ -30,7 +30,7 @@
 #endif
 #include "ml_ifpack_wrap.h"
 #include "Teuchos_ParameterList.hpp"
-#include "ml_epetra_preconditioner.h"
+#include "ml_MultiLevelPreconditioner.h"
 
 using namespace Teuchos;
 using namespace ML_Epetra;

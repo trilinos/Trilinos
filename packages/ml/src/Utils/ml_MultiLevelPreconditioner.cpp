@@ -240,7 +240,8 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 #include "ml_agg_METIS.h"
 #include "ml_epetra_utils.h"
 
-#include "ml_epetra_preconditioner.h"
+#include "ml_epetra.h"
+#include "ml_MultiLevelPreconditioner.h"
 #include "ml_agg_ParMETIS.h"
 
 #include "ml_anasazi.h"
@@ -269,7 +270,7 @@ void ML_Epetra::MultiLevelPreconditioner::PrintLine() const
 
 // ================================================ ====== ==== ==== == =
 
-void ML_Epetra::MultiLevelPreconditioner::Destroy_ML_Preconditioner()
+int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
 {
 
   char parameter[80];
@@ -480,12 +481,14 @@ void ML_Epetra::MultiLevelPreconditioner::Destroy_ML_Preconditioner()
   ML_print_it();
 #endif
 
+  return 0;
 }
 
 // ================================================ ====== ==== ==== == =
 
-ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
-						   const bool ComputePrec ) :
+ML_Epetra::MultiLevelPreconditioner::
+MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
+			 const bool ComputePrec ) :
   RowMatrix_(&RowMatrix),
   RowMatrixAllocated_(0)
 {
@@ -496,17 +499,19 @@ ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMa
   List_ = NewList;
   ML_Epetra::SetDefaults("SA",List_,(int *)0, (double *)0, Prefix_);
     
-  Initialize();
+  ML_CHK_ERRV(Initialize());
 
   // construct hierarchy
-  if( ComputePrec == true ) ComputePreconditioner();
+  if (ComputePrec == true) 
+    ML_CHK_ERRV(ComputePreconditioner());
 }
   
 // ================================================ ====== ==== ==== == =
 
-ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
-						    const ParameterList & List, const bool ComputePrec,
-						    const char Prefix[] ) :
+ML_Epetra::MultiLevelPreconditioner::
+MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
+			 const ParameterList & List, const bool ComputePrec,
+			 const char Prefix[] ) :
   RowMatrix_(&RowMatrix),
   RowMatrixAllocated_(0)
 {
@@ -514,10 +519,11 @@ ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowM
 
   List_ = List;
 
-  Initialize();
+  ML_CHK_ERRV(Initialize());
 
   // construct hierarchy
-  if( ComputePrec == true ) ComputePreconditioner();
+  if (ComputePrec == true) 
+    ML_CHK_ERRV(ComputePreconditioner());
 }
 
 // ================================================ ====== ==== ==== == =
@@ -527,40 +533,33 @@ ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowM
  * - TMatrix.OperatorDomainMap() == NodeMatrix.OperatorRangeMap()
  * - TMatrix.OperatorRangeMap()  == EdgeMatrix.OperatorDomainMap()
  */
-ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & EdgeMatrix,
-						    const Epetra_RowMatrix & TMatrix,
-						    const Epetra_RowMatrix & NodeMatrix,
-						    const ParameterList & List,
-						    const bool ComputePrec,
-						    const char Prefix[] ) :
+ML_Epetra::MultiLevelPreconditioner::
+MultiLevelPreconditioner(const Epetra_RowMatrix & EdgeMatrix,
+			 const Epetra_RowMatrix & TMatrix,
+			 const Epetra_RowMatrix & NodeMatrix,
+			 const ParameterList & List,
+			 const bool ComputePrec,
+			 const char Prefix[] ) :
   RowMatrix_(&EdgeMatrix),
   RowMatrixAllocated_(0)
 {
 
   // some sanity checks
-  bool ok = true;
-  if( ! TMatrix.OperatorDomainMap().SameAs(NodeMatrix.OperatorRangeMap() ) ) {
+  if (! TMatrix.OperatorDomainMap().SameAs(NodeMatrix.OperatorRangeMap()) ) {
     cerr << ErrorMsg_ << "discrete grad DomainMap != node RangeMap..." << endl;
-    ok = false;
-  }
-  if( ! TMatrix.OperatorRangeMap().SameAs(EdgeMatrix.OperatorDomainMap() ) ) {
-    cerr << ErrorMsg_ << "discrete grad RangeMap != edge DomainMap..." <<endl;
-    ok = false;
+    ML_CHK_ERRV(-1); // error on discrete grad
   }
 
-  if( ok == false ) {
-#ifdef ML_MPI
-    MPI_Abort(MPI_COMM_WORLD,1);
-#else
-    exit( EXIT_FAILURE );
-#endif
+  if (! TMatrix.OperatorRangeMap().SameAs(EdgeMatrix.OperatorDomainMap()) ) {
+    cerr << ErrorMsg_ << "discrete grad RangeMap != edge DomainMap..." <<endl;
+    ML_CHK_ERRV(-2); // error on discrete grad
   }
 
   sprintf(Prefix_,"%s",Prefix);
 
   List_ = List;
 
-  Initialize();
+  ML_CHK_ERRV(Initialize());
 
   // set Maxwell here.
   // NOTE: RowMatrix_ and EdgeMatrix_ pointer to the same Epetra_RowMatrix
@@ -570,15 +569,17 @@ ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowM
   EdgeMatrix_ = & EdgeMatrix;
 
   // construct hierarchy
-  if( ComputePrec == true ) ComputePreconditioner();
+  if (ComputePrec == true) 
+    ML_CHK_ERRV(ComputePreconditioner());
 
 }
 
 // ================================================ ====== ==== ==== == =
 // FIXME: should I be deleted??
-ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Operator,
-						    const ParameterList & List, const bool ComputePrec,
-						    const char Prefix[] )
+ML_Epetra::MultiLevelPreconditioner::
+MultiLevelPreconditioner(ML_Operator * Operator,
+			 const ParameterList & List, const bool ComputePrec,
+			 const char Prefix[] )
 {
 
   // need to wrap an Epetra_RowMatrix around Operator.
@@ -587,6 +588,7 @@ ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Ope
   int MaxNumNonzeros;
   double CPUTime;
   
+  // FIXME: substitute with a better version
   ML_Operator2EpetraCrsMatrix(Operator,RowMatrixAllocated_,MaxNumNonzeros,
 			      true,CPUTime);
 
@@ -599,10 +601,11 @@ ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Ope
 
   List_ = List;
 
-  Initialize();
+  ML_CHK_ERRV(Initialize());
 
   // construct hierarchy
-  if( ComputePrec == true ) ComputePreconditioner();
+  if (ComputePrec == true) 
+    ML_CHK_ERRV(ComputePreconditioner());
 }
 
 // ================================================ ====== ==== ==== == =
@@ -610,7 +613,7 @@ ML_Epetra::MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Ope
  *  - put default values in Aztec vectors.
  *  - zero-out timing
  */
-void ML_Epetra::MultiLevelPreconditioner::Initialize()
+int ML_Epetra::MultiLevelPreconditioner::Initialize()
 {
 
   Comm_ = &(RowMatrix_->Comm());
@@ -668,7 +671,8 @@ void ML_Epetra::MultiLevelPreconditioner::Initialize()
   // memory
   AnalyzeMemory_ = false;
 
-  for( int i=0 ; i<ML_MEM_SIZE ; ++i ) memory_[i] = 0;
+  for (int i = 0 ; i < ML_MEM_SIZE ; ++i) 
+    memory_[i] = 0;
 
   // filtering vectors
   flt_R_ = 0;
@@ -684,6 +688,8 @@ void ML_Epetra::MultiLevelPreconditioner::Initialize()
   // scaling stuff
   Scaling_ = 0;
   InvScaling_ = 0;
+
+  return 0;
 }
 
 
@@ -694,8 +700,8 @@ int ML_Epetra::MultiLevelPreconditioner::ComputeFilteringPreconditioner()
 
   char parameter[80];
   
-  if( IsComputePreconditionerOK_ == true ) {
-    Destroy_ML_Preconditioner();
+  if (IsComputePreconditionerOK_ == true ){
+    DestroyPreconditioner();
   }
 
   // 1.- disable filtering/GGB in ComputePreconditioner()
@@ -728,7 +734,7 @@ int ML_Epetra::MultiLevelPreconditioner::ComputeFilteringPreconditioner()
 
   NullSpaceToFree_ = 0;
   
-  Destroy_ML_Preconditioner();
+  DestroyPreconditioner();
 
   // 4.- recompute preconditioner with new options
   sprintf(parameter,"%sfiltering: enable", Prefix_);
@@ -742,7 +748,8 @@ int ML_Epetra::MultiLevelPreconditioner::ComputeFilteringPreconditioner()
 
 // ================================================ ====== ==== ==== == =
 
-int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckPreconditioner)
+int ML_Epetra::MultiLevelPreconditioner::
+ComputePreconditioner(const bool CheckPreconditioner)
 {
 
   BreakForDebugger();
@@ -751,7 +758,7 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   // check whether the old filtering is still ok for the new matrix //
   // ============================================================== //
 
-  if( CheckPreconditioner == true && RateOfConvergence_ != -1.0 ) {
+  if (CheckPreconditioner == true && RateOfConvergence_ != -1.0) {
 
     // If the previous preconditioner was computed with option
     // "adaptive: enable" == true, we know the rate of convergence
@@ -760,8 +767,11 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
     // This requires an AztecOO object to be defined (ML must have been
     // configured with --enable-aztecoo)
 
-    if( CheckPreconditionerKrylov() == false ) Destroy_ML_Preconditioner();
-    else                                       return 0;
+    if (CheckPreconditionerKrylov() == false) {
+      ML_CHK_ERR(DestroyPreconditioner());
+    }
+    else                                       
+      return 0;
     
   } else if( CheckPreconditioner == true && SchurDecomposition_ ) {
  
@@ -770,13 +780,16 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
     // In this case, we
     // check whether the old preconditioner is still ok for the new matrix
     
-    if( CheckPreconditionerFiltering() == false ) Destroy_ML_Preconditioner();
-    else                                          return 0;
+    if (CheckPreconditionerFiltering() == false) {
+      ML_CHK_ERR(DestroyPreconditioner());
+    }
+    else
+      return 0;
     
   } else if( CheckPreconditioner == false && IsComputePreconditionerOK_ == true ) {
   
     // get rid of what done before 
-    Destroy_ML_Preconditioner();
+    ML_CHK_ERR(DestroyPreconditioner());
     
   } // nothing else if left
 
@@ -810,7 +823,7 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   int OutputLevel = List_.get(parameter, 10);  
   ML_Set_PrintLevel(OutputLevel);
 
-  verbose_ = ( 5 < ML_Get_PrintLevel() && ProcConfig_[AZ_node] == 0);
+  verbose_ = (5 < ML_Get_PrintLevel() && ProcConfig_[AZ_node] == 0);
 
   if( verbose_ ) PrintLine();
   
@@ -1043,22 +1056,30 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   /* restriction smoother. Only for non-Maxwell.                            */
   /* ********************************************************************** */
 
-  if( SolvingMaxwell_ == false ) SetSmoothingDamping();
-  else ML_Aggregate_Set_DampingFactor( agg_, 0.0);
+  if( SolvingMaxwell_ == false ) {
+    ML_CHK_ERR(SetSmoothingDamping());
+  }
+  else 
+    ML_Aggregate_Set_DampingFactor( agg_, 0.0);
 
   /* ********************************************************************** */
   /* set scaling                                                            */
   /* ********************************************************************** */
 
-  if (SolvingMaxwell_ == false) 
-    SetScaling();
+  if (SolvingMaxwell_ == false) {
+    ML_CHK_ERR(SetScaling());
+  }
 
   /* ********************************************************************** */
   /* set null space                                                         */
   /* ********************************************************************** */
 
-  if( SolvingMaxwell_ == false ) SetNullSpace();
-  else                           SetNullSpaceMaxwell();
+  if( SolvingMaxwell_ == false ) {
+    ML_CHK_ERR(SetNullSpace());
+  }
+  else {
+    ML_CHK_ERR(SetNullSpaceMaxwell());
+  }
   
   /************************************************************************/
   /* Build hierarchy using smoothed aggregation.                          */
@@ -1067,10 +1088,12 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   /*----------------------------------------------------------------------*/
 
   int Direction;
-  if( IsIncreasing == "increasing" ) Direction = ML_INCREASING;
-  else                               Direction = ML_DECREASING;
+  if (IsIncreasing == "increasing")
+    Direction = ML_INCREASING;
+  else
+    Direction = ML_DECREASING;
 
-  if( SolvingMaxwell_ == false ) {
+  if (SolvingMaxwell_ == false) {
 
     sprintf(parameter,"%saggregation: use auxiliary matrix", Prefix_);
     bool CreateFakeProblem = List_.get(parameter, false);
@@ -1081,7 +1104,9 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
 
     Epetra_FECrsMatrix * FakeMatrix = 0;
 
-    if( CreateFakeProblem == true ) CreateAuxiliaryMatrix(FakeMatrix);
+    if( CreateFakeProblem == true ) {
+      ML_CHK_ERR(CreateAuxiliaryMatrix(FakeMatrix));
+    }
     
     NumLevels_ = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
 
@@ -1091,30 +1116,12 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
       
       ml_->Amat[LevelID_[0]].data = (void *)RowMatrix_;
 
-#ifdef NEIN
-      // FIXME pleaze...
-      // THIS IS PURE CRAP
-      ML_Operator* Amat = &(ml_->Amat[LevelID_[0]]);
-      ML_Operator* t2 = ML_Operator_Create(Amat->comm);
-      ML_Operator_Transpose_byrow(Amat,t2);
-      ML_Operator* t3 = ML_Operator_Create(Amat->comm);
-      ML_Operator_Add(Amat,t2,t3,ML_CSR_MATRIX,1.);
-
-      Epetra_CrsMatrix * Epetra_Kn, * Epetra_Ke, * Epetra_T;
-
-      int MaxNumNonzeros;
-      double CPUTime;
-
-      ML_Operator2EpetraCrsMatrix(t3,Epetra_Ke,
-				  MaxNumNonzeros,
-				  true,CPUTime);
-      ml_->Amat[LevelID_[0]].data = (void *)Epetra_Ke;
-#endif
-
       // generate new hierarchy with "good" matrix
       if( verbose_ ) {
 	cout << endl;
-	cout << PrintMsg_ << "*** Now re-building the ML hierarchy with the actual matrix..." << endl;
+	cout << PrintMsg_ 
+	     << "*** Now re-building the ML hierarchy with the actual matrix..." 
+	     << endl;
 	cout << endl;
       }
 
@@ -1168,8 +1175,12 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   /* Now cycling over all levels                                            */
   /* ********************************************************************** */
 
-  if( SolvingMaxwell_ == false ) SetSmoothers();
-  else                           SetSmoothersMaxwell();
+  if( SolvingMaxwell_ == false ) {
+    ML_CHK_ERR(SetSmoothers());
+  }
+  else {
+    ML_CHK_ERR(SetSmoothersMaxwell());
+  }
 
   if( AnalyzeMemory_ ) {
     call2 = ML_MaxAllocatableSize();
@@ -1185,7 +1196,9 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   /* solution of the coarse problem                                         */
   /* ********************************************************************** */
 
-  if( NumLevels_ > 1 ) SetCoarse();
+  if( NumLevels_ > 1 ) {
+    ML_CHK_ERR(SetCoarse());
+  }
 
   ownership_ = false;
 
@@ -1222,7 +1235,7 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   /* ml_ggb.c, in the Main subdirectory).                                   */
   /* ********************************************************************** */
 
-  SetFiltering();
+  ML_CHK_ERR(SetFiltering());
   
   /* ********************************************************************** */
   /* One may decide to print out the entire hierarchy (to be analyzed in    */
@@ -1291,7 +1304,8 @@ int ML_Epetra::MultiLevelPreconditioner::ComputePreconditioner(const bool CheckP
   
   CreateLabel();
   
-  if( SolvingMaxwell_ == false ) SetPreconditioner();
+  if( SolvingMaxwell_ == false ) 
+    SetPreconditioner();
 
   IsComputePreconditionerOK_ = true;
   
@@ -1367,7 +1381,8 @@ void ML_Epetra::MultiLevelPreconditioner::PrintList(int MyPID)
 
 // ============================================================================
 
-int ML_Epetra::MultiLevelPreconditioner::SetParameterList(const ParameterList & List) 
+int ML_Epetra::MultiLevelPreconditioner::
+SetParameterList(const ParameterList & List) 
 {
   if( IsComputePreconditionerOK_ == true ) DestroyPreconditioner();
   List_ = List;
@@ -1425,9 +1440,11 @@ int ML_Epetra::MultiLevelPreconditioner::CreateLabel()
   }
 
   if( SolvingMaxwell_ == false ) 
-    sprintf(Label_,"ML (L=%d, %s, %s)", ml_->ML_num_actual_levels, finest, coarsest);
+    sprintf(Label_,"ML (L=%d, %s, %s)", 
+	    ml_->ML_num_actual_levels, finest, coarsest);
   else
-    sprintf(Label_,"ML (Maxwell, L=%d, %s, %s)", ml_ptr->ML_num_actual_levels, finest, coarsest);
+    sprintf(Label_,"ML (Maxwell, L=%d, %s, %s)", 
+	    ml_ptr->ML_num_actual_levels, finest, coarsest);
   
   return 0;
     
@@ -1435,8 +1452,9 @@ int ML_Epetra::MultiLevelPreconditioner::CreateLabel()
 
 // ============================================================================
 
-int ML_Epetra::MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
-					   Epetra_MultiVector& Y) const
+int ML_Epetra::MultiLevelPreconditioner::
+ApplyInverse(const Epetra_MultiVector& X,
+	     Epetra_MultiVector& Y) const
 {
 
   // FIXME: What the hell am I doing here?
@@ -1455,10 +1473,14 @@ int ML_Epetra::MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& 
     
   Epetra_Time Time(Comm());
   
-  if (!X.Map().SameAs(OperatorDomainMap())) EPETRA_CHK_ERR(-1);
-  if (!Y.Map().SameAs(OperatorRangeMap())) EPETRA_CHK_ERR(-2);
-  if (Y.NumVectors()!=X.NumVectors()) EPETRA_CHK_ERR(-3);
-  if( !IsPreconditionerComputed() ) EPETRA_CHK_ERR(-10);
+  if (!X.Map().SameAs(OperatorDomainMap())) 
+    ML_CHK_ERR(-1);
+  if (!Y.Map().SameAs(OperatorRangeMap())) 
+    ML_CHK_ERR(-2);
+  if (Y.NumVectors()!=X.NumVectors()) 
+    ML_CHK_ERR(-3);
+  if( !IsPreconditionerComputed() ) 
+    ML_CHK_ERR(-10);
 
   // FIXME: allocate me before, just once???
   Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled
@@ -1471,10 +1493,10 @@ int ML_Epetra::MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& 
 
   // ML_iterate doesn't handle multivectors, so extract and iterate one at
   // a time on them.
-  double **xvectors;
-  double **yvectors;
-  EPETRA_CHK_ERR(xtmp.ExtractView(&xvectors));
-  EPETRA_CHK_ERR(Y.ExtractView(&yvectors));
+  double** xvectors;
+  double** yvectors;
+  ML_CHK_ERR(xtmp.ExtractView(&xvectors));
+  ML_CHK_ERR(Y.ExtractView(&yvectors));
 
   ML * ml_ptr;
   
@@ -1620,7 +1642,7 @@ int ML_Epetra::MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& 
  * - \c Amesos-ScALAPACK (under development in Amesos)
  * - \c do-nothing
  */
-void ML_Epetra::MultiLevelPreconditioner::SetCoarse() 
+int ML_Epetra::MultiLevelPreconditioner::SetCoarse() 
 {
 
   char parameter[80];
@@ -1662,8 +1684,10 @@ void ML_Epetra::MultiLevelPreconditioner::SetCoarse()
     // do nothing, ML will not use any coarse solver 
   } else {
     ML_Gen_Smoother_Amesos(ml_ptr, LevelID_[NumLevels_-1], ML_AMESOS_KLU, MaxProcs);
+    ML_EXIT(-1); // Amesos is only the default...
   }
     
+  return 0;
 }
 
 // ============================================================================
@@ -1675,7 +1699,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetCoarse()
  * - \c Coupled (deprecated)
  * - \c MIS
  */
-void ML_Epetra::MultiLevelPreconditioner::SetAggregation() 
+int ML_Epetra::MultiLevelPreconditioner::SetAggregation() 
 {
 
   char parameter[80];
@@ -1791,11 +1815,12 @@ void ML_Epetra::MultiLevelPreconditioner::SetAggregation()
      } /* for */
      } /* else */
   
+  return 0;
 }
 
 // ================================================ ====== ==== ==== == =
 
-void ML_Epetra::MultiLevelPreconditioner::SetPreconditioner() 
+int ML_Epetra::MultiLevelPreconditioner::SetPreconditioner() 
 {
 
   char parameter[80];
@@ -1858,11 +1883,12 @@ void ML_Epetra::MultiLevelPreconditioner::SetPreconditioner()
     
   }
   
+  return 0;
 }
 
 // ================================================ ====== ==== ==== == =
 
-void ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping() 
+int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping() 
 {
 
   Epetra_Time Time(Comm());
@@ -1885,7 +1911,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
     /* For "classical" approach to determine lambda_max only.                 */
     /* ********************************************************************** */
 
-    SetSmoothingDampingClassic();
+    ML_CHK_ERR(SetSmoothingDampingClassic());
     
   } else if( RandPSmoothing == "advanced" ) {
 
@@ -2141,7 +2167,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
 	     << ErrorMsg_ << "<fov-1> / <fov-2> / <fov-5> / <fov-10> / <user-defined>" << endl;
       }
 
-      exit( EXIT_FAILURE );
+      ML_EXIT(-10); // wrong input parameter
     }
 
     agg_->field_of_values = (void*) field_of_values;  
@@ -2155,15 +2181,16 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
 	   << ErrorMsg_ << "<classic> / <advanced>" << endl;
     }
     
-    exit( EXIT_FAILURE );
+    ML_EXIT(-11); // wrong input parameter
     
   }
 
+  return 0;
 }
 
 // ============================================================================
 
-void ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
+int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
 {
   
   char parameter[80];
@@ -2196,24 +2223,30 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
       cerr << ErrorMsg_ << "It should be: " << endl
 	   << ErrorMsg_ << "<cg> / <Anorm> / <Anasazi> / <power-method>" << endl;
     }
-    exit( EXIT_FAILURE );
+    ML_EXIT(-10); // wrong input parameter
   }
     
+  return 0;
 }
  
 // ============================================================================
 
-int ML_Epetra::MultiLevelPreconditioner::PrintStencil2D(const int nx, const int ny, 
-							int NodeID,
-							const int EquationID)
+int ML_Epetra::MultiLevelPreconditioner::
+PrintStencil2D(const int nx, const int ny, 
+	       int NodeID,
+	       const int EquationID)
 {
 
-  // FIXME: I don't work in parallel, but I can be fixed
-  if( nx <= 0 ) EPETRA_CHK_ERR(-1);
-  if( ny <= 0 ) EPETRA_CHK_ERR(-1);
+  if (nx <= 0)
+    ML_CHK_ERR(-1); // need nodes along the X-axis
+ 
+  if (ny <= 0)
+    ML_CHK_ERR(-2); // need nodes along Y-axis
 
-  if( RowMatrix_ == 0 ) EPETRA_CHK_ERR(-2);
-  if( IsPreconditionerComputed() == false ) EPETRA_CHK_ERR(-3);
+
+  if (RowMatrix_ == 0) 
+    ML_CHK_ERR(-3); // matrix still not set
+
 
   int MaxPerRow = RowMatrix_->MaxNumEntries();
   int NumEntriesRow;   // local entries on each row
@@ -2229,19 +2262,18 @@ int ML_Epetra::MultiLevelPreconditioner::PrintStencil2D(const int nx, const int 
   }
   
   // need to convert from NodeID (BlockRowID) to PointRowID
-  int LocalRowID = NodeID * NumPDEEqns_;
+  int GID = NodeID * NumPDEEqns_;
 
-  bool DoAgain = true;
+  int LID = RowMatrix_->RowMatrixRowMap().LID(GID);
 
-  do {
-    int ierr = RowMatrix_->ExtractMyRowCopy(LocalRowID, MaxPerRow, NumEntriesRow,
+  if (LID != -1) {
+    int ierr = RowMatrix_->ExtractMyRowCopy(LID, MaxPerRow, NumEntriesRow,
 					    &Values[0], &Indices[0]);
-  
-    if( ierr ) EPETRA_CHK_ERR(-4);
-    if( NumEntriesRow == 1 ) ++NodeID;
-    else                     DoAgain = false;
-  } while(DoAgain);
-  
+    if (ierr) 
+      ML_CHK_ERR(-4);
+ 
+  }
+
   // cycle over nonzero elements, look for elements in positions that we
   // can understand
   
@@ -2355,7 +2387,7 @@ int ML_Epetra::MultiLevelPreconditioner::BreakForDebugger()
 }
 
 // ============================================================================
-void ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatrix * & FakeMatrix)
+int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatrix * & FakeMatrix)
 {
   char parameter[80];
 
@@ -2369,7 +2401,9 @@ void ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatr
   Epetra_Map Map(-1,NumMyRows,0,Comm());
   FakeMatrix = new Epetra_FECrsMatrix(Copy,Map,
 				      2*RowMatrix_->MaxNumEntries());
-  assert(FakeMatrix != 0); 
+  if (FakeMatrix == 0) {
+    ML_CHK_ERR(-1); // something went wrong
+  }
 
   int NumDimensions = 0;
 
@@ -2384,7 +2418,7 @@ void ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatr
       << ErrorMsg_ << "You must specify them using options" << endl
       << ErrorMsg_ << "`aggregation: x-coordinates' (and equivalently for" << endl
       << ErrorMsg_ << "y- and z-." << endl;
-    exit( EXIT_FAILURE );
+    ML_CHK_ERR(-2); // wrong parameters
   }
 
   sprintf(parameter,"%saggregation: y-coordinates", Prefix_);
@@ -2399,7 +2433,7 @@ void ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatr
       if( z_coord != 0 && y_coord == 0 ) {
         cerr << ErrorMsg_ << "Something wrong: `aggregation: y-coordinates'" << endl
              << ErrorMsg_ << "is null, while `aggregation: z-coordinates' is null" << endl;
-        exit( EXIT_FAILURE );
+	ML_CHK_ERR(-3); // something went wrong
       }
   
   sprintf(parameter,"%saggregation: theta", Prefix_);
@@ -2553,14 +2587,17 @@ void ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatr
 	    double val = -(1.0-theta)*(1.0/d2) + theta*(colVal[j]);
 
 	    GlobalCol = global_isize_as_int[colInd[j]];
-	    assert(GlobalCol != -1);
+	    if (GlobalCol == -1)
+	      ML_CHK_ERR(-9);
 
 	    // insert this value on all rows
 	    for (int k = 0 ; k < NumPDEEqns_ ; ++k) {
 	      int row = GlobalRow+k;
 	      int col = GlobalCol+k;
-	      assert(row < NumGlobalRows());
-	      assert(col < NumGlobalCols());
+	      if (row >= NumGlobalRows())
+		ML_CHK_ERR(-9);
+	      if (col >= NumGlobalCols())
+		ML_CHK_ERR(-9);
 /*
 	      assert(FakeMatrix->InsertGlobalValues(row,1,&val,&col) == 0);
 */
@@ -2580,8 +2617,10 @@ void ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatr
 	      for( int k=0 ; k<NumPDEEqns_ ; ++k ) {
 		int row = GlobalCol+k;
 		int col = GlobalRow+k;
-		assert(row < NumGlobalRows());
-		assert(col < NumGlobalCols());
+		if (row >= NumGlobalRows())
+		  ML_CHK_ERR(-9);
+		if (col >= NumGlobalCols())
+		  ML_CHK_ERR(-9);
 /*
 		assert(FakeMatrix->InsertGlobalValues(row,1,&val,&col) == 0);
 */
@@ -2599,19 +2638,22 @@ void ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatr
       // create lines with zero-row sum
       for (int k = 0 ; k < NumPDEEqns_ ; ++k) {
 	int row = GlobalRow + k;
-	assert(row < NumGlobalRows());
+	if (row >= NumGlobalRows())
+	  ML_CHK_ERR(-9); // something went wrong
 	/*
 	assert(FakeMatrix->InsertGlobalValues(row,1,&total,&row) == 0);
 	*/
 	if (FakeMatrix->SumIntoGlobalValues(1,&row,1,&row,&total) != 0) {
-	  assert(FakeMatrix->InsertGlobalValues(1,&row,1,&row,&total) == 0);
+	  if (FakeMatrix->InsertGlobalValues(1,&row,1,&row,&total) != 0)
+	    ML_CHK_ERR(-9); // something went wrong
 	}
 
       }
     }
   }
 
-  FakeMatrix->FillComplete();
+  if (FakeMatrix->FillComplete())
+    ML_CHK_ERR(-5); // something went wrong
 
   delete [] colInd;
   delete [] colVal;
@@ -2621,6 +2663,8 @@ void ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatr
 
   // tell ML to keep the tentative prolongator
   ML_Aggregate_Set_Reuse(agg_);
+
+  return 0;
 }
 
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/

@@ -37,9 +37,11 @@
 #include "ml_amesos_wrap.h"
 #include "ml_ifpack_wrap.h"
 #include "ml_agg_METIS.h"
+
+#include "ml_epetra.h"
 #include "ml_epetra_utils.h"
 
-#include "ml_epetra_preconditioner.h"
+#include "ml_MultiLevelPreconditioner.h"
 #include "ml_agg_ParMETIS.h"
 
 #include "ml_anasazi.h"
@@ -65,15 +67,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 
   string Pre(Prefix_);
 
-  bool ok = false;
-  // some options have both names, `filtering' and `ggb'.
-  sprintf(parameter,"%sggb: enable", Prefix_);
-  ok = List_.get(parameter,false);
-  
-  if( ok == false ) {
-    sprintf(parameter,"%sfiltering: enable", Prefix_);
-    if( ! List_.get(parameter,false) ) return -1;
-  }
+  sprintf(parameter,"%sfiltering: enable", Prefix_);
+  if (List_.get(parameter,false) == false) 
+    return(0);
 
 #ifdef MARZIO_GGB
   sprintf(parameter,"%sfiltering: use symmetric cycle", Prefix_);
@@ -466,7 +462,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
   if( verbose_ ) 
     cout << PrintMsg_ << "\t- Total Time for filtering setup = " << Time.ElapsedTime() << " (s)" << endl;
     
-  return( ReturnValue );
+  ML_RETURN(ReturnValue);
   
 }
 

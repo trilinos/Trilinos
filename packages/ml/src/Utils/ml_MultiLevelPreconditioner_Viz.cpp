@@ -38,7 +38,8 @@ extern int ML_Aggregate_Stats_CleanUp_Amalgamate( ML *ml, ML_Aggregate *ag);
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "ml_epetra_preconditioner.h"
+#include "ml_epetra.h"
+#include "ml_MultiLevelPreconditioner.h"
 
 // ============================================================================
 // Used in VizMePleaze()
@@ -55,13 +56,21 @@ RandomAndZero(double * tmp_rhs, double * tmp_sol, int size)
 int ML_Epetra::MultiLevelPreconditioner::
 VisualizeAggregates()
 {
-  return(Visualize(true, false, false, false, -1, -1, -1));
+  if (IsPreconditionerComputed() == false)
+    ML_CHK_ERR(-1); // need an already computed preconditioner
+
+  ML_CHK_ERR(Visualize(true, false, false, false, -1, -1, -1));
+
+  return(0);
 }
 
 // ============================================================================
 int ML_Epetra::MultiLevelPreconditioner::
 VisualizeSmoothers(int NumPreCycles, int NumPostCycles)
 {
+
+  if (IsPreconditionerComputed() == false)
+    ML_CHK_ERR(-1); // need an already computed preconditioner
 
   bool VizPreSmoother = false;
   bool VizPostSmoother = false;
@@ -74,17 +83,25 @@ VisualizeSmoothers(int NumPreCycles, int NumPostCycles)
   int ierr = Visualize(false, VizPreSmoother, VizPostSmoother,
 		       false, NumPreCycles, NumPostCycles, -1);
 
-  return(ierr);
+  ML_CHK_ERR(ierr);
+
+  return(0);
 }
 
 // ============================================================================
 int ML_Epetra::MultiLevelPreconditioner::
 VisualizeCycle(int NumCycles)
 {
+
+  if (IsPreconditionerComputed() == false)
+    ML_CHK_ERR(-1); // need an already computed preconditioner
+
   int ierr = Visualize(false, false, false, true,
 		       -1, -1, NumCycles);
 
-  return(ierr);
+  ML_CHK_ERR(ierr);
+
+  return(0);
 }
 
 
@@ -103,7 +120,7 @@ Visualize(bool VizAggre, bool VizPreSmoother,
   // does not work with Maxwell
   if( ml_ == 0 ) {
     cerr << ErrorMsg_ << "Visualization does not work (yet) with Maxwell..." << endl;
-    return(-1);
+    ML_CHK_ERR(-1);
   }
 
   string Prefix = Prefix_;

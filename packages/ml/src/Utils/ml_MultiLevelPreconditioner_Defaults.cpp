@@ -36,14 +36,11 @@
 #include "ml_agg_METIS.h"
 #include "ml_epetra_utils.h"
 
-#include "ml_epetra_preconditioner.h"
+#include "ml_MultiLevelPreconditioner.h"
 #include "ml_agg_ParMETIS.h"
 
+#include "ml_epetra.h"
 #include "ml_anasazi.h"
-
-#include "ml_ggb.h"
-
-#include <vector>
 
 using namespace Teuchos;
 using namespace ML_Epetra;
@@ -61,26 +58,32 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
   if( options == NULL ) options = new int[AZ_OPTIONS_SIZE];
   if( params  == NULL ) params  = new double[AZ_PARAMS_SIZE];
 
-  if( ProblemType == "SA" )
-    return( ML_Epetra::SetDefaultsSA(List, Prefix, options, params) );
-  else if( ProblemType == "maxwell" || ProblemType == "Maxwell" )
-    return( ML_Epetra::SetDefaultsMaxwell(List, Prefix, options, params ) );
-  else if( ProblemType == "DD-ML" )
-    return( ML_Epetra::SetDefaultsDD_3Levels(List, Prefix, options, params ) );
-  else if( ProblemType == "DD-ML-LU" )
-    return( ML_Epetra::SetDefaultsDD_3Levels_LU(List, Prefix, options, params ) );
-  else if( ProblemType == "DD" )
-    return( ML_Epetra::SetDefaultsDD(List, Prefix, options, params ) );
-  else if( ProblemType == "DD-LU" )
-    return( ML_Epetra::SetDefaultsDD_LU(List, Prefix, options, params ) );
+  if( ProblemType == "SA" ) {
+    ML_CHK_ERR( ML_Epetra::SetDefaultsSA(List, Prefix, options, params) );
+  }
+  else if( ProblemType == "maxwell" || ProblemType == "Maxwell" ) {
+    ML_CHK_ERR( ML_Epetra::SetDefaultsMaxwell(List, Prefix, options, params ) );
+  }
+  else if( ProblemType == "DD-ML" ) {
+    ML_CHK_ERR( ML_Epetra::SetDefaultsDD_3Levels(List, Prefix, options, params ) );
+  }
+  else if( ProblemType == "DD-ML-LU" ) {
+    ML_CHK_ERR( ML_Epetra::SetDefaultsDD_3Levels_LU(List, Prefix, options, params ) );
+  }
+  else if( ProblemType == "DD" ) {
+    ML_CHK_ERR( ML_Epetra::SetDefaultsDD(List, Prefix, options, params ) );
+  }
+  else if( ProblemType == "DD-LU" ) {
+    ML_CHK_ERR( ML_Epetra::SetDefaultsDD_LU(List, Prefix, options, params ) );
+  }
   else {
     cerr << "ERROR: Wrong input parameter in `SetDefaults' ("
 	 << ProblemType << "). Should be: " << endl
 	 << "ERROR: <SA> / <DD> / <DD-ML> / <maxwell>" << endl;
-    exit( EXIT_FAILURE );
+    ML_CHK_ERR(-1); // bad input option
   }
 
-  return 0;
+  return(0);
   
   
 }

@@ -25,7 +25,8 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "ml_epetra_preconditioner.h"
+#include "ml_epetra.h"
+#include "ml_MultiLevelPreconditioner.h"
 #include <iomanip>
 
 // ============================================================================
@@ -132,9 +133,9 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixCheap()
   // sanity checks
 
   if (RowMatrix_ == 0) 
-    return(-1); // Matrix not yet set
+    ML_CHK_ERR(-1); // Matrix not yet set
   if (ml_ == 0) 
-    return(-4); // at present does not work with Maxwell (easy fix?)
+    ML_CHK_ERR(-4); // at present does not work with Maxwell (easy fix?)
 
   // execution begins
 
@@ -178,12 +179,15 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* Ma
 
   // sanity checks
 
-  if (RowMatrix_ == 0) 
-    return(-1); // Matrix not yet set
-  if ( (MatVec[0] != 'A') && (IsPreconditionerComputed() != true) )
-    return(-2); // need preconditioner for this job
-  if (ml_ == 0) 
-    return(-4); // at present does not work with Maxwell (easy fix?)
+  if (RowMatrix_ == 0) {
+    ML_CHK_ERR(-1); // Matrix not yet set
+  }
+  if ( (MatVec[0] != 'A') && (IsPreconditionerComputed() != true) ) {
+    ML_CHK_ERR(-2); // need preconditioner for this job
+  }
+  if (ml_ == 0) {
+    ML_CHK_ERR(-4); // at present does not work with Maxwell (easy fix?)
+  }
 
   // execution begins
 
@@ -270,7 +274,7 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* Ma
 
   double max = 0;
 
-  if (verbose_) {
+  if (Comm().MyPID() == 0) {
 
     cout << "\t*** Done. Results are in file `" << filename << "'." << endl;
     std::ofstream seig_A(filename);
@@ -278,10 +282,17 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* Ma
     seig_A << "%largest magnitude eigenvalues" << endl;
     seig_A << "%computed eigenvalues = " << NumEigenvalues << endl;
     seig_A << "%tolerance = " << tol << endl;
+#ifdef ML_OCTAVE
     seig_A << MATLABname << " = [" << endl;
+#endif
 
     for (int i=0 ; i<NumEigenvalues ; ++i) {
+#ifdef ML_OCTAVE
       seig_A <<	RealEigenvalues[i] << " + i * (" << ImagEigenvalues[i] << ')' << endl;
+#else
+      seig_A <<	RealEigenvalues[i] << "   " << ImagEigenvalues[i] << endl;
+#endif
+
       double eig =sqrt(pow(RealEigenvalues[i],2.0) + pow(ImagEigenvalues[i],2.0));
       if( eig>max ) max = eig;
     }
@@ -321,7 +332,7 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* Ma
 
   double min = DBL_MAX;
 
-  if (verbose_) {
+  if (Comm().MyPID() == 0) {
 
     cout << "\t*** Done. Results are in file `" << filename << "'." << endl;
     std::ofstream seig_A(filename, std::ios::app);
@@ -331,11 +342,17 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesSparse(char* Ma
     seig_A << "%tolerance = " << tol << endl;
 
     for (int i=0 ; i<NumEigenvalues ; ++i) {
+#ifdef ML_OCTAVE
       seig_A <<	RealEigenvalues[i] << " + i * (" << ImagEigenvalues[i] << ')' << endl;
+#else
+      seig_A <<	RealEigenvalues[i] << "   " << ImagEigenvalues[i] << endl;
+#endif
       double eig =sqrt(pow(RealEigenvalues[i],2.0) + pow(ImagEigenvalues[i],2.0));
       if (eig < min) min = eig;
     }
+#ifdef ML_OCTAVE
     seig_A << "];" << endl;
+#endif
     seig_A.close();
 
     cout << PrintMsg_ << "\tmin |lambda_{" << MatVec <<"}|   = " << min << endl;
@@ -375,12 +392,15 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesDense(char* Mat
 
   // sanity checks
 
-  if (RowMatrix_ == 0) 
-    return(-1); // Matrix not yet set
-  if ( (MatVec[0] != 'A') && (IsPreconditionerComputed() != true) )
-    return(-2); // need preconditioner for this job
-  if (Comm().NumProc() != 1)
-    return(-3); // only serial runs
+  if (RowMatrix_ == 0) {
+    ML_CHK_ERR(-1); // Matrix not yet set
+  }
+  if ( (MatVec[0] != 'A') && (IsPreconditionerComputed() != true) ) {
+    ML_CHK_ERR(-2); // need preconditioner for this job
+  }
+  if (Comm().NumProc() != 1) {
+    ML_CHK_ERR(-3); // only serial runs
+  }
 
   // execution begins
  
@@ -426,7 +446,7 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesDense(char* Mat
 	 << ErrorMsg_ << "much to me. Now I return; maybe you can change the" << endl
 	 << ErrorMsg_ << "source code (file " << __FILE__ << ", line "
 	 << __LINE__ << ")" << endl;
-    return(-1);
+    ML_CHK_ERR(-1);
   }
 #endif
     
@@ -450,7 +470,7 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesDense(char* Mat
     cerr << ErrorMsg_ << "Not enough memory to allocate"
          << 8*NumMyRows()*NumMyRows() << "bytes. Now" << endl
 	 << ErrorMsg_ << "skipping the analysis of the eigenvalues." << endl;
-    return(-10);
+    ML_CHK_ERR(-10);
   }
   
   int allocated = 1;
@@ -500,16 +520,24 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesDense(char* Mat
     cout << "\t*** results are on file `eig_A.m'." << endl;
 
     std::ofstream eig_A("eig_A.m");
+#ifdef ML_OCTAVE
     eig_A << "eig_A = [" << endl;
+#endif
     min = DBL_MAX, max = DBL_MIN;
 
     for (int i=0 ; i<n ; i++) {
       double eig = sqrt(Er[i] * Er[i] + Ei[i] * Ei[i]);
       if( eig < min ) min = eig;
       if( eig > max ) max = eig;
+#ifdef ML_OCTAVE
       eig_A << Er[i] << " + i * " << Ei[i] << endl;
+#else
+      eig_A << Er[i] << "    " << Ei[i] << endl;
+#endif
     }
+#ifdef ML_OCTAVE
     eig_A << "];";
+#endif
     eig_A.close();
 
     cout << endl << "\tmin |lambda_i(A)|         = " << min << endl;
@@ -573,16 +601,24 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeMatrixEigenvaluesDense(char* Mat
     cout << "\t*** results are on file `eig_PA.m'." << endl;
 
     std::ofstream eig_PA("eig_PA.m");
+#ifdef ML_OCTAVE
     eig_PA << "eig_PA = [" << endl;
+#endif
     min = DBL_MAX, max = DBL_MIN;
 
     for (int i=0 ; i<n ; i++) {
       double eig = sqrt(Er[i] * Er[i] + Ei[i] * Ei[i]);
       if( eig < min ) min = eig;
       if( eig > max ) max = eig;
+#ifdef ML_OCTAVE
       eig_PA << Er[i] << " + i * " << Ei[i] << endl;
+#else
+      eig_PA << Er[i] << "    " << Ei[i] << endl;
+#endif
     }
+#ifdef ML_OCTAVE
     eig_PA << "];";
+#endif
     eig_PA.close();
 
     cout << endl << "\tmin |lambda_i(ML^{-1}A)|  = " << min << endl;
@@ -618,10 +654,10 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothersSparse(int NumPreCycles
   // sanity checks
 
   if (IsPreconditionerComputed() == false) 
-    return(-1); // need preconditioner to do this job
+    ML_CHK_ERR(-1); // need preconditioner to do this job
 
   if( ml_ == 0 ) {
-    return(-2); // Does not work with Maxwell
+    ML_CHK_ERR(-2); // Does not work with Maxwell
   }
 
   // execution begins
@@ -779,10 +815,10 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(int NumCycles)
   // sanity checks
 
   if (IsPreconditionerComputed() == false) 
-    return(-1); // need preconditioner to do this job
+    ML_CHK_ERR(-1); // need preconditioner to do this job
 
   if( ml_ == 0 ) {
-    return(-2); // Does not work with Maxwell (yet)
+    ML_CHK_ERR(-2); // Does not work with Maxwell (yet)
   }
 
   // execution begins
@@ -854,14 +890,14 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothersDense(int NumPreCycles,
   // sanity checks
 
   if (IsPreconditionerComputed() == false) 
-    return(-1); // need preconditioner to do this job
+    ML_CHK_ERR(-1); // need preconditioner to do this job
 
   if( ml_ == 0 ) {
-    return(-2); // Does not work with Maxwell (yet)
+    ML_CHK_ERR(-2); // Does not work with Maxwell (yet)
   }
 
   if (Comm().NumProc() != 1) 
-    return(-3); // only serial runs
+    ML_CHK_ERR(-3); // only serial runs
 
   // execution begins
 
@@ -894,7 +930,7 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothersDense(int NumPreCycles,
     
     // only square matrices
     if (n != Op->invec_leng)
-      return(-4);
+      ML_CHK_ERR(-4);
 
     EigenVectors = new double[n * n];
     RealEigenValues = new double[n];
@@ -907,6 +943,8 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeSmoothersDense(int NumPreCycles,
 
     // define the following variable to plot on file
     // the eigenvectors of the operator
+    // This may be used to plot the eigenvalue structure of all level's
+    // matrices
 #ifdef NOT_DEF
     double * x_coord = List_.get("viz: x-coordinates", (double *)0);
     double * y_coord = List_.get("viz: y-coordinates", (double *)0);
