@@ -116,7 +116,7 @@ chanHomotopy_OBJECTS = $(am_chanHomotopy_OBJECTS)
 am__DEPENDENCIES_2 =  \
 	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
 	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1)
 am_chanMultiContinuation_OBJECTS =  \
 	chanMultiContinuation-ChanMultiContinuation.$(OBJEXT) \
 	chanMultiContinuation-ChanProblemInterface.$(OBJEXT)
@@ -454,7 +454,7 @@ chanContinuation_LDADD = \
 	$(top_builddir)/src-loca/src/libloca.la \
 	-L$(top_builddir)/src-lapack -lnoxlapack \
 	-L$(top_builddir)/src -lnox \
-	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 chanTP_SOURCES = $(srcdir)/ChanTP.C \
 		$(srcdir)/ChanProblemInterface.H \

@@ -59,7 +59,7 @@ example_LDADD = \
 	$(top_builddir)/src-loca/src/libloca.la \
 	-L$(top_builddir)/src-epetra -lnoxepetra \
 	-L$(top_builddir)/src -lnox \
-	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

@@ -78,7 +78,7 @@ brusselatorContinuation_LDADD = \
 	$(top_builddir)/src-loca/src/libloca.la \
 	-L$(top_builddir)/src-lapack -lnoxlapack \
 	-L$(top_builddir)/src -lnox \
-	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 brusselatorHopf_LDADD = $(brusselatorContinuation_LDADD)
 

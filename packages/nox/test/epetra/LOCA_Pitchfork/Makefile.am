@@ -62,7 +62,7 @@ pitchfork_exe_LDADD = \
 	$(top_builddir)/test/utils/libnoxtestutils.a \
 	$(top_builddir)/src-epetra/libnoxepetra.a \
 	$(top_builddir)/src/libnox.a \
-	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

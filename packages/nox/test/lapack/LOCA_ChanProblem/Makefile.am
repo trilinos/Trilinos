@@ -65,7 +65,7 @@ chanContinuation_exe_LDADD = \
 		-L$(top_builddir)/src-lapack \
 		-L$(top_builddir)/test/utils \
                 -lnoxtestutils -lnoxlapack -lnox \
-                $(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+                $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 chanTPContinuation_exe_SOURCES = \
                 $(srcdir)/ChanTPContinuation.C \

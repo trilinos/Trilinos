@@ -105,7 +105,7 @@ pitchforkContinuation_OBJECTS = $(am_pitchforkContinuation_OBJECTS)
 am__DEPENDENCIES_2 =  \
 	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
 	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -387,7 +387,7 @@ pitchfork_LDADD = \
 	$(top_builddir)/src-loca/src/libloca.la \
 	-L$(top_builddir)/src-lapack -lnoxlapack \
 	-L$(top_builddir)/src -lnox \
-        $(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+        $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 pitchforkContinuation_LDADD = $(pitchfork_LDADD)
 

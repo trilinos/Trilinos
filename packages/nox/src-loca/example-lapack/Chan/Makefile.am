@@ -71,7 +71,7 @@ chanContinuation_LDADD = \
 	$(top_builddir)/src-loca/src/libloca.la \
 	-L$(top_builddir)/src-lapack -lnoxlapack \
 	-L$(top_builddir)/src -lnox \
-	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 chanTP_SOURCES = $(srcdir)/ChanTP.C \
 		$(srcdir)/ChanProblemInterface.H \

@@ -109,7 +109,7 @@ brusselatorHopf_OBJECTS = $(am_brusselatorHopf_OBJECTS)
 am__DEPENDENCIES_2 =  \
 	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
 	$(top_builddir)/src-loca/src/libloca.la $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1)
 am_brusselatorHopfContinuation_OBJECTS = brusselatorHopfContinuation-BrusselatorHopfContinuation.$(OBJEXT) \
 	brusselatorHopfContinuation-BrusselatorProblemInterface.$(OBJEXT)
 brusselatorHopfContinuation_OBJECTS =  \
@@ -410,7 +410,7 @@ brusselatorContinuation_LDADD = \
 	$(top_builddir)/src-loca/src/libloca.la \
 	-L$(top_builddir)/src-lapack -lnoxlapack \
 	-L$(top_builddir)/src -lnox \
-	$(CXXREPOS) $(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
+	$(XTRALDADD) $(LIBTOOL_CCLINKER_FLAGS) $(LIBS)
 
 brusselatorHopf_LDADD = $(brusselatorContinuation_LDADD)
 brusselatorHopfContinuation_LDADD = $(brusselatorContinuation_LDADD)
