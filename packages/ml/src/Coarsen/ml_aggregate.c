@@ -2160,7 +2160,6 @@ int ML_Aggregate_Set_SmoothRestrictionWithAT( ML_Aggregate *ag )
   return 0;
 }
 
-#define ML_repartition
 
 
 
