@@ -169,8 +169,8 @@ address of this structure to the other routines in this package.
 int <b>Zoltan_DD_Create </b>
 (struct Zoltan_DD_Struct **<i>dd</i>,
 MPI_Comm <i>comm</i>,
-int <i>num_gid</i>,
-int <i>num_lid</i>,
+int <i>num_gid_entries</i>,
+int <i>num_lid_entries</i>,
 int <i>user_length</i>,
 int <i>table_length</i>,
 int <i>debug_level</i>);
@@ -203,9 +203,9 @@ if the updates represent the same owner for a GID.
 <td> Structure maintains directory state and hash table.</td></tr>
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;comm</i></td>
 <td>MPI comm duplicated and stored specifying directory processors.</td></tr>
-<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;num_gid</i></td>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;num_gid_entries</i></td>
 <td>Length of GID.</td>
-<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;num_lid</i></td>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;num_lid_entries</i></td>
 <td>Length of local ID or zero to ignore local IDs.</td></tr>
 <tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;user_length</i></td>
 <td>Length of user defined data field (optional, may be zero).</td></tr>
@@ -217,10 +217,7 @@ conditions where 3 is the most verbose.</td></tr>
 <tr>
 <td><b>Returned Value:</b></td><td></td></tr>
 <tr><td>&nbsp;&nbsp;&nbsp;int</td>
-<td>ZOLTAN_DD_NORMAL_RETURN</td></tr>
-<tr><td></td><td>ZOLTAN_DD_MEMORY_ERROR</td></tr>
-<tr><td></td><td>ZOLTAN_DD_MPI_ERROR</td></tr>
-<tr><td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td></tr>
 
 </table>
 <p>
@@ -258,9 +255,9 @@ to free the previously saved MPI comm.
 <hr>
 int <b>Zoltan_DD_Update</b>
 (struct Zoltan_DD_Struct *<i>dd</i>,
-ZOLTAN_ID_PTR <i>gid</i>,
-ZOLTAN_ID_PTR <i>lid</i>,
-ZOLTAN_ID_PTR <i>user</i>,
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>lid</i>,
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>user</i>,
 int *<i>partition</i>,
 int <i>count</i>);
 <hr>
@@ -268,10 +265,8 @@ int <i>count</i>);
 optional local IDs, optional user data, and optional partitions. This
 routine updates the information for existing directory entries or creates
 a new entry (filled with given data) if a GID is not found.  NULL
-lists should be passed for optional arguments not desired.  If all
-entries were found (and updated), the return is ZOLTAN_DD_NORMAL_RETURN.
-If at least one GID was not found, the return value is
-ZOLTAN_DD_GID_ADDED.  This function should be called initially and
+lists should be passed for optional arguments not desired.  
+This function should be called initially and
 whenever objects are migrated to keep the distributed directory current.
 <p>
 The user can set the debug level argument in <b>Zoltan_DD_Create</b>
@@ -298,11 +293,7 @@ within one update cycle.
 <tr>
 <td><b>Returned Value:</b></td><td></td></tr>
 <tr><td>&nbsp;&nbsp;&nbsp;int</td>
-<td>ZOLTAN_DD_NORMAL_RETURN</td></tr>
-<tr><td></td><td>ZOLTAN_DD_MEMORY_ERROR</td></tr>
-<tr><td></td><td>ZOLTAN_DD_GID_ADDED</td></tr>
-<tr><td></td><td>ZOLTAN_DD_GID_REDEFINED_ERROR</td></tr><tr>
-<td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td></tr>
 </table>
 <p>
 
@@ -312,9 +303,9 @@ within one update cycle.
 <hr>
 int <b>Zoltan_DD_Find</b>
 (Zoltan_DD_DDirectory *<i>dd</i>,
-ZOLTAN_ID_PTR <i>gid</i>,
-ZOLTAN_ID_PTR <i>lid</i>,
-ZOLTAN_ID_PTR <i>data</i>,
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>lid</i>,
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>data</i>,
 int *<i>partition</i>,
 int <i>count</i>,
 int *<i>owner</i>);
@@ -345,10 +336,7 @@ being used.
 <tr>
 <td><b>Returned Value:</b></td><td></td></tr>
 <tr><td>&nbsp;&nbsp;&nbsp;int</td>
-<td>ZOLTAN_DD_NORMAL_RETURN</td></tr>
-<tr><td></td><td>ZOLTAN_DD_MEMORY_ERROR</td></tr>
-<tr><td></td><td>ZOLTAN_DD_GID_NOT_FOUND_ERROR</td></tr>
-<td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td></tr>
 </table>
 
 <p>
@@ -359,7 +347,7 @@ being used.
 <hr>
 int <b>Zoltan_DD_Remove</b>
 (struct Zoltan_DD_Struct *<i>dd</i>,
-ZOLTAN_ID_PTR <i>gid</i>,
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>gid</i>,
 int <i>count</i>);
 <hr>
 <b>Zoltan_DD_Remove</b> takes a list of GIDs and removes all of
@@ -379,10 +367,7 @@ their information from the distributed directory.
 <tr>
 <td><b>Returned Value:</b></td></tr>
 <tr><td>&nbsp;&nbsp;&nbsp;int</td>
-<td>ZOLTAN_DD_NORMAL_RETURN</td></tr>
-<tr><td></td><td>ZOLTAN_DD_MEMORY_ERROR</td></tr>
-<tr><td></td><td>ZOLTAN_DD_GID_NOT_FOUND_ERROR</td></tr>
-<td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td></tr>
 </table>
 <p>
 
@@ -392,7 +377,7 @@ their information from the distributed directory.
 <hr>
 void <b>Zoltan_DD_Set_Hash_Fn</b>
 (struct Zoltan_DD_Struct *<i>dd</i>,
-unsigned int (*<i>hash</i>) (ZOLTAN_ID_PTR, int, unsigned int));
+unsigned int (*<i>hash</i>) (<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a>, int, unsigned int));
 <hr>
 Enables the user to register a new hash function for the distributed
 directory. (If this routine is not called, the default hash function
@@ -406,7 +391,7 @@ function must have calling arguments compatible with <b><a href="../dev_html/dev
 Consider that a user has defined a hash function, myhash, as<br>
 <p>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
- unsigned int myhash(ZOLTAN_ID_PTR gid, int length, unsigned int naverage)<br>
+ unsigned int myhash(<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> gid, int length, unsigned int naverage)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -493,8 +478,7 @@ their own similar routine.
 <tr>
 <td><b>Returned Value:</b></td></tr>
 <tr><td>&nbsp;&nbsp;&nbsp;int</td>
-<td>ZOLTAN_DD_NORMAL_RETURN</td></tr>
-<td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td></tr>
 
 </table>
 <p>
@@ -538,10 +522,7 @@ high and low lists are evenly distributed among the processors via modulo
 <tr>
 <td><b>Returned Value:</b></td><td></td></tr>
 <tr><td>&nbsp;&nbsp;&nbsp;int</td>
-<td>ZOLTAN_DD_NORMAL_RETURN</td></tr>
-<td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
-<td></td><td>ZOLTAN_DD_MEMORY_ERROR</td></tr>
-
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td></tr>
 </table>
 <p>
 
@@ -564,8 +545,7 @@ directory at one line per GID.
 <tr>
 <td><b>Returned Value:</b></td></tr>
 <tr><td>&nbsp;&nbsp;&nbsp;int</td>
-<td>ZOLTAN_DD_NORMAL_RETURN</td></tr>
-<td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td></tr>
 
 </table>
 <p>
@@ -591,8 +571,6 @@ will automatically benefit the distributed directory.
 <p>
 <p>
 FUTURE:
-<blockquote> Returned error codes will be made consistent with Zoltan
-             error codes.</blockquote>
 
 <blockquote> The C99 capability for variable length arrays would
              significantly simplify many of these following
