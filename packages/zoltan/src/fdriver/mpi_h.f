@@ -8,6 +8,6 @@
 !/*    2 September 1999:       Date of creation.                             */
 !/*--------------------------------------------------------------------------*/
 
-module mpi_h
-include "mpif.h"
-end module mpi_h
+      module mpi_h
+      include "mpif.h"
+      end module mpi_h
