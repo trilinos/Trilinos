@@ -319,8 +319,8 @@ else
 
   # These Chaco problems are run only for C driver; F90 driver does not
   # read assignment input files or multiple weights.
-  set ch_name = ($ch_name drake vwgt2 brack2_3)
-  set ch_nproc = ($ch_nproc 3 2 5) # no. of procs
+  set ch_name = ($ch_name drake vwgt2 hammond2 brack2_3)
+  set ch_nproc = ($ch_nproc 3 2 6 5) # no. of procs
 
   if (! $no_rcb) then
     set ch_methods = ( $ch_methods rcb rcb-oneproc rcb-ts )
