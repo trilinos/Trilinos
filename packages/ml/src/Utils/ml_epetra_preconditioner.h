@@ -106,6 +106,11 @@ public:
   //! Returns the Epetra_Map object associated with the range of this operator.
   const Epetra_Map & OperatorRangeMap() const {return(RangeMap_);};
   //@}
+
+  void DestroyPreconditioner() 
+  {
+    Destroy_ML_Preconditioner();
+  }
   
   void Destroy_ML_Preconditioner();
 
