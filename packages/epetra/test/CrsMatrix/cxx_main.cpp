@@ -1,14 +1,14 @@
+#include "Epetra_Map.h"
+#include "Epetra_Time.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Vector.h"
+#include "Epetra_Flops.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include "mpi.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Epetra_Map.h"
-#include "Epetra_Time.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Flops.h"
 #include "../epetra_test_err.h"
 
 // prototypes

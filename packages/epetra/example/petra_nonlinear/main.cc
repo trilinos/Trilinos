@@ -4,17 +4,17 @@
 #include <assert.h>
 #include <string.h>
 #include <math.h>
+#include "Petra_Comm.h"
+#include "Petra_Map.h"
+#include "Petra_RDP_MultiVector.h"
+#include "Petra_RDP_Vector.h"
+#include "Petra_RDP_DCRS_Matrix.h"
 #ifdef PETRA_MPI
 #include "mpi.h"
 #endif
 #ifndef __cplusplus
 #define __cplusplus
 #endif
-#include "Petra_Comm.h"
-#include "Petra_Map.h"
-#include "Petra_RDP_MultiVector.h"
-#include "Petra_RDP_Vector.h"
-#include "Petra_RDP_DCRS_Matrix.h"
 
 int main(int argc, char *argv[])
 {

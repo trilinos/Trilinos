@@ -4,6 +4,15 @@
 #include <assert.h>
 #include <string.h>
 #include <math.h>
+#include "Epetra_Comm.h"
+#include "Epetra_Time.h"
+#include "Epetra_Map.h"
+#include "Epetra_BlockMap.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_CrsGraph.h"
+#include "Epetra_Export.h"
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -14,15 +23,6 @@
 #ifndef __cplusplus
 #define __cplusplus
 #endif
-#include "Epetra_Comm.h"
-#include "Epetra_Time.h"
-#include "Epetra_Map.h"
-#include "Epetra_BlockMap.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_Export.h"
 
 int main(int argc, char *argv[])
 {

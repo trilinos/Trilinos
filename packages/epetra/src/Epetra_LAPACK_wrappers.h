@@ -25,9 +25,7 @@
 #ifndef _EPETRA_LAPACK_WRAPPERS_H_
 #define _EPETRA_LAPACK_WRAPPERS_H_
 
-#ifndef NO_AUTOTOOLS
-#include "Epetra_config.h"
-#endif /*This file doesn't exist in old make and configure system*/
+#include "Epetra_ConfigDefs.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -128,7 +126,7 @@
 /* Use autoconf's definition of F77_FUNC 
    unless using old make system */
 
-#ifdef NO_AUTOTOOLS
+#ifndef HAVE_CONFIG_H
 
 #ifdef F77_FUNC
 #undef F77_FUNC
@@ -139,7 +137,7 @@
 #else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
 #define F77_FUNC(lcase,UCASE) lcase ## _
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
-#endif /* NO_AUTOTOOLS */
+#endif /* HAVE_CONFIG_H */
 
 #define DGETRF_F77  F77_FUNC(dgetrf,DGETRF)
 #define DGETRS_F77  F77_FUNC(dgetrs,DGETRS)

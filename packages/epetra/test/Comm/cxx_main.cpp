@@ -1,12 +1,12 @@
 // Epetra_Comm Test routine
+#include "Epetra_Time.h"
+#include "Epetra_Util.h"
 #ifdef EPETRA_MPI
 #include <mpi.h>
 #include "Epetra_MpiComm.h"
 #endif
 #include "Epetra_SerialComm.h"
 
-#include "Epetra_Time.h"
-#include "Epetra_Util.h"
 #include "../epetra_test_err.h"
 
 int main(int argc, char *argv[]) {

@@ -1,5 +1,10 @@
 // Epetra_BlockMap Test routine
 
+#include "Epetra_BlockMap.h"
+#include "Epetra_Map.h"
+#include "Epetra_MapColoring.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_Import.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
@@ -7,11 +12,6 @@
 
 #include "Epetra_SerialComm.h"
 #include "Epetra_Time.h"
-#include "Epetra_BlockMap.h"
-#include "Epetra_Map.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_Import.h"
 
 int main(int argc, char *argv[]) {
 

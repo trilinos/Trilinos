@@ -3,17 +3,16 @@
 #include <set>
 #include <algorithm>
 #include <vector>
-
+#include "Epetra_Map.h"
+#include "Epetra_BlockMap.h"
+#include "Epetra_MapColoring.h"
+#include "Epetra_CrsMatrix.h"
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Epetra_Map.h"
-#include "Epetra_BlockMap.h"
-#include "Epetra_MapColoring.h"
-#include "Epetra_CrsMatrix.h"
 
 using namespace std;
 

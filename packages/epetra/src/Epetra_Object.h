@@ -25,140 +25,9 @@
 #ifndef _EPETRA_OBJECT_H_
 #define _EPETRA_OBJECT_H_
 
-
-#ifndef __cplusplus
-#define __cplusplus
-#endif
-
-#if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT)
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-#include <iostream>
-#include <math.h>
-#include <string>
-using namespace std;
-
-#elif defined(TFLOP)
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-#include <string>
-using std::string;
-#include <iostream>
-#include <iomanip>
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
-
-#else
-
-#include <cstdlib>
-#include <cstdio>
-#include <cassert>
-#include <iostream>
-#include <cmath>
-#include <string>
-using namespace std;
-
-#endif
-
-
-
-#ifdef EPETRA_SIMULATE_BOOL
-#ifdef bool
-#undef bool
-#endif
-#ifdef true
-#undef true
-#endif
-#ifdef false
-#undef false
-#endif
-
-#define bool int
-#define true 1
-#define false 0
-
-#endif
-
-#define EPETRA_MAX(x,y) (( (x) > (y) ) ? x : y)     /* max function  */
-#define EPETRA_MIN(x,y) (( (x) < (y) ) ? x : y)     /* min function  */
-#define EPETRA_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)  /* sign function */
-
-
-const double Epetra_MinDouble = 1.0E-100;
-const double Epetra_MaxDouble = 1.0E+100;
-const double Epetra_Overflow = 1.79E308; // Used to test if equilibration should be done.
-const double Epetra_Underflow = 2.23E-308;
-
-// RAB: 2002/1/25: Define EPETRA_ANSI_CPP as an argument to the compiler!
-//#undef EPETRA_ANSI_CPP // Do not use ANSI/ISO C++ (curently just checked for I/O functions)
-#ifdef EPETRA_ANSI_CPP
-typedef std::ios_base::fmtflags   Epetra_fmtflags;
-#else
-typedef long int                  Epetra_fmtflags;
-#endif
-
-const bool Epetra_FormatStdout = true; // Set true if the ostream << operator should format output
-
-// Delete any previous definition of EPETRA_NO_ERROR_REPORTS
-
-#ifdef EPETRA_CHK_ERR
-#undef EPETRA_CHK_ERR
-#endif
-#ifdef EPETRA_CHK_PTR
-#undef EPETRA_CHK_PTR
-#endif
-#ifdef EPETRA_CHK_REF
-#undef EPETRA_CHK_REF
-#endif
-
-// Make error report silent by defining EPETRA_NO_ERROR_REPORTS
-
-#ifdef EPETRA_NO_ERROR_REPORTS
-const int DefaultTracebackMode = 0;
-#define EPETRA_CHK_ERR(a) { int epetra_err = a; if (epetra_err != 0)  return(epetra_err);}
-#define EPETRA_CHK_PTR(a) { return(a);}
-#define EPETRA_CHK_REF(a) { return(a);}
-#else
-
-
-// Great little macro obtained from Alan Williams (modified for dynamic switching on/off)
-
-const int DefaultTracebackMode = 1; // Default value for traceback behavior
-
-#define EPETRA_CHK_ERR(a) { { int epetra_err = a; \
-                              if ((epetra_err < 0 && Epetra_Object::GetTracebackMode() > 0) || \
-                                  (epetra_err > 0 && Epetra_Object::GetTracebackMode() > 1)) { \
-                      cerr << "Epetra ERROR " << epetra_err << ", " \
-                           << __FILE__ << ", line " << __LINE__ << endl; }\
-                      if (epetra_err !=0) return(epetra_err);  }\
-                   }
-
-// Extension of same macro for pointer, returns zero if bad
-
-#define EPETRA_CHK_PTR(a) { if (a == 0 && Epetra_Object::GetTracebackMode() > 0) { \
-                      cerr << "Epetra returning zero pointer " << ", " \
-                           << __FILE__ << ", line " << __LINE__ << endl; } \
-                      return(a); \
-                   }
-// Extension of same macro for reference, returns a default reference
-
-#define EPETRA_CHK_REF(a) { if (Epetra_Object::GetTracebackMode() > 0) {\
-                      cerr << "Epetra returning default reference " << ", " \
-                           << __FILE__ << ", line " << __LINE__ << endl; } \
-                      return(a); \
-                   }
-#endif
-
 #include "Epetra_CombineMode.h"
 #include "Epetra_DataAccess.h"
-
+#include "Epetra_ConfigDefs.h"
 
 //! Epetra_Object:  The base Epetra class.
 /*! The Epetra_Object class provides capabilities common to all Epetra objects,
@@ -241,7 +110,7 @@ class Epetra_Object {
 // = 1 - Fatal (negative) values are reported
 // = 2 - All values (except zero) reported.
 
-// Default is set to 2.  Can be set to different value using SetTracebackMode() method in
+// Default is set to 1.  Can be set to different value using SetTracebackMode() method in
 // Epetra_Object class
   static int TracebackMode;
 

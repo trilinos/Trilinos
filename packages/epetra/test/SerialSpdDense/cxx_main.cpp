@@ -1,15 +1,15 @@
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
-#include <mpi.h>
-#endif
-#include "Epetra_SerialComm.h"
-
 #include "Epetra_Map.h"
 #include "Epetra_Time.h"
 #include "Epetra_SerialSymDenseMatrix.h" 
 #include "Epetra_SerialDenseMatrix.h" 
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_SerialSpdDenseSolver.h"
+#ifdef EPETRA_MPI
+#include "Epetra_MpiComm.h"
+#include <mpi.h>
+#endif
+#include "Epetra_SerialComm.h"
+
 
 // prototypes
 

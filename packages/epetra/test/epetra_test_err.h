@@ -6,7 +6,7 @@ error the way that an assert command does. */
 
 #ifndef _EPETRA_TEST_ERR_H_
 #define _EPETRA_TEST_ERR_H_
-#include <iostream>
+#include "Epetra_ConfigDefs.h"
 using namespace std;
 // This function is to be used when first identifying an error.
 #define EPETRA_TEST_ERR(a,b) { { int epetra_testing_err = a; \

@@ -4,12 +4,6 @@
 #include <assert.h>
 #include <string.h>
 #include <math.h>
-#ifdef PETRA_MPI
-#include "mpi.h"
-#endif
-#ifndef __cplusplus
-#define __cplusplus
-#endif
 #include "Petra_Comm.h"
 #include "Petra_Map.h"
 #include "Petra_Time.h"
@@ -17,6 +11,12 @@
 #include "Petra_RDP_Vector.h"
 #include "Petra_RDP_CRS_Matrix.h"
 #include "Trilinos_LinearProblem.h"
+#ifdef PETRA_MPI
+#include "mpi.h"
+#endif
+#ifndef __cplusplus
+#define __cplusplus
+#endif
 
 // prototype
 #include"basis.h"

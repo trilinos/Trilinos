@@ -20,13 +20,12 @@ EPETRA_COMM_MPI             = EPETRA_MPI
 EPETRA_COMM                 = $(EPETRA_COMM_$(TRILINOS_COMM))
 
 DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
-         -DIFPACK -DSPARSEBLAS
+         -DIFPACK
 # -DMULTI_VECTOR
 
 INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/ifpack/src \
            -I$(TRILINOS_HOME)/packages/epetra/src  \
-	   -I$(TRILINOS_HOME)/packages/triutils/src $(BLAS_INCLUDES) \
-           $(SPBLAS_INCLUDES)
+	   -I$(TRILINOS_HOME)/packages/triutils/src $(BLAS_INCLUDES) 
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(INCLUDES)

@@ -1,12 +1,12 @@
 // Epetra_BlockMap Test routine
 
+#include "Epetra_Time.h"
+#include "Epetra_BlockMap.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #endif
 #include "Epetra_SerialComm.h"
-#include "Epetra_Time.h"
-#include "Epetra_BlockMap.h"
 #include "checkmap.h"
 #include "../epetra_test_err.h"
 

@@ -1,15 +1,15 @@
 // Epetra_FECrsMatrix Test routine
 
+#include "Epetra_Time.h"
+#include "Epetra_Map.h"
+#include "Epetra_FECrsMatrix.h"
+#include "ExecuteTestProblems.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Epetra_Time.h"
-#include "Epetra_Map.h"
-#include "Epetra_FECrsMatrix.h"
-#include "ExecuteTestProblems.h"
 #include "../epetra_test_err.h"
 
 int main(int argc, char *argv[]) {

@@ -1,5 +1,6 @@
 // Epetra_Object Test routine
 
+#include "Epetra_Object.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
@@ -7,7 +8,6 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-#include "Epetra_Object.h"
 #include "../epetra_test_err.h"
 int main(int argc, char *argv[]) {
 

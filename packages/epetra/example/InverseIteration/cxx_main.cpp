@@ -4,13 +4,6 @@
 #include <assert.h>
 #include <string.h>
 #include <math.h>
-#ifdef EPETRA_MPI
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include "Trilinos_Util.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Time.h"
@@ -18,6 +11,13 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
+#ifdef EPETRA_MPI
+#include "mpi.h"
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+#include "Trilinos_Util.h"
 #include "Ifpack_IlukGraph.h"
 #include "Ifpack_CrsRiluk.h"
 

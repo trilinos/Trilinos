@@ -1,3 +1,9 @@
+#include "Epetra_Map.h"
+#include "Epetra_Time.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Vector.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include "mpi.h"
@@ -7,12 +13,6 @@
 #ifndef __cplusplus
 #define __cplusplus
 #endif
-#include "Epetra_Map.h"
-#include "Epetra_Time.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
 #include "../epetra_test_err.h"
 
 int main(int argc, char *argv[])
