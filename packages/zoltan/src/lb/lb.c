@@ -73,11 +73,11 @@ int mpi_flag;
 LB *LB_Create(MPI_Comm communicator)
 {
 /*
- *  Function to create a load balancing object.  May want more than one
- *  object if using different decompositions with different techniques.
- *  This function allocates and initializes the object.
+ *  Function to create a load balancing structure.  May want more than one
+ *  structure if using different decompositions with different techniques.
+ *  This function allocates and initializes the structure.
  *  Output:
- *    LB *               --  Pointer to a LB object.
+ *    LB *               --  Pointer to a LB structure.
  *
  */
 
@@ -85,7 +85,7 @@ char *yo = "LB_Create_Object";
 LB *lb;
 
   /*
-   * Allocate storage for the load-balancing object.
+   * Allocate storage for the load-balancing structure.
    */
 
   lb = (LB *) LB_MALLOC(sizeof(LB));
@@ -101,7 +101,7 @@ LB *lb;
   if (communicator == MPI_COMM_NULL) {
     /*
      *  The processor is not in the communicator for the load-balancing
-     *  object.  Set lb->Communicator to MPI_COMM_NULL and give dummy 
+     *  structure.  Set lb->Communicator to MPI_COMM_NULL and give dummy 
      *  values to lb->Proc and lb->Num_Proc.
      */
     lb->Communicator = MPI_COMM_NULL;
@@ -128,6 +128,7 @@ LB *lb;
   lb->Machine_Desc = NULL;
   lb->Params = NULL;
   lb->Imbalance_Tol = 1.1;
+  lb->Deterministic = TRUE;
   lb->Obj_Weight_Dim = 0;
   lb->Comm_Weight_Dim = 0;
   lb->Data_Structure = NULL;
@@ -194,9 +195,9 @@ LB *lb;
 void LB_Destroy(LB **lb)
 {
 /*
- *  Function to free a load balancing object.
+ *  Function to free a load balancing structure.
  *  Input:
- *    LB *               --  Pointer to a LB object.
+ *    LB *               --  Pointer to a LB structure.
  *
  */
 
@@ -218,7 +219,7 @@ int LB_Set_Fn(LB *lb, LB_FN_TYPE fn_type, void *fn, void *data)
 /*
  *  Function to initialize a given LB interface function.
  *  Input:
- *    lb                --  Pointer to a LB object.
+ *    lb                --  Pointer to a LB structure.
  *    fn_type           --  Enum type indicating the function to be set.
  *    fn                --  Pointer to the function to be used in the
  *                          assignment.
@@ -345,7 +346,7 @@ int LB_Set_Method(LB *lb, char *method_name)
 /*
  *  Function to set the load balancing method to be used.
  *  Input:
- *    lb                 --  The load balancing object to which this method
+ *    lb                 --  The load balancing structure to which this method
  *                           applies.
  *    method_name        --  String specifying the desired method.
  *
@@ -410,7 +411,7 @@ int LB_Set_Method(LB *lb, char *method_name)
   }
 
   if (lb->Proc == 0) {
-    printf("LB:  Load balancing method = %d (%s)\n", lb->Method, method_name);
+    printf("ZOLTAN Load balancing method = %d (%s)\n", lb->Method, method_name);
   }
 
   LB_FREE(&method_upper);
@@ -424,8 +425,8 @@ int LB_Set_Method(LB *lb, char *method_name)
 
 int LB_Balance(
   LB *lb, 
-  int *changes,               /* Set to zero or one depending on if the
-                                 load balancer determines a new
+  int *changes,               /* Set to zero or one depending on if 
+                                 Zoltan determines a new
                                  decomposition or not:
                                  zero - No changes to the decomposition
                                         were made by the load-balancing
@@ -464,7 +465,7 @@ int LB_Balance(
 {
 /*
  * Main user-call for load-balancing.
- * Input:  a load-balancing object with appropriate function pointers set.
+ * Input:  a load-balancing structure with appropriate function pointers set.
  * Output: 
  *   num_import_objs
  *   import_global_ids
@@ -486,6 +487,9 @@ int error;    /* Error code */
 double start_time, end_time;
 double lb_time[2] = {0.0,0.0};
 
+  if (lb->Debug_Level > 0 && lb->Proc == 0)
+    LB_Print_Key_Params(lb);
+
   start_time = LB_Time();
 
   /* assume no changes */
@@ -500,7 +504,7 @@ double lb_time[2] = {0.0,0.0};
   *export_procs = NULL;
 
   /*
-   *  Return if this processor is not in the load-balancing object's
+   *  Return if this processor is not in the load-balancing structure's
    *  communicator.
    */
 
@@ -541,12 +545,12 @@ double lb_time[2] = {0.0,0.0};
           export_local_ids, export_procs);
 
   if (error == LB_FATAL){
-    printf("[%1d] FATAL ERROR: Load balancer returned error code %d\n", 
+    printf("[%1d] FATAL ERROR: Zoltan returned error code %d\n", 
       lb->Proc, error);
     return (error);
   }
   else if (error){
-    printf("[%1d] WARNING: Load balancer returned error code %d\n", 
+    printf("[%1d] WARNING: Zoltan returned error code %d\n", 
       lb->Proc, error);
   }
 
@@ -609,7 +613,8 @@ double lb_time[2] = {0.0,0.0};
                               import_local_ids, import_procs);
     else{
       /* No map at all available */
-      printf("%s Error: Load-balancing function returned neither import nor export data.\n", yo);
+      printf("%s Error: Load-balancing function returned neither import nor "
+             "export data.\n", yo);
       return LB_WARN;
     }
   }
@@ -620,7 +625,7 @@ double lb_time[2] = {0.0,0.0};
   if (lb->Debug_Level > 6) {
     int i;
     LB_Print_Sync_Start(lb, TRUE);
-    printf("LBLB: Objects to be exported from Proc %d\n", lb->Proc);
+    printf("ZOLTAN: Objects to be exported from Proc %d\n", lb->Proc);
     for (i = 0; i < *num_export_objs; i++) {
       printf("    Obj: %10d  Destination: %4d\n", 
              (*export_global_ids)[i], (*export_procs)[i]);
@@ -644,10 +649,10 @@ double lb_time[2] = {0.0,0.0};
   
   /* Print timing info */
   if (lb->Proc == 0) {
-    printf("LBLIB LB  Times:  \n");
+    printf("ZOLTAN Times:  \n");
   }
-  LB_Print_Stats (lb, lb_time[0], "LBLIB     Balance:     ");
-  LB_Print_Stats (lb, lb_time[1], "LBLIB     HelpMigrate: ");
+  LB_Print_Stats (lb, lb_time[0], "ZOLTAN     Balance:     ");
+  LB_Print_Stats (lb, lb_time[1], "ZOLTAN     HelpMigrate: ");
 
   *changes = 1;
   if (error)
@@ -661,7 +666,7 @@ double lb_time[2] = {0.0,0.0};
 /****************************************************************************/
 
 int LB_Compute_Destinations(
-  LB *lb,                    /* Load balancing object for current balance.   */
+  LB *lb,                    /* Load balancing structure for current balance.*/
   int num_import,            /* Number of non-local objects assigned to the 
                                 processor in the new decomposition.          */
   LB_GID *import_global_ids, /* Array of global IDs for non-local objects 
@@ -707,7 +712,7 @@ int i;
 
 
   /*
-   *  Return if this processor is not in the load-balancing object's
+   *  Return if this processor is not in the load-balancing structure's
    *  communicator.
    */
 
@@ -749,7 +754,7 @@ int i;
 
    msgtag = 32767;
    LB_Comm_Create(&comm_plan, num_import, proc_list, lb->Communicator, msgtag,
-                             num_export);
+                  lb->Deterministic, num_export);
 
   /*
    *  Allocate space for the object tags that need to be exported.  Communicate
@@ -832,7 +837,7 @@ int i;
 /****************************************************************************/
 
 int LB_Help_Migrate(
-  LB *lb,                    /* Load balancing object for current balance.   */
+  LB *lb,                    /* Load balancing structure for current balance.*/
   int num_import,            /* Number of non-local objects assigned to the 
                                 processor in the new decomposition.          */
   LB_GID *import_global_ids, /* Array of global IDs for non-local objects 
@@ -891,7 +896,7 @@ int msgtag, msgtag2;     /* Tags for communication routines                 */
 int ierr = 0;
 
   /*
-   *  Return if this processor is not in the load-balancing object's
+   *  Return if this processor is not in the load-balancing structure's
    *  communicator.
    */
 
@@ -899,25 +904,25 @@ int ierr = 0;
     return (LB_OK);
 
   if (lb->Debug_Level > 4)
-    printf("LBLIB %d %s Entering HELP_MIGRATE %d %d\n",
+    printf("ZOLTAN %d %s Entering HELP_MIGRATE %d %d\n",
             lb->Proc, yo, num_import, num_export);
 
   if (lb->Migrate.Get_Obj_Size == NULL) {
-    fprintf(stderr, "LBLIB %d %s Error:  Must register an "
+    fprintf(stderr, "ZOLTAN %d %s Error:  Must register an "
            "LB_OBJ_SIZE_FN_TYPE function to use the migration-help tools.\n",
            lb->Proc, yo);
     return (LB_FATAL);
   }
 
   if (lb->Migrate.Pack_Obj == NULL) {
-    fprintf(stderr, "LBLIB %d %s Error:  Must register an "
+    fprintf(stderr, "ZOLTAN %d %s Error:  Must register an "
            "LB_PACK_OBJ_FN_TYPE function to use the migration-help tools.\n",
            lb->Proc, yo);
     return (LB_FATAL);
   }
 
   if (lb->Migrate.Unpack_Obj == NULL) {
-    fprintf(stderr, "LBLIB %d %s Error:  Must register an "
+    fprintf(stderr, "ZOLTAN %d %s Error:  Must register an "
          "LB_UNPACK_OBJ_FN_TYPE function to use the migration-help tools.\n",
          lb->Proc, yo);
     return (LB_FATAL);
@@ -936,7 +941,7 @@ int ierr = 0;
     }
 
     if (lb->Debug_Level > 5)
-      printf("LBLIB %d %s Done Pre-Process\n", lb->Proc, yo);
+      printf("ZOLTAN %d %s Done Pre-Process\n", lb->Proc, yo);
   }
 
   /*
@@ -1005,7 +1010,7 @@ int ierr = 0;
 
   msgtag = 32767;
   LB_Comm_Create(&comm_plan, num_export, proc_list, lb->Communicator, msgtag,
-                             &tmp_import);
+                 lb->Deterministic, &tmp_import);
   if (tmp_import != num_import) {
     fprintf(stderr, "%d  Error in %s:  tmp_import %d != num_import %d\n", 
             lb->Proc, yo, tmp_import, num_import);
@@ -1075,11 +1080,11 @@ int ierr = 0;
     }
 
     if (lb->Debug_Level > 5)
-      printf("LBLIB %d %s Done Post-Process\n", lb->Proc, yo);
+      printf("ZOLTAN %d %s Done Post-Process\n", lb->Proc, yo);
   }
 
   if (lb->Debug_Level > 4)
-    printf("LBLIB %d %s Leaving HELP_MIGRATE %d %d\n",
+    printf("ZOLTAN %d %s Leaving HELP_MIGRATE %d %d\n",
             lb->Proc, yo, num_import, num_export);
 
   return (LB_OK);
@@ -1136,7 +1141,7 @@ void LB_Eval (LB *lb, int print_stats,
      int *nadj, int *ierr)
 /* 
  * Input:
- *   lb          - pointer to lb object
+ *   lb          - pointer to lb structure
  *   print_stats - if > 0, compute and print max and sum of the metrics
  *
  * Output:
@@ -1152,7 +1157,8 @@ void LB_Eval (LB *lb, int print_stats,
  */
 
 {
-  char *yo = "LB_EVAL:";
+  char *yo = "LB_Eval";
+  char *yo2 = "ZOLTAN LB_Eval";
   int i, j, num_obj, max_edges, flag, nedges;
   int num_adj, num_boundary, cut_weight;
   int stats[3*NUM_GSTATS], *ewgts;
@@ -1356,32 +1362,32 @@ void LB_Eval (LB *lb, int print_stats,
     /* Print max-sum of results */
     nproc = lb->Num_Proc; /* convert to float */
     if (lb->Proc == 0){
-      printf("\n%s  Statistics for current partitioning/balance:\n", yo);
+      printf("\n%s  Statistics for current partitioning/balance:\n", yo2);
       for (i=0; i<lb->Obj_Weight_Dim; i++)
         printf("%s  Object weight #%1d :  Max = %6.1f, Sum = %7.1f, "
           "Imbal. = %5.3f\n",
-          yo, i+1, tmp_wgt[lb->Obj_Weight_Dim+i], tmp_wgt[2*lb->Obj_Weight_Dim+i], 
+          yo2, i+1, tmp_wgt[lb->Obj_Weight_Dim+i], tmp_wgt[2*lb->Obj_Weight_Dim+i], 
           (tmp_wgt[2*lb->Obj_Weight_Dim+i] > 0
             ? tmp_wgt[lb->Obj_Weight_Dim+i]*nproc/tmp_wgt[2*lb->Obj_Weight_Dim+i]
             : 1.));
       printf("%s  No. of objects   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
-        yo, stats[NUM_GSTATS], stats[2*NUM_GSTATS], 
+        yo2, stats[NUM_GSTATS], stats[2*NUM_GSTATS], 
         (stats[2*NUM_GSTATS] > 0
               ? stats[NUM_GSTATS]*nproc/stats[2*NUM_GSTATS]
               : 1.));
       if (lb->Get_Num_Edges != NULL){
         printf("%s  Cut weight       :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
-          yo, stats[NUM_GSTATS+1], stats[2*NUM_GSTATS+1], 
+          yo2, stats[NUM_GSTATS+1], stats[2*NUM_GSTATS+1], 
           (stats[2*NUM_GSTATS+1] > 0 
                 ? stats[NUM_GSTATS+1]*nproc/stats[2*NUM_GSTATS+1]
                 : 1.));
         printf("%s  Boundary objects :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
-          yo, stats[NUM_GSTATS+2], stats[2*NUM_GSTATS+2], 
+          yo2, stats[NUM_GSTATS+2], stats[2*NUM_GSTATS+2], 
           (stats[2*NUM_GSTATS+2] > 0
                 ? stats[NUM_GSTATS+2]*nproc/stats[2*NUM_GSTATS+2]
                 : 1.));
         printf("%s  Adjacent procs   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
-          yo, stats[NUM_GSTATS+3], stats[2*NUM_GSTATS+3], 
+          yo2, stats[NUM_GSTATS+3], stats[2*NUM_GSTATS+3], 
           (stats[2*NUM_GSTATS+3] > 0
                 ? stats[NUM_GSTATS+3]*nproc/stats[2*NUM_GSTATS+3]
                 : 1.));

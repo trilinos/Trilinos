@@ -254,7 +254,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   im_load = 0;
   msgtag = 32767;
   LB_Comm_Create(&comm_plan, nsentags, tag_pids, lb->Communicator, 
-      msgtag, &nreceives);
+      msgtag, lb->Deterministic, &nreceives);
 
   if (nreceives > 0) {
     tmp = (pRegion) LB_MALLOC(nreceives * sizeof(Region));

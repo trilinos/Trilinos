@@ -117,7 +117,7 @@ unsigned char *p;          /* for setting IDs to NULL */
   nproc = lb->Num_Proc;
 
   /*
-   * Allocate the root of the refinement tree for this load balancing object.
+   * Allocate the root of the refinement tree for this load balancing structure.
    * If a tree already exists, destroy it first.
    */
 
@@ -169,7 +169,7 @@ unsigned char *p;          /* for setting IDs to NULL */
 
   REFTREE_params[0].ptr = (void *) &hashsize;
   hashsize = DEFAULT_HASH_TABLE_SIZE;
-  LB_Assign_Param_Vals(lb->Params, REFTREE_params);
+  LB_Assign_Param_Vals(lb->Params, REFTREE_params, lb->Debug_Level, lb->Proc);
 
   hashtab = (struct LB_reftree_hash_node **)
             LB_MALLOC(sizeof(struct LB_reftree_hash_node *)*hashsize);

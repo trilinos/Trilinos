@@ -831,7 +831,7 @@ typedef void LB_CHILD_WEIGHT_FORT_FN(void *data, LB_GID *global_id,
  *  returns which version of the library this is. If the application
  *  uses MPI, call this function after calling MPI_Init. If the
  *  application does not use MPI, this function calls MPI_Init for
- *  use by the load balancer. This function returns the version of
+ *  use by Zoltan. This function returns the version of
  *  the LB library.
  *  Input:
  *    int argc                   --  Argument count from main()
@@ -933,9 +933,10 @@ extern int LB_Set_Param(struct LB_Struct *lb, char *name, char *val);
  *    struct LB_Struct *lb       --  The load balancing structure containing 
  *                                   info about this load-balancing invocation.
  *  Output:
- *    int *changes               --  This value tells if the load balancer
- *                                   came up with a new decomposition or
- *                                   not. It can be either a one or a zero:
+ *    int *changes               --  This value tells whether the new 
+ *                                   decomposition computed by Zoltan differs 
+ *                                   from the one given as input to Zoltan.
+ *                                   It can be either a one or a zero:
  *                                   zero - No changes to the decomposition
  *                                          were made by the load-balancing
  *                                          algorithm; migration is not needed.

@@ -21,19 +21,24 @@
 /* Knowing who I send to, determine how many messages I'll receive, */
 /* and their lengths.  Upon entry, the arrays "lengths_to" and "procs_to" */
 /* contain list of processors I send to and the lengths of the corresponding */
-/* messages.  Upon exit, "lengths_from" and "procs_from" contain receive  info. */
+/* messages. Upon exit, "lengths_from" and "procs_from" contain receive info. */
 
-/* Data is allowed to be mapped from me to me.  This self entry is always last */
+/* Data is allowed to be mapped from me to me. This self entry is always last */
 /* in the list of recvs. */
 
 /* List of messages to/from is ended by a negative value in procs array. */
 
 /* Always keep self messages at end. */
 
-#ifdef DETERMINISTIC
- /* Prototype definition */
- static void      LB_Sort_Procs(int *, int *, int);
-#endif
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+/* Prototype definition */
+static void      LB_Sort_Procs(int *, int *, int);
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 
 int       LB_Invert_Map(
 int      *lengths_to,		/* lengths of my sends */
@@ -46,6 +51,9 @@ int      *pnrecvs,		/* number of messages I receive */
 int       my_proc,		/* my processor number */
 int       nprocs,		/* total number of processors */
 int       tag,			/* message tag I can use */
+int       deterministic,        /* flag indicating whether result should be
+                                   deterministic (i.e., independent of the
+                                   order in which messages are received). */
 MPI_Comm  comm)			/* communicator */
 {
     int      *lengths_from;	/* lengths of my recvs */
@@ -88,7 +96,7 @@ MPI_Comm  comm)			/* communicator */
 
 
     /* Now receive the lengths of all my messages from their senders. */
-    /* Note that proc/length_from lists are ordered by sequence messages arrive. */
+    /* Note that proc/length_from lists are ordered by sequence msgs arrive. */
     for (i = 0; i < nrecvs - self_msg; i++) {
 	MPI_Recv((void *) &lengths_from[i], 1, MPI_INT, MPI_ANY_SOURCE, tag,
 	comm, &status);
@@ -104,33 +112,36 @@ MPI_Comm  comm)			/* communicator */
     /* Instead of barrier, I'm counting on having a unique tag. */
 
     
-#ifdef DETERMINISTIC
-/* If a deterministic ordering is needed (eg. for debugging), add following. */
-/* Note: self messages are kept at the end. */
-    LB_Sort_Procs(procs_from, lengths_from, nrecvs - self_msg);
-#endif
+    if (deterministic) {
+        /* 
+         * If a deterministic ordering is needed (eg. for debugging), 
+         * sort recvs. 
+         * Note: self messages are kept at the end. 
+         */
+        LB_Sort_Procs(procs_from, lengths_from, nrecvs - self_msg);
+    }
 
     *plengths_from = lengths_from;
     *pprocs_from = procs_from;
-    *pnrecvs = nrecvs - self_msg;	/* Only return number of true messages */
+    *pnrecvs = nrecvs - self_msg;    /* Only return number of true messages */
 
     return(LB_OK);
 }
 
-
-
-
-#ifdef DETERMINISTIC
-/* This routine will ensure that the ordering */
-/* produced by the invert_map routines is deterministic.  This should */
-/* lead to more reproducible bugs.  This is accomplished by sorting */
-/* the message lists by processor ID. */
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
 
 static void      LB_Sort_Procs(
 int      *procs,                /* procs I'll receive from */
 int      *vals,                 /* value associated with each message */
 int       nvals)		/* length of these two arrays */
 {
+/* This routine will ensure that the ordering */
+/* produced by the invert_map routines is deterministic.  This should */
+/* make bugs more reproducible.  This is accomplished by sorting */
+/* the message lists by processor ID. */
+
     int       temp;		/* swapping value */
     int       i, j;             /* loop counter */
 
@@ -150,4 +161,3 @@ int       nvals)		/* length of these two arrays */
 	}
     }
 }
-#endif

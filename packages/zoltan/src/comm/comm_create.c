@@ -27,6 +27,9 @@ int       nvals,		/* number of values I currently own */
 int      *assign,		/* processor assignment for all my values */
 MPI_Comm  comm,			/* communicator for xfer operation */
 int       tag,			/* message tag I can use */
+int       deterministic,        /* flag indicating whether result should be
+                                   deterministic (i.e., independent of the
+                                   order in which messages are received). */
 int      *pnrecv)		/* returned # vals I own after communication */
 {
     struct Comm_Obj *plan;	/* returned communication data structure pointer */
@@ -164,7 +167,8 @@ int      *pnrecv)		/* returned # vals I own after communication */
 
     /* Determine how many messages & what length I'll receive. */
     lb_flag = LB_Invert_Map(lengths_to, procs_to, nsends, self_msg,
-	       &lengths_from, &procs_from, &nrecvs, my_proc, nprocs, tag, comm);
+	       &lengths_from, &procs_from, &nrecvs, my_proc, nprocs, tag,
+               deterministic, comm);
     
     if (lb_flag != LB_OK && lb_flag != LB_WARN) {
 	LB_FREE((void **) &indices_to);

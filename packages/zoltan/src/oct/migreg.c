@@ -37,7 +37,8 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
 				    the objs from other processors. */
 
   msgtag = 32767;
-  LB_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, msgtag, &n_import);
+  LB_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, msgtag, 
+                 lb->Deterministic, &n_import);
   *c2 = n_import;
   if (n_import > 0) {
     import_objs = (Region *) LB_MALLOC(n_import * sizeof(Region));

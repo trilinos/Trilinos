@@ -102,7 +102,7 @@ int error = FALSE;            /* error flag                                  */
   OCT_params[2].ptr = (void *) &oct_granularity;
   OCT_params[3].ptr = (void *) &oct_output_level;
 
-  LB_Assign_Param_Vals(lb->Params, OCT_params);
+  LB_Assign_Param_Vals(lb->Params, OCT_params, lb->Debug_Level, lb->Proc);
 
   /* Set oct_wgtflag based on the "key" parameter Obj_Weight_Dim */
   oct_wgtflag = (lb->Obj_Weight_Dim > 0);

@@ -53,7 +53,7 @@ int found;
 int i, ierr = 0;
 
   /*
-   * Allocate an RCB data structure for this load balancing object.
+   * Allocate an RCB data structure for this load balancing structure.
    * If the previous data structure is still there, free the Dots first;
    * the other fields can be reused.
    */

@@ -204,7 +204,7 @@ typedef struct Machine_Type MachineType;
 /*****************************************************************************/
 
 /*
- *  Define a load balancing object.  It will contain pointers to the
+ *  Define a load balancing structure.  It will contain pointers to the
  *  appropriate functions for interfacing with applications and 
  *  pointers to the data structure used for load balancing.
  */
@@ -227,6 +227,9 @@ struct LB_Struct {
   double Imbalance_Tol;           /*  Tolerance to which to load balance;
                                       Imbalance_Tol = 1.1 implies 10% imbalance
                                       is acceptable, i.e. max/avg = 1.1.     */
+  int Deterministic;              /*  Flag indicating whether algorithms used
+                                      should be forced to be deterministic.
+                                      Default = TRUE.                        */
   int Obj_Weight_Dim;             /*  Dimension of the object weights, 
                                       usually 0 (no weights) or 1 */
   int Comm_Weight_Dim;            /*  Dimension of the communication weights, 
@@ -366,7 +369,7 @@ struct LB_Struct {
 /* MACROS  */
 
 /*
- *  Test whether the processor is in the given load-balancing object's
+ *  Test whether the processor is in the given load-balancing structure's
  *  communicator.  Used to exit from balancing routines for processors
  *  that are not included in the load-balancing communicator.
  */

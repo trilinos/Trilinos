@@ -54,7 +54,7 @@ static int hash_lookup (struct LB_hash_node **hashtab, LB_GID key, int n);
 /**********************************************************/
 
 int LB_ParMetis(
-  LB *lb,             /* load balancing object */
+  LB *lb,             /* load balancing structure */
   int *num_imp,       /* number of objects to be imported */
   LB_GID **imp_gids,  /* global ids of objects to be imported */
   LB_LID **imp_lids,  /* local  ids of objects to be imported */
@@ -83,7 +83,7 @@ int LB_ParMetis(
   Parmetis_params[2].ptr = (void *) &(options[OPTION_FOLDF]);
   Parmetis_params[3].ptr = (void *) &(options[OPTION_DBGLVL]);
 
-  LB_Assign_Param_Vals(lb->Params, Parmetis_params);
+  LB_Assign_Param_Vals(lb->Params, Parmetis_params, lb->Debug_Level, lb->Proc);
 
   /* Set options[0] to 1 if any of the low level ParMetis options were set,
      or 0 otherwise. This is required by ParMetis. */
@@ -120,7 +120,7 @@ int LB_ParMetis(
 /**********************************************************/
 
 int LB_Jostle(
-  LB *lb,             /* load balancing object */
+  LB *lb,             /* load balancing structure */
   int *num_imp,       /* number of objects to be imported */
   LB_GID **imp_gids,  /* global ids of objects to be imported */
   LB_LID **imp_lids,  /* local  ids of objects to be imported */
@@ -136,7 +136,7 @@ int LB_Jostle(
   return LB_FATAL;
 
 #else /* LB_JOSTLE */
-  static LB *lb_obj = NULL; /* Last lb object used */
+  static LB *lb_str = NULL; /* Last lb structure used */
   static char *alg = "JOSTLE";
   char str[MAX_PARAM_STRING_LEN+1]; 
   char blank[MAX_PARAM_STRING_LEN+1]; 
@@ -149,10 +149,10 @@ int LB_Jostle(
                                    /* change our lb struct.                   */
 
   /* Initialize Jostle if this is the first call with 
-   * this load balancing object.
+   * this load balancing structure.
    */
-  if (lb != lb_obj){
-     lb_obj = lb;
+  if (lb != lb_str){
+     lb_str = lb;
      pjostle_init(&num_proc, &proc);
      pjostle_comm(&comm);
   }
@@ -173,7 +173,7 @@ int LB_Jostle(
   Jostle_params[3].ptr = (void *) matching;
   Jostle_params[4].ptr = (void *) reduction;
 
-  LB_Assign_Param_Vals(lb->Params, Jostle_params); 
+  LB_Assign_Param_Vals(lb->Params, Jostle_params, lb->Debug_Level, lb->Proc); 
 
   /* Set Jostle parameters using jostle_env() */
   if (threshold){
@@ -234,7 +234,7 @@ int LB_Jostle(
   }
 
 static int LB_ParMetis_Jostle(
-  LB *lb,             /* load balancing object */
+  LB *lb,             /* load balancing structure */
   int *num_imp,       /* number of objects to be imported */
   LB_GID **imp_gids,  /* global ids of objects to be imported */
   LB_LID **imp_lids,  /* local  ids of objects to be imported */
@@ -613,7 +613,8 @@ static int LB_ParMetis_Jostle(
     printf("[%1d] Debug: Calling LB_Comm_Create with %d packets to send.\n",
       lb->Proc, nsend);
 #endif
-    ierr = LB_Comm_Create( &comm_plan, nsend, plist, comm, TAG1, &nrecv);
+    ierr = LB_Comm_Create( &comm_plan, nsend, plist, comm, TAG1, 
+                           lb->Deterministic, &nrecv);
     if (ierr){
       /* Return error code */
       printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);

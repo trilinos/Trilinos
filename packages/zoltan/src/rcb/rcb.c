@@ -149,7 +149,7 @@ int LB_rcb(
     gen_tree = 0;
     wgtflag = (lb->Obj_Weight_Dim > 0); /* Multidim. weights not accepted */
 
-    LB_Assign_Param_Vals(lb->Params, RCB_params);
+    LB_Assign_Param_Vals(lb->Params, RCB_params, lb->Debug_Level, lb->Proc);
 
     *num_export = -1;  /* We don't compute the export map. */
 
@@ -511,7 +511,7 @@ static int rcb(
     incoming = 0;
     message_tag = 1;
     ierr = LB_Comm_Create(&cobj, outgoing, proc_list, local_comm, message_tag,
-                             &incoming);
+                          lb->Deterministic, &incoming);
     if (ierr != LB_OK && ierr != LB_WARN) {
        LB_FREE(&proc_list);
        LB_FREE(&dotmark);
@@ -685,15 +685,15 @@ static int rcb(
   lb_time[0] += (end_time - start_time);
 
   if (lb->Proc == 0) {
-    printf("LBLIB RCB Times:  \n");
+    printf("ZOLTAN RCB Times:  \n");
   }
-  LB_Print_Stats(lb, lb_time[0], "LBLIB     Build:       ");
-  LB_Print_Stats(lb, lb_time[1], "LBLIB     RCB:         ");
+  LB_Print_Stats(lb, lb_time[0], "ZOLTAN     Build:       ");
+  LB_Print_Stats(lb, lb_time[1], "ZOLTAN     RCB:         ");
 
   if (lb->Debug_Level > 6) {
     int i;
     LB_Print_Sync_Start(lb, TRUE);
-    printf("LBLIB RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 
+    printf("ZOLTAN RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 
            lb->Proc, pdotnum, pdottop, *num_import);
     printf("  Assigned objects:\n");
     for (i = 0; i < pdotnum; i++) {

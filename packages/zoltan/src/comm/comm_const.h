@@ -40,11 +40,11 @@ typedef struct Comm_Obj COMM_OBJ;
 
 /* function prototypes */
 
-extern int LB_Comm_Create(COMM_OBJ **, int, int *, MPI_Comm, int, int *);
+extern int LB_Comm_Create(COMM_OBJ **, int, int *, MPI_Comm, int, int, int *);
 extern int LB_Comm_Do(COMM_OBJ *, int, char *, int, char *);
 extern int LB_Comm_Do_Reverse(COMM_OBJ *, int, char *, int, char *);
 extern int LB_Comm_Destroy(COMM_OBJ **);
 extern int LB_Invert_Map(int *, int *, int, int, int **, int **, int *,
-    int, int, int, MPI_Comm);
+    int, int, int, int, MPI_Comm);
 
 #endif
