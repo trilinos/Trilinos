@@ -130,8 +130,6 @@ echo "export RANLIB"     >> .arch_env
 # some stupid code to use ar instead of xar
 # on some TFLOP environments
 #
-\rm -f etc/makefile.copy
-cp etc/makefile.${ARCH} etc/makefile.copy
 if test `expr ${ARCH}` = 'TFLOP' ||
    test `expr ${ARCH}` = 'XTFLOP' 
 then
