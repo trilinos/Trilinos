@@ -28,7 +28,7 @@
 
 <H2>
 <A NAME="Migration Example"></A>Migration Examples</H2>
-Data migration using Zoltan's migration-help tools can be accomplished
+Data migration using Zoltan's migration tools can be accomplished
 in two different ways:
 <BLOCKQUOTE><A HREF="#Auto-migration example">auto-migration</A>, or
 <BR><A HREF="#User-guided Migration Example">user-guided migration</A>.</BLOCKQUOTE>
@@ -85,7 +85,7 @@ user_return_particle_list, NULL);</TT>&nbsp;
 
 <P><TT>/* <I>Register additional functions for packing and unpacking data</I>
 */</TT>&nbsp;
-<BR><TT>/* <I>by migration-help tools. </I>*/</TT>&nbsp;
+<BR><TT>/* <I>by migration tools. </I>*/</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A>,
 user_return_particle_data_size, NULL);</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>,
@@ -109,14 +109,14 @@ user_unpack_particle_data, NULL);</TT>&nbsp;
 <BR><TT>...</TT></TD>
 </TR>
 
-<CAPTION ALIGN=BOTTOM><I>Typical calling sequence for using the migration-help
+<CAPTION ALIGN=BOTTOM><I>Typical calling sequence for using the migration
 tools' auto-migration capability with the dynamic load-balancing tools.</I></CAPTION>
 </TABLE></CENTER>
 &nbsp;
 <H2>
 <A NAME="User-guided Migration Example"></A>User-Guided Migration Example</H2>
 In the following <A HREF="#User-guided Migration Example Fig">figure</A>,
-an example of user-guided migration using Zoltan's migration-help tools
+an example of user-guided migration using Zoltan's migration tools
 for a finite element application is shown. Several migration steps are
 needed to completely rebuild the application's data structures for the
 new decomposition. On each processor, newly imported nodes need copies
@@ -124,7 +124,7 @@ of elements containing those nodes. Newly imported elements, then, need
 copies of "ghost" nodes, nodes that are in the element but are assigned
 to other processors. Each of these entities (nodes, elements, and ghost
 nodes) can be migrated in separate migration steps using the functions
-provided in the migration-help tools.First, the assignment of nodes to
+provided in the migration tools.  First, the assignment of nodes to
 processors returned by <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
 is established. Query functions that pack and unpack nodes are registered
 and <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
@@ -146,7 +146,7 @@ nodes can be built within the element packing and unpacking routines, and
 calls to <B><A HREF="ug_interface_mig.html#LB_Compute_Destinations">LB_Compute_Destinations</A></B>
 and <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>,
 with node packing and unpacking, satisfy requests for ghost nodes. In all
-three phases of migration, the migration-help tools handle communication;
+three phases of migration, the migration tools handle communication;
 the application is responsible only for packing and unpacking data and
 for building the appropriate request lists.
 <BR>&nbsp;
@@ -212,7 +212,7 @@ Num_Elt_Requests, Elt_Requests_Global_IDs,&nbsp;</TT>&nbsp;
 </TR>
 
 <CAPTION ALIGN=BOTTOM><I>Typical calling sequence for user-guided use of
-the migration-help tools in Zoltan</I>.</CAPTION>
+the migration tools in Zoltan</I>.</CAPTION>
 </TABLE></CENTER>
 &nbsp;
 <BR>

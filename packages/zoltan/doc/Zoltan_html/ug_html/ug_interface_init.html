@@ -55,17 +55,23 @@ char **<i> argv</i>, float *<i> ver</i>);</td>
 </table>
 
 <hr WIDTH="100%">The <b>LB_Initialize</b> function initializes values needed
-in the load-balancing tools. This function must be called with the <i>argc</i>
-and <i>argv</i> command-line arguments from the main program. If the application
+in the load-balancing tools. 
+If the application
 uses MPI, this function should be called after calling <b>MPI_Init</b>.
 If the application does not use MPI, this function calls <b>MPI_Init</b>
-for use by the load balancer. It also returns the version of the dynamic
-load-balancing library so that users can verify which version of the library
-their application is linked to. From C,&nbsp; if <b>MPI_Init</b> has already
+for use by the load balancer. 
+This function is called with the <i>argc</i>
+and <i>argv</i> command-line arguments from the main program, which are used
+if <b>LB_Initialize</b> calls <b>MPI_Init</b>.
+From C,&nbsp; if <b>MPI_Init</b> has already
 been called, the <i>argc</i> and <i>argv</i> arguments may have any value
 because their values will be ignored.&nbsp; From Fortran, if one of <i>argc</i>
 or <i>argv</i> is omitted, they must both be omitted. If they are omitted,
 <i>ver</i> does NOT have to be passed as a keyword argument.
+<p>
+<b>LB_Initialize</b> returns the version of the dynamic
+load-balancing library so that users can verify which version of the library
+their application is linked to. 
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -193,7 +199,7 @@ query functions</a> for an explanation.&nbsp;</td>
 </table>
 
 <hr WIDTH="100%"><b>LB_Set_Fn</b> registers an application-supplied query
-function in the load-balancing library. Both load-balancing and migration-help
+function in the load-balancing library. Both load-balancing and migration
 functions are registered through calls to <b>LB_Set_Fn</b> .
 <br>&nbsp;
 <table WIDTH="100%" >

@@ -37,7 +37,7 @@ library; that is, a pointer to the function is passed to the load-balancing
 library, which can then call that function when its information is needed.&nbsp;
 Two categories of query functions are used by the library:
 <BLOCKQUOTE><A HREF="ug_query_lb.html">Load-Balancing Query Functions</A>
-<BR><A HREF="ug_query_mig.html">Migration-Help Query Functions</A></BLOCKQUOTE>
+<BR><A HREF="ug_query_mig.html">Migration Query Functions</A></BLOCKQUOTE>
 A variety of query functions can be registered by the user. The query functions
 have a function type, describing their purpose to the load-balancing library.
 When a function is registered with the load-balancing library through a
@@ -67,8 +67,8 @@ the object with global ID "3295" may be stored by the application in location
 and local ID "15" can be used by the application to describe the object.
 Then, rather than searching the array for global ID "3295," the application
 query routines can subsequently use the local ID to index directly into
-the local storage array. See <A HREF="ug_usage.html#Application Data Types">Application
-Data Types</A> for a description of global and local IDs.  All of the functions
+the local storage array. See <A HREF="ug_usage.html#Data Types for Object IDs">Data 
+Types for Object IDs</A> for a description of global and local IDs.  All of the functions
 have, as their first argument, a pointer to data that is passed to the
 load-balancing library through <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.
 This data is not used by the load-balancing library. A different set of
@@ -87,7 +87,7 @@ set to some non-zero value.
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
 <A HREF="ug_query_lb.html">Next:&nbsp; Load-Balancing Query Functions</A>&nbsp;
-|&nbsp; <A HREF="ug_interface_mig.html">Previous:&nbsp; Migration-Help
+|&nbsp; <A HREF="ug_interface_mig.html">Previous:&nbsp; Migration
 Functions</A>]
 </BODY>
 </HTML>

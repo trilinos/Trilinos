@@ -32,7 +32,7 @@ Examples of query functions provided by a simple application are included
 below.&nbsp; The load-balancing examples include a simple implementation
 of <B><A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</A> </B>and <B><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
 query functions and variants of the simple implementation that exploit
-local identifiers and data pointers.&nbsp; Migration-help examples for
+local identifiers and data pointers.&nbsp; Migration examples for
 packing and unpacking objects are also included.&nbsp;&nbsp; Robust error
 checking is not included in the routines; application developers should
 include more explicit error checking in their query functions.
@@ -40,7 +40,7 @@ include more explicit error checking in their query functions.
 <UL><A HREF="#basic_query_example">Basic example</A>
 <BR><A HREF="#lb_lid_query_example">User-defined local identifiers (LB_LID)</A>
 <BR><A HREF="#data_ptr_query_example">User-defined data pointer</A></UL>
-<A HREF="#mig_query_example">Migration-Help Examples</A>
+<A HREF="#mig_query_example">Migration Examples</A>
 <UL><A HREF="#mig_pack_example">Packing and unpacking functions</A></UL>
 </UL>
 All the examples use a mesh data structure consisting of nodes in the mesh.&nbsp;
@@ -685,13 +685,13 @@ the application-defined data pointer.</I></CAPTION>
 </TABLE></CENTER>
 &nbsp;
 <H3>
-<A NAME="mig_query_example"></A>Migration-Help Examples</H3>
+<A NAME="mig_query_example"></A>Migration Examples</H3>
 
 <H4>
 <A NAME="mig_pack_example"></A>Packing and Unpacking Data</H4>
-Simple migration-help query functions for the <A HREF="#basic_query_example">Basic
+Simple migration query functions for the <A HREF="#basic_query_example">Basic
 Example</A> are included<A HREF="#query example four"> below</A>.&nbsp;
-These functions are used by the migration-help tools to move nodes among
+These functions are used by the migration tools to move nodes among
 the processors.&nbsp; The functions <I>user_size_node</I>, <I>user_pack_node</I>,
 and <I>user_unpack_node</I> are registered through calls to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.&nbsp;
 Query function <I>user_size_node</I> returns the size (in bytes) of data
@@ -714,7 +714,7 @@ as all migrating objects must have the same size.
 <TD><A NAME="query example four"></A><TT>main()&nbsp;</TT>&nbsp;
 <BR><TT>{&nbsp;</TT>&nbsp;
 <BR><TT>...&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Register migration-help query functions.</I>
+<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Register migration query functions.</I>
 */</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Do not register a data pointer with the
 functions;</I> */</TT>&nbsp;
@@ -771,7 +771,7 @@ char *buf, int *ierr)</TT>&nbsp;
 <BR><TT>}</TT>&nbsp;</TD>
 </TR>
 
-<CAPTION ALIGN=BOTTOM><I>Example of migration-help query functions for
+<CAPTION ALIGN=BOTTOM><I>Example of migration query functions for
 the <A HREF="#basic_query_example">Basic Example</A>.</I></CAPTION>
 </TABLE></CENTER>
 

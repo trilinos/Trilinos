@@ -27,7 +27,7 @@
 
 
 <H2>
-<A NAME="Migration-Help Functions"></A>Migration-Help Functions</H2>
+<A NAME="Migration Functions"></A>Migration Functions</H2>
 If requested, Zoltan can automatically transfer an application's data between
 processors to realize the new decomposition. This functionality will be
 performed as part of the call to <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
@@ -35,12 +35,12 @@ if the <B><A HREF="ug_alg.html#General_Parameters">AUTO_MIGRATE</A></B>
 parameter is set to TRUE (nonzero) via a call to <B><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B>.
 Alternatively, the application can leave <B><A HREF="ug_alg.html#General_Parameters">AUTO_MIGRATE</A></B>
 FALSE and call <B><A HREF="#LB_Help_Migrate">LB_Help_Migrate</A></B> itself.
-In either case, <A HREF="ug_query_mig.html#Migration-Help Query Functions">routines
+In either case, <A HREF="ug_query_mig.html#Migration Query Functions">routines
 to pack and unpack object data</A> must be provided by the application.
 See <A HREF="ug_examples_mig.html#Migration Example">Migration Examples</A>
 for examples with and without auto-migration.
 
-<P>The following functions are the migration-help interface functions.
+<P>The following functions are the migration interface functions.
 Their detailed descriptions can be found below.
 <BLOCKQUOTE><B><A HREF="#LB_Compute_Destinations">LB_Compute_Destinations</A></B>
 <BR><B><A HREF="#LB_Help_Migrate">LB_Help_Migrate</A></B></BLOCKQUOTE>
@@ -95,7 +95,7 @@ to satisfy their assignments of non-local objects.
 
 <TD>Pointer to the load-balancing structure, created by 
 <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>,
-to be used in this invocation of the migration-help routine.</TD>
+to be used in this invocation of the migration routine.</TD>
 </TR>
 
 <TR>
@@ -231,7 +231,7 @@ data structures.
 
 <TD>Pointer to the load-balancing structure, created by 
 <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>,
-to be used in this invocation of the migration-help routine.</TD>
+to be used in this invocation of the migration routine.</TD>
 </TR>
 
 <TR>

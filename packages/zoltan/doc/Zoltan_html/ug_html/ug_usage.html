@@ -30,7 +30,7 @@
 This section contains information needed to use the Zoltan library with
 applications:
 <blockquote><a href="#System Requirements">System requirements.</a>
-<br><a href="#Application Data Types">Application data type</a>s for global
+<br><a href="#Data Types for Object IDs">Data type</a>s for global
 and local IDs.
 <br>Instructions for <a href="#Building the Library">building the Zoltan
 library.</a>
@@ -46,15 +46,15 @@ In order to build and use Zoltan, you will need:
 ANSI C compiler.</li>
 
 <li>
-Unix-like operating system, for example Linux or Solaris.</li>
+Unix-like operating system, such as Linux or Solaris.</li>
 
 <li>
-<a href="http://www-unix.mcs.anl.gov/mpi/">MPI </a>library for message
-passing (version 1.1 or higher), for example MPICH or LAM.</li>
+<a href="http://www-unix.mcs.anl.gov/mpi/">MPI</a> library for message
+passing (version 1.1 or higher), such as MPICH or LAM.</li>
 
 <li>
-<i>gmake</i> is recommended to build the library. Other versions of <i>make</i>
-may also work.</li>
+<i>gmake</i> (GNU Make) is recommended to build the library. 
+</li>
 
 <li>
 A Fortran90 compatible compiler is required if you wish to call Zoltan
@@ -62,10 +62,10 @@ from Fortran applications.</li>
 </ul>
 
 <h3>
-<a NAME="Application Data Types"></a>Application Data Types</h3>
+<a NAME="Data Types for Object IDs"></a>Data Types for Object IDs</h3>
 Application query functions and application callable library functions
-use global and local identifiers (IDs) for objects. All objects to be used
-in load balancing must have unique global IDs. Different applications may
+use global and local identifiers (IDs) for objects. <i>All objects to be used
+in load balancing must have unique global IDs.</i> Different applications may
 use different data types to represent these IDs. One finite element application,
 for example, may use integers as global identifiers (e.g., see [<a href="ug_refs.html#mpsalsa">MPSalsa</a>]);
 another may use a structure of information including local element counts
@@ -181,7 +181,8 @@ where <i>&lt;platform></i> specifies the particular platform for which
 Zoltan is being built.&nbsp; Paths to compilers, include files, and libraries
 are defined in this lower-level makefile and are then read by the top-level
 Makefile.&nbsp; Examples of lower-level makefiles for Solaris, Sandia's
-ASCI Red (tflop) computer, an Intel Paragon, and Linux boxes are included
+ASCI Red (tflop) computer, an Intel Paragon, SGI workstations, and PCs 
+running Linux are included
 in the <i>Makefiles</i> subdirectory.&nbsp;&nbsp; A well-commented version
 of the lower-level makefile, <i>Makefiles/Makefile.generic</i>, is also
 included; this file can be used as a template for new environment-specific
@@ -231,10 +232,16 @@ Zoltan library routines. Similarly, Fortran applications must USE
 zoltan</a>. The application should then be linked with the Zoltan library
 by including -lzoltan in the linking command for the application. Communication
 within the library is performed through MPI, so appropriate MPI libraries
-must be linked with the application. Third-party libraries, such as <a href="ug_alg_parmetis.html">ParMETIS</a>
+must be linked with the application. Third-party libraries, such as 
+<a href="ug_alg_parmetis.html">ParMETIS</a>
 and <a href="http://www.gre.ac.uk/~jjg01/">Jostle</a>, must be also be
 linked with the application if they were included in compilation of the
-Zoltan library.&nbsp; In Zoltan's top-level <a href="#Building the Library">Makefile</a>,
+Zoltan library.&nbsp;  
+(A courtesy copy of <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
+is included with the Zoltan distribution;
+ <a href="http://www.gre.ac.uk/~jjg01/">Jostle</a> must be obtained directly
+from  <a href="http://www.gre.ac.uk/~jjg01/">http://www.gre.ac.uk/~jjg01/</a>.)
+In Zoltan's top-level <a href="#Building the Library">Makefile</a>,
 the variable $THIRD_PARTY_LIBS&nbsp; specifies the library names that can
 be used with Zoltan.&nbsp; <a href="ug_fortran_apps.html">Compiling Fortran
 applications</a> also requires specifying<i> Zoltan/Obj_&lt;platform></i>

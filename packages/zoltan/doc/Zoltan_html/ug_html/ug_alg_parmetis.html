@@ -38,8 +38,11 @@ with many sub-methods. Zoltan provides an interface to all the ParMETIS
 the parameter PARMETIS_METHOD. Most of the ParMETIS methods are based on
 either multilevel Kernighan-Lin partitioning or a diffusion algorithm.
 The names of the ParMETIS methods used by Zoltan are identical to those
-in the ParMETIS library. For further information about the various ParMETIS
-methods and parameters, please consult the ParMETIS User's Guide.
+in the ParMETIS library. For further information about the various 
+<a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
+methods and parameters, please consult the 
+<a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
+User's Guide.
 <p>Graph partitioning is a useful abstraction for load balancing. The main
 idea is to represent the computatiional application as a weighted graph.
 The nodes or vertices in the graph correspond to objects in Zoltan.&nbsp;
@@ -56,7 +59,9 @@ above are NP-hard so no efficient exact algorithm is known. We remark that
 in Zoltan, the number of partitions is always the same as the number of
 processes (which is normally equal to the number of processors).
 <p>We only give a brief summary of the various ParMETIS methods here; for
-more details see the ParMETIS documentation. The methods fall into three
+more details see the 
+<a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
+documentation. The methods fall into three
 categories:
 <ol>
 <li>
@@ -83,7 +88,7 @@ There is no guarantee that Zoltan will work correctly if you have a different
 version of ParMETIS on your computer. Source and documentation for ParMETIS
 can be obtained from the <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS
 home page</a>. As a courtesy service,&nbsp; a compatible version of the
-ParMETIS&nbsp; source code will be distributed with Zoltan. However, ParMETIS
+ParMETIS&nbsp; source code is distributed with Zoltan. However, ParMETIS
 is a completely separate library. If you do not wish to install ParMETIS,
 it is possible to compile Zoltan without any references to ParMETIS&nbsp;
 (when you 'make' Zoltan, comment out the PARMETIS_LIBPATH variable in the

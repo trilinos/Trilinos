@@ -29,9 +29,12 @@
 <H2>
 Functions for Augmenting a Decomposition</H2>
 The following functions support the addition of new items to an existing
-decomposition. Given a decomposition, they determine which processor(s)
-a new item should be assigned to. Currently, they work in conjunction with
-only the&nbsp; <A HREF="ug_alg_rcb.html#RCB">RCB</A> algorithm.
+decomposition. Given a decomposition, they determine to which processor(s)
+a new item should be assigned. Currently, they work in conjunction with
+only the 
+<A HREF="ug_alg_rcb.html">RCB</A> and
+<a href="ug_alg_irb.html">IRB</a> 
+algorithms.
 <BLOCKQUOTE><B><A HREF="#LB_Point_Assign">LB_Point_Assign</A></B>
 <BR><B><A HREF="#LB_Box_Assign">LB_Box_Assign</A></B></BLOCKQUOTE>
 
@@ -56,10 +59,13 @@ only the&nbsp; <A HREF="ug_alg_rcb.html#RCB">RCB</A> algorithm.
 </TR>
 </TABLE>
 
-<HR WIDTH="100%"><B>LB_Point_Assign</B> is used to determine which processor
-a new point should be assigned to. It is only applicable to geometrically
-generated decompositions (currently only RCB). If the parameter <B>KEEP_CUTS</B>
-is set to TRUE, then the recursive sequence of cuts which define an RCB
+<HR WIDTH="100%"><B>LB_Point_Assign</B> is used to determine to which processor
+a new point should be assigned. It is applicable only to geometrically
+generated decompositions (currently only 
+<A HREF="ug_alg_rcb.html">RCB</A> and
+<a href="ug_alg_irb.html">IRB</a>).
+If the parameter <B>KEEP_CUTS</B>
+is set to TRUE, then the recursive sequence of cuts which define the 
 decomposition is saved. Given a new geometric point, the processor which
 owns it can be determined.
 <BR>&nbsp;
@@ -127,10 +133,13 @@ zmax, procs, numprocs</I>)&nbsp;
 <HR WIDTH="100%">In many settings, it is useful to know which processors
 might need to know about an extended geometric object. <B>LB_Box_Assign</B>
 addresses this problem. Given a geometric decomposition of space (currently
-only RCB is supported), and given an axis-aligned box around the geometric
+only 
+<A HREF="ug_alg_rcb.html">RCB</A> and
+<a href="ug_alg_irb.html">IRB</a> are
+supported), and given an axis-aligned box around the geometric
 object, <B>LB_Box_Assign</B> determines which processors own geometry that
 intersects the box. To use this routine, the parameter <B>KEEP_CUTS</B>
-must be set to TRUE when the RCB decomposition is generated. This parameter
+must be set to TRUE when the decomposition is generated. This parameter
 will cause the recursive sequence of geometric cuts to be saved, which
 is necessary for <B>LB_Box_Assign</B> to do its job.
 <BR>&nbsp;
@@ -192,7 +201,7 @@ the box (i.e. the number of entries placed in the <I>procs</I> list).&nbsp;</TD>
 </TABLE>
 
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
-<A HREF="ug_interface_mig.html">Next:&nbsp; Migration-Help Functions</A>&nbsp;
+<A HREF="ug_interface_mig.html">Next:&nbsp; Migration Functions</A>&nbsp;
 |&nbsp; <A HREF="ug_interface_lb.html">Previous:&nbsp; Load-Balancing Functions</A>]&nbsp;
 </BODY>
 </HTML>

@@ -445,7 +445,7 @@ pointed to by <i>Get_Child_Weight</i>. Set in <b><a href="../ug_html/ug_interfac
 <tr>
 <td VALIGN=TOP>LB_MIGRATE <i>Migrate</i></td>
 
-<td>A structure with data used by the migration-help tools. See the <a href="#Migrate_Fields">table</a>
+<td>A structure with data used by the migration tools. See the <a href="#Migrate_Fields">table</a>
 below.</td>
 </tr>
 
@@ -453,7 +453,7 @@ below.</td>
 </table></center>
 
 <p>Each <b>LB_Struct</b> data structure has an <b>LB_Migrate</b> sub-structure.
-The <b>LB_Migrate</b> structure contains data used by the migration-help
+The <b>LB_Migrate</b> structure contains data used by the migration
 tools, including pointers to object packing and unpacking routines. These
 pointers are set through the load-balancing interface routine <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
 and are used in <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>.
@@ -530,7 +530,7 @@ pointed to by <i>Get_Obj_Size</i>. Set in <b><a href="../ug_html/ug_interface_in
 *<i> Pack_Obj</i></td>
 
 <td>A pointer to an application-registered function that packs all data
-for a given object into a communication buffer provided by the migration-help
+for a given object into a communication buffer provided by the migration
 tools in preparation for data-migration communication. Called by <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
 for each object to be exported; set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>.</td>
 </tr>
