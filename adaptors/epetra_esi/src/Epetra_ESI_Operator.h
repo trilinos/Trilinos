@@ -191,6 +191,10 @@ class Operator : public virtual esi::Object,
     { //cout << "NumMyNonzeros" << endl; 
       return(-1); }
 
+  int NumMyRowEntries(int MyRow, int & NumEntries) const
+    { //cout << "NumMyRowEntries" << endl; 
+      return(-1); }
+
   int NumMyRows() const
     { 
       //AztecOO assumes ExtractMyRowCopy will work if NumMyCols and NumMyRows

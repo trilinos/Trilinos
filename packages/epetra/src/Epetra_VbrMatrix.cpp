@@ -1006,6 +1006,17 @@ int Epetra_VbrMatrix::CopyMatDiag(double * A, int LDA, int NumRows, int NumCols,
   return(0);
 }
 //=============================================================================
+int Epetra_VbrMatrix::NumMyRowEntries(int MyRow, int & NumEntries) const {
+
+  int BlockRow, BlockOffset;
+  int ierr = RowMap().FindLocalBlockID(MyRow, BlockRow, BlockOffset);  if (ierr!=0) return(ierr);
+
+  int NumBlockEntries = NumMyBlockEntries(BlockRow);
+  NumEntries = 0;
+  for (int i=0; i<NumBlockEntries; i++) NumEntries += ColDims_[BlockRow][i];
+  return(0);  
+}
+//=============================================================================
 int Epetra_VbrMatrix::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const {
   if (!Filled()) return(-1); // Can't row unless matrix is filled
   if (!IndicesAreLocal()) return(-2);

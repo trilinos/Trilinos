@@ -52,6 +52,17 @@ class Epetra_RowMatrix {
 
     // Matrix data extraction routines
 
+    //! Returns the number of nonzero entries in MyRow.
+    /*! 
+    \param In
+           MyRow - Local row.
+    \param Out
+	   NumEntries - Number of nonzero values present.
+	  
+    \return Integer error code, set to 0 if successful.
+  */
+    virtual int NumMyRowEntries(int MyRow, int & NumEntries) const = 0;
+
     //! Returns a copy of the specified local row in user-provided arrays.
     /*! 
     \param In

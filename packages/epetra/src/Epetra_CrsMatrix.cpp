@@ -506,6 +506,14 @@ int Epetra_CrsMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, do
   return(0);
 }
 //==========================================================================
+int Epetra_CrsMatrix::NumMyRowEntries(int Row, int & NumEntries) const 
+{
+
+  if (!MyLRID(Row)) EPETRA_CHK_ERR(-1); // Not in the range of local rows
+  NumEntries = NumMyEntries(Row);
+  return(0);
+}
+//==========================================================================
 int Epetra_CrsMatrix::ExtractGlobalRowCopy(int Row, int Length, int & NumEntries, double * Values) const 
 {
 

@@ -71,6 +71,8 @@ numbers.  The ResetFlops() function resets the floating point counter.
 class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_Flops, public Epetra_BLAS, public virtual Epetra_RowMatrix{
       
  public:
+
+  //@{ \name Constructors/Destructor.
   //! Epetra_VbrMatrix constuctor with variable number of indices per row.
   /*! Creates a Epetra_VbrMatrix object and allocates storage.  
     
@@ -115,6 +117,9 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_Flops, public Ep
 
   //! Epetra_VbrMatrix Destructor
   virtual ~Epetra_VbrMatrix();
+  //@}
+  
+  //@{ \name Insertion/Replace/SumInto methods.
 
   //! Initialize all values in graph of the matrix with constant value.
   /*!
@@ -261,8 +266,9 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_Flops, public Ep
 
     //! If FillComplete() has been called, this query returns true, otherwise it returns false.
     bool Filled() const {return(Graph_->Filled());};
+    //@}
 
-    // Matrix data extraction routines
+  //@{ \name Extraction methods.
 
     //! Copy the block indices into user-provided array, set pointers for rest of data for specified global block row.
     /*! 
@@ -545,8 +551,9 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_Flops, public Ep
     */
 
     int ExtractBlockDiagonalEntryView(double * & Values, int & LDA) const;
+    //@}
 
-    // Mathematical functions.
+  //@{ \name Computational methods.
 
 
     //! Returns the result of a Epetra_VbrMatrix multiplied by a Epetra_Vector x in y.
@@ -561,40 +568,6 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_Flops, public Ep
     \return Integer error code, set to 0 if successful.
   */
     int Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vector& y) const;
-    //! Returns a copy of the specified global row in user-provided arrays.
-    /*! 
-    \param In
-           GlobalRow - Global row to extract.
-    \param In
-	   Length - Length of Values and Indices.
-    \param Out
-	   NumEntries - Number of nonzero entries extracted.
-    \param Out
-	   Values - Extracted values for this row.
-    \param Out
-	   Indices - Extracted global column indices for the corresponding values.
-	  
-    \return Integer error code, set to 0 if successful.
-  */
-    int ExtractGlobalRowCopy(int GlobalRow, int Length, int & NumEntries, double *Values, int * Indices) const;
-
-    //! Returns a copy of the specified local row in user-provided arrays.
-    /*! 
-    \param In
-           MyRow - Local row to extract.
-    \param In
-	   Length - Length of Values and Indices.
-    \param Out
-	   NumEntries - Number of nonzero entries extracted.
-    \param Out
-	   Values - Extracted values for this row.
-    \param Out
-	   Indices - Extracted global column indices for the corresponding values.
-	  
-    \return Integer error code, set to 0 if successful.
-  */
-    int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
-
 
     //! Returns the result of a Epetra_VbrMatrix multiplied by a Epetra_MultiVector X in Y.
     /*! 
@@ -689,7 +662,48 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_Flops, public Ep
     \return Integer error code, set to 0 if successful.
   */
     int RightScale(const Epetra_Vector& x);
-    // Atribute access functions
+  //@}
+
+  //@{ \name Matrix Properties Query Methods.
+
+    //! Sort column entries, row-by-row, in ascending order.
+    int SortEntries();
+
+    //! If SortEntries() has been called, this query returns true, otherwise it returns false.
+    bool Sorted() const {return(Graph_->Sorted());};
+
+    //! Add entries that have the same column index. Remove redundant entries from list.
+    int MergeRedundantEntries();
+
+    //! If MergeRedundantEntries() has been called, this query returns true, otherwise it returns false.
+    bool NoRedundancies() const {return(Graph_->NoRedundancies());};
+    //! Eliminates memory that is used for construction.  Make consecutive row index sections contiguous.
+    int OptimizeStorage();
+
+    //! If OptimizeStorage() has been called, this query returns true, otherwise it returns false.
+    bool StorageOptimized() const {return(Graph_->StorageOptimized());};
+
+    //! If matrix indices has not been transformed to local, this query returns true, otherwise it returns false.
+    bool IndicesAreGlobal() const {return(Graph_->IndicesAreGlobal());};
+
+    //! If matrix indices has been transformed to local, this query returns true, otherwise it returns false.
+    bool IndicesAreLocal() const {return(Graph_->IndicesAreLocal());};
+
+    //! If matrix indices are packed into single array (done in OptimizeStorage()) return true, otherwise false.
+    bool IndicesAreContiguous() const {return(Graph_->IndicesAreContiguous());};
+
+    //! If matrix is lower triangular, this query returns true, otherwise it returns false.
+    bool LowerTriangular() const {return(Graph_->LowerTriangular());};
+
+    //! If matrix is upper triangular, this query returns true, otherwise it returns false.
+    bool UpperTriangular() const {return(Graph_->UpperTriangular());};
+
+    //! If matrix is lower triangular, this query returns true, otherwise it returns false.
+    bool NoDiagonal() const {return(Graph_->NoDiagonal());};
+
+  //@}
+  
+  //@{ \name Atribute access functions
 
     //! Returns the infinity norm of the global matrix.
     /* Returns the quantity \f$ \| A \|_\infty\f$ such that
@@ -741,7 +755,7 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_Flops, public Ep
     
     //! Returns the number of nonzero block entries in the calling processor's portion of the matrix.
     int NumMyBlockEntries() const {return(Graph_->NumMyEntries());};
-    
+
     //! Returns the number of local nonzero block diagonal entries.
     int NumMyBlockDiagonals() const {return(Graph_->NumMyBlockDiagonals());};
     
@@ -790,68 +804,6 @@ int GlobalMaxNumBlockEntries() const {return(Graph_->GlobalMaxNumIndices());};
     //! Returns the index base for row and column indices for this graph.
     int IndexBase() const {return(Graph_->IndexBase());};
 
-    //! Sort column entries, row-by-row, in ascending order.
-    int SortEntries();
-
-    //! If SortEntries() has been called, this query returns true, otherwise it returns false.
-    bool Sorted() const {return(Graph_->Sorted());};
-
-    //! Add entries that have the same column index. Remove redundant entries from list.
-    int MergeRedundantEntries();
-
-    //! If MergeRedundantEntries() has been called, this query returns true, otherwise it returns false.
-    bool NoRedundancies() const {return(Graph_->NoRedundancies());};
-    //! Eliminates memory that is used for construction.  Make consecutive row index sections contiguous.
-    int OptimizeStorage();
-
-    //! If OptimizeStorage() has been called, this query returns true, otherwise it returns false.
-    bool StorageOptimized() const {return(Graph_->StorageOptimized());};
-
-    //! If matrix indices has not been transformed to local, this query returns true, otherwise it returns false.
-    bool IndicesAreGlobal() const {return(Graph_->IndicesAreGlobal());};
-
-    //! If matrix indices has been transformed to local, this query returns true, otherwise it returns false.
-    bool IndicesAreLocal() const {return(Graph_->IndicesAreLocal());};
-
-    //! If matrix indices are packed into single array (done in OptimizeStorage()) return true, otherwise false.
-    bool IndicesAreContiguous() const {return(Graph_->IndicesAreContiguous());};
-
-    //! If matrix is lower triangular, this query returns true, otherwise it returns false.
-    bool LowerTriangular() const {return(Graph_->LowerTriangular());};
-
-    //! If matrix is upper triangular, this query returns true, otherwise it returns false.
-    bool UpperTriangular() const {return(Graph_->UpperTriangular());};
-
-    //! If matrix is lower triangular, this query returns true, otherwise it returns false.
-    bool NoDiagonal() const {return(Graph_->NoDiagonal());};
-
-    //! Returns the local row index for given global row index, returns -1 if no local row for this global row.
-    int LRID( int GRID) const {return(Graph_->LRID(GRID));};
-
-    //! Returns the global row index for give local row index, returns IndexBase-1 if we don't have this local row.
-    int GRID( int LRID) const {return(Graph_->GRID(LRID));};
-
-    //! Returns the local column index for given global column index, returns -1 if no local column for this global column.
-    int LCID( int GCID) const {return(Graph_->LCID(GCID));};
-
-    //! Returns the global column index for give local column index, returns IndexBase-1 if we don't have this local column.
-    int GCID( int LCID) const {return(Graph_->GCID(LCID));};
- 
-    //! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
-    bool  MyGRID(int GRID) const {return(Graph_->MyGRID(GRID));};
-   
-    //! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
-    bool  MyLRID(int LRID) const {return(Graph_->MyLRID(LRID));};
-
-    //! Returns true if the GCID passed in belongs to the calling processor in this map, otherwise returns false.
-    bool  MyGCID(int GCID) const {return(Graph_->MyGCID(GCID));};
-   
-    //! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
-    bool  MyLCID(int LCID) const {return(Graph_->MyLCID(LCID));};
-
-    //! Returns true of GID is owned by the calling processor, otherwise it returns false.
-    bool MyGlobalBlockRow(int GID) const {return(Graph_->MyGlobalRow(GID));};
-
     //! Returns a pointer to the Epetra_CrsGraph object associated with this matrix.
     const Epetra_CrsGraph & Graph() const {return(*Graph_);};
 
@@ -884,9 +836,89 @@ int GlobalMaxNumBlockEntries() const {return(Graph_->GlobalMaxNumIndices());};
 
     //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
     const Epetra_Comm & Comm() const {return(Graph_->Comm());};
+  //@}
+  
+  //@{ \name Local/Global ID methods
+    //! Returns the local row index for given global row index, returns -1 if no local row for this global row.
+    int LRID( int GRID) const {return(Graph_->LRID(GRID));};
+
+    //! Returns the global row index for give local row index, returns IndexBase-1 if we don't have this local row.
+    int GRID( int LRID) const {return(Graph_->GRID(LRID));};
+
+    //! Returns the local column index for given global column index, returns -1 if no local column for this global column.
+    int LCID( int GCID) const {return(Graph_->LCID(GCID));};
+
+    //! Returns the global column index for give local column index, returns IndexBase-1 if we don't have this local column.
+    int GCID( int LCID) const {return(Graph_->GCID(LCID));};
+ 
+    //! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
+    bool  MyGRID(int GRID) const {return(Graph_->MyGRID(GRID));};
+   
+    //! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
+    bool  MyLRID(int LRID) const {return(Graph_->MyLRID(LRID));};
+
+    //! Returns true if the GCID passed in belongs to the calling processor in this map, otherwise returns false.
+    bool  MyGCID(int GCID) const {return(Graph_->MyGCID(GCID));};
+   
+    //! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
+    bool  MyLCID(int LCID) const {return(Graph_->MyLCID(LCID));};
+
+    //! Returns true of GID is owned by the calling processor, otherwise it returns false.
+    bool MyGlobalBlockRow(int GID) const {return(Graph_->MyGlobalRow(GID));};
+  //@}
+  
+  //@{ \name I/O Methods.
 
   //! Print method
   virtual void Print(ostream & os) const;
+  //@}
+  //@{ \name Additional methods required to implement RowMatrix interface.
+
+    //! Returns a copy of the specified global row in user-provided arrays.
+    /*! 
+    \param In
+           GlobalRow - Global row to extract.
+    \param In
+	   Length - Length of Values and Indices.
+    \param Out
+	   NumEntries - Number of nonzero entries extracted.
+    \param Out
+	   Values - Extracted values for this row.
+    \param Out
+	   Indices - Extracted global column indices for the corresponding values.
+	  
+    \return Integer error code, set to 0 if successful.
+  */
+    int ExtractGlobalRowCopy(int GlobalRow, int Length, int & NumEntries, double *Values, int * Indices) const;
+
+    //! Returns a copy of the specified local row in user-provided arrays.
+    /*! 
+    \param In
+           MyRow - Local row to extract.
+    \param In
+	   Length - Length of Values and Indices.
+    \param Out
+	   NumEntries - Number of nonzero entries extracted.
+    \param Out
+	   Values - Extracted values for this row.
+    \param Out
+	   Indices - Extracted global column indices for the corresponding values.
+	  
+    \return Integer error code, set to 0 if successful.
+  */
+    int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
+
+    //! Return the current number of values stored for the specified local row.
+    /*! 
+    \param In
+           MyRow - Local row.
+    \param Out
+	   NumEntries - Number of nonzero values.
+	  
+    \return Integer error code, set to 0 if successful.
+  */
+    int NumMyRowEntries(int MyRow, int & NumEntries) const;
+  //@}
 
  protected:
     bool Allocated() const {return(Allocated_);};

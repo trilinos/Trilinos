@@ -540,7 +540,21 @@ int check(Epetra_VbrMatrix& A,
 
   assert(NumGlobalNonzeros==NumGlobalNonzeros1);
 
+  
+  // Test RowMatrix interface implementations
+  int RowDim, NumBlockEntries, * BlockIndices, * ColDims, * LDAs;
+  double ** Values;
+  // Get View of last block row
+  A.ExtractMyBlockRowView(NumMyBlockRows-1, RowDim, NumBlockEntries, BlockIndices, ColDims,
+			  LDAs, Values);
+  int NumMyEntries1 = 0;
+  for (int i=0; i < NumBlockEntries; i++) NumMyEntries1 += ColDims[i];
+  int NumMyEntries;
+  A.NumMyRowEntries(NumMyRows-1, NumMyEntries);
+  if (verbose) cout << "\n\nNumber of nonzero values in last row = " << NumMyEntries << endl<< endl;
 
+  assert(NumMyEntries==NumMyEntries1);
+  
   // Other binary tests
 
   assert(!A.NoDiagonal());

@@ -656,6 +656,20 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   //! Print method
   virtual void Print(ostream & os) const;
   //@}
+  //@{ \name Additional methods required to implement RowMatrix interface.
+
+    //! Return the current number of values stored for the specified local row.
+    /*! Similar to NumMyEntries() except NumEntries is returned as an argument
+        and error checking is done on the input value MyRow.
+    \param In
+           MyRow - Local row.
+    \param Out
+	   NumEntries - Number of nonzero values.
+	  
+    \return Integer error code, set to 0 if successful.
+  */
+    int NumMyRowEntries(int MyRow, int & NumEntries) const;
+  //@}
 
  protected:
     bool Allocated() const {return(Allocated_);};
