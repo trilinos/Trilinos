@@ -1,6 +1,6 @@
 
 # Which compiler to use
-CC = gcc
+CC = mpicc
 
 
 # What optimization level to use
@@ -13,7 +13,7 @@ INCDIR =
 COPTIONS = 
 
 # Which loader to use
-LD = gcc
+LD = mpicc
 
 # In which directories to look for any additional libraries
 LIBDIR = 
