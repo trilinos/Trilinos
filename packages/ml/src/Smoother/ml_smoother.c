@@ -1039,12 +1039,13 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 	  sqrt(ML_gdot(totalsize,x,x,comm)));
    fflush(stdout);
 #endif
-
-ML_free(cols);
-ML_free(vals);
    ML_free(res); ML_free(local_x);
+   res = NULL; local_x = NULL;
 
    } /* for iter = 1... */
+
+   ML_free(cols);
+   ML_free(vals);
 
    return 0;
 }
