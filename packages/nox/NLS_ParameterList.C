@@ -23,7 +23,7 @@ NLS_ParameterList::~NLS_ParameterList()
 void NLS_ParameterList::unused() const
 {
   // Warn about any unused parameters
-  for (PCIterator i = params.begin(); i != params.end(); i ++) {
+  for (PCIterator i = params.begin(); i != params.end(); ++i) {
     if (!(i->second.isUsed())) {
       cout << "WARNING: Parameter \"" << i->first << "\" " << i->second
 	   << " is unused" << endl;
@@ -63,7 +63,7 @@ bool NLS_ParameterList::isRecursive(const List& l) const
   if (&l == this)
     return true;
 
-  for (PCIterator i = l.params.begin(); i != l.params.end(); i ++) {
+  for (PCIterator i = l.params.begin(); i != l.params.end(); ++i) {
     if ((i->second.isList()) && 
 	(isRecursive(i->second.getListValue())))
       return true;
@@ -142,7 +142,7 @@ bool NLS_ParameterList::isParameter(const string& name) const
 
 ostream& NLS_ParameterList::print(ostream& stream, int indent = 0) const
 {
-  for (PCIterator i = params.begin(); i != params.end(); i ++) {
+  for (PCIterator i = params.begin(); i != params.end(); ++i) {
     for (int j = 0; j < indent; j ++)
       stream << ' ';
     stream << i->first << " = " << i->second << endl;

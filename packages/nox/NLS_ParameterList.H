@@ -86,7 +86,7 @@ private:
 private:
 
   //! Parameter list
-  ParamsContainer params;
+  ParamContainer params;
  
   //! Used to create a string when the getParameter is called with a
   //! char* nominal value. A new string is created for each such
