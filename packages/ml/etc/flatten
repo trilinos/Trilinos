@@ -28,7 +28,19 @@ do
    for j in ../src/$i/*.*[ch]
    do
      FILE=`echo $j | sed "s,.*/,,"`
-     ln -s $j $FILE
+     ln -s $j $FILE 
+   done
+
+   CURRDIR="../src/$i/*.cpp"
+   for j in $CURRDIR
+   do
+     temp="xx${j}xx"
+     SRC=`echo $temp | sed "s/\.\.\/src\/$i\/\*\.cpp//"`
+     if test `expr ${SRC}` != 'xxxx'
+     then
+        FILE=`echo $j | sed "s,.*/,,"`
+        ln -s $j $FILE 
+     fi
    done
 done
 ln -s ../src/Include/ml_include.h ml_include.h
