@@ -1037,10 +1037,10 @@ or if the number of entries in this row exceed the Length parameter.
   void UpdateExportVector(int NumVectors) const;
   void GeneralMV(double * x, double * y) const;
   void GeneralMTV(double * x, double * y) const;
-  void GeneralMM(double ** X, double ** Y, int NumVectors) const;
-  void GeneralMTM(double ** X, double ** Y, int NumVectors) const;
+  void GeneralMM(double ** X, int LDX, double ** Y, int LDY, int NumVectors) const;
+  void GeneralMTM(double ** X, int LDX, double ** Y, int LDY, int NumVectors) const;
   void GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, double * x, double * y) const;
-  void GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, double ** X, double ** Y, int NumVectors) const;
+  void GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, double ** X, int LDX, double ** Y, int LDY, int NumVectors) const;
 
   void SetStaticGraph(bool Flag) {StaticGraph_ = Flag;}
 

@@ -95,7 +95,7 @@ int Epetra_Util::SetSeed(unsigned int Seed) {
 	for (int k=j; k>=0; k-=m)
 	  {
 	    if ((SortAscending && list[k+m] >= list[k]) || 
-		( !SortAscending && list[k+m] >= list[k]))
+		( !SortAscending && list[k+m] <= list[k]))
 	      break;
 	    int temp = list[k+m];
 	    list[k+m] = list[k];

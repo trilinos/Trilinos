@@ -36,7 +36,7 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Distributor.h"
 #include "Epetra_OffsetIndex.h"
-
+#include "Epetra_BLAS_wrappers.h"
 //==============================================================================
 Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, int* NumEntriesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
@@ -1048,14 +1048,6 @@ int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epe
   //
   // This function find Y such that LY = X or UY = X or the transpose cases.
   //
-  if((X.NumVectors() == 1) && (Y.NumVectors() == 1)) {
-    double* xp = (double*) X[0];
-    double* yp = (double*) Y[0];
-    Epetra_Vector x(View, X.Map(), xp);
-    Epetra_Vector y(View, Y.Map(), yp);
-    EPETRA_CHK_ERR(Solve(Upper, Trans, UnitDiagonal, x, y));
-    return(0);
-  }
   if(!Filled()) 
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
@@ -1070,10 +1062,16 @@ int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epe
 
   double** Xp = (double**) X.Pointers();
   double** Yp = (double**) Y.Pointers();
+  int LDX = X.ConstantStride() ? X.Stride() : 0;
+  int LDY = Y.ConstantStride() ? Y.Stride() : 0;
   int NumVectors = X.NumVectors();
 
 
-  GeneralSM(Upper, Trans, UnitDiagonal, Xp, Yp, NumVectors);
+    // Do actual computation
+  if (NumVectors==1)
+    GeneralSV(Upper, Trans, UnitDiagonal, *Xp, *Yp);
+  else
+    GeneralSM(Upper, Trans, UnitDiagonal, Xp, LDX, Yp, LDY, NumVectors);
 
   UpdateFlops(2 * NumVectors * NumGlobalNonzeros());
   return(0);
@@ -2134,7 +2132,8 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
     GeneralMV(xp, yp);
 
     if(Exporter() != 0) {
-      EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter(), InsertAdd)); // Fill y with Values from export vector
+      y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter(), Add)); // Fill y with Values from export vector
     }
     // Handle case of rangemap being a local replicated map
     if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
@@ -2182,7 +2181,9 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 
   double** Xp = (double**) X.Pointers();
   double** Yp = (double**) Y.Pointers();
-   UpdateImportVector(NumVectors); // Make sure Import and Export Vectors are compatible
+  int LDX = X.ConstantStride() ? X.Stride() : 0;
+  int LDY = Y.ConstantStride() ? Y.Stride() : 0;
+  UpdateImportVector(NumVectors); // Make sure Import and Export Vectors are compatible
   UpdateExportVector(NumVectors);
 
   if (!TransA) {
@@ -2191,15 +2192,23 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     if (Importer()!=0) {
       EPETRA_CHK_ERR(ImportVector_->Import(X, *Importer(), Insert));
       Xp = (double**)ImportVector_->Pointers();
+      LDX = ImportVector_->ConstantStride() ? ImportVector_->Stride() : 0;
     }
 
     // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
-    if (Exporter()!=0) Yp = (double**)ExportVector_->Pointers();
+    if (Exporter()!=0) {
+      Yp = (double**)ExportVector_->Pointers();
+      LDY = ExportVector_->ConstantStride() ? ExportVector_->Stride() : 0;
+    }
 
     // Do actual computation
-    GeneralMM(Xp, Yp, NumVectors);
+    if (NumVectors==1)
+      GeneralMV(*Xp, *Yp);
+    else
+      GeneralMM(Xp, LDX, Yp, LDY, NumVectors);
     if (Exporter()!=0) {
-      Y.Export(*ExportVector_, *Exporter(), InsertAdd); // Fill Y with Values from export vector
+      Y.PutScalar(0.0);  // Make sure target is zero
+      Y.Export(*ExportVector_, *Exporter(), Add); // Fill Y with Values from export vector
     }
     // Handle case of rangemap being a local replicated map
     if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Y.Reduce());
@@ -2212,13 +2221,20 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     if (Exporter()!=0) {
       EPETRA_CHK_ERR(ExportVector_->Import(X, *Exporter(), Insert));
       Xp = (double**)ExportVector_->Pointers();
+      LDX = ExportVector_->ConstantStride() ? ExportVector_->Stride() : 0;
     }
 
     // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
-    if (Importer()!=0) Yp = (double**)ImportVector_->Pointers();
+    if (Importer()!=0) {
+      Yp = (double**)ImportVector_->Pointers();
+      LDY = ImportVector_->ConstantStride() ? ImportVector_->Stride() : 0;
+    }
 
     // Do actual computation
-    GeneralMTM(Xp, Yp, NumVectors);
+    if (NumVectors==1)
+      GeneralMTV(*Xp, *Yp);
+    else
+      GeneralMTM(Xp, LDX, Yp, LDY, NumVectors);
     if (Importer()!=0) {
       Y.PutScalar(0.0);  // Make sure target is zero
       EPETRA_CHK_ERR(Y.Export(*ImportVector_, *Importer(), Add)); // Fill Y with Values from export vector
@@ -2262,9 +2278,14 @@ void Epetra_CrsMatrix::UpdateExportVector(int NumVectors) const {
 void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
   
   if (StorageOptimized() && Graph().StorageOptimized()) {
+
     double * Values = All_Values();
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
+
+    int izero = 0;
+    EPETRA_DCRSMV_F77(&izero, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, x, y);
+    return;
     for(int i = 0; i < NumMyRows_; i++) {
       double sum = 0.0;
       int prevOffset = *IndexOffset++;
@@ -2317,6 +2338,14 @@ void Epetra_CrsMatrix::GeneralMV(double * x, double * y)  const {
 void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
 
   int NumCols = NumMyCols();
+  if (StorageOptimized() && Graph().StorageOptimized()) {
+    double * Values = All_Values_;
+    int * Indices = Graph().All_Indices();
+    int * IndexOffset = Graph().IndexOffset();
+    int ione = 1;
+    EPETRA_DCRSMV_F77(&ione, &NumMyRows_, &NumCols, Values, Indices, IndexOffset, x, y);
+    return;
+  }
   for(int i = 0; i < NumCols; i++) 
     y[i] = 0.0; // Initialize y for transpose multiply
 
@@ -2362,12 +2391,17 @@ void Epetra_CrsMatrix::GeneralMTV(double * x, double * y) const {
   return;
 }
 //=======================================================================================================
-void Epetra_CrsMatrix::GeneralMM(double ** X, double ** Y, int NumVectors) const {
+void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int NumVectors) const {
 
   if (StorageOptimized() && Graph().StorageOptimized()) {
     double * Values = All_Values_;
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
+    if (LDX!=0 && LDY!=0) {
+    int izero = 0;
+    EPETRA_DCRSMM_F77(&izero, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
+    return;
+    }
     for (int i=0; i < NumMyRows_; i++) {
       int prevOffset = *IndexOffset++;
       int NumEntries = *IndexOffset - prevOffset;
@@ -2416,10 +2450,19 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, double ** Y, int NumVectors) const
   return;
 }
 //=======================================================================================================
-void Epetra_CrsMatrix::GeneralMTM(double ** X, double ** Y, int NumVectors)  const{
+void Epetra_CrsMatrix::GeneralMTM(double ** X, int LDX, double ** Y, int LDY, int NumVectors)  const{
 
   int NumCols = NumMyCols();
-
+  if (StorageOptimized() && Graph().StorageOptimized()) {
+    if (LDX!=0 && LDY!=0) {
+      double * Values = All_Values_;
+      int * Indices = Graph().All_Indices();
+      int * IndexOffset = Graph().IndexOffset();
+      int ione = 1;
+      EPETRA_DCRSMM_F77(&ione, &NumMyRows_, &NumCols, Values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
+      return;
+    }
+  }
   for (int k=0; k<NumVectors; k++) 
     for (int i=0; i < NumCols; i++) 
       Y[k][i] = 0.0; // Initialize y for transpose multiply
@@ -2481,12 +2524,20 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
 
 
   int i, j, j0;
-  int NumCols = NumMyCols();
 
   if (StorageOptimized() && Graph().StorageOptimized()) {
     double * Values = All_Values();
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
+
+    int iupper = Upper ? 1:0;
+    int itrans = Trans ? 1:0;
+    int udiag =  UnitDiagonal ? 1:0;
+    int nodiag = NoDiagonal() ? 1:0;
+    int xysame = (xp==yp) ? 1:0;
+    EPETRA_DCRSSV_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, xp, yp, &xysame);
+    return;
+
     if (!Trans) {
       
       if (Upper) {
@@ -2537,7 +2588,7 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
     else {
       
       if (xp!=yp) 
-	for (i=0; i < NumCols; i++) 
+	for (i=0; i < NumMyRows_; i++) 
 	  yp[i] = xp[i]; // Initialize y for transpose solve
       
       if (Upper) {
@@ -2631,7 +2682,7 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
     else {
       
       if (xp!=yp) 
-	for (i=0; i < NumCols; i++) 
+	for (i=0; i < NumMyRows_; i++) 
 	  yp[i] = xp[i]; // Initialize y for transpose solve
       
       if (Upper) {
@@ -2674,7 +2725,7 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
   return;
 }
 //=======================================================================================================
-void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, double ** Xp, double ** Yp, int NumVectors)  const{
+void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, double ** Xp, int LDX, double ** Yp, int LDY, int NumVectors)  const{
 
   int i, j, j0, k;
   double diag;
@@ -2683,7 +2734,18 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
     double * Values = All_Values();
     int * Indices = Graph().All_Indices();
     int * IndexOffset = Graph().IndexOffset();
-
+    /*
+    if (LDX!=0 && LDY!=0) {
+      int iupper = Upper ? 1:0;
+      int itrans = Trans ? 1:0;
+      int udiag =  UnitDiagonal ? 1:0;
+      int nodiag = NoDiagonal() ? 1:0;
+      int xysame = (Xp==Yp) ? 1:0;
+      EPETRA_DCRSSM_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, 
+                       *Xp, &LDX, *Yp, &LDY, &xysame, &NumVectors);
+      return;
+    }
+    */
     if(!Trans) {   
       if(Upper) {   
 	j0 = 1;
@@ -2885,6 +2947,7 @@ void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, doub
   
   return;
 }
+//=============================================================================
 int Epetra_CrsMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vector& y) const {
   //
   // This function forms the product y = A * x or y = A' * x
@@ -2894,9 +2957,6 @@ int Epetra_CrsMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
   int i, j;
-  int* NumEntriesPerRow = Graph().NumIndicesPerRow();
-  int** Indices = Graph().Indices();
-  double** Values = Values_;
   double* xp = (double*) x.Values();
   double* yp = (double*) y.Values();
   int NumMyCols_ = NumMyCols();
@@ -2932,9 +2992,9 @@ int Epetra_CrsMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
 		
     // Do actual computation
     for(i = 0; i < NumMyRows_; i++) {
-      int     NumEntries = *NumEntriesPerRow++;
-      int*    RowIndices = *Indices++;
-      double* RowValues  = *Values++;
+      int     NumEntries = NumMyEntries(i);
+      int*    RowIndices = Graph().Indices(i);
+      double* RowValues  = Values(i);
       double sum = 0.0;
       for(j = 0; j < NumEntries; j++) 
 	sum += RowValues[j] * xp[RowIndices[j]];
@@ -2984,9 +3044,9 @@ int Epetra_CrsMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
       yp[i] = 0.0; // Initialize y for transpose multiply
         
     for(i = 0; i < NumMyRows_; i++) {
-      int     NumEntries = *NumEntriesPerRow++;
-      int*    RowIndices = *Indices++;
-      double* RowValues  = *Values++;
+      int     NumEntries = NumMyEntries(i);
+      int*    RowIndices = Graph().Indices(i);
+      double* RowValues  = Values(i);
       for(j = 0; j < NumEntries; j++) 
 	yp[RowIndices[j]] += RowValues[j] * xp[i];
     }
@@ -2999,6 +3059,136 @@ int Epetra_CrsMatrix::Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vect
   }
 
   UpdateFlops(2 * NumGlobalNonzeros());
+  return(0);
+}
+//=============================================================================
+int Epetra_CrsMatrix::Multiply1(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+  //
+  // This function forms the product Y = A * Y or Y = A' * X
+  //
+  if((X.NumVectors() == 1) && (Y.NumVectors() == 1)) {
+    double* xp = (double*) X[0];
+    double* yp = (double*) Y[0];
+    Epetra_Vector x(View, X.Map(), xp);
+    Epetra_Vector y(View, Y.Map(), yp);
+    EPETRA_CHK_ERR(Multiply1(TransA, x, y));
+    return(0);
+  }
+  if(!Filled()) {
+    EPETRA_CHK_ERR(-1); // Matrix must be filled.
+  }
+
+  int i, j, k;
+
+  double** Xp = (double**) X.Pointers();
+  double** Yp = (double**) Y.Pointers();
+
+  int NumVectors = X.NumVectors();
+  int NumMyCols_ = NumMyCols();
+
+
+  // Need to better manage the Import and Export vectors:
+  // - Need accessor functions
+  // - Need to make the NumVector match (use a View to do this)
+  // - Need to look at RightScale and ColSum routines too.
+
+  if (!TransA) {
+
+    // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
+    if (Importer()!=0) {
+      if (ImportVector_!=0) {
+	if (ImportVector_->NumVectors()!=NumVectors) { 
+	  delete ImportVector_; ImportVector_= 0;}
+      }
+      if (ImportVector_==0) 
+	ImportVector_ = new Epetra_MultiVector(ColMap(),NumVectors); // Create import vector if needed
+      EPETRA_CHK_ERR(ImportVector_->Import(X, *Importer(), Insert));
+      Xp = (double**)ImportVector_->Pointers();
+    }
+
+    // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+    if (Exporter()!=0) {
+      if (ExportVector_!=0) {
+	if (ExportVector_->NumVectors()!=NumVectors) { 
+	  delete ExportVector_; ExportVector_= 0;}
+      }
+      if (ExportVector_==0) 
+	ExportVector_ = new Epetra_MultiVector(RowMap(),NumVectors); // Create Export vector if needed
+      Yp = (double**)ExportVector_->Pointers();
+    }
+
+    // Do actual computation
+
+    for (i=0; i < NumMyRows_; i++) {
+      int      NumEntries = NumMyEntries(i);
+      int *    RowIndices = Graph().Indices(i);
+      double * RowValues  = Values(i);
+      for (k=0; k<NumVectors; k++) {
+	double sum = 0.0;
+	for (j=0; j < NumEntries; j++) sum += RowValues[j] * Xp[k][RowIndices[j]];
+	Yp[k][i] = sum;
+      }
+    }
+    if (Exporter()!=0) {
+      Y.PutScalar(0.0); // Make sure target is zero
+      Y.Export(*ExportVector_, *Exporter(), Add); // Fill Y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Y.Reduce());
+  }
+  else { // Transpose operation
+		
+
+    // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors
+
+    if (Exporter()!=0) {
+      if (ExportVector_!=0) {
+	if (ExportVector_->NumVectors()!=NumVectors) { 
+	  delete ExportVector_; ExportVector_= 0;}
+      }
+      if (ExportVector_==0) 
+	ExportVector_ = new Epetra_MultiVector(RowMap(),NumVectors); // Create Export vector if needed
+      EPETRA_CHK_ERR(ExportVector_->Import(X, *Exporter(), Insert));
+      Xp = (double**)ExportVector_->Pointers();
+    }
+
+    // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
+    if (Importer()!=0) {
+      if (ImportVector_!=0) {
+	if (ImportVector_->NumVectors()!=NumVectors) { 
+	  delete ImportVector_; ImportVector_= 0;}
+      }
+      if (ImportVector_==0) 
+	ImportVector_ = new Epetra_MultiVector(ColMap(),NumVectors); // Create import vector if needed
+      Yp = (double**)ImportVector_->Pointers();
+    }
+
+    // Do actual computation
+
+
+
+    for (k=0; k<NumVectors; k++) 
+      for (i=0; i < NumMyCols_; i++) 
+	Yp[k][i] = 0.0; // Initialize y for transpose multiply
+    
+    for (i=0; i < NumMyRows_; i++) {
+      int      NumEntries = NumMyEntries(i);
+      int *    RowIndices = Graph().Indices(i);
+      double * RowValues  = Values(i);
+      for (k=0; k<NumVectors; k++) {
+	for (j=0; j < NumEntries; j++) 
+	  Yp[k][RowIndices[j]] += RowValues[j] * Xp[k][i];
+      }
+    }
+    if (Importer()!=0) {
+      Y.PutScalar(0.0); // Make sure target is zero
+      EPETRA_CHK_ERR(Y.Export(*ImportVector_, *Importer(), Add)); // Fill Y with Values from export vector
+    }
+    // Handle case of rangemap being a local replicated map
+    if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1)  EPETRA_CHK_ERR(Y.Reduce());
+  }
+
+  UpdateFlops(2*NumVectors*NumGlobalNonzeros());
   return(0);
 }
 

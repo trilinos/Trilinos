@@ -48,7 +48,7 @@ CORE = \
 	$(srcdir)/Epetra_BLAS.cpp \
 	$(srcdir)/Epetra_LAPACK.cpp \
 	$(srcdir)/Epetra_Object.cpp
-	
+
 UTIL_H = \
 	$(srcdir)/Epetra_Flops.h \
 	$(srcdir)/Epetra_Time.h \
@@ -89,7 +89,11 @@ UNIPROC = \
 	$(srcdir)/Epetra_SerialDenseVector.cpp \
 	$(srcdir)/Epetra_SerialDenseSVD.cpp \
 	$(srcdir)/Epetra_IntSerialDenseMatrix.cpp  \
-	$(srcdir)/Epetra_IntSerialDenseVector.cpp 
+	$(srcdir)/Epetra_IntSerialDenseVector.cpp \
+	$(srcdir)/Epetra_dcrsmv.f \
+	$(srcdir)/Epetra_dcrsmm.f \
+	$(srcdir)/Epetra_dcrssv.f \
+	$(srcdir)/Epetra_dcrsmm.f
 
 SERIAL_H = \
 	$(srcdir)/Epetra_SerialComm.h  \
@@ -208,7 +212,9 @@ COMP_H = \
 	$(srcdir)/Epetra_FECrsMatrix.h \
 	$(srcdir)/Epetra_FEVbrMatrix.h \
 	$(srcdir)/Epetra_FEVector.h \
-	$(srcdir)/Epetra_IntVector.h
+	$(srcdir)/Epetra_IntVector.h \
+	$(srcdir)/Epetra_JadOperator.h
+
 
 COMP = \
 	$(srcdir)/Epetra_CompObject.cpp \
@@ -224,7 +230,8 @@ COMP = \
 	$(srcdir)/Epetra_FECrsMatrix.cpp \
 	$(srcdir)/Epetra_FEVbrMatrix.cpp \
 	$(srcdir)/Epetra_FEVector.cpp \
-	$(srcdir)/Epetra_IntVector.cpp
+	$(srcdir)/Epetra_IntVector.cpp \
+	$(srcdir)/Epetra_JadOperator.cpp
 
 
 # ------------------------------------------------------------------------

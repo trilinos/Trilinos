@@ -62,6 +62,10 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DSYMM_F77   F77_FUNC(ssymm,SSYMM)
 #define DTRMM_F77   F77_FUNC(strmm,STRMM)
 #define DTRSM_F77   F77_FUNC(strsm,STRSM)
+#define EPETRA_DCRSMV_F77   F77_FUNC_(epetra_dcrsmv,EPETRA_DCRSMV)
+#define EPETRA_DCRSMM_F77   F77_FUNC_(epetra_dcrsmm,EPETRA_DCRSMM)
+#define EPETRA_DCRSSV_F77   F77_FUNC_(epetra_dcrssv,EPETRA_DCRSSV)
+#define EPETRA_DCRSSM_F77   F77_FUNC_(epetra_dcrssm,EPETRA_DCRSSM)
 
 #elif defined(INTEL_CXML)
 
@@ -82,6 +86,10 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
 #define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
 #define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
+#define EPETRA_DCRSMV_F77   F77_FUNC_(epetra_dcrsmv,EPETRA_DCRSMV)
+#define EPETRA_DCRSMM_F77   F77_FUNC_(epetra_dcrsmm,EPETRA_DCRSMM)
+#define EPETRA_DCRSSV_F77   F77_FUNC_(epetra_dcrssv,EPETRA_DCRSSV)
+#define EPETRA_DCRSSM_F77   F77_FUNC_(epetra_dcrssm,EPETRA_DCRSSM)
 
 
 #elif defined(INTEL_MKL)
@@ -103,6 +111,10 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
 #define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
 #define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
+#define EPETRA_DCRSMV_F77   F77_FUNC_(epetra_dcrsmv,EPETRA_DCRSMV)
+#define EPETRA_DCRSMM_F77   F77_FUNC_(epetra_dcrsmm,EPETRA_DCRSMM)
+#define EPETRA_DCRSSV_F77   F77_FUNC_(epetra_dcrssv,EPETRA_DCRSSV)
+#define EPETRA_DCRSSM_F77   F77_FUNC_(epetra_dcrssm,EPETRA_DCRSSM)
 
 
 #endif 
@@ -115,8 +127,13 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #undef F77_FUNC
 #endif
 
+#ifdef F77_FUNC_
+#undef F77_FUNC_
+#endif
+
 
 #define F77_FUNC(lcase,UCASE) UCASE
+#define F77_FUNC_(lcase,UCASE) UCASE
 
 #else /* Define Epetra_fcd for all other machines */
 
@@ -131,11 +148,16 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifdef F77_FUNC
 #undef F77_FUNC
 #endif
+#ifdef F77_FUNC_
+#undef F77_FUNC_
+#endif
 
 #ifdef TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE
 #define F77_FUNC(lcase,UCASE) lcase
+#define F77_FUNC_(lcase,UCASE) lcase
 #else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
 #define F77_FUNC(lcase,UCASE) lcase ## _
+#define F77_FUNC_(lcase,UCASE) lcase ## __
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 #endif /* HAVE_CONFIG_H */
 
@@ -153,6 +175,10 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
 #define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
 #define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
+#define EPETRA_DCRSMV_F77   F77_FUNC_(epetra_dcrsmv,EPETRA_DCRSMV)
+#define EPETRA_DCRSMM_F77   F77_FUNC_(epetra_dcrsmm,EPETRA_DCRSMM)
+#define EPETRA_DCRSSV_F77   F77_FUNC_(epetra_dcrssv,EPETRA_DCRSSV)
+#define EPETRA_DCRSSM_F77   F77_FUNC_(epetra_dcrssm,EPETRA_DCRSSM)
 
 
 #endif
@@ -227,6 +253,16 @@ void PREFIX DTRMM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd,
 void PREFIX DTRSM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
 		      int *m, int *n, double *alpha, double *a, int *
 		      lda, double *b, int *ldb);
+void PREFIX EPETRA_DCRSMV_F77(const int *, const int *, const int *, const double *, const int *, 
+			      const int *, double *, double *);
+void PREFIX EPETRA_DCRSMM_F77(const int *, const int *, const int *, const double *, const int *, 
+			      const int *, double *, int *, double *, int *, int *);
+void PREFIX EPETRA_DCRSSV_F77(const int *, const int *, const int *, const int *, const int *, 
+			      const int *, const double *, const int *, const int *, double *, 
+			      double *, const int *);
+void PREFIX EPETRA_DCRSSM_F77(const int *, const int *, const int *, const int *, const int *, 
+			      const int *, const double *, const int *, const int *, double *, 
+			      const int *, double *, const int *, const int *, const int *);
 
 /* Single precision BLAS 3 */
 void PREFIX SGEMM_F77(Epetra_fcd, Epetra_fcd, int *m, int *

@@ -36,6 +36,7 @@
 #include "Epetra_IntVector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_SerialDenseVector.h"
 #include "Epetra_Flops.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -45,6 +46,7 @@
 #endif
 #include "../epetra_test_err.h"
 #include "Epetra_Version.h"
+#include "Epetra_JadOperator.h"
 
 // prototypes
 
@@ -55,7 +57,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_CrsMatrix *& A, 
 			Epetra_Vector *& b, 
 			Epetra_Vector *& bt,
-			Epetra_Vector *&xexact, bool StaticProfile);
+			Epetra_Vector *&xexact, bool StaticProfile, bool MakeLocalOnly);
 
 void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
 			int * xoff, int * yoff, int nrhs,
@@ -64,7 +66,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_CrsMatrix *& A, 
 			Epetra_MultiVector *& b, 
 			Epetra_MultiVector *& bt,
-			Epetra_MultiVector *&xexact, bool StaticProfile);
+			Epetra_MultiVector *&xexact, bool StaticProfile, bool MakeLocalOnly);
  
 void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
 			int * xoff, int * yoff,
@@ -74,7 +76,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_VbrMatrix *& A, 
 			Epetra_Vector *& b, 
 			Epetra_Vector *& bt,
-			Epetra_Vector *&xexact, bool StaticProfile);
+			Epetra_Vector *&xexact, bool StaticProfile, bool MakeLocalOnly);
 
 void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
 			int * xoff, int * yoff, 
@@ -84,11 +86,20 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_VbrMatrix *& A, 
 			Epetra_MultiVector *& b, 
 			Epetra_MultiVector *& bt,
-			Epetra_MultiVector *&xexact, bool StaticProfile);
+			Epetra_MultiVector *&xexact, bool StaticProfile, bool MakeLocalOnly);
 
 void GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int numProcs,
 			      int myPID, int * & myGlobalElements);
 
+void runMatrixTests(Epetra_CrsMatrix * A,  Epetra_MultiVector * b, Epetra_MultiVector * bt,
+		    Epetra_MultiVector * xexact, bool StaticProfile, bool verbose, bool summary);
+
+void runJadOperatorTests(Epetra_JadOperator * A,  Epetra_MultiVector * b, Epetra_MultiVector * bt,
+		    Epetra_MultiVector * xexact, bool StaticProfile, bool verbose, bool summary);
+
+void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_MultiVector * btL, Epetra_MultiVector * xexactL, 
+		      Epetra_CrsMatrix * U,  Epetra_MultiVector * bU, Epetra_MultiVector * btU, Epetra_MultiVector * xexactU, 
+		      bool StaticProfile, bool verbose, bool summary);
 int main(int argc, char *argv[])
 {
   int ierr = 0, j;
@@ -133,10 +144,10 @@ int main(int argc, char *argv[])
     return(1);
 
   }
-  //  char tmp;
-  //  if (rank==0) cout << "Press any key to continue..."<< endl;
-  //  if (rank==0) cin >> tmp;
-  //  comm.Barrier();
+    //char tmp;
+    //if (comm.MyPID()==0) cout << "Press any key to continue..."<< endl;
+    //if (comm.MyPID()==0) cin >> tmp;
+    //comm.Barrier();
 
   comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   if (verbose && comm.MyPID()==0)
@@ -183,9 +194,9 @@ int main(int argc, char *argv[])
     return(1);
   }
 
-  if (numPoints!=5 && numPoints!=9) {
+  if (numPoints!=5 && numPoints!=9 && numPoints!=25) {
     cerr << "Number of points specified = " << numPoints << endl
-	 << " is not 5 or 9" << endl << endl;
+	 << " is not 5, 9, 25" << endl << endl;
     return(1);
   }
 
@@ -194,8 +205,8 @@ int main(int argc, char *argv[])
     return(1);
   }
 
-  Epetra_IntSerialDenseVector Xoff;
-  Epetra_IntSerialDenseVector Yoff;
+  Epetra_IntSerialDenseVector Xoff, XLoff, XUoff;
+  Epetra_IntSerialDenseVector Yoff, YLoff, YUoff;
   if (numPoints==5) {
 
      // Generate a 5-point 2D Finite Difference matrix
@@ -203,8 +214,20 @@ int main(int argc, char *argv[])
     Yoff.Size(5);
     Xoff[0] = -1; Xoff[1] = 1; Xoff[2] = 0; Xoff[3] = 0;  Xoff[4] = 0; 
     Yoff[0] = 0;  Yoff[1] = 0; Yoff[2] = 0; Yoff[3] = -1; Yoff[4] = 1; 
+
+     // Generate a 2-point 2D Lower triangular Finite Difference matrix
+    XLoff.Size(2);
+    YLoff.Size(2);
+    XLoff[0] = -1; XLoff[1] =  0; 
+    YLoff[0] =  0; YLoff[1] = -1;
+
+     // Generate a 3-point 2D upper triangular Finite Difference matrix
+    XUoff.Size(3);
+    YUoff.Size(3);
+    XUoff[0] =  0; XUoff[1] =  1; XUoff[2] = 0; 
+    YUoff[0] =  0; YUoff[1] =  0; YUoff[2] = 1;
   }
-  else {
+  else if (numPoints==9) {
     // Generate a 9-point 2D Finite Difference matrix
     Xoff.Size(9);
     Yoff.Size(9);
@@ -214,184 +237,217 @@ int main(int argc, char *argv[])
     Yoff[3] =  0;  Yoff[4] =  0; Yoff[5] =  0; 
     Xoff[6] = -1;  Xoff[7] =  0; Xoff[8] =  1; 
     Yoff[6] =  1;  Yoff[7] =  1; Yoff[8] =  1; 
+
+    // Generate a 5-point lower triangular 2D Finite Difference matrix
+    XLoff.Size(5);
+    YLoff.Size(5);
+    XLoff[0] = -1;  XLoff[1] =  0; Xoff[2] =  1; 
+    YLoff[0] = -1;  YLoff[1] = -1; Yoff[2] = -1; 
+    XLoff[3] = -1;  XLoff[4] =  0; 
+    YLoff[3] =  0;  YLoff[4] =  0;
+
+    // Generate a 4-point upper triangular 2D Finite Difference matrix
+    XUoff.Size(4);
+    YUoff.Size(4);
+    XUoff[0] =  1; 
+    YUoff[0] =  0; 
+    XUoff[1] = -1;  XUoff[2] =  0; XUoff[3] =  1; 
+    YUoff[1] =  1;  YUoff[2] =  1; YUoff[3] =  1; 
+
+  }
+  else {
+    // Generate a 25-point 2D Finite Difference matrix
+    Xoff.Size(25);
+    Yoff.Size(25);
+    int xi = 0, yi = 0;
+    int xo = -2, yo = -2;
+    Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+    xo = -2, yo++;
+    Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+    xo = -2, yo++;
+    Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+    xo = -2, yo++;
+    Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+    xo = -2, yo++;
+    Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
+    Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
+
+    // Generate a 13-point lower triangular 2D Finite Difference matrix
+    XLoff.Size(13);
+    YLoff.Size(13);
+    xi = 0, yi = 0;
+    xo = -2, yo = -2;
+    XLoff[xi++] = xo++;  XLoff[xi++] = xo++; XLoff[xi++] = xo++; XLoff[xi++] = xo++; XLoff[xi++] = xo++;
+    YLoff[yi++] = yo  ;  YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; 
+    xo = -2, yo++;
+    XLoff[xi++] = xo++;  XLoff[xi++] = xo++; XLoff[xi++] = xo++; XLoff[xi++] = xo++; XLoff[xi++] = xo++;
+    YLoff[yi++] = yo  ;  YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; YLoff[yi++] = yo  ; 
+    xo = -2, yo++;
+    XLoff[xi++] = xo++;  XLoff[xi++] = xo++; XLoff[xi++] = xo++;
+    YLoff[yi++] = yo  ;  YLoff[yi++] = yo  ; YLoff[yi++] = yo  ;
+
+    // Generate a 13-point upper triangular 2D Finite Difference matrix
+    XUoff.Size(13);
+    YUoff.Size(13);
+    xi = 0, yi = 0;
+    xo = 0, yo = 0;
+    XUoff[xi++] = xo++;  XUoff[xi++] = xo++; XUoff[xi++] = xo++;
+    YUoff[yi++] = yo  ;  YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; 
+    xo = -2, yo++;
+    XUoff[xi++] = xo++;  XUoff[xi++] = xo++; XUoff[xi++] = xo++; XUoff[xi++] = xo++; XUoff[xi++] = xo++;
+    YUoff[yi++] = yo  ;  YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; 
+    xo = -2, yo++;
+    XUoff[xi++] = xo++;  XUoff[xi++] = xo++; XUoff[xi++] = xo++; XUoff[xi++] = xo++; XUoff[xi++] = xo++;
+    YUoff[yi++] = yo  ;  YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; YUoff[yi++] = yo  ; 
+
   }
 
   Epetra_Map * map;
+  Epetra_Map * mapL;
+  Epetra_Map * mapU;
   Epetra_CrsMatrix * A;
-  Epetra_Vector * b;
-  Epetra_Vector * bt;
-  Epetra_Vector * xexact;
-
-  GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
-		     Xoff.Values(), Yoff.Values(), comm, verbose, summary,
-		     map, A, b, bt, xexact, false);
-
-  Epetra_Vector q(b->Map());
-  Epetra_Vector z(b->Map());
-  Epetra_Vector r(b->Map());
+  Epetra_CrsMatrix * L;
+  Epetra_CrsMatrix * U;
+  Epetra_MultiVector * b;
+  Epetra_MultiVector * bt;
+  Epetra_MultiVector * xexact;
+  Epetra_MultiVector * bL;
+  Epetra_MultiVector * btL;
+  Epetra_MultiVector * xexactL;
+  Epetra_MultiVector * bU;
+  Epetra_MultiVector * btU;
+  Epetra_MultiVector * xexactU;
+  Epetra_SerialDenseVector resvec(0);
 
   //Timings
   Epetra_Flops flopcounter;
-  A->SetFlopCounter(flopcounter);
   Epetra_Time timer(comm);
-    
-  for (j=0; j<4; j++) { // j = 0/2 is notrans, j = 1/3 is trans
-      
-    bool TransA = (j==1 || j==3);
-    std::string contig = "without";
-    if (j>1) contig = "with";
-
-    if (j==2) A->OptimizeStorage();
-
-    flopcounter.ResetFlops();
-    timer.ResetStartTime();
-
-    //10 matvecs
-    for( int i = 0; i < 10; ++i )
-      A->Multiply(TransA, *xexact, z); // Compute z = A*xexact or z = A'*xexact
-      
-    elapsed_time = timer.ElapsedTime();
-    total_flops = A->Flops();
-    MFLOPs = total_flops/elapsed_time/1000000.0;
-    if (verbose) cout << "\n\nTotal MFLOPs for 10 MatVec's with dynamic Profile (Trans = " << TransA
-		      << ")  and " << contig << " optimized storage = " << MFLOPs << endl<< endl;
-    if (summary) {
-      if (comm.NumProc()==1) {
-	if (TransA) cout << "TransMvDynProf" << contig << "OptStor" << '\t';
-	else cout << "NoTransMvDynProf" << contig << "OptStor" << '\t';
-      }
-      cout << MFLOPs << endl;
-    }
-      
-
-    // Compute residual
-    if (TransA)
-      r.Update(-1.0, z, 1.0, *bt, 0.0); // r = bt - z
-    else
-      r.Update(-1.0, z, 1.0, *b, 0.0); // r = b - z
-
-    double rnorm;
-    r.Norm2(&rnorm);
-    if (verbose) cout << "Norm of difference between computed and exact RHS = " << rnorm << endl;
-  }
-
-  delete map;
-  delete A;
-  delete b;
-  delete bt; 
-  delete xexact;
 		
-  GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
-		     Xoff.Values(), Yoff.Values(), comm, verbose, summary,
-		     map, A, b, bt, xexact, true);
+  for (int j=0; j<2; j++) {
+    for (int k=1; k<16; k++) {
+      if (k<7 || k%2==0) {
+      int nrhs=k;
+      if (verbose) cout << "\n*************** Results for " << nrhs << " RHS with ";
 
-  //Timings
-  A->SetFlopCounter(flopcounter);
+      bool StaticProfile = (j==0);
+      if (verbose) 
+	if (StaticProfile) cout << " static profile\n";
+	else cout << " dynamic profile\n";
+      
+      GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
+			 Xoff.Values(), Yoff.Values(), nrhs, comm, verbose, summary,
+			 map, A, b, bt, xexact, StaticProfile, false);
+      
+      timer.ResetStartTime();
+      Epetra_JadOperator JA(*A);
+      elapsed_time = timer.ElapsedTime();
+      if (verbose) cout << "Time to create Jagged diagonal matrix = " << elapsed_time << endl;
+
+      //cout << "A = " << *A << endl;
+      //cout << "JA = " << JA << endl;
+
+      runJadOperatorTests(&JA, b, bt, xexact, StaticProfile, verbose, summary);
+
+      runMatrixTests(A, b, bt, xexact, StaticProfile, verbose, summary);
+
+      delete A;
+      delete b;
+      delete bt; 
+      delete xexact;
+
+      GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, XLoff.Length(),
+			 XLoff.Values(), YLoff.Values(), nrhs, comm, verbose, summary,
+			 mapL, L, bL, btL, xexactL, StaticProfile, true);
+      
+
+      GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, XUoff.Length(),
+			 XUoff.Values(), YUoff.Values(), nrhs, comm, verbose, summary,
+			 mapU, U, bU, btU, xexactU, StaticProfile, true);
+      
+
+      runLUMatrixTests(L, bL, btL, xexactL, U, bU, btU, xexactU, StaticProfile, verbose, summary);
+
+      delete L;
+      delete bL;
+      delete btL; 
+      delete xexactL;
+      delete mapL;
+
+      delete U;
+      delete bU;
+      delete btU; 
+      delete xexactU;
+      delete mapU;
+
+      Epetra_MultiVector q(*map, nrhs);
+      Epetra_MultiVector z(q);
+      Epetra_MultiVector r(q);
+      
+      delete map;
+      q.SetFlopCounter(flopcounter);
+      z.SetFlopCounter(q);
+      r.SetFlopCounter(q);
+
+      resvec.Resize(nrhs);
+      
     
-  for (j=0; j<4; j++) { // j = 0/2 is notrans, j = 1/3 is trans
+      flopcounter.ResetFlops();
+      timer.ResetStartTime();
+
+      //10 norms
+      for( int i = 0; i < 10; ++i )
+	q.Norm2( resvec.Values() );
+
+      elapsed_time = timer.ElapsedTime();
+      total_flops = q.Flops();
+      MFLOPs = total_flops/elapsed_time/1000000.0;
+      if (verbose) cout << "\nTotal MFLOPs for 10 Norm2's= " << MFLOPs << endl;
       
-    bool TransA = (j==1 || j==3);
-    std::string contig = "without";
-    if (j>1) contig = "with";
-
-    if (j==2) A->OptimizeStorage();
-
-    TransA = (j==1 || j==3);
-
-    flopcounter.ResetFlops();
-    timer.ResetStartTime();
-
-    //10 matvecs
-    for( int i = 0; i < 10; ++i )
-      A->Multiply(TransA, *xexact, z); // Compute z = A*xexact or z = A'*xexact
-      
-    elapsed_time = timer.ElapsedTime();
-    total_flops = A->Flops();
-    MFLOPs = total_flops/elapsed_time/1000000.0;
-    if (verbose) cout << "\n\nTotal MFLOPs for 10 MatVec's with Static Profile (Trans = " << TransA
-		      << ") and " << contig << " optimized storage = " << MFLOPs << endl<< endl;
-    if (summary) {
-      if (comm.NumProc()==1) {
-	if (TransA) cout << "TransMvStatProf" << contig << "OptStor" << '\t';
-	else cout << "NoTransMvStatProf" << contig << "OptStor" << '\t';
+      if (summary) {
+	if (comm.NumProc()==1) cout << "Norm2" << '\t';
+	cout << MFLOPs << endl;
       }
-      cout << MFLOPs << endl;
-    }
       
-
-    // Compute residual
-    if (TransA)
-      r.Update(-1.0, z, 1.0, *bt, 0.0); // r = bt - z
-    else
-      r.Update(-1.0, z, 1.0, *b, 0.0); // r = b - z
-
-    double rnorm;
-    r.Norm2(&rnorm);
-    if (verbose) cout << "Norm of difference between computed and exact RHS = " << rnorm << endl;
+      flopcounter.ResetFlops();
+      timer.ResetStartTime();
+      
+      //10 dot's
+      for( int i = 0; i < 10; ++i )
+	q.Dot(z, resvec.Values());
+      
+      elapsed_time = timer.ElapsedTime();
+      total_flops = q.Flops();
+      MFLOPs = total_flops/elapsed_time/1000000.0;
+      if (verbose) cout << "Total MFLOPs for 10 Dot's  = " << MFLOPs << endl;
+      
+      if (summary) {
+	if (comm.NumProc()==1) cout << "DotProd" << '\t';
+	cout << MFLOPs << endl;
+      }
+      
+      flopcounter.ResetFlops();
+      timer.ResetStartTime();
+      
+      //10 dot's
+      for( int i = 0; i < 10; ++i )
+	q.Update(1.0, z, 1.0, r, 0.0);
+      
+      elapsed_time = timer.ElapsedTime();
+      total_flops = q.Flops();
+      MFLOPs = total_flops/elapsed_time/1000000.0;
+      if (verbose) cout << "Total MFLOPs for 10 Updates= " << MFLOPs << endl;
+      
+      if (summary) {
+	if (comm.NumProc()==1) cout << "Update" << '\t';
+	cout << MFLOPs << endl;
+      }
+    }
+    }
   }
-
-  q.SetFlopCounter(*A);
-  z.SetFlopCounter(*A);
-    
-  flopcounter.ResetFlops();
-  timer.ResetStartTime();
-  //10 norms
-  double n_out;
-  for( int i = 0; i < 10; ++i )
-    q.Norm2( &n_out );
-
-  elapsed_time = timer.ElapsedTime();
-  total_flops = q.Flops();
-  MFLOPs = total_flops/elapsed_time/1000000.0;
-  if (verbose) cout << "\n\nTotal MFLOPs for 10 Norm2's= " << MFLOPs << endl<< endl;
-
-  if (summary) {
-    if (comm.NumProc()==1) cout << "Norm2" << '\t';
-    cout << MFLOPs << endl;
-  }
-
-  r.SetFlopCounter(*A);
-    
-  flopcounter.ResetFlops();
-  timer.ResetStartTime();
-
-  //10 dot's
-  for( int i = 0; i < 10; ++i )
-    q.Dot(z, &n_out);
-    
-  elapsed_time = timer.ElapsedTime();
-  total_flops = q.Flops();
-  MFLOPs = total_flops/elapsed_time/1000000.0;
-  if (verbose) cout << "\n\nTotal MFLOPs for 10 Dot's= " << MFLOPs << endl<< endl;
-    
-  if (summary) {
-    if (comm.NumProc()==1) cout << "DotProd" << '\t';
-    cout << MFLOPs << endl;
-  }
-
-  flopcounter.ResetFlops();
-  timer.ResetStartTime();
-
-  //10 dot's
-  for( int i = 0; i < 10; ++i )
-    q.Update(1.0, z, 1.0, r, 0.0);
-    
-  elapsed_time = timer.ElapsedTime();
-  total_flops = q.Flops();
-  MFLOPs = total_flops/elapsed_time/1000000.0;
-  if (verbose) cout << "\n\nTotal MFLOPs for 10 Updates= " << MFLOPs << endl<< endl;
-    
-  if (summary) {
-    if (comm.NumProc()==1) cout << "Update" << '\t';
-    cout << MFLOPs << endl;
-  }
-
-  delete map;
-  delete A;
-  delete b;
-  delete bt; 
-  delete xexact;
-		
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
@@ -439,13 +495,13 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_CrsMatrix *& A, 
 			Epetra_Vector *& b, 
 			Epetra_Vector *& bt,
-			Epetra_Vector *&xexact, bool StaticProfile) {
+			Epetra_Vector *&xexact, bool StaticProfile, bool MakeLocalOnly) {
 
   Epetra_MultiVector * b1, * bt1, * xexact1;
 	
   GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints, 
 		     xoff, yoff, 1, comm, verbose, summary, 
-		     map, A, b1, bt1, xexact1, StaticProfile);
+		     map, A, b1, bt1, xexact1, StaticProfile, MakeLocalOnly);
 
   b = dynamic_cast<Epetra_Vector *>(b1);
   bt = dynamic_cast<Epetra_Vector *>(bt1);
@@ -461,7 +517,7 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_CrsMatrix *& A, 
 			Epetra_MultiVector *& b, 
 			Epetra_MultiVector *& bt,
-			Epetra_MultiVector *&xexact, bool StaticProfile) {
+			Epetra_MultiVector *&xexact, bool StaticProfile, bool MakeLocalOnly) {
   
   Epetra_Time timer(comm);
   // Determine my global IDs
@@ -477,7 +533,10 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
   int profile = 0; if (StaticProfile) profile = numPoints;
   
-  A = new Epetra_CrsMatrix(Copy, *map, profile, StaticProfile); // Construct matrix
+  if (MakeLocalOnly) 
+    A = new Epetra_CrsMatrix(Copy, *map, *map, profile, StaticProfile); // Construct matrix with rowmap=colmap
+  else
+    A = new Epetra_CrsMatrix(Copy, *map, profile, StaticProfile); // Construct matrix
 
   int * indices = new int[numPoints];
   double * values = new double[numPoints];
@@ -589,13 +648,13 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_VbrMatrix *& A, 
 			Epetra_Vector *& b, 
 			Epetra_Vector *& bt,
-			Epetra_Vector *&xexact, bool StaticProfile) {
+			Epetra_Vector *&xexact, bool StaticProfile, bool MakeLocalOnly) {
 	
   Epetra_MultiVector * b1, * bt1, * xexact1;
 	
   GenerateVbrProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
 		     xoff, yoff, nsizes, sizes,
-		     1, comm, verbose, summary, map, A, b1, bt1, xexact1, StaticProfile);
+		     1, comm, verbose, summary, map, A, b1, bt1, xexact1, StaticProfile, MakeLocalOnly);
 
   b = dynamic_cast<Epetra_Vector *>(b1);
   bt = dynamic_cast<Epetra_Vector *>(bt1);
@@ -612,7 +671,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 			Epetra_VbrMatrix *& A, 
 			Epetra_MultiVector *& b, 
 			Epetra_MultiVector *& bt,
-			Epetra_MultiVector *&xexact, bool StaticProfile) {
+			Epetra_MultiVector *&xexact, bool StaticProfile, bool MakeLocalOnly) {
 
   int i, j;
 
@@ -636,7 +695,10 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
   int profile = 0; if (StaticProfile) profile = numPoints;
   
-  A = new Epetra_VbrMatrix(Copy, *map, profile); // Construct matrix
+  if (MakeLocalOnly) 
+    A = new Epetra_VbrMatrix(Copy, *map, *map, profile); // Construct matrix rowmap=colmap
+  else
+    A = new Epetra_VbrMatrix(Copy, *map, profile); // Construct matrix
 
   int * indices = new int[numPoints];
   double * values = new double[numPoints];
@@ -714,6 +776,7 @@ void GenerateVbrProblem(int numNodesX, int numNodesY, int numProcsX, int numProc
 
   return;
 }
+
 void GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int numProcs,
 			      int myPID, int * & myGlobalElements) {
 
@@ -732,3 +795,231 @@ void GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int n
   return;
 }
 
+void runMatrixTests(Epetra_CrsMatrix * A,  Epetra_MultiVector * b, Epetra_MultiVector * bt,
+		    Epetra_MultiVector * xexact, bool StaticProfile, bool verbose, bool summary) {
+
+  Epetra_MultiVector z(*b);
+  Epetra_MultiVector r(*b);
+  Epetra_SerialDenseVector resvec(b->NumVectors());
+
+  //Timings
+  Epetra_Flops flopcounter;
+  A->SetFlopCounter(flopcounter);
+  Epetra_Time timer(A->Comm());
+  std::string statdyn =        "dynamic";
+  if (StaticProfile) statdyn = "static ";
+
+  for (int j=0; j<4; j++) { // j = 0/2 is notrans, j = 1/3 is trans
+    
+    bool TransA = (j==1 || j==3);
+    std::string contig = "without";
+    if (j>1) contig =    "with   ";
+    
+    for (int k=0; k<2; k++) { // Loop over old multiply vs. new multiply
+      
+      std::string oldnew = "old";
+      if (k>0) oldnew =    "new";
+
+      if (j==2) A->OptimizeStorage();
+
+      flopcounter.ResetFlops();
+      timer.ResetStartTime();
+
+      if (k==0) {
+	//10 matvecs
+	for( int i = 0; i < 10; ++i )
+	  A->Multiply1(TransA, *xexact, z); // Compute z = A*xexact or z = A'*xexact using old Multiply method
+      }
+      else {
+	//10 matvecs
+	for( int i = 0; i < 10; ++i )
+	  A->Multiply(TransA, *xexact, z); // Compute z = A*xexact or z = A'*xexact
+      }
+      
+      double elapsed_time = timer.ElapsedTime();
+      double total_flops = A->Flops();
+
+      // Compute residual
+      if (TransA)
+	r.Update(-1.0, z, 1.0, *bt, 0.0); // r = bt - z
+      else
+	r.Update(-1.0, z, 1.0, *b, 0.0); // r = b - z
+
+      r.Norm2(resvec.Values());
+      
+      if (verbose) cout << "ResNorm = " << resvec.NormInf() << ": ";
+      double MFLOPs = total_flops/elapsed_time/1000000.0;
+      if (verbose) cout << "Total MFLOPs for 10 " << oldnew << " MatVec's with " << statdyn << " Profile (Trans = " << TransA
+			<< ")  and " << contig << " optimized storage = " << MFLOPs <<endl;
+      if (summary) {
+	if (A->Comm().NumProc()==1) {
+	  if (TransA) cout << "TransMv" << statdyn<< "Prof" << contig << "OptStor" << '\t';
+	  else cout << "NoTransMv" << statdyn << "Prof" << contig << "OptStor" << '\t';
+	}
+	cout << MFLOPs << endl;
+      }
+    }
+  }
+  return;
+}
+void runJadOperatorTests(Epetra_JadOperator * A,  Epetra_MultiVector * b, Epetra_MultiVector * bt,
+		    Epetra_MultiVector * xexact, bool StaticProfile, bool verbose, bool summary) {
+
+  Epetra_MultiVector z(*b);
+  Epetra_MultiVector r(*b);
+  Epetra_SerialDenseVector resvec(b->NumVectors());
+
+  //Timings
+  Epetra_Flops flopcounter;
+  A->SetFlopCounter(flopcounter);
+  Epetra_Time timer(A->Comm());
+
+  for (int j=0; j<2; j++) { // j = 0 is notrans, j = 1 is trans
+    
+    bool TransA = (j==1);
+    A->SetUseTranspose(TransA);
+    flopcounter.ResetFlops();
+    timer.ResetStartTime();
+
+    //10 matvecs
+    for( int i = 0; i < 10; ++i )
+      A->Apply(*xexact, z); // Compute z = A*xexact or z = A'*xexact
+    
+    double elapsed_time = timer.ElapsedTime();
+    double total_flops = A->Flops();
+    
+    // Compute residual
+    if (TransA)
+      r.Update(-1.0, z, 1.0, *bt, 0.0); // r = bt - z
+    else
+      r.Update(-1.0, z, 1.0, *b, 0.0); // r = b - z
+    
+    r.Norm2(resvec.Values());
+    
+    if (verbose) cout << "ResNorm = " << resvec.NormInf() << ": ";
+    double MFLOPs = total_flops/elapsed_time/1000000.0;
+    if (verbose) cout << "Total MFLOPs for 10 " << " Jagged Diagonal MatVec's with (Trans = " << TransA
+		      << ") " << MFLOPs <<endl;
+    if (summary) {
+      if (A->Comm().NumProc()==1) {
+	if (TransA) cout << "TransMv" << '\t';
+	else cout << "NoTransMv" << '\t';
+      }
+      cout << MFLOPs << endl;
+    }
+  }
+  return;
+}
+//=========================================================================================
+void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_MultiVector * btL, Epetra_MultiVector * xexactL, 
+		      Epetra_CrsMatrix * U,  Epetra_MultiVector * bU, Epetra_MultiVector * btU, Epetra_MultiVector * xexactU, 
+		      bool StaticProfile, bool verbose, bool summary) {
+
+  if (L->NoDiagonal()) {
+    bL->Update(1.0, *xexactL, 1.0); // Add contribution of a unit diagonal to bL
+    btL->Update(1.0, *xexactL, 1.0); // Add contribution of a unit diagonal to btL
+  }
+  if (U->NoDiagonal()) {
+    bU->Update(1.0, *xexactU, 1.0); // Add contribution of a unit diagonal to bU
+    btU->Update(1.0, *xexactU, 1.0); // Add contribution of a unit diagonal to btU
+  }
+
+  Epetra_MultiVector z(*bL);
+  Epetra_MultiVector r(*bL);
+  Epetra_SerialDenseVector resvec(bL->NumVectors());
+
+  //Timings
+  Epetra_Flops flopcounter;
+  L->SetFlopCounter(flopcounter);
+  U->SetFlopCounter(flopcounter);
+  Epetra_Time timer(L->Comm());
+  std::string statdyn =        "dynamic";
+  if (StaticProfile) statdyn = "static ";
+
+  for (int j=0; j<4; j++) { // j = 0/2 is notrans, j = 1/3 is trans
+    
+    bool TransA = (j==1 || j==3);
+    std::string contig = "without";
+    if (j>1) contig =    "with   ";
+    
+    if (j==2) {
+      L->OptimizeStorage();
+      U->OptimizeStorage();
+    }
+
+    flopcounter.ResetFlops();
+    timer.ResetStartTime();
+    
+    //10 lower solves
+    bool Upper = false;
+    bool UnitDiagonal = L->NoDiagonal();  // If no diagonal, then unit must be used
+    Epetra_MultiVector * b = TransA ? btL : bL;  // solve with the appropriate b vector
+    for( int i = 0; i < 10; ++i )
+      L->Solve(Upper, TransA, UnitDiagonal, *b, z); // Solve Lz = bL or L'z = bLt
+      
+    double elapsed_time = timer.ElapsedTime();
+    double total_flops = L->Flops();
+
+    // Compute residual
+    r.Update(-1.0, z, 1.0, *xexactL, 0.0); // r = bt - z
+    r.Norm2(resvec.Values());
+
+    if (resvec.NormInf()>0.000001) {
+      cout << "resvec = " << resvec << endl;
+      cout << "z = " << z << endl;
+      cout << "xexactL = " << *xexactL << endl;
+      cout << "r = " << r << endl;
+    }
+      
+    if (verbose) cout << "ResNorm = " << resvec.NormInf() << ": ";
+    double MFLOPs = total_flops/elapsed_time/1000000.0;
+    if (verbose) cout << "Total MFLOPs for 10 " << " Lower solves " << statdyn << " Profile (Trans = " << TransA
+		      << ")  and " << contig << " opt storage = " << MFLOPs <<endl;
+    if (summary) {
+      if (L->Comm().NumProc()==1) {
+	if (TransA) cout << "TransLSv" << statdyn<< "Prof" << contig << "OptStor" << '\t';
+	else cout << "NoTransLSv" << statdyn << "Prof" << contig << "OptStor" << '\t';
+      }
+      cout << MFLOPs << endl;
+    }
+    flopcounter.ResetFlops();
+    timer.ResetStartTime();
+    
+    //10 upper solves
+    Upper = true;
+    UnitDiagonal = U->NoDiagonal();  // If no diagonal, then unit must be used
+    b = TransA ? btU : bU;  // solve with the appropriate b vector
+    for( int i = 0; i < 10; ++i )
+      U->Solve(Upper, TransA, UnitDiagonal, *b, z); // Solve Lz = bL or L'z = bLt
+      
+    elapsed_time = timer.ElapsedTime();
+    total_flops = U->Flops();
+
+    // Compute residual
+    r.Update(-1.0, z, 1.0, *xexactU, 0.0); // r = bt - z
+    r.Norm2(resvec.Values());
+
+    if (resvec.NormInf()>0.001) {
+      cout << "U = " << *U << endl;
+      //cout << "resvec = " << resvec << endl;
+      cout << "z = " << z << endl;
+      cout << "xexactU = " << *xexactU << endl;
+      //cout << "r = " << r << endl;
+      cout << "b = " << *b << endl;
+    }
+
+      
+    if (verbose) cout << "ResNorm = " << resvec.NormInf() << ": ";
+    MFLOPs = total_flops/elapsed_time/1000000.0;
+    if (verbose) cout << "Total MFLOPs for 10 " << " Upper solves " << statdyn << " Profile (Trans = " << TransA
+		      << ")  and " << contig << " opt storage = " << MFLOPs <<endl;
+    if (summary) {
+      if (L->Comm().NumProc()==1) {
+	if (TransA) cout << "TransUSv" << statdyn<< "Prof" << contig << "OptStor" << '\t';
+	else cout << "NoTransUSv" << statdyn << "Prof" << contig << "OptStor" << '\t';
+      }
+      cout << MFLOPs << endl;
+    }
+  }
+  return;
+}
