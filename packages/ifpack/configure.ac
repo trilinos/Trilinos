@@ -420,8 +420,8 @@ AC_CONFIG_FILES([
 		test/IlukGraph/Makefile.include
 		test/SetParameters/Makefile
 		test/SetParameters/Makefile.include
-		test/PointPreconditioner/Makefile
-		test/PointPreconditioner/Makefile.include
+		test/Relaxation/Makefile
+		test/Relaxation/Makefile.include
 		test/AdditiveSchwarz/Makefile
 		test/AdditiveSchwarz/Makefile.include
 		test/Container/Makefile

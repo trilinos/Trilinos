@@ -98,7 +98,7 @@ echo $file
 
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
-foreach f (CrsRiluk IlukGraph SetParameters)
+foreach f (CrsRiluk IlukGraph CompareWithAztecOO SetParameters Container OverlappingRowMatrix PreconditionerFactory Relaxation)
 	cd $f
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
@@ -108,10 +108,8 @@ foreach f (CrsRiluk IlukGraph SetParameters)
 		    # A test failed.
 			set AnError = True
 			echo "  ******** Test failed ********" >>& ../$file
-			echo "############" $g "##############" >>& ../$file2
-			$mpigo 3 ./$g -v >>& ../$file2
-			cat ../$file4 >> ../$file
-			rm -f ../$file4
+                        echo "  now re-running with -v option" >>& ../$file
+			$mpigo 3 ./$g -v >>& ../$file
 		    else
 		    # Tests passed
 			echo "******** Test passed ********" >>& ../$file

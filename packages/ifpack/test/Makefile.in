@@ -226,7 +226,11 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = CrsRiluk IlukGraph SetParameters scripts
+SUBDIRS = CrsRiluk IlukGraph SetParameters scripts \
+          AdditiveSchwarz CompareWithAztecOO Container \
+          OverlappingRowMatrix PreconditionerFactory \
+          Relaxation TestAll
+
 all: all-recursive
 
 .SUFFIXES:

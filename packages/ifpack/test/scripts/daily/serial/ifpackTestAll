@@ -82,7 +82,7 @@ echo $file
 
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
-foreach f (CrsRiluk IlukGraph SetParameters)
+foreach f (CrsRiluk IlukGraph CompareWithAztecOO SetParameters Container OverlappingRowMatrix PreconditionerFactory Relaxation)
 	cd $f
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
