@@ -1,0 +1,32 @@
+Index: ltmain.sh
+===================================================================
+RCS file: /space/CVS/Trilinos/packages/nox/config/ltmain.sh,v
+retrieving revision 1.1
+diff -c -r1.1 ltmain.sh
+*** ltmain.sh	5 Jan 2005 17:45:02 -0000	1.1
+--- ltmain.sh	24 Mar 2005 17:20:44 -0000
+***************
+*** 1782,1788 ****
+        *.$libext)
+  	# An archive.
+  	deplibs="$deplibs $arg"
+! 	old_deplibs="$old_deplibs $arg"
+  	continue
+  	;;
+  
+--- 1782,1796 ----
+        *.$libext)
+  	# An archive.
+  	deplibs="$deplibs $arg"
+! 
+! 	# The following line was commented out by etphipp@sandia.gov
+! 	# on 3/24/05.  If a library is passed in as path/libname.a, that
+! 	# library is passed to the static linker.  This causes serious 
+! 	# problems on many platforms since typically ar doesn't allow
+! 	# nested archives.  Often an invalid archive is created that cannot
+! 	# be linked against.
+! 
+! 	#old_deplibs="$old_deplibs $arg"
+  	continue
+  	;;
+  

@@ -1782,7 +1782,15 @@ EOF
       *.$libext)
 	# An archive.
 	deplibs="$deplibs $arg"
-	old_deplibs="$old_deplibs $arg"
+
+	# The following line was commented out by etphipp@sandia.gov
+	# on 3/24/05.  If a library is passed in as path/libname.a, that
+	# library is passed to the static linker.  This causes serious 
+	# problems on many platforms since typically ar doesn't allow
+	# nested archives.  Often an invalid archive is created that cannot
+	# be linked against.
+
+	#old_deplibs="$old_deplibs $arg"
 	continue
 	;;
 
