@@ -101,17 +101,9 @@ CCOMP		= $(CC) $(INC_PATH) $(CFLAGS)
 #
 # lint defines
 #
-LINT		= lint
-LINT_INC_PATH	= -IMemory -ICommunication \
-		  -I$(INC_PATH)
-#		  -I/Net/local/lang/SC3.0.1/include \
-#		  -I/Net/local/lang/SC3.0.1/ansi_include \
-#		  -I/Net/local/mpi/include \
-#		  -I/Net/local/mpi/mpich/include \
-#                  -I/Net/local/mpi/build/solaris/ch_p4/include \
-#		  -I/Net/proj/zoltan/arch/sun/include
+LINT		= lint 
+LINT_INC_PATH	= -IMemory -ICommunication  $(INC_PATH)
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES)
-LINT_TARGET	= llib-l$(LIB_TARGET).ln
 VPATH		= $(SUBDIRS) 
 
 ###########################################################################
@@ -218,17 +210,31 @@ zdrive_comm comm:
 	
 #
 ############################################################################
-#         OTHER TARGETS
+#         LINT TARGETS
 ############################################################################
 #
 
-$(LINT_TARGET): $(ZOLTAN_CSRC)
-	@echo "Generating lint file for library..."
-	$(LINT) $(LINT_FLAGS)  $? -o $(LIB_TARGET)
+llib-l$(MEM_LIB).ln: $(MEM_CSRC)
+	@echo "Generating lint file for library " $(MEM_LIB)
+	$(LINT) $(LINT_FLAGS)  $? -o $(MEM_LIB)
 
-lint: $(ZDRIVE_CSRC) $(LINT_TARGET)
+llib-l$(COMM_LIB).ln: $(COMM_CSRC)
+	@echo "Generating lint file for library " $(COMM_LIB)
+	$(LINT) $(LINT_FLAGS)  $? -o $(COMM_LIB)
+
+lint_mem: $(MEM_DRIVER_CSRC) llib-l$(MEM_LIB).ln
 	@echo "running lint..."
-	$(LINT) $(LINT_FLAGS) "VPATH=$(LINT_VPATH) $?
+	$(LINT) $(LINT_FLAGS) $?
+
+lint_comm: $(COMM_DRIVER_CSRC) llib-l$(COMM_LIB).ln llib-l$(MEM_LIB).ln
+	@echo "running lint..."
+	$(LINT) $(LINT_FLAGS) $?
+
+#
+############################################################################
+#         OTHER TARGETS
+############################################################################
+#
 
 clean:
 	-for a in $(SUBDIRS); do \
