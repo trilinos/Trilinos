@@ -39,6 +39,19 @@
 namespace NOX {
 
 //! %NOX %Petsc support.
+/*!
+%NOX provides support for PETSc data structures through concrete 
+implementations of the <b>%NOX::Abstract::Group</b> and
+<b>%NOX::Abstract::Vector</b>.  A <b>SharedJacobian</b> class
+exists which for now simply wraps a PETSc matrix used as the Jacobian.  Future
+enhancements may include generalizing this to an operator supporting the
+finite-difference and matrix-free capabilities provided in PETSc.
+
+An <b>Interface</b> class provides callbacks to the application needed
+for function (residual) evaluations and possibly matrix (Jacobian) fills.
+
+*/
+
 namespace Petsc {
 
 //! Implementation of NOX::Abstract::Vector for %Petsc vectors.
