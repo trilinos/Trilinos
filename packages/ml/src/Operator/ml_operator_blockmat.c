@@ -247,6 +247,7 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
 
   ML_Operator_blockmat_data = (struct ML_Operator_blockmat_data *) ML_allocate(
 				       sizeof(struct ML_Operator_blockmat_data));
+
   ML_Operator_blockmat_data->Ke_diag = NULL;
   ML_Operator_blockmat_data->M_diag  = NULL;
   ML_Operator_blockmat_data->M_mat   = NULL;
@@ -292,7 +293,6 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
       ML_Operator_blockmat_data->M_matvec_data = M->data;
     }
   } 
-
   ML_Operator_Set_ApplyFuncData(blockmat, scale_fact*Ke->invec_leng, 
 				scale_fact*Ke->outvec_leng, ML_INTERNAL,
 				ML_Operator_blockmat_data,
@@ -340,6 +340,9 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
 
   if (M != NULL) {
     ML_Operator_blockmat_data->M_mat =  M;
+  }
+  if (Ke != NULL) {
+    ML_Operator_blockmat_data->Ke_mat =  Ke;
   }
 
   return 1;
