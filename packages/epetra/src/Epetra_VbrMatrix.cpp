@@ -1786,15 +1786,20 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
   //
 
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
+  bool hasOperatorMap = false;
   if (DoRows) {
-    //if (!Graph().RangeMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
-    if ( !Graph().RangeMap().SameAs(x.Map()) && !OperatorRangeMap().SameAs(x.Map()) )
-      EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
+    if ( !Graph().RangeMap().SameAs(x.Map()) ) {
+      hasOperatorMap = OperatorRangeMap().SameAs(x.Map());
+      if( !hasOperatorMap )
+        EPETRA_CHK_ERR(-2);
+    }
   }
   else {
-    //if (!Graph().DomainMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
-    if ( !Graph().RangeMap().SameAs(x.Map()) && !OperatorDomainMap().SameAs(x.Map()) )
-      EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
+    if ( !Graph().DomainMap().SameAs(x.Map()) ) {
+      hasOperatorMap = OperatorDomainMap().SameAs(x.Map());
+      if( !hasOperatorMap )
+        EPETRA_CHK_ERR(-2);
+    }
   }
   int ierr = 0;
   int * NumBlockEntriesPerRow = NumBlockEntriesPerRow_;
@@ -1862,8 +1867,15 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
 
   if (!DoRows) {
     if (Importer()!=0){
-      x.PutScalar(0.0);
-      EPETRA_CHK_ERR(x.Export(*x_tmp, *Importer(), Add)); // Fill x with Values from import vector
+      Epetra_Vector  *x_blocked = NULL;
+      if(hasOperatorMap)
+        x_blocked = new Epetra_Vector( ::View, DoRows ? Graph().RangeMap() : Graph().DomainMap(), &x[0] );
+      else
+        x_blocked = &x;
+      x_blocked->PutScalar(0.0);
+      EPETRA_CHK_ERR(x_blocked->Export(*x_tmp, *Importer(), Add)); // Fill x with Values from import vector
+      if(hasOperatorMap)
+        delete x_blocked;
       delete x_tmp;
       xp = (double*) x.Values();
     }
