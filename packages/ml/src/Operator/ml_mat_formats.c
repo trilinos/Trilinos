@@ -474,6 +474,7 @@ int MSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
    ML_CommInfoOP     *getrow_comm;
    ML_Operator       *Amat;
    ML_Comm           *comm;
+   int *bindx_ptr;
 
    Amat  = (ML_Operator *) Amat_in;
    comm  = Amat->comm;
@@ -495,15 +496,29 @@ int MSR_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[])
    }
    else p2 = p;
 
+
+  j = bindx[0];
+  bindx_ptr = &bindx[j];
   for (i = 0; i < Nrows; i++) {
-     sum  = val[i] * p2[i];
-     bindx_row = bindx[i];
-     nzeros    = bindx[i+1] - bindx_row;
-     for (j = 0; j < nzeros; j++) {
-        k = bindx_row + j;
-        sum  += val[k] * p2[bindx[k]];
-     }
-     ap[i] = sum;
+    sum =  val[i]*p2[i];
+    while (j+10 < bindx[i+1]) {
+      sum += val[j+9]*p2[bindx_ptr[9]] +
+	val[j+8]*p2[bindx_ptr[8]] +
+	val[j+7]*p2[bindx_ptr[7]] +
+	val[j+6]*p2[bindx_ptr[6]] +
+	val[j+5]*p2[bindx_ptr[5]] +
+	val[j+4]*p2[bindx_ptr[4]] +
+	val[j+3]*p2[bindx_ptr[3]] +
+	val[j+2]*p2[bindx_ptr[2]] +
+	val[j+1]*p2[bindx_ptr[1]] +
+	val[j]*p2[*bindx_ptr];
+      bindx_ptr += 10;
+      j += 10;
+    }
+    while (j < bindx[i+1]) {
+      sum += val[j++] * p2[*bindx_ptr++];
+    }
+    ap[i] = sum;
   }
 
 
