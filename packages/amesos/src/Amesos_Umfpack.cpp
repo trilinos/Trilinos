@@ -59,6 +59,7 @@ Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
   SerialCrsMatrixA_(0), 
   SerialMap_(0), 
   SerialMatrix_(0), 
+  UseTranspose_(false),
   SymbolicFactorizationOK_(false), 
   NumericFactorizationOK_(false)  {
   
