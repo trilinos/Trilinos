@@ -2909,7 +2909,10 @@ static int ML_ggb_CoarseSolver = 2;
 	   __FILE__, __LINE__ );
   exit(-1);
 #endif
-#endif
+
+#else
+static int ML_ggb_CoarseSolver = 1;
+#endif /* if defined(HAVE_ML_ARPACK) || defined(HAVE_ML_PARPACK) */
 
 int ML_ggb_Set_CoarseSolver(int flag) 
 {
