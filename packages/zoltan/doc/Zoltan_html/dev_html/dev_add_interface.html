@@ -1,11 +1,11 @@
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1376">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
-
-   <TITLE> Zoltan Developer's Guide:  Adding Interface Routines</TITLE>
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Adding Interface Routines</title>
 <!
   ------------------------
   | CVS File Information |
@@ -15,36 +15,41 @@
   $Date$
   $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
+<div ALIGN=right>
+<h3>
+<img SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></h3></div>
 
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
-
-<H2>
-<A NAME="new_interface"></A>Load-Balancing Interface Routines</H2>
-A new algorithm must be added to the load-balancing interface for use in
-<B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.
-An entry for the new algorithm must be added to the enumerated type <B>LB_Method</B>
-in <I>lb/lb_const.h</I>. An external <B><A HREF="dev_add_lb.html">LB_FN</A></B>
-prototype for the load-balancing function must also be added to <I>lb/lb_const.h</I>;
-see the prototype for function <I>lb_rcb</I> as an example. A character
+<h2>
+<a NAME="new_interface"></a>Load-Balancing Interface Routines</h2>
+Any new method that you wish to add to the Zoltan library must have an
+interface that conforms to the protype <b><a href="dev_add_lb.html">LB_FN</a></b>.
+Note that the load balancing
+function may return either import lists, export lists, or both. All
+processes must return the same type of list. If&nbsp; import (export) lists
+are not computed, then the variable <i>num_import</i> (<i>num_export</i>)
+must be set to a negative number (typically -1) upon return.
+<p>A new algorithm must be added to the load-balancing interface for use
+in
+<b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>.
+An entry for the new algorithm must be added to the enumerated type <b>LB_Method</b>
+in <i>lb/lb_const.h</i>. An external <b><a href="dev_add_lb.html">LB_FN</a></b>
+prototype for the load-balancing function must also be added to <i>lb/lb_const.h</i>;
+see the prototype for function <i>lb_rcb</i> as an example. A character
 string describing the new algorithm should be chosen to be used as application
-input to <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.
-A test for this string is added to <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>,
-and the <I>Method</I> and <I>LB_Fn</I> fields of the <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>
-passed to <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>
+input to <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>.
+A test for this string is added to <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>,
+and the <i>Method</i> and <i>LB_Fn</i> fields of the <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
+passed to <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>
 should be set to the new enumerated type value and new load-balancing function
 pointer.
-<BR>&nbsp;
-
-<P>
-<HR WIDTH="100%">
-<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_add_lb.html">Next:&nbsp;
-Load-Balancing Function Implementation</A>&nbsp; |&nbsp; <A HREF="dev_add.html">Previous:&nbsp;
-Adding New Algorithms</A>]
-</BODY>
-</HTML>
+<br>&nbsp;
+<p>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_add_lb.html">Next:&nbsp;
+Load-Balancing Function Implementation</a>&nbsp; |&nbsp; <a href="dev_add.html">Previous:&nbsp;
+Adding New Algorithms</a>]
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Adding Parameters</title>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+</head>
+<body bgcolor="#FFFFFF">
+
+<div ALIGN=right>
+<h3>
+<img SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></h3></div>
+
+<h2>
+<a NAME="new_parameters"></a>Adding new parameters</h2>
+All parameters in Zoltan should be set and accessed through the <a href="dev_util_params.html">parameter
+setting utilities</a>. To add a new parameter to an existing method, you
+need to do the following:
+<ul>
+<li>
+In the source code for the desired method, search for&nbsp; the place where
+the static array of parameters is defined. It will look something like:
+<i>static PARAM_VARS Method_params[] = { ... }</i>.&nbsp; Add a line with
+the name of the new parameter, a pointer to the variable you want to associate
+(usually NULL), and its type.</li>
+
+<li>
+In the method source code, bind the parameter to a local variable through
+<b><a href="dev_util_params.html#LB_Bind_Param">LB_Bind_Param</a></b>.
+Make sure you do this before <b><a href="dev_util_params.html#LB_Assign_Param_Vals">LB_Assign_Param_Vals
+</a></b>is
+invoked.</li>
+
+<li>
+Update the parameter function for the method in question. This routine
+is typically called <b>LB_Set_</b><i>Method</i><b>_Param</b><i>. </i>This
+routine checks if a given string is a valid parameter for that method.
+It may also verify the values.</li>
+</ul>
+When you add a new method to Zoltan, you also need to:
+<ul>
+<li>
+Write a parameter function for your method that checks whether a given
+string and value is a valid parameter pair for your method. See <b>LB_Set_RCB_Param</b>
+in <i>rcb/rcb.c</i> for an example.</li>
+
+<li>
+Let you method access the parameters via <b><a href="dev_util_params.html#LB_Bind_Param">LB_Bind_Param
+</a></b>and
+<a href="dev_util_params.html#LB_Assign_Param_Vals">LB_Assign_Param_Vals
+.</a></li>
+
+<li>
+Change the parameter function array in <i>params/set_params.c</i> to include
+your parameter function. Simply add a new entry to the static array that
+looks like: <i>static LB_SET_PARAM_FN * Param_func[] = {...}</i>.</li>
+
+<li>
+Make sure your method uses the <a href="key_params">key parameters</a>
+in Zoltan correctly.</li>
+</ul>
+One useful convention is to put your method routine and your corresponding
+parameter function in the same source file. This way you can define the
+parameters in a static array. This convention eliminates&nbsp; the risk
+of bugs caused by duplicate declarations (that are, incorrectly, not identical).
+<br>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_mig.html">Next:&nbsp;
+Migration-Help Tools</a>&nbsp; |&nbsp; <a href="dev_add_struct.html">Previous:&nbsp;
+Data Structures</a>]
+</body>
+</html>

@@ -29,25 +29,47 @@ to the library is simple. In many cases, existing code can be easily modified
 to use the interface query functions to build the data structures needed
 for the algorithm. The process for adding new algorithms to the library
 is described below; more detail is provided at each link.
-<blockquote>Add the algorithm to the <a href="dev_add_interface.html">Load-Balancing
-Interface Routines</a>;
-<br>Implement a <a href="dev_add_lb.html">Load-Balancing Function</a> front-end
-to the algorithm;
-<br>Use the load-balancing <a href="dev_add_struct.html">Data Structures</a>
-provided by the library;
-<br>Add the <a href="dev_add_param.html">Parameters</a> needed by the algorithm;
-and
-<br>Modify the <a href="dev_fortran.html">Fortran interface</a> if the
-API is changed.</blockquote>
+<ul>
+<li>
+Read the <a href="dev_intro_philosophy.html">Philosophy of Zoltan</a> and
+the <a href="dev_intro_coding.html">Coding Principles in Zoltan</a>.</li>
+
+<li>
+Add the algorithm to the <a href="dev_add_interface.html">Load-Balancing
+Interface Routines</a>.</li>
+
+<li>
+Implement a <a href="dev_add_lb.html">Load-Balancing Function</a> front-end
+to the algorithm.</li>
+
+<li>
+Use the load-balancing <a href="dev_add_struct.html">Data Structures</a>
+provided by the library.</li>
+
+<li>
+Add the <a href="dev_add_params.html">Parameters</a> needed by the algorithm.
+Also make sure that the algorithm uses the <a href="dev_util_params.html#key_params">key
+parameters</a> in Zoltan properly.</li>
+
+<li>
+If necessary, write a routine to <a href="dev_add_free.html">Free</a> your
+dynamically allocated data structures.</li>
+
+<li>
+Modify the <a href="dev_fortran.html">Fortran interface</a> if the API
+is changed.</li>
+
+<li>
+Document your new method. The documentation should be written in HTML or
+in a format that can easily be converted into HTML.</li>
+</ul>
 <!--
   BAH: Modify this section to include the following.
     Write parameter routine & modify set_params
+    Key params. Mention Imbal_tol and Debug_level.
     Write free routine if appropriate (& modify Free_Structure to call it)
-    Return with nimport or nexport = -1 if not computed.
-
     Change Data Structure discussion to emphasize it's only for
       persistant data.
-
     Make this into a checklist.
 -->
 <hr WIDTH="100%">
